@@ -117,6 +117,7 @@ python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .s
 python3 -I -u kings-cross-src/tools/mutation/train.py kings-cross-src .scratch/mutation/train
 python3 -I -u kings-cross-src/tools/mutation/trainweb.py kings-cross-src .scratch/mutation/trainweb
 python3 -I -u kings-cross-src/tools/mutation/tunnel-track.py kings-cross-src .scratch/mutation/tunnel-track
+python3 -I -u kings-cross-src/tools/mutation/weather.py kings-cross-src .scratch/mutation/weather
 python3 -I -u kings-cross-src/tools/mutation/western-front.py kings-cross-src .scratch/mutation/western-front
 ```
 
@@ -158,6 +159,18 @@ Waverley decoder, platform screening and anchors (`core/waverley-anchors.ts`) wi
 (`tools/waverley-anchors.ts`), and the station switcher (`web/src/stations.ts`). Where two guards
 cover for each other (`motion.py`, `stations.py`), a mutation is given as a list of edits and applies
 them together; removing either alone changes nothing a test can see.
+
+`weather.py` mutates the sun, the sky and the weather: the sun's position (`core/solar.ts`), the sky rig and
+the fog (`core/daylight.ts`), the Open-Meteo feed (`web/src/weather.ts`), the climate each station gets
+(`web/src/station-weather.ts`), the roofs that keep the weather off (`web/src/cover.ts`, and the names the builders give the
+roof meshes), the rain and snow (`web/src/precip.ts`), the page's fixed lights (`web/src/world.ts`) and what the atmosphere
+applies to the scene (`web/src/atmosphere.ts`). The mutations are of behaviour: a series term dropped, a sign or a unit wrong, a
+boundary moved by one, a clamp or a guard removed, a call left out. None anchors on a colour, a lamp share or a rail dimming
+(those are tuned elsewhere), so retuning the look does not stale them. It runs the nine test files of those modules for every
+mutation and, like the other `kxmut` drivers, must see every one of their tests fail by assertion under at least one mutation
+(`N/M tests observed failing`). Label text after the arguments runs only the mutations whose label contains it, for a re-run of
+the survivors of a change; a partial run skips that accounting. `--check` only looks for each search text, exactly once, and runs
+nothing.
 
 `station.py` also mutates the committed data and `tools/fidelity.ts`.
 

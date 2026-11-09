@@ -11,7 +11,7 @@ import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { concourseCanopy, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding } from '../../core/station.ts';
 import { createAtmosphere } from '../src/atmosphere.ts';
 import { buildConcourse } from '../src/concourse.ts';
-import { buildCoverMap, COVER_GLSL, coverAt, coverUniforms, groundCoverAt, groundOpenShare } from '../src/cover.ts';
+import { applyCover, buildCoverMap, COVER_GLSL, coverAt, coverUniforms, groundCoverAt, groundOpenShare } from '../src/cover.ts';
 import { buildFurniture, furniturePlan } from '../src/furniture.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, ROOF_SKIN } from '../src/shed.ts';
@@ -593,6 +593,48 @@ test('the roofs follow the scene: a roof added is covered after a rescan and not
   assert.equal(coverAt(atmosphere.cover(), spot[0] + 30, 2, spot[2]), 0, 'a roof taken away lets the weather back in');
   assert.ok(sameBytes((atmosphere.cover() as CoverMap).heights, before.heights) && sameBytes((atmosphere.cover() as CoverMap).soft, before.soft), 'to the map it was, soft edge and all');
   assert.ok((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.data === (atmosphere.cover() as CoverMap).soft, 'and the shaders have its soft edge back');
+});
+
+test('the shaders stop at the map\'s edges: a point on the edge of the last cell, or before the first, is open sky even where the end cells are roofed', () => {
+  // A map that is roofed in every cell, to the edge, so a read that clamps to the end cell would find a roof (the real maps keep a clear metre round the roofs, which hides this).
+  const roofed: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 4, nz: 4, step: 0.15, heights: new Uint8Array(16).fill(40), soft: new Uint8Array(16).fill(255) };
+  try {
+    applyCover(roofed);
+    const glsl = new Glsl(COVER_GLSL);
+    const env: Env = { vars: uniformValues(coverUniforms), fns: { texture2D } };
+    for (const name of ['coverAt', 'coverGroundAt'] as const) {
+      const read = (x: number, y: number, z: number): number => glsl.call(name, [[x, y, z]], env) as number;
+      assert.equal(read(2, 1, 2), 1, `${name}: under the roof, in the middle`);
+      assert.equal(read(3.9, 1, 3.9), 1, `${name}: in the last cell`);
+      assert.equal(read(0.1, 1, 0.1), 1, `${name}: in the first cell`);
+      assert.equal(read(4, 1, 2), 0, `${name}: exactly on the far edge in x`);
+      assert.equal(read(2, 1, 4), 0, `${name}: exactly on the far edge in z`);
+      assert.equal(read(4.5, 1, 2), 0, `${name}: past it in x`);
+      assert.equal(read(2, 1, 4.5), 0, `${name}: past it in z`);
+      assert.equal(read(-0.1, 1, 2), 0, `${name}: before the first cell in x`);
+      assert.equal(read(2, 1, -0.1), 0, `${name}: before the first cell in z`);
+    }
+  } finally { applyCover(atmosphere.cover()); }
+});
+
+test('drops fall: a streak and a flake are lower a moment later, by the speed they fall at', () => {
+  const from = new THREE.Vector3(...at(W + 15, 100, 1.7)), look = new THREE.Vector3(...at(W + 15, 140, 1.7));
+  const cam = camera(from, look);
+  const heightAt = (kind: 'rain' | 'snow', timeS: number): { y: number; box: number; fall: number } => {
+    atmosphere.precip.update({ timeS, target: look, camera: from, distance: from.distanceTo(look), rain: 1, snow: 1, windMs: 0, daylight: 1 });
+    const u = kind === 'rain' ? rainUniforms() : snowUniforms();
+    const seed: Seed = { position: [0.3, 0.6, 0.4], aRand: [0.5, 1] };
+    const drop = (kind === 'rain' ? rainShader : snowShader)(cam)(seed, false);
+    const placed = (kind === 'rain' ? drop.locals.p : drop.locals.world) as number[];
+    return { y: placed[1] as number, box: (u.uBox!.value as THREE.Vector3).y, fall: u.uFall!.value as number };
+  };
+  for (const kind of ['rain', 'snow'] as const) {
+    const before = heightAt(kind, 0), after = heightAt(kind, 0.5);
+    assert.ok(Math.abs(before.y - 0.6 * before.box) < 1e-9, `${kind}: at the start it is where its seed puts it: ${before.y} of ${before.box}`);
+    // the jitter 0.5 gives the speed of the base fall for rain (0.85 + 0.3 x 0.5 = 1) and for snow (0.7 + 0.6 x 0.5 = 1)
+    assert.ok(Math.abs(after.y - (0.6 * after.box - 0.5 * after.fall)) < 1e-9, `${kind}: half a second later it has fallen half a second's worth: ${after.y} against ${0.6 * after.box - 0.5 * after.fall}`);
+    assert.ok(after.y < before.y, `${kind}: lower`);
+  }
 });
 
 test('disposing the atmosphere takes the roofs away from the shaders: they see no map, and read nothing', () => {

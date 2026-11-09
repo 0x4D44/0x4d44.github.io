@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { describeSun } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
 import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
-import { createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from '../src/station-weather.ts';
+import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from '../src/station-weather.ts';
 import { coverAt, coverUniforms, findRoofs } from '../src/cover.ts';
+import { liveUrl } from '../src/weather.ts';
+import type { WeatherFeedOptions } from '../src/weather.ts';
 import { addWorld } from '../src/world.ts';
 
 const location = { lat: 55.9519018, lon: -3.1904199 };
@@ -110,7 +113,8 @@ test('Waverley climate disposal cancels its feed, frees only owned sky geometry 
   assert.equal(skyFreed, 1); assert.equal(modelFreed, 0);
   assert.equal(pending.size, 0, 'inactive station leaves no weather poll');
   assert.ok(builderLights.every(l => l.visible));
-  assert.deepEqual(new Set(view.scene.children), original);
+  // (not assert.deepEqual of the two sets: a failure would print the whole scene graph, and the diff of it does not finish)
+  assert.ok(view.scene.children.length === original.size && view.scene.children.every(o => original.has(o)), 'the scene is as it was: the sky, the ground ring, the precipitation and the sun lights are gone and nothing else');
   view.dispose(); assert.equal(modelFreed, 1);
 });
 
@@ -130,4 +134,259 @@ test('unloading the Waverley view also disposes its attached climate exactly onc
   sky.geometry.addEventListener('dispose', () => ++freed);
   try { view.dispose(); view.dispose(); assert.equal(freed,1,'lazy scene owner disposes the active weather'); }
   finally { climate.dispose(); }
+});
+
+// ---- two scenes, one set of shaders: whichever is on show owns the shared roofs, wetness and snow ------------------------------------------------
+
+/** A flat 10 m roof at 6 m, named like a real one so the cover map is drawn from it. */
+function roofAt(x: number, z: number, name = 'canopy-glass'): THREE.Mesh {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([x - 5, 6, z - 5, x - 5, 6, z + 5, x + 5, 6, z + 5, x + 5, 6, z - 5], 3));
+  geometry.setIndex([0, 1, 2, 0, 2, 3]);
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+  mesh.name = name;
+  return mesh;
+}
+/** A London-like scene: the page's world and a climate over it. */
+function londonOf(weather: WeatherFeedOptions = sceneWeatherOptions('clear', null)) {
+  const scene = new THREE.Scene(), world = addWorld(scene, { grid: false });
+  return { scene, world, climate: createSceneWeather({ scene, world, sites: null, weather }) };
+}
+const sharedHeights = (): Uint8Array => (coverUniforms.uCoverMap.value as THREE.DataTexture).image.data as Uint8Array;
+const settled = (): Promise<void> => new Promise(resolve => setImmediate(resolve));
+/** The timers a feed is given, that never fire. */
+function idleTimers() {
+  let seq = 0; const pending = new Map<number, () => void>();
+  return { pending, setTimeout(fn: () => void) { pending.set(++seq, fn); return seq; }, clearTimeout(id: unknown) { pending.delete(id as number); } };
+}
+
+test('a roof drawn late into the scene that is not on show does not take the roofs from the scene that is; the scene on show takes them back on its next frame', async () => {
+  const london = londonOf();
+  const { view } = await viewOf();
+  const edinburgh = createWaverleyWeather(view, sceneWeatherOptions('snow', null)); view.climate = edinburgh;
+  try {
+    edinburgh.update(frame(1000));
+    const own = edinburgh.atmosphere.cover()!;
+    assert.ok(sharedHeights() === own.heights, 'Edinburgh is on show: the shared roofs are its own');
+    london.scene.add(roofAt(300, 300));
+    london.climate.atmosphere.rescan(); // a lazy chunk of the other scene arriving late
+    assert.ok(sharedHeights() === london.climate.atmosphere.cover()!.heights, 'that scan drew the other scene\'s roofs into the shared map (the thing to be undone)');
+    edinburgh.update(frame(1016));
+    assert.ok(sharedHeights() === own.heights, 'the scene on show has its own roofs back on its next frame, though it was the scene on show all along');
+  } finally { view.dispose(); london.climate.dispose(); }
+});
+
+test('a scene with no roofs, on show, shows none, whatever roofs the other scene drew late into the shared map', async () => {
+  const london = londonOf();
+  const { view } = await viewOf();
+  const edinburgh = createWaverleyWeather(view, sceneWeatherOptions('snow', null)); view.climate = edinburgh;
+  try {
+    london.climate.update(frame(1000));
+    assert.equal(coverUniforms.uCoverRect.value.z, 0, 'London has no roofs');
+    view.scene.add(roofAt(300, 300));
+    edinburgh.atmosphere.rescan();
+    assert.ok(coverUniforms.uCoverRect.value.z > 0, 'that scan put Edinburgh\'s roofs in the shared map (the thing to be undone)');
+    london.climate.update(frame(1016));
+    assert.equal(coverUniforms.uCoverRect.value.z, 0, 'London is on show and has no roofs, so the shaders see none');
+  } finally { view.dispose(); london.climate.dispose(); }
+});
+
+test('putting a scene on show reports a change once, then none until the other scene has taken the shared roofs', () => {
+  const bare = londonOf(), roofed = londonOf();
+  roofed.scene.add(roofAt(40, 40));
+  roofed.climate.atmosphere.rescan();
+  try {
+    assert.equal(activateSceneAtmosphere(bare.climate.atmosphere), true, 'a scene that was not on show comes on show');
+    assert.equal(activateSceneAtmosphere(bare.climate.atmosphere), false, 'asked again, nothing changes');
+    assert.equal(coverUniforms.uCoverRect.value.z, 0);
+    assert.equal(activateSceneAtmosphere(roofed.climate.atmosphere), true, 'the other scene takes the roofs');
+    assert.ok(sharedHeights() === roofed.climate.atmosphere.cover()!.heights);
+    assert.equal(activateSceneAtmosphere(roofed.climate.atmosphere), false, 'and keeps them');
+    assert.equal(activateSceneAtmosphere(bare.climate.atmosphere), true, 'the first comes back on show');
+    assert.equal(coverUniforms.uCoverRect.value.z, 0, 'with none');
+    assert.equal(activateSceneAtmosphere(bare.climate.atmosphere), false);
+  } finally { bare.climate.dispose(); roofed.climate.dispose(); }
+});
+
+test('a scene with no weather of its own, put back on show, takes the other scene\'s snow and wet off the shared ground at once, inside the quarter-second throttle', async () => {
+  const london = londonOf({ mode: 'off' });
+  const surface = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  surface.name = 'asphalt';
+  london.scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), surface));
+  london.climate.atmosphere.rescan();
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  surface.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const { view } = await viewOf();
+  const edinburgh = createWaverleyWeather(view, sceneWeatherOptions('snow', null)); view.climate = edinburgh;
+  try {
+    london.climate.update(frame(1000));
+    assert.equal(shader.uniforms.uSnowCover!.value, 0, 'no snow in London');
+    edinburgh.update(frame(1016));
+    assert.ok((shader.uniforms.uSnowCover!.value as number) > 0.5, 'Edinburgh\'s snow lies on the shared ground');
+    london.climate.update(frame(1032));
+    assert.equal(shader.uniforms.uSnowCover!.value, 0, 'London, back on show 16 ms later, has none of it');
+    assert.equal(shader.uniforms.uWet!.value, 0, 'nor the wet');
+  } finally { view.dispose(); london.climate.dispose(); }
+});
+
+test('once its climate is disposed a scene is left alone: no new weather, the dome stays where it was, the shared roofs are not touched', () => {
+  const { world, climate } = londonOf();
+  climate.update(frame(1000));
+  const sky = climate.atmosphere.state()!, domeAt = world.sky.position.toArray();
+  climate.dispose();
+  const elsewhere = new THREE.PerspectiveCamera(); elsewhere.position.set(900, 1, 2);
+  assert.doesNotThrow(() => climate.update({ timeMs: timeMs + 7 * 3_600_000, wallMs: 60_000, camera: elsewhere, target: new THREE.Vector3() }));
+  assert.ok(climate.atmosphere.state() === sky, 'the sky worked out before is the last one');
+  assert.deepEqual(world.sky.position.toArray(), domeAt, 'and the dome does not follow the camera');
+  assert.equal(coverUniforms.uCoverRect.value.z, 0);
+});
+
+test('a climate puts the dome round the camera every frame, says nothing of the sky before it has one, and takes the sun disc and stars off the dome when it ends', () => {
+  const { world, climate } = londonOf(sceneWeatherOptions('rain', null));
+  assert.equal(climate.status(timeMs), '', 'before the first frame there is no sky to describe');
+  assert.equal(climate.status(timeMs, ' (time pinned)'), '');
+  const eye = new THREE.PerspectiveCamera(); eye.position.set(7, 8, 9);
+  const look = new THREE.Vector3();
+  climate.update({ timeMs, wallMs: 1000, camera: eye, target: look });
+  assert.deepEqual(world.sky.position.toArray(), [7, 8, 9], 'the dome rides with the camera');
+  eye.position.set(-300, 2, 60);
+  climate.update({ timeMs, wallMs: 1016, camera: eye, target: look });
+  assert.deepEqual(world.sky.position.toArray(), [-300, 2, 60], 'on every frame');
+  const sun = describeSun(climate.atmosphere.state()!.sun.elevationDeg);
+  assert.equal(climate.status(timeMs), ` · ${sun} · ${climate.feed.status(timeMs)}`);
+  assert.equal(climate.status(timeMs, ' (time pinned)'), ` · ${sun} (time pinned) · ${climate.feed.status(timeMs)}`);
+  assert.ok(world.sky.getObjectByName('sun-disc') && world.sky.getObjectByName('stars'));
+  climate.dispose();
+  // (assert.ok, not assert.equal against undefined: a failure would print the whole scene graph the object hangs from)
+  assert.ok(!world.sky.getObjectByName('sun-disc'), 'the atmosphere is disposed with the climate: no sun disc on the dome');
+  assert.ok(!world.sky.getObjectByName('stars'), 'and no stars');
+});
+
+/** Seventy-two hourly rows of an Open-Meteo archive from midnight UTC on `first`; `hour(i)` overrides row `i`. */
+function archiveFrom(first: string, hour: (i: number) => Record<string, number> = () => ({})) {
+  const cols: Record<string, number[]> = { weather_code: [], cloud_cover: [], precipitation: [], rain: [], snowfall: [], wind_speed_10m: [], is_day: [] };
+  const time: string[] = [];
+  for (let i = 0; i < 72; i++) {
+    time.push(new Date(Date.parse(`${first}T00:00:00Z`) + i * 3_600_000).toISOString().slice(0, 16));
+    const row: Record<string, number> = { weather_code: 1, cloud_cover: 20, precipitation: 0, rain: 0, snowfall: 0, wind_speed_10m: 7.2, is_day: 1, ...hour(i) };
+    for (const key of Object.keys(cols)) cols[key]!.push(row[key]!);
+  }
+  return { hourly_units: { time: 'iso8601', wind_speed_10m: 'km/h' }, hourly: { time, ...cols } };
+}
+
+test('a scene shows the weather of the time it is showing, not of the wall clock: a replayed wet hour is wet at that hour and not at another', async () => {
+  const requests: string[] = [];
+  const rows = archiveFrom('2026-11-08', (i): Record<string, number> => (i === 24 + 12 ? { weather_code: 63, cloud_cover: 100, precipitation: 1.4, rain: 1.4 } : {}));
+  const { climate } = londonOf({ mode: 'replay', date: '2026-11-09', timers: idleTimers(), now: () => Date.parse('2026-11-09T15:00:00Z'),
+    fetchImpl: (async (input: unknown) => { requests.push(String(input)); return new Response(JSON.stringify(rows)); }) as typeof fetch });
+  try {
+    await settled();
+    assert.equal(requests.length, 1, 'the archive was asked for');
+    climate.update(frame(1000)); // the scene time is 12:00 UTC on the 9th; the wall clock reads 1000 ms after the epoch
+    assert.ok(climate.atmosphere.state()!.weather.rain > 0, 'wet at the hour that was wet');
+    climate.update({ ...frame(2000), timeMs: Date.parse('2026-11-09T05:00:00Z') });
+    assert.equal(climate.atmosphere.state()!.weather.rain, 0, 'and dry at five in the morning');
+  } finally { climate.dispose(); }
+});
+
+test('the Scottish weather is asked for at Waverley, whatever options the page gave', async () => {
+  const { view } = await viewOf();
+  const requests: string[] = [];
+  const timers = idleTimers();
+  const climate = createWaverleyWeather(view, { mode: 'live', timers, now: () => timeMs,
+    fetchImpl: (async (input: unknown) => { requests.push(String(input)); return new Response(JSON.stringify({ current: { time: '2026-11-09T12:00', weather_code: 0, cloud_cover: 0, precipitation: 0 } })); }) as typeof fetch });
+  try {
+    await settled();
+    assert.deepEqual(requests, [liveUrl(location)]);
+    assert.ok(requests[0]!.includes('latitude=55.9519018&longitude=-3.1904199'), requests[0]);
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('weather is only for a scene that is built: a placeholder, or a view with no geometry, is refused and left untouched', async () => {
+  const { view } = await viewOf();
+  const children = [...view.scene.children];
+  try {
+    assert.throws(() => createWaverleyWeather({ ...view, placeholder: true } as WaverleyView, sceneWeatherOptions('rain', null)), /requires a built geographic scene/);
+    assert.throws(() => createWaverleyWeather({ ...view, geometry: undefined } as unknown as WaverleyView, sceneWeatherOptions('rain', null)), /requires a built geographic scene/);
+    assert.ok(view.scene.children.length === children.length && view.scene.children.every((o, i) => o === children[i]), 'nothing was added to the scene');
+  } finally { view.dispose(); }
+});
+
+test('the Scottish climate leaves the scene as it found it: its background and fog back, the lights that were on on and the ones that were off off', async () => {
+  const { view } = await viewOf();
+  const on = new THREE.DirectionalLight(0xffffff, 1), off = new THREE.PointLight(0xffffff, 1);
+  off.visible = false;
+  view.scene.add(on, off);
+  const background = new THREE.Color(0x123456), fog = new THREE.Fog(0x654321, 5, 50);
+  view.scene.background = background; view.scene.fog = fog;
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('rain', null));
+  try {
+    climate.update(frame());
+    assert.ok(view.scene.background !== background && view.scene.fog !== fog, 'the climate paints its own');
+    assert.deepEqual([on.visible, off.visible], [false, false], 'and has the one sky rig');
+    view.scene.traverse(o => assert.ok(!(o instanceof THREE.GridHelper), 'no measuring grid in a real place'));
+  } finally { climate.dispose(); }
+  assert.ok(view.scene.background === background, 'the background is the one that was there');
+  assert.ok(view.scene.fog === fog, 'and so is the fog');
+  assert.deepEqual([background.getHex(), fog.color.getHex(), fog.near, fog.far], [0x123456, 0x654321, 5, 50], 'untouched by the climate');
+  assert.deepEqual([on.visible, off.visible], [true, false], 'a light that was off stays off');
+  view.dispose();
+});
+
+const ringOf = (scene: THREE.Object3D): THREE.Mesh | undefined => scene.getObjectByName('ground-outside-terrain') as THREE.Mesh | undefined;
+/** The distinct x (axis 0) or z (axis 2) values among a mesh's vertices. */
+const coordinates = (mesh: THREE.Mesh, axis: 0 | 2): number[] => {
+  const position = mesh.geometry.getAttribute('position');
+  return [...new Set(Array.from({ length: position.count }, (_, i) => (axis === 0 ? position.getX(i) : position.getZ(i))))].sort((a, b) => a - b);
+};
+
+test('the flat ground is left only outside the scene\'s own terrain: the hole in it is the terrain\'s extent', async () => {
+  const { view } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  try {
+    const ring = ringOf(view.scene);
+    assert.ok(ring, 'there is flat ground outside the terrain');
+    for (const axis of [0, 2] as const) {
+      const at = coordinates(ring!, axis);
+      assert.ok(at.includes(-64) && at.includes(64), `the hole runs from -64 m to 64 m: ${at}`);
+      assert.ok(!at.includes(-120) && !at.includes(120), `and is not the platforms' reach: ${at}`);
+    }
+    let flat = 0;
+    view.scene.traverse(o => { if (((o as THREE.Mesh).material as THREE.Material | undefined)?.name === 'ground-flat') flat++; });
+    assert.equal(flat, 1, 'the only flat ground is the ring: the plane it was carved from is gone');
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('with no terrain to say how far the scene reaches, the flat ground starts a hundred metres beyond the platforms, on every side', async () => {
+  const { view } = await viewOf();
+  const bare = { ...view, model: { ...view.model, terrain: undefined } } as unknown as WaverleyView;
+  const climate = createWaverleyWeather(bare, sceneWeatherOptions('clear', null));
+  try {
+    const ring = ringOf(view.scene);
+    assert.ok(ring, 'there is flat ground outside');
+    // the one platform is the square from -20 m to 20 m
+    const [x, z] = [coordinates(ring!, 0), coordinates(ring!, 2)];
+    assert.ok(x.includes(-120), `west: ${x}`);
+    assert.ok(x.includes(120), `east: ${x}`);
+    assert.ok(z.includes(-120), `north: ${z}`);
+    assert.ok(z.includes(120), `south: ${z}`);
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('disposal frees the sky and the flat ground, geometry and material, and nothing of the model', async () => {
+  const { view, built } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  const sky = view.scene.children.find(o => o instanceof THREE.Mesh && o.geometry instanceof THREE.SphereGeometry) as THREE.Mesh;
+  const ring = ringOf(view.scene)!;
+  const freed: string[] = [];
+  for (const [name, mesh] of [['sky', sky], ['flat ground', ring]] as const) {
+    mesh.geometry.addEventListener('dispose', () => freed.push(`${name} geometry`));
+    (mesh.material as THREE.Material).addEventListener('dispose', () => freed.push(`${name} material`));
+  }
+  const platform = built.parts.platforms.children[0] as THREE.Mesh;
+  platform.geometry.addEventListener('dispose', () => freed.push('model geometry'));
+  (platform.material as THREE.Material).addEventListener('dispose', () => freed.push('model material'));
+  climate.dispose();
+  assert.deepEqual(freed.sort(), ['flat ground geometry', 'flat ground material', 'sky geometry', 'sky material']);
+  view.dispose();
 });

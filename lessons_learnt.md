@@ -16,6 +16,10 @@ and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
   position lerped between graph.pos nodes sits that far off the drawn rails. Build the graph with { curves: true } and read
   points and directions with edgePoint(). Anything placed beside the track (OLE, signals, platform edges, cuttings) reads
   railShapes / shapeFrom too: before it did, the OLE registered its wires up to 0.47 m off the drawn track at a support.
+- 2026-11-09 - a failed assert on a scene graph ate 4 GB: use assert.ok (web/tests/station-weather.test.ts:original)
+  assert.equal(obj, undefined) on a THREE object, or assert.deepEqual of two Sets of scene children, makes Node build a diff of the whole graph (parent and
+  children point both ways): two mutation runs hit the 4 GB cap (OVERCAP, not a kill) the moment the test went red. Compare with length plus every(has) or
+  assert.ok(!obj, message), so that a red test is cheap and a mutant that reaches it is a plain kill.
 - 2026-11-09 - a timed-out node --test leaves workers running: use kxmut.run_command (kings-cross-src tools/mutation/lib/kxmut.py)
   subprocess.run(timeout=) kills only the top node --test. Its --test-isolation=process workers keep running, and a mutant that loops and allocates never
   lets --test-timeout fire: one mutation run left orphaned workers holding 283, 203 and 159 GB compressed and the Mac ran out of memory. run_command gives

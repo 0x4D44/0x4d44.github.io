@@ -125,6 +125,58 @@ test('the look follows the weather: heavier rain is denser, night rain is dimmer
   p.dispose();
 });
 
+test('a trace of rain draws no streak and more snow than there is draws no more than all the flakes', () => {
+  const p = createPrecip();
+  p.update(frame({ rain: 0.0001 }));
+  assert.deepEqual(p.stats(), { rainVertices: 0, snowPoints: 0, drawCalls: 0 }, 'a trace of rain rounds to no streak and no draw');
+  p.update(frame({ snow: 7 }));
+  assert.deepEqual(p.stats(), { rainVertices: 0, snowPoints: SNOW_FLAKES, drawCalls: 1 });
+  p.update(frame({ snow: -7, rain: -7 }));
+  assert.deepEqual(p.stats(), { rainVertices: 0, snowPoints: 0, drawCalls: 0 });
+  p.dispose();
+});
+
+test('the look of the drops in known views, to the number: how wide the box is, how fast and how long the rain, how big and how quick the flakes, how opaque, and how the wind leans them', () => {
+  const p = createPrecip();
+  const num = (o: THREE.LineSegments | THREE.Points, name: string): number => uniforms(o)[name]!.value as number;
+  const vec = (o: THREE.LineSegments | THREE.Points, name: string): number[] => (uniforms(o)[name]!.value as THREE.Vector2 | THREE.Vector3).toArray();
+  const close = (got: number, want: number, what: string): void => assert.ok(Math.abs(got - want) < 1e-9, `${what}: ${got} against ${want}`);
+  // The wanted values are worked out by hand from the rules in precip.ts's comments: the box is 1.2 x the view's depth, 16 to 560 m, four fifths as tall;
+  // rain falls (9 + 2 x amount) m/s, faster in proportion to a box wider than 40 m (up to 8 times) so the apparent speed is the same near and far;
+  // a streak is 3.5% of the box long (half a metre to 9 m); it is more opaque the heavier it is and a little under half as opaque at night.
+  const rainCases: [number, number, number, number, number, number, number][] = [ // distance, amount, daylight → box width, fall, streak length, opacity
+    [5, 1, 1, 16, 11, 0.56, 0.5], [5, 0.5, 1, 16, 10, 0.56, 0.34], [100, 1, 0, 120, 33, 4.2, 0.225], [1000, 1, 1, 560, 88, 9, 0.5], [3000, 0.2, 0.5, 560, 75.2, 9, 0.1769],
+  ];
+  for (const [distance, amount, daylight, width, fall, length, opacity] of rainCases) {
+    p.update(frame({ rain: amount, daylight, distance }));
+    const where = `rain ${amount} from ${distance} m at daylight ${daylight}`;
+    vec(p.rain, 'uBox').forEach((v, i) => close(v, [width, width * 0.8, width][i] as number, `${where}: the box`));
+    close(num(p.rain, 'uFall'), fall, `${where}: the fall`);
+    close(num(p.rain, 'uLen'), length, `${where}: the streak`);
+    close(num(p.rain, 'uOpacity'), opacity, `${where}: the opacity`);
+  }
+  // snow: the box is 0.6 of the rain's (16 m at least), flakes fall (1.2 m/s) faster in a wider box (up to 4 times), and are bigger in one (5 cm to 20 cm);
+  // opacity (0.5 + 0.4 x amount) x (0.55 + 0.45 x daylight)
+  const snowCases: [number, number, number, number, number, number, number][] = [ // distance, amount, daylight → box width, fall, flake size, opacity
+    [5, 1, 1, 16, 1.2, 0.05, 0.9], [100, 0.5, 0, 72, 1.44, 0.1584, 0.385], [1000, 1, 1, 336, 4.8, 0.2, 0.9], [3000, 0.25, 0.5, 336, 4.8, 0.2, 0.6 * 0.775],
+  ];
+  for (const [distance, amount, daylight, width, fall, size, opacity] of snowCases) {
+    p.update(frame({ snow: amount, daylight, distance }));
+    const where = `snow ${amount} from ${distance} m at daylight ${daylight}`;
+    vec(p.snow, 'uBox').forEach((v, i) => close(v, [width, width * 0.8, width][i] as number, `${where}: the box`));
+    close(num(p.snow, 'uFall'), fall, `${where}: the fall`);
+    close(num(p.snow, 'uSize'), size, `${where}: the flake`);
+    close(num(p.snow, 'uOpacity'), opacity, `${where}: the opacity`);
+  }
+  // the wind leans rain by half its speed along x and 0.3 along z, snow by 0.4 and 0.25 (a gale is held to 8 m/s)
+  for (const [wind, rainLean, snowLean] of [[4, [2, 1.2], [1.6, 1]], [400, [4, 2.4], [3.2, 2]], [-3, [0, 0], [0, 0]]] as const) {
+    p.update(frame({ rain: 1, snow: 1, windMs: wind }));
+    vec(p.rain, 'uWind').forEach((v, i) => close(v, rainLean[i] as number, `rain in ${wind} m/s`));
+    vec(p.snow, 'uWind').forEach((v, i) => close(v, snowLean[i] as number, `snow in ${wind} m/s`));
+  }
+  p.dispose();
+});
+
 test('the shaders are well-formed for every GPU: no smoothstep with its edges reversed (undefined in GLSL), the uniforms they read are all supplied', () => {
   const p = createPrecip();
   for (const o of [p.rain, p.snow]) {

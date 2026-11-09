@@ -282,6 +282,67 @@ test('a very wide area gets bigger cells rather than a bigger map', () => {
   assert.ok(wide.nx * wide.nz <= COVER_MAX_CELLS, `${wide.nx} x ${wide.nz}`);
   assert.ok(Math.abs(coverHeightAt(wide, 3000, 3000) - 8) <= COVER_STEP);
   assert.equal(coverHeightAt(wide, 7000, 3000), 0);
+  // the cells grow a quarter metre at a time to the first size that fits: 2002 m over 1000 cells needs 2.002 m, and the next size up from 0.5 m that clears it is 2.25 m
+  const big = buildCoverMap(sceneOf(slab(0, 2000, 0, 2000, 8)))!;
+  assert.equal(big.cell, 2.25, 'the smallest cell, in quarter-metre steps, that keeps the map to a million cells');
+  assert.ok(big.nx * big.nz <= COVER_MAX_CELLS && Math.ceil(2002 / 2) ** 2 > COVER_MAX_CELLS, 'and 2 m would not have fitted');
+  assert.equal(buildCoverMap(sceneOf(slab(0, 400, 0, 400, 8)))!.cell, COVER_CELL, 'a map that fits keeps the half-metre cells');
+});
+
+test('heights are held to the nearest 15 cm up to 38 m, rounded and not floored; a higher roof counts as the highest', () => {
+  const held = (y: number): number => coverHeightAt(buildCoverMap(sceneOf(slab(0, 10, 0, 10, y)))!, 5, 5);
+  for (const [y, want] of [[10.14, 10.2], [10.1, 10.05], [10.04, 10.05], [6, 6], [0.2, 0.15], [37.9, 37.95]] as const) {
+    assert.ok(Math.abs(held(y) - want) < 1e-9, `a roof at ${y} m is held as ${held(y)} m, not ${want} m`);
+  }
+  assert.ok(Math.abs(held(60) - 38.25) < 1e-9, `${held(60)}: a roof above 38 m counts as 38.25 m`);
+});
+
+/** A mesh of the triangles in `points` (x, y, z each, three to a triangle) with no index, named like a real roof. */
+const triangles = (points: number[], name = 'canopy-glass'): THREE.Mesh => {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+  mesh.name = name;
+  return mesh;
+};
+
+test('a roof of a single triangle is a roof, and so is a small one; a sloped roof is read at the middle of each cell', () => {
+  const one = buildCoverMap(sceneOf(triangles([0, 6, 0, 0, 6, 10, 10, 6, 0])));
+  assert.ok(one, 'a mesh of one triangle draws a map');
+  assert.ok(Math.abs(coverHeightAt(one, 2, 2) - 6) < 0.1, `inside it: ${coverHeightAt(one, 2, 2)}`);
+  assert.equal(coverHeightAt(one, 8, 8), 0, 'and not beyond its far edge');
+  // 0.8 m by 0.8 m, right-angled: a third of a square metre, with just one cell centre inside it (at 0.25, 0.25)
+  const small = buildCoverMap(sceneOf(triangles([0, 6, 0, 0, 6, 0.8, 0.8, 6, 0])));
+  assert.ok(small, 'a roof less than a square metre draws a map');
+  assert.ok(Math.abs(coverHeightAt(small, 0.25, 0.25) - 6) < 0.1, `a small roof still covers what is under it: ${coverHeightAt(small, 0.25, 0.25)}`);
+  assert.equal(coverHeightAt(small, 0.75, 0.25), 0);
+
+  // a roof that rises 0.5 m for every metre east: the height of a cell is the roof's at the cell's middle (so the quantised value of that, to the step)
+  const sloped = buildCoverMap(sceneOf(roof([[0, 4, 0], [0, 4, 10], [10, 9, 10], [10, 9, 0]])))!;
+  for (const x of [1, 3.3, 5, 7.7, 9.5]) {
+    const middle = sloped.x0 + (Math.floor((x - sloped.x0) / sloped.cell) + 0.5) * sloped.cell;
+    const want = Math.round((4 + 0.5 * middle) / COVER_STEP) * COVER_STEP;
+    assert.ok(Math.abs(coverHeightAt(sloped, x, 5) - want) < 1e-9, `at x = ${x} (the cell's middle is ${middle}): ${coverHeightAt(sloped, x, 5)} against ${want}`);
+  }
+});
+
+test('a point beyond the last cell of the map, on any side, is open sky: nothing is read from off the end of the bytes', () => {
+  const flat = buildCoverMap(sceneOf(slab(2, 12, 3, 9, 6)))!;
+  const farX = flat.x0 + flat.nx * flat.cell, farZ = flat.z0 + flat.nz * flat.cell;
+  const outside: [number, number][] = [[farX + 0.1, farZ - 0.1], [farX + 0.1, 6], [farX + 3, farZ - 0.1], [7, farZ + 0.1], [flat.x0 - 0.1, 6], [7, flat.z0 - 0.1], [flat.x0 - 0.1, farZ - 0.1]];
+  for (const [x, z] of outside) {
+    assert.equal(coverHeightAt(flat, x, z), 0, `the roof over ${x}, ${z}`);
+    assert.equal(coverAt(flat, x, 2, z), 0, `the cover at ${x}, ${z}`);
+  }
+});
+
+test('the shaders are given the step of the map they are given, and the default step when there is none', () => {
+  const tiny: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 2, nz: 2, step: 0.3, heights: new Uint8Array(4), soft: new Uint8Array(4) };
+  try {
+    applyCover(tiny);
+    assert.equal(coverUniforms.uCoverScale.value, 0.3);
+  } finally { applyCover(null); }
+  assert.equal(coverUniforms.uCoverScale.value, COVER_STEP);
 });
 
 test('the shaders\' maps: the bytes the CPU reads are the bytes the GPU is given, one byte to a cell, the heights looked up and the soft map blended, and none is the empty one', () => {

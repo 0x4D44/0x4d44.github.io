@@ -7,7 +7,7 @@ import {
   archiveUrl, ARCHIVE_ORIGIN, CLEAR_STATE, createWeatherFeed, FORCED_NAMES, FORECAST_ORIGIN, forcedObservation, liveUrl, parseCurrent, parseHourly, parseSceneTime,
   POLL_MS, STALE_MS, TIMEOUT_MS, WEATHER_ORIGINS, weatherState,
 } from '../src/weather.ts';
-import type { Timers, WeatherObservation } from '../src/weather.ts';
+import type { Timers, WeatherObservation, WeatherState } from '../src/weather.ts';
 
 // ---- fakes ------------------------------------------------------------------------------------------------
 
@@ -92,6 +92,7 @@ test('the requests are the ones asked for: the live URL exactly, the archive for
   assert.equal(ARCHIVE_ORIGIN, WEATHER_ORIGINS[1]);
   assert.equal(POLL_MS, 10 * 60_000, 'at most every ten minutes');
   assert.equal(TIMEOUT_MS, 8_000);
+  assert.equal(STALE_MS, 60 * 60_000, 'a live reading is dropped when it is an hour old');
   for (const u of [liveUrl(), archiveUrl('2026-11-06', '2026-11-08')].map((s) => new URL(s))) {
     assert.equal(u.protocol, 'https:');
     assert.equal(u.username + u.password + u.port, '', 'no credentials and no port');
@@ -146,6 +147,89 @@ test('parseHourly maps each hour\'s start to its observation, leaves out hours w
   assert.equal(table.has(Date.parse('2026-11-06T11:00:00Z')), false);
   for (const bad of [null, {}, { hourly: null }, { hourly: {} }, { hourly: { time: 'x' } }, forecast()]) assert.equal(parseHourly(bad), null);
   assert.equal(parseHourly({ hourly: { time: ['not a time'], weather_code: [1], cloud_cover: [1], precipitation: [0] } })!.size, 0);
+});
+
+/** the observation parseCurrent makes of a forecast with `over` applied to its current block, which must parse */
+function parsed(over: Record<string, unknown>): WeatherObservation {
+  const o = parseCurrent(forecast(over));
+  assert.ok(o, `${JSON.stringify(over)} should parse`);
+  return o;
+}
+
+test('parseCurrent: a missing optional figure takes its stated default, an impossible one counts as missing, and every range includes its ends', () => {
+  assert.equal(parsed({ precipitation: 0.8, rain: null }).rainMm, 0.8, 'no rain figure: all of the precipitation is rain');
+  assert.equal(parsed({ precipitation: 0.8, rain: 1001 }).rainMm, 0.8, 'an impossible rain figure is a missing one');
+  assert.equal(parsed({ snowfall: null }).snowCm, 0, 'no snowfall figure: no snow');
+  assert.equal(parsed({ snowfall: -1 }).snowCm, 0);
+  assert.equal(parsed({ wind_speed_10m: null }).windMs, 0, 'no wind figure: calm');
+  assert.equal(parsed({ wind_speed_10m: -3 }).windMs, 0);
+  assert.equal(parsed({ wind_speed_10m: 1001 }).windMs, 0);
+  assert.equal(parsed({ visibility: -1 }).visibilityM, null);
+  assert.equal(parsed({ visibility: 1_000_001 }).visibilityM, null, 'a visibility over a thousand kilometres is a fault, not a measurement');
+  assert.equal(parsed({ is_day: null }).isDay, null, 'no day flag: unknown, not day');
+  assert.equal(parsed({ is_day: 2 }).isDay, null);
+  // the interval a reading covers: fifteen minutes unless the reply says something between a minute and a day
+  assert.equal(parsed({ interval: undefined }).intervalS, 900);
+  assert.equal(parsed({ interval: 59 }).intervalS, 900, 'under a minute is not an interval');
+  assert.equal(parsed({ interval: 86_401 }).intervalS, 900, 'over a day is not an interval');
+  assert.equal(parsed({ interval: 60 }).intervalS, 60);
+  assert.equal(parsed({ interval: 86_400 }).intervalS, 86_400);
+  // each range includes both its ends, and codes are whole numbers
+  assert.equal(parsed({ weather_code: 0 }).code, 0);
+  assert.equal(parsed({ weather_code: 99 }).code, 99);
+  assert.equal(parsed({ weather_code: 62.6 }).code, 63);
+  assert.equal(parsed({ cloud_cover: 0 }).cloudPct, 0);
+  assert.equal(parsed({ cloud_cover: 100 }).cloudPct, 100);
+  assert.equal(parsed({ precipitation: 0, rain: 0 }).precipMm, 0);
+  assert.equal(parsed({ precipitation: 1000, rain: 1000 }).precipMm, 1000);
+  assert.equal(parsed({ visibility: 0 }).visibilityM, 0);
+  assert.equal(parsed({ visibility: 1_000_000 }).visibilityM, 1_000_000);
+  assert.ok(Math.abs(parsed({ wind_speed_10m: 1000 }).windMs - 1000 / 3.6) < 1e-9);
+  for (const bad of [{ weather_code: -0.5 }, { weather_code: 100 }, { cloud_cover: -1 }, { cloud_cover: 100.5 }, { cloud_cover: undefined }, { precipitation: 1000.5 }, { precipitation: undefined }]) {
+    assert.equal(parseCurrent(forecast(bad)), null, `${JSON.stringify(bad)} is not a reading`);
+  }
+});
+
+test('wind speeds are converted from the unit the reply names, in a forecast and in an archive; with no usable unit they are read as km/h', () => {
+  for (const [units, metresPerSecond] of [['km/h', 1 / 3.6], ['m/s', 1], ['mp/h', 0.44704], ['kn', 0.514444]] as const) {
+    const live = forecast({ wind_speed_10m: 10 });
+    (live.current_units as Record<string, string>).wind_speed_10m = units;
+    assert.ok(Math.abs(parseCurrent(live)!.windMs - 10 * metresPerSecond) < 1e-9, `${units} in a forecast`);
+    const rows = archive('2026-11-06', () => ({ wind_speed_10m: 10 }));
+    rows.hourly_units.wind_speed_10m = units;
+    const hour = parseHourly(rows)!.get(Date.parse('2026-11-06T05:00:00Z'))!;
+    assert.ok(Math.abs(hour.windMs - 10 * metresPerSecond) < 1e-9, `${units} in an archive: ${hour.windMs}`);
+  }
+  for (const units of [undefined, null, 5, '', 'furlongs/fortnight', 'toString', '__proto__']) {
+    const live = forecast({ wind_speed_10m: 10 });
+    (live.current_units as Record<string, unknown>).wind_speed_10m = units;
+    assert.ok(Math.abs(parseCurrent(live)!.windMs - 10 / 3.6) < 1e-9, `${String(units)} is read as km/h in a forecast`);
+    const rows = archive('2026-11-06', () => ({ wind_speed_10m: 10 }));
+    (rows.hourly_units as Record<string, unknown>).wind_speed_10m = units;
+    assert.ok(Math.abs(parseHourly(rows)!.get(Date.parse('2026-11-06T05:00:00Z'))!.windMs - 10 / 3.6) < 1e-9, `${String(units)} is read as km/h in an archive`);
+  }
+  // a reply whose units block is missing, null or not a block at all is read as km/h too, and does not throw
+  for (const block of [undefined, null, 'km/h', 7]) {
+    assert.doesNotThrow(() => parseCurrent({ ...forecast({ wind_speed_10m: 10 }), current_units: block }), `current_units ${String(block)}`);
+    assert.doesNotThrow(() => parseHourly({ ...archive('2026-11-06'), hourly_units: block }), `hourly_units ${String(block)}`);
+    assert.ok(Math.abs(parseCurrent({ ...forecast({ wind_speed_10m: 10 }), current_units: block })!.windMs - 10 / 3.6) < 1e-9);
+    assert.ok(Math.abs(parseHourly({ ...archive('2026-11-06', () => ({ wind_speed_10m: 10 })), hourly_units: block })!.get(Date.parse('2026-11-06T05:00:00Z'))!.windMs - 10 / 3.6) < 1e-9);
+  }
+  assert.doesNotThrow(() => parseHourly({ hourly: { time: 'not a list' } }), 'a table whose times are not a list is refused, not walked');
+  assert.equal(parseHourly({ hourly: { time: 'not a list' } }), null);
+});
+
+test('a time in a reply is UTC whatever zone the page runs in', () => {
+  const before = process.env.TZ;
+  try {
+    for (const zone of ['America/New_York', 'Asia/Kolkata', 'Pacific/Auckland']) {
+      process.env.TZ = zone;
+      assert.equal(parseCurrent(forecast())!.timeMs, Date.parse('2026-11-09T14:45:00Z'), `a forecast read in ${zone}`);
+      assert.ok(parseHourly(archive('2026-11-06'))!.has(Date.parse('2026-11-06T10:00:00Z')), `an archive read in ${zone}`);
+    }
+  } finally {
+    if (before === undefined) delete process.env.TZ; else process.env.TZ = before;
+  }
 });
 
 // ---- observation -> what to draw -----------------------------------------------------------------------------------
@@ -217,7 +301,125 @@ test('weatherState: the measured rate can raise the code\'s amount; a dry code w
   }
 });
 
+/**
+ * [code, label, rain, snow, visibility, cloud, wet ground, snow cover, thunder] for a dry reading with no cloud figure and no visibility
+ * figure, so that only the table of codes speaks. Worked out by a separate transcription of the table's amounts (weather.ts CODES) and of the
+ * formulas for the ground and the cloud floor, not by running the page's code; the families are WMO's: 51 to 57 drizzle, 61 to 67 rain,
+ * 71 to 77 snow, 80 to 82 rain showers, 85 and 86 snow showers, 95 to 99 thunderstorms.
+ */
+const CODE_TABLE: readonly [number, string, number, number, number, number, number, number, boolean][] = [
+  [0, 'clear sky', 0, 0, Infinity, 0, 0, 0, false],
+  [1, 'mainly clear', 0, 0, Infinity, 0, 0, 0, false],
+  [2, 'partly cloudy', 0, 0, Infinity, 0, 0, 0, false],
+  [3, 'overcast', 0, 0, Infinity, 0.85, 0, 0, false],
+  [45, 'fog', 0, 0, 300, 0.7, 0.3, 0, false],
+  [48, 'freezing fog', 0, 0, 250, 0.7, 0.3, 0, false],
+  [51, 'light drizzle', 0.14, 0, 4000, 0.778, 0.196, 0, false],
+  [53, 'drizzle', 0.22, 0, 2800, 0.794, 0.308, 0, false],
+  [55, 'dense drizzle', 0.32, 0, 1800, 0.814, 0.448, 0, false],
+  [56, 'light freezing drizzle', 0.16, 0, 3500, 0.782, 0.224, 0, false],
+  [57, 'dense freezing drizzle', 0.32, 0, 1800, 0.814, 0.448, 0, false],
+  [61, 'light rain', 0.35, 0, Infinity, 0.82, 0.49, 0, false],
+  [63, 'rain', 0.6, 0, 7000, 0.87, 0.84, 0, false],
+  [65, 'heavy rain', 0.9, 0, 3500, 0.93, 1, 0, false],
+  [66, 'light freezing rain', 0.4, 0, Infinity, 0.83, 0.56, 0, false],
+  [67, 'heavy freezing rain', 0.85, 0, 3500, 0.92, 1, 0, false],
+  [71, 'light snow', 0, 0.3, 6000, 0.81, 0, 0.74, false],
+  [73, 'snow', 0, 0.55, 3500, 0.86, 0, 0.94, false],
+  [75, 'heavy snow', 0, 0.85, 1500, 0.92, 0, 1, false],
+  [77, 'snow grains', 0, 0.3, 6000, 0.81, 0, 0.74, false],
+  [80, 'light rain showers', 0.4, 0, Infinity, 0.83, 0.56, 0, false],
+  [81, 'rain showers', 0.65, 0, Infinity, 0.88, 0.91, 0, false],
+  [82, 'violent rain showers', 1, 0, 3500, 0.95, 1, 0, false],
+  [85, 'light snow showers', 0, 0.4, 6000, 0.83, 0, 0.82, false],
+  [86, 'heavy snow showers', 0, 0.85, 2000, 0.92, 0, 1, false],
+  [95, 'thunderstorm', 0.75, 0, 5000, 0.9, 1, 0, true],
+  [96, 'thunderstorm with hail', 0.85, 0, 4000, 0.92, 1, 0, true],
+  [99, 'thunderstorm with heavy hail', 0.95, 0, 3500, 0.94, 1, 0, true],
+];
+
+test('weatherState: every code in the table has its own label, kind and strength of precipitation, view, cloud floor, wet ground and snow cover', () => {
+  for (const [code, label, rain, snow, visibilityM, cloud, wet, snowCover, thunder] of CODE_TABLE) {
+    const s = weatherState(obs({ code }));
+    const at = `code ${code} (${label})`;
+    assert.equal(s.label, label, at);
+    assert.equal(s.thunder, thunder, `${at}: thunder`);
+    assert.equal(s.visibilityM, visibilityM, `${at}: visibility`);
+    for (const [name, want, got] of [['rain', rain, s.rain], ['snow', snow, s.snow], ['cloud', cloud, s.cloud], ['wet ground', wet, s.wet], ['snow cover', snowCover, s.snowCover]] as const) {
+      assert.ok(Math.abs(got - want) < 1e-9, `${at}: ${name} ${got} against ${want}`);
+    }
+  }
+  assert.equal(CODE_TABLE.length, 28, 'no row of the table was dropped');
+});
+
+type Expected = { cloud: number; rain: number; snow: number; visibilityM: number; wet: number; snowCover: number };
+/** [what the case is, the observation's figures, the state it makes]: the measured figures combined with the code, worked by hand from the formulas in weather.ts */
+const SCENARIOS: readonly (readonly [string, Partial<WeatherObservation>, Expected])[] = [
+  ['a downpour under a light-rain code (20 mm an hour)', { code: 61, cloudPct: 100, precipMm: 5, rainMm: 5, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0.998727366199, snow: 0, visibilityM: Infinity, wet: 1, snowCover: 0 }],
+  ['the same 20 mm an hour measured over a whole hour', { code: 61, cloudPct: 100, precipMm: 20, rainMm: 20, snowCm: 0, visibilityM: null, intervalS: 3600 }, { cloud: 1, rain: 0.998727366199, snow: 0, visibilityM: Infinity, wet: 1, snowCover: 0 }],
+  ['rain that has just stopped under a dry code (1.6 mm an hour)', { code: 3, cloudPct: 100, precipMm: 0.4, rainMm: 0.4, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0.206676890245, snow: 0, visibilityM: Infinity, wet: 0.35, snowCover: 0 }],
+  ['a trace under a dry code, below 0.05 mm an hour: not rain', { code: 3, cloudPct: 100, precipMm: 0.011, rainMm: 0.011, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0 }],
+  ['a trace under a dry code, just over 0.05 mm an hour: rain that has just stopped', { code: 3, cloudPct: 100, precipMm: 0.014, rainMm: 0.014, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0.009246761727, snow: 0, visibilityM: Infinity, wet: 0.35, snowCover: 0 }],
+  ['a fifth of a millimetre an hour under a partly cloudy code', { code: 2, cloudPct: 30, precipMm: 0.05, rainMm: 0.05, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 0.756449301497, rain: 0.032246507484, snow: 0, visibilityM: Infinity, wet: 0.35, snowCover: 0 }],
+  ['sleet: rain and snow together under a rain code', { code: 61, cloudPct: 100, precipMm: 1, rainMm: 0.6, snowCm: 0.3, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0.368201430942, snow: 0.368201430942, visibilityM: Infinity, wet: 0.515482003319, snowCover: 0.794561144754 }],
+  ['snowfall with no rain under a dry code is all snow', { code: 3, cloudPct: 100, precipMm: 1, rainMm: 0, snowCm: 1, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0, snow: 0.368201430942, visibilityM: Infinity, wet: 0.35, snowCover: 0.794561144754 }],
+  ['a snow code with no snowfall figure is still snow, not rain', { code: 73, cloudPct: 100, precipMm: 0.5, rainMm: 0.5, snowCm: 0, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0, snow: 0.55, visibilityM: 3500, wet: 0.35, snowCover: 0.94 }],
+  ['snow lying from earlier under a dry code', { code: 3, cloudPct: 100, precipMm: 0, rainMm: 0, snowCm: 0.2, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0.5 }],
+  ['a visibility of 23 999 m is a limit', { code: 0, visibilityM: 23_999 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 23_999, wet: 0, snowCover: 0 }],
+  ['a visibility of 24 000 m is not', { code: 0, visibilityM: 24_000 }, { cloud: 0, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0 }],
+  ['a visibility of 15 km is a limit', { code: 0, visibilityM: 15_000 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 15_000, wet: 0, snowCover: 0 }],
+  ['a visibility of 2 km is no fog on the ground', { code: 0, visibilityM: 2000 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 2000, wet: 0, snowCover: 0 }],
+  ['a visibility of 1500 m is the edge of fog', { code: 0, visibilityM: 1500 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 1500, wet: 0, snowCover: 0 }],
+  ['a visibility of 900 m is half fog', { code: 0, visibilityM: 900 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 900, wet: 0.15, snowCover: 0 }],
+  ['a visibility of 300 m is full fog', { code: 0, visibilityM: 300 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 300, wet: 0.3, snowCover: 0 }],
+  ['a visibility of nothing', { code: 0, visibilityM: 0 }, { cloud: 0, rain: 0, snow: 0, visibilityM: 0, wet: 0.3, snowCover: 0 }],
+  ['overcast with a higher cloud figure keeps the figure', { code: 3, cloudPct: 95 }, { cloud: 0.95, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0 }],
+  ['fog with a lower cloud figure takes the code\'s floor', { code: 45, cloudPct: 60 }, { cloud: 0.7, rain: 0, snow: 0, visibilityM: 300, wet: 0.3, snowCover: 0 }],
+  ['fog with a worse measured visibility keeps the measurement', { code: 45, visibilityM: 120 }, { cloud: 0.7, rain: 0, snow: 0, visibilityM: 120, wet: 0.3, snowCover: 0 }],
+  ['fog with a better measured visibility takes the code\'s', { code: 45, visibilityM: 5000 }, { cloud: 0.7, rain: 0, snow: 0, visibilityM: 300, wet: 0.3, snowCover: 0 }],
+  ['heavy rain with no cloud figure is still under cloud', { code: 65, cloudPct: 0 }, { cloud: 0.93, rain: 0.9, snow: 0, visibilityM: 3500, wet: 1, snowCover: 0 }],
+  ['snow under heavy-snow showers with a fifth of a millimetre melted in a quarter hour', { code: 86, cloudPct: 100, precipMm: 0.2, rainMm: 0, snowCm: 0.3, visibilityM: null, intervalS: 900 }, { cloud: 1, rain: 0, snow: 0.85, visibilityM: 2000, wet: 0.35, snowCover: 1 }],
+];
+
+test('weatherState: the measured rate, sleet, snow on the ground, the visibility limits and the cloud figure combine with the code as the cases say', () => {
+  for (const [what, over, want] of SCENARIOS) {
+    const s = weatherState(obs(over));
+    for (const key of Object.keys(want) as (keyof Expected)[]) {
+      assert.ok(s[key] === want[key] || Math.abs(s[key] - want[key]) < 1e-9, `${what}: ${key} is ${s[key]}, not ${want[key]}`);
+    }
+  }
+});
+
 // ---- ?weather= and ?time= ------------------------------------------------------------------------------------------
+
+/** the state each ?weather= name makes, worked by hand from the code, the figures and the formulas */
+const FORCED_STATES: readonly (readonly [string, WeatherState])[] = [
+  ['clear', { cloud: 0, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0, windMs: 0, thunder: false, label: 'clear sky' }],
+  ['cloudy', { cloud: 0.55, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0, windMs: 0, thunder: false, label: 'partly cloudy' }],
+  ['overcast', { cloud: 1, rain: 0, snow: 0, visibilityM: Infinity, wet: 0, snowCover: 0, windMs: 0, thunder: false, label: 'overcast' }],
+  ['drizzle', { cloud: 1, rain: 0.22, snow: 0, visibilityM: 2800, wet: 0.35, snowCover: 0, windMs: 0, thunder: false, label: 'drizzle' }],
+  ['rain', { cloud: 1, rain: 0.798103482005, snow: 0, visibilityM: 7000, wet: 1, snowCover: 0, windMs: 3, thunder: false, label: 'rain' }],
+  ['heavy-rain', { cloud: 1, rain: 0.990596437449, snow: 0, visibilityM: 3500, wet: 1, snowCover: 0, windMs: 6, thunder: false, label: 'heavy rain' }],
+  ['thunder', { cloud: 1, rain: 0.981684361111, snow: 0, visibilityM: 5000, wet: 1, snowCover: 0, windMs: 7, thunder: true, label: 'thunderstorm' }],
+  ['mist', { cloud: 0.9, rain: 0, snow: 0, visibilityM: 1800, wet: 0, snowCover: 0, windMs: 0, thunder: false, label: 'mist' }],
+  ['fog', { cloud: 1, rain: 0, snow: 0, visibilityM: 300, wet: 0.3, snowCover: 0, windMs: 0, thunder: false, label: 'fog' }],
+  ['snow', { cloud: 1, rain: 0, snow: 0.55, visibilityM: 3500, wet: 0.35, snowCover: 0.94, windMs: 2, thunder: false, label: 'snow' }],
+];
+
+test('forced weather: each name makes exactly its state, and the observation behind it is a quarter-hour reading with the figures the name sets', () => {
+  assert.deepEqual(FORCED_STATES.map(([name]) => name).sort(), [...FORCED_NAMES].sort(), 'every name is covered');
+  for (const [name, want] of FORCED_STATES) {
+    const s = weatherState(forcedObservation(name));
+    for (const key of ['cloud', 'rain', 'snow', 'visibilityM', 'wet', 'snowCover', 'windMs'] as const) {
+      assert.ok(s[key] === want[key] || Math.abs(s[key] - want[key]) < 1e-9, `${name}: ${key} is ${s[key]}, not ${want[key]}`);
+    }
+    assert.equal(s.thunder, want.thunder, `${name}: thunder`);
+    assert.equal(s.label, want.label, `${name}: label`);
+  }
+  assert.deepEqual(forcedObservation('snow', 123), { source: 'forced', timeMs: 123, intervalS: 900, code: 73, cloudPct: 100, precipMm: 0.5, rainMm: 0, snowCm: 0.7, visibilityM: null, windMs: 2, isDay: null });
+  assert.deepEqual(forcedObservation('rain'), { source: 'forced', timeMs: 0, intervalS: 900, code: 63, cloudPct: 100, precipMm: 1.2, rainMm: 1.2, snowCm: 0, visibilityM: null, windMs: 3, isDay: null });
+  assert.deepEqual(forcedObservation('mist'), { source: 'forced', timeMs: 0, intervalS: 900, code: 3, cloudPct: 90, precipMm: 0, rainMm: 0, snowCm: 0, visibilityM: 1800, windMs: 0, isDay: null, label: 'mist' });
+});
 
 test('forced weather: every name gives a fixed, believable state; unknown names give none', () => {
   assert.deepEqual([...FORCED_NAMES].sort(), ['clear', 'cloudy', 'drizzle', 'fog', 'heavy-rain', 'mist', 'overcast', 'rain', 'snow', 'thunder']);
@@ -285,6 +487,41 @@ test('live: while the answer is shown the status line credits Open-Meteo with th
   feed.dispose();
 });
 
+test('live and replay status lines round the cloud to a whole percent, and a live line leaves a cloudless sky out', async () => {
+  const clock = new FakeClock('2026-11-09T14:50:00Z');
+  const cases: [Record<string, unknown>, RegExp][] = [
+    [{ weather_code: 0, cloud_cover: 0 }, /^weather: clear sky \(Open-Meteo, 14:45 UTC\)$/],
+    [{ weather_code: 2, cloud_cover: 0.4 }, /^weather: partly cloudy, 0% cloud \(Open-Meteo, 14:45 UTC\)$/],
+    [{ weather_code: 2, cloud_cover: 90.6 }, /^weather: partly cloudy, 91% cloud \(Open-Meteo, 14:45 UTC\)$/],
+  ];
+  for (const [over, expected] of cases) {
+    const { fetchImpl } = fakeFetch(clock, () => json(forecast(over)));
+    const feed = createWeatherFeed({ mode: 'live', fetchImpl, now: clock.now, timers: clock });
+    await clock.advance(0);
+    assert.match(feed.status(clock.t), expected, JSON.stringify(over));
+    feed.dispose();
+  }
+  const rows = archive('2026-11-06', (i) => (i === 10 ? { weather_code: 2, cloud_cover: 90.6 } : i === 11 ? { weather_code: 0, cloud_cover: 0 } : {}));
+  const { fetchImpl } = fakeFetch(clock, () => json(rows));
+  const replay = createWeatherFeed({ mode: 'replay', date: '2026-11-07', fetchImpl, now: clock.now, timers: clock });
+  await clock.advance(0);
+  assert.equal(replay.status(Date.parse('2026-11-06T10:30:00Z')), 'weather: partly cloudy, 91% cloud (Open-Meteo archive, 10:00 UTC)');
+  assert.equal(replay.status(Date.parse('2026-11-06T11:30:00Z')), 'weather: clear sky, 0% cloud (Open-Meteo archive, 11:00 UTC)', 'a replay line always says the cloud');
+  replay.dispose();
+});
+
+test('live: after a long gap with no poll (a page that was asleep) the old reading is not shown, and the status line says there is none', async () => {
+  const clock = new FakeClock('2026-11-09T14:50:00Z');
+  const { fetchImpl } = fakeFetch(clock, () => json(forecast()));
+  const feed = createWeatherFeed({ mode: 'live', fetchImpl, now: clock.now, timers: clock });
+  await clock.advance(0);
+  assert.notEqual(feed.observation(clock.t), null);
+  clock.t += 2 * 3_600_000; // time passed with no timer firing
+  assert.equal(feed.observation(clock.t), null);
+  assert.equal(feed.status(clock.t), 'weather unavailable (no reading), clear sky assumed');
+  feed.dispose();
+});
+
 test('live: a request that gets no answer is abandoned after eight seconds, the sky stays clear and the status line says why', async () => {
   const clock = new FakeClock('2026-11-09T14:50:00Z');
   const { fetchImpl, calls } = fakeFetch(clock, hang);
@@ -304,6 +541,31 @@ test('live: a request that gets no answer is abandoned after eight seconds, the 
   assert.equal(calls.length, 2, 'it tries again ten minutes after the first START (the timeout does not add to the wait)');
   assert.equal(calls[1]!.at - calls[0]!.at, POLL_MS);
   feed.dispose();
+});
+
+test('live: a reply whose body never arrives is abandoned at the timeout like one that never started', async () => {
+  const clock = new FakeClock('2026-11-09T14:50:00Z');
+  const headersOnly = (): Response => ({ ok: true, status: 200, json: () => new Promise<never>(() => undefined) }) as unknown as Response;
+  const { fetchImpl, calls } = fakeFetch(clock, headersOnly);
+  const feed = createWeatherFeed({ mode: 'live', fetchImpl, now: clock.now, timers: clock });
+  await clock.advance(TIMEOUT_MS - 1);
+  assert.match(feed.status(clock.t), /loading/, 'still waiting for the body at 7.999 s');
+  await clock.advance(1);
+  assert.equal(feed.status(clock.t), 'weather unavailable (no answer in 8 s), clear sky assumed');
+  await clock.advance(POLL_MS);
+  assert.equal(calls.length, 2, 'and it asks again');
+  feed.dispose();
+});
+
+test('live: a failure that carries no message, or is not an error at all, is still named', async () => {
+  for (const thrown of [new Error(''), 'boom', undefined, 42]) {
+    const clock = new FakeClock('2026-11-09T14:50:00Z');
+    const { fetchImpl } = fakeFetch(clock, () => { throw thrown; });
+    const feed = createWeatherFeed({ mode: 'live', fetchImpl, now: clock.now, timers: clock });
+    await clock.advance(0);
+    assert.equal(feed.status(clock.t), 'weather unavailable (request failed), clear sky assumed', `after throwing ${String(thrown)}`);
+    feed.dispose();
+  }
 });
 
 test('live: every kind of failure falls back to a clear sky and says so; the next success recovers', async () => {
@@ -449,6 +711,7 @@ test('replay: today\'s recording asks no further than today; a future one asks n
   await clock.advance(POLL_MS * 2);
   assert.equal(future.calls.length, 0);
   assert.equal(f2.status(clock.t), 'weather unavailable (the recording is dated in the future), clear sky assumed');
+  assert.equal(clock.timers, 0, 'and it is not asked again: the date will not change');
   f2.dispose();
 
   const nodate = fakeFetch(clock, () => json(archive('2026-11-09')));
@@ -456,6 +719,7 @@ test('replay: today\'s recording asks no further than today; a future one asks n
   await clock.advance(POLL_MS * 2);
   assert.equal(nodate.calls.length, 0);
   assert.match(f3.status(clock.t), /^weather unavailable \(no recording date\)/);
+  assert.equal(clock.timers, 0, 'and it is not asked again');
   f3.dispose();
 
   let down = true;
@@ -473,6 +737,39 @@ test('replay: today\'s recording asks no further than today; a future one asks n
   await clock.advance(3_600_000);
   assert.equal(flaky.calls.length, 2, 'and then it stops');
   f4.dispose();
+});
+
+test('replay: a recording dated tomorrow still asks for today, one dated the day after asks for nothing', async () => {
+  const clock = new FakeClock('2026-11-09T15:00:00Z');
+  const tomorrow = fakeFetch(clock, () => json(archive('2026-11-09')));
+  const f1 = createWeatherFeed({ mode: 'replay', date: '2026-11-10', fetchImpl: tomorrow.fetchImpl, now: clock.now, timers: clock });
+  await clock.advance(0);
+  assert.equal(tomorrow.calls.length, 1);
+  assert.equal(tomorrow.calls[0]!.url, archiveUrl('2026-11-09', '2026-11-09'), 'the day before the recording, which is today, to the latest day there is');
+  f1.dispose();
+  const later = fakeFetch(clock, () => json(archive('2026-11-09')));
+  const f2 = createWeatherFeed({ mode: 'replay', date: '2026-11-11', fetchImpl: later.fetchImpl, now: clock.now, timers: clock });
+  await clock.advance(0);
+  assert.equal(later.calls.length, 0);
+  assert.equal(f2.status(clock.t), 'weather unavailable (the recording is dated in the future), clear sky assumed');
+  f2.dispose();
+});
+
+test('replay: a reply that is not an archive is a failure to be asked about again, not an empty archive', async () => {
+  const clock = new FakeClock('2026-11-09T15:00:00Z');
+  let attempt = 0;
+  const { fetchImpl, calls } = fakeFetch(clock, () => (attempt++ === 0 ? json({ hello: 'world' }) : json(archive('2026-11-06'))));
+  const feed = createWeatherFeed({ mode: 'replay', date: '2026-11-07', fetchImpl, now: clock.now, timers: clock });
+  const when = Date.parse('2026-11-07T14:35:00Z');
+  await clock.advance(0);
+  assert.equal(feed.status(when), 'weather unavailable (unexpected reply), clear sky assumed');
+  assert.equal(feed.observation(when), null);
+  assert.equal(clock.timers, 1, 'the next try is waiting');
+  await clock.advance(POLL_MS);
+  assert.equal(calls.length, 2);
+  assert.notEqual(feed.observation(when), null);
+  assert.match(feed.status(when), /^weather: /);
+  feed.dispose();
 });
 
 // ---- no request at all -------------------------------------------------------------------------------------------------------------
