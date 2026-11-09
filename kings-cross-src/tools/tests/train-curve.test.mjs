@@ -50,8 +50,18 @@ check('C01 is one set of numbers for every kind: the baseline is the longest car
  assert.equal(F.CURVE.baselineM,longestCar,'the baseline is the longest car of any kind');
  near(F.CURVE.cutDeg*D2R,SMOOTH_TURN,1e-12,'a track that turns by more than this at a node is a corner on the page (core/curves.ts), not a curve');
  assert.deepEqual(F.CURVE_VIEWS,['curve-plan','curve-oblique']);assert.equal(F.CURVE_STAGE,'neutral-curve (scenery hidden)');
- assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01']);assert.ok(!F.VIEW_IDS.includes('C01'),'the default views stay V01-V10');
+ assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02']);assert.ok(!F.VIEW_IDS.includes('C01'),'the default views stay V01-V10');
  for(const word of ['edgePoint','core/curves.ts','carPoses','END_GAP','FINDING','day only','1 cm'])assert.ok(F.CURVE_RULE.includes(word),`the rule names ${word}`);
+});
+
+check('C02 is C01\'s second pose and has numbers of its own: a bend is 1 degree or more across the baseline, the band is 10%, the main lines count, and it is an opt-in id',()=>{
+ assert.deepEqual({...F.CURVE_NORMAL},{id:'C02',suffix:'curve-normal',rule:F.CURVE_NORMAL_RULE,bendMinDeg:1,bandShare:.1,services:['main']});
+ assert.ok(Object.isFrozen(F.CURVE_NORMAL)&&Object.isFrozen(F.CURVE_NORMAL.services));
+ assert.deepEqual(F.CURVE_NORMAL_VIEWS,['curve-normal-plan','curve-normal-oblique']);assert.ok(Object.isFrozen(F.CURVE_NORMAL_VIEWS));
+ assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02']);assert.ok(!F.VIEW_IDS.includes('C02'),'the default views stay V01-V10');assert.deepEqual(F.ASKABLE_VIEW_IDS.slice(-3),['M01','C01','C02']);
+ assert.notEqual(F.CURVE_NORMAL.id,F.CURVE.id);assert.notEqual(F.CURVE_NORMAL.suffix,F.CURVE.suffix);assert.notEqual(F.CURVE_NORMAL_RULE,F.CURVE_RULE);
+ // the rule says how the radius was picked, from the track and not from a train, and what stands in when no stretch has it
+ for(const word of ['C02','typical','median','1 degree','26 m','0.5 m','service main','10%','never from a train','synthetic','day only','information','carPoses','least mean'])assert.ok(F.CURVE_NORMAL_RULE.includes(word),`the rule names ${word}`);
 });
 
 check('the polyline helpers measure a path: the distance along it to each point, the segment a distance falls in, the point at a distance, and the distance from a point to it',()=>{
@@ -254,16 +264,20 @@ check('a bend a hair sharper wins, in the same chain or in another, and a bend h
  * half metre from half the train and the margin in from each end, the first run of the greatest, and the edges the window around the middle of that run touches. Written longhand, not
  * from the finder's helpers.
  */
-const scan=(data,length,{curved=true,baseline=26,margin=10,step=.5}={})=>{
+const wrapAngle=angle=>Math.atan2(Math.sin(angle),Math.cos(angle));
+/** The drawn curve of the first way of a data set (the page's own curve for each edge, joined, or the chords): the points, the distance to each, the heading of the segment a distance falls in, and the edges' extents. */
+const drawn=(data,curved)=>{
  const ids=data.rails[0].nodes,pos=new Map(data.nodes.map(n=>[n[0],[n[1],n[2]]])),shapes=curved?shapesOf(data):null,dense=[],nodeAt=[0];
  ids.slice(0,-1).forEach((id,i)=>{(shapes?shapes(id,ids[i+1]):[pos.get(id),pos.get(ids[i+1])]).forEach((p,k)=>{if(i===0||k>0)dense.push(p);});nodeAt.push(dense.length-1);});
  const cum=[0];for(let i=1;i<dense.length;i++)cum.push(cum[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));
- const total=cum.at(-1),headingAt=s=>{let i=0;while(i+2<dense.length&&cum[i+1]<=s)i++;return Math.atan2(dense[i+1][0]-dense[i][0],-(dense[i+1][1]-dense[i][1]));};
- const wrap=angle=>Math.atan2(Math.sin(angle),Math.cos(angle)),need=length/2+margin,turns=[];
- for(let s=need;s<=total-need+1e-9;s+=step)turns.push([s,Math.abs(wrap(headingAt(s+baseline/2)-headingAt(s-baseline/2)))]);
+ const headingAt=s=>{let i=0;while(i+2<dense.length&&cum[i+1]<=s)i++;return Math.atan2(dense[i+1][0]-dense[i][0],-(dense[i+1][1]-dense[i][1]));};
+ return {total:cum.at(-1),headingAt,spans:ids.slice(0,-1).map((id,i)=>({from:id,to:ids[i+1],start:cum[nodeAt[i]],end:cum[nodeAt[i+1]]}))};
+};
+const scan=(data,length,{curved=true,baseline=26,margin=10,step=.5}={})=>{
+ const {total,headingAt,spans}=drawn(data,curved),need=length/2+margin,turns=[];
+ for(let s=need;s<=total-need+1e-9;s+=step)turns.push([s,Math.abs(wrapAngle(headingAt(s+baseline/2)-headingAt(s-baseline/2)))]);
  const top=Math.max(...turns.map(t=>t[1])),first=turns.findIndex(t=>t[1]>=top-1e-12);let last=first;while(last+1<turns.length&&turns[last+1][1]>=top-1e-12)last++;
  const apex=(turns[first][0]+turns[last][0])/2,lo=Math.max(0,apex-need),hi=Math.min(total,apex+need);
- const spans=ids.slice(0,-1).map((id,i)=>({from:id,to:ids[i+1],start:cum[nodeAt[i]],end:cum[nodeAt[i+1]]}));
  return {turn:top,apex,spans,covered:spans.filter(e=>e.end>lo&&e.start<hi)};
 };
 check('the finder finds what a scan written another way finds: the greatest turn, the middle of its first run (also where the end of the scan cuts the run short) and the edges the window touches',()=>{
@@ -310,6 +324,225 @@ check('the synthetic arc is a circle of the radius asked for, north then right, 
  assert.deepEqual(F.curveRouteFor({nodes:[],rails:[]},130,{stepM:1}).points,none.points,'the step of the search is not the length of a chord');
  assert.ok(F.curveRouteFor({nodes:[],rails:[]},130,{arcStepM:5}).points.length<none.points.length,'but the length of a chord can be asked for');
  const real=F.curveRouteFor(arcWay({R:100}),60,{shapeOf:shapesOf(arcWay({R:100}))});assert.equal(real.source,'real');assert.ok(real.local&&real.local.points.length===real.points.length);
+});
+
+// ---- C02: the bend that is typical of the track -------------------------------------------------------------------------------------------------
+/** A turn of `deg` degrees across the 26 m baseline, as the radius it stands for; and a number to a micrometre, as the tools give them. */
+const RADIUS=deg=>26/(deg*D2R),q6=x=>Math.round(x*1e6)/1e6;
+/**
+ * A way of 400 m with one kink of `deg` degrees `lead` metres along it. `lead` is off the half-metre grid the positions stand on, so no window ends on the kink and float noise cannot move it
+ * across one: exactly 52 positions have the kink inside the 26 m they look across, and they turn by exactly `deg`. `service: false` leaves the way without one.
+ */
+const kinked=(deg,{x0=0,idBase=500,wayId=9,lead=100.25,tunnel=false,service='main'}={})=>{
+ const a=[x0,0],b=run(a,0,lead),way=polyWay([a,b,run(b,deg,400-lead)],{idBase,wayId,tunnel});
+ for(const rail of way.rails){if(service===false)delete rail.service;else rail.service=service;}
+ return way;
+};
+check('the typical radius is the median of the track\'s bend positions, each half a metre of track at the radius of its own turn across the baseline, the upper one of two middle ones',()=>{
+ // two kinks in a way of 400 m, 200 m apart: 52 positions turn by 10 degrees and 52 by 20; the rest of the way is straight to the eye and is track, not bend
+ const a=[0,0],b=run(a,0,100.25),c=run(b,10,200),data=polyWay([a,b,c,run(c,30,99.75)]),typical=safely(()=>F.typicalRadius(data));
+ assert.deepEqual(typical,{radiusM:q6(RADIUS(10)),baselineM:26,bendMinDeg:1,services:['main'],stepM:.5,trackM:374.5,bendM:52,quartilesM:[q6(RADIUS(20)),q6(RADIUS(10))],pieces:1});
+ assert.deepEqual(F.typicalRadius({nodes:[...data.nodes].reverse(),rails:[...data.rails].reverse()}),typical,'the order of the file changes nothing');
+ // one of each: the median is the longer of the two radii, not the shorter and not their mean
+ assert.ok(typical.radiusM>RADIUS(20)&&typical.radiusM<=RADIUS(10)+1e-6&&Math.abs(typical.radiusM-(RADIUS(10)+RADIUS(20))/2)>10);
+ // weighted by the track: a bend of 10 degrees on one way and two of 20 on another, so 52 positions at the one radius and 104 at the other, and the typical radius is the one with the track, whichever way is the tighter
+ const weighted=merge(kinked(10,{idBase:100,wayId:1}),polyWay([[3000,0],[3000,-100.25],run([3000,-100.25],20,50),run(run([3000,-100.25],20,50),40,249.75)],{idBase:200,wayId:2}));
+ assert.equal(safely(()=>F.typicalRadius(weighted)).radiusM,q6(RADIUS(20)),'104 positions of 20 degrees outweigh 52 of 10, though each way has one kink of the one and the median of ways would be the wider');
+ const outweighed=merge(kinked(20,{idBase:100,wayId:1}),polyWay([[3000,0],[3000,-100.25],run([3000,-100.25],10,50),run(run([3000,-100.25],10,50),20,249.75)],{idBase:200,wayId:2}));
+ assert.equal(F.typicalRadius(outweighed).radiusM,q6(RADIUS(10)),'and the other way round');
+});
+
+check('the typical radius counts the ways of the services it is asked for, in a tunnel or not, and only those; the track it was taken on and the bend in it are given in metres',()=>{
+ const ways=merge(kinked(10,{idBase:100,wayId:1}),kinked(20,{x0:2000,idBase:200,wayId:2,tunnel:true}),kinked(20,{x0:4000,idBase:300,wayId:3}),kinked(5,{x0:6000,idBase:400,wayId:4,service:'siding'}),kinked(25,{x0:8000,idBase:500,wayId:5,service:false}));
+ const typical=(options={})=>safely(()=>F.typicalRadius(ways,options)),summary=t=>t&&[t.radiusM,t.trackM,t.bendM,t.pieces];
+ // main: the surface 10, the tunnel 20 and the surface 20 (52, 104 positions, the tunnel one among them: without it the median would be 10 degrees); the siding and the way with no service are not counted
+ assert.deepEqual(summary(typical()),[q6(RADIUS(20)),3*374.5,78,5],'by default the main lines, in a tunnel or not');
+ assert.deepEqual(summary(typical({services:['main']})),summary(typical()));
+ assert.deepEqual(summary(typical({services:['siding']})),[q6(RADIUS(5)),374.5,26,5]);
+ assert.deepEqual(summary(typical({services:['main','siding']})),[q6(RADIUS(10)),4*374.5,104,5]);
+ assert.deepEqual(summary(typical({services:[null]})),[q6(RADIUS(25)),374.5,26,5],'a way with no service is the service null');
+ assert.deepEqual(typical({services:['main','siding']}).services,['main','siding']);assert.equal(typical({services:['ferry']}),null,'nothing of that service');assert.equal(typical({services:[]}),null);
+ // the default list is the constant\'s, copied: a result does not hand the constant itself to whoever edits it
+ const own=typical();own.services.push('x');assert.deepEqual(F.CURVE_NORMAL.services,['main']);
+});
+
+check('the typical radius takes a turn of the threshold or more for a bend, a baseline, a step and a corner cut of its own, and counts a position by the whole of the baseline on its piece',()=>{
+ const a=[0,0],b=run(a,0,100.25),c=run(b,10,200),data=polyWay([a,b,c,run(c,30,99.75)]),typical=(options={},d=data)=>safely(()=>F.typicalRadius(d,options));
+ // the threshold is inclusive: 10 degrees is a bend at 10 and not at 10.001, 20 at 20 and not at 20.001
+ assert.deepEqual([typical({bendMinDeg:10}).radiusM,typical({bendMinDeg:10}).bendM],[q6(RADIUS(10)),52]);
+ assert.deepEqual([typical({bendMinDeg:10.001}).radiusM,typical({bendMinDeg:10.001}).bendM],[q6(RADIUS(20)),26],'only the 20 degree kink');
+ assert.deepEqual([typical({bendMinDeg:20}).radiusM,typical({bendMinDeg:20}).bendM],[q6(RADIUS(20)),26]);assert.equal(typical({bendMinDeg:20.001}),null);
+ assert.notEqual(typical({bendMinDeg:1}),null,'the default is 1 degree');assert.equal(typical({bendMinDeg:1}).bendMinDeg,1);assert.equal(typical({bendMinDeg:15}).bendMinDeg,15);
+ // 1 degree is a bend, a thousandth of a degree less is not
+ assert.equal(typical({},kinked(1)).radiusM,q6(RADIUS(1)));assert.equal(typical({},kinked(.999)),null);
+ // a step of a metre: half the positions, each standing for twice the track
+ const metre=typical({stepM:1});assert.deepEqual([metre.stepM,metre.trackM,metre.bendM,metre.radiusM],[1,375,52,q6(RADIUS(10))]);
+ // a baseline of 13 m: windows half as wide, so radii half as large and half as many positions look across a kink, and the positions begin at 6.5 m
+ const half=typical({baselineM:13});assert.deepEqual([half.baselineM,half.radiusM,half.bendM,half.trackM],[13,q6(13/(10*D2R)),26,(Math.floor((400-13)/.5+1e-9)+1)*.5]);
+ // a corner cut at 15 degrees: the kink of 20 is a corner, the way is two pieces, and no window looks across the corner
+ const cut=typical({cutDeg:15});assert.deepEqual([cut.pieces,cut.radiusM,cut.bendM],[2,q6(RADIUS(10)),26]);assert.equal(typical().pieces,1);
+ // a window must lie on its piece: a way shorter than the baseline has no position, one the baseline long (to a tenth of a nanometre) has one, one a hundredth of a micrometre short has none
+ const around=(extra,leg=13)=>{const p=[0,0],q=[0,-13],r=run(q,20,leg+extra);return polyWay([p,q,r]);};
+ assert.equal(typical({},around(0,12)),null,'24 m');
+ const one=typical({},around(-1e-10));assert.deepEqual([one.trackM,one.bendM,one.radiusM],[.5,.5,q6(RADIUS(20))]);assert.equal(typical({},around(-1e-8)),null);
+ const whole=typical({},around(0));assert.deepEqual([whole.trackM,whole.bendM],[.5,.5]);
+ // a corner is not a bend: the pieces each side are straight; nor is a straight, nor no track at all
+ assert.equal(typical({},polyWay([[0,0],[0,-200],[0,-400],[200,-400],[400,-400]])),null);assert.equal(typical({},polyWay([[0,0],[0,-300],[0,-600]])),null);assert.equal(typical({},{nodes:[],rails:[]}),null);
+});
+
+check('the quartiles of the typical radius are the radii a quarter and three quarters of the way up the bend positions in order, whatever the order of the ways',()=>{
+ // four ways with a bend each, 52 positions apiece: the 25 degree positions are the tightest quarter, then 15, 10 and 5 degrees
+ const ways=[5,25,10,15].map((deg,i)=>kinked(deg,{x0:2000*i,idBase:100*(i+1),wayId:i+1})),data=merge(...ways),typical=safely(()=>F.typicalRadius(data));
+ assert.deepEqual([typical.radiusM,typical.quartilesM,typical.bendM,typical.trackM],[q6(RADIUS(10)),[q6(RADIUS(15)),q6(RADIUS(5))],104,4*374.5]);
+ assert.deepEqual(F.typicalRadius(merge(...[...ways].reverse())).quartilesM,typical.quartilesM);
+ // the lower of the two is lower, the upper higher, and the median between them
+ assert.ok(typical.quartilesM[0]<typical.radiusM&&typical.radiusM<typical.quartilesM[1]);
+});
+
+check('a position counts for the service of the edge it stands on, not of the edges its window looks across, and one on a node belongs to the edge that begins there',()=>{
+ // one chain of 400 m: a main way to the node 200 m along, a siding from it, and a kink of 20 degrees 190.25 m along (9.75 m before the node, so the windows of the last 45 main positions look across it)
+ const a=[0,0],k=[0,-190.25],bend=(extra)=>{const b=run(k,20,9.75+extra);return {nodes:[[500,...a],[501,...k],[502,...b],[503,...run(b,20,200-extra)]],rails:[{id:1,nodes:[500,501,502],tunnel:false,service:'main'},{id:2,nodes:[502,503],tunnel:false,service:'siding'}]};};
+ const typical=(services,data=bend(0))=>safely(()=>F.typicalRadius(data,{services})),summary=t=>t&&[t.radiusM,t.trackM,t.bendM,t.pieces];
+ // positions 13 to 199.5 stand on the main edge (374 of the 749) and 200 to 387 on the siding (375); the kink is in the window of positions 177.5 to 203, 45 of them on the main edge and 7 on the siding
+ assert.deepEqual(summary(typical(['main'])),[q6(RADIUS(20)),187,22.5,1]);assert.deepEqual(summary(typical(['siding'])),[q6(RADIUS(20)),187.5,3.5,1]);
+ assert.deepEqual(summary(typical(['main','siding'])),[q6(RADIUS(20)),374.5,26,1],'together they are the whole way: 52 positions');
+ // a node half a nanometre past a position still begins the next edge for it: the tolerance for the noise in a chain\'s lengths
+ assert.deepEqual(summary(typical(['main'],bend(5e-10))),[q6(RADIUS(20)),187,22.5,1]);assert.deepEqual(summary(typical(['siding'],bend(5e-10))),[q6(RADIUS(20)),187.5,3.5,1]);
+ // but a node a hundredth of a micrometre past it does not: the position is on the edge it was
+ assert.deepEqual(summary(typical(['main'],bend(1e-8))),[q6(RADIUS(20)),187.5,23,1]);
+});
+
+check('the typical radius is measured on the curve the page draws, not on the chords between the nodes',()=>{
+ const data=arcWay({R:120,spacing:40,count:9}),smooth=safely(()=>F.typicalRadius(data,{shapeOf:shapesOf(data)})),chords=safely(()=>F.typicalRadius(data));
+ assert.ok(Math.abs(smooth.radiusM-120)<.05*120,`the drawn curve is the circle: ${smooth.radiusM}`);
+ assert.ok(chords.radiusM<.7*smooth.radiusM,`on the chords a node\'s whole turn falls in one baseline: ${chords.radiusM} against ${smooth.radiusM}`);
+ assert.ok(smooth.bendM>chords.bendM,'the chords have straight positions between the nodes where the drawn curve bends all along');assert.ok(smooth.bendM>.95*smooth.trackM,`and the drawn curve bends all along but its first and last metres: ${smooth.bendM} of ${smooth.trackM}`);assert.ok(chords.bendM<.75*chords.trackM,'a node is within the 26 m a window looks across for 26 m in every 40');
+ assert.ok(smooth.trackM>chords.trackM&&smooth.trackM-chords.trackM<3,'the drawn curve is a little longer than its chords');
+});
+
+/**
+ * Another way to findTypicalRoute's answer, for a track of one way: the turn across the baseline at every half metre of the drawn curve of the whole way (longhand), the positions whose own
+ * radius is within the band of the typical one, for each the mean over the length of the train of |turn / typical turn - 1| summed straight off, the first run of the least mean, and what the
+ * train stands on with its middle at the middle of that run: its turn, the tightest bend under it, the length of it that is straight to the eye, and the edges its window touches.
+ */
+const typicalScan=(data,length,typicalM,{curved=true,baseline=26,margin=10,step=.5,band=.1,bendMin=1}={})=>{
+ const {total,headingAt,spans}=drawn(data,curved),need=length/2+margin,typicalTurn=baseline/typicalM,count=Math.round(length/step);
+ const turnAt=s=>Math.abs(wrapAngle(headingAt(Math.min(total,s+baseline/2))-headingAt(Math.max(0,s-baseline/2))));
+ const found=[];
+ for(let s=need;s<=total-need+1e-9;s+=step) {
+  const turn=turnAt(s);
+  if(!(turn>0&&Math.abs(baseline/turn/typicalM-1)<=band+1e-12))continue;
+  let sum=0;for(let i=0;i<=count;i++)sum+=Math.abs(turnAt(s-length/2+i*step)/typicalTurn-1);
+  found.push({s,mean:sum/(count+1)});
+ }
+ if(!found.length)return null;
+ const least=Math.min(...found.map(p=>p.mean)),first=found.findIndex(p=>p.mean<=least+1e-12);let last=first;
+ while(last+1<found.length&&Math.abs(found[last+1].s-found[last].s-step)<1e-9&&found[last+1].mean<=least+1e-12)last++;
+ const apex=(found[first].s+found[last].s)/2,samples=Array.from({length:count+1},(_,i)=>turnAt(apex-length/2+i*step)),lo=Math.max(0,apex-need),hi=Math.min(total,apex+need);
+ return {mean:least,apex,turn:turnAt(apex),tightest:Math.min(...samples.filter(t=>t>1e-9).map(t=>baseline/t)),straight:samples.filter(t=>t<bendMin*D2R-1e-12).length*step,spans,covered:spans.filter(e=>e.end>lo&&e.start<hi),run:[found[first].s,found[last].s]};
+};
+const typicalRoute=(data,length,typicalM,options={})=>safely(()=>F.findTypicalRoute(data,length,{radiusM:typicalM},{shapeOf:options.curved===false?null:shapesOf(data),...options.options}));
+check('the bend nearest the typical radius is what a scan written another way finds: the positions in the band, the least mean departure from the typical turn along the train, the middle of its first run, and the edges the window touches',()=>{
+ const a=[0,0],b=run(a,0,200.25),c=run(b,20,60),d=run(c,40,199.75),e=run(a,0,100.25),f=run(e,10,200),pair=polyWay([a,b,c,d]),two=polyWay([a,e,f,run(f,30,99.75)]),end=polyWay([a,run(a,0,300.25),run(run(a,0,300.25),20,60)]);
+ // a kink drawn smooth is a gentler bend than its chords make it: the typical radius of those is the median of what the page draws
+ const drawnMedian=data=>F.typicalRadius(data,{shapeOf:shapesOf(data)}).radiusM,arc100=arcWay({R:100,spacing:20,count:21});
+ const cases=[
+  ['an arc of 120 m drawn through nodes 40 m apart',arcWay({R:120,spacing:40,count:9}),100,120,true],
+  ['an arc of 100 m through nodes 20 m apart, a train of 60 m, a typical radius 10% over',arc100,60,110,true],
+  ['the same, 8% under',arc100,60,92,true],
+  ['the same, a little further than a tenth from it, and no place is in the band',arc100,60,90,true,false],
+  ['a kink of 20 degrees',kinked(20),60,RADIUS(20),false],
+  ['two kinks of 20 degrees 60 m apart, a train of 100 m that sees both from either, and the first of two equal places',pair,100,RADIUS(20),false],
+  ['the same drawn smooth',pair,100,drawnMedian(pair),true],
+  ['kinks of 10 and 20 degrees, the typical radius that of the 20',two,60,RADIUS(20),false],
+  ['the same, the typical radius that of the 10',two,60,RADIUS(10),false],
+  ['the same, a radius between the two that is in the band of neither',two,60,(RADIUS(10)+RADIUS(20))/2,false,false],
+  ['a kink 60 m before the end of its way',end,100,RADIUS(20),false],
+  ['the same drawn smooth',end,100,drawnMedian(end),true],
+ ];
+ for(const [name,data,length,typicalM,curved,has=true] of cases) {
+  const want=typicalScan(data,length,typicalM,{curved}),route=typicalRoute(data,length,typicalM,{curved});
+  assert.equal(want!==null,has,`${name}: ${has?'a place is':'no place is'} in the band`);
+  if(want===null){assert.equal(route,null,`${name}: no route`);continue;}
+  assert.notEqual(route,null,`${name}: a route`);
+  const start=want.spans.find(s=>s.from===route.steps[0].from).start;
+  near(route.turnDeg*D2R,want.turn,1e-7,`${name}: the turn`);near(route.radiusM,26/want.turn,2e-6,`${name}: the radius`);near(start+route.apexS,want.apex,5e-6,`${name}: the middle of the train`);
+  assert.deepEqual(route.steps.map(s=>[s.from,s.to]),want.covered.map(s=>[s.from,s.to]),`${name}: the edges of the window`);
+  near(route.pick.meanDeviation,want.mean,1e-6,`${name}: the mean departure`);near(route.pick.tightestM,want.tightest,2e-6,`${name}: the tightest bend under the train`);assert.equal(route.pick.straightM,want.straight,`${name}: the straight under it`);
+  assert.deepEqual([route.pick.kind,route.pick.typicalRadiusM,route.pick.bandShare],['typical',typicalM,.1],`${name}: the pick says what it was picked for`);
+  assert.equal(route.source,'real');assert.equal(route.smooth,curved);assert.equal(route.baselineM,26);
+ }
+});
+
+check('a kink is what the train stands on at the middle of the run of equal places, its mean departure counts what is straight under it, and of two equal runs the first wins',()=>{
+ // one kink of 20 degrees at 200.25 m of 400: 52 places have it in their window, all of them with the whole kink in the 60 m of train, so they tie, and the middle of the run is the kink
+ const one=typicalRoute(kinked(20,{lead:200.25}),60,RADIUS(20),{curved:false});
+ vec(one.apex,[0,-200.25],1e-6,'the kink');
+ assert.deepEqual(one.pick,{kind:'typical',typicalRadiusM:RADIUS(20),bandShare:.1,meanDeviation:q6(69/121),tightestM:q6(RADIUS(20)),straightM:34.5});
+ near(one.turnDeg,20,1e-9);near(one.radiusM,q6(RADIUS(20)),1e-9);
+ // two kinks 60 m apart (200.25 and 260.25), a train of 100 m: from the last place of the first kink or the first place of the second it sees 84 of 201 places in a kink, the most it can, and the first run wins
+ const a=[0,0],b=run(a,0,200.25),c=run(b,20,60),d=run(c,40,199.75),both=polyWay([a,b,c,d]),two=typicalRoute(both,100,RADIUS(20),{curved:false});
+ near(two.apexS,213,1e-6,'the last place of the first kink, 12.75 m past it, not the first of the second at 247.5');
+ assert.deepEqual(two.pick,{kind:'typical',typicalRadiusM:RADIUS(20),bandShare:.1,meanDeviation:q6(117/201),tightestM:q6(RADIUS(20)),straightM:58.5});
+ // written another way, the least mean is that and the run of it one place
+ const scanned=typicalScan(both,100,RADIUS(20),{curved:false});near(scanned.mean,117/201,1e-12);assert.deepEqual(scanned.run,[213,213]);
+});
+
+check('a place counts if its own radius is within the band of the typical one, the edge itself counted, and a route needs one; a bad length or radius is refused',()=>{
+ const way=kinked(20),r=RADIUS(20),route=(typicalM,options)=>typicalRoute(way,60,typicalM,{curved:false,options});
+ // the band is a share of the typical radius, on either side: the kink\'s radius is 10% over at r / 1.1, and 10% under at r / 0.9, the edges counted to a million-millionth; a hair beyond is out
+ for(const [ratio,note] of [[1.1,'10% over'],[.9,'10% under']]) {
+  const edge=r/(ratio+(ratio>1?4e-13:-4e-13)),beyond=r/(ratio+(ratio>1?2e-12:-2e-12));
+  assert.ok(Math.abs(r/edge-1)>.1&&Math.abs(r/edge-1)<.1+1e-12,`${note}: the edge is a hair past the share in float`);assert.notEqual(route(edge),null,`${note}: the edge is in the band`);assert.equal(route(beyond),null,`${note}: a hair past it is out`);
+ }
+ assert.equal(route(r/1.2),null,'20% over');assert.equal(route(r/.8),null,'20% under');assert.notEqual(route(r/1.05),null);assert.notEqual(route(r/.95),null);
+ // a wider band takes more, a narrower one less, and the share is reported as given
+ assert.equal(route(r/1.15),null);const wide=route(r/1.15,{bandShare:.2});assert.equal(wide.pick.bandShare,.2);assert.equal(route(r/1.05,{bandShare:.04}),null);
+ // nothing in the band: a train too long for every piece, a straight track, a typical radius far from the track\'s, no data
+ assert.equal(typicalRoute(way,5000,r,{curved:false}),null,'a train longer than every piece');assert.equal(typicalRoute(polyWay([[0,0],[0,-300],[0,-600]]),60,r,{curved:false}),null,'a straight');assert.equal(route(1000),null);assert.equal(F.findTypicalRoute({nodes:[],rails:[]},60,{radiusM:r}),null);
+ // a bend near the end of its way: a train that does not fit beside it stands on what it can
+ const tail=polyWay([[0,0],run([0,0],0,300.25),run(run([0,0],0,300.25),20,60)]);
+ assert.notEqual(typicalRoute(tail,60,r,{curved:false}),null);assert.equal(typicalRoute(tail,100,r,{curved:false}).pick.straightM,74.5,'the 26 places of the kink that a train of 100 m fits beside all see all of it: 149 of 201 places are straight');
+ // refused
+ assert.throws(()=>F.findTypicalRoute(way,0,{radiusM:r}),/a train 0 m long has no bend to find/);assert.throws(()=>F.findTypicalRoute(way,-5,{radiusM:r}),/a train -5 m long/);assert.throws(()=>F.findTypicalRoute(way,NaN,{radiusM:r}),/a train NaN m long/);
+ assert.throws(()=>F.findTypicalRoute(way,60,null),/a typical radius of undefined m is no bend/);assert.throws(()=>F.findTypicalRoute(way,60,{}),/a typical radius of undefined m/);
+ assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:0}),/a typical radius of 0 m is no bend/);assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:-3}),/a typical radius of -3 m/);assert.throws(()=>F.findTypicalRoute(way,60,{radiusM:NaN}),/a typical radius of NaN m/);
+});
+
+check('of two bends in the band the one the train sees more of wins wherever it is in the file, and of two equal ones the one walked first',()=>{
+ // one kink of 20 degrees on way 3, two of 20 degrees 30 m apart (a train of 60 m sees both from between) on way 2, a lone kink on way 1: way 2 is the nearest to a bend all along the train
+ const lone=kinked(20,{idBase:100,wayId:1}),a=[3000,0],b=run(a,0,100.25),c=run(b,20,30),pair=polyWay([a,b,c,run(c,40,269.75)],{idBase:200,wayId:2}),late=kinked(20,{x0:6000,idBase:300,wayId:3});
+ const data=merge(lone,pair,late),route=typicalRoute(data,60,RADIUS(20),{curved:false});
+ assert.deepEqual(route.ways,[2],'the pair, which the train stands across more of');assert.ok(route.pick.meanDeviation<q6(69/121));
+ assert.deepEqual(route.searched,{chains:3,pieces:3,fitting:3});
+ const flipped={nodes:[...data.nodes].reverse(),rails:[...data.rails].reverse()};assert.deepEqual(typicalRoute(flipped,60,RADIUS(20),{curved:false}),route,'the order of the file changes nothing');
+ // equal bends: the first chain walked, the one from the lowest node, whatever order the file lists them in
+ const twin=merge(kinked(20,{idBase:100,wayId:5}),kinked(20,{x0:3000,idBase:300,wayId:3})),first=typicalRoute(twin,60,RADIUS(20),{curved:false});
+ assert.deepEqual(first.ways,[5],'equal bends: the chain that starts at the lowest node');assert.deepEqual(typicalRoute({nodes:[...twin.nodes].reverse(),rails:[...twin.rails].reverse()},60,RADIUS(20),{curved:false}).ways,[5]);
+ // a bend a hair nearer wins, in another chain: kinks of 20 and 20.0001 degrees, the typical radius that of the second
+ const nearer=merge(kinked(20,{idBase:100,wayId:1}),kinked(20.0001,{x0:3000,idBase:300,wayId:2}));
+ assert.deepEqual(typicalRoute(nearer,60,RADIUS(20.0001),{curved:false}).ways,[2],'the later chain, a hair nearer');assert.deepEqual(typicalRoute(nearer,60,RADIUS(20),{curved:false}).ways,[1]);
+});
+
+check('the route for a typical radius is the bend nearest it on the page\'s track with the frame of the train on it, and the arc of that radius, saying why, where no stretch has a bend in the band',()=>{
+ const data=arcWay({R:150,spacing:30,count:41}),shapeOf=shapesOf(data),typical=safely(()=>F.typicalRadius(data,{shapeOf})),route=safely(()=>F.curveRouteFor(data,100,{shapeOf,typical}));
+ assert.equal(route.source,'real');assert.equal(route.smooth,true);assert.equal(route.pick.kind,'typical');assert.equal(route.pick.typicalRadiusM,typical.radiusM);
+ assert.ok(route.local&&route.local.points.length===route.points.length&&route.local.insideSign===-route.local.outsideSign,'the frame of the train on it, as for any route');
+ assert.deepEqual({...route,local:null},{...safely(()=>F.findTypicalRoute(data,100,typical,{shapeOf})),local:null},'the route findTypicalRoute gives');
+ // without a typical radius the route is the tightest bend\'s, and has no pick
+ const tight=safely(()=>F.curveRouteFor(data,100,{shapeOf}));assert.equal(tight.pick,undefined);assert.deepEqual({...tight,local:null},{...F.findCurveRoute(data,100,{shapeOf}),local:null});
+ // the band and the margin are the search\'s, passed on
+ assert.equal(F.curveRouteFor(data,100,{shapeOf,typical,bandShare:.2}).pick.bandShare,.2);
+ // no stretch holds the train on a bend in the band: the arc of the typical radius, its note saying which band
+ const none=safely(()=>F.curveRouteFor(data,100,{shapeOf,typical:{radiusM:600}}));
+ assert.equal(none.source,'synthetic');near(none.radiusM,600,1e-9);assert.equal(none.pick,undefined);assert.ok(none.local);
+ assert.equal(none.note,'a synthetic circular arc of radius 600 m: no run of the page\'s track holds a train 100 m long on a bend within 10% of the typical radius');
+ assert.match(F.curveRouteFor(data,100,{shapeOf,typical:{radiusM:600},bandShare:.25}).note,/ on a bend within 25% of the typical radius$/);
+ // the arc of a track with no bend at all is of the typical radius too, not of the fallback\'s, and the tightest bend\'s fallback is as it was
+ const arc=F.curveRouteFor({nodes:[],rails:[]},130,{typical:{radiusM:452}});near(arc.radiusM,452,1e-9);assert.match(arc.note,/^a synthetic circular arc of radius 452 m: .* 130 m long on a bend within 10% of the typical radius$/);
+ const old=F.curveRouteFor({nodes:[],rails:[]},130);near(old.radiusM,100,1e-9);assert.match(old.note,/ 130 m long on a bend$/,'the tightest bend\'s arc says what it said');
+ // a note ends with the reason the caller gave
+ assert.match(F.circularArcRoute(130,100,{reason:'on a hill'}).note,/ 130 m long on a hill$/);
 });
 
 // ---- the frame ----------------------------------------------------------------------------------------------------------------------------------
@@ -631,6 +864,28 @@ check('what the page has is judged against the plan: a bogie off the track is a 
  const both=F.curveVerdict(clean,wide);assert.equal(both.status,'FINDING');assert.deepEqual(both.findings.map(x=>x.check),['bogie-on-track']);assert.deepEqual(F.curveVerdict(plan,wide).findings.map(x=>x.check),['coupler','bogie-on-track']);
 });
 
+check('C02 plans a kind as C01 does under names of its own: the same cameras, joints and checks on the same route, the id, suffix, views and rule of the typical curve, and the pick of the route in the summary',()=>{
+ const {f,route,placed}=arcPlaced('gn387x4',452),given={gangwayWidthM:bodySpec(f.family).gangway.width,endGapM:END_GAP};
+ const one=safely(()=>F.planCurve(f,route,placed,given)),two=safely(()=>F.planCurve(f,route,placed,given,F.CURVE_NORMAL));
+ assert.equal(two.status,'OK');assert.deepEqual([one.id,one.suffix,one.notes.rule],['C01','curve',F.CURVE_RULE]);assert.deepEqual([two.id,two.suffix,two.notes.rule],['C02','curve-normal',F.CURVE_NORMAL_RULE]);
+ assert.deepEqual(two.views.map(v=>[v.id,v.suffix,v.frame]),F.CURVE_NORMAL_VIEWS.map(suffix=>['C02',suffix,'curve']));assert.deepEqual(one.views.map(v=>[v.id,v.suffix]),F.CURVE_VIEWS.map(suffix=>['C01',suffix]));
+ // nothing else differs: the cameras, the joints and the verdicts are the route\'s
+ const bare=p=>({...p,id:null,suffix:null,notes:{...p.notes,rule:null},views:p.views.map(({id,suffix,...rest})=>rest)});
+ assert.deepEqual(bare(two),bare(one));
+ assert.deepEqual(safely(()=>F.planCurveViews(f,route,placed.poses,{curve:F.CURVE_NORMAL})),two.views);assert.deepEqual(F.planCurveViews(f,route,placed.poses),one.views,'C01 is the default');
+ assert.deepEqual(F.planCurveViews(f,route,placed.poses,{aspect:1.2,curve:F.CURVE_NORMAL}).map(v=>v.suffix),F.CURVE_NORMAL_VIEWS,'the aspect and the curve are separate options');
+ // the pick of a route is in the plan\'s summary, in the notes and in what is frozen; a route without one has none
+ const pick={kind:'typical',typicalRadiusM:452,bandShare:.1,meanDeviation:.3,tightestM:400,straightM:9},picked=safely(()=>F.planCurve(f,{...route,pick},placed,given,F.CURVE_NORMAL));
+ assert.deepEqual(picked.route.pick,pick);assert.deepEqual(picked.notes.route.pick,pick);assert.deepEqual(F.curvePoseOf(picked).route.pick,pick);assert.ok(!('pick' in two.route)&&!('pick' in F.curvePoseOf(two).route));
+ // a plan that is a GAP is still C02\'s
+ const gap=F.planCurve(f,route,{...placed,problems:['x']},given,F.CURVE_NORMAL);assert.deepEqual([gap.status,gap.id,gap.suffix,gap.notes.rule],['GAP','C02','curve-normal',F.CURVE_NORMAL_RULE]);
+ // every kind on the typical radius of the page\'s track, on an arc of it: no check fails
+ for(const kind of ALL_KINDS) {
+  const {curve}=arcPlaced(kind,452),plan=safely(()=>C.planCurveFor(formations.get(kind),curve,undefined,F.CURVE_NORMAL));
+  assert.equal(plan.status,'OK',`${kind}: ${plan.reason}`);assert.equal(plan.id,'C02');assert.deepEqual(plan.checks.findings,[],`${kind}: the joints hold on a bend of 452 m`);assert.equal(plan.checks.bodies.ok,true);
+ }
+});
+
 // ---- the stage ----------------------------------------------------------------------------------------------------------------------------------
 check('the stage follows the route: ballast, sleepers square to it every 65 cm and two rails a gauge apart, all of it named, owned by the capture and 0 at the rail head',()=>{
  const arc=safely(()=>F.circularArcRoute(130,100)),points=F.curveFrame(arc).points,stage=safely(()=>F.buildCurveStage(T,{points}));
@@ -822,6 +1077,23 @@ check('the joints of every kind on an arc are what an independent computation gi
  }
 });
 
+/** Each kind\'s joints on a curve against the numbers pinned for it, [tightest body gap, at which joint, widest coupler, at which joint, widest gangway, at which joint, its edge, findings, findings by check], and by the independent computation. */
+const checkJoints=(curve,pose,pins)=>{
+ assert.deepEqual(Object.keys(pins),ALL_KINDS);
+ for(const kind of ALL_KINDS) {
+  const f=formations.get(kind),plan=C.planCurveFor(f,curve,undefined,pose),c=plan.checks,[gap,gapAt,coupler,couplerAt,gangway,gangwayAt,edge,findings,byCheck]=pins[kind];
+  assert.equal(plan.status,'OK',`${kind}: ${plan.reason}`);assert.equal(plan.id,pose.id);
+  near(c.bodies.minGapM,gap,6e-7,`${kind} tightest body gap`);assert.equal(c.bodies.atJoint,gapAt);assert.equal(c.bodies.ok,true,`${kind}: no body touches the next`);
+  near(c.couplers.maxDistanceM,coupler,6e-7,`${kind} widest coupler`);assert.equal(c.couplers.atJoint,couplerAt);near(c.gangways.maxDistanceM,gangway,6e-7,`${kind} widest gangway`);assert.equal(c.gangways.atJoint,gangwayAt);assert.equal(c.gangways.edge,edge);
+  assert.equal(c.findings.length,findings,`${kind} findings`);const tally={};for(const x of c.findings)tally[x.check]=(tally[x.check]??0)+1;assert.deepEqual(tally,byCheck,`${kind} findings by check`);
+  assert.equal(c.couplers.ok,!byCheck.coupler);assert.equal(c.gangways.ok,!byCheck.gangway);
+  assert.equal(F.curveVerdict(plan).status,findings?'FINDING':'PASS');
+  // the placement checks passed against the page\'s own carPoses
+  assert.ok(C.curvePoses(f,curve).ok,`${kind}: carPoses puts every bogie on the curve`);
+  // the same numbers by the independent computation
+  const other=brute(C.curvePoses(f,curve).poses,f);plan.joints.forEach((j,i)=>{near(j.bodyGapM,other[i].gap,1e-9);near(j.coupler.distanceM,other[i].coupler,1e-9);near(j.gangway.right.distanceM,other[i].right,1e-9);});
+ }
+};
 check('on the page\'s own track the tightest bend the longest train fits is 81.8 m, in a tunnel under the station, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
  const curve=await C.loadCurveRoute(),route=curve.route;
  const bytes=await readFile(fileURLToPath(new URL('../../web/src/data/kx-track.json',import.meta.url)));
@@ -842,18 +1114,56 @@ check('on the page\'s own track the tightest bend the longest train fits is 81.8
   gn387x4:[.373719,1,.153676,2,.311825,1,'right',0,{}],gn387x8:[.373719,3,.153676,4,.311825,3,'right',0,{}],gn387x12:[.373719,5,.171946,10,.311825,5,'right',0,{}],gn717x6:[.373727,2,.148899,3,.383738,2,'right',1,{gangway:1}],
   gc180x5:[.501641,2,.490887,1,.520994,1,'right',6,{coupler:2,gangway:4}],tl700x8:[.374182,3,.144755,4,.383025,3,'right',1,{gangway:1}],tl700x12:[.374182,5,.144755,6,.383025,5,'right',1,{gangway:1}],
  };
- assert.deepEqual(Object.keys(pins),ALL_KINDS);
- for(const kind of ALL_KINDS) {
-  const f=formations.get(kind),plan=C.planCurveFor(f,curve),c=plan.checks,[gap,gapAt,coupler,couplerAt,gangway,gangwayAt,edge,findings,byCheck]=pins[kind];
-  assert.equal(plan.status,'OK',`${kind}: ${plan.reason}`);
-  near(c.bodies.minGapM,gap,6e-7,`${kind} tightest body gap`);assert.equal(c.bodies.atJoint,gapAt);assert.equal(c.bodies.ok,true,`${kind}: no body touches the next`);
-  near(c.couplers.maxDistanceM,coupler,6e-7,`${kind} widest coupler`);assert.equal(c.couplers.atJoint,couplerAt);near(c.gangways.maxDistanceM,gangway,6e-7,`${kind} widest gangway`);assert.equal(c.gangways.atJoint,gangwayAt);assert.equal(c.gangways.edge,edge);
-  assert.equal(c.findings.length,findings,`${kind} findings`);const tally={};for(const x of c.findings)tally[x.check]=(tally[x.check]??0)+1;assert.deepEqual(tally,byCheck,`${kind} findings by check`);
-  assert.equal(c.couplers.ok,!byCheck.coupler);assert.equal(c.gangways.ok,!byCheck.gangway);
-  assert.equal(F.curveVerdict(plan).status,findings?'FINDING':'PASS');
-  // the placement checks passed against the page\'s own carPoses
-  assert.ok(C.curvePoses(f,curve).ok,`${kind}: carPoses puts every bogie on the curve`);
-  // the same numbers by the independent computation
-  const other=brute(C.curvePoses(f,curve).poses,f);plan.joints.forEach((j,i)=>{near(j.bodyGapM,other[i].gap,1e-9);near(j.coupler.distanceM,other[i].coupler,1e-9);near(j.gangway.right.distanceM,other[i].right,1e-9);});
- }
+ checkJoints(curve,F.CURVE,pins);
+});
+
+check('the route of a C02 run is read from a track file the same way, with the typical radius found on it beside the route, and a track with no bend to take one from is refused',async()=>{
+ const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(path.join(scratch,'train-curve-test-'));
+ try {
+  const write=async(name,data)=>{const file=path.join(dir,name),text=JSON.stringify(data);await writeFile(file,text);return {file,text};};
+  const bend=arcWay({R:150,spacing:30,count:41,idBase:10,wayId:5}),a=await write('bend.json',bend),normal=await C.loadCurveRoute(a.file,{typical:true}),tight=await C.loadCurveRoute(a.file);
+  const longest=Math.max(...ALL_KINDS.map(k=>trainLayout(k).length)),graph=buildGraph(bend,{curves:true}),long=C.describeFormation('gn387x12');
+  assert.equal('typical' in tight,false,'the tightest bend has no typical radius');assert.equal(tight.route.pick,undefined);
+  // the radius is the finder\'s on the curves of the page\'s graph, and the route is the bend nearest it
+  const want=F.typicalRadius(bend,{shapeOf:(x,y)=>shapeFrom(graph.shapes,x,y)});assert.deepEqual(normal.typical,want);assert.ok(Math.abs(normal.typical.radiusM-150)<.05*150,`${normal.typical.radiusM}`);
+  assert.equal(normal.route.source,'real');assert.deepEqual([normal.route.pick.kind,normal.route.pick.typicalRadiusM],['typical',want.radiusM]);assert.equal(normal.route.smooth,true);
+  assert.deepEqual(normal.longest,{kind:'gn387x12',lengthM:longest});assert.deepEqual(normal.trackData,tight.trackData);assert.equal(normal.trackData.sha256,sha(Buffer.from(a.text)));
+  assert.equal(C.curvePoses(long,normal).ok,true,'the poses of the longest kind fit it');
+  const plan=C.planCurveFor(long,normal,undefined,F.CURVE_NORMAL);assert.equal(plan.status,'OK');assert.deepEqual([plan.id,plan.suffix,plan.route.pick.kind],['C02','curve-normal','typical']);
+  // a track that bends, but nowhere the longest train fits on a bend in the band, is the arc of the typical radius, with the radius still returned
+  const shorter=await write('short.json',arcWay({R:150,spacing:30,count:6,idBase:10,wayId:5})),arc=await C.loadCurveRoute(shorter.file,{typical:true});
+  assert.equal(arc.route.source,'synthetic');near(arc.route.radiusM,arc.typical.radiusM,1e-9);assert.ok(Math.abs(arc.typical.radiusM-150)<.05*150);assert.match(arc.route.note,/on a bend within 10% of the typical radius$/);assert.equal(C.curvePoses(long,arc).ok,true);
+  // a track that does not bend has no radius to take: refused, where the tightest bend\'s falls back to its arc
+  const straight=await write('straight.json',polyWay([[0,0],[0,-400],[0,-800]]));
+  await assert.rejects(C.loadCurveRoute(straight.file,{typical:true}),/the page's track has no bend to take a typical radius from/);assert.equal((await C.loadCurveRoute(straight.file)).route.source,'synthetic');
+ } finally {await rm(dir,{recursive:true,force:true});}
+});
+
+check('on the page\'s own track the radius that is typical of a bend is 451.9 m, the bend nearest it is on the surface at 474.8 m, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
+ const curve=await C.loadCurveRoute(undefined,{typical:true}),route=curve.route,{typical}=curve;
+ const bytes=await readFile(fileURLToPath(new URL('../../web/src/data/kx-track.json',import.meta.url)));
+ assert.equal(curve.trackData.sha256,sha(bytes));
+ assert.equal(curve.trackData.sha256,'ae5b95e46601e9f72d2bb8861138438fbf564c7b53dc96d16bce7481f71ba2a9','the track data changed: re-derive every number below, then update this pin');
+ assert.deepEqual(curve.longest,{kind:'gn387x12',lengthM:244.67999999999995});
+ // the radius: the median of the 13,859 m of bend on the 40,627 m of main line the track has, in its 210 pieces, a quarter of it tighter than 277 m and a quarter wider than 774 m
+ assert.deepEqual(typical,{radiusM:451.89688,baselineM:26,bendMinDeg:1,services:['main'],stepM:.5,trackM:40627,bendM:13859,quartilesM:[277.370828,774.190879],pieces:210});
+ // the bend: on the surface (no tunnel in its window), three ways, within the band of that radius, under a train that is on a bend of about that radius along its length and straight for 9 m of it
+ assert.deepEqual([route.source,route.smooth,route.radiusM,route.turnDeg,route.baselineM],['real',true,474.836107,3.137273,26]);
+ assert.deepEqual(route.apex,[-110.735902,-1135.891177]);assert.deepEqual(route.ways,[22758713,22597498,4480807]);assert.deepEqual(route.services,['main']);assert.deepEqual(route.tunnel,{apexInTunnel:false,windowM:0,fraction:0});
+ assert.deepEqual([route.steps.length,route.points.length,route.lengthM,route.apexS],[12,67,297.773371,142.927318]);assert.deepEqual(route.apexAt,{step:6,share:.330004});
+ assert.deepEqual(route.chain,{lengthM:1498.444024,nodes:35,from:[-535.2,-1148.8],to:[891,-1517.2]});assert.deepEqual(route.searched,{chains:209,pieces:210,fitting:69});
+ assert.deepEqual(route.pick,{kind:'typical',typicalRadiusM:451.89688,bandShare:.1,meanDeviation:.289293,tightestM:334.907162,straightM:9});
+ assert.deepEqual([route.local.insideSign,route.local.outsideSign,route.local.headingDeg],[-1,1,80.781862]);
+ assert.ok(Math.abs(route.radiusM/typical.radiusM-1)<=.1,'the bend is within the band of the typical radius');
+ const circle=circumradius(route);assert.ok(Math.abs(route.radiusM-circle)<.05*circle,`the radius is the drawn curve\'s: ${route.radiusM}, and three points of it say ${circle}`);
+ // every node of the route\'s edges is on the page\'s drawn curve, and the route is that curve
+ const graph=buildGraph(JSON.parse(bytes.toString('utf8')),{curves:true});
+ for(const s of route.steps){const e=graph.adj.get(s.from).find(x=>x.wayId===s.way&&(x.a===s.to||x.b===s.to));const pts=shapeFrom(graph.shapes,s.from,s.to);assert.equal(pts.length,s.toIndex-s.fromIndex+1,'the edge is its curve\'s points');pts.forEach((p,k)=>vec(route.points[s.fromIndex+k],p,6e-7));assert.ok(e);}
+ near(curve.placement.apexM,142.918748,1e-6);near(curve.placement.chain.lengthM,297.75361,1e-6);
+ // each kind: no joint fails, which is the point of a typical bend (the tightest one fails on 8 of 11)
+ checkJoints(curve,F.CURVE_NORMAL,{
+  lner5:[.611582,2,.069734,0,.090039,2,'right',0,{}],lner9:[.611582,4,.126106,1,.13354,1,'right',0,{}],hull5:[.611582,2,.071655,0,.090039,2,'right',0,{}],lumo5:[.611582,2,.069734,0,.090039,2,'right',0,{}],
+  gn387x4:[.633792,2,.054989,1,.07132,2,'right',0,{}],gn387x8:[.633792,4,.054989,3,.07132,4,'right',0,{}],gn387x12:[.62036,1,.054989,5,.075675,1,'right',0,{}],gn717x6:[.633718,3,.053555,2,.080444,3,'right',0,{}],
+  gc180x5:[.615086,2,.041458,0,.065464,2,'right',0,{}],tl700x8:[.633798,4,.052826,2,.080851,4,'right',0,{}],tl700x12:[.618932,1,.052826,4,.080851,6,'right',0,{}],
+ });
 });

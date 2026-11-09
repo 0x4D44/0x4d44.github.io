@@ -25,6 +25,10 @@ const formations=new Map(ALL_KINDS.map(kind=>[kind,C.describeFormation(kind)]));
 let routeOnce=null;
 const route=()=>routeOnce??(routeOnce=C.loadCurveRoute());
 const planOf=async kind=>{const curve=await route(),plan=safely(()=>C.planCurveFor(formations.get(kind),curve));assert.equal(plan.status,'OK',`the curve of ${kind} is OK: ${plan.reason}`);return plan;};
+/** The same on the bend nearest the radius that is typical of the page's own track (C02). */
+let normalOnce=null;
+const normalRoute=()=>normalOnce??(normalOnce=C.loadCurveRoute(undefined,{typical:true}));
+const planNormalOf=async kind=>{const curve=await normalRoute(),plan=safely(()=>C.planCurveFor(formations.get(kind),curve,undefined,F.CURVE_NORMAL));assert.equal(plan.status,'OK',`the typical curve of ${kind} is OK: ${plan.reason}`);return plan;};
 
 // ---- a stand-in for the page ---------------------------------------------------------------------------------------------------------------
 class FakeStyle {
@@ -110,7 +114,7 @@ async function runCurve({kind=KIND,plan,formation=formations.get(kind),page=curv
   return {...result,plan,log,published,written,order,page,get shots() {return shots;}};
  } finally {delete globalThis.window;delete globalThis.document;}
 }
-const reportOf=run=>JSON.parse(run.written.get(`${KIND}-curve.json`).toString('utf8'));
+const reportOf=(run,suffix='curve')=>JSON.parse(run.written.get(`${KIND}-${suffix}.json`).toString('utf8'));
 
 // ---- the in-page driver --------------------------------------------------------------------------------------------------------------------
 check('the in-page driver puts the specimen on the curved stage, poses the cars as the live trains are and reads them back, and takes it all away again',async()=>{
@@ -334,7 +338,7 @@ check('--views takes C01 as an opt-in: the default views stay V01-V10, the curve
  assert.deepEqual(parse(['--views','M01,C01']).views,['M01','C01']);assert.deepEqual(parse(['--views','C01,M01']).views,['M01','C01'],'the order is the catalogue\'s, not the command line\'s');
  assert.deepEqual(parse(['--views','C01','--exposure','day']).views,['C01']);assert.deepEqual(parse(['--views','V01','--exposure','dusk']).views,['V01'],'a dusk pass of the other views is as it was');assert.deepEqual(parse(['--exposure','dusk']).views,F.VIEW_IDS);
  refuse(['--views','C01','--exposure','dusk'],/--views C01: the curve is taken at day only, not dusk/);refuse(['--views','V01,C01','--exposure','dusk'],/--views C01: the curve is taken at day only, not dusk/);refuse(['--views','M01,C01','--exposure','dusk'],/--views M01: the motion clip is taken at day only, not dusk/);
- refuse(['--views','C02'],/--views: unknown C02; expected V01,V02,V03,V04,V05,V06,V07,V08,V09,V10,M01,C01/);refuse(['--views','C01,C01'],/--views: C01 repeated/);refuse(['--views','c01'],/unknown c01/);
+ refuse(['--views','C03'],/--views: unknown C03; expected V01,V02,V03,V04,V05,V06,V07,V08,V09,V10,M01,C01,C02/);refuse(['--views','C01,C01'],/--views: C01 repeated/);refuse(['--views','c01'],/unknown c01/);
  refuse(['--kinds','C01'],/--kinds: unknown C01/,'the kinds are still the kinds');
 });
 
@@ -387,4 +391,97 @@ check('the frozen plan of a curve is compared when both have one, within a toler
  assert.deepEqual(drifts(C.loadFrozenPoses(JSON.stringify(manifest(['lner5']))),mapOf(kinds)).map(x=>[x.kind,x.reason]),[['gn387x8','kind missing from the frozen poses']]);
  // the drift of another kind's curve is reported with its own kind
  const m2=manifest(kinds);m2.kinds.gn387x8.views.curve.plan.views[0].target[0]+=1;assert.deepEqual(drifts(C.loadFrozenPoses(JSON.stringify(m2)),mapOf(kinds)).map(x=>[x.kind,x.view,x.at]),[['gn387x8','curve','/views/0/target/0']]);
+});
+
+// ---- C02: the same on the bend that is typical of the track ----------------------------------------------------------------------------------------
+check('C02 on the stand-in page is the same two pictures and a report under names of its own: the files, the labels, the entry, the sidecars and the rule say it is the typical bend',async()=>{
+ const plan=await planNormalOf(KIND),run=await runCurve({plan}),pictures=[`${KIND}-curve-normal-plan.png`,`${KIND}-curve-normal-oblique.png`],radius=plan.route.radiusM.toFixed(1);
+ assert.deepEqual(run.order,[...pictures,`${KIND}-curve-normal.json`]);assert.deepEqual([...run.published.keys()],pictures);assert.deepEqual([...run.written.keys()],[`${KIND}-curve-normal.json`]);
+ assert.ok(run.log[2].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C02 curve-normal-plan - typical real bend, R ${radius} m")`),run.log[2].slice(-140));
+ assert.ok(run.log[6].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C02 curve-normal-oblique - typical real bend, R ${radius} m")`),run.log[6].slice(-140));
+ assert.match(run.log[0],new RegExp(`^window\\.__cat\\.beginCurve\\("${KIND}",${plan.lengthM},`));assert.equal(run.log[1],`window.__cat.poseCars(${JSON.stringify(plan.cars)})`);
+ const {entry,verdict}=run;assert.equal(verdict.status,'PASS');assert.deepEqual([entry.id,entry.suffix],['C02','curve-normal']);assert.deepEqual(entry.plan,F.curvePoseOf(plan));assert.equal(entry.notes.rule,F.CURVE_NORMAL_RULE);
+ assert.deepEqual(entry.outcome,{status:'OK',reason:null,report:`${KIND}-curve-normal.json`,stage:F.CURVE_STAGE,views:pictures.map((file,i)=>({suffix:F.CURVE_NORMAL_VIEWS[i],status:'OK',reason:null,file})),checks:{status:'PASS',findings:0}});
+ for(const [i,file] of pictures.entries()) {
+  const side=run.published.get(file).sidecar;
+  assert.deepEqual([side.file,side.view.id,side.view.suffix,side.view.frame],[file,'C02',F.CURVE_NORMAL_VIEWS[i],'curve']);assert.equal(side.curve.id,'C02');assert.equal(side.curve.view,F.CURVE_NORMAL_VIEWS[i]);
+  assert.deepEqual(side.curve.route.pick,plan.route.pick);assert.equal(side.curve.route.source,'real');assert.deepEqual([side.curve.checks.status,side.curve.checks.findings],['PASS',0]);assert.equal(side.pixels.ok,true);
+ }
+ const report=reportOf(run,'curve-normal');assert.deepEqual([report.schema,report.kind,report.id,report.status,report.rule],['kx-catalogue-curve/1',KIND,'C02','OK',F.CURVE_NORMAL_RULE]);
+ assert.deepEqual(report.route.pick,plan.route.pick);assert.equal(report.route.radiusM,plan.route.radiusM);assert.deepEqual(report.views.map(v=>[v.suffix,v.status,v.file]),pictures.map((file,i)=>[F.CURVE_NORMAL_VIEWS[i],'OK',file]));
+ // the tightest bend\'s report says its own rule, and the two differ
+ const tight=await runCurve();assert.equal(reportOf(tight).rule,F.CURVE_RULE);assert.notEqual(report.rule,reportOf(tight).rule);assert.equal(reportOf(tight).id,'C01');
+ // a plan that is a GAP is recorded under its own name too
+ const gap=await runCurve({plan:{...plan,status:'GAP',reason:'why',views:[],cars:[],bogies:[],joints:[],checks:null,noseM:null}});assert.deepEqual([gap.entry.id,gap.entry.suffix,gap.entry.outcome.status],['C02','curve-normal','GAP']);
+});
+
+check('the manifest names C02 beside C01: the radius that is typical of the track and what it was made of, the bend nearest it, its views and its rule; a run without it says nothing of it',async()=>{
+ const tight=await route(),normal=await normalRoute(),stamp='2026-11-09T00:00:00Z',head=C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,curveNormal:normal,generated:stamp});
+ assert.deepEqual(head.curve,C.curveManifest(tight));assert.deepEqual(head.curveNormal,C.curveManifest(normal,F.CURVE_NORMAL));
+ const m=head.curveNormal;assert.deepEqual(Object.keys(m),['id','suffix','stage','rule','longestKind','longestM','trackData','typical','route','views','exposure']);
+ assert.deepEqual([m.id,m.suffix,m.stage,m.rule,m.longestKind,m.views,m.exposure],['C02','curve-normal',F.CURVE_STAGE,F.CURVE_NORMAL_RULE,'gn387x12',F.CURVE_NORMAL_VIEWS,'day']);assert.deepEqual(m.trackData,normal.trackData);assert.deepEqual(m.typical,normal.typical);
+ assert.deepEqual(Object.keys(m.route),['source','smooth','radiusM','turnDeg','baselineM','apex','lengthM','apexS','points','steps','apexAt','ways','services','tunnel','chain','searched','frame','pick']);assert.deepEqual(m.route.pick,normal.route.pick);assert.deepEqual(m.route.frame,normal.route.local);
+ // the tightest bend\'s entry has neither a typical radius nor a pick
+ assert.ok(!('typical' in head.curve)&&!('pick' in head.curve.route));assert.equal(head.curve.rule,F.CURVE_RULE);assert.deepEqual(head.curve.views,F.CURVE_VIEWS);
+ // the typical radius of a synthetic arc stands in the manifest too, with the note
+ const arc=F.curveRouteFor({nodes:[],rails:[]},100,{typical:{radiusM:452}}),synthetic=C.curveManifest({route:arc,longest:{kind:'gn387x12',lengthM:100},trackData:{file:'x',sha256:'0'.repeat(64)},typical:{radiusM:452}},F.CURVE_NORMAL);
+ assert.equal(synthetic.route.source,'synthetic');assert.equal(synthetic.route.note,arc.note);assert.ok(!('pick' in synthetic.route));assert.deepEqual(synthetic.typical,{radiusM:452});
+ // a run without C02 says nothing of it, with or without C01
+ assert.ok(!('curveNormal' in C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,generated:stamp})));assert.ok(!('curveNormal' in C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curve:tight,curveNormal:null,generated:stamp})));
+ const only=C.catalogueManifest({exposure:'day',stationScene:null,host,build,poses:null,curveNormal:normal,generated:stamp});assert.ok(!('curve' in only));assert.deepEqual(only.curveNormal,head.curveNormal);
+});
+
+check('--views takes C02 as a second opt-in beside C01: not among the default views, day only, listed after C01 and the clip',()=>{
+ const base=['--mode','catalogue','--dist','d','--out','o'],parse=extra=>safely(()=>C.parseCatalogueArgs([...base,...extra])),refuse=(extra,pattern)=>assert.throws(()=>C.parseCatalogueArgs([...base,...extra]),pattern);
+ assert.ok(!parse([]).views.includes('C02'));assert.deepEqual(parse(['--views','C02']).views,['C02']);assert.deepEqual(parse(['--views','C02,C01']).views,['C01','C02'],'the order is the catalogue\'s');
+ assert.deepEqual(parse(['--views','C02,V04,M01,C01']).views,['V04','M01','C01','C02']);assert.deepEqual(parse(['--views','C02','--exposure','day']).views,['C02']);
+ refuse(['--views','C02','--exposure','dusk'],/--views C02: the curve is taken at day only, not dusk/);refuse(['--views','V01,C02','--exposure','dusk'],/--views C02: the curve is taken at day only, not dusk/);
+ refuse(['--views','C01,C02','--exposure','dusk'],/--views C01: the curve is taken at day only, not dusk/);refuse(['--views','C02,C02'],/--views: C02 repeated/);refuse(['--views','c02'],/unknown c02/);
+});
+
+check('catalogue preflight plans C02 without Chrome beside C01 and the rest, and tells a held manifest that froze another typical curve from one that did not have it',async()=>{
+ const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(scratch+'/train-curve-test-'),log=console.log;
+ try {
+  const dist=path.join(dir,'dist'),out=path.join(dir,'out');await mkdir(dist);
+  const run=async(...args)=>{const lines=[];console.log=(...a)=>lines.push(a.join(' '));try{await C.catalogueMain(['--mode','catalogue','--dist',dist,'--out',out,'--chrome','none',...args]);}finally{console.log=log;}return lines.map(l=>JSON.parse(l));};
+  const ok=async(...args)=>{try{return await run(...args);}catch(e){assert.fail(`catalogueMain threw: ${e?.message}`);}};
+  const [one]=await ok('--kinds','lner5,gn387x12','--views','C02');assert.deepEqual([one.catalogue,one.kinds,one.views,one.posesFrozen,one.exposure],[true,['lner5','gn387x12'],['C02'],false,'day']);assert.deepEqual(one.planned,{lner5:{OK:1},gn387x12:{OK:1}});
+  const [all]=await ok('--views','C02');assert.deepEqual(all.planned,Object.fromEntries(ALL_KINDS.map(kind=>[kind,{OK:1}])),'every kind\'s typical curve is planned on the page\'s own track');
+  const [both]=await ok('--kinds','lner5','--views','C01,C02');assert.deepEqual(both.planned.lner5,{OK:2},'the two curves are two plans');assert.deepEqual(both.views,['C01','C02']);
+  const [v2]=await ok('--kinds','lner5','--views','V02'),[mixed]=await ok('--kinds','lner5','--views','V02,C02');
+  assert.deepEqual(mixed.planned.lner5,{...v2.planned.lner5,OK:v2.planned.lner5.OK+1},'the typical curve adds one OK to the views beside it');
+  // a manifest of an earlier round has neither curve: it must not refuse a run that asks for either
+  const poses=path.join(dir,'manifest.json'),earlier={rubric:F.CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',kinds:{lner5:{views:{}}}};
+  earlier.kinds.lner5.views=Object.fromEntries(F.planCatalogueViews(formations.get('lner5')).map(v=>[v.suffix,{plan:JSON.parse(JSON.stringify(F.poseOf(v)))}]));await writeFile(poses,JSON.stringify(earlier));
+  const [frozen]=await ok('--kinds','lner5','--views','C02','--poses',poses);assert.equal(frozen.posesFrozen,true);assert.deepEqual(frozen.planned,{lner5:{OK:1}});
+  await assert.rejects(run('--kinds','lner5','--views','C02','--exposure','dusk','--poses',poses),/--views C02: the curve is taken at day only, not dusk/);
+  // a manifest that froze the typical curve, planned differently, refuses; one that froze only the tightest bend\'s differently does not refuse a run of the typical one, and the other way round
+  const normal=await planNormalOf('lner5'),tight=await planOf('lner5'),held=(suffix,plan)=>{const m=JSON.parse(JSON.stringify(earlier));m.kinds.lner5.views[suffix]={plan:JSON.parse(JSON.stringify(F.curvePoseOf(plan)))};m.kinds.lner5.views[suffix].plan.views[0].eye[0]+=1;return m;};
+  await writeFile(poses,JSON.stringify(held('curve-normal',normal)));
+  await assert.rejects(run('--kinds','lner5','--views','C02','--poses',poses),/refusing to capture: 1 pose\(s\) differ from .*lner5\/curve-normal curve plan differs from the frozen plan at \/views\/0\/eye\/0/);
+  const [elsewhere]=await ok('--kinds','lner5','--views','C01','--poses',poses);assert.equal(elsewhere.posesFrozen,true,'a run of C01 does not compare C02\'s entry');
+  await writeFile(poses,JSON.stringify(held('curve',tight)));
+  const [other]=await ok('--kinds','lner5','--views','C02','--poses',poses);assert.equal(other.posesFrozen,true,'a run of C02 does not compare C01\'s entry');
+  await assert.rejects(run('--kinds','lner5','--views','C01,C02','--poses',poses),/lner5\/curve curve plan differs from the frozen plan at \/views\/0\/eye\/0/);
+ } finally {console.log=log;await rm(dir,{recursive:true,force:true});}
+});
+
+check('the frozen plans of C01 and C02 are compared each with its own entry, within a tolerance, and an earlier round\'s manifest without either leaves nothing to drift from',async()=>{
+ const kinds=['lner5','gn387x8'],tight=new Map(),normal=new Map();for(const kind of kinds){tight.set(kind,await planOf(kind));normal.set(kind,await planNormalOf(kind));}
+ const mapOf=(ks,{curve=true,curveNormal=true}={})=>new Map(ks.map(kind=>[kind,{kind,views:[],curve:curve?tight.get(kind):null,curveNormal:curveNormal?normal.get(kind):null}]));
+ const manifest=ks=>JSON.parse(JSON.stringify({rubric:F.CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',kinds:Object.fromEntries(ks.map(kind=>[kind,{views:{curve:{plan:F.curvePoseOf(tight.get(kind))},'curve-normal':{plan:F.curvePoseOf(normal.get(kind))}}}]))}));
+ const drifts=(m,map,options)=>safely(()=>C.frozenPoseDrift(C.loadFrozenPoses(JSON.stringify(m)),map,options));
+ assert.deepEqual(drifts(manifest(kinds),mapOf(kinds)),[],'both planned again match what they froze, through a JSON round trip');
+ // a drift of C02 is C02\'s, of its kind and where; one of C01 is C01\'s; both at once are both, C01 first
+ const m=manifest(kinds);m.kinds.lner5.views['curve-normal'].plan.views[1].target[2]+=1;
+ assert.deepEqual(drifts(m,mapOf(kinds)),[{kind:'lner5',view:'curve-normal',reason:'curve plan differs from the frozen plan',at:'/views/1/target/2'}]);
+ m.kinds.lner5.views.curve.plan.route.radiusM+=1;assert.deepEqual(drifts(m,mapOf(kinds)).map(d=>[d.kind,d.view,d.at]),[['lner5','curve','/route/radiusM'],['lner5','curve-normal','/views/1/target/2']]);
+ // the pick of the route is frozen: another stretch of track, at the same radius, is a drift
+ const picked=manifest(kinds);picked.kinds.gn387x8.views['curve-normal'].plan.route.pick.meanDeviation+=.01;assert.deepEqual(drifts(picked,mapOf(kinds)).map(d=>[d.kind,d.view,d.at]),[['gn387x8','curve-normal','/route/pick/meanDeviation']]);
+ // the tolerance is the usual one and can be given
+ const tiny=manifest(kinds);tiny.kinds.lner5.views['curve-normal'].plan.views[0].eye[0]+=1e-9;assert.deepEqual(drifts(tiny,mapOf(kinds)),[]);assert.equal(drifts(tiny,mapOf(kinds),{tol:1e-12})[0]?.view,'curve-normal');
+ // a run that does not plan one compares none of it; a manifest that does not have one has nothing to drift from
+ assert.deepEqual(drifts(m,mapOf(kinds,{curve:false,curveNormal:false})),[]);assert.deepEqual(drifts(m,mapOf(kinds,{curve:false})).map(d=>d.view),['curve-normal']);assert.deepEqual(drifts(m,mapOf(kinds,{curveNormal:false})).map(d=>d.view),['curve']);
+ const noNormal=manifest(kinds);for(const kind of kinds)delete noNormal.kinds[kind].views['curve-normal'];assert.deepEqual(drifts(noNormal,mapOf(kinds)),[],'the manifest of a round before C02 existed');
+ const noPlan=manifest(kinds);delete noPlan.kinds.lner5.views['curve-normal'].plan;assert.deepEqual(drifts(noPlan,mapOf(kinds)),[]);
 });

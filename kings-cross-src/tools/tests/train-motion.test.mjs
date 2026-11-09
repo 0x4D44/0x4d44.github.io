@@ -51,7 +51,7 @@ check('M01 is one set of numbers for every kind: 20 m/s, a second a frame, 16 fr
  assert.deepEqual(F.MOTION.zRange,[-540,160]);assert.equal(F.MOTION.zRange[1]-F.MOTION.zRange[0],700);assert.equal(F.MOTION.routeStepM,50);assert.equal(F.MOTION.slackM,100);
  assert.deepEqual([F.MOTION.boundaryMarginM,F.MOTION.distanceToleranceM,F.MOTION.clearanceMarginM,F.MOTION.targetAheadM,F.MOTION.fov],[.05,1e-6,.25,100,50]);
  assert.equal(F.MOTION_STAGE,'neutral-straight (scenery hidden)');
- assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01']);assert.deepEqual(F.ASKABLE_VIEW_IDS,[...F.VIEW_IDS,'M01','C01']);assert.ok(!F.VIEW_IDS.includes('M01'),'the default views stay V01-V10');
+ assert.deepEqual(F.OPT_IN_VIEW_IDS,['M01','C01','C02']);assert.deepEqual(F.ASKABLE_VIEW_IDS,[...F.VIEW_IDS,'M01','C01','C02']);assert.ok(!F.VIEW_IDS.includes('M01'),'the default views stay V01-V10');
  assert.deepEqual(F.MOTION.sheet,{columns:4,tileWidth:400,tileHeight:250,gap:8});
  assert.equal(F.CATALOGUE.viewport.width/F.MOTION.sheet.tileWidth,F.CATALOGUE.viewport.height/F.MOTION.sheet.tileHeight,'a tile is the frame at a whole fraction of its size');
  // the platform 5 camera of V10: its edge at the nose of a train standing at stop 3, and a camera stands .5 m inside it

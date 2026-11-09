@@ -1257,7 +1257,7 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
 // and run in the page. M01 is not in VIEW_IDS: a run that is not asked for it neither plans it nor refuses on poses frozen before it existed.
 // ============================================================================================
 /** The views a run can be asked for (`--views`) besides VIEW_IDS, which are the ones it takes when it is not asked. */
-export const OPT_IN_VIEW_IDS = Object.freeze(['M01', 'C01']);
+export const OPT_IN_VIEW_IDS = Object.freeze(['M01', 'C01', 'C02']);
 export const ASKABLE_VIEW_IDS = Object.freeze([...VIEW_IDS, ...OPT_IN_VIEW_IDS]);
 /**
  * The clip's numbers, one set for every kind. `lodDistanceM` is web/src/train-parts.ts BOGIE_LOD_DISTANCE (a test pins the two equal): at that distance or more a bogie is
@@ -1571,6 +1571,25 @@ export const CURVE_RULE = 'C01 (opt-in, day only). One pose per kind on the tigh
   + 'gangway opening must have the boundary points of the two cars no further apart than one bellows (END_GAP, web/src/train.ts) can reach; and every bogie the page has must stand on the curve within 1 cm. '
   + 'A failed check is a FINDING in the report, never a failed picture and never loosened.';
 
+/**
+ * C02 is C01's second pose: the same stage, views, placement and checks on a bend of the radius that is typical of the page's own track, where C01 is its tightest (an extreme, kept as
+ * information). The typical radius is found from the track alone (typicalRadius), never from a train: it is the median radius of every position of the page's `services` ways (the main
+ * lines, in a tunnel or not) that turns by `bendMinDeg` degrees or more across CURVE.baselineM (less is a straight to the eye). The pose is the place where the longest train sits on the
+ * bend nearest that radius: of the positions whose own radius is within `bandShare` of it, the one with the least mean of |curvature / typical curvature - 1| along the train's length.
+ */
+export const CURVE_NORMAL_RULE = 'C02 (opt-in, day only). The second curve pose, on a bend of the radius that is typical of the page\'s own track; C01\'s tightest bend stays as information, an extreme and not a typical curve. '
+  + 'The track, the stage, the two views, the placement by the page\'s own carPoses and the checks of every joint and bogie are C01\'s. The radius is found from the track alone, never from a train: web/src/data/kx-track.json drawn on the smooth '
+  + 'curves of core/curves.ts, every 0.5 m along each piece of track between branches and corners, on the ways of service main (in a tunnel or not), where the heading changes by 1 degree or more across the 26 m of the longest car '
+  + '(a smaller turn is a straight to the eye): each such position stands for 0.5 m of bend at the radius 26 m over its turn, and the typical radius is the median of them. The train stands where the page\'s track holds the longest train on '
+  + 'the bend nearest that radius: of the positions whose own radius is within 10% of the typical one, the one for which the curvature along the length of the longest train is nearest the typical curvature (the least mean of '
+  + '|curvature / typical curvature - 1| over that length, which counts a straight as 1), with its middle on that position. If no stretch holds the longest train on such a bend the pose is an arc of the typical radius, labelled synthetic.';
+export const CURVE_NORMAL = Object.freeze({
+  id: 'C02', suffix: 'curve-normal', rule: CURVE_NORMAL_RULE,
+  bendMinDeg: 1, bandShare: .1, services: Object.freeze(['main']),
+});
+/** The suffixes of C02's two views, in file order. */
+export const CURVE_NORMAL_VIEWS = Object.freeze([`${CURVE_NORMAL.suffix}-plan`, `${CURVE_NORMAL.suffix}-oblique`]);
+
 /** The distance along a polyline of [x, z] points to each of them (the first at 0). */
 export const cumulative = points => { const cum = [0]; for (let i = 0; i + 1 < points.length; i++) cum.push(cum[i] + Math.hypot(points[i + 1][0] - points[i][0], points[i + 1][1] - points[i][1])); return cum; };
 /** The segment of a polyline, by its cumulative lengths, that the distance `s` falls in (the first for a distance before the start, the last for one at or past the end). */
@@ -1599,18 +1618,11 @@ function denseTrack(piece, shapeOf) {
   return { D, cum, total: cum.at(-1), nodeAt };
 }
 /**
- * The tightest bend of the page's track that a train of `lengthM` fits, from its own data (`data`: web/src/data/kx-track.json, { nodes: [[id, x, z]], rails: [{ id, nodes, tunnel,
- * service }] }) and the curves it is drawn on (`shapeOf(a, b)`: the points of the smooth curve from node a to node b, core/curves.ts shapeFrom; none is the chord). The track is cut
- * into chains, the runs of edges between nodes where it branches or ends (walked from the lowest-numbered such node, edges in way order, so the result does not depend on the order of
- * the file), each chain is cut again where the chords turn by more than `cutDeg` at a node (a corner: the page draws no curve through it), and every piece long enough for the train and
- * `marginM` at each end is scanned every `stepM` metres, along its curve, for the turn across `baselineM`. The tightest turn wins (the first one, in chain order, on a tie); where the
- * turn holds the same value over a run of positions the middle of that run is the tightest point. The route is the whole edges of that piece from the one that holds half the train and
- * the margin before the tightest point to the one that holds the same after it, in the direction the chain was walked: `points`, the curve of those edges; `steps`, the edges, with the
- * indices in `points` where each starts and ends; `apexAt`, the edge the tightest point is on and its share of that edge's curve. Null if no piece holds the train on a bend. All
- * numbers in the page's world metres (x east, z south), to a micrometre.
+ * The page's track as a set of pieces a train can run along: its ways cut into chains, the runs of edges between nodes where the track branches or ends (walked from the lowest-numbered such node,
+ * edges in way order, so the result does not depend on the order of the file), and each chain cut again where its chords turn by more than `cutDeg` at a node (a corner: the page draws no
+ * curve through it). A piece is { edges, ids, P }: its edges (way, a, b, length, tunnel, service), its node ids and their places.
  */
-export function findCurveRoute(data, lengthM, { baselineM = CURVE.baselineM, cutDeg = CURVE.cutDeg, marginM = CURVE.marginM, stepM = CURVE.stepM, shapeOf = null } = {}) {
-  if (!(lengthM > 0)) throw new Error(`a train ${lengthM} m long has no bend to find`);
+function trackPieces(data, cutDeg) {
   const pos = new Map(data.nodes.map(([id, x, z]) => [id, [x, z]])), touching = new Map();
   for (const rail of data.rails) for (let i = 0; i + 1 < rail.nodes.length; i++) {
     const a = rail.nodes[i], b = rail.nodes[i + 1], pa = pos.get(a), pb = pos.get(b);
@@ -1644,6 +1656,42 @@ export function findCurveRoute(data, lengthM, { baselineM = CURVE.baselineM, cut
     for (let i = 1; i + 1 < P.length; i++) if (Math.abs(wrap(bearing(P[i], P[i + 1]) - bearing(P[i - 1], P[i]))) > cutDeg * D2R) { cut(chain, P, from, i); from = i; }
     cut(chain, P, from, P.length - 1);
   }
+  return { chains, pieces };
+}
+/**
+ * The route for the best position `best` ({ turn, s, piece, track }): the whole edges of its piece that hold a train of 2 x `need` metres (half of it and its margin either side of `s`),
+ * as findCurveRoute describes them. `turn` is the turn across the baseline at `s`.
+ */
+function routeAt(best, { need, baselineM, shapeOf, chains, pieces, fitting }) {
+  const { piece, track } = best, { D, cum, total, nodeAt } = track, lo = Math.max(0, best.s - need), hi = Math.min(total, best.s + need);
+  const startOf = i => cum[nodeAt[i]], endOf = i => cum[nodeAt[i + 1]];
+  const edgeAt = s => { let i = 0; while (i + 1 < piece.edges.length && startOf(i + 1) <= s + 1e-9) i++; return i; };
+  const i0 = edgeAt(lo), i1 = edgeAt(hi - 1e-9), j = edgeAt(best.s), covered = piece.edges.slice(i0, i1 + 1);
+  const tunnelM = covered.reduce((n, edge, k) => n + (edge.tunnel ? Math.max(0, Math.min(endOf(i0 + k), hi) - Math.max(startOf(i0 + k), lo)) : 0), 0), routeM = endOf(i1) - startOf(i0);
+  const steps = covered.map((edge, k) => ({ way: edge.way, a: edge.a, b: edge.b, from: piece.ids[i0 + k], to: piece.ids[i0 + k + 1], chordM: q6(edge.length), tunnel: edge.tunnel, service: edge.service,
+    fromIndex: nodeAt[i0 + k] - nodeAt[i0], toIndex: nodeAt[i0 + k + 1] - nodeAt[i0] }));
+  return { source: 'real', smooth: typeof shapeOf === 'function', radiusM: q6(baselineM / best.turn), turnDeg: q6(best.turn / D2R), baselineM, lengthM: q6(routeM), apexS: q6(best.s - startOf(i0)),
+    apex: pointAlong(D, cum, best.s).map(q6), points: D.slice(nodeAt[i0], nodeAt[i1 + 1] + 1).map(p => [q6(p[0]), q6(p[1])]), steps,
+    apexAt: { step: j - i0, share: q6((best.s - startOf(j)) / (endOf(j) - startOf(j))) },
+    ways: [...new Set(covered.map(e => e.way))], services: [...new Set(covered.map(e => e.service))],
+    tunnel: { apexInTunnel: piece.edges[j].tunnel, windowM: q6(tunnelM), fraction: q6(tunnelM / (hi - lo)) },
+    chain: { lengthM: q6(total), nodes: piece.P.length, from: piece.P[0].map(q6), to: piece.P.at(-1).map(q6) },
+    searched: { chains: chains.length, pieces: pieces.length, fitting } };
+}
+/**
+ * The tightest bend of the page's track that a train of `lengthM` fits, from its own data (`data`: web/src/data/kx-track.json, { nodes: [[id, x, z]], rails: [{ id, nodes, tunnel,
+ * service }] }) and the curves it is drawn on (`shapeOf(a, b)`: the points of the smooth curve from node a to node b, core/curves.ts shapeFrom; none is the chord). The track is cut
+ * into chains, the runs of edges between nodes where it branches or ends (walked from the lowest-numbered such node, edges in way order, so the result does not depend on the order of
+ * the file), each chain is cut again where the chords turn by more than `cutDeg` at a node (a corner: the page draws no curve through it), and every piece long enough for the train and
+ * `marginM` at each end is scanned every `stepM` metres, along its curve, for the turn across `baselineM`. The tightest turn wins (the first one, in chain order, on a tie); where the
+ * turn holds the same value over a run of positions the middle of that run is the tightest point. The route is the whole edges of that piece from the one that holds half the train and
+ * the margin before the tightest point to the one that holds the same after it, in the direction the chain was walked: `points`, the curve of those edges; `steps`, the edges, with the
+ * indices in `points` where each starts and ends; `apexAt`, the edge the tightest point is on and its share of that edge's curve. Null if no piece holds the train on a bend. All
+ * numbers in the page's world metres (x east, z south), to a micrometre.
+ */
+export function findCurveRoute(data, lengthM, { baselineM = CURVE.baselineM, cutDeg = CURVE.cutDeg, marginM = CURVE.marginM, stepM = CURVE.stepM, shapeOf = null } = {}) {
+  if (!(lengthM > 0)) throw new Error(`a train ${lengthM} m long has no bend to find`);
+  const { chains, pieces } = trackPieces(data, cutDeg);
   const need = lengthM / 2 + marginM;
   let best = null, fitting = 0;
   for (const piece of pieces) {
@@ -1661,35 +1709,96 @@ export function findCurveRoute(data, lengthM, { baselineM = CURVE.baselineM, cut
     if (!best || top > best.turn + 1e-12) best = { turn: top, s: need + (k0 + k1) / 2 * stepM, piece, track };
   }
   if (!best || !(best.turn > 1e-9)) return null;
-  const { piece, track } = best, { D, cum, total, nodeAt } = track, lo = Math.max(0, best.s - need), hi = Math.min(total, best.s + need);
-  const startOf = i => cum[nodeAt[i]], endOf = i => cum[nodeAt[i + 1]];
-  const edgeAt = s => { let i = 0; while (i + 1 < piece.edges.length && startOf(i + 1) <= s + 1e-9) i++; return i; };
-  const i0 = edgeAt(lo), i1 = edgeAt(hi - 1e-9), j = edgeAt(best.s), covered = piece.edges.slice(i0, i1 + 1);
-  const tunnelM = covered.reduce((n, edge, k) => n + (edge.tunnel ? Math.max(0, Math.min(endOf(i0 + k), hi) - Math.max(startOf(i0 + k), lo)) : 0), 0), routeM = endOf(i1) - startOf(i0);
-  const steps = covered.map((edge, k) => ({ way: edge.way, a: edge.a, b: edge.b, from: piece.ids[i0 + k], to: piece.ids[i0 + k + 1], chordM: q6(edge.length), tunnel: edge.tunnel, service: edge.service,
-    fromIndex: nodeAt[i0 + k] - nodeAt[i0], toIndex: nodeAt[i0 + k + 1] - nodeAt[i0] }));
-  return { source: 'real', smooth: typeof shapeOf === 'function', radiusM: q6(baselineM / best.turn), turnDeg: q6(best.turn / D2R), baselineM, lengthM: q6(routeM), apexS: q6(best.s - startOf(i0)),
-    apex: pointAlong(D, cum, best.s).map(q6), points: D.slice(nodeAt[i0], nodeAt[i1 + 1] + 1).map(p => [q6(p[0]), q6(p[1])]), steps,
-    apexAt: { step: j - i0, share: q6((best.s - startOf(j)) / (endOf(j) - startOf(j))) },
-    ways: [...new Set(covered.map(e => e.way))], services: [...new Set(covered.map(e => e.service))],
-    tunnel: { apexInTunnel: piece.edges[j].tunnel, windowM: q6(tunnelM), fraction: q6(tunnelM / (hi - lo)) },
-    chain: { lengthM: q6(total), nodes: piece.P.length, from: piece.P[0].map(q6), to: piece.P.at(-1).map(q6) },
-    searched: { chains: chains.length, pieces: pieces.length, fitting } };
+  return routeAt(best, { need, baselineM, shapeOf, chains, pieces, fitting });
+}
+
+/**
+ * The radius that is typical of a bend on the page's track, from its data alone (`data` and `shapeOf` as for findCurveRoute) and not from any train. The track is cut into pieces as
+ * findCurveRoute cuts it, and every position, each `stepM` metres along each piece with the whole of `baselineM` on the piece, that stands on an edge of a way whose service is one of
+ * `services` and turns by `bendMinDeg` degrees or more across the baseline is one bend position: the radius baselineM / turn, standing for `stepM` metres of track. The typical radius
+ * is the median of those (the upper of the two middle ones when there is an even number of them), so it is a length-weighted median. Returns it with what it was made of: the track
+ * the positions were taken on and the length of it that bends, the quartiles of the radii, the threshold and the ways counted. Null where nothing bends.
+ */
+export function typicalRadius(data, { baselineM = CURVE.baselineM, cutDeg = CURVE.cutDeg, stepM = CURVE.stepM, bendMinDeg = CURVE_NORMAL.bendMinDeg, services = CURVE_NORMAL.services, shapeOf = null } = {}) {
+  const { pieces } = trackPieces(data, cutDeg), radii = [];
+  let trackM = 0;
+  for (const piece of pieces) {
+    const { D, cum, total, nodeAt } = denseTrack(piece, shapeOf), count = Math.floor((total - baselineM) / stepM + 1e-9) + 1;
+    let i = 0;
+    for (let k = 0; k < count; k++) {
+      const s = baselineM / 2 + k * stepM;
+      while (i + 1 < piece.edges.length && cum[nodeAt[i + 1]] <= s + 1e-9) i++;
+      if (!services.includes(piece.edges[i].service)) continue;
+      trackM += stepM;
+      const turn = Math.abs(wrap(headingAtS(D, cum, s + baselineM / 2) - headingAtS(D, cum, s - baselineM / 2)));
+      if (turn >= bendMinDeg * D2R - 1e-12) radii.push(baselineM / turn);
+    }
+  }
+  if (!radii.length) return null;
+  radii.sort((p, q) => p - q);
+  const at = share => radii[Math.floor(radii.length * share)];
+  return { radiusM: q6(at(.5)), baselineM, bendMinDeg, services: [...services], stepM, trackM: q6(trackM), bendM: q6(radii.length * stepM), quartilesM: [q6(at(.25)), q6(at(.75))], pieces: pieces.length };
+}
+/**
+ * The bend nearest the typical radius that a train of `lengthM` fits on the page's track (`typical`: typicalRadius's). The pieces, the curves, the margin and the positions are
+ * findCurveRoute's, but a position counts only if the radius there (its own, across the baseline) is within `bandShare` of the typical one, and the best is the one for which the track
+ * under the train is nearest that bend: the least mean, over the positions every `stepM` metres along the length of the train with its middle on the position, of |turn / typical turn - 1|
+ * (a straight counts 1, a bend twice as tight counts 1, one half as tight .5). The first best one wins, in chain order; where the mean holds one value over a run of positions the middle of
+ * that run is the position. The route is findCurveRoute's, with `pick` added: the typical radius, the band, the mean, and the tightest radius and the length of straight under the train.
+ * Null if no piece holds the train on a bend in the band.
+ */
+export function findTypicalRoute(data, lengthM, typical, { baselineM = CURVE.baselineM, cutDeg = CURVE.cutDeg, marginM = CURVE.marginM, stepM = CURVE.stepM, bandShare = CURVE_NORMAL.bandShare, bendMinDeg = CURVE_NORMAL.bendMinDeg, shapeOf = null } = {}) {
+  if (!(lengthM > 0)) throw new Error(`a train ${lengthM} m long has no bend to find`);
+  if (!(typical?.radiusM > 0)) throw new Error(`a typical radius of ${typical?.radiusM} m is no bend`);
+  const { chains, pieces } = trackPieces(data, cutDeg), need = lengthM / 2 + marginM, typicalTurn = baselineM / typical.radiusM, spans = Math.floor(lengthM / stepM + 1e-9);
+  let best = null, fitting = 0;
+  for (const piece of pieces) {
+    const track = denseTrack(piece, shapeOf), { D, cum, total } = track;
+    if (total < 2 * need - 1e-9) continue;
+    fitting++;
+    const turnAt = s => Math.abs(wrap(headingAtS(D, cum, Math.min(total, s + baselineM / 2)) - headingAtS(D, cum, Math.max(0, s - baselineM / 2))));
+    const count = Math.floor((total - 2 * need) / stepM + 1e-9) + 1, prefix = [0];
+    // the turn at marginM + j * stepM, which is where the train's length begins for the j-th position and every stepM after it: a prefix sum of how far each is from the typical turn
+    for (let j = 0; j < count + spans; j++) prefix.push(prefix[j] + Math.abs(turnAt(marginM + j * stepM) / typicalTurn - 1));
+    const scores = [];
+    for (let k = 0; k < count; k++) {
+      const turn = turnAt(need + k * stepM), radius = turn > 1e-9 ? baselineM / turn : Infinity;
+      scores.push(Math.abs(radius / typical.radiusM - 1) <= bandShare + 1e-12 ? -(prefix[k + spans + 1] - prefix[k]) / (spans + 1) : -Infinity);
+    }
+    let top = -Infinity;
+    for (const score of scores) if (score > top) top = score;
+    if (top === -Infinity) continue;
+    const k0 = scores.findIndex(score => score >= top - 1e-12);
+    let k1 = k0;
+    while (k1 + 1 < count && scores[k1 + 1] >= top - 1e-12) k1++;
+    if (!best || top > best.score + 1e-12) best = { score: top, turn: turnAt(need + (k0 + k1) / 2 * stepM), s: need + (k0 + k1) / 2 * stepM, piece, track, turnAt };
+  }
+  if (!best) return null;
+  // the train's length under the pick: the tightest bend it stands on (the middle of the train is on one, so there is one) and how much of it is straight to the eye
+  let tightest = Infinity, straightM = 0;
+  for (let i = 0; i <= spans; i++) {
+    const turn = best.turnAt(best.s - lengthM / 2 + i * stepM);
+    if (turn < bendMinDeg * D2R - 1e-12) straightM += stepM;
+    if (turn > 1e-9) tightest = Math.min(tightest, baselineM / turn);
+  }
+  return { ...routeAt(best, { need, baselineM, shapeOf, chains, pieces, fitting }),
+    pick: { kind: 'typical', typicalRadiusM: typical.radiusM, bandShare, meanDeviation: q6(-best.score), tightestM: q6(tightest), straightM: q6(straightM) } };
 }
 
 /**
  * The synthetic route for a data set with no bend a train fits: an arc of `radiusM` through the origin, travelling north (-z) and bending to the right (+x), as long as the train
- * and the margin at each end, in chords of `stepM` (an even number of them, so the tightest point is a node). Labelled `synthetic` wherever it goes. It has no edges of the page's
+ * and the margin at each end, in chords of `stepM` (an even number of them, so the tightest point is a node). Labelled `synthetic` wherever it goes, its note ending with `reason`, why the
+ * track has no such bend. It has no edges of the page's
  * graph (`steps` is null): it is a polyline, straight chords of a few metres, which the placement code takes as it takes any graph without curves.
  */
-export function circularArcRoute(lengthM, radiusM, { marginM = CURVE.marginM, stepM = CURVE.arcStepM, baselineM = CURVE.baselineM } = {}) {
+export function circularArcRoute(lengthM, radiusM, { marginM = CURVE.marginM, stepM = CURVE.arcStepM, baselineM = CURVE.baselineM, reason = 'on a bend' } = {}) {
   if (!(lengthM > 0) || !(radiusM > 0)) throw new Error(`an arc of radius ${radiusM} m for a train ${lengthM} m long`);
   const half = lengthM / 2 + marginM, n = 2 * Math.ceil(half / stepM), points = [];
   for (let i = 0; i <= n; i++) { const phi = (i - n / 2) * (half / (n / 2)) / radiusM; points.push([q6(radiusM - radiusM * Math.cos(phi)), q6(-radiusM * Math.sin(phi))]); }
   const cum = cumulative(points), turn = Math.abs(wrap(headingAtS(points, cum, Math.min(cum.at(-1), cum[n / 2] + baselineM / 2)) - headingAtS(points, cum, Math.max(0, cum[n / 2] - baselineM / 2))));
   return { source: 'synthetic', smooth: false, radiusM: q6(radiusM), turnDeg: q6(turn / D2R), baselineM, lengthM: q6(cum.at(-1)), apexS: q6(cum[n / 2]), apex: [0, 0], points, steps: null, apexAt: null, ways: [], services: [],
     tunnel: { apexInTunnel: false, windowM: 0, fraction: 0 }, chain: null, searched: null,
-    note: `a synthetic circular arc of radius ${radiusM} m: no run of the page's track holds a train ${lengthM} m long on a bend` };
+    note: `a synthetic circular arc of radius ${radiusM} m: no run of the page's track holds a train ${lengthM} m long ${reason}` };
 }
 /**
  * The map from the page's world into the train's own frame at the route's tightest point: the point at the origin, the direction of travel there (the chord across the baseline) along
@@ -1714,11 +1823,13 @@ export function curveFrame(route, options = {}) {
 }
 /**
  * The route for a train of `lengthM`: the tightest real bend of `data` it fits (on the curves `options.shapeOf` gives), else the synthetic arc (`options.fallbackRadiusM` of radius, its
- * chords `options.arcStepM` long; the margin and the baseline are shared with the search), with its frame as `local`.
+ * chords `options.arcStepM` long; the margin and the baseline are shared with the search), with its frame as `local`. Given `options.typical` (typicalRadius's) it is the bend nearest that
+ * radius instead (findTypicalRoute), and the arc that stands in for it is of the typical radius, its note saying that no run holds the train on a bend within the band of it.
  */
 export function curveRouteFor(data, lengthM, options = {}) {
-  const { marginM, baselineM, arcStepM } = options;
-  const found = findCurveRoute(data, lengthM, options) ?? circularArcRoute(lengthM, options.fallbackRadiusM ?? CURVE.fallbackRadiusM, { marginM, baselineM, stepM: arcStepM });
+  const { marginM, baselineM, arcStepM, typical, bandShare = CURVE_NORMAL.bandShare } = options;
+  const found = (typical ? findTypicalRoute(data, lengthM, typical, options) : findCurveRoute(data, lengthM, options))
+    ?? circularArcRoute(lengthM, typical?.radiusM ?? options.fallbackRadiusM ?? CURVE.fallbackRadiusM, { marginM, baselineM, stepM: arcStepM, ...(typical ? { reason: `on a bend within ${q6(bandShare * 100)}% of the typical radius` } : {}) });
   return { ...found, local: curveFrame(found, options) };
 }
 /**
@@ -1817,9 +1928,9 @@ export function fitCameraDistance({ points, target, direction, up, fov, aspect =
  * The two views of a train on the curve, in the frame of the route (the train's own: x across, the nose toward -z): straight down on the middle of the train's footprint, image up the
  * train's right-hand side and its nose at the left (as V06's roof plan has it), and from the outside of the bend, `elevationDeg` above the horizon, looking at the middle of the footprint
  * at half the height of the roof. Each stands as near as frames the footprint of every car (its envelope padded by `padM`, at the rail and at the roof) within the fit fraction of the
- * image, and is turned by the sun-bearing rule like every other view. `poses` are curveJoints' poses.
+ * image, and is turned by the sun-bearing rule like every other view. `poses` are curveJoints' poses; `curve` is the pose the views belong to (CURVE, or CURVE_NORMAL: its id and suffix).
  */
-export function planCurveViews(f, route, poses, { aspect = CATALOGUE.aspect } = {}) {
+export function planCurveViews(f, route, poses, { aspect = CATALOGUE.aspect, curve = CURVE } = {}) {
   const H = f.roofTop, pad = CURVE.padM, spots = [];
   for (const pose of poses) for (const [sx, end] of [[-1, 0], [1, 0], [1, 1], [-1, 1]]) spots.push(carPoint(pose, sx * (f.half + pad), end ? pose.end + pad : pose.start - pad));
   const xs = spots.map(p => p[0]), zs = spots.map(p => p[1]), bounds = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
@@ -1827,7 +1938,7 @@ export function planCurveViews(f, route, poses, { aspect = CATALOGUE.aspect } = 
   const region = box(q6(bounds[0]), q6(bounds[1]), 0, q6(H + pad), q6(bounds[2]), q6(bounds[3])), outsideSign = route.local.outsideSign;
   const make = (name, target, direction, up, notes) => {
     const distance = fitCameraDistance({ points, target, direction, up, fov: CURVE.fov, aspect }), eye = target.map((v, i) => q6(v + direction[i] * distance));
-    const view = { id: CURVE.id, suffix: `${CURVE.suffix}-${name}`, frame: 'curve', status: 'OK', eye, target: target.map(q6), fov: CURVE.fov, up, near: catalogueNear(eye, target), region,
+    const view = { id: curve.id, suffix: `${curve.suffix}-${name}`, frame: 'curve', status: 'OK', eye, target: target.map(q6), fov: CURVE.fov, up, near: catalogueNear(eye, target), region,
       extents: { scope: 'train', z0: 0, z1: q6(f.length) }, notes: { stage: CURVE_STAGE, distanceM: distance, fitFraction: CATALOGUE.fitFraction, footprintM: { x: [q6(bounds[0]), q6(bounds[1])], z: [q6(bounds[2]), q6(bounds[3])] }, ...notes } };
     return { ...view, rotation: stageRotation(view) };
   };
@@ -1842,20 +1953,21 @@ export function planCurveViews(f, route, poses, { aspect = CATALOGUE.aspect } = 
  * what carPoses did with the train on the route ({ poses: curveJoints' poses, each with the `front` and `rear` bogie points in the frame of the route, `cars`: the poses as the page is told
  * them, `noseM`: how far along the route's edges, in the page's own measure of distance along the track (the chords), the nose stood, and `problems`: every way carPoses disagrees with
  * the geometry) and `spec` is { gangwayWidthM, endGapM }. A GAP, with the reason, if carPoses disagrees with the geometry or did not pose every car; otherwise the two views, the cars to
- * pose, the bogies where they must stand, every joint and the verdicts the joints give by themselves (the page's bogies are read later: judgeCurvePage).
+ * pose, the bogies where they must stand, every joint and the verdicts the joints give by themselves (the page's bogies are read later: judgeCurvePage). `curve` is the pose the plan belongs
+ * to: CURVE (C01), or CURVE_NORMAL (C02), which names the plan and the views and carries its own rule.
  */
-export function planCurve(f, route, placed, { gangwayWidthM, endGapM }) {
+export function planCurve(f, route, placed, { gangwayWidthM, endGapM }, curve = CURVE) {
   const { poses, cars } = placed, problems = [];
   if (placed.problems?.length) problems.push(`the page's placement code (carPoses) disagrees with the geometry: ${placed.problems.slice(0, 3).join('; ')}`);
   if (poses.length !== f.cars.length) problems.push(`carPoses posed ${poses.length} of the ${f.cars.length} cars of ${f.kind}`);
   const summary = { source: route.source, smooth: route.smooth === true, radiusM: route.radiusM, turnDeg: route.turnDeg, baselineM: route.baselineM, apex: route.apex, headingDeg: route.local.headingDeg,
     outsideSign: route.local.outsideSign, lengthM: route.local.lengthM, apexS: route.local.apexS, edges: route.steps?.length ?? 0, ways: route.ways, services: route.services, tunnel: route.tunnel,
-    ...(route.note ? { note: route.note } : {}) };
-  const notes = { stage: CURVE_STAGE, route: summary, rule: CURVE_RULE };
-  const head = { id: CURVE.id, suffix: CURVE.suffix, frame: 'curve', lengthM: f.length, route: summary, path: route.local.points, notes };
+    ...(route.note ? { note: route.note } : {}), ...(route.pick ? { pick: route.pick } : {}) };
+  const notes = { stage: CURVE_STAGE, route: summary, rule: curve.rule ?? CURVE_RULE };
+  const head = { id: curve.id, suffix: curve.suffix, frame: 'curve', lengthM: f.length, route: summary, path: route.local.points, notes };
   if (problems.length) return { ...head, status: 'GAP', reason: problems.join('; '), noseM: null, views: [], cars: [], bogies: [], joints: [], checks: null };
   const joints = curveJoints(poses, { half: f.half, gangwayWidthM, endGapM }, { outsideSign: route.local.outsideSign });
-  return { ...head, status: 'OK', reason: null, noseM: q6(placed.noseM), views: planCurveViews(f, route, poses), cars, joints, checks: judgeCurveJoints(joints, { reachM: endGapM }),
+  return { ...head, status: 'OK', reason: null, noseM: q6(placed.noseM), views: planCurveViews(f, route, poses, { curve }), cars, joints, checks: judgeCurveJoints(joints, { reachM: endGapM }),
     bogies: poses.flatMap(p => [p.front, p.rear].map((point, k) => ({ name: `bogie-${p.index}-${k}`, car: p.index, k, point }))) };
 }
 /** The numbers that define a curve plan, for freezing and comparison (what the page read and the verdicts are not part of it). */

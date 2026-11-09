@@ -14,7 +14,7 @@ import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {ALTERNATE_RULE,ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,alternatePlacementsFor,alternateViewsFromSearch,findPlacement,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
+import {ALTERNATE_RULE,ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_NORMAL,CURVE_NORMAL_VIEWS,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,alternatePlacementsFor,alternateViewsFromSearch,findPlacement,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,typicalRadius,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph,edgePoint} from '../core/graph.ts';
 import {shapeFrom} from '../core/curves.ts';
@@ -364,7 +364,7 @@ export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
 /**
  * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`.
- * Without `--views` a run takes V01-V10; `M01` (the motion clip) and `C01` (the curve) are opt-in, `--views M01`, `--views C01` or with others, and are taken at day only.
+ * Without `--views` a run takes V01-V10; `M01` (the motion clip), `C01` (the tightest curve) and `C02` (the curve of the radius that is typical of the page's track) are opt-in, `--views M01`, `--views C01,C02` or with others, and are taken at day only.
  */
 export function parseCatalogueArgs(args) {
   const options=new Map();
@@ -393,6 +393,7 @@ export function parseCatalogueArgs(args) {
   const views=list('--views',ASKABLE_VIEW_IDS,VIEW_IDS);
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
   if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
+  if(views.includes(CURVE_NORMAL.id)&&exposure!=='day')throw new Error(`--views ${CURVE_NORMAL.id}: the curve is taken at day only, not ${exposure}`);
   return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
@@ -507,9 +508,11 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
     // the motion clip is derived by a rule, not searched for: a held manifest that does not have it (a pass before M01 existed) leaves nothing to drift from
     const clip=plan.motion&&held.views?.[plan.motion.suffix];
     if(clip?.plan){const at=poseDifference(motionPoseOf(plan.motion),clip.plan,tol);if(at!==null)drifts.push({kind,view:plan.motion.suffix,reason:'motion plan differs from the frozen plan',at});}
-    // the curve is derived the same way: a held manifest from before C01 existed has nothing to drift from
-    const bend=plan.curve&&held.views?.[plan.curve.suffix];
-    if(bend?.plan){const at=poseDifference(curvePoseOf(plan.curve),bend.plan,tol);if(at!==null)drifts.push({kind,view:plan.curve.suffix,reason:'curve plan differs from the frozen plan',at});}
+    // the curves are derived the same way: a held manifest from before C01 or C02 existed has nothing to drift from
+    for(const curve of [plan.curve,plan.curveNormal]) {
+      const bend=curve&&held.views?.[curve.suffix];
+      if(bend?.plan){const at=poseDifference(curvePoseOf(curve),bend.plan,tol);if(at!==null)drifts.push({kind,view:curve.suffix,reason:'curve plan differs from the frozen plan',at});}
+    }
   }
   return drifts;
 }
@@ -778,11 +781,11 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
 }
 
 /** The head of the run's manifest: what the run was (rubric, viewport, the sun rule, the exposure, the station, the machine and build, the poses it reused) before any kind is photographed. */
-export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,curve=null,generated=new Date().toISOString()}) {
+export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,curve=null,curveNormal=null,generated=new Date().toISOString()}) {
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated,viewport:CATALOGUE.viewport,
     sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
       text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose. It always uses the day rig's sun, in every exposure, so a dusk pass turns each specimen exactly as the day pass did."},
-    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),...(curve?{curve:curveManifest(curve)}:{}),
+    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),...(curve?{curve:curveManifest(curve)}:{}),...(curveNormal?{curveNormal:curveManifest(curveNormal,CURVE_NORMAL)}:{}),
     host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:poses,kinds:{}};
 }
 /** The page address of a run: the local server's port and the query its exposure pins. */
@@ -1149,13 +1152,16 @@ export function placementRoute(route,graph) {
 }
 /**
  * The route of a run, from the data the page is built from: the tightest real bend of the page's smooth track (the graph built with curves, whose curves the finder reads) that the
- * longest kind fits, the same for every kind whatever `--kinds` says, and the chain of the page's edges the placement code poses along.
+ * longest kind fits, the same for every kind whatever `--kinds` says, and the chain of the page's edges the placement code poses along. With `typical` the bend nearest the radius that is
+ * typical of that track instead (typicalRadius, found from the track alone), which is returned with it.
  */
-export async function loadCurveRoute(file=fileURLToPath(new URL('../web/src/data/kx-track.json',import.meta.url))) {
+export async function loadCurveRoute(file=fileURLToPath(new URL('../web/src/data/kx-track.json',import.meta.url)),{typical=false}={}) {
   const bytes=await readFile(file),data=JSON.parse(bytes.toString('utf8')),graph=buildGraph(data,{curves:true});
   const longest=ALL_KINDS.map(kind=>({kind,lengthM:trainLayout(kind).length})).reduce((a,b)=>b.lengthM>a.lengthM?b:a);
-  const route=curveRouteFor(data,longest.lengthM,{shapeOf:(a,b)=>shapeFrom(graph.shapes,a,b)});
-  return {route,placement:placementRoute(route,graph),longest,trackData:{file:'kings-cross-src/web/src/data/kx-track.json',sha256:sha256(bytes)}};
+  const shapeOf=(a,b)=>shapeFrom(graph.shapes,a,b),radius=typical?typicalRadius(data,{shapeOf}):null;
+  if(typical&&!radius)throw new Error('the page\'s track has no bend to take a typical radius from');
+  const route=curveRouteFor(data,longest.lengthM,{shapeOf,...(radius?{typical:radius}:{})});
+  return {route,placement:placementRoute(route,graph),longest,trackData:{file:'kings-cross-src/web/src/data/kx-track.json',sha256:sha256(bytes)},...(radius?{typical:radius}:{})};
 }
 /**
  * The cars of one kind on the route, posed by the page's own placement code (`place`, carPoses; a parameter only so that a test can hand the checks poses that are wrong) with the
@@ -1182,9 +1188,9 @@ export function curvePoses(formation,{route,placement},place=carPoses) {
   return {ok:!problems.length,problems,maxErrorM,noseM,route:{points:route.points.length,lengthM:route.lengthM},
     poses:local.map(p=>({index:p.car.index,start:p.car.start,end:p.car.end,bogies:[...p.car.bogies],position:[...p.position],rotationY:p.rotationY,scaleZ:p.scaleZ,front:[...p.frontBogie.point],rear:[...p.rearBogie.point]})),cars:pagePoses(local)};
 }
-/** One kind's plan on the route: the poses the page's carPoses gives, the two views and every joint (planCurve), the gangway of the family and web/src/train.ts END_GAP as the specification. */
-export function planCurveFor(formation,curve,place=carPoses) {
-  return planCurve(formation,curve.route,curvePoses(formation,curve,place),{gangwayWidthM:bodySpec(formation.family).gangway.width,endGapM:END_GAP});
+/** One kind's plan on the route: the poses the page's carPoses gives, the two views and every joint (planCurve), the gangway of the family and web/src/train.ts END_GAP as the specification. `pose` is C01's (CURVE) or C02's (CURVE_NORMAL). */
+export function planCurveFor(formation,curve,place=carPoses,pose=CURVE) {
+  return planCurve(formation,curve.route,curvePoses(formation,curve,place),{gangwayWidthM:bodySpec(formation.family).gangway.width,endGapM:END_GAP},pose);
 }
 
 /**
@@ -1208,17 +1214,21 @@ export function catalogueViewSteps({kind,formation,evaluate,screenshot,publish,s
 /** The `curve` block of a picture's sidecar: the route, where the train stands on it and the verdicts (the findings themselves are in the report). */
 export const curveBlock=(plan,view,verdict)=>({id:plan.id,stage:CURVE_STAGE,view:view.suffix,route:plan.route,noseM:plan.noseM,
   checks:{status:verdict.status,findings:verdict.findings.length,bodies:verdict.bodies,couplers:verdict.couplers,gangways:verdict.gangways,bogies:verdict.bogies}});
-/** What the manifest says once of the curve: the rule, the stage, the route (with its points in the page's world) and the data it was found in. */
-export const curveManifest=({route,longest,trackData})=>({id:CURVE.id,suffix:CURVE.suffix,stage:CURVE_STAGE,rule:CURVE_RULE,longestKind:longest.kind,longestM:longest.lengthM,trackData,
+/**
+ * What the manifest says once of a curve: the rule, the stage, the route (with its points in the page's world) and the data it was found in; for C02 also the radius that is typical of
+ * the track and what it was made of, and the route's `pick` (how near that bend the stretch is). `curve` is CURVE (C01) or CURVE_NORMAL (C02).
+ */
+export const curveManifest=({route,longest,trackData,typical=null},curve=CURVE)=>({id:curve.id,suffix:curve.suffix,stage:CURVE_STAGE,rule:curve.rule??CURVE_RULE,longestKind:longest.kind,longestM:longest.lengthM,trackData,
+  ...(typical?{typical}:{}),
   route:{source:route.source,smooth:route.smooth,radiusM:route.radiusM,turnDeg:route.turnDeg,baselineM:route.baselineM,apex:route.apex,lengthM:route.lengthM,apexS:route.apexS,points:route.points,steps:route.steps,apexAt:route.apexAt,
-    ways:route.ways,services:route.services,tunnel:route.tunnel,chain:route.chain,searched:route.searched,frame:route.local,...(route.note?{note:route.note}:{})},
-  views:CURVE_VIEWS,exposure:'day'});
+    ways:route.ways,services:route.services,tunnel:route.tunnel,chain:route.chain,searched:route.searched,frame:route.local,...(route.pick?{pick:route.pick}:{}),...(route.note?{note:route.note}:{})},
+  views:curve.id===CURVE_NORMAL.id?CURVE_NORMAL_VIEWS:CURVE_VIEWS,exposure:'day'});
 /**
  * `<kind>-curve.json`: the curve in one file. Its status and reason; the route and where the train stands on it; every joint's numbers; the bogies as the page has them; the
  * verdicts and each finding with the sentence that explains it; each view's file, camera, rotation, pixels and inspection.
  */
 export function curveReport({kind,plan,formation,status,reason,verdict,page,results,session,host,build,exposure,state}) {
-  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-curve/1',kind,id:plan.id,status,reason,stage:CURVE_STAGE,rule:CURVE_RULE,route:plan.route,noseM:plan.noseM,path:plan.path,
+  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-curve/1',kind,id:plan.id,status,reason,stage:CURVE_STAGE,rule:plan.notes?.rule??CURVE_RULE,route:plan.route,noseM:plan.noseM,path:plan.path,
     formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
     checks:{status:verdict.status,findings:verdict.findings,bodies:verdict.bodies,couplers:verdict.couplers,gangways:verdict.gangways,bogies:verdict.bogies,
       reading:'bodies: the footprints of two neighbours must not touch; couplers and gangways: the boundary points of two neighbours (the end of the first car, the start of the second, at the middle and at each edge of the gangway opening) must be no further apart than one bellows reaches (END_GAP); bogies: each must stand on the path within 1 cm'},
@@ -1227,7 +1237,7 @@ export function curveReport({kind,plan,formation,status,reason,verdict,page,resu
       pixels:r.verdict??null,visibleFraction:r.inspection?.visibleFraction??null,checkedSamples:r.inspection?.checkedSamples??null})),
     renderer:session.renderer,exposure:exposure.id,host:host.os,macModel:host.macModel,git:host.git,build,hiddenSceneNames:sortedObjects(state.hidden),stageLevels:state.stage};
 }
-/** One kind's C01 line in the manifest: the frozen plan, and what became of the pictures and the checks. */
+/** One kind's C01 or C02 line in the manifest: the frozen plan, and what became of the pictures and the checks. */
 export function curveManifestEntry(plan,result) {
   return {id:plan.id,suffix:plan.suffix,plan:curvePoseOf(plan),notes:plan.notes,
     outcome:{status:result.status,reason:result.reason??null,report:result.report??null,stage:CURVE_STAGE,
@@ -1248,7 +1258,7 @@ export async function captureCurve({kind,plan,formation,evaluate,screenshot,publ
   try {
     page=judgeCurvePage(plan,await evaluate(`window.__cat.poseCars(${JSON.stringify(plan.cars)})`));verdict=curveVerdict(plan,page);
     if(!page.problems.length)results=await runCatalogueViews(plan.views,catalogueViewSteps({kind,formation,evaluate,screenshot,publish,session,host,build,state,exposure,check,
-      label:view=>`${kind} catalogue specimen on ${CURVE_STAGE} - ${view.id} ${view.suffix} - ${plan.route.source==='real'?'tightest real bend':'SYNTHETIC arc'}, R ${plan.route.radiusM.toFixed(1)} m`,
+      label:view=>`${kind} catalogue specimen on ${CURVE_STAGE} - ${view.id} ${view.suffix} - ${plan.route.source==='real'?(plan.route.pick?'typical real bend':'tightest real bend'):'SYNTHETIC arc'}, R ${plan.route.radiusM.toFixed(1)} m`,
       extra:view=>({hiddenSceneNames:sortedObjects(state.hidden),curve:curveBlock(plan,view,verdict)})}));
   } finally {await evaluate('window.__cat.end()');}
   const reasons=[];
@@ -1267,10 +1277,10 @@ export async function catalogueMain(args) {
   if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
   for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
   const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null,withMotion=opts.views.includes(MOTION.id);
-  const curve=opts.views.includes(CURVE.id)?await loadCurveRoute():null;
+  const curve=opts.views.includes(CURVE.id)?await loadCurveRoute():null,curveNormal=opts.views.includes(CURVE_NORMAL.id)?await loadCurveRoute(undefined,{typical:true}):null;
   const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
     return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null,
-      curve:curve?planCurveFor(formation,curve):null}];}));
+      curve:curve?planCurveFor(formation,curve):null,curveNormal:curveNormal?planCurveFor(formation,curveNormal,carPoses,CURVE_NORMAL):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
     const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
@@ -1281,15 +1291,15 @@ export async function catalogueMain(args) {
       if(plan.station)plan.stationViews=stationViewsFromFrozen(plan.station,frozen.kinds[plan.kind]);
     }
   }
-  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[]),...(plan.motion?[plan.motion]:[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),plan.curve?{[plan.curve.status]:1}:{})]));
+  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[]),...(plan.motion?[plan.motion]:[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),[plan.curve,plan.curveNormal].filter(Boolean).reduce((n,c)=>({...n,[c.status]:(n[c.status]??0)+1}),{}))]));
   if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,exposure:opts.exposure,posesFrozen:!!frozen,planned:counts}));return;}
   const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   await mkdir(out,{recursive:true});
   const host=hostInfo(),build=await buildHash(dist),started=performance.now();
   let chrome,cdp,profile,server,cleanup,fatal,session;
   const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
-  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion,curve});
-  const summary={kinds:{},timingsMs:{},...(curve?{curveChecks:{}}:{})};
+  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion,curve,curveNormal});
+  const summary={kinds:{},timingsMs:{},...(curve?{curveChecks:{}}:{}),...(curveNormal?{curveNormalChecks:{}}:{})};
   try {
     server=catalogueServer(root,dist);
     await new Promise((r,j)=>{server.once('error',j);server.listen(0,'127.0.0.1',r);});
@@ -1370,6 +1380,11 @@ export async function catalogueMain(args) {
         // C01: the train on the curve, on its own stage (captureCurve begins and ends the specimen itself); a failed check is a finding, counted apart from the pictures' statuses
         const {entry,verdict}=await captureCurve({kind,plan:plan.curve,formation:plan.formation,evaluate,screenshot:shoot,publish,write,session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
         entries[entry.suffix]=entry;summary.curveChecks[kind]={status:verdict.status,findings:verdict.findings.length};bend=` (curve checks ${verdict.status}, ${verdict.findings.length} finding(s))`;
+      }
+      if(plan.curveNormal) {
+        // C02: the same on the bend of the radius that is typical of the track
+        const {entry,verdict}=await captureCurve({kind,plan:plan.curveNormal,formation:plan.formation,evaluate,screenshot:shoot,publish,write,session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
+        entries[entry.suffix]=entry;summary.curveNormalChecks[kind]={status:verdict.status,findings:verdict.findings.length};bend+=` (typical curve checks ${verdict.status}, ${verdict.findings.length} finding(s))`;
       }
       manifest.kinds[kind]={formation:manifestFormation(plan.formation),views:entries};
       const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
