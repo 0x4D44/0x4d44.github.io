@@ -635,6 +635,9 @@ test('flat faces: the screens are glass on the face, a layer in front of their f
     assert.equal(c.face.shapes.filter((sh) => sh.glass).length, 1, `${c.label}: one glass shape`);
     assert.ok(pane.glass && frame.lift < pane.lift, `${c.label}: glass over its frame`);
     assert.equal(!!pane.mirror, c.kind !== 'tl700x8', `${c.label}: a pane each side of a door, or (the 700) one across`);
+    // CHANGED (red-check: a lean of 0, or one tilted up, passed: the normals below are checked against the lean the table gives, the table the code reads): the lean is a tilt down of about
+    // 6 to 19 degrees (ASSUMED, chosen by eye in look-dev), so that the pane reflects the dark ground and not the sky's glow
+    assert.ok(c.face.glassLean <= -0.1 && c.face.glassLean >= -0.35, `${c.label}: a glass lean of ${c.face.glassLean}`);
     for (const car of layout.cars.filter((k) => k.cab)) {
       const interior = isInterior(car, layout);
       const here = `${c.label}, car ${car.index} (${car.cab} cab${interior ? ', coupled' : ''})`;
@@ -1244,7 +1247,6 @@ test('fronts: the Azuma\'s front: a round-lensed lamp cluster on each cheek, par
     frame: 0.07,
     wipers: true,
     display: false,
-    door: null,
     warning: null,
     coupler: { style: 'plain', covered: true },
   });
@@ -1253,7 +1255,8 @@ test('fronts: the Azuma\'s front: a round-lensed lamp cluster on each cheek, par
 test('fronts: only the 387 and the 717 have a door in their faces, full height between two screens; no front has the old outlined door on its lower face, and none carries a door marker', () => {
   // CHANGED (the 717's front door was a small outlined box on its lower face between the lamps, with a window, a handle and a marker): GN717-03-717005-Potters-Bar and GN717-01-717013-HDW show
   // a full-height door at the middle of its face, between the two screens, black over a white lower leaf; it is shapes of its flat face now (the Class 717's face), and nothing has the old door
-  assert.deepEqual(FAMILIES.filter((f) => bodySpec(f).front.door), [], 'the families with the old outlined front door');
+  // CHANGED (FrontSpec.door is gone: every family had it null, so its block in buildTrain never ran): the check reads the field through a cast, so a spec that sets one again is still caught, since nothing would draw it
+  assert.deepEqual(FAMILIES.filter((f) => (bodySpec(f).front as unknown as { door?: unknown }).door), [], 'the families with the old outlined front door');
   assert.deepEqual(FAMILIES.filter((f) => bodySpec(f).front.face?.shapes.some((sh) => sh.name === 'door-frame')), ['electrostar', 'desiro'], 'the families with a door shape in their face');
   for (const kind of ['lner5', 'gn387x4', 'gn717x6', 'tl700x8', 'gc180x5'] as TrainKind[]) assert.equal(all(built(kind), 'front-door').length, 0, `${kind}: front-door markers`);
 });
@@ -3122,6 +3125,8 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
       const here = `${kind} car ${car.index}`;
       const mesh = detailOf(g, car);
       const parts = { shed: trisOfColour(mesh, KIT_COLOURS.shed), cap: trisOfColour(mesh, KIT_COLOURS.cap), plate: trisOfColour(mesh, KIT_COLOURS.plate), cable: trisOfColour(mesh, KIT_COLOURS.cable) };
+      // CHANGED (red-check: a family whose roofKit was set to null passed, its cars read as "no kit" by the branch below): every car that carries a pantograph has a kit; only the 180, which has no pantograph, has none
+      if (car.pantograph) assert.ok(spec.roofKit, `${here}: a pantograph car's family has a roof kit`);
       if (!car.pantograph || !spec.roofKit) {
         for (const [name, ts] of Object.entries(parts)) assert.equal(ts.length, 0, `${here}: no ${name} triangles on a car without a roof kit`);
         continue;

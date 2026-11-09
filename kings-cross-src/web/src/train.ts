@@ -319,8 +319,6 @@ interface FrontSpec {
   /** how far up the glass a parked wiper's outer end stands, metres along the nose (default 0.08: the arm lies along the glass's foot; the Class 180's lean up the glass, GC180-05) */
   wiperRise?: number;
   display: boolean;
-  /** a front (evacuation) door outlined on the upper face: its width and the most height it may take (null: none) */
-  door: { width: number; height: number } | null;
   /** the colour of the yellow warning panel on the front (the upper face and the first half metre of the nose behind it); null: the livery's own front */
   warning: number | null;
   /**
@@ -336,7 +334,7 @@ interface FrontSpec {
   cabSideSurround?: number;
   /**
    * A flat face: a wall carrying its panels, lamp housings and, where the windscreens are on it, the screens, door and coupler too, as shapes laid on its plane
-   * (train-face.ts). When present, `door` is not used (the shapes carry the lenses and the door). A face that carries its screens (the 387's, 717's and 700's) has no
+   * (train-face.ts). The shapes carry the lenses and the door. A face that carries its screens (the 387's, 717's and 700's) has no
    * `screen` in the glass spec and no `wipers` or `display`; the Class 180's face is the panels and pods under a windscreen that is still a patch on the nose's roof.
    */
   face?: FaceSpec;
@@ -510,7 +508,6 @@ const AT300: BodySpec = {
     // wiper arms parked on the glass, as lner-800-113-newcastle-2025, lner-800-doncaster-2026, hull-802-doncaster-2024 and LUMO-04 show
     wipers: true,
     display: false,
-    door: null,
     warning: null,
     coupler: { style: 'plain', covered: true },
   },
@@ -612,7 +609,6 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
       frame: 0,
       wipers: false,
       display: false,
-      door: null,
       warning: AMBER,
       warningWrap: 0.3,
       warningWidth: 0.9,
@@ -686,7 +682,6 @@ const DESIRO_BODY = ((): BodySpec => {
       frame: 0,
       wipers: false,
       display: false,
-      door: null,
       warning: null,
       coupler: { style: 'dellner', covered: false },
       face: DESIRO_717_FACE,
@@ -716,7 +711,6 @@ const DESIRO700_BODY: BodySpec = {
     frame: 0,
     wipers: false,
     display: false,
-    door: null,
     warning: null,
     coupler: { style: 'dellner', covered: false },
     face: DESIRO_700_FACE,
@@ -798,7 +792,6 @@ const ADELANTE_BODY = ((): BodySpec => {
       wipers: true,
       wiperRise: 0.5,
       display: false,
-      door: null,
       warning: null,
       coupler: { style: 'scharfenberg', covered: false },
       face: ADELANTE_FACE,
@@ -1266,22 +1259,6 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         place(shape, false);
         if (shape.mirror) place(shape, true);
       }
-    }
-    // a front door outlined on the upper face, with a window and a handle: as tall as the face allows above the cut, and always inside the face's outline
-    if (front.door) {
-      const hw = front.door.width / 2;
-      const y0 = yCut + 0.07;
-      let y1 = Math.min(y0 + front.door.height, r0.top - 0.06);
-      while (y1 > y0 + 0.3 && xAtY(tipHalf, y1) < hw + 0.08) y1 -= 0.02;
-      detail.fan(onFace(roundedRect(-hw - 0.02, hw + 0.02, y0 - 0.02, y1 + 0.02, 0.05, 2), 0.005), faceN, col(0x15171a));
-      detail.fan(onFace(roundedRect(-hw, hw, y0, y1, 0.04, 2), 0.007), faceN, colourOf(upperColour));
-      detail.fan(onFace(roundedRect(-hw * 0.55, hw * 0.55, y1 - 0.27, y1 - 0.1, 0.03, 2), 0.009), faceN, colourOf(def.glass));
-      detail.fan(onFace(roundedRect(hw * 0.62, hw * 0.62 + 0.04, y0 + 0.14, y0 + 0.26, 0.01, 1), 0.009), faceN, col(0x9aa0a8));
-      const m = new THREE.Object3D();
-      m.name = 'front-door';
-      m.position.set(0, (y0 + y1) / 2, Z(tip));
-      m.userData = { width: 2 * hw, height: y1 - y0 };
-      group.add(m);
     }
     // A patch laid on the nose's surface, `lift` metres off it along its normal: rows x cols quads over the (x, s) points `at(v, u)` gives
     // (v runs along the rows, u across them, both 0..1). The windscreen, its frame, the wipers and the destination display are such patches.

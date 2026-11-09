@@ -147,7 +147,7 @@ M = [
     ("pod: the kind's overrides ignored in the finish", "export const frontOf = (kind: TrainKind): Readonly<FrontSpec> => ({ ...BODIES[trainLayout(kind).spec.family].front, ...FRONT_OVERRIDES[kind] });", "export const frontOf = (kind: TrainKind): Readonly<FrontSpec> => ({ ...BODIES[trainLayout(kind).spec.family].front });"),
     ("cluster: the lenses 30% too big", "const u = Math.cos(a) * at.r;", "const u = Math.cos(a) * at.r * 1.3;"),
     ("cluster: the headlight marker ten centimetres high", "m.position.set(at[0], at[1], Z(at[2]));\n        m.userData = { side: side > 0 ? 'right' : 'left' };", "m.position.set(at[0], at[1] + 0.1, Z(at[2]));\n        m.userData = { side: side > 0 ? 'right' : 'left' };"),
-    ('wipers: the AT300 without them', "    wipers: true,\n    display: false,\n    door: null,\n    warning: null,\n    coupler: { style: 'plain', covered: true },", "    wipers: false,\n    display: false,\n    door: null,\n    warning: null,\n    coupler: { style: 'plain', covered: true },"),
+    ('wipers: the AT300 without them', "    wipers: true,\n    display: false,\n    warning: null,\n    coupler: { style: 'plain', covered: true },", "    wipers: false,\n    display: false,\n    warning: null,\n    coupler: { style: 'plain', covered: true },"),
     ("cab glass in the body material", "const m = new THREE.Mesh(glass.build(), glassMaterial());", "const m = new THREE.Mesh(glass.build(), plain());"),
     # --- bogies ------------------------------------------------------------------------------------------------
     ("wheels on a narrower track", "w.position.set((sx * track) / 2, radius, az);", "w.position.set((sx * track) / 3, radius, az);", P),
@@ -189,8 +189,8 @@ M = [
     ("the Hull Trains cone starts behind the tip", "rect(0, Math.min(nose, def.noseConeLength ?? nose), TEX_Y0, TEX_Y1);", "rect(0.5, Math.min(nose, def.noseConeLength ?? nose), TEX_Y0, TEX_Y1);", L),
     ("the Hull Trains cone 2.6 m long", "    noseConeLength: 1.6,", "    noseConeLength: 2.6,", L),
     ("the Hull Trains cone no longer limited", "    noseConeLength: 1.6,", "", L),
-    # --- the finish of a cab front: lamps, bezel, warning panel, wipers, display, front door -----------------------------
-    ('warning panel on the 717', "      door: null,\n      warning: null,\n      coupler: { style: 'dellner', covered: false },\n      face: DESIRO_717_FACE,", "      door: null,\n      warning: 0xf2c100,\n      coupler: { style: 'dellner', covered: false },\n      face: DESIRO_717_FACE,"),
+    # --- the finish of a cab front: lamps, bezel, warning panel, wipers, display -----------------------------
+    ('warning panel on the 717', "      warning: null,\n      coupler: { style: 'dellner', covered: false },\n      face: DESIRO_717_FACE,", "      warning: 0xf2c100,\n      coupler: { style: 'dellner', covered: false },\n      face: DESIRO_717_FACE,"),
     ('no warning panel on the 700', "    { name: 'warning-panel', outline: [...PANEL_700, ...PANEL_700.slice(0, -1).reverse().map(([x, y]): [number, number] => [-x, y])], colour: YELLOW, lift: 0.003 },\n", '', FACE),
     ('no warning panel on the 180', "    { name: 'warning-panel', outline: [[0.95, 2.4], [0.69, 0.95], [-0.69, 0.95], [-0.95, 2.4]], colour: YELLOW, lift: 0.0015 },\n", '', FACE),
     ("warning panel only on the face, not wrapped back along the nose", "else if (front.warning !== null && inWarning && kmin >= kW) colour = front.warning;", "else if (false) colour = def.roof;"),
@@ -219,8 +219,6 @@ M = [
     ("display at the foot of the glass", "const top = screen.s1 - 0.12;", "const top = screen.s0 + 0.5;"),
     ("display sunk into the nose", "detail, col(0xffa000), 0.034);", "detail, col(0xffa000), -0.034);"),
     ("wipers floating 30 cm off the nose", "detail, arm, 0.032);", "detail, arm, 0.3);"),
-    ("front door a metre wide", "      const hw = front.door.width / 2;", "      const hw = front.door.width;"),
-    ("front door down in the coupler cover's zone", "      const y0 = yCut + 0.07;", "      const y0 = yCut - 0.5;"),
     # --- couplers: styles, exposed noses, the open recess and jumper cable of a coupled nose ---------------------------------
     ("Dellner head front 2 cm short", "const [f0, f1] = zr(reach - 0.012, reach);", "const [f0, f1] = zr(reach - 0.032, reach - 0.02);", P),
     ("plain coupler head sticks out past its reach", "soup.box(-0.13, 0.13, y - 0.11, y + 0.11, hz0, hz0 + 0.1, dark);", "soup.box(-0.13, 0.13, y - 0.11, y + 0.11, hz0, hz0 + 0.15, dark);", P),
