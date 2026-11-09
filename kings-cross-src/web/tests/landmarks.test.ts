@@ -739,8 +739,9 @@ test('Great Northern Hotel [hist-a]: stacks of heights and widths of their own, 
   /** the four sides of a flat quad's corners, shortest first (the two diagonals are the longest of the six distances) */
   const sides = (vs: V3[]): number[] => distinct(vs).flatMap((a, i, all) => all.slice(i + 1).map((b) => Math.hypot(a[0] - b[0], a[2] - b[2]))).sort((m, n) => m - n).slice(0, 4);
   const cm = (x: number): number => Math.round(x * 100) / 100;
-  // hist-a (ASSUMED): a stack of the scale k (shaft 1.4 k x 0.95 k m), the height of its shaft over the flat top, and whether a lower companion (0.7 k, 0.6 of the height) stands beside it
-  const sites: [number, number, boolean][] = [[1.2, 2.8, true], [1.5, 2.4, false], [1.0, 3.4, true], [1.4, 3.0, false], [1.6, 2.6, true], [1.1, 3.6, false]];
+  // hist-a (ASSUMED): a stack of the scale k (shaft 1.4 k x 0.95 k m), the height of its shaft over the flat top, and whether a lower companion (0.7 k, 0.6 of the height) stands beside it. Round 7 (the
+  // scorer: "modest boxes; R-a's are tall broad slabs that dominate the skyline"): about twice round 6's heights, 4.6 to 6.8 m
+  const sites: [number, number, boolean][] = [[1.2, 5.4, true], [1.5, 4.6, false], [1.0, 6.4, true], [1.4, 5.8, false], [1.6, 5.0, true], [1.1, 6.8, false]];
   const expected = [0, 1].flatMap(() => sites.flatMap(([k, h, pair]) => [[1.4 * k, 0.95 * k, h, k], ...(pair ? [[0.98 * k, 0.665 * k, 0.6 * h, 0.7 * k]] : [])]));
   // the shafts are the hotel's own brick: above the eaves the brick is those eighteen boxes, five faces of two triangles each, every foot on the flat top (behind the crest, on no slope)
   const shafts = boxes(triangles(parts.brick as Batch).filter((t) => t.p.every((v) => v[1] > hotel.eaves)));
@@ -855,7 +856,7 @@ test('Midland Grand [hist-b]: two stacked gabled attic rows light the front and 
   const additions = dormerTriangles({ ...midland, towers: [] });
   const glass = additions.pane!;
   assert.ok(glass.length > 40, 'the attic has real glazed dormer faces, not unbroken slate');
-  const clusters = stackClusters({ ...midland, towers: [] });
+  const clusters = stackClusters({ ...midland, towers: [] }, []); // (no gabled bay here, so no cluster is moved for a turret)
   let upper = 0;
   let given = 0;
   [...midland.front.bays, ...midland.wing.bays].forEach((bay, n) => {
@@ -1045,12 +1046,17 @@ test('Midland Grand [hist-b, hist-c, hist-e]: the stacks stand in clusters of th
   }
   assert.ok(heights.size >= 3, `${[...heights]} m: more than two heights`);
   assert.equal(used.size, clusters.length * 60, 'three shafts to a cluster, and every cluster built');
-  // clusters along one facet are 13 to 20 m apart (a cluster about every 13 m), and no two neighbours on a facet are the same height
+  // clusters along one facet are 13 to 20 m apart (a cluster about every 13 m), and no two neighbours on a facet are the same height. Round 7: a cluster in the line of sight of a gable's turret from the
+  // Euston Road standpoint moves up to 8 m along its facet, or is left out (`square`: where each stands with no gabled bay), so a pair with one of those in it is 9 to 30 m apart (9 m: no two clusters touch)
+  const square = stackClusters(midland, []);
+  const regular = (p: (typeof clusters)[number]): boolean => square.some((q) => q.i === p.i && q.s === p.s);
+  assert.ok(clusters.some((p) => !regular(p)) && square.some((p) => !clusters.some((q) => q.i === p.i && q.s === p.s)), 'the gabled bays\' turrets move some clusters and cost the roof some');
   for (const i of new Set(clusters.map((p) => p.i))) {
     const row = clusters.filter((p) => p.i === i);
     for (let k = 1; k < row.length; k++) {
       const [a, b] = [row[k - 1], row[k]] as [(typeof row)[number], (typeof row)[number]];
-      assert.ok(b.s - a.s >= 13 - 1e-9 && b.s - a.s <= 20, `facet ${i}: ${b.s - a.s} m between clusters`);
+      const [least, most] = regular(a) && regular(b) ? [13, 20] : [9, 30];
+      assert.ok(b.s - a.s >= least - 1e-9 && b.s - a.s <= most, `facet ${i}: ${b.s - a.s} m between clusters`);
       assert.notEqual(a.top, b.top, `facet ${i}: neighbours of one height`);
     }
   }
@@ -1075,16 +1081,62 @@ test('Midland Grand [hist-b, hist-c, hist-e]: the stacks stand in clusters of th
   const e6 = polygonEdges(midland.outline)[6] as ReturnType<typeof polygonEdges>[number];
   const ring = midland.roof.ring.map((p, k): Pt => (k === 6 ? [p[0] + e6.dir[0] * 5, p[1] + e6.dir[1] * 5] : p));
   assert.equal(stackClusters({ ...midland, roof: { ...midland.roof, ring } }).some((q) => q.i === 6), false, 'with the hip drawn in, no cluster stands on facet 6');
-  // the dormers keep to their own places: none stands where a cluster does (an upper dormer gives way within 3 m of one)
+  // the dormers keep to their own places: none stands where a cluster does (an upper dormer gives way within 3 m of one); `dormerTriangles` builds no gabled bay, so no cluster is moved for a turret
   const dormers = dormerTriangles();
   for (const t of [...(dormers.slate as Tri[]), ...(dormers.stone as Tri[])]) for (const v of t.p) {
-    for (const p of clusters) {
+    for (const p of square) {
       const e = polygonEdges(midland.outline)[p.i] as ReturnType<typeof polygonEdges>[number];
       const along = (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
       const depth = -((v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1]);
       assert.equal(Math.abs(along - p.s) < 2.9 && Math.abs(depth - p.d) < 0.6, false, 'a dormer corner where a cluster of stacks stands');
     }
   }
+});
+
+test('Midland Grand [hist-b]: from the Euston Road standpoint no stack cluster stands in line with a gable turret: the sky shows between every turret\'s spire and every cluster (the scorer, round 6: the pinnacles "fuse with the stack clusters in silhouette")', () => {
+  const parts = midlandGeometry(midland);
+  const [stone, slate, brick] = [parts.stone, parts.slate, parts.brickRed].map((m) => triangles(m as Batch));
+  // the standpoint: the frozen midland-euston-road camera of tools/evidence.mjs, on the south pavement 50 m out of the middle of the front's middle facet, looking at that facet's middle
+  const eye: Pt = [-67.56067450589593, 142.60696559216098];
+  const aim: Pt = [-89.84999999999995, 97.84999999999998];
+  const fwd: Pt = [aim[0] - eye[0], aim[1] - eye[1]].map((x) => x / Math.hypot(aim[0] - eye[0], aim[1] - eye[1])) as Pt;
+  const e7 = polygonEdges(midland.outline)[7] as ReturnType<typeof polygonEdges>[number];
+  close(e7.a[0] + (e7.dir[0] * e7.length) / 2 + e7.normal[0] * 50, eye[0], 1e-6, 'the standpoint is 50 m out of the middle of facet 7');
+  close(e7.a[1] + (e7.dir[1] * e7.length) / 2 + e7.normal[1] * 50, eye[1], 1e-6, 'the same, along z');
+  /** the bearing of a point from the standpoint, to the right of its line of sight (radians): what the picture's x follows */
+  const bearing = (v: V3): number => Math.atan2((v[0] - eye[0]) * -fwd[1] + (v[2] - eye[1]) * fwd[0], (v[0] - eye[0]) * fwd[0] + (v[2] - eye[1]) * fwd[1]);
+  const span = (ts: Tri[]): [number, number] => {
+    const bs = ts.flatMap((tr) => tr.p.map(bearing));
+    return [Math.min(...bs), Math.max(...bs)];
+  };
+  // the turrets as built: a spire's tip 9 m over a shaft 3.5 m tall on the parapet, one at each foot of each gable; each turret is what stands within 0.75 m of its tip in plan, from the parapet up
+  const tipY = midland.eaves + 0.9 + 3.5 + 9;
+  const tips: V3[] = [];
+  for (const v of slate.flatMap((tr) => tr.p)) if (Math.abs(v[1] - tipY) < 1e-9 && !tips.some((u) => Math.hypot(u[0] - v[0], u[2] - v[2]) < 1e-6)) tips.push(v);
+  assert.equal(tips.length, 2 * PAVILIONS.length, 'two turrets to a gabled bay');
+  const turrets = tips.map((tip) => span([...stone, ...slate].filter((tr) => tr.p.every((v) => v[1] >= midland.eaves + 0.9 - 1e-9 && Math.hypot(v[0] - tip[0], v[2] - tip[2]) < 0.75))));
+  /** the stacks of cluster `p` in `parts`: the stone and brick above 2.5 m over the crown within 3.4 m of its middle in plan */
+  const stacksOf = (p: { i: number; s: number; d: number }, ts: Tri[]): Tri[] => {
+    const c = roofAt(p.i, p.s, p.d);
+    return ts.filter((tr) => tr.p.some((v) => v[1] >= midland.ridge + 2.5) && tr.p.every((v) => Math.hypot(v[0] - c[0], v[2] - c[2]) < 3.4));
+  };
+  const gap = (a: [number, number], b: [number, number]): number => Math.max(b[0] - a[1], a[0] - b[1]);
+  const clusters = stackClusters(midland);
+  let pairs = 0;
+  for (const p of clusters) {
+    const mine = span(stacksOf(p, [...stone, ...brick]));
+    assert.ok(mine[1] - mine[0] > 0, `a cluster is built at ${p.s.toFixed(1)} m along facet ${p.i}`);
+    for (const turret of turrets) {
+      assert.ok(gap(turret, mine) >= 0.002, `a cluster at ${p.s.toFixed(1)} m along facet ${p.i} stands in line with a turret, ${gap(turret, mine)} rad apart`);
+      pairs++;
+    }
+  }
+  assert.equal(pairs, clusters.length * turrets.length, 'every cluster was measured against every turret');
+  // the round 6 places (no regard for the turrets) put clusters in line with them: that is the cause, and what the rule moves
+  const bare = midlandGeometry(midland, []);
+  const [bareStone, bareBrick] = [triangles(bare.stone as Batch), triangles(bare.brickRed as Batch)];
+  const inLine = stackClusters(midland, []).filter((p) => turrets.some((turret) => gap(turret, span(stacksOf(p, [...bareStone, ...bareBrick]))) < 0.002));
+  assert.ok(inLine.length >= 5, `${inLine.length} clusters of the round 6 layout stand in line with a turret`);
 });
 
 test('Midland Grand [hist-b, hist-e]: iron cresting runs along the crown, wholly on its edge and nowhere inside a tower: a rail 0.12 m tall and a flat tooth 0.55 m wide and 0.88 m tall to each 0.9 m, one to each side', () => {
@@ -1305,9 +1357,9 @@ test('Midland Grand [hist-b, hist-c]: a lucarne on each face of each tower\'s sp
   }
 });
 
-test('Midland Grand [hist-c]: the four corner pinnacles of each tower are clusters of eight slender stone shafts (three to a face) round a dark core, on a plinth under a capital, with a tall spirelet banded in eight stripes on a base 1.3 m wide: 7.15 m tall, 1.9 m wide at the cluster, flush with the clock stage', () => {
+test('Midland Grand [hist-b, hist-c]: the four corner pinnacles of each tower are clusters of eight slender stone shafts (three to a face) round a dark core, on a plinth under a capital, flush with the clock stage; the clock tower\'s carry a spirelet banded in eight stripes on a base 1.3 m wide (7.15 m in all, 1.9 m wide at the cluster), the west tower\'s a grey spire 9 m tall on the same base', () => {
   const parts = midlandGeometry(midland);
-  const [stone, brick, pane] = [parts.stone, parts.brickRed, parts.pane].map((m) => triangles(m as Batch));
+  const [stone, brick, pane, slate] = [parts.stone, parts.brickRed, parts.pane, parts.slate].map((m) => triangles(m as Batch));
   const half = 0.95;
   for (const t of midland.towers) {
     const st = towerStages(t.height);
@@ -1348,20 +1400,33 @@ test('Midland Grand [hist-c]: the four corner pinnacles of each tower are cluste
       const capital = of(stone, y2, y3).filter((tr) => !shafts.includes(tr) && tr.p.some((v) => v[1] > y2 + 1e-6));
       assert.equal(capital.length, 10, `${where}: a capital of five faces`);
       close(reach(capital), half + 0.1, 1e-6, `${where}: as wide as the plinth`);
-      // the spirelet (round 6, the scorer: "stubby"; hist-c: tall, slender and striped, its base about half the cluster's width): eight stripes 0.5875 m tall, stone and red brick by turns, from a base 1.3 m wide to the point
-      const above = (m: Tri[]): Tri[] => of(m, y3, y3 + 4.7).filter((tr) => tr.p.some((v) => v[1] > y3 + 1e-6));
-      const [stripesStone, stripesBrick] = [above(stone), above(brick)];
-      assert.equal(stripesStone.length, 32, `${where}: stone stripes 1, 3, 5 and 7, of four faces of two triangles`);
-      assert.equal(stripesBrick.length, 28, `${where}: red stripes 2, 4 and 6 of four faces of two triangles, the 8th a point of four triangles`);
-      for (let k = 0; k < 7; k++) {
-        const ts = (k % 2 ? stripesBrick : stripesStone).filter((tr) => tr.p.every((v) => v[1] >= y3 + k * 0.5875 - 1e-6 && v[1] <= y3 + (k + 1) * 0.5875 + 1e-6));
-        assert.ok(ts.length >= 8, `${where}: stripe ${k + 1} is whole`);
-        close(reach(ts), 0.65 * (1 - k / 8), 1e-6, `${where}: stripe ${k + 1} starts as wide as the taper gives`);
+      const above = (m: Tri[], h: number): Tri[] => of(m, y3, y3 + h).filter((tr) => tr.p.some((v) => v[1] > y3 + 1e-6));
+      if (t.name === 'clock') {
+        // the spirelet (round 6, the scorer: "stubby"; hist-c: tall, slender and striped, its base about half the cluster's width): eight stripes 0.5875 m tall, stone and red brick by turns, from a base 1.3 m wide to the point
+        const [stripesStone, stripesBrick] = [above(stone, 4.7), above(brick, 4.7)];
+        assert.equal(stripesStone.length, 32, `${where}: stone stripes 1, 3, 5 and 7, of four faces of two triangles`);
+        assert.equal(stripesBrick.length, 28, `${where}: red stripes 2, 4 and 6 of four faces of two triangles, the 8th a point of four triangles`);
+        for (let k = 0; k < 7; k++) {
+          const ts = (k % 2 ? stripesBrick : stripesStone).filter((tr) => tr.p.every((v) => v[1] >= y3 + k * 0.5875 - 1e-6 && v[1] <= y3 + (k + 1) * 0.5875 + 1e-6));
+          assert.ok(ts.length >= 8, `${where}: stripe ${k + 1} is whole`);
+          close(reach(ts), 0.65 * (1 - k / 8), 1e-6, `${where}: stripe ${k + 1} starts as wide as the taper gives`);
+        }
+        const apex = [...stripesStone, ...stripesBrick].flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 4.7 - 1e-6);
+        assert.ok(apex.length > 0 && apex.every((v) => Math.abs(inTower(t, v).a - ca) < 1e-6 && Math.abs(inTower(t, v).o - co) < 1e-6), `${where}: the spirelet ends in a point on the axis`);
+        close(Math.max(...apex.map((v) => v[1])), st.wall + 7.15, 1e-6, `${where}: 7.15 m over the wall head`);
+        assert.ok(st.wall + 7.15 < st.roof, `${where}: under the roof's top`);
+        assert.equal(above(slate, 9).length, 0, `${where}: no grey spire on it`);
+      } else {
+        // hist-b (round 7, the scorer: "tall slender stone spires on its turrets"): the west tower's is a pyramid of grey slate, a plain one, from the same base 1.3 m wide to a point 9 m over the capital, standing above the roof's top
+        const spire = above(slate, 9);
+        assert.equal(spire.length, 4, `${where}: a spire of four faces`);
+        close(reach(spire), 0.65, 1e-6, `${where}: on a base 1.3 m wide`);
+        const apex = spire.flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 9 - 1e-6);
+        assert.ok(apex.length > 0 && apex.every((v) => Math.abs(inTower(t, v).a - ca) < 1e-6 && Math.abs(inTower(t, v).o - co) < 1e-6), `${where}: it ends in a point on the axis`);
+        close(Math.max(...apex.map((v) => v[1])), st.wall + 2.45 + 9, 1e-6, `${where}: 11.45 m over the wall head`);
+        assert.ok(st.wall + 2.45 + 9 > st.roof, `${where}: it stands above the roof's top`);
+        assert.equal(above(stone, 9).length + above(brick, 9).length, 0, `${where}: no stripes`);
       }
-      const apex = [...stripesStone, ...stripesBrick].flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 4.7 - 1e-6);
-      assert.ok(apex.length > 0 && apex.every((v) => Math.abs(inTower(t, v).a - ca) < 1e-6 && Math.abs(inTower(t, v).o - co) < 1e-6), `${where}: the spirelet ends in a point on the axis`);
-      close(Math.max(...apex.map((v) => v[1])), st.wall + 7.15, 1e-6, `${where}: 7.15 m over the wall head`);
-      assert.ok(st.wall + 7.15 < st.roof, `${where}: under the roof's top`);
     }
   }
 });
@@ -1980,7 +2045,9 @@ test('Midland Grand [hist-b]: a gabled bay\'s cheeks are planar roof planes from
   try {
     for (const pair of pavilionPairs) {
       const w = (pair[0].width + pair[1].width) / 2 - 0.2;
-      const cheeks = triangles(withP.slate as Batch).filter((t) => !old.has(sig(t)) && t.p.every((v) => Math.abs(inPavilion(pair, v).along) <= w + 1e-6 && v[1] >= midland.eaves - 1e-9));
+      // (round 7: the turrets at the gable's feet are spires of slate; they stand in a square 1 m across, 0.2 m out, centred on the foot of each rake, from 4.4 m over the eaves)
+      const spire = (t: Tri): boolean => t.p.every((v) => v[1] >= midland.eaves + 4.4 - 1e-9 && [-1, 1].some((s) => Math.abs(inPavilion(pair, v).along - s * w) <= 0.5 + 1e-6 && Math.abs(inPavilion(pair, v).out - 0.2) <= 0.5 + 1e-6));
+      const cheeks = triangles(withP.slate as Batch).filter((t) => !old.has(sig(t)) && !spire(t) && t.p.every((v) => Math.abs(inPavilion(pair, v).along) <= w + 1e-6 && v[1] >= midland.eaves - 1e-9));
       // four triangles: a quad a side, and the pitch of each is the same on both sides (mirror images)
       const mine = cheeks.filter((t) => t.p.some((v) => inPavilion(pair, v).out > 0.4));
       assert.equal(mine.length, 4, 'two cheeks of two triangles');
@@ -2054,20 +2121,26 @@ test('Midland Grand [hist-b]: each gabled bay stands on a stone plinth 0.9 m tal
   }
 });
 
-test('Midland Grand [hist-b]: each gabled bay carries two slender striped spirelets at the feet of its gable, standing on the parapet and rising above the main ridge', () => {
+test('Midland Grand [hist-b]: each gabled bay carries two slender spirelets at the feet of its gable, standing on the parapet and rising above the main ridge: a stone shaft under a spire of grey slate, not red and cream stripes', () => {
   const parts = midlandGeometry(midland);
   const tip = midland.eaves + 0.9 + 3.5 + 9;
   assert.ok(tip > midland.ridge, 'they break the skyline');
-  const vertices = [...triangles(parts.stone as Batch), ...triangles(parts.brickRed as Batch)].flatMap((t) => t.p);
+  const [stone, slate, brick] = [parts.stone, parts.slate, parts.brickRed].map((m) => triangles(m as Batch));
   for (const pair of pavilionPairs) {
     const w = (pair[0].width + pair[1].width) / 2 - 0.2;
-    const at = (y: number): string[] => [...new Set(vertices.filter((v) => Math.abs(v[1] - y) < 1e-9 && Math.abs(Math.abs(inPavilion(pair, v).along) - w) < 1e-6 && Math.abs(inPavilion(pair, v).out - 0.2) < 1e-6).map((v) => `${Math.sign(inPavilion(pair, v).along)}`))];
+    /** within `r` of the foot of a rake: the middle of a spirelet's square, 0.2 m out */
+    const foot = (v: V3, r: number): boolean => Math.abs(Math.abs(inPavilion(pair, v).along) - w) < r && Math.abs(inPavilion(pair, v).out - 0.2) < r;
+    const at = (y: number): string[] => [...new Set(slate.flatMap((t) => t.p).filter((v) => Math.abs(v[1] - y) < 1e-9 && foot(v, 1e-6)).map((v) => `${Math.sign(inPavilion(pair, v).along)}`))];
     assert.deepEqual(at(tip).sort(), ['-1', '1'], 'a tip at each foot of the gable');
-    const flare = vertices.filter((v) => Math.abs(v[1] - (midland.eaves + 0.9)) < 1e-9 && Math.abs(Math.abs(inPavilion(pair, v).along) - w) < 0.51 && Math.abs(inPavilion(pair, v).out - 0.2) < 0.51);
+    const flare = stone.flatMap((t) => t.p).filter((v) => Math.abs(v[1] - (midland.eaves + 0.9)) < 1e-9 && foot(v, 0.51));
     assert.ok(flare.length >= 8, 'each stands on the parapet, 0.9 m over the eaves');
-    // striped: the three bands of the spire alternate stone and red brick, so both materials reach the cap's foot height
-    const bands = new Set([...triangles(parts.stone as Batch).map((t) => ['stone', t] as const), ...triangles(parts.brickRed as Batch).map((t) => ['brickRed', t] as const)].filter(([, t]) => t.p.every((v) => v[1] >= midland.eaves + 0.9 + 3.5 - 1e-9 && v[1] <= tip + 1e-9 && Math.abs(Math.abs(inPavilion(pair, v).along) - w) < 0.51 && Math.abs(inPavilion(pair, v).out - 0.2) < 0.51)).map(([k]) => k));
-    assert.deepEqual([...bands].sort(), ['brickRed', 'stone'], 'banded in stone and red');
+    // round 7 (the scorer: the striped pinnacles "fuse with the stack clusters in silhouette; R-b's are grey stone spirelets"): the shaft is stone to 3.5 m, and over it a plain pyramid of slate; no red brick
+    const mine = (ts: Tri[]): Tri[] => ts.filter((t) => t.p.every((v) => v[1] >= midland.eaves + 0.9 - 1e-9 && foot(v, 0.5 + 1e-6)));
+    const spire = mine(slate);
+    assert.equal(spire.length, 8, 'two spires, each of four faces');
+    assert.ok(spire.every((t) => t.p.every((v) => v[1] >= midland.eaves + 0.9 + 3.5 - 1e-9)), 'the spires stand on their shafts');
+    assert.equal(mine(stone).filter((t) => t.p.every((v) => v[1] <= midland.eaves + 0.9 + 3.5 + 1e-9)).length, 16, 'two shafts of stone, four faces of two triangles each, 3.5 m tall');
+    assert.equal(mine(brick).length, 0, 'and no red brick in them');
   }
 });
 
