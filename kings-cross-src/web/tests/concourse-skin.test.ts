@@ -184,3 +184,25 @@ test('roof materials: the underside reads light, as the scene lights shine from 
   assert.equal(funnel.type, 'MeshLambertMaterial', 'the funnel is the same painted steel');
   assert.ok(funnel.color.r > 0.85 && lum(funnel.emissive) > 0.15 && lum(funnel.emissive) < lum(member.emissive), `the funnel's tubes stay white but keep a shaded side (glow ${lum(funnel.emissive).toFixed(2)})`);
 });
+
+test('roof edge: the glazed wall is blue-grey reflective glass in thin dark mullions, three posts to an edge and a rail across', () => {
+  const lum = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const wall = skin.getObjectByName('concourse-wall') as THREE.Mesh, bars = skin.getObjectByName('concourse-mullions') as THREE.Mesh;
+  const edges = wall.geometry.getAttribute('position').count / 4, p = bars.geometry.getAttribute('position');
+  assert.equal(p.count % 24, 0, 'every framing member is a box of 24 vertices');
+  let posts = 0, thin = 0, rails = 0;
+  for (let b = 0; b < p.count; b += 24) {
+    const lo = new THREE.Vector3(Infinity, Infinity, Infinity), hi = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    for (let i = b; i < b + 24; i++) { const v = new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i)); lo.min(v); hi.max(v); }
+    const size = hi.sub(lo);
+    if (size.y > 2) { posts++; if (Math.max(size.x, size.z) <= 0.13) thin++; } else rails++; // 0.13 m: not the 0.18 m posts of the picket fence it replaces
+  }
+  // R-c: fine verticals close together: a post at each rim node (one per edge, and one more for each open run of the rim) and two more along every edge
+  assert.ok(posts >= 3 * edges && posts <= 3 * edges + 8, `${posts} posts on ${edges} edges`);
+  assert.equal(thin, posts, 'every post is at most 0.13 m square');
+  assert.equal(rails, edges, 'one rail along each edge');
+  const glass = wall.material as THREE.MeshPhongMaterial, steel = bars.material as THREE.MeshLambertMaterial;
+  assert.ok(glass.transparent && glass.opacity >= 0.5 && glass.opacity <= 0.7, `the wall glass hides some of what is behind it (opacity ${glass.opacity})`);
+  assert.ok(glass.color.b > glass.color.r && lum(glass.color) < 0.5, 'the glass is blue-grey, not clear');
+  assert.ok(lum(steel.color) < 0.25 && lum(steel.emissive) < 0.05, `the mullions are dark steel (lit ${lum(steel.color).toFixed(2)}, glow ${lum(steel.emissive).toFixed(3)})`);
+});

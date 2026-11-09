@@ -38,6 +38,11 @@ mutations = [
     ('edge fascia omitted', '    soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],', '    if (!rimEdges) soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],'),
     ('edge fascia hangs below the wall top', 'export const FASCIA_BOTTOM = 0;', 'export const FASCIA_BOTTOM = -0.2;'),
     ('edge fascia leans off the outline', '[t[0], t[1] + SKIN_LIFT, t[2]], [s[0], s[1] + SKIN_LIFT, s[2]]],', '[t[0] + 0.5, t[1] + SKIN_LIFT, t[2]], [s[0] + 0.5, s[1] + SKIN_LIFT, s[2]]],'),
+    ('mullion posts as thick as a picket fence', 'export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;', 'export const MULLION = { post: 0.18, bar: 0.07, transom: 0.55 } as const;'),
+    ('no intermediate posts along an edge', 'for (const k of [1 / 3, 2 / 3]) {', 'for (const k of [] as number[]) {'),
+    ('no transom rail', '    mullions.box([(p[0] + q[0]) / 2, (MULLION.transom', '    if (!rimEdges) mullions.box([(p[0] + q[0]) / 2, (MULLION.transom'),
+    ('wall glass nearly clear', "opacity: 0.56, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall'", "opacity: 0.2, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall'"),
+    ('white mullions', 'color: 0x59606a, emissive: 0x23282e', 'color: 0xf7f9fb, emissive: 0xbcc1c7'),
     ('edge fascia faces inward', 'facing: [nx * (out ? 1 : -1), 0, nz * (out ? 1 : -1)]', 'facing: [-nx * (out ? 1 : -1), 0, -nz * (out ? 1 : -1)]'),
 ]
 

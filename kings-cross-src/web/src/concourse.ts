@@ -24,7 +24,7 @@ import * as THREE from 'three';
 import { concourseHeight, pointInPolygon, shedToWorld, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
-import { Batch, material, rgb, rng, texture } from './materials.ts';
+import { Batch, rgb, rng, texture } from './materials.ts';
 import type { Rgb, V2, V3 } from './materials.ts';
 import { WESTERN_RANGE } from './shed.ts';
 
@@ -73,6 +73,12 @@ export const ROOFLIGHT_AZIMUTHS = [18, 30, 42, 54, 66, 78] as const;
  * roof's 138 m extent (Arup fig.6) is exactly that of its cells and stays as the evidence pack pins it.
  */
 export const FASCIA_BOTTOM = 0;
+/**
+ * The glazed wall's framing, metres (ASSUMED from R-c: fine dark verticals at close spacing under the edge, with a rail across;
+ * the white posts every 4.5 m this once had read as a picket fence). A post of `post` at each rim node, two of `bar` along
+ * every edge, and a transom rail of `bar` across them at `transom` of the wall's height.
+ */
+export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;
 
 export interface Diagrid {
   /** node positions in world x, z (metres) with the radius from the column */
@@ -495,6 +501,10 @@ interface RoofMaterials {
   funnel: THREE.Material;
   /** the paving: charcoal stone in large slabs (R-ab, R-b: lit 64 to 87 a channel, against 136 for the shared pale paving) */
   floor: THREE.Material;
+  /** the glazed wall round the rim: blue-grey reflective glass that hides more of what is behind it than the shared 42 % pane (R-c) */
+  wallGlass: THREE.Material;
+  /** the wall's thin mullions and transom: dark steel (R-c) */
+  mullion: THREE.Material;
 }
 let roofMaterials: RoofMaterials | null = null;
 /** The slab texture's average colour (materials.ts) and the tint that darkens it to the references' charcoal (ASSUMED; tuned so the lit floor means 64 to 87 a channel, R-ab, R-b). */
@@ -519,6 +529,8 @@ function roofMaterial(): RoofMaterials {
     funnel: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, emissive: 0x7d8288, name: 'concourse-funnel' }),
     // The shared 'concourseFloor' is a pale grey; the references show a dark charcoal stone, mean about (64..87) a channel against
     // the model's 136. The same slab texture, darkened; where there is no canvas (Node) the colour is the product of the two.
+    wallGlass: new THREE.MeshPhongMaterial({ color: 0x7f9bb0, specular: 0xdfe9f2, shininess: 110, transparent: true, opacity: 0.56, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall' }),
+    mullion: new THREE.MeshLambertMaterial({ color: 0x59606a, emissive: 0x23282e, name: 'concourse-mullion' }),
     floor: new THREE.MeshLambertMaterial({ map: slabs, color: slabs ? FLOOR_TINT : new THREE.Color(FLOOR_AVERAGE).multiply(new THREE.Color(FLOOR_TINT)), name: 'concourse-floor' }),
   };
   return roofMaterials;
@@ -958,8 +970,14 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       if (post.has(i)) continue;
       post.add(i);
       const n = at(i);
-      mullions.box([n[0], n[1] / 2, n[2]], [0.18, n[1], 0.18]);
+      mullions.box([n[0], n[1] / 2, n[2]], [MULLION.post, n[1], MULLION.post]);
     }
+    for (const k of [1 / 3, 2 / 3]) {
+      const y = p[1] + k * (q[1] - p[1]);
+      mullions.box([p[0] + k * (q[0] - p[0]), y / 2, p[2] + k * (q[2] - p[2])], [MULLION.bar, y, MULLION.bar]);
+    }
+    const rise = MULLION.transom * (q[1] - p[1]), run = Math.hypot(len, rise);
+    mullions.box([(p[0] + q[0]) / 2, (MULLION.transom * (p[1] + q[1])) / 2, (p[2] + q[2]) / 2], [run, MULLION.bar, MULLION.bar], { rotZ: Math.asin(rise / run), rotY: Math.atan2(-(q[2] - p[2]), q[0] - p[0]) });
   }
 
   const group = new THREE.Group();
@@ -983,8 +1001,8 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       group.add(mesh);
     }
   }
-  add(wall, material('glass'), 'concourse-wall', 3);
-  add(mullions, mat.member, 'concourse-mullions');
+  add(wall, mat.wallGlass, 'concourse-wall', 3);
+  add(mullions, mat.mullion, 'concourse-mullions');
   add(floor, mat.floor, 'concourse-floor');
   group.add(buildFitOut(shed, worldToShed(shed, centre).v));
   // Open branching stalk, batched into one mesh at the retained position.
