@@ -9,7 +9,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { greatNorthernHotelPlan, landmarkFootprints, landmarkPlans, landmarkSeats } from '../../core/landmarks.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, worldToShed } from '../../core/station.ts';
-import { CLOCK_TOWER_EYE_Y, CLOCK_TOWER_STANDOFF, CONCOURSE_WEST_STANDOFF, ELEMENT_VIEWS, cityBuildings, stationCameras, stationWorld } from '../evidence.mjs';
+import { CLOCK_TOWER_EYE_Y, CLOCK_TOWER_STANDOFF, CONCOURSE_WEST_STANDOFF, ELEMENT_VIEWS, HUD_FREE_ROWS, cityBuildings, stationCameras, stationWorld } from '../evidence.mjs';
 import { buildStationScene, clearanceFaults, lensFor, stationData, viewClearance } from '../station-scene.mjs';
 
 const { data } = stationData();
@@ -56,6 +56,9 @@ function nearShare(camera, { occluders, ground }, within, n = 11) {
 
 const ndcOf = (lens, x, y, z) => new THREE.Vector3(x, y, z).project(lens);
 const inFrame = (p, margin = 1) => Math.abs(p.x) <= margin && Math.abs(p.y) <= margin && p.z < 1;
+/** The row (of HUD_FREE_ROWS.height) and column (of 1280) a projected point lands on. */
+const rowOf = p => (1 - p.y) / 2 * HUD_FREE_ROWS.height;
+const columnOf = p => (1 + p.x) / 2 * 1280;
 
 test('midland-clock-tower frames the whole tower, from the eaves to the spire tip, from the stand it always had', () => {
   const midland = plans.midland, clock = midland.towers.find(t => t.name === 'clock'), seat = landmarkSeats(plans, terrain).midland.y;
@@ -68,8 +71,10 @@ test('midland-clock-tower frames the whole tower, from the eaves to the spire ti
   const tip = ndc(0, tipY), base = ndc(0, eavesY), clockFace = ndc(0, seat + clock.height * .68);
   for (const [label, p] of [['spire tip', tip], ['eaves line', base], ['clock face', clockFace]]) assert.ok(inFrame(p, .95), `${label} is out of frame or against its edge: ${p.x.toFixed(3)}, ${p.y.toFixed(3)}`);
   for (const along of [-half, half]) for (const y of [eavesY, seat + clock.height * .73]) assert.ok(inFrame(ndc(along, y, half), .95), `a corner of the tower at ${y.toFixed(1)} m is out of frame`);
-  assert.ok(tip.y - base.y > 1.5, `the tower fills ${((tip.y - base.y) / 2 * 100).toFixed(0)}% of the frame height, not a speck`);
-  assert.ok(base.y > -.82, 'the eaves line clears the page\'s status line, which covers the bottom 9% of every capture');
+  assert.ok(tip.y - base.y > 1.25, `the tower fills ${((tip.y - base.y) / 2 * 100).toFixed(0)}% of the frame height, not a speck`);
+  // The page draws over the frame's top-left (the station switcher) and bottom (the status lines): the spire tip and the eaves line are between them.
+  assert.ok(rowOf(tip) >= HUD_FREE_ROWS.top, `the spire tip is on row ${rowOf(tip).toFixed(0)}, under the station switcher (rows 48-125)`);
+  assert.ok(rowOf(base) <= HUD_FREE_ROWS.bottom, `the eaves line is on row ${rowOf(base).toFixed(0)}, under the status lines (from row 714)`);
   assert.match(camera.source, /spire tip/);
 });
 
@@ -91,18 +96,23 @@ test('gnh-from-square, concourse-exterior-square and concourse-exterior-west sta
 
 test('gnh-from-square shows the whole crescent with nothing on the lens, where the rubric\'s stand and the first wave-0 stand did not', () => {
   const camera = cameras['gnh-from-square'], lens = lensFor(camera), hotel = greatNorthernHotelPlan(data);
-  const eaves = hotel.outline.map(([x, z]) => ndcOf(lens, x, hotel.eaves, z));
-  assert.ok(eaves.every(p => inFrame(p)), 'every outline vertex of the hotel, at the eaves, is in frame');
+  // The whole hotel, roofline and chimneys (the ridge and 3 m above it) down to the ground, between the page's overlays and inside the frame.
+  const points = hotel.outline.flatMap(([x, z]) => [0, hotel.eaves, hotel.ridge + 3].map(y => ({ y, p: ndcOf(lens, x, y, z) })));
+  for (const { y, p } of points) assert.ok(p.z < 1 && columnOf(p) > 20 && columnOf(p) < 1260, `a hotel vertex at ${y.toFixed(1)} m is out of the frame's width: column ${columnOf(p).toFixed(0)}`);
+  const roofline = Math.min(...points.filter(({ y }) => y === hotel.ridge + 3).map(({ p }) => rowOf(p))), foot = Math.max(...points.filter(({ y }) => y === 0).map(({ p }) => rowOf(p)));
+  assert.ok(roofline >= HUD_FREE_ROWS.top, `the roofline is on row ${roofline.toFixed(0)}, under the station switcher (rows 48-125)`);
+  assert.ok(foot <= HUD_FREE_ROWS.bottom, `the foot of the hotel is on row ${foot.toFixed(0)}, under the status lines (from row 714)`);
+  assert.ok(foot - roofline > HUD_FREE_ROWS.height / 2, `the hotel fills ${((foot - roofline) / HUD_FREE_ROWS.height * 100).toFixed(0)}% of the frame height at its nearest corner, not a speck`);
   const main = hotel.faces.find(face => face.kind === 'main').chain.edges, mid = main[Math.floor(main.length / 2)].mid;
-  const top = ndcOf(lens, mid[0], hotel.eaves, mid[1]), foot = ndcOf(lens, mid[0], 0, mid[1]);
-  assert.ok(Math.abs(foot.x) < .01, 'aimed at the middle of the main face');
-  assert.ok(top.y - foot.y > .5, `the hotel is ${((top.y - foot.y) / 2 * 100).toFixed(0)}% of the frame height at the middle of its main face, not a speck`);
+  assert.ok(Math.abs(ndcOf(lens, mid[0], 0, mid[1]).x) < .01, 'aimed along the middle of the main face');
   const crowding = nearShare(camera, scene, 15);
   assert.ok(crowding < .05, `${(crowding * 100).toFixed(0)}% of the frame is within 15 m`);
-  // The same measure sees the faults: the first wave-0 stand (45 m, 20 degrees east of south) had a wall and trees across a quarter of the frame.
+  // The same measure sees the faults: the first wave-0 camera (45 m, 20 degrees east of south, a 50 degree lens aimed at the face's mid height)
+  // had the round building's wall and the pavement trees across a quarter of the frame.
   const s = shedLayout(data), south = worldToShed(s, hotel.outline.reduce((a, b) => b[1] > a[1] ? b : a)), swing = 70 * Math.PI / 180;
   const [x, z] = shedToWorld(s, south.u + 45 * Math.cos(swing), south.v - 45 * Math.sin(swing));
-  assert.ok(nearShare({ ...camera, pos: [x, terrain.heightAt(x, z) + 1.7, z] }, scene, 15) > .2, 'the first wave-0 stand is crowded by the round building');
+  const first = { pos: [x, terrain.heightAt(x, z) + 1.7, z], target: [mid[0], hotel.eaves / 2, mid[1]] };
+  assert.ok(nearShare(first, scene, 15) > .2, 'the first wave-0 camera is crowded by the round building');
 });
 
 test('the exterior roof views take the whole concourse roof into the frame', () => {
