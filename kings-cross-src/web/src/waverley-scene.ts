@@ -6,8 +6,8 @@
 // ground at bridges and the station. Like the KX preview, rail heads use a schematic common y=0.
 // Flatten ground under the mapped station/platforms and within 8 m of open rail, blending over
 // 40 m to the physical context. Those widths, 0.915 m platform height, rail/sleeper dimensions,
-// and fallback building heights are ASSUMED, not measured Waverley dimensions. Roof profiles
-// are flat footprint proxies; no unsupported bays, roof pitches, pillars, clocks or interiors.
+// and fallback building heights are ASSUMED, not measured Waverley dimensions. The station's
+// ridge-and-furrow type is sourced; its numeric profile is ASSUMED (waverley-roof.ts).
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as WaverleyData} from '../../core/waverley-data.ts';
@@ -15,7 +15,9 @@ import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import {createTerrain, terrainFromFunction, buildTerrainMesh, overMesh} from '../../core/terrain.ts';
 import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
-import type {V3} from './materials.ts';
+import type {V3,Rgb,MaterialName} from './materials.ts';
+import {ridgeRoofBatches} from './waverley-roof.ts';
+import {buildWaverleyLandmarks,WAVERLEY_LANDMARK_OMIT_IDS} from './waverley-landmarks.ts';
 // Separate lazy assets: neither OSM nor Scottish terrain enters the London entry chunk.
 // Awaiting the module resolves both before the synchronous builder becomes available.
 const [{default:dataFile},{default:terrainFile}]=await Promise.all([
@@ -100,14 +102,16 @@ export function waverleyGround(data:WaverleyData,raw:Terrain):Terrain {
  // 8 m refines only the flattening transition; it adds no resolution claim to the 16 m DTM.
  return terrainFromFunction(height,raw.extent,8,{q:.001,groundY:WAVERLEY_LEVELS.ground,datumAod:raw.datumAod});
 }
-function walls(b:Batch,outer:readonly Pt[],holes:readonly (readonly Pt[])[],bottom:(x:number,z:number)=>number,top:(x:number,z:number)=>number):void {
+function walls(b:Batch,outer:readonly Pt[],holes:readonly (readonly Pt[])[],bottom:(x:number,z:number)=>number,top:(x:number,z:number)=>number,color?:Rgb):void {
  for(const [rIndex,input] of [outer,...holes].entries()){
  const ring=cleanRing(input);let signed=0;for(let i=0;i<ring.length;i++){const p=ring[i],q=ring[(i+1)%ring.length];signed+=p[0]*q[1]-q[0]*p[1];}
- if((signed>0)!==(rIndex===0))ring.reverse();
+ // In x/east,z/south, a negative outer ring faces outward with bottom-bottom-top-top
+ // quads. Positive rings were inward-facing, culling whole exterior faces on slopes.
+ if((signed>0)===(rIndex===0))ring.reverse();
  for(let i=0;i<ring.length;i++){
   const a=ring[i],p=ring[(i+1)%ring.length],length=Math.hypot(p[0]-a[0],p[1]-a[1]);
   const y0=bottom(...a),y1=bottom(...p),h0=top(...a),h1=top(...p);
-  b.quadUV([a[0],y0,a[1]],[p[0],y1,p[1]],[p[0],h1,p[1]],[a[0],h0,a[1]],[[0,0],[length,0],[length,h1-y1],[0,h0-y0]]);
+  b.poly([[a[0],y0,a[1]],[p[0],y1,p[1]],[p[0],h1,p[1]],[a[0],h0,a[1]]],[[0,0],[length,0],[length,h1-y1],[0,h0-y0]],{color});
  }
  }
 }
@@ -120,12 +124,20 @@ function strip(batch:Batch,a:Pt,b:Pt,halfWidth:number,y:number):void {
 /** Lazy import contract: const {buildWaverleyScene}=await import('./waverley-scene.ts'); const w=buildWaverleyScene(); scene.add(w.group); */
 export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  const data=options.data??unpackWaverleyScene(dataFile);
- const field=waverleyGround(data,options.terrain??createTerrain(terrainFile as unknown as TerrainFile));
+ const contextTerrain=options.terrain??createTerrain(terrainFile as unknown as TerrainFile);
+ const field=waverleyGround(data,contextTerrain);
  const group=new THREE.Group();group.name='edinburgh-waverley';
  const parts={terrain:new THREE.Group(),track:new THREE.Group(),platforms:new THREE.Group(),roof:new THREE.Group(),buildings:new THREE.Group()};
  for(const [key,value]of Object.entries(parts)){value.name=`waverley-${key}`;group.add(value);}
  parts.roof.visible=options.roofVisible!==false;parts.buildings.visible=options.cityVisible!==false;
  const geometries=new Set<THREE.BufferGeometry>(),ownedMaterials=new Set<THREE.Material>();
+ // Own variants of the KX palette; never mutate the cached shared materials. Shades
+ // and small per-block variations are ASSUMED, not facade-survey classifications.
+ const local=(key:MaterialName,tint:number,vertexColors=false):THREE.MeshLambertMaterial=>{
+  const m=material(key).clone() as THREE.MeshLambertMaterial;m.color.multiply(new THREE.Color(tint));m.vertexColors=vertexColors;ownedMaterials.add(m);return m;
+ };
+ const sandstone=local('stone',0xe4d4b3,true),slate=local('slate',0xada99f);
+ const glazing=local('shedGlass',0xf2f4ef);glazing.opacity=.78;glazing.forceSinglePass=true;
  const stats={triangles:0,drawCalls:0,platforms:data.platforms.length,buildings:data.buildings.length,roofs:data.roofs.length,sleepers:0};
  const add=(parent:THREE.Group,b:Batch,mat:THREE.Material,name:string):void=>{
   if(!b.triangles)return;const g=b.build();geometries.add(g);const mesh=new THREE.Mesh(g,mat);mesh.name=name;parent.add(mesh);stats.triangles+=b.triangles;stats.drawCalls++;
@@ -133,7 +145,11 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  // This source extent is in whole 16 m blocks, not necessarily whole KX 64 m blocks.
  const tm=buildTerrainMesh(field,{maxLeaf:16,tolerance:()=>.08});
  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(tm.positions,3));tg.setIndex(new THREE.BufferAttribute(tm.indices,1));tg.computeVertexNormals();
- const terrainMesh=new THREE.Mesh(tg,terrainMaterial('ground'));terrainMesh.name='waverley-ground';parts.terrain.add(terrainMesh);geometries.add(tg);stats.triangles+=tm.triangles;stats.drawCalls++;
+ const groundMaterial=terrainMaterial('ground').clone() as THREE.MeshLambertMaterial;
+ // Neutral warm ground separates sandstone/slate/glazing without inventing land-use
+ // polygons; real roads/parks are not classified by this context-only DTM.
+ groundMaterial.color.setHex(0x757568);ownedMaterials.add(groundMaterial);
+ const terrainMesh=new THREE.Mesh(tg,groundMaterial);terrainMesh.name='waverley-ground';parts.terrain.add(terrainMesh);geometries.add(tg);stats.triangles+=tm.triangles;stats.drawCalls++;
  const ground=overMesh(field,tm);
  const ballast=new Batch(),rails=new Batch(),lines:number[]=[],sleepers:V3[]=[];
  for(const [ax,az,bx,bz]of waverleyTrackSegments(data)){
@@ -154,17 +170,35 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  const platformTops=new Batch(),platformSides=new Batch();
  for(const p of data.platforms){fillSurface(platformTops,p.path,[],()=>WAVERLEY_LEVELS.platform);walls(platformSides,p.path,[],()=>WAVERLEY_LEVELS.ground,()=>WAVERLEY_LEVELS.platform);}
  add(parts.platforms,platformTops,material('asphalt'),'waverley-platform-surfaces');add(parts.platforms,platformSides,material('stone'),'waverley-platform-faces');
- const roof=new Batch();
- for(const r of data.roofs){const base=r.id==='relation/240040'?WAVERLEY_LEVELS.ground:ground.rangeUnder(r.outer,16).mean;fillSurface(roof,r.outer,r.holes,()=>base+r.height);}
- add(parts.roof,roof,material('roofGlass'),'waverley-mapped-roofs');
- const buildings=new Batch(),buildingTops=new Batch();
+ const roof=new Batch(),roofRunners=new Batch();
+ for(const r of data.roofs){
+  if(r.id==='relation/240040'){
+   const shaped=ridgeRoofBatches(r.outer,r.holes);
+   // Batch.append is intentionally unnecessary: copy faces while preserving their
+   // physical normals/UVs. Both pieces still make one draw per material overall.
+   for(const [from,to]of [[shaped.glass,roof],[shaped.ribs,roofRunners]]){
+    const base=to.count;to.positions.push(...from.positions);to.normals.push(...from.normals);to.uvs.push(...from.uvs);to.indices.push(...from.indices.map(i=>i+base));
+   }
+  }else{const base=ground.rangeUnder(r.outer,16).mean;fillSurface(roof,r.outer,r.holes,()=>base+r.height);}
+ }
+ add(parts.roof,roof,glazing,'waverley-mapped-roofs');
+ add(parts.roof,roofRunners,material('ribPaint'),'waverley-roof-runners');
+ const buildings=new Batch({colored:true}),buildingTops=new Batch();
+ const omitted=new Set(options.data?[]:WAVERLEY_LANDMARK_OMIT_IDS);
  for(const b of data.buildings){
-  const base=ground.rangeUnder(b.outer,32).min,top=base+b.height;
-  walls(buildings,b.outer,b.holes,(x,z)=>b.minHeight?base+b.minHeight:Math.min(top-.1,ground.heightAt(x,z)),()=>top);
+  if(omitted.has(b.id))continue;
+  const base=ground.rangeUnder(b.outer,4).min,top=base+b.height;
+  let hash=0;for(const c of b.id)hash=(hash*31+c.charCodeAt(0))>>>0;
+  const tone=.86+(hash%17)*.01,color:Rgb=[tone,tone*.985,tone*.95];
+  // One foundation plane, ASSUMED 0.15m rendering sink. Elevated OSM parts keep their real
+  // min_height void; terrain never pulls individual wall corners into shards.
+  walls(buildings,b.outer,b.holes,()=>b.minHeight?base+b.minHeight:base-.15,()=>top,color);
   fillSurface(buildingTops,b.outer,b.holes,()=>top);
  }
- add(parts.buildings,buildings,material('stone'),'waverley-building-walls');add(parts.buildings,buildingTops,material('slate'),'waverley-building-tops');
+ add(parts.buildings,buildings,sandstone,'waverley-building-walls');add(parts.buildings,buildingTops,slate,'waverley-building-tops');
+ const landmarks=options.data?undefined:buildWaverleyLandmarks(ground,contextTerrain);
+ if(landmarks){parts.buildings.add(landmarks.group);stats.triangles+=landmarks.stats.triangles;stats.drawCalls+=landmarks.stats.drawCalls;}
  if(options.lighting!==false){const hemisphere=new THREE.HemisphereLight(0xd8e6f5,0x7a7566,2.1),sun=new THREE.DirectionalLight(0xfff0d9,2.4);sun.position.set(-300,600,250);group.add(hemisphere,sun);}
  let disposed=false;
- return {group,parts,origin:{...data.origin},attribution:`${data.attribution}; ${terrainFile.attribution}`,terrain:ground,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();for(const m of ownedMaterials)m.dispose();group.clear();}};
+ return {group,parts,origin:{...data.origin},attribution:`${data.attribution}; ${terrainFile.attribution}`,terrain:ground,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();landmarks?.dispose();for(const g of geometries)g.dispose();for(const m of ownedMaterials)m.dispose();group.clear();}};
 }
