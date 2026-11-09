@@ -14,6 +14,7 @@
 import { centroid, inZone, KINGS_CROSS } from './zones.ts';
 import type { Pt } from './geo.ts';
 import type { Building, KxData, Platform } from './osm.ts';
+import { buildGraph } from './graph.ts';
 
 export const FT = 0.3048;
 export const SHED_SPAN_WIDTH = 105 * FT; // clear width of each arch, 32.0 m
@@ -35,6 +36,63 @@ export const KINGS_CROSS_PLATFORM_LENGTHS_M: Readonly<Record<string, number>> = 
   '0': 305, '1': 304, '2': 285, '3': 288, '4': 290, '5': 278,
   '6': 289, '7': 289, '8': 291, '9': 176, '10': 176,
 });
+
+/** Reviewed discrepancy, not a new OSM coordinate. P9 way 111571259 is only 162.48 m
+ * end-to-end; its north cap was last positioned in changesets 105135332 / 106011877
+ * (2021 construction, Maxar / Esri imagery). No split continuation is mapped.
+ * https://www.openstreetmap.org/way/111571259/history
+ * Network Rail's Sectional Appendix above gives 176 m. Retain the mapped south end
+ * and track endpoint; reconstruct the north cap from that published rail distance.
+ * ASSUMPTION: untagged terminal 822146067 locates the buffer (as the berth builder
+ * already assumes). The inferred cap is not a surveyed ramp or buffer position. */
+export const PLATFORM_9_OUTLINE_BASIS = Object.freeze({
+  osmId: 111571259, bufferNode: 822146067, lengthM: KINGS_CROSS_PLATFORM_LENGTHS_M['9']!,
+  source: 'Network Rail LNE (NCS) Sectional Appendix September 2026, PDF p.110: P9 176 m; north end inferred along OSM rail from terminal 822146067',
+});
+
+/** Drawing correction only: source polygons, anchors, train lengths and stops stay
+ * untouched. Extend the two existing face tangents to a cap perpendicular to the
+ * rail at the published distance. Never extrapolate rail or choose at a junction. */
+export function platformDrawingOutline(p: Platform, data: Partial<Pick<KxData, 'nodes' | 'rails'>>): Pt[] {
+  const basis = PLATFORM_9_OUTLINE_BASIS;
+  if (p.id !== basis.osmId || p.ref !== '9' || !isSurfacePlatform(p) || !data.nodes || !data.rails || p.pts.length < 4) return p.pts;
+  const graph = buildGraph({ nodes: data.nodes, rails: data.rails });
+  let node: number = basis.bufferNode, previous = -1, left = basis.lengthM;
+  let end: Pt | undefined, direction: Pt | undefined;
+  const seen = new Set<number>();
+  while (!seen.has(node)) {
+    seen.add(node);
+    const edges = (graph.adj.get(node) ?? []).filter(e => e.a !== previous && e.b !== previous);
+    if (edges.length !== 1 || edges[0]!.tunnel) return p.pts;
+    const edge = edges[0]!, next = edge.a === node ? edge.b : edge.a;
+    const a = graph.pos.get(node)!, b = graph.pos.get(next)!;
+    if (edge.length <= 0) return p.pts;
+    if (left <= edge.length) {
+      direction = [(b[0] - a[0]) / edge.length, (b[1] - a[1]) / edge.length];
+      end = [a[0] + direction[0] * left, a[1] + direction[1] * left];
+      break;
+    }
+    left -= edge.length; previous = node; node = next;
+  }
+  if (!end || !direction || direction[1] >= 0) return p.pts;
+  const dir = direction, target = dot(end, dir), n = p.pts.length;
+  // The short north-facing cap, independent of ring winding or starting vertex.
+  const cap = p.pts.map((a, i) => ({ i, a, b: p.pts[(i + 1) % n]! }))
+    .filter(e => len(sub(e.a, e.b)) < 10 && Math.abs(dot(sub(e.a, e.b), dir)) < 1)
+    .sort((a, b) => dot(sub(b.a, a.a), dir))[0];
+  if (!cap || target <= Math.max(dot(cap.a, dir), dot(cap.b, dir))) return p.pts;
+  const pts = p.pts.slice();
+  for (const [i, neighbour] of [[cap.i, (cap.i + n - 1) % n], [(cap.i + 1) % n, (cap.i + 2) % n]]) {
+    const a = p.pts[i!]!, v = sub(a, p.pts[neighbour!]!), advance = dot(v, dir);
+    if (advance <= 0) return p.pts;
+    const t = (target - dot(a, dir)) / advance;
+    pts[i!] = [a[0] + v[0] * t, a[1] + v[1] * t];
+  }
+  // Keep both original cap vertices: P8 shares the eastern one and its edge.
+  // Dropping it would merge a shared seam and an exposed extension into one edge.
+  return p.pts.flatMap((point, i) => i === cap.i
+    ? [point, pts[i]!, pts[(i + 1) % n]!] : [point]);
+}
 
 const dot = (a: Pt, b: Pt): number => a[0] * b[0] + a[1] * b[1];
 const sub = (a: Pt, b: Pt): Pt => [a[0] - b[0], a[1] - b[1]];

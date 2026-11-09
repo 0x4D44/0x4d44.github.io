@@ -16,6 +16,8 @@ import {
   platformHeading,
   platformReport,
   platformFormationLimits,
+  platformDrawingOutline,
+  PLATFORM_9_OUTLINE_BASIS,
   platformSouthEnd,
   pointInPolygon,
   polygonArea,
@@ -79,6 +81,46 @@ test('station: formation limits fall back to polygon length only without a publi
   const limits = platformFormationLimits(data, clearance, {});
   assert.equal(limits.get('9'), length - clearance);
   assert.equal(limits.has('10'), false, 'no measured or published length stays unknown');
+});
+
+test('station: P9 north cap uses the published 176 m along rail and preserves every mapped vertex and all other platforms', () => {
+  // NR LNE (NCS) Sectional Appendix September 2026, PDF p.110; public OSM
+  // track nodes from terminal 822146067 to the unbranched platform approach.
+  const source = stationPlatforms(data).get('9')!, original = JSON.stringify(data);
+  const pts = platformDrawingOutline(source, data);
+  assert.equal(PLATFORM_9_OUTLINE_BASIS.lengthM, 176);
+  assert.match(PLATFORM_9_OUTLINE_BASIS.source, /inferred/);
+  assert.equal(pts.length, source.pts.length + 2);
+  for (const point of source.pts) assert.ok(pts.includes(point), 'retain original cap vertices and shared P8 seam');
+  const nodes = new Map(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const chain = [822146067, 1270404737, 2275818533, 12873025962, 1256318218, 2275818588];
+  let along = 0;
+  for (let i = 1; i < chain.length; i++) {
+    const a = nodes.get(chain[i - 1]!)!, b = nodes.get(chain[i]!)!;
+    along += Math.hypot(b[0] - a[0], b[1] - a[1]);
+  }
+  const a = nodes.get(chain.at(-1)!)!, b = nodes.get(8755636217)!;
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]), dir: Pt = [(b[0] - a[0]) / length, (b[1] - a[1]) / length];
+  const end: Pt = [a[0] + (176 - along) * dir[0], a[1] + (176 - along) * dir[1]];
+  const cap = pts.filter(point => !source.pts.includes(point));
+  assert.equal(cap.length, 2);
+  for (const point of cap) assert.ok(Math.abs((point[0] - end[0]) * dir[0] + (point[1] - end[1]) * dir[1]) < 1e-9);
+  for (const p of data.platforms.filter(p => p !== source)) assert.equal(platformDrawingOutline(p, data), p.pts);
+  assert.equal(JSON.stringify(data), original, 'never rewrite OSM polygons, graph nodes or buffer stops');
+});
+
+test('station: P9 end reconstruction requires an unambiguous complete surface track, and tolerates either polygon winding', () => {
+  const p = stationPlatforms(data).get('9')!, corrected = platformDrawingOutline(p, data);
+  const points = (pts: Pt[]) => pts.map(point => point.map(v => v.toFixed(6)).join(',')).sort();
+  for (const ring of [p.pts.slice(3).concat(p.pts.slice(0, 3)), p.pts.slice().reverse()]) {
+    assert.deepEqual(points(platformDrawingOutline({ ...p, pts: ring }, data)), points(corrected));
+  }
+  assert.equal(platformDrawingOutline(p, {}), p.pts);
+  assert.equal(platformDrawingOutline({ ...p, tunnel: true }, data), p.pts);
+  assert.equal(platformDrawingOutline(p, { ...data, nodes: data.nodes.filter(([id]) => id !== 822146067) }), p.pts);
+  const branch = { ...data, nodes: [...data.nodes, [-1, 0, -280] as [number, number, number]],
+    rails: [...data.rails, { id: -1, nodes: [12873025962, -1], service: 'main' as const, tunnel: false, bridge: false, layer: 0 }] };
+  assert.equal(platformDrawingOutline(p, branch), p.pts, 'a branch is not permission to invent the platform route');
 });
 
 test('station: xRangeAtZ gives the crossings of the outline, or null off the polygon', () => {

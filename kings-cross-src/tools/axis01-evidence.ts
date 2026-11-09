@@ -82,7 +82,9 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     return { ref, osmId: p.id, drawnTopBounds: box(top), drawnTopSamples, drawnLengthM, osmLongAxisM: round(osm.length), publishedOperationalLengthM: published,
       drawnMinusOsmM: round(drawnLengthM - osm.length), drawnMinusPublishedM: published === null ? null : round(drawnLengthM - published),
       withinPublishedTolerance: published === null ? null : Math.abs(drawnLengthM - published) <= TOLERANCES.platformM,
-      withinOsmTolerance: Math.abs(drawnLengthM - osm.length) <= TOLERANCES.platformM };
+      withinOsmTolerance: Math.abs(drawnLengthM - osm.length) <= TOLERANCES.platformM,
+      // A documented drawing inference (core/station.ts platformDrawingOutline) explains an OSM difference; it is not a survey.
+      outlineInference: (built.userData.outlineInferences as { source: string }[] | undefined)?.[0] ?? null };
   });
   const segments = railSegments(data);
   const near = [...splitByZone(segments.main, layout).near, ...splitByZone(segments.siding, layout).near];
@@ -149,7 +151,9 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
   const station = new THREE.Group(); station.add(platformGroup, buildShed(layout));
   const throat = new THREE.Group(); if (railMesh) throat.add(railMesh.clone()); throat.add(portalGroup);
   const flags = [
-    ...platforms.filter(p => !p.withinOsmTolerance).map(p => ({ code: 'platform-osm-tolerance', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m` })),
+    ...platforms.filter(p => !p.withinOsmTolerance).map(p => p.outlineInference
+      ? { code: 'platform-outline-inferred', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m by a documented inference, not a survey: ${p.outlineInference.source}` }
+      : { code: 'platform-osm-tolerance', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m` }),
     ...platforms.filter(p => p.withinPublishedTolerance === false).map(p => ({ code: 'platform-published-tolerance', detail: `Platform ${p.ref}: drawn minus published operational ${p.drawnMinusPublishedM} m exceeds 1 m; operational length and polygon extent differ in definition` })),
     ...platforms.filter(p => p.withinPublishedTolerance === null).map(p => ({ code: 'platform-published-missing', detail: `Platform ${p.ref}: no published operational length` })),
     ...(gaugeSamples.length < 3 ? [{ code: 'gauge-samples-missing', detail: `Only ${gaugeSamples.length} clear-track gauge samples; at least 3 required` }] : []),

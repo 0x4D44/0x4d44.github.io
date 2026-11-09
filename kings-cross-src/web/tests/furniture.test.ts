@@ -269,7 +269,7 @@ test('edge strips: laid only on long runs of track-facing edges, never on a shed
   for (const p of surface) {
     const edges = edgesOf(p.pts);
     for (const chain of stripChains(edges)) {
-      if (kx.get(p.ref ?? '') === p) perRef.set(p.ref ?? '?', (perRef.get(p.ref ?? '?') ?? 0) + 1); // the King's Cross platforms only: St Pancras has refs 1-12 too
+      if (kx.get(p.ref ?? '')?.id === p.id) perRef.set(p.ref ?? '?', (perRef.get(p.ref ?? '?') ?? 0) + 1); // the King's Cross platforms only: St Pancras has refs 1-12 too
       const total = chain.edges.reduce((s, k) => s + (edges[k] as { length: number }).length, 0);
       assert.ok(total >= FIGURES.minTrackRun, `platform ${p.ref}: a strip run of only ${total} m`);
       for (const k of chain.edges) {
@@ -283,9 +283,9 @@ test('edge strips: laid only on long runs of track-facing edges, never on a shed
     }
   }
   // regression table, from the OSM data: every King's Cross platform has a strip on its track side(s), and
-  // only there. Platform 8's west face (a shed wall), platform 9's east face and most of platform 10's west
-  // face have no rail beside them, so only one run on 8 and 9 and a short one on 10's west side
-  const expected: Record<string, number> = { '0': 1, '1': 1, '2': 1, '3': 1, '4': 1, '5': 1, '6': 1, '7': 1, '8': 1, '9': 1, '10': 2 };
+  // only there. P8's west face is a shed wall. P9's reconstructed north extension has
+  // an exposed east face beside rail 8, so it now has a second, short strip run.
+  const expected: Record<string, number> = { '0': 1, '1': 1, '2': 1, '3': 1, '4': 1, '5': 1, '6': 1, '7': 1, '8': 1, '9': 2, '10': 2 };
   for (const ref of PLATFORM_REFS) assert.equal(perRef.get(ref), expected[ref], `strip runs on platform ${ref}`);
   const p8 = surface.find((p) => p.ref === '8' && kx.get('8') === p) as { pts: Pt[] };
   for (const chain of stripChains(edgesOf(p8.pts))) for (const v of chain.outer) assert.ok(worldToShed(layout, v).u > 3, `platform 8 has a strip at u = ${worldToShed(layout, v).u}, on its wall side`);

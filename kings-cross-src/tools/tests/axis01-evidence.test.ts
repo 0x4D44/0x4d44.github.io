@@ -101,3 +101,15 @@ test('compares the drawn concourse roof extent with Arup and flags a missing sta
   assert.ok(synthetic.flags.some(f => f.code === 'concourse-missing'));
   assert.match(renderAxis01Markdown(synthetic), /not measured \(no OSM station footprint\)\. FLAG/);
 });
+
+test('names the documented Platform 9 outline inference instead of an unexplained OSM mismatch', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { shedLayout } = await import('../../core/station.ts');
+  const real: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  const report = createAxis01Report(real, shedLayout(real));
+  const p9 = report.platforms.find(p => p.ref === '9')!;
+  assert.ok(p9.outlineInference !== null && Math.abs(p9.drawnMinusPublishedM!) <= 1);
+  assert.ok(report.flags.some(f => f.code === 'platform-outline-inferred' && f.detail.includes('Platform 9') && f.detail.includes('Sectional Appendix')));
+  assert.ok(!report.flags.some(f => f.code === 'platform-osm-tolerance' && f.detail.includes('Platform 9:')));
+  assert.ok(report.platforms.filter(p => p.ref !== '9').every(p => p.outlineInference === null));
+});

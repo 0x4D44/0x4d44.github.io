@@ -41,7 +41,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
-import { isSurfacePlatform, longAxis, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, stationPlatforms, worldToShed } from '../../core/station.ts';
+import { isSurfacePlatform, longAxis, platformDrawingOutline, PLATFORM_9_OUTLINE_BASIS, PLATFORM_REFS, pointInPolygon, SHED_PLATFORM_REFS, SHED_SPAN_WIDTH, stationPlatforms, worldToShed } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material, rgb, rng, TEXTURES } from './materials.ts';
 import type { Rgb, V3 } from './materials.ts';
@@ -263,8 +263,11 @@ export interface PlatformEdge {
 }
 
 /** Surface platforms with a usable outline: the same set core/scene.ts platformPrisms draws. */
-export function surfacePlatforms(data: Pick<KxData, 'platforms'>): { id: number; ref?: string; pts: Pt[] }[] {
-  return data.platforms.filter((p) => p.pts.length >= 3 && isSurfacePlatform(p));
+export function surfacePlatforms(data: FurnitureData): { id: number; ref?: string; pts: Pt[] }[] {
+  return data.platforms.filter((p) => p.pts.length >= 3 && isSurfacePlatform(p)).map(p => {
+    const pts = platformDrawingOutline(p, data);
+    return pts === p.pts ? p : { ...p, pts };
+  });
 }
 
 function isShared(a: Pt, b: Pt, length: number, inward: Pt, others: readonly Pt[][]): boolean {
@@ -503,6 +506,8 @@ export function buildPlatforms(data: FurnitureData, layout: Pick<ShedLayout, 'or
   const group = new THREE.Group();
   group.name = 'platforms';
   const polys = surfacePlatforms(data);
+  group.userData.outlineInferences = polys.filter(p => p.pts !== data.platforms.find(q => q.id === p.id)?.pts)
+    .map(p => ({ platform: p.ref, ...PLATFORM_9_OUTLINE_BASIS }));
   const outlines = polys.map((p) => p.pts);
   const tracks = trackSegments(data);
   const tops = newBatch();
@@ -780,7 +785,8 @@ function canopyFor(f: Frame): CanopyPlan | null {
  * Pure: no three.js objects, so the tests can hold every rule to it.
  */
 export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): FurniturePlan {
-  const outlines = surfacePlatforms(data).map((p) => p.pts);
+  // Reconstructing the platform end does not locate a longer canopy or new furniture.
+  const outlines = surfacePlatforms({ platforms: data.platforms }).map((p) => p.pts);
   const tracks = trackSegments(data);
   const plan: FurniturePlan = { lamps: [], benches: [], helpPoints: [], screens: [], canopies: [] };
   const kx = stationPlatforms(data);
