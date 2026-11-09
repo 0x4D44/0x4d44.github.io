@@ -3566,6 +3566,13 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
             assert.ok(Math.abs(v.x) >= limit - 0.02, `${here}: a ${label} vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, the flank starts at ${limit.toFixed(3)}`);
           }
         }
+        // and the rim's top edge is laid ON the stop (the window's a rim's width under it): no vertex of the rim stands nearer the middle than the stop's 0.8 of the widest half-width, less
+        // the 2 cm the lift moves it. (Added after the full pass of the mutation driver: with the window's reserve gone its top edge stands on the stop and the rim 2.5 cm over it, up the roof's
+        // shoulder under the colour mask's band, and nothing here noticed.)
+        for (const v of rim) {
+          assert.ok(Math.abs(v.x) >= 0.8 * widest(along(v) + NOSE_RECESS) - 0.02, `${here}: a rim vertex at ${along(v).toFixed(3)} m, ${v.y.toFixed(3)} m up stands ${Math.abs(v.x).toFixed(3)} m from the middle, over the stop`);
+        }
+        assert.equal(FLANK_FRACTION, 0.8, 'the stop is at 0.8 of the widest half-width');
         if (cluster.rim) {
           // the rim edges the window where the stop bites too: over the front of the top edge the rim's highest vertex stands at least a rim's width over the window's (less what the lifts
           // move them, a few millimetres)
