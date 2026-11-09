@@ -80,6 +80,12 @@ M = [
  ('frozen input hash unchecked', C, '!== entry.sha256)', '!== entry.sha256 && false)'),
  ('frozen input accepts traversal', C, "path.basename(entry.file) !== entry.file", 'false'),
  ('CDP response lost', C, 'p.resolve(m.result)', 'p.resolve({})'),
+ ('OSM review accepts a signal facing the other way', R, 'sameDirection: dot > 0.9,', 'sameDirection: true,'),
+ ('OSM review ignores which berth a signal ref names', R, '(s.ref === null || s.refBerth === head.berth));', 'true);'),
+ ('OSM review offers a node already bound to another berth', R, '&& s.main && !claimed.has(s.id) &&', '&& s.main &&'),
+ ('OSM review is given no bound nodes', R, 'overlay.signals, boundOsm) : null;', 'overlay.signals) : null;'),
+ ('OSM review is not written into the position reason', R, 'if (osmReview) positionReview.reason = `${positionReview.reason}. OSM review: ${osmReview.reason}`;', ''),
+ ('leave-one-out scores omitted from the markdown', R, '    ...looLines(report.loo),\n', ''),
 ]
 
 def run(root, target=None, cli=False):

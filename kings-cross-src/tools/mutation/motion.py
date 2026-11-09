@@ -40,6 +40,7 @@ M = [
     ('cab change moves the wrong end', 't.pos = point(nose.edge, nose.toT);', 't.pos = oldPos;'),
     ('early departure authority dropped', 'if (t.route.length) t.pendingTarget = a;', 'if (t.route.length) delete t.pendingTarget;'),
     ('partner berth reverses early', 'if (t.target.platform !== undefined && !sameStop)', 'if (t.target.platform !== undefined)'),
+    ('partners are not limited to platform berths', 'if (x?.platform === undefined || y?.platform === undefined) return false;', 'if (!x || !y) return false;'),
     ('steps teleport to their target', 'if (a) requestTarget(t, a);', 'if (a) { t.pos = locate(a)!; requestTarget(t, a); }'),
     ('unmapped flag dropped', "t.unmapped = event.to ?? '';", "t.unmapped = '';"),
     ('collision authority ignored', 'if (clear < available)', 'if (false && clear < available)'),
@@ -110,15 +111,27 @@ A = [
 MOTION_TEST = 'core/tests/motion.test.ts'
 AUDIT_TEST = 'tools/tests/motion-audit.test.mjs'
 
-cases = [('core/motion.ts', label, old, new) for label, old, new in M] + [('tools/motion-audit.ts', label, old, new) for label, old, new in A]
+# Mutations that need two edits at once. Two guards decide that a step joins the standing body, "the partner
+# berths share a stop" and "the standing body is within 5 cm of the destination"; each alone makes the other
+# redundant, so removing either one alone changes nothing a test can see. Removing both is the observable fault.
+COMPOUND = [
+    ('platform berths at different stops are treated as partners', [
+        ('return !!p && !!q && p.edge === q.edge && Math.abs(p.t - q.t) < EPS;', 'return !!p && !!q;'),
+        ('Math.hypot(old.pos.point[0] - destinationPos.point[0], old.pos.point[1] - destinationPos.point[1]) < 0.05);', 'true);'),
+    ]),
+]
+
+cases = ([('core/motion.ts', label, [(old, new)]) for label, old, new in M]
+         + [('core/motion.ts', label, pairs) for label, pairs in COMPOUND]
+         + [('tools/motion-audit.ts', label, [(old, new)]) for label, old, new in A])
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, 'motion') as work:
     suite = kxmut.Suite(work, test_timeout_ms=15000, timeout=30)
     test_names = suite.baseline([MOTION_TEST]).passed | suite.baseline([AUDIT_TEST]).passed
-    for file, label, old, new in cases:
+    for file, label, replacements in cases:
         test = AUDIT_TEST if file.startswith('tools/') else MOTION_TEST
         try:
-            with kxmut.mutated(work / file, [(old, new)]):
+            with kxmut.mutated(work / file, replacements):
                 verdict, _run = suite.judge([test], strict=True)
         except kxmut.StalePattern as error:
             tally.stale(label, error)

@@ -234,6 +234,6 @@ test('berths CLI: CORPUS is optional prefix corroboration for the geographic rev
   const hash = report.sourceHashes.find((source: { role: string }) => source.role === 'corpus');
   assert.equal(hash?.sha256, createHash('sha256').update(await readFile(corpusPath)).digest('hex'));
   // Synthetic SMART has no row tying STANOX 99001 to berth 2999, so the K prefix stays unproven.
-  assert.deepEqual(report.geographicEvidence.summary.corroboratedPrefixes, {});
+  assert.deepEqual(report.geographicEvidence?.summary.corroboratedPrefixes, {});
   assert.equal(report.candidateUnmapped.find((u: { berth: string }) => u.berth === '2999')?.reason, 'no-evidence');
 });

@@ -130,9 +130,11 @@ test('berth geography: another signal prefix identifies berths only when CORPUS 
   assert.equal(r.map.unmapped.find((u) => u.berth === '2300')?.reason, 'outside-network');
   assert.match(r.map.unmapped.find((u) => u.berth === '2300')!.detail, /ref "K2300".*CORPUS TESTSIG.*SIG K 512.*berth 0512/);
   assert.equal(r.summary.prefixedSignals, 1); assert.equal(r.summary.yaSignals, 0);
-  // Same CORPUS name without the SMART tie, another area's tie, or a YA-named location: no identity.
+  // The berth may be either end of the SMART row.
+  assert.equal(run([{ ...tied[0]!, FROMBERTH: '0510', TOBERTH: '0512' }]).map.unmapped.find((u) => u.berth === '2300')?.reason, 'outside-network');
+  // Same CORPUS name without the SMART tie, another area's or another STANOX's tie, or a YA-named location: no identity.
   for (const [smart, rows] of [[[{ ...tied[0]!, FROMBERTH: '0511', TOBERTH: '0513' }], corpus], [[{ ...tied[0]!, TD: 'XX' }], corpus],
-    [tied, [{ ...corpus[0]!, NLCDESC: 'INVENTED SIG YA 512' }]]] as const) {
+    [[{ ...tied[0]!, STANOX: '99002' }], corpus], [tied, [{ ...corpus[0]!, NLCDESC: 'INVENTED SIG YA 512' }]]] as const) {
     const n = run([...smart], [...rows]);
     assert.equal(n.map.unmapped.find((u) => u.berth === '2300')?.reason, 'no-evidence'); assert.equal(n.summary.prefixedSignals, 0);
   }
@@ -171,4 +173,20 @@ test('berth geography: no direction, an overhang past 25 m of track or a conflic
   const conflict = review(map(), overhang(-110, 'forward', 'YA 2302'));
   assert.deepEqual(conflict.map.anchors, []);
   assert.equal(conflict.map.unmapped.find((u) => u.berth === '2302')?.reason, 'conflict');
+});
+
+test('berth geography: the boundary overhang allowance is 25 m of OSM track', () => {
+  const near = review(map(), overhang(-124, 'forward')).map.anchors.find((a) => a.berth === '2300');
+  assert.ok(near, '24 m of track is inside the allowance');
+  assert.ok(Math.abs(near.errorM - 29) < .2, 'error is 5 m plus the 24 m overhang');
+  assert.deepEqual(review(map(), overhang(-126, 'forward')).map.anchors, [], '26 m of track is outside it');
+});
+
+test('berth geography: a rail way that reaches a graph node which is not an end of the graph anchors nothing', () => {
+  const through: KxData = { ...data, nodes: [[1, 0, 0], [2, 0, -100], [3, 50, -100]],
+    rails: [...data.rails, { id: 2, nodes: [2, 3], service: 'main', tunnel: false, bridge: false, layer: 0 }] };
+  const r = reviewGeographicEvidence(through, map(), { elements: overhang(-110, 'forward') }, { source: 'synthetic-overpass.json' });
+  assert.deepEqual(r.map.anchors, []);
+  assert.equal(r.map.unmapped.find((u) => u.berth === '2300')?.reason, 'no-evidence');
+  assert.match(r.map.unmapped.find((u) => u.berth === '2300')!.detail, /no graph end within 25 m/);
 });

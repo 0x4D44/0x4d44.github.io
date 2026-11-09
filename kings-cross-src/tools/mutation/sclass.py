@@ -18,7 +18,7 @@ if '.scratch' not in scratch.parts:
 scratch.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
-    ('inverse proceed polarity ignored', 'for (const proceedValue of [0, 1] as const)', 'for (const proceedValue of [1] as const)'),
+    ('inverse proceed polarity ignored', 'for (const proceedValue of [0, 1] as const) {\n      const trainCycles', 'for (const proceedValue of [1] as const) {\n      const trainCycles'),
     ('constant initial bits hidden', 'if (from !== to) transitions.push', 'if (from !== to && (from !== null || to !== 0)) transitions.push'),
     ('lookup whole byte used instead of bit', 'bitValue(byte, h!.bit) === h!.proceedValue', 'byte === h!.proceedValue'),
     ('refresh bytes reversed', 'offset * 2, offset * 2 + 2', '(width - 1 - offset) * 2, (width - offset) * 2'),
@@ -33,15 +33,15 @@ MUTATIONS = [
     ('precision threshold reduced', 'const MIN_PRECISION = 0.8;', 'const MIN_PRECISION = 0.6;'),
     ('precision exact threshold rejected', 'evidence.precision >= MIN_PRECISION', 'evidence.precision > MIN_PRECISION'),
     ('time split replaced by row-count split', ': startMs + (endMs - startMs) / 2 };', ': (rows[Math.floor(rows.length / 2)]?.t ?? startMs) };'),
-    ('fold guard bands bypassed', 'if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold)) {', 'if (false) {'),
+    ('fold guard bands bypassed', 'if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold)) {\n      steps.excludedAtEdges', 'if (false) {\n      steps.excludedAtEdges'),
     ('training upper fold edge inclusive', 'end: bounds.splitMs, inclusiveEnd: false', 'end: bounds.splitMs, inclusiveEnd: true'),
     ('clearing may occur outside approach window', 'cycle.clear >= passage.t - windows.beforeMs && ', ''),
     ('danger may return before passage', 'cycle.danger >= passage.t - (windows.earlyMs ?? 0) && ', ''),
     ('danger may return outside window', 'cycle.danger <= passage.t + windows.afterMs', 'true'),
     ('one cycle supports repeated passages', '!used.has(i) &&', 'true &&'),
-    ('four-star descriptions count as trains', 'if (e.descr === NOT_A_TRAIN) {', 'if (false) {'),
+    ('four-star descriptions count as trains', "if (e.kind !== 'step') continue;\n    if (e.descr === NOT_A_TRAIN) {", "if (e.kind !== 'step') continue;\n    if (false) {"),
     ('duplicate step filter disabled', 'if (seenSteps.has(key)) {', 'if (false) {'),
-    ('incomplete step filter disabled', "if (!e.descr || !e.from || !e.to || e.from === e.to) {", 'if (false) {'),
+    ('incomplete step filter disabled', "steps.ignoredNotATrain += 1; continue; }\n    if (!e.descr || !e.from || !e.to || e.from === e.to) {", "steps.ignoredNotATrain += 1; continue; }\n    if (false) {"),
     ('training bit ambiguity ignored', 'other.berth === hypothesis.berth && other.kind === hypothesis.kind && other.to === hypothesis.to || ', ''),
     ('training berth ambiguity ignored', '(other.address === hypothesis.address && other.bit === hypothesis.bit)', 'false'),
     ('held-out data chooses among training bits', 'other !== hypothesis &&\n      (other.berth', 'other !== hypothesis && qualifies(other.heldOut) && qualifies(hypothesis.heldOut) &&\n      (other.berth'),
@@ -79,6 +79,22 @@ MUTATIONS = [
     ('revalidation admits duplicate steps', 'if (seenSteps.has(key)) continue;', 'if (false) continue;'),
     ('revalidation admits incomplete steps', 'if (!e.descr || !e.from || !e.to || e.from === e.to) continue;', 'if (false) continue;'),
     ('revalidation admits steps on held out fold edges', 'if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold)) continue;', 'if (false) continue;'),
+    # The leave-one-recording-out analysis repeats the step filters and the polarity loop of the halves analysis.
+    ('leave-one-out inverse proceed polarity ignored', 'for (const proceedValue of [0, 1] as const) {\n        const cycles = train.flatMap', 'for (const proceedValue of [1] as const) {\n        const cycles = train.flatMap'),
+    ('leave-one-out fold guard bands bypassed', 'if (!inFold(row.t - windows.beforeMs, fold) || !inFold(row.t + (windows.routeAfterMs ?? windows.afterMs), fold)) { steps.excludedAtEdges', 'if (false) { steps.excludedAtEdges'),
+    ('leave-one-out four-star descriptions count as trains', "if (e.kind !== 'step') continue;\n      if (e.descr === NOT_A_TRAIN) {", "if (e.kind !== 'step') continue;\n      if (false) {"),
+    ('leave-one-out incomplete step filter disabled', "steps.ignoredNotATrain += 1; continue; }\n      if (!e.descr || !e.from || !e.to || e.from === e.to) {", "steps.ignoredNotATrain += 1; continue; }\n      if (false) {"),
+    ('leave-one-out duplicate step filter disabled', 'if (seen.has(key)) { steps.duplicates += 1; continue; }', 'if (false) { steps.duplicates += 1; continue; }'),
+    # Leave-one-recording-out admission, session splitting and restart checkpoints.
+    ('every held-out session passes its own recall and precision', 'return (e.trials < MIN_SUPPORT || (e.recall ?? 0) >= MIN_PRECISION) &&\n    (e.support + e.unmatchedCycles < MIN_SUPPORT || (e.precision ?? 0) >= MIN_PRECISION);', 'return true;'),
+    ('held-out session recall is not required', 'return (e.trials < MIN_SUPPORT || (e.recall ?? 0) >= MIN_PRECISION) &&\n    (e.support', 'return (e.support'),
+    ('held-out session precision is not required', '(e.support + e.unmatchedCycles < MIN_SUPPORT || (e.precision ?? 0) >= MIN_PRECISION);', 'true;'),
+    ('fold selection forced true', 'selected: candidates(pool.filter(o => o !== s)).get(c.key)?.unique === true,', 'selected: true,'),
+    ('nested admission sees the session it scores', 'const inner = admit(everyone.filter(s => s !== r));', 'const inner = admit(everyone);'),
+    ('restart continuity forced false', 'const continuous = lastReceipt !== undefined && row.t - lastReceipt <= SESSION_GAP_MS;', 'const continuous = false;'),
+    ('restart continuity forced true', 'const continuous = lastReceipt !== undefined && row.t - lastReceipt <= SESSION_GAP_MS;', 'const continuous = true;'),
+    ('malformed snapshot wipes byte history', 'if (picture === undefined) result.state = {}; else result.rejectedMessages += 1;', '{ result.state = {}; if (picture !== undefined) result.rejectedMessages += 1; }'),
+    ('recording sessions ignore receipt gaps', 'if (previous === undefined || row.t - previous > gapMs) sessions.push([]);', 'if (previous === undefined) sessions.push([]);'),
 ]
 
 def run(work):

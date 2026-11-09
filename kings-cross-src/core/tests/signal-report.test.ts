@@ -219,6 +219,7 @@ test('OSM head review locates an inferred head only through a unique same-way, s
   const inferred = r.heads.find(h => h.inferred)!;
   assert.equal(inferred.osmReview?.outcome, 'no-compatible-osm-main-signal');
   assert.match(inferred.positionReview.reason, /OSM review: Position left uncertain/);
+  assert.match(inferred.positionReview.reason, /already bound to another berth/, 'OSM nodes that already stand for a berth cannot locate an inferred head');
   assert.equal(inferred.positionReview.status, 'uncertain');
   assert.match(signalReportMarkdown(r), /## Decoded heads with an uncertain position[\s\S]*\| -\d+ \| 9903 \| td-anchor \| no-compatible-osm-main-signal/);
 });

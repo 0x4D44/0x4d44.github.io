@@ -35,6 +35,16 @@ MUTATIONS = [
     ('in-envelope coordinate classified as outside', [("status = 'not-north-outside';", "status = 'outside-network';")]),
     ('source node inventory lost', [('status, signals: matching, detail', 'status, signals: [], detail')]),
     ('unmatched berths reported as outside', [("let status: GeographicDecision['status'] = 'no-matching-ref';", "let status: GeographicDecision['status'] = 'outside-network';")]),
+    ('boundary overhang direction flipped', [("inward: (step === 1) === (direction === 'forward')", "inward: (step === 1) !== (direction === 'forward')")]),
+    ('boundary anchor faces the wrong way at the graph end', [('const forward = inward ? edge.a === node : edge.b === node;', 'const forward = inward ? edge.b === node : edge.a === node;')]),
+    ('boundary overhang allowance widened to 50 m', [('const OVERHANG_LIMIT_M = 25;', 'const OVERHANG_LIMIT_M = 50;')]),
+    ('boundary overhang allowance narrowed to 15 m', [('const OVERHANG_LIMIT_M = 25;', 'const OVERHANG_LIMIT_M = 15;')]),
+    ('boundary end need not be an end of the graph', [('if ((g.adj.get(way.nodes[j]!) ?? []).length === 1) found.push(', 'if (true) found.push(')]),
+    ('CORPUS signal location need not be tied to a SMART row', [("const tied = smart.some((r) => text(r, 'TD') === area && text(r, 'STANOX') === stanox && (text(r, 'FROMBERTH') === berth || text(r, 'TOBERTH') === berth));", 'const tied = true;')]),
+    ('CORPUS tie ignores the SMART area', [("text(r, 'TD') === area && text(r, 'STANOX') === stanox", "text(r, 'STANOX') === stanox")]),
+    ('CORPUS tie ignores the STANOX', [("text(r, 'TD') === area && text(r, 'STANOX') === stanox &&", "text(r, 'TD') === area &&")]),
+    ('CORPUS tie ignores which berth the row names', [("(text(r, 'FROMBERTH') === berth || text(r, 'TOBERTH') === berth));", 'true);')]),
+    ('CORPUS tie reads only the from berth', [("(text(r, 'FROMBERTH') === berth || text(r, 'TOBERTH') === berth));", "text(r, 'FROMBERTH') === berth);")]),
 ]
 
 def run(work):

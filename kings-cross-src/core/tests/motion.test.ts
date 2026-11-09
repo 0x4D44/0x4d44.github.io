@@ -969,8 +969,9 @@ test('a feed observation just ahead of the frame clock cannot overbrighten a fad
 test('motion: a step into a platform whose partner berth holds a standing train joins that body instead of queueing behind it', () => {
   const m = createMotion(graph, anchors);
   m.apply(step('A', 'P', 'FRONT'), 0);
-  for (let i = 0; i < 8000 && !(m.trains()[0]!.state === 'held' && m.trains()[0]!.distanceM > 0); i++) m.advance(0.1);
-  const front = m.trains()[0]!;
+  // one(m) asserts the lone body, so a train that left the scene fails by assertion, not by reading undefined.
+  for (let i = 0; i < 8000 && !(one(m).state === 'held' && one(m).distanceM > 0); i++) m.advance(0.1);
+  const front = one(m);
   assert.equal(front.state, 'held');
   m.apply(step('P', 'P2', 'FRONT'), 0);                 // 1N86 1006 -> B006: same physical stop, lastBerth becomes the alias
   m.apply(step('A', 'B', 'REAR'), 0); m.advance(5);     // 5S99 approaching
@@ -993,4 +994,19 @@ test('motion: platform partner berths at different stops still hold two trains',
   assert.equal(m.trains().length, 2);
   m.advance(30);
   assert.equal(m.trains().length, 2);
+});
+
+// Only platform berths are partners. Two signal berths on one spot are two berths: a step into the second
+// must not adopt the body standing in the first, or a following train would vanish into the one ahead.
+test('motion: signal berths on the same spot are not partners, so a step into one does not adopt the standing train', () => {
+  const a = { ...anchors, anchors: [...anchors.anchors, anchor('S1', 2000), anchor('S2', 2000)] };
+  const m = createMotion(graph, a);
+  m.apply(interpose('S1', 'FRONT'), 0);
+  m.apply(step('A', 'B', 'REAR'), 0);
+  m.advance(5);
+  m.apply(step('B', 'S2', 'REAR'), 0);
+  m.advance(120);
+  const trains = m.trains();
+  assert.deepEqual(trains.map((t) => t.description).sort(), ['FRONT', 'REAR']);
+  assert.equal(m.diagnostics().filter((i: { kind: string }) => i.kind === 'merged').length, 0);
 });

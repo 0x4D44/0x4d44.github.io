@@ -52,6 +52,13 @@ MUTATIONS = [
     ('failed daily candidate published anyway', 'if (decision?.publish && candidate)', 'if (candidate)'),
     ('events outside closed UTC filename accepted', "if (rows.some(row => new Date(row.t).toISOString().slice(0, 10).replaceAll('-', '') !== day))", 'if (false)'),
     ('on demand dispatch bypassed', "if (process.argv[2] === '--relearn')", 'if (false)'),
+    ('relearn validation is always last-recording', "return sessions >= 3 ? 'leave-one-recording-out' : 'last-recording';", "return 'last-recording';"),
+    ('relearn session count skips the outage split', 'n + splitRecordingSessions(rows.filter(row => row.e.area === area)).length, 0);', 'n + (rows.some(row => row.e.area === area) ? 1 : 0), 0);'),
+    ('relearn session count includes other areas', 'splitRecordingSessions(rows.filter(row => row.e.area === area)).length', 'splitRecordingSessions(rows).length'),
+    ('relearn ignores the chosen validation scheme', 'candidate = analyseSclassRecordings(recordings, anchors, { validation });', 'candidate = analyseSclassRecordings(recordings, anchors);'),
+    ('published relearn table drops the leave-one-out scores', 'folds: candidate.folds, loo: looOf(candidate),', 'folds: candidate.folds, loo: null,'),
+    ('CLI table drops the leave-one-out scores', 'folds: analysis.folds, loo: looOf(analysis),', 'folds: analysis.folds, loo: null,'),
+    ('CLI report omits the leave-one-out section', '    ...looMarkdown(analysis),\n', ''),
 ]
 
 

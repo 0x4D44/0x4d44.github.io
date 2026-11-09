@@ -72,6 +72,29 @@ test('CLI writes reproducible last-recording and baseline reports without raw ev
   assert.match(invoke(['--validation', 'leave-one-recording-out']).stderr, /at least three nonempty recording sessions/);
 });
 
+test('CLI leave-one-recording-out writes the nested scores to the table and the report, and halves write none', async t => {
+  const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(path.join(scratch, 'sclass-loo-cli-test-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const anchors = path.join(dir, 'anchors.json');
+  await writeFile(anchors, JSON.stringify({ area: 'Y9', sources: ['synthetic'], anchors: [], unmapped: [] }));
+  const recordings = [];
+  for (let i = 0; i < 3; i++) {
+    const file = path.join(dir, `recording-${i}.ndjson`); recordings.push(file);
+    await writeFile(file, [0, 100000].map(at => JSON.stringify({ t: at + i * 200000, e: { kind: 'sclass', area: 'Y9', msgType: 'SF', address: '10', data: '00' } })).join('\n'));
+  }
+  const invoke = extra => spawnSync(process.execPath, [path.join(root, 'kings-cross-src/tools/sclass.ts'),
+    ...recordings.flatMap(file => ['--recording', file]), '--anchors', anchors, '--out', dir, ...extra], { encoding: 'utf8', timeout: 30000 });
+  const loo = invoke(['--validation', 'leave-one-recording-out']); assert.equal(loo.status, 0, loo.stderr);
+  const table = JSON.parse(await readFile(path.join(dir, 'sclass-table.json'), 'utf8'));
+  assert.equal(table.loo?.scheme, 'leave-one-recording-out');
+  assert.equal(table.loo?.nested.length, 3);
+  assert.match(await readFile(path.join(dir, 'sclass-report.md'), 'utf8'), /## Leave-one-recording-out held-out scores[\s\S]*\| 2 \| /);
+  const halves = invoke([]); assert.equal(halves.status, 0, halves.stderr);
+  assert.equal(JSON.parse(await readFile(path.join(dir, 'sclass-table.json'), 'utf8')).loo, null);
+  assert.doesNotMatch(await readFile(path.join(dir, 'sclass-report.md'), 'utf8'), /Leave-one-recording-out held-out scores/);
+});
+
 const analysis = hypotheses => ({ area: 'Y9', hypotheses });
 test('publication accepts equal precision with retained mappings and additional decoded heads', () => {
   const current = analysis([hypothesis('proceed', '9901')]);
@@ -171,12 +194,12 @@ const assets = {
     side: 'left', sideSource: 'assumed-left', berth: '9901', review: 'osm-ref-match' }] },
   track: { nodes: [], ways: [], rails: [], platforms: [], tracks: [], buildings: [] },
 };
-async function dailyFixture() {
+async function dailyFixture(days = [1, 2]) {
   const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
   const dir = await mkdtemp(path.join(scratch, 'sclass-relearn-test-'));
   await mkdir(path.join(dir, 'recordings'));
   await writeFile(path.join(dir, 'anchors.json'), JSON.stringify({ area: 'Y9', sources: ['synthetic'], anchors: [], unmapped: [] }));
-  for (const day of [1, 2]) {
+  for (const day of days) {
     const start = Date.UTC(2025, 0, day);
     const rows = [{ t: start, e: { kind: 'sclass', area: 'Y9', msgType: 'SF', address: '10', data: '00' } },
       { t: start + 2_200_000, e: { kind: 'marker', area: 'Y9' } }];
@@ -186,7 +209,7 @@ async function dailyFixture() {
       { t: start + t + 100, e: { kind: 'sclass', area: 'Y9', msgType: 'SF', address: '10', data: '00' } });
     await writeFile(path.join(dir, 'recordings', `td-Y9-2025010${day}.ndjson`), rows.map(row => JSON.stringify(row)).join('\n'));
   }
-  return { dir, options: { dataDir: dir, now: () => Date.UTC(2025, 0, 3, 0, 1), assets } };
+  return { dir, options: { dataDir: dir, now: () => Date.UTC(2025, 0, days.at(-1) + 1, 0, 1), assets } };
 }
 
 test('daily relearn publishes atomically with dated backups history and common-day evidence', async () => {
@@ -231,6 +254,19 @@ test('daily relearn publishes atomically with dated backups history and common-d
   assert.equal(finalHistory.length, 3);
   assert.equal(finalHistory[2].published, false);
   assert.equal(finalHistory[2].bits, 1);
+});
+
+test('daily relearn over three completed days validates leave-one-recording-out and publishes the nested scores', async () => {
+  const { dir, options } = await dailyFixture([1, 2, 3]);
+  const result = await relearnSclass(options);
+  assert.equal(result.published, true, result.reasons.join(' '));
+  assert.equal(result.validationDay, '20250103');
+  const current = JSON.parse(await readFile(path.join(dir, 'sclass.json'), 'utf8'));
+  assert.equal(current.validation, 'leave-one-recording-out');
+  const sidecar = JSON.parse(await readFile(path.join(dir, 'sclass-table.json'), 'utf8'));
+  assert.equal(sidecar.loo?.scheme, 'leave-one-recording-out');
+  assert.equal(sidecar.loo?.nested.length, 3);
+  assert.equal(sidecar.folds.length, 3);
 });
 
 test('daily relearn with insufficient completed days keeps the current table and records a refusal', async () => {

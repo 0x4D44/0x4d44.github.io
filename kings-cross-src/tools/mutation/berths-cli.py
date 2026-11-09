@@ -24,6 +24,7 @@ MUTATIONS = [
     ('position displacement is erased', 'displacementM: Math.hypot(next.point[0] - old.point[0], next.point[1] - old.point[1])', 'displacementM: 0'),
     ('position-review cause is misreported', "cause: 'candidate-position-review'", "cause: 'unbounded-or-ambiguous-chain'"),
     ('previous map requirement is bypassed', "if (preservePositions && !previous) throw new Error('--preserve-positions requires --previous');", "if (false && preservePositions && !previous) throw new Error('--preserve-positions requires --previous');"),
+    ('corpus without geographic evidence is accepted', "if (corpus && !geographicEvidence) throw new Error('--corpus requires --geographic-evidence');", "if (false && corpus && !geographicEvidence) throw new Error('--corpus requires --geographic-evidence');"),
     ('source hash is fabricated', "createHash('sha256').update(bytes).digest('hex')", "'0'.repeat(64)"),
     ('berths report JSON output guard is removed',
      'await Promise.all(outputs.map(([name]) => checkOutputFile(outDir, name)));',

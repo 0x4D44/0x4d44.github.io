@@ -422,6 +422,16 @@ test('sclass: rule leave-one-recording-out prunes a mapping that fails one held-
   assert.equal(signalStates({ '20': 1 }, result.hypotheses, anchors).A, 'unknown');
 });
 
+test('sclass: rule leave-one-recording-out prunes a mapping whose precision fails in one held-out session even when pooled precision passes', () => {
+  const noisy = shift(fixture(times, [...times, 400, 450, 500, 550]), 15000); // six supports and four false clearings: precision .6
+  const result = loo([fixture(), shift(fixture(), 5000), shift(fixture(), 10000), noisy]);
+  const h = result.hypotheses.find(h => h.address === '20' && h.bit === 0 && h.berth === 'A' && h.kind === 'proceed');
+  assert.ok(h);
+  assert.ok(h.heldOut.precision! >= 0.8 && h.heldOut.recall! >= 0.8, 'pooled held-out alone would admit it');
+  assert.equal(h.status, 'unknown');
+  assert.match(h.reason, /session\(s\) 3 below/);
+});
+
 test('sclass: rule leave-one-recording-out rejects a mapping only one session can teach', () => {
   const bTimes = [100, 200, 300, 700, 800, 900];
   const first = [...fixture(), ...fixture(bTimes, bTimes, '21').filter(r => r.e.kind === 'sclass'), ...bTimes.map(t => step(t, 'B'))];
@@ -429,6 +439,25 @@ test('sclass: rule leave-one-recording-out rejects a mapping only one session ca
   const b = result.hypotheses.find(h => h.berth === 'B');
   assert.ok(b); assert.equal(b.status, 'unknown'); assert.match(b.reason, /Unstable: training without session\(s\) 0/);
   assert.equal(result.hypotheses.find(h => h.berth === 'A' && h.address === '20')?.status, 'decoded');
+});
+
+test('sclass: rule leave-one-recording-out ignores four-star, incomplete and duplicate steps and excludes windows crossing a session edge', () => {
+  const noisy = [...fixture(), ...times.map(t => step(t, 'A', '****')), step(50), { ...step(170), e: { ...step(170).e, to: 'A' } },
+    { ...step(180), e: { ...step(180).e, descr: '' } }, step(5), step(995)];
+  const result = loo([noisy, shift(fixture(), 5000), shift(fixture(), 10000)]);
+  assert.equal(result.steps.ignoredNotATrain, 6);
+  assert.equal(result.steps.ignoredIncomplete, 2);
+  assert.equal(result.steps.duplicates, 1);
+  assert.equal(result.steps.total, 20, 'eighteen passages plus the two near the session edges');
+  assert.equal(result.steps.excludedAtEdges, 2);
+  assert.equal(result.steps.heldOut, 18);
+  assert.equal(result.hypotheses.find(h => h.address === '20' && h.bit === 0 && h.berth === 'A' && h.kind === 'proceed')?.status, 'decoded');
+});
+
+test('sclass: rule leave-one-recording-out decodes a bit whose proceed level is the inverse', () => {
+  const inverse = () => [...fixture().filter(r => r.e.kind !== 'sclass'), byte(0, 1), ...times.flatMap((t, i) => [byte(t - 2 - i % 3, 0), byte(t + 3 + i % 2, 1)])];
+  const decoded = loo([inverse(), shift(inverse(), 5000), shift(inverse(), 10000)]).hypotheses.filter(h => h.status === 'decoded');
+  assert.deepEqual(decoded.map(h => [h.berth, h.address, h.bit, h.proceedValue]), [['A', '20', 0, 0]]);
 });
 
 test('sclass: rule recording sessions split at receipt gaps and leave-one-out needs three disjoint sessions', () => {
