@@ -1178,7 +1178,7 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
 // and run in the page. M01 is not in VIEW_IDS: a run that is not asked for it neither plans it nor refuses on poses frozen before it existed.
 // ============================================================================================
 /** The views a run can be asked for (`--views`) besides VIEW_IDS, which are the ones it takes when it is not asked. */
-export const OPT_IN_VIEW_IDS = Object.freeze(['M01']);
+export const OPT_IN_VIEW_IDS = Object.freeze(['M01', 'C01']);
 export const ASKABLE_VIEW_IDS = Object.freeze([...VIEW_IDS, ...OPT_IN_VIEW_IDS]);
 /**
  * The clip's numbers, one set for every kind. `lodDistanceM` is web/src/train-parts.ts BOGIE_LOD_DISTANCE (a test pins the two equal): at that distance or more a bogie is
@@ -1371,6 +1371,33 @@ export function readBogieLods(T, group, camera) {
   return out;
 }
 /**
+ * What is wrong with the cars the page has (`have`: each car node's name, visibility and transform, as the in-page driver reads them) against the cars the capture posed
+ * (`applied`): a different number of them, or one that is hidden, not where it was put, turned or stretched.
+ */
+export function appliedCarProblems(applied, have) {
+  const problems = [], want = new Map(applied.map(c => [`car-${c.index}`, c]));
+  if (have.length !== want.size) problems.push(`the specimen has ${have.length} cars, the capture posed ${want.size}`);
+  for (const c of have) {
+    const w = want.get(c.name);
+    if (!(w && c.visible === true && Math.abs(c.position[0] - w.position[0]) < 1e-9 && Math.abs(c.position[2] - w.position[1]) < 1e-9 && Math.abs(c.rotationY - w.rotationY) < 1e-9 && Math.abs(c.scaleZ - w.scaleZ) < 1e-9)) problems.push(`${c.name} is not where the capture put it`);
+  }
+  return problems;
+}
+/**
+ * The bogies a page reports against the bogies a plan has, matched by name: each planned bogie the page reported, as [planned, reported] in the plan's order. A bogie reported twice, one the
+ * plan has not and a planned bogie the page left out are pushed onto `problems`.
+ */
+function reportedBogies(plan, reported, problems) {
+  const seen = new Map(), planned = new Set(plan.map(t => t.name)), pairs = [];
+  for (const b of reported) { if (seen.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'} twice`); seen.set(b.name, b); if (!planned.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'}, which the plan has not`); }
+  for (const t of plan) {
+    const r = seen.get(t.name);
+    if (!r) { problems.push(`the page reports no ${t.name}`); continue; }
+    pairs.push([t, r]);
+  }
+  return pairs;
+}
+/**
  * One frame of a clip against its plan. `read` is what the page said after the frame: `bogies` (readBogieLods), `clearance` (checkNearClearance), `costs` (trainCosts),
  * `cabDistanceM` and `cars` (the transform each car node actually has). `applied` is the cars the capture asked the page to pose.
  * `gap` is a reason the frame cannot be a picture of the clip (the near plane is cut by the train); `problems` are a page that is not in the state it was asked to be in
@@ -1378,12 +1405,9 @@ export function readBogieLods(T, group, camera) {
  * the clip but leave the pictures standing as evidence of what the page drew. `baseTriangles` is what the train draws besides its bogies.
  */
 export function judgeMotionFrame(plan, index, read, applied = null, { toleranceM = MOTION.distanceToleranceM } = {}) {
-  const lod = plan.clip.lodDistanceM, mismatches = [], problems = [], rows = [], seen = new Map(), planned = new Set(plan.bogies.map(t => t.name));
-  for (const b of read.bogies) { if (seen.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'} twice`); seen.set(b.name, b); if (!planned.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'}, which the plan has not`); }
+  const lod = plan.clip.lodDistanceM, mismatches = [], problems = [], rows = [];
   let maxDistanceErrorM = 0;
-  for (const t of plan.bogies) {
-    const r = seen.get(t.name);
-    if (!r) { problems.push(`the page reports no ${t.name}`); continue; }
+  for (const [t, r] of reportedBogies(plan.bogies, read.bogies, problems)) {
     const predicted = { level: t.level[index], distanceM: t.distanceM[index] }, errorM = Math.abs(r.distanceM - predicted.distanceM), got = { level: r.level, distanceM: r.distanceM };
     maxDistanceErrorM = Math.max(maxDistanceErrorM, errorM);
     if (r.level !== predicted.level) mismatches.push({ frame: index, bogie: t.name, why: 'level', predicted, read: got });
@@ -1394,14 +1418,7 @@ export function judgeMotionFrame(plan, index, read, applied = null, { toleranceM
   }
   const cabErrorM = Math.abs(read.cabDistanceM - plan.frames[index].cabDistanceM);
   if (!(cabErrorM <= toleranceM)) mismatches.push({ frame: index, bogie: null, why: 'cab distance', predicted: { distanceM: plan.frames[index].cabDistanceM }, read: { distanceM: read.cabDistanceM } });
-  if (applied) {
-    const want = new Map(applied.map(c => [`car-${c.index}`, c])), have = read.cars ?? [];
-    if (have.length !== want.size) problems.push(`the specimen has ${have.length} cars, the capture posed ${want.size}`);
-    for (const c of have) {
-      const w = want.get(c.name);
-      if (!(w && c.visible === true && Math.abs(c.position[0] - w.position[0]) < 1e-9 && Math.abs(c.position[2] - w.position[1]) < 1e-9 && Math.abs(c.rotationY - w.rotationY) < 1e-9 && Math.abs(c.scaleZ - w.scaleZ) < 1e-9)) problems.push(`${c.name} is not where the capture put it`);
-    }
-  }
+  if (applied) problems.push(...appliedCarProblems(applied, read.cars ?? []));
   const baseTriangles = rows.length === plan.bogies.length && rows.every(w => w.triangles !== null) ? read.costs.triangles - rows.reduce((n, w) => n + w.triangles, 0) : null;
   return { gap: read.clearance.ok ? null : read.clearance.reason, mismatches, problems, rows, maxDistanceErrorM, cabErrorM, baseTriangles };
 }
@@ -1437,4 +1454,411 @@ export function judgeMotionClip(plan, frames) {
   if (mismatches.length) reasons.push(`${mismatches.length} reading(s) differ from the schedule predicted from the geometry: ${mismatches.slice(0, 3).map(m => `frame ${m.frame + 1} ${m.bogie ?? 'cab'} ${m.why}`).join('; ')}`);
   if (problems.length) reasons.push(problems.slice(0, 3).join('; '));
   return { ok, status: ok ? 'OK' : 'GAP', reason: ok ? null : reasons.join('; '), flips, mismatches, costs, maxDistanceErrorM: Math.max(0, ...frames.map(f => f.judged.maxDistanceErrorM)) };
+}
+
+// ============================================================================================
+// C01 (opt-in): the whole train on a curve. One pose per kind on the tightest real bend of the page's track that the longest train fits: the cars are placed by the page's own
+// carPoses over that path (web/src/trains-live.ts), photographed from above and from the outside of the bend on a neutral stage, and checked in numbers, at every joint, for what
+// the placement does there. Like M01 it is not in VIEW_IDS. The route, the plan and the checks are plain numbers (the Node tests pin each of them); the stage and the readers take
+// THREE and run in the page.
+// ============================================================================================
+/**
+ * The curve's numbers, one set for every kind. The bend is found by its local radius over `baselineM`, the longest car of any kind (26 m): the heading change across that run of
+ * track is the turn, and baselineM / turn the radius. The page draws its track on smooth curves through every OSM node (core/curves.ts) except where the track turns by more than
+ * `cutDeg` at a node (core/curves.ts SMOOTH_TURN, 30 degrees: a corner, not a curve), so a chain of track is cut there. The route is the stretch of track that holds the longest train
+ * with `marginM` to spare at each end. `fallbackRadiusM` and `arcStepM` make the synthetic arc
+ * that stands in when no stretch of the page's track holds a train on a bend. The cameras: FOV 50, the oblique one `elevationDeg` above the horizon, and a region padded by `padM`.
+ * A bogie must stand on the track within `bogieToleranceM`; the page's carPoses must put one where the route has it within `placementToleranceM` (the route's points are rounded to a
+ * micrometre).
+ */
+export const CURVE = Object.freeze({
+  id: 'C01', suffix: 'curve', stage: 'neutral-curve',
+  baselineM: 26, cutDeg: 30, marginM: 10, stepM: .5,
+  fallbackRadiusM: 100, arcStepM: 2,
+  fov: 50, elevationDeg: 35, padM: .3,
+  bogieToleranceM: .01, placementToleranceM: 1e-5,
+});
+/** The suffixes of the two views of the curve, in file order. */
+export const CURVE_VIEWS = Object.freeze([`${CURVE.suffix}-plan`, `${CURVE.suffix}-oblique`]);
+/** What every sidecar, manifest entry and note says of the stage. */
+export const CURVE_STAGE = `${CURVE.stage} (scenery hidden)`;
+/** How the curve is made and judged, for the manifest and every sidecar. */
+export const CURVE_RULE = 'C01 (opt-in, day only). One pose per kind on the tightest real bend of the page\'s track that the longest train fits. The track is the page\'s own: web/src/data/kx-track.json drawn on the smooth '
+  + 'curves of core/curves.ts, which trains run on through core/graph.ts edgePoint. The local radius is the 26 m (the longest car) over the heading change across it on those curves, found along every run of track '
+  + 'between branches and corners, and the train stands with its middle on the tightest point. The cars are posed by the page\'s own carPoses (web/src/trains-live.ts) over the page\'s graph built with curves, turned '
+  + 'into the frame of the specimen (the tightest point at the origin, the travel along -z) and applied as createLiveTrains.update does; the page\'s track is not drawn, a neutral stage that follows the same curve is '
+  + '(scenery hidden). Two views, straight down (image up is the train\'s right-hand side, the nose at the left) and from the outside of the bend, 35 degrees above the horizon, each turned by the sun-bearing rule. '
+  + 'Numbers, not pictures, are the check: no two adjacent car bodies (the shell\'s footprint, END_GAP short of each car end) may intersect; at each joint the coupler (the middle of the seam) and each edge of the '
+  + 'gangway opening must have the boundary points of the two cars no further apart than one bellows (END_GAP, web/src/train.ts) can reach; and every bogie the page has must stand on the curve within 1 cm. '
+  + 'A failed check is a FINDING in the report, never a failed picture and never loosened.';
+
+/** The distance along a polyline of [x, z] points to each of them (the first at 0). */
+export const cumulative = points => { const cum = [0]; for (let i = 0; i + 1 < points.length; i++) cum.push(cum[i] + Math.hypot(points[i + 1][0] - points[i][0], points[i + 1][1] - points[i][1])); return cum; };
+/** The segment of a polyline, by its cumulative lengths, that the distance `s` falls in (the first for a distance before the start, the last for one at or past the end). */
+export const segmentAt = (cum, s) => { let lo = 0, hi = cum.length - 2; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (cum[mid] <= s) lo = mid; else hi = mid - 1; } return lo; };
+/** The point `s` metres along a polyline of [x, z] points whose cumulative lengths are `cum` (the first point at 0; past either end the last segment's line goes on). */
+export const pointAlong = (points, cum, s) => { const i = segmentAt(cum, s), t = (s - cum[i]) / (cum[i + 1] - cum[i]); return [points[i][0] + (points[i + 1][0] - points[i][0]) * t, points[i][1] + (points[i + 1][1] - points[i][1]) * t]; };
+/** A step's heading, clockwise from north (-z), as the page's trains have it. */
+const bearing = (a, b) => Math.atan2(b[0] - a[0], -(b[1] - a[1]));
+const headingAtS = (points, cum, s) => { const i = segmentAt(cum, s); return bearing(points[i], points[i + 1]); };
+/** The distance from a point [x, z] to the nearest point of a polyline: polygonEdgeDistance's, of the polygon that goes along the polyline and back. */
+export const polylineDistance = (points, p) => polygonEdgeDistance(p, [...points, ...points.slice(1, -1).reverse()]);
+
+/**
+ * The track of one piece of a chain as the page draws it: the dense polyline `D` through the piece's nodes (each edge's curve from `shapeOf(from, to)`, the points of core/curves.ts, or
+ * its chord where there is none), the distance along it to every point (`cum`), and `nodeAt[i]`, the index in `D` of the piece's node i.
+ */
+function denseTrack(piece, shapeOf) {
+  const D = [piece.P[0]], nodeAt = [0];
+  piece.edges.forEach((edge, i) => {
+    const run = shapeOf?.(piece.ids[i], piece.ids[i + 1]);
+    const points = Array.isArray(run) && run.length >= 2 ? run : [piece.P[i], piece.P[i + 1]];
+    for (let k = 1; k < points.length; k++) D.push([points[k][0], points[k][1]]);
+    nodeAt.push(D.length - 1);
+  });
+  const cum = cumulative(D);
+  return { D, cum, total: cum.at(-1), nodeAt };
+}
+/**
+ * The tightest bend of the page's track that a train of `lengthM` fits, from its own data (`data`: web/src/data/kx-track.json, { nodes: [[id, x, z]], rails: [{ id, nodes, tunnel,
+ * service }] }) and the curves it is drawn on (`shapeOf(a, b)`: the points of the smooth curve from node a to node b, core/curves.ts shapeFrom; none is the chord). The track is cut
+ * into chains, the runs of edges between nodes where it branches or ends (walked from the lowest-numbered such node, edges in way order, so the result does not depend on the order of
+ * the file), each chain is cut again where the chords turn by more than `cutDeg` at a node (a corner: the page draws no curve through it), and every piece long enough for the train and
+ * `marginM` at each end is scanned every `stepM` metres, along its curve, for the turn across `baselineM`. The tightest turn wins (the first one, in chain order, on a tie); where the
+ * turn holds the same value over a run of positions the middle of that run is the tightest point. The route is the whole edges of that piece from the one that holds half the train and
+ * the margin before the tightest point to the one that holds the same after it, in the direction the chain was walked: `points`, the curve of those edges; `steps`, the edges, with the
+ * indices in `points` where each starts and ends; `apexAt`, the edge the tightest point is on and its share of that edge's curve. Null if no piece holds the train on a bend. All
+ * numbers in the page's world metres (x east, z south), to a micrometre.
+ */
+export function findCurveRoute(data, lengthM, { baselineM = CURVE.baselineM, cutDeg = CURVE.cutDeg, marginM = CURVE.marginM, stepM = CURVE.stepM, shapeOf = null } = {}) {
+  if (!(lengthM > 0)) throw new Error(`a train ${lengthM} m long has no bend to find`);
+  const pos = new Map(data.nodes.map(([id, x, z]) => [id, [x, z]])), touching = new Map();
+  for (const rail of data.rails) for (let i = 0; i + 1 < rail.nodes.length; i++) {
+    const a = rail.nodes[i], b = rail.nodes[i + 1], pa = pos.get(a), pb = pos.get(b);
+    if (!pa || !pb || a === b) continue;
+    const length = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+    if (!(length > 0)) continue;
+    const edge = { way: rail.id, a, b, length, tunnel: rail.tunnel === true, service: rail.service ?? null };
+    for (const n of [a, b]) { if (!touching.has(n)) touching.set(n, []); touching.get(n).push(edge); }
+  }
+  const used = new Set(), chains = [];
+  for (const start of [...touching.keys()].filter(n => touching.get(n).length !== 2).sort((p, q) => p - q)) {
+    for (const first of [...touching.get(start)].sort((p, q) => p.way - q.way || p.a - q.a || p.b - q.b)) {
+      if (used.has(first)) continue;
+      const nodes = [start], edges = [];
+      for (let at = start, edge = first; ;) {
+        edges.push(edge); used.add(edge);
+        at = edge.a === at ? edge.b : edge.a; nodes.push(at);
+        const here = touching.get(at);
+        if (here.length !== 2) break;
+        const next = here[0] === edge ? here[1] : here[0];
+        if (used.has(next)) break;
+        edge = next;
+      }
+      chains.push({ nodes, edges });
+    }
+  }
+  const pieces = [], cut = (chain, P, from, to) => pieces.push({ edges: chain.edges.slice(from, to), ids: chain.nodes.slice(from, to + 1), P: P.slice(from, to + 1) });
+  for (const chain of chains) {
+    const P = chain.nodes.map(n => pos.get(n));
+    let from = 0;
+    for (let i = 1; i + 1 < P.length; i++) if (Math.abs(wrap(bearing(P[i], P[i + 1]) - bearing(P[i - 1], P[i]))) > cutDeg * D2R) { cut(chain, P, from, i); from = i; }
+    cut(chain, P, from, P.length - 1);
+  }
+  const need = lengthM / 2 + marginM;
+  let best = null, fitting = 0;
+  for (const piece of pieces) {
+    const track = denseTrack(piece, shapeOf), { D, cum, total } = track;
+    if (total < 2 * need - 1e-9) continue;
+    fitting++;
+    const count = Math.floor((total - 2 * need) / stepM + 1e-9) + 1, turns = [];
+    for (let k = 0; k < count; k++) {
+      const s = need + k * stepM;
+      turns.push(Math.abs(wrap(headingAtS(D, cum, Math.min(total, s + baselineM / 2)) - headingAtS(D, cum, Math.max(0, s - baselineM / 2)))));
+    }
+    const top = Math.max(...turns), k0 = turns.findIndex(t => t >= top - 1e-12);
+    let k1 = k0;
+    while (k1 + 1 < count && turns[k1 + 1] >= top - 1e-12) k1++;
+    if (!best || top > best.turn + 1e-12) best = { turn: top, s: need + (k0 + k1) / 2 * stepM, piece, track };
+  }
+  if (!best || !(best.turn > 1e-9)) return null;
+  const { piece, track } = best, { D, cum, total, nodeAt } = track, lo = Math.max(0, best.s - need), hi = Math.min(total, best.s + need);
+  const startOf = i => cum[nodeAt[i]], endOf = i => cum[nodeAt[i + 1]];
+  const edgeAt = s => { let i = 0; while (i + 1 < piece.edges.length && startOf(i + 1) <= s + 1e-9) i++; return i; };
+  const i0 = edgeAt(lo), i1 = edgeAt(hi - 1e-9), j = edgeAt(best.s), covered = piece.edges.slice(i0, i1 + 1);
+  const tunnelM = covered.reduce((n, edge, k) => n + (edge.tunnel ? Math.max(0, Math.min(endOf(i0 + k), hi) - Math.max(startOf(i0 + k), lo)) : 0), 0), routeM = endOf(i1) - startOf(i0);
+  const steps = covered.map((edge, k) => ({ way: edge.way, a: edge.a, b: edge.b, from: piece.ids[i0 + k], to: piece.ids[i0 + k + 1], chordM: q6(edge.length), tunnel: edge.tunnel, service: edge.service,
+    fromIndex: nodeAt[i0 + k] - nodeAt[i0], toIndex: nodeAt[i0 + k + 1] - nodeAt[i0] }));
+  return { source: 'real', smooth: typeof shapeOf === 'function', radiusM: q6(baselineM / best.turn), turnDeg: q6(best.turn / D2R), baselineM, lengthM: q6(routeM), apexS: q6(best.s - startOf(i0)),
+    apex: pointAlong(D, cum, best.s).map(q6), points: D.slice(nodeAt[i0], nodeAt[i1 + 1] + 1).map(p => [q6(p[0]), q6(p[1])]), steps,
+    apexAt: { step: j - i0, share: q6((best.s - startOf(j)) / (endOf(j) - startOf(j))) },
+    ways: [...new Set(covered.map(e => e.way))], services: [...new Set(covered.map(e => e.service))],
+    tunnel: { apexInTunnel: piece.edges[j].tunnel, windowM: q6(tunnelM), fraction: q6(tunnelM / (hi - lo)) },
+    chain: { lengthM: q6(total), nodes: piece.P.length, from: piece.P[0].map(q6), to: piece.P.at(-1).map(q6) },
+    searched: { chains: chains.length, pieces: pieces.length, fitting } };
+}
+
+/**
+ * The synthetic route for a data set with no bend a train fits: an arc of `radiusM` through the origin, travelling north (-z) and bending to the right (+x), as long as the train
+ * and the margin at each end, in chords of `stepM` (an even number of them, so the tightest point is a node). Labelled `synthetic` wherever it goes. It has no edges of the page's
+ * graph (`steps` is null): it is a polyline, straight chords of a few metres, which the placement code takes as it takes any graph without curves.
+ */
+export function circularArcRoute(lengthM, radiusM, { marginM = CURVE.marginM, stepM = CURVE.arcStepM, baselineM = CURVE.baselineM } = {}) {
+  if (!(lengthM > 0) || !(radiusM > 0)) throw new Error(`an arc of radius ${radiusM} m for a train ${lengthM} m long`);
+  const half = lengthM / 2 + marginM, n = 2 * Math.ceil(half / stepM), points = [];
+  for (let i = 0; i <= n; i++) { const phi = (i - n / 2) * (half / (n / 2)) / radiusM; points.push([q6(radiusM - radiusM * Math.cos(phi)), q6(-radiusM * Math.sin(phi))]); }
+  const cum = cumulative(points), turn = Math.abs(wrap(headingAtS(points, cum, Math.min(cum.at(-1), cum[n / 2] + baselineM / 2)) - headingAtS(points, cum, Math.max(0, cum[n / 2] - baselineM / 2))));
+  return { source: 'synthetic', smooth: false, radiusM: q6(radiusM), turnDeg: q6(turn / D2R), baselineM, lengthM: q6(cum.at(-1)), apexS: q6(cum[n / 2]), apex: [0, 0], points, steps: null, apexAt: null, ways: [], services: [],
+    tunnel: { apexInTunnel: false, windowM: 0, fraction: 0 }, chain: null, searched: null,
+    note: `a synthetic circular arc of radius ${radiusM} m: no run of the page's track holds a train ${lengthM} m long on a bend` };
+}
+/**
+ * The map from the page's world into the train's own frame at the route's tightest point: the point at the origin, the direction of travel there (the chord across the baseline) along
+ * -z, +x the right-hand side of the travel, so a camera on a side of the train is a camera at that sign of x as it is for every other view. `point` maps a world point [x, z], `vector` a
+ * direction; `p0` and `p1` are the ends of the baseline in the world.
+ */
+export function frameTransform(route, { baselineM = route.baselineM ?? CURVE.baselineM } = {}) {
+  const cum = cumulative(route.points), at = s => pointAlong(route.points, cum, Math.min(cum.at(-1), Math.max(0, s)));
+  const apex = at(route.apexS), p0 = at(route.apexS - baselineM / 2), p1 = at(route.apexS + baselineM / 2), chord = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+  if (!(chord > 0)) throw new Error('the route has no direction at its tightest point');
+  const d = [(p1[0] - p0[0]) / chord, (p1[1] - p0[1]) / chord], r = [-d[1], d[0]];
+  const across = v => v[0] * r[0] + v[1] * r[1], along = v => v[0] * d[0] + v[1] * d[1];
+  return { apex, p0, p1, point: p => [across([p[0] - apex[0], p[1] - apex[1]]), -along([p[0] - apex[0], p[1] - apex[1]])], vector: v => [across(v), -along(v)] };
+}
+/**
+ * The route in the train's own frame (frameTransform): the points, the tightest point's place and heading in the world, and `insideSign`, the side of the bend's centre. Lengths are the
+ * route's own.
+ */
+export function curveFrame(route, options = {}) {
+  const t = frameTransform(route, options), points = route.points.map(p => t.point(p).map(q6)), inside = Math.sign(t.point(t.p0)[0] + t.point(t.p1)[0]) || 1;
+  return { points, apexS: route.apexS, lengthM: q6(cumulative(points).at(-1)), apex: t.apex.map(q6), headingDeg: q6(bearing(t.p0, t.p1) / D2R), insideSign: inside, outsideSign: -inside };
+}
+/**
+ * The route for a train of `lengthM`: the tightest real bend of `data` it fits (on the curves `options.shapeOf` gives), else the synthetic arc (`options.fallbackRadiusM` of radius, its
+ * chords `options.arcStepM` long; the margin and the baseline are shared with the search), with its frame as `local`.
+ */
+export function curveRouteFor(data, lengthM, options = {}) {
+  const { marginM, baselineM, arcStepM } = options;
+  const found = findCurveRoute(data, lengthM, options) ?? circularArcRoute(lengthM, options.fallbackRadiusM ?? CURVE.fallbackRadiusM, { marginM, baselineM, stepM: arcStepM });
+  return { ...found, local: curveFrame(found, options) };
+}
+/**
+ * A pose carPoses gave in the world, in the frame of the route: the car's position, its turn and each bogie's place and direction (`back`, toward the tail) mapped by `frame`
+ * (frameTransform), the car's stretch unchanged. The rest of the pose (the car) stays as it was.
+ */
+export function localPose(pose, frame) {
+  const forward = frame.vector([Math.sin(pose.rotationY), Math.cos(pose.rotationY)]), sample = s => ({ point: frame.point(s.point), back: frame.vector(s.back) });
+  return { ...pose, position: frame.point(pose.position), rotationY: Math.atan2(forward[0], forward[1]), frontBogie: sample(pose.frontBogie), rearBogie: sample(pose.rearBogie) };
+}
+
+/** A point of a car, given in the train's own frame (x across, z along), in the frame of the route: where the page puts that point of the car node. */
+export function carPoint(pose, x, z) {
+  const c = Math.cos(pose.rotationY), s = Math.sin(pose.rotationY), along = pose.scaleZ * z;
+  return [pose.position[0] + x * c + along * s, pose.position[1] - x * s + along * c];
+}
+/**
+ * The gap between two convex polygons (arrays of [x, z] corners): the distance between them if they are apart, 0 if they touch, and minus the shallowest way out if they overlap
+ * (the separating-axis test: the largest separation over every edge normal of both).
+ */
+export function polygonGap(a, b) {
+  let separation = -Infinity;
+  for (const poly of [a, b]) for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length], nx = p[1] - q[1], nz = q[0] - p[0], n = Math.hypot(nx, nz);
+    if (!(n > 0)) continue;
+    const pa = a.map(v => (v[0] * nx + v[1] * nz) / n), pb = b.map(v => (v[0] * nx + v[1] * nz) / n);
+    separation = Math.max(separation, Math.min(...pb) - Math.max(...pa), Math.min(...pa) - Math.max(...pb));
+  }
+  if (!(separation > 0)) return separation;
+  let nearest = Infinity;
+  for (const [from, to] of [[a, b], [b, a]]) for (const p of from) nearest = Math.min(nearest, polygonEdgeDistance(p, to));
+  return nearest;
+}
+/**
+ * Every joint of the train as the placement leaves it. `poses` are the cars in train order, { index, start, end, position, rotationY, scaleZ } (the car's extent in the train's own
+ * frame and carPoses' pose of it); `spec` is { half, gangwayWidthM, endGapM } (the body's half width, the gangway opening's width and web/src/train.ts END_GAP). For each pair of
+ * neighbours: the gap between the footprints of the two bodies (a rectangle `half` either side, END_GAP short of each car end, so 2 x END_GAP apart on a straight), and for the coupler
+ * (the middle of the seam) and each edge of the gangway opening the two boundary points of the cars there, one the end of the first car and one the start of the second, which meet on
+ * a straight: how far apart they are, and that distance as an opening along the joint (positive: apart) and a slip across it. `left` and `right` are of the direction of travel, and
+ * `outsideSign` (+1: the right-hand side is the outside of the bend) says which is the outside.
+ */
+export function curveJoints(poses, { half, gangwayWidthM, endGapM }, { outsideSign = 1 } = {}) {
+  const body = pose => [[-half, pose.start + endGapM], [half, pose.start + endGapM], [half, pose.end - endGapM], [-half, pose.end - endGapM]].map(([x, z]) => carPoint(pose, x, z));
+  return poses.slice(0, -1).map((a, i) => {
+    const b = poses[i + 1], fa = [Math.sin(a.rotationY), Math.cos(a.rotationY)], fb = [Math.sin(b.rotationY), Math.cos(b.rotationY)], mean = Math.hypot(fa[0] + fb[0], fa[1] + fb[1]);
+    const u = [(fa[0] + fb[0]) / mean, (fa[1] + fb[1]) / mean];
+    const seam = (x, name, side) => {
+      const p = carPoint(a, x, a.end), q = carPoint(b, x, b.start), d = [q[0] - p[0], q[1] - p[1]];
+      return { name, side, xM: q6(x), distanceM: Math.hypot(d[0], d[1]), openM: d[0] * u[0] + d[1] * u[1], slipM: d[0] * -u[1] + d[1] * u[0] };
+    };
+    const edge = sign => seam(sign * gangwayWidthM / 2, sign < 0 ? 'left' : 'right', sign === outsideSign ? 'outside' : 'inside');
+    return { joint: i, between: [a.index, b.index], turnDeg: Math.abs(wrap(b.rotationY - a.rotationY)) / D2R, bodyGapM: polygonGap(body(a), body(b)),
+      coupler: seam(0, 'coupler', 'centre'), gangway: { left: edge(-1), right: edge(1) } };
+  });
+}
+/**
+ * The verdicts the joints give by themselves. Bodies: every pair of neighbours must have a positive gap. Bellows: the coupler and each edge of every gangway opening must have the
+ * boundary points of its two cars no further apart than `reachM`. Each failure is a finding with the joint, the numbers and the sentence a reader needs.
+ */
+export function judgeCurveJoints(joints, { reachM }) {
+  const findings = [], tightest = joints.reduce((best, j) => !best || j.bodyGapM < best.bodyGapM ? j : best, null);
+  const widest = (pick) => joints.reduce((best, j) => { const s = pick(j); return !best || s.distanceM > best.seam.distanceM ? { joint: j.joint, seam: s } : best; }, null);
+  const coupler = widest(j => j.coupler), gangway = widest(j => j.gangway.left.distanceM > j.gangway.right.distanceM ? j.gangway.left : j.gangway.right);
+  for (const j of joints) {
+    if (!(j.bodyGapM > 0)) findings.push({ check: 'body-gap', joint: j.joint, between: j.between, gapM: j.bodyGapM, message: `the bodies of cars ${j.between[0]} and ${j.between[1]} ${j.bodyGapM < 0 ? `intersect by ${(-j.bodyGapM).toFixed(3)} m` : 'touch'} at the joint` });
+    const seams = [['coupler', j.coupler], ['gangway', j.gangway.left], ['gangway', j.gangway.right]];
+    for (const [check, s] of seams) if (!(s.distanceM <= reachM)) findings.push({ check, joint: j.joint, between: j.between, edge: check === 'gangway' ? s.name : null, side: s.side, distanceM: s.distanceM, openM: s.openM, slipM: s.slipM, reachM,
+      message: `${check === 'coupler' ? 'the coupler' : `the ${s.name} (${s.side}) edge of the gangway`} between cars ${j.between[0]} and ${j.between[1]}: the cars' boundary points are ${s.distanceM.toFixed(3)} m apart (${s.openM.toFixed(3)} m open, ${Math.abs(s.slipM).toFixed(3)} m slipped), more than the ${reachM} m one bellows reaches` });
+  }
+  return { findings, bodies: { ok: joints.every(j => j.bodyGapM > 0), joints: joints.length, minGapM: tightest?.bodyGapM ?? null, atJoint: tightest?.joint ?? null },
+    couplers: { ok: joints.every(j => j.coupler.distanceM <= reachM), reachM, maxDistanceM: coupler?.seam.distanceM ?? null, atJoint: coupler?.joint ?? null },
+    gangways: { ok: joints.every(j => j.gangway.left.distanceM <= reachM && j.gangway.right.distanceM <= reachM), reachM, maxDistanceM: gangway?.seam.distanceM ?? null, atJoint: gangway?.joint ?? null, edge: gangway?.seam.name ?? null } };
+}
+
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const unit3 = a => { const n = Math.hypot(...a); return a.map(v => v / n); };
+/**
+ * The camera distance that frames a set of points: the smallest, to a millimetre, at which a camera standing that far from `target` along the unit vector `direction` (looking back at
+ * the target, `up` its up) has every one of the `points` ([x, y, z]) in front of it and inside +-`fraction` of the half width and of the half height of the image. The projection is
+ * the camera's own (vertical FOV `fov`, `aspect`); a point's offsets across the view do not change as the camera backs off, only its depth, so the first distance that fits is found
+ * by halving.
+ */
+export function fitCameraDistance({ points, target, direction, up, fov, aspect = CATALOGUE.aspect, fraction = CATALOGUE.fitFraction }) {
+  const forward = direction.map(v => -v), right = unit3(cross3(forward, up)), top = cross3(right, forward), t = Math.tan(fov * D2R / 2);
+  const fits = distance => points.every(p => {
+    const v = p.map((c, i) => c - (target[i] + direction[i] * distance)), depth = dot3(v, forward);
+    return depth > 0 && Math.abs(dot3(v, right) / (depth * t * aspect)) <= fraction && Math.abs(dot3(v, top) / (depth * t)) <= fraction;
+  });
+  let lo = 0, hi = 1;
+  while (!fits(hi)) { lo = hi; hi *= 2; if (hi > 1e7) throw new Error('no distance frames the points'); }
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
+  return ceil3(hi);
+}
+/**
+ * The two views of a train on the curve, in the frame of the route (the train's own: x across, the nose toward -z): straight down on the middle of the train's footprint, image up the
+ * train's right-hand side and its nose at the left (as V06's roof plan has it), and from the outside of the bend, `elevationDeg` above the horizon, looking at the middle of the footprint
+ * at half the height of the roof. Each stands as near as frames the footprint of every car (its envelope padded by `padM`, at the rail and at the roof) within the fit fraction of the
+ * image, and is turned by the sun-bearing rule like every other view. `poses` are curveJoints' poses.
+ */
+export function planCurveViews(f, route, poses, { aspect = CATALOGUE.aspect } = {}) {
+  const H = f.roofTop, pad = CURVE.padM, spots = [];
+  for (const pose of poses) for (const [sx, end] of [[-1, 0], [1, 0], [1, 1], [-1, 1]]) spots.push(carPoint(pose, sx * (f.half + pad), end ? pose.end + pad : pose.start - pad));
+  const xs = spots.map(p => p[0]), zs = spots.map(p => p[1]), bounds = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  const centre = [(bounds[0] + bounds[1]) / 2, (bounds[2] + bounds[3]) / 2], points = spots.flatMap(p => [[p[0], 0, p[1]], [p[0], H, p[1]]]);
+  const region = box(q6(bounds[0]), q6(bounds[1]), 0, q6(H + pad), q6(bounds[2]), q6(bounds[3])), outsideSign = route.local.outsideSign;
+  const make = (name, target, direction, up, notes) => {
+    const distance = fitCameraDistance({ points, target, direction, up, fov: CURVE.fov, aspect }), eye = target.map((v, i) => q6(v + direction[i] * distance));
+    const view = { id: CURVE.id, suffix: `${CURVE.suffix}-${name}`, frame: 'curve', status: 'OK', eye, target: target.map(q6), fov: CURVE.fov, up, near: catalogueNear(eye, target), region,
+      extents: { scope: 'train', z0: 0, z1: q6(f.length) }, notes: { stage: CURVE_STAGE, distanceM: distance, fitFraction: CATALOGUE.fitFraction, footprintM: { x: [q6(bounds[0]), q6(bounds[1])], z: [q6(bounds[2]), q6(bounds[3])] }, ...notes } };
+    return { ...view, rotation: stageRotation(view) };
+  };
+  return [
+    make('plan', [centre[0], H, centre[1]], [0, 1, 0], [1, 0, 0], { imageAxis: 'image x runs along the train toward the tail, the nose at the left; image up is the right-hand side of the direction of travel' }),
+    make('oblique', [centre[0], H / 2, centre[1]], [outsideSign * Math.cos(CURVE.elevationDeg * D2R), Math.sin(CURVE.elevationDeg * D2R), 0], [0, 1, 0],
+      { elevationDeg: CURVE.elevationDeg, side: `the outside of the bend (${outsideSign > 0 ? 'right' : 'left'}-hand side of the direction of travel)` }),
+  ];
+}
+/**
+ * Everything about one kind on the curve, from the geometry alone, before the page is asked anything. `f` is describeFormation's plain description, `route` curveRouteFor's, `placed`
+ * what carPoses did with the train on the route ({ poses: curveJoints' poses, each with the `front` and `rear` bogie points in the frame of the route, `cars`: the poses as the page is told
+ * them, `noseM`: how far along the route's edges, in the page's own measure of distance along the track (the chords), the nose stood, and `problems`: every way carPoses disagrees with
+ * the geometry) and `spec` is { gangwayWidthM, endGapM }. A GAP, with the reason, if carPoses disagrees with the geometry or did not pose every car; otherwise the two views, the cars to
+ * pose, the bogies where they must stand, every joint and the verdicts the joints give by themselves (the page's bogies are read later: judgeCurvePage).
+ */
+export function planCurve(f, route, placed, { gangwayWidthM, endGapM }) {
+  const { poses, cars } = placed, problems = [];
+  if (placed.problems?.length) problems.push(`the page's placement code (carPoses) disagrees with the geometry: ${placed.problems.slice(0, 3).join('; ')}`);
+  if (poses.length !== f.cars.length) problems.push(`carPoses posed ${poses.length} of the ${f.cars.length} cars of ${f.kind}`);
+  const summary = { source: route.source, smooth: route.smooth === true, radiusM: route.radiusM, turnDeg: route.turnDeg, baselineM: route.baselineM, apex: route.apex, headingDeg: route.local.headingDeg,
+    outsideSign: route.local.outsideSign, lengthM: route.local.lengthM, apexS: route.local.apexS, edges: route.steps?.length ?? 0, ways: route.ways, services: route.services, tunnel: route.tunnel,
+    ...(route.note ? { note: route.note } : {}) };
+  const notes = { stage: CURVE_STAGE, route: summary, rule: CURVE_RULE };
+  const head = { id: CURVE.id, suffix: CURVE.suffix, frame: 'curve', lengthM: f.length, route: summary, path: route.local.points, notes };
+  if (problems.length) return { ...head, status: 'GAP', reason: problems.join('; '), noseM: null, views: [], cars: [], bogies: [], joints: [], checks: null };
+  const joints = curveJoints(poses, { half: f.half, gangwayWidthM, endGapM }, { outsideSign: route.local.outsideSign });
+  return { ...head, status: 'OK', reason: null, noseM: q6(placed.noseM), views: planCurveViews(f, route, poses), cars, joints, checks: judgeCurveJoints(joints, { reachM: endGapM }),
+    bogies: poses.flatMap(p => [p.front, p.rear].map((point, k) => ({ name: `bogie-${p.index}-${k}`, car: p.index, k, point }))) };
+}
+/** The numbers that define a curve plan, for freezing and comparison (what the page read and the verdicts are not part of it). */
+export const curvePoseOf = p => ({ status: p.status, lengthM: p.lengthM, route: p.route, path: p.path, views: p.views.map(poseOf) });
+
+/** The cars of the specimen as they stand: the transform of each car node. */
+export function readCars(group) {
+  return group.children.filter(o => /^car-\d+$/.test(o.name)).map(o => ({ name: o.name, visible: o.visible, position: o.position.toArray(), rotationY: o.rotation.y, scaleZ: o.scale.z }));
+}
+/** Where every bogie the specimen shows stands: its position in the specimen's own frame (`local`, the frame the route is in) and in the world. */
+export function readBogiePoints(T, group) {
+  group.updateMatrixWorld(true);
+  const out = [], world = new T.Vector3();
+  group.traverseVisible(o => {
+    const m = /^bogie-(\d+)-(\d+)$/.exec(o.name);
+    if (!m) return;
+    world.setFromMatrixPosition(o.matrixWorld);
+    out.push({ name: o.name, car: Number(m[1]), k: Number(m[2]), local: group.worldToLocal(world.clone()).toArray(), world: world.toArray() });
+  });
+  return out;
+}
+/**
+ * What the page has, against the plan: `read` is { cars: readCars, bogies: readBogiePoints }. `problems` are a page that is not in the state it was asked to be in (a car not where it
+ * was put, a bogie missing, twice or unplanned), which makes the curve a GAP; `findings` are bogies that stand more than `toleranceM` from the track (the path, at the rail head), which
+ * are the model's. `rows` give each bogie's place, its distance from the path and from the place carPoses gave it.
+ */
+export function judgeCurvePage(plan, read, { toleranceM = CURVE.bogieToleranceM } = {}) {
+  const problems = appliedCarProblems(plan.cars, read.cars ?? []), findings = [], rows = [];
+  for (const [t, r] of reportedBogies(plan.bogies, read.bogies ?? [], problems)) {
+    const offTrackM = Math.hypot(polylineDistance(plan.path, [r.local[0], r.local[2]]), r.local[1]), plannedErrorM = Math.hypot(r.local[0] - t.point[0], r.local[1], r.local[2] - t.point[1]);
+    rows.push({ name: t.name, car: t.car, k: t.k, plannedPoint: t.point, local: r.local, world: r.world, offTrackM, plannedErrorM });
+    if (!(offTrackM <= toleranceM)) findings.push({ check: 'bogie-on-track', bogie: t.name, offTrackM, toleranceM, message: `${t.name} stands ${offTrackM.toFixed(4)} m from the track, more than the ${toleranceM} m allowed` });
+  }
+  return { problems, findings, rows, bogies: { ok: findings.length === 0 && problems.length === 0, count: rows.length, toleranceM, maxOffTrackM: Math.max(0, ...rows.map(r => r.offTrackM)), maxPlannedErrorM: Math.max(0, ...rows.map(r => r.plannedErrorM)) } };
+}
+/** The verdict of the curve: the joints' findings and the page's, PASS when there are none. `page` is judgeCurvePage's, or null when the page was never read (then the bogies are not judged). */
+export function curveVerdict(plan, page = null) {
+  if (!plan.checks) return { status: 'NOT RUN', findings: [], bodies: null, couplers: null, gangways: null, bogies: null };
+  const findings = [...plan.checks.findings, ...(page?.findings ?? [])];
+  return { status: findings.length ? 'FINDING' : 'PASS', findings, bodies: plan.checks.bodies, couplers: plan.checks.couplers, gangways: plan.checks.gangways, bogies: page?.bogies ?? null };
+}
+
+/**
+ * A capture-only stage that follows the route, named like the straight one and never part of the model: the ground, a 3.4 m ballast strip, sleepers (one InstancedMesh every .65 m of
+ * the route, each square to the track under it) and two rail-head boxes at the wheel-tread centres, the rail head top at y = 0 and the levels the page's own track has (web/src/track.ts).
+ * Each straight run of the route is a box, the ends of the boxes at a bend cut or lengthened so that the rails meet at the corner (a rail at a lateral offset s is lengthened by
+ * -s tan(turn / 2) at each end of a run, the ballast by half its width times tan(|turn| / 2)) and the boxes of a strip are merged into one mesh. `points` are the route in the frame of the specimen.
+ */
+export function buildCurveStage(T, { points }) {
+  const g = new T.Group();
+  g.name = 'capture-stage';
+  g.userData = { captureOwned: true, note: 'capture-only neutral curved specimen stage; not part of the model' };
+  const cum = cumulative(points), total = cum.at(-1), lambert = color => new T.MeshLambertMaterial({ color }), yaw = i => Math.atan2(points[i + 1][0] - points[i][0], points[i + 1][1] - points[i][1]);
+  const turn = j => wrap(bearing(points[j], points[j + 1]) - bearing(points[j - 1], points[j]));
+  const strip = (name, color, width, height, y, offset, extension) => {
+    const position = [], normal = [], index = [];
+    for (let i = 0; i + 1 < points.length; i++) {
+      const length = cum[i + 1] - cum[i], e0 = i > 0 ? extension(turn(i)) : 0, e1 = i + 2 < points.length ? extension(turn(i + 1)) : 0, theta = yaw(i), d = [Math.sin(theta), Math.cos(theta)];
+      const geometry = new T.BoxGeometry(width, height, length + e0 + e1).applyMatrix4(new T.Matrix4().makeRotationY(theta).setPosition(
+        (points[i][0] + points[i + 1][0]) / 2 - d[1] * offset + d[0] * (e1 - e0) / 2, y, (points[i][1] + points[i + 1][1]) / 2 + d[0] * offset + d[1] * (e1 - e0) / 2));
+      for (const v of geometry.attributes.position.array) position.push(v);
+      for (const v of geometry.attributes.normal.array) normal.push(v);
+      for (const v of geometry.index.array) index.push(v + position.length / 3 - geometry.attributes.position.count);
+      geometry.dispose();
+    }
+    const merged = new T.BufferGeometry();
+    merged.setAttribute('position', new T.Float32BufferAttribute(position, 3)); merged.setAttribute('normal', new T.Float32BufferAttribute(normal, 3)); merged.setIndex(index);
+    const m = new T.Mesh(merged, lambert(color)); m.name = name; g.add(m); return m;
+  };
+  const xs = points.map(p => p[0]), zs = points.map(p => p[1]), ground = new T.Mesh(new T.PlaneGeometry(9000, 9000).rotateX(-Math.PI / 2), lambert(0x3a4049));
+  ground.name = 'capture-stage-ground'; ground.position.set((Math.min(...xs) + Math.max(...xs)) / 2, CATALOGUE.groundY, (Math.min(...zs) + Math.max(...zs)) / 2); g.add(ground);
+  strip('capture-stage-ballast', 0x5d5a55, 3.4, .06, CATALOGUE.groundY + .03, 0, angle => 1.7 * Math.tan(Math.abs(angle) / 2));
+  const count = Math.floor(total / .65), sleepers = new T.InstancedMesh(new T.BoxGeometry(2.6, .05, .25), lambert(0x8d8b85), count), m = new T.Matrix4();
+  sleepers.name = 'capture-stage-sleepers';
+  for (let i = 0; i < count; i++) { const s = .325 + i * .65, p = pointAlong(points, cum, s); m.makeRotationY(yaw(segmentAt(cum, s))).setPosition(p[0], -.125, p[1]); sleepers.setMatrixAt(i, m); }
+  sleepers.instanceMatrix.needsUpdate = true;
+  g.add(sleepers);
+  for (const sx of [-1, 1]) {
+    const offset = sx * CATALOGUE.gaugeM / 2;
+    strip(`capture-stage-rail-${sx < 0 ? 'left' : 'right'}`, 0xa0a4aa, CATALOGUE.railHeadWidthM, .1, -.05, offset, angle => -offset * Math.tan(angle / 2));
+  }
+  g.userData.levels = { groundY: CATALOGUE.groundY, ballastTopY: CATALOGUE.groundY + .06, sleeperTopY: -.1, railHeadTopY: 0, railCentreX: CATALOGUE.gaugeM / 2, ballastWidthM: 3.4, sleepers: count,
+    route: { points: points.length, lengthM: q6(total) } };
+  return g;
 }

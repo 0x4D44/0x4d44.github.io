@@ -10,13 +10,14 @@ import {deflateSync,crc32} from 'node:zlib';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
-import {bodySpec,carPlan} from '../web/src/train.ts';
+import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {ASKABLE_VIEW_IDS,CATALOGUE,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,judgeMotionClip,judgeMotionFrame,motionPoseOf,planCatalogueViews,planMotion,planStation,poseOf,poseDifference,reseatBlockedStationViews,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
+import {ASKABLE_VIEW_IDS,CATALOGUE,CURVE,CURVE_RULE,CURVE_STAGE,CURVE_VIEWS,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,cumulative,curvePoseOf,curveRouteFor,curveVerdict,failureSummary,frameTransform,frozenEntryOf,judgeCurvePage,judgeMotionClip,judgeMotionFrame,localPose,motionPoseOf,planCatalogueViews,planCurve,planMotion,planStation,poseOf,poseDifference,pointAlong,reseatBlockedStationViews,segmentAt,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
-import {buildGraph} from '../core/graph.ts';
+import {buildGraph,edgePoint} from '../core/graph.ts';
+import {shapeFrom} from '../core/curves.ts';
 import {createMotion} from '../core/motion.ts';
 import {carPoses,createTrainKinds} from '../web/src/trains-live.ts';
 import {createReplayFeed,parseRecording} from '../web/src/feed.ts';
@@ -353,7 +354,7 @@ export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
 /**
  * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`.
- * Without `--views` a run takes V01-V10; `M01` (the motion clip) is opt-in, `--views M01` or with others, and is taken at day only.
+ * Without `--views` a run takes V01-V10; `M01` (the motion clip) and `C01` (the curve) are opt-in, `--views M01`, `--views C01` or with others, and are taken at day only.
  */
 export function parseCatalogueArgs(args) {
   const options=new Map();
@@ -381,6 +382,7 @@ export function parseCatalogueArgs(args) {
   if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
   const views=list('--views',ASKABLE_VIEW_IDS,VIEW_IDS);
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
+  if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
   return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
@@ -495,6 +497,9 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
     // the motion clip is derived by a rule, not searched for: a held manifest that does not have it (a pass before M01 existed) leaves nothing to drift from
     const clip=plan.motion&&held.views?.[plan.motion.suffix];
     if(clip?.plan){const at=poseDifference(motionPoseOf(plan.motion),clip.plan,tol);if(at!==null)drifts.push({kind,view:plan.motion.suffix,reason:'motion plan differs from the frozen plan',at});}
+    // the curve is derived the same way: a held manifest from before C01 existed has nothing to drift from
+    const bend=plan.curve&&held.views?.[plan.curve.suffix];
+    if(bend?.plan){const at=poseDifference(curvePoseOf(plan.curve),bend.plan,tol);if(at!==null)drifts.push({kind,view:plan.curve.suffix,reason:'curve plan differs from the frozen plan',at});}
   }
   return drifts;
 }
@@ -628,10 +633,23 @@ export function catalogueDriver() {
     const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
     if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
     const clearance=F.checkNearClearance(F.vertexBoxes(T,s.group),pose.position,{near:pose.near,fov:pose.fov,aspect:pose.aspect,marginM:spec.clearanceMarginM});
-    const cars=s.group.children.filter(o=>/^car-\d+$/.test(o.name)).map(o=>({name:o.name,visible:o.visible,position:o.position.toArray(),rotationY:o.rotation.y,scaleZ:o.scale.z}));
-    return {pose,info:drawn,costs:F.trainCosts(s.group),bogies:F.readBogieLods(T,s.group,k.camera),clearance,cabDistanceM:F.leadingCabPoint(T,s.group).distanceTo(k.camera.position),cars,
+    return {pose,info:drawn,costs:F.trainCosts(s.group),bogies:F.readBogieLods(T,s.group,k.camera),clearance,cabDistanceM:F.leadingCabPoint(T,s.group).distanceTo(k.camera.position),cars:F.readCars(s.group),
       placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text,chrome,atmosphere:atmosphereOf(),trainNight:readTrainNight(s.group)};
   };
+  /**
+   * C01: a specimen begun as usual, then its straight stage taken away for the one that follows the route (`points`, in the specimen's own frame, the frame the cars are posed in).
+   * Scenery hidden, the chrome hidden, as for every neutral stage.
+   */
+  cat.beginCurve=(kind,length,points)=>{
+    const {T,F}=cat,begun=cat.begin(kind,length),s=cat.state;
+    k.scene.remove(s.stage);disposeGeometries(s.stage);
+    s.stage=F.buildCurveStage(T,{points});k.scene.add(s.stage);
+    return {...begun,stage:s.stage.userData.levels,children:sceneChildren()};
+  };
+  /** C01: the cars and the bogies of the specimen as they stand, in its own frame. */
+  cat.readCurve=()=>{const {T,F}=cat,s=cat.state;return {cars:F.readCars(s.group),bogies:F.readBogiePoints(T,s.group)};};
+  /** C01: the cars posed as createLiveTrains.update poses them (the same function M01 uses), then read back. */
+  cat.poseCars=cars=>{const s=cat.state;s.saved=null;cat.F.applyCarPoses(s.group,cars);return cat.readCurve();};
   /** 'empty' hides the specimen, 'car:N' shows only car N, 'all' restores; each draws one frame. */
   cat.isolate=mode=>{
     const s=cat.state,g=s.group;
@@ -750,11 +768,11 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
 }
 
 /** The head of the run's manifest: what the run was (rubric, viewport, the sun rule, the exposure, the station, the machine and build, the poses it reused) before any kind is photographed. */
-export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,generated=new Date().toISOString()}) {
+export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,curve=null,generated=new Date().toISOString()}) {
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated,viewport:CATALOGUE.viewport,
     sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
       text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose. It always uses the day rig's sun, in every exposure, so a dusk pass turns each specimen exactly as the day pass did."},
-    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),
+    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),...(curve?{curve:curveManifest(curve)}:{}),
     host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:poses,kinds:{}};
 }
 /** The page address of a run: the local server's port and the query its exposure pins. */
@@ -1018,6 +1036,175 @@ export async function reseatStationResults({results,station,search,capture}) {
   return {results:results.map(r=>again.find(a=>a.view.suffix===r.view.suffix)??(stays.has(r.view.suffix)?{...r,reason:stays.get(r.view.suffix)}:r)),report};
 }
 
+// ---- C01: the curve, in Node -----------------------------------------------------------------------------------------------------------------
+// The route, the plan and the verdicts are in train-framing.mjs (curveRouteFor, planCurve, judgeCurvePage, curveVerdict). Here: the page's own placement code over the route, the
+// steps a picture goes through (shared with the other views), the sidecars, the report and the manifest entry, and the run of one kind's curve.
+/**
+ * A route made of edges of the page's graph, the track a train runs along edge after edge: `steps` are [{ edge, from }], `from` the node the train enters the edge at (its other end is
+ * where it leaves, the next step's `from`). The distance along it is the page's own, the edges' lengths (the chords) end to end: `cum[j]` is the distance to the start of step j.
+ */
+export function chainRoute(graph,steps) {
+  if(!Array.isArray(steps)||!steps.length)throw new Error('a route needs at least one edge');
+  const cum=[0],list=[];
+  steps.forEach(({edge,from},j)=>{
+    if(from!==edge.a&&from!==edge.b)throw new Error(`step ${j} enters edge ${edge.a}-${edge.b} at node ${from}, which is not on it`);
+    if(j>0){const prev=steps[j-1],left=prev.from===prev.edge.a?prev.edge.b:prev.edge.a;if(left!==from)throw new Error(`step ${j} enters at node ${from}, but step ${j-1} leaves at node ${left}`);}
+    list.push({edge,forward:from===edge.a,lengthM:edge.length});cum.push(cum[j]+edge.length);
+  });
+  return {graph,steps:list,cum,lengthM:cum.at(-1)};
+}
+/**
+ * The train as the motion model reports it on such a route (trainViewAt is the same for a straight path): its nose `noseM` along the route and its tail `lengthM` behind, each occupied
+ * interval in the edge's own terms (fromT to toT: a to b when the train runs that way, b to a when it runs against it) and the heading read off the edge's curve (edgePoint) at the nose.
+ */
+export function chainViewAt(route,noseM,lengthM,{id=1,speed=0}={}) {
+  const tailM=noseM-lengthM,{graph,cum}=route;
+  if(tailM<-1e-9||noseM>route.lengthM+1e-9)throw new Error(`a train ${lengthM} m long with its nose ${noseM} m along does not fit a route ${route.lengthM} m long`);
+  const occupied=[];
+  route.steps.forEach((step,j)=>{
+    const lo=Math.max(tailM,cum[j]),hi=Math.min(noseM,cum[j+1]);
+    if(hi-lo>1e-9){const u0=(lo-cum[j])/step.lengthM,u1=(hi-cum[j])/step.lengthM;occupied.push({edge:step.edge,fromT:step.forward?u0:1-u0,toT:step.forward?u1:1-u1});}
+  });
+  const last=occupied.at(-1);
+  if(!last)throw new Error('the train occupies none of the route');
+  const {point,dir}=edgePoint(graph,last.edge,last.toT),sign=Math.sign(last.toT-last.fromT);
+  return {id,description:'capture',leading:{edge:last.edge,t:last.toT,point},heading:Math.atan2(dir[0]*sign,-dir[1]*sign),
+    speed,lengthM,occupiedLengthM:occupied.reduce((n,s)=>n+Math.abs(s.toT-s.fromT)*s.edge.length,0),occupied,state:'moving',opacity:1,targetBerth:'',lastBerth:'',blocked:false,distanceM:noseM,reversals:0};
+}
+/**
+ * Where the page's placement code poses a train for a route: `chain`, the edges of the page's graph (built with curves) that a route found on the page's track runs along, or the straight
+ * chords of the points of the synthetic arc; `apexM`, how far along the chain (the page's own measure, the chords) the route's tightest point is; and `where(m)`, the place in the world
+ * at distance m along the chain, found from the route's own points by the share of each edge's curve, so not through edgePoint, which is what the poses are checked against.
+ */
+export function placementRoute(route,graph) {
+  const dense=cumulative(route.points);
+  if(route.source!=='real') {
+    const path=polylineRoute(route.points);
+    return {chain:chainRoute(path.graph,path.graph.edges.map(edge=>({edge,from:edge.a}))),apexM:route.apexS,where:m=>pointAlong(path.points,path.cum,m)};
+  }
+  const steps=route.steps.map(s=>{
+    const edge=(graph.adj.get(s.from)??[]).find(e=>e.wayId===s.way&&((e.a===s.from&&e.b===s.to)||(e.a===s.to&&e.b===s.from)));
+    if(!edge)throw new Error(`the page's graph has no edge of way ${s.way} between nodes ${s.from} and ${s.to}`);
+    return {edge,from:s.from};
+  });
+  const chain=chainRoute(graph,steps),at=route.apexAt;
+  return {chain,apexM:chain.cum[at.step]+at.share*chain.steps[at.step].lengthM,where:m=>{
+    const k=segmentAt(chain.cum,m),s=route.steps[k],u=(m-chain.cum[k])/chain.steps[k].lengthM;
+    return pointAlong(route.points,dense,dense[s.fromIndex]+u*(dense[s.toIndex]-dense[s.fromIndex]));
+  }};
+}
+/**
+ * The route of a run, from the data the page is built from: the tightest real bend of the page's smooth track (the graph built with curves, whose curves the finder reads) that the
+ * longest kind fits, the same for every kind whatever `--kinds` says, and the chain of the page's edges the placement code poses along.
+ */
+export async function loadCurveRoute(file=fileURLToPath(new URL('../web/src/data/kx-track.json',import.meta.url))) {
+  const bytes=await readFile(file),data=JSON.parse(bytes.toString('utf8')),graph=buildGraph(data,{curves:true});
+  const longest=ALL_KINDS.map(kind=>({kind,lengthM:trainLayout(kind).length})).reduce((a,b)=>b.lengthM>a.lengthM?b:a);
+  const route=curveRouteFor(data,longest.lengthM,{shapeOf:(a,b)=>shapeFrom(graph.shapes,a,b)});
+  return {route,placement:placementRoute(route,graph),longest,trackData:{file:'kings-cross-src/web/src/data/kx-track.json',sha256:sha256(bytes)}};
+}
+/**
+ * The cars of one kind on the route, posed by the page's own placement code (`place`, carPoses; a parameter only so that a test can hand the checks poses that are wrong) with the
+ * middle of the train on the route's tightest point, then turned into the frame of the route. Checked against the geometry first: each bogie is where the route has it at its distance
+ * behind the nose (to CURVE.placementToleranceM), and each car is turned, stretched and put where the chord between its own bogies says. `problems` is every way carPoses and the geometry
+ * disagree, or a train that does not fit the route; the plan records that as a GAP.
+ */
+export function curvePoses(formation,{route,placement},place=carPoses) {
+  const layout=trainLayout(formation.kind),length=formation.length,{chain,apexM,where}=placement,noseM=apexM+length/2,problems=[];
+  if(noseM-length<-1e-9||noseM>chain.lengthM+1e-9)return {ok:false,problems:[`a train ${length} m long with its middle on the tightest point does not fit the ${chain.lengthM} m of the route's edges`],maxErrorM:null,noseM,route:{points:route.points.length,lengthM:route.lengthM},poses:[],cars:[]};
+  const raw=place(chain.graph,chainViewAt(chain,noseM,length),layout);
+  let maxErrorM=0;
+  for(const pose of raw) {
+    const here=pose.car.bogies.map(z=>where(noseM-z)),[front,rear]=[pose.frontBogie.point,pose.rearBogie.point];
+    [front,rear].forEach((point,k)=>{
+      const error=Math.hypot(point[0]-here[k][0],point[1]-here[k][1]);maxErrorM=Math.max(maxErrorM,error);
+      if(!(error<=CURVE.placementToleranceM))problems.push(`carPoses puts bogie-${pose.car.index}-${k} at (${point}), the route has it at (${here[k]})`);
+    });
+    const dx=rear[0]-front[0],dz=rear[1]-front[1],chord=Math.hypot(dx,dz),scaleZ=chord/(pose.car.bogies[1]-pose.car.bogies[0]),turned=Math.abs(Math.atan2(Math.sin(pose.rotationY-Math.atan2(dx,dz)),Math.cos(pose.rotationY-Math.atan2(dx,dz))));
+    const put=Math.hypot(pose.position[0]-(front[0]-dx/chord*scaleZ*pose.car.bogies[0]),pose.position[1]-(front[1]-dz/chord*scaleZ*pose.car.bogies[0]));
+    if(!(turned<=1e-9&&Math.abs(pose.scaleZ-scaleZ)<=1e-9&&put<=1e-6))problems.push(`carPoses puts car-${pose.car.index} at ${pose.position} turned ${pose.rotationY} and stretched ${pose.scaleZ}, the chord between its bogies says (${front[0]-dx/chord*scaleZ*pose.car.bogies[0]},${front[1]-dz/chord*scaleZ*pose.car.bogies[0]}) turned ${Math.atan2(dx,dz)} and stretched ${scaleZ}`);
+  }
+  const frame=frameTransform(route),local=raw.map(p=>localPose(p,frame));
+  return {ok:!problems.length,problems,maxErrorM,noseM,route:{points:route.points.length,lengthM:route.lengthM},
+    poses:local.map(p=>({index:p.car.index,start:p.car.start,end:p.car.end,bogies:[...p.car.bogies],position:[...p.position],rotationY:p.rotationY,scaleZ:p.scaleZ,front:[...p.frontBogie.point],rear:[...p.rearBogie.point]})),cars:pagePoses(local)};
+}
+/** One kind's plan on the route: the poses the page's carPoses gives, the two views and every joint (planCurve), the gangway of the family and web/src/train.ts END_GAP as the specification. */
+export function planCurveFor(formation,curve,place=carPoses) {
+  return planCurve(formation,curve.route,curvePoses(formation,curve,place),{gangwayWidthM:bodySpec(formation.family).gangway.width,endGapM:END_GAP});
+}
+
+/**
+ * The steps a view goes through, as runCatalogueViews takes them: inspect (the page frames the view and checks it), shoot (the picture and its empty-stage baseline), verify (the pixels)
+ * and publish (the picture with its sidecar). `label(view)` is the text the page shows in the picture's corner; `extra(view)` is merged into the sidecar (a block a kind of view adds).
+ */
+export function catalogueViewSteps({kind,formation,evaluate,screenshot,publish,session,host,build,state,exposure,check=()=>{},label,extra=()=>({})}) {
+  const live=new Map();
+  return {
+    check,
+    unavailable:view=>view.capability&&!session.lampApi?view.capability.reason:null,
+    inspect:async view=>{const r=await evaluate(`window.__cat.${view.id==='V10'?'stationView':'view'}(${JSON.stringify(view)},${JSON.stringify(label(view))})`);live.set(view,r);return r.inspection;},
+    shoot:view=>photograph({evaluate,screenshot,view}),
+    verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
+    publish:async(view,picture,inspection,verdict,timingsMs)=>{
+      const file=`${kind}-${view.suffix}.png`;
+      return publish(file,picture.shot,{...catalogueSidecar({kind,view,file,formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs,exposure}),...extra(view)});
+    },
+  };
+}
+/** The `curve` block of a picture's sidecar: the route, where the train stands on it and the verdicts (the findings themselves are in the report). */
+export const curveBlock=(plan,view,verdict)=>({id:plan.id,stage:CURVE_STAGE,view:view.suffix,route:plan.route,noseM:plan.noseM,
+  checks:{status:verdict.status,findings:verdict.findings.length,bodies:verdict.bodies,couplers:verdict.couplers,gangways:verdict.gangways,bogies:verdict.bogies}});
+/** What the manifest says once of the curve: the rule, the stage, the route (with its points in the page's world) and the data it was found in. */
+export const curveManifest=({route,longest,trackData})=>({id:CURVE.id,suffix:CURVE.suffix,stage:CURVE_STAGE,rule:CURVE_RULE,longestKind:longest.kind,longestM:longest.lengthM,trackData,
+  route:{source:route.source,smooth:route.smooth,radiusM:route.radiusM,turnDeg:route.turnDeg,baselineM:route.baselineM,apex:route.apex,lengthM:route.lengthM,apexS:route.apexS,points:route.points,steps:route.steps,apexAt:route.apexAt,
+    ways:route.ways,services:route.services,tunnel:route.tunnel,chain:route.chain,searched:route.searched,frame:route.local,...(route.note?{note:route.note}:{})},
+  views:CURVE_VIEWS,exposure:'day'});
+/**
+ * `<kind>-curve.json`: the curve in one file. Its status and reason; the route and where the train stands on it; every joint's numbers; the bogies as the page has them; the
+ * verdicts and each finding with the sentence that explains it; each view's file, camera, rotation, pixels and inspection.
+ */
+export function curveReport({kind,plan,formation,status,reason,verdict,page,results,session,host,build,exposure,state}) {
+  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-curve/1',kind,id:plan.id,status,reason,stage:CURVE_STAGE,rule:CURVE_RULE,route:plan.route,noseM:plan.noseM,path:plan.path,
+    formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies,motor,pantograph})=>({index,type,length,start,end,cab,bogies,motor,pantograph}))},
+    checks:{status:verdict.status,findings:verdict.findings,bodies:verdict.bodies,couplers:verdict.couplers,gangways:verdict.gangways,bogies:verdict.bogies,
+      reading:'bodies: the footprints of two neighbours must not touch; couplers and gangways: the boundary points of two neighbours (the end of the first car, the start of the second, at the middle and at each edge of the gangway opening) must be no further apart than one bellows reaches (END_GAP); bogies: each must stand on the path within 1 cm'},
+    joints:plan.joints,bogies:page?.rows??[],pageProblems:page?.problems??[],
+    views:results.map(r=>({suffix:r.view.suffix,status:r.status,reason:r.reason??null,file:r.file??null,eye:r.view.eye,target:r.view.target,up:r.view.up,fov:r.view.fov,near:r.view.near,distanceM:r.view.notes.distanceM,rotation:r.view.rotation,
+      pixels:r.verdict??null,visibleFraction:r.inspection?.visibleFraction??null,checkedSamples:r.inspection?.checkedSamples??null})),
+    renderer:session.renderer,exposure:exposure.id,host:host.os,macModel:host.macModel,git:host.git,build,hiddenSceneNames:sortedObjects(state.hidden),stageLevels:state.stage};
+}
+/** One kind's C01 line in the manifest: the frozen plan, and what became of the pictures and the checks. */
+export function curveManifestEntry(plan,result) {
+  return {id:plan.id,suffix:plan.suffix,plan:curvePoseOf(plan),notes:plan.notes,
+    outcome:{status:result.status,reason:result.reason??null,report:result.report??null,stage:CURVE_STAGE,
+      views:(result.views??[]).map(r=>({suffix:r.view.suffix,status:r.status,reason:r.reason??null,file:r.file??null})),
+      checks:{status:result.verdict.status,findings:result.verdict.findings.length}}};
+}
+/**
+ * One kind's curve against a page that has the catalogue driver: put the specimen on the stage that follows the route, pose the cars as the page's live trains are, read back what the page
+ * has and judge it, then take the two views through the usual steps (inspect, shoot, verify, publish) and write the report. A page that is not as it was asked to be, or a view that fails
+ * its checks, is a GAP with its reason; a failed check of the joints or the bogies is a FINDING, in the report and the entry, and never a failed picture. A plan that is already a GAP is
+ * recorded without touching the page. Returns { entry, verdict }.
+ */
+export async function captureCurve({kind,plan,formation,evaluate,screenshot,publish,write,session,host,build,exposure,check=()=>{}}) {
+  if(plan.status!=='OK'){const verdict=curveVerdict(plan);return {entry:curveManifestEntry(plan,{status:'GAP',reason:plan.reason,verdict}),verdict};}
+  check();
+  const state=await evaluate(`window.__cat.beginCurve(${JSON.stringify(kind)},${formation.length},${JSON.stringify(plan.path)})`);
+  let page,verdict,results=[];
+  try {
+    page=judgeCurvePage(plan,await evaluate(`window.__cat.poseCars(${JSON.stringify(plan.cars)})`));verdict=curveVerdict(plan,page);
+    if(!page.problems.length)results=await runCatalogueViews(plan.views,catalogueViewSteps({kind,formation,evaluate,screenshot,publish,session,host,build,state,exposure,check,
+      label:view=>`${kind} catalogue specimen on ${CURVE_STAGE} - ${view.id} ${view.suffix} - ${plan.route.source==='real'?'tightest real bend':'SYNTHETIC arc'}, R ${plan.route.radiusM.toFixed(1)} m`,
+      extra:view=>({hiddenSceneNames:sortedObjects(state.hidden),curve:curveBlock(plan,view,verdict)})}));
+  } finally {await evaluate('window.__cat.end()');}
+  const reasons=[];
+  if(page.problems.length)reasons.push(`the page is not as the capture posed it: ${page.problems.slice(0,3).join('; ')}`);
+  for(const r of results)if(r.status!=='OK')reasons.push(`${r.view.suffix}: ${r.reason}`);
+  const status=reasons.length?'GAP':'OK',reason=reasons.length?reasons.join('; '):null,report=`${kind}-${plan.suffix}.json`;
+  await write(report,Buffer.from(JSON.stringify(curveReport({kind,plan,formation,status,reason,verdict,page,results,session,host,build,exposure,state}),null,2)+'\n'));
+  return {entry:curveManifestEntry(plan,{status,reason,report,views:results,verdict}),verdict};
+}
+
 export async function catalogueMain(args) {
   const opts=parseCatalogueArgs(args),root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
   if(opts.exposure!=='day'&&!opts.poses)throw new Error(`--exposure ${opts.exposure} reuses the poses of a day pass, so poses cannot change between exposures: give --poses <the day pass's catalogue-manifest.json>`);
@@ -1026,8 +1213,10 @@ export async function catalogueMain(args) {
   if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
   for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
   const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null,withMotion=opts.views.includes(MOTION.id);
+  const curve=opts.views.includes(CURVE.id)?await loadCurveRoute():null;
   const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
-    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null}];}));
+    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null,
+      curve:curve?planCurveFor(formation,curve):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
     const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
@@ -1038,15 +1227,15 @@ export async function catalogueMain(args) {
       if(plan.station)plan.stationViews=stationViewsFromFrozen(plan.station,frozen.kinds[plan.kind]);
     }
   }
-  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[]),...(plan.motion?[plan.motion]:[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
+  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[]),...(plan.motion?[plan.motion]:[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),plan.curve?{[plan.curve.status]:1}:{})]));
   if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,exposure:opts.exposure,posesFrozen:!!frozen,planned:counts}));return;}
   const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   await mkdir(out,{recursive:true});
   const host=hostInfo(),build=await buildHash(dist),started=performance.now();
   let chrome,cdp,profile,server,cleanup,fatal,session;
   const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
-  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion});
-  const summary={kinds:{},timingsMs:{}};
+  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion,curve});
+  const summary={kinds:{},timingsMs:{},...(curve?{curveChecks:{}}:{})};
   try {
     server=catalogueServer(root,dist);
     await new Promise((r,j)=>{server.once('error',j);server.listen(0,'127.0.0.1',r);});
@@ -1080,23 +1269,9 @@ export async function catalogueMain(args) {
     const shoot=async()=>Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64');
     const publish=async(file,bytes,sidecar)=>{await writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});await writeFile(path.join(out,file+'.json'),JSON.stringify(sidecar,null,2)+'\n',{flag:'wx',mode:0o600});return file;};
     // the views of one specimen already on stage: check, photograph (with the empty-stage baseline), verify the pixels, write the picture and its sidecar
-    const captureViews=async(kind,plan,views,state)=>{
-      const live=new Map();
-      return runCatalogueViews(views,{
-        check:()=>lifetime.check(),
-        unavailable:view=>view.capability&&!session.lampApi?view.capability.reason:null,
-        inspect:async view=>{
-          const station=view.id==='V10',text=`${kind} catalogue specimen ${station?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}`;
-          const r=await evaluate(`window.__cat.${station?'stationView':'view'}(${JSON.stringify(view)},${JSON.stringify(text)})`);live.set(view,r);return r.inspection;
-        },
-        shoot:view=>photograph({evaluate,screenshot:shoot,view}),
-        verify:async(view,picture,inspection)=>{const diff=pixelDiff(picture.shot,picture.baseline);return pixelVerdict(view,diff,picture.subject?pixelDiff(picture.subject,picture.baseline):diff,inspection);},
-        publish:async(view,picture,inspection,verdict,timingsMs)=>{
-          const file=`${kind}-${view.suffix}.png`;
-          return publish(file,picture.shot,catalogueSidecar({kind,view,file,formation:plan.formation,session,host,build,state,result:{verdict,live:live.get(view)},timings:timingsMs,exposure:manifest.exposure}));
-        },
-      });
-    };
+    const captureViews=(kind,plan,views,state)=>runCatalogueViews(views,catalogueViewSteps({kind,formation:plan.formation,evaluate,screenshot:shoot,publish,session,host,build,state,exposure:manifest.exposure,check:()=>lifetime.check(),
+      label:view=>`${kind} catalogue specimen ${view.id==='V10'?"at King's Cross, station scenery kept":'on neutral stage'} - ${view.id} ${view.suffix}`}));
+    const write=(file,bytes)=>writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600});
     for(const [kind,plan] of plans) {
       lifetime.check();const kindStart=performance.now();
       const entries={};
@@ -1127,14 +1302,19 @@ export async function catalogueMain(args) {
       }
       if(plan.motion) {
         // M01: the clip on its own stage (captureMotionClip begins and ends the specimen itself)
-        const {entry}=await captureMotionClip({kind,plan:plan.motion,formation:plan.formation,evaluate,screenshot:shoot,publish,write:(file,bytes)=>writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600}),
-          session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
+        const {entry}=await captureMotionClip({kind,plan:plan.motion,formation:plan.formation,evaluate,screenshot:shoot,publish,write,session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
         entries[entry.suffix]=entry;
+      }
+      let bend='';
+      if(plan.curve) {
+        // C01: the train on the curve, on its own stage (captureCurve begins and ends the specimen itself); a failed check is a finding, counted apart from the pictures' statuses
+        const {entry,verdict}=await captureCurve({kind,plan:plan.curve,formation:plan.formation,evaluate,screenshot:shoot,publish,write,session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
+        entries[entry.suffix]=entry;summary.curveChecks[kind]={status:verdict.status,findings:verdict.findings.length};bend=` (curve checks ${verdict.status}, ${verdict.findings.length} finding(s))`;
       }
       manifest.kinds[kind]={formation:manifestFormation(plan.formation),views:entries};
       const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
       summary.kinds[kind]=tally;summary.timingsMs[kind]=Math.round(performance.now()-kindStart);
-      console.log(`${kind}: ${JSON.stringify(tally)} in ${(summary.timingsMs[kind]/1000).toFixed(1)} s`);
+      console.log(`${kind}: ${JSON.stringify(tally)}${bend} in ${(summary.timingsMs[kind]/1000).toFixed(1)} s`);
     }
   }catch(error){fatal={reason:error.message,stack:error.stack};}
   finally{cdp?.close();cleanup=await cleanupCaptureBrowser(chrome,profile);lifetime.dispose();server?.closeAllConnections();if(server?.listening)await new Promise(r=>server.close(r));}
