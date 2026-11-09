@@ -8,11 +8,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import * as THREE from 'three';
 import { planBuilding } from '../../core/city.ts';
 import { shedBufferStops, shedLayout, shedToWorld, standingTrainPose, worldToShed } from '../../core/station.ts';
 import { trainLayout } from '../../core/train.ts';
 import { WESTERN_RANGE } from '../../web/src/shed.ts';
-import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
+import { lensFor } from '../station-scene.mjs';
+import { AXES, ELEMENT_VIEWS, LIGHTING_NOTE, WESTERN_RANGE_STANDOFF, cameraBuildingCollisions, cityBuildings, cdpPipe, createEvidenceServer, commandResult, lightingFingerprint, lightingProbe, optionsFrom, prepareEvidenceScene, proxyTarget, realMetal, relayUrl, resolveViews, runStationEvidenceShots, safeFile, safeOutputDirectory, searchSignalStates, signalReplayWindow, signalStateTarget, signalStateCamera, setSignalDetailBoardVisibility, stationViewNames, stationWorld, writePrivateFile, runAxis04Reports, stationCameras, trainCameras, within } from '../evidence.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const scratch = path.join(root, '.scratch/evidence13-tests');
@@ -230,16 +232,22 @@ test('station cameras cover every requested landmark using finite world position
   assert.equal(AXES.length,9); assert.equal(cameras['platform-eye'].pos[1],2.5);
 });
 
-test('Western Range camera frames the actual west brick facade at eye level', async () => {
+test('Western Range camera shows the whole west elevation from eye level, 62 m back on its mid-length', async () => {
   const data=JSON.parse(await readFile(path.join(root,'kings-cross-src/web/src/data/kx-track.json'),'utf8'));
   const s=shedLayout(data), camera=stationCameras(data)['western-range'];
   const local=worldToShed(s,[camera.pos[0],camera.pos[2]]), target=worldToShed(s,[camera.target[0],camera.target[2]]);
-  const facadeU=-WESTERN_RANGE.depth-.01, middleV=(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2;
-  assert.ok(local.u<facadeU && local.u-facadeU>-7,'camera sits within seven metres outside the western face');
-  assert.ok(local.v>=WESTERN_RANGE.v0&&local.v<=WESTERN_RANGE.v1,'camera stays alongside the OSM-length range');
-  assert.ok(Math.abs(local.v-middleV)<1e-8);
-  assert.ok(Math.abs(target.u-facadeU)<.2&&Math.abs(target.v-middleV)<1e-8,'aims at the brick west face');
-  assert.equal(camera.pos[1],1.6); assert.equal(camera.fov,35);
+  const faceU=-WESTERN_RANGE.depth, middleV=(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2;
+  assert.ok(Math.abs(local.u-(faceU-WESTERN_RANGE_STANDOFF))<1e-6,'the standpoint is 62 m west of the western face');
+  assert.ok(Math.abs(local.v-middleV)<1e-6,'on the middle of the OSM-length range');
+  assert.ok(Math.abs(target.u-(faceU-.1))<1e-6&&Math.abs(target.v-middleV)<1e-8,'aims square at the brick west face');
+  assert.equal(camera.pos[1],1.6,'still eye level'); assert.equal(camera.fov,70);
+  // What matters is what the lens sees: the face's four corners (both ends, ground and eave) are all inside the frame, and between them they
+  // cross most of its width, so neither a close-up that crops the ends nor a distant speck can pass.
+  const lens=lensFor(camera), eave=WESTERN_RANGE.storey*WESTERN_RANGE.storeys;
+  const corner=(v,y)=>{const [x,z]=shedToWorld(s,faceU,v);return new THREE.Vector3(x,y,z).project(lens);};
+  const corners=[[WESTERN_RANGE.v0,0],[WESTERN_RANGE.v0,eave],[WESTERN_RANGE.v1,0],[WESTERN_RANGE.v1,eave]].map(([v,y])=>corner(v,y));
+  for(const p of corners) assert.ok(Math.abs(p.x)<1&&Math.abs(p.y)<1&&p.z<1,`a corner of the elevation is out of frame: ${p.x.toFixed(3)}, ${p.y.toFixed(3)}`);
+  assert.ok(Math.abs(corners[0].x-corners[2].x)>1.7,`the elevation crosses ${(Math.abs(corners[0].x-corners[2].x)/2*100).toFixed(0)}% of the frame width`);
 });
 
 test('train closeups are three metres from the nose and coach side and include bogie gangway and 387', () => {
@@ -310,7 +318,7 @@ test('every named station and sample train camera clears the rendered city build
   // Pin the requested clear positions; check the old footprints at street height too.
   const at=(u,v,y)=>{const [x,z]=shedToWorld(s,u,v);return [x,y,z];};
   assert.deepEqual(cameras['south-front'].pos,at(s.width/2,-70,26));
-  assert.deepEqual(cameras['western-range'].pos,at(-WESTERN_RANGE.depth-6,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6));
+  assert.deepEqual(cameras['western-range'].pos,at(-WESTERN_RANGE.depth-WESTERN_RANGE_STANDOFF,(WESTERN_RANGE.v0+WESTERN_RANGE.v1)/2,1.6));
   for (const [name,pos,id] of [['south-front',at(s.width/2,-125,2),137827419],['western-range',at(-65,185,12),1018561795]]) {
     assert.ok(cameraBuildingCollisions({[name]:{...cameras[name],pos}},buildings).some(c=>c.buildingId===id),name);
   }
@@ -469,6 +477,8 @@ const NEW_CAMERAS = {
   'historic-neighbours': ['gnh-from-square', 'midland-euston-road', 'midland-clock-tower', 'barlow-interior'],
   'city-surroundings': ['granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east'],
 };
+/** Cameras added beside the rubrics' own, on the lead's request (the square's south-west is behind the hotel; see tests/camera-faults.test.mjs). */
+const EXTRA_CAMERAS = ['concourse-exterior-west'];
 /** The twenty cameras that existed before wave 0, as that commit placed them: the new views must not move them. */
 const OLD_CAMERAS = {"overview":{"pos":[260,220,90],"target":[46.3756,5,-131.6293]},"top":{"pos":[46.3756,3000,-131.6293],"target":[46.3784,0,-131.7293],"fov":12,"near":100,"grid":true},"side":{"pos":[1531.8966,65,-89.9688],"target":[46.3756,65,-131.6293],"fov":7,"near":100,"grid":true},"south-front":{"pos":[41.0493,26,58.296],"target":[43.0116,12,-11.6765]},"front-oblique":{"pos":[146.6921,32,76.2646],"target":[43.5723,12,-31.6686]},"shed-interior":{"pos":[44.15,3.2,-328.45],"target":[45.8149,8,-111.6372]},"platform-eye":{"pos":[43.5429,2.5,-210.0929],"target":[44.6642,2.5,-250.0771]},"concourse":{"pos":[-58.1982,2.5,-90.5031],"target":[-21.2568,12,-90.5031]},"western-range":{"pos":[-8.9753,1.6,-87.9638],"target":[-3.0776,3.5,-87.7984],"fov":35,"near":0.1},"western-range-gateline":{"pos":[-46.9924,3,-52.2155],"target":[-4.0193,5.5,-51.0104],"fov":60,"near":0.1},"roof-above":{"pos":[91.0776,131.6408,-120.3717],"target":[46.0953,18.6408,-121.6332]},"north-gable":{"pos":[52.0899,18,-335.3892],"target":[49.8473,12,-255.4206]},"concourse-roof-detail":{"pos":[-27.5055,13.0377,-86.6033],"target":[-26.0055,19.0377,-87.6033],"fov":50,"near":0.1},"platform-eye-south":{"pos":[43.5429,2.5,-210.0929],"target":[42.4215,2.5,-170.1086]},"great-northern-hotel":{"pos":[-76.8251,10,-5.3446],"target":[-61.25,9.65,-24.9],"fov":75,"near":0.1},"concourse-hotel-junction":{"pos":[-22.8431,14,-71.9845],"target":[-53.4,9.65,-38.95]},"midland-grand-front":{"pos":[-22.982,28,232.1209],"target":[-89.85,11,97.85]},"st-pancras-shed":{"pos":[-51.6307,46,147.2178],"target":[-132.3879,15.24,-13.6494]},"st-pancras-shed-oblique":{"pos":[180.6156,182.88,-30.9907],"target":[-134.9916,14.6304,-18.836],"fov":55,"near":0.1},"gasworks-portals":{"pos":[40.1745,12,-393.4972],"target":[42.2617,4,-458.4637]}};
 
@@ -543,11 +553,15 @@ test('runStationEvidenceShots shoots every fixed view twice for flicker, or only
   for (const element of Object.keys(ELEMENT_VIEWS)) assert.deepEqual((await run(resolveViews(element, cameras))).map(shot => shot.name).sort(), [...ELEMENT_VIEWS[element]].sort(), element);
 });
 
-test('the twenty cameras that were there before wave 0 have not moved', () => {
+// The round-4 scorer found `western-range` (a 1.6 m stand 6 m off the face, about three bays in frame) useless; the lead asked for it to be
+// moved back to show the whole west elevation. It keeps its name and is the one pre-wave-0 camera allowed to move (see its own test).
+const REFRAMED = ['western-range'];
+test('the twenty cameras that were there before wave 0 are all still there, and only western-range, re-framed on request, has moved', () => {
   const cameras = stationCameras(trackData);
   assert.deepEqual(Object.keys(OLD_CAMERAS).filter(name => !cameras[name]), [], 'none was removed or renamed');
   for (const [name, was] of Object.entries(OLD_CAMERAS)) {
     const now = cameras[name];
+    if (REFRAMED.includes(name)) { assert.ok(Math.hypot(...now.pos.map((v, i) => v - was.pos[i])) > 30, `${name} was moved back from its close-up`); continue; }
     for (const key of ['pos', 'target']) was[key].forEach((value, i) => assert.ok(Math.abs(now[key][i] - value) < 1e-3, `${name}.${key}[${i}]: ${now[key][i]} against ${value}`));
     assert.equal(now.fov, was.fov, `${name}.fov`);
     assert.equal(now.near, was.near, `${name}.near`);
@@ -559,7 +573,9 @@ test('every camera the six rubrics add exists, looks somewhere, and names the ph
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
   assert.equal(added.length, 21);
   assert.equal(new Set(added).size, 21, 'no view is added twice');
-  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length, 'nothing else was added');
+  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length, 'nothing else was added');
+  assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
+  for (const name of EXTRA_CAMERAS) { assert.ok(cameras[name], name); assert.match(cameras[name].source, /\([a-z0-9-]+\.jpg/, `${name} names its reference photograph`); assert.ok(Object.values(ELEMENT_VIEWS).some(names => names.includes(name)), `${name} is scored with an element`); }
   for (const [element, names] of Object.entries(NEW_CAMERAS)) for (const name of names) {
     const camera = cameras[name];
     assert.ok(camera, `${element}: ${name}`);
@@ -574,7 +590,7 @@ test('every camera the six rubrics add exists, looks somewhere, and names the ph
 test('the new cameras stand where their sources say: the platform eyes on the platform, the street cameras on the ground', () => {
   const cameras = stationCameras(trackData), { terrain } = stationWorld(), platformEye = cameras['platform-eye'].pos[1];
   for (const name of ['platform-eye-p1-north', 'platform-eye-p8-south', 'roof-underside', 'furniture-close', 'suburban-p9']) assert.equal(cameras[name].pos[1], platformEye, `${name} is 1.6 m above its platform`);
-  for (const name of ['facade-brick-close', 'front-southwest-pedestrian', 'concourse-exterior-square', 'gnh-from-square', 'midland-euston-road', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east']) {
+  for (const name of ['facade-brick-close', 'front-southwest-pedestrian', 'concourse-exterior-square', 'concourse-exterior-west', 'gnh-from-square', 'midland-euston-road', 'granary-square', 'gasholders', 'canal-lock', 'kings-boulevard', 'euston-road-east']) {
     const [x, y, z] = cameras[name].pos;
     assert.ok(Math.abs(y - terrain.heightAt(x, z) - 1.7) < 1e-9, `${name}: the eye is 1.7 m above the terrain under it (${y} over ${terrain.heightAt(x, z)})`);
   }

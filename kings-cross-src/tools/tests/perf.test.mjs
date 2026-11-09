@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, headroomMarkdown, headroomReport, headroomVsBaseline } from '../perf.mjs';
+import { createServer } from 'node:http';
+import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, createRelayRoute, firstTrainVisible, headroomMarkdown, headroomReport, headroomVsBaseline, peakMarkdown, sweepMarkdown } from '../perf.mjs';
+import { sweepSummary } from '../camera-sweep.mjs';
 
 const node = { id: 1, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 0, functionName: 'scene' } };
 const maps = new Map([['bundle.js', [[{ generatedColumn: 0, source: 'scene.ts', originalLine: 2 }]]]]);
@@ -161,4 +163,117 @@ test('the Markdown says whether the headroom is valid and lists each camera', ()
   assert.match(invalid, /NOT VALID/);
   assert.match(invalid, /Headroom gap: The uncapped flags did not lift the frame limit/);
   assert.match(headroomMarkdown(undefined).join('\n'), /not measured/);
+  assert.match(headroomMarkdown(now, 'Station camera headroom').join('\n'), /^Station camera headroom \(uncapped/, 'the station table carries its own title');
+  assert.match(headroomMarkdown(undefined, 'Station camera headroom').join('\n'), /^Station camera headroom: not measured/);
+});
+
+// ---- The replay peak: the relay route, the first train, and the sweep Markdown ----------------------------------------------------------
+
+const SCRIPT = [
+  JSON.stringify({ t: 1000, e: { kind: 'interpose', area: 'Y9', descr: '1A01', to: 'B1' } }),
+  JSON.stringify({ t: 2000, e: { kind: 'step', area: 'Y9', descr: '1A01', from: 'B1', to: 'B2', time: 2000 } }),
+  JSON.stringify({ t: 3000, e: { kind: 'interpose', area: 'Y9', descr: '2B02', to: 'B1' } }),
+];
+const RECORDING = `${SCRIPT.join('\n')}\n`;
+
+/** A fake relay (recording, a health route, a failing recording for another date) behind the perf tool's /relay route, both on ephemeral ports. */
+async function withRelayRoute(replayWindow, run) {
+  const relay = createServer((req, res) => {
+    const url = new URL(req.url, 'http://relay.invalid');
+    if (url.pathname === '/recording' && url.searchParams.get('date') === '20261107') res.writeHead(200, { 'content-type': 'application/x-ndjson', etag: 'upstream' }).end(RECORDING);
+    else if (url.pathname === '/recording') res.writeHead(404).end('no such day');
+    else if (url.pathname === '/health') res.writeHead(200, { 'content-type': 'application/json' }).end('{"ok":true}');
+    else res.writeHead(404).end();
+  });
+  await new Promise(resolve => relay.listen(0, '127.0.0.1', resolve));
+  const relayBase = new URL(`http://127.0.0.1:${relay.address().port}`);
+  const route = createRelayRoute(relayBase, replayWindow);
+  const front = createServer((req, res) => { if (!route(req, res)) res.writeHead(418).end('not the relay'); });
+  await new Promise(resolve => front.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${front.address().port}`;
+  try { await run(base, relay, relayBase); }
+  finally { front.closeAllConnections?.(); relay.closeAllConnections?.(); await new Promise(resolve => front.close(resolve)); await new Promise(resolve => relay.close(resolve)); }
+}
+
+test('the relay route forwards everything, and only a window set on it changes the recording', async () => {
+  const replayWindow = { startMs: null };
+  await withRelayRoute(replayWindow, async (base) => {
+    const plain = await fetch(`${base}/relay/recording?date=20261107`);
+    assert.equal(plain.status, 200); assert.equal(await plain.text(), RECORDING, 'no window: the recording as the relay sent it');
+    assert.equal(plain.headers.get('etag'), 'upstream', 'and its headers');
+    assert.equal(await (await fetch(`${base}/relay/health`)).text(), '{"ok":true}');
+    assert.equal((await fetch(`${base}/elsewhere`)).status, 418, 'a path outside /relay is not this route\'s');
+    replayWindow.startMs = 2500;
+    const windowed = await fetch(`${base}/relay/recording?date=20261107`);
+    assert.equal(windowed.status, 200);
+    assert.match(windowed.headers.get('content-type'), /ndjson/); assert.equal(windowed.headers.get('cache-control'), 'no-store');
+    const rows = (await windowed.text()).split('\n').filter(Boolean).map(line => JSON.parse(line));
+    assert.deepEqual(rows.map(r => [r.t, r.e.kind]), [[2500, 'snapshot'], [3000, 'interpose']]);
+    assert.deepEqual(rows[0].e.berths, { B2: '1A01' });
+    assert.equal(windowed.headers.get('content-length'), String(Buffer.byteLength(JSON.stringify(rows[0]) + '\n' + SCRIPT[2] + '\n')), 'the length is the windowed body\'s');
+    assert.equal(await (await fetch(`${base}/relay/health`)).text(), '{"ok":true}', 'other routes are untouched while a window is set');
+    assert.equal((await fetch(`${base}/relay/recording?date=20260101`)).status, 404, 'a recording the relay does not have is passed through, not windowed');
+    replayWindow.startMs = null;
+    assert.equal(await (await fetch(`${base}/relay/recording?date=20261107`)).text(), RECORDING, 'clearing the window restores the recording');
+  });
+});
+
+test('the relay route answers 502 when the relay is down or its recording is not a recording', async () => {
+  const replayWindow = { startMs: 2500 };
+  const route = createRelayRoute(new URL('http://127.0.0.1:1'), replayWindow);
+  const front = createServer((req, res) => { route(req, res); });
+  await new Promise(resolve => front.listen(0, '127.0.0.1', resolve));
+  try {
+    const down = await fetch(`http://127.0.0.1:${front.address().port}/relay/recording?date=20261107`);
+    assert.equal(down.status, 502); assert.equal(await down.text(), 'relay unavailable');
+  } finally { front.closeAllConnections?.(); await new Promise(resolve => front.close(resolve)); }
+  const garbage = createServer((req, res) => res.writeHead(200).end('this is not ndjson\n'));
+  await new Promise(resolve => garbage.listen(0, '127.0.0.1', resolve));
+  const route2 = createRelayRoute(new URL(`http://127.0.0.1:${garbage.address().port}`), { startMs: 5 });
+  const front2 = createServer((req, res) => { route2(req, res); });
+  await new Promise(resolve => front2.listen(0, '127.0.0.1', resolve));
+  try {
+    const bad = await fetch(`http://127.0.0.1:${front2.address().port}/relay/recording?date=20261107`);
+    assert.equal(bad.status, 502); assert.match(await bad.text(), /could not be restarted/);
+  } finally { front2.closeAllConnections?.(); garbage.closeAllConnections?.(); await new Promise(resolve => front2.close(resolve)); await new Promise(resolve => garbage.close(resolve)); }
+});
+
+const startupTiming = (overrides = {}) => ({
+  navigationStartToSceneRenderedMs: 1100, navigationStartToReplayTrainsRenderedMs: 1500, replayTrainDrawsAtFirstRender: 14,
+  phases: { sceneToFirstTrainMs: 400, firstTrainContentDelayMs: 30 }, ...overrides,
+});
+
+test('first train visible: cold and warm, from the startup loads, and whether the replay started at its peak', () => {
+  const atPeak = firstTrainVisible({ coldFreshProfile: startupTiming({ navigationStartToReplayTrainsRenderedMs: 2400 }), warmSecondLoadSameProfile: startupTiming() }, { mode: 'scan' });
+  assert.equal(atPeak.startsAtPeak, true);
+  assert.deepEqual(atPeak.warm, { ms: 1500, sceneRenderedMs: 1100, afterSceneMs: 400, trainDrawsAtFirstRender: 14, waitForRecordedTravelMs: 30 });
+  assert.equal(atPeak.cold.ms, 2400);
+  assert.equal(firstTrainVisible({ warmSecondLoadSameProfile: startupTiming() }, { mode: 'given' }).startsAtPeak, true);
+  const fromStart = firstTrainVisible({ warmSecondLoadSameProfile: startupTiming() }, { mode: 'none' });
+  assert.equal(fromStart.startsAtPeak, false, 'a replay that starts empty includes the wait for the first train');
+  assert.equal(fromStart.cold, null);
+  assert.match(atPeak.definition, /warm/); assert.match(atPeak.definition, /first draw of a train mesh/);
+  assert.equal(firstTrainVisible({}, undefined).warm, null);
+});
+
+const sweepCamera = (overrides = {}) => ({
+  fps: { median: 60, p5: 60 }, frameDistribution: { p50: 16.7, p95: 16.7, p99: 16.8, max: 33.3, slowShare: 0.0033, missedSlots: 1 },
+  trainsShown: { min: 10, median: 12, max: 14 }, steady60: true, busy: true, view: {}, ...overrides,
+});
+
+test('the peak and sweep Markdown say where the replay started and list every camera with its frame-time figures', () => {
+  const peak = { mode: 'scan', startISO: '2026-11-07T17:21:00.000Z', startMs: 1794072060000, windowMs: 2_040_000, minShown: 11, medianShown: 12, maxShown: 14, busyFloor: 9,
+    scan: { speed: 120, samples: 210, maxShown: 15, maxShownISO: '2026-11-07T17:50:00.000Z', firstISO: '2026-11-07T16:12:15.000Z', lastISO: '2026-11-07T17:56:43.000Z' } };
+  const text = peakMarkdown(peak).join('\n');
+  assert.match(text, /scanned at 120x/); assert.match(text, /starts at 2026-11-07T17:21:00\.000Z/); assert.match(text, /34 minutes/);
+  assert.match(text, /min 11, median 12, max 14; a camera counts as busy at a median of 9 or more/);
+  assert.match(text, /at most 15 trains drawn, at 2026-11-07T17:50:00\.000Z, over 210 samples/);
+  assert.match(peakMarkdown({ mode: 'given', from: 'baseline.json', startISO: 'x', startMs: 5, windowMs: 60000, busyFloor: 4 }).join('\n'), /given by baseline\.json/);
+  assert.match(peakMarkdown({ mode: 'none' }).join('\n'), /not used/); assert.match(peakMarkdown(undefined).join('\n'), /not used/);
+  const cameras = { 'south-front': sweepCamera(), top: sweepCamera({ view: { grid: true }, steady60: false, busy: false, fps: { median: 41, p5: 38 }, frameDistribution: { p50: 16.7, p95: 33.3, p99: 50, max: 66.7, slowShare: .31, missedSlots: 90 } }) };
+  const md = sweepMarkdown(cameras, sweepSummary(cameras)).join('\n');
+  assert.match(md, /1 of 2 cameras steady at 60 FPS/); assert.match(md, /1 of 2 measured at the peak/);
+  assert.match(md, /\| south-front \| 10\/12\/14 \| 60 \| 60 \| 16\.7 \| 16\.7 \| 16\.8 \| 33\.3 \| 0\.33 \| 1 \| yes \| yes \|/);
+  assert.match(md, /\| top \(grid view\) \| 10\/12\/14 \| 41 \| 38 \| 16\.7 \| 33\.3 \| 50 \| 66\.7 \| 31 \| 90 \| NO \| NO \|/);
+  assert.match(sweepMarkdown({}, sweepSummary({})).join('\n'), /not measured/);
 });

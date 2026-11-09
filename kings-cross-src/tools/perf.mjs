@@ -1,5 +1,15 @@
-// Startup timing, source-mapped CPU profile, and two fixed replay cameras.
+// Startup timing, source-mapped CPU profile, two fixed replay cameras and a sweep of every fixed station camera.
 // Build with --sourcemap; --self-test runs Node-only checks without Chrome or a build.
+//
+// Every measurement runs on the replay's busiest stretch, not its quiet start (a few trains). Before the measured Chrome opens, a Chrome
+// of its own plays the whole recording at 120x and counts the trains drawn (tools/replay-peak.mjs); the recording is then served to the
+// page restarted at the busiest window, from a snapshot of the trains in their berths, as a live connection delivers them. The report's
+// replayPeak says where, and each camera says whether its median trains drawn reached the busy floor. --peak none keeps the old start at
+// the beginning of the recording; --peak-start <replay clock ms> or --peak-from <earlier perf report> fix the start so that every cold/warm
+// pair measures the same minutes (axis08-evidence.mjs passes the first pair's).
+// The sweep (--stations all|none|<names>, --station-seconds 5): every fixed station camera of evidence.mjs, on a fresh load each, placed as
+// the evidence pack places it, with the frame-time distribution (tools/frame-stats.mjs) and a steady-60 verdict. --no-legacy-cameras leaves
+// out overview and shed (the 60 s axis 8 cameras) for the later pairs. The first-train-visible figure is in report.firstTrainVisible.
 // --startup-only captures cold/warm/profile startup without camera FPS measurements.
 // --check-build validates the actual bundle/maps and writes sizes without launching Chrome.
 // --scene-ready also waits for cityLoaded, terrain/city geometry and their next submitted render.
@@ -28,6 +38,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
+import { frameDistribution, steadyAt60 } from './frame-stats.mjs';
+import { SCAN_SPEED, peakWindow, windowRecording } from './replay-peak.mjs';
+import { sweepCameraList, sweepSummary } from './camera-sweep.mjs';
 
 // Install before any app module runs. onAfterRender proves a train mesh passed renderer
 // visibility/frustum checks and issued a draw; group.visible alone does not prove that.
@@ -398,14 +411,101 @@ export function headroomVsBaseline(headroom, baseline) {
   return { cameras, worstRatio: ratios.length ? Math.min(...ratios) : null, definition: 'Uncapped median FPS of this run over the baseline run, per camera; below 1 is slower than the baseline.' };
 }
 
-export function headroomMarkdown(headroom) {
-  if (!headroom) return ['Headroom: not measured (uncapped run skipped).', ''];
+export function headroomMarkdown(headroom, title = 'Headroom') {
+  if (!headroom) return [`${title}: not measured (uncapped run skipped).`, ''];
   const value = n => finiteNumber(n) ? Number(n.toFixed(2)) : 'n/a';
-  return [`Headroom (uncapped, ${headroom.flags.join(' ')}): ${headroom.valid ? 'valid' : 'NOT VALID'}. Repainting-page control ${value(headroom.control.cappedFps)} FPS capped, ${value(headroom.control.uncappedFps)} FPS uncapped.`, '',
+  return [`${title} (uncapped, ${headroom.flags.join(' ')}): ${headroom.valid ? 'valid' : 'NOT VALID'}. Repainting-page control ${value(headroom.control.cappedFps)} FPS capped, ${value(headroom.control.uncappedFps)} FPS uncapped.`, '',
     ...headroom.gaps.map(gap => `- Headroom gap: ${gap}`), ...(headroom.gaps.length ? [''] : []),
     '| Camera | Capped median FPS | Uncapped median FPS | Uncapped p5 FPS | Headroom x60 | Frame cost ms | Uncapped p95 frame ms |', '| --- | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...Object.entries(headroom.cameras).map(([name, row]) => `| ${name} | ${value(row.cappedMedianFps)} | ${value(row.uncappedMedianFps)} | ${value(row.uncappedP5Fps)} | ${value(row.headroom)} | ${value(row.frameCostMs)} | ${value(row.uncappedFrameMs.p95)} |`), '',
     ...(headroom.vsBaseline ? [`Against the baseline run: ${Object.entries(headroom.vsBaseline.cameras).map(([name, row]) => `${name} ${row.fps} / ${row.baselineFps} = ${row.ratio}x`).join(', ') || 'no camera in common'}.`, ''] : [])];
+}
+
+// ---- The replay peak, the camera sweep and the first train -------------------------------------------------------------------------
+// The first seconds of the recorded replay show one or two trains, which says little about a busy evening. The perf tool therefore
+// scans the replay once at SCAN_SPEED for the stretch that keeps the most trains drawn (tools/replay-peak.mjs), serves the recording to
+// its own Chrome restarted there, and measures every fixed station camera on it, in every cold/warm pair.
+
+/**
+ * The same-origin /relay route of the perf server, as `(req, res) => handled`. Everything is forwarded to the relay, except that while
+ * `replayWindow.startMs` is set a GET of /relay/recording is answered with the recording restarted at that replay time (windowRecording),
+ * so the page starts at the peak. The recording is held in memory only. A relay that is down, or answers anything but 200 for the
+ * recording, is passed through as it is.
+ */
+export function createRelayRoute(relayBase, replayWindow = { startMs: null }) {
+  return (req, res) => {
+    const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
+    if (requestUrl.pathname !== '/relay' && !requestUrl.pathname.startsWith('/relay/')) return false;
+    const target = new URL(relayBase);
+    target.pathname = `${target.pathname.replace(/\/$/, '')}${requestUrl.pathname.replace(/^\/relay(?=\/|$)/, '')}` || '/';
+    target.search = requestUrl.search;
+    const windowed = req.method === 'GET' && requestUrl.pathname === '/relay/recording' && replayWindow.startMs != null;
+    const unavailable = () => { if (!res.headersSent) res.writeHead(502); res.end('relay unavailable'); };
+    const relayRequest = (target.protocol === 'https:' ? httpsRequest : httpRequest)(target, {
+      method: req.method,
+      headers: { host: target.host, accept: req.headers.accept ?? '*/*' },
+      timeout: 35_000,
+    }, (relayResponse) => {
+      if (!windowed || relayResponse.statusCode !== 200) {
+        res.writeHead(relayResponse.statusCode ?? 502, relayResponse.headers);
+        relayResponse.pipe(res);
+        return;
+      }
+      const chunks = [];
+      relayResponse.on('data', (chunk) => chunks.push(chunk));
+      relayResponse.on('error', unavailable);
+      relayResponse.on('end', () => {
+        let body;
+        try { body = Buffer.from(windowRecording(Buffer.concat(chunks).toString('utf8'), replayWindow.startMs).text); }
+        catch { if (!res.headersSent) res.writeHead(502); res.end('recording could not be restarted at the peak'); return; }
+        res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store', 'content-length': body.length });
+        res.end(body);
+      });
+    });
+    relayRequest.on('timeout', () => relayRequest.destroy(new Error('relay request timed out')));
+    relayRequest.on('error', unavailable);
+    req.pipe(relayRequest);
+    return true;
+  };
+}
+
+/**
+ * The "first train visible" figure: navigation start to the first draw of a replay train mesh, on the cold load and on the warm second load
+ * of the same profile. `warm.ms` is the headline. On a replay restarted at its peak the trains are in their berths from the first
+ * frame, so the time is the page's own work; on an unrestarted replay it also waits for the recording's first train
+ * (`waitForRecordedTravelMs`), which says nothing about the page.
+ */
+export function firstTrainVisible(startup, peak) {
+  const pick = timing => timing ? {
+    ms: timing.navigationStartToReplayTrainsRenderedMs ?? null, sceneRenderedMs: timing.navigationStartToSceneRenderedMs ?? null,
+    afterSceneMs: timing.phases?.sceneToFirstTrainMs ?? null, trainDrawsAtFirstRender: timing.replayTrainDrawsAtFirstRender ?? null,
+    waitForRecordedTravelMs: timing.phases?.firstTrainContentDelayMs ?? null,
+  } : null;
+  return {
+    startsAtPeak: peak?.mode === 'scan' || peak?.mode === 'given', cold: pick(startup?.coldFreshProfile), warm: pick(startup?.warmSecondLoadSameProfile),
+    definition: 'Milliseconds from navigation start to the first draw of a train mesh in replay mode, on the fresh-profile load (cold) and on the second load of the same profile with the HTTP cache (warm). Draw submission, not display. When the replay starts at its peak the page is given the trains in their berths, as a live connection gives them, so the figure is the page\'s own work; otherwise it also includes the wait for the recording\'s first train (waitForRecordedTravelMs).',
+  };
+}
+
+const fixed = (n, digits = 1) => finiteNumber(n) ? Number(n.toFixed(digits)) : 'n/a';
+
+/** The replay peak as Markdown lines. */
+export function peakMarkdown(peak) {
+  if (!peak || peak.mode === 'none') return ['Replay peak: not used; the replay starts at the beginning of the recording.', ''];
+  const trains = `trains drawn in the window min ${fixed(peak.minShown, 0)}, median ${fixed(peak.medianShown, 0)}, max ${fixed(peak.maxShown, 0)}; a camera counts as busy at a median of ${fixed(peak.busyFloor, 0)} or more`;
+  return [`Replay peak (${peak.mode === 'scan' ? `scanned at ${peak.scan?.speed}x` : `given by ${peak.from ?? '--peak-start'}`}): the replay starts at ${peak.startISO} (clock ${peak.startMs}), restarted from a snapshot of the trains in their berths; the window is ${fixed(peak.windowMs / 60000)} minutes of replay; ${trains}.`,
+    ...(peak.scan ? [`The scan saw at most ${peak.scan.maxShown} trains drawn, at ${peak.scan.maxShownISO}, over ${peak.scan.samples} samples of a recording from ${peak.scan.firstISO} to ${peak.scan.lastISO}.`] : []), ''];
+}
+
+/** One pair's station sweep as Markdown lines: a row per fixed station camera. */
+export function sweepMarkdown(stationCameras, summary, title = 'Fixed station cameras at the replay peak') {
+  const rows = Object.entries(stationCameras ?? {});
+  if (!rows.length) return [`${title}: not measured.`, ''];
+  const yes = flag => flag === true ? 'yes' : flag === false ? 'NO' : 'n/a';
+  return [`${title}: ${summary.steadyAt60} of ${summary.cameras} cameras steady at 60 FPS (median second >= 60 and at most 1% of frames later than 20 ms); ${summary.busy} of ${summary.cameras} measured at the peak (median trains drawn at or above the busy floor).`, '',
+    '| Camera | Trains drawn (min/median/max) | Median FPS | p5 FPS | Frame ms p50 | p95 | p99 | max | Slow frames % | Missed slots | Steady 60 | At peak |',
+    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |',
+    ...rows.map(([name, c]) => `| ${name}${c.view?.grid ? ' (grid view)' : ''} | ${c.trainsShown.min}/${c.trainsShown.median}/${c.trainsShown.max} | ${fixed(c.fps.median, 0)} | ${fixed(c.fps.p5, 0)} | ${fixed(c.frameDistribution.p50)} | ${fixed(c.frameDistribution.p95)} | ${fixed(c.frameDistribution.p99)} | ${fixed(c.frameDistribution.max)} | ${fixed(c.frameDistribution.slowShare * 100, 2)} | ${c.frameDistribution.missedSlots} | ${yes(c.steady60)} | ${yes(c.busy)} |`), ''];
 }
 
 async function selfTest() {
@@ -529,6 +629,15 @@ const out = path.resolve(flag('--out', path.join(repoRoot, '.scratch', 'round12-
 const seconds = Number(flag('--seconds', '60'));
 // The headroom run needs a throughput, not a long soak: 20 s of per-second buckets unless told otherwise.
 const uncappedSeconds = Number(flag('--uncapped-seconds', String(Math.min(seconds, 20))));
+// The sweep of every fixed station camera: a short window each, since there are many; --stations none leaves only overview and shed.
+const stationSeconds = Number(flag('--station-seconds', '5'));
+const stationsSpec = flag('--stations', 'all');
+const legacyCameras = !args.includes('--no-legacy-cameras');
+// Where the replay starts. auto: scan the recording for its busiest stretch. none: the recording's first row (a few trains).
+// --peak-start <replay clock ms> or --peak-from <earlier perf report> fix the start, so every pair measures the same minutes.
+const peakMode = flag('--peak', 'auto');
+const peakStartFlag = flag('--peak-start');
+const peakFromPath = flag('--peak-from');
 // The scene pin (tools/scene-pin.mjs): a page that reads ?time and ?weather shows the same sky every run and asks for no weather.
 const pin = scenePinFrom({ time: flag('--time'), weather: flag('--weather'), sky: flag('--sky') });
 const headroomBaselinePath = flag('--headroom-baseline');
@@ -549,6 +658,14 @@ if (!Number.isFinite(seconds) || seconds < 1 || seconds > 300) {
 if (!Number.isFinite(uncappedSeconds) || uncappedSeconds < 1 || uncappedSeconds > 300) {
   throw new Error('--uncapped-seconds must be between 1 and 300');
 }
+if (!Number.isFinite(stationSeconds) || stationSeconds < 1 || stationSeconds > 60) throw new Error('--station-seconds must be between 1 and 60');
+if (!['auto', 'none'].includes(peakMode)) throw new Error('--peak must be auto or none');
+if (peakMode === 'none' && (peakStartFlag || peakFromPath)) throw new Error('--peak none cannot be combined with --peak-start or --peak-from');
+if (peakStartFlag && peakFromPath) throw new Error('--peak-start and --peak-from fix the same thing: give one');
+if (peakStartFlag !== undefined && !(Number(peakStartFlag) >= 0 && Number.isFinite(Number(peakStartFlag)))) throw new Error('--peak-start must be a replay clock time in epoch milliseconds');
+if (!legacyCameras && stationsSpec === 'none' && !args.includes('--startup-only')) throw new Error('nothing to measure: --no-legacy-cameras with --stations none (use --startup-only for startup timing alone)');
+const peakFrom = peakFromPath ? JSON.parse(await readFile(path.resolve(peakFromPath), 'utf8')).replayPeak : null;
+if (peakFromPath && !(peakFrom?.startMs >= 0)) throw new Error('--peak-from must be an earlier perf report with a replayPeak section');
 if (relayBase.protocol !== 'http:' && relayBase.protocol !== 'https:') {
   throw new Error('--relay must use http or https');
 }
@@ -625,7 +742,7 @@ const report = {
     gzipShippedBytes: buildEntries.filter((file) => !file.file.endsWith('.map')).reduce((sum, file) => sum + file.gzipBytes, 0),
     gzipBudgetBytes: 2_000_000,
   },
-  replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds },
+  replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds, stationSecondsPerCamera: stationSeconds },
   scenePin: { ...pin, parameters: pinParameters(pin), note: 'Added to every page address. A page built before the sky and weather work ignores it; a page that reads it shows this clock and weather and requests none.' },
   viewport,
   frameBudgetMs: 1000 / 60,
@@ -646,6 +763,19 @@ if (args.includes('--check-build')) {
   console.log(JSON.stringify({ ...result, build: { ...report.build, files: undefined } }, null, 2));
   process.exit(report.build.gzipBundleWithinBudget ? 0 : 1);
 }
+// The fixed station cameras (evidence.mjs), loaded only for a run that measures them: the evidence module is heavy and a startup-only run needs none of it.
+let stationList = [];
+if (!args.includes('--startup-only') && stationsSpec !== 'none') {
+  const { stationCameras } = await import('./evidence.mjs');
+  const { stationData } = await import('./station-scene.mjs');
+  stationList = sweepCameraList(stationCameras(stationData().data), stationsSpec).map((camera) => ({ ...camera, station: true }));
+}
+// The camera sets in the order they are measured: the two axis 8 cameras at --seconds, then every station camera at --station-seconds.
+const legacyList = legacyCameras && !args.includes('--startup-only') ? Object.entries(cameras).map(([name, camera]) => ({ name, ...camera })) : [];
+// How much replay one camera's page load can cover: the load, the two settling seconds and its window, at the replay speed. The peak must hold that long.
+const peakWindowMs = (8 + 2 + Math.max(5, legacyList.length ? seconds : 0, stationList.length ? stationSeconds : 0)) * 1000 * replaySpeed;
+const replayWindow = { startMs: null };
+const relayRoute = createRelayRoute(relayBase, replayWindow);
 const cleanup = () => {
   if (cleanupPromise) return cleanupPromise;
   cleanupPromise = (async () => {
@@ -686,23 +816,7 @@ try {
     const requestRow = { url: req.url ?? '/', startMs: Date.now() };
     serverRequests.push(requestRow);
     res.once('finish', () => Object.assign(requestRow, { endMs: Date.now(), status: res.statusCode }));
-    if (requestUrl.pathname === '/relay' || requestUrl.pathname.startsWith('/relay/')) {
-      const target = new URL(relayBase);
-      target.pathname = `${target.pathname.replace(/\/$/, '')}${requestUrl.pathname.replace(/^\/relay(?=\/|$)/, '')}` || '/';
-      target.search = requestUrl.search;
-      const relayRequest = (target.protocol === 'https:' ? httpsRequest : httpRequest)(target, {
-        method: req.method,
-        headers: { host: target.host, accept: req.headers.accept ?? '*/*' },
-        timeout: 35_000,
-      }, (relayResponse) => {
-        res.writeHead(relayResponse.statusCode ?? 502, relayResponse.headers);
-        relayResponse.pipe(res);
-      });
-      relayRequest.on('timeout', () => relayRequest.destroy(new Error('relay request timed out')));
-      relayRequest.on('error', () => { if (!res.headersSent) res.writeHead(502); res.end('relay unavailable'); });
-      req.pipe(relayRequest);
-      return;
-    }
+    if (relayRoute(req, res)) return;
     let hit = null;
     try {
       if (requestUrl.pathname === '/' || requestUrl.pathname === '/kings-cross' || requestUrl.pathname === '/kings-cross/') {
@@ -819,6 +933,78 @@ try {
     chrome = undefined;
     profile = undefined;
   };
+  // Every page load carries the scene pin (tools/scene-pin.mjs), so the sky and weather are the same in every run and the page asks for no weather.
+  const replayQuery = withPin(`?trains=replay&date=${replayDate}&speed=${replaySpeed}`, pin);
+  const freshNavigationFor = ({ S, evaluate }) => async (url, beforeNavigate = async () => {}) => {
+    await S('Page.navigate', { url: 'about:blank' });
+    // Wait for the blank document to commit before requesting a fresh navigation.
+    const blankDeadline = Date.now() + 5000;
+    while (await evaluate('location.href').catch(() => null) !== 'about:blank') {
+      if (Date.now() > blankDeadline) throw new Error('about:blank did not commit');
+      await delay(25);
+    }
+    await beforeNavigate();
+    await S('Page.navigate', { url });
+  };
+  // Waits for the replay page to be playing; returns what the page said. The camera sweeps and the peak scan share it.
+  const awaitReplayPage = async (evaluate, label) => {
+    const readyDeadline = Date.now() + 35_000;
+    let pageState;
+    while (Date.now() < readyDeadline) {
+      pageState = await evaluate(`(() => {
+        const k = window.__kx;
+        if (!k?.ready) return null;
+        return { firstFrameMs: k.firstFrameMs, mode: k.feed.mode, date: k.feed.date, speed: k.feed.speed, connection: k.feed.connection };
+      })()`).catch(() => null);
+      if (pageState?.firstFrameMs > 0 && pageState.mode === 'replay' && ['playing', 'recording ended'].includes(pageState.connection)) return pageState;
+      await delay(150);
+    }
+    throw new Error(`${label}: replay page did not start within 35 seconds (${pageState?.connection ?? 'page not ready'})`);
+  };
+
+  // The replay peak. One scan load of the whole recording at SCAN_SPEED, in a Chrome of its own that is closed before the measured one opens
+  // (a scan in the measured profile would warm its cache and spoil the cold load), counting the trains drawn as the replay clock runs.
+  const SCAN_TIMEOUT_MS = 240_000;
+  const scanReplay = async (scanSession) => {
+    await freshNavigationFor(scanSession)(`${base}/kings-cross/${withPin(`?trains=replay&date=${replayDate}&speed=${SCAN_SPEED}`, pin)}`);
+    await awaitReplayPage(scanSession.evaluate, 'replay scan');
+    const samples = [], deadline = Date.now() + SCAN_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      const state = await scanSession.evaluate(`(() => {
+        const k = window.__kx, trains = k.trains ?? [];
+        return { clockMs: k.feed.timeMs ?? null, connection: k.feed.connection,
+          shown: trains.filter((train) => train.group?.visible && train.group.children.some((car) => car.visible)).length };
+      })()`);
+      if (state.clockMs > 0) samples.push({ clockMs: state.clockMs, shown: state.shown });
+      if (state.connection === 'recording ended') return samples;
+      await delay(250);
+    }
+    throw new Error(`the replay did not reach the end of the recording within ${SCAN_TIMEOUT_MS / 1000} s at ${SCAN_SPEED}x; give the peak with --peak-start`);
+  };
+  const resolvePeak = async () => {
+    if (peakMode === 'none') return { mode: 'none' };
+    if (peakStartFlag !== undefined || peakFrom) {
+      const startMs = peakFrom ? peakFrom.startMs : Number(peakStartFlag);
+      replayWindow.startMs = startMs;
+      return { mode: 'given', from: peakFrom ? peakFromPath : '--peak-start', startMs, startISO: new Date(startMs).toISOString(), windowMs: peakWindowMs,
+        busyFloor: peakFrom?.busyFloor ?? null, minShown: peakFrom?.minShown ?? null, medianShown: peakFrom?.medianShown ?? null, maxShown: peakFrom?.maxShown ?? null };
+    }
+    const scanSession = await openSession();
+    let samples;
+    try { samples = await scanReplay(scanSession); } finally { await closeSession(); }
+    const window = peakWindow(samples, peakWindowMs);
+    if (!window) throw new Error('the replay scan saw no clock time');
+    replayWindow.startMs = window.startMs;
+    const iso = (ms) => new Date(ms).toISOString();
+    const top = samples.reduce((best, sample) => sample.shown > best.shown ? sample : best, samples[0]);
+    const thin = Math.ceil(samples.length / 300);
+    return { mode: 'scan', ...window, startISO: iso(window.startMs), endISO: iso(window.endMs),
+      scan: { speed: SCAN_SPEED, samples: samples.length, firstMs: samples[0].clockMs, lastMs: samples.at(-1).clockMs, firstISO: iso(samples[0].clockMs), lastISO: iso(samples.at(-1).clockMs),
+        maxShown: top.shown, maxShownAtMs: top.clockMs, maxShownISO: iso(top.clockMs), seriesClockShown: samples.filter((_, i) => i % thin === 0).map((sample) => [sample.clockMs, sample.shown]) } };
+  };
+  report.replayPeak = await resolvePeak();
+  console.log(JSON.stringify({ replayPeak: { ...report.replayPeak, scan: report.replayPeak.scan && { ...report.replayPeak.scan, seriesClockShown: undefined } } }, null, 2));
+
   const session = await openSession();
   const { send, S, evaluate } = session;
   report.chromeVersion = await send('Browser.getVersion');
@@ -868,20 +1054,7 @@ try {
   })`, 8000);
   report.paintControl = await paintControl(evaluate);
 
-  // Every page load carries the scene pin (tools/scene-pin.mjs), so the sky and weather are the same in every run and the page asks for no weather.
-  const replayQuery = withPin(`?trains=replay&date=${replayDate}&speed=${replaySpeed}`, pin);
   const startupUrl = `${base}/kings-cross/${replayQuery}`;
-  const freshNavigationFor = ({ S, evaluate }) => async (url, beforeNavigate = async () => {}) => {
-    await S('Page.navigate', { url: 'about:blank' });
-    // Wait for the blank document to commit before requesting a fresh navigation.
-    const blankDeadline = Date.now() + 5000;
-    while (await evaluate('location.href').catch(() => null) !== 'about:blank') {
-      if (Date.now() > blankDeadline) throw new Error('about:blank did not commit');
-      await delay(25);
-    }
-    await beforeNavigate();
-    await S('Page.navigate', { url });
-  };
   const freshNavigation = freshNavigationFor(session);
   const startupLoad = async (profileCpu = false) => {
     let networkStart, serverStart;
@@ -933,36 +1106,37 @@ try {
   };
   // Raw CPU profiles deliberately omitted: only aggregate source/function costs are saved.
 
-  // The fixed cameras on the replay, each for `measureSeconds` in the given session's Chrome: per-second FPS buckets, frame times and renderer load.
-  const measureCameras = async ({ S, evaluate }, controlFpsMedian, measureSeconds, label) => {
-    const freshNavigation = freshNavigationFor({ S, evaluate });
-    const results = {};
-    for (const [cameraName, camera] of Object.entries(cameras)) {
-      const url = `${base}/kings-cross/${replayQuery}`;
-      await freshNavigation(url);
-      const readyDeadline = Date.now() + 35_000;
-      let pageState;
-      while (Date.now() < readyDeadline) {
-        pageState = await evaluate(`(() => {
-          const k = window.__kx;
-          if (!k?.ready) return null;
-          return { firstFrameMs: k.firstFrameMs, mode: k.feed.mode, date: k.feed.date, speed: k.feed.speed, connection: k.feed.connection };
-        })()`).catch(() => null);
-        if (pageState?.firstFrameMs > 0 && pageState.mode === 'replay' && ['playing', 'recording ended'].includes(pageState.connection)) break;
-        await delay(150);
-      }
-      if (!pageState?.firstFrameMs || pageState.mode !== 'replay' || !['playing', 'recording ended'].includes(pageState.connection)) {
-        const connection = pageState?.connection ?? 'page not ready';
-        throw new Error(`${cameraName}: replay page did not start within 35 seconds (${connection})`);
-      }
-      await evaluate(`(() => {
+  // The two axis 8 cameras keep the placement they have always had; a station camera is placed as the evidence pack places it (evidence.mjs
+  // setCamera), so its frame rate is the frame rate of the view that was captured.
+  const legacyCameraScript = (camera) => `(() => {
         const k = window.__kx;
         k.controls.maxDistance = 3000;
         k.camera.position.set(${camera.pos.join(',')});
         k.controls.target.set(${camera.target.join(',')});
         k.controls.update();
         return true;
-      })()`);
+      })()`;
+  const stationCameraScript = (camera) => `(() => {
+        const k = window.__kx;
+        k.controls.minDistance = .05; k.controls.maxDistance = 20000; k.controls.maxPolarAngle = Math.PI;
+        k.camera.far = 20000; k.camera.near = ${camera.near}; k.camera.fov = ${camera.fov}; k.camera.updateProjectionMatrix();
+        k.camera.position.set(${camera.pos.join(',')});
+        k.controls.target.set(${camera.target.join(',')});
+        k.controls.update();
+        return true;
+      })()`;
+  const busyFloor = report.replayPeak?.busyFloor ?? null;
+  // Each camera of `cameraList` on a fresh load of the replay (restarted at the peak when there is one), for `measureSeconds` in the given
+  // session's Chrome: per-second FPS buckets, the frame-time distribution, trains drawn and renderer load.
+  // Results are written into `results` as each camera finishes, so a failure part-way through still leaves the cameras measured so far in the report.
+  const measureCameras = async ({ S, evaluate }, controlFpsMedian, measureSeconds, label, cameraList, results = {}) => {
+    const freshNavigation = freshNavigationFor({ S, evaluate });
+    for (const camera of cameraList) {
+      const cameraName = camera.name;
+      const url = `${base}/kings-cross/${replayQuery}`;
+      await freshNavigation(url);
+      await awaitReplayPage(evaluate, cameraName);
+      await evaluate(camera.station ? stationCameraScript(camera) : legacyCameraScript(camera));
       await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
       await evaluate('new Promise((resolve) => setTimeout(resolve, 2000))', 5000);
 
@@ -1013,6 +1187,7 @@ try {
             fpsBuckets: buckets,
             fps: { median: fpsMedian, p5: fpsP5, min: Math.min(...buckets), max: Math.max(...buckets) },
             frameMs: { p50: deltaP50, p95: deltaP95, p99: deltaP99, max: Math.max(...dt) },
+            frameMsSamples: dt.map((value) => Math.round(value * 100) / 100),
             frameBudget: { targetFps: 60, budgetMs: 1000 / 60, p95WithinBudget: deltaP95 !== null && deltaP95 <= 1000 / 60, p99WithinBudget: deltaP99 !== null && deltaP99 <= 1000 / 60 },
             rendererCalls: frameStats(calls),
             triangles: frameStats(triangles),
@@ -1052,8 +1227,16 @@ try {
         requestAnimationFrame(frame);
       }))()`, measureSeconds * 1000 + 20_000);
 
+      // The distribution is computed here from the frame times the page returned; the raw list is not kept in the report.
+      const frameTimes = measurement.frameMsSamples;
+      delete measurement.frameMsSamples;
+      const distribution = frameDistribution(frameTimes);
       const normalized = {
         ...measurement,
+        view: { pos: camera.pos, target: camera.target, ...(camera.station ? { fov: camera.fov, near: camera.near, ...(camera.grid ? { grid: true } : {}) } : {}) },
+        frameDistribution: distribution,
+        steady60: steadyAt60(measurement.fps.median, distribution),
+        busy: busyFloor === null ? null : measurement.trainsShown.median >= busyFloor,
         frameBudgetMs: rounded(measurement.frameBudget.budgetMs, 3),
         fps: Object.fromEntries(Object.entries(measurement.fps).map(([key, value]) => [key, rounded(value, 2)])),
         frameMs: Object.fromEntries(Object.entries(measurement.frameMs).map(([key, value]) => [key, rounded(value, 2)])),
@@ -1068,23 +1251,42 @@ try {
       };
       normalized.fpsBuckets = measurement.fpsBuckets.map((fps) => rounded(fps, 2));
       results[cameraName] = normalized;
-      console.log(JSON.stringify({ session: label, camera: cameraName, fps: normalized.fps, frameMs: normalized.frameMs, renderer: normalized.renderer, replayProgress: normalized.replayProgress, trainMotion: normalized.trainMotion }, null, 2));
+      if (camera.station) console.log(`${label} ${cameraName}: median ${normalized.fps.median} FPS (p5 ${normalized.fps.p5}), frame p99 ${distribution.p99} ms, ${distribution.slowFrames} slow of ${distribution.frames}, trains drawn ${normalized.trainsShown.min}/${normalized.trainsShown.median}/${normalized.trainsShown.max}, steady ${normalized.steady60}, busy ${normalized.busy}`);
+      else console.log(JSON.stringify({ session: label, camera: cameraName, fps: normalized.fps, frameMs: normalized.frameMs, renderer: normalized.renderer, replayProgress: normalized.replayProgress, trainMotion: normalized.trainMotion }, null, 2));
     }
     return results;
   };
   const startupOnly = args.includes('--startup-only');
-  if (!startupOnly) report.cameras = await measureCameras(session, report.rafControl.medianFps, seconds, 'capped');
+  report.firstTrainVisible = firstTrainVisible(report.startup, report.replayPeak);
+  if (!startupOnly) {
+    if (legacyList.length) await measureCameras(session, report.rafControl.medianFps, seconds, 'capped', legacyList, report.cameras);
+    if (stationList.length) {
+      report.stationCameras = {};
+      await measureCameras(session, report.rafControl.medianFps, stationSeconds, 'capped-stations', stationList, report.stationCameras);
+      report.stationSweep = sweepSummary(report.stationCameras);
+    }
+  }
 
   // Headroom: the same cameras in a second Chrome with the frame limit and GPU vsync off (flags only apply at launch).
   if (!startupOnly && !args.includes('--no-uncapped')) {
     await closeSession();
     const uncappedSession = await openSession(UNCAPPED_FLAGS);
-    report.uncapped = { flags: [...UNCAPPED_FLAGS], secondsPerCamera: uncappedSeconds, chromeVersion: await uncappedSession.send('Browser.getVersion') };
+    const uncappedStationSeconds = Math.min(stationSeconds, uncappedSeconds);
+    report.uncapped = { flags: [...UNCAPPED_FLAGS], secondsPerCamera: uncappedSeconds, stationSecondsPerCamera: uncappedStationSeconds, chromeVersion: await uncappedSession.send('Browser.getVersion') };
     report.uncapped.rafControl = await rafControl(uncappedSession.evaluate);
     report.uncapped.paintControl = await paintControl(uncappedSession.evaluate);
-    report.uncapped.cameras = await measureCameras(uncappedSession, report.uncapped.rafControl.medianFps, uncappedSeconds, 'uncapped');
-    report.headroom = headroomReport({ control: report.paintControl, cameras: report.cameras }, { control: report.uncapped.paintControl, cameras: report.uncapped.cameras });
-    if (headroomBaseline) report.headroom.vsBaseline = { file: headroomBaselinePath, ...headroomVsBaseline(report.headroom, headroomBaseline.headroom) };
+    if (legacyList.length) {
+      report.uncapped.cameras = {};
+      await measureCameras(uncappedSession, report.uncapped.rafControl.medianFps, uncappedSeconds, 'uncapped', legacyList, report.uncapped.cameras);
+      report.headroom = headroomReport({ control: report.paintControl, cameras: report.cameras }, { control: report.uncapped.paintControl, cameras: report.uncapped.cameras });
+      if (headroomBaseline) report.headroom.vsBaseline = { file: headroomBaselinePath, ...headroomVsBaseline(report.headroom, headroomBaseline.headroom) };
+    }
+    if (stationList.length) {
+      report.uncapped.stationCameras = {};
+      await measureCameras(uncappedSession, report.uncapped.rafControl.medianFps, uncappedStationSeconds, 'uncapped-stations', stationList, report.uncapped.stationCameras);
+      report.stationHeadroom = headroomReport({ control: report.paintControl, cameras: report.stationCameras }, { control: report.uncapped.paintControl, cameras: report.uncapped.stationCameras });
+      if (headroomBaseline?.stationHeadroom?.cameras) report.stationHeadroom.vsBaseline = { file: headroomBaselinePath, ...headroomVsBaseline(report.stationHeadroom, headroomBaseline.stationHeadroom) };
+    }
   }
 
   report.requests = requestSummary(networkRequests);
@@ -1096,12 +1298,15 @@ try {
     '# King’s Cross performance', '',
     `Cold scene: ${rounded(report.startup.coldFreshProfile.navigationStartToSceneRenderedMs)} ms; replay trains: ${rounded(report.startup.coldFreshProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
     `Warm second load scene: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToSceneRenderedMs)} ms (${report.startup.warmSecondLoadSameProfile.sceneWithin3s ? 'PASS' : 'FAIL'}, strict <3 s); replay trains: ${rounded(report.startup.warmSecondLoadSameProfile.navigationStartToReplayTrainsRenderedMs)} ms.`,
+    `First train visible (navigation start to the first train draw): warm second load ${rounded(report.firstTrainVisible.warm.ms)} ms with ${report.firstTrainVisible.warm.trainDrawsAtFirstRender} train draws in that frame; cold ${rounded(report.firstTrainVisible.cold.ms)} ms${report.firstTrainVisible.startsAtPeak ? '' : '. The replay starts empty here, so this includes the wait for the recording\'s first train'}.`,
     `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
+    ...peakMarkdown(report.replayPeak),
     ...startupPhaseMarkdown(report.startup), '',
     `Failed request URLs: ${report.requests.failedUrls.length ? report.requests.failedUrls.join(', ') : 'none'}.`, '',
     ...cpuProfileMarkdown(report.startup.cpu),
     ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS, p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
-    ...(args.includes('--startup-only') ? [] : headroomMarkdown(report.headroom)),
+    ...(report.stationCameras ? sweepMarkdown(report.stationCameras, report.stationSweep) : []),
+    ...(startupOnly ? [] : [...(legacyList.length ? headroomMarkdown(report.headroom) : []), ...(stationList.length ? headroomMarkdown(report.stationHeadroom, 'Station camera headroom') : [])]),
     `Scene pin: ${report.scenePin.parameters}.`, '',
     report.startup.limitations, '', report.startup.cpu.caveat, '',
   ].join('\n');
