@@ -1081,6 +1081,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
 
   // ---- the shed: one strip of shell to each segment of the arch, from the south wall to the gable
   const glassHalf = (F.glassFraction * plan.span) / 2; // [WP-STP] glass covers the middle half of the roof: of its width, as seen from above (hist-e: glass about half the span, dark slate either side)
+  const glazed = section.slice(0, steps).map((_, k) => Math.abs((sec(k).x + sec(k + 1).x) / 2 - plan.width / 2) < glassHalf); // the strips of glass
   const strip = (m: Batch, k: number, d: number, uv: [V2, V2, V2, V2], f = 1): void => {
     const n = out[k] as P2;
     const e = (i: number, v: number): V3 => at(sec(i).x - n[0] * d, v, Math.max(0, sec(i).y - n[1] * d));
@@ -1090,7 +1091,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     const [a0, a1] = [arc[k] as number, arc[k + 1] as number];
     const across: [V2, V2, V2, V2] = [[a0, 0], [a1, 0], [a1, L], [a0, L]]; // glass panes and boards: u across the strip, v along it
     const along: [V2, V2, V2, V2] = [[0, a0], [0, a1], [L, a1], [L, a0]]; // slate and brick: u along the shed, v up the slope
-    if (Math.abs((sec(k).x + sec(k + 1).x) / 2 - plan.width / 2) < glassHalf) strip(glass, k, 0, across);
+    if (glazed[k]) strip(glass, k, 0, across);
     else if (k % (steps - 1) === 0) {
       strip(brick, k, 0, along); // hist-d2, hist-e: the shed's side walls are red brick, outside and in; the springing strip of the arch stands for the wall
       strip(brick, k, 0, along, -1);
@@ -1139,10 +1140,20 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
       for (const [a, b] of [[t0, mid(b0, b1)], [mid(b0, b1), t1], [b0, mid(t0, t1)], [mid(t0, t1), b1], [t0, b0]] as const) bar(v, a, b, 0.4, 0.1);
     }
   }
-  // a purlin under the roof at every node of the arch, along the whole shed: the lines that run away down the vault in hist-d
-  for (let k = 0; k <= steps; k++) {
-    const p = into(k, 0.14);
-    rib.box(at(p[0], L / 2, Math.max(0.08, p[1])), [0.2, 0.16, L], { rotY: -plan.heading, skip: ['+y', '+z', '-z'] });
+  // longitudinal ironwork, tilted to the roof where it stands, from the top of the brick walls (node 1) to node 23: a purlin 0.2 x 0.16 m under the skin at every node of the arch and between each two (hist-d: the
+  // dense lines that run away down the vault), a girder 0.5 x 0.9 m hung under the lower chord at every third node (hist-d: a few heavy beams, straight and pale, across the ribs), and over the glass a glazing
+  // bar 0.25 x 0.08 m at each of those places (hist-e: light bars along the silver crown, a pixel or so wide from far off). Sizes and spacings ASSUMED.
+  const [g0, g1] = [glazed.indexOf(true), glazed.lastIndexOf(true) + 1]; // the nodes where the glass begins and ends
+  for (let k = 2; k < 2 * steps - 1; k++) {
+    const [lo, hi] = [(k - 1) >> 1, (k >> 1) + 1];
+    const turn = Math.atan2(sec(hi).y - sec(lo).y, sec(hi).x - sec(lo).x); // the slope of the roof here
+    const long = (d: number, s: V3, skip: string[]): void => {
+      const p = k % 2 ? mid(into(lo, d), into(hi, d)) : into(k / 2, d);
+      rib.box(at(p[0], L / 2, p[1]), s, { rotY: -plan.heading, rotZ: turn, skip });
+    };
+    long(0.14, [0.2, 0.16, L], ['+y', '+z', '-z']);
+    if (k % 6 === 0) long(3.05, [0.5, 0.9, L], ['+y', '+z', '-z']);
+    if (k >= 2 * g0 && k <= 2 * g1) long(-0.04, [0.25, 0.08, L], ['-y', '+z', '-z']);
   }
   // the end screen: glazing in a white iron grid from the transition roof's foot up to the arch; panes about 3.6 m (hist-d2: about 14 across), so the shared glazing is stretched 4x along, 2x up
   const gable: P2[] = [];

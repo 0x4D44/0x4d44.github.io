@@ -26,6 +26,7 @@ const plan = greatNorthernHotelPlan(data);
 const building = data.buildings.find(b => b.id === OSM_IDS.greatNorthernHotel)!;
 
 interface Tri { p: [V3, V3, V3] }
+const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
 function triangles(m: Batch): Tri[] {
   const out: Tri[] = [];
   for (let i = 0; i < m.indices.length; i += 3) {
@@ -107,6 +108,51 @@ test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the e
     assert.ok(best!.inset > minimumInset - GEOMETRY_EPSILON, `chimney caps clear the dormer roof run in the actual geometry (${best!.inset} <= ${minimumInset}; nearest bay ${bestAlong} m)`);
   }
   assert.deepEqual(Object.keys(full).sort(), ['brick', 'brickRed', 'sash', 'slate', 'stone'], 'roof details share the existing material batches: the hotel’s four, and the clay of the pots (the ground floor is square-headed: no arched sash)');
+});
+
+/** the triangles that share corners, in groups: a quad, or a gable's face and the border round it */
+function groups(tris: Tri[]): Tri[][] {
+  const key = (v: V3): string => v.map(c => c.toFixed(4)).join(',');
+  const parent = tris.map((_, i) => i);
+  const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i] as number)));
+  const owner = new Map<string, number>();
+  tris.forEach((t, i) => t.p.forEach(v => { const o = owner.get(key(v)); if (o === undefined) owner.set(key(v), i); else parent[root(i)] = root(o); }));
+  const out = new Map<number, Tri[]>();
+  tris.forEach((t, i) => out.set(root(i), [...(out.get(root(i)) ?? []), t]));
+  return [...out.values()];
+}
+
+test('Great Northern Hotel [hist-a, HE R6]: a dormer over two bays in three, none over the middle bay of each three or a bay under 2.4 m, each a stone gable 2.2 m wide (0.65 of a narrower bay), 1.5 m to its shoulders and 2.2 m to its apex, with a sash 1.1 x 1.25 m', () => {
+  const full = hotelGeometry(plan);
+  const sashes = groups(all(full, 'sash').filter(t => t.p.every(v => v[1] > plan.eaves)));
+  const gables = groups(all(full, 'stone').filter(t => t.p.every(v => v[1] >= plan.eaves - 0.01 && v[1] < plan.ridge)));
+  const centre = (g: Tri[]): V3 => { const vs = g.flatMap(t => t.p); return [0, 1, 2].map(k => (Math.max(...vs.map(v => v[k] as number)) + Math.min(...vs.map(v => v[k] as number))) / 2) as V3; };
+  const spread = (g: Tri[], k: number): number => { const vs = g.flatMap(t => t.p.map(v => v[k] as number)); return Math.max(...vs) - Math.min(...vs); };
+  let n = 0;
+  for (const face of plan.faces) face.bays.forEach((bay, i) => {
+    // on the bay's own roof facet (the quad from its eaves edge to the ridge ring), within half its width along it
+    const [e, f, r, q0] = [plan.outline[bay.edge]!, plan.outline[(bay.edge + 1) % plan.outline.length]!, plan.roof.ring[(bay.edge + 1) % plan.outline.length]!, plan.roof.ring[bay.edge]!];
+    const mine = sashes.filter(q => { const c = centre(q); return pointInPolygon([c[0], c[2]], [e, f, r, q0]) && Math.abs((c[0] - bay.at[0]) * bay.dir[0] + (c[2] - bay.at[1]) * bay.dir[1]) < bay.width / 2; });
+    assert.equal(mine.length, i % 3 !== 1 && bay.width > 2.4 ? 1 : 0, `${face.kind} bay ${i} (${bay.width.toFixed(2)} m): a dormer unless it is the middle of three or too narrow`);
+    for (const q of mine) {
+      n++;
+      assert.equal(q.length, 2, 'a sash is one quad');
+      const [along, up] = [Math.hypot(spread(q, 0), spread(q, 2)), spread(q, 1)];
+      assert.ok(Math.abs(along - 1.1) < 1e-4 && Math.abs(up - 1.25) < 1e-4, `the sash is 1.1 x 1.25 m (${along.toFixed(3)} x ${up.toFixed(3)})`);
+      // its gable is the stone group that holds the sash's middle: the face with its border (0.14 m round the sides, 0.24 over the apex)
+      const c = centre(q);
+      const gable = gables.filter(g => [0, 1, 2].every(k => Math.abs(centre(g)[k] as number - (c[k] as number)) <= spread(g, k) / 2 + 0.05));
+      assert.equal(gable.length, 1, 'the sash stands on one gable');
+      const g = gable[0] as Tri[];
+      close(spread(g, 1), ASSUMED_DORMER_HEIGHT + 1.7 * 0.14, 1e-3, 'a gable 2.2 m to its apex, and the border over it');
+      close(Math.hypot(spread(g, 0), spread(g, 2)), Math.min(2.2, bay.width * 0.65) + 0.28, 1e-3, 'a gable 2.2 m wide (0.65 of a narrower bay), and the border at its sides');
+      const feet = Math.min(...g.flatMap(t => t.p.map(v => v[1])));
+      const shoulders = [...new Set(g.flatMap(t => t.p.map(v => v[1].toFixed(4))))].map(Number).sort((a, b) => a - b);
+      assert.ok(shoulders.some(y => Math.abs(y - (feet + 1.5)) < 1e-3), 'its shoulders are 1.5 m over its feet');
+      close(Math.min(...q.flatMap(t => t.p.map(v => v[1]))) - feet, ASSUMED_DORMER_WINDOW_SILL, 1e-3, 'the sash stands 0.18 m over the gable\'s feet');
+    }
+  });
+  assert.equal(n, plan.faces.reduce((m, f) => m + dormerBays(f), 0), 'every dormer was checked');
 });
 
 test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof without changing the hotel footprint', () => {

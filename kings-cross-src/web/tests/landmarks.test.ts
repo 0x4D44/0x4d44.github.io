@@ -49,6 +49,19 @@ const merged = (...sets: PartMap<Key>[]): PartMap<Key> => {
   return out;
 };
 
+const key = (v: V3): string => v.map((c) => c.toFixed(4)).join(',');
+/** the boxes among some triangles: those that share corners, each as its list of triangles */
+const boxes = (tris: Tri[]): Tri[][] => {
+  const parent = tris.map((_, i) => i);
+  const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i] as number)));
+  const owner = new Map<string, number>();
+  tris.forEach((t, i) => t.p.forEach((v) => { const o = owner.get(key(v)); if (o === undefined) owner.set(key(v), i); else parent[root(i)] = root(o); }));
+  const groups = new Map<number, Tri[]>();
+  tris.forEach((t, i) => groups.set(root(i), [...(groups.get(root(i)) ?? []), t]));
+  return [...groups.values()];
+};
+const distinct = (vs: V3[]): V3[] => [...new Map(vs.map((v) => [key(v), v] as const)).values()];
+
 const hotel = greatNorthernHotelPlan(data);
 const midland = midlandGrandPlan(data);
 const barlow = barlowPlan(data);
@@ -572,18 +585,6 @@ test('Great Northern Hotel [hist-a]: stacks of heights and widths of their own, 
   const parts = hotelGeometry(hotel);
   const roof = new THREE.Mesh((hotelGeometry({ ...hotel, faces: [] }).slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
   roof.updateMatrixWorld(true);
-  const key = (v: V3): string => v.map((c) => c.toFixed(4)).join(',');
-  /** the boxes among some triangles: those that share corners, each as its list of triangles */
-  const boxes = (tris: Tri[]): Tri[][] => {
-    const parent = tris.map((_, i) => i);
-    const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i] as number)));
-    const owner = new Map<string, number>();
-    tris.forEach((t, i) => t.p.forEach((v) => { const o = owner.get(key(v)); if (o === undefined) owner.set(key(v), i); else parent[root(i)] = root(o); }));
-    const groups = new Map<number, Tri[]>();
-    tris.forEach((t, i) => groups.set(root(i), [...(groups.get(root(i)) ?? []), t]));
-    return [...groups.values()];
-  };
-  const distinct = (vs: V3[]): V3[] => [...new Map(vs.map((v) => [key(v), v] as const)).values()];
   /** the four sides of a flat quad's corners, shortest first (the two diagonals are the longest of the six distances) */
   const sides = (vs: V3[]): number[] => distinct(vs).flatMap((a, i, all) => all.slice(i + 1).map((b) => Math.hypot(a[0] - b[0], a[2] - b[2]))).sort((m, n) => m - n).slice(0, 4);
   const cm = (x: number): number => Math.round(x * 100) / 100;
@@ -604,8 +605,10 @@ test('Great Northern Hotel [hist-a]: stacks of heights and widths of their own, 
     const k = (s[3] as number) / 1.4;
     const near = (v: V3): boolean => vs.some((u) => Math.hypot(u[0] - v[0], u[2] - v[2]) < 1.2 * k);
     const capTop = stone.filter((t) => geoNormal(t)[1] > 0 && t.p.every((v) => Math.abs(v[1] - (topY + 0.26)) < 1e-6 && near(v)));
+    assert.equal(capTop.length, 2, 'a cap, its top one quad');
     sides(capTop.flatMap((t) => t.p)).forEach((m, i) => close(m, [1.4 * k, 1.4 * k, 1.85 * k, 1.85 * k][i] as number, 1e-6, 'a cap 1.85 k along the facade and 1.4 k deep'));
     const course = stone.filter((t) => geoNormal(t)[1] > 0 && t.p.every((v) => Math.abs(v[1] - (topY - 0.4)) < 1e-6 && near(v)));
+    assert.equal(course.length, 2, 'a corbel course, its top one quad');
     sides(course.flatMap((t) => t.p)).forEach((m, i) => close(m, [1.25 * k, 1.25 * k, 1.7 * k, 1.7 * k][i] as number, 1e-6, 'a corbel course 1.7 k along the facade and 1.25 k deep'));
     return [s[3] as number, s[0] as number, topY - hotel.ridge, k];
   });
@@ -615,7 +618,7 @@ test('Great Northern Hotel [hist-a]: stacks of heights and widths of their own, 
   found.forEach((r, i) => r.forEach((x, j) => close(x, (expected[i] as number[])[j] as number, 1e-6, `stack ${i}: width, depth, height and scale of its site`)));
   assert.ok(new Set(found.map((r) => cm(r[0] as number))).size >= 8 && new Set(found.map((r) => cm(r[2] as number))).size >= 8, 'widths and heights vary: not one stack repeated');
   // the pots: eighteen boxes of clay 0.55 x 0.7 x 0.55 m, one on each stack, its foot a quarter of a metre over the top of the shaft (a hair under the cap's top)
-  const pots = boxes(triangles(parts.brickRed as Batch));
+  const pots = boxes(triangles((parts.brickRed ?? new Batch()) as Batch));
   assert.equal(pots.length, 18, 'a pot on every stack');
   for (const b of pots) {
     const vs = b.flatMap((t) => t.p);
@@ -1766,6 +1769,28 @@ function underSkin(u: number, y: number): number {
   }
   return best;
 }
+/** the height of the roof's skin over the point `u` across the shed */
+const skinY = (u: number): number => {
+  for (let k = 0; k + 1 < skin.length; k++) {
+    const a = skin[k] as { u: number; y: number };
+    const b = skin[k + 1] as { u: number; y: number };
+    if (u >= a.u && u <= b.u) return a.y + ((u - a.u) / (b.u - a.u)) * (b.y - a.y);
+  }
+  return -Infinity;
+};
+/** the slope (radians) of the strip of the roof's skin nearest the point (across, up) */
+function skinSlope(u: number, y: number): number {
+  let best = Infinity;
+  let slope = 0;
+  for (let k = 0; k + 1 < skin.length; k++) {
+    const a = skin[k] as { u: number; y: number };
+    const b = skin[k + 1] as { u: number; y: number };
+    const f = Math.max(0, Math.min(1, ((u - a.u) * (b.u - a.u) + (y - a.y) * (b.y - a.y)) / ((b.u - a.u) ** 2 + (b.y - a.y) ** 2)));
+    const d = Math.hypot(u - a.u - f * (b.u - a.u), y - a.y - f * (b.y - a.y));
+    if (d < best) [best, slope] = [d, Math.atan2(b.y - a.y, b.u - a.u)];
+  }
+  return slope;
+}
 const dot = (a: V3, b: V3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const unit = (a: V3): V3 => a.map((x) => x / Math.hypot(...a)) as V3;
 
@@ -1839,18 +1864,61 @@ test('Barlow ribs [WP-STP, hist-d, hist-d2]: an X-braced lattice truss 2.6 m dee
       for (const t of sel.filter((q) => q.p.every((p) => p[1] > 1e-9))) close(Math.min(...[[0, 1], [1, 2], [2, 0]].map(([a, b]) => Math.hypot(...(t.p[a as number] as V3).map((c, k) => c - (t.p[b as number] as V3)[k]!)))), 0.4, 1e-6, `rib ${i}: a bar of the ${name} is 0.4 m wide`);
     }
   });
-  // the purlins run the length of the shed, one under each node of the arch
-  const purlins = triangles(parts.rib as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > barlow.barlowLength - 1);
-  assert.equal(purlins.length, 25 * 3 * 2, 'a purlin of three faces under each of the 25 nodes');
-  // each is 0.2 m wide and 0.16 m deep, in groups of six triangles in order across the shed
-  const byU = [...purlins].sort((a, b) => a.p.reduce((x, p) => x + inVault(p).u, 0) / 3 - b.p.reduce((x, p) => x + inVault(p).u, 0) / 3);
-  for (let n = 0; n < 25; n++) {
-    const pts = byU.slice(6 * n, 6 * n + 6).flatMap((t) => t.p).map(inVault);
-    close(Math.max(...pts.map((p) => p.u)) - Math.min(...pts.map((p) => p.u)), 0.2, 1e-6, `purlin ${n}: 0.2 m wide`);
-    close(Math.max(...pts.map((p) => p.y)) - Math.min(...pts.map((p) => p.y)), 0.16, 1e-6, `purlin ${n}: 0.16 m deep`);
-  }
   // all of the vault's ironwork is the rib material: the extension's plate girders beyond the gable are the roof panels' (metal)
   assert.equal(triangles(parts.rib as Batch).filter((t) => t.p.some((p) => inVault(p).v > barlow.barlowLength + 1e-6)).length, 0, 'no rib ironwork beyond the gable');
+});
+
+test('Barlow longitudinal ironwork [hist-d, hist-e]: a purlin under the roof at every node of the arch and between each two, a girder hung under the lower chord at every third node, a glazing bar on the glass at each of them, all tilted to the roof and the length of the shed', () => {
+  const parts = barlowGeometry(barlow);
+  const L = barlow.barlowLength;
+  const F = FIGURES.barlow;
+  const along = triangles(parts.rib as Batch).filter((t) => Math.max(...t.p.map((p) => inVault(p).v)) - Math.min(...t.p.map((p) => inVault(p).v)) > L - 1);
+  // each is a box of three faces, from the south end to the gable, whose cross-section is a rectangle: its two sides, its middle, how far it is from lying along the roof, and how deep under the skin it is
+  const found = boxes(along).map((b) => {
+    assert.equal(b.length, 6, 'three faces of two triangles each');
+    const south = distinct(b.flatMap((t) => t.p).filter((p) => Math.abs(inVault(p).v) < 1e-6)).map(inVault);
+    assert.equal(south.length, 4, 'a rectangle: four corners at the south end');
+    close(Math.max(...b.flatMap((t) => t.p.map((p) => inVault(p).v))), L, 1e-6, 'and it runs to the gable');
+    // the six distances between the corners: two short sides, two long sides, two diagonals
+    const d = south.flatMap((a, i) => south.slice(i + 1).map((c) => ({ l: Math.hypot(a.u - c.u, a.y - c.y), angle: Math.atan2(c.y - a.y, c.u - a.u) }))).sort((m, n) => m.l - n.l);
+    const [u, y] = [south.reduce((s, p) => s + p.u, 0) / 4, south.reduce((s, p) => s + p.y, 0) / 4];
+    const roof = skinSlope(u, y);
+    const off = (angle: number): number => Math.abs((((angle - roof + Math.PI * 1.5) % Math.PI) + Math.PI) % Math.PI - Math.PI / 2); // the angle between two lines, 0 to 90 degrees
+    return { short: (d[0] as { l: number }).l, long: (d[2] as { l: number }).l, u, y, south, tilt: Math.min(off((d[0] as { angle: number }).angle), off((d[2] as { angle: number }).angle)), depth: skinY(u) > y ? underSkin(u, y) : -underSkin(u, y) };
+  });
+  const kind = (short: number, long: number) => found.filter((f) => Math.abs(f.short - short) < 1e-6 && Math.abs(f.long - long) < 1e-6).sort((m, n) => m.u - n.u);
+  const [purlins, girders, bars] = [kind(0.16, 0.2), kind(0.5, 0.9), kind(0.08, 0.25)];
+  assert.equal(purlins.length + girders.length + bars.length, found.length, 'every piece is a purlin 0.2 x 0.16 m, a girder 0.5 x 0.9 m or a bar 0.25 x 0.08 m');
+  assert.equal(purlins.length, 2 * 24 - 3, 'purlins at the 23 nodes above the brick walls (nodes 1 to 23) and midway between each two: 45');
+  assert.equal(girders.length, 7, 'a girder at nodes 3, 6, 9, 12, 15, 18 and 21');
+  assert.equal(bars.length, 25, 'a bar at every node and strip middle of the 12 strips of glass: 25');
+  // each is tilted to the roof where it stands: within 8 degrees of the strip nearest it (half the bend at the crown, 15 degrees, is 7.5; a piece left square to the ground would be 15 to 48 degrees off over the slate and the glass's edges)
+  for (const f of found) assert.ok(f.tilt < 0.14, `a piece at ${f.u.toFixed(1)} m is ${((f.tilt * 180) / Math.PI).toFixed(1)} degrees off the roof's slope`);
+  // the purlins: a pitch of 1.5 m across, the centre 0.14 m under the skin, the top face 0.06 m under it, the lining's boards between
+  purlins.forEach((p, i) => {
+    close(p.depth, 0.14, 0.01, `purlin ${i}: its centre is 0.14 m under the skin`);
+    if (i) close(p.u - (purlins[i - 1] as { u: number }).u, barlow.span / 48, 0.1, `purlin ${i}: a node's pitch, halved, from the one before`);
+    for (const c of p.south) assert.ok(underSkin(c.u, c.y) >= 0.04 && skinY(c.u) > c.y, `a corner of purlin ${i} is inside the roof`);
+  });
+  // the girders: the centre 3.05 m under the skin, so that the top face lies 2.6 m under it, against the underside of the lower chord (centre 2.4 m, 0.4 m wide), and across the ribs: at the nodes' own places
+  girders.forEach((g, i) => {
+    const j = 3 * (i + 1);
+    const [a, b] = [skin[j - 1] as { u: number; y: number }, skin[j + 1] as { u: number; y: number }];
+    const l = Math.hypot(b.u - a.u, b.y - a.y);
+    const want = { u: (skin[j] as { u: number }).u - (3.05 * -(b.y - a.y)) / l, y: (skin[j] as { y: number }).y - (3.05 * (b.u - a.u)) / l };
+    close(g.u, want.u, 0.05, `girder ${i}: under node ${j}, across`);
+    close(g.y, want.y, 0.05, `girder ${i}: under node ${j}, up`);
+    close(g.depth, 3.05, 0.03, `girder ${i}: its centre is 3.05 m under the skin (at the crown, where the skin bends 15 degrees, a hair less)`);
+    close(Math.min(...g.south.map((c) => underSkin(c.u, c.y))), 2.6, 0.06, `girder ${i}: its top face is 2.6 m under the skin, below the lower chord`);
+  });
+  // the glazing bars: a node's pitch, halved, apart (1.5 m), standing 0.04 m proud of the glass: over the glass only
+  const glassHalf = (F.glassFraction * barlow.span) / 2;
+  bars.forEach((p, i) => {
+    close(p.depth, -0.04, 0.01, `bar ${i}: its centre is 0.04 m over the glass, so that its underside is bedded in the glass and its top 0.08 m proud`);
+    assert.ok(Math.abs(p.u - barlow.width / 2) <= glassHalf + 0.1, `bar ${i} is over the glass (${Math.abs(p.u - barlow.width / 2).toFixed(2)} m from the middle, the glass half ${glassHalf.toFixed(2)})`);
+    if (i) close(p.u - (bars[i - 1] as { u: number }).u, barlow.span / 48, 0.1, `bar ${i}: 1.5 m from the one before`);
+  });
+  assert.ok(Math.min(...bars.map((p) => p.u)) < barlow.width / 2 - glassHalf + 0.1 && Math.max(...bars.map((p) => p.u)) > barlow.width / 2 + glassHalf - 0.1, 'the bars run across the whole of the glass, to its edges');
 });
 
 test('Barlow shed [hist-d]: pale boarding 8 cm under each slate strip, parallel to it, facing out so that it shows from inside only', () => {
@@ -1896,14 +1964,6 @@ test('Barlow end screen [hist-d2]: a grid of 0.3 m iron bars stands inside the g
   const L = barlow.barlowLength;
   const F = FIGURES.barlow;
   const mid = margin + barlow.span / 2;
-  const skinY = (u: number): number => {
-    for (let k = 0; k + 1 < skin.length; k++) {
-      const a = skin[k] as { u: number; y: number };
-      const b = skin[k + 1] as { u: number; y: number };
-      if (u >= a.u && u <= b.u) return a.y + ((u - a.u) / (b.u - a.u)) * (b.y - a.y);
-    }
-    return -Infinity;
-  };
   const grid = triangles(parts.rib as Batch).filter((t) => t.p.every((p) => Math.abs(inVault(p).v - (L - 0.15)) < 0.05 + 1e-6));
   // a ribbon of two triangles to a face, a face each side of the bar's plane, 0.1 m apart, the nearer 0.1 m inside the glass
   assert.ok(grid.length > 0 && grid.length % 4 === 0, `${grid.length} triangles, four to a bar`);
