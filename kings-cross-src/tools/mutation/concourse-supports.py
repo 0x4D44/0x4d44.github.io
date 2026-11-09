@@ -7,6 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'lib'))
+import kxmut  # only for run_process: the timeout, the memory cap and no orphaned test workers; the counting below is this driver's own
+
 src, scratch = (Path(p).resolve() for p in sys.argv[1:])
 scratch.mkdir(parents=True, exist_ok=True)
 work = scratch / 'work'
@@ -32,14 +36,19 @@ mutations = [
     ('struts start from the rail at the wrong height', '(MULLION.transom * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];', '(0.3 * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];'),
 ]
 def run(label):
-    result = subprocess.run(['node', '--test', '--test-reporter=tap', '--test-timeout=60000', 'web/tests/concourse-supports.test.ts'], cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=120)
+    try:
+        result = kxmut.run_process(['node', '--test', '--test-reporter=tap', '--test-timeout=60000', 'web/tests/concourse-supports.test.ts'], cwd=work, timeout=120)
+    except subprocess.TimeoutExpired as error:  # a hang, or a mutant that ate its memory cap; the log keeps what it wrote
+        output = f'{kxmut.why(error)}\n{error.output or ""}{error.stderr or ""}'
+        (scratch / f'{label}.log').write_text(output)
+        return None, output
     output = result.stdout + result.stderr
     (scratch / f'{label}.log').write_text(output)
     return result.returncode, output
 
 code, _ = run('baseline')
-if code:
-    raise SystemExit('Baseline failed; inspect baseline.log')
+if code is None or code:
+    raise SystemExit('Baseline failed or timed out; inspect baseline.log')
 survivors, invalid = [], []
 try:
     for i, (label, old, new) in enumerate(mutations):
@@ -47,7 +56,10 @@ try:
             raise SystemExit(f'Expected one mutation anchor for {label}')
         (work / rel).write_text(original.replace(old, new, 1))
         code, output = run(f'm{i:02d}')
-        if code == 0:
+        if code is None:
+            invalid.append(label)
+            print(f'[INVALID] {label}: {output.splitlines()[0]} (that is not a kill)', flush=True)
+        elif code == 0:
             survivors.append(label)
             print(f'[SURVIVED] {label}', flush=True)
         elif 'AssertionError' in output and not re.search(r'SyntaxError|TypeError|ERR_MODULE_NOT_FOUND|ERR_UNKNOWN_FILE_EXTENSION', output):
