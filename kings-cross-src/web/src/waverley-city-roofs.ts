@@ -20,8 +20,8 @@ import {cleanRing} from './waverley-mesh.ts';
 
 export const ROOF_ASSUMED={pitchDeg:40,maxRise:4.5,maxArea:3000,maxHeight:30,skillionRise:1.5,flatKinds:['commercial','office','retail','industrial','warehouse','parking','garage','garages','construction','roof','supermarket','train_station','transportation','hospital','service','kiosk']} as const;
 /** Chimney stacks: ASSUMED Edinburgh tenement gable and party-wall stacks, 2.4 m across the ridge, 0.9 m along it, 1.4 m above it,
- *  one at each gable end and one every CHIMNEY.spacing along the ridge (typical tenement frontage). Only on pitched residential-kind roofs. */
-export const CHIMNEY={across:2.4,along:.9,above:1.4,spacing:12} as const;
+ *  one at each gable end and one about every CHIMNEY.spacing along the ridge (every second or third tenement frontage; ASSUMED). Only on pitched residential-kind roofs. */
+export const CHIMNEY={across:2.4,along:.9,above:1.4,spacing:18} as const;
 const CHIMNEY_KINDS=new Set(['yes','residential','apartments','house','terrace','tenement','hotel','church','school','university','public','civic','dormitory','detached','semidetached_house','government']);
 interface Line {n:Pt;o:number}
 export interface RoofPlan {

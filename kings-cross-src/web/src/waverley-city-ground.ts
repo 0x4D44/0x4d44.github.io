@@ -18,7 +18,7 @@ import type {Terrain} from '../../core/terrain.ts';
 import {WAVERLEY_LEVELS} from './waverley-mesh.ts';
 import data from './data/waverley-city-landuse.json' with {type:'json'};
 
-export const DRAPE_LIFT=.12;
+export const DRAPE_LIFT=.15;
 export const ROCK_SLOPE_DEG=38;
 /** sRGB paint for each ground class, matched by eye to R-wv3-a and R-wv3-c as rendered under the Waverley rig (ACES, exposure 1.25,
  *  which lifts a paint about 1.6x): ASSUMED shades. */
@@ -112,7 +112,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
  // The drape: the terrain mesh rebuilt over the drawn surface, less the railway bed.
- const tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>.1});
+ const tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>.15});
  const P=tm.positions,keep:number[]=[],bed=(i:number)=>Math.abs(P[i*3+1]-WAVERLEY_LEVELS.ground)<.01;
  for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;keep.push(a,b,c);}
  const pos=new Float32Array(P.length),uv=new Float32Array(P.length/3*2);
@@ -126,9 +126,9 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  // Trees: crowns (one icosahedron each) and trunks, two instanced draws.
  const trees=placeTrees(ground,footprints);
  if(trees.length){
-  // A mapped tree is seen close from the gardens: a rounder crown (icosahedron, detail 1, 80 faces); woods and scrub are seen as masses (20).
+  // A mapped tree is seen close from the gardens: a rounder crown (a 7 x 4 sphere, 42 faces); woods and scrub are seen as masses (icosahedron, 20).
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
-  const fineG=ico(1),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,4,1,true);geometries.push(fineG,coarseG,trunkG);
+  const fineG=new THREE.SphereGeometry(1,7,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
   const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub');
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
@@ -139,14 +139,14 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
     col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);crowns.setColorAt(i,col);});
    crowns.instanceMatrix.needsUpdate=true;if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;crowns.name=name;crowns.computeBoundingSphere();
-   group.add(crowns);stats.triangles+=list.length*(geo.getAttribute('position').count/3);stats.drawCalls++;
+   group.add(crowns);stats.triangles+=list.length*(geo.index?geo.index.count:geo.getAttribute('position').count)/3;stats.drawCalls++;
   };
   if(mapped.length)crownsOf(mapped,fineG,'waverley-tree-crowns');
   if(massed.length)crownsOf(massed,coarseG,'waverley-wood-crowns');
   if(trunked.length){const trunks=new THREE.InstancedMesh(trunkG,bark,trunked.length);
    trunked.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*(t.kind==='tree'?.33:.4),th=t.height-ch*1.2+.4;q.setFromAxisAngle(up,r*6.283);
     m.compose(new THREE.Vector3(t.x,t.y-.4+th/2,t.z),q,new THREE.Vector3(.15+t.height*.012,th,.15+t.height*.012));trunks.setMatrixAt(i,m);});
-   trunks.instanceMatrix.needsUpdate=true;trunks.name='waverley-tree-trunks';trunks.computeBoundingSphere();group.add(trunks);stats.triangles+=trunked.length*8;stats.drawCalls++;}
+   trunks.instanceMatrix.needsUpdate=true;trunks.name='waverley-tree-trunks';trunks.computeBoundingSphere();group.add(trunks);stats.triangles+=trunked.length*6;stats.drawCalls++;}
  }
  let disposed=false;
  return {group,stats,trees,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const x of geometries)x.dispose();for(const x of materials)x.dispose();map?.dispose();group.clear();}};
