@@ -156,8 +156,7 @@ export async function startRelay({
   const trust = createTrustState({ area, services: () => services, now });
   const publishTrust = (events) => {
     for (const e of events) {
-      recorder.append(e);
-      const row = { t: now(), e };
+      const row = recorder.append(e);
       for (const send of listeners) send(row);
     }
   };
@@ -191,10 +190,9 @@ export async function startRelay({
           const t = now();
           for (const e of events) {
             if (!state.apply(e)) continue;
-            const row = { t, e };
+            const row = recorder.append(e);
             recent.push(row);
             if (recent.length > RECENT_MAX) recent.shift();
-            recorder.append(e);
             for (const send of listeners) send(row);
           }
           status.lastEventAt = t;
@@ -248,11 +246,11 @@ export async function startRelay({
         }
         case '/events': {
           res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
-          if (!writeEvent(res, `event: snapshot\ndata: ${JSON.stringify(state.snapshot())}\n\n`)) return;
+          if (!writeEvent(res, `event: snapshot\ndata: ${JSON.stringify({ ...state.snapshot(), t: now() })}\n\n`)) return;
           const send = (row) => {
             if (row.e.kind === 'snapshot') {
               const { kind, ...snapshot } = row.e;
-              if (!writeEvent(res, `event: snapshot\ndata: ${JSON.stringify(snapshot)}\n\n`)) listeners.delete(send);
+              if (!writeEvent(res, `event: snapshot\ndata: ${JSON.stringify({ ...snapshot, t: row.t })}\n\n`)) listeners.delete(send);
             } else if (row.e.kind === 'trust') { if (!writeEvent(res, `event: trust\ndata: ${JSON.stringify(row)}\n\n`)) listeners.delete(send); }
             else if (!writeEvent(res, `event: td\ndata: ${JSON.stringify(row)}\n\n`)) listeners.delete(send);
           };

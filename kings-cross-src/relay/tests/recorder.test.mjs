@@ -64,3 +64,20 @@ test('recorder robustness: close bounds a blocked writer and cancels its deadlin
   t.mock.timers.tick(10000);
   assert.equal(flushed.recorder.stats().state,'closed'); assert.equal(flushed.recorder.stats().gap,false);
 });
+
+for (const failed of [false, true]) {
+  test(`recorder canonical clock: append returns the captured row with writer failed=${failed}`, async () => {
+    const written = [];
+    let clock = 946684800000;
+    const recorder = await createRecorder({dir, area: 'Y9', now: () => ++clock,
+      createStream: () => { if (failed) throw new Error('synthetic writer failure'); return new Writable({write(chunk, _encoding, done) { written.push(...chunk.toString().trim().split('\n').map(JSON.parse)); done(); }}); },
+      schedule: () => ({unref(){}}), unschedule(){} });
+    try {
+      const expected = clock + 1;
+      const row = recorder.append(event);
+      assert.deepEqual(row, {t: expected, e: event}, 'writer failure must not suppress the live event or its timestamp');
+      if (!failed) assert.deepEqual(written.at(-1), row);
+      assert.equal(recorder.append({...event, area: 'OTHER'}), undefined);
+    } finally { await recorder.close(); }
+  });
+}

@@ -268,7 +268,7 @@ async function main(): Promise<void> {
     startWall = Date.now(); startMono = performance.now(); initialSnapshot = JSON.parse(payload);
     motion = createMotion(graph, anchors, optionsFor(startWall));
     feed = createLiveFeed(motion, (state) => { statuses.push({ atMs: Date.now(), state }); }, {
-      source: () => { source = new ObservedSource(); return source; }, now: () => performance.now(),
+      source: () => { source = new ObservedSource(); return source; }, now: () => performance.now(), epochMs: startWall,
     });
     source!.onopen?.(new Event('open')); source!.emit('snapshot', payload);
     samples.push({ atMs: startWall, trains: sampleTrains(motion.trains()) });
@@ -378,9 +378,10 @@ async function main(): Promise<void> {
     recordedCheckpointMs: window[0]!.t, checkpointToLiveStartMs: startWall - window[0]!.t, sameInitialBerths },
     received: { messages: received.length, snapshots, pings, recordedEventsInReplay: window.length },
     timetable: { date: scheduleDate, calls: schedule.calls.length, policy: 'One timetable fetched before checkpoint wait, fixed for all worlds; independent birth-kind caches. Page refresh timing is not reproduced.' },
+    observationClock: { liveEpochMs: startWall, policy: 'Timestamped SSE observations retain recorder time for cancellation fades; animation remains on the elapsed frame timeline. Unstamped legacy messages use their application time.' },
     receiptMinusRecordedMs: { median: quantile(jitter, 0.5), p95: quantile(jitter, 0.95), max: jitter.length ? Math.max(...jitter) : null },
     initialization, initializationExplanation, statuses, ...comparison, sameInitialSnapshotControl,
-    explanation: 'Both modes use the page feed factories and identical graph, anchors, lengths and speed tags. Live advances on a 60 Hz Node timer and applies SSE messages at the latest frame, as the page does; replay uses recorder timestamps and the real nearest-prior recorded checkpoint. Sampling splits frame advances at exact one-second wall-clock offsets. Acceptance requires identical description multiplicities at every sampled second, valid ordered samples, and every paired position difference below 5 m; numeric physical ids and edges are reported separately without remapping. Node timer/receipt jitter and recorder-to-SSE timestamp differences remain measurable. The separately labelled sameInitialSnapshotControl uses the actual live connection snapshot plus the recording events after connection; that diagnostic seed is not claimed to be a recorded checkpoint.',
+    explanation: 'Both modes use the page feed factories and identical graph, anchors, lengths and speed tags. Live advances physical motion on a 60 Hz Node timer and applies SSE messages synchronously at the latest frame. Timestamped observations carry recorder time separately for cancellation fades, as the page does; replay uses recorder timestamps and the real nearest-prior recorded checkpoint. Sampling splits frame advances at exact one-second wall-clock offsets. Acceptance requires identical description multiplicities at every sampled second, valid ordered samples, and every paired position difference below 5 m; numeric physical ids and edges are reported separately without remapping. Node timer/receipt jitter and recorder-to-SSE timestamp differences remain measurable. The separately labelled sameInitialSnapshotControl uses the actual live connection snapshot plus the recording events after connection; that diagnostic seed is not claimed to be a recorded checkpoint.',
   };
   await writeFile(resolve(out, 'replay-samples.json'), JSON.stringify(replaySamples) + '\n', { mode: 0o600 });
   await writeFile(resolve(out, 'same-initial-snapshot-samples.json'), JSON.stringify(alignedSamples) + '\n', { mode: 0o600 });

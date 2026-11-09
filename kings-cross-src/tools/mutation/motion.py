@@ -18,6 +18,8 @@ scratch.mkdir(parents=True, exist_ok=True)
 
 # Each mutation is valid TypeScript and changes an observable motion rule.
 M = [
+    ('cancel expiry follows render phase instead of observation time', 'else if (t && t.fadeAt === undefined) t.fadeAt = observedAtMs;', 'else if (t && t.fadeAt === undefined) t.fadeAt = now;'),
+    ('future observation overbrightens fading body', 'Math.min(1, Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000)))', 'Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000))'),
     ('future opposing authorities ignored', 'const opposing = opposingClearance(t.route, other);', 'const opposing = Infinity;'),
     ('unsafe late opposing authority accepted', 'opposingClearance(route, other) + EPS < (t.speed * t.speed + other.speed * other.speed) / (2 * braking)', 'false'),
     ('merge reservation ignored', 'if (merge && merge.winner !== t &&', 'if (false && merge && merge.winner !== t &&'),
@@ -42,7 +44,7 @@ M = [
     ('opposing meeting boundary ignored', 'clear = Math.min(clear, Math.max(0, meeting.stop - t.distanceM));', 'clear = clear;'),
     ('overlapping births allowed', 'if (overlapM(t.body, other.body) > EPS) return false;', 'if (false) return false;'),
     ('stars become trains', "event.area !== anchors.area || !event.descr || event.descr === NOT_A_TRAIN", "event.area !== anchors.area || !event.descr || event.descr === 'IMPOSSIBLE'"),
-    ('cancel pops immediately', 'else if (t && t.fadeAt === undefined) t.fadeAt = now;', 'else if (t) active.delete(description);'),
+    ('cancel pops immediately', 'else if (t && t.fadeAt === undefined) t.fadeAt = observedAtMs;', 'else if (t) active.delete(description);'),
     ('quiet timeout disabled', 'now - t.lastSeen >= quietMs', 'false'),
     ('reverse routes accepted on the current edge', '(target.t - start.t) * t.dir >= -EPS', 'true'),
     ('close target bypasses service braking check', 'route.reduce((sum, s) => sum + size(s), 0) + EPS < t.speed * t.speed / (2 * braking)', 'false'),

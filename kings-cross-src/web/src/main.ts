@@ -311,8 +311,8 @@ function start(): void {
       if (disposed) return;
       const sink: MotionSink = {
         advance: (seconds) => motion!.advance(seconds),
-        apply: (event, nowMs) => {
-          motion!.apply(event, nowMs); signalLayer?.apply({ t: nowMs, e: event });
+        apply: (event, nowMs, observedAtMs) => {
+          motion!.apply(event, nowMs, observedAtMs); signalLayer?.apply({ t: nowMs, e: event });
           if (event.kind === 'trust') timetable?.apply(event, nowMs);
         },
       };

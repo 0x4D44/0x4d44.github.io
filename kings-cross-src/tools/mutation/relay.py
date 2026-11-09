@@ -46,8 +46,8 @@ MUTATIONS = [
     ("relay: Host check by suffix", "relay.mjs", "host === `${h}:${port}`", "(host ?? '').endsWith(`${port}`)"),
     ("relay: any method allowed", "relay.mjs", "return method === 'GET' ? null : 405;", "return null;"),
     ("relay: bind all interfaces", "relay.mjs", "server.listen(port, '127.0.0.1', resolve)", "server.listen(port, '0.0.0.0', resolve)"),
-    ("relay: no recording", "relay.mjs", "recorder.append(e);", ""),
-    ("relay: no initial SSE snapshot", "relay.mjs", "if (!writeEvent(res, `event: snapshot\\ndata: ${JSON.stringify(state.snapshot())}\\n\\n`)) return;", "if (false) return;"),
+    ("relay: no recording", "relay.mjs", "const row = recorder.append(e);\n            recent.push(row);", "const row = { t, e };\n            recent.push(row);"),
+    ("relay: no initial SSE snapshot", "relay.mjs", "if (!writeEvent(res, `event: snapshot\\ndata: ${JSON.stringify({ ...state.snapshot(), t: now() })}\\n\\n`)) return;", "if (false) return;"),
     ("relay: CORS wide open", "relay.mjs", "'cache-control': 'no-store' });\n  res.end(text);", "'cache-control': 'no-store', 'access-control-allow-origin': '*' });\n  res.end(text);"),
     ("feed: log leaks the passcode", "feed.mjs", "log(`feed: connected${server ? ` to ${server}` : ''}, subscribed to ${topic}`);", "log(`feed: connected ${creds.secret}`);"),
     ("feed: never reconnect on close", "feed.mjs", "      onStatus({ state: 'disconnected' });\n      schedule();", "      onStatus({ state: 'disconnected' });"),
@@ -96,7 +96,7 @@ MUTATIONS = [
     ("feed: TRUST subscription missing", "feed.mjs", "if (trustTopic) client.subscribe(trustTopic, { id: 'trust' });", ""),
     ("feed: TRUST routed into TD parser", "feed.mjs", "trustTopic && (destination === trustTopic || subscription === 'trust')", "false"),
     ("relay: TRUST not broadcast", "relay.mjs", "else if (row.e.kind === 'trust')", "else if (false)"),
-    ("relay: TRUST not recorded", "relay.mjs", "recorder.append(e);\n      const row", "\n      const row"),
+    ("relay: TRUST not recorded", "relay.mjs", "const row = recorder.append(e);\n      for (const send", "const row = { t: now(), e };\n      for (const send"),
     ("schedule: HTTP errors treated as extract", "schedule.mjs", "if (!res.ok) {", "if (false) {"),
     ("trust: startup activations lost", "trust.mjs", "return resolvePending(serviceRows);", "return [];"),
     ("trust: early variation sign wrong", "trust.mjs", "case 'EARLY': return -value;", "case 'EARLY': return value;"),
@@ -154,9 +154,15 @@ MUTATIONS = [
     ("recorder: failed writer is not destroyed", "recorder.mjs", "entry.stream.destroy();", ""),
     ("recorder: recording failure suppresses live snapshots", "recorder.mjs", "if (event.kind === 'snapshot') onSnapshot(row);", "if (!failure && event.kind === 'snapshot') onSnapshot(row);"),
     ("relay: recording failures missing from health", "relay.mjs", "recording: recorder.stats(),", ""),
+    ("relay clock: initial snapshot loses capture timestamp", "relay.mjs", "JSON.stringify({ ...state.snapshot(), t: now() })", "JSON.stringify(state.snapshot())"),
+    ("relay clock: checkpoint loses recorder timestamp", "relay.mjs", "JSON.stringify({ ...snapshot, t: row.t })", "JSON.stringify(snapshot)"),
+    ("relay clock: TD uses an independent timestamp", "relay.mjs", "const row = recorder.append(e);\n            recent.push(row);", "const row = { ...recorder.append(e), t: now() };\n            recent.push(row);"),
+    ("relay clock: TRUST uses an independent timestamp", "relay.mjs", "const row = recorder.append(e);\n      for (const send", "const row = { ...recorder.append(e), t: now() };\n      for (const send"),
+    ("recorder clock: append does not return captured row", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);\n      return row;", "if (event.kind !== 'trust') state.apply(event);\n      return undefined;"),
+    ("recorder clock: failed writer loses captured row", "recorder.mjs", "if (event.kind !== 'trust') state.apply(event);\n      return row;", "if (event.kind !== 'trust') state.apply(event);\n      return failure ? undefined : row;"),
 ]
 
-OFFLINE_TEST_PATTERN = r'^(?:encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|recorder robustness:|stomp robustness:|relay robustness:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
+OFFLINE_TEST_PATTERN = r'^(?:encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|recorder robustness:|recorder canonical clock:|relay canonical clock:|stomp robustness:|relay robustness:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
 TEST_FILES = [
     'parser-properties.test.mjs', 'relay.test.mjs', 'robustness17.test.mjs',
     'schedule.test.mjs', 'security17.test.mjs', 'stomp.test.mjs',
@@ -217,6 +223,7 @@ names = test_names(baseline.stdout)
 if not names or not complete_tests(baseline.stdout, names):
     raise SystemExit('offline baseline TAP output is incomplete')
 new_names = {name for name in names if name.startswith((
+    'relay canonical clock:', 'recorder canonical clock:',
     'relay offline:', 'schedule endpoint offline:', 'schedule integration offline:',
     'round17 ', 'parser properties:', 'TD properties:',
     'Origin guard', 'SSE heartbeat reports', 'recording and cache symlinks',

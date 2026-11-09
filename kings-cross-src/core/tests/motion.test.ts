@@ -943,3 +943,25 @@ test('late opposing future authority refuses to consume either trains service br
   assert.deepEqual(after.leading, before.leading); assert.equal(after.speed, before.speed);
   assert.ok(m.diagnostics().some((i) => i.description === 'BETA' && i.reason.includes('opposing')));
 });
+
+
+test('an observation-driven cancellation keeps its timestamp without moving the physical clock', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(interpose('A'), 0); m.advance(2.005);
+  const before = one(m);
+  m.apply({ kind: 'cancel', area: 'TEST', descr: 'SYN1', from: 'A' }, 2005, 1978);
+  assert.deepEqual(one(m).occupied, before.occupied);
+  m.advance(4.995);
+  assert.deepEqual(m.trains(), [], 'the 6978 ms fade deadline is independent of the 2005 ms frame phase');
+});
+
+test('a feed observation just ahead of the frame clock cannot overbrighten a fading train', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(interpose('A'), 0); m.advance(2);
+  m.apply({ kind: 'cancel', area: 'TEST', descr: 'SYN1', from: 'A' }, 2000, 2010);
+  assert.equal(one(m).opacity, 1);
+  m.advance(5);
+  assert.equal(m.trains().length, 1, 'the source-time deadline is 7010 ms, not the last-frame deadline');
+  assert.ok(one(m).opacity > 0 && one(m).opacity <= 1);
+  m.advance(.011); assert.deepEqual(m.trains(), []);
+});

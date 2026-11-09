@@ -11,7 +11,8 @@ export interface SnapshotEvent extends MotionEvent {
   sclass?: { addresses: number; data: Record<string, string> };
 }
 export interface RecordedEvent { t: number; e: MotionEvent | SnapshotEvent }
-export interface MotionSink { apply(event: MotionEvent, nowMs: number): void; advance(seconds: number): void }
+/** Observation time shares nowMs's basis but may differ from the latest animation frame. */
+export interface MotionSink { apply(event: MotionEvent, nowMs: number, observedAtMs?: number): void; advance(seconds: number): void }
 export interface TrainFeed { advance(realSeconds: number): void; dispose(): void; timeMs(): number }
 export type FeedStatus = (state: string) => void;
 export function trainSettings(params: URLSearchParams): { mode: 'auto' | 'live' | 'replay' | 'demo' | 'none'; date: string; speed: number } {
@@ -107,8 +108,8 @@ export function snapshotEvents(value: unknown, previous: readonly string[] = [])
 /** One reconciliation path for live reconnects, recorded checkpoints and the offline audit. */
 export function createEventReconciler(apply: MotionSink['apply']) {
   const descriptions = new Map<string, Set<string>>();
-  const applyOne = (event: MotionEvent, atMs: number): void => {
-    if (!['step', 'interpose', 'cancel'].includes(event.kind)) { apply(event, atMs); return; }
+  const applyOne = (event: MotionEvent, atMs: number, observedAtMs: number): void => {
+    if (!['step', 'interpose', 'cancel'].includes(event.kind)) { apply(event, atMs, observedAtMs); return; }
     if (!descriptions.has(event.area)) {
       if (descriptions.size >= 256) throw new Error('too many TD areas');
       descriptions.set(event.area, new Set());
@@ -121,18 +122,18 @@ export function createEventReconciler(apply: MotionSink['apply']) {
         present.add(event.descr);
       }
     }
-    apply(event, atMs);
+    apply(event, atMs, observedAtMs);
   };
-  return (event: MotionEvent, atMs: number): void => {
+  return (event: MotionEvent, atMs: number, observedAtMs = atMs): void => {
     if (event.kind === 'snapshot') {
       const changes = snapshotEvents(event, [...descriptions.get(event.area) ?? []]);
       // Preserve the complete S-class picture for consumers alongside motion. Motion
       // ignores the raw snapshot and receives the same interposes/cancels in both modes.
       if (!descriptions.has(event.area) && descriptions.size >= 256) throw new Error('too many TD areas');
       descriptions.set(event.area, new Set(Object.values((event as SnapshotEvent).berths)));
-      apply(event, atMs);
-      for (const change of changes) apply(change, atMs);
-    } else applyOne(event, atMs);
+      apply(event, atMs, observedAtMs);
+      for (const change of changes) apply(change, atMs, observedAtMs);
+    } else applyOne(event, atMs, observedAtMs);
   };
 }
 
@@ -155,7 +156,7 @@ export function createReplayClock(rows: readonly RecordedEvent[], speed = 1) {
 
 export function createTimeline(sink: MotionSink, startMs = 0) {
   let time = startMs;
-  const reconcile = createEventReconciler((event, atMs) => sink.apply(event, atMs));
+  const reconcile = createEventReconciler((event, atMs, observedAtMs) => sink.apply(event, atMs, observedAtMs));
   const advanceTo = (nextMs: number): void => {
     if (!Number.isFinite(nextMs)) throw new Error('timeline time must be finite');
     const next = Math.max(time, nextMs);
@@ -165,7 +166,7 @@ export function createTimeline(sink: MotionSink, startMs = 0) {
   return {
     timeMs: (): number => time,
     advanceTo,
-    deliver(event: MotionEvent, atMs = time): void { advanceTo(atMs); reconcile(event, time); },
+    deliver(event: MotionEvent, atMs = time, observedAtMs = atMs): void { advanceTo(atMs); reconcile(event, time, observedAtMs); },
   };
 }
 
@@ -193,10 +194,20 @@ export interface LiveDependencies {
   schedule?: (fn: () => void, ms: number) => unknown;
   unschedule?: (timer: unknown) => void;
   now?: () => number;
+  /** Fixed wall-clock origin of the elapsed animation timeline; injectable for capture/tests. */
+  epochMs?: number;
 }
 
 export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveDependencies = {}): TrainFeed {
   const timeline = createTimeline(sink);
+  const epochMs = deps.epochMs ?? Date.now();
+  if (!epoch(epochMs)) throw new Error('live epoch must be finite');
+  const packetTime = (packet: unknown): number | undefined => {
+    if (!object(packet)) throw new Error('invalid relay packet');
+    if (!Object.hasOwn(packet, 't')) return undefined; // Older relays have unstamped snapshots.
+    if (!epoch(packet.t)) throw new Error('invalid recorder timestamp');
+    return packet.t;
+  };
   const source = deps.source ?? ((url) => new EventSource(url));
   const schedule = deps.schedule ?? ((fn, ms) => setTimeout(fn, ms));
   const unschedule = deps.unschedule ?? ((timer) => clearTimeout(timer as ReturnType<typeof setTimeout>));
@@ -236,7 +247,12 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     attempt = 0; // A TCP/SSE open alone does not prove that the stream is usable.
     if (opened) watch(current);
   };
-  const deliver = (e: MotionEvent): void => { timeline.deliver(e); lastDataAt = now(); paintConnection(); };
+  const deliver = (e: MotionEvent, recordedAtMs?: number): void => {
+    // Delivery stays synchronous and never rewinds/advances physical motion. Event-driven
+    // deadlines use the relay's recorded receive time, not the phase of the last frame.
+    timeline.deliver(e, timeline.timeMs(), recordedAtMs === undefined ? timeline.timeMs() : recordedAtMs - epochMs);
+    lastDataAt = now(); paintConnection();
+  };
   const retry = (fault?: string): void => {
     opened = false;
     stopWatchdog();
@@ -259,22 +275,25 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     current.addEventListener('snapshot', (event) => {
       if (disposed || stream !== current) return;
       try {
-        const parsed = parseEvent({ ...(parseMessage(event.data) as Record<string, unknown>), kind: 'snapshot' });
-        received(current); deliver(parsed);
+        const packet = parseMessage(event.data), at = packetTime(packet);
+        const parsed = parseEvent({ ...(packet as Record<string, unknown>), kind: 'snapshot' });
+        received(current); deliver(parsed, at);
       } catch { retry('invalid relay snapshot'); }
     });
     current.addEventListener('td', (event) => {
       if (disposed || stream !== current) return;
       try {
-        const parsed = parseEvent((parseMessage(event.data) as { e: unknown }).e);
-        received(current); deliver(parsed);
+        const packet = parseMessage(event.data), at = packetTime(packet);
+        const parsed = parseEvent((packet as { e: unknown }).e);
+        received(current); deliver(parsed, at);
       } catch { retry('invalid relay event'); }
     });
     current.addEventListener('trust', (event) => {
       if (disposed || stream !== current) return;
       try {
-        const parsed = parseEvent((parseMessage(event.data) as { e: unknown }).e);
-        received(current); deliver(parsed);
+        const packet = parseMessage(event.data), at = packetTime(packet);
+        const parsed = parseEvent((packet as { e: unknown }).e);
+        received(current); deliver(parsed, at);
       } catch { retry('invalid TRUST event'); }
     });
     current.addEventListener('ping', (event) => {

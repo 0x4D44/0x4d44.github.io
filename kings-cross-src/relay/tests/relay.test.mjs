@@ -483,8 +483,9 @@ test('relay snapshot: connect and reconnect snapshots agree in SSE and recording
   const [file] = await readdir(path.join(dataDir, 'recordings'));
   const rows = (await readFile(path.join(dataDir, 'recordings', file), 'utf8')).trim().split('\n').map(JSON.parse);
   assert.deepEqual(rows.filter((row) => row.e.kind !== 'snapshot').map((row) => row.e.kind), ['step', 'sclass']);
-  const lastRecorded = rows.filter((row) => row.e.kind === 'snapshot').at(-1).e;
-  const { kind: _kind, ...recordedSnapshot } = lastRecorded;
+  const lastRecorded = rows.filter((row) => row.e.kind === 'snapshot').at(-1);
+  const { kind: _kind, ...recordedFields } = lastRecorded.e;
+  const recordedSnapshot = { ...recordedFields, t: lastRecorded.t };
   assert.deepEqual(recordedSnapshot, recovered, 'the reconnect SSE checkpoint matches the recorded checkpoint');
 });
 
@@ -777,4 +778,76 @@ test('relay robustness: recording failure appears in health while live snapshots
   assert.equal(relay.state.apply({kind:'interpose',area:'Y9',to:'1234',descr:'1A23'}),true);
   const snapshot=JSON.parse((await fakeRequest(captured.handler,{url:'/snapshot'})).body);
   assert.equal(snapshot.berths['1234'],'1A23');
+});
+
+// Canonical clock contract: no listeners, keychain, browser, or network.
+for (const kind of ['initial snapshot', 'checkpoint snapshot', 'td', 'trust']) {
+  test(`relay canonical clock: ${kind} carries its exact capture/recording timestamp`, async (t) => {
+    const captured = captureHttp(t), intervals = captureIntervals(t), broker = syntheticBroker();
+    const dataDir = await newTmp('kx-canonical-clock-');
+    let relay, clock = Date.UTC(2026, 10, 8, 12);
+    t.after(async () => { await relay?.close(); });
+    relay = await startRelay({ area: 'Y9', topic: '/topic/TD', trustTopic: '/topic/TRUST', dataDir,
+      now: () => ++clock, readCredentials: async () => ({account: ACCOUNT, secret: SENTINEL}),
+      connectSocket: () => broker.connectSocket(), heartbeat: [0, 0] });
+    await until(() => broker.subscribes.length >= 1, 'synthetic subscriptions');
+    assert.equal(broker.subscribes.length, 2, 'both TD and TRUST subscriptions are installed');
+    const beforeCapture = clock;
+    const stream = await fakeRequest(captured.handler, {url: '/events'});
+    const parseFrames = (name) => [...stream.writes.join('').matchAll(new RegExp(`^event: ${name}\\ndata: (.+)$`, 'gm'))].map(match => JSON.parse(match[1]));
+    if (kind === 'initial snapshot') {
+      const initial = parseFrames('snapshot')[0];
+      assert.equal(initial.t, beforeCapture + 1, 'timestamp is captured with the initial snapshot, before the heartbeat');
+      assert.deepEqual(initial.berths, {});
+      return;
+    }
+    if (kind === 'checkpoint snapshot') intervals.timers.find(timer => timer.milliseconds === 600000).callback();
+    else if (kind === 'td') broker.push(JSON.stringify([step('Y9', '1A23', '1001', '1002'), step('Y9', '1B45', '1003', '1004')]));
+    else broker.sockets.at(-1).emit('data', encodeFrame('MESSAGE', { destination: '/topic/TRUST', subscription: 'trust' }, JSON.stringify([
+      {header: {msg_type: '0003'}, body: {train_id: 'AA1A23M008', loc_stanox: '54311', event_type: 'ARRIVAL',
+        planned_timestamp: '1794139200000', actual_timestamp: '1794139260000', gbtt_timestamp: '1794139200000', platform: '4'}}
+    ])));
+    await relay.close();
+    const [file] = await readdir(path.join(dataDir, 'recordings'));
+    const rows = (await readFile(path.join(dataDir, 'recordings', file), 'utf8')).trim().split('\n').map(JSON.parse);
+    if (kind === 'checkpoint snapshot') {
+      const row = rows.at(-1), {kind: _kind, ...snapshot} = row.e;
+      assert.equal(row.e.kind, 'snapshot');
+      assert.deepEqual(parseFrames('snapshot').at(-1), {...snapshot, t: row.t});
+    } else {
+      const live = parseFrames(kind), recorded = rows.filter(row => row.e.kind === (kind === 'td' ? 'step' : 'trust'));
+      assert.equal(live.length, kind === 'td' ? 2 : 1, 'synthetic feed publishes all events');
+      assert.deepEqual(live, recorded, 'SSE uses exactly the row the recorder captured');
+      if (kind === 'td') {
+        const recent = JSON.parse((await fakeRequest(captured.handler, {url: '/recent'})).body);
+        assert.deepEqual(recent, recorded);
+      }
+    }
+  });
+}
+
+test('relay canonical clock: failed recording still publishes timestamped TD, TRUST and checkpoints', async (t) => {
+  const captured = captureHttp(t), intervals = captureIntervals(t), broker = syntheticBroker();
+  const dataDir = await newTmp('kx-canonical-failed-');
+  await mkdir(path.join(dataDir, 'recordings', 'td-Y9-20261108.ndjson'), {recursive: true});
+  let relay, clock = Date.UTC(2026, 10, 8, 12);
+  t.after(async () => { await relay?.close(); });
+  relay = await startRelay({area: 'Y9', topic: '/topic/TD', trustTopic: '/topic/TRUST', dataDir,
+    now: () => ++clock, readCredentials: async () => ({account: ACCOUNT, secret: SENTINEL}),
+    connectSocket: () => broker.connectSocket(), heartbeat: [0, 0]});
+  await until(async () => JSON.parse((await fakeRequest(captured.handler)).body).recording.state === 'failed', 'writer failure');
+  const stream = await fakeRequest(captured.handler, {url: '/events'});
+  broker.push(JSON.stringify([step('Y9', '1A23', '1001', '1002')]));
+  broker.sockets.at(-1).emit('data', encodeFrame('MESSAGE', {destination: '/topic/TRUST', subscription: 'trust'}, JSON.stringify([
+    {header: {msg_type: '0003'}, body: {train_id: 'AA1A23M008', loc_stanox: '54311', event_type: 'ARRIVAL',
+      planned_timestamp: '1794139200000', actual_timestamp: '1794139260000', gbtt_timestamp: '1794139200000'}}
+  ])));
+  const beforeCheckpoint = clock;
+  intervals.timers.find(timer => timer.milliseconds === 600000).callback();
+  const text = stream.writes.join('');
+  assert.match(text, /event: td\ndata: .*"descr":"1A23"/);
+  assert.match(text, /event: trust\ndata: .*"type":"movement"/);
+  const snapshots = [...text.matchAll(/^event: snapshot\ndata: (.+)$/gm)].map(match => JSON.parse(match[1]));
+  assert.equal(snapshots.at(-1).t, beforeCheckpoint + 1);
+  assert.equal(snapshots.at(-1).berths['1002'], '1A23');
 });

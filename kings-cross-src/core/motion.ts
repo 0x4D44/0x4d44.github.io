@@ -563,7 +563,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     active.set(description, t);
     issues.push({ kind: 'renamed', description, previousDescription: oldName, berth, reason: kind });
   };
-  const apply = (event: MotionEvent, nowMs: number): void => {
+  const apply = (event: MotionEvent, nowMs: number, observedAtMs = nowMs): void => {
+    if (!Number.isFinite(observedAtMs)) throw new Error('observation time must be finite');
     if (!Number.isFinite(nowMs)) throw new Error('motion time must be finite');
     if (!started) { now = nowMs; started = true; } else now = Math.max(now, nowMs);
     if (event.area === anchors.area && ['snapshot', 'sclass', 'step', 'interpose', 'cancel', 'heartbeat'].includes(event.kind)) {
@@ -602,7 +603,9 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       }
       lastObservation.delete(description);
       if (queued.has(description)) queued.delete(description);
-      else if (t && t.fadeAt === undefined) t.fadeAt = now;
+      // A feed observation can precede the latest rendered frame. Its five-second
+      // cancellation fade is timed from that observation, without rewinding the body.
+      else if (t && t.fadeAt === undefined) t.fadeAt = observedAtMs;
       return;
     }
     if (event.kind !== 'step' && event.kind !== 'interpose') return;
@@ -834,7 +837,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     speed: t.speed, lengthM: t.lengthM, occupiedLengthM: t.body.reduce((sum, s) => sum + size(s), 0),
     occupied: t.body.map((s) => ({ ...s })),
     state: t.fadeAt !== undefined ? 'fading' : t.estimated ? 'estimated' : t.departing ? 'departing' : t.speed === 0 ? 'held' : 'moving',
-    opacity: (t.estimated ? 0.55 : 1) * (t.fadeAt === undefined ? 1 : Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000))),
+    opacity: (t.estimated ? 0.55 : 1) * (t.fadeAt === undefined ? 1 : Math.min(1, Math.max(0, 1 - (now - t.fadeAt) / (fadeSeconds * 1000)))),
     targetBerth: t.target.berth, lastBerth: t.lastBerth,
     ...(t.unmapped !== undefined ? { unmappedBerth: t.unmapped } : {}),
     blocked: t.blocked, distanceM: t.distanceM, reversals: t.reversals,

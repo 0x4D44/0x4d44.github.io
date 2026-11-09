@@ -201,49 +201,48 @@ test('SUBSCRIBE is held back until the server has answered CONNECT', async (t) =
 });
 
 test('the client never emits or stringifies the passcode', async (t) => {
-  const sock = new net.Socket();
+  const sock = new FakeSocket();
   t.after(() => sock.destroy());
-  sock.write = () => true;
   const client = new StompClient(sock, { login: 'l', passcode: 'SENTINEL-PASSCODE' });
   const dump = JSON.stringify(client) + String(Object.keys(client)) + JSON.stringify(Object.getOwnPropertyNames(client));
   assert.ok(!dump.includes('SENTINEL-PASSCODE'));
 
-  // Now run real clients against a loopback stub (127.0.0.1, ephemeral port, fake passcode only). The stub plays an
-  // untrusted server: it echoes the passcode back in every field it controls, the CONNECTED server header and an
-  // ERROR frame's message and body, so any path that forwards upstream text would carry it into an event.
+  // Exercise the actual client and parser with an untrusted synthetic broker.
+  // It echoes the passcode in CONNECTED and ERROR metadata without opening sockets.
   const PASS = 'SENTINEL-PASSCODE';
   const wire = [];
-  const server = await fakeServer(t, (s) => {
-    const parser = new FrameParser();
-    s.on('data', (d) => {
-      for (const f of parser.push(d)) {
-        wire.push(f);
-        if (f.command === 'CONNECT' && f.headers.login === 'stub-ok') s.write(encodeFrame('CONNECTED', { version: '1.2', server: 'stub/1 ' + PASS, 'heart-beat': '0,0' }));
-        if (f.command === 'CONNECT' && f.headers.login === 'stub-err') s.write(encodeFrame('ERROR', { message: 'login refused for ' + PASS }, PASS));
-        if (f.command === 'SUBSCRIBE') s.write(encodeFrame('MESSAGE', { destination: f.headers.destination, subscription: f.headers.id }, '[{"CT_MSG":{}}]'));
-      }
+  const connectSocket = () => {
+    const socket = new FakeSocket((f) => {
+      wire.push(f);
+      queueMicrotask(() => {
+        if (f.command === 'CONNECT' && f.headers.login === 'stub-ok') socket.send('CONNECTED', { version: '1.2', server: 'stub/1 ' + PASS, 'heart-beat': '0,0' });
+        if (f.command === 'CONNECT' && f.headers.login === 'stub-err') socket.send('ERROR', { message: 'login refused for ' + PASS }, PASS);
+        if (f.command === 'SUBSCRIBE') socket.send('MESSAGE', { destination: f.headers.destination, subscription: f.headers.id }, '[{"CT_MSG":{}}]');
+      });
     });
-  });
+    t.after(() => socket.destroy());
+    return socket;
+  };
   const emitted = [];
   const watch = (live) => {
     for (const name of ['connected', 'message', 'fault', 'close']) {
       live.on(name, (...args) => emitted.push({ name, args: args.map((a) => (a instanceof Error ? { name: a.name, message: a.message, stack: a.stack } : a)) }));
     }
   };
-  const ok = new StompClient(clientSocket(server), { login: 'stub-ok', passcode: PASS, heartbeat: [0, 0] });
+  const ok = new StompClient(connectSocket(), { login: 'stub-ok', passcode: PASS, heartbeat: [0, 0] });
   watch(ok);
-  const gotMessage = new Promise((resolve) => ok.once('message', resolve));
   ok.subscribe('/topic/x');
   ok.start();
-  await gotMessage;
-  const okClosed = new Promise((resolve) => ok.once('close', resolve));
+  // CONNECTED queues the MESSAGE reply in a second microtask. Drain both turns
+  // without waiting forever when a mutation deliberately breaks an event path.
+  await Promise.resolve();
+  await Promise.resolve();
   ok.disconnect();
-  await okClosed;
-  const refused = new StompClient(clientSocket(server), { login: 'stub-err', passcode: PASS, heartbeat: [0, 0] });
+  const refused = new StompClient(connectSocket(), { login: 'stub-err', passcode: PASS, heartbeat: [0, 0] });
   watch(refused);
-  const refusedClosed = new Promise((resolve) => refused.once('close', resolve));
   refused.start();
-  await refusedClosed;
+  await Promise.resolve();
+  refused.disconnect();
   assert.deepEqual(emitted.map((e) => e.name), ['connected', 'message', 'close', 'fault', 'close'], 'the stub drove every event path of the client');
   const emittedText = JSON.stringify(emitted);
   assert.ok(!emittedText.includes(PASS), 'an event the client emitted carried the passcode: ' + emittedText);

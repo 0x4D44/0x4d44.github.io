@@ -504,3 +504,66 @@ test('live SSE invalid heartbeat traffic cannot suppress increasing retry delays
     assert.match(h.states.at(-1)!, /retry in 0.5s/, 'valid legacy heartbeats remain compatible');
   } finally { h.feed.dispose(); }
 });
+
+
+// Synthetic clocks deliberately straddle an exact removal sample. No railway observations.
+for (const removal of ['snapshot', 'cancel'] as const) {
+  test(`recorded ${removal} time controls a fade despite an ahead live frame clock`, () => {
+    const base = Date.UTC(2001, 0, 1);
+    const graph = buildGraph({ nodes: [[1, 0, -1000], [2, 500, -1000]], rails: [
+      { id: 1, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+    const anchors: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [
+      { berth: 'A', kind: 'signal', from: 1, to: 2, t: .5, point: [250, -1000], errorM: 0, evidence: 'synthetic' }] };
+    const first = { kind: 'snapshot', area: 'TEST', berths: { A: 'SYN1' } };
+    const gone = removal === 'snapshot' ? { kind: 'snapshot', area: 'TEST', berths: {} }
+      : { kind: 'cancel', area: 'TEST', descr: 'SYN1', from: 'A' };
+    const recorded = [{ t: base, e: first }, { t: base + 1978, e: gone }];
+    const liveMotion = createMotion(graph, anchors, { lengthM: 20 }), replayMotion = createMotion(graph, anchors, { lengthM: 20 });
+    const stream = new FakeStream();
+    const live = createLiveFeed(liveMotion, () => {}, { epochMs: base, source: () => stream, schedule: () => 1, unschedule() {} });
+    const replay = createReplayFeed(recorded, 1, replayMotion, () => {});
+    try {
+      stream.emit('snapshot', { ...first, t: base });
+      live.advance(2.005127); replay.advance(2.005127);
+      const before = liveMotion.trains()[0]!;
+      stream.emit(removal === 'snapshot' ? 'snapshot' : 'td', removal === 'snapshot' ? { ...gone, t: base + 1978 } : recorded[1]);
+      assert.equal(live.timeMs(), 2005.127, 'receiving old observation time never rewinds or advances animation');
+      assert.deepEqual(liveMotion.trains()[0]!.occupied, before.occupied);
+      live.advance(4.944873); replay.advance(4.944873);
+      assert.equal(liveMotion.trains().length, 1); assert.equal(replayMotion.trains().length, 1);
+      assert.ok(Math.abs(liveMotion.trains()[0]!.opacity - replayMotion.trains()[0]!.opacity) < 1e-5);
+      live.advance(.05); replay.advance(.05);
+      assert.deepEqual(liveMotion.trains(), [], 'fade expires from recorded observation time, before the sampled instant');
+      assert.deepEqual(replayMotion.trains(), []);
+    } finally { live.dispose(); replay.dispose(); }
+  });
+}
+
+test('timeline forwards observation time independently of its monotonic physical clock', () => {
+  let physical = 0;
+  const applied: { at: number; observed: number | undefined; physical: number }[] = [];
+  const timeline = createTimeline({ advance: dt => { physical += dt * 1000; },
+    apply: (_e, at, observed) => applied.push({ at, observed, physical }) });
+  timeline.advanceTo(2005);
+  timeline.deliver(first, timeline.timeMs(), 1978);
+  timeline.deliver(next, timeline.timeMs(), 2010);
+  assert.deepEqual(applied, [{ at: 2005, observed: 1978, physical: 2005 }, { at: 2005, observed: 2010, physical: 2005 }]);
+});
+
+test('live feed rejects invalid recorder timestamps before delivering any part of a packet', () => {
+  for (const [type, payload] of [
+    ['snapshot', { t: 'bad', area: 'TEST', berths: { A: 'SYN1' } }],
+    ['td', { t: 'bad', e: first }],
+    ['trust', { t: 'bad', e: { kind: 'trust', area: 'TEST', type: 'movement' } }],
+  ]) {
+    const stream = new FakeStream(), states: string[] = [], applied: MotionEvent[] = [];
+    const feed = createLiveFeed({ apply: e => applied.push(e), advance() {} }, s => states.push(s), {
+      epochMs: 0, source: () => stream, schedule: () => 1, unschedule() {} });
+    try {
+      stream.emit(type as string, payload);
+      assert.equal(stream.closed, true, `${type} must reconnect after invalid recorder time`);
+      assert.deepEqual(applied, []);
+      assert.match(states.at(-1)!, /invalid .*; reconnecting/);
+    } finally { feed.dispose(); }
+  }
+});

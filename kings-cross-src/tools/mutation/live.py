@@ -21,13 +21,17 @@ F = 'web/src/feed.ts'
 T = 'web/src/trains-live.ts'
 R = 'relay/relay.mjs'
 M = [
+    ('live cancellation uses last frame instead of recorded time', F, 'recordedAtMs - epochMs', 'timeline.timeMs()'),
+    ('timeline drops observation time before applying', F, 'sink.apply(event, atMs, observedAtMs)', 'sink.apply(event, atMs)'),
+    ('snapshot cancels drop their observation time', F, 'for (const change of changes) apply(change, atMs, observedAtMs);', 'for (const change of changes) apply(change, atMs);'),
+    ('invalid recorder timestamp accepted', F, "if (!epoch(packet.t)) throw new Error('invalid recorder timestamp');", "void packet.t;"),
     ('proxy preserves the wrong Host', 'vite.config.ts', 'changeOrigin: true', 'changeOrigin: false'),
     ('default mode never probes relay', F, "requested === null ? 'auto'", "requested === null ? 'demo'"),
     ('recording rows remain out of time order', F, 'return rows.sort((a, b) => a.t - b.t);', 'return rows;'),
     ('recording parse start is not measured', F, "performance.mark('kx:recording-parse-start');", ''),
     ('failed recording parse is not timed', F, "} finally { performance.mark('kx:recording-parse-end'); }", "} finally { if (false) performance.mark('kx:recording-parse-end'); }"),
     ('replay speed ignored', F, 'seconds * speed * 1000', 'seconds * 1000'),
-    ('event applied before advancing to its time', F, 'advanceTo(atMs); reconcile(event, time);', 'reconcile(event, time); advanceTo(atMs);'),
+    ('event applied before advancing to its time', F, 'advanceTo(atMs); reconcile(event, time, observedAtMs);', 'reconcile(event, time, observedAtMs); advanceTo(atMs);'),
     ('backoff never increases', F, '500 * 2 ** Math.min(16, Math.max(0, Math.floor(attempt)))', '500'),
     ('reconnect snapshot does not cancel missing descriptions', F, 'if (!present.has(descr))', 'if (false)'),
     ('failed EventSource left connected', F, 'stream?.close(); stream = undefined;', 'stream = undefined;'),
@@ -37,8 +41,8 @@ M = [
     ('opening the stream does not renew the watchdog deadline', F, 'opened = true; lastMessageAt = now(); watch(current);', 'opened = true; watch(current);'),
     ('ping events do not refresh liveness', F, "current.addEventListener('ping',", "current.addEventListener('ignored-ping',"),
     ('stale stream ping extends liveness', F, "current.addEventListener('ping', (event) => {\n      if (disposed || stream !== current) return;", "current.addEventListener('ping', (event) => {\n      if (disposed) return;"),
-    ('snapshot does not refresh liveness', F, "received(current); deliver(parsed);\n      } catch { retry('invalid relay snapshot'); }", "deliver(parsed);\n      } catch { retry('invalid relay snapshot'); }"),
-    ('TD does not refresh liveness', F, "received(current); deliver(parsed);\n      } catch { retry('invalid relay event'); }", "deliver(parsed);\n      } catch { retry('invalid relay event'); }"),
+    ('snapshot does not refresh liveness', F, "received(current); deliver(parsed, at);\n      } catch { retry('invalid relay snapshot'); }", "deliver(parsed, at);\n      } catch { retry('invalid relay snapshot'); }"),
+    ('TD does not refresh liveness', F, "received(current); deliver(parsed, at);\n      } catch { retry('invalid relay event'); }", "deliver(parsed, at);\n      } catch { retry('invalid relay event'); }"),
     ('dispose leaves the watchdog scheduled', F, 'disposed = true; stopWatchdog(); stream?.close();', 'disposed = true; stream?.close();'),
     ('retry leaves the old watchdog scheduled', F, 'opened = false;\n    stopWatchdog();', 'opened = false;'),
     ('cancelled watchdog callback replaces its successor', F, ' || generation !== watchdogGeneration', ''),
@@ -133,7 +137,7 @@ M = [
     ('snapshots bypass shared reconciliation', F, "if (event.kind === 'snapshot') {", "if (false) {"),
     ('snapshot validation skipped by recording parser', F, 'snapshotEvents(e);', '// snapshotEvents(e);'),
     ('snapshot S-class validation disabled', F, 'if (e.sclass !== undefined)', 'if (false)'),
-    ('reconciliation loses full S-class snapshots', F, 'apply(event, atMs);\n      for (const change', 'for (const change'),
+    ('reconciliation loses full S-class snapshots', F, 'apply(event, atMs, observedAtMs);\n      for (const change', 'for (const change'),
     ('snapshot cancels descriptions in other areas', F, 'snapshotEvents(event, [...descriptions.get(event.area) ?? []])', 'snapshotEvents(event, [...descriptions.values()].flatMap((s) => [...s]))'),
     ('invalid snapshot changes the world before validation', F, "if (event.kind === 'snapshot') {", "if (event.kind === 'snapshot') { apply(event, atMs);"),
     ('audit omits snapshot reconciliation', 'tools/motion-check.ts', 'reconcile(event, start + time * 1000);', 'motion.apply(event, start + time * 1000);'),
@@ -160,7 +164,7 @@ def run(work, rel=None):
     }.get(rel, ['web/tests/feed.test.ts', 'web/tests/feed-fault.test.ts', 'web/tests/trains-live.test.ts',
                 'web/tests/tooltip.test.ts', 'core/tests/station.test.ts', 'relay/tests/relay.test.mjs'])
     command = ['node', '--test', '--test-reporter=tap', '--test-timeout=5000',
-               '--test-name-pattern=^(relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|an explicit unavailable timetable|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
+               '--test-name-pattern=^(recorded .* time controls|timeline forwards observation|live feed rejects invalid recorder|relay files:|relay heartbeat:|relay shutdown:|the dev relay proxy|train URL|feed parses|feed snapshot|feed audit|replay clock|live and replay|backoff grows|a reconnect snapshot|live SSE|legacy timestamp-only|full legacy timetable|malformed legacy timetable|HTTP timetable enrichment|public TRUST timestamps|the default relay probe|an explicit unavailable timetable|live car|consecutive car|straight car|the headcode|service kind matching|Great Northern formation|Thameslink and Grand Central|unknown service evidence|a physical birth freezes|platform-capped|station: formation limits|a capped formation|fading one train|eight same-kind trains|exact fading opacity|a unique fading palette|different train kinds|cars whose|a renamed train|a fresh physical train)',
                *files]
     process = subprocess.Popen(command, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                text=True, stdin=subprocess.DEVNULL, start_new_session=True)

@@ -57,6 +57,7 @@ export async function createRecorder({ dir, area, now = Date.now, onSnapshot = (
     }
     // Live clients still need reconciliation snapshots after recording has failed.
     if (event.kind === 'snapshot') onSnapshot(row);
+    return row;
   };
   const checkpoint = () => { if (!closed) write({ kind: 'snapshot', ...state.snapshot() }); };
   checkpoint();
@@ -67,8 +68,9 @@ export async function createRecorder({ dir, area, now = Date.now, onSnapshot = (
     stats() { return { state: failure ? 'failed' : closed ? 'closed' : 'recording', error: failure, gap: failure !== null, queuedBytes: queuedBytes(), maxQueueBytes: MAX_QUEUE_BYTES }; },
     append(event) {
       if (closed || event.area !== area) return;
-      write(event);
+      const row = write(event);
       if (event.kind !== 'trust') state.apply(event);
+      return row;
     },
     close() {
       if (closing) return closing;
