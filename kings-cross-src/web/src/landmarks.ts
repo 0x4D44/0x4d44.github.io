@@ -101,12 +101,17 @@ export function createMaterials(): MaterialSet {
   // a tenth in linear light and the green by an eighth, the blue where it was: that mean is (169, 102, 72) at the noon rig, dE76 3.7 from R-c's (overcast (162, 94, 66), 4.7), and the masked tower and range
   // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
   // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
-  const brickRed = footShaded(tint('brickRed', [0.88, 0.92, 0.885]));
+  const midlandBrick: [number, number, number] = [0.88, 0.92, 0.885];
+  const brickRed = footShaded(tint('brickRed', midlandBrick));
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
-  // pale salmon (144, 98, 83) in the oblique view, and is a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
+  // pale salmon (144, 98, 83) in the oblique view, and was a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
   // colour. The stacks along the wall's top stay the Midland's red (hist-e: tall red stacks).
-  const brickDeep = footShaded(tint('brickRed', [0.36, 0.45, 0.49]));
+  // Round six, the gate (the lighting-materials scorer of round six: in hist-b the flank and the hotel front, in one frame, match within 0.016 on both colour ratios, and hist-e's sunlit flank
+  // has the new Midland's ratios): round six had lightened and warmed the Midland's brick and left this wall at its round-five tint (0.36, 0.45, 0.49), which drew green at 0.40 and blue at 0.26 of
+  // the red where the Midland's are 0.33 and 0.19, and the tolerance on the two had been loosened to 0.075 to let it pass. The wall is now the Midland's own tint scaled by the 0.55 (the same ratios
+  // by construction, a 0.55 share of its light as before), so it can no longer drift from it: (0.484, 0.506, 0.487), lit (128, 76, 57) against the Midland's (168, 101, 77) in linear albedo.
+  const brickDeep = footShaded(tint('brickRed', midlandBrick.map((c) => c * 0.55) as [number, number, number]));
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
   const stone = footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]));
