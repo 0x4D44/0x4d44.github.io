@@ -114,6 +114,31 @@ test('names the documented Platform 9 outline inference instead of an unexplaine
   assert.ok(report.platforms.filter(p => p.ref !== '9').every(p => p.outlineInference === null));
 });
 
+test('checks every platform against Network Rail construction-drawing lengths, an independent non-OSM reference', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { shedLayout, KINGS_CROSS_PLATFORM_GA_M } = await import('../../core/station.ts');
+  const real: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  const report = createAxis01Report(real, shedLayout(real));
+  for (const p of report.platforms) {
+    assert.equal(p.gaLengthM, KINGS_CROSS_PLATFORM_GA_M[p.ref]!.length);
+    assert.ok(Math.abs(p.drawnMinusGaM! - (p.drawnLengthM - p.gaLengthM!)) < 0.01);
+    assert.equal(p.withinGaTolerance, Math.abs(p.drawnMinusGaM!) <= 1);
+    assert.equal(report.flags.some(f => f.code === 'platform-ga-length' && f.detail.startsWith(`Platform ${p.ref}:`)), !p.withinGaTolerance);
+  }
+  // P10 is OSM as mapped, 0.55 m short of the drawing's 175.48 m: inside 1 m, so the 176 m gap is rounding.
+  const p10 = report.platforms.find(p => p.ref === '10')!;
+  assert.equal(p10.withinGaTolerance, true, `${p10.drawnMinusGaM}`);
+  assert.ok(p10.drawnMinusGaM! < 0 && p10.drawnMinusGaM! > -1);
+  assert.match(renderAxis01Markdown(report), /\| 10 \| [\d.]+ \| [\d.]+ \| 176 \| [-\d.]+ \| FLAG \| 175\.48 \| -0\.\d+ \| yes \|/);
+  // Control: P10 scaled 2% about its first vertex (about 3.5 m longer) fails the check.
+  const [ox, oz] = real.platforms.find(p => p.id === 945776388)!.pts[0]!;
+  const scaled = { ...real, platforms: real.platforms.map(p => p.id !== 945776388 ? p : { ...p, pts: p.pts.map(([x, z]) => [ox + (x - ox) * 1.02, oz + (z - oz) * 1.02] as [number, number]) }) };
+  const control = createAxis01Report(scaled, shedLayout(scaled)).platforms.find(p => p.ref === '10')!;
+  assert.equal(control.withinGaTolerance, false, `${control.drawnMinusGaM}`);
+  const shortGa = report.platforms.filter(p => p.withinGaTolerance === false).map(p => p.ref);
+  assert.ok(shortGa.length > 0, 'the polygons that run past the drawing (ramps, apron) stay flagged, not hidden');
+});
+
 
 test('checks transformed actual top boundaries in both directions and rejects missing or narrowed tops', () => {
   const ring: [number, number][] = [[0, 0], [10, 0], [10, -100], [0, -100]];

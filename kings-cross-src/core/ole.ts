@@ -11,7 +11,9 @@
 // THE RULE. Supports stand on cross lines at fixed distances v along the shed's frame (OLE.span
 // apart from OLE.firstV), which is how the real throat reads: a portal or a row of supports across
 // all the tracks at once. Under the train shed (v inside the shed's length) nothing stands on a
-// platform: each wire is held by a drop tube from the roof directly above it. North of the shed,
+// platform: as in the photos (OLE_SOURCES.shed), a transverse cross-span wire runs across each arch
+// from rib to rib, and a vertical hanger drops from it to each catenary; under the low side aisles,
+// where no arch is high enough, a drop tube hangs from the roof instead. North of the shed,
 // the tracks met on one cross line are grouped (a gap over OLE.groupGap splits a group) and each
 // group gets a portal: a mast clear of every rail at each end, a boom across, and a drop tube down
 // to each wire. A boom longer than OLE.maxBoom takes an intermediate mast in the widest gap clear
@@ -27,16 +29,18 @@ import type { ShedLayout } from './station.ts';
 export const OLE = {
   /** contact wire height above the rail head at stations and in the throat, metres (OLE_SOURCES.height) */
   contactHeight: 4.7,
-  /** contact wire to catenary at a support, metres (OLE_SOURCES.system); ASSUMED within the published range */
+  /** contact wire to catenary at a support, metres. ASSUMED: no UK figure found (OLE_SOURCES.system) */
   systemHeight: 1.4,
   /** the least system height, at a tunnel mouth or under the shed's valley, metres. ASSUMED */
   minSystemHeight: 0.3,
   /** the catenary's mid-span sag, as a fraction of the system height. ASSUMED */
   sag: 0.45,
   /** zig-zag of the contact wire either side of the track centre at alternate supports, metres (OLE_SOURCES.stagger) */
-  stagger: 0.2,
-  /** distance between support cross lines, metres (OLE_SOURCES.span) */
+  stagger: 0.23,
+  /** distance between support cross lines, metres. ASSUMED: no UK figure found (OLE_SOURCES.span) */
   span: 45,
+  /** a cross-span wire's height above the highest catenary it carries, metres. ASSUMED */
+  crossSpanClearance: 0.5,
   /** the first cross line, metres north of the shed's south wall: just north of the buffer stops (v = 12..24) */
   firstV: 27,
   /** spacing of the droppers that hang the contact wire from the catenary, metres. ASSUMED */
@@ -61,13 +65,23 @@ export const OLE = {
   tubeSize: 0.06,
 } as const;
 
-/** Where each figure in OLE comes from. Filled from the research notes in .scratch (not committed). */
+/** Where each figure in OLE comes from (checked 2026-11-09). Network Rail's OLE standards
+ * (NR/L2/ELP/21087, 21088, NR/GN/ELP/27415) are not openly readable, so these are secondary. */
 export const OLE_SOURCES = {
-  height: 'PENDING',
-  system: 'PENDING',
-  stagger: 'PENDING',
-  span: 'PENDING',
-  shed: 'PENDING',
+  height: '4.7 m nominal: PWI Journal Oct 2021 ("reduce the contact wire height from the nominal height of 4700mm to 4165mm", '
+    + 'https://issuu.com/thepwi/docs/pwi_journal_oct_2021_web/s/17565674, search excerpt only); range 4.165-5.94 m: Rail Engineer, '
+    + '"A bad wire day", https://www.railengineer.co.uk/a-bad-wire-day/; absolute minimum 4.165 m: Amey, Dewsbury station footbridge, '
+    + 'https://www.amey.com/uk/projects/2023/march/dewsbury-station-footbridge-voltage-controlled-clearances',
+  stagger: 'up to 230 mm either side on straight track, 380 mm on curves: Rail Engineer, "A bad wire day" (above)',
+  system: 'NOT FOUND for UK 25 kV. 1.4 m is the Furrer+Frey GEFF figure (a Swiss system), used as an assumption',
+  span: 'NOT FOUND for UK 25 kV. Non-UK caps seen: 65 m (Bane NOR), 70 m (Furrer+Frey GEFF); 45 m is an assumption for a station throat',
+  mapped: 'OSM: no power=catenary_mast or power=portal in the build-data.ts bbox (Overpass, 2026-11-09)',
+  shed: 'Wikimedia Commons, mattbuck, "King\'s Cross railway station MMB 36 365521.jpg", 2012-03-19, CC BY-SA 2.0/3.0 '
+    + '(https://commons.wikimedia.org/wiki/File:King%27s_Cross_railway_station_MMB_36_365521.jpg): transverse wires across the shed '
+    + 'anchored to the arch ribs and walls through insulators, vertical droppers to the running wires, no masts on the platforms',
+  throat: 'Wikimedia Commons, Stephen Craven, "Gasworks tunnels (1)" and "(2)", geograph 6964044 / 6964046, 2021-09-16, CC BY-SA 2.0 '
+    + '(https://commons.wikimedia.org/wiki/File:Gasworks_tunnels_(1)_-_geograph.org.uk_-_6964044.jpg): steel portal gantries with booms '
+    + 'and drop tubes across the tracks in front of the tunnel mouths',
 } as const;
 
 /** A square-section steel member between two points, [x, y, z]. */
@@ -94,6 +108,9 @@ export interface OlePlan {
   wires: number[];
   /** wire segments by kind, for tests: indexes into `wires` / 6 */
   counts: { contact: number; catenary: number; droppers: number };
+  /** flat segments of the shed's cross-span wires (rib to rib) and their hangers down to each catenary */
+  spans: number[];
+  spanCounts: { crossSpans: number; hangers: number };
 }
 
 type Layout = Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'> & Partial<Pick<ShedLayout, 'aisle' | 'springing'>>;
@@ -105,6 +122,8 @@ export interface OleInput {
   inZone: (x: number, z: number) => boolean;
   /** roof height over shed-frame u, metres; required for supports under the shed */
   roofY?: (u: number) => number;
+  /** each shed arch as a shed-frame u range [west, east]: the cross-span wires run rib to rib across it */
+  arches?: readonly [number, number][];
   /** tunnel mouth origins (core/landmarks.ts tunnelMouths): the wires taper and masts step out near them */
   mouths?: readonly Pt[];
 }
@@ -193,7 +212,9 @@ export function olePlan(input: OleInput): OlePlan {
   const members: Member[] = [];
   const wires: number[] = [];
   const counts = { contact: 0, catenary: 0, droppers: 0 };
-  if (!segs.length) return { lines, members, wires, counts };
+  const spans: number[] = [];
+  const spanCounts = { crossSpans: 0, hangers: 0 };
+  if (!segs.length) return { lines, members, wires, counts, spans, spanCounts };
   const roofY = input.roofY;
   const inShedV = (v: number): boolean => v > 0 && v < layout.length;
   // the lowest roof within the stagger either side of the track: the wire swings that far
@@ -248,6 +269,7 @@ export function olePlan(input: OleInput): OlePlan {
   const nearMouth = (p: Pt): boolean => mouths.some(m => Math.hypot(p[0] - m[0], p[1] - m[1]) < OLE.mouthReach);
   for (const v of vs) {
     const seen = new Set<string>();
+    const held = new Set<object>();
     const crossings = segs.filter(s => s.va !== s.vb && (s.va - v) * (s.vb - v) <= 0).map(s => {
       const t = (v - s.va) / (s.vb - s.va);
       const len = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]), off = staggerAt(v);
@@ -264,10 +286,34 @@ export function olePlan(input: OleInput): OlePlan {
     lines.push(line);
     const top = (c: { u: number; x: number; z: number }): number => catenary([c.x, c.z], c.u, v);
     const underRoof = (c: { u: number }): boolean => inShed && c.u >= 0 && c.u <= layout.width;
-    // under the shed: a drop tube from the roof straight above each wire to the catenary, and a registration arm
-    for (const c of crossings.filter(underRoof)) {
-      const roof = roofY!(c.u), y = top(c);
-      if (roof > y) members.push({ a: [c.wx, roof, c.wz], b: [c.wx, y, c.wz], size: OLE.tubeSize, kind: 'tube' });
+    // under the shed: a cross-span wire across each arch, rib to rib, with a hanger to each catenary;
+    // under an aisle (no arch) a drop tube from the roof. A registration arm holds every contact wire.
+    const sheltered = crossings.filter(underRoof);
+    for (const [a0, a1] of input.arches ?? []) {
+      const under = sheltered.filter(c => c.u >= a0 && c.u < a1);
+      if (!under.length) continue;
+      const y = Math.max(...under.map(top)) + OLE.crossSpanClearance;
+      const anchor = (lo: number, hi: number): number => { // roofY rises from lo towards hi: the first u that reaches y
+        if (roofY!(hi) < y) return NaN;
+        for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (roofY!(m) >= y) hi = m; else lo = m; }
+        return hi;
+      };
+      const mid = (a0 + a1) / 2, west = anchor(a0, mid), east = anchor(a1, mid);
+      if (!Number.isFinite(west) || !Number.isFinite(east)) continue;
+      const w = toWorld(layout, west, v), e = toWorld(layout, east, v);
+      spans.push(w[0], roofY!(west), w[1], e[0], roofY!(east), e[1]); spanCounts.crossSpans++;
+      for (const c of under) {
+        held.add(c);
+        const ys = roofY!(west) + (roofY!(east) - roofY!(west)) * (c.u - west) / (east - west);
+        spans.push(c.wx, ys, c.wz, c.wx, top(c), c.wz); spanCounts.hangers++;
+      }
+    }
+    for (const c of sheltered) {
+      const y = top(c);
+      if (!held.has(c)) {
+        const roof = roofY!(c.u);
+        if (roof > y) members.push({ a: [c.wx, roof, c.wz], b: [c.wx, y, c.wz], size: OLE.tubeSize, kind: 'tube' });
+      }
       members.push({ a: [c.wx, y, c.wz], b: [c.wx, C + 0.05, c.wz], size: OLE.tubeSize * 0.6, kind: 'arm' });
     }
     // in the open (the throat, and the suburban platforms beside the shed): groups of tracks with a portal each
@@ -317,5 +363,5 @@ export function olePlan(input: OleInput): OlePlan {
       }
     }
   }
-  return { lines, members, wires, counts };
+  return { lines, members, wires, counts, spans, spanCounts };
 }

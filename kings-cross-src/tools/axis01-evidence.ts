@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { project } from '../core/geo.ts';
 import type { RawElement, KxData } from '../core/osm.ts';
 import type { Pt } from '../core/geo.ts';
-import { GAUGE, KINGS_CROSS_PLATFORM_LENGTHS_M, concourseCanopy, longAxis, shedLayout, stationBuilding, stationPlatforms, platformDrawingOutline } from '../core/station.ts';
+import { GAUGE, KINGS_CROSS_PLATFORM_GA_M, KINGS_CROSS_PLATFORM_LENGTHS_M, concourseCanopy, longAxis, shedLayout, stationBuilding, stationPlatforms, platformDrawingOutline } from '../core/station.ts';
 import { railSegments } from '../core/scene.ts';
 import { trainLayout } from '../core/train.ts';
 import { buildPlatforms } from '../web/src/furniture.ts';
@@ -152,6 +152,10 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     return { ref, osmId: p.id, drawingBoundary, rawBoundary, drawnTopBounds: box(top), drawnTopSamples, drawnLengthM, osmLongAxisM: round(osm.length), publishedOperationalLengthM: published,
       drawnMinusOsmM: round(drawnLengthM - osm.length), drawnMinusPublishedM: published === null ? null : round(drawnLengthM - published),
       withinPublishedTolerance: published === null ? null : Math.abs(drawnLengthM - published) <= TOLERANCES.platformM,
+      // The independent (non-OSM) end check: Network Rail's construction drawings' platform lengths.
+      gaLengthM: KINGS_CROSS_PLATFORM_GA_M[ref]?.length ?? null,
+      drawnMinusGaM: KINGS_CROSS_PLATFORM_GA_M[ref] ? round(drawnLengthM - KINGS_CROSS_PLATFORM_GA_M[ref]!.length) : null,
+      withinGaTolerance: KINGS_CROSS_PLATFORM_GA_M[ref] ? Math.abs(drawnLengthM - KINGS_CROSS_PLATFORM_GA_M[ref]!.length) <= TOLERANCES.platformM : null,
       withinOsmTolerance: Math.abs(drawnLengthM - osm.length) <= TOLERANCES.platformM,
       // A documented drawing inference (core/station.ts platformDrawingOutline) explains an OSM difference; it is not a survey.
       outlineInference: (built.userData.outlineInferences as { source: string }[] | undefined)?.[0] ?? null };
@@ -229,6 +233,7 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
       ? { code: 'platform-outline-inferred', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m by a documented inference, not a survey: ${p.outlineInference.source}` }
       : { code: 'platform-osm-tolerance', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m` }),
     ...platforms.filter(p => p.withinPublishedTolerance === false).map(p => ({ code: 'platform-published-tolerance', detail: `Platform ${p.ref}: drawn minus published operational ${p.drawnMinusPublishedM} m exceeds 1 m; operational length and polygon extent differ in definition` })),
+    ...platforms.filter(p => p.withinGaTolerance === false).map(p => ({ code: 'platform-ga-length', detail: `Platform ${p.ref}: drawn minus Network Rail construction-drawing length ${p.drawnMinusGaM} m exceeds 1 m (independent, non-OSM; the drawing's length may exclude ramps or the apron behind the buffers that the polygon includes)` })),
     ...platforms.filter(p => p.withinPublishedTolerance === null).map(p => ({ code: 'platform-published-missing', detail: `Platform ${p.ref}: no published operational length` })),
     ...(gaugeSamples.length < 3 ? [{ code: 'gauge-samples-missing', detail: `Only ${gaugeSamples.length} clear-track gauge samples; at least 3 required` }] : []),
     ...gaugeSamples.filter(p => !p.withinTolerance).map(p => ({ code: p.gaugeM === null ? 'gauge-hit-missing' : 'gauge-tolerance', detail: `Gauge at ${p.point.join(',')}: ${p.gaugeM ?? 'missing'} m` })),
@@ -244,7 +249,7 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
       tunnels: 'Dominant actual brick mesh face plane vs OSM open/tunnel boundary nodes; terrain-mode face builder with flat ground; lid/flank terrain heights excluded.',
       boundary: 'Actual transformed top mesh triangle boundary vs approved drawing outline and, when provided, raw OSM way ring reprojected with core/project; bidirectional samples at <=2 m spacing, 1 m tolerance. Raw P9 inference difference remains explicit. Not an independent survey.',
       registration: 'When raw OSM is provided: compact rail nodes and mouth boundary nodes matched by original OSM node IDs, plan distance <=3 m. This checks source registration, not drawn rail or portal survey accuracy. Missing raw input is unavailable.',
-      sources: 'Published dimensions and citations retained in core/station.ts; no independent source re-verification in this tool.' },
+      sources: 'Published dimensions and citations retained in core/station.ts; no independent source re-verification in this tool. Independent platform-end check: Network Rail construction-drawing platform lengths (core/station.ts KINGS_CROSS_PLATFORM_GA_M, Camden planning portal), 1 m tolerance; a design as issued, not an as-built survey.' },
     platforms, gaugeSamples, tunnels, concourse,
     platform11: { drawn: platforms.some(p => p.ref === '11'), drawnStationRefs: platforms.map(p => p.ref), basis: 'All station-zone surface source polygons passed through the actual platform builder; no generated extra slabs.' },
     sample26mCar: { kind: 'lner5', carIndex: 1, specLengthM, drawnCarLengthM, differenceM: round(drawnCarLengthM - specLengthM), toleranceM: 0.001, withinTolerance: Math.abs(drawnCarLengthM - specLengthM) <= 0.001, includes: 'all car meshes including coupler; model spec length includes coupling allowance' },
@@ -255,9 +260,9 @@ export function renderAxis01Markdown(report: ReturnType<typeof createAxis01Repor
   const lines = [
     '# Axis 01 geometry evidence', '',
     'Model consistency evidence; not an independent survey. Published operational platform lengths and drawn polygon extents differ in definition. A published-length flag is a numeric comparison, not proof that the platform mesh is wrong.', '',
-    '| Platform | Drawn m | OSM m | Published operational m | Drawn − published m | Within published 1 m |',
-    '| --- | ---: | ---: | ---: | ---: | --- |',
-    ...report.platforms.map(p => `| ${p.ref} | ${p.drawnLengthM} | ${p.osmLongAxisM} | ${p.publishedOperationalLengthM ?? 'missing'} | ${p.drawnMinusPublishedM ?? 'missing'} | ${p.withinPublishedTolerance === null ? 'missing' : p.withinPublishedTolerance ? 'yes' : 'FLAG'} |`),
+    '| Platform | Drawn m | OSM m | Published operational m | Drawn − published m | Within published 1 m | NR drawing m | Drawn − drawing m | Within drawing 1 m (non-OSM) |',
+    '| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |',
+    ...report.platforms.map(p => `| ${p.ref} | ${p.drawnLengthM} | ${p.osmLongAxisM} | ${p.publishedOperationalLengthM ?? 'missing'} | ${p.drawnMinusPublishedM ?? 'missing'} | ${p.withinPublishedTolerance === null ? 'missing' : p.withinPublishedTolerance ? 'yes' : 'FLAG'} | ${p.gaLengthM ?? 'missing'} | ${p.drawnMinusGaM ?? 'missing'} | ${p.withinGaTolerance === null ? 'missing' : p.withinGaTolerance ? 'yes' : 'FLAG'} |`),
     '', report.concourse === null ? 'Western Concourse overall N–S roof: not measured (no OSM station footprint). FLAG.'
       : `Western Concourse overall N–S roof: ${report.concourse.drawnNorthSouthM} m; Arup overall roof 138 m; difference ${report.concourse.differenceM} m; ${report.concourse.withinTolerance ? 'PASS' : 'FLAG'} at 3 m. Partial OSM arc fitted-circle diameter ${report.concourse.fittedArcDiameterM} m is a different measurement. [Source: Arup fig.6](${report.concourse.source}).`,
     '', `Raw OSM source registration: ${report.sourceRegistration.status}; maximum compact rail node-ID plan distance ${report.sourceRegistration.maxDistanceM ?? 'unavailable'} m; tolerance 3 m. Source consistency, not drawn survey accuracy.`,

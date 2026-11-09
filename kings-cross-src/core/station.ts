@@ -37,6 +37,36 @@ export const KINGS_CROSS_PLATFORM_LENGTHS_M: Readonly<Record<string, number>> = 
   '6': 289, '7': 289, '8': 291, '9': 176, '10': 176,
 });
 
+/** A second, non-OSM reference for the platform ends: Network Rail / Morgan Sindall, Kings Cross
+ * Remodelling Pack 7, proposed platform general-arrangement plans 152319-MOS-DRG-ECV-070101..070106,
+ * 1:100, Issued for Construction Nov 2019 - Mar 2020, public on Camden's planning portal
+ * (https://camdocs.camden.gov.uk/CMWebDrawer/Record/<id>/file/document, ids 8710929 P0-1, 8710930 P2-3,
+ * 8710931 P4-5, 8710932 P6-7, 8619940 P8-9, 8958497 P10). Each sheet's note reads
+ * "START OF PLATFORM n = CH. a", "END OF PLATFORM n = CH. b", "PLATFORM n TOTAL LENGTH = c m"
+ * (scheme chainage in metres along the line; read from the PDF text layer 2026-11-09; P0, P1 and P10
+ * re-read by hand). It is the design as issued, not an as-built survey, and the chainage datum is not
+ * stated, so only the lengths are used. Which end of the OSM polygon each figure measures is not
+ * stated either: a polygon may include ramps or the apron behind the buffers. */
+export const KINGS_CROSS_PLATFORM_GA_M: Readonly<Record<string, { start: number; end: number; length: number }>> = Object.freeze({
+  '0': { start: 32.99, end: 337.06, length: 304.07 }, '1': { start: 18.01, end: 333.79, length: 315.78 },
+  '2': { start: 18.01, end: 291.18, length: 273.18 }, '3': { start: 17.98, end: 306.33, length: 288.35 },
+  '4': { start: 17.97, end: 307.65, length: 289.68 }, '5': { start: 28.32, end: 299.21, length: 270.89 },
+  '6': { start: 28.32, end: 316.32, length: 288.0 }, '7': { start: 28.33, end: 316.11, length: 287.78 },
+  '8': { start: 28.35, end: 317.36, length: 289.01 }, '9': { start: 145.67, end: 320.77, length: 175.11 },
+  '10': { start: 148.66, end: 324.14, length: 175.48 },
+});
+
+/** Platform 10, reviewed 2026-11-09 and left as OSM maps it. OSM way 945776388 is 174.93 m along
+ * its long axis; Network Rail's own construction drawing (KINGS_CROSS_PLATFORM_GA_M) gives the
+ * physical platform as 175.48 m, so OSM is 0.55 m short: inside the rubric's 1 m, and no coordinate
+ * is invented. The Sectional Appendix's 176 m operational figure is 0.52 m MORE than that physical
+ * length, which only rounding can explain, so the 1.07 m gap to 176 m is the Appendix's whole-metre
+ * rounding plus 0.55 m of OSM tracing, not a platform shorter than its trains. */
+export const PLATFORM_10_LENGTH_REVIEW = Object.freeze({
+  osmId: 945776388, osmLongAxisM: 174.93, gaLengthM: 175.48, operationalM: 176,
+  source: 'NR/Morgan Sindall 152319-MOS-DRG-ECV-070106 (Camden record 8958497): PLATFORM 10 TOTAL LENGTH = 175.48m',
+});
+
 /** Reviewed discrepancy, not a new OSM coordinate. P9 way 111571259 is only 162.48 m
  * end-to-end; its north cap was last positioned in changesets 105135332 / 106011877
  * (2021 construction, Maxar / Esri imagery). No split continuation is mapped.

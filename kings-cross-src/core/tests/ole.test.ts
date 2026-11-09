@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { KxData, Rail } from '../osm.ts';
-import { catenaryAt, distanceToSegment, OLE, olePlan, staggerAt, supportVs, systemHeightAt, wiredSegments } from '../ole.ts';
+import { catenaryAt, distanceToSegment, OLE, OLE_SOURCES, olePlan, staggerAt, supportVs, systemHeightAt, wiredSegments } from '../ole.ts';
 
 // A frame with heading 0: u = x - 0, v = -(z - 0). Tracks run north (towards -z).
 const layout = { origin: [0, 0] as [number, number], heading: 0, width: 40, length: 100 };
@@ -57,7 +57,10 @@ test('ole: the contact wire is level at 4.7 m; the catenary is the system height
 });
 
 test('ole: the contact wire zig-zags +stagger and -stagger at alternate supports and never strays further', () => {
-  assert.equal(OLE.stagger, 0.2);
+  assert.equal(OLE.stagger, 0.23, 'Rail Engineer, "A bad wire day": up to 230 mm on straight track');
+  assert.match(OLE_SOURCES.stagger, /230 mm/);
+  assert.match(OLE_SOURCES.height, /4700mm/);
+  assert.match(OLE_SOURCES.span, /NOT FOUND/, 'an unsourced figure says so');
   for (let k = 0; k < 6; k++) assert.ok(Math.abs(staggerAt(OLE.firstV + k * OLE.span) - (k % 2 ? -1 : 1) * OLE.stagger) < 1e-9);
   for (let v = 0; v < 400; v += 3.7) assert.ok(Math.abs(staggerAt(v)) <= OLE.stagger + 1e-9);
   assert.ok(Math.abs(staggerAt(OLE.firstV + OLE.span / 2)) < 1e-9, 'on the centre line mid-span');
@@ -96,6 +99,24 @@ test('ole: under the shed no mast stands, every wire is hung from the roof above
   const tubes = plan.members.filter(m => m.kind === 'tube' && -m.a[2] < layout.length);
   assert.equal(tubes.length, shedLines.length * 4);
   for (const t of tubes) assert.equal(t.a[1], roof(t.a[0]), 'a drop tube starts at the roof');
+});
+
+test('ole: under an arch a cross-span wire runs rib to rib above the catenaries, with one hanger to each; no drop tube', () => {
+  // one arch over u 0..40, crown 20 m: roof = 4 + sqrt(20^2 - (u - 20)^2)
+  const roof = (u: number): number => 4 + Math.sqrt(Math.max(0, 400 - (u - 20) ** 2));
+  const plan = olePlan({ data: parallel(4, 4.5, 12), layout, inZone: everywhere, roofY: roof, arches: [[0, 40]] });
+  const shedLines = plan.lines.filter(l => l.inShed);
+  assert.equal(plan.spanCounts.crossSpans, shedLines.length);
+  assert.equal(plan.spanCounts.hangers, shedLines.length * 4);
+  assert.equal(plan.members.filter(m => m.kind === 'tube' && -m.a[2] < layout.length).length, 0);
+  const spans = segs(plan.spans);
+  for (const s of spans.filter(s => s[1] !== s[4] || s[0] !== s[3])) {
+    if (s[0] === s[3] && s[2] === s[5]) continue; // a hanger
+    for (const [x, y] of [[s[0]!, s[1]!], [s[3]!, s[4]!]]) assert.ok(Math.abs(y - roof(x)) < 1e-6, 'a cross-span ends on the arch');
+    assert.ok(Math.abs(s[1]! - s[4]!) < 1e-6, 'level across the arch');
+    assert.ok(s[1]! >= OLE.contactHeight + OLE.systemHeight + OLE.crossSpanClearance - 1e-6);
+  }
+  for (const h of spans.filter(s => s[0] === s[3] && s[2] === s[5])) assert.ok(h[1]! > h[4]! && Math.abs(h[4]! - (OLE.contactHeight + OLE.systemHeight)) < 1e-6, 'a hanger drops to the catenary at the support');
 });
 
 test('ole: in the open each group gets a portal with masts clear of every rail and signal; a long boom takes a middle mast', () => {
