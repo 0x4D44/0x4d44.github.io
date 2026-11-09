@@ -580,13 +580,15 @@ test('fronts: each family\'s headlight and tail lamp are the size, shape and pla
       near((boxes[0] as THREE.Box3).min.x, -(boxes[1] as THREE.Box3).max.x, 1e-9, `${kind} car ${car.index} lamps are mirrored`);
     }
   }
-  // the families differ: round lamps on the 717 and the 180, strips on the 700 and the 387, a tail lamp outboard only on the 700
-  // CHANGED (the AT300's were rectangles): the photographs of its pods (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, hull-802-doncaster-2024,
-  // lner-800-doncaster-2026) show round LED lenses, a larger headlight with a smaller round lamp beside it
-  for (const f of ['desiro', 'adelante', 'at300'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'round');
-  for (const f of ['electrostar', 'desiro700'] as Family[]) assert.equal(bodySpec(f).front.lamps.shape, 'rect');
-  assert.ok(bodySpec('desiro700').front.lamps.tailAt[0] > 0.1 && bodySpec('electrostar').front.lamps.tailAt[0] === 0, 'the 700 has its tail lamp outboard of the headlight strip; the 387 has it under');
-  assert.ok(bodySpec('desiro700').front.lamps.head[1] < 0.08 && bodySpec('adelante').front.lamps.head[1] > 0.1, 'the 700 has a slim strip, the 180 a big round lamp');
+  // the families differ in where the second lamp is: under the 717's and the 180's headlight, inboard of the 387's, outboard of the 700's
+  // CHANGED (the AT300's, the 387's and the 700's were rectangles and strips): photographs of their pods (LUMO-04-Lumo-803003-at-Edinburgh-Waverley,
+  // hull-802-doncaster-2024, lner-800-doncaster-2026; gn387_01_387114_ely, gn387_02_387121_ely; tl700_01_gatwick_front_29079928802) show round lenses
+  for (const f of FAMILIES) assert.equal(bodySpec(f).front.lamps.shape, 'round', `${f}: round lenses`);
+  const below = (f: Family): number => bodySpec(f).front.lamps.tailAt[0];
+  assert.ok(below('desiro700') > 0.1, 'the 700 has its second lamp outboard of the headlight');
+  assert.ok(below('electrostar') < -0.1, 'the 387 has its small lamp inboard of the headlight, beside it');
+  assert.ok(below('desiro') === 0 && below('adelante') === 0 && below('at300') < 0, 'the 717 and the 180 have the tail lamp under the headlight, the Azuma inboard and under');
+  assert.ok(bodySpec('desiro700').front.lamps.head[1] < bodySpec('adelante').front.lamps.head[1], 'the 700 has a smaller lens than the 180');
   // the 180's lamp pods are a lighter grey than any other family's near-black bezel, so they read against its black front
   const pod = bodySpec('adelante').front.lamps.bezelColour;
   assert.ok(pod !== undefined && lumaOf(pod) > 0.2 && lumaOf(0x15171a) < 0.1, 'the 180 has grey lamp pods');

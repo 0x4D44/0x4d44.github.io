@@ -454,7 +454,9 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
     // ASSUMED, all of it: an LED headlight bar over a tail-lamp bar in a dark bezel at each lower corner; a Dellner coupler under a cover; a
     // yellow warning panel (no source says the Great Northern 387s have one: the 2010s Electrostars' fronts were photographed with and without it)
     front: {
-      lamps: { shape: 'rect', y: 0.58, x: 0.62, head: [0.3, 0.075], tail: [0.3, 0.045], tailAt: [0, -0.11], bezel: 0.035 },
+      // two round lenses side by side in a dark housing at the yellow panel's lower outer corner, a larger headlight outboard and a smaller round lamp inboard
+      // of it (gn387_01_387114_ely, gn387_02_387121_ely: both clusters stand outboard of the gangway door); sizes read off those photographs, not published
+      lamps: { shape: 'round', y: 0.58, x: 0.72, head: [0.17, 0.17], tail: [0.1, 0.1], tailAt: [-0.17, 0], bezel: 0.035 },
       frame: 0.08,
       wipers: true,
       display: false,
@@ -547,7 +549,9 @@ const DESIRO700_BODY: BodySpec = {
   // one broad windscreen, with no emergency door between two panes (tl700_01_gatwick_front)
   glass: { screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14 }, side: DESIRO_BODY.glass.side },
   front: {
-    lamps: { shape: 'rect', y: 0.55, x: 0.77, head: [0.2, 0.06], tail: [0.07, 0.07], tailAt: [0.14, 0], bezel: 0.03 },
+    // a slim dark pod at the face's upper outer corner with two round lenses in it, the headlight inboard and the larger-looking pale lamp outboard of it
+    // (tl700_01_gatwick_front_29079928802: a tapered pod under each lower corner of the glass); sizes read off that photograph, not published
+    lamps: { shape: 'round', y: 0.55, x: 0.72, head: [0.13, 0.13], tail: [0.13, 0.13], tailAt: [0.16, 0], bezel: 0.03 },
     frame: 0.07,
     wipers: true,
     display: true,
@@ -994,7 +998,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const xs = [cx - lamps.head[0] / 2, cx + lamps.head[0] / 2, tx - lamps.tail[0] / 2, tx + lamps.tail[0] / 2];
         const ys = [yh - lamps.head[1] / 2, yh + lamps.head[1] / 2, ty - lamps.tail[1] / 2, ty + lamps.tail[1] / 2];
         const b = lamps.bezel;
-        detail.fan(onFace(roundedRect(Math.min(...xs) - b, Math.max(...xs) + b, Math.min(...ys) - b, Math.max(...ys) + b, lamps.shape === 'round' ? 0.1 : 0.05, 3), 0.005), faceN, col(lamps.bezelColour ?? BEZEL));
+        const [bx0, bx1, by0, by1] = [Math.min(...xs) - b, Math.max(...xs) + b, Math.min(...ys) - b, Math.max(...ys) + b];
+        // (a corner radius over half the housing's height would make the two corners' arcs cross, and the fan zero-area triangles: a low housing, as the 700's, keeps a flat between them)
+        detail.fan(onFace(roundedRect(bx0, bx1, by0, by1, Math.min(lamps.shape === 'round' ? 0.1 : 0.05, 0.45 * Math.min(bx1 - bx0, by1 - by0)), 3), 0.005), faceN, col(lamps.bezelColour ?? BEZEL));
       }
       lens(cx, yh, lamps.head[0], lamps.head[1], 0.009, col(car.cab === 'front' && !interiorCab ? LENS.headOn : LENS.headOff));
       lens(tx, ty, lamps.tail[0], lamps.tail[1], 0.009, col(car.cab === 'rear' && !interiorCab ? LENS.tailOn : LENS.tailOff));
