@@ -36,6 +36,33 @@ function clip(ring:Pt[],x:number,greater:boolean):Pt[]{
 function inside(p:Pt,r:Pt[]):boolean{
  let yes=false;for(let i=0,j=r.length-1;i<r.length;j=i++)if((r[i][1]>p[1])!==(r[j][1]>p[1])&&p[0]<(r[j][0]-r[i][0])*(p[1]-r[i][1])/(r[j][1]-r[i][1])+r[i][0])yes=!yes;return yes;
 }
+/** The part of a convex polygon on one side of the line a-b: side(p) = cross(b - a, p - a), kept where its sign is `sign`. */
+function clipSide(ring:Pt[],a:Pt,b:Pt,sign:1|-1):Pt[]{
+ const side=(p:Pt):number=>sign*((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0])),out:Pt[]=[];
+ for(let i=0;i<ring.length;i++){
+  const p=ring[i],q=ring[(i+1)%ring.length],sp=side(p),sq=side(q);
+  if(sp>=0)out.push(p);
+  if((sp>=0)!==(sq>=0)){const t=sp/(sp-sq);out.push([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t]);}
+ }
+ return out;
+}
+const area2=(r:readonly Pt[]):number=>{let s=0;for(let i=0;i<r.length;i++){const a=r[i],b=r[(i+1)%r.length];s+=a[0]*b[1]-b[0]*a[1];}return s;};
+/** A convex polygon less a convex cut-out: the pieces outside each of the cut-out's edges in turn (convex, non-overlapping). */
+function subtractConvex(poly:Pt[],cut:readonly Pt[]):Pt[][]{
+ const c=area2(cut)>0?cut:[...cut].reverse(),pieces:Pt[][]=[];let rest=poly;
+ for(let i=0;i<c.length&&rest.length>=3;i++){
+  const a=c[i],b=c[(i+1)%c.length],outside=clipSide(rest,a,b,-1);
+  if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);
+  rest=clipSide(rest,a,b,1);
+ }
+ return pieces;
+}
+/** The convex hull of a ring (Andrew's monotone chain), counter-clockwise in x/z. */
+export function convexHull(ring:readonly Pt[]):Pt[]{
+ const pts=[...clean(ring)].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o:Pt,a:Pt,b:Pt)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+ const half=(list:Pt[]):Pt[]=>{const h:Pt[]=[];for(const p of list){while(h.length>=2&&cross(h[h.length-2],h[h.length-1],p)<=0)h.pop();h.push(p);}h.pop();return h;};
+ return [...half(pts),...half([...pts].reverse())];
+}
 /** The north-south runs [z0, z1] of the line at east coordinate x that lie inside the outer ring and outside every hole. */
 export function footprintRuns(outer:readonly Pt[],holes:readonly (readonly Pt[])[],x:number):[number,number][]{
  const rings=[clean(outer),...holes.map(clean)],zs:number[]=[],out:[number,number][]=[];
@@ -48,9 +75,9 @@ export function footprintRuns(outer:readonly Pt[],holes:readonly (readonly Pt[])
  for(let i=1;i<cuts.length;i++){const z0=cuts[i-1],z1=cuts[i],mid:Pt=[x,(z0+z1)/2];if(inside(mid,rings[0])&&!rings.slice(1).some(r=>inside(mid,r)))out.push([z0,z1]);}
  return out;
 }
-/** Split triangulated OSM faces at each gutter/ridge. Clipping triangles retains
+/** Split triangulated OSM faces at each gutter/ridge; `cutouts` are convex outlines (the bridges over the roof) the roof stops at. Clipping triangles retains
  * concavities and holes exactly; moving only original OSM corners would bridge bays. */
-export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt[])[],profile:RidgeRoofProfile=WAVERLEY_ROOF_PROFILE,bands:{gutter:number;ridge:number}=WAVERLEY_ROOF_BANDS):{glass:Batch;ribs:Batch;solid:Batch}{
+export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt[])[],profile:RidgeRoofProfile=WAVERLEY_ROOF_PROFILE,bands:{gutter:number;ridge:number}=WAVERLEY_ROOF_BANDS,cutouts:readonly (readonly Pt[])[]=[]):{glass:Batch;ribs:Batch;solid:Batch}{
  if(!Number.isFinite(profile.pitch)||profile.pitch<=0||![profile.gutter,profile.rise,profile.phase].every(Number.isFinite))throw Error('Invalid Waverley roof profile');
  const glass=new Batch(),ribs=new Batch(),solid=new Batch(),rings=[clean(outer),...holes.map(clean)],points=rings.flat(),half=profile.pitch/2;
  if(rings[0].length<3)return {glass,ribs,solid};
@@ -59,7 +86,11 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
  for(const face of faces){
   const triangle=face.map(i=>points[i]),lo=Math.min(...triangle.map(p=>p[0])),hi=Math.max(...triangle.map(p=>p[0]));
   for(let k=Math.floor((lo-profile.phase)/half);k<=Math.floor((hi-profile.phase)/half);k++){
-   const x0=profile.phase+k*half,poly=clip(clip(triangle,x0,true),x0+half,false);
+   const x0=profile.phase+k*half;
+   // Convex cut-outs (the bridges that cross the roof) leave convex pieces of this half-pitch piece.
+   let pieces=[clip(clip(triangle,x0,true),x0+half,false)];
+   for(const cut of cutouts)pieces=pieces.flatMap(p=>p.length<3?[]:subtractConvex(p,cut));
+   for(const poly of pieces){
    for(let i=1;i+1<poly.length;i++){
     const pts=[poly[0],poly[i],poly[i+1]] as [Pt,Pt,Pt];
     glass.tri(...pts.map(p=>[p[0],height(p[0]),p[1]] as V3) as [V3,V3,V3],pts,[0,1,0]);
@@ -70,6 +101,7 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
     const band=clip(clip(poly,a,true),b,false);
     for(let i=1;i+1<band.length;i++){const pts=[band[0],band[i],band[i+1]] as [Pt,Pt,Pt];solid.tri(...pts.map(p=>[p[0],height(p[0])+WAVERLEY_ROOF_STRIP_LIFT,p[1]] as V3) as [V3,V3,V3],pts,[0,1,0]);}
    }
+   }
   }
  }
  const lo=Math.min(...rings[0].map(p=>p[0])),hi=Math.max(...rings[0].map(p=>p[0]));
@@ -77,7 +109,7 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
  // the central building. Fine cassette bars remain in the existing KX texture.
  for(let k=Math.ceil((lo-profile.phase)/half);profile.phase+k*half<hi;k++){
   const x=profile.phase+k*half;
-  for(const [z0,z1]of footprintRuns(outer,holes,x))if(z1-z0>.16)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.08]);
+  for(const [z0,z1]of footprintRuns(outer,[...holes,...cutouts],x))if(z1-z0>.16)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.08]);
  }
  return {glass,ribs,solid};
 }

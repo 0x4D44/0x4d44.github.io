@@ -63,8 +63,8 @@ export interface WaverleyStationPlan {
  columns:WaverleyColumn[];
  /** Platform girders, column to column. */
  spans:[Pt,Pt][];
- /** The roof's hole rings (the central block's outline), for the valance. */
- holes:Pt[][];
+ /** The roof's hole rings (the central block's outline), for the valance, and the bridges it stops at (no valance under a deck). */
+ holes:Pt[][];cutouts:readonly (readonly Pt[])[];
  /** Gutter girders: [x, z0, z1]. */
  gutters:[number,number,number][];
  lamps:WaverleyPlacement[];benches:WaverleyPlacement[];signs:WaverleyPlacement[];screens:WaverleyPlacement[];
@@ -91,20 +91,20 @@ function edgeDistance(p:Pt,r:readonly Pt[]):number{
  return best;
 }
 /** Is p under the roof (inside its outline, outside its hole) by at least `margin` metres? */
-export function underRoof(roof:Pick<WaverleyArea,'outer'|'holes'>,p:Pt,margin:number):boolean{
- const outer=cleanRing(roof.outer),holes=roof.holes.map(cleanRing);
+export function underRoof(roof:Pick<WaverleyArea,'outer'|'holes'>,p:Pt,margin:number,cutouts:readonly (readonly Pt[])[]=[]):boolean{
+ const outer=cleanRing(roof.outer),holes=[...roof.holes,...cutouts].map(cleanRing);
  return inRing(p,outer)&&!holes.some(h=>inRing(p,h))&&[outer,...holes].every(r=>edgeDistance(p,r)>=margin);
 }
 const rotAcross=(f:Frame):number=>Math.atan2(-f.n[1],f.n[0]);
 
 /** Where everything goes (pure: no three.js objects). */
-export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,roof:Pick<WaverleyArea,'outer'|'holes'>|undefined):WaverleyStationPlan{
+export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,roof:Pick<WaverleyArea,'outer'|'holes'>|undefined,cutouts:readonly (readonly Pt[])[]=[]):WaverleyStationPlan{
  const S=WAVERLEY_STRUCTURE,P=WAVERLEY_ROOF_PROFILE,frames=waverleyPlatformFrames(data);
- const plan:WaverleyStationPlan={frames,columns:[],spans:[],holes:[],gutters:[],lamps:[],benches:[],signs:[],screens:[]};
+ const plan:WaverleyStationPlan={frames,columns:[],spans:[],holes:[],cutouts,gutters:[],lamps:[],benches:[],signs:[],screens:[]};
  if(!roof)return plan;
  const outer=cleanRing(roof.outer),xs=outer.map(p=>p[0]);plan.holes=roof.holes.map(cleanRing);
  for(let k=Math.ceil((Math.min(...xs)-P.phase)/P.pitch);P.phase+k*P.pitch<Math.max(...xs);k++){
-  const x=P.phase+k*P.pitch;for(const [z0,z1]of footprintRuns(roof.outer,roof.holes,x))if(z1-z0>2)plan.gutters.push([x,z0+.3,z1-.3]);
+  const x=P.phase+k*P.pitch;for(const [z0,z1]of footprintRuns(roof.outer,[...roof.holes,...cutouts],x))if(z1-z0>2)plan.gutters.push([x,z0+.3,z1-.3]);
  }
  for(const f of frames){
   // Where this platform's middle line crosses a furrow line: sample the middle every 0.5 m along the platform's axis.
@@ -114,7 +114,7 @@ export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,
   for(let i=1;i<mids.length;i++){
    const a=mids[i-1],b=mids[i],ka=Math.floor((a.p[0]-P.phase)/P.pitch),kb=Math.floor((b.p[0]-P.phase)/P.pitch);if(ka===kb)continue;
    const x=P.phase+Math.max(ka,kb)*P.pitch,t=a.t+(b.t-a.t)*(x-a.p[0])/(b.p[0]-a.p[0]),band=bandAt(f,t,S.pedestalRadius);if(!band)continue;
-   const p=worldPoint(f,t,band.mid);if(!underRoof(roof,p,S.roofMargin))continue;
+   const p=worldPoint(f,t,band.mid);if(!underRoof(roof,p,S.roofMargin,cutouts))continue;
    if(plan.columns.some(c=>Math.hypot(c.x-p[0],c.z-p[1])<S.mergeDistance))continue;
    const c={x:p[0],z:p[1],ref:f.ref};plan.columns.push(c);own.push({t,c});
   }
@@ -202,6 +202,7 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
   const a=h[i],b=h[(i+1)%h.length],len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(len/S.valancePiece));
   for(let k=0;k<n;k++){
    const p=(t:number):Pt=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],p0=p(k/n),p1=p(Math.min(1,(k+1)/n)),y0=S.valanceBottom;
+   if(plan.cutouts.some(c=>inRing(p((k+.5)/n),c)))continue;
    const quad:V3[]=[[p0[0],y0,p0[1]],[p1[0],y0,p1[1]],[p1[0],roofHeight(p1[0]),p1[1]],[p0[0],roofHeight(p0[0]),p0[1]]];
    // Both faces: it is seen from inside the hole and from under the roof.
    ironwork.poly(quad,undefined,{color:C.valance});ironwork.poly([...quad].reverse(),undefined,{color:C.valance});

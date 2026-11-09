@@ -4,13 +4,13 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import dataFile from '../src/data/waverley-scene.json' with {type:'json'};
-import {buildWaverleyStation,WAVERLEY_STATION_OMIT_IDS,WAVERLEY_STATION_ROOF_ID} from '../src/waverley-station.ts';
+import {buildWaverleyStation,WAVERLEY_ROOF_CUTOUTS,WAVERLEY_STATION_OMIT_IDS,WAVERLEY_STATION_ROOF_ID} from '../src/waverley-station.ts';
 import {waverleyRailPieces,waverleyStationPlan,waverleyStructureBatches,WAVERLEY_EDGE_BANDS,WAVERLEY_STRUCTURE} from '../src/waverley-station-structure.ts';
 import {centralBlockBatches,WAVERLEY_BLOCK,WAVERLEY_CENTRAL_BLOCK_ID} from '../src/waverley-station-block.ts';
 import {ridgeRoofBatches,roofHeight,WAVERLEY_ROOF_BANDS,WAVERLEY_ROOF_PROFILE,WAVERLEY_ROOF_STRIP_LIFT} from '../src/waverley-roof.ts';
 import {WAVERLEY_LEVELS} from '../src/waverley-mesh.ts';
 
-const data=unpackWaverleyScene(dataFile as never),roof=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)!,plan=waverleyStationPlan(data,roof),tracks=waverleyRailPieces(data);
+const data=unpackWaverleyScene(dataFile as never),roof=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)!,plan=waverleyStationPlan(data,roof,WAVERLEY_ROOF_CUTOUTS),tracks=waverleyRailPieces(data);
 const flat={rangeUnder:()=>({min:WAVERLEY_LEVELS.ground,max:WAVERLEY_LEVELS.ground,mean:WAVERLEY_LEVELS.ground})};
 /** A train's half-width from the track centre line, metres: the KX figure for a platform face (furniture.ts FIGURES.trackProbe), ASSUMED. */
 const ENVELOPE_HALF=1.7;
@@ -115,4 +115,25 @@ test('W1 station: every part is counted, and dispose frees the owned materials',
  assert.ok(s.stats.triangles<240000,`${s.stats.triangles} triangles`);assert.ok(s.stats.drawCalls<=6+24);
  const m=(s.roof.getObjectByName('waverley-roof-ironwork') as THREE.Mesh).material as THREE.Material;let freed=0;m.addEventListener('dispose',()=>freed++);
  s.dispose();assert.equal(freed,1);
+});
+
+test('W1 roof stops at North Bridge and Waverley Bridge, keeps the published 34,000 m2 within 5%, and leaves the Waverley Steps to W2',async()=>{
+ const {default:frontage}=await import('../src/data/waverley-frontage.json',{with:{type:'json'}});
+ const s=buildWaverleyStation(data,flat),bridges=frontage.bridges.map(b=>b.ring as Pt[]);
+ let area=0;
+ for(const name of ['waverley-mapped-roofs','waverley-roof-strips','waverley-roof-ironwork','waverley-roof-runners']){
+  const g=(s.roof.getObjectByName(name) as THREE.Mesh).geometry,pos=g.getAttribute('position'),idx=g.index!;
+  for(let i=0;i<idx.count;i+=3){
+   const v=[0,1,2].map(k=>[pos.getX(idx.getX(i+k)),pos.getY(idx.getX(i+k)),pos.getZ(idx.getX(i+k))]),c:Pt=[(v[0][0]+v[1][0]+v[2][0])/3,(v[0][2]+v[1][2]+v[2][2])/3];
+   if(c[0]<-90||c[0]>320)continue;
+   assert.ok(!bridges.some(b=>inRing(c,b)),`${name} face at ${c} lies inside a bridge outline`);
+   if(name==='waverley-mapped-roofs'&&inRing(c,roof.outer)&&v.every(p=>p[1]>=WAVERLEY_ROOF_PROFILE.gutter-1e-6))area+=Math.abs((v[1][0]-v[0][0])*(v[2][2]-v[0][2])-(v[1][2]-v[0][2])*(v[2][0]-v[0][0]))/2;
+  }
+ }
+ assert.ok(Math.abs(area/34000-1)<=.05,`station roof ${area.toFixed(0)} m2 against Network Rail's 34,000`);
+ for(const c of plan.columns)assert.ok(!bridges.some(b=>inRing([c.x,c.z],b)),'no column stands under a bridge deck');
+ const steps=data.roofs.find(r=>r.id==='way/577519823')!,mid=steps.outer.reduce((a,p)=>[a[0]+p[0]/steps.outer.length,a[1]+p[1]/steps.outer.length],[0,0]);
+ s.roof.updateMatrixWorld(true);
+ assert.equal(new THREE.Raycaster(new THREE.Vector3(mid[0],60,mid[1]),new THREE.Vector3(0,-1,0)).intersectObject(s.roof.getObjectByName('waverley-mapped-roofs')!).length,0,'the steps slab is not drawn');
+ s.dispose();
 });

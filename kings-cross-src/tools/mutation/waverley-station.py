@@ -32,7 +32,7 @@ TESTS = ['web/tests/waverley-station.test.ts', 'web/tests/waverley-roof.test.ts'
 
 MUTATIONS = [
     # where the columns stand
-    ('a column is not held under the roof', STRUCT, 'if(!underRoof(roof,p,S.roofMargin))continue;', ''),
+    ('a column is not held under the roof', STRUCT, 'if(!underRoof(roof,p,S.roofMargin,cutouts))continue;', ''),
     ('a column stands at the band edge, toward a track', STRUCT, 'const p=worldPoint(f,t,band.mid);', 'const p=worldPoint(f,t,band.s0-1);'),
     ('a girder jumps a missing column', STRUCT, 'if(Math.hypot(a.c.x-b.c.x,a.c.z-b.c.z)>S.maxSpan)continue;', ''),
     # furniture
@@ -55,6 +55,12 @@ MUTATIONS = [
     ('the block top is a metre low', BLOCK, 'fillSurface(top,r,[],()=>y(h));', 'fillSurface(top,r,[],()=>y(h-1));'),
     ('upper windows run into the cornice', BLOCK, [('upperSill:.4,', 'upperSill:.8,'), ('if(y1>h-B.cornice-.1)continue;', '')]),
     ('a door sits behind the plinth', BLOCK, 'windowLift:.03,doorLift:.1,', 'windowLift:.03,doorLift:.05,'),
+    # the bridges over the roof and the steps (W2's)
+    ('the roof runs on under the bridges', STATION, 'ridgeRoofBatches(r.outer,r.holes,undefined,undefined,WAVERLEY_ROOF_CUTOUTS)', 'ridgeRoofBatches(r.outer,r.holes)'),
+    ('a cut-out keeps the piece inside it', ROOF, 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);', 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);if(i===c.length-1&&rest.length>=3)pieces.push(clipSide(rest,a,b,1));'),
+    ('the valance runs on under North Bridge', STRUCT, 'if(plan.cutouts.some(c=>inRing(p((k+.5)/n),c)))continue;', ''),
+    ('columns stand under the bridges', STRUCT, 'holes=[...roof.holes,...cutouts].map(cleanRing);', 'holes=roof.holes.map(cleanRing);'),
+    ('the steps slab is still drawn', STATION, '}else if(r.id!==WAVERLEY_STEPS_ROOF_ID){', '}else{'),
     # the station's bookkeeping
     ('the owned materials are not disposed', STATION, 'for(const m of owned)m.dispose();', ''),
 ]

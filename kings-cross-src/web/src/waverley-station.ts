@@ -2,10 +2,12 @@
 // Horizontal geometry is OSM (ODbL). The 0.915 m platform height and the roof's numeric profile are ASSUMED (waverley-scene.ts,
 // waverley-roof.ts). waverley-scene.ts calls buildWaverleyStation once and adds its two groups as the scene's platforms and roof parts.
 import * as THREE from 'three';
+import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as WaverleyData} from '../../core/waverley-data.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {Batch,material} from './materials.ts';
-import {ridgeRoofBatches} from './waverley-roof.ts';
+import {convexHull,ridgeRoofBatches} from './waverley-roof.ts';
+import frontage from './data/waverley-frontage.json' with {type:'json'};
 import {WAVERLEY_LEVELS,fillSurface,meshAdder} from './waverley-mesh.ts';
 import {paintMaterial,waverleyStationPlan,waverleyStructureBatches} from './waverley-station-structure.ts';
 import {centralBlockBatches,WAVERLEY_CENTRAL_BLOCK_ID} from './waverley-station-block.ts';
@@ -14,6 +16,12 @@ import {centralBlockBatches,WAVERLEY_CENTRAL_BLOCK_ID} from './waverley-station-
 export const WAVERLEY_STATION_ROOF_ID='relation/240040';
 /** Mapped city blocks W1 draws itself (e.g. the central block), so waverley-scene.ts leaves them out of the city loop, as it does for
  *  WAVERLEY_FRONTAGE_OMIT_IDS and WAVERLEY_CITY_OMIT_IDS. Empty until W1 draws a replacement. */
+/** The flat 8 m slab OSM maps over Waverley Steps: not drawn here; the steps and their cover are W2's (waverley-frontage.ts). */
+export const WAVERLEY_STEPS_ROOF_ID='way/577519823';
+/** The bridges that cross over the station roof, North Bridge (way/380552925) and Waverley Bridge (way/377738788), as convex outlines:
+ * the roof stops at them (R-wv2-c2: the roof meets North Bridge's flank; R-wv1-a3: the roof ends east of Waverley Bridge). The rings are
+ * W2's OSM data (data/waverley-frontage.json), read only; each is all but straight-sided, so its hull is its outline. */
+export const WAVERLEY_ROOF_CUTOUTS:readonly Pt[][]=frontage.bridges.map(b=>convexHull(b.ring.map(p=>[p[0],p[1]] as Pt)));
 export const WAVERLEY_STATION_OMIT_IDS:readonly string[]=[WAVERLEY_CENTRAL_BLOCK_ID];
 export interface WaverleyStation {
  platforms:THREE.Group;
@@ -30,7 +38,7 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  // Own variant of the KX glazing; never mutate the cached shared material.
  const glazing=own(material('shedGlass').clone() as THREE.MeshLambertMaterial);glazing.color.multiply(new THREE.Color(0xf2f4ef));glazing.vertexColors=false;
  glazing.opacity=.78;glazing.forceSinglePass=true;
- const stationRoof=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID),plan=waverleyStationPlan(data,stationRoof),structure=waverleyStructureBatches(plan);
+ const stationRoof=data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID),plan=waverleyStationPlan(data,stationRoof,WAVERLEY_ROOF_CUTOUTS),structure=waverleyStructureBatches(plan);
  // Platforms: pale slab paving (R-wv1-b, R-wv1-b2: light grey flags, not asphalt), the KX coper/tactile/white-line strip on every track edge,
  // and darker faces (R-wv1-b: the platform wall under the coper is dark, weathered stone). Faces skip the seam between two polygons of one island.
  const platformTops=new Batch();
@@ -49,9 +57,9 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  const roof=new Batch(),roofRunners=new Batch(),roofStrips=new Batch();
  for(const r of data.roofs){
   if(r.id===WAVERLEY_STATION_ROOF_ID){
-   const shaped=ridgeRoofBatches(r.outer,r.holes);
+   const shaped=ridgeRoofBatches(r.outer,r.holes,undefined,undefined,WAVERLEY_ROOF_CUTOUTS);
    for(const [from,to]of [[shaped.glass,roof],[shaped.ribs,roofRunners],[shaped.solid,roofStrips]])to.append(from);
-  }else{const base=ground.rangeUnder(r.outer,16).mean;fillSurface(roof,r.outer,r.holes,()=>base+r.height);}
+  }else if(r.id!==WAVERLEY_STEPS_ROOF_ID){const base=ground.rangeUnder(r.outer,16).mean;fillSurface(roof,r.outer,r.holes,()=>base+r.height);}
  }
  add(roofGroup,roof,glazing,'waverley-mapped-roofs');
  add(roofGroup,roofRunners,material('ribPaint'),'waverley-roof-runners');
