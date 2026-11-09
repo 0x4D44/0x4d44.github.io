@@ -35,6 +35,14 @@
 // ref=ECM1 (King's Cross's own tracks, shed to the tunnel mouths); every Thameslink, St Pancras,
 // Moorgate and Great Northern Route way has no node in it (tests/track.test.ts proves both).
 //
+// CURVES. Every track, in the zone and beyond, is drawn on core/curves.ts's smooth curves, not the OSM
+// chords: each segment is cut into short pieces that turn by at most half a degree each, through every
+// OSM node, with no angle where a track runs on through a node and a turnout's branch leaving along its
+// through route. The chains, the bed, the rails (offset +-RAIL_CENTRE from the curve, mitred at every
+// joint), the sleepers (square to each piece) and the lines all follow those pieces, and main.ts's graph
+// carries the same curves, so the trains run on them. On the 2026 extract the zone's 131 chords become
+// about 800 pieces, and the worst angle at a joint falls from 5.5 to 0.6 degrees.
+//
 // FIGURES. Only what a source backs is stated as fact; the rest says ASSUMED.
 //   gauge 1.435 m between inner faces, head 0.072 m: core/station.ts (GAUGE, RAIL_HEAD_WIDTH).
 //   rail height 0.10 m, ballast top -0.14 m, sleeper 2.6 x 0.25 m: the brief for this module.
@@ -56,6 +64,7 @@
 // little, by a fixed pseudo-random sequence, so crossing sleepers at junctions never z-fight and
 // the rows do not look stamped.
 import * as THREE from 'three';
+import { railShapes } from '../../core/curves.ts';
 import { railSegments, ribbonTriangles, twinRails } from '../../core/scene.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
@@ -535,7 +544,9 @@ export type TrackLayout = ZoneLayout;
 export function buildTrack(data: Pick<KxData, 'nodes' | 'rails'>, layout: TrackLayout): THREE.Group {
   // Only the ECML has modelled bores and a train rail datum. Raising other underground routes
   // (Tube, Thameslink, etc.) would expose them across flat ground; their elevations are unknown.
-  const rails = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => !r.tunnel || r.ref === 'ECM1') });
+  // Every segment is drawn as its smooth curve (core/curves.ts), taken from the WHOLE data set: the
+  // same curves main.ts's graph gives the trains, so they run on these rails.
+  const rails = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => !r.tunnel || r.ref === 'ECM1') }, railShapes(data));
   const main = splitByZone(rails.main, layout);
   const siding = splitByZone(rails.siding, layout);
 

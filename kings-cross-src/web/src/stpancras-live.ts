@@ -51,7 +51,7 @@ export function createMmlReplay(rows: readonly RecordedEvent[], sink: MotionSink
 }
 
 export function createMmlMotion(data: KxData, value: unknown) {
-  const graph = buildGraph(data), anchors = validateMmlAnchors(value, graph);
+  const graph = buildGraph(data, { curves: true }), anchors = validateMmlAnchors(value, graph);
   const layout = emrTrainLayout(ASSUMED_MML_KIND);
   const motion = createMotion(graph, anchors, { lengthM: layout.length,
     // ASSUMED conservative MML station limit, pending a sourced local speed table.

@@ -210,7 +210,7 @@ function start(): void {
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
   // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
-  const graph = buildGraph(data);
+  const graph = buildGraph(data, { curves: true }); // trains run on the drawn curves (core/curves.ts)
   let motion: ReturnType<typeof createMotion> | null = null;
   let liveTrains: ReturnType<typeof createLiveTrains> | null = null;
   let feed: TrainFeed | null = null;

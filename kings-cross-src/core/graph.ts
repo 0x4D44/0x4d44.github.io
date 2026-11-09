@@ -1,5 +1,7 @@
 // Track graph built from the compact OSM model: nodes are OSM nodes, edges are the
 // straight segments between consecutive nodes of a rail way. Pure functions, no I/O.
+import { railShapes, shapeKey, shapePoint } from './curves.ts';
+import type { RailShapes } from './curves.ts';
 import { dist } from './geo.ts';
 import type { Pt } from './geo.ts';
 import type { KxData, RailService } from './osm.ts';
@@ -17,9 +19,15 @@ export interface Graph {
   pos: Map<number, Pt>;
   adj: Map<number, Edge[]>;
   edges: Edge[];
+  /** the smooth curve of each edge (core/curves.ts), when built with { curves: true }; edges are straight otherwise */
+  shapes?: RailShapes;
 }
 
-export function buildGraph(data: Pick<KxData, 'nodes' | 'rails'>): Graph {
+/**
+ * `curves`: give the graph the smooth track the page draws (core/curves.ts), so edgePoint() puts a
+ * train on the drawn rails. Topology, edge lengths (the chords) and every routing rule stay the same.
+ */
+export function buildGraph(data: Pick<KxData, 'nodes' | 'rails'>, opts: { curves?: boolean } = {}): Graph {
   const pos = new Map<number, Pt>();
   for (const [id, x, z] of data.nodes) pos.set(id, [x, z]);
   const adj = new Map<number, Edge[]>();
@@ -42,7 +50,20 @@ export function buildGraph(data: Pick<KxData, 'nodes' | 'rails'>): Graph {
       link(b, e);
     }
   }
-  return { pos, adj, edges };
+  return opts.curves ? { pos, adj, edges, shapes: railShapes(data) } : { pos, adj, edges };
+}
+
+/**
+ * The point a share `t` (0..1) of the way along an edge from edge.a to edge.b, and the unit direction
+ * from a to b there: on the edge's curve when the graph has one, else on its chord.
+ */
+export function edgePoint(g: Pick<Graph, 'pos' | 'shapes'>, edge: Pick<Edge, 'a' | 'b'>, t: number): { point: Pt; dir: Pt } {
+  const shape = g.shapes?.get(shapeKey(edge.a, edge.b));
+  if (shape) return shapePoint(shape, edge.a, edge.b, t);
+  const a = g.pos.get(edge.a) as Pt;
+  const b = g.pos.get(edge.b) as Pt;
+  const l = dist(a, b);
+  return { point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], dir: l > 0 ? [(b[0] - a[0]) / l, (b[1] - a[1]) / l] : [0, 0] };
 }
 
 const other = (e: Edge, n: number): number => (e.a === n ? e.b : e.a);

@@ -1,6 +1,7 @@
 // The motion core owns occupied track. Each car follows its own two bogie samples, so
 // coaches articulate through points instead of rotating one rigid 234 m train.
 import * as THREE from 'three';
+import { edgePoint } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
@@ -136,9 +137,10 @@ export function sampleOccupied(graph: Graph, train: TrainView, behindM: number):
     if (length < 1e-9) continue;
     if (left <= length + 1e-8) {
       const t = s.toT + (s.fromT - s.toT) * Math.min(1, left / length);
-      const a = graph.pos.get(s.edge.a)!, b = graph.pos.get(s.edge.b)!;
+      // on the edge's drawn curve when the graph carries one (core/curves.ts), else on its chord
+      const { point, dir } = edgePoint(graph, s.edge, t);
       const sign = Math.sign(s.fromT - s.toT);
-      return { point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], back: [(b[0] - a[0]) * sign / s.edge.length, (b[1] - a[1]) * sign / s.edge.length] };
+      return { point, back: [dir[0] * sign, dir[1] * sign] };
     }
     left -= length;
   }

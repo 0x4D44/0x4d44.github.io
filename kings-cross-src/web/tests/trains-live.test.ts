@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
+import { railShapes } from '../../core/curves.ts';
 import { buildGraph, snap } from '../../core/graph.ts';
+import { railSegments } from '../../core/scene.ts';
 import type { Graph } from '../../core/graph.ts';
 import { createMotion, DEFAULT_BUFFER_CLEARANCE_M, overlapM } from '../../core/motion.ts';
 import type { MotionBirth, TrainView } from '../../core/motion.ts';
@@ -71,6 +73,54 @@ test('live car bogie centres stay on a curved track and retain their distances b
     }
   }
   assert.ok(Math.max(...angles) - Math.min(...angles) > 0.8, 'cars must bend independently');
+  layer.dispose();
+});
+
+test('on a graph with the drawn curves, every bogie and car runs on the drawn centre line, not on the OSM chords', () => {
+  // a 180 m radius drawn in 40 m chords (they sag 1.1 m inside the circle); the page draws the curve (core/curves.ts)
+  const nodes: [number, number, number][] = [];
+  for (let i = 0; i <= 12; i++) { const a = (i * 40) / 180; nodes.push([i + 1, 180 * (1 - Math.cos(a)), 180 * Math.sin(a)]); }
+  const data = { nodes, rails: [{ id: 1, nodes: nodes.map(([id]) => id), service: 'main' as const, tunnel: false, bridge: false, layer: 0 }] };
+  const drawn = railSegments(data, railShapes(data)).main;
+  const offTrack = (x: number, z: number): number => {
+    let best = Infinity;
+    for (let i = 0; i + 5 < drawn.length; i += 6) {
+      const ax = drawn[i]!, az = drawn[i + 2]!, dx = drawn[i + 3]! - ax, dz = drawn[i + 5]! - az, l2 = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+      best = Math.min(best, Math.hypot(x - ax - t * dx, z - az - t * dz));
+    }
+    return best;
+  };
+  const graph = buildGraph(data, { curves: true });
+  const length = trainLayout('lner9').length;
+  const occupied = [];
+  let left = length;
+  for (const edge of graph.edges) {
+    const take = Math.min(left, edge.length);
+    occupied.push({ edge, fromT: take / edge.length, toT: 0 }); left -= take;
+    if (left <= 1e-8) break;
+  }
+  occupied.reverse();
+  const train: TrainView = { id: 1, description: '1SYN', leading: { edge: graph.edges[0]!, t: 0, point: [0, 0] }, heading: Math.PI, speed: 5, lengthM: length, occupiedLengthM: length, occupied,
+    state: 'moving', opacity: 1, targetBerth: 'SYNTHETIC', lastBerth: 'SYNTHETIC', blocked: false, distanceM: 0, reversals: 0 };
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene);
+  layer.update([train]); scene.updateMatrixWorld(true);
+  const group = layer.trains()[0]!.group;
+  let worst = 0, bogies = 0;
+  for (const car of trainLayout('lner9').cars) {
+    const node = group.getObjectByName(`car-${car.index}`)!;
+    for (const k of [0, 1]) {
+      const p = world(node.getObjectByName(`bogie-${car.index}-${k}`)!);
+      worst = Math.max(worst, offTrack(p.x, p.z)); bogies++;
+    }
+  }
+  assert.ok(bogies >= 18, `${bogies} bogies`);
+  assert.ok(worst < 0.001, `a bogie is ${worst.toFixed(4)} m off the drawn track`);
+  // the same train on the chords: a bogie mid-chord would be up to the 1.1 m sag off the drawn rails
+  const chords = buildGraph(data);
+  let chordWorst = 0;
+  for (let d = 0; d < length; d += 5) { const p = sampleOccupied(chords, { ...train, occupied: train.occupied.map((o) => ({ ...o, edge: chords.edges[graph.edges.indexOf(o.edge)]! })) }, d)!; chordWorst = Math.max(chordWorst, offTrack(p.point[0], p.point[1])); }
+  assert.ok(chordWorst > 0.5, `on the chords a bogie would be ${chordWorst.toFixed(2)} m off`);
   layer.dispose();
 });
 

@@ -5,6 +5,7 @@ import { areaIdentity } from './station-config.ts';
 import { NOT_A_TRAIN } from './anchors.ts';
 import type { AnchorMap, BerthAnchor } from './anchors.ts';
 import type { Pt } from './geo.ts';
+import { edgePoint } from './graph.ts';
 import type { Edge, Graph } from './graph.ts';
 import { inZone, KINGS_CROSS } from './zones.ts';
 
@@ -215,11 +216,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       }
     }
   };
-  const point = (edge: Edge, t: number): TrackPosition => {
-    const a = graph.pos.get(edge.a)!;
-    const b = graph.pos.get(edge.b)!;
-    return { edge, t, point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t] };
-  };
+  // on the edge's drawn curve when the graph carries one (core/curves.ts), else on its chord
+  const point = (edge: Edge, t: number): TrackPosition => ({ edge, t, point: edgePoint(graph, edge, t).point });
   const anchorPlacement = (a: BerthAnchor): { pos: TrackPosition; dir: number } | undefined => {
     const e = graph.edges.find((e) => (e.a === a.from && e.b === a.to) || (e.b === a.from && e.a === a.to));
     if (!e || !(a.t >= 0 && a.t <= 1) || e.length <= 0) return;
@@ -843,7 +841,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   };
   const trains = (): TrainView[] => [...active.values()].map((t) => ({
     id: t.id, exiting: t.exiting, description: t.description, leading: { ...t.pos, point: [...t.pos.point] as Pt },
-    heading: (() => { const a = graph.pos.get(t.pos.edge.a)!, b = graph.pos.get(t.pos.edge.b)!; return Math.atan2((b[0] - a[0]) * t.dir, -(b[1] - a[1]) * t.dir); })(),
+    heading: (() => { const d = edgePoint(graph, t.pos.edge, t.pos.t).dir; return Math.atan2(d[0] * t.dir, -d[1] * t.dir); })(),
     speed: t.speed, lengthM: t.lengthM, occupiedLengthM: t.body.reduce((sum, s) => sum + size(s), 0),
     occupied: t.body.map((s) => ({ ...s })),
     state: t.fadeAt !== undefined ? 'fading' : t.estimated ? 'estimated' : t.departing ? 'departing' : t.speed === 0 ? 'held' : 'moving',

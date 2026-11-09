@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
+import { railShapes } from '../../core/curves.ts';
 import { railSegments, TUNNEL_DEPTH, twinRails } from '../../core/scene.ts';
 import { GAUGE, RAIL_HEAD_WIDTH, shedBufferStops, shedLayout, worldToShed } from '../../core/station.ts';
 import { TEXTURES } from '../src/materials.ts';
@@ -40,6 +41,8 @@ import { terrainFromFunction } from '../../core/terrain.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
+/** The track group's triangle budget (60,000 on the OSM chords; the curves' pieces cost 44,000 more): see the buildTrack test. */
+const TRIS_BUDGET = 100_000;
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
 
@@ -137,6 +140,15 @@ function onPolyline(pts: Pt[], p: Pt): { s: number; off: number; dir: Pt } {
   return best;
 }
 
+/** The centre line buildTrack draws for one way (core/curves.ts): its smooth curve's points, node to node. */
+function drawnLine(pts: Pt[]): Pt[] {
+  const ways = waysOf(pts);
+  const m = railSegments(ways, railShapes(ways)).main;
+  const out: Pt[] = [[m[0] as number, m[2] as number]];
+  for (let i = 0; i + 5 < m.length; i += 6) out.push([m[i + 3] as number, m[i + 5] as number]);
+  return out;
+}
+
 // ---- figures -------------------------------------------------------------------------------------
 
 test('track: the levels stack up from the ground to the rail head, with the figures the brief gives', () => {
@@ -221,14 +233,16 @@ test('sleepers: each is square to the line and on it, in the placements and in t
     near(Math.cos(p.yaw) * dir[0] - Math.sin(p.yaw) * dir[1], 0, 1e-9, 'long axis is square to the line');
     near(Math.sin(p.yaw) * dir[0] + Math.cos(p.yaw) * dir[1], 1, 1e-9, 'short axis runs along the line');
   }
+  // buildTrack lays them along the drawn curve (core/curves.ts), not the chords: on it and square to it
+  const line = drawnLine(pts);
   const sleepers = mesh(buildTrack(waysOf(pts), FLAT), 'track-sleepers') as unknown as THREE.InstancedMesh;
-  assert.equal(sleepers.count, s.length);
+  assert.equal(sleepers.count, sleeperPlacements(segmentsOf(...line)).length);
   const m = new THREE.Matrix4();
   for (let i = 0; i < sleepers.count; i++) {
     sleepers.getMatrixAt(i, m);
     const pos = new THREE.Vector3().setFromMatrixPosition(m);
     const axis = new THREE.Vector3(1, 0, 0).transformDirection(m);
-    const { off, dir } = onPolyline(pts, [pos.x, pos.z]);
+    const { off, dir } = onPolyline(line, [pos.x, pos.z]);
     near(off, 0, 1e-4, `instance ${i} on the line`);
     near(axis.x * dir[0] + axis.z * dir[1], 0, 1e-6, `instance ${i} square to the line`);
     assert.ok(pos.y <= 1e-9 && pos.y >= -0.004 - 1e-9, `instance ${i} drop ${pos.y} is within the 4 mm jitter`);
@@ -320,6 +334,61 @@ test('zone: on the real extract it holds about 131 main segments, 4.5 km, and no
   assert.equal(main.near.length + main.far.length, rails.main.length);
 });
 
+test('curves: in the station zone the drawn track has no visible angle where it runs on, every OSM node is still on it, and a turnout branch leaves along its through route', () => {
+  // the joints of the drawn pieces along every chain, and at every junction the sharpest fork (a branch's first piece
+  // against the nearest other branch's, both leaving the node): the OSM chords turned by up to 5.5 degrees at a node
+  // and forked at up to 7.7 degrees; the curves (core/curves.ts) by under a degree
+  const deg = (r: number): number => (r * 180) / Math.PI;
+  const measure = (segments: number[]): { joint: number; fork: number; junctions: number } => {
+    let joint = 0;
+    for (const c of trackChains(segments)) {
+      for (let i = 1; i + 1 < c.length; i++) {
+        const [a, b, d] = [c[i - 1] as Pt, c[i] as Pt, c[i + 1] as Pt];
+        const ux = b[0] - a[0], uz = b[1] - a[1], vx = d[0] - b[0], vz = d[1] - b[1];
+        joint = Math.max(joint, deg(Math.acos(Math.min(1, (ux * vx + uz * vz) / (Math.hypot(ux, uz) * Math.hypot(vx, vz))))));
+      }
+    }
+    const leaving = new Map<string, Pt[]>();
+    for (let i = 0; i + 5 < segments.length; i += 6) {
+      const a: Pt = [segments[i] as number, segments[i + 2] as number];
+      const b: Pt = [segments[i + 3] as number, segments[i + 5] as number];
+      for (const [p, q] of [[a, b], [b, a]] as const) {
+        const l = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        const list = leaving.get(`${p[0]},${p[1]}`) ?? [];
+        list.push([(q[0] - p[0]) / l, (q[1] - p[1]) / l]);
+        leaving.set(`${p[0]},${p[1]}`, list);
+      }
+    }
+    let fork = 0;
+    let junctions = 0;
+    for (const dirs of leaving.values()) {
+      if (dirs.length < 3) continue;
+      junctions++;
+      for (const u of dirs) {
+        let nearest = 180;
+        for (const v of dirs) if (v !== u) nearest = Math.min(nearest, deg(Math.acos(Math.min(1, u[0] * v[0] + u[1] * v[1]))));
+        if (nearest < 25) fork = Math.max(fork, nearest); // a diamond crossing's routes cross at more: not a fork
+      }
+    }
+    return { joint, fork, junctions };
+  };
+  const ecml = { nodes: data.nodes, rails: data.rails.filter((r) => !r.tunnel || r.ref === 'ECM1') };
+  const chords = measure(splitByZone(railSegments(ecml).main, layout).near);
+  const curves = measure(splitByZone(railSegments(ecml, railShapes(data)).main, layout).near);
+  assert.ok(chords.joint > 5 && chords.fork > 7, `the chords: joints to ${chords.joint.toFixed(2)}, forks to ${chords.fork.toFixed(2)} degrees`);
+  assert.equal(curves.junctions, chords.junctions, 'the same junctions');
+  assert.ok(curves.junctions >= 10, `${curves.junctions} junctions`);
+  assert.ok(curves.joint < 1, `a drawn joint turns ${curves.joint.toFixed(2)} degrees`);
+  assert.ok(curves.fork < 1, `a turnout branch leaves ${curves.fork.toFixed(2)} degrees off its through route`);
+  // every OSM node of the zone's track is a vertex of the drawn track, exactly where OSM puts it
+  const near = splitByZone(railSegments(ecml, railShapes(data)).main, layout).near;
+  const vertices = new Set<string>();
+  for (let i = 0; i + 2 < near.length; i += 3) vertices.add(`${near[i]},${near[i + 2]}`);
+  const zoneNodes = new Set(splitByZone(railSegments(ecml).main, layout).near.flatMap((v, i, a) => (i % 3 === 0 ? [`${v},${a[i + 2]}`] : [])));
+  assert.ok(zoneNodes.size > 100);
+  for (const n of zoneNodes) assert.ok(vertices.has(n), `OSM node ${n} is on the drawn track`);
+});
+
 // ---- the group -----------------------------------------------------------------------------------
 
 test('buildTrack: builds from the real data in Node as five meshes, one sleeper per spacing along 4.5 km, within the triangle budget', () => {
@@ -327,7 +396,8 @@ test('buildTrack: builds from the real data in Node as five meshes, one sleeper 
   assert.equal(g.name, 'track');
   assert.deepEqual(g.children.map((c) => c.name).sort(), ['track-ballast', 'track-lines', 'track-rails', 'track-sleepers', 'track-tunnel']);
   assert.ok(g.children.length <= 6, 'draw calls');
-  const chains = trackChains(splitByZone(railSegments(data).main, layout).near);
+  const drawn = railSegments({ nodes: data.nodes, rails: data.rails.filter((r) => !r.tunnel || r.ref === 'ECM1') }, railShapes(data));
+  const chains = trackChains(splitByZone(drawn.main, layout).near);
   let length = 0;
   for (const c of chains) for (let i = 0; i + 1 < c.length; i++) length += Math.hypot((c[i + 1] as Pt)[0] - (c[i] as Pt)[0], (c[i + 1] as Pt)[1] - (c[i] as Pt)[1]);
   const sleepers = mesh(g, 'track-sleepers') as unknown as THREE.InstancedMesh;
@@ -338,8 +408,9 @@ test('buildTrack: builds from the real data in Node as five meshes, one sleeper 
   let tris = sleepers.count * ((sleepers.geometry.index?.count ?? 0) / 3);
   assert.equal(tris, sleepers.count * SLEEPER_TRIANGLES, 'a sleeper is SLEEPER_TRIANGLES triangles');
   for (const name of ['track-ballast', 'track-rails']) tris += (mesh(g, name).geometry.index?.count ?? 0) / 3;
-  // measured on the 2026 extract: 6978 sleepers; 78,554 triangles with 10-triangle sleepers, 50,642 with 6
-  assert.ok(tris < 60_000, `${tris} triangles`);
+  // measured on the 2026 extract: 6978 sleepers; 78,554 triangles with 10-triangle sleepers, 50,642 with 6 on the
+  // OSM chords; 95,072 on core/curves.ts's short pieces (half a degree a joint), all the extra in the rails and the bed
+  assert.ok(tris < TRIS_BUDGET, `${tris} triangles`);
   // the library's materials: the ballast itself, the sleepers its concrete (tinted per instance, fading with distance)
   assert.equal((mesh(g, 'track-ballast').material as THREE.Material).name, 'ballast');
   assert.equal((sleepers.material as THREE.MeshLambertMaterial).color.getHex(), 0x8e8e8a);
@@ -377,19 +448,23 @@ test('rails: the inner faces are one GAUGE apart, measured on the built geometry
 });
 
 test('rails: the gauge holds round a bend (the rails are mitred, not butted)', () => {
+  // the 25 degree bend is drawn as the curve's short pieces (core/curves.ts), each joint mitred: every head-top
+  // corner is exactly half a gauge (inner) or half a gauge plus a head (outer) from the drawn centre line. Butted
+  // pieces would put the corners at the joints off by d(1 - cos joint): 0.03 mm at a half-degree joint, which the
+  // float32 positions (7.6e-6 m apart out here) still resolve.
   const a = (25 * Math.PI) / 180;
   const pts: Pt[] = [[10, -20], [10, -60], [10 + Math.sin(a) * 40, -60 - Math.cos(a) * 40]];
+  const line = drawnLine(pts);
+  assert.ok(line.length > 40, `${line.length} points: the bend is smoothed`);
   const rails = mesh(buildTrack(waysOf(pts), FLAT), 'track-rails');
-  // the head-top corners at the bend lie on the bisector, perpendicular to the mean heading
-  const mean: Pt = [Math.sin(a), -1 - Math.cos(a)];
-  const ml = Math.hypot(mean[0], mean[1]);
-  const along = (p: THREE.Vector3): number => ((p.x - 10) * mean[0] + (p.z + 60) * mean[1]) / ml;
-  const across = (p: THREE.Vector3): number => (-(p.x - 10) * mean[1] + (p.z + 60) * mean[0]) / ml;
-  const bend = vertices(rails.geometry).filter((p) => Math.abs(p.y - RAIL_TOP) < 1e-9 && Math.hypot(p.x - 10, p.z + 60) < 1.5 && Math.abs(along(p)) < 1e-4);
-  const lat = cluster(bend.map(across), 1e-4);
-  assert.equal(lat.length, 4, `bend vertices at ${lat.join(', ')}`);
-  // measured along the bisector the offsets are d / cos(half the kink), so the perpendicular gauge is still GAUGE
-  near(((lat[2] as number) - (lat[1] as number)) * Math.cos(a / 2), GAUGE, 1e-4, 'inner faces at the bend');
+  const top = vertices(rails.geometry).filter((p) => Math.abs(p.y - RAIL_TOP) < 1e-9 && p.z < -21 && p.z > -95);
+  assert.ok(top.length > 4 * 40, `${top.length} head-top corners`);
+  let worst = 0;
+  for (const p of top) {
+    const { off } = onPolyline(line, [p.x, p.z]);
+    worst = Math.max(worst, Math.min(Math.abs(off - GAUGE / 2), Math.abs(off - GAUGE / 2 - RAIL_HEAD_WIDTH)));
+  }
+  near(worst, 0, 1.5e-5, 'a head-top corner off its lateral offset from the centre line (m)');
 });
 
 test('faces: every triangle of the ballast, rails and sleepers is wound the way its normal says; the ballast faces up', () => {
@@ -453,7 +528,8 @@ test('ballast: the top is at BALLAST_TOP, the shoulders fall to the ground, and 
 // ---- the lines -----------------------------------------------------------------------------------
 
 test('lines: beyond the zone twin rails, along the zone a lifted copy, and modelled ECML tunnel lines at train level', () => {
-  const rails = railSegments(data);
+  const shapes = railShapes(data);
+  const rails = railSegments({ nodes: data.nodes, rails: data.rails.filter((r) => !r.tunnel || r.ref === 'ECM1') }, shapes);
   const g = buildTrack(data, layout);
   const lines = mesh(g, 'track-lines');
   const pos = lines.geometry.getAttribute('position');
@@ -479,7 +555,7 @@ test('lines: beyond the zone twin rails, along the zone a lifted copy, and model
   assert.equal(mat.opacity, 0.7);
   assert.equal(mat.transparent, true);
   const tp = tunnel.geometry.getAttribute('position');
-  const modelled = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => r.ref === 'ECM1') }).tunnel;
+  const modelled = railSegments({ nodes: data.nodes, rails: data.rails.filter(r => r.ref === 'ECM1') }, shapes).tunnel;
   assert.equal(tp.count * 3, modelled.length);
   for (let i = 0; i < modelled.length; i++) near(tp.array[i] as number, modelled[i] as number, 1e-3, `tunnel coordinate ${i}`);
   assert.ok(vertices(tunnel.geometry).every((p) => p.y === TUNNEL_DEPTH), 'the tunnel lines stay at TUNNEL_DEPTH');

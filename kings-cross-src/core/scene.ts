@@ -1,5 +1,7 @@
 // Pure scene data: turns the compact OSM model into the numbers the renderer draws.
 // No three.js here, so the rules are testable without a browser.
+import { shapeFrom } from './curves.ts';
+import type { RailShapes } from './curves.ts';
 import type { Pt } from './geo.ts';
 import type { KxData } from './osm.ts';
 import { isSurfacePlatform, railPair } from './station.ts';
@@ -23,7 +25,11 @@ export interface RailSegments {
   tunnel: number[];
 }
 
-export function railSegments(data: Pick<KxData, 'nodes' | 'rails'>): RailSegments {
+/**
+ * `shapes` (core/curves.ts railShapes, built from the whole data set): draw each segment as its
+ * smooth curve's short pieces instead of one chord, the same curve the trains run on.
+ */
+export function railSegments(data: Pick<KxData, 'nodes' | 'rails'>, shapes?: RailShapes): RailSegments {
   const pos = new Map<number, Pt>();
   for (const [id, x, z] of data.nodes) pos.set(id, [x, z]);
   const out: RailSegments = { main: [], siding: [], tunnel: [] };
@@ -34,6 +40,11 @@ export function railSegments(data: Pick<KxData, 'nodes' | 'rails'>): RailSegment
       const a = pos.get(r.nodes[i] as number);
       const b = pos.get(r.nodes[i + 1] as number);
       if (!a || !b) continue;
+      const curve = shapes && shapeFrom(shapes, r.nodes[i] as number, r.nodes[i + 1] as number);
+      if (curve) {
+        for (let k = 0; k + 1 < curve.length; k++) bucket.push((curve[k] as Pt)[0], y, (curve[k] as Pt)[1], (curve[k + 1] as Pt)[0], y, (curve[k + 1] as Pt)[1]);
+        continue;
+      }
       bucket.push(a[0], y, a[1], b[0], y, b[1]);
     }
   }

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMotion, maxspeedMps, overlapM } from '../motion.ts';
 import type { MotionEvent, MotionOptions, TrainView } from '../motion.ts';
-import { buildGraph } from '../graph.ts';
+import { buildGraph, edgePoint } from '../graph.ts';
+import { railShapes } from '../curves.ts';
+import { railSegments } from '../scene.ts';
 import type { AnchorMap, BerthAnchor } from '../anchors.ts';
 
 // Invented straight railway, away from the station zone. No production TD data.
@@ -1009,4 +1011,38 @@ test('motion: signal berths on the same spot are not partners, so a step into on
   const trains = m.trains();
   assert.deepEqual(trains.map((t) => t.description).sort(), ['FRONT', 'REAR']);
   assert.equal(m.diagnostics().filter((i: { kind: string }) => i.kind === 'merged').length, 0);
+});
+
+test('on a graph with the drawn curves the leading end runs on the drawn centre line and heads along it', () => {
+  // invented: a 1 km radius in 100 m chords (they sag 1.25 m inside the circle), away from the station zone
+  const nodes: [number, number, number][] = [];
+  for (let i = 0; i <= 6; i++) nodes.push([i + 1, 5000 + 1000 * Math.sin(i / 10), -3000 + 1000 * (1 - Math.cos(i / 10))]);
+  const data = { nodes, rails: [{ id: 9, nodes: nodes.map(([id]) => id), service: 'main' as const, tunnel: false, bridge: false, layer: 0 }] };
+  const curved = buildGraph(data, { curves: true });
+  const drawn = railSegments(data, railShapes(data)).main;
+  const offTrack = (x: number, z: number): number => {
+    let best = Infinity;
+    for (let i = 0; i + 5 < drawn.length; i += 6) {
+      const ax = drawn[i]!, az = drawn[i + 2]!, dx = drawn[i + 3]! - ax, dz = drawn[i + 5]! - az, l2 = dx * dx + dz * dz;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / l2));
+      best = Math.min(best, Math.hypot(x - ax - t * dx, z - az - t * dz));
+    }
+    return best;
+  };
+  const at = (berth: string, from: number, t: number): BerthAnchor => ({ berth, kind: 'signal', from, to: from + 1, t, point: edgePoint(curved, { a: from, b: from + 1 }, t).point, errorM: 1, evidence: 'synthetic' });
+  const m = createMotion(curved, { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [at('A', 1, 0.5), at('B', 5, 0.5)] });
+  m.apply(step('A', 'B'), 0);
+  let worst = 0, turned = 0, moved = 0;
+  for (let i = 0; i < 1200; i++) {
+    m.advance(0.1);
+    const t = one(m), [x, z] = t.leading.point;
+    worst = Math.max(worst, offTrack(x, z));
+    moved = t.distanceM;
+    const d = edgePoint(curved, t.leading.edge, t.leading.t).dir;
+    turned = Math.max(turned, Math.abs(Math.sin(t.heading - Math.atan2(d[0], -d[1]))));
+  }
+  assert.ok(moved > 150, `moved ${moved} m`);
+  assert.ok(worst < 1e-6, `the leading end is ${worst} m off the drawn track`);
+  // heading is atan2(dx * dir, -dz * dir): along the curve's own direction there (or its reverse), not the chord's (3 degrees off at a node)
+  assert.ok(turned < 1e-9, `heading off the curve's direction by asin ${turned}`);
 });

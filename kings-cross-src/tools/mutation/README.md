@@ -88,6 +88,7 @@ python3 -I -u kings-cross-src/tools/mutation/concourse-hotel.py kings-cross-src 
 python3 -I -u kings-cross-src/tools/mutation/concourse-roof.py kings-cross-src .scratch/mutation/concourse-roof
 python3 -I -u kings-cross-src/tools/mutation/concourse.py kings-cross-src .scratch/mutation/concourse
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
+python3 -I -u kings-cross-src/tools/mutation/curves.py kings-cross-src .scratch/mutation/curves
 python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
 python3 -I -u kings-cross-src/tools/mutation/fidelity.py kings-cross-src .scratch/mutation/fidelity
 python3 -I -u kings-cross-src/tools/mutation/hotel-exterior.py kings-cross-src .scratch/mutation/hotel-exterior
