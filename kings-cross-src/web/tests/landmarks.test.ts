@@ -1205,7 +1205,7 @@ test('Midland Grand: the clock tower has a belfry of paired arches on every face
   for (const p of all) if (p.y > st.roof + 1e-6) assert.ok(Math.abs(p.a) < 2.0 && Math.abs(p.o) < 2.0, `a vertex at ${p.y} above the roof's top is off the lantern`);
 });
 
-test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate pyramid between the turrets, an open pinnacled lantern part-way up, a long needle and a rod', () => {
+test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate pyramid between the turrets, an arcaded pinnacled lantern part-way up, a long needle and a rod', () => {
   const parts = midlandGeometry(midland);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
@@ -1224,11 +1224,32 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   // the gables' cheeks meet the hip where the steep roof begins: an apex-back point on each face, on the pyramid's base
   const backs = slate.flatMap((s) => s.p).filter((v) => Math.abs(v[1] - (st.wall + g)) < 1e-6 && Math.abs(Math.hypot(inTower(t, v).a, inTower(t, v).o) - 3.3) < 1e-6 && (Math.abs(inTower(t, v).a) < 1e-6 || Math.abs(inTower(t, v).o) < 1e-6));
   assert.ok(new Set(backs.map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`)).size === 4, 'one cheek meeting point on each face');
-  // the lantern is open: dark lights behind two mullions a face, a cornice, a pinnacle on each corner; the needle starts from inside its cornice
+  // the lantern is an arcade (the scorer, round 5: "a plain box"; hist-c): a stone stage with three pointed dark lights to a face, 0.9 m wide and 1.13 m apart, from 0.6 m over its foot to 0.6 m under its head,
+  // standing 0.05 m out of the wall, a cornice, a pinnacle on each corner; the needle starts from inside its cornice
   const lantern = (s: Tri): boolean => s.p.every((v) => v[1] >= st.roof + 0.4 - 1e-6 && v[1] <= st.lantern - 0.4 + 1e-6) && within(2.0)(s);
-  assert.equal(triangles(parts.pane as Batch).filter(lantern).length, 8, 'four dark walls');
-  const mullions = triangles(parts.stone as Batch).filter((s) => lantern(s) && Math.abs(geoNormal(s)[1]) < 1e-9);
-  assert.equal(mullions.length, 64, 'eight mullions, a box each with four sides of two triangles');
+  const walls = triangles(parts.stone as Batch).filter((s) => lantern(s) && s.p.every((v) => Math.abs(Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)) - 1.7) < 1e-6));
+  assert.equal(walls.length, 8, 'four stone walls of two triangles');
+  const lights = triangles(parts.pane as Batch).filter(lantern);
+  for (const [n, d] of [[t.out, t.along], [t.along, t.out]] as const) {
+    for (const s of [1, -1]) {
+      const mine = lights.filter((tr) => tr.p.every((v) => Math.abs((v[0] - t.centre[0]) * n[0] * s + (v[2] - t.centre[1]) * n[1] * s - 1.75) < 1e-6));
+      const along = (v: V3): number => (v[0] - t.centre[0]) * d[0] + (v[2] - t.centre[1]) * d[1];
+      const spans: [number, number][] = [];
+      for (const tr of mine.sort((a, b) => Math.min(...a.p.map(along)) - Math.min(...b.p.map(along)))) {
+        const [lo, hi] = [Math.min(...tr.p.map(along)), Math.max(...tr.p.map(along))];
+        const last = spans[spans.length - 1];
+        if (last && lo < last[1] + 1e-6) last[1] = Math.max(last[1], hi);
+        else spans.push([lo, hi]);
+      }
+      assert.equal(spans.length, 3, `three lights on the face ${n} ${s}`);
+      spans.forEach(([lo, hi], k) => {
+        close(hi - lo, 0.9, 1e-6, 'each 0.9 m wide');
+        close((lo + hi) / 2, (k - 1) * 1.13, 1e-6, 'on its pitch');
+      });
+      close(Math.min(...mine.flatMap((tr) => tr.p.map((v) => v[1]))), st.roof + 0.6, 1e-9, 'from 0.6 m over the stage\'s foot');
+      close(Math.max(...mine.flatMap((tr) => tr.p.map((v) => v[1]))), st.lantern - 0.6, 1e-9, 'to 0.6 m under its head');
+    }
+  }
   const pinnacles = triangles(parts.stone as Batch).filter((s) => s.p.some((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6));
   assert.equal(new Set(pinnacles.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6).map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`))).size, 4, 'a pinnacle on each corner of the lantern');
   // the needle: slender (taller than twice its base), then a thin rod to the tower's height (73 m)

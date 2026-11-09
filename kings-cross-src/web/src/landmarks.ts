@@ -951,8 +951,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   addRoof(slate, sq(P), sq(rb), wH, wH + g, false, [P - rb, P - rb, P - rb, P - rb]);
   addRoof(slate, sq(rb), sq(lant), wH + g, top, false, [rb - lant, rb - lant, rb - lant, rb - lant]);
   if (clockTower) {
-    addWalls(part(parts, 'pane'), sq(lant - 0.12), rT + 0.4, lT - 0.4);
-    for (const f of facesAt(lant)) for (const dx of [-0.55, 0.55]) stone.box(onWall(f, dx, (rT + lT) / 2), [0.2, lT - rT - 0.8, 0.2], { rotY: yaw(f.dir), skip: ['-y', '+y'] });
+    addWalls(stone, sq(lant), rT + 0.4, lT - 0.4);
+    for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addWindow(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
     addBand(stone, ring(lant), rT, 0.4, 0.1);
     addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
     for (const c of sq(lant)) addSpike(stone, c, t.along, t.out, 0.22, rT, lT + 0.9);
