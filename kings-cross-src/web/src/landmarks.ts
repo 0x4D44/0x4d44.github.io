@@ -801,7 +801,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
   for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.2);
-  addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out (ASSUMED)
+  addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out, with a dark balustrade 0.5 m tall on it (ASSUMED)
+  addBand(part(parts, 'pane'), ring(h), sT + 0.5, 0.5, 0.4);
   // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
@@ -895,6 +896,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, ...ROWS.map(([y, h]) => ({ y, h, head: 'pointed' as Head }))];
   // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; the first floor's is its balcony, standing 0.4 m out; sizes ASSUMED
   rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.14 : 0.4));
+  addBand(part(parts, 'pane'), segs, ROWS[0][0] - 0.2, 0.7, 0.38); // hist-b: an iron balconette along the balcony, a dark rail 0.7 m tall on it and a hair inside its edge (ASSUMED)
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
   const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {

@@ -239,6 +239,23 @@ test('Midland Grand [hist-b]: a continuous stone sill course 0.45 m under each o
   assert.equal(stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (1.0 - 0.45)) < 1e-9 || Math.abs(v[1] - (1.0 - 0.2)) < 1e-9)).length, 0, 'there is none under the ground row');
 });
 
+test('Midland Grand [hist-b]: an iron balconette stands on the first floor\'s balcony, a dark rail 0.7 m tall and 0.38 m out (a hair inside the balcony\'s 0.4 m), cut where the towers stand', () => {
+  const pane = triangles(midlandGeometry(midland).pane as Batch);
+  const segs = segmentsOutside(polygonEdges(midland.outline), midland.towers.map((t) => towerSquare(t, 0.45)));
+  const foot = ROWS[0][0] - 0.45 + 0.25; // the top of the balcony slab
+  const head = foot + 0.7;
+  const front = pane.filter((t) => t.p.every((v) => Math.abs(v[1] - foot) < 1e-9 || Math.abs(v[1] - head) < 1e-9) && t.p.some((v) => Math.abs(v[1] - foot) < 1e-9) && t.p.some((v) => Math.abs(v[1] - head) < 1e-9));
+  assert.equal(front.length, 2 * segs.length, 'one front face of two triangles to every uncut wall');
+  for (const t of front) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, 'and nowhere inside a tower');
+  for (const sg of segs) {
+    const l = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
+    const depth = (v: V3): number => (v[0] - sg.a[0]) * sg.normal[0] + (v[2] - sg.a[1]) * sg.normal[1];
+    const along = (v: V3): number => ((v[0] - sg.a[0]) * (sg.b[0] - sg.a[0]) + (v[2] - sg.a[1]) * (sg.b[1] - sg.a[1])) / l;
+    const mine = front.filter((t) => t.p.every((v) => Math.abs(depth(v) - 0.38) < 1e-6) && Math.min(...t.p.map(along)) < l - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
+    assert.equal(mine.length, 2, `the wall from (${sg.a[0].toFixed(1)}, ${sg.a[1].toFixed(1)}) has a rail 0.38 m out`);
+  }
+});
+
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
 type Bay = (typeof hotel.faces)[number]['bays'][number];
@@ -1009,6 +1026,10 @@ test('Midland Grand [hist-c]: each face of the clock tower\'s belfry has two gro
   const slab = triangles(parts.stone as Batch).filter((tr) => tr.p.every((v) => Math.abs(v[1] - st.shaft) < 1e-9 || Math.abs(v[1] - st.shaft - 0.5) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9));
   assert.equal(slab.length, 8, 'a front face to each of the four sides (two triangles)');
   close(Math.max(...slab.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))), h + 0.45, 1e-6, 'the balcony stands 0.45 m out');
+  // and a dark balustrade 0.5 m tall on it, a hair inside its edge
+  const rail = triangles(parts.pane as Batch).filter((tr) => tr.p.every((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9 || Math.abs(v[1] - st.shaft - 1.0) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 1.0) < 1e-9));
+  assert.equal(rail.length, 8, 'a front face of two triangles on each of the four sides');
+  close(Math.max(...rail.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))), h + 0.4, 1e-6, 'the balustrade stands 0.4 m out');
   const groupBase = st.shaft + 0.9;
   const groupHeight = st.belfry - st.shaft - 2.4;
   const lancetTop = groupBase + groupHeight - 0.9; // the lancets end under the oculus of their group
