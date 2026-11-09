@@ -26,6 +26,7 @@ python3 -I -u kings-cross-src/tools/mutation/berths-geography.py
 python3 -I -u kings-cross-src/tools/mutation/berths.py kings-cross-src .scratch/mutation/berths
 python3 -I -u kings-cross-src/tools/mutation/board.py kings-cross-src .scratch/mutation/board
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
+python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/mutation/live
 python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/mutation/motion
 python3 -I -u kings-cross-src/tools/mutation/perf.py kings-cross-src .scratch/mutation/perf
