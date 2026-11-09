@@ -308,7 +308,7 @@ function start(): void {
       const toSun = climate.atmosphere.keyDirection();
       if (shown === scene && sunShadow && toSun) { if (added) sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
     }
-    grade(renderer, sky !== null, sky?.rig.exposure ?? 1);
+    grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud); // (the concourse's fill is London's)
     renderer.render(shown, camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();

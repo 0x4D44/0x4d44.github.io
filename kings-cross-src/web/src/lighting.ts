@@ -33,13 +33,15 @@ const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
  * Set the renderer's light grade for the scene it is about to draw: for a scene with a climate the filmic tone map at `exposure` (its own
  * sky's) and the shade under its roofs; for one without, neither. The shared materials (steel, ballast, asphalt, stone ...) carry the roof
  * shade into every scene that uses them, and the cover map it reads is the shown scene's (station-weather.ts), which a scene with no
- * climate does not have, so there it is switched off.
+ * climate does not have, so there it is switched off. `hemisphere` and `cloud` (the shown sky's hemisphere intensity and cloud) are given
+ * for London's scene only, and give the concourse its fill (`INTERIOR`); left out, there is none.
  */
-export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: number): void {
+export function grade(renderer: THREE.WebGLRenderer, graded: boolean, exposure: number, hemisphere = 0, cloud = 0): void {
   const mapping = graded ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
   if (renderer.toneMapping !== mapping) renderer.toneMapping = mapping;
   renderer.toneMappingExposure = graded ? exposure : 1;
   roofShadeUniforms.uRoofShade.value.set(...(graded ? ROOF_SHADE_LOSS : NO_ROOF_SHADE));
+  interiorFillFor(graded ? hemisphere : 0, cloud, roofShadeUniforms.uInteriorFill.value);
 }
 
 /**
@@ -217,7 +219,7 @@ function patchChunk(name: 'lights_fragment_begin' | 'shadowmap_pars_fragment', f
   const text = chunks[name] as string;
   if (text.includes(to)) return; // made already (this module loaded twice)
   const next = text.replace(from, to);
-  if (next === text) throw new Error(`three's ${name} chunk is not the text lighting.ts changes: the shadow cost changes in lighting.ts need to follow it`);
+  if (next === text) throw new Error(`lighting.ts: three's ${name} chunk has changed`);
   chunks[name] = next;
 }
 
@@ -334,8 +336,31 @@ vec4 roofShade( vec3 p, vec4 loss ) {
 }
 `;
 
-/** The one uniform every roof-shaded program shares: its loss (see `ROOF_SHADE`), or zero while a scene other than London's is drawn. */
-export const roofShadeUniforms = { uRoofShade: { value: new THREE.Vector4(...ROOF_SHADE_LOSS) } };
+/**
+ * THE FILL UNDER THE CONCOURSE. The shade above is the Barlow shed's: it keeps 0.4 to 0.8 of the hemisphere's light and the sun's reaches only through the glass. The
+ * Western Concourse is not that. Its roof is a solid white soffit under a glazed rim, so the room is lit by the light thrown back from the soffit and the glass wall, and
+ * its floor and the Range's brick read as a daylit hall (the Western Concourse's conc-ab and conc-b: the floor a mid grey, the Range's buff brick at about (110, 94, 71),
+ * its lit courses brighter). With the shed's shade alone the floor drew at L 9 and the Range's face at L 24, neutral and half the brightness. So where the highest roof
+ * over a point is the concourse's (cover.ts `ROOM_ROOFS`) a Lambert surface also gets a fill: a warm-neutral irradiance that follows the hemisphere's own intensity (so it
+ * follows the hour and the sky), kept less under cloud (the exposure already doubles then), added as the hemisphere's light is, scaled by the surface's own colour and by
+ * how far under the roof it is. The amounts are ASSUMED, judged by the Range's and the floor's colour in the frozen views against those photographs.
+ */
+export const INTERIOR = { level: 1.5, cloud: 0.5, tint: [1, 0.94, 0.84] } as const;
+
+/**
+ * The fill's irradiance, per colour (linear), for a hemisphere of this intensity under this much cloud (0 clear, 1 overcast); written into `out`. It is the amount for a surface wholly
+ * under the dome, divided by the shade's blue loss: the shader has that loss times how far under the roof the surface is (`1 - roofK.b`), and the product is the amount, scaled.
+ */
+export function interiorFillFor(hemisphereIntensity: number, cloud: number, out = new THREE.Vector3()): THREE.Vector3 {
+  const k = (INTERIOR.level * hemisphereIntensity * (1 - INTERIOR.cloud * cloud)) / ROOF_SHADE.ambient[2];
+  return out.set(INTERIOR.tint[0] * k, INTERIOR.tint[1] * k, INTERIOR.tint[2] * k);
+}
+
+/** What every roof-shaded program shares: the shade's loss (see `ROOF_SHADE`; zero while a scene other than London's is drawn) and the concourse's fill (`interiorFillFor`, set by `grade` every frame, for London's scene only). */
+export const roofShadeUniforms = {
+  uRoofShade: { value: new THREE.Vector4(...ROOF_SHADE_LOSS) },
+  uInteriorFill: { value: new THREE.Vector3(0, 0, 0) },
+};
 
 const shaded = new WeakSet<THREE.Material>();
 
@@ -355,12 +380,13 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
     Object.assign(shader.uniforms, coverUniforms, roofShadeUniforms);
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
-    fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\n${ROOF_SHADE_GLSL}`)
+    fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 {
   vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
+  if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) ) * material.diffuseColor * RECIPROCAL_PI;
 }`);
     shader.fragmentShader = fragment;
   };

@@ -9,7 +9,7 @@ import type { KxData } from '../../core/osm.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { concourseCanopy, concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { buildConcourse } from '../src/concourse.ts';
-import { applyCover, buildCoverMap, COVER_BLUR, COVER_CELL, COVER_DEEP, COVER_GLSL, COVER_MAX_CELLS, COVER_SHALLOW, COVER_STEP, coverAt, coverHeightAt, coverSoftAt, coverUniforms, findRoofs, groundCoverAt, groundOpenShare, openShare, ROOF_MESHES } from '../src/cover.ts';
+import { applyCover, buildCoverMap, COVER_BLUR, COVER_CELL, COVER_DEEP, COVER_GLSL, COVER_MAX_CELLS, COVER_SHALLOW, COVER_STEP, coverAt, coverHeightAt, coverSoftAt, coverUniforms, findRoofs, groundCoverAt, groundOpenShare, openShare, ROOF_MESHES, ROOM_ROOFS } from '../src/cover.ts';
 import { buildFurniture, furniturePlan } from '../src/furniture.ts';
 import { addLandmarks } from '../src/landmarks.ts';
 import { buildShed, ROOF_SKIN } from '../src/shed.ts';
@@ -337,7 +337,7 @@ test('a point beyond the last cell of the map, on any side, is open sky: nothing
 });
 
 test('the shaders are given the step of the map they are given, and the default step when there is none', () => {
-  const tiny: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 2, nz: 2, step: 0.3, heights: new Uint8Array(4), soft: new Uint8Array(4) };
+  const tiny: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 2, nz: 2, step: 0.3, heights: new Uint8Array(4), soft: new Uint8Array(4), rooms: new Uint8Array(4) };
   try {
     applyCover(tiny);
     assert.equal(coverUniforms.uCoverScale.value, 0.3);
@@ -345,11 +345,12 @@ test('the shaders are given the step of the map they are given, and the default 
   assert.equal(coverUniforms.uCoverScale.value, COVER_STEP);
 });
 
-test('the shaders\' maps: the bytes the CPU reads are the bytes the GPU is given, one byte to a cell, the heights looked up and the soft map blended, and none is the empty one', () => {
+test('the shaders\' maps: the bytes the CPU reads are the bytes the GPU is given, one byte to a cell, the heights and the rooms looked up and the soft map blended, and none is the empty one', () => {
   applyCover(map);
-  const t = coverUniforms.uCoverMap.value as THREE.DataTexture, soft = coverUniforms.uCoverSoft.value as THREE.DataTexture;
-  assert.ok(t !== soft);
-  for (const [texture, bytes, filter, what] of [[t, map.heights, THREE.NearestFilter, 'the heights, looked up'], [soft, map.soft, THREE.LinearFilter, 'the soft map, blended']] as const) {
+  const t = coverUniforms.uCoverMap.value as THREE.DataTexture, soft = coverUniforms.uCoverSoft.value as THREE.DataTexture, rooms = coverUniforms.uCoverRooms.value as THREE.DataTexture;
+  assert.ok(t !== soft && t !== rooms && soft !== rooms);
+  // (each is one channel, a texture of its own: a two-channel heights texture, with the rooms in its green, cost the shed view a third of its frame rate on Apple's GPU)
+  for (const [texture, bytes, filter, what] of [[t, map.heights, THREE.NearestFilter, 'the heights, looked up'], [soft, map.soft, THREE.LinearFilter, 'the soft map, blended'], [rooms, map.rooms, THREE.NearestFilter, 'the rooms, looked up']] as const) {
     assert.equal(texture.image.width, map.nx, what);
     assert.equal(texture.image.height, map.nz, what);
     assert.ok(texture.image.data === bytes, `${what}: the same bytes`); // (not assert.equal: a failure would print both maps, and its diff of 225,000 lines does not finish)
@@ -371,20 +372,56 @@ test('the shaders\' maps: the bytes the CPU reads are the bytes the GPU is given
     assert.equal((map.heights[j * map.nx + i] as number) * coverUniforms.uCoverScale.value, coverHeightAt(map, x, z), `the texel at ${x.toFixed(1)}, ${z.toFixed(1)}`);
   }
   let freed = 0;
-  for (const texture of [t, soft]) texture.addEventListener('dispose', () => { freed++; });
+  for (const texture of [t, soft, rooms]) texture.addEventListener('dispose', () => { freed++; });
   applyCover(null);
-  assert.equal(freed, 2, 'a map that is replaced is freed, both its textures');
+  assert.equal(freed, 3, 'a map that is replaced is freed, all its textures');
   assert.equal(coverUniforms.uCoverRect.value.z, 0, 'with no map the shaders see no roof');
   assert.equal(coverUniforms.uCoverScale.value, COVER_STEP);
   assert.equal((coverUniforms.uCoverMap.value as THREE.DataTexture).image.width, 1);
   assert.equal((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.width, 1);
-  const empty = [coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value];
+  assert.equal((coverUniforms.uCoverRooms.value as THREE.DataTexture).image.width, 1);
+  const empty = [coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value, coverUniforms.uCoverRooms.value];
   let kept = 0;
   for (const texture of empty) texture.addEventListener('dispose', () => { kept++; });
   applyCover(map);
   applyCover(null);
   assert.equal(kept, 0, 'the empty textures are shared, never freed');
-  assert.deepEqual([coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value], empty, 'and they are what comes back');
+  assert.deepEqual([coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value, coverUniforms.uCoverRooms.value], empty, 'and they are what comes back');
+});
+
+test('the rooms: a cell is a room where the highest roof over it is one of the concourse dome\'s, and nowhere else; no cell at the map\'s edge is roofed or a room', () => {
+  assert.deepEqual([...ROOM_ROOFS], ['concourse-glass', 'concourse-panels']);
+  // the dome's panels and glass side by side, a taller slate roof over half of the panels and of the glass, a shed roof apart, and open ground between
+  const m = buildCoverMap(sceneOf(slab(0, 10, 0, 10, 6, 'concourse-panels'), slab(10, 14, 0, 10, 6, 'concourse-glass'), slab(5, 20, 0, 10, 9, 'landmarks-slate'), slab(30, 40, 0, 10, 12, 'shed-roof-cladding'))) as CoverMap;
+  const room = (x: number, z: number): number => m.rooms[Math.floor((z - m.z0) / m.cell) * m.nx + Math.floor((x - m.x0) / m.cell)] as number;
+  const height = (x: number, z: number): number => m.heights[Math.floor((z - m.z0) / m.cell) * m.nx + Math.floor((x - m.x0) / m.cell)] as number;
+  assert.equal(room(2, 5), 255, 'the panels, with nothing over them');
+  assert.equal(room(7, 5), 0, 'the panels under the hotel\'s roof: the highest wins, and that is not a room');
+  assert.equal(room(12, 5), 0, 'the glass under it too');
+  assert.equal(room(16, 5), 0, 'the hotel\'s roof alone');
+  assert.equal(room(35, 5), 0, 'the shed\'s roof');
+  assert.equal(room(25, 5), 0, 'open ground');
+  assert.ok(height(7, 5) > 0 && height(35, 5) > 0, 'those are roofed cells all the same');
+  const glass = buildCoverMap(sceneOf(slab(0, 10, 0, 10, 6, 'concourse-glass'))) as CoverMap;
+  assert.equal(glass.rooms[Math.floor((5 - glass.z0) / glass.cell) * glass.nx + Math.floor((5 - glass.x0) / glass.cell)], 255, 'the glass is a room roof too');
+  assert.ok(m.rooms.every((r, i) => r === 0 || ((m.heights[i] as number) > 0 && r === 255)), 'a room cell is a roofed cell, and the flag is 0 or 255');
+  for (const mm of [m, map]) {
+    let edge = 0;
+    for (let i = 0; i < mm.nx; i++) for (const j of [0, mm.nz - 1]) edge += (mm.heights[j * mm.nx + i] as number) + (mm.rooms[j * mm.nx + i] as number);
+    for (let j = 0; j < mm.nz; j++) for (const i of [0, mm.nx - 1]) edge += (mm.heights[j * mm.nx + i] as number) + (mm.rooms[j * mm.nx + i] as number);
+    assert.equal(edge, 0, 'the clear metre round the roofs: past the map\'s edge the flag is 0 whichever way the texture is clamped');
+  }
+});
+
+test('the rooms in the real station: the concourse floor is a room, and so is the air 0.6 m west of the Western Range\'s face (where the fill looks for the wall); the platforms under the shed are not', () => {
+  const room = (x: number, z: number): number => map.rooms[Math.floor((z - map.z0) / map.cell) * map.nx + Math.floor((x - map.x0) / map.cell)] as number;
+  assert.equal(room(canopy.centre[0], canopy.centre[1]), 255, 'the middle of the concourse');
+  for (const v of [20, 50, 80, 110, 135]) {
+    const [x, z] = shedToWorld(layout, -12 - 0.6, v); // the Range's concourse face is at u = -12 (cover.ts ROOM_ROOFS, lighting.ts INTERIOR)
+    assert.equal(room(x, z), 255, `0.6 m in front of the Range's face at v ${v}`);
+  }
+  for (const v of [20, 100]) { const [x, z] = shedToWorld(layout, layout.aisle + R, v); assert.equal(room(x, z), 0, `a platform under the shed at v ${v}`); }
+  assert.ok(map.rooms.reduce((n, r) => n + (r ? 1 : 0), 0) > 10000, 'and the dome is a good few cells');
 });
 
 test('the soft map is the roofed cells blurred by the documented kernel, row by row and column by column, to a byte', () => {

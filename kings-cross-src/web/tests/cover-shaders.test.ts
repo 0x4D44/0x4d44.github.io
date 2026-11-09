@@ -174,16 +174,17 @@ const PLACES: { label: string; p: [number, number, number]; under: boolean; span
 test('the page wires the shaders to one map: the atmosphere draws it from the scene\'s roofs and every shader that reads it is given the same texture', () => {
   assert.ok(map, 'the real station has roofs');
   // (identity and byte checks are written with assert.ok: a failed assert.equal or deepEqual on a map prints both, and its diff of 225,000 lines does not finish)
-  assert.ok(sameBytes(map.heights, (buildCoverMap(scene) as CoverMap).heights), 'the map is the one drawn from the roofs');
+  assert.ok(sameBytes(map.heights, (buildCoverMap(scene) as CoverMap).heights) && sameBytes(map.rooms, (buildCoverMap(scene) as CoverMap).rooms), 'the map is the one drawn from the roofs');
   assert.ok(atmosphere.cover() === map, 'and the one the atmosphere keeps');
   const heights = coverUniforms.uCoverMap.value as THREE.DataTexture, soft = coverUniforms.uCoverSoft.value as THREE.DataTexture;
   assert.ok(heights.image.data === map.heights, 'and it is what the GPU is given');
+  assert.ok((coverUniforms.uCoverRooms.value as THREE.DataTexture).image.data === map.rooms, 'with the rooms beside it');
   assert.ok(soft.image.data === map.soft, 'with the soft map beside it');
   assert.equal(heights.magFilter, THREE.NearestFilter, 'the heights are looked up, not blended');
   assert.equal(soft.magFilter, THREE.LinearFilter, 'the soft map is blended: that is the soft edge');
   assert.ok(sameBytes(map.soft, (buildCoverMap(scene) as CoverMap).soft), 'and it is the one drawn from the roofs');
   for (const [label, u] of [['rain', rainUniforms()], ['snow', snowUniforms()]] as const) {
-    for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(u[name] === coverUniforms[name], `${label}: ${name} is the shared one`);
+    for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(u[name] === coverUniforms[name], `${label}: ${name} is the shared one`);
   }
   const patched = new THREE.MeshLambertMaterial();
   patched.name = 'asphalt';
@@ -191,7 +192,7 @@ test('the page wires the shaders to one map: the atmosphere draws it from the sc
   atmosphere.rescan();
   const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: '', fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
   patched.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
-  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(shader.uniforms[name] === coverUniforms[name], `the wet ground: ${name} is the shared one`);
+  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(shader.uniforms[name] === coverUniforms[name], `the wet ground: ${name} is the shared one`);
 });
 
 test('coverAt in GLSL, run on the uploaded texture, answers what the CPU map answers: under a roof, in the open, over a roof, in the fade, outside the map', () => {
@@ -574,7 +575,7 @@ test('the roofs follow the scene: a roof added is covered after a rescan and not
   assert.equal(coverAt(after, spot[0], 2, spot[2]), 1, 'under the new roof');
   assert.equal(coverAt(after, spot[0], 9, spot[2]), 0, 'and over it');
   assert.equal(coverAt(after, ...at(layout.aisle + R, 100, 1.5)), 1, 'the shed is still covered');
-  assert.ok((coverUniforms.uCoverMap.value as THREE.DataTexture).image.data === after.heights, 'the shaders have the new map');
+  assert.ok((coverUniforms.uCoverMap.value as THREE.DataTexture).image.data === after.heights && (coverUniforms.uCoverRooms.value as THREE.DataTexture).image.data === after.rooms, 'the shaders have the new map');
   assert.ok((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.data === after.soft, 'and its soft edge');
   assert.equal(coverUniforms.uCoverRect.value.x, after.x0);
   atmosphere.rescan();
@@ -591,18 +592,18 @@ test('the roofs follow the scene: a roof added is covered after a rescan and not
   scene.remove(swapped);
   atmosphere.rescan();
   assert.equal(coverAt(atmosphere.cover(), spot[0] + 30, 2, spot[2]), 0, 'a roof taken away lets the weather back in');
-  assert.ok(sameBytes((atmosphere.cover() as CoverMap).heights, before.heights) && sameBytes((atmosphere.cover() as CoverMap).soft, before.soft), 'to the map it was, soft edge and all');
+  assert.ok(sameBytes((atmosphere.cover() as CoverMap).heights, before.heights) && sameBytes((atmosphere.cover() as CoverMap).soft, before.soft) && sameBytes((atmosphere.cover() as CoverMap).rooms, before.rooms), 'to the map it was, soft edge and rooms and all');
   assert.ok((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.data === (atmosphere.cover() as CoverMap).soft, 'and the shaders have its soft edge back');
 });
 
 test('the shaders stop at the map\'s edges: a point on the edge of the last cell, or before the first, is open sky even where the end cells are roofed', () => {
   // A map that is roofed in every cell, to the edge, so a read that clamps to the end cell would find a roof (the real maps keep a clear metre round the roofs, which hides this).
-  const roofed: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 4, nz: 4, step: 0.15, heights: new Uint8Array(16).fill(40), soft: new Uint8Array(16).fill(255) };
+  const roofed: CoverMap = { x0: 0, z0: 0, cell: 1, nx: 4, nz: 4, step: 0.15, heights: new Uint8Array(16).fill(40), soft: new Uint8Array(16).fill(255), rooms: new Uint8Array(16).fill(255) };
   try {
     applyCover(roofed);
     const glsl = new Glsl(COVER_GLSL);
     const env: Env = { vars: uniformValues(coverUniforms), fns: { texture2D } };
-    for (const name of ['coverAt', 'coverGroundAt'] as const) {
+    for (const name of ['coverAt', 'coverGroundAt', 'coverRoomAt'] as const) {
       const read = (x: number, y: number, z: number): number => glsl.call(name, [[x, y, z]], env) as number;
       assert.equal(read(2, 1, 2), 1, `${name}: under the roof, in the middle`);
       assert.equal(read(3.9, 1, 3.9), 1, `${name}: in the last cell`);
@@ -643,10 +644,12 @@ test('disposing the atmosphere takes the roofs away from the shaders: they see n
   const glsl = new Glsl(COVER_GLSL);
   assert.equal(glsl.call('coverAt', [[...at(layout.aisle + R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0);
   assert.equal(glsl.call('coverGroundAt', [[...at(layout.aisle + R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'for the ground too');
+  assert.equal(glsl.call('coverRoomAt', [[...at(layout.aisle + R, 100, 1.5)]], { vars: uniformValues(coverUniforms), fns: { texture2D } }), 0, 'and for the rooms');
   assert.equal((coverUniforms.uCoverSoft.value as THREE.DataTexture).image.width, 1, 'and the soft map is the empty one');
   let reads = 0; // with no map the shaders do not fetch a texel at all, for the drops or for the ground
   const counting: Env = { vars: uniformValues(coverUniforms), fns: { texture2D: (sampler: Value, uv: Value): Value => { reads++; return texture2D(sampler, uv); } } };
   glsl.call('coverAt', [[...at(layout.aisle + R, 100, 1.5)]], counting);
   glsl.call('coverGroundAt', [[...at(layout.aisle + R, 100, 1.5)]], counting);
+  glsl.call('coverRoomAt', [[...at(layout.aisle + R, 100, 1.5)]], counting);
   assert.equal(reads, 0, 'and read nothing');
 });

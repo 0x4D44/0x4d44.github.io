@@ -356,7 +356,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const roofOnly = compile(brick);
   assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
   assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
-  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade'].sort());
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill'].sort(), 'the cover, the shade and the concourse\'s fill, and nothing else');
 
   const s = compile(asphalt);
   const f = s.fragmentShader;
@@ -375,7 +375,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   assert.equal(f.split('float coverGroundAt(').length - 1, 1, 'the ground\'s cover read is in the shader once');
   assert.ok(f.indexOf('float coverGroundAt(') < f.indexOf('coverGroundAt( cameraPosition'), 'and declared above where it is used');
   assert.ok(f.includes('if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );'), 'read at the surface\'s own world position, with the soft edge, and not at all in dry weather');
-  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(s.uniforms[name] === coverUniforms[name], `${name} is the shared one, so every surface sees the same roofs`);
+  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(s.uniforms[name] === coverUniforms[name], `${name} is the shared one, so every surface sees the same roofs`);
   assert.equal(s.uniforms.uDark!.value, SURFACES.get('asphalt')!.dark);
   assert.equal(s.uniforms.uSheenK!.value, SURFACES.get('asphalt')!.sheen);
   assert.equal(s.uniforms.uSnowK!.value, 1);

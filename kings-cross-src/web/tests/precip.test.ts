@@ -205,7 +205,7 @@ test('both drops are held back by the roofs: the cover read is in each vertex sh
     const m = shader(o);
     assert.equal(m.vertexShader.split('float coverAt(').length - 1, 1, `${o.name}: the cover read is in the shader once`);
     assert.ok(m.vertexShader.indexOf('float coverAt(') < m.vertexShader.indexOf('void main'), `${o.name}: and declared above where it is used`);
-    for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(m.uniforms[name] === coverUniforms[name], `${o.name}: ${name} is the shared one`);
+    for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(m.uniforms[name] === coverUniforms[name], `${o.name}: ${name} is the shared one`);
     assert.equal(m.fragmentShader.includes('coverAt'), false, `${o.name}: the vertex shader decides, so a streak is wholly there or wholly gone`);
   }
   p.dispose();

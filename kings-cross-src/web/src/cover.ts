@@ -20,6 +20,9 @@ export const ROOF_MESHES: readonly string[] = [
   'landmarks-roofGlass', 'landmarks-slate', // web/src/landmarks.ts: the Barlow shed's roof (and the hotels' slate, which cover only their own, solid, footprints)
 ];
 
+/** The roofs that make a room of what is under them: the Western Concourse's dome. Its floor and the Range's face get a fill of light (lighting.ts `INTERIOR`) that the open air and the other roofs' shade do not. */
+export const ROOM_ROOFS: readonly string[] = ['concourse-glass', 'concourse-panels'];
+
 /** Metres across one cell of the map. */
 export const COVER_CELL = 0.5;
 /** Metres of roof height in one step of a cell's byte: roofs up to 38 m are held exactly (the shed's crown is 22 m); a higher one counts as 38 m. */
@@ -46,6 +49,8 @@ export interface CoverMap {
   heights: Uint8Array;
   /** the same cells: how much of the ground there is roofed over, 255 well under a roof, 0 well clear of one, about 128 at its edge (the roofed cells blurred by `COVER_BLUR`) */
   soft: Uint8Array;
+  /** the same cells: 255 where the highest roof over the cell is one of `ROOM_ROOFS`, else 0 */
+  rooms: Uint8Array;
 }
 
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
@@ -88,7 +93,7 @@ function worldTriangles(mesh: THREE.Mesh): { xyz: Float64Array; corners: ArrayLi
  */
 export function buildCoverMap(root: THREE.Object3D, roofs: readonly THREE.Mesh[] = findRoofs(root)): CoverMap | null {
   root.updateMatrixWorld(true);
-  const meshes = roofs.map(worldTriangles).filter((t): t is NonNullable<typeof t> => t !== null && t.corners.length >= 3);
+  const meshes = roofs.map((r) => ({ ...worldTriangles(r), room: ROOM_ROOFS.includes(r.name) ? 255 : 0 })).filter((t): t is { xyz: Float64Array; corners: ArrayLike<number>; room: number } => t.corners !== undefined && t.corners.length >= 3);
   if (meshes.length === 0) return null;
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const { xyz } of meshes) {
@@ -106,7 +111,8 @@ export function buildCoverMap(root: THREE.Object3D, roofs: readonly THREE.Mesh[]
   while (cells(cell) > COVER_MAX_CELLS) cell += COVER_CELL / 2;
   const x0 = minX - 1, z0 = minZ - 1;
   const nx = Math.ceil((maxX - minX + 2) / cell), nz = Math.ceil((maxZ - minZ + 2) / cell);
-  const heights = new Uint8Array(nx * nz);
+  const heights = new Uint8Array(nx * nz), rooms = new Uint8Array(nx * nz);
+  let room = 0; // 255 while the dome's own meshes are drawn
   const step = COVER_STEP;
 
   const fill = (ax: number, ay: number, az: number, bx: number, by: number, bz: number, cx: number, cy: number, cz: number): void => {
@@ -134,18 +140,19 @@ export function buildCoverMap(root: THREE.Object3D, roofs: readonly THREE.Mesh[]
       for (let i = i0; i <= i1; i++) {
         const y = ay + dydx * (x0 + (i + 0.5) * cell - ax) + dydz * (z - az);
         const h = Math.min(255, Math.round(y / step));
-        if (h > (heights[j * nx + i] as number)) heights[j * nx + i] = h;
+        if (h > (heights[j * nx + i] as number)) { heights[j * nx + i] = h; rooms[j * nx + i] = room; }
       }
     }
   };
-  for (const { xyz, corners } of meshes) {
+  for (const { xyz, corners, room: r } of meshes) {
+    room = r;
     const at = (c: number): [number, number, number] => [xyz[3 * c] as number, xyz[3 * c + 1] as number, xyz[3 * c + 2] as number];
     for (let t = 0; t + 2 < corners.length; t += 3) {
       const a = at(corners[t] as number), b = at(corners[t + 1] as number), c = at(corners[t + 2] as number);
       fill(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
     }
   }
-  return { x0, z0, cell, nx, nz, step, heights, soft: blurRoofed(heights, nx, nz) };
+  return { x0, z0, cell, nx, nz, step, heights, soft: blurRoofed(heights, nx, nz), rooms };
 }
 
 /** The roofed cells (any height above 0) as 0 or 1, blurred by `COVER_BLUR` along each row and then down each column, scaled to a byte. Past the map's edge there is no roof. */
@@ -217,13 +224,19 @@ export const groundOpenShare = (map: CoverMap | null, x: number, y: number, z: n
 
 /**
  * GLSL for the same reads: the uniforms (shared by every shader that needs them, see `coverUniforms`), `coverAt(p)` for a drop, 0 in the open to
- * 1 under a roof, and `coverGroundAt(p)` for the ground, the same with a soft edge.
+ * 1 under a roof, and `coverGroundAt(p)` for the ground, the same with a soft edge. `coverRoomAt(p)` is 1 where the highest roof over the point is a room's (`ROOM_ROOFS`).
+ * The uniforms (comments here, not in the shader text, which every browser downloads): `uCoverMap` is nearest-filtered, the height of the highest roof over each cell in
+ * steps (0: open sky); `uCoverSoft` is linear, the same cells, how much of the ground there is roofed over; `uCoverRooms` is nearest, the same cells again, 255 where that roof is a
+ * `ROOM_ROOFS` one (a texture of its own, not a second channel of the heights: a two-channel `uCoverMap` cost the shed view a third of its frame rate on Apple's GPU, where
+ * the one-channel one costs nothing); `uCoverRect` is the map's lowest x and z and one over its width and depth in metres, zero when there is no map; `uCoverScale` is metres
+ * of roof height in one step of a byte.
  */
 export const COVER_GLSL = /* glsl */`
-uniform sampler2D uCoverMap; // nearest: the height of the highest roof over each cell, in steps (0: open sky)
-uniform sampler2D uCoverSoft; // linear: the same cells, how much of the ground there is roofed over
-uniform vec4 uCoverRect; // the map's lowest x and z, and one over its width and depth in metres; zero when there is no map
-uniform float uCoverScale; // metres of roof height in one step of a byte
+uniform sampler2D uCoverMap;
+uniform sampler2D uCoverSoft;
+uniform sampler2D uCoverRooms;
+uniform vec4 uCoverRect;
+uniform float uCoverScale;
 float coverAt(vec3 p) {
   if (uCoverRect.z <= 0.0) return 0.0;
   vec2 uv = (p.xz - uCoverRect.xy) * uCoverRect.zw;
@@ -239,6 +252,11 @@ float coverGroundAt(vec3 p) {
   float over = roof > 0.0 ? smoothstep(roof - ${COVER_DEEP.toFixed(2)}, roof - ${COVER_SHALLOW.toFixed(2)}, p.y) : 0.0;
   return texture2D(uCoverSoft, uv).r * (1.0 - over);
 }
+float coverRoomAt(vec3 p) {
+  if (uCoverRect.z <= 0.0) return 0.0;
+  vec2 uv = (p.xz - uCoverRect.xy) * uCoverRect.zw;
+  return uv.x >= 0.0 && uv.y >= 0.0 && uv.x < 1.0 && uv.y < 1.0 ? texture2D(uCoverRooms, uv).r : 0.0;
+}
 `;
 
 function byteTexture(data: Uint8Array, width: number, height: number, filter: THREE.MagnificationTextureFilter): THREE.DataTexture {
@@ -252,28 +270,32 @@ function byteTexture(data: Uint8Array, width: number, height: number, filter: TH
 
 const emptyHeights = byteTexture(new Uint8Array(1), 1, 1, THREE.NearestFilter);
 const emptySoft = byteTexture(new Uint8Array(1), 1, 1, THREE.LinearFilter);
+const emptyRooms = byteTexture(new Uint8Array(1), 1, 1, THREE.NearestFilter);
 
 /** What every shader that reads the cover shares: one map, so one set of uniform objects. With no map `uCoverRect.z` is 0 and the reads are 0 everywhere. */
 export const coverUniforms = {
   uCoverMap: { value: emptyHeights as THREE.Texture },
   uCoverSoft: { value: emptySoft as THREE.Texture },
+  uCoverRooms: { value: emptyRooms as THREE.Texture },
   uCoverRect: { value: new THREE.Vector4(0, 0, 0, 0) },
   uCoverScale: { value: COVER_STEP },
 };
 
 /** Show the shaders this map (or none): the roofs they stop the weather at. */
 export function applyCover(map: CoverMap | null): void {
-  const before = [coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value];
+  const before = [coverUniforms.uCoverMap.value, coverUniforms.uCoverSoft.value, coverUniforms.uCoverRooms.value];
   if (map) {
     coverUniforms.uCoverMap.value = byteTexture(map.heights, map.nx, map.nz, THREE.NearestFilter); // heights are looked up, never blended
     coverUniforms.uCoverSoft.value = byteTexture(map.soft, map.nx, map.nz, THREE.LinearFilter); // the ground's edge is blended: that is what the soft map is for
+    coverUniforms.uCoverRooms.value = byteTexture(map.rooms, map.nx, map.nz, THREE.NearestFilter); // so are the rooms
     coverUniforms.uCoverRect.value.set(map.x0, map.z0, 1 / (map.nx * map.cell), 1 / (map.nz * map.cell));
     coverUniforms.uCoverScale.value = map.step;
   } else {
     coverUniforms.uCoverMap.value = emptyHeights;
     coverUniforms.uCoverSoft.value = emptySoft;
+    coverUniforms.uCoverRooms.value = emptyRooms;
     coverUniforms.uCoverRect.value.set(0, 0, 0, 0);
     coverUniforms.uCoverScale.value = COVER_STEP;
   }
-  for (const texture of before) if (texture !== emptyHeights && texture !== emptySoft) texture.dispose();
+  for (const texture of before) if (texture !== emptyHeights && texture !== emptySoft && texture !== emptyRooms) texture.dispose();
 }

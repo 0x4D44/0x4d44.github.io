@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -51,6 +51,37 @@ test('grade: a scene with a climate (London\'s, Edinburgh\'s own) is drawn throu
   assert.equal(renderer.toneMapping, THREE.ACESFilmicToneMapping);
   assert.equal(renderer.toneMappingExposure, 0.9, 'a second scene\'s own exposure');
   assert.deepEqual(roofShadeUniforms.uRoofShade.value.toArray(), [...ROOF_SHADE.ambient, ROOF_SHADE.direct], 'and back again');
+});
+
+test('grade: the concourse\'s fill is set from the sky\'s hemisphere and its cloud for a scene with a climate, and is none for one without (Waverley has no concourse) or before there is a sky', () => {
+  const renderer = fakeRenderer();
+  const fill = (): number[] => roofShadeUniforms.uInteriorFill.value.toArray();
+  grade(renderer, true, 1.25, 1.02, 0);
+  assert.deepEqual(fill(), interiorFillFor(1.02, 0).toArray(), 'a clear sky');
+  assert.ok(fill().every((c) => c > 0), 'and it is something');
+  grade(renderer, true, 1.25, 1.02, 1);
+  assert.deepEqual(fill(), interiorFillFor(1.02, 1).toArray(), 'an overcast one');
+  assert.ok((fill()[0] as number) < (interiorFillFor(1.02, 0).x), 'a little less');
+  grade(renderer, true, 1.25, 0.5, 0);
+  assert.deepEqual(fill(), interiorFillFor(0.5, 0).toArray(), 'it follows the hemisphere\'s intensity (the hour)');
+  grade(renderer, false, 1.25, 1.02, 0);
+  assert.deepEqual(fill(), [0, 0, 0], 'a scene with no climate has none');
+  grade(renderer, true, 1.25);
+  assert.deepEqual(fill(), [0, 0, 0], 'and with no sky yet, none');
+});
+
+test('interiorFillFor: the hemisphere\'s intensity times INTERIOR.level, warm, kept less under cloud, none without a hemisphere, divided by the shade\'s blue loss (the shader multiplies by it)', () => {
+  const blueLoss = ROOF_SHADE.ambient[2];
+  const close = (a: number, b: number, what: string): void => assert.ok(Math.abs(a - b) < 1e-12, `${what}: ${a} against ${b}`);
+  const clear = interiorFillFor(1, 0), overcast = interiorFillFor(1, 1);
+  for (let k = 0; k < 3; k++) close(clear.getComponent(k) * blueLoss, INTERIOR.level * (INTERIOR.tint[k] as number), `colour ${k} wholly under the dome: the shader's blue loss times this`);
+  assert.ok(clear.x > clear.z && clear.x >= clear.y && clear.y >= clear.z, `warm: ${clear.toArray()}`);
+  assert.ok(INTERIOR.cloud > 0 && INTERIOR.cloud < 1, 'cloud takes some of it, never all');
+  for (let k = 0; k < 3; k++) close(overcast.getComponent(k), clear.getComponent(k) * (1 - INTERIOR.cloud), `colour ${k} under full cloud`);
+  for (let k = 0; k < 3; k++) close(interiorFillFor(0.5, 0).getComponent(k) * 2, clear.getComponent(k), `colour ${k}: linear in the hemisphere's intensity`);
+  assert.deepEqual(interiorFillFor(0, 0.7).toArray(), [0, 0, 0], 'no hemisphere, no fill');
+  const out = new THREE.Vector3();
+  assert.ok(interiorFillFor(1, 0, out) === out, 'written into the vector it is given');
 });
 
 test('leaveOutOfGrade: lines, points and sprites are authored in display colours and skip the tone map; lit surfaces and the dome keep their own setting', () => {
@@ -413,13 +444,16 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   assert.equal(m.customProgramCacheKey(), 'prior+roofShade', 'its key is kept in the program\'s, so a surface that is also wet-patched is its own program');
   assert.notEqual(new THREE.MeshLambertMaterial().customProgramCacheKey(), m.customProgramCacheKey());
   assert.equal(f.split('float coverGroundAt(').length - 1, 1, 'the cover read is in once');
-  const order = ['float coverGroundAt(', '#include <lights_lambert_pars_fragment>', 'vec4 roofShade(', '#include <lights_fragment_end>', 'vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );',
-    'reflectedLight.indirectDiffuse *= roofK.rgb;', 'reflectedLight.directDiffuse *= roofK.a;', '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
+  const fill = 'if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) ) * material.diffuseColor * RECIPROCAL_PI;';
+  const order = ['float coverGroundAt(', 'float coverRoomAt(', '#include <lights_lambert_pars_fragment>', 'uniform vec3 uInteriorFill;', 'vec4 roofShade(', '#include <lights_fragment_end>',
+    'vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );', 'reflectedLight.indirectDiffuse *= roofK.rgb;', 'reflectedLight.directDiffuse *= roofK.a;', fill, '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'declared above where it is used; applied after the lights, before the output');
   assert.ok(f.indexOf('uniform vec4 uRoofShade;') < f.indexOf('vec4 roofShade('), 'the uniform is declared first');
-  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRect', 'uCoverScale'] as const) assert.ok(shader.uniforms[name] === coverUniforms[name], `${name} is the shared one`);
+  for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(shader.uniforms[name] === coverUniforms[name], `${name} is the shared one`);
   assert.ok(shader.uniforms.uRoofShade === roofShadeUniforms.uRoofShade, 'one shade for every surface, which grade() switches');
+  assert.ok(shader.uniforms.uInteriorFill === roofShadeUniforms.uInteriorFill, 'and one fill, which grade() sets');
+  assert.equal(f.split('coverRoomAt(').length - 1, 2, 'the room read is declared once and used once: the fill is the hemisphere term\'s, added after the shade has scaled it, so the shade does not take it away');
   // twice does nothing wrong to a plain material either
   const plain = new THREE.MeshLambertMaterial();
   addRoofShade(plain);
