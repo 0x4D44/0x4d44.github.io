@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:* ws://localhost:*; worker-src 'self' blob:; font-src 'self'; manifest-src 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://127.0.0.1:* ws://localhost:* https://api.open-meteo.com https://archive-api.open-meteo.com; worker-src 'self' blob:; font-src 'self'; manifest-src 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>King's Cross in 3D</title>
 <meta name="description" content="A 3D model of King's Cross station at true scale, built from OpenStreetMap, with sample Azuma trains standing at the buffer stops. Live running is not connected yet.">
@@ -45,7 +45,7 @@
 <div id="fallback"><p>This page needs WebGL to draw the 3D model, and your browser has it turned off or unavailable.</p></div>
 <div class="hud">
   <span id="status">Loading…</span>
-  <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). Ground: <span id="ground-credit">contains Environment Agency information © Environment Agency and/or database right 2026</span> (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>)</span>
+  <span>Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL). Ground: <span id="ground-credit">contains Environment Agency information © Environment Agency and/or database right 2026</span> (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>). Weather: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</span>
 </div>
 <script type="module" src="./src/main.ts"></script>
 <!-- the shared "← Almanac" back button is injected into the production build by vite.config.ts -->

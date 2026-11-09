@@ -886,7 +886,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const lamps = front.lamps;
     const lens = (cx: number, cy: number, w: number, h: number, depth: number, colour: THREE.Color): void => {
       const outline = lamps.shape === 'round' ? ellipse(cx, cy, w / 2, h / 2) : roundedRect(cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2, Math.min(w, h) * 0.25, 2);
+      detail.emit = 2; // a lamp lens glows in its own colour after dark
       detail.fan(onFace(outline, depth), faceN, colour);
+      detail.emit = 0;
     };
     for (const sx of [-1, 1]) {
       const yh = r0.bottom + lamps.y * (r0.top - r0.bottom);
@@ -1158,7 +1160,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     for (const sx of [-1, 1]) {
       const outer = (rel: number): number => sx * (half - rel);
       detail.prismX(roundedRect(za - 0.03, zb + 0.03, wy0 - 0.03, wy1 + 0.03, 0.1, 2), sx * (W - 0.005), outer(0.016), gasket);
+      detail.emit = 1; // the glass of a passenger window is lit warm after dark (train-geom.ts `trainNight`)
       detail.prismX(roundedRect(za, zb, wy0, wy1, 0.08, 2), sx * (W - 0.005), outer(0.012), paneC, false);
+      detail.emit = 0;
       detail.prismX(roundedRect(za + 0.04, zb - 0.04, wy1 - 0.26, wy1 - 0.03, 0.05, 2), outer(0.0125), outer(0.0115), sky, false);
     }
   }

@@ -111,9 +111,10 @@ test('axis07 evidence: absent relay logs and incomplete GPU phases prevent a cle
     validCsp: true, cspErrorCount: 0, cspInvalidSourceCount: 0, consoleErrorCount: 0, unexpectedNetworkFailures: [],
     board: { present: true, mode: name === 'no-relay' ? 'sample' : name === 'offline-replay' ? 'replay' : 'live', platformTrainCount: 1 },
     screenshot: `${name}.png`, relayRequestCounts: {}, replayStartMs: 1000, replayTimeMs: 2000,
-    attribution: { present: { osm: true, environmentAgency: true, openGovernmentLicence: true } },
+    attribution: { present: { osm: true, environmentAgency: true, openGovernmentLicence: true, openMeteo: true } },
     failedRequests: name === 'no-relay' ? [{ url: 'http://127.0.0.1:43210/relay/health', requestId: 'synthetic-request', status: 503 }] : [] });
   const good = { status: 'PASS', validGpu: true, renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M4)', networkDiagnostics: [],
+    cspAudit: { valid: true, connectSrc: ["'self'", 'ws://127.0.0.1:*', 'ws://localhost:*', 'https://api.open-meteo.com', 'https://archive-api.open-meteo.com'], problems: [] },
     phases: ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered', 'offline-replay'].map(phase) };
   await writeFile(file, JSON.stringify(good));
   const imported = await browserEvidence(file);
@@ -128,7 +129,9 @@ test('axis07 evidence: absent relay logs and incomplete GPU phases prevent a cle
   assert.equal((await browserEvidence(file)).status, 'FAIL', 'offline replay cannot fetch relay anchors');
   for (const bad of [{ ...good, renderer: 'SwiftShader' }, { ...good, phases: [phase('connected')] },
     { ...good, phases: good.phases.map((p) => ({ ...p, validCsp: false })) },
-    { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { osm: false } } })) }]) {
+    { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { osm: false } } })) },
+    { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { ...p.attribution.present, openMeteo: false } } })) },
+    { ...good, cspAudit: { valid: false, connectSrc: ['*'], problems: ['connect-src is *'] } }, { ...good, cspAudit: undefined }]) {
     await writeFile(file, JSON.stringify(bad)); assert.equal((await browserEvidence(file)).status, 'FAIL');
   }
 });

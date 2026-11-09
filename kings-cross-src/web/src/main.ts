@@ -5,6 +5,7 @@ import type { CityData } from '../../core/city.ts';
 import { addCity } from './city.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { buildFurniture, buildPlatforms } from './furniture.ts';
+import type { FurniturePlan } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
 import { addPortals, portalHole } from './portals.ts';
 import { REPLACED_BUILDING_IDS as LANDMARK_OSM_IDS, tunnelMouths } from '../../core/landmarks.ts';
@@ -31,6 +32,11 @@ import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
+import { createAtmosphere } from './atmosphere.ts';
+import { nightLightSites } from './night.ts';
+import { CLEAR_STATE, createWeatherFeed, parseSceneTime, weatherState } from './weather.ts';
+import type { WeatherFeed, WeatherObservation, WeatherState } from './weather.ts';
+import { describeSun } from '../../core/daylight.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 import { createStations } from './stations.ts';
@@ -75,7 +81,8 @@ function start(): void {
   // Ballast, sleepers and rail heads (track.ts); textured platforms with edge strips and furniture.
   scene.add(buildTrack(data, layout));
   scene.add(buildPlatforms(data, layout));
-  scene.add(buildFurniture(data, layout));
+  const furniture = buildFurniture(data, layout);
+  scene.add(furniture);
 
   // The station footprint is a roof, not a block: skip it as a building and build the shed. So are
   // the blocks that would stand inside the concourse dome or against the south front.
@@ -188,6 +195,23 @@ function start(): void {
   window.addEventListener('resize', resize);
   resize();
 
+  // Time of day and weather (atmosphere.ts): the sun, the sky, the lamps and the ground follow the scene clock, and the weather follows
+  // Open-Meteo (weather.ts). ?bare=1 and ?sky=ref keep the old fixed rig; ?time=<ISO instant> pins the clock and ?weather=<name> the
+  // weather (no request), which is how the evidence shots stay repeatable. They are the same page, only pinned.
+  const pinnedTimeMs = parseSceneTime(params.get('time'));
+  const forcedWeather = params.get('weather');
+  const fixedSky = (bare || params.get('sky') === 'ref') && pinnedTimeMs === null && forcedWeather === null;
+  const replayDay = `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}`;
+  const weatherFeed: WeatherFeed | null = fixedSky ? null : createWeatherFeed(
+    forcedWeather === 'off' || forcedWeather === '0' ? { mode: 'off' }
+      : forcedWeather !== null ? { mode: 'forced', forced: forcedWeather }
+        : settings.mode === 'replay' ? { mode: 'replay', date: replayDay } : { mode: 'live' });
+  const lampPlan = furniture.userData.plan as FurniturePlan;
+  const atmosphere = fixedSky ? null : createAtmosphere({ scene, world, sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }) });
+  const replayNoonMs = Date.parse(`${replayDay}T12:00:00Z`);
+  let weatherNow: WeatherState = CLEAR_STATE;
+  let weatherObs: WeatherObservation | null | undefined;
+
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
   // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
@@ -207,7 +231,7 @@ function start(): void {
     boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
-  Object.assign(kx, { evidenceBuildTrain: buildTrain });
+  Object.assign(kx, { evidenceBuildTrain: buildTrain, atmosphere, weatherFeed });
   const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
@@ -221,7 +245,12 @@ function start(): void {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
       : mode === 'live' ? 'live' : mode === 'demo' ? 'sample trains at the buffers, not live' : 'trains hidden';
     const signals = signalLayer?.counts() ?? { drawn: 0, decoded: 0 };
-    const text = stations.statusText(`${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded`);
+    const sky = atmosphere?.state();
+    const timeNote = pinnedTimeMs !== null ? ' (time set by the page address)' : params.has('time') ? ' (time= ignored: not an ISO instant with a zone, or 13-digit epoch milliseconds)' : '';
+    // The sky and the weather are London's (one Open-Meteo point at King's Cross), so Edinburgh does not claim them.
+    const london = stations.state().selected !== 'edinburgh-waverley';
+    const skyText = london && sky && weatherFeed ? ` · ${describeSun(sky.sun.elevationDeg)}${timeNote} · ${weatherFeed.status(sceneClock())}` : '';
+    const text = stations.statusText(`${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded${skyText}`);
     if (status.textContent !== text) status.textContent = text;
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
@@ -229,6 +258,8 @@ function start(): void {
   const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now()
     : feed?.timeMs() ?? (stPancras.timeMs() || stations.edinburgh()?.live?.timeMs() || 0);
   Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
+  // The scene clock the sun and the weather follow: now, or the recording's time in a replay (noon of its day until the feed has one), or ?time=.
+  const sceneClock = (): number => pinnedTimeMs ?? (settings.mode === 'replay' ? (feed?.timeMs() || replayNoonMs) : Date.now());
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
     groups: () => trains.map((t) => t.group),
@@ -262,11 +293,20 @@ function start(): void {
     paintStatus();
     controls.update();
     world.follow(camera);
+    if (atmosphere && weatherFeed) {
+      const t = sceneClock();
+      const obs = weatherFeed.observation(t);
+      if (obs !== weatherObs) { weatherObs = obs; weatherNow = weatherState(obs); }
+      atmosphere.update({ timeMs: t, weather: weatherNow, camera, target: controls.target, wallMs: time });
+    }
     renderer.render(stations.activeScene(), camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
 
+  // the terrain and the city make their materials late: the wet and snowy ground picks them up when they have arrived
+  void groundLoaded.then(() => atmosphere?.rescan());
+  void cityLoaded.then(() => atmosphere?.rescan());
   (window as unknown as { __kx: unknown }).__kx = kx;
   paintStatus();
   paintBoard();
@@ -356,5 +396,6 @@ function start(): void {
     stations.dispose();
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
+    weatherFeed?.dispose(); atmosphere?.dispose();
   }, { once: true });
 }

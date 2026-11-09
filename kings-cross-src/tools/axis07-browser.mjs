@@ -19,11 +19,69 @@ const scratchRoot = path.join(repoRoot, '.scratch');
 const PHASES = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered', 'offline-replay'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 export const freshDiagnostics = (phase, proxyEnabled) => ({ phase, proxyEnabled, consoleErrorCount: 0, cspErrorCount: 0, cspInvalidSourceCount: 0,
-  failedRequests: [], expectedRelayFailures: [], unexpectedNetworkFailures: [], relayRequestCounts: {}, expectedRelayConsoleErrorCount: 0,
-  consoleErrors: [], messages: [] });
+  failedRequests: [], expectedRelayFailures: [], expectedWeatherFailures: [], unexpectedNetworkFailures: [], relayRequestCounts: {}, weatherRequestCounts: {},
+  expectedRelayConsoleErrorCount: 0, expectedWeatherConsoleErrorCount: 0, consoleErrors: [], messages: [] });
 function relayPath(value) {
   try { const pathname = new URL(value).pathname; return pathname.startsWith('/relay/') ? pathname : null; }
   catch { return null; }
+}
+
+/**
+ * The weather the page may fetch: Open-Meteo's forecast and archive endpoints, one exact path on each. The list is written out here,
+ * not read from web/src/weather.ts, so this check does not follow the code it checks; web/tests/csp.test.ts holds the two equal.
+ */
+export const WEATHER_ENDPOINTS = new Map([['https://api.open-meteo.com', '/v1/forecast'], ['https://archive-api.open-meteo.com', '/v1/archive']]);
+/** The page's whole `connect-src`, in order: its own origin, the loopback dev sockets, and the two weather origins. Nothing else. */
+export const EXPECTED_CONNECT_SRC = ["'self'", 'ws://127.0.0.1:*', 'ws://localhost:*', ...WEATHER_ENDPOINTS.keys()];
+
+/** The origin of a URL that is exactly one of the weather endpoints (https, no credentials, no port, that endpoint's own path); else null. */
+export function weatherEndpoint(value) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    return WEATHER_ENDPOINTS.get(url.origin) === url.pathname ? url.origin : null;
+  } catch { return null; }
+}
+
+/**
+ * Audit the page's own Content-Security-Policy: `connect-src` must be exactly EXPECTED_CONNECT_SRC (a missing origin fails as a
+ * superfluous one does), the directives that gate scripts, objects, forms, workers and images must be what they always were,
+ * and `unsafe-eval` must be absent.
+ */
+export function auditPageCsp(html) {
+  const policy = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(String(html))?.[1];
+  if (!policy) return { valid: false, connectSrc: null, problems: ['no Content-Security-Policy meta tag'] };
+  const problems = [];
+  const rules = new Map(policy.split(';').map(rule => { const [key, ...values] = rule.trim().split(/\s+/); return [key, values]; }));
+  const same = (got, want) => Array.isArray(got) && got.length === want.length && got.every((source, i) => source === want[i]);
+  const connectSrc = rules.get('connect-src') ?? null;
+  if (!same(connectSrc, EXPECTED_CONNECT_SRC)) problems.push(`connect-src is ${connectSrc ? connectSrc.join(' ') : 'absent'}, expected exactly: ${EXPECTED_CONNECT_SRC.join(' ')}`);
+  const fixed = { 'default-src': ["'none'"], 'script-src': ["'self'"], 'base-uri': ["'none'"], 'object-src': ["'none'"], 'form-action': ["'none'"],
+    'img-src': ["'self'", 'data:', 'blob:'], 'worker-src': ["'self'", 'blob:'] };
+  for (const [key, want] of Object.entries(fixed)) {
+    if (!same(rules.get(key), want)) problems.push(`${key} is ${rules.get(key)?.join(' ') ?? 'absent'}, expected ${want.join(' ')}`);
+  }
+  if (policy.includes('unsafe-eval')) problems.push('unsafe-eval is allowed');
+  return { valid: problems.length === 0, connectSrc, problems };
+}
+
+/**
+ * True for the console error Chrome logs when an exact Open-Meteo endpoint is unreachable (a transport failure, or a 5xx): the page's
+ * designed fallback to a clear sky, said on its status line. A CSP block, a CORS error, a 4xx, a lookalike host or any other origin is not.
+ */
+export function expectedWeatherConsoleError({ method, error, text, url, status }) {
+  return error === true && method === 'Log.entryAdded' && !/content security policy|blocked_by_csp/i.test(text ?? '') && weatherEndpoint(url) !== null &&
+    /failed to load resource/i.test(text ?? '') && (/net::ERR_/i.test(text ?? '') || (status ?? 0) >= 500);
+}
+
+/** True for a URL the page has no business requesting: not loopback http/ws, not data/blob/about, and not exactly a weather endpoint. */
+export function foreignRequest(value) {
+  try {
+    const url = new URL(value);
+    if (['data:', 'blob:', 'about:'].includes(url.protocol)) return false;
+    if (['http:', 'ws:'].includes(url.protocol) && ['127.0.0.1', 'localhost'].includes(url.hostname)) return false;
+    return weatherEndpoint(value) === null;
+  } catch { return true; }
 }
 function expectedRelayFault(diagnostics, url, { status = null, failed = false, canceled = false } = {}) {
   const pathname = relayPath(url);
@@ -37,6 +95,11 @@ function recordNetworkFailure(diagnostics, url, detail) {
   const pathname = relayPath(fullUrl);
   const canceled = detail.canceled === true;
   const expected = expectedRelayFault(diagnostics, fullUrl, detail);
+  // Open-Meteo unreachable is a designed state: the page falls back to a clear sky and says so (phaseIsComplete requires that line).
+  // Only a transport failure or a server error on one of the exact weather endpoints counts; any other origin stays unexpected.
+  // A request the page's own CSP blocked is never "Open-Meteo being away": it is the policy refusing what the page asked for.
+  const blockedByCsp = detail.blockedReason === 'csp' || /blocked_by_csp/i.test(detail.errorText ?? '');
+  const weather = !expected && !canceled && !blockedByCsp && weatherEndpoint(fullUrl) !== null && (detail.failed === true || (detail.status ?? 0) >= 500);
   const row = {
     requestId: detail.requestId ?? null,
     url: fullUrl,
@@ -45,12 +108,13 @@ function recordNetworkFailure(diagnostics, url, detail) {
     errorText: detail.errorText ?? null,
     event: detail.event ?? 'network failure',
     canceled,
-    classification: expected ? 'expected-relay' : canceled ? 'ignored-cancelled' : 'unexpected',
+    classification: expected ? 'expected-relay' : weather ? 'expected-weather' : canceled ? 'ignored-cancelled' : 'unexpected',
   };
   diagnostics.failedRequests.push(row);
   if (expectedRelayFault(diagnostics, url, detail)) {
     diagnostics.expectedRelayFailures.push(row);
   }
+  else if (weather) diagnostics.expectedWeatherFailures.push(row);
   else if (!canceled) diagnostics.unexpectedNetworkFailures.push(row);
 }
 function usableUrl(value) {
@@ -66,6 +130,12 @@ export function recordCdpNetworkEvent(message, diagnostics, requestInfo) {
     requestInfo.set(requestId, { url: request?.url ?? null, status: null, diagnostics });
     const pathname = relayPath(request?.url);
     if (pathname) diagnostics.relayRequestCounts[pathname] = (diagnostics.relayRequestCounts[pathname] ?? 0) + 1;
+    const weather = weatherEndpoint(request?.url);
+    if (weather) diagnostics.weatherRequestCounts[weather] = (diagnostics.weatherRequestCounts[weather] ?? 0) + 1;
+    // Anything else that leaves the machine is a finding in its own right, whether or not it succeeds.
+    else if (foreignRequest(request?.url)) diagnostics.unexpectedNetworkFailures.push({
+      requestId: requestId ?? null, url: typeof request?.url === 'string' ? request.url : null, path: 'unknown', status: null, errorText: null,
+      event: 'request to an origin the page may not use', canceled: false, classification: 'unexpected' });
     return true;
   }
   if (method === 'Network.responseReceived') {
@@ -80,12 +150,12 @@ export function recordCdpNetworkEvent(message, diagnostics, requestInfo) {
     return true;
   }
   if (method === 'Network.loadingFailed') {
-    const { requestId, errorText, canceled } = params, info = requestInfo.get(requestId);
+    const { requestId, errorText, canceled, blockedReason } = params, info = requestInfo.get(requestId);
     const url = usableUrl(info?.url), pathname = relayPath(url);
     const faultPhase = pathname && ['stopped', 'sse-drop'].includes(diagnostics.phase);
     const target = (faultPhase ? diagnostics : info?.diagnostics) ?? diagnostics;
     recordNetworkFailure(target, url, {
-      event: method, requestId, status: info?.status ?? null, failed: true, errorText, canceled: canceled === true,
+      event: method, requestId, status: info?.status ?? null, failed: true, errorText, canceled: canceled === true, blockedReason,
     });
     return true;
   }
@@ -290,15 +360,20 @@ export function phaseIsComplete(report) {
       Number.isSafeInteger(phase.board.platformTrainCount) && phase.board.platformTrainCount >= 0 &&
       Number.isSafeInteger(phase.trainCount) && phase.attribution?.present?.osm === true &&
       phase.attribution?.present?.environmentAgency === true && phase.attribution?.present?.openGovernmentLicence === true &&
+      phase.attribution?.present?.openMeteo === true &&
       phase.cspInvalidSourceCount === 0 && phase.cspErrorCount === 0 && phase.validCsp === true && phase.consoleErrorCount === 0 &&
-      phase.unexpectedNetworkFailures?.length === 0 && typeof phase.screenshot === 'string' && phase.screenshot.trim().length > 0;
+      phase.unexpectedNetworkFailures?.length === 0 && typeof phase.screenshot === 'string' && phase.screenshot.trim().length > 0 &&
+      // a phase whose weather request failed must say so, and say it fell back to a clear sky
+      ((phase.expectedWeatherFailures?.length ?? 0) === 0 && (phase.expectedWeatherConsoleErrorCount ?? 0) === 0 ||
+        /weather unavailable[^·]*clear sky/i.test(phase.statusLine));
   });
   const noRelay = phases.get('no-relay'), stopped = phases.get('stopped'), drop = phases.get('sse-drop');
   const replay = phases.get('offline-replay');
   const replayObserved = replay?.trainCount > 0 && Number.isFinite(replay.replayStartMs) &&
     Number.isFinite(replay.replayTimeMs) && replay.replayTimeMs > replay.replayStartMs &&
     replay.relayRequestCounts && Object.values(replay.relayRequestCounts).every(count => count === 0);
-  return complete && replayObserved && noRelay?.connection === 'relay absent' && /sample trains/i.test(noRelay.statusLine ?? '') &&
+  // the page's own CSP, read from the built index.html: connect-src names exactly the permitted origins (auditPageCsp)
+  return complete && replayObserved && report.cspAudit?.valid === true && noRelay?.connection === 'relay absent' && /sample trains/i.test(noRelay.statusLine ?? '') &&
     (noRelay.relayRequestCounts?.['/relay/health'] ?? 0) <= 1 && stopped?.connection?.includes('reconnecting') &&
     (stopped.trainCount ?? 0) > 0 && drop?.connection?.includes('reconnecting') && (drop.trainCount ?? 0) > 0 &&
     (phases.get('connected')?.trainCount ?? 0) > 0 &&
@@ -370,6 +445,7 @@ function observationExpression() {
         osm: /Map data © OpenStreetMap contributors/i.test(attributionText),
         environmentAgency: /Environment Agency information/i.test(attributionText),
         openGovernmentLicence: !!licenseLink,
+        openMeteo: /Weather: Open-Meteo\\.com \\(CC BY 4\\.0\\)/.test(attributionText),
       } },
     };
   })()`;
@@ -384,11 +460,12 @@ function phaseMarkdown(report) {
     '| Phase | Condition | Proxy | Connection | Trains | Board rows | Attribution | CSP errors | CSP invalid sources | Console errors | Expected relay failures | Unexpected network failures | Screenshot |',
     '|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|',
   ];
-  for (const phase of report.phases) lines.push(`| ${phase.name} | ${phase.conditionObserved ? 'observed' : 'gap'} | ${phase.proxyEnabled === null ? 'unknown' : phase.proxyEnabled ? 'enabled' : 'disabled'} | ${phase.connection ?? 'unavailable'} | ${phase.trainCount ?? 'unavailable'} | ${phase.board?.platformTrainCount ?? 'unavailable'} | ${phase.attribution?.present?.osm && phase.attribution?.present?.environmentAgency && phase.attribution?.present?.openGovernmentLicence ? 'present' : 'gap'} | ${phase.cspErrorCount ?? 'unavailable'} | ${phase.cspInvalidSourceCount ?? 'unavailable'} | ${phase.consoleErrorCount ?? 'unavailable'} | ${phase.expectedRelayFailures?.length ?? 'unavailable'} | ${phase.unexpectedNetworkFailures?.length ?? 'unavailable'} | ${phase.screenshot ? `[${path.basename(phase.screenshot)}](${path.basename(phase.screenshot)})` : 'unavailable'} |`);
+  for (const phase of report.phases) lines.push(`| ${phase.name} | ${phase.conditionObserved ? 'observed' : 'gap'} | ${phase.proxyEnabled === null ? 'unknown' : phase.proxyEnabled ? 'enabled' : 'disabled'} | ${phase.connection ?? 'unavailable'} | ${phase.trainCount ?? 'unavailable'} | ${phase.board?.platformTrainCount ?? 'unavailable'} | ${phase.attribution?.present?.osm && phase.attribution?.present?.environmentAgency && phase.attribution?.present?.openGovernmentLicence && phase.attribution?.present?.openMeteo ? 'present' : 'gap'} | ${phase.cspErrorCount ?? 'unavailable'} | ${phase.cspInvalidSourceCount ?? 'unavailable'} | ${phase.consoleErrorCount ?? 'unavailable'} | ${phase.expectedRelayFailures?.length ?? 'unavailable'} | ${phase.unexpectedNetworkFailures?.length ?? 'unavailable'} | ${phase.screenshot ? `[${path.basename(phase.screenshot)}](${path.basename(phase.screenshot)})` : 'unavailable'} |`);
   const transitions = (report.networkDiagnostics ?? []).filter(d => !report.phases.some(p => p.name === d.phase)).map(d => ({ ...d, name: d.phase }));
   for (const phase of [...report.phases, ...transitions]) {
     const details = [
       ['Expected relay failures', phase.expectedRelayFailures ?? []],
+      ['Expected weather failures (Open-Meteo unreachable; the page falls back to a clear sky and says so)', phase.expectedWeatherFailures ?? []],
       ['Unexpected network failures', phase.unexpectedNetworkFailures ?? []],
       ['Recorded canceled requests (not counted as phase failures)', (phase.failedRequests ?? []).filter(row => row.classification === 'ignored-cancelled')],
     ];
@@ -404,6 +481,11 @@ function phaseMarkdown(report) {
       else for (const error of phase.consoleErrors) lines.push('', `- ${error.expectedRelayFault ? 'Expected relay error' : 'Error'} · request ${error.requestId ?? 'unavailable'} · ${error.url ? `URL \`${error.url.replaceAll('`', '\\`')}\`` : 'URL unresolved (CDP supplied no usable URL)'} · ${error.text}`);
     }
   }
+  lines.push('', '## Page CSP', '', report.cspAudit?.valid === true
+    ? `- connect-src is exactly: ${report.cspAudit.connectSrc.join(' ')}`
+    : `- NOT as expected: ${(report.cspAudit?.problems ?? ['not audited']).join('; ')}`);
+  lines.push('', '## Weather requests', '', ...report.phases.map(phase => `- ${phase.name}: ${Object.keys(phase.weatherRequestCounts ?? {}).length
+    ? Object.entries(phase.weatherRequestCounts).map(([origin, count]) => `${count} to ${origin}`).join(', ') : 'none'}`));
   if (report.gaps.length) lines.push('', '## Gaps', '', ...report.gaps.map(gap => `- ${gap}`));
   if (report.error) lines.push('', '## Error', '', report.error);
   return `${lines.join('\n')}\n`;
@@ -412,7 +494,8 @@ function phaseMarkdown(report) {
 async function persistReport(report) {
   syncDiagnostics(report);
   report.status = finalizeStatus(report);
-  report.validCsp = report.phases.length === PHASES.length && report.phases.every(phase => phase.validCsp === true && phase.cspErrorCount === 0 && phase.cspInvalidSourceCount === 0);
+  report.validCsp = report.cspAudit?.valid === true && report.phases.length === PHASES.length &&
+    report.phases.every(phase => phase.validCsp === true && phase.cspErrorCount === 0 && phase.cspInvalidSourceCount === 0);
   await writeArtifact(path.join(report.out, 'axis07-browser.md'), phaseMarkdown(report));
   await writeArtifact(path.join(report.out, 'axis07-browser.json'), `${JSON.stringify(report, null, 2)}\n`);
 }
@@ -427,7 +510,7 @@ export async function main(args = process.argv.slice(2)) {
   }
 
   const report = { schema: 1, when: new Date().toISOString(), out: options.out, dist: options.dist,
-    renderer: null, genuineMetalGpu: false, validGpu: false, validCsp: false, phases: [], networkDiagnostics: [], gaps: [], error: null };
+    renderer: null, genuineMetalGpu: false, validGpu: false, validCsp: false, cspAudit: null, phases: [], networkDiagnostics: [], gaps: [], error: null };
   const diagnosticsFor = (phase, proxyEnabled) => {
     const diagnostics = freshDiagnostics(phase, proxyEnabled);
     report.networkDiagnostics.push(diagnostics);
@@ -453,6 +536,9 @@ export async function main(args = process.argv.slice(2)) {
     await newOutputDirectory(options.out);
     outputReady = true;
     await stat(path.join(options.dist, 'index.html')).catch(() => { throw new Error(`built page not found at ${options.dist}; build it before running the browser check`); });
+    // The page's own Content-Security-Policy, as built: connect-src must be exactly the permitted list (auditPageCsp).
+    report.cspAudit = auditPageCsp(await readFile(path.join(options.dist, 'index.html'), 'utf8'));
+    for (const problem of report.cspAudit.problems) report.gaps.push(`page CSP: ${problem}`);
     const trackData = JSON.parse(await readFile(path.join(packageRoot, 'web/src/data/kx-track.json'), 'utf8'));
     relay = createSyntheticRelay(trackData);
     const relayOrigin = await relay.listen();
@@ -500,12 +586,17 @@ export async function main(args = process.argv.slice(2)) {
       const status = Number.isFinite(parsedStatus) ? parsedStatus : info?.status ?? null;
       const expectedRelay = error && message.method === 'Log.entryAdded' && relayPath(url) && !cspInvalid &&
         expectedRelayFault(diagnostics, url, { status, failed: true });
+      const expectedWeather = expectedWeatherConsoleError({ method: message.method, error, text, url, status });
       if (error && diagnostics.consoleErrors.length < 20) diagnostics.consoleErrors.push({
         text: text.slice(0, 800), url: url || null, requestId, status,
-        expectedRelayFault: !!expectedRelay, urlResolution,
+        expectedRelayFault: !!expectedRelay, expectedWeatherFault: !!expectedWeather, urlResolution,
       });
       if (expectedRelay) {
         diagnostics.expectedRelayConsoleErrorCount++;
+        error = false;
+      }
+      if (expectedWeather) {
+        diagnostics.expectedWeatherConsoleErrorCount++;
         error = false;
       }
       if (error) diagnostics.consoleErrorCount++;
@@ -534,7 +625,7 @@ export async function main(args = process.argv.slice(2)) {
     const takePhase = async (name, conditionObserved, expectation, proxyEnabled) => {
       const cityLoaded = await evaluate('window.__kx?.cityLoaded ? window.__kx.cityLoaded.then(() => true) : true').catch(() => false);
       await twoFrames().catch(() => {});
-      const page = await evaluate(observationExpression()).catch(error => ({ statusLine: '', connection: null, trainCount: null, board: null, renderer: null, attribution: { text: '', present: { osm: false, environmentAgency: false, openGovernmentLicence: false } }, pageError: error.message }));
+      const page = await evaluate(observationExpression()).catch(error => ({ statusLine: '', connection: null, trainCount: null, board: null, renderer: null, attribution: { text: '', present: { osm: false, environmentAgency: false, openGovernmentLicence: false, openMeteo: false } }, pageError: error.message }));
       const screenshot = path.join(options.out, `${name}.png`);
       try {
         const image = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
@@ -547,10 +638,13 @@ export async function main(args = process.argv.slice(2)) {
         cspInvalidSourceCount: activeDiagnostics?.cspInvalidSourceCount ?? 0,
         consoleErrorCount: activeDiagnostics?.consoleErrorCount ?? 0,
         expectedRelayConsoleErrorCount: activeDiagnostics?.expectedRelayConsoleErrorCount ?? 0,
+        expectedWeatherConsoleErrorCount: activeDiagnostics?.expectedWeatherConsoleErrorCount ?? 0,
         failedRequests: activeDiagnostics?.failedRequests ?? [],
         expectedRelayFailures: activeDiagnostics?.expectedRelayFailures ?? [],
+        expectedWeatherFailures: activeDiagnostics?.expectedWeatherFailures ?? [],
         unexpectedNetworkFailures: activeDiagnostics?.unexpectedNetworkFailures ?? [],
         relayRequestCounts: activeDiagnostics?.relayRequestCounts ?? {},
+        weatherRequestCounts: activeDiagnostics?.weatherRequestCounts ?? {},
         consoleErrors: activeDiagnostics?.consoleErrors ?? [],
         consoleErrorMessages: activeDiagnostics?.messages ?? [],
         validCsp: (activeDiagnostics?.cspErrorCount ?? 0) === 0 && (activeDiagnostics?.cspInvalidSourceCount ?? 0) === 0,

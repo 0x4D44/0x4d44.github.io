@@ -19,6 +19,33 @@ samples) or `?trains=none`; the default probes once before choosing live or samp
 signal bytes remain explicitly unknown. Hover a train (or tap it on a touch screen) for a
 card with everything the page knows of it; `&tooltip=0` turns the card off.
 
+## Time of day and weather
+
+The scene shows the real time of day and the live weather at the station. The sun's elevation and azimuth for King's
+Cross (51.532 N, 0.1233 W) come from the NOAA/Meeus solar position (`core/solar.ts`, held to JPL Horizons within 0.02
+degree by `core/tests/solar.test.ts`) at the scene clock: now when live, the recording's own time in a replay. They drive
+the sun, the sky, the ambient light and, below -6 degrees (the end of civil twilight), the station, platform and train lights
+(`core/daylight.ts`, `web/src/atmosphere.ts`). The weather is Open-Meteo's (`web/src/weather.ts`): the forecast `current`
+block for a live page, polled at most every ten minutes; the archive `hourly` block (one request) for a replay's day. Cloud
+greys the light and the sky, rain and snow are two bounded GPU draws near the camera (`web/src/precip.ts`), the ground and
+platforms go wet or white, and fog and mist pull the scene fog in. If Open-Meteo cannot be reached the sky stays clear and the
+status line says `weather unavailable (...), clear sky assumed`. The page sends nothing else to anyone, and no key is used.
+Weather data: [Open-Meteo.com](https://open-meteo.com/), CC BY 4.0; the page's `connect-src` names only
+`https://api.open-meteo.com` and `https://archive-api.open-meteo.com`.
+
+Repeatable pictures (the screenshots in an evidence pack, the tests): pin the clock and the weather in the address, and the
+page asks Open-Meteo for nothing.
+
+| Parameter | Effect |
+|---|---|
+| `&time=2026-11-09T16:25:00Z` | The scene clock: an ISO 8601 instant with a zone, or thirteen-digit epoch milliseconds. |
+| `&weather=clear` (or `cloudy`, `overcast`, `drizzle`, `rain`, `heavy-rain`, `thunder`, `mist`, `fog`, `snow`) | A fixed weather, no request. `off` (or `0`) is a clear sky and no request. |
+| `&sky=ref` (or `&bare=1`) | The page's old fixed look (a high sun, the dusk-blue sky): no sky maths, no weather, no request. |
+
+The tools that load the page without these (`evidence.mjs`, `axis01-capture.mjs`, `signal-capture.mjs`,
+`train-capture.mjs`, `perf.mjs`) now see the real clock and the live weather: add `&sky=ref` for the old look, or
+`&time=...&weather=...` for a chosen one, wherever a capture has to repeat.
+
 ## Relay
 
 Run the relay on macOS. It listens on `127.0.0.1` and serves GET requests only to loopback

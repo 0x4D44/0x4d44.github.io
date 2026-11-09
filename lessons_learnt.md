@@ -11,6 +11,10 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - a patched shader's type error shows only on a real GPU: vColor is vec4 (kings-cross-src web/src/train-geom.ts:trainNight)
+  three 0.187 declares `varying vec4 vColor` in fragment shaders, so `outgoingLight + vColor * k` adds a vec4 to a vec3 and the program fails to link.
+  Node, tsc and the build all passed; only a headless Chrome on the real GPU (--use-angle=metal, signal-capture.mjs manualFrames) printed the error.
+  web/tests/train-night.test.ts now types every added line against three's own declarations (use vColor.rgb), but a new onBeforeCompile patch still needs one GPU run.
 - 2026-11-09 - bundled data JSON grows the main chunk: review evidence tipped it past Vite's 1,200 kB warning (kings-cross-src web/src/data/kx-signals.json)
   Embedding each signal head's positionReview (URLs, reasons, versions) took the main chunk from 1,198 to 1,264 kB and the build printed a
   chunk-size warning, which the rubric counts as a new warning. Tests and typecheck stayed green, so only the build output showed it. Keep

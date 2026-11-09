@@ -109,6 +109,13 @@ export class Soup {
   readonly nrm: number[] = [];
   readonly clr: number[] = [];
   readonly uvs: number[] = [];
+  /** One lamp tag per vertex (see `emit`); the geometry carries it as `aGlow` only if some vertex is lit. */
+  readonly glow: number[] = [];
+  /**
+   * The lamp tag every vertex added from now on takes: 0 unlit, 1 a lit passenger window (warm light inside), 2 a lamp lens that
+   * glows in its own colour. `trainNight` (below) lights the tagged vertices after dark; by day they are as untagged ones.
+   */
+  emit = 0;
 
   tri(p: [V3, V3, V3], n: [V3, V3, V3], c: THREE.Color | null, uv?: [UV, UV, UV]): void {
     const f = cross(sub(p[1], p[0]), sub(p[2], p[0]));
@@ -119,6 +126,7 @@ export class Soup {
       const nn = n[i] as V3;
       this.pos.push(v[0], v[1], v[2]);
       this.nrm.push(nn[0], nn[1], nn[2]);
+      this.glow.push(this.emit);
       if (c) this.clr.push(c.r, c.g, c.b);
       if (uv) this.uvs.push((uv[i] as UV)[0], (uv[i] as UV)[1]);
     }
@@ -207,6 +215,7 @@ export class Soup {
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
     if (this.clr.length) g.setAttribute('color', new THREE.Float32BufferAttribute(this.clr, 3));
     if (this.uvs.length) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
+    if (this.glow.some((v) => v > 0)) g.setAttribute('aGlow', new THREE.Float32BufferAttribute(this.glow, 1));
     g.computeBoundingBox();
     g.computeBoundingSphere();
     return g;
@@ -233,10 +242,29 @@ export function gridNormals(P: V3[][], closedColumns: boolean, inside: (row: num
   );
 }
 
+/**
+ * How lit the trains' lamps and windows are: 0 by day, 1 after dark (web/src/atmosphere.ts sets it from the sun). It drives the
+ * vertices a `Soup` tagged (`emit`): lit passenger windows glow warm and the headlight and tail lamp lenses glow in their own colour.
+ */
+export const trainNight = { value: 0 };
+
 let plainMaterial: THREE.MeshLambertMaterial | null = null;
 /** The one material for everything that carries its colour in the vertices; shared by every train. */
 export const plain = (): THREE.MeshLambertMaterial => {
-  plainMaterial ??= new THREE.MeshLambertMaterial({ vertexColors: true });
+  if (!plainMaterial) {
+    plainMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // Add the lamp glow after lighting. Vertices with no `aGlow` attribute read 0 and draw as before.
+    plainMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uNight = trainNight;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aGlow;\nvarying float vGlow;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
+        .replace('#include <opaque_fragment>',
+          'outgoingLight += uNight * ( step( 0.5, vGlow ) * ( 1.0 - step( 1.5, vGlow ) ) * vec3( 1.0, 0.82, 0.52 ) * 1.1 + step( 1.5, vGlow ) * vColor.rgb * 1.6 );\n#include <opaque_fragment>');
+    };
+  }
   return plainMaterial;
 };
 

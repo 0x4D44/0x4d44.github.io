@@ -44,10 +44,14 @@ export interface World {
   follow(camera: THREE.Camera): void;
   /** the terrain covers `extent`: draw the flat plane only outside it (four strips) */
   carve(extent: Extent): void;
+  /** the scene's lights, which start as `LIGHTS` and which web/src/atmosphere.ts drives from the sun and the weather */
+  lights: { hemisphere: THREE.HemisphereLight; sun: THREE.DirectionalLight; fills: readonly THREE.DirectionalLight[] };
+  /** the sky dome, vertex-coloured (atmosphere.ts repaints it) */
+  sky: THREE.Mesh;
 }
 
 function skyDome(): THREE.Mesh {
-  const g = new THREE.SphereGeometry(5200, 32, 18);
+  const g = new THREE.SphereGeometry(5200, 48, 24);
   const pos = g.getAttribute('position');
   const colors: number[] = [];
   const top = new THREE.Color(ZENITH);
@@ -108,18 +112,22 @@ export function addWorld(scene: THREE.Scene, opts: { grid: boolean; bare?: boole
   const sky = skyDome();
   scene.add(sky);
 
-  scene.add(new THREE.HemisphereLight(LIGHTS.hemisphere.sky, LIGHTS.hemisphere.ground, LIGHTS.hemisphere.intensity));
+  const hemisphere = new THREE.HemisphereLight(LIGHTS.hemisphere.sky, LIGHTS.hemisphere.ground, LIGHTS.hemisphere.intensity);
+  scene.add(hemisphere);
   const sun = new THREE.DirectionalLight(LIGHTS.sun.colour, LIGHTS.sun.intensity);
   sun.position.set(...LIGHTS.sun.position);
   scene.add(sun);
+  const fills: THREE.DirectionalLight[] = [];
   for (const f of LIGHTS.fills) {
     const fill = new THREE.DirectionalLight(f.colour, f.intensity);
     fill.name = f.name;
     fill.position.set(f.position[0], f.position[1], f.position[2]);
     scene.add(fill);
+    fills.push(fill);
   }
 
   const flat = new THREE.MeshLambertMaterial({ color: GROUND_COLOUR });
+  flat.name = 'ground-flat';
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(FLAT_SIZE, FLAT_SIZE).rotateX(-Math.PI / 2), flat);
   ground.position.y = GROUND_Y;
   scene.add(ground);
@@ -127,6 +135,8 @@ export function addWorld(scene: THREE.Scene, opts: { grid: boolean; bare?: boole
   if (opts.grid) scene.add(measuringGrid());
 
   return {
+    lights: { hemisphere, sun, fills },
+    sky,
     follow(camera) {
       sky.position.copy(camera.position);
     },
