@@ -11,6 +11,10 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - the track is drawn on curves, not OSM chords: read train positions with edgePoint (kings-cross-src core/graph.ts)
+  core/curves.ts bends every rail segment through its nodes (up to 0.86 m off the chord in the station zone, 2.5 m beyond). A
+  position lerped between graph.pos nodes sits that far off the drawn rails. Build the graph with { curves: true } and read
+  points and directions with edgePoint(); the OLE still registers its wires on the chords (up to 0.47 m off at a support).
 - 2026-11-09 - a timed-out node --test leaves workers running: use kxmut.run_command (kings-cross-src tools/mutation/lib/kxmut.py)
   subprocess.run(timeout=) kills only the top node --test. Its --test-isolation=process workers keep running, and a mutant that loops and allocates never
   lets --test-timeout fire: one mutation run left orphaned workers holding 283, 203 and 159 GB compressed and the Mac ran out of memory. run_command gives
