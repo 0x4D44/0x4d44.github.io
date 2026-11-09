@@ -1766,6 +1766,7 @@ test('Midland Grand [hist-b]: a tower carries the facade\'s window rows (ROWS) o
         ROWS.forEach(([y, wh], i) => {
           const row = pane.filter((p) => p.p.every((v) => onFace(v) && v[1] >= y - 1e-9 && v[1] < y + 5));
           if (inside) return assert.equal(row.length, 0, `${t.name}: no windows in row ${i} on a face turned toward the hotel`);
+          if (i === 1) return; // the second row of a free face (the tower's front) is an oriel (the next test)
           assert.ok(row.length > 0, `${t.name}: windows in row ${i}`);
           close(Math.max(...row.flatMap((p) => p.p.map((v) => v[1]))), y + wh - 0.45 + 0.27, 1e-9, `${t.name}: row ${i} is ${wh} m tall, as on the facade`);
           // round 5: the first floor's group is three lights in an arch 3.2 m wide, the floors above pairs 2.4 m wide, as the facade's (0.4 m shafts between three, 0.6 m between two)
@@ -1788,6 +1789,71 @@ test('Midland Grand [hist-b]: a tower carries the facade\'s window rows (ROWS) o
     }
   }
   assert.ok(free >= midland.towers.length && turned >= 1, `${free} faces clear of the hotel, ${turned} turned toward it`);
+});
+
+test('Midland Grand [hist-b]: each tower\'s front face carries an oriel in place of its second row\'s pair (the scorer, round 5: projecting bays/oriels): a canted bay of pale stone 4 m tall, 3.4 m across at the wall and 2.2 m at its front 0.6 m out, on a course, a lancet to each 1.1 m of a facet, under a pyramid 1.8 m high', () => {
+  const parts = midlandGeometry(midland);
+  const y0 = ROWS[1][0] - 0.4;
+  let roofs = 0;
+  for (const t of midland.towers) {
+    const h = t.side / 2;
+    const at = (v: V3): [number, number] => [inTower(t, v).a, inTower(t, v).o - h]; // along the face from its middle, and out of it
+    const inBay = (v: V3, slack = 0): boolean => Math.abs(at(v)[0]) < 1.9 && at(v)[1] > -0.3 && at(v)[1] < 0.9 + slack;
+    // the walls (stone, as the photograph's is): the front, a facet at 45 degrees to each side, and the one against the tower (two triangles each), from y0 to 4 m up, on the lines of the plan
+    const walls = triangles(parts.stone as Batch).filter((tr) => tr.p.every((v) => Math.abs(Math.abs(at(v)[0]) - (1.7 - at(v)[1])) < 1e-6 && at(v)[1] > -1e-6 && at(v)[1] < 0.6 + 1e-6 && v[1] > y0 - 1e-9 && v[1] < y0 + 4 + 1e-9));
+    assert.equal(walls.length, 8, `${t.name}: four wall quads of two triangles`);
+    close(Math.min(...walls.flatMap((tr) => tr.p.map((v) => v[1]))), y0, 1e-9, `${t.name}: from the foot`);
+    close(Math.max(...walls.flatMap((tr) => tr.p.map((v) => v[1]))), y0 + 4, 1e-9, `${t.name}: 4 m tall`);
+    const reach = walls.flatMap((tr) => tr.p.map((v) => at(v)));
+    close(Math.max(...reach.map((p) => p[1])), 0.6, 1e-6, `${t.name}: 0.6 m out`);
+    close(Math.max(...reach.map((p) => Math.abs(p[0]))), 1.7, 1e-6, `${t.name}: 3.4 m across at the wall`);
+    close(Math.max(...reach.filter((p) => p[1] > 0.6 - 1e-6).map((p) => Math.abs(p[0]))), 1.1, 1e-6, `${t.name}: 2.2 m across at its front`);
+    for (const p of reach) close(Math.abs(p[0]), 1.7 - p[1], 1e-6, `${t.name}: its sides stand at 45 degrees`);
+    // under it a stone course 0.4 m deep standing 0.15 m out of the walls, its front mitred with the facets'
+    const course = triangles(parts.stone as Batch).filter((tr) => tr.p.every((v) => inBay(v) && (Math.abs(v[1] - (y0 - 0.4)) < 1e-9 || Math.abs(v[1] - y0) < 1e-9)));
+    assert.ok(course.length >= 12, `${t.name}: a course of faces under it (${course.length})`);
+    close(Math.max(...course.flatMap((tr) => tr.p.map((v) => at(v)[1]))), 0.75, 1e-6, `${t.name}: the course stands 0.15 m beyond the front`);
+    // the lights: a lancet to each 1.1 m of a facet, 0.5 m narrower than its share, from 0.5 m above the foot to 2.8 m tall, standing 0.1 m out of the facet
+    const panes = triangles(parts.pane as Batch).filter((tr) => tr.p.every((v) => inBay(v, 0.1) && v[1] > y0 + 0.5 - 1e-9 && v[1] < y0 + 3.3 + 1e-9));
+    const facets = [[[-1.7, 0], [-1.1, 0.6]], [[-1.1, 0.6], [1.1, 0.6]], [[1.1, 0.6], [1.7, 0]]] as const;
+    let lights = 0;
+    for (const [p0, p1] of facets) {
+      const len = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      const d = [(p1[0] - p0[0]) / len, (p1[1] - p0[1]) / len] as const;
+      const n = Math.round(len / 1.1);
+      const mine = panes.filter((tr) => tr.p.every((v) => Math.abs(-d[1] * (at(v)[0] - p0[0]) + d[0] * (at(v)[1] - p0[1]) - 0.1) < 1e-6));
+      assert.ok(mine.length > 0, `${t.name}: lights on the facet from ${p0} to ${p1}`);
+      const spans: [number, number][] = [];
+      for (const tr of mine.sort((a, b) => Math.min(...a.p.map((v) => d[0] * (at(v)[0] - p0[0]) + d[1] * (at(v)[1] - p0[1]))) - Math.min(...b.p.map((v) => d[0] * (at(v)[0] - p0[0]) + d[1] * (at(v)[1] - p0[1]))))) {
+        const us = tr.p.map((v) => d[0] * (at(v)[0] - p0[0]) + d[1] * (at(v)[1] - p0[1]));
+        const last = spans[spans.length - 1];
+        if (last && Math.min(...us) < last[1] + 1e-6) last[1] = Math.max(last[1], ...us);
+        else spans.push([Math.min(...us), Math.max(...us)]);
+      }
+      assert.equal(spans.length, n, `${t.name}: ${n} lights on a facet ${len.toFixed(2)} m wide`);
+      spans.forEach(([lo, hi], k) => {
+        close(hi - lo, len / n - 0.5, 1e-6, `${t.name}: a light ${len / n - 0.5} m wide`);
+        close((lo + hi) / 2, ((k + 0.5) * len) / n, 1e-6, `${t.name}: in the middle of its share`);
+      });
+      lights += n;
+    }
+    assert.equal(lights, 4, `${t.name}: a pair in the front and one in each side`);
+    close(Math.max(...panes.flatMap((tr) => tr.p.map((v) => v[1]))), y0 + 3.3, 1e-9, `${t.name}: their heads`);
+    // the roof: a pyramid on the walls' head, 1.8 m high, its apex 0.3 m out of the tower on its middle
+    const roof = triangles(parts.stone as Batch).filter((tr) => tr.p.every((v) => inBay(v) && v[1] > y0 + 4 - 1e-9 && v[1] < y0 + 5.8 + 1e-9));
+    assert.equal(roof.length, 4, `${t.name}: four faces`);
+    const apex = roof.flatMap((tr) => tr.p).filter((v) => v[1] > y0 + 5.8 - 1e-9);
+    assert.ok(apex.length >= 4, `${t.name}: a point on each`);
+    for (const v of apex) {
+      close(at(v)[0], 0, 1e-6, `${t.name}: the apex on the bay's middle`);
+      close(at(v)[1], 0.3, 1e-6, `${t.name}: 0.3 m out of the tower`);
+    }
+    roofs += roof.length;
+    // in the pair's place: nothing of its panes (lancets 0.1 m off the face, 2.4 m wide) on the face under the oriel
+    const pair = triangles(parts.pane as Batch).filter((tr) => tr.p.every((v) => Math.abs(at(v)[0]) < 1.3 && at(v)[1] > 0.05 && at(v)[1] < 0.15 && v[1] > ROWS[1][0] - 1e-9 && v[1] < ROWS[1][0] + ROWS[1][1]));
+    assert.equal(pair.length, 0, `${t.name}: the second row's pair is gone from the front`);
+  }
+  assert.equal(roofs, 4 * midland.towers.length, 'one oriel to a tower, on its front');
 });
 
 /** where a vertex is in a pavilion's frame: along the front from its middle, and out of the wall */

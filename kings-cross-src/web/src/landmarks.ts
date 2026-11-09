@@ -846,6 +846,24 @@ export function towerStages(H: number): { shaft: number; belfry: number; corbel:
 export const ROWS = [[6.9, 4.0], [12.4, 3.4], [17.9, 2.6]] as const;
 
 /**
+ * hist-b: an oriel in the second row of a tower's free face, its front's (the scorer, round 5: "projecting bays/oriels"), a canted bay of pale stone, 4 m tall from `y`, a trapezoid on plan (3.4 m across at the wall, 2.2 m at its front,
+ * 0.6 m out) on a course 0.4 m deep standing 0.15 m out, a lancet to each 1.1 m of a facet, under a pyramid 1.8 m high. Sizes ASSUMED, scaled from the photograph.
+ */
+function addOriel(parts: PartMap<Key>, f: Placed, y: number): void {
+  const ring = ([[-1.7, 0], [-1.1, 0.6], [1.1, 0.6], [1.7, 0]] as const).map(([u, l]): Pt => [onWall(f, u, 0, l)[0], onWall(f, u, 0, l)[2]]);
+  const apex = onWall(f, 0, 0, 0.3);
+  const edges = polygonEdges(ring);
+  const stone = part(parts, 'stone');
+  addWalls(stone, ring, y, y + 4);
+  addBand(stone, segmentsOutside(edges, []), y - 0.4, 0.4, 0.15);
+  addRoof(stone, ring, ring.map((): Pt => [apex[0], apex[2]]), y + 4, y + 5.8, false);
+  for (const e of edges.slice(0, 3)) {
+    const n = Math.round(e.length / 1.1);
+    for (let k = 0; k < n; k++) addFramedWindow(parts, shift({ at: [(e.a[0] + e.b[0]) / 2, (e.a[1] + e.b[1]) / 2], dir: [e.normal[1], -e.normal[0]], normal: e.normal }, (k - (n - 1) / 2) * (e.length / n)), y + 0.5, e.length / n - 0.5, 2.8, 'pointed', 0.08);
+  }
+}
+
+/**
  * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 73 m clock tower): a brick shaft of window rows then lancets, a belfry of
  * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a brick gable on each face, with a dial on the clock tower's, [HE-STP] "gabled clocks
  * on each face"), four corner pinnacles, a steep slate roof with a lucarne on each face, a lantern (the clock tower's) and a needle with a weathervane; a pointed portal at the foot of the front.
@@ -873,7 +891,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
-    ROWS.forEach(([y, wh], r) => { if (!inside) addTwin(parts, f, y, r ? 2.4 : 3.2, wh, r ? 2 : 3); });
+    ROWS.forEach(([y, wh], r) => { if (inside) return; if (r === 1) addOriel(parts, f, y - 0.4); else addTwin(parts, f, y, r ? 2.4 : 3.2, wh, r ? 2 : 3); });
     for (const y of [22, 29.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
