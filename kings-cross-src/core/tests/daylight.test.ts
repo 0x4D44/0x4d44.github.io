@@ -120,6 +120,25 @@ test('cloud takes the sun away and greys the sky; the ambient light stays, so th
   assert.equal(rig(40, { cloud: -2 }).sun.intensity, clear.sun.intensity, 'cloud below 0 is clamped');
 });
 
+test('an overcast day\'s sky is the pale cool white of a bright overcast, not a dark grey, and it stays dusk-dark in the evening', () => {
+  // R-lighting-materials-d (an overcast morning on the south front, 2026-06): the sky is (212, 219, 235) high up and (228, 233, 245) toward the
+  // horizon, sRGB, so a pale white with a little blue, brighter at the horizon than overhead
+  const noon = rig(40, { cloud: 1 });
+  assert.ok(luma(noon.dome.zenith) > 0.78, `a bright zenith: ${luma(noon.dome.zenith)}`);
+  assert.ok(luma(noon.dome.horizon) > 0.85, `a brighter horizon: ${luma(noon.dome.horizon)}`);
+  assert.ok(luma(noon.dome.horizon) > luma(noon.dome.zenith), 'the horizon is the paler');
+  assert.ok(noon.dome.zenith[2] > noon.dome.zenith[0] && spread(noon.dome.zenith) < 0.16, `a little blue, not a colour: ${noon.dome.zenith}`);
+  assert.ok(luma(noon.dome.zenith) > luma(rig(40).dome.zenith), 'a cloud sky is brighter than the clear blue');
+  // the dusk with cloud keeps the dusk's dark sky (the lift is the day's), and the lift comes in smoothly with the sun
+  assert.ok(luma(rig(-8, { cloud: 1 }).dome.zenith) < 0.1, `a cloudy dusk is dark: ${luma(rig(-8, { cloud: 1 }).dome.zenith)}`);
+  let previous = luma(rig(-8, { cloud: 1 }).dome.zenith);
+  for (let e = -8; e <= 40; e += 0.5) {
+    const now = luma(rig(e, { cloud: 1 }).dome.zenith);
+    assert.ok(now >= previous - 1e-9 && now - previous < 0.06, `the cloud sky brightens smoothly with the sun: ${previous} to ${now} at ${e}`);
+    previous = now;
+  }
+});
+
 test('rain darkens the sky and the light and brings the lamps on in the afternoon; heavier rain is darker', () => {
   const dry = rig(35, { cloud: 1 }), light = rig(35, { cloud: 1, rain: 0.35 }), heavy = rig(35, { cloud: 1, rain: 1 });
   assert.ok(luma(heavy.dome.zenith) < luma(light.dome.zenith) && luma(light.dome.zenith) < luma(dry.dome.zenith));

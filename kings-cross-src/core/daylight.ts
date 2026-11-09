@@ -194,6 +194,11 @@ export const DAYLIGHT_FLOOR = 0.12;
 /** The stylised moon's strength on a clear night (the key light's intensity; the reference sun is 1.7). */
 export const MOON_INTENSITY = 0.55;
 
+/** How far a cloud sky's colour is pulled toward its own grey (1 is a neutral grey): a bright overcast keeps a little of the blue, a pale cool white. */
+const CLOUD_SKY_GREY = 0.9;
+/** What the day adds to the grey of a cloud sky's zenith and horizon, as a multiple of it (at full day; none at dusk). */
+const CLOUD_LIFT = { zenith: 1.05, horizon: 0.2 } as const;
+
 /** The moon: a fixed, stylised cool key from the south-west, 42 degrees up (not an ephemeris). */
 const MOON_DIRECTION = sunDirection(42, 215);
 const MOON_COLOUR = hexRgb(0x7f95c8);
@@ -220,9 +225,12 @@ export function skyRig(elevationDeg: number, azimuthDeg: number, weather: SkyWea
   const hemiGround = mixRgb(k.hemiGround, [0.74, 0.76, 0.8], 0.7 * snow * dayAmount);
   const hemiIntensity = reference.hemisphere.intensity * k.hemiK * (1 - 0.08 * cloud) * (1 - 0.1 * rain) * (1 - 0.12 * fog) * (1 + 0.08 * snow);
 
-  // The dome: clear colours, then toward cloud grey (zenith darker, horizon paler), darkened by rain, then into the fog colour.
-  let zenith = mixRgb(k.zenith, scaleRgb(desaturate(k.zenith, 1), 0.82), 0.9 * cloud);
-  let horizon = mixRgb(k.horizon, scaleRgb(desaturate(k.horizon, 1), 0.96), 0.85 * cloud);
+  // The dome: clear colours, then toward the cloud's pale cool white (zenith darker, horizon paler), darkened by rain, then into the fog colour.
+  // A bright overcast is the brightest thing in the sky, not a dark grey one: in the day the cloud colour is the clear colour's own grey
+  // lifted by `CLOUD_LIFT` (R-lighting-materials-d: about (212, 219, 235) high up, (228, 233, 245) at the horizon, a little blue left in it),
+  // and at dusk, when the lift is not wanted, it is the old dim grey. The lift is ASSUMED, matched by eye to that one photograph.
+  let zenith = mixRgb(k.zenith, scaleRgb(desaturate(k.zenith, CLOUD_SKY_GREY), 0.82 + CLOUD_LIFT.zenith * dayAmount), 0.9 * cloud);
+  let horizon = mixRgb(k.horizon, scaleRgb(desaturate(k.horizon, CLOUD_SKY_GREY), 0.96 + CLOUD_LIFT.horizon * dayAmount), 0.85 * cloud);
   const darker = 1 - 0.14 * rain;
   zenith = scaleRgb(zenith, darker);
   horizon = scaleRgb(horizon, darker);
