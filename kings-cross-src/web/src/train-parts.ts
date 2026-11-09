@@ -1,15 +1,30 @@
 // The small parts of a train: bogies (wheels with flanges, axles, brake discs, side frames, springs,
-// traction motors), the pantograph, the couplers and the gangway bellows. Each is built once, merged into
+// dampers, traction motors), the pantograph, the couplers and the gangway bellows. Each is built once, merged into
 // one mesh, and shared; nothing here is instanced per wheel.
 //
 // A bogie is drawn at two levels of detail (THREE.LOD): the full bogie near the camera, and beyond
-// BOGIE_LOD_DISTANCE a bare one (wheels, side frames and a transom) of about a tenth of the triangles.
+// BOGIE_LOD_DISTANCE a bare one (round wheels, a side frame each side and a transom) of about a tenth of the triangles.
 //
 // Local frame of a bogie: centred on the rail head (y = 0), x across, z along the train.
+//
+// What the bogies are drawn from. The reference photographs are private review photos and are not shipped; the file
+// names below are the ones in the review folder (refs/<kind>/...):
+//   lner-gwr800-bogie-detail-2017.jpg   a Hitachi AT300 leading bogie, outer side, hardware only: OUTSIDE axle boxes with
+//       round end caps, a big coil primary spring on each, a deep side beam that is thick in the middle and sweeps up over
+//       the axle boxes, a long yaw damper low across the middle with a clevis at each end, a yellow step plate under it, wheels
+//       with a dark web and a lighter rim.
+//   tl700_03_gatwick_bogie_28898326470.jpg   a Siemens SF7000 (Class 700) bogie: INSIDE frame (the wheels stand outside it),
+//       plain light-grey wheel webs with a hub cover and a rust-brown rim band, the frame, a grey yaw damper and the air spring
+//       in a cluster between the wheels.
+//   tl700_02_gatwick_side_28563922734.jpg   the same bogie from the platform: the same plain wheels, the cluster between them.
+//   GC180-01-180-101-Kings-Cross-8077814883-.jpg   the Class 180's leading bogie from the cab end: a boxy dusty frame, axle
+//       boxes with a spring pot above, a long gold-ended damper low across the middle.
+//   gn387_03_387123_cambridge.jpg   the Electrostar's cab bogie, about a hundred pixels across: a dark frame with a damper
+//       across the middle and nothing that tells it from the generic outside-frame bogie; so it is drawn as that.
+// What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames.
 import * as THREE from 'three';
-import { col, plain, Soup } from './train-geom.ts';
+import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { unit } from './train-geom.ts';
 
 /** Wheel tread width. Assumed. */
 export const WHEEL_WIDTH = 0.13;
@@ -19,6 +34,15 @@ export const FLANGE_WIDTH = 0.028;
 /** Brake discs: radius and thickness, two on each axle. ASSUMED. */
 export const DISC_RADIUS = 0.29;
 export const DISC_THICKNESS = 0.024;
+/** Sides to the tread, the flange and the face of a wheel, and to the far level's wheel. 40 reads round at three metres (a wheel is about 250 px across there). */
+export const WHEEL_SEGMENTS = 40;
+export const FAR_WHEEL_SEGMENTS = 12;
+/** No part of a bogie is further from the centre line than this, and none reaches above the body floor (the lowest is 0.98 m: a Class 180's). */
+export const BOGIE_HALF_WIDTH = 1.15;
+export const BOGIE_TOP = 0.95;
+
+/** Whose bogie is drawn: the Hitachi AT300 (Class 800/801), the Bombardier Electrostar (Class 387), the Siemens SF7000 (Class 700/717) or the Alstom Coradia 1000's (Class 180). */
+export type BogieStyle = 'hitachi' | 'electrostar' | 'siemens' | 'alstom';
 
 export interface BogieSpec {
   /** Wheel radius, metres. */
@@ -31,109 +55,521 @@ export interface BogieSpec {
   motor: boolean;
   /** A driven bogie of a diesel-hydraulic unit has a final-drive gearbox on each axle and a cardan shaft, not traction motors. */
   diesel?: boolean;
+  /** Which maker's bogie to draw. Absent: the Alstom's for a diesel unit, the Hitachi's otherwise. */
+  style?: BogieStyle;
+}
+
+/** The style a spec draws: its own, or the one its other flags imply. */
+export function bogieStyle(spec: Pick<BogieSpec, 'diesel' | 'style'>): BogieStyle {
+  return spec.style ?? (spec.diesel === true ? 'alstom' : 'hitachi');
 }
 
 const bogieCache = new Map<string, THREE.BufferGeometry>();
 const farCache = new Map<string, THREE.BufferGeometry>();
 
-/** A cylinder along x, y or z, as a transform for `Soup.geometry`. */
-function along(axis: 'x' | 'y' | 'z', x: number, y: number, z: number): THREE.Matrix4 {
-  const m = new THREE.Matrix4().makeTranslation(x, y, z);
-  if (axis === 'y') return m;
-  return m.multiply(axis === 'x' ? new THREE.Matrix4().makeRotationZ(Math.PI / 2) : new THREE.Matrix4().makeRotationX(Math.PI / 2));
+// --- the toolbox: solids of revolution, extruded outlines ---------------------------------------------------------------
+
+type P2 = readonly [number, number];
+const circles = new Map<number, { c: number[]; s: number[] }>();
+/** cos and sin of the n angles round a ring, exact at every quarter turn (so a ring of 4k sides has a vertex exactly at the top, the bottom and both ends). Angle 0 is up (+e1). */
+function circle(n: number): { c: number[]; s: number[] } {
+  let t = circles.get(n);
+  if (!t) {
+    const c: number[] = [];
+    const s: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const q = (4 * i) / n;
+      if (Number.isInteger(q)) {
+        c.push([1, 0, -1, 0][q] as number);
+        s.push([0, 1, 0, -1][q] as number);
+      } else {
+        c.push(Math.cos((2 * Math.PI * i) / n));
+        s.push(Math.sin((2 * Math.PI * i) / n));
+      }
+    }
+    t = { c, s };
+    circles.set(n, t);
+  }
+  return t;
 }
 
-function cylinder(soup: Soup, axis: 'x' | 'y' | 'z', c: V3, radius: number, length: number, segs: number, colour: THREE.Color, caps = true): void {
-  const g = new THREE.CylinderGeometry(radius, radius, length, segs, 1, !caps);
-  soup.geometry(g, along(axis, c[0], c[1], c[2]), colour);
-  g.dispose();
+/** An axis for `lathe`: the point at u = 0, the direction u grows in, and the two directions the angle sweeps (up, then along z for an axis along x). */
+interface Axis {
+  o: V3;
+  a: V3;
+  e1: V3;
+  e2: V3;
+}
+/** u runs along x (positive away from the centre line when `dir` is the side), the ring starts upward. */
+const axisX = (x: number, y: number, z: number, dir: 1 | -1 = 1): Axis => ({ o: [x, y, z], a: [dir, 0, 0], e1: [0, 1, 0], e2: [0, 0, 1] });
+const axisY = (x: number, y: number, z: number): Axis => ({ o: [x, y, z], a: [0, 1, 0], e1: [0, 0, 1], e2: [1, 0, 0] });
+const axisZ = (x: number, y: number, z: number): Axis => ({ o: [x, y, z], a: [0, 0, 1], e1: [0, 1, 0], e2: [1, 0, 0] });
+
+/**
+ * A solid of revolution as one piece: `prof` is a polyline of (u, radius) pairs, `n` sides round. The surface faces to the LEFT of the
+ * direction of travel along the profile (u to the right, radius up): a closed solid is walked from its first end cap up to its radius, along
+ * its side and down its last end cap. A segment that starts or ends on the axis becomes a fan. Normals are smooth round the ring and flat along
+ * the profile, so a tread reads round and a rim keeps its edge. `colours` is one colour or one per segment.
+ * A profile point may carry its own ring size as a third number (the default is `n`): a ring may have half the sides of the one next to it,
+ * and the band between them is three triangles for every two of the bigger ring's, so a wheel's web needs no more sides than it shows.
+ */
+function lathe(soup: Soup, ax: Axis, prof: readonly (readonly [number, number] | readonly [number, number, number])[], n: number, colours: THREE.Color | readonly THREE.Color[]): void {
+  const at = (u: number, rho: number, i: number, sides: number): V3 => {
+    const { c, s } = circle(sides);
+    const ci = c[i % sides] as number;
+    const si = s[i % sides] as number;
+    return [
+      ax.o[0] + ax.a[0] * u + rho * (ci * ax.e1[0] + si * ax.e2[0]),
+      ax.o[1] + ax.a[1] * u + rho * (ci * ax.e1[1] + si * ax.e2[1]),
+      ax.o[2] + ax.a[2] * u + rho * (ci * ax.e1[2] + si * ax.e2[2]),
+    ];
+  };
+  for (let k = 0; k + 1 < prof.length; k++) {
+    const [u0, r0] = prof[k] as readonly [number, number];
+    const [u1, r1] = prof[k + 1] as readonly [number, number];
+    if (r0 === 0 && r1 === 0) continue;
+    const n0 = (prof[k] as readonly number[])[2] ?? n;
+    const n1 = (prof[k + 1] as readonly number[])[2] ?? n;
+    const colour = colours instanceof THREE.Color ? colours : (colours[Math.min(k, colours.length - 1)] as THREE.Color);
+    const len = Math.hypot(u1 - u0, r1 - r0);
+    const nu = -(r1 - r0) / len;
+    const nr = (u1 - u0) / len;
+    const nrm = (i: number, sides: number): V3 => {
+      const { c, s } = circle(sides);
+      const ci = c[i % sides] as number;
+      const si = s[i % sides] as number;
+      return [
+        ax.a[0] * nu + nr * (ci * ax.e1[0] + si * ax.e2[0]),
+        ax.a[1] * nu + nr * (ci * ax.e1[1] + si * ax.e2[1]),
+        ax.a[2] * nu + nr * (ci * ax.e1[2] + si * ax.e2[2]),
+      ];
+    };
+    if (r0 === 0) {
+      for (let i = 0; i < n1; i++) {
+        const na = nrm(i, n1);
+        const nb = nrm(i + 1, n1);
+        soup.tri([at(u0, 0, i, n1), at(u1, r1, i, n1), at(u1, r1, i + 1, n1)], [unit(add(na, nb)), na, nb], colour);
+      }
+    } else if (r1 === 0) {
+      for (let i = 0; i < n0; i++) {
+        const na = nrm(i, n0);
+        const nb = nrm(i + 1, n0);
+        soup.tri([at(u0, r0, i, n0), at(u0, r0, i + 1, n0), at(u1, 0, i, n0)], [na, nb, unit(add(na, nb))], colour);
+      }
+    } else if (n0 === n1) {
+      for (let i = 0; i < n0; i++) {
+        const na = nrm(i, n0);
+        const nb = nrm(i + 1, n0);
+        soup.tri([at(u0, r0, i, n0), at(u1, r1, i, n0), at(u1, r1, i + 1, n0)], [na, na, nb], colour);
+        soup.tri([at(u0, r0, i, n0), at(u1, r1, i + 1, n0), at(u0, r0, i + 1, n0)], [na, nb, nb], colour);
+      }
+    } else if (n0 === 2 * n1 || n1 === 2 * n0) {
+      // the band between a ring and one of half its sides: for each side of the small ring, the three triangles that join it to the big ring's two
+      const big = n0 > n1 ? { u: u0, r: r0, sides: n0 } : { u: u1, r: r1, sides: n1 };
+      const small = n0 > n1 ? { u: u1, r: r1, sides: n1 } : { u: u0, r: r0, sides: n0 };
+      for (let j = 0; j < small.sides; j++) {
+        const a0 = at(big.u, big.r, 2 * j, big.sides);
+        const a1 = at(big.u, big.r, 2 * j + 1, big.sides);
+        const a2 = at(big.u, big.r, 2 * j + 2, big.sides);
+        const b0 = at(small.u, small.r, j, small.sides);
+        const b1 = at(small.u, small.r, j + 1, small.sides);
+        const na0 = nrm(2 * j, big.sides);
+        const na1 = nrm(2 * j + 1, big.sides);
+        const na2 = nrm(2 * j + 2, big.sides);
+        const nb0 = nrm(j, small.sides);
+        const nb1 = nrm(j + 1, small.sides);
+        soup.tri([a0, a1, b0], [na0, na1, nb0], colour);
+        soup.tri([a1, a2, b1], [na1, na2, nb1], colour);
+        soup.tri([a1, b1, b0], [na1, nb1, nb0], colour);
+      }
+    } else {
+      throw new Error(`lathe: a ring of ${n0} sides cannot join one of ${n1}`);
+    }
+  }
+}
+
+/** A closed cylinder (or an open tube) of radius `rho` from u0 to u1. */
+function tube(soup: Soup, ax: Axis, u0: number, u1: number, rho: number, n: number, colour: THREE.Color, caps: '' | 'start' | 'end' | 'both' = ''): void {
+  const prof: P2[] = [];
+  if (caps === 'start' || caps === 'both') prof.push([u0, 0]);
+  prof.push([u0, rho], [u1, rho]);
+  if (caps === 'end' || caps === 'both') prof.push([u1, 0]);
+  lathe(soup, ax, prof, n, colour);
+}
+
+const cross2 = (a: P2, b: P2, c: P2): number => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+const area2 = (p: readonly P2[]): number => p.reduce((s, a, i) => s + cross2([0, 0], a, p[(i + 1) % p.length] as P2), 0);
+
+/** Triangles (as index triples, counter-clockwise) of a simple polygon given counter-clockwise, by ear clipping. */
+function earClip(poly: readonly P2[]): [number, number, number][] {
+  const idx = poly.map((_, i) => i);
+  const out: [number, number, number][] = [];
+  const inside = (p: P2, a: P2, b: P2, c: P2): boolean => cross2(a, b, p) > 1e-9 && cross2(b, c, p) > 1e-9 && cross2(c, a, p) > 1e-9;
+  while (idx.length > 3) {
+    let clipped = false;
+    for (let k = 0; k < idx.length && !clipped; k++) {
+      const i0 = idx[(k + idx.length - 1) % idx.length] as number;
+      const i1 = idx[k] as number;
+      const i2 = idx[(k + 1) % idx.length] as number;
+      const a = poly[i0] as P2;
+      const b = poly[i1] as P2;
+      const c = poly[i2] as P2;
+      if (cross2(a, b, c) <= 1e-12) continue;
+      if (idx.some((j) => j !== i0 && j !== i1 && j !== i2 && inside(poly[j] as P2, a, b, c))) continue;
+      out.push([i0, i1, i2]);
+      idx.splice(k, 1);
+      clipped = true;
+    }
+    if (!clipped) throw new Error('bogie outline is not a simple polygon');
+  }
+  out.push([idx[0] as number, idx[1] as number, idx[2] as number]);
+  return out;
+}
+
+/**
+ * A plate: the outline (z, y) extruded along x from `x0` to `x1` (x0 < x1): a cap facing +x, a cap facing -x and the rim between them. The
+ * face looking away from the centre line (+x for `side` 1, -x for -1) is `outer`'s colour, as is the rim, the face looking in is `inner`'s.
+ * The outline may be concave but must not cross itself; either winding.
+ */
+function plate(soup: Soup, outline: readonly P2[], x0: number, x1: number, outer: THREE.Color, inner: THREE.Color = outer, side: 1 | -1 = 1): void {
+  const c = outer;
+  const poly = area2(outline) < 0 ? [...outline].reverse() : [...outline];
+  const v = (p: P2, x: number): V3 => [x, p[1], p[0]];
+  for (const [i, j, k] of earClip(poly)) {
+    const a = poly[i] as P2;
+    const b = poly[j] as P2;
+    const d = poly[k] as P2;
+    soup.tri([v(a, x1), v(b, x1), v(d, x1)], [[1, 0, 0], [1, 0, 0], [1, 0, 0]], side > 0 ? outer : inner);
+    soup.tri([v(a, x0), v(b, x0), v(d, x0)], [[-1, 0, 0], [-1, 0, 0], [-1, 0, 0]], side > 0 ? inner : outer);
+  }
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i] as P2;
+    const b = poly[(i + 1) % poly.length] as P2;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nrm: V3 = [0, -(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+    soup.quad([v(a, x0), v(a, x1), v(b, x1), v(b, x0)], [nrm, nrm, nrm, nrm], c);
+  }
+}
+
+/** The x range of a part standing `a` to `b` out from the centre line on side `sx`, lowest first. */
+const xs = (sx: number, a: number, b: number): [number, number] => (sx > 0 ? [a, b] : [-b, -a]);
+/** Append every triangle of `from` to `into`. */
+function append(into: Soup, from: Soup): void {
+  for (let i = 0; i < from.pos.length; i++) into.pos.push(from.pos[i] as number);
+  for (let i = 0; i < from.nrm.length; i++) into.nrm.push(from.nrm[i] as number);
+  for (let i = 0; i < from.clr.length; i++) into.clr.push(from.clr[i] as number);
+}
+
+// --- colours ------------------------------------------------------------------------------------------------------------
+
+interface Palette {
+  frame: THREE.Color;
+  box: THREE.Color;
+  cap: THREE.Color;
+  spring: THREE.Color;
+  coil: THREE.Color;
+  tread: THREE.Color;
+  rim: THREE.Color;
+  web: THREE.Color;
+  hub: THREE.Color;
+  inner: THREE.Color;
+  disc: THREE.Color;
+  discRim: THREE.Color;
+  damper: THREE.Color;
+  clevis: THREE.Color;
+  motor: THREE.Color;
+  gear: THREE.Color;
+  axle: THREE.Color;
+  rubber: THREE.Color;
+  accent: THREE.Color;
+}
+const PALETTES: Record<BogieStyle, Palette> = {
+  // the AT300's: near-black frame and boxes with a lighter steel cap and rim (lner-gwr800-bogie-detail-2017.jpg), a yellow step
+  hitachi: {
+    frame: col(0x3a3e45), box: col(0x30343a), cap: col(0x6a6f77), spring: col(0x575b61), coil: col(0x2b2d31),
+    tread: col(0x9a9fa6), rim: col(0x6b7078), web: col(0x484c53), hub: col(0x80858c), inner: col(0x2f3238),
+    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5c6168),
+    motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
+  },
+  // the Electrostar's: the same outside-frame kit in a slightly bluer dark grey (no photograph of its bogie is usable)
+  electrostar: {
+    frame: col(0x3c4048), box: col(0x32363d), cap: col(0x6c717a), spring: col(0x585d65), coil: col(0x2c2e33),
+    tread: col(0x9a9fa6), rim: col(0x6d727a), web: col(0x4a4f57), hub: col(0x80858c), inner: col(0x30343a),
+    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5e636b),
+    motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
+  },
+  // the SF7000's: light-grey frame, webs and covers, a rust-brown rim, black rubber (tl700_03_gatwick_bogie_28898326470.jpg)
+  siemens: {
+    frame: col(0x8d939a), box: col(0x7d838a), cap: col(0xa4a9af), spring: col(0x5d6168), coil: col(0x2f3135),
+    tread: col(0x8f949b), rim: col(0x9b5b36), web: col(0xa7acb2), hub: col(0xb3b8be), inner: col(0x6f747a),
+    disc: col(0x62676e), discRim: col(0x7d8289), damper: col(0x959ba1), clevis: col(0x7a8087),
+    motor: col(0x4d5259), gear: col(0x73787f), axle: col(0x575b61), rubber: col(0x25272a), accent: col(0xb0262c),
+  },
+  // the Class 180's: dusty brown-grey frame, gold-ended dampers (GC180-01-180-101-Kings-Cross-8077814883-.jpg)
+  alstom: {
+    frame: col(0x66625a), box: col(0x55514a), cap: col(0x7d796f), spring: col(0x5f5b53), coil: col(0x32302c),
+    tread: col(0x9a9fa6), rim: col(0x6d7077), web: col(0x45474c), hub: col(0x80848a), inner: col(0x303236),
+    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0xb8923a), clevis: col(0x6f6a60),
+    motor: col(0x4a4e55), gear: col(0x504d46), axle: col(0x36373a), rubber: col(0x1f2125), accent: col(0xb8923a),
+  },
+};
+
+// --- the parts ----------------------------------------------------------------------------------------------------------
+
+/** Outer face of a wheel's web stands this far out of the tread's mid-plane, its hub this far. */
+const HUB_RADIUS = 0.115;
+const AXLE_RADIUS = 0.07;
+const DISC_SIDES = 12;
+
+/**
+ * One wheel as a solid of revolution about its axle, `dir` the way out (+1 on the +x side). Inner face dished a little, the flange standing
+ * FLANGE_HEIGHT proud of the tread on the inner side, the tread, a bevelled rim on the outer face, a nearly flat web and a hub boss with its cover.
+ * The tread's two edges lie exactly at the marker's radius, and a vertex lies exactly at the bottom of the tread (y = 0) and at the bottom of
+ * the flange (y = -FLANGE_HEIGHT).
+ */
+function wheel(soup: Soup, dir: 1 | -1, x: number, r: number, z: number, pal: Palette): void {
+  const ax = axisX(x, r, z, dir);
+  const tip = r + FLANGE_HEIGHT;
+  const uTip = -WHEEL_WIDTH / 2 - FLANGE_WIDTH * 0.6;
+  const n = WHEEL_SEGMENTS;
+  lathe(soup, ax, [[-0.046, 0], [uTip, tip]], n, pal.inner);
+  lathe(soup, ax, [[uTip, tip], [-WHEEL_WIDTH / 2, r]], n, pal.tread);
+  lathe(soup, ax, [[-WHEEL_WIDTH / 2, r], [WHEEL_WIDTH / 2, r]], n, pal.tread);
+  // the rim's bevel and the web: the web has half the sides (it is flat and inside the round of the tread, where nothing shows a corner)
+  lathe(soup, ax, [[WHEEL_WIDTH / 2, r], [0.04, r - 0.06, n / 2], [0.054, 0, n / 2]], n, [pal.rim, pal.web]);
+  lathe(soup, ax, [[0.048, HUB_RADIUS], [0.098, HUB_RADIUS], [0.098, 0]], 12, pal.hub);
+}
+
+/** The four wheels of a bogie. */
+function wheelsets(soup: Soup, spec: BogieSpec, pal: Palette): void {
+  const half = spec.track / 2;
+  for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) for (const sx of [-1, 1] as const) wheel(soup, sx, sx * half, spec.radius, az, pal);
+}
+
+/** The two axles: out to the axle boxes on an outside-frame bogie, to the hubs on an inside-frame one. */
+function axles(soup: Soup, spec: BogieSpec, pal: Palette, reach: number): void {
+  for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) tube(soup, axisX(-reach, spec.radius, az), 0, 2 * reach, AXLE_RADIUS, 10, pal.axle);
+}
+
+/** Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED). */
+function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
+  const r = spec.radius;
+  const t = DISC_THICKNESS / 2;
+  for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
+    const inward = az < 0 ? 1 : -1;
+    for (const sx of [-1, 1]) {
+      lathe(soup, axisX(sx * 0.3, r, az), [[-t, 0], [-t, DISC_RADIUS], [t, DISC_RADIUS], [t, 0]], DISC_SIDES, [pal.disc, pal.discRim, pal.disc]);
+      const [x0, x1] = xs(sx, 0.3 - 0.05, 0.3 + 0.05);
+      const z0 = az + inward * 0.2;
+      const z1 = az + inward * 0.34;
+      soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
+    }
+  }
+}
+
+// --- the frames ---------------------------------------------------------------------------------------------------------
+
+/** Distance out from the centre line of the journals of an outside-frame bogie, and the box, beam and damper on them. */
+const OUT_JOURNAL = 1.02;
+
+/** A coil spring standing on y = `y0`, `h` tall, at (x, z): a drum with two wraps on it. */
+function coilSpring(soup: Soup, x: number, y0: number, z: number, h: number, rho: number, pal: Palette): void {
+  tube(soup, axisY(x, y0, z), 0, h, rho, 8, pal.coil);
+  for (const f of [0.28, 0.64]) tube(soup, axisY(x, y0, z), h * f, h * (f + 0.17), rho * 1.2, 8, pal.spring);
+}
+
+/** The outline (z, y) of an outside side beam, mirrored about z = 0: bottom edge from one end to the other, then the top edge back. */
+function beamOutline(half: readonly P2[]): P2[] {
+  // `half` runs from the centre of the bottom edge out to the end, up the end and back along the top to the centre
+  const right = half;
+  const left = [...half].reverse().map((p): P2 => [-p[0], p[1]]);
+  const out: P2[] = [];
+  for (const p of [...left, ...right]) {
+    const last = out[out.length - 1];
+    if (!last || Math.abs(last[0] - p[0]) > 1e-9 || Math.abs(last[1] - p[1]) > 1e-9) out.push(p);
+  }
+  if (out.length > 1 && Math.abs((out[0] as P2)[0] - (out[out.length - 1] as P2)[0]) < 1e-9 && Math.abs((out[0] as P2)[1] - (out[out.length - 1] as P2)[1]) < 1e-9) out.pop();
+  return out;
+}
+
+/**
+ * An outside-frame bogie (Hitachi AT300, Electrostar, Class 180): an axle box and a coil spring on each journal, a side beam resting on the springs,
+ * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams.
+ */
+function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: BogieStyle): void {
+  const r = spec.radius;
+  const w = spec.wheelbase / 2;
+  const beam =
+    style === 'alstom'
+      ? // a boxy straight beam with shallow ends (GC180-01: a squarer frame than the Hitachi's)
+        beamOutline([[0, r + 0.02], [0.5, r + 0.02], [0.9, r + 0.2], [w + 0.32, r + 0.2], [w + 0.32, r + 0.46], [0.7, r + 0.46], [0, r + 0.4]])
+      : style === 'electrostar'
+        ? // a flatter, lower beam
+          beamOutline([[0, r + 0.04], [0.5, r + 0.04], [0.85, r + 0.2], [w + 0.34, r + 0.2], [w + 0.34, r + 0.44], [0.8, r + 0.44], [0, r + 0.4]])
+        : // the AT300's: deep in the middle, swept up and out over the axle boxes (lner-gwr800-bogie-detail-2017.jpg)
+          beamOutline([[0, r - 0.01], [0.5, r - 0.01], [0.82, r + 0.12], [w - 0.28, r + 0.26], [w + 0.33, r + 0.26], [w + 0.35, r + 0.36], [w + 0.3, r + 0.5], [w - 0.3, r + 0.5], [0.75, r + 0.44], [0, r + 0.4]]);
+  const springTop = r + 0.26;
+  for (const sx of [-1, 1]) {
+    const [bx0, bx1] = xs(sx, 0.975, 1.065);
+    plate(F, beam, bx0, bx1, pal.frame, pal.box, sx as 1 | -1);
+    // the air spring on the middle of the beam, a rubber drum standing up to the underside of the body
+    const topMid = r + 0.4;
+    tube(S, axisY(sx * OUT_JOURNAL, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, 0.12, 10, pal.rubber, 'end');
+    for (const az of [-w, w]) {
+      // the axle box, its round end cap, and the spring on top of it
+      const [ax0, ax1] = xs(sx, 0.955, 1.085);
+      F.box(ax0, ax1, r - 0.13, r + 0.11, az - 0.125, az + 0.125, pal.box);
+      tube(F, axisX(sx * 1.085, r, az, sx as 1 | -1), 0, 0.035, 0.07, 10, pal.cap, 'end');
+      coilSpring(S, sx * OUT_JOURNAL, r + 0.11, az, springTop - (r + 0.11), 0.062, pal);
+    }
+    // the yaw damper: a black cylinder along the bogie with a clevis at each end, on the outside of the beam
+    const yD = r - 0.03;
+    tube(F, axisZ(sx * 1.095, yD, -0.42), 0, 0.84, 0.032, 8, pal.damper);
+    for (const z of [-0.47, 0.4]) {
+      const [cx0, cx1] = xs(sx, 1.07, 1.125);
+      F.box(cx0, cx1, yD - 0.045, yD + 0.045, z, z + 0.07, pal.clevis);
+    }
+    if (style === 'hitachi') {
+      // the yellow maintenance step under the middle of the bogie, hung from the beam on a plate (lner-gwr800-bogie-detail-2017.jpg)
+      const [px0, px1] = xs(sx, 0.98, 1.14);
+      F.box(px0, px1, 0.19, 0.21, -0.25, 0.25, pal.accent);
+      const [hx0, hx1] = xs(sx, 1.065, 1.1);
+      F.box(hx0, hx1, 0.21, r - 0.06, -0.17, 0.17, pal.frame);
+      // the two round bosses on the deep middle of the beam (the same photograph: a circle each side of the step's plate)
+      for (const z of [-0.38, 0.38]) lathe(F, axisX(sx * 1.071, r + 0.04, z, sx as 1 | -1), [[0, 0.1], [0, 0]], 12, pal.spring);
+    }
+  }
+  // the cross beam between the side beams
+  F.box(-0.98, 0.98, r + 0.2, r + 0.4, -0.08, 0.08, pal.box);
+}
+
+/**
+ * An inside-frame bogie (Siemens SF7000): the frame lies between the wheels with the axle boxes inboard of them, so from the side one sees
+ * the plain wheels and, between them, the frame, a coil spring at each axle box, the air spring over the middle and a yaw damper
+ * (tl700_03_gatwick_bogie_28898326470.jpg).
+ */
+function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
+  const r = spec.radius;
+  const w = spec.wheelbase / 2;
+  const beam = beamOutline([[0, r - 0.16], [0.5, r - 0.16], [w - 0.2, r - 0.1], [w + 0.12, r - 0.1], [w + 0.12, r + 0.27], [w - 0.25, r + 0.27], [0.55, r + 0.24], [0, r + 0.24]]);
+  for (const sx of [-1, 1]) {
+    const [bx0, bx1] = xs(sx, 0.46, 0.58);
+    plate(F, beam, bx0, bx1, pal.frame, pal.box, sx as 1 | -1);
+    // the big coil spring beside each axle box, between the frame and the wheel
+    for (const az of [-w, w]) {
+      const [ax0, ax1] = xs(sx, 0.47, 0.6);
+      F.box(ax0, ax1, r - 0.11, r + 0.11, az - 0.11, az + 0.11, pal.box);
+      coilSpring(S, sx * 0.53, r + 0.11, az, 0.16, 0.07, pal);
+    }
+    // the air spring over the middle of the beam
+    tube(S, axisY(sx * 0.52, r + 0.24, 0), 0, BOGIE_TOP - (r + 0.24) - 0.005, 0.13, 10, pal.rubber, 'end');
+    // the yaw damper: a grey cylinder between two clevises, outside the beam
+    const yD = r - 0.02;
+    tube(F, axisZ(sx * 0.61, yD, -0.4), 0, 0.8, 0.03, 8, pal.damper);
+    for (const z of [-0.45, 0.4]) {
+      const [cx0, cx1] = xs(sx, 0.585, 0.64);
+      F.box(cx0, cx1, yD - 0.04, yD + 0.04, z, z + 0.05, pal.clevis);
+    }
+  }
+  F.box(-0.5, 0.5, r + 0.1, r + 0.24, -0.08, 0.08, pal.box);
+}
+
+// --- the drive ----------------------------------------------------------------------------------------------------------
+
+/**
+ * A motor bogie's drive: a traction motor across the bogie on each axle's inboard side of the middle, its gear case on one end of it reaching
+ * to the axle. (Frame-mounted motors with a gear case on the axle are the UK EMU arrangement; no photograph shows them, so the sizes are ASSUMED.)
+ */
+function tractionMotors(D: Soup, spec: BogieSpec, pal: Palette, caseX: [number, number]): void {
+  const r = spec.radius;
+  for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
+    const dz = az < 0 ? 0.52 : -0.52;
+    const side = az < 0 ? 1 : -1;
+    lathe(D, axisX(-0.31, r + 0.08, az + dz), [[0, 0], [0, 0.2], [0.62, 0.2], [0.62, 0]], 14, pal.motor);
+    const [x0, x1] = xs(side, caseX[0], caseX[1]);
+    D.box(x0, x1, r - 0.17, r + 0.2, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);
+  }
+}
+
+/** A diesel-hydraulic unit's driven bogie: a final-drive gearbox on each axle, joined by a cardan shaft along the bogie. */
+function finalDrive(D: Soup, spec: BogieSpec, pal: Palette): void {
+  const r = spec.radius;
+  const w = spec.wheelbase / 2;
+  for (const az of [-w, w]) {
+    // the gearbox on the axle: a casing 0.6 m across and 0.44 m long, from 0.2 m under the axle line to 0.2 above it, round the axle's housing (ASSUMED sizes)
+    D.box(-0.3, 0.3, r - 0.2, r + 0.2, az - 0.22, az + 0.22, pal.gear);
+    lathe(D, axisX(-0.35, r, az), [[0, 0], [0, 0.15], [0.7, 0.15], [0.7, 0]], 12, pal.motor);
+  }
+  // the cardan shaft along the middle of the bogie, from the one gearbox to the other
+  tube(D, axisZ(0, r + 0.08, -(w - 0.22)), 0, 2 * (w - 0.22), 0.045, 8, pal.motor);
+}
+
+// --- the bogie ----------------------------------------------------------------------------------------------------------
+
+export type BogiePart = 'wheels' | 'axles' | 'brakes' | 'frame' | 'springs' | 'drive';
+
+/** The bogie's parts, each its own soup: the wheels with their hubs, the axles, the discs and callipers, the frames with their boxes and dampers, the springs, and the motors or final drives. */
+export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
+  const style = bogieStyle(spec);
+  const pal = PALETTES[style];
+  const parts: Record<BogiePart, Soup> = { wheels: new Soup(), axles: new Soup(), brakes: new Soup(), frame: new Soup(), springs: new Soup(), drive: new Soup() };
+  wheelsets(parts.wheels, spec, pal);
+  brakes(parts.brakes, spec, pal);
+  if (style === 'siemens') {
+    axles(parts.axles, spec, pal, spec.track / 2 + 0.05);
+    insideFrame(parts.frame, parts.springs, spec, pal);
+  } else {
+    axles(parts.axles, spec, pal, 0.96);
+    outsideFrame(parts.frame, parts.springs, spec, pal, style);
+  }
+  if (spec.motor && spec.diesel) finalDrive(parts.drive, spec, pal);
+  else if (spec.motor) tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
+  return parts;
 }
 
 export function bogieSoup(spec: BogieSpec): Soup {
-  const { radius: r, wheelbase: wb, track, motor } = spec;
   const soup = new Soup();
-  const steel = col(0x70757d);
-  const dark = col(0x2a2d32);
-  const motorC = col(0x3d4147);
-  const hub = col(0x9aa0a8);
-  const disc = col(0x555a61);
-  const spring = col(0x7a6a3a);
-  const rubber = col(0x1d1f23);
-  const frame = col(0x30343a);
-  const half = track / 2;
-  for (const az of [-wb / 2, wb / 2]) {
-    for (const sx of [-1, 1]) {
-      // 20 segments: a multiple of four puts a vertex at the bottom, so the tread touches y = 0 exactly. The tread and the flange are
-      // open tubes (the web and the flange close their ends); only the outer face of the web and the hub cap show.
-      cylinder(soup, 'x', [sx * half, r, az], r, WHEEL_WIDTH, 20, steel, false);
-      // the flange: a ring on the inner side of the tread, standing FLANGE_HEIGHT proud of it (so it dips that far below the rail head, into the gap)
-      cylinder(soup, 'x', [sx * (half - WHEEL_WIDTH / 2 - FLANGE_WIDTH / 2), r, az], r + FLANGE_HEIGHT, FLANGE_WIDTH, 20, steel);
-      // the web, dished a little on the outer face, and the hub cap
-      cylinder(soup, 'x', [sx * (half + WHEEL_WIDTH / 2 + 0.006), r, az], r - 0.05, 0.012, 16, dark);
-      cylinder(soup, 'x', [sx * (half + WHEEL_WIDTH / 2 + 0.02), r, az], 0.12, 0.03, 8, hub);
-      // outboard axle box, with the primary spring on it
-      soup.box(sx > 0 ? half + 0.09 : -half - 0.25, sx > 0 ? half + 0.25 : -half - 0.09, r - 0.1, r + 0.11, az - 0.11, az + 0.11, dark);
-      cylinder(soup, 'y', [sx * (half + 0.17), r + 0.2, az], 0.06, 0.2, 10, spring, false);
-    }
-    // the axle, and a brake disc each side of the middle
-    cylinder(soup, 'x', [0, r, az], 0.065, track, 10, dark, false);
-    for (const sx of [-1, 1]) cylinder(soup, 'x', [sx * 0.3, r, az], DISC_RADIUS, DISC_THICKNESS, 16, disc);
-  }
-  // side frames: a bar over each axle box and across, higher in the middle
-  const zEnd = wb / 2 + 0.12;
-  for (const sx of [-1, 1]) {
-    const x = sx * (half + 0.17);
-    soup.bar([r + 0.12, -zEnd], [r + 0.28, -0.7], 0.1, 0.1, frame, x);
-    soup.bar([r + 0.28, -0.7], [r + 0.3, 0.7], 0.1, 0.12, frame, x);
-    soup.bar([r + 0.3, 0.7], [r + 0.12, zEnd], 0.1, 0.1, frame, x);
-  }
-  // two transoms joining the side frames, and the bolster between them with the brake cylinders
-  for (const z of [-0.55, 0.55]) soup.box(-half - 0.22, half + 0.22, r + 0.2, r + 0.34, z - 0.09, z + 0.09, frame);
-  soup.box(-0.34, 0.34, r + 0.18, r + 0.36, -0.46, 0.46, dark);
-  for (const sx of [-1, 1]) cylinder(soup, 'z', [sx * 0.5, r + 0.3, 0.0], 0.07, 0.4, 8, motorC);
-  // air springs under the body
-  for (const sx of [-1, 1]) for (const z of [-0.45, 0.45]) {
-    const g = new THREE.CylinderGeometry(0.14, 0.15, 0.2, 8, 1, true);
-    soup.geometry(g, new THREE.Matrix4().makeTranslation(sx * 0.92, 0.82, z), rubber);
-    g.dispose();
-  }
-  if (motor && spec.diesel) {
-    // a diesel-hydraulic unit's driven bogie: a final-drive gearbox on each axle, joined by a cardan shaft along the bogie
-    for (const az of [-wb / 2, wb / 2]) {
-      soup.box(-0.3, 0.3, r - 0.2, r + 0.2, az - 0.22, az + 0.22, motorC);
-      cylinder(soup, 'x', [0, r, az], 0.15, 0.7, 12, dark);
-    }
-    cylinder(soup, 'z', [0, r + 0.08, 0], 0.045, wb - 0.44, 8, dark, false);
-  } else if (motor) {
-    // a traction motor across the bogie behind each axle, with its gear case on the axle
-    for (const az of [-wb / 2, wb / 2]) {
-      const dz = az < 0 ? 0.52 : -0.52;
-      cylinder(soup, 'x', [0, r + 0.08, az + dz], 0.2, 0.62, 14, motorC);
-      soup.box(0.2, 0.46, r - 0.15, r + 0.2, az - 0.2, az + 0.2, dark);
-    }
-  }
+  for (const part of Object.values(bogieParts(spec))) append(soup, part);
   return soup;
 }
 
 /**
- * The bogie seen from far off: eight-sided wheels, a side frame on each side and one transom, and nothing else (no
- * flanges, axles, discs, springs or motors). The wheels stand where the full bogie's do, so the swap does not move
- * the silhouette; about a tenth of the triangles.
+ * The bogie seen from far off: twelve-sided wheels, a side frame on each side and one transom, and nothing else (no
+ * flanges, axles, discs, springs or motors). The wheels stand where the full bogie's do and the frames fill the
+ * place of its beams, in their colours, so the swap does not move or recolour the silhouette; about a tenth of the triangles.
  */
-export function bogieFarSoup(spec: Pick<BogieSpec, 'radius' | 'wheelbase' | 'track'>): Soup {
+export function bogieFarSoup(spec: Pick<BogieSpec, 'radius' | 'wheelbase' | 'track' | 'diesel' | 'style'>): Soup {
   const { radius: r, wheelbase: wb, track } = spec;
+  const style = bogieStyle(spec);
+  const pal = PALETTES[style];
   const soup = new Soup();
   const half = track / 2;
-  const steel = col(0x70757d);
-  const frame = col(0x30343a);
-  for (const az of [-wb / 2, wb / 2]) {
-    for (const sx of [-1, 1]) cylinder(soup, 'x', [sx * half, r, az], r, WHEEL_WIDTH, 8, steel);
+  const w = wb / 2;
+  const n = FAR_WHEEL_SEGMENTS;
+  for (const az of [-w, w]) {
+    for (const sx of [-1, 1] as const) {
+      const ax = axisX(sx * half, r, az, sx);
+      lathe(soup, ax, [[-WHEEL_WIDTH / 2, 0], [-WHEEL_WIDTH / 2, r]], n, pal.inner);
+      lathe(soup, ax, [[-WHEEL_WIDTH / 2, r], [WHEEL_WIDTH / 2, r]], n, pal.tread);
+      lathe(soup, ax, [[WHEEL_WIDTH / 2, r], [WHEEL_WIDTH / 2, 0]], n, pal.web);
+    }
   }
-  const zEnd = wb / 2 + 0.12;
-  for (const sx of [-1, 1]) soup.box(sx > 0 ? half + 0.1 : -half - 0.25, sx > 0 ? half + 0.25 : -half - 0.1, r + 0.08, r + 0.34, -zEnd, zEnd, frame);
-  soup.box(-half - 0.22, half + 0.22, r + 0.2, r + 0.36, -0.6, 0.6, frame);
+  if (style === 'siemens') {
+    for (const sx of [-1, 1]) {
+      const [x0, x1] = xs(sx, 0.46, 0.58);
+      soup.box(x0, x1, r - 0.16, r + 0.24, -(w + 0.12), w + 0.12, pal.frame);
+    }
+    soup.box(-0.5, 0.5, r + 0.1, r + 0.24, -0.08, 0.08, pal.frame);
+    return soup;
+  }
+  for (const sx of [-1, 1]) {
+    const [x0, x1] = xs(sx, 0.975, 1.065);
+    soup.box(x0, x1, r + 0.12, r + 0.5, -(w + 0.33), w + 0.33, pal.frame);
+  }
+  soup.box(-0.98, 0.98, r + 0.2, r + 0.4, -0.08, 0.08, pal.box);
   return soup;
 }
+
 
 /** Beyond this distance from the camera (metres) a bogie is drawn bare. `globalThis.__kxBogieLodDistance` overrides it at build time (Infinity: never), for measuring the saving on one build. */
 export const BOGIE_LOD_DISTANCE = 150;
@@ -159,13 +595,14 @@ export function buildBogie(spec: BogieSpec): THREE.Group {
       group.add(w);
     }
   }
-  const key = `${radius}/${wb}/${track}/${spec.motor}/${spec.diesel === true}`;
+  const style = bogieStyle(spec);
+  const key = `${radius}/${wb}/${track}/${spec.motor}/${spec.diesel === true}/${style}`;
   let geometry = bogieCache.get(key);
   if (!geometry) {
     geometry = bogieSoup(spec).build();
     bogieCache.set(key, geometry);
   }
-  const farKey = `${radius}/${wb}/${track}`;
+  const farKey = `${radius}/${wb}/${track}/${style}`;
   let farGeometry = farCache.get(farKey);
   if (!farGeometry) {
     farGeometry = bogieFarSoup(spec).build();

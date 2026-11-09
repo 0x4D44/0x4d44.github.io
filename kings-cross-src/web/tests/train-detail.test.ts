@@ -1020,12 +1020,23 @@ test('bogies: wheels have flanges and the bogie has brake discs and springs, mot
   // place, inboard of the tread, where nothing else of the bogie rises as high (the air springs stand outboard and higher).
   const flangeBand = trailer.pos.filter((_, i) => i % 3 === 1 && Math.abs(trailer.pos[i - 1] as number) > spec.track / 2 - 0.1 && Math.abs(trailer.pos[i - 1] as number) < spec.track / 2 - 0.017);
   near(Math.max(...flangeBand), 2 * spec.radius + FLANGE_HEIGHT, 1e-6, 'flange top');
-  // air springs under the body: one in each corner of the bogie, outboard of the wheels and standing higher than any wheel reaches
-  const springCorners = new Set<string>();
+  // air springs under the body: outboard of the wheels and standing higher than any wheel reaches
+  // CHANGED (the bogie rebuild): the old bogie drew four air springs, one in each corner, each higher than the rest of the bogie. The photographs
+  // (lner-gwr800-bogie-detail-2017.jpg, tl700_03_gatwick_bogie_28898326470.jpg) show one air spring over the middle of each side beam, and the new
+  // side beam is itself taller than the wheel (it carries the springs), so the air springs are found as the very top of the bogie: two, one each side,
+  // outboard of the wheels and centred on the middle of the bogie.
+  const topY = Math.max(...ys);
+  assert.ok(topY > 2 * spec.radius + FLANGE_HEIGHT + 0.012, `the air springs stand ${topY} m high, no higher than a wheel`);
+  const springSides = new Set<number>();
+  let springReach = 0;
   for (let i = 0; i < trailer.pos.length; i += 3) {
-    if ((trailer.pos[i + 1] as number) > 2 * spec.radius + FLANGE_HEIGHT + 0.012 && Math.abs(trailer.pos[i] as number) > spec.track / 2 + 0.05) springCorners.add(`${Math.sign(trailer.pos[i] as number)},${Math.sign(trailer.pos[i + 2] as number)}`);
+    if ((trailer.pos[i + 1] as number) < topY - 0.01) continue;
+    assert.ok(Math.abs(trailer.pos[i] as number) > spec.track / 2 + 0.05, 'the top of the bogie is outboard of the wheels');
+    springSides.add(Math.sign(trailer.pos[i] as number));
+    springReach = Math.max(springReach, Math.abs(trailer.pos[i + 2] as number));
   }
-  assert.equal(springCorners.size, 4, `air springs in ${springCorners.size} corners of the bogie`);
+  assert.deepEqual([...springSides].sort(), [-1, 1], 'an air spring on each side of the bogie');
+  assert.ok(springReach < 0.2, `the air springs are ${springReach} m from the middle of the bogie`);
   // brake discs: two a side of the middle on each axle, between the wheels, smaller than the wheel but not a hub (ASSUMED 0.29 m radius:
   // an axle-mounted disc is about 0.6 m across on a UK EMU; not looked up). Measure the vertices lying in the disc's plane, from the axles.
   assert.ok(DISC_RADIUS >= 0.25 && DISC_RADIUS <= 0.35, `brake disc radius ${DISC_RADIUS}`);
@@ -1102,9 +1113,11 @@ test('bogies: every wheel is the size and spacing its family and bogie type give
 
 test('bogies: a driven bogie of the diesel Class 180 has a final-drive gearbox on each axle and a cardan shaft between them, not traction motors, on the same wheels', () => {
   const spec = { radius: 0.42, wheelbase: 2.7, track: FIGURES.gauge.value };
+  // CHANGED (the bogie rebuild): a bogie is drawn in its maker's style and a diesel bogie defaults to the Alstom's, so the electric and trailer bogies it is
+  // compared with are given that style too: the three differ in their drive and in nothing else.
   const diesel = bogieSoup({ ...spec, motor: true, diesel: true });
-  const electric = bogieSoup({ ...spec, motor: true });
-  const trailer = bogieSoup({ ...spec, motor: false });
+  const electric = bogieSoup({ ...spec, motor: true, style: 'alstom' });
+  const trailer = bogieSoup({ ...spec, motor: false, style: 'alstom' });
   const count = (s: Soup): number => s.pos.length / 9;
   assert.ok(count(diesel) > count(trailer) + 40 && count(diesel) < 2600, `a diesel driven bogie: ${count(diesel)} triangles against a trailer's ${count(trailer)}`);
   // a trailer bogie is a trailer bogie, whatever the unit drives it with
@@ -1130,7 +1143,8 @@ test('bogies: a driven bogie of the diesel Class 180 has a final-drive gearbox o
   }
   // the unit's own cache: a diesel bogie is its own geometry, a trailer's does not depend on it, and the far one is the same bare bogie
   const near1 = buildBogie({ ...spec, motor: true, diesel: true });
-  const near2 = buildBogie({ ...spec, motor: true, diesel: false });
+  // CHANGED (the bogie rebuild): the same style, or the far bogies would differ by their colours
+  const near2 = buildBogie({ ...spec, motor: true, diesel: false, style: 'alstom' });
   const meshes = (g: THREE.Object3D, lod: string): THREE.Mesh => all(g, 'bogie-mesh').find((m) => m.userData.lod === lod) as THREE.Mesh;
   assert.notEqual(meshes(near1, 'near').geometry, meshes(near2, 'near').geometry);
   assert.equal(meshes(near1, 'far').geometry, meshes(near2, 'far').geometry);
