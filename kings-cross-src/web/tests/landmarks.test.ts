@@ -1464,10 +1464,29 @@ test('Midland Grand [hist-c]: each face of the clock tower\'s belfry has two gro
   const slab = triangles(parts.stone as Batch).filter((tr) => tr.p.every((v) => Math.abs(v[1] - st.shaft) < 1e-9 || Math.abs(v[1] - st.shaft - 0.5) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9));
   assert.equal(slab.length, 8, 'a front face to each of the four sides (two triangles)');
   close(Math.max(...slab.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))), h + 0.45, 1e-6, 'the balcony stands 0.45 m out');
-  // and a dark balustrade 0.5 m tall on it, a hair inside its edge
-  const rail = triangles(parts.pane as Batch).filter((tr) => tr.p.every((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9 || Math.abs(v[1] - st.shaft - 1.0) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 0.5) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - 1.0) < 1e-9));
-  assert.equal(rail.length, 8, 'a front face of two triangles on each of the four sides');
-  close(Math.max(...rail.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))), h + 0.4, 1e-6, 'the balustrade stands 0.4 m out');
+  // and on it a stone balustrade 0.5 m tall, open (hist-c: rails and balusters, the dark of the belfry behind them), a hair inside the slab's edge
+  const between = (ts: Tri[], lo: number, hi: number): Tri[] => ts.filter((tr) => tr.p.every((v) => Math.abs(v[1] - st.shaft - lo) < 1e-9 || Math.abs(v[1] - st.shaft - hi) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - lo) < 1e-9) && tr.p.some((v) => Math.abs(v[1] - st.shaft - hi) < 1e-9));
+  const reach = (ts: Tri[]): number => Math.max(...ts.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)))));
+  const dark = between(triangles(parts.pane as Batch), 0.5, 0.94);
+  assert.equal(dark.length, 8, 'the dark of the belfry behind the balusters: a front face of two triangles on each of the four sides, short of the head rail so that no top face of it lies on the rail\'s');
+  close(reach(dark), h + 0.3, 1e-6, 'standing 0.3 m out, behind the balustrade');
+  const rock = triangles(parts.stone as Batch);
+  for (const [lo, name] of [[0.5, 'foot'], [0.94, 'head']] as const) {
+    const rail = between(rock, lo, lo + 0.06);
+    assert.equal(rail.length, 8, `the ${name} rail: a front face of two triangles on each of the four sides`);
+    close(reach(rail), h + 0.4, 1e-6, `the ${name} rail stands 0.4 m out`);
+  }
+  // between the rails a baluster 0.08 m wide every 0.32 m or so, evenly spaced, the first and last half a pitch from the corners
+  const n = Math.floor(t.side / 0.32);
+  const posts = between(rock, 0.56, 0.94);
+  assert.equal(posts.length, 4 * n * 2, `${n} balusters of two triangles on each of the four sides`);
+  close(reach(posts), h + 0.4, 1e-6, 'the balusters stand 0.4 m out too');
+  const front = posts.filter((tr) => tr.p.every((v) => Math.abs(inTower(t, v).o - h - 0.4) < 1e-6));
+  const across = (tr: Tri): [number, number] => [Math.min(...tr.p.map((v) => inTower(t, v).a)), Math.max(...tr.p.map((v) => inTower(t, v).a))];
+  const centres = [...new Set(front.map((tr) => ((across(tr)[0] + across(tr)[1]) / 2).toFixed(5)))].map(Number).sort((a, b) => a - b);
+  assert.equal(centres.length, n, 'each at a place of its own');
+  centres.forEach((c, k) => close(c, ((k + 0.5) * t.side) / n - h, 1e-4, `baluster ${k} is evenly placed`));
+  for (const tr of front) close(across(tr)[1] - across(tr)[0], 0.08, 1e-6, 'a baluster is 0.08 m wide');
   const groupBase = st.shaft + 0.9;
   const groupHeight = st.belfry - st.shaft - 2.6;
   const lancetTop = groupBase + groupHeight - 0.9; // the lancets end under the oculus of their group

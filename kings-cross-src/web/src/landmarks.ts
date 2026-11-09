@@ -283,6 +283,24 @@ export function addBand(m: Batch, segs: readonly Seg[], y: number, h: number, ou
   });
 }
 
+/**
+ * A balustrade along `segs` (hist-b: the first floor's cast-iron balcony; hist-c: the belfry's stone one): a rail 0.06 m tall at the foot `y` and at the head, `h` above it, `out` m from the wall, and between
+ * them a baluster 0.08 m wide every 0.32 m or so, a flat face looking out (round 5's solid dark band read as a wall). Sizes ASSUMED.
+ */
+function addBalustrade(m: Batch, segs: readonly Seg[], y: number, h: number, out: number): void {
+  for (const r of [y, y + h - 0.06]) addBand(m, segs, r, 0.06, out);
+  for (const sg of segs) {
+    const [dx, dz] = [sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]];
+    const l = Math.hypot(dx, dz);
+    const n = Math.floor(l / 0.32);
+    const q = (u: number, v: number): V3 => [sg.a[0] + (dx * u) / l + sg.normal[0] * out, v, sg.a[1] + (dz * u) / l + sg.normal[1] * out];
+    for (let k = 0; k < n; k++) {
+      const [u0, u1] = [((k + 0.5) * l) / n - 0.04, ((k + 0.5) * l) / n + 0.04];
+      m.quadUV(q(u0, y + 0.06), q(u1, y + 0.06), q(u1, y + h - 0.06), q(u0, y + h - 0.06), [[u0, 0], [u1, 0], [u1, h], [u0, h]], [sg.normal[0], 0, sg.normal[1]]);
+    }
+  }
+}
+
 export type Head = 'flat' | 'round' | 'pointed';
 
 /** The outline of a window, as convex (x across, y up) points from the bottom-left corner; `w` wide, `h` tall. */
@@ -849,8 +867,9 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
   for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.2);
-  addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out, with a dark balustrade 0.5 m tall on it (ASSUMED)
-  addBand(part(parts, 'pane'), ring(h), sT + 0.5, 0.5, 0.4);
+  addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out, with a stone balustrade 0.5 m tall on it, the dark of the belfry between its balusters (ASSUMED)
+  addBand(part(parts, 'pane'), ring(h), sT + 0.5, 0.44, 0.3);
+  addBalustrade(stone, ring(h), sT + 0.5, 0.5, 0.4);
   // windows: the facade's rows in pairs while the tower is part of it, then single lancets; faces turned toward the hotel are bare below the eaves
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
@@ -960,16 +979,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.14 : 0.4));
   // hist-b: a cast-iron balcony along the first floor's balcony, a hair inside its edge: a rail 0.06 m tall at the foot and at the head, 0.7 m apart, and a baluster 0.08 m wide
   // every 0.32 m between them (round 5's solid dark band read as a wall); sizes ASSUMED
-  const iron = part(parts, 'pane');
-  const foot = ROWS[0][0] - 0.2;
-  for (const y of [foot, foot + 0.64]) addBand(iron, segs, y, 0.06, 0.38);
-  for (const sg of segs) {
-    const [dx, dz] = [sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]];
-    const l = Math.hypot(dx, dz);
-    const n = Math.floor(l / 0.32);
-    const q = (u: number, y: number): V3 => [sg.a[0] + (dx * u) / l + sg.normal[0] * 0.38, y, sg.a[1] + (dz * u) / l + sg.normal[1] * 0.38];
-    for (let k = 0; k < n; k++) iron.quadUV(q(((k + 0.5) * l) / n - 0.04, foot + 0.06), q(((k + 0.5) * l) / n + 0.04, foot + 0.06), q(((k + 0.5) * l) / n + 0.04, foot + 0.64), q(((k + 0.5) * l) / n - 0.04, foot + 0.64), undefined, [sg.normal[0], 0, sg.normal[1]]);
-  }
+  addBalustrade(part(parts, 'pane'), segs, ROWS[0][0] - 0.2, 0.7, 0.38);
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
   const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {
