@@ -135,3 +135,25 @@ test('struts: two white struts to each pane of the wall, in a V from its rail to
   }
   assert.ok(rails >= 2 * panes - 6, `${rails} struts checked on ${panes} panes`);
 });
+
+// Round 7 fix (C1): the trees and the struts are plain white paint, the same from every standpoint (R-a: white trunks). The funnel's legs are shaded round by a colour baked on each strip (`tubeShade`:
+// dark on the side that looks along +x), which means something only in the funnel's own mesh, turned into the shed's frame. The supports are built in the world's, where the same shade drew all three
+// trees at the hotel junction near-black and one face of a tree at the gateline dark (the scorer's regression of round 7). So no strip of the supports is shaded, whichever way it faces, and the trees do
+// face every way round (a count on each side, so that the test cannot pass on a mesh that shows one side only).
+test('tree columns and struts: plain white on every strip, whichever way it faces, so that no tree goes dark from any standpoint', () => {
+  const colour = supports.geometry.getAttribute('color'), normal = supports.geometry.getAttribute('normal');
+  assert.ok(colour && normal && colour.count === normal.count && colour.count > 1000, 'a colour and a normal to each vertex of the supports');
+  const looks = { '+x': 0, '-x': 0, '+z': 0, '-z': 0 };
+  let shaded = 0, darkest = 1;
+  for (let i = 0; i < colour.count; i++) {
+    const least = Math.min(colour.getX(i), colour.getY(i), colour.getZ(i));
+    darkest = Math.min(darkest, least);
+    if (least < 0.999) shaded++;
+    if (normal.getX(i) > 0.7) looks['+x']++;
+    if (normal.getX(i) < -0.7) looks['-x']++;
+    if (normal.getZ(i) > 0.7) looks['+z']++;
+    if (normal.getZ(i) < -0.7) looks['-z']++;
+  }
+  for (const [side, count] of Object.entries(looks)) assert.ok(count > 200, `vertices of the supports whose normal looks along ${side}: ${count}`);
+  assert.equal(shaded, 0, `${shaded} of ${colour.count} vertices of the supports carry a shade, the darkest ${darkest.toFixed(2)} of the paint's white`);
+});

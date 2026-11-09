@@ -38,6 +38,11 @@ mutations = [
     ('struts end a metre under the roof edge', 'roundMember(struts, foot, end, STRUT_DIAMETER, true);', 'roundMember(struts, foot, [end[0], end[1] - 1, end[2]], STRUT_DIAMETER, true);'),
     ('struts drawn as closed tubes, a face looking up into the brim', 'roundMember(struts, foot, end, STRUT_DIAMETER, true);', 'roundMember(struts, foot, end, STRUT_DIAMETER);'),
     ('struts start from the rail at the wrong height', '(MULLION.transom * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];', '(0.3 * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];'),
+    # round 7 fix (C1): the trees and the struts are plain white paint, the same from every standpoint; only the funnel's legs are shaded
+    ('the trees shaded as the funnel\'s legs are, round 7\'s defect: near-black from the hotel junction', 's = shade ? shade(a.n) : 1;', 's = open ? 1 : tubeShade(a.n);'),
+    ('every tube shaded, the struts and the roof members too', 's = shade ? shade(a.n) : 1;', 's = tubeShade(a.n);'),
+    ('the trees shaded by the world\'s z, a lit side and a dark one', 's = shade ? shade(a.n) : 1;', 's = shade ? shade(a.n) : (1 - a.n[2]) / 2;'),
+    ('the supports a shade under white', 's = shade ? shade(a.n) : 1;', 's = shade ? shade(a.n) : 0.95;'),
 ]
 def run(label):
     try:

@@ -184,16 +184,18 @@ export function tubeRings(rings: readonly Ring[], clamp?: readonly [number, numb
 export interface Ring { p: V3; t: V3; r: number; x?: V3 }
 
 /**
- * How much of its white a full round member (a leg of the funnel, a tree column) shows where its surface looks along n (round 7, C3): lit from the west, where the glass wall is, so the one
- * flat fill the grade gives a room leaves it round, full on the side to the viewer from the concourse and a third as bright at its edge, dark on the side to the Range (R-a), not a flat ribbon.
+ * How much of its white a leg of the funnel shows where its surface looks along n (round 7, C3): lit from the west, where the glass wall is, so the one flat fill the grade gives a room
+ * leaves it round, full on the side to the viewer from the concourse and a third as bright at its edge, dark on the side to the Range (R-a), not a flat ribbon. Only the funnel's legs
+ * take it, for x is the shed's axis only in their mesh, which is turned into the shed's frame: the tree columns are built in the world's frame, where x means nothing to the Range, and
+ * shaded by it three of them went black from the hotel junction (round 7 fix, C1).
  */
 export const tubeShade = (n: V3): number => ((1 - n[0]) / 2) ** 1.5;
 
-function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number], open = false): void {
+function tube(batch: Batch, rings: readonly Ring[], clamp?: readonly [number, number], open = false, shade?: (n: V3) => number): void {
   const sides = open ? 4 : TUBE_SIDES, verts = tubeRings(rings, clamp, sides);
   for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < sides; j++) {
     if (open && Math.cos(((j + 0.5) * 2 * Math.PI) / sides) > -0.1) continue; // an open tube leaves out the faces that look up at the cladding, which no one sees
-    const a = verts[k]![j]!, b = verts[k]![(j + 1) % sides]!, c = verts[k + 1]![(j + 1) % sides]!, d = verts[k + 1]![j]!, s = open ? 1 : tubeShade(a.n);
+    const a = verts[k]![j]!, b = verts[k]![(j + 1) % sides]!, c = verts[k + 1]![(j + 1) % sides]!, d = verts[k + 1]![j]!, s = shade ? shade(a.n) : 1;
     batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n], color: [s, s, s] });
   }
 }
@@ -427,7 +429,7 @@ export function funnelRoof(grid: Diagrid, kept: [number, number, number][], cent
 
 function columnGeometry(head: V3[], roof: V3[][]): THREE.BufferGeometry {
   const batch = new Batch({ colored: true });
-  for (const rings of columnStrands(head, roof)) tube(batch, rings, [0, 99]);
+  for (const rings of columnStrands(head, roof)) tube(batch, rings, [0, 99], false, tubeShade);
   return batch.build();
 }
 
@@ -497,7 +499,7 @@ function roofMaterial(): RoofMaterials {
     skylight: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, toneMapped: false, name: 'concourse-skylight' }),
     // Dark and glassy from above (R-c).
     skylightTop: new THREE.MeshPhongMaterial({ color: 0x6f8aa5, emissive: 0x16202b, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.66, side: THREE.FrontSide, depthWrite: false, name: 'concourse-skylight-top' }),
-    // White paint, lit as the room is and shaded by `tubeShade` (round 7, C1, C3: with the emissive it once carried, the grade's flat fill and tone curve drew every member the same near-white).
+    // White paint, lit as the room is, and the funnel's legs shaded round by `tubeShade` in their vertex colours (round 7, C1, C3: with the emissive it once carried, the grade's flat fill and tone curve drew every member the same near-white).
     member: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, vertexColors: true, name: 'concourse-member' }),
     // R-c: dark reflective glass over shopfront glass, a navy band between.
     wallGlass: new THREE.MeshPhongMaterial({ map: wall, color: wall ? 0xffffff : 0x4f677a, specular: 0xdfe9f2, shininess: 110, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall' }),

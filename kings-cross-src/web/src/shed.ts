@@ -72,7 +72,8 @@ export const VALLEY_HALF = 0.25;
  * Extending three storeys along this entire procedural range and treating the shed/Range walls
  * as coincident are ASSUMED simplifications, not a dimensioned wall survey. The former LB09
  * section 2.3 attribution was not verified (see the corrected Camden references in buildShed).
- * Depth, storey height and bay width are also ASSUMED. Tests pin v0 and v1 to the OSM numbers.
+ * Depth, storey height and bay width are also ASSUMED, as is the size of a flank window (1.2 m x 2.4 m, scaled from the brick centre's top-storey sash: see
+ * buildWesternRange). Tests pin v0 and v1 to the OSM numbers.
  * `centre` is the funnel's v (the concourse's centre in this frame; tested to agree) and `block` how far from it the brick centre of the face runs
  * (R-a, R-ab, R-b: the funnel stands before a brick block of about 30 m, with dressed windows and tall arched openings, and glazed curtain
  * walls either side, which concourse.ts draws): the bays whose centres lie within it. ASSUMED, scaled off the photographs.
@@ -709,7 +710,8 @@ export function buildTower(x: number): THREE.Group {
  * wall with a stone plinth, string courses and a pitched slate roof, and a southern ground-floor
  * gateline/public frontage. Its concourse face follows R-a, R-ab and R-b: a brick centre
  * (WESTERN_RANGE.block) of dressed sash windows over a row of tall round-headed openings, a stone
- * corner at each end, and either side only the row of openings, the curtain wall above it being
+ * corner at each end, and either side the row of openings and a small window in the top storey of
+ * each bay (ASSUMED size, where it is drawn), the curtain wall above the openings being
  * concourse.ts's. See WESTERN_RANGE for what is OSM and what is ASSUMED. Its east face stands 0.01 m
  * inside the shed's west wall, so the shed wall covers overlapping faces below the aisle roof
  * except at the five gateline passages.
@@ -749,7 +751,9 @@ export function buildWesternRange(): THREE.Group {
   brick.poly([[x0, top, -v0], [x1, top, -v0], [xm, top + roofRise, -v0]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
   brick.poly([[x1, top, -v1], [x0, top, -v1], [xm, top + roofRise, -v1]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
   // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay. On the concourse face, beside the brick centre (whose windows are below), the top storey of each flank
-  // bay shows through the curtain wall's clear panes with a window of its own, a sash a little smaller than the centre's (round 7, C4: R-a, R-ab show fenestration in the flanks, where there was blank brick).
+  // bay shows through the curtain wall's clear panes with a window of its own (round 7, C4: R-a, R-ab show fenestration in the flanks, where there was blank brick). The size, 1.2 m x 2.4 m, is ASSUMED:
+  // no reference measures a flank window, so it is scaled from the brick centre's top-storey sash below (1.9 m x 2.9 m, read off R-ab, R-a and R-b), taken in to about two thirds of its width and four
+  // fifths of its height so that it reads as a plainer, smaller window than the centre's, in the middle of its bay on the same foot.
   for (const v of westernBays()) {
     windowQuad(win, [x1 + 0.02, 9.1, -v], '+x');
     if (v < b0 || v > b1) windowQuad(win, [x0 - 0.02, 8.95, -v], '-x', 1.2, 2.4);

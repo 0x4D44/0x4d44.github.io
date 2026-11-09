@@ -72,12 +72,13 @@ mutations = [
     ('the roof members taken from the ring inside the head', 'grid.nodes[o]!.ring > n.ring ? [o] : []', 'grid.nodes[o]!.ring < n.ring ? [o] : []'),
     ('only the first roof member of a node is kept', 'out.length ? out.map(o =>', 'out.length ? out.slice(0, 1).map(o =>'),
     # round 7 (C3): the legs are shaded round by the colour baked on each strip, from the normal at its first corner; the roof's open members stay white
-    ('the legs not shaded, flat white as round 6\'s', ', s = open ? 1 : tubeShade(a.n);', ', s = 1;'),
+    ('the legs not shaded, flat white as round 6\'s', ', s = shade ? shade(a.n) : 1;', ', s = 1;'),
+    ('the legs not given the shade at the funnel\'s call', 'tube(batch, rings, [0, 99], false, tubeShade)', 'tube(batch, rings, [0, 99])'),
     ('the legs shaded the wrong way, dark toward the concourse', 'export const tubeShade = (n: V3): number => ((1 - n[0]) / 2) ** 1.5;', 'export const tubeShade = (n: V3): number => ((1 + n[0]) / 2) ** 1.5;'),
     ('the legs shaded hardly at all', 'export const tubeShade = (n: V3): number => ((1 - n[0]) / 2) ** 1.5;', 'export const tubeShade = (n: V3): number => 0.8 - 0.2 * n[0];'),
     ('the legs shaded by their height, not their facing', 'export const tubeShade = (n: V3): number => ((1 - n[0]) / 2) ** 1.5;', 'export const tubeShade = (n: V3): number => ((1 - n[1]) / 2) ** 1.5;'),
-    ('the legs shaded from the other side of the strip', ', s = open ? 1 : tubeShade(a.n);', ', s = open ? 1 : tubeShade(c.n);'),
-    ('the roof members shaded too', ', s = open ? 1 : tubeShade(a.n);', ', s = tubeShade(a.n);'),
+    ('the legs shaded from the other side of the strip', ', s = shade ? shade(a.n) : 1;', ', s = shade ? shade(c.n) : 1;'),
+    ('the roof members shaded too', ', s = shade ? shade(a.n) : 1;', ', s = tubeShade(a.n);'),
     ('the legs carry no colour at all', 'const batch = new Batch({ colored: true });', 'const batch = new Batch();'),
 ]
 
