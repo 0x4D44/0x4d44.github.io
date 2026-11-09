@@ -127,7 +127,8 @@ test('W1 roof stops at North Bridge and Waverley Bridge, keeps the published 34,
   for(let i=0;i<idx.count;i+=3){
    const v=[0,1,2].map(k=>[pos.getX(idx.getX(i+k)),pos.getY(idx.getX(i+k)),pos.getZ(idx.getX(i+k))]),c:Pt=[(v[0][0]+v[1][0]+v[2][0])/3,(v[0][2]+v[1][2]+v[2][2])/3];
    if(c[0]<-90||c[0]>320)continue;
-   assert.ok(!bridges.some(b=>inRing(c,b)),`${name} face at ${c} lies inside a bridge outline`);
+   // Every corner, not just the centre: a face that straddles a bridge edge has a corner more than a centimetre inside it.
+   for(const p of v){const q:Pt=[p[0],p[2]];assert.ok(!bridges.some(b=>inRing(q,b)&&b.every((a,j)=>segDist(q,[a,b[(j+1)%b.length]])>.01)),`${name} corner at ${q} lies inside a bridge outline`);}
    if(name==='waverley-mapped-roofs'&&inRing(c,roof.outer)&&v.every(p=>p[1]>=WAVERLEY_ROOF_PROFILE.gutter-1e-6))area+=Math.abs((v[1][0]-v[0][0])*(v[2][2]-v[0][2])-(v[1][2]-v[0][2])*(v[2][0]-v[0][0]))/2;
   }
  }

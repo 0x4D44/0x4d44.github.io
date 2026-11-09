@@ -14,14 +14,14 @@ import {centralBlockBatches,WAVERLEY_CENTRAL_BLOCK_ID} from './waverley-station-
 
 /** The mapped Waverley station roof (OSM relation/240040): drawn as the ridge-and-furrow shed, and flattened under by waverley-scene.ts. */
 export const WAVERLEY_STATION_ROOF_ID='relation/240040';
-/** Mapped city blocks W1 draws itself (e.g. the central block), so waverley-scene.ts leaves them out of the city loop, as it does for
- *  WAVERLEY_FRONTAGE_OMIT_IDS and WAVERLEY_CITY_OMIT_IDS. Empty until W1 draws a replacement. */
 /** The flat 8 m slab OSM maps over Waverley Steps: not drawn here; the steps and their cover are W2's (waverley-frontage.ts). */
 export const WAVERLEY_STEPS_ROOF_ID='way/577519823';
 /** The bridges that cross over the station roof, North Bridge (way/380552925) and Waverley Bridge (way/377738788), as convex outlines:
  * the roof stops at them (R-wv2-c2: the roof meets North Bridge's flank; R-wv1-a3: the roof ends east of Waverley Bridge). The rings are
  * W2's OSM data (data/waverley-frontage.json), read only; each is all but straight-sided, so its hull is its outline. */
 export const WAVERLEY_ROOF_CUTOUTS:readonly Pt[][]=frontage.bridges.map(b=>convexHull(b.ring.map(p=>[p[0],p[1]] as Pt)));
+/** Mapped city blocks W1 draws itself, so waverley-scene.ts leaves them out of the city loop, as it does for WAVERLEY_FRONTAGE_OMIT_IDS
+ *  and WAVERLEY_CITY_OMIT_IDS: the central block (waverley-station-block.ts). */
 export const WAVERLEY_STATION_OMIT_IDS:readonly string[]=[WAVERLEY_CENTRAL_BLOCK_ID];
 export interface WaverleyStation {
  platforms:THREE.Group;

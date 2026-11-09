@@ -105,11 +105,11 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
   }
  }
  const lo=Math.min(...rings[0].map(p=>p[0])),hi=Math.max(...rings[0].map(p=>p[0]));
- // Ridge and gutter runners terminate at the footprint/hole, rather than bridging
+ // Ridge and gutter runners terminate 0.3 m inside the footprint/hole/bridge edge (so a runner's corner never pokes past a slanting edge), rather than bridging
  // the central building. Fine cassette bars remain in the existing KX texture.
  for(let k=Math.ceil((lo-profile.phase)/half);profile.phase+k*half<hi;k++){
   const x=profile.phase+k*half;
-  for(const [z0,z1]of footprintRuns(outer,[...holes,...cutouts],x))if(z1-z0>.16)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.08]);
+  for(const [z0,z1]of footprintRuns(outer,[...holes,...cutouts],x))if(z1-z0>.8)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.6]);
  }
  return {glass,ribs,solid};
 }

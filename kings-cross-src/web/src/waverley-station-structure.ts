@@ -27,6 +27,9 @@ import {footprintRuns,roofHeight,WAVERLEY_ROOF_PROFILE} from './waverley-roof.ts
 export const WAVERLEY_STRUCTURE={
  /** Gutter girders under each furrow: top 0.05 m under the ASSUMED 8 m gutter, 1.0 m deep (ASSUMED from R-wv1-b, where a girder is about as deep as a pedestal is tall). */
  gutterGirderTop:7.95,gutterGirderDepth:1.0,
+ /** A gutter girder stops this far short of the roof's edge, a hole or a bridge (m): its 0.3 m chord, square to a bridge's slanting flank, would
+  *  otherwise poke under the deck (North Bridge crosses the furrows at about 16 degrees). ASSUMED. */
+ gutterEnd:1.0,
  /** Platform girders, column to column: top 0.23 m under the gutter girders' so no chord is coplanar with another, 0.9 m deep (ASSUMED, R-wv1-b). */
  platformGirderTop:7.72,platformGirderDepth:.9,
  /** Chord 0.3 m wide x 0.18 m deep; lattice flats 0.12 x 0.08 m (ASSUMED, R-wv1-b3). */
@@ -104,7 +107,7 @@ export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,
  if(!roof)return plan;
  const outer=cleanRing(roof.outer),xs=outer.map(p=>p[0]);plan.holes=roof.holes.map(cleanRing);
  for(let k=Math.ceil((Math.min(...xs)-P.phase)/P.pitch);P.phase+k*P.pitch<Math.max(...xs);k++){
-  const x=P.phase+k*P.pitch;for(const [z0,z1]of footprintRuns(roof.outer,[...roof.holes,...cutouts],x))if(z1-z0>2)plan.gutters.push([x,z0+.3,z1-.3]);
+  const x=P.phase+k*P.pitch;for(const [z0,z1]of footprintRuns(roof.outer,[...roof.holes,...cutouts],x))if(z1-z0>2*S.gutterEnd)plan.gutters.push([x,z0+S.gutterEnd,z1-S.gutterEnd]);
  }
  for(const f of frames){
   // Where this platform's middle line crosses a furrow line: sample the middle every 0.5 m along the platform's axis.
@@ -202,7 +205,7 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
   const a=h[i],b=h[(i+1)%h.length],len=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(len/S.valancePiece));
   for(let k=0;k<n;k++){
    const p=(t:number):Pt=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t],p0=p(k/n),p1=p(Math.min(1,(k+1)/n)),y0=S.valanceBottom;
-   if(plan.cutouts.some(c=>inRing(p((k+.5)/n),c)))continue;
+   if(plan.cutouts.some(c=>[p0,p1,p((k+.5)/n)].some(q=>inRing(q,c))))continue;
    const quad:V3[]=[[p0[0],y0,p0[1]],[p1[0],y0,p1[1]],[p1[0],roofHeight(p1[0]),p1[1]],[p0[0],roofHeight(p0[0]),p0[1]]];
    // Both faces: it is seen from inside the hole and from under the roof.
    ironwork.poly(quad,undefined,{color:C.valance});ironwork.poly([...quad].reverse(),undefined,{color:C.valance});
