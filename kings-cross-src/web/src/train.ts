@@ -402,10 +402,11 @@ interface BodySpec {
   /** half-width of the underframe slab */
   underframe: number;
   /**
-   * the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), whether they carry louvres, and whether
-   * they are a row of separate boxes with gaps between them (the Electrostar's underfloor) rather than one panel to a stretch
+   * the side skirts' finish: how far the covers are paled from the livery's skirt colour (0: as the livery gives it, 1: SKIRT_PALE), whether they carry louvres, whether they are a
+   * row of separate boxes with gaps between them (the Electrostar's underfloor) rather than one panel to a stretch, and whether they show a notched hem (the
+   * Azuma's: `SKIRT_HEM`)
    */
-  skirt: { light: number; vents: boolean; boxes?: SkirtBoxes };
+  skirt: { light: number; vents: boolean; boxes?: SkirtBoxes; hem?: boolean };
   /** what a pantograph car's roof carries beside the pantograph (insulators, a cable run): the style, and the height over the roof's crown nothing of it passes (null: none) */
   roofKit: { style: RoofKitStyle; height: number } | null;
   /** the cab front's lamps, frame, coupler and warning panel */
@@ -520,7 +521,7 @@ const AT300: BodySpec = {
   pantographTop: FIGURES.pantographFoldedHeight.value,
   underframe: 0.95,
   // light grey equipment covers with groups of louvres (lner-801-214-2025, lner-800-doncaster-2026, hull-802-paragon-2025); how pale is read off them, not published
-  skirt: { light: 0.6, vents: true },
+  skirt: { light: 0.9, vents: true, hem: true },
   // the Azuma's front: a slanted lamp cluster in each cheek (see ClusterSpec), a cover over the coupler, parked wipers, a livery-coloured front (LNER's is yellow in the livery)
   front: {
     cluster: AT300_CLUSTER,
@@ -1674,7 +1675,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const edge = (sec.half[0] as [number, number])[0];
   for (const [s0, s1] of free) {
     for (const [z0, z1] of skirtSplit(s0, s1, spec.skirt.boxes)) {
-      for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), rake: spec.skirt.boxes?.rake });
+      for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), hem: skirts.hem === null ? null : col(skirts.hem), rake: spec.skirt.boxes?.rake });
     }
   }
   // a diesel unit's tank, cooler, engine, transmission and batteries hang under the floor between the bogies, in plain sight below the valance, a dark hanger across each gap
@@ -1796,14 +1797,19 @@ function blend(a: number, b: number, t: number): number {
 
 /** The pale grey an Azuma's underfloor covers tend to (a livery's skirt colour is blended toward it by the family's `skirt.light`). Read off photographs, not published. */
 export const SKIRT_PALE = 0xb4b8be;
-/** How far the louvres are darkened from the livery's skirt colour. */
+/** How far the louvres are darkened from the livery's skirt colour, and (a good deal further) the notches of the covers' hem. */
 const SKIRT_VENT_DARK = 0.45;
+const SKIRT_HEM_DARK = 0.7;
 /**
- * The colours a body's side skirts wear for a livery: the covers (the livery's skirt colour paled by the family's `skirt.light`) and their louvres
+ * The colours a body's side skirts wear for a livery: the covers (the livery's skirt colour paled by the family's `skirt.light`), their louvres and their hem
  * (null where the family has none). The underframe slab seen through the bogie cut-outs stays the livery's skirt colour.
  */
-export function skirtColours(def: Pick<TrainLivery, 'skirt'>, spec: Pick<BodySpec, 'skirt'>): { panel: number; vent: number | null } {
-  return { panel: blend(def.skirt, SKIRT_PALE, spec.skirt.light), vent: spec.skirt.vents ? blend(def.skirt, 0x000000, SKIRT_VENT_DARK) : null };
+export function skirtColours(def: Pick<TrainLivery, 'skirt'>, spec: Pick<BodySpec, 'skirt'>): { panel: number; vent: number | null; hem: number | null } {
+  return {
+    panel: blend(def.skirt, SKIRT_PALE, spec.skirt.light),
+    vent: spec.skirt.vents ? blend(def.skirt, 0x000000, SKIRT_VENT_DARK) : null,
+    hem: spec.skirt.hem === true ? blend(def.skirt, 0x000000, SKIRT_HEM_DARK) : null,
+  };
 }
 
 /**

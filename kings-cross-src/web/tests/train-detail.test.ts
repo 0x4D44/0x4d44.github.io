@@ -10,7 +10,7 @@ import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial,
 import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle, PodBox, PodForm, PodMark } from '../src/train-parts.ts';
 import { clipConvex, col, ellipse, Soup } from '../src/train-geom.ts';
 import { ADELANTE_FACE, AMBER, AMBER_DOOR, BEZEL, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, barOutline, boxOutline } from '../src/train-face.ts';
@@ -3400,20 +3400,67 @@ test('skirts: one panel is a closed shell leaning in, its foot raked at both end
   }
 });
 
-test('skirts: the Azuma\'s covers are paler than its underframe and carry two groups of four louvres on each long stretch, lying on the panel; no other family has louvres', () => {
-  // two groups of four louvres on each clear stretch 3.5 m or longer, on each side, where the cover hangs 0.4 m or more
-  const expectedSlits = (car: Car, spec: ReturnType<typeof bodySpec>): number =>
-    stretchesOf(car, spec.cutout).filter(([s, e]) => e - s >= 3.5 && spec.floor - spec.skirtBottom >= 0.4).length * 2 * 4 * 2;
+/** The triangles of a Soup in one vertex colour, as triples of points (the soup is built in the train's own frame, so there is no matrix). */
+function soupTrisOfColour(soup: Soup, c: THREE.Color): Tri[] {
+  const out: Tri[] = [];
+  // the position and colour arrays go three numbers to a vertex, nine to a triangle
+  for (let k = 0; k + 8 < soup.pos.length; k += 9) {
+    if ([0, 3, 6].every((o) => Math.abs((soup.clr[k + o] as number) - c.r) < 1e-6 && Math.abs((soup.clr[k + o + 1] as number) - c.g) < 1e-6 && Math.abs((soup.clr[k + o + 2] as number) - c.b) < 1e-6)) {
+      out.push([0, 3, 6].map((o) => new THREE.Vector3(soup.pos[k + o] as number, soup.pos[k + o + 1] as number, soup.pos[k + o + 2] as number)) as Tri);
+    }
+  }
+  return out;
+}
+/** The quads in a list of triangles (two each, as a Soup lays a quad), as the box of their four corners: [z0, z1, y0, y1]. */
+function quadBoxes(tris: Tri[]): [number, number, number, number][] {
+  assert.equal(tris.length % 2, 0, 'quads come in pairs of triangles');
+  const out: [number, number, number, number][] = [];
+  for (let i = 0; i < tris.length; i += 2) {
+    const vs = [...(tris[i] as Tri), ...(tris[i + 1] as Tri)];
+    out.push([Math.min(...vs.map((v) => v.z)), Math.max(...vs.map((v) => v.z)), Math.min(...vs.map((v) => v.y)), Math.max(...vs.map((v) => v.y))]);
+  }
+  return out;
+}
+const midZ = (q: readonly number[]): number => ((q[0] as number) + (q[1] as number)) / 2;
+/** The louvre slats one side of a clear stretch carries: a group of grilles stands where it clears the stretch's raked ends, and is left off where it does not (the rule of `skirtPanel`, written out). */
+function slatsOn(len: number): number {
+  const rake = Math.min(SKIRT_RAKE, 0.25 * len);
+  let n = 0;
+  for (const { at, grilles } of SKIRT_LOUVRES) {
+    const half = ((grilles - 1) * SKIRT_GRILLE.pitch + SKIRT_GRILLE.width) / 2;
+    if (at * len - half >= rake + SKIRT_VENT_CLEAR && at * len + half <= len - rake - SKIRT_VENT_CLEAR) n += grilles * SKIRT_GRILLE.slats;
+  }
+  return n;
+}
+/** The notches one side of a clear stretch carries along its foot: as many on the pitch as fit between the ends of the foot, less the margin (written out). */
+function notchesOn(len: number): number {
+  const rake = Math.min(SKIRT_RAKE, 0.25 * len);
+  return Math.floor((len - 2 * rake - 2 * SKIRT_HEM.margin - SKIRT_HEM.notchWidth) / SKIRT_HEM.notchPitch + 1e-9) + 1;
+}
+
+test('skirts: the Azuma\'s covers are paler than its underframe and carry grilles of louvres, four a fifth of the way along each long stretch and two past its middle, lying on the panel, and a notched hem; no other family has either', () => {
+  // CHANGED (round 4: it was two groups of four thin slits, three tenths and seven tenths of the way along, and no hem): the louvres are grilles of slats on each clear stretch 3.5 m or
+  // longer where the group clears the raked ends, on each side, where the cover hangs 0.4 m or more; the hem is a row of notches on each stretch 1.5 m or longer
+  const H = (spec: ReturnType<typeof bodySpec>): number => spec.floor - spec.skirtBottom;
+  const expectedSlats = (car: Car, spec: ReturnType<typeof bodySpec>): number =>
+    stretchesOf(car, spec.cutout).filter(([s, e]) => e - s >= 3.5 && H(spec) >= 0.4).reduce((a, [s, e]) => a + slatsOn(e - s), 0) * 2;
+  const expectedNotches = (car: Car, spec: ReturnType<typeof bodySpec>): number =>
+    stretchesOf(car, spec.cutout).filter(([s, e]) => e - s >= 1.5 && H(spec) >= 0.3).reduce((a, [s, e]) => a + notchesOn(e - s), 0) * 2;
   for (const kind of ALL_KINDS) {
     const layout = trainLayout(kind);
     const spec = bodySpec(familyOf(kind));
     const def = liveryFor(kind);
-    const { panel, vent } = skirtColours(def, spec);
+    const { panel, vent, hem } = skirtColours(def, spec);
     const g = built(kind);
     if (familyOf(kind) === 'at300') {
       // light grey covers with louvres (lner-801-214-2025, lner-800-doncaster-2026, hull-802-paragon-2025), not a dark slab
       assert.ok(lumaOf(panel) >= lumaOf(def.skirt) + 0.12, `${kind}: covers (${lumaOf(panel).toFixed(2)}) paler than the underframe (${lumaOf(def.skirt).toFixed(2)})`);
+      // CHANGED (round 4: the covers were 0.6 of the way to the pale grey, and rendered a mid grey where the photographs show silver): within a tenth of the pale grey's luma
+      assert.ok(lumaOf(SKIRT_PALE) - lumaOf(panel) < 0.1, `${kind}: covers (${lumaOf(panel).toFixed(2)}) as pale as the photographed grey (${lumaOf(SKIRT_PALE).toFixed(2)}) to a tenth`);
       assert.ok(vent !== null && lumaOf(vent) < lumaOf(panel) - 0.1, `${kind}: louvres darker than the covers`);
+      // the hem is a colour of its own, darker than the louvres
+      assert.ok(hem !== null && lumaOf(hem) < lumaOf(vent) - 0.03, `${kind}: hem notches (${hem === null ? '-' : lumaOf(hem).toFixed(2)}) darker than the louvres (${lumaOf(vent).toFixed(2)})`);
+      assert.equal(new Set([panel, vent, hem, def.skirt]).size, 4, `${kind}: the covers, the louvres, the hem and the underframe are four colours`);
     } else if (familyOf(kind) === 'electrostar') {
       // CHANGED (the covers as the livery gives them: it was every family but the Azuma): the Electrostar's boxes are mid-grey against the dark underframe (gn387_03_387123_cambridge,
       // gn387_01_387114_ely), no louvres; the other two electric families' and the Class 180's are as the livery gives them
@@ -3423,31 +3470,132 @@ test('skirts: the Azuma\'s covers are paler than its underframe and carry two gr
       assert.equal(panel, def.skirt, `${kind}: the covers as the livery gives them`);
       assert.equal(vent, null, `${kind}: no louvres`);
     }
+    if (familyOf(kind) !== 'at300') assert.equal(hem, null, `${kind}: no hem`);
     const edge = (carSection(spec).half[0] as [number, number])[0];
     for (const car of layout.cars.filter((c) => c.cab === null).slice(0, 2)) {
-      const slits = vent === null ? [] : trisOfColour(detailOf(g, car), vent);
-      assert.equal(slits.length, vent === null ? 0 : 2 * expectedSlits(car, spec), `${kind} car ${car.index}: louvre triangles (two sides)`);
+      const slats = vent === null ? [] : trisOfColour(detailOf(g, car), vent);
+      assert.equal(slats.length, vent === null ? 0 : 2 * expectedSlats(car, spec), `${kind} car ${car.index}: louvre triangles (two sides)`);
+      if (familyOf(kind) === 'at300') assert.equal(slats.length, 2 * 2 * (4 + 2) * SKIRT_GRILLE.slats, `${kind} car ${car.index}: six grilles of ${SKIRT_GRILLE.slats} slats a side, on the one long stretch`);
+      const notches = hem === null ? [] : trisOfColour(detailOf(g, car), hem);
+      assert.equal(notches.length, hem === null ? 0 : 2 * expectedNotches(car, spec), `${kind} car ${car.index}: hem triangles (two sides)`);
       // on the panel: a few millimetres out of its face, clear of it
-      for (const v of slits.flat()) {
+      for (const v of [...slats, ...notches].flat()) {
         const out = Math.abs(v.x) - skirtHalfAt(edge, spec.floor, v.y);
-        assert.ok(out > 0.002 && out < 0.006, `${kind} car ${car.index}: a louvre vertex stands ${out.toFixed(4)} m off the panel`);
+        assert.ok(out > 0.002 && out < 0.006, `${kind} car ${car.index}: a louvre or hem vertex stands ${out.toFixed(4)} m off the panel`);
       }
     }
   }
 });
 
-test('skirts: a panel carries louvres only where the cover is tall enough and the stretch long enough, and only where the kind has them', () => {
+test('skirts: a panel carries louvres only where the cover is tall enough, the stretch long enough and the group clear of its ends, and only where the kind has them', () => {
   const trianglesOf = (z1: number, bottom: number, vent: boolean): number => {
     const soup = new Soup();
     skirtPanel(soup, { side: 1, z0: 0, z1, edge: 1.2, floor: 1.0, bottom, colour: col(0x777777), vent: vent ? col(0x222222) : null });
     return soup.pos.length / 9;
   };
-  // the panel's eight triangles, and sixteen more for two groups of four louvres
-  assert.equal(trianglesOf(8, 0.45, true), 8 + 16, 'a long, tall cover');
-  assert.equal(trianglesOf(4, 0.5, true), 8 + 16, 'a stretch of 4 m, a cover 0.5 m tall');
+  // the panel's eight triangles, and two for every slat (CHANGED, round 4: it was sixteen for two groups of four thin slits)
+  assert.equal(trianglesOf(8, 0.45, true), 8 + 2 * 60, 'a long, tall cover: six grilles of ten slats');
+  // 4 m: the group of four (centred 0.92 m along, 2.1 m wide) runs off the end and is left out; the group of two (2.28 m along, 1.02 m wide) stands clear
+  assert.equal(trianglesOf(4, 0.5, true), 8 + 2 * 20, 'a stretch of 4 m: the group of two only');
   assert.equal(trianglesOf(2, 0.45, true), 8, 'a stretch of 2 m is too short for louvres');
   assert.equal(trianglesOf(8, 0.7, true), 8, 'a cover 0.3 m tall is too shallow for louvres');
   assert.equal(trianglesOf(8, 0.45, false), 8, 'a kind without louvres has none');
+  // the clearance, to the centimetre: the group of four (centred 0.23 of the way along, 1.05 m each side) must stand 0.14 m (the rake) + 0.3 m clear of the stretch's end
+  assert.equal(trianglesOf(6.5, 0.45, true), 8 + 2 * 60, 'at 6.5 m the group of four stands 0.445 m from the end: it fits');
+  assert.equal(trianglesOf(6.4, 0.45, true), 8 + 2 * 20, 'at 6.4 m it stands 0.422 m from the end: it is left out');
+  // the far end, mirrored: the group of two (0.57 of the way along, 0.51 m each side) stands clear of the far end by 0.43 L - 0.51 - 0.14 - 0.3 at its smallest on a stretch this long
+  assert.equal(slatsOn(6.5), 60, 'the test\'s own sum agrees');
+  assert.equal(slatsOn(6.4), 20, 'on both');
+});
+
+test('skirts: a cover\'s louvres are grilles of ten slats, half a metre wide, four a quarter of the way along and two just past the middle', () => {
+  // (lner-801-214-2025, lner-800-doncaster-2026, the covers enlarged: dark grilles of fine vertical slats, about half a metre wide, in two groups along a 13 m cover: four close
+  // together in two pairs a fifth to a third of the way along, two past the middle)
+  assert.deepEqual(SKIRT_LOUVRES, [{ at: 0.23, grilles: 4 }, { at: 0.57, grilles: 2 }]);
+  assert.deepEqual({ ...SKIRT_GRILLE }, { width: 0.48, pitch: 0.54, slats: 10, slatWidth: 0.036 });
+  const soup = new Soup();
+  const z0 = 3;
+  const z1 = 15;
+  skirtPanel(soup, { side: 1, z0, z1, edge: 1.2, floor: 1.0, bottom: 0.45, colour: col(0x777777), vent: col(0x222222) });
+  const slats = quadBoxes(soupTrisOfColour(soup, col(0x222222))).sort((a, b) => a[0] - b[0]);
+  assert.equal(slats.length, 60);
+  // a grille is a run of slats a centimetre apart; the next grille is more than a few centimetres on
+  const grilles: [number, number, number, number][][] = [];
+  for (const q of slats) {
+    const last = grilles[grilles.length - 1];
+    if (last !== undefined && q[0] - (last[last.length - 1] as number[])[1]! < 0.03) last.push(q);
+    else grilles.push([q]);
+  }
+  assert.deepEqual(grilles.map((g) => g.length), [10, 10, 10, 10, 10, 10]);
+  // the centres: a group of four 12 m x 0.23 = 2.76 m along the stretch, 0.54 m apart; a group of two 6.84 m along
+  const centres = [3 + 2.76 - 1.5 * 0.54, 3 + 2.76 - 0.5 * 0.54, 3 + 2.76 + 0.5 * 0.54, 3 + 2.76 + 1.5 * 0.54, 3 + 6.84 - 0.5 * 0.54, 3 + 6.84 + 0.5 * 0.54];
+  grilles.forEach((gr, i) => {
+    const first = gr[0] as number[];
+    const lastQ = gr[gr.length - 1] as number[];
+    near((((first[0] as number) + (lastQ[1] as number)) / 2), centres[i] as number, 1e-6, `grille ${i} is centred where its group puts it`);
+    // ten slats 3.6 cm wide on a 4.8 cm pitch: 9 x 0.048 + 0.036 = 0.468 m from the first slat's edge to the last's
+    near((lastQ[1] as number) - (first[0] as number), 0.468, 1e-6, `grille ${i} is 46.8 cm from its first slat to its last`);
+    gr.forEach((q, k) => {
+      near(q[1] - q[0], 0.036, 1e-6, `grille ${i} slat ${k} is 3.6 cm wide`);
+      if (k > 0) near(midZ(q) - midZ(gr[k - 1] as number[]), 0.048, 1e-6, `grille ${i} slat ${k} stands 4.8 cm from the one before`);
+      // the slats run from 0.12 m over the foot to 0.1 m under the floor
+      near(q[2], 0.45 + 0.12, 1e-2, 'a slat starts above the foot');
+      near(q[3], 1.0 - 0.1, 1e-2, 'and ends under the floor');
+    });
+  });
+  // a grille's neighbour in its group is 0.54 m on (0.48 m wide, so 0.06 m between: more than the 1.2 cm between slats); the two groups are 4 m apart
+  const gaps = grilles.slice(1).map((gr, i) => (gr[0] as number[])[0]! - ((grilles[i] as number[][])[9] as number[])[1]!);
+  near(gaps[0] as number, 0.54 - 0.468, 1e-6, 'neighbours in a group');
+  near(gaps[3] as number, 2.532, 1e-6, 'the groups stand apart: the first group\'s last grille ends 6.804 m along, the second\'s first starts 9.336 m along');
+});
+
+test('skirts: a cover carries a hem of notches along its foot on a stretch of 1.5 m or more and a cover 0.3 m tall, centred on the foot and clear of its raked ends; a panel without a hem colour has none', () => {
+  const hem = col(0x101214);
+  const z0 = 0;
+  const z1 = 9.1;
+  const bottom = 0.45;
+  const floor = 1.0;
+  const edge = 1.2;
+  // (the lift is along the face's normal, which leans down as the face leans in: a vertex stands this far out of the face at its own height)
+  const lift = SKIRT_SLIT_LIFT * Math.hypot(1, SKIRT_LEAN);
+  for (const side of [-1, 1] as const) {
+    const soup = new Soup();
+    skirtPanel(soup, { side, z0, z1, edge, floor, bottom, colour: col(0x777777), vent: col(0x222222), hem });
+    const rake = SKIRT_RAKE;
+    const marks = soupTrisOfColour(soup, hem);
+    const notches = quadBoxes(marks).sort((a, b) => a[0] - b[0]);
+    // 9.1 m: the foot runs 0.24 m to 8.86 m; the notches 0.2 m wide on a 0.5 m pitch: (8.62 - 0.2) / 0.5 = 16.84, so 17 of them
+    assert.equal(notches.length, 17, 'seventeen notches');
+    assert.equal(soup.pos.length / 9, 8 + 2 * (4 + 2) * 10 + 2 * 17, 'beside the panel\'s eight triangles and the louvres\'');
+    notches.forEach((q, k) => {
+      near(q[1] - q[0], SKIRT_HEM.notchWidth, 1e-6, `notch ${k} is 20 cm wide`);
+      near(q[3] - q[2], SKIRT_HEM.notchHeight, 2e-3, `notch ${k} is 7 cm tall`);
+      near(q[2], bottom, 2e-2, `notch ${k} stands on the foot`);
+      near(midZ(q), (z0 + z1) / 2 + (k - 8) * SKIRT_HEM.notchPitch, 1e-6, `notch ${k} is on the pitch, the row centred on the foot`);
+    });
+    assert.ok((notches[0] as number[])[0]! >= z0 + rake + SKIRT_HEM.margin - 1e-9, 'the row starts inside the foot\'s near end');
+    assert.ok((notches[16] as number[])[1]! <= z1 - rake - SKIRT_HEM.margin + 1e-9, 'and ends inside its far end');
+    // the hem stands below the louvres: no notch reaches the lowest of the slats, so the two never lie on one another
+    const slatBottom = Math.min(...quadBoxes(soupTrisOfColour(soup, col(0x222222))).map((q) => q[2]));
+    assert.ok(Math.max(...notches.map((q) => q[3])) < slatBottom, 'no notch reaches the louvres');
+    // every notch lies on the panel's face, a few millimetres out of it (the lean puts the face at skirtHalfAt)
+    for (const t of marks) {
+      for (const v of t) near(side * v.x - skirtHalfAt(edge, floor, v.y), lift, 1e-6, 'a notch vertex stands off the face by the lift');
+    }
+  }
+  // no hem without a colour, on a stretch under 1.5 m, or on a cover under 0.3 m
+  const count = (o: Parameters<typeof skirtPanel>[1]): number => {
+    const soup = new Soup();
+    skirtPanel(soup, o);
+    return soup.pos.length / 9;
+  };
+  const base = { side: 1 as const, z0: 0, z1: 9.1, edge: 1.2, floor: 1.0, bottom: 0.45, colour: col(0x777777), vent: null };
+  assert.equal(count(base), 8, 'no hem colour: a plain panel');
+  assert.equal(count({ ...base, hem: null }), 8, 'a null hem colour: a plain panel');
+  assert.equal(count({ ...base, hem, z1: 1.4 }), 8, 'a stretch of 1.4 m is too short for a hem');
+  assert.equal(count({ ...base, hem, bottom: 0.75 }), 8, 'a cover 0.25 m tall is too shallow for a hem');
+  assert.equal(count({ ...base, hem, z1: 1.6 }), 8 + 2 * 2, 'a stretch of 1.6 m has two notches: the foot runs 0.24 m to 1.36 m, and (1.12 - 0.2) / 0.5 = 1.84');
+  assert.equal(count({ ...base, hem, bottom: 0.69 }), 8 + 2 * 17, 'a cover 0.31 m tall has the hem');
 });
 
 // --- the cab side window ----------------------------------------------------------------------------------------

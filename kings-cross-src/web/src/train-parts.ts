@@ -963,15 +963,42 @@ export const SKIRT_THICKNESS = 0.05;
 export const SKIRT_TUCK = 0.04;
 /** A skirt's outer face starts this far inside the body's lowest corner. */
 export const SKIRT_SETBACK = 0.01;
-/** A cover this tall (metres) or taller carries louvres, on a stretch this long (metres) or longer: two groups of `SKIRT_SLITS`, at these fractions of its length. */
+/**
+ * A cover this tall (metres) or taller carries louvres, on a stretch this long (metres) or longer. The photographs (lner-801-214-2025 and lner-800-doncaster-2026, the covers between
+ * the bogies, enlarged) show them as grilles: dark panels of fine vertical slats, about half a metre wide and a little over a quarter of the cover's height, standing in two groups
+ * along a long cover, four grilles a fifth to a third of the way along (two close pairs) and two just past its middle (CHANGED, round 4: this drew two groups of four thin slits,
+ * each group the width of one grille). The sizes are read off the enlargements against the cover's length, which the bogie spacing gives: ASSUMED, to a few centimetres.
+ */
 export const SKIRT_VENT_MIN_HEIGHT = 0.4;
 export const SKIRT_VENT_MIN_LENGTH = 3.5;
-export const SKIRT_VENT_AT = [0.3, 0.7] as const;
-export const SKIRT_SLITS = 4;
-export const SKIRT_SLIT_WIDTH = 0.05;
-export const SKIRT_SLIT_PITCH = 0.13;
+export const SKIRT_LOUVRES: readonly { at: number; grilles: number }[] = [{ at: 0.23, grilles: 4 }, { at: 0.57, grilles: 2 }];
+export const SKIRT_GRILLE = {
+  /** one grille's width, and the distance from its centre to its neighbour's */
+  width: 0.48,
+  pitch: 0.54,
+  /** the slats a grille is cut into, and the width of each (the rest is the gap showing the cover between two) */
+  slats: 10,
+  slatWidth: 0.036,
+} as const;
+/** A group of grilles stands this clear (metres) of its stretch's raked ends, or is left off. */
+export const SKIRT_VENT_CLEAR = 0.3;
 /** A louvre stands this far off the panel's face (clear of it, so neither shows through the other). */
 export const SKIRT_SLIT_LIFT = 0.004;
+
+/**
+ * The hem of the Azuma's covers (the same photographs): a row of small notches along the foot of the cover, the castellation where the equipment behind shows through, dark. ASSUMED
+ * sizes, read off the enlargements as the grilles' are: a notch 0.2 m wide and 0.07 m tall on a 0.5 m pitch. A cover carries them where its stretch is this long and it is this tall;
+ * they stand the same `SKIRT_SLIT_LIFT` off its face as the louvres, in a colour of their own (so a louvre count is a count of louvres).
+ */
+export const SKIRT_HEM = {
+  minLength: 1.5,
+  minHeight: 0.3,
+  notchWidth: 0.2,
+  notchHeight: 0.07,
+  notchPitch: 0.5,
+  /** the row stays this far inside the foot's ends (the foot is raked at each) */
+  margin: 0.1,
+} as const;
 
 /**
  * Half-width of a skirt's outer face at height `y`: it hangs from just inside the body's lowest corner (`edge` from the centre line, the floor
@@ -1025,14 +1052,16 @@ export interface SkirtPanel {
   colour: THREE.Color;
   /** the louvres' colour, or null for a plain panel */
   vent: THREE.Color | null;
+  /** the colour of the foot's notches (`SKIRT_HEM`), or null/absent for a panel without them */
+  hem?: THREE.Color | null;
   /** how far the foot is cut back at each end (default SKIRT_RAKE; never more than a quarter of the panel's length) */
   rake?: number;
 }
 
 /**
  * One side skirt over a clear stretch between two bogie cut-outs: a thin panel leaning in from the body's lower edge, its foot raked at each end,
- * with (on a tall enough, long enough stretch, and where the kind has them) two groups of louvres on its face. Its top and inner face are not drawn:
- * the first is inside the body and the second looks at the underframe.
+ * with (on a tall enough, long enough stretch, and where the kind has them) groups of louvre grilles on its face, and (where the kind has them) a notched hem (`SKIRT_HEM`).
+ * Its top and inner face are not drawn: the first is inside the body and the second looks at the underframe.
  */
 export function skirtPanel(soup: Soup, o: SkirtPanel): void {
   const { side: sx, z0, z1, edge, floor, bottom } = o;
@@ -1047,18 +1076,36 @@ export function skirtPanel(soup: Soup, o: SkirtPanel): void {
   soup.face([outer[0], outer[3], inner[3], inner[0]], centre, o.colour);
   soup.face([outer[1], outer[2], inner[2], inner[1]], centre, o.colour);
   soup.face([outer[3], outer[2], inner[2], inner[3]], centre, o.colour);
-  if (o.vent === null || z1 - z0 < SKIRT_VENT_MIN_LENGTH || floor - bottom < SKIRT_VENT_MIN_HEIGHT) return;
-  // the louvres lie on the panel: the face's normal leans down as the panel leans in
+  // the louvres and the hem lie on the panel: the face's normal leans down as the panel leans in
   const n = unit([sx, -SKIRT_LEAN, 0]);
-  const y0 = bottom + 0.12;
-  const y1 = floor - 0.1;
   const at = (y: number, z: number): V3 => [out(y) + n[0] * SKIRT_SLIT_LIFT, y + n[1] * SKIRT_SLIT_LIFT, z];
-  for (const f of SKIRT_VENT_AT) {
-    for (let k = 0; k < SKIRT_SLITS; k++) {
-      const zc = z0 + f * (z1 - z0) + (k - (SKIRT_SLITS - 1) / 2) * SKIRT_SLIT_PITCH;
-      const a = zc - SKIRT_SLIT_WIDTH / 2;
-      const b = zc + SKIRT_SLIT_WIDTH / 2;
-      soup.quad([at(y0, a), at(y0, b), at(y1, b), at(y1, a)], [n, n, n, n], o.vent);
+  const strip = (ya: number, yb: number, za: number, zb: number, colour: THREE.Color): void => soup.quad([at(ya, za), at(ya, zb), at(yb, zb), at(yb, za)], [n, n, n, n], colour);
+  if (o.vent !== null && z1 - z0 >= SKIRT_VENT_MIN_LENGTH && floor - bottom >= SKIRT_VENT_MIN_HEIGHT) {
+    const y0 = bottom + 0.12;
+    const y1 = floor - 0.1;
+    const G = SKIRT_GRILLE;
+    for (const { at: f, grilles } of SKIRT_LOUVRES) {
+      const centre = z0 + f * (z1 - z0);
+      const half = ((grilles - 1) * G.pitch + G.width) / 2;
+      if (centre - half < z0 + rake + SKIRT_VENT_CLEAR || centre + half > z1 - rake - SKIRT_VENT_CLEAR) continue;
+      for (let g = 0; g < grilles; g++) {
+        const zNear = centre + (g - (grilles - 1) / 2) * G.pitch - G.width / 2;
+        for (let k = 0; k < G.slats; k++) {
+          const za = zNear + (k + 0.5) * (G.width / G.slats) - G.slatWidth / 2;
+          strip(y0, y1, za, za + G.slatWidth, o.vent);
+        }
+      }
+    }
+  }
+  if (o.hem && z1 - z0 >= SKIRT_HEM.minLength && floor - bottom >= SKIRT_HEM.minHeight) {
+    const H = SKIRT_HEM;
+    // the notches along the foot, centred on it: as many on the pitch as fit between its ends
+    const f0 = z0 + rake + H.margin;
+    const f1 = z1 - rake - H.margin;
+    const count = Math.floor((f1 - f0 - H.notchWidth) / H.notchPitch + 1e-9) + 1;
+    for (let k = 0; k < count; k++) {
+      const zc = (f0 + f1) / 2 + (k - (count - 1) / 2) * H.notchPitch;
+      strip(bottom, bottom + H.notchHeight, zc - H.notchWidth / 2, zc + H.notchWidth / 2, o.hem);
     }
   }
 }
