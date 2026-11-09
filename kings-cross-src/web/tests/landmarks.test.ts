@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addArch, addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackPairs, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
@@ -704,23 +704,23 @@ test('Midland Grand [hist-b]: two stacked gabled attic rows light the front and 
   const additions = dormerTriangles({ ...midland, towers: [] });
   const glass = additions.pane!;
   assert.ok(glass.length > 40, 'the attic has real glazed dormer faces, not unbroken slate');
-  const pairs = stackPairs({ ...midland, towers: [] });
+  const clusters = stackClusters({ ...midland, towers: [] });
   let upper = 0;
   let given = 0;
   [...midland.front.bays, ...midland.wing.bays].forEach((bay, n) => {
     const near = glass.filter(t => t.p.every(v => Math.abs((v[0] - bay.at[0]) * bay.dir[0] + (v[2] - bay.at[1]) * bay.dir[1]) < bay.width / 2));
     assert.ok(near.some(t => t.p.every(v => v[1] < (midland.eaves + midland.ridge) / 2)), 'lower dormer row follows each bay');
     const has = near.some(t => t.p.every(v => v[1] > (midland.eaves + midland.ridge) / 2));
-    // the upper row is missing on every third bay, and where a pair of stacks stands (round 5: it gives way within 2.4 m of the dormer's edge)
+    // the upper row is missing on every third bay, and where a cluster of stacks stands (round 6: it gives way within 3 m of the dormer's edge)
     const e = polygonEdges(midland.outline)[bay.edge] as ReturnType<typeof polygonEdges>[number];
     const s0 = (bay.at[0] - e.a[0]) * e.dir[0] + (bay.at[1] - e.a[1]) * e.dir[1];
-    const stacked = pairs.some((q) => q.i === bay.edge && Math.abs(q.s - s0) < bay.width / 2 + 2.4);
+    const stacked = clusters.some((q) => q.i === bay.edge && Math.abs(q.s - s0) < bay.width / 2 + 3.0);
     if (n % 3 === 2) assert.equal(has, false, `bay ${n}: no upper dormer on every third bay`);
-    else if (!stacked) { if (midland.roof.runs[bay.edge] as number > 6) assert.equal(has, true, `bay ${n}: the upper dormer is there unless a pair of stacks stands by`); } // (a facet with a short run has no room for one)
+    else if (!stacked) { if (midland.roof.runs[bay.edge] as number > 6) assert.equal(has, true, `bay ${n}: the upper dormer is there unless a cluster of stacks stands by`); } // (a facet with a short run has no room for one)
     else given++;
     if (has) upper++;
   });
-  assert.ok(upper >= 15 && given >= 1, `${upper} upper dormers, ${given} bays given up to a pair of stacks`);
+  assert.ok(upper >= 15 && given >= 1, `${upper} upper dormers, ${given} bays given up to a cluster of stacks`);
   const gables = additions.stone!.filter(t => t.p.length === 3 && t.p.filter(v => Math.abs(v[1] - Math.max(...t.p.map(p => p[1]))) < 1e-8).length === 1);
   assert.ok(gables.length > 30, 'pale gables have apex vertices above their shoulders');
 });
@@ -817,7 +817,7 @@ test('Midland Grand: dormers lie on the slopes, never on the crown, and no two d
   for (const t of dormers) { parent.set(find(key(t.p[0])), find(key(t.p[1]))); parent.set(find(key(t.p[1])), find(key(t.p[2]))); }
   const pieces = new Map<string, Pt[]>();
   for (const t of dormers) for (const v of t.p) (pieces.get(find(key(v))) ?? pieces.set(find(key(v)), []).get(find(key(v))) as Pt[]).push([v[0], v[2]]);
-  assert.ok(pieces.size >= 35, `${pieces.size} separate dormers`); // 33 lower and the upper rows, some of which give way to a pair of stacks
+  assert.ok(pieces.size >= 35, `${pieces.size} separate dormers`); // 33 lower and the upper rows, some of which give way to a cluster of stacks
   const hull = (pts: Pt[]): Pt[] => {
     const s = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     const cross = (o: Pt, a: Pt, b: Pt): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
@@ -844,114 +844,148 @@ const roofAt = (i: number, s: number, d: number): V3 => {
   const e = polygonEdges(midland.outline)[i] as ReturnType<typeof polygonEdges>[number];
   return [e.a[0] + e.dir[0] * s - e.normal[0] * d, midland.eaves + ((midland.ridge - midland.eaves) * d) / (midland.roof.runs[i] as number), e.a[1] + e.dir[1] * s - e.normal[1] * d];
 };
-/** The red-brick triangles of the two shafts of pair `p` (a shaft and its pot, 20 triangles each), one list to a shaft: those wholly within a shaft's 1.4 x 0.95 m footprint. */
+/** The three shafts of a cluster: how far each stands along the facet from the cluster's middle (2.1 m apart) and how far its pot stops under the cluster's height (the middle shaft the tallest). */
+const SHAFTS = [[-1, 1.2], [0, 0], [1, 0.6]] as const;
+/** The red-brick triangles of the three shafts of cluster `p` (a shaft and its pot, 20 triangles each), one list to a shaft: those wholly within a shaft's 1.4 x 0.95 m footprint. */
 function shaftsOf(p: { i: number; s: number; d: number }, bricks: Tri[]): Tri[][] {
   const e = polygonEdges(midland.outline)[p.i] as ReturnType<typeof polygonEdges>[number];
-  return [-1, 1].map((o) => {
-    const c = roofAt(p.i, p.s + o * 1.2, p.d);
+  return SHAFTS.map(([o]) => {
+    const c = roofAt(p.i, p.s + o * 2.1, p.d);
     const local = (v: V3): [number, number] => [(v[0] - c[0]) * e.dir[0] + (v[2] - c[2]) * e.dir[1], (v[0] - c[0]) * e.normal[0] + (v[2] - c[2]) * e.normal[1]];
     return bricks.filter((t) => t.p.every((v) => Math.abs(local(v)[0]) < 0.701 && Math.abs(local(v)[1]) < 0.476 && v[1] > c[1] - 4));
   });
 }
 
-test('Midland Grand [hist-b, hist-c, hist-e]: the stacks stand in pairs about 18 m apart, rising out of the slope to heights of their own, wholly on their facets and clear of the towers', () => {
-  const pairs = stackPairs(midland);
-  // round 4's clusters of three every 8.4 m (60 stacks, 9 m tall) read as an unbroken fence: now a pair about every 18 m, under 30 pairs in all
-  assert.ok(pairs.length >= 15 && pairs.length <= 30, `${pairs.length} pairs`);
+test('Midland Grand [hist-b, hist-c, hist-e]: the stacks stand in clusters of three about 13 m apart, rising out of the slope to heights of their own, wholly on their facets and clear of the towers', () => {
+  const clusters = stackClusters(midland);
+  // round 4's threes every 8.4 m (60 stacks, 9 m tall) read as an unbroken fence, round 5's pairs every 18 m (3.4 to 6.2 m) as thin against R-b: now a cluster of three about every 13 m, 4.4 to 7.2 m
+  assert.ok(clusters.length >= 18 && clusters.length <= 30, `${clusters.length} clusters`);
   const bricks = triangles(midlandGeometry(midland).brickRed as Batch);
   const heights = new Set<string>();
   const used = new Set<Tri>();
-  for (const p of pairs) {
+  for (const p of clusters) {
     const run = midland.roof.runs[p.i] as number;
     const slope = (midland.ridge - midland.eaves) / run;
-    close(p.d, run - 1, 1e-9, 'a pair stands a metre in under the crown line');
+    close(p.d, run - 1, 1e-9, 'a cluster stands a metre in under the crown line');
     const shafts = shaftsOf(p, bricks);
     shafts.forEach((ts, k) => {
+      const [o, drop] = SHAFTS[k] as (typeof SHAFTS)[number];
       assert.equal(ts.length, 20, 'a shaft and its pot: 20 triangles');
       ts.forEach((t) => used.add(t));
       const ys = ts.flatMap((t) => t.p.map((v) => v[1]));
       // [hist-c: the stacks rise out of the slate] the foot is buried 0.3 m under the slope at the shaft's outer face, so it stands on the slope and not on the crown
-      close(Math.min(...ys), roofAt(p.i, p.s, p.d - 0.5)[1] - 0.3, 1e-6, 'its foot is 0.3 m under the slate at its outer face');
+      close(Math.min(...ys), roofAt(p.i, p.s + o * 2.1, p.d - 0.5)[1] - 0.3, 1e-6, 'its foot is 0.3 m under the slate at its outer face');
       assert.ok(Math.min(...ys) < midland.ridge - 1.5 * slope, 'so it stands on the slope, well under the crown');
-      close(Math.max(...ys), p.top - (k ? 0.8 : 0), 1e-6, 'and its pot reaches its height, the second shaft 0.8 m lower');
+      close(Math.max(...ys), p.top - drop, 1e-6, `and its pot reaches its height, the outer shafts ${drop} m lower`);
     });
-    // the height is its own: 3.4 to 6.2 m over the crown
-    assert.ok(p.top >= midland.ridge + 3.4 - 1e-9 && p.top <= midland.ridge + 6.2 + 1e-9, `a pair ${p.top - midland.ridge} m over the crown`);
+    // the height is its own: 4.4 to 7.2 m over the crown
+    assert.ok(p.top >= midland.ridge + 4.4 - 1e-9 && p.top <= midland.ridge + 7.2 + 1e-9, `a cluster ${p.top - midland.ridge} m over the crown`);
     heights.add((p.top - midland.ridge).toFixed(1));
-    // 2.4 m between the shafts' middles along the facet
-    const [a, b] = [roofAt(p.i, p.s - 1.2, p.d), roofAt(p.i, p.s + 1.2, p.d)];
-    close(Math.hypot(a[0] - b[0], a[2] - b[2]), 2.4, 1e-9, 'the shafts stand 2.4 m apart');
-    // wholly on its own facet, hips and all, and 2 m clear of every tower
+    // 2.1 m between the shafts' middles along the facet
+    const [a, b, c] = [roofAt(p.i, p.s - 2.1, p.d), roofAt(p.i, p.s, p.d), roofAt(p.i, p.s + 2.1, p.d)];
+    close(Math.hypot(a[0] - b[0], a[2] - b[2]), 2.1, 1e-9, 'the shafts stand 2.1 m apart');
+    close(Math.hypot(c[0] - b[0], c[2] - b[2]), 2.1, 1e-9, 'on both sides of the middle one');
+    // wholly on its own facet, hips and all, and 1.5 m clear of every tower
     const facet = facetOf(p.i);
     for (const t of shafts.flat()) for (const v of t.p) {
       assert.ok(insideConvex([v[0], v[2]], facet), `a stack corner at ${v[0].toFixed(1)}, ${v[2].toFixed(1)} is off its facet`);
-      for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 2)), false, `a stack within 2 m of the ${tower.name} tower`);
+      for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 1.5)), false, `a stack within 1.5 m of the ${tower.name} tower`);
     }
   }
   assert.ok(heights.size >= 3, `${[...heights]} m: more than two heights`);
-  assert.equal(used.size, pairs.length * 40, 'two shafts to a pair, and every pair built');
-  // pairs along one facet are 12 to 22 m apart (a pair about every 18 m), and no two neighbours on a facet are the same height
-  for (const i of new Set(pairs.map((p) => p.i))) {
-    const row = pairs.filter((p) => p.i === i);
+  assert.equal(used.size, clusters.length * 60, 'three shafts to a cluster, and every cluster built');
+  // clusters along one facet are 13 to 20 m apart (a cluster about every 13 m), and no two neighbours on a facet are the same height
+  for (const i of new Set(clusters.map((p) => p.i))) {
+    const row = clusters.filter((p) => p.i === i);
     for (let k = 1; k < row.length; k++) {
       const [a, b] = [row[k - 1], row[k]] as [(typeof row)[number], (typeof row)[number]];
-      assert.ok(b.s - a.s >= 12 && b.s - a.s <= 22, `facet ${i}: ${b.s - a.s} m between pairs`);
+      assert.ok(b.s - a.s >= 13 - 1e-9 && b.s - a.s <= 20, `facet ${i}: ${b.s - a.s} m between clusters`);
       assert.notEqual(a.top, b.top, `facet ${i}: neighbours of one height`);
     }
   }
-  // a tower keeps a pair 3 m off: the pairs a plan with no tower has and this one lacks are those within 3 m of a tower, and it keeps none of those
-  const bare = stackPairs({ ...midland, towers: [] });
-  const centre = (p: (typeof pairs)[number]): Pt => { const c = roofAt(p.i, p.s, p.d); return [c[0], c[2]]; };
-  const lost = bare.filter((p) => !pairs.some((q) => q.i === p.i && q.s === p.s));
-  assert.ok(lost.length >= 1, 'a tower costs some pair its place');
-  for (const p of lost) assert.ok(midland.towers.some((t) => pointInQuad(centre(p), towerSquare(t, 3))), `a pair left out away from the towers (facet ${p.i}, ${p.s} m)`);
-  for (const p of pairs) for (const t of midland.towers) assert.equal(pointInQuad(centre(p), towerSquare(t, 3)), false, `a pair within 3 m of the ${t.name} tower`);
-  // set the clock tower down with its near wall 1.5 m from a pair's middle: that pair goes, and no other stands within 3 m of it
+  // a tower keeps a cluster 4.5 m off: the clusters a plan with no tower has and this one lacks are those within 4.5 m of a tower, and it keeps none of those
+  const bare = stackClusters({ ...midland, towers: [] });
+  const centre = (p: (typeof clusters)[number]): Pt => { const c = roofAt(p.i, p.s, p.d); return [c[0], c[2]]; };
+  const lost = bare.filter((p) => !clusters.some((q) => q.i === p.i && q.s === p.s));
+  assert.ok(lost.length >= 1, 'a tower costs some cluster its place');
+  for (const p of lost) assert.ok(midland.towers.some((t) => pointInQuad(centre(p), towerSquare(t, 4.5))), `a cluster left out away from the towers (facet ${p.i}, ${p.s} m)`);
+  for (const p of clusters) for (const t of midland.towers) assert.equal(pointInQuad(centre(p), towerSquare(t, 4.5)), false, `a cluster within 4.5 m of the ${t.name} tower`);
+  // set the clock tower down with its near wall 3.5 m from a cluster's middle: that cluster goes, and no other stands within 4.5 m of it
   const clock = midland.towers.find((tw) => tw.name === 'clock') as (typeof midland.towers)[number];
-  const target = pairs[3] as (typeof pairs)[number];
+  const target = clusters[3] as (typeof clusters)[number];
   const [tx, , tz] = roofAt(target.i, target.s, target.d);
-  const moved = { ...midland, towers: midland.towers.map((tw) => (tw === clock ? { ...tw, centre: [tx + clock.out[0] * (clock.side / 2 + 1.5), tz + clock.out[1] * (clock.side / 2 + 1.5)] as Pt } : tw)) };
-  const near = stackPairs(moved);
-  assert.equal(near.some((q) => q.i === target.i && q.s === target.s), false, 'the pair 1.5 m from the tower has gone');
-  for (const q of near) assert.equal(pointInQuad(centre(q), towerSquare(moved.towers.find((tw) => tw.name === 'clock') as (typeof midland.towers)[number], 3)), false, 'and none stands within 3 m of it');
-  assert.ok(near.length >= pairs.length - 4, 'the rest stand');
-  // a pair needs the room between its facet's hips: draw a hip of edge 6 in 5 m along the facet, and the pair there (it stood 5.1 m along) has no room
-  assert.ok(pairs.some((q) => q.i === 6), 'a pair stands on facet 6');
+  const moved = { ...midland, towers: midland.towers.map((tw) => (tw === clock ? { ...tw, centre: [tx + clock.out[0] * (clock.side / 2 + 3.5), tz + clock.out[1] * (clock.side / 2 + 3.5)] as Pt } : tw)) };
+  const near = stackClusters(moved);
+  assert.equal(near.some((q) => q.i === target.i && q.s === target.s), false, 'the cluster 3.5 m from the tower has gone');
+  for (const q of near) assert.equal(pointInQuad(centre(q), towerSquare(moved.towers.find((tw) => tw.name === 'clock') as (typeof midland.towers)[number], 4.5)), false, 'and none stands within 4.5 m of it');
+  assert.ok(near.length >= clusters.length - 4, 'the rest stand');
+  // a cluster needs the room between its facet's hips: draw a hip of edge 6 in 5 m along the facet, and the cluster there (it stood 5.1 m along) has no room
+  assert.ok(clusters.some((q) => q.i === 6), 'a cluster stands on facet 6');
   const e6 = polygonEdges(midland.outline)[6] as ReturnType<typeof polygonEdges>[number];
   const ring = midland.roof.ring.map((p, k): Pt => (k === 6 ? [p[0] + e6.dir[0] * 5, p[1] + e6.dir[1] * 5] : p));
-  assert.equal(stackPairs({ ...midland, roof: { ...midland.roof, ring } }).some((q) => q.i === 6), false, 'with the hip drawn in, no pair stands on facet 6');
-  // the dormers keep to their own places: none stands where a pair does (an upper dormer gives way within 2.4 m of one)
+  assert.equal(stackClusters({ ...midland, roof: { ...midland.roof, ring } }).some((q) => q.i === 6), false, 'with the hip drawn in, no cluster stands on facet 6');
+  // the dormers keep to their own places: none stands where a cluster does (an upper dormer gives way within 3 m of one)
   const dormers = dormerTriangles();
   for (const t of [...(dormers.slate as Tri[]), ...(dormers.stone as Tri[])]) for (const v of t.p) {
-    for (const p of pairs) {
+    for (const p of clusters) {
       const e = polygonEdges(midland.outline)[p.i] as ReturnType<typeof polygonEdges>[number];
       const along = (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
       const depth = -((v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1]);
-      assert.equal(Math.abs(along - p.s) < 2.3 && Math.abs(depth - p.d) < 0.6, false, 'a dormer corner where a pair of stacks stands');
+      assert.equal(Math.abs(along - p.s) < 2.9 && Math.abs(depth - p.d) < 0.6, false, 'a dormer corner where a cluster of stacks stands');
     }
   }
 });
 
-test('Midland Grand [hist-b, hist-e]: a dark cresting strip 0.7 m tall runs along the crown, wholly on its edge and nowhere inside a tower', () => {
-  const crestOf = (plan: typeof midland): Tri[] => triangles(midlandGeometry(plan).pane as Batch).filter((t) => t.p.every((v) => v[1] >= plan.ridge - 1e-9 && v[1] <= plan.ridge + 0.7 + 1e-9));
+test('Midland Grand [hist-b, hist-e]: iron cresting runs along the crown, wholly on its edge and nowhere inside a tower: a rail 0.12 m tall and a flat tooth 0.55 m wide and 0.88 m tall to each 0.9 m, one to each side', () => {
+  const crestOf = (plan: typeof midland): Tri[] => triangles(midlandGeometry(plan).pane as Batch).filter((t) => t.p.every((v) => v[1] >= plan.ridge - 1e-9 && v[1] <= plan.ridge + 1 + 1e-9));
   const crest = crestOf(midland);
-  assert.ok(crest.length >= 40, `${crest.length} cresting triangles`);
+  assert.ok(crest.length >= 200, `${crest.length} cresting triangles`);
   const ys = crest.flatMap((t) => t.p.map((v) => v[1]));
   close(Math.min(...ys), midland.ridge, 1e-9, 'it stands on the crown');
-  close(Math.max(...ys), midland.ridge + 0.7, 1e-9, 'and rises 0.7 m');
+  close(Math.max(...ys), midland.ridge + 1, 1e-9, 'and rises 1 m');
   const ring = polygonEdges(midland.roof.ring);
   const offRing = (p: Pt): number => Math.min(...ring.map((e) => {
     const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
     return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
   }));
   for (const t of crest) for (const v of t.p) {
-    assert.ok(offRing([v[0], v[2]]) <= 0.05 + 1e-6, `a cresting vertex ${offRing([v[0], v[2]])} m off the crown's edge (it is 0.1 m thick)`);
+    assert.ok(offRing([v[0], v[2]]) <= 0.05 + 1e-6, `a cresting vertex ${offRing([v[0], v[2]])} m off the crown's edge (the rail is 0.1 m thick)`);
     for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0.3)), false, `cresting inside the ${tower.name} tower`);
   }
-  // it is cut where a tower stands on the crown: the strip is shorter than the whole crown by what the towers cover (the two long faces of a strip are 1.4 m of height per metre of it)
-  const length = (ts: Tri[]): number => ts.filter((t) => Math.abs(geoNormal(t)[1]) < 1e-9).reduce((s, t) => s + worldArea(t), 0) / 1.4;
-  const whole = length(crestOf({ ...midland, towers: [] }));
-  assert.ok(length(crest) < whole - 5, `the cresting of ${length(crest)} m is shorter than the ${whole} m of a crown with no tower on it`);
+  // the rail: boxes 0.12 m tall, five faces of two triangles
+  const rail = crest.filter((t) => t.p.every((v) => v[1] <= midland.ridge + 0.12 + 1e-9));
+  assert.equal(rail.length % 10, 0, 'the rail is boxes of five faces of two triangles');
+  assert.ok(rail.length >= 40, `${rail.length} rail triangles`);
+  // the teeth: each stands on the rail, 0.55 m wide, apex 0.88 m over it on the middle of its base, flat in the plane of the crown line, and has a twin facing the other way
+  const teeth = crest.filter((t) => !rail.includes(t));
+  assert.ok(teeth.length >= 160 && teeth.length % 2 === 0, `${teeth.length} teeth`);
+  const apexes = new Map<string, Tri[]>();
+  for (const t of teeth) {
+    const high = t.p.filter((v) => Math.abs(v[1] - (midland.ridge + 1)) < 1e-9);
+    const low = t.p.filter((v) => Math.abs(v[1] - (midland.ridge + 0.12)) < 1e-9);
+    assert.ok(high.length === 1 && low.length === 2, 'a tooth: an apex and two feet on the rail');
+    const [h, l0, l1] = [high[0] as V3, low[0] as V3, low[1] as V3];
+    close(Math.hypot(l0[0] - l1[0], l0[2] - l1[2]), 0.55, 1e-6, 'a tooth is 0.55 m wide');
+    close((l0[0] + l1[0]) / 2 - h[0], 0, 1e-6, 'its apex over the middle of its feet');
+    close((l0[2] + l1[2]) / 2 - h[2], 0, 1e-6, 'its apex over the middle of its feet');
+    const n = geoNormal(t);
+    close(n[1], 0, 1e-9, 'a tooth stands upright');
+    close(n[0] * (l0[0] - l1[0]) + n[2] * (l0[2] - l1[2]), 0, 1e-9, 'and across the crown line');
+    const k = h.map((x) => x.toFixed(4)).join(',');
+    apexes.set(k, [...(apexes.get(k) ?? []), t]);
+  }
+  for (const [k, pair] of apexes) {
+    assert.equal(pair.length, 2, `a tooth at ${k} has a twin and no more`);
+    const [n0, n1] = [geoNormal(pair[0] as Tri), geoNormal(pair[1] as Tri)];
+    close((n0[0] * n1[0] + n0[2] * n1[2]) / (Math.hypot(n0[0], n0[2]) * Math.hypot(n1[0], n1[2])), -1, 1e-9, `the two at ${k} face opposite ways`);
+  }
+  // one every 0.9 m: the median gap from a tooth to the one nearest it
+  const at = [...apexes.values()].map((p) => (p[0] as Tri).p.find((v) => Math.abs(v[1] - (midland.ridge + 1)) < 1e-9) as V3);
+  const gaps = at.map((a, i) => Math.min(...at.filter((_, j) => j !== i).map((b) => Math.hypot(a[0] - b[0], a[2] - b[2])))).sort((x, y) => x - y);
+  close(gaps[Math.floor(gaps.length / 2)] as number, 0.9, 1e-6, 'a tooth every 0.9 m');
+  // it is cut where a tower stands on the crown: there are fewer teeth than along the whole crown of a plan with no tower on it
+  const whole = crestOf({ ...midland, towers: [] }).filter((t) => t.p.some((v) => Math.abs(v[1] - (midland.ridge + 1)) < 1e-9)).length;
+  assert.ok(teeth.length < whole - 10, `${teeth.length} teeth, against ${whole} along a crown with no tower on it`);
 });
 
 test('Midland Grand: the slate roof is a true-to-scale surface: every facet is laid out flat, texel area = roof area', () => {
@@ -1593,11 +1627,11 @@ test('Midland Grand [hist-b]: three gabled bays two windows wide stand 0.5 m out
     // the lower dormer row is the gable itself; the upper row stands behind it, clear of the cheeks (they end where the roof meets them)
     for (const bay of pair) {
       const behind = triangles(withP.pane as Batch).filter((t) => t.p.every((v) => v[1] > midland.eaves && Math.abs((v[0] - bay.at[0]) * bay.dir[0] + (v[2] - bay.at[1]) * bay.dir[1]) < bay.width / 2 && (v[0] - bay.at[0]) * bay.normal[0] + (v[2] - bay.at[1]) * bay.normal[1] < -0.3));
-      // round 5: where a pair of stacks stands within 2.4 m of the upper dormer's edge, the upper dormer gives way to it
+      // round 6: where a cluster of stacks stands within 3 m of the upper dormer's edge, the upper dormer gives way to it
       const e = polygonEdges(midland.outline)[bay.edge] as ReturnType<typeof polygonEdges>[number];
       const s0 = (bay.at[0] - e.a[0]) * e.dir[0] + (bay.at[1] - e.a[1]) * e.dir[1];
-      const stacked = stackPairs(midland).some((q) => q.i === bay.edge && Math.abs(q.s - s0) < bay.width / 2 + 2.4);
-      assert.ok((behind.length > 0 || stacked) && behind.every((t) => t.p.every((v) => v[1] >= 28)), 'only the upper dormer is left on a gabled bay (and none where a pair of stacks stands)');
+      const stacked = stackClusters(midland).some((q) => q.i === bay.edge && Math.abs(q.s - s0) < bay.width / 2 + 3.0);
+      assert.ok((behind.length > 0 || stacked) && behind.every((t) => t.p.every((v) => v[1] >= 28)), 'only the upper dormer is left on a gabled bay (and none where a cluster of stacks stands)');
     }
     // the parapet gives way where the cheeks start: no part of one overlaps the gable's width (it is one long quad per wall, so look at what it spans)
     const parapet = (g: PartMap<Key>): Tri[] => triangles(g.stone as Batch).filter((t) => t.p.every((v) => v[1] >= midland.eaves - 1e-9 && v[1] <= midland.eaves + 0.9 + 1e-9 && inPavilion(pair, v).out < 0.4 && inPavilion(pair, v).out > -0.05) && Math.min(...t.p.map((v) => inPavilion(pair, v).along)) < w - 1e-6 && Math.max(...t.p.map((v) => inPavilion(pair, v).along)) > -w + 1e-6);
@@ -1737,12 +1771,12 @@ test('Midland Grand [hist-b, hist-c, hist-e]: the dormers are 5.2 to 6.2 m tall 
   });
   assert.equal([...sizes.keys()].filter((k) => k[0] === 'l').length, 4, `all four sizes of lower dormer are built (${[...sizes.keys()]})`);
   assert.equal([...sizes.keys()].filter((k) => k[0] === 'u').length, 4, `and of upper dormer (${[...sizes.keys()]})`);
-  // the stacks: pairs of 1.4 m x 0.95 m shafts along the long shed side too, three or more of them
+  // the stacks: clusters of 1.4 m x 0.95 m shafts along the long shed side too, three or more of them
   const bricks = triangles(midlandGeometry(midland).brickRed as Batch);
   const shed = polygonEdges(midland.outline)[32] as ReturnType<typeof polygonEdges>[number];
-  const pairs = stackPairs(midland).filter((p) => p.i === 32);
-  assert.ok(pairs.length >= 3, `${pairs.length} pairs along the shed side`);
-  for (const ts of pairs.flatMap((p) => shaftsOf(p, bricks))) {
+  const along = stackClusters(midland).filter((p) => p.i === 32);
+  assert.ok(along.length >= 3, `${along.length} clusters along the shed side`);
+  for (const ts of along.flatMap((p) => shaftsOf(p, bricks))) {
     const vs = ts.flatMap((t) => t.p);
     const a = vs.map((v) => v[0] * shed.dir[0] + v[2] * shed.dir[1]);
     const d = vs.map((v) => v[0] * shed.normal[0] + v[2] * shed.normal[1]);

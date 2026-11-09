@@ -722,8 +722,8 @@ function facetSpan(r: RoofFrame, i: number, d0: number, d1: number): [number, nu
   return [Math.max(lo * d0, lo * d1), e.length + Math.min(hi * d0, hi * d1)];
 }
 
-/** A pair of chimney stacks on the Midland's roof: its facet `i`, `s` m along it from the facet's first corner, `d` m in from its eaves, and the height `top` its taller shaft's pot reaches. */
-export interface StackPair {
+/** A cluster of three chimney stacks on the Midland's roof: its facet `i`, `s` m along it from the facet's first corner, `d` m in from its eaves, and the height `top` its tallest (middle) shaft's pot reaches. */
+export interface StackCluster {
   i: number;
   s: number;
   d: number;
@@ -731,26 +731,25 @@ export interface StackPair {
 }
 
 /**
- * hist-b, hist-c, hist-e: where the Midland's chimney stacks stand. A pair of shafts (1.4 x 0.95 m, 2.4 m apart) about every 18 m along a facet, rising out of the slate a
- * metre in under the crown line, each pair to a height of its own, 3.4 to 6.2 m over the crown, and the second shaft 0.8 m lower: a skyline of a few groups at
- * different heights, as the Euston Road front's, where round 4's clusters of three every 8.4 m (9 m tall) read as an unbroken fence that hid the sky (the scorer: "fewer, spaced
- * to R-b's rhythm, rising from the roof slope"). Spacing, heights and the pair ASSUMED from those photographs. A pair stands wholly on its facet (clear of the hips) and
- * 3 m clear of the towers.
+ * hist-b, hist-c, hist-e: where the Midland's chimney stacks stand. A cluster of three shafts (1.4 x 0.95 m, 2.1 m apart, the middle one the tallest and the ones either side 1.2 and 0.6 m
+ * lower) about every 13 m along a facet, rising out of the slate a metre in under the crown line, each cluster to a height of its own, 4.4 to 7.2 m over the crown: round 5's pairs
+ * every 18 m (3.4 to 6.2 m) read thin against R-b's tall, clustered stacks (the scorer: "more and taller stack clusters at wall lines"), where round 4's threes every 8.4 m (9 m tall) read as
+ * an unbroken fence that hid the sky. Spacing, heights and the cluster ASSUMED from those photographs. A cluster stands wholly on its facet (clear of the hips) and 4.5 m clear of the towers.
  */
-export function stackPairs(plan: MidlandPlan): StackPair[] {
+export function stackClusters(plan: MidlandPlan): StackCluster[] {
   const frame: RoofFrame = { plan, edges: polygonEdges(plan.outline), rise: plan.ridge - plan.eaves };
-  const out: StackPair[] = [];
+  const out: StackCluster[] = [];
   for (const e of frame.edges) {
     const run = plan.roof.runs[e.i] as number;
     if (e.length < 10 || run < 5) continue;
     const d = run - 1;
     const [from, to] = facetSpan(frame, e.i, d - 0.5, d + 0.5);
-    const n = Math.max(1, Math.round(e.length / 18));
+    const n = Math.max(1, Math.floor(e.length / 13));
     for (let k = 0; k < n; k++) {
       const s = ((k + 0.5) / n) * e.length;
       const at = onRoof(frame, e.i, s, d);
-      if (s - 2.2 < from || s + 2.2 > to || plan.towers.some((t) => pointInQuad([at[0], at[2]], towerSquare(t, 3)))) continue;
-      out.push({ i: e.i, s, d, top: plan.ridge + ([3.4, 5.4, 4.2, 6.2][(3 * e.i + 5 * k) % 4] as number) });
+      if (s - 3.2 < from || s + 3.2 > to || plan.towers.some((t) => pointInQuad([at[0], at[2]], towerSquare(t, 4.5)))) continue;
+      out.push({ i: e.i, s, d, top: plan.ridge + ([4.4, 6.4, 5.2, 7.2][(3 * e.i + 5 * k) % 4] as number) });
     }
   }
   return out;
@@ -966,8 +965,8 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   // with pale borders and lights, a storey tall in a lower row above the cornice and a smaller upper row set back; roof photograph:
   // https://www.blackheath.org/events/2026/3/26/walk-amp-talk-st-pancras-and-somerstown. ASSUMED: one of each row to a bay (the upper over two bays in
   // three), sizes and places; on the bay's own facet, never inside a tower's envelope; a gabled bay is its own lower row. Round 5 (the scorer: "bigger, more varied dormers", "small and plain
-  // against R-c's steep, crested dormers"): the lower row 5.2 to 6.2 m tall and up to 4.3 m wide, the upper 3.4 to 3.7 m, each bay its own size in a cycle of four; an upper dormer gives way to a pair of stacks.
-  const stacks = stackPairs(plan);
+  // against R-c's steep, crested dormers"): the lower row 5.2 to 6.2 m tall and up to 4.3 m wide, the upper 3.4 to 3.7 m, each bay its own size in a cycle of four; an upper dormer gives way to a cluster of stacks.
+  const stacks = stackClusters(plan);
   [...plan.front.bays, ...plan.wing.bays].forEach((bay, n) => {
     const i = bay.edge;
     const e = edges[i] as Edge;
@@ -988,7 +987,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       const ww = Math.min(Math.min(1.8, bay.width * 0.36) * (lower ? 0.9 + v / 10 : 0.6 + v / 20), (to - from) / 2 - 0.15, (half - s0 + to - 0.16) / 2, (half + s0 - from - 0.16) / 2);
       if (ww < 0.5) continue;
       const s = Math.min(Math.max(s0, from + 0.15 + ww), to - 0.15 - ww);
-      if (Math.abs(s - s0) + ww > bay.width / 2 || (!lower && stacks.some((q) => q.i === i && Math.abs(q.s - s) < ww + 2.4))) continue;
+      if (Math.abs(s - s0) + ww > bay.width / 2 || (!lower && stacks.some((q) => q.i === i && Math.abs(q.s - s) < ww + 3.0))) continue;
       const mid = onRoof(frame, i, s, d);
       // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
       if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
@@ -998,17 +997,24 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
     }
   });
-  // the stacks: each shaft rises out of the slope, its foot buried 0.3 m under the slate at its outer face (see stackPairs)
+  // the stacks: each shaft rises out of the slope, its foot buried 0.3 m under the slate at its outer face (see stackClusters)
   for (const p of stacks) {
     const e = edges[p.i] as Edge;
-    for (const o of [-1, 1]) {
-      const c = onRoof(frame, p.i, p.s + o * 1.2, p.d);
-      const base = onRoof(frame, p.i, p.s + o * 1.2, p.d - 0.5)[1] - 0.3;
-      addStack(parts, [c[0], c[2]], e.dir, base, p.top - (o > 0 ? 0.8 : 0) - base - 0.95);
+    for (const [o, drop] of [[-1, 1.2], [0, 0], [1, 0.6]] as const) {
+      const c = onRoof(frame, p.i, p.s + o * 2.1, p.d);
+      const base = onRoof(frame, p.i, p.s + o * 2.1, p.d - 0.5)[1] - 0.3;
+      addStack(parts, [c[0], c[2]], e.dir, base, p.top - drop - base - 0.95);
     }
   }
-  // hist-b, hist-e: iron cresting along the crown; a plain strip 0.7 m tall stands for its piercing (ASSUMED), cut at the towers
-  for (const { a, b } of segmentsOutside(polygonEdges(plan.roof.ring), cutters)) part(parts, 'pane').box([(a[0] + b[0]) / 2, plan.ridge + 0.35, (a[1] + b[1]) / 2], [Math.hypot(b[0] - a[0], b[1] - a[1]), 0.7, 0.1], { rotY: Math.atan2(a[1] - b[1], b[0] - a[0]), skip: ['-y'] });
+  // hist-b, hist-e: iron cresting along the crown, cut at the towers: a rail 0.12 m tall and a tooth 0.55 m wide and 0.88 m tall to each 0.9 m, flat in the plane of the crown line (a triangle to
+  // each side: round 5's solid dark strip read as a wall); sizes ASSUMED
+  const pane = part(parts, 'pane');
+  for (const { a, b } of segmentsOutside(polygonEdges(plan.roof.ring), cutters)) {
+    const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const at = (s: number, y: number): V3 => [a[0] + ((b[0] - a[0]) * s) / l, plan.ridge + y, a[1] + ((b[1] - a[1]) * s) / l];
+    pane.box([(a[0] + b[0]) / 2, plan.ridge + 0.06, (a[1] + b[1]) / 2], [l, 0.12, 0.1], { rotY: Math.atan2(a[1] - b[1], b[0] - a[0]), skip: ['-y'] });
+    for (let s = 0.45; s < l - 0.3; s += 0.9) for (const f of [-1, 1]) pane.tri(at(s - 0.275, 0.12), at(s + 0.275, 0.12), at(s, 1), undefined, [(-(b[1] - a[1]) * f) / l, 0, ((b[0] - a[0]) * f) / l]);
+  }
   for (const t of plan.towers) addTower(parts, t, plan);
   return parts;
 }
