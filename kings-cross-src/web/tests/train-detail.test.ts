@@ -3659,6 +3659,13 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
         assert.ok(Math.abs(along(v)) < 1e-4, `${kind} car ${car.index}: the band's front row stands ${(along(v) * 1000).toFixed(1)} mm off the face's plane`);
         near(v.y, yAtX(tipHalf, Math.abs(v.x)), 1e-4, `${kind} car ${car.index}: the band's front row at x = ${v.x.toFixed(3)} stands off the face's outline`);
       }
+      // ... and it has a column at every vertex of the outline across the top, so that its chords do not cut the outline's corners (the chord across the vertex 0.34 m out of the
+      // Azuma's face stood 8 mm under it, and the strip dipped under the loft there: a red shard at each of the two vertices in the 3 m views)
+      const cornerY = Math.min(...edgeRow.map((v) => v.y));
+      for (const [x, y] of tipHalf) {
+        if (y <= cornerY + 1e-6) continue;
+        for (const side of [-1, 1]) assert.ok(edgeRow.some((v) => Math.abs(v.x - side * x) < 1e-4), `${kind} car ${car.index}: the band's front row has no column at the outline's vertex x = ${(side * x).toFixed(3)}, y = ${y.toFixed(3)}`);
+      }
     }
   }
 });

@@ -1123,6 +1123,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     // down from the crown, the band over the nose's top takes it up
     const maskHalf = (y: number): number => (mask ? lerp(mask.hwFoot, mask.hwTop, (y - r0.bottom) / (r0.top - r0.bottom)) : 0);
     let bandStart = 0;
+    // the x of each vertex of the face's outline from where the mask's edge leaves it up to the crown: the band's front row has a column at every one of them
+    const bandVertices: number[] = [];
     if (mask) {
       bandStart = (tipHalf[K - 1] as [number, number])[0];
       for (let k = K - 1; k >= 1; k--) {
@@ -1132,6 +1134,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const fb = maskHalf(b[1]) - b[0];
         if (fa > 0 && fb <= 0) {
           bandStart = lerp(a[0], b[0], fa / (fa - fb));
+          for (let j = k; j < K; j++) bandVertices.push((tipHalf[j] as [number, number])[0]);
           break;
         }
       }
@@ -1329,11 +1332,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
         // first row stands ON the face's edge (no lift), where the cap's strip meets it, and the lift grows from there to the 12 mm the loft's facets need over the first fifth.
         // (At 4 mm the row stood 2.7 mm over the edge and 3 mm in front of the face, and the red of the loft behind showed through the slit between them as a hairline along the
-        // arch of the face, in the 3 m views of the LNER's yellow and the Hull Trains beak.)
+        // arch of the face, in the 3 m views of the LNER's yellow and the Hull Trains beak.) So that the row lies on the outline and not on chords across its corners, it has a column
+        // at every vertex of the outline (and its mirror) besides the columns spread over the angle, which crowd toward the corners where the surface turns: the chord across the vertex 0.34 m out
+        // stood 8 mm under it, and the strip dipped under the loft there, a red shard at each of the two vertices.
         const sEnd = screen.s0 - front.frame + 0.06;
-        nosePatch(12, 18, (v, u) => {
+        const pins = bandVertices.flatMap((x) => (x > 1e-6 ? [x / bandStart, -x / bandStart] : [0]));
+        const spread = Array.from({ length: 19 }, (_, q) => Math.sin(Math.PI * (q / 18 - 0.5)));
+        const columns = [...pins, ...spread.filter((f) => pins.every((p) => Math.abs(p - f) > 0.02))].sort((a, b) => a - b);
+        nosePatch(12, columns.length - 1, (v, u) => {
           const s = sEnd * (0.5 - 0.5 * Math.cos(Math.PI * v));
-          return [lerp(bandStart, mask.hwSill, s / sEnd) * Math.sin(Math.PI * (u - 0.5)), s];
+          return [lerp(bandStart, mask.hwSill, s / sEnd) * (columns[Math.round(u * (columns.length - 1))] as number), s];
         }, detail, colourOf(mask.colour), (v) => lerp(0, 0.012, Math.min(1, v * 5)));
       }
       if (front.wipers) {
