@@ -1,0 +1,10 @@
+{
+  "started": "2026-11-03T05:00:00.714911+00:00",
+  "ended": "2026-11-03T05:00:00.825852+00:00",
+  "argv": [
+    "/workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender",
+    "--version"
+  ],
+  "exitCode": 0,
+  "log": "blender-version.log"
+}

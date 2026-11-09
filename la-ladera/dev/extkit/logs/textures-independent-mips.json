@@ -1,0 +1,12 @@
+{
+  "started": "2026-11-03T05:02:59.020634+00:00",
+  "ended": "2026-11-03T05:03:01.262327+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--input-type=module",
+    "-e",
+    "import { readFileSync } from \"node:fs\"; import { resolve } from \"node:path\"; import { inspectKtx2, decodeKtx2, seamMetrics } from \"./la-ladera/tools/blender/extkit_texture_codec.mjs\"; const root=\"la-ladera/assets/models/extkit\"; const materials=JSON.parse(readFileSync(root+\"/materials.json\")); let count=0,gpu=0; for (const wall of materials.walls) for (const key of [\"map\",\"normal\",\"orm\"]) { const info=inspectKtx2(readFileSync(resolve(root,wall[key]))); gpu+=info.gpuBytes; for(let level=0;level<info.levelCount;level++) { const seam=seamMetrics(decodeKtx2(info,level)); if(seam.horizontalMax || seam.verticalMax) throw Error(wall.id+\" \"+key+\" mip\"+level+\" \"+JSON.stringify(seam)); count++; } console.log(wall.id+\" \"+key+\":11 valid mips; opposite edges identical\"); } console.log(JSON.stringify({texturePlanes:36,decodedMips:count,wallGpuBytes:gpu,allEdgesExact:true}));"
+  ],
+  "exitCode": 0,
+  "log": "textures-independent-mips.log"
+}

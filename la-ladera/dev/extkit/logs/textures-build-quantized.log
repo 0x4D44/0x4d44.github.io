@@ -1,0 +1,26 @@
+UTC start: 2026-11-03T05:01:41.227642+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle python la-ladera/tools/blender/extkit_textures.py --preview la-ladera/dev/extkit
+
+extkit_wall_azul_anil: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_turquesa: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_amarillo_ocre: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_terracota: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_verde_menta: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_rosado: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_tolete: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_tolete_humedo: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_bloque: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_baldosin: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_panete: 3 KTX2 planes, 1024px, 11 mips
+extkit_wall_cal: 3 KTX2 planes, 1024px, 11 mips
+{
+  "textureFiles": 39,
+  "wallMaterials": 12,
+  "textureBytes": 6257029,
+  "gpuBytes": 37749372,
+  "materials": "/workspace/scratch/597af25581a6/repo/la-ladera/assets/models/extkit/materials.json"
+}
+
+UTC end: 2026-11-03T05:02:02.000177+00:00
+Exit status: 0

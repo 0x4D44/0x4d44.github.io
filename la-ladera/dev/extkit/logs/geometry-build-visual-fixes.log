@@ -1,0 +1,4768 @@
+UTC start: 2026-11-03T05:28:13.755437+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender --background --factory-startup --threads 2 --python-exit-code 1 --python la-ladera/tools/blender/extkit_build.py -- --node /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node
+
+socket(): Operation not permitted
+socket(): Operation not permitted
+extkit_tank_500_blue_steel: 1452 triangles, 6 parts; actual [1.2171, 1.6134, 0.92]
+extkit_tank_500_blue_block: 1228 triangles, 6 parts; actual [1.2171, 1.3534, 0.92]
+extkit_tank_500_black_steel: 1452 triangles, 5 parts; actual [1.2171, 1.6134, 0.92]
+extkit_tank_500_black_block: 1228 triangles, 5 parts; actual [1.2171, 1.3534, 0.92]
+extkit_tank_1000_blue_steel: 1452 triangles, 6 parts; actual [1.4971, 1.8238, 1.2]
+extkit_tank_1000_blue_block: 1228 triangles, 6 parts; actual [1.4971, 1.5638, 1.2]
+extkit_tank_1000_black_steel: 1452 triangles, 5 parts; actual [1.4971, 1.8238, 1.2]
+extkit_tank_1000_black_block: 1228 triangles, 5 parts; actual [1.4971, 1.5638, 1.2]
+extkit_tank_2000_blue_steel: 1452 triangles, 6 parts; actual [1.8771, 2.0842, 1.58]
+extkit_tank_2000_blue_block: 1228 triangles, 6 parts; actual [1.8771, 1.8242, 1.58]
+extkit_tank_2000_black_steel: 1452 triangles, 5 parts; actual [1.8771, 2.0842, 1.58]
+extkit_tank_2000_black_block: 1228 triangles, 5 parts; actual [1.8771, 1.8242, 1.58]
+extkit_tank_1000_blue_raised: 1452 triangles, 6 parts; actual [1.4971, 2.3838, 1.2]
+extkit_tank_1000_black_raised: 1452 triangles, 5 parts; actual [1.4971, 2.3838, 1.2]
+extkit_laundry_balcony: 612 triangles, 4 parts; actual [2.08, 1.0307, 0.3094]
+extkit_laundry_roof: 1308 triangles, 5 parts; actual [4.16, 2.03, 0.7]
+extkit_laundry_rotary: 760 triangles, 4 parts; actual [2.2493, 2.13, 2.2493]
+extkit_laundry_pole: 676 triangles, 5 parts; actual [2.96, 2.03, 0.16]
+extkit_dish_46: 1220 triangles, 3 parts; actual [0.4738, 0.6969, 0.6003]
+extkit_dish_68: 1220 triangles, 3 parts; actual [0.6938, 0.9169, 0.6003]
+extkit_dish_92: 1220 triangles, 3 parts; actual [0.9338, 1.1569, 0.6003]
+extkit_aerial_yagi: 646 triangles, 2 parts; actual [1.212, 1.16, 0.78]
+extkit_aerial_bowtie: 498 triangles, 2 parts; actual [0.6255, 1.16, 0.18]
+extkit_rebar_55_light: 1152 triangles, 2 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_55_heavy: 1152 triangles, 2 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_110_light: 1152 triangles, 2 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_110_heavy: 1152 triangles, 2 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_180_light: 1152 triangles, 2 parts; actual [0.2884, 1.797, 0.2687]
+extkit_rebar_180_heavy: 1152 triangles, 2 parts; actual [0.2884, 1.797, 0.2687]
+extkit_gas_cage_1: 1332 triangles, 4 parts; actual [0.585, 0.995, 0.5765]
+extkit_gas_cage_2: 2440 triangles, 4 parts; actual [1.135, 0.995, 0.5765]
+extkit_pipe_straight: 192 triangles, 1 parts; actual [0.0425, 0.996, 0.0425]
+extkit_pipe_elbow: 480 triangles, 1 parts; actual [0.2592, 0.2442, 0.0425]
+extkit_pipe_tee: 256 triangles, 1 parts; actual [0.396, 0.1912, 0.0425]
+extkit_pipe_bracket: 506 triangles, 2 parts; actual [0.12, 0.12, 0.1235]
+extkit_drain_straight: 192 triangles, 1 parts; actual [0.1298, 0.996, 0.1298]
+extkit_drain_elbow: 480 triangles, 1 parts; actual [0.3029, 0.2879, 0.1298]
+extkit_drain_tee: 256 triangles, 1 parts; actual [0.396, 0.2349, 0.1298]
+extkit_drain_bracket: 506 triangles, 2 parts; actual [0.1559, 0.12, 0.1605]
+extkit_meter_1: 688 triangles, 5 parts; actual [0.4, 0.7362, 0.222]
+extkit_meter_3: 1728 triangles, 5 parts; actual [1.2, 0.7362, 0.222]
+extkit_transformer_pole: 1860 triangles, 4 parts; actual [0.9659, 1.3265, 0.92]
+extkit_cable_thin: 64 triangles, 1 parts; actual [0.5, 0.018, 0.018]
+extkit_cable_bundle: 144 triangles, 1 parts; actual [0.5, 0.0327, 0.0345]
+extkit_chalkboard: 146 triangles, 3 parts; actual [0.61, 0.87, 0.1175]
+extkit_grille_1: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_2: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_3: 924 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_4: 1164 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_5: 1428 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_6: 1884 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_7: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_8: 780 triangles, 1 parts; actual [1.185, 1.18, 0.179]
+extkit_shutter_100: 180 triangles, 3 parts; actual [1.0, 0.31, 0.296]
+extkit_shutter_180: 180 triangles, 3 parts; actual [1.8, 0.31, 0.296]
+extkit_shutter_260: 180 triangles, 3 parts; actual [2.6, 0.31, 0.296]
+extkit_plant_sansevieria: 676 triangles, 5 parts; actual [0.4256, 0.9136, 0.36]
+extkit_plant_aloe: 676 triangles, 5 parts; actual [0.5545, 0.6036, 0.5602]
+extkit_plant_fern: 1504 triangles, 5 parts; actual [0.6855, 0.6272, 0.5951]
+extkit_plant_geranium: 1464 triangles, 7 parts; actual [0.532, 0.6202, 0.3741]
+extkit_plant_croton: 684 triangles, 6 parts; actual [0.5016, 0.8474, 0.412]
+extkit_plant_pothos: 862 triangles, 5 parts; actual [0.5244, 0.7248, 0.5954]
+extkit_lattice_square: 518 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+extkit_lattice_diamond: 1814 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+extkit_lattice_flower: 4694 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+INFO Draco is available, use library at /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/lib/libbf_intern_draco_bridge.so
+INFO MeshOptimizer is available, use library at /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/lib/libbf_intern_meshopt_bridge.so
+
+extkit_near.glb: 2,631,200 bytes; 51 repeated component references
+extkit_tank_500_blue_steel_lod1: 300 triangles, 4 parts; actual [1.1818, 1.6141, 0.92]
+extkit_tank_500_blue_block_lod1: 212 triangles, 4 parts; actual [1.1813, 1.3541, 0.92]
+extkit_tank_500_black_steel_lod1: 300 triangles, 3 parts; actual [1.1818, 1.6141, 0.92]
+extkit_tank_500_black_block_lod1: 212 triangles, 3 parts; actual [1.1813, 1.3541, 0.92]
+extkit_tank_1000_blue_steel_lod1: 300 triangles, 4 parts; actual [1.4618, 1.8245, 1.2]
+extkit_tank_1000_blue_block_lod1: 212 triangles, 4 parts; actual [1.4613, 1.5645, 1.2]
+extkit_tank_1000_black_steel_lod1: 300 triangles, 3 parts; actual [1.4618, 1.8245, 1.2]
+extkit_tank_1000_black_block_lod1: 212 triangles, 3 parts; actual [1.4613, 1.5645, 1.2]
+extkit_tank_2000_blue_steel_lod1: 300 triangles, 4 parts; actual [1.8418, 2.085, 1.58]
+extkit_tank_2000_blue_block_lod1: 212 triangles, 4 parts; actual [1.8413, 1.825, 1.58]
+extkit_tank_2000_black_steel_lod1: 300 triangles, 3 parts; actual [1.8418, 2.085, 1.58]
+extkit_tank_2000_black_block_lod1: 212 triangles, 3 parts; actual [1.8413, 1.825, 1.58]
+extkit_tank_1000_blue_raised_lod1: 300 triangles, 4 parts; actual [1.4619, 2.3845, 1.2]
+extkit_tank_1000_black_raised_lod1: 300 triangles, 3 parts; actual [1.4619, 2.3845, 1.2]
+extkit_laundry_balcony_lod1: 128 triangles, 3 parts; actual [2.08, 1.0243, 0.3094]
+extkit_laundry_roof_lod1: 234 triangles, 3 parts; actual [4.048, 2.03, 0.7]
+extkit_laundry_rotary_lod1: 188 triangles, 3 parts; actual [2.2493, 2.13, 2.2493]
+extkit_laundry_pole_lod1: 122 triangles, 3 parts; actual [2.848, 2.03, 0.0629]
+extkit_dish_46_lod1: 168 triangles, 3 parts; actual [0.46, 0.69, 0.5912]
+extkit_dish_68_lod1: 168 triangles, 3 parts; actual [0.68, 0.91, 0.5912]
+extkit_dish_92_lod1: 168 triangles, 3 parts; actual [0.92, 1.15, 0.5912]
+extkit_aerial_yagi_lod1: 119 triangles, 2 parts; actual [1.209, 1.16, 0.78]
+extkit_aerial_bowtie_lod1: 139 triangles, 2 parts; actual [0.625, 1.16, 0.13]
+extkit_rebar_55_light_lod1: 126 triangles, 1 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_55_heavy_lod1: 126 triangles, 1 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_110_light_lod1: 126 triangles, 1 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_110_heavy_lod1: 126 triangles, 1 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_180_light_lod1: 126 triangles, 1 parts; actual [0.2884, 1.797, 0.2687]
+extkit_rebar_180_heavy_lod1: 126 triangles, 1 parts; actual [0.2884, 1.797, 0.2687]
+extkit_gas_cage_1_lod1: 396 triangles, 4 parts; actual [0.585, 0.995, 0.558]
+extkit_gas_cage_2_lod1: 620 triangles, 4 parts; actual [1.135, 0.995, 0.558]
+extkit_pipe_straight_lod1: 16 triangles, 1 parts; actual [0.036, 0.96, 0.036]
+extkit_pipe_elbow_lod1: 40 triangles, 1 parts; actual [0.238, 0.223, 0.036]
+extkit_pipe_tee_lod1: 32 triangles, 1 parts; actual [0.36, 0.188, 0.036]
+extkit_pipe_bracket_lod1: 90 triangles, 1 parts; actual [0.12, 0.12, 0.1235]
+extkit_drain_straight_lod1: 16 triangles, 1 parts; actual [0.11, 0.96, 0.11]
+extkit_drain_elbow_lod1: 40 triangles, 1 parts; actual [0.275, 0.26, 0.11]
+extkit_drain_tee_lod1: 32 triangles, 1 parts; actual [0.36, 0.225, 0.11]
+extkit_drain_bracket_lod1: 90 triangles, 1 parts; actual [0.1554, 0.12, 0.1605]
+extkit_meter_1_lod1: 136 triangles, 4 parts; actual [0.4, 0.6856, 0.2195]
+extkit_meter_3_lod1: 360 triangles, 4 parts; actual [1.2, 0.6856, 0.2195]
+extkit_transformer_pole_lod1: 382 triangles, 4 parts; actual [0.9659, 1.3265, 0.92]
+extkit_cable_thin_lod1: 16 triangles, 1 parts; actual [0.5, 0.018, 0.018]
+extkit_cable_bundle_lod1: 16 triangles, 1 parts; actual [0.5, 0.036, 0.036]
+extkit_chalkboard_lod1: 22 triangles, 2 parts; actual [0.61, 0.87, 0.0545]
+extkit_grille_1_lod1: 180 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_2_lod1: 180 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_3_lod1: 288 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_4_lod1: 240 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_5_lod1: 270 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_6_lod1: 360 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_7_lod1: 180 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_8_lod1: 252 triangles, 1 parts; actual [1.185, 1.18, 0.1789]
+extkit_shutter_100_lod1: 28 triangles, 1 parts; actual [1.0, 0.23, 0.29]
+extkit_shutter_180_lod1: 28 triangles, 1 parts; actual [1.8, 0.23, 0.29]
+extkit_shutter_260_lod1: 28 triangles, 1 parts; actual [2.6, 0.23, 0.29]
+extkit_plant_sansevieria_lod1: 156 triangles, 5 parts; actual [0.4256, 0.9125, 0.36]
+extkit_plant_aloe_lod1: 156 triangles, 5 parts; actual [0.5594, 0.6025, 0.5196]
+extkit_plant_fern_lod1: 306 triangles, 5 parts; actual [0.6208, 0.6299, 0.6515]
+extkit_plant_geranium_lod1: 420 triangles, 7 parts; actual [0.532, 0.6155, 0.36]
+extkit_plant_croton_lod1: 168 triangles, 6 parts; actual [0.5016, 0.795, 0.3759]
+extkit_plant_pothos_lod1: 228 triangles, 5 parts; actual [0.5244, 0.7225, 0.4584]
+extkit_lattice_square_lod1: 86 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+extkit_lattice_diamond_lod1: 662 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+extkit_lattice_flower_lod1: 1526 triangles, 1 parts; actual [1.2025, 1.195, 0.141]
+
+extkit_lod.glb: 651,244 bytes; 33 repeated component references
+{
+  "ok": true,
+  "complete": true,
+  "runtime": "v22.16.0",
+  "baseAssets": 65,
+  "lodAssets": 65,
+  "glbBytes": 3282444,
+  "modelBytes": 3470012,
+  "textureBytes": 6083057,
+  "gpuBytes": 37749372,
+  "gpuCompressedWallBytes": 33555072,
+  "gpuAtlasBytes": 4194300,
+  "maxTriangles": 4694,
+  "maxSmallTriangles": 1884,
+  "maxLodRatio": 0.36585365853658536,
+  "sharedMeshAliases": 84,
+  "artifactCount": 43,
+  "families": {
+    "water_tank": 14,
+    "laundry": 4,
+    "satellite_dish": 3,
+    "tv_aerial": 2,
+    "rebar": 6,
+    "gas_cage": 2,
+    "pipe": 4,
+    "drain": 4,
+    "meter_box": 2,
+    "transformer": 1,
+    "cable_segment": 2,
+    "chalkboard": 1,
+    "grille": 8,
+    "shutter_box": 3,
+    "plant": 6,
+    "lattice": 3
+  },
+  "assets": [
+    {
+      "key": "extkit_tank_500_blue_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_500_blue_steel",
+      "min": [
+        -0.6085594892501831,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.6085596084594727,
+        1.6133946999907494,
+        0.46000000834465027
+      ],
+      "triangles": 1452,
+      "parts": 6,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        120,
+        121,
+        126,
+        125,
+        123,
+        119
+      ],
+      "size": [
+        1.2171190977096558,
+        1.6133946999907494,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_blue_block",
+      "family": "water_tank",
+      "name": "extkit_tank_500_blue_block",
+      "min": [
+        -0.6085594892501831,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.6085598468780518,
+        1.353394590318203,
+        0.46000000834465027
+      ],
+      "triangles": 1228,
+      "parts": 6,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        115,
+        116,
+        124,
+        125,
+        118,
+        119
+      ],
+      "size": [
+        1.2171193361282349,
+        1.353394590318203,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_black_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_500_black_steel",
+      "min": [
+        -0.6085594892501831,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.6085596084594727,
+        1.6133946999907494,
+        0.46000000834465027
+      ],
+      "triangles": 1452,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        120,
+        121,
+        122,
+        123,
+        119
+      ],
+      "size": [
+        1.2171190977096558,
+        1.6133946999907494,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_black_block",
+      "family": "water_tank",
+      "name": "extkit_tank_500_black_block",
+      "min": [
+        -0.6085594892501831,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.6085598468780518,
+        1.353394590318203,
+        0.46000000834465027
+      ],
+      "triangles": 1228,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "size": [
+        1.2171193361282349,
+        1.353394590318203,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_steel",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7485595345497131,
+        1.8238015994429588,
+        0.6000000238418579
+      ],
+      "triangles": 1452,
+      "parts": 6,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        135,
+        136,
+        142,
+        140,
+        138,
+        119
+      ],
+      "size": [
+        1.4971190690994263,
+        1.8238015994429588,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_block",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_block",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.748559832572937,
+        1.563801608979702,
+        0.6000000238418579
+      ],
+      "triangles": 1228,
+      "parts": 6,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        127,
+        128,
+        139,
+        140,
+        130,
+        119
+      ],
+      "size": [
+        1.4971193671226501,
+        1.563801608979702,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_steel",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7485595345497131,
+        1.8238015994429588,
+        0.6000000238418579
+      ],
+      "triangles": 1452,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        135,
+        136,
+        137,
+        138,
+        119
+      ],
+      "size": [
+        1.4971190690994263,
+        1.8238015994429588,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_block",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_block",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.748559832572937,
+        1.563801608979702,
+        0.6000000238418579
+      ],
+      "triangles": 1228,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        127,
+        128,
+        129,
+        130,
+        119
+      ],
+      "size": [
+        1.4971193671226501,
+        1.563801608979702,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_blue_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_blue_steel",
+      "min": [
+        -0.9385595321655273,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9385595321655273,
+        2.0842337235808372,
+        0.7900000214576721
+      ],
+      "triangles": 1452,
+      "parts": 6,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        147,
+        148,
+        153,
+        154,
+        150,
+        119
+      ],
+      "size": [
+        1.8771190643310547,
+        2.0842337235808372,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_blue_block",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_blue_block",
+      "min": [
+        -0.9385595321655273,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9385598301887512,
+        1.8242336139082909,
+        0.7900000214576721
+      ],
+      "triangles": 1228,
+      "parts": 6,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        143,
+        144,
+        151,
+        152,
+        146,
+        119
+      ],
+      "size": [
+        1.8771193623542786,
+        1.8242336139082909,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_black_steel",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_black_steel",
+      "min": [
+        -0.9385595321655273,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9385595321655273,
+        2.0842337235808372,
+        0.7900000214576721
+      ],
+      "triangles": 1452,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        147,
+        148,
+        149,
+        150,
+        119
+      ],
+      "size": [
+        1.8771190643310547,
+        2.0842337235808372,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_black_block",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_black_block",
+      "min": [
+        -0.9385595321655273,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9385598301887512,
+        1.8242336139082909,
+        0.7900000214576721
+      ],
+      "triangles": 1228,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_soil",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        143,
+        144,
+        145,
+        146,
+        119
+      ],
+      "size": [
+        1.8771193623542786,
+        1.8242336139082909,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_raised",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_raised",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7485591769218445,
+        2.3838016614317894,
+        0.6000000238418579
+      ],
+      "triangles": 1452,
+      "parts": 6,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        131,
+        132,
+        141,
+        140,
+        134,
+        119
+      ],
+      "size": [
+        1.4971187114715576,
+        2.3838016614317894,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_raised",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_raised",
+      "min": [
+        -0.7485595345497131,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7485591769218445,
+        2.3838016614317894,
+        0.6000000238418579
+      ],
+      "triangles": 1452,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light",
+        "extkit_black",
+        "extkit_pvc",
+        "extkit_paint"
+      ],
+      "meshIds": [
+        131,
+        132,
+        133,
+        134,
+        119
+      ],
+      "size": [
+        1.4971187114715576,
+        2.3838016614317894,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_laundry_balcony",
+      "family": "laundry",
+      "name": "extkit_laundry_balcony",
+      "min": [
+        -1.0399999618530273,
+        0,
+        -0.15470562875270844
+      ],
+      "max": [
+        1.0399999618530273,
+        1.030713140964508,
+        0.15470536053180695
+      ],
+      "triangles": 612,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth",
+        "extkit_wood"
+      ],
+      "meshIds": [
+        42,
+        43,
+        44,
+        45
+      ],
+      "size": [
+        2.0799999237060547,
+        1.030713140964508,
+        0.3094109892845154
+      ]
+    },
+    {
+      "key": "extkit_laundry_roof",
+      "family": "laundry",
+      "name": "extkit_laundry_roof",
+      "min": [
+        -2.0799999237060547,
+        0,
+        -0.3499999940395355
+      ],
+      "max": [
+        2.0799999237060547,
+        2.0299999713897705,
+        0.3499999940395355
+      ],
+      "triangles": 1308,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_concrete",
+        "extkit_rope",
+        "extkit_cloth",
+        "extkit_wood"
+      ],
+      "meshIds": [
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "size": [
+        4.159999847412109,
+        2.0299999713897705,
+        0.699999988079071
+      ]
+    },
+    {
+      "key": "extkit_laundry_rotary",
+      "family": "laundry",
+      "name": "extkit_laundry_rotary",
+      "min": [
+        -1.1246702671051025,
+        0,
+        -1.1246707439422607
+      ],
+      "max": [
+        1.1246707439422607,
+        2.130000114440918,
+        1.1246702671051025
+      ],
+      "triangles": 760,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth",
+        "extkit_wood"
+      ],
+      "meshIds": [
+        56,
+        57,
+        58,
+        59
+      ],
+      "size": [
+        2.2493410110473633,
+        2.130000114440918,
+        2.2493410110473633
+      ]
+    },
+    {
+      "key": "extkit_laundry_pole",
+      "family": "laundry",
+      "name": "extkit_laundry_pole",
+      "min": [
+        -1.4800000190734863,
+        0,
+        -0.07999999821186066
+      ],
+      "max": [
+        1.4800000190734863,
+        2.0299999713897705,
+        0.07999999821186066
+      ],
+      "triangles": 676,
+      "parts": 5,
+      "materials": [
+        "extkit_steel",
+        "extkit_concrete",
+        "extkit_rope",
+        "extkit_cloth",
+        "extkit_wood"
+      ],
+      "meshIds": [
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "size": [
+        2.9600000381469727,
+        2.0299999713897705,
+        0.1599999964237213
+      ]
+    },
+    {
+      "key": "extkit_dish_46",
+      "family": "satellite_dish",
+      "name": "extkit_dish_46",
+      "min": [
+        -0.23691168427467346,
+        0,
+        -0.30014878511428833
+      ],
+      "max": [
+        0.2369113266468048,
+        0.6969280242919922,
+        0.30014875531196594
+      ],
+      "triangles": 1220,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        9,
+        10,
+        11
+      ],
+      "size": [
+        0.47382301092147827,
+        0.6969280242919922,
+        0.6002975404262543
+      ]
+    },
+    {
+      "key": "extkit_dish_68",
+      "family": "satellite_dish",
+      "name": "extkit_dish_68",
+      "min": [
+        -0.3469116985797882,
+        0,
+        -0.30014878511428833
+      ],
+      "max": [
+        0.3469112813472748,
+        0.9169279932975769,
+        0.30014875531196594
+      ],
+      "triangles": 1220,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        12,
+        13,
+        14
+      ],
+      "size": [
+        0.693822979927063,
+        0.9169279932975769,
+        0.6002975404262543
+      ]
+    },
+    {
+      "key": "extkit_dish_92",
+      "family": "satellite_dish",
+      "name": "extkit_dish_92",
+      "min": [
+        -0.4669116735458374,
+        0,
+        -0.30014878511428833
+      ],
+      "max": [
+        0.46691131591796875,
+        1.1569279432296753,
+        0.30014875531196594
+      ],
+      "triangles": 1220,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        15,
+        16,
+        17
+      ],
+      "size": [
+        0.9338229894638062,
+        1.1569279432296753,
+        0.6002975404262543
+      ]
+    },
+    {
+      "key": "extkit_aerial_yagi",
+      "family": "tv_aerial",
+      "name": "extkit_aerial_yagi",
+      "min": [
+        -0.6060000061988831,
+        0,
+        -0.38999998569488525
+      ],
+      "max": [
+        0.6060000061988831,
+        1.159999966621399,
+        0.38999998569488525
+      ],
+      "triangles": 646,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        2,
+        3
+      ],
+      "size": [
+        1.2120000123977661,
+        1.159999966621399,
+        0.7799999713897705
+      ]
+    },
+    {
+      "key": "extkit_aerial_bowtie",
+      "family": "tv_aerial",
+      "name": "extkit_aerial_bowtie",
+      "min": [
+        -0.3127400875091553,
+        0,
+        -0.09000000357627869
+      ],
+      "max": [
+        0.31273990869522095,
+        1.159999966621399,
+        0.09000000357627869
+      ],
+      "triangles": 498,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        0,
+        1
+      ],
+      "size": [
+        0.6254799962043762,
+        1.159999966621399,
+        0.18000000715255737
+      ]
+    },
+    {
+      "key": "extkit_rebar_55_light",
+      "family": "rebar",
+      "name": "extkit_rebar_55_light",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        0.5508840084075928,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_black"
+      ],
+      "meshIds": [
+        99,
+        98
+      ],
+      "size": [
+        0.2884019911289215,
+        0.5508840084075928,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_55_heavy",
+      "family": "rebar",
+      "name": "extkit_rebar_55_heavy",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        0.5508840084075928,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_heavy",
+        "extkit_black"
+      ],
+      "meshIds": [
+        97,
+        98
+      ],
+      "size": [
+        0.2884019911289215,
+        0.5508840084075928,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_110_light",
+      "family": "rebar",
+      "name": "extkit_rebar_110_light",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.0988069772720337,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_black"
+      ],
+      "meshIds": [
+        102,
+        101
+      ],
+      "size": [
+        0.2884019911289215,
+        1.0988069772720337,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_110_heavy",
+      "family": "rebar",
+      "name": "extkit_rebar_110_heavy",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.0988069772720337,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_heavy",
+        "extkit_black"
+      ],
+      "meshIds": [
+        100,
+        101
+      ],
+      "size": [
+        0.2884019911289215,
+        1.0988069772720337,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_180_light",
+      "family": "rebar",
+      "name": "extkit_rebar_180_light",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.797016978263855,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_black"
+      ],
+      "meshIds": [
+        105,
+        104
+      ],
+      "size": [
+        0.2884019911289215,
+        1.797016978263855,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_180_heavy",
+      "family": "rebar",
+      "name": "extkit_rebar_180_heavy",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.797016978263855,
+        0.13433198630809784
+      ],
+      "triangles": 1152,
+      "parts": 2,
+      "materials": [
+        "extkit_rust_heavy",
+        "extkit_black"
+      ],
+      "meshIds": [
+        103,
+        104
+      ],
+      "size": [
+        0.2884019911289215,
+        1.797016978263855,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_gas_cage_1",
+      "family": "gas_cage",
+      "name": "extkit_gas_cage_1",
+      "min": [
+        -0.29249998927116394,
+        0,
+        -0.28825002908706665
+      ],
+      "max": [
+        0.29249998927116394,
+        0.9950000289827585,
+        0.28824999928474426
+      ],
+      "triangles": 1332,
+      "parts": 4,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_steel",
+        "extkit_paint",
+        "extkit_black"
+      ],
+      "meshIds": [
+        23,
+        24,
+        25,
+        26
+      ],
+      "size": [
+        0.5849999785423279,
+        0.9950000289827585,
+        0.5765000283718109
+      ]
+    },
+    {
+      "key": "extkit_gas_cage_2",
+      "family": "gas_cage",
+      "name": "extkit_gas_cage_2",
+      "min": [
+        -0.5674999952316284,
+        0,
+        -0.28825002908706665
+      ],
+      "max": [
+        0.5674999952316284,
+        0.9950000289827585,
+        0.28824999928474426
+      ],
+      "triangles": 2440,
+      "parts": 4,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_steel",
+        "extkit_paint",
+        "extkit_black"
+      ],
+      "meshIds": [
+        27,
+        28,
+        29,
+        30
+      ],
+      "size": [
+        1.1349999904632568,
+        0.9950000289827585,
+        0.5765000283718109
+      ]
+    },
+    {
+      "key": "extkit_pipe_straight",
+      "family": "pipe",
+      "name": "extkit_pipe_straight",
+      "min": [
+        -0.021239999681711197,
+        0,
+        -0.021239999681711197
+      ],
+      "max": [
+        0.021239999681711197,
+        0.9959999918937683,
+        0.021239999681711197
+      ],
+      "triangles": 192,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        72
+      ],
+      "size": [
+        0.042479999363422394,
+        0.9959999918937683,
+        0.042479999363422394
+      ]
+    },
+    {
+      "key": "extkit_pipe_elbow",
+      "family": "pipe",
+      "name": "extkit_pipe_elbow",
+      "min": [
+        -0.1296200007200241,
+        0,
+        -0.021239999681711197
+      ],
+      "max": [
+        0.1296200007200241,
+        0.24424000084400177,
+        0.021239999681711197
+      ],
+      "triangles": 480,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        71
+      ],
+      "size": [
+        0.2592400014400482,
+        0.24424000084400177,
+        0.042479999363422394
+      ]
+    },
+    {
+      "key": "extkit_pipe_tee",
+      "family": "pipe",
+      "name": "extkit_pipe_tee",
+      "min": [
+        -0.1979999989271164,
+        0,
+        -0.021239999681711197
+      ],
+      "max": [
+        0.1979999989271164,
+        0.19123999774456024,
+        0.021239999681711197
+      ],
+      "triangles": 256,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        73
+      ],
+      "size": [
+        0.3959999978542328,
+        0.19123999774456024,
+        0.042479999363422394
+      ]
+    },
+    {
+      "key": "extkit_pipe_bracket",
+      "family": "pipe",
+      "name": "extkit_pipe_bracket",
+      "min": [
+        -0.05999999865889549,
+        0,
+        -0.06174999848008156
+      ],
+      "max": [
+        0.05999999865889549,
+        0.11999999731779099,
+        0.06174999848008156
+      ],
+      "triangles": 506,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        70,
+        19
+      ],
+      "size": [
+        0.11999999731779099,
+        0.11999999731779099,
+        0.12349999696016312
+      ]
+    },
+    {
+      "key": "extkit_drain_straight",
+      "family": "drain",
+      "name": "extkit_drain_straight",
+      "min": [
+        -0.0649000033736229,
+        0,
+        -0.0649000033736229
+      ],
+      "max": [
+        0.0649000033736229,
+        0.9959999918937683,
+        0.0649000033736229
+      ],
+      "triangles": 192,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        21
+      ],
+      "size": [
+        0.1298000067472458,
+        0.9959999918937683,
+        0.1298000067472458
+      ]
+    },
+    {
+      "key": "extkit_drain_elbow",
+      "family": "drain",
+      "name": "extkit_drain_elbow",
+      "min": [
+        -0.1514499932527542,
+        0,
+        -0.0649000033736229
+      ],
+      "max": [
+        0.1514499932527542,
+        0.28790000081062317,
+        0.0649000033736229
+      ],
+      "triangles": 480,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        20
+      ],
+      "size": [
+        0.3028999865055084,
+        0.28790000081062317,
+        0.1298000067472458
+      ]
+    },
+    {
+      "key": "extkit_drain_tee",
+      "family": "drain",
+      "name": "extkit_drain_tee",
+      "min": [
+        -0.1979999989271164,
+        0,
+        -0.0649000033736229
+      ],
+      "max": [
+        0.1979999989271164,
+        0.23489999771118164,
+        0.0649000033736229
+      ],
+      "triangles": 256,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        22
+      ],
+      "size": [
+        0.3959999978542328,
+        0.23489999771118164,
+        0.1298000067472458
+      ]
+    },
+    {
+      "key": "extkit_drain_bracket",
+      "family": "drain",
+      "name": "extkit_drain_bracket",
+      "min": [
+        -0.07796578109264374,
+        0,
+        -0.08025000244379044
+      ],
+      "max": [
+        0.07796621322631836,
+        0.11999999731779099,
+        0.08025000244379044
+      ],
+      "triangles": 506,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        18,
+        19
+      ],
+      "size": [
+        0.1559319943189621,
+        0.11999999731779099,
+        0.16050000488758087
+      ]
+    },
+    {
+      "key": "extkit_meter_1",
+      "family": "meter_box",
+      "name": "extkit_meter_1",
+      "min": [
+        -0.20000000298023224,
+        0,
+        -0.11100000143051147
+      ],
+      "max": [
+        0.20000000298023224,
+        0.7361887581646442,
+        0.11100000143051147
+      ],
+      "triangles": 688,
+      "parts": 5,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black",
+        "extkit_porcelain",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "size": [
+        0.4000000059604645,
+        0.7361887581646442,
+        0.22200000286102295
+      ]
+    },
+    {
+      "key": "extkit_meter_3",
+      "family": "meter_box",
+      "name": "extkit_meter_3",
+      "min": [
+        -0.6000000238418579,
+        0,
+        -0.11100000143051147
+      ],
+      "max": [
+        0.6000000238418579,
+        0.7361887581646442,
+        0.11100000143051147
+      ],
+      "triangles": 1728,
+      "parts": 5,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black",
+        "extkit_porcelain",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        65,
+        66,
+        67,
+        68,
+        69
+      ],
+      "size": [
+        1.2000000476837158,
+        0.7361887581646442,
+        0.22200000286102295
+      ]
+    },
+    {
+      "key": "extkit_transformer_pole",
+      "family": "transformer",
+      "name": "extkit_transformer_pole",
+      "min": [
+        -0.48292505741119385,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.4829249382019043,
+        1.3264849781990051,
+        0.46000000834465027
+      ],
+      "triangles": 1860,
+      "parts": 4,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_porcelain",
+        "extkit_black"
+      ],
+      "meshIds": [
+        155,
+        156,
+        157,
+        158
+      ],
+      "size": [
+        0.9658499956130981,
+        1.3264849781990051,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_cable_thin",
+      "family": "cable_segment",
+      "name": "extkit_cable_thin",
+      "min": [
+        -0.25,
+        0,
+        -0.008999999612569809
+      ],
+      "max": [
+        0.25,
+        0.017999999225139618,
+        0.008999999612569809
+      ],
+      "triangles": 64,
+      "parts": 1,
+      "materials": [
+        "extkit_black"
+      ],
+      "meshIds": [
+        5
+      ],
+      "size": [
+        0.5,
+        0.017999999225139618,
+        0.017999999225139618
+      ]
+    },
+    {
+      "key": "extkit_cable_bundle",
+      "family": "cable_segment",
+      "name": "extkit_cable_bundle",
+      "min": [
+        -0.25,
+        0,
+        -0.017275193706154823
+      ],
+      "max": [
+        0.25,
+        0.032669998705387115,
+        0.017274806275963783
+      ],
+      "triangles": 144,
+      "parts": 1,
+      "materials": [
+        "extkit_black"
+      ],
+      "meshIds": [
+        4
+      ],
+      "size": [
+        0.5,
+        0.032669998705387115,
+        0.03454999998211861
+      ]
+    },
+    {
+      "key": "extkit_chalkboard",
+      "family": "chalkboard",
+      "name": "extkit_chalkboard",
+      "min": [
+        -0.3050000071525574,
+        0,
+        -0.05874999985098839
+      ],
+      "max": [
+        0.3050000071525574,
+        0.8700000047683716,
+        0.05874999985098839
+      ],
+      "triangles": 146,
+      "parts": 3,
+      "materials": [
+        "extkit_wood",
+        "extkit_chalk",
+        "extkit_steel"
+      ],
+      "meshIds": [
+        6,
+        7,
+        8
+      ],
+      "size": [
+        0.6100000143051147,
+        0.8700000047683716,
+        0.11749999970197678
+      ]
+    },
+    {
+      "key": "extkit_grille_1",
+      "family": "grille",
+      "name": "extkit_grille_1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 492,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        31
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_2",
+      "family": "grille",
+      "name": "extkit_grille_2",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 492,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        32
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_3",
+      "family": "grille",
+      "name": "extkit_grille_3",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 924,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        33
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_4",
+      "family": "grille",
+      "name": "extkit_grille_4",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 1164,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        34
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_5",
+      "family": "grille",
+      "name": "extkit_grille_5",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 1428,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        35
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_6",
+      "family": "grille",
+      "name": "extkit_grille_6",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 1884,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        36
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_7",
+      "family": "grille",
+      "name": "extkit_grille_7",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 492,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        37
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_8",
+      "family": "grille",
+      "name": "extkit_grille_8",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.08950000256299973
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.08950000256299973
+      ],
+      "triangles": 780,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        38
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.17900000512599945
+      ]
+    },
+    {
+      "key": "extkit_shutter_100",
+      "family": "shutter_box",
+      "name": "extkit_shutter_100",
+      "min": [
+        -0.5,
+        0,
+        -0.14799998700618744
+      ],
+      "max": [
+        0.5,
+        0.3100000023841858,
+        0.14800000190734863
+      ],
+      "triangles": 180,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        106,
+        107,
+        108
+      ],
+      "size": [
+        1,
+        0.3100000023841858,
+        0.29599998891353607
+      ]
+    },
+    {
+      "key": "extkit_shutter_180",
+      "family": "shutter_box",
+      "name": "extkit_shutter_180",
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.14799998700618744
+      ],
+      "max": [
+        0.8999999761581421,
+        0.3100000023841858,
+        0.14800000190734863
+      ],
+      "triangles": 180,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        109,
+        110,
+        111
+      ],
+      "size": [
+        1.7999999523162842,
+        0.3100000023841858,
+        0.29599998891353607
+      ]
+    },
+    {
+      "key": "extkit_shutter_260",
+      "family": "shutter_box",
+      "name": "extkit_shutter_260",
+      "min": [
+        -1.2999999523162842,
+        0,
+        -0.14799998700618744
+      ],
+      "max": [
+        1.2999999523162842,
+        0.3100000023841858,
+        0.14800000190734863
+      ],
+      "triangles": 180,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        112,
+        113,
+        114
+      ],
+      "size": [
+        2.5999999046325684,
+        0.3100000023841858,
+        0.29599998891353607
+      ]
+    },
+    {
+      "key": "extkit_plant_sansevieria",
+      "family": "plant",
+      "name": "extkit_plant_sansevieria",
+      "min": [
+        -0.21279999613761902,
+        0,
+        -0.18000000715255737
+      ],
+      "max": [
+        0.21279999613761902,
+        0.9136366248130798,
+        0.18000000715255737
+      ],
+      "triangles": 676,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        94,
+        75,
+        95,
+        81,
+        96
+      ],
+      "size": [
+        0.42559999227523804,
+        0.9136366248130798,
+        0.36000001430511475
+      ]
+    },
+    {
+      "key": "extkit_plant_aloe",
+      "family": "plant",
+      "name": "extkit_plant_aloe",
+      "min": [
+        -0.2772464454174042,
+        0,
+        -0.28011104464530945
+      ],
+      "max": [
+        0.27724628150463104,
+        0.6036362200975418,
+        0.2801109850406647
+      ],
+      "triangles": 676,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        74,
+        75,
+        76,
+        77,
+        78
+      ],
+      "size": [
+        0.5544927269220352,
+        0.6036362200975418,
+        0.5602220296859741
+      ]
+    },
+    {
+      "key": "extkit_plant_fern",
+      "family": "plant",
+      "name": "extkit_plant_fern",
+      "min": [
+        -0.3427657186985016,
+        0,
+        -0.29754704236984253
+      ],
+      "max": [
+        0.34276530146598816,
+        0.6272241175174713,
+        0.29754698276519775
+      ],
+      "triangles": 1504,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        84,
+        75,
+        85,
+        81,
+        86
+      ],
+      "size": [
+        0.6855310201644897,
+        0.6272241175174713,
+        0.5950940251350403
+      ]
+    },
+    {
+      "key": "extkit_plant_geranium",
+      "family": "plant",
+      "name": "extkit_plant_geranium",
+      "min": [
+        -0.26600000262260437,
+        0,
+        -0.18707428872585297
+      ],
+      "max": [
+        0.26600000262260437,
+        0.6202467381954193,
+        0.18707427382469177
+      ],
+      "triangles": 1464,
+      "parts": 7,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_wood",
+        "extkit_leaf",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        87,
+        75,
+        80,
+        81,
+        88,
+        89,
+        90
+      ],
+      "size": [
+        0.5320000052452087,
+        0.6202467381954193,
+        0.37414856255054474
+      ]
+    },
+    {
+      "key": "extkit_plant_croton",
+      "family": "plant",
+      "name": "extkit_plant_croton",
+      "min": [
+        -0.2508000135421753,
+        0,
+        -0.20599165558815002
+      ],
+      "max": [
+        0.2508000135421753,
+        0.8473866581916809,
+        0.20599135756492615
+      ],
+      "triangles": 684,
+      "parts": 6,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_wood",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        79,
+        75,
+        80,
+        81,
+        82,
+        83
+      ],
+      "size": [
+        0.5016000270843506,
+        0.8473866581916809,
+        0.41198301315307617
+      ]
+    },
+    {
+      "key": "extkit_plant_pothos",
+      "family": "plant",
+      "name": "extkit_plant_pothos",
+      "min": [
+        -0.2621999979019165,
+        0,
+        -0.297675222158432
+      ],
+      "max": [
+        0.2621999979019165,
+        0.7248409986495972,
+        0.297675222158432
+      ],
+      "triangles": 862,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        91,
+        75,
+        92,
+        81,
+        93
+      ],
+      "size": [
+        0.524399995803833,
+        0.7248409986495972,
+        0.595350444316864
+      ]
+    },
+    {
+      "key": "extkit_lattice_square",
+      "family": "lattice",
+      "name": "extkit_lattice_square",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 518,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        41
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    },
+    {
+      "key": "extkit_lattice_diamond",
+      "family": "lattice",
+      "name": "extkit_lattice_diamond",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 1814,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        39
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    },
+    {
+      "key": "extkit_lattice_flower",
+      "family": "lattice",
+      "name": "extkit_lattice_flower",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 4694,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        40
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    },
+    {
+      "key": "extkit_tank_500_blue_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_500_blue_steel_lod1",
+      "min": [
+        -0.5908793807029724,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.5908796191215515,
+        1.6140840128064156,
+        0.46000000834465027
+      ],
+      "triangles": 300,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        91,
+        96,
+        95,
+        93
+      ],
+      "size": [
+        1.181758999824524,
+        1.6140840128064156,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_blue_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_500_blue_block_lod1",
+      "min": [
+        -0.590660035610199,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.5906599164009094,
+        1.3540840223431587,
+        0.46000000834465027
+      ],
+      "triangles": 212,
+      "parts": 4,
+      "materials": [
+        "extkit_concrete",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        88,
+        94,
+        95,
+        90
+      ],
+      "size": [
+        1.1813199520111084,
+        1.3540840223431587,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_black_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_500_black_steel_lod1",
+      "min": [
+        -0.5908793807029724,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.5908796191215515,
+        1.6140840128064156,
+        0.46000000834465027
+      ],
+      "triangles": 300,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        91,
+        92,
+        93
+      ],
+      "size": [
+        1.181758999824524,
+        1.6140840128064156,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_500_black_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_500_black_block_lod1",
+      "min": [
+        -0.590660035610199,
+        0,
+        -0.46000000834465027
+      ],
+      "max": [
+        0.5906599164009094,
+        1.3540840223431587,
+        0.46000000834465027
+      ],
+      "triangles": 212,
+      "parts": 3,
+      "materials": [
+        "extkit_concrete",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        88,
+        89,
+        90
+      ],
+      "size": [
+        1.1813199520111084,
+        1.3540840223431587,
+        0.9200000166893005
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_steel_lod1",
+      "min": [
+        -0.7308793663978577,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7308796048164368,
+        1.8245120123028755,
+        0.6000000238418579
+      ],
+      "triangles": 300,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        103,
+        110,
+        111,
+        105
+      ],
+      "size": [
+        1.4617589712142944,
+        1.8245120123028755,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_block_lod1",
+      "min": [
+        -0.7306600213050842,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7306600213050842,
+        1.5645120218396187,
+        0.6000000238418579
+      ],
+      "triangles": 212,
+      "parts": 4,
+      "materials": [
+        "extkit_concrete",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        97,
+        106,
+        107,
+        99
+      ],
+      "size": [
+        1.4613200426101685,
+        1.5645120218396187,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_steel_lod1",
+      "min": [
+        -0.7308793663978577,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7308796048164368,
+        1.8245120123028755,
+        0.6000000238418579
+      ],
+      "triangles": 300,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        103,
+        104,
+        105
+      ],
+      "size": [
+        1.4617589712142944,
+        1.8245120123028755,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_block_lod1",
+      "min": [
+        -0.7306600213050842,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7306600213050842,
+        1.5645120218396187,
+        0.6000000238418579
+      ],
+      "triangles": 212,
+      "parts": 3,
+      "materials": [
+        "extkit_concrete",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        97,
+        98,
+        99
+      ],
+      "size": [
+        1.4613200426101685,
+        1.5645120218396187,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_blue_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_blue_steel_lod1",
+      "min": [
+        -0.9208794236183167,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9208795428276062,
+        2.0849659517407417,
+        0.7900000214576721
+      ],
+      "triangles": 300,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        115,
+        120,
+        121,
+        117
+      ],
+      "size": [
+        1.8417589664459229,
+        2.0849659517407417,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_blue_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_blue_block_lod1",
+      "min": [
+        -0.9206600189208984,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9206600189208984,
+        1.824965961277485,
+        0.7900000214576721
+      ],
+      "triangles": 212,
+      "parts": 4,
+      "materials": [
+        "extkit_concrete",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        112,
+        118,
+        119,
+        114
+      ],
+      "size": [
+        1.8413200378417969,
+        1.824965961277485,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_black_steel_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_black_steel_lod1",
+      "min": [
+        -0.9208794236183167,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9208795428276062,
+        2.0849659517407417,
+        0.7900000214576721
+      ],
+      "triangles": 300,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        115,
+        116,
+        117
+      ],
+      "size": [
+        1.8417589664459229,
+        2.0849659517407417,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_2000_black_block_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_2000_black_block_lod1",
+      "min": [
+        -0.9206600189208984,
+        0,
+        -0.7900000214576721
+      ],
+      "max": [
+        0.9206600189208984,
+        1.824965961277485,
+        0.7900000214576721
+      ],
+      "triangles": 212,
+      "parts": 3,
+      "materials": [
+        "extkit_concrete",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        112,
+        113,
+        114
+      ],
+      "size": [
+        1.8413200378417969,
+        1.824965961277485,
+        1.5800000429153442
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_blue_raised_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_blue_raised_lod1",
+      "min": [
+        -0.7309658527374268,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7309660911560059,
+        2.3845119550824165,
+        0.6000000238418579
+      ],
+      "triangles": 300,
+      "parts": 4,
+      "materials": [
+        "extkit_steel",
+        "extkit_blue",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        100,
+        108,
+        109,
+        102
+      ],
+      "size": [
+        1.4619319438934326,
+        2.3845119550824165,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_tank_1000_black_raised_lod1",
+      "family": "water_tank",
+      "name": "extkit_tank_1000_black_raised_lod1",
+      "min": [
+        -0.7309658527374268,
+        0,
+        -0.6000000238418579
+      ],
+      "max": [
+        0.7309660911560059,
+        2.3845119550824165,
+        0.6000000238418579
+      ],
+      "triangles": 300,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_black",
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        100,
+        101,
+        102
+      ],
+      "size": [
+        1.4619319438934326,
+        2.3845119550824165,
+        1.2000000476837158
+      ]
+    },
+    {
+      "key": "extkit_laundry_balcony_lod1",
+      "family": "laundry",
+      "name": "extkit_laundry_balcony_lod1",
+      "min": [
+        -1.0399999618530273,
+        0,
+        -0.15470562875270844
+      ],
+      "max": [
+        1.0399999618530273,
+        1.0242942571640015,
+        0.15470536053180695
+      ],
+      "triangles": 128,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        37,
+        38,
+        39
+      ],
+      "size": [
+        2.0799999237060547,
+        1.0242942571640015,
+        0.3094109892845154
+      ]
+    },
+    {
+      "key": "extkit_laundry_roof_lod1",
+      "family": "laundry",
+      "name": "extkit_laundry_roof_lod1",
+      "min": [
+        -2.0239999294281006,
+        0,
+        -0.3499999940395355
+      ],
+      "max": [
+        2.0239999294281006,
+        2.0299999713897705,
+        0.3499999940395355
+      ],
+      "triangles": 234,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        43,
+        44,
+        45
+      ],
+      "size": [
+        4.047999858856201,
+        2.0299999713897705,
+        0.699999988079071
+      ]
+    },
+    {
+      "key": "extkit_laundry_rotary_lod1",
+      "family": "laundry",
+      "name": "extkit_laundry_rotary_lod1",
+      "min": [
+        -1.1246702671051025,
+        0,
+        -1.1246707439422607
+      ],
+      "max": [
+        1.1246707439422607,
+        2.130000114440918,
+        1.1246702671051025
+      ],
+      "triangles": 188,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        46,
+        47,
+        48
+      ],
+      "size": [
+        2.2493410110473633,
+        2.130000114440918,
+        2.2493410110473633
+      ]
+    },
+    {
+      "key": "extkit_laundry_pole_lod1",
+      "family": "laundry",
+      "name": "extkit_laundry_pole_lod1",
+      "min": [
+        -1.4240000247955322,
+        0,
+        -0.031458075158298016
+      ],
+      "max": [
+        1.4240000247955322,
+        2.0299999713897705,
+        0.0314582958817482
+      ],
+      "triangles": 122,
+      "parts": 3,
+      "materials": [
+        "extkit_steel",
+        "extkit_rope",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        40,
+        41,
+        42
+      ],
+      "size": [
+        2.8480000495910645,
+        2.0299999713897705,
+        0.06291637104004622
+      ]
+    },
+    {
+      "key": "extkit_dish_46_lod1",
+      "family": "satellite_dish",
+      "name": "extkit_dish_46_lod1",
+      "min": [
+        -0.23000000417232513,
+        0,
+        -0.2956250011920929
+      ],
+      "max": [
+        0.23000000417232513,
+        0.6900000125169754,
+        0.2956249713897705
+      ],
+      "triangles": 168,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        7,
+        8,
+        9
+      ],
+      "size": [
+        0.46000000834465027,
+        0.6900000125169754,
+        0.5912499725818634
+      ]
+    },
+    {
+      "key": "extkit_dish_68_lod1",
+      "family": "satellite_dish",
+      "name": "extkit_dish_68_lod1",
+      "min": [
+        -0.3400000035762787,
+        0,
+        -0.2956250011920929
+      ],
+      "max": [
+        0.3400000035762787,
+        0.9100000113248825,
+        0.2956249713897705
+      ],
+      "triangles": 168,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        10,
+        11,
+        9
+      ],
+      "size": [
+        0.6800000071525574,
+        0.9100000113248825,
+        0.5912499725818634
+      ]
+    },
+    {
+      "key": "extkit_dish_92_lod1",
+      "family": "satellite_dish",
+      "name": "extkit_dish_92_lod1",
+      "min": [
+        -0.46000000834465027,
+        0,
+        -0.2956250011920929
+      ],
+      "max": [
+        0.46000000834465027,
+        1.1500000208616257,
+        0.2956249713897705
+      ],
+      "triangles": 168,
+      "parts": 3,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        12,
+        13,
+        9
+      ],
+      "size": [
+        0.9200000166893005,
+        1.1500000208616257,
+        0.5912499725818634
+      ]
+    },
+    {
+      "key": "extkit_aerial_yagi_lod1",
+      "family": "tv_aerial",
+      "name": "extkit_aerial_yagi_lod1",
+      "min": [
+        -0.6044999957084656,
+        0,
+        -0.38999998569488525
+      ],
+      "max": [
+        0.6044999957084656,
+        1.159999966621399,
+        0.38999998569488525
+      ],
+      "triangles": 119,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        2,
+        1
+      ],
+      "size": [
+        1.2089999914169312,
+        1.159999966621399,
+        0.7799999713897705
+      ]
+    },
+    {
+      "key": "extkit_aerial_bowtie_lod1",
+      "family": "tv_aerial",
+      "name": "extkit_aerial_bowtie_lod1",
+      "min": [
+        -0.3124951124191284,
+        0,
+        -0.06499999761581421
+      ],
+      "max": [
+        0.3124948740005493,
+        1.159999966621399,
+        0.06499999761581421
+      ],
+      "triangles": 139,
+      "parts": 2,
+      "materials": [
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        0,
+        1
+      ],
+      "size": [
+        0.6249899864196777,
+        1.159999966621399,
+        0.12999999523162842
+      ]
+    },
+    {
+      "key": "extkit_rebar_55_light_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_55_light_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        0.5508840084075928,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        80
+      ],
+      "size": [
+        0.2884019911289215,
+        0.5508840084075928,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_55_heavy_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_55_heavy_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        0.5508840084075928,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_heavy"
+      ],
+      "meshIds": [
+        79
+      ],
+      "size": [
+        0.2884019911289215,
+        0.5508840084075928,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_110_light_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_110_light_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.0988069772720337,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        82
+      ],
+      "size": [
+        0.2884019911289215,
+        1.0988069772720337,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_110_heavy_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_110_heavy_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.0988069772720337,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_heavy"
+      ],
+      "meshIds": [
+        81
+      ],
+      "size": [
+        0.2884019911289215,
+        1.0988069772720337,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_180_light_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_180_light_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.797016978263855,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_light"
+      ],
+      "meshIds": [
+        84
+      ],
+      "size": [
+        0.2884019911289215,
+        1.797016978263855,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_rebar_180_heavy_lod1",
+      "family": "rebar",
+      "name": "extkit_rebar_180_heavy_lod1",
+      "min": [
+        -0.1442011296749115,
+        0,
+        -0.13433201611042023
+      ],
+      "max": [
+        0.14420086145401,
+        1.797016978263855,
+        0.13433198630809784
+      ],
+      "triangles": 126,
+      "parts": 1,
+      "materials": [
+        "extkit_rust_heavy"
+      ],
+      "meshIds": [
+        83
+      ],
+      "size": [
+        0.2884019911289215,
+        1.797016978263855,
+        0.26866400241851807
+      ]
+    },
+    {
+      "key": "extkit_gas_cage_1_lod1",
+      "family": "gas_cage",
+      "name": "extkit_gas_cage_1_lod1",
+      "min": [
+        -0.29249998927116394,
+        0,
+        -0.27900001406669617
+      ],
+      "max": [
+        0.29249998927116394,
+        0.9950000289827585,
+        0.27900001406669617
+      ],
+      "triangles": 396,
+      "parts": 4,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_steel",
+        "extkit_paint",
+        "extkit_black"
+      ],
+      "meshIds": [
+        18,
+        19,
+        20,
+        21
+      ],
+      "size": [
+        0.5849999785423279,
+        0.9950000289827585,
+        0.5580000281333923
+      ]
+    },
+    {
+      "key": "extkit_gas_cage_2_lod1",
+      "family": "gas_cage",
+      "name": "extkit_gas_cage_2_lod1",
+      "min": [
+        -0.5674999952316284,
+        0,
+        -0.27900001406669617
+      ],
+      "max": [
+        0.5674999952316284,
+        0.9950000289827585,
+        0.27900001406669617
+      ],
+      "triangles": 620,
+      "parts": 4,
+      "materials": [
+        "extkit_rust_light",
+        "extkit_steel",
+        "extkit_paint",
+        "extkit_black"
+      ],
+      "meshIds": [
+        22,
+        23,
+        24,
+        25
+      ],
+      "size": [
+        1.1349999904632568,
+        0.9950000289827585,
+        0.5580000281333923
+      ]
+    },
+    {
+      "key": "extkit_pipe_straight_lod1",
+      "family": "pipe",
+      "name": "extkit_pipe_straight_lod1",
+      "min": [
+        -0.017999999225139618,
+        0,
+        -0.017999999225139618
+      ],
+      "max": [
+        0.017999999225139618,
+        0.9599999785423279,
+        0.017999999225139618
+      ],
+      "triangles": 16,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        59
+      ],
+      "size": [
+        0.035999998450279236,
+        0.9599999785423279,
+        0.035999998450279236
+      ]
+    },
+    {
+      "key": "extkit_pipe_elbow_lod1",
+      "family": "pipe",
+      "name": "extkit_pipe_elbow_lod1",
+      "min": [
+        -0.11900000274181366,
+        0,
+        -0.017999999225139618
+      ],
+      "max": [
+        0.11900000274181366,
+        0.22300000488758087,
+        0.017999999225139618
+      ],
+      "triangles": 40,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        58
+      ],
+      "size": [
+        0.23800000548362732,
+        0.22300000488758087,
+        0.035999998450279236
+      ]
+    },
+    {
+      "key": "extkit_pipe_tee_lod1",
+      "family": "pipe",
+      "name": "extkit_pipe_tee_lod1",
+      "min": [
+        -0.18000000715255737,
+        0,
+        -0.017999999225139618
+      ],
+      "max": [
+        0.18000000715255737,
+        0.18799999356269836,
+        0.017999999225139618
+      ],
+      "triangles": 32,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        60
+      ],
+      "size": [
+        0.36000001430511475,
+        0.18799999356269836,
+        0.035999998450279236
+      ]
+    },
+    {
+      "key": "extkit_pipe_bracket_lod1",
+      "family": "pipe",
+      "name": "extkit_pipe_bracket_lod1",
+      "min": [
+        -0.05999999865889549,
+        0,
+        -0.06174999848008156
+      ],
+      "max": [
+        0.05999999865889549,
+        0.11999999731779099,
+        0.06174999848008156
+      ],
+      "triangles": 90,
+      "parts": 1,
+      "materials": [
+        "extkit_steel"
+      ],
+      "meshIds": [
+        57
+      ],
+      "size": [
+        0.11999999731779099,
+        0.11999999731779099,
+        0.12349999696016312
+      ]
+    },
+    {
+      "key": "extkit_drain_straight_lod1",
+      "family": "drain",
+      "name": "extkit_drain_straight_lod1",
+      "min": [
+        -0.054999999701976776,
+        0,
+        -0.054999999701976776
+      ],
+      "max": [
+        0.054999999701976776,
+        0.9599999785423279,
+        0.054999999701976776
+      ],
+      "triangles": 16,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        16
+      ],
+      "size": [
+        0.10999999940395355,
+        0.9599999785423279,
+        0.10999999940395355
+      ]
+    },
+    {
+      "key": "extkit_drain_elbow_lod1",
+      "family": "drain",
+      "name": "extkit_drain_elbow_lod1",
+      "min": [
+        -0.13750000298023224,
+        0,
+        -0.054999999701976776
+      ],
+      "max": [
+        0.13750000298023224,
+        0.25999999046325684,
+        0.054999999701976776
+      ],
+      "triangles": 40,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        15
+      ],
+      "size": [
+        0.2750000059604645,
+        0.25999999046325684,
+        0.10999999940395355
+      ]
+    },
+    {
+      "key": "extkit_drain_tee_lod1",
+      "family": "drain",
+      "name": "extkit_drain_tee_lod1",
+      "min": [
+        -0.18000000715255737,
+        0,
+        -0.054999999701976776
+      ],
+      "max": [
+        0.18000000715255737,
+        0.22499999403953552,
+        0.054999999701976776
+      ],
+      "triangles": 32,
+      "parts": 1,
+      "materials": [
+        "extkit_pvc"
+      ],
+      "meshIds": [
+        17
+      ],
+      "size": [
+        0.36000001430511475,
+        0.22499999403953552,
+        0.10999999940395355
+      ]
+    },
+    {
+      "key": "extkit_drain_bracket_lod1",
+      "family": "drain",
+      "name": "extkit_drain_bracket_lod1",
+      "min": [
+        -0.07769551873207092,
+        0,
+        -0.08025000244379044
+      ],
+      "max": [
+        0.07769547402858734,
+        0.11999999731779099,
+        0.08025000244379044
+      ],
+      "triangles": 90,
+      "parts": 1,
+      "materials": [
+        "extkit_steel"
+      ],
+      "meshIds": [
+        14
+      ],
+      "size": [
+        0.15539099276065826,
+        0.11999999731779099,
+        0.16050000488758087
+      ]
+    },
+    {
+      "key": "extkit_meter_1_lod1",
+      "family": "meter_box",
+      "name": "extkit_meter_1_lod1",
+      "min": [
+        -0.20000000298023224,
+        0,
+        -0.10975000262260437
+      ],
+      "max": [
+        0.20000000298023224,
+        0.6856275796890259,
+        0.10975000262260437
+      ],
+      "triangles": 136,
+      "parts": 4,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black",
+        "extkit_porcelain"
+      ],
+      "meshIds": [
+        49,
+        50,
+        51,
+        52
+      ],
+      "size": [
+        0.4000000059604645,
+        0.6856275796890259,
+        0.21950000524520874
+      ]
+    },
+    {
+      "key": "extkit_meter_3_lod1",
+      "family": "meter_box",
+      "name": "extkit_meter_3_lod1",
+      "min": [
+        -0.6000000238418579,
+        0,
+        -0.10975000262260437
+      ],
+      "max": [
+        0.6000000238418579,
+        0.6856275796890259,
+        0.10975000262260437
+      ],
+      "triangles": 360,
+      "parts": 4,
+      "materials": [
+        "extkit_paint",
+        "extkit_steel",
+        "extkit_black",
+        "extkit_porcelain"
+      ],
+      "meshIds": [
+        53,
+        54,
+        55,
+        56
+      ],
+      "size": [
+        1.2000000476837158,
+        0.6856275796890259,
+        0.21950000524520874
+      ]
+    },
+    {
+      "key": "extkit_transformer_pole_lod1",
+      "family": "transformer",
+      "name": "extkit_transformer_pole_lod1",
+      "min": [
+        -0.48292505741119385,
+        0,
+        -0.46000001206994057
+      ],
+      "max": [
+        0.4829249382019043,
+        1.3264849185943604,
+        0.46000000834465027
+      ],
+      "triangles": 382,
+      "parts": 4,
+      "materials": [
+        "extkit_paint",
+        "extkit_porcelain",
+        "extkit_steel",
+        "extkit_black"
+      ],
+      "meshIds": [
+        122,
+        123,
+        124,
+        125
+      ],
+      "size": [
+        0.9658499956130981,
+        1.3264849185943604,
+        0.9200000204145908
+      ]
+    },
+    {
+      "key": "extkit_cable_thin_lod1",
+      "family": "cable_segment",
+      "name": "extkit_cable_thin_lod1",
+      "min": [
+        -0.25,
+        0,
+        -0.008999999612569809
+      ],
+      "max": [
+        0.25,
+        0.017999999225139618,
+        0.008999999612569809
+      ],
+      "triangles": 16,
+      "parts": 1,
+      "materials": [
+        "extkit_black"
+      ],
+      "meshIds": [
+        4
+      ],
+      "size": [
+        0.5,
+        0.017999999225139618,
+        0.017999999225139618
+      ]
+    },
+    {
+      "key": "extkit_cable_bundle_lod1",
+      "family": "cable_segment",
+      "name": "extkit_cable_bundle_lod1",
+      "min": [
+        -0.25,
+        0,
+        -0.017999999225139618
+      ],
+      "max": [
+        0.25,
+        0.035999998450279236,
+        0.017999999225139618
+      ],
+      "triangles": 16,
+      "parts": 1,
+      "materials": [
+        "extkit_black"
+      ],
+      "meshIds": [
+        3
+      ],
+      "size": [
+        0.5,
+        0.035999998450279236,
+        0.035999998450279236
+      ]
+    },
+    {
+      "key": "extkit_chalkboard_lod1",
+      "family": "chalkboard",
+      "name": "extkit_chalkboard_lod1",
+      "min": [
+        -0.3050000071525574,
+        0,
+        -0.027250001206994057
+      ],
+      "max": [
+        0.3050000071525574,
+        0.8700000047683716,
+        0.027249999344348907
+      ],
+      "triangles": 22,
+      "parts": 2,
+      "materials": [
+        "extkit_wood",
+        "extkit_chalk"
+      ],
+      "meshIds": [
+        5,
+        6
+      ],
+      "size": [
+        0.6100000143051147,
+        0.8700000047683716,
+        0.054500000551342964
+      ]
+    },
+    {
+      "key": "extkit_grille_1_lod1",
+      "family": "grille",
+      "name": "extkit_grille_1_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 180,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        26
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_2_lod1",
+      "family": "grille",
+      "name": "extkit_grille_2_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 180,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        27
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_3_lod1",
+      "family": "grille",
+      "name": "extkit_grille_3_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 288,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        28
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_4_lod1",
+      "family": "grille",
+      "name": "extkit_grille_4_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 240,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        29
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_5_lod1",
+      "family": "grille",
+      "name": "extkit_grille_5_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 270,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        30
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_6_lod1",
+      "family": "grille",
+      "name": "extkit_grille_6_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 360,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        31
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_7_lod1",
+      "family": "grille",
+      "name": "extkit_grille_7_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.04675000160932541
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.04675000160932541
+      ],
+      "triangles": 180,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        32
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.09350000321865082
+      ]
+    },
+    {
+      "key": "extkit_grille_8_lod1",
+      "family": "grille",
+      "name": "extkit_grille_8_lod1",
+      "min": [
+        -0.5924999713897705,
+        0,
+        -0.08946855366230011
+      ],
+      "max": [
+        0.5924999713897705,
+        1.1799999475479126,
+        0.08946844935417175
+      ],
+      "triangles": 252,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        33
+      ],
+      "size": [
+        1.184999942779541,
+        1.1799999475479126,
+        0.17893700301647186
+      ]
+    },
+    {
+      "key": "extkit_shutter_100_lod1",
+      "family": "shutter_box",
+      "name": "extkit_shutter_100_lod1",
+      "min": [
+        -0.5,
+        0,
+        -0.14499999582767487
+      ],
+      "max": [
+        0.5,
+        0.23000000417232513,
+        0.14499999582767487
+      ],
+      "triangles": 28,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        85
+      ],
+      "size": [
+        1,
+        0.23000000417232513,
+        0.28999999165534973
+      ]
+    },
+    {
+      "key": "extkit_shutter_180_lod1",
+      "family": "shutter_box",
+      "name": "extkit_shutter_180_lod1",
+      "min": [
+        -0.8999999761581421,
+        0,
+        -0.14499999582767487
+      ],
+      "max": [
+        0.8999999761581421,
+        0.23000000417232513,
+        0.14499999582767487
+      ],
+      "triangles": 28,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        86
+      ],
+      "size": [
+        1.7999999523162842,
+        0.23000000417232513,
+        0.28999999165534973
+      ]
+    },
+    {
+      "key": "extkit_shutter_260_lod1",
+      "family": "shutter_box",
+      "name": "extkit_shutter_260_lod1",
+      "min": [
+        -1.2999999523162842,
+        0,
+        -0.14499999582767487
+      ],
+      "max": [
+        1.2999999523162842,
+        0.23000000417232513,
+        0.14499999582767487
+      ],
+      "triangles": 28,
+      "parts": 1,
+      "materials": [
+        "extkit_paint"
+      ],
+      "meshIds": [
+        87
+      ],
+      "size": [
+        2.5999999046325684,
+        0.23000000417232513,
+        0.28999999165534973
+      ]
+    },
+    {
+      "key": "extkit_plant_sansevieria_lod1",
+      "family": "plant",
+      "name": "extkit_plant_sansevieria_lod1",
+      "min": [
+        -0.21279999613761902,
+        0,
+        -0.18000000715255737
+      ],
+      "max": [
+        0.21279999613761902,
+        0.9124795496463776,
+        0.18000000715255737
+      ],
+      "triangles": 156,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        77,
+        62,
+        63,
+        64,
+        78
+      ],
+      "size": [
+        0.42559999227523804,
+        0.9124795496463776,
+        0.36000001430511475
+      ]
+    },
+    {
+      "key": "extkit_plant_aloe_lod1",
+      "family": "plant",
+      "name": "extkit_plant_aloe_lod1",
+      "min": [
+        -0.27969488501548767,
+        0,
+        -0.25981852412223816
+      ],
+      "max": [
+        0.27969488501548767,
+        0.6024791300296783,
+        0.2598184645175934
+      ],
+      "triangles": 156,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "size": [
+        0.5593897700309753,
+        0.6024791300296783,
+        0.5196369886398315
+      ]
+    },
+    {
+      "key": "extkit_plant_fern_lod1",
+      "family": "plant",
+      "name": "extkit_plant_fern_lod1",
+      "min": [
+        -0.3103986382484436,
+        0,
+        -0.3257545828819275
+      ],
+      "max": [
+        0.3103983402252197,
+        0.6298797130584717,
+        0.32575440406799316
+      ],
+      "triangles": 306,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        69,
+        62,
+        63,
+        64,
+        70
+      ],
+      "size": [
+        0.6207969784736633,
+        0.6298797130584717,
+        0.6515089869499207
+      ]
+    },
+    {
+      "key": "extkit_plant_geranium_lod1",
+      "family": "plant",
+      "name": "extkit_plant_geranium_lod1",
+      "min": [
+        -0.26600000262260437,
+        0,
+        -0.18000000715255737
+      ],
+      "max": [
+        0.26600000262260437,
+        0.6154795736074448,
+        0.18000000715255737
+      ],
+      "triangles": 420,
+      "parts": 7,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_wood",
+        "extkit_leaf",
+        "extkit_cloth"
+      ],
+      "meshIds": [
+        71,
+        62,
+        63,
+        64,
+        72,
+        73,
+        74
+      ],
+      "size": [
+        0.5320000052452087,
+        0.6154795736074448,
+        0.36000001430511475
+      ]
+    },
+    {
+      "key": "extkit_plant_croton_lod1",
+      "family": "plant",
+      "name": "extkit_plant_croton_lod1",
+      "min": [
+        -0.2508000135421753,
+        0,
+        -0.1879325956106186
+      ],
+      "max": [
+        0.2508000135421753,
+        0.7949795722961426,
+        0.18793241679668427
+      ],
+      "triangles": 168,
+      "parts": 6,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_wood",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        66,
+        62,
+        63,
+        64,
+        67,
+        68
+      ],
+      "size": [
+        0.5016000270843506,
+        0.7949795722961426,
+        0.37586501240730286
+      ]
+    },
+    {
+      "key": "extkit_plant_pothos_lod1",
+      "family": "plant",
+      "name": "extkit_plant_pothos_lod1",
+      "min": [
+        -0.2621999979019165,
+        0,
+        -0.22922177612781525
+      ],
+      "max": [
+        0.2621999979019165,
+        0.7224792987108231,
+        0.22922176122665405
+      ],
+      "triangles": 228,
+      "parts": 5,
+      "materials": [
+        "extkit_concrete",
+        "extkit_steel",
+        "extkit_terracotta",
+        "extkit_soil",
+        "extkit_leaf"
+      ],
+      "meshIds": [
+        75,
+        62,
+        63,
+        64,
+        76
+      ],
+      "size": [
+        0.524399995803833,
+        0.7224792987108231,
+        0.4584435373544693
+      ]
+    },
+    {
+      "key": "extkit_lattice_square_lod1",
+      "family": "lattice",
+      "name": "extkit_lattice_square_lod1",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 86,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        36
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    },
+    {
+      "key": "extkit_lattice_diamond_lod1",
+      "family": "lattice",
+      "name": "extkit_lattice_diamond_lod1",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 662,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        34
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    },
+    {
+      "key": "extkit_lattice_flower_lod1",
+      "family": "lattice",
+      "name": "extkit_lattice_flower_lod1",
+      "min": [
+        -0.6012499928474426,
+        0,
+        -0.07050000131130219
+      ],
+      "max": [
+        0.6012499928474426,
+        1.1950000524520874,
+        0.07050000131130219
+      ],
+      "triangles": 1526,
+      "parts": 1,
+      "materials": [
+        "extkit_concrete"
+      ],
+      "meshIds": [
+        35
+      ],
+      "size": [
+        1.2024999856948853,
+        1.1950000524520874,
+        0.14100000262260437
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "path": "assets/textures/extkit/atlas.png",
+      "channel": "map",
+      "format": "RGBA8",
+      "width": 512,
+      "height": 512,
+      "bytes": 178229,
+      "gpuBytes": 1398100
+    },
+    {
+      "path": "assets/textures/extkit/atlas_normal.png",
+      "channel": "normal",
+      "format": "RGBA8",
+      "width": 512,
+      "height": 512,
+      "bytes": 96020,
+      "gpuBytes": 1398100
+    },
+    {
+      "path": "assets/textures/extkit/atlas_orm.png",
+      "channel": "orm",
+      "format": "RGBA8",
+      "width": 512,
+      "height": 512,
+      "bytes": 106898,
+      "gpuBytes": 1398100
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_albedo.ktx2",
+      "wall": "extkit_wall_azul_anil",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 194493,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_normal.ktx2",
+      "wall": "extkit_wall_azul_anil",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 254330,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_azul_anil_orm.ktx2",
+      "wall": "extkit_wall_azul_anil",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 100669,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_albedo.ktx2",
+      "wall": "extkit_wall_turquesa",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 255953,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_normal.ktx2",
+      "wall": "extkit_wall_turquesa",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 240345,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_turquesa_orm.ktx2",
+      "wall": "extkit_wall_turquesa",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 94212,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_albedo.ktx2",
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 262055,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_normal.ktx2",
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 239572,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_amarillo_ocre_orm.ktx2",
+      "wall": "extkit_wall_amarillo_ocre",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 95224,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_albedo.ktx2",
+      "wall": "extkit_wall_terracota",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 192834,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_normal.ktx2",
+      "wall": "extkit_wall_terracota",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 232945,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_terracota_orm.ktx2",
+      "wall": "extkit_wall_terracota",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 93267,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_albedo.ktx2",
+      "wall": "extkit_wall_verde_menta",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 252747,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_normal.ktx2",
+      "wall": "extkit_wall_verde_menta",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 227463,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_verde_menta_orm.ktx2",
+      "wall": "extkit_wall_verde_menta",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 93761,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_albedo.ktx2",
+      "wall": "extkit_wall_rosado",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 218351,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_normal.ktx2",
+      "wall": "extkit_wall_rosado",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 239591,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_rosado_orm.ktx2",
+      "wall": "extkit_wall_rosado",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 92419,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_albedo.ktx2",
+      "wall": "extkit_wall_tolete",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 171088,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_normal.ktx2",
+      "wall": "extkit_wall_tolete",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 39607,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_orm.ktx2",
+      "wall": "extkit_wall_tolete",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 152544,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_albedo.ktx2",
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 167938,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_normal.ktx2",
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 40262,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_tolete_humedo_orm.ktx2",
+      "wall": "extkit_wall_tolete_humedo",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 167178,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_albedo.ktx2",
+      "wall": "extkit_wall_bloque",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 216253,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_normal.ktx2",
+      "wall": "extkit_wall_bloque",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 33298,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_bloque_orm.ktx2",
+      "wall": "extkit_wall_bloque",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 156495,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_albedo.ktx2",
+      "wall": "extkit_wall_baldosin",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 188292,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_normal.ktx2",
+      "wall": "extkit_wall_baldosin",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 8011,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_baldosin_orm.ktx2",
+      "wall": "extkit_wall_baldosin",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 21577,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_albedo.ktx2",
+      "wall": "extkit_wall_panete",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 199837,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_normal.ktx2",
+      "wall": "extkit_wall_panete",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 106441,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_panete_orm.ktx2",
+      "wall": "extkit_wall_panete",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 75590,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_albedo.ktx2",
+      "wall": "extkit_wall_cal",
+      "channel": "map",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 274989,
+      "format": 132,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_normal.ktx2",
+      "wall": "extkit_wall_cal",
+      "channel": "normal",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 216877,
+      "format": 141,
+      "mipLevels": 11,
+      "gpuBytes": 1398128,
+      "seamMax": 0
+    },
+    {
+      "path": "assets/textures/extkit/wall_cal_orm.ktx2",
+      "wall": "extkit_wall_cal",
+      "channel": "orm",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 85402,
+      "format": 131,
+      "mipLevels": 11,
+      "gpuBytes": 699064,
+      "seamMax": 0
+    }
+  ],
+  "errors": []
+}
+
+INSTALLED 65 near/LOD pairs, 3,282,444 GLB bytes; complete=True.
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit
+
+UTC end: 2026-11-03T05:28:34.105053+00:00
+Exit status: 0

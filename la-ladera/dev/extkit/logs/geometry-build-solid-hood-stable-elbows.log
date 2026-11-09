@@ -1,0 +1,84 @@
+UTC start: 2026-11-03T05:47:00.805194+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender --background --factory-startup --threads 2 --python-exit-code 1 --python la-ladera/tools/blender/extkit_build.py -- --node /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node
+
+socket(): Operation not permitted
+socket(): Operation not permitted
+extkit_tank_500_blue_steel: 1452 triangles, 6 parts; actual [1.2171, 1.6134, 0.92]
+extkit_tank_500_blue_block: 1228 triangles, 6 parts; actual [1.2171, 1.3534, 0.92]
+extkit_tank_500_black_steel: 1452 triangles, 5 parts; actual [1.2171, 1.6134, 0.92]
+extkit_tank_500_black_block: 1228 triangles, 5 parts; actual [1.2171, 1.3534, 0.92]
+extkit_tank_1000_blue_steel: 1452 triangles, 6 parts; actual [1.4971, 1.8238, 1.2]
+extkit_tank_1000_blue_block: 1228 triangles, 6 parts; actual [1.4971, 1.5638, 1.2]
+extkit_tank_1000_black_steel: 1452 triangles, 5 parts; actual [1.4971, 1.8238, 1.2]
+extkit_tank_1000_black_block: 1228 triangles, 5 parts; actual [1.4971, 1.5638, 1.2]
+extkit_tank_2000_blue_steel: 1452 triangles, 6 parts; actual [1.8771, 2.0842, 1.58]
+extkit_tank_2000_blue_block: 1228 triangles, 6 parts; actual [1.8771, 1.8242, 1.58]
+extkit_tank_2000_black_steel: 1452 triangles, 5 parts; actual [1.8771, 2.0842, 1.58]
+extkit_tank_2000_black_block: 1228 triangles, 5 parts; actual [1.8771, 1.8242, 1.58]
+extkit_tank_1000_blue_raised: 1452 triangles, 6 parts; actual [1.4971, 2.3838, 1.2]
+extkit_tank_1000_black_raised: 1452 triangles, 5 parts; actual [1.4971, 2.3838, 1.2]
+extkit_laundry_balcony: 612 triangles, 4 parts; actual [2.08, 1.0307, 0.3094]
+extkit_laundry_roof: 1308 triangles, 5 parts; actual [4.16, 2.03, 0.7]
+extkit_laundry_rotary: 760 triangles, 4 parts; actual [2.2493, 2.13, 2.2493]
+extkit_laundry_pole: 676 triangles, 5 parts; actual [2.96, 2.03, 0.16]
+extkit_dish_46: 1220 triangles, 3 parts; actual [0.4738, 0.6969, 0.6003]
+extkit_dish_68: 1220 triangles, 3 parts; actual [0.6938, 0.9169, 0.6003]
+extkit_dish_92: 1220 triangles, 3 parts; actual [0.9338, 1.1569, 0.6003]
+extkit_aerial_yagi: 646 triangles, 2 parts; actual [1.212, 1.16, 0.78]
+extkit_aerial_bowtie: 498 triangles, 2 parts; actual [0.6255, 1.16, 0.18]
+extkit_rebar_55_light: 1152 triangles, 2 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_55_heavy: 1152 triangles, 2 parts; actual [0.2884, 0.5509, 0.2687]
+extkit_rebar_110_light: 1152 triangles, 2 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_110_heavy: 1152 triangles, 2 parts; actual [0.2884, 1.0988, 0.2687]
+extkit_rebar_180_light: 1152 triangles, 2 parts; actual [0.2884, 1.797, 0.2687]
+extkit_rebar_180_heavy: 1152 triangles, 2 parts; actual [0.2884, 1.797, 0.2687]
+extkit_gas_cage_1: 1332 triangles, 4 parts; actual [0.585, 0.995, 0.5765]
+extkit_gas_cage_2: 2440 triangles, 4 parts; actual [1.135, 0.995, 0.5765]
+extkit_pipe_straight: 192 triangles, 1 parts; actual [0.0425, 0.996, 0.0425]
+extkit_pipe_elbow: 480 triangles, 1 parts; actual [0.2592, 0.2442, 0.0425]
+extkit_pipe_tee: 256 triangles, 1 parts; actual [0.396, 0.1912, 0.0425]
+extkit_pipe_bracket: 506 triangles, 2 parts; actual [0.12, 0.12, 0.1235]
+extkit_drain_straight: 192 triangles, 1 parts; actual [0.1298, 0.996, 0.1298]
+extkit_drain_elbow: 480 triangles, 1 parts; actual [0.3029, 0.2879, 0.1298]
+extkit_drain_tee: 256 triangles, 1 parts; actual [0.396, 0.2349, 0.1298]
+extkit_drain_bracket: 506 triangles, 2 parts; actual [0.1559, 0.12, 0.1605]
+extkit_meter_1: 688 triangles, 5 parts; actual [0.4, 0.7362, 0.222]
+extkit_meter_3: 1728 triangles, 5 parts; actual [1.2, 0.7362, 0.222]
+extkit_transformer_pole: 1860 triangles, 4 parts; actual [0.9659, 1.3265, 0.92]
+extkit_cable_thin: 64 triangles, 1 parts; actual [0.5, 0.018, 0.018]
+extkit_cable_bundle: 144 triangles, 1 parts; actual [0.5, 0.0327, 0.0345]
+extkit_chalkboard: 146 triangles, 3 parts; actual [0.61, 0.87, 0.1175]
+extkit_grille_1: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_2: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_3: 924 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_4: 1164 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_5: 1428 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_6: 1884 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_7: 492 triangles, 1 parts; actual [1.185, 1.18, 0.0935]
+extkit_grille_8: 780 triangles, 1 parts; actual [1.185, 1.18, 0.179]
+Traceback (most recent call last):
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_build.py", line 154, in <module>
+    if __name__=='__main__':main()
+                            ~~~~^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_build.py", line 119, in main
+    near,failures=make_file(lib/'extkit_near.glb',items,materials,False)
+                  ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_build.py", line 39, in make_file
+    G.build(asset,item,far)
+    ~~~~~~~^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_geometry.py", line 564, in build
+    BUILDERS[item['family']](a,item,far)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_geometry.py", line 437, in shutter
+    ids=[polygon.index(v) for v in triangle]
+         ~~~~~~~~~~~~~^^^
+ValueError: 4 is not in list
+
+Error: script failed, file: 'la-ladera/tools/blender/extkit_build.py', exiting.
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit
+
+UTC end: 2026-11-03T05:47:03.337829+00:00
+Exit status: 1

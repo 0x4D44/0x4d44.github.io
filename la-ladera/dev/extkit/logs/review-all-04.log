@@ -1,0 +1,567 @@
+UTC start: 2026-11-03T05:49:18.170050+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/e8a86919619d/runtime/blender-5.2.3-linux-x64/blender --background --factory-startup --threads 2 --python-exit-code 1 --python la-ladera/tools/blender/extkit_contact.py -- --out /workspace/scratch/597af25581a6/review-final-accepted --samples 8 --decode-python /opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python
+
+socket(): Operation not permitted
+socket(): Operation not permitted
+06:49:18 | INFO: Data are loaded, start creating Blender stuff
+06:49:18 | INFO: Blender create Mesh node extkit_aerial_bowtie-0
+06:49:18 | INFO: Blender create Mesh node extkit_aerial_bowtie-1
+06:49:18 | INFO: Blender create Mesh node extkit_aerial_yagi-0
+06:49:18 | INFO: Blender create Mesh node extkit_aerial_yagi-1
+06:49:18 | INFO: Blender create Mesh node extkit_cable_bundle-0
+06:49:18 | INFO: Blender create Mesh node extkit_cable_thin-0
+06:49:18 | INFO: Blender create Mesh node extkit_chalkboard-0
+06:49:18 | INFO: Blender create Mesh node extkit_chalkboard-1
+06:49:18 | INFO: Blender create Mesh node extkit_chalkboard-2
+06:49:18 | INFO: Blender create Mesh node extkit_dish_46-0
+06:49:18 | INFO: Blender create Mesh node extkit_dish_46-1
+06:49:18 | INFO: Blender create Mesh node extkit_dish_46-2
+06:49:18 | INFO: Blender create Mesh node extkit_dish_68-0
+06:49:18 | INFO: Blender create Mesh node extkit_dish_68-1
+06:49:18 | INFO: Blender create Mesh node extkit_dish_68-2
+06:49:18 | INFO: Blender create Mesh node extkit_dish_92-0
+06:49:18 | INFO: Blender create Mesh node extkit_dish_92-1
+06:49:18 | INFO: Blender create Mesh node extkit_dish_92-2
+06:49:18 | INFO: Blender create Mesh node extkit_drain_bracket-0
+06:49:18 | INFO: Blender create Mesh node extkit_pipe_bracket-1
+06:49:18 | INFO: Blender create Mesh node extkit_drain_elbow-0
+06:49:18 | INFO: Blender create Mesh node extkit_drain_straight-0
+06:49:18 | INFO: Blender create Mesh node extkit_drain_tee-0
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_1-0
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_1-1
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_1-2
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_1-3
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_2-0
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_2-1
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_2-2
+06:49:18 | INFO: Blender create Mesh node extkit_gas_cage_2-3
+06:49:18 | INFO: Blender create Mesh node extkit_grille_1-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_2-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_3-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_4-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_5-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_6-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_7-0
+06:49:18 | INFO: Blender create Mesh node extkit_grille_8-0
+06:49:18 | INFO: Blender create Mesh node extkit_lattice_diamond-0
+06:49:18 | INFO: Blender create Mesh node extkit_lattice_flower-0
+06:49:18 | INFO: Blender create Mesh node extkit_lattice_square-0
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_balcony-0
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_balcony-1
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_balcony-2
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_balcony-3
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_pole-0
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_pole-1
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_pole-2
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_pole-3
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_pole-4
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_roof-0
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_roof-1
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_roof-2
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_roof-3
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_roof-4
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_rotary-0
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_rotary-1
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_rotary-2
+06:49:18 | INFO: Blender create Mesh node extkit_laundry_rotary-3
+06:49:18 | INFO: Blender create Mesh node extkit_meter_1-0
+06:49:18 | INFO: Blender create Mesh node extkit_meter_1-1
+06:49:18 | INFO: Blender create Mesh node extkit_meter_1-2
+06:49:18 | INFO: Blender create Mesh node extkit_meter_1-3
+06:49:18 | INFO: Blender create Mesh node extkit_meter_1-4
+06:49:18 | INFO: Blender create Mesh node extkit_meter_3-0
+06:49:18 | INFO: Blender create Mesh node extkit_meter_3-1
+06:49:18 | INFO: Blender create Mesh node extkit_meter_3-2
+06:49:18 | INFO: Blender create Mesh node extkit_meter_3-3
+06:49:18 | INFO: Blender create Mesh node extkit_meter_3-4
+06:49:18 | INFO: Blender create Mesh node extkit_pipe_bracket-0
+06:49:18 | INFO: Blender create Mesh node extkit_pipe_elbow-0
+06:49:18 | INFO: Blender create Mesh node extkit_pipe_straight-0
+06:49:18 | INFO: Blender create Mesh node extkit_pipe_tee-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_aloe-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_sansevieria-1
+06:49:18 | INFO: Blender create Mesh node extkit_plant_aloe-2
+06:49:18 | INFO: Blender create Mesh node extkit_plant_aloe-3
+06:49:18 | INFO: Blender create Mesh node extkit_plant_aloe-4
+06:49:18 | INFO: Blender create Mesh node extkit_plant_croton-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_geranium-2
+06:49:18 | INFO: Blender create Mesh node extkit_plant_sansevieria-3
+06:49:18 | INFO: Blender create Mesh node extkit_plant_croton-4
+06:49:18 | INFO: Blender create Mesh node extkit_plant_croton-5
+06:49:18 | INFO: Blender create Mesh node extkit_plant_fern-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_fern-2
+06:49:18 | INFO: Blender create Mesh node extkit_plant_fern-4
+06:49:18 | INFO: Blender create Mesh node extkit_plant_geranium-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_geranium-4
+06:49:18 | INFO: Blender create Mesh node extkit_plant_geranium-5
+06:49:18 | INFO: Blender create Mesh node extkit_plant_geranium-6
+06:49:18 | INFO: Blender create Mesh node extkit_plant_pothos-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_pothos-2
+06:49:18 | INFO: Blender create Mesh node extkit_plant_pothos-4
+06:49:18 | INFO: Blender create Mesh node extkit_plant_sansevieria-0
+06:49:18 | INFO: Blender create Mesh node extkit_plant_sansevieria-2
+06:49:18 | INFO: Blender create Mesh node extkit_plant_sansevieria-4
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_55_heavy-0
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_55_light-1
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_55_light-0
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_110_heavy-0
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_110_light-1
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_110_light-0
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_180_heavy-0
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_180_light-1
+06:49:18 | INFO: Blender create Mesh node extkit_rebar_180_light-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_100-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_100-1
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_100-2
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_180-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_180-1
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_180-2
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_260-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_260-1
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_260-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_black_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-5
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_black_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_raised-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_black_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_black_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel-4
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel-3
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole-0
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole-1
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole-2
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole-3
+06:49:19 | INFO: glTF import finished in 0.32s
+06:49:19 | INFO: Data are loaded, start creating Blender stuff
+06:49:19 | INFO: Blender create Mesh node extkit_aerial_bowtie_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_aerial_yagi_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_aerial_yagi_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_cable_bundle_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_cable_thin_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_chalkboard_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_chalkboard_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_dish_46_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_dish_46_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_dish_46_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_dish_68_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_dish_68_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_dish_92_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_dish_92_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_drain_bracket_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_drain_elbow_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_drain_straight_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_drain_tee_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_1_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_1_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_1_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_1_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_2_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_2_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_2_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_gas_cage_2_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_grille_1_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_2_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_3_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_4_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_5_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_6_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_7_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_grille_8_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_lattice_diamond_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_lattice_flower_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_lattice_square_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_balcony_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_balcony_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_balcony_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_pole_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_pole_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_pole_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_roof_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_roof_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_roof_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_rotary_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_rotary_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_laundry_rotary_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_meter_1_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_meter_1_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_meter_1_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_meter_1_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_meter_3_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_meter_3_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_meter_3_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_meter_3_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_pipe_bracket_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_pipe_elbow_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_pipe_straight_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_pipe_tee_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_aloe_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_sansevieria_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_plant_sansevieria_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_plant_sansevieria_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_plant_aloe_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_plant_croton_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_croton_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_plant_croton_lod1-5
+06:49:19 | INFO: Blender create Mesh node extkit_plant_fern_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_fern_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_plant_geranium_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_geranium_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_plant_geranium_lod1-5
+06:49:19 | INFO: Blender create Mesh node extkit_plant_geranium_lod1-6
+06:49:19 | INFO: Blender create Mesh node extkit_plant_pothos_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_pothos_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_plant_sansevieria_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_plant_sansevieria_lod1-4
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_55_heavy_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_55_light_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_110_heavy_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_110_light_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_180_heavy_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_rebar_180_light_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_100_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_180_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_shutter_260_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_black_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_black_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_500_blue_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_raised_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_black_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_block_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_raised_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_1000_blue_steel_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_black_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_black_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel_lod1-3
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_block_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_tank_2000_blue_steel_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole_lod1-0
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole_lod1-1
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole_lod1-2
+06:49:19 | INFO: Blender create Mesh node extkit_transformer_pole_lod1-3
+06:49:19 | INFO: glTF import finished in 0.22s
+Decoded36 shipped KTX2 wall maps for Blender review.
+/workspace/scratch/597af25581a6/repo/la-ladera/tools/blender/extkit_contact.py:33: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+00:07.549  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_blue_steel.png'
+RENDERED extkit_tank_500_blue_steel
+00:11.387  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_blue_steel_lod1.png'
+RENDERED extkit_tank_500_blue_steel_lod1
+00:14.909  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_blue_block.png'
+RENDERED extkit_tank_500_blue_block
+00:18.247  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_blue_block_lod1.png'
+RENDERED extkit_tank_500_blue_block_lod1
+00:21.754  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_black_steel.png'
+RENDERED extkit_tank_500_black_steel
+00:25.121  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_black_steel_lod1.png'
+RENDERED extkit_tank_500_black_steel_lod1
+00:28.641  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_black_block.png'
+RENDERED extkit_tank_500_black_block
+00:32.010  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_500_black_block_lod1.png'
+RENDERED extkit_tank_500_black_block_lod1
+00:35.149  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_steel.png'
+RENDERED extkit_tank_1000_blue_steel
+00:38.451  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_steel_lod1.png'
+RENDERED extkit_tank_1000_blue_steel_lod1
+00:41.661  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_block.png'
+RENDERED extkit_tank_1000_blue_block
+00:44.824  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_block_lod1.png'
+RENDERED extkit_tank_1000_blue_block_lod1
+00:48.042  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_steel.png'
+RENDERED extkit_tank_1000_black_steel
+00:51.300  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_steel_lod1.png'
+RENDERED extkit_tank_1000_black_steel_lod1
+00:54.751  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_block.png'
+RENDERED extkit_tank_1000_black_block
+00:58.097  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_block_lod1.png'
+RENDERED extkit_tank_1000_black_block_lod1
+01:01.639  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_blue_steel.png'
+RENDERED extkit_tank_2000_blue_steel
+01:04.932  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_blue_steel_lod1.png'
+RENDERED extkit_tank_2000_blue_steel_lod1
+01:08.166  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_blue_block.png'
+RENDERED extkit_tank_2000_blue_block
+01:11.475  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_blue_block_lod1.png'
+RENDERED extkit_tank_2000_blue_block_lod1
+01:15.056  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_black_steel.png'
+RENDERED extkit_tank_2000_black_steel
+01:18.317  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_black_steel_lod1.png'
+RENDERED extkit_tank_2000_black_steel_lod1
+01:21.482  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_black_block.png'
+RENDERED extkit_tank_2000_black_block
+01:25.014  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_2000_black_block_lod1.png'
+RENDERED extkit_tank_2000_black_block_lod1
+01:28.208  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_raised.png'
+RENDERED extkit_tank_1000_blue_raised
+01:31.519  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_blue_raised_lod1.png'
+RENDERED extkit_tank_1000_blue_raised_lod1
+01:34.884  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_raised.png'
+RENDERED extkit_tank_1000_black_raised
+01:38.051  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_tank_1000_black_raised_lod1.png'
+RENDERED extkit_tank_1000_black_raised_lod1
+01:41.355  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_balcony.png'
+RENDERED extkit_laundry_balcony
+01:44.528  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_balcony_lod1.png'
+RENDERED extkit_laundry_balcony_lod1
+01:47.687  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_roof.png'
+RENDERED extkit_laundry_roof
+01:50.801  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_roof_lod1.png'
+RENDERED extkit_laundry_roof_lod1
+01:54.087  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_rotary.png'
+RENDERED extkit_laundry_rotary
+01:57.234  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_rotary_lod1.png'
+RENDERED extkit_laundry_rotary_lod1
+02:00.819  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_pole.png'
+RENDERED extkit_laundry_pole
+02:03.870  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_laundry_pole_lod1.png'
+RENDERED extkit_laundry_pole_lod1
+02:07.366  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_46.png'
+RENDERED extkit_dish_46
+02:10.749  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_46_lod1.png'
+RENDERED extkit_dish_46_lod1
+02:14.184  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_68.png'
+RENDERED extkit_dish_68
+02:17.340  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_68_lod1.png'
+RENDERED extkit_dish_68_lod1
+02:20.627  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_92.png'
+RENDERED extkit_dish_92
+02:23.940  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_dish_92_lod1.png'
+RENDERED extkit_dish_92_lod1
+02:26.893  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_aerial_yagi.png'
+RENDERED extkit_aerial_yagi
+02:30.356  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_aerial_yagi_lod1.png'
+RENDERED extkit_aerial_yagi_lod1
+02:33.520  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_aerial_bowtie.png'
+RENDERED extkit_aerial_bowtie
+02:36.636  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_aerial_bowtie_lod1.png'
+RENDERED extkit_aerial_bowtie_lod1
+02:39.699  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_55_light.png'
+RENDERED extkit_rebar_55_light
+02:42.710  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_55_light_lod1.png'
+RENDERED extkit_rebar_55_light_lod1
+02:45.813  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_55_heavy.png'
+RENDERED extkit_rebar_55_heavy
+02:48.834  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_55_heavy_lod1.png'
+RENDERED extkit_rebar_55_heavy_lod1
+02:52.228  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_110_light.png'
+RENDERED extkit_rebar_110_light
+02:55.900  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_110_light_lod1.png'
+RENDERED extkit_rebar_110_light_lod1
+02:59.682  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_110_heavy.png'
+RENDERED extkit_rebar_110_heavy
+03:03.322  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_110_heavy_lod1.png'
+RENDERED extkit_rebar_110_heavy_lod1
+03:06.889  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_180_light.png'
+RENDERED extkit_rebar_180_light
+03:10.505  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_180_light_lod1.png'
+RENDERED extkit_rebar_180_light_lod1
+03:14.098  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_180_heavy.png'
+RENDERED extkit_rebar_180_heavy
+03:17.599  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_rebar_180_heavy_lod1.png'
+RENDERED extkit_rebar_180_heavy_lod1
+03:21.287  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_gas_cage_1.png'
+RENDERED extkit_gas_cage_1
+03:25.001  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_gas_cage_1_lod1.png'
+RENDERED extkit_gas_cage_1_lod1
+03:28.609  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_gas_cage_2.png'
+RENDERED extkit_gas_cage_2
+03:32.728  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_gas_cage_2_lod1.png'
+RENDERED extkit_gas_cage_2_lod1
+03:36.084  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_straight.png'
+RENDERED extkit_pipe_straight
+03:39.427  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_straight_lod1.png'
+RENDERED extkit_pipe_straight_lod1
+03:43.006  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_elbow.png'
+RENDERED extkit_pipe_elbow
+03:46.231  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_elbow_lod1.png'
+RENDERED extkit_pipe_elbow_lod1
+03:50.200  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_tee.png'
+RENDERED extkit_pipe_tee
+03:54.017  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_tee_lod1.png'
+RENDERED extkit_pipe_tee_lod1
+03:58.074  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_bracket.png'
+RENDERED extkit_pipe_bracket
+04:01.993  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_pipe_bracket_lod1.png'
+RENDERED extkit_pipe_bracket_lod1
+04:05.350  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_straight.png'
+RENDERED extkit_drain_straight
+04:08.690  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_straight_lod1.png'
+RENDERED extkit_drain_straight_lod1
+04:12.268  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_elbow.png'
+RENDERED extkit_drain_elbow
+04:15.769  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_elbow_lod1.png'
+RENDERED extkit_drain_elbow_lod1
+04:19.355  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_tee.png'
+RENDERED extkit_drain_tee
+04:23.235  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_tee_lod1.png'
+RENDERED extkit_drain_tee_lod1
+04:27.368  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_bracket.png'
+RENDERED extkit_drain_bracket
+04:31.325  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_drain_bracket_lod1.png'
+RENDERED extkit_drain_bracket_lod1
+04:34.682  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_meter_1.png'
+RENDERED extkit_meter_1
+04:38.312  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_meter_1_lod1.png'
+RENDERED extkit_meter_1_lod1
+04:41.812  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_meter_3.png'
+RENDERED extkit_meter_3
+04:45.217  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_meter_3_lod1.png'
+RENDERED extkit_meter_3_lod1
+04:48.714  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_transformer_pole.png'
+RENDERED extkit_transformer_pole
+04:52.512  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_transformer_pole_lod1.png'
+RENDERED extkit_transformer_pole_lod1
+04:55.791  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_cable_thin.png'
+RENDERED extkit_cable_thin
+04:58.962  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_cable_thin_lod1.png'
+RENDERED extkit_cable_thin_lod1
+05:02.317  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_cable_bundle.png'
+RENDERED extkit_cable_bundle
+05:05.767  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_cable_bundle_lod1.png'
+RENDERED extkit_cable_bundle_lod1
+05:09.314  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_chalkboard.png'
+RENDERED extkit_chalkboard
+05:12.640  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_chalkboard_lod1.png'
+RENDERED extkit_chalkboard_lod1
+05:15.931  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_1.png'
+RENDERED extkit_grille_1
+05:19.197  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_1_lod1.png'
+RENDERED extkit_grille_1_lod1
+05:22.683  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_2.png'
+RENDERED extkit_grille_2
+05:25.932  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_2_lod1.png'
+RENDERED extkit_grille_2_lod1
+05:29.669  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_3.png'
+RENDERED extkit_grille_3
+05:32.869  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_3_lod1.png'
+RENDERED extkit_grille_3_lod1
+05:36.319  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_4.png'
+RENDERED extkit_grille_4
+05:39.778  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_4_lod1.png'
+RENDERED extkit_grille_4_lod1
+05:43.316  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_5.png'
+RENDERED extkit_grille_5
+05:46.549  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_5_lod1.png'
+RENDERED extkit_grille_5_lod1
+05:49.789  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_6.png'
+RENDERED extkit_grille_6
+05:53.182  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_6_lod1.png'
+RENDERED extkit_grille_6_lod1
+05:56.586  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_7.png'
+RENDERED extkit_grille_7
+06:00.018  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_7_lod1.png'
+RENDERED extkit_grille_7_lod1
+06:03.231  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_8.png'
+RENDERED extkit_grille_8
+06:06.373  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_grille_8_lod1.png'
+RENDERED extkit_grille_8_lod1
+06:09.739  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_100.png'
+RENDERED extkit_shutter_100
+06:12.980  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_100_lod1.png'
+RENDERED extkit_shutter_100_lod1
+06:16.081  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_180.png'
+RENDERED extkit_shutter_180
+06:19.182  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_180_lod1.png'
+RENDERED extkit_shutter_180_lod1
+06:22.321  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_260.png'
+RENDERED extkit_shutter_260
+06:25.330  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_shutter_260_lod1.png'
+RENDERED extkit_shutter_260_lod1
+06:28.484  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_sansevieria.png'
+RENDERED extkit_plant_sansevieria
+06:31.733  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_sansevieria_lod1.png'
+RENDERED extkit_plant_sansevieria_lod1
+06:35.016  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_aloe.png'
+RENDERED extkit_plant_aloe
+06:38.333  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_aloe_lod1.png'
+RENDERED extkit_plant_aloe_lod1
+06:41.693  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_fern.png'
+RENDERED extkit_plant_fern
+06:44.881  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_fern_lod1.png'
+RENDERED extkit_plant_fern_lod1
+06:48.186  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_geranium.png'
+RENDERED extkit_plant_geranium
+06:51.743  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_geranium_lod1.png'
+RENDERED extkit_plant_geranium_lod1
+06:55.140  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_croton.png'
+RENDERED extkit_plant_croton
+06:58.299  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_croton_lod1.png'
+RENDERED extkit_plant_croton_lod1
+07:01.651  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_pothos.png'
+RENDERED extkit_plant_pothos
+07:04.960  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_plant_pothos_lod1.png'
+RENDERED extkit_plant_pothos_lod1
+07:08.231  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_square.png'
+RENDERED extkit_lattice_square
+07:11.466  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_square_lod1.png'
+RENDERED extkit_lattice_square_lod1
+07:15.053  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_diamond.png'
+RENDERED extkit_lattice_diamond
+07:18.428  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_diamond_lod1.png'
+RENDERED extkit_lattice_diamond_lod1
+07:22.135  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_flower.png'
+RENDERED extkit_lattice_flower
+07:25.660  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/extkit_lattice_flower_lod1.png'
+RENDERED extkit_lattice_flower_lod1
+08:14.451  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/facade-eye-1_6m.png'
+09:06.217  render           | Saved: '/workspace/scratch/597af25581a6/review-final-accepted/roof-eye-1_6m.png'
+Actual-file review renders complete; source hashes unchanged.
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:35:05)
+
+Blender quit
+
+UTC end: 2026-11-03T05:58:24.725497+00:00
+Exit status: 0

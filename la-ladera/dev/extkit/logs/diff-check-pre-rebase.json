@@ -1,0 +1,12 @@
+{
+  "started": "2026-11-03T05:59:10.457754+00:00",
+  "ended": "2026-11-03T05:59:10.484478+00:00",
+  "argv": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "exitCode": 2,
+  "log": "diff-check-pre-rebase.log"
+}

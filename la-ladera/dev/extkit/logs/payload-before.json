@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "failures": [],
+  "budgets": [
+    {
+      "name": "textures",
+      "mb": 27.82,
+      "max": 40
+    },
+    {
+      "name": "models",
+      "mb": 34.56,
+      "max": 40
+    },
+    {
+      "name": "models/people",
+      "mb": 9.38,
+      "max": 14
+    },
+    {
+      "name": "models/furniture",
+      "mb": 5.15,
+      "max": 10
+    },
+    {
+      "name": "models/world",
+      "mb": 0,
+      "max": 6
+    },
+    {
+      "name": "models/arch",
+      "mb": 0,
+      "max": 2
+    },
+    {
+      "name": "shipped total (excl. vendor,dev,labs,tests,tools)",
+      "mb": 65.71,
+      "max": 150
+    },
+    {
+      "name": "estimated GPU texture memory",
+      "mb": 505,
+      "max": 800
+    }
+  ],
+  "largest": [
+    "6.60 MB  assets/models/people/people.glb",
+    "3.29 MB  dev/beach_props/contact-08.png",
+    "3.24 MB  dev/beach_props/contact-07.png",
+    "3.16 MB  dev/beach_props/contact-02.png",
+    "3.12 MB  dev/beach_props/catalogue.jpg",
+    "3.11 MB  dev/beach_props/contact-04.png",
+    "2.99 MB  dev/beach_props/contact-03.png",
+    "2.90 MB  dev/beach_props/contact-05.png"
+  ],
+  "textureFiles": 171,
+  "modelFiles": 119,
+  "unreadableImageSizes": []
+}

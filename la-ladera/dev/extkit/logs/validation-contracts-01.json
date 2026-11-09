@@ -1,0 +1,15 @@
+{
+  "started": "2026-11-03T05:03:09.275111+00:00",
+  "ended": "2026-11-03T05:03:12.993178+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--input-type=module",
+    "-e",
+    "import {readFileSync} from \"node:fs\"; import {ROOT,validateCatalogue,validateMaterialDefinitions,inspectTextures} from \"./la-ladera/tools/blender/extkit_validate.mjs\"; const c=JSON.parse(readFileSync(ROOT+\"/tools/blender/extkit.catalog.json\")); const m=JSON.parse(readFileSync(ROOT+\"/assets/models/extkit/materials.json\")); console.log(\"CATALOGUE\",validateCatalogue(c).size); validateMaterialDefinitions(m); const t=inspectTextures(ROOT,m); console.log(JSON.stringify({textureBytes:t.textureBytes,gpuBytes:t.gpuBytes,gpuCompressedWallBytes:t.gpuCompressedWallBytes,gpuAtlasBytes:t.gpuAtlasBytes,textures:t.textures.length,seams:t.textures.filter(x=>x.wall).map(x=>({wall:x.wall,channel:x.channel,seamMax:x.seamMax}))},null,2));"
+  ],
+  "exitCode": 0,
+  "log": "validation-contracts-01.log"
+}

@@ -1,0 +1,12 @@
+{
+  "started": "2026-11-03T06:02:06.660779+00:00",
+  "ended": "2026-11-03T06:02:06.710065+00:00",
+  "argv": [
+    "python",
+    "la-ladera/dev/extkit/audit_scope.py",
+    "origin/main",
+    "--staged"
+  ],
+  "exitCode": 0,
+  "log": "scope-post-rebase.log"
+}

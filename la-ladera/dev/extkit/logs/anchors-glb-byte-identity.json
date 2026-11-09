@@ -1,0 +1,11 @@
+{
+  "started": "2026-11-03T05:11:00.674863+00:00",
+  "ended": "2026-11-03T05:11:00.714180+00:00",
+  "argv": [
+    "python",
+    "-c",
+    "from pathlib import Path; import hashlib,json; root=Path(\"la-ladera/assets/models\"); old=json.loads(Path(\"/workspace/scratch/597af25581a6/extkit_glb_hashes_before_anchors.json\").read_text()); new={p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in old}; assert new==old,(old,new); print(\"PASS: near and LOD GLB bytes are identical after anchor metadata correction.\"); print(json.dumps(new,indent=2)); m=json.loads((root/\"manifest.extkit.json\").read_text()); print(\"complete\",m[\"complete\"],\"libraryOnly\",m[\"libraryOnly\"],\"manifestBytes\",(root/\"manifest.extkit.json\").stat().st_size)"
+  ],
+  "exitCode": 0,
+  "log": "anchors-glb-byte-identity.log"
+}

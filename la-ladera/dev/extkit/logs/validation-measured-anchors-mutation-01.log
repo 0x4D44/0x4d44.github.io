@@ -1,0 +1,10 @@
+UTC start: 2026-11-03T05:11:50.154823+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tools/nice.mjs --idle /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node la-ladera/tests/extkit-mutations.mjs --only measured_anchors
+
+KILLED measured_anchors: wall anchors follow the decoded near rear plane even when all metadata and hashes agree
+MUTATIONS: 1/1 killed under v22.16.0
+{"runtime":"v22.16.0","suites":1,"tests":1,"killed":1,"failures":[]}
+
+UTC end: 2026-11-03T05:11:55.678160+00:00
+Exit status: 0

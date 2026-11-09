@@ -1,0 +1,8 @@
+UTC start: 2026-11-03T05:58:50.487207+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: python -c 'import hashlib,json,shutil; from pathlib import Path; src=Path("/workspace/scratch/597af25581a6/review-final-accepted"); dst=Path("la-ladera/dev/extkit"); names=("contact-report.json","eye-view-report.json","source-pins-all.json"); pins=json.loads((src/names[2]).read_text()); assert all(hashlib.sha256((Path("la-ladera")/p).read_bytes()).hexdigest()==h for p,h in pins.items()); assert len(json.loads((src/names[0]).read_text()))==130; assert len(json.loads((src/names[1]).read_text())["views"])==2; [shutil.copyfile(src/n,dst/n) for n in names]; print("Copied three review reports: 130 contacts, two eye views, 44 matching source hashes")'
+
+Copied three review reports: 130 contacts, two eye views, 44 matching source hashes
+
+UTC end: 2026-11-03T05:58:50.523825+00:00
+Exit status: 0

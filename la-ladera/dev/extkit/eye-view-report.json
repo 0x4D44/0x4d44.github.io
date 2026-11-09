@@ -1,0 +1,469 @@
+{
+  "source": "Actual exported GLB roots and decoded shipped atlas/KTX2 textures",
+  "runtimeIntegrationTested": false,
+  "notes": [
+    "Review-only architecture is procedural and not shipped in the library.",
+    "Wall BC5 normal Z is reconstructed from compressed XY.",
+    "AO multiplies preview albedo because Blender has no separate AO input.",
+    "Plant review placement uses solid ledge backs; catalogue anchors include rear foliage.",
+    "Cables reuse short GLB segment geometry; instances use a quadratic illustrative sag."
+  ],
+  "views": [
+    {
+      "file": "facade-eye-1_6m.png",
+      "cameraGame": [
+        8.4,
+        1.6,
+        8.0
+      ],
+      "walkingSurfaceY": 0,
+      "eyeHeightMetres": 1.6,
+      "placedAssets": [
+        {
+          "asset": "extkit_grille_3",
+          "position": [
+            -0.8,
+            1.13,
+            -1.47325
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_grille_7",
+          "position": [
+            1.15,
+            1.13,
+            -1.47325
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_shutter_100",
+          "position": [
+            3.95,
+            2.3,
+            -2.3120000000000003
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_chalkboard",
+          "position": [
+            0.18,
+            0.9,
+            -1.46125
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_meter_1",
+          "position": [
+            -2.35,
+            1.1,
+            -1.409
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_gas_cage_2",
+          "position": [
+            -2.15,
+            0.02,
+            -0.89
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_straight",
+          "position": [
+            2.68,
+            0.15,
+            -1.4551
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_straight",
+          "position": [
+            2.68,
+            1.15,
+            -1.4551
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_straight",
+          "position": [
+            2.68,
+            2.15,
+            -1.4551
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_bracket",
+          "position": [
+            2.68,
+            0.55,
+            -1.43975
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_bracket",
+          "position": [
+            2.68,
+            2.3,
+            -1.43975
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_drain_elbow",
+          "position": [
+            2.57,
+            0.03,
+            -1.4551
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_plant_geranium",
+          "position": [
+            -0.8,
+            1.05,
+            -1.3579257112741472
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_plant_pothos",
+          "position": [
+            1.15,
+            1.05,
+            -1.2473247778415681
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_plant_sansevieria",
+          "position": [
+            5.78,
+            0.65,
+            -2.304999992847443
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_tank_1000_blue_steel",
+          "position": [
+            -1.6,
+            3.36,
+            -3.25
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_tank_500_black_block",
+          "position": [
+            1.6,
+            3.36,
+            -3.65
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_laundry_balcony",
+          "position": [
+            0.6,
+            2.5,
+            -1.365295
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_dish_68",
+          "position": [
+            2.2,
+            3.49,
+            -2.1698510000000004
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_aerial_yagi",
+          "position": [
+            -2.5,
+            3.36,
+            -2.8
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_110_heavy",
+          "position": [
+            -2.9,
+            3.36,
+            -1.9
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_110_heavy",
+          "position": [
+            2.9,
+            3.36,
+            -1.9
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_110_heavy",
+          "position": [
+            -2.9,
+            3.36,
+            -4.1
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_lattice_diamond",
+          "position": [
+            5.45,
+            1.3,
+            -2.3895000000000004
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_pipe_bracket",
+          "position": [
+            2.85,
+            2.87,
+            -1.45825
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_pipe_bracket",
+          "position": [
+            5.7,
+            2.47,
+            -2.3982500000000004
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            2.992499828338623,
+            2.8264000415802,
+            -1.377000093460083
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            3.2774999141693115,
+            2.619999885559082,
+            -1.4709999561309814
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            3.5625,
+            2.4552001953125,
+            -1.565000057220459
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            3.8474998474121094,
+            2.3320000171661377,
+            -1.6589999198913574
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            4.132499694824219,
+            2.2504000663757324,
+            -1.753000020980835
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            4.417499542236328,
+            2.210400104522705,
+            -1.847000002861023
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            4.702499866485596,
+            2.2119998931884766,
+            -1.940999984741211
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            4.987500190734863,
+            2.255200147628784,
+            -2.0350000858306885
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            5.272500038146973,
+            2.3400001525878906,
+            -2.129000186920166
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_cable_bundle",
+          "position": [
+            5.557499885559082,
+            2.466400146484375,
+            -2.2230000495910645
+          ],
+          "rotationY": 0
+        }
+      ]
+    },
+    {
+      "file": "roof-eye-1_6m.png",
+      "cameraGame": [
+        5.0,
+        1.6,
+        6.1
+      ],
+      "walkingSurfaceY": 0,
+      "eyeHeightMetres": 1.6,
+      "placedAssets": [
+        {
+          "asset": "extkit_tank_2000_black_block",
+          "position": [
+            -2.1,
+            0,
+            -1.2
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_tank_1000_blue_raised",
+          "position": [
+            0.6,
+            0,
+            -1.8
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_laundry_pole",
+          "position": [
+            1.4,
+            0,
+            0.65
+          ],
+          "rotationY": -0.22
+        },
+        {
+          "asset": "extkit_laundry_roof",
+          "position": [
+            1.6,
+            0,
+            -2.7
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_dish_92",
+          "position": [
+            -3.25,
+            0.25,
+            -2.989851
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_aerial_bowtie",
+          "position": [
+            2.7,
+            0.66,
+            -3.35
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_55_light",
+          "position": [
+            -3.5,
+            0,
+            2.5
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_180_heavy",
+          "position": [
+            -3.5,
+            0,
+            -2.6
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_rebar_110_light",
+          "position": [
+            3.5,
+            0,
+            -2.7
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_plant_aloe",
+          "position": [
+            -2.4,
+            0.62,
+            -2.2905679041147233
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_plant_fern",
+          "position": [
+            -1.1,
+            0.62,
+            -2.3099999868869783
+          ],
+          "rotationY": 0
+        },
+        {
+          "asset": "extkit_lattice_flower",
+          "position": [
+            -1.8,
+            0.9,
+            -2.4195
+          ],
+          "rotationY": 0
+        }
+      ]
+    }
+  ]
+}

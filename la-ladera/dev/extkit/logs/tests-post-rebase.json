@@ -1,0 +1,16 @@
+{
+  "started": "2026-11-03T06:00:29.362978+00:00",
+  "ended": "2026-11-03T06:00:54.905695+00:00",
+  "argv": [
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "la-ladera/tools/nice.mjs",
+    "--idle",
+    "/workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node",
+    "--test",
+    "--experimental-test-isolation=none",
+    "--test-concurrency=1",
+    "la-ladera/tests/extkit-assets.test.mjs"
+  ],
+  "exitCode": 0,
+  "log": "tests-post-rebase.log"
+}

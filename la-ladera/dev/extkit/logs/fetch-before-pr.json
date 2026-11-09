@@ -1,0 +1,12 @@
+{
+  "started": "2026-11-03T05:59:43.319030+00:00",
+  "ended": "2026-11-03T05:59:48.642183+00:00",
+  "argv": [
+    "git",
+    "fetch",
+    "origin",
+    "main"
+  ],
+  "exitCode": 0,
+  "log": "fetch-before-pr.log"
+}

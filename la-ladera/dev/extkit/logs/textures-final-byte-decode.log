@@ -1,0 +1,44 @@
+UTC start: 2026-11-03T05:05:17.803062+00:00
+Working directory: /workspace/scratch/597af25581a6/repo
+Command: /workspace/scratch/656bacdf6a4e/tooling/node-v22.16.0-linux-x64/bin/node --input-type=module -e 'import { readFileSync } from "node:fs"; import { resolve } from "node:path"; import { createHash } from "node:crypto"; import assert from "node:assert/strict"; import { inspectKtx2, decodeKtx2, seamMetrics } from "./la-ladera/tools/blender/extkit_texture_codec.mjs"; const root="la-ladera/assets/models/extkit"; const materials=JSON.parse(readFileSync(root+"/materials.json")); let count=0,gpu=0,maxNormalXY2=0; for(const file of materials.files) { const b=readFileSync(resolve(root,file.file)); assert.equal(b.length,file.bytes); assert.equal(createHash("sha256").update(b).digest("hex"),file.sha256); } for (const wall of materials.walls) for (const key of ["map","normal","orm"]) { const info=inspectKtx2(readFileSync(resolve(root,wall[key]))); gpu+=info.gpuBytes; for(let level=0;level<info.levelCount;level++) { const decoded=decodeKtx2(info,level); const seam=seamMetrics(decoded); assert.equal(seam.horizontalMax,0,wall.id+" "+key+" mip"+level); assert.equal(seam.verticalMax,0,wall.id+" "+key+" mip"+level); if(key==="normal") for(let p=0;p<decoded.pixels.length;p+=3) { const x=decoded.pixels[p]/127.5-1,y=decoded.pixels[p+1]/127.5-1; maxNormalXY2=Math.max(maxNormalXY2,x*x+y*y); } count++; } console.log(wall.id+" "+key+":11 valid mips; opposite edges identical"); } assert.ok(maxNormalXY2<=1); console.log(JSON.stringify({hashedTexturePlanes:materials.files.length,decodedMips:count,wallGpuBytes:gpu,maxNormalXY2,allEdgesExact:true}));'
+
+extkit_wall_azul_anil map:11 valid mips; opposite edges identical
+extkit_wall_azul_anil normal:11 valid mips; opposite edges identical
+extkit_wall_azul_anil orm:11 valid mips; opposite edges identical
+extkit_wall_turquesa map:11 valid mips; opposite edges identical
+extkit_wall_turquesa normal:11 valid mips; opposite edges identical
+extkit_wall_turquesa orm:11 valid mips; opposite edges identical
+extkit_wall_amarillo_ocre map:11 valid mips; opposite edges identical
+extkit_wall_amarillo_ocre normal:11 valid mips; opposite edges identical
+extkit_wall_amarillo_ocre orm:11 valid mips; opposite edges identical
+extkit_wall_terracota map:11 valid mips; opposite edges identical
+extkit_wall_terracota normal:11 valid mips; opposite edges identical
+extkit_wall_terracota orm:11 valid mips; opposite edges identical
+extkit_wall_verde_menta map:11 valid mips; opposite edges identical
+extkit_wall_verde_menta normal:11 valid mips; opposite edges identical
+extkit_wall_verde_menta orm:11 valid mips; opposite edges identical
+extkit_wall_rosado map:11 valid mips; opposite edges identical
+extkit_wall_rosado normal:11 valid mips; opposite edges identical
+extkit_wall_rosado orm:11 valid mips; opposite edges identical
+extkit_wall_tolete map:11 valid mips; opposite edges identical
+extkit_wall_tolete normal:11 valid mips; opposite edges identical
+extkit_wall_tolete orm:11 valid mips; opposite edges identical
+extkit_wall_tolete_humedo map:11 valid mips; opposite edges identical
+extkit_wall_tolete_humedo normal:11 valid mips; opposite edges identical
+extkit_wall_tolete_humedo orm:11 valid mips; opposite edges identical
+extkit_wall_bloque map:11 valid mips; opposite edges identical
+extkit_wall_bloque normal:11 valid mips; opposite edges identical
+extkit_wall_bloque orm:11 valid mips; opposite edges identical
+extkit_wall_baldosin map:11 valid mips; opposite edges identical
+extkit_wall_baldosin normal:11 valid mips; opposite edges identical
+extkit_wall_baldosin orm:11 valid mips; opposite edges identical
+extkit_wall_panete map:11 valid mips; opposite edges identical
+extkit_wall_panete normal:11 valid mips; opposite edges identical
+extkit_wall_panete orm:11 valid mips; opposite edges identical
+extkit_wall_cal map:11 valid mips; opposite edges identical
+extkit_wall_cal normal:11 valid mips; opposite edges identical
+extkit_wall_cal orm:11 valid mips; opposite edges identical
+{"hashedTexturePlanes":39,"decodedMips":396,"wallGpuBytes":33555072,"maxNormalXY2":0.10792772010765092,"allEdgesExact":true}
+
+UTC end: 2026-11-03T05:05:19.987395+00:00
+Exit status: 0
