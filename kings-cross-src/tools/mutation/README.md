@@ -27,6 +27,7 @@ python3 -I -u kings-cross-src/tools/mutation/berths.py kings-cross-src .scratch/
 python3 -I -u kings-cross-src/tools/mutation/board.py kings-cross-src .scratch/mutation/board
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
 python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
+python3 -I -u kings-cross-src/tools/mutation/fidelity.py kings-cross-src .scratch/mutation/fidelity
 python3 -I -u kings-cross-src/tools/mutation/hotel-roof.py kings-cross-src .scratch/mutation/hotel-roof
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/mutation/live
 python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/mutation/motion
@@ -50,7 +51,9 @@ python3 -I -u kings-cross-src/tools/mutation/tunnel-track.py kings-cross-src .sc
 ```
 
 `axis01-evidence.py` and the no-argument drivers choose their own private `.scratch`
-locations. `trainweb.py` runs every mutation as shown; append one or more mutation-name
+locations. `axis01-evidence.py` also accepts `--out .scratch/<fresh-output>` after the
+package argument to retain its assertion logs in a selected scratch directory.
+`trainweb.py` runs every mutation as shown; append one or more mutation-name
 substrings to narrow it. `station.py` requires the local raw OpenStreetMap extract at
 `/Users/md/kx-data/osm/kx-osm.json`, the raw input used by `tools/build-data.ts`; it is not
 committed. `test-suite.py` needs no external inputs.

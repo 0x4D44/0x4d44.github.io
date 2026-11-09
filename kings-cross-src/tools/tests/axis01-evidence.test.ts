@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { createAxis01Report, measureGauge, meshExtent, renderAxis01Markdown } from '../axis01-evidence.ts';
+import { createAxis01Report, measureBoundaryAgreement, measureGauge, meshExtent, renderAxis01Markdown, rawExtractElements } from '../axis01-evidence.ts';
 
 const layout: ShedLayout = { origin: [0, 0], heading: 0, width: 70, length: 243.84, aisle: 2.996, crown: 21.6408, springing: 5.6388 };
 function fixture(): KxData {
@@ -112,4 +112,69 @@ test('names the documented Platform 9 outline inference instead of an unexplaine
   assert.ok(report.flags.some(f => f.code === 'platform-outline-inferred' && f.detail.includes('Platform 9') && f.detail.includes('Sectional Appendix')));
   assert.ok(!report.flags.some(f => f.code === 'platform-osm-tolerance' && f.detail.includes('Platform 9:')));
   assert.ok(report.platforms.filter(p => p.ref !== '9').every(p => p.outlineInference === null));
+});
+
+
+test('checks transformed actual top boundaries in both directions and rejects missing or narrowed tops', () => {
+  const ring: [number, number][] = [[0, 0], [10, 0], [10, -100], [0, -100]];
+  const geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([0,.9,0,10,.9,0,10,.9,-100,0,.9,0,10,.9,-100,0,.9,-100],3));
+  const parent = new THREE.Group(); const top = new THREE.Mesh(geometry); parent.add(top);
+  const baseline = measureBoundaryAgreement(top, ring);
+  assert.equal(baseline.withinTolerance, true);
+  assert.equal(baseline.drawnToReferenceM, 0); assert.equal(baseline.referenceToDrawnM, 0);
+  parent.position.x = 5;
+  assert.equal(meshExtent(top, new THREE.Vector3(0,0,1)), 100);
+  assert.equal(measureBoundaryAgreement(top, ring).withinTolerance, false);
+  parent.position.x = 0; top.scale.x = .5;
+  const narrow = measureBoundaryAgreement(top, ring);
+  assert.equal(narrow.withinTolerance, false); assert.ok(narrow.referenceToDrawnM! >= 5);
+  assert.equal(measureBoundaryAgreement(new THREE.Group(), ring).withinTolerance, false);
+  assert.equal(measureBoundaryAgreement(top, []).withinTolerance, false);
+});
+
+test('anchors rail and mouth node identities to raw OSM and exposes translated tunnel nodes', async () => {
+  const { unproject } = await import('../../core/geo.ts');
+  assert.throws(() => rawExtractElements({}), /elements array/);
+  assert.throws(() => rawExtractElements({elements:null}), /elements array/);
+  assert.throws(() => rawExtractElements(null), /elements array/);
+  assert.deepEqual(rawExtractElements({elements:[]}), []);
+  const data = fixture();
+  const raw = data.nodes.map(([id,x,z]) => ({ type: 'node' as const, id, ...unproject(x,z,data.origin) }));
+  const base = createAxis01Report(data, layout, {}, raw);
+  assert.equal(base.sourceRegistration.status, 'available');
+  assert.ok(base.sourceRegistration.railNodes.every(n => n.withinTolerance));
+  assert.ok(base.tunnels.every(t => t.sourceRegistration?.withinTolerance));
+  const moved = fixture(); moved.nodes = moved.nodes.map(([id,x,z]) => [id,x+5,z]);
+  const corrupt = createAxis01Report(moved, layout, {}, raw);
+  assert.ok(corrupt.flags.some(f => f.code === 'mouth-source-registration'));
+  assert.ok(corrupt.flags.some(f => f.code === 'rail-source-registration'));
+  assert.ok(corrupt.tunnels.every(t => t.sourceRegistration!.maxDistanceM! > 3));
+  assert.ok(corrupt.tunnels.every(t => t.withinThroatTolerance));
+  assert.ok(corrupt.gaugeSamples.every(g => g.withinTolerance));
+  assert.equal(createAxis01Report(data, layout).sourceRegistration.status, 'unavailable');
+  assert.equal(createAxis01Report(data, layout).platforms[0]!.rawBoundary, null);
+  const partial = createAxis01Report(data, layout, {}, raw.filter(n => n.id !== 2));
+  assert.ok(partial.tunnels.some(t => t.sourceRegistration!.nodes.some(n => n.id === 2 && n.distanceM === null && !n.withinTolerance)));
+  assert.ok(partial.flags.some(f => f.code === 'mouth-source-registration'));
+  const missingRings = createAxis01Report(data, layout, {}, []);
+  assert.ok(missingRings.platforms.every(p => p.rawBoundary!.status === 'unavailable' && !p.rawBoundary!.withinTolerance));
+  assert.ok(missingRings.flags.some(f => f.code === 'platform-raw-boundary'));
+  assert.equal(createAxis01Report(data, layout, {}, []).sourceRegistration.status, 'available');
+  assert.ok(createAxis01Report(data, layout, {}, []).flags.some(f => f.code === 'mouth-source-registration'));
+});
+
+test('checks real drawn outlines against approved outlines while keeping raw P9 inference explicit', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { shedLayout } = await import('../../core/station.ts');
+  const real: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  // Synthetic raw rows retain the real compact rings: this tests actual meshes without requiring a private local extract.
+  const { unproject } = await import('../../core/geo.ts');
+  const raw = real.platforms.map(p => ({type: 'way' as const,id:p.id,geometry:p.pts.map(([x,z])=>unproject(x,z,real.origin))}));
+  const report = createAxis01Report(real, shedLayout(real), {}, raw);
+  assert.ok(report.platforms.every(p => p.drawingBoundary.withinTolerance));
+  assert.ok(report.platforms.filter(p => p.ref !== '9').every(p => p.rawBoundary?.withinTolerance));
+  const p9 = report.platforms.find(p => p.ref === '9')!;
+  assert.equal(p9.rawBoundary!.withinTolerance, false);
+  assert.ok(p9.rawBoundary!.drawnToReferenceM! > 10);
+  assert.ok(report.flags.some(f => f.code === 'platform-raw-boundary-inferred'));
 });

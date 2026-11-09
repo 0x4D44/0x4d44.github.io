@@ -160,6 +160,20 @@ test('one shared source-map build serves selected axes and motion precedes dimen
   assert.ok(!calls.some(step => step.args.some(arg => /signal-report\.ts$/.test(arg))));
 });
 
+test('axis 01 compares actual geometry and fidelity against the same frozen raw OSM input', async () => {
+  const f = await fixture(), calls = [];
+  const result = await invoke(f, ['--only', '1'], fake(calls));
+  const geometry = calls.find(step => step.id === '01-geometry');
+  const fidelity = calls.find(step => step.id === '01-fidelity');
+  assert.ok(geometry && fidelity);
+  assert.ok(geometry.args.includes('--raw'), 'drawn geometry needs the raw OSM position reference');
+  const raw = result.inputs.find(input => input.role === 'raw-osm');
+  assert.ok(raw?.path.startsWith(path.join(f.out, 'inputs') + path.sep));
+  assert.equal(geometry.args[geometry.args.indexOf('--raw') + 1], raw.path);
+  assert.equal(fidelity.args[fidelity.args.indexOf('--raw') + 1], raw.path);
+  assert.ok(geometry.inputs.includes('raw-osm'), 'declare the geometry command raw dependency');
+});
+
 test('axis 05 keeps standard train capture and adds a separate portal capture with shared prerequisites', async () => {
   const f = await fixture(), calls = [];
   const result = await invoke(f, ['--only', '5', '--gpu'], fake(calls));

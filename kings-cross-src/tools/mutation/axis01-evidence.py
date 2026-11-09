@@ -1,4 +1,4 @@
-"""Strict named-assertion mutations; all temporary output stays in round21-geometry.
+"""Strict named-assertion mutations; temporary output stays in the selected scratch output directory.
 Usage: python3 -I -u kings-cross-src/tools/mutation/axis01-evidence.py kings-cross-src
 """
 from __future__ import annotations
@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 src = Path(sys.argv[1]).resolve()
-scratch = src.parent / '.scratch' / 'round21-geometry' / 'mutations'
+scratch = Path(sys.argv[sys.argv.index('--out') + 1]).resolve() if '--out' in sys.argv else src.parent / '.scratch' / 'round21-geometry' / 'mutations'
 scratch.mkdir(parents=True, exist_ok=True)
 FILE = 'tools/axis01-evidence.ts'
 TEST = 'tools/tests/axis01-evidence.test.ts'
@@ -22,8 +22,17 @@ NAMES = [
     'renders explicit numeric published flags and missing gauge evidence without claiming a survey',
     'compares the drawn concourse roof extent with Arup and flags a missing station footprint',
     'names the documented Platform 9 outline inference instead of an unexplained OSM mismatch',
+    'checks transformed actual top boundaries in both directions and rejects missing or narrowed tops',
+    'anchors rail and mouth node identities to raw OSM and exposes translated tunnel nodes',
+    'checks real drawn outlines against approved outlines while keeping raw P9 inference explicit',
 ]
 MUTATIONS = [
+    ('invalid raw extract accepted', "typeof value !== 'object' || value === null || !Array.isArray((value as { elements?: unknown }).elements)", 'false', NAMES[8]),
+    ('boundary world transform ignored', '.applyMatrix4(o.matrixWorld);', ';', NAMES[7]),
+    ('reverse boundary direction suppressed', 'valid ? directed(reference, drawn) : null', 'valid ? 0 : null', NAMES[7]),
+    ('raw node registration distance fabricated', 'distanceM !== null && distanceM <= TOLERANCES.throatM', 'distanceM !== null', NAMES[8]),
+    ('approved drawing boundary missing', 'measureBoundaryAgreement(top, platformDrawingOutline(p, data))', 'measureBoundaryAgreement(new THREE.Group(), platformDrawingOutline(p, data))', NAMES[9]),
+    ('raw outline replaced by inferred drawing', 'measureBoundaryAgreement(top, rawRing ?? [])', 'measureBoundaryAgreement(top, platformDrawingOutline(p, data))', NAMES[9]),
     ('published flags suppressed', "p.withinPublishedTolerance === false", 'false', NAMES[4]),
     ('world transform ignored', '.applyMatrix4(o.matrixWorld).dot(axis)', '.dot(axis)', NAMES[0]),
     ('drawn gauge replaced by input constant', 'gaugeM: round(hits[0]!.distance + hits[1]!.distance)', 'gaugeM: GAUGE', NAMES[1]),
@@ -50,6 +59,7 @@ with tempfile.TemporaryDirectory(prefix='axis01-', dir=scratch) as temp:
     for name in [FILE, TEST, 'package.json']:
         shutil.copy2(src / name, work / name)
     baseline = run(work)
+    (scratch / 'baseline.tap').write_text(baseline.stdout + baseline.stderr)
     names = set(re.findall(r'^ok \d+ - (.+)$', baseline.stdout, re.M))
     if baseline.returncode or baseline.stderr or names != set(NAMES):
         print(baseline.stdout, baseline.stderr)
@@ -64,6 +74,7 @@ with tempfile.TemporaryDirectory(prefix='axis01-', dir=scratch) as temp:
         target.write_text(original.replace(old, new, 1))
         try:
             result = run(work, name)
+            (scratch / (re.sub(r'[^a-z0-9]+', '-', label.lower()) + '.tap')).write_text(result.stdout + result.stderr)
         finally:
             target.write_text(original)
         failed = re.findall(r'^not ok \d+ - (.+)$', result.stdout, re.M)

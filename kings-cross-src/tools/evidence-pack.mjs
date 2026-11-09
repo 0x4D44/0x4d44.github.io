@@ -188,8 +188,8 @@ export function buildPlan(o, inputs, mutations = []) {
   add('build', '00', 'npm', ['--prefix', p, 'run', 'build', '--', '--sourcemap', '--outDir', dist, '--emptyOutDir'], { outputs: [dirOutput(dist)] });
   if (selected.has('01')) {
     const legacy = path.join(o.root, '.scratch/round21-geometry'), target = path.join(axis('01'), 'geometry');
-    node('01-geometry', '01', 'axis01-evidence.ts', ['--graph', input('graph'), '--out', legacy], {
-      inputs: ['graph'], outputs: ['json', 'md'].flatMap(ext => [fileOutput(path.join(legacy, `axis01-evidence.${ext}`)), fileOutput(path.join(target, `axis01-evidence.${ext}`))]),
+    node('01-geometry', '01', 'axis01-evidence.ts', ['--graph', input('graph'), '--raw', input('raw-osm'), '--out', legacy], {
+      inputs: ['graph', 'raw-osm'], outputs: ['json', 'md'].flatMap(ext => [fileOutput(path.join(legacy, `axis01-evidence.${ext}`)), fileOutput(path.join(target, `axis01-evidence.${ext}`))]),
       copies: ['json', 'md'].map(ext => ({ source: path.join(legacy, `axis01-evidence.${ext}`), target: path.join(target, `axis01-evidence.${ext}`) })),
       note: 'CLI fixes its output to .scratch/round21-geometry; fresh results are copied into this pack.' });
     node('01-fidelity', '01', 'fidelity.ts', ['--raw', input('raw-osm'), '--json'], { inputs: ['raw-osm'], stdoutArtifact: path.join(axis('01'), 'osm-fidelity.json') });

@@ -4,9 +4,10 @@ import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as THREE from 'three';
-import type { KxData } from '../core/osm.ts';
+import { project } from '../core/geo.ts';
+import type { RawElement, KxData } from '../core/osm.ts';
 import type { Pt } from '../core/geo.ts';
-import { GAUGE, KINGS_CROSS_PLATFORM_LENGTHS_M, concourseCanopy, longAxis, shedLayout, stationBuilding, stationPlatforms } from '../core/station.ts';
+import { GAUGE, KINGS_CROSS_PLATFORM_LENGTHS_M, concourseCanopy, longAxis, shedLayout, stationBuilding, stationPlatforms, platformDrawingOutline } from '../core/station.ts';
 import { railSegments } from '../core/scene.ts';
 import { trainLayout } from '../core/train.ts';
 import { buildPlatforms } from '../web/src/furniture.ts';
@@ -53,11 +54,77 @@ export function measureRailFaces(mesh: THREE.Mesh, point: Pt, direction: Pt) {
 export function measureGauge(mesh: THREE.Mesh, point: Pt, direction: Pt): number | null {
   return measureRailFaces(mesh, point, direction)?.gaugeM ?? null;
 }
+/** Sample both actual mesh boundary and reference ring at intervals no greater than 2 m.
+ * Shared triangle edges cancel; coordinates include all ancestor/object transforms.
+ * This is sampled source/drawing consistency, not a survey or an exact Hausdorff bound. */
+export function measureBoundaryAgreement(object: THREE.Object3D, ring: readonly Pt[], toleranceM = 1) {
+  const sampleIntervalM = 2;
+  type Edge = [Pt, Pt];
+  const counts = new Map<string, { edge: Edge; count: number }>();
+  object.updateWorldMatrix(true, true);
+  object.traverse(o => {
+    if (!(o instanceof THREE.Mesh)) return;
+    const position = o.geometry.getAttribute('position'), index = o.geometry.getIndex();
+    if (!position) return;
+    const at = (i: number): Pt => {
+      const v = new THREE.Vector3().fromBufferAttribute(position, i).applyMatrix4(o.matrixWorld);
+      return [v.x, v.z];
+    };
+    for (let i = 0; i + 2 < (index?.count ?? position.count); i += 3) {
+      const pts = [0, 1, 2].map(k => at(index ? index.getX(i + k) : i + k));
+      for (let k = 0; k < 3; k++) {
+        const edge: Edge = [pts[k]!, pts[(k + 1) % 3]!];
+        const key = edge.map(p => p.map(n => n.toFixed(5)).join(',')).sort().join('|');
+        const previous = counts.get(key);
+        counts.set(key, { edge, count: (previous?.count ?? 0) + 1 });
+      }
+    }
+  });
+  const drawn = [...counts.values()].filter(e => e.count === 1).map(e => e.edge);
+  const reference: Edge[] = ring.map((p, i) => [p, ring[(i + 1) % ring.length]!]);
+  const valid = drawn.length > 0 && ring.length >= 3;
+  const distance = (p: Pt, [a, b]: Edge): number => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz;
+    const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2)) : 0;
+    return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dz * t);
+  };
+  const directed = (from: Edge[], to: Edge[]): number => {
+    let maximum = 0;
+    for (const [a, b] of from) {
+      const count = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / sampleIntervalM));
+      for (let k = 0; k <= count; k++) {
+        const point: Pt = [a[0] + (b[0] - a[0]) * k / count, a[1] + (b[1] - a[1]) * k / count];
+        maximum = Math.max(maximum, Math.min(...to.map(e => distance(point, e))));
+      }
+    }
+    return round(maximum);
+  };
+  const drawnToReferenceM = valid ? directed(drawn, reference) : null;
+  const referenceToDrawnM = valid ? directed(reference, drawn) : null;
+  return { status: valid ? 'available' as const : 'unavailable' as const, sampleIntervalM, toleranceM,
+    drawnToReferenceM, referenceToDrawnM, withinTolerance: valid && drawnToReferenceM! <= toleranceM && referenceToDrawnM! <= toleranceM };
+}
 function box(object: THREE.Object3D) {
   const b = new THREE.Box3().setFromObject(object);
   return { x: [round(b.min.x), round(b.max.x)], y: [round(b.min.y), round(b.max.y)], z: [round(b.min.z), round(b.max.z)] };
 }
-export function createAxis01Report(data: KxData, layout = shedLayout(data), inputs: unknown = {}) {
+export function createAxis01Report(data: KxData, layout = shedLayout(data), inputs: unknown = {}, rawElements?: readonly RawElement[]) {
+  const rawNodes = new Map<number, Pt>(), rawWays = new Map<number, RawElement>();
+  for (const e of rawElements ?? []) {
+    if (e.type === 'node' && e.lat !== undefined && e.lon !== undefined) rawNodes.set(e.id, project(e.lat, e.lon, data.origin));
+    if (e.type === 'way') {
+      rawWays.set(e.id, e);
+      e.nodes?.forEach((id, i) => { const p = e.geometry?.[i]; if (p) rawNodes.set(id, project(p.lat, p.lon, data.origin)); });
+    }
+  }
+  const positions = new Map(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const registration = (ids: readonly number[]) => {
+    const nodes = ids.map(id => { const a = positions.get(id), b = rawNodes.get(id); const distanceM = a && b ? round(Math.hypot(a[0] - b[0], a[1] - b[1])) : null;
+      return { id, distanceM, withinTolerance: distanceM !== null && distanceM <= TOLERANCES.throatM }; });
+    return { nodes, maxDistanceM: nodes.some(n => n.distanceM === null) || !nodes.length ? null : Math.max(...nodes.map(n => n.distanceM!)), withinTolerance: nodes.length > 0 && nodes.every(n => n.withinTolerance) };
+  };
+  const railRegistration = registration([...new Set(data.rails.flatMap(r => r.nodes))]);
+  const sourceRegistration = { status: rawElements === undefined ? 'unavailable' as const : 'available' as const, toleranceM: TOLERANCES.throatM, railNodes: rawElements === undefined ? [] : railRegistration.nodes, maxDistanceM: rawElements === undefined ? null : railRegistration.maxDistanceM };
   const platformGroup = buildPlatforms({ ...data, platforms: [...stationPlatforms(data).values()] }, layout);
   const track = buildTrack(data, layout);
   track.updateMatrixWorld(true);
@@ -79,7 +146,10 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
       for (let k = 0; k < 3; k++) centre.add(new THREE.Vector3().fromBufferAttribute(vertices, index ? index.getX(triangle * 3 + k) : triangle * 3 + k));
       return centre.divideScalar(3).toArray().map(round);
     });
-    return { ref, osmId: p.id, drawnTopBounds: box(top), drawnTopSamples, drawnLengthM, osmLongAxisM: round(osm.length), publishedOperationalLengthM: published,
+    const rawRing = rawWays.get(p.id)?.geometry?.map(g => project(g.lat, g.lon, data.origin));
+    const drawingBoundary = measureBoundaryAgreement(top, platformDrawingOutline(p, data));
+    const rawBoundary = rawElements === undefined ? null : measureBoundaryAgreement(top, rawRing ?? []);
+    return { ref, osmId: p.id, drawingBoundary, rawBoundary, drawnTopBounds: box(top), drawnTopSamples, drawnLengthM, osmLongAxisM: round(osm.length), publishedOperationalLengthM: published,
       drawnMinusOsmM: round(drawnLengthM - osm.length), drawnMinusPublishedM: published === null ? null : round(drawnLengthM - published),
       withinPublishedTolerance: published === null ? null : Math.abs(drawnLengthM - published) <= TOLERANCES.platformM,
       withinOsmTolerance: Math.abs(drawnLengthM - osm.length) <= TOLERANCES.platformM,
@@ -130,7 +200,7 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     }
     const setbackM = [...planes].sort((a, b) => b[1] - a[1])[0]![0];
     const drawnFaceOrigin: Pt = [round(m.origin[0] + m.axis[0] * setbackM), round(m.origin[1] + m.axis[1] * setbackM)];
-    return { id: m.id, osmOrigin: m.origin, drawnFaceOrigin, setbackM, withinThroatTolerance: Math.abs(setbackM) <= TOLERANCES.throatM,
+    return { id: m.id, sourceRegistration: rawElements === undefined ? null : registration(m.nodeIds), osmOrigin: m.origin, drawnFaceOrigin, setbackM, withinThroatTolerance: Math.abs(setbackM) <= TOLERANCES.throatM,
       osmNodeIds: m.nodeIds, osmWayIds: data.rails.filter(r => r.tunnel && r.nodes.some(n => m.nodeIds.includes(n))).map(r => r.id) };
   });
   // The concourse needs the OSM station footprint; without one there is nothing to measure.
@@ -151,6 +221,10 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
   const station = new THREE.Group(); station.add(platformGroup, buildShed(layout));
   const throat = new THREE.Group(); if (railMesh) throat.add(railMesh.clone()); throat.add(portalGroup);
   const flags = [
+    ...platforms.filter(p => !p.drawingBoundary.withinTolerance).map(p => ({ code: 'platform-drawing-boundary', detail: `Platform ${p.ref}: actual top boundary differs from approved drawing outline or is unavailable` })),
+    ...platforms.filter(p => p.rawBoundary !== null && !p.rawBoundary.withinTolerance).map(p => ({ code: p.outlineInference ? 'platform-raw-boundary-inferred' : 'platform-raw-boundary', detail: `Platform ${p.ref}: sampled actual top boundary vs raw OSM ${p.rawBoundary!.drawnToReferenceM}/${p.rawBoundary!.referenceToDrawnM} m (drawn-to-raw/raw-to-drawn); ${p.outlineInference ? 'documented drawing inference, not a survey' : 'source consistency difference or missing source ring'}` })),
+    ...(rawElements !== undefined && !railRegistration.withinTolerance ? [{ code: 'rail-source-registration', detail: `Compact rail node-ID plan registration against raw OSM exceeds ${TOLERANCES.throatM} m or has missing source nodes; maximum ${railRegistration.maxDistanceM} m` }] : []),
+    ...tunnels.filter(t => t.sourceRegistration !== null && !t.sourceRegistration.withinTolerance).map(t => ({ code: 'mouth-source-registration', detail: `${t.id}: compact mouth boundary node-ID plan registration against raw OSM exceeds ${TOLERANCES.throatM} m or is missing; maximum ${t.sourceRegistration!.maxDistanceM} m` })),
     ...platforms.filter(p => !p.withinOsmTolerance).map(p => p.outlineInference
       ? { code: 'platform-outline-inferred', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m by a documented inference, not a survey: ${p.outlineInference.source}` }
       : { code: 'platform-osm-tolerance', detail: `Platform ${p.ref}: drawn minus OSM ${p.drawnMinusOsmM} m` }),
@@ -164,10 +238,12 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
     ...(concourse === null ? [{ code: 'concourse-missing', detail: 'No OSM station footprint, so the Western Concourse roof was not measured' }]
       : concourse.withinTolerance ? [] : [{ code: 'concourse-tolerance', detail: `Concourse N–S roof ${concourse.drawnNorthSouthM} m differs from Arup's 138 m by more than 3 m` }]),
   ];
-  return { schemaVersion: 1, inputs, tolerances: TOLERANCES, flags,
+  return { schemaVersion: 1, inputs, sourceRegistration, tolerances: TOLERANCES, flags,
     method: { independentSurvey: false, platforms: 'Actual platform-tops mesh vertex extent projected onto OSM long axis; same buildPlatforms as main.ts, per polygon. Published lengths are operational lengths, not polygon extents.',
       gauge: 'Samples selected before measuring where no other centreline is within 1.7 m (coincident parallel segments permitted); turnout crossings excluded. Horizontal rays from centreline at y=-0.007 onto actual merged rail mesh inner head faces; 2 mm tolerance allows Float32 and miter errors.',
       tunnels: 'Dominant actual brick mesh face plane vs OSM open/tunnel boundary nodes; terrain-mode face builder with flat ground; lid/flank terrain heights excluded.',
+      boundary: 'Actual transformed top mesh triangle boundary vs approved drawing outline and, when provided, raw OSM way ring reprojected with core/project; bidirectional samples at <=2 m spacing, 1 m tolerance. Raw P9 inference difference remains explicit. Not an independent survey.',
+      registration: 'When raw OSM is provided: compact rail nodes and mouth boundary nodes matched by original OSM node IDs, plan distance <=3 m. This checks source registration, not drawn rail or portal survey accuracy. Missing raw input is unavailable.',
       sources: 'Published dimensions and citations retained in core/station.ts; no independent source re-verification in this tool.' },
     platforms, gaugeSamples, tunnels, concourse,
     platform11: { drawn: platforms.some(p => p.ref === '11'), drawnStationRefs: platforms.map(p => p.ref), basis: 'All station-zone surface source polygons passed through the actual platform builder; no generated extra slabs.' },
@@ -184,6 +260,9 @@ export function renderAxis01Markdown(report: ReturnType<typeof createAxis01Repor
     ...report.platforms.map(p => `| ${p.ref} | ${p.drawnLengthM} | ${p.osmLongAxisM} | ${p.publishedOperationalLengthM ?? 'missing'} | ${p.drawnMinusPublishedM ?? 'missing'} | ${p.withinPublishedTolerance === null ? 'missing' : p.withinPublishedTolerance ? 'yes' : 'FLAG'} |`),
     '', report.concourse === null ? 'Western Concourse overall N–S roof: not measured (no OSM station footprint). FLAG.'
       : `Western Concourse overall N–S roof: ${report.concourse.drawnNorthSouthM} m; Arup overall roof 138 m; difference ${report.concourse.differenceM} m; ${report.concourse.withinTolerance ? 'PASS' : 'FLAG'} at 3 m. Partial OSM arc fitted-circle diameter ${report.concourse.fittedArcDiameterM} m is a different measurement. [Source: Arup fig.6](${report.concourse.source}).`,
+    '', `Raw OSM source registration: ${report.sourceRegistration.status}; maximum compact rail node-ID plan distance ${report.sourceRegistration.maxDistanceM ?? 'unavailable'} m; tolerance 3 m. Source consistency, not drawn survey accuracy.`,
+    '', 'Platform sampled boundary agreement (drawn/reference directions, <=2 m interval, 1 m tolerance):',
+    ...report.platforms.map(p => `- Platform ${p.ref}: approved drawing ${p.drawingBoundary.drawnToReferenceM}/${p.drawingBoundary.referenceToDrawnM} m, ${p.drawingBoundary.withinTolerance ? 'PASS' : 'FLAG'}; raw OSM ${p.rawBoundary ? `${p.rawBoundary.drawnToReferenceM}/${p.rawBoundary.referenceToDrawnM} m, ${p.rawBoundary.withinTolerance ? 'PASS' : 'FLAG'}` : 'unavailable'}${p.outlineInference ? '; documented outline inference remains explicit' : ''}.`),
     '', 'Gauge samples (actual inner rail faces; tolerance 0.002 m):', '',
     ...report.gaugeSamples.map((p, i) => `- ${i + 1}: x=${round(p.point[0])}, z=${round(p.point[1])}; ${p.gaugeM ?? 'missing'} m; error ${p.errorM ?? 'missing'} m; ${p.withinTolerance ? 'PASS' : 'FLAG'}`),
     '', `26 m intermediate car: drawn ${report.sample26mCar.drawnCarLengthM} m; specification ${report.sample26mCar.specLengthM} m; tolerance ${report.sample26mCar.toleranceM} m; ${report.sample26mCar.withinTolerance ? 'PASS' : 'FLAG'}.`,
@@ -199,18 +278,24 @@ export function renderAxis01Markdown(report: ReturnType<typeof createAxis01Repor
   ];
   return lines.join('\n');
 }
+/** A supplied extract must be explicit; malformed input must not become optional absence. */
+export function rawExtractElements(value: unknown): RawElement[] {
+  if (typeof value !== 'object' || value === null || !Array.isArray((value as { elements?: unknown }).elements)) throw new Error('raw OSM extract must contain an elements array');
+  return (value as { elements: RawElement[] }).elements;
+}
 async function fingerprint(path: string) { return { path: relative(ROOT, path), sha256: createHash('sha256').update(await readFile(path)).digest('hex') }; }
 async function main() {
   const args = process.argv.slice(2);
-  let graph = resolve(ROOT, 'kings-cross-src/web/src/data/kx-track.json'); let out = OUTPUT;
+  let graph = resolve(ROOT, 'kings-cross-src/web/src/data/kx-track.json'); let out = OUTPUT; let rawPath: string | undefined;
   for (let i = 0; i < args.length; i++) {
-    if (!['--graph', '--out'].includes(args[i]!) || !args[i + 1]) throw new Error('usage: axis01-evidence.ts [--graph PATH] [--out .scratch/round21-geometry]');
-    if (args[i] === '--graph') graph = resolve(args[++i]!); else out = resolve(args[++i]!);
+    if (!['--graph', '--out', '--raw'].includes(args[i]!) || !args[i + 1]) throw new Error('usage: axis01-evidence.ts [--graph PATH] [--raw PATH] [--out .scratch/round21-geometry]');
+    if (args[i] === '--graph') graph = resolve(args[++i]!); else if (args[i] === '--raw') rawPath = resolve(args[++i]!); else out = resolve(args[++i]!);
   }
+  const rawElements = rawPath ? rawExtractElements(JSON.parse(await readFile(rawPath, 'utf8'))) : undefined;
   await mkdir(OUTPUT, { recursive: true });
   if (await realpath(out) !== await realpath(OUTPUT)) throw new Error('output must be worktree .scratch/round21-geometry');
   const sources = await Promise.all(['core/station.ts', 'core/scene.ts', 'core/landmarks.ts', 'web/src/furniture.ts', 'web/src/track.ts', 'web/src/portals.ts', 'web/src/train.ts', 'core/train.ts', 'web/src/main.ts', 'web/src/shed.ts', 'web/src/materials.ts', 'web/src/world.ts', 'tools/axis01-evidence.ts'].map(p => fingerprint(resolve(ROOT, 'kings-cross-src', p))));
-  const report = createAxis01Report(JSON.parse(await readFile(graph, 'utf8')) as KxData, undefined, { graph: await fingerprint(graph), sources });
+  const report = createAxis01Report(JSON.parse(await readFile(graph, 'utf8')) as KxData, undefined, { graph: await fingerprint(graph), sources, ...(rawPath ? { raw: await fingerprint(rawPath) } : {}) }, rawElements);
   await writeFile(resolve(out, 'axis01-evidence.json'), JSON.stringify(report, null, 2) + '\n');
   const markdown = renderAxis01Markdown(report);
   await writeFile(resolve(out, 'axis01-evidence.md'), markdown);
