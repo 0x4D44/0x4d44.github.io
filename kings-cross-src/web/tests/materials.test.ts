@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
+import { Glsl } from './glsl.ts';
 
 const names = Object.keys(TEXTURES) as TextureName[];
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
@@ -424,10 +425,51 @@ test('window glass varies from window to window: the decals by their quad, the c
     // the houses keep a window's number to itself, at the full swing
     assert.equal(s.fragmentShader.includes('gk = mix( gk, 0.5 + 0.5 * sin('), curtain, `${name}: the smooth field is the curtain wall's`);
     assert.ok(s.fragmentShader.includes(curtain ? 'gTint * mix( 0.8, 1.3, gk )' : 'gTint * mix( 0.55, 1.55, gk )'), `${name}: its swing of light`);
+    // and a curtain wall's number rises with the height up the wall and takes a share of its building's own colour (round five, E4: "uniform blue horizontal stripes on every building,
+    // with no sky gradient"); after the smooth field it is a number of, before the glass takes it
+    const gradient = 'gk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );';
+    assert.equal(s.fragmentShader.includes(gradient), curtain, `${name}: the sky gradient is the curtain wall's`);
+    if (curtain) {
+      const order = ['gk = mix( gk, 0.5 + 0.5 * sin(', gradient, 'float gShare'].map((needle) => s.fragmentShader.indexOf(needle));
+      assert.ok(order[0] >= 0 && order[0] < order[1] && order[1] < order[2], `${name}: after the smooth field, before the glass takes its number (${order})`);
+    }
     // every facade is darker at its foot: the contact shade of the wall meeting the ground (0.22 over a storey, 0.14 in the first third of one)
     assert.ok(s.fragmentShader.includes('diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );'), `${name}: contact shade at the foot of the wall`);
   }
   assert.ok(!shader(material('window')).fragmentShader.includes('exp( -vMapUv.y )'), 'a window decal is no wall: it has no foot to darken');
+});
+
+test('a curtain wall\'s window number rises with the height up the wall and takes a share of its building\'s own colour: darker and warmer glass at the foot, paler and bluer in the upper storeys, and one tower not the next (round five, E4)', () => {
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  cityMaterial('glass').onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const line = s.fragmentShader.split('\n').find((l) => l.startsWith('gk = clamp(')) ?? '';
+  const expression = /^gk = (clamp\(.*\));$/.exec(line)?.[1] ?? '';
+  assert.ok(expression !== '', `the line is in the curtain wall's shader: ${line}`);
+  const glsl = new Glsl('');
+  // the number a window ends with: its own (`gk`, from the smooth field), the building's colour's seed (`gSeed`), the storeys up the wall (vMapUv.y)
+  const number = (gk: number, seed: number, storeys: number): number => glsl.evaluate(expression, { vars: {} }, { gk, gSeed: seed, vMapUv: [0, storeys] }) as number;
+  // up the wall, whatever the window's own number: the foot is darker and warmer (lower; the tint is warm at 0 and cool at 1), the top paler and bluer
+  for (const gk of [0.2, 0.5, 0.8]) {
+    let last = -1;
+    for (const storeys of [0, 1, 2, 4, 8, 16]) {
+      const k = number(gk, 0.5, storeys);
+      assert.ok(k >= last, `a window's number never falls with the height: ${k} after ${last}, at ${storeys} storeys, from ${gk}`);
+      last = k;
+    }
+    assert.ok(number(gk, 0.5, 8) - number(gk, 0.5, 0) > 0.3, `the foot of a tower is well below its upper storeys: ${number(gk, 0.5, 0)} against ${number(gk, 0.5, 8)}, from ${gk}`);
+    // held level at five storeys up on a building of the middle tint: a facade's mean is where it was
+    assert.ok(Math.abs(number(gk, 0.5, 5) - gk) < 0.01, `five storeys up the middle tint keeps the window's number: ${number(gk, 0.5, 5)} from ${gk}`);
+  }
+  // one tower is paler and bluer overall and its neighbour darker, by the fraction of the colour's seed (the integer part is not the building's own)
+  assert.ok(number(0.5, 0.9, 5) - number(0.5, 0.1, 5) > 0.4, `two towers differ: ${number(0.5, 0.9, 5)} against ${number(0.5, 0.1, 5)}`);
+  assert.ok(Math.abs(number(0.5, 3.4, 5) - number(0.5, 0.4, 5)) < 1e-6, 'by the seed\'s fraction alone');
+  // it is a number between 0 and 1 whatever it is given: the glass's mix of tint and light takes it as one
+  for (const gk of [0, 1]) for (const seed of [0, 0.5, 0.99]) for (const storeys of [0, 5, 40]) {
+    const k = number(gk, seed, storeys);
+    assert.ok(k >= 0 && k <= 1, `held to 0..1: ${k} at ${gk}, ${seed}, ${storeys}`);
+  }
+  assert.equal(number(1, 0.99, 40), 1, 'the brightest, bluest glass a tall wall has');
+  assert.equal(number(0, 0, 0), 0, 'and the darkest, warmest, at the foot');
 });
 
 test('the stock brick is worn like the close-up (burnt ends, duller grey-brown bricks and none of them green, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {

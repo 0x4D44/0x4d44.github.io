@@ -576,7 +576,12 @@ const GLASS_VARIES_GLSL = glassVariesGlsl(0.55, 1.55);
  * tile's, mixed with the building's own (its vertex colour), so a facade is a patchwork of windows and its neighbour a different one.
  * A curtain wall (the 'glass' facade) takes three quarters of its number from a smooth field across the tiles instead, and a narrower swing
  * of light (0.8 to 1.3, not 0.55 to 1.55): a glass tower reflects the sky in broad patches and bands, not in a random chequer of panes, which
- * from the overview was a repeating tiled blue. Every facade is darker at its foot (contact shade: the ground's occlusion, the damp and the
+ * from the overview was a repeating tiled blue. Round five (the E4 scorer: "uniform blue horizontal stripes on every building, with no sky gradient or reflection variation between
+ * panes ... a per-facade sky-reflection gradient, brighter toward the top"): a curtain wall's number also rises with the height, from the foot (the glass shows the street and its
+ * shade: darker, warmer) to the upper storeys (the sky: brighter, cooler), `1 - exp( -0.2 v )` of it with v the storeys up the wall, and takes 0.6 of a building's own offset from
+ * its colour (`fract( gSeed )`: the building's tint is its own), so one tower is paler and bluer overall and its neighbour darker. The two are held level at five storeys up on a
+ * building of the middle tint, where the facade's mean is where it was; the number is held to 0..1, so a tall wall's upper storeys are the brightest and bluest glass it has.
+ * Every facade is darker at its foot (contact shade: the ground's occlusion, the damp and the
  * dirt at the base of a wall): 0.22 of its light falling away over a storey, and a tighter 0.14 in the first third of one; v is metres up
  * the wall in storeys, and starts at zero at the foot of each part of a wall, so the storey above a shopfront has a shadow under its fascia too.
  */
@@ -586,7 +591,7 @@ float gSeed = 0.0;
 gSeed = dot( vColor.rgb, vec3( 37.1, 91.7, 53.3 ) );
 #endif
 float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed ) * 43758.5453 );
-${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );' : ''}
+${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );
 `;

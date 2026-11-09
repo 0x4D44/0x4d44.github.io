@@ -70,6 +70,9 @@ test('vectors: constructors, swizzles in all three alphabets, component-wise mat
   assert.equal(expr('step(0.5, 0.5)'), 1, 'step is 1 at the edge');
   assert.equal(expr('pow(2.0, 10.0)'), 1024);
   assert.equal(expr('sqrt(81.0)'), 9);
+  assert.equal(expr('exp(0.0)'), 1);
+  near(expr('exp(-2.0)'), Math.exp(-2));
+  near(expr('exp(vec2(1.0, -0.5))'), [Math.E, Math.exp(-0.5)]);
   near(expr('sin(0.0) + cos(0.0)'), 1);
   assert.equal(expr('smoothstep(0.0, 1.0, 0.25)'), 0.15625, '3t^2 - 2t^3 at a quarter');
   assert.equal(expr('smoothstep(0.0, 1.0, 0.5)'), 0.5);

@@ -313,6 +313,7 @@ const BUILTINS: Record<string, (...args: Value[]) => Value> = {
   abs: (x) => componentwise([x as Value], Math.abs),
   floor: (x) => componentwise([x as Value], Math.floor),
   fract: (x) => componentwise([x as Value], (v) => v - Math.floor(v)),
+  exp: (x) => componentwise([x as Value], Math.exp),
   sqrt: (x) => componentwise([x as Value], Math.sqrt),
   sin: (x) => componentwise([x as Value], Math.sin),
   cos: (x) => componentwise([x as Value], Math.cos),
