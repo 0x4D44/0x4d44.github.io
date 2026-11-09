@@ -9,7 +9,7 @@ import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, sky
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
-import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SURFACES } from '../src/atmosphere.ts';
+import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
 import { coverUniforms } from '../src/cover.ts';
 import { furniturePlan } from '../src/furniture.ts';
 import { cityMaterial, material, terrainMaterial } from '../src/materials.ts';
@@ -377,7 +377,7 @@ test('the overcast deck\'s dark masses are lifted, and the bright ones are still
   assert.ok(l[l.length - 1]! > 2 * mean, `and the bright patches are still far over it: ${(l[l.length - 1]! / mean).toFixed(2)} of the mean`);
 });
 
-test('the concourse soffit, an unlit colour the exposure multiplies, is divided by it again, so a cloudy sky does not take it to white (round five, E6)', () => {
+test('the concourse soffit, an unlit colour the exposure multiplies, is divided by it again, so a cloudy sky does not take it to white, and is held to SOFFIT_LEVEL of its painted colour (rounds five and six, E6 and E2)', () => {
   const { scene, atmosphere, at } = setup();
   const soffit = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
   soffit.name = 'concourse-soffit';
@@ -386,15 +386,16 @@ test('the concourse soffit, an unlit colour the exposure multiplies, is divided 
   scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), soffit), new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), other));
   atmosphere.rescan();
   at(NOON);
-  assert.ok(Math.abs(soffit.color.r - 1) < 1e-9, `at a clear noon the exposure is the day's and the soffit as built: ${soffit.color.r}`);
+  assert.ok(SOFFIT_LEVEL > 0.2 && SOFFIT_LEVEL < 0.6, `a mid-tone soffit, a shaded lattice and not near-white (the photograph's, conc-b, reads a dark warm grey): ${SOFFIT_LEVEL}`);
+  assert.ok(Math.abs(soffit.color.r - SOFFIT_LEVEL) < 1e-9, `at a clear noon the exposure is the day's and the soffit is SOFFIT_LEVEL of what was built: ${soffit.color.r}`);
   at(NOON, state('overcast'));
   const { exposure } = atmosphere.state()!.rig;
   assert.ok(exposure > 1.8 * DAY_EXPOSURE, `the cloud has doubled the exposure (${exposure.toFixed(2)} against ${DAY_EXPOSURE})`);
-  assert.ok(Math.abs(soffit.color.r - DAY_EXPOSURE / exposure) < 1e-9 && soffit.color.g === soffit.color.r && soffit.color.b === soffit.color.r, `so it is scaled down to ${soffit.color.r.toFixed(2)}`);
-  assert.ok(Math.abs(soffit.color.r * exposure - DAY_EXPOSURE) < 1e-9, 'and what the film sees of it is the clear noon\'s: the concourse ceiling mean was 239 with p99 254 under cloud, 210 with p99 230 in the sun, and is 217 and 245 now');
+  assert.ok(Math.abs(soffit.color.r - (SOFFIT_LEVEL * DAY_EXPOSURE) / exposure) < 1e-9 && soffit.color.g === soffit.color.r && soffit.color.b === soffit.color.r, `so it is scaled down to ${soffit.color.r.toFixed(2)}`);
+  assert.ok(Math.abs(soffit.color.r * exposure - SOFFIT_LEVEL * DAY_EXPOSURE) < 1e-9, 'and what the film sees of it is the clear noon\'s: the concourse ceiling mean was 239 with p99 254 under cloud, 210 with p99 230 in the sun, and 217 and 245 in round five');
   assert.equal(other.color.r, 1, 'no other unlit material is touched');
   at(NOON);
-  assert.ok(Math.abs(soffit.color.r - 1) < 1e-9, 'and a clearing sky brings it back');
+  assert.ok(Math.abs(soffit.color.r - SOFFIT_LEVEL) < 1e-9, 'and a clearing sky brings it back');
 });
 
 test('what glowed like sky-lit day (shed lining, glazing, ribs) dims after dark and picks up the lamps\' warmth', () => {

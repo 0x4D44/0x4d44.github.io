@@ -71,6 +71,14 @@ const CLOUD_BILLOW = 2.2;
  * dark side's swing is held to this share, so the deck's floor is 0.6 of its base and the patches stay as pale and as many.
  */
 const CLOUD_DARK = 0.55;
+/**
+ * How much of its painted colour the concourse's soffit keeps. The soffit is unlit (a lit underside would be black under the sun), so nothing in the scene dims it and its colour is the one
+ * thing to set; round five held it to the picture it makes at the clear day's exposure. Round six (the E2 and E6 scorer: concourse.png "reads near-white and low-contrast, where the photo's solid soffit
+ * is a mid-tone shaded lattice", the frame "the outlier ... washed out against the exterior views and conc-b"): the soffit's cells drew a pale silver, the top half of the frame at luma 155 (p50 164, p10
+ * 110) and the whole frame at 129 noon and 150 under cloud, where conc-b's soffit is a dark warm grey. At 0.35 the cells are a mid grey and the white members and the sky glazing stand out of them: the top
+ * half is 127 (p50 117, p10 89) and the frame 114 at noon and 136 under cloud, within the exteriors' 113 to 142 and 110 to 146 (overview, south front, the Midland, the hotel, the close brick view).
+ */
+export const SOFFIT_LEVEL = 0.35;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
 const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
@@ -385,7 +393,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     for (const [m, base] of railLines) m.color.copy(base).multiplyScalar(RAIL_NIGHT + (1 - RAIL_NIGHT) * rig.daylight);
     // Round five (the E6 scorer: the overcast concourse's soffit was mean 239, p99 254, "the coffer pattern washes out to near white", against 215 at noon): an exposure opened for cloud (or
     // night) doubles what the camera makes of an unlit surface, so the soffit is held to the picture it makes at the clear day's exposure, 215 at noon and, in cloud, no brighter.
-    soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);
+    soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);
 
     // wet and snowy ground
     rgb(surfaceUniforms.sheen.value, rig.dome.horizon).multiplyScalar(0.55);
