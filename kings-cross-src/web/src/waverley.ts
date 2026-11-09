@@ -15,7 +15,7 @@ export function createWaverleyPlaceholderScene(): { scene: THREE.Scene; dispose:
 }
 
 export interface WaverleyModelModule {
-  buildWaverleyScene(): { group: THREE.Group; dispose(): void; terrain?: unknown; parts?: Record<string, THREE.Group> };
+  buildWaverleyScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group> };
 }
 export interface WaverleyView {
   scene: THREE.Scene;
@@ -23,6 +23,7 @@ export interface WaverleyView {
   message: string;
   error?: string;
   geometry?: WaverleyAnchorScene;
+  groundAttribution?: string;
   model?: ReturnType<WaverleyModelModule['buildWaverleyScene']>;
   live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown };
   view(aspect: number): StationView;
@@ -72,7 +73,7 @@ export async function loadWaverleyScene(options: {
     model = module.buildWaverleyScene();
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0x334458); scene.add(model.group);
     let disposed = false;
-    const loaded: WaverleyView = { scene, model, geometry, placeholder: false,
+    const loaded: WaverleyView = { scene, model, geometry, groundAttribution: model.groundAttribution, placeholder: false,
       message: 'Edinburgh Waverley: OSM model · EB live trains unavailable until private anchors load',
       view: aspect => waverleyView(geometry, aspect),
       // The model owns its local geometry/materials. A broad scene disposer would

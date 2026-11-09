@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
-import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels, stationPlaceholder } from '../station-capture.mjs';
+import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels, stationPlaceholder, stationOverlayRegions } from '../station-capture.mjs';
 
 test('capture waits for an occupied GPU with bounded polling before allowing launch', async () => {
   let time = 0, checks = 0;
@@ -88,4 +88,20 @@ test('installed Waverley models require rendered scene variation rather than the
   assert.equal(inspectStationPixels(stationPng(() => [51,68,88]), { ...pixelPlan, placeholder: stationPlaceholder(empty) }).clear, true);
   assert.equal(stationPlaceholder({ state: { selected: 'kings-cross' } }), false);
   assert.throws(() => stationPlaceholder({ state: { selected: 'edinburgh-waverley' } }), /scene accounting/);
+});
+
+test('transparent full-screen train label layers never mask the flight canvas, while actual labels remain excluded', () => {
+  const element = (className, rect, children = []) => ({ tagName: 'DIV', id: '', className, children,
+    matches: selector => selector.split(',').some(s => s.trim() === '.' + className),
+    getBoundingClientRect: () => ({ ...rect, width: rect.right - rect.left, height: rect.bottom - rect.top }) });
+  const canvas = { left: 0, top: 0, right: 80, bottom: 100 };
+  const label = element('train-label', { left: 20, top: 60, right: 40, bottom: 65 });
+  for (const className of ['mml-train-labels', 'edinburgh-train-labels']) {
+    const excluded = stationOverlayRegions({ body: { children: [element(className, canvas, [label])] } });
+    assert.equal(excluded.some(r => r.left <= 0 && r.top <= 0 && r.right >= 80 && r.bottom >= 100), false, `${className} is transparent`);
+    assert.ok(excluded.some(r => r.left <= 20 && r.right >= 40 && r.top <= 60 && r.bottom >= 65), 'painted label excluded');
+    const scene = inspectStationPixels(stationPng((x, y) => [40 + x, 40 + y, 90]), { canvas, excluded });
+    assert.equal(scene.clear, true); assert.ok(scene.samples >= 100);
+    assert.equal(inspectStationPixels(stationPng(() => [14,18,24]), { canvas, excluded }).clear, false, 'actual blank canvas still fails');
+  }
 });

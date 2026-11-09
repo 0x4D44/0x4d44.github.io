@@ -48,16 +48,18 @@ class MockDocument {
   readonly body = new MockElement('body');
   readonly heading = new MockElement('h1');
   readonly app = new MockElement('main');
+  readonly groundCredit = new MockElement('span');
   readonly bodyDataset: Record<string, string | undefined> = {};
   defaultView: MockWindow | null = null;
 
   constructor() {
+    this.groundCredit.textContent = 'Contains Environment Agency information (synthetic London credit)';
     Object.defineProperty(this.body, 'dataset', { value: this.bodyDataset });
     Object.defineProperty(this.body, 'style', { value: { setProperty: (_name: string, _value: string): void => {} } });
   }
   createElement(tag: string): MockElement { const element = new MockElement(tag); element.ownerDocument = this; return element; }
   querySelector(selector: string): MockElement | null { return selector === 'h1' ? this.heading : null; }
-  getElementById(id: string): MockElement | null { return id === 'app' ? this.app : null; }
+  getElementById(id: string): MockElement | null { return id === 'app' ? this.app : id === 'ground-credit' ? this.groundCredit : null; }
 }
 
 class MockWindow extends MockElement {
@@ -277,5 +279,39 @@ test('disposing a Waverley hop before its midpoint releases the built pending mo
     const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model });
     rig.stations.frame(rig.time); await rig.stations.select('edinburgh-waverley', false);
     rig.stations.dispose(); assert.equal(disposed, 1);
+  });
+});
+
+test('ground attribution follows the rendered station and restores the London credit on return', async () => {
+  await withResizeObserver(async () => {
+    const { loadWaverleyScene } = await import('../src/waverley.ts');
+    const credit = 'Synthetic Scottish Government LiDAR attribution, OGL v3';
+    const model = await loadWaverleyScene({ modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), groundAttribution: credit, dispose() {} }) }),
+      geometryLoader: async () => ({ default: { origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [], platforms: [{ id: 'synthetic', ref: '1', tags: {}, path: [[0,0],[100,0],[100,5],[0,5]] }] } }) });
+    const rig = fixture(mapData, 1, undefined, { loadEdinburgh: async () => model });
+    const london = rig.doc.groundCredit.textContent;
+    rig.stations.frame(rig.time); await rig.stations.select('st-pancras', false); rig.stations.frame(rig.time + 2000);
+    assert.equal(rig.doc.groundCredit.textContent, london, 'St Pancras uses London EA terrain');
+    rig.time += 2100; await switchAndFinish(rig, 'edinburgh-waverley');
+    assert.equal(rig.doc.groundCredit.textContent, credit, 'Edinburgh must show the loaded terrain source');
+    await switchAndFinish(rig, 'kings-cross'); assert.equal(rig.doc.groundCredit.textContent, london);
+    rig.stations.dispose();
+  });
+});
+
+test('render presentation refresh publishes newly loaded replay status to the station notice', async () => {
+  await withResizeObserver(async () => {
+    const { loadWaverleyScene } = await import('../src/waverley.ts'); let text = 'EB: private anchors required';
+    const model = await loadWaverleyScene({ modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose() {} }) }),
+      geometryLoader: async () => ({ default: { origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [], platforms: [{ id: 'synthetic', ref: '1', tags: {}, path: [[0,0],[100,0],[100,5],[0,5]] }] } }) });
+    const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model, attachEdinburgh: view => {
+      view.live = { group: new THREE.Group(), frame() {}, dispose() {}, status: () => text, timeMs: () => 1, load: async () => {}, state() {} };
+    } });
+    await switchAndFinish(rig, 'edinburgh-waverley');
+    text = 'EB: frozen replay · 2 trains';
+    (rig.stations as typeof rig.stations & { refreshPresentation?(): void }).refreshPresentation?.();
+    assert.equal(rig.nav.children[2].textContent, text, 'capture/app must refresh after the train runtime advances');
+    assert.equal(rig.nav.children[2].textContent, rig.stations.statusText('KX status'));
+    rig.stations.dispose();
   });
 });

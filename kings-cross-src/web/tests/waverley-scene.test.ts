@@ -45,6 +45,16 @@ test('Waverley ground keeps the station and open tracks level while retaining di
  assert.ok(ground.heightAt(0,32)>-.2&&ground.heightAt(0,32)<raw.heightAt(0,32),'transition is a blend, not a cliff');
 });
 
+test('Waverley exposes its Scottish terrain source separately from the OSM map attribution',()=>{
+ const source=JSON.parse(readFileSync(new URL('../src/data/waverley-terrain.json',import.meta.url),'utf8'));
+ const built=buildWaverleyScene({data:empty(),terrain:flat(),lighting:false});
+ try {
+  assert.equal(built.groundAttribution,source.attribution);
+  assert.match(built.groundAttribution,/Scottish Government/);
+  assert.doesNotMatch(built.groundAttribution,/Environment Agency/);
+ } finally {built.dispose();}
+});
+
 test('Waverley dispose frees owned geometry once, detaches the scene and preserves shared materials',()=>{
  const d=empty();d.platforms=[{id:'way/1',ref:'1',path:rect(0,0,20,4),tags:{train:'yes',railway:'platform'}}];d.roofs=[area('relation/240040',rect(-10,-10,30,10),[rect(0,0,4,4)])];d.buildings=[area('way/3',rect(50,50,55,55))];
  const built=buildWaverleyScene({data:d,terrain:flat(),lighting:false});const parent=new THREE.Group();parent.add(built.group);

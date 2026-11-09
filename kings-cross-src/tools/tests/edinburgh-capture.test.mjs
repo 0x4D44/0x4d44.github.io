@@ -4,7 +4,7 @@ import path from 'node:path';
 import { mkdir, mkdtemp, symlink } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { parseArgs, validateInputs, recordedPlatformEvidence, acceptRealTrain, verifyBrowserPlan,
-  frozenRelayResponse, firstPlatformPlan, requireGeometry, privateOutput } from '../edinburgh-capture.mjs';
+  frozenRelayResponse, firstPlatformPlan, requireGeometry, privateOutput, verifyCapturePresentation } from '../edinburgh-capture.mjs';
 
 const anchors = { area: 'EB', anchors: [{ berth: 'S001', kind: 'smart' }],
   platformAssociations: [{ berth: 'S001', platform: '12', event: 'A' }] };
@@ -69,7 +69,7 @@ test('browser EB proof matches replay clock, assumed neutral body, allocation an
 });
 
 test('EB capture output refuses public paths and directory symlink escapes', async () => {
-  const base = fileURLToPath(new URL('../../../.scratch/a43/capture/', import.meta.url));
+  const base = fileURLToPath(new URL('../../../.scratch/a44/capture/', import.meta.url));
   await mkdir(base, { recursive: true }); const dir = await mkdtemp(path.join(base, 'synthetic-'));
   await symlink(dir, path.join(dir, 'link'));
   const outcomes = [];
@@ -85,4 +85,12 @@ test('missing actual platform steps fail before engine creation or any GPU launc
 
 test('empty public geometry remains an explicit unavailable placeholder before any GPU launch', async () => {
   await assert.rejects(requireGeometry({ origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [], platforms: [] }), /unavailable: Edinburgh geometry is empty or a placeholder/);
+});
+
+test('capture refuses stale status and station notice after a frozen replay seek',()=>{
+ const liveStatus='Edinburgh Waverley: frozen EB replay · 2 trains · neutral assumed fleet';
+ const presentation={liveStatus,status:liveStatus,notice:liveStatus};
+ assert.deepEqual(verifyCapturePresentation(presentation),presentation);
+ for(const change of [{status:'Edinburgh Waverley: live trains unavailable'},{notice:'Edinburgh Waverley: private anchors required'},{liveStatus:'Edinburgh Waverley: live'}])
+   assert.throws(()=>verifyCapturePresentation({...presentation,...change}),/presentation does not match/);
 });

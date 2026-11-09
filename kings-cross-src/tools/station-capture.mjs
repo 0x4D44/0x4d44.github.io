@@ -36,6 +36,16 @@ export function stationPlaceholder(observed) {
   return observed.accounting.placeholder;
 }
 
+/** Serializable browser-side mask builder; transparent label layers paint only their children. */
+export function stationOverlayRegions(doc) {
+  return [{ left: 0, top: 0, right: 109, bottom: 41, element: 'shared Almanac pill' },
+    ...[...doc.body.children].filter(e => e.id !== 'app' && !['SCRIPT', 'STYLE'].includes(e.tagName))
+      .flatMap(e => e.matches('.station-placeholder,.mml-train-labels,.edinburgh-train-labels') ? [...e.children] : [e])
+      .map(e => ({ element: `${e.tagName}#${e.id}.${e.className}`, rect: e.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 0 && rect.height > 0)
+      .map(({ rect: r, element }) => ({ left: r.left - 2, top: r.top - 2, right: r.right + 2, bottom: r.bottom + 2, element }))];
+}
+
 export function inspectStationPixels(bytes, { canvas, excluded = [], placeholder = false }) {
   const image = readPng(bytes), rect = canvas ?? { left: 0, top: 0, right: image.width, bottom: image.height };
   let samples = 0, nonblack = 0, expected = 0;
@@ -53,7 +63,7 @@ export function inspectStationPixels(bytes, { canvas, excluded = [], placeholder
   const variance = samples ? sums.reduce((sum, value, channel) => sum + Math.max(0, squares[channel] / samples - (value / samples) ** 2), 0) / 3 : 0;
   const standardDeviation = Math.sqrt(variance), nonblackFraction = samples ? nonblack / samples : 0, expectedBackgroundFraction = samples ? expected / samples : 0;
   const clear = samples >= 100 && nonblackFraction >= .02 && (placeholder ? expectedBackgroundFraction >= .95 : standardDeviation >= 2);
-  return { clear, reason: clear ? null : 'PNG canvas is black or blank after excluding DOM overlays', samples, nonblackFraction, standardDeviation, expectedBackgroundFraction, placeholder, canvas: rect, excluded, viewport: [image.width, image.height] };
+  return { clear, reason: clear ? null : samples < 100 ? 'insufficient unmasked canvas pixels after excluding DOM overlays' : 'PNG canvas is black or blank after excluding DOM overlays', samples, nonblackFraction, standardDeviation, expectedBackgroundFraction, placeholder, canvas: rect, excluded, viewport: [image.width, image.height] };
 }
 
 export const GPU_HOLD = '/Users/md/worktrees/0x4d44.github.io/20261109-TSK-HUM-kings-cross-round-5-pack-and-scorer/.scratch/gpu-hold';
@@ -136,7 +146,7 @@ export async function main(args = process.argv.slice(2)) {
     await evaluate('window.__captureTime=performance.now();window.__signalFrame(window.__captureTime)');
     report.renderer = await evaluate("(()=>{const g=window.__kx.renderer.getContext(),e=g.getExtension('WEBGL_debug_renderer_info');return e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER)})()");
     if (!/Metal/i.test(report.renderer) || /SwiftShader|llvmpipe|software/i.test(report.renderer)) throw new Error(`real Metal GPU required: ${report.renderer}`);
-    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:[{left:0,top:0,right:109,bottom:41},...[...document.body.children].filter(e=>e.id!=='app'&&!['SCRIPT','STYLE'].includes(e.tagName)).flatMap(e=>e.matches('.station-placeholder')?[...e.children]:[e]).map(e=>e.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({left:r.left-2,top:r.top-2,right:r.right+2,bottom:r.bottom+2}))]},state:k.stations.state(),accounting:k.stations.accounting(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
+    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:(${stationOverlayRegions.toString()})(document)},state:k.stations.state(),accounting:k.stations.accounting(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
     const frame = async delta => { const before = await inspect(); await evaluate(`window.__captureTime+=${delta};window.__signalFrame(window.__captureTime)`); const after = await inspect(); report.clock.push({ delta, before: before.clock, after: after.clock }); if (Number.isFinite(before.clock.simulation) && Number.isFinite(after.clock.simulation) && Math.abs(after.clock.simulation - before.clock.simulation - delta) > 1e-5) throw new Error('manual frame delta did not advance simulation clock exactly'); };
     const shot = async name => {
       await frame(0); // A same-time render preserves the clock and repaints any freshly resized buffer.

@@ -43,6 +43,7 @@ export interface WaverleyScene {
  parts:{terrain:THREE.Group;track:THREE.Group;platforms:THREE.Group;roof:THREE.Group;buildings:THREE.Group};
  origin:WaverleyData['origin'];
  attribution:string;
+ groundAttribution:string;
  /** Ground of the drawn mesh, including the documented railway flattening, not a rail survey. */
  terrain:Terrain;
  stats:{triangles:number;drawCalls:number;platforms:number;buildings:number;roofs:number;sleepers:number};
@@ -200,5 +201,5 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  if(landmarks){parts.buildings.add(landmarks.group);stats.triangles+=landmarks.stats.triangles;stats.drawCalls+=landmarks.stats.drawCalls;}
  if(options.lighting!==false){const hemisphere=new THREE.HemisphereLight(0xd8e6f5,0x7a7566,2.1),sun=new THREE.DirectionalLight(0xfff0d9,2.4);sun.position.set(-300,600,250);group.add(hemisphere,sun);}
  let disposed=false;
- return {group,parts,origin:{...data.origin},attribution:`${data.attribution}; ${terrainFile.attribution}`,terrain:ground,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();landmarks?.dispose();for(const g of geometries)g.dispose();for(const m of ownedMaterials)m.dispose();group.clear();}};
+ return {group,parts,origin:{...data.origin},attribution:`${data.attribution}; ${terrainFile.attribution}`,groundAttribution:terrainFile.attribution,terrain:ground,stats,dispose(){if(disposed)return;disposed=true;group.removeFromParent();landmarks?.dispose();for(const g of geometries)g.dispose();for(const m of ownedMaterials)m.dispose();group.clear();}};
 }

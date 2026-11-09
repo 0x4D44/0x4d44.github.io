@@ -63,6 +63,7 @@ export function createStations(options: {
 }) {
   const { scene: london, camera, controls, renderer } = options;
   const doc = renderer.domElement.ownerDocument, win = doc.defaultView!;
+  const groundCredit = doc.getElementById('ground-credit'), londonGroundCredit = groundCredit?.textContent ?? '';
   const initial: StationView = { eye: camera.position.toArray(), target: controls.target.toArray() };
   const nav = doc.createElement('nav'); nav.className = 'station-switcher'; nav.setAttribute('aria-label', 'Stations');
   const style = doc.createElement('style'); style.textContent = STATION_CSS;
@@ -152,6 +153,17 @@ export function createStations(options: {
     await selection.select(id);
     if (history && selection.state().selected === id) win.history.pushState(null, '', stationHref(win.location.href, id));
   };
+  // Refresh after the train runtimes, including a frozen capture seek, so every
+  // rendered frame's station notice and footer describe the same current state.
+  const refreshPresentation = (): void => {
+    if (disposed) return;
+    const state = selection.state();
+    const message = state.phase === 'ready' ? state.selected === 'edinburgh-waverley' && placeholderScene
+      ? placeholderScene.live?.status() ?? placeholderScene.message : options.stationStatus?.(state.selected) : undefined;
+    if (message && notice.textContent !== message) notice.textContent = message;
+    const credit = activeScene === london ? londonGroundCredit : placeholderScene?.groundAttribution ?? 'Terrain model not loaded.';
+    if (groundCredit && groundCredit.textContent !== credit) groundCredit.textContent = credit;
+  };
   for (const station of Object.values(STATIONS)) {
     const button = doc.createElement('button'); button.type = 'button'; button.textContent = station.name;
     button.setAttribute('aria-pressed', String(station.id === 'kings-cross')); button.setAttribute('aria-describedby', notice.id);
@@ -165,6 +177,7 @@ export function createStations(options: {
   if (initialId !== 'kings-cross') void select(initialId, false);
   else pose(viewOf(initialId));
   return {
+    refreshPresentation,
     select, state: () => {
       const state = selection.state();
       return state.phase === 'ready' && state.selected === 'edinburgh-waverley' && placeholderScene
@@ -199,16 +212,14 @@ export function createStations(options: {
         if (t >= 1) { hop = null; renderer.domElement.style.opacity = '1'; selection.finish(); }
       }
       maskKx();
-      const state = selection.state();
-      const message = state.phase === 'ready' ? state.selected === 'edinburgh-waverley' && placeholderScene
-        ? placeholderScene.live?.status() ?? placeholderScene.message : options.stationStatus?.(state.selected) : undefined;
-      if (message && notice.textContent !== message) notice.textContent = message;
+      refreshPresentation();
     },
     dispose(): void {
       if (disposed) return; disposed = true; flight = null; hop = null; selection.dispose(); cancelInput(); observer.disconnect();
       win.removeEventListener('popstate', onPop); win.removeEventListener('resize', sizeNav);
       pendingEdinburgh?.dispose(); pendingEdinburgh = null;
       placeholderScene?.dispose(); for (const [object, visible] of masked) object.visible = visible;
+      if (groundCredit) groundCredit.textContent = londonGroundCredit;
       nav.remove(); placeholder.remove(); delete doc.body.dataset.station; renderer.domElement.style.opacity = '1';
     },
   };

@@ -254,10 +254,11 @@ function start(): void {
     stPancras.frame(dt, stations.state().selected === 'st-pancras', feed?.timeMs());
     if (mode === 'demo') sampleTimeMs += dt * 1000;
     if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
-    paintStatus();
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
+    stations.refreshPresentation();
+    paintStatus();
     controls.update();
     world.follow(camera);
     renderer.render(stations.activeScene(), camera);

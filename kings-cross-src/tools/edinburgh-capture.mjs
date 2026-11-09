@@ -7,7 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ensureScratchOutput } from './area-coverage.mjs';
 import { cdpPipe, manualFrames } from './signal-capture.mjs';
-import { inspectStationPixels, waitForGpu } from './station-capture.mjs';
+import { inspectStationPixels, stationOverlayRegions, waitForGpu } from './station-capture.mjs';
+import { besideMappedPlatform, platformCameraCandidates } from './edinburgh-framing.mjs';
 import { cleanupCaptureBrowser, createCaptureLifetime } from './capture-runtime.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
@@ -101,19 +102,33 @@ export async function firstPlatformPlan(rows, anchors, data) {
   if (!observations.length) throw new Error('unavailable: no observed EB platform train in recording');
   const { createEdinburghMotion } = await import('../web/src/edinburgh-live.ts');
   const { createAreaReplay } = await import('../web/src/area-replay.ts');
+  const [T,{buildNeutralTrain,disposeNeutralTrain},{carPoses},{neutralTrainLayout}] = await Promise.all([
+    import('three'),import('../web/src/train-neutral.ts'),import('../web/src/trains-live.ts'),import('../core/train-neutral.ts')]);
+  const preview=buildNeutralTrain(),layout=neutralTrainLayout();
+  const hasContext=(view,source)=>{
+    if(!besideMappedPlatform(view.leading.point,data.platforms))return false;
+    for(const car of preview.children)car.visible=false;
+    for(const pose of carPoses(source.graph,view,layout)) {
+      const coach=preview.getObjectByName(`car-${pose.car.index}`);coach.visible=true;
+      coach.position.set(pose.position[0],0,pose.position[1]);coach.rotation.y=pose.rotationY;coach.scale.z=pose.scaleZ;
+      if(platformCameraCandidates(T,coach,data.platforms).length)return true;
+    }
+    return false;
+  };
   const session = createEdinburghMotion(data, anchors), replay = createAreaReplay('EB', rows, session.sink, 1);
   // Event-local seeks avoid scanning an entire recording at video frame frequency.
-  const times = [...new Set(observations.flatMap(o => [o.timeMs, o.timeMs + 1000, o.timeMs + 10000]))].filter(t => t <= rows.at(-1).t).sort((a, b) => a - b);
-  for (const timeMs of times) {
+  const times = [...new Set(observations.flatMap(o => [0,1000,10000,30000,60000,120000].map(offset=>o.timeMs+offset)))].filter(t => t <= rows.at(-1).t).sort((a, b) => a - b);
+  try { for (const timeMs of times) {
     replay.frame(0, timeMs);
-    const train = session.motion.trains().find(v => acceptRealTrain(v, anchors, observations, timeMs));
+    const train = session.motion.trains().find(v => acceptRealTrain(v, anchors, observations, timeMs) && hasContext(v,session));
     if (train) {
       const canonical = createEdinburghMotion(data, anchors), direct = createAreaReplay('EB', rows, canonical.sink, 1);
       direct.frame(0, timeMs);
-      const actual = canonical.motion.trains().find(v => v.description === train.description && acceptRealTrain(v, anchors, observations, timeMs));
+      const actual = canonical.motion.trains().find(v => v.description === train.description && acceptRealTrain(v, anchors, observations, timeMs) && hasContext(v,canonical));
       if (actual) return { timeMs, train: structuredClone(actual), observations: observations.filter(o => o.description === actual.description && o.timeMs <= timeMs) };
     }
   }
+  } finally { disposeNeutralTrain(preview); }
   throw new Error('unavailable: no usable replayed EB platform train; no manufactured capture');
 }
 
@@ -126,6 +141,13 @@ async function fingerprintTree(dir, captured) {
     else if (entry.isFile()) { const bytes = await readFile(file); captured.set(file, bytes); result.push({ file, bytes: bytes.length, sha256: hash(bytes) }); }
   }
   return result.sort((a, b) => a.file.localeCompare(b.file));
+}
+
+export function verifyCapturePresentation(presentation) {
+  if (!presentation || !presentation.liveStatus?.includes('frozen EB replay') ||
+      presentation.status !== presentation.liveStatus || presentation.notice !== presentation.liveStatus)
+    throw new Error('EB capture presentation does not match frozen replay status');
+  return presentation;
 }
 
 export async function main(argv = process.argv.slice(2)) {
@@ -156,7 +178,7 @@ export async function main(argv = process.argv.slice(2)) {
         const response = frozenRelayResponse(req.url, frozen);
         if (response) { res.writeHead(response.status, { 'content-type': response.type, 'cache-control': 'no-store' }).end(response.body); return; }
         const u = new URL(req.url, 'http://127.0.0.1');
-        const special = { '/capture/three.core.js': path.join(ROOT, 'kings-cross-src/node_modules/three/build/three.core.js'), '/capture/train-framing.mjs': path.join(ROOT, 'kings-cross-src/tools/train-framing.mjs'), '/almanac-back.js': path.join(ROOT, 'almanac-back.js') };
+        const special = { '/capture/three.core.js': path.join(ROOT, 'kings-cross-src/node_modules/three/build/three.core.js'), '/capture/edinburgh-framing.mjs': path.join(ROOT, 'kings-cross-src/tools/edinburgh-framing.mjs'), '/capture/train-framing.mjs': path.join(ROOT, 'kings-cross-src/tools/train-framing.mjs'), '/almanac-back.js': path.join(ROOT, 'almanac-back.js') };
         let file = special[u.pathname];
         if (['/kings-cross', '/kings-cross/'].includes(u.pathname)) file = path.join(dist, 'index.html');
         else if (u.pathname.startsWith('/kings-cross/')) {
@@ -184,7 +206,7 @@ export async function main(argv = process.argv.slice(2)) {
     await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/kings-cross/?trains=replay&date=${date}&station=edinburgh-waverley&speed=1&board=0&tooltip=0` });
     const deadline = Date.now() + 90000;
     while (!await evaluate('!!window.__kx?.stations?.edinburgh')) { if (Date.now() > deadline) throw new Error('Edinburgh Waverley runtime startup timeout'); await new Promise(resolve => setTimeout(resolve, 100)); }
-    await evaluate(`(async()=>{const k=window.__kx;await k.cityLoaded;await k.stations.select('edinburgh-waverley',false);window.__signalFrame(0);const e=k.stations.edinburgh();if(!e||e.placeholder||!e.live)throw new Error('Edinburgh geometry/live runtime unavailable: placeholder');await e.live.load();window.__captureT=await import('/capture/three.core.js');window.__captureF=await import('/capture/train-framing.mjs');})()`);
+    await evaluate(`(async()=>{const k=window.__kx;await k.cityLoaded;await k.stations.select('edinburgh-waverley',false);window.__signalFrame(0);const e=k.stations.edinburgh();if(!e||e.placeholder||!e.live)throw new Error('Edinburgh geometry/live runtime unavailable: placeholder');await e.live.load();window.__captureT=await import('/capture/three.core.js');window.__captureF=await import('/capture/edinburgh-framing.mjs');})()`);
     while (!await evaluate('!!window.__kx.stations.edinburgh()?.live?.state().ready')) {
       const error = await evaluate('window.__kx.stations.edinburgh()?.live?.state().error');
       if (error || Date.now() > deadline) throw new Error(error ?? 'EB replay load timeout');
@@ -192,26 +214,26 @@ export async function main(argv = process.argv.slice(2)) {
     }
     report.renderer = await evaluate("(()=>{const g=window.__kx.renderer.getContext(),e=g.getExtension('WEBGL_debug_renderer_info');return e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER)})()");
     if (!/Metal/i.test(report.renderer) || /SwiftShader|llvmpipe|software/i.test(report.renderer)) throw new Error(`real Metal GPU required: ${report.renderer}`);
-    const actual = await evaluate(`(()=>{const k=window.__kx,e=k.stations.edinburgh(),live=e.live;live.frame(0,true,${report.plan.timeMs});e.scene.updateMatrixWorld(true);k.renderer.render(e.scene,k.camera);const g=k.stations.edinburgh().live.group.children.find(g=>g.userData.id===${report.plan.train.id});return {timeMs:live.timeMs(),simulationTimeMs:k.simulationTimeMs,state:live.state(),groupState:g?.userData};})()`);
+    const actual = await evaluate(`(()=>{const k=window.__kx,e=k.stations.edinburgh(),live=e.live;live.frame(0,true,${report.plan.timeMs});window.__signalFrame(0);k.stations.refreshPresentation();e.scene.updateMatrixWorld(true);k.renderer.render(e.scene,k.camera);const g=k.stations.edinburgh().live.group.children.find(g=>g.userData.id===${report.plan.train.id});return {timeMs:live.timeMs(),simulationTimeMs:k.simulationTimeMs,state:live.state(),groupState:g?.userData};})()`);
     const real = verifyBrowserPlan(actual, report.plan, anchors);
     report.actual = actual;
     const shot = async (name, visibility = null) => {
-      const dimensions = await evaluate(`(()=>{const k=window.__kx;const r=k.renderer.domElement.getBoundingClientRect();return {canvas:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},excluded:[{left:0,top:0,right:109,bottom:41},...[...document.body.children].filter(e=>e.id!=='app'&&!['SCRIPT','STYLE'].includes(e.tagName)).flatMap(e=>e.matches('.mml-train-labels,.edinburgh-train-labels,.eb-train-labels,.station-placeholder')?[...e.children]:[e]).map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({left:r.left,top:r.top,right:r.right,bottom:r.bottom}))]};})()`);
+      const presentation = verifyCapturePresentation(await evaluate(`(()=>{const k=window.__kx;window.__signalFrame(0);k.stations.refreshPresentation();const e=k.stations.edinburgh();k.renderer.render(e.scene,k.camera);return {status:document.getElementById('status')?.textContent,notice:document.getElementById('station-notice')?.textContent,liveStatus:e.live.status()};})()`));
+      const dimensions = await evaluate(`(()=>{const k=window.__kx;const r=k.renderer.domElement.getBoundingClientRect();return {canvas:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},excluded:(${stationOverlayRegions.toString()})(document)};})()`);
       const png = await send('Page.captureScreenshot', { format: 'png' }), bytes = Buffer.from(png.data, 'base64'), pixels = inspectStationPixels(bytes, dimensions);
       if (!pixels.clear) throw new Error(`${name}: blank canvas`);
       await privateWrite(path.join(out, `${name}.png`), bytes);
-      report.shots.push({ name, sha256: hash(bytes), timeMs: actual.timeMs, train: real, visibility, pixels,
+      report.shots.push({ name, sha256: hash(bytes), timeMs: actual.timeMs, train: real, visibility, pixels, presentation,
         camera: await evaluate('({position:window.__kx.camera.position.toArray(),target:window.__kx.controls.target.toArray()})') });
     };
     await shot('01-edinburgh-waverley-overview');
-    // Low platform-side detail cameras stay beneath the roof. Try each actual coach
-    // on both sides; every accepted sample must raycast to its own rendered body.
+    // Fit a whole actual coach and mapped platform context; roofs/buildings remain drawn.
     let clear = false;
-    for (let index = 0; index < 5 && !clear; index++) for (const side of [1, -1]) {
-      const view = await evaluate(`(()=>{const k=window.__kx,T=window.__captureT,F=window.__captureF,g=k.stations.edinburgh().live.group.children.find(g=>g.userData.id===${real.id}),coach=g?.getObjectByName('car-${index}');if(!coach?.visible)return {failure:'coach not visible'};try{const box=F.trainBounds(T,coach);const shell=coach.getObjectByName('body-shell');shell.geometry.computeBoundingBox();const z=shell.geometry.boundingBox.getCenter(new T.Vector3()).z;const view=F.detailCamera(T,k.stations.edinburgh().scene,k.camera,k.controls,coach,undefined,[0,1.85,z],${side});let draws=0;coach.traverse(o=>{if(o.isMesh)o.onAfterRender=()=>draws++;});k.renderer.render(k.stations.edinburgh().scene,k.camera);return {...view,draws};}catch(e){return {failure:e.message,details:e.details??null};}})()`);
-      report.attempts.push({ coach: index, side, ...view });
+    for (let index = 0; index < 5 && !clear; index++) {
+      const view = await evaluate(`(()=>{const k=window.__kx,T=window.__captureT,F=window.__captureF,e=k.stations.edinburgh(),g=e.live.group.children.find(g=>g.userData.id===${real.id}),coach=g?.getObjectByName('car-${index}');if(!coach?.visible)return {failure:'coach not visible'};try{const view=F.platformCoachCamera(T,e.scene,k.camera,k.controls,coach,e.geometry.platforms,e.model.terrain);let draws=0;coach.traverse(o=>{if(o.isMesh)o.onAfterRender=()=>draws++;});k.renderer.render(e.scene,k.camera);return {...view,draws};}catch(e){return {failure:e.message,details:e.details??null};}})()`);
+      report.attempts.push({ coach: index, ...view });
       if (view.failure || !view.draws || !view.visibility?.clear) continue;
-      await shot('02-recorded-eb-train-detail', view); clear = true; break;
+      await shot('02-recorded-eb-train-detail', view); clear = true;
     }
     if (!clear) throw new Error('unavailable: recorded EB train is occluded in every platform-side detail camera; no manufactured capture');
   } catch (error) { report.errors.push(error.stack ?? error.message); }
