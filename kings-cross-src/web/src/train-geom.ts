@@ -103,6 +103,42 @@ export function ellipse(ca: number, cb: number, ra: number, rb: number, n = 14):
   });
 }
 
+/**
+ * The part of a polygon that lies inside a convex polygon, kept `inset` metres clear of its edges (Sutherland-Hodgman, one edge at a time; both in (a, b), the clip
+ * counter-clockwise). The subject may be wound either way. Nothing is left (an empty list) where they do not overlap.
+ */
+export function clipConvex(subject: readonly (readonly [number, number])[], clip: readonly (readonly [number, number])[], inset = 0): [number, number][] {
+  let out: [number, number][] = subject.map((p): [number, number] => [p[0], p[1]]);
+  for (let i = 0; i < clip.length && out.length > 0; i++) {
+    const a = clip[i] as readonly [number, number];
+    const b = clip[(i + 1) % clip.length] as readonly [number, number];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    // (a clip edge of no length bounds nothing)
+    if (len < 1e-12) continue;
+    // how far inside the edge a point stands: positive on the left of a -> b, where a counter-clockwise polygon's inside is
+    const inside = (p: readonly [number, number]): number => ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) / len - inset;
+    const next: [number, number][] = [];
+    for (let j = 0; j < out.length; j++) {
+      const p = out[j] as [number, number];
+      const q = out[(j + 1) % out.length] as [number, number];
+      const dp = inside(p);
+      const dq = inside(q);
+      if (dp >= 0) next.push(p);
+      if (dp >= 0 !== dq >= 0) {
+        const t = dp / (dp - dq);
+        next.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+      }
+    }
+    out = next;
+  }
+  // a vertex that lies on a clip edge is kept once as itself and once as the crossing: drop the copy (a fan over it would hold a zero-area triangle)
+  const distinct = out.filter((p, i) => {
+    const q = out[(i + out.length - 1) % out.length] as [number, number];
+    return Math.hypot(p[0] - q[0], p[1] - q[1]) > 1e-9;
+  });
+  return distinct.length >= 3 ? distinct : [];
+}
+
 /** A bag of triangles. Winding is fixed at insertion so it agrees with the normals given. */
 export class Soup {
   readonly pos: number[] = [];
@@ -144,8 +180,8 @@ export class Soup {
     this.quad(p, [n, n, n, n], c);
   }
 
-  /** A convex polygon, flat, facing `n`. */
-  fan(poly: V3[], n: V3, c: THREE.Color): void {
+  /** A convex polygon, flat, facing `n` (no colour: the material's own, as glass has). */
+  fan(poly: V3[], n: V3, c: THREE.Color | null): void {
     if (poly.length < 3) return;
     const c0 = mean(poly);
     for (let k = 0; k < poly.length; k++) this.tri([c0, poly[k] as V3, poly[(k + 1) % poly.length] as V3], [n, n, n], c);

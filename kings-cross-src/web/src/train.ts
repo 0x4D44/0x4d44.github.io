@@ -34,8 +34,10 @@ import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
-import { clamp01, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
+import { clamp01, clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
+import { AMBER, BEZEL, boxOutline, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER } from './train-face.ts';
+import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, buildBogie, buildPantograph, couplerHalf, skirtPanel, WHEEL_WIDTH } from './train-parts.ts';
@@ -118,29 +120,14 @@ const CRESCENT_ZONE = 1.25;
 const MASK_TILT = 0.45;
 /** The windscreen's frame reaches no further across than this fraction of the nose's half-width at its own place (see screenHalfWidth). */
 const FRAME_REACH = 0.91;
-/** The near-black of a lamp's bezel and of a front door's outline. */
-const BEZEL = 0x15171a;
 /** The smoked glass of an AT300 lamp cluster's window, on the nose's cheek: near black, a shade off the bezel's so the two read apart (Lumo, LNER). */
 export const POD = 0x181a1e;
 /** The same window on a Hull Trains cab, a dark slate a shade off the grey beak's own so the two still read apart (hull-802-doncaster-2024: slate window, lighter rim). */
 export const HULL_POD = 0x272b32;
 /** The dark swoosh round the cab side window of the Hull Trains and Lumo cabs: near black, a shade off the glass's own so the pane still reads in it. */
 export const CAB_SWOOSH = 0x101215;
-/** The parked wiper arms' colour: a dark grey, a shade off the glass's black so they still read against it. */
-const WIPER = 0x3b4048;
-/**
- * The cab side window, as a pane of glass rather than a black cut-out (the round-4 scorer's finding on coach-lner9-3m and coach-lumo5-3m: "a flat black
- * polygon", with a white specular blob where the pane's normals turned to the sun). Three layers, from the photographs lner-800-doncaster-2026,
- * hull-802-doncaster-2024 and LUMO-04-Lumo-803003-at-Edinburgh-Waverley, whose side windows are glossy dark panes in a thin black seal with a soft pale
- * sky reflection across their upper part:
- *   the seal    a near-black patch a hand's breadth bigger than the pane, under it (PANE_SEAL, a shade off every other near-black the nose uses);
- *   the pane    the reflective glass, shaded with one normal across it (tilted down, so it reflects the dark ground: no blob), and
- *   the sky     two matte bands over the pane's upper rows, a pale one along the top edge and a fainter one under it.
- * The shades are approximate (read off those photographs, not published).
- */
-export const PANE_SEAL = 0x0b0c0e;
-export const PANE_SKY_HI = 0x4b5b73;
-export const PANE_SKY_MID = 0x1d2733;
+// (the colours of a lamp's bezel, the parked wipers and the three layers of a cab window are in train-face.ts, with the flat faces that share them)
+export { PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID } from './train-face.ts';
 /** The seal reaches this far outside the pane along the nose (metres) and across it (as a fraction of the ring's height). */
 const PANE_SEAL_ALONG = 0.045;
 const PANE_SEAL_ACROSS = 0.025;
@@ -232,8 +219,6 @@ export function setTrainLampState(train: THREE.Object3D, state: TrainLampState):
 }
 /** The yellow of a warning panel: the shade is approximate (the LNER livery's nose front is about the same). */
 const YELLOW = 0xf2c100;
-/** The 387's gangway door leaf: a duller, orange-leaning yellow than the panels beside it (gn387_02_387121_ely, gn387_03_387123_cambridge). Approximate. */
-const DOOR_YELLOW = 0xe3a50f;
 /** Columns of the car section (counted from the bottom, 0..12) that carry the livery texture: the wall and the lower shoulder. Above them, and below, vertex colours. */
 const SHELL_K0 = 1;
 const SHELL_K1 = 7;
@@ -252,15 +237,18 @@ export interface CarPlan {
 
 // --- one family's body -----------------------------------------------------------------------------
 
-/** The cab glass: a windscreen patch on the nose's roof, and a cab side window on each side. All in distances from the nose tip. */
+/**
+ * The cab glass: a windscreen patch on the nose's roof, and a cab side window on each side. All in distances from the nose tip. A cab with a flat face (FrontSpec.face) has
+ * its windscreens among the shapes on the face and no patch on the roof; the 387 has no cab side window either (gn387_03_387123_cambridge: the cab's flank is a plain panel).
+ */
 interface GlassSpec {
   /**
    * windscreen: from `s0` (the bonnet end) to `s1` (the roof end), half-width as a fraction of the ring's, corner radii at the top and bottom edges;
    * `pillar` (metres, 0 or absent: none) is a centre post that divides the glass into two panes, as the Class 180's has
    */
-  screen: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number };
+  screen?: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number };
   /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
-  side: FlankPatch & { surround?: FlankPatch };
+  side?: FlankPatch & { surround?: FlankPatch };
 }
 
 /**
@@ -348,14 +336,13 @@ interface FrontSpec {
   warningWidth?: number;
   /** the nose coupler's style, and whether a cover hides it at a train end (else the coupler stands out of the face, and the face stands END_GAP back) */
   coupler: { style: CouplerStyle; covered: boolean };
-  /**
-   * A full-height door between the two windscreens (the Class 387's gangway door): its leaf runs from above the cover up the face and along the
-   * nose to the glass's top edge, in the gap the screen's `pillar` leaves; `leaf` is its colour and `width` the leaf's, a little less than the
-   * pillar's (the screen's black frame is the door's outline).
-   */
-  centreDoor?: { width: number; leaf: number };
   /** the colour of the dark swoosh round the cab side window, where the livery has one (the glass spec's `side.surround` is its shape); absent: none */
   cabSideSurround?: number;
+  /**
+   * A flat face: a tall, nearly upright wall carrying its windscreens, door, panels, lamp housings and coupler as shapes laid on its plane (train-face.ts), in place of
+   * a windscreen on the nose's roof. When present, `lamps`, `door`, `wipers` and `display` are not used (the shapes carry them), and the glass spec has no `screen`.
+   */
+  face?: FaceSpec;
 }
 
 /** One piece of a diesel unit's underframe: its length along the car, half-width, and the height of its underside above the rail head. */
@@ -566,7 +553,7 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
   const floor = fig.floorHeight.value - 0.12;
   const cover = 0.14;
   const crown = fig.height.value - cover;
-  const length = 1.9;
+  const length = 1.5;
   return {
     family: 'electrostar',
     half: fig.bodyWidth.value / 2,
@@ -585,46 +572,45 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
     nose: {
       length,
       knots: [
-        // a steeply raked windscreen over a near-vertical front: the lower edge of the glass is about 2 m up, the roof reached 1.4 m back (ASSUMED: from photographs, not drawn).
-        // The face is nearly as broad as the body, as the Desiro's is (Wikimedia Commons: "Class 387 at Luton": a wide front with the lamps at its corners)
-        { s: 0, top: 2.0, ws: 0.88, bottom: 0.55 },
-        { s: 0.25, top: 2.12, ws: 0.9, bottom: 0.62 },
-        { s: 0.6, top: 2.7, ws: 0.935, bottom: 0.78 },
-        { s: 1.0, top: 3.2, ws: 0.965, bottom: 0.9 },
-        { s: 1.4, top: 3.48, ws: 0.99, bottom: floor - 0.02 },
+        // A near-flat, tall face (ASSUMED sizes, read off photographs against the published 3.77 m and 2.80 m, not drawn): up from a bumper whose foot is about 0.55 m up to
+        // a brow at 3.5 m, nearly as wide as the body, then a short cap that levels onto the roof (gn387_03_387123_cambridge: the face is a near-vertical wall, its glass
+        // raked a few degrees; the roof's front is a short rounded cap, not the long slope of a bullet nose). The ring's own corners are rounded by `fillet`: its face
+        // loses `filletLoss` of its size, so the knots are a little taller and wider than the face they make (3.53 m, 2.49 m: ELECTROSTAR_FACE's shapes are clipped to it).
+        { s: 0, top: 3.62, ws: 0.95, bottom: 0.5 },
+        { s: 0.12, top: 3.63, ws: 0.975, bottom: 0.55 },
+        { s: 0.5, top: 3.63, ws: 0.99, bottom: 0.75 },
+        { s: 1.0, top: 3.63, ws: 1, bottom: 0.9 },
         { s: length, top: crown, ws: 1, bottom: floor },
       ],
-      fillet: 0.26,
-      filletLoss: 0.18,
-      roundLen: 1.7,
+      fillet: 0.2,
+      filletLoss: 0.06,
+      filletSteps: 9,
+      roundLen: 1.0,
       widest: 0.45,
-      boxiness: 3.5,
+      boxiness: 4,
     },
-    glass: {
-      // two windscreens either side of the gangway door: the door's gap is the centre post (gn387_02_387121_ely, gn387_01_387114_ely: a tall door
-      // between the two panes, in a dark frame, its leaf the warning yellow)
-      screen: { s0: 0.2, s1: 1.5, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.14, pillar: 0.8 },
-      side: { sBack: 1.85, sFront0: 1.3, sFront1: 0.95, v0: 0.55, v1: 0.8 },
-    },
+    // no glass on the roof or the flank: the windscreens are shapes on the face (front.face)
+    glass: {},
     gangway: { width: 1.9, height: 2.15, bottom: 1.15 },
     // folded, level with the roof covers, so the highest point stays the published 3.77 m
     pantographTop: 0.14,
     underframe: 1.0,
     // the skirt as the livery gives it (no photograph shows these covers closely): a plain panel, leaning in under the body's edge
     skirt: { light: 0, vents: false },
-    // ASSUMED, all of it: an LED headlight bar over a tail-lamp bar in a dark bezel at each lower corner; a Dellner coupler under a cover; a
-    // yellow warning panel (no source says the Great Northern 387s have one: the 2010s Electrostars' fronts were photographed with and without it)
+    // A flat face (ELECTROSTAR_FACE, from gn387_01_387114_ely and gn387_02_387121_ely): two screens either side of a full-height door in a dark frame, amber panels under
+    // them with a lamp housing (two round lenses side by side) in each lower outer corner, a pale bumper with the Dellner coupler in a recess. The amber also wraps the roof's
+    // front as a brow, back to 0.3 m, over the top three quarters of the face's width (the cheeks beside the screens are the body's own white); the loft's colours carry that,
+    // the face's panels the rest. ASSUMED sizes throughout (no drawing).
     front: {
-      // two round lenses side by side in a dark housing at the yellow panel's lower outer corner, a larger headlight outboard and a smaller round lamp inboard
-      // of it (gn387_01_387114_ely, gn387_02_387121_ely: both clusters stand outboard of the gangway door); sizes read off those photographs, not published
-      lamps: { shape: 'round', y: 0.58, x: 0.72, head: [0.17, 0.17], tail: [0.1, 0.1], tailAt: [-0.17, 0], bezel: 0.035 },
-      frame: 0.08,
-      wipers: true,
+      frame: 0,
+      wipers: false,
       display: false,
       door: null,
-      warning: YELLOW,
+      warning: AMBER,
+      warningWrap: 0.3,
+      warningWidth: 0.9,
       coupler: { style: 'dellner', covered: true },
-      centreDoor: { width: 0.62, leaf: DOOR_YELLOW },
+      face: ELECTROSTAR_FACE,
     },
     underfloor: null,
     plan: emuPlan('electrostar', length),
@@ -841,7 +827,10 @@ const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> 
  * end (NOSE_RECESS); a front whose coupler stands out of it holds the face a whole END_GAP back, so the coupler's head reaches the end
  * of the car and the car still spans exactly its own [start, end].
  */
-export const faceSetback = (family: Family): number => (BODIES[family].front.coupler.covered ? NOSE_RECESS : END_GAP);
+export const faceSetback = (family: Family): number => {
+  const front = BODIES[family].front;
+  return front.coupler.covered ? (front.face?.setback ?? NOSE_RECESS) : END_GAP;
+};
 
 /** One box of a diesel car's underfloor equipment, in the train's own frame (x across, y above the rail head, z along the train). */
 export interface UnderfloorBlock {
@@ -981,10 +970,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const R = rings.length - 1;
   const colourOf = (c: number): THREE.Color => col(c);
   const glassHalf = (s: number): [number, number][] => halfAt(sec, norm, egg, ringAt(spec.nose, s));
+  // (a cab with a flat face has no windscreen on its roof: `screen` is absent, and nothing below that needs it is drawn)
   const screen = spec.glass.screen;
   // the windscreen outline, a rounded rectangle laid on the nose: half-width at nose distance s, for the glass (margin 0) or a frame
   // `margin` wider all round (its corners concentric with the glass's)
   const screenHalfWidth = (s: number, margin: number): number => {
+    if (!screen) return 0;
     const s0 = screen.s0 - margin;
     const s1 = screen.s1 + margin;
     const ringHalf = ringAt(spec.nose, s).ws * W;
@@ -1073,7 +1064,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const tipHalf = halfAt(sec, norm, egg, r0);
     const face = loopFromHalf(tipHalf).map(([x, y]): V3 => world([x, y, tip]));
     // the face splits where the loft's column J0 meets it (yCut), so the panel's edge continues, unbroken, round the fillet
-    const coverTop = yCut - 0.03;
+    // (a flat face says where its bumper ends itself: its panels are shapes laid on it, and the loft's column is not at the photographs' height)
+    const flat = front.face;
+    const coverTop = flat ? flat.coverTop : yCut - 0.03;
     const covered = front.coupler.covered;
     // under the cover: the livery's lower nose; with no cover, the dark underframe colour (a valance round the coupler); over it, the warning panel where there is one
     const lowerColour = covered ? (def.noseCone ?? (front.mask ? def.noseFront : def.swoosh) ?? def.noseFront) : def.skirt;
@@ -1168,8 +1161,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     if (interiorCab) {
       // Two units coupled, cab to cab. The cover is open: a dark recess where it was, and in it the Dellner coupler, out to the middle of the
       // gap to meet the other unit's (the two heads touch). A jumper cable, sagging, is slung from a socket on the face to the other unit's.
-      const hw = Math.min(a * 0.8, xAtY(tipHalf, r0.bottom + 0.12) * 0.9);
-      detail.fan(onFace(roundedRect(-hw, hw, r0.bottom + 0.08, coverTop - 0.05, 0.06, 2), 0.004), faceN, col(0x0d0e10));
+      const hw = flat ? flat.recess.half : Math.min(a * 0.8, xAtY(tipHalf, r0.bottom + 0.12) * 0.9);
+      // (a flat face draws its recess with its shapes, below)
+      if (!flat) detail.fan(onFace(roundedRect(-hw, hw, r0.bottom + 0.08, coverTop - 0.05, 0.06, 2), 0.004), faceN, col(0x0d0e10));
       const socketY = coverTop - 0.14;
       for (const sx of [-1, 1]) {
         const x = sx * Math.min(a * 0.62, hw * 0.9);
@@ -1180,9 +1174,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         detail.bar([socketY, z0 + outward * 0.04], [socketY - 0.14, z1], 0.035, 0.035, col(0x111214), x);
       }
     } else if (covered) {
-      // the coupler cover: the lower part of the face, a dark seam across its top, and two latches
-      detail.fan(onFace(roundedRect(-a * 0.92, a * 0.92, coverTop - 0.012, coverTop + 0.012, 0.01, 1), COVER_RELIEF), faceN, seam);
-      for (const sx of [-1, 1]) detail.fan(onFace(roundedRect(sx * a * 0.45 - 0.05, sx * a * 0.45 + 0.05, coverTop - 0.1, coverTop - 0.03, 0.01, 1), COVER_RELIEF), faceN, seam);
+      // the coupler cover: the lower part of the face, a dark seam across its top, and two latches (a flat face's bumper has neither: its coupler stands in a recess, below)
+      if (!flat) {
+        detail.fan(onFace(roundedRect(-a * 0.92, a * 0.92, coverTop - 0.012, coverTop + 0.012, 0.01, 1), COVER_RELIEF), faceN, seam);
+        for (const sx of [-1, 1]) detail.fan(onFace(roundedRect(sx * a * 0.45 - 0.05, sx * a * 0.45 + 0.05, coverTop - 0.1, coverTop - 0.03, 0.01, 1), COVER_RELIEF), faceN, seam);
+      }
       const cover = new THREE.Object3D();
       cover.name = 'coupler-cover';
       cover.position.set(0, (r0.bottom + coverTop) / 2, Z(tip));
@@ -1210,6 +1206,41 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       detail.emit = 0;
       lampLenses.push({ role, v0, v1: detail.glow.length });
     };
+    if (flat) {
+      // A flat face: the coupler's recess in the bumper, then the face's shapes (train-face.ts), each clipped to the face's outline (a convex loop) and laid on its plane at
+      // its own lift. A shape's x is the cab's own, to its right: a rear cab's right is the train's left, and `mirror` draws the other hand's copy.
+      const outline = loopFromHalf(tipHalf);
+      const glassN = unit([0, flat.glassLean, faceN[2]]);
+      const place = (shape: FaceShape, mirrored: boolean): void => {
+        const flip = (mirrored ? -1 : 1) * dir;
+        const clipped = clipConvex(shape.outline.map(([x, y]): [number, number] => [x * flip, y]), outline, shape.inset ?? 0);
+        if (clipped.length < 3) return;
+        const poly = onFace(clipped, shape.lift);
+        if (shape.glass) {
+          glass.fan(poly, glassN, null);
+        } else if (shape.lens) {
+          lensFan(shape.lens, poly, faceN);
+          if (shape.lens === 'head') {
+            const m = new THREE.Object3D();
+            m.name = 'headlight';
+            const cx = clipped.reduce((sum, p) => sum + p[0], 0) / clipped.length;
+            m.position.set(cx, clipped.reduce((sum, p) => sum + p[1], 0) / clipped.length, Z(tip));
+            m.userData = { side: cx > 0 ? 'right' : 'left' };
+            group.add(m);
+          }
+        } else {
+          if (shape.colour === undefined) throw new Error(`face shape ${shape.name} has no colour`);
+          detail.fan(poly, faceN, colourOf(shape.colour));
+        }
+      };
+      const recess = flat.recess;
+      const shapes: readonly FaceShape[] = [{ name: 'coupler-recess', outline: boxOutline(-recess.half, recess.half, recess.y0, recess.y1, 0.03), colour: RECESS, lift: RECESS_LIFT }, ...flat.shapes];
+      for (const shape of shapes) {
+        if (shape.trainEnd && interiorCab) continue;
+        place(shape, false);
+        if (shape.mirror) place(shape, true);
+      }
+    }
     const lamps = front.lamps;
     if (lamps) {
       const lens = (role: 'head' | 'tail', cx: number, cy: number, w: number, h: number, depth: number): void => {
@@ -1294,63 +1325,53 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         }
       }
     };
-    // the windscreen: a curved patch on the nose's roof, glass over a black frame; rows crowd toward the two edges, where the corners curve
-    const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number, post = 0): void => {
-      // with a centre post the glass is two panes (each its own patch, 10 columns across), and the frame's black shows between them
-      for (const pane of post > 0 ? [-1, 1] : [0]) {
-        nosePatch(30, post > 0 ? 10 : 20, (v, u) => {
-          const s = lerp(screen.s0 - margin, screen.s1 + margin, 0.5 - 0.5 * Math.cos(Math.PI * v));
-          const hw = screenHalfWidth(s, margin);
-          if (pane === 0) return [hw * (2 * u - 1), s];
-          const inner = Math.min(post / 2, hw * 0.5);
-          return [pane > 0 ? lerp(inner, hw, u) : lerp(-hw, -inner, u), s];
-        }, target, colour, lift);
+    if (screen) {
+      // the windscreen: a curved patch on the nose's roof, glass over a black frame; rows crowd toward the two edges, where the corners curve
+      const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number, post = 0): void => {
+        // with a centre post the glass is two panes (each its own patch, 10 columns across), and the frame's black shows between them
+        for (const pane of post > 0 ? [-1, 1] : [0]) {
+          nosePatch(30, post > 0 ? 10 : 20, (v, u) => {
+            const s = lerp(screen.s0 - margin, screen.s1 + margin, 0.5 - 0.5 * Math.cos(Math.PI * v));
+            const hw = screenHalfWidth(s, margin);
+            if (pane === 0) return [hw * (2 * u - 1), s];
+            const inner = Math.min(post / 2, hw * 0.5);
+            return [pane > 0 ? lerp(inner, hw, u) : lerp(-hw, -inner, u), s];
+          }, target, colour, lift);
+        }
+      };
+      // the frame and the glass stand clear of the loft by more than its facets sag between rings (a few mm, up to a centimetre on the steep shoulder), so neither shows through the other
+      patch(front.frame, detail, colourOf(def.glass), 0.014);
+      patch(0, glass, null, 0.02, screen.pillar ?? 0);
+      if (mask) {
+        // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
+        // first row stands only 4 mm off the face's edge, where the cap's strip meets it, and the lift grows to the 12 mm the loft's facets need over the first fifth.
+        const sEnd = screen.s0 - front.frame + 0.06;
+        nosePatch(12, 18, (v, u) => {
+          const s = sEnd * (0.5 - 0.5 * Math.cos(Math.PI * v));
+          return [lerp(bandStart, mask.hwSill, s / sEnd) * Math.sin(Math.PI * (u - 0.5)), s];
+        }, detail, colourOf(mask.colour), (v) => lerp(0.004, 0.012, Math.min(1, v * 5)));
       }
-    };
-    // the frame and the glass stand clear of the loft by more than its facets sag between rings (a few mm, up to a centimetre on the steep shoulder), so neither shows through the other
-    patch(front.frame, detail, colourOf(def.glass), 0.014);
-    patch(0, glass, null, 0.02, screen.pillar ?? 0);
-    if (mask) {
-      // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
-      // first row stands only 4 mm off the face's edge, where the cap's strip meets it, and the lift grows to the 12 mm the loft's facets need over the first fifth.
-      const sEnd = screen.s0 - front.frame + 0.06;
-      nosePatch(12, 18, (v, u) => {
-        const s = sEnd * (0.5 - 0.5 * Math.cos(Math.PI * v));
-        return [lerp(bandStart, mask.hwSill, s / sEnd) * Math.sin(Math.PI * (u - 0.5)), s];
-      }, detail, colourOf(mask.colour), (v) => lerp(0.004, 0.012, Math.min(1, v * 5)));
-    }
-    if (front.centreDoor) {
-      // the gangway door between the two panes: its leaf up the face (from the cover's seam to the face's top edge, which it follows) and along the
-      // nose to the glass's top; the screen's black frame, 4 mm under it, is its outline
-      const hw = front.centreDoor.width / 2;
-      const leaf = colourOf(front.centreDoor.leaf);
-      const yb = coverTop + 0.04;
-      const topEdge: [number, number][] = [-1, -0.5, 0, 0.5, 1].map((t): [number, number] => [t * hw, yAtX(tipHalf, Math.abs(t) * hw)]);
-      detail.fan(onFace([[-hw, yb], [hw, yb], ...topEdge.reverse()], 0.007), faceN, leaf);
-      // (it starts 3 cm back, so its lift stays behind the face's plane: no detail stands out in front of the train's end)
-      // (and 27 mm off the nose, well clear of the black frame's own facets under it: at 18 mm the two interleave in a jagged black seam)
-      nosePatch(14, 1, (v, u) => [(2 * u - 1) * hw, lerp(0.03, screen.s1 + front.frame, v)], detail, leaf, 0.027);
-    }
-    if (front.wipers) {
-      // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying
-      // in the glass's lower edge (a pale arm higher up reads as an eyebrow)
-      const arm = col(WIPER);
-      const pivot = (screen.pillar ?? 0) / 2 + 0.1;
-      for (const sx of [-1, 1]) {
-        const a: [number, number] = [sx * pivot, screen.s0 + 0.045];
-        const b: [number, number] = [sx * Math.min(0.8, screenHalfWidth(screen.s0 + 0.08, 0) - 0.2), screen.s0 + 0.08];
-        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        const perp: [number, number] = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
-        nosePatch(6, 1, (v, u) => [a[0] + (b[0] - a[0]) * v + perp[0] * (u - 0.5) * 0.028, a[1] + (b[1] - a[1]) * v + perp[1] * (u - 0.5) * 0.028], detail, arm, 0.032);
+      if (front.wipers) {
+        // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying
+        // in the glass's lower edge (a pale arm higher up reads as an eyebrow)
+        const arm = col(WIPER);
+        const pivot = (screen.pillar ?? 0) / 2 + 0.1;
+        for (const sx of [-1, 1]) {
+          const a: [number, number] = [sx * pivot, screen.s0 + 0.045];
+          const b: [number, number] = [sx * Math.min(0.8, screenHalfWidth(screen.s0 + 0.08, 0) - 0.2), screen.s0 + 0.08];
+          const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          const perp: [number, number] = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
+          nosePatch(6, 1, (v, u) => [a[0] + (b[0] - a[0]) * v + perp[0] * (u - 0.5) * 0.028, a[1] + (b[1] - a[1]) * v + perp[1] * (u - 0.5) * 0.028], detail, arm, 0.032);
+        }
       }
-    }
-    if (front.display) {
-      // the destination display: a lit amber panel in a dark bezel, across the top of the glass, over the middle half of its width
-      const top = screen.s1 - 0.12;
-      const hwDisplay = Math.min(0.5, screenHalfWidth(screen.s1 - 0.3, 0) - 0.3);
-      // (a lit strip of text in a dark panel, as the photographs show it, gn387_02_387121_ely and tl700_01_gatwick_front: not an amber slab across the glass)
-      nosePatch(2, 8, (v, u) => [lerp(-hwDisplay - 0.03, hwDisplay + 0.03, u), lerp(top - 0.25, top + 0.02, v)], detail, col(0x0d0e10), 0.03);
-      nosePatch(2, 4, (v, u) => [lerp(-hwDisplay * 0.45, hwDisplay * 0.45, u), lerp(top - 0.15, top - 0.08, v)], detail, col(0xffa000), 0.034);
+      if (front.display) {
+        // the destination display: a lit amber panel in a dark bezel, across the top of the glass, over the middle half of its width
+        const top = screen.s1 - 0.12;
+        const hwDisplay = Math.min(0.5, screenHalfWidth(screen.s1 - 0.3, 0) - 0.3);
+        // (a lit strip of text in a dark panel, as the photographs show it, gn387_02_387121_ely and tl700_01_gatwick_front: not an amber slab across the glass)
+        nosePatch(2, 8, (v, u) => [lerp(-hwDisplay - 0.03, hwDisplay + 0.03, u), lerp(top - 0.25, top + 0.02, v)], detail, col(0x0d0e10), 0.03);
+        nosePatch(2, 4, (v, u) => [lerp(-hwDisplay * 0.45, hwDisplay * 0.45, u), lerp(top - 0.15, top - 0.08, v)], detail, col(0xffa000), 0.034);
+      }
     }
     // the cab side windows, one each side, following the nose's slope: the pane (glass), and where the kind has one the dark swoosh round it (a
     // matte patch a little under the glass)
@@ -1463,11 +1484,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         group.add(m);
       }
     }
+    const sw = spec.glass.side;
+    // (a cab without a side window, the 387's, draws neither the window nor its swoosh)
     for (const side of [-1, 1]) {
+      if (!sw) continue;
       // (the shoulder's facets sag a centimetre between rings, so the swoosh stands 12 mm off the loft, and the pane 4 mm proud of it)
-      if (front.cabSideSurround !== undefined && spec.glass.side.surround) sideWindow(side, spec.glass.side.surround, detail, col(front.cabSideSurround), PANE_LIFT.swoosh);
+      if (front.cabSideSurround !== undefined && sw.surround) sideWindow(side, sw.surround, detail, col(front.cabSideSurround), PANE_LIFT.swoosh);
       // the seal round the pane, the pane itself, and the sky's two matte bands over its upper rows
-      const sw = spec.glass.side;
       const seal: FlankPatch = { sBack: sw.sBack + PANE_SEAL_ALONG, sBack1: sw.sBack1 === undefined ? undefined : sw.sBack1 + PANE_SEAL_ALONG, sFront0: sw.sFront0 - PANE_SEAL_ALONG, sFront1: sw.sFront1 - PANE_SEAL_ALONG, v0: sw.v0 - PANE_SEAL_ACROSS, v1: sw.v1 + PANE_SEAL_ACROSS };
       sideWindow(side, seal, detail, col(PANE_SEAL), PANE_LIFT.seal);
       sideWindow(side, sw, glass, null, PANE_LIFT.pane, { flat: true });
