@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - a cover texture built from a copy re-uploads each frame (station-weather.ts:activateSceneAtmosphere)
+  activateSceneAtmosphere runs every frame and compares coverUniforms.uCoverMap.value.image.data with map.heights by identity. A rooms flag held as a second
+  channel of an interleaved copy failed that test each frame, so applyCover rebuilt and re-uploaded the cover textures every frame: about 1.5 ms of a 2.5 ms
+  shed frame, with no shader cost to find (a bisect of builds found it, reading the shader did not). Keep each extra cover channel in its own one-channel
+  texture built from the map's own array (cover.ts uCoverRooms) and keep the identity pinned by a test (web/tests/cover-shaders.test.ts).
 - 2026-11-09 - roof height is not concourseHeight(r): lay features on the nodes' rim-scaled surface (concourse.ts surface)
   buildConcourse sets a node's height to concourseHeight(canopy, canopy.radius * r / (r + toRim)), toRim being the distance to the OSM outline, so the
   roof falls to the rim wherever the outline is. On the west the outline is about 74 m from the funnel, not the canopy's 61.6 m radius: 54 to 58 m out the
