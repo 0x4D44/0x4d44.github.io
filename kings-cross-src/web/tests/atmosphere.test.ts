@@ -354,6 +354,23 @@ test('wet ground: the shader of each named surface is patched once with the shar
   assert.ok(luma(s.uniforms.uSheen!.value as THREE.Color) < luma(sheenColour), 'the wet ground mirrors the sky, so at night it mirrors less');
 });
 
+test('two scenes share the station\'s surfaces: the second atmosphere\'s scan leaves the first\'s wet ground and the roof shade both in the shared material', () => {
+  // King's Cross and Edinburgh Waverley each have an atmosphere, and the ballast, asphalt and concrete are the one set of materials in both. A second
+  // wet patch would replace the first's `onBeforeCompile`, and with it the roof shade lighting.ts layered on it, while the cache key still said it was there.
+  const london = setup(), waverley = setup();
+  const shared = new THREE.MeshLambertMaterial({ color: 0x808080 }); shared.name = 'ballast';
+  const plain = new THREE.MeshLambertMaterial({ color: 0x808080 }); plain.name = 'steel';
+  for (const { scene } of [london, waverley]) for (const m of [shared, plain]) scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), m));
+  london.atmosphere.rescan();
+  const once = [shared.version, plain.version];
+  waverley.atmosphere.rescan();
+  assert.deepEqual([shared.version, plain.version], once, 'the second scan finds both already done, and does not recompile them');
+  for (const m of [shared, plain]) assert.ok(m.customProgramCacheKey().endsWith('+roofShade'), `${m.name}: the cache key says the roof shade is in the shader`);
+  const wet = compile(shared).fragmentShader;
+  assert.ok(wet.includes('uniform float uWet;') && wet.includes('uniform vec4 uRoofShade;'), 'the ballast has the wet ground and the roof shade, as the key says');
+  assert.ok(compile(plain).fragmentShader.includes('uniform vec4 uRoofShade;'), 'the steel has the roof shade');
+});
+
 test('rain and snow are drawn when the weather has them, with the scene\'s view, and not otherwise', () => {
   const { atmosphere, at } = setup();
   at(NOON);

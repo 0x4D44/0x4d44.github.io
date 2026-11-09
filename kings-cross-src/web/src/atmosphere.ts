@@ -62,6 +62,13 @@ const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
 const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
 
 /**
+ * The surfaces that have their wet-and-snow shader, whichever atmosphere gave it. The station's materials are shared between scenes (King's Cross
+ * and Edinburgh Waverley draw the same ballast, asphalt and concrete), and each scene has an atmosphere that scans its own: a second patch would replace
+ * the first's `onBeforeCompile`, and with it the roof shade that lighting.ts layers on top, while the material's cache key still claimed it.
+ */
+const wetPatched = new WeakSet<THREE.Material>();
+
+/**
  * Add wetness and snow to a Lambert surface in its own shader: after the texture and colours are applied the surface darkens
  * (`uDark` x `uWet`) and blends toward snow (`uSnowK` x `uSnowCover`); after lighting, a sky-coloured sheen that grows at glancing
  * angles is added (`uSheenK` x `uWet`). With uWet and uSnowCover at 0 the surface draws as it always did. Under a roof (cover.ts) none
@@ -212,7 +219,6 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
   world.sky.add(sunSprite, stars);
 
   // ---- surfaces that get wet, and stand-ins for daylight --------------------------------------------------
-  const patched = new Set<THREE.Material>();
   const standIns = new Map<Emissive, THREE.Color>();
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
   // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
@@ -241,8 +247,8 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
         const lambert = m as THREE.MeshLambertMaterial;
         const spec = SURFACES.get(m.name);
-        if (spec && lambert.isMeshLambertMaterial && !patched.has(m)) {
-          patched.add(m);
+        if (spec && lambert.isMeshLambertMaterial && !wetPatched.has(m)) {
+          wetPatched.add(m);
           patchSurface(lambert, spec);
         }
         // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
