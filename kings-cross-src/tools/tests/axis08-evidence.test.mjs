@@ -3,6 +3,7 @@ import test from 'node:test';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { randomBytes } from 'node:crypto';
 import vm from 'node:vm';
 import { sizeReport, hardwareReport, summarizeRuns, collectRuns, BUDGET_BYTES, PERF_PAIR_LIMIT_MS, main, evidenceMarkdown, firstTrainMarkdown, pairPerfArgs, stationSweepMarkdown, statusLine } from '../axis08-evidence.mjs';
 import { startupObserver, extractTiming } from '../perf.mjs';
@@ -23,6 +24,26 @@ test('every emitted file including geometry and source maps contributes to expli
   assert.equal(result.sourceMapsGzipBytes, gzipSync(bodies['assets/main.js.map']).length);
   assert.equal(result.appPayloadGzipBytes, result.allEmittedGzipBytes - result.sourceMapsGzipBytes);
   assert.equal(result.files.find(row => row.file.endsWith('.map')).classification, 'source-map');
+});
+
+test('the size verdict counts only what ships (ruling of 2026-11-09): maps cannot fail it, an oversized app payload does', async () => {
+  await mkdir(scratch, { recursive: true });
+  const measure = async bodies => {
+    const dir = await mkdtemp(path.join(scratch, 'dist-'));
+    await mkdir(path.join(dir, 'assets'));
+    for (const [name, body] of Object.entries(bodies)) await writeFile(path.join(dir, name), body);
+    return sizeReport(dir);
+  };
+  // Random bytes do not compress, so the gzip sizes track the byte counts.
+  const mapsOnly = await measure({ 'index.html': '<html/>', 'assets/main.js': randomBytes(100_000), 'assets/main.js.map': randomBytes(2_100_000) });
+  assert.ok(mapsOnly.allEmittedGzipBytes >= BUDGET_BYTES, 'the maps push the all-emitted total over the limit');
+  assert.ok(mapsOnly.appPayloadGzipBytes < BUDGET_BYTES);
+  assert.equal(mapsOnly.appPayloadWithinBudget, true, 'a map over the limit does not fail the verdict');
+  assert.equal('allEmittedWithinBudget' in mapsOnly, false, 'the all-emitted total carries no verdict');
+  assert.match(mapsOnly.budgetDefinition, /2026-11-09/);
+  assert.match(mapsOnly.budgetDefinition, /for information only and carries no pass\/fail verdict/);
+  const oversized = await measure({ 'index.html': '<html/>', 'assets/main.js': randomBytes(2_100_000) });
+  assert.equal(oversized.appPayloadWithinBudget, false, 'an app payload over the limit fails it');
 });
 
 test('hardware inventory selects model and GPU without retaining serial identifiers', async () => {
@@ -80,7 +101,7 @@ test('CLI rejects invalid options, too few runs and output outside private scrat
   await assert.rejects(main(['--unknown']), /unknown/);
   // Order matters: an unsafe --out stops a bypassed run-count guard here, instead of letting it go on to run a real build and browser.
   await assert.rejects(main(['--runs', '1', '--out', '/private/tmp/outside']), /integer/);
-  await assert.rejects(main(['--runs', '1']), /integer/);
+  await assert.rejects(main(['--runs', '21', '--out', '/private/tmp/outside']), /integer/);
   await assert.rejects(main(['--out', '/private/tmp/outside']), /beneath/);
 });
 
@@ -113,16 +134,29 @@ test('the first pair\'s uncapped headroom reaches the summary and the Markdown, 
   assert.equal(summarizeRuns([report(), report()]).headroom, null, 'a report from before the headroom run has none');
   assert.equal(summarizeRuns([report(), first]).headroom, null, 'later pairs measure startup only');
   const markdown = (browser) => evidenceMarkdown({ status: 'pass', invocation: ['node'], hardware: { model: 'M', cpu: 'C', logicalCpus: 1, gpu: ['G'], os: { platform: 'darwin', release: '1', version: 'v', arch: 'arm64' } },
-    build: { files: [], appPayloadGzipBytes: 1, allEmittedGzipBytes: 1, sourceMapsGzipBytes: 0, budgetBytes: 2000000, appPayloadWithinBudget: true, allEmittedWithinBudget: true, budgetDefinition: 'x' }, browser });
+    build: { files: [], appPayloadGzipBytes: 1, allEmittedGzipBytes: 1, sourceMapsGzipBytes: 0, budgetBytes: 2000000, appPayloadWithinBudget: true, budgetDefinition: 'x' }, browser });
   const text = markdown(measured);
   assert.match(text, /Headroom \(uncapped, --disable-gpu-vsync --disable-frame-rate-limit\): valid\./);
   assert.match(text, /\| overview \| 60 \| 438 \| 433 \| 7\.3 \| 2 \| 3 \|/);
   assert.match(markdown(summarizeRuns([report(), report()])), /Headroom: not measured/);
 });
 
+test('Markdown gives the app payload the size verdict and reports the all-emitted total with none', () => {
+  const render = build => evidenceMarkdown({ status: 'pass', invocation: ['node'], hardware: { model: 'M', cpu: 'C', logicalCpus: 1, gpu: ['G'], os: { platform: 'darwin', release: '1', version: 'v', arch: 'arm64' } },
+    build: { files: [], appPayloadGzipBytes: 1_000_000, allEmittedGzipBytes: 2_500_000, sourceMapsGzipBytes: 1_500_000, budgetBytes: 2000000, appPayloadWithinBudget: true, budgetDefinition: 'x', ...build }, browser: null });
+  const text = render({});
+  assert.match(text, /App payload gzip: 1000000 \/ 2000000 B: PASS\./);
+  const line = text.split('\n').find(row => row.startsWith('All emitted gzip including maps'));
+  assert.match(line, /informational only/);
+  assert.match(line, /2026-11-09/);
+  assert.match(line, /: 2500000 B\. Source maps: 1500000 B\.$/);
+  assert.doesNotMatch(line, /PASS|FAIL|NOT MEASURED|\/ 2000000/, 'the all-emitted total has no verdict and no limit to be measured against');
+  assert.match(render({ appPayloadGzipBytes: 2_100_000, allEmittedGzipBytes: 2_100_000, sourceMapsGzipBytes: 0, appPayloadWithinBudget: false }), /App payload gzip: 2100000 \/ 2000000 B: FAIL\./);
+});
+
 test('the CLI passes the scene pin and the headroom options on to perf and refuses unknown ones', async () => {
   await assert.rejects(main(['--headroom']), /unknown option/);
-  await assert.rejects(main(['--runs', '1', '--weather', 'rain']), /integer/, 'the pin options are known; the run count is what is wrong');
+  await assert.rejects(main(['--runs', '1', '--weather', 'rain', '--out', '/private/tmp/outside']), /integer/,'the pin options are known; the run count is what is wrong');
 });
 
 test('Markdown includes hardware, every file, samples, aggregates, failed targets, limitations and exact command', () => {
@@ -130,7 +164,7 @@ test('Markdown includes hardware, every file, samples, aggregates, failed target
   const browser = summarizeRuns([low, report()]);
   const result = evidenceMarkdown({ status: 'fail', invocation: ['node', 'tools/axis08-evidence.mjs', '--runs', '2'],
     hardware: { model: 'Mac Studio', cpu: 'Apple CPU', logicalCpus: 8, gpu: ['Apple GPU'], os: { platform: 'darwin', release: '26', version: 'Darwin', arch: 'arm64' }, gaps: ['synthetic inventory gap'] },
-    build: { files: [{ file: 'geometry.js', classification: 'app-payload', bytes: 200, gzipBytes: 100 }, { file: 'main.js.map', classification: 'source-map', bytes: 400, gzipBytes: 200 }], appPayloadGzipBytes: 100, allEmittedGzipBytes: 300, sourceMapsGzipBytes: 200, budgetBytes: 2000000, appPayloadWithinBudget: true, allEmittedWithinBudget: true, budgetDefinition: 'Strict <2 MB' }, browser });
+    build: { files: [{ file: 'geometry.js', classification: 'app-payload', bytes: 200, gzipBytes: 100 }, { file: 'main.js.map', classification: 'source-map', bytes: 400, gzipBytes: 200 }], appPayloadGzipBytes: 100, allEmittedGzipBytes: 300, sourceMapsGzipBytes: 200, budgetBytes: 2000000, appPayloadWithinBudget: true, budgetDefinition: 'Strict <2 MB' }, browser });
   for (const text of ['Mac Studio', 'Apple CPU', 'Apple GPU', 'darwin', 'geometry.js', 'main.js.map', '| cold | 2 | 100 | 600 |', '| warm | firstRenderMs | 50 | 50 | 50 |', 'Median FPS', '| shed | ANGLE Apple Metal | 60 | 40 |', 'FPS target: FAIL', 'display presentation', 'synthetic inventory gap', "'node' 'tools/axis08-evidence.mjs' '--runs' '2'"]) assert.ok(result.includes(text), text);
 });
 
@@ -143,7 +177,7 @@ const PEAK = { mode: 'scan', startISO: '2026-11-07T17:21:00.000Z', startMs: 1794
 const sweptReport = (names = ['south-front', 'tower-close'], overrides = {}) => ({ ...report(), replayPeak: PEAK, firstTrainVisible: { startsAtPeak: true },
   stationCameras: Object.fromEntries(names.map(name => [name, sweepCamera(overrides[name])])) });
 const renderMarkdown = browser => evidenceMarkdown({ status: 'pass', invocation: ['node'], hardware: { model: 'M', cpu: 'C', logicalCpus: 1, gpu: ['G'], os: { platform: 'darwin', release: '1', version: 'v', arch: 'arm64' } },
-  build: { files: [], appPayloadGzipBytes: 1, allEmittedGzipBytes: 1, sourceMapsGzipBytes: 0, budgetBytes: 2000000, appPayloadWithinBudget: true, allEmittedWithinBudget: true, budgetDefinition: 'x' }, browser });
+  build: { files: [], appPayloadGzipBytes: 1, allEmittedGzipBytes: 1, sourceMapsGzipBytes: 0, budgetBytes: 2000000, appPayloadWithinBudget: true, budgetDefinition: 'x' }, browser });
 
 test('the station sweep joins the verdict: every camera, in every pair, steady at 60 FPS and measured at the replay peak', () => {
   const ok = summarizeRuns([sweptReport(), sweptReport(), sweptReport()]);
@@ -239,6 +273,6 @@ test('each pair\'s perf arguments: the first scans for the peak and measures the
 });
 
 test('the CLI accepts the station sweep options', async () => {
-  await assert.rejects(main(['--runs', '1', '--stations', 'all', '--station-seconds', '5']), /integer/, 'the sweep options are known; the run count is what is wrong');
+  await assert.rejects(main(['--runs', '1', '--stations', 'all', '--station-seconds', '5', '--out', '/private/tmp/outside']), /integer/,'the sweep options are known; the run count is what is wrong');
   await assert.rejects(main(['--stationz', '5']), /unknown option/);
 });

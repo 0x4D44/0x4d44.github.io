@@ -23,6 +23,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const project = path.resolve(here, '..');
 const scratch = path.resolve(project, '..', '.scratch');
 export const BUDGET_BYTES = 2_000_000;
+// The project owner's ruling of 2026-11-09: only what ships counts against the size limit, and the published page has no source maps.
+export const BUDGET_DEFINITION = 'Strict < 2 MB (2000000 bytes), sum of each file independently gzipped. Per the project owner\'s ruling of 2026-11-09, only what ships counts: the verdict applies to the app payload, which includes geometry, lazy chunks and every non-map file (the published page has no source maps). The all-emitted total adds the source maps, is reported for information only and carries no pass/fail verdict. Excludes relay recording/network data and the shared external almanac-back.js.';
 export async function sizeReport(dist) {
   const files = [];
   async function walk(dir) {
@@ -40,7 +42,7 @@ export async function sizeReport(dist) {
   const total = rows => rows.reduce((sum, row) => sum + row.gzipBytes, 0);
   const allEmittedGzipBytes = total(files);
   const appPayloadGzipBytes = total(files.filter(row => row.classification === 'app-payload'));
-  return { files, budgetBytes: BUDGET_BYTES, budgetDefinition: 'Strict < 2 MB (2000000 bytes), sum of each file independently gzipped. App payload includes geometry, lazy chunks and all non-map files. Source maps are explicitly separate but remain in all-emitted total. Excludes relay recording/network data and the shared external almanac-back.js.', allEmittedGzipBytes, appPayloadGzipBytes, sourceMapsGzipBytes: allEmittedGzipBytes - appPayloadGzipBytes, allEmittedWithinBudget: allEmittedGzipBytes < BUDGET_BYTES, appPayloadWithinBudget: appPayloadGzipBytes < BUDGET_BYTES };
+  return { files, budgetBytes: BUDGET_BYTES, budgetDefinition: BUDGET_DEFINITION, allEmittedGzipBytes, appPayloadGzipBytes, sourceMapsGzipBytes: allEmittedGzipBytes - appPayloadGzipBytes, appPayloadWithinBudget: appPayloadGzipBytes < BUDGET_BYTES };
 }
 
 export async function hardwareReport(platform = os.platform(), execute = promisify(execFile)) {
@@ -152,7 +154,7 @@ export function evidenceMarkdown(report) {
     `Model: ${cell(h.model)}. CPU: ${cell(h.cpu)} (${h.logicalCpus} logical CPUs). GPU: ${cell(h.gpu?.join(', '))}.`,
     `OS: ${cell(h.os.platform)} ${cell(h.os.release)}; ${cell(h.os.version)}; ${cell(h.os.arch)}.`, '',
     `App payload gzip: ${b.appPayloadGzipBytes} / ${b.budgetBytes} B: ${verdict(b.appPayloadWithinBudget)}.`,
-    `All emitted gzip including maps: ${b.allEmittedGzipBytes} / ${b.budgetBytes} B: ${verdict(b.allEmittedWithinBudget)}. Source maps: ${b.sourceMapsGzipBytes} B.`, '',
+    `All emitted gzip including maps (informational only, no verdict; the size limit counts only what ships, ruling of 2026-11-09): ${b.allEmittedGzipBytes} B. Source maps: ${b.sourceMapsGzipBytes} B.`, '',
     b.budgetDefinition, '', '| Emitted file | Classification | Bytes | Gzip bytes |', '| --- | --- | ---: | ---: |',
     ...b.files.map(row => `| ${cell(row.file)} | ${row.classification} | ${row.bytes} | ${row.gzipBytes} |`), ''];
   if (browser) {

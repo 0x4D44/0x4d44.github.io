@@ -26,6 +26,21 @@ mutations = [
  ('omit repeated independent pairs', 'axis08-evidence.mjs', 'index < runs;', 'index < runs - 1;'),
  ('premature city readiness', 'perf.mjs', 'cityComplete && k.parts?.terrain && k.parts?.buildings', 'true'),
  ('allow one startup pair', 'axis08-evidence.mjs', 'runs < 2', 'runs < 1'),
+ ('allow too many pairs', 'axis08-evidence.mjs', 'runs > 20', 'runs > 21'),
+ ('refuse the scene pin options', 'axis08-evidence.mjs', "'--check-build', '--time', '--weather', '--sky'", "'--check-build', '--time', '--sky'"),
+ ('refuse the station sweep options', 'axis08-evidence.mjs', "'--headroom-baseline', '--station-seconds', '--stations']);", "'--headroom-baseline']);"),
+ ('later pair repeats the axis cameras', 'axis08-evidence.mjs', "'--no-legacy-cameras', '--no-uncapped'", "'--no-uncapped'"),
+ ('headroom lost from the summary', 'axis08-evidence.mjs', 'headroom: reports[0].headroom ?? null', 'headroom: null'),
+ ('replay start claimed as the peak', 'axis08-evidence.mjs', 'startsAtPeak: reports.every(report => report.firstTrainVisible?.startsAtPeak === true)', 'startsAtPeak: true'),
+ ('omit Markdown station camera rows', 'axis08-evidence.mjs', '...Object.entries(sweep.cameras).map(', '...Object.entries({}).map('),
+ # The 2026-11-09 ruling: only what ships counts against the size limit; the all-emitted total is information only.
+ ('size verdict counts the maps', 'axis08-evidence.mjs', 'appPayloadWithinBudget: appPayloadGzipBytes < BUDGET_BYTES', 'appPayloadWithinBudget: allEmittedGzipBytes < BUDGET_BYTES'),
+ ('size verdict never fails', 'axis08-evidence.mjs', 'appPayloadWithinBudget: appPayloadGzipBytes < BUDGET_BYTES', 'appPayloadWithinBudget: true'),
+ ('all-emitted total regains a verdict', 'axis08-evidence.mjs', 'allEmittedGzipBytes, appPayloadGzipBytes, sourceMapsGzipBytes:', 'allEmittedGzipBytes, allEmittedWithinBudget: allEmittedGzipBytes < BUDGET_BYTES, appPayloadGzipBytes, sourceMapsGzipBytes:'),
+ ('Markdown puts a verdict on the all-emitted total', 'axis08-evidence.mjs', '${b.allEmittedGzipBytes} B. Source maps', '${b.allEmittedGzipBytes} B: ${verdict(b.appPayloadWithinBudget)}. Source maps'),
+ ('Markdown hides the app payload verdict', 'axis08-evidence.mjs', 'B: ${verdict(b.appPayloadWithinBudget)}.`,', 'B: PASS.`,'),
+ ('definition drops the ruling date', 'axis08-evidence.mjs', 'ruling of 2026-11-09, only', 'ruling, only'),
+ ('status ignores the app payload verdict', 'axis08-evidence.mjs', ", !build.appPayloadWithinBudget && 'app payload budget'", ", false && 'app payload budget'"),
 ]
 
 tally = kxmut.Tally()
