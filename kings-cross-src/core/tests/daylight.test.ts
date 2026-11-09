@@ -156,6 +156,18 @@ test('rain darkens the sky and the light and brings the lamps on in the afternoo
   assert.ok(heavy.daylight < dry.daylight || dry.daylight === heavy.daylight);
 });
 
+test('rain darkens the dome by a share of its own colour, a seventh at full rain, in a clear sky and at dusk under cloud (where the day\'s lift of a cloud sky does not also change)', () => {
+  // (by day under cloud the sky also loses its lift as the rain comes, which darkens it too, so only these cases show the darkening itself)
+  for (const [e, cloud] of [[55, 0], [10, 0], [-8, 1], [-8, 0.5], [-12, 1]] as const) {
+    const dry = rig(e, { cloud });
+    for (const [rain, share] of [[0.5, 0.07], [1, 0.14]] as const) {
+      const wet = rig(e, { cloud, rain });
+      near(wet.dome.zenith, dry.dome.zenith.map((v) => v * (1 - share)), 1e-9, `the zenith at ${e} degrees, cloud ${cloud}, rain ${rain}`);
+      near(wet.dome.horizon, dry.dome.horizon.map((v) => v * (1 - share)), 1e-9, `the horizon at ${e} degrees, cloud ${cloud}, rain ${rain}`);
+    }
+  }
+});
+
 test('snow lightens the ground\'s share of the ambient by day and not at night', () => {
   assert.ok(luma(rig(30, { cloud: 1, snow: 1 }).hemisphere.ground) > 1.5 * luma(rig(30, { cloud: 1 }).hemisphere.ground), 'snow on the ground lights the underside of things');
   near(rig(-30, { snow: 1 }).hemisphere.ground, rig(-30).hemisphere.ground, 1e-12, 'night ground');

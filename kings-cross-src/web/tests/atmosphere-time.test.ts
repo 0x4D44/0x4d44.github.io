@@ -57,6 +57,11 @@ function sunReaches(deg: number, from: string, place?: { lat: number; lon: numbe
   throw new Error(`the sun never reaches ${deg} degrees after ${from}`);
 }
 
+/** What the sky model makes of the sun at that place in the sky with that cloud and rain (the rest of the weather clear). */
+const rigAt = (elevationDeg: number, azimuthDeg: number, cloud: number, rain: number) => skyRig(elevationDeg, azimuthDeg, { cloud, rain, snow: 0, visibilityM: CLEAR_STATE.visibilityM }, REFERENCE);
+/** How far the dome's colours or its glow move from one rig to the other, as atmosphere.ts measures it. */
+const movedBy = (a: ReturnType<typeof rigAt>, b: ReturnType<typeof rigAt>): number => Math.max(Math.abs(a.glow.strength - b.glow.strength), ...[0, 1, 2].flatMap((i) => [Math.abs(a.dome.zenith[i]! - b.dome.zenith[i]!), Math.abs(a.dome.horizon[i]! - b.dome.horizon[i]!)]));
+
 test('the scene\'s lights are the rig\'s: the sky light and the ground light, the fills and the key, colour and strength, by day, at night, in rain and in fog', () => {
   const { atmosphere, lights, at } = setup();
   for (const [when, w] of [[MIDNIGHT, CLEAR_STATE], [NOON, weather({ rain: 0.8, cloud: 1, wet: 0.9 })], ['2026-12-21T15:40:00Z', CLEAR_STATE], [NOON, weather({ visibilityM: 300 })]] as const) {
@@ -195,29 +200,47 @@ test('the dome is repainted when the sun has moved enough to move its glow, and 
     at('2026-12-21T00:30:00Z');
     assert.ok(colours(world).version > before, 'the sun has moved under the ground: the dome is repainted for it');
   }
-  // 4. a small change of weather in the same minute: the colours change, a little (found by searching for the thinnest bit more cloud that is seen,
-  //    so that the test does not depend on how the sky is coloured)
+  // 4. a small change of weather in the same minute, the cloud steady: the colours change a little, and the dome is painted for it (found by searching for
+  //    the thinnest bit of rain that is seen, so that the test does not depend on how the sky is coloured)
   {
     const { world, at } = setup();
     const sun = solarPosition(Date.parse(NOON));
-    const rigAt = (cloud: number) => skyRig(sun.elevationDeg, sun.azimuthDeg, { cloud, rain: 0, snow: 0, visibilityM: CLEAR_STATE.visibilityM }, REFERENCE);
-    const movedBy = (a: ReturnType<typeof rigAt>, b: ReturnType<typeof rigAt>): number => Math.max(Math.abs(a.glow.strength - b.glow.strength), ...[0, 1, 2].flatMap((i) => [Math.abs(a.dome.zenith[i]! - b.dome.zenith[i]!), Math.abs(a.dome.horizon[i]! - b.dome.horizon[i]!)]));
-    let more = 0.1, moved = 0;
-    for (let cloud = 0.12; cloud <= 1 && moved <= 0.02; cloud += 0.02) { more = cloud; moved = movedBy(rigAt(0.1), rigAt(cloud)); }
-    assert.ok(moved > 0.02 && moved < 0.39, `a little more cloud moves the colours of the dome by a little: ${moved} at ${more}`);
-    at(NOON, weather({ cloud: 0.1 }));
+    let rain = 0, moved = 0;
+    for (let r = 0.02; r <= 1 && moved <= 0.02; r += 0.02) { rain = r; moved = movedBy(rigAt(sun.elevationDeg, sun.azimuthDeg, 0.5, 0), rigAt(sun.elevationDeg, sun.azimuthDeg, 0.5, r)); }
+    assert.ok(moved > 0.02 && moved < 0.39, `a little rain moves the colours of the dome by a little: ${moved} at ${rain}`);
+    at(NOON, weather({ cloud: 0.5 }));
     const before = colours(world).version;
-    at(NOON, weather({ cloud: more }));
+    at(NOON, weather({ cloud: 0.5, rain }));
     assert.ok(colours(world).version > before, 'and the dome is painted for it');
     const settled = colours(world).version;
-    at(NOON, weather({ cloud: more }));
+    at(NOON, weather({ cloud: 0.5, rain }));
     assert.equal(colours(world).version, settled, 'and then left alone while nothing changes');
+  }
+  // 5. the cloud changing while the colours hardly move (deep in the night they are all but black): the deck's billows still change, so the dome is
+  //    painted again for a change of cloud of a few hundredths, and not for a hair's difference
+  {
+    const { world, at } = setup();
+    const night = solarPosition(Date.parse(MIDNIGHT));
+    assert.ok(night.elevationDeg < -18, 'a night with no twilight in it');
+    const colourMove = (from: number, to: number): number => movedBy(rigAt(night.elevationDeg, night.azimuthDeg, from, 0), rigAt(night.elevationDeg, night.azimuthDeg, to, 0));
+    assert.ok(colourMove(0.4, 0.45) < 0.004, `at night a few hundredths of cloud move the colours less than the dome is repainted for: ${colourMove(0.4, 0.45)}`);
+    at(MIDNIGHT, weather({ cloud: 0.4 }));
+    const before = colours(world).version;
+    at(MIDNIGHT, weather({ cloud: 0.405 }));
+    assert.equal(colours(world).version, before, 'a hair of cloud leaves the dome alone');
+    at(MIDNIGHT, weather({ cloud: 0.45 }));
+    assert.ok(colours(world).version > before, 'but a few hundredths of cloud repaint its billows');
+    const settled = colours(world).version;
+    at(MIDNIGHT, weather({ cloud: 0.45 }));
+    assert.equal(colours(world).version, settled, 'once');
+    at(MIDNIGHT, weather({ cloud: 0.5 }));
+    assert.ok(colours(world).version > settled, 'and again as the deck thickens further');
   }
 });
 
 test('the rain follows the frame: its clock is the wall clock in seconds, its box is as deep as the view, the wind leans it, and the night dims it', () => {
   const { atmosphere, camera, target } = setup();
-  const uniform =(name: string): { value: unknown } => (atmosphere.precip.rain.material as THREE.ShaderMaterial).uniforms[name] as { value: unknown };
+  const uniform = (name: string): { value: unknown } => (atmosphere.precip.rain.material as THREE.ShaderMaterial).uniforms[name] as { value: unknown };
   camera.position.set(0, 3, 0);
   target.set(0, 0, 4);
   const frame = (iso: string, wallMs: number, w: WeatherState): void => atmosphere.update({ timeMs: Date.parse(iso), weather: w, camera, target, wallMs });
