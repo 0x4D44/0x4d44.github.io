@@ -85,18 +85,18 @@ export function createMaterials(): MaterialSet {
     if (emissive !== undefined) m.emissive.set(emissive);
     return m;
   };
-  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 1.6];
+  const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.2];
   // hist-e: the extension's panels and girders, light grey against the white frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
   // hist-b: the Midland's brick is a light terracotta red (sunlit about 0xbd8263), not the library's deep crimson: the shared brick texture times (1.1, 0.55, 0.78); ASSUMED
   const brickRed = tint('brickRed', [1.1 * brickGain, 0.55 * brickGain, 0.78 * brickGain]);
   // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa); ASSUMED
   const stone = tint('stone', [1.25 * stoneGain, 1.2 * stoneGain, 1.15 * stoneGain]);
-  // hist-a: the hotel's stock brick, a golden buff (mean about 0x7c6a51 against the library's 0x65583f at the same light), a touch warmer than the library's
-  const brick = tint('brick', [brickGain, 0.96 * brickGain, 0.92 * brickGain]);
+  // hist-a: the hotel's stock brick, a golden buff (a wall of it reads 0x786449; the library's brick, times (1, 0.96, 0.92) x 1.5, rendered 0x6d604a at the noon rig), warmer: times (1.15, 1.05, 0.88)
+  const brick = tint('brick', [1.15 * brickGain, 1.05 * brickGain, 0.88 * brickGain]);
   // hist-d: the glazing is silver-grey and bright, the ribs pale blue-grey (hist-d2: dark only in shadow); the library's glass is its pane texture (light sky blue, mean
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
-  // blue-grey (sunlit about 0x8f8d93 and 0x6a6f79 against its 0x404751): a neutral colour of 1.6.
+  // blue-grey (sunlit about 0x8f8d93 and 0x6b727b against its 0x434950 at the noon rig): a neutral colour of 2.2 renders as 0x666e78.
   const roofGlass = tint('shedGlass', [1.24, 0.95, 0.84], 0xd4beaf);
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
   const slate = tint('slateBothSides', [slateGain, slateGain, slateGain]);
