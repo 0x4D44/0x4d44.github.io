@@ -1,16 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ADELANTE, ALL_KINDS, carLength, DESIRO_700, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, roofHeight, TL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
-import type { CarType, TrainKind } from '../train.ts';
+import { ADELANTE, ALL_KINDS, carLength, carLengthOf, DESIRO_700, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, HULL_802_DRIVING_CAR, roofHeight, TL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
+import type { CarType, Figure, TrainKind } from '../train.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
 
 test('train: the published unit lengths are the sum of the published car lengths (129.7 m and 233.7 m)', () => {
   near(trainLayout('lner5').length, 129.7, 1e-9, '5-car 800/2, 801/1');
   near(trainLayout('lner9').length, 233.7, 1e-9, '9-car 800/1, 801/2');
-  // Hull Trains and Lumo run 5-car sets of the same cars
-  near(trainLayout('hull5').length, 129.7, 1e-9, '5-car 802/3');
-  near(trainLayout('lumo5').length, 129.7, 1e-9, '5-car 803');
+  // The Lumo 803 prints no car length (Wikipedia's infobox has no dimension): it takes the 800's as an assumed transfer, so its five cars sum to the same 129.7 m.
+  near(trainLayout('lumo5').length, 129.7, 1e-9, '5-car 803 (assumed transfer)');
+  // CHANGED: the Hull Trains 802's cab cars are the 802's own published 25.7 m (Eversholt Rail, Wikipedia), not the 800's 25.85 m, so its five cars sum to
+  // 2 x 25.7 + 3 x 26 = 129.4 m. That sum is derived: no source prints a Class 802 unit length.
+  near(trainLayout('hull5').length, 2 * 25.7 + 3 * 26, 1e-9, '5-car 802/3 from its own cab cars');
 });
 
 test('train: car counts and formations are as published', () => {
@@ -22,10 +24,11 @@ test('train: car counts and formations are as published', () => {
   assert.deepEqual(TRAIN_KINDS.map((k) => TRAIN_SPECS[k].cars.length), [5, 9, 5, 5]);
 });
 
-test('train: per car, length 25.85 m for the cab cars and 26.00 m for the rest, width 2.7 m, height as drawn', () => {
+test('train: per car, length 25.85 m for the cab cars (25.7 m on the Hull Trains 802) and 26.00 m for the rest, width 2.7 m, height as drawn', () => {
   for (const kind of TRAIN_KINDS) {
     for (const car of trainLayout(kind).cars) {
-      assert.equal(car.length, DRIVING.has(car.type) ? 25.85 : 26.0, `${kind} car ${car.index} ${car.type}`);
+      // CHANGED: the Hull Trains 802's cab cars are the 802's own published 25.7 m (Eversholt Rail, Wikipedia); every other Azuma-family cab car is the 800's 25.85 m
+      assert.equal(car.length, DRIVING.has(car.type) ? (kind === 'hull5' ? 25.7 : 25.85) : 26.0, `${kind} car ${car.index} ${car.type}`);
       near(car.end - car.start, car.length, 1e-9, `${kind} car ${car.index} span`);
     }
   }
@@ -52,19 +55,64 @@ test('train: the AT300 roof remains an assumption after the primary-source revie
   assert.doesNotMatch(FIGURES.roofEdgeHeight.source, /Hitachi's 3\.62/);
 });
 
-test('train: Hull cab transfer distinguishes the GWR owner figure from Hull verification', () => {
-  assert.match(TRAIN_SPECS.hull5.source, /eversholtrail\.co\.uk\/fleet\/class-802/);
-  assert.match(TRAIN_SPECS.hull5.source, /GWR.*25\.7/);
-  assert.match(TRAIN_SPECS.hull5.source, /ASSUMED/);
-  assert.match(TRAIN_SPECS.hull5.source, /coupl/);
-  near(trainLayout('hull5').length, 129.7, 1e-9, 'unchanged pending a Hull-specific dimension');
+// CHANGED (was: "Hull cab transfer distinguishes the GWR owner figure from Hull verification", which kept the Class 800's 25.85 m as an assumed transfer): the round-4
+// scorer's finding is that the Class 802's cab car is published at 25.7 m, so the Hull Trains 802 is built on it. What the figure is measured between is printed
+// nowhere, and is marked UNVERIFIABLE where it is used.
+test('train: the Hull Trains 802 cab cars are the 802\'s published 25.7 m, with what that is measured between marked UNVERIFIABLE and the five-car sum marked derived', () => {
+  const source = TRAIN_SPECS.hull5.source;
+  assert.match(source, /eversholtrail\.co\.uk\/fleet\/class-802/);
+  assert.match(source, /Cab cars 25\.7 m and intermediates 26 m/);
+  assert.match(source, /UNVERIFIABLE/);
+  assert.match(source, /coupl/);
+  assert.match(source, /129\.4 m, is derived, not published/);
+  assert.doesNotMatch(source, /ASSUMED from Class 800|Retain 25\.85/, 'the 800\'s figure is no longer the Hull cab');
+  assert.equal(HULL_802_DRIVING_CAR.value, 25.7);
+  assert.equal(HULL_802_DRIVING_CAR.basis, 'published');
+  assert.match(HULL_802_DRIVING_CAR.source, /eversholtrail\.co\.uk\/fleet\/class-802/);
+  assert.match(HULL_802_DRIVING_CAR.source, /Wikipedia/);
+  assert.match(HULL_802_DRIVING_CAR.source, /UNVERIFIABLE/);
+  // the figure reaches the layout, for the Hull Trains kind only and for its cab cars only
+  for (const t of ['DPTS', 'DPTF'] as const) {
+    assert.equal(carLengthOf('hull5', t), 25.7, `hull5 ${t}`);
+    assert.equal(carLengthOf('lner5', t), 25.85, `lner5 ${t}`);
+    assert.equal(carLengthOf('lumo5', t), 25.85, `lumo5 ${t}`);
+  }
+  for (const t of ['MS', 'MC', 'TS', 'MF'] as const) assert.equal(carLengthOf('hull5', t), 26, `hull5 ${t}`);
+  const hull = trainLayout('hull5').cars;
+  assert.deepEqual(hull.map((c) => c.length), [25.7, 26, 26, 26, 25.7]);
+  near(trainLayout('hull5').length, 129.4, 1e-9, 'five cars');
+  // the bogies keep their place measured from each nose, and the rear cab car's from its own end
+  near((hull[0] as { bogies: readonly [number, number] }).bogies[1], FIGURES.innerBogieFromNose.value, 1e-9, 'front car inner bogie');
+  near(trainLayout('hull5').length - (hull[4] as { bogies: readonly [number, number] }).bogies[0], FIGURES.innerBogieFromNose.value, 1e-9, 'rear car inner bogie');
 });
 
-test('train: Lumo bodyshell evidence does not turn transferred dimensions into published numbers', () => {
+test('train: Lumo bodyshell evidence does not turn transferred dimensions into published numbers, and says they are UNVERIFIABLE', () => {
   assert.match(TRAIN_SPECS.lumo5.source, /lumo-train-now-available-from-hornby/);
   assert.match(TRAIN_SPECS.lumo5.source, /beaconrail\.com\/en\/fleet-item\/cl-803/);
   assert.match(TRAIN_SPECS.lumo5.source, /ASSUMED.*25\.85.*26.*2\.7.*3\.62/);
+  assert.match(TRAIN_SPECS.lumo5.source, /UNVERIFIABLE/);
+  assert.match(TRAIN_SPECS.lumo5.source, /Wikipedia's Class 803 infobox.*no car length, width or height/);
   near(trainLayout('lumo5').length, 129.7, 1e-9, 'unchanged transferred dimensions');
+});
+
+test('train: a height no source prints says UNVERIFIABLE where it is used, and only the Class 387 has a published one', () => {
+  // Searched 2026-11-08 and 2026-11-09: Wikipedia (the Class 800, 802, 803, 700, 717 and 180 infoboxes), the Hitachi Review, Eversholt Rail, Angel Trains, Beacon Rail,
+  // the ORR's Class 803 authorisation and the Siemens datasheets print no height for any of these. Each is therefore a stated assumption, to be replaced.
+  const assumed: [string, Figure][] = [
+    ['the Class 800, 801, 802 and 803 roof edge', FIGURES.roofEdgeHeight],
+    ['the Class 717', DESIRO_CITY.height],
+    ['the Class 700', DESIRO_700.height],
+    ['the Class 180', ADELANTE.height],
+  ];
+  for (const [name, f] of assumed) {
+    assert.equal(f.basis, 'assumed', `${name}: no source prints it`);
+    assert.match(f.source, /UNVERIFIABLE/, `${name} says so`);
+  }
+  assert.equal(ELECTROSTAR.height.basis, 'published', 'the Class 387\'s 3.77 m is printed by Wikipedia\'s infobox');
+  assert.doesNotMatch(ELECTROSTAR.height.source, /UNVERIFIABLE/);
+  // the assumed heights are the figures the model is built on: the Azuma's roof edge plus its covers, the others' 3.77 m
+  near(roofHeight(), 3.62, 1e-9, 'the Azuma\'s top of covers');
+  for (const f of [DESIRO_CITY.height, DESIRO_700.height, ADELANTE.height]) assert.equal(f.value, ELECTROSTAR.height.value);
 });
 
 test('train: cars abut from the front nose at 0 to the rear, with no gap and no overlap', () => {

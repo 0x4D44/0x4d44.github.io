@@ -24,7 +24,7 @@ const GBTRAINS = 'gbtrains.uk/stock/800 (an independent modeller\'s reference; f
 
 export const FIGURES = {
   /** Driving vehicles (the cab cars). 2 x 25.85 + 3 x 26.00 = 129.7 m, the published 5-car length. */
-  drivingCarLength: { value: 25.85, unit: 'm', basis: 'published', source: `${HITACHI}: cab body 25.350 m plus 0.500 m (half the shared 1.000 m inter-car gap) = 25.850 m allocated car pitch. This is arithmetic from the published plan, not a directly printed overall Hull 802/3 or Lumo 803 dimension.` },
+  drivingCarLength: { value: 25.85, unit: 'm', basis: 'published', source: `${HITACHI}: cab body 25.350 m plus 0.500 m (half the shared 1.000 m inter-car gap) = 25.850 m allocated car pitch. This is arithmetic from the published plan for the Class 800 and 801, not a directly printed overall dimension; the Hull Trains 802 has its own printed 25.7 m (HULL_802_DRIVING_CAR) and the Lumo 803 has none (UNVERIFIABLE; it takes this figure as an assumed transfer).` },
   /** Intermediate vehicles. */
   intermediateCarLength: { value: 26.0, unit: 'm', basis: 'published', source: `${HITACHI}: intermediate body 25.000 m plus a 1.000 m shared inter-car gap = 26.000 m allocated car pitch. The five-car plan totals 2*25.350 + 3*25.000 + 4*1.000 = 129.700 m.` },
   /** Published for 800/801 and by Angel Trains for 802; its transfer to 803 is assumed. */
@@ -33,7 +33,7 @@ export const FIGURES = {
    * Height of the body's roof edge above the rail head. No verified primary figure found.
    * The top of the roof covers (the highest point of the body) is this plus roofCoverHeight.
    */
-  roofEdgeHeight: { value: 3.35, unit: 'm', basis: 'assumed', source: `No verified primary roof height found (reviewed 2026-11-09). Hitachi Review 63(10), pp. 647-648, Fig. 2/Table 1, https://www.hitachi.com/content/dam/hitachi/global/en/insights/media/hitachihyoron/2014/r2014_10/r2014_10_105.pdf has no roof height. DfT IEP Train Technical Specification, section 3.4, https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/82840/tts-redacted.pdf specifies a gauge, not a measured roof envelope. ${GBTRAINS} reports 3.62 m with an undefined Hitachi attribution; that attribution is unverified. Retain ASSUMED top of roof covers 3.62 m minus drawn cover 0.27 m = 3.35 m roof edge. No primary source found for the height of Class 803 either (Beacon Rail fleet page and ORR 2021 authorisation). To be replaced by a dimensioned rail-to-roof drawing.` },
+  roofEdgeHeight: { value: 3.35, unit: 'm', basis: 'assumed', source: `UNVERIFIABLE: No verified primary roof height found for the Class 800, 801, 802 or 803 (reviewed 2026-11-09; the Wikipedia infoboxes of the 800 and the 802 print car lengths and the 800 a width, none a height, and the 803's prints no dimension at all). Hitachi Review 63(10), pp. 647-648, Fig. 2/Table 1, https://www.hitachi.com/content/dam/hitachi/global/en/insights/media/hitachihyoron/2014/r2014_10/r2014_10_105.pdf has no roof height. DfT IEP Train Technical Specification, section 3.4, https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/82840/tts-redacted.pdf specifies a gauge, not a measured roof envelope. ${GBTRAINS} reports 3.62 m with an undefined Hitachi attribution; that attribution is unverified. Retain ASSUMED top of roof covers 3.62 m minus drawn cover 0.27 m = 3.35 m roof edge. No primary source found for the height of Class 803 either (Beacon Rail fleet page and ORR 2021 authorisation). To be replaced by a dimensioned rail-to-roof drawing.` },
   /** The grey roof covers stand this far above the roof edge. */
   roofCoverHeight: { value: 0.27, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: "the roof covers stand about 11 in (0.27 m) higher" (0.27 to 0.3 m)` },
   /** Axle spacing inside one bogie. */
@@ -55,6 +55,17 @@ export const FIGURES = {
   /** Standard gauge. */
   gauge: { value: 1.435, unit: 'm', basis: 'published', source: 'Wikipedia infoboxes: "1,435 mm (4 ft 8+1/2 in) standard gauge"' },
 } as const satisfies Record<string, Figure>;
+
+/**
+ * The driving cars (DPTS and DPTF) of the Class 802, which Hull Trains runs as its 802/3: 25.7 m, as Eversholt Rail's Class 802 fleet page prints it
+ * ("Dimensions of unit: DPTS & DPTF: 25.7m, MS-TS-MF: 26m", https://eversholtrail.co.uk/fleet/class-802/, read 2026-11-09) and Wikipedia's Class 802 infobox
+ * ("Driving vehicles 25.7 m (84 ft 4 in)", "Intermediate vehicles 26 m (85 ft 4 in)"). The Class 800 and 801 are printed at 25.85 m (Wikipedia: "25.850 m
+ * (84 ft 9.7 in)"), so the sources put the 802's cab 0.15 m shorter than its cousins', and the model follows each class's own figure.
+ * What the 25.7 m is measured between is UNVERIFIABLE: neither source says (over couplers, over the body, or between pivots). The 26 m intermediate beside it
+ * matches the allocated pitch of the Hitachi Review's Fig. 2 (a 25.000 m body plus the 1.000 m shared gap), so the same convention is read for the cab cars:
+ * an inference, not a published definition. The five-car train, 2 x 25.7 + 3 x 26 = 129.4 m, is derived, not published.
+ */
+export const HULL_802_DRIVING_CAR = { value: 25.7, unit: 'm', basis: 'published', source: 'Eversholt Rail, Class 802 fleet page, "Dimensions of unit: DPTS & DPTF: 25.7m, MS-TS-MF: 26m" (https://eversholtrail.co.uk/fleet/class-802/); Wikipedia infobox for British Rail Class 802, "Driving vehicles 25.7 m (84 ft 4 in)" (both read 2026-11-09). What the length is measured between is UNVERIFIABLE: neither source says; it is read here as the allocated car pitch, as the 26 m intermediate figure matches the Hitachi pitch (an inference).' } as const satisfies Figure;
 
 /**
  * The vehicle families the model draws: Hitachi AT300 (Azuma and its cousins), Bombardier Electrostar (Class 387),
@@ -99,8 +110,8 @@ const UNIT_387: readonly CarType[] = ['DMSO', 'MSO', 'PTSO', 'DMSO'];
 export const TRAIN_SPECS: Readonly<Record<TrainKind, TrainSpec>> = {
   lner5: { kind: 'lner5', family: 'at300', classes: '800/2, 801/1', operator: 'LNER', livery: 'lner', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: DPTS-MS-MS-MC-DPTF` },
   lner9: { kind: 'lner9', family: 'at300', classes: '800/1, 801/2', operator: 'LNER', livery: 'lner', cars: ['DPTS', 'MS', 'MS', 'TS', 'MS', 'TS', 'MC', 'MF', 'DPTF'], source: `${WIKI}: DPTS-MS-MS-TS-MS-TS-MC-MF-DPTF` },
-  hull5: { kind: 'hull5', family: 'at300', classes: '802/3', operator: 'Hull Trains', livery: 'hulltrains', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: "5 cars per 802/0 and 802/3 unit: DPTS-MS-MS-MC-DPTF". Cab length ASSUMED from Class 800/801 (25.85 m including the coupling allowance). Eversholt Rail https://eversholtrail.co.uk/fleet/class-802/ publishes GWR Class 802 DPTS/DPTF 25.7 m and intermediate 26 m, without defining coupling endpoints; this is primary evidence for that fleet, not an independently verified Hull 802/3 overall cab length. Hull fleet owner https://angeltrains.co.uk/fleet/class-802/ gives nominal length 26 m and width 2.7 m only. Retain 25.85 m pending a Hull-specific drawing with comparable endpoints (reviewed 2026-11-09).` },
-  lumo5: { kind: 'lumo5', family: 'at300', classes: '803', operator: 'Lumo', livery: 'lumo', cars: ['DPTS', 'MS', 'MS', 'MS', 'DPTS'], source: `ORR Class 803 authorisation, 27 September 2021, Table 1, https://www.orr.gov.uk/sites/default/files/2021-10/2021-09-27-authorisation-letter-for-class-803-rolling-stock.pdf: DPTS-MS-MS-MS-DPTS. Lumo https://www.lumo.co.uk/who-we-are/lumonews/lumo-train-now-available-from-hornby (27 May 2025) confirms the same bodyshell as earlier UK A-trains, without numerical dimensions. Beacon Rail https://beaconrail.com/en/fleet-item/cl-803/ publishes bogie dimensions but no car length, body width or roof height. Class 803 dimensions remain ASSUMED transfers: cab 25.85 m, intermediate 26 m, width 2.7 m, roof-cover top 3.62 m; these are not independently published Class 803 figures (reviewed 2026-11-09).` },
+  hull5: { kind: 'hull5', family: 'at300', classes: '802/3', operator: 'Hull Trains', livery: 'hulltrains', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: "5 cars per 802/0 and 802/3 unit: DPTS-MS-MS-MC-DPTF". Cab cars 25.7 m and intermediates 26 m, as printed for the Class 802 by Eversholt Rail https://eversholtrail.co.uk/fleet/class-802/ ("Dimensions of unit: DPTS & DPTF: 25.7m, MS-TS-MF: 26m"; its page is for the GWR units) and by Wikipedia's Class 802 infobox (driving vehicles 25.7 m, intermediate 26 m; read 2026-11-09); the Class 800 and 801 are printed at 25.85 m, so the sources put the 802's cab 0.15 m shorter, and the model follows each class's own figure (see HULL_802_DRIVING_CAR). What the 25.7 m is measured between is UNVERIFIABLE: neither source says (over couplers, over the body or between pivots). It is read here as the allocated car pitch, the convention the 26 m intermediate matches (Hitachi Review Fig. 2: a 25.000 m body plus the 1.000 m shared gap), which is an inference. Hull fleet owner https://angeltrains.co.uk/fleet/class-802/ gives nominal length 26 m and width 2.7 m only. The five-car train, 2 x 25.7 + 3 x 26 = 129.4 m, is derived, not published (reviewed 2026-11-09).` },
+  lumo5: { kind: 'lumo5', family: 'at300', classes: '803', operator: 'Lumo', livery: 'lumo', cars: ['DPTS', 'MS', 'MS', 'MS', 'DPTS'], source: `ORR Class 803 authorisation, 27 September 2021, Table 1, https://www.orr.gov.uk/sites/default/files/2021-10/2021-09-27-authorisation-letter-for-class-803-rolling-stock.pdf: DPTS-MS-MS-MS-DPTS. Lumo https://www.lumo.co.uk/who-we-are/lumonews/lumo-train-now-available-from-hornby (27 May 2025) confirms the same bodyshell as earlier UK A-trains, without numerical dimensions. Beacon Rail https://beaconrail.com/en/fleet-item/cl-803/ publishes bogie dimensions but no car length, body width or roof height. Wikipedia's Class 803 infobox (read 2026-11-09) prints no car length, width or height. Class 803 length, width and height are UNVERIFIABLE from any source found, and remain ASSUMED transfers: cab 25.85 m, intermediate 26 m, width 2.7 m, roof-cover top 3.62 m; these are not independently published Class 803 figures (reviewed 2026-11-09).` },
   gn387x4: { kind: 'gn387x4', family: 'electrostar', classes: '387', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387], source: `${WIKI_387}: "4 cars per unit", DMSO-MSO-PTSO-DMSO` },
   gn387x8: { kind: 'gn387x8', family: 'electrostar', classes: '387 x2', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387], source: `${WIKI_387}: two 4-car units coupled (the units work in multiple)` },
   gn387x12: { kind: 'gn387x12', family: 'electrostar', classes: '387 x3', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387, ...UNIT_387], source: `${WIKI_387}: three 4-car units coupled; the page says c2c ran 387s as 12-car sets` },
@@ -130,6 +141,15 @@ export function carLength(type: CarType, family?: Family): number {
   if (f === undefined || f === 'at300') return DRIVING.has(type) ? FIGURES.drivingCarLength.value : FIGURES.intermediateCarLength.value;
   const fig = EMU_FIGURES[f];
   return DRIVING.has(type) && fig.drivingCarLength ? fig.drivingCarLength.value : fig.carLength.value;
+}
+
+/**
+ * The length of one car of a train of this kind: `carLength`, except on a Hull Trains Class 802, whose driving cars are the 802's own published 25.7 m
+ * (HULL_802_DRIVING_CAR), not the Class 800's 25.85 m. (The Lumo 803 has no published length, and keeps the 800's as an assumed transfer.)
+ */
+export function carLengthOf(kind: TrainKind, type: CarType): number {
+  if (kind === 'hull5' && DRIVING.has(type)) return HULL_802_DRIVING_CAR.value;
+  return carLength(type, TRAIN_SPECS[kind].family);
 }
 
 /** One car, positioned along the train. `s` is metres from the front nose, growing rearwards. */
@@ -177,7 +197,7 @@ export function trainLayout(kind: TrainKind): TrainLayout {
   const cars: Car[] = [];
   let at = 0;
   spec.cars.forEach((type, index) => {
-    const length = carLength(type);
+    const length = carLengthOf(kind, type);
     const start = at;
     const end = at + length;
     let bogies: [number, number];
@@ -245,7 +265,7 @@ export const DESIRO_CITY = {
   carLength: { value: 121.674 / 6, unit: 'm', basis: 'assumed', source: `${SIEMENS_717}: "Unit length 121,674 mm" (also ${WIKI_717}: 121.7 m); six equal cars is ASSUMED, as no per-car length is published (Wikipedia: car length 20.2 m, Siemens: "nominal vehicle length 20 m")` },
   bodyWidth: { value: 2.8, unit: 'm', basis: 'published', source: `${SIEMENS_717}: "Width 2,800 mm"; ${WIKI_717}: "Width 2.80 m (9 ft 2 in)"` },
   /** Neither the datasheet nor the Wikipedia page gives a height; the Electrostar's published 3.77 m is used (both fit the same UK gauge). */
-  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published (the datasheet and Wikipedia give no height). Taken equal to the Class 387\'s published 3.77 m, as both run the same UK routes; to be replaced.' },
+  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'UNVERIFIABLE: not published (the Siemens datasheet and Wikipedia give no height; read 2026-11-08). Taken equal to the Class 387\'s published 3.77 m, as both run the same UK routes; to be replaced by a dimensioned drawing.' },
   floorHeight: { value: 1.1, unit: 'm', basis: 'published', source: `${SIEMENS_717}: "Floor height (a.r.l.) 1,100 mm"; ${WIKI_717}: "Floor height 1.10 m (3 ft 7 in)"` },
   wheelDiameter: { value: 0.82, unit: 'm', basis: 'published', source: `${WIKI_717}: "Wheel diameter 820 to 760 mm (new to worn)"; the new wheel is drawn` },
   wheelbaseMotor: { value: 2.2, unit: 'm', basis: 'published', source: `${WIKI_717}: Siemens SGP SF7000 bogies, "Wheelbase 2,200 mm (motor bogies)"` },
@@ -276,7 +296,7 @@ export const DESIRO_700 = {
   drivingCarLength: { value: 20.55, unit: 'm', basis: 'assumed', source: `Not published per car. Worked out, as ASSUMED, from the 8-car unit length of 162.0 m (${SIEMENS_700}) less six intermediate cars of 20.15 m, shared between the two end cars: (162.0 - 6 x 20.15) / 2 = 20.55 m. The Class 717's published 121.674 m agrees: 2 x 20.55 + 4 x 20.15 = 121.7 m. To be replaced.` },
   bodyWidth: { value: 2.8, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Width 2,800 mm"; ${WIKI_700}: "Width 2.80 m (9 ft 2 in)"` },
   /** Neither the datasheet nor the Wikipedia page gives a height; taken as the Class 717's assumption. */
-  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published (the Siemens datasheet and Wikipedia give no height). Taken equal to the Class 717\'s assumed 3.77 m, which is the Class 387\'s published height, as all three run the same UK routes; to be replaced.' },
+  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'UNVERIFIABLE: not published (the Siemens datasheet and Wikipedia give no height; read 2026-11-08). Taken equal to the Class 717\'s assumed 3.77 m, which is the Class 387\'s published height, as all three run the same UK routes; to be replaced by a dimensioned drawing.' },
   floorHeight: { value: 1.1, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Floor height (a.r.l.) 1,100 mm"; ${WIKI_700}: "Floor height 1.10 m (43.31 in)"` },
   wheelDiameter: { value: 0.82, unit: 'm', basis: 'published', source: `${SIEMENS_700}: "Wheel diameter 820 mm (new) / 760 mm (worn)"; the new wheel is drawn` },
   wheelbaseMotor: { value: 2.2, unit: 'm', basis: 'published', source: `${WIKI_700}: Siemens SGP SF7000 bogies, "Wheelbase 2,200 mm (motor bogies)"` },
@@ -300,7 +320,7 @@ export const ADELANTE = {
   carLength: { value: 23.02, unit: 'm', basis: 'published', source: `${ANGEL_180}, https://angeltrains.co.uk/fleet/class-180/ (reviewed 2026-11-09): 23.02 m for MFL, MSL, MSLRB. Prefer the fleet owner's type-specific figure over ${WIKI_180}'s 23.03 m. Calculated sum from the cited 2 DMSL + 3 intermediate formation: 2*23.71 + 3*23.02 = 116.48 m; this is not a published whole-unit length; the secondary whole-unit figure is 116.52 m (${WIKI_180}; ${LOCO_180}). Do not stretch individual cars to force agreement.` },
   drivingCarLength: { value: 23.71, unit: 'm', basis: 'published', source: `${WIKI_180}: "Car length 23.71 or 23.03 m", the driving cars (DMSL); ${ANGEL_180}: "23.71 m (DMSL)"` },
   bodyWidth: { value: 2.73, unit: 'm', basis: 'published', source: `${WIKI_180}: "Width 2.73 m (8 ft 11 1/2 in)"; ${ANGEL_180}: "Width 2.73 m"` },
-  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia, loco-info.com and Angel Trains give no height). 3.77 m is what one aggregator (gptkb.org) lists for the class, unverified, and is the Class 387\'s published height; to be replaced.' },
+  height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'UNVERIFIABLE: not published in any page read (Wikipedia, loco-info.com and Angel Trains give no height; read 2026-11-08). 3.77 m is what one aggregator (gptkb.org) lists for the class, unsourced, and is the Class 387\'s published height; to be replaced by a dimensioned drawing.' },
   floorHeight: { value: 1.1, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a typical UK diesel multiple unit, to be replaced.' },
   wheelDiameter: { value: 0.84, unit: 'm', basis: 'assumed', source: 'Not published in any page read (a forum thread asks the same question unanswered); a typical new wheel for a UK DMU, to be replaced.' },
   wheelbaseMotor: { value: 2.7, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia names the bogies "Alstom MB2" and gives no wheelbase); a typical value, to be replaced.' },
