@@ -374,6 +374,12 @@ interface UnderfloorSpec {
   clearance: number;
 }
 
+/** The finish of a body's roof fairings where they are not the grey default: a colour, and (where the fairing is a louvred hatch) the ridges across its top. */
+export interface CoverStyle {
+  colour: number;
+  ridges?: { pitch: number; width: number; colour: number; lift: number; margin: number };
+}
+
 interface BodySpec {
   family: Family;
   /** half the body width: the door panes are the widest points */
@@ -387,6 +393,8 @@ interface BodySpec {
   coverHeight: number;
   coverBw: number;
   coverTw: number;
+  /** what the fairings wear when they are not the pale grey of an electric unit's: their own colour, and the louvre ridges along the top of each (the Class 180's cooler hatches) */
+  coverStyle?: CoverStyle;
   skirtBottom: number;
   cutout: number;
   doorWidth: number;
@@ -762,6 +770,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     coverHeight: cover,
     coverBw: 0.9,
     coverTw: 0.7,
+    // the fairings are the cooler's hatches, dark and louvred (GC180-01 and GC180-05: black panels with fine louvres on the roof, not the Azuma's pale grey fairings); ASSUMED
+    // ridge sizes: 4 cm across on a 12 cm pitch, standing 4 mm proud of the hatch's top
+    coverStyle: { colour: 0x1b1d21, ridges: { pitch: 0.12, width: 0.04, colour: 0x3a3e45, lift: 0.004, margin: 0.2 } },
     skirtBottom: 0.9,
     cutout: 2.0,
     doorWidth: fig.doorWidth.value,
@@ -1645,7 +1656,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     covers = without(covers, k0, k1);
     roofKit(detail, { style: spec.roofKit.style, p0: car.pantograph[0], p1: car.pantograph[1], dir: kitDir, crown: spec.crown, height: spec.roofKit.height });
   } else if (car.pantograph) covers = without(covers, car.pantograph[0] - 0.35, car.pantograph[1] + 0.35);
-  const coverColour = col(0xb4b8be);
+  const coverColour = col(spec.coverStyle?.colour ?? 0xb4b8be);
+  const ridges = spec.coverStyle?.ridges;
   for (const [z0, z1] of covers) {
     if (z1 - z0 < 0.8) continue;
     const yb = spec.crown - 0.04;
@@ -1659,6 +1671,18 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const f = (a: V3, b: V3, c3: V3, d: V3): void => detail.face([a, b, c3, d], mean8, coverColour);
     f(hi[0] as V3, hi[1] as V3, hi[2] as V3, hi[3] as V3);
     for (let k = 0; k < 4; k++) f(lo[k] as V3, lo[(k + 1) % 4] as V3, hi[(k + 1) % 4] as V3, hi[k] as V3);
+    // a louvred hatch: ridges across its top, as many on the pitch as fit between its ends (less the margin), centred, and stood off the top by the lift
+    if (ridges) {
+      const room = z1 - z0 - 2 * ez - 2 * ridges.margin - ridges.width;
+      const n = Math.floor(room / ridges.pitch + 1e-9) + 1;
+      const yr = yt + ridges.lift;
+      const up: V3 = [0, 1, 0];
+      const xr = tw - ridges.margin;
+      for (let k = 0; k < n; k++) {
+        const zc = (z0 + z1) / 2 + (k - (n - 1) / 2) * ridges.pitch;
+        detail.quad([[-xr, yr, zc - ridges.width / 2], [xr, yr, zc - ridges.width / 2], [xr, yr, zc + ridges.width / 2], [-xr, yr, zc + ridges.width / 2]], [up, up, up, up], col(ridges.colour));
+      }
+    }
   }
 
   // skirts between the bogie cut-outs, and the dark underframe seen through the cut-outs

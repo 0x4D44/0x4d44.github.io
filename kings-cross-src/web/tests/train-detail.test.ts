@@ -3918,6 +3918,61 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
   }
 });
 
+test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the top for every 12 cm; every other family\'s are the pale grey fairings, plain', () => {
+  // (GC180-01 and GC180-05: black panels with fine louvres on the roof of the diesel unit, not an electric unit's pale grey fairings)
+  const PALE = 0xb4b8be;
+  const HATCH = 0x1b1d21;
+  const RIDGE = 0x3a3e45;
+  for (const kind of ALL_KINDS) {
+    const spec = bodySpec(familyOf(kind));
+    const g = built(kind);
+    const top = spec.crown + spec.coverHeight;
+    const is180 = familyOf(kind) === 'adelante';
+    // the pinned values, literal: the hatches' colour and the ridges' sizes (ASSUMED, read off the photographs by eye)
+    if (is180) assert.deepEqual(spec.coverStyle, { colour: HATCH, ridges: { pitch: 0.12, width: 0.04, colour: RIDGE, lift: 0.004, margin: 0.2 } });
+    else assert.equal(spec.coverStyle, undefined, `${kind}: the default fairings`);
+    const colour = is180 ? HATCH : PALE;
+    let covers = 0;
+    for (const car of trainLayout(kind).cars.slice(0, 3)) {
+      const mesh = detailOf(g, car);
+      // each cover's top is a quad at the cover's height, over the crown
+      const tops = quadBoxes(trisOfColour(mesh, colour).filter((t) => t.every((v) => Math.abs(v.y - top) < 1e-4))).sort((a, b) => a[0] - b[0]);
+      covers += tops.length;
+      // the other finish is nowhere on the roof
+      const other = trisOfColour(mesh, is180 ? PALE : HATCH).filter((t) => t.some((v) => v.y > spec.crown));
+      assert.equal(other.length, 0, `${kind} car ${car.index}: no ${is180 ? 'pale' : 'dark'} cover triangles on the roof`);
+      const ridgeTris = trisOfColour(mesh, RIDGE).filter((t) => t.every((v) => Math.abs(v.y - (top + 0.004)) < 1e-4));
+      if (!is180) {
+        assert.equal(ridgeTris.length, 0, `${kind} car ${car.index}: plain covers`);
+        continue;
+      }
+      assert.ok(tops.length >= 2, `${kind} car ${car.index}: ${tops.length} hatches`);
+      const ridges = quadBoxes(ridgeTris).sort((a, b) => a[0] - b[0]);
+      let seen = 0;
+      for (const [k, t] of tops.entries()) {
+        const mine = ridges.filter((q) => midZ(q) > t[0] && midZ(q) < t[1]);
+        // the ridges on the pitch that fit between the top's ends, less 0.2 m at each, and one more: (length - 0.4 - 0.04) / 0.12 rounded down, plus one
+        const want = Math.floor((t[1] - t[0] - 0.4 - 0.04) / 0.12 + 1e-9) + 1;
+        assert.equal(mine.length, want, `${kind} car ${car.index} hatch ${k}: ridges over a top ${(t[1] - t[0]).toFixed(2)} m long`);
+        assert.ok(want >= 30, `${kind} car ${car.index} hatch ${k}: ${want} ridges`);
+        seen += mine.length;
+        mine.forEach((q, i) => {
+          // (the geometry holds float32s: a place this far down a train is good to ZTOL)
+          near(q[1] - q[0], 0.04, ZTOL, `ridge ${i} is 4 cm across`);
+          near(midZ(q), (t[0] + t[1]) / 2 + (i - (want - 1) / 2) * 0.12, ZTOL, `ridge ${i} is on the pitch, the row centred on the hatch`);
+        });
+        // across the top, 0.2 m short of each edge of it (the top is 0.7 m each side of the centre line)
+        const xs = ridgeTris.filter((tr) => tr.every((v) => v.z > t[0] && v.z < t[1])).flat().map((v) => Math.abs(v.x));
+        near(Math.max(...xs), 0.5, ZTOL, `${kind} car ${car.index} hatch ${k}: ridges end 0.2 m in from the edge of the top`);
+      }
+      assert.equal(seen, ridges.length, `${kind} car ${car.index}: every ridge is on a hatch`);
+    }
+    assert.ok(covers >= 4, `${kind}: ${covers} covers on the first three cars`);
+  }
+  // darker than the roof they stand on: black panels on the lighter roof (GC180-01)
+  assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof) - 0.1, `hatches (${lumaOf(HATCH).toFixed(2)}) darker than the roof (${lumaOf(liveryFor('gc180x5').roof).toFixed(2)})`);
+});
+
 test('pantograph: the head carries two dark carbon strips along its top, inside the bow, no higher than the folded pantograph', () => {
   let seen = 0;
   for (const kind of ALL_KINDS) {
