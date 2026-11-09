@@ -480,7 +480,10 @@ function addHotelRoofDetails(parts: PartMap<Key>, plan: HotelPlan): void {
 export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   const parts: PartMap<Key> = {};
   const stone = part(parts, 'stone');
-  addWalls(part(parts, 'brick'), plan.outline, 0, plan.eaves);
+  // hist-a: the ground floor is pale stucco, cream piers between tall arched openings, up to its string course (the scorer: "a pale stucco base with tall openings"); the brick begins there
+  const stucco = plan.groundStorey - 0.12;
+  addWalls(part(parts, 'brick'), plan.outline, stucco, plan.eaves);
+  addWalls(stone, plan.outline, 0, stucco);
   const segs = segmentsOutside(polygonEdges(plan.outline), []);
   const top = plan.eaves - CORNICE_HEIGHT;
   // hist-a: a stucco string course over the ground floor and a sill course under each upper row (the first has the ground floor's); sizes ASSUMED.
@@ -857,6 +860,13 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     addBand(stone, ring(lant), rT, 0.4, 0.1);
     addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
     for (const c of sq(lant)) addSpike(stone, c, t.along, t.out, 0.22, rT, lT + 0.9);
+    // hist-b, hist-c: a lucarne on each face of the spire, a stone gablet 1.2 m wide and 2.6 m to its apex over a pointed light, its foot 0.9 m up the slope; sizes ASSUMED
+    const yb = wH + g + 0.9;
+    const slope = (rT - wH - g) / (rb - lant);
+    for (const f of facesAt(rb - (yb - wH - g) / slope)) {
+      addGable(parts, [f.at[0], yb, f.at[1]], f.dir, f.normal, slope, 0.6, 2.6, 1.5, 'stone');
+      addFramedWindow(parts, f, yb + 0.25, 0.7, 1.5, 'pointed', 0.1);
+    }
   }
   addSpike(slate, t.centre, t.along, t.out, lant - 0.3, lT, H - 1.8);
   addSpike(slate, t.centre, t.along, t.out, 0.08, H - 1.8, H);
@@ -1055,6 +1065,24 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     } else {
       strip(slate, k, 0, along);
       strip(lining, k, 0.08, across); // painted boarding just under it: the shared lining is seen from inside only (hist-d)
+    }
+  }
+  // hist-d2: Gothic arcading on the brick side walls, seen from inside between the ribs: two pointed arches to a bay (at 0.27 and 0.73 of it), each a stone surround
+  // 3.3 x 6.1 m from 0.85 m up the wall round a dark recess 2.6 x 5.6 m from 1.2 m, standing 0.03 and 0.06 m inside it. Sizes ASSUMED.
+  const stone = part(parts, 'stone');
+  for (const k of [0, steps - 1]) {
+    const [lo, hi] = k ? [sec(steps), sec(steps - 1)] : [sec(0), sec(1)];
+    const n = out[k] as P2;
+    const l = Math.hypot(hi.x - lo.x, hi.y - lo.y);
+    for (let i = 1; i < plan.ribs.length; i++) {
+      for (const f of [0.27, 0.73]) {
+        const v = (plan.ribs[i - 1] as number) * (1 - f) + (plan.ribs[i] as number) * f;
+        for (const [m, w, h, base, d] of [[stone, 3.3, 6.1, 0.85, 0.03], [pane, 2.6, 5.6, 1.2, 0.06]] as const) {
+          const o = windowOutline(w, h, 'pointed').slice(0, -1); // its last point repeats the one before
+          const pt =([x, y]: [number, number]): V3 => at(lo.x + ((hi.x - lo.x) / l) * (base + y) - n[0] * d, v + x, Math.max(0, lo.y + ((hi.y - lo.y) / l) * (base + y) - n[1] * d));
+          m.poly(o.map(pt), o, { facing: dir(-n[0], -n[1]) });
+        }
+      }
     }
   }
   // the ribs: two chords and an X-braced lattice 2.6 m deep (hist-d, hist-d2: deep girders that read as a dense web over the whole arch); a bar is a ribbon of width w and

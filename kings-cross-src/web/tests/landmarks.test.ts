@@ -506,6 +506,28 @@ test('Great Northern Hotel [hist-a]: a stucco base 1 m tall stands 0.06 m proud 
   });
 });
 
+test('Great Northern Hotel [hist-a]: the ground floor is pale stucco, a wall of the cream stone from the ground to the foot of its string course on every wall, and the brick begins there', () => {
+  const parts = hotelGeometry(hotel);
+  const stone = triangles(parts.stone as Batch);
+  const brick = triangles(parts.brick as Batch);
+  const top = hotel.groundStorey - 0.12;
+  for (const e of polygonEdges(hotel.outline).filter((q) => q.length >= 0.05)) {
+    const depth = (v: V3): number => (v[0] - e.a[0]) * e.normal[0] + (v[2] - e.a[1]) * e.normal[1];
+    const along = (v: V3): number => (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1];
+    const onWall = (t: Tri): boolean => t.p.every((v) => Math.abs(depth(v)) < 1e-6 && along(v) > -1e-6 && along(v) < e.length + 1e-6);
+    const low = stone.filter((t) => onWall(t));
+    assert.equal(low.length, 2, `wall ${e.i}: one stucco quad (two triangles)`);
+    const lowYs = low.flatMap((t) => t.p.map((v) => v[1]));
+    close(Math.min(...lowYs), 0, 1e-9, `wall ${e.i}: the stucco stands on the ground`);
+    close(Math.max(...lowYs), top, 1e-9, `wall ${e.i}: and runs up to the foot of the string course`);
+    const wall = brick.filter((t) => onWall(t));
+    assert.equal(wall.length, 2, `wall ${e.i}: one brick quad`);
+    const ys = wall.flatMap((t) => t.p.map((v) => v[1]));
+    close(Math.min(...ys), top, 1e-9, `wall ${e.i}: the brick begins where the stucco ends`);
+    close(Math.max(...ys), hotel.eaves, 1e-9, `wall ${e.i}: and runs to the eaves`);
+  }
+});
+
 test('Great Northern Hotel [hist-a]: the ground-floor arches are 1.6 x 3.2 m on a sill 0.6 m up, each in a cream archivolt a quarter-metre wider each side (less where the bay is narrow)', () => {
   const parts = hotelGeometry(hotel);
   const stone = triangles(parts.stone as Batch);
@@ -888,7 +910,7 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   assert.ok(t.height - st.wall >= 3 * (st.wall - st.corbel), `${t.height - st.wall} m of spire over a ${st.wall - st.corbel} m clock stage`);
   // the steep roof: its base a little over half the stage's width (hist-c), its facets near 73 degrees, as steep as hist-b and hist-c show
   const slate = triangles(parts.slate as Batch).filter(within(stage));
-  const steep = slate.filter((s) => s.p.every((v) => v[1] >= st.wall + g - 1e-6 && v[1] <= st.roof + 1e-6) && within(3.3)(s));
+  const steep = slate.filter((s) => s.p.every((v) => v[1] >= st.wall + g - 1e-6 && v[1] <= st.roof + 1e-6) && within(3.3)(s) && worldArea(s) > 5); // not the little cheeks and roofs of the lucarnes
   assert.equal(steep.length, 8, 'four facets of two triangles');
   for (const s of steep) assert.ok(pitch(s) > 70 && pitch(s) < 76, `a steep roof facet at ${pitch(s)} degrees`);
   assert.ok(Math.max(...steep.flatMap((s) => s.p.map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o))))) <= 0.65 * stage, 'its base is under two thirds of the stage\'s width');
@@ -909,6 +931,48 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   assert.ok(t.height - 1.8 - st.lantern > 2 * (2 * baseHalf), `a needle ${t.height - 1.8 - st.lantern} m tall on a base ${2 * baseHalf} m wide`);
   const rod = needle.flatMap((s) => s.p).filter((v) => Math.abs(v[1] - (t.height - 1.8)) < 1e-6);
   assert.ok(rod.length > 0 && rod.every((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)) < 0.2), 'the rod rises from the needle\'s tip');
+});
+
+test('Midland Grand [hist-b, hist-c]: a lucarne on each face of the clock tower\'s spire: a stone gablet 1.2 m wide and 2.6 m to its apex standing on the slope with its cheeks meeting the roof, over a pointed light', () => {
+  const parts = midlandGeometry(midland);
+  const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
+  const st = towerStages(t.height);
+  const foot = st.wall + 4.3; // where the steep roof begins
+  const yb = foot + 0.9;
+  const slate = triangles(parts.slate as Batch);
+  const stone = triangles(parts.stone as Batch);
+  const pane = triangles(parts.pane as Batch);
+  for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+    const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
+    const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
+    // the spire's facet on this face, and from its own corners the depth of the slope at any height
+    const facet = slate.filter((s) => worldArea(s) > 5 && s.p.every((v) => v[1] >= foot - 1e-6 && v[1] <= st.roof + 1e-6 && depth(v) > 1.6 - 1e-6));
+    assert.equal(facet.length, 2, `${n}: the facet of two triangles`);
+    const corners = facet.flatMap((s) => s.p);
+    const [low, high] = [corners.find((v) => Math.abs(v[1] - foot) < 1e-6) as V3, corners.find((v) => Math.abs(v[1] - st.roof) < 1e-6) as V3];
+    const slope = (y: number): number => depth(low) + ((y - foot) / (st.roof - foot)) * (depth(high) - depth(low));
+    const front = slope(yb);
+    // the gablet's stone face and its border, in one plane on the slope
+    const face = stone.filter((s) => s.p.every((v) => Math.abs(depth(v) - front) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
+    assert.equal(face.length, 11, `${n}: a face of three triangles and a border of four quads (up the sides and along the rakes)`);
+    const ys = face.flatMap((s) => s.p.map((v) => v[1]));
+    close(Math.min(...ys), yb, 1e-9, `${n}: its foot is on the slope, 0.9 m above where the steep roof begins`);
+    close(Math.max(...ys), yb + 2.6 + 1.7 * 0.14, 1e-9, `${n}: 2.6 m to the apex, and the border over it`);
+    const xs = face.flatMap((s) => s.p.map(across));
+    close(Math.max(...xs), 0.6 + 0.14, 1e-6, `${n}: 1.2 m wide, and its border`);
+    close(Math.min(...xs), -(0.6 + 0.14), 1e-6, `${n}: centred on the face`);
+    // the light: a pointed pane 0.7 x 1.5 m, 0.25 m up the face and 0.1 m in front of it
+    const light = pane.filter((s) => s.p.every((v) => Math.abs(depth(v) - front - 0.1) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
+    assert.ok(light.length >= 7, `${n}: a fan of triangles for the light`);
+    close(Math.min(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 0.25, 1e-9, `${n}: the light's sill`);
+    close(Math.max(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 1.75, 1e-9, `${n}: its head`);
+    close(Math.max(...light.flatMap((s) => s.p.map((v) => Math.abs(across(v))))), 0.35, 1e-6, `${n}: 0.7 m wide`);
+    // the cheeks and the little roof: slate, from the face back to the slope, every back corner on it
+    const cheeks = slate.filter((s) => worldArea(s) < 5 && s.p.every((v) => v[1] >= yb - 1e-6 && v[1] <= yb + 2.6 + 1e-6 && Math.abs(across(v)) <= 0.6 + 1e-6 && depth(v) > 1.6));
+    assert.equal(cheeks.length, 6, `${n}: a cheek (a triangle) and half a roof (a quad) on each side`);
+    for (const v of cheeks.flatMap((s) => s.p)) assert.ok(Math.abs(depth(v) - front) < 1e-6 || Math.abs(depth(v) - slope(v[1])) < 1e-6, `${n}: a cheek corner at height ${v[1].toFixed(2)} is on the face or on the slope`);
+    assert.ok(cheeks.flatMap((s) => s.p).filter((v) => Math.abs(depth(v) - slope(v[1])) < 1e-6 && Math.abs(depth(v) - front) > 1e-6).length >= 4, `${n}: the cheeks run back into the roof`);
+  }
 });
 
 test('Midland Grand [hist-c]: a row of corbels 0.9 m tall under the corbel table on every face of each tower, no farther out than its first step, in front of a dark recess, clear of the belfry\'s windows', () => {
@@ -1576,7 +1640,7 @@ test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of g
   close(Math.min(...slopePts.map((p) => p.y)), lo, 1e-9, 'the low edge is level with the girders\' underside');
   close(Math.max(...slopePts.map((p) => p.y)), lo + F.truss, 1e-9, 'each tooth climbs a 2.6 m truss depth');
   close(Math.min(...slopePts.map((p) => p.v)), barlow.barlowLength + F.transition, 1e-9, 'the roof starts where the transition ends');
-  const risers = triangles(parts.pane as Batch);
+  const risers = triangles(parts.pane as Batch).filter(beyond); // the dark recesses of the shed's arcading are pane too, inside the vault
   assert.equal(risers.length, 14 * 2 * 2, 'a riser to each tooth, seen from both sides');
   assert.ok(risers.every((t) => Math.abs(unit(geoNormal(t))[1]) < 1e-9), 'upright');
   const north: V3 = [Math.sin(barlow.heading), 0, -Math.cos(barlow.heading)];
@@ -1618,6 +1682,48 @@ test('Barlow shed [hist-d2, hist-e]: the springing strip of the arch on each sid
   }
 });
 
+test('Barlow shed [hist-d2]: Gothic arcading on both brick side walls, between the ribs: two pointed arches to a bay, a stone surround round a dark recess, standing 0.03 and 0.06 m inside the wall and facing in', () => {
+  const parts = barlowGeometry(barlow);
+  const [first, last] = [barlow.ribs[0] as number, barlow.ribs[barlow.ribs.length - 1] as number];
+  const bays = barlow.ribs.length - 1;
+  assert.equal(bays, 23);
+  for (const [key, w, h, base, d] of [['stone', 3.3, 6.1, 0.85, 0.03], ['pane', 2.6, 5.6, 1.2, 0.06]] as const) {
+    // the vault's own triangles low on the walls between the first and last rib (the stacks' stone is at the eaves, the extension's risers beyond the gable)
+    const all = triangles(parts[key] as Batch).filter((t) => t.p.every((p) => inVault(p).y < 8 && inVault(p).v > first - 1e-6 && inVault(p).v < last + 1e-6));
+    assert.equal(all.length, 2 * bays * 2 * 7, `${key}: two walls, two arches to each of ${bays} bays, a fan of seven triangles`);
+    for (const side of [-1, 1]) {
+      const [a, b] = (side < 0 ? [skin[0], skin[1]] : [skin[23], skin[24]]) as [{ u: number; y: number }, { u: number; y: number }];
+      const [lo, hi] = side < 0 ? [a, b] : [b, a]; // from the foot up the wall
+      const l = Math.hypot(b.u - a.u, b.y - a.y);
+      const n: [number, number] = [-(b.y - a.y) / l, (b.u - a.u) / l]; // the wall's outward normal in the section
+      const up: [number, number] = [(hi.u - lo.u) / l, (hi.y - lo.y) / l];
+      const mine = all.filter((t) => Math.sign(inVault(t.p[0]).u - barlow.width / 2) === side);
+      assert.equal(mine.length, bays * 2 * 7, `${key}, ${side < 0 ? 'west' : 'east'} wall: two arches to each bay`);
+      for (let g = 0; g < bays * 2; g++) {
+        const fan = mine.slice(g * 7, g * 7 + 7);
+        const pts = fan.flatMap((t) => t.p).map(inVault);
+        const bay = Math.floor(g / 2);
+        const [r0, r1, f] = [barlow.ribs[bay] as number, barlow.ribs[bay + 1] as number, g % 2 ? 0.73 : 0.27];
+        const vs = pts.map((p) => p.v);
+        close((Math.min(...vs) + Math.max(...vs)) / 2, r0 * (1 - f) + r1 * f, 1e-6, `${key} arch ${g}: ${f} of the way across bay ${bay + 1}`);
+        close(Math.max(...vs) - Math.min(...vs), w, 1e-6, `${key} arch ${g}: ${w} m wide`);
+        assert.ok(Math.min(...vs) > r0 + 0.2 && Math.max(...vs) < r1 - 0.2, `${key} arch ${g}: clear of the ribs either side`);
+        const s = pts.map((p) => (p.u - lo.u) * up[0] + (p.y - lo.y) * up[1]);
+        close(Math.min(...s), base, 1e-6, `${key} arch ${g}: its foot ${base} m up the wall`);
+        close(Math.max(...s), base + h, 1e-6, `${key} arch ${g}: ${h} m tall`);
+        for (const p of pts) close(-((p.u - lo.u) * n[0] + (p.y - lo.y) * n[1]), d, 1e-6, `${key} arch ${g}: ${d} m inside the wall`);
+        for (const t of fan) {
+          const c: V3 = [0, 1, 2].map((k) => (t.p[0][k] + t.p[1][k] + t.p[2][k]) / 3) as V3;
+          const g3 = unit(geoNormal(t));
+          const here = inVault(c);
+          const ahead = inVault([c[0] + g3[0], c[1] + g3[1], c[2] + g3[2]]);
+          assert.ok((ahead.u - here.u) * -side > 0.5, `${key} arch ${g}: faces into the shed`);
+        }
+      }
+    }
+  }
+});
+
 test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Pancras Road (east) wall, one every 14 m, each 3.6 m tall from a foot 0.5 m under the eaves and wholly outside the shell', () => {
   const parts = barlowGeometry(barlow);
   // the east half of the arch, from its foot up to the crown: where the wall's outer face stands at each height
@@ -1644,7 +1750,8 @@ test('Barlow shed [hist-e]: a row of tall brick stacks along the top of the Panc
     close(Math.max(...shaft.map((p) => p.u)) - Math.min(...shaft.map((p) => p.u)), 0.95, 1e-6, 'and 0.95 m across it');
   }
   // nothing of a stack, its stone corbel and cap included, is inside the shell: from the vault the wall shows whole
-  const all = [...stacks, ...triangles(parts.stone as Batch)].flatMap((t) => t.p).map(inVault);
+  // (the stone of the arcading on the walls below is inside the vault on purpose: a stack's stone is up at the eaves)
+  const all = [...stacks, ...triangles(parts.stone as Batch).filter((t) => t.p.every((p) => inVault(p).y > 8))].flatMap((t) => t.p).map(inVault);
   assert.ok(all.length >= n * 60, `${all.length} stack vertices`);
   for (const p of all) assert.ok(p.u >= wallU(p.y) - 1e-6, `a stack vertex at height ${p.y.toFixed(2)} is ${(wallU(p.y) - p.u).toFixed(3)} m inside the shell`);
 });
