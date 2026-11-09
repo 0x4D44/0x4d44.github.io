@@ -69,19 +69,22 @@ test('measures every ALL_KINDS coach body and roof envelope while excluding sepa
   assert.equal(envelope.minY, 2);
 });
 
-test('keeps class-specific source dimensions and exposes the Class 802 driving-car discrepancy', () => {
+test('keeps the Class 802 transfer explicitly assumed and selects the Class 180 fleet owner’s dimensions', () => {
   const result = report();
   const hullDriving = result.kinds.find(({ kind }) => kind === 'hull5')!.cars[0]!;
   assert.equal(hullDriving.type, 'DPTS');
   assert.equal(hullDriving.model.vehicleLengthM, 25.85);
   assert.equal(hullDriving.expected.lengthM.published.values[0]?.valueM, 25.7);
   assert.equal(hullDriving.expected.lengthM.published.status, 'reported');
+  assert.equal(hullDriving.expected.lengthM.modelSpec.basis, 'assumed');
   assert.match(hullDriving.expected.lengthM.published.note ?? '', /25\.85/);
   assert.equal(hullDriving.expected.lengthM.published.values[0]?.sources[0]?.url, 'https://en.wikipedia.org/wiki/British_Rail_Class_802');
 
   const gcMiddle = result.kinds.find(({ kind }) => kind === 'gc180x5')!.cars[1]!;
   assert.equal(gcMiddle.expected.lengthM.published.status, 'source-conflict');
-  assert.deepEqual(gcMiddle.expected.lengthM.published.values.map(({ valueM }) => valueM), [23.03, 23.02]);
+  assert.equal(gcMiddle.model.vehicleLengthM, 23.02);
+  assert.deepEqual(gcMiddle.expected.lengthM.published.values.map(({ valueM }) => valueM), [23.02, 23.03]);
+  assert.equal(gcMiddle.expected.lengthM.published.values[0]?.sources[0]?.url, 'https://angeltrains.co.uk/fleet/class-180/');
   assert.ok(gcMiddle.expected.lengthM.published.values.every(({ sources }) => sources[0]?.url.startsWith('https://')));
 });
 

@@ -172,10 +172,10 @@ function lengthFigure(family: Family, type: string): Figure {
   return DRIVING.has(type as never) && figure.drivingCarLength ? figure.drivingCarLength : figure.carLength;
 }
 
-function modelFigures(family: Family, type: string): { length: Figure; width: Figure; height: { value: number; basis: string; source: string } } {
+function modelFigures(family: Family, type: string, kind: TrainKind): { length: Figure; width: Figure; height: { value: number; basis: string; source: string } } {
   if (family === 'at300') {
     return {
-      length: lengthFigure(family, type),
+      length: kind === 'hull5' && DRIVING.has(type as never) ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.hull5.source } : lengthFigure(family, type),
       width: FIGURES.bodyWidth,
       height: {
         value: roofHeight(),
@@ -253,7 +253,7 @@ function publishedDimensions(kind: TrainKind, type: string): {
     return {
       length: {
         values: [{ valueM: drive ? 25.7 : 26, basis: 'published', sources: [CLASS_CITATIONS.wiki802], ...(drive ? { note: 'Class 802 Wikipedia reports 25.7 m driving vehicles; the shared model uses the Class 800/801 figure 25.85 m.' } : {}) }],
-        note: drive ? 'Model spec 25.85 m differs from the Class 802 published driving-car figure 25.7 m by 0.15 m.' : undefined,
+        note: drive ? 'Retain 25.85 m as an ASSUMED Class 800/801 transfer, not a verified Class 802 dimension. Angel Trains (https://angeltrains.co.uk/fleet/class-802/) gives nominal 26 m only; no type-specific primary cab figure found. Wikipedia’s 25.7 m is retained as a weaker conflicting citation, not used to rescale the model.' : undefined,
       },
       width: { values: [{ valueM: 2.7, basis: 'published', sources: [CLASS_CITATIONS.angel802] }] },
       height: { values: noFigure('Class 802 sources do not give an overall height.'), note: 'No published overall body/roof height was found for Class 802.' },
@@ -297,9 +297,9 @@ function publishedDimensions(kind: TrainKind, type: string): {
     }
     return {
       length: { values: [
-        { valueM: 23.03, basis: 'published', sources: [CLASS_CITATIONS.wiki180], note: 'Wikipedia figure, used by the model.' },
-        { valueM: 23.02, basis: 'published', sources: [CLASS_CITATIONS.angel180], note: 'Angel Trains figure; 0.01 m shorter than Wikipedia.' },
-      ], note: 'Published sources differ by 0.01 m.' },
+        { valueM: 23.02, basis: 'published', sources: [CLASS_CITATIONS.angel180], note: 'Fleet owner’s type-specific figure, selected for the model.' },
+        { valueM: 23.03, basis: 'published', sources: [CLASS_CITATIONS.wiki180], note: 'Secondary figure, superseded for the model by the fleet owner.' },
+      ], note: 'Prefer Angel Trains’ 23.02 m intermediate vehicles. Calculated from Angel Trains’ published formation and rounded car dimensions: 2×23.71 + 3×23.02 = 116.48 m (not a published whole-unit length), 0.04 m below the secondary whole-unit 116.52 m; no artificial length adjustment.' },
       width: { values: [{ valueM: 2.73, basis: 'published', sources: [CLASS_CITATIONS.angel180, CLASS_CITATIONS.wiki180] }] },
       height: { values: noFigure('Class 180 Wikipedia and Angel Trains pages do not give an overall height.'), note: 'No published overall body/roof height was found for Class 180.' },
     };
@@ -344,7 +344,7 @@ function measureKinds(): Axis03Report['kinds'] {
       const carGroup = group.getObjectByName(`car-${car.index}`);
       if (!carGroup) throw new Error(`${kind} car ${car.index} is missing from buildTrain()`);
       const geometry = measureCarEnvelope(carGroup);
-      const figures = modelFigures(spec.family, car.type);
+      const figures = modelFigures(spec.family, car.type, kind);
       const published = publishedDimensions(kind, car.type);
       const lengthM = expectedDimension(figures.length, published.length.values, modelDimensionSources(kind, 'length'), published.length.note);
       const widthM = expectedDimension(figures.width, published.width.values, modelDimensionSources(kind, 'width'), published.width.note);
