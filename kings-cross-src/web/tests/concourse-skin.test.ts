@@ -22,7 +22,7 @@ const hotel = data.buildings.find(b => b.id === 46821177)!;
 const skin = buildConcourse(canopy, station.pts, layout, [hotel.pts]);
 skin.updateMatrixWorld(true);
 const { centre: axis, grid: skinGrid } = concourseGrid(canopy, station.pts, layout, [hotel.pts]);
-const SLOPE_FACE = 0.7; // a roof facet's normal.y is 0.89 or more (26 degrees at the rim); the edge apron's is about 0.4
+const SLOPE_FACE = 0.7; // a roof facet's normal.y is 0.89 or more (26 degrees at the rim)
 
 interface Face { a: THREE.Vector3; b: THREE.Vector3; c: THREE.Vector3; mid: THREE.Vector3; normal: THREE.Vector3; area: number }
 function faces(name: string): Face[] {
@@ -50,8 +50,16 @@ function toRim(x: number, z: number): number {
 }
 const toAxis = (v: THREE.Vector3): number => Math.hypot(v.x - axis[0], v.z - axis[1]);
 const inGlazedZone = (f: Face): boolean => toAxis(f.mid) < FUNNEL_GLAZING_RADIUS || toRim(f.mid.x, f.mid.z) < RIM_GLAZING_WIDTH;
-const soffitCells = (): Face[] => faces('concourse-panels').filter(f => f.normal.y > SLOPE_FACE);
-const standing = (): Face[] => faces('concourse-panels').filter(f => f.normal.y <= SLOPE_FACE); // fascia on the outline, upstands between solid and glazed cells
+const soffitCells = (): Face[] => {
+  const cells = faces('concourse-panels');
+  for (const f of cells) assert.ok(f.normal.y > SLOPE_FACE, `the panels hold a face that is not a roof facet (normal.y ${f.normal.y.toFixed(2)})`);
+  return cells;
+};
+const standing = (): Face[] => { // fascia on the outline, upstands between solid and glazed cells: the panels' child
+  const walls = faces('concourse-edges');
+  for (const f of walls) assert.ok(Math.abs(f.normal.y) < 1e-3, `the edge band holds a face that is not vertical (normal.y ${f.normal.y.toFixed(2)})`);
+  return walls;
+};
 const crownOf = (glass: Face[]): Face[] => glass.filter(f => [f.a, f.b, f.c].some(v => toAxis(v) < 1e-3));
 const roofGlass = (): Face[] => { const glass = faces('concourse-glass'), crown = crownOf(glass); return glass.filter(f => !crown.includes(f)); };
 
@@ -178,7 +186,7 @@ test('roof edge: a vertical fascia stands on the outline, over the glazed wall, 
   close(Math.min(...heights), canopy.rim + FASCIA_BOTTOM, EPS);
   // the fascia stands on the cell outline, so the roof's overall extent is that of its cells (the evidence pack pins it at 137.2787 m)
   const along = new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading));
-  const s = faces('concourse-panels').flatMap(f => [f.a, f.b, f.c]).map(v => v.dot(along));
+  const s = [...faces('concourse-panels'), ...standing()].flatMap(f => [f.a, f.b, f.c]).map(v => v.dot(along));
   close(Math.max(...s) - Math.min(...s), 137.278699, 0.001);
 });
 

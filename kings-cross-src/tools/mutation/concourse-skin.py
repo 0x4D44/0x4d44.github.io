@@ -37,7 +37,7 @@ mutations = [
     ('glass bright from above too', 'emissive: 0x16202b', 'emissive: 0xbdd2e6'),
     ('glass seen from above only', "side: THREE.BackSide, depthWrite: false, name: 'concourse-skylight'", "side: THREE.FrontSide, depthWrite: false, name: 'concourse-skylight'"),
     ('oculus omitted', 'for (let i = 0; i < crown.length; i++) {', 'for (let i = 0; i < 0; i++) {'),
-    ('edge fascia omitted', '    soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],', '    if (!rimEdges) soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],'),
+    ('edge fascia omitted', '    standing.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],', '    if (!rimEdges) standing.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],'),
     ('edge fascia hangs below the wall top', 'export const FASCIA_BOTTOM = 0;', 'export const FASCIA_BOTTOM = -0.2;'),
     ('edge fascia leans off the outline', '[t[0], t[1] + SKIN_LIFT, t[2]], [s[0], s[1] + SKIN_LIFT, s[2]]],', '[t[0] + 0.5, t[1] + SKIN_LIFT, t[2]], [s[0] + 0.5, s[1] + SKIN_LIFT, s[2]]],'),
     ('mullion posts as thick as a picket fence', 'export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;', 'export const MULLION = { post: 0.18, bar: 0.07, transom: 0.55 } as const;'),
@@ -53,7 +53,7 @@ mutations = [
     ('closure floats over the cornice', 'a: V3 = [A[0], Math.min(CORNICE_TOP, A[1]), A[2]]', 'a: V3 = [A[0], Math.min(CORNICE_TOP + 3, A[1]), A[2]]'),
     ('no upstands between solid and glazed cells', '    if (cells.length !== 2 || glazed.has(cells[0]!) === glazed.has(cells[1]!)) continue;', '    continue;'),
     ('upstands face the solid cell', '{ facing: [(A[0] + B[0]) / 2 - apex[0], 0, (A[2] + B[2]) / 2 - apex[2]], color: scaled(SOFFIT_TONE, 0.9) }', '{ facing: [apex[0] - (A[0] + B[0]) / 2, 0, apex[2] - (A[2] + B[2]) / 2], color: scaled(SOFFIT_TONE, 0.9) }'),
-    ('upstands stop short of the skin', 'soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)]', 'soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT + 0.05), nodeAt(a, SOFFIT_LIFT + 0.05)]'),
+    ('upstands stop short of the skin', 'standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)]', 'standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT + 0.05), nodeAt(a, SOFFIT_LIFT + 0.05)]'),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:

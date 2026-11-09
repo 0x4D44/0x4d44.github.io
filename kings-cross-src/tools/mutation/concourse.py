@@ -26,6 +26,9 @@ mutations = [
     ('members outside the trumpet', 'r = columnRadius(t, mouth);', 'r = columnRadius(t, mouth) + 1;'),
     ('head one metre below the roof', 'const p: V3 = last ? [...head[i]!] :', 'const p: V3 = last ? [head[i]![0], head[i]![1] - 1, head[i]![2]] :'),
     ('column moved into facade', 'column.position.set(cx, 0, cz);', 'column.position.set(cx + 10, 0, cz);'),
+    ('upstands back in the soffit soup', 'standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)]', 'soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)]'),
+    ('fascia back in the soffit soup', '    standing.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],', '    soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]],'),
+    ('edge band beside the panels, not under them', "if (panels) add(standing, mat.soffit, 'concourse-edges', 0, panels);", "add(standing, mat.soffit, 'concourse-edges');"),
 ]
 def run(label):
     """(exit code, output, why): `why` is empty unless the run was cut short, for its time or the memory it held (never a kill)."""

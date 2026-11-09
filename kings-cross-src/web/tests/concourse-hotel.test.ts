@@ -41,7 +41,7 @@ test('drawn roof and members clear the Great Northern Hotel OSM footprint while 
   const group=buildConcourse(canopy, station.pts, layout, [hotel.pts]);
   const metrics: Record<string,{area:number;count:number}>={};
   const extent:number[]=[];
-  for(const name of ['concourse-panels','concourse-glass','concourse-lattice','concourse-floor']) {
+  for(const name of ['concourse-panels','concourse-edges','concourse-glass','concourse-lattice','concourse-floor']) {
     const mesh=group.getObjectByName(name) as THREE.Mesh, p=mesh.geometry.getAttribute('position'), index=mesh.geometry.index;
     let overlap=0,count=0;
     for(let i=0;i<(index?.count??p.count);i+=3) {
@@ -50,7 +50,7 @@ test('drawn roof and members clear the Great Northern Hotel OSM footprint while 
       if(value>1e-7) {overlap+=value;count++;}
     }
     metrics[name]={area:overlap,count};
-    if(name==='concourse-panels') for(let i=0;i<p.count;i++) extent.push(worldToShed(layout,[p.getX(i),p.getZ(i)]).v);
+    if(name==='concourse-panels'||name==='concourse-edges') for(let i=0;i<p.count;i++) extent.push(worldToShed(layout,[p.getX(i),p.getZ(i)]).v); // the roof's reach: the panels and the edge band under them
   }
   const span=Math.max(...extent)-Math.min(...extent);
   console.log(JSON.stringify({hotelId:hotel.id,metrics,span}));

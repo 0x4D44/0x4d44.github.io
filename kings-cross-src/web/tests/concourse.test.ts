@@ -15,6 +15,14 @@ const canopy = concourseCanopy(data);
 const station = stationBuilding(data) as NonNullable<ReturnType<typeof stationBuilding>>;
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
 const EPS = 1e-4; // float32 geometry
+type V3 = [number, number, number];
+const positions = (mesh: THREE.Mesh): V3[] => { const p = mesh.geometry.getAttribute('position'); return Array.from({ length: p.count }, (_, i): V3 => [p.getX(i), p.getY(i), p.getZ(i)]); };
+/** The roof's panels and everything that hangs under them: the evidence pack (tools/axis01-evidence.ts) measures the roof's reach the same way. */
+const panelVertices = (group: THREE.Group): V3[] => {
+  const out: V3[] = [];
+  (group.getObjectByName('concourse-panels') as THREE.Mesh).traverse(o => { if ((o as THREE.Mesh).isMesh) out.push(...positions(o as THREE.Mesh)); });
+  return out;
+};
 const ringCounts = (d: Diagrid): number[] => {
   const counts: number[] = Array.from({ length: d.rings + 1 }, () => 0);
   for (const n of d.nodes) counts[n.ring] = (counts[n.ring] as number) + 1;
@@ -122,14 +130,14 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
   assert.ok(lattice.min.y > canopy.rim - 0.5 && lattice.min.y < canopy.rim + 2);
   // the funnel is 20 m high (R3); its head stands on the roof's third ring, where the roof has dipped 0.1 to 0.7 m
   assert.ok(bbox(named('concourse-column')).max.y > 19.3 && bbox(named('concourse-column')).max.y < canopy.apex, `the funnel is ${bbox(named('concourse-column')).max.y} m high`);
-  // roof infill and the floor face up; the soffit mesh also holds the roof's vertical edge fascia, which looks sideways but never down
-  for (const n of ['concourse-glass', 'concourse-floor']) {
+  // roof infill, soffit and floor face up; the edge band under the panels is the roof's vertical upstands and fascia, which look sideways but never down
+  for (const n of ['concourse-glass', 'concourse-panels', 'concourse-floor']) {
     const g = named(n).geometry;
     const normal = g.getAttribute('normal');
     for (let i = 0; i < normal.count; i++) assert.ok(normal.getY(i) > 0.3, `${n}: a face points down`);
   }
-  const soffitNormal = named('concourse-panels').geometry.getAttribute('normal');
-  for (let i = 0; i < soffitNormal.count; i++) assert.ok(soffitNormal.getY(i) > 0.3 || Math.abs(soffitNormal.getY(i)) < 1e-6, `concourse-panels: a face points down (${soffitNormal.getY(i)})`);
+  const edgeNormal = named('concourse-edges').geometry.getAttribute('normal');
+  for (let i = 0; i < edgeNormal.count; i++) assert.ok(Math.abs(edgeNormal.getY(i)) < 1e-6, `concourse-edges: a face is not vertical (${edgeNormal.getY(i)})`);
   close(bbox(named('concourse-floor')).max.y, 0.02, EPS);
   // each rim glazing quad faces away from the column
   const wall = named('concourse-wall').geometry;
@@ -152,9 +160,7 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
 // https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf#page=15
 test('the drawn concourse spans Arup’s 138 m overall roof within the structure tolerance', () => {
   const group = buildConcourse(canopy, station.pts, layout);
-  const mesh = group.getObjectByName('concourse-panels') as THREE.Mesh;
-  const p = mesh.geometry.getAttribute('position');
-  const v = Array.from({length: p.count}, (_, i) => worldToShed(layout, [p.getX(i), p.getZ(i)]).v);
+  const v = panelVertices(group).map(([x, , z]) => worldToShed(layout, [x, z]).v);
   const span = Math.max(...v) - Math.min(...v);
   assert.ok(Math.abs(span - 138) < 3, `drawn overall N–S extent ${span} m, not a fitted-circle diameter`);
 });
@@ -170,15 +176,32 @@ test('the funnel stands beside the Western Range without entering its brickwork'
 });
 
 test('the roof reaches the OSM concourse arc including its north and south canopy ends', () => {
-  const roof = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-panels') as THREE.Mesh;
-  const p = roof.geometry.getAttribute('position');
+  const roof = panelVertices(buildConcourse(canopy, station.pts, layout));
   for (const point of station.pts) {
     const {u,v} = worldToShed(layout, point);
     if (u >= -45 || v > WESTERN_RANGE.v1 + .1) continue;
     let nearest = Infinity;
-    for (let i=0;i<p.count;i++) nearest = Math.min(nearest, Math.hypot(p.getX(i)-point[0],p.getZ(i)-point[1]));
+    for (const [x, , z] of roof) nearest = Math.min(nearest, Math.hypot(x-point[0],z-point[1]));
     assert.ok(nearest < 3, `OSM roof edge u=${u}, v=${v} is ${nearest} m from the drawn roof`);
   }
+});
+
+// The weather's cover test (web/tests/cover.test.ts) reads the roof meshes' vertices three at a time, each triple a triangle: a vertical quad among them
+// would shift every triple after it. The panels are a pure soup, and the standing faces hang under them, where the evidence pack still finds them.
+test('the roof meshes the weather reads are triangle soups, and the standing faces are the panels\' child so the roof still reaches the outline', () => {
+  const group = buildConcourse(canopy, station.pts, layout);
+  for (const name of ['concourse-panels', 'concourse-glass']) {
+    const geometry = (group.getObjectByName(name) as THREE.Mesh).geometry, p = geometry.getAttribute('position'), index = geometry.getIndex()!;
+    assert.equal(p.count % 3, 0, `${name}: vertices come in threes`);
+    for (let i = 0; i < index.count; i += 3) for (let k = 0; k < 3; k++) assert.equal(Math.floor(index.getX(i + k) / 3), i / 3, `${name}: triangle ${i / 3} has a vertex of another triangle`);
+  }
+  const panels = group.getObjectByName('concourse-panels') as THREE.Mesh, edges = group.getObjectByName('concourse-edges') as THREE.Mesh;
+  assert.ok(edges.parent === panels, 'the edge band hangs under the panels'); // not assert.equal: a failed one would diff two scene graphs
+  assert.ok(edges.material === panels.material, 'in the soffit\'s own material');
+  const along = new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading));
+  const reach = (vertices: V3[]): number => { const s = vertices.map(([x, y, z]) => new THREE.Vector3(x, y, z).dot(along)); return Math.max(...s) - Math.min(...s); };
+  const reached = reach(panelVertices(group)), soffitOnly = reach(positions(panels));
+  assert.ok(reached - soffitOnly > 3, `the soffit alone reaches ${soffitOnly.toFixed(1)} m: only the edge band, on the outline, brings the roof to ${reached.toFixed(1)} m`);
 });
 
 // JMP built photo shows brickwork through the crossing white stalk members.

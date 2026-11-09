@@ -652,11 +652,11 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
   return group;
 }
 
-function addMesh(group: THREE.Group, geometry: THREE.BufferGeometry, material: THREE.Material, name: string, order = 0): THREE.Mesh {
+function addMesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, name: string, order = 0): THREE.Mesh {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.name = name;
   mesh.renderOrder = order;
-  group.add(mesh);
+  parent.add(mesh);
   return mesh;
 }
 
@@ -677,6 +677,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   const closure = new Batch({ colored: true });
   const struts = new Batch();
   const soffit = new Batch({ colored: true });
+  const standing = new Batch({ colored: true }); // the upstands and the fascia: vertical quads, kept out of the soffit's triangle soup
   const cladding = new Batch({ colored: true });
   const floor = new Batch();
   const wall = new Batch();
@@ -714,7 +715,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   for (const { a, b, cells } of edges.values()) {
     if (cells.length !== 2 || glazed.has(cells[0]!) === glazed.has(cells[1]!)) continue;
     const solid = kept[glazed.has(cells[0]!) ? cells[1]! : cells[0]!]!, apex = at(solid.find(n => n !== a && n !== b)!), A = at(a), B = at(b);
-    soffit.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)], [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]],
+    standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)], [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]],
       { facing: [(A[0] + B[0]) / 2 - apex[0], 0, (A[2] + B[2]) / 2 - apex[2]], color: scaled(SOFFIT_TONE, 0.9) });
   }
   const paired = new Set<number>();
@@ -785,8 +786,8 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     const out = nx * ((p[0] + q[0]) / 2 - cx) + nz * ((p[2] + q[2]) / 2 - cz) > 0;
     const [s, t] = out ? [p, q] : [q, p], [ws, wt] = (out ? [e.a, e.b] : [e.b, e.a]).map(inset) as [V3, V3];
     wall.quad([ws[0], 0, ws[2]], [wt[0], 0, wt[2]], wt, ws, [0, 0], [len, 0], [len, wt[1]], [0, ws[1]]);
-    // The fascia (R-c: a thin bright band) up to the skin, in the soffit mesh so it reaches the whole outline.
-    soffit.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]], [t[0], t[1] + FASCIA_BOTTOM, t[2]], [t[0], t[1] + SKIN_LIFT, t[2]], [s[0], s[1] + SKIN_LIFT, s[2]]],
+    // The fascia (R-c: a thin bright band) up to the skin, under the panels, so that it reaches the whole outline.
+    standing.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]], [t[0], t[1] + FASCIA_BOTTOM, t[2]], [t[0], t[1] + SKIN_LIFT, t[2]], [s[0], s[1] + SKIN_LIFT, s[2]]],
       [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]], { facing: [nx * (out ? 1 : -1), 0, nz * (out ? 1 : -1)], color: FASCIA_TONE });
     for (const [i, w] of [[e.a, inset(e.a)], [e.b, inset(e.b)]] as const) {
       if (post.has(i)) continue;
@@ -824,9 +825,12 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
 
   const group = new THREE.Group();
   group.name = 'western-concourse';
-  const add = (b: Batch, m: THREE.Material, name: string, order = 0): void => { if (b.count > 0) addMesh(group, b.build(), m, name, order); };
+  const add = (b: Batch, m: THREE.Material, name: string, order = 0, parent: THREE.Object3D = group): THREE.Mesh | undefined => b.count > 0 ? addMesh(parent, b.build(), m, name, order) : undefined;
   add(members, mat.member, 'concourse-lattice');
-  add(soffit, mat.soffit, 'concourse-panels');
+  // The panels are a triangle soup, three vertices to a triangle, which is how the weather's cover test reads them (cover.test.ts), and the
+  // standing faces are the panels' child: the evidence pack measures the roof's reach (137.2787 m, axis01-evidence.ts) through the panels and what hangs under them.
+  const panels = add(soffit, mat.soffit, 'concourse-panels');
+  if (panels) add(standing, mat.soffit, 'concourse-edges', 0, panels);
   add(cladding, mat.cladding, 'concourse-cladding');
   if (glass.count > 0) { // one geometry, two looks: bright from below, dark and glinting from above
     const panes = glass.build();
