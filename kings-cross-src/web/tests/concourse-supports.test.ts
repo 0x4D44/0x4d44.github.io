@@ -107,6 +107,7 @@ test('struts: two white struts to each pane of the wall, in a V from its rail to
   const wall = group.getObjectByName('concourse-wall') as THREE.Mesh, p = wall.geometry.getAttribute('position'), panes = p.count / 4;
   const drawn = sites.filter(s => standsAt(s, [hotel.pts])).length, sides = baseOf(sites[1]!).length / 2;
   assert.equal(supports.geometry.index!.count / 3, 2 * sides * (5 * drawn + 2 * panes), 'a trunk and four branches to each drawn tree, two struts to each pane');
+  assert.ok(STRUT_DIAMETER <= 0.11, `the struts are thin rods, ${STRUT_DIAMETER} m through (R-c: a light lattice under the brim, not stout bars)`);
   const struts = new THREE.Raycaster();
   let rails = 0;
   const centre3 = new THREE.Vector3(centre[0], 0, centre[1]);

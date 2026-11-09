@@ -31,6 +31,7 @@ mutations = [
     ('three branches', '.slice(0, 4).map(at)', '.slice(0, 3).map(at)'),
     ('branches 0.2 m through', 'roundMember(struts, fork, tip, TREES.branch);', 'roundMember(struts, fork, tip, 0.2);'),
     ('branches to the farthest of five nodes', '.slice(0, 4).map(at)', '.slice(1, 5).map(at)'),
+    ('struts as stout as bars', 'export const STRUT_DIAMETER = 0.1;', 'export const STRUT_DIAMETER = 0.14;'),
     ('one strut to each pane', 'for (const end of [p, q]) roundMember(struts, foot, end, STRUT_DIAMETER);', 'for (const end of [p]) roundMember(struts, foot, end, STRUT_DIAMETER);'),
     ('struts end a metre under the roof edge', 'roundMember(struts, foot, end, STRUT_DIAMETER);', 'roundMember(struts, foot, [end[0], end[1] - 1, end[2]], STRUT_DIAMETER);'),
     ('struts start from the rail at the wrong height', '(MULLION.transom * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];', '(0.3 * (ws[1] + wt[1])) / 2, (ws[2] + wt[2]) / 2];'),

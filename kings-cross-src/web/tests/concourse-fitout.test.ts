@@ -173,7 +173,7 @@ test('fit-out: the lettering is generic: no operator, shop or product brand', ()
     for (const brand of brands) assert.ok(!w.includes(brand), `"${w}" names a brand (${brand})`);
     assert.ok(w.length > 0 && w.length <= 36, `"${w}" is not a sign's worth of words`);
   }
-  for (const line of FITOUT_TEXT.board) assert.match(line, /^[A-Z][a-z]+ {3}Platform [0-8] {3}(On time|Delayed)$/, 'a board line is a destination, a platform and a status');
+  for (const line of FITOUT_TEXT.board) assert.match(line, /^[A-Z][a-z]+ Platform [0-8] (On time|Delayed)$/, 'a board line is a destination, a platform and a status');
   // the five bays are the gateline, so each carries the platforms' sign, not a word for the toilets or the left luggage (round 2, C5): one text for all five, then one for each shop
   assert.equal(plateCentres().length, 7, 'a plate over each of the five bays and two shops');
   assert.deepEqual([...FITOUT_TEXT.plates], ['Platforms 0 to 8  →', 'Cafe', 'News and gifts'], 'generic wayfinding words only: the platforms over the gateline, then the two shops');

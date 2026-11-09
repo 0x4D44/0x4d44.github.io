@@ -37,15 +37,15 @@ export const GLAZED_SHARE = { published: 0.15, tolerance: 0.05 } as const;
 export const ROOFLIGHT_RADIUS = 58;
 export const ROOFLIGHT_AZIMUTHS = [-26, -14, -2, 10] as const;
 export const ROOFLIGHT_HALF = { along: 4, across: 4.7 } as const;
-export const ROOFLIGHT_FRAME = 0.14;
-export const ROOFLIGHT_KERB = [0.7, 1.1] as const;
+export const ROOFLIGHT_FRAME = 0.08;
+export const ROOFLIGHT_KERB = [0.7, 0.95] as const;
 /** Roof edge fascia (R-c: a thin bright band): rim height up to the skin, on the outline, so the 138 m extent is the cells'. */
 export const FASCIA_BOTTOM = 0;
 /** Wall framing, metres (ASSUMED, R-c): a post at each rim node, two bars along each edge, a transom at this share of the height. */
 export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;
 /** The wall stands this far inside the outline under the glass brim, on white V struts (R-c, R-c2; ASSUMED). */
 export const WALL_INSET = 3;
-export const STRUT_DIAMETER = 0.14;
+export const STRUT_DIAMETER = 0.1;
 /** u of the roof's cut plane (0.3 m in front of the Range's face), the top of its cornice and of its first string course, the curtain wall's sill. */
 export const WEST_WALL = -WESTERN_RANGE.depth - 0.3;
 export const CORNICE_TOP = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
@@ -313,7 +313,7 @@ export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;
 /** Rings of legs under the head: height share, leg count (the head has the roof ring's). */
 const COLUMN_RINGS = [[0, 12], [0.06, 12], [0.17, 12], [0.29, 12], [0.41, 12], [0.53, 12], [0.65, 18], [0.75, 18], [0.84, 18], [0.92, 24]] as const;
 /** Radius of a ring at share t of the head's height: feet 1.85 m out, splayed 0.25 m, a cone, then a bell. */
-export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (0.3 * t + 0.7 * t ** 3) + (t ? 0 : 0.25);
+export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (1 - Math.sqrt(1 - t * t)) + (t ? 0 : 0.25);
 /** Diameter of a leg at this height, metres: 0.36 at the floor, 0.22 under the roof (ASSUMED, conc-ab). */
 export function columnTubeDiameter(y: number, top: number): number {
   return 0.36 - 0.14 * clamp01(y / top);
@@ -449,15 +449,13 @@ function canvasTexture(width: number, height: number, draw: (g: CanvasRenderingC
   return t;
 }
 
-/** One roof cell in UVs 0..1 (a triangle's corners (0,0), (1,0), (0,1); a diamond's, in order round it): bright in the middle, falling to `edge` of the light at its edges (R-a, R-c). Null in Node. */
-const pillowTexture = (shape: 'triangle' | 'diamond', edge: number): THREE.CanvasTexture | null => canvasTexture(64, 64, g => {
+/** One cladding diamond in UVs 0..1 (its corners in order round it): bright in the middle, falling to 0.62 of the light at its edges (R-c). Null in Node. */
+const pillowTexture = (): THREE.CanvasTexture | null => canvasTexture(64, 64, g => {
   const image = g.createImageData(64, 64);
   for (let y = 0; y < 64; y++) {
     for (let x = 0; x < 64; x++) {
-      const u = (x + 0.5) / 64, v = 1 - (y + 0.5) / 64;
-      const nearest = shape === 'triangle' ? Math.min(u, v, 1 - u - v) : Math.min(u, v, 1 - u, 1 - v);
-      const t = clamp01(nearest / (shape === 'triangle' ? 0.26 : 0.18));
-      const light = edge + (1 - edge) * t * t * (3 - 2 * t); // linear light; the texture holds sRGB
+      const t = clamp01(Math.min(x + 0.5, y + 0.5, 63.5 - x, 63.5 - y) / 11.52);
+      const light = 0.62 + 0.38 * t * t * (3 - 2 * t); // linear light; the texture holds sRGB
       const shade = Math.round(255 * Math.pow(light, 1 / 2.2));
       const k = (y * 64 + x) * 4;
       image.data[k] = image.data[k + 1] = image.data[k + 2] = shade;
@@ -502,14 +500,14 @@ function roofMaterial(): RoofMaterials {
   const slabs = texture('floorSlab'), wall = wallTexture();
   roofMaterials = {
     // Unlit: the scene's lights shine from above, so a lit underside would be black (R-a: pale soffit).
-    soffit: new THREE.MeshBasicMaterial({ map: pillowTexture('triangle', 0.5), color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, name: 'concourse-soffit' }),
-    cladding: new THREE.MeshPhongMaterial({ map: pillowTexture('diamond', 0.62), color: 0xffffff, vertexColors: true, specular: 0xe8f0f8, shininess: 64, name: 'concourse-cladding' }),
+    soffit: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, side: THREE.DoubleSide, name: 'concourse-soffit' }),
+    cladding: new THREE.MeshPhongMaterial({ map: pillowTexture(), color: 0xffffff, vertexColors: true, specular: 0xe8f0f8, shininess: 64, name: 'concourse-cladding' }),
     // Glows from below as daylight does (R-a, conc-ab).
-    skylight: new THREE.MeshBasicMaterial({ map: pillowTexture('triangle', 0.7), color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, name: 'concourse-skylight' }),
+    skylight: new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, opacity: 0.94, side: THREE.BackSide, depthWrite: false, name: 'concourse-skylight' }),
     // Dark and glassy from above (R-c).
     skylightTop: new THREE.MeshPhongMaterial({ color: 0x6f8aa5, emissive: 0x16202b, specular: 0xffffff, shininess: 120, transparent: true, opacity: 0.66, side: THREE.FrontSide, depthWrite: false, name: 'concourse-skylight-top' }),
-    member: new THREE.MeshLambertMaterial({ color: 0xf7f9fb, emissive: 0xbcc1c7, name: 'concourse-member' }),
-    funnel: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, emissive: 0x7d8288, name: 'concourse-funnel' }),
+    member: new THREE.MeshLambertMaterial({ color: 0xf7f9fb, emissive: 0xa9aeb4, name: 'concourse-member' }),
+    funnel: new THREE.MeshLambertMaterial({ color: 0xf4f6f8, emissive: 0x91979d, name: 'concourse-funnel' }),
     // R-c: dark reflective glass over shopfront glass, a navy band between.
     wallGlass: new THREE.MeshPhongMaterial({ map: wall, color: wall ? 0xffffff : 0x4f677a, specular: 0xdfe9f2, shininess: 110, transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false, name: 'concourse-wall' }),
     mullion: new THREE.MeshLambertMaterial({ color: 0x59606a, emissive: 0x23282e, name: 'concourse-mullion' }),
@@ -579,7 +577,7 @@ export const FITOUT = {
 /** The lettering the signs carry. Generic words only. */
 export const FITOUT_TEXT = {
   totem: ['Underground', 'Platforms 0 to 8', 'Toilets', 'Left luggage', 'Information'],
-  board: ['Leeds   Platform 4   On time', 'York   Platform 6   On time', 'Cambridge   Platform 2   Delayed', 'Peterborough   Platform 3   On time', 'Newcastle   Platform 5   On time'],
+  board: ['Leeds Platform 4 On time', 'York Platform 6 On time', 'Cambridge Platform 2 Delayed', 'Peterborough Platform 3 On time', 'Newcastle Platform 5 On time'],
   /** over each of the five gate bays, which all lead to the platforms; then over each of the two shops */
   plates: ['Platforms 0 to 8  →', 'Cafe', 'News and gifts'],
 } as const;
@@ -610,7 +608,6 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
     const y = ty + 30 + i * 46;
     g.strokeRect(tx + 10, y - 12, 24, 24);
     g.fillText(line, tx + 44, y, tw - 50);
-    g.fillRect(tx + 10, y + 21, tw - 20, 1);
   });
   const screen = g.createLinearGradient(0, ty + 270, 0, ty + th - 14);
   screen.addColorStop(0, '#c9c4ff');
@@ -624,7 +621,7 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
     fill('#0d0f13', bx + p * pw + 4, by + 4, pw - 8, bh - 8);
     for (let row = 0; row < 11; row++) {
       g.fillStyle = row ? '#ffb21a' : '#e6e2ff';
-      g.fillText(FITOUT_TEXT.board[(p + row) % FITOUT_TEXT.board.length]!.replace(/ {3}/g, ' '), bx + p * pw + 10, by + 18 + row * 24, pw - 20);
+      g.fillText(FITOUT_TEXT.board[(p + row) % FITOUT_TEXT.board.length]!, bx + p * pw + 10, by + 18 + row * 24, pw - 20);
     }
   }
   // plates: navy, white lettering, a pictogram square (R-ab, R-b)
@@ -642,12 +639,9 @@ const signAtlas = (): THREE.CanvasTexture | null => canvasTexture(ATLAS.width, A
   light.addColorStop(1, '#a8743d');
   fill(light, sx, sy, sw, sh);
   [0.22, 0.38, 0.54].forEach((shelf, k) => {
-    fill('#5a4a3c', sx + 8, sy + sh * shelf, sw - 16, 4);
     for (let j = 0; j < 6; j++) fill(goods[(j + k * 2) % goods.length]!, sx + 12 + j * 31, sy + sh * shelf - 16, 22, 16);
   });
   fill('#3a2f27', sx, sy + sh * 0.72, sw, sh * 0.28);
-  fill('#d8d2c8', sx, sy + sh * 0.72, sw, 6);
-  for (const lamp of [0.2, 0.5, 0.8]) fill('#fff6dc', sx + sw * lamp - 10, sy + 4, 20, 6);
 });
 /** The corners (0,0), (1,0), (1,1), (0,1) of a face in the atlas, from a region [x, y, w, h]. */
 const atlasQuad = (r: readonly number[]): V2[] => [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, v]): V2 => [(r[0]! + u! * r[2]!) / ATLAS.width, 1 - (r[1]! + (1 - v!) * r[3]!) / ATLAS.height]);
@@ -678,8 +672,7 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
   for (const [u, dv] of FITOUT.clusters) {
     const v = funnelV + dv;
     part(u, 0, v, 0.6, cluster.height, 0.6, RED);
-    for (let k = 0; k < 4; k++) {
-      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz = Math.round(Math.sin((k * Math.PI) / 2));
+    for (const [du, dz] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
       const body = dz === 0 ? [0.5, 0.56] : [0.56, 0.5], cowl = dz === 0 ? [0.62, 0.64] : [0.64, 0.62], mu = u + du * 0.58, mv = v + dz * 0.58;
       part(mu, 0, mv, body[0]!, 1.55, body[1]!, PAPER);
       part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, RED);
@@ -767,11 +760,11 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   const north = concourseNorth(footprint, shed);
 
   const members = new Batch();
-  const glass = new Batch({ colored: true });
-  const closure = new Batch({ colored: true });
+  const glass = new Batch({ colored: true, uv: false });
+  const closure = new Batch({ colored: true, uv: false });
   const struts = new Batch();
-  const soffit = new Batch({ colored: true });
-  const standing = new Batch({ colored: true }); // the upstands and the fascia: vertical quads, kept out of the soffit's triangle soup
+  const soffit = new Batch({ colored: true, uv: false });
+  const standing = new Batch({ colored: true, uv: false }); // the upstands and the fascia: vertical quads, kept out of the soffit's triangle soup
   const cladding = new Batch({ colored: true });
   const floor = new Batch();
   const wall = new Batch();
@@ -791,25 +784,24 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   const rim = (x: number, z: number): number => rimDistance(shed, footprint, north, x, z);
   const glazed = glazedCells(d, kept, centre, rim);
   const tone = rng(0x4b58), paneTone = rng(0x91a3);
-  const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.68, k * 0.82, k]; }; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a), each pane its own shade
-  const SOFFIT_TONE = rgb(0xdadee2), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
+  const pane = (): Rgb => { const k = 0.9 + 0.1 * paneTone(); return [k * 0.78, k * 0.89, k]; }; // daylight seen through clear glass, sky blue so that the white members stand out against it (R-a), each pane its own shade
+  const SOFFIT_TONE = rgb(0xaeb3b9), CLADDING_TONE = rgb(0xc2c7cc), UP: V3 = [0, 1, 0]; // CLADDING_TONE: silver, lit it reads as R-c's (154, 152, 146) in the shade and R-c2's bright facets in the sun
   const scaled = (c: Rgb, k: number): Rgb => [c[0] * k, c[1] * k, c[2] * k];
   const nodeAt = (i: number, by: number): V3 => { const p = at(i); return [p[0], p[1] + by, p[2]]; };
-  const barycentric: [V2, V2, V2] = [[0, 0], [1, 0], [0, 1]];
   kept.forEach((t, i) => {
     if (glazed.has(i)) {
-      glass.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], barycentric, { facing: UP, color: pane() });
+      glass.poly([nodeAt(t[0], SKIN_LIFT), nodeAt(t[1], SKIN_LIFT), nodeAt(t[2], SKIN_LIFT)], undefined, { facing: UP, color: pane() });
       return;
     }
     const outer = share((d.nodes[t[0]]!.r + d.nodes[t[1]]!.r + d.nodes[t[2]]!.r) / 3);
     // Each cell its own shade (ASSUMED +-4 %), dimming toward the rim.
-    soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], barycentric, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.1 * outer)) });
+    soffit.poly([nodeAt(t[0], SOFFIT_LIFT), nodeAt(t[1], SOFFIT_LIFT), nodeAt(t[2], SOFFIT_LIFT)], undefined, { facing: UP, color: scaled(SOFFIT_TONE, (0.96 + 0.08 * tone()) * (1 - 0.1 * outer)) });
   });
   // An upstand closes the cavity where a solid cell meets a glazed one, so no sky shows through.
   for (const { a, b, cells } of edges.values()) {
     if (cells.length !== 2 || glazed.has(cells[0]!) === glazed.has(cells[1]!)) continue;
     const solid = kept[glazed.has(cells[0]!) ? cells[1]! : cells[0]!]!, apex = at(solid.find(n => n !== a && n !== b)!), A = at(a), B = at(b);
-    standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)], [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]],
+    standing.poly([nodeAt(a, SOFFIT_LIFT), nodeAt(b, SOFFIT_LIFT), nodeAt(b, SKIN_LIFT), nodeAt(a, SKIN_LIFT)], undefined,
       { facing: [(A[0] + B[0]) / 2 - apex[0], 0, (A[2] + B[2]) / 2 - apex[2]], color: scaled(SOFFIT_TONE, 0.9) });
   }
   const paired = new Set<number>();
@@ -836,14 +828,14 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   // The rooflights: dark glass in a pale frame that rises to it, laid on the cladding (R-c, R-c2). The pillow texture's middle is full light, its edge dark.
   const surface = (x: number, z: number): number => { const r = Math.hypot(x - cx, z - cz); return concourseHeight(canopy, (canopy.radius * r) / (r + rim(x, z))); }; // the nodes' own height law
   for (const { outer, inner } of rooflights(centre, shed, surface)) {
-    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { facing: UP, color: rgb(0xeef1f4) });
+    for (let j = 0; j < 4; j++) cladding.poly([outer[j]!, outer[(j + 1) % 4]!, inner[(j + 1) % 4]!, inner[j]!], [[0.5, 0.5], [0.5, 0.5], [0.5, 0.5], [0.5, 0.5]], { facing: UP, color: scaled(CLADDING_TONE, 0.72) });
     cladding.poly(inner, undefined, { facing: UP, color: rgb(0x405468) });
   }
   // The oculus: glass over the funnel's open top (R-a).
   const crown = d.nodes.filter(n => n.ring === 0);
   for (let i = 0; i < crown.length; i++) {
     const p = crown[i]!, q = crown[(i + 1) % crown.length]!;
-    glass.poly([[cx, canopy.apex + SKIN_LIFT, cz], [p.x, height(p) + SKIN_LIFT, p.z], [q.x, height(q) + SKIN_LIFT, q.z]], barycentric, { facing: UP, color: pane() });
+    glass.poly([[cx, canopy.apex + SKIN_LIFT, cz], [p.x, height(p) + SKIN_LIFT, p.z], [q.x, height(q) + SKIN_LIFT, q.z]], undefined, { facing: UP, color: pane() });
   }
 
   // The ground follows the OSM outline clipped at the façade and northern limits, keeping its small corners.
@@ -867,7 +859,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   // The wall, WALL_INSET inside the outline, from the floor to the brim glass; the fascia stays on the outline.
   const post = new Set<number>();
   const rimEdges = [...edges.values()].filter(e => e.uses === 1 && d.nodes[e.a]!.ring === d.rings && d.nodes[e.b]!.ring === d.rings);
-  const FASCIA_TONE = rgb(0xdfe3e7);
+  const FASCIA_TONE = rgb(0xa5aeb1);
   const inset = (i: number): V3 => { // the wall's foot below node i and its top, on the brim glass over it; with no roof over the foot (beside the hotel) it stays on the outline
     const n = d.nodes[i]!, k = WALL_INSET / Math.hypot(cx - n.x, cz - n.z), x = n.x + (cx - n.x) * k, z = n.z + (cz - n.z) * k;
     const cell = kept.find(t => pointInPolygon([x, z], t.map(j => [d.nodes[j]!.x, d.nodes[j]!.z] as Pt)));
@@ -888,7 +880,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     wall.quad([ws[0], 0, ws[2]], [wt[0], 0, wt[2]], wt, ws, [0, 0], [len, 0], [len, wt[1]], [0, ws[1]]);
     // The fascia (R-c: a thin bright band) up to the skin, under the panels, so that it reaches the whole outline.
     standing.poly([[s[0], s[1] + FASCIA_BOTTOM, s[2]], [t[0], t[1] + FASCIA_BOTTOM, t[2]], [t[0], t[1] + SKIN_LIFT, t[2]], [s[0], s[1] + SKIN_LIFT, s[2]]],
-      [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]], { facing: [nx * (out ? 1 : -1), 0, nz * (out ? 1 : -1)], color: FASCIA_TONE });
+      undefined, { facing: [nx * (out ? 1 : -1), 0, nz * (out ? 1 : -1)], color: FASCIA_TONE });
     for (const [i, w] of [[e.a, inset(e.a)], [e.b, inset(e.b)]] as const) {
       if (post.has(i)) continue;
       post.add(i);
@@ -908,7 +900,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   // every fin, so the wall runs true whatever its edges' lengths.
   const cut = (i: number): boolean => Math.abs(worldToShed(shed, [d.nodes[i]!.x, d.nodes[i]!.z]).u - WEST_WALL) < 0.01;
   const EAST: V3 = (() => { const o = shedToWorld(shed, 0, 0), e = shedToWorld(shed, 1, 0); return [e[0] - o[0], 0, e[1] - o[1]]; })();
-  const [brickFrom, brickTo] = westernBlock(), FLAT: V2[] = [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]], white: Rgb = [1, 1, 1]; // a pane is flat glass: the middle of the pillow
+  const [brickFrom, brickTo] = westernBlock(), white: Rgb = [1, 1, 1];
   for (const e of edges.values()) {
     if (e.uses !== 1 || !cut(e.a) || !cut(e.b)) continue;
     const [A, B] = [nodeAt(e.a, SKIN_LIFT), nodeAt(e.b, SKIN_LIFT)], [va, vb] = [A, B].map(p => worldToShed(shed, [p[0], p[2]]).v) as [number, number], [lo, hi] = [Math.min(va, vb), Math.max(va, vb)];
@@ -922,7 +914,7 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
       const foot = (v: number): V3 => on(v, Math.min(low, on(v)[1])), quad = [foot(s0), foot(s1), on(s1), on(s0)];
       // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
       // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
-      closure.poly(quad, FLAT, { facing: EAST, color: !curtain ? pane() : Math.abs(mid / CURTAIN_PANE - Math.round(mid / CURTAIN_PANE)) * CURTAIN_PANE < CURTAIN_FIN / 2 ? white : scaled(pane(), 0.78) });
+      closure.poly(quad, undefined, { facing: EAST, color: !curtain ? pane() : Math.abs(mid / CURTAIN_PANE - Math.round(mid / CURTAIN_PANE)) * CURTAIN_PANE < CURTAIN_FIN / 2 ? white : scaled(pane(), 0.78) });
       cladding.poly(quad, [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
     }
   }

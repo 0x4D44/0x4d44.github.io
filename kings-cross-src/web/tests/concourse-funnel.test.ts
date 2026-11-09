@@ -66,6 +66,9 @@ test('funnel: a ring of 12 legs stands on the floor about 4 m across and the fun
   let last = 0;
   for (let t = 0.1; t <= 1.0001; t += 0.1) { assert.ok(columnRadius(t, mouth) > last || t === 0.1, `columnRadius at ${t.toFixed(1)}`); last = columnRadius(t, mouth); }
   close(columnRadius(1, mouth), mouth, 1e-9);
+  // R-a, R-ab: it sweeps out until it runs level into the roof's lattice, with no rim under it: in the last hundredth of its height it leans 70 degrees from the upright
+  const lean = Math.atan((mouth - columnRadius(0.99, mouth)) / (0.01 * top)) * 57.2958;
+  assert.ok(lean > 70, `the flare meets the roof ${lean.toFixed(0)} degrees from the upright, not level`);
 });
 
 test('funnel: the head stands on the roof\'s third ring, one leg to each node, and the legs on the Range side rise straight up against the brick', () => {
@@ -155,26 +158,30 @@ test('funnel: a tube never twists, however its tangent bends: each ring is the l
 
 // Two equal tubes that cross meet along a crease, and each leans a different way there, so lit plainly they show a hard step across it (a tear).
 test('funnel: where two tubes cross, each is shaded halfway toward the other\'s own normal at the crossing, so the crease shows no step', () => {
-  let crossed = 0, round = 0;
+  let crossed = 0, round = 0, shared = 0;
   for (const rings of columnStrands(head, roof)) {
     const frames = tubeRings(rings), crossings = rings.filter(c => c.x);
+    // how far a vertex is from the axis of the tube that crosses at `c`
+    const away = (v: V3, c: Ring): number => { const a = [v[0] - c.p[0], v[1] - c.p[1], v[2] - c.p[2]], d = dot3(a, c.x!); return Math.hypot(a[0]! - d * c.x![0], a[1]! - d * c.x![1], a[2]! - d * c.x![2]); };
     rings.forEach((ring, k) => {
       for (const vertex of frames[k]!) {
         const radial = toward(ring.p, vertex.p);
         close(Math.hypot(...vertex.n), 1, 1e-9);
         if (ring.x) {
-          // at the crossing itself: halfway between the tube's own normal and the other tube's, which is straight out from the other's axis
+          // at the crossing itself: halfway between the tube's own normal and the other tube's, which is straight out from the other's axis; unless a second crossing of
+          // the same tube reaches the vertex too (two crossings within two radii of one another's tubes, where the legs run nearly parallel), which blends in its own
+          if (crossings.some(c => c !== ring && away(vertex.p, c) < 2 * ring.r)) { shared++; continue; }
           const along = dot3(radial, ring.x), other = toward([0, 0, 0], [radial[0] - along * ring.x[0], radial[1] - along * ring.x[1], radial[2] - along * ring.x[2]]);
           close(angle3(vertex.n, other), angle3(radial, other) / 2, 1e-6);
           if (angle3(radial, other) > 0.2) crossed++;
         }
         // well clear of every tube that crosses it (two radii from its axis) a vertex is shaded round
-        const clear = crossings.every(c => { const a = [vertex.p[0] - c.p[0], vertex.p[1] - c.p[1], vertex.p[2] - c.p[2]], d = dot3(a, c.x!); return Math.hypot(a[0]! - d * c.x![0], a[1]! - d * c.x![1], a[2]! - d * c.x![2]) > 2 * ring.r; });
-        if (clear) { assert.ok(angle3(vertex.n, radial) < 1e-6, 'a vertex well clear of the tubes that cross it is shaded round, its normal straight out from its own axis'); round++; }
+        if (crossings.every(c => away(vertex.p, c) > 2 * ring.r)) { assert.ok(angle3(vertex.n, radial) < 1e-6, 'a vertex well clear of the tubes that cross it is shaded round, its normal straight out from its own axis'); round++; }
       }
     });
   }
   assert.ok(crossed > 500 && round > 1000, `${crossed} vertices where two tubes lean apart at a crossing, ${round} clear of any`);
+  assert.ok(shared < crossed / 40, `${shared} vertices at a crossing are also reached by a second one: rare, not the rule (${crossed} are not)`);
 });
 
 // R-ab: a leg that starts above the floor grows out of the legs it crosses, as a branch; at the foot, 24 legs start from 12 feet.
@@ -244,9 +251,9 @@ test('funnelRoof: the members out of a head node are the lattice links to the ri
   for (const m of roof.flat()) assert.ok(m[1] <= 0.02, `a member rises ${m[1].toFixed(2)}: the roof falls away from the funnel's mouth`);
 });
 
-test('funnel: members run 1.2 to 5.1 m between nodes; a leg is 0.36 m through at the floor, 0.22 m at the roof, and is drawn that wide', () => {
+test('funnel: members run 1.2 to 6.3 m between nodes (the last, flaring out to the roof, the longest); a leg is 0.36 m through at the floor, 0.22 m at the roof, and is drawn that wide', () => {
   const lengths = edges.map(length);
-  assert.ok(Math.min(...lengths) > 1.1 && Math.max(...lengths) < 5.1, `lengths ${Math.min(...lengths).toFixed(2)} to ${Math.max(...lengths).toFixed(2)} m`);
+  assert.ok(Math.min(...lengths) > 1.1 && Math.max(...lengths) < 6.3, `lengths ${Math.min(...lengths).toFixed(2)} to ${Math.max(...lengths).toFixed(2)} m`);
   assert.ok(Math.abs(columnTubeDiameter(0, top) - 0.36) < 1e-9 && Math.abs(columnTubeDiameter(top, top) - 0.22) < 1e-9, 'a leg is 0.36 m through at the floor and 0.22 m at the roof');
   let last = Infinity;
   for (let y = 0; y <= top; y += 1) {

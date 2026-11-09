@@ -23,7 +23,8 @@ shutil.copytree(src, work, ignore=shutil.ignore_patterns('node_modules', '.git',
 (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
 target = work / 'web/src/concourse.ts'
 original = target.read_text()
-RADIUS = 'export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (0.3 * t + 0.7 * t ** 3) + (t ? 0 : 0.25);'
+RADIUS = 'export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (1 - Math.sqrt(1 - t * t)) + (t ? 0 : 0.25);'
+FLARE = '(1 - Math.sqrt(1 - t * t))'
 THICK = 'return 0.36 - 0.14 * clamp01(y / top);'
 mutations = [
     ('tubes are six-sided', 'const TUBE_SIDES = 8;', 'const TUBE_SIDES = 6;'),
@@ -33,8 +34,10 @@ mutations = [
     ('feet too wide', RADIUS, RADIUS.replace('1.85 + (mouth - 1.85)', '3.5 + (mouth - 3.5)')),
     ('feet too narrow', RADIUS, RADIUS.replace('1.85 + (mouth - 1.85)', '0.6 + (mouth - 0.6)')),
     ('feet not splayed', RADIUS, RADIUS.replace(' + (t ? 0 : 0.25)', '')),
-    ('a straight stalk, no widening', '(0.3 * t + 0.7 * t ** 3)', '0'),
-    ('widens only at the very top', '(0.3 * t + 0.7 * t ** 3)', 't ** 40'),
+    ('a straight stalk, no widening', FLARE, '0'),
+    ('widens only at the very top', FLARE, 't ** 40'),
+    ('the shallow flare of round 3, which meets the roof at 48 degrees', FLARE, '(0.3 * t + 0.7 * t ** 3)'),
+    ('a flare that reaches the mouth early and runs on straight', FLARE, 'Math.min(1, 1.2 * t ** 2)'),
     ('head legs stand off the roof ring', 'const p: V3 = last ? [...head[i]!] :', 'const p: V3 = last ? [head[i]![0], head[i]![1] - 0.5, head[i]![2]] :'),
     ('head ring one ring in', 'export const FUNNEL_HEAD_RING = 2;', 'export const FUNNEL_HEAD_RING = 1;'),
     ('Range-side legs reach into the cornice', 'export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;', 'export const FUNNEL_REACH = FUNNEL_RADIUS + 0.4;'),
