@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - an unbound GLSL name throws in the test evaluator, so its mutant is an ERROR, not a kill (web/tests/glsl.ts:Glsl)
+  kxmut counts a kill only when a test fails by assertion. The MOTTLE test ran the slab line with only vMapUv bound, so the mutant that reads gl_FragCoord threw "unknown name" and was judged ERROR in
+  tools/mutation/lighting.py. Bind the built-in to one fixed point in the test: every slab then gets the same tone, and the spread assertion fails. The same goes for any call a mutant can make throw (squeezeGlsl
+  on a module that does not parse is a RolldownError): wrap it in assert.doesNotThrow and assert on what it returns.
+
 - 2026-11-09 - a vertex shade baked in one mesh's frame blackened trees in another (concourse.ts:tubeShade)
   tubeShade darkens faces that look along +x, the Range's side only in the funnel mesh, which is turned into the shed's frame (column.rotation.y). tube() applied it to every closed tube, so it also
   shaded the perimeter tree columns in the supports mesh, built in the world's frame: from the hotel junction all three trunks rendered near-black (mean sRGB 19 to 58) while every unit test of their

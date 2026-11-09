@@ -98,6 +98,7 @@ python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
 python3 -I -u kings-cross-src/tools/mutation/fidelity.py kings-cross-src .scratch/mutation/fidelity
 python3 -I -u kings-cross-src/tools/mutation/hotel-exterior.py kings-cross-src .scratch/mutation/hotel-exterior
 python3 -I -u kings-cross-src/tools/mutation/hotel-roof.py kings-cross-src .scratch/mutation/hotel-roof
+python3 -I -u kings-cross-src/tools/mutation/lighting.py kings-cross-src .scratch/mutation/lighting
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/mutation/live
 python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/mutation/motion
 python3 -I -u kings-cross-src/tools/mutation/ole.py kings-cross-src .scratch/mutation/ole
@@ -177,6 +178,19 @@ mutation and, like the other `kxmut` drivers, must see every one of their tests 
 (`N/M tests observed failing`). Label text after the arguments runs only the mutations whose label contains it, for a re-run of
 the survivors of a change; a partial run skips that accounting. `--check` only looks for each search text, exactly once, and runs
 nothing.
+
+`lighting.py` mutates how the light lands on the model (`web/src/lighting.ts`): the grade (the filmic tone map and its exposure, what stays out of it, the watch for
+additions), the sun's shadow (the box, its steps and its snap to the map's texels, the light's frame, the depth map made by hand, the patches of three's own shadow
+chunks, which meshes cast and which take the shadow, the rooms whose casters switch on with the camera), the shade under a roof, the contact shade at a wall's foot, the
+slab tone, and the concourse's fill with its two weights. It reaches the few links its tests hold in other files (the define in `web/src/materials.ts` and
+`web/src/landmarks.ts`, the paving's slab tone, the soffit's name in `web/src/concourse.ts`) and the build's GLSL squeeze in `vite.config.ts` (the `/* glsl */` template
+squeeze, the squeeze of three.js's own shader strings, the plugin list). It runs four test commands, one for each of `web/tests/lighting.test.ts`,
+`tools/tests/glsl-squeeze.test.ts`, `tools/tests/three-squeeze.test.ts` and `tools/tests/three-squeeze-hooks.test.ts`, because a test file that dies on its own import
+hides the others in the same run; a mutation is caught when any of its lanes fails by assertion, and every test of the four must be seen failing. No mutation anchors on a
+night or emissive line (the glow below a glazed roof, the lamps, the stand-ins) or on a tuned colour or amount (the numbers of `ROOF_SHADE` and `INTERIOR` are mutated by a
+factor put in front of the first digit), so the night lighting and a retune do not stale them. The dev server's JSON-import plugin in `vite.config.ts` is not covered.
+Label text after the arguments runs only the mutations whose label contains it (a partial run skips the 'never failed' accounting); `--check` only looks for each search
+text, exactly once, and runs nothing. The mutations left out as equivalent, with the reason for each, are in the driver's docstring.
 
 `station.py` also mutates the committed data and `tools/fidelity.ts`.
 

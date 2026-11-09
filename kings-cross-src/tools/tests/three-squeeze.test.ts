@@ -32,6 +32,15 @@ test('squeezeGlslText: a string with no newline, one that is not GLSL, a continu
   assert.equal(squeezeGlslText('#ifdef A\nfloat x;\n#endif\n'), null);
 });
 
+test('squeezeGlslText: a string reads as GLSL by a preprocessor line at the start of any of its lines, a function, a uniform or a declaration, and by nothing else', () => {
+  assert.equal(squeezeGlslText('#define A   1\n   y'), '#define A 1\ny', 'a preprocessor line');
+  assert.equal(squeezeGlslText('words\n#define A   1\n'), 'words\n#define A 1\n', 'on any line of the string');
+  assert.equal(squeezeGlslText('void   f(  )\n  {}'), 'void f( )\n{}', 'a function');
+  assert.equal(squeezeGlslText('uniform   x\n  y'), 'uniform x\ny', 'a uniform');
+  assert.equal(squeezeGlslText('float   x;\n   y'), 'float x;\ny', 'a declaration');
+  assert.equal(squeezeGlslText('see the #define   docs\n  at http://example.com'), null, 'a # that does not start a line, in a message');
+});
+
 test('squeezeThreeGlsl: the top-level declarations of many-line GLSL strings are squeezed (var, const or let, either quote), and nothing else in the module is touched', () => {
   const code = [
     decl('one', GLSL),

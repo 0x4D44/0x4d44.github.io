@@ -66,6 +66,8 @@ test('grade: the concourse\'s fill is set from the sky\'s hemisphere and its clo
   assert.deepEqual(fill(), interiorFillFor(0.5, 0).toArray(), 'it follows the hemisphere\'s intensity (the hour)');
   grade(renderer, false, 1.25, 1.02, 0);
   assert.deepEqual(fill(), [0, 0, 0], 'a scene with no climate has none');
+  grade(renderer, true, 1.25, 1.02);
+  assert.deepEqual(fill(), interiorFillFor(1.02, 0).toArray(), 'a sky given with no cloud is a clear one');
   grade(renderer, true, 1.25);
   assert.deepEqual(fill(), [0, 0, 0], 'and with no sky yet, none');
 });
@@ -87,7 +89,10 @@ test('interiorFillFor: the hemisphere\'s intensity times INTERIOR.level, warm, k
 test('leaveOutOfGrade: lines, points and sprites are authored in display colours and skip the tone map; lit surfaces and the dome keep their own setting', () => {
   const line = new THREE.LineBasicMaterial(), points = new THREE.PointsMaterial(), sprite = new THREE.SpriteMaterial();
   const lambert = new THREE.MeshLambertMaterial(), basic = new THREE.MeshBasicMaterial();
-  assert.deepEqual([line, points, sprite, lambert, basic].map((m) => leaveOutOfGrade(m)), [true, true, true, false, false], 'it says which it changed');
+  const all = [line, points, sprite, lambert, basic];
+  const before = all.map((m) => m.version);
+  assert.deepEqual(all.map((m) => leaveOutOfGrade(m)), [true, true, true, false, false], 'it says which it changed');
+  assert.deepEqual(all.map((m, i) => m.version - (before[i] as number)), [1, 1, 1, 0, 0], 'and recompiles those, once (a program is cached with its tone map in it), and only those');
   assert.deepEqual([line, points, sprite].map((m) => m.toneMapped), [false, false, false]);
   assert.deepEqual([lambert, basic].map((m) => m.toneMapped), [true, true]);
   const version = line.version;
@@ -105,6 +110,11 @@ test('createUngradedScan: the unlit things of the scene on show are left out of 
   assert.equal(line.material.toneMapped, false);
   assert.equal(wall.material.toneMapped, true, 'the wall keeps the grade');
   assert.equal(scan(root), 0, 'nothing new, nothing done');
+  // an object it has seen is not read again: what a frame costs is the new objects, not every material of the scene
+  line.material.toneMapped = true;
+  assert.equal(scan(root), 0, 'a seen object is not looked at twice');
+  assert.equal(line.material.toneMapped, true);
+  line.material.toneMapped = false;
   // a label and a train that come in later, deep in a group, are caught the frame they do
   const train = new THREE.Group();
   const label = new THREE.Sprite(new THREE.SpriteMaterial());
@@ -156,6 +166,24 @@ test('createAdditionsWatch: the scans of a scene run on the first look and on th
   assert.equal(createAdditionsWatch()(scene), true, 'a fresh watch has not looked at anything');
 });
 
+test('createAdditionsWatch: an object is listened to once, however many times the scene is looked at again (each look walks the whole scene, a few thousand objects)', () => {
+  const look = createAdditionsWatch();
+  const scene = new THREE.Scene();
+  const group = new THREE.Group();
+  scene.add(group);
+  const listened = new Map<THREE.Object3D, number>();
+  for (const o of [scene, group]) {
+    const add = o.addEventListener.bind(o) as (type: string, listener: () => void) => void;
+    (o as unknown as { addEventListener: typeof add }).addEventListener = (type, listener) => { listened.set(o, (listened.get(o) ?? 0) + 1); add(type, listener); };
+  }
+  assert.equal(look(scene), true);
+  group.add(new THREE.Group());
+  assert.equal(look(scene), true);
+  group.add(new THREE.Group());
+  assert.equal(look(scene), true);
+  assert.deepEqual([listened.get(scene), listened.get(group)], [1, 1], 'listened to on the first look, and not again on the next two');
+});
+
 test('the shadow shader: a face turned from the sun does not ask the map, and the soft edge asks SHADOW_TAPS times, in three\'s own chunks that every lit material compiles', () => {
   const lights = THREE.ShaderChunk.lights_fragment_begin;
   assert.ok(lights.includes('receiveShadow && dot( geometryNormal, directLight.direction ) > 0.0 ) ? getShadow( directionalShadowMap[ i ]'), 'the directional light asks only the faces it lights');
@@ -170,6 +198,27 @@ test('the shadow shader: a face turned from the sun does not ask the map, and th
   const taps: number = SHADOW_TAPS; // (widened: three's own five is a setting this may come back to)
   assert.ok(body.includes(taps === 5 ? '* 0.2;' : `* ${(1 / taps).toFixed(8)};`), 'and averaged');
   assert.ok(SHADOW_TAPS >= 3 && SHADOW_TAPS <= 5, 'three asks at the least, or the edge is a hard step with a grain on it');
+  // each ask is one point of the disk, turned by the pixel's own angle and spread by the light's radius, at the depth of the fragment, and the asks are summed
+  for (let i = 0; i < SHADOW_TAPS; i++) assert.ok(body.includes(`texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( ${i}, ${SHADOW_TAPS}, phi ) * radius, shadowCoord.z ) )`), `ask ${i}, spread by the radius`);
+  assert.ok(body.includes(`shadow = ( ${Array.from({ length: SHADOW_TAPS }, (_, i) => `texture( shadowMap, vec3( shadowCoord.xy + vogelDiskSample( ${i}, ${SHADOW_TAPS}, phi ) * radius, shadowCoord.z ) )`).join(' + ')} ) * `), 'summed, not subtracted');
+});
+
+/** lighting.ts as a second module (a query makes it a new one), so that its top-level patches run again on three's chunks as they are now. */
+const loadAgain = (tag: string): Promise<unknown> => import(`../src/lighting.ts?${tag}`);
+
+test('the patches of three\'s chunks: the module loaded a second time (a dev server reloads it) finds them made and leaves the chunks as they are; a chunk that three has moved on from is an error, not a silent no-op', async () => {
+  const chunks = THREE.ShaderChunk as unknown as Record<string, string>;
+  const patched = { lights_fragment_begin: chunks.lights_fragment_begin as string, shadowmap_pars_fragment: chunks.shadowmap_pars_fragment as string };
+  await assert.doesNotReject(loadAgain('again'), 'a patch that is made is not made twice');
+  assert.deepEqual({ lights_fragment_begin: chunks.lights_fragment_begin, shadowmap_pars_fragment: chunks.shadowmap_pars_fragment }, patched, 'and the chunks are as they were');
+  for (const name of ['lights_fragment_begin', 'shadowmap_pars_fragment'] as const) {
+    chunks[name] = 'void main() { gl_FragColor = vec4( 1.0 ); }';
+    try {
+      await assert.rejects(loadAgain(`moved-on-${name}`), (error: Error) => error.message === `lighting.ts: three's ${name} chunk has changed`, `${name}: a chunk that no longer reads as expected stops the module loading`);
+    } finally {
+      chunks[name] = patched[name];
+    }
+  }
 });
 
 // ---- the shadow box ----------------------------------------------------------------------------------------------------------------------------
@@ -193,12 +242,22 @@ test('shadowFit: the box is one of a few fixed sizes, so zooming never makes the
   assert.equal(shadowFit([0, 0, 0], 30, noon).half, 48, 'close in the box is the smallest step');
   assert.equal(shadowFit([0, 0, 0], 30.1, noon).half, 72, 'a hair past 48/1.6 it steps up');
   assert.equal(shadowFit([0, 0, 0], 5000, noon).half, 800, 'far out it is the largest');
+  assert.equal(shadowFit([0, 0, 0], 30, noon, 4096).texel, 96 / 4096, 'a texel is the box over the map it is drawn into');
 });
 
 test('shadowFit: the focus is held to the map\'s texels in the light\'s plane, so moving the camera never makes the edges crawl', () => {
   const { x, y } = lightAxes(noon);
   assert.ok(Math.abs(dot(x, y)) < 1e-12 && Math.abs(dot(x, noon)) < 1e-12 && Math.abs(dot(y, noon)) < 1e-12, 'the light\'s frame is square');
   assert.ok(y[1] > 0.4, 'and its y is the more upright axis');
+  // three unit axes at right angles for every sun, one straight overhead (exactly, where the axis the frame is built from has to change) and one on the horizon too
+  const suns: V3[] = [90, 89.9, 75, 59, 30, 10, 3].map((el) => sunDirection(el, 200));
+  suns.push([0, 1, 0], [0, -1, 0]);
+  for (const sun of suns) {
+    const f = lightAxes(sun);
+    const length = (v: V3): number => Math.hypot(v[0], v[1], v[2]);
+    assert.ok(Math.abs(length(f.dir) - 1) < 1e-12 && Math.abs(length(f.x) - 1) < 1e-12 && Math.abs(length(f.y) - 1) < 1e-12, `sun at ${sun}: three unit axes (${length(f.x)}, ${length(f.y)})`);
+    assert.ok(Math.abs(dot(f.x, f.y)) < 1e-12 && Math.abs(dot(f.x, f.dir)) < 1e-12 && Math.abs(dot(f.y, f.dir)) < 1e-12, `sun at ${sun}: at right angles`);
+  }
   const rand =((seed) => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; })(7);
   for (let n = 0; n < 200; n++) {
     const focus: V3 = [rand() * 400 - 200, rand() * 30, rand() * 400 - 200];
@@ -221,6 +280,8 @@ test('shadowFit: the light stands back along the sun\'s direction and its depth 
       const back = f.half * 1.2 + 150;
       const dist = Math.hypot(f.position[0] - f.target[0], f.position[1] - f.target[1], f.position[2] - f.target[2]);
       assert.ok(Math.abs(dist - back) < 1e-6, `${el} degrees, ${d} m: the light is ${dist} from its target, not ${back}`);
+      const toLight: V3 = [(f.position[0] - f.target[0]) / dist, (f.position[1] - f.target[1]) / dist, (f.position[2] - f.target[2]) / dist];
+      assert.ok(dot(toLight, lightAxes(toSun).dir) > 1 - 1e-9, `${el} degrees, ${d} m: the light stands on the sun's side of its target, looking down the sun's rays`);
       assert.equal(f.near, 1);
       assert.ok(f.far >= back + f.half / Math.tan((el * Math.PI) / 180) + 199, `${el} degrees, ${d} m: the far plane ${f.far} reaches the far corner of the ground`);
     }
@@ -236,6 +297,14 @@ test('shadowFit: the bias is a hair of depth and the normal offset a few texels 
     assert.ok(f.normalBias >= 0.03 && f.normalBias <= 0.3, `normal bias ${f.normalBias}`);
     assert.ok(f.normalBias <= 4 * f.texel + 0.031, `at most a few texels (${f.normalBias} against a texel of ${f.texel})`);
   }
+  // both grow with the texel: a coarser map takes a bigger depth bias (its metres: the bias is in the depth range's own unit) and a bigger offset, until the offset's cap
+  const metres = (f: ReturnType<typeof shadowFit>): number => -f.bias * f.far;
+  const fits = [20, 100, 400].map((d) => shadowFit([0, 0, 0], d, noon));
+  assert.ok(fits.every((f) => metres(f) >= 0.02), `a bias of 2 cm at the least: ${fits.map(metres)}`);
+  assert.ok(metres(fits[0] as ReturnType<typeof shadowFit>) < metres(fits[1] as ReturnType<typeof shadowFit>) && metres(fits[1] as ReturnType<typeof shadowFit>) < metres(fits[2] as ReturnType<typeof shadowFit>), `the depth bias grows with the texel: ${fits.map(metres)}`);
+  for (const f of fits) if (f.normalBias > 0.03 && f.normalBias < 0.3) assert.ok(f.normalBias >= 0.5 * f.texel && f.normalBias <= f.texel, `between half a texel and a texel, away from its floor and its cap: ${f.normalBias} for a texel of ${f.texel}`);
+  assert.equal(shadowFit([0, 0, 0], 20, noon, 8192).normalBias, 0.03, 'a finer map keeps the offset above its floor of 3 cm');
+  assert.equal(shadowFit([0, 0, 0], 400, noon, 512).normalBias, 0.3, 'and a coarser one holds it to its cap of 30 cm');
 });
 
 // ---- the casters: the real scene's meshes -------------------------------------------------------------------------------------------------------
@@ -273,9 +342,11 @@ test('the casters are named meshes of the real scene: every name is there, and n
 test('createSunShadow: one directional light casts one 2048 map by hand; the casters cast from both faces, every lit surface takes the shadow, and nothing is flagged twice', () => {
   const sun = world.lights.sun;
   const shadow = createSunShadow(scene, sun);
+  assert.equal(sun.shadow.needsUpdate, true, 'the first frame draws the map, whether or not update() has run before it');
   assert.equal(shadow.tag(), true, 'casters found');
   assert.equal(sun.castShadow, true);
   assert.deepEqual([sun.shadow.mapSize.x, sun.shadow.mapSize.y], [2048, 2048]);
+  assert.ok(sun.shadow.radius > 1 && sun.shadow.radius < 3, `a soft edge, a pixel or two wide (three's own is 1; the soft edge asks the map ${SHADOW_TAPS} times over a disk of this radius): ${sun.shadow.radius}`);
   assert.equal(sun.shadow.autoUpdate, false, 'drawn on demand, not every frame');
   assert.equal((sun.shadow.camera as THREE.OrthographicCamera).isOrthographicCamera, true);
   assert.equal(world.lights.fills.some((f) => f.castShadow) || world.lights.hemisphere.castShadow === true, false, 'one caster: the sun');
@@ -298,6 +369,26 @@ test('createSunShadow: one directional light casts one 2048 map by hand; the cas
   assert.ok(!scene.children.includes(sun.target));
 });
 
+test('createSunShadow.tag: only meshes are taken: a group or a line that carries a caster\'s name is not flagged, listed or counted as a find, and a mesh of the same name is', () => {
+  const scene = new THREE.Scene();
+  const group = new THREE.Group();
+  group.name = 'city-stock';
+  const line = new THREE.Line(new THREE.BufferGeometry(), new THREE.MeshLambertMaterial());
+  line.name = 'city-roof';
+  scene.add(group, line);
+  const shadow = createSunShadow(scene, new THREE.DirectionalLight());
+  assert.equal(shadow.tag(), false, 'nothing here is a mesh');
+  assert.deepEqual(shadow.casters(), []);
+  assert.deepEqual([group.castShadow, line.castShadow, line.receiveShadow], [false, false, false], 'and nothing is flagged');
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshLambertMaterial());
+  mesh.name = 'city-stock';
+  scene.add(mesh);
+  assert.equal(shadow.tag(), true, 'the mesh is found');
+  assert.deepEqual(shadow.casters(), [mesh]);
+  assert.equal(shadow.tag(), false, 'once');
+  shadow.dispose();
+});
+
 test('createSunShadow: the map is made up front as a 24-bit depth texture with a one-channel colour attachment, 21 MB and not the 34 MB three allocates unasked (GPU texture cap +32 MB)', () => {
   const sun = new THREE.DirectionalLight();
   const shadow = createSunShadow(new THREE.Scene(), sun);
@@ -308,6 +399,7 @@ test('createSunShadow: the map is made up front as a 24-bit depth texture with a
   assert.equal(map.texture.type, THREE.UnsignedByteType);
   const depth = map.depthTexture as THREE.DepthTexture;
   assert.ok(depth && depth.isDepthTexture, 'the depth the lit shaders compare against');
+  assert.equal(depth.name, 'sun.shadowMap', 'named for the debugger that lists the page\'s textures (three names the maps it makes itself)');
   assert.deepEqual([depth.image.width, depth.image.height], [SHADOW_MAP_SIZE, SHADOW_MAP_SIZE]);
   assert.equal(depth.format, THREE.DepthFormat);
   assert.equal(depth.type, THREE.UnsignedIntType);
@@ -316,7 +408,10 @@ test('createSunShadow: the map is made up front as a 24-bit depth texture with a
   assert.deepEqual([depth.minFilter, depth.magFilter], [THREE.LinearFilter, THREE.LinearFilter]);
   const bytes = SHADOW_MAP_SIZE * SHADOW_MAP_SIZE * (1 + 4);
   assert.ok(bytes < 22e6, `${(bytes / 1e6).toFixed(1)} MB: the colour attachment is a byte a texel and the depth four`);
+  let released = 0;
+  map.addEventListener('dispose', () => { released++; });
   shadow.dispose();
+  assert.equal(released, 1, 'the map goes back with the light: it is 21 MB of the page\'s texture memory');
 });
 
 test('createSunShadow.update: the box follows the camera\'s target; the map is flagged for redraw only when the box, the sun or a caster moved', () => {
@@ -335,7 +430,13 @@ test('createSunShadow.update: the box follows the camera\'s target; the map is f
   sun.shadow.needsUpdate = false;
   assert.equal(cam.right, fit.half);
   assert.equal(cam.left, -fit.half);
+  assert.equal(cam.top, fit.half, 'the box is square');
+  assert.equal(cam.bottom, -fit.half);
+  assert.equal(cam.near, fit.near);
   assert.equal(cam.far, fit.far);
+  const projection = cam.projectionMatrix.elements;
+  assert.ok(Math.abs((projection[0] as number) - 1 / fit.half) < 1e-12 && Math.abs((projection[5] as number) - 1 / fit.half) < 1e-12 && Math.abs((projection[10] as number) + 2 / (fit.far - fit.near)) < 1e-12, 'and the projection is built for it');
+  assert.deepEqual([12, 13, 14].map((i) => +(sun.target.matrixWorld.elements[i] as number).toFixed(6)), fit.target.map((n) => +n.toFixed(6)), 'the light\'s target is where it was put, its matrix too: the map can be drawn at once');
   assert.deepEqual(sun.target.position.toArray().map((n) => +n.toFixed(6)), fit.target.map((n) => +n.toFixed(6)));
   assert.deepEqual(sun.position.toArray().map((n) => +n.toFixed(6)), fit.position.map((n) => +n.toFixed(6)));
   assert.equal(sun.shadow.bias, fit.bias);
@@ -353,6 +454,7 @@ test('createSunShadow.update: the box follows the camera\'s target; the map is f
   assert.equal(sun.shadow.needsUpdate, true);
   sun.shadow.needsUpdate = false;
   assert.equal(shadow.update(camera, target, sunDirection(58, 152)), true, 'and so does the sun moving');
+  assert.equal(cam.far, shadowFit([target.x, target.y, target.z], camera.position.distanceTo(target), sunDirection(58, 152)).far, 'and the depth the box is cut at follows the sun, the size of the box staying as it was');
   sun.shadow.needsUpdate = false;
   const hidden = shadow.casters().find((m) => m.visible) as THREE.Mesh;
   hidden.visible = false;
@@ -361,6 +463,71 @@ test('createSunShadow.update: the box follows the camera\'s target; the map is f
   assert.equal(shadow.update(camera, target, sunDirection(58, 152)), true, 'or shown again');
   camera.position.set(0, 100, 900);
   assert.equal(shadow.update(camera, target, sunDirection(58, 152)), true, 'a step in the box\'s size');
+  shadow.dispose();
+});
+
+test('createSunShadow.update: the box is sized from the camera\'s distance to its target wherever they stand, and a step in its size or a move of the sun redraws the map even with the focus at the world origin, where the texel it stands on does not change', () => {
+  const sun = new THREE.DirectionalLight();
+  const shadow = createSunShadow(new THREE.Scene(), sun);
+  const cam = sun.shadow.camera as THREE.OrthographicCamera;
+  const camera = new THREE.PerspectiveCamera();
+  const origin = new THREE.Vector3();
+  camera.position.set(0, 0, 30);
+  assert.equal(shadow.update(camera, origin, noon), true);
+  assert.equal(cam.right, 48, 'a camera 30 m from its target: the smallest box');
+  camera.position.set(0, 0, 100);
+  assert.equal(shadow.update(camera, origin, noon), true, 'pulled back to 100 m: the box goes from 48 m to 160 m a side');
+  assert.equal(cam.right, 160);
+  assert.equal(shadow.update(camera, origin, sunDirection(58, 152)), true, 'and the sun moving');
+  assert.equal(shadow.update(camera, origin, sunDirection(58, 152)), false, 'and nothing else moving, nothing');
+  // a camera and a target far from the origin and close to each other: the box is the camera's distance to its target (31.6 m), not the camera's distance to the origin (1,414 m)
+  const far = new THREE.Vector3(1000, 0, 1030);
+  camera.position.set(1000, 10, 1000);
+  shadow.update(camera, far, noon);
+  assert.equal(cam.right, 72, 'the box of a camera 31.6 m from its target');
+  shadow.dispose();
+});
+
+test('createSunShadow.update: a pan along either axis of the light\'s plane redraws the map, a camera and a target moving together at the same distance', () => {
+  const sun = new THREE.DirectionalLight();
+  const shadow = createSunShadow(new THREE.Scene(), sun);
+  const camera = new THREE.PerspectiveCamera();
+  const offset = new THREE.Vector3(0, 100, 250);
+  const stand = (focus: THREE.Vector3): boolean => { camera.position.copy(focus).add(offset); return shadow.update(camera, focus, noon); };
+  const { x, y } = lightAxes(noon);
+  const base = new THREE.Vector3(...shadowFit([10, 0, 20], offset.length(), noon).target);
+  assert.equal(stand(base), true, 'the first fit');
+  assert.equal(stand(base), false, 'standing still');
+  for (const [name, axis] of [['flat', x], ['upright', y]] as const) {
+    assert.equal(stand(base.clone().add(new THREE.Vector3(...axis).multiplyScalar(25))), true, `25 m along the light's ${name} axis`);
+    assert.equal(stand(base), true, 'and back');
+  }
+  shadow.dispose();
+});
+
+test('createSunShadow.update: the shadow camera\'s projection is rebuilt when the box changes size or the sun changes the depth it is cut at, and not when the box only moves', () => {
+  const sun = new THREE.DirectionalLight();
+  const shadow = createSunShadow(new THREE.Scene(), sun);
+  const cam = sun.shadow.camera as THREE.OrthographicCamera;
+  let builds = 0;
+  const rebuild = cam.updateProjectionMatrix.bind(cam);
+  cam.updateProjectionMatrix = () => { builds++; rebuild(); };
+  const camera = new THREE.PerspectiveCamera();
+  const stand = (distance: number, focus: THREE.Vector3, toSun: V3): void => { camera.position.set(focus.x, focus.y, focus.z + distance); shadow.update(camera, focus, toSun); };
+  const morning = sunDirection(58, 152);
+  stand(30, new THREE.Vector3(), noon);
+  assert.equal(builds, 1, 'the first fit builds it');
+  stand(30, new THREE.Vector3(7, 0, 3), noon);
+  stand(25, new THREE.Vector3(-20, 0, 40), noon);
+  assert.equal(builds, 1, 'a move within the same step of the box builds nothing');
+  stand(100, new THREE.Vector3(), noon);
+  assert.equal(builds, 2, 'a step in the size builds it');
+  stand(100, new THREE.Vector3(5, 0, 0), noon);
+  assert.equal(builds, 2);
+  stand(100, new THREE.Vector3(), morning);
+  assert.equal(builds, 3, 'and a sun at another height, which cuts the same box at another depth');
+  stand(100, new THREE.Vector3(), morning);
+  assert.equal(builds, 3, 'once');
   shadow.dispose();
 });
 
@@ -374,10 +541,14 @@ test('createSunShadow.update: the lattice and columns cast while the camera is i
   const cast = (name: string): boolean => shadow.casters().filter((m) => m.name === name).every((m) => m.castShadow);
   const camera = new THREE.PerspectiveCamera();
   const target = new THREE.Vector3();
+  // the casters that belong to no room and are not the trees (the city's walls and roofs, the hotels, the front, the canopies) cast wherever the camera stands
+  const roomed = new Set(['concourse-lattice', 'concourse-column', 'shed-ribs', 'city-trees']);
   const stand = (p: THREE.Vector3, y: number): number => {
     camera.position.set(p.x, y, p.z);
     target.set(p.x + 10, 5, p.z);
     shadow.update(camera, target, noon);
+    const rest = shadow.casters().filter((m) => !roomed.has(m.name));
+    assert.ok(rest.length > 20 && rest.every((m) => m.castShadow), `${rest.length} casters outside the rooms and the trees, all of them casting`);
     return shadow.casters().filter((m) => m.visible && m.castShadow).reduce((s, m) => s + triangles(m), 0);
   };
   const concourse = centre('concourse-lattice'), shed = centre('shed-ribs');
@@ -515,7 +686,8 @@ test('addRoofShade: after the lights are summed and before the output; any patch
     'vec4 roofK = roofShade( cameraPosition - vViewPosition * mat3( viewMatrix ), uRoofShade );', 'float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );', 'reflectedLight.indirectDiffuse *= roofK.rgb;', 'reflectedLight.directDiffuse *= roofK.a;', fill, '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'declared above where it is used; applied after the lights, before the output');
-  assert.ok(f.indexOf('uniform vec4 uRoofShade;') < f.indexOf('vec4 roofShade('), 'the uniform is declared first');
+  assert.ok(f.includes('uniform vec4 uRoofShade;') && f.indexOf('uniform vec4 uRoofShade;') < f.indexOf('vec4 roofShade('), 'the uniform is declared first');
+  assert.equal(f.split('*= roofK').length - 1, 2, 'the hemisphere term and the direct term are scaled once each: the fill, added after, is the shade\'s to leave alone');
   for (const name of ['uCoverMap', 'uCoverSoft', 'uCoverRooms', 'uCoverRect', 'uCoverScale'] as const) assert.ok(shader.uniforms[name] === coverUniforms[name], `${name} is the shared one`);
   assert.ok(shader.uniforms.uRoofShade === roofShadeUniforms.uRoofShade, 'one shade for every surface, which grade() switches');
   assert.ok(shader.uniforms.uInteriorFill === roofShadeUniforms.uInteriorFill, 'and one fill, which grade() sets');
@@ -524,6 +696,14 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   const plain = new THREE.MeshLambertMaterial();
   addRoofShade(plain);
   assert.equal(plain.customProgramCacheKey().endsWith('+roofShade'), true);
+  // a material whose own patch has put the cover read in (the weather's wet ground does) is not given a second one: a program with two cannot compile
+  const wet = new THREE.MeshLambertMaterial();
+  wet.onBeforeCompile = (s) => { s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>\n${COVER_GLSL}`); };
+  addRoofShade(wet);
+  const wetShader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  wet.onBeforeCompile(wetShader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(wetShader.fragmentShader.split('float coverGroundAt(').length - 1, 1, 'the cover read an earlier patch added is not added again');
+  assert.ok(wetShader.fragmentShader.includes('vec4 roofK = roofShade('), 'and the shade is there');
 });
 
 test('addRoofShade: the concourse\'s fill is weighted by how far down the face looks and by how pale the surface is, so white steel keeps its modelling and the Range\'s brick and the floor keep their fill (round five, the funnel legs)', () => {
@@ -674,9 +854,10 @@ test('addRoofShade: a material with the MOTTLE define has its colour scaled by t
   const mottleExpression = /diffuseColor\.rgb \*= (.*);/.exec(block)?.[1] ?? '';
   assert.ok(slabExpression !== '' && mottleExpression !== '', `both lines are in the block: ${block}`);
   const glsl = new Glsl('');
-  // the number at (x, z) metres on the paving, `pixel` slabs wide to a pixel (what fwidth( slab ) would answer on the screen)
+  // the number at (x, z) metres on the paving, `pixel` slabs wide to a pixel (what fwidth( slab ) would answer on the screen). The fragment is always at one point of the screen:
+  // a slab is the paving's own, and a tone that came from where on the screen it is drawn would be the same for every slab here
   const toneAt = (x: number, z: number, pixel = 0): number => {
-    const slab = glsl.evaluate(slabExpression, { vars: {} }, { vMapUv: [x / 2.4, z / 2.4] });
+    const slab = glsl.evaluate(slabExpression, { vars: {} }, { vMapUv: [x / 2.4, z / 2.4], gl_FragCoord: [640.5, 360.5, 0.5, 1] });
     return glsl.evaluate(mottleExpression, { vars: {}, fns: { fwidth: () => [pixel, pixel] } }, { slab }) as number;
   };
   const tones: number[] = [];
