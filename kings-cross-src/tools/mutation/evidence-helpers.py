@@ -2,7 +2,7 @@
 
 python3 -I -u kings-cross-src/tools/mutation/evidence-helpers.py kings-cross-src .scratch/mutation/evidence-helpers [group ...]
 
-Seven groups, each judged by its own tests (a name given after the scratch path runs only the groups it is part of):
+Eight groups, each judged by its own tests (a name given after the scratch path runs only the groups it is part of):
 
   camera-sweep  tools/camera-sweep.mjs  which station cameras the frame-rate sweep runs, and how one pair and several pairs are summarised
   replay-peak   tools/replay-peak.mjs   restarting a recording at an instant, and finding the busiest stretch of a scan
@@ -13,6 +13,8 @@ Seven groups, each judged by its own tests (a name given after the scratch path 
   evidence      tools/evidence.mjs      the --hud, scoring-view, --views and scene-pin option parts of the pack tool: 13 tests of
                                         tools/tests/evidence.test.mjs, chosen by name (the rest of that file is covered by station-evidence.py
                                         and axis07-browser.py, or by nothing yet)
+  frozen-cameras tools/evidence.mjs     the station cameras: literals equal to the baseline's (tools/tests/frozen-station-cameras.json), reading
+                                        no station data and handed out fresh on every call
 
 The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass first, and a load or crash error
 is an ERROR, not a kill (tools/mutation/lib/kxmut.py).
@@ -454,6 +456,40 @@ EVIDENCE = [
     ('the usage text separates the scoring views with commas', "${r.role} view`).join('; ')}", "${r.role} view`).join(', ')}"),
 ]
 
+# The station cameras are literals (FROZEN_STATION_CAMERAS) held to tools/tests/frozen-station-cameras.json, the baseline's copy. The three tests
+# of tools/tests/frozen-cameras.test.mjs all compare with that fixture, so a changed value in the table turns each of them red; the fixture is the
+# baseline's own and is not mutated. Two entries, quoted whole, for the swap of two cameras:
+FROZEN_TOP = ("  top: {\n    pos: [46.37560028234806, 3000, -131.62931499021622],\n    target: [46.37840361751828, 0, -131.7292756890529],\n"
+              "    source: 'shedLayout, 10 m grid',\n    grid: true, fov: 12, near: 100,\n  },\n")
+FROZEN_SIDE = ("  side: {\n    pos: [1531.8966211635652, 65, -89.9688086871672],\n    target: [46.37560028234806, 65, -131.62931499021622],\n"
+               "    source: 'shedLayout, 10 m grid',\n    grid: true, fov: 7, near: 100,\n  },\n")
+FROZEN_FUNCTION = 'export function stationCameras(data) {\n  return structuredClone(FROZEN_STATION_CAMERAS);\n}'
+
+FROZEN_CAMERAS = [
+    # ---- a frozen camera changes (test: "every station camera is its frozen baseline value, field for field, and no camera is unfrozen")
+    ('a lens changes, as it did when the clock tower was lowered', 'fov: 66.5, near: 0.1,', 'fov: 63.8, near: 0.1,'),
+    ('an aim changes, as it did when the clock tower was lowered', 'target: [-51.35363794830843, 47.42283429841958, 73.46131825870368],', 'target: [-51.35363794830843, 46.27915317467165, 73.46131825870368],'),
+    ('an eye moves', 'pos: [260, 220, 90],', 'pos: [260, 220, 91],'),
+    ('a source label is reworded', "source: 'shedLayout',", "source: 'shedLayout frame',"),
+    ('a grid camera loses its grid', 'grid: true, fov: 12, near: 100,', 'fov: 12, near: 100,'),
+    ('a near plane moves', 'grid: true, fov: 12, near: 100,', 'grid: true, fov: 12, near: 99,'),
+    ('a camera is renamed', "'north-gable': {", "'north-gable-view': {"),
+    ('a camera is added', "const FROZEN_STATION_CAMERAS = {\n  overview: {", "const FROZEN_STATION_CAMERAS = {\n  'extra-view': {\n    pos: [0, 1, 2],\n    target: [0, 1, 3],\n    source: 'extra',\n  },\n  overview: {"),
+    ('two cameras swap places', FROZEN_TOP + FROZEN_SIDE, FROZEN_SIDE + FROZEN_TOP),
+
+    # ---- the cameras read the station data (test: "a frozen camera does not depend on the model: stationCameras reads no station data")
+    ('a camera moves when the station data has nothing in it', FROZEN_FUNCTION,
+     'export function stationCameras(data) {\n  const cameras = structuredClone(FROZEN_STATION_CAMERAS);\n  cameras.overview.pos[0] += data?.buildings ? 0 : 1;\n  return cameras;\n}'),
+    ('a camera moves when no station data is given', FROZEN_FUNCTION,
+     'export function stationCameras(data) {\n  const cameras = structuredClone(FROZEN_STATION_CAMERAS);\n  cameras.overview.pos[0] += data === undefined ? 1 : 0;\n  return cameras;\n}'),
+
+    # ---- the cameras are handed out fresh (test: "every call returns fresh cameras, so editing what one call returned changes nothing for the next")
+    ('the table itself is returned', 'return structuredClone(FROZEN_STATION_CAMERAS);', 'return FROZEN_STATION_CAMERAS;'),
+    ('the cameras are copied one level deep', 'return structuredClone(FROZEN_STATION_CAMERAS);', 'return { ...FROZEN_STATION_CAMERAS };'),
+    ('the cameras are copied two levels deep', 'return structuredClone(FROZEN_STATION_CAMERAS);',
+     'return Object.fromEntries(Object.entries(FROZEN_STATION_CAMERAS).map(([name, camera]) => [name, { ...camera }]));'),
+]
+
 # Mutations that change nothing, so no test can catch them. They are not run; they are kept so that the next reader does not take one for a gap.
 # (group, label, old, new[, file]) as in the tables.
 EQUIVALENT = [
@@ -470,6 +506,7 @@ GROUPS = [
     dict(name='camera-sweep', target='tools/camera-sweep.mjs', test='tools/tests/camera-sweep.test.mjs', mutations=CAMERA_SWEEP),
     dict(name='hud', target='tools/hud.mjs', test='tools/tests/hud.test.mjs', mutations=HUD),
     dict(name='evidence', target='tools/evidence.mjs', test='tools/tests/evidence.test.mjs', only=EVIDENCE_TESTS, mutations=EVIDENCE, timeout=120, test_timeout_ms=30000),
+    dict(name='frozen-cameras', target='tools/evidence.mjs', test='tools/tests/frozen-cameras.test.mjs', mutations=FROZEN_CAMERAS, timeout=120, test_timeout_ms=30000),
 ]
 
 

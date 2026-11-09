@@ -144,11 +144,13 @@ geometry/camera assertions in Node; they need no browser, relay listener or priv
 the preserved-anchor input to the replay audit. It runs the named synthetic replay assertions
 in isolated package copies.
 
-`evidence-helpers.py` mutates the small modules the evidence and performance tools share, in seven
+`evidence-helpers.py` mutates the small modules the evidence and performance tools share, in eight
 groups that are each judged by their own tests: `camera-sweep`, `replay-peak`, `frame-stats`,
-`scene-pin`, `flicker`, `hud` (with the page sources whose names its overlay selectors rely on) and
+`scene-pin`, `flicker`, `hud` (with the page sources whose names its overlay selectors rely on),
 `evidence` (the `--hud`, `--views`, scene-pin and scoring-view parts of `tools/evidence.mjs`, judged
-by 13 tests of `tools/tests/evidence.test.mjs` chosen by name; the driver stops if one is renamed).
+by 13 tests of `tools/tests/evidence.test.mjs` chosen by name; the driver stops if one is renamed) and
+`frozen-cameras` (the station cameras of `tools/evidence.mjs`, which are literals held to the
+baseline's values in `tools/tests/frozen-station-cameras.json` by `tools/tests/frozen-cameras.test.mjs`).
 It needs no browser, relay or recording. It exits 0 only when every mutation is caught and every
 test it runs was also seen failing by an assertion, and its report names the first mutation that
 reddened each test; append group names to run fewer (`... .scratch/mutation/evidence-helpers hud

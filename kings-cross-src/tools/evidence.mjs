@@ -11,15 +11,11 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { PLATFORM_HEIGHT, railSegments, twinRails } from '../core/scene.ts';
-import { CLOCK_TOWER_HEIGHT, GAUGE, RAIL_HEAD_WIDTH, SHED_SPAN_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, stationBuilding, stationPlatforms, worldToShed } from '../core/station.ts';
-import { barlowPlan, greatNorthernHotelPlan, landmarkPlans, landmarkSeats, midlandGrandPlan, REPLACED_BUILDING_IDS, tunnelMouths } from '../core/landmarks.ts';
+import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, stationBuilding, stationPlatforms } from '../core/station.ts';
+import { REPLACED_BUILDING_IDS } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
-import { gasholderPlan, granaryComplex } from '../core/kxcentral.ts';
 import { createTerrain } from '../core/terrain.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
-import { TOWER_SIZE, WESTERN_RANGE } from '../web/src/shed.ts';
-import { concourseGrid, keepTriangles } from '../web/src/concourse.ts';
-import { furniturePlan } from '../web/src/furniture.ts';
 import { FLICKER_GAP_MS, compareFrames, flickerSummary } from './flicker.mjs';
 import { PIN_TIME, PIN_WEATHER, WEATHER_NAMES, pinHonoured, pinParameters, scenePinFrom, withPin } from './scene-pin.mjs';
 import { HUD_NOTE, HUD_SELECTORS, hudController, hudMode } from './hud.mjs';
@@ -29,7 +25,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
 const packageRoot = path.resolve(here, '..');
 export const VIEWPORTS = { desktop: { width: 1280, height: 800 }, phone: { width: 390, height: 844 } };
-/** Metres west of the Western Range's west face from which `western-range` and `western-range-full` see its whole elevation. */
+// The stands below are what the frozen station cameras (FROZEN_STATION_CAMERAS) were placed from. The cameras are literals and do not
+// read these; the tests that measure a camera against its subject (camera-faults, evidence) read them, so a stand that no longer
+// matches its camera shows up there.
+/** Metres west of the Western Range's west face that `western-range` and `western-range-full` stand, to see its whole elevation. */
 export const WESTERN_RANGE_STANDOFF = 62;
 /**
  * The page draws over its own frame. In an 800 row capture the station switcher covers rows 48-125 below column 680 (web/src/stations.ts)
@@ -37,21 +36,15 @@ export const WESTERN_RANGE_STANDOFF = 62;
  * (the clock tower, the hotel) keep it between rows 130 and 706: a spire tip behind the "Edinburgh Waverley" button is not framed.
  */
 export const HUD_FREE_ROWS = { top: 130, bottom: 706, height: 800 };
-/** Metres out along the Midland Grand clock tower's front normal, and the eye height there, from which `midland-clock-tower` frames the whole tower. */
+/** Metres out along the Midland Grand clock tower's front normal, and the eye height there, that `midland-clock-tower` stands, to frame the whole tower. */
 export const CLOCK_TOWER_STANDOFF = 60;
 export const CLOCK_TOWER_EYE_Y = 40;
-/** Metres from the Great Northern Hotel's south end, and degrees east of due south, where `gnh-from-square` stands (the rubric's 45 m due south is inside OSM building 96299681). */
-export const GNH_STANDOFF = 30;
-export const GNH_BEARING_DEG = 30;
-/** The aim height on the hotel's main face and the lens that put its roofline and base between the page's overlays (HUD_FREE_ROWS). */
-export const GNH_AIM_Y = 23;
-export const GNH_FOV = 64;
-/** Metres west of the concourse canopy's west rim from which `concourse-exterior-west` sees the whole roof. */
+/** Metres west of the concourse canopy's west rim that `concourse-exterior-west` stands, to see the whole roof. */
 export const CONCOURSE_WEST_STANDOFF = 38;
 export const TRAIN_FACTORY_HOOK = 'Object.assign(kx, { evidenceBuildTrain: buildTrain });';
 export const AXES = [
   ['01', 'Geometric fidelity', 'Platform lengths, gauge, top/side 10 m grids; raw-OSM fidelity comparison remains a separate command.'],
-  ['02', 'Station look', 'Fixed world cameras derived from the station frame and OSM landmark plans.'],
+  ['02', 'Station look', 'Fixed world cameras, frozen at the baseline values; each was placed from the station frame, the OSM landmark plans or a reference photograph.'],
   ['03', 'Train models', 'Sample Azuma detail shots and dimension tests; a staged 387 is explicitly labelled.'],
   ['04', 'Live-data correctness', 'Replay inventory/churn report, live/replay comparison command, and board shots.'],
   ['05', 'Motion', 'Recording audit plus successive replay frames, with observed motion positions.'],
@@ -271,180 +264,232 @@ export async function safeFile(root, name) {
 }
 
 let worldCache;
-/** The committed terrain and city extract the ground-level cameras stand on, read once. */
+/** The committed terrain and city extract, read once, for measuring a camera against the ground. The station cameras do not read it: they are frozen. */
 export function stationWorld() {
   if (!worldCache) { const { city, terrain } = stationData(); worldCache = { city, terrain: createTerrain(terrain) }; }
   return worldCache;
 }
 
-// x east, y up, z south. Landmark targets come from their actual public OSM outlines.
-export function stationCameras(data, world = stationWorld()) {
-  const s = shedLayout(data), concourse = concourseCanopy(data);
-  const at = (u, v, y) => { const [x, z] = shedToWorld(s, u, v); return [x, y, z]; };
-  const camera = (pos, target, source, extra = {}) => ({ pos, target, source, ...extra });
-  const cams = {
-    overview: camera([260, 220, 90], at(s.width / 2, 120, 5), 'shedLayout'),
-    top: camera(at(s.width / 2, 120, 3000), at(s.width / 2, 120.1, 0), 'shedLayout, 10 m grid', { grid: true, fov: 12, near: 100 }),
-    side: camera(at(s.width + 1450, 120, 65), at(s.width / 2, 120, 65), 'shedLayout, 10 m grid', { grid: true, fov: 7, near: 100 }),
-    'south-front': camera(at(s.width / 2, -70, 26), at(s.width / 2, 0, 12), 'shedLayout south facade, clear of Belgrove House'),
-    'front-oblique': camera(at(s.width + 70, -85, 32), at(s.width / 2, 20, 12), 'shedLayout south-east corner'),
-    'shed-interior': camera(at(s.width / 4, s.length - 7, 3.2), at(s.width / 4, s.length - 90, 9), 'shedLayout, platform north end'),
-    'platform-eye': camera(at(s.width / 2, 100, PLATFORM_HEIGHT + 1.6), at(s.width / 2, 140, PLATFORM_HEIGHT + 1.6), 'shedLayout platform axis; eye 1.6 m above platform'),
-    concourse: camera([concourse.centre[0] - concourse.radius * .6, PLATFORM_HEIGHT + 1.6, concourse.centre[1]], [concourse.centre[0], 12, concourse.centre[1]], 'concourseCanopy fitted OSM arc'),
-    // Wave 0 re-framing (round-4 scorer: the old 1.6 m stand 6 m off the face showed about three bays). The same eye height, pulled back
-    // WESTERN_RANGE_STANDOFF = 62 m from the west face on the Range's mid-length line, with a 70 degree lens: at the capture aspect
-    // (1.6) that is a 96 degree horizontal view, wider than the 133.4 m elevation seen from 62 m (2 x atan(66.7 / 62) = 94 degrees).
-    'western-range': camera(at(-WESTERN_RANGE.depth - WESTERN_RANGE_STANDOFF, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 1.6),
-      at(-WESTERN_RANGE.depth - 0.1, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 7.5),
-      `WESTERN_RANGE west brick facade v${WESTERN_RANGE.v0}..${WESTERN_RANGE.v1}: the whole ${(WESTERN_RANGE.v1 - WESTERN_RANGE.v0).toFixed(1)} m west elevation from ${WESTERN_RANGE_STANDOFF} m west of the face on its mid-length, eye 1.6 m, 70 degree lens`, { fov: 70, near: .1 }),
-    'western-range-gateline': camera(at(-55, 38, 3), at(-WESTERN_RANGE.depth - .01, 38, 5.5),
-      'Arup 2012/2 p27 fig4 southern public frontage; ASSUMED model alignment, upper floors and scene retained', { fov: 60, near: .1 }),
-    'roof-above': camera(at(s.width / 2 + 45, 110, s.crown + 110), at(s.width / 2, 110, s.crown - 3), 'shedLayout roof'),
-    'north-gable': camera(at(s.width / 2, s.length + 80, 18), at(s.width / 2, s.length, 12), 'shedLayout north gable'),
-  };
+/**
+ * The fixed station cameras by name (x east, y up, z south), frozen at the values the graphical-fidelity baseline holds
+ * (gfx-rubrics/baseline/cameras.json, "station"); tools/tests/frozen-station-cameras.json is the copy that
+ * tools/tests/frozen-cameras.test.mjs holds stationCameras to, name by name and field by field.
+ *
+ * A frozen camera must not depend on the model. These were computed on every run from the OSM station frame, the landmark plans and
+ * the terrain, so a model change moved a view the scorers had already compared against (the Midland Grand clock tower going from 76 m
+ * to 73 m, the rubric's figure, would have moved midland-clock-tower's aim and lens, and the scorers' camera check, which compares
+ * pos, target and fov with the baseline, would have voided the view). They are literals now. Change one only on purpose, in this
+ * table and in the test's copy together, and re-freeze the baseline with it. The comments keep the reasoning each camera came from
+ * (the photograph, the stand, the lens); a model value they name (a height, a width) is the one it had when the camera was frozen.
+ */
+const FROZEN_STATION_CAMERAS = {
+  overview: {
+    pos: [260, 220, 90],
+    target: [46.37560028234806, 5, -131.62931499021622],
+    source: 'shedLayout',
+  },
+  top: {
+    pos: [46.37560028234806, 3000, -131.62931499021622],
+    target: [46.37840361751828, 0, -131.7292756890529],
+    source: 'shedLayout, 10 m grid',
+    grid: true, fov: 12, near: 100,
+  },
+  side: {
+    pos: [1531.8966211635652, 65, -89.9688086871672],
+    target: [46.37560028234806, 65, -131.62931499021622],
+    source: 'shedLayout, 10 m grid',
+    grid: true, fov: 7, near: 100,
+  },
+  'south-front': {
+    pos: [41.04926345892175, 26, 58.29601279953229],
+    target: [43.01159807807881, 12, -11.676476386164524],
+    source: 'shedLayout south facade, clear of Belgrove House',
+  },
+  'front-oblique': {
+    pos: [146.69214011801085, 32, 76.26459857899144],
+    target: [43.57226511212369, 12, -31.66861615350647],
+    source: 'shedLayout south-east corner',
+  },
+  'shed-interior': {
+    pos: [44.150000000000006, 3.2, -328.45],
+    target: [45.814933248303184, 8, -111.63717522287426],
+    source: 'OSM platform 4 north end looking into the shed',
+  },
+  'platform-eye': {
+    pos: [43.54285714285716, 2.5, -210.09285714285716],
+    target: [44.66419121094691, 2.5, -250.07713667754103],
+    source: 'OSM platform 4 polygon, eye 1.6 m above platform',
+  },
+  concourse: {
+    pos: [-58.19823691449512, 2.5, -90.50307363615148],
+    target: [-21.256814215392197, 12, -90.50307363615148],
+    source: 'concourseCanopy fitted OSM arc',
+  },
+  // Wave 0 re-framing (round-4 scorer: the old 1.6 m stand 6 m off the face showed about three bays). The same eye height, pulled back
+  // WESTERN_RANGE_STANDOFF = 62 m from the west face on the Range's mid-length line, with a 70 degree lens: at the capture aspect
+  // (1.6) that is a 96 degree horizontal view, wider than the 133.4 m elevation seen from 62 m (2 x atan(66.7 / 62) = 94 degrees).
+  'western-range': {
+    pos: [-64.95331210268448, 1.6, -89.53369347678505],
+    target: [-3.0776395227611486, 7.5, -87.79842900641617],
+    source: 'WESTERN_RANGE west brick facade v8.1..141.5: the whole 133.4 m west elevation from 62 m west of the face on its mid-length, eye 1.6 m, 70 degree lens',
+    fov: 70, near: 0.1,
+  },
+  'western-range-gateline': {
+    pos: [-46.992406666352196, 3, -52.21552262253324],
+    target: [-4.019302236450679, 5.5, -51.010368832853786],
+    source: 'Arup 2012/2 p27 fig4 southern public frontage; ASSUMED model alignment, upper floors and scene retained',
+    fov: 60, near: 0.1,
+  },
+  'roof-above': {
+    pos: [91.07758124184501, 131.6408, -120.37174427994427],
+    target: [46.09526676532562, 18.640800000000002, -121.63324510654523],
+    source: 'shedLayout roof',
+  },
+  'north-gable': {
+    pos: [52.08991869333342, 18, -335.38920349896534],
+    target: [49.84725055715392, 12, -255.42064442959756],
+    source: 'shedLayout north gable',
+  },
   // Roof-family comparison: the same public-model triangle in before/after builds,
   // viewed from below at about six metres. No shell, cladding or city is hidden.
-  const station = stationBuilding(data);
-  let funnel = null; // world [x, z] of the concourse funnel's axis
-  if (station) {
-    const { centre, grid } = concourseGrid(concourse, station.pts, s, data.buildings.filter(b => b.id === 46821177).map(b => b.pts));
-    funnel = centre;
-    const targets = keepTriangles(grid, station.pts, s).map(tri => tri.reduce((p, i) => {
-      const n = grid.nodes[i]; return [p[0] + n.x / 3, p[1] + n.height / 3, p[2] + n.z / 3];
-    }, [0, 0, 0]));
-    targets.sort((p, q) => Math.hypot(p[0] - centre[0] + 18, p[2] - centre[1]) - Math.hypot(q[0] - centre[0] + 18, q[2] - centre[1]));
-    const t = targets[0];
-    if (t) cams['concourse-roof-detail'] = camera([t[0] - 1.5, t[1] - 6, t[2] + 1], t,
-      'drawn concourse roof triangle, view from below; approximate procedural member families', { fov: 50, near: .1 });
-  }
-  const p = stationPlatforms(data).get('4');
-  if (p) { const mid = p.pts.reduce((a, b) => [a[0] + b[0] / p.pts.length, a[1] + b[1] / p.pts.length], [0, 0]);
-    cams['platform-eye'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] + Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] - Math.cos(s.heading) * 40], 'OSM platform 4 polygon, eye 1.6 m above platform');
-    cams['platform-eye-south'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] - Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] + Math.cos(s.heading) * 40], 'OSM platform 4 polygon, south-facing eye 1.6 m above platform');
-    const tip = [...p.pts].sort((a,b)=>a[1]-b[1]).slice(0,2).reduce((a,b)=>[a[0]+b[0]/2,a[1]+b[1]/2],[0,0]);
-    cams['shed-interior'] = camera([tip[0],3.2,tip[1]], at(s.width / 2,100,8), 'OSM platform 4 north end looking into the shed'); }
+  'concourse-roof-detail': {
+    pos: [-27.505453679719565, 13.037666207957841, -86.60333744605987],
+    target: [-26.005453679719565, 19.03766620795784, -87.60333744605987],
+    source: 'drawn concourse roof triangle, view from below; approximate procedural member families',
+    fov: 50, near: 0.1,
+  },
+  'platform-eye-south': {
+    pos: [43.54285714285716, 2.5, -210.09285714285716],
+    target: [42.42152307476741, 2.5, -170.10857760817328],
+    source: 'OSM platform 4 polygon, south-facing eye 1.6 m above platform',
+  },
   // Pancras Road exterior: the concave east front sits beside the concourse. Its old
   // normal-offset camera landed below that roof and hid the hotel. The public west
   // frontage provides an unobstructed view of the F9 ground-floor arch trim.
   // https://historicengland.org.uk/listing/the-list/list-entry/1113244
-  const hotel = greatNorthernHotelPlan(data), road = hotel.faces.find(f => f.kind === 'rear').chain.edges;
-  const edge = road[Math.floor(road.length / 2)];
-  cams['great-northern-hotel'] = camera([edge.mid[0] + edge.normal[0] * 25, 10, edge.mid[1] + edge.normal[1] * 25], [edge.mid[0], hotel.eaves / 2, edge.mid[1]], 'Great Northern Hotel Pancras Road exterior; OSM rear-chain normal', { fov: 75, near: .1 });
+  'great-northern-hotel': {
+    pos: [-76.82513065762711, 10, -5.344558174312606],
+    target: [-61.25, 9.65, -24.9],
+    source: 'Great Northern Hotel Pancras Road exterior; OSM rear-chain normal',
+    fov: 75, near: 0.1,
+  },
   // Retain the old under-roof view as a junction diagnostic, not as hotel evidence.
   // Before/after captures can inspect the paving seam without moving the camera.
-  const main = hotel.faces.find(f => f.kind === 'main').chain.edges;
-  const junction = main[Math.floor(main.length / 2)];
-  cams['concourse-hotel-junction'] = camera([junction.mid[0] + junction.normal[0] * 45, 14, junction.mid[1] + junction.normal[1] * 45], [junction.mid[0], hotel.eaves / 2, junction.mid[1]], 'OSM hotel main facade; fixed concourse paving-junction diagnostic');
-  const midland = midlandGrandPlan(data), face = midland.front.edges[Math.floor(midland.front.edges.length / 2)];
-  cams['midland-grand-front'] = camera([face.mid[0] + face.normal[0] * 150, 28, face.mid[1] + face.normal[1] * 150], [face.mid[0], midland.eaves / 2, face.mid[1]], 'midlandGrandPlan Euston Road front');
-  const barlow = barlowPlan(data), bp = (u, v, y) => { const [x, z] = shedToWorld(barlow, u, v); return [x, y, z]; };
-  cams['st-pancras-shed'] = camera(bp(barlow.width / 2, -85, 46), bp(barlow.width / 2, 95, barlow.rise / 2), 'barlowPlan south end, real OSM heading');
-  const midlandEast = Math.max(...midland.outline.map(p => worldToShed(barlow, p).u));
-  cams['st-pancras-shed-oblique'] = camera(
-    bp(midlandEast + barlow.width * 3.3, -barlow.width * 0.4, barlow.rise * 6),
-    bp(barlow.width / 2, barlow.barlowLength * 0.48, barlow.rise * 0.48),
-    'barlowPlan elevated south-east oblique; stand-off derived from Midland Grand extent and Barlow width',
-    { fov: 55, near: .1 },
-  );
-  const mouth = tunnelMouths(data).find(m => m.id === 'gasworks-south');
-  if (mouth) cams['gasworks-portals'] = camera([mouth.origin[0] - mouth.axis[0] * 65, 12, mouth.origin[1] - mouth.axis[1] * 65], [mouth.origin[0], 4, mouth.origin[1]], 'tunnelMouths gasworks-south rail boundary');
+  'concourse-hotel-junction': {
+    pos: [-22.843110827215803, 14, -71.98447478138837],
+    target: [-53.4, 9.65, -38.95],
+    source: 'OSM hotel main facade; fixed concourse paving-junction diagnostic',
+  },
+  'midland-grand-front': {
+    pos: [-22.982023517687793, 28, 232.12089677648294],
+    target: [-89.85, 11, 97.85],
+    source: 'midlandGrandPlan Euston Road front',
+  },
+  'st-pancras-shed': {
+    pos: [-51.63065086440554, 46, 147.21783924819596],
+    target: [-132.3878885320359, 15.24, -13.649399692160884],
+    source: 'barlowPlan south end, real OSM heading',
+  },
+  'st-pancras-shed-oblique': {
+    pos: [180.61555356901593, 182.88, -30.990709103055394],
+    target: [-134.99161672917833, 14.6304, -18.835988264560044],
+    source: 'barlowPlan elevated south-east oblique; stand-off derived from Midland Grand extent and Barlow width',
+    fov: 55, near: 0.1,
+  },
+  'gasworks-portals': {
+    pos: [40.17447320353345, 12, -393.4972012403787],
+    target: [42.26168417780199, 4, -458.4636814463194],
+    source: 'tunnelMouths gasworks-south rail boundary',
+  },
 
   // ---- Wave 0 of the graphical-fidelity programme: the fixed views the six element rubrics add ----------------------
   // (gfx-rubrics/rubric-<element>.md, "Fixed views"). Each stands where its reference photograph was taken (refs/<group>/
   // SOURCES.md) or on the OSM feature the rubric names, and is frozen once an element's iteration starts. A camera that
-  // stands on the ground takes the terrain height under it (the ground is not flat here); platform eyes stand 1.6 m above
+  // stands on the ground took the terrain height under it (the ground is not flat here); platform eyes stand 1.6 m above
   // the platform surface. ELEMENT_VIEWS says which element is scored from which view.
-  const { terrain, city } = world;
-  const stand = ([x, z], eye = 1.7) => [x, terrain.heightAt(x, z) + eye, z];
-  const standAt = (u, v, eye) => stand(shedToWorld(s, u, v), eye);
-  const groundAt = ([x, z], above = 0) => [x, terrain.heightAt(x, z) + above, z];
-  const way = id => (city.roads.find(r => r.id === id) ?? city.canals.find(c => c.id === id) ?? (() => { throw new Error(`OSM way ${id} is not in the city extract`); })()).pts;
-  const pathLength = pts => pts.slice(1).reduce((n, p, i) => n + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
-  // The point `distance` metres along a polyline, with the unit direction of travel there.
-  const along = (pts, distance) => {
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const length = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
-      if (distance <= length || i + 2 === pts.length) {
-        const t = Math.min(1, distance / length);
-        return { point: [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * t, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * t], dir: [(pts[i + 1][0] - pts[i][0]) / length, (pts[i + 1][1] - pts[i][1]) / length] };
-      }
-      distance -= length;
-    }
-  };
-  const wallPlane = -(TOWER_SIZE + .15); // v of the clock tower's south face: buildTower stands TOWER_SIZE/2 + .15 in front of the south front
 
   // lighting-materials. R-lighting-materials-a (light-a2-facade-brick-sunlit-2026-06.jpg, Bex Walton CC BY 4.0): stock brick
   // beside a pier of the south front. The east end pier is the stone pier at u = width - 0.5 (shed.ts); the eye stands
   // 4 m south of it and aims at the brick between the pier and the nearest porch arch.
-  cams['facade-brick-close'] = camera(standAt(s.width - 1, -4), at(s.width - 2.5, 0, 2.6),
-    'R-lighting-materials-a standpoint (light-a2-facade-brick-sunlit-2026-06.jpg): 4 m south of the east end pier of the south front, eye 1.7 m', { fov: 50, near: .1 });
+  'facade-brick-close': {
+    pos: [77.99074543182866, 1.1164013310948557, -6.693935449602762],
+    target: [76.60346835608698, 2.6, -10.734413430624517],
+    source: 'R-lighting-materials-a standpoint (light-a2-facade-brick-sunlit-2026-06.jpg): 4 m south of the east end pier of the south front, eye 1.7 m',
+    fov: 50, near: 0.1,
+  },
 
   // kx-front.
   // R-kx-front-c (front-c-clocktower-2019.jpg, Acabashi CC BY-SA 4.0): the clock tower from the square. 35 m south of the
   // tower's south face at y = 28 m, aimed at the clock centre (buildTower's clockY, 5.75 m under the 112 ft overall height).
-  cams['tower-close'] = camera(at(s.width / 2, wallPlane - 35, 28), at(s.width / 2, wallPlane, CLOCK_TOWER_HEIGHT - 5.75),
-    'R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre', { fov: 35, near: .1 });
+  'tower-close': {
+    pos: [41.84681231485059, 28, 29.85719398048837],
+    target: [42.82797962442912, 28.3876, -5.129050612360035],
+    source: 'R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre',
+    fov: 35, near: 0.1,
+  },
   // R-kx-front-b (front-b-oblique-sw-2016.jpg, Oast House Archive CC BY-SA 2.0): the front from the square's south-west,
   // about 60 m from the west great arch (centre u = aisle + half a span), looking north-east at the front. The pure
   // south-west bearing (45 degrees) puts the eye inside the square's row of trees (a trunk 0.7 m away filled 58% of the
   // frame), so the eye keeps the 60 m but stands 38 m west and 49 m south of the arch: south-south-west, clear of them.
-  const westArch = s.aisle + SHED_SPAN_WIDTH / 2;
-  cams['front-southwest-pedestrian'] = camera(standAt(westArch - 38, -49), at(s.width / 2, 0, 12),
-    'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east', { fov: 60, near: .1 });
+  'front-southwest-pedestrian': {
+    pos: [-12.342812741131121, 1.8085703201461005, 35.79040898519868],
+    target: [43.01159807807881, 12, -11.676476386164524],
+    source: 'R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east',
+    fov: 60, near: 0.1,
+  },
   // R-kx-front-d (front-d2-north-york-way-2019.jpg, Colin Cheesman CC BY-SA 2.0): the east flank from York Way. The OSM York Way
   // centreline (way 43892837) runs about 10 m east of the flank wall here; the eye stands 40 m out at y = 12 m, looking west.
-  cams['shed-east-flank'] = camera(at(s.width + 40, s.length / 2, 12), at(s.width, s.length / 2, 9),
-    'R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west', { near: .1 });
+  'shed-east-flank': {
+    pos: [122.50459160122618, 12, -131.41508000499567],
+    target: [82.52031206654229, 9, -132.53641407308544],
+    source: 'R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west',
+    near: 0.1,
+  },
 
   // shed-interior. The platform eyes use platform 4's recipe (polygon midpoint, 1.6 m above the platform, looking along it).
-  const platformMid = ref => { const q = stationPlatforms(data).get(ref); return q && q.pts.reduce((a, b) => [a[0] + b[0] / q.pts.length, a[1] + b[1] / q.pts.length], [0, 0]); };
-  const platformEye = (mid, sign, source) => camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]],
-    [mid[0] + sign * Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] - sign * Math.cos(s.heading) * 40], source);
-  const platform1 = platformMid('1'), platform8 = platformMid('8'), platform4 = platformMid('4');
   // East-shed interior photograph (shed-a-north-from-footbridge-2019.jpg, kitmasterbloke CC BY 2.0, looks north along the platforms).
-  if (platform1) cams['platform-eye-p1-north'] = platformEye(platform1, 1, 'OSM platform 1 polygon midpoint, eye 1.6 m above platform, looking north; east-shed interior standpoint (shed-a-north-from-footbridge-2019.jpg)');
+  'platform-eye-p1-north': {
+    pos: [67.66190476190475, 2.5, -206.35238095238097],
+    target: [68.7832388299945, 2.5, -246.33666048706488],
+    source: 'OSM platform 1 polygon midpoint, eye 1.6 m above platform, looking north; east-shed interior standpoint (shed-a-north-from-footbridge-2019.jpg)',
+  },
   // R-kx-shed-interior-b (shed-b-south-screen-2019.jpg, kitmasterbloke CC BY 2.0): the inner face of the south screen.
-  if (platform8) cams['platform-eye-p8-south'] = platformEye(platform8, -1, 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)');
-  const furniture = furniturePlan(data, s);
-  if (platform4) {
-    // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
-    // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
-    const m = worldToShed(s, platform4), eye = PLATFORM_HEIGHT + 1.6, pitch = 55 * Math.PI / 180, reach = 30, run = Math.cos(pitch) * reach * Math.SQRT1_2;
-    cams['roof-underside'] = camera([platform4[0], eye, platform4[1]], at(m.u + run, m.v + run, eye + Math.sin(pitch) * reach),
-      'OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)');
-    // R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg, The wub CC BY-SA 4.0): the bench/lamp/help-point groups on a platform.
-    // The nearest such group to the midpoint is everything within 3 m of the nearest piece; the eye stands 4 m from its centre,
-    // along the platform on the midpoint's side, looking at it.
-    const pieces = [...furniture.benches, ...furniture.lamps, ...furniture.helpPoints].filter(piece => piece.ref === '4');
-    if (pieces.length) {
-      const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-      const first = pieces.reduce((a, b) => dist([a.x, a.z], platform4) <= dist([b.x, b.z], platform4) ? a : b);
-      const group = pieces.filter(piece => dist([piece.x, piece.z], [first.x, first.z]) <= 3);
-      const centre = [group.reduce((n, piece) => n + piece.x, 0) / group.length, group.reduce((n, piece) => n + piece.z, 0) / group.length];
-      const axis = [Math.sin(s.heading), -Math.cos(s.heading)], toMid = (platform4[0] - centre[0]) * axis[0] + (platform4[1] - centre[1]) * axis[1] >= 0 ? 1 : -1;
-      cams['furniture-close'] = camera([centre[0] + toMid * axis[0] * 4, PLATFORM_HEIGHT + 1.6, centre[1] + toMid * axis[1] * 4], [centre[0], PLATFORM_HEIGHT + .8, centre[1]],
-        'OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)');
-    }
-  }
+  'platform-eye-p8-south': {
+    pos: [15.408333333333333, 2.5, -216.2666666666667],
+    target: [14.286999265243583, 2.5, -176.28238713198283],
+    source: 'OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)',
+  },
+  // R-kx-shed-interior-a (shed-a-north-from-footbridge-2019.jpg): the roof underside, ribs and glazing. Platform 4 midpoint,
+  // eye 1.6 m, pitched up 55 degrees and turned north-east so the sight line crosses the east vault.
+  'roof-underside': {
+    pos: [43.54285714285716, 2.5, -210.09285714285716],
+    target: [56.04656167073201, 27.074561328669756, -221.9143760208631],
+    source: 'OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)',
+  },
+  // R-kx-shed-interior-d (shed-d-platform-furniture-2022.jpg, The wub CC BY-SA 4.0): the bench/lamp/help-point groups on a platform.
+  // The nearest such group to the midpoint is everything within 3 m of the nearest piece; the eye stands 4 m from its centre,
+  // along the platform on the midpoint's side, looking at it.
+  'furniture-close': {
+    pos: [43.47617734039083, 2.5, -217.99980584974898],
+    target: [43.5883107471998, 1.7000000000000002, -221.99823380321737],
+    source: 'OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)',
+  },
   // R-kx-shed-interior-f (shed-f-suburban-platforms-2022.jpg, Mr Ignavy CC BY-SA 2.0): the platform 9-10 canopies. Platform 9's
   // vertex mean lies outside its own canopy (the platform splays), so the midpoint is the canopy's middle sample, which is under it.
-  const canopy9 = furniture.canopies.find(c => c.ref === '9');
-  if (canopy9) {
-    const k = Math.floor(canopy9.left.length / 2), centreline = i => [(canopy9.left[i][0] + canopy9.right[i][0]) / 2, (canopy9.left[i][1] + canopy9.right[i][1]) / 2];
-    const mid = centreline(k), ahead = [centreline(Math.min(k + 1, canopy9.left.length - 1)), centreline(Math.max(k - 1, 0))];
-    const dir = [ahead[0][0] - ahead[1][0], ahead[0][1] - ahead[1][1]], length = Math.hypot(...dir), north = (dir[0] * Math.sin(s.heading) - dir[1] * Math.cos(s.heading)) >= 0 ? 1 : -1;
-    cams['suburban-p9'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] + north * dir[0] / length * 40, PLATFORM_HEIGHT + 1.6, mid[1] + north * dir[1] / length * 40],
-      'OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)');
-  }
+  'suburban-p9': {
+    pos: [7.821052603185734, 2.5, -271.7337435583622],
+    target: [17.78834085522388, 2.5, -310.47200842529685],
+    source: 'OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)',
+  },
 
   // western-concourse.
-  if (funnel) {
-    // R-western-concourse-a (conc-a-funnel-2012.jpg, Colin CC BY-SA 3.0; conc-ab-funnel-brick-2025.jpg): the funnel and the Range behind
-    // it. 8 m west of the funnel's axis, eye 1.6 m above the concourse floor (y = 0.02), pitched up 35 degrees, looking east.
-    const f = worldToShed(s, funnel), eye = 1.62;
-    cams['concourse-funnel-up'] = camera(at(f.u - 8, f.v, eye), at(f.u, f.v, eye + 8 * Math.tan(35 * Math.PI / 180)),
-      'R-western-concourse-a standpoint (conc-a-funnel-2012.jpg): 8 m from the funnel axis, eye 1.6 m, pitched up 35 degrees, looking east at the funnel and the Range');
-  }
+  // R-western-concourse-a (conc-a-funnel-2012.jpg, Colin CC BY-SA 3.0; conc-ab-funnel-brick-2025.jpg): the funnel and the Range behind
+  // it. 8 m west of the funnel's axis, eye 1.6 m above the concourse floor (y = 0.02), pitched up 35 degrees, looking east.
+  'concourse-funnel-up': {
+    pos: [-16.7270740795371, 1.62, -86.22636688980997],
+    target: [-8.730218172600322, 7.221660305677678, -86.00210007619202],
+    source: 'R-western-concourse-a standpoint (conc-a-funnel-2012.jpg): 8 m from the funnel axis, eye 1.6 m, pitched up 35 degrees, looking east at the funnel and the Range',
+  },
   // R-western-concourse-c (conc-c-exterior-square-2016.jpg, ell brown CC BY-SA 2.0): the concourse roof from King's Cross Square.
   // The canopy edge is the fitted arc's southern point. The rubric asks for ~50 m south-west of it, looking north-east, but that
   // quarter of the square is the hotel's: from 43 south-west stands (bearing 185-260 degrees from the roof's centre, 15-100 m from its
@@ -454,20 +499,31 @@ export function stationCameras(data, world = stationWorld()) {
   // dome, so the aim is the canopy's centre (a 45 degree aim put the roof half out of frame) and the lens is 60 degrees to take the
   // 123 m span in. The hotel still stands in front of about half of the canopy from this stand (tests/camera-faults.test.mjs measures
   // it), so the western-concourse scorer could not score C6 from here: it is context only (VIEW_ROLES) and C6 is scored from the west view.
-  const arc = worldToShed(s, concourse.centre), canopyEdge = arc.v - concourse.radius;
-  cams['concourse-exterior-square'] = camera(standAt(arc.u - 5, canopyEdge - 35), [concourse.centre[0], 8, concourse.centre[1]],
-    'R-western-concourse-c standpoint (conc-c-exterior-square-2016.jpg): King\'s Cross Square, eye 1.7 m, 35 m south of the canopy edge and 5 m west (the south-west quarter of the square is behind the hotel), looking at the whole roof', { fov: 60, near: .1 });
+  'concourse-exterior-square': {
+    pos: [-28.962002958314887, 1.7873006283983532, 5.887844681929378],
+    target: [-21.256814215392197, 8, -90.50307363615148],
+    source: 'R-western-concourse-c standpoint (conc-c-exterior-square-2016.jpg): King\'s Cross Square, eye 1.7 m, 35 m south of the canopy edge and 5 m west (the south-west quarter of the square is behind the hotel), looking at the whole roof',
+    fov: 60, near: 0.1,
+  },
   // The photograph's own composition, which the square cannot give: the whole dome with the hotel at the frame's right edge and the
   // clock turret behind the roof. That is the dome seen from the west, across Pancras Road: 38 m west of the canopy's west rim on the
   // roof's centre line, eye 1.7 m, looking east. Added beside concourse-exterior-square (not named in the rubric) for the C2 and C6
   // criteria, and now the official view for C6 (VIEW_ROLES): the lead's decision after the scorer found the hotel hiding the square's.
-  cams['concourse-exterior-west'] = camera(standAt(arc.u - concourse.radius - CONCOURSE_WEST_STANDOFF, arc.v), [concourse.centre[0], 8, concourse.centre[1]],
-    `R-western-concourse-c composition (conc-c-exterior-square-2016.jpg, conc-c2-dome-aerial-2016.jpg): Pancras Road, ${CONCOURSE_WEST_STANDOFF} m west of the canopy's west rim on the roof's centre line, eye 1.7 m, looking east at the whole roof with the hotel at the right edge`, { fov: 60, near: .1 });
+  'concourse-exterior-west': {
+    pos: [-120.78672025708558, 1.1259939593046575, -93.29432749234542],
+    target: [-21.256814215392197, 8, -90.50307363615148],
+    source: 'R-western-concourse-c composition (conc-c-exterior-square-2016.jpg, conc-c2-dome-aerial-2016.jpg): Pancras Road, 38 m west of the canopy\'s west rim on the roof\'s centre line, eye 1.7 m, looking east at the whole roof with the hotel at the right edge',
+    fov: 60, near: 0.1,
+  },
   // R-western-concourse-b (conc-b-roof-meets-range-2025-08.jpg, Jonosunde CC BY-SA 4.0): the whole Range elevation from inside the
   // concourse. y = 8 m under the roof near the canopy's west edge (the rim itself is only ~5 m high), at the Range's mid-length. The
   // eye is clear of the roof: the dome's glazing is 3.3 m above it there and the concourse floor 8 m below (tests/camera-faults.test.mjs).
-  cams['western-range-full'] = camera(at(-WESTERN_RANGE.depth - WESTERN_RANGE_STANDOFF, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 8), at(-WESTERN_RANGE.depth - .1, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 6),
-    'R-western-concourse-b standpoint (conc-b-roof-meets-range-2025-08.jpg): inside the concourse near the canopy\'s west edge, y = 8 m, under the roof glazing, the full Range elevation', { fov: 70, near: .1 });
+  'western-range-full': {
+    pos: [-64.95331210268448, 8, -89.53369347678505],
+    target: [-3.0776395227611486, 6, -87.79842900641617],
+    source: 'R-western-concourse-b standpoint (conc-b-roof-meets-range-2025-08.jpg): inside the concourse near the canopy\'s west edge, y = 8 m, under the roof glazing, the full Range elevation',
+    fov: 70, near: 0.1,
+  },
 
   // historic-neighbours.
   // R-historic-neighbours-a (hist-a-great-northern-hotel-2013.jpg, Richard Ash CC BY-SA 2.0): the crescent from the square, looking
@@ -479,69 +535,90 @@ export function stationCameras(data, world = stationWorld()) {
   // is 64 degrees, which puts the roofline (the ridge and the chimneys above it, 27 m) and the foot of the nearest corner inside the
   // page's free rows (HUD_FREE_ROWS): the 50 degree lens aimed at 9.65 m cropped the near corner's roof and put the dormers behind the
   // station switcher.
-  const hotelSouth = worldToShed(s, hotel.outline.reduce((a, b) => b[1] > a[1] ? b : a)), swing = GNH_BEARING_DEG * Math.PI / 180;
-  cams['gnh-from-square'] = camera(standAt(hotelSouth.u + GNH_STANDOFF * Math.sin(swing), hotelSouth.v - GNH_STANDOFF * Math.cos(swing)), [junction.mid[0], GNH_AIM_Y, junction.mid[1]],
-    `R-historic-neighbours-a standpoint (hist-a-great-northern-hotel-2013.jpg): King's Cross Square, eye 1.7 m, ${GNH_STANDOFF} m from the hotel's south end at ${GNH_BEARING_DEG} degrees east of south (clear of the round service building OSM 96299681 that the rubric's 45 m due-south stand lands in), looking along the crescent's main face with the whole roofline in frame`, { fov: GNH_FOV, near: .1 });
+  'gnh-from-square': {
+    pos: [-20.134223016314543, 1.9819315691099577, 15.39105164732452],
+    target: [-53.4, 23, -38.95],
+    source: 'R-historic-neighbours-a standpoint (hist-a-great-northern-hotel-2013.jpg): King\'s Cross Square, eye 1.7 m, 30 m from the hotel\'s south end at 30 degrees east of south (clear of the round service building OSM 96299681 that the rubric\'s 45 m due-south stand lands in), looking along the crescent\'s main face with the whole roofline in frame',
+    fov: 64, near: 0.1,
+  },
   // R-historic-neighbours-b (hist-b-midland-grand-euston-road-2012.jpg, Colin CC BY-SA 3.0): the front from Euston Road. The two
   // OSM carriageways cross the front's normal 29.8 m and 42.1 m out; 50 m is the south pavement beyond them.
-  cams['midland-euston-road'] = camera(stand([face.mid[0] + face.normal[0] * 50, face.mid[1] + face.normal[1] * 50]), [face.mid[0], 16, face.mid[1]],
-    'R-historic-neighbours-b standpoint (hist-b-midland-grand-euston-road-2012.jpg): south pavement of Euston Road opposite the hotel centre, eye 1.7 m', { fov: 70, near: .1 });
+  'midland-euston-road': {
+    pos: [-67.56067450589593, 2.830348310685503, 142.60696559216098],
+    target: [-89.85, 16, 97.85],
+    source: 'R-historic-neighbours-b standpoint (hist-b-midland-grand-euston-road-2012.jpg): south pavement of Euston Road opposite the hotel centre, eye 1.7 m',
+    fov: 70, near: 0.1,
+  },
   // R-historic-neighbours-c (hist-c-clock-tower-2015.jpg, Elliott Brown CC BY-SA 2.0): the clock tower. 60 m out along the tower's
-  // front normal at y = 40 m. The round-4 scorers found the old 35 degree lens aimed at the clock (0.68 of the tower height) cut the
-  // spire off: its tip stands 31 degrees above that eye and the frame ended at 28. The standpoint stays; the lens and the aim now come
-  // from the two heights that bound the tower, the main roof's eaves (where the tower rises out of the building) and the spire tip
-  // (clockTowerHeight, 76 m), placed on the top and bottom of the page's free rows (HUD_FREE_ROWS: the station switcher is over the
-  // spire tip of a tower framed any tighter, and the status lines over its eaves).
-  const seats = landmarkSeats(landmarkPlans(data), terrain), clock = midland.towers.find(t => t.name === 'clock');
-  if (clock) {
-    const eye = [clock.centre[0] + clock.out[0] * CLOCK_TOWER_STANDOFF, CLOCK_TOWER_EYE_Y, clock.centre[1] + clock.out[1] * CLOCK_TOWER_STANDOFF];
-    const base = seats.midland.y + midland.eaves, tip = seats.midland.y + clock.height, freeTop = 1 - 2 * HUD_FREE_ROWS.top / HUD_FREE_ROWS.height;
-    const down = Math.atan2(base - eye[1], CLOCK_TOWER_STANDOFF), up = Math.atan2(tip - eye[1], CLOCK_TOWER_STANDOFF);
-    const fov = Math.ceil(2 * Math.atan(Math.tan((up - down) / 2) / freeTop) * 180 / Math.PI * 10) / 10, aimY = eye[1] + CLOCK_TOWER_STANDOFF * Math.tan((up + down) / 2);
-    cams['midland-clock-tower'] = camera(eye, [clock.centre[0], aimY, clock.centre[1]],
-      `R-historic-neighbours-c standpoint (hist-c-clock-tower-2015.jpg): ${CLOCK_TOWER_STANDOFF} m from the clock tower along its front normal, y = ${CLOCK_TOWER_EYE_Y} m, the whole tower in frame from the ${midland.eaves} m eaves to the ${clock.height} m spire tip, clear of the page's overlays (${fov} degree lens aimed at ${aimY.toFixed(1)} m)`, { fov, near: .1 });
-  }
+  // front normal at y = 40 m (CLOCK_TOWER_STANDOFF, CLOCK_TOWER_EYE_Y). The round-4 scorers found the old 35 degree lens aimed at the
+  // clock (0.68 of the tower height) cut the spire off: its tip stands 31 degrees above that eye and the frame ended at 28. The stand
+  // stayed; the lens and the aim were set from the two heights that bound the tower, the main roof's eaves (22 m, where the tower
+  // rises out of the building) and the spire tip (76 m, the model's clockTowerHeight when this was frozen), placed on the top and
+  // bottom of the page's free rows (HUD_FREE_ROWS: the station switcher is over the spire tip of a tower framed any tighter, and the
+  // status lines over its eaves): the lens is the angle between the two heights seen from the eye, widened to put them on those rows
+  // and rounded up to 0.1 degree, and the aim is the middle of the two. Both are literals now, and stay so when the model moves: the
+  // rubric's figure for the tower is 73 m (Bradley 2007), and the same derivation from it gives a 63.8 degree lens aimed at 46.3 m
+  // instead of 66.5 degrees at 47.4 m: not the view the baseline holds.
+  'midland-clock-tower': {
+    pos: [-27.53216076224816, 40, 128.52979585409406],
+    target: [-51.35363794830843, 47.42283429841958, 73.46131825870368],
+    source: 'R-historic-neighbours-c standpoint (hist-c-clock-tower-2015.jpg): 60 m from the clock tower along its front normal, y = 40 m, the whole tower in frame from the 22 m eaves to the 76 m spire tip, clear of the page\'s overlays (66.5 degree lens aimed at 47.4 m)',
+    fov: 66.5, near: 0.1,
+  },
   // R-historic-neighbours-d (hist-d-barlow-interior-2014.jpg, mattbuck CC BY-SA 4.0; hist-d2-barlow-looking-north-2018.jpg): the
   // Barlow shed from inside, on its centreline 40 m from the south end, eye 1.6 m above the shed's floor (its seat), looking north.
-  cams['barlow-interior'] = camera(bp(barlow.width / 2, 40, seats.barlow.y + 1.6), bp(barlow.width / 2, 200, seats.barlow.y + 1.6),
-    'R-historic-neighbours-d standpoint (hist-d-barlow-interior-2014.jpg): inside the Barlow shed on its centreline, 40 m from the south end, eye 1.6 m, looking north');
+  'barlow-interior': {
+    pos: [-107.71206591137107, 1.1, 35.50447887294815],
+    target: [-179.49627717148695, 1.1, -107.48862240736904],
+    source: 'R-historic-neighbours-d standpoint (hist-d-barlow-interior-2014.jpg): inside the Barlow shed on its centreline, 40 m from the south end, eye 1.6 m, looking north',
+  },
 
   // city-surroundings.
   // R-city-surroundings-b (city-b-granary-building-2016.jpg, Clem Rutter CC BY-SA 3.0): the Granary from Granary Square. The square
   // runs from the Granary's front to the canal, whose OSM centreline is ~98 m south of the front; 88 m is the south steps.
-  const granary = granaryComplex(data).granary, granaryFront = granary.front[1];
-  cams['granary-square'] = camera(stand([granaryFront.mid[0] + granaryFront.normal[0] * 88, granaryFront.mid[1] + granaryFront.normal[1] * 88]), groundAt(granaryFront.mid, granary.eaves / 2),
-    'R-city-surroundings-b standpoint (city-b-granary-building-2016.jpg): Granary Square south steps, 88 m south of the Granary front, eye 1.7 m, looking north');
+  'granary-square': {
+    pos: [-116.10205456323189, 8.859598863756945, -450.31892209297956],
+    target: [-93.25, 17.950000381469728, -535.3],
+    source: 'R-city-surroundings-b standpoint (city-b-granary-building-2016.jpg): Granary Square south steps, 88 m south of the Granary front, eye 1.7 m, looking north',
+  },
   // R-city-surroundings-c (city-c-gasholders-2023.jpg, The wub CC BY-SA 4.0): the triplet from the towpath. The canal vertex nearest
   // the point 55 m south of the triplet's centre, then 7 m to the triplet's side of the centreline (the water is 9 m wide).
-  const triplet = gasholderPlan().triplet, holders = [triplet.reduce((n, h) => n + h.centre[0], 0) / triplet.length, triplet.reduce((n, h) => n + h.centre[1], 0) / triplet.length];
-  const canalRuns = city.canals.map(c => c.pts), canalDist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
-  let bank = null;
-  for (const pts of canalRuns) pts.forEach((p, i) => { const d = canalDist(p, [holders[0], holders[1] + 55]); if (!bank || d < bank.d) bank = { d, p, dir: [pts[Math.min(i + 1, pts.length - 1)][0] - pts[Math.max(i - 1, 0)][0], pts[Math.min(i + 1, pts.length - 1)][1] - pts[Math.max(i - 1, 0)][1]] }; });
-  if (bank) {
-    const length = Math.hypot(...bank.dir), side = [-bank.dir[1] / length, bank.dir[0] / length], towardHolders = side[0] * (holders[0] - bank.p[0]) + side[1] * (holders[1] - bank.p[1]) >= 0 ? 1 : -1;
-    cams.gasholders = camera(stand([bank.p[0] + towardHolders * side[0] * 7, bank.p[1] + towardHolders * side[1] * 7]), groundAt(holders, 12),
-      'R-city-surroundings-c standpoint (city-c-gasholders-2023.jpg): canal towpath south of the gasholder triplet, eye 1.7 m, looking north');
-  }
+  gasholders: {
+    pos: [-271.4797210984105, -2.1587933324442714, -587.1973793086374],
+    target: [-237.22138989823574, 13.869305055978296, -653.1208161391395],
+    source: 'R-city-surroundings-c standpoint (city-c-gasholders-2023.jpg): canal towpath south of the gasholder triplet, eye 1.7 m, looking north',
+  },
   // R-city-surroundings-d (city-d-canal-lock-2022.jpg, Jim Osley CC BY-SA 2.0): St Pancras Lock. OSM canal way 108337675 starts at the
   // lock junction, where the terrain falls to the lock cutting. The scene's water polygons run ~11 m either side of that centreline
   // (a 7 m offset put the eye in the water), so the eye stands on the east towpath 14 m from it, 10 m down-canal of the junction, and
   // looks 60 m down the canal (it runs south-south-east here, not due east as the rubric words it).
-  const lockWay = way(108337675), lockDir = along(lockWay, 1).dir, lockSide = [-lockDir[1], lockDir[0]], lockEast = lockSide[0] >= 0 ? 1 : -1;
-  const lockEye = [lockWay[0][0] + lockDir[0] * 10 + lockEast * lockSide[0] * 14, lockWay[0][1] + lockDir[1] * 10 + lockEast * lockSide[1] * 14];
-  cams['canal-lock'] = camera(stand(lockEye), groundAt([lockWay[0][0] + lockDir[0] * 60, lockWay[0][1] + lockDir[1] * 60], 1),
-    'R-city-surroundings-d standpoint (city-d-canal-lock-2022.jpg): east towpath at St Pancras Lock (OSM canal way 108337675), eye 1.7 m, looking down the canal');
+  'canal-lock': {
+    pos: [-274.10604318448173, -0.925332274855377, -606.3515030435755],
+    target: [-262.0796059259647, -2.258052023292347, -555.8404665578039],
+    source: 'R-city-surroundings-d standpoint (city-d-canal-lock-2022.jpg): east towpath at St Pancras Lock (OSM canal way 108337675), eye 1.7 m, looking down the canal',
+  },
   // R-city-surroundings-e (city-e-google-kgx1-2026.jpg, Bex Walton CC BY 4.0): KGX1 from King's Boulevard. The OSM centreline of the
   // boulevard (way 807924984) runs beside KGX1's west face; the eye stands 25 m along it from the south end, looking up the street.
-  const boulevard = way(807924984), here = along(boulevard, 25), ahead = along(boulevard, 120);
-  cams['kings-boulevard'] = camera(stand(here.point), groundAt(ahead.point, 14),
-    'R-city-surroundings-e standpoint (city-e-google-kgx1-2026.jpg): King\'s Boulevard, eye 1.7 m, looking north up the street at KGX1');
+  'kings-boulevard': {
+    pos: [-69.74361639944951, 2.5303075110385786, -201.88985644056845],
+    target: [-55.096958361497165, 19.20718153026687, -295.65293500368495],
+    source: 'R-city-surroundings-e standpoint (city-e-google-kgx1-2026.jpg): King\'s Boulevard, eye 1.7 m, looking north up the street at KGX1',
+  },
   // R-city-surroundings-a (city-a-aerial-skyline-2016.jpg, Robot8A CC BY-SA 4.0): Euston Road outside the forecourt. The eye stands on
   // the middle of OSM way 367808662 (the eastbound carriageway beside the Square) and looks along the road to Pentonville Road (way 1112581153).
-  const eustonWay = way(367808662), eustonMid = along(eustonWay, pathLength(eustonWay) / 2), pentonville = way(1112581153).at(-1);
-  cams['euston-road-east'] = camera(stand(eustonMid.point), groundAt(pentonville, 4),
-    'R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King\'s Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road');
-  return cams;
+  'euston-road-east': {
+    pos: [39.65, 1.201249999925493, 44.05],
+    target: [133.5, 3.9374999990686774, -3],
+    source: 'R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King\'s Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road',
+  },
+};
+
+/**
+ * The station cameras by name: a fresh copy of FROZEN_STATION_CAMERAS on every call, so a caller may edit what it gets. `data` is
+ * accepted for the callers that pass the station data and is not read: a frozen camera does not depend on the model.
+ */
+export function stationCameras(data) {
+  return structuredClone(FROZEN_STATION_CAMERAS);
 }
 
 /** Match main.ts's city exclusions. kx-city.json has streets/ground; footprints live in kx-track.json. */

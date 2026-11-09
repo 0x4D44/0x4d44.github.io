@@ -18,10 +18,15 @@ shutil.copytree(src,work,ignore=shutil.ignore_patterns('node_modules','.git','.s
 (work/'node_modules').symlink_to((src/'node_modules').resolve(),target_is_directory=True)
 target=work/'tools/evidence.mjs'
 original=target.read_text()
+# The station cameras are frozen literals (FROZEN_STATION_CAMERAS), so each mutation edits the hotel camera's literal numbers: the middle of
+# the Pancras Road (rear) chain is [-61.25, -24.9], the camera stands 25 m out along its normal at y = 10 and aims at it.
+HOTEL_POS='pos: [-76.82513065762711, 10, -5.344558174312606],'
 mutations=[
- ('under-roof east camera',"road = hotel.faces.find(f => f.kind === 'rear')","road = hotel.faces.find(f => f.kind === 'main')"),
- ('camera below Barlow roof',"[edge.mid[0] + edge.normal[0] * 25, 10, edge.mid[1] + edge.normal[1] * 25]","[edge.mid[0] + edge.normal[0] * 45, 10, edge.mid[1] + edge.normal[1] * 45]"),
- ('camera at facade',"[edge.mid[0] + edge.normal[0] * 25, 10, edge.mid[1] + edge.normal[1] * 25]","[edge.mid[0], 10, edge.mid[1]]"),
+ # the main face's camera, 45 m out at y = 14 and aimed at the main face: the under-roof view the junction diagnostic keeps
+ ('under-roof east camera',HOTEL_POS+"\n    target: [-61.25, 9.65, -24.9],","pos: [-22.843110827215803, 14, -71.98447478138837],\n    target: [-53.4, 9.65, -38.95],"),
+ # 45 m out along the same normal
+ ('camera below Barlow roof',HOTEL_POS,'pos: [-89.2852351837288, 10, 10.299795286237305],'),
+ ('camera at facade',HOTEL_POS,'pos: [-61.25, 10, -24.9],'),
 ]
 def run(name):
     try: r=kxmut.run_process(['node','--test','--test-reporter=tap','tools/tests/hotel-exterior.test.mjs'],cwd=work,timeout=60)

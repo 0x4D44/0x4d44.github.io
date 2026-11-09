@@ -1,0 +1,583 @@
+{
+  "overview": {
+    "pos": [
+      260,
+      220,
+      90
+    ],
+    "target": [
+      46.37560028234806,
+      5,
+      -131.62931499021622
+    ],
+    "source": "shedLayout"
+  },
+  "top": {
+    "pos": [
+      46.37560028234806,
+      3000,
+      -131.62931499021622
+    ],
+    "target": [
+      46.37840361751828,
+      0,
+      -131.7292756890529
+    ],
+    "source": "shedLayout, 10 m grid",
+    "grid": true,
+    "fov": 12,
+    "near": 100
+  },
+  "side": {
+    "pos": [
+      1531.8966211635652,
+      65,
+      -89.9688086871672
+    ],
+    "target": [
+      46.37560028234806,
+      65,
+      -131.62931499021622
+    ],
+    "source": "shedLayout, 10 m grid",
+    "grid": true,
+    "fov": 7,
+    "near": 100
+  },
+  "south-front": {
+    "pos": [
+      41.04926345892175,
+      26,
+      58.29601279953229
+    ],
+    "target": [
+      43.01159807807881,
+      12,
+      -11.676476386164524
+    ],
+    "source": "shedLayout south facade, clear of Belgrove House"
+  },
+  "front-oblique": {
+    "pos": [
+      146.69214011801085,
+      32,
+      76.26459857899144
+    ],
+    "target": [
+      43.57226511212369,
+      12,
+      -31.66861615350647
+    ],
+    "source": "shedLayout south-east corner"
+  },
+  "shed-interior": {
+    "pos": [
+      44.150000000000006,
+      3.2,
+      -328.45
+    ],
+    "target": [
+      45.814933248303184,
+      8,
+      -111.63717522287426
+    ],
+    "source": "OSM platform 4 north end looking into the shed"
+  },
+  "platform-eye": {
+    "pos": [
+      43.54285714285716,
+      2.5,
+      -210.09285714285716
+    ],
+    "target": [
+      44.66419121094691,
+      2.5,
+      -250.07713667754103
+    ],
+    "source": "OSM platform 4 polygon, eye 1.6 m above platform"
+  },
+  "concourse": {
+    "pos": [
+      -58.19823691449512,
+      2.5,
+      -90.50307363615148
+    ],
+    "target": [
+      -21.256814215392197,
+      12,
+      -90.50307363615148
+    ],
+    "source": "concourseCanopy fitted OSM arc"
+  },
+  "western-range": {
+    "pos": [
+      -64.95331210268448,
+      1.6,
+      -89.53369347678505
+    ],
+    "target": [
+      -3.0776395227611486,
+      7.5,
+      -87.79842900641617
+    ],
+    "source": "WESTERN_RANGE west brick facade v8.1..141.5: the whole 133.4 m west elevation from 62 m west of the face on its mid-length, eye 1.6 m, 70 degree lens",
+    "fov": 70,
+    "near": 0.1
+  },
+  "western-range-gateline": {
+    "pos": [
+      -46.992406666352196,
+      3,
+      -52.21552262253324
+    ],
+    "target": [
+      -4.019302236450679,
+      5.5,
+      -51.010368832853786
+    ],
+    "source": "Arup 2012/2 p27 fig4 southern public frontage; ASSUMED model alignment, upper floors and scene retained",
+    "fov": 60,
+    "near": 0.1
+  },
+  "roof-above": {
+    "pos": [
+      91.07758124184501,
+      131.6408,
+      -120.37174427994427
+    ],
+    "target": [
+      46.09526676532562,
+      18.640800000000002,
+      -121.63324510654523
+    ],
+    "source": "shedLayout roof"
+  },
+  "north-gable": {
+    "pos": [
+      52.08991869333342,
+      18,
+      -335.38920349896534
+    ],
+    "target": [
+      49.84725055715392,
+      12,
+      -255.42064442959756
+    ],
+    "source": "shedLayout north gable"
+  },
+  "concourse-roof-detail": {
+    "pos": [
+      -27.505453679719565,
+      13.037666207957841,
+      -86.60333744605987
+    ],
+    "target": [
+      -26.005453679719565,
+      19.03766620795784,
+      -87.60333744605987
+    ],
+    "source": "drawn concourse roof triangle, view from below; approximate procedural member families",
+    "fov": 50,
+    "near": 0.1
+  },
+  "platform-eye-south": {
+    "pos": [
+      43.54285714285716,
+      2.5,
+      -210.09285714285716
+    ],
+    "target": [
+      42.42152307476741,
+      2.5,
+      -170.10857760817328
+    ],
+    "source": "OSM platform 4 polygon, south-facing eye 1.6 m above platform"
+  },
+  "great-northern-hotel": {
+    "pos": [
+      -76.82513065762711,
+      10,
+      -5.344558174312606
+    ],
+    "target": [
+      -61.25,
+      9.65,
+      -24.9
+    ],
+    "source": "Great Northern Hotel Pancras Road exterior; OSM rear-chain normal",
+    "fov": 75,
+    "near": 0.1
+  },
+  "concourse-hotel-junction": {
+    "pos": [
+      -22.843110827215803,
+      14,
+      -71.98447478138837
+    ],
+    "target": [
+      -53.4,
+      9.65,
+      -38.95
+    ],
+    "source": "OSM hotel main facade; fixed concourse paving-junction diagnostic"
+  },
+  "midland-grand-front": {
+    "pos": [
+      -22.982023517687793,
+      28,
+      232.12089677648294
+    ],
+    "target": [
+      -89.85,
+      11,
+      97.85
+    ],
+    "source": "midlandGrandPlan Euston Road front"
+  },
+  "st-pancras-shed": {
+    "pos": [
+      -51.63065086440554,
+      46,
+      147.21783924819596
+    ],
+    "target": [
+      -132.3878885320359,
+      15.24,
+      -13.649399692160884
+    ],
+    "source": "barlowPlan south end, real OSM heading"
+  },
+  "st-pancras-shed-oblique": {
+    "pos": [
+      180.61555356901593,
+      182.88,
+      -30.990709103055394
+    ],
+    "target": [
+      -134.99161672917833,
+      14.6304,
+      -18.835988264560044
+    ],
+    "source": "barlowPlan elevated south-east oblique; stand-off derived from Midland Grand extent and Barlow width",
+    "fov": 55,
+    "near": 0.1
+  },
+  "gasworks-portals": {
+    "pos": [
+      40.17447320353345,
+      12,
+      -393.4972012403787
+    ],
+    "target": [
+      42.26168417780199,
+      4,
+      -458.4636814463194
+    ],
+    "source": "tunnelMouths gasworks-south rail boundary"
+  },
+  "facade-brick-close": {
+    "pos": [
+      77.99074543182866,
+      1.1164013310948557,
+      -6.693935449602762
+    ],
+    "target": [
+      76.60346835608698,
+      2.6,
+      -10.734413430624517
+    ],
+    "source": "R-lighting-materials-a standpoint (light-a2-facade-brick-sunlit-2026-06.jpg): 4 m south of the east end pier of the south front, eye 1.7 m",
+    "fov": 50,
+    "near": 0.1
+  },
+  "tower-close": {
+    "pos": [
+      41.84681231485059,
+      28,
+      29.85719398048837
+    ],
+    "target": [
+      42.82797962442912,
+      28.3876,
+      -5.129050612360035
+    ],
+    "source": "R-kx-front-c standpoint (front-c-clocktower-2019.jpg): 35 m south of the tower face, y = 28 m, aimed at the clock centre",
+    "fov": 35,
+    "near": 0.1
+  },
+  "front-southwest-pedestrian": {
+    "pos": [
+      -12.342812741131121,
+      1.8085703201461005,
+      35.79040898519868
+    ],
+    "target": [
+      43.01159807807881,
+      12,
+      -11.676476386164524
+    ],
+    "source": "R-kx-front-b standpoint (front-b-oblique-sw-2016.jpg): 62 m south-south-west of the west great arch, eye 1.7 m on the square, looking north-east",
+    "fov": 60,
+    "near": 0.1
+  },
+  "shed-east-flank": {
+    "pos": [
+      122.50459160122618,
+      12,
+      -131.41508000499567
+    ],
+    "target": [
+      82.52031206654229,
+      9,
+      -132.53641407308544
+    ],
+    "source": "R-kx-front-d standpoint (front-d2-north-york-way-2019.jpg): York Way side, 40 m east of the east flank wall at mid-length, y = 12 m, looking west",
+    "near": 0.1
+  },
+  "platform-eye-p1-north": {
+    "pos": [
+      67.66190476190475,
+      2.5,
+      -206.35238095238097
+    ],
+    "target": [
+      68.7832388299945,
+      2.5,
+      -246.33666048706488
+    ],
+    "source": "OSM platform 1 polygon midpoint, eye 1.6 m above platform, looking north; east-shed interior standpoint (shed-a-north-from-footbridge-2019.jpg)"
+  },
+  "platform-eye-p8-south": {
+    "pos": [
+      15.408333333333333,
+      2.5,
+      -216.2666666666667
+    ],
+    "target": [
+      14.286999265243583,
+      2.5,
+      -176.28238713198283
+    ],
+    "source": "OSM platform 8 polygon midpoint, eye 1.6 m above platform, looking south at the inner south screen; R-kx-shed-interior-b standpoint (shed-b-south-screen-2019.jpg)"
+  },
+  "roof-underside": {
+    "pos": [
+      43.54285714285716,
+      2.5,
+      -210.09285714285716
+    ],
+    "target": [
+      56.04656167073201,
+      27.074561328669756,
+      -221.9143760208631
+    ],
+    "source": "OSM platform 4 polygon midpoint, eye 1.6 m, pitched up 55 degrees across the east vault; R-kx-shed-interior-a standpoint (shed-a-north-from-footbridge-2019.jpg)"
+  },
+  "furniture-close": {
+    "pos": [
+      43.47617734039083,
+      2.5,
+      -217.99980584974898
+    ],
+    "target": [
+      43.5883107471998,
+      1.7000000000000002,
+      -221.99823380321737
+    ],
+    "source": "OSM platform 4, 4 m from the nearest bench/lamp/help-point group (furniturePlan), eye 1.6 m; R-kx-shed-interior-d standpoint (shed-d-platform-furniture-2022.jpg)"
+  },
+  "suburban-p9": {
+    "pos": [
+      7.821052603185734,
+      2.5,
+      -271.7337435583622
+    ],
+    "target": [
+      17.78834085522388,
+      2.5,
+      -310.47200842529685
+    ],
+    "source": "OSM platform 9 canopy middle (furniturePlan canopy 9), eye 1.6 m above platform, looking north along the platform; R-kx-shed-interior-f standpoint (shed-f-suburban-platforms-2022.jpg)"
+  },
+  "concourse-funnel-up": {
+    "pos": [
+      -16.7270740795371,
+      1.62,
+      -86.22636688980997
+    ],
+    "target": [
+      -8.730218172600322,
+      7.221660305677678,
+      -86.00210007619202
+    ],
+    "source": "R-western-concourse-a standpoint (conc-a-funnel-2012.jpg): 8 m from the funnel axis, eye 1.6 m, pitched up 35 degrees, looking east at the funnel and the Range"
+  },
+  "concourse-exterior-square": {
+    "pos": [
+      -28.962002958314887,
+      1.7873006283983532,
+      5.887844681929378
+    ],
+    "target": [
+      -21.256814215392197,
+      8,
+      -90.50307363615148
+    ],
+    "source": "R-western-concourse-c standpoint (conc-c-exterior-square-2016.jpg): King's Cross Square, eye 1.7 m, 35 m south of the canopy edge and 5 m west (the south-west quarter of the square is behind the hotel), looking at the whole roof",
+    "fov": 60,
+    "near": 0.1
+  },
+  "concourse-exterior-west": {
+    "pos": [
+      -120.78672025708558,
+      1.1259939593046575,
+      -93.29432749234542
+    ],
+    "target": [
+      -21.256814215392197,
+      8,
+      -90.50307363615148
+    ],
+    "source": "R-western-concourse-c composition (conc-c-exterior-square-2016.jpg, conc-c2-dome-aerial-2016.jpg): Pancras Road, 38 m west of the canopy's west rim on the roof's centre line, eye 1.7 m, looking east at the whole roof with the hotel at the right edge",
+    "fov": 60,
+    "near": 0.1
+  },
+  "western-range-full": {
+    "pos": [
+      -64.95331210268448,
+      8,
+      -89.53369347678505
+    ],
+    "target": [
+      -3.0776395227611486,
+      6,
+      -87.79842900641617
+    ],
+    "source": "R-western-concourse-b standpoint (conc-b-roof-meets-range-2025-08.jpg): inside the concourse near the canopy's west edge, y = 8 m, under the roof glazing, the full Range elevation",
+    "fov": 70,
+    "near": 0.1
+  },
+  "gnh-from-square": {
+    "pos": [
+      -20.134223016314543,
+      1.9819315691099577,
+      15.39105164732452
+    ],
+    "target": [
+      -53.4,
+      23,
+      -38.95
+    ],
+    "source": "R-historic-neighbours-a standpoint (hist-a-great-northern-hotel-2013.jpg): King's Cross Square, eye 1.7 m, 30 m from the hotel's south end at 30 degrees east of south (clear of the round service building OSM 96299681 that the rubric's 45 m due-south stand lands in), looking along the crescent's main face with the whole roofline in frame",
+    "fov": 64,
+    "near": 0.1
+  },
+  "midland-euston-road": {
+    "pos": [
+      -67.56067450589593,
+      2.830348310685503,
+      142.60696559216098
+    ],
+    "target": [
+      -89.85,
+      16,
+      97.85
+    ],
+    "source": "R-historic-neighbours-b standpoint (hist-b-midland-grand-euston-road-2012.jpg): south pavement of Euston Road opposite the hotel centre, eye 1.7 m",
+    "fov": 70,
+    "near": 0.1
+  },
+  "midland-clock-tower": {
+    "pos": [
+      -27.53216076224816,
+      40,
+      128.52979585409406
+    ],
+    "target": [
+      -51.35363794830843,
+      47.42283429841958,
+      73.46131825870368
+    ],
+    "source": "R-historic-neighbours-c standpoint (hist-c-clock-tower-2015.jpg): 60 m from the clock tower along its front normal, y = 40 m, the whole tower in frame from the 22 m eaves to the 76 m spire tip, clear of the page's overlays (66.5 degree lens aimed at 47.4 m)",
+    "fov": 66.5,
+    "near": 0.1
+  },
+  "barlow-interior": {
+    "pos": [
+      -107.71206591137107,
+      1.1,
+      35.50447887294815
+    ],
+    "target": [
+      -179.49627717148695,
+      1.1,
+      -107.48862240736904
+    ],
+    "source": "R-historic-neighbours-d standpoint (hist-d-barlow-interior-2014.jpg): inside the Barlow shed on its centreline, 40 m from the south end, eye 1.6 m, looking north"
+  },
+  "granary-square": {
+    "pos": [
+      -116.10205456323189,
+      8.859598863756945,
+      -450.31892209297956
+    ],
+    "target": [
+      -93.25,
+      17.950000381469728,
+      -535.3
+    ],
+    "source": "R-city-surroundings-b standpoint (city-b-granary-building-2016.jpg): Granary Square south steps, 88 m south of the Granary front, eye 1.7 m, looking north"
+  },
+  "gasholders": {
+    "pos": [
+      -271.4797210984105,
+      -2.1587933324442714,
+      -587.1973793086374
+    ],
+    "target": [
+      -237.22138989823574,
+      13.869305055978296,
+      -653.1208161391395
+    ],
+    "source": "R-city-surroundings-c standpoint (city-c-gasholders-2023.jpg): canal towpath south of the gasholder triplet, eye 1.7 m, looking north"
+  },
+  "canal-lock": {
+    "pos": [
+      -274.10604318448173,
+      -0.925332274855377,
+      -606.3515030435755
+    ],
+    "target": [
+      -262.0796059259647,
+      -2.258052023292347,
+      -555.8404665578039
+    ],
+    "source": "R-city-surroundings-d standpoint (city-d-canal-lock-2022.jpg): east towpath at St Pancras Lock (OSM canal way 108337675), eye 1.7 m, looking down the canal"
+  },
+  "kings-boulevard": {
+    "pos": [
+      -69.74361639944951,
+      2.5303075110385786,
+      -201.88985644056845
+    ],
+    "target": [
+      -55.096958361497165,
+      19.20718153026687,
+      -295.65293500368495
+    ],
+    "source": "R-city-surroundings-e standpoint (city-e-google-kgx1-2026.jpg): King's Boulevard, eye 1.7 m, looking north up the street at KGX1"
+  },
+  "euston-road-east": {
+    "pos": [
+      39.65,
+      1.201249999925493,
+      44.05
+    ],
+    "target": [
+      133.5,
+      3.9374999990686774,
+      -3
+    ],
+    "source": "R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King's Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road"
+  }
+}
