@@ -252,21 +252,23 @@ test('Midland Grand [hist-b]: a continuous stone sill course 0.45 m under each o
   assert.equal(stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (1.0 - 0.45)) < 1e-9 || Math.abs(v[1] - (1.0 - 0.2)) < 1e-9)).length, 0, 'there is none under the ground row');
 });
 
-test('Midland Grand [hist-b]: a cast-iron balcony stands on the first floor\'s balcony, a hair inside its 0.4 m edge (0.38 m out): a rail 0.06 m tall at the foot and at the head, 0.7 m apart, and a baluster 0.08 m wide every 0.32 m between them, cut where the towers stand', () => {
-  const pane = triangles(midlandGeometry(midland).pane as Batch);
+/**
+ * A balustrade on the Midland's walls as addBalustrade builds it, cut where the towers stand: from `foot`, `height` tall, `out` m from the wall, a rail 0.06 m tall at the foot and at the head and a
+ * baluster 0.08 m wide every 0.32 m or so between them, the first and last half a pitch in from each wall's ends. `ts` are the triangles of the batch it is built in.
+ */
+function checkBalustrade(ts: Tri[], foot: number, height: number, out: number, what: string, min: number): void {
   const segs = segmentsOutside(polygonEdges(midland.outline), midland.towers.map((t) => towerSquare(t, 0.45)));
-  const foot = ROWS[0][0] - 0.45 + 0.25; // the top of the balcony slab
-  const on = (lo: number, hi: number): Tri[] => pane.filter((t) => t.p.every((v) => Math.abs(v[1] - lo) < 1e-9 || Math.abs(v[1] - hi) < 1e-9) && t.p.some((v) => Math.abs(v[1] - lo) < 1e-9) && t.p.some((v) => Math.abs(v[1] - hi) < 1e-9));
-  const rails = [on(foot, foot + 0.06), on(foot + 0.64, foot + 0.7)];
-  const posts = on(foot + 0.06, foot + 0.64);
-  for (const [name, ts] of [['foot', rails[0]], ['head', rails[1]], ['balusters', posts]] as const) for (const t of ts) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, `the ${name} of the balcony stands inside a tower`);
+  const on = (lo: number, hi: number): Tri[] => ts.filter((t) => t.p.every((v) => Math.abs(v[1] - lo) < 1e-9 || Math.abs(v[1] - hi) < 1e-9) && t.p.some((v) => Math.abs(v[1] - lo) < 1e-9) && t.p.some((v) => Math.abs(v[1] - hi) < 1e-9));
+  const rails = [on(foot, foot + 0.06), on(foot + height - 0.06, foot + height)];
+  const posts = on(foot + 0.06, foot + height - 0.06);
+  for (const [name, list] of [['foot', rails[0]], ['head', rails[1]], ['balusters', posts]] as const) for (const t of list) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, `the ${name} of the ${what} stands inside a tower`);
   let balusters = 0;
   for (const sg of segs) {
     const l = Math.hypot(sg.b[0] - sg.a[0], sg.b[1] - sg.a[1]);
     const depth = (v: V3): number => (v[0] - sg.a[0]) * sg.normal[0] + (v[2] - sg.a[1]) * sg.normal[1];
     const along = (v: V3): number => ((v[0] - sg.a[0]) * (sg.b[0] - sg.a[0]) + (v[2] - sg.a[1]) * (sg.b[1] - sg.a[1])) / l;
-    const mine = (ts: Tri[]): Tri[] => ts.filter((t) => t.p.every((v) => Math.abs(depth(v) - 0.38) < 1e-6) && Math.min(...t.p.map(along)) < l - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
-    assert.equal(mine(rails[0] as Tri[]).length, 2, `the wall from (${sg.a[0].toFixed(1)}, ${sg.a[1].toFixed(1)}) has a foot rail 0.38 m out`);
+    const mine = (list: Tri[]): Tri[] => list.filter((t) => t.p.every((v) => Math.abs(depth(v) - out) < 1e-6) && Math.min(...t.p.map(along)) < l - 1e-6 && Math.max(...t.p.map(along)) > 1e-6);
+    assert.equal(mine(rails[0] as Tri[]).length, 2, `the wall from (${sg.a[0].toFixed(1)}, ${sg.a[1].toFixed(1)}) has a foot rail ${out} m out`);
     assert.equal(mine(rails[1] as Tri[]).length, 2, 'and a head rail');
     // the balusters: a quad of two triangles each, 0.08 m wide, evenly spaced about every 0.32 m, the first and last half a pitch in from the wall's ends
     const n = Math.floor(l / 0.32);
@@ -278,7 +280,15 @@ test('Midland Grand [hist-b]: a cast-iron balcony stands on the first floor\'s b
     for (const t of quads) close(Math.max(...t.p.map(along)) - Math.min(...t.p.map(along)), 0.08, 1e-6, 'a baluster is 0.08 m wide');
     balusters += n;
   }
-  assert.ok(balusters > 600, `${balusters} balusters`);
+  assert.ok(balusters > min, `${balusters} balusters`);
+}
+
+test('Midland Grand [hist-b]: a cast-iron balcony stands on the first floor\'s balcony, a hair inside its 0.4 m edge (0.38 m out): a rail 0.06 m tall at the foot and at the head, 0.7 m apart, and a baluster 0.08 m wide every 0.32 m between them, cut where the towers stand', () => {
+  checkBalustrade(triangles(midlandGeometry(midland).pane as Batch), ROWS[0][0] - 0.45 + 0.25, 0.7, 0.38, 'balcony', 600); // the top of the balcony slab
+});
+
+test('Midland Grand [hist-b]: the roof\'s edge carries an open stone balustrade in place of a solid parapet (hist-b: a pierced one above the cornice): 0.9 m tall from the eaves, 0.35 m out, a rail 0.06 m tall at the foot and at the head and a baluster 0.08 m wide every 0.32 m between them, cut where the towers stand', () => {
+  checkBalustrade(triangles(midlandGeometry(midland, []).stone as Batch), midland.eaves, 0.9, 0.35, 'roof\'s edge', 1000);
 });
 
 test('Midland Grand [hist-b]: the first floor\'s balcony stands on a stone corbel under each bay, 0.5 m wide and 0.7 m tall, as far out as the slab (0.4 m), none behind a tower', () => {
@@ -1929,7 +1939,7 @@ test('Midland Grand [hist-b]: three gabled bays two windows wide stand 0.5 m out
       const stacked = stackClusters(midland).some((q) => q.i === bay.edge && Math.abs(q.s - s0) < bay.width / 2 + 3.0);
       assert.ok((behind.length > 0 || stacked) && behind.every((t) => t.p.every((v) => v[1] >= 28)), 'only the upper dormer is left on a gabled bay (and none where a cluster of stacks stands)');
     }
-    // the parapet gives way where the cheeks start: no part of one overlaps the gable's width (it is one long quad per wall, so look at what it spans)
+    // the parapet (an open balustrade) gives way where the cheeks start: no part of one overlaps the gable's width (a rail is a long quad, a baluster a short one, so look at what each spans)
     const parapet = (g: PartMap<Key>): Tri[] => triangles(g.stone as Batch).filter((t) => t.p.every((v) => v[1] >= midland.eaves - 1e-9 && v[1] <= midland.eaves + 0.9 + 1e-9 && inPavilion(pair, v).out < 0.4 && inPavilion(pair, v).out > -0.05) && Math.min(...t.p.map((v) => inPavilion(pair, v).along)) < w - 1e-6 && Math.max(...t.p.map((v) => inPavilion(pair, v).along)) > -w + 1e-6);
     assert.ok(parapet(without).length > 0, 'the parapet runs across the place without a gabled bay');
     assert.equal(parapet(withP).length, 0, 'and gives way to the gable with one');

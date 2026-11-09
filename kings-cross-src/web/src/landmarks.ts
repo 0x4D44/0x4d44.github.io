@@ -988,7 +988,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   const feet = pairs.map(([a, b]) => addPavilion(parts, { ...a, at: [(a.at[0] + b.at[0]) / 2, (a.at[1] + b.at[1]) / 2], width: a.width + b.width }, plan.eaves, frame.rise / (plan.roof.runs[a.edge] as number)));
   for (const [y, h] of [[0, 0.9], [6, 0.35], [11.5, 0.35], [17, 0.35]] as const) addBand(stone, segs, y, h, 0.12); // a stone base under the ground storey [hist-b], then the first three string courses
   addBand(stone, segs, plan.eaves - 1.0, 1.0, 0.6); // the cornice
-  addBand(stone, segmentsOutside(edges, [...cutters, ...feet]), plan.eaves, 0.9, 0.35); // the parapet in front of the gutter: not where a gabled bay's cheeks start
+  addBalustrade(stone, segmentsOutside(edges, [...cutters, ...feet]), plan.eaves, 0.9, 0.35); // hist-b: an open stone balustrade along the roof's edge, in front of the gutter: not where a gabled bay's cheeks start
   addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge, true, plan.roof.runs);
 
   // windows: four storeys, round-headed at the bottom and pairs of pointed lancets above; the front and the curved wing in bays, the rest evenly
