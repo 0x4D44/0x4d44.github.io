@@ -354,8 +354,8 @@ function columnGeometry(head: V3[]): THREE.BufferGeometry {
 
 // Roof materials, local (materials.ts has no soffit, cladding or daylit glazing).
 
-/** A canvas texture drawn by `draw`, which gets the context and a rectangle fill; null in Node. */
 type Fill = (style: string | CanvasGradient, x: number, y: number, w: number, h: number) => void;
+/** A canvas texture drawn by `draw`, which gets the context and a rectangle fill; null in Node. */
 function canvasTexture(width: number, height: number, draw: (g: CanvasRenderingContext2D, fill: Fill) => void): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
