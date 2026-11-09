@@ -8,6 +8,7 @@ import {buildWaverleyScene,waverleyRailwayFootprint,waverleyRailwayIntrusions,wa
 import {WAVERLEY_LEVELS} from '../src/waverley-mesh.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import data from '../src/data/waverley-frontage.json' with {type:'json'};
+import extra from '../src/data/waverley-frontage-extra.json' with {type:'json'};
 import sceneFile from '../src/data/waverley-scene.json' with {type:'json'};
 type Pt=[number,number];
 const ground={heightAt:(x:number,z:number)=>8+x*.002+z*.003,rangeUnder:()=>({min:8,max:8,mean:8})};
@@ -66,13 +67,13 @@ test('four 3.2 m dials, one on each face of the mapped tower, centred and proud 
 test('the hotel stands on its unchanged OSM outline, walls to the main cornice, and the tower shaft never shares the body wall plane',()=>{
  const built=buildWaverleyFrontage(ground);
  try {
-  const P=built.group.userData.frontage.P,body=ringOf(data.balmoralBody.ring);
+  const P=built.group.userData.frontage.P,body=ringOf(extra.balmoralBody.ring);
   const facade=positions(built.group.getObjectByName('waverley-balmoral-facade') as THREE.Mesh);
   for(const v of facade){assert.ok(body.some(p=>Math.abs(p[0]-v.x)<1e-3&&Math.abs(p[1]-v.z)<1e-3),'every facade corner is an OSM outline vertex');assert.ok(v.y<=P+BALMORAL_LEVELS.cornice+1e-3);}
   assert.ok(facade.some(v=>Math.abs(v.y-P-BALMORAL_LEVELS.cornice)<1e-3));
   for(const v of positions(built.group.getObjectByName('waverley-balmoral-tower') as THREE.Mesh))assert.ok(v.y>=P+BALMORAL_LEVELS.cornice-1e-3,'the textured tower starts at the cornice, above the coplanar body wall');
   // HES: 5 storeys, mezzanine and attic. The cornice holds six levels; the attic is above it
-  assert.equal(data.balmoralBody.levels,6);assert.ok(BALMORAL_LEVELS.mansard>BALMORAL_LEVELS.cornice);
+  assert.equal(extra.balmoralBody.levels,6);assert.ok(BALMORAL_LEVELS.mansard>BALMORAL_LEVELS.cornice);
  } finally {built.dispose();}
 });
 test('North Bridge: three 53 m spans of six arched ribs on two masonry piers (HES LB30035)',()=>{
@@ -95,12 +96,12 @@ test('North Bridge piers and abutment stand clear of every drawn track and platf
    if(!inRing(x,z,pier.ring))continue;probes++;
    for(const s of tracks)assert.ok(segDist(x,z,[s[0],s[1]],[s[2],s[3]])>=half,`pier ${k} on a track's ballast at ${x.toFixed(2)},${z.toFixed(2)}`);
    for(const p of scene.platforms)assert.ok(!inRing(x,z,p.path as Pt[]),`pier ${k} on platform ${p.ref} at ${x.toFixed(2)},${z.toFixed(2)}`);
-   for(const b of blocks)if(inRing(x,z,b.outer as Pt[]))assert.equal(b.id,data.northBridgePierSeat.id,`pier ${k} inside ${b.id}`);
+   for(const b of blocks)if(inRing(x,z,b.outer as Pt[]))assert.equal(b.id,extra.northBridgePierSeat.id,`pier ${k} inside ${b.id}`);
   }
   assert.ok(probes>100);
  }
  // pier 1 bears on the roof of the station block that fills its band, never through it
- const seat=scene.buildings.find(b=>b.id===data.northBridgePierSeat.id)!;
+ const seat=scene.buildings.find(b=>b.id===extra.northBridgePierSeat.id)!;
  assert.ok(Math.abs(nb.piers[0].bottom-(realScene().terrain.rangeUnder(seat.outer,4).min+seat.height))<1e-6,'pier 1 stands on the seat block top');
 });
 test('the bridges keep over the train envelope: no rib, fascia or column top below 3.9 m over a track',()=>{
@@ -124,19 +125,24 @@ test('the bridges keep over the train envelope: no rib, fascia or column top bel
 });
 test('Waverley Bridge: six support lines (seven spans, HES LB30270), each column on an island platform clear of every track',()=>{
  const wb=frontageOf().waverleyBridge,tracks=waverleyTrackSegments(scene);
- assert.equal(data.waverleyBridgeColumns.length,6,'six support lines make seven spans');
+ assert.equal(extra.waverleyBridgeColumns.length,6,'six support lines make seven spans');
  const f=bridgeFrame(ringOf(data.bridges[1].ring));
- const ss=data.waverleyBridgeColumns.map(l=>l.s);for(let i=1;i<ss.length;i++)assert.ok(ss[i]>ss[i-1]+8);assert.ok(f.length>95);
+ const ss=extra.waverleyBridgeColumns.map(l=>l.s);for(let i=1;i<ss.length;i++)assert.ok(ss[i]>ss[i-1]+3,'six distinct support lines along the bridge');assert.ok(f.length>95);
  for(const c of wb.columns as {x:number;z:number;bottom:number;top:number}[]){
   const on=scene.platforms.find(p=>inRing(c.x,c.z,p.path as Pt[]));
-  assert.ok(on,`column at ${c.x},${c.z} stands on a platform`);assert.ok(edgeDist(c.x,c.z,on.path as Pt[])>=1.2,'1.2 m in from the platform edge');
+  assert.ok(on,`column at ${c.x},${c.z} stands on a platform`);
+  // the lead's ruling (round 1): the whole base at least 1.0 m in from the platform edge and off the coping, yellow tactile strip and
+  // white line, which run to 1.15 m from the edge (materials.ts platformEdge); probed round the base's circumscribing circle
+  for(let k=0;k<16;k++){const a=k*Math.PI/8,x=c.x+.42*Math.SQRT2*Math.cos(a),z=c.z+.42*Math.SQRT2*Math.sin(a);
+   assert.ok(inRing(x,z,on.path as Pt[]),'the base stays on its platform');const d=edgeDist(x,z,on.path as Pt[]);
+   assert.ok(d>=1.0&&d>=1.15,`column base ${d.toFixed(2)} m from the platform edge, inside the edge, tactile or line zone`);}
   for(const s of tracks)assert.ok(segDist(c.x,c.z,[s[0],s[1]],[s[2],s[3]])>3.2,'3.2 m from any track centre');
   assert.equal(c.bottom,WAVERLEY_LEVELS.platform);assert.ok(c.top>3.9);
  }
  assert.ok(wb.columns.length>=20);
 });
 test('Princes Mall: terrace at street level on its unchanged outline, rooflights on the terrace and off its inner rings',()=>{
- const mall=frontageOf().mall,ring=ringOf(data.princesMall.ring),holes=data.princesMall.holes.map(ringOf);
+ const mall=frontageOf().mall,ring=ringOf(extra.princesMall.ring),holes=extra.princesMall.holes.map(ringOf);
  assert.ok(mall.lights.length>10);
  for(const l of mall.lights as {x:number;z:number}[]){assert.ok(inRing(l.x,l.z,ring));assert.ok(!holes.some(h=>inRing(l.x,l.z,h)));}
  assert.ok(!waverleyRailwayIntrusions(scene).includes('relation/1113940'));

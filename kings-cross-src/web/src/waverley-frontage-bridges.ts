@@ -3,8 +3,8 @@
 // (Wikipedia; Canmore summary); Waverley Bridge "seven plate girder spans" (HES LB30270). Plan: the OSM outlines way/380552925 and
 // way/377738788, unchanged; the decks keep the DTM end-height rule (waverley-frontage.ts). Placed against the scene's railway, not a camera:
 // North Bridge's two piers stand in the only bands across the bridge clear of every drawn track's ballast and every platform (pier 1 on the
-// roof of the station block OSM way/225997712, which fills its band), and Waverley Bridge's six support lines stand on island platforms,
-// at least 1.2 m in from the platform edge and 3.2 m from any track centre (precomputed in data/waverley-frontage.json, checked by tests).
+// roof of the station block OSM way/225997712, which fills its band), and Waverley Bridge's six support lines stand on island platforms
+// by the rule WAVERLEY_BRIDGE_COLUMN (precomputed by tools/build-waverley-frontage-extra.ts, checked by tests).
 // ASSUMED: arch springing 6.4 m above the rail datum (above the 3.9 m train envelope, core/train-emr.ts), rib section 1.3 x 0.5 m, pier
 // widths (the free bands: 3.5 and 3.1 m), the spandrel post pitch (span/20), parapet height 1.1 m, the deck's 1 m structural depth,
 // the paint colours (R-wv2-a2 blue and cream parapet, R-wv2-c2 grey ribs) and Waverley Bridge's 0.55 m columns (R-wv2-b shows columns on
@@ -22,6 +22,22 @@ export const NORTH_BRIDGE={spanLength:53,ribsPerSpan:6,springing:6.4,rib:[1.3,.5
 export const BRIDGE_COLOURS={rib:0x7d8b92,spandrel:0x3f4b57,blue:0x4c78ad,cream:0xe4dcc4,trim:0x6b2f2a,coping:0xcfc6b0,pier:0x786d60,
  balustrade:0xd8d2bd,panel:0xc4bda7,girder:0x8d9188,column:0x5d6a62} as const;
 const C=(h:number):Rgb=>rgb(h);
+const inRing=([x,z]:Pt,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
+const segDist=([x,z]:Pt,a:Pt,b:Pt)=>{const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);};
+/**
+ * Where a Waverley Bridge column may stand (the lead's round-1 ruling: on the island platforms, as R-wv2-b shows). Its square base
+ * (`base` half side, ASSUMED) must lie wholly on one platform, clear of the edge zone: coping 0-0.2 m, yellow tactile strip 0.2-0.6 m,
+ * white line to 1.15 m from the edge (materials.ts platformEdge; DfT tactile guidance, offsets ASSUMED), so at least `minEdge` in;
+ * and its centre `track` m or more from every track centre, outside the train envelope (2.9 m wide body, core/train*.ts, plus margin).
+ */
+export const WAVERLEY_BRIDGE_COLUMN={base:.42,shaft:.275,edgeZone:1.15,minEdge:1,track:3.2,
+ /** The distance from the column's centre that its base reaches in any direction (the base square's half diagonal). */
+ get reach(){return this.base*Math.SQRT2;},
+ allowed(p:Pt,platforms:readonly (readonly Pt[])[],tracks:readonly (readonly [Pt,Pt])[]):boolean{
+  const on=platforms.find(r=>inRing(p,r));if(!on)return false;
+  const edge=Math.min(...on.map((a,i)=>segDist(p,a,on[(i+1)%on.length])));
+  return edge-this.reach>=Math.max(this.edgeZone,this.minEdge)&&tracks.every(([a,b])=>segDist(p,a,b)>=this.track);
+ }};
 type Deck=(p:Pt)=>number;
 const lerp=(a:Pt,b:Pt,t:number):Pt=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
 function along(path:readonly Pt[],f:number):Pt{
@@ -148,8 +164,8 @@ export function waverleyBridge(b:Batch,input:WaverleyBridgeInput){
  for(const line of input.columns){
   const ax=dir(f.at(line.s,0),f.at(line.s,1)),az:V3=[-ax[2],0,ax[0]];
   for(const [x,z] of line.cols){const top=deck([x,z])-NORTH_BRIDGE.deckDepth,bottom=WAVERLEY_LEVELS.platform;
-   obox(b,[x,(bottom+top)/2,z],ax,up,az,[.275,(top-bottom)/2,.275],C(BRIDGE_COLOURS.column));
-   obox(b,[x,bottom+.15,z],ax,up,az,[.42,.15,.42],C(BRIDGE_COLOURS.column));
+   const K=WAVERLEY_BRIDGE_COLUMN;obox(b,[x,(bottom+top)/2,z],ax,up,az,[K.shaft,(top-bottom)/2,K.shaft],C(BRIDGE_COLOURS.column));
+   obox(b,[x,bottom+.15,z],ax,up,az,[K.base,.15,K.base],C(BRIDGE_COLOURS.column));
    obox(b,[x,top-.12,z],ax,up,az,[.5,.12,.5],C(BRIDGE_COLOURS.column));
    columns.push({x,z,bottom,top});}
  }

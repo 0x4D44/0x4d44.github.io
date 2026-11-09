@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildWaverleyCityLandmarks,WAVERLEY_CITY_HEIGHTS,WAVERLEY_CITY_SOURCES,WAVERLEY_CITY_OMIT_IDS} from '../src/waverley-city.ts';
 import {WAVERLEY_FRONTAGE_OMIT_IDS} from '../src/waverley-frontage.ts';
+import {WAVERLEY_STATION_OMIT_IDS} from '../src/waverley-station.ts';
 import data from '../src/data/waverley-city.json' with {type:'json'};
 const ground={heightAt:(x:number,z:number)=>8+x*.002+z*.003,rangeUnder:()=>({min:8,max:8,mean:8})};
 test('the Scott Monument keeps its mapped height and its 98 cited OSM parts',()=>{
@@ -11,7 +12,7 @@ test('the Scott Monument keeps its mapped height and its 98 cited OSM parts',()=
  assert.equal(data.scott.parts.length,98);
  assert.ok(data.scott.parts.some(p=>p.id==='way/445166834'&&p.height===61.11&&p.minHeight===15&&p.roofHeight===40));
  assert.ok(WAVERLEY_CITY_OMIT_IDS.includes('way/39044819'));
- assert.equal(new Set([...WAVERLEY_CITY_OMIT_IDS,...WAVERLEY_FRONTAGE_OMIT_IDS]).size,100,'the two elements replace 100 distinct city blocks between them');
+ const omitted=[...WAVERLEY_STATION_OMIT_IDS,...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS];assert.equal(new Set(omitted).size,omitted.length,'no city block is replaced by two elements');
 });
 test('city landmarks are finite, one draw, and dispose what they own once',()=>{
  const built=buildWaverleyCityLandmarks(ground);assert.equal(built.stats.drawCalls,1);assert.ok(built.stats.triangles<40000);
