@@ -83,3 +83,41 @@ test('Waverley three through anchors continue without terminal cab changes', () 
   assert.ok(previous > map.anchors.find(a => a.berth === 'QQ02')!.point[0]);
   assert.equal(motion.diagnostics().some(issue => issue.kind === 'reversal'), false);
 });
+
+test('Waverley packed paths add up zig-zag deltas in tenths of a metre, and only the one packed format is accepted', () => {
+  const varint = (n: number): number[] => { const out: number[] = []; for (; n >= 128; n = Math.floor(n / 128)) out.push((n % 128) | 128); out.push(n); return out; };
+  const pack = (tenths: number[]): string => btoa(String.fromCharCode(...tenths.flatMap(n => varint(n < 0 ? -2 * n - 1 : 2 * n))));
+  const packed = (tenths: number[]) => ({ origin: { lat: 0, lon: 0 }, attribution: 'Synthetic', format: 'waverley-varint-v1', q: 0.1, platforms: [], rails: [{ id: 'invented', tags: {}, path: pack(tenths) }] });
+  // steps (200,-50), (800,80) and (-100,-300): each point is the one before plus its step, and a negative step goes back
+  assert.doesNotThrow(() => decodeWaverleyAnchorScene(packed([200, -50, 800, 80, -100, -300])), 'every step is a whole number of tenths');
+  assert.deepEqual(decodeWaverleyAnchorScene(packed([200, -50, 800, 80, -100, -300])).rails[0]!.path, [[20, -5], [100, 3], [90, -27]]);
+  assert.throws(() => decodeWaverleyAnchorScene({ ...packed([0, 0]), format: 'waverley-varint-v2' }), /Unsupported/);
+});
+
+test('Waverley refuses two rails with one identity', () => {
+  const d = scene();
+  assert.throws(() => waverleyTrackData({ ...d, rails: [d.rails[0]!, d.rails[0]!] }), /Duplicate Waverley rail/);
+});
+
+test('Waverley screening: a track within 3 m of the face for a real stretch of it identifies the platform, and a dead end is a terminal candidate', () => {
+  const d = scene(); // platform 1 spans x 200..400 with its face at z -1001
+  const along = (z: number, ...xs: number[]): WaverleyAnchorScene['rails'] => [{ id: 'synthetic/track', path: xs.map(x => [x, z] as [number, number]), tags: {} }];
+  const candidates = (rails: WaverleyAnchorScene['rails']) => waverleyPlatformGeometry({ ...d, rails })[0]!.candidates;
+  assert.equal(candidates(along(-1004, 0, 200, 400, 800)).length, 1, 'a track 3 m from the face is adjacent');
+  assert.equal(candidates(along(-1004, 300, 310)).length, 0, 'ten metres alongside a 200 m platform identify nothing');
+  assert.equal(candidates(along(-1004, 300, 360)).length, 1, 'sixty metres do');
+  assert.equal(candidates(along(-1004, 0, 200, 400))[0]!.topology, 'terminal-candidate', 'a track that ends at the platform');
+  assert.equal(candidates(along(-1004, 0, 200, 400, 800))[0]!.topology, 'through-or-unresolved', 'one that runs on through it');
+  // a tilted platform's bounding box reaches well past its 3 m margin, so only the distance itself rejects a far parallel track
+  const a = Math.PI / 6, turn = ([x, z]: [number, number]): [number, number] => [x * Math.cos(a) - z * Math.sin(a), x * Math.sin(a) + z * Math.cos(a)];
+  const tilted = (z: number): number => waverleyPlatformGeometry({ ...d, platforms: [{ ...d.platforms[0]!, path: d.platforms[0]!.path.map(turn) }],
+    rails: [{ id: 'synthetic/track', path: [0, 200, 400, 800].map(x => turn([x, z])), tags: {} }] })[0]!.candidates.length;
+  assert.equal(tilted(-1003.5), 1, 'a parallel track 2.5 m off the face');
+  assert.equal(tilted(-1010), 0, 'one 9 m off it is no platform track, though inside the bounding box');
+});
+
+test('Waverley takes platform associations only from the four arrival and departure events', () => {
+  const odd = buildWaverleyAnchors(scene(), [row('1', 'QQ01', 'E'), row('2', 'QQ02', ''), row('3', 'QQ03', 'a')], [], { allowProvisionalHeading: true });
+  assert.deepEqual(odd.platformAssociations, []);
+  assert.deepEqual(odd.anchors, []);
+});

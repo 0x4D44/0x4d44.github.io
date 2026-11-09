@@ -3,10 +3,16 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { createStations, londonRoofCeiling } from '../src/stations.ts';
+import { createStations, londonRoofCeiling, stPancrasView } from '../src/stations.ts';
 import type { KxData } from '../../core/osm.ts';
 
 type Listener = (event: Event) => void;
+
+/** Two objects are the same object, as a plain boolean check: a failed strictEqual on THREE objects prints a diff of the
+ * whole scene, and the test runner then reports that failure without its assertion code. */
+const same = (actual: unknown, expected: unknown, message: string): void => assert.ok(actual === expected, message);
+/** Let every queued microtask and the pending lazy load settle. */
+const settle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
 
 class MockElement {
   readonly tagName: string;
@@ -101,7 +107,8 @@ function fixture(data = {} as KxData, aspect = 1, search?: string, overrides: Pa
   const londonMesh = new THREE.Mesh(meshGeometry, meshMaterial);
   const scene = new THREE.Scene(); scene.add(londonMesh); scene.environment = map;
   const camera = new THREE.PerspectiveCamera(50, aspect); camera.position.set(3, 4, 12);
-  const controls = { target: new THREE.Vector3(0, 1, 0), update(): void {} } as unknown as OrbitControls;
+  // a flight between London views listens for the user taking the controls (station-transition.ts)
+  const controls = { target: new THREE.Vector3(0, 1, 0), update(): void {}, addEventListener(): void {}, removeEventListener(): void {} } as unknown as OrbitControls;
   let renderListDisposals = 0, rendererDisposals = 0;
   const renderer = {
     domElement: canvas,
@@ -138,7 +145,8 @@ async function switchAndFinish(rig: ReturnType<typeof fixture>, id: 'kings-cross
   await rig.stations.select(id, false);
   assert.equal(rig.stations.state().phase, 'hopping');
   rig.stations.frame(rig.time + 299);
-  assert.equal(rig.stations.activeScene(), before, 'the scene stays put before the midpoint');
+  same(rig.stations.activeScene(), before, 'the scene stays put before the midpoint');
+  assert.equal(rig.nav.children[2].textContent, `Map hop · ${rig.stations.state().message}`, 'a frame mid-hop leaves the hop notice alone');
   rig.stations.frame(rig.time + 300);
   rig.stations.frame(rig.time + 600);
   assert.equal(rig.stations.state().phase, 'ready');
@@ -147,25 +155,28 @@ async function switchAndFinish(rig: ReturnType<typeof fixture>, id: 'kings-cross
 
 test('Waverley map hops release London once and repeated returns keep the London graph and replay state', async () => {
   await withResizeObserver(async () => {
-    const rig = fixture();
+    let attachedToPlaceholder = 0;
+    const rig = fixture(undefined, 1, undefined, { attachEdinburgh: () => { ++attachedToPlaceholder; } });
     const kxStatus = 'replay of 2026-11-09 at 8x · UTC feed remains active';
 
     await switchAndFinish(rig, 'edinburgh-waverley');
     const waverley = rig.stations.activeScene();
-    assert.notEqual(waverley, rig.scene);
+    assert.ok(waverley !== rig.scene);
     assert.equal(waverley.children.length, 0, 'Waverley is a real empty placeholder scene');
     assert.ok(waverley.background instanceof THREE.Color);
     assert.deepEqual(rig.releases, { geometry: 1, material: 1, texture: 1 });
     assert.equal(rig.stations.accounting().londonGpuReleases, 1);
     assert.equal(rig.rendererDisposals, 0, 'station changes keep the page renderer alive');
-    assert.equal(rig.renderer.domElement, rig.canvas);
+    same(rig.renderer.domElement, rig.canvas, 'the page canvas stays');
     assert.equal(rig.stations.statusText(kxStatus), 'Edinburgh Waverley: model not built yet. Live trains not enabled.');
+    assert.equal(rig.londonMesh.visible, false, 'London objects are hidden while another station is shown');
+    assert.equal(attachedToPlaceholder, 0, 'the empty placeholder gets no live train runtime');
 
     await switchAndFinish(rig, 'kings-cross');
-    assert.equal(rig.stations.activeScene(), rig.scene);
-    assert.equal(rig.scene.children[0], rig.londonMesh, 'London CPU objects remain attached');
-    assert.equal(rig.londonMesh.geometry, rig.meshGeometry);
-    assert.equal(rig.londonMesh.material, rig.meshMaterial);
+    same(rig.stations.activeScene(), rig.scene, 'London is the active scene again');
+    same(rig.scene.children[0], rig.londonMesh, 'London CPU objects remain attached');
+    same(rig.londonMesh.geometry, rig.meshGeometry, 'the geometry object is kept');
+    same(rig.londonMesh.material, rig.meshMaterial, 'the material object is kept');
     assert.equal(rig.londonMesh.visible, true);
     assert.equal(rig.stations.statusText(kxStatus), kxStatus);
 
@@ -188,7 +199,9 @@ test('Waverley map hops release London once and repeated returns keep the London
     assert.equal(rig.canvas.style.opacity, '1');
     const wavButton = [...rig.stationButtons].find(button => button.textContent.includes('Waverley'))!;
     wavButton.dispatch('click');
+    await settle();
     assert.equal(rig.win.history.pushes.length, 0, 'detached navigation cannot change the URL after disposal');
+    assert.equal(rig.doc.bodyDataset.station, undefined, 'nor mark the page with a station again');
   });
 });
 
@@ -202,9 +215,10 @@ test('disposing during a pending Waverley hop prevents a later frame from swappi
     rig.stations.dispose();
     rig.stations.frame(rig.time + 1000);
 
-    assert.equal(rig.stations.activeScene(), rig.scene, 'a disposed controller cannot run the pending scene swap');
+    same(rig.stations.activeScene(), rig.scene, 'a disposed controller cannot run the pending scene swap');
     assert.deepEqual(rig.releases, { geometry: 0, material: 0, texture: 0 });
     assert.equal(rig.stations.accounting().londonGpuReleases, 0);
+    assert.equal(rig.londonMesh.visible, true, 'a frame after disposal does not hide London again');
   });
 });
 
@@ -257,15 +271,15 @@ test('real Waverley activation attaches only its EB runtime and removes the unav
         platforms: [{ id: 'synthetic', ref: '1', tags: {}, path: [[0, 0], [100, 0], [100, 5], [0, 5]] }] } }),
     });
     const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model, attachEdinburgh: view => {
-      ++attached; assert.equal(view, model);
+      ++attached; same(view, model, 'the runtime attaches to the loaded model');
       view.live = { group: new THREE.Group(), frame() {}, dispose() {}, status: () => 'Edinburgh: assumed fleet', timeMs: () => 1000, load: async () => {}, state() {} };
     } });
     await switchAndFinish(rig, 'edinburgh-waverley'); rig.stations.frame(rig.time);
-    assert.equal(attached, 1); assert.equal(rig.stations.activeScene(), model.scene);
+    assert.equal(attached, 1); same(rig.stations.activeScene(), model.scene, 'the Waverley model scene is shown');
     assert.equal(rig.stations.accounting().placeholder, false); assert.equal(rig.placeholder.hidden, true);
     assert.equal(rig.stations.statusText('KX trains'), 'Edinburgh: assumed fleet');
     assert.equal(rig.stations.state().message, 'Edinburgh: assumed fleet');
-    assert.equal(rig.stations.edinburgh(), model);
+    same(rig.stations.edinburgh(), model, 'the loaded model is the Edinburgh view');
     await switchAndFinish(rig, 'kings-cross'); assert.equal(disposed, 1); assert.equal(rig.stations.edinburgh(), null);
     rig.stations.dispose(); assert.equal(disposed, 1);
   });
@@ -295,7 +309,8 @@ test('ground attribution follows the rendered station and restores the London cr
     rig.time += 2100; await switchAndFinish(rig, 'edinburgh-waverley');
     assert.equal(rig.doc.groundCredit.textContent, credit, 'Edinburgh must show the loaded terrain source');
     await switchAndFinish(rig, 'kings-cross'); assert.equal(rig.doc.groundCredit.textContent, london);
-    rig.stations.dispose();
+    await switchAndFinish(rig, 'edinburgh-waverley'); assert.equal(rig.doc.groundCredit.textContent, credit);
+    rig.stations.dispose(); assert.equal(rig.doc.groundCredit.textContent, london, 'disposal puts the London credit back');
   });
 });
 
@@ -334,4 +349,81 @@ test('selected station sky text reaches both status lines with Edinburgh values 
     assert.doesNotMatch(rig.stations.statusText('KX'), /Edinburgh/);
     rig.stations.dispose();
   });
+});
+
+test('the station buttons select a station: loading label, heading, pressed state and one history entry; going back follows the address', async () => {
+  await withResizeObserver(async () => {
+    const rig = fixture(mapData);
+    const [kings, pancras] = [...rig.stationButtons];
+    const pressed = (): string[] => [...rig.stationButtons].map(button => button.attributes.get('aria-pressed')!);
+    assert.deepEqual(pressed(), ['true', 'false', 'false']);
+    assert.equal(rig.doc.bodyDataset.station, 'kings-cross');
+    rig.stations.frame(rig.time);
+    pancras!.dispatch('click');
+    assert.equal(rig.stations.state().phase, 'loading');
+    assert.equal(pancras!.textContent, 'St Pancras · Loading…', 'the button being loaded says so');
+    assert.equal(kings!.textContent, "King's Cross");
+    assert.equal(rig.nav.attributes.get('aria-busy'), 'true');
+    assert.equal(rig.nav.children[2].textContent, 'Loading St Pancras…');
+    rig.stations.frame(rig.time + 1);
+    assert.equal(rig.nav.children[2].textContent, 'Loading St Pancras…', 'a frame while loading leaves the progress notice alone');
+    await settle();
+    assert.equal(rig.stations.state().selected, 'st-pancras');
+    rig.stations.frame(rig.time + 100);
+    assert.equal(rig.stations.state().phase, 'flying');
+    assert.equal(rig.nav.children[2].textContent, rig.stations.state().message, 'a frame mid-flight leaves the station notice alone');
+    assert.equal(rig.doc.bodyDataset.station, 'st-pancras');
+    assert.equal(rig.doc.heading.textContent, 'St Pancras');
+    assert.equal(rig.doc.app.attributes.get('aria-label'), 'St Pancras station view');
+    assert.deepEqual(pressed(), ['false', 'true', 'false']);
+    assert.equal(pancras!.textContent, 'St Pancras');
+    assert.equal(rig.nav.attributes.get('aria-busy'), 'false');
+    assert.deepEqual(rig.win.history.pushes, ['https://example.test/kings-cross/?trains=replay&date=20261109&speed=8&station=st-pancras']);
+    // going back: the address names King's Cross again, and following it adds no history entry
+    rig.win.location.search = '?trains=replay&date=20261109&speed=8';
+    rig.win.dispatch('popstate');
+    await settle();
+    assert.equal(rig.stations.state().selected, 'kings-cross');
+    assert.equal(rig.doc.heading.textContent, "King's Cross");
+    assert.equal(rig.win.history.pushes.length, 1, 'following the address pushes nothing');
+    rig.stations.dispose();
+  });
+});
+
+test('a station that fails to load leaves the last usable station selected and adds no history entry', async () => {
+  await withResizeObserver(async () => {
+    const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => { throw new Error('offline'); } });
+    [...rig.stationButtons][2]!.dispatch('click');
+    await settle();
+    const state = rig.stations.state();
+    assert.equal(state.phase, 'failed');
+    assert.equal(state.selected, 'kings-cross');
+    assert.match(rig.nav.children[2].textContent, /Edinburgh Waverley could not load/);
+    rig.stations.frame(rig.time + 1);
+    assert.match(rig.nav.children[2].textContent, /Edinburgh Waverley could not load/, 'a frame after a failed load keeps the failure notice');
+    assert.equal(rig.doc.heading.textContent, "King's Cross");
+    assert.equal(rig.win.history.pushes.length, 0, 'no history entry for a station that was not reached');
+    rig.stations.dispose();
+  });
+});
+
+test('a bookmarked station starts selected, without a history entry', async () => {
+  await withResizeObserver(async () => {
+    const rig = fixture(mapData, 1, '?trains=demo&station=st-pancras');
+    await settle();
+    assert.equal(rig.stations.state().selected, 'st-pancras');
+    assert.equal(rig.doc.heading.textContent, 'St Pancras');
+    assert.equal(rig.win.history.pushes.length, 0);
+    rig.stations.dispose();
+  });
+});
+
+test('St Pancras backs the camera off in proportion to a narrow screen and keeps its wide framing otherwise', () => {
+  const standOff = (aspect: number): number => {
+    const view = stPancrasView(mapData, aspect);
+    return Math.hypot(...view.eye.map((v, i) => v - view.target[i]!));
+  };
+  assert.ok(Math.abs(standOff(2) - standOff(1.6)) < 1e-9, 'a wide screen keeps the same framing');
+  assert.ok(Math.abs(standOff(0.4) / standOff(0.8) - 2) < 1e-9, 'a narrow screen stands off in inverse proportion to its aspect');
+  assert.ok(standOff(0.8) > standOff(1.6));
 });

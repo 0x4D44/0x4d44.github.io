@@ -83,6 +83,16 @@ test('ole (real data): under the shed every wire and member stays under the roof
   assert.ok(atMouth > 0, 'wires reach the mouth');
 });
 
+test('ole (real data): the shed carries a cross-span over its arches at every support line, and the wire mesh draws them with the wires', () => {
+  const shedLines = plan.lines.filter(l => l.inShed);
+  assert.ok(shedLines.length >= 3, `${shedLines.length} support lines under the shed`);
+  assert.ok(plan.spanCounts.crossSpans >= shedLines.length, 'at least one arch carries a cross-span at each shed line');
+  assert.ok(plan.spanCounts.hangers >= plan.spanCounts.crossSpans, 'every cross-span has a hanger');
+  const lines = ole.getObjectByName('ole-wires') as THREE.LineSegments;
+  assert.equal(lines.geometry.getAttribute('position').count, (plan.wires.length + plan.spans.length) / 3, 'the cross-spans and hangers are drawn with the wires');
+  assert.equal(ole.userData.wireSegments, (plan.wires.length + plan.spans.length) / 6);
+});
+
 test('ole (real data): every support line holds every wire that crosses it', () => {
   assert.ok(plan.lines.length >= 9);
   for (const l of plan.lines) {
@@ -98,9 +108,12 @@ test('wire level of detail: solid within a few metres, fading with distance, gon
   assert.ok(wireAlpha(150, fov, 1080) < 1 && wireAlpha(150, fov, 1080) > 0.3);
   assert.ok(wireAlpha(1500, fov, 1080) < 0.1);
   for (let d = 1; d < 1000; d *= 1.5) assert.ok(wireAlpha(d * 1.5, fov, 1080) <= wireAlpha(d, fov, 1080));
+  // a pixel is the screen height divided into the view: half the pixels, half the coverage
+  assert.ok(Math.abs(wireAlpha(150, fov, 540) * 2 - wireAlpha(150, fov, 1080)) < 1e-9);
   const out: number[] = [];
   memberTriangles({ a: [0, 0, 0], b: [0, 5, 0], size: 0.3, kind: 'mast' }, out);
   assert.equal(out.length, 12 * 9);
-  const xs = out.filter((_, i) => i % 3 === 0), ys = out.filter((_, i) => i % 3 === 1);
+  const xs = out.filter((_, i) => i % 3 === 0), ys = out.filter((_, i) => i % 3 === 1), zs = out.filter((_, i) => i % 3 === 2);
   assert.ok(Math.abs(Math.max(...xs) - 0.15) < 1e-9 && Math.abs(Math.min(...ys)) < 1e-9 && Math.abs(Math.max(...ys) - 5) < 1e-9);
+  assert.ok(Math.abs(Math.min(...xs) + 0.15) < 1e-9 && Math.abs(Math.max(...zs) - 0.15) < 1e-9 && Math.abs(Math.min(...zs) + 0.15) < 1e-9, 'a square section, size wide each way');
 });

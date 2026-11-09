@@ -7,6 +7,8 @@ import { runFeed } from '../feed.mjs';
 import { encodeFrame, FrameParser } from '../stomp.mjs';
 
 test('areas: configuredAreas parses and deduplicates an ordered allowlist', () => {
+  assert.doesNotThrow(() => configuredAreas(' Y9 , Y4 '), 'blanks around an entry are ignored');
+  assert.deepEqual(configuredAreas(' Y9 , Y4 '), ['Y9', 'Y4']);
   assert.deepEqual(configuredAreas('Y9, Y4, Y9'), ['Y9', 'Y4']);
   assert.deepEqual(configuredAreas(['Y9', 'X1']), ['Y9', 'X1']);
   assert.deepEqual(configuredAreas(undefined), ['Y9']);
@@ -23,6 +25,7 @@ test('areas: configuredAreas rejects empty and malformed area entries', () => {
 
 test('areas: requestArea selects the default or one configured area', () => {
   const areas = ['Y9', 'Y4'];
+  assert.doesNotThrow(() => requestArea('/api/events', areas, 'Y9'), 'a request with no selector gets the default');
   assert.equal(requestArea('/api/events', areas, 'Y9'), 'Y9');
   assert.equal(requestArea('/api/events?view=map&area=Y4', areas, 'Y9'), 'Y4');
 });
@@ -38,6 +41,14 @@ test('areas: requestArea refuses unknown, duplicate, empty and malformed selecto
   ]) {
     assert.throws(() => requestArea(url, areas, 'Y9'), undefined, `expected rejection for ${url}`);
   }
+});
+
+test('areas: requestArea needs exactly one default area', () => {
+  const areas = ['Y9', 'Y4'];
+  assert.throws(() => requestArea('/api/events', areas, 'Y9,Y4'), /single area/);
+  assert.throws(() => requestArea('/api/events', areas, []));
+  assert.equal(requestArea('/api/events', areas, 'Y4'), 'Y4', 'the default is the one area given');
+  assert.throws(() => requestArea('/api/events', areas, 'X1'), /unknown area/, 'a default outside the allowlist is refused');
 });
 
 test('areas: areaDataDir preserves Y9 storage and isolates other areas', () => {

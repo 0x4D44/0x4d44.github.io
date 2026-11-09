@@ -59,6 +59,7 @@ python3 -I -u kings-cross-src/tools/mutation/hotel-exterior.py kings-cross-src .
 python3 -I -u kings-cross-src/tools/mutation/hotel-roof.py kings-cross-src .scratch/mutation/hotel-roof
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/mutation/live
 python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/mutation/motion
+python3 -I -u kings-cross-src/tools/mutation/ole.py kings-cross-src .scratch/mutation/ole
 python3 -I -u kings-cross-src/tools/mutation/perf.py kings-cross-src .scratch/mutation/perf
 python3 -I -u kings-cross-src/tools/mutation/relay.py kings-cross-src/relay .scratch/mutation/relay
 python3 -I -u kings-cross-src/tools/mutation/replay-report.py kings-cross-src .scratch/mutation/replay-report
@@ -73,6 +74,7 @@ python3 -I -u kings-cross-src/tools/mutation/signal-report.py kings-cross-src .s
 python3 -I -u kings-cross-src/tools/mutation/signals.py kings-cross-src .scratch/mutation/signals
 python3 -I -u kings-cross-src/tools/mutation/station-evidence.py kings-cross-src .scratch/mutation/station-evidence
 python3 -I -u kings-cross-src/tools/mutation/station.py kings-cross-src .scratch/mutation/station /Users/md/kx-data/osm/kx-osm.json
+python3 -I -u kings-cross-src/tools/mutation/stations.py kings-cross-src .scratch/mutation/stations
 python3 -I -u kings-cross-src/tools/mutation/test-suite.py
 python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .scratch/mutation/train-capture
 python3 -I -u kings-cross-src/tools/mutation/train.py kings-cross-src .scratch/mutation/train
@@ -99,6 +101,15 @@ geometry/camera assertions in Node; they need no browser, relay listener or priv
 `replay-report.py` mutates multi-recording argument handling, growing-file tail capture, and
 the preserved-anchor input to the replay audit. It runs the named synthetic replay assertions
 in isolated package copies.
+
+`ole.py` mutates the overhead line equipment (`core/ole.ts`, `web/src/ole.ts`): what is wired, the
+support lines, stagger, sag and tunnel-mouth taper, the shed's cross-spans, portals and masts, the
+wire level of detail and the member boxes. `stations.py` mutates the multi-station code: the TD-area
+allowlist and storage layout (`relay/areas.mjs`), the station table (`core/station-config.ts`), the
+Waverley decoder, platform screening and anchors (`core/waverley-anchors.ts`) with its offline tool
+(`tools/waverley-anchors.ts`), and the station switcher (`web/src/stations.ts`). Where two guards
+cover for each other (`motion.py`, `stations.py`), a mutation is given as a list of edits and applies
+them together; removing either alone changes nothing a test can see.
 
 `station.py` also mutates the committed data and `tools/fidelity.ts`.
 
