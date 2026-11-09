@@ -1629,16 +1629,21 @@ test('Barlow vault [WP-STP]: 100 ft at the crown, on the ground at the springing
   close(Math.max(...roof.filter((p) => p.y > 29).map((p) => p.u)) + Math.min(...roof.filter((p) => p.y > 29).map((p) => p.u)), barlow.width, 1.5, 'the crown is mid-shed');
 });
 
-test('Barlow vault [WP-STP]: glass covers the middle half of the arch, slate the outer quarters, to 210 m', () => {
+test('Barlow vault [WP-STP, hist-e]: glass covers the middle half of the roof as seen from above (round 4 took half the arch\'s length: glass over 70% of the width, a roof near-white from outside), slate the rest, to 210 m', () => {
   const parts = barlowGeometry(barlow);
   const slate = triangles(parts.slate as Batch);
   // the glass strips that start at the south wall (the middle of the arch): glass u is the distance along the arch, slate v likewise
   const glass = triangles(parts.roofGlass as Batch).filter((t) => t.p.some((p) => inVault(p).v < 1e-6));
+  const across = glass.flatMap((t) => t.p.map((p) => inVault(p).u));
+  close((Math.max(...across) - Math.min(...across)) / barlow.span, FIGURES.barlow.glassFraction, 0.06, 'the glass spans half the width of the span (to a strip: 24 strips, 4% each)');
+  close((Math.max(...across) + Math.min(...across)) / 2, barlow.width / 2, 1e-6, 'about the middle of the shed');
   const glassFrom = Math.min(...glass.flatMap((t) => t.uv.map((q) => q[0])));
   const glassTo = Math.max(...glass.flatMap((t) => t.uv.map((q) => q[0])));
   const total = Math.max(...[...slate, ...sideWalls(parts)].flatMap((t) => t.uv.map((q) => q[1]))); // the whole arch: its outer strips are the brick walls
-  close((glassTo - glassFrom) / total, FIGURES.barlow.glassFraction, 0.05, 'fraction of the arch that is glass');
-  close(glassFrom / total, 0.25, 0.05, 'the west quarter is slate');
+  close((glassTo - glassFrom) / total, 0.385, 0.03, 'which is about 0.385 of the arch\'s length (the arch is steep at the foot)');
+  close(glassFrom / total, 0.307, 0.03, 'and the slate and brick below it about 0.31 of it on each side (hist-e: dark slate a good third of the roof either side of the silver crown)');
+  // the slate lies wholly outside the glass, in plan
+  for (const t of slate) for (const p of t.p) assert.ok(Math.abs(inVault(p).u - barlow.width / 2) > (FIGURES.barlow.glassFraction * barlow.span) / 2 - 0.5 || inVault(p).y < 1, 'no slate under the glass');
   close(Math.max(...slate.flatMap((t) => t.p.map((p) => inVault(p).v))), barlow.barlowLength, 1e-6, 'slate ends at 689 ft');
   close(Math.max(...glass.flatMap((t) => t.p.map((p) => inVault(p).v))), barlow.barlowLength, 1e-6, 'and so does the glass');
   // UVs are metres, so slate, panes and boards come out true to scale along the whole shed
@@ -1661,15 +1666,19 @@ test('Barlow ribs [WP-STP, hist-d, hist-d2]: an X-braced lattice truss 2.6 m dee
     assert.ok(Math.min(...pts.map((p) => underSkin(p.u, p.y))) >= 0.05, `rib ${i} stands wholly inside the roof`); // 0.10 under it but for the feet, which are held to the platform
     // two chords, and a lattice that crosses the gap between them: four diagonals (two crossed pairs, an X) and a vertical to each of the 24 segments, each seen from both sides
     const depths = ts.map((t) => t.p.map((p) => underSkin(inVault(p).u, inVault(p).y)));
-    const topTs = ts.filter((_, j) => Math.max(...(depths[j] as number[])) < 0.5);
+    const topTs = ts.filter((_, j) => Math.max(...(depths[j] as number[])) < 0.55); // the chord is 0.4 m wide, its middle 0.3 m under the skin: its inner edge 0.5 m
     const bottomTs = ts.filter((_, j) => Math.min(...(depths[j] as number[])) > 1.5);
     const latticeTs = ts.filter((t) => !topTs.includes(t) && !bottomTs.includes(t));
     assert.equal(topTs.length, 24 * 3 * 2, `rib ${i}: the top chord, two sides and an underside to a segment`);
     assert.equal(bottomTs.length, 24 * 3 * 2, `rib ${i}: the bottom chord`);
-    assert.equal(latticeTs.length, 24 * 20 + 4, `rib ${i}: four diagonals and a vertical to a segment, and the closing vertical`);
+    assert.equal(latticeTs.length, 24 * 20, `rib ${i}: four diagonals and a vertical to a segment (a bar is two faces of two triangles; the east foot has none: it would lie flat on the platform)`);
     // heavy members, not wires (hist-d, hist-d2): every face of a chord stands 0.2 m either side of the rib's plane (0.4 m thick), of a lattice bar 0.1 m (0.2 m)
     for (const [name, sel, half] of [['top chord', topTs, 0.2], ['bottom chord', bottomTs, 0.2], ['lattice', latticeTs, 0.1]] as const) {
       for (const t of sel) for (const p of t.p) close(Math.abs(inVault(p).v - (barlow.ribs[i] as number)), half, 1e-6, `rib ${i}: the ${name} is ${2 * half} m thick`);
+    }
+    // and 0.4 m wide in the plane of the rib, every bar (round 5: bars 0.24 m wide were a pixel or two at the crown, 60 m off, and the lattice read only at the haunches): the shortest side of each triangle of a bar's face is its width (but at the foot, where a corner is held to the platform)
+    for (const [name, sel] of [['top chord', topTs], ['bottom chord', bottomTs], ['lattice', latticeTs]] as const) {
+      for (const t of sel.filter((q) => q.p.every((p) => p[1] > 1e-9))) close(Math.min(...[[0, 1], [1, 2], [2, 0]].map(([a, b]) => Math.hypot(...(t.p[a as number] as V3).map((c, k) => c - (t.p[b as number] as V3)[k]!)))), 0.4, 1e-6, `rib ${i}: a bar of the ${name} is 0.4 m wide`);
     }
   });
   // the purlins run the length of the shed, one under each node of the arch
@@ -1776,7 +1785,22 @@ test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of g
   // nothing beyond the gable is arched or high: the extension is subservient to the Barlow shed
   const all = Object.values(parts).flatMap((m) => triangles(m as Batch)).filter(beyond).flatMap((t) => t.p).map(inVault);
   assert.ok(Math.max(...all.map((p) => p.y)) <= Math.max(F.screenFoot + F.pyramid, lo + F.truss) + 1e-9, 'under half the crown');
-  assert.ok(Math.min(...all.map((p) => p.y)) > 5, 'on its own height: no glass to the ground as the arch had');
+  // dark glass walls its sides from the ground (round 5, hist-e: open sides left a slab floating on daylight): the transition's up to the girders' underside, the saw-tooth bays' to the fascia's foot
+  const wallTs = triangles(parts.pane as Batch).filter((t) => beyond(t) && Math.min(...t.p.map((p) => p[1])) < 1e-9);
+  assert.equal(wallTs.length, 2 * 2 * 4, 'two walls to a side, each a quad drawn both ways');
+  for (const t of wallTs) assert.ok(t.p.every((p) => Math.abs(inVault(p).u) < 1e-6) || t.p.every((p) => Math.abs(inVault(p).u - barlow.width) < 1e-6), 'on a side of the extension');
+  const vT = barlow.barlowLength + F.transition;
+  const [onTransition, onBays] = [wallTs.filter((t) => t.p.every((p) => inVault(p).v <= vT + 1e-6)), wallTs.filter((t) => t.p.every((p) => inVault(p).v >= vT - 1e-6))];
+  assert.equal(onTransition.length + onBays.length, wallTs.length, 'each wall is one or the other');
+  assert.equal(onTransition.length, 8, 'the transition has a wall each side');
+  close(Math.max(...onTransition.flatMap((t) => t.p.map((p) => p[1]))), lo, 1e-9, 'the transition\'s walls rise to the girders\' underside');
+  close(Math.max(...onBays.flatMap((t) => t.p.map((p) => p[1]))), lo - 1.2, 1e-9, 'the bays\' to the foot of the fascia');
+  close(Math.min(...onBays.flatMap((t) => t.p.map((p) => inVault(p).v))), vT, 1e-6, 'from the end of the transition');
+  close(Math.max(...onBays.flatMap((t) => t.p.map((p) => inVault(p).v))), barlow.length, 1e-6, 'to the outline\'s north end');
+  // the roof itself stands on its own height; its north end hangs to 6.5 m, a dark band across the shed over the trains (no daylight under a floating slab)
+  const roofTs = Object.values(parts).flatMap((m) => triangles(m as Batch)).filter((t) => beyond(t) && Math.min(...t.p.map((p) => p[1])) > 1e-9); // not the walls
+  close(Math.min(...roofTs.flatMap((t) => t.p.map((p) => p[1]))), 6.5, 1e-9, 'the last riser hangs to 6.5 m: clear of the trains');
+  assert.equal(roofTs.filter((t) => t.p.some((p) => p[1] < 10)).every((t) => t.p.every((p) => Math.abs(inVault(p).v - barlow.length) < 1e-6 || p[1] >= lo - 1.2 - 1e-9)), true, 'and nothing else of the roof is below its fascia');
   close(Math.max(...all.map((p) => p.v)), barlow.length, 1e-9, 'to the outline\'s north end');
   assert.ok(all.every((p) => p.u > -1e-9 && p.u < barlow.width + 1e-9), 'wall to wall');
   // the transition: 12 x 4 pyramids of glass, 1.5 m high, over the 22 m behind the gable
@@ -1797,7 +1821,7 @@ test('Barlow extension [NSC-EXT]: no arch past the gable; a 22 m transition of g
   close(Math.min(...slopePts.map((p) => p.y)), lo, 1e-9, 'the low edge is level with the girders\' underside');
   close(Math.max(...slopePts.map((p) => p.y)), lo + F.truss, 1e-9, 'each tooth climbs a 2.6 m truss depth');
   close(Math.min(...slopePts.map((p) => p.v)), barlow.barlowLength + F.transition, 1e-9, 'the roof starts where the transition ends');
-  const risers = triangles(parts.pane as Batch).filter(beyond); // the dark recesses of the shed's arcading are pane too, inside the vault
+  const risers = triangles(parts.pane as Batch).filter((t) => beyond(t) && Math.min(...t.p.map((p) => p[1])) > 1e-9); // the dark recesses of the shed's arcading are pane too, inside the vault; so are the extension's side walls, which stand on the ground
   assert.equal(risers.length, 14 * 2 * 2, 'a riser to each tooth, seen from both sides');
   assert.ok(risers.every((t) => Math.abs(unit(geoNormal(t))[1]) < 1e-9), 'upright');
   const north: V3 = [Math.sin(barlow.heading), 0, -Math.cos(barlow.heading)];

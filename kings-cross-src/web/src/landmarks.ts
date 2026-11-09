@@ -1070,7 +1070,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   };
 
   // ---- the shed: one strip of shell to each segment of the arch, from the south wall to the gable
-  const glassFrom = (1 - F.glassFraction) / 2;
+  const glassHalf = (F.glassFraction * plan.span) / 2; // [WP-STP] glass covers the middle half of the roof: of its width, as seen from above (hist-e: glass about half the span, dark slate either side)
   const strip = (m: Batch, k: number, d: number, uv: [V2, V2, V2, V2], f = 1): void => {
     const n = out[k] as P2;
     const e = (i: number, v: number): V3 => at(sec(i).x - n[0] * d, v, Math.max(0, sec(i).y - n[1] * d));
@@ -1080,8 +1080,7 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     const [a0, a1] = [arc[k] as number, arc[k + 1] as number];
     const across: [V2, V2, V2, V2] = [[a0, 0], [a1, 0], [a1, L], [a0, L]]; // glass panes and boards: u across the strip, v along it
     const along: [V2, V2, V2, V2] = [[0, a0], [0, a1], [L, a1], [L, a0]]; // slate and brick: u along the shed, v up the slope
-    const tm = (sec(k).t + sec(k + 1).t) / 2;
-    if (tm > glassFrom && tm < 1 - glassFrom) strip(glass, k, 0, across);
+    if (Math.abs((sec(k).x + sec(k + 1).x) / 2 - plan.width / 2) < glassHalf) strip(glass, k, 0, across);
     else if (k % (steps - 1) === 0) {
       strip(brick, k, 0, along); // hist-d2, hist-e: the shed's side walls are red brick, outside and in; the springing strip of the arch stands for the wall
       strip(brick, k, 0, along, -1);
@@ -1109,7 +1108,8 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     }
   }
   // the ribs: two chords and an X-braced lattice 2.6 m deep (hist-d, hist-d2: deep girders that read as a dense web over the whole arch); a bar is a ribbon of width w and
-  // thickness 2t along the shed, with an underside if a chord. Members ASSUMED, scaled from hist-d2: chords 0.3 x 0.4 m, lattice 0.24 x 0.2 m.
+  // thickness 2t along the shed, with an underside if a chord. Members ASSUMED, scaled from hist-d and hist-d2 (the girders read as a dense web of heavy bars from the shed's floor, even at
+  // the crown, where a bar 0.24 m wide was a pixel or two at 60 m): chords 0.4 x 0.4 m, lattice 0.4 x 0.2 m.
   const bar = (v: number, a: P2, b: P2, w: number, t: number, under = false): void => {
     const l = Math.hypot(b[0] - a[0], b[1] - a[1]);
     const n: P2 = [(-(b[1] - a[1]) / l) * (w / 2), ((b[0] - a[0]) / l) * (w / 2)];
@@ -1117,18 +1117,17 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
     for (const m of [-1, 1]) rib.quadUV(e(a, -1, m * t), e(b, -1, m * t), e(b, 1, m * t), e(a, 1, m * t), undefined, dir(0, 0, m));
     if (under) rib.quadUV(e(a, -1, -t), e(b, -1, -t), e(b, -1, t), e(a, -1, t), undefined, dir(-n[0], -n[1]));
   };
-  const top = section.map((_, k) => into(k, 0.25));
-  const bot = section.map((_, k) => into(k, 2.45));
+  const top = section.map((_, k) => into(k, 0.3));
+  const bot = section.map((_, k) => into(k, 2.4));
   const mid = (a: P2, b: P2): P2 => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   for (const v of plan.ribs) {
     for (let k = 0; k < steps; k++) {
       const [t0, t1, b0, b1] = [top[k], top[k + 1], bot[k], bot[k + 1]] as P2[];
-      bar(v, t0, t1, 0.3, 0.2, true);
-      bar(v, b0, b1, 0.3, 0.2, true);
-      // the lattice: a vertical at each node and two crossing diagonals (an X) between the chords
-      for (const [a, b] of [[t0, mid(b0, b1)], [mid(b0, b1), t1], [b0, mid(t0, t1)], [mid(t0, t1), b1], [t0, b0]] as const) bar(v, a, b, 0.24, 0.1);
+      bar(v, t0, t1, 0.4, 0.2, true);
+      bar(v, b0, b1, 0.4, 0.2, true);
+      // the lattice: a vertical at each node (the foot's lies along the platform) and two crossing diagonals (an X) between the chords
+      for (const [a, b] of [[t0, mid(b0, b1)], [mid(b0, b1), t1], [b0, mid(t0, t1)], [mid(t0, t1), b1], [t0, b0]] as const) bar(v, a, b, 0.4, 0.1);
     }
-    bar(v, top[steps] as P2, bot[steps] as P2, 0.24, 0.1);
   }
   // a purlin under the roof at every node of the arch, along the whole shed: the lines that run away down the vault in hist-d
   for (let k = 0; k <= steps; k++) {
@@ -1181,12 +1180,15 @@ export function barlowGeometry(plan: BarlowPlan, steps = 24): PartMap<Key> {
   }
   // the main roof: 14 teeth, each climbing a truss depth to the north, where a dark glazed riser drops back; a fascia closes each side
   const tooth = plan.bay / F.teeth;
-  for (let i = 0; i < F.bays * F.teeth; i++) {
-    const [v0, v1, hi] = [vT + i * tooth, vT + (i + 1) * tooth, lo + F.truss];
+  const teeth = F.bays * F.teeth;
+  for (let i = 0; i < teeth; i++) {
+    const [v0, v1, hi, low] = [vT + i * tooth, vT + (i + 1) * tooth, lo + F.truss, i < teeth - 1 ? lo : 6.5]; // the last riser hangs to 6.5 m, over the trains (hist-e: no daylight under a floating slab)
     sheet(metal, [at(0, v0, lo), at(W, v0, lo), at(W, v1, hi), at(0, v1, hi)], UP);
-    sheet(pane, [at(0, v1, hi), at(W, v1, hi), at(W, v1, lo), at(0, v1, lo)], dir(0, 0, 1));
+    sheet(pane, [at(0, v1, hi), at(W, v1, hi), at(W, v1, low), at(0, v1, low)], dir(0, 0, 1));
     for (const u of [0, W]) sheet(metal, [at(u, v0, lo - 1.2), at(u, v1, lo - 1.2), at(u, v1, hi), at(u, v0, lo)], dir(1, 0));
   }
+  // hist-e: dark glass walls the sides of the extension from the ground to its fascia (a roof on open air read as a slab with daylight under it)
+  for (const u of [0, W]) for (const [a, b, y] of [[L, vT, lo], [vT, plan.length, lo - 1.2]] as const) sheet(pane, [at(u, a, 0), at(u, b, 0), at(u, b, y), at(u, a, y)], dir(1, 0));
   // the south wall: the shed's end, brick, behind the hotel; u across the wall from its west foot, v up
   const wall = section.map((p): V3 => at(p.x, 0.15, p.y)); // the arch, foot to foot
   const foot0 = wall[0] as V3;
