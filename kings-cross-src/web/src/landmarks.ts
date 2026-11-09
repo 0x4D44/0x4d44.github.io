@@ -104,11 +104,18 @@ export function createMaterials(): MaterialSet {
   const clock = own(new THREE.MeshBasicMaterial({ map: clockMap, color: clockMap ? 0xffffff : 0xe9e2cc, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   // the extension's roof panels (hist-e): light grey, mid-tone against the white-painted frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
+  // hist-b: the Midland's brick is a light terracotta red (sunlit about 0xbd8263), not the library's deep crimson (about 0x8e3c2c): the shared
+  // brick texture times (1.1, 0.55, 0.78) comes to about 0xa8684f. The shade is ASSUMED.
+  const brickRed = own((material('brickRed') as THREE.MeshLambertMaterial).clone());
+  brickRed.color.setRGB(1.1, 0.55, 0.78);
+  // hist-a, hist-b: the dressings are creamier and paler than the library's grey ashlar (about 0xdcd3be in daylight against its 0xc8c0aa): times (1.25, 1.2, 1.1); ASSUMED
+  const stone = own((material('stone') as THREE.MeshLambertMaterial).clone());
+  stone.color.setRGB(1.25, 1.2, 1.1);
   return {
     table: {
       brick: material('brick'),
-      brickRed: material('brickRed'),
-      stone: material('stone'),
+      brickRed,
+      stone,
       slate: material('slateBothSides'),
       sash: material('sash'),
       sashArch: material('sashArch'),
@@ -318,7 +325,10 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
 const CORNICE_HEIGHT = 0.7; // ASSUMED
+const CORNICE_OUT = 0.8; // hist-a: the modillion cornice stands well out from the wall; the depth is ASSUMED
 const SASH_HEIGHT = 2.4; // ASSUMED
+const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly advanced": hist-a shows each on a stucco box about this far out (ASSUMED)
+const ADVANCED = [5, 12]; // their places along the main front, counting from 0
 
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry):
 // "Slate roof with pedimented dormers." All dimensions and the one-per-bay count below are ASSUMED;
@@ -341,7 +351,7 @@ const GNH_CHIMNEY_WIDTH = 0.72; // ASSUMED shaft width along a facade bay
 const GNH_CHIMNEY_DEPTH = 0.64; // ASSUMED depth across the roof slope
 const GNH_CHIMNEY_CAP_WIDTH = 0.92; // ASSUMED slab cap width
 const GNH_CHIMNEY_CAP_DEPTH = 0.84; // ASSUMED slab cap depth
-const GNH_CHIMNEY_HEIGHT = 2.4; // ASSUMED prominent stack height
+const GNH_CHIMNEY_HEIGHT = 3.2; // ASSUMED stack height, scaled from hist-a (a stack stands about one and a half dormers tall)
 const GNH_CHIMNEY_CAP_HEIGHT = 0.14; // ASSUMED slab cap thickness
 const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
 
@@ -454,7 +464,8 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   addWalls(part(parts, 'brick'), plan.outline, 0, plan.eaves);
   const segs = segmentsOutside(polygonEdges(plan.outline), []);
   addBand(stone, segs, plan.groundStorey - 0.12, 0.28, 0.1); // string course over the ground floor
-  addBand(stone, segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, 0.55); // modillion cornice [HE-GNH]; its depth is ASSUMED
+  addBand(stone, segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, CORNICE_OUT); // modillion cornice [HE-GNH]
+  for (let s = 2; s < plan.storeys; s++) addBand(stone, segs, plan.groundStorey + (s - 1) * plan.upperStorey + 0.2, 0.3, 0.1); // hist-a: a stucco sill course under each upper row (the first has the ground floor's); sizes ASSUMED
   addRoof(part(parts, 'slate'), plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
   addHotelRoofDetails(parts, plan);
 
@@ -470,14 +481,16 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
       stone.box([bay.at[0] + bay.normal[0] * 0.2, crown + 0.1, bay.at[1] + bay.normal[1] * 0.2], [0.5, 0.45, 0.12], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]) }); // [HE-GNH] keystone dimensions are ASSUMED
       // ground floor: round-headed openings [HE-GNH]
       addSash(parts, 'sashArch', bay, 0.75, aw, ah);
+      // the sixth and thirteenth bays of the main front are tripartite and advanced [HE-GNH]: three narrow lights on a stucco box (hist-a, 3 m wide), from the first floor to the cornice
+      const advanced = face.kind === 'main' && ADVANCED.includes(index);
+      if (advanced) stone.box([bay.at[0] + (bay.normal[0] * (ADVANCE - 0.15)) / 2, (plan.groundStorey + plan.eaves - CORNICE_HEIGHT) / 2, bay.at[1] + (bay.normal[1] * (ADVANCE - 0.15)) / 2], [3, plan.eaves - CORNICE_HEIGHT - plan.groundStorey, ADVANCE + 0.15], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]), skip: ['+y'] });
       for (let s = 1; s < f.storeys; s++) {
         // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little) so the top row clears the cornice
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;
-        // the sixth and thirteenth bays of the main front are tripartite [HE-GNH]: three narrow lights
-        if (face.kind === 'main' && (index === 5 || index === 12)) {
+        if (advanced) {
           for (const k of [-1, 0, 1]) {
             const at: Pt = [bay.at[0] + bay.dir[0] * k * 0.8, bay.at[1] + bay.dir[1] * k * 0.8];
-            addSash(parts, 'sash', { at, dir: bay.dir, normal: bay.normal }, base, 0.75, SASH_HEIGHT);
+            addSash(parts, 'sash', { at, dir: bay.dir, normal: bay.normal }, base, 0.75, SASH_HEIGHT, ADVANCE + 0.08);
           }
         } else addSash(parts, 'sash', bay, base, tw, SASH_HEIGHT);
       }
@@ -501,17 +514,19 @@ function squareAbout(c: Pt, along: Pt, out: Pt, half: number): Pt[] {
 /**
  * The head of a pointed opening `w` wide, from the right-hand jamb over the apex to the left-hand one: two arcs springing at `spring`,
  * `grow` metres outside the opening (concentric with its own). x is across from the opening's middle, y up from its sill.
+ * `round` makes it the semicircle about the middle of the springing (hist-b: the ground storey's arches).
  */
-export function headArc(w: number, spring: number, grow: number, steps = 3): [number, number][] {
+export function headArc(w: number, spring: number, grow: number, steps = 3, round = false): [number, number][] {
   const hw = w / 2;
-  const r = w + grow;
-  const end = Math.acos(hw / r);
+  const r = round ? hw + grow : w + grow;
+  const end = round ? Math.PI / 2 : Math.acos(hw / r);
+  const c = round ? 0 : -hw;
   const right: [number, number][] = [];
   const left: [number, number][] = [];
   for (let k = 0; k <= steps; k++) {
     const a = (end * k) / steps;
-    right.push([-hw + r * Math.cos(a), spring + r * Math.sin(a)]);
-    left.push([hw - r * Math.cos(a), spring + r * Math.sin(a)]);
+    right.push([c + r * Math.cos(a), spring + r * Math.sin(a)]);
+    left.push([-c - r * Math.cos(a), spring + r * Math.sin(a)]);
   }
   return [...right, ...left.reverse().slice(1)];
 }
@@ -524,8 +539,8 @@ const MOULDING = 0.08;
  * moulding round the outside of it. The two halves are mirror images (each runs stone, brick, stone ... up from its jamb), so the apex is
  * a pale pair of blocks, never a pale one beside a red one. `t` thick, `lift` off the wall.
  */
-function addVoussoirs(parts: PartMap<Key>, p: Placed, y: number, w: number, spring: number, t: number, lift: number, steps = 3): void {
-  const rings = [0, t, t + MOULDING].map((g) => headArc(w, spring, g, steps));
+function addVoussoirs(parts: PartMap<Key>, p: Placed, y: number, w: number, spring: number, t: number, lift: number, steps = 3, round = false): void {
+  const rings = [0, t, t + MOULDING].map((g) => headArc(w, spring, g, steps, round));
   const q = ([x, v]: readonly [number, number]): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * lift, y + v, p.at[1] + p.dir[1] * x + p.normal[1] * lift];
   const face: V3 = [p.normal[0], 0, p.normal[1]];
   const n = 2 * steps;
@@ -569,7 +584,12 @@ export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h:
   }
   addDisc(pane, p, 0, y + h - 0.45, 0.27, 0.1);
   addVoussoirs(parts, p, y, W, spring, t, 0.05);
-  // the jambs carry the arch's courses down to the sill (the course under the springing is brick, the next stone, and so on), and its moulding
+  addJambs(parts, p, y, W, spring, t);
+  stone.box([p.at[0] + p.normal[0] * 0.2, y - 0.1, p.at[1] + p.normal[1] * 0.2], [W + 0.6, 0.2, 0.5], { rotY: Math.atan2(-p.dir[1], p.dir[0]), skip: ['-y'] });
+}
+
+/** The jambs of an arch `W` wide with a ring `t` thick: its courses carried down to the sill (the course under the springing is brick, the next stone, and so on), and its moulding. */
+function addJambs(parts: PartMap<Key>, p: Placed, y: number, W: number, spring: number, t: number): void {
   const nb = spring > 0.3 ? Math.max(1, Math.round(spring / 0.65)) : 0;
   const face: V3 = [p.normal[0], 0, p.normal[1]];
   const q = (x: number, v: number): V3 => [p.at[0] + p.dir[0] * x + p.normal[0] * 0.05, y + v, p.at[1] + p.dir[1] * x + p.normal[1] * 0.05];
@@ -579,9 +599,15 @@ export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h:
       const v1 = (spring * (k + 1)) / nb;
       part(parts, (nb - 1 - k) % 2 === 0 ? 'brickRed' : 'stone').quadUV(q(s * (W / 2), v0), q(s * (W / 2 + t), v0), q(s * (W / 2 + t), v1), q(s * (W / 2), v1), [[0, v0], [t, v0], [t, v1], [0, v1]], face);
     }
-    if (nb) stone.quadUV(q(s * (W / 2 + t), 0), q(s * (W / 2 + t + MOULDING), 0), q(s * (W / 2 + t + MOULDING), spring), q(s * (W / 2 + t), spring), [[0, 0], [MOULDING, 0], [MOULDING, spring], [0, spring]], face);
+    if (nb) part(parts, 'stone').quadUV(q(s * (W / 2 + t), 0), q(s * (W / 2 + t + MOULDING), 0), q(s * (W / 2 + t + MOULDING), spring), q(s * (W / 2 + t), spring), [[0, 0], [MOULDING, 0], [MOULDING, spring], [0, spring]], face);
   }
-  stone.box([p.at[0] + p.normal[0] * 0.2, y - 0.1, p.at[1] + p.normal[1] * 0.2], [W + 0.6, 0.2, 0.5], { rotY: Math.atan2(-p.dir[1], p.dir[0]), skip: ['-y'] });
+}
+
+/** A round-headed opening in a ring of red and stone voussoirs, on jambs of red and stone courses (hist-b: the ground storey's arcade); sizes ASSUMED. */
+export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number): void {
+  addWindow(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
+  addVoussoirs(parts, p, y, w, h - w / 2, 0.22, 0.05, 3, true);
+  addJambs(parts, p, y, w, h - w / 2, 0.22);
 }
 
 /** A chimney stack on the crown of the roof: a brick shaft, a stone corbel course and cap, a clay pot (hist-b, hist-e: tall brick stacks in pairs along the ridge). Sizes ASSUMED. */
@@ -718,6 +744,11 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   }
   // the corbel table: three steps, each a little farther out
   for (let k = 0; k < 3; k++) addBand(stone, whole(0), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
+  // and under it a row of corbels, as far out as the first step (hist-c: the table is dense with them); their size and spacing are ASSUMED
+  const nc = Math.round((2 * h) / 0.9);
+  for (const f of faces) {
+    for (let k = 0; k < nc; k++) stone.box([f.at[0] + f.dir[0] * (((k + 0.5) * 2 * h) / nc - h) + f.normal[0] * 0.05, bT - 0.3, f.at[1] + f.dir[1] * (((k + 0.5) * 2 * h) / nc - h) + f.normal[1] * 0.05], [0.5, 0.6, 0.4], { rotY: Math.atan2(-f.dir[1], f.dir[0]), skip: ['+y'] });
+  }
   // the clock stage
   const grow = 0.5;
   addWalls(brick, sq(h + grow), tT, wH);
@@ -775,6 +806,7 @@ export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
 
   // windows: four storeys, round-headed at the bottom and pairs of pointed lancets above; the front and the curved wing in bays, the rest evenly
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, { y: 6.9, h: 3.4, head: 'pointed' as Head }, { y: 12.4, h: 3.4, head: 'pointed' as Head }, { y: 17.9, h: 3.0, head: 'pointed' as Head }];
+  for (const row of rows.slice(1)) addBand(stone, segs, row.y - 0.45, 0.25, 0.14); // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; sizes ASSUMED
   const covered = (p: Pt): boolean => cutters.some((q) => pointInQuad(p, q));
   const dress = (bays: readonly BayPosition[], rich: boolean): void => {
     for (const bay of bays) {
@@ -782,6 +814,7 @@ export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
       const w = Math.max(1.0, Math.min(1.7, bay.width * 0.32));
       for (const row of rows) {
         if (rich && row.head === 'pointed') addTwin(parts, bay, row.y, Math.max(1.6, Math.min(2.5, bay.width * 0.46)), row.h);
+        else if (row.head === 'round') addArch(parts, bay, row.y, w, row.h);
         else addFramedWindow(parts, bay, row.y, w, row.h, row.head, 0.22);
       }
     }

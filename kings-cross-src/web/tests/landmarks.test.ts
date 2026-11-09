@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, headArc, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addLandmarks, addTwin, addWalls, barlowGeometry, createMaterials, headArc, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
@@ -179,6 +179,23 @@ test('Midland Grand: the building itself cuts its eaves cornice where the towers
   for (const t of cornice) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, `a cornice vertex at (${v[0].toFixed(1)}, ${v[2].toFixed(1)}) is inside the ${tower.name} tower`);
 });
 
+test('Midland Grand [hist-b]: a continuous stone sill course 0.45 m under each of the three upper window rows, cut where the towers stand, 0.14 m proud of the wall', () => {
+  const stone = triangles(midlandGeometry(midland).stone as Batch);
+  const segs = segmentsOutside(polygonEdges(midland.outline), midland.towers.map((t) => towerSquare(t, 0.45)));
+  for (const y of [6.9, 12.4, 17.9]) {
+    const front = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (y - 0.45)) < 1e-9 || Math.abs(v[1] - (y - 0.2)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y - 0.45)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y - 0.2)) < 1e-9));
+    assert.equal(front.length, 2 * segs.length, `the course under the row at ${y} m is one front face to every uncut wall`);
+    for (const t of front) for (const v of t.p) for (const tower of midland.towers) assert.equal(pointInQuad([v[0], v[2]], towerSquare(tower, 0)), false, 'and nowhere inside a tower');
+    // every front-face vertex is the segment end moved out by the course's depth along its wall's normal: 0.14 m from that wall
+    const out = front.flatMap((t) => t.p.map((v) => Math.min(...polygonEdges(midland.outline).map((e) => {
+      const s = Math.max(0, Math.min(e.length, (v[0] - e.a[0]) * e.dir[0] + (v[2] - e.a[1]) * e.dir[1]));
+      return Math.hypot(v[0] - (e.a[0] + e.dir[0] * s), v[2] - (e.a[1] + e.dir[1] * s));
+    }))));
+    close(Math.max(...out), 0.14, 1e-6, `the course under the row at ${y} m stands 0.14 m proud`);
+  }
+  assert.equal(stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (1.0 - 0.45)) < 1e-9 || Math.abs(v[1] - (1.0 - 0.2)) < 1e-9)).length, 0, 'there is none under the ground row');
+});
+
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
 test('Great Northern Hotel: facade windows keep their counts and assumed attic dormers add one sash per bay', () => {
@@ -229,24 +246,68 @@ test('Great Northern Hotel: every real ground arch gets one keystone and the imp
   assert.equal(Object.keys(parts).length, 5, 'the details stay in the existing five material batches');
 });
 
-test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth proud, and faces out', () => {
+test('Great Northern Hotel: every window stands on a wall (the advanced bays\' lights, on their box), a hand\'s breadth proud, and faces out', () => {
   const parts = hotelGeometry(hotel);
   const edges = polygonEdges(hotel.outline);
   const distance = (p: Pt): number => Math.min(...edges.map((e) => {
     const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
     return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
   }));
+  const main = hotel.faces.find((f) => f.kind === 'main')!;
+  const advanced = [5, 12].map((i) => main.bays[i]!);
   for (const key of ['sash', 'sashArch'] as const) {
     const windows = triangles(parts[key] as Batch).filter(t => key === 'sash' ? t.p.every(v => v[1] <= hotel.eaves) : true);
     for (const t of windows) {
       for (const v of t.p) {
         assert.equal(pointInPolygon([v[0], v[2]], hotel.outline), false, `${key} vertex outside the walls`);
-        assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
+        // [HE-GNH] the sixth and thirteenth bays are advanced: their three lights stand on a box 0.4 m out, a hand's breadth (0.08) proud of it
+        const onBox = advanced.find((b) => Math.abs((v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1]) <= 1.5 && (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] > 0.3);
+        if (onBox) close((v[0] - onBox.at[0]) * onBox.normal[0] + (v[2] - onBox.at[1]) * onBox.normal[1], 0.48, 1e-6, 'a light of an advanced bay stands on its box');
+        else assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
       }
       const g = geoNormal(t);
       assert.ok(Math.abs(g[1]) < 1e-9, 'windows are vertical');
     }
   }
+});
+
+test('Great Northern Hotel [HE-GNH, hist-a]: the sixth and thirteenth bays of the main front stand 0.4 m out on a 3 m stucco box from the first floor to the cornice, and no other bay does', () => {
+  const stone = triangles(hotelGeometry(hotel).stone as Batch);
+  const main = hotel.faces.find((f) => f.kind === 'main')!;
+  assert.equal(main.bays.length, 18);
+  const frame = (v: V3, b: (typeof main.bays)[number]): { along: number; depth: number } => ({ along: (v[0] - b.at[0]) * b.dir[0] + (v[2] - b.at[1]) * b.dir[1], depth: (v[0] - b.at[0]) * b.normal[0] + (v[2] - b.at[1]) * b.normal[1] });
+  main.bays.forEach((b, i) => {
+    const fronts = stone.filter((t) => t.p.every((v) => Math.abs(frame(v, b).depth - 0.4) < 1e-6 && Math.abs(frame(v, b).along) <= 1.5 + 1e-6));
+    if (i !== 5 && i !== 12) return assert.equal(fronts.length, 0, `bay ${i + 1} is not advanced`);
+    assert.equal(fronts.length, 2, `bay ${i + 1}: one flat front, two triangles`);
+    const ys = fronts.flatMap((t) => t.p.map((v) => v[1]));
+    const along = fronts.flatMap((t) => t.p.map((v) => frame(v, b).along));
+    close(Math.min(...ys), hotel.groundStorey, 1e-9, 'the box starts at the first floor');
+    close(Math.max(...ys), hotel.eaves - 0.7, 1e-9, 'and ends under the cornice');
+    close(Math.max(...along) - Math.min(...along), 3, 1e-6, 'it is 3 m wide');
+  });
+});
+
+test('Great Northern Hotel [hist-a]: a stucco sill course under each of the upper rows, the cornice 0.8 m out', () => {
+  const stone = triangles(hotelGeometry(hotel).stone as Batch);
+  const edges = polygonEdges(hotel.outline).filter((e) => e.length >= 0.05);
+  const outline = hotel.outline;
+  const distance = (p: Pt): number => Math.min(...polygonEdges(outline).map((e) => {
+    const t = Math.max(0, Math.min(e.length, (p[0] - e.a[0]) * e.dir[0] + (p[1] - e.a[1]) * e.dir[1]));
+    return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
+  }));
+  for (const s of [2, 3, 4]) {
+    const y0 = hotel.groundStorey + (s - 1) * hotel.upperStorey + 0.2;
+    const faces = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - y0) < 1e-9 || Math.abs(v[1] - (y0 + 0.3)) < 1e-9) && t.p.some((v) => Math.abs(v[1] - y0) < 1e-9) && t.p.some((v) => Math.abs(v[1] - (y0 + 0.3)) < 1e-9));
+    assert.equal(faces.length, 2 * edges.length, `row ${s}: one front face (two triangles) on every wall`);
+    const out = faces.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])));
+    close(Math.max(...out), 0.1, 1e-6, `row ${s}: the course stands 0.1 m out`);
+    assert.ok(Math.min(...out) > 0.09, `row ${s}: and no nearer the wall at a corner than a hair`);
+    const sills = triangles(hotelGeometry(hotel).sash as Batch).filter((t) => t.p.every((v) => v[1] <= hotel.eaves)).flatMap((t) => t.p.map((v) => v[1]));
+    assert.ok(sills.some((y) => Math.abs(y - (y0 + 0.3)) < 1e-9), `row ${s}: the windows stand on the top of the course`);
+  }
+  const cornice = stone.filter((t) => t.p.every((v) => Math.abs(v[1] - (hotel.eaves - 0.7)) < 1e-9 || Math.abs(v[1] - hotel.eaves) < 1e-9));
+  close(Math.max(...cornice.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])))), 0.8, 1e-6, 'the cornice stands 0.8 m out');
 });
 
 test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and no window is hidden by the cornice', () => {
@@ -537,6 +598,21 @@ test('Midland Grand: the clock tower has a belfry of paired arches on every face
   for (const p of all) if (p.y > st.roof + 1e-6) assert.ok(Math.abs(p.a) < 1.6 && Math.abs(p.o) < 1.6, `a vertex at ${p.y} above the roof's top is off the lantern`);
 });
 
+test('Midland Grand [hist-c]: a row of corbels under the corbel table on every face of each tower, no farther out than its first step, clear of the belfry\'s windows', () => {
+  const stone = triangles(midlandGeometry(midland).stone as Batch);
+  for (const t of midland.towers) {
+    const bT = towerStages(t.height).belfry;
+    const half = t.side / 2;
+    const nc = Math.round(t.side / 0.9);
+    const corbels = stone.filter((s) => s.p.some((v) => v[1] < bT - 0.1) && s.p.every((v) => v[1] >= bT - 0.6 - 1e-9 && v[1] <= bT + 1e-9 && Math.abs((v[0] - t.centre[0]) * t.along[0] + (v[2] - t.centre[1]) * t.along[1]) < half + 0.3 && Math.abs((v[0] - t.centre[0]) * t.out[0] + (v[2] - t.centre[1]) * t.out[1]) < half + 0.3));
+    assert.equal(corbels.length, 4 * nc * 10, `${t.name}: ${nc} corbels to a face, five faces to a corbel (the top is under the first step)`);
+    const reach = Math.max(...corbels.flatMap((s) => s.p.map((v) => Math.max(Math.abs((v[0] - t.centre[0]) * t.along[0] + (v[2] - t.centre[1]) * t.along[1]), Math.abs((v[0] - t.centre[0]) * t.out[0] + (v[2] - t.centre[1]) * t.out[1])))));
+    close(reach, half + 0.25, 1e-6, `${t.name}: as far out as the first step of the table`);
+    const arches = Math.max(...stone.filter((s) => s.p.every((v) => v[1] > bT - 3 && v[1] < bT - 0.6 - 1e-9 && Math.hypot(v[0] - t.centre[0], v[2] - t.centre[1]) < half + 0.5)).flatMap((s) => s.p.map((v) => v[1])));
+    assert.ok(arches < bT - 0.6, `${t.name}: the belfry's stonework ends under the corbels (${arches} against ${bT - 0.6})`);
+  }
+});
+
 test('Midland Grand: each dial is upright and reads left to right as a viewer outside sees it, whichever face it is on', () => {
   const clocks = triangles(midlandGeometry(midland).clock as Batch);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
@@ -605,6 +681,72 @@ test('addTwin: paired lancets under an arch of stone and red voussoirs, the halv
   const outer = Math.max(...red.flatMap((t) => t.p.map((v) => Math.abs(v[0]))));
   const stoneOuter = Math.max(...stone.filter((t) => t.p.every((v) => v[1] > 0.4)).flatMap((t) => t.p.map((v) => Math.abs(v[0]))));
   assert.ok(stoneOuter > outer + 0.05, `the moulding (${stoneOuter}) stands outside the red blocks (${outer})`);
+});
+
+test('headArc, round: a semicircle about the middle of the springing, each ring concentric with the opening', () => {
+  for (const [w, spring, grow, steps] of [[1.4, 2.5, 0, 3], [1.7, 3.1, 0.22, 4], [1.0, 2.0, 0.3, 5]] as const) {
+    const pts = headArc(w, spring, grow, steps, true);
+    const n = 2 * steps;
+    assert.equal(pts.length, n + 1, 'points');
+    close(pts[0]![0], w / 2 + grow, 1e-9, 'starts grow outside the right jamb');
+    close(pts[0]![1], spring, 1e-9, 'at the springing');
+    close(pts[steps]![0], 0, 1e-9, 'the apex is on the centre line');
+    close(pts[steps]![1], spring + w / 2 + grow, 1e-9, 'a radius above the springing');
+    for (let k = 0; k <= n; k++) close(Math.hypot(pts[k]![0], pts[k]![1] - spring), w / 2 + grow, 1e-9, `point ${k} is one radius from the middle of the springing`);
+    for (let k = 0; k <= steps; k++) {
+      close(pts[k]![0], -pts[n - k]![0], 1e-9, 'mirror in x');
+      close(pts[k]![1], pts[n - k]![1], 1e-9, 'and level');
+    }
+  }
+});
+
+test('addArch [hist-b]: a round-headed dark opening in a ring of voussoirs, red and stone in turn with a pale pair at the apex, on jambs whose top course is red, a stone moulding outside all', () => {
+  const parts: PartMap<Key> = {};
+  const w = 1.5;
+  const h = 3.9;
+  const spring = h - w / 2;
+  addArch(parts, { at: [0, 0], dir: [1, 0], normal: [0, 1] }, 0, w, h);
+  const pane = triangles(parts.pane as Batch);
+  close(Math.max(...pane.flatMap((t) => t.p.map((v) => v[1]))), h, 1e-9, 'the opening is h tall');
+  close(Math.max(...pane.flatMap((t) => t.p.map((v) => v[0]))), w / 2, 1e-9, 'and w wide');
+  const red = triangles(parts.brickRed as Batch);
+  const stone = triangles(parts.stone as Batch);
+  const head = red.filter((t) => t.p.every((v) => v[1] >= spring - 1e-9));
+  assert.equal(head.length, 4, 'two red voussoirs (a quad is two triangles), one on each side of the pale apex');
+  for (const t of head) for (const v of t.p) {
+    const r = Math.hypot(v[0], v[1] - spring);
+    assert.ok(r >= w / 2 - 1e-9 && r <= w / 2 + 0.22 + 1e-9, `a red voussoir corner is ${r} m from the middle of the springing: on the ring`);
+  }
+  const jambs = red.filter((t) => t.p.some((v) => v[1] < spring - 1e-9));
+  assert.equal(jambs.length, 12, 'red courses down both jambs: three each side of five');
+  close(Math.max(...jambs.flatMap((t) => t.p.map((v) => v[1]))), spring, 1e-9, 'the top course, under the springing, is red');
+  const cx = (t: Tri): number => (t.p[0][0] + t.p[1][0] + t.p[2][0]) / 3;
+  const area = (ts: Tri[]): number => ts.reduce((s, t) => s + worldArea(t), 0);
+  close(area(red.filter((t) => cx(t) < 0)), area(red.filter((t) => cx(t) > 0)), 1e-9, 'the red area on each side of the centre line');
+  assert.ok(red.every((t) => t.p.every((v) => Math.abs(v[0]) > 1e-6)), 'no red block at the apex');
+  const outer = Math.max(...red.flatMap((t) => t.p.map((v) => Math.abs(v[0]))));
+  const stoneOuter = Math.max(...stone.filter((t) => t.p.every((v) => v[1] > 0.4)).flatMap((t) => t.p.map((v) => Math.abs(v[0]))));
+  assert.ok(stoneOuter > outer + 0.05, `the moulding (${stoneOuter}) stands outside the red blocks (${outer})`);
+  for (const t of [...pane, ...red, ...stone]) assert.ok(geoNormal(t)[2] > 0, 'everything faces out');
+});
+
+test('Midland Grand [hist-b]: the ground storey is an arcade of those arches, one to a bay of the front and the wing, and the upper rows keep their paired lancets', () => {
+  const parts = midlandGeometry(midland);
+  const dressed = [...midland.front.bays, ...midland.wing.bays].filter((b) => !midland.towers.some((t) => pointInQuad(b.at, towerSquare(t, 0.45))));
+  assert.ok(dressed.length >= 25, `${dressed.length} bays`);
+  const pane = triangles(parts.pane as Batch);
+  const red = triangles(parts.brickRed as Batch);
+  for (const b of dressed) {
+    const near = (v: V3): boolean => Math.hypot(v[0] - b.at[0], v[2] - b.at[1]) < 1.5;
+    const w = Math.max(1.0, Math.min(1.7, b.width * 0.32));
+    const spring = 4.9 - w / 2;
+    const opening = pane.filter((t) => t.p.every((v) => near(v) && v[1] < 5.5));
+    assert.equal(opening.length, 9, 'one round-headed pane: a fan of eleven points');
+    close(Math.max(...opening.flatMap((t) => t.p.map((v) => v[1]))), 4.9, 1e-9, 'from 1 m to 4.9 m');
+    assert.equal(red.filter((t) => t.p.every((v) => near(v) && v[1] >= spring - 1e-9 && v[1] < 5.5)).length, 4, 'two red voussoirs in its ring');
+  }
+  const lancets = pane.filter((t) => t.p.every((v) => v[1] > 6.9 && v[1] < 10.4));
+  assert.ok(lancets.length > dressed.length * 6, 'the first floor keeps its paired lancets');
 });
 
 // ---- the Barlow vault --------------------------------------------------------------------------
@@ -775,15 +917,27 @@ test('Barlow vault: the south wall closes the end', () => {
 
 // ---- assembly ----------------------------------------------------------------------------------
 
-test('materials: every look but the clock and the extension\'s roof panels is the library\'s shared one (red brick, two-sided slate, the shed\'s glass, ribs and boarding, sashes, panes), and nothing shared is changed', () => {
+test('materials: every look but the clock, the extension\'s roof panels, the Midland\'s terracotta brick and the cream dressings is the library\'s shared one (stock brick, two-sided slate, the shed\'s glass, ribs and boarding, sashes, panes), and nothing shared is changed', () => {
   const before = (material('brick') as THREE.MeshLambertMaterial).color.getHex();
+  const redBefore = (material('brickRed') as THREE.MeshLambertMaterial).color.getHex();
+  const stoneBefore = (material('stone') as THREE.MeshLambertMaterial).color.getHex();
   const set = createMaterials();
   assert.equal(set.table.brick, material('brick'));
-  assert.equal(set.table.stone, material('stone'));
+  const cream = set.table.stone as THREE.MeshLambertMaterial;
+  const ashlar = material('stone') as THREE.MeshLambertMaterial;
+  assert.notEqual(cream, ashlar, 'the dressings are their own: creamier and paler than the library\'s grey ashlar [hist-a, hist-b]');
+  assert.equal(cream.map, ashlar.map, 'on the same coursed-stone texture');
+  assert.ok(cream.color.r > ashlar.color.r && cream.color.g > ashlar.color.g && cream.color.b > ashlar.color.b && cream.color.r > cream.color.b, 'paler, and warm');
+  assert.equal(ashlar.color.getHex(), stoneBefore, 'the shared one keeps its colour');
   assert.equal(set.table.roofGlass, material('shedGlass'), 'the shed\'s milky glazing: bright from inside');
   assert.equal(set.table.rib, material('ribPaint'), 'the restored shed\'s pale ironwork');
   assert.equal(set.table.lining, material('lining'));
-  assert.equal(set.table.brickRed, material('brickRed'), 'the Midland Grand\'s brick is the library\'s tinted one');
+  const red = set.table.brickRed as THREE.MeshLambertMaterial;
+  const sharedRed = material('brickRed') as THREE.MeshLambertMaterial;
+  assert.notEqual(red, sharedRed, 'the Midland Grand\'s brick is its own: a lighter terracotta than the library\'s crimson [hist-b]');
+  assert.equal(red.map, sharedRed.map, 'on the same stock-brick texture');
+  assert.ok(red.color.g > sharedRed.color.g * 2 && red.color.b > sharedRed.color.b * 2 && red.color.r >= sharedRed.color.r, 'lighter, and less saturated');
+  assert.equal(sharedRed.color.getHex(), redBefore, 'the shared one keeps its colour');
   assert.notEqual(set.table.brickRed, material('brick'));
   assert.equal(set.table.slate, material('slateBothSides'));
   assert.notEqual(set.table.slate, material('slate'), 'the shed\'s slate is seen from inside: a two-sided one');
@@ -795,9 +949,9 @@ test('materials: every look but the clock and the extension\'s roof panels is th
   for (const key of ['sash', 'sashArch', 'pane'] as const) assert.equal((set.table[key] as THREE.MeshLambertMaterial).polygonOffset, true, `${key} is pulled toward the camera`);
   assert.equal((material('window') as THREE.MeshLambertMaterial).polygonOffset, false, 'the plain window is not');
   assert.equal((material('brick') as THREE.MeshLambertMaterial).color.getHex(), before, 'the shared brick keeps its colour');
-  assert.ok((set.table.brickRed as THREE.MeshLambertMaterial).color.r > (set.table.brickRed as THREE.MeshLambertMaterial).color.g, 'red brick');
-  assert.deepEqual(set.owned, [set.table.clock, set.table.metal], 'the clock face and the extension\'s roof panels are all this set makes (no document here, so no texture)');
-  for (const key of ['brick', 'brickRed', 'slate', 'sash', 'sashArch', 'pane', 'roofGlass', 'rib', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
+  assert.ok(red.color.r > red.color.g && red.color.r > red.color.b, 'a red tint on the stock brick');
+  assert.deepEqual(set.owned, [set.table.clock, set.table.metal, set.table.brickRed, set.table.stone], 'the clock face, the extension\'s roof panels, the terracotta brick and the cream dressings are all this set makes (no document here, so no texture)');
+  for (const key of ['brick', 'slate', 'sash', 'sashArch', 'pane', 'roofGlass', 'rib', 'lining'] as const) assert.ok(!set.owned.includes(set.table[key]), `we never dispose the shared ${key}`);
 });
 
 test('addLandmarks: one mesh per material, a modest triangle budget, the replaced OSM ids, and a clean dispose', () => {
