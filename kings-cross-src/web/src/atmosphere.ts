@@ -58,10 +58,13 @@ const SNOW = new THREE.Color(0.72, 0.75, 0.79);
 const rgb = (c: THREE.Color, v: Rgb): THREE.Color => c.setRGB(v[0], v[1], v[2], THREE.SRGBColorSpace);
 const clamp01 = (x: number): number => Math.min(1, Math.max(0, x));
 /**
- * How strongly an overcast deck's structure shows on the dome: a billow is up to 0.85 x 0.4 = 34% darker than the deck's mean, and up to
- * 17% paler (ASSUMED, judged by eye against R-lighting-materials-d, whose clouds run from white to a slate grey).
+ * How strongly an overcast deck's structure shows on the dome: the deck's colour is its base times `1 + CLOUD_BILLOW x (noise - 0.52)`, the noise running 0.07 to 0.93 over
+ * the dome (mean 0.47, p1 0.19, p99 0.79). Round four (the E1 scorer: sdL 5.8 against R-lighting-materials-d's 12.9, mean L 80.6, "soft, faint blotches" against "strong
+ * dark-and-bright cloud masses"): at 0.85 the deck ran 0.59 to 1.32 of its base (sdL 5.5 over the top rows of front-oblique); at 2.2 it runs 0 to 1.9 (p1 0.28, p99 1.6: the paler
+ * patches clip to white, as R-d's gaps do, the darker ones are slate grey), sdL about 11. The 0.52 keeps the lower end above zero (a negative colour is NaN after the sRGB curve).
+ * ASSUMED, judged by eye and by sdL against R-lighting-materials-d.
  */
-const CLOUD_BILLOW = 0.85;
+const CLOUD_BILLOW = 2.2;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
 const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
@@ -307,7 +310,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       const k = Math.pow(t, 0.45 + 0.1 * cloud); // a clear sky deepens to its blue sooner (R-lighting-materials-a2: deep blue by 30 degrees up), a cloud deck keeps its old, slower ease
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
-      const deck = billow > 0 ? 1 + billow * smoothstep(0.02, 0.3, t) * (cloudDeck(x / r, y / r, z / r) - 0.6) : 1;
+      const deck = billow > 0 ? 1 + billow * smoothstep(0.02, 0.3, t) * (cloudDeck(x / r, y / r, z / r) - 0.52) : 1;
       colour.setRGB(
         (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow,
         (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow,

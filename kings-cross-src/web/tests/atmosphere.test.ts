@@ -279,6 +279,9 @@ test('an overcast dome carries the cloud deck\'s billows, a clear one is a smoot
   assert.ok(spread(high) < 0.005, `a clear dome is one colour round a ring: ${spread(high)}`);
   at(NOON, state('overcast'));
   assert.ok(spread(high) > 0.03, `an overcast dome has darker and paler patches round a ring: ${spread(high)}`);
+  // round four (the E1 scorer: the overcast dome was "too even, sdL 5.8 against 12.9": "soft, faint blotches" where R-lighting-materials-d has "strong dark-and-bright cloud masses"):
+  // the spread of the linear luma round the ring was 0.24 with the old billows and is 0.58 now (sdL 5.5 to 11 over the top rows of front-oblique)
+  assert.ok(spread(high) > 0.4, `strong cloud masses, not faint blotches: ${spread(high)}`);
   assert.ok(spread(ring(0)) < 1e-6, `and the horizon is one colour all round, the fog's: ${spread(ring(0))}`);
   at(NOON, state('clear'));
   assert.ok(spread(high) < 0.005, 'a clearing sky is smooth again (the dome is repainted when the cloud changes, not only when its colours do)');
