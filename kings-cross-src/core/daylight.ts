@@ -195,8 +195,8 @@ function valueNoise(x: number, y: number): number {
  * The structure of a cloud deck seen from below, 0..1 and about 0.5 on average, for a unit direction on the sky dome (x east, y up,
  * z south). The deck is a flat layer: the direction is projected onto it (so the billows are large overhead and crowd together toward
  * the horizon, as a real deck does), and three octaves of value noise give billows about 20 degrees across with edges of 5 to 10.
- * atmosphere.ts multiplies the overcast dome by `1 + k (deck - 0.6)`, so a grey sky has darker and paler cloud rather than one flat
- * tone (a deck of 0.6, a little above the average, leaves the sky's colour as it was, so the average cloud is a little darker than the
+ * atmosphere.ts multiplies the overcast dome by `1 + k (deck - 0.52)`, so a grey sky has darker and paler cloud rather than one flat
+ * tone (a deck of 0.52, a little above the real average of 0.47, leaves the sky's colour as it was, so the average cloud is a little darker than the
  * plain dome). Fixed numbers: the same sky every time, so a capture can be repeated.
  */
 export function cloudDeck(x: number, y: number, z: number): number {
