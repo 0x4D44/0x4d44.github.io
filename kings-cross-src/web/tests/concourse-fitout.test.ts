@@ -168,3 +168,27 @@ test('floor: dark charcoal stone in the references\' tone, in the slab texture, 
   // lit 64 to 87 a channel in R-ab and R-b against the earlier 136, which is 0.19 to 0.35 of the light in linear terms
   assert.ok(ratio > 0.2 && ratio < 0.4, `the floor reflects ${(100 * ratio).toFixed(0)} % as much light as the shared paving`);
 });
+
+test('fit-out: each ticket block is four machines about 2 m tall, white-bodied under red cowls, back to back round a red core; boards hang in the first-floor storey; totems stand twice a person\'s height', () => {
+  const colour = solid.geometry.getAttribute('color'), all = vertices(solid);
+  const tone = (i: number): 'red' | 'paper' | 'other' => (colour.getX(i) > 0.3 && colour.getY(i) < 0.1 ? 'red' : colour.getX(i) > 0.7 && colour.getY(i) > 0.7 && colour.getZ(i) > 0.7 ? 'paper' : 'other');
+  const blocks = pieces.filter(p => p.kind === 'cluster');
+  assert.equal(blocks.length, 2, 'two blocks of ticket machines');
+  for (const f of blocks) {
+    // R-ab, R-b: a machine stands a head above the people beside it, about 2 m (ASSUMED, scaled from people of 1.7 m)
+    assert.ok(f.top >= 1.9 && f.top <= 2.4, `a ticket machine ${f.top} m tall`);
+    const cu = (f.u0 + f.u1) / 2, cv = (f.v0 + f.v1) / 2, mine = all.map((v, i) => ({ v, t: tone(i) })).filter(({ v }) => inside(f, v, 0.02));
+    for (const [du, dv] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const reach = (t: string, above = 0): number => Math.max(...mine.filter(m => m.t === t && m.v.y > above).map(({ v }) => du * (v.x - cu) + dv * (-v.z - cv)));
+      assert.ok(reach('paper') > 0.8, `a white machine on the (${du}, ${dv}) side of the block at u ${cu.toFixed(1)}`);
+      assert.ok(reach('red', 1.6) > 0.85 && reach('red', 1.6) < 0.95, `its red cowl reaches ${reach('red', 1.6).toFixed(2)} m from the block's axis`);
+    }
+    assert.ok(Math.max(...mine.filter(m => m.t === 'red').map(m => m.v.y)) > f.top - 0.01, 'red caps the block');
+  }
+  // R-a: the long dark boards hang at the first-floor windows, over the plates above the openings (whose top is 4.14 m)
+  for (const f of pieces.filter(p => p.kind === 'board')) {
+    assert.ok(f.bottom >= WESTERN_RANGE.storey + 1 && f.top <= 2 * WESTERN_RANGE.storey - 1, `a board from ${f.bottom.toFixed(2)} to ${f.top.toFixed(2)} m, in the first-floor storey (${WESTERN_RANGE.storey} to ${2 * WESTERN_RANGE.storey} m)`);
+  }
+  // R-a: a totem is about twice the height of the people at its foot (ASSUMED 3 m)
+  for (const f of pieces.filter(p => p.kind === 'totem')) assert.ok(f.top >= 2.8 && f.top <= 3.4, `a totem ${f.top} m tall`);
+});

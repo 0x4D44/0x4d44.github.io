@@ -40,7 +40,8 @@ mutations = [
     ('rings not turned half a step', '((rings.length - 1 - k) % 2) * 0.5', '0'),
     ('legs kink at every crossing', 'ends[i]![1] = ends[o]![0] = unit(sum(dirs[i]!, dirs[o]!));', 'ends[i]![1] = dirs[i]!; ends[o]![0] = dirs[o]!;'),
     ('feet not upright', 'ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));', 'ends[o]![0] = dirs[o]!;'),
-    ('legs reach the roof without sweeping out', 'ends[i]![1] = unit(sum(dirs[i]!, p[0] < FUNNEL_REACH ? unit([p[0], 0, p[2]]) : [0, 0, 0]));', 'ends[i]![1] = [0, 1, 0];'),
+    ('legs reach the roof without sweeping out', 'ends[i]![1] = unit(sum(dirs[i]!, [2 * o[0], 0, 2 * o[2]]));', 'ends[i]![1] = [0, 1, 0];'),
+    ('legs land steeper, half the outward weight', 'ends[i]![1] = unit(sum(dirs[i]!, [2 * o[0], 0, 2 * o[2]]));', 'ends[i]![1] = unit(sum(dirs[i]!, [0.5 * o[0], 0, 0.5 * o[2]]));'),
 ]
 
 def run(name: str) -> subprocess.CompletedProcess[str]:

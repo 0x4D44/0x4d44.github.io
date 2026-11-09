@@ -19,14 +19,19 @@ shutil.copytree(src, work, ignore=shutil.ignore_patterns('node_modules', '.git',
 (work / 'node_modules').symlink_to((src / 'node_modules').resolve(), target_is_directory=True)
 target = work / 'web/src/concourse.ts'
 original = target.read_text()
-BOARD = 'board: { length: 16.8, height: 1.05, bottom: 4.9, standoff: 0.3, depth: 0.12 }'
+BOARD = 'board: { length: 16.8, height: 1.05, bottom: 5.6, standoff: 0.3, depth: 0.12 }'
 TOTEMS = 'totems: [[-30, -15], [-30, 15], [-24, -26]]'
 mutations = [
     ('ticket block beside the funnel feet', 'clusters: [[-23.5, -12], [-23.5, 12]]', 'clusters: [[-19.5, -2], [-23.5, 12]]'),
     ('totem against the Range', TOTEMS, 'totems: [[-30, -15], [-30, 15], [-13, -30]]'),
     ('totem beyond the concourse', TOTEMS, 'totems: [[-30, -15], [-30, 15], [-24, -80]]'),
     ('board inside the brickwork', BOARD, BOARD.replace('standoff: 0.3', 'standoff: -0.3')),
-    ('board low enough to meet the plates', BOARD, BOARD.replace('bottom: 4.9', 'bottom: 3.7')),
+    ('board low enough to meet the plates', BOARD, BOARD.replace('bottom: 5.6', 'bottom: 3.7')),
+    ('boards hung low, as in round 1', BOARD, BOARD.replace('bottom: 5.6', 'bottom: 4.9')),
+    ('ticket machines shorter than a person plus a head', 'cluster: { size: 1.78, height: 2.2 }', 'cluster: { size: 1.78, height: 1.8 }'),
+    ('ticket machines with white cowls', 'part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, RED);', 'part(mu, 1.55, mv, cowl[0]!, cluster.height - 1.55, cowl[1]!, PAPER);'),
+    ('a block of three ticket machines', '      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz', '      if (k === 3) continue;\n      const du = Math.round(Math.cos((k * Math.PI) / 2)), dz'),
+    ('totems no taller than before', 'totem: { width: 1.1, depth: 0.22, height: 3 }', 'totem: { width: 1.1, depth: 0.22, height: 2.4 }'),
     ('gate cabinets into the reveals', 'offsets: [-3, -1.8, -0.6, 0.6, 1.8, 3] as readonly number[]', 'offsets: [-3.5, -1.8, -0.6, 0.6, 1.8, 3.5] as readonly number[]'),
     ('gate cabinets between the bays', 'bays: 5, firstBay: 4, pitch: 8 }', 'bays: 5, firstBay: 8, pitch: 8 }'),
     ('shop centre off by a metre', 'shops: [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 48] as readonly number[],', 'shops: [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 49] as readonly number[],'),

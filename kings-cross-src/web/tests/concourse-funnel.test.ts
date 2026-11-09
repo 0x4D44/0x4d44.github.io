@@ -102,7 +102,7 @@ test('funnel: legs cross in diamonds, pass every crossing without a kink, stand 
     const straight = ins.filter(i => outs.some(o => dot(last(i), first(o)) > Math.cos(Math.PI / 36))).length;
     assert.ok(straight >= Math.min(ins.length, outs.length), `${straight} of ${ins.length} legs go straight on at the node ${n}, ${p[1].toFixed(1)} m up, which ${outs.length} leave`);
     if (!ins.length) for (const o of outs) assert.ok(first(o)[1] > 0.97, `the foot at node ${n} is upright, ${first(o)[1].toFixed(2)}`);
-    if (!outs.length && p[0] < FUNNEL_REACH - 1e-6) for (const i of ins) assert.ok(last(i)[1] < 0.5, `the leg into the roof at node ${n} sweeps outwards, ${last(i)[1].toFixed(2)}`);
+    if (!outs.length && p[0] < FUNNEL_REACH - 1e-6) for (const i of ins) assert.ok(last(i)[1] < 0.3, `the leg into the roof at node ${n} lands within 17 degrees of the roof's slope, ${last(i)[1].toFixed(2)} (R-a: the legs fan out into the first ring of members)`);
     // R-a, R-ab: between the feet and the bell two parents lie either side of a node, half a step round: legs cross in diamonds
     if (ins.length && p[1] > 0.05 * top && p[1] < 0.55 * top) {
       const under = ins.map(e => nodes[edges[e]![0]]!);

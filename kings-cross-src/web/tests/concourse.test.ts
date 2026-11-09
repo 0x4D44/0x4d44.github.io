@@ -110,8 +110,8 @@ test('columnRadius: a trumpet that rises from a splayed foot, narrows to a waist
 test('buildConcourse: lattice under the published apex, panels and floor facing up, rim glazing facing out', () => {
   const group = buildConcourse(canopy, station.pts, layout);
   const named = (n: string): THREE.Mesh => group.getObjectByName(n) as THREE.Mesh;
-  assert.deepEqual(group.children.map(c => c.name).sort(), ['concourse-cladding', 'concourse-column', 'concourse-fitout', 'concourse-floor', 'concourse-glass', 'concourse-glass-top',
-    'concourse-lattice', 'concourse-mullions', 'concourse-panels', 'concourse-wall'], 'the concourse is these meshes and no others');
+  assert.deepEqual(group.children.map(c => c.name).sort(), ['concourse-cladding', 'concourse-closure', 'concourse-column', 'concourse-fitout', 'concourse-floor', 'concourse-glass', 'concourse-glass-top',
+    'concourse-lattice', 'concourse-mullions', 'concourse-panels', 'concourse-supports', 'concourse-wall'], 'the concourse is these meshes and no others');
   const bbox = (m: THREE.Mesh): THREE.Box3 => {
     m.geometry.computeBoundingBox();
     return m.geometry.boundingBox as THREE.Box3;
@@ -141,10 +141,11 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
     assert.ok(out > 0, 'a rim pane faces the column');
     assert.ok(Math.abs(wn.getY(i)) < 1e-6, 'a rim pane is vertical');
   }
-  // the rim glazing runs from the floor to the roof edge, which is the lowest roof height on the ring
+  // the rim glazing runs from the floor to the brim glass, a little above the roof edge (the roof there is the lowest on the ring, 5 m, and
+  // rises about 2 m in the 3 m the wall stands back, R-c)
   const rimTop = concourseHeight(canopy, canopy.radius);
-  close(bbox(named('concourse-wall')).max.y, rimTop, EPS);
   close(rimTop, canopy.rim, 1e-9);
+  assert.ok(bbox(named('concourse-wall')).max.y > rimTop + 1 && bbox(named('concourse-wall')).max.y < rimTop + 3.5, `the wall is ${bbox(named('concourse-wall')).max.y} m high`);
 });
 
 // Arup Journal 2/2012, printed p.15 fig.6 explicitly measures the overall N–S roof extent:
