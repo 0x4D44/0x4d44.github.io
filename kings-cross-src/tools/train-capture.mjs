@@ -14,7 +14,7 @@ import {bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {ASKABLE_VIEW_IDS,CATALOGUE,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,judgeMotionClip,judgeMotionFrame,motionPoseOf,planCatalogueViews,planMotion,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
+import {ASKABLE_VIEW_IDS,CATALOGUE,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,judgeMotionClip,judgeMotionFrame,motionPoseOf,planCatalogueViews,planMotion,planStation,poseOf,poseDifference,reseatBlockedStationViews,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
@@ -448,7 +448,8 @@ export function pixelVerdict(view,diff,subject=diff,inspection=null,{minChanged=
 /**
  * Run the planned views of one kind through `steps`. The sequence for each view is: inspect (the geometry check, never moves the camera), then
  * shoot (picture), then verify (pixels), then publish. A view that fails inspect or verify becomes a GAP with the reason: it is recorded, not
- * retried, and not replaced by another pose. A view the model plan already marked GAP or N/A is passed through. A thrown error is a defect in the
+ * retried, and not replaced by another pose (the one exception is a frozen V10 camera the scene now blocks, which reseatStationResults searches for again, after this
+ * pass, in its own placement). A view the model plan already marked GAP or N/A is passed through. A thrown error is a defect in the
  * run itself, not in the view, and stops the kind.
  */
 export async function runCatalogueViews(views,{inspect,shoot,verify,publish,check=()=>{},unavailable=()=>null,now=()=>performance.now()}) {
@@ -997,6 +998,26 @@ export async function captureMotionClip({kind,plan,formation,evaluate,screenshot
   return {entry:motionManifestEntry(plan,{status:clip.status,reason:clip.reason,report,sheet,frames,flips:clip.flips})};
 }
 
+/** Every placement a station search tried, with what it found view by view, for captures.json (the manifest keeps the chosen placement's detail). */
+export const stationSearchSummary=report=>report.map(r=>({placement:r.placementId,clear:r.clear,
+  views:Object.fromEntries(Object.entries(r.views).map(([s,v])=>[s,{tested:v.tested,acceptedAzimuthDeg:v.accepted?.azimuthDeg??null,failures:failureSummary(v.tried)}]))}));
+
+/**
+ * V10 on frozen poses: the results of one kind's frozen station views, with every frozen camera the scene now blocks searched for again in its own placement
+ * (reseatBlockedStationViews) and the views that search found photographed. Only a view that was OK in the plan and whose inspection found its camera blocked is reseated:
+ * a planned GAP, a view whose pixels failed and a view that was not frozen are left as recorded. `search(placements)` is the page's search, `capture(views)` photographs views
+ * as the first pass did. Returns the results in their order and the search's report (null when nothing was blocked, so nothing was searched).
+ */
+export async function reseatStationResults({results,station,search,capture}) {
+  const blocked=results.filter(r=>r.view.id==='V10'&&r.view.status==='OK'&&r.view.search?.frozen&&r.status==='GAP'&&r.inspection&&!r.inspection.clear);
+  const placement=blocked.length?station.placements.find(p=>p.id===blocked[0].view.placement?.id):null;
+  if(!placement)return {results,report:null};
+  const report=await search([placement]);
+  const {replacements,stays}=reseatBlockedStationViews(station,blocked,report);
+  const again=replacements.length?await capture(replacements):[];
+  return {results:results.map(r=>again.find(a=>a.view.suffix===r.view.suffix)??(stays.has(r.view.suffix)?{...r,reason:stays.get(r.view.suffix)}:r)),report};
+}
+
 export async function catalogueMain(args) {
   const opts=parseCatalogueArgs(args),root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
   if(opts.exposure!=='day'&&!opts.poses)throw new Error(`--exposure ${opts.exposure} reuses the poses of a day pass, so poses cannot change between exposures: give --poses <the day pass's catalogue-manifest.json>`);
@@ -1092,11 +1113,16 @@ export async function catalogueMain(args) {
           if(!views){
             const report=await evaluate(`window.__cat.stationSearch(${JSON.stringify(plan.station.placements)})`);
             views=stationViewsFromSearch(plan.station,report);
-            // every placement the search tried, with what it found view by view (the manifest keeps the chosen placement's detail)
-            summary.stationSearch??={};summary.stationSearch[kind]=report.map(r=>({placement:r.placementId,clear:r.clear,
-              views:Object.fromEntries(Object.entries(r.views).map(([s,v])=>[s,{tested:v.tested,acceptedAzimuthDeg:v.accepted?.azimuthDeg??null,failures:failureSummary(v.tried)}]))}));
+            (summary.stationSearch??={})[kind]=stationSearchSummary(report);
           }
-          for(const r of await captureViews(kind,plan,views,state))entries[r.view.suffix]=manifestEntry(r);
+          let results=await captureViews(kind,plan,views,state);
+          if(plan.stationViews) {
+            // frozen cameras the scene now blocks (a bench, a post, an overhead-line mast another change put in the line) are searched for again, in their placement: nothing else moves
+            const again=await reseatStationResults({results,station:plan.station,search:placements=>evaluate(`window.__cat.stationSearch(${JSON.stringify(placements)})`),capture:views=>captureViews(kind,plan,views,state)});
+            results=again.results;
+            if(again.report)(summary.stationReseat??={})[kind]=stationSearchSummary(again.report);
+          }
+          for(const r of results)entries[r.view.suffix]=manifestEntry(r);
         } finally {await evaluate('window.__cat.end()');}
       }
       if(plan.motion) {

@@ -785,6 +785,27 @@ export function stationViewsFromFrozen(station, held, { platformHeightM = CATALO
   });
 }
 /**
+ * V10 on frozen poses once the scene has moved on. A frozen camera that the page now finds blocked is searched for again, in the placement it was frozen in, so that a bench
+ * or a post another change put in its line does not turn the view into a GAP: the V10 rule (eye 1.7 m over a platform, exactly the view's distance from its focus, a clear
+ * line to the specimen) is only ever answered by a search, and a frozen camera is that search's earlier answer. Every other view keeps its frozen camera.
+ * `blocked` are the capture results of the frozen views that failed their inspection (the view, the reason, the blocker); `report` is the search of that one placement.
+ * Returns `replacements`, the views the search found a camera for (the search's own view, its search block naming the frozen camera it replaces and why it was blocked),
+ * and `stays`, for each view it found none for, the reason it stays the GAP it was recorded as (which says both the frozen camera's and the search's).
+ */
+export function reseatBlockedStationViews(station, blocked, report, opts) {
+  const fresh = stationViewsFromSearch(station, report, opts), replacements = [], stays = new Map();
+  for (const b of blocked) {
+    const f = fresh.find(v => v.suffix === b.view.suffix);
+    if (!f) throw new Error(`reseatBlockedStationViews: ${b.view.suffix} is not a V10 view of this plan`);
+    // the target is the view's focus, the same for every camera of the view, so only the camera (eye, bearing, platform) and why it failed are kept
+    if (f.status === 'OK') {
+      replacements.push({ ...f, search: { ...f.search, replacesFrozen: { eye: b.view.eye, azimuthDeg: b.view.azimuthDeg ?? null, platform: b.view.platform ?? null,
+        reason: b.reason ?? null, blocker: b.blocker ?? null } } });
+    } else stays.set(b.view.suffix, `${b.reason}; searched again in ${b.view.placement.id}: ${f.reason}`);
+  }
+  return { replacements, stays };
+}
+/**
  * Every way the frozen V10 poses of one kind differ from what this run derives: a view missing, a placement this run cannot derive (or two
  * placements in one kind), a camera that no longer lies exactly `distanceM` from the focus over a platform, or numbers that moved by more than `tol`.
  */

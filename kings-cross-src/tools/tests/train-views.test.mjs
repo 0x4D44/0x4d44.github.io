@@ -1093,6 +1093,88 @@ test('frozen V10 poses are reused exactly without a search, a frozen GAP stays a
  const stripped=planOf('gn387x12',{...station,platforms:[]});assert.ok(F.stationFrozenDrift({...stripped,placements:plan.placements,context:stripped.context},held).some(d=>d.reason==='the frozen camera is no longer over a platform'));
 });
 
+// ---- V10 on frozen poses when the scene has moved on: a blocked frozen camera is searched for again ---------------------------------------
+const reseatFixture=()=>{
+ const plan=stationPlans.get('lner5'),B=plan.placements[1].id,held=F.stationViewsFromSearch(plan,fakeReport(plan,allAt(plan,B))),frozen=F.stationViewsFromFrozen(plan,manifestOf(held));
+ const okResult=view=>({view,status:'OK',reason:null,inspection:{clear:true},file:`lner5-${view.suffix}.png`,attempts:1});
+ const blockedResult=(view,blocker='Scene/furniture/benches')=>({view,status:'GAP',reason:'coach occluded',blocker,inspection:{clear:false,reason:'coach occluded',blocker},attempts:1});
+ return {plan,B,frozen,okResult,blockedResult};
+};
+
+test('a frozen V10 camera the scene now blocks is searched for again in its own placement: the replacement names the camera it replaces, a view with no clear camera stays a GAP that says both',()=>{
+ const {plan,B,frozen,blockedResult}=reseatFixture();
+ assert.ok(frozen.every(v=>v.status==='OK'&&v.search.frozen===true&&v.placement.id===B));
+ // the scene moved: 'station-150m' is blocked by a help point and 'station-75m-coach' by an overhead-line mast; the search of B finds the second candidate for the first and none for the second
+ const blocked=[blockedResult(frozen.find(v=>v.suffix==='station-150m'),'Scene/furniture/help-points'),blockedResult(frozen.find(v=>v.suffix==='station-75m-coach'),'Scene/ole/ole-steel')];
+ const report=fakeReport(plan,{[B]:{...allAt(plan,B)[B],'station-150m':1,'station-75m-coach':null}});
+ const {replacements,stays}=F.reseatBlockedStationViews(plan,blocked,report);
+ assert.deepEqual(replacements.map(v=>v.suffix),['station-150m'],'only a blocked view the search found a camera for is replaced');
+ const r=replacements[0],cam=plan.placements[1].views.find(v=>v.suffix==='station-150m').candidates[1],was=frozen.find(v=>v.suffix==='station-150m');
+ assert.equal(r.status,'OK');assert.equal(r.id,'V10');assert.equal(r.placement.id,B);vec(r.eye,cam.eye,1e-12);assert.equal(r.azimuthDeg,cam.azimuthDeg);assert.equal(r.platform,cam.platform);assert.equal(r.near,cam.near);
+ assert.notDeepEqual(r.eye,was.eye,'it is another camera than the frozen one');near(horizontal(r.eye,r.target),150,1e-6,'and V10\'s rule holds: exactly the view\'s distance from its focus');near(r.eye[1],.9+1.7,1e-9,'1.7 m over the platform');
+ assert.equal(r.search.frozen,undefined,'it is a searched camera now, not a frozen one');assert.equal(r.search.chosen,B);assert.equal(r.search.rejectedBefore.length,1);assert.equal(r.search.pass,cam.pass);
+ assert.deepEqual(r.search.replacesFrozen,{eye:was.eye,azimuthDeg:was.azimuthDeg,platform:was.platform,reason:'coach occluded',blocker:'Scene/furniture/help-points'});
+ assert.deepEqual(r.target,was.target,'the view looks at the same point: only the camera moved');assert.deepEqual(r.focus,was.focus);assert.deepEqual(r.region,was.region);assert.deepEqual(r.rotation,was.rotation,'the specimen stands as it did');
+ // the other stays the GAP it was: its reason says what blocked the frozen camera and what the new search found
+ assert.deepEqual([...stays.keys()],['station-75m-coach']);
+ const cams=plan.placements[1].views.find(v=>v.suffix==='station-75m-coach');
+ assert.equal(stays.get('station-75m-coach'),`coach occluded; searched again in ${B}: no clear camera: ${cams.candidates.length} of ${cams.candidateCount} candidate positions over platforms were inspected (${cams.spreadCount} spread over the platforms, then ${cams.candidates.length-cams.spreadCount} thinned-out neighbours); blocked by Scene/furniture/benches (coach occluded) x${cams.candidates.length}`);
+ // nothing asked for, nothing returned, whatever the search found
+ assert.deepEqual(F.reseatBlockedStationViews(plan,[],report),{replacements:[],stays:new Map()});
+ // a placement the search could not run in leaves the view the GAP it was, and says so
+ const none=F.reseatBlockedStationViews(plan,[blocked[0]],[]);assert.equal(none.replacements.length,0);assert.match(none.stays.get('station-150m'),/^coach occluded; searched again in .+: no placement could be searched$/);
+ // a result for a view this plan does not have is another plan's: that is a defect in the run, not a view to give up on
+ assert.throws(()=>F.reseatBlockedStationViews(plan,[{...blocked[0],view:{...blocked[0].view,suffix:'station-300m'}}],report),/station-300m is not a V10 view of this plan/);
+});
+
+test('reseatStationResults searches only for a frozen V10 camera found blocked, only in the placement it was frozen in, photographs only what the search found, and leaves every other result as recorded',async()=>{
+ const {plan,B,frozen,okResult,blockedResult}=reseatFixture(),A=plan.placements[0].id;
+ const calls={search:[],capture:[]};
+ const searchWith=accepts=>async placements=>{calls.search.push(placements.map(p=>p.id));return fakeReport(plan,accepts).filter(r=>placements.some(p=>p.id===r.placementId));};
+ const capture=async views=>{calls.capture.push(views.map(v=>v.suffix));return views.map(okResult);};
+ const reset=()=>{calls.search=[];calls.capture=[];};
+ // nothing blocked: no search, no photograph, the very same results
+ const clear=frozen.map(okResult);
+ let out=await C.reseatStationResults({results:clear,station:plan,search:searchWith(allAt(plan,B)),capture});
+ assert.equal(out.results,clear);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // the first view blocked: placement B alone is searched (not A), only that view's replacement is photographed, and the rest are the same results in the same places
+ const results=frozen.map((v,i)=>i===0?blockedResult(v):okResult(v));
+ out=await C.reseatStationResults({results,station:plan,search:searchWith({[A]:allAt(plan,A,0)[A],[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:2}}),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[[frozen[0].suffix]]});assert.deepEqual(out.report.map(r=>r.placementId),[B]);
+ assert.deepEqual(out.results.map(r=>r.view.suffix),frozen.map(v=>v.suffix),'in their places');assert.equal(out.results[0].status,'OK');assert.equal(out.results[0].file,`lner5-${frozen[0].suffix}.png`);
+ assert.equal(out.results[0].view.search.replacesFrozen.blocker,'Scene/furniture/benches');assert.notEqual(out.results[0].view,frozen[0]);
+ out.results.slice(1).forEach((r,i)=>assert.equal(r,results[i+1],`${r.view.suffix} is untouched`));
+ // no clear camera for the blocked view: nothing is photographed, and its result is the GAP it was with a reason that says both
+ reset();out=await C.reseatStationResults({results,station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null}}),capture});
+ assert.deepEqual(calls,{search:[[B]],capture:[]},'a search, and no photograph');assert.equal(out.results[0].status,'GAP');assert.match(out.results[0].reason,new RegExp(`^coach occluded; searched again in ${B}: no clear camera: `));
+ assert.equal(out.results[0].blocker,'Scene/furniture/benches');assert.equal(out.results[0].view,frozen[0]);assert.deepEqual(out.results[0].inspection,results[0].inspection);out.results.slice(1).forEach((r,i)=>assert.equal(r,results[i+1]));assert.equal(out.report.length,1);
+ // what is not a frozen V10 camera found blocked is never searched for again: a view that was a GAP in the plan, one that was not frozen, one that failed on its pixels (its inspection was clear), and a stage view
+ reset();
+ const odd=[{...blockedResult(frozen[0]),view:{...frozen[0],status:'GAP'}},{...blockedResult(frozen[1]),view:{...frozen[1],search:{chosen:B}}},{...blockedResult(frozen[2]),inspection:{clear:true}},
+  {view:{id:'V03',suffix:'front-3m',status:'OK',search:{frozen:true},placement:{id:B}},status:'GAP',reason:'x',inspection:{clear:false}},
+  {...blockedResult(frozen[3]),status:'OK'}];
+ out=await C.reseatStationResults({results:odd,station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.results,odd);assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // a frozen placement this plan does not have is not searched for (the drift check refuses such a file first)
+ out=await C.reseatStationResults({results:[{...blockedResult(frozen[0]),view:{...frozen[0],placement:{id:'stop-9-nowhere'}}}],station:plan,search:searchWith(allAt(plan,B)),capture});assert.equal(out.report,null);assert.deepEqual(calls,{search:[],capture:[]});
+ // two views blocked, one found and one not: the one is photographed, the other keeps its GAP
+ reset();out=await C.reseatStationResults({results:frozen.map((v,i)=>i<2?blockedResult(v):okResult(v)),station:plan,search:searchWith({[B]:{...allAt(plan,B)[B],[frozen[0].suffix]:null,[frozen[1].suffix]:1}}),capture});
+ assert.deepEqual(calls.capture,[[frozen[1].suffix]]);assert.deepEqual(out.results.slice(0,2).map(r=>r.status),['GAP','OK']);
+});
+
+test('the summary of a station search lists every placement tried and, per view, how many cameras were inspected, the bearing accepted and what blocked the rest',()=>{
+ const plan=stationPlans.get('lner5'),[A,B]=plan.placements.map(p=>p.id);
+ const report=fakeReport(plan,{[A]:{'station-25m':null,'station-75m':1},[B]:{...allAt(plan,B)[B],'station-150m':2,'station-75m-coach':null}});
+ const summary=C.stationSearchSummary(report);
+ assert.deepEqual(summary.map(s=>[s.placement,s.clear]),report.map(r=>[r.placementId,r.clear]));assert.equal(summary.length,2);
+ const a=summary[0].views,b=summary[1].views;
+ assert.deepEqual(a['station-25m'],{tested:plan.placements[0].views[0].candidates.length,acceptedAzimuthDeg:null,failures:[['Scene/furniture/benches (coach occluded)',plan.placements[0].views[0].candidates.length]]});
+ assert.deepEqual(a['station-75m'],{tested:2,acceptedAzimuthDeg:plan.placements[0].views[1].candidates[1].azimuthDeg,failures:[['Scene/furniture/benches (coach occluded)',1]]});
+ assert.deepEqual(b['station-150m'],{tested:3,acceptedAzimuthDeg:plan.placements[1].views[2].candidates[2].azimuthDeg,failures:[['Scene/furniture/benches (coach occluded)',2]]});
+ assert.deepEqual(b['station-25m'],{tested:1,acceptedAzimuthDeg:plan.placements[1].views[0].candidates[0].azimuthDeg,failures:[]},'a camera accepted first time has nothing that blocked it');
+ assert.equal(b['station-75m-coach'].acceptedAzimuthDeg,null);assert.deepEqual(Object.keys(b),plan.views.map(v=>v.suffix),'every view, in the plan\'s order');
+ assert.deepEqual(C.stationSearchSummary([]),[]);
+});
+
 test('a V10 search view is checked and chosen through the same inspection as the final picture, placement by placement',()=>{
  const f=checkFixture(),placement={id:'p1',position:[100,0,-40],rotationY:.7},spec=side(0).region;
  const at=(x,y=2.6,z=13)=>F.placedPoint(placement,[x,y,z]),target=at(0,1.7,13);
