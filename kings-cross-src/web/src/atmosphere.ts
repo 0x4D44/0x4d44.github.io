@@ -304,7 +304,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const r = Math.hypot(x, y, z);
       const t = clamp01(y / r);
-      const k = Math.pow(t, 0.55);
+      const k = Math.pow(t, 0.45 + 0.1 * cloud); // a clear sky deepens to its blue sooner (R-lighting-materials-a2: deep blue by 30 degrees up), a cloud deck keeps its old, slower ease
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
       const deck = billow > 0 ? 1 + billow * smoothstep(0.02, 0.3, t) * (cloudDeck(x / r, y / r, z / r) - 0.6) : 1;

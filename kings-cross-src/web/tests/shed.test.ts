@@ -34,9 +34,11 @@ test('vaultPoint: angle 0 is the west springing, pi the east, pi/2 the crown', (
   close(c, 20); close(cy, 21.6);
 });
 
-test('the glazed strip is the 9 m wide band along the crown', () => {
+test('the glazed strip is the 29 m wide band along the crown: about 72% of the vault, as measured in R-lighting-materials-b (27.4 to 30.2 m)', () => {
   close(2 * R * Math.sin(glazedHalfAngle()), GLAZED_STRIP_WIDTH, 1e-9);
-  assert.equal(GLAZED_STRIP_WIDTH, 9);
+  assert.equal(GLAZED_STRIP_WIDTH, 29);
+  const share = (2 * glazedHalfAngle()) / Math.PI;
+  assert.ok(share > 0.66 && share < 0.78, `the glass covers ${(100 * share).toFixed(0)}% of the arc, the photograph's 72% plus or minus 6%`);
 });
 
 test('valleyCut: a roof skin wider than the arch stops on the valley line, above the springing and below the crown', () => {

@@ -23,8 +23,16 @@ const R = SHED_SPAN_WIDTH / 2;
 
 /** Roof ribs every 20 ft: ASSUMED, the published sources give no rib spacing. */
 export const RIB_SPACING = 6.1;
-/** Width of the glazed strip along each crown, metres: ASSUMED (the roof is slate-grey flanks, glazed crown). */
-export const GLAZED_STRIP_WIDTH = 9;
+/**
+ * Width of the glazed strip along each crown, metres (the chord of the glazed arc): 29, so the glass covers about 72% of the vault's 180 degrees
+ * and the lined, solid flank only the lowest 25 degrees or so each side. MEASURED from R-lighting-materials-b (the 2021 interior, looking up the
+ * shed): the glazing stops where the pale lining begins, near the springing; the image slope of the longitudinal edges against the vanishing point
+ * puts that edge 20 to 28 degrees up each flank (a camera yaw-only model, focal length and the vanishing point read off the photograph, the camera
+ * a half to one and a quarter radii off the axis), so the glazed share is 72% plus or minus 6%, a half-angle of 59 to 71 degrees and a chord of
+ * 27.4 to 30.2 m for the 16 m radius. The first build's 9 m (a quarter of that, ASSUMED) left the soffit a white lining. The photograph is the only
+ * source: no drawing of the glazing's extent was found.
+ */
+export const GLAZED_STRIP_WIDTH = 29;
 /** Thickness of the flank walls: ASSUMED. */
 const WALL_THICK = 0.6;
 /** Thickness of the south front: ASSUMED. */
@@ -440,7 +448,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
       flanks.push(vaultBand(uc, sp, R + ROOF_SKIN, a0, a1, L, ARC_STEPS));
       lining.push(vaultBand(uc, sp, R + ROOF_SKIN - 0.02, a0, a1, L, ARC_STEPS));
     }
-    glass.push(vaultBand(uc, sp, R + ROOF_SKIN, Math.PI / 2 - phi, Math.PI / 2 + phi, L, 4));
+    glass.push(vaultBand(uc, sp, R + ROOF_SKIN, Math.PI / 2 - phi, Math.PI / 2 + phi, L, ARC_STEPS)); // (the band is 130 degrees now, not 33: four chords would flatten the crown by half a metre)
   });
   const cladMat = (material('slate') as THREE.MeshLambertMaterial).clone();
   cladMat.transparent = true; // its opacity changes with the view, see roofOpacity

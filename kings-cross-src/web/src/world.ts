@@ -17,11 +17,14 @@ const ZENITH = 0x0b1322;
  * everything outside the terrain's extent (tools/build-terrain.ts holds the same number).
  */
 export const GROUND_Y = -0.2;
-// The ground where nothing is drawn over it (yards, car parks, the lots between blocks): a neutral mid grey, as worn tarmac and concrete
-// are (about 0.12 reflective; the warmth of the sun is the light's, not the paint's). It was the dusk page's navy 0x3a4049, which under
-// the daylight rig read as holes of dark blue in the overview (R-lighting-materials-d, -e: the ground is grey, never navy).
+// The ground where nothing is drawn over it (yards, car parks, the lots between blocks): a neutral mid grey, as worn concrete and gravel
+// are (about 0.14 reflective; the warmth of the sun is the light's, not the paint's). It was the dusk page's navy 0x3a4049, which under
+// the daylight rig read as holes of dark blue in the overview (R-lighting-materials-d, -e: the ground is grey, never navy). Then 0x626260,
+// which under the warm sun came out a khaki (0.17 more red than blue) and the same tone as the roads: the roads are darker now (cityMaterial
+// 'asphalt'), and this is a hair cooler (the sun's warmth lies over it, so it reads neutral), so the open ground sits between the dark roads and
+// the pale paving. About 0.13 reflective.
 // materials.ts TERRAIN_COLOUR.ground is the same number, for the terrain mesh that replaces this plane.
-export const GROUND_COLOUR = 0x626260;
+export const GROUND_COLOUR = 0x626568;
 
 /**
  * The scene's lights (exported so a test can light a surface the way the page does). The hemisphere is the dusk sky over the

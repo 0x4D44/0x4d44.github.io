@@ -87,8 +87,8 @@ export const SHADOW_CASTERS: ReadonlySet<string> = new Set([
   'range-brick', 'range-stone', 'range-roof', 'tower-brick', 'tower-stone', 'tower-cap',
   // the Western Concourse (concourse.ts): the lattice, the roof panels and the columns (not the glass)
   'concourse-lattice', 'concourse-panels', 'concourse-column',
-  // the landmarks (landmarks.ts): the hotels and the Barlow shed's steel
-  'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate', 'landmarks-steel',
+  // the landmarks (landmarks.ts): the hotels and the Barlow shed's lattice ribs (the extension's pale panels and girders, 'landmarks-metal', are left out: one more draw in the pass for a shadow nobody frames)
+  'landmarks-brick', 'landmarks-brickRed', 'landmarks-stone', 'landmarks-slate', 'landmarks-rib',
   // King's Cross Central (kxcentral.ts)
   'kxcentral-brick', 'kxcentral-brickRed', 'kxcentral-stone', 'kxcentral-slate', 'kxcentral-iron', 'kxcentral-drum', 'kxcentral-timber', 'kxcentral-alu', 'kxcentral-curtain',
   // the city (city.ts): every building's walls and roofs

@@ -104,8 +104,8 @@ const ROWS: readonly Row[] = [
   { e: 2, zenith: 0x365a94, horizon: 0xe8b58a, sun: 0xff9a52, sunK: 0.215, hemiSky: 0xa6b6e0, hemiGround: 0x343842, hemiK: 1.05, fillK: 0.96, fillTint: 0xffd5a8 },
   { e: 6, zenith: 0x3f69a8, horizon: 0xd2cdc8, sun: 0xffb878, sunK: 0.36, hemiSky: 0xb4c6f0, hemiGround: 0x383c46, hemiK: 1.12, fillK: 1.14, fillTint: 0xffe0bc },
   { e: 12, zenith: 0x4674b4, horizon: 0xbccde2, sun: 0xffd9a8, sunK: 0.8, hemiSky: 0xbdd0fa, hemiGround: 0x625d57, hemiK: 1.08, fillK: 1.1, fillTint: 0xfff0d8 },
-  { e: 25, zenith: 0x4a7dc0, horizon: 0xbccfe6, sun: 0xffe8c2, sunK: 1, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1, fillK: 1, fillTint: 0xfff0d8 },
-  { e: 45, zenith: 0x4a80c6, horizon: 0xb4cde8, sun: 0xfff0d6, sunK: 1.08, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1.02, fillK: 1, fillTint: 0xfff0d8 },
+  { e: 25, zenith: 0x4678bc, horizon: 0xbccfe6, sun: 0xffe8c2, sunK: 1, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1, fillK: 1, fillTint: 0xfff0d8 },
+  { e: 45, zenith: 0x4678c0, horizon: 0xb4cde8, sun: 0xfff4e0, sunK: 1.08, hemiSky: 0xc4d6ff, hemiGround: 0x6e6860, hemiK: 1.02, fillK: 1, fillTint: 0xfff0d8 },
 ];
 
 interface Sampled {
@@ -146,13 +146,14 @@ export function fogAmount(visibilityM: number): number {
 
 /**
  * The haze of clear air, as aerial perspective: it starts at the camera's feet (80 m) and thickens evenly, so the city 400 m off is
- * a sixth of the way to the horizon's colour, a kilometre off a third, and the far ground and the dome's edge meet at 2.8 km. A
- * high view (the overview looks 260 to 1050 m down the ground) then shows the far blocks paler and bluer than the near ones, as the
- * daylight references do, while a street-level view (everything within 150 m) is untouched. ASSUMED amounts, judged by eye: the
- * references (R-lighting-materials-a, -d) are close-ups with no far skyline to measure. The first fog here began at 1100 m and
- * ended at 3600; the second began at 450 m, which left the lower half of the overview with no haze at all.
+ * a sixth of the way to the horizon's colour, a kilometre off nearly half, and the far ground and the dome's edge meet at 2 km. A
+ * high view (the overview looks 480 to 1160 m down the ground in its top two thirds) then shows the far blocks lighter, greyer and bluer
+ * than the near ones, as the daylight references do, while a street-level view (everything within 150 m) is untouched. ASSUMED amounts,
+ * judged by eye: the references (R-lighting-materials-a, -d) are close-ups with no far skyline to measure. The first fog here began at
+ * 1100 m and ended at 3600; the second began at 450 m, which left the lower half of the overview with no haze at all; the third ended
+ * at 2.8 km, which left the far third of the overview (480 to 1160 m: 19% to 40% of the way) nearly as contrasty as the foreground.
  */
-export const CLEAR_FOG = { near: 80, far: 2800 } as const;
+export const CLEAR_FOG = { near: 80, far: 2000 } as const;
 
 /**
  * The haze of a visibility of exactly 10 km, and the cap on every thinner one (mist, rain, drizzle, fog): the weather's own fog, which

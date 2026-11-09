@@ -54,7 +54,7 @@ export const TEXTURES: Readonly<Record<TextureName, TextureSpec>> = {
   brickRed: { tile: [57 * IN, 24 * IN], px: [579, 244], density: [350, 450], average: 0xb26952, repeat: true,
     source: 'Imperial brick 9 x 4.5 x 3 in as the stock brick; the red from R-lighting-materials-c (Midland Grand front), shades ASSUMED' },
   // Ashlar: 0.6 x 0.3 m blocks (two across, two courses). ASSUMED block size.
-  stone: { tile: [1.2, 0.6], px: [360, 180], density: [250, 350], average: 0xc8c0aa, repeat: true,
+  stone: { tile: [1.2, 0.6], px: [360, 180], density: [250, 350], average: 0xa99a7c, repeat: true,
     source: 'ASSUMED block size 0.6 x 0.3 m' },
   // Welsh slate 600 x 300 mm laid with a 250 mm gauge: four slates across, four courses. Slate
   // sizes are standard trade sizes; that the roof is slate-grey is the brief's, the shade ASSUMED.
@@ -146,8 +146,12 @@ interface BrickPalette {
   wear?: { olive: readonly [number, number] };
 }
 
-/** London stock is yellow-buff; the headers of a Flemish bond are burnt darker, blue-grey to brown. */
-const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb9a26c, 0x9d8656], header: [0x7c6e58, 0x6b6660], burnt: [0x5e5448, 0x4a4540],
+/**
+ * London stock is yellow-buff; the headers of a Flemish bond are burnt a little darker, grey-brown. Round three: the headers were 0.72 of a
+ * stretcher's light and the stretchers a 15% spread, which at the distance of the hotel (a brick a few pixels long) read as a speckle of light
+ * and dark bricks with no course in it; the headers are 0.84 now, the stretchers a 10% spread, so the mortar's courses are what the eye finds.
+ */
+const STOCK_BRICK: BrickPalette = { mortar: '#a29d8c', stretcher: [0xb4a06c, 0xa18a5a], header: [0x948462, 0x857a66], burnt: [0x72665a, 0x5e564c],
   wear: { olive: [0xa39d6e, 0x8c8662] } };
 /** The Midland Grand's red (R-lighting-materials-c): orange-red stretchers, headers a shade deeper, pale buff mortar. ASSUMED shades. */
 const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86649], header: [0xcf6047, 0xb45640], burnt: [0x5e3a30, 0x4a322c] };
@@ -160,13 +164,13 @@ const RED_BRICK: BrickPalette = { mortar: '#b8aa94', stretcher: [0xf57756, 0xd86
 function wearBrick(g: Ctx, r: () => number, mortar: string, x: number, y: number, len: number, h: number): void {
   if (r() < 0.6) { // a burnt end, the hot end of the clamp
     const burn = len * (0.15 + r() * 0.3);
-    g.fillStyle = `rgba(52,36,18,${(0.1 + r() * 0.12).toFixed(2)})`;
+    g.fillStyle = `rgba(52,36,18,${(0.06 + r() * 0.08).toFixed(2)})`;
     g.fillRect(r() < 0.5 ? x : x + len - burn, y, burn, h);
   }
   if (r() < 0.45) { // a smudge of soot or old lime wash across the face
     const sw = len * (0.2 + r() * 0.4);
     const sh = h * (0.3 + r() * 0.5);
-    g.fillStyle = r() < 0.7 ? `rgba(40,34,26,${(0.06 + r() * 0.08).toFixed(2)})` : `rgba(235,228,205,${(0.1 + r() * 0.1).toFixed(2)})`;
+    g.fillStyle = r() < 0.7 ? `rgba(40,34,26,${(0.04 + r() * 0.06).toFixed(2)})` : `rgba(235,228,205,${(0.06 + r() * 0.07).toFixed(2)})`;
     g.fillRect(x + r() * (len - sw), y + r() * (h - sh), sw, sh);
   }
   if (r() < 0.14) { // a crack
@@ -196,10 +200,10 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
       for (const isHeader of [false, true]) {
         const x0 = k * period + shift + (isHeader ? stretcher + joint : 0);
         const len = isHeader ? header : stretcher;
-        const dark = r() < 0.03; // an overburnt brick
+        const dark = r() < 0.015; // an overburnt brick (one in sixty-six: they were one in thirty-three and near black, the strongest speckle in a close view)
         const colours = !isHeader && palette.wear && r() < 0.3 ? palette.wear.olive : isHeader ? palette.header : palette.stretcher; // (a stock fired olive-grey: one in three stretchers)
-        const lift = palette.wear ? 0.06 : 0; // (the wear below darkens the average a little: the bricks start that much lighter, so the wall keeps its hue and lightness)
-        const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.9 + lift + r() * 0.2) : tone(colours[0], colours[1], r(), 0.9 + lift + r() * 0.18);
+        const lift = palette.wear ? 0.03 : 0; // (the wear below darkens the average a little: the bricks start that much lighter, so the wall keeps its hue and lightness)
+        const base = isHeader ? tone(palette.header[0], palette.header[1], r(), 0.95 + lift + r() * 0.1) : tone(colours[0], colours[1], r(), 0.95 + lift + r() * 0.1);
         g.fillStyle = dark ? tone(palette.burnt[0], palette.burnt[1], r()) : base;
         g.fillRect(x0, y + joint, len, course - joint);
         g.fillStyle = 'rgba(255,245,210,0.13)'; // the lit top arris
@@ -207,10 +211,8 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
         g.fillStyle = 'rgba(0,0,0,0.14)'; // the shaded underside
         g.fillRect(x0, y + course - Math.max(1.2, joint * 0.4), len, Math.max(1.2, joint * 0.4));
         if (palette.wear && !dark) wearBrick(g, r, palette.mortar, x0, y + joint, len, course - joint);
-        for (let s = 0; s < 4; s++) {
-          g.fillStyle = r() < 0.5 ? 'rgba(60,45,25,0.16)' : 'rgba(255,240,190,0.10)';
-          g.fillRect(x0 + r() * len, y + joint + r() * (course - joint), 1.5 + r() * 2, 1 + r() * 1.5);
-        }
+        g.fillStyle = r() < 0.5 ? 'rgba(60,45,25,0.12)' : 'rgba(255,240,190,0.08)'; // one grain in the face (it was four: the speckle)
+        g.fillRect(x0 + r() * len, y + joint + r() * (course - joint), 1.5 + r() * 2, 1 + r() * 1.5);
       }
     }
   }
@@ -219,7 +221,7 @@ function paintBrick(g: Ctx, w: number, h: number, palette: BrickPalette = STOCK_
 
 function paintStone(g: Ctx, w: number, h: number): void {
   const r = rng(23);
-  g.fillStyle = '#a8a392';
+  g.fillStyle = '#8e8774';
   g.fillRect(0, 0, w, h);
   const bw = w / 2;
   const bh = h / 2;
@@ -227,10 +229,10 @@ function paintStone(g: Ctx, w: number, h: number): void {
   for (let row = 0; row < 2; row++) {
     for (let k = -1; k < 3; k++) {
       const x = k * bw + (row % 2) * (bw / 2);
-      g.fillStyle = tone(0xd4ccb6, 0xc2baa2, r(), 0.94 + r() * 0.1);
+      g.fillStyle = tone(0xb0a082, 0xa29377, r(), 0.96 + r() * 0.08);
       g.fillRect(x + j / 2, row * bh + j / 2, bw - j, bh - j);
-      for (let s = 0; s < 40; s++) {
-        g.fillStyle = r() < 0.5 ? 'rgba(90,80,60,0.10)' : 'rgba(255,255,240,0.14)';
+      for (let s = 0; s < 14; s++) {
+        g.fillStyle = r() < 0.5 ? 'rgba(90,80,60,0.07)' : 'rgba(255,255,240,0.09)';
         g.fillRect(x + r() * bw, row * bh + r() * bh, 1 + r() * 2.5, 1 + r() * 1.5);
       }
     }
@@ -553,23 +555,32 @@ function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {
  * and darkened toward a warm room where it is low, about 0.55 to 1.55 of the painted tone (1.05 on average, so a facade's mean is where it was).
  * The wall, the surround and the bars are not touched.
  */
-const GLASS_VARIES_GLSL = /* glsl */`
+const glassVariesGlsl = (lo: number, hi: number): string => /* glsl */`
 float gShare = smoothstep( 0.08, 0.2, ( diffuseColor.b - diffuseColor.r ) / ( diffuseColor.b + diffuseColor.r + 0.02 ) );
 vec3 gTint = mix( vec3( 1.10, 1.03, 0.92 ), vec3( 0.82, 0.92, 1.08 ), gk );
-diffuseColor.rgb *= mix( vec3( 1.0 ), gTint * mix( 0.55, 1.55, gk ), gShare );
+diffuseColor.rgb *= mix( vec3( 1.0 ), gTint * mix( ${lo}, ${hi}, gk ), gShare );
 `;
+const GLASS_VARIES_GLSL = glassVariesGlsl(0.55, 1.55);
 
 /**
  * One window to a tile (the city's facades: stock, red, stone, panel, glass and shop repeat one storey by one bay): the window's number is the
  * tile's, mixed with the building's own (its vertex colour), so a facade is a patchwork of windows and its neighbour a different one.
+ * A curtain wall (the 'glass' facade) takes three quarters of its number from a smooth field across the tiles instead, and a narrower swing
+ * of light (0.8 to 1.3, not 0.55 to 1.55): a glass tower reflects the sky in broad patches and bands, not in a random chequer of panes, which
+ * from the overview was a repeating tiled blue. Every facade is darker at its foot (contact shade: the ground's occlusion, the damp and the
+ * dirt at the base of a wall): 0.22 of its light falling away over a storey, and a tighter 0.14 in the first third of one; v is metres up
+ * the wall in storeys, and starts at zero at the foot of each part of a wall, so the storey above a shopfront has a shadow under its fascia too.
  */
-const GLASS_BY_TILE_GLSL = /* glsl */`
+const glassByTileGlsl = (curtain: boolean): string => /* glsl */`
 float gSeed = 0.0;
 #ifdef USE_COLOR
 gSeed = dot( vColor.rgb, vec3( 37.1, 91.7, 53.3 ) );
 #endif
 float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed ) * 43758.5453 );
-${GLASS_VARIES_GLSL}`;
+${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );' : ''}
+${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
+diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );
+`;
 
 /**
  * The smooth field a decal window's number is read from, at the window's corner (world metres): two sines at frequencies of 2 to 4 radians
@@ -608,7 +619,7 @@ ${GLASS_VARIES_GLSL}`;
  * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material
  * must carry a map (the windows are in the texture). Its program key says which, so the two never share a compile.
  */
-export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile'): T {
+export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain'): T {
   m.onBeforeCompile = (shader) => {
     if (by === 'quad') {
       shader.vertexShader = shader.vertexShader
@@ -617,7 +628,7 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
     }
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', by === 'quad' ? '#include <common>\nvarying vec3 vWinPos;' : '#include <common>')
-      .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : GLASS_BY_TILE_GLSL}`);
+      .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
   };
   m.customProgramCacheKey = () => `glassVaries-${by}`;
   return m;
@@ -1216,8 +1227,8 @@ function paintCityGlass(g: CityCtx, w: number, h: number): void {
   g.fillStyle = '#46525c'; // the spandrel
   g.fillRect(0, 0, w, h);
   const lg = g.createLinearGradient(0, 0, 0, h);
-  lg.addColorStop(0, '#8fb4c8');
-  lg.addColorStop(1, '#3d6074');
+  lg.addColorStop(0, '#9db4c4');
+  lg.addColorStop(1, '#4f6a7c');
   g.fillStyle = lg;
   g.fillRect(2, 10, w - 4, h - 100); // vision glass above the spandrel, which is at the bottom of the tile
   g.fillStyle = 'rgba(255,255,255,0.12)'; // a sky reflection streak
@@ -1338,7 +1349,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   // curtain walling catches the sun: a Phong sheen on top of the drawn glass
   glass: () => {
     const t = cityTexture('glass');
-    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'tile');
+    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'curtain');
   },
   roof: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
   paint: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
@@ -1351,8 +1362,10 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
     return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.water.average, vertexColors: true, specular: 0x27343a, shininess: 25 });
   },
   // roads and paving reuse the station's asphalt and slab textures (shared, not copied)
-  // (a road is darker than a platform: the same texture at four-fifths of the light, 0xe0dfdc, which is about 0.14 reflective, weathered road asphalt)
-  asphalt: () => cityFlat('asphalt', 0xe0dfdc),
+  // (a road is much darker than a platform and than the open ground: the same texture at a quarter of the light, 0x858889, which is about 0.045
+  // reflective, aged road asphalt, and cool-neutral under the warm sun. At 0xe0dfdc, 0.14, the roads were the open ground's tone and drew as one
+  // khaki plain from the overview; the R-lighting-materials-d and -e roads are the darkest thing in the street)
+  asphalt: () => cityFlat('asphalt', 0x858889),
   // Paving tones are set under the daylight rig (DAYLIGHT, world.ts) to R-lighting-materials-d/e: pale warm-grey stone, about
   // (163, 158, 157) where the sun lies on it. The pavement is that; the forecourt plaza, laid in lighter stone, a shade above.
   // The footways and paths are darker than the squares they cross (R-lighting-materials-a2, -e: a pale square crossed by darker strips of
@@ -1406,7 +1419,7 @@ export function cityMaterial(name: CityMaterialName): THREE.Material {
 
 export type TerrainMaterialName = 'ground' | 'bank' | 'wall';
 
-const TERRAIN_COLOUR: Readonly<Record<'ground' | 'bank', number>> = { ground: 0x626260, bank: 0x3f4a35 }; // the ground: world.ts GROUND_COLOUR (a test holds the two equal)
+const TERRAIN_COLOUR: Readonly<Record<'ground' | 'bank', number>> = { ground: 0x626568, bank: 0x3f4a35 }; // the ground: world.ts GROUND_COLOUR (a test holds the two equal)
 /**
  * The retaining wall's tint over the shared London stock brick (average 0xa0895a): it takes the brick to a dark, sooty brown,
  * about 0x57472a once mip-mapped (a century and a half of coal smoke; the shade is ASSUMED, no survey of these walls was found).

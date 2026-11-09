@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
+import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 
 const names = Object.keys(TEXTURES) as TextureName[];
@@ -416,10 +416,18 @@ test('window glass varies from window to window: the decals by their quad, the c
   for (const name of ['stock', 'red', 'stone', 'panel', 'glass', 'shop'] as const) {
     const m = cityMaterial(name);
     const s = shader(m);
+    const curtain = name === 'glass';
     assert.ok(!s.vertexShader.includes('vWinPos'), `${name}: a facade needs no world position`);
     assert.ok(s.fragmentShader.includes('floor( vMapUv )') && s.fragmentShader.includes('vColor.rgb'), `${name}: a window to a tile, mixed with the building's own colour`);
-    assert.equal(m.customProgramCacheKey(), 'glassVaries-tile', `${name}: its own program`);
+    assert.equal(m.customProgramCacheKey(), curtain ? 'glassVaries-curtain' : 'glassVaries-tile', `${name}: its own program`);
+    // a curtain wall takes most of its window's number from a smooth field across the tiles and swings less far (round three: it was a chequer of random blue panes);
+    // the houses keep a window's number to itself, at the full swing
+    assert.equal(s.fragmentShader.includes('gk = mix( gk, 0.5 + 0.5 * sin('), curtain, `${name}: the smooth field is the curtain wall's`);
+    assert.ok(s.fragmentShader.includes(curtain ? 'gTint * mix( 0.8, 1.3, gk )' : 'gTint * mix( 0.55, 1.55, gk )'), `${name}: its swing of light`);
+    // every facade is darker at its foot: the contact shade of the wall meeting the ground (0.22 over a storey, 0.14 in the first third of one)
+    assert.ok(s.fragmentShader.includes('diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );'), `${name}: contact shade at the foot of the wall`);
   }
+  assert.ok(!shader(material('window')).fragmentShader.includes('exp( -vMapUv.y )'), 'a window decal is no wall: it has no foot to darken');
 });
 
 test('the stock brick is worn like the close-up (burnt ends, olive bricks, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {
@@ -451,7 +459,13 @@ test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on 
   assert.ok(Math.abs(r - b) <= 6 && Math.abs(r - g) <= 4, `neutral: ${r},${g},${b}`);
   assert.ok(r >= 104 && r <= 130, `about 0.17 reflective (sRGB 118): ${r}`);
   const road = (cityMaterial('asphalt') as THREE.MeshLambertMaterial).color;
-  assert.ok(road.r < 0.85 && road.r > 0.6 && Math.abs(road.r - road.b) < 0.03, `a road is the same tarmac at about four-fifths of the light, and neutral: ${road.r.toFixed(2)}, ${road.g.toFixed(2)}, ${road.b.toFixed(2)}`);
+  // round three: a road is the same tarmac at a quarter of the light (about 0.045 reflective, aged asphalt), so it is the darkest flat thing in the street, well apart
+  // from the open ground (about 0.14) and the paving (0.4 and over); at four-fifths (0.14) the roads were the ground's own tone and drew as one plain from the overview
+  assert.ok(road.r < 0.34 && road.r > 0.2 && Math.abs(road.r - road.b) < 0.03, `a road is the same tarmac at about a quarter of the light, and neutral: ${road.r.toFixed(2)}, ${road.g.toFixed(2)}, ${road.b.toFixed(2)}`);
+  const lin = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  const roadLight = lin(road) * lin(new THREE.Color(avg));
+  const groundLight = lin((terrainMaterial('ground') as THREE.MeshLambertMaterial).color);
+  assert.ok(roadLight < 0.5 * groundLight, `the road's reflectance (${roadLight.toFixed(3)}) is under half the open ground's (${groundLight.toFixed(3)})`);
   const a = recorder();
   PAINTERS.asphalt(a.ctx, 256, 256);
   const base = String(a.styles[0]);
