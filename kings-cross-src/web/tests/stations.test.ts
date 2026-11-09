@@ -88,7 +88,7 @@ async function withResizeObserver<T>(run: () => T | Promise<T>): Promise<T> {
   }
 }
 
-function fixture(data = {} as KxData, aspect = 1, search?: string) {
+function fixture(data = {} as KxData, aspect = 1, search?: string, overrides: Partial<Parameters<typeof createStations>[0]> = {}) {
   const doc = new MockDocument();
   const win = new MockWindow(); doc.defaultView = win;
   if (search !== undefined) win.location.search = search;
@@ -114,7 +114,7 @@ function fixture(data = {} as KxData, aspect = 1, search?: string) {
   const clockSnapshot = { ...replayClock };
   const options = {
     scene, camera, controls, renderer, ready: Promise.resolve(), data,
-    kxObjects: () => [londonMesh], replayClock,
+    kxObjects: () => [londonMesh], replayClock, ...overrides,
   } as unknown as Parameters<typeof createStations>[0];
   const stations = createStations(options);
   const nav = doc.body.children[0];
@@ -242,5 +242,40 @@ test('default and explicit King\'s Cross bookmarks both start with the phone fra
     assert.equal(bookmark.stations.state().selected, 'kings-cross');
     assert.equal(bookmark.stations.state().phase, 'ready');
     defaultView.stations.dispose(); bookmark.stations.dispose();
+  });
+});
+
+test('real Waverley activation attaches only its EB runtime and removes the unavailable placeholder', async () => {
+  await withResizeObserver(async () => {
+    const { loadWaverleyScene } = await import('../src/waverley.ts');
+    let attached = 0, disposed = 0;
+    const model = await loadWaverleyScene({
+      modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose: () => { ++disposed; } }) }),
+      geometryLoader: async () => ({ default: { origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [],
+        platforms: [{ id: 'synthetic', ref: '1', tags: {}, path: [[0, 0], [100, 0], [100, 5], [0, 5]] }] } }),
+    });
+    const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model, attachEdinburgh: view => {
+      ++attached; assert.equal(view, model);
+      view.live = { group: new THREE.Group(), frame() {}, dispose() {}, status: () => 'Edinburgh: assumed fleet', timeMs: () => 1000, load: async () => {}, state() {} };
+    } });
+    await switchAndFinish(rig, 'edinburgh-waverley'); rig.stations.frame(rig.time);
+    assert.equal(attached, 1); assert.equal(rig.stations.activeScene(), model.scene);
+    assert.equal(rig.stations.accounting().placeholder, false); assert.equal(rig.placeholder.hidden, true);
+    assert.equal(rig.stations.statusText('KX trains'), 'Edinburgh: assumed fleet');
+    assert.equal(rig.stations.state().message, 'Edinburgh: assumed fleet');
+    assert.equal(rig.stations.edinburgh(), model);
+    await switchAndFinish(rig, 'kings-cross'); assert.equal(disposed, 1); assert.equal(rig.stations.edinburgh(), null);
+    rig.stations.dispose(); assert.equal(disposed, 1);
+  });
+});
+
+test('disposing a Waverley hop before its midpoint releases the built pending model', async () => {
+  await withResizeObserver(async () => {
+    const { loadWaverleyScene } = await import('../src/waverley.ts'); let disposed = 0;
+    const model = await loadWaverleyScene({ modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose: () => { ++disposed; } }) }),
+      geometryLoader: async () => ({ default: { origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [], platforms: [] } }) });
+    const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model });
+    rig.stations.frame(rig.time); await rig.stations.select('edinburgh-waverley', false);
+    rig.stations.dispose(); assert.equal(disposed, 1);
   });
 });

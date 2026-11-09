@@ -49,3 +49,13 @@ test('disposing during a lazy request prevents scene activation', async () => {
   const pending = selection.select('edinburgh-waverley'); selection.dispose(); resolve(1); await pending;
   assert.equal(activations, 0);
 });
+
+test('superseded and disposed lazy scene requests dispose their unactivated model', async () => {
+  let resolve!: (value: number) => void; const discarded: number[] = [];
+  const selection = createStationSelection({ load: id => id === 'edinburgh-waverley' ? new Promise<number>(r => { resolve = r; }) : Promise.resolve(2),
+    activate: () => 'ready', change() {}, discard: value => { discarded.push(value); } });
+  const old = selection.select('edinburgh-waverley'); await selection.select('kings-cross'); resolve(1); await old;
+  assert.deepEqual(discarded, [1]);
+  const pending = selection.select('edinburgh-waverley'); selection.dispose(); resolve(3); await pending;
+  assert.deepEqual(discarded, [1, 3]);
+});

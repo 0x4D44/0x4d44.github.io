@@ -22,6 +22,7 @@ export function createStationSelection<T>(options: {
   load(station: StationId): Promise<T>;
   activate(station: StationId, value: T): Exclude<StationPhase, 'loading' | 'failed'>;
   change(state: StationState): void;
+  discard?(value: T): void;
 }) {
   let current: StationId = 'kings-cross', serial = 0;
   let state: StationState = { selected: current, phase: 'ready', message: stationMessage(current) };
@@ -33,7 +34,7 @@ export function createStationSelection<T>(options: {
       paint({ selected: station, phase: 'loading', message: `Loading ${STATIONS[station].name}…` });
       try {
         const value = await options.load(station);
-        if (request !== serial) return;
+        if (request !== serial) { options.discard?.(value); return; }
         const phase = options.activate(station, value); current = station;
         paint({ selected: station, phase, message: stationMessage(station) });
       } catch (error) {

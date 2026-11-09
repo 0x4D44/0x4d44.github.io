@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
-import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels } from '../station-capture.mjs';
+import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels, stationPlaceholder } from '../station-capture.mjs';
 
 test('capture waits for an occupied GPU with bounded polling before allowing launch', async () => {
   let time = 0, checks = 0;
@@ -77,4 +77,15 @@ test('Waverley permits its specified solid background while still rejecting a bl
   const plan = { ...pixelPlan, placeholder: true };
   assert.equal(inspectStationPixels(stationPng(() => [51,68,88]), plan).clear, true);
   assert.equal(inspectStationPixels(stationPng(() => [14,18,24]), plan).clear, false);
+});
+
+test('installed Waverley models require rendered scene variation rather than the placeholder background exception', () => {
+  const real = { state: { selected: 'edinburgh-waverley' }, accounting: { placeholder: false } };
+  assert.equal(stationPlaceholder(real), false);
+  assert.equal(inspectStationPixels(stationPng(() => [51,68,88]), { ...pixelPlan, placeholder: stationPlaceholder(real) }).clear, false);
+  const empty = { ...real, accounting: { placeholder: true } };
+  assert.equal(stationPlaceholder(empty), true);
+  assert.equal(inspectStationPixels(stationPng(() => [51,68,88]), { ...pixelPlan, placeholder: stationPlaceholder(empty) }).clear, true);
+  assert.equal(stationPlaceholder({ state: { selected: 'kings-cross' } }), false);
+  assert.throws(() => stationPlaceholder({ state: { selected: 'edinburgh-waverley' } }), /scene accounting/);
 });

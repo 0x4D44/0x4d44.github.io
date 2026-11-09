@@ -30,6 +30,12 @@ export async function synchronizeCaptureViewport({ width, height, setMetrics, pr
 }
 
 /** Exclude DOM panels before judging canvas pixels; labels cannot rescue an empty WebGL frame. */
+export function stationPlaceholder(observed) {
+  if (observed.state.selected !== 'edinburgh-waverley') return false;
+  if (typeof observed.accounting?.placeholder !== 'boolean') throw new Error('Waverley capture needs scene accounting');
+  return observed.accounting.placeholder;
+}
+
 export function inspectStationPixels(bytes, { canvas, excluded = [], placeholder = false }) {
   const image = readPng(bytes), rect = canvas ?? { left: 0, top: 0, right: image.width, bottom: image.height };
   let samples = 0, nonblack = 0, expected = 0;
@@ -130,13 +136,13 @@ export async function main(args = process.argv.slice(2)) {
     await evaluate('window.__captureTime=performance.now();window.__signalFrame(window.__captureTime)');
     report.renderer = await evaluate("(()=>{const g=window.__kx.renderer.getContext(),e=g.getExtension('WEBGL_debug_renderer_info');return e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER)})()");
     if (!/Metal/i.test(report.renderer) || /SwiftShader|llvmpipe|software/i.test(report.renderer)) throw new Error(`real Metal GPU required: ${report.renderer}`);
-    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:[{left:0,top:0,right:109,bottom:41},...[...document.body.children].filter(e=>e.id!=='app'&&!['SCRIPT','STYLE'].includes(e.tagName)).flatMap(e=>e.matches('.station-placeholder')?[...e.children]:[e]).map(e=>e.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({left:r.left-2,top:r.top-2,right:r.right+2,bottom:r.bottom+2}))]},state:k.stations.state(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
+    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:[{left:0,top:0,right:109,bottom:41},...[...document.body.children].filter(e=>e.id!=='app'&&!['SCRIPT','STYLE'].includes(e.tagName)).flatMap(e=>e.matches('.station-placeholder')?[...e.children]:[e]).map(e=>e.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({left:r.left-2,top:r.top-2,right:r.right+2,bottom:r.bottom+2}))]},state:k.stations.state(),accounting:k.stations.accounting(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
     const frame = async delta => { const before = await inspect(); await evaluate(`window.__captureTime+=${delta};window.__signalFrame(window.__captureTime)`); const after = await inspect(); report.clock.push({ delta, before: before.clock, after: after.clock }); if (Number.isFinite(before.clock.simulation) && Number.isFinite(after.clock.simulation) && Math.abs(after.clock.simulation - before.clock.simulation - delta) > 1e-5) throw new Error('manual frame delta did not advance simulation clock exactly'); };
     const shot = async name => {
       await frame(0); // A same-time render preserves the clock and repaints any freshly resized buffer.
       const observed = await inspect(), png = await send('Page.captureScreenshot', { format: 'png' }), bytes = Buffer.from(png.data, 'base64');
       await writeFile(path.join(out, name + '.png'), bytes);
-      const pixels = inspectStationPixels(bytes, { ...observed.pixels, placeholder: observed.state.selected === 'edinburgh-waverley' });
+      const pixels = inspectStationPixels(bytes, { ...observed.pixels, placeholder: stationPlaceholder(observed) });
       report.shots.push({ name, ...observed, pixels });
       await writeFile(path.join(out, name + '.json'), JSON.stringify({ name, ...observed, pixels }, null, 2) + '\n');
       verifyViewport(observed.viewport);
@@ -152,8 +158,8 @@ export async function main(args = process.argv.slice(2)) {
     };
     await shot('01-kings-cross');
     await select('st-pancras'); await frame(900); const mid = await shot('02-london-flight'); if (mid.state.phase !== 'flying') throw new Error(`expected London midflight, observed ${mid.state.phase}`); await frame(2000); const stp = await shot('03-st-pancras'); if (stp.state.selected !== 'st-pancras' || stp.state.phase !== 'ready') throw new Error('St Pancras endpoint not ready'); if (!/view only/i.test(stp.state.message) || !/not (?:yet )?enabled/i.test(stp.state.message)) throw new Error('St Pancras lacks honest view-only/no-live-trains labels');
-    await select('edinburgh-waverley'); await frame(700); const waverley = await shot('04-waverley-placeholder');
-    if (!/not (?:yet )?(?:built|available)|placeholder|planned|unavailable|not modelled|not modeled|not loaded/i.test(waverley.text)) throw new Error('Waverley lacks an honest unavailable label');
+    await select('edinburgh-waverley'); await frame(700); const waverley = await shot('04-waverley');
+    if (stationPlaceholder(waverley) && !/not (?:yet )?(?:built|available)|placeholder|planned|unavailable|not modelled|not modeled|not loaded/i.test(waverley.text)) throw new Error('Waverley lacks an honest unavailable label');
     await select('kings-cross'); await frame(2100);
     report.cancellations = [];
     for (const id of ['st-pancras', 'kings-cross']) {

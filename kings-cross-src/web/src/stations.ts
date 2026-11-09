@@ -11,6 +11,7 @@ import { bindStationFlightCancellation, sampleStationFlight } from './station-tr
 import type { StationView } from './station-transition.ts';
 import { releaseSceneGpu } from './station-resources.ts';
 import { kingsCrossView } from './station-framing.ts';
+import type { WaverleyView } from './waverley.ts';
 
 export const STATION_CSS = `
 .station-switcher{position:fixed;top:48px;left:16px;right:16px;max-width:660px;z-index:30;box-sizing:border-box;color:var(--fg);font:13px/1.4 system-ui,sans-serif}
@@ -57,6 +58,8 @@ export function createStations(options: {
   scene: THREE.Scene; camera: THREE.PerspectiveCamera; controls: OrbitControls; renderer: THREE.WebGLRenderer;
   ready: Promise<unknown>; data: KxData; kxObjects(): THREE.Object3D[];
   stationStatus?(id: StationId): string | undefined;
+  attachEdinburgh?(view: WaverleyView): void;
+  loadEdinburgh?(): Promise<WaverleyView>;
 }) {
   const { scene: london, camera, controls, renderer } = options;
   const doc = renderer.domElement.ownerDocument, win = doc.defaultView!;
@@ -77,12 +80,13 @@ export function createStations(options: {
   let activeScene = london, active: StationId = 'kings-cross', lastTime = performance.now(), roofCeiling = 0;
   let flight: { start: number; from: StationView; to: StationView } | null = null;
   let hop: { start: number; to: StationId; swap: () => void; swapped: boolean } | null = null;
-  let placeholderScene: ReturnType<typeof import('./waverley.ts')['createWaverleyPlaceholderScene']> | null = null;
+  let placeholderScene: WaverleyView | null = null;
+  let pendingEdinburgh: WaverleyView | null = null;
   let disposed = false, releases = 0;
   let viewportAspect = camera.aspect;
   let cancelInput = (): void => {};
   const viewOf = (id: StationId): StationView => id === 'st-pancras' ? stPancrasView(options.data, camera.aspect)
-    : id === 'kings-cross' ? kingsCrossView(options.data, initial, camera.aspect) : initial;
+    : id === 'kings-cross' ? kingsCrossView(options.data, initial, camera.aspect) : placeholderScene?.view(camera.aspect) ?? initial;
   const pose = (view: StationView): void => { camera.position.fromArray(view.eye); controls.target.fromArray(view.target); controls.update(); };
   const sizeNav = (): void => { doc.body.style.setProperty('--station-nav-bottom', `${nav.getBoundingClientRect().bottom}px`); };
   const maskKx = (): void => {
@@ -95,23 +99,29 @@ export function createStations(options: {
   };
   const selection = createStationSelection({
     load: async (id) => {
-      if (id === 'edinburgh-waverley') return await import('./waverley.ts');
+      if (id === 'edinburgh-waverley') return options.loadEdinburgh ? options.loadEdinburgh() : (await import('./waverley.ts')).loadWaverleyScene();
       await options.ready; roofCeiling = londonRoofCeiling(london); return null;
     },
-    activate: (id, module) => {
+    discard: loaded => loaded?.dispose(),
+    activate: (id, loaded) => {
+      pendingEdinburgh?.dispose(); pendingEdinburgh = null;
       cancelInput(); flight = null; hop = null; renderer.domElement.style.opacity = '1';
       const destination = viewOf(id);
       if (id === 'edinburgh-waverley' || activeScene !== london) {
+        if (id === 'edinburgh-waverley') pendingEdinburgh = loaded;
         const swap = (): void => {
           if (id === 'edinburgh-waverley') {
             if (activeScene === london) { releaseSceneGpu(london); ++releases; }
             placeholderScene?.dispose();
-            placeholderScene = module!.createWaverleyPlaceholderScene(); activeScene = placeholderScene.scene;
-            pose({ eye: [0, 2, 10], target: [0, 0, 0] });
+            placeholderScene = loaded!; activeScene = placeholderScene.scene;
+            pendingEdinburgh = null;
+            explanation.textContent = placeholderScene.message;
+            if (!placeholderScene.placeholder) options.attachEdinburgh?.(placeholderScene);
+            pose(placeholderScene.view(camera.aspect));
           } else {
             placeholderScene?.dispose(); placeholderScene = null; activeScene = london; pose(viewOf(id));
           }
-          renderer.renderLists.dispose(); active = id; placeholder.hidden = id !== 'edinburgh-waverley';
+          renderer.renderLists.dispose(); active = id; placeholder.hidden = id !== 'edinburgh-waverley' || !placeholderScene?.placeholder;
         };
         if (reduced.matches) { swap(); return 'ready'; }
         hop = { start: lastTime, to: id, swap, swapped: false }; return 'hopping';
@@ -155,16 +165,23 @@ export function createStations(options: {
   if (initialId !== 'kings-cross') void select(initialId, false);
   else pose(viewOf(initialId));
   return {
-    select, state: selection.state, activeScene: () => activeScene,
-    statusText: (kx: string): string => selection.state().selected === 'kings-cross' ? kx : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected),
-    accounting: () => ({ londonGpuReleases: releases, scene: active, placeholder: !!placeholderScene }),
+    select, state: () => {
+      const state = selection.state();
+      return state.phase === 'ready' && state.selected === 'edinburgh-waverley' && placeholderScene
+        ? { ...state, message: placeholderScene.live?.status() ?? placeholderScene.message } : state;
+    }, activeScene: () => activeScene,
+    edinburgh: () => placeholderScene,
+    statusText: (kx: string): string => selection.state().selected === 'kings-cross' ? kx
+      : selection.state().selected === 'edinburgh-waverley' && placeholderScene ? placeholderScene.live?.status() ?? placeholderScene.message
+      : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected),
+    accounting: () => ({ londonGpuReleases: releases, scene: active, placeholder: !!placeholderScene?.placeholder }),
     frame(time: number): void {
       if (disposed) return;
       lastTime = time;
       if (camera.aspect !== viewportAspect) {
         viewportAspect = camera.aspect;
         const state = selection.state();
-        if (activeScene === london && state.selected !== 'edinburgh-waverley' && state.phase !== 'loading') {
+        if ((activeScene === london || placeholderScene) && state.phase !== 'loading') {
           const to = viewOf(state.selected);
           if (flight) flight = { start: time, from: { eye: camera.position.toArray(), target: controls.target.toArray() }, to };
           else pose(to);
@@ -183,12 +200,14 @@ export function createStations(options: {
       }
       maskKx();
       const state = selection.state();
-      const message = state.phase === 'ready' ? options.stationStatus?.(state.selected) : undefined;
+      const message = state.phase === 'ready' ? state.selected === 'edinburgh-waverley' && placeholderScene
+        ? placeholderScene.live?.status() ?? placeholderScene.message : options.stationStatus?.(state.selected) : undefined;
       if (message && notice.textContent !== message) notice.textContent = message;
     },
     dispose(): void {
       if (disposed) return; disposed = true; flight = null; hop = null; selection.dispose(); cancelInput(); observer.disconnect();
       win.removeEventListener('popstate', onPop); win.removeEventListener('resize', sizeNav);
+      pendingEdinburgh?.dispose(); pendingEdinburgh = null;
       placeholderScene?.dispose(); for (const [object, visible] of masked) object.visible = visible;
       nav.remove(); placeholder.remove(); delete doc.body.dataset.station; renderer.domElement.style.opacity = '1';
     },

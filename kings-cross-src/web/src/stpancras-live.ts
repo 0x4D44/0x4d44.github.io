@@ -11,8 +11,9 @@ import { emrTrainLayout } from '../../core/train-emr.ts';
 import type { EmrKind } from '../../core/train-emr.ts';
 import { buildEmrTrain, disposeEmrTrain } from './train-emr.ts';
 import { carPoses } from './trains-live.ts';
-import { backoffMs, createLiveFeed, createTimeline, parseRecording, relayReachable } from './feed.ts';
+import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
 import type { LiveDependencies, MotionSink, RecordedEvent, TrainFeed } from './feed.ts';
+import { createAreaReplay } from './area-replay.ts';
 
 export const MML_AREA = 'WH';
 export const ASSUMED_MML_KIND: EmrKind = 'emr222x5';
@@ -46,25 +47,7 @@ export function mmlLiveDependencies(deps: LiveDependencies = {}): LiveDependenci
 
 /** Use the existing reconciliation/timeline, but seek both areas to the same UTC clock. */
 export function createMmlReplay(rows: readonly RecordedEvent[], sink: MotionSink, speed = 1) {
-  if (!rows.length || !Number.isFinite(speed) || speed <= 0) throw new Error('nonempty WH recording and positive replay speed required');
-  if (rows.some(r => r.e.area !== MML_AREA)) throw new Error('WH recording contains another area');
-  const timeline = createTimeline(sink, rows[0]!.t);
-  let cursor = 0, time = rows[0]!.t;
-  return {
-    timeMs: () => time,
-    frame(seconds: number, utcMs?: number): void {
-      if (!Number.isFinite(seconds) || seconds < 0) throw new Error('nonnegative elapsed time required');
-      const next = utcMs === undefined ? time + seconds * speed * 1000 : utcMs;
-      if (!Number.isFinite(next)) throw new Error('finite UTC clock required');
-      // A later-starting area's checkpoint must not appear before the shared replay clock.
-      if (next < rows[0]!.t) { time = next; return; }
-      if (next < timeline.timeMs()) return;
-      while (cursor < rows.length && rows[cursor]!.t <= next) {
-        const r = rows[cursor++]!; timeline.deliver(r.e, r.t, r.t);
-      }
-      timeline.advanceTo(next); time = next;
-    },
-  };
+  return createAreaReplay(MML_AREA, rows, sink, speed);
 }
 
 export function createMmlMotion(data: KxData, value: unknown) {

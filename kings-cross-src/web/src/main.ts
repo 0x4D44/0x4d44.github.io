@@ -36,6 +36,7 @@ import signalData from './data/kx-signals.json';
 import { createStations } from './stations.ts';
 import { resizeViewport } from './viewport.ts';
 import { createStPancrasLive } from './stpancras-live.ts';
+import { createEdinburghLive } from './edinburgh-live.ts';
 
 const data = trackData as unknown as KxData;
 /** A standing train's nose stops this far (metres) north of its buffer stop. */
@@ -209,6 +210,8 @@ function start(): void {
   const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
+    attachEdinburgh: view => { view.live = createEdinburghLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
+      mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname }); },
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
   Object.assign(kx, { stations, stPancras });
@@ -222,7 +225,8 @@ function start(): void {
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
   let sampleTimeMs = 0, lastBoardFrame = -Infinity;
-  const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? stPancras.timeMs();
+  const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now()
+    : feed?.timeMs() ?? (stPancras.timeMs() || stations.edinburgh()?.live?.timeMs() || 0);
   Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
@@ -253,6 +257,7 @@ function start(): void {
     paintStatus();
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     stations.frame(time);
+    stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
     controls.update();
     world.follow(camera);
     renderer.render(stations.activeScene(), camera);
