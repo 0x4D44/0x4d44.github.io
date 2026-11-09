@@ -97,6 +97,25 @@ test('every real catalogue kind provides a clear three metre coach detail before
  }
 });
 
+test('a coach detail view samples its region by area, however the body is cut into triangles: a flank of two huge triangles frames, and so does one with a dense patch of tiny ones beside the focus',()=>{
+ // A body's flank is a few triangles as long as the car, and its windows and nose are thousands of tiny ones. The sampler once took the centres of the triangles in list order: a flank
+ // whose triangle centres all stand outside the region had no samples ("insufficient visible coach surface samples"), and a dense patch took all 32 samples and framed only itself.
+ for(const dense of [false,true]){
+  const {scene,group,camera,controls}=sceneFixture();group.children[0].geometry=new T.BoxGeometry(2.7,3.1,dense?5:26);
+  if(dense){
+   // 39,000 tiny triangles (6 mm2 each, just over the sampler's floor for a degenerate one), listed ahead of a 5 m shell (the way a nose's rings and lenses are): the flank's own pieces are under one per cent of the candidates
+   const patch=new T.Mesh(new T.PlaneGeometry(.5,.5,140,140).rotateY(Math.PI/2),new T.MeshBasicMaterial());patch.name='body-detail';patch.position.set(1.36,2,14.5);
+   const shell=group.children[0];group.remove(shell);group.add(patch,shell);
+  }
+  let view;assert.doesNotThrow(()=>{view=detailCamera(T,scene,camera,controls,group,{heightAt:()=>0},[0,1.85,13]);},`dense patch: ${dense}`);
+  // (the 4.5 m region is 1.5 of the frame's 2.0 across at 3 m: samples that cover it span over 1.2, where a sampler that spends its picks on the patch spans 0.8)
+  assert.equal(view.visibility.clear,true);assert.ok(view.visibility.screenSpan>=1.2,`dense patch ${dense}: screen span ${view.visibility.screenSpan}`);
+ }
+ // and only the region is sampled: a plate whose nearest edge stands 2.3 m from the focus, outside the 2.25 m region, gives it no surface, though pieces of it reach in
+ const {scene,group,camera,controls}=sceneFixture();group.children[0].geometry=new T.BoxGeometry(2.7,3.1,1);group.children[0].position.set(0,2,30);
+ const plate=new T.Mesh(new T.PlaneGeometry(1,3,1,1).rotateY(Math.PI/2),new T.MeshBasicMaterial());plate.name='body-detail';plate.position.set(1.36,2,15.8);group.add(plate);
+ assert.throws(()=>detailCamera(T,scene,camera,controls,group,{heightAt:()=>0},[0,1.85,13]),/insufficient visible coach surface samples/);
+});
 test('forward captures reuse replay and seek on the simulated clock without reloading for camera or coach changes',async()=>{
  const loads=[],seeks=[],session=replaySession(async index=>{loads.push(index);return {start:1000};},async(...v)=>seeks.push(v));
  assert.equal((await session.at(0,1100)).loaded,true);assert.equal((await session.at(0,1200)).loaded,false);

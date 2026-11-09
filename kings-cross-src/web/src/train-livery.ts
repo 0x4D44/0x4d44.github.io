@@ -122,32 +122,43 @@ export const HULL_DOOR = 0xc41e46;
 
 // --- LNER ---------------------------------------------------------------------------------------
 
-/** Top and bottom of the LNER red band beside the windows (metres above the rail head): the band holds the whole window row. Read off lner-801-214-2025 against its door height (the leaf is 1.15 to 2.86 m). */
-export const LNER_BAND: [number, number] = [1.52, 2.97];
+/**
+ * Top and bottom of the LNER red band beside the windows (metres above the rail head): the band holds the whole window row and a hand's breadth round it, and is
+ * about 47% of the body's height between the dark foot and the roof edge. Read off lner-801-214-2025 (the first car: band top 3.05 m, bottom 1.82 m) and
+ * lner-800-doncaster-2026 (2.96 m, 1.85 m), each against the height between the roof edge (3.35 m) and the underframe's top (1.0 m). It was [1.52, 2.97], which
+ * made the sides two thirds red where the photographs show a white-silver train with a red band.
+ */
+export const LNER_BAND: [number, number] = [1.83, 2.97];
 
 /**
- * The Azuma's side. lner-801-214-2025 (a 5-car 801 at Doncaster-area track) and lner-800-doncaster-2026: white car sides, one
- * unbroken RED band holding the whole row of windows (not a band under them), a white lower body below it down to the underframe,
- * a thin light-orange pinstripe at the cantrail. At the cab the red leaves the band, swings down the cab side in a sweep and
- * wraps the nose's flank round to the cheeks beside the yellow mask; a pale silver crescent edges the sweep's top. The numbers
- * are readings off those two photographs, not a drawing: the sweep's top edge climbs from the cheek (0 m, the top of the face)
- * to the band's top by about 1.6 m behind the cab door, and the white lower body ends in a tongue just behind the door.
+ * The Azuma's side. lner-801-214-2025 (a 5-car 801 at Doncaster-area track; a close crop of its first car) and lner-800-doncaster-2026: white-silver car sides, one
+ * unbroken RED band holding the whole row of windows (not a band under them: the white-silver lower body is about a third of the side's height), a thin
+ * light-orange pinstripe at the cantrail, a thin pale line under the band's foot. At the cab the band's front end rises a little at the crew door and swings
+ * forward and down in a red WING round the cab side window, its lower edge a pale crescent that falls from the band's foot to the top of the cheek; in front of and
+ * above the wing the nose's shoulder is white, and below the crescent the whole lower flank is white-silver. The red returns only as a CHEEK, a strip beside the
+ * face from the foot of the nose to the lamp window, its back edge rounded. The numbers are readings off those photographs, not a drawing.
  */
 function lnerShapes(nose: number): Shape[] {
   const bandTop = LNER_BAND[1];
   const bandBottom = LNER_BAND[0];
-  const sA = nose + 1.6;
-  const top = smoothCurve([[0, 1.8], [1.0, 1.95], [2.0, 2.15], [3.5, 2.35], [5.0, 2.6], [sA, bandTop], [TEX_SPAN, bandTop]], 64);
-  // the white lower body's front end: a tongue, level at the band's bottom edge and falling away to the floor just behind the cab door
-  const tongue = smoothCurve([[nose + 0.8, TEX_Y0], [nose + 1.8, 1.0], [nose + 2.6, 1.32], [nose + 3.4, bandBottom], [TEX_SPAN, bandBottom]], 48);
-  // the polygon: along the top edge to the car's end, back along the white lower body's edge, then along the bottom of the texture to the nose
-  const red: [number, number][] = [...between(top, tongue), [0, TEX_Y0]];
-  const crescentTop = top.filter((p) => p[0] <= sA).map((p): [number, number] => [p[0], p[1] + 0.1]);
-  const crescent = between(crescentTop, top.filter((p) => p[0] <= sA));
+  // where the band reaches its full height: a little behind the crew door
+  const sA = nose + 1.2;
+  // the wing's upper edge: above the lamp window's back corner, climbing back past the cab side window to a little over the band at the crew door, then down to the band's top
+  const top = smoothCurve([[0.9, 1.95], [1.5, 2.15], [2.2, 2.55], [2.9, 3.0], [nose, 3.14], [nose + 0.4, 3.14], [sA, bandTop], [TEX_SPAN, bandTop]], 64);
+  // its lower edge, the crescent: from the cheek's top back to the band's foot at the crew door
+  const bottom = smoothCurve([[0.7, 1.42], [1.4, 1.58], [2.3, 1.7], [nose, 1.78], [nose + 0.5, bandBottom], [TEX_SPAN, bandBottom]], 64);
+  const wing = between(top, bottom);
+  // the pale crescent just under the wing's lower edge (a broader one at the cab, a thin line along the band's foot behind it)
+  const under = bottom.map((p): [number, number] => [p[0], p[1] - (p[0] <= nose + 0.5 ? 0.12 : 0.04)]);
+  const crescent = between(bottom, under);
+  // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded
+  const cheek: [number, number][] = [[0, TEX_Y0], [0.5, TEX_Y0], [0.8, 0.75], [0.92, 1.05], [0.85, 1.3], [0.7, 1.5], [0, 1.5]];
   return [
-    { colour: 0x2d3036, pts: rect(0, TEX_SPAN, TEX_Y0, 1.0) },
-    { colour: LNER_RED, pts: red },
+    // the dark underframe, from just behind the crew door (the nose's own lower flank is white-silver)
+    { colour: 0x2d3036, pts: rect(nose + 0.2, TEX_SPAN, TEX_Y0, 1.0) },
+    { colour: LNER_RED, pts: wing },
     { colour: 0xb5bbc2, pts: crescent },
+    { colour: LNER_RED, pts: cheek },
     // the pinstripe: a line a few millimetres' thick along the cantrail behind the cab (it is only a hint at scale)
     { colour: 0xe8683a, pts: rect(sA, TEX_SPAN, 3.03, 3.07) },
   ];
@@ -314,7 +325,7 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   surround: null,
   foot: 0x2d3036,
   noseTop: 0x1a1c21,
-  noseTopFrom: 3.2,
+  noseTopFrom: 2.0,
   // small red lettering on the white lower body, between the doors (photographs show the Azuma name and the LNER mark small, at the car ends)
   decals: (c) => [{ text: 'LNER', colour: LNER_RED, rect: [bay(c) - 0.5 * 2.722 * 0.26, 1.12, 0, 1.38] }],
 });
@@ -410,10 +421,15 @@ const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
   sources: [...LIVERIES.grandcentral.sources, 'photographs (private review set): GC180-01-180-101-Kings-Cross and GC180-05-Grand-Central-at-Halifax show the orange band sweeping down the cab side and a thin orange pinstripe'],
 });
 
+// Lumo: livery.ts's row unchanged, and over the windscreen a dark grey dome (LUMO-03-Lumo-803004-passes-York-301023, LUMO-05-Lumo-803005-at-King-s-Cross-Platform-10:
+// the cab's top is a smooth dark cap from the glass's upper edge back, the shoulders beside the glass the body's blue; the shade approximate).
+const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.0 });
+
 const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   lner5: LNER,
   lner9: LNER,
   hull5: HULL,
+  lumo5: LUMO,
   gn387x4: GN387,
   gn387x8: GN387,
   gn387x12: GN387,
@@ -423,7 +439,7 @@ const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   tl700x12: TL700,
 };
 
-/** The livery a kind wears. Kinds without an entry (Lumo) wear their operator's livery.ts row unchanged. */
+/** The livery a kind wears. Kinds without an entry wear their operator's livery.ts row unchanged. */
 export function liveryFor(kind: TrainKind): TrainLivery {
   return BY_KIND[kind] ?? asTrainLivery(LIVERIES[TRAIN_SPECS[kind].livery], { scheme: 'base' });
 }

@@ -56,9 +56,29 @@ function obstruction(hit, target, camera) {
     occluder: { chain, distanceM: hit.distance, targetDistanceM: camera.position.distanceTo(target),
       point: hit.point.toArray(), target: target.toArray(), camera: camera.position.toArray() } };
 }
-/** Triangle-centre samples lie on actual body surfaces, unlike empty bounding-box corners. */
+/** In a bounded detail view no two sampled places on a triangle are further apart than this, metres. */
+const SAMPLE_PITCH = .3;
+/**
+ * The places that sample one triangle in a view of the region within `radius` of `focus`: its centre if it is small, else the centres of the pieces it splits into (cut at its
+ * edges' midpoints until no edge is longer than SAMPLE_PITCH), leaving out the pieces that cannot reach the region, each with its area. A body's flank is a few triangles as long as
+ * the car, whose centres stand metres from anything near them, and its nose and its windows are thousands of tiny ones: the centres alone sample the nose and miss the flank.
+ */
+function trianglePieces(T, p, q, r, focus, radius, out) {
+  const centre = p.clone().add(q).add(r).multiplyScalar(1/3);
+  if (centre.distanceTo(focus) - Math.max(centre.distanceTo(p), centre.distanceTo(q), centre.distanceTo(r)) > radius) return;
+  if (Math.max(p.distanceTo(q), q.distanceTo(r), r.distanceTo(p)) <= SAMPLE_PITCH) {
+    if (centre.distanceTo(focus) <= radius) out.push({ centre, area: q.clone().sub(p).cross(r.clone().sub(p)).length() / 2 });
+    return;
+  }
+  const pq = p.clone().add(q).multiplyScalar(.5), qr = q.clone().add(r).multiplyScalar(.5), rp = r.clone().add(p).multiplyScalar(.5);
+  for (const [a, b, c] of [[p, pq, rp], [pq, q, qr], [rp, qr, r], [pq, qr, rp]]) trianglePieces(T, a, b, c, focus, radius, out);
+}
+/**
+ * Triangle-centre samples lie on actual body surfaces, unlike empty bounding-box corners. A view of a region (`detail.focus` and `detail.radius`) samples it by area: the pieces of every
+ * triangle that reaches it (trianglePieces), picked at even steps of their cumulative area, so the picks cover what the picture shows however the body happens to be cut into triangles.
+ */
 function bodySamples(T, group, camera, detail) {
-  const samples = [], maxY = trainBounds(T, group).max.y;
+  const samples = [], maxY = trainBounds(T, group).max.y, bounded = detail?.focus ? detail : null;
   group.traverseVisible(o => {
     if (!o.isMesh || !/^(body-shell|body-detail|cab-glass)$/.test(o.name)) return;
     const a = o.geometry.attributes.position, index = o.geometry.index;
@@ -67,17 +87,33 @@ function bodySamples(T, group, camera, detail) {
     const point = i => o.localToWorld(new T.Vector3().fromBufferAttribute(a, index ? index.getX(i) : i));
     for (let i = 0; i + 2 < n; i += 3) {
       const p = point(i), q = point(i+1), r = point(i+2), normal = q.clone().sub(p).cross(r.clone().sub(p));
-      const centre = p.clone().add(q).add(r).multiplyScalar(1/3);
-      if (normal.lengthSq() < 1e-10 || normal.normalize().dot(camera.position.clone().sub(centre).normalize()) < .45) continue;
-      if (detail) {
-        if (detail.focus && centre.distanceTo(detail.focus) > detail.radius) continue;
-        if (detail.includePoint && !detail.includePoint(centre)) continue;
-      } else if (centre.y < maxY - 2) continue;
-      samples.push(centre);
+      if (normal.lengthSq() < 1e-10) continue;
+      normal.normalize();
+      const places = [];
+      if (bounded) trianglePieces(T, p, q, r, bounded.focus, bounded.radius, places);
+      else places.push({ centre: p.clone().add(q).add(r).multiplyScalar(1/3) });
+      for (const place of places) {
+        const { centre } = place;
+        if (normal.dot(camera.position.clone().sub(centre).normalize()) < .45) continue;
+        if (detail) {
+          if (detail.includePoint && !detail.includePoint(centre)) continue;
+        } else if (centre.y < maxY - 2) continue;
+        samples.push(place);
+      }
     }
   });
+  const k = Math.min(32, samples.length);
+  if (bounded && samples.length > k) {
+    const total = samples.reduce((sum, s) => sum + s.area, 0), picked = [];
+    for (let i = 0, at = 0, seen = 0; i < k; i++) {
+      const want = (i + .5) / k * total;
+      while (at < samples.length - 1 && seen + samples[at].area < want) seen += samples[at++].area;
+      picked.push(samples[at].centre);
+    }
+    return picked;
+  }
   // Cover the sampled surface, not just one lucky clear window.
-  return Array.from({length: Math.min(32, samples.length)}, (_,i) => samples[Math.floor(i * samples.length / Math.min(32,samples.length))]);
+  return Array.from({length: k}, (_,i) => samples[Math.floor(i * samples.length / k)].centre);
 }
 /** Uses the drawn terrain and external scene geometry, with named obstruction diagnostics. */
 export function inspectTrainFrame(T, scene, camera, group, ground, { detail, minScreenSpan = .15, minVerticalSpan=0 } = {}) {

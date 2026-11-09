@@ -240,7 +240,9 @@ test('train: a cab narrows in plan and slopes in elevation toward the end of the
       if (car.cab === null) continue;
       const nearTip = body.filter((v) => tipSide(v.z) < 0.3 && v.y > 0.7);
       assert.ok(nearTip.length > 0, `${kind} car ${car.index}: no nose`);
-      assert.ok(Math.max(...nearTip.map((v) => Math.abs(v.x))) < 0.9, `${kind} car ${car.index}: the nose tip is not narrow`);
+      // CHANGED (0.9 m: the half-width a 5.4 m nose had within 0.3 m of its tip): the AT300's headlights stand about 0.9 m either side of the middle, on the cheek, within 0.4 m of the tip
+      // (lner-800-113-newcastle-2025, head on), so the nose there is about 0.95 m a side; it is still well under the body's 1.33 m
+      assert.ok(Math.max(...nearTip.map((v) => Math.abs(v.x))) < 1.05, `${kind} car ${car.index}: the nose tip is not narrow`);
       assert.ok(Math.max(...nearTip.map((v) => v.y)) < FIGURES.roofEdgeHeight.value - 1.0, `${kind} car ${car.index}: the nose tip is not lower than the roof`);
       // vertices are float32, so a z near 130 m is only good to about 1e-5
       assert.ok(body.every((v) => v.z >= car.start - 1e-4 && v.z <= car.end + 1e-4), `${kind} car ${car.index}: the body leaves its own car`);

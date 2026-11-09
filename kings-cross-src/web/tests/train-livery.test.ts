@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, shellMaterial } from '../src/livery.ts';
-import { NOSE_RECESS, bodySpec, buildTrain } from '../src/train.ts';
+import { NOSE_RECESS, bodySpec, buildTrain, frontOf } from '../src/train.ts';
+import { ringAt } from '../src/train-nose.ts';
 import { col } from '../src/train-geom.ts';
 import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
@@ -50,11 +51,17 @@ test('curveY: linear between samples, held flat beyond the ends', () => {
 
 // --- the schemes, read at a point ---------------------------------------------------------------------
 
-test('LNER: one red band holds the windows along the whole car, white above and below it, the foot dark; the red sweeps down the cab side to the floor', () => {
+test('LNER: one red band holds the windows along the whole car, white above and below it, the foot dark; at the cab it swings forward and down in a red wing round the cab side window, white below its crescent, with a red cheek by the face', () => {
+  // CHANGED (the red was a band 1.45 m tall that swept down the whole cab flank to the floor, so the train read two thirds red): lner-801-214-2025 (a close crop of its first
+  // car) and lner-800-doncaster-2026 show a white-silver train with a red band about 1.1 m tall round the windows, a red wing round the cab side window whose lower edge is a pale
+  // crescent, the nose's lower flank white-silver, and the red coming back only as a cheek strip beside the face
   const [bottom, top] = LNER_BAND;
   // the band holds the whole row of windows (lner-801-214-2025: the red is the band round the windows, not a stripe under them)
   const windows = bodySpec('at300').windowY;
   assert.ok(bottom < windows[0] && top > windows[1], `the red band (${bottom} to ${top} m) holds the window row (${windows[0]} to ${windows[1]} m)`);
+  // and is not most of the side: between the underframe's top (1.0 m) and the roof edge (3.35 m) it is 40% to 55% of the height (the photographs: 47%)
+  const share = (top - bottom) / (3.35 - 1.0);
+  assert.ok(share > 0.4 && share < 0.55, `the red band is ${(share * 100).toFixed(0)}% of the side's height`);
   // along a through car (the texture's last column): the window band is red, the body above and below it white
   // (a point exactly on the texture's edge, s = TEX_SPAN, is on no polygon's inside: the last column is read just inside it)
   const LAST = TEX_SPAN - 0.01;
@@ -66,21 +73,37 @@ test('LNER: one red band holds the windows along the whole car, white above and 
     assert.equal(at('lner5', LNER_NOSE, s, top + 0.1), LIVERIES.lner.body, `s = ${s}: white over the band`);
     assert.equal(at('lner5', LNER_NOSE, s, 0.8), 0x2d3036, `s = ${s}: the dark foot`);
   }
-  // at the cab the red leaves the band and wraps the nose's flank down to the floor: at the tip's flank it reaches the foot, and the white
-  // lower body does not begin until the tongue, well behind the tip
-  assert.equal(at('lner5', LNER_NOSE, 0.5, 1.2), LNER_RED, 'the flank beside the face is red at window height');
-  assert.equal(at('lner5', LNER_NOSE, 0.5, 0.7), LNER_RED, 'the red wraps the flank right down to the floor, over the dark foot (lner-801-214-2025)');
-  assert.equal(at('lner5', LNER_NOSE, 1.5, 1.15), LNER_RED, 'red lower down the cab side, 1.5 m back');
-  assert.equal(at('lner5', LNER_NOSE, LNER_NOSE + 3.8, 1.2), LIVERIES.lner.body, 'the white lower body (the tongue) has arrived by the car body');
-  // the sweep's top edge climbs toward the band's top as it goes back: the red's highest point rises with s along the nose
+  // the cheek: a red strip beside the face from the nose's foot up under the lamp window
+  assert.equal(at('lner5', LNER_NOSE, 0.4, 0.7), LNER_RED, 'the cheek reaches the nose\'s foot');
+  assert.equal(at('lner5', LNER_NOSE, 0.4, 1.2), LNER_RED, 'the cheek beside the lamp window');
+  // behind it the whole lower flank is white-silver, down to the floor (lner-801-214-2025), and so is the shoulder in front of and above the wing
+  assert.equal(at('lner5', LNER_NOSE, 1.5, 0.7), LIVERIES.lner.body, 'white at the foot of the flank, 1.5 m back');
+  assert.equal(at('lner5', LNER_NOSE, 1.5, 1.15), LIVERIES.lner.body, 'white lower down the cab side, 1.5 m back');
+  assert.equal(at('lner5', LNER_NOSE, 2.5, 1.2), LIVERIES.lner.body, 'white under the crescent, 2.5 m back');
+  assert.equal(at('lner5', LNER_NOSE, 1.5, 2.6), LIVERIES.lner.body, 'white in front of and above the wing: the shoulder');
+  // the wing: red over the cab side window, its upper edge climbing as it goes back and a little over the band's top at the crew door, its lower edge (the crescent) falling to the cheek
+  assert.equal(at('lner5', LNER_NOSE, 2.5, 2.2), LNER_RED, 'the wing, over the cab side window');
+  assert.equal(at('lner5', LNER_NOSE, LNER_NOSE + 0.2, 3.05), LNER_RED, 'the wing is over the band\'s top at the crew door');
+  assert.equal(at('lner5', LNER_NOSE, LNER_NOSE + 0.2, 1.9), LNER_RED, 'and the band\'s foot is 1.8 m at the crew door');
+  // the pale crescent under the wing's lower edge (a broad one, 12 cm, at the cab), and a thin line (4 cm) under the band's foot behind it (lner-801-214-2025)
+  const CRESCENT = 0xb5bbc2;
+  assert.equal(at('lner5', LNER_NOSE, 2.3, 1.64), CRESCENT, 'the crescent under the wing');
+  assert.equal(at('lner5', LNER_NOSE, LAST, bottom - 0.02), CRESCENT, 'the thin pale line under the band\'s foot');
+  assert.equal(at('lner5', LNER_NOSE, LAST, bottom - 0.08), LIVERIES.lner.body, 'and white below it');
   const topAt = (s: number): number => {
     let hi = 0;
-    for (let y = 1.0; y <= 3.0; y += 0.01) if (at('lner5', LNER_NOSE, s, y) === LNER_RED) hi = y;
+    for (let y = 1.0; y <= 3.3; y += 0.01) if (at('lner5', LNER_NOSE, s, y) === LNER_RED) hi = y;
     return hi;
   };
-  assert.ok(topAt(0.5) < topAt(2) && topAt(2) < topAt(4) && topAt(4) < topAt(7), `the sweep rises: ${[0.5, 2, 4, 7].map(topAt).join(', ')}`);
-  assert.ok(Math.abs(topAt(LAST) - top) < 0.03, `it ends at the band's top (${topAt(LAST)} vs ${top})`);
-  // the pinstripe along the cantrail is only behind the sweep
+  const footAt = (s: number): number => {
+    let lo = 9;
+    for (let y = 1.0; y <= 3.3; y += 0.01) if (at('lner5', LNER_NOSE, s, y) === LNER_RED) { lo = y; break; }
+    return lo;
+  };
+  assert.ok(topAt(1.5) < topAt(2.5) && topAt(2.5) < topAt(3.5), `the wing's upper edge rises: ${[1.5, 2.5, 3.5].map(topAt).join(', ')}`);
+  assert.ok(footAt(1.5) < footAt(2.5) && footAt(2.5) < footAt(LNER_NOSE + 0.4), `the crescent climbs to the band's foot: ${[1.5, 2.5, LNER_NOSE + 0.4].map(footAt).join(', ')}`);
+  assert.ok(Math.abs(topAt(LAST) - top) < 0.03 && Math.abs(footAt(LAST) - bottom) < 0.03, `the red ends as the band (${footAt(LAST)} to ${topAt(LAST)} vs ${bottom} to ${top})`);
+  // the pinstripe along the cantrail is only behind the wing
   assert.equal(at('lner5', LNER_NOSE, 12, 3.05), 0xe8683a);
   assert.equal(at('lner5', LNER_NOSE, 0.5, 3.05), LIVERIES.lner.body);
   // the 9-car and 5-car LNER trains wear the same paint
@@ -203,12 +226,17 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
   for (const kind of ['lumo5'] as TrainKind[]) {
     const l = liveryFor(kind);
     const row = LIVERIES[TRAIN_SPECS[kind].livery];
-    assert.equal(l.noseTop, null);
+    // CHANGED (Lumo wore its operator row with no dome at all): LUMO-03-Lumo-803004-passes-York-301023 and LUMO-05-Lumo-803005-at-King-s-Cross-Platform-10 show a dark grey
+    // cap over the windscreen on the 803, from the glass's top edge back; every other part of the row is still livery.ts's
+    assert.equal(l.noseTop, 0x2a2d33);
+    assert.equal(l.noseTopFrom, 2.0);
     for (const key of Object.keys(row) as (keyof typeof row)[]) assert.equal(l[key], row[key], `${kind}.${key}`);
   }
-  // the LNER nose is a black dome over the glass, from 3.2 m back; the 717's the whole nose; the others have no special top
+  // CHANGED (the LNER dome began 3.2 m back, on a 5.4 m nose): the nose is 3.9 m long now and the black cap starts at the windscreen's top edge, 2.0 m from the tip
+  // (lner-801-214-2025: the black cap runs from the top of the glass back over the roof)
+  // the LNER nose is a black dome over the glass; the 717's the whole nose; the others have no special top
   assert.equal(liveryFor('lner5').noseTop, 0x1a1c21);
-  assert.equal(liveryFor('lner5').noseTopFrom, 3.2);
+  assert.equal(liveryFor('lner5').noseTopFrom, 2.0);
   assert.equal(liveryFor('gn717x6').noseTop, 0x1a1c21);
   assert.equal(liveryFor('gn717x6').noseTopFrom, 0);
   assert.equal(liveryFor('gc180x5').noseTop, null);
@@ -319,10 +347,18 @@ const detailOf = (g: THREE.Object3D, index: number): THREE.Mesh => {
   return d as THREE.Mesh;
 };
 
-test('the Hull Trains front: a grey beak between two blue cheeks on the face, the dome over the glass the body\'s blue, the doors red', () => {
+test('the Hull Trains front: a grey beak between two blue cheeks on the face, its edges the mask\'s two slanted lines, the dome over the glass the body\'s blue, the doors red', () => {
   const g = buildTrain('hull5');
   g.updateMatrixWorld(true);
   const layout = trainLayout('hull5');
+  const mask = frontOf('hull5').mask;
+  assert.ok(mask, 'the Hull Trains front has a colour mask');
+  assert.equal(mask.colour, HULL_BEAK);
+  const r0 = ringAt(bodySpec('at300').nose, 0);
+  // CHANGED (the beak was cut along the loft's own columns, an upright strip: the cheeks' inner edge one x at every height): the mask is two straight lines from the face's foot
+  // (`hwFoot` either side of the middle) to its top (`hwTop`), as hull-802-doncaster-2024 shows a bullet of grey widening up the face; the beak stays inside them at every
+  // height and the cheeks outside, so the test now holds every vertex to the line at its own height
+  const half = (y: number): number => mask.hwFoot + ((mask.hwTop - mask.hwFoot) * (y - r0.bottom)) / (r0.top - r0.bottom);
   for (const car of layout.cars.filter((c) => c.cab)) {
     // the face stands NOSE_RECESS behind the end of the car (a covered coupler); the flat caps stand in its plane, the lamps and the seam a few millimetres off it
     const face = car.cab === 'front' ? car.start + NOSE_RECESS : car.end - NOSE_RECESS;
@@ -332,39 +368,43 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, th
     const cheeks = onFace(HULL_BLUE);
     assert.ok(beak.length > 0 && cheeks.length > 0, `car ${car.index}: ${beak.length} beak and ${cheeks.length} cheek triangles on the face`);
     const cheekBox = new THREE.Box3().setFromPoints(cheeks.flat());
-    const innerCheek = Math.min(...cheeks.flat().map((v) => Math.abs(v.x)));
     assert.ok(cheekBox.min.x < -0.2 && cheekBox.max.x > 0.2, `car ${car.index}: a cheek each side`);
-    // the beak, where the cheeks are (their height), stays between them
-    const inCheekHeight = beak.flat().filter((v) => v.y > cheekBox.min.y + 1e-6 && v.y <= cheekBox.max.y);
-    assert.ok(inCheekHeight.length > 0);
-    for (const v of inCheekHeight) assert.ok(Math.abs(v.x) <= innerCheek + 1e-6, `car ${car.index}: the beak reaches x = ${v.x.toFixed(3)}, past the cheeks' edge at ${innerCheek.toFixed(3)}`);
+    for (const v of beak.flat()) assert.ok(Math.abs(v.x) <= half(v.y) + 1e-4, `car ${car.index}: the beak reaches x = ${v.x.toFixed(3)} at y = ${v.y.toFixed(2)}, past the line at ${half(v.y).toFixed(3)}`);
+    for (const v of cheeks.flat()) assert.ok(Math.abs(v.x) >= half(v.y) - 1e-4, `car ${car.index}: a cheek vertex at x = ${v.x.toFixed(3)}, y = ${v.y.toFixed(2)} is inside the beak's line at ${half(v.y).toFixed(3)}`);
+    // the beak is a bullet: narrow at the foot, wide at the top (the line's own widths, give or take the face's rounded corners)
+    const foot = Math.max(...beak.flat().filter((v) => v.y < r0.bottom + 0.15).map((v) => Math.abs(v.x)));
+    const upper = Math.max(...beak.flat().filter((v) => v.y > r0.top - 0.3).map((v) => Math.abs(v.x)));
+    assert.ok(foot < mask.hwFoot + 0.1 && upper > foot + 0.08, `car ${car.index}: the beak is ${foot.toFixed(2)} m either side at its foot and ${upper.toFixed(2)} m near its top`);
   }
   // the doors are the Hull red
   // (the doors are vertex-coloured leaves in each car's body-detail, so the colour is looked for there: a leaf is a pair of quads of the door colour)
   for (const car of layout.cars) assert.ok(trisOfColour(detailOf(g, car.index), HULL_DOOR).length >= 8, `car ${car.index}: red door leaves`);
 });
 
-test('the nose\'s top: the LNER has a dark dome over the glass from 3.2 m back, the 717 a dark nose roof from the tip, every other kind none', () => {
+test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over the glass from its top edge (2.0 m back), the 717 a dark nose roof from the tip, every other kind none', () => {
   const dark = 0x1a1c21;
+  const lumoDome = 0x2a2d33;
   const cars = (kind: TrainKind): number[] => trainLayout(kind).cars.filter((c) => c.cab).map((c) => c.index);
-  for (const kind of ['lner5', 'lner9'] as TrainKind[]) {
+  // CHANGED (the LNER's began 3.2 m back, and Lumo had none): the nose is 3.9 m long now, the cap starts at the glass's top edge (2.0 m), and the 803 has one too (LUMO-03, LUMO-05)
+  for (const [kind, colour] of [['lner5', dark], ['lner9', dark], ['lumo5', lumoDome]] as [TrainKind, number][]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
     for (const index of cars(kind)) {
       const car = trainLayout(kind).cars[index] as { cab: 'front' | 'rear'; start: number; end: number };
-      const tris = trisOfColour(detailOf(g, index), dark);
+      const tris = trisOfColour(detailOf(g, index), colour);
       assert.ok(tris.length > 20, `${kind} car ${index}: the dome (${tris.length} triangles)`);
-      // all of it is more than 3.2 m from the nose's tip (the livery's `noseTopFrom`), measured along the car, and on the roof
+      // all of it is more than 2.0 m from the nose's tip (the livery's `noseTopFrom`), measured along the car, and on the roof
       const tip = car.cab === 'front' ? car.start : car.end;
       for (const t of tris) for (const v of t) {
-        assert.ok(Math.abs(v.z - tip) >= 3.2 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
-        assert.ok(v.y > 2.5, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(2)}, not on the roof`);
+        assert.ok(Math.abs(v.z - tip) >= 2.0 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
+        // (CHANGED from 2.5 m: the cap runs a little way down the sides of the glass, about a third of the way down its side edge, 2.6 m: lner-801-214-2025's close crop of the cab)
+        assert.ok(v.y > 2.4, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(2)}, not on the roof or the glass's upper shoulder`);
       }
     }
     // a through car has none
     const through = trainLayout(kind).cars.find((c) => !c.cab);
     assert.ok(through);
-    assert.equal(trisOfColour(detailOf(g, through.index), dark).length, 0, `${kind}: the dark dome on a through car`);
+    assert.equal(trisOfColour(detailOf(g, through.index), colour).length, 0, `${kind}: the dark dome on a through car`);
   }
   // the 717's nose roof is dark from the very tip
   {
@@ -377,10 +417,10 @@ test('the nose\'s top: the LNER has a dark dome over the glass from 3.2 m back, 
     const first = Math.min(...tris.flat().map((v) => Math.abs(v.z - car.start)));
     assert.ok(first < 1, `the dark nose roof begins ${first.toFixed(2)} m from the tip`);
   }
-  // no dark dome elsewhere: not on the Hull, Lumo, 387, 700 or 180 cabs
-  for (const kind of ['hull5', 'lumo5', 'gn387x4', 'tl700x8', 'gc180x5'] as TrainKind[]) {
+  // no dark dome elsewhere: not on the Hull, 387, 700 or 180 cabs, in either of the two domes' colours
+  for (const kind of ['hull5', 'gn387x4', 'tl700x8', 'gc180x5'] as TrainKind[]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
-    for (const index of cars(kind)) assert.equal(trisOfColour(detailOf(g, index), dark).length, 0, `${kind} car ${index}: a dark nose roof`);
+    for (const index of cars(kind)) for (const colour of [dark, lumoDome]) assert.equal(trisOfColour(detailOf(g, index), colour).length, 0, `${kind} car ${index}: a nose roof in ${colour.toString(16)}`);
   }
 });
