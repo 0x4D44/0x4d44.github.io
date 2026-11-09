@@ -45,7 +45,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 670127975,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -364.6,
+          -760.5
+        ],
+        "wayId": 22597542,
+        "from": 670127975,
+        "to": 1242694471,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 11,
+        "wayVersion": 20,
+        "latitude": 51.5376389,
+        "longitude": -0.1290701,
+        "evidence": [
+          "https://www.openstreetmap.org/node/670127975/history",
+          "https://api.openstreetmap.org/api/0.6/node/670127975/11.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597542/20.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/22597370/31.json"
+        ],
+        "reason": "OSM node 670127975 v11 is on consecutive nodes 670127975 -> 1242694471 of way 22597542 v20 (High Speed 1 / TRL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 22597542 v20 is outgoing, way 22597370 v31 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -362.6040190947424,
+          -760.3732710536344
+        ],
+        "adjoiningWays": [
+          {
+            "id": 22597370,
+            "version": 31,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1242427174,
@@ -82,7 +120,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242427174,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -112.5,
+          -1046
+        ],
+        "wayId": 17564095,
+        "from": 1242427174,
+        "to": 12379402610,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 5,
+        "wayVersion": 12,
+        "latitude": 51.5402071,
+        "longitude": -0.1254265,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242427174/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242427174/5.json",
+          "https://api.openstreetmap.org/api/0.6/way/17564095/12.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 1242427174 v5 is on consecutive nodes 1242427174 -> 12379402610 of way 17564095 v12 (North London Incline / NLI). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -111.87476330923903,
+          -1044.1002423626878
+        ]
+      }
     },
     {
       "id": 1242427186,
@@ -124,7 +192,45 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242427186,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -360,
+          -382.3
+        ],
+        "wayId": 312878296,
+        "from": 1242427186,
+        "to": 9126947111,
+        "direction": "forward",
+        "rawPosition": "right",
+        "side": "right",
+        "nodeVersion": 6,
+        "wayVersion": 10,
+        "latitude": 51.5342377,
+        "longitude": -0.1290037,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242427186/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242427186/6.json",
+          "https://api.openstreetmap.org/api/0.6/way/312878296/10.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/1390567879/2.json"
+        ],
+        "reason": "OSM node 1242427186 v6 is on consecutive nodes 1242427186 -> 9126947111 of way 312878296 v10 (St Pancras to Chesterfield Line / 1 / SPC1). Direction=forward is relative to that way order. Position=right is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 312878296 v10 is outgoing, way 1390567879 v2 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -358.1375144405885,
+          -383.02879869716105
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1390567879,
+            "version": 2,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1242427306,
@@ -164,7 +270,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242427306,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -97.6,
+          -1016.6
+        ],
+        "wayId": 108285826,
+        "from": 1242427306,
+        "to": 14096439857,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 6,
+        "wayVersion": 18,
+        "latitude": 51.5399423,
+        "longitude": -0.1252104,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242427306/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242427306/6.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285826/18.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/784012409/7.json"
+        ],
+        "reason": "OSM node 1242427306 v6 is on consecutive nodes 1242427306 -> 14096439857 of way 108285826 v18 (High Speed 1 / Up Channel Tunnel Rail Link / TRL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 108285826 v18 is outgoing, way 784012409 v7 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -96.59944480425072,
+          -1014.8682698535109
+        ],
+        "adjoiningWays": [
+          {
+            "id": 784012409,
+            "version": 7,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1242694189,
@@ -200,7 +344,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242694189,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -336.1,
+          -824.8
+        ],
+        "wayId": 108285829,
+        "from": 1242694189,
+        "to": 1242427757,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 4,
+        "wayVersion": 19,
+        "latitude": 51.5382175,
+        "longitude": -0.1286587,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242694189/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242694189/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285829/19.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 1242694189 v4 is on consecutive nodes 1242694189 -> 1242427757 of way 108285829 v19 (CTRL Relief / RDO). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -337.9569533817705,
+          -825.5427813527082
+        ]
+      }
     },
     {
       "id": 1242694453,
@@ -235,7 +409,38 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242694453,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          88,
+          -1158.7
+        ],
+        "wayId": 13846093,
+        "from": 1242694453,
+        "to": 129734023,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 5,
+        "wayVersion": 21,
+        "latitude": 51.5412203,
+        "longitude": -0.1225273,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242694453/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242694453/5.json",
+          "https://api.openstreetmap.org/api/0.6/way/13846093/21.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204"
+        ],
+        "reason": "OSM node 1242694453 v5 is on consecutive nodes 1242694453 -> 129734023 of way 13846093 v21 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured.",
+        "previousPost": [
+          86.82698037569632,
+          -1160.319884243086
+        ]
+      }
     },
     {
       "id": 1242694471,
@@ -275,7 +480,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1242694471,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -365,
+          -754.2
+        ],
+        "wayId": 22597542,
+        "from": 670127975,
+        "to": 1242694471,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 4,
+        "wayVersion": 20,
+        "latitude": 51.5375823,
+        "longitude": -0.1290767,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1242694471/history",
+          "https://api.openstreetmap.org/api/0.6/node/1242694471/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597542/20.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 1242694471 v4 is on consecutive nodes 670127975 -> 1242694471 of way 22597542 v20 (High Speed 1 / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -366.9959809052576,
+          -754.3267289463656
+        ]
+      }
     },
     {
       "id": 1243292577,
@@ -310,7 +545,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1243292577,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          127.4,
+          -1186.5
+        ],
+        "wayId": 1379255238,
+        "from": 1243292577,
+        "to": 1790610589,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 4,
+        "wayVersion": 5,
+        "latitude": 51.5414705,
+        "longitude": -0.1219578,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1243292577/history",
+          "https://api.openstreetmap.org/api/0.6/node/1243292577/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/1379255238/5.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/10340282/25.json"
+        ],
+        "reason": "OSM node 1243292577 v4 is on consecutive nodes 1243292577 -> 1790610589 of way 1379255238 v5 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 1379255238 v5 is outgoing, way 10340282 v25 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          126.35095701350323,
+          -1188.2027944128643
+        ],
+        "adjoiningWays": [
+          {
+            "id": 10340282,
+            "version": 25,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1243292707,
@@ -344,7 +617,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1243292707,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          132.7,
+          -1181.9
+        ],
+        "wayId": 1379255237,
+        "from": 12379402772,
+        "to": 1243292707,
+        "direction": "backward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 5,
+        "wayVersion": 5,
+        "latitude": 51.5414292,
+        "longitude": -0.1218814,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1243292707/history",
+          "https://api.openstreetmap.org/api/0.6/node/1243292707/5.json",
+          "https://api.openstreetmap.org/api/0.6/way/1379255237/5.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/108344894/16.json"
+        ],
+        "reason": "OSM node 1243292707 v5 is on consecutive nodes 12379402772 -> 1243292707 of way 1379255237 v5 (High Speed 1 / Up Channel Tunnel Rail Link / TRL2). Direction=backward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 1379255237 v5 is incoming, way 108344894 v16 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          131.69715243517305,
+          -1183.63040364127
+        ],
+        "adjoiningWays": [
+          {
+            "id": 108344894,
+            "version": 16,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 1256318219,
@@ -386,7 +698,45 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1256318219,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          32.4,
+          -459.1
+        ],
+        "wayId": 1196414294,
+        "from": 8813738932,
+        "to": 1256318219,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 8,
+        "wayVersion": 6,
+        "latitude": 51.5349284,
+        "longitude": -0.1233323,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1256318219/history",
+          "https://api.openstreetmap.org/api/0.6/node/1256318219/8.json",
+          "https://api.openstreetmap.org/api/0.6/way/1196414294/6.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/68286540/25.json"
+        ],
+        "reason": "OSM node 1256318219 v8 is on consecutive nodes 8813738932 -> 1256318219 of way 1196414294 v6 (East Coast Main Line / E / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 1196414294 v6 is incoming, way 68286540 v25 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          34.39923522402271,
+          -459.04469612105055
+        ],
+        "adjoiningWays": [
+          {
+            "id": 68286540,
+            "version": 25,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 1256318245,
@@ -428,7 +778,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1256318245,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          38.7,
+          -458.8
+        ],
+        "wayId": 389490012,
+        "from": 1256318245,
+        "to": 8813738934,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 6,
+        "wayVersion": 16,
+        "latitude": 51.534926,
+        "longitude": -0.1232402,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1256318245/history",
+          "https://api.openstreetmap.org/api/0.6/node/1256318245/6.json",
+          "https://api.openstreetmap.org/api/0.6/way/389490012/16.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/389488831/10.json"
+        ],
+        "reason": "OSM node 1256318245 v6 is on consecutive nodes 1256318245 -> 8813738934 of way 389490012 v16 (East Coast Main Line / D / ECM1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 389490012 v16 is outgoing, way 389488831 v10 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          36.7010397713206,
+          -458.86448258802193
+        ],
+        "adjoiningWays": [
+          {
+            "id": 389488831,
+            "version": 10,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1752783504,
@@ -462,7 +850,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783504,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          29.3,
+          -458.1
+        ],
+        "wayId": 15707293,
+        "from": 1752783504,
+        "to": 8813738931,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 4,
+        "wayVersion": 19,
+        "latitude": 51.5349197,
+        "longitude": -0.123376,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783504/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783504/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/15707293/19.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/1196414296/7.json"
+        ],
+        "reason": "OSM node 1752783504 v4 is on consecutive nodes 1752783504 -> 8813738931 of way 15707293 v19 (East Coast Main Line / F / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 15707293 v19 is outgoing, way 1196414296 v7 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          27.301526119111134,
+          -458.17811624290124
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1196414296,
+            "version": 7,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1752783506,
@@ -504,7 +931,45 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783506,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          55.2,
+          -458.1
+        ],
+        "wayId": 1562776390,
+        "from": 14222438354,
+        "to": 1752783506,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 5,
+        "wayVersion": 1,
+        "latitude": 51.5349197,
+        "longitude": -0.1230014,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783506/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783506/5.json",
+          "https://api.openstreetmap.org/api/0.6/way/1562776390/1.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/910894973/11.json"
+        ],
+        "reason": "OSM node 1752783506 v5 is on consecutive nodes 14222438354 -> 1752783506 of way 1562776390 v1 (East Coast Main Line / A / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 1562776390 v1 is incoming, way 910894973 v11 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          57.19852234926263,
+          -458.02313375579763
+        ],
+        "adjoiningWays": [
+          {
+            "id": 910894973,
+            "version": 11,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 1752783510,
@@ -552,7 +1017,45 @@
       "side": "right",
       "sideSource": "osm",
       "berth": "1023",
-      "review": "osm-ref-match"
+      "review": "osm-ref-match",
+      "positionReview": {
+        "id": 1752783510,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          42.6,
+          -458.6
+        ],
+        "wayId": 1562776392,
+        "from": 8813738933,
+        "to": 1752783510,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 5,
+        "wayVersion": 1,
+        "latitude": 51.5349245,
+        "longitude": -0.1231841,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783510/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783510/5.json",
+          "https://api.openstreetmap.org/api/0.6/way/1562776392/1.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/40430949/22.json"
+        ],
+        "reason": "OSM node 1752783510 v5 is on consecutive nodes 8813738933 -> 1752783510 of way 1562776392 v1 (East Coast Main Line / C / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 1562776392 v1 is incoming, way 40430949 v22 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          44.599583636926894,
+          -458.559192170675
+        ],
+        "adjoiningWays": [
+          {
+            "id": 40430949,
+            "version": 22,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 1752783519,
@@ -586,7 +1089,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783519,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          76.1,
+          -940.2
+        ],
+        "wayId": 1467471978,
+        "from": 1752783519,
+        "to": 8813738937,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 3,
+        "latitude": 51.5392556,
+        "longitude": -0.1227,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783519/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783519/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/1467471978/3.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/17983114/20.json"
+        ],
+        "reason": "OSM node 1752783519 v3 is on consecutive nodes 1752783519 -> 8813738937 of way 1467471978 v3 (East Coast Main Line / A / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 1467471978 v3 is outgoing, way 17983114 v20 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          78.09753316988548,
+          -940.1006962477686
+        ],
+        "adjoiningWays": [
+          {
+            "id": 17983114,
+            "version": 20,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1752783520,
@@ -620,7 +1162,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783520,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          63.8,
+          -940.8
+        ],
+        "wayId": 389490009,
+        "from": 1752783520,
+        "to": 8813738936,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 21,
+        "latitude": 51.539261,
+        "longitude": -0.1228782,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783520/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783520/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/389490009/21.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/5065007/30.json"
+        ],
+        "reason": "OSM node 1752783520 v3 is on consecutive nodes 1752783520 -> 8813738936 of way 389490009 v21 (East Coast Main Line / C / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 389490009 v21 is outgoing, way 5065007 v30 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          65.79631678365115,
+          -940.6786768805515
+        ],
+        "adjoiningWays": [
+          {
+            "id": 5065007,
+            "version": 30,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1752783527,
@@ -654,7 +1235,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783527,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          60.3,
+          -941
+        ],
+        "wayId": 1562776393,
+        "from": 8813738935,
+        "to": 1752783527,
+        "direction": "backward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 1,
+        "latitude": 51.5392625,
+        "longitude": -0.1229284,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783527/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783527/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/1562776393/1.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/1196414292/5.json"
+        ],
+        "reason": "OSM node 1752783527 v3 is on consecutive nodes 8813738935 -> 1752783527 of way 1562776393 v1 (East Coast Main Line / D / ECM1). Direction=backward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 1562776393 v1 is incoming, way 1196414292 v5 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          62.29716699663473,
+          -940.8935857737283
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1196414292,
+            "version": 5,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 1752783529,
@@ -688,7 +1308,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783529,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          53.2,
+          -941.3
+        ],
+        "wayId": 163611763,
+        "from": 1752783529,
+        "to": 13190936419,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 13,
+        "latitude": 51.5392657,
+        "longitude": -0.1230316,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783529/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783529/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/163611763/13.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/1196414293/5.json"
+        ],
+        "reason": "OSM node 1752783529 v3 is on consecutive nodes 1752783529 -> 13190936419 of way 163611763 v13 (East Coast Main Line / E / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 163611763 v13 is outgoing, way 1196414293 v5 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          55.19786502924769,
+          -941.2076131778382
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1196414293,
+            "version": 5,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 1752783531,
@@ -722,7 +1381,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 1752783531,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          49.9,
+          -941.5
+        ],
+        "wayId": 389490010,
+        "from": 13190936420,
+        "to": 1752783531,
+        "direction": "backward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 8,
+        "latitude": 51.5392671,
+        "longitude": -0.1230791,
+        "evidence": [
+          "https://www.openstreetmap.org/node/1752783531/history",
+          "https://api.openstreetmap.org/api/0.6/node/1752783531/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/389490010/8.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/15716946/23.json"
+        ],
+        "reason": "OSM node 1752783531 v3 is on consecutive nodes 13190936420 -> 1752783531 of way 389490010 v8 (East Coast Main Line / F / ECM1). Direction=backward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 389490010 v8 is incoming, way 15716946 v23 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          51.897868545220724,
+          -941.407689242135
+        ],
+        "adjoiningWays": [
+          {
+            "id": 15716946,
+            "version": 23,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 2275818716,
@@ -764,7 +1462,45 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 2275818716,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          51.7,
+          -458.2
+        ],
+        "wayId": 1562776391,
+        "from": 5560417209,
+        "to": 2275818716,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 4,
+        "wayVersion": 1,
+        "latitude": 51.534921,
+        "longitude": -0.1230533,
+        "evidence": [
+          "https://www.openstreetmap.org/node/2275818716/history",
+          "https://api.openstreetmap.org/api/0.6/node/2275818716/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/1562776391/1.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/910894974/11.json"
+        ],
+        "reason": "OSM node 2275818716 v4 is on consecutive nodes 5560417209 -> 2275818716 of way 1562776391 v1 (East Coast Main Line / B / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 1562776391 v1 is incoming, way 910894974 v11 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          53.698783491771216,
+          -458.1302536522614
+        ],
+        "adjoiningWays": [
+          {
+            "id": 910894974,
+            "version": 11,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 2275818729,
@@ -798,7 +1534,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 2275818729,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          71.8,
+          -940.4
+        ],
+        "wayId": 218331254,
+        "from": 2275818729,
+        "to": 8813738938,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 3,
+        "wayVersion": 15,
+        "latitude": 51.5392575,
+        "longitude": -0.1227627,
+        "evidence": [
+          "https://www.openstreetmap.org/node/2275818729/history",
+          "https://api.openstreetmap.org/api/0.6/node/2275818729/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/218331254/15.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/902674180/11.json"
+        ],
+        "reason": "OSM node 2275818729 v3 is on consecutive nodes 2275818729 -> 8813738938 of way 218331254 v15 (East Coast Main Line / B / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 218331254 v15 is outgoing, way 902674180 v11 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          73.79837844511817,
+          -940.31947925679
+        ],
+        "adjoiningWays": [
+          {
+            "id": 902674180,
+            "version": 11,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 3187971982,
@@ -840,7 +1615,45 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 3187971982,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -347.9,
+          -385.9
+        ],
+        "wayId": 110558314,
+        "from": 1242694302,
+        "to": 3187971982,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 3,
+        "wayVersion": 14,
+        "latitude": 51.5342705,
+        "longitude": -0.1288289,
+        "evidence": [
+          "https://www.openstreetmap.org/node/3187971982/history",
+          "https://api.openstreetmap.org/api/0.6/node/3187971982/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/110558314/14.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/1390567881/2.json"
+        ],
+        "reason": "OSM node 3187971982 v3 is on consecutive nodes 1242694302 -> 3187971982 of way 110558314 v14 (St Pancras to Chesterfield Line / SPC1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 110558314 v14 is incoming, way 1390567881 v2 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -346.08018466804043,
+          -386.7296216954521
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1390567881,
+            "version": 2,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 3187971983,
@@ -882,7 +1695,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 3187971983,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -338.7,
+          -389.9
+        ],
+        "wayId": 15694743,
+        "from": 3187971983,
+        "to": 1242427775,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 3,
+        "wayVersion": 26,
+        "latitude": 51.5343066,
+        "longitude": -0.128696,
+        "evidence": [
+          "https://www.openstreetmap.org/node/3187971983/history",
+          "https://api.openstreetmap.org/api/0.6/node/3187971983/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/15694743/26.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/1390567882/2.json"
+        ],
+        "reason": "OSM node 3187971983 v3 is on consecutive nodes 3187971983 -> 1242427775 of way 15694743 v26 (St Pancras to Chesterfield Line / SPC1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 15694743 v26 is outgoing, way 1390567882 v2 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -340.5175225537859,
+          -389.06536728647893
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1390567882,
+            "version": 2,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 6548541878,
@@ -924,7 +1775,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 6548541878,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -350.3,
+          -384.9
+        ],
+        "wayId": 1390567880,
+        "from": 6548541878,
+        "to": 1242694413,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 3,
+        "wayVersion": 2,
+        "latitude": 51.5342617,
+        "longitude": -0.1288643,
+        "evidence": [
+          "https://www.openstreetmap.org/node/6548541878/history",
+          "https://api.openstreetmap.org/api/0.6/node/6548541878/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/1390567880/2.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 6548541878 v3 is on consecutive nodes 6548541878 -> 1242694413 of way 1390567880 v2 (St Pancras to Chesterfield Line / 2 / SPC1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -352.0270564733765,
+          -383.89139901954815
+        ]
+      }
     },
     {
       "id": 7323450293,
@@ -963,7 +1844,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 7323450293,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -116.7,
+          -1028.8
+        ],
+        "wayId": 784009052,
+        "from": 7323450293,
+        "to": 14100644207,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 3,
+        "wayVersion": 10,
+        "latitude": 51.5400526,
+        "longitude": -0.1254872,
+        "evidence": [
+          "https://www.openstreetmap.org/node/7323450293/history",
+          "https://api.openstreetmap.org/api/0.6/node/7323450293/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/784009052/10.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/611662178/12.json"
+        ],
+        "reason": "OSM node 7323450293 v3 is on consecutive nodes 7323450293 -> 14100644207 of way 784009052 v10 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 784009052 v10 is outgoing, way 611662178 v12 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -117.51431846078944,
+          -1030.626714385014
+        ],
+        "adjoiningWays": [
+          {
+            "id": 611662178,
+            "version": 12,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 7323450294,
@@ -1005,7 +1924,45 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 7323450294,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -350.9,
+          -757
+        ],
+        "wayId": 108285829,
+        "from": 7323450294,
+        "to": 12783091154,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 7,
+        "wayVersion": 19,
+        "latitude": 51.5376083,
+        "longitude": -0.1288729,
+        "evidence": [
+          "https://www.openstreetmap.org/node/7323450294/history",
+          "https://api.openstreetmap.org/api/0.6/node/7323450294/7.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285829/19.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://api.openstreetmap.org/api/0.6/way/784009054/9.json"
+        ],
+        "reason": "OSM node 7323450294 v7 is on consecutive nodes 7323450294 -> 12783091154 of way 108285829 v19 (CTRL Relief / RDO). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed. At this way split, way 108285829 v19 is outgoing, way 784009054 v9 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -352.8826087015224,
+          -757.2631781462198
+        ],
+        "adjoiningWays": [
+          {
+            "id": 784009054,
+            "version": 9,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 12006516967,
@@ -1050,7 +2007,37 @@
       "side": "left",
       "sideSource": "osm",
       "berth": "1004",
-      "review": "osm-ref-match"
+      "review": "osm-ref-match",
+      "positionReview": {
+        "id": 12006516967,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          45.7,
+          -339.8
+        ],
+        "wayId": 1390691713,
+        "from": 8600105820,
+        "to": 12006516967,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 7,
+        "latitude": 51.5338557,
+        "longitude": -0.1231397,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12006516967/history",
+          "https://api.openstreetmap.org/api/0.6/node/12006516967/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1390691713/7.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12006516967 v2 is on consecutive nodes 8600105820 -> 12006516967 of way 1390691713 v7 (East Coast Main Line / 4 / ECM1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          43.701972387067585,
+          -339.71119877275856
+        ]
+      }
     },
     {
       "id": 12006524069,
@@ -1082,7 +2069,38 @@
       "side": "left",
       "sideSource": "assumed-left",
       "berth": "1039",
-      "review": "osm-ref-match"
+      "review": "osm-ref-match",
+      "positionReview": {
+        "id": 12006524069,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          54,
+          -821.6
+        ],
+        "wayId": 1562776393,
+        "from": 12006524069,
+        "to": 8813738935,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 2,
+        "wayVersion": 1,
+        "latitude": 51.5381884,
+        "longitude": -0.1230187,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12006524069/history",
+          "https://api.openstreetmap.org/api/0.6/node/12006524069/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1562776393/1.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204"
+        ],
+        "reason": "OSM node 12006524069 v2 is on consecutive nodes 12006524069 -> 8813738935 of way 1562776393 v1 (East Coast Main Line / D / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured.",
+        "previousPost": [
+          52.002391907425,
+          -821.6977850115247
+        ]
+      }
     },
     {
       "id": 12006524070,
@@ -1114,7 +2132,38 @@
       "side": "left",
       "sideSource": "assumed-left",
       "berth": "1075",
-      "review": "osm-ref-match"
+      "review": "osm-ref-match",
+      "positionReview": {
+        "id": 12006524070,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          116,
+          -1317.3
+        ],
+        "wayId": 1178696697,
+        "from": 12006524070,
+        "to": 1752783584,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 2,
+        "wayVersion": 6,
+        "latitude": 51.5426464,
+        "longitude": -0.1221229,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12006524070/history",
+          "https://api.openstreetmap.org/api/0.6/node/12006524070/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1178696697/6.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204"
+        ],
+        "reason": "OSM node 12006524070 v2 is on consecutive nodes 12006524070 -> 1752783584 of way 1178696697 v6 (East Coast Main Line / Down Fast / ECM1). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured.",
+        "previousPost": [
+          114.12175429575935,
+          -1317.987163062527
+        ]
+      }
     },
     {
       "id": 12379402610,
@@ -1150,7 +2199,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12379402610,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -120.4,
+          -1043.4
+        ],
+        "wayId": 17564095,
+        "from": 1242427174,
+        "to": 12379402610,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 12,
+        "latitude": 51.5401835,
+        "longitude": -0.125541,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12379402610/history",
+          "https://api.openstreetmap.org/api/0.6/node/12379402610/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/17564095/12.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12379402610 v2 is on consecutive nodes 1242427174 -> 12379402610 of way 17564095 v12 (North London Incline / NLI). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -121.02523669076098,
+          -1045.2997576373123
+        ]
+      }
     },
     {
       "id": 12379402715,
@@ -1184,7 +2263,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12379402715,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -218.6,
+          -992.1
+        ],
+        "wayId": 108285810,
+        "from": 12379402715,
+        "to": 5763221032,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 4,
+        "wayVersion": 15,
+        "latitude": 51.5397221,
+        "longitude": -0.1269607,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12379402715/history",
+          "https://api.openstreetmap.org/api/0.6/node/12379402715/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285810/15.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/22597354/17.json"
+        ],
+        "reason": "OSM node 12379402715 v4 is on consecutive nodes 12379402715 -> 5763221032 of way 108285810 v15 (ECML-CTRL Chord / TRL9). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 108285810 v15 is outgoing, way 22597354 v17 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          -217.745853597241,
+          -990.2915658920896
+        ],
+        "adjoiningWays": [
+          {
+            "id": 22597354,
+            "version": 17,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 12379402728,
@@ -1223,7 +2341,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12379402728,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -372.5,
+          -796.9
+        ],
+        "wayId": 784012410,
+        "from": 12379402728,
+        "to": 1242694501,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 4,
+        "wayVersion": 8,
+        "latitude": 51.5379664,
+        "longitude": -0.1291849,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12379402728/history",
+          "https://api.openstreetmap.org/api/0.6/node/12379402728/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/784012410/8.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12379402728 v4 is on consecutive nodes 12379402728 -> 1242694501 of way 784012410 v8 (Silo Curve / ISL2). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -374.4758832964845,
+          -797.2096533524341
+        ]
+      }
     },
     {
       "id": 12775522499,
@@ -1259,7 +2407,38 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12775522499,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          99.8,
+          -1160.5
+        ],
+        "wayId": 22597358,
+        "from": 12775522499,
+        "to": 1242694527,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 2,
+        "wayVersion": 27,
+        "latitude": 51.541237,
+        "longitude": -0.1223569,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12775522499/history",
+          "https://api.openstreetmap.org/api/0.6/node/12775522499/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597358/27.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204"
+        ],
+        "reason": "OSM node 12775522499 v2 is on consecutive nodes 12775522499 -> 1242694527 of way 22597358 v27 (High Speed 1 / Up Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured.",
+        "previousPost": [
+          100.95240354649273,
+          -1158.8653850404357
+        ]
+      }
     },
     {
       "id": 12775522500,
@@ -1296,9 +2475,39 @@
         -0.24593811988225509,
         0.969285531300649
       ],
-      "side": "left",
-      "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "side": "over-track",
+      "sideSource": "osm",
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12775522500,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -359,
+          -829.6
+        ],
+        "wayId": 22597539,
+        "from": 12775522500,
+        "to": 1242694144,
+        "direction": "forward",
+        "rawPosition": "bridge",
+        "side": "over-track",
+        "nodeVersion": 4,
+        "wayVersion": 24,
+        "latitude": 51.5382607,
+        "longitude": -0.1289893,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12775522500/history",
+          "https://api.openstreetmap.org/api/0.6/node/12775522500/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597539/24.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12775522500 v4 is on consecutive nodes 12775522500 -> 1242694144 of way 22597539 v24 (High Speed 1 / Down Channel Tunnel Rail Link / TRL1). Direction=forward is relative to that way order. Uncertain elevation: position=bridge establishes gantry mounting over this rail, not a left-hand mast. No mapped gantry height/support geometry; retain a schematic-height head without inventing a mast.",
+        "previousPost": [
+          -360.9385710626013,
+          -830.0918762397646
+        ]
+      }
     },
     {
       "id": 12775548338,
@@ -1332,7 +2541,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12775548338,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          631,
+          -1413.4
+        ],
+        "wayId": 1379847814,
+        "from": 13453160243,
+        "to": 12775548338,
+        "direction": "backward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 2,
+        "wayVersion": 5,
+        "latitude": 51.5435113,
+        "longitude": -0.1146783,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12775548338/history",
+          "https://api.openstreetmap.org/api/0.6/node/12775548338/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1379847814/5.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/1379255235/4.json"
+        ],
+        "reason": "OSM node 12775548338 v2 is on consecutive nodes 13453160243 -> 12775548338 of way 1379847814 v5 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=backward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 1379847814 v5 is incoming, way 1379255235 v4 is outgoing: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          631.7692307692307,
+          -1411.5538461538463
+        ],
+        "adjoiningWays": [
+          {
+            "id": 1379255235,
+            "version": 4,
+            "role": "outgoing"
+          }
+        ]
+      }
     },
     {
       "id": 12775548339,
@@ -1366,7 +2614,46 @@
       ],
       "side": "left",
       "sideSource": "assumed-left",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12775548339,
+        "status": "uncertain",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          548.2,
+          -1358.4
+        ],
+        "wayId": 1379847815,
+        "from": 12775548339,
+        "to": 13453160244,
+        "direction": "forward",
+        "rawPosition": null,
+        "side": "uncertain",
+        "nodeVersion": 2,
+        "wayVersion": 5,
+        "latitude": 51.5430168,
+        "longitude": -0.1158752,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12775548339/history",
+          "https://api.openstreetmap.org/api/0.6/node/12775548339/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1379847815/5.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal",
+          "https://sacuksprodnrdigital0001.blob.core.windows.net/sectional-appendix/Sectional%20Appendix%20full%20PDFs%20September%2026/London%20North%20Eastern%20%28NCS%29%20Sectional%20Appendix%20September%202026.pdf#page=204",
+          "https://api.openstreetmap.org/api/0.6/way/228013428/16.json"
+        ],
+        "reason": "OSM node 12775548339 v2 is on consecutive nodes 12775548339 -> 13453160244 of way 1379847815 v5 (High Speed 1 / Up Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Uncertain side: no railway:signal:position tag. The public Sectional Appendix is a line-layout schematic, not evidence for this head's mast side. Retain assumed left of travel; offset/height unmeasured. At this way split, way 1379847815 v5 is outgoing, way 228013428 v16 is incoming: consistent way order, no branch ambiguity.",
+        "previousPost": [
+          548.9022468831771,
+          -1356.5273416448622
+        ],
+        "adjoiningWays": [
+          {
+            "id": 228013428,
+            "version": 16,
+            "role": "incoming"
+          }
+        ]
+      }
     },
     {
       "id": 12776478081,
@@ -1408,7 +2695,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478081,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -312.1,
+          -406.6
+        ],
+        "wayId": 1390567885,
+        "from": 1242694280,
+        "to": 12776478081,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 4,
+        "latitude": 51.5344562,
+        "longitude": -0.1283116,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478081/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478081/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1390567885/4.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478081 v2 is on consecutive nodes 1242694280 -> 12776478081 of way 1390567885 v4 (Channel Tunnel Rail Link / 8 / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -313.8910465856642,
+          -405.7099707150994
+        ]
+      }
     },
     {
       "id": 12776478082,
@@ -1450,7 +2767,37 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478082,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -308.5,
+          -408
+        ],
+        "wayId": 1390567890,
+        "from": 12776478082,
+        "to": 1242694190,
+        "direction": "forward",
+        "rawPosition": "right",
+        "side": "right",
+        "nodeVersion": 2,
+        "wayVersion": 4,
+        "latitude": 51.5344691,
+        "longitude": -0.1282605,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478082/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478082/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1390567890/4.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478082 v2 is on consecutive nodes 12776478082 -> 1242694190 of way 1390567890 v4 (Channel Tunnel Rail Link / 9 / TRL1). Direction=forward is relative to that way order. Position=right is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -306.70907998288516,
+          -408.8902839391438
+        ]
+      }
     },
     {
       "id": 12776478083,
@@ -1492,7 +2839,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478083,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -297.3,
+          -412.9
+        ],
+        "wayId": 1390567886,
+        "from": 87510980,
+        "to": 12776478083,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 4,
+        "latitude": 51.5345133,
+        "longitude": -0.1280978,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478083/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478083/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/1390567886/4.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478083 v2 is on consecutive nodes 87510980 -> 12776478083 of way 1390567886 v4 (Channel Tunnel Rail Link / 10 / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -299.11401793549686,
+          -412.0577773870907
+        ]
+      }
     },
     {
       "id": 12776478084,
@@ -1535,7 +2912,37 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478084,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -312.4,
+          -455.2
+        ],
+        "wayId": 110558318,
+        "from": 1242694383,
+        "to": 12776478084,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 2,
+        "wayVersion": 23,
+        "latitude": 51.5348936,
+        "longitude": -0.1283163,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478084/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478084/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/110558318/23.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478084 v2 is on consecutive nodes 1242694383 -> 12776478084 of way 110558318 v23 (CTRL Relief / 11 / TRL1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -310.58408123099906,
+          -456.0381163549235
+        ]
+      }
     },
     {
       "id": 12776478085,
@@ -1578,7 +2985,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478085,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -302.3,
+          -460.2
+        ],
+        "wayId": 722371716,
+        "from": 12776478085,
+        "to": 87511262,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 12,
+        "latitude": 51.5349391,
+        "longitude": -0.1281703,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478085/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478085/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/722371716/12.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478085 v2 is on consecutive nodes 12776478085 -> 87511262 of way 722371716 v12 (CTRL Relief / 12 / RDO). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -304.09337151659867,
+          -459.31466469433735
+        ]
+      }
     },
     {
       "id": 12776478086,
@@ -1621,7 +3058,37 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12776478086,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -302.1,
+          -467.9
+        ],
+        "wayId": 110558317,
+        "from": 1242694242,
+        "to": 12776478086,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 2,
+        "wayVersion": 23,
+        "latitude": 51.5350083,
+        "longitude": -0.1281679,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12776478086/history",
+          "https://api.openstreetmap.org/api/0.6/node/12776478086/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/110558317/23.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12776478086 v2 is on consecutive nodes 1242694242 -> 12776478086 of way 110558317 v23 (CTRL Relief / 13 / RDO). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -300.3111456180002,
+          -468.7944271909999
+        ]
+      }
     },
     {
       "id": 12783091154,
@@ -1666,7 +3133,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 12783091154,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -349.4,
+          -768.3
+        ],
+        "wayId": 108285829,
+        "from": 7323450294,
+        "to": 12783091154,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 3,
+        "wayVersion": 19,
+        "latitude": 51.5377092,
+        "longitude": -0.1288508,
+        "evidence": [
+          "https://www.openstreetmap.org/node/12783091154/history",
+          "https://api.openstreetmap.org/api/0.6/node/12783091154/3.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285829/19.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 12783091154 v3 is on consecutive nodes 7323450294 -> 12783091154 of way 108285829 v19 (CTRL Relief / RDO). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -347.4173912984776,
+          -768.0368218537801
+        ]
+      }
     },
     {
       "id": 13472176902,
@@ -1708,7 +3205,37 @@
       "side": "right",
       "sideSource": "osm",
       "berth": "2070",
-      "review": "osm-ref-match"
+      "review": "osm-ref-match",
+      "positionReview": {
+        "id": 13472176902,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          103,
+          -1322.8
+        ],
+        "wayId": 491380792,
+        "from": 13472176903,
+        "to": 13472176902,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 2,
+        "wayVersion": 8,
+        "latitude": 51.5426961,
+        "longitude": -0.1223105,
+        "evidence": [
+          "https://www.openstreetmap.org/node/13472176902/history",
+          "https://api.openstreetmap.org/api/0.6/node/13472176902/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/491380792/8.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 13472176902 v2 is on consecutive nodes 13472176903 -> 13472176902 of way 491380792 v8 (East Coast Main Line / Down Slow / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          101.10634247543328,
+          -1323.4434758578625
+        ]
+      }
     },
     {
       "id": 13472176903,
@@ -1744,7 +3271,37 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 13472176903,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          99.5,
+          -1312.5
+        ],
+        "wayId": 491380792,
+        "from": 87513153,
+        "to": 13472176903,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 1,
+        "wayVersion": 8,
+        "latitude": 51.5426033,
+        "longitude": -0.1223609,
+        "evidence": [
+          "https://www.openstreetmap.org/node/13472176903/history",
+          "https://api.openstreetmap.org/api/0.6/node/13472176903/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/491380792/8.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 13472176903 v1 is on consecutive nodes 87513153 -> 13472176903 of way 491380792 v8 (East Coast Main Line / Down Slow / ECM1). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          97.57407196057164,
+          -1313.03925985104
+        ]
+      }
     },
     {
       "id": 13472176904,
@@ -1780,7 +3337,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 13472176904,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          86.8,
+          -1261.3
+        ],
+        "wayId": 491380792,
+        "from": 1242694147,
+        "to": 13472176904,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 8,
+        "latitude": 51.5421431,
+        "longitude": -0.1225445,
+        "evidence": [
+          "https://www.openstreetmap.org/node/13472176904/history",
+          "https://api.openstreetmap.org/api/0.6/node/13472176904/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/491380792/8.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 13472176904 v1 is on consecutive nodes 1242694147 -> 13472176904 of way 491380792 v8 (East Coast Main Line / Down Slow / ECM1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          88.7585208390142,
+          -1260.894788791928
+        ]
+      }
     },
     {
       "id": 13472176905,
@@ -1817,7 +3404,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 13472176905,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -402,
+          -1083
+        ],
+        "wayId": 22758715,
+        "from": 13472176905,
+        "to": 1243327269,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 13,
+        "latitude": 51.5405396,
+        "longitude": -0.1296108,
+        "evidence": [
+          "https://www.openstreetmap.org/node/13472176905/history",
+          "https://api.openstreetmap.org/api/0.6/node/13472176905/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/22758715/13.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 13472176905 v1 is on consecutive nodes 13472176905 -> 1243327269 of way 22758715 v13 (North London Incline / NLI). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -403.1407916189907,
+          -1081.3572600686534
+        ]
+      }
     },
     {
       "id": 14096439855,
@@ -1856,7 +3473,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14096439855,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -100.5,
+          -1020.6
+        ],
+        "wayId": 607628025,
+        "from": 14096439855,
+        "to": 1243327201,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 4,
+        "wayVersion": 11,
+        "latitude": 51.5399789,
+        "longitude": -0.1252526,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14096439855/history",
+          "https://api.openstreetmap.org/api/0.6/node/14096439855/4.json",
+          "https://api.openstreetmap.org/api/0.6/way/607628025/11.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14096439855 v4 is on consecutive nodes 14096439855 -> 1243327201 of way 607628025 v11 (North London Line Connection / ISL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -99.47892249168912,
+          -1018.8802905123185
+        ]
+      }
     },
     {
       "id": 14096439856,
@@ -1895,7 +3542,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14096439856,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -108.7,
+          -1015.7
+        ],
+        "wayId": 607628025,
+        "from": 1243327201,
+        "to": 14096439856,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 2,
+        "wayVersion": 11,
+        "latitude": 51.5399347,
+        "longitude": -0.1253719,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14096439856/history",
+          "https://api.openstreetmap.org/api/0.6/node/14096439856/2.json",
+          "https://api.openstreetmap.org/api/0.6/way/607628025/11.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14096439856 v2 is on consecutive nodes 1243327201 -> 14096439856 of way 607628025 v11 (North London Line Connection / ISL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -109.74290001890789,
+          -1017.406563667304
+        ]
+      }
     },
     {
       "id": 14096439857,
@@ -1933,7 +3610,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14096439857,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -106.6,
+          -1011.4
+        ],
+        "wayId": 108285826,
+        "from": 1242427306,
+        "to": 14096439857,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 18,
+        "latitude": 51.5398957,
+        "longitude": -0.1253404,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14096439857/history",
+          "https://api.openstreetmap.org/api/0.6/node/14096439857/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/108285826/18.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14096439857 v1 is on consecutive nodes 1242427306 -> 14096439857 of way 108285826 v18 (High Speed 1 / Up Channel Tunnel Rail Link / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -107.60055519574927,
+          -1013.1317301464891
+        ]
+      }
     },
     {
       "id": 14100562306,
@@ -1969,7 +3676,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100562306,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -368.5,
+          -975
+        ],
+        "wayId": 10340760,
+        "from": 1242694261,
+        "to": 14100562306,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 18,
+        "latitude": 51.5395683,
+        "longitude": -0.1291273,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100562306/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100562306/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/10340760/18.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100562306 v1 is on consecutive nodes 1242694261 -> 14100562306 of way 10340760 v18 (Silo Curve / ISL2). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -366.6430466182295,
+          -975.7427813527082
+        ]
+      }
     },
     {
       "id": 14100571512,
@@ -2005,7 +3742,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100571512,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -375.5,
+          -993.1
+        ],
+        "wayId": 10340760,
+        "from": 14100571512,
+        "to": 1242694274,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 18,
+        "latitude": 51.539731,
+        "longitude": -0.1292288,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100571512/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100571512/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/10340760/18.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100571512 v1 is on consecutive nodes 14100571512 -> 1242694274 of way 10340760 v18 (Silo Curve / ISL2). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -377.3382900600361,
+          -992.3121614028418
+        ]
+      }
     },
     {
       "id": 14100571513,
@@ -2041,7 +3808,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100571513,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -394.3,
+          -1042
+        ],
+        "wayId": 15692256,
+        "from": 14100571513,
+        "to": 1242694254,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 23,
+        "latitude": 51.5401712,
+        "longitude": -0.1295004,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100571513/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100571513/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/15692256/23.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100571513 v1 is on consecutive nodes 14100571513 -> 1242694254 of way 15692256 v23 (North London Line Connection / ISL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -395.4904551012515,
+          -1040.3928856133105
+        ]
+      }
     },
     {
       "id": 14100644203,
@@ -2076,7 +3873,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100644203,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -273.9,
+          -928.8
+        ],
+        "wayId": 22597371,
+        "from": 12379402762,
+        "to": 14100644203,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 24,
+        "latitude": 51.5391526,
+        "longitude": -0.1277598,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100644203/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100644203/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597371/24.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100644203 v1 is on consecutive nodes 12379402762 -> 14100644203 of way 22597371 v24 (High Speed 1 / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -275.17603572950065,
+          -930.340043121811
+        ]
+      }
     },
     {
       "id": 14100644204,
@@ -2111,7 +3938,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100644204,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -265.4,
+          -935.4
+        ],
+        "wayId": 22597371,
+        "from": 14100644204,
+        "to": 12379402762,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 24,
+        "latitude": 51.5392125,
+        "longitude": -0.1276366,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100644204/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100644204/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597371/24.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100644204 v1 is on consecutive nodes 14100644204 -> 12379402762 of way 22597371 v24 (High Speed 1 / TRL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -264.2103139891794,
+          -933.7923162015937
+        ]
+      }
     },
     {
       "id": 14100644205,
@@ -2146,7 +4003,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100644205,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -306.6,
+          -921.8
+        ],
+        "wayId": 22597539,
+        "from": 14100644205,
+        "to": 1242694239,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 24,
+        "latitude": 51.5390897,
+        "longitude": -0.1282319,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100644205/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100644205/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597539/24.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100644205 v1 is on consecutive nodes 14100644205 -> 1242694239 of way 22597539 v24 (High Speed 1 / Down Channel Tunnel Rail Link / TRL1). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -308.0830715582476,
+          -923.1418266479382
+        ]
+      }
     },
     {
       "id": 14100644206,
@@ -2180,7 +4067,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100644206,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -342.9,
+          -870.2
+        ],
+        "wayId": 22597539,
+        "from": 87525202,
+        "to": 14100644206,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 24,
+        "latitude": 51.5386262,
+        "longitude": -0.1287576,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100644206/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100644206/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/22597539/24.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100644206 v1 is on consecutive nodes 87525202 -> 14100644206 of way 22597539 v24 (High Speed 1 / Down Channel Tunnel Rail Link / TRL1). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -341.1475681826467,
+          -869.2361625004557
+        ]
+      }
     },
     {
       "id": 14100644207,
@@ -2219,7 +4136,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100644207,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          -108.4,
+          -1032.5
+        ],
+        "wayId": 784009052,
+        "from": 7323450293,
+        "to": 14100644207,
+        "direction": "backward",
+        "rawPosition": "right",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 10,
+        "latitude": 51.5400859,
+        "longitude": -0.1253677,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100644207/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100644207/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/784009052/10.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100644207 v1 is on consecutive nodes 7323450293 -> 14100644207 of way 784009052 v10 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=backward is relative to that way order. Position=right is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          -107.58568153921057,
+          -1030.6732856149858
+        ]
+      }
     },
     {
       "id": 14100729247,
@@ -2253,7 +4200,37 @@
       ],
       "side": "left",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100729247,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          18.4,
+          -1109.2
+        ],
+        "wayId": 607628022,
+        "from": 14100729247,
+        "to": 5976039010,
+        "direction": "forward",
+        "rawPosition": "left",
+        "side": "left",
+        "nodeVersion": 1,
+        "wayVersion": 13,
+        "latitude": 51.5407751,
+        "longitude": -0.123534,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100729247/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100729247/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/607628022/13.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100729247 v1 is on consecutive nodes 14100729247 -> 5976039010 of way 607628022 v13 (High Speed 1 / Down Channel Tunnel Rail Link / TRL2). Direction=forward is relative to that way order. Position=left is way-relative, hence left of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          17.40772212328659,
+          -1110.9364862842492
+        ]
+      }
     },
     {
       "id": 14100729248,
@@ -2287,7 +4264,37 @@
       ],
       "side": "right",
       "sideSource": "osm",
-      "review": "unreviewed"
+      "review": "unreviewed",
+      "positionReview": {
+        "id": 14100729248,
+        "status": "reviewed",
+        "reviewedAt": "2026-11-09",
+        "point": [
+          21,
+          -1105
+        ],
+        "wayId": 1549855333,
+        "from": 1242427561,
+        "to": 14100729248,
+        "direction": "backward",
+        "rawPosition": "left",
+        "side": "right",
+        "nodeVersion": 1,
+        "wayVersion": 2,
+        "latitude": 51.5407373,
+        "longitude": -0.1234963,
+        "evidence": [
+          "https://www.openstreetmap.org/node/14100729248/history",
+          "https://api.openstreetmap.org/api/0.6/node/14100729248/1.json",
+          "https://api.openstreetmap.org/api/0.6/way/1549855333/2.json",
+          "https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal"
+        ],
+        "reason": "OSM node 14100729248 v1 is on consecutive nodes 1242427561 -> 14100729248 of way 1549855333 v2 (High Speed 1 / Up Channel Tunnel Rail Link / TRL2). Direction=backward is relative to that way order. Position=left is way-relative, hence right of travel. Track position and qualitative side reviewed; the 2 m lateral offset and glyph height are schematic, not surveyed.",
+        "previousPost": [
+          22.109400392450343,
+          -1103.3358994113241
+        ]
+      }
     }
   ]
 }

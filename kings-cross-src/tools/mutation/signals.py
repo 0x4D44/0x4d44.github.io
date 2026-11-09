@@ -96,6 +96,19 @@ M = [
     ('builder leaks private berth', [('const overlay: SignalOverlay =', "if (options.anchors?.anchors[0]) signals[0]!.berth = options.anchors.anchors[0].berth; const overlay: SignalOverlay =")], B),
     ('builder distance widened', [('dist(a.point, s.edge.point) <= 40', 'dist(a.point, s.edge.point) <= 400')], B),
     ('builder one-to-one ignored', [("privateTrials.filter((other) =>\n      other.candidates.some((a) => a.berth === trial.candidates[0]!.berth)).length === 1", 'true')], B),
+    ('bridge incorrectly uses a left mast', [("rawPosition === 'bridge' ? 'over-track' :", '')], B),
+    ('bridge incorrectly offsets off its rail', [("signal.side === 'over-track' ? 0 :", '')]),
+    ('bridge gets an invented mast', [("const post = signal.side === 'over-track' ? undefined :", 'const post =')]),
+    ('uncertain public label hidden', [("? '' : 'uncertain: '", "? '' : ''")]),
+    ('uncertain inferred label hidden', [('uncertain position and side', 'position and side')]),
+    ('public position review discarded', [('out.positionReview = structuredClone(reviewed);', 'void reviewed;')], B),
+    ('stale reviewed point accepted', [('dist(reviewed.point, out.edge.point) < .01', 'true')], B),
+    ('wrong reviewed rail accepted', [('reviewed.wayId === out.edge.wayId', 'true')], B),
+    ('wrong reviewed edge accepted', [('reviewed.from === out.edge.from', 'true')], B),
+    ('reversed reviewed direction accepted', [('reviewed.direction === signal.direction', 'true')], B),
+    ('changed raw side keeps review', [('reviewed.rawPosition === (rawPosition ?? null)', 'true')], B),
+    ('wrong reviewed side accepted', [('reviewed.side === side', 'true')], B),
+    ('bundled public review absent', [('"positionReview":', '"missingReview":')], 'web/src/data/kx-signals.json'),
 ]
 
 def run(work):
@@ -126,6 +139,8 @@ try:
     (root / 'web/src').mkdir(parents=True)
     (root / 'web/src/data').mkdir()
     shutil.copy2(src / 'web/src/data/kx-track.json', root / 'web/src/data/kx-track.json')
+    for name in ['kx-signals.json', 'kx-signal-review.json']:
+        shutil.copy2(src / 'web/src/data' / name, root / 'web/src/data' / name)
     (root / 'web/tests').mkdir(parents=True)
     shutil.copy2(src / 'web/src/board.ts', root / 'web/src/board.ts')
     shutil.copy2(src / 'web/src/feed.ts', root / 'web/src/feed.ts')

@@ -34,18 +34,27 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   const decoded = hypotheses.filter(admitted);
   const proceed = decoded.filter(h => (h.kind ?? 'proceed') === 'proceed');
   const layer = createSignals(overlay, new THREE.Scene(), { area: anchors.area, platforms: data.platforms });
-  layer.setAnchors(anchors, buildGraph(data)); layer.setTable(table);
+  const graph = buildGraph(data);
+  layer.setAnchors(anchors, graph); layer.setTable(table);
   const records = layer.signals();
   const headRows = records.map(r => {
     const berth = r.group.userData.berth as string | undefined;
     const source = r.mappingSource ?? 'osm-unbound';
     const anchor = anchors.anchors.find(a => a.berth === berth);
     const aspect = proceed.find(h => h.berth === berth);
+    const rail = graph.edges.find(e => (e.a === r.signal.edge.from && e.b === r.signal.edge.to) || (e.a === r.signal.edge.to && e.b === r.signal.edge.from));
+    const positionReview = !r.inferredPosition && r.signal.positionReview ? r.signal.positionReview : {
+      status: 'uncertain' as const, evidence: rail ? [`https://www.openstreetmap.org/way/${rail.wayId}`] : [] as string[],
+      reason: r.inferredPosition ? `No public evidence identifies a signal position or side here; OSM way ${rail?.wayId ?? 'unavailable'} supports the rail only; ${r.label}; ${anchor?.evidence ?? 'anchor evidence unavailable'}`
+        : 'No public review of this head\'s track position and side. Berth/reference identity alone cannot establish the mast side.',
+    };
+    const previousPost = r.signal.positionReview?.previousPost;
     return { id: r.signal.id, ref: r.signal.ref ?? null, berth: berth ?? null, decoded: Boolean(aspect),
       hypothesisId: aspect?.id ?? null, positionSource: source,
       review: source === 'reference' ? 'osm-ref-match' : source === 'nearby' || source === 'private-topology' ? 'topology' : 'unreviewed',
       inferred: r.inferredPosition, point: [...r.signal.edge.point], post: [r.group.position.x, r.group.position.y, r.group.position.z],
       facing: [...r.signal.facing], travel: [...r.signal.travel], side: r.signal.side,
+      positionReview, postDeltaM: previousPost ? [r.group.position.x - previousPost[0], r.group.position.z - previousPost[1]] : null,
       errorM: source === 'reference' ? 0 : anchor?.errorM ?? null,
       positionReason: source === 'reference' ? `OSM reference ${r.signal.ref} uniquely names the berth`
         : source === 'private-topology' ? 'Private one-to-one, same-edge, direction-compatible topology review within 40 m'
@@ -120,17 +129,27 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
   return { area: anchors.area, states: CAPTURE_STATES, unsupportedStates: ['caution'],
     validation: metadata.validation ?? null, windows: metadata.windows ?? null, folds: metadata.folds ?? null,
     evidencePolicy: 'Supplied table held-out evidence; >=3 supports and precision/recall >=0.8 in both folds. Route bits never drive an aspect. No re-learning or synthetic hypotheses.',
+    positionPolicy: 'Public review covers horizontal track position, tagged direction and side, independently of berth identity. Topology-only positions remain uncertain. Lateral offsets and head heights are schematic; no survey accuracy or inferred mast side is claimed.',
     counts: { addresses: new Set(bits.map(b => b.address)).size, bits: bits.length, decodedBits: bits.filter(b => b.decoded).length,
       unknownBits: bits.filter(b => !b.decoded).length, decodedProceedBits: proceed.length, decodedRouteBits: decoded.filter(h => h.kind === 'route').length,
       drawnHeads: headRows.length, positionedDecodedHeads: headRows.filter(h => h.decoded).length,
       unpositionedDecodedHeads: decodedHeads.filter(h => !h.headIds.length).length, positionedUndecodedHeads: headRows.filter(h => !h.decoded).length,
       reviewedDecodedHeads: headRows.filter(h => h.decoded && h.review !== 'unreviewed').length,
+      positionReviewedDecodedHeads: headRows.filter(h => h.decoded && h.positionReview.status === 'reviewed').length,
+      positionUncertainDecodedHeads: headRows.filter(h => h.decoded && h.positionReview.status !== 'reviewed').length,
+      positionReview: {
+        reviewed: headRows.filter(h => h.positionReview.status === 'reviewed').length,
+        topology: headRows.filter(h => h.positionReview.status !== 'reviewed' && h.review === 'topology').length,
+        uncertain: headRows.filter(h => h.positionReview.status !== 'reviewed' && h.review !== 'topology').length,
+      },
       publicOverlayReview: reviews(overlay.signals), effectiveOverlayReview: reviews(headRows.filter(h => !h.inferred)), drawnHeadReview: reviews(headRows) },
     heldOut: { all: total(decoded), proceed: total(proceed) }, bits, heads: headRows, decodedHeads, captures, intervals };
 }
 
 export function signalReportMarkdown(report: ReturnType<typeof signalReport>): string {
   const lines = ['# Signals evidence', '', report.evidencePolicy, '', `Counts: ${JSON.stringify(report.counts)}`,
+    report.positionPolicy,
+    'Legacy publicOverlayReview/effectiveOverlayReview/drawnHeadReview and reviewedDecodedHeads count identity evidence, not geographic approval. Use positionReview and positionReviewedDecodedHeads for positions.',
     `Validation: ${cell(report.validation)}; windows (ms): ${JSON.stringify(report.windows)}; folds: ${JSON.stringify(report.folds)}.`,
     `Held-out micro precision ${pct(report.heldOut.all.precision)}, recall ${pct(report.heldOut.all.recall)}.`,
     'Caution is unsupported by this decoder; no caution screenshot or aspect is claimed.', '',
@@ -138,6 +157,10 @@ export function signalReportMarkdown(report: ReturnType<typeof signalReport>): s
   for (const b of report.bits) lines.push(`| ${b.address} | ${b.bit} | ${b.decoded ? b.kind : 'unknown'} | ${cell(b.berth)} | ${b.headIds.join(', ') || 'unpositioned'} | ${b.positionSources.join(', ') || 'none'} | ${pct(b.precision)} | ${pct(b.recall)} |`);
   lines.push('', '## Every decoded proceed head', '', '| Berth | Head(s) | Source | Held-out precision | Recall | Recorded position reason |', '|---|---|---|---:|---:|---|');
   for (const h of report.decodedHeads) lines.push(`| ${h.berth} | ${h.headIds.join(', ') || 'unpositioned'} | ${cell(h.positionSource)} | ${pct(h.heldOut.precision)} | ${pct(h.heldOut.recall ?? h.heldOut.precision)} | ${cell(h.reason)} |`);
+  lines.push('', '## Every drawn head: position and side review', '',
+    'Identity/topology and geographic review are separate. An OSM reference does not establish a missing mast side; unknown aspects are independent of uncertain positions. Deltas compare with the public overlay before this review; private inferred positions have no public baseline.', '',
+    '| Head / ref | Identity source | Geographic review | Track point (x,z) | Side drawn | Post change (dx,dz), m | Evidence and limits |', '|---|---|---|---|---|---|---|');
+  for (const h of report.heads) lines.push(`| ${h.id} / ${cell(h.ref)} | ${h.positionSource} | ${h.positionReview.status} | ${h.point.join(', ')} | ${h.side} | ${h.postDeltaM?.map(n => n.toFixed(3)).join(', ') ?? 'no public baseline'} | ${cell(h.positionReview.reason)} ${h.positionReview.evidence.join(' ')} |`);
   lines.push('', '## Every positioned head without a decoded proceed aspect', '', '| Head | Ref | Berth | Position source | Reason |', '|---|---|---|---|---|');
   for (const h of report.heads.filter(h => !h.decoded)) lines.push(`| ${h.id} | ${cell(h.ref)} | ${cell(h.berth)} | ${h.positionSource} | ${cell(h.positionReason)} |`);
   return `${lines.join('\n')}\n`;

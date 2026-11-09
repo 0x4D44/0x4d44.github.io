@@ -9,9 +9,10 @@ import { stationPlatforms, platformSouthEnd } from '../core/station.ts';
 import type { Pt } from '../core/geo.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import type { AnchorMap } from '../core/anchors.ts';
-import type { SignalOverlay, OverlaySignal } from '../web/src/signals.ts';
+import type { SignalOverlay, OverlaySignal, PublicSignalReview } from '../web/src/signals.ts';
+import publicReviews from '../web/src/data/kx-signal-review.json' with { type: 'json' };
 
-export interface SignalBuildOptions { raw?: RawElement[]; anchors?: AnchorMap }
+export interface SignalBuildOptions { raw?: RawElement[]; anchors?: AnchorMap; reviews?: readonly PublicSignalReview[] }
 interface ReviewNote { id: number; ref?: string; classification: string[]; notes: string[]; snapM?: number }
 
 /** Pure build hook. No private input is read while constructing the public overlay. */
@@ -55,8 +56,9 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     const rawPosition = rawById.get(signal.id)?.tags?.['railway:signal:position'];
     const positionKnown = rawPosition === 'left' || rawPosition === 'right';
     // OSM position is relative to way order; the public renderer uses travel.
-    const side = positionKnown ? (forward ? rawPosition : rawPosition === 'left' ? 'right' : 'left') : 'left';
-    if (!positionKnown) note.notes.push(`${rawPosition === undefined ? 'Missing position' : `Unsupported position ${JSON.stringify(rawPosition)}`}: UK left-of-travel convention assumed; not a surveyed position.`);
+    const side = rawPosition === 'bridge' ? 'over-track' : positionKnown ? (forward ? rawPosition : rawPosition === 'left' ? 'right' : 'left') : 'left';
+    if (rawPosition === 'bridge') note.notes.push('OSM gantry mounting: glyph over its governed rail, no invented side mast; height unmeasured.');
+    else if (!positionKnown) note.notes.push(`${rawPosition === undefined ? 'Missing position' : `Unsupported position ${JSON.stringify(rawPosition)}`}: UK left-of-travel convention assumed; not a surveyed position.`);
     else if (!forward) note.notes.push('OSM way-relative side flipped for backward train travel.');
     const berth = signal.ref?.match(/^YA\s*(\d{4})$/)?.[1];
     const out: OverlaySignal = {
@@ -64,9 +66,19 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
       ...(signal.ref ? { ref: signal.ref } : {}), ...(signal.direction ? { direction: signal.direction } : {}),
       kinds: [...signal.kinds], edge: { wayId: s.edge.wayId, from: s.edge.a, to: s.edge.b, t: s.t, point: s.point },
       travel, facing: [-travel[0], -travel[1]], side,
-      sideSource: positionKnown ? 'osm' : 'assumed-left',
+      sideSource: positionKnown || rawPosition === 'bridge' ? 'osm' : 'assumed-left',
       ...(berth ? { berth } : {}), review: berth && directionKnown ? 'osm-ref-match' : 'unreviewed',
     };
+    const reviews = (options.reviews ?? publicReviews.signals as PublicSignalReview[]).filter(r => r.id === signal.id);
+    const reviewed = reviews.length === 1 ? reviews[0] : undefined;
+    // A human review is pinned to this track, direction and raw side evidence.
+    // A later OSM rebuild cannot silently carry an old approval onto changed geometry.
+    if (reviewed && dist(reviewed.point, out.edge.point) < .01 && reviewed.wayId === out.edge.wayId &&
+        reviewed.from === out.edge.from && reviewed.to === out.edge.to && reviewed.direction === signal.direction &&
+        reviewed.rawPosition === (rawPosition ?? null) &&
+        (reviewed.status === 'uncertain' || positionKnown && reviewed.side === side)) {
+      out.positionReview = structuredClone(reviewed);
+    }
     if (signal.ref && !berth) note.notes.push('Non-YA reference retained; no public berth binding.');
     if (classification.includes('train_protection') && !classification.includes('main')) note.notes.push('Protection board retained; not classified as a main signal.');
     signals.push(out); included.push(note);
@@ -100,7 +112,8 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
       'Serving components are seeded by non-tunnel terminal tracks within 40 m of the south end of KGX surface platforms 0–10.',
       'Prefer containing-way outgoing/incoming edge for forward/backward; otherwise nearest rail across all components before reachability filtering.',
       'Missing/both/unknown direction assumes way-forward and remains unreviewed.',
-      'OSM railway:signal:position=left/right is relative to way direction (https://wiki.openstreetmap.org/wiki/Template:General_Signal_Tags). Public side is relative to train travel, so backward signals flip left/right. Missing/unsupported position assumes UK left of travel, explicitly marked assumed-left.',
+      'OSM railway:signal:position=left/right is relative to way direction (https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal). Public side is relative to train travel, so backward signals flip left/right. Bridge mounting uses an over-track glyph without a side mast; elevation remains uncertain. Missing/other unsupported positions assume left of travel, explicitly marked assumed-left.',
+      'Geographic approval comes only from the separate public OSM review ledger pinned to point, edge, direction and raw side tag. Reference and private topology identities do not approve a missing mast side. Offsets and heights remain schematic.',
       'Public berth strings come only from /^YA\\s*(\\d{4})$/ OSM refs; private topology never changes public JSON.',
       'Private topology candidates require an unreferenced main signal and either an inferred anchor or a signal anchor whose private evidence starts with Topology. Platform and direct OSM-reference anchors are excluded. Candidates require the same edge, compatible direction and distance <=40 m, and must be unique one-to-one or remain unreviewed.',
     ],

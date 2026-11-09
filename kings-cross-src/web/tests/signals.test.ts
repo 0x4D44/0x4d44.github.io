@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { createReplayFeed, createTimeline } from '../src/feed.ts';
 import { buildSignalOverlay } from '../../tools/build-signals.ts';
 import type { KxData, Platform } from '../../core/osm.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import type { Graph } from '../../core/graph.ts';
+import { project, round } from '../../core/geo.ts';
 import { createSignals, platformStarter } from '../src/signals.ts';
-import type { OverlaySignal, SignalEvent } from '../src/signals.ts';
+import type { OverlaySignal, SignalEvent, PublicSignalReview } from '../src/signals.ts';
 import type { TimedTdEvent } from '../../core/sclass.ts';
 
 const signal = (extra: Partial<OverlaySignal> = {}): OverlaySignal => ({ id: 1, point: [11, 21], ref: 'YA 1004', kinds: ['main'],
@@ -455,6 +457,65 @@ function privateAnchors(z = -320, reverse = false): AnchorMap {
   return { area: 'Y9', sources: ['synthetic private'], unmapped: [], anchors: [{ berth: 'PRIVATE', kind: 'inferred',
     from: reverse ? 4 : 3, to: reverse ? 3 : 4, t: (-300 - z) / 100, point: [0, z], errorM: 5, evidence: 'synthetic only' }] };
 }
+
+const publicReview = (extra: Partial<PublicSignalReview> = {}): PublicSignalReview => ({ id: 3, status: 'reviewed', reviewedAt: '2026-11-09',
+  point: [0, -300], wayId: 9, from: 3, to: 4, direction: 'forward', rawPosition: 'left', side: 'left',
+  nodeVersion: 1, wayVersion: 1, latitude: 0, longitude: 0,
+  evidence: ['https://www.openstreetmap.org/node/3', 'https://www.openstreetmap.org/way/9'],
+  reason: 'Synthetic public review: containing rail, direction and left side explicitly tagged.', previousPost: [-2, -300], ...extra });
+
+test('public position review is independent of a berth identity and rejects stale geometry or side evidence', () => {
+  const raw = [{ type: 'node' as const, id: 3, tags: { 'railway:signal:position': 'left' } }];
+  const build = (reviews = [publicReview()]) => buildSignalOverlay(builderData(), { raw, reviews });
+  const reviewed = build().overlay.signals.find(s => s.id === 3)!;
+  assert.equal(reviewed.berth, undefined); assert.equal(reviewed.review, 'unreviewed', 'identity remains separate');
+  assert.equal(reviewed.positionReview?.status, 'reviewed');
+  assert.equal(reviewed.positionReview?.side, 'left');
+  assert.match(reviewed.positionReview!.evidence[0]!, /openstreetmap/);
+  const { layer, drawn } = fixture([reviewed]);
+  assert.match(drawn.label, /reviewed track position and side/); layer.dispose();
+  for (const change of [{ point: [0, -301] }, { wayId: 10 }, { from: 2 }, { direction: 'backward' }, { rawPosition: 'right' }, { side: 'right' }] satisfies Partial<PublicSignalReview>[]) {
+    assert.notEqual(build([publicReview(change)]).overlay.signals.find(s => s.id === 3)!.positionReview?.status, 'reviewed');
+  }
+  assert.notEqual(buildSignalOverlay(builderData(), { reviews: [publicReview()] }).overlay.signals.find(s => s.id === 3)!.positionReview?.status, 'reviewed');
+});
+
+test('OSM bridge mounting stays over its governed track without an invented left-hand mast', () => {
+  const result = buildSignalOverlay(builderData(), { raw: [{ type: 'node', id: 3, tags: { 'railway:signal:position': 'bridge' } }] });
+  const bridge = result.overlay.signals.find(s => s.id === 3)!;
+  assert.equal(bridge.side, 'over-track'); assert.equal(bridge.sideSource, 'osm');
+  const { layer, drawn } = fixture([bridge]);
+  close(drawn.group.position.x, bridge.edge.point[0]); close(drawn.group.position.z, bridge.edge.point[1]);
+  assert.equal(Boolean(drawn.group.getObjectByName('post')), false);
+  assert.match(drawn.label, /uncertain.*bridge.*height/i); layer.dispose();
+});
+
+test('uncertain public and inferred positions say why even if the aspect and identity decode', () => {
+  const { layer, drawn } = fixture(); layer.setTable(table()); layer.apply(row());
+  assert.equal(drawn.state, 'proceed'); assert.match(drawn.label, /uncertain.*side/i);
+  layer.setAnchors(tdMap([tdAnchor('OTHER')]), signalGraph()); layer.setTable(tableFor('OTHER'));
+  const head = inferred(layer)[0]!;
+  assert.ok(head);
+  assert.match(head.label, /position inferred from TD.*uncertain.*side/i); layer.dispose();
+});
+
+test('every public overlay head has a source-backed review and assumed sides never pass as reviewed', () => {
+  const overlay = JSON.parse(readFileSync(new URL('../src/data/kx-signals.json', import.meta.url), 'utf8'));
+  assert.ok(overlay.signals.length > 0);
+  for (const s of overlay.signals as OverlaySignal[]) {
+    assert.ok(s.positionReview, `missing review for public OSM node ${s.id}`);
+    const r = s.positionReview!;
+    assert.equal(r.id, s.id); assert.deepEqual(r.point, s.edge.point);
+    assert.ok(r.evidence.includes(`https://www.openstreetmap.org/node/${s.id}/history`));
+    assert.ok(r.evidence.includes(`https://api.openstreetmap.org/api/0.6/node/${s.id}/${r.nodeVersion}.json`));
+    // kx-track stores projected OSM nodes rounded to one decimal metre.
+    const point = project(r.latitude, r.longitude).map(v => round(v));
+    assert.deepEqual(point, r.point, 'reviewed coordinate matches the actual drawing');
+    assert.ok(r.reason.length > 30); assert.equal(r.wayId, s.edge.wayId);
+    assert.equal(r.status === 'reviewed', s.sideSource === 'osm' && s.side !== 'over-track');
+    if (s.sideSource === 'assumed-left') assert.equal(r.side, 'uncertain');
+  }
+});
 
 test('OSM builder follows way direction raw side tags and strict YA reference prefixes', () => {
   const result = buildSignalOverlay(builderData(), { raw: [{ type: 'node', id: 2, tags: { 'railway:signal:position': 'right' } }] });

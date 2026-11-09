@@ -22,6 +22,28 @@ const rows = [event(0), event(100, 'sclass', { msgType: 'SF', address: '10', dat
   event(200, 'sclass', { msgType: 'SF', address: '10', data: '00' }), event(300, 'sclass', { msgType: 'SG', address: '20', data: '00000000' }), event(400)];
 const report = () => signalReport([rows], data, overlay, anchors, table);
 
+test('signal report separates public geographic review from identity and inventories every uncertainty and displacement', () => {
+  const reviewed = structuredClone(overlay);
+  reviewed.signals[0]!.sideSource = 'osm';
+  reviewed.signals[0]!.positionReview = { id: 1, status: 'reviewed', reviewedAt: '2026-11-09', point: [10, 0],
+    wayId: 1, from: 1, to: 2, direction: 'forward', rawPosition: 'left', side: 'left', nodeVersion: 1, wayVersion: 1,
+    latitude: 0, longitude: 0, evidence: ['https://www.openstreetmap.org/node/1/history'], reason: 'Synthetic public coordinate, direction and side review', previousPost: [10, 0] };
+  const map: AnchorMap = { ...anchors, anchors: [{ berth: '9903', kind: 'inferred', from: 1, to: 2, t: .5, point: [50, 0], errorM: 75, evidence: 'synthetic private chain' }] };
+  const r = signalReport([rows], data, reviewed, map, table);
+  assert.deepEqual(r.counts.positionReview, { reviewed: 1, topology: 0, uncertain: 2 });
+  assert.equal(r.counts.positionReviewedDecodedHeads, 1); assert.equal(r.counts.positionUncertainDecodedHeads, 1);
+  const head = r.heads.find(h => h.id === 1)!;
+  assert.equal(head.positionReview.status, 'reviewed'); assert.equal(head.review, 'osm-ref-match');
+  assert.deepEqual(head.postDeltaM, [0, -2]);
+  assert.equal(r.heads.find(h => h.inferred)!.positionReview.status, 'uncertain');
+  assert.match(r.heads.find(h => h.inferred)!.positionReview.reason, /no public.*side/i);
+  assert.match(r.heads.find(h => h.inferred)!.positionReview.reason, /synthetic private chain/);
+  assert.ok(r.heads.find(h => h.inferred)!.positionReview.evidence.includes('https://www.openstreetmap.org/way/1'));
+  const md = signalReportMarkdown(r);
+  assert.match(md, /Every drawn head: position and side review/);
+  assert.match(md, /openstreetmap.org\/node\/1\/history/); assert.match(md, /synthetic private chain/);
+});
+
 test('signal report inventories all eight bits of constant refresh bytes and separates route from proceed', () => {
   const r = report();
   assert.equal(r.bits.length, 40); assert.equal(r.counts.addresses, 5);

@@ -64,6 +64,15 @@ export function platformStarter(anchor: BerthAnchor, graph: SignalGraph, platfor
   }
 }
 
+/** Public OSM review only. TD identities and learned byte associations never belong here. */
+export interface PublicSignalReview {
+  id: number; status: 'reviewed' | 'uncertain'; reviewedAt: string;
+  point: [number, number]; wayId: number; from: number; to: number;
+  direction: string; rawPosition: string | null; side: 'left' | 'right' | 'over-track' | 'uncertain';
+  nodeVersion: number; wayVersion: number; latitude: number; longitude: number;
+  adjoiningWays?: { id: number; version: number; role: string }[];
+  evidence: string[]; reason: string; previousPost: [number, number];
+}
 export interface OverlaySignal {
   id: number;
   point: [number, number];
@@ -73,10 +82,12 @@ export interface OverlaySignal {
   edge: { wayId: number; from: number; to: number; t: number; point: [number, number] };
   travel: [number, number];
   facing: [number, number];
-  side: 'left' | 'right';
+  side: 'left' | 'right' | 'over-track';
   sideSource: 'osm' | 'assumed-left';
   berth?: string;
   review: 'osm-ref-match' | 'topology' | 'unreviewed';
+  /** Geographic review is independent of the berth identity above. Heights/offsets remain schematic. */
+  positionReview?: PublicSignalReview;
 }
 export interface SignalOverlay { attribution: string; signals: OverlaySignal[] }
 export type SignalEvent = TimedTdEvent | { t: number; e: { kind: 'snapshot'; area: string; berths?: unknown; sclass?: unknown } };
@@ -162,7 +173,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     return new THREE.Mesh(geometry, material);
   }
   function pose(signal: OverlaySignal, group: THREE.Group): void {
-    const side = signal.side === 'left' ? 1 : -1;
+    const side = signal.side === 'over-track' ? 0 : signal.side === 'left' ? 1 : -1;
     group.position.set(signal.edge.point[0] + side * 2 * signal.travel[1], 0,
       signal.edge.point[1] - side * 2 * signal.travel[0]);
     group.rotation.y = Math.atan2(signal.facing[0], signal.facing[1]);
@@ -170,9 +181,12 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   function makeHead(signal: OverlaySignal, inferred = false): DrawnSignal {
     const group = new THREE.Group(); group.name = `signal-${signal.id}`;
     pose(signal, group);
-    const post = mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999); post.name = 'post'; post.position.y = 1.85; group.add(post);
+    // OSM bridge denotes a gantry, not a freestanding mast on an assumed side.
+    // Keep the glyph height schematic: no source measures the gantry's elevation.
+    const post = signal.side === 'over-track' ? undefined : mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999);
+    if (post) { post.name = 'post'; post.position.y = 1.85; group.add(post); }
     if (inferred) {
-      const material = post.material as THREE.MeshBasicMaterial; material.transparent = true; material.opacity = 0.45;
+      const material = post!.material as THREE.MeshBasicMaterial; material.transparent = true; material.opacity = 0.45;
       const ringGeometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 49 }, (_, i) => {
         const angle = i / 48 * Math.PI * 2; return new THREE.Vector3(Math.cos(angle) * .8, .04, Math.sin(angle) * .8);
       }));
@@ -191,9 +205,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     question.add(new THREE.Line(lineGeometry, lineMaterial));
     const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff); dot.position.y = -0.22; question.add(dot);
     question.position.set(0, 3.48, 0.16); group.add(question);
-    const label = inferred ? `Signal ${signal.berth} · position inferred from TD` : `Signal ${signal.ref ?? signal.id} · OSM position`;
+    const detail = signal.positionReview?.status === 'reviewed' ? 'reviewed track position and side; height/offset schematic'
+      : signal.positionReview?.reason ?? (signal.side === 'over-track' ? 'bridge mounting; height unmeasured' : 'side not evidenced by a public position review');
+    const label = inferred ? `Signal ${signal.berth} · position inferred from TD · uncertain position and side`
+      : `Signal ${signal.ref ?? signal.id} · OSM position · ${signal.positionReview?.status === 'reviewed' ? '' : 'uncertain: '}${detail}`;
     if (inferred) group.name = label;
     group.userData.label = label; group.userData.inferredPosition = inferred;
+    group.userData.positionReview = signal.positionReview?.status ?? 'uncertain';
     const record: DrawnSignal = { signal, group, state: 'unknown', inferredPosition: inferred, label };
     records.push(record); lamps.set(record, lamp); questions.set(record, question); parent.add(group);
     return record;
@@ -309,7 +327,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
         edge: { wayId: 0, from: anchor.from, to: anchor.to, t: anchor.t, point: [...anchor.point] },
         travel, facing: [-travel[0], -travel[1]], side: 'left', sideSource: 'assumed-left', berth: anchor.berth, review: 'unreviewed' };
       const record = old ?? makeHead(signal, true); record.signal = signal; pose(signal, record.group);
-      record.label = `Signal ${anchor.berth} · ${anchor.kind === 'platform' ? 'platform departure end · ' : ''}position inferred from TD`;
+      record.label = `Signal ${anchor.berth} · ${anchor.kind === 'platform' ? 'platform departure end · ' : ''}position inferred from TD · uncertain position and side`;
       record.group.userData.label = record.label; record.group.name = record.label;
       record.group.userData.platformStarter = anchor.kind === 'platform';
       inferredHeads.set(anchor.berth, record); bind(record, anchor, 'td-anchor');
