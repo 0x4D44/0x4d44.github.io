@@ -90,9 +90,12 @@ export function createMaterials(): MaterialSet {
   // hist-e: the extension's panels and girders, light grey against the white frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
   // R-lighting-materials-c and hist-b: the Midland's brick is an orange-red, (156, 98, 69) sunlit in R-c and (160, 113, 91) in hist-b's softer light: not pink, and not the
-  // library's deep crimson. The red texture (average 0xb26952) times (0.5, 0.63, 0.75) renders (165, 101, 78) on the tower and (158, 97, 77) on the range (dE 4.5 from R-c); the
-  // earlier (1.1, 0.55, 0.78) rendered (216, 103, 86), a saturated pink-red, dE 25 from R-c at this rig.
-  const brickRed = tint('brickRed', [0.5 * brickGain, 0.63 * brickGain, 0.75 * brickGain]);
+  // library's deep crimson. Round four's scorers state the lit brick's own means, R-c Lab 56.9 / 29.8 / 35.0 and hist-b 56.8 / 19.6 / 21.1 (the masked means of every brick pixel
+  // read lower, as the round-three fit's did): against those the tint (0.5, 0.63, 0.75), (165, 101, 78) on the tower, Lab 49.9 / 23.4 / 24.2, was dE2000 8.3 and 7.0 away (10.7 and 9.0 on the
+  // range): ten L too dark and short of R-c's chroma, a flat salmon. The red texture (average 0xb26952) times (0.73, 0.825, 0.8) renders about (192, 120, 85), Lab 57.7 / 23.9 / 30.8 on the
+  // tower: dE2000 3.0 from R-c and 4.6 from hist-b (the two are 6.5 apart, and this sits between them, nearer R-c's chroma for the deeper orange-red); the earlier (1.1, 0.55, 0.78)
+  // rendered (216, 103, 86), a saturated pink-red.
+  const brickRed = tint('brickRed', [0.73 * brickGain, 0.825 * brickGain, 0.8 * brickGain]);
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
   const stone = tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]);

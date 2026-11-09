@@ -2111,6 +2111,12 @@ test('materials: the tinted looks (terracotta and buff brick, cream dressings, l
   assert.ok(rr > rg && rg > rb, 'a red brick: red over green over blue once the tint is on the red texture');
   // orange-red, not pink: R-lighting-materials-c's sunlit brick is (156, 98, 69) (green at 0.37 of its red in linear light, blue at 0.18) and hist-b's (160, 113, 91) (0.47, 0.30)
   assert.ok(rg / rr > 0.3 && rg / rr < 0.55 && rb / rr < 0.35, `orange-red, not pink: green at ${(rg / rr).toFixed(2)} of its red, blue at ${(rb / rr).toFixed(2)}`);
+  // round four (the lighting-materials E3 and historic D6 scorers): their lit-brick means are R-c Lab 56.9 / 29.8 / 35.0 and hist-b 56.8 / 19.6 / 21.1. The tint that renders the tower at
+  // Lab 57.7 / 23.9 / 30.8 at the noon rig (dE2000 3.0 from R-c and 4.6 from hist-b; the round-three tint rendered 49.9 / 23.4 / 24.2, 8.3 and 7.0 away, a flat salmon) is a reflectance of
+  // 0.24 (the round-three tint's was 0.17) with green at 0.38 of the red and blue at 0.23: the same orange-red, a third lighter, and the deeper chroma the scorers asked for
+  const reflect = 0.2126 * rr + 0.7152 * rg + 0.0722 * rb;
+  assert.ok(reflect > 0.22 && reflect < 0.26, `lit, the Midland's brick is about 0.24 reflective (L 57 at the noon rig), not the 0.17 that drew L 50: ${reflect.toFixed(3)}`);
+  assert.ok(rg / rr > 0.35 && rg / rr < 0.41 && rb / rr > 0.2 && rb / rr < 0.26, `with green at 0.38 of its red and blue at 0.23 (hue 52 degrees, R-c's chroma and not hist-b's): ${(rg / rr).toFixed(3)}, ${(rb / rr).toFixed(3)}`);
   const buff = lambert('brick');
   assert.notEqual(buff, shared('brick'), 'the hotel\'s brick is its own: a lighter, golden buff [hist-a]');
   assert.equal(buff.map, shared('brick').map, 'on the same stock-brick texture');
