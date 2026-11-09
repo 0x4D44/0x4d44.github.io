@@ -8,7 +8,7 @@ import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
 import { Batch, rgb, rng, texture } from './materials.ts';
 import type { Rgb, V2, V3 } from './materials.ts';
-import { WESTERN_RANGE } from './shed.ts';
+import { WESTERN_ARCH, WESTERN_RANGE, westernArches, westernBlock } from './shed.ts';
 
 /** Funnel head radius, where the lattice starts, metres (ASSUMED). */
 export const FUNNEL_RADIUS = 5.4;
@@ -46,9 +46,13 @@ export const MULLION = { post: 0.12, bar: 0.07, transom: 0.55 } as const;
 /** The wall stands this far inside the outline under the glass brim, on white V struts (R-c, R-c2; ASSUMED). */
 export const WALL_INSET = 3;
 export const STRUT_DIAMETER = 0.14;
-/** u of the roof's cut plane (0.3 m in front of the Range's face) and the top of its cornice. */
+/** u of the roof's cut plane (0.3 m in front of the Range's face), the top of its cornice and of its first string course, the curtain wall's sill. */
 export const WEST_WALL = -WESTERN_RANGE.depth - 0.3;
 export const CORNICE_TOP = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
+export const SILL = WESTERN_RANGE.storey + 0.15;
+/** Curtain wall either side of the Range's brick centre (R-a), ASSUMED: a white fin 0.1 m wide at every half-bay, a flat pane between. */
+export const CURTAIN_PANE = WESTERN_RANGE.bay / 2;
+export const CURTAIN_FIN = 0.1;
 /** Perimeter tree columns: 16, "12 m apart and 52.1 m from the centre of the funnel" (Arup 2/2012 p16), facing west; drawn under the roof only, 3 m in and clear of other buildings. ASSUMED: sizes, fork 2.4 m under the roof. */
 export const TREES = { count: 16, spacing: 12, radius: 52.1, trunk: 0.6, branch: 0.3, fork: 2.4, edgeClear: 3 } as const;
 export function treeSites(shed: ShedLayout, centre: Pt): Pt[] {
@@ -549,6 +553,7 @@ export function rooflights(centre: Pt, shed: Pick<ShedLayout, 'origin' | 'headin
 
 /** u of the Range's west face, the concourse's side (its east face is 0.01 m inside the shed's wall, 12 m deep). */
 export const RANGE_FACE = -WESTERN_RANGE.depth - 0.01;
+const BLOCK = westernBlock();
 
 /** Metres; positions are [u, metres north of the funnel axis] in the shed frame. */
 export const FITOUT = {
@@ -558,10 +563,10 @@ export const FITOUT = {
   totem: { width: 1.1, depth: 0.22, height: 3 },
   /** the third keeps out of the gateline view's sight lines to the gate mouths (tested) */
   totems: [[-30, -15], [-30, 15], [-24, -26]] as readonly (readonly [number, number])[],
-  /** on short brackets from the Range's face, `bottom` above the floor: ten tall panels in the first-floor windows' band (5.0 to 7.6 m), a pale bar above and below (R-a, R-e) */
+  /** on short brackets from the Range's face, `bottom` above the floor: ten tall panels in the first-floor storey (5.0 to 7.6 m), a pale bar above and below (R-a, R-e) */
   board: { length: 16.8, height: 2.6, bottom: 5, standoff: 0.3, depth: 0.12, panels: 10, bar: 0.1 },
-  /** each board's southern end, metres north of the funnel axis */
-  boards: [-24.3, 7.5] as readonly number[],
+  /** each board's southern end, v in the shed frame: one on the curtain wall either side of the Range's brick centre, a metre clear of it (R-a) */
+  boards: [BLOCK[0] - 17.8, BLOCK[1] + 1] as readonly number[],
   /** fare gate cabinets either side of each aisle, at this u, the first bay's centre at v0 + 4 */
   gate: { u: -9, length: 1.6, width: 0.22, height: 1.0, offsets: [-3, -1.8, -0.6, 0.6, 1.8, 3] as readonly number[], bays: 5, firstBay: 4, pitch: 8 },
   /** the two shops' centres (shed.ts WESTERN_SHOPS), their panes 0.4 m inside the Range's face (tested) */
@@ -570,8 +575,6 @@ export const FITOUT = {
   shopfront: { width: 2.6, top: 3.15, bottom: 0.04, u: RANGE_FACE + 0.335 },
   /** navy plates over the openings (head 3.6 m), up to the string course's top (4.25 m) */
   plate: { height: 0.6, bottom: 3.64, standoff: 0.22, depth: 0.05, bayWidth: 5.2, shopWidth: 2.6 },
-  /** stone dressings round the Range's windows, 1.4 m wide (shed.ts: one in every bay): how far they stand out and how wide the sill and hood run; a clear opening is 3.3 m (a bay) or 1.4 m (a shop) each side of its centre */
-  dressing: { depth: 0.12, sill: 0.2, wide: 1, reveal: [3.3, 1.4] as readonly [number, number] },
 } as const;
 /** The lettering the signs carry. Generic words only. */
 export const FITOUT_TEXT = {
@@ -701,8 +704,8 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     }
   }
   // departure boards: a dark bank between a pale bar above and below, on brackets, the lettered face toward the concourse
-  for (const dv of FITOUT.boards) {
-    const v0 = funnelV + dv, v1 = v0 + board.length, face = RANGE_FACE - board.standoff - board.depth;
+  for (const v0 of FITOUT.boards) {
+    const v1 = v0 + board.length, face = RANGE_FACE - board.standoff - board.depth;
     part(face + board.depth / 2, board.bottom + board.bar, (v0 + v1) / 2, board.depth, board.height - 2 * board.bar, board.length, BOARD);
     for (const y of [board.bottom, board.bottom + board.height - board.bar]) part(face + board.depth / 2, y, (v0 + v1) / 2, board.depth, board.bar, board.length, PAPER);
     for (const f of [0.05, 0.5, 0.95]) part(RANGE_FACE - board.standoff / 2, board.bottom + 0.2, v0 + f * board.length, board.standoff, 0.12, 0.1, PLINTH);
@@ -729,35 +732,10 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
     const pts = ([[v + half - 0.02, y0], [v - half + 0.02, y0], [v - half + 0.02, y1], [v + half - 0.02, y1]] as const).map(([w, y]): V3 => L(face - 0.004, y, w));
     sign(ATLAS.plates[Math.max(0, i - gate.bays + 1)]!, pts, [-1, 0, 0], NAVY);
   });
-  // the shops' lit interiors, on the Range's dark panes (shed.ts)
-  for (const v of FITOUT.shops) {
-    const pts = ([[v + shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.bottom], [v - shopfront.width / 2, shopfront.top], [v + shopfront.width / 2, shopfront.top]] as const).map(([w, y]): V3 => L(shopfront.u, y, w));
+  // the lit interiors: each shop's, on the Range's dark pane (shed.ts), and each tall opening's, 2 cm in front of its pane and up to the springing of its arch
+  for (const [v, half, top, u] of [...FITOUT.shops.map(v => [v, shopfront.width / 2, shopfront.top, shopfront.u] as const), ...westernArches().map(v => [v, WESTERN_ARCH.half, WESTERN_ARCH.spring, RANGE_FACE - WESTERN_ARCH.pane - 0.02] as const)]) {
+    const pts = ([[v + half, shopfront.bottom], [v - half, shopfront.bottom], [v - half, top], [v + half, top]] as const).map(([w, y]): V3 => L(u, y, w));
     sign(ATLAS.shop, pts, [-1, 0, 0], rgb(0xe8c58a));
-  }
-  // stone dressings on the Range's face round the window shed.ts puts in every bay (1.4 x 2.6 m, the ground floor round-headed; R-ab, R-b): jambs and a
-  // sill, an arch ring and key on the ground floor, a hood with a shallow pediment on the first; the top storey stays plain, and no window is dressed
-  // where there is none (an opening) or where a board hangs over it
-  const { dressing: dress } = FITOUT, STONE = rgb(0xe2d8bb), opens = plateCentres(), { v0: rv0, v1: rv1, bay } = WESTERN_RANGE, bays = Math.floor((rv1 - rv0) / bay);
-  const flat = (pts: V3[]): void => solid.poly(pts, undefined, { normal: [-1, 0, 0], color: STONE });
-  for (let i = 0; i < bays; i++) {
-    const v = rv0 + (rv1 - rv0 - bays * bay) / 2 + (i + 0.5) * bay;
-    const ground = !opens.some((c, k) => Math.abs(v - c) < dress.reveal[+(k >= gate.bays)] + 0.7), first = !FITOUT.boards.some(b => v > funnelV + b - dress.wide && v < funnelV + b + board.length + dress.wide);
-    for (const [on, y0, h, sill] of [[ground, 1.4, 1.9, 1.28], [first, 5, 2.6, 4.88]] as const) {
-      if (!on) continue;
-      for (const s of [-1, 1]) part(RANGE_FACE - dress.depth / 2, y0, v + s * 0.8, dress.depth, h, 0.2, STONE);
-      part(RANGE_FACE - dress.sill / 2, sill, v, dress.sill, 0.12, 2 * dress.wide, STONE);
-    }
-    if (ground) {
-      for (let k = 0; k < 8; k++) {
-        const at = (r: number, a: number): V3 => L(RANGE_FACE - dress.depth, 3.3 + r * Math.sin(a), v + r * Math.cos(a)), a = (k * Math.PI) / 8, b = a + Math.PI / 8;
-        flat([at(0.7, a), at(0.9, a), at(0.9, b), at(0.7, b)]);
-      }
-      part(RANGE_FACE - 0.07, 4.05, v, 0.14, 0.25, 0.3, STONE);
-    }
-    if (first) {
-      part(RANGE_FACE - dress.sill / 2, 7.6, v, dress.sill, 0.2, 2 * dress.wide, STONE);
-      flat([-1, -0.5, 0, 0.5, 1].map(k => L(RANGE_FACE - 0.14, 7.8 + 0.22 * (1 - k * k), v + 0.95 * k)));
-    }
   }
   const group = new THREE.Group();
   group.name = 'concourse-fitout';
@@ -925,18 +903,28 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
     mullions.box(foot, [slant, MULLION.bar, MULLION.bar], { rotZ: Math.asin(rise / slant), rotY: Math.atan2(-(wt[2] - ws[2]), wt[0] - ws[0]) });
     for (const end of [p, q]) roundMember(struts, foot, end, STRUT_DIAMETER);
   }
-  // The Range cut: glass from the cornice to the roof's skin, so no sky shows between roof and Range (R-a, R-b).
+  // The Range cut: glass from the cornice to the roof's skin, so no sky shows between roof and Range (R-a, R-b). Either side of the Range's brick centre it comes down to the first
+  // string course, over the ground-floor openings, as a curtain wall (R-a): a pane between white fins on the Range's half-bays. Each edge is cut at the brick centre's ends and at
+  // every fin, so the wall runs true whatever its edges' lengths.
   const cut = (i: number): boolean => Math.abs(worldToShed(shed, [d.nodes[i]!.x, d.nodes[i]!.z]).u - WEST_WALL) < 0.01;
   const EAST: V3 = (() => { const o = shedToWorld(shed, 0, 0), e = shedToWorld(shed, 1, 0); return [e[0] - o[0], 0, e[1] - o[1]]; })();
+  const [brickFrom, brickTo] = westernBlock(), FLAT: V2[] = [[0.34, 0.34], [0.34, 0.34], [0.34, 0.34], [0.34, 0.34]], white: Rgb = [1, 1, 1]; // a pane is flat glass: the middle of the pillow
   for (const e of edges.values()) {
     if (e.uses !== 1 || !cut(e.a) || !cut(e.b)) continue;
-    const [A, B] = [nodeAt(e.a, SKIN_LIFT), nodeAt(e.b, SKIN_LIFT)], a: V3 = [A[0], Math.min(CORNICE_TOP, A[1]), A[2]], b: V3 = [B[0], Math.min(CORNICE_TOP, B[1]), B[2]];
-    if (A[1] <= CORNICE_TOP && B[1] <= CORNICE_TOP) continue;
-    closure.poly([a, b, B], barycentric, { facing: EAST, color: pane() });
-    closure.poly([a, B, A], barycentric, { facing: EAST, color: pane() });
-    // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
-    // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
-    cladding.poly([a, b, B, A], [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
+    const [A, B] = [nodeAt(e.a, SKIN_LIFT), nodeAt(e.b, SKIN_LIFT)], [va, vb] = [A, B].map(p => worldToShed(shed, [p[0], p[2]]).v) as [number, number], [lo, hi] = [Math.min(va, vb), Math.max(va, vb)];
+    const on = (v: number, y?: number): V3 => { const t = (v - va) / (vb - va); return [A[0] + t * (B[0] - A[0]), y ?? A[1] + t * (B[1] - A[1]), A[2] + t * (B[2] - A[2])]; };
+    const marks = [lo, hi, brickFrom, brickTo];
+    for (let m = Math.ceil((lo - CURTAIN_FIN) / CURTAIN_PANE); m * CURTAIN_PANE - CURTAIN_FIN / 2 < hi; m++) marks.push(m * CURTAIN_PANE - CURTAIN_FIN / 2, m * CURTAIN_PANE + CURTAIN_FIN / 2);
+    const cuts = [...new Set(marks.map(v => Math.min(hi, Math.max(lo, v))))].sort((x, y) => x - y);
+    for (let k = 0; k + 1 < cuts.length; k++) {
+      const [s0, s1] = [cuts[k]!, cuts[k + 1]!], mid = (s0 + s1) / 2, curtain = mid < brickFrom || mid > brickTo, low = curtain ? SILL : CORNICE_TOP;
+      if (on(s0)[1] <= low && on(s1)[1] <= low) continue;
+      const foot = (v: number): V3 => on(v, Math.min(low, on(v)[1])), quad = [foot(s0), foot(s1), on(s1), on(s0)];
+      // The glass is drawn from the concourse only, so seen from the Range side the cut would be a hole onto the funnel's thin white legs and the floor. The dome's
+      // skin, turned down the cut, closes it from that side (lit, so it keeps to the weather and the hour, as the glass cannot).
+      closure.poly(quad, FLAT, { facing: EAST, color: !curtain ? pane() : Math.abs(mid / CURTAIN_PANE - Math.round(mid / CURTAIN_PANE)) * CURTAIN_PANE < CURTAIN_FIN / 2 ? white : scaled(pane(), 0.78) });
+      cladding.poly(quad, [[0, 0], [1, 0], [1, 1], [0, 1]], { facing: EAST, color: scaled(CLADDING_TONE, 0.9 + 0.2 * tone()) });
+    }
   }
   // The perimeter tree columns: a trunk and four branches to the nearest roof nodes.
   const used = new Set(kept.flat());

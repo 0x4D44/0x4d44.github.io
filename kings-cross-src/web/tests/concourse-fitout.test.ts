@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
 import { buildConcourse, columnMembers, columnTubeDiameter, concourseGrid, FITOUT, FITOUT_TEXT, funnelHead, plateCentres, RANGE_FACE } from '../src/concourse.ts';
-import { buildWesternRange, WESTERN_RANGE } from '../src/shed.ts';
+import { buildWesternRange, WESTERN_ARCH, WESTERN_RANGE, westernArches } from '../src/shed.ts';
 
 // The ground-level fit-out. R-ab (conc-ab-funnel-brick-2025) and R-b (conc-b-roof-meets-range-2025-08) show: red-topped
 // ticket machines in a block on the open floor; navy wayfinding totems with white lettering and a lit screen; navy plates
@@ -27,27 +27,18 @@ const { centre, grid } = concourseGrid(canopy, station.pts, layout, [hotel.pts])
 const funnel = worldToShed(layout, centre);
 const range = buildWesternRange();
 range.updateMatrixWorld(true);
-/** The windows the built Range really has on its concourse face, from their decal quads (four vertices each, 2 cm proud of the face): centre v, foot y. The east face, over the shed's roof, is not the concourse's. */
-const rangeWindows = ['range-windows', 'range-windows-arched'].flatMap(name => {
-  const p = (range.getObjectByName(name) as THREE.Mesh).geometry.getAttribute('position'), out: { v: number; y0: number }[] = [];
-  for (let i = 0; i < p.count; i += 4) {
-    const quad = [0, 1, 2, 3].map(k => [p.getX(i + k), p.getY(i + k), p.getZ(i + k)] as const);
-    if (quad[0]![0] < RANGE_FACE) out.push({ v: -(Math.min(...quad.map(q => q[2])) + Math.max(...quad.map(q => q[2]))) / 2, y0: Math.min(...quad.map(q => q[1])) });
-  }
-  return out;
-});
 const pieces = fitOutFootprints(funnel.v);
 const BAY = 3.3; // half the 6.6 m clear width of a gateline bay (shed.ts, Arup 2/2012 p29)
 
 // The test's own statement of what the fit-out must fill.
-interface Footprint { kind: 'cluster' | 'totem' | 'board' | 'gate' | 'plate' | 'arch' | 'hood'; u0: number; u1: number; v0: number; v1: number; bottom: number; top: number }
+interface Footprint { kind: 'cluster' | 'totem' | 'board' | 'gate' | 'plate'; u0: number; u1: number; v0: number; v1: number; bottom: number; top: number }
 /** Where each solid piece stands, in the shed frame, given the funnel axis's v. */
 function fitOutFootprints(funnelV: number): Footprint[] {
   const { cluster, totem, board, gate, plate } = FITOUT, out: Footprint[] = [];
   for (const [u, dv] of FITOUT.clusters) out.push({ kind: 'cluster', u0: u - cluster.size / 2, u1: u + cluster.size / 2, v0: funnelV + dv - cluster.size / 2, v1: funnelV + dv + cluster.size / 2, bottom: 0, top: cluster.height });
   // a totem stands on a plinth 0.3 m deep and 0.1 m wider than its body
   for (const [u, dv] of FITOUT.totems) out.push({ kind: 'totem', u0: u - 0.15, u1: u + 0.15, v0: funnelV + dv - totem.width / 2 - 0.05, v1: funnelV + dv + totem.width / 2 + 0.05, bottom: 0, top: totem.height });
-  for (const dv of FITOUT.boards) out.push({ kind: 'board', u0: RANGE_FACE - board.standoff - board.depth, u1: RANGE_FACE, v0: funnelV + dv, v1: funnelV + dv + board.length, bottom: board.bottom, top: board.bottom + board.height });
+  for (const v of FITOUT.boards) out.push({ kind: 'board', u0: RANGE_FACE - board.standoff - board.depth, u1: RANGE_FACE, v0: v, v1: v + board.length, bottom: board.bottom, top: board.bottom + board.height });
   for (let i = 0; i < gate.bays; i++) for (const o of gate.offsets) {
     const v = WESTERN_RANGE.v0 + gate.firstBay + i * gate.pitch + o;
     out.push({ kind: 'gate', u0: gate.u - gate.length / 2, u1: gate.u + gate.length / 2, v0: v - gate.width / 2 - 0.01, v1: v + gate.width / 2 + 0.01, bottom: 0, top: gate.height + 0.02 });
@@ -55,14 +46,6 @@ function fitOutFootprints(funnelV: number): Footprint[] {
   for (const [i, v] of plateCentres().entries()) {
     const half = (i < gate.bays ? plate.bayWidth : plate.shopWidth) / 2;
     out.push({ kind: 'plate', u0: RANGE_FACE - plate.standoff - plate.depth, u1: RANGE_FACE, v0: v - half, v1: v + half, bottom: plate.bottom, top: plate.bottom + plate.height });
-  }
-  // R-ab, R-b: stone round the windows, 1 m each side of a window's centre and 0.2 m proud at most: on the ground floor from the sill (1.28 m) to the key of the arch (4.3 m),
-  // on the first from the sill (4.88 m) to the crown of the hood (8.02 m); the top storey stays plain, and no board has a dressing in its way
-  for (const { v, y0 } of rangeWindows) {
-    const ground = y0 < 2, first = y0 > 4 && y0 < 6;
-    if (!ground && !first) continue;
-    if (first && FITOUT.boards.some(dv => v + 1 > funnelV + dv && v - 1 < funnelV + dv + board.length)) continue;
-    out.push({ kind: ground ? 'arch' : 'hood', u0: RANGE_FACE - 0.2, u1: RANGE_FACE, v0: v - 1, v1: v + 1, bottom: ground ? 1.28 : 4.88, top: ground ? 4.3 : 8.02 });
   }
   return out;
 }
@@ -91,10 +74,7 @@ test('fit-out: two meshes, lit solids and unlit signs, in a group turned into th
 test('fit-out: the solids are the footprints, and nothing stands outside them', () => {
   const kinds = new Map<string, number>();
   for (const f of pieces) kinds.set(f.kind, (kinds.get(f.kind) ?? 0) + 1);
-  assert.deepEqual([...kinds].sort(), [['arch', 24], ['board', 2], ['cluster', 2], ['gate', 30], ['hood', 28], ['plate', 7], ['totem', 3]],
-    'two ticket blocks, three totems, two boards, thirty gate cabinets, seven plates, an arch round each of 24 ground-floor windows and a hood over each of 28 on the first floor');
-  // the Range has 39 windows to a storey but those the openings take (ground floor) and the boards hide (first): the top storey, 39 of them, stays plain
-  assert.equal(rangeWindows.filter(w => w.y0 > 8).length, 39, 'the top storey has a window in every bay and none is dressed');
+  assert.deepEqual([...kinds].sort(), [['board', 2], ['cluster', 2], ['gate', 30], ['plate', 7], ['totem', 3]], 'two ticket blocks, three totems, two boards, thirty gate cabinets and seven plates (the Range\'s own stone is shed.ts\'s)');
   const all = vertices(solid), stray = all.filter(v => !pieces.some(f => inside(f, v, 0.02)));
   assert.equal(stray.length, 0, `${stray.length} solid vertices outside every footprint, the first at ${stray[0]?.x.toFixed(2)}, ${stray[0]?.y.toFixed(2)}, ${stray[0] ? (-stray[0].z).toFixed(2) : ''}`);
   // and each footprint is the box round what is drawn in it, to 3 cm: a piece neither missing nor smaller than its footprint says
@@ -122,6 +102,10 @@ test('fit-out: floor pieces stand in the concourse, clear of the funnel\'s feet 
     assert.ok(Math.abs(f.u1 - RANGE_FACE) < 1e-9 && f.u0 > RANGE_FACE - 0.6, `${f.kind} hangs on brackets from the Range's face`);
     assert.ok(f.v0 > WESTERN_RANGE.v0 && f.v1 < WESTERN_RANGE.v1, `${f.kind} is within the Range's length`);
   }
+  // R-a: the boards hang on the curtain wall either side of the brick centre (v 56.1 to 90.1), a metre clear of it, not across its dressed windows (round 3, C5)
+  const [brickFrom, brickTo] = [56.1, 90.1];
+  for (const f of pieces.filter(p => p.kind === 'board')) assert.ok(f.v1 <= brickFrom - 1 + 1e-6 || f.v0 >= brickTo + 1 - 1e-6, `a board from v ${f.v0.toFixed(1)} to ${f.v1.toFixed(1)} hangs over the brick centre's windows`);
+  assert.deepEqual(pieces.filter(p => p.kind === 'board').map(f => f.v0 < brickFrom).sort(), [false, true], 'one board either side of the brick centre');
   for (const f of pieces.filter(p => p.kind === 'gate')) assert.ok(f.u0 > RANGE_FACE && f.u1 < -0.01, 'a gate cabinet stands inside the Range\'s depth');
   for (let i = 0; i < pieces.length; i++) for (let j = i + 1; j < pieces.length; j++) assert.ok(!overlap(pieces[i]!, pieces[j]!), `${pieces[i]!.kind} ${i} meets ${pieces[j]!.kind} ${j}`);
 });
@@ -157,6 +141,28 @@ test('fit-out: each gate cabinet stands in an open bay of the built Range, clear
     assert.ok(firstHit(RANGE_FACE - 1, 1.5, v + 1.35)?.object.name === 'range-public-glazing' && firstHit(RANGE_FACE - 1, 1.5, v + 1.46)?.object.name !== 'range-public-glazing', 'the glazing ends 1.4 m from the shop\'s centre');
     assert.ok(FITOUT.shopfront.width / 2 < 1.4 && FITOUT.shopfront.top < 3.2, 'the lit interior fits inside the pane');
   }
+  // each tall opening of the Range wears a lit interior 2 cm in front of its dark pane, 2 m wide and up to the springing of its arch: the pane is 1 m a side and rounds off above that
+  assert.equal(westernArches().length, 24, 'an opening in each of 24 bays');
+  for (const v of westernArches()) {
+    const hit = firstHit(RANGE_FACE - 1, 2, v + 0.9);
+    assert.equal(hit?.object.name, 'range-public-glazing', `an opening's pane at v ${(v + 0.9).toFixed(1)}`);
+    assert.ok(Math.abs(hit!.point.x - (RANGE_FACE - WESTERN_ARCH.pane)) < 0.005, `the opening's pane is at u ${hit!.point.x.toFixed(3)}`);
+  }
+  // and the interiors themselves: a quad in each opening, a metre either side of its centre, from the floor (4 cm up) to the springing (3 m), 2 cm in front of the pane
+  assert.ok(WESTERN_ARCH.half === 1 && WESTERN_ARCH.spring === 3, 'the pane is 2 m wide to 3 m, then rounds off to 4 m');
+  const p = signs.geometry.getAttribute('position'), lit = Array.from({ length: p.count }, (_, i) => new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i))).filter(q => Math.abs(q.x - (RANGE_FACE - WESTERN_ARCH.pane - 0.02)) < 1e-4);
+  assert.equal(lit.length, 4 * westernArches().length, 'one quad in front of each opening\'s pane, and nothing else there');
+  for (const v of westernArches()) {
+    const mine = lit.filter(q => Math.abs(-q.z - v) < 1.01), set = (f: (q: THREE.Vector3) => number): number[] => [...new Set(mine.map(q => +f(q).toFixed(3)))].sort((a, b) => a - b);
+    assert.deepEqual(set(q => -q.z - v), [-1, 1], `the interior at v ${v.toFixed(1)} is 2 m wide about the opening's centre`);
+    assert.deepEqual(set(q => q.y), [0.04, 3], `the interior at v ${v.toFixed(1)} runs from the floor to the springing`);
+  }
+});
+
+test('the Range\'s brick centre is centred on the funnel: its axis is the v the Range builder is told (WESTERN_RANGE.centre), and the ten bays about it run 0.25 m off', () => {
+  assert.ok(Math.abs(funnel.v - WESTERN_RANGE.centre) < 0.5, `the funnel's axis is at v ${funnel.v.toFixed(2)}, the Range is built about ${WESTERN_RANGE.centre}`);
+  const bays = Array.from({ length: 10 }, (_, i) => 57.8 + 3.4 * i), middle = (bays[0]! + bays[9]!) / 2;
+  assert.ok(Math.abs(middle - funnel.v) < 0.5, `the brick centre is at v ${middle.toFixed(2)}, the funnel's axis at ${funnel.v.toFixed(2)}`);
 });
 
 test('fit-out: the lettering is generic: no operator, shop or product brand', () => {
@@ -196,34 +202,10 @@ test('fit-out: every sign faces the concourse (or its own side, for a totem) and
     assert.ok(tangent.dot(right) > 0, 'lettering runs left to right, not mirrored');
     assert.ok(bitangent.dot(up) > 0, 'lettering stands upright');
   }
-  // two triangles to a face: a totem has two faces, a board, a plate and a shopfront one each; the totems' east faces are the only ones turned from the concourse
-  assert.equal(index.count / 3, 2 * (FITOUT.totems.length * 2 + FITOUT.boards.length + plateCentres().length + FITOUT.shops.length), 'every lettered face and no other');
+  // two triangles to a face: a totem has two faces, a board, a plate, a shopfront and a tall opening's interior one each; the totems' east faces are the only ones turned from the concourse
+  assert.equal(index.count / 3, 2 * (FITOUT.totems.length * 2 + FITOUT.boards.length + plateCentres().length + FITOUT.shops.length + westernArches().length), 'every lettered face and no other');
   assert.equal(east, 2 * FITOUT.totems.length, 'only the totems have a face on their east side');
   assert.ok(west > east, 'the rest face west, toward the concourse');
-});
-
-// The footprints only bound the stone, so each piece is pinned here: round every dressed window two jambs and a sill, then an arch ring and key over the ground floor's
-// round head (springing 3.3 m, 0.7 to 0.9 m out) or a hood and a shallow pediment over the first floor's flat one (R-ab, R-b).
-test('fit-out: a dressed window has two jambs and a sill, then an arch ring and key (ground floor) or a hood and pediment (first)', () => {
-  const all = vertices(solid), near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-4; // single precision
-  for (const f of pieces.filter(p => p.kind === 'arch' || p.kind === 'hood')) {
-    const v = (f.v0 + f.v1) / 2, mine = all.filter(p => inside(f, p, 0.02)), arch = f.kind === 'arch', y0 = arch ? 1.4 : 5, at = `${f.kind} at v ${v.toFixed(1)}`;
-    const offsets = (u: number, y: number): number[] => [...new Set(mine.filter(p => near(p.x, u) && near(p.y, y)).map(p => +(-p.z - v).toFixed(3)))].sort((a, b) => a - b);
-    assert.deepEqual(offsets(RANGE_FACE - 0.12, y0), [-0.9, -0.7, 0.7, 0.9], `${at}: a jamb 0.2 m wide each side of the window, standing 0.12 m proud`);
-    assert.deepEqual(offsets(RANGE_FACE - 0.2, y0), [-1, 1], `${at}: a sill 2 m wide and 0.2 m proud under the window`);
-    if (arch) {
-      const ring = mine.filter(p => near(p.x, RANGE_FACE - 0.12) && p.y > 3.3 + 1e-6), radius = (p: THREE.Vector3): number => Math.hypot(-p.z - v, p.y - 3.3);
-      assert.equal(ring.length, 28, `${at}: eight segments of ring above the springing, 28 corners`);
-      assert.ok(ring.every(p => near(radius(p), 0.7) || near(radius(p), 0.9)), `${at}: the ring is 0.7 to 0.9 m out from the springing`);
-      assert.ok(near(Math.max(...ring.map(p => p.y)), 4.2) && near(Math.min(...ring.map(p => -p.z - v)), -0.9 * Math.cos(Math.PI / 8)), `${at}: the ring reaches over the crown and down the sides`);
-      assert.deepEqual(offsets(RANGE_FACE - 0.14, 4.3), [-0.15, 0.15], `${at}: a key 0.3 m wide at the crown`);
-    } else {
-      assert.deepEqual(offsets(RANGE_FACE - 0.2, 7.8), [-1, 1], `${at}: a hood 2 m wide over the head`);
-      const pediment = mine.filter(p => near(p.x, RANGE_FACE - 0.14)), rise = pediment.map(p => p.y - 7.8);
-      assert.equal(pediment.length, 5, `${at}: a pediment of five corners`);
-      assert.ok(near(Math.max(...rise), 0.22) && rise.filter(r => near(r, 0)).length === 2, `${at}: it rises 0.22 m from a 1.9 m base`);
-    }
-  }
 });
 
 // Round 2 read "Toilets" and "Left luggage" over the gates: the five bays of the gateline are one sign, the platforms', and the shops' two differ from it and from each other.
@@ -271,7 +253,7 @@ test('fit-out: each ticket block is four machines about 2 m tall, white-bodied u
     }
     assert.ok(Math.max(...mine.filter(m => m.t === 'red').map(m => m.v.y)) > f.top - 0.01, 'red caps the block');
   }
-  // R-a, R-e: large dark boards of tall panels, many rows each, hang across the first-floor windows (5.0 to 7.6 m), well over the plates above the openings (top 4.24 m)
+  // R-a, R-e: large dark boards of tall panels, many rows each, hang in the first-floor storey (5.0 to 7.6 m) on the curtain wall, well over the plates above the openings (top 4.24 m)
   for (const f of pieces.filter(p => p.kind === 'board')) {
     assert.ok(f.bottom >= WESTERN_RANGE.storey + 0.8 && f.top <= 2 * WESTERN_RANGE.storey - 0.5, `a board from ${f.bottom.toFixed(2)} to ${f.top.toFixed(2)} m, in the first-floor storey (${WESTERN_RANGE.storey} to ${2 * WESTERN_RANGE.storey} m)`);
     assert.ok(f.top - f.bottom >= 2.4 && f.v1 - f.v0 >= 14, `a board ${(f.v1 - f.v0).toFixed(1)} m long and ${(f.top - f.bottom).toFixed(1)} m tall is a large one, not a strip`);

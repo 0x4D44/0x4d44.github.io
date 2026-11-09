@@ -75,6 +75,7 @@ const roofGlass = (): Face[] => { const glass = faces('concourse-glass'), crown 
 const roofLayers = skin.children.filter(c => ['concourse-closure', 'concourse-glass', 'concourse-panels', 'concourse-lattice', 'concourse-cladding'].includes(c.name));
 const roofAt = (u: number, v: number): number => { const w = shedToWorld(layout, u, v); return new THREE.Raycaster(new THREE.Vector3(w[0], 0, w[1]), new THREE.Vector3(0, 1, 0)).intersectObjects(roofLayers, true)[0]?.point.y ?? 0; };
 const CORNICE = WESTERN_RANGE.storey * WESTERN_RANGE.storeys + 0.5;
+const SILL = WESTERN_RANGE.storey + 0.15; // the first string course's top
 const eastward = ((): THREE.Vector3 => { const east = shedToWorld(layout, 1, 0), origin = shedToWorld(layout, 0, 0); return new THREE.Vector3(east[0] - origin[0], 0, east[1] - origin[1]).normalize(); })();
 
 test('roof skin: 15 percent of the roof is glazed, round the funnel and in a band at the outline, as published', () => {
@@ -365,10 +366,46 @@ test('roof edge: the glass closes the Range cut from the cornice to the roof ski
     sampled++;
   }
   assert.ok(sampled >= 24, `${sampled} sight lines checked`);
-  // its foot rests on the cornice; its top is the roof's skin
+  // its foot rests on the cornice over the brick centre and on the first string course either side of it, and never lower; its top is the roof's skin
   const q = closure.geometry.getAttribute('position'), ys = Array.from({ length: q.count }, (_, i) => q.getY(i));
-  assert.ok(ys.filter(y => Math.abs(y - CORNICE) < EPS).length > ys.length / 3 && Math.min(...ys) > CORNICE - 4, 'the closure stands on the cornice');
+  const feet = (at: number): number => ys.filter(y => Math.abs(y - at) < EPS).length;
+  assert.ok(feet(CORNICE) > ys.length / 25 && feet(SILL) > ys.length / 4 && Math.min(...ys) > SILL - EPS, `the closure stands on the cornice (${feet(CORNICE)} of ${ys.length} vertices) and on the sill (${feet(SILL)}), none lower than ${Math.min(...ys).toFixed(3)}`);
   assert.ok(Math.max(...ys) > CORNICE + 5, `the closure rises to ${Math.max(...ys).toFixed(1)} m`);
+});
+
+// R-a: either side of the brick centre the roof's glass comes down to the Range's first string course as a curtain wall of tall panes between thin white fins, one at every half-bay
+// (1.7 m: the bays are 3.4 m, so the fins stand over each opening's crown and each pier). The brick centre is v 56.1 to 90.1 (western-front.test.ts), and the wall stops exactly there.
+test('roof edge: beside the Range\'s brick centre the glass is a curtain wall from the first string course up, in panes between white fins; over the centre it stops on the cornice', () => {
+  const sight = (v: number, y: number, among: THREE.Object3D[] = roofLayers): THREE.Intersection | undefined => { const w = shedToWorld(layout, -26, v); return new THREE.Raycaster(new THREE.Vector3(w[0], y, w[1]), eastward).intersectObjects(among, true)[0]; };
+  const beside = [38, 44, 50, 55.9, 56.07, 90.13, 90.3, 94, 100, 108, 114], over = [56.13, 56.3, 59, 66, 73, 80, 87, 89.9, 90.07]; // 56.07 and 90.13 are in the half-fins the walls end in
+  for (const v of beside) {
+    assert.ok(roofAt(-13, v) > CORNICE + 0.3, `the roof is over the cornice at v ${v}`);
+    for (const y of [SILL + 0.3, 6, 9, CORNICE - 0.3]) {
+      const hit = sight(v, y);
+      assert.equal(hit?.object.name, 'concourse-closure', `a sight line at v ${v}, ${y.toFixed(1)} m high, beside the brick centre meets ${hit?.object.name ?? 'the Range'}`);
+      assert.ok(Math.abs(worldToShed(layout, [hit!.point.x, hit!.point.z]).u + 12.3) < 0.02, 'the curtain stands in the plane of the roof glass');
+    }
+    assert.equal(sight(v, SILL - 0.3)?.object.name, undefined, `nothing below the sill at v ${v}`); // the name, not the hit: a failing assert prints its operand, and a hit holds the whole scene
+  }
+  for (const v of over) for (const y of [SILL + 0.3, 8, CORNICE - 0.3]) assert.equal(sight(v, y)?.object.name, undefined, `over the brick centre the Range's own wall shows at v ${v}, ${y.toFixed(1)} m: no glass`);
+  // across a stretch of wall, at a height, the fins are the white stripes of the glass
+  const finsAt = (from: number, to: number, y: number): number[][] => {
+    const runs: number[][] = [];
+    for (let v = from; v < to; v += 0.01) {
+      const hit = sight(v, y, [skin.getObjectByName('concourse-closure')!]), colour = hit && (hit.object as THREE.Mesh).geometry.getAttribute('color');
+      if (!colour || colour.getX(hit.face!.a) < 0.99 || colour.getZ(hit.face!.a) < 0.99) continue; // the panes are blue: red well under 1
+      const last = runs[runs.length - 1];
+      if (last && v - last[1]! < 0.015) last[1] = v; else runs.push([v, v]);
+    }
+    return runs;
+  };
+  for (const y of [5, 8, 11]) {
+    const row = finsAt(92, 116, y), widths = row.map(r => r[1]! - r[0]! + 0.01), centres = row.map(r => (r[0]! + r[1]!) / 2);
+    assert.ok(row.length === 14 || row.length === 15, `${row.length} fins in 24 m of wall at ${y} m`);
+    assert.ok(widths.every(w => w > 0.08 && w < 0.12), `fins ${Math.min(...widths).toFixed(2)} to ${Math.max(...widths).toFixed(2)} m wide at ${y} m`);
+    for (const c of centres) assert.ok(Math.abs(c / 1.7 - Math.round(c / 1.7)) * 1.7 < 0.02, `a fin at v ${c.toFixed(2)} is not on a half-bay`);
+  }
+  assert.equal(finsAt(58, 88, CORNICE + 1).length, 0, 'no fins in the glass over the brick centre');
 });
 
 test("roof edge: from the Range side the cut is closed too, by the dome's skin turned down it, so no hole opens onto the funnel and the floor", () => {

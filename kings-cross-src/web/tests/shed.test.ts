@@ -6,7 +6,7 @@ import type { KxData } from '../../core/osm.ts';
 import { CLOCK_TOWER_HEIGHT, SHED_LENGTH, SHED_SPAN_WIDTH, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
 import { shedRoofY } from '../src/furniture.ts';
 import { material } from '../src/materials.ts';
-import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, XRAY_OPACITY } from '../src/shed.ts';
+import { buildShed, buildTower, buildWesternRange, gableBars, GABLE_GLASS_FROM, glazedHalfAngle, GLAZED_STRIP_WIDTH, GLASS_OPACITY, glazingOpacity, lunetteBars, MEMBER_SIZE, RIB_SPACING, ribMembers, ribPositions, ROOF_SKIN, roofOpacity, TOWER_SIZE, valleyCut, VALLEY_HALF, vaultBand, vaultPoint, WESTERN_RANGE, westernArches, westernBays, westernBlock, XRAY_OPACITY } from '../src/shed.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const layout = shedLayout(data);
@@ -382,29 +382,42 @@ test('buildWesternRange: three storeys of brick west of the shed wall, between i
   close(brick.max.y, storey * storeys + 0.5 + roofRise, EPS); // its gable ends rise to the ridge
   const slate = bbox(byName(range, 'range-roof'));
   assert.ok(slate.max.y > brick.max.y - EPS);
-  // Upper sash floors stay complete; only the documented southern gateline and adjoining
-  // public frontage replace ground-floor sash. Arup Journal 2/2012 p27 fig4/p29 locates
-  // five southern bays; built JMP photograph shows the neighbouring public/shop interfaces.
-  // Their station-frame alignment/widths remain ASSUMED, independently pinned here.
+  // The Range's concourse face (R-a, R-ab, R-b): a brick centre of ten bays about the funnel with sash windows on its first and top storeys, a tall round-headed opening in
+  // every ground-floor bay the gateline and the two shops leave, and nothing above those openings either side (the concourse's curtain wall hangs there). The east face, over the
+  // shed's aisle roof, keeps its top-storey window in every bay. Arup Journal 2/2012 p27 fig4/p29 locates five southern bays; the built JMP photograph shows the neighbouring
+  // public/shop interfaces. Their station-frame alignment/widths remain ASSUMED, independently pinned here.
   const bays = Math.floor((v1 - v0) / WESTERN_RANGE.bay);
   assert.equal(bays, 39);
-  assert.equal(positions(byName(range, 'range-windows').geometry).count / 4, 3 * bays);
   const margin = (v1 - v0 - bays * WESTERN_RANGE.bay) / 2;
   const allLowerCentres = Array.from({ length: bays }, (_, i) => v0 + margin + (i + 0.5) * WESTERN_RANGE.bay);
+  assert.deepEqual(westernBays().map(v => v.toFixed(3)), allLowerCentres.map(v => v.toFixed(3)), 'a whole number of 3.4 m bays, centred in the OSM length');
+  assert.deepEqual(range.children.map(c => c.name).sort(), ['range-brick', 'range-public-frames', 'range-public-glazing', 'range-roof', 'range-stone', 'range-windows'], 'six meshes, six draw calls');
+  const sash = positions(byName(range, 'range-windows').geometry);
+  const decals = Array.from({ length: sash.count / 4 }, (_, i) => {
+    const z = [0, 1, 2, 3].map(k => sash.getZ(i * 4 + k)), y = [0, 1, 2, 3].map(k => sash.getY(i * 4 + k));
+    return { west: sash.getX(i * 4) < -0.5, v: -(Math.min(...z) + Math.max(...z)) / 2, foot: Math.min(...y) };
+  });
+  assert.deepEqual(decals.filter(d => !d.west).map(d => d.v.toFixed(3)), allLowerCentres.map(v => v.toFixed(3)), 'a window in every bay on the east face');
+  assert.ok(decals.filter(d => !d.west).every(d => Math.abs(d.foot - 9.1) < EPS), 'on the top storey only, the one over the shed roof');
+  // ten bays centred 0.25 m south of the funnel's axis (v 72.85, where concourse-fitout.test.ts pins the funnel): v 56.1 to 90.1
+  const block = allLowerCentres.filter(v => v > 56.1 && v < 90.1);
+  assert.equal(block.length, 10);
+  assert.deepEqual(westernBlock().map(v => +v.toFixed(3)), [56.1, 90.1], 'the brick centre runs from bay edge to bay edge');
+  const west = decals.filter(d => d.west);
+  assert.equal(west.length, 2 * block.length, 'two storeys of windows in the brick centre on the concourse face, and none beside it or on the ground floor');
+  for (const v of block) for (const foot of [5, 9.1]) assert.ok(west.some(d => Math.abs(d.v - v) < EPS && Math.abs(d.foot - foot) < EPS), `a window in the bay at v ${v.toFixed(1)}, foot ${foot}`);
+  // The gateline's five bays and the two shops replace ground-floor openings; every other bay has a tall one, each wearing a pane in the public glazing (R-b)
   const publicIntervals = [
     ...[12.1, 20.1, 28.1, 36.1, 44.1].map(v => [v - 3.3, v + 3.3]),
     ...[52.1, 56.1].map(v => [v - 1.4, v + 1.4]),
   ];
-  // Each original sash spans 1.4m along the wall; remove it only where that span overlaps an interface.
+  // A bay's opening is lost to an interface where the bay's 1.4 m central span overlaps it.
   const retained = allLowerCentres.filter(v => !publicIntervals.some(([a, b]) => v + 0.7 > a! && v - 0.7 < b!));
-  const arched = positions(byName(range, 'range-windows-arched').geometry);
-  assert.equal(arched.count / 4, retained.length, 'only ground-floor sash overlapping public intervals is replaced');
-  const actual = Array.from({ length: arched.count / 4 }, (_, i) =>
-    -[0, 1, 2, 3].reduce((sum, k) => sum + arched.getZ(i * 4 + k), 0) / 4);
-  for (let i = 0; i < retained.length; i++) close(actual[i]!, retained[i]!, EPS);
+  assert.equal(retained.length, 24);
+  assert.deepEqual(westernArches().map(v => v.toFixed(3)), retained.map(v => v.toFixed(3)), 'an opening in every ground-floor bay clear of the gateline and the shops');
   const northernLimit = Math.max(...publicIntervals.map(([, end]) => end!)) + 0.7;
-  assert.deepEqual(actual.filter(v => v >= northernLimit).map(v => v.toFixed(3)),
-    allLowerCentres.filter(v => v >= northernLimit).map(v => v.toFixed(3)), 'every northern lower sash remains');
+  assert.deepEqual(westernArches().filter(v => v >= northernLimit).map(v => v.toFixed(3)),
+    allLowerCentres.filter(v => v >= northernLimit).map(v => v.toFixed(3)), 'every northern bay has one');
 });
 
 test('the Range can be left out', () => {

@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { Batch, material } from './materials.ts';
-import type { V3 } from './materials.ts';
+import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
 const R = SHED_SPAN_WIDTH / 2;
@@ -65,8 +65,11 @@ export const VALLEY_HALF = 0.25;
  * as coincident are ASSUMED simplifications, not a dimensioned wall survey. The former LB09
  * section 2.3 attribution was not verified (see the corrected Camden references in buildShed).
  * Depth, storey height and bay width are also ASSUMED. Tests pin v0 and v1 to the OSM numbers.
+ * `centre` is the funnel's v (the concourse's centre in this frame; tested to agree) and `block` how far from it the brick centre of the face runs
+ * (R-a, R-ab, R-b: the funnel stands before a brick block of about 30 m, with dressed windows and tall arched openings, and glazed curtain
+ * walls either side, which concourse.ts draws): the bays whose centres lie within it. ASSUMED, scaled off the photographs.
  */
-export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0 } as const;
+export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0, centre: 72.85, block: 17 } as const;
 
 /** F7: Arup Journal 2/2012 pp24–25 (circulation), p27 fig4 (southern location), p29 (five bays and concrete/Y support):
  * https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf
@@ -83,6 +86,23 @@ const westernCuts = (shops = false): [number, number][] => [
   ...WESTERN_GATES.map(v => [v - 3.3, v + 3.3] as [number, number]),
   ...(shops ? WESTERN_SHOPS.map(v => [v - 1.4, v + 1.4] as [number, number]) : []),
 ];
+/**
+ * A tall round-headed opening on the ground floor (R-b): half its clear width, the height of its springing (the crown stands a half-width above), the stone ring's
+ * width and how far its dark pane stands off the face. ASSUMED, scaled off the people in R-b.
+ */
+export const WESTERN_ARCH = { half: 1, spring: 3, ring: 0.2, pane: 0.04 } as const;
+/** v of the centre of each bay along the Range: a whole number of bays, centred in its length. */
+export function westernBays(): number[] {
+  const { v0, v1, bay } = WESTERN_RANGE, n = Math.floor((v1 - v0) / bay);
+  return Array.from({ length: n }, (_, i) => v0 + (v1 - v0 - n * bay) / 2 + (i + 0.5) * bay);
+}
+/** The v-limits of the brick centre: the outer edges of the bays whose centres lie within `block` of the funnel's axis. */
+export function westernBlock(): [number, number] {
+  const near = westernBays().filter(v => Math.abs(v - WESTERN_RANGE.centre) < WESTERN_RANGE.block);
+  return [near[0]! - WESTERN_RANGE.bay / 2, near[near.length - 1]! + WESTERN_RANGE.bay / 2];
+}
+/** The bays of the ground floor that carry a tall round-headed opening: those no gateline bay or shop takes (a bay's 1.4 m span clear of their reveals). */
+export const westernArches = (): number[] => westernBays().filter(v => !westernCuts(true).some(([a, b]) => v + 0.7 > a && v - 0.7 < b));
 /** Split a solid at ground-level door intervals; retain the header, reveals and all other mass. */
 function westernWall(b: Batch, x: number, d: number, a: number, z: number, top: number, cuts: [number, number][]): void {
   const box = (lo: number, hi: number, bottom: number, head: number): void => {
@@ -670,57 +690,68 @@ export function buildTower(x: number): THREE.Group {
 
 /**
  * The Western Range in the shed's local frame: a three-storey brick block along the shed's west
- * wall, with sash upper floors and a southern ground-floor gateline/public frontage,
- * string courses between the storeys, a stone cornice and a pitched slate roof. See WESTERN_RANGE
- * for what is OSM and what is ASSUMED. Its east face stands 0.01 m inside the shed's west wall, so
- * the shed wall covers overlapping faces below the aisle roof except at the five gateline passages.
+ * wall with a stone plinth, string courses and a pitched slate roof, and a southern ground-floor
+ * gateline/public frontage. Its concourse face follows R-a, R-ab and R-b: a brick centre
+ * (WESTERN_RANGE.block) of dressed sash windows over a row of tall round-headed openings, a stone
+ * corner at each end, and either side only the row of openings, the curtain wall above it being
+ * concourse.ts's. See WESTERN_RANGE for what is OSM and what is ASSUMED. Its east face stands 0.01 m
+ * inside the shed's west wall, so the shed wall covers overlapping faces below the aisle roof
+ * except at the five gateline passages.
  */
 export function buildWesternRange(): THREE.Group {
-  const { v0, v1, depth, storey, storeys, bay, roofRise } = WESTERN_RANGE;
+  const { v0, v1, depth, storey, roofRise } = WESTERN_RANGE;
   const g = new THREE.Group();
   g.name = 'western-range';
   const brick = new Batch();
   const stone = new Batch();
   const slate = new Batch();
   const win = new Batch();
-  const winArch = new Batch();
+  const panes = new Batch(), frames = new Batch();
   const x1 = -0.01;
   const x0 = x1 - depth;
-  const eaves = storey * storeys;
+  const eaves = storey * WESTERN_RANGE.storeys;
   const len = v1 - v0;
-  const zc = -(v0 + v1) / 2;
   const xm = (x0 + x1) / 2;
+  const [b0, b1] = westernBlock(), arches = westernArches(), { half, spring, ring, pane } = WESTERN_ARCH;
+  /** A polygon on the west face, facing the concourse, its texture running over the face in metres. */
+  const west = (b: Batch, pts: V3[]): void => b.poly(pts, pts.map((p): V2 => [-p[2], p[1]]), { facing: [-1, 0, 0] });
   westernWall(brick, xm, depth, v0, v1, eaves, westernCuts(true));
-  westernWall(stone, xm, depth + 0.5, v0 - 0.25, v1 + 0.25, GROUND_Y + 1, westernCuts(true)); // interrupted plinth
-  for (let s = 1; s < storeys; s++) stone.box([xm, s * storey, zc], [depth + 0.3, 0.3, len + 0.3]); // string courses
-  stone.box([xm, eaves + 0.25, zc], [depth + 0.9, 0.5, len + 0.9]); // cornice
+  westernWall(stone, xm, depth + 0.5, v0 - 0.25, v1 + 0.25, GROUND_Y + 1, [...westernCuts(true), ...arches.map((v): [number, number] => [v - half - ring, v + half + ring])]); // plinth, broken at every opening
+  // the string course under the first floor runs the whole length (it is the curtain wall's sill); the second course and the cornice only along the brick centre
+  for (const [y, d, h, a, b] of [[storey, 0.3, 0.3, v0, v1], [2 * storey, 0.3, 0.3, b0, b1], [eaves + 0.25, 0.9, 0.5, b0, b1]] as const) stone.box([xm, y, -(a + b) / 2], [depth + d, h, b - a + 0.3]);
+  for (const v of [b0, b1]) stone.box([x0 - 0.05, (WESTERN_HEAD + eaves) / 2, -v], [0.3, eaves - WESTERN_HEAD, 0.8]); // the brick centre's quoins, from the openings' heads up (a shop's pane is at its southern end)
   // pitched roof: two slopes meeting at a ridge along the length, brick gable ends
   const top = eaves + 0.5;
   const slant = Math.hypot(depth / 2 + 0.45, roofRise);
   const lenA = len + 0.9;
   const zN = -(v1 + 0.45);
   const zS = -(v0 - 0.45);
-  const xw = x0 - 0.45;
+  const xw = x0 - 0.2; // short of the concourse's glass, which stands 0.29 m off the face
   const xe = x1 + 0.45;
   slate.quad([xw, top, zS], [xm, top + roofRise, zS], [xm, top + roofRise, zN], [xw, top, zN], [0, 0], [slant, 0], [slant, lenA], [0, lenA]);
   slate.quad([xm, top + roofRise, zS], [xe, top, zS], [xe, top, zN], [xm, top + roofRise, zN], [0, 0], [slant, 0], [slant, lenA], [0, lenA]);
   brick.poly([[x0, top, -v0], [x1, top, -v0], [xm, top + roofRise, -v0]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
   brick.poly([[x1, top, -v1], [x0, top, -v1], [xm, top + roofRise, -v1]], [[0, 0], [depth, 0], [depth / 2, roofRise]]);
-  // a window in every bay on the west face (the concourse side), three storeys; the ground floor is round-headed.
-  // On the east face only the top storey shows, above the shed's aisle roof.
-  const bays = Math.floor(len / bay);
-  const margin = (len - bays * bay) / 2;
-  for (let i = 0; i < bays; i++) {
-    const z = -(v0 + margin + (i + 0.5) * bay);
-    for (let s = 0; s < storeys; s++) {
-      if (s === 0 && westernCuts(true).some(([a, b]) => -z + 0.7 > a && -z - 0.7 < b)) continue;
-      const y = s * storey + (s === 0 ? 1.4 : 0.9);
-      const target = s === 0 ? winArch : win;
-      windowQuad(target, [x0 - 0.02, y, z], '-x');
-      if (y >= 5.8) windowQuad(target, [x1 + 0.02, y, z], '+x');
-    }
+  // On the east face only the top storey shows, above the shed's aisle roof, a window in every bay. On the west face the brick centre has two storeys of sash windows,
+  // the first with jambs, a sill and a hood with a shallow pediment in stone (R-ab, R-b); the top storey stays plain.
+  for (const v of westernBays()) {
+    const z = -v;
+    windowQuad(win, [x1 + 0.02, 9.1, z], '+x');
+    if (v < b0 || v > b1) continue;
+    for (const y of [5, 9.1]) windowQuad(win, [x0 - 0.02, y, z], '-x');
+    for (const s of [-1, 1]) stone.box([x0 - 0.06, 6.3, z + s * 0.8], [0.12, 2.6, 0.2]);
+    stone.box([x0 - 0.1, 4.94, z], [0.2, 0.12, 2]);
+    stone.box([x0 - 0.1, 7.7, z], [0.2, 0.2, 2]);
+    west(stone, [-1, -0.5, 0, 0.5, 1].map((k): V3 => [x0 - 0.14, 7.8 + 0.22 * (1 - k * k), z + 0.95 * k]));
   }
-  const panes = new Batch(), frames = new Batch();
+  // the ground floor's row of tall round-headed openings (R-b): a dark pane in a stone ring that rises from the floor, a key at the crown
+  const head = (z: number, r: number, d: number): V3[] => [[x0 - d, 0.05, z + r], ...Array.from({ length: 9 }, (_, k): V3 => [x0 - d, spring + r * Math.sin((k * Math.PI) / 8), z + r * Math.cos((k * Math.PI) / 8)]), [x0 - d, 0.05, z - r]];
+  for (const v of arches) {
+    const inner = head(-v, half, 0.12), outer = head(-v, half + ring, 0.12);
+    west(panes, head(-v, half, pane));
+    for (let k = 0; k + 1 < inner.length; k++) west(stone, [inner[k]!, inner[k + 1]!, outer[k + 1]!, outer[k]!]);
+    stone.box([x0 - 0.1, spring + half + 0.15, -v], [0.2, 0.3, 0.3]);
+  }
   for (const v of WESTERN_SHOPS) {
     // Recessed frontage only: the shop retains its backing mass, unlike the through-gateline.
     brick.box([(x0 + 0.65 + x1) / 2, (GROUND_Y + WESTERN_HEAD) / 2, -v], [depth - 0.65, WESTERN_HEAD - GROUND_Y, 2.8]);
@@ -738,6 +769,5 @@ export function buildWesternRange(): THREE.Group {
   g.add(mesh(stone.build(), material('stone'), 'range-stone'));
   g.add(mesh(slate.build(), material('slate'), 'range-roof'));
   g.add(mesh(win.build(), material('sash'), 'range-windows'));
-  g.add(mesh(winArch.build(), material('sashArch'), 'range-windows-arched'));
   return g;
 }
