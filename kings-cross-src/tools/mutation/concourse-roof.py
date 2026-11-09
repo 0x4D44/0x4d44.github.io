@@ -28,7 +28,9 @@ mutations = [
     ('ribs take the nearest link on the other hand','delta=(angle(outer)-angle(inner)+1e-6+4*Math.PI)%(2*Math.PI)', 'delta=(angle(inner)-angle(outer)+1e-6+4*Math.PI)%(2*Math.PI)'),
     ('rib width doubled', 'const RIB_WIDTH = 0.15', 'const RIB_WIDTH = 0.3'),
     ('rib depth range narrowed', '0.45 - 0.2 * t', '0.45 - 0.1 * t'),
-    ('round tube polygon coarsened', 'const TUBE_SIDES = 8', 'const TUBE_SIDES = 4'),
+    # round 5: every drawn roof member is an open tube of four sides, so TUBE_SIDES (the closed tubes of the funnel and the tree columns) no longer reaches the lattice; the funnel driver kills its mutant
+    ('open tubes a half octagon, twice the faces', 'const sides = open ? 4 : TUBE_SIDES', 'const sides = open ? 8 : TUBE_SIDES'),
+    ('open tubes keep the faces that look up at the cladding', "if (open && Math.cos(((j + 0.5) * 2 * Math.PI) / sides) > -0.1) continue;", "if (false) continue;"),
     ('tube diameter interpolation flattened', '0.219 - 0.08 * t', '0.219 - 0.04 * t'),
     ('no medial net, the weave only as fine as the cladding', 'for (const t of kept) {\n    const mid = [0, 1, 2].map(', 'for (const t of [] as typeof kept) {\n    const mid = [0, 1, 2].map('),
     ('medial tubes stout', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.1, true);', 'roundMember(members, mid[k]!, mid[(k + 1) % 3]!, 0.2, true);'),

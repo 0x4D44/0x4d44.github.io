@@ -654,7 +654,7 @@ function buildFitOut(shed: ShedLayout, funnelV: number): THREE.Group {
   const part = (u: number, y0: number, v: number, du: number, dy: number, dv: number, color: Rgb): void => solid.box(L(u, y0 + dy / 2, v), [du, dy, dv], { color });
   const { cluster, totem, board, gate } = FITOUT;
   const sign = (region: readonly number[], pts: V3[], normal: V3, plain: Rgb): void => signs.poly(pts, atlasQuad(region), { normal, color: textured ? WHITE : plain });
-  // ticket machines (R-ab): a block of four, two pairs back to back, white bodies under one red slab, a screen and keypad on each front
+  // ticket machines (R-ab): a block of four, two pairs back to back, white bodies under one red slab, a screen on each outer front
   for (const [u, dv] of FITOUT.clusters) {
     const v = funnelV + dv, w = cluster.width / 2, slab = 0.4;
     part(u, cluster.height - slab, v, cluster.depth, slab, cluster.width, RED);
