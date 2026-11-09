@@ -25,8 +25,8 @@
     "gpt-4o-search-preview": [2.5, 10], "gpt-4o-mini-search-preview": [0.15, 0.6]
   },
   "anthropic": {
-    "_source": "platform.claude.com/docs/en/about-claude/pricing, 2026-11-03 (base input, output)",
-    "claude-fable-5-1": [10, 50], "claude-fable-5": [10, 50],
+    "_source": "platform.claude.com/docs/en/about-claude/pricing, 2026-11-03 (base input, output); claude-fable-5-2 added 2026-11-09",
+    "claude-fable-5-2": [8, 40], "claude-fable-5-1": [10, 50], "claude-fable-5": [10, 50],
     "claude-opus-5-5": [4, 20], "claude-opus-5": [5, 25], "claude-opus-4-8": [5, 25],
     "claude-opus-4-7": [5, 25], "claude-opus-4-6": [5, 25], "claude-opus-4-5": [5, 25],
     "claude-sonnet-5-5": [2, 10], "claude-sonnet-5": [2, 10], "claude-sonnet-4-6": [3, 15],

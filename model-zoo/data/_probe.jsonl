@@ -125,3 +125,5 @@
 {"model": "claude-opus-5-5@thinking", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 4, "thinking_chars": 0}, "cost": 0.000152, "secs": 1.92, "resolved_model": "claude-opus-5-5", "price_source": "anthropic"}
 {"model": "claude-sonnet-5-5@thinking", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 4, "thinking_chars": 0}, "cost": 7.6e-05, "secs": 1.98, "resolved_model": "claude-sonnet-5-5", "price_source": "anthropic"}
 {"model": "claude-sonnet-4-5-20250929", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 14, "out": 4, "thinking_chars": 0}, "cost": 0.000102, "secs": 4.52, "resolved_model": "claude-sonnet-4-5-20250929", "price_source": "anthropic"}
+{"model": "claude-fable-5-2", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 20, "thinking_chars": 0}, "cost": 0.000944, "secs": 3.58, "resolved_model": "claude-fable-5-2", "price_source": "anthropic"}
+{"model": "claude-fable-5-2@thinking", "endpoint": "anthropic", "reply": "ok", "usage": {"in": 18, "out": 18, "thinking_chars": 0}, "cost": 0.000864, "secs": 3.71, "resolved_model": "claude-fable-5-2", "price_source": "anthropic"}

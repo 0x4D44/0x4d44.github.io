@@ -20,7 +20,7 @@ WORKERS = int(os.environ.get("ZOO_WORKERS", "16"))
 EXCLUDE = os.environ.get("ZOO_EXCLUDE", "")  # regex of models to leave out of this run
 ONLY = os.environ.get("ZOO_ONLY", "")  # regex: only these models; the budget then counts only them
 # Current Claude family: also run each with extended thinking on, as "<model>@thinking".
-THINKING = {"claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"}
+THINKING = {"claude-fable-5-2", "claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"}
 LOCK = threading.Lock()
 QUOTA_GONE = threading.Event()  # set when OpenAI reports the credit is used up
 # gpt-5-pro reasons ~500 tokens even to pick a number ($0.06 a call); batch 1 had 10.

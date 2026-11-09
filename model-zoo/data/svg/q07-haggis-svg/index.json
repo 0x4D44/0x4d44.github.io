@@ -311,5 +311,17 @@
   "sample": 0,
   "status": "no-svg",
   "note": "cut off while still defining its shapes: nothing reached the canvas"
+ },
+ "claude-fable-5-2@thinking": {
+  "model": "claude-fable-5-2@thinking",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_tokens)"
+ },
+ "claude-fable-5-2": {
+  "model": "claude-fable-5-2",
+  "sample": 0,
+  "status": "no-svg",
+  "note": "ran out of output budget (max_tokens)"
  }
 }

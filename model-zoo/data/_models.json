@@ -21,6 +21,11 @@
   "display_name": "Claude Fable 5.1",
   "provider": "anthropic"
  },
+ "claude-fable-5-2": {
+  "created": "2026-11-09",
+  "display_name": "Claude Fable 5.2",
+  "provider": "anthropic"
+ },
  "claude-haiku-4-5-20251001": {
   "created": "2025-10-15",
   "display_name": "Claude Haiku 4.5",
