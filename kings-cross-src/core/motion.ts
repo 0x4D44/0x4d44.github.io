@@ -370,7 +370,11 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       append(shortened, { ...s, toT: s.fromT + direction(s) * take / s.edge.length });
       left -= take; if (left <= EPS) break;
     }
-    const end = shortened.at(-1)!, dir = direction(end), pos = point(end.edge, end.toT);
+    const end = shortened.at(-1);
+    // At the reserve, roundoff can leave a positive sub-EPS remainder that append
+    // deliberately drops. No usable extension means retain the current authority/pose.
+    if (!end) return;
+    const dir = direction(end), pos = point(end.edge, end.toT);
     const stop: BerthAnchor = { ...a, platform: undefined, kind: 'inferred', from: dir > 0 ? end.edge.a : end.edge.b, to: dir > 0 ? end.edge.b : end.edge.a,
       t: dir > 0 ? pos.t : 1 - pos.t, point: pos.point, evidence: 'estimated approach: held short pending this train’s mapped step' };
     if (!setTarget(t, stop)) return;

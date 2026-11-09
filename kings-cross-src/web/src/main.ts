@@ -6,9 +6,8 @@ import { addCity } from './city.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
 import { buildFurniture, buildPlatforms } from './furniture.ts';
 import { buildBufferStops, buildTrack } from './track.ts';
-import { addLandmarks, LANDMARK_OSM_IDS } from './landmarks.ts';
 import { addPortals, portalHole } from './portals.ts';
-import { tunnelMouths } from '../../core/landmarks.ts';
+import { REPLACED_BUILDING_IDS as LANDMARK_OSM_IDS, tunnelMouths } from '../../core/landmarks.ts';
 import { createTerrain } from '../../core/terrain.ts';
 import type { Terrain, TerrainFile } from '../../core/terrain.ts';
 import type { KxData } from '../../core/osm.ts';
@@ -92,13 +91,18 @@ function start(): void {
   const terrainLoaded: Promise<Terrain | null> = bare || params.get('terrain') === '0'
     ? Promise.resolve(null)
     : import('./data/kx-terrain.json').then((m) => createTerrain(m.default as unknown as TerrainFile)).catch((err: unknown) => { console.error('terrain failed to load', err); return null; });
-  const groundLoaded: Promise<Terrain | null> = terrainLoaded.then((field) => {
+  const groundLoaded: Promise<Terrain | null> = terrainLoaded.then(async (field) => {
     // everything that stands on the ground is seated on the surface as drawn (the mesh), not on the DTM it approximates
     const terrain = field ? addTerrain(scene, field, { exclude: portalHole(tunnelMouths(data)), rails }).ground : null;
     parts.terrain = terrain;
     if (field) world.carve(field.extent);
     addPortals(scene, data, terrain ? { terrain } : {}); // Gasworks and Copenhagen tunnel mouths: cutting ends on the terrain, else wing walls and an earth bank on the flat plane
-    if (!bare) addLandmarks(scene, data, terrain ? { terrain } : {}); // each building's base on the lowest ground under it
+    if (!bare) {
+      // Optional procedural landmarks have their own chunk, like King's Cross Central below.
+      // cityLoaded still waits for their geometry; captures never race this lazy boundary.
+      const { addLandmarks } = await import('./landmarks.ts');
+      addLandmarks(scene, data, terrain ? { terrain } : {}); // each base on its lowest ground
+    }
     return terrain;
   });
   // King's Cross Central (Coal Drops, Granary, gasholders, Crick, Library, Platform 37) rides in
@@ -114,7 +118,7 @@ function start(): void {
   const shed = buildShed(layout);
   scene.add(shed);
   parts.shed = shed;
-  if (station) scene.add(buildConcourse(canopy, station.pts, layout));
+  if (station) scene.add(buildConcourse(canopy, station.pts, layout, data.buildings.filter(b => b.id === 46821177).map(b => b.pts)));
 
   scene.add(buildBufferStops(data, layout));
 

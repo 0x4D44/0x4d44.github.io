@@ -17,6 +17,7 @@ MUTATIONS = [
     ('keep the partial recording tail', 'await output.truncate(lastNewline + 1)', 'await output.truncate(offset)'),
     ('ignore recording date order', ".filter(n => /^td-Y9-\\d{8}\\.ndjson$/.test(n)).sort()", ".filter(n => /^td-Y9-\\d{8}\\.ndjson$/.test(n)).sort().reverse()"),
     ('reuse an existing pack', "if (current === options.out) throw new Error('output must be fresh; directory already exists')", "if (false) throw new Error('output must be fresh; directory already exists')"),
+    ('precreate child-owned output directories', 'for (const output of step.outputs) await safeArtifactAncestors(options.root, output.path);', 'for (const output of step.outputs) { await safeArtifactAncestors(options.root, output.path); await mkdir(path.dirname(output.path), { recursive: true, mode: 0o700 }); }'),
     ('omit source maps', "'--', '--sourcemap', '--outDir'", "'--', '--outDir'"),
     ('run GPU tools without opt-in', "step.needs.includes('GPU') && !options.gpu", 'false'),
     ('required failures do not fail the pack', 'report.exitCode = report.steps.some', 'report.exitCode = false && report.steps.some'),

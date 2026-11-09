@@ -7,7 +7,7 @@ import { worldToShed } from '../../core/station.ts';
 import { FIGURES, roofHeight, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIVERIES } from '../src/livery.ts';
-import { ASSUMED, buildTrain, carPlan, END_GAP, standTrain } from '../src/train.ts';
+import { ASSUMED, bodySpec, buildTrain, carPlan, carSection, END_GAP, standTrain } from '../src/train.ts';
 import { FLANGE_HEIGHT } from '../src/train-parts.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
@@ -179,6 +179,10 @@ test('train: two pantographs, one on each driving car, folded, over the span the
 test('train: two single-leaf doors per side per car, on the car and on the skin of the body', () => {
   for (const kind of TRAIN_KINDS) {
     const g = built(kind);
+    // single-leaf: the body these trains wear is specified with one leaf to a door (the geometry below shows it drawn that way)
+    const family = trainLayout(kind).spec.family;
+    assert.equal(bodySpec(family).doorLeaves, 1, `${kind}: the ${family} body is specified with ${bodySpec(family).doorLeaves} leaves to a door, not one`);
+    const wall = carSection(bodySpec(family)).width;
     for (const car of trainLayout(kind).cars) {
       const group = named(g, `car-${car.index}`);
       const doors = all(group, 'door');
@@ -203,6 +207,23 @@ test('train: two single-leaf doors per side per car, on the car and on the skin 
           vs.some((v) => Math.abs(v.x - at.x) < 1e-6 && Math.abs(v.z - at.z) <= (d.userData.width as number) / 2),
           `${kind} car ${car.index}: no door geometry at z=${at.z}`,
         );
+        // ... and the leaf itself, not only the window in it (the window is the one thing at the skin plane). The leaf is a panel as big as the
+        // opening (the marker's width and height) whose outer face stands out of the wall without passing the window's plane; it is in one
+        // piece, so its outer face has a vertex at each corner of the opening and an edge at no other place across the door (no seam)
+        const width = d.userData.width as number;
+        const height = d.userData.height as number;
+        const leaf = vs.filter((v) => Math.sign(v.x) === Math.sign(at.x) && Math.abs(v.z - at.z) <= width / 2 + 1e-4 && Math.abs(v.y - at.y) <= height / 2 + 1e-4 && Math.abs(v.x) > wall + 1e-3 && Math.abs(v.x) < Math.abs(at.x) - 1e-6);
+        for (const sz of [-1, 1]) {
+          for (const sy of [-1, 1]) {
+            assert.ok(
+              leaf.some((v) => Math.abs(v.z - (at.z + (sz * width) / 2)) < 1e-4 && Math.abs(v.y - (at.y + (sy * height) / 2)) < 1e-4),
+              `${kind} car ${car.index}: the door at z=${at.z} has no leaf on the skin: no vertex at its ${sz > 0 ? 'rear' : 'front'} ${sy > 0 ? 'top' : 'bottom'} corner, between the wall (${wall}) and the window (${Math.abs(at.x)})`,
+            );
+          }
+        }
+        const leafZ = leaf.map((v) => v.z).sort((a, b) => a - b);
+        const leafEdges = leafZ.filter((z, i) => i === 0 || z - (leafZ[i - 1] as number) > 1e-3);
+        assert.equal(leafEdges.length, 2, `${kind} car ${car.index}: the door at z=${at.z} is not a single leaf: its leaf has edges at ${leafEdges.map((z) => (z - at.z).toFixed(3)).join(', ')} m from the door's middle`);
       }
     }
   }

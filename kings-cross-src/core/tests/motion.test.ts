@@ -532,6 +532,43 @@ test('an outside arrival can use an anchored successor on an observed chain', ()
   close(arrived.leading.point[0], 1500); assert.equal(arrived.state, 'held'); close(arrived.opacity, 1);
 });
 
+test('an unmapped step at the estimated reserve keeps its body and waits for mapped authority', () => {
+  // Synthetic decimal geometry: (.5 - .475) * 1000 is just over 25 m.
+  // A second unmapped step must not turn that roundoff into an empty route.
+  const a: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [
+    anchor('START', 100), { ...anchor('STOP', 500), errorM: 1 },
+  ] };
+  const m = createMotion(graph, a, { observedSteps: [step('M1', 'M2'), step('M2', 'STOP')] });
+  m.apply(step('START', 'M1'), 0);
+  const stopped = stopAfterMoving(m);
+  close(stopped.leading.point[0], 475);
+  assert.equal(stopped.state, 'estimated');
+  assert.equal(stopped.speed, 0);
+  const remaining = (0.5 - stopped.leading.t) * stopped.leading.edge.length;
+  assert.ok(remaining > 25 && remaining - 25 < 1e-8, 'exercise a positive sub-epsilon reserve residual');
+
+  m.apply(step('M1', 'M2'), 0);
+  const after = one(m);
+  assert.equal(after.lastBerth, 'M2');
+  assert.equal(after.unmappedBerth, 'M2');
+  assert.equal(after.targetBerth, 'STOP');
+  for (const key of ['id', 'leading', 'occupied', 'occupiedLengthM', 'speed', 'distanceM', 'reversals', 'state'] as const) {
+    assert.deepEqual(after[key], stopped[key], `no physical change in ${key}`);
+  }
+  m.advance(1);
+  assert.deepEqual(one(m).leading, stopped.leading);
+  assert.equal(one(m).distanceM, stopped.distanceM);
+  assert.deepEqual(m.diagnostics(), [], 'a zero extension is a valid estimated hold, not an unroutable step');
+
+  m.apply(step('M2', 'STOP'), 0);
+  assert.deepEqual(one(m).leading, stopped.leading, 'mapped authority must not teleport the train');
+  const arrived = finish(m);
+  close(arrived.leading.point[0], 500);
+  close(arrived.distanceM - stopped.distanceM, 25);
+  assert.equal(arrived.id, stopped.id);
+  assert.equal(arrived.state, 'held');
+});
+
 test('a cold unknown interpose follows its supplied chain onto the correct graph edge', () => {
   const g = buildGraph({ nodes: [[11, 0, -2000], [12, 1000, -2000], [13, 2000, -2000], [14, 3000, -2000], [21, 0, -1000], [22, 3000, -1000]], rails: [
     { id: 8, nodes: [11, 12, 13, 14], service: 'main', tunnel: false, bridge: false, layer: 0 },

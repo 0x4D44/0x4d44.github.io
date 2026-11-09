@@ -53,7 +53,8 @@ test('frozen schedule policy verifies provenance and matches only its birth day'
 test('train capture verifies immutable input fingerprints before launching a browser',async()=>{
  const scratch=fileURLToPath(new URL('../../../.scratch/',import.meta.url));await mkdir(scratch,{recursive:true});const dir=await mkdtemp(scratch+'/train-capture-test-'),bytes=Buffer.from('synthetic');
  const capturedPath=dir+'/input.json';await writeFile(capturedPath,bytes);const entry={capturedPath,sha256:createHash('sha256').update(bytes).digest('hex')};
- assert.deepEqual(await frozenBytes(entry),bytes);await assert.rejects(frozenBytes({...entry,sha256:'0'.repeat(64)}));await assert.rejects(frozenBytes({}));
+ assert.deepEqual(await frozenBytes(entry),bytes);await assert.rejects(frozenBytes({...entry,sha256:'0'.repeat(64)}),/frozen input hash mismatch/);await assert.rejects(frozenBytes({}),/missing frozen input fingerprint/);
+ for(const unfingerprinted of [{capturedPath},{sha256:entry.sha256},{...entry,sha256:entry.sha256.slice(1)}])await assert.rejects(frozenBytes(unfingerprinted),/missing frozen input fingerprint/);
 });
 const graph=()=>({nodes:[[1,0,0],[2,0,40],[3,0,80],[4,0,120],[5,100,20],[6,100,60],[7,100,100],[8,100,120]],rails:[{id:1,nodes:[1,2],tunnel:false},{id:2,nodes:[5,6],tunnel:true},{id:3,nodes:[3,4],tunnel:false},{id:4,nodes:[7,8],tunnel:false}],platforms:[{pts:[[-2,80],[2,80],[2,120],[-2,120]]}]});
 test('catalogue coach positions use fitting surface OSM track outside platform envelopes',()=>{

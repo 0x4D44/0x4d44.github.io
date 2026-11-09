@@ -5,12 +5,12 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
-import { barlowPlan, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
+import { barlowPlan, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
 import { addBand, addLandmarks, addWalls, barlowGeometry, createMaterials, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, pointInQuad, segmentsOutside, towerSquare, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
-import { Batch, material } from '../src/materials.ts';
+import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -190,6 +190,42 @@ test('Great Northern Hotel: a round-headed window on the ground floor and four s
   assert.equal(triangles(parts.sash as Batch).length, 2 * (4 * bays + 2 * 2 * 4));
 });
 
+test('Great Northern Hotel: a synthetic impost run clears its arch and carries a keystone above the crown', () => {
+  const outline: Pt[] = [[0, 0], [12, 0], [12, 8], [0, 8]];
+  const edge = polygonEdges(outline)[0]!;
+  const chain = { vertices: [0, 1], edges: [edge], length: edge.length, turning: 0 };
+  const synthetic = { ...hotel, outline, faces: [{ kind: 'main' as const, chain, bays: chainBays(chain.edges, 1) }], roof: { ring: outline, inset: 0 } };
+  const bay = synthetic.faces[0]!.bays[0]!;
+  const stone = triangles(hotelGeometry(synthetic).stone as Batch);
+  const spring = 0.75 + TEXTURES.windowArch.tile[1] - TEXTURES.windowArch.tile[0] / 2;
+  const crown = 0.75 + TEXTURES.windowArch.tile[1];
+  const impost = stone.filter((t) => t.p.some((v) => Math.abs(v[1] - spring) <= 0.081));
+  const keystone = stone.filter((t) => t.p.every((v) => v[1] >= crown - 0.126 && v[1] <= crown + 0.326));
+  assert.equal(impost.length, 30, 'five unbroken facade segments, each with the three faces of one moulded band');
+  assert.equal(keystone.length, 12, 'one six-sided stone block over the arch');
+  const depths = keystone.flatMap((t) => t.p.map((v) => (v[0] - bay.at[0]) * bay.normal[0] + (v[2] - bay.at[1]) * bay.normal[1]));
+  assert.ok(Math.min(...depths) > 0.08, 'the keystone clears the sash plane, so their faces do not z-fight');
+  for (const t of impost) for (const v of t.p) {
+    const along = (v[0] - bay.at[0]) * bay.dir[0] + (v[2] - bay.at[1]) * bay.dir[1];
+    const depth = (v[0] - bay.at[0]) * bay.normal[0] + (v[2] - bay.at[1]) * bay.normal[1];
+    assert.ok(depth < -1e-6 || depth > 0.3 || Math.abs(along) >= TEXTURES.windowArch.tile[0] / 2 - 1e-6, 'the impost does not overlap the pane');
+  }
+});
+
+test('Great Northern Hotel: every real ground arch gets one keystone and the impost stays below the cornice', () => {
+  const parts = hotelGeometry(hotel);
+  const bays = hotel.faces.reduce((n, f) => n + f.bays.length, 0);
+  const stone = triangles(parts.stone as Batch);
+  const crown = 0.75 + TEXTURES.windowArch.tile[1];
+  const keystones = stone.filter((t) => t.p.every((v) => v[1] >= crown - 0.126 && v[1] <= crown + 0.326));
+  const spring = 0.75 + TEXTURES.windowArch.tile[1] - TEXTURES.windowArch.tile[0] / 2;
+  const impost = stone.filter((t) => t.p.some((v) => Math.abs(v[1] - spring) <= 0.081));
+  assert.equal(keystones.length, bays * 12);
+  assert.ok(impost.length > bays * 6, `${impost.length} impost triangles run around the facade between the arches`);
+  assert.ok(Math.max(...[...keystones, ...impost].flatMap((t) => t.p.map((v) => v[1]))) < hotel.eaves - 0.6, 'the details clear the upper facade and roof');
+  assert.equal(Object.keys(parts).length, 5, 'the details stay in the existing five material batches');
+});
+
 test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth proud, and faces out', () => {
   const parts = hotelGeometry(hotel);
   const edges = polygonEdges(hotel.outline);
@@ -251,6 +287,73 @@ test('Midland Grand: four faces of windows on the front bays, none behind a towe
   assert.ok(open >= 28 && open <= 33, `${open} front and wing bays are open`);
   const panes = triangles(parts.pane as Batch).length;
   assert.ok(panes > open * 4 * 2, `at least a window per bay per storey, got ${panes} pane triangles`);
+});
+
+// Isolate attic additions from the identical roof/towers and the four lower window rows.
+function dormerTriangles(plan = midland): Partial<Record<Key, Tri[]>> {
+  const plain = midlandGeometry({ ...plan, front: { ...plan.front, bays: [] }, wing: { ...plan.wing, bays: [] } });
+  const full = midlandGeometry(plan), result: Partial<Record<Key, Tri[]>> = {};
+  const signature = (t: Tri): string => JSON.stringify(t.p);
+  for (const key of ['stone', 'slate', 'pane'] as const) {
+    const old = new Set(triangles(plain[key] as Batch).map(signature));
+    result[key] = triangles(full[key] as Batch).filter(t => t.p.every(v => v[1] > plan.eaves) && !old.has(signature(t)));
+  }
+  return result;
+}
+
+test('Midland Grand: two stacked gabled attic rows light the front and curved wing [HE 1342037]', () => {
+  const additions = dormerTriangles({ ...midland, towers: [] });
+  const glass = additions.pane!;
+  assert.ok(glass.length > 40, 'the attic has real glazed dormer faces, not unbroken slate');
+  for (const face of [midland.front, midland.wing]) {
+    for (const bay of face.bays) {
+      const near = glass.filter(t => t.p.every(v => Math.abs((v[0] - bay.at[0]) * bay.dir[0] + (v[2] - bay.at[1]) * bay.dir[1]) < bay.width / 2));
+      assert.ok(near.some(t => t.p.every(v => v[1] < (midland.eaves + midland.ridge) / 2)), 'lower dormer row follows each bay');
+      assert.ok(near.some(t => t.p.every(v => v[1] > (midland.eaves + midland.ridge) / 2)), 'upper dormer stacks above it');
+    }
+  }
+  const gables = additions.stone!.filter(t => t.p.length === 3 && t.p.filter(v => Math.abs(v[1] - Math.max(...t.p.map(p => p[1]))) < 1e-8).length === 1);
+  assert.ok(gables.length > 30, 'pale gables have apex vertices above their shoulders');
+});
+
+test('Midland Grand: dormer cheeks and roofs meet the existing pitch, stay below the ridge and clear both towers', () => {
+  const additions = dormerTriangles();
+  assert.ok(additions.slate!.length > 40, 'there are pitched dormer roofs to test');
+  // Separating-axis test: catches crossings even when every triangle vertex misses a tower.
+  const intersects = (triangle: Tri, tower: typeof midland.towers[number]): boolean => {
+    const square = towerSquare(tower, 0.4);
+    const polygons = [triangle.p.map(v => [v[0], v[2]] as Pt), square];
+    for (const polygon of polygons) for (let i = 0; i < polygon.length; i++) {
+      const a = polygon[i]!, b = polygon[(i + 1) % polygon.length]!, axis = [b[1] - a[1], a[0] - b[0]];
+      if (Math.hypot(...axis) < 1e-9) continue;
+      const ranges = polygons.map(ps => ps.map(p => p[0] * axis[0]! + p[1] * axis[1]!));
+      if (Math.max(...ranges[0]!) < Math.min(...ranges[1]!) - 1e-7 || Math.max(...ranges[1]!) < Math.min(...ranges[0]!) - 1e-7) return false;
+    }
+    return true;
+  };
+  const roofOnly = midlandGeometry({ ...midland, towers: [], front: { ...midland.front, bays: [] }, wing: { ...midland.wing, bays: [] } });
+  // Compare the double-precision construction, avoiding Float32 upload rounding at the seams.
+  const roofBatch = roofOnly.slate as Batch;
+  const roofGeometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float64Array(roofBatch.positions), 3));
+  roofGeometry.setIndex(roofBatch.indices);
+  const mesh = new THREE.Mesh(roofGeometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  const ray = new THREE.Raycaster();
+  try {
+    for (const [key, ts] of Object.entries(additions)) for (const triangle of ts!) {
+      assert.ok(worldArea(triangle) > 1e-8, 'no degenerate dormer triangles');
+      for (const tower of midland.towers) assert.equal(intersects(triangle, tower), false, `${key} crosses the ${tower.name} tower envelope`);
+      let contacts = 0;
+      for (const v of triangle.p) {
+        assert.ok(v[1] < midland.ridge, 'attic details stay below the main ridge');
+        ray.set(new THREE.Vector3(v[0], 100, v[2]), new THREE.Vector3(0, -1, 0));
+        const roof = ray.intersectObject(mesh)[0];
+        assert.ok(roof, 'a dormer is supported by the existing roof pitch');
+        assert.ok(v[1] >= roof.point.y - 2e-5, `${key} penetrates the underlying roof: ${v[1]} < ${roof.point.y}`);
+        if (Math.abs(v[1] - roof.point.y) < 2e-5) contacts++;
+      }
+      if (key === 'slate') assert.ok(contacts > 0, 'each cheek/hood meets the main pitch at its back seam');
+    }
+  } finally { mesh.geometry.dispose(); (mesh.material as THREE.Material).dispose(); }
 });
 
 // ---- the Barlow vault --------------------------------------------------------------------------

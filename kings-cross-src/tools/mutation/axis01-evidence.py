@@ -20,6 +20,8 @@ NAMES = [
     'proves station surface refs exclude underground eleven and measures actual 26 metre car',
     'measures portal brick planes against OSM boundary nodes with throat tolerance',
     'renders explicit numeric published flags and missing gauge evidence without claiming a survey',
+    'compares the drawn concourse roof extent with Arup and flags a missing station footprint',
+    'names the documented Platform 9 outline inference instead of an unexplained OSM mismatch',
 ]
 MUTATIONS = [
     ('published flags suppressed', "p.withinPublishedTolerance === false", 'false', NAMES[4]),
@@ -28,6 +30,8 @@ MUTATIONS = [
     ('car extent fabricated', 'const drawnCarLengthM = meshExtent(car, new THREE.Vector3(0, 0, 1));', 'const drawnCarLengthM = 25;', NAMES[2]),
     ('portal measured plane fabricated', 'const setbackM = [...planes].sort((a, b) => b[1] - a[1])[0]![0];', 'const setbackM = 0;', NAMES[3]),
     ('surface eleven hidden by report', "drawn: platforms.some(p => p.ref === '11')", 'drawn: false', NAMES[2]),
+    ('concourse tolerance tightened past the drawn roof', 'withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 3', 'withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 0.3', NAMES[5]),
+    ('documented outline inference reported as OSM mismatch', "? { code: 'platform-outline-inferred'", "? { code: 'platform-osm-tolerance'", NAMES[6]),
 ]
 
 def run(work: Path, name: str | None = None):

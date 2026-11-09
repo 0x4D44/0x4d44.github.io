@@ -22,6 +22,7 @@ import {
 } from '../terrain.ts';
 import type { Terrain, TerrainFile, TerrainMesh } from '../terrain.ts';
 import { FIGURES, tunnelMouths } from '../landmarks.ts';
+import { shedBufferStops, shedLayout, worldToShed } from '../station.ts';
 import type { KxData } from '../osm.ts';
 import type { Pt } from '../geo.ts';
 
@@ -447,6 +448,40 @@ test('terrain data: the model rail datum: ground at the shed ends is where the m
   }
   // the Gasworks Tunnel runs under the Regent's Canal: the ground there is a canal bed, lower than the ground 60 m on either side
   assert.equal(gasworksSouth.id, 'gasworks-south');
+  // THE MODEL RAIL DATUM. y = 0 is the rail head at the shed's buffer stops and the ground that carries it is GROUND_Y: the level the grids are re-levelled
+  // to (tools/build-terrain.ts) and the one the shed's walls and the platform walls start from (web/src/shed.ts, web/src/furniture.ts). The file records
+  // it, and the AOD of that rail head (the build tool's header: "from the buffers (16.8 m AOD)").
+  assert.equal(file.groundY, GROUND_Y, 'the datum: the file records the ground a railway stands on');
+  assert.ok(Math.abs(file.datumAod - 16.8) < 0.15, `the datum: the rail head at the buffer stops is ${file.datumAod} m AOD, the build tool's header says 16.8`);
+  // So the ground is GROUND_Y at both ends of the shed: at every buffer stop (the south end) ...
+  const shed = shedLayout(track);
+  const stops = shedBufferStops(track, shed);
+  assert.ok(stops.length >= 9, `${stops.length} buffer stops at the south end of the shed`);
+  for (const s of stops) {
+    const ground = terrain.heightAt(s.x, s.z);
+    assert.ok(Math.abs(ground - GROUND_Y) < 0.05, `buffer stop ${s.id}: the ground is ${ground.toFixed(2)} m, the datum puts it at ${GROUND_Y} m`);
+  }
+  // ... and under the open main-line rails in the last 20 m of each end (v is the distance north of the shed's south wall)
+  const pos = new Map(track.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const sampled = { south: 0, north: 0 };
+  for (const r of track.rails) {
+    if (r.ref !== 'ECM1' || r.tunnel || r.bridge) continue;
+    for (let i = 0; i + 1 < r.nodes.length; i++) {
+      const a = pos.get(r.nodes[i] as number) as Pt;
+      const b = pos.get(r.nodes[i + 1] as number) as Pt;
+      for (let k = 0; k <= 20; k++) {
+        const x = a[0] + ((b[0] - a[0]) * k) / 20;
+        const z = a[1] + ((b[1] - a[1]) * k) / 20;
+        const { u, v } = worldToShed(shed, [x, z]);
+        const end = u < 0 || u > shed.width ? null : v >= 0 && v < 20 ? 'south' : v > shed.length - 20 && v <= shed.length ? 'north' : null;
+        if (!end) continue;
+        sampled[end]++;
+        const ground = terrain.heightAt(x, z);
+        assert.ok(Math.abs(ground - GROUND_Y) < 0.05, `the ${end} end of the shed, ECML way ${r.id} at (${x.toFixed(1)}, ${z.toFixed(1)}): the ground is ${ground.toFixed(2)} m, the datum puts it at ${GROUND_Y} m`);
+      }
+    }
+  }
+  assert.ok(sampled.south > 20 && sampled.north > 10, `rail points sampled at the ends of the shed: ${JSON.stringify(sampled)}`);
 });
 
 test('terrain data: the grids fit the budget (committed JSON under 400 kB, 150 kB gzipped is the build tool\'s check)', () => {

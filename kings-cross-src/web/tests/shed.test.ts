@@ -351,7 +351,7 @@ test('buildShed: the front has its two great windows, glazed and barred, and no 
   assert.ok(lo > 8, 'the open arch below the gable glass clears a train');
 });
 
-test('buildTower: 112 ft to the apex of the cap, a clock on each of the four faces looking outward', () => {
+test('buildTower: 112 ft overall including the vane, a clock on each of the four faces looking outward', () => {
   const tower = buildTower(30);
   let top = 0;
   tower.traverse((o) => {
@@ -382,12 +382,29 @@ test('buildWesternRange: three storeys of brick west of the shed wall, between i
   close(brick.max.y, storey * storeys + 0.5 + roofRise, EPS); // its gable ends rise to the ridge
   const slate = bbox(byName(range, 'range-roof'));
   assert.ok(slate.max.y > brick.max.y - EPS);
-  // a window in every bay on every storey of the west face (round-headed on the ground floor), and on the
-  // east face only the top storey, which shows above the shed's aisle roof
+  // Upper sash floors stay complete; only the documented southern gateline and adjoining
+  // public frontage replace ground-floor sash. Arup Journal 2/2012 p27 fig4/p29 locates
+  // five southern bays; built JMP photograph shows the neighbouring public/shop interfaces.
+  // Their station-frame alignment/widths remain ASSUMED, independently pinned here.
   const bays = Math.floor((v1 - v0) / WESTERN_RANGE.bay);
   assert.equal(bays, 39);
   assert.equal(positions(byName(range, 'range-windows').geometry).count / 4, 3 * bays);
-  assert.equal(positions(byName(range, 'range-windows-arched').geometry).count / 4, bays);
+  const margin = (v1 - v0 - bays * WESTERN_RANGE.bay) / 2;
+  const allLowerCentres = Array.from({ length: bays }, (_, i) => v0 + margin + (i + 0.5) * WESTERN_RANGE.bay);
+  const publicIntervals = [
+    ...[12.1, 20.1, 28.1, 36.1, 44.1].map(v => [v - 3.3, v + 3.3]),
+    ...[52.1, 56.1].map(v => [v - 1.4, v + 1.4]),
+  ];
+  // Each original sash spans 1.4m along the wall; remove it only where that span overlaps an interface.
+  const retained = allLowerCentres.filter(v => !publicIntervals.some(([a, b]) => v + 0.7 > a! && v - 0.7 < b!));
+  const arched = positions(byName(range, 'range-windows-arched').geometry);
+  assert.equal(arched.count / 4, retained.length, 'only ground-floor sash overlapping public intervals is replaced');
+  const actual = Array.from({ length: arched.count / 4 }, (_, i) =>
+    -[0, 1, 2, 3].reduce((sum, k) => sum + arched.getZ(i * 4 + k), 0) / 4);
+  for (let i = 0; i < retained.length; i++) close(actual[i]!, retained[i]!, EPS);
+  const northernLimit = Math.max(...publicIntervals.map(([, end]) => end!)) + 0.7;
+  assert.deepEqual(actual.filter(v => v >= northernLimit).map(v => v.toFixed(3)),
+    allLowerCentres.filter(v => v >= northernLimit).map(v => v.toFixed(3)), 'every northern lower sash remains');
 });
 
 test('the Range can be left out', () => {

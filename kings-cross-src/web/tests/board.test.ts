@@ -594,6 +594,13 @@ test('board geometry clears the pill status and attribution at all five evidence
       assert.equal(box.width, Math.min(350, width! - 32));
     }
   }
+  // Phones narrower than 350 px plus a 16 px margin each side (382 px): the board gives way, 16 px in from the left and the
+  // same from the right (so the viewport less 32 px), where the five viewports above all show the 350 px cap instead.
+  for (const [width, height] of [[375, 667], [360, 740], [320, 568]]) {
+    const box = boardLayout(width!, height!);
+    assert.equal(box.left, 16, `${width}x${height}: left margin is ${box.left} px, not 16`);
+    assert.equal(box.width, width! - 32, `${width}x${height}: the board is the viewport less 16 px each side (${width! - 32} px), got ${box.width}`);
+  }
 });
 
 test('HUD wrapping and visual viewport changes resize the board without a render update', () => {

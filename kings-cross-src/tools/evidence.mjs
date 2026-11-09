@@ -16,6 +16,7 @@ import { barlowPlan, greatNorthernHotelPlan, midlandGrandPlan, REPLACED_BUILDING
 import { planBuilding } from '../core/city.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
 import { WESTERN_RANGE } from '../web/src/shed.ts';
+import { concourseGrid, keepTriangles } from '../web/src/concourse.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..', '..');
@@ -117,17 +118,41 @@ export function stationCameras(data) {
     'western-range': camera(at(-WESTERN_RANGE.depth - 6, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 1.6),
       at(-WESTERN_RANGE.depth - 0.1, (WESTERN_RANGE.v0 + WESTERN_RANGE.v1) / 2, 3.5),
       `WESTERN_RANGE west brick facade v${WESTERN_RANGE.v0}..${WESTERN_RANGE.v1}; eye-level west-side view`, { fov: 35, near: .1 }),
+    'western-range-gateline': camera(at(-55, 38, 3), at(-WESTERN_RANGE.depth - .01, 38, 5.5),
+      'Arup 2012/2 p27 fig4 southern public frontage; ASSUMED model alignment, upper floors and scene retained', { fov: 60, near: .1 }),
     'roof-above': camera(at(s.width / 2 + 45, 110, s.crown + 110), at(s.width / 2, 110, s.crown - 3), 'shedLayout roof'),
     'north-gable': camera(at(s.width / 2, s.length + 80, 18), at(s.width / 2, s.length, 12), 'shedLayout north gable'),
   };
+  // Roof-family comparison: the same public-model triangle in before/after builds,
+  // viewed from below at about six metres. No shell, cladding or city is hidden.
+  const station = stationBuilding(data);
+  if (station) {
+    const { centre, grid } = concourseGrid(concourse, station.pts, s, data.buildings.filter(b => b.id === 46821177).map(b => b.pts));
+    const targets = keepTriangles(grid, station.pts, s).map(tri => tri.reduce((p, i) => {
+      const n = grid.nodes[i]; return [p[0] + n.x / 3, p[1] + n.height / 3, p[2] + n.z / 3];
+    }, [0, 0, 0]));
+    targets.sort((p, q) => Math.hypot(p[0] - centre[0] + 18, p[2] - centre[1]) - Math.hypot(q[0] - centre[0] + 18, q[2] - centre[1]));
+    const t = targets[0];
+    if (t) cams['concourse-roof-detail'] = camera([t[0] - 1.5, t[1] - 6, t[2] + 1], t,
+      'drawn concourse roof triangle, view from below; approximate procedural member families', { fov: 50, near: .1 });
+  }
   const p = stationPlatforms(data).get('4');
   if (p) { const mid = p.pts.reduce((a, b) => [a[0] + b[0] / p.pts.length, a[1] + b[1] / p.pts.length], [0, 0]);
     cams['platform-eye'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] + Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] - Math.cos(s.heading) * 40], 'OSM platform 4 polygon, eye 1.6 m above platform');
     const tip = [...p.pts].sort((a,b)=>a[1]-b[1]).slice(0,2).reduce((a,b)=>[a[0]+b[0]/2,a[1]+b[1]/2],[0,0]);
     cams['shed-interior'] = camera([tip[0],3.2,tip[1]], at(s.width / 2,100,8), 'OSM platform 4 north end looking into the shed'); }
-  const hotel = greatNorthernHotelPlan(data), main = hotel.faces.find(f => f.kind === 'main').chain.edges;
-  const edge = main[Math.floor(main.length / 2)];
-  cams['great-northern-hotel'] = camera([edge.mid[0] + edge.normal[0] * 45, 14, edge.mid[1] + edge.normal[1] * 45], [edge.mid[0], hotel.eaves / 2, edge.mid[1]], 'greatNorthernHotelPlan main facade');
+  // Pancras Road exterior: the concave east front sits beside the concourse. Its old
+  // normal-offset camera landed below that roof and hid the hotel. The public west
+  // frontage provides an unobstructed view of the F9 ground-floor arch trim.
+  // https://historicengland.org.uk/listing/the-list/list-entry/1113244
+  const hotel = greatNorthernHotelPlan(data), road = hotel.faces.find(f => f.kind === 'rear').chain.edges;
+  const edge = road[Math.floor(road.length / 2)];
+  cams['great-northern-hotel'] = camera([edge.mid[0] + edge.normal[0] * 25, 10, edge.mid[1] + edge.normal[1] * 25], [edge.mid[0], hotel.eaves / 2, edge.mid[1]], 'Great Northern Hotel Pancras Road exterior; OSM rear-chain normal', { fov: 75, near: .1 });
+  // Retain the old under-roof view as a junction diagnostic, not as hotel evidence.
+  // Before/after captures can inspect the paving seam without moving the camera.
+  const main = hotel.faces.find(f => f.kind === 'main').chain.edges;
+  const junction = main[Math.floor(main.length / 2)];
+  cams['concourse-hotel-junction'] = camera([junction.mid[0] + junction.normal[0] * 45, 14, junction.mid[1] + junction.normal[1] * 45], [junction.mid[0], hotel.eaves / 2, junction.mid[1]], 'OSM hotel main facade; fixed concourse paving-junction diagnostic');
   const midland = midlandGrandPlan(data), face = midland.front.edges[Math.floor(midland.front.edges.length / 2)];
   cams['midland-grand-front'] = camera([face.mid[0] + face.normal[0] * 150, 28, face.mid[1] + face.normal[1] * 150], [face.mid[0], midland.eaves / 2, face.mid[1]], 'midlandGrandPlan Euston Road front');
   const barlow = barlowPlan(data), bp = (u, v, y) => { const [x, z] = shedToWorld(barlow, u, v); return [x, y, z]; };

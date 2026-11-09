@@ -172,6 +172,26 @@ test('axis 05 keeps standard train capture and adds a separate portal capture wi
   assert.equal(result.steps.find(step => step.id === portal.id).status, 'passed');
 });
 
+test('07-browser owns its fresh output directory before writing its registered report', async () => {
+  const f = await fixture(), calls = [];
+  let browserCalls = 0;
+  const result = await invoke(f, ['--only', '7', '--gpu'], fake(calls, async step => {
+    if (step.id !== '07-browser') return;
+    browserCalls++;
+    const directory = step.args[step.args.indexOf('--out') + 1];
+    assert.equal(directory, path.join(f.out, 'axis-07/browser'));
+    assert.equal(await exists(directory), false, 'pack must not pre-create the browser --out directory');
+    // Match axis07-browser's exclusive directory contract without starting Chrome.
+    // The ordinary fake then writes its declared JSON report into this child-owned directory.
+    await mkdir(directory, { mode: 0o700 });
+  }));
+  assert.equal(browserCalls, 1, 'the registered browser command must run');
+  const browser = result.steps.find(step => step.id === '07-browser');
+  assert.equal(browser.status, 'passed', browser.reason);
+  assert.deepEqual(browser.artifacts, ['axis-07/browser/axis07-browser.json']);
+  assert.deepEqual(JSON.parse(await readFile(path.join(f.out, browser.artifacts[0]), 'utf8')), { synthetic: true });
+});
+
 test('GPU evidence stays incomplete without opt-in and manual keychain commands never run', async () => {
   const f = await fixture(), calls = [];
   const result = await invoke(f, [], fake(calls));

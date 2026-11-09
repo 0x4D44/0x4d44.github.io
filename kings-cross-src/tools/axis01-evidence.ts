@@ -137,7 +137,7 @@ export function createAxis01Report(data: KxData, layout = shedLayout(data), inpu
   const footprint = stationBuilding(data)?.pts;
   const concourse = footprint ? (() => {
     const canopy = concourseCanopy(data);
-    const roof = buildConcourse(canopy, footprint, layout).getObjectByName('concourse-panels')!;
+    const roof = buildConcourse(canopy, footprint, layout, data.buildings.filter(b => b.id === 46821177).map(b => b.pts)).getObjectByName('concourse-panels')!;
     const drawnNorthSouthM = round(meshExtent(roof, new THREE.Vector3(Math.sin(layout.heading), 0, -Math.cos(layout.heading))));
     return { drawnNorthSouthM, publishedOverallRoofM: 138, differenceM: round(drawnNorthSouthM - 138),
       withinTolerance: Math.abs(drawnNorthSouthM - 138) <= 3, fittedArcDiameterM: round(2 * canopy.radius),

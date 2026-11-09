@@ -11,6 +11,7 @@ import { bodySpec, buildTrain, carPlan, carSection, END_GAP, faceSetback, NOSE_R
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_LOD_DISTANCE, DISC_RADIUS, FLANGE_HEIGHT, WHEEL_WIDTH, bogieFarSoup, bogieSoup, buildBogie, couplerHalf } from '../src/train-parts.ts';
 import { col, ellipse, Soup } from '../src/train-geom.ts';
+import { COUPLING_CLEARANCE } from '../src/trains-live.ts';
 
 const WHEEL_HALF = WHEEL_WIDTH / 2;
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
@@ -220,6 +221,32 @@ test('nose: the face stands NOSE_RECESS behind the end of the train (where a cov
     near(frontBody.min.z, front.start + NOSE_RECESS - 0.006, 0.0061, `${kind} front face`);
     const rearBody = [named(named(g, `car-${rear.index}`), 'body-detail'), named(named(g, `car-${rear.index}`), 'body-shell')].map(boxOf).reduce((a, b) => a.union(b));
     near(rearBody.max.z, rear.end - NOSE_RECESS + 0.006, 0.0061, `${kind} rear face`);
+    // The face itself, measured on the drawn nose. The two boxes above cannot tell a cover's face (NOSE_RECESS in, its lenses 1 mm short of the
+    // end) from an open recess (the face END_GAP in, but with a coupler drawn out of it that reaches the end): both end within 6 mm of the end
+    // plane. The face is the plane that holds most of the flat area facing out of the end of the train, within 0.4 m of that end (the lamps'
+    // lenses, their bezels and the cover's seam lie in planes a few millimetres in front of it, with a small part of its area; further back
+    // the nose has walls of its own that face out too, and on the narrow Azuma nose they are larger than the face).
+    const covered = spec.front.coupler.covered;
+    const faceOf = (car: Car): number => {
+      const out = outwards(car);
+      const end = car.cab === 'front' ? car.start : car.end;
+      const planes = new Map<number, { z: number; area: number }>();
+      for (const t of triangles(detailOf(g, car))) {
+        const inset = (t[0].z - end) * -out;
+        if (faceNormal(t).z * out < 0.999 || inset < -0.001 || inset > 0.4 || t.some((v) => Math.abs(v.z - t[0].z) > 1e-4)) continue;
+        const plane = planes.get(Math.round(inset * 1000)) ?? { z: t[0].z, area: 0 };
+        plane.area += areaOf(t);
+        planes.set(Math.round(inset * 1000), plane);
+      }
+      return [...planes.values()].sort((a, b) => b.area - a.area)[0]?.z ?? Number.NaN;
+    };
+    near(faceOf(front), facePlane(front, covered, false), ZTOL, `${kind} front face stands ${covered ? 'NOSE_RECESS' : 'END_GAP'} behind the end of the train`);
+    near(faceOf(rear), facePlane(rear, covered, false), ZTOL, `${kind} rear face stands ${covered ? 'NOSE_RECESS' : 'END_GAP'} behind the end of the train`);
+    // and each end of the train has a cover where the family has one, else the coupler standing out of the face
+    for (const car of [front, rear]) {
+      assert.equal(all(named(g, `car-${car.index}`), 'coupler-cover').length, covered ? 1 : 0, `${kind} car ${car.index} (${car.cab}): coupler-cover markers`);
+      assert.equal(all(named(g, `car-${car.index}`), 'nose-coupler').length, covered ? 0 : 1, `${kind} car ${car.index} (${car.cab}): nose-coupler markers`);
+    }
     // at full section: the wall stands at half the body width minus the door relief, over the whole of the car behind the nose
     const shell = named(named(g, 'car-0'), 'body-shell') as THREE.Mesh;
     const behind = triangles(shell).flatMap((t) => t).filter((v) => v.z > front.start + spec.nose.length + 0.5);
@@ -390,6 +417,8 @@ test('lamps: two headlight clusters on the face of every cab, one each side, lev
       const face = car.cab === 'front' ? car.start : car.end;
       assert.ok(Math.abs(a.z - face) < 0.4, `${kind} car ${car.index} lamps ${a.z} are at the face, ${face}`);
       assert.deepEqual(mine.map((l) => l.userData.side).sort(), ['left', 'right']);
+      // and each tag names its own lamp's side: +x is the right of the train (it travels toward -z), as the door markers have it, at either end of the train
+      for (const l of mine) assert.equal(l.userData.side, worldPos(l).x > 0 ? 'right' : 'left', `${kind} car ${car.index}: the headlight at x = ${worldPos(l).x.toFixed(3)} is tagged '${l.userData.side}'`);
       // where the cover is on, the lamps are above its top
       const cover = all(named(g, `car-${car.index}`), 'coupler-cover')[0];
       if (cover) assert.ok(a.y > (cover.userData.y1 as number), `${kind} car ${car.index}: the lamps are over the cover`);
@@ -887,6 +916,9 @@ test('gangways: a bellows at each end of each joint, of a believable size, with 
 
 test('gap: each body stands 0.35 m inside its car end, the clearance the live layer was written for (COUPLING_CLEARANCE in trains-live.ts)', () => {
   assert.equal(END_GAP, 0.35);
+  // the live layer's constant is that same gap (it lays the cars' outlines by it: see its tests), so the two must not drift apart
+  assert.equal(COUPLING_CLEARANCE, END_GAP, `COUPLING_CLEARANCE in trains-live.ts is ${COUPLING_CLEARANCE} m, but train.ts stands each body END_GAP = ${END_GAP} m inside its car end`);
+  assert.equal(COUPLING_CLEARANCE, 0.35, `COUPLING_CLEARANCE is ${COUPLING_CLEARANCE} m, not the 0.35 m the live layer was written for`);
   // and the bodies really are that far in: every through car of a train
   for (const kind of ['lner9', 'gn717x6'] as TrainKind[]) {
     const g = built(kind);
@@ -947,6 +979,8 @@ test('bogies: every wheel is the size and spacing its family and bogie type give
     const layout = trainLayout(kind);
     const fig = layout.spec.family === 'at300' ? null : emuFig(kind);
     const geometries = new Set<THREE.BufferGeometry>();
+    // the bogie geometry is shared, so the wheels of each (geometry, marker) pair are measured once
+    const treadsMeasured = new Set<string>();
     for (const car of layout.cars) {
       car.bogies.forEach((z, k) => {
         const bogie = named(g, `bogie-${car.index}-${k}`);
@@ -959,6 +993,33 @@ test('bogies: every wheel is the size and spacing its family and bogie type give
           near(w.userData.radius as number, radius, 1e-9, `${kind} wheel radius`);
           near(Math.abs(w.position.z), wheelbase / 2, 1e-9, `${kind} axle spacing`);
           assert.equal(w.userData.flange, FLANGE_HEIGHT);
+        }
+        // the markers are what the tests and the live layer read, the mesh is what is drawn: each level of the bogie mesh has its wheel tread
+        // where the marker says. On each edge of the tread there is a ring of vertices at the marker's radius about its axle, and the ring
+        // reaches the rail head, the top of the wheel, and a radius fore and aft of the axle
+        for (const mesh of all(bogie, 'bogie-mesh') as THREE.Mesh[]) {
+          const lod = mesh.userData.lod as string;
+          const pos = mesh.geometry.getAttribute('position');
+          for (const w of wheels) {
+            const key = `${mesh.geometry.uuid}/${w.position.x}/${w.position.y}/${w.position.z}`;
+            if (treadsMeasured.has(key)) continue;
+            treadsMeasured.add(key);
+            for (const edge of [-1, 1]) {
+              const ring: [number, number][] = [];
+              for (let i = 0; i < pos.count; i++) {
+                if (Math.abs(pos.getX(i) - (w.position.x + edge * WHEEL_HALF)) > 1e-4) continue;
+                const up = pos.getY(i) - w.position.y;
+                const along = pos.getZ(i) - w.position.z;
+                if (Math.abs(Math.hypot(up, along) - radius) < 1e-4) ring.push([up, along]);
+              }
+              const where = `${kind} ${lod} bogie mesh, wheel marked at x ${w.position.x}, z ${w.position.z}, tread edge x ${w.position.x + edge * WHEEL_HALF}`;
+              assert.ok(ring.length > 0, `${where}: no vertex at the marker's radius ${radius} from its axle, so the mesh has no wheel where the marker is`);
+              near(Math.max(...ring.map((v) => v[1])), radius, 1e-4, `${where}: the tread reaches a radius fore of the axle`);
+              near(Math.min(...ring.map((v) => v[1])), -radius, 1e-4, `${where}: the tread reaches a radius aft of the axle`);
+              near(Math.max(...ring.map((v) => v[0])), radius, 1e-4, `${where}: the top of the wheel is a radius above the axle`);
+              near(Math.min(...ring.map((v) => v[0])), -radius, 1e-4, `${where}: the tread touches the rail head, a radius under the axle`);
+            }
+          }
         }
         geometries.add((named(bogie, 'bogie-mesh') as THREE.Mesh).geometry);
       });
@@ -1244,6 +1305,10 @@ test('liveries: every livery names its sources and grades its colours, and the G
   const luma = (c: number): number => (0.2126 * ((c >> 16) & 255) + 0.7152 * ((c >> 8) & 255) + 0.0722 * (c & 255)) / 255;
   assert.ok(luma(LIVERIES.greatnorthern.body) > 0.7, `Great Northern body ${LIVERIES.greatnorthern.body.toString(16)} is not light`);
   assert.ok((LIVERIES.greatnorthern.door & 255) > ((LIVERIES.greatnorthern.door >> 16) & 255) + 0x20, `Great Northern doors ${LIVERIES.greatnorthern.door.toString(16)} are not blue`);
+  // blue is a hue, not just "more blue than red": a sea-green or a teal door beats its red on blue too (the 387's original Southern green is
+  // what the 717 article's pastel blue replaces). A blue door has its blue channel ahead of the green one as well
+  const doorGreen = (LIVERIES.greatnorthern.door >> 8) & 255;
+  assert.ok((LIVERIES.greatnorthern.door & 255) > doorGreen + 0x10, `Great Northern doors ${LIVERIES.greatnorthern.door.toString(16)} are not blue: green ${doorGreen} is not behind blue ${LIVERIES.greatnorthern.door & 255}`);
   // the cab front: pale like the body (the first version drew it dark all over, a guess no source backed; photographs show a white face), with a dark top and glass surround
   assert.match(LIVERIES.greatnorthern.basis, /pale cab front with a dark top and glass surround from two photographs; every shade approximate/);
   assert.equal(LIVERIES.greatnorthern.noseCone, null, 'no cone: the face and the cheeks are the body\'s colour');
@@ -1361,6 +1426,16 @@ test('liveries: the lettering atlas has a row for every text any livery uses, ro
     for (const cab of [true, false]) {
       for (const index of [0, 1, 4]) {
         for (const item of def.decals({ index, count: 5, cab, length: 25, nose: cab ? 5 : 0, doors: [3, 22] })) if (item.text) assert.ok(texts.includes(item.text), `${name}: "${item.text}" is not in the atlas`);
+      }
+    }
+  }
+  // ... and for every car of the longest train the model builds, not a sample of them. A livery that names its cars (the Hull Trains towns, one a
+  // car) asks for a different text on each; the sixth town is on a car that no five-car Hull set has but a coupled pair would
+  const longest = Math.max(...ALL_KINDS.map((k) => trainLayout(k).cars.length));
+  for (const [name, def] of Object.entries(LIVERIES)) {
+    for (const cab of [true, false]) {
+      for (let index = 0; index < longest; index++) {
+        for (const item of def.decals({ index, count: longest, cab, length: 25, nose: cab ? 5 : 0, doors: [3, 22] })) if (item.text) assert.ok(texts.includes(item.text), `${name}: car ${index} of ${longest} (${cab ? 'cab' : 'through'}): "${item.text}" is not in the atlas`);
       }
     }
   }

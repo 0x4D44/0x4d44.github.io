@@ -420,7 +420,18 @@ const osm = (id: number): Pt[] => outlineOf(data, id);
 
 test('every landmark is built, every triangle is real (finite, with an area), every normal is a unit vector and no triangle faces against its normal', () => {
   assert.deepEqual(Object.keys(geo).sort(), ['coalDrops', 'crick', 'gasholders', 'granary', 'gymnasium', 'landscraper', 'library']);
-  for (const [name, sets] of Object.entries(geo)) {
+  // Two ways to a degenerate triangle that the clean data never takes, built here so that the same checks see them: a wall piece that dies away to
+  // nothing at its start (a neighbour's roof reaches the wall's top there), and OSM rings that repeat their first point (an OSM way closes itself that
+  // way; kx-track.json has dropped the copy, so cleanRing's pop of it never fires on the real data).
+  const tapered = new Batch();
+  raisedWallQuads(tapered, [{ edge: ringEdges(sq(0, 0, 10, 10))[0] as RaisedWall['edge'], baseA: 19.7, baseB: 14, topA: 19.7, topB: 19.7 }]);
+  const closed = { buildings: data.buildings.map((b) => ({ ...b, pts: [...b.pts, b.pts[0] as Pt] })) };
+  const built: [string, PartMap<Key>[]][] = [
+    ...Object.entries(geo),
+    ['wall piece that dies away to nothing at its start', [{ brick: tapered }]],
+    ...Object.entries(kxGeometry(kxPlans(closed))).map(([name, sets]): [string, PartMap<Key>[]] => [`${name} built from rings that repeat their first point`, sets]),
+  ];
+  for (const [name, sets] of built) {
     assert.ok(sets.length >= 1);
     for (const [key, b] of allBatches(sets)) {
       assert.ok(b.positions.every(Number.isFinite) && b.uvs.every(Number.isFinite) && b.normals.every(Number.isFinite), `${name}/${key}: finite`);
@@ -658,6 +669,25 @@ test('the same landmarks every load: two builds give identical meshes', () => {
     const pb = ((b.group.children[i] as THREE.Mesh).geometry.getAttribute('position')).array;
     assert.deepEqual(Array.from(pa), Array.from(pb), `${c.name}: same vertices`);
   });
+  // The roof-garden trees are one InstancedMesh of a shared icosahedron, so the loop above sees only the icosahedron. Where each tree stands, how big it is
+  // and which way it turns are in the instance matrices, and its green in the instance colours: compare those too, for every instanced mesh (and at least one).
+  const firstDifference = (x: number[], y: number[]): string => {
+    const k = x.findIndex((v, i) => v !== y[i]);
+    return k < 0 ? 'none' : `element ${k}, ${x[k]} then ${y[k]}`;
+  };
+  const instanced = a.group.children.filter((c): c is THREE.InstancedMesh => (c as THREE.InstancedMesh).isInstancedMesh === true);
+  assert.ok(instanced.length >= 1, `the trees are an instanced mesh, found ${instanced.length} instanced meshes`);
+  for (const ia of instanced) {
+    const ib = b.group.children[a.group.children.indexOf(ia)] as THREE.InstancedMesh;
+    assert.equal(ia.count, ib.count, `${ia.name}: ${ia.count} instances, then ${ib.count}`);
+    const ma = Array.from(ia.instanceMatrix.array);
+    const mb = Array.from(ib.instanceMatrix.array);
+    assert.deepEqual(ma, mb, `${ia.name}: the same placements, sizes and turns (first difference: ${firstDifference(ma, mb)})`);
+    assert.ok(ia.instanceColor && ib.instanceColor, `${ia.name}: each instance has a colour`);
+    const ca = Array.from(ia.instanceColor.array);
+    const cb = Array.from(ib.instanceColor.array);
+    assert.deepEqual(ca, cb, `${ia.name}: the same colours (first difference: ${firstDifference(ca, cb)})`);
+  }
   a.dispose();
   b.dispose();
 });
@@ -686,7 +716,19 @@ test('building them is cheap: all seven landmarks in well under a second', () =>
   const t0 = performance.now();
   const kx = addKxCentral(new THREE.Scene(), data);
   const ms = performance.now() - t0;
-  assert.ok(ms < 1500, `${ms.toFixed(0)} ms`);
+  // What "cheap" means on any machine is the work done, and the work is the triangles built; a roof mesh is what can run away (the Crick's at 1 m instead of 8 m makes
+  // 80,000 on its own, and at 0.2 m half a million, a second of building). The build makes about 20,600 (15,600 in walls, roofs and frames, 5,000 in the 250 trees; the
+  // biggest landmark, the gasholders, is 6,200). The ceilings leave half as much again over the whole build and twice the biggest landmark: above the bands of 'triangle
+  // budgets' (7,800 at most for a landmark) and the scene test (25,000 in all), so they stay quiet for detail added within those budgets and speak only for a runaway mesh.
+  const MAX_TRIANGLES = 30_000;
+  const MAX_PER_LANDMARK = 12_000;
+  assert.ok(kx.stats.triangles <= MAX_TRIANGLES, `${kx.stats.triangles} triangles in all, over the ${MAX_TRIANGLES} that keep the build cheap: ${JSON.stringify(kx.stats.byLandmark)}`);
+  for (const [name, n] of Object.entries(kx.stats.byLandmark)) assert.ok(n <= MAX_PER_LANDMARK, `${name}: ${n} triangles, over the ${MAX_PER_LANDMARK} that keep the build cheap`);
+  // The clock is the coarse check on the machine, and 500 ms is what the title means by well under a second. 20 runs of this build took 20 to 24 ms alone, up to 34 ms beside
+  // eight other test processes and up to 136 ms beside twelve on a box that other work was also using, so the limit keeps a margin of 3.7 times over the worst of those
+  // (15 times over the loaded suite's). A slip in the Crick's roof mesh alone (0.5 m or finer) takes 0.6 to 1.4 s, which this catches too, but the work budget above is
+  // what catches it on any machine.
+  assert.ok(ms < 500, `${ms.toFixed(0)} ms`);
   kx.dispose();
 });
 

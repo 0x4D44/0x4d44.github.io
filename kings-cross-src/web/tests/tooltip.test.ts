@@ -462,6 +462,25 @@ test('a second finger down makes a gesture, not a tap', () => {
   fire(h.canvas, 'pointerup', { pointerType: 'touch', pointerId: 2, clientX: 700, clientY: 500, timeStamp: clockMs + 70 });
   h.tip.frame();
   assert.equal(h.root.hidden, true);
+  // The two fingers can also come up between two frames (the end of a pinch), with no frame() between to clear a tap: the rule itself has to
+  // have marked BOTH as part of a gesture when the second came down, whichever lifts first. Both rest on the train, so a tap from either would show the card.
+  const p2 = pixel(new THREE.Vector3(0, 2, 20)); // the train's second car
+  const where = new Map([[1, p], [2, p2]]);
+  const lone = (spot: { x: number; y: number }): boolean => {
+    const g = harness([train('A', 0, -20)]);
+    fire(g.canvas, 'pointerdown', { pointerType: 'touch', pointerId: 1, clientX: spot.x, clientY: spot.y });
+    fire(g.canvas, 'pointerup', { pointerType: 'touch', pointerId: 1, clientX: spot.x, clientY: spot.y, timeStamp: clockMs + 60 });
+    g.tip.frame();
+    return !g.root.hidden;
+  };
+  assert.ok(lone(p) && lone(p2), 'control: a lone finger on either spot is a tap, so only the second finger can be what keeps the card away below');
+  for (const order of [[1, 2], [2, 1]]) {
+    const g = harness([train('A', 0, -20)]);
+    for (const id of [1, 2]) fire(g.canvas, 'pointerdown', { pointerType: 'touch', pointerId: id, clientX: where.get(id)!.x, clientY: where.get(id)!.y });
+    for (const id of order) fire(g.canvas, 'pointerup', { pointerType: 'touch', pointerId: id, clientX: where.get(id)!.x, clientY: where.get(id)!.y, timeStamp: clockMs + 60 });
+    g.tip.frame();
+    assert.equal(g.root.hidden, true, `both fingers lifted between two frames, in the order ${order.join(' then ')}: a card means a finger of the pinch was taken for a tap`);
+  }
 });
 
 test('a pinned train the page can no longer describe is dropped, not shown again later', () => {

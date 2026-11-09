@@ -32,6 +32,17 @@ const FRONT_THICK = 1.2;
 /** The brick south front stands this far above the arch crowns (kept from the first build; ASSUMED). */
 const FRONT_ABOVE_CROWN = 2.4;
 export const TOWER_SIZE = 6.4; // ASSUMED
+/**
+ * Network Rail records six porch arches, three each side of the tower:
+ * https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-london-kings-cross-station/
+ * Equal bays, 6.8 m openings, 2 m jambs and rise, 0.2 m threshold and 0.4 m stone rings
+ * are ASSUMED. No door/glass infill is modelled.
+ */
+export const SOUTH_FRONT_ARCADES = { perSide: 3, openingWidth: 6.8, jambHeight: 2.0, archRise: 2.0, footAboveGround: 0.2, ringWidth: 0.4 } as const;
+export function southFrontArcadeCentres(width: number, towerWidth: number): number[] {
+  const left = Array.from({ length: SOUTH_FRONT_ARCADES.perSide }, (_, i) => (i + 0.5) * (width - towerWidth) / (2 * SOUTH_FRONT_ARCADES.perSide));
+  return [...left, ...left.map(x => width - x).reverse()];
+}
 /** The glass of each north gable starts this far above the platform; below it the arch is open for trains (ASSUMED). */
 export const GABLE_GLASS_FROM = 9.5;
 const ARC_STEPS = 12;
@@ -52,6 +63,36 @@ export const VALLEY_HALF = 0.25;
  * listing). Tests pin v0 and v1 to the OSM numbers.
  */
 export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0 } as const;
+
+/** F7: Arup Journal 2/2012 pp24–25 (circulation), p27 fig4 (southern location), p29 (five bays and concrete/Y support):
+ * https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf
+ * ASSUMED station-frame alignment and dimensions: five 8 m bays at the existing south end,
+ * 6.6 m clear width, 3.6 m head, 0.65 m shop recess, 0.7 m supports. Approximate plan scale, not a survey.
+ * Only two adjoining public/shop interfaces are represented from the built concourse photograph:
+ * https://mcaslan.agencyprojects.com/storage/app/uploads/public/69a/2c2/318/69a2c23185a88699376861.jpg
+ * Their exact placement, width and glazing division are ASSUMED; upper floors and remaining frontage stay intact.
+ */
+const WESTERN_GATES = Array.from({ length: 5 }, (_, i) => WESTERN_RANGE.v0 + 4 + i * 8);
+const WESTERN_SHOPS = [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 48];
+const WESTERN_HEAD = 3.6;
+const westernCuts = (shops = false): [number, number][] => [
+  ...WESTERN_GATES.map(v => [v - 3.3, v + 3.3] as [number, number]),
+  ...(shops ? WESTERN_SHOPS.map(v => [v - 1.4, v + 1.4] as [number, number]) : []),
+];
+/** Split a solid at ground-level door intervals; retain the header, reveals and all other mass. */
+function westernWall(b: Batch, x: number, d: number, a: number, z: number, top: number, cuts: [number, number][]): void {
+  const box = (lo: number, hi: number, bottom: number, head: number): void => {
+    if (hi > lo && head > bottom) b.box([x, (bottom + head) / 2, -(lo + hi) / 2], [d, head - bottom, hi - lo]);
+  };
+  let start = a;
+  for (const [lo, hi] of cuts) {
+    if (hi <= a || lo >= z) continue;
+    box(start, Math.max(a, lo), GROUND_Y, top);
+    box(Math.max(a, lo), Math.min(z, hi), WESTERN_HEAD, top);
+    start = Math.min(z, hi);
+  }
+  box(start, z, GROUND_Y, top);
+}
 
 // ---------------------------------------------------------------------------------------------
 // pure geometry
@@ -297,6 +338,24 @@ function halfDisc(uc: number, springing: number, r: number): THREE.Shape {
   return s;
 }
 
+function segmentalArchOpening(uc: number, foot: number, halfWidth: number, jamb: number, rise: number): THREE.Shape {
+  const s = new THREE.Shape();
+  s.moveTo(uc - halfWidth, foot); s.lineTo(uc - halfWidth, foot + jamb);
+  s.absellipse(uc, foot + jamb, halfWidth, rise, Math.PI, 0, true);
+  s.lineTo(uc + halfWidth, foot); s.lineTo(uc - halfWidth, foot);
+  return s;
+}
+
+function segmentalArchRing(uc: number, spring: number, halfWidth: number, rise: number, thickness: number): THREE.Shape {
+  const s = new THREE.Shape();
+  s.moveTo(uc - halfWidth - thickness, spring);
+  s.absellipse(uc, spring, halfWidth + thickness, rise + thickness, Math.PI, 0, true);
+  s.lineTo(uc + halfWidth, spring);
+  s.absellipse(uc, spring, halfWidth, rise, 0, Math.PI, false);
+  s.lineTo(uc - halfWidth - thickness, spring);
+  return s;
+}
+
 /** An arched band of radius r0..r1 about (uc, springing): the stone moulding round an arch. */
 function archRing(uc: number, springing: number, r0: number, r1: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -436,16 +495,19 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const [x0, outward] of [[0, -1], [W, 1]] as [number, number][]) {
     // the wall is a box outside the line x0 (west wall to the west, east wall to the east)
     const xc = x0 + (outward * WALL_THICK) / 2;
-    brick.box([xc, (wallH + GROUND_Y) / 2, -L / 2], [WALL_THICK, wallH - GROUND_Y, L]);
+    westernWall(brick, xc, WALL_THICK, 0, L, wallH, outward < 0 ? westernCuts() : []);
     stone.box([xc, wallH + 0.15, -L / 2], [WALL_THICK + 0.5, 0.3, L]); // coping
     for (const v of ribPos) {
-      brick.box([x0 + outward * (WALL_THICK + 0.25), (wallH + GROUND_Y) / 2 - 0.15, -v], [0.5, wallH - GROUND_Y - 0.3, 0.9]); // pier outside
-      brick.box([x0 - outward * 0.15, (wallH + GROUND_Y) / 2 - 0.15, -v], [0.3, wallH - GROUND_Y - 0.3, 0.9]); // pier inside
+      // Trim only piers intersecting the five passage intervals; keep their heads supporting the roof.
+      const bottom = outward < 0 && westernCuts().some(([a, b]) => v + 0.45 > a && v - 0.45 < b) ? WESTERN_HEAD : GROUND_Y;
+      const pierH = wallH - bottom - 0.3;
+      brick.box([x0 + outward * (WALL_THICK + 0.25), (wallH + bottom) / 2 - 0.15, -v], [0.5, pierH, 0.9]); // pier outside
+      brick.box([x0 - outward * 0.15, (wallH + bottom) / 2 - 0.15, -v], [0.3, pierH, 0.9]); // pier inside
     }
     // a window in every bay between the piers, on the inner face (and the outer face of the east wall)
     for (let i = 0; i + 1 < ribPos.length; i++) {
       const z = -(((ribPos[i] as number) + (ribPos[i + 1] as number)) / 2);
-      windowQuad(windows, [x0 - outward * 0.02, 1.9, z], outward < 0 ? '+x' : '-x');
+      if (outward > 0 || !westernCuts().some(([a, b]) => -z + 0.7 > a && -z - 0.7 < b)) windowQuad(windows, [x0 - outward * 0.02, 1.9, z], outward < 0 ? '+x' : '-x');
       if (outward > 0) windowQuad(windows, [x0 + WALL_THICK + 0.02, 1.9, z], '+x');
     }
   }
@@ -457,21 +519,29 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // ---- the south front ------------------------------------------------------------------------
   const outline = new THREE.Shape([new THREE.Vector2(0, GROUND_Y), new THREE.Vector2(W, GROUND_Y), new THREE.Vector2(W, frontTop), new THREE.Vector2(0, frontTop)]);
   for (const uc of centres) outline.holes.push(halfDisc(uc, sp, R));
+  const entryR = SOUTH_FRONT_ARCADES.openingWidth / 2;
+  const entryFoot = GROUND_Y + SOUTH_FRONT_ARCADES.footAboveGround;
+  const entryCentres = southFrontArcadeCentres(W, TOWER_SIZE);
+  for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
   frontGeo.translate(0, 0, -FRONT_THICK);
   group.add(mesh(frontGeo, material('brick'), 'shed-front'));
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
-  proud(W / 2, GROUND_Y + 0.7, W + 0.8, 1.4, 0.35); // plinth
+  let plinthStart = -0.4;
+  for (const x of entryCentres) {
+    const left = x - entryR, right = x + entryR;
+    if (left > plinthStart) proud((plinthStart + left) / 2, GROUND_Y + 0.7, left - plinthStart, 1.4, 0.35);
+    plinthStart = right;
+  }
+  if (plinthStart < W + 0.4) proud((plinthStart + W + 0.4) / 2, GROUND_Y + 0.7, W + 0.4 - plinthStart, 1.4, 0.35); // plinth interrupted at each entrance
   proud(W / 2, sp - 0.3, W + 0.4, 0.6, 0.3); // sill course at the springing
   proud(W / 2, frontTop - 0.45, W + 1.0, 0.9, 0.7); // cornice
   proud(W / 2, frontTop + 0.15, W + 0.6, 0.3, 0.4); // its coping
   for (const x of [0.5, W - 0.5]) proud(x, (frontTop + GROUND_Y) / 2, 1.0, frontTop - GROUND_Y - 1.0, 0.25); // end piers
-  // round-headed windows along the lower front, either side of the tower
-  for (let x = 3.2; x < W - 2; x += 4.4) {
-    if (Math.abs(x - W / 2) < TOWER_SIZE / 2 + 1.5) continue;
-    windowQuad(windowsArch, [x, GROUND_Y + 1.8, 0.02], '+z', 2.0, 3.2);
-  }
+  const entryRings = entryCentres.map(x => new THREE.ExtrudeGeometry(segmentalArchRing(x, entryFoot + SOUTH_FRONT_ARCADES.jambHeight, entryR, SOUTH_FRONT_ARCADES.archRise, SOUTH_FRONT_ARCADES.ringWidth), { depth: 0.5, bevelEnabled: false, curveSegments: 24 }));
+  group.add(mesh(mergeGeometries(entryRings, false), material('stone'), 'shed-front-porch-arches'));
+  disposables.push(...entryRings);
   const rings: THREE.BufferGeometry[] = [];
   const lunGlass: THREE.BufferGeometry[] = [];
   const bars = new Batch();
@@ -529,10 +599,14 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
 }
 
 /**
- * The clock tower on the shed's spine, in the shed's local frame (south = +z), 112 ft to the
- * top of its cap (published, see core/station.ts): a brick shaft on a stone plinth with corner
- * quoins, a clock on every face, two stone cornices round an arched belfry stage, and a pyramid
- * cap in slate. Stage heights and the 6.4 m width are ASSUMED; clock size ASSUMED 3.4 m.
+ * The built south front has its clock in the upper brick turret immediately below the eaves,
+ * without a further arched-window stage above it (JMP photograph):
+ * https://mcaslan.agencyprojects.com/storage/app/uploads/public/69a/2be/fdc/69a2befdcf61f464137352.jpg
+ * Historic England 1078328 identifies the pyramidal roof and weather vane:
+ * https://historicengland.org.uk/listing/the-list/list-entry/1078328
+ * Stage dimensions, cornices, shallow cap, vane geometry/finish, 6.4 m width and 3.4 m clock
+ * diameter are ASSUMED from that appearance, not a surveyed elevation. ASSUMED: the published
+ * 112 ft overall height includes the vane; the previous model allocated it all to the cap.
  */
 export function buildTower(x: number): THREE.Group {
   const tower = new THREE.Group();
@@ -541,50 +615,56 @@ export function buildTower(x: number): THREE.Group {
   const ts = new Batch();
   const tslate = new Batch();
   const tw = TOWER_SIZE;
-  const shaftTop = 26.0;
+  const shaftTop = CLOCK_TOWER_HEIGHT - 8.2; // ASSUMED stage proportions, metres
+  const eavesY = CLOCK_TOWER_HEIGHT - 3.3;
+  const capTop = CLOCK_TOWER_HEIGHT - 1.3;
+  const clockY = (shaftTop + eavesY) / 2;
   tb.box([0, (shaftTop + GROUND_Y) / 2, 0], [tw, shaftTop - GROUND_Y, tw]);
   ts.box([0, GROUND_Y + 0.9, 0], [tw + 0.7, 1.8, tw + 0.7]); // plinth
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) ts.box([sx * (tw / 2 + 0.05), (shaftTop + GROUND_Y) / 2 + 0.9, sz * (tw / 2 + 0.05)], [0.9, shaftTop - GROUND_Y - 1.8, 0.9]); // quoins
-  ts.box([0, shaftTop + 0.6, 0], [tw + 1.2, 1.2, tw + 1.2]); // first cornice
-  ts.box([0, shaftTop + 1.2 + 1.4, 0], [tw - 0.6, 2.8, tw - 0.6]); // belfry stage
-  ts.box([0, shaftTop + 4.0 + 0.45, 0], [tw + 0.6, 0.9, tw + 0.6]); // second cornice
-  const capBase = shaftTop + 4.9;
+  ts.box([0, shaftTop, 0], [tw + 0.4, 0.4, tw + 0.4]);
+  tb.box([0, (shaftTop + eavesY) / 2, 0], [tw, eavesY - shaftTop, tw]); // clock turret
+  ts.box([0, eavesY + 0.325, 0], [tw + 1.2, 0.65, tw + 1.2]); // ASSUMED eaves cornice
+  const capBase = eavesY + 0.65;
   const hb = tw / 2 + 0.3;
-  const apex: V3 = [0, CLOCK_TOWER_HEIGHT, 0];
+  const apex: V3 = [0, capTop, 0];
   const corners: V3[] = [[-hb, capBase, hb], [hb, capBase, hb], [hb, capBase, -hb], [-hb, capBase, -hb]];
-  const slant = Math.hypot(hb, CLOCK_TOWER_HEIGHT - capBase);
+  const slant = Math.hypot(hb, capTop - capBase);
   for (let i = 0; i < 4; i++) tslate.poly([corners[i] as V3, corners[(i + 1) % 4] as V3, apex], [[0, 0], [2 * hb, 0], [hb, slant]]);
   tslate.poly([corners[3] as V3, corners[2] as V3, corners[1] as V3, corners[0] as V3], [[0, 0], [1, 0], [1, 1], [0, 1]]);
-  // a clock on every face, in a stone surround; arched belfry openings above
+  // a clock on every face, in a stone surround directly below the eaves
   const clockMat = clockMaterial();
   const clockGeo = new THREE.CircleGeometry(1.7, 40);
   const surroundGeo = new THREE.RingGeometry(1.7, 2.15, 40);
   const faces = new THREE.Group();
-  const openings = new Batch();
   const dirs: [number, number][] = [[0, 1], [1, 0], [0, -1], [-1, 0]]; // south, east, north, west: (x, z)
   for (const [nx, nz] of dirs) {
     const face = new THREE.Mesh(clockGeo, clockMat);
-    face.position.set(nx * (tw / 2 + 0.06), 22.4, nz * (tw / 2 + 0.06));
+    face.position.set(nx * (tw / 2 + 0.06), clockY, nz * (tw / 2 + 0.06));
     face.rotation.y = Math.atan2(nx, nz);
     const ring = new THREE.Mesh(surroundGeo, material('stone'));
-    ring.position.set(nx * (tw / 2 + 0.05), 22.4, nz * (tw / 2 + 0.05));
+    ring.position.set(nx * (tw / 2 + 0.05), clockY, nz * (tw / 2 + 0.05));
     ring.rotation.y = face.rotation.y;
     faces.add(ring, face);
-    // belfry opening: centred on the face of the belfry stage, facing out
-    const out = tw / 2 - 0.3 + 0.05;
-    windowQuad(openings, [nx * out, shaftTop + 1.4, nz * out], nx === 0 ? (nz > 0 ? '+z' : '-z') : nx > 0 ? '+x' : '-x', 1.8, 2.4);
   }
-  tower.add(mesh(tb.build(), material('brick'), 'tower-brick'), mesh(ts.build(), material('stone'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(openings.build(), material('sashArch'), 'tower-openings'));
+  // ASSUMED simplified vane: mast, cardinal cross and arrow; its precise metalwork is not surveyed.
+  const vane = new Batch(), vaneY = CLOCK_TOWER_HEIGHT - 0.65;
+  vane.box([0, (capTop - 0.15 + CLOCK_TOWER_HEIGHT) / 2, 0], [0.045, CLOCK_TOWER_HEIGHT - capTop + 0.15, 0.045]);
+  vane.box([0, vaneY, 0], [1.8, 0.04, 0.04]);
+  vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
+  const arrow: V3[] = [[0.8, vaneY - 0.18, 0], [1.35, vaneY, 0], [0.8, vaneY + 0.18, 0]];
+  vane.poly(arrow); vane.poly([...arrow].reverse());
+  tower.add(mesh(tb.build(), material('brick'), 'tower-brick'), mesh(ts.build(), material('stone'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
   tower.position.set(x, 0, tw / 2 + 0.15);
   return tower;
 }
 
 /**
  * The Western Range in the shed's local frame: a three-storey brick block along the shed's west
- * wall, its long walls pierced by a window in every bay (round-headed on the ground floor),
+ * wall, with sash upper floors and a southern ground-floor gateline/public frontage,
  * string courses between the storeys, a stone cornice and a pitched slate roof. See WESTERN_RANGE
  * for what is OSM and what is ASSUMED. Its east face stands 0.01 m inside the shed's west wall, so
- * the shed wall covers the faces that would otherwise fight below the aisle roof.
+ * the shed wall covers overlapping faces below the aisle roof except at the five gateline passages.
  */
 export function buildWesternRange(): THREE.Group {
   const { v0, v1, depth, storey, storeys, bay, roofRise } = WESTERN_RANGE;
@@ -601,8 +681,8 @@ export function buildWesternRange(): THREE.Group {
   const len = v1 - v0;
   const zc = -(v0 + v1) / 2;
   const xm = (x0 + x1) / 2;
-  brick.box([xm, (eaves + GROUND_Y) / 2, zc], [depth, eaves - GROUND_Y, len]);
-  stone.box([xm, GROUND_Y + 0.5, zc], [depth + 0.5, 1.0, len + 0.5], { skip: ['-y'] }); // plinth
+  westernWall(brick, xm, depth, v0, v1, eaves, westernCuts(true));
+  westernWall(stone, xm, depth + 0.5, v0 - 0.25, v1 + 0.25, GROUND_Y + 1, westernCuts(true)); // interrupted plinth
   for (let s = 1; s < storeys; s++) stone.box([xm, s * storey, zc], [depth + 0.3, 0.3, len + 0.3]); // string courses
   stone.box([xm, eaves + 0.25, zc], [depth + 0.9, 0.5, len + 0.9]); // cornice
   // pitched roof: two slopes meeting at a ridge along the length, brick gable ends
@@ -624,12 +704,27 @@ export function buildWesternRange(): THREE.Group {
   for (let i = 0; i < bays; i++) {
     const z = -(v0 + margin + (i + 0.5) * bay);
     for (let s = 0; s < storeys; s++) {
+      if (s === 0 && westernCuts(true).some(([a, b]) => -z + 0.7 > a && -z - 0.7 < b)) continue;
       const y = s * storey + (s === 0 ? 1.4 : 0.9);
       const target = s === 0 ? winArch : win;
       windowQuad(target, [x0 - 0.02, y, z], '-x');
       if (y >= 5.8) windowQuad(target, [x1 + 0.02, y, z], '+x');
     }
   }
+  const panes = new Batch(), frames = new Batch();
+  for (const v of WESTERN_SHOPS) {
+    // Recessed frontage only: the shop retains its backing mass, unlike the through-gateline.
+    brick.box([(x0 + 0.65 + x1) / 2, (GROUND_Y + WESTERN_HEAD) / 2, -v], [depth - 0.65, WESTERN_HEAD - GROUND_Y, 2.8]);
+    panes.box([x0 + 0.4, (GROUND_Y + 3.2) / 2, -v], [0.05, 3.2 - GROUND_Y, 2.8]);
+    frames.box([x0 + 0.35, 3.35, -v], [0.15, 0.5, 2.8]);
+    frames.box([x0 + 0.35, (GROUND_Y + 3.2) / 2, -v], [0.12, 3.2 - GROUND_Y, 0.08]);
+  }
+  // ASSUMED simplified central Y-columns: stems and flared heads support the retained first floor.
+  for (const v of WESTERN_GATES) {
+    stone.box([xm, (GROUND_Y + 2.5) / 2, -v], [0.7, 2.5 - GROUND_Y, 0.7]);
+    for (const side of [-1, 1]) stone.box([xm + side * 0.55, 2.95, -v], [0.6, 1.55, 0.7], { rotZ: side * -0.65 });
+  }
+  g.add(mesh(panes.build(), material('pane'), 'range-public-glazing'), mesh(frames.build(), material('steel'), 'range-public-frames'));
   g.add(mesh(brick.build(), material('brick'), 'range-brick'));
   g.add(mesh(stone.build(), material('stone'), 'range-stone'));
   g.add(mesh(slate.build(), material('slate'), 'range-roof'));

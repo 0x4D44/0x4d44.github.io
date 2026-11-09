@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import net from 'node:net';
+import util from 'node:util';
 import { test } from 'node:test';
 import { FrameParser, StompClient, encodeFrame } from '../stomp.mjs';
 import { runFeed } from '../feed.mjs';
@@ -206,6 +207,52 @@ test('the client never emits or stringifies the passcode', async (t) => {
   const client = new StompClient(sock, { login: 'l', passcode: 'SENTINEL-PASSCODE' });
   const dump = JSON.stringify(client) + String(Object.keys(client)) + JSON.stringify(Object.getOwnPropertyNames(client));
   assert.ok(!dump.includes('SENTINEL-PASSCODE'));
+
+  // Now run real clients against a loopback stub (127.0.0.1, ephemeral port, fake passcode only). The stub plays an
+  // untrusted server: it echoes the passcode back in every field it controls, the CONNECTED server header and an
+  // ERROR frame's message and body, so any path that forwards upstream text would carry it into an event.
+  const PASS = 'SENTINEL-PASSCODE';
+  const wire = [];
+  const server = await fakeServer(t, (s) => {
+    const parser = new FrameParser();
+    s.on('data', (d) => {
+      for (const f of parser.push(d)) {
+        wire.push(f);
+        if (f.command === 'CONNECT' && f.headers.login === 'stub-ok') s.write(encodeFrame('CONNECTED', { version: '1.2', server: 'stub/1 ' + PASS, 'heart-beat': '0,0' }));
+        if (f.command === 'CONNECT' && f.headers.login === 'stub-err') s.write(encodeFrame('ERROR', { message: 'login refused for ' + PASS }, PASS));
+        if (f.command === 'SUBSCRIBE') s.write(encodeFrame('MESSAGE', { destination: f.headers.destination, subscription: f.headers.id }, '[{"CT_MSG":{}}]'));
+      }
+    });
+  });
+  const emitted = [];
+  const watch = (live) => {
+    for (const name of ['connected', 'message', 'fault', 'close']) {
+      live.on(name, (...args) => emitted.push({ name, args: args.map((a) => (a instanceof Error ? { name: a.name, message: a.message, stack: a.stack } : a)) }));
+    }
+  };
+  const ok = new StompClient(clientSocket(server), { login: 'stub-ok', passcode: PASS, heartbeat: [0, 0] });
+  watch(ok);
+  const gotMessage = new Promise((resolve) => ok.once('message', resolve));
+  ok.subscribe('/topic/x');
+  ok.start();
+  await gotMessage;
+  const okClosed = new Promise((resolve) => ok.once('close', resolve));
+  ok.disconnect();
+  await okClosed;
+  const refused = new StompClient(clientSocket(server), { login: 'stub-err', passcode: PASS, heartbeat: [0, 0] });
+  watch(refused);
+  const refusedClosed = new Promise((resolve) => refused.once('close', resolve));
+  refused.start();
+  await refusedClosed;
+  assert.deepEqual(emitted.map((e) => e.name), ['connected', 'message', 'close', 'fault', 'close'], 'the stub drove every event path of the client');
+  const emittedText = JSON.stringify(emitted);
+  assert.ok(!emittedText.includes(PASS), 'an event the client emitted carried the passcode: ' + emittedText);
+  const connects = wire.filter((f) => f.command === 'CONNECT');
+  assert.equal(connects.length, 2, 'both clients connected to the stub');
+  for (const f of connects) assert.equal(f.headers.passcode, PASS, 'CONNECT is the one frame that carries the passcode');
+  const leakyFrames = wire.filter((f) => f.command !== 'CONNECT' && JSON.stringify(f).includes(PASS)).map((f) => f.command);
+  assert.deepEqual(leakyFrames, [], 'no frame after CONNECT may carry the passcode');
+  assert.ok(!(util.inspect(ok, { showHidden: true, depth: 4 }) + util.inspect(refused, { showHidden: true, depth: 4 })).includes(PASS), 'inspecting a started client shows the passcode');
 });
 
 test('an ERROR frame becomes a fault without upstream text', async (t) => {

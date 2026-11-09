@@ -290,18 +290,25 @@ const SASH_HEIGHT = 2.4; // ASSUMED
 
 export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   const parts: PartMap<Key> = {};
+  const stone = part(parts, 'stone');
   addWalls(part(parts, 'brick'), plan.outline, 0, plan.eaves);
   const segs = segmentsOutside(polygonEdges(plan.outline), []);
-  addBand(part(parts, 'stone'), segs, plan.groundStorey - 0.12, 0.28, 0.1); // string course over the ground floor
-  addBand(part(parts, 'stone'), segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, 0.55); // modillion cornice [HE-GNH]; its depth is ASSUMED
+  addBand(stone, segs, plan.groundStorey - 0.12, 0.28, 0.1); // string course over the ground floor
+  addBand(stone, segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, 0.55); // modillion cornice [HE-GNH]; its depth is ASSUMED
   addRoof(part(parts, 'slate'), plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
 
   const f = FIGURES.gnh;
-  const [tw, th] = TEXTURES.window.tile;
+  const [tw] = TEXTURES.window.tile;
+  const [aw, ah] = TEXTURES.windowArch.tile;
+  const crown = 0.75 + ah;
+  const bays = plan.faces.flatMap(face => face.bays);
+  const openings = bays.map(({ at, dir, normal }) => [-aw / 2, aw / 2, aw / 2, -aw / 2].map((x, i) => [at[0] + dir[0] * x + normal[0] * (i < 2 ? -1 : 1), at[1] + dir[1] * x + normal[1] * (i < 2 ? -1 : 1)] as Pt));
+  addBand(stone, segmentsOutside(polygonEdges(plan.outline), openings), 0.75 + ah - aw / 2 - 0.08, 0.16, 0.14); // [HE-GNH] continuous imposts; profile is ASSUMED
   for (const face of plan.faces) {
     face.bays.forEach((bay, index) => {
+      stone.box([bay.at[0] + bay.normal[0] * 0.2, crown + 0.1, bay.at[1] + bay.normal[1] * 0.2], [0.5, 0.45, 0.12], { rotY: Math.atan2(-bay.dir[1], bay.dir[0]) }); // [HE-GNH] keystone dimensions are ASSUMED
       // ground floor: round-headed openings [HE-GNH]
-      addSash(parts, 'sashArch', bay, 0.75, tw, th);
+      addSash(parts, 'sashArch', bay, 0.75, aw, ah);
       for (let s = 1; s < f.storeys; s++) {
         // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little) so the top row clears the cornice
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;
@@ -380,13 +387,14 @@ function addTower(parts: PartMap<Key>, t: TowerPlan): void {
 
 export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
   const parts: PartMap<Key> = {};
+  const stone = part(parts, 'stone'), slate = part(parts, 'slate');
   addWalls(part(parts, 'brickRed'), plan.outline, 0, plan.eaves);
   // the towers stand in front of the wall: stop the bands and windows where they stand
   const cutters = plan.towers.map((t) => towerSquare(t, 0.45));
   const segs = segmentsOutside(polygonEdges(plan.outline), cutters);
-  for (const y of [6.0, 11.5, 17.0]) addBand(part(parts, 'stone'), segs, y, 0.35, 0.12);
-  addBand(part(parts, 'stone'), segs, plan.eaves - 1.0, 1.0, 0.6);
-  addRoof(part(parts, 'slate'), plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
+  for (const y of [6.0, 11.5, 17.0]) addBand(stone, segs, y, 0.35, 0.12);
+  addBand(stone, segs, plan.eaves - 1.0, 1.0, 0.6);
+  addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
 
   // windows: four storeys, round-headed at the bottom and pointed above; the front and the curved wing in bays, the rest evenly
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, { y: 6.9, h: 3.4, head: 'pointed' as Head }, { y: 12.4, h: 3.4, head: 'pointed' as Head }, { y: 17.9, h: 3.0, head: 'pointed' as Head }];
@@ -410,6 +418,29 @@ export function midlandGeometry(plan: MidlandPlan): PartMap<Key> {
       bays.push({ edge: e.i, at: [e.a[0] + e.dir[0] * e.length * t, e.a[1] + e.dir[1] * e.length * t], dir: e.dir, normal: e.normal, width: e.length / n });
     }
     dress(bays);
+  }
+  // HE 1342037: two roof storeys with stacked gabled dormers.
+  // https://historicengland.org.uk/listing/the-list/list-entry/1342037
+  // Public roof photograph: https://www.blackheath.org/events/2026/3/26/walk-amp-talk-st-pancras-and-somerstown
+  // ASSUMED: regular bay alignment, tier insets, widths/heights and plain stone gables;
+  // slate cheeks/hoods meet the existing pitch. No new footprint or tower placement.
+  const slope = (plan.ridge - plan.eaves) / plan.roof.inset;
+  for (const bay of [...plan.front.bays, ...plan.wing.bays]) for (const f of [0.12, 0.55]) {
+    const w = Math.min(1.3, bay.width * 0.25) * (f < 0.5 ? 1 : 0.75), h = f < 0.5 ? 3.6 : 2.8, shoulder = h * 0.68;
+    const depth = h / slope, inset = plan.roof.inset * f, y = plan.eaves + slope * inset;
+    const p = { ...bay, at: [bay.at[0] - bay.normal[0] * inset, bay.at[1] - bay.normal[1] * inset] as Pt };
+    // Inflate by the full hood radius, not just its centre: no edge can cross a tower.
+    if (plan.towers.some(t => pointInQuad(p.at, towerSquare(t, Math.hypot(w, depth) + 0.45)))) continue;
+    const q = (u: number, d: number, v: number): V3 => [p.at[0] + p.dir[0] * u - p.normal[0] * d, y + v, p.at[1] + p.dir[1] * u - p.normal[1] * d];
+    const normal: V3 = [p.normal[0], 0, p.normal[1]];
+    const gable: V2[] = [[-w, 0], [w, 0], [w, shoulder], [0, h], [-w, shoulder]];
+    stone.poly(gable.map(([u, v]) => q(u, 0, v)), gable, { normal });
+    for (const sign of [-1, 1]) {
+      slate.tri(q(sign*w, 0, 0), q(sign*w, 0, shoulder), q(sign*w, shoulder/slope, shoulder), [[0, 0], [0, shoulder], [shoulder/slope, shoulder]], [sign*p.dir[0], 0, sign*p.dir[1]]);
+      const span = Math.hypot(w, h - shoulder);
+      slate.quadUV(q(sign*w, 0, shoulder), q(0, 0, h), q(0, depth, h), q(sign*w, shoulder/slope, shoulder), [[0, 0], [span, 0], [span, depth], [0, shoulder/slope]], UP);
+    }
+    addFramedWindow(parts, p, y + 0.18, w * 1.05, shoulder * 0.8, 'pointed', 0.12);
   }
   for (const t of plan.towers) addTower(parts, t);
   return parts;

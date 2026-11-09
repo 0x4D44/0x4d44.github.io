@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, concourseHeight, pointInPolygon, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
 import { buildConcourse, columnProfile, diagrid, EDGE, edgesOf, FUNNEL_RADIUS, keepTriangles } from '../src/concourse.ts';
+import * as concourse from '../src/concourse.ts';
 import type { Diagrid } from '../src/concourse.ts';
 import { WESTERN_RANGE } from '../src/shed.ts';
 
@@ -176,4 +177,50 @@ test('the roof reaches the OSM concourse arc including its north and south canop
     for (let i=0;i<p.count;i++) nearest = Math.min(nearest, Math.hypot(p.getX(i)-point[0],p.getZ(i)-point[1]));
     assert.ok(nearest < 3, `OSM roof edge u=${u}, v=${v} is ${nearest} m from the drawn roof`);
   }
+});
+
+// JMP built photo shows brickwork through the crossing white stalk members.
+test('column lattice: rays pass through open branching gaps instead of a continuous shell', () => {
+  const column = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-column') as THREE.Mesh;
+  column.updateMatrixWorld(true);
+  for (const y of [3, 8, 11, 14, 17, 19]) {
+    let hits = 0;
+    for (let i = 0; i < 120; i++) {
+      const angle = (i + .37) * 2 * Math.PI / 120;
+      const direction = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+      const origin = new THREE.Vector3(column.position.x, y, column.position.z).addScaledVector(direction, 8);
+      hits += Number(new THREE.Raycaster(origin, direction.negate(), 0, 16).intersectObject(column).length > 0);
+    }
+    assert.ok(hits > 0 && hits < 108, `height ${y}: ${hits}/120 rays hit, expected members and open gaps`);
+  }
+});
+
+test('column lattice: connected branching members are drawn inside the retained assumed envelope', () => {
+  const api = concourse as typeof concourse & { columnMembers?: (apex: number) => {nodes: [number,number,number][]; edges: [number,number][]} };
+  assert.equal(typeof api.columnMembers, 'function', 'column needs an inspectable member graph');
+  const {nodes, edges} = api.columnMembers!(canopy.apex);
+  const adjacent = nodes.map(() => new Set<number>());
+  for (const [a,b] of edges) { adjacent[a]!.add(b); adjacent[b]!.add(a); }
+  const reached = new Set([0]), pending = [0];
+  for (const a of pending) for (const b of adjacent[a]!) if (!reached.has(b)) {reached.add(b); pending.push(b);}
+  assert.equal(reached.size, nodes.length, 'every member joins the same structure');
+  assert.ok(adjacent.some(n => n.size >= 4), 'members branch at shared nodes');
+  assert.ok(nodes.some(n => n[1] === 0) && nodes.some(n => Math.abs(n[1]-19.9)<EPS), 'floor to existing apex');
+  const column = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-column') as THREE.Mesh;
+  column.updateMatrixWorld(true);
+  for (const [a,b] of edges) {
+    const p = new THREE.Vector3(...nodes[a]!).lerp(new THREE.Vector3(...nodes[b]!), .5);
+    const direction = new THREE.Vector3(p.x,0,p.z).normalize();
+    const origin = p.clone().add(column.position).addScaledVector(direction, .5);
+    assert.ok(new THREE.Raycaster(origin,direction.negate(),0,1).intersectObject(column).length, `missing drawn member ${a}:${b}`);
+  }
+  const profile = columnProfile(canopy.apex), positions = column.geometry.getAttribute('position');
+  for (let i=0;i<positions.count;i++) {
+    const y=positions.getY(i), r=Math.hypot(positions.getX(i),positions.getZ(i));
+    assert.ok(y >= -EPS && y <= 19.9+EPS, 'existing height envelope');
+    const upper=profile.findIndex(p=>p[1]>=y-EPS), hi=profile[Math.max(1,upper)]!,lo=profile[Math.max(0,upper-1)]!;
+    const radius=lo[0]+(hi[0]-lo[0])*(y-lo[1])/(hi[1]-lo[1]);
+    assert.ok(r<=radius+EPS, `member radius ${r} exceeds envelope ${radius} at ${y}`);
+  }
+  assert.ok(!column.children.length && column.geometry.groups.length <= 1, 'one batched member mesh');
 });

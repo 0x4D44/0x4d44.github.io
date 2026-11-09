@@ -195,6 +195,15 @@ test('meshPolygon is finer where asked: halving maxEdge at least doubles the tri
   const a = meshPolygon(sq(0, 0, 40, 40), 10).tris.length;
   const b = meshPolygon(sq(0, 0, 40, 40), 5).tris.length;
   assert.ok(b >= a * 2, `${a} -> ${b}`);
+  // The ratio alone sits on a boundary: the 40 m square takes 64 triangles at 10 m and 128 at anything from 9 m down to 7.1 m, so a mesh that stopped
+  // refining near 8 m would still "double". The contract is that no triangle edge is longer than maxEdge; and a triangle with no side over maxEdge
+  // covers at most (sqrt(3) / 4) maxEdge^2 (the equilateral one), so the 1600 m2 square needs at least that many triangles.
+  for (const maxEdge of [10, 5]) {
+    const mesh = meshPolygon(sq(0, 0, 40, 40), maxEdge);
+    const least = Math.ceil(1600 / ((Math.sqrt(3) / 4) * maxEdge * maxEdge));
+    assert.ok(mesh.tris.length >= least, `maxEdge ${maxEdge}: ${mesh.tris.length} triangles for 1600 m2, edges of at most ${maxEdge} m need at least ${least}`);
+    checkMesh(`40 m square at maxEdge ${maxEdge}`, sq(0, 0, 40, 40), mesh, maxEdge);
+  }
 });
 
 test('clipHalfPlane and insertCrossings: the two halves of a ring add up to the ring, and the crossings are the points on the line', () => {
@@ -217,6 +226,10 @@ test('simplifyRing and dropSharpTurns: drop the corners that are not corners, ke
   assert.equal(r.length, 4, 'a point on a straight run goes');
   assert.equal(simplifyRing([[0, 0], [0.5, 0], [10, 0], [10, 10], [0, 10]], 1.5, 3).length, 4, 'a corner closer than minEdge goes');
   assert.equal(simplifyRing([[0, 0], [10, 0], [10, 10], [0, 10]], 1.5, 3).length, 4, 'a square stays a square');
+  // a short edge at a REAL corner: a 1.4 m chamfer turns 45 degrees at both its ends, so the straightness test keeps both and only minEdge can drop the second
+  const chamfered: Pt[] = [[0, 0], [10, 0], [10, 10], [1, 10], [0, 9]];
+  assert.deepEqual(simplifyRing(chamfered, 1.5, 3), [[0, 0], [10, 0], [10, 10], [1, 10]], 'a corner closer than minEdge goes even where it is a real corner (45 degrees)');
+  assert.deepEqual(simplifyRing(chamfered, 1, 3), chamfered, 'the same corner stays when it is farther than minEdge');
   const spike: Pt[] = [[0, 0], [10, 0], [10, 10], [5.2, 10], [5, 30], [4.8, 10], [0, 10]];
   const out = dropSharpTurns(spike, 150);
   assert.ok(!out.some((p) => p[1] === 30), 'the thin spike is dropped');
@@ -230,6 +243,13 @@ test('exposedEdges: the edges two neighbours share are not walls', () => {
   assert.equal(exposedEdges(a, []).length, 4);
   assert.equal(exposedEdges(a, [b]).every((e) => e.normal[0] <= 0.01), true, 'the one on the east side is the one left out');
   assert.ok(onRing([10, 5], a, 0.01) && !onRing([11, 5], a, 0.5));
+  // a neighbour has to cover the whole edge: the two prongs of a U round a passage touch both ends of the south edge but not its middle, which stays a wall
+  const prongs: Pt[] = [[0, 0], [0, -6], [10, -6], [10, 0], [8, 0], [8, -4], [2, -4], [2, 0]];
+  assert.ok(onRing([0, 0], prongs) && onRing([10, 0], prongs) && !onRing([5, 0], prongs), 'the fixture touches both ends of the south edge and not its middle');
+  assert.equal(exposedEdges(a, [prongs]).length, 4, 'a neighbour that touches both ends of an edge but not its middle does not hide it');
+  // and it has to be ONE neighbour that does: three that touch one end, the other end and the middle of the edge do not hide it between them
+  const apart: Pt[][] = [sq(-4, -4, 0, 0), sq(10, -4, 14, 0), sq(4, -4, 6, 0)];
+  assert.equal(exposedEdges(a, apart).length, 4, 'three neighbours that touch one end, the other end and the middle of an edge do not hide it between them');
 });
 
 test('gableRoof: a ridge at eaves + rise over the middle of the width, the eaves on the long walls, a crossing in each end wall', () => {
@@ -401,6 +421,24 @@ test('the gasholders: circles fitted to the OSM ways (nodes within 0.5 m of them
   for (const [p, q] of [[a, b], [a, c], [b, c]] as const) close(Math.hypot(p.centre[0] - q.centre[0], p.centre[1] - q.centre[1]), p.radius + q.radius, 0.5, `${p.id} and ${q.id} touch`);
   // Gasholder Park stands clear of the triplet
   for (const g of plan.triplet) assert.ok(Math.hypot(g.centre[0] - plan.park.centre[0], g.centre[1] - plan.park.centre[1]) > g.radius + plan.park.radius, `park clear of ${g.id}`);
+  // The OSM circles sit within 0.15 of a whole number of columns (24.14, 19.04 and 26.05 pitches for the triplet), so these ways cannot tell the nearest
+  // column count from the one below it. Bend each way, in turn, into a circle that is a known fraction of a pitch over a whole number: the count is the NEAREST.
+  const ways = GASHOLDER_WAYS as Record<number, Pt[]>;
+  for (const real of [...plan.triplet, plan.park]) {
+    const kept = ways[real.id] as Pt[];
+    try {
+      for (const [pitches, columns] of [[20.6, 21], [20.4, 20]] as const) {
+        const radius = (pitches * FIG.gas.columnPitch) / (2 * Math.PI);
+        ways[real.id] = Array.from({ length: 36 }, (_, k): Pt => [real.centre[0] + radius * Math.cos((2 * Math.PI * k) / 36), real.centre[1] + radius * Math.sin((2 * Math.PI * k) / 36)]);
+        const bent = gasholderPlan();
+        const g = [...bent.triplet, bent.park].find((h) => h.id === real.id) as typeof real;
+        close(g.radius, radius, 1e-3, `${real.id}: the fitted circle`);
+        assert.equal(g.columns, columns, `${real.id}: a circle of ${pitches} column pitches gets ${g.columns} columns, the nearest whole number is ${columns}`);
+      }
+    } finally {
+      ways[real.id] = kept;
+    }
+  }
 });
 
 test('the apartment drums [DC] [AR]: 12, 9 and 8 storeys, the biggest drum the tallest, each inside its frame with a courtyard, none in the park', () => {

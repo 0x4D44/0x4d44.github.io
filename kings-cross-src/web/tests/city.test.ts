@@ -33,6 +33,18 @@ const rect = (x0: number, z0: number, x1: number, z1: number): [number, number][
 
 test('every city texture draws at a real-world scale: facades at 100 texels per metre both ways, grass and water in their ranges', () => {
   assert.deepEqual(textureNames.slice().sort(), ['glass', 'grass', 'panel', 'red', 'shop', 'stock', 'stone', 'water']);
+  // The facades come first, so a wrong scale is reported as the facade's own ("stock up: 120 != 100"): their band (95 to 105
+  // texels per metre) is the generic band's below, which would otherwise fire first and leave these lines unreachable. Every
+  // other check compares a texture with FACADE_TEXELS_PER_M and would follow a changed constant, so pin the 100 itself.
+  assert.equal(FACADE_TEXELS_PER_M, 100, `facades are drawn at 100 texels per metre, FACADE_TEXELS_PER_M is ${FACADE_TEXELS_PER_M}`);
+  for (const key of facadeKeys) {
+    const spec = CITY_TEXTURES[key];
+    const [tx, ty] = texelsPerMetre(spec);
+    close(tx, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} across`);
+    close(ty, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} up`);
+    assert.ok(Number.isInteger(spec.px[0]) && Number.isInteger(spec.px[1]), `${key}: whole pixels`);
+    assert.match(spec.source, /ASSUMED/, `${key}: its sizes are marked ASSUMED, none is a survey`);
+  }
   for (const name of textureNames) {
     const spec = CITY_TEXTURES[name];
     const [tx, ty] = texelsPerMetre(spec);
@@ -42,14 +54,6 @@ test('every city texture draws at a real-world scale: facades at 100 texels per 
     assert.ok(spec.px[0] * spec.px[1] <= 1_100_000, `${name}: ${spec.px} px is more than a megapixel`);
     assert.ok(spec.source.length > 10, `${name}: says where its size comes from`);
     assert.equal(spec.repeat, true, `${name} tiles`);
-  }
-  for (const key of facadeKeys) {
-    const spec = CITY_TEXTURES[key];
-    const [tx, ty] = texelsPerMetre(spec);
-    close(tx, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} across`);
-    close(ty, FACADE_TEXELS_PER_M, FACADE_TEXELS_PER_M * 0.05, `${key} up`);
-    assert.ok(Number.isInteger(spec.px[0]) && Number.isInteger(spec.px[1]), `${key}: whole pixels`);
-    assert.match(spec.source, /ASSUMED/, `${key}: its sizes are marked ASSUMED, none is a survey`);
   }
 });
 
@@ -163,6 +167,23 @@ test('the painted windows are the sizes the specs say, in the middle of the bay 
   const arch = paint('red').filter((c) => c.op === 'fillRect' && isGradient(c.fillStyle));
   assert.ok(arch.length >= 1);
   close((arch[0] as Call).args[2] as number, 120, 0.1, 'red-brick arch width in px');
+  // ... 2.15 m tall to the crown, standing on a 0.9 m sill, in the middle of its bay, with room for a lintel (the spec's words).
+  // The glass is clipped to an arch path, so read the opening the glass fills: moveTo its bottom left corner, lineTo the
+  // springing line, a quadratic curve to the right springing point. The crown of the arch is the middle of that curve.
+  const [redW, redH] = CITY_TEXTURES.red.px;
+  const redCalls = paint('red');
+  const pane = rect('red');
+  const at = redCalls.findIndex((c, i) => c.op === 'moveTo' && Math.abs((c.args[0] as number) - pane.x) < 0.5 && redCalls[i + 2]?.op === 'quadraticCurveTo');
+  assert.ok(at >= 0, 'red: the glass is clipped to an arch that starts at its bottom left corner');
+  const foot = (redCalls[at] as Call).args[1] as number;
+  const springing = (redCalls[at + 1] as Call).args[1] as number;
+  const [, controlY, , endY] = (redCalls[at + 2] as Call).args as number[];
+  const crown = 0.25 * springing + 0.5 * controlY + 0.25 * endY;
+  close((redH - foot) / 100, 0.9, 0.011, 'red arch window sill height');
+  close((foot - crown) / 100, 2.15, 0.011, 'red arch window height to the crown');
+  close(pane.x + pane.w / 2, redW / 2, 0.51, 'red arch window is centred in its bay');
+  assert.ok(crown >= 0.2 * 100, `red: the crown of the arch is ${crown.toFixed(1)} px from the top of the tile, no room for a lintel`);
+  assert.ok((redH - crown) / 100 <= CITY_TEXTURES.red.tile[1] - 0.3, `red: window head ${((redH - crown) / 100).toFixed(2)} m in a ${CITY_TEXTURES.red.tile[1]} m storey`);
 });
 
 test('brick is metric: courses of 75 mm and a whole number of 225 mm bricks across, so the tile repeats without a seam', () => {
@@ -170,6 +191,7 @@ test('brick is metric: courses of 75 mm and a whole number of 225 mm bricks acro
     const [w, h] = CITY_TEXTURES[name].px;
     const rows = new Set<number>();
     const firstRow = new Set<number>();
+    const spans = new Map<number, [number, number]>();
     for (const c of paint(name)) {
       if (c.op !== 'fillRect') continue;
       const [x, y, bw, bh] = c.args as number[];
@@ -177,6 +199,9 @@ test('brick is metric: courses of 75 mm and a whole number of 225 mm bricks acro
       if (typeof c.fillStyle === 'string' && c.fillStyle.startsWith('rgb(') && (bh as number) < 8 && (bw as number) > 15 && (bw as number) < 30) {
         rows.add(Math.round((y as number) * 100) / 100);
         if ((y as number) < 3) firstRow.add(Math.round((x as number) * 100) / 100);
+        const courseY = Math.round((y as number) * 100) / 100;
+        const [lo, hi] = spans.get(courseY) ?? [Infinity, -Infinity];
+        spans.set(courseY, [Math.min(lo, x as number), Math.max(hi, (x as number) + (bw as number))]);
       }
     }
     const course = h / rows.size;
@@ -185,6 +210,14 @@ test('brick is metric: courses of 75 mm and a whole number of 225 mm bricks acro
     const brick = w / Math.round(w / 22.5);
     close(brick / 100, 0.225, 0.225 * 0.04, `${name}: brick length in m`);
     assert.ok(firstRow.size >= Math.round(w / 22.5), `${name}: bricks across the first course`);
+    // The pitch the bricks are really laid at, from the painted first course (its wrap bricks included): 225 mm within 4%,
+    // and a whole number of them across the tile, so the pattern meets itself at the edge.
+    const xs = [...firstRow].sort((a, b) => a - b);
+    const pitch = ((xs[xs.length - 1] as number) - (xs[0] as number)) / (xs.length - 1);
+    assert.ok(Math.abs(pitch / 100 - 0.225) <= 0.225 * 0.04, `${name}: the painted bricks are laid ${(pitch * 10).toFixed(0)} mm apart (${xs.length} bricks from ${xs[0]} to ${xs[xs.length - 1]} px), not 225 mm +/- 4%`);
+    assert.ok(Math.abs(w / pitch - Math.round(w / pitch)) < 0.01, `${name}: ${(w / pitch).toFixed(3)} bricks of ${pitch.toFixed(2)} px across a ${w} px tile is not a whole number, so the pattern has a seam`);
+    // ... and every course, the half-brick offset ones included, runs out past both edges of the tile
+    for (const [y, [lo, hi]] of spans) assert.ok(lo <= 1.5 && hi >= w - 1.5, `${name}: the course at y = ${y} spans ${lo.toFixed(1)} to ${hi.toFixed(1)} of a ${w} px tile, leaving a seam`);
   }
 });
 

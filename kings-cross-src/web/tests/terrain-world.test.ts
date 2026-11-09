@@ -93,7 +93,7 @@ test('addTerrain: ground, bank and wall in their own draws, every triangle in ex
   assert.equal(freed, 3, 'every draw\'s geometry is freed');
 });
 
-test('addTerrain: the retaining wall is sooty brick of its own, much darker than a portal face but still warm, and behind the city layers in depth', () => {
+test('addTerrain: the retaining wall is sooty brick of its own, much darker than a portal face but still warm, and behind the city layers in depth', async () => {
   const scene = new THREE.Scene();
   const d = addTerrain(scene, terrainFromFunction(ridge, EXT256, 1), { tolerance: () => 0.02 });
   const wall = d.group.children.find((c) => c.name === 'terrain-wall') as THREE.Mesh;
@@ -112,6 +112,25 @@ test('addTerrain: the retaining wall is sooty brick of its own, much darker than
   for (const flat of [terrainMaterial('ground'), terrainMaterial('bank')] as const) assert.equal(m.polygonOffsetFactor, flat.polygonOffsetFactor, `pushed back as far as the ${flat.name}`);
   assert.ok(m.polygonOffset && m.polygonOffsetFactor === 1 && m.polygonOffsetUnits === 1, 'behind the city layers, whose offsets are negative');
   assert.equal(portal.polygonOffset, false, 'the portal brick itself is untouched');
+  // In a browser the brick has a picture; Node has no document, so everything above is flat colour. Make the picture for a moment: a second,
+  // private copy of materials.ts (the query on its URL gives it caches of its own, so nothing leaks into the module the other tests share) is
+  // asked for the two materials while a document whose canvas swallows every drawing call stands in for the page's, and the document goes again.
+  const fresh = await import(new URL('../src/materials.ts?brick-picture', import.meta.url).href) as typeof import('../src/materials.ts');
+  const host = globalThis as { document?: unknown };
+  const ink = new Proxy({}, { get: () => () => undefined, set: () => true });
+  const made = (() => {
+    host.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ink }) };
+    try { return { brick: fresh.material('brick') as THREE.MeshLambertMaterial, wall: fresh.terrainMaterial('wall') as THREE.MeshLambertMaterial }; } finally { delete host.document; }
+  })();
+  const brickMap = made.brick.map;
+  const wallMap = made.wall.map;
+  assert.ok(brickMap, 'control: with a document the portal brick has a picture, so the checks below are about the wall');
+  // (booleans, not assert.equal on the objects: a failed equal would try to print two textures and materials, which the test runner cannot report)
+  assert.ok(made.wall !== made.brick, `the wall is a material of its own, not the portal brick (both are called ${made.wall.name})`);
+  assert.ok(wallMap, `the retaining wall is brick: it wears the brick picture, not just a brick-coloured tint (its map is ${wallMap})`);
+  assert.ok(wallMap === brickMap, `the same brick picture as the portal faces, so the wall's UVs in metres still make bricks the size of bricks (the wall's picture is ${wallMap.uuid}, the portal brick's ${brickMap.uuid})`);
+  close(wallMap.repeat.x, 1 / fresh.TEXTURES.brick.tile[0], 1e-12, 'the wall\'s picture repeats once per brick tile across (its UVs are in metres)');
+  close(wallMap.repeat.y, 1 / fresh.TEXTURES.brick.tile[1], 1e-12, 'and once per brick tile up');
   d.dispose();
 });
 
@@ -235,6 +254,17 @@ test('portalHole: the strip behind the face and across the arches, and no more',
     assert.ok(!probe(m, 0, BLOCK.hole[0] - 0.5), `${m.id}: in front of the face is open ground`);
     assert.ok(!probe(m, 0, BLOCK.hole[1] + 0.5), `${m.id}: beyond the strip the terrain is back`);
     assert.ok(!probe(m, m.halfWidth + 0.5, 1), `${m.id}: beside the strip the terrain is back`);
+    // the strip is as wide on one side of the face's centre line as on the other (|u|), and ends where BLOCK says: a hair either side of each edge
+    const edge = m.halfWidth + BLOCK.holeSide;
+    for (const side of [-1, 1]) {
+      const name = side < 0 ? 'negative' : 'positive';
+      assert.ok(probe(m, side * (edge - 0.02), 1), `${m.id}: a hair inside the strip's edge on the ${name} u side (u ${(side * (edge - 0.02)).toFixed(2)}) is in the hole`);
+      assert.ok(!probe(m, side * (edge + 0.02), 1), `${m.id}: a hair outside the strip's edge on the ${name} u side (u ${(side * (edge + 0.02)).toFixed(2)}) is open ground`);
+    }
+    for (const [end, w, inward] of [['front', BLOCK.hole[0], 0.02], ['back', BLOCK.hole[1], -0.02]] as const) {
+      assert.ok(probe(m, 0, w + inward), `${m.id}: a hair inside the strip's ${end} edge (w ${w}) is in the hole`);
+      assert.ok(!probe(m, 0, w - inward), `${m.id}: a hair outside the strip's ${end} edge (w ${w}) is open ground`);
+    }
   }
   assert.ok(!hole(10_000, 10_000), 'nowhere else');
 });
@@ -271,6 +301,17 @@ test('blockTop: the parapet, or the ground behind the block when that is higher'
   const ramp = (x: number, z: number): number => 12 + 0.5 * inMouthFrame(m, x, z).w; // rises into the tunnel
   const top = blockTop(m, { heightAt: ramp });
   close(top, 12 + 0.5 * BLOCK.depth + 0.05, 1e-9, 'the ground where the lid ends, 4.6 m in');
+  // Ground that differs across the block's width: the lid clears the highest of it wherever along the face it lies, and ground beside the
+  // block (past its flanks) is not behind it. The shelves are wider than the 1 m the width is sampled at, so none can fall between samples.
+  for (const mouth of mouths) {
+    const Hb = mouth.halfWidth + BLOCK.flank;
+    const shelfOf = (on: (u: number) => boolean) => (x: number, z: number): number => (on(inMouthFrame(mouth, x, z).u) ? 30 : -0.2);
+    for (const [where, on] of [['the right-hand end', (u: number) => u > Hb - 2], ['the middle', (u: number) => Math.abs(u) < 1.5], ['the left-hand end', (u: number) => u < -Hb + 2]] as const) {
+      close(blockTop(mouth, { heightAt: shelfOf(on) }), 30.05, 1e-9, `${mouth.id}: a shelf of high ground behind ${where} of the block lifts the lid to it`);
+    }
+    const beside = blockTop(mouth, { heightAt: shelfOf((u) => Math.abs(u) > Hb + 2) });
+    assert.equal(beside, FIGURES.tunnel.parapet, `${mouth.id}: high ground beside the block, past its flanks, is not behind it: the lid stands at ${beside} m, not the parapet's ${FIGURES.tunnel.parapet} m`);
+  }
 });
 
 test('mouthPartsTerrain: a plinth to the ground, a lid at the top as wide as the block is deep, and the arches\' recess tubes', () => {

@@ -402,8 +402,9 @@ export async function runEvidencePack(args = process.argv.slice(2), dependencies
     } else {
       const began = performance.now();
       try {
-        // Directories are created only for explicit outputs; exclusive per-axis tools get fresh subdirectories.
-        for (const output of step.outputs) { await safeArtifactAncestors(options.root, output.path); await mkdir(path.dirname(output.path), { recursive: true, mode: 0o700 }); }
+        // Child tools own their output directories, including exclusive fresh --out paths.
+        // Validate containment here; only pack-owned copies/stdout artifacts create parents below.
+        for (const output of step.outputs) await safeArtifactAncestors(options.root, output.path);
         const value = await execute(step); Object.assign(result, value, { durationMs: value.durationMs ?? performance.now() - began });
         result.log = `logs/${step.id}.log`;
         await writeFile(path.join(options.out, result.log), `${commandText(step)}\n\n${value.stdout ?? ''}${value.stderr ?? ''}`, { mode: 0o600 });

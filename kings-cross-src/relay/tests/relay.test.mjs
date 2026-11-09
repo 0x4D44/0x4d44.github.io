@@ -530,13 +530,21 @@ test('relay: a keychain failure is retried with backoff and logged without secre
   });
   const logs = [];
   let calls = 0;
+  // runFeed takes its timer from the global setTimeout when it starts: record the delay of every retry it schedules.
+  const retryDelays = [];
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => {
+    if (fn?.name === 'attempt') retryDelays.push(ms);
+    return realSetTimeout(fn, ms, ...rest);
+  };
+  t.after(() => { globalThis.setTimeout = realSetTimeout; });
   relay = await startRelay({
     area: 'Y9',
     topic: 't',
     dataDir,
     readCredentials: async () => {
       calls += 1;
-      if (calls < 3) throw new Error('keychain: lookup failed (exit 44)');
+      if (calls < 3) throw new Error('keychain: lookup failed (exit 44) PRIVATE-DETAIL /Users/private/path');
       return { account: ACCOUNT, secret: SENTINEL };
     },
     connectSocket: () => net.connect(broker.port, '127.0.0.1'),
@@ -544,9 +552,14 @@ test('relay: a keychain failure is retried with backoff and logged without secre
     backoff: { minMs: 10, maxMs: 20 },
     log: (l) => logs.push(l),
   });
+  globalThis.setTimeout = realSetTimeout;
   await until(async () => (await getJson(relay.port, '/health')).feed === 'connected', 'connected after retries');
   assert.equal(calls, 3);
   assert.ok(logs.filter((l) => /keychain: lookup failed/.test(l)).length >= 2);
+  assert.deepEqual(retryDelays, [10, 20], 'each failed attempt waits twice as long as the one before, from minMs up to maxMs');
+  assert.deepEqual(logs.filter((l) => /keychain/.test(l)), ['feed: keychain: lookup failed', 'feed: keychain: lookup failed'], 'a keychain failure is logged as its category only');
+  const everything = logs.join('\n');
+  for (const secret of [SENTINEL, ACCOUNT, 'PRIVATE-DETAIL', '/Users/private', 'exit 44']) assert.ok(!everything.includes(secret), 'the log leaked ' + secret);
   await relay.close();
 });
 

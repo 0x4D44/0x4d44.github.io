@@ -366,6 +366,18 @@ test('a missing timetable backs off in live mode and is not re-asked in replay',
   assert.ok(delays.every((ms, i) => i === 0 || ms >= delays[i - 1]!), `delays never shrink: ${delays}`);
   assert.ok(delays.at(-1)! >= 60_000, `live backs off to at least a minute: ${delays}`);
   assert.ok(delays.at(-1)! <= 600_000, `live keeps asking at least every 10 min: ${delays}`);
+  // Six polls stop at 160 s, short of the ceiling. On a second feed, poll past it: each wait is double the last until the ceiling, and there it stays.
+  jobs.length = 0;
+  const long = createScheduleFeed({ mode: 'live', hostname: 'localhost', relayPresent: true, fetchImpl, now: () => Date.parse('2026-11-08T12:00Z'), ...timers });
+  await long.refresh();
+  const climb: number[] = [];
+  for (let i = 0; i < 10; i++) { const job = jobs.shift()!; climb.push(job.ms); job.fn(); await long.refresh(); }
+  long.dispose();
+  const CEILING = 300_000;
+  climb.forEach((ms, i) => {
+    const want = Math.min(5_000 * 2 ** i, CEILING);
+    assert.equal(ms, want, `live back-off, wait ${i + 1} of ${climb.length} is ${ms} ms, not ${want}: 5 s doubled each time up to the ${CEILING} ms ceiling, then level (waits ${climb})`);
+  });
   jobs.length = 0; asked = 0;
   const replay = createScheduleFeed({ mode: 'replay', hostname: 'localhost', relayPresent: true, date: '2026-11-07', fetchImpl, ...timers });
   await replay.refresh();
