@@ -35,12 +35,12 @@ mutations = [
     ('chimneys omitted',
      'for (const bay of hotelChimneyBays(plan)) addHotelChimney(parts, plan, bay);',
      '// chimneys omitted', 'not ok 1 - Great Northern Hotel: assumed pedimented dormers'),
-    ('chimney caps moved inside dormer hoods',
-     'const inset = Math.min(1 - capHalfInset - 0.02, GNH_DORMER_REAR_INSET + capHalfInset + GNH_ROOF_DETAIL_GAP / roofRun);',
-     'const inset = 0.58;', 'not ok 1 - Great Northern Hotel: assumed pedimented dormers'),
+    ('chimney caps moved in front of the dormer rears',
+     'const [x, , z] = hotelRoofPoint(plan, bay.edge, t, 1 + (GNH_CHIMNEY_CAP_DEPTH / 2 + GNH_ROOF_DETAIL_GAP) / roofRun);',
+     'const [x, , z] = hotelRoofPoint(plan, bay.edge, t, 0.58);', 'not ok 1 - Great Northern Hotel: assumed pedimented dormers'),
     ('cap base falls back to the roof',
-     'const capBase = capRoofCorners.map(([x, , z]): V3 => [x, shaftTopY, z]);',
-     'const capBase = capRoofCorners.map(([x, y, z]): V3 => [x, y, z]);',
+     'ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, shaftTopY), ring(',
+     'ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, plan.ridge), ring(',
      'not ok 1 - Great Northern Hotel: assumed pedimented dormers'),
 ]
 

@@ -12,7 +12,8 @@ import { Batch } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
 const ASSUMED_DORMER_REAR_INSET = 0.68;
-const ASSUMED_STACK_CAP_DEPTH = 1.0;
+const ASSUMED_STACK_CAP_DEPTH = 1.8;
+const ASSUMED_STACK_CAP_WIDTH = 2.7;
 const ASSUMED_STACK_CAP_HEIGHT = 0.14;
 const ASSUMED_DORMER_STACK_GAP = 0.12;
 const ASSUMED_DORMER_WINDOW_SILL = 0.18;
@@ -96,11 +97,11 @@ test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the e
         best = { inset: coord.inset, roofRun };
       }
     }
-    assert.ok(best && bestAlong < 1, `chimney top vertex maps to a long OSM roof bay (${bestAlong} m)`);
+    assert.ok(best && bestAlong < ASSUMED_STACK_CAP_WIDTH / 2 + 0.3, `chimney top vertex maps to a long OSM roof bay, within the half-width of its cap and a facet's taper (${bestAlong} m)`);
     const minimumInset = ASSUMED_DORMER_REAR_INSET + ASSUMED_DORMER_STACK_GAP / best!.roofRun;
     assert.ok(best!.inset > minimumInset - GEOMETRY_EPSILON, `chimney caps clear the dormer roof run in the actual geometry (${best!.inset} <= ${minimumInset}; nearest bay ${bestAlong} m)`);
   }
-  assert.deepEqual(Object.keys(full).sort(), ['brick', 'sash', 'sashArch', 'slate', 'stone'], 'roof details share the hotel’s five existing material batches');
+  assert.deepEqual(Object.keys(full).sort(), ['brick', 'sash', 'slate', 'stone'], 'roof details share the hotel’s four existing material batches (the ground floor is square-headed: no arched sash)');
 });
 
 test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof without changing the hotel footprint', () => {

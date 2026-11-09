@@ -334,7 +334,7 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
 
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
-const CORNICE_HEIGHT = 0.7; // ASSUMED
+const CORNICE_HEIGHT = 1.1; // hist-a: the heavy bracketed cornice is about a third of a storey tall (it was 0.7 m, thin against the photograph); ASSUMED
 const CORNICE_OUT = 1.0; // hist-a: a heavy modillion cornice stands well out from the wall; the depth is ASSUMED
 const SASH_HEIGHT = 2.4; // ASSUMED
 const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly advanced": hist-a shows each block about this far out (ASSUMED)
@@ -345,8 +345,12 @@ const ADVANCE = 0.4; // [HE-GNH] the sixth and thirteenth bays are "slightly adv
  * main front's blocks at the same thirds of its length (ASSUMED), the north-west end the return's central bay (ASSUMED: "the north-west end matches").
  */
 export const HOTEL_ADVANCED: Record<HotelFaceKind, readonly number[]> = { main: [4, 5, 6, 11, 12, 13], rear: [5, 6, 7, 14, 15, 16], return: [2], end: [2] };
-/** hist-a: tall round-headed openings in cream archivolts on the ground floor (a sill 0.6 m up, 1.6 x 3.2 m; sizes ASSUMED, scaled from the photograph's storey). */
-export const ARCH = { sill: 0.6, width: 1.6, height: 3.2 } as const;
+/**
+ * hist-a: tall square-headed openings in cream architraves between wide stucco piers on the ground floor, a keystone over each head (a sill 0.6 m up, 1.5 x 3.4 m; sizes ASSUMED,
+ * scaled from the photograph's storey). [HE-GNH] lists the ground floor as round-headed with continuous imposts and keystones; the photograph shows square heads under its awnings
+ * (the 2013 shopfronts), and the heads follow it: the keystones are all that is kept of the listing's arches.
+ */
+export const GROUND = { sill: 0.6, width: 1.5, height: 3.4 } as const;
 const PILASTER = 1.0; // hist-a: the cream pilasters are about this wide at most (ASSUMED); each gives way to the light of the bay beside it
 
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry): "Slate roof with pedimented dormers." Sizes and the one-per-bay count are ASSUMED; places follow the facade bays and the eaves/ridge ring.
@@ -361,13 +365,14 @@ const GNH_DORMER_WINDOW_HEIGHT = 1.15; // ASSUMED
 const GNH_DORMER_REAR_CLEARANCE = 0.04; // ASSUMED: the slate cheeks meet the main roof
 
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry) also records "Prominent slab chimney-stacks";
-// hist-a shows eight or nine in the hotel's brick with pale slab caps, each about a dormer wide. ASSUMED: eight on each long slope, over its middle.
-const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 8; // ASSUMED
-const GNH_CHIMNEY_WIDTH = 1.5; // ASSUMED shaft width along a facade bay
-const GNH_CHIMNEY_DEPTH = 0.8; // ASSUMED depth across the roof slope
-const GNH_CHIMNEY_CAP_WIDTH = 1.75; // ASSUMED slab cap width
-const GNH_CHIMNEY_CAP_DEPTH = 1.0; // ASSUMED slab cap depth
-const GNH_CHIMNEY_HEIGHT = 3.2; // ASSUMED stack height, scaled from hist-a (a stack stands about one and a half dormers tall)
+// hist-a shows eight or nine in the hotel's brick with pale slab caps, broad blocks a dormer and a half wide and about as deep as the slope's run. ASSUMED: six on each long slope,
+// each standing on the flat top just behind the crest (the slope is too short a run for a stack this deep), clear of the dormers.
+const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 6; // ASSUMED
+const GNH_CHIMNEY_WIDTH = 2.4; // ASSUMED shaft width along a facade bay (it was 1.5 m: slim against hist-a)
+const GNH_CHIMNEY_DEPTH = 1.5; // ASSUMED depth across the roof (it was 0.8 m)
+const GNH_CHIMNEY_CAP_WIDTH = 2.7; // ASSUMED slab cap width
+const GNH_CHIMNEY_CAP_DEPTH = 1.8; // ASSUMED slab cap depth
+const GNH_CHIMNEY_HEIGHT = 3.2; // ASSUMED stack height over the flat top, scaled from hist-a (a stack stands about as tall as it is wide)
 const GNH_CHIMNEY_CAP_HEIGHT = 0.14; // ASSUMED slab cap thickness
 const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
 
@@ -388,7 +393,7 @@ function hotelRoofPoint(plan: HotelPlan, edgeIndex: number, t: number, inset: nu
     return q >= -1e-8 && r >= -1e-8 && q + r <= 1 + 1e-8 ? yu + q * (yv - yu) + r * (yw - yu) : undefined;
   };
   const y = height(a, b, rb, plan.eaves, plan.eaves, plan.eaves + rise) ?? height(a, rb, ra, plan.eaves, plan.eaves + rise, plan.eaves + rise);
-  return [x, y ?? plan.eaves + rise * inset, z];
+  return [x, y ?? plan.ridge, z]; // past the crest: the flat top
 }
 
 function bayParameter(plan: HotelPlan, bay: BayPosition): { edgeLength: number; t: number; roofRun: number } {
@@ -436,34 +441,18 @@ function hotelChimneyBays(plan: HotelPlan): BayPosition[] {
 }
 
 function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
-  const { edgeLength, t, roofRun } = bayParameter(plan, bay);
-  const capHalfInset = GNH_CHIMNEY_CAP_DEPTH / (2 * roofRun);
-  const inset = Math.min(1 - capHalfInset - 0.02, GNH_DORMER_REAR_INSET + capHalfInset + GNH_ROOF_DETAIL_GAP / roofRun);
-  const df = GNH_CHIMNEY_DEPTH / (2 * roofRun);
-  const shaftCorners = [
-    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset - df),
-    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset - df),
-    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset + df),
-    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset + df),
-  ];
-  const centre = hotelRoofPoint(plan, bay.edge, t, inset);
-  const shaftTopY = centre[1] + GNH_CHIMNEY_HEIGHT - GNH_CHIMNEY_CAP_HEIGHT;
-  const shaftTop = shaftCorners.map(([x, , z]): V3 => [x, shaftTopY, z]);
-  const capRoofCorners = [
-    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset - capHalfInset),
-    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset - capHalfInset),
-    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset + capHalfInset),
-    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset + capHalfInset),
-  ];
-  // The lower lip sits at shaft-top height, not on the roof; only the narrow shaft feet touch slate.
-  const capBase = capRoofCorners.map(([x, , z]): V3 => [x, shaftTopY, z]);
-  const capTopY = shaftTopY + GNH_CHIMNEY_CAP_HEIGHT;
-  const capTop = capBase.map(([x, , z]): V3 => [x, capTopY, z]);
+  const { t, roofRun } = bayParameter(plan, bay);
+  // wholly behind the crest, on the flat top: the middle is the roof's run, the gap and half the cap's depth in from the eaves line
+  const [x, , z] = hotelRoofPoint(plan, bay.edge, t, 1 + (GNH_CHIMNEY_CAP_DEPTH / 2 + GNH_ROOF_DETAIL_GAP) / roofRun);
+  /** the four corners of a w x d slab (along the facade, deep) about the middle at height y, front left first: the sides run front, right, back, left */
+  const ring = (w: number, d: number, y: number): V3[] => ([[-1, 1], [1, 1], [1, -1], [-1, -1]] as const).map(([a, b]): V3 => [x + bay.dir[0] * a * w / 2 + bay.normal[0] * b * d / 2, y, z + bay.dir[1] * a * w / 2 + bay.normal[1] * b * d / 2]);
+  const shaftTopY = plan.ridge + GNH_CHIMNEY_HEIGHT - GNH_CHIMNEY_CAP_HEIGHT;
+  const [foot, shaftTop, capBase, capTop] = [ring(GNH_CHIMNEY_WIDTH, GNH_CHIMNEY_DEPTH, plan.ridge), ring(GNH_CHIMNEY_WIDTH, GNH_CHIMNEY_DEPTH, shaftTopY), ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, shaftTopY), ring(GNH_CHIMNEY_CAP_WIDTH, GNH_CHIMNEY_CAP_DEPTH, shaftTopY + GNH_CHIMNEY_CAP_HEIGHT)];
   const stone = part(parts, 'stone');
   const sides: V3[] = [[bay.normal[0], 0, bay.normal[1]], [bay.dir[0], 0, bay.dir[1]], [-bay.normal[0], 0, -bay.normal[1]], [-bay.dir[0], 0, -bay.dir[1]]];
   for (let i = 0; i < 4; i++) {
     const j = (i + 1) % 4;
-    const [a, b] = [shaftCorners[i] as V3, shaftCorners[j] as V3];
+    const [a, b] = [foot[i] as V3, foot[j] as V3];
     const w = Math.hypot(b[0] - a[0], b[2] - a[2]);
     part(parts, 'brick').quadUV(a, b, shaftTop[j] as V3, shaftTop[i] as V3, [[0, a[1]], [w, b[1]], [w, shaftTopY], [0, shaftTopY]], sides[i] as V3);
     stone.quadUV(capBase[i] as V3, capBase[j] as V3, capTop[j] as V3, capTop[i] as V3, undefined, sides[i] as V3);
@@ -498,11 +487,8 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
 
   const f = FIGURES.gnh;
   const [tw] = TEXTURES.window.tile;
-  const { sill, width: aw, height: ah } = ARCH;
+  const { sill, width: aw, height: ah } = GROUND;
   const crown = sill + ah;
-  const bays = plan.faces.flatMap(face => face.bays);
-  const openings = bays.map(({ at, dir, normal }) => [-aw / 2, aw / 2, aw / 2, -aw / 2].map((x, i) => [at[0] + dir[0] * x + normal[0] * (i < 2 ? -1 : 1), at[1] + dir[1] * x + normal[1] * (i < 2 ? -1 : 1)] as Pt));
-  addBand(stone, segmentsOutside(polygonEdges(plan.outline), openings), crown - aw / 2 - 0.08, 0.16, 0.14); // [HE-GNH] continuous imposts; profile is ASSUMED
   const blocks: Seg[] = []; // the faces of the advanced blocks, which the courses cross
   for (const face of plan.faces) {
     const adv = HOTEL_ADVANCED[face.kind];
@@ -511,9 +497,9 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
       const on = adv.includes(index);
       const lift = on ? ADVANCE : 0;
       stone.box(onWall(bay, 0, crown + 0.1, 0.2), [0.5, 0.45, 0.12], { rotY }); // [HE-GNH] keystone dimensions are ASSUMED
-      // ground floor: round-headed openings [HE-GNH], each in a cream archivolt 0.25 m wide (hist-a)
-      addWindow(stone, bay, sill - 0.1, Math.min(aw + 0.5, bay.width - 0.1), ah + 0.3, 'round', 0.04, true);
-      addSash(parts, 'sashArch', bay, sill, aw, ah);
+      // ground floor: square-headed openings, each in a cream architrave 0.25 m wide (hist-a), under the keystone [HE-GNH]
+      addWindow(stone, bay, sill - 0.1, Math.min(aw + 0.5, bay.width - 0.1), ah + 0.15, 'flat', 0.04, true);
+      addSash(parts, 'sash', bay, sill, aw, ah);
       // the ends of the run of advanced bays it is in, and of the face: a pilaster stands there
       const ends = [-1, 1].map(k => !face.bays[index + k] || adv.includes(index + k) !== on);
       const centre = on && ends[0] === ends[1];
@@ -537,13 +523,14 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
         stone.box(onWall(bay, (wide[1] - wide[0]) / 2, plan.eaves - CORNICE_HEIGHT / 2, CORNICE_OUT + ADVANCE / 2 - 0.005), [bay.width + wide[0] + wide[1], CORNICE_HEIGHT, ADVANCE + 0.01], { rotY, skip: ['+z'] });
       }
       for (let s = 1; s < f.storeys; s++) {
-        // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little) so the top row clears the cornice
+        // sashes 2.4 m tall (the shared texture is 2.6 m, squeezed a little), the top row's 2 m (hist-a: the storeys shorten upward) so it clears the cornice
         const base = f.groundStorey + (s - 1) * f.upperStorey + 0.5;
+        const sh = s < f.storeys - 1 ? SASH_HEIGHT : SASH_HEIGHT - 0.4;
         if (centre) {
-          for (const k of [-1, 0, 1]) addSash(parts, 'sash', shift(bay, k * 0.8), base, 0.75, SASH_HEIGHT, ADVANCE + 0.08);
+          for (const k of [-1, 0, 1]) addSash(parts, 'sash', shift(bay, k * 0.8), base, 0.75, sh, ADVANCE + 0.08);
         } else {
-          addWindow(stone, bay, base - 0.1, Math.min(tw + 0.5, bay.width - 0.1), SASH_HEIGHT + 0.15, 'flat', lift + 0.04, true); // hist-a: a cream stucco architrave round every light, 0.25 m wide (ASSUMED)
-          addSash(parts, 'sash', bay, base, tw, SASH_HEIGHT, lift + 0.08);
+          addWindow(stone, bay, base - 0.1, Math.min(tw + 0.5, bay.width - 0.1), sh + 0.15, 'flat', lift + 0.04, true); // hist-a: a cream stucco architrave round every light, 0.25 m wide (ASSUMED)
+          addSash(parts, 'sash', bay, base, tw, sh, lift + 0.08);
         }
       }
     });
