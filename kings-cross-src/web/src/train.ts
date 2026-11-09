@@ -453,18 +453,12 @@ function windowsIn(from: number, to: number, pitch: number, pier: number, atLeas
 }
 
 /**
- * No part of a cluster starts closer to the nose's tip than this, metres along the nose. Where the face turns into the cheek the surface leans forward, so a patch lifted
- * off it by a centimetre would stand ahead of the face's plane, outside its own car: the window's lift (CLUSTER_LIFT.window, 26 mm) takes at most that much off its distance
- * behind the face, and it still stands 2 cm or more behind it.
- */
-export const FACE_CLEAR = 0.05;
-
-/**
  * The AT300's cluster (see ClusterSpec); a kind's own colours are laid over it (FRONT_OVERRIDES). The photographs put it beside the corner of the band under the windscreen, the
  * headlamp about 0.9 m either side of the middle and level with the windscreen's lower corners (lner-800-108-offord-cluny-2023, side on: the housing 1.2 to 2.2 m behind the tip,
  * 1.7 to 2.2 m up; lner-800-113-newcastle-2025, head on: 0.9 m out). On this nose the shoulder beside the band's corner stands 0.75 to 1.0 m out at 1.55 to 2.1 m up and 0.5 to 1.5 m back, turned
  * 45 to 65 degrees from the way the train points, so the housing is laid there, its top edge held under the flank's stop (FLANK_FRACTION) where the roof starts: the headlamp
  * (0.28 m long, 0.15 m across) at its upper end, the array of marker lenses (a disc 0.17 m across) at its lower front one (ASSUMED sizes, from the photographs' proportions).
+ * The window starts 0.5 m behind the tip, so nothing of it, lifted off the cheek where the face leans forward, can stand ahead of the face's plane (the test holds it to that).
  */
 export const AT300_CLUSTER: ClusterSpec = {
   window: { y0: 1.5, y1: 2.12, sFront0: 0.5, sBack0: 0.92, sFront1: 0.95, sBack1: 1.5, colour: POD },
@@ -1515,7 +1509,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side)
           const y = lerp(win.y0 - grow, win.y1 + grow, q / rows);
           const f = (y - win.y0) / (win.y1 - win.y0);
-          const sF = Math.max(FACE_CLEAR, lerp(win.sFront0, win.sFront1, f) - grow);
+          const sF = lerp(win.sFront0, win.sFront1, f) - grow;
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
           grid.push(

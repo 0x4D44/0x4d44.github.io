@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, FACE_CLEAR, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
@@ -1837,6 +1837,13 @@ test('bogies: a driven bogie of the diesel Class 180 has a final-drive gearbox o
   const radiusOf = (v: [number, number, number]): number => Math.hypot(v[0], v[1] - (spec.radius + CARDAN_AXIS));
   assert.deepEqual([...new Set(shaft.map((v) => radiusOf(v).toFixed(6)))].sort(), ['0.000000', '0.055000', '0.090000'], 'a shaft 5.5 cm in radius with a yoke 9 cm in radius');
   for (const end of [-1, 1]) assert.ok(shaft.some((v) => v[2] * end > 0.8 && Math.abs(radiusOf(v) - 0.09) < 1e-6), `a yoke on the end of the shaft at ${end}`);
+  // the tube itself (the 5.5 cm rings) runs the whole way between the gearboxes' inboard faces; a yoke is 4 cm long and stands at each of its ends, inside the span
+  const reach = spec.wheelbase / 2 - GEARBOX_REACH;
+  const tubeZ = shaft.filter((v) => Math.abs(radiusOf(v) - 0.055) < 1e-6).map((v) => v[2]);
+  near(Math.min(...tubeZ), -reach, 1e-6, 'the shaft tube starts at the one gearbox');
+  near(Math.max(...tubeZ), reach, 1e-6, 'and runs to the other');
+  const yokeZ = [...new Set(shaft.filter((v) => Math.abs(radiusOf(v) - 0.09) < 1e-6).map((v) => v[2].toFixed(6)))].sort();
+  assert.deepEqual(yokeZ, [-reach, -reach + 0.04, reach - 0.04, reach].map((z) => z.toFixed(6)).sort(), 'a yoke 4 cm long at each end of the tube');
   assert.ok(!verts(electric).some((v) => Math.abs(v[0]) < 0.05 && Math.abs(v[2]) > 0.5 && Math.abs(v[2]) < 1.0 && Math.abs(v[1] - (spec.radius + CARDAN_AXIS)) < 0.1), 'the electric bogie has no cardan shaft');
   // the same wheels: the tread, the flange and the web are untouched
   for (const s of [diesel, trailer]) {
@@ -2154,6 +2161,87 @@ test('bogie drives hang in view: a motor bogie\'s drive reaches 10 cm under its 
     assert.equal(endBells.length, 4 * 14, `${label}: the four end discs, fourteen triangles each`);
     assert.equal(barrels.length, 2 * 14 * 2, `${label}: the two barrels, fourteen sides of two triangles each`);
     for (const { t } of endBells) assert.ok(colourOf(t) > colourOf(barrels[0]!.t) + 0.1, `${label}: an end bell is lighter than the barrel`);
+  }
+});
+
+/** A soup's triangles, each with its corners and the colour of its first corner (a part of the drive is one colour all over). */
+const soupTris = (s: Soup): { v: [V3t, V3t, V3t]; c: [number, number, number] }[] =>
+  Array.from({ length: s.pos.length / 9 }, (_, t) => ({
+    v: [0, 1, 2].map((k): V3t => [s.pos[9 * t + 3 * k] as number, s.pos[9 * t + 3 * k + 1] as number, s.pos[9 * t + 3 * k + 2] as number]) as [V3t, V3t, V3t],
+    c: [s.clr[9 * t] as number, s.clr[9 * t + 1] as number, s.clr[9 * t + 2] as number],
+  }));
+const linearLuma = (c: [number, number, number]): number => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+
+test('bogie drives: a traction motor\'s gear case is a box from its axle to the motor\'s far end, on the opposite sides for the two axles, in the gear colour and not the barrel\'s', () => {
+  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel)) {
+    const r = spec.radius;
+    const w = spec.wheelbase / 2;
+    const tris = soupTris(bogieParts(spec).drive);
+    // the case is the only part of the drive beyond the ends of the barrels (|x| 0.31): every corner of its triangles is at |x| 0.33 or more
+    const gear = tris.filter(({ v }) => v.every((p) => Math.abs(p[0]) >= 0.33));
+    const barrels = tris.filter(({ v }) => v.some((p) => p[0] < -0.3) && v.some((p) => p[0] > 0.3));
+    assert.equal(gear.length, 2 * 12, `${label}: a box of six faces for each of the two axles`);
+    assert.equal(barrels.length, 2 * 14 * 2, `${label}: and the two barrels`);
+    const outer = spec.style === 'siemens' ? 0.45 : 0.56;
+    const reach = r + MOTOR_RADIUS + MOTOR_CLEAR;
+    // the front axle's case is on the right-hand side, the rear axle's on the left, and each runs from the axle (0.17 m either side) to the far end of its motor (the same 0.17 m beyond it)
+    for (const [axle, side] of [[-w, 1], [w, -1]] as const) {
+      const box = gear.filter(({ v }) => v.every((p) => p[0] * side > 0)).flatMap(({ v }) => v);
+      assert.equal(box.length, 36, `${label}: the case of the axle at ${axle} stands on the side ${side}`);
+      const range = (k: number): [number, number] => [Math.min(...box.map((p) => p[k] as number)), Math.max(...box.map((p) => p[k] as number))];
+      const [x0, x1] = range(0);
+      near(Math.min(side * x0, side * x1), 0.34, 1e-6, `${label}: the case starts 34 cm from the middle`);
+      near(Math.max(side * x0, side * x1), outer, 1e-6, `${label}: and ends ${outer} m out`);
+      const [y0, y1] = range(1);
+      near(y0, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, 1e-6, `${label}: it stands 4 cm up from the barrel's lowest point`);
+      near(y1, r + MOTOR_AXIS + MOTOR_RADIUS, 1e-6, `${label}: and reaches the top of the barrel`);
+      const [z0, z1] = range(2);
+      near(z0, side > 0 ? axle - 0.17 : axle - reach - 0.17, 1e-6, `${label}: the case's near end, ${side > 0 ? 'at the axle' : 'at the motor'}`);
+      near(z1, side > 0 ? axle + reach + 0.17 : axle + 0.17, 1e-6, `${label}: and its far end, ${side > 0 ? 'at the motor' : 'at the axle'}`);
+    }
+    // its colour is the gear casing's, which is not the barrel's
+    const barrel = linearLuma(barrels[0]!.c);
+    for (const { c } of gear) assert.ok(Math.abs(linearLuma(c) - barrel) > 0.01, `${label}: the gear case is the barrel's colour`);
+  }
+});
+
+test('bogie drives: a diesel unit\'s final drive is a gearbox on each axle, a cardan shaft between them and a yoke at each end of it, each the size and the colour the table gives', () => {
+  for (const spec of [{ radius: 0.42, wheelbase: 2.7, track: FIGURES.gauge.value, motor: true, diesel: true, style: 'alstom' }, { radius: 0.41, wheelbase: 2.2, track: FIGURES.gauge.value, motor: true, diesel: true, style: 'siemens' }] as const) {
+    const label = `${spec.style} ${spec.wheelbase}`;
+    const r = spec.radius;
+    const w = spec.wheelbase / 2;
+    const tris = soupTris(bogieParts(spec).drive);
+    const distinct = (ps: V3t[]): number => new Set(ps.map((p) => p.map((c) => c.toFixed(5)).join(' '))).size;
+    // the gearbox: a box 0.6 m across, from 0.2 m under the axle line to 0.2 above it, 0.22 m aft of the axle and GEARBOX_REACH inboard of it
+    const gear = tris.filter(({ v }) => v.some((p) => Math.abs(Math.abs(p[0]) - 0.3) < 1e-9));
+    assert.equal(gear.length, 2 * 12, `${label}: a box of six faces on each axle`);
+    for (const axle of [-w, w]) {
+      const inward = axle < 0 ? 1 : -1;
+      const own = gear.filter(({ v }) => v.every((p) => Math.abs(p[2] - axle) < 0.6)).flatMap(({ v }) => v);
+      assert.equal(own.length, 36, `${label}: the gearbox of the axle at ${axle}`);
+      near(Math.min(...own.map((p) => p[1])), r - 0.2, 1e-6, `${label}: the gearbox hangs 0.2 m under the axle line`);
+      near(Math.max(...own.map((p) => p[1])), r + 0.2, 1e-6, `${label}: and reaches 0.2 m over it, not the frame`);
+      near(Math.min(...own.map((p) => p[2])), Math.min(axle - inward * 0.22, axle + inward * GEARBOX_REACH), 1e-6, `${label}: the gearbox's near end`);
+      near(Math.max(...own.map((p) => p[2])), Math.max(axle - inward * 0.22, axle + inward * GEARBOX_REACH), 1e-6, `${label}: and its far end`);
+      // the axle's housing: a cylinder 0.7 m long, 0.35 m either side of the middle and 0.15 m in radius round the axle line, twelve sided, in the motor colour
+      const housing = tris.filter(({ v }) => v.some((p) => Math.abs(Math.abs(p[0]) - 0.35) < 1e-9) && v.every((p) => Math.abs(p[2] - axle) <= 0.151));
+      assert.equal(housing.length, 12 + 24 + 12, `${label}: the housing of the axle at ${axle}: an end disc, twelve sides of two triangles and the other end disc`);
+      const ends = [-1, 1].map((sx) => housing.flatMap(({ v }) => v).filter((p) => Math.abs(p[0] - sx * 0.35) < 1e-9));
+      for (const end of ends) {
+        assert.ok(end.length >= 12, `${label}: the axle housing at ${axle} has no end`);
+        assert.equal(new Set(end.map((p) => Math.hypot(p[1] - r, p[2] - axle).toFixed(6))).size, 2, `${label}: a ring and a centre`);
+        near(Math.max(...end.map((p) => Math.hypot(p[1] - r, p[2] - axle))), 0.15, 1e-6, `${label}: the axle housing is 0.15 m in radius`);
+        assert.equal(distinct(end.filter((p) => Math.hypot(p[1] - r, p[2] - axle) > 0.1)), 12, `${label}: twelve sides`);
+      }
+    }
+    // the cardan shaft: eight sides of 5.5 cm radius along the middle, a yoke of 9 cm radius at each end that is lighter than the tube
+    const z0 = -(w - GEARBOX_REACH);
+    const tube = tris.filter(({ v }) => v.every((p) => Math.abs(p[0]) < 0.06) && v.some((p) => Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - 0.055) < 1e-6));
+    const yokes = tris.filter(({ v }) => v.every((p) => Math.abs(p[0]) < 0.1) && v.some((p) => Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - 0.09) < 1e-6));
+    const startRing = tube.flatMap(({ v }) => v).filter((p) => Math.abs(p[2] - z0) < 1e-6 && Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - 0.055) < 1e-6);
+    assert.equal(distinct(startRing), 8, `${label}: the shaft is eight sided`);
+    assert.ok(tube.length >= 16 && yokes.length >= 16, `${label}: ${tube.length} triangles of the tube, ${yokes.length} of the yokes`);
+    for (const { c } of yokes) assert.ok(linearLuma(c) > linearLuma(tube[0]!.c) + 0.05, `${label}: a yoke is no lighter than the shaft`);
   }
 });
 
@@ -2941,6 +3029,9 @@ test('underfloor: a diesel car has its tank, cooler, engine, transmission and ba
       near(box.max.y, b.y1, 1e-6, `${b.name}: and reaches the floor`);
       near(box.min.z, b.z1, ZTOL, `${b.name}: it starts where the one mass ends`);
       near(box.max.z, next.z0, ZTOL, `${b.name}: and ends where the next begins`);
+      // no top face (it would be against the floor, out of sight): nothing in it looks up, and its foot looks down
+      assert.equal(hangers.filter((t) => faceNormal(t).y > 0.5).length, 0, `${b.name}: the hanger has a top`);
+      assert.equal(hangers.filter((t) => faceNormal(t).y < -0.5).length, 2, `${b.name}: the hanger has no foot`);
     });
   }
   // too little room: the pods shrink together instead of reaching a wheel
@@ -3240,6 +3331,27 @@ test('skirts: every side skirt is a thin panel hanging from just inside the body
         // only the clear stretches: nothing within a bogie's cut-out
         for (const b of car.bogies) assert.ok(vs.every((v) => Math.abs(v.z - b) >= spec.cutout - 1e-3), `${here}: a skirt reaches into the cut-out of the bogie at ${b}`);
       }
+    }
+  }
+});
+
+test('underframe: the dark slab between the skirts stands from 0.17 m over the valance\'s foot (or from just under the floor where the valance is shallower than that) to 5 cm over the floor, on every kind', () => {
+  // the slab is the box the skirts hide: it must not poke above the floor where a diesel unit's valance is a shallow one (a foot at 0.9 m under a floor at 0.98 m makes 1.07 m a slab
+  // bottom over the slab's own top)
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const spec = bodySpec(familyOf(kind));
+    const slab = liveryFor(kind).skirt;
+    const bottom = Math.min(spec.skirtBottom + 0.17, spec.floor - 0.01);
+    assert.ok(bottom < spec.floor + 0.05, `${kind}: a slab with its bottom ${bottom} over its top`);
+    for (const car of trainLayout(kind).cars) {
+      const ys = trisOfColour(detailOf(g, car), slab)
+        .filter((t) => t.every((v) => Math.abs(Math.abs(v.x) - spec.underframe) < 1e-5))
+        .flat()
+        .map((v) => v.y);
+      assert.ok(ys.length >= 3 * 10, `${kind} car ${car.index}: ${ys.length / 3} triangles of the underframe slab`);
+      near(Math.min(...ys), bottom, 1e-5, `${kind} car ${car.index}: the slab's bottom`);
+      near(Math.max(...ys), spec.floor + 0.05, 1e-5, `${kind} car ${car.index}: the slab's top`);
     }
   }
 });
@@ -3881,12 +3993,14 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
       for (const sign of [-1, 1]) {
         const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
         const onSide = (ts: Tri[]): Tri[] => ts.filter((t) => t.every((v) => v.x * sign > 0));
-        // the window: behind the face's plane everywhere (nothing stands out in front of the train's end), no nearer the tip than FACE_CLEAR less its lift, reaching back as
+        // the window: behind the face's plane everywhere (nothing stands out in front of the train's end), no nearer the tip than the spec's front edge less its lift, reaching back as
         // far as the spec's top edge and up and down as far as its height
         const win: THREE.Vector3[] = onSide(trisOfColour(mesh, cluster.window.colour)).flat();
         assert.ok(win.length >= 300, `${here}: only ${win.length} window vertices`);
-        // (CHANGED: the allowance for the lift was a literal 2 cm, the window's old 12 mm and a little over; it is the window's own lift now, which is 26 mm)
-        assert.ok(Math.min(...win.map(along)) > FACE_CLEAR - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
+        // (CHANGED: the window used to be held 5 cm behind the tip by a stop (FACE_CLEAR); it starts 0.5 m back now, the stop could not bind and is gone, and this holds the window to its own
+        // front edge less its lift, which is 26 mm: the cheek leans forward there)
+        assert.ok(Math.min(...win.map(along)) > cluster.window.sFront0 - CLUSTER_LIFT.window, `${here}: the window starts ${Math.min(...win.map(along)).toFixed(3)} m behind the face`);
+        assert.ok(Math.min(...win.map(along)) > 0.4, `${here}: the window stands ${Math.min(...win.map(along)).toFixed(3)} m behind the face, clear of the plane it must not pass`);
         const reach = Math.max(...win.map(along));
         near(reach, cluster.window.sBack1, 0.1, `${here}: the window's reach`);
         near(Math.min(...win.map((v) => v.y)), cluster.window.y0, 0.03, `${here}: the window's foot`);
@@ -4141,6 +4255,19 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       assert.ok(reach > sGlass - 0.15 && reach < sGlass + 0.1, `${kind} car ${car.index}: the band reaches ${reach.toFixed(2)} m back, the windscreen starts at ${sGlass}`);
       const bandOut = Math.max(...band.flat().map((v) => Math.abs(v.x)));
       assert.ok(bandOut <= mask.hwSill + 0.03 && bandOut > mask.hwTop - 0.1, `${kind} car ${car.index}: the band is ${bandOut.toFixed(2)} m out at its widest, the spec says ${mask.hwSill}`);
+      // the band lies on the nose and not in it: at the middle of every triangle and of each of its edges (not only at the vertices, which stand on the loft's rings) it is over the nose's
+      // surface at that place by 3 mm or more and by less than 6 cm. Rows that skip the loft's rings stood 56 mm under the nose in the middle of a triangle, columns that skip the outline's
+      // corners 14 mm, and the red of the loft showed through the yellow as shards and a ragged line (the original: 5.7 mm at the least)
+      const egg = eggSection(norm, family.nose.widest, family.nose.boxiness);
+      for (const t of band) {
+        const mids = [t[0].clone().add(t[1]).add(t[2]).divideScalar(3), ...([[0, 1], [1, 2], [2, 0]] as const).map(([a, b]) => t[a].clone().add(t[b]).multiplyScalar(0.5))];
+        for (const p of mids) {
+          const s = along(p);
+          if (s < 0.03) continue;
+          const over = p.y - yAtX(halfAt(sec, norm, egg, ringAt(family.nose, Math.max(0, Math.min(family.nose.length, s)))), Math.abs(p.x));
+          assert.ok(over > 0.003 && over < 0.06, `${kind} car ${car.index}: the band is ${(over * 1000).toFixed(1)} mm over the nose at x = ${p.x.toFixed(3)}, s = ${s.toFixed(3)}`);
+        }
+      }
       // the band's front row stands on the face's own outline, in the face's plane: where the cap's yellow ends the band's begins, with no slit between them for the red of the loft
       // behind to show through (the row used to stand 4 mm off the loft: 2.7 mm over the outline and 3 mm in front of the face, and the red showed as a hairline along the arch of the
       // face in the 3 m views of the LNER's yellow and of the Hull Trains beak)
