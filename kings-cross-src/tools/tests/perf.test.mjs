@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createServer } from 'node:http';
-import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, createRelayRoute, firstTrainVisible, headroomMarkdown, headroomReport, headroomVsBaseline, peakMarkdown, sweepMarkdown } from '../perf.mjs';
+import { HEADROOM_FPS_TARGET, UNCAPPED_CONTROL_RATIO, UNCAPPED_FLAGS, aggregateCpu, cpuProfileMarkdown, createRelayRoute, firstTrainVisible, headroomMarkdown, headroomReport, headroomVsBaseline, peakMarkdown, sourceMapPlan, sweepMarkdown } from '../perf.mjs';
 import { sweepSummary } from '../camera-sweep.mjs';
 
 const node = { id: 1, callFrame: { url: 'bundle.js', lineNumber: 0, columnNumber: 0, functionName: 'scene' } };
@@ -276,4 +276,17 @@ test('the peak and sweep Markdown say where the replay started and list every ca
   assert.match(md, /\| south-front \| 10\/12\/14 \| 60 \| 60 \| 16\.7 \| 16\.7 \| 16\.8 \| 33\.3 \| 0\.33 \| 1 \| yes \| yes \|/);
   assert.match(md, /\| top \(grid view\) \| 10\/12\/14 \| 41 \| 38 \| 16\.7 \| 33\.3 \| 50 \| 66\.7 \| 31 \| 90 \| NO \| NO \|/);
   assert.match(sweepMarkdown({}, sweepSummary({})).join('\n'), /not measured/);
+});
+
+test('a re-export chunk Rollup gave no source map is left unmapped; a declared map that is missing, or a build with no maps, is still refused', () => {
+  const script = (file, mapped, declared = mapped) => ({ file, mapped, declared });
+  // The multi-station split: an 87 byte landmarks-*.js that only re-exports has no map and no sourceMappingURL comment.
+  const split = sourceMapPlan([script('assets/index-a.js', true), script('assets/landmarks-b.js', false), script('assets/landmarks-c.js', true)]);
+  assert.deepEqual(split.missing, []);
+  assert.deepEqual(split.facades, ['assets/landmarks-b.js']);
+  // A chunk that names a map the build does not have is a broken build.
+  assert.deepEqual(sourceMapPlan([script('assets/index-a.js', true), script('assets/station-b.js', false, true)]), { missing: ['assets/station-b.js'], facades: [] });
+  // A build made without --sourcemap has no map on any script, declared or not.
+  assert.deepEqual(sourceMapPlan([script('assets/index-a.js', false), script('assets/landmarks-b.js', false)]).missing, ['assets/index-a.js', 'assets/landmarks-b.js']);
+  assert.deepEqual(sourceMapPlan([script('assets/index-a.js', true), script('assets/landmarks-b.js', true)]), { missing: [], facades: [] });
 });

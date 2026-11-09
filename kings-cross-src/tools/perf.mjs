@@ -271,6 +271,20 @@ function startupPhaseMarkdown(startup) {
     ...['anchors', 'recording', 'schedule'].map((phase) => `| ${phase} | ${value(cold.fetches.find((row) => row.phase === phase)?.totalMs)} | ${value(warm.fetches.find((row) => row.phase === phase)?.totalMs)} |`)];
 }
 
+/**
+ * Which of a build's scripts the CPU profile needs a source map for. Rollup writes neither a map nor a `sourceMappingURL` comment for a
+ * chunk that only re-exports (the multi-station split makes an 87 byte `landmarks-*.js` one): it has no code to profile, and any
+ * samples in it stay under `[unmapped] <url>`. A script that declares a map which is missing, or a build in which no script has one
+ * (made without --sourcemap), is still refused.
+ * @param {{ file: string, mapped: boolean, declared: boolean }[]} scripts `mapped`: a readable map sits beside it; `declared`: it names one.
+ */
+export function sourceMapPlan(scripts) {
+  if (!scripts.some((script) => script.mapped)) return { missing: scripts.map((script) => script.file), facades: [] };
+  return {
+    missing: scripts.filter((script) => !script.mapped && script.declared).map((script) => script.file),
+    facades: scripts.filter((script) => !script.mapped && !script.declared).map((script) => script.file),
+  };
+}
 // Source Map v3 Base64 VLQ, no runtime dependency. Columns and lines are zero based.
 function decodeMappings(map) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -720,13 +734,14 @@ const buildEntries = await Promise.all(buildFiles.map(async (file) => {
   return { file: path.relative(dist, file), bytes: body.length, gzipBytes: gzipSync(body).length, sha256: createHash('sha256').update(body).digest('hex'), modifiedAt: info.mtime.toISOString() };
 }));
 const decodedBuildMaps = new Map();
-for (const entry of buildEntries.filter((entry) => entry.file.endsWith('.js'))) {
-  const mapPath = path.join(dist, `${entry.file}.map`);
-  let map;
-  try { map = JSON.parse(await readFile(mapPath, 'utf8')); }
-  catch { throw new Error(`CPU profiling requires source maps: rebuild with --sourcemap (missing/invalid ${mapPath})`); }
-  decodedBuildMaps.set(entry.file.split(path.sep).join('/'), decodeMappings(map));
-}
+const buildScripts = await Promise.all(buildEntries.filter((entry) => entry.file.endsWith('.js')).map(async (entry) => {
+  let map = null;
+  try { map = JSON.parse(await readFile(path.join(dist, `${entry.file}.map`), 'utf8')); } catch { /* a refusal or a facade, decided below */ }
+  return { file: entry.file, map, mapped: map !== null, declared: (await readFile(path.join(dist, entry.file), 'utf8')).includes('sourceMappingURL=') };
+}));
+const sourceMapChoice = sourceMapPlan(buildScripts);
+if (sourceMapChoice.missing.length) throw new Error(`CPU profiling requires source maps: rebuild with --sourcemap (missing/invalid ${path.join(dist, `${sourceMapChoice.missing[0]}.map`)})`);
+for (const script of buildScripts) if (script.mapped) decodedBuildMaps.set(script.file.split(path.sep).join('/'), decodeMappings(script.map));
 const report = {
   when: new Date().toISOString(),
   machine: `${os.type()} ${os.release()}, ${os.cpus()[0]?.model ?? 'unknown cpu'} x${os.cpus().length}, ${Math.round(os.totalmem() / 2 ** 30)} GB`,
@@ -741,6 +756,7 @@ const report = {
     gzipBundleBytes: buildEntries.filter((file) => /\.(js|css)$/.test(file.file)).reduce((sum, file) => sum + file.gzipBytes, 0),
     gzipShippedBytes: buildEntries.filter((file) => !file.file.endsWith('.map')).reduce((sum, file) => sum + file.gzipBytes, 0),
     gzipBudgetBytes: 2_000_000,
+    scriptsWithoutSourceMap: sourceMapChoice.facades,
   },
   replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds, stationSecondsPerCamera: stationSeconds },
   scenePin: { ...pin, parameters: pinParameters(pin), note: 'Added to every page address. A page built before the sky and weather work ignores it; a page that reads it shows this clock and weather and requests none.' },
@@ -756,7 +772,7 @@ if (args.includes('--check-build')) {
   const sourceFiles = new Set();
   for (const rows of decodedBuildMaps.values()) for (const row of rows) for (const segment of row) if (segment.source) sourceFiles.add(segment.source);
   const result = { mode: 'Node build preflight; Chrome not launched', build: report.build,
-    sourceMaps: { files: decodedBuildMaps.size, originalSourceFiles: sourceFiles.size },
+    sourceMaps: { files: decodedBuildMaps.size, originalSourceFiles: sourceFiles.size, scriptsWithoutSourceMap: sourceMapChoice.facades },
     startup: 'Not measured; run without --check-build on the GPU host.' };
   await writeFile(path.join(out, 'build-preflight.json'), `${JSON.stringify(result, null, 2)}\n`);
   await writeFile(path.join(out, 'build-preflight.md'), `# Performance build preflight\n\nJS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}).\n\n${decodedBuildMaps.size} source maps decoded; ${sourceFiles.size} original source files. First-render, CPU and FPS measurements require the Chrome run.\n`);
