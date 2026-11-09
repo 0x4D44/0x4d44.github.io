@@ -459,13 +459,19 @@ test('asphalt is a neutral mid grey, not the blue-grey it was, and the paths on 
   assert.ok(Math.abs(r - b) <= 6 && Math.abs(r - g) <= 4, `neutral: ${r},${g},${b}`);
   assert.ok(r >= 104 && r <= 130, `about 0.17 reflective (sRGB 118): ${r}`);
   const road = (cityMaterial('asphalt') as THREE.MeshLambertMaterial).color;
-  // round three: a road is the same tarmac at a quarter of the light (about 0.045 reflective, aged asphalt), so it is the darkest flat thing in the street, well apart
-  // from the open ground (about 0.14) and the paving (0.4 and over); at four-fifths (0.14) the roads were the ground's own tone and drew as one plain from the overview
-  assert.ok(road.r < 0.34 && road.r > 0.2 && Math.abs(road.r - road.b) < 0.03, `a road is the same tarmac at about a quarter of the light, and neutral: ${road.r.toFixed(2)}, ${road.g.toFixed(2)}, ${road.b.toFixed(2)}`);
+  // round four (lighting-materials E5): London tarmac in daylight is a mid grey (L 44 in hist-a, 52 in hist-e), 7 to 10 L under the paving beside it, not the near-black
+  // (L 24, 35 L under the footway) a road at a quarter of the platform asphalt's light drew. A road is the same tarmac at about three-fifths of the light (0.11
+  // reflective), cool-neutral, still the darkest flat thing in the street and under the open ground (0.13); at four-fifths (0.14) the roads were the ground's own tone and
+  // drew as one plain from the overview
+  const [rb, , bb] = [(road.getHex() >> 16) & 255, (road.getHex() >> 8) & 255, road.getHex() & 255];
+  assert.ok(road.r > 0.5 && road.r < 0.7 && bb >= rb && bb - rb <= 16, `a road is the same tarmac at about three-fifths of the light, cool-neutral: ${rb},${(road.getHex() >> 8) & 255},${bb}`);
   const lin = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   const roadLight = lin(road) * lin(new THREE.Color(avg));
   const groundLight = lin((terrainMaterial('ground') as THREE.MeshLambertMaterial).color);
-  assert.ok(roadLight < 0.5 * groundLight, `the road's reflectance (${roadLight.toFixed(3)}) is under half the open ground's (${groundLight.toFixed(3)})`);
+  const pavingLight = lin((cityMaterial('pavement') as THREE.MeshLambertMaterial).color) * lin(new THREE.Color(TEXTURES.floorSlab.average));
+  assert.ok(roadLight > 0.09 && roadLight < 0.13, `the road's reflectance is about 0.11 (mid-grey tarmac, L 44 to 52): ${roadLight.toFixed(3)}`);
+  assert.ok(roadLight < 0.9 * groundLight, `the road's reflectance (${roadLight.toFixed(3)}) is under the open ground's (${groundLight.toFixed(3)}), so it still reads apart from it`);
+  assert.ok(roadLight > 0.55 * pavingLight && roadLight < 0.85 * pavingLight, `the road sits just under the paving (${pavingLight.toFixed(3)}), not 35 L below it: ${roadLight.toFixed(3)}`);
   const a = recorder();
   PAINTERS.asphalt(a.ctx, 256, 256);
   const base = String(a.styles[0]);

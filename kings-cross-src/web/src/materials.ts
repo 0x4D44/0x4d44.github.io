@@ -1362,10 +1362,11 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
     return new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.water.average, vertexColors: true, specular: 0x27343a, shininess: 25 });
   },
   // roads and paving reuse the station's asphalt and slab textures (shared, not copied)
-  // (a road is much darker than a platform and than the open ground: the same texture at a quarter of the light, 0x858889, which is about 0.045
-  // reflective, aged road asphalt, and cool-neutral under the warm sun. At 0xe0dfdc, 0.14, the roads were the open ground's tone and drew as one
-  // khaki plain from the overview; the R-lighting-materials-d and -e roads are the darkest thing in the street)
-  asphalt: () => cityFlat('asphalt', 0x858889),
+  // (round four: London tarmac in daylight is a mid grey, L 44 in hist-a and 52 in hist-e, 7 to 10 L under the paving beside it. At a quarter of the platform
+  // asphalt's light, 0x858889, 0.045 reflective, a road drew near-black (L 24) and 35 L under the footway; 0xc9cdd4 is the same texture at about three-fifths of it,
+  // cool-neutral under the warm sun, 0.11 reflective: L 46 to 48 at the noon rig, 11 L under the footway and still the darkest flat thing in the street, under the open
+  // ground (0.13). At 0xe0dfdc, 0.14, the roads were the ground's own tone and drew as one khaki plain from the overview)
+  asphalt: () => cityFlat('asphalt', 0xc9cdd4),
   // Paving tones are set under the daylight rig (DAYLIGHT, world.ts) to R-lighting-materials-d/e: pale warm-grey stone, about
   // (163, 158, 157) where the sun lies on it. The pavement is that; the forecourt plaza, laid in lighter stone, a shade above.
   // The footways and paths are darker than the squares they cross (R-lighting-materials-a2, -e: a pale square crossed by darker strips of
