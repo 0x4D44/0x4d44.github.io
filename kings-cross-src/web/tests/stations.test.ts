@@ -315,3 +315,23 @@ test('render presentation refresh publishes newly loaded replay status to the st
     rig.stations.dispose();
   });
 });
+
+
+test('selected station sky text reaches both status lines with Edinburgh values and restores London on return', async () => {
+  await withResizeObserver(async () => {
+    const { loadWaverleyScene } = await import('../src/waverley.ts');
+    const model = await loadWaverleyScene({ modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose() {} }) }),
+      geometryLoader: async () => ({ default: { origin: { lat:0,lon:0 }, attribution:'synthetic',rails:[],platforms:[{ id:'synthetic',ref:'1',tags:{},path:[[0,0],[100,0],[100,5],[0,5]] }] } }) });
+    const edinburgh = ' · sun 18° up (day) · weather: snow (synthetic Edinburgh)', london = ' · sun 24° up (day) · weather: clear sky (synthetic London)';
+    const rig = fixture(undefined, 1, undefined, { loadEdinburgh: async () => model,
+      stationSuffix: id => id === 'edinburgh-waverley' ? edinburgh : london,
+      attachEdinburgh: view => { view.live = { group:new THREE.Group(),frame(){},dispose(){},status:()=> 'EB replay · 2 trains',timeMs:()=>1,load:async()=>{},state(){} }; } });
+    await switchAndFinish(rig, 'edinburgh-waverley'); rig.stations.refreshPresentation();
+    assert.equal(rig.stations.statusText('KX'), 'EB replay · 2 trains' + edinburgh);
+    assert.equal(rig.nav.children[2].textContent, rig.stations.statusText('KX'));
+    await switchAndFinish(rig, 'kings-cross');
+    assert.equal(rig.stations.statusText('KX'), 'KX' + london);
+    assert.doesNotMatch(rig.stations.statusText('KX'), /Edinburgh/);
+    rig.stations.dispose();
+  });
+});

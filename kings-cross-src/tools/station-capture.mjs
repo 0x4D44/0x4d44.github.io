@@ -86,10 +86,17 @@ export function verifyViewport(view) {
   if (view.canvases !== 1 || view.overflowX > 1 || view.overflowY > 1 || view.covered.length) throw new Error(`station viewport invariant failed: ${JSON.stringify(view)}`);
   return true;
 }
+/** Optional reproducible sky pins use exactly the page's parameters. */
+export function stationCaptureQuery(options) {
+  const query = new URLSearchParams({ trains: 'demo' });
+  for (const name of ['time', 'weather']) if (options.has('--' + name)) query.set(name, options.get('--' + name));
+  return query;
+}
+
 export async function main(args = process.argv.slice(2)) {
   const options = new Map();
   for (let i = 0; i < args.length; i += 2) {
-    if (!['--dist', '--out', '--chrome'].includes(args[i]) || !args[i + 1] || options.has(args[i])) throw new Error('usage: station-capture.mjs --dist <built dist> --out <worktree/.scratch/a40-shots> [--chrome <path>]');
+    if (!['--dist', '--out', '--chrome', '--time', '--weather'].includes(args[i]) || !args[i + 1] || options.has(args[i])) throw new Error('usage: station-capture.mjs --dist <built dist> --out <worktree/.scratch/a40-shots> [--chrome <path>] [--time <ISO instant>] [--weather <pin>]');
     options.set(args[i], args[i + 1]);
   }
   if (!options.has('--dist') || !options.has('--out')) throw new Error('--dist and --out required');
@@ -139,14 +146,14 @@ export async function main(args = process.argv.slice(2)) {
     await send('Page.addScriptToEvaluateOnNewDocument', { source: `(${manualFrames.toString()})();window.__captureResizeSerial=0;window.addEventListener('resize',()=>window.__captureResizeSerial++);` });
     const metrics = (width, height) => send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
     await metrics(1440, 1000);
-    await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/kings-cross/?trains=demo` });
+    await send('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/kings-cross/?${stationCaptureQuery(options)}` });
     const end = Date.now() + 90000;
     while (!await evaluate('!!window.__kx?.stations')) { if (Date.now() >= end) throw new Error('station runtime startup timeout'); await new Promise(r => setTimeout(r, 100)); }
     await evaluate('window.__kx.cityLoaded');
     await evaluate('window.__captureTime=performance.now();window.__signalFrame(window.__captureTime)');
     report.renderer = await evaluate("(()=>{const g=window.__kx.renderer.getContext(),e=g.getExtension('WEBGL_debug_renderer_info');return e?g.getParameter(e.UNMASKED_RENDERER_WEBGL):g.getParameter(g.RENDERER)})()");
     if (!/Metal/i.test(report.renderer) || /SwiftShader|llvmpipe|software/i.test(report.renderer)) throw new Error(`real Metal GPU required: ${report.renderer}`);
-    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:(${stationOverlayRegions.toString()})(document)},state:k.stations.state(),accounting:k.stations.accounting(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
+    const inspect = () => evaluate(`(()=>{const k=window.__kx,d=document.documentElement;return {url:location.href,resources:performance.getEntriesByType('resource').map(r=>r.name),pixels:{canvas:JSON.parse(JSON.stringify(k.renderer.domElement.getBoundingClientRect())),excluded:(${stationOverlayRegions.toString()})(document)},state:k.stations.state(),accounting:k.stations.accounting(),memory:{...k.renderer.info.memory},clock:{feed:{...k.feed},simulation:k.simulationTimeMs??null},camera:{position:k.camera.position.toArray(),target:k.controls.target.toArray()},text:document.body.innerText,sky:(k.stations.activeScene()===k.scene?k.atmosphere:k.stations.edinburgh()?.climate?.atmosphere)?.state()??null,viewport:{canvases:document.querySelectorAll('canvas').length,overflowX:d.scrollWidth-d.clientWidth,overflowY:d.scrollHeight-d.clientHeight,covered:[...document.querySelectorAll('a,button,input,select,[role=button]')].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.left<109&&r.right>0&&r.top<41&&r.bottom>0}).map(e=>e.textContent)},buttons:[...document.querySelectorAll('button')].map(e=>({text:e.textContent,pressed:e.getAttribute('aria-pressed'),rect:JSON.parse(JSON.stringify(e.getBoundingClientRect()))}))}})()`);
     const frame = async delta => { const before = await inspect(); await evaluate(`window.__captureTime+=${delta};window.__signalFrame(window.__captureTime)`); const after = await inspect(); report.clock.push({ delta, before: before.clock, after: after.clock }); if (Number.isFinite(before.clock.simulation) && Number.isFinite(after.clock.simulation) && Math.abs(after.clock.simulation - before.clock.simulation - delta) > 1e-5) throw new Error('manual frame delta did not advance simulation clock exactly'); };
     const shot = async name => {
       await frame(0); // A same-time render preserves the clock and repaints any freshly resized buffer.

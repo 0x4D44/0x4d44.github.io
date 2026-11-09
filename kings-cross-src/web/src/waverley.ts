@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { releaseSceneGpu } from './station-resources.ts';
 import type { StationView } from './station-transition.ts';
 import type { WaverleyAnchorScene } from '../../core/waverley-anchors.ts';
+import type { SceneWeather } from './station-weather.ts';
 import { decodeWaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 
 export const WAVERLEY_PLACEHOLDER_LABEL = 'Edinburgh Waverley — model not yet available';
@@ -24,6 +25,7 @@ export interface WaverleyView {
   error?: string;
   geometry?: WaverleyAnchorScene;
   groundAttribution?: string;
+  climate?: SceneWeather;
   model?: ReturnType<WaverleyModelModule['buildWaverleyScene']>;
   live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown };
   view(aspect: number): StationView;
@@ -78,7 +80,7 @@ export async function loadWaverleyScene(options: {
       view: aspect => waverleyView(geometry, aspect),
       // The model owns its local geometry/materials. A broad scene disposer would
       // also release the London palette shared by its track/platform meshes.
-      dispose: () => { if (disposed) return; disposed = true; loaded.live?.dispose(); model!.dispose(); scene.clear(); } };
+      dispose: () => { if (disposed) return; disposed = true; loaded.climate?.dispose(); loaded.live?.dispose(); model!.dispose(); scene.clear(); } };
     return loaded;
   } catch (error) {
     model?.dispose();

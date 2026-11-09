@@ -389,3 +389,19 @@ test('the rig at the moment of the old fixed look: skyRig at 25 degrees and no w
   assert.equal(rig.hemisphere.intensity, LIGHTS.hemisphere.intensity);
   assert.deepEqual(rig.fills.map((f) => f.intensity), LIGHTS.fills.map((f) => f.intensity));
 });
+
+
+test('a configured atmosphere computes the sun at Waverley without changing the default London rig', () => {
+  const timeMs = Date.parse('2026-11-09T12:00:00Z'), location = { lat: 55.9519018, lon: -3.1904199 };
+  const scene = new THREE.Scene(), world = addWorld(scene, { grid: false });
+  const atmosphere = createAtmosphere({ scene, world, sites: null, location });
+  const camera = new THREE.PerspectiveCamera();
+  try {
+    atmosphere.update({ timeMs, camera, target: new THREE.Vector3(), wallMs: 1000, weather: CLEAR_STATE });
+    const expected = solarPosition(timeMs, location.lat, location.lon), actual = atmosphere.state()!.sun;
+    assert.ok(Math.abs(actual.elevationDeg - expected.elevationDeg) < 1e-10, 'solar latitude must be the displayed station');
+    assert.ok(Math.abs(actual.azimuthDeg - expected.azimuthDeg) < 1e-10, 'solar longitude must be the displayed station');
+    assert.ok(Math.abs(actual.elevationDeg - solarPosition(timeMs).elevationDeg) > 3, 'Waverley must not inherit London sun');
+    assert.deepEqual(REFERENCE.sun, { colour: LIGHTS.sun.colour, intensity: LIGHTS.sun.intensity });
+  } finally { atmosphere.dispose(); }
+});

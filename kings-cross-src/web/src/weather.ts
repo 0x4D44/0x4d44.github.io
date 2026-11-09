@@ -1,5 +1,5 @@
 // The weather at the station, from Open-Meteo (https://open-meteo.com, CC BY 4.0; no key). Three sources, one shape:
-//   live     api.open-meteo.com/v1/forecast `current` for King's Cross, polled at most every ten minutes;
+//   live     api.open-meteo.com/v1/forecast `current` for the configured station (default King's Cross), polled at most every ten minutes;
 //   replay   archive-api.open-meteo.com/v1/archive hourly values for the recording's day, one request, then looked up by scene time;
 //   forced   `?weather=rain` and friends: a fixed state, no request (for screenshots and tests); `?weather=off` is clear sky.
 // Whatever fails, the scene falls back to a clear sky and the status line says so (`WeatherFeed.status`).
@@ -10,6 +10,7 @@
 // `weatherState` turns an observation into the numbers the renderer draws (cloud, rain, snow, visibility, wet and snow-covered
 // ground); the WMO code table is Open-Meteo's (https://open-meteo.com/en/docs: "WMO Weather interpretation codes").
 import { STATION_LAT, STATION_LON } from '../../core/solar.ts';
+import type { LatLon } from '../../core/geo.ts';
 
 /** The only origins the page contacts for weather. The CSP `connect-src` in index.html lists exactly these (tests/csp.test.ts). */
 export const WEATHER_ORIGINS = ['https://api.open-meteo.com', 'https://archive-api.open-meteo.com'] as const;
@@ -26,9 +27,10 @@ const CURRENT_FIELDS = 'weather_code,cloud_cover,precipitation,rain,snowfall,vis
 // The archive has no visibility (it answers null for every hour), so it is not asked for.
 const HOURLY_FIELDS = 'weather_code,cloud_cover,precipitation,rain,snowfall,wind_speed_10m,is_day';
 
-export const liveUrl = (): string => `${FORECAST_ORIGIN}/v1/forecast?latitude=${STATION_LAT}&longitude=${STATION_LON}&current=${CURRENT_FIELDS}`;
-export const archiveUrl = (startDate: string, endDate: string): string =>
-  `${ARCHIVE_ORIGIN}/v1/archive?latitude=${STATION_LAT}&longitude=${STATION_LON}&start_date=${startDate}&end_date=${endDate}&hourly=${HOURLY_FIELDS}&timezone=UTC`;
+const LONDON = { lat: STATION_LAT, lon: STATION_LON };
+export const liveUrl = (location: LatLon = LONDON): string => `${FORECAST_ORIGIN}/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&current=${CURRENT_FIELDS}`;
+export const archiveUrl = (startDate: string, endDate: string, location: LatLon = LONDON): string =>
+  `${ARCHIVE_ORIGIN}/v1/archive?latitude=${location.lat}&longitude=${location.lon}&start_date=${startDate}&end_date=${endDate}&hourly=${HOURLY_FIELDS}&timezone=UTC`;
 
 export interface WeatherObservation {
   source: 'live' | 'archive' | 'forced';
@@ -244,6 +246,8 @@ export interface Timers {
 }
 
 export interface WeatherFeedOptions {
+  /** The displayed station's public map origin; omitted keeps the existing London point. */
+  location?: LatLon;
   /** 'live': poll the forecast `current`; 'replay': the archive for `date`; 'forced': a fixed state; 'off': clear sky, no request */
   mode: 'live' | 'replay' | 'forced' | 'off';
   /** replay: the recording's date, YYYY-MM-DD */
@@ -320,7 +324,7 @@ export function createWeatherFeed(options: WeatherFeedOptions): WeatherFeed {
     let retry = true;
     try {
       if (options.mode === 'live') {
-        const obs = parseCurrent(await getJson(liveUrl()));
+        const obs = parseCurrent(await getJson(liveUrl(options.location)));
         if (!obs) throw new Error('unexpected reply');
         latest = obs;
         lastOkAt = now();
@@ -330,7 +334,7 @@ export function createWeatherFeed(options: WeatherFeedOptions): WeatherFeed {
         const start = isoDate(day - 86_400_000);
         const end = isoDate(Math.min(day + 86_400_000, now()));
         if (end < start) throw new Permanent('the recording is dated in the future');
-        const table = parseHourly(await getJson(archiveUrl(start, end)));
+        const table = parseHourly(await getJson(archiveUrl(start, end, options.location)));
         if (!table) throw new Error('unexpected reply');
         hourly = table;
         lastOkAt = now();

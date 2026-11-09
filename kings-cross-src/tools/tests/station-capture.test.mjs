@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { deflateSync } from 'node:zlib';
-import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels, stationPlaceholder, stationOverlayRegions } from '../station-capture.mjs';
+import { waitForGpu, verifyMemoryReturn, verifyViewport, synchronizeCaptureViewport, inspectStationPixels, stationPlaceholder, stationOverlayRegions, stationCaptureQuery } from '../station-capture.mjs';
 
 test('capture waits for an occupied GPU with bounded polling before allowing launch', async () => {
   let time = 0, checks = 0;
@@ -104,4 +104,14 @@ test('transparent full-screen train label layers never mask the flight canvas, w
     assert.equal(scene.clear, true); assert.ok(scene.samples >= 100);
     assert.equal(inspectStationPixels(stationPng(() => [14,18,24]), { canvas, excluded }).clear, false, 'actual blank canvas still fails');
   }
+});
+
+
+test('station capture forwards time and weather pins without enabling a live train or relay', () => {
+  const time = '2026-11-09T12:00:00+00:00';
+  const query = stationCaptureQuery(new Map([['--time',time],['--weather','snow']]));
+  assert.equal(query.get('time'),time); assert.equal(query.get('weather'),'snow');
+  assert.equal(query.get('trains'),'demo');
+  assert.equal(query.size,3);
+  assert.equal(stationCaptureQuery(new Map()).toString(),'trains=demo');
 });

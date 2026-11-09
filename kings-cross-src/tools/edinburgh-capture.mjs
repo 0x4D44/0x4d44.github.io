@@ -144,8 +144,11 @@ async function fingerprintTree(dir, captured) {
 }
 
 export function verifyCapturePresentation(presentation) {
+  const expected = presentation?.stationStatus ?? presentation?.liveStatus;
+  const suffix = typeof expected === 'string' && typeof presentation?.liveStatus === 'string' ? expected.slice(presentation.liveStatus.length) : null;
   if (!presentation || !presentation.liveStatus?.includes('frozen EB replay') ||
-      presentation.status !== presentation.liveStatus || presentation.notice !== presentation.liveStatus)
+      !expected?.startsWith(presentation.liveStatus) || !(suffix === '' || suffix?.startsWith(' · sun ') && suffix.includes(' · weather')) ||
+      presentation.status !== expected || presentation.notice !== expected)
     throw new Error('EB capture presentation does not match frozen replay status');
   return presentation;
 }
@@ -218,7 +221,7 @@ export async function main(argv = process.argv.slice(2)) {
     const real = verifyBrowserPlan(actual, report.plan, anchors);
     report.actual = actual;
     const shot = async (name, visibility = null) => {
-      const presentation = verifyCapturePresentation(await evaluate(`(()=>{const k=window.__kx;window.__signalFrame(0);k.stations.refreshPresentation();const e=k.stations.edinburgh();k.renderer.render(e.scene,k.camera);return {status:document.getElementById('status')?.textContent,notice:document.getElementById('station-notice')?.textContent,liveStatus:e.live.status()};})()`));
+      const presentation = verifyCapturePresentation(await evaluate(`(()=>{const k=window.__kx;window.__signalFrame(0);k.stations.refreshPresentation();const e=k.stations.edinburgh();k.renderer.render(e.scene,k.camera);return {status:document.getElementById('status')?.textContent,notice:document.getElementById('station-notice')?.textContent,liveStatus:e.live.status(),stationStatus:k.stations.statusText('')};})()`));
       const dimensions = await evaluate(`(()=>{const k=window.__kx;const r=k.renderer.domElement.getBoundingClientRect();return {canvas:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},excluded:(${stationOverlayRegions.toString()})(document)};})()`);
       const png = await send('Page.captureScreenshot', { format: 'png' }), bytes = Buffer.from(png.data, 'base64'), pixels = inspectStationPixels(bytes, dimensions);
       if (!pixels.clear) throw new Error(`${name}: blank canvas`);

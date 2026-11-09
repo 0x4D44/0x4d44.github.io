@@ -13,6 +13,7 @@ import { fogRange, skyRig } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
+import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { createNightLights } from './night.ts';
@@ -146,6 +147,8 @@ function starPoints(): THREE.Points {
 }
 
 export interface AtmosphereOptions {
+  /** Geographic location only; omitted preserves the original London sun and lighting rig. */
+  location?: LatLon;
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -189,7 +192,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
@@ -344,7 +347,7 @@ export function createAtmosphere({ scene, world, sites }: AtmosphereOptions): At
       // The sky maths run four times a second; a new weather (a new object, which happens when a reading arrives) runs them at once.
       if (state === null || f.weather !== state.weather || f.wallMs - lastCompute >= 250) {
         lastCompute = f.wallMs;
-        const sunPos = solarPosition(f.timeMs);
+        const sunPos = solarPosition(f.timeMs, location?.lat, location?.lon);
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };

@@ -495,3 +495,33 @@ test('forced and off modes never fetch; a forced observation is the same object 
   assert.equal(unknown.status(0), 'weather: unknown name "blizzard", clear sky');
   for (const f of [forced, off, unknown]) f.dispose();
 });
+
+
+test('weather URL location is explicit for Waverley and defaults remain exactly London', () => {
+  const location = { lat: 55.9519018, lon: -3.1904199 };
+  for (const url of [liveUrl(location), archiveUrl('2026-11-07', '2026-11-09', location)]) {
+    const query = new URL(url).searchParams;
+    assert.equal(query.get('latitude'), String(location.lat));
+    assert.equal(query.get('longitude'), String(location.lon));
+  }
+  assert.equal(new URL(liveUrl()).searchParams.get('latitude'), '51.532');
+  assert.equal(new URL(liveUrl()).searchParams.get('longitude'), '-0.1233');
+});
+
+test('live and replay feeds request their configured station rather than the London point', async () => {
+  const location = { lat: 55.9519018, lon: -3.1904199 };
+  for (const mode of ['live', 'replay'] as const) {
+    const clock = new FakeClock('2026-11-09T15:00:00Z');
+    const { fetchImpl, calls } = fakeFetch(clock, () => json(mode === 'live' ? forecast() : archive('2026-11-08')));
+    const feed = createWeatherFeed({ mode, location, date: '2026-11-09', fetchImpl, timers: clock, now: clock.now });
+    try {
+      await settle();
+      assert.equal(calls.length, 1);
+      const query = new URL(calls[0]!.url).searchParams;
+      assert.equal(query.get('latitude'), String(location.lat));
+      assert.equal(query.get('longitude'), String(location.lon));
+      assert.equal(calls[0]!.init.credentials, 'omit');
+    } finally { feed.dispose(); }
+    assert.equal(clock.timers, 0);
+  }
+});

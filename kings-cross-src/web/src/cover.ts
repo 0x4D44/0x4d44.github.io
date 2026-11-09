@@ -16,6 +16,7 @@ export const ROOF_MESHES: readonly string[] = [
   'shed-roof-cladding', 'shed-roof-glass', 'shed-aisle-roofs', // web/src/shed.ts: the slate flanks and glazed crown of both vaults, the two flat aisle roofs
   'concourse-glass', 'concourse-panels', // web/src/concourse.ts: the Western Concourse's dome
   'canopy-glass', // web/src/furniture.ts: the canopies over platforms 9 and 10
+  'waverley-mapped-roofs', 'waverley-building-tops', // Scottish station glazing and the mapped solid building roofs
   'landmarks-roofGlass', 'landmarks-slate', // web/src/landmarks.ts: the Barlow shed's roof (and the hotels' slate, which cover only their own, solid, footprints)
 ];
 

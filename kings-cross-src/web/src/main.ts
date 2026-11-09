@@ -32,11 +32,9 @@ import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
-import { createAtmosphere } from './atmosphere.ts';
+import { createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
 import { nightLightSites } from './night.ts';
-import { CLEAR_STATE, createWeatherFeed, parseSceneTime, weatherState } from './weather.ts';
-import type { WeatherFeed, WeatherObservation, WeatherState } from './weather.ts';
-import { describeSun } from '../../core/daylight.ts';
+import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 import { createStations } from './stations.ts';
@@ -202,15 +200,12 @@ function start(): void {
   const forcedWeather = params.get('weather');
   const fixedSky = (bare || params.get('sky') === 'ref') && pinnedTimeMs === null && forcedWeather === null;
   const replayDay = `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}`;
-  const weatherFeed: WeatherFeed | null = fixedSky ? null : createWeatherFeed(
-    forcedWeather === 'off' || forcedWeather === '0' ? { mode: 'off' }
-      : forcedWeather !== null ? { mode: 'forced', forced: forcedWeather }
-        : settings.mode === 'replay' ? { mode: 'replay', date: replayDay } : { mode: 'live' });
+  const weatherOptions = sceneWeatherOptions(forcedWeather, settings.mode === 'replay' ? replayDay : null);
   const lampPlan = furniture.userData.plan as FurniturePlan;
-  const atmosphere = fixedSky ? null : createAtmosphere({ scene, world, sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }) });
+  const londonClimate = fixedSky ? null : createSceneWeather({ scene, world,
+    sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), weather: weatherOptions });
+  const atmosphere = londonClimate?.atmosphere ?? null, weatherFeed = londonClimate?.feed ?? null;
   const replayNoonMs = Date.parse(`${replayDay}T12:00:00Z`);
-  let weatherNow: WeatherState = CLEAR_STATE;
-  let weatherObs: WeatherObservation | null | undefined;
 
   // `firstFrameMs` is performance.now() when the first frame was drawn: milliseconds since the
   // navigation began, which the evidence script reports as the time to first render.
@@ -236,7 +231,9 @@ function start(): void {
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
     attachEdinburgh: view => { view.live = createEdinburghLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
-      mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname }); },
+      mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
+      if (!fixedSky) view.climate = createWaverleyWeather(view, weatherOptions); },
+    stationSuffix: id => (id === 'edinburgh-waverley' ? stations.edinburgh()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
   Object.assign(kx, { stations, stPancras });
@@ -245,12 +242,7 @@ function start(): void {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
       : mode === 'live' ? 'live' : mode === 'demo' ? 'sample trains at the buffers, not live' : 'trains hidden';
     const signals = signalLayer?.counts() ?? { drawn: 0, decoded: 0 };
-    const sky = atmosphere?.state();
-    const timeNote = pinnedTimeMs !== null ? ' (time set by the page address)' : params.has('time') ? ' (time= ignored: not an ISO instant with a zone, or 13-digit epoch milliseconds)' : '';
-    // The sky and the weather are London's (one Open-Meteo point at King's Cross), so Edinburgh does not claim them.
-    const london = stations.state().selected !== 'edinburgh-waverley';
-    const skyText = london && sky && weatherFeed ? ` · ${describeSun(sky.sun.elevationDeg)}${timeNote} · ${weatherFeed.status(sceneClock())}` : '';
-    const text = stations.statusText(`${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded${skyText}`);
+    const text = stations.statusText(`${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded`);
     if (status.textContent !== text) status.textContent = text;
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
@@ -259,7 +251,8 @@ function start(): void {
     : feed?.timeMs() ?? (stPancras.timeMs() || stations.edinburgh()?.live?.timeMs() || 0);
   Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
   // The scene clock the sun and the weather follow: now, or the recording's time in a replay (noon of its day until the feed has one), or ?time=.
-  const sceneClock = (): number => pinnedTimeMs ?? (settings.mode === 'replay' ? (feed?.timeMs() || replayNoonMs) : Date.now());
+  const sceneClock = (): number => pinnedTimeMs ?? (settings.mode === 'replay' ? ((stations.state().selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.timeMs() : feed?.timeMs()) || replayNoonMs) : Date.now());
+  const timeNote = pinnedTimeMs !== null ? ' (time set by the page address)' : params.has('time') ? ' (time= ignored: not an ISO instant with a zone, or 13-digit epoch milliseconds)' : '';
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
     groups: () => trains.map((t) => t.group),
@@ -289,16 +282,12 @@ function start(): void {
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
+    controls.update();
+    const climate = stations.activeScene() === scene ? londonClimate : stations.edinburgh()?.climate;
+    if (climate) climate.update({ timeMs: sceneClock(), camera, target: controls.target, wallMs: time });
+    else if (stations.activeScene() === scene) world.follow(camera);
     stations.refreshPresentation();
     paintStatus();
-    controls.update();
-    world.follow(camera);
-    if (atmosphere && weatherFeed) {
-      const t = sceneClock();
-      const obs = weatherFeed.observation(t);
-      if (obs !== weatherObs) { weatherObs = obs; weatherNow = weatherState(obs); }
-      atmosphere.update({ timeMs: t, weather: weatherNow, camera, target: controls.target, wallMs: time });
-    }
     renderer.render(stations.activeScene(), camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
@@ -396,6 +385,6 @@ function start(): void {
     stations.dispose();
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
-    weatherFeed?.dispose(); atmosphere?.dispose();
+    londonClimate?.dispose();
   }, { once: true });
 }

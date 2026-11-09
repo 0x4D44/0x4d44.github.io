@@ -94,3 +94,14 @@ test('capture refuses stale status and station notice after a frozen replay seek
  for(const change of [{status:'Edinburgh Waverley: live trains unavailable'},{notice:'Edinburgh Waverley: private anchors required'},{liveStatus:'Edinburgh Waverley: live'}])
    assert.throws(()=>verifyCapturePresentation({...presentation,...change}),/presentation does not match/);
 });
+
+
+test('EB capture accepts the composed current sky only when both status lines agree with that station',()=>{
+ const liveStatus='Edinburgh Waverley: frozen EB replay · 2 trains';
+ const stationStatus=liveStatus+' · sun 18° up (day) · weather: snow';
+ const p={liveStatus,stationStatus,status:stationStatus,notice:stationStatus};
+ assert.deepEqual(verifyCapturePresentation(p),p);
+ for(const change of [{status:liveStatus},{notice:liveStatus},{stationStatus:'London: sun 24° up (day)'},
+   {stationStatus:liveStatus+' · private anchors unavailable',status:liveStatus+' · private anchors unavailable',notice:liveStatus+' · private anchors unavailable'}])
+   assert.throws(()=>verifyCapturePresentation({...p,...change}),/presentation does not match/);
+});

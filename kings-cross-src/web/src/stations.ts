@@ -58,6 +58,7 @@ export function createStations(options: {
   scene: THREE.Scene; camera: THREE.PerspectiveCamera; controls: OrbitControls; renderer: THREE.WebGLRenderer;
   ready: Promise<unknown>; data: KxData; kxObjects(): THREE.Object3D[];
   stationStatus?(id: StationId): string | undefined;
+  stationSuffix?(id: StationId): string;
   attachEdinburgh?(view: WaverleyView): void;
   loadEdinburgh?(): Promise<WaverleyView>;
 }) {
@@ -160,7 +161,8 @@ export function createStations(options: {
     const state = selection.state();
     const message = state.phase === 'ready' ? state.selected === 'edinburgh-waverley' && placeholderScene
       ? placeholderScene.live?.status() ?? placeholderScene.message : options.stationStatus?.(state.selected) : undefined;
-    if (message && notice.textContent !== message) notice.textContent = message;
+    const text = message ? message + (options.stationSuffix?.(state.selected) ?? '') : undefined;
+    if (text && notice.textContent !== text) notice.textContent = text;
     const credit = activeScene === london ? londonGroundCredit : placeholderScene?.groundAttribution ?? 'Terrain model not loaded.';
     if (groundCredit && groundCredit.textContent !== credit) groundCredit.textContent = credit;
   };
@@ -184,9 +186,9 @@ export function createStations(options: {
         ? { ...state, message: placeholderScene.live?.status() ?? placeholderScene.message } : state;
     }, activeScene: () => activeScene,
     edinburgh: () => placeholderScene,
-    statusText: (kx: string): string => selection.state().selected === 'kings-cross' ? kx
+    statusText: (kx: string): string => (selection.state().selected === 'kings-cross' ? kx
       : selection.state().selected === 'edinburgh-waverley' && placeholderScene ? placeholderScene.live?.status() ?? placeholderScene.message
-      : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected),
+      : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected)) + (options.stationSuffix?.(selection.state().selected) ?? ''),
     accounting: () => ({ londonGpuReleases: releases, scene: active, placeholder: !!placeholderScene?.placeholder }),
     frame(time: number): void {
       if (disposed) return;
