@@ -1,5 +1,5 @@
-"""Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, livery.ts) against
-web/tests/train.test.ts and web/tests/train-detail.test.ts.
+"""Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, train-livery.ts, livery.ts) against
+web/tests/train.test.ts, web/tests/train-detail.test.ts and web/tests/train-livery.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
 load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
@@ -15,7 +15,8 @@ F = "web/src/train.ts"
 P = "web/src/train-parts.ts"
 N = "web/src/train-nose.ts"
 L = "web/src/livery.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts"]
+LV = "web/src/train-livery.ts"
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts"]
 M = [
     # --- the train: pantograph, bogies, doors, roof covers, windows -----------------------------------------
     ("pantograph at the start of its span", "p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);", "p.position.set(0, spec.crown, car.pantograph[0]);"),
@@ -244,6 +245,41 @@ M = [
     ("lettering atlas a fixed 1280 px tall", "const atlasH = (): number => (atlasTexts().length + 1) * ROW_H;", "const atlasH = (): number => 1280;", L),
     ("lettering atlas leaves out the newest liveries", "  for (const def of Object.values(LIVERIES)) {\n    for (const cab of [true, false]) {\n      for (let index = 0; index < 6; index++) {", "  for (const def of Object.values(LIVERIES).slice(0, 4)) {\n    for (const cab of [true, false]) {\n      for (let index = 0; index < 6; index++) {", L),
     ("ellipse closes on its first point", "const t = (2 * Math.PI * i) / n;", "const t = (2 * Math.PI * i) / (n - 1);", "web/src/train-geom.ts"),
+    # --- lamp states, the 387's centre door ---------------------------------------------------------------------------------
+    ("lamp state: headlights lit at the trailing end too", "col(car.cab === 'front' && !interiorCab ? LENS.headOn : LENS.headOff)", "col(LENS.headOn)"),
+    ("lamp state: tail lamps lit at the leading end too", "col(car.cab === 'rear' && !interiorCab ? LENS.tailOn : LENS.tailOff)", "col(LENS.tailOn)"),
+    ("lamp state: a coupled cab end lit like a train's front", "col(car.cab === 'front' && !interiorCab ? LENS.headOn : LENS.headOff)", "col(car.cab === 'front' ? LENS.headOn : LENS.headOff)"),
+    ("lamp state: a coupled cab end lit like a train's rear", "col(car.cab === 'rear' && !interiorCab ? LENS.tailOn : LENS.tailOff)", "col(car.cab === 'rear' ? LENS.tailOn : LENS.tailOff)"),
+    ("lamp state: the lit and dark headlight lens alike", "export const LENS = { headOn: 0xfff3c4, headOff: 0x70767e,", "export const LENS = { headOn: 0xfff3c4, headOff: 0xfff3c4,"),
+    ("387 door: leaf wider than the post", "centreDoor: { width: 0.62, leaf: DOOR_YELLOW }", "centreDoor: { width: 0.9, leaf: DOOR_YELLOW }"),
+    ("387 door: leaf starts under the cover's top", "const yb = coverTop + 0.04;", "const yb = coverTop - 0.2;"),
+    ("387 door: leaf stops short of the glass", "lerp(0.03, screen.s1 + front.frame, v)", "lerp(0.03, screen.s1 - 0.6, v)"),
+    ("387 door: a leaf on the 717 too", "      door: { width: 0.6, height: 0.62 },", "      door: { width: 0.6, height: 0.62 },\n      centreDoor: { width: 0.5, leaf: 0xe3a50f },"),
+    ("387 door: no post between the 387's panes", "topRadius: 0.3, bottomRadius: 0.14, pillar: 0.8 },", "topRadius: 0.3, bottomRadius: 0.14 },"),
+    ("387 door: the 717 without its post", "bottomRadius: 0.14, pillar: 0.7 },", "bottomRadius: 0.14 },"),
+    # --- the per-kind paint (train-livery.ts) -------------------------------------------------------------------------------
+    ("paint: LNER band 0.5 m too low", "export const LNER_BAND: [number, number] = [1.52, 2.97];", "export const LNER_BAND: [number, number] = [1.52, 2.47];", LV),
+    ("paint: LNER sweep top flat", "[[0, 1.8], [1.0, 1.95], [2.0, 2.15], [3.5, 2.35], [5.0, 2.6], [sA, bandTop], [TEX_SPAN, bandTop]]", "[[0, 2.5], [1.0, 2.5], [2.0, 2.5], [3.5, 2.5], [5.0, 2.5], [sA, bandTop], [TEX_SPAN, bandTop]]", LV),
+    ("paint: LNER red does not wrap to the floor", "const red: [number, number][] = [...between(top, tongue), [0, TEX_Y0]];", "const red: [number, number][] = [...between(top, tongue)];", LV),
+    ("paint: LNER no dark foot", "{ colour: 0x2d3036, pts: rect(0, TEX_SPAN, TEX_Y0, 1.0) },\n    { colour: LNER_RED, pts: red },", "{ colour: LNER_RED, pts: red },", LV),
+    ("paint: LNER pinstripe over the nose", "rect(sA, TEX_SPAN, 3.03, 3.07)", "rect(0, TEX_SPAN, 3.03, 3.07)", LV),
+    ("paint: LNER dome from the tip", "  noseTopFrom: 3.2,", "  noseTopFrom: 0.5,", LV),
+    ("paint: Gc band at the wrong height", "const bandTop = 1.5;\n  const bandBottom = 1.04;", "const bandTop = 2.5;\n  const bandBottom = 2.04;", LV),
+    ("paint: Gc no cantrail line", "    { colour: GC_ORANGE, pts: rect(nose, TEX_SPAN, 3.02, 3.06) },\n", "", LV),
+    ("paint: Gc sweep not lowered at the nose", "[[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [nose, 0.78], [sD, bandBottom], [TEX_SPAN, bandBottom]]", "[[0.1, bandBottom], [0.7, bandBottom], [1.5, bandBottom], [nose, bandBottom], [sD, bandBottom], [TEX_SPAN, bandBottom]]", LV),
+    ("paint: 387 no pinstripe", "    { colour: GN_PINSTRIPE, pts: rect(nose, TEX_SPAN, 3.0, 3.04) },\n", "", LV),
+    ("paint: 387 name panel too narrow", "const tw = textEms('Great Northern') * em;", "const tw = textEms('Great Northern') * em * 0.3;", LV),
+    ("paint: 387 doors blue again", "  door: GN387_GREEN,", "  door: 0x24307a,", LV),
+    ("paint: 717 nose top not dark", "  noseTop: 0x1a1c21,\n  noseTopFrom: 0,", "  noseTop: null,\n  noseTopFrom: 0,", LV),
+    ("paint: Hull wears the LNER paint", "  lner9: LNER,", "  lner9: LNER,\n  hull5: LNER,", LV),
+    ("paint: the 9-car LNER unpainted", "  lner9: LNER,", "", LV),
+    ("paint: body colour not laid first", "  g.fillRect(0, 0, TEX_W, TEX_H);\n", "", LV),
+    ("paint: shapes upside down", "(1 - (y - TEX_Y0) / (TEX_Y1 - TEX_Y0)) * TEX_H", "((y - TEX_Y0) / (TEX_Y1 - TEX_Y0)) * TEX_H", LV),
+    ("paint: shapes along the wrong axis", "const X = (s: number): number => (s / TEX_SPAN) * TEX_W;", "const X = (s: number): number => (s / TEX_SPAN) * TEX_W * 0.5;", LV),
+    ("paint: curve overshoots its knots", "tan.push(p * q <= 0 ? 0 : (2 * p * q) / (p + q));", "tan.push((p + q) / 2);", LV),
+    ("paint: curve lookup not clamped", "if (s >= last[0]) return last[1];", "if (s >= last[0]) return 0;", LV),
+    ("paint: shell material remade for every car", "let m = shells.get(key);", "let m: THREE.MeshLambertMaterial | undefined;", LV),
+    ("paint: base scheme gets a material of its own", "if (livery.scheme === 'base') return shellMaterial(TRAIN_SPECS[kind].livery, nose);", "", LV),
 ]
 only = sys.argv[3:]
 selected = [m for m in M if not only or any(o in m[0] for o in only)]

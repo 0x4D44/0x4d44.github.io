@@ -29,9 +29,11 @@ import * as THREE from 'three';
 import { standingTrainPose } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { EMU_FIGURES, FIGURES, trainLayout } from '../../core/train.ts';
-import type { Car, EmuFamily, Family, Livery, TrainKind, TrainLayout } from '../../core/train.ts';
-import { atlasRect, BAND_Y, decalMaterial, LIVERIES, shellMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
-import type { DecalItem, LiveryDef } from './livery.ts';
+import type { Car, EmuFamily, Family, TrainKind, TrainLayout } from '../../core/train.ts';
+import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
+import type { DecalItem } from './livery.ts';
+import { liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
+import type { TrainLivery } from './train-livery.ts';
 import { col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
@@ -89,8 +91,17 @@ const FRAME_REACH = 0.91;
 const BEZEL = 0x15171a;
 /** The parked wiper arms' colour: a dark grey, a shade off the glass's black so they still read against it. */
 const WIPER = 0x3b4048;
+/**
+ * The lenses of a cab's lamps, lit and dark. A train in service shows white headlights at its leading end and red tail lamps at its trailing end,
+ * and the other lenses unlit (an unlit headlamp is a pale reflector, an unlit tail lens a dark red); the cab ends of two coupled units show none
+ * of the four. Car 0 is the leading car and the last car the trailing one (trains-live.ts walks the cars back from the leading end), so the
+ * model needs no state switch: each end is built in the state it has in service. Shades approximate.
+ */
+export const LENS = { headOn: 0xfff3c4, headOff: 0x70767e, tailOn: 0xd02020, tailOff: 0x4a1317 } as const;
 /** The yellow of a warning panel: the shade is approximate (the LNER livery's nose front is about the same). */
 const YELLOW = 0xf2c100;
+/** The 387's gangway door leaf: a duller, orange-leaning yellow than the panels beside it (gn387_02_387121_ely, gn387_03_387123_cambridge). Approximate. */
+const DOOR_YELLOW = 0xe3a50f;
 /** Columns of the car section (counted from the bottom, 0..12) that carry the livery texture: the wall and the lower shoulder. Above them, and below, vertex colours. */
 const SHELL_K0 = 1;
 const SHELL_K1 = 7;
@@ -160,6 +171,12 @@ interface FrontSpec {
   warningWidth?: number;
   /** the nose coupler's style, and whether a cover hides it at a train end (else the coupler stands out of the face, and the face stands END_GAP back) */
   coupler: { style: CouplerStyle; covered: boolean };
+  /**
+   * A full-height door between the two windscreens (the Class 387's gangway door): its leaf runs from above the cover up the face and along the
+   * nose to the glass's top edge, in the gap the screen's `pillar` leaves; `leaf` is its colour and `width` the leaf's, a little less than the
+   * pillar's (the screen's black frame is the door's outline).
+   */
+  centreDoor?: { width: number; leaf: number };
 }
 
 /** One piece of a diesel unit's underframe: its length along the car, half-width, and the height of its underside above the rail head. */
@@ -284,14 +301,16 @@ const AT300: BodySpec = {
   },
   glass: {
     screen: { s0: 1.2, s1: 3.35, fraction: 0.8, topRadius: 0.32, bottomRadius: 0.12 },
-    side: { sBack: 4.95, sFront0: 3.5, sFront1: 2.75, v0: 0.5, v1: 0.78 },
+    // a small pane behind the windscreen's pillar, not the broad slab it was (photographs lner-801-214-2025, hull-802-doncaster-2024: a short dark window, about a metre and a half long)
+    side: { sBack: 4.95, sFront0: 4.0, sFront1: 3.25, v0: 0.56, v1: 0.8 },
   },
   gangway: { width: ASSUMED.gangwayWidth, height: ASSUMED.gangwayHeight, bottom: ASSUMED.gangwayBottom },
   pantographTop: FIGURES.pantographFoldedHeight.value,
   underframe: 0.95,
   // the Azuma's front is as S3 drew it: plain lamps on the face, a cover over the coupler, a livery-coloured front (LNER's is yellow in the livery)
   front: {
-    lamps: { shape: 'rect', y: 0.56, x: 0.6, head: [0.26, 0.12], tail: [0.14, 0.07], tailAt: [0, -0.14], bezel: 0 },
+    // headlamp pods in the upper outer corners of the face, under the windscreen's corners (lner-800-113-newcastle-2025, hull-802-doncaster-2024): a dark housing with the lamp, the tail lamp beneath it
+    lamps: { shape: 'rect', y: 0.6, x: 0.6, head: [0.26, 0.12], tail: [0.12, 0.06], tailAt: [0, -0.15], bezel: 0.04 },
     frame: 0.07,
     wipers: false,
     display: false,
@@ -375,7 +394,9 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
       boxiness: 3.5,
     },
     glass: {
-      screen: { s0: 0.2, s1: 1.5, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.14 },
+      // two windscreens either side of the gangway door: the door's gap is the centre post (gn387_02_387121_ely, gn387_01_387114_ely: a tall door
+      // between the two panes, in a dark frame, its leaf the warning yellow)
+      screen: { s0: 0.2, s1: 1.5, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.14, pillar: 0.8 },
       side: { sBack: 1.85, sFront0: 1.3, sFront1: 0.95, v0: 0.55, v1: 0.8 },
     },
     gangway: { width: 1.9, height: 2.15, bottom: 1.15 },
@@ -388,10 +409,11 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
       lamps: { shape: 'rect', y: 0.58, x: 0.62, head: [0.3, 0.075], tail: [0.3, 0.045], tailAt: [0, -0.11], bezel: 0.035 },
       frame: 0.08,
       wipers: true,
-      display: true,
+      display: false,
       door: null,
       warning: YELLOW,
       coupler: { style: 'dellner', covered: true },
+      centreDoor: { width: 0.62, leaf: DOOR_YELLOW },
     },
     underfloor: null,
     plan: emuPlan('electrostar', length),
@@ -439,7 +461,8 @@ const DESIRO_BODY = ((): BodySpec => {
       boxiness: 3.6,
     },
     glass: {
-      screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14 },
+      // the 717's emergency door stands between its two windscreens, a black panel in the black glass (GN717-03-717005-Potters-Bar, GN717-05-25.06.26-Welwyn-Garden-City-717014)
+      screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14, pillar: 0.7 },
       side: { sBack: 1.65, sFront0: 1.15, sFront1: 0.9, v0: 0.55, v1: 0.8 },
     },
     // the Desiro City's gangways are open and "full width"
@@ -473,6 +496,8 @@ const DESIRO_BODY = ((): BodySpec => {
 const DESIRO700_BODY: BodySpec = {
   ...DESIRO_BODY,
   family: 'desiro700',
+  // one broad windscreen, with no emergency door between two panes (tl700_01_gatwick_front)
+  glass: { screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14 }, side: DESIRO_BODY.glass.side },
   front: {
     lamps: { shape: 'rect', y: 0.55, x: 0.77, head: [0.2, 0.06], tail: [0.07, 0.07], tailAt: [0.14, 0], bezel: 0.03 },
     frame: 0.07,
@@ -577,6 +602,16 @@ const ADELANTE_BODY = ((): BodySpec => {
 const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: ELECTROSTAR_BODY, desiro: DESIRO_BODY, desiro700: DESIRO700_BODY, adelante: ADELANTE_BODY };
 
 /**
+ * What differs between kinds that share a body. The AT300 front is the Azuma's by default (a livery-coloured nose); LNER's
+ * has the yellow mask under the windscreen, with the red cheeks either side of it (photographs lner-801-214-2025,
+ * lner-800-113-newcastle-2025: the mask is about four fifths of the face's width and runs back to the windscreen's lower edge).
+ */
+const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
+  lner5: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
+  lner9: { warning: LNER_YELLOW, warningWrap: 1.2, warningWidth: 0.8 },
+};
+
+/**
  * How far a cab front's face stands behind the end of the train. A front with its coupler under a cover leaves the face almost at the
  * end (NOSE_RECESS); a front whose coupler stands out of it holds the face a whole END_GAP back, so the coupler's head reaches the end
  * of the car and the car still spans exactly its own [start, end].
@@ -651,8 +686,10 @@ export function carSection(b: Pick<BodySpec, 'floor' | 'wallTop' | 'crown'> & { 
 
 interface CarContext {
   spec: BodySpec;
-  def: LiveryDef;
-  livery: Livery;
+  /** the cab front's finish for this kind: the family's own, with the kind's overrides (FRONT_OVERRIDES) laid over it */
+  front: FrontSpec;
+  def: TrainLivery;
+  kind: TrainKind;
   layout: TrainLayout;
 }
 
@@ -683,7 +720,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   // where the body begins and ends along the car: a train-end nose starts NOSE_RECESS behind the car end (so the lamps and
   // the seam, laid a few millimetres proud of the face, stay inside the car) or, where its coupler stands out of the face,
   // END_GAP behind it (so the coupler's head can reach the end); anything else stands END_GAP in
-  const front = spec.front;
+  const front = ctx.front;
   const tip = car.cab ? (interiorCab ? END_GAP : faceSetback(spec.family)) : END_GAP;
   const bodyEnd = L - END_GAP;
   const noseLen = car.cab ? spec.nose.length : 0;
@@ -789,7 +826,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // a warning panel wraps the nose above the cover (to ring `warnEnd`, and as far across as column kW), over whatever colour the livery gives the nose
       else if (front.warning !== null && inWarning && kmin >= kW) colour = front.warning;
       else if (frontBand) colour = kmin >= J0 ? def.noseFront : (front.coupler.covered ? (def.swoosh ?? def.noseFront) : def.skirt);
-      else if (onNose) colour = def.noseCone ?? (kmax > SHELL_K1 && farS <= crescentEnd + 1e-9 ? def.noseBand : def.roof);
+      // the nose's roof: a livery's own top colour from `noseTopFrom` back (the LNER's black dome over the windscreen), else the crescent, else the roof
+      else if (onNose) colour = def.noseCone ?? (def.noseTop !== null && kmax > SHELL_K1 && nearS >= def.noseTopFrom - 1e-9 ? def.noseTop : kmax > SHELL_K1 && farS <= crescentEnd + 1e-9 ? def.noseBand : def.roof);
       detail.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], colourOf(colour));
     }
   }
@@ -902,8 +940,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const b = lamps.bezel;
         detail.fan(onFace(roundedRect(Math.min(...xs) - b, Math.max(...xs) + b, Math.min(...ys) - b, Math.max(...ys) + b, lamps.shape === 'round' ? 0.1 : 0.05, 3), 0.005), faceN, col(lamps.bezelColour ?? BEZEL));
       }
-      lens(cx, yh, lamps.head[0], lamps.head[1], 0.009, col(0xfff3c4));
-      lens(tx, ty, lamps.tail[0], lamps.tail[1], 0.009, col(0xd02020));
+      lens(cx, yh, lamps.head[0], lamps.head[1], 0.009, col(car.cab === 'front' && !interiorCab ? LENS.headOn : LENS.headOff));
+      lens(tx, ty, lamps.tail[0], lamps.tail[1], 0.009, col(car.cab === 'rear' && !interiorCab ? LENS.tailOn : LENS.tailOff));
       const m = new THREE.Object3D();
       m.name = 'headlight';
       m.position.set(sx * xh, yh, Z(tip));
@@ -980,6 +1018,18 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     // the frame and the glass stand clear of the loft by more than its facets sag between rings (a few mm, up to a centimetre on the steep shoulder), so neither shows through the other
     patch(front.frame, detail, colourOf(def.glass), 0.014);
     patch(0, glass, null, 0.02, screen.pillar ?? 0);
+    if (front.centreDoor) {
+      // the gangway door between the two panes: its leaf up the face (from the cover's seam to the face's top edge, which it follows) and along the
+      // nose to the glass's top; the screen's black frame, 4 mm under it, is its outline
+      const hw = front.centreDoor.width / 2;
+      const leaf = colourOf(front.centreDoor.leaf);
+      const yb = coverTop + 0.04;
+      const topEdge: [number, number][] = [-1, -0.5, 0, 0.5, 1].map((t): [number, number] => [t * hw, yAtX(tipHalf, Math.abs(t) * hw)]);
+      detail.fan(onFace([[-hw, yb], [hw, yb], ...topEdge.reverse()], 0.007), faceN, leaf);
+      // (it starts 3 cm back, so its lift stays behind the face's plane: no detail stands out in front of the train's end)
+      // (and 27 mm off the nose, well clear of the black frame's own facets under it: at 18 mm the two interleave in a jagged black seam)
+      nosePatch(14, 1, (v, u) => [(2 * u - 1) * hw, lerp(0.03, screen.s1 + front.frame, v)], detail, leaf, 0.027);
+    }
     if (front.wipers) {
       // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying
       // in the glass's lower edge (a pale arm higher up reads as an eyebrow)
@@ -997,8 +1047,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // the destination display: a lit amber panel in a dark bezel, across the top of the glass, over the middle half of its width
       const top = screen.s1 - 0.12;
       const hwDisplay = Math.min(0.5, screenHalfWidth(screen.s1 - 0.3, 0) - 0.3);
+      // (a lit strip of text in a dark panel, as the photographs show it, gn387_02_387121_ely and tl700_01_gatwick_front: not an amber slab across the glass)
       nosePatch(2, 8, (v, u) => [lerp(-hwDisplay - 0.03, hwDisplay + 0.03, u), lerp(top - 0.25, top + 0.02, v)], detail, col(0x0d0e10), 0.03);
-      nosePatch(2, 8, (v, u) => [lerp(-hwDisplay, hwDisplay, u), lerp(top - 0.22, top - 0.01, v)], detail, col(0xffa000), 0.034);
+      nosePatch(2, 4, (v, u) => [lerp(-hwDisplay * 0.45, hwDisplay * 0.45, u), lerp(top - 0.15, top - 0.08, v)], detail, col(0xffa000), 0.034);
     }
     // the cab side windows, one each side, following the nose's slope
     const sw = spec.glass.side;
@@ -1173,7 +1224,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   void BAND_Y;
 
   // one shell material per livery and family: a through car reads only the texture's last column, so the nose length does not matter to it
-  const shellMesh = new THREE.Mesh(shell.build(), shellMaterial(ctx.livery, spec.nose.length));
+  const shellMesh = new THREE.Mesh(shell.build(), shellMaterialFor(ctx.kind, spec.nose.length));
   shellMesh.name = 'body-shell';
   const detailMesh = new THREE.Mesh(detail.build(), plain());
   detailMesh.name = 'body-detail';
@@ -1248,13 +1299,13 @@ function pushDecal(soup: Soup, item: DecalItem, W: number, Z: (s: number) => num
 
 export function buildTrain(kind: TrainKind): THREE.Group {
   const layout = trainLayout(kind);
-  const livery = layout.spec.livery;
   const spec = BODIES[layout.spec.family];
-  const def = LIVERIES[livery];
+  const def = liveryFor(kind);
+  const front: FrontSpec = { ...spec.front, ...FRONT_OVERRIDES[kind] };
   const root = new THREE.Group();
   root.name = `train-${kind}`;
   root.userData = { kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family };
-  for (const car of layout.cars) root.add(buildCar(car, { spec, def, livery, layout }));
+  for (const car of layout.cars) root.add(buildCar(car, { spec, front, def, kind, layout }));
   return root;
 }
 

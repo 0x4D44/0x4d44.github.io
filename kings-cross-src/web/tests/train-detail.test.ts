@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { bodySpec, buildTrain, carPlan, carSection, END_GAP, faceSetback, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
+import { bodySpec, buildTrain, carPlan, carSection, END_GAP, faceSetback, LENS, NOSE_RECESS, underfloorBlocks } from '../src/train.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_LOD_DISTANCE, DISC_RADIUS, FLANGE_HEIGHT, WHEEL_WIDTH, bogieFarSoup, bogieSoup, buildBogie, couplerHalf } from '../src/train-parts.ts';
 import { col, ellipse, Soup } from '../src/train-geom.ts';
@@ -309,9 +309,11 @@ test('glass: the windscreen is a raked, curved, wide pane that stands on the out
   }
 });
 
-test('glass: the Class 180\'s windscreen is two panes with a 10 cm post between them (ASSUMED width), every other cab\'s is one pane across the middle', () => {
+test('glass: the windscreen is two panes round a post where the cab has one (the 180\'s 10 cm post, the 387\'s and the 717\'s centre doors), one pane across the middle on every other cab', () => {
+  // CHANGED (it said only the 180 had a post): gn387_02_387121_ely and GN717-03-717005-Potters-Bar show a full-height door between two
+  // windscreens on the 387 and the 717; the Azuma and the 700 (tl700_01_gatwick_front, lner-800-113-newcastle-2025) have one broad pane
   const pillar = Object.fromEntries(FAMILIES.map((f) => [f, bodySpec(f).glass.screen.pillar]));
-  assert.deepEqual(pillar, { at300: undefined, electrostar: undefined, desiro: undefined, desiro700: undefined, adelante: 0.1 });
+  assert.deepEqual(pillar, { at300: undefined, electrostar: 0.8, desiro: 0.7, desiro700: undefined, adelante: 0.1 });
   for (const kind of ['lner5', 'gn387x4', 'gn717x6', 'tl700x8', 'gc180x5'] as TrainKind[]) {
     const g = built(kind);
     const post = bodySpec(trainLayout(kind).spec.family).glass.screen.pillar ?? 0;
@@ -393,6 +395,38 @@ test('glass: the cab glass is a dark, tinted, reflective material of its own, an
   }
 });
 
+test('glass: the 387\'s gangway door stands in the gap between its two windscreens, a leaf narrower than the post, from the face\'s cover up to the top of the glass', () => {
+  const door = bodySpec('electrostar').front.centreDoor;
+  assert.ok(door, 'the 387 has a centre door');
+  const screen = bodySpec('electrostar').glass.screen;
+  assert.ok(screen.pillar !== undefined && door.width < screen.pillar, `the leaf (${door.width}) is narrower than the post (${screen.pillar}), so the frame outlines it`);
+  for (const kind of ['gn387x4', 'gn387x8'] as TrainKind[]) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    for (const car of layout.cars.filter((c) => c.cab)) {
+      const here = `${kind} car ${car.index} (${car.cab})`;
+      const leaf = trisOfColour(detailOf(g, car), door.leaf);
+      assert.ok(leaf.length >= 20, `${here}: ${leaf.length} leaf triangles`);
+      const box = boxOfTris(leaf);
+      // (the leaf stands 27 mm off the nose along its normal, which leans a little outward: up to a millimetre or two each side)
+      assert.ok(Math.max(Math.abs(box.min.x), Math.abs(box.max.x)) <= door.width / 2 + 0.005, `${here}: the leaf is ${box.max.x - box.min.x} m wide, wider than ${door.width}`);
+      // it runs from the face, along the nose, to the top of the glass: how far along (out from the face plane) is the extent in z
+      const interior = car.cab === 'front' ? car.start > 1e-9 : car.end < layout.length - 1e-9;
+      const face = facePlane(car, true, interior);
+      const along = Math.max(...leaf.flat().map((v) => Math.abs(v.z - face)));
+      assert.ok(along >= screen.s1 - 0.15 && along <= screen.s1 + bodySpec('electrostar').front.frame + 0.1, `${here}: the leaf runs ${along.toFixed(2)} m back along the nose; the glass's top is at ${screen.s1}`);
+      // and up the face from above the coupler cover: no leaf below the cover's top
+      const cover = all(named(g, `car-${car.index}`), 'coupler-cover')[0];
+      if (cover) assert.ok(box.min.y > (cover.userData.y1 as number), `${here}: the leaf starts at ${box.min.y.toFixed(3)}, under the cover's top ${cover.userData.y1}`);
+    }
+  }
+  // no other family has one: no 717, 700, 180 or Azuma carries the leaf's colour on its front
+  for (const kind of ['gn717x6', 'tl700x8', 'gc180x5', 'lner5', 'hull5', 'lumo5'] as TrainKind[]) {
+    const g = built(kind);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) assert.equal(trisOfColour(detailOf(g, car), door.leaf).length, 0, `${kind} car ${car.index}: a 387's door leaf`);
+  }
+});
+
 test('lamps: two headlight clusters on the face of every cab, one each side, level, inside the face and above the coupler cover', () => {
   for (const kind of ALL_KINDS) {
     const g = built(kind);
@@ -426,11 +460,46 @@ test('lamps: two headlight clusters on the face of every cab, one each side, lev
   }
 });
 
+test('lamps: the leading end shows lit headlights and dark tail lenses, the trailing end lit tail lamps and dark headlight lenses, a coupled cab end none lit', () => {
+  const lens = (g: THREE.Object3D, car: Car): Record<keyof typeof LENS, number> => {
+    const mesh = detailOf(g, car);
+    const n = (hex: number): number => trisOfColour(mesh, hex).length;
+    return { headOn: n(LENS.headOn), headOff: n(LENS.headOff), tailOn: n(LENS.tailOn), tailOff: n(LENS.tailOff) };
+  };
+  for (const kind of ALL_KINDS) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    for (const car of layout.cars.filter((c) => c.cab)) {
+      const here = `${kind} car ${car.index} (${car.cab} cab)`;
+      const l = lens(g, car);
+      const interior = car.cab === 'front' ? car.start > 1e-9 : car.end < layout.length - 1e-9;
+      // two clusters a cab, each with a headlight lens and a tail lens: the same number of triangles lit or dark
+      assert.ok(l.headOn + l.headOff > 0 && l.tailOn + l.tailOff > 0, `${here}: lenses`);
+      if (interior) {
+        assert.deepEqual([l.headOn, l.tailOn], [0, 0], `${here}: a coupled cab end shows no lit lamp`);
+        assert.ok(l.headOff > 0 && l.tailOff > 0, `${here}: dark lenses`);
+      } else if (car.cab === 'front') {
+        assert.ok(l.headOn > 0 && l.tailOff > 0, `${here}: the leading end shows its headlights lit, tail lenses dark`);
+        assert.deepEqual([l.headOff, l.tailOn], [0, 0], `${here}: and neither a dark headlight nor a lit tail lamp`);
+      } else {
+        assert.ok(l.tailOn > 0 && l.headOff > 0, `${here}: the trailing end shows its tail lamps lit, headlight lenses dark`);
+        assert.deepEqual([l.headOn, l.tailOff], [0, 0], `${here}: and neither a lit headlight nor a dark tail lens`);
+      }
+    }
+  }
+  // the four lens colours differ, and a lit one is lighter or redder than its dark one
+  const lum = (h: number): number => lumaOf(h);
+  assert.ok(lum(LENS.headOn) > lum(LENS.headOff) + 0.2 && lum(LENS.tailOn) > lum(LENS.tailOff) + 0.1, 'a lit lens is brighter than a dark one');
+  assert.equal(new Set(Object.values(LENS)).size, 4);
+});
+
 // --- the finish of a cab front -----------------------------------------------------------------------
 
 test('fronts: each family\'s headlight and tail lamp are the size, shape and place its spec gives: level, inside the face, standing proud of a dark bezel where it has one', () => {
-  const HEAD = 0xfff3c4;
-  const TAIL = 0xd02020;
+  // CHANGED (the lenses used to be one colour at both ends of a train): the leading end has its headlights lit and its tail lamps dark, the
+  // trailing end the other way round (see LENS); each end's lenses are found by the colour they have there
+  const HEAD_ON = LENS.headOn;
+  const TAIL_ON = LENS.tailOn;
   for (const kind of ['lner5', 'gn387x4', 'gn717x6', 'tl700x8', 'gc180x5'] as TrainKind[]) {
     const g = built(kind);
     const layout = trainLayout(kind);
@@ -456,8 +525,8 @@ test('fronts: each family\'s headlight and tail lamp are the size, shape and pla
       for (const side of [-1, 1]) {
         const here = `${kind} car ${car.index} ${side < 0 ? 'left' : 'right'}`;
         const onSide = (ts: Tri[]): Tri[] => ts.filter((t) => t.every((v) => v.x * side > 0));
-        const headTris = onSide(trisOfColour(mesh, HEAD));
-        const tailTris = onSide(trisOfColour(mesh, TAIL));
+        const headTris = onSide(trisOfColour(mesh, car.cab === 'front' ? HEAD_ON : LENS.headOff));
+        const tailTris = onSide(trisOfColour(mesh, car.cab === 'rear' ? TAIL_ON : LENS.tailOff));
         const head = boxOfTris(headTris);
         const tail = boxOfTris(tailTris);
         boxes.push(head);
@@ -625,9 +694,11 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen and 
   }
 });
 
-test('fronts: the Azuma keeps the front it had: plain lamps with no bezel, a covered plain coupler, no wipers, display, door or warning panel', () => {
+test('fronts: the Azuma keeps the front it had: rectangular lamps, a covered plain coupler, no wipers, display, door or warning panel (the lamps now sit up in the face\'s outer corners in a dark housing)', () => {
+  // CHANGED (the lamps were low and bare, at 0.56 of the face's height and 0.6 of its half-width, with no housing): lner-800-113-newcastle-2025 and
+  // hull-802-doncaster-2024 show the headlamp pod in the face's upper outer corner, a dark housing round the lamp with the tail lamp beneath it
   assert.deepEqual(bodySpec('at300').front, {
-    lamps: { shape: 'rect', y: 0.56, x: 0.6, head: [0.26, 0.12], tail: [0.14, 0.07], tailAt: [0, -0.14], bezel: 0 },
+    lamps: { shape: 'rect', y: 0.6, x: 0.6, head: [0.26, 0.12], tail: [0.12, 0.06], tailAt: [0, -0.15], bezel: 0.04 },
     frame: 0.07,
     wipers: false,
     display: false,
@@ -1528,7 +1599,10 @@ test('Class 700: eight or twelve cars of 20.55 and 20.15 m, a pantograph on each
   // the 700's body is the 717's: the same section, nose, glass and bogies, from the same spec
   const a = bodySpec('desiro700');
   const b = bodySpec('desiro');
-  assert.deepEqual([a.half, a.floor, a.wallTop, a.crown, a.nose, a.glass, a.gangway], [b.half, b.floor, b.wallTop, b.crown, b.nose, b.glass, b.gangway]);
+  // CHANGED (it compared the whole glass spec): the 717 now has a centre post for its emergency door, which the 700 has not; the rest of the screen and the side windows are alike
+  const { pillar: _post, ...screen717 } = b.glass.screen;
+  void _post;
+  assert.deepEqual([a.half, a.floor, a.wallTop, a.crown, a.nose, a.glass.screen, a.glass.side, a.gangway], [b.half, b.floor, b.wallTop, b.crown, b.nose, screen717, b.glass.side, b.gangway]);
   assert.notDeepEqual(a.front, b.front, 'a front of its own');
   assert.equal(EMU_FIGURES.desiro700.wheelDiameter.value, EMU_FIGURES.desiro.wheelDiameter.value);
 });
