@@ -119,7 +119,8 @@ export function edgesOf(tris: [number, number, number][]): Map<string, Edge> {
   return out;
 }
 
-// Arup pp.13-16: radial box ribs, axial tubes. ASSUMED: each inner node's nearest angular link outward is a rib.
+// Arup pp.13-16: radial box ribs, axial tubes. ASSUMED: each inner node's nearest link outward on one hand (anticlockwise from above) is a rib, so
+// the ribs run on from ring to ring as swept curves, as the lattice swirls out of the funnel in R-ab.
 function roofRibs(edges: Map<string, Edge>, nodes: Diagrid['nodes'], centre: Pt): Set<string> {
   const nearest = new Map<number, {key:string;delta:number}>();
   const angle = (i:number): number => Math.atan2(nodes[i]!.z-centre[1], nodes[i]!.x-centre[0]);
@@ -127,7 +128,7 @@ function roofRibs(edges: Map<string, Edge>, nodes: Diagrid['nodes'], centre: Pt)
     const na=nodes[a]!, nb=nodes[b]!;
     if (Math.abs(na.ring-nb.ring)!==1 || na.ring<0 || nb.ring<0) continue;
     const inner=na.ring<nb.ring?a:b, outer=inner===a?b:a;
-    const raw=Math.abs(angle(inner)-angle(outer)), delta=Math.min(raw,2*Math.PI-raw), key=`${a}:${b}`;
+    const delta=(angle(outer)-angle(inner)+1e-6+4*Math.PI)%(2*Math.PI), key=`${a}:${b}`;
     if (delta < (nearest.get(inner)?.delta ?? Infinity)) nearest.set(inner,{key,delta});
   }
   return new Set([...nearest.values()].map(v=>v.key));
