@@ -156,32 +156,65 @@ test('funnel: a tube never twists, however its tangent bends: each ring is the l
   columnStrands(head, roof).forEach((rings, s) => check(`strand ${s}`, rings));
 });
 
-// Two equal tubes that cross meet along a crease, and each leans a different way there, so lit plainly they show a hard step across it (a tear).
+// Two equal tubes that cross meet along a crease, and each leans a different way there, so lit plainly they show a hard step across it (a tear). `shading` asserts
+// every vertex of a strand's tubes and counts them: those at a crossing, those clear of every crossing, and those at a crossing that a second one reaches too.
+const shading = (rings: readonly Ring[]): { crossed: number; round: number; shared: number; coned: number } => {
+  const count = { crossed: 0, round: 0, shared: 0, coned: 0 };
+  // the tube that crosses at `c`, seen from a vertex: how far the vertex is from its axis, and which way is straight out from that axis
+  const from = (v: V3, c: Ring): { away: number; out: V3 } => {
+    const a: V3 = [v[0] - c.p[0], v[1] - c.p[1], v[2] - c.p[2]], d = dot3(a, c.x!), m: V3 = [a[0] - d * c.x![0], a[1] - d * c.x![1], a[2] - d * c.x![2]];
+    return { away: Math.hypot(...m), out: toward([0, 0, 0], m) };
+  };
+  // the determinant of three vectors, to write one as a sum of three others
+  const det = (a: V3, b: V3, c: V3): number => dot3(a, [b[1] * c[2] - b[2] * c[1], b[2] * c[0] - b[0] * c[2], b[0] * c[1] - b[1] * c[0]]);
+  const orders = <T>(a: T[]): T[][] => (a.length < 2 ? [a] : a.flatMap((x, i) => orders([...a.slice(0, i), ...a.slice(i + 1)]).map(o => [x, ...o])));
+  const frames = tubeRings(rings), crossings = rings.filter(c => c.x);
+  rings.forEach((ring, k) => {
+    for (const vertex of frames[k]!) {
+      const radial = toward(ring.p, vertex.p);
+      close(Math.hypot(...vertex.n), 1, 1e-9);
+      // the tubes that reach the vertex (within two radii of their axes), each with its pull: whole within a radius of the axis, none at two
+      const hits = crossings.map(c => from(vertex.p, c)).filter(h => h.away > 1e-9 && h.away < 2 * ring.r).map(h => ({ out: h.out, pull: Math.min(1, 2 - h.away / ring.r) }));
+      if (ring.x && hits.length > 1) {
+        // a second crossing reaches this one's vertex (where legs run nearly parallel, two crossings overlap): the shading leans toward the tubes one after the other, so it is
+        // what leaning the round normal toward each in turn gives, in whichever order, and it lies in the cone of the round normal and the tubes' own
+        count.shared++;
+        const lean = (order: typeof hits): V3 => order.reduce((s, h) => toward([0, 0, 0], [s[0] + h.pull * h.out[0], s[1] + h.pull * h.out[1], s[2] + h.pull * h.out[2]]), radial);
+        assert.ok(orders(hits).some(order => angle3(lean(order), vertex.n) < 1e-6), 'a vertex that two crossings reach is shaded as the round normal leaned toward each of them in turn');
+        const [p, q] = [hits[0]!.out, hits[1]!.out], whole = det(radial, p, q);
+        // (the three directions in one plane, which cannot be written as a sum of the others in only one way, are left to the check above)
+        if (hits.length === 2 && Math.abs(whole) > 1e-3) {
+          count.coned++;
+          for (const share of [det(vertex.n, p, q), det(radial, vertex.n, q), det(radial, p, vertex.n)]) assert.ok(share / whole > 0, 'the shading is the round normal and both tubes\' own, each in some measure, none turned against');
+        }
+        continue;
+      }
+      if (ring.x) {
+        // at the crossing itself: halfway between the tube's own normal and the other tube's, which is straight out from the other's axis
+        const along = dot3(radial, ring.x), other = toward([0, 0, 0], [radial[0] - along * ring.x[0], radial[1] - along * ring.x[1], radial[2] - along * ring.x[2]]);
+        close(angle3(vertex.n, other), angle3(radial, other) / 2, 1e-6);
+        if (angle3(radial, other) > 0.2) count.crossed++;
+      }
+      // well clear of every tube that crosses it (two radii from its axis) a vertex is shaded round
+      if (hits.length === 0) { assert.ok(angle3(vertex.n, radial) < 1e-6, 'a vertex well clear of the tubes that cross it is shaded round, its normal straight out from its own axis'); count.round++; }
+    }
+  });
+  return count;
+};
+
 test('funnel: where two tubes cross, each is shaded halfway toward the other\'s own normal at the crossing, so the crease shows no step', () => {
   let crossed = 0, round = 0, shared = 0;
-  for (const rings of columnStrands(head, roof)) {
-    const frames = tubeRings(rings), crossings = rings.filter(c => c.x);
-    // how far a vertex is from the axis of the tube that crosses at `c`
-    const away = (v: V3, c: Ring): number => { const a = [v[0] - c.p[0], v[1] - c.p[1], v[2] - c.p[2]], d = dot3(a, c.x!); return Math.hypot(a[0]! - d * c.x![0], a[1]! - d * c.x![1], a[2]! - d * c.x![2]); };
-    rings.forEach((ring, k) => {
-      for (const vertex of frames[k]!) {
-        const radial = toward(ring.p, vertex.p);
-        close(Math.hypot(...vertex.n), 1, 1e-9);
-        if (ring.x) {
-          // at the crossing itself: halfway between the tube's own normal and the other tube's, which is straight out from the other's axis; unless a second crossing of
-          // the same tube reaches the vertex too (two crossings within two radii of one another's tubes, where the legs run nearly parallel), which blends in its own
-          if (crossings.some(c => c !== ring && away(vertex.p, c) < 2 * ring.r)) { shared++; continue; }
-          const along = dot3(radial, ring.x), other = toward([0, 0, 0], [radial[0] - along * ring.x[0], radial[1] - along * ring.x[1], radial[2] - along * ring.x[2]]);
-          close(angle3(vertex.n, other), angle3(radial, other) / 2, 1e-6);
-          if (angle3(radial, other) > 0.2) crossed++;
-        }
-        // well clear of every tube that crosses it (two radii from its axis) a vertex is shaded round
-        if (crossings.every(c => away(vertex.p, c) > 2 * ring.r)) { assert.ok(angle3(vertex.n, radial) < 1e-6, 'a vertex well clear of the tubes that cross it is shaded round, its normal straight out from its own axis'); round++; }
-      }
-    });
-  }
+  for (const rings of columnStrands(head, roof)) { const count = shading(rings); crossed += count.crossed; round += count.round; shared += count.shared; }
   assert.ok(crossed > 500 && round > 1000, `${crossed} vertices where two tubes lean apart at a crossing, ${round} clear of any`);
   assert.ok(shared < crossed / 40, `${shared} vertices at a crossing are also reached by a second one: rare, not the rule (${crossed} are not)`);
+});
+
+// Independent of the funnel's own layout: a straight tube up the y axis crossed by two others a tube's width apart, so their crossings overlap.
+test('funnel: a vertex that two crossings reach is shaded as the round normal leaned toward each tube in turn, whatever the layout', () => {
+  const r = 0.1, up: V3 = [0, 1, 0], plain = (y: number): Ring => ({ p: [0, y, 0], t: up, r }), crossing = (y: number, x: V3): Ring => ({ p: [0, y, 0], t: up, r, x: toward([0, 0, 0], x) });
+  const count = shading([plain(0), plain(0.5), crossing(0.9, [1, 1, 0]), crossing(1.1, [0, 1, 1]), plain(1.5), plain(2)]);
+  assert.ok(count.shared > 4 && count.coned > 2, `${count.shared} vertices of the two crossings are reached by both, ${count.coned} of them in the cone`);
+  assert.ok(count.crossed > 0 && count.round > 4, `${count.crossed} lean apart at a crossing alone, ${count.round} are clear of both`);
 });
 
 // R-ab: a leg that starts above the floor grows out of the legs it crosses, as a branch; at the foot, 24 legs start from 12 feet.
@@ -251,9 +284,12 @@ test('funnelRoof: the members out of a head node are the lattice links to the ri
   for (const m of roof.flat()) assert.ok(m[1] <= 0.02, `a member rises ${m[1].toFixed(2)}: the roof falls away from the funnel's mouth`);
 });
 
-test('funnel: members run 1.2 to 6.3 m between nodes (the last, flaring out to the roof, the longest); a leg is 0.36 m through at the floor, 0.22 m at the roof, and is drawn that wide', () => {
-  const lengths = edges.map(length);
-  assert.ok(Math.min(...lengths) > 1.1 && Math.max(...lengths) < 6.3, `lengths ${Math.min(...lengths).toFixed(2)} to ${Math.max(...lengths).toFixed(2)} m`);
+test('funnel: members run 1.2 to 5.1 m between nodes, but for the last stretch into the head, which flares out to the roof and runs to 6.3 m; a leg is 0.36 m through at the floor, 0.22 m at the roof, and is drawn that wide', () => {
+  // the last stretch is the members that land on the head's nodes (the head's are the last of the nodes): they cross the widest gap, from the last ring out to the roof's ring
+  const first = nodes.length - head.length, lands = ([, b]: [number, number]): boolean => b >= first;
+  const stalk = edges.filter(e => !lands(e)).map(length), flare = edges.filter(lands).map(length), long = flare.filter(l => l > 5.1).length;
+  assert.ok(Math.min(...stalk, ...flare) > 1.1 && Math.max(...stalk) < 5.1, `members below the head run ${Math.min(...stalk, ...flare).toFixed(2)} to ${Math.max(...stalk).toFixed(2)} m: a long one in the trunk is a ring missing`);
+  assert.ok(Math.max(...flare) < 6.3 && long <= flare.length / 6, `the last stretch runs to ${Math.max(...flare).toFixed(2)} m, ${long} of its ${flare.length} members over 5.1 m`);
   assert.ok(Math.abs(columnTubeDiameter(0, top) - 0.36) < 1e-9 && Math.abs(columnTubeDiameter(top, top) - 0.22) < 1e-9, 'a leg is 0.36 m through at the floor and 0.22 m at the roof');
   let last = Infinity;
   for (let y = 0; y <= top; y += 1) {

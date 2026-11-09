@@ -59,6 +59,10 @@ mutations = [
     ('crossing tubes lit plainly, a step across the crease', 'if (g > 0 && away > 1e-9) shade = unit(', 'if (g > 9 && away > 1e-9) shade = unit('),
     ('crossing tubes lit entirely as the other', 'g = Math.min(1, 2 - away / r);', 'g = Math.min(9, 2 - away / r);'),
     ('the blend reaches four radii from the other tube', 'g = Math.min(1, 2 - away / r);', 'g = Math.min(1, 4 - away / r);'),
+    ('a mid-trunk gap of 5.4 m: one ring missing, the next moved up', '[0.41, 12], [0.53, 12],', '[0.57, 12],'),
+    ('only the first crossing leans a vertex that two reach', 'if (g > 0 && away > 1e-9) shade = unit(', 'if (g > 0 && away > 1e-9 && shade === n) shade = unit('),
+    ('the last crossing alone leans a vertex that two reach', 'shade = unit(sum(shade, [(g * m[0]) / away,', 'shade = unit(sum(n, [(g * m[0]) / away,'),
+    ('a second crossing leans a vertex the wrong way', 'shade = unit(sum(shade, [(g * m[0]) / away, (g * m[1]) / away, (g * m[2]) / away]));', 'shade = unit(sum(shade, [((shade === n ? g : -g) * m[0]) / away, ((shade === n ? g : -g) * m[1]) / away, ((shade === n ? g : -g) * m[2]) / away]));'),
     ('the roof members taken from the ring inside the head', 'grid.nodes[o]!.ring > n.ring ? [o] : []', 'grid.nodes[o]!.ring < n.ring ? [o] : []'),
     ('only the first roof member of a node is kept', 'out.length ? out.map(o =>', 'out.length ? out.slice(0, 1).map(o =>'),
 ]
