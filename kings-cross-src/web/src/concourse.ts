@@ -32,11 +32,6 @@ import { WESTERN_RANGE } from './shed.ts';
 export const FUNNEL_RADIUS = 5.4;
 /** Target ring spacing and edge length, metres (ASSUMED). */
 export const EDGE = 4.5;
-/**
- * Nodes on the roof's first ring and on the funnel's top level, which share positions so the funnel tubes run on
- * into the roof (R-a: the diagrid sweeps down out of the funnel with its smallest cells there). A multiple of six.
- */
-export const FUNNEL_NODES = 24;
 const RIB_WIDTH = 0.15; // Arup pp.13–16: typical fabricated radial ribs are 150 mm wide.
 const TUBE_SIDES = 8; // ASSUMED exterior approximation; no unsourced wall thickness/bore.
 /**
@@ -191,6 +186,27 @@ function roundMember(batch: Batch, p: V3, q: V3, diameter: number, clamp?: reado
   }
 }
 
+/**
+ * A round tube through rings of {point, tangent, radius}: TUBE_SIDES flat strips between rings, smooth normals. A ring's frame comes from
+ * its tangent alone (up, squared to it), so tubes that meet end to end at a shared ring share its vertices and no seam shows.
+ */
+function tube(batch: Batch, rings: readonly { p: V3; t: V3; r: number }[], clamp?: readonly [number, number]): void {
+  const verts = rings.map(({ p, t, r }) => {
+    let u: V3 = [-t[0] * t[1], 1 - t[1] * t[1], -t[2] * t[1]];
+    const l = Math.hypot(...u);
+    u = l < 1e-6 ? [1, 0, 0] : [u[0] / l, u[1] / l, u[2] / l];
+    const v: V3 = [t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2], t[0] * u[1] - t[1] * u[0]];
+    return Array.from({ length: TUBE_SIDES }, (_, j) => {
+      const c = Math.cos((j * 2 * Math.PI) / TUBE_SIDES), s = Math.sin((j * 2 * Math.PI) / TUBE_SIDES), n: V3 = [c * u[0] + s * v[0], c * u[1] + s * v[1], c * u[2] + s * v[2]];
+      return { n, p: [p[0] + r * n[0], clamp ? Math.min(clamp[1], Math.max(clamp[0], p[1] + r * n[1])) : p[1] + r * n[1], p[2] + r * n[2]] as V3 };
+    });
+  });
+  for (let k = 0; k + 1 < verts.length; k++) for (let j = 0; j < TUBE_SIDES; j++) {
+    const a = verts[k]![j]!, b = verts[k]![(j + 1) % TUBE_SIDES]!, c = verts[k + 1]![(j + 1) % TUBE_SIDES]!, d = verts[k + 1]![j]!;
+    batch.poly([a.p, b.p, c.p, d.p], undefined, { normals: [a.n, b.n, c.n, d.n] });
+  }
+}
+
 /** Which triangles of the lattice are built: inside the OSM footprint, outside the shed, outside the Western Range. */
 export function keepTriangles(d: Diagrid, footprint: Pt[], shed: Pick<ShedLayout, 'origin' | 'heading' | 'width' | 'length'>): [number, number, number][] {
   const { depth, v0, v1 } = WESTERN_RANGE;
@@ -324,125 +340,94 @@ export function concourseGrid(canopy: ConcourseCanopy, footprint: Pt[], shed: Sh
   return { centre, grid };
 }
 
-// The funnel (the central tree column). R-a, conc-ab and conc-b show a tree of long, thick, round white tubes: a dozen
-// or more legs stand on the floor and widen steadily as they rise, cross each other in tall diamonds, branch, and run on
-// into the roof's own lattice round a ring of glass. FUNNEL_RADIUS and the 20 m height are pinned by the roof grid and the
-// tests; the rest is ASSUMED from the photographs, scaled by the people in them (about 1.7 m): feet about 4 m across, legs
-// about 0.35 m through, 12 legs at the floor, 36 under the roof. The real funnel is wider at the top than this one
-// (conc-a: about 2.7 times its width at the floor); the top radius stays at the roof grid's first ring, so the flare is
-// compressed to fit it.
-/** Radius of the legs at the floor, before the splay, metres (ASSUMED: conc-ab, the feet span about 3.7 m). */
-const COLUMN_STEM = 1.8;
-/** How much wider than that the feet stand, and how quickly that dies away with height, metres (ASSUMED: conc-ab shows the feet splayed at the floor). */
-const COLUMN_FOOT = 0.25;
-const COLUMN_FOOT_DECAY = 0.6;
-/** The widening is this share a straight cone and the rest a bell (the fifth power of the height) that sweeps out under the roof (ASSUMED: conc-a, conc-b: the legs widen all the way up and sweep out under the glass). */
-const COLUMN_CONE = 0.4;
-/**
- * Heights of the lattice's rings for a funnel 19.9 m tall, metres: about 1.6 m apart, closing a little toward the roof, so
- * that the members stay under 2 m long and the funnel's profile reads as a curve (ASSUMED: the diamonds in conc-b are
- * about 1 m across and 3 m tall at mid height).
- */
-const COLUMN_LEVELS = [0, 1.0, 2.6, 4.2, 5.8, 7.4, 9.0, 10.6, 12.2, 13.7, 15.1, 16.4, 17.5, 18.5, 19.3, 19.9] as const;
-/** Members to a ring at this radius: 12 legs at the floor, forking to 18 and then 24 under the roof, which is 2 for each of the roof's 12 first-ring nodes (every other one stands on a node; the rest on the ring's chords). */
-const columnCount = (radius: number): number => (radius < 2.6 ? 12 : radius < 3.8 ? 18 : 24);
-/** Diameter of a leg at this height, metres: stouter at the floor, slimmer under the roof (ASSUMED, conc-ab: about 0.35 m at the foot, 0.22 m at the head). */
+// The funnel, the central tree column. R-a, conc-ab, conc-b: a dozen thick round white legs stand on the floor (feet about 4 m across),
+// widen as they rise and sweep out in a trumpet under the glass, crossing in tall diamonds with no collars, and run on into the roof's
+// lattice. R3 (JMP): 20 m high, beside the Range. ASSUMED, from the photographs scaled by the people in them (1.7 m): 12 legs at the
+// floor forking to 24, 0.36 m through at the foot and 0.22 m at the roof, the mouth as wide as the roof grid's third ring.
+/** The roof grid ring the legs land on, one leg to each node. */
+export const FUNNEL_HEAD_RING = 2;
+/** How far the Range side of the funnel reaches, metres: the legs there rise straight up against the brick (conc-ab), their tubes clear of the cornice's front, 0.45 m proud of the face. */
+export const FUNNEL_REACH = FUNNEL_RADIUS - 0.6;
+/** Rings of legs under the head: height as a share of the head's, legs in the ring. The head has the roof ring's own count. */
+const COLUMN_RINGS = [[0, 12], [0.06, 12], [0.17, 12], [0.29, 12], [0.41, 12], [0.53, 12], [0.65, 18], [0.75, 18], [0.84, 18], [0.92, 24]] as const;
+/** Radius of a ring at share t of the head's height, for a mouth of radius `mouth`: feet 1.85 m out and splayed 0.25 m more, a little cone, then a bell. */
+export const columnRadius = (t: number, mouth: number): number => 1.85 + (mouth - 1.85) * (0.3 * t + 0.7 * t ** 3) + (t ? 0 : 0.25);
+/** Diameter of a leg at this height, metres: 0.36 at the floor, 0.22 under the roof (ASSUMED, conc-ab). */
 export function columnTubeDiameter(y: number, top: number): number {
   return 0.36 - 0.14 * Math.max(0, Math.min(1, y / top));
 }
-/** The foot collar round each leg: a short sleeve at the floor (ASSUMED, conc-ab: the legs stand in plain collars). */
-export const COLUMN_COLLAR = { radius: 0.26, height: 0.42 } as const;
 
-/** ASSUMED retained trumpet envelope, [radius, height] metres; not a measured member centreline. */
-export function columnProfile(apex: number): [number, number][] {
-  const top = apex - 0.1, last = COLUMN_LEVELS.length - 1;
-  return COLUMN_LEVELS.map((level, i): [number, number] => {
-    if (i === last) return [FUNNEL_RADIUS, top];
-    const y = (level * top) / COLUMN_LEVELS[last]!, t = y / top;
-    const widening = COLUMN_CONE * t + (1 - COLUMN_CONE) * t ** 5;
-    return [COLUMN_STEM + (FUNNEL_RADIUS - COLUMN_STEM) * widening + COLUMN_FOOT * Math.exp(-y / COLUMN_FOOT_DECAY), y];
+/**
+ * The legs as a graph, in the funnel's frame (x = shed u, z = minus shed v, from its axis). `head` is the roof ring they land on.
+ * Each node links to the two nearest below it, the rings turned half a step each time, so the legs cross in diamonds.
+ */
+export function columnMembers(head: V3[]): { nodes: V3[]; edges: [number, number][] } {
+  const nodes: V3[] = [], edges: [number, number][] = [], rings: readonly (readonly [number, number])[] = [...COLUMN_RINGS, [1, head.length]];
+  const mouth = Math.min(...head.map(p => Math.hypot(p[0], p[2]))), top = head.reduce((s, p) => s + p[1], 0) / head.length;
+  const turn = Math.atan2(head[0]![2], head[0]![0]);
+  let below: { index: number; angle: number }[] = [];
+  rings.forEach(([t, count], k) => {
+    const here: typeof below = [], last = k === rings.length - 1;
+    for (let i = 0; i < count; i++) {
+      const angle = turn + ((i + ((rings.length - 1 - k) % 2) * 0.5) * 2 * Math.PI) / count, r = columnRadius(t, mouth);
+      const p: V3 = last ? [...head[i]!] : [r * Math.cos(angle), t * top, r * Math.sin(angle)];
+      here.push({ index: nodes.length, angle: last ? Math.atan2(p[2], p[0]) : angle });
+      p[0] = Math.min(p[0], FUNNEL_REACH);
+      nodes.push(p);
+      const apart = (a: number): number => { const d = Math.abs(a - here[i]!.angle) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
+      for (const a of [...below].sort((a, b) => apart(a.angle) - apart(b.angle) || a.index - b.index).slice(0, 2)) edges.push([a.index, nodes.length - 1]);
+    }
+    below = here;
+  });
+  return { nodes, edges };
+}
+
+/** The roof ring the legs land on, in the funnel's frame: x = shed u, z = minus shed v, from its axis; y the node's height. */
+export function funnelHead(grid: Diagrid, centre: Pt, shed: ShedLayout): V3[] {
+  const axis = worldToShed(shed, centre);
+  return grid.nodes.filter(n => n.ring === FUNNEL_HEAD_RING).map((n): V3 => { const s = worldToShed(shed, [n.x, n.z]); return [s.u - axis.u, n.height!, axis.v - s.v]; });
+}
+
+/** Straight tubes a leg is drawn in between two nodes, along a smooth curve. */
+export const COLUMN_SEGMENTS = 3;
+const sum = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const unit = (a: V3): V3 => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+
+/**
+ * Each leg is a smooth curve through its nodes (conc-ab: long, smooth legs, no collars): a Hermite curve between two nodes, with the
+ * tangent at each end shared with the leg it continues into, the one most nearly in line, so a leg passes a crossing without a kink.
+ * Legs stand upright on the floor and swing out flat into the roof. Returns each leg's points and unit tangents, in `columnMembers` order.
+ */
+export function columnLegs(head: V3[]): { pts: V3[]; tans: V3[] }[] {
+  const { nodes, edges } = columnMembers(head);
+  const dirs = edges.map(([a, b]) => unit([nodes[b]![0] - nodes[a]![0], nodes[b]![1] - nodes[a]![1], nodes[b]![2] - nodes[a]![2]]));
+  const dot = (i: number, j: number): number => dirs[i]![0] * dirs[j]![0] + dirs[i]![1] * dirs[j]![1] + dirs[i]![2] * dirs[j]![2];
+  const ends = edges.map((_, e): [V3, V3] => [dirs[e]!, dirs[e]!]); // tangent at an edge's lower and upper node
+  nodes.forEach((p, n) => {
+    const ins = edges.flatMap(([, b], e) => (b === n ? [e] : [])), outs = edges.flatMap(([a], e) => (a === n ? [e] : [])), used = new Set<number>();
+    for (const [i, o] of ins.flatMap(i => outs.map(o => [i, o] as const)).sort((x, y) => dot(y[0], y[1]) - dot(x[0], x[1]))) {
+      if (used.has(i) || used.has(o)) continue;
+      used.add(i).add(o);
+      ends[i]![1] = ends[o]![0] = unit(sum(dirs[i]!, dirs[o]!));
+    }
+    if (!ins.length) for (const o of outs) ends[o]![0] = unit(sum(dirs[o]!, [0, 2, 0]));
+    else if (!outs.length) for (const i of ins) ends[i]![1] = unit(sum(dirs[i]!, p[0] < FUNNEL_REACH ? unit([p[0], 0, p[2]]) : [0, 0, 0]));
+  });
+  return edges.map(([a, b], e) => {
+    const P = nodes[a]!, Q = nodes[b]!, L = Math.hypot(Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]), [t0, t1] = ends[e]!;
+    const at = (s: number, deriv: boolean): V3 => {
+      const s2 = s * s, s3 = s2 * s;
+      const h = deriv ? [6 * s2 - 6 * s, 3 * s2 - 4 * s + 1, 6 * s - 6 * s2, 3 * s2 - 2 * s] : [2 * s3 - 3 * s2 + 1, s3 - 2 * s2 + s, 3 * s2 - 2 * s3, s3 - s2];
+      return [0, 1, 2].map(c => h[0]! * P[c]! + h[1]! * L * t0[c]! + h[2]! * Q[c]! + h[3]! * L * t1[c]!) as V3;
+    };
+    const ks = Array.from({ length: COLUMN_SEGMENTS + 1 }, (_, k) => k / COLUMN_SEGMENTS);
+    return { pts: ks.map(s => at(s, false)), tans: ks.map(s => unit(at(s, true))) };
   });
 }
 
-/** A unit icosahedron: the corners are also the smooth normals of a node's blob. */
-const ICOSAHEDRON = (() => {
-  const phi = (1 + Math.sqrt(5)) / 2, length = Math.hypot(1, phi);
-  const corners = ([[-1, phi, 0], [1, phi, 0], [-1, -phi, 0], [1, -phi, 0], [0, -1, phi], [0, 1, phi], [0, -1, -phi], [0, 1, -phi], [phi, 0, -1], [phi, 0, 1], [-phi, 0, -1], [-phi, 0, 1]] as V3[])
-    .map((c): V3 => [c[0] / length, c[1] / length, c[2] / length]);
-  const faces: [number, number, number][] = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-    [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
-  return { corners, faces };
-})();
-
-/** The envelope's radius at height y: straight between the profile's rings, as the envelope test reads it. */
-function columnEnvelope(profile: readonly [number, number][], y: number): number {
-  const upper = Math.max(1, profile.findIndex(p => p[1] >= y));
-  const [r0, y0] = profile[upper - 1]!, [r1, y1] = profile[upper]!;
-  return r0 + ((r1 - r0) * (y - y0)) / (y1 - y0);
-}
-
-// JMP built photograph (brickwork visible through the stalk):
-// https://mcaslan.agencyprojects.com/storage/app/uploads/public/69a/2c2/318/69a2c23185a88699376861.jpg
-// Arup Journal 2/2012 pp.13–16 describes the funnel/diagrid, not a solid skin.
-// ASSUMED member layout: the retained envelope's rings carry 12→36 nodes, alternating half-pitch rotations (counted down
-// from the top ring, which sits on the roof's own first-ring angles); each upper node branches to its two nearest lower
-// neighbours, so equal rings make a diagrid of crossing helices and a ring with more nodes forks them. Centre lines stand
-// inside the envelope by their own radius, so the drawn tubes stay within it. An open visual approximation, not steel setting out.
-export function columnMembers(apex: number): {nodes: V3[]; edges: [number, number][]} {
-  const nodes: V3[] = [], edges: [number, number][] = [];
-  const profile = columnProfile(apex), top = apex - 0.1;
-  let previous: { index: number; angle: number }[] = [];
-  for (const [level, [radius, y]] of profile.entries()) {
-    const count = columnCount(radius), phase = ((profile.length - 1 - level) % 2) * 0.5;
-    // 1.7 radii and 3 cm in from the envelope: a node's blob is 1.44 radii out, and a tilted tube's rim reaches 1/cos(tilt) radii sideways. A foot also leaves room for its collar.
-    let r = radius - (0.85 * columnTubeDiameter(y, top) + 0.03);
-    if (level === 0) r = Math.min(r, columnEnvelope(profile, COLUMN_COLLAR.height) - COLUMN_COLLAR.radius - 0.02);
-    const current: typeof previous = [];
-    for (let i = 0; i < count; i++) {
-      const angle = ((i + phase) * 2 * Math.PI) / count; // ASSUMED angular phase
-      current.push({ index: nodes.length, angle });
-      nodes.push([r * Math.cos(angle), y, r * Math.sin(angle)]);
-      if (previous.length) {
-        const apart = (a: number): number => { const d = Math.abs(a - angle) % (2 * Math.PI); return Math.min(d, 2 * Math.PI - d); };
-        const nearest = [...previous].sort((a, b) => apart(a.angle) - apart(b.angle) || a.index - b.index);
-        for (const a of nearest.slice(0, 2)) edges.push([a.index, nodes.length - 1]);
-      }
-    }
-    previous = current;
-  }
-  return {nodes, edges};
-}
-
-function columnGeometry(apex: number): THREE.BufferGeometry {
-  const batch = new Batch(), {nodes, edges} = columnMembers(apex), top = apex - 0.1;
-  // Round tubes, a leg's diameter set by its height; their ends are clamped to the floor and to the roof's first ring.
-  for (const [a, b] of edges) {
-    const p = nodes[a]!, q = nodes[b]!;
-    roundMember(batch, p, q, columnTubeDiameter((p[1] + q[1]) / 2, top), [0, top]);
-  }
-  // A cast node at each crossing (conc-b: the legs cross at slightly swollen white nodes), 1.44 times a leg's width: a smooth
-  // twenty-sided blob that closes the notches where tubes meet at an angle. None at the floor (the collar does that job) or at
-  // the head (the roof's own first ring does).
-  for (const n of nodes) {
-    if (n[1] <= 0 || n[1] >= top) continue;
-    const radius = 0.72 * columnTubeDiameter(n[1], top);
-    for (const [a, b, c] of ICOSAHEDRON.faces) {
-      const corners = [a, b, c].map(i => ICOSAHEDRON.corners[i]!);
-      batch.poly(corners.map((k): V3 => [n[0] + radius * k[0], n[1] + radius * k[1], n[2] + radius * k[2]]), undefined, { normals: corners });
-    }
-  }
-  // A collar round each foot: a short eight-sided sleeve, capped.
-  for (const n of nodes) {
-    if (n[1] !== 0) continue;
-    const { radius, height } = COLUMN_COLLAR;
-    const ring = (y: number): V3[] => Array.from({ length: TUBE_SIDES }, (_, i) => [n[0] + radius * Math.cos((i * 2 * Math.PI) / TUBE_SIDES), y, n[2] + radius * Math.sin((i * 2 * Math.PI) / TUBE_SIDES)]);
-    const foot = ring(0), head = ring(height);
-    for (let i = 0; i < TUBE_SIDES; i++) {
-      const j = (i + 1) % TUBE_SIDES, mid = (i + 0.5) * 2 * Math.PI / TUBE_SIDES;
-      batch.poly([foot[i]!, foot[j]!, head[j]!, head[i]!], undefined, { normal: [Math.cos(mid), 0, Math.sin(mid)] });
-    }
-    batch.poly(head, undefined, { normal: [0, 1, 0] });
-  }
+function columnGeometry(head: V3[]): THREE.BufferGeometry {
+  const batch = new Batch(), top = head.reduce((s, p) => s + p[1], 0) / head.length;
+  for (const { pts, tans } of columnLegs(head)) tube(batch, pts.map((p, k) => ({ p, t: tans[k]!, r: columnTubeDiameter(p[1], top) / 2 })), [0, 99]);
   return batch.build();
 }
 
@@ -1006,10 +991,11 @@ export function buildConcourse(canopy: ConcourseCanopy, footprint: Pt[], shed: S
   add(mullions, mat.mullion, 'concourse-mullions');
   add(floor, mat.floor, 'concourse-floor');
   group.add(buildFitOut(shed, worldToShed(shed, centre).v));
-  // Open branching stalk, batched into one mesh at the retained position.
-  const column = new THREE.Mesh(columnGeometry(canopy.apex), mat.funnel);
+  // The funnel, one mesh in the shed's frame about its own axis (x = u, z = -v), its legs landing on the roof's third ring.
+  const column = new THREE.Mesh(columnGeometry(funnelHead(d, centre, shed)), mat.funnel);
   column.name = 'concourse-column';
   column.position.set(cx, 0, cz);
+  column.rotation.y = -shed.heading;
   group.add(column);
   return group;
 }

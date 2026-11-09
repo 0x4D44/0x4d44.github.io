@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, concourseHeight, pointInPolygon, shedLayout, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, columnProfile, diagrid, EDGE, edgesOf, FUNNEL_RADIUS, keepTriangles } from '../src/concourse.ts';
+import { buildConcourse, columnRadius, concourseGrid, diagrid, EDGE, edgesOf, FUNNEL_RADIUS, funnelHead, keepTriangles, RANGE_FACE } from '../src/concourse.ts';
 import * as concourse from '../src/concourse.ts';
 import type { Diagrid } from '../src/concourse.ts';
 import { WESTERN_RANGE } from '../src/shed.ts';
@@ -98,16 +98,13 @@ test('keepTriangles: inside the OSM footprint, clear of the shed and of the West
   }
 });
 
-test('columnProfile: a trumpet that rises from a flared foot, narrows to a waist and opens out to the funnel rim under the apex', () => {
-  const profile = columnProfile(20);
-  assert.deepEqual(profile[0]?.[1], 0, 'starts on the floor');
-  assert.deepEqual(profile[profile.length - 1], [FUNNEL_RADIUS, 19.9]);
-  for (let i = 1; i < profile.length; i++) assert.ok((profile[i] as [number, number])[1] > (profile[i - 1] as [number, number])[1], 'heights rise');
-  const radii = profile.map(([r]) => r);
+test('columnRadius: a trumpet that rises from a splayed foot, narrows to a waist near the floor and opens out to the mouth under the roof', () => {
+  const mouth = 11.5, radii = [0, 0.06, 0.17, 0.29, 0.41, 0.53, 0.65, 0.75, 0.84, 0.92, 1].map(t => columnRadius(t, mouth));
   const waist = radii.indexOf(Math.min(...radii));
-  assert.ok(waist > 0 && waist < radii.length - 1, 'the waist is between the foot and the rim');
-  for (let i = waist + 1; i < radii.length; i++) assert.ok((radii[i] as number) >= (radii[i - 1] as number), 'the trumpet only opens above its waist');
-  assert.ok(Math.max(...radii) <= FUNNEL_RADIUS + 1e-9);
+  assert.ok(waist > 0 && waist < 3, 'the waist is just above the splayed foot');
+  for (let i = waist + 1; i < radii.length; i++) assert.ok((radii[i] as number) > (radii[i - 1] as number), 'the trumpet only opens above its waist');
+  close(radii[radii.length - 1] as number, mouth, 1e-9);
+  assert.ok(Math.max(...radii) <= mouth + 1e-9 && radii[0]! * 2 > 3.6 && radii[0]! * 2 < 4.8, 'the feet span about 4 m (R-ab) and nothing is wider than the mouth');
 });
 
 test('buildConcourse: lattice under the published apex, panels and floor facing up, rim glazing facing out', () => {
@@ -123,8 +120,8 @@ test('buildConcourse: lattice under the published apex, panels and floor facing 
   const lattice = bbox(named('concourse-lattice'));
   assert.ok(lattice.max.y > 19 && lattice.max.y < canopy.apex + 0.3, `lattice tops out at ${lattice.max.y}`);
   assert.ok(lattice.min.y > canopy.rim - 0.5 && lattice.min.y < canopy.rim + 2);
-  // the column rises to just under the funnel
-  close(bbox(named('concourse-column')).max.y, canopy.apex - 0.1, EPS);
+  // the funnel is 20 m high (R3); its head stands on the roof's third ring, where the roof has dipped 0.1 to 0.7 m
+  assert.ok(bbox(named('concourse-column')).max.y > 19.3 && bbox(named('concourse-column')).max.y < canopy.apex, `the funnel is ${bbox(named('concourse-column')).max.y} m high`);
   // roof infill and the floor face up; the soffit mesh also holds the roof's vertical edge fascia, which looks sideways but never down
   for (const n of ['concourse-glass', 'concourse-floor']) {
     const g = named(n).geometry;
@@ -168,6 +165,7 @@ test('the funnel stands beside the Western Range without entering its brickwork'
   const {u} = worldToShed(layout, [column.position.x, column.position.z]);
   const gap = -WESTERN_RANGE.depth - (u + FUNNEL_RADIUS);
   assert.ok(gap >= 0 && gap <= 1, `funnel top is ${gap} m from the façade`);
+  assert.ok(RANGE_FACE > u + FUNNEL_RADIUS, 'the roof grid\'s first ring stays west of the Range face');
 });
 
 test('the roof reaches the OSM concourse arc including its north and south canopy ends', () => {
@@ -191,39 +189,43 @@ test('column lattice: rays pass through open branching gaps instead of a continu
     for (let i = 0; i < 120; i++) {
       const angle = (i + .37) * 2 * Math.PI / 120;
       const direction = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
-      const origin = new THREE.Vector3(column.position.x, y, column.position.z).addScaledVector(direction, 8);
-      hits += Number(new THREE.Raycaster(origin, direction.negate(), 0, 16).intersectObject(column).length > 0);
+      const origin = new THREE.Vector3(column.position.x, y, column.position.z).addScaledVector(direction, 15);
+      hits += Number(new THREE.Raycaster(origin, direction.negate(), 0, 30).intersectObject(column).length > 0);
     }
     assert.ok(hits > 0 && hits < 108, `height ${y}: ${hits}/120 rays hit, expected members and open gaps`);
   }
 });
 
-test('column lattice: connected branching members are drawn inside the retained assumed envelope', () => {
-  const api = concourse as typeof concourse & { columnMembers?: (apex: number) => {nodes: [number,number,number][]; edges: [number,number][]} };
+test('column lattice: connected branching members are drawn inside the trumpet\'s envelope, each one where the graph says', () => {
+  const api = concourse as typeof concourse & { columnMembers?: (head: [number, number, number][]) => {nodes: [number,number,number][]; edges: [number,number][]} };
   assert.equal(typeof api.columnMembers, 'function', 'column needs an inspectable member graph');
-  const {nodes, edges} = api.columnMembers!(canopy.apex);
+  const { centre, grid } = concourseGrid(canopy, station.pts, layout);
+  const head = funnelHead(grid, centre, layout);
+  const {nodes, edges} = api.columnMembers!(head);
   const adjacent = nodes.map(() => new Set<number>());
   for (const [a,b] of edges) { adjacent[a]!.add(b); adjacent[b]!.add(a); }
   const reached = new Set([0]), pending = [0];
   for (const a of pending) for (const b of adjacent[a]!) if (!reached.has(b)) {reached.add(b); pending.push(b);}
   assert.equal(reached.size, nodes.length, 'every member joins the same structure');
   assert.ok(adjacent.some(n => n.size >= 4), 'members branch at shared nodes');
-  assert.ok(nodes.some(n => n[1] === 0) && nodes.some(n => Math.abs(n[1]-19.9)<EPS), 'floor to existing apex');
+  assert.ok(nodes.some(n => n[1] === 0) && nodes.some(n => n[1] > 19.2), 'floor to roof');
   const column = buildConcourse(canopy, station.pts, layout).getObjectByName('concourse-column') as THREE.Mesh;
-  column.updateMatrixWorld(true);
+  const positions = column.geometry.getAttribute('position');
+  // each member is drawn: the surface passes within a leg's width of the middle of its chord (the leg curves a little between its nodes)
   for (const [a,b] of edges) {
     const p = new THREE.Vector3(...nodes[a]!).lerp(new THREE.Vector3(...nodes[b]!), .5);
-    const direction = new THREE.Vector3(p.x,0,p.z).normalize();
-    const origin = p.clone().add(column.position).addScaledVector(direction, .5);
-    assert.ok(new THREE.Raycaster(origin,direction.negate(),0,1).intersectObject(column).length, `missing drawn member ${a}:${b}`);
+    let nearest = Infinity;
+    for (let i=0;i<positions.count;i++) nearest = Math.min(nearest, Math.hypot(positions.getX(i)-p.x, positions.getY(i)-p.y, positions.getZ(i)-p.z));
+    const chord = Math.hypot(nodes[b]![0] - nodes[a]![0], nodes[b]![1] - nodes[a]![1], nodes[b]![2] - nodes[a]![2]);
+    assert.ok(nearest < chord / 6 + 0.7, `missing drawn member ${a}:${b} (${nearest.toFixed(2)} m from its middle; its rings stand a sixth of ${chord.toFixed(1)} m apart)`);
   }
-  const profile = columnProfile(canopy.apex), positions = column.geometry.getAttribute('position');
+  // the whole is the trumpet: no vertex wider than the mouth's radius at its height, plus half a metre, and none above the roof
+  const mouth = Math.min(...head.map(p => Math.hypot(p[0], p[2]))), top = head.reduce((s, p) => s + p[1], 0) / head.length;
   for (let i=0;i<positions.count;i++) {
     const y=positions.getY(i), r=Math.hypot(positions.getX(i),positions.getZ(i));
-    assert.ok(y >= -EPS && y <= 19.9+EPS, 'existing height envelope');
-    const upper=profile.findIndex(p=>p[1]>=y-EPS), hi=profile[Math.max(1,upper)]!,lo=profile[Math.max(0,upper-1)]!;
-    const radius=lo[0]+(hi[0]-lo[0])*(y-lo[1])/(hi[1]-lo[1]);
-    assert.ok(r<=radius+EPS, `member radius ${r} exceeds envelope ${radius} at ${y}`);
+    assert.ok(y >= -EPS && y <= canopy.apex, 'height envelope');
+    // below the last ring of the bell, where the legs sweep out to the roof's own nodes
+    if (y < 0.8 * top) assert.ok(r <= columnRadius(y / top, mouth) + 0.6, `member radius ${r} exceeds the trumpet at ${y}`);
   }
   assert.ok(!column.children.length && column.geometry.groups.length <= 1, 'one batched member mesh');
 });

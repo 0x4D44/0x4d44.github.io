@@ -4,7 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import type { KxData } from '../../core/osm.ts';
 import { concourseCanopy, pointInPolygon, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../../core/station.ts';
-import { buildConcourse, COLUMN_COLLAR, columnMembers, concourseGrid, FITOUT, FITOUT_TEXT, fitOutFootprints, plateCentres, RANGE_FACE } from '../src/concourse.ts';
+import { buildConcourse, columnMembers, columnTubeDiameter, concourseGrid, FITOUT, FITOUT_TEXT, fitOutFootprints, funnelHead, plateCentres, RANGE_FACE } from '../src/concourse.ts';
 import type { Footprint } from '../src/concourse.ts';
 import { buildWesternRange, WESTERN_RANGE } from '../src/shed.ts';
 
@@ -24,7 +24,7 @@ group.updateMatrixWorld(true);
 const fitout = group.getObjectByName('concourse-fitout') as THREE.Group;
 const solid = fitout?.getObjectByName('concourse-fitout-solid') as THREE.Mesh;
 const signs = fitout?.getObjectByName('concourse-fitout-signs') as THREE.Mesh;
-const { centre } = concourseGrid(canopy, station.pts, layout, [hotel.pts]);
+const { centre, grid } = concourseGrid(canopy, station.pts, layout, [hotel.pts]);
 const funnel = worldToShed(layout, centre);
 const pieces = fitOutFootprints(funnel.v);
 const BAY = 3.3; // half the 6.6 m clear width of a gateline bay (shed.ts, Arup 2/2012 p29)
@@ -67,7 +67,7 @@ test('fit-out: the solids are the footprints, and nothing stands outside them', 
 });
 
 test('fit-out: floor pieces stand in the concourse, clear of the funnel\'s feet and of the Range; pieces on the Range stand off its face; none touch', () => {
-  const reach = Math.max(...columnMembers(canopy.apex).nodes.filter(n => n[1] === 0).map(n => Math.hypot(n[0], n[2]))) + COLUMN_COLLAR.radius;
+  const reach = Math.max(...columnMembers(funnelHead(grid, centre, layout)).nodes.filter(n => n[1] === 0).map(n => Math.hypot(n[0], n[2]))) + columnTubeDiameter(0, 19.5) / 2;
   for (const f of pieces.filter(p => p.kind === 'cluster' || p.kind === 'totem')) {
     const nearest = Math.hypot(Math.max(f.u0 - funnel.u, 0, funnel.u - f.u1), Math.max(f.v0 - funnel.v, 0, funnel.v - f.v1));
     assert.ok(nearest > reach + 3, `${f.kind} at u ${f.u0.toFixed(1)}, v ${f.v0.toFixed(1)} is ${nearest.toFixed(1)} m from the funnel axis; its feet reach ${reach.toFixed(1)} m`);
