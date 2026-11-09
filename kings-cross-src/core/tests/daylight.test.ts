@@ -258,6 +258,15 @@ test('in clear air the fog is the horizon\'s colour, a little bluer; under cloud
   assert.ok(Math.abs(lean(rig(30, { cloud: 1 }))) < 1e-9, 'an overcast sky\'s haze is the horizon\'s colour');
   assert.ok(lean(rig(30, { cloud: 0.5 })) > 0 && lean(rig(30, { cloud: 0.5 })) < lean(clear), 'a broken sky\'s is between');
   assert.ok(lean(rig(30, { visibilityM: 250 })) < 0.01, 'a fog is the horizon\'s colour (one colour, no seam)');
+  // The test above reads the fog against a horizon that the fog has already pulled to its own colour, so it cannot see a tint left in the fog itself. Under a clear sky in the densest fog
+  // (visibility 200 m: fogAmount 1) the dome's horizon is a tenth of the sky's own and nine tenths of the fog (the horizon is mixed 0.9 of the way to it); the sky's own colour comes
+  // back out of that, and the fog is it halfway to grey, which leaves the blue less the red at half the sky's own: no tint, whatever the tint of the clear air is.
+  const thick = rig(30, { visibilityM: 200 });
+  assert.equal(thick.fogAmount, 1);
+  const sky = thick.dome.horizon.map((c, i) => (c - 0.9 * thick.fog[i]!) / 0.1);
+  const bluer = thick.fog[2] - thick.fog[0] - 0.5 * (sky[2]! - sky[0]!);
+  assert.ok(Math.abs(bluer) < 1e-9, `the densest fog under a clear sky has no tint: ${bluer.toExponential(2)} more blue less red than half the sky's own`);
+  assert.ok(sky[2]! - sky[0]! > 0.05, 'and the sky it comes from is a blue one, so that is a test of something');
 });
 
 test('stars show on dark clear nights only', () => {

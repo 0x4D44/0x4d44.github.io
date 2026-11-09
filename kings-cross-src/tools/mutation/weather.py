@@ -10,12 +10,14 @@ for each other need both removed before either shows.
 
 The mutations are of behaviour, not of tuning: a series term dropped, a sign or a unit wrong, a boundary moved by one, a clamp or a guard
 removed, a factor halved or doubled, a call left out. Nothing here anchors on a colour, a lamp share or a rail dimming (the lighting colours are
-tuned elsewhere); a mutant that no test could tell from the tuned original is not listed. Two such equivalent mutants were tried and left out:
+tuned elsewhere); a mutant that no test could tell from the tuned original is not listed. Three such equivalent mutants were tried and left out:
 the replay status's `failure ?? 'no reading'` fallback in web/src/weather.ts (an archive that did not load always leaves a failure message, and
 `pending` is true only before the first reply, so the fallback cannot be reached), and the `Math.abs(det) < 1e-9` guard in web/src/cover.ts
 (positions are float32, so in practice the plan determinant of a triangle is either exactly 0, for a wall or a line, or well above 1e-9; at
 exactly 0 the unguarded height is NaN, from 0/0 or Infinity minus Infinity, and a NaN height is never written into the map. The guard's
-threshold is mutated instead).
+threshold is mutated instead), and the `Math.min(1, ...)` on the clear-air haze's blue in core/daylight.ts (probed over the sun at -10 to 90
+degrees in one-degree steps and every thirtieth degree of azimuth, in clear air and under a fifth cloud, the blue the haze gives the fog is at
+most 0.964, at 45 degrees with the horizon at 0.910, so the cap never binds; it is a guard for a stronger tint).
 
 `--check` only looks for every mutation's search text in the package (exactly once) and runs nothing. Label text on the command line runs only the
 mutations whose label contains it (any of them); the 'never failed' accounting needs the whole list, so a partial run skips it."""
@@ -229,7 +231,15 @@ MUTATIONS = [
     ('the cloud keeps the horizon\'s own colour', DAYLIGHT, 'desaturate(k.horizon, CLOUD_SKY_GREY)', 'desaturate(k.horizon, 0)'),
     ('the cloud leaves no blue in the zenith', DAYLIGHT, 'desaturate(k.zenith, CLOUD_SKY_GREY)', 'desaturate(k.zenith, 1)'),
     ('the cloud leaves no blue in the horizon', DAYLIGHT, 'desaturate(k.horizon, CLOUD_SKY_GREY)', 'desaturate(k.horizon, 1)'),
-    ('fog colour is the horizon colour', DAYLIGHT, 'mixRgb(horizon, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog)', 'horizon'),
+    ('fog colour is the horizon colour', DAYLIGHT, 'mixRgb(haze, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog)', 'horizon'),
+    # the haze of a clear day: the horizon with its red down and its blue up, as much as the air is clear (round six, E1)
+    ('the clear air has no haze', DAYLIGHT, 'mixRgb(haze, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog)', 'mixRgb(horizon, scaleRgb(desaturate(horizon, 1), 1.06), 0.5 * fog)'),
+    ('the haze does not lower the red', DAYLIGHT, 'horizon[0] * (1 - HAZE_BLUE * clearAir)', 'horizon[0]'),
+    ('the haze does not raise the blue', DAYLIGHT, 'Math.min(1, horizon[2] * (1 + HAZE_BLUE * clearAir))', 'horizon[2]'),
+    ('the haze raises the red and lowers the blue', DAYLIGHT, [('horizon[0] * (1 - HAZE_BLUE * clearAir)', 'horizon[0] * (1 + HAZE_BLUE * clearAir)'), ('horizon[2] * (1 + HAZE_BLUE * clearAir)', 'horizon[2] * (1 - HAZE_BLUE * clearAir)')]),
+    ('the haze takes the green down with the red', DAYLIGHT, '[horizon[0] * (1 - HAZE_BLUE * clearAir), horizon[1],', '[horizon[0] * (1 - HAZE_BLUE * clearAir), horizon[1] * (1 - HAZE_BLUE * clearAir),'),
+    ('the haze is as strong under cloud', DAYLIGHT, 'const clearAir = (1 - cloud) * (1 - fog);', 'const clearAir = 1 - fog;'),
+    ('the haze is as strong in fog', DAYLIGHT, 'const clearAir = (1 - cloud) * (1 - fog);', 'const clearAir = 1 - cloud;'),
     ('fog does not pull the zenith in', DAYLIGHT, 'zenith = mixRgb(zenith, scaleRgb(fogColour, 0.88), 0.85 * fog);', ''),
     ('fog does not pull the horizon in', DAYLIGHT, 'horizon = mixRgb(horizon, fogColour, 0.9 * fog);', ''),
     ('the scene fog is not the dome\'s fog colour', DAYLIGHT, '    fog: fogColour,', '    fog: zenith,'),
@@ -736,10 +746,11 @@ MUTATIONS = [
     ('a surface that is not Lambert is patched', ATMOSPHERE, 'if (spec && lambert.isMeshLambertMaterial && !wetPatched.has(m)) {', 'if (spec && !wetPatched.has(m)) {'),
     # the concourse's unlit soffit follows the camera's exposure, the one thing that moves its pixels
     ('the concourse soffit is not found', ATMOSPHERE, "if (m.name === 'concourse-soffit') soffit = m as THREE.MeshBasicMaterial;", "if (m.name === 'concourse-soffits') soffit = m as THREE.MeshBasicMaterial;"),
-    ('the concourse soffit is not scaled', ATMOSPHERE, '    soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);\n', ''),
-    ('the concourse soffit is scaled the wrong way', ATMOSPHERE, 'soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);', 'soffit?.color.setScalar(rig.exposure / DAY_EXPOSURE);'),
-    ('the concourse soffit is scaled in red alone', ATMOSPHERE, 'soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);', 'soffit?.color.setRGB(DAY_EXPOSURE / rig.exposure, 1, 1);'),
-    ('the concourse soffit is scaled by the reciprocal of the exposure', ATMOSPHERE, 'soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);', 'soffit?.color.setScalar(1 / rig.exposure);'),
+    ('the concourse soffit is not scaled', ATMOSPHERE, '    soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);\n', ''),
+    ('the concourse soffit is scaled the wrong way', ATMOSPHERE, 'soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);', 'soffit?.color.setScalar((SOFFIT_LEVEL * rig.exposure) / DAY_EXPOSURE);'),
+    ('the concourse soffit is scaled in red alone', ATMOSPHERE, 'soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);', 'soffit?.color.setRGB((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure, SOFFIT_LEVEL, SOFFIT_LEVEL);'),
+    ('the concourse soffit is scaled by the reciprocal of the exposure', ATMOSPHERE, 'soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);', 'soffit?.color.setScalar(SOFFIT_LEVEL / rig.exposure);'),
+    ('the concourse soffit keeps all of its painted colour', ATMOSPHERE, 'soffit?.color.setScalar((SOFFIT_LEVEL * DAY_EXPOSURE) / rig.exposure);', 'soffit?.color.setScalar(DAY_EXPOSURE / rig.exposure);'),
     ('wet ground is not set', ATMOSPHERE, 'surfaceUniforms.wet.value = weather.wet;', ''),
     ('snow cover is not set', ATMOSPHERE, 'surfaceUniforms.snowCover.value = weather.snowCover;', ''),
     ('wet ground and snow cover are swapped', ATMOSPHERE, 'surfaceUniforms.wet.value = weather.wet;\n    surfaceUniforms.snowCover.value = weather.snowCover;', 'surfaceUniforms.wet.value = weather.snowCover;\n    surfaceUniforms.snowCover.value = weather.wet;'),
