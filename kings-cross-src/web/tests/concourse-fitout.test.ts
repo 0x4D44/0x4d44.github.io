@@ -105,11 +105,14 @@ test('fit-out: each gate cabinet stands in an open bay of the built Range, clear
     const hit = firstHit(RANGE_FACE - 1, 1.5, v);
     assert.ok(hit && Math.abs(hit.point.x - RANGE_FACE) < 0.05, `the Range's face is at u ${hit?.point.x.toFixed(3)}, RANGE_FACE ${RANGE_FACE}`);
   }
-  // each shop's pane is 0.4 m inside the face, 2.8 m wide, and the lit interior stands 1 cm in front of it
+  // each shop's pane is 0.375 m inside the face, 2.8 m wide, and the lit interior stands 4 cm in front of it
   for (const v of FITOUT.shops) {
     const hit = firstHit(RANGE_FACE - 1, 1.5, v + 0.5); // the shop's central mullion stands at v itself
     assert.equal(hit?.object.name, 'range-public-glazing', 'the first thing a ray meets at a shop is its glazing');
-    assert.ok(Math.abs(hit!.point.x - (FITOUT.shopfront.u + 0.01)) < 0.005, `the pane's face is at u ${hit!.point.x.toFixed(3)}; the shopfront is drawn at ${FITOUT.shopfront.u}`);
+    assert.ok(Math.abs(hit!.point.x - (FITOUT.shopfront.u + 0.04)) < 0.005, `the pane's face is at u ${hit!.point.x.toFixed(3)}; the shopfront is drawn at ${FITOUT.shopfront.u}`);
+    // and it is in front of the pane in the depth buffer however far away it is seen: its polygon offset beats the pane's
+    const paneOffset = ((hit!.object as THREE.Mesh).material as THREE.Material).polygonOffsetFactor, signOffset = (signs.material as THREE.Material).polygonOffsetFactor;
+    assert.ok((signs.material as THREE.Material).polygonOffset && signOffset < paneOffset, `signs offset ${signOffset}, pane ${paneOffset}`);
     assert.ok(firstHit(RANGE_FACE - 1, 1.5, v + 1.35)?.object.name === 'range-public-glazing' && firstHit(RANGE_FACE - 1, 1.5, v + 1.46)?.object.name !== 'range-public-glazing', 'the glazing ends 1.4 m from the shop\'s centre');
     assert.ok(FITOUT.shopfront.width / 2 < 1.4 && FITOUT.shopfront.top < 3.2, 'the lit interior fits inside the pane');
   }

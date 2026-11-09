@@ -613,8 +613,8 @@ export const FITOUT = {
   gate: { u: -9, length: 1.6, width: 0.22, height: 1.0, offsets: [-3, -1.8, -0.6, 0.6, 1.8, 3] as readonly number[], bays: 5, firstBay: 4, pitch: 8 },
   /** the Range's two shops, v of each centre: WESTERN_SHOPS in shed.ts (v0 + 44, v0 + 48), whose pane stands 0.4 m inside the Range's face (tested against the built Range) */
   shops: [WESTERN_RANGE.v0 + 44, WESTERN_RANGE.v0 + 48] as readonly number[],
-  /** a lit interior drawn 1 cm in front of a shop's dark pane, which is 2.8 m wide and rises to 3.2 m */
-  shopfront: { width: 2.6, top: 3.15, bottom: 0.04, u: RANGE_FACE + 0.365 },
+  /** a lit interior drawn 4 cm in front of a shop's dark pane (whose face is 0.375 m inside the Range's, 2.8 m wide, rising to 3.2 m) and 5 cm behind its mullion */
+  shopfront: { width: 2.6, top: 3.15, bottom: 0.04, u: RANGE_FACE + 0.335 },
   /** navy plates over the openings, `standoff` out from the Range's face (clear of the string course's 0.15 m), `bottom` above the floor (the openings' head is 3.6 m) */
   plate: { height: 0.5, bottom: 3.64, standoff: 0.22, depth: 0.05, bayWidth: 5.2, shopWidth: 2.6 },
 } as const;
@@ -746,7 +746,8 @@ function fitOutMaterial(): { solid: THREE.Material; signs: THREE.Material } {
   fitOutMaterials = {
     solid: new THREE.MeshLambertMaterial({ vertexColors: true, name: 'concourse-fitout' }),
     // unlit, so the boards and the totems' screens glow as lit signs do; vertex colours carry the flat tone where there is no canvas
-    signs: new THREE.MeshBasicMaterial({ map: atlas, color: 0xffffff, vertexColors: true, name: 'concourse-signs' }),
+    // Polygon offset stronger than the Range's panes (materials.ts nearer(): -2), so a shopfront drawn 4 cm in front of one still wins at 60 m.
+    signs: new THREE.MeshBasicMaterial({ map: atlas, color: 0xffffff, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, name: 'concourse-signs' }),
   };
   return fitOutMaterials;
 }
