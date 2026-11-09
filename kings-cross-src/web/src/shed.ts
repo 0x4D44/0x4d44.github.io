@@ -369,6 +369,23 @@ function clockMaterial(): THREE.Material {
   return new THREE.MeshLambertMaterial({ map: t });
 }
 
+/**
+ * A flat shape built in the xy plane, turned to face -z (north, out of the shed's end): the winding reversed and the normals with it. A
+ * ShapeGeometry's front face looks +z, which is the way the front's great windows look out; the gable's look out the other way, and the glass
+ * mirrors the sky only on its front face (`skyGlint`), so it is the outside of the gable that must be the front.
+ */
+function facingNorth(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  const index = g.getIndex() as THREE.BufferAttribute;
+  for (let i = 0; i < index.count; i += 3) {
+    const b = index.getX(i + 1);
+    index.setX(i + 1, index.getX(i + 2));
+    index.setX(i + 2, b);
+  }
+  const normal = g.getAttribute('normal') as THREE.BufferAttribute;
+  for (let i = 0; i < normal.count; i++) normal.setZ(i, -normal.getZ(i));
+  return g;
+}
+
 function halfDisc(uc: number, springing: number, r: number): THREE.Shape {
   const s = new THREE.Shape();
   s.moveTo(uc - r, springing);
@@ -611,7 +628,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
     s.moveTo(uc - R * Math.cos(aBase), GABLE_GLASS_FROM);
     s.absarc(uc, sp, R, Math.PI - aBase, aBase, true);
     s.lineTo(uc - R * Math.cos(aBase), GABLE_GLASS_FROM);
-    const g = new THREE.ShapeGeometry(s, 40);
+    const g = facingNorth(new THREE.ShapeGeometry(s, 40));
     g.translate(0, 0, -L);
     gableGeos.push(g);
     addBars(gBars, gableBars(uc, sp, GABLE_GLASS_FROM), 0, -L);

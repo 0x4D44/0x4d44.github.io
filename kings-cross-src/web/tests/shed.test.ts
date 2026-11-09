@@ -359,6 +359,29 @@ test('buildShed: the front has its two great windows, glazed and barred, and no 
   assert.ok(lo > 8, 'the open arch below the gable glass clears a train');
 });
 
+test('buildShed: the front\'s great windows look out south and the gables\' look out north, in the winding and in the stored normals: the glass mirrors the sky on its front face alone (round six, E4), so that face must be the outside', () => {
+  const group = buildShed(layout);
+  /** the sum over the triangles of the z of their winding's normal (twice the area, signed), and the z the vertices store */
+  const facing = (name: string): { winding: number; stored: number[] } => {
+    const g = byName(group, name).geometry;
+    const p = positions(g);
+    const index = g.getIndex() as THREE.BufferAttribute;
+    const normal = g.getAttribute('normal') as THREE.BufferAttribute;
+    const at = (i: number): THREE.Vector3 => new THREE.Vector3().fromBufferAttribute(p, index.getX(i));
+    let winding = 0;
+    for (let i = 0; i < index.count; i += 3) winding += new THREE.Vector3().subVectors(at(i + 1), at(i)).cross(new THREE.Vector3().subVectors(at(i + 2), at(i))).z;
+    const stored = new Set<number>();
+    for (let i = 0; i < normal.count; i++) stored.add(Math.round(normal.getZ(i) * 1e6) / 1e6);
+    return { winding, stored: [...stored] };
+  };
+  const front = facing('shed-front-glass');
+  assert.ok(front.winding > 100, `the front's glass is wound to face south: ${front.winding}`);
+  assert.deepEqual(front.stored, [1], 'and stores +z for its normals');
+  const gable = facing('shed-gable-glass');
+  assert.ok(gable.winding < -100, `the gables' glass is wound to face north: ${gable.winding}`);
+  assert.deepEqual(gable.stored, [-1], 'and stores -z for its normals');
+});
+
 test('buildTower: 112 ft overall including the vane, a clock on each of the four faces looking outward', () => {
   const tower = buildTower(30);
   let top = 0;

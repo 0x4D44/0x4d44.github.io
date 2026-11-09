@@ -660,6 +660,44 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
   return m;
 }
 
+/**
+ * GLSL for the sky in the great windows of the shed's front and in the gables behind it (R-lighting-materials-a2: the arched glazing mirrors the sky in pale
+ * diagonal streaks and shows the dark ribs and the platforms through the rest, never one even tint). It runs after the lights and the tone map, just before
+ * the fog, on `gl_FragColor`: the pane takes the sky's own colour (`fogColor`: the haze the sky ends in at the horizon, as the page shows it, taken 0.7 of
+ * the way to white) by a share `gf`, its own colour dimmed by 0.45 so a streak shows, and is 0.8 of that share more opaque, so a bright streak hides the room
+ * behind it and a dark gap shows it. The share is a Fresnel-like term (0.45 face-on, 0.85 at a glancing view) times a field of streaks fixed in the world, so
+ * a streak stays where it is as the camera moves: bands of the fragment's world x and height that lean 61 degrees (lines of x * 0.9 + y * 0.5), the sum of
+ * three sines 6, 17 and 2.7 m apart (so no two bands are alike) and a weak cross wave to stop them running dead parallel, 0.15 to 1.9 of their mean, held to
+ * 0.8 (the room is never wholly hidden). A clear sky has the streaks (the sky is bluer than it is red by 0.04 to 0.25: `gc`); a grey one (an overcast, snow,
+ * fog or rain) has one even veil of the Fresnel-like share, as a sky with nothing in it mirrors. How much the glass mirrors scales with how bright the sky is
+ * (`fogColor.g`: none under 0.55, which is a dusk's salmon horizon at 0.549 and a night's at 0.09, all of it from 0.8, a clear noon's 0.804; a heavy rain's grey
+ * 0.67 gets 0.44), so a window never glows at dusk or night and the lit shed behind it shows as it did. Only where the scene has fog (no fog, no sky colour) and
+ * only on the outside face: three draws a double-sided transparent pane in two passes, back faces first with `FLIP_SIDED` defined (and the winding flipped
+ * with it, so `gl_FrontFacing` is true there too), so that pass is left out, and `gl_FrontFacing` keeps a single-pass pane to its front face. The front's glass
+ * looks out south as built; the gables' (shed.ts `facingNorth`) are turned to look out north. From inside a window shows what is outside it, and no mirror.
+ */
+const SKY_GLINT_GLSL = /* glsl */`
+#if defined( USE_FOG ) && ! defined( FLIP_SIDED )
+vec3 gw = cameraPosition - vViewPosition * mat3( viewMatrix );
+float gp = dot( gw.xy, vec2( 0.9, 0.5 ) );
+float gb = sin( gp ) + 0.8 * sin( 0.37 * gp + 1.3 ) + 0.5 * sin( 2.3 * gp + 4.0 ) + 0.35 * sin( dot( gw.xy, vec2( -0.45, 0.8 ) ) + 0.7 );
+float gs = gl_FrontFacing ? smoothstep( 0.55, 0.8, fogColor.g ) : 0.0;
+float gc = smoothstep( 0.04, 0.25, fogColor.b - fogColor.r );
+float gf = min( ( 0.45 + 0.4 * ( 1.0 - abs( dot( normal, normalize( vViewPosition ) ) ) ) ) * mix( 1.0, 0.15 + 1.75 * smoothstep( -0.6, 0.9, gb ), gc ), 0.8 ) * gs;
+gl_FragColor.rgb = mix( gl_FragColor.rgb * ( 1.0 - 0.45 * gs ), mix( fogColor, vec3( 1.0 ), 0.7 * gs ), gf );
+gl_FragColor.a = mix( gl_FragColor.a, 1.0, 0.8 * gf );
+#endif
+`;
+
+/** Give a Phong glass the sky above (see `SKY_GLINT_GLSL`). Its program key says so, so it never shares a compile with a plain Phong. */
+export function skyGlint<T extends THREE.MeshPhongMaterial>(m: T): T {
+  m.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `${SKY_GLINT_GLSL}#include <fog_fragment>`);
+  };
+  m.customProgramCacheKey = () => 'skyGlint';
+  return m;
+}
+
 /** Flat things stood a few centimetres off a wall: pulled toward the camera so they never z-fight at range. */
 function nearer<T extends THREE.Material>(m: T): T {
   m.polygonOffset = true;
@@ -678,8 +716,8 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // The glazing of the shed roof: tinted, see-through, with astragal bars. Never writes depth, so
   // what is behind it shows.
   roofGlass: () => tiled('roofGlass', { transparent: true, side: THREE.DoubleSide, depthWrite: false }),
-  // Plain glass for the big windows: a little reflective (a specular highlight from the sun), tinted blue-green.
-  glass: () => new THREE.MeshPhongMaterial({ color: 0x86a9c4, specular: 0xbfd2e4, shininess: 80, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false }),
+  // Plain glass for the big windows: a little reflective (a specular highlight from the sun), tinted blue-green, and mirroring the sky in patches (skyGlint).
+  glass: () => skyGlint(new THREE.MeshPhongMaterial({ color: 0x86a9c4, specular: 0xbfd2e4, shininess: 80, transparent: true, opacity: 0.42, side: THREE.DoubleSide, depthWrite: false })),
   window: () => glassVaries(tiled('window', { transparent: true, alphaTest: 0.05 }), 'quad'),
   windowArch: () => glassVaries(tiled('windowArch', { transparent: true, alphaTest: 0.05 }), 'quad'),
   concrete: () => new THREE.MeshLambertMaterial({ color: 0x8e8e8a }),

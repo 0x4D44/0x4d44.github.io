@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import { MOTTLE } from '../src/lighting.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
-import { Glsl } from './glsl.ts';
+import { Glsl, Mat } from './glsl.ts';
 
 const names = Object.keys(TEXTURES) as TextureName[];
 const close = (a: number, b: number, eps = 1e-6): void => assert.ok(Math.abs(a - b) <= eps, `${a} != ${b}`);
@@ -473,7 +473,108 @@ test('a curtain wall\'s window number rises with the height up the wall and take
   assert.equal(number(0, 0, 0), 0, 'and the darkest, warmest, at the foot');
 });
 
-test('the King\'s Cross front\'s brick and stone carry the contact shade at the foot of a wall; the shared brick and stone, the Western Range\'s, do not, and are otherwise the same (round five, E2)', () => {
+test('the shed\'s great windows mirror a clear sky in diagonal streaks on their outside face: a share of the sky\'s own colour, more at a glancing view, one even veil under a grey sky, none at dusk or night or from inside, and only where the scene has fog (round six, E4)', () => {
+  const m = material('glass') as THREE.MeshPhongMaterial;
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.phong.vertexShader, fragmentShader: THREE.ShaderLib.phong.fragmentShader };
+  m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = s.fragmentShader;
+  // on the colour the screen gets (after the lights, the tone map and the colour space), just before the fog takes its share, inside the fog's own guard (no fog, no sky colour to take)
+  // and out of the back-face pass of a double-sided pane (three draws that first, with FLIP_SIDED defined, and the winding flipped with it)
+  const at = f.indexOf('#if defined( USE_FOG ) && ! defined( FLIP_SIDED )\nvec3 gw');
+  assert.ok(at > 0, 'the glint is in the glass\'s shader, inside the fog\'s guard and out of the back-face pass');
+  for (const earlier of ['#include <opaque_fragment>', '#include <tonemapping_fragment>', '#include <colorspace_fragment>']) assert.ok(f.indexOf(earlier) < at, `after ${earlier}`);
+  assert.ok(at < f.indexOf('#include <fog_fragment>'), 'before the fog');
+  assert.ok(f.indexOf('#endif', at) < f.indexOf('#include <fog_fragment>'), 'the guard is closed before the fog\'s own');
+  assert.equal(m.customProgramCacheKey(), 'skyGlint', 'its own program');
+  assert.equal(THREE.ShaderLib.phong.fragmentShader.includes('skyGlint'), false, 'three\'s own Phong is not touched');
+
+  // run the statements, the camera and the fragment placed in the world (the view matrix is the identity, so the view position is the camera's less the fragment's): the pane's colour and alpha out, and the
+  // share of the sky they imply (alpha = 0.42 + 0.58 * 0.8 * share). The normal faces the camera unless a test says otherwise; the face is the front one unless a test says not.
+  const body = f.slice(at, f.indexOf('#endif', at)).split('\n').slice(1).join('\n');
+  const identity = new Mat(4, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+  const glsl = new Glsl('');
+  const glass = [0.30, 0.40, 0.50, 0.42];
+  const run = (fog: number[], camera: number[], point: number[], normal?: number[], front = true) => {
+    const toCamera = camera.map((c, i) => c - point[i]!);
+    const length = Math.hypot(...toCamera);
+    const env = { vars: { gl_FragColor: [...glass], gl_FrontFacing: front, fogColor: fog, cameraPosition: camera, viewMatrix: identity, vViewPosition: toCamera, normal: normal ?? toCamera.map((c) => c / length) } };
+    glsl.run(body, env);
+    const out = env.vars.gl_FragColor as number[];
+    return { rgb: out.slice(0, 3), alpha: out[3]!, share: (out[3]! - glass[3]!) / (0.8 * (1 - glass[3]!)) };
+  };
+  // the screen's own fog colour in each state (read off the page: a clear noon, an overcast, a snow, a heavy rain, a dusk, a night)
+  const day = [0.6635, 0.8039, 0.9644], overcast = [0.8772, 0.9015, 0.9279], snow = [0.8872, 0.9083, 0.9311], rain = [0.6486, 0.6655, 0.6838], dusk = [0.7149, 0.5494, 0.455], night = [0.0553, 0.0863, 0.1497];
+  /** the share over a 60 m by 30 m pane, seen from 60 m off straight on; `glancing` turns the pane's normal across the line of sight */
+  const field = (fog: number[], glancing = false): number[] => {
+    const out: number[] = [];
+    for (let x = 0; x < 60; x += 1.5) for (let y = 0; y < 30; y += 1.5) out.push(run(fog, [x, y, 60], [x, y, 0], glancing ? [1, 0, 0] : undefined).share);
+    return out;
+  };
+  const mean = (v: number[]): number => v.reduce((a, b) => a + b, 0) / v.length;
+  const fraction = (v: number[], test: (x: number) => boolean): number => v.filter(test).length / v.length;
+  const faceOn = field(day);
+  // streaks of the sky across the pane and nearly clear glass between, never an even tint: about a third of the pane is streak (over 0.7), about two fifths clear (under 0.15)
+  assert.ok(Math.min(...faceOn) < 0.12 && Math.max(...faceOn) > 0.75, `streaked: ${Math.min(...faceOn).toFixed(3)} to ${Math.max(...faceOn).toFixed(3)}`);
+  assert.ok(fraction(faceOn, (x) => x > 0.7) > 0.2 && fraction(faceOn, (x) => x > 0.7) < 0.5, `a third of the pane is streak: ${fraction(faceOn, (x) => x > 0.7).toFixed(2)}`);
+  assert.ok(fraction(faceOn, (x) => x < 0.15) > 0.25 && fraction(faceOn, (x) => x < 0.15) < 0.55, `two fifths of it is clear: ${fraction(faceOn, (x) => x < 0.15).toFixed(2)}`);
+  assert.ok(mean(faceOn) > 0.3 && mean(faceOn) < 0.5, `the share's mean over the pane: ${mean(faceOn).toFixed(3)}`);
+  // at a glancing view (the normal across the line of sight) the share is 0.85 where face-on it is 0.45, and never more than 0.8
+  const glancing = field(day, true);
+  assert.ok(mean(glancing) > 1.15 * mean(faceOn), `a glancing view mirrors more: ${mean(glancing).toFixed(3)} against ${mean(faceOn).toFixed(3)}`);
+  let compared = 0;
+  glancing.forEach((g, i) => {
+    if (g < 0.8 - 1e-9) { assert.ok(Math.abs(g / faceOn[i]! - 0.85 / 0.45) < 1e-9, `the same streak, 0.85 against 0.45: ${g} over ${faceOn[i]}`); compared++; }
+  });
+  assert.ok(compared > glancing.length * 0.4, `where the 0.8 does not hold it, the Fresnel-like term is 0.85 against 0.45 (${compared} of ${glancing.length} points)`);
+  for (const v of [...faceOn, ...glancing]) assert.ok(v >= 0 && v <= 0.8 + 1e-9, `held to 0.8: ${v}`);
+  assert.ok(Math.abs(Math.max(...glancing) - 0.8) < 1e-9, 'the brightest streak at a glancing view is held to 0.8 (the room is never wholly hidden)');
+  // where it mirrors, the pane takes the sky's colour (the haze, taken 0.7 of the way to white) over its own, dimmed by 0.45: the colour out is the dimmed pane toward the mirror by the share the alpha shows
+  const dimmed = glass.slice(0, 3).map((c) => c * (1 - 0.45));
+  const mirror = day.map((c) => c * 0.3 + 0.7);
+  for (let x = 0; x < 60; x += 7) {
+    const r = run(day, [x, 12, 60], [x, 12, 0]);
+    r.rgb.forEach((c, i) => assert.ok(Math.abs(c - (dimmed[i]! + (mirror[i]! - dimmed[i]!) * r.share)) < 1e-9, `channel ${i} is the dimmed pane toward the mirror by ${r.share.toFixed(3)}: ${c}`));
+    assert.ok(r.alpha >= glass[3]! && r.alpha <= 1, `more opaque, not less: ${r.alpha}`);
+  }
+  // the streaks are fixed in the world: a point of the pane gives the same share (seen straight on) wherever the camera stands, and the next point along gives another
+  const there = run(day, [21, 9, 60], [21, 9, 0]).share;
+  assert.ok(Math.abs(there - run(day, [300, 80, -250], [21, 9, 0]).share) < 1e-9, 'a streak stays where it is as the camera moves');
+  assert.ok(Math.abs(there - run(day, [24, 14, 60], [24, 14, 0]).share) > 0.01, 'and the next point along the pane has its own');
+  // they lean: along a streak (up and to the left, 61 degrees from the horizontal) the share changes little, across it (the way the bands are numbered) it swings through the whole range
+  const stepChange = (dir: number[]): number => {
+    let sum = 0, n = 0;
+    for (let x = 5; x < 55; x += 2.5) for (let y = 5; y < 25; y += 2.5) {
+      const a = run(day, [x, y, 60], [x, y, 0]).share;
+      const b = run(day, [x + 3 * dir[0]!, y + 3 * dir[1]!, 60], [x + 3 * dir[0]!, y + 3 * dir[1]!, 0]).share;
+      sum += Math.abs(a - b); n++;
+    }
+    return sum / n;
+  };
+  const norm = Math.hypot(0.9, 0.5);
+  const across = stepChange([0.9 / norm, 0.5 / norm]);
+  const along = stepChange([-0.5 / norm, 0.9 / norm]);
+  assert.ok(across > 3 * along && across > 0.3, `a streak runs up the glass: ${along.toFixed(3)} a 3 m step along it, ${across.toFixed(3)} across`);
+  // a grey sky (an overcast, a snow) has nothing to mirror but itself: one even veil of the Fresnel-like share, 0.45 face-on, and the heavy rain's dimmer grey the same, in less
+  for (const grey of [overcast, snow]) {
+    const veil = field(grey);
+    assert.ok(Math.max(...veil) - Math.min(...veil) < 0.02 && Math.abs(mean(veil) - 0.45) < 0.01, `an even veil of 0.45: ${Math.min(...veil).toFixed(3)} to ${Math.max(...veil).toFixed(3)}`);
+  }
+  const wet = field(rain);
+  assert.ok(Math.max(...wet) - Math.min(...wet) < 0.02 && mean(wet) > 0.1 && mean(wet) < 0.3, `the rain's grey is mirrored in part, evenly: ${Math.min(...wet).toFixed(3)} to ${Math.max(...wet).toFixed(3)}`);
+  // a dusk sky (the salmon horizon) and a night sky are not mirrored at all: the pane is what it was, so the lit shed behind it shows as it did and nothing glows
+  for (const dim of [dusk, night]) {
+    for (const v of [...field(dim), ...field(dim, true)]) assert.equal(v, 0, 'at dusk and at night the glass mirrors nothing');
+    const unchanged = run(dim, [20, 10, 60], [20, 10, 0], [1, 0, 0]);
+    assert.deepEqual([...unchanged.rgb, unchanged.alpha], glass, 'and its colour and alpha are what they were');
+  }
+  // and from inside no mirror at all, whatever the sky: a window shows what is outside it
+  for (const sky of [day, overcast]) {
+    const inside = run(sky, [20, 10, 60], [20, 10, 0], undefined, false);
+    assert.deepEqual([...inside.rgb, inside.alpha], glass, 'from inside the pane is what it was');
+  }
+});
+
+test('the King\'s Cross front\'s brick and stone carry the contact shade at the foot of a wall; the shared brick and stone, the Western Range\'s, do not, and are otherwise the same (round five, E2)',() => {
   for (const [footed, plain] of [['brickFoot', 'brick'], ['stoneFoot', 'stone']] as const) {
     const a = material(footed) as THREE.MeshLambertMaterial;
     const b = material(plain) as THREE.MeshLambertMaterial;
