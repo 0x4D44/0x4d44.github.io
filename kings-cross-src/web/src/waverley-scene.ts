@@ -17,7 +17,7 @@ import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
 import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS,cleanRing,meshAdder} from './waverley-mesh.ts';
-import {buildWaverleyStation,WAVERLEY_STATION_ROOF_ID} from './waverley-station.ts';
+import {buildWaverleyStation,WAVERLEY_STATION_ROOF_ID,WAVERLEY_STATION_OMIT_IDS} from './waverley-station.ts';
 import {buildWaverleyFrontage,WAVERLEY_FRONTAGE_OMIT_IDS} from './waverley-frontage.ts';
 import {buildWaverleyCity,buildWaverleyCityLandmarks,WAVERLEY_CITY_OMIT_IDS} from './waverley-city.ts';
 import {addWaverleyLights} from './station-weather.ts';
@@ -159,7 +159,7 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  // Elements draw their own replacements of mapped city blocks; the synthetic-data path (tests) draws no landmarks.
  const landmarks=!options.data;
  // City blocks standing on the track or a platform are not drawn (waverleyRailwayIntrusions), whatever the data.
- const city=buildWaverleyCity(data,ground,{omitBuildingIds:[...landmarks?[...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS]:[],...waverleyRailwayIntrusions(data)]});
+ const city=buildWaverleyCity(data,ground,{omitBuildingIds:[...landmarks?[...WAVERLEY_STATION_OMIT_IDS,...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS]:[],...waverleyRailwayIntrusions(data)]});
  const terrain=new THREE.Group(),track=new THREE.Group(),buildings=new THREE.Group();
  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.BufferAttribute(tm.positions,3));tg.setIndex(new THREE.BufferAttribute(tm.indices,1));tg.computeVertexNormals();
  const groundMaterial=terrainMaterial('ground').clone() as THREE.MeshLambertMaterial;

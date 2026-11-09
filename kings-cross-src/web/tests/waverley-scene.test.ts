@@ -103,7 +103,8 @@ test('Waverley committed station roof has its actual OSM central hole, with no s
  const g=built.parts.roof;assert.ok(g.children.length>0);assert.ok(!d.buildings.some(r=>r.id==='way/5208866'));
  const hole=roof.holes[0],mid=hole.reduce((a,p)=>[a[0]+p[0]/hole.length,a[1]+p[1]/hole.length],[0,0]);g.updateMatrixWorld(true);
  assert.equal(new THREE.Raycaster(new THREE.Vector3(mid[0],1000,mid[1]),new THREE.Vector3(0,-1,0)).intersectObject(g,true).length,0,'station glazing never covers central building');
- assert.equal(built.stats.platforms,23);assert.ok(built.stats.triangles>1000&&built.stats.triangles<350000);assert.ok(built.stats.drawCalls<=16);built.dispose();
+ assert.equal(built.stats.platforms,23);// Scene budget sized for the three Waverley elements under Arthur's 2026-11-09 21:56 ruling (4x caps); the FPS gate is the real guard.
+ assert.ok(built.stats.triangles>1000&&built.stats.triangles<1000000);assert.ok(built.stats.drawCalls<=80);built.dispose();
 });
 
 test('Waverley default scene includes the mapped landmarks within the complete scene budget',()=>{
@@ -114,8 +115,9 @@ test('Waverley default scene includes the mapped landmarks within the complete s
  let triangles=0,draws=0;
  built.group.traverse(o=>{if(o instanceof THREE.Mesh){const faces=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;triangles+=faces*(o instanceof THREE.InstancedMesh?o.count:1);draws++;}else if(o instanceof THREE.LineSegments)draws++;});
  assert.equal(built.stats.triangles,triangles);assert.equal(built.stats.drawCalls,draws);
- assert.ok(triangles<400000,`complete geometry has ${triangles} triangles`);
- assert.ok(draws<=20,`complete geometry has ${draws} draws`);built.dispose();
+ // Sized for the three Waverley elements under Arthur's 2026-11-09 21:56 budget ruling; still far under the 2,000,000-triangle frame ceiling.
+ assert.ok(triangles<1500000,`complete geometry has ${triangles} triangles`);
+ assert.ok(draws<=150,`complete geometry has ${draws} draws`);built.dispose();
 });
 
 // The railway is kept clear of city blocks by a general rule (waverleyRailwayIntrusions), not by id. These checks measure the

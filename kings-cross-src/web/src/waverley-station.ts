@@ -10,6 +10,9 @@ import {WAVERLEY_LEVELS,fillSurface,meshAdder,walls} from './waverley-mesh.ts';
 
 /** The mapped Waverley station roof (OSM relation/240040): drawn as the ridge-and-furrow shed, and flattened under by waverley-scene.ts. */
 export const WAVERLEY_STATION_ROOF_ID='relation/240040';
+/** Mapped city blocks W1 draws itself (e.g. the central block), so waverley-scene.ts leaves them out of the city loop, as it does for
+ *  WAVERLEY_FRONTAGE_OMIT_IDS and WAVERLEY_CITY_OMIT_IDS. Empty until W1 draws a replacement. */
+export const WAVERLEY_STATION_OMIT_IDS:readonly string[]=[];
 export interface WaverleyStation {
  platforms:THREE.Group;
  roof:THREE.Group;
