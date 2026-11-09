@@ -824,13 +824,14 @@ const chainOf = o => { const names = []; for (let p = o; p; p = p.parent) names.
  * A capture-only stage, clearly named and never part of the model: a large ground plane, a 3.4 m ballast strip, sleepers (one
  * InstancedMesh) and two rail-head boxes at the wheel-tread centres (x = +-gauge/2), the rail head top at y = 0. The levels copy
  * the page's own track (web/src/track.ts): ground -0.2, ballast top -0.14, sleeper top -0.10, rail 0.10 m tall. It runs 60 m
- * past each end of the train. The page's lights, fog, renderer and background are left alone.
+ * past each end of the train. The page's lights, fog, renderer and background are left alone. `zRange` ([z0, z1]) replaces the length and margin with
+ * an explicit run, for a stage the specimen drives along (M01) instead of standing on.
  */
-export function buildCatalogueStage(T, { length, margin = 60 } = {}) {
+export function buildCatalogueStage(T, { length, margin = 60, zRange } = {}) {
   const g = new T.Group();
   g.name = 'capture-stage';
   g.userData = { captureOwned: true, note: 'capture-only neutral specimen stage; not part of the model' };
-  const z0 = -margin, z1 = length + margin, span = z1 - z0, mid = (z0 + z1) / 2, lambert = color => new T.MeshLambertMaterial({ color });
+  const [z0, z1] = zRange ?? [-margin, length + margin], span = z1 - z0, mid = (z0 + z1) / 2, lambert = color => new T.MeshLambertMaterial({ color });
   const add = (name, geometry, color, x, y, z) => { const m = new T.Mesh(geometry, lambert(color)); m.name = name; m.position.set(x, y, z); g.add(m); return m; };
   add('capture-stage-ground', new T.PlaneGeometry(9000, 9000).rotateX(-Math.PI / 2), 0x3a4049, 0, CATALOGUE.groundY, mid);
   add('capture-stage-ballast', new T.BoxGeometry(3.4, .06, span), 0x5d5a55, 0, CATALOGUE.groundY + .03, mid);
@@ -919,18 +920,29 @@ export function visibleChrome(doc, win, options) {
 export function placeStageSpecimen(group, stage, rotationY, position = [0, 0, 0]) {
   for (const o of [group, stage]) if (o) { o.position.set(...position); o.rotation.set(0, rotationY, 0); o.updateMatrixWorld(true); }
 }
+/** The triangles and draw calls one mesh costs: its draw range, a material array by its groups, nothing for a mesh whose materials are all invisible. */
+function meshCost(o) {
+  const g = o.geometry, n = Math.min(g.drawRange.count, (g.index?.count ?? g.attributes.position.count) - g.drawRange.start), none = { triangles: 0, drawCalls: 0 };
+  if (!o.material || n <= 0) return none;
+  const materials = Array.isArray(o.material) ? o.material : [o.material];
+  if (materials.every(m => m.visible === false || m.opacity === 0)) return none;
+  if (Array.isArray(o.material) && g.groups.length) {
+    let triangles = 0, drawCalls = 0;
+    for (const part of g.groups) if (o.material[part.materialIndex]?.visible !== false) { drawCalls++; triangles += part.count / 3; }
+    return { triangles, drawCalls };
+  }
+  return { triangles: n / 3, drawCalls: 1 };
+}
+/** The cost of every mesh at or below `object`, shown or not (a level of detail that is hidden still has its cost). */
+export function objectCost(object) {
+  let triangles = 0, drawCalls = 0;
+  object.traverse(o => { if (!o.isMesh) return; const c = meshCost(o); triangles += c.triangles; drawCalls += c.drawCalls; });
+  return { triangles, drawCalls };
+}
 /** Static triangles and draw calls of a train, counted exactly as .scratch/train-rubric/measure-costs.mjs does. Call it after the frame is rendered, so the LODs are the ones drawn. */
 export function trainCosts(group) {
   let triangles = 0, drawCalls = 0;
-  group.traverseVisible(o => {
-    if (!o.isMesh) return;
-    const g = o.geometry, n = Math.min(g.drawRange.count, (g.index?.count ?? g.attributes.position.count) - g.drawRange.start);
-    if (!o.material || n <= 0) return;
-    const materials = Array.isArray(o.material) ? o.material : [o.material];
-    if (materials.every(m => m.visible === false || m.opacity === 0)) return;
-    if (Array.isArray(o.material) && g.groups.length) { for (const part of g.groups) if (o.material[part.materialIndex]?.visible !== false) { drawCalls++; triangles += part.count / 3; } }
-    else { drawCalls++; triangles += n / 3; }
-  });
+  group.traverseVisible(o => { if (!o.isMesh) return; const c = meshCost(o); triangles += c.triangles; drawCalls += c.drawCalls; });
   return { triangles, drawCalls };
 }
 /** Aim the camera at a view given in the train's own frame, through the specimen's world transform. Returns the world pose actually set. */
@@ -1137,4 +1149,271 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
     if (clear === placement.views.length) break;
   }
   return report;
+}
+
+// ============================================================================================
+// M01 (opt-in): the motion clip. The specimen drives away from a fixed camera along a neutral straight stage and, after every frame, the page is asked which level of
+// detail each bogie is drawn at and how far it is from the camera. The plan and the verdicts are plain numbers (the Node tests pin each of them); the readers take THREE
+// and run in the page. M01 is not in VIEW_IDS: a run that is not asked for it neither plans it nor refuses on poses frozen before it existed.
+// ============================================================================================
+/** The views a run can be asked for (`--views`) besides VIEW_IDS, which are the ones it takes when it is not asked. */
+export const OPT_IN_VIEW_IDS = Object.freeze(['M01']);
+export const ASKABLE_VIEW_IDS = Object.freeze([...VIEW_IDS, ...OPT_IN_VIEW_IDS]);
+/**
+ * The clip's numbers, one set for every kind. `lodDistanceM` is web/src/train-parts.ts BOGIE_LOD_DISTANCE (a test pins the two equal): at that distance or more a bogie is
+ * drawn bare. 20 m/s (72 km/h), a frame a second, 16 frames: 300 m, enough for the last bogie of the longest kind to pass 150 m from the camera. The camera is V10's (its eye
+ * 1.7 m above a platform surface that is .9 m above the rail head, FOV 50, 1600x1000), `lateralM` from the track axis on the -x side, the side the page sun is on, so the
+ * near side of the train is lit; 3.3 m is where V10's platform 5 camera stands at stop 3 (the edge is 2.80 m from the axis at the nose, and a camera stands .5 m inside
+ * it), but the stage has no platform. The stage and the path run along -z (the page's north) from z = 160 to z = -540: 160 m behind the camera, and `slackM` or more past the
+ * nose of the longest kind in the last frame.
+ */
+export const MOTION = Object.freeze({
+  id: 'M01', suffix: 'motion', stage: 'neutral-straight',
+  speedMps: 20, stepS: 1, frames: 16, minFrames: 12,
+  lodDistanceM: 150, boundaryMarginM: .05, distanceToleranceM: 1e-6,
+  lateralM: 3.3, targetAheadM: 100, fov: 50,
+  zRange: Object.freeze([-540, 160]), routeStepM: 50, slackM: 100,
+  /** the near plane must clear every vertex bounding box by this much more than the radius of the near volume */
+  clearanceMarginM: .25,
+  /** the contact sheet: tiles of tileWidth x tileHeight (the frame at a quarter of its size), this many to a row, gap pixels apart */
+  sheet: Object.freeze({ columns: 4, tileWidth: 400, tileHeight: 250, gap: 8 }),
+});
+/** What every sidecar, manifest entry and note says of the stage. */
+export const MOTION_STAGE = `${MOTION.stage} (scenery hidden)`;
+/** How the clip is made, for the manifest and every sidecar. */
+export const MOTION_RULE = 'M01 (opt-in, day only). One clip per kind on one neutral straight stage with the page scenery hidden: a 700 m run along -z, the page\'s north, from z = 160 to z = -540. '
+  + 'The specimen is posed with the page\'s own carPoses (web/src/trains-live.ts) over a synthetic straight path and moves at a constant speed: frame i has the nose i x speed x step '
+  + 'metres further along than frame 0, in which the middle of the train is level with the camera. The camera is fixed for the whole clip and looks along the track: V10\'s eye height '
+  + '(1.7 m above a platform surface .9 m above the rail head), FOV 50, 1600x1000, 3.3 m from the track axis on the -x side, the side the page sun is on. 3.3 m is where V10\'s platform 5 '
+  + 'camera stands at stop 3 (the edge is 2.80 m from the axis at the nose of the train and a camera stands .5 m inside it), but the stage has no platform. After every frame the page is asked, '
+  + 'for every bogie, which level of detail it is drawn at and how far it is from the camera. Both must equal what the geometry predicts (a bogie is drawn bare at 150 m or more), every bogie '
+  + 'must change from full to bare exactly once inside the clip, and the near plane must clear the bounding box of every vertex of the train in every frame. Any difference is a GAP with '
+  + 'its reason, never a quiet pass.';
+/** Why the clip is not in the station scene, said once in the notes. */
+export const MOTION_STATION_NOTE = 'No clip is in the station scene: the station scene could not hold the longest kinds. Walking north from each of the shed\'s buffer stops by the straightest '
+  + 'edge at every junction, there are 422-436 m of open track before the first tunnel edge, and lner9, gn387x12 and tl700x12 need 496-514 m (from the tail at the start of the clip to the '
+  + 'nose when their last bogie passes 150 m from the camera). V10 remains the in-station evidence.';
+
+/** The fixed camera of the clip, in world metres: the origin is level with the middle of the train in the first frame, the train drives toward -z. */
+export function motionCamera({ aspect = CATALOGUE.aspect } = {}) {
+  const eye = [q6(-MOTION.lateralM), q6(CATALOGUE.platformHeightM + CATALOGUE.eyeAbovePlatformM), 0], target = [eye[0], eye[1], q6(-MOTION.targetAheadM)];
+  return { eye, target, fov: MOTION.fov, up: [0, 1, 0], near: catalogueNear(eye, target), aspect };
+}
+/**
+ * The radius of a ball about the eye that holds the whole near volume, the frustum from the eye to the near plane: its far corners are near x sqrt(1 + tan(fov/2)^2 +
+ * (tan(fov/2) x aspect)^2) from the eye. A box farther than this from the eye cannot be cut by the near plane.
+ */
+export function nearClipRadius({ near, fov, aspect }) {
+  const v = Math.tan(fov * D2R / 2), h = v * aspect;
+  return near * Math.sqrt(1 + v * v + h * h);
+}
+/**
+ * Every frame of the clip for one formation, from the geometry alone, before the page is asked anything. `f` is describeFormation's plain description. The nose is at
+ * z = -length/2 - travel (the train faces -z, its middle level with the camera at the origin in frame 0) and each bogie stands its own distance behind the nose, so its
+ * distance from the camera is known in every frame and so is the level of detail the page must draw (level 1, the bare bogie, at `lodDistanceM` or more). The plan is OK only
+ * if every bogie is full in the first frame and bare in the last, changes level exactly once and is never within `boundaryMarginM` of the boundary, the stage reaches `slackM`
+ * past the last nose and behind the first tail, the clip has enough frames and the near volume is clear of the side of the train; otherwise it is a GAP with every reason.
+ */
+export function planMotion(f, { speedMps = MOTION.speedMps, stepS = MOTION.stepS, frames: count = MOTION.frames } = {}) {
+  const L = f.length, lod = MOTION.lodDistanceM, camera = motionCamera(), eye = camera.eye, [zFar, zBehind] = MOTION.zRange;
+  const frames = Array.from({ length: count }, (_, i) => {
+    const travelM = q6(i * speedMps * stepS), noseZ = q6(-L / 2 - travelM);
+    return { index: i, number: i + 1, timeS: q6(i * stepS), travelM, noseZ, middleZ: q6(-travelM), tailZ: q6(L / 2 - travelM),
+      cabDistanceM: Math.hypot(eye[0], eye[1] - CATALOGUE.stationFocusHeightM, eye[2] - (noseZ + CATALOGUE.stationCabFocusZ)) };
+  });
+  const bogies = f.cars.flatMap(c => c.bogies.map((z, k) => {
+    const distanceM = frames.map(r => Math.hypot(eye[0], eye[1], r.noseZ + z - eye[2]));
+    return { name: `bogie-${c.index}-${k}`, car: c.index, k, z, distanceM, level: distanceM.map(d => d >= lod ? 1 : 0) };
+  }));
+  const flips = bogies.map(t => {
+    let nearToFar = 0, farToNear = 0, first = null;
+    for (let i = 1; i < t.level.length; i++) if (t.level[i] !== t.level[i - 1]) { if (t.level[i] === 1) { nearToFar++; first ??= i; } else farToNear++; }
+    return { name: t.name, car: t.car, k: t.k, nearToFar, farToNear, firstFarIndex: first, lastNearIndex: first === null ? null : first - 1,
+      nearDistanceM: first === null ? null : t.distanceM[first - 1], farDistanceM: first === null ? null : t.distanceM[first] };
+  });
+  const margin = Math.min(...bogies.flatMap(t => t.distanceM.map(d => Math.abs(d - lod))));
+  const lateralGapM = Math.abs(eye[0]) - f.half, clipRadiusM = nearClipRadius(camera), needM = clipRadiusM + MOTION.clearanceMarginM;
+  const finalNoseZ = frames.at(-1).noseZ, startTailZ = frames[0].tailZ, problems = [];
+  if (count < MOTION.minFrames) problems.push(`the clip has ${count} frames, fewer than ${MOTION.minFrames}`);
+  for (const t of bogies) if (t.level[0] !== 0) problems.push(`${t.name} is already drawn bare in the first frame (${t.distanceM[0].toFixed(1)} m)`);
+  for (const t of bogies) if (t.level.at(-1) !== 1) problems.push(`${t.name} is still drawn in full in the last frame (${t.distanceM.at(-1).toFixed(1)} m)`);
+  for (const x of flips) if (x.nearToFar !== 1 || x.farToNear !== 0) problems.push(`${x.name} changes level ${x.nearToFar} times to bare and ${x.farToNear} times to full, not once to bare`);
+  if (margin < MOTION.boundaryMarginM) problems.push(`a bogie is ${margin.toFixed(3)} m from the ${lod} m boundary in some frame, under the ${MOTION.boundaryMarginM} m margin`);
+  if (finalNoseZ - MOTION.slackM < zFar) problems.push(`the stage ends at z = ${zFar}, under ${MOTION.slackM} m past the nose of the last frame (z = ${finalNoseZ})`);
+  if (startTailZ > zBehind) problems.push(`the tail of the first frame (z = ${startTailZ}) is behind the start of the stage (z = ${zBehind})`);
+  if (lateralGapM < needM) problems.push(`the camera is ${lateralGapM.toFixed(2)} m from the side of the train, under the ${needM.toFixed(2)} m its near volume and margin need`);
+  const travelM = q6((count - 1) * speedMps * stepS), trackLengthM = zBehind - zFar;
+  const clip = { stage: MOTION.stage, scenery: 'hidden', zRange: [...MOTION.zRange], trackLengthM, direction: 'toward -z, nose first', speedMps, stepS, frames: count, travelM,
+    lodDistanceM: lod, start: 'the middle of the train level with the camera', camera: 'fixed for the whole clip' };
+  return { id: MOTION.id, suffix: MOTION.suffix, frame: 'motion', status: problems.length ? 'GAP' : 'OK', reason: problems.length ? problems.slice(0, 6).join('; ') + (problems.length > 6 ? `; and ${problems.length - 6} more` : '') : null,
+    lengthM: L, camera, clip, bogies, frames, flips,
+    clearance: { lateralGapM: q6(lateralGapM), clipRadiusM, marginM: MOTION.clearanceMarginM, ok: lateralGapM >= needM },
+    checks: { minBoundaryMarginM: margin, finalNoseZ, startTailZ, stageSlackM: q6(finalNoseZ - zFar) },
+    notes: { stage: MOTION_STAGE, trackLengthM, speedMps, stepS, frames: count, travelM, lodDistanceM: lod,
+      camera: `fixed for the whole clip: ${MOTION.lateralM} m to the -x (sun) side of the track axis, ${eye[1]} m above the rail head (V10's eye height), level with the middle of the train at the start, looking along the track`,
+      rule: MOTION_RULE, stationScene: MOTION_STATION_NOTE } };
+}
+/** The numbers that define a clip, for freezing and comparison (what the page read is not part of the plan). */
+export const motionPoseOf = p => ({ status: p.status, lengthM: p.lengthM, camera: p.camera, clip: p.clip, flips: p.flips.map(x => [x.name, x.firstFarIndex]) });
+
+/** Distance from a point to an axis-aligned box ({ min, max }); 0 inside it. */
+export function boxDistance(box, p) {
+  return Math.hypot(Math.max(box.min[0] - p[0], 0, p[0] - box.max[0]), Math.max(box.min[1] - p[1], 0, p[1] - box.max[1]), Math.max(box.min[2] - p[2], 0, p[2] - box.max[2]));
+}
+/** The names from `root` down to an object ('car-3/body-shell'); an unnamed object is its type. */
+const pathBelow = (o, root) => { const names = []; for (let p = o; p && p !== root; p = p.parent) names.unshift(p.name || p.type); return names.join('/'); };
+/**
+ * The world-space bounding box of the vertices of every visible mesh below `object`, one box per mesh, with the path of the mesh. Every vertex is moved to the world, so a
+ * turned mesh keeps a tight box (a local box carried over would be looser). A mesh whose vertices are not its geometry's (instanced, skinned) cannot be bounded this way,
+ * and the check stops rather than pass it.
+ */
+export function vertexBoxes(T, object) {
+  object.updateWorldMatrix(true, true);
+  const boxes = [], v = new T.Vector3();
+  object.traverseVisible(o => {
+    if (!o.isMesh) return;
+    if (o.isInstancedMesh || o.isSkinnedMesh) throw new Error(`${pathBelow(o, object)} is ${o.isInstancedMesh ? 'instanced' : 'skinned'}: its vertices are not its geometry's, so its box cannot be bounded from the geometry`);
+    const pos = o.geometry.attributes.position;
+    if (!pos || !pos.count) return;
+    const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+      if (v.x < min[0]) min[0] = v.x; if (v.x > max[0]) max[0] = v.x;
+      if (v.y < min[1]) min[1] = v.y; if (v.y > max[1]) max[1] = v.y;
+      if (v.z < min[2]) min[2] = v.z; if (v.z > max[2]) max[2] = v.z;
+    }
+    boxes.push({ name: pathBelow(o, object), min, max, vertices: pos.count });
+  });
+  return boxes;
+}
+/**
+ * Does the near plane clear every box? The near volume (the frustum from the eye to the near plane) lies within `clipRadiusM` of the eye (nearClipRadius), so a box at least that
+ * far from the eye, plus `marginM`, cannot be cut by the near plane. No box at all is not clear: a frame of an empty specimen proves nothing.
+ */
+export function checkNearClearance(boxes, eye, { near, fov, aspect, marginM = 0 }) {
+  const clipRadiusM = nearClipRadius({ near, fov, aspect }), needM = clipRadiusM + marginM;
+  const distances = boxes.map(b => ({ name: b.name, distanceM: boxDistance(b, eye) }));
+  const nearest = distances.reduce((best, d) => !best || d.distanceM < best.distanceM ? d : best, null);
+  const cut = distances.filter(d => d.distanceM < needM).sort((a, b) => a.distanceM - b.distanceM), violations = cut.slice(0, 8);
+  const ok = boxes.length > 0 && cut.length === 0;
+  return { check: 'near-plane clearance of the bounding box of every vertex', ok,
+    reason: !boxes.length ? 'the specimen has no visible geometry to clear' : cut.length ? `the near plane (near ${near} m, clip radius ${clipRadiusM.toFixed(3)} m, margin ${marginM} m) is cut by ${cut.length} bounding box(es), the nearest ${cut[0].name} at ${cut[0].distanceM.toFixed(3)} m` : null,
+    nearM: near, clipRadiusM, marginM, boxes: boxes.length, minDistanceM: nearest?.distanceM ?? null, nearest, violationCount: cut.length, violations };
+}
+/**
+ * Pose the cars as web/src/trains-live.ts createLiveTrains.update does: every child of the train hidden, then each posed car shown at its position, turned and stretched, and
+ * each of its bogies turned to the track. `cars` are { index, position: [x, z], rotationY, scaleZ, bogies: [{ k, rotationY }] }.
+ */
+export function applyCarPoses(group, cars) {
+  for (const node of group.children) node.visible = false;
+  for (const c of cars) {
+    const node = group.getObjectByName(`car-${c.index}`);
+    if (!node) throw new Error(`the specimen has no car-${c.index}`);
+    node.visible = true;
+    node.position.set(c.position[0], 0, c.position[1]);
+    node.rotation.y = c.rotationY;
+    node.scale.set(1, 1, c.scaleZ);
+    for (const b of c.bogies) {
+      const bogie = node.getObjectByName(`bogie-${c.index}-${b.k}`);
+      if (!bogie) throw new Error(`car-${c.index} has no bogie-${c.index}-${b.k}`);
+      bogie.rotation.y = b.rotationY;
+    }
+  }
+  group.updateMatrixWorld(true);
+}
+/** The leading cab as V01 looks at it: 1.7 m up and 1.5 m behind the nose, on car 0, in world metres. */
+export function leadingCabPoint(T, group) {
+  group.updateMatrixWorld(true);
+  const car = group.getObjectByName('car-0');
+  if (!car) throw new Error('the specimen has no car-0');
+  return car.localToWorld(new T.Vector3(0, CATALOGUE.stationFocusHeightM, CATALOGUE.stationCabFocusZ));
+}
+/**
+ * What the page drew each bogie as, read AFTER the frame was rendered (the renderer is what updates a LOD): for every visible LOD, its bogie's name, the level it reports
+ * (getCurrentLevel: 0 the full bogie, 1 the bare one), its distance from the camera as THREE measures it, its level table, which of its meshes are shown and what each level
+ * costs (triangles and draw calls, counted as trainCosts counts, shown or not), whether the meshes shown are exactly the one the level names (`consistent`), and whether the bogie
+ * is inside the camera's frame.
+ */
+export function readBogieLods(T, group, camera) {
+  group.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+  const eye = new T.Vector3().setFromMatrixPosition(camera.matrixWorld), p = new T.Vector3(), ndc = new T.Vector3(), out = [];
+  group.traverseVisible(o => {
+    if (!o.isLOD) return;
+    const name = o.parent?.name ?? '', m = /^bogie-(\d+)-(\d+)$/.exec(name), level = o.getCurrentLevel(), shown = o.levels.map(l => l.object.visible);
+    p.setFromMatrixPosition(o.matrixWorld);
+    ndc.copy(p).project(camera);
+    out.push({ name, car: m ? Number(m[1]) : null, k: m ? Number(m[2]) : null, level, distanceM: eye.distanceTo(p) / camera.zoom, world: p.toArray(),
+      consistent: shown.filter(Boolean).length === 1 && shown[level] === true,
+      levels: o.levels.map(l => ({ lod: l.object.userData?.lod ?? null, fromM: l.distance, visible: l.object.visible, ...objectCost(l.object) })),
+      inFrame: ndc.z > -1 && ndc.z < 1 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1 });
+  });
+  return out;
+}
+/**
+ * One frame of a clip against its plan. `read` is what the page said after the frame: `bogies` (readBogieLods), `clearance` (checkNearClearance), `costs` (trainCosts),
+ * `cabDistanceM` and `cars` (the transform each car node actually has). `applied` is the cars the capture asked the page to pose.
+ * `gap` is a reason the frame cannot be a picture of the clip (the near plane is cut by the train); `problems` are a page that is not in the state it was asked to be in
+ * (a bogie missing or twice, a car not where it was put), which also makes the frame a GAP; `mismatches` are readings that differ from the geometry's prediction, which fail
+ * the clip but leave the pictures standing as evidence of what the page drew. `baseTriangles` is what the train draws besides its bogies.
+ */
+export function judgeMotionFrame(plan, index, read, applied = null, { toleranceM = MOTION.distanceToleranceM } = {}) {
+  const lod = plan.clip.lodDistanceM, mismatches = [], problems = [], rows = [], seen = new Map(), planned = new Set(plan.bogies.map(t => t.name));
+  for (const b of read.bogies) { if (seen.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'} twice`); seen.set(b.name, b); if (!planned.has(b.name)) problems.push(`the page reports ${b.name || 'an unnamed bogie'}, which the plan has not`); }
+  let maxDistanceErrorM = 0;
+  for (const t of plan.bogies) {
+    const r = seen.get(t.name);
+    if (!r) { problems.push(`the page reports no ${t.name}`); continue; }
+    const predicted = { level: t.level[index], distanceM: t.distanceM[index] }, errorM = Math.abs(r.distanceM - predicted.distanceM), got = { level: r.level, distanceM: r.distanceM };
+    maxDistanceErrorM = Math.max(maxDistanceErrorM, errorM);
+    if (r.level !== predicted.level) mismatches.push({ frame: index, bogie: t.name, why: 'level', predicted, read: got });
+    if (!(errorM <= toleranceM)) mismatches.push({ frame: index, bogie: t.name, why: 'distance', predicted, read: got });
+    if (r.levels.length !== 2 || r.levels[0].fromM !== 0 || r.levels[1].fromM !== lod) mismatches.push({ frame: index, bogie: t.name, why: 'level table', predicted: { fromM: [0, lod] }, read: { fromM: r.levels.map(l => l.fromM) } });
+    if (!r.consistent) mismatches.push({ frame: index, bogie: t.name, why: 'meshes shown', predicted, read: { ...got, shown: r.levels.map(l => l.visible) } });
+    rows.push({ name: t.name, car: t.car, k: t.k, level: r.level, distanceM: r.distanceM, predictedLevel: predicted.level, predictedDistanceM: predicted.distanceM, errorM, triangles: r.levels[r.level]?.triangles ?? null, inFrame: r.inFrame });
+  }
+  const cabErrorM = Math.abs(read.cabDistanceM - plan.frames[index].cabDistanceM);
+  if (!(cabErrorM <= toleranceM)) mismatches.push({ frame: index, bogie: null, why: 'cab distance', predicted: { distanceM: plan.frames[index].cabDistanceM }, read: { distanceM: read.cabDistanceM } });
+  if (applied) {
+    const want = new Map(applied.map(c => [`car-${c.index}`, c])), have = read.cars ?? [];
+    if (have.length !== want.size) problems.push(`the specimen has ${have.length} cars, the capture posed ${want.size}`);
+    for (const c of have) {
+      const w = want.get(c.name);
+      if (!(w && c.visible === true && Math.abs(c.position[0] - w.position[0]) < 1e-9 && Math.abs(c.position[2] - w.position[1]) < 1e-9 && Math.abs(c.rotationY - w.rotationY) < 1e-9 && Math.abs(c.scaleZ - w.scaleZ) < 1e-9)) problems.push(`${c.name} is not where the capture put it`);
+    }
+  }
+  const baseTriangles = rows.length === plan.bogies.length && rows.every(w => w.triangles !== null) ? read.costs.triangles - rows.reduce((n, w) => n + w.triangles, 0) : null;
+  return { gap: read.clearance.ok ? null : read.clearance.reason, mismatches, problems, rows, maxDistanceErrorM, cabErrorM, baseTriangles };
+}
+/**
+ * The whole clip. `frames` are each { index, status, reason, read, judged } (`judged` is judgeMotionFrame's). The clip is OK only if every frame is, every reading matched the
+ * plan, each bogie changed level exactly when and as often as planned, and the triangles the train draws besides its bogies are the same in every frame (so the levels reported
+ * are the meshes drawn). A GAP frame is a GAP clip, and so is a reading that differs from the plan: a difference is never a quiet pass.
+ */
+export function judgeMotionClip(plan, frames) {
+  const problems = [], mismatches = frames.flatMap(f => f.judged.mismatches), gaps = frames.filter(f => f.status !== 'OK');
+  if (frames.length !== plan.frames.length) problems.push(`the clip has ${frames.length} frames, the plan ${plan.frames.length}`);
+  for (const f of frames) for (const p of f.judged.problems) problems.push(`frame ${f.index + 1}: ${p}`);
+  const flips = plan.flips.map(p => {
+    const rows = frames.map(f => f.judged.rows.find(w => w.name === p.name) ?? null), levels = rows.map(w => w?.level ?? null);
+    let nearToFar = 0, farToNear = 0, first = null;
+    for (let i = 1; i < levels.length; i++) if (levels[i] !== levels[i - 1]) { if (levels[i] === 1) { nearToFar++; first ??= i; } else farToNear++; }
+    return { name: p.name, nearToFar, farToNear, firstFarIndex: first, lastNearIndex: first === null ? null : first - 1, plannedFirstFarIndex: p.firstFarIndex,
+      lastNearDistanceM: first === null ? null : rows[first - 1]?.distanceM ?? null, firstFarDistanceM: first === null ? null : rows[first]?.distanceM ?? null,
+      equal: nearToFar === 1 && farToNear === 0 && first === p.firstFarIndex && levels.length === plan.frames.length && levels.every(l => l !== null) };
+  });
+  for (const x of flips) if (!x.equal) problems.push(`${x.name} was read changing to bare ${x.nearToFar} times (first at frame ${x.firstFarIndex === null ? 'never' : x.firstFarIndex + 1}) and back ${x.farToNear} times, the plan says once at frame ${x.plannedFirstFarIndex + 1}`);
+  const bases = frames.map(f => f.judged.baseTriangles), baseEqual = frames.length > 0 && bases.every(b => b !== null && Math.abs(b - bases[0]) < 1e-9);
+  if (!baseEqual) problems.push(`the triangles drawn besides the bogies differ between frames (${[...new Set(bases)].join(', ')}), so the levels reported are not the meshes drawn`);
+  const head = frames[0], tail = frames.at(-1), every = (f, level) => !!f && f.judged.rows.length > 0 && f.judged.rows.every(w => w.level === level);
+  const costs = { baseTriangles: baseEqual ? bases[0] : null, baseTrianglesEqual: baseEqual,
+    perBogie: head ? head.read.bogies.map(b => ({ name: b.name, near: { triangles: b.levels[0]?.triangles ?? null, drawCalls: b.levels[0]?.drawCalls ?? null }, far: { triangles: b.levels[1]?.triangles ?? null, drawCalls: b.levels[1]?.drawCalls ?? null } })) : [],
+    allNear: every(head, 0) ? { index: 0, ...head.read.costs } : null, allBare: every(tail, 1) ? { index: frames.length - 1, ...tail.read.costs } : null,
+    perFrame: frames.map(f => ({ index: f.index, triangles: f.read.costs.triangles, drawCalls: f.read.costs.drawCalls, rendererInfo: f.read.info, baseTriangles: f.judged.baseTriangles })) };
+  costs.savedTriangles = costs.allNear && costs.allBare ? costs.allNear.triangles - costs.allBare.triangles : null;
+  costs.savedDrawCalls = costs.allNear && costs.allBare ? costs.allNear.drawCalls - costs.allBare.drawCalls : null;
+  const ok = !problems.length && !mismatches.length && !gaps.length, reasons = [];
+  if (gaps.length) reasons.push(`${gaps.length} frame(s) are GAP: ${gaps.slice(0, 3).map(f => `frame ${f.index + 1} ${f.reason}`).join('; ')}`);
+  if (mismatches.length) reasons.push(`${mismatches.length} reading(s) differ from the schedule predicted from the geometry: ${mismatches.slice(0, 3).map(m => `frame ${m.frame + 1} ${m.bogie ?? 'cab'} ${m.why}`).join('; ')}`);
+  if (problems.length) reasons.push(problems.slice(0, 3).join('; '));
+  return { ok, status: ok ? 'OK' : 'GAP', reason: ok ? null : reasons.join('; '), flips, mismatches, costs, maxDistanceErrorM: Math.max(0, ...frames.map(f => f.judged.maxDistanceErrorM)) };
 }

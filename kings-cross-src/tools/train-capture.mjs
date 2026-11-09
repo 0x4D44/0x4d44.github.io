@@ -6,6 +6,7 @@ import {createServer} from 'node:http';
 import {readFile,writeFile,realpath,mkdir,mkdtemp,stat,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {deflateSync,crc32} from 'node:zlib';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
@@ -13,11 +14,11 @@ import {bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
-import {CATALOGUE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,planCatalogueViews,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
+import {ASKABLE_VIEW_IDS,CATALOGUE,MOTION,MOTION_RULE,MOTION_STAGE,MOTION_STATION_NOTE,STAGE_VIEWS,STATION_ORIENTATIONS,VIEW_IDS,failureSummary,frozenEntryOf,judgeMotionClip,judgeMotionFrame,motionPoseOf,planCatalogueViews,planMotion,planStation,poseOf,poseDifference,stationFrozenDrift,stationViewsFromFrozen,stationViewsFromSearch,viewForExposure} from './train-framing.mjs';
 import {tunnelMouths} from '../core/landmarks.ts';
 import {buildGraph} from '../core/graph.ts';
 import {createMotion} from '../core/motion.ts';
-import {createTrainKinds} from '../web/src/trains-live.ts';
+import {carPoses,createTrainKinds} from '../web/src/trains-live.ts';
 import {createReplayFeed,parseRecording} from '../web/src/feed.ts';
 import {matchService,validDate} from '../core/schedule.ts';
 
@@ -350,7 +351,10 @@ export function stationManifest(scene) {
 
 export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
-/** `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`. */
+/**
+ * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`.
+ * Without `--views` a run takes V01-V10; `M01` (the motion clip) is opt-in, `--views M01` or with others, and is taken at day only.
+ */
 export function parseCatalogueArgs(args) {
   const options=new Map();
   for(let i=0;i<args.length;i+=2) {
@@ -362,8 +366,8 @@ export function parseCatalogueArgs(args) {
   }
   if(options.get('--mode')!=='catalogue')throw new Error('--mode must be catalogue');
   for(const name of ['--dist','--out'])if(!options.has(name))throw new Error(`missing ${name}`);
-  const list=(name,allowed)=>{
-    if(!options.has(name))return [...allowed];
+  const list=(name,allowed,taken=allowed)=>{
+    if(!options.has(name))return [...taken];
     const items=options.get(name).split(',');
     for(const item of items) {
       if(!allowed.includes(item))throw new Error(`${name}: unknown ${item||'(empty)'}; expected ${allowed.join(',')}`);
@@ -375,7 +379,9 @@ export function parseCatalogueArgs(args) {
   if(!isExposure(exposure))throw new Error(`--exposure: unknown ${exposure}; expected ${EXPOSURE_IDS.join(',')}`);
   const seconds=Number(options.get('--timeout-seconds')??CATALOGUE_TIMEOUT_S.default);
   if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
-  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views:list('--views',VIEW_IDS),chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
+  const views=list('--views',ASKABLE_VIEW_IDS,VIEW_IDS);
+  if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
+  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
 /** Host and build identity for every sidecar: the machine, the git head and the exact page that was photographed. */
@@ -485,6 +491,9 @@ export function frozenPoseDrift(frozen,plans,{tol=1e-6}={}) {
       if(at!==null)drifts.push({kind,view:view.suffix,reason:'pose differs from the frozen pose',at});
     }
     if(plan.station)for(const d of stationFrozenDrift(plan.station,held,{tol}))drifts.push({kind,...d});
+    // the motion clip is derived by a rule, not searched for: a held manifest that does not have it (a pass before M01 existed) leaves nothing to drift from
+    const clip=plan.motion&&held.views?.[plan.motion.suffix];
+    if(clip?.plan){const at=poseDifference(motionPoseOf(plan.motion),clip.plan,tol);if(at!==null)drifts.push({kind,view:plan.motion.suffix,reason:'motion plan differs from the frozen plan',at});}
   }
   return drifts;
 }
@@ -546,10 +555,11 @@ export function catalogueDriver() {
     return value;
   };
   const sceneChildren=()=>k.scene.children.map(o=>({name:o.name||'',type:o.type,visible:o.visible}));
-  cat.begin=(kind,length)=>{
+  // `zRange` ([z0, z1]) is a stage the specimen drives along (M01) instead of a stage 60 m longer than the train at each end
+  cat.begin=(kind,length,zRange)=>{
     const {T,F}=cat;
     if(cat.state)throw new Error('a specimen is already on stage');
-    const group=k.evidenceBuildTrain(kind),hidden=F.hideSceneryForStage(k.scene),stage=F.buildCatalogueStage(T,{length});
+    const group=k.evidenceBuildTrain(kind),hidden=F.hideSceneryForStage(k.scene),stage=F.buildCatalogueStage(T,{length,zRange});
     k.scene.add(stage);k.scene.add(group);
     cat.state={kind,length,group,stage,hidden,dom:[],saved:null,ground:{heightAt:()=>F.CATALOGUE.groundY}};
     const dom=hideChrome(cat.state.dom);
@@ -598,6 +608,28 @@ export function catalogueDriver() {
   cat.stationSearch=placements=>{
     const {T,F}=cat,s=cat.state;
     return F.searchStation(T,{scene:k.scene,camera:k.camera,controls:k.controls,group:s.group,ground:s.ground},placements);
+  };
+  /**
+   * M01: one frame of a clip. The cars are posed as the page's live trains are (spec.cars) and the fixed camera set (spec.camera), one frame is drawn, and then the page is asked what it drew: the level
+   * and distance of every bogie, the near-plane clearance of every vertex box, the distance to the leading cab, the cars as they stand and the costs. The renderer's counters are summed over every
+   * render call of the frame, not just the last.
+   */
+  cat.motionFrame=(spec,text)=>{
+    const {T,F}=cat,s=cat.state,info=k.renderer.info;
+    s.saved=null;
+    F.applyCarPoses(s.group,spec.cars);
+    const pose=F.setWorldView(T,k.camera,k.controls,spec.camera);
+    label(text);const chrome=cat.assertChrome();
+    const autoReset=info.autoReset,renders=info.render.frame;
+    info.autoReset=false;info.reset();
+    try{frame();}finally{info.autoReset=autoReset;}
+    const drawn={calls:info.render.calls,triangles:info.render.triangles,renders:info.render.frame-renders};
+    const moved=Math.max(...k.camera.position.toArray().map((v,i)=>Math.abs(v-pose.position[i])),...k.controls.target.toArray().map((v,i)=>Math.abs(v-pose.target[i])));
+    if(moved>1e-6)throw new Error(`the page moved the camera by ${moved} m while rendering the frame`);
+    const clearance=F.checkNearClearance(F.vertexBoxes(T,s.group),pose.position,{near:pose.near,fov:pose.fov,aspect:pose.aspect,marginM:spec.clearanceMarginM});
+    const cars=s.group.children.filter(o=>/^car-\d+$/.test(o.name)).map(o=>({name:o.name,visible:o.visible,position:o.position.toArray(),rotationY:o.rotation.y,scaleZ:o.scale.z}));
+    return {pose,info:drawn,costs:F.trainCosts(s.group),bogies:F.readBogieLods(T,s.group,k.camera),clearance,cabDistanceM:F.leadingCabPoint(T,s.group).distanceTo(k.camera.position),cars,
+      placement:{position:s.group.position.toArray(),rotationY:s.group.rotation.y},labelText:text,chrome,atmosphere:atmosphereOf(),trainNight:readTrainNight(s.group)};
   };
   /** 'empty' hides the specimen, 'car:N' shows only car N, 'all' restores; each draws one frame. */
   cat.isolate=mode=>{
@@ -717,11 +749,11 @@ export function catalogueSidecar({kind,view,file,formation,session,host,build,st
 }
 
 /** The head of the run's manifest: what the run was (rubric, viewport, the sun rule, the exposure, the station, the machine and build, the poses it reused) before any kind is photographed. */
-export function catalogueManifest({exposure,stationScene,host,build,poses,generated=new Date().toISOString()}) {
+export function catalogueManifest({exposure,stationScene,host,build,poses,motion=false,generated=new Date().toISOString()}) {
   return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-manifest/1',generated,viewport:CATALOGUE.viewport,
     sunRule:{id:'sun-bearing-v1',sunPosition:CATALOGUE.sunPosition,offsetDeg:CATALOGUE.sunOffsetDeg,
       text:"Each view's specimen is turned about the vertical axis so the camera's bearing from the focus point is within 15 degrees of the page sun's azimuth, the sun nudged toward the specimen's nearest lateral axis (plan view: the upper-left diagonal). A pure function of the view's train-local pose. It always uses the day rig's sun, in every exposure, so a dusk pass turns each specimen exactly as the day pass did."},
-    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),
+    station:stationScene?stationManifest(stationScene):null,exposure:exposureRecord(exposure),...(motion?{motion:motionManifest()}:{}),
     host:host.os,macModel:host.macModel,git:host.git,build,posesFrom:poses,kinds:{}};
 }
 /** The page address of a run: the local server's port and the query its exposure pins. */
@@ -740,6 +772,231 @@ export async function photograph({evaluate,screenshot,view}) {
   return {shot,baseline,subject};
 }
 
+// ---- M01: the motion clip, in Node -----------------------------------------------------------------------------------------------------------
+// The geometry and the verdicts are in train-framing.mjs (planMotion, judgeMotionFrame, judgeMotionClip). Here: the page's own placement code over a synthetic path, the
+// images (a PNG encoder and a contact sheet, with no dependency but node:zlib), the sidecars, the report and the manifest entry, and the run of one kind's clip.
+/**
+ * A path for the page's placement code to pose a train along: straight edges between points [x, z], as the page's Graph has them (node i at points[i], one edge per pair).
+ * `cum[i]` is the distance from the start of the route to node i.
+ */
+export function polylineRoute(points) {
+  if(!Array.isArray(points)||points.length<2)throw new Error('a route needs at least two points');
+  const pos=new Map(),adj=new Map(),edges=[],cum=[0];
+  points.forEach((p,i)=>{pos.set(i,[p[0],p[1]]);adj.set(i,[]);});
+  for(let i=0;i+1<points.length;i++) {
+    const length=Math.hypot(points[i+1][0]-points[i][0],points[i+1][1]-points[i][1]);
+    if(!(length>0))throw new Error(`route point ${i+1} repeats point ${i}`);
+    const edge={wayId:1,a:i,b:i+1,length,service:'main',tunnel:false};
+    edges.push(edge);adj.get(i).push(edge);adj.get(i+1).push(edge);cum.push(cum[i]+length);
+  }
+  return {graph:{pos,adj,edges},cum,lengthM:cum.at(-1),points:points.map(p=>[p[0],p[1]])};
+}
+/**
+ * The train as the page's motion model reports it (core/motion.ts TrainView): its nose `noseS` metres along the route and its tail `lengthM` behind, travelling from the start of
+ * the route toward its end. The occupied intervals run tail to nose (fromT < toT, a to b), the heading is clockwise from north (-z).
+ */
+export function trainViewAt(route,noseS,lengthM,{id=1,speed=0}={}) {
+  const tailS=noseS-lengthM,{graph,cum}=route;
+  if(tailS<-1e-9||noseS>route.lengthM+1e-9)throw new Error(`a train ${lengthM} m long with its nose ${noseS} m along does not fit a route ${route.lengthM} m long`);
+  const occupied=[];
+  graph.edges.forEach((edge,j)=>{
+    const lo=Math.max(tailS,cum[j]),hi=Math.min(noseS,cum[j+1]);
+    if(hi-lo>1e-9)occupied.push({edge,fromT:(lo-cum[j])/edge.length,toT:(hi-cum[j])/edge.length});
+  });
+  const last=occupied.at(-1);
+  if(!last)throw new Error('the train occupies none of the route');
+  const a=graph.pos.get(last.edge.a),b=graph.pos.get(last.edge.b);
+  return {id,description:'capture',leading:{edge:last.edge,t:last.toT,point:[a[0]+(b[0]-a[0])*last.toT,a[1]+(b[1]-a[1])*last.toT]},heading:Math.atan2(b[0]-a[0],-(b[1]-a[1])),
+    speed,lengthM,occupiedLengthM:occupied.reduce((n,s)=>n+Math.abs(s.toT-s.fromT)*s.edge.length,0),occupied,state:'moving',opacity:1,targetBerth:'',lastBerth:'',blocked:false,distanceM:noseS,reversals:0};
+}
+/** The poses carPoses gives, as the page is told them: what createLiveTrains.update sets on each car node and, from the track direction under each bogie, on its bogies (web/src/trains-live.ts). */
+export function pagePoses(poses) {
+  return poses.map(pose=>({index:pose.car.index,position:[pose.position[0],pose.position[1]],rotationY:pose.rotationY,scaleZ:pose.scaleZ,
+    bogies:[pose.frontBogie,pose.rearBogie].map((sample,k)=>({k,rotationY:Math.atan2(sample.back[0],sample.back[1])-pose.rotationY}))}));
+}
+/**
+ * The cars of every frame of the clip, posed by the page's own placement code (carPoses) over a synthetic straight path along -z, and checked against the plan's geometry: every car
+ * is posed, every bogie is where the plan has it (to a micrometre), every car is unturned and unstretched and every bogie stands square to the track. `ok` is false, with the
+ * reasons, if carPoses and the geometry disagree; the capture records that as a GAP and does not photograph on poses it cannot vouch for. `place` is the placement code
+ * (the page's carPoses), a parameter only so that a test can hand the checks poses that are wrong.
+ */
+export function motionPoses(formation,plan,place=carPoses) {
+  const [zFar,zBehind]=MOTION.zRange,steps=Math.round((zBehind-zFar)/MOTION.routeStepM),layout=trainLayout(formation.kind);
+  const route=polylineRoute(Array.from({length:steps+1},(_,i)=>[0,zBehind-i*MOTION.routeStepM])),problems=[];
+  let maxErrorM=0;
+  const frames=plan.frames.map(frame=>{
+    const poses=place(route.graph,trainViewAt(route,zBehind-frame.noseZ,formation.length,{speed:plan.clip.speedMps}),layout),cars=pagePoses(poses);
+    if(poses.length!==layout.cars.length||2*poses.length!==plan.bogies.length)problems.push(`frame ${frame.number}: carPoses poses ${poses.length} of ${layout.cars.length} cars and the plan has ${plan.bogies.length} bogies`);
+    for(const [n,pose] of poses.entries()) {
+      for(const [k,sample] of [pose.frontBogie,pose.rearBogie].entries()) {
+        const planned=plan.bogies.find(b=>b.car===pose.car.index&&b.k===k);
+        if(!planned){problems.push(`frame ${frame.number}: the plan has no bogie-${pose.car.index}-${k}`);continue;}
+        const want=frame.noseZ+planned.z,error=Math.hypot(sample.point[0],sample.point[1]-want);
+        maxErrorM=Math.max(maxErrorM,error);
+        if(!(error<=1e-6))problems.push(`frame ${frame.number}: carPoses puts bogie-${pose.car.index}-${k} at z ${sample.point[1]} (x ${sample.point[0]}), the geometry says z ${want}`);
+        if(!(Math.abs(cars[n].bogies[k].rotationY)<=1e-9))problems.push(`frame ${frame.number}: carPoses turns bogie-${pose.car.index}-${k} by ${cars[n].bogies[k].rotationY} rad on a straight path`);
+      }
+      if(!(Math.abs(pose.position[0])<=1e-6&&Math.abs(pose.position[1]-frame.noseZ)<=1e-6&&Math.abs(pose.rotationY)<=1e-9&&Math.abs(pose.scaleZ-1)<=1e-9))
+        problems.push(`frame ${frame.number}: carPoses puts car-${pose.car.index} at ${pose.position} turned ${pose.rotationY} and stretched ${pose.scaleZ}, the geometry says (0, ${frame.noseZ}), square and unstretched`);
+    }
+    return {index:frame.index,noseS:zBehind-frame.noseZ,cars};
+  });
+  return {ok:!problems.length,problems,maxErrorM,frames,route:{points:route.points.length,edges:route.graph.edges.length,lengthM:route.lengthM}};
+}
+
+/** A PNG (8-bit RGB or RGBA, no interlace, filter 0 on every row), written with node:zlib alone. `pixels` are `channels` bytes a pixel, row by row. */
+export function encodePng({width,height,channels=3,pixels}) {
+  if(!Number.isInteger(width)||!Number.isInteger(height)||width<1||height<1||![3,4].includes(channels)||pixels.length!==width*height*channels)throw new Error('the pixels are not width x height x channels bytes');
+  const stride=width*channels,raw=Buffer.alloc((stride+1)*height);
+  for(let y=0;y<height;y++)raw.set(pixels.subarray(y*stride,(y+1)*stride),y*(stride+1)+1);
+  const chunk=(type,data)=>{
+    const head=Buffer.alloc(8),tail=Buffer.alloc(4);
+    head.writeUInt32BE(data.length,0);head.write(type,4,'ascii');tail.writeUInt32BE(crc32(Buffer.concat([head.subarray(4),data]))>>>0,0);
+    return Buffer.concat([head,data,tail]);
+  };
+  const header=Buffer.alloc(13);header.writeUInt32BE(width,0);header.writeUInt32BE(height,4);header[8]=8;header[9]=channels===3?2:6;
+  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',header),chunk('IDAT',deflateSync(raw)),chunk('IEND',Buffer.alloc(0))]);
+}
+/** A decoded image (readPng) at 1/factor of its size as RGB: each pixel is the mean of the factor x factor block it covers. */
+export function downscale(image,factor) {
+  const width=Math.floor(image.width/factor),height=Math.floor(image.height/factor),pixels=Buffer.alloc(width*height*3),area=factor*factor;
+  for(let y=0;y<height;y++)for(let x=0;x<width;x++)for(let c=0;c<3;c++) {
+    let sum=0;
+    for(let dy=0;dy<factor;dy++)for(let dx=0;dx<factor;dx++)sum+=image.pixels[((y*factor+dy)*image.width+x*factor+dx)*image.channels+c];
+    pixels[(y*width+x)*3+c]=Math.round(sum/area);
+  }
+  return {width,height,channels:3,pixels};
+}
+/** The digits 0-9 as 3 x 5 bit maps, row by row. */
+const DIGIT_GLYPHS=Object.freeze(['111101101101111','010110010010111','111001111100111','111001111001111','101101111001001','111100111001111','111100111101111','111001001001001','111101111101111','111101111001111']);
+export const SHEET_COLOURS=Object.freeze({background:[32,38,46],gap:[128,128,128],flip:[255,140,0],label:[0,0,0],digit:[255,255,255]});
+/**
+ * The contact sheet of a clip as RGB pixels. `frames` are { number, image, flips } in order: `image` is a decoded PNG (readPng) a whole number of times the tile size, or null for
+ * a frame that is not a picture; `flips` is how many bogies are first read bare at that frame. The grid has `columns` tiles to a row, frame 1 at the top left, tiles `gap` pixels
+ * apart. A tile is its frame at the tile size; a frame that is not a picture is a grey tile. Each flip is an orange square along the top of the tile, and the frame's number is
+ * drawn white on black at its bottom left.
+ */
+export function contactSheet(frames,{columns,tileWidth,tileHeight,gap}=MOTION.sheet) {
+  const rows=Math.ceil(frames.length/columns),width=columns*tileWidth+(columns+1)*gap,height=rows*tileHeight+(rows+1)*gap,pixels=Buffer.alloc(width*height*3);
+  const fill=(x0,y0,w,h,[r,g,b])=>{for(let y=Math.max(0,y0);y<Math.min(height,y0+h);y++)for(let x=Math.max(0,x0);x<Math.min(width,x0+w);x++){const i=(y*width+x)*3;pixels[i]=r;pixels[i+1]=g;pixels[i+2]=b;}};
+  fill(0,0,width,height,SHEET_COLOURS.background);
+  frames.forEach((frame,n)=>{
+    const x0=gap+(n%columns)*(tileWidth+gap),y0=gap+Math.floor(n/columns)*(tileHeight+gap);
+    if(frame.image) {
+      const factor=Math.round(frame.image.width/tileWidth);
+      if(factor<1||frame.image.width!==tileWidth*factor||frame.image.height!==tileHeight*factor)throw new Error(`frame ${frame.number} is ${frame.image.width}x${frame.image.height}, not a whole number of times ${tileWidth}x${tileHeight}`);
+      const tile=downscale(frame.image,factor);
+      for(let y=0;y<tileHeight;y++)tile.pixels.copy(pixels,((y0+y)*width+x0)*3,y*tileWidth*3,(y+1)*tileWidth*3);
+    }else fill(x0,y0,tileWidth,tileHeight,SHEET_COLOURS.gap);
+    for(let i=0;i<frame.flips;i++)fill(x0+4+i*14,y0+4,10,10,SHEET_COLOURS.flip);
+    const text=String(frame.number),scale=3;
+    fill(x0+4,y0+tileHeight-4-7*scale,(text.length*4+1)*scale,7*scale,SHEET_COLOURS.label);
+    [...text].forEach((digit,d)=>{
+      const glyph=DIGIT_GLYPHS[Number(digit)];
+      for(let row=0;row<5;row++)for(let col=0;col<3;col++)if(glyph[row*3+col]==='1')fill(x0+4+(1+d*4+col)*scale,y0+tileHeight-4-7*scale+(1+row)*scale,scale,scale,SHEET_COLOURS.digit);
+    });
+  });
+  return {width,height,channels:3,pixels};
+}
+
+/** The scene children the capture hid, by name and then type. The page adds some of them as it finishes loading, so its own order changes from run to run and a clip's files would not repeat. */
+export const sortedObjects=list=>[...list].sort((p,q)=>p.name<q.name?-1:p.name>q.name?1:p.type<q.type?-1:p.type>q.type?1:0);
+/** The sidecar of one frame of the clip: the usual sidecar of a picture (renderer, viewport, render state, pose, specimen, formation, costs) and a `motion` block of what makes it a frame of a clip. */
+export function motionSidecar({kind,plan,frame,file,formation,session,host,build,state,read,judged,verdict,exposure=exposureRecord('day'),timings}) {
+  const number=String(frame.number).padStart(2,'0'),camera=plan.camera;
+  const view={id:plan.id,suffix:`${plan.suffix}-${number}`,frame:'motion',eye:camera.eye,target:camera.target,fov:camera.fov,up:camera.up,near:camera.near,
+    notes:{...plan.notes,frame:{index:frame.index,number:frame.number,of:plan.frames.length,timeS:frame.timeS,travelM:frame.travelM,noseZ:frame.noseZ}},
+    rotation:{rule:'none: the cars are posed along the path by carPoses and the specimen stays at the origin',rotationY:0}};
+  // the camera in the train's own frame (the nose at z = 0, +z along the body): the cars are unturned, so only the nose's position moves it
+  const local={eye:[camera.eye[0],camera.eye[1],camera.eye[2]-frame.noseZ],target:[camera.target[0],camera.target[1],camera.target[2]-frame.noseZ]};
+  const sidecar=catalogueSidecar({kind,view,file,formation,session,host,build,state,result:{verdict,live:{...read,local,inspection:read.clearance}},timings,exposure});
+  return {...sidecar,hiddenSceneNames:sortedObjects(state.hidden),motion:{id:plan.id,stage:MOTION_STAGE,trackLengthM:plan.clip.trackLengthM,speedMps:plan.clip.speedMps,stepS:plan.clip.stepS,lodDistanceM:plan.clip.lodDistanceM,
+    frame:{index:frame.index,number:frame.number,of:plan.frames.length,timeS:frame.timeS,travelM:frame.travelM,noseZ:frame.noseZ,middleZ:frame.middleZ,tailZ:frame.tailZ},
+    cabDistanceM:read.cabDistanceM,plannedCabDistanceM:frame.cabDistanceM,bogies:judged.rows,baseTriangles:judged.baseTriangles,maxDistanceErrorM:judged.maxDistanceErrorM,
+    rendererInfo:read.info,trainStatic:read.costs,clearance:read.clearance,mismatches:judged.mismatches,problems:judged.problems}};
+}
+/** What the manifest says once of the clip (the rule, the stage and the numbers), written when a run is asked for M01. */
+export const motionManifest=()=>({id:MOTION.id,suffix:MOTION.suffix,stage:MOTION_STAGE,rule:MOTION_RULE,stationScene:MOTION_STATION_NOTE,speedMps:MOTION.speedMps,stepS:MOTION.stepS,frames:MOTION.frames,
+  trackLengthM:MOTION.zRange[1]-MOTION.zRange[0],zRange:MOTION.zRange,lodDistanceM:MOTION.lodDistanceM,lateralM:MOTION.lateralM,sheet:MOTION.sheet,exposure:'day'});
+/**
+ * `<kind>-motion.json`: the clip in one file. Its status and reason; the stage, speed, step and frames; each bogie's name, its full and bare costs from the static counter, the frame it was first
+ * read bare at against the one the geometry predicts, and the frames either side of the flip with their files; the whole train's cost with every bogie full and with every bogie bare; each frame's
+ * status, distances, clearance and costs; the sheet.
+ */
+export function motionReport({kind,plan,formation,clip,frames,poses,sheet,session,host,build,exposure,state}) {
+  const at=i=>i===null||!frames[i]?null:{index:i,number:i+1,file:frames[i].file,status:frames[i].status};
+  const bogies=clip.flips.map(x=>{
+    const planned=plan.bogies.find(b=>b.name===x.name),cost=clip.costs.perBogie.find(c=>c.name===x.name),rows=frames.map(f=>f.judged.rows.find(w=>w.name===x.name));
+    return {name:x.name,car:planned.car,k:planned.k,zM:planned.z,near:cost?.near??null,far:cost?.far??null,plannedFirstFarIndex:x.plannedFirstFarIndex,firstFarIndex:x.firstFarIndex,equal:x.equal,
+      lastNear:x.lastNearIndex===null?null:{...at(x.lastNearIndex),distanceM:x.lastNearDistanceM},firstFar:x.firstFarIndex===null?null:{...at(x.firstFarIndex),distanceM:x.firstFarDistanceM},
+      level:rows.map(w=>w?.level??null),distanceM:rows.map(w=>w?.distanceM??null),plannedDistanceM:planned.distanceM};
+  });
+  return {rubric:CATALOGUE.rubric,schema:'kx-catalogue-motion/1',kind,id:plan.id,status:clip.status,reason:clip.reason,
+    stage:MOTION_STAGE,trackLengthM:plan.clip.trackLengthM,speedMps:plan.clip.speedMps,stepS:plan.clip.stepS,frameCount:plan.clip.frames,travelM:plan.clip.travelM,lodDistanceM:plan.clip.lodDistanceM,
+    rule:MOTION_RULE,stationScene:MOTION_STATION_NOTE,clip:plan.clip,camera:plan.camera,
+    formation:{kind,family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,cars:formation.cars.map(({index,type,length,start,end,cab,bogies:b,motor,pantograph})=>({index,type,length,start,end,cab,bogies:b,motor,pantograph}))},
+    flips:{bogies:bogies.length,allEqual:clip.flips.every(x=>x.equal),minBoundaryMarginM:plan.checks.minBoundaryMarginM,maxDistanceErrorM:clip.maxDistanceErrorM,mismatches:clip.mismatches},bogies,
+    costs:{note:'triangles and draw calls from the static counter (visible meshes, independent of the frustum), read after each frame was rendered',baseTriangles:clip.costs.baseTriangles,baseTrianglesEqual:clip.costs.baseTrianglesEqual,
+      allNear:clip.costs.allNear,allBare:clip.costs.allBare,savedTriangles:clip.costs.savedTriangles,savedDrawCalls:clip.costs.savedDrawCalls,perFrame:clip.costs.perFrame},
+    frames:frames.map(f=>({index:f.index,number:f.number,file:f.file,status:f.status,reason:f.reason,...plan.frames[f.index],cabDistanceReadM:f.read.cabDistanceM,maxDistanceErrorM:f.judged.maxDistanceErrorM,
+      bogieLevels:f.judged.rows.map(w=>w.level),clearance:f.read.clearance,pixels:f.pixels,rendererInfo:f.read.info,trainStatic:f.read.costs,baseTriangles:f.judged.baseTriangles,problems:f.judged.problems})),
+    checks:{...plan.checks,clearance:plan.clearance,poses:{maxErrorM:poses.maxErrorM,route:poses.route}},
+    sheet:sheet?{file:sheet,...MOTION.sheet,rows:Math.ceil(plan.frames.length/MOTION.sheet.columns),ticks:'one orange square along the top of a tile for each bogie first read bare at that frame; grey tile: the frame is a GAP'}:null,
+    renderer:session.renderer,exposure:exposure.id,host:host.os,macModel:host.macModel,git:host.git,build,hiddenSceneNames:sortedObjects(state.hidden),stageLevels:state.stage};
+}
+/** One kind's M01 line in the manifest: the frozen plan, and what became of the clip and where its files are. */
+export function motionManifestEntry(plan,result) {
+  return {id:plan.id,suffix:plan.suffix,plan:motionPoseOf(plan),notes:plan.notes,
+    outcome:{status:result.status,reason:result.reason??null,file:result.status==='OK'?result.report??null:null,report:result.report??null,sheet:result.sheet??null,
+      stage:MOTION_STAGE,trackLengthM:plan.clip.trackLengthM,speedMps:plan.clip.speedMps,stepS:plan.clip.stepS,frameCount:plan.clip.frames,
+      frames:(result.frames??[]).map(f=>({index:f.index,number:f.number,status:f.status,reason:f.reason,file:f.file})),
+      flips:(result.flips??[]).map(x=>({name:x.name,firstFarIndex:x.firstFarIndex,plannedFirstFarIndex:x.plannedFirstFarIndex,equal:x.equal}))}};
+}
+/**
+ * One kind's motion clip against a page that has the catalogue driver: pose the cars with the page's own placement code, draw each frame, ask the page what it drew, photograph it
+ * and write the pictures with their sidecars, the contact sheet and the report. A frame that is not a picture of the clip (the near plane cuts the train, the page is not as it was asked to
+ * be, no train in the picture) is a GAP with its reason and is not published. A plan that is already a GAP, or poses the geometry does not vouch for, are recorded without touching the page.
+ * `publish(file, bytes, sidecar)` writes a picture and its sidecar, `write(file, bytes)` any other file. Returns { entry }, the manifest entry.
+ */
+export async function captureMotionClip({kind,plan,formation,evaluate,screenshot,publish,write,session,host,build,exposure,check=()=>{},now=()=>performance.now()}) {
+  const none={frames:[],flips:[],report:null,sheet:null};
+  if(plan.status!=='OK')return {entry:motionManifestEntry(plan,{...none,status:'GAP',reason:plan.reason})};
+  const poses=motionPoses(formation,plan);
+  if(!poses.ok)return {entry:motionManifestEntry(plan,{...none,status:'GAP',reason:`the page's placement code (carPoses) disagrees with the geometry: ${poses.problems.slice(0,3).join('; ')}`})};
+  const state=await evaluate(`window.__cat.begin(${JSON.stringify(kind)},${formation.length},${JSON.stringify(MOTION.zRange)})`),frames=[];
+  try {
+    for(const frame of plan.frames) {
+      check();
+      const i=frame.index,cars=poses.frames[i].cars,text=`${kind} motion ${plan.id} - frame ${frame.number}/${plan.frames.length} - ${frame.timeS} s, ${frame.travelM} m on - ${MOTION_STAGE}`;
+      const t0=now(),read=await evaluate(`window.__cat.motionFrame(${JSON.stringify({camera:plan.camera,cars,clearanceMarginM:MOTION.clearanceMarginM})},${JSON.stringify(text)})`),t1=now();
+      const judged=judgeMotionFrame(plan,i,read,cars),record={index:i,number:frame.number,status:'OK',reason:null,file:null,read,judged,shot:null,pixels:null};
+      if(judged.gap){record.status='GAP';record.reason=judged.gap;}
+      else if(judged.problems.length){record.status='GAP';record.reason=judged.problems.slice(0,3).join('; ');}
+      else {
+        const picture=await photograph({evaluate,screenshot,view:{}}),t2=now(),verdict=pixelVerdict({},pixelDiff(picture.shot,picture.baseline)),t3=now();
+        record.pixels=verdict;
+        if(!verdict.ok){record.status='GAP';record.reason=verdict.reason;}
+        else {
+          const file=`${kind}-${plan.suffix}-${String(frame.number).padStart(2,'0')}.png`;
+          await publish(file,picture.shot,motionSidecar({kind,plan,frame,file,formation,session,host,build,state,read,judged,verdict,exposure,timings:{read:t1-t0,shoot:t2-t1,verify:t3-t2}}));
+          record.file=file;record.shot=picture.shot;
+        }
+      }
+      frames.push(record);
+    }
+  } finally {await evaluate('window.__cat.end()');}
+  const clip=judgeMotionClip(plan,frames),flipsAt=new Map();
+  for(const x of clip.flips)if(x.firstFarIndex!==null)flipsAt.set(x.firstFarIndex,(flipsAt.get(x.firstFarIndex)??0)+1);
+  let sheet=null;
+  if(frames.some(f=>f.file)) {
+    sheet=`${kind}-${plan.suffix}-sheet.png`;
+    await write(sheet,encodePng(contactSheet(frames.map(f=>({number:f.number,image:f.shot?readPng(f.shot):null,flips:flipsAt.get(f.index)??0})))));
+  }
+  const report=`${kind}-${plan.suffix}.json`;
+  await write(report,Buffer.from(JSON.stringify(motionReport({kind,plan,formation,clip,frames,poses,sheet,session,host,build,exposure,state}),null,2)+'\n'));
+  return {entry:motionManifestEntry(plan,{status:clip.status,reason:clip.reason,report,sheet,frames,flips:clip.flips})};
+}
+
 export async function catalogueMain(args) {
   const opts=parseCatalogueArgs(args),root=ROOT,scratch=await realpath(path.join(root,'.scratch'));
   if(opts.exposure!=='day'&&!opts.poses)throw new Error(`--exposure ${opts.exposure} reuses the poses of a day pass, so poses cannot change between exposures: give --poses <the day pass's catalogue-manifest.json>`);
@@ -747,9 +1004,9 @@ export async function catalogueMain(args) {
   const inside=p=>{const r=path.relative(scratch,p);return !r.startsWith('..')&&!path.isAbsolute(r);};
   if(!inside(out)||out===scratch)throw new Error('--out must be under worktree .scratch');
   for(let parent=out;;) {try{if(!inside(await realpath(parent)))throw new Error('output symlink escapes .scratch');break;}catch(e){if(e.code!=='ENOENT')throw e;parent=path.dirname(parent);}}
-  const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null;
+  const stageIds=opts.views.filter(id=>id!=='V10'),stationScene=opts.views.includes('V10')?await loadStationScene():null,withMotion=opts.views.includes(MOTION.id);
   const plans=new Map(opts.kinds.map(kind=>{const formation=describeFormation(kind);
-    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null}];}));
+    return [kind,{kind,formation,views:planCatalogueViews(formation).filter(v=>stageIds.includes(v.id)).map(v=>viewForExposure(v,opts.exposure)),station:stationScene?planStation(formation,stationScene):null,motion:withMotion?planMotion(formation):null}];}));
   let frozen=null,frozenSha=null;
   if(opts.poses) {
     const bytes=await readFile(path.resolve(opts.poses));frozen=loadFrozenPoses(bytes.toString('utf8'));frozenSha=sha256(bytes);
@@ -760,14 +1017,14 @@ export async function catalogueMain(args) {
       if(plan.station)plan.stationViews=stationViewsFromFrozen(plan.station,frozen.kinds[plan.kind]);
     }
   }
-  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
+  const counts=Object.fromEntries([...plans].map(([kind,plan])=>[kind,[...plan.views,...(plan.stationViews??plan.station?.views??[]),...(plan.motion?[plan.motion]:[])].reduce((n,v)=>({...n,[v.status]:(n[v.status]??0)+1}),{})]));
   if(opts.chrome==='none'){console.log(JSON.stringify({catalogue:true,rubric:CATALOGUE.rubric,kinds:opts.kinds,views:opts.views,exposure:opts.exposure,posesFrozen:!!frozen,planned:counts}));return;}
   const chromePath=opts.chrome??'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';await stat(chromePath);
   await mkdir(out,{recursive:true});
   const host=hostInfo(),build=await buildHash(dist),started=performance.now();
   let chrome,cdp,profile,server,cleanup,fatal,session;
   const lifetime=createCaptureLifetime({timeoutMs:opts.timeoutMs,onStop:()=>cdp?.close()});
-  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null});
+  const manifest=catalogueManifest({exposure:opts.exposure,stationScene,host,build,poses:frozen?{file:path.resolve(opts.poses),sha256:frozenSha}:null,motion:withMotion});
   const summary={kinds:{},timingsMs:{}};
   try {
     server=catalogueServer(root,dist);
@@ -841,6 +1098,12 @@ export async function catalogueMain(args) {
           }
           for(const r of await captureViews(kind,plan,views,state))entries[r.view.suffix]=manifestEntry(r);
         } finally {await evaluate('window.__cat.end()');}
+      }
+      if(plan.motion) {
+        // M01: the clip on its own stage (captureMotionClip begins and ends the specimen itself)
+        const {entry}=await captureMotionClip({kind,plan:plan.motion,formation:plan.formation,evaluate,screenshot:shoot,publish,write:(file,bytes)=>writeFile(path.join(out,file),bytes,{flag:'wx',mode:0o600}),
+          session,host,build,exposure:manifest.exposure,check:()=>lifetime.check()});
+        entries[entry.suffix]=entry;
       }
       manifest.kinds[kind]={formation:manifestFormation(plan.formation),views:entries};
       const tally={};for(const e of Object.values(entries))tally[e.outcome.status]=(tally[e.outcome.status]??0)+1;
