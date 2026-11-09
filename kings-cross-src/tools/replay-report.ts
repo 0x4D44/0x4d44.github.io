@@ -12,8 +12,11 @@ import type { Edge, Graph } from '../core/graph.ts';
 import { createMotion, DEFAULT_BUFFER_CLEARANCE_M, overlapM } from '../core/motion.ts';
 import type { TrainView } from '../core/motion.ts';
 import type { KxData } from '../core/osm.ts';
-import { trainLayout } from '../core/train.ts';
-import { createTimeline, parseRecording } from '../web/src/feed.ts';
+import { matchService, validDate } from '../core/schedule.ts';
+import type { ScheduleCall } from '../core/schedule.ts';
+import { createTrainKinds } from '../web/src/trains-live.ts';
+import type { FormationChoice } from '../web/src/trains-live.ts';
+import { createTimeline, parseRecording, ukDate } from '../web/src/feed.ts';
 import type { RecordedEvent, SnapshotEvent } from '../web/src/feed.ts';
 
 /** Locate the stopping cab independently of the replayed train, along its platform rail. */
@@ -71,7 +74,8 @@ export function berthInventory(rows: readonly RecordedEvent[], map: AnchorMap) {
   return { inventory, placeholders, violations };
 }
 
-export function replayReport(data: KxData, rows: readonly RecordedEvent[], anchors: AnchorMap) {
+export function replayReport(data: KxData, rows: readonly RecordedEvent[], anchors: AnchorMap,
+  options: { schedule?: { date: string; calls: ScheduleCall[] } } = {}) {
   if (!rows.length) throw new Error('recording is empty');
   const graph = buildGraph(data);
   const coverage = berthInventory(rows, anchors), violations = [...coverage.violations];
@@ -103,19 +107,34 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
     return { berth, platform: n, mapped: Boolean(actual), osmTrackAvailable: Boolean(correct), correctTargetTrack: sameTrack,
       reachedSamples: 0, movingSamples: 0, blockedSamples: 0, pendingSamples: 0, actuallyHeldWrongTrackSamples: 0 };
   });
+  const formationBasis = new Map<number, 'timetable-matched' | 'assumed-fallback'>();
+  const kinds = createTrainKinds((description, time) => matchService(description, time, options.schedule?.calls ?? []));
   const motion = createMotion(graph, anchors, { estimatedMotion: true,
-    lengthM: (d) => trainLayout(d[0] === '1' ? 'lner9' : 'lner5').length,
+    lengthM: (description, birth) => {
+      formationBasis.set(birth.id, matchService(description, birth.timeMs, options.schedule?.calls ?? []) ? 'timetable-matched' : 'assumed-fallback');
+      return kinds.lengthM(description, birth);
+    },
     wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
   const start = rows[0]!.t, end = rows.at(-1)!.t + 6000, dt = 0.1;
   const timeline = createTimeline(motion, start);
-  type PlatformStep = { eventIndex: number; atMs: number; from?: string; to: string; description: string; physicalId?: number;
-    reachedAtMs?: number; blocked: boolean; queued: boolean; routeRefused: boolean; lastSeenState?: string; resolution?: string };
+  type SourceEvidence = { eventIndex: number; atMs: number; kind: 'snapshot' | 'cancel'; empty?: boolean;
+    physicalDescriptionPresent?: boolean; stepDescriptionPresent?: boolean; targetBerthOwner?: string; from?: string };
+  type PlatformStep = { observationKind: 'incoming' | 'same-stop-transfer'; afterDeparture?: boolean;
+    sourceEvidence?: SourceEvidence; terminalSourceEvent?: SourceEvidence; disappearedAtMs?: number; routeRefusedReason?: string; eventIndex: number; atMs: number; from?: string; to: string; description: string; physicalId?: number;
+    reachedAtMs?: number; lastReachedAtMs?: number; firstObservedAtMs?: number; lastObservedAtMs?: number;
+    formation?: FormationChoice; lengthM?: number; formationBasis?: 'timetable-matched' | 'assumed-fallback';
+    terminalReason?: string; lastDiagnostic?: { kind: string; reason: string; atMs: number }; blocked: boolean; queued: boolean; routeRefused: boolean; lastSeenState?: string; resolution?: string };
   const platformSteps: PlatformStep[] = [];
   const renameCounts = new Map<number, number>();
   let diagnosticCursor = 0, unattributedRenames = 0;
   const captureRenames = (): void => {
     const issues = motion.diagnostics(), trains = motion.trains();
-    for (const issue of issues.slice(diagnosticCursor)) if (issue.kind === 'renamed') {
+    for (const issue of issues.slice(diagnosticCursor)) {
+      for (const step of platformSteps) {
+        const linked = step.physicalId === undefined ? undefined : trains.find(t => t.id === step.physicalId) ?? previous.get(step.physicalId);
+        if (issue.description === (linked?.description ?? (step.physicalId === undefined ? step.description : undefined))) step.lastDiagnostic = {kind: issue.kind, reason: issue.reason, atMs: timeline.timeMs()};
+      }
+      if (issue.kind === 'renamed') {
       const t = trains.find((t) => t.description === issue.description);
       if (t) {
         renameCounts.set(t.id, (renameCounts.get(t.id) ?? 0) + 1);
@@ -123,16 +142,24 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
         if (issue.previousDescription) physical.get(t.id)!.add(issue.previousDescription);
         physical.get(t.id)!.add(issue.description);
       } else unattributedRenames++;
+      }
     }
     diagnosticCursor = issues.length;
   };
   const observePlatformSteps = (trains: TrainView[], atMs: number): void => {
     for (const step of platformSteps) {
-      if (step.reachedAtMs !== undefined) continue;
       const t = step.physicalId === undefined ? trains.find((t) => t.description === step.description) : trains.find((t) => t.id === step.physicalId);
-      if (!t) continue;
+      if (!t) {
+        if (step.physicalId !== undefined && step.lastObservedAtMs !== undefined) step.disappearedAtMs ??= atMs;
+        continue;
+      }
+      if (t.state === 'fading' && step.sourceEvidence) step.terminalSourceEvent ??= step.sourceEvidence;
       step.physicalId = t.id; step.blocked = t.blocked; step.lastSeenState = t.state;
-      if (t.speed === 0 && bodyAtStop(t, expectedStops.get(step.to))) step.reachedAtMs = atMs;
+      step.firstObservedAtMs ??= atMs; step.lastObservedAtMs = atMs;
+      step.formation = kinds.formationFor(t); step.lengthM = t.lengthM; step.formationBasis = formationBasis.get(t.id);
+      if (t.speed === 0 && bodyAtStop(t, expectedStops.get(step.to))) {
+        step.reachedAtMs ??= atMs; step.lastReachedAtMs = atMs;
+      }
     }
   };
   let cursor = 0, samples = 0, anchoredSeconds = 0, estimatedSeconds = 0, fadingSeconds = 0;
@@ -146,12 +173,33 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
       const row = rows[cursor++]!;
       observePlatformSteps(motion.trains(), timeline.timeMs());
       const beforeIssues = motion.diagnostics().length;
+      const beforeTrain = motion.trains().find(t => t.description === row.e.descr);
+      if (row.e.area === anchors.area && (row.e.kind === 'snapshot' || row.e.kind === 'cancel')) {
+        for (const step of platformSteps) {
+          const linked = step.physicalId === undefined ? undefined : motion.trains().find(t => t.id === step.physicalId);
+          if (!linked) continue;
+          if (row.e.kind === 'snapshot') {
+            const owners = Object.values((row.e as SnapshotEvent).berths);
+            if (!owners.includes(linked.description)) step.sourceEvidence = {eventIndex: cursor - 1, atMs: row.t, kind: 'snapshot',
+              empty: owners.length === 0, physicalDescriptionPresent: false, stepDescriptionPresent: owners.includes(step.description),
+              ...((row.e as SnapshotEvent).berths[linked.targetBerth] ?? (row.e as SnapshotEvent).berths[step.to] ?
+                {targetBerthOwner: (row.e as SnapshotEvent).berths[linked.targetBerth] ?? (row.e as SnapshotEvent).berths[step.to]} : {})};
+          } else if (row.e.descr === linked.description || row.e.descr === step.description) {
+            step.sourceEvidence = {eventIndex: cursor - 1, atMs: row.t, kind: 'cancel', from: row.e.from};
+          }
+        }
+      }
       timeline.deliver(row.e, row.t);
       captureRenames();
       if (row.e.area === anchors.area && row.e.kind === 'step' && row.e.descr !== NOT_A_TRAIN && /^10(?:0\d|10)$/.test(row.e.to ?? '')) {
-        const emitted = motion.diagnostics().slice(beforeIssues);
-        platformSteps.push({ eventIndex: cursor - 1, atMs: row.t, from: row.e.from, to: row.e.to!, description: row.e.descr!,
-          blocked: false, queued: emitted.some((i) => i.kind === 'queued'), routeRefused: emitted.some((i) => i.kind === 'unroutable') });
+        const emitted = motion.diagnostics().slice(beforeIssues).filter(i => i.description === row.e.descr);
+        const fromStop = stops.get(row.e.from ?? ''), toStop = stops.get(row.e.to!);
+        const observationKind = fromStop && toStop && fromStop.edge === toStop.edge && Math.abs(fromStop.t - toStop.t) * fromStop.edge.length < 0.05 ? 'same-stop-transfer' : 'incoming';
+        platformSteps.push({ observationKind, afterDeparture: beforeTrain !== undefined && beforeTrain.reversals > 0 && beforeTrain.state === 'departing', eventIndex: cursor - 1, atMs: row.t, from: row.e.from, to: row.e.to!, description: row.e.descr!,
+          blocked: false, queued: emitted.some((i) => i.kind === 'queued'), routeRefused: emitted.some((i) => i.kind === 'unroutable'),
+          routeRefusedReason: emitted.find(i => i.kind === 'unroutable')?.reason,
+          lastDiagnostic: emitted.length ? { kind: emitted.at(-1)!.kind, reason: emitted.at(-1)!.reason, atMs: row.t } : undefined });
+        observePlatformSteps(motion.trains(), timeline.timeMs());
       }
     }
     timeline.advanceTo(at);
@@ -201,17 +249,27 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
     if (jump.reversal) violations.push(`mapped step reversal: ${jump.from} -> ${jump.to}`);
     if (jump.issues.some((issue) => issue.includes('speed above') || issue.includes('zero-time'))) violations.push(`mapped step implied-speed/zero-time violation: ${jump.from} -> ${jump.to}`);
   }
-  for (const step of platformSteps) step.resolution = step.reachedAtMs !== undefined ? 'reached-correct-track' :
+  for (const step of platformSteps) step.resolution = step.observationKind === 'same-stop-transfer' ? 'same-stop-transfer' : step.reachedAtMs !== undefined ? 'reached-correct-track' :
     step.routeRefused ? 'route-refused' : step.blocked ? 'blocked' : step.physicalId !== undefined ? 'pending' : step.queued ? 'queued' : 'no-body';
-  const platformStepSummary = { total: platformSteps.length, reachedCorrectTrack: platformSteps.filter((s) => s.resolution === 'reached-correct-track').length,
-    unresolved: platformSteps.filter((s) => s.resolution !== 'reached-correct-track').length,
-    outcomes: Object.fromEntries(['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body'].map((state) => [state, platformSteps.filter((s) => s.resolution === state).length])) };
+  for (const step of platformSteps) {
+    const reason = step.reachedAtMs !== undefined ? 'observed stopped body on correct platform track' :
+      step.disappearedAtMs !== undefined && step.lastSeenState === 'fading' ? 'linked body disappeared after observed fading' :
+      `replay ended after six-second drain; ${step.resolution}${step.lastSeenState ? `; last observed state ${step.lastSeenState}` : ''}`;
+    step.terminalReason = (step.observationKind === 'same-stop-transfer' ? `same-stop transfer${step.afterDeparture ? ' after departure' : ''}; ` : '') +
+      (step.routeRefused ? `route refused: ${step.routeRefusedReason}; ` : '') + reason;
+  }
+  const platformStepSummary = { total: platformSteps.length, incoming: platformSteps.filter(s => s.observationKind === 'incoming').length, sameStopTransfers: platformSteps.filter(s => s.observationKind === 'same-stop-transfer').length, reachedCorrectTrack: platformSteps.filter((s) => s.resolution === 'reached-correct-track').length,
+    unresolved: platformSteps.filter((s) => s.observationKind === 'incoming' && s.resolution !== 'reached-correct-track').length,
+    outcomes: Object.fromEntries(['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body', 'same-stop-transfer'].map((state) => [state, platformSteps.filter((s) => s.resolution === state).length])) };
   const median = (ns: number[]) => { const a = [...ns].sort((a, b) => a - b), i = Math.floor(a.length / 2); return a.length ? a.length % 2 ? a[i]! : (a[i - 1]! + a[i]!) / 2 : 0; };
   const byPhysicalId = [...physical].map(([id, descriptions]) => ({ id, descriptions: [...descriptions], descriptionsCount: descriptions.size, renameCount: renameCounts.get(id) ?? 0 }));
   return { ok: violations.length === 0, violations, events: rows.length, area: anchors.area, samples, stepSeconds: dt,
     durationSeconds: (rows.at(-1)!.t - start) / 1000, drainSeconds: 6,
     coverage: { seen: coverage.inventory.length, anchored: coverage.inventory.filter((i) => i.classification === 'anchored').length,
       unmapped: coverage.inventory.filter((i) => i.classification === 'unmapped').length, placeholderObservations: coverage.placeholders, berths: coverage.inventory },
+    timetable: { date: options.schedule?.date ?? ukDate(start), available: Boolean(options.schedule),
+      note: options.schedule ? 'Timetable matched at physical birth where available; unmatched services use assumed fallback formation.' :
+        'No timetable supplied for this date: assumed fallback formation for every physical birth.' },
     platforms, platformSteps, platformStepSummary, stepJumps, stepSummary: { physicalStepEvents: physicalSteps.length, unmeasuredEndpointEvents: physicalSteps.filter(({ e }) => !byBerth.has(e.from!) || !byBerth.has(e.to!)).length, mappedPairs: stepJumps.length, disconnectedPairs: stepJumps.filter((s) => s.lengthM === null).length,
       reversalPairs: stepJumps.filter((s) => s.reversal).length, impliedSpeedFlagPairs: stepJumps.filter((s) => s.issues.some((i) => i.includes('speed above') || i.includes('zero-time'))).length },
     headcodeChurn: { physicalIds: physical.size, idsWithMultipleDescriptions: [...physical.values()].filter((v) => v.size > 1).length,
@@ -224,6 +282,7 @@ export function replayReport(data: KxData, rows: readonly RecordedEvent[], ancho
     motion: { starsDrawn, overspeedSamples: overspeed, backwardsSamples: backwards, overlapPairSamples: overlaps,
       peakQueued, queuedAtEnd: motion.queuedCount(), unroutable: issues.filter((i) => i.kind === 'unroutable').length },
     limitations: ['TD steps grant authority; they do not instantaneously place a nose at the target. Pending/blocked targets are not wrong-track arrivals.',
+      'Same-stop transfer means co-location in the supplied anchor map, not an independent finding of TD berth semantics; unresolved buffer/platform alias assumptions remain assumptions.',
       'Per-step identities use visible descriptions, then retain the physical id through renames. Deferred names may resolve only when applied; no visible identity is reported as no-body or queued, not a successful arrival.',
       'Platform samples describe visible bodies targeting canonical platform berths; queued observations are not drawn and only aggregate queue size is exposed by motion.',
       'Step implied-speed flags describe TD residence and coarse anchors, not drawn physical speed. Unmapped endpoint pairs have no graph-distance claim.',
@@ -257,7 +316,7 @@ interface ReplayOutput extends ReplayMetrics {
   unionInventory: { seen: number; anchored: number; unmapped: number; berths: ReplayMetrics['coverage']['berths'] };
   berthsReconciliation?: Record<string, unknown>;
   reproducibility: {
-    inputHashes: { recordings: RecordingInput[]; anchors: InputFingerprint; effectiveAnchors?: InputFingerprint; graph: InputFingerprint; smart?: InputFingerprint };
+    inputHashes: { recordings: RecordingInput[]; anchors: InputFingerprint; effectiveAnchors?: InputFingerprint; graph: InputFingerprint; smart?: InputFingerprint; schedules?: Array<InputFingerprint & { date: string }> };
     command: { cwd: string; command: string; executable: string; args: string[] };
   };
 }
@@ -331,7 +390,7 @@ function combineReplayReports(entries: ReplayEntry[]): ReplayMetrics {
   const platformSteps = entries.flatMap(({ input, metrics }) => metrics.platformSteps.map((step) => ({ ...step, recording: input.path })));
   const stepJumps = entries.flatMap(({ input, metrics }) => metrics.stepJumps.map((jump) => ({ ...jump, recording: input.path })));
   const byPhysicalId = entries.flatMap(({ input, metrics }) => metrics.headcodeChurn.byPhysicalId.map((item) => ({ ...item, recording: input.path })));
-  const outcomes = Object.fromEntries(['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body']
+  const outcomes = Object.fromEntries(['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body', 'same-stop-transfer']
     .map((state) => [state, reports.reduce((n, report) => n + report.platformStepSummary.outcomes[state as keyof typeof report.platformStepSummary.outcomes], 0)]));
   const violations = entries.flatMap(({ input, metrics }) => metrics.violations.map((violation) => `${input.path}: ${violation}`));
   const med = (values: number[]): number => {
@@ -358,9 +417,10 @@ function combineReplayReports(entries: ReplayEntry[]): ReplayMetrics {
     coverage: { seen: berths.length, anchored: berths.filter((b) => b.classification === 'anchored').length,
       unmapped: berths.filter((b) => b.classification === 'unmapped').length,
       placeholderObservations: reports.reduce((n, report) => n + report.coverage.placeholderObservations, 0), berths },
+    timetable: {date: 'multiple recording dates', available: reports.every(r => r.timetable.available), note: 'See per-recording timetable status; missing dates use assumed fallback formation.'},
     platforms: [...platformMap.values()].sort((a, b) => a.berth.localeCompare(b.berth)), platformSteps,
-    platformStepSummary: { total: platformSteps.length, reachedCorrectTrack: outcomes['reached-correct-track'],
-      unresolved: platformSteps.length - outcomes['reached-correct-track'], outcomes },
+    platformStepSummary: { total: platformSteps.length, incoming: platformSteps.filter(s => s.observationKind === 'incoming').length, sameStopTransfers: platformSteps.filter(s => s.observationKind === 'same-stop-transfer').length, reachedCorrectTrack: outcomes['reached-correct-track'],
+      unresolved: platformSteps.length - outcomes['same-stop-transfer'] - outcomes['reached-correct-track'], outcomes },
     stepJumps,
     stepSummary: { physicalStepEvents: sumField(reports, 'stepSummary', 'physicalStepEvents'),
       unmeasuredEndpointEvents: sumField(reports, 'stepSummary', 'unmeasuredEndpointEvents'),
@@ -381,10 +441,21 @@ function combineReplayReports(entries: ReplayEntry[]): ReplayMetrics {
 
 function markdownCell(value: unknown): string { return String(value ?? '—').replaceAll('|', '\\|').replace(/[\r\n]+/g, ' '); }
 
+function incomingMarkdown(report: ReplayOutput): string {
+  const lines = ['## TD platform events (incoming and same-stop transfers)', '', '| Input | Event index | Time (UTC) | From → to | Description | Body id | Formation / metres | Basis | First / last observed (UTC) | First / last reached (UTC) | Kind | Outcome | Reason | Source evidence |',
+    '| --- | ---: | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- |'];
+  const time = (value?: number) => value === undefined ? '—' : new Date(value).toISOString();
+  for (const step of report.platformSteps) {
+    const recording = (step as typeof step & {recording?: string}).recording;
+    lines.push(`| ${markdownCell(recording)} | ${step.eventIndex} | ${time(step.atMs)} | ${markdownCell(step.from)} → ${step.to} | ${markdownCell(step.description)} | ${step.physicalId ?? '—'} | ${step.formation?.kind ?? 'unlinked'} / ${step.lengthM ?? '—'} | ${markdownCell(step.formationBasis ?? 'unlinked; formation not observed')} | ${time(step.firstObservedAtMs)} / ${time(step.lastObservedAtMs)} | ${time(step.reachedAtMs)} / ${time(step.lastReachedAtMs)} | ${step.observationKind} | ${step.resolution} | ${markdownCell(step.terminalReason)} | ${markdownCell(step.terminalSourceEvent ?? step.sourceEvidence ? JSON.stringify(step.terminalSourceEvent ?? step.sourceEvidence) : undefined)} |`);
+  }
+  return lines.join('\n') + '\n';
+}
+
 function replayMarkdown(report: ReplayOutput): string {
   const entries = report.recordings ?? [];
   if (entries.length <= 1) {
-    return `# Replay evidence report\n\n${report.ok ? 'PASS' : 'FAIL'}: ${report.coverage.seen} seen berths; ${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped. ${report.events} events, ${report.durationSeconds} seconds.\n\n${report.violations.map((v) => `- ${v}`).join('\n')}\n\n${report.headcodeChurn.physicalIds} physical ids; ${report.headcodeChurn.renames} renames; ${report.headcodeChurn.idsWithMultipleDescriptions} ids with multiple descriptions.\n\nDrawn train-seconds: ${report.drawnTime.anchoredTrainSeconds.toFixed(1)} anchored, ${report.drawnTime.estimatedTrainSeconds.toFixed(1)} estimated; ${report.drawnTime.fadingTrainSeconds.toFixed(1)} fading (also included).\n\n${report.platformStepSummary.total} incoming platform steps: ${report.platformStepSummary.reachedCorrectTrack} reached the correct track, ${report.platformStepSummary.unresolved} unresolved. Outcomes: ${JSON.stringify(report.platformStepSummary.outcomes)}.\n\n${report.motion.unroutable} unroutable motion diagnostics; peak queued ${report.motion.peakQueued}. These are limitations, not wrong-track arrivals.\n\n${report.stepSummary.physicalStepEvents} physical step events; ${report.stepSummary.unmeasuredEndpointEvents} have an unmapped endpoint. ${report.stepSummary.mappedPairs} mapped step pairs; ${report.stepSummary.disconnectedPairs} disconnected; ${report.stepSummary.impliedSpeedFlagPairs} implied-speed flags.\n\nPlaceholder draw check: ${report.motion.starsDrawn === 0 ? 'PASS' : 'FAIL'} — ${report.motion.starsDrawn} **** samples drawn.\n\n${report.limitations.join('\n\n')}\n\n${report.drawnTime.basis}\n\nFull berth inventory, platform arrival states, step paths and physical-id descriptions are in replay-report.json.\n`;
+    return `# Replay evidence report\n\n${report.ok ? 'PASS' : 'FAIL'}: ${report.coverage.seen} seen berths; ${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped. ${report.events} events, ${report.durationSeconds} seconds.\n\n${report.violations.map((v) => `- ${v}`).join('\n')}\n\n${report.headcodeChurn.physicalIds} physical ids; ${report.headcodeChurn.renames} renames; ${report.headcodeChurn.idsWithMultipleDescriptions} ids with multiple descriptions.\n\nDrawn train-seconds: ${report.drawnTime.anchoredTrainSeconds.toFixed(1)} anchored, ${report.drawnTime.estimatedTrainSeconds.toFixed(1)} estimated; ${report.drawnTime.fadingTrainSeconds.toFixed(1)} fading (also included).\n\n${report.platformStepSummary.total} TD platform observations (${report.platformStepSummary.incoming} incoming, ${report.platformStepSummary.sameStopTransfers} same-stop transfers): ${report.platformStepSummary.reachedCorrectTrack} reached the correct track, ${report.platformStepSummary.unresolved} unresolved. Outcomes: ${JSON.stringify(report.platformStepSummary.outcomes)}.\n\n${report.motion.unroutable} unroutable motion diagnostics; peak queued ${report.motion.peakQueued}. These are limitations, not wrong-track arrivals.\n\n${report.stepSummary.physicalStepEvents} physical step events; ${report.stepSummary.unmeasuredEndpointEvents} have an unmapped endpoint. ${report.stepSummary.mappedPairs} mapped step pairs; ${report.stepSummary.disconnectedPairs} disconnected; ${report.stepSummary.impliedSpeedFlagPairs} implied-speed flags.\n\nPlaceholder draw check: ${report.motion.starsDrawn === 0 ? 'PASS' : 'FAIL'} — ${report.motion.starsDrawn} **** samples drawn.\n\n${report.limitations.join('\n\n')}\n\n${report.drawnTime.basis}\n\nFull berth inventory, platform arrival states, step paths and physical-id descriptions are in replay-report.json.\n`;
   }
   const lines = ['# Replay evidence report — multi-recording', '',
     `${report.ok ? '**PASS**' : '**FAIL**'} across ${entries.length} recordings: ${report.events} events over ${report.durationSeconds} recording-seconds; ${report.coverage.seen} unique seen berths (${report.coverage.anchored} anchored, ${report.coverage.unmapped} unmapped).`,
@@ -440,13 +511,13 @@ export function completeRecordingPrefix(bytes: Buffer, sourceChangedDuringCaptur
 }
 
 export async function runReplayReport(args: string[]) {
-  const values = new Map<string, string>(), recordingPaths: string[] = [];
+  const values = new Map<string, string>(), recordingPaths: string[] = [], schedulePaths: string[] = [];
   for (let i = 0; i < args.length; i += 2) {
     const k = args[i]!, v = args[i + 1];
-    if (!['--recording', '--anchors', '--out', '--graph', '--smart'].includes(k) || !v || v.startsWith('--') || (k !== '--recording' && values.has(k))) {
-      throw new Error('usage: replay-report.ts --recording <ndjson> [--recording <ndjson> ...] --anchors <json> --out <.scratch/directory> [--graph <json>] [--smart <smart.json.gz>]');
+    if (!['--recording', '--anchors', '--out', '--graph', '--smart', '--schedule'].includes(k) || !v || v.startsWith('--') || (!['--recording','--schedule'].includes(k) && values.has(k))) {
+      throw new Error('usage: replay-report.ts --recording <ndjson> [--recording <ndjson> ...] --anchors <json> --out <.scratch/directory> [--graph <json>] [--smart <smart.json.gz>] [--schedule <date-cache.json> ...]');
     }
-    if (k === '--recording') recordingPaths.push(v); else values.set(k, v);
+    if (k === '--recording') recordingPaths.push(v); else if (k === '--schedule') schedulePaths.push(v); else values.set(k, v);
   }
   if (!recordingPaths.length) throw new Error('missing --recording');
   for (const k of ['--anchors', '--out']) if (!values.has(k)) throw new Error(`missing ${k}`);
@@ -476,6 +547,16 @@ export async function runReplayReport(args: string[]) {
   if (values.has('--smart')) {
     const smartPath = resolve(values.get('--smart')!), smartBytes = await readFile(smartPath);
     smartFingerprint = await captureInput(out, scratchReal, 'smart.json.gz', smartBytes, smartPath);
+  }
+  const schedules = new Map<string, {date: string; calls: ScheduleCall[]}>();
+  const scheduleFingerprints: Array<InputFingerprint & {date: string}> = [];
+  for (const scheduleSource of schedulePaths) {
+    const path = resolve(scheduleSource), bytes = await readFile(path), doc = JSON.parse(bytes.toString('utf8'));
+    if (!doc || !validDate(doc.date) || !Array.isArray(doc.calls) || doc.calls.some((call: ScheduleCall) => call.date !== doc.date || typeof call.headcode !== 'string' || typeof call.operator !== 'string' || typeof call.origin !== 'string' || typeof call.destination !== 'string' ||
+      ![call.arrivalMs, call.departureMs].every(t => t === null || typeof t === 'number' && Number.isFinite(t)))) throw new Error(`invalid schedule cache: ${path}`);
+    if (schedules.has(doc.date)) throw new Error(`duplicate schedule date: ${doc.date}`);
+    schedules.set(doc.date, doc);
+    scheduleFingerprints.push({...await captureInput(out, scratchReal, `schedule-${doc.date}.json`, bytes, path), date: doc.date});
   }
   const capturedRecordings: Array<{ input: RecordingInput; rows: ReturnType<typeof parseRecording> }> = [];
   for (let index = 0; index < recordingPaths.length; index++) {
@@ -537,16 +618,17 @@ export async function runReplayReport(args: string[]) {
       }
     }
   }
-  const entries: ReplayEntry[] = capturedRecordings.map(({ input, rows }) => ({ input, metrics: replayReport(data, rows, effectiveAnchors) }));
+  const entries: ReplayEntry[] = capturedRecordings.map(({ input, rows }) => ({ input, metrics: replayReport(data, rows, effectiveAnchors, {schedule: schedules.get(ukDate(rows[0]!.t))}) }));
   const union = combineReplayReports(entries), unionInventory = { seen: union.coverage.seen, anchored: union.coverage.anchored,
     unmapped: union.coverage.unmapped, berths: union.coverage.berths };
   const rerunOut = resolve(scratch, `${out.split(/[\\/]/).at(-1) ?? 'replay-report'}-reproduced-${process.pid}`);
   const reproduceArgs = [fileURLToPath(import.meta.url), ...entries.flatMap(({ input }) => ['--recording', input.capturedPath]),
     '--anchors', anchorFingerprint.capturedPath, '--graph', graphFingerprint.capturedPath, '--out', rerunOut];
   if (smartFingerprint) reproduceArgs.push('--smart', smartFingerprint.capturedPath);
+  for (const schedule of scheduleFingerprints) reproduceArgs.push('--schedule', schedule.capturedPath);
   const reproducibility = { inputHashes: { recordings: entries.map(({ input }) => input), anchors: anchorFingerprint,
       ...(effectiveAnchorFingerprint ? { effectiveAnchors: effectiveAnchorFingerprint } : {}), graph: graphFingerprint,
-      ...(smartFingerprint ? { smart: smartFingerprint } : {}) },
+      ...(smartFingerprint ? { smart: smartFingerprint } : {}), ...(scheduleFingerprints.length ? { schedules: scheduleFingerprints } : {}) },
     command: { cwd: root, command: process.execPath, executable: process.execPath, args: reproduceArgs } };
   const report = (entries.length === 1
     ? { ...entries[0]!.metrics, recordingInput: entries[0]!.input, coverage: union.coverage }
@@ -560,7 +642,7 @@ export async function runReplayReport(args: string[]) {
       report.violations.push(`position-preserving berth reconciliation failed: ${String(berthsReconciliation.error)}`);
     }
   }
-  const md = replayMarkdown(report);
+  const md = replayMarkdown(report) + '\n' + report.timetable.note + '\n\n' + incomingMarkdown(report);
   await writeFile(resolve(out, 'replay-report.json'), JSON.stringify(report, null, 2) + '\n');
   await writeFile(resolve(out, 'replay-report.md'), md);
   return report;

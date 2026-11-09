@@ -181,13 +181,16 @@ test('Midland Grand: the building itself cuts its eaves cornice where the towers
 
 // ---- the Great Northern Hotel ------------------------------------------------------------------
 
-test('Great Northern Hotel: a round-headed window on the ground floor and four sashes above, in every bay', () => {
+test('Great Northern Hotel: facade windows keep their counts and assumed attic dormers add one sash per bay', () => {
   const parts = hotelGeometry(hotel);
   const bays = hotel.faces.reduce((s, f) => s + f.bays.length, 0);
   assert.equal(bays, 50);
   assert.equal(triangles(parts.sashArch as Batch).length, 2 * bays);
   // 4 upper storeys per bay; the sixth and thirteenth bays of the main front are tripartite: two more lights per storey
-  assert.equal(triangles(parts.sash as Batch).length, 2 * (4 * bays + 2 * 2 * 4));
+  const sashes = triangles(parts.sash as Batch);
+  assert.equal(sashes.filter(t => t.p.every(v => v[1] <= hotel.eaves)).length, 2 * (4 * bays + 2 * 2 * 4));
+  // HE confirms plural attic dormers; one per OSM-derived facade bay is ASSUMED.
+  assert.equal(sashes.filter(t => t.p.every(v => v[1] > hotel.eaves)).length, 2 * bays);
 });
 
 test('Great Northern Hotel: a synthetic impost run clears its arch and carries a keystone above the crown', () => {
@@ -234,7 +237,8 @@ test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth pro
     return Math.hypot(p[0] - (e.a[0] + e.dir[0] * t), p[1] - (e.a[1] + e.dir[1] * t));
   }));
   for (const key of ['sash', 'sashArch'] as const) {
-    for (const t of triangles(parts[key] as Batch)) {
+    const windows = triangles(parts[key] as Batch).filter(t => key === 'sash' ? t.p.every(v => v[1] <= hotel.eaves) : true);
+    for (const t of windows) {
       for (const v of t.p) {
         assert.equal(pointInPolygon([v[0], v[2]], hotel.outline), false, `${key} vertex outside the walls`);
         assert.ok(distance([v[0], v[2]]) < 0.2, `${key} vertex ${distance([v[0], v[2]])} m off the wall`);
@@ -248,15 +252,20 @@ test('Great Northern Hotel: every window stands on a wall, a hand\'s breadth pro
 test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and no window is hidden by the cornice', () => {
   const parts = hotelGeometry(hotel);
   close(Math.max(...triangles(parts.brick as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick to the eaves');
-  close(Math.max(...allVertices(parts).map((v) => v[1])), hotel.ridge, 1e-9, 'the highest point is the ridge');
   close(Math.min(...allVertices(parts).map((v) => v[1])), 0, 1e-9, 'walls stand on the ground');
+  const slateYs = triangles(parts.slate as Batch).flatMap((t) => t.p.map((v) => v[1]));
+  close(Math.max(...slateYs), hotel.ridge, 1e-9, 'the slate ridge remains the highest roof surface');
   // the cornice is the highest stone band: windows end below its underside
   const stoneYs = triangles(parts.stone as Batch).flatMap((t) => t.p.map((v) => v[1]));
   const corniceBottom = Math.min(...stoneYs.filter((y) => y > hotel.eaves - 1.0 && y < hotel.eaves - 0.3));
-  const sashTop = Math.max(...triangles(parts.sash as Batch).flatMap((t) => t.p.map((v) => v[1])));
-  assert.ok(sashTop < corniceBottom, `window tops reach ${sashTop}, the cornice starts at ${corniceBottom}`);
+  const sashes = triangles(parts.sash as Batch);
+  const wallSashTop = Math.max(...sashes.filter(t => t.p.every(v => v[1] <= hotel.eaves)).flatMap(t => t.p.map(v => v[1])));
+  assert.ok(wallSashTop < corniceBottom, `wall window tops reach ${wallSashTop}, the cornice starts at ${corniceBottom}`);
+  const atticSashTop = Math.max(...sashes.filter(t => t.p.every(v => v[1] > hotel.eaves)).flatMap(t => t.p.map(v => v[1])));
+  assert.ok(atticSashTop > hotel.eaves && atticSashTop < hotel.ridge, `attic sashes reach ${atticSashTop}, above the wall and below the ridge`);
+  assert.ok(Math.max(...stoneYs) > hotel.ridge, 'the assumed slab chimney stacks rise above the roof');
   // the slate roof stands on the walls: its lowest edge is the eaves
-  close(Math.min(...triangles(parts.slate as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'roof eaves');
+  close(Math.min(...slateYs), hotel.eaves, 1e-9, 'roof eaves');
 });
 
 // ---- the Midland Grand -------------------------------------------------------------------------

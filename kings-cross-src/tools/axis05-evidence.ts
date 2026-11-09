@@ -257,6 +257,7 @@ export async function runAxis05(args: string[]) {
       inputHashes: { ...inputs, ...(schedules.length ? { schedules } : {}), ...(sclass ? { sclass } : {}) },
       command: { ...repro.command, args: [fileURLToPath(import.meta.url), ...repro.command.args.slice(1), ...schedules.flatMap((input) => ['--schedule', input.capturedPath]), ...(sclass ? ['--sclass', sclass.capturedPath] : [])] } }, references: recordings[0]!.audit.method.references,
     limitations: ['All distributions sample the drawn model at 100 ms, including stationary trains; quantiles round to 0.01 units. These are simulation measurements, not telemetry of actual railway speed.',
+      'Route-distance consistency compares the motion odometer with a conservative lower bound from endpoint speeds, assuming the audit acceleration/deceleration bounds between samples and allowing 0.05 m tolerance. It detects reported motion without sufficient route travel; it is not independent proof of continuous body trajectory.',
       'Speed limits use OSM way tags and existing model caps; 0.7 m/s², 3 m buffer clearance and 2 m platform tolerance are modeling audit bounds, not independently certified infrastructure rules.',
       lengthPolicy,
       'Overlap counts test occupied-track intersection each tick. Separate same-edge occupied-center order exchanges detect sampled pass-through candidates. Zero sampled findings do not prove continuous-time absence of overlap/pass-through between samples.',

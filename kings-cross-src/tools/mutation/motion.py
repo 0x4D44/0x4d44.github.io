@@ -18,6 +18,11 @@ scratch.mkdir(parents=True, exist_ok=True)
 
 # Each mutation is valid TypeScript and changes an observable motion rule.
 M = [
+    ('future opposing authorities ignored', 'const opposing = opposingClearance(t.route, other);', 'const opposing = Infinity;'),
+    ('unsafe late opposing authority accepted', 'opposingClearance(route, other) + EPS < (t.speed * t.speed + other.speed * other.speed) / (2 * braking)', 'false'),
+    ('merge reservation ignored', 'if (merge && merge.winner !== t &&', 'if (false && merge && merge.winner !== t &&'),
+    ('unsafe late merge authority accepted', "if (reservation === null) { issue(t, a.berth, 'merge conflict is inside service braking distance'); return false; }", 'if (false) return false;'),
+    ('withdrawn merge reservation retained', 'for (const pairs of merges.values()) pairs.delete(t);', 'for (const pairs of merges.values()) void pairs;'),
     ('terminating trains touch the buffers', 'opts.bufferClearanceM ?? DEFAULT_BUFFER_CLEARANCE_M', 'opts.bufferClearanceM ?? 0'),
     ('buffer clearance walks toward the buffers', 'continuation(pos, -dir, bufferClearance)', 'continuation(pos, dir, bufferClearance)'),
     ('short buffer edge loses the arrival facing', 'dir: -direction(last)', 'dir: direction(last)'),
@@ -80,6 +85,7 @@ M = [
 
 # Audit mutations check that bad output is detected, independently of the motion policy.
 A = [
+    ('audit ignores distance under reported speed', 'if (!cabReversal && odometerDelta < minimumTravelM)', 'if (false)'),
     ('audit uses raw platform instead of drawn outline', 'pts: platformDrawingOutline(p, data)', 'pts: p.pts'),
     ('audit loses maximum speed', 'counts.maxSpeedMps = Math.max(counts.maxSpeedMps, train.speed);', 'counts.maxSpeedMps = 0;'),
     ('audit ignores acceleration violations', 'counts.accelerationViolationTicks++;', 'counts.accelerationViolationTicks += 0;'),

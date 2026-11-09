@@ -5,6 +5,7 @@ import { mkdir, readdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { finalizeStatus, hardwareRenderer } from './axis07-browser.mjs';
 import { keychainIdentifiers, identifierPatterns, redact, privateCommand, scanGit, scanFiles } from './axis07-scan.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url)), pkg = resolve(root, 'kings-cross-src');
@@ -132,13 +133,11 @@ export async function browserEvidence(path) {
   try {
     const value = JSON.parse(await readFile(path, 'utf8'));
     const phases = Array.isArray(value.phases) ? value.phases : [];
-    const names = new Set(phases.map((p) => p.name));
-    const valid = value.status === 'PASS' && value.validGpu === true && typeof value.renderer === 'string' &&
-      /Metal/i.test(value.renderer) && !/SwiftShader|llvmpipe|software/i.test(value.renderer) &&
-      ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'].every((n) => names.has(n)) && phases.every((p) =>
-        typeof p.statusLine === 'string' && Number.isInteger(p.trainCount) && p.trainCount >= 0 && p.validCsp === true && p.attribution?.present?.osm === true);
+    const valid = value.status === 'PASS' && hardwareRenderer(value.renderer) && finalizeStatus(value) === 'PASS';
     return { status: valid ? 'PASS' : 'FAIL', renderer: typeof value.renderer === 'string' ? value.renderer : null,
       validGpu: value.validGpu === true, phases: phases.map((p) => ({ name: p.name, statusLine: p.statusLine, trainCount: p.trainCount,
+        mode: p.mode, connection: p.connection, proxyEnabled: p.proxyEnabled, board: p.board,
+        replayStartMs: p.replayStartMs, replayTimeMs: p.replayTimeMs, relayRequestCounts: p.relayRequestCounts,
         attribution: p.attribution, validCsp: p.validCsp, screenshot: p.screenshot,
         failedRequests: p.failedRequests, consoleErrors: p.consoleErrors })), networkDiagnostics: value.networkDiagnostics, source: path };
   } catch { return { status: 'FAIL', reason: 'browser result could not be read' }; }
@@ -213,7 +212,7 @@ export async function runAxis07(args, dependencies = {}) {
   const report = sanitize({ schema: 1, status, generatedAt: new Date().toISOString(), sourceHash, relaySuite, mutation, relayProbe, keychain,
     secretScan: { git, files }, osmMarker, browser, gaps,
     reproduction: { command: 'node', args: [fileURLToPath(import.meta.url), ...args] },
-    policy: 'Read-only Git. Account attributes only, no password lookup. Patterns pass to Git via stdin. No raw command output or matched content is retained. No relay means sample trains; browser evidence labels that honestly.' }, patterns);
+    policy: 'Read-only Git. Account attributes only, no password lookup. Patterns pass to Git via stdin. No raw command output or matched content is retained. Browser evidence separates sample fallback from static bundle replay without relay requests.' }, patterns);
   await writeFile(resolve(options.out, 'axis07-evidence.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
   await writeFile(resolve(options.out, 'axis07-evidence.md'), markdown(report), { mode: 0o600 });
   await writeFile(resolve(options.out, 'relay-mutation.json'), JSON.stringify(sanitize(mutation, patterns), null, 2) + '\n', { mode: 0o600 });

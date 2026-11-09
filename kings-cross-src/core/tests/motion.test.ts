@@ -772,3 +772,174 @@ test('an early unmapped step finishes its established route to the last anchor b
   for (let i = 0; i < 2000; i++) { m.advance(0.1); if (one(m).state === 'fading') break; }
   close(one(m).leading.point[0], 1300); close(one(m).leading.point[1], -1400);
 });
+
+
+test('a berth-local cancel preserves a body still observed in another berth', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(step('A', 'B'), 0); m.advance(3);
+  const before = one(m);
+  m.apply(interpose('MIRROR'), 3000);
+  m.apply({ kind: 'cancel', area: 'TEST', from: 'MIRROR', descr: 'SYN1' }, 3000);
+  assert.notEqual(one(m).state, 'fading');
+  assert.deepEqual(one(m).leading, before.leading);
+  assert.equal(one(m).id, before.id);
+  m.apply({ kind: 'cancel', area: 'TEST', from: 'B', descr: 'SYN1' }, 3000);
+  assert.equal(one(m).state, 'fading', 'the last observation still cancels normally');
+});
+
+
+test('a deferred replacement keeps an arrival live while its berth and area are observed', () => {
+  const m = createMotion(graph, anchors, { quietMs: 2000 });
+  m.apply(step('A', 'P', 'OLD'), 0); m.advance(1);
+  m.apply(interpose('P', 'NEW'), 1000); m.advance(1.5);
+  m.apply({ kind: 'heartbeat', area: 'TEST' }, 2500); m.advance(1);
+  assert.notEqual(one(m).state, 'fading');
+  assert.equal(one(m).description, 'OLD', 'rename waits for physical arrival');
+  assert.ok(one(m).speed > 0);
+});
+
+
+test('a cancel at a colocated platform alias removes that physical observation', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(interpose('P'), 0); m.apply(step('P', 'P2'), 0);
+  const before = one(m);
+  m.apply({ kind: 'cancel', area: 'TEST', from: 'P', descr: 'SYN1' }, 0);
+  assert.equal(one(m).state, 'fading');
+  assert.deepEqual(one(m).occupied, before.occupied);
+  m.advance(5.1); assert.deepEqual(m.trains(), []);
+});
+
+// Two independent incoming lines converge onto one running line. Every observation is synthetic.
+function mergingMotion(reverseOrder = false, sameTarget = false) {
+  const g = buildGraph({ nodes: [[1, 0, -1100], [2, 0, -900], [3, 1000, -1000], [4, 3000, -1000]],
+    rails: [[1, 3], [2, 3], [3, 4]].map((nodes, i) => ({ id: i + 1, nodes, service: 'main' as const, tunnel: false, bridge: false, layer: 0 })) });
+  const a = (berth: string, from: number, to: number, t: number): BerthAnchor => {
+    const p = g.pos.get(from)!, q = g.pos.get(to)!;
+    return { berth, from, to, t, kind: 'signal', point: [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t], errorM: 1, evidence: 'synthetic' };
+  };
+  const map: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [a('A', 1, 3, .2), a('B', 2, 3, .2),
+    a('NEAR_A', 1, 3, .999), a('NEAR_B', 2, 3, .999), a('C', 3, 4, .8), a('D', 3, 4, .9)] };
+  const m = createMotion(g, map, { lengthM: 100 });
+  const pairs = [['ALPHA', 'A'], ['BETA', 'B']];
+  if (reverseOrder) pairs.reverse();
+  for (const [name, origin] of pairs) m.apply(interpose(origin!, name!), 0);
+  return { m, pairs, sameTarget };
+}
+
+for (const reverseOrder of [false, true]) for (const sameTarget of [false, true]) {
+  test(`merging authorities service brake and release after the winning tail clears: order=${reverseOrder}, same target=${sameTarget}`, () => {
+    const { m, pairs } = mergingMotion(reverseOrder, sameTarget);
+    for (const [name, origin] of pairs) m.apply(step(origin!, sameTarget || name === 'ALPHA' ? 'C' : 'D', name!), 0);
+    let previous = new Map(m.trains().map((t) => [t.description, t]));
+    let firstAcross = '', sawYield = false, sawRelease = false;
+    for (let i = 0; i < 4500; i++) {
+      m.advance(.1);
+      const trains = m.trains(), alpha = trains.find((t) => t.description === 'ALPHA')!, beta = trains.find((t) => t.description === 'BETA')!;
+      assert.equal(trains.length, 2);
+      assert.equal(overlapM(alpha.occupied, beta.occupied), 0);
+      for (const t of trains) {
+        const before = previous.get(t.description)!;
+        assert.ok(t.speed >= before.speed - .0600001);
+        assert.ok(t.distanceM - before.distanceM >= before.speed * .1 - .0030001,
+          `${t.description}: distance ${t.distanceM - before.distanceM} inconsistent with speed ${before.speed} -> ${t.speed}`);
+        if (!firstAcross && t.leading.point[0] >= 1000) firstAcross = t.description;
+      }
+      if (beta.speed === 0 && beta.blocked) sawYield = true;
+      if (beta.leading.point[0] >= 1000) {
+        sawRelease = true;
+        assert.ok(alpha.leading.point[0] >= 1105 - 1e-6, 'winning tail and gap must clear the merge before entry');
+      }
+      previous = new Map(trains.map((t) => [t.description, t]));
+    }
+    assert.equal(firstAcross, 'ALPHA');
+    assert.ok(sawYield); assert.ok(sawRelease);
+  });
+}
+
+test('late conflicting merge authority is refused when both approaches are inside their stopping distances', () => {
+  const { m } = mergingMotion();
+  m.apply(step('A', 'NEAR_A', 'ALPHA'), 0);
+  m.apply(step('B', 'NEAR_B', 'BETA'), 0);
+  // Both trains still have enough authority to stop, but cannot stop five metres short of the merge.
+  while (m.trains()[0]!.leading.point[0] < 900) m.advance(.1);
+  m.apply(step('NEAR_A', 'C', 'ALPHA'), 0);
+  const before = m.trains().find((t) => t.description === 'BETA')!;
+  m.apply(step('NEAR_B', 'D', 'BETA'), 0);
+  const after = m.trains().find((t) => t.description === 'BETA')!;
+  assert.equal(after.targetBerth, before.targetBerth);
+  assert.deepEqual(after.leading, before.leading); assert.equal(after.speed, before.speed);
+  assert.ok(m.diagnostics().some((i) => i.description === 'BETA' && i.reason.includes('merge')));
+});
+
+test('withdrawing a merge authority releases its waiting peer', () => {
+  const { m } = mergingMotion();
+  m.apply(step('A', 'C', 'ALPHA'), 0); m.apply(step('B', 'D', 'BETA'), 0);
+  m.advance(20);
+  m.apply(step('C', 'NEAR_A', 'ALPHA'), 0);
+  assert.equal(m.trains().find((t) => t.description === 'ALPHA')!.targetBerth, 'NEAR_A');
+  let previous = new Map(m.trains().map((t) => [t.description, t]));
+  for (let i = 0; i < 4000; i++) {
+    m.advance(.1);
+    const trains = m.trains();
+    assert.equal(trains.length, 2, 'both authorized bodies remain visible');
+    assert.equal(overlapM(trains[0]!.occupied, trains[1]!.occupied), 0);
+    for (const t of trains) {
+      const before = previous.get(t.description)!;
+      assert.ok(t.distanceM - before.distanceM >= before.speed * .1 - .0030001);
+    }
+    previous = new Map(trains.map((t) => [t.description, t]));
+  }
+  assert.equal(m.trains().find((t) => t.description === 'BETA')!.leading.point[0], 2800);
+});
+
+function shortOpposingMotion(reverseOrder = false, eastStart = .2, gapM = 5) {
+  const g = buildGraph({ nodes: [[1, 0, -1000], [2, 1000, -1000], [3, 1010, -1000], [4, 2010, -1000]],
+    rails: [{ id: 1, nodes: [1, 2, 3, 4], service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const a = (berth: string, from: number, to: number, t: number): BerthAnchor => ({ berth, from, to, t, kind: 'signal',
+    point: [g.pos.get(from)![0] + (g.pos.get(to)![0] - g.pos.get(from)![0]) * t, -1000], errorM: 1, evidence: 'synthetic' });
+  const map: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [a('A', 1, 2, .2), a('B', 4, 3, eastStart),
+    a('C', 2, 3, .9), a('D', 3, 2, .9), a('NEAR_A', 1, 2, .999), a('NEAR_B', 4, 3, .999)] };
+  const m = createMotion(g, map, { lengthM: 100, gapM });
+  const pairs = [['ALPHA', 'A', 'C'], ['BETA', 'B', 'D']];
+  if (reverseOrder) pairs.reverse();
+  for (const [name, origin] of pairs) m.apply(interpose(origin!, name!), 0);
+  return { m, pairs };
+}
+
+for (const reverseOrder of [false, true]) for (const eastStart of [.2, .6]) {
+  test(`opposing future routes reserve braking space before entering a short shared edge: order=${reverseOrder}, east=${eastStart}`, () => {
+    const { m, pairs } = shortOpposingMotion(reverseOrder, eastStart);
+    for (const [name, origin, target] of pairs) m.apply(step(origin!, target!, name!), 0);
+    let previous = new Map(m.trains().map((t) => [t.id, t]));
+    for (let i = 0; i < 2500; i++) {
+      m.advance(.1);
+      const trains = m.trains();
+      assert.equal(trains.length, 2, 'both authorized bodies remain visible');
+      assert.equal(overlapM(trains[0]!.occupied, trains[1]!.occupied), 0);
+      for (const t of trains) {
+        const before = previous.get(t.id)!;
+        assert.ok(t.speed >= before.speed - .0600001);
+        assert.ok(t.distanceM - before.distanceM >= before.speed * .1 - .0030001,
+          `${t.description}: moved ${t.distanceM - before.distanceM}, speed ${before.speed} -> ${t.speed}`);
+      }
+      previous = new Map(trains.map((t) => [t.id, t]));
+    }
+    assert.ok(m.trains().every((t) => t.speed === 0));
+    assert.ok(m.trains().some((t) => t.blocked), 'the peer with remaining authority waits at its fixed boundary');
+    const alpha = m.trains().find((t) => t.description === 'ALPHA')!, beta = m.trains().find((t) => t.description === 'BETA')!;
+    assert.ok(beta.leading.point[0] - alpha.leading.point[0] >= 5 - 1e-6);
+  });
+}
+
+test('late opposing future authority refuses to consume either trains service braking space', () => {
+  const { m } = shortOpposingMotion(false, .2, 20);
+  m.apply(step('A', 'NEAR_A', 'ALPHA'), 0); m.apply(step('B', 'NEAR_B', 'BETA'), 0);
+  while (m.trains()[0]!.leading.point[0] < 900) m.advance(.1);
+  m.apply(step('NEAR_A', 'C', 'ALPHA'), 0);
+  const before = m.trains().find((t) => t.description === 'BETA')!;
+  m.apply(step('NEAR_B', 'D', 'BETA'), 0);
+  const after = m.trains().find((t) => t.description === 'BETA')!;
+  assert.equal(after.targetBerth, before.targetBerth);
+  assert.deepEqual(after.leading, before.leading); assert.equal(after.speed, before.speed);
+  assert.ok(m.diagnostics().some((i) => i.description === 'BETA' && i.reason.includes('opposing')));
+});

@@ -12,6 +12,7 @@ if not out.is_relative_to(src.parent / '.scratch'):
     raise SystemExit('output must be under worktree .scratch')
 out.mkdir(parents=True, exist_ok=True)
 MUTANTS = [
+    ('reported speed without route travel ignored', 'tools/motion-audit.ts', 'if (!cabReversal && odometerDelta < minimumTravelM)', 'if (false && odometerDelta < minimumTravelM)', 'detects frozen body travel'),
     ('CLI schedule resolver disconnected', 'tools/axis05-evidence.ts', 'createTrainKinds(policy.serviceFor)', 'createTrainKinds(() => undefined)', 'Axis 05 optional inputs freeze'),
     ('birth-day schedule ignored', 'tools/axis05-evidence.ts', 'return calls ? matchService(description, atMs, calls) : undefined;', 'return undefined;', 'Axis 05 schedules select'),
     ('duplicate schedule date accepted', 'tools/axis05-evidence.ts', 'if (schedules.has(doc.date)) throw new Error(`duplicate schedule date: ${doc.date}`);', 'void doc.date;', 'Axis 05 schedules reject'),
@@ -28,7 +29,7 @@ def run(work, pattern=None):
     args = ['node', '--test', '--test-reporter=tap', '--test-timeout=15000']
     if pattern:
         args.append('--test-name-pattern=' + pattern)
-    args.append('tools/tests/axis05-evidence.test.mjs')
+    args.extend(['tools/tests/axis05-evidence.test.mjs', 'tools/tests/motion-audit.test.mjs'] if pattern and pattern.startswith('detects frozen body') else ['tools/tests/axis05-evidence.test.mjs'])
     return subprocess.run(args, cwd=work, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
 with tempfile.TemporaryDirectory(prefix='axis05-', dir=out) as directory:
     work = Path(directory) / 'kings-cross-src'
@@ -41,6 +42,10 @@ with tempfile.TemporaryDirectory(prefix='axis05-', dir=out) as directory:
     if baseline.returncode:
         raise SystemExit(baseline.stdout + baseline.stderr)
     passed = set(re.findall(r'^ok \d+ - (.*)', baseline.stdout, re.M))
+    motion_baseline = run(work, 'detects frozen body travel')
+    if motion_baseline.returncode:
+        raise SystemExit(motion_baseline.stdout + motion_baseline.stderr)
+    passed.update(name for name in re.findall(r'^ok \d+ - (.*)', motion_baseline.stdout, re.M) if name.startswith('detects frozen body travel'))
     killed = set()
     survivors = []
     for label, file, old, new, pattern in MUTANTS:

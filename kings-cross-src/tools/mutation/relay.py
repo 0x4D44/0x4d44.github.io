@@ -34,6 +34,9 @@ MUTATIONS = [
     ("td: CA time not numeric", "td.mjs", "time: ms(m.time) };\n    case 'CB'", "time: m.time };\n    case 'CB'"),
     ("state: step does not clear old berth", "state.mjs", "if (e.from) this.#berths.delete(e.from);", ""),
     ("state: ignore area", "state.mjs", "|| e.area !== this.#area", ""),
+    ("state: SG/SH only refresh their first byte", "state.mjs", "offset < sclassWidth", "offset < 1"),
+    ("state: S-class payload width is unchecked", "state.mjs", "if (!sclassWidth || e.data.length !== sclassWidth * 2) return false;", "if (!sclassWidth) return false;"),
+    ("state: S-class address overflow is accepted", "state.mjs", "if (sclassFirst + sclassWidth - 1 > 0xffff) return false;", "if (false) return false;"),
     ("keychain: first lookup asks for the password", "keychain.mjs", "['find-generic-password', '-s', service])", "['find-generic-password', '-s', service, '-w'])"),
     ("keychain: error leaks stderr text", "keychain.mjs", "reject(new Error(`keychain: lookup failed (exit ${err.code ?? 'unknown'})`))", "reject(new Error(`keychain: ${err.message} (exit ${err.code ?? 'unknown'})`))"),
     ("keychain: allow non-macOS", "keychain.mjs", "if (platform !== 'darwin') throw new Error('keychain: only macOS is supported');", ""),
@@ -53,7 +56,7 @@ MUTATIONS = [
     ("static: stale cache always trusted", "static.mjs", "if (now() - st.mtimeMs < maxAgeMs) return await cached.readFile();", "return await cached.readFile();"),
     ("static: unknown names allowed", "static.mjs", "if (!Object.hasOwn(KINDS, kind)) throw new Error('static: unknown file');", "if (false) throw new Error('static: unknown file');"),
     ("recorder: never roll the day", "recorder.mjs", "if (d !== streamDay) {", "if (streamDay === '') {"),
-    ("recorder: records lose their newline separators", "recorder.mjs", "stream.write(`${JSON.stringify(row)}\\n`);", "stream.write(JSON.stringify(row));"),
+    ("recorder: records lose their newline separators", "recorder.mjs", "const text = `${JSON.stringify(row)}\\n`;", "const text = JSON.stringify(row);"),
     ("recorder: no startup snapshot", "recorder.mjs", "  checkpoint();\n  const timer", "  const timer"),
     ("recorder: checkpoint interval is one hour", "recorder.mjs", "10 * 60_000", "60 * 60_000"),
     ("recorder: interval never checkpoints", "recorder.mjs", "schedule(checkpoint,", "schedule(() => {},"),
@@ -139,13 +142,25 @@ MUTATIONS = [
     ("trust: retained cancellations exceed their cap", "trust.mjs", "const MAX_CANCELLATIONS = 2_000;", "const MAX_CANCELLATIONS = 20_000;"),
     ("trust: cancellation status never expires", "trust.mjs", "if (at - value.event.receivedAtMs >= DAY_MS) cancellations.delete(key);", "if (false) cancellations.delete(key);"),
     ("schedule: malformed corpus container is read as rows", "schedule.mjs", "const rows = Array.isArray(candidate) ? candidate : [];", "const rows = candidate;"),
+    ("stomp: intentional disconnect leaves the client active", "stomp.mjs", "    } finally {\n      this.#onClose();", "    } finally {"),
+    ("recorder: successful close retains deadline", "recorder.mjs", ".finally(() => clearTimeout(deadline));", ".finally(() => {});"),
+    ("recorder: blocked close never times out", "recorder.mjs", "setTimeout(() => fail('close timeout'), 5000)", "setTimeout(() => fail('close timeout'), 50_000)"),
+    ("recorder: failed cleanup escapes", "recorder.mjs", "try { entry.stream.destroy(); }\n      catch { /* Recording is already failed; transport cleanup cannot recover it. */ }", "entry.stream.destroy();\n      try {}"),
+    ("stomp: handshake never times out", "stomp.mjs", "30_000);", "3_600_000);"),
+    ("stomp: successful handshake retains deadline", "stomp.mjs", "        clearTimeout(this.#handshakeTimer);", ""),
+    ("recorder: stream errors are unhandled", "recorder.mjs", "stream.on('error', () => { fail('write failed'); entry.settle(); });", ""),
+    ("recorder: stream errors expose private details", "recorder.mjs", "stream.on('error', () => { fail('write failed');", "stream.on('error', (error) => { fail(error.message);"),
+    ("recorder: queue limit doubled", "recorder.mjs", "const MAX_QUEUE_BYTES = 4 * 1024 * 1024;", "const MAX_QUEUE_BYTES = 8 * 1024 * 1024;"),
+    ("recorder: failed writer is not destroyed", "recorder.mjs", "entry.stream.destroy();", ""),
+    ("recorder: recording failure suppresses live snapshots", "recorder.mjs", "if (event.kind === 'snapshot') onSnapshot(row);", "if (!failure && event.kind === 'snapshot') onSnapshot(row);"),
+    ("relay: recording failures missing from health", "relay.mjs", "recording: recorder.stats(),", ""),
 ]
 
-OFFLINE_TEST_PATTERN = r'^(?:encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
+OFFLINE_TEST_PATTERN = r'^(?:encode then parse|a frame split into single bytes|two frames in one chunk|content-length lets a body|header values are escaped|CONNECT headers are not escaped|first occurrence of a repeated header|a frame whose content-length|a frame over the size cap|the client never emits or stringifies|stomp: fake transport|feed: fake transport|td:|state:|keychain:|static:|recorder:|recorder robustness:|stomp robustness:|relay robustness:|relay files:|relay snapshot:|relay offline:|relay heartbeat:|relay shutdown:|schedule stream:|schedule cache:|schedule endpoint offline:|schedule integration offline:|trust:|round17 |parser properties:|TD properties:|Origin guard|SSE heartbeat reports|recording and cache symlinks|recordings stream|reference downloads reject|HTTP errors and logs never echo)'
 TEST_FILES = [
     'parser-properties.test.mjs', 'relay.test.mjs', 'robustness17.test.mjs',
     'schedule.test.mjs', 'security17.test.mjs', 'stomp.test.mjs',
-    'trust.test.mjs', 'units.test.mjs',
+    'trust.test.mjs', 'units.test.mjs', 'sclass-state.test.mjs', 'recorder.test.mjs',
 ]
 
 def run(work):
@@ -206,7 +221,7 @@ new_names = {name for name in names if name.startswith((
     'round17 ', 'parser properties:', 'TD properties:',
     'Origin guard', 'SSE heartbeat reports', 'recording and cache symlinks',
     'recordings stream', 'reference downloads reject', 'HTTP errors and logs never echo',
-    'relay heartbeat: a connected SSE client', 'trust:',
+    'relay heartbeat: a connected SSE client', 'trust:', 'state: S-class',
 ))}
 seen, survived, timeouts = set(), [], []
 for i, (label, fname, old, new) in enumerate(MUTATIONS):
@@ -214,6 +229,10 @@ for i, (label, fname, old, new) in enumerate(MUTATIONS):
         work = Path(tmp)
         shutil.copytree(src, work / 'relay')
         shutil.copytree(src.parent / 'core', work / 'core')
+        (work / 'web/src/data').mkdir(parents=True)
+        shutil.copy2(src.parent / 'web/src/signals.ts', work / 'web/src/signals.ts')
+        shutil.copy2(src.parent / 'web/src/data/kx-track.json', work / 'web/src/data/kx-track.json')
+        (work / 'node_modules').symlink_to(src.parent / 'node_modules', target_is_directory=True)
         f = work / 'relay' / fname
         f.write_text(f.read_text().replace(old, new, 1))
         result, expired = run(work)

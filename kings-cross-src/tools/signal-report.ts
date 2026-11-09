@@ -5,8 +5,8 @@ import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildGraph } from '../core/graph.ts';
-import { qualifiesSignalEvidence, trackSclass } from '../core/sclass.ts';
-import type { SignalHypothesis, SignalState, TimedTdEvent } from '../core/sclass.ts';
+import { MIN_PRECISION, MIN_SUPPORT, qualifiesSignalEvidence, revalidateSignalHypotheses, SIGNAL_WINDOWS, trackSclass } from '../core/sclass.ts';
+import type { SignalHypothesis, SignalState, SignalWindows, TimedTdEvent } from '../core/sclass.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import { createSignals, signalRefBerth, validatedSignalHypotheses } from '../web/src/signals.ts';
@@ -27,11 +27,53 @@ export function capturePlan(intervals: readonly SignalInterval[]) {
 const admitted = (h: SignalHypothesis) => h.status === 'decoded' && qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut);
 const pct = (v: number | null) => v === null ? '—' : `${(100 * v).toFixed(2)}%`;
 const cell = (v: unknown) => String(v ?? '—').replaceAll('|', '\\|').replaceAll('\n', ' ');
+type FixedOutcome = 'insufficient-support' | 'below-precision-or-recall' | 'meets-acceptance';
+type FixedEvidence = { support: number; trials: number; cycles: number; precision: number | null; recall: number | null };
+function fixedEvidence(h: SignalHypothesis): FixedEvidence {
+  return { support: h.heldOut.support, trials: h.heldOut.trials, cycles: h.heldOut.support + h.heldOut.unmatchedCycles,
+    precision: h.heldOut.precision, recall: h.heldOut.recall ?? null };
+}
+function fixedOutcome(e: FixedEvidence): FixedOutcome {
+  if (e.support < MIN_SUPPORT) return 'insufficient-support';
+  if (e.precision === null || e.precision < MIN_PRECISION || e.recall === null || e.recall < MIN_PRECISION) return 'below-precision-or-recall';
+  return 'meets-acceptance';
+}
+function aggregateFixed(items: readonly { heldOut: FixedEvidence }[]) {
+  const support = items.reduce((n, h) => n + h.heldOut.support, 0);
+  const trials = items.reduce((n, h) => n + h.heldOut.trials, 0);
+  const cycles = items.reduce((n, h) => n + h.heldOut.cycles, 0);
+  return { mappings: items.length, support, trials, cycles, precision: cycles ? support / cycles : null, recall: trials ? support / trials : null };
+}
+function outcomeCounts(items: readonly { heldOut: FixedEvidence }[]) {
+  const counts = { insufficientSupport: 0, belowPrecisionOrRecallThreshold: 0, meetsAcceptance: 0 };
+  for (const item of items) {
+    const outcome = fixedOutcome(item.heldOut);
+    if (outcome === 'insufficient-support') counts.insufficientSupport += 1;
+    else if (outcome === 'below-precision-or-recall') counts.belowPrecisionOrRecallThreshold += 1;
+    else counts.meetsAcceptance += 1;
+  }
+  return counts;
+}
+function tableFoldRelation(folds: unknown, startMs: number | null, endMs: number | null): string {
+  if (startMs === null || endMs === null || !Array.isArray(folds)) return 'unknown-folds';
+  const valid = folds.filter((fold): fold is { startMs: number; splitMs: number; endMs: number } =>
+    fold !== null && typeof fold === 'object' && Number.isFinite(fold.startMs) && Number.isFinite(fold.splitMs) && Number.isFinite(fold.endMs) &&
+    fold.startMs <= fold.splitMs && fold.splitMs <= fold.endMs);
+  if (!valid.length) return 'unknown-folds';
+  const training = valid.some(f => f.startMs < f.splitMs && endMs >= f.startMs && startMs < f.splitMs);
+  const heldOut = valid.some(f => f.splitMs < f.endMs && endMs >= f.splitMs && startMs <= f.endMs);
+  if (training && heldOut) return 'overlaps-training-and-held-out';
+  if (training) return 'overlaps-training';
+  if (heldOut) return 'overlaps-held-out';
+  return 'outside-table-folds-independence-unknown';
+}
 
 /** Includes every observed bit, every drawn head, and every decoded but unpositioned berth. */
 export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], data: KxData, overlay: SignalOverlay,
   anchors: AnchorMap, table: unknown, raw?: RawElement[], reviews: readonly PublicSignalReview[] = publicReviews.signals as PublicSignalReview[]) {
   const hypotheses = validatedSignalHypotheses(table, anchors.area);
+  const metadata = table && typeof table === 'object' && !Array.isArray(table) ? table as Record<string, unknown> : {};
+  const tableWindows = metadata.windows === undefined || metadata.windows === null ? undefined : metadata.windows as SignalWindows;
   const decoded = hypotheses.filter(admitted);
   const proceed = decoded.filter(h => (h.kind ?? 'proceed') === 'proceed');
   const rawById = new Map((raw ?? []).filter(e => e.type === 'node').map(e => [e.id, e]));
@@ -136,8 +178,37 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
     const trials = items.reduce((s, h) => s + h.heldOut.trials, 0);
     return { support, cycles, trials, precision: cycles ? support / cycles : null, recall: trials ? support / trials : null };
   };
+  const fixed = hypotheses.filter(admitted);
+  const excluded = hypotheses.filter(h => !admitted(h)).map(h => ({ hypothesisId: h.id, address: h.address, bit: h.bit,
+    berth: h.berth, status: h.status, reason: h.reason }));
+  const fixedRecordings = recordings.map((input, recording) => {
+    const areaRows = input.filter(row => row.e.area === anchors.area);
+    const range = areaRows.reduce((r, row) => ({ start: Math.min(r.start, row.t), end: Math.max(r.end, row.t) }),
+      { start: Number.POSITIVE_INFINITY, end: Number.NEGATIVE_INFINITY });
+    const startMs = areaRows.length ? range.start : null, endMs = areaRows.length ? range.end : null;
+    const revalidated = revalidateSignalHypotheses(input, fixed, { area: anchors.area, windows: tableWindows });
+    const mappings = revalidated.map(h => {
+      const evidence = fixedEvidence(h);
+      return { hypothesisId: h.id, address: h.address, bit: h.bit, berth: h.berth, kind: h.kind ?? 'proceed',
+        to: h.to ?? null, proceedValue: h.proceedValue, heldOut: evidence, outcome: fixedOutcome(evidence) };
+    });
+    const proceedMappings = mappings.filter(h => h.kind === 'proceed');
+    return { recording, rowCount: input.length, areaRowCount: areaRows.length, startMs, endMs,
+      spanMs: startMs === null || endMs === null ? null : endMs - startMs,
+      spanCoverage: 'captured-span-only', partialDayLimitation: 'May be a partial day; completeness is not established.',
+      tableFoldRelation: tableFoldRelation(metadata.folds, startMs, endMs), mappings,
+      all: aggregateFixed(mappings), proceed: aggregateFixed(proceedMappings), outcomes: outcomeCounts(mappings) };
+  });
+  const fixedPairs = fixedRecordings.flatMap(recording => recording.mappings);
+  const fixedRevalidation = {
+    method: 'Fixed revalidation of mappings admitted by the supplied table; no discovery or admission changes.',
+    windows: tableWindows ?? SIGNAL_WINDOWS, minimumSupport: MIN_SUPPORT, minimumPrecision: MIN_PRECISION, minimumRecall: MIN_PRECISION,
+    admittedMappingCount: fixed.length, excludedUnknownMappings: excluded.filter(h => h.status === 'unknown'), excludedMappings: excluded,
+    recordings: fixedRecordings,
+    aggregate: { all: aggregateFixed(fixedPairs), proceed: aggregateFixed(fixedPairs.filter(h => h.kind === 'proceed')),
+      outcomes: outcomeCounts(fixedPairs) },
+  };
   const captures = recordings.map((_, recording) => ({ recording, cases: capturePlan(intervals.filter(i => i.recording === recording)) }));
-  const metadata = table && typeof table === 'object' ? table as Record<string, unknown> : {};
   const reviewCounts = (items: { review: string }[]) => Object.fromEntries([...new Set(items.map(h => h.review))].sort().map(review => [review, items.filter(h => h.review === review).length]));
   return { area: anchors.area, states: CAPTURE_STATES, unsupportedStates: ['caution'],
     validation: metadata.validation ?? null, windows: metadata.windows ?? null, folds: metadata.folds ?? null,
@@ -156,7 +227,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
         uncertain: headRows.filter(h => h.positionReview.status !== 'reviewed' && h.review !== 'topology').length,
       },
       publicOverlayReview: reviewCounts(overlay.signals), effectiveOverlayReview: reviewCounts(headRows.filter(h => !h.inferred)), drawnHeadReview: reviewCounts(headRows) },
-    heldOut: { all: total(decoded), proceed: total(proceed) }, bits, heads: headRows, decodedHeads, captures, intervals };
+    heldOut: { all: total(decoded), proceed: total(proceed) }, fixedRevalidation, bits, heads: headRows, decodedHeads, captures, intervals };
 }
 
 export function signalReportMarkdown(report: ReturnType<typeof signalReport>): string {
@@ -166,7 +237,20 @@ export function signalReportMarkdown(report: ReturnType<typeof signalReport>): s
     `Validation: ${cell(report.validation)}; windows (ms): ${JSON.stringify(report.windows)}; folds: ${JSON.stringify(report.folds)}.`,
     `Held-out micro precision ${pct(report.heldOut.all.precision)}, recall ${pct(report.heldOut.all.recall)}.`,
     'Caution is unsupported by this decoder; no caution screenshot or aspect is claimed.', '',
-    '| Address | Bit | Meaning | Berth | Head(s) | Position source | Held-out precision | Recall |', '|---|---:|---|---|---|---|---:|---:|'];
+    '## Fixed mapping revalidation', '',
+    `${report.fixedRevalidation.method} Per-recording scores use the supplied table windows, or the core defaults when absent. Revalidation does not change table admission or rendered head states.`,
+    `Acceptance requires support >= ${report.fixedRevalidation.minimumSupport} and precision and recall >= ${pct(report.fixedRevalidation.minimumPrecision)}.`,
+    `Outcomes: insufficient (<${report.fixedRevalidation.minimumSupport} support) ${report.fixedRevalidation.aggregate.outcomes.insufficientSupport}; below precision/recall threshold ${report.fixedRevalidation.aggregate.outcomes.belowPrecisionOrRecallThreshold}; meets acceptance ${report.fixedRevalidation.aggregate.outcomes.meetsAcceptance}. Excluded unknown mappings: ${report.fixedRevalidation.excludedUnknownMappings.length}.`,
+    'Recording spans describe captured rows only and may cover a partial day. Fold overlap is shown below; outside the reported fold bounds means independence is unknown, not assumed.',
+    '', '| Recording | Rows (area rows) | Captured span | Table fold relation | All precision / recall | Proceed precision / recall |', '|---:|---:|---|---|---:|---:|'];
+  const timeLabel = (value: number | null) => value === null ? '—' : new Date(value).toISOString();
+  for (const r of report.fixedRevalidation.recordings) lines.push(`| ${r.recording} | ${r.rowCount} (${r.areaRowCount}) | ${timeLabel(r.startMs)} to ${timeLabel(r.endMs)}; ${r.spanMs === null ? 'span unknown' : `${(r.spanMs / 60_000).toFixed(1)} min`} | ${r.tableFoldRelation} | ${pct(r.all.precision)} / ${pct(r.all.recall)} | ${pct(r.proceed.precision)} / ${pct(r.proceed.recall)} |`);
+  lines.push('', '| Recording | Address.bit | Fixed mapping | Kind | Support / trials | Cycles | Precision | Recall | Outcome |', '|---:|---|---|---|---:|---:|---:|---:|---|');
+  for (const r of report.fixedRevalidation.recordings) for (const h of r.mappings)
+    lines.push(`| ${r.recording} | ${h.address}.${h.bit} | ${cell(`${h.hypothesisId}: ${h.berth}=${h.proceedValue}${h.to ? ` → ${h.to}` : ''}`)} | ${h.kind} | ${h.heldOut.support} / ${h.heldOut.trials} | ${h.heldOut.cycles} | ${pct(h.heldOut.precision)} | ${pct(h.heldOut.recall)} | ${h.outcome} |`);
+  if (!report.fixedRevalidation.recordings.some(r => r.mappings.length)) lines.push('| — | — | no admitted fixed mappings | — | — | — | — | — | — |');
+  lines.push('',
+    '| Address | Bit | Meaning | Berth | Head(s) | Position source | Held-out precision | Recall |', '|---|---:|---|---|---|---|---:|---:|');
   for (const b of report.bits) lines.push(`| ${b.address} | ${b.bit} | ${b.decoded ? b.kind : 'unknown'} | ${cell(b.berth)} | ${b.headIds.join(', ') || 'unpositioned'} | ${b.positionSources.join(', ') || 'none'} | ${pct(b.precision)} | ${pct(b.recall)} |`);
   lines.push('', '## Every decoded proceed head', '', '| Berth | Head(s) | Source | Held-out precision | Recall | Recorded position reason |', '|---|---|---|---:|---:|---|');
   for (const h of report.decodedHeads) lines.push(`| ${h.berth} | ${h.headIds.join(', ') || 'unpositioned'} | ${cell(h.positionSource)} | ${pct(h.heldOut.precision)} | ${pct(h.heldOut.recall ?? h.heldOut.precision)} | ${cell(h.reason)} |`);

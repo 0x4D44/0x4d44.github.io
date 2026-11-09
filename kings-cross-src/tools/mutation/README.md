@@ -27,6 +27,7 @@ python3 -I -u kings-cross-src/tools/mutation/berths.py kings-cross-src .scratch/
 python3 -I -u kings-cross-src/tools/mutation/board.py kings-cross-src .scratch/mutation/board
 python3 -I -u kings-cross-src/tools/mutation/core.py kings-cross-src .scratch/mutation/core
 python3 -I -u kings-cross-src/tools/mutation/evidence-pack.py
+python3 -I -u kings-cross-src/tools/mutation/hotel-roof.py kings-cross-src .scratch/mutation/hotel-roof
 python3 -I -u kings-cross-src/tools/mutation/live.py kings-cross-src .scratch/mutation/live
 python3 -I -u kings-cross-src/tools/mutation/motion.py kings-cross-src .scratch/mutation/motion
 python3 -I -u kings-cross-src/tools/mutation/perf.py kings-cross-src .scratch/mutation/perf
@@ -39,6 +40,7 @@ python3 -I -u kings-cross-src/tools/mutation/sclass-job.py kings-cross-src .scra
 python3 -I -u kings-cross-src/tools/mutation/sclass.py kings-cross-src .scratch/mutation/sclass
 python3 -I -u kings-cross-src/tools/mutation/signal-report.py kings-cross-src .scratch/mutation/signal-report
 python3 -I -u kings-cross-src/tools/mutation/signals.py kings-cross-src .scratch/mutation/signals
+python3 -I -u kings-cross-src/tools/mutation/station-evidence.py kings-cross-src .scratch/mutation/station-evidence
 python3 -I -u kings-cross-src/tools/mutation/station.py kings-cross-src .scratch/mutation/station /Users/md/kx-data/osm/kx-osm.json
 python3 -I -u kings-cross-src/tools/mutation/test-suite.py
 python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .scratch/mutation/train-capture

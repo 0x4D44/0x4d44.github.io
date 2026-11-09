@@ -9,7 +9,9 @@ import type { AnchorMap } from '../anchors.ts';
 import type { KxData } from '../osm.ts';
 import { buildGraph } from '../graph.ts';
 import { DEFAULT_BUFFER_CLEARANCE_M } from '../motion.ts';
-import { completeRecordingPrefix, platformStoppingPoint } from '../../tools/replay-report.ts';
+import { completeRecordingPrefix, platformStoppingPoint, replayReport } from '../../tools/replay-report.ts';
+import type { ScheduleCall } from '../schedule.ts';
+import { trainLayout } from '../train.ts';
 import { parseRecording } from '../../web/src/feed.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
@@ -34,7 +36,7 @@ async function run(name: string, anchors: AnchorMap, rows: unknown[]) {
   return { status: child.status, report, dir };
 }
 
-async function runMultiple(name: string, anchors: AnchorMap, recordings: unknown[][], graph = data, smart?: Buffer) {
+async function runMultiple(name: string, anchors: AnchorMap, recordings: unknown[][], graph = data, smart?: Buffer, schedules: Array<{date: string; calls: ScheduleCall[]}> = []) {
   const dir = resolve(scratch, name); await mkdir(dir, { recursive: true });
   await writeFile(resolve(dir, 'anchors.json'), JSON.stringify(anchors));
   await writeFile(resolve(dir, 'graph.json'), JSON.stringify(graph));
@@ -46,6 +48,9 @@ async function runMultiple(name: string, anchors: AnchorMap, recordings: unknown
   const recordingArgs = files.flatMap((file) => ['--recording', file]);
   const args = [tool, ...recordingArgs, '--anchors', resolve(dir, 'anchors.json'), '--graph', resolve(dir, 'graph.json'), '--out', resolve(dir, 'out')];
   if (smart) { const smartPath = resolve(dir, 'smart.json.gz'); await writeFile(smartPath, smart); args.push('--smart', smartPath); }
+  for (let index = 0; index < schedules.length; index++) {
+    const path = resolve(dir, `schedule-${index}.json`); await writeFile(path, JSON.stringify(schedules[index])); args.push('--schedule', path);
+  }
   const child = spawnSync(process.execPath, args,
     { encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
   assert.equal(child.error, undefined);
@@ -250,4 +255,93 @@ test('CLI combines multiple recordings with union reasons, per-recording measure
   assert.equal(rerun.coverage.seen, report.coverage.seen);
   assert.deepEqual(rerun.reproducibility.inputHashes.recordings.map((input: { sha256: string }) => input.sha256),
     report.reproducibility.inputHashes.recordings.map((input: { sha256: string }) => input.sha256));
+});
+
+
+function shortCall(date: string, at: number): ScheduleCall {
+  return { uid: 'INVENTED', headcode: '1SYN', operator: 'GN', category: 'XX', date, serviceDate: date, stp: 'P',
+    startDate: date, endDate: date, platform: null, origin: 'MORGATE', destination: 'INVENTED', arrival: null, departure: null,
+    publicArrival: null, publicDeparture: null, arrivalMs: at, departureMs: null, publicArrivalMs: null, publicDepartureMs: null };
+}
+test('replay uses the page birth formation and explicitly reports missing-timetable fallback', () => {
+  const date = '2026-01-15', at = Date.parse(`${date}T12:00:00Z`), m = map();
+  m.anchors.push({ ...a('1000', 1), platform: '0', kind: 'platform' });
+  const rows = parseRecording(JSON.stringify({t: at, e: event('step', {from: 'A', to: '1000', descr: '1SYN'})}));
+  const scheduled = replayReport(data, rows, m, {schedule: {date, calls: [shortCall(date, at)]}});
+  const assumed = replayReport(data, rows, m);
+  assert.equal(scheduled.platformSteps[0].formation?.kind, 'gn717x6');
+  assert.equal(scheduled.platformSteps[0].lengthM, trainLayout('gn717x6').length);
+  assert.equal(scheduled.platformSteps[0].formationBasis, 'timetable-matched');
+  assert.equal(assumed.platformSteps[0].lengthM, trainLayout('lner9').length);
+  assert.equal(assumed.platformSteps[0].formationBasis, 'assumed-fallback');
+  assert.match(assumed.timetable.note, /assumed fallback/i);
+  assert.equal(scheduled.platformSteps[0].firstObservedAtMs, at);
+  assert.ok(scheduled.platformSteps[0].lastObservedAtMs !== undefined);
+  assert.ok(scheduled.platformSteps[0].lastObservedAtMs >= at);
+  assert.ok(typeof scheduled.platformSteps[0].terminalReason === 'string');
+  assert.match(scheduled.platformSteps[0].terminalReason, /recording.*ended|replay.*ended/i);
+});
+test('CLI pairs repeated frozen schedule inputs by date and writes every incoming event in Markdown', async () => {
+  const dates = ['2026-01-15','2026-01-16','2026-01-17'];
+  const times = dates.map(d => Date.parse(`${d}T12:00:00Z`)), m=map();
+  m.anchors.push({ ...a('1000', 1), platform: '0', kind: 'platform' });
+  const recordings=times.map(t => [{t,e:event('step',{from:'A',to:'1000',descr:'1SYN'})}]);
+  const result=await runMultiple('scheduled-dates',m,recordings,data,undefined,
+    [ {date:dates[1],calls:[shortCall(dates[1],times[1])]}, {date:dates[0],calls:[shortCall(dates[0],times[0])]} ]);
+  const r=result.report;
+  assert.deepEqual(r.recordings.map((x:any)=>x.metrics.platformSteps[0].formation.kind), ['gn717x6','gn717x6','lner9']);
+  assert.equal(r.recordings[2].metrics.platformSteps[0].formationBasis,'assumed-fallback');
+  assert.match(r.recordings[2].metrics.timetable.note,/assumed fallback/i);
+  assert.equal(r.reproducibility.inputHashes.schedules.length,2);
+  assert.equal(r.reproducibility.command.args.filter((x:string)=>x==='--schedule').length,2);
+  for(const input of r.reproducibility.inputHashes.schedules){
+    assert.equal(await readFile(input.capturedPath,'utf8'),await readFile(input.path,'utf8'));
+    assert.match(input.sha256,/^[a-f0-9]{64}$/);
+  }
+  const md=await readFile(resolve(result.dir,'out/replay-report.md'),'utf8');
+  assert.match(md,/Event index/); assert.match(md,/Body id/); assert.match(md,/Formation/); assert.match(md,/assumed.fallback/i);
+  for(const date of dates)assert.ok(md.includes(date));
+});
+
+test('incoming rows retain explicit empty or replacement snapshot evidence without inferring arrival', () => {
+  const m=map();m.anchors.push({...a('1000',1),platform:'0',kind:'platform'});
+  for(const berths of [{}, {1000:'REPLACEMENT'}]){
+    const rows=parseRecording([
+      {t:0,e:event('step',{from:'A',to:'1000'})},
+      {t:1000,e:event('snapshot',{berths})},
+    ].map(x=>JSON.stringify(x)).join('\n'));
+    const step=replayReport(data,rows,m).platformSteps[0];
+    assert.deepEqual(step.sourceEvidence,{eventIndex:1,atMs:1000,kind:'snapshot',empty:Object.keys(berths).length===0,
+      physicalDescriptionPresent:false,stepDescriptionPresent:false, ...(Object.keys(berths).length ? {targetBerthOwner: 'REPLACEMENT'} : {})});
+    assert.equal(step.reachedAtMs,undefined);
+    assert.ok(typeof step.terminalReason === 'string');
+    if (Object.keys(berths).length === 0) {
+      assert.match(step.terminalReason,/linked body disappeared after observed fading/i);
+      assert.deepEqual(step.terminalSourceEvent,step.sourceEvidence);
+    } else {
+      assert.match(step.terminalReason,/replay ended.*moving/i);
+      assert.equal(step.terminalSourceEvent,undefined);
+    }
+  }
+});
+
+test('co-located platform alias observations remain distinct from physical incoming arrivals', () => {
+  const m=map();
+  m.anchors.push({...a('1000',1),platform:'0',kind:'platform'}, {...a('ALIAS',1),platform:'0',kind:'platform'});
+  const rows=parseRecording([
+    {t:0,e:event('interpose',{to:'1000'})},
+    {t:100,e:event('step',{from:'1000',to:'B'})},
+    {t:488,e:event('step',{from:'ALIAS',to:'1000'})},
+  ].map(x=>JSON.stringify(x)).join('\n'));
+  const r=replayReport(data,rows,m), step=r.platformSteps[0];
+  assert.equal(step.observationKind,'same-stop-transfer');
+  assert.equal(step.resolution,'same-stop-transfer');
+  assert.ok(typeof step.terminalReason === 'string');
+  assert.match(step.terminalReason,/same-stop transfer after departure/);
+  assert.equal(step.routeRefused,true);
+  assert.equal(r.platformStepSummary.total,1);
+  assert.equal(r.platformStepSummary.incoming,0);
+  assert.equal(r.platformStepSummary.sameStopTransfers,1);
+  assert.equal(r.platformStepSummary.reachedCorrectTrack,0);
+  assert.equal(r.platformStepSummary.unresolved,0);
 });

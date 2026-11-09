@@ -79,6 +79,7 @@ interface MetricCounts {
   maxPointJumpM: number;
   pointOverspeedTicks: number;
   teleportTicks: number;
+  distanceUnderSpeedTicks: number;
   backwardTicks: number;
   sameTrackOverlapTicks: number;
   maxSameTrackOverlapM: number;
@@ -103,6 +104,7 @@ interface TrainProfile {
   maxPointJumpM: number;
   pointOverspeedTicks: number;
   teleportTicks: number;
+  distanceUnderSpeedTicks: number;
   backwardTicks: number;
   accelerationViolationTicks: number;
   decelerationViolationTicks: number;
@@ -288,7 +290,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
   const overlapPairs = new Map<string, { trainIds: [number, number]; descriptions: [string, string]; maxOverlapM: number; ticks: number }>();
   const platformStops = new Map<string, PlatformStopAudit & { trainId: number; description: string }>();
   const counts: MetricCounts = { ticks: 0, maxSpeedMps: 0, maxAccelerationMps2: 0, maxDecelerationMps2: 0, maxPointJumpM: 0,
-    pointOverspeedTicks: 0, teleportTicks: 0, backwardTicks: 0, sameTrackOverlapTicks: 0, maxSameTrackOverlapM: 0,
+    pointOverspeedTicks: 0, teleportTicks: 0, distanceUnderSpeedTicks: 0, backwardTicks: 0, sameTrackOverlapTicks: 0, maxSameTrackOverlapM: 0,
     speedLimitViolationTicks: 0, accelerationViolationTicks: 0, decelerationViolationTicks: 0, heldOutsideAnchorViolations: 0,
     platformBufferClearanceViolations: 0, platformBodyContainmentViolations: 0, stationaryCabReversals: 0, reversalsOutsidePlatform: 0 };
   const sample = (atMs: number): void => {
@@ -308,7 +310,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
       if (!profile) {
         profile = { id: train.id, description: train.description, lengthM: train.lengthM, firstSeenSeconds: elapsed, lastSeenSeconds: elapsed,
           maxSpeedMps: train.speed, maxAccelerationMps2: 0, maxDecelerationMps2: 0, maxPointJumpM: 0, pointOverspeedTicks: 0,
-          teleportTicks: 0, backwardTicks: 0, accelerationViolationTicks: 0, decelerationViolationTicks: 0,
+          teleportTicks: 0, distanceUnderSpeedTicks: 0, backwardTicks: 0, accelerationViolationTicks: 0, decelerationViolationTicks: 0,
           speedLimitViolationTicks: 0, maxSameTrackOverlapM: 0, maxHeldOutsideAnchorsSeconds: 0, platformStops: [], profile: [], profileTruncated: false };
         profiles.set(train.id, profile);
       }
@@ -329,6 +331,18 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
           counts.reversalsOutsidePlatform++;
           violations.push({ kind: 'reversal-outside-platform', trainId: train.id, description: train.description, seconds: elapsed,
             details: { berth: train.lastBerth, reversals: train.reversals, odometerDeltaM: odometerDelta, platformBody } });
+        }
+        // A bounded-speed trajectory cannot cover less than this route distance,
+        // even if it slows and accelerates between the two sampled endpoints.
+        const minimumTravelM = Math.max(0, Math.min(old.speed, train.speed) * dtSeconds -
+          Math.max(accelBound, decelBound) * dtSeconds * dtSeconds / 2 - DEFAULTS.pointToleranceM);
+        if (!cabReversal && odometerDelta < minimumTravelM) {
+          counts.distanceUnderSpeedTicks++; profile.distanceUnderSpeedTicks++;
+          if (!violations.some((v) => v.kind === 'distance-under-reported-speed' && v.trainId === train.id)) {
+            violations.push({ kind: 'distance-under-reported-speed', trainId: train.id, description: train.description, seconds: elapsed,
+              details: { odometerDeltaM: odometerDelta, minimumTravelM, previousSpeedMps: old.speed, speedMps: train.speed,
+                dtSeconds, assumedRateBoundMps2: Math.max(accelBound, decelBound), toleranceM: DEFAULTS.pointToleranceM } });
+          }
         }
         const deltaV = (train.speed - old.speed) / dtSeconds;
         if (!cabReversal && deltaV > 0) {
@@ -510,6 +524,7 @@ export function auditRecording(rows: readonly RecordedEvent[], data: KxData, anc
       heldClassification: 'continuous interval at speed <= 0.05 m/s beyond max(anchor.errorM, 5 m) from every located anchor; ordinary dwell at an anchor is informational and is not a violation',
       cabReversal: 'a reversal counter increase on occupied surface-platform track with occupied-body overlap consistent with odometer distance is treated as a legal cab label reversal; its nose-label jump is excluded from point-speed, teleport and backward metrics; reversals elsewhere are reported',
       trainLengths: options.lengthPolicy ?? `Fallback LNER IET shape assumption: descriptions starting with 1 use ${lengths.long} m (9-car); other descriptions use ${lengths.short} m (5-car)`,
+      distanceConsistency: 'route odometer advance must be at least min(endpoint speeds) * dt - max(audit acceleration/deceleration bounds) * dt² / 2 - 0.05 m; assumes those rate bounds between samples, excludes recognized cab swaps, and does not independently prove continuous body trajectory',
       limits: '0.7 m/s² accel/decel thresholds are modeling audit bounds; core currently models 0.7 accel and 0.6 service braking',
       references: [
         'Hitachi Class 800 series lists maximum acceleration of 0.75 m/s²: https://www.hitachirail.com/products-and-solutions/rolling-stock/intercity-trains/class-800-series-800-810/',
@@ -540,6 +555,7 @@ export function renderMotionAuditMarkdown(report: ReturnType<typeof auditRecordi
     `| Accel / decel bound ticks (> ${report.thresholds.accelerationMps2} / ${report.thresholds.decelerationMps2} m/s²) | ${c.accelerationViolationTicks} / ${c.decelerationViolationTicks} |\n` +
     `| Speed-limit violation ticks | ${c.speedLimitViolationTicks} |\n` +
     `| Drawn point overspeed / teleport / backward ticks | ${c.pointOverspeedTicks} / ${c.teleportTicks} / ${c.backwardTicks} |\n` +
+    `| Route distance below reported speed ticks | ${c.distanceUnderSpeedTicks} |\n` +
     `| Same-track overlap ticks / max overlap | ${c.sameTrackOverlapTicks} / ${f(c.maxSameTrackOverlapM)} m |\n` +
     `| Held > ${report.thresholds.heldOutsideAnchorSeconds}s outside all anchors | ${c.heldOutsideAnchorViolations} |\n` +
     `| Platform buffer / body containment violations | ${c.platformBufferClearanceViolations} / ${c.platformBodyContainmentViolations} |\n` +

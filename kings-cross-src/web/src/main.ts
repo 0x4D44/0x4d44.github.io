@@ -23,6 +23,7 @@ import { buildShed } from './shed.ts';
 import { buildTrain, standTrain } from './train.ts';
 import { backoffMs, createLiveFeed, createReplayFeed, createScheduleFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { MotionSink, TrainFeed } from './feed.ts';
+import { loadOfflineReplay } from './offline-replay.ts';
 import { createSignals } from './signals.ts';
 import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
@@ -131,6 +132,7 @@ function start(): void {
   let settingsError = '';
   try { settings = trainSettings(params); }
   catch (error) { settings = { mode: 'none', date: '', speed: 1 }; settingsError = (error as Error).message; }
+  const replayBundle = settings.mode === 'replay' ? params.get('replayBundle') : null;
   const trains: { kind: TrainKind; group: THREE.Group; noseWorld: [number, number, number]; headingRad: number; trackIndex?: number; description?: string }[] = [];
   const samples: THREE.Group[] = [];
   const sampleBoardTrains: BoardTrain[] = [];
@@ -250,7 +252,7 @@ function start(): void {
   (window as unknown as { __kx: unknown }).__kx = kx;
   paintStatus();
   paintBoard();
-  if (signalLayer && relayReachable(location.hostname)) void signalLayer.loadTable().then(paintStatus);
+  if (signalLayer && replayBundle === null && relayReachable(location.hostname)) void signalLayer.loadTable().then(paintStatus);
 
   let disposed = false, bootstrapTimer: ReturnType<typeof setTimeout> | undefined;
   const setConnection = (value: string): void => {
@@ -270,17 +272,24 @@ function start(): void {
     kx.boardRows = null;
     mode = requested; setConnection(attempt ? 'reconnecting; loading anchors' : 'loading anchors');
     try {
-      const response = await fetch('/relay/anchors', { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
-      if (!response.ok) throw new Error('anchors unavailable');
-      const anchors = await response.json() as AnchorMap;
-      if (!anchors || typeof anchors.area !== 'string' || !Array.isArray(anchors.anchors) || !Array.isArray(anchors.unmapped)) throw new Error('invalid anchors');
-      let recording: ReturnType<typeof parseRecording> | undefined;
-      if (requested === 'replay') {
-        setConnection('loading recording');
-        const replay = await fetch(`/relay/recording?date=${settings.date}`, { cache: 'no-store', signal: AbortSignal.timeout(30_000) });
-        if (!replay.ok) throw new Error('recording unavailable');
-        recording = parseRecording(await replay.text());
-        if (!recording.length) throw new Error('recording is empty');
+      const bundle = requested === 'replay' && replayBundle !== null
+        ? await loadOfflineReplay(replayBundle, location.href, graph, `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}`)
+        : undefined;
+      let anchors: AnchorMap;
+      let recording: ReturnType<typeof parseRecording> | undefined = bundle?.recording;
+      if (bundle) anchors = bundle.anchors;
+      else {
+        const response = await fetch('/relay/anchors', { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
+        if (!response.ok) throw new Error('anchors unavailable');
+        anchors = await response.json() as AnchorMap;
+        if (!anchors || typeof anchors.area !== 'string' || !Array.isArray(anchors.anchors) || !Array.isArray(anchors.unmapped)) throw new Error('invalid anchors');
+        if (requested === 'replay') {
+          setConnection('loading recording');
+          const replay = await fetch(`/relay/recording?date=${settings.date}`, { cache: 'no-store', signal: AbortSignal.timeout(30_000) });
+          if (!replay.ok) throw new Error('recording unavailable');
+          recording = parseRecording(await replay.text());
+          if (!recording.length) throw new Error('recording is empty');
+        }
       }
       if (disposed) return;
       unmapped = anchors.unmapped.length;
@@ -294,7 +303,8 @@ function start(): void {
       kx.motion = motion;
       liveTrains = createLiveTrains(graph, scene, trainKinds.kindFor);
       timetable?.dispose();
-      timetable = createScheduleFeed({ mode: requested, hostname: location.hostname,
+      timetable = createScheduleFeed({ mode: requested, hostname: bundle ? 'localhost' : location.hostname,
+        ...(bundle ? { relayPresent: true, fetchImpl: bundle.fetchSchedule } : {}),
         date: requested === 'replay' ? `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}` : undefined,
         onChange: () => paintBoard() });
       await timetable.refresh();
@@ -309,6 +319,10 @@ function start(): void {
       feed = requested === 'replay' ? createReplayFeed(recording!, settings.speed, sink, setConnection) : createLiveFeed(sink, setConnection);
     } catch (error) {
       if (disposed) return;
+      if (replayBundle !== null && requested === 'replay') {
+        setConnection(`replay bundle unavailable: ${(error as Error).message}`);
+        return;
+      }
       const delay = backoffMs(attempt);
       setConnection(`${(error as Error).message}; reconnecting in ${delay / 1000}s`);
       bootstrapTimer = setTimeout(() => { void begin(requested, attempt + 1); }, delay);

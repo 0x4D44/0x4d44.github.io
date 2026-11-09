@@ -288,6 +288,134 @@ export function addSash(parts: PartMap<Key>, key: 'sash' | 'sashArch', p: Placed
 const CORNICE_HEIGHT = 0.7; // ASSUMED
 const SASH_HEIGHT = 2.4; // ASSUMED
 
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry):
+// "Slate roof with pedimented dormers." All dimensions and the one-per-bay count below are ASSUMED;
+// locations follow the OSM-derived facade bays and the matching eaves/ridge ring.
+const GNH_DORMER_INSET = 0.34; // ASSUMED fraction up the roof slope
+const GNH_DORMER_REAR_INSET = 0.68; // ASSUMED dormer roof run
+const GNH_DORMER_WIDTH = 1.8; // ASSUMED maximum width
+const GNH_DORMER_WALL_HEIGHT = 1.35; // ASSUMED
+const GNH_DORMER_PEDIMENT_RISE = 0.65; // ASSUMED
+const GNH_DORMER_WINDOW_SILL = 0.18; // ASSUMED
+const GNH_DORMER_WINDOW_WIDTH = 1.05; // ASSUMED
+const GNH_DORMER_WINDOW_HEIGHT = 1.15; // ASSUMED
+const GNH_DORMER_REAR_CLEARANCE = 0.04; // ASSUMED: the slate cheeks meet the main roof
+
+// [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry)
+// also records "Prominent slab chimney-stacks." Their stone finish, count and dimensions are ASSUMED:
+// three on each long roof slope, selected by bay index and projected onto the OSM roof ring.
+const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = 3; // ASSUMED
+const GNH_CHIMNEY_WIDTH = 0.72; // ASSUMED shaft width along a facade bay
+const GNH_CHIMNEY_DEPTH = 0.64; // ASSUMED depth across the roof slope
+const GNH_CHIMNEY_CAP_WIDTH = 0.92; // ASSUMED slab cap width
+const GNH_CHIMNEY_CAP_DEPTH = 0.84; // ASSUMED slab cap depth
+const GNH_CHIMNEY_HEIGHT = 2.4; // ASSUMED prominent stack height
+const GNH_CHIMNEY_CAP_HEIGHT = 0.14; // ASSUMED slab cap thickness
+const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
+
+/** A point on one actual roof facet; `inset` interpolates the matching OSM eaves and roof-ring edges. */
+function hotelRoofPoint(plan: HotelPlan, edgeIndex: number, t: number, inset: number): V3 {
+  const j = (edgeIndex + 1) % plan.outline.length;
+  const a = plan.outline[edgeIndex] as Pt, b = plan.outline[j] as Pt;
+  const ra = plan.roof.ring[edgeIndex] as Pt, rb = plan.roof.ring[j] as Pt;
+  const x0 = a[0] + (b[0] - a[0]) * t, z0 = a[1] + (b[1] - a[1]) * t;
+  const x1 = ra[0] + (rb[0] - ra[0]) * t, z1 = ra[1] + (rb[1] - ra[1]) * t;
+  const x = x0 + (x1 - x0) * inset, z = z0 + (z1 - z0) * inset;
+  const p: Pt = [x, z], rise = plan.ridge - plan.eaves;
+  const height = (u: Pt, v: Pt, w: Pt, yu: number, yv: number, yw: number): number | undefined => {
+    const uvx = v[0] - u[0], uvz = v[1] - u[1], uwx = w[0] - u[0], uwz = w[1] - u[1];
+    const px = p[0] - u[0], pz = p[1] - u[1], d = uvx * uwz - uvz * uwx;
+    if (Math.abs(d) < 1e-10) return undefined;
+    const q = (px * uwz - pz * uwx) / d, r = (uvx * pz - uvz * px) / d;
+    return q >= -1e-8 && r >= -1e-8 && q + r <= 1 + 1e-8 ? yu + q * (yv - yu) + r * (yw - yu) : undefined;
+  };
+  const y = height(a, b, rb, plan.eaves, plan.eaves, plan.eaves + rise) ?? height(a, rb, ra, plan.eaves, plan.eaves + rise, plan.eaves + rise);
+  return [x, y ?? plan.eaves + rise * inset, z];
+}
+
+function bayParameter(plan: HotelPlan, bay: BayPosition): { edgeLength: number; t: number; roofRun: number } {
+  const a = plan.outline[bay.edge] as Pt, b = plan.outline[(bay.edge + 1) % plan.outline.length] as Pt;
+  const ra = plan.roof.ring[bay.edge] as Pt, rb = plan.roof.ring[(bay.edge + 1) % plan.outline.length] as Pt;
+  const dx = b[0] - a[0], dz = b[1] - a[1], edgeLength = Math.hypot(dx, dz);
+  const t = ((bay.at[0] - a[0]) * dx + (bay.at[1] - a[1]) * dz) / (edgeLength * edgeLength);
+  const roofRun = (Math.hypot(ra[0] - a[0], ra[1] - a[1]) + Math.hypot(rb[0] - b[0], rb[1] - b[1])) / 2;
+  return { edgeLength, t, roofRun };
+}
+
+function addHotelDormer(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
+  const { edgeLength, t } = bayParameter(plan, bay);
+  const width = Math.min(GNH_DORMER_WIDTH, bay.width * 0.55);
+  const dt = width / (2 * edgeLength);
+  const left = hotelRoofPoint(plan, bay.edge, t - dt, GNH_DORMER_INSET);
+  const right = hotelRoofPoint(plan, bay.edge, t + dt, GNH_DORMER_INSET);
+  const centre = hotelRoofPoint(plan, bay.edge, t, GNH_DORMER_INSET);
+  const shoulderLeft: V3 = [left[0], centre[1] + GNH_DORMER_WALL_HEIGHT, left[2]];
+  const shoulderRight: V3 = [right[0], centre[1] + GNH_DORMER_WALL_HEIGHT, right[2]];
+  const apex: V3 = [centre[0], centre[1] + GNH_DORMER_WALL_HEIGHT + GNH_DORMER_PEDIMENT_RISE, centre[2]];
+  const faceNormal: V3 = [bay.normal[0], 0, bay.normal[1]];
+  part(parts, 'stone').fan([left, right, shoulderRight, apex, shoulderLeft], faceNormal, p => [p[0], p[1]]);
+  addSash(parts, 'sash', { at: [centre[0], centre[2]], dir: bay.dir, normal: bay.normal }, centre[1] + GNH_DORMER_WINDOW_SILL, GNH_DORMER_WINDOW_WIDTH, GNH_DORMER_WINDOW_HEIGHT);
+
+  const backLeft = hotelRoofPoint(plan, bay.edge, t - dt, GNH_DORMER_REAR_INSET);
+  const backRight = hotelRoofPoint(plan, bay.edge, t + dt, GNH_DORMER_REAR_INSET);
+  const backCentre = hotelRoofPoint(plan, bay.edge, t, GNH_DORMER_REAR_INSET);
+  const rearTopLeft: V3 = [backLeft[0], backLeft[1] + GNH_DORMER_REAR_CLEARANCE, backLeft[2]];
+  const rearTopRight: V3 = [backRight[0], backRight[1] + GNH_DORMER_REAR_CLEARANCE, backRight[2]];
+  const rearApex: V3 = [backCentre[0], backCentre[1] + GNH_DORMER_REAR_CLEARANCE, backCentre[2]];
+  const slate = part(parts, 'slate');
+  const depth = Math.hypot(backCentre[0] - centre[0], backCentre[2] - centre[2]);
+  const uv: [number, number][] = [[0, 0], [depth, 0], [depth, GNH_DORMER_WALL_HEIGHT], [0, GNH_DORMER_WALL_HEIGHT]];
+  slate.quadUV(left, backLeft, rearTopLeft, shoulderLeft, uv as [[number, number], [number, number], [number, number], [number, number]], faceNormal);
+  slate.quadUV(right, shoulderRight, rearTopRight, backRight, uv as [[number, number], [number, number], [number, number], [number, number]], [-faceNormal[0], 0, -faceNormal[2]]);
+  const roofUv: [[number, number], [number, number], [number, number], [number, number]] = [[0, 0], [width / 2, 0], [width / 2, depth], [0, depth]];
+  slate.quadUV(apex, shoulderLeft, rearTopLeft, rearApex, roofUv, UP);
+  slate.quadUV(apex, rearApex, rearTopRight, shoulderRight, roofUv, UP);
+}
+
+function hotelChimneyBays(plan: HotelPlan): BayPosition[] {
+  return plan.faces.filter(face => face.bays.length >= 8).flatMap(face => Array.from({ length: GNH_CHIMNEY_COUNT_PER_LONG_SLOPE }, (_, i) => face.bays[Math.floor((i + 0.5) * face.bays.length / GNH_CHIMNEY_COUNT_PER_LONG_SLOPE)] as BayPosition));
+}
+
+function addHotelChimney(parts: PartMap<Key>, plan: HotelPlan, bay: BayPosition): void {
+  const { edgeLength, t, roofRun } = bayParameter(plan, bay);
+  const capHalfInset = GNH_CHIMNEY_CAP_DEPTH / (2 * roofRun);
+  const inset = Math.min(1 - capHalfInset - 0.02, GNH_DORMER_REAR_INSET + capHalfInset + GNH_ROOF_DETAIL_GAP / roofRun);
+  const df = GNH_CHIMNEY_DEPTH / (2 * roofRun);
+  const shaftCorners = [
+    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset - df),
+    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset - df),
+    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset + df),
+    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_WIDTH / (2 * edgeLength), inset + df),
+  ];
+  const centre = hotelRoofPoint(plan, bay.edge, t, inset);
+  const shaftTopY = centre[1] + GNH_CHIMNEY_HEIGHT - GNH_CHIMNEY_CAP_HEIGHT;
+  const shaftTop = shaftCorners.map(([x, , z]): V3 => [x, shaftTopY, z]);
+  const capRoofCorners = [
+    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset - capHalfInset),
+    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset - capHalfInset),
+    hotelRoofPoint(plan, bay.edge, t + GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset + capHalfInset),
+    hotelRoofPoint(plan, bay.edge, t - GNH_CHIMNEY_CAP_WIDTH / (2 * edgeLength), inset + capHalfInset),
+  ];
+  // The lower lip sits at shaft-top height, not on the roof; only the narrow shaft feet touch slate.
+  const capBase = capRoofCorners.map(([x, , z]): V3 => [x, shaftTopY, z]);
+  const capTopY = shaftTopY + GNH_CHIMNEY_CAP_HEIGHT;
+  const capTop = capBase.map(([x, , z]): V3 => [x, capTopY, z]);
+  const stone = part(parts, 'stone');
+  const sides: V3[] = [[bay.normal[0], 0, bay.normal[1]], [bay.dir[0], 0, bay.dir[1]], [-bay.normal[0], 0, -bay.normal[1]], [-bay.dir[0], 0, -bay.dir[1]]];
+  for (let i = 0; i < 4; i++) {
+    const j = (i + 1) % 4;
+    stone.quadUV(shaftCorners[i] as V3, shaftCorners[j] as V3, shaftTop[j] as V3, shaftTop[i] as V3, undefined, sides[i] as V3);
+    stone.quadUV(capBase[i] as V3, capBase[j] as V3, capTop[j] as V3, capTop[i] as V3, undefined, sides[i] as V3);
+  }
+  stone.quadUV(capBase[0] as V3, capBase[1] as V3, capBase[2] as V3, capBase[3] as V3, undefined, [0, -1, 0]);
+  stone.quadUV(capTop[0] as V3, capTop[1] as V3, capTop[2] as V3, capTop[3] as V3, undefined, UP);
+}
+
+function addHotelRoofDetails(parts: PartMap<Key>, plan: HotelPlan): void {
+  for (const face of plan.faces) for (const bay of face.bays) addHotelDormer(parts, plan, bay);
+  for (const bay of hotelChimneyBays(plan)) addHotelChimney(parts, plan, bay);
+}
+
 export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   const parts: PartMap<Key> = {};
   const stone = part(parts, 'stone');
@@ -296,6 +424,7 @@ export function hotelGeometry(plan: HotelPlan): PartMap<Key> {
   addBand(stone, segs, plan.groundStorey - 0.12, 0.28, 0.1); // string course over the ground floor
   addBand(stone, segs, plan.eaves - CORNICE_HEIGHT, CORNICE_HEIGHT, 0.55); // modillion cornice [HE-GNH]; its depth is ASSUMED
   addRoof(part(parts, 'slate'), plan.outline, plan.roof.ring, plan.eaves, plan.ridge);
+  addHotelRoofDetails(parts, plan);
 
   const f = FIGURES.gnh;
   const [tw] = TEXTURES.window.tile;

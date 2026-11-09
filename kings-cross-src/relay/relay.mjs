@@ -226,6 +226,7 @@ export async function startRelay({
             lastEventAgeMs: status.lastEventAt ? now() - status.lastEventAt : null,
             badMessages: status.badMessages,
             counts: state.snapshot().counts,
+            recording: recorder.stats(),
             schedule: schedules.stats(),
             trust: trust.stats(),
           });

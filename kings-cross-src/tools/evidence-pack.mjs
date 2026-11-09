@@ -120,7 +120,13 @@ async function inventory(options) {
   for (const [i, source] of recordings.entries()) {
     const date = dateFor(source), role = `recording:${i}`;
     add(role, source, `recording-${String(i + 1).padStart(2, '0')}.ndjson`); specs.at(-1).date = date;
-    if (date) add(`schedule:${i}`, path.join(options.dataDir, `schedule-${date}.json`), `schedule-${String(i + 1).padStart(2, '0')}.json`, true);
+    if (date) {
+      add(`schedule:${i}`, path.join(options.dataDir, `schedule-${date}.json`), `schedule-${String(i + 1).padStart(2, '0')}.json`, true);
+      // Missing day caches use the page's explicit fallback. Existing caches are frozen
+      // and declared dependencies, so a later refresh cannot change measured formations.
+      try { await lstat(specs.at(-1).source); specs.at(-1).presentAtPlanning = true; }
+      catch (error) { specs.at(-1).presentAtPlanning = error.code !== 'ENOENT'; }
+    }
   }
   return specs;
 }
@@ -170,6 +176,8 @@ export function buildPlan(o, inputs, mutations = []) {
   const input = role => inputs.find(i => i.role === role)?.path;
   const recordings = inputs.filter(i => i.role.startsWith('recording:'));
   const recArgs = recordings.flatMap(i => ['--recording', i.path]);
+  const motionSchedules = inputs.filter(i => i.role.startsWith('schedule:') && i.presentAtPlanning);
+  const motionScheduleArgs = motionSchedules.flatMap(i => ['--schedule', i.path]);
   const selected = new Set(o.only), motionNeeded = ['03', '04', '05'].some(n => selected.has(n));
   const steps = [], add = (id, n, command, args, extra = {}) => {
     steps.push({ id, axis: n, command, args, cwd: o.root, timeoutMs: 300000, required: true, needs: [], requires: [], inputs: [], outputs: [], ...extra });
@@ -193,9 +201,9 @@ export function buildPlan(o, inputs, mutations = []) {
     outputs: [fileOutput(path.join(axis('02'), 'station/manifest.json')), fileOutput(path.join(axis('02'), 'station/index.md'))],
     note: 'The station tool also collects supporting axes/checks; their gaps are preserved, not claimed as station failures.' });
   const motionOut = path.join(axis('05'), 'motion'), motionJson = path.join(motionOut, 'axis05-evidence.json');
-  if (motionNeeded) node('05-motion', '05', 'axis05-evidence.ts', [...recArgs, '--anchors', input('anchors'), '--graph', input('graph'), '--smart', input('smart'), '--out', motionOut], {
-    inputs: ['recordings', 'anchors', 'graph', 'smart'], outputs: [fileOutput(motionJson), fileOutput(path.join(motionOut, 'axis05-evidence.md'))],
-    note: 'Motion is a prerequisite of dimensions and train capture; it is measured once and indexed under both axes.' });
+  if (motionNeeded) node('05-motion', '05', 'axis05-evidence.ts', [...recArgs, ...motionScheduleArgs, '--anchors', input('anchors'), '--graph', input('graph'), '--smart', input('smart'), '--out', motionOut], {
+    inputs: ['recordings', 'anchors', 'graph', 'smart', ...motionSchedules.map(i => i.role)], outputs: [fileOutput(motionJson), fileOutput(path.join(motionOut, 'axis05-evidence.md'))],
+    note: 'Motion is a prerequisite of dimensions and train capture; it is measured once and indexed under both axes. Frozen per-day schedules resolve page formations; unavailable days retain the explicit headcode fallback.' });
   if (selected.has('03') || selected.has('05')) {
     const dim = path.join(axis('03'), 'dimensions'), shots = path.join(axis('03'), 'shots');
     node('03-dimensions', '03', 'axis03-evidence.ts', ['--motion-report', motionJson, '--out', dim], {
@@ -221,8 +229,8 @@ export function buildPlan(o, inputs, mutations = []) {
       needs: ['loopback', 'running relay'], timeoutMs: (o.liveSeconds + 655) * 1000,
       outputs: [fileOutput(path.join(live, 'live-vs-replay.json')), fileOutput(path.join(live, 'live-vs-replay.md'))],
       note: 'Fresh live capture uses the relay state at capture time; its own anchors/schedule hashes are retained. It is distinct from the frozen historical inputs.' });
-    const board = recordings.length ? path.join(axis('04'), `board-${recordings[0].date ?? 0}/board-vs-trust.json`) : null;
-    node('04-summary', '04', 'axis04-summary.ts', ['--out', path.join(axis('04'), 'summary'), '--replay-report', path.join(replay, 'replay-report.json'), '--live-report', path.join(live, 'live-vs-replay.json'), ...(board ? ['--board-report', board] : []), '--relay', o.relay], {
+    const boardReports = recordings.flatMap((recording, i) => ['--board-report', path.join(axis('04'), `board-${recording.date ?? i}/board-vs-trust.json`)]);
+    node('04-summary', '04', 'axis04-summary.ts', ['--out', path.join(axis('04'), 'summary'), '--replay-report', path.join(replay, 'replay-report.json'), '--live-report', path.join(live, 'live-vs-replay.json'), ...boardReports, '--relay', o.relay], {
       outputs: [fileOutput(path.join(axis('04'), 'summary/axis-04-summary.json')), fileOutput(path.join(axis('04'), 'summary/axis-04-summary.md'))],
       note: 'The summary records absent/failed inputs as gaps; later board dates are linked individually.' });
   }

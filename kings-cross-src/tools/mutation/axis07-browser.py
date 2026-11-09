@@ -57,6 +57,19 @@ MUTATIONS = [
     ('errors between screenshots are hidden', 'tools/axis07-browser.mjs',
      "if (report.networkDiagnostics?.some(d => d.consoleErrorCount || d.cspErrorCount || d.unexpectedNetworkFailures.length)) return 'GAP';", '',
      'browser report completeness requires all phases, attribution, status, board, counts and screenshots'),
+    ('offline replay clock may remain frozen', 'tools/axis07-browser.mjs',
+     'replay.replayTimeMs > replay.replayStartMs', 'replay.replayTimeMs >= replay.replayStartMs',
+     'browser report completeness requires all phases, attribution, status, board, counts and screenshots'),
+    ('offline replay may request relay endpoints', 'tools/axis07-browser.mjs',
+     'Object.values(replay.relayRequestCounts).every(count => count === 0)', 'true',
+     'browser report completeness requires all phases, attribution, status, board, counts and screenshots'),
+    ('sample board accepted in live replay evidence', 'tools/axis07-browser.mjs',
+     "phase.board.mode === (offline ? 'sample' : replay ? 'replay' : 'live')", 'true',
+     'browser report completeness requires all phases, attribution, status, board, counts and screenshots'),
+    ('static fixture clock disagrees with its recording', 'tools/axis07-browser.mjs',
+     'return { startMs, resources: new Map([', 'return { startMs: startMs + 120_000, resources: new Map([',
+     'offline browser fixture serves finite static replay while the relay proxy is disabled'),
+
 ]
 
 
@@ -107,9 +120,9 @@ try:
 
     baseline, expired = run(root)
     expected = test_names(baseline.stdout)
-    if baseline.returncode or baseline.stderr or expired or len(expected) != 9 or '# tests 9' not in baseline.stdout:
+    if baseline.returncode or baseline.stderr or expired or len(expected) != 10 or '# tests 10' not in baseline.stdout:
         print(baseline.stdout, baseline.stderr)
-        raise SystemExit('baseline failed or did not run exactly the nine focused tests')
+        raise SystemExit('baseline failed or did not run exactly the ten focused tests')
 
     originals = {file: (root / file).read_text() for _, file, _, _, _ in MUTATIONS}
     for label, filename, old, new, expected_failure in MUTATIONS:

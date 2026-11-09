@@ -55,12 +55,16 @@ export const VALLEY_HALF = 0.25;
  * The Western Range: Cubitt's 1850s brick range along the west side of the shed, between the shed
  * wall and the Western Concourse. Its footprint is read off the OSM station building (260720558):
  * the concourse arc ends at v = 141.5 in the shed frame (the Range ends with it) and the footprint's
- * southern edge beside the front is at v = 8.1 to 8.9. The storey count is sourced: the Historic
- * England list entry (1078328) describes the Western range as a 3 storey block, and Camden's Listed
- * Building Consent LB09 submissions for the Main Train Shed (section 2.3; see the valley comment in
- * buildShed) say the shed's side walls ARE the Western and Eastern Range walls. Depth, storey height
- * and bay width are ASSUMED (no published survey was found; the storey height in metres is in no
- * listing). Tests pin v0 and v1 to the OSM numbers.
+ * southern edge beside the front is at v = 8.1 to 8.9. Historic England list entry 1078328,
+ * Details, describes the western office block as three storeys, with service rooms behind:
+ * https://historicengland.org.uk/listing/the-list/list-entry/1078328?section=official-list-entry
+ * Arup Journal 2/2012, p27 figs 4-5, locates the Range beside the shed and describes the roof's
+ * load path through its cross-walls and buttresses:
+ * https://www.arup.com/globalassets/downloads/arup-journal/the-arup-journal-2012-issue-2.pdf#page=27
+ * Extending three storeys along this entire procedural range and treating the shed/Range walls
+ * as coincident are ASSUMED simplifications, not a dimensioned wall survey. The former LB09
+ * section 2.3 attribution was not verified (see the corrected Camden references in buildShed).
+ * Depth, storey height and bay width are also ASSUMED. Tests pin v0 and v1 to the OSM numbers.
  */
 export const WESTERN_RANGE = { v0: 8.1, v1: 141.5, depth: 12, storey: 4.1, storeys: 3, bay: 3.4, roofRise: 3.0 } as const;
 
@@ -456,15 +460,20 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   group.add(ribs);
   // the valley: where the two roofs meet, a board-lined fascia closes the gap from the springing up to the
   // cut skins, so each vault's soffit reads as running down to the springing (the first build's grey concrete
-  // slab was the large dark plane that filled the left of the view from the platforms). The real central
-  // support is a brick spine wall, a two-storey round-arched arcade, carrying the ribs at the springing
-  // [CAM-LB09: Camden's Listed Building Consent 2008/2860 condition LB09 submissions for the Main Train Shed
-  // (camdocs.camden.gov.uk records 3355818 and 3357544), section 2.2: "The Spine Wall separating the two Train
-  // Sheds is a two Storey round arched arcade, with stepped flat arches"; HE-KX: Historic England list entry 1078328,
-  // "round-arched brick colonnade" (text read on britishlistedbuildings.co.uk/101078328); RKG: RKG Partnership's
-  // King's Cross roof case study, "brick central spine wall"]. The OSM tracks run along this line (a buffer stop
-  // stands at u = 36.1), so the wall is not drawn and the valley stays open below the springing. The colour of
-  // the restored 2012 ironwork and lining is in none of these: the paint colours are ASSUMED (see materials.ts).
+  // slab was the large dark plane that filled the left of the view from the platforms). Historic England
+  // list entry 1078328, Interior (official URL above), supports a round-arched brick central colonnade.
+  // Camden's delegated report 2009/5099/L under 2007/2611/L, p3, describes late-C20 timber boarding
+  // above the central spine wall when assessing glass-storage box fixings:
+  // https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3357544/file/document
+  // It does not establish this fascia's continuous extent, width, framing or closure at the springing:
+  // those are ASSUMED model geometry. Neither checked source establishes the formerly claimed two-storey,
+  // stepped-flat-arch profile or exact masonry bearing level. The former LB09 section 2.2 attribution is
+  // unverified; these Camden records are delegated reports, not that submission. The OSM tracks run along
+  // this model line (a buffer stop stands at u = 36.1), so the wall is not drawn below the springing.
+  // Camden's delegated report 2009/5177/L under 2007/2611/L, p3, records submission of paint-removal
+  // trials and Architectural Paint Analysis Volume 1, but does not specify the selected restored palette:
+  // https://camdocs.camden.gov.uk/HPRMWebDrawer/Record/3355818/file/document
+  // The drawn ironwork and lining paint colours remain ASSUMED (see materials.ts).
   const valleyTop = sp + (R + ROOF_SKIN) * Math.sin(cut);
   const valleyX = layout.aisle + 2 * R;
   const valley = new Batch();

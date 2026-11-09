@@ -762,3 +762,19 @@ test('relay shutdown: recorder flushes and timers clear when server close report
   const rows = (await readFile(file, 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);
   assert.deepEqual(rows.map((row) => row.e.kind), ['snapshot'], 'recorder is flushed despite server close failure');
 });
+
+test('relay robustness: recording failure appears in health while live snapshots continue', async (t) => {
+  const captured = captureHttp(t);
+  const dataDir = await newTmp('kx-recording-failure-');
+  const now = Date.UTC(2000,0,1);
+  await mkdir(path.join(dataDir,'recordings','td-Y9-20000101.ndjson'),{recursive:true});
+  const relay = await startRelay({area:'Y9',dataDir,feedEnabled:false,now:()=>now});
+  t.after(async()=>{await relay.close();await rm(dataDir,{recursive:true,force:true});});
+  await until(async()=>JSON.parse((await fakeRequest(captured.handler)).body).recording?.state==='failed','recording failure');
+  const health=JSON.parse((await fakeRequest(captured.handler)).body);
+  assert.equal(health.recording.error,'write failed'); assert.equal(health.recording.gap,true);
+  assert.equal(health.feed,'disabled');
+  assert.equal(relay.state.apply({kind:'interpose',area:'Y9',to:'1234',descr:'1A23'}),true);
+  const snapshot=JSON.parse((await fakeRequest(captured.handler,{url:'/snapshot'})).body);
+  assert.equal(snapshot.berths['1234'],'1A23');
+});

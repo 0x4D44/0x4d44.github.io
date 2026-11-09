@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { auditRecording } from '../motion-audit.ts';
+import { auditRecording, renderMotionAuditMarkdown } from '../motion-audit.ts';
 import { PLATFORM_9_OUTLINE_BASIS } from '../../core/station.ts';
 
 const data = {
@@ -78,6 +78,7 @@ test('records a deterministic 1 s profile and excludes a stationary cab reversal
   assert.equal(first.counts.stationaryCabReversals, 1);
   assert.equal(first.counts.maxPointJumpM, 0);
   assert.equal(first.counts.teleportTicks, 0);
+  assert.equal(first.counts.distanceUnderSpeedTicks, 0);
   assert.equal(first.counts.backwardTicks, 0);
   assert.equal(first.counts.reversalsOutsidePlatform, 0);
 });
@@ -160,4 +161,34 @@ test('assesses platform 9 against the drawn 176 m extension and retains genuine 
   assert.equal(outside.counts.platformBodyContainmentViolations, 1, 'genuine overhang retains the existing 2 m tolerance');
   assert.ok(outside.trains[0].platformStops[0].maximumBodyOutsidePlatformM > 2);
   assert.equal(fixture.platforms[0].pts[1][1], -300, 'audit must not rewrite source geometry');
+});
+
+
+test('detects frozen body travel hidden by a plausible reported speed', () => {
+  const frozen = auditRecording(rows(200), data, anchors, {
+    createMotion: scriptedFactory((_seconds, graph) => [view(graph, { x: 50, speed: 4 })]),
+  });
+  assert.equal(frozen.counts.pointOverspeedTicks, 0);
+  assert.equal(frozen.counts.accelerationViolationTicks, 0);
+  assert.equal(frozen.counts.decelerationViolationTicks, 0);
+  assert.equal(frozen.counts.distanceUnderSpeedTicks, 2);
+  assert.equal(frozen.trains[0].distanceUnderSpeedTicks, 2);
+  assert.equal(frozen.violations.filter(v => v.kind === 'distance-under-reported-speed').length, 1);
+  assert.match(renderMotionAuditMarkdown(frozen), /Route distance below reported speed ticks \| 2/);
+  const moving = auditRecording(rows(200), data, anchors, {
+    createMotion: scriptedFactory((seconds, graph) => [{ ...view(graph, { x: 50 + 4 * seconds, speed: 4 }), distanceM: 4 * seconds }]),
+  });
+  assert.equal(moving.counts.distanceUnderSpeedTicks, 0);
+  const curved = auditRecording(rows(1000), data, anchors, {
+    createMotion: scriptedFactory((seconds, graph) => [{ ...view(graph, { x: 50, speed: 4 }),
+      leading: { edge: graph.edges[0], t: .5, point: [50 + 4 * Math.sin(seconds), -200 + 4 * (1 - Math.cos(seconds))] }, distanceM: 4 * seconds }]),
+  });
+  assert.equal(curved.counts.distanceUnderSpeedTicks, 0, 'route odometer avoids curved-track chord ambiguity');
+  const arrival = auditRecording(rows(7000), data, anchors, {
+    createMotion: scriptedFactory((seconds, graph) => {
+      const time = Math.min(seconds, 4 / .6), distanceM = 4 * time - .3 * time * time;
+      return [{ ...view(graph, { x: 50 + distanceM, speed: Math.max(0, 4 - .6 * seconds) }), distanceM }];
+    }),
+  });
+  assert.equal(arrival.counts.distanceUnderSpeedTicks, 0, 'bounded braking through arrival and hold stays clear');
 });

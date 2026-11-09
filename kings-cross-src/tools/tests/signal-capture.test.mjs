@@ -31,6 +31,36 @@ test('signal capture records a failed head tries another recorded head and conti
  let missing;await assert.doesNotReject(async()=>{missing=await runCapturePlans(r,async p=>{if(p.state==='proceed')throw new Error('blocked');return p;});});
  assert.equal(missing.exitCode,1);assert.deepEqual(missing.missingStates,['proceed']);assert.equal(missing.shots.length,1);
 });
+test('signal capture cannot omit a supported state observed in a decoded head interval',()=>{
+ const r=pack();
+ r.intervals.push({...plan,state:'danger',startMs:300,endMs:500,recording:0});
+ assert.throws(()=>validatePack(r),/recording 0.*danger.*no capture case/);
+ r.captures[0].cases.push({...plan,state:'danger',startMs:300,endMs:500,timeMs:400});
+ assert.equal(validatePack(r).length,2);
+ // Proceed and caution have not been observed; the tool must not manufacture them.
+ assert.equal(validatePack(pack()).length,1);
+ const tooShort=pack();tooShort.intervals.push({...plan,state:'proceed',startMs:300,endMs:301,recording:0});
+ assert.equal(validatePack(tooShort).length,1,'no interior capture clock exists at the minimum interval duration');
+});
+test('signal capture requires the observed states of each recording independently',async()=>{
+ const r=pack();r.inputs.recordings.push({});r.captures.push({recording:1,cases:[{...plan}]});
+ r.intervals.push({...plan,recording:1});
+ let result;await assert.doesNotReject(async()=>{result=await runCapturePlans(r,async p=>{if(p.recording===0)throw new Error('first recording blocked');return p;});});
+ assert.equal(result.shots.length,1);assert.equal(result.failed.length,1);
+ assert.equal(result.exitCode,1,'the second recording cannot replace the first recording evidence');
+ assert.deepEqual(result.missingStates,['unknown']);
+ assert.deepEqual(result.missingCases,[{recording:0,state:'unknown'}]);
+ assert.deepEqual(result.coverage,[{recording:0,observedStates:['unknown'],capturedStates:[],missingStates:['unknown']},
+  {recording:1,observedStates:['unknown'],capturedStates:['unknown'],missingStates:[]}]);
+ const complete=await runCapturePlans(r,async p=>p);assert.equal(complete.exitCode,0);assert.deepEqual(complete.missingCases,[]);
+});
+test('signal capture validates each callback result before counting its evidence',async()=>{
+ const r=pack();
+ let result;await assert.doesNotReject(async()=>{result=await runCapturePlans(r,async p=>({...p,state:'danger'}));});
+ assert.equal(result.exitCode,1);assert.equal(result.shots.length,0);
+ assert.equal(result.failed.length,1);
+ assert.match(result.failed[0].reason,/capture result.*recorded case/);
+});
 test('signal screenshots require exact head state clock and an actual rendered frame',()=>{
  const expected={...plan,post:[10,0,20]},actual={id:7,berth:'SYN',state:'unknown',timeMs:150,rendered:true,post:[10,0,20],visibility:{clear:true}};assert.equal(verifyShot(expected,actual),true);
  for(const change of [{id:8},{berth:'OTHER'},{state:'danger'},{timeMs:151},{rendered:false},{post:[11,0,20]},{visibility:{clear:false,reason:'housing occluded'}},{visibility:null}])assert.throws(()=>verifyShot(expected,{...actual,...change}));

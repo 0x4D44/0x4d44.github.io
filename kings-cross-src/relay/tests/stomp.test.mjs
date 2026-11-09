@@ -410,3 +410,33 @@ test('feed: fake transport keeps credentials private, logs bad bodies, and recon
   await secondConnected;
   assert.equal(readCount, 2);
 });
+
+test('stomp robustness: handshake deadline covers a silent connection and clears on success', (t) => {
+  t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:1000});
+  const socket=new FakeSocket(), faults=[];
+  const client=new StompClient(socket,{login:'invented',passcode:'synthetic',heartbeat:[0,0]});
+  client.on('fault',error=>faults.push(error.message)); client.start();
+  t.mock.timers.tick(30000);
+  assert.deepEqual(faults,['stomp: handshake timeout']); assert.equal(socket.closed,true);
+  const healthySocket=new FakeSocket(), healthy=new StompClient(healthySocket,{login:'invented',passcode:'synthetic',heartbeat:[0,0]});
+  healthy.on('fault',error=>assert.fail(error.message)); healthy.start(); healthySocket.send('CONNECTED',{'heart-beat':'0,0'});
+  t.mock.timers.tick(60000); assert.equal(healthySocket.closed,false); healthy.disconnect();
+});
+
+test('stomp robustness: intentional disconnect stops a half-open transport immediately', (t) => {
+  t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:1000});
+  for (const connected of [false,true]) {
+    const socket=new FakeSocket(); socket.end=()=>{};
+    const client=new StompClient(socket,{login:'invented',passcode:'synthetic',heartbeat:[20,20]});
+    const faults=[],messages=[]; let closes=0;
+    client.on('fault',error=>faults.push(error.message)); client.on('message',message=>messages.push(message));
+    client.on('close',()=>closes++); client.start();
+    if(connected)socket.send('CONNECTED',{'heart-beat':'20,20'});
+    client.disconnect();
+    const writes=socket.writes.length;
+    t.mock.timers.tick(60000);
+    socket.send('MESSAGE',{},'late'); socket.emit('error',new Error('synthetic late error'));
+    assert.deepEqual(faults,[]); assert.deepEqual(messages,[]); assert.equal(socket.writes.length,writes);
+    socket.destroy(); client.disconnect(); assert.equal(closes,1);
+  }
+});

@@ -117,6 +117,7 @@ export class StompClient extends EventEmitter {
   #vhost;
   #heartbeat;
   #timers = [];
+  #handshakeTimer;
   #pending = [];
   #connected = false;
   #closed = false;
@@ -137,6 +138,8 @@ export class StompClient extends EventEmitter {
     socket.on('data', (chunk) => this.#onData(chunk));
     socket.on('error', () => this.#fault(new Error('stomp: socket error')));
     socket.on('close', () => this.#onClose());
+    this.#handshakeTimer = setTimeout(() => this.#fault(new Error('stomp: handshake timeout')), 30_000);
+    this.#handshakeTimer.unref?.();
     const [cx, cy] = this.#heartbeat;
     socket.write(
       encodeFrame('CONNECT', {
@@ -160,6 +163,7 @@ export class StompClient extends EventEmitter {
     try {
       if (this.#connected) this.#socket.write(encodeFrame('DISCONNECT'));
     } finally {
+      this.#onClose();
       this.#socket.end();
     }
   }
@@ -185,6 +189,8 @@ export class StompClient extends EventEmitter {
       case 'CONNECTED': {
         if (this.#connected) { this.#fault(new Error('stomp: repeated CONNECTED')); break; }
         if (!this.#startHeartbeats(frame.headers['heart-beat'])) break;
+        clearTimeout(this.#handshakeTimer);
+        this.#handshakeTimer = undefined;
         this.#connected = true;
         for (const f of this.#pending.splice(0)) this.#socket.write(f);
         // This value reaches feed logs. Server text is untrusted and may echo credentials.
@@ -236,15 +242,22 @@ export class StompClient extends EventEmitter {
   #fault(err) {
     if (this.#closed || this.#faulted) return;
     this.#faulted = true;
+    this.#clearTimers();
     this.emit('fault', err);
     this.#socket.destroy();
+  }
+
+  #clearTimers() {
+    clearTimeout(this.#handshakeTimer);
+    this.#handshakeTimer = undefined;
+    for (const timer of this.#timers) clearInterval(timer);
+    this.#timers = [];
   }
 
   #onClose() {
     if (this.#closed) return;
     this.#closed = true;
-    for (const t of this.#timers) clearInterval(t);
-    this.#timers = [];
+    this.#clearTimers();
     this.emit('close');
   }
 }

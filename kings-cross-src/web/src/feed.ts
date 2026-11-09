@@ -233,16 +233,17 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
   };
   const received = (current: EventStream): void => {
     lastMessageAt = now();
+    attempt = 0; // A TCP/SSE open alone does not prove that the stream is usable.
     if (opened) watch(current);
   };
   const deliver = (e: MotionEvent): void => { timeline.deliver(e); lastDataAt = now(); paintConnection(); };
-  const retry = (): void => {
+  const retry = (fault?: string): void => {
     opened = false;
     stopWatchdog();
     stream?.close(); stream = undefined;
     if (disposed || timer !== undefined) return;
     const delay = backoffMs(attempt++);
-    report(`reconnecting; retry in ${delay / 1000}s${lastDataAt === undefined ? '' : `; last data ${Math.max(0, Math.floor((now() - lastDataAt) / 1000))}s old`}`);
+    report(`${fault ? `${fault}; ` : ''}reconnecting; retry in ${delay / 1000}s${lastDataAt === undefined ? '' : `; last data ${Math.max(0, Math.floor((now() - lastDataAt) / 1000))}s old`}`);
     timer = schedule(() => { timer = undefined; connect(); }, delay);
   };
   const connect = (): void => {
@@ -253,32 +254,37 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
     // An HTTP/SSE handshake can stall before onopen, just as an open stream can go quiet.
     lastMessageAt = now();
     watch(current);
-    current.onopen = () => { if (!disposed && stream === current) { opened = true; received(current); attempt = 0; upstream = undefined; paintConnection(); } };
+    current.onopen = () => { if (!disposed && stream === current) { opened = true; lastMessageAt = now(); watch(current); upstream = undefined; paintConnection(); } };
     current.onerror = () => { if (stream === current) retry(); };
     current.addEventListener('snapshot', (event) => {
       if (disposed || stream !== current) return;
-      received(current);
-      try { deliver(parseEvent({ ...(parseMessage(event.data) as Record<string, unknown>), kind: 'snapshot' })); }
-      catch { report('invalid relay snapshot'); }
+      try {
+        const parsed = parseEvent({ ...(parseMessage(event.data) as Record<string, unknown>), kind: 'snapshot' });
+        received(current); deliver(parsed);
+      } catch { retry('invalid relay snapshot'); }
     });
     current.addEventListener('td', (event) => {
       if (disposed || stream !== current) return;
-      received(current);
-      try { deliver(parseEvent((parseMessage(event.data) as { e: unknown }).e)); }
-      catch { report('invalid relay event'); }
+      try {
+        const parsed = parseEvent((parseMessage(event.data) as { e: unknown }).e);
+        received(current); deliver(parsed);
+      } catch { retry('invalid relay event'); }
     });
     current.addEventListener('trust', (event) => {
       if (disposed || stream !== current) return;
-      received(current);
-      try { deliver(parseEvent((parseMessage(event.data) as { e: unknown }).e)); }
-      catch { report('invalid TRUST event'); }
+      try {
+        const parsed = parseEvent((parseMessage(event.data) as { e: unknown }).e);
+        received(current); deliver(parsed);
+      } catch { retry('invalid TRUST event'); }
     });
     current.addEventListener('ping', (event) => {
       if (disposed || stream !== current) return;
-      received(current);
       try {
         const ping = parseMessage(event.data);
-        if (object(ping) && ['connecting', 'connected', 'disconnected', 'disabled'].includes(String(ping.feed))) {
+        if (!object(ping) || !epoch(ping.t) ||
+          (ping.lastEventAt != null && !epoch(ping.lastEventAt))) throw new Error('invalid heartbeat');
+        if (Object.hasOwn(ping, 'feed') && !['connecting', 'connected', 'disconnected', 'disabled'].includes(String(ping.feed))) throw new Error('invalid upstream state');
+        if (Object.hasOwn(ping, 'feed')) {
           upstream = String(ping.feed);
           // Remote receive time establishes age even before this browser sees a TD event.
           if (epoch(ping.lastEventAt) && epoch(ping.t)) {
@@ -289,8 +295,9 @@ export function createLiveFeed(sink: MotionSink, status: FeedStatus, deps: LiveD
           // without overriding explicit upstream metadata or resetting the data age.
           upstream = 'connected';
         }
+        received(current);
         paintConnection();
-      } catch { report('invalid relay heartbeat'); }
+      } catch { retry('invalid relay heartbeat'); }
     });
   };
   connect();

@@ -294,7 +294,7 @@ test('live SSE watchdog retries after more than fifteen seconds of silence on an
 
 test('live SSE pings keep a quiet stream alive without advancing simulation or adding trains', () => {
   const h = liveHarness(); h.open();
-  for (let i = 0; i < 12; i++) { h.tick(5000); h.streams[0]!.emit('ping', { t: -999 }); }
+  for (let i = 0; i < 12; i++) { h.tick(5000); h.streams[0]!.emit('ping', { t: 0, feed: 'connecting' }); }
   assert.equal(h.streams.length, 1); assert.equal(h.streams[0]!.closed, false); assert.match(h.states.at(-1)!, /^relay connected/);
   assert.deepEqual(h.applied, []); assert.equal(h.feed.timeMs(), 0);
   h.tick(15_000); assert.match(h.states.at(-1)!, /^relay connected/);
@@ -330,7 +330,7 @@ test('live SSE dispose cancels its watchdog and ignores an already queued watchd
 
 test('live SSE a cancelled watchdog callback cannot replace the current deadline', () => {
   const h = liveHarness(); h.open(); const queued = [...h.jobs.values()][0]!.fn;
-  h.tick(5000); h.streams[0]!.emit('ping', { t: 0 });
+  h.tick(5000); h.streams[0]!.emit('ping', { t: 0, feed: 'connecting' });
   queued(); assert.equal(h.jobs.size, 1);
   h.tick(15_001); assert.match(h.states.at(-1)!, /reconnecting/); assert.equal(h.jobs.size, 1);
   h.feed.dispose(); assert.equal(h.jobs.size, 0);
@@ -414,4 +414,93 @@ test('an explicit unavailable timetable stops replay polling and live retries un
       }
     } finally { feed.dispose(); }
   }
+});
+
+
+test('a reconnect retains an arriving body whose deferred replacement is in the snapshot', () => {
+  const graph = buildGraph({ nodes: [[1, 0, -1000], [2, 5000, -1000]], rails: [
+    { id: 7, nodes: [1, 2], service: 'main', tunnel: false, bridge: false, layer: 0 },
+  ] });
+  const anchors: AnchorMap = { area: 'TEST', sources: ['synthetic'], unmapped: [], anchors: [
+    { berth: 'A', kind: 'signal', from: 1, to: 2, t: 0.08, point: [400, -1000], errorM: 0, evidence: 'synthetic' },
+    { berth: 'P', kind: 'platform', platform: '1', from: 1, to: 2, t: 0.6, point: [3000, -1000], errorM: 0, evidence: 'synthetic' },
+  ] };
+  const motion = createMotion(graph, anchors, { lengthM: 130 });
+  const timeline = createTimeline(motion);
+  timeline.deliver({ kind: 'step', area: 'TEST', from: 'A', to: 'P', descr: 'OLD' }, 0);
+  timeline.deliver({ kind: 'interpose', area: 'TEST', to: 'P', descr: 'NEW' }, 5000);
+  const before = motion.trains()[0]!;
+  timeline.deliver({ kind: 'snapshot', area: 'TEST', berths: { P: 'NEW' } } as SnapshotEvent, 5000);
+  assert.notEqual(motion.trains()[0]!.state, 'fading');
+  assert.equal(motion.trains()[0]!.id, before.id);
+  assert.deepEqual(motion.trains()[0]!.occupied, before.occupied);
+  timeline.advanceTo(500_000);
+  const arrived = motion.trains()[0]!;
+  assert.equal(motion.trains().length, 1);
+  assert.equal(arrived.description, 'NEW'); assert.equal(arrived.id, before.id);
+  assert.equal(arrived.lengthM, 130); assert.equal(arrived.state, 'held');
+  assert.ok(Math.abs(arrived.leading.point[0] - 2997) < 1e-6);
+  timeline.deliver({ kind: 'snapshot', area: 'TEST', berths: {} } as SnapshotEvent, 500_000);
+  assert.equal(motion.trains()[0]!.state, 'fading', 'a genuinely absent body must still fade');
+  timeline.advanceTo(506_000); assert.deepEqual(motion.trains(), []);
+});
+
+
+test('live SSE accepts an HTTP open without resetting exponential retry backoff', () => {
+  const h = liveHarness();
+  try {
+    for (const delay of [500, 1000, 2000, 4000, 8000, 16000, 30000]) {
+      h.open(); h.streams.at(-1)!.onerror?.({} as Event);
+      assert.match(h.states.at(-1)!, new RegExp(`retry in ${delay / 1000}s`));
+      h.tick(delay);
+    }
+    h.open();
+    h.streams.at(-1)!.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
+    h.streams.at(-1)!.onerror?.({} as Event);
+    assert.match(h.states.at(-1)!, /retry in 0.5s/, 'validated traffic resets backoff');
+  } finally { h.feed.dispose(); }
+});
+
+test('live SSE malformed messages close the stream with a named fault and preserve the last good scene', () => {
+  for (const [type, value, fault] of [
+    ['snapshot', { area: 'TEST', berths: { A: null } }, 'invalid relay snapshot'],
+    ['td', { e: { ...first, to: null } }, 'invalid relay event'],
+    ['trust', { e: { kind: 'trust', area: 'TEST', receivedAtMs: 'bad' } }, 'invalid TRUST event'],
+    ['ping', {}, 'invalid relay heartbeat'],
+    ['ping', { t: 0, feed: 'pretending' }, 'invalid relay heartbeat'],
+    ['ping', { t: 0, feed: 'connected', lastEventAt: 'bad' }, 'invalid relay heartbeat'],
+  ] as const) {
+    const h = liveHarness();
+    try {
+      h.open(); const stream = h.streams[0]!;
+      stream.emit('snapshot', { area: 'TEST', berths: { A: 'SYN1' } });
+      stream.emit('ping', { t: 0, feed: 'connected', lastEventAt: 0 });
+      assert.equal(h.states.at(-1), 'connected');
+      const before = [...h.applied];
+      stream.emit(type, value);
+      assert.equal(stream.closed, true, `${type} must not hold a broken stream open`);
+      assert.match(h.states.at(-1)!, /reconnecting/);
+      assert.ok(h.states.at(-1)!.includes(fault), `${type} records its named fault`);
+      assert.deepEqual(h.applied, before, 'invalid traffic never replaces the last good picture');
+      stream.emit('ping', { t: 0, feed: 'connected' });
+      assert.match(h.states.at(-1)!, /reconnecting/, 'a closed stream cannot claim recovery');
+      h.tick(500); h.open();
+      h.streams[1]!.emit('ping', { t: 0, feed: 'connected', lastEventAt: 0 });
+      assert.equal(h.states.at(-1), 'connected', 'valid traffic recovers without reload');
+    } finally { h.feed.dispose(); }
+  }
+});
+
+test('live SSE invalid heartbeat traffic cannot suppress increasing retry delays', () => {
+  const h = liveHarness();
+  try {
+    for (const delay of [500, 1000, 2000]) {
+      h.open(); h.streams.at(-1)!.emit('ping', { t: null });
+      assert.match(h.states.at(-1)!, new RegExp(`retry in ${delay / 1000}s`));
+      h.tick(delay);
+    }
+    h.open(); h.streams.at(-1)!.emit('ping', { t: 0 });
+    h.streams.at(-1)!.onerror?.({} as Event);
+    assert.match(h.states.at(-1)!, /retry in 0.5s/, 'valid legacy heartbeats remain compatible');
+  } finally { h.feed.dispose(); }
 });

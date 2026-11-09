@@ -116,6 +116,20 @@ test('snapshots freeze both recordings in sorted order with SHA256 and omit the 
   for (const file of recordingArgs) assert.ok(file.startsWith(path.join(f.out, 'inputs') + path.sep));
 });
 
+test('axis 04 summary argv includes a board report path for every date, including unavailable reports', async () => {
+  const f = await fixture(), calls = [];
+  const result = await invoke(f, ['--only', '4'], fake(calls));
+  const summary = calls.find(step => step.id === '04-summary');
+  assert.ok(summary);
+  const reports = summary.args.flatMap((arg, index) => arg === '--board-report' ? [summary.args[index + 1]] : []);
+  assert.deepEqual(reports, [
+    path.join(f.out, 'axis-04/board-2026-11-08/board-vs-trust.json'),
+    path.join(f.out, 'axis-04/board-2026-11-09/board-vs-trust.json'),
+  ]);
+  assert.equal(result.steps.find(step => step.id === '04-board-0')?.status, 'gap',
+    'the first date has no frozen schedule while summary still receives every expected report path');
+});
+
 test('fresh output containment rejects existing, outside, and escaping symlink paths before commands', async () => {
   for (const kind of ['existing', 'outside', 'symlink']) {
     const f = await fixture(), calls = [];
@@ -318,4 +332,36 @@ test('an undocumented mutation driver is an explicit engineering gap rather than
   const result = await invoke(f, ['--only', '9'], fake([]));
   assert.equal(result.exitCode, 1);
   assert.match(result.steps.find(s => s.id === '09-mutation-registry').reason, /undocumented\.py/);
+});
+
+
+test('axis 05 freezes available day schedules for page formation matching and leaves missing days as explicit fallback', async () => {
+  const f = await fixture(), calls = [];
+  const cached = JSON.stringify({ date: '2026-11-08', calls: [], source: 'synthetic' });
+  await writeFile(path.join(f.data, 'schedule-2026-11-08.json'), cached);
+  const result = await invoke(f, ['--only', '5', '--gpu'], fake(calls, async step => {
+    if (step.id === 'build') await writeFile(path.join(f.data, 'schedule-2026-11-08.json'), '{"changed":"after freeze"}');
+    return null;
+  }));
+  const motion = calls.find(step => step.id === '05-motion');
+  const scheduleFlags = motion.args.flatMap((arg, i) => arg === '--schedule' ? [motion.args[i + 1]] : []);
+  const frozen = result.inputs.find(input => input.role === 'schedule:0');
+  assert.deepEqual(scheduleFlags, [frozen.path], 'motion must use the frozen cache, never the source path or the missing next day');
+  assert.ok(motion.inputs.includes('schedule:0'), 'schedule hash is a declared dependency');
+  assert.ok(!motion.inputs.includes('schedule:1'), 'a missing optional day does not block other motion evidence');
+  assert.equal(frozen.status, 'captured');
+  assert.equal(await readFile(frozen.path, 'utf8'), cached, 'a later update cannot change captured formation evidence');
+  assert.equal(frozen.sha256, digest(Buffer.from(cached)));
+  assert.equal(result.steps.find(step => step.id === '05-motion').status, 'passed');
+  const missing = result.inputs.find(input => input.role === 'schedule:1');
+  assert.equal(missing.status, 'not used');
+  assert.equal(missing.presentAtPlanning, false);
+  assert.match(motion.note, /fallback/i, 'the plan explains unavailable day schedules honestly');
+
+  const absent = await fixture(), absentCalls = [];
+  const noSchedules = await invoke(absent, ['--only', '5', '--gpu'], fake(absentCalls));
+  const fallback = absentCalls.find(step => step.id === '05-motion');
+  assert.ok(!fallback.args.includes('--schedule'));
+  assert.ok(!fallback.inputs.some(role => role.startsWith('schedule:')));
+  assert.equal(noSchedules.steps.find(step => step.id === '05-motion').status, 'passed');
 });

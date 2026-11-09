@@ -103,15 +103,29 @@ test('axis07 evidence: absent relay logs and incomplete GPU phases prevent a cle
   const result = await runAxis07(noLogs, injected());
   assert.equal(result.report.status, 'FAIL'); assert.equal(result.report.secretScan.files.status, 'FAIL');
   const file = resolve(dir, 'browser.json');
-  const phase = (name) => ({ name, statusLine: 'synthetic status', trainCount: 2, validCsp: true, attribution: { present: { osm: true } },
+  const phase = (name) => ({ name, conditionObserved: true, cityLoaded: true,
+    mode: name === 'no-relay' ? 'demo' : name === 'offline-replay' ? 'replay' : 'live',
+    connection: name === 'no-relay' ? 'relay absent' : name === 'offline-replay' ? 'playing' : ['stopped', 'sse-drop'].includes(name) ? 'reconnecting' : 'connected',
+    proxyEnabled: !['no-relay', 'stopped', 'offline-replay'].includes(name),
+    statusLine: name === 'no-relay' ? 'sample trains · relay absent' : 'synthetic status', trainCount: 2,
+    validCsp: true, cspErrorCount: 0, cspInvalidSourceCount: 0, consoleErrorCount: 0, unexpectedNetworkFailures: [],
+    board: { present: true, mode: name === 'no-relay' ? 'sample' : name === 'offline-replay' ? 'replay' : 'live', platformTrainCount: 1 },
+    screenshot: `${name}.png`, relayRequestCounts: {}, replayStartMs: 1000, replayTimeMs: 2000,
+    attribution: { present: { osm: true, environmentAgency: true, openGovernmentLicence: true } },
     failedRequests: name === 'no-relay' ? [{ url: 'http://127.0.0.1:43210/relay/health', requestId: 'synthetic-request', status: 503 }] : [] });
-  const good = { status: 'PASS', validGpu: true, renderer: 'ANGLE Apple Metal', networkDiagnostics: [],
-    phases: ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'].map(phase) };
+  const good = { status: 'PASS', validGpu: true, renderer: 'ANGLE (Apple, ANGLE Metal Renderer: Apple M4)', networkDiagnostics: [],
+    phases: ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered', 'offline-replay'].map(phase) };
   await writeFile(file, JSON.stringify(good));
   const imported = await browserEvidence(file);
   assert.equal(imported.status, 'PASS');
   assert.deepEqual(imported.phases[0].failedRequests, good.phases[0].failedRequests, 'the combined pack keeps failed request URLs');
   assert.deepEqual(imported.networkDiagnostics, good.networkDiagnostics, 'transition diagnostics remain available in the combined pack');
+  const stale = { ...good, phases: good.phases.filter(p => p.name !== 'offline-replay') };
+  await writeFile(file, JSON.stringify(stale));
+  assert.equal((await browserEvidence(file)).status, 'FAIL', 'a stale five-phase pack cannot prove static offline replay');
+  const relayReplay = structuredClone(good); relayReplay.phases[5].relayRequestCounts['/relay/anchors'] = 1;
+  await writeFile(file, JSON.stringify(relayReplay));
+  assert.equal((await browserEvidence(file)).status, 'FAIL', 'offline replay cannot fetch relay anchors');
   for (const bad of [{ ...good, renderer: 'SwiftShader' }, { ...good, phases: [phase('connected')] },
     { ...good, phases: good.phases.map((p) => ({ ...p, validCsp: false })) },
     { ...good, phases: good.phases.map((p) => ({ ...p, attribution: { present: { osm: false } } })) }]) {

@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { PLATFORM_HEIGHT, railSegments, twinRails } from '../core/scene.ts';
-import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, stationBuilding, stationPlatforms } from '../core/station.ts';
+import { GAUGE, RAIL_HEAD_WIDTH, buildingsUnderStation, concourseCanopy, platformReport, pointInPolygon, shedLayout, shedToWorld, stationBuilding, stationPlatforms, worldToShed } from '../core/station.ts';
 import { barlowPlan, greatNorthernHotelPlan, midlandGrandPlan, REPLACED_BUILDING_IDS, tunnelMouths } from '../core/landmarks.ts';
 import { planBuilding } from '../core/city.ts';
 import { ALL_KINDS, FIGURES, EMU_FIGURES, trainLayout } from '../core/train.ts';
@@ -87,6 +87,63 @@ export async function writePrivateFile(file, body) {
 }
 
 export function realMetal(renderer) { return typeof renderer === 'string' && /\bMetal\b/i.test(renderer) && !/SwiftShader|llvmpipe|software/i.test(renderer); }
+
+export const ROOF_MATERIAL_AUTO = 'auto';
+export const ROOF_MATERIAL_SOLID = 'solid slate (evidence override)';
+
+/** The comparison pair shares each fixed context camera; only the slate material state changes. */
+export function roofMaterialEvidencePairs(cameras) {
+  return ['roof-above', 'front-oblique'].map(cameraName => ({
+    cameraName,
+    context: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_AUTO },
+    solid: { camera: cameras[cameraName], roofMaterialEvidence: ROOF_MATERIAL_SOLID },
+  }));
+}
+
+/** Run the intact Station camera set and its same-camera physical-slate comparison shots. */
+export async function runStationEvidenceShots(cameras, shot, attempt) {
+  const pairs = roofMaterialEvidencePairs(cameras);
+  const contextEvidence = new Map(pairs.map(pair => [pair.cameraName, pair.context.roofMaterialEvidence]));
+  for (const [name, camera] of Object.entries(cameras).filter(([, camera]) => !camera.grid))
+    await attempt('02', name, () => shot('02', name, camera, contextEvidence.has(name) ? { roofMaterialEvidence: contextEvidence.get(name) } : {}));
+  for (const pair of pairs)
+    await attempt('02', `${pair.cameraName}-solid-slate`, () => shot('02', `${pair.cameraName}-solid-slate`, pair.solid.camera, { roofMaterialEvidence: pair.solid.roofMaterialEvidence }));
+}
+
+/** Capture the physical slate view while an async begin/restore bridge holds the serialized page helper open. */
+export async function captureEvidencePng(roofMaterialEvidence, { prepare, capture, restore }) {
+  if (roofMaterialEvidence !== ROOF_MATERIAL_SOLID) return await capture();
+  await prepare();
+  try { return await capture(); }
+  finally { await restore(); }
+}
+
+/** Force only the shed slate cladding; its original callback still updates glass opacity for the current camera. */
+export async function withSolidSlateEvidence(cladding, capture) {
+  if (cladding?.name !== 'shed-roof-cladding') throw new Error('solid slate evidence requires shed-roof-cladding');
+  if (typeof capture !== 'function') throw new Error('solid slate evidence requires a capture callback');
+  const materials = Array.isArray(cladding.material) ? cladding.material : [cladding.material];
+  if (!materials.length || materials.some(material => !material)) throw new Error('shed roof cladding has no material');
+  const before = materials.map(material => ({ opacity: material.opacity, depthWrite: material.depthWrite }));
+  const callback = cladding.onBeforeRender;
+  const forceSolid = () => {
+    for (const material of materials) { material.opacity = 1; material.depthWrite = true; }
+  };
+  try {
+    cladding.onBeforeRender = function(...args) {
+      if (typeof callback === 'function') callback.apply(this, args);
+      forceSolid();
+    };
+    forceSolid();
+    return await capture();
+  } finally {
+    cladding.onBeforeRender = callback;
+    materials.forEach((material, index) => {
+      material.opacity = before[index].opacity;
+      material.depthWrite = before[index].depthWrite;
+    });
+  }
+}
 export function proxyTarget(relay, pathname) {
   const request = new URL(pathname, 'http://127.0.0.1');
   if (!request.pathname.startsWith('/relay/')) return null;
@@ -139,6 +196,7 @@ export function stationCameras(data) {
   const p = stationPlatforms(data).get('4');
   if (p) { const mid = p.pts.reduce((a, b) => [a[0] + b[0] / p.pts.length, a[1] + b[1] / p.pts.length], [0, 0]);
     cams['platform-eye'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] + Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] - Math.cos(s.heading) * 40], 'OSM platform 4 polygon, eye 1.6 m above platform');
+    cams['platform-eye-south'] = camera([mid[0], PLATFORM_HEIGHT + 1.6, mid[1]], [mid[0] - Math.sin(s.heading) * 40, PLATFORM_HEIGHT + 1.6, mid[1] + Math.cos(s.heading) * 40], 'OSM platform 4 polygon, south-facing eye 1.6 m above platform');
     const tip = [...p.pts].sort((a,b)=>a[1]-b[1]).slice(0,2).reduce((a,b)=>[a[0]+b[0]/2,a[1]+b[1]/2],[0,0]);
     cams['shed-interior'] = camera([tip[0],3.2,tip[1]], at(s.width / 2,100,8), 'OSM platform 4 north end looking into the shed'); }
   // Pancras Road exterior: the concave east front sits beside the concourse. Its old
@@ -157,6 +215,13 @@ export function stationCameras(data) {
   cams['midland-grand-front'] = camera([face.mid[0] + face.normal[0] * 150, 28, face.mid[1] + face.normal[1] * 150], [face.mid[0], midland.eaves / 2, face.mid[1]], 'midlandGrandPlan Euston Road front');
   const barlow = barlowPlan(data), bp = (u, v, y) => { const [x, z] = shedToWorld(barlow, u, v); return [x, y, z]; };
   cams['st-pancras-shed'] = camera(bp(barlow.width / 2, -85, 46), bp(barlow.width / 2, 95, barlow.rise / 2), 'barlowPlan south end, real OSM heading');
+  const midlandEast = Math.max(...midland.outline.map(p => worldToShed(barlow, p).u));
+  cams['st-pancras-shed-oblique'] = camera(
+    bp(midlandEast + barlow.width * 3.3, -barlow.width * 0.4, barlow.rise * 6),
+    bp(barlow.width / 2, barlow.barlowLength * 0.48, barlow.rise * 0.48),
+    'barlowPlan elevated south-east oblique; stand-off derived from Midland Grand extent and Barlow width',
+    { fov: 55, near: .1 },
+  );
   const mouth = tunnelMouths(data).find(m => m.id === 'gasworks-south');
   if (mouth) cams['gasworks-portals'] = camera([mouth.origin[0] - mouth.axis[0] * 65, 12, mouth.origin[1] - mouth.axis[1] * 65], [mouth.origin[0], 4, mouth.origin[1]], 'tunnelMouths gasworks-south rail boundary');
   return cams;
@@ -451,16 +516,50 @@ export async function main(args = process.argv.slice(2)) {
       if (extra.signalId !== undefined && metadata.signals?.find(s=>s.id===extra.signalId)?.state !== extra.observedState) throw new Error('signal changed state before capture; shot was not accepted');
       const file = `axis-${id}/${name}.png`; await mkdir(path.join(options.out, `axis-${id}`), { recursive: true });
       const boardState = extra.signalId === undefined ? null : await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),true)`);
-      let png;
+      let png, captureRender = null;
       try {
         if (extra.signalId !== undefined) await twoFrames();
-        png = await S('Page.captureScreenshot', { format: 'png' });
+        png = await captureEvidencePng(extra.roofMaterialEvidence, {
+          prepare: async () => evaluate(`(() => {
+            const k=window.__kx, cladding=k.parts?.shed?.getObjectByName('shed-roof-cladding');
+            if(!cladding) throw new Error('shed roof cladding unavailable');
+            const materials=Array.isArray(cladding.material)?cladding.material:[cladding.material];
+            const state={cladding,materials,opacity:materials.map(m=>m.opacity),depthWrite:materials.map(m=>m.depthWrite),callback:cladding.onBeforeRender,ready:false,release:null};
+            state.promise=(${withSolidSlateEvidence.toString()})(cladding,()=>new Promise(resolve=>{state.ready=true;state.release=resolve;}));
+            k.__solidSlateCapture=state; return true;
+          })()`),
+          capture: async () => {
+            if (extra.roofMaterialEvidence === ROOF_MATERIAL_SOLID) {
+              await until('window.__kx.__solidSlateCapture?.ready === true');
+              await twoFrames();
+              captureRender = await evaluate(`(() => {
+                const k=window.__kx,cladding=k.parts.shed.getObjectByName('shed-roof-cladding'),glass=k.parts.shed.getObjectByName('shed-roof-glass');
+                const opacity=Array.isArray(cladding.material)?cladding.material.map(m=>m.opacity):cladding.material.opacity;
+                const depthWrite=Array.isArray(cladding.material)?cladding.material.map(m=>m.depthWrite):cladding.material.depthWrite;
+                if ((Array.isArray(opacity)?opacity.some(value=>value!==1):opacity!==1) || (Array.isArray(depthWrite)?depthWrite.some(value=>value!==true):depthWrite!==true))
+                  throw new Error('solid slate was not active after two rendered frames');
+                return {drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,roofCladding:{opacity,depthWrite,glassOpacity:glass.material.opacity},overrideFrames:2};
+              })()`);
+            }
+            return S('Page.captureScreenshot', { format: 'png' });
+          },
+          restore: async () => {
+            await evaluate('window.__kx.__solidSlateCapture?.release?.(true); true');
+            await evaluate('window.__kx.__solidSlateCapture.promise');
+            const restored = await evaluate(`(() => {
+              const s=window.__kx.__solidSlateCapture;
+              const ok=s.cladding.onBeforeRender===s.callback && s.materials.every((m,i)=>m.opacity===s.opacity[i]&&m.depthWrite===s.depthWrite[i]);
+              delete window.__kx.__solidSlateCapture; return ok;
+            })()`);
+            if (!restored) throw new Error('solid slate evidence failed to restore auto cladding state');
+          },
+        });
       } finally {
         if (extra.signalId !== undefined) await evaluate(`(${setSignalDetailBoardVisibility.toString()})(document.querySelector('.kx-board'),false,${JSON.stringify(boardState)})`);
       }
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
-      const record = { file, axis: id, scenario: currentScenario, ...metadata, source: c?.source ?? 'current page camera', ...extra };
+      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', ...extra };
       report.screenshots.push(record); axis(id).screenshots.push(file); return record;
     };
     const attempt = async (id, name, work) => { try { await work(); } catch (e) { gap(id, `${name}: ${e.message}`); } };
@@ -478,7 +577,7 @@ export async function main(args = process.argv.slice(2)) {
 
     // Fixed offline views deliberately keep the station intact; only measuring views are bare.
     await navigate('?trains=none&board=0', 'station');
-    for (const [name, c] of Object.entries(cameras).filter(([, c]) => !c.grid)) await attempt('02', name, () => shot('02', name, c));
+    await runStationEvidenceShots(cameras, shot, attempt);
     if (!cameras['gasworks-portals']) gap('02', 'Gasworks south mouth could not be located in public geometry');
     await navigate('?trains=none&bare=1&grid=1&board=0', 'geometry');
     for (const [name, c] of Object.entries(cameras).filter(([, c]) => c.grid)) await shot('01', `${name}-10m-grid`, c);

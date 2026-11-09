@@ -75,6 +75,7 @@ interface Train {
   pendingRename?: { description: string; berth: string; kind: string };
   estimated?: boolean; estimateSpeed?: number; awaitingAnchor?: string;
 }
+interface MergeReservation { edge: Edge; winner: Train; yieldStop: number; releaseAt: number }
 interface Meeting { selfAuthority: number; otherAuthority: number; stop: number }
 const EPS = 1e-8;
 const size = (s: Segment): number => Math.abs(s.toT - s.fromT) * s.edge.length;
@@ -130,13 +131,18 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
   const berthOwners = new Map<string, string>();
   // A quiet description can still be standing at a red signal or boarding. Only an
   // idle area (or loss of its recorded berth) makes the quiet timeout stale evidence.
+  const replacementObserved = (t: Train): boolean => Boolean(t.pendingRename &&
+    berthOwners.get(t.pendingRename.berth) === t.pendingRename.description);
+  const observedAtTarget = (t: Train): boolean => anchorMap.has(t.target.berth) &&
+    berthOwners.get(t.target.berth) === t.description;
   const quietExpired = (t: Train): boolean => now - t.lastSeen >= quietMs &&
-    !(now - lastAreaActivity < quietMs && [...berthOwners.values()].includes(t.description));
+    !(now - lastAreaActivity < quietMs && ([...berthOwners.values()].includes(t.description) || replacementObserved(t)));
   const active = new Map<string, Train>();
   const queued = new Map<string, Train>();
   const pendingNames = new Map<string, Train>();
   const issues: MotionIssue[] = [];
   const meetings = new Map<Train, Map<Train, Meeting>>();
+  const merges = new Map<Train, Map<Train, MergeReservation>>();
   const anchorMap = new Map(anchors.anchors.map((a) => [a.berth, a]));
   let nextId = 1;
   const chains = new Map<string, Map<string, Set<string>>>();
@@ -319,16 +325,97 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     }
     return best;
   };
-  const setTarget = (t: Train, a: BerthAnchor): boolean => {
-    const route = routeTo(t, a);
+  // Opposing authorities can end inside a short common edge while both bodies are
+  // still on different approaches. Distances to any common reference add to the
+  // nose-to-nose separation, so the existing fixed meeting can reserve braking early.
+  const opposingClearance = (route: Segment[], other: Train): number => {
+    let ownAlong = 0;
+    for (const s of route) {
+      let otherAlong = 0;
+      for (const b of other.route) {
+        const lo = Math.max(Math.min(s.fromT, s.toT), Math.min(b.fromT, b.toT));
+        const hi = Math.min(Math.max(s.fromT, s.toT), Math.max(b.fromT, b.toT));
+        if (s.edge === b.edge && direction(s) !== direction(b) && hi - lo > EPS) {
+          const reference = (lo + hi) / 2;
+          return Math.max(0, ownAlong + otherAlong +
+            (Math.abs(reference - s.fromT) + Math.abs(reference - b.fromT)) * s.edge.length - gap);
+        }
+        otherAlong += size(b);
+      }
+      ownAlong += size(s);
+    }
+    return Infinity;
+  };
+  // Reserve a future convergence before either nose reaches the shared edge. Body-only
+  // clearance sees the conflict too late to service brake on separate incoming lines.
+  const mergePlan = (t: Train, route: Segment[], other: Train): MergeReservation | null | undefined => {
+    let ownAlong = 0;
+    for (let i = 0; i < route.length; i++) {
+      const s = route[i]!;
+      let otherAlong = 0;
+      for (let j = 0; j < other.route.length; j++) {
+        const b = other.route[j]!;
+        if (s.edge === b.edge && direction(s) === direction(b) &&
+          Math.min(Math.max(s.fromT, s.toT), Math.max(b.fromT, b.toT)) -
+          Math.max(Math.min(s.fromT, s.toT), Math.min(b.fromT, b.toT)) > EPS) {
+          // Both noses already on this line, or a shared incoming edge: ordinary following.
+          if ((i === 0 && j === 0) || (i > 0 && j > 0 && route[i - 1]!.edge === other.route[j - 1]!.edge)) return;
+          const entry = direction(s) > 0 ? 0 : 1;
+          const ownEntry = ownAlong - Math.abs(s.fromT - entry) * s.edge.length;
+          const otherEntry = otherAlong - Math.abs(b.fromT - entry) * b.edge.length;
+          const ownCanStop = ownEntry - gap + EPS >= t.speed * t.speed / (2 * braking);
+          const otherCanStop = otherEntry - gap + EPS >= other.speed * other.speed / (2 * braking);
+          const previous = merges.get(t)?.get(other);
+          let winner: Train;
+          if (i === 0) winner = t;
+          else if (j === 0) winner = other;
+          else if (previous?.edge === s.edge) winner = previous.winner;
+          else if (!ownCanStop && !otherCanStop) return null;
+          else if (!ownCanStop) winner = t;
+          else if (!otherCanStop) winner = other;
+          else winner = t.description < other.description ? t : other;
+          const loser = winner === t ? other : t;
+          const yieldStop = loser.distanceM + (winner === t ? otherEntry : ownEntry) - gap;
+          const releaseAt = winner.distanceM + (winner === t ? ownEntry : otherEntry) + winner.lengthM + gap;
+          if (winner.distanceM < releaseAt - EPS && yieldStop - loser.distanceM + EPS < loser.speed * loser.speed / (2 * braking)) return null;
+          return { edge: s.edge, winner, yieldStop, releaseAt };
+        }
+        otherAlong += size(b);
+      }
+      ownAlong += size(s);
+    }
+  };
+  const reserveMerge = (t: Train, other: Train, reservation: MergeReservation): void => {
+    if (!merges.has(t)) merges.set(t, new Map());
+    if (!merges.has(other)) merges.set(other, new Map());
+    merges.get(t)!.set(other, reservation); merges.get(other)!.set(t, reservation);
+  };
+  const setTarget = (t: Train, a: BerthAnchor, route = routeTo(t, a)): boolean => {
     if (!route) { issue(t, a.berth, 'no forward graph path'); return false; }
     if (route.reduce((sum, s) => sum + size(s), 0) + EPS < t.speed * t.speed / (2 * braking)) {
       issue(t, a.berth, 'target is inside service braking distance'); return false;
     }
+    const reservations: [Train, MergeReservation][] = [];
+    for (const other of active.values()) if (other !== t) {
+      if (clearance(t, other, route) + EPS < t.speed * t.speed / (2 * braking)) {
+        issue(t, a.berth, 'occupied route is inside service braking distance'); return false;
+      }
+      if (opposingClearance(route, other) + EPS < (t.speed * t.speed + other.speed * other.speed) / (2 * braking)) {
+        issue(t, a.berth, 'opposing authority is inside service braking distance'); return false;
+      }
+      const reservation = mergePlan(t, route, other);
+      if (reservation === null) { issue(t, a.berth, 'merge conflict is inside service braking distance'); return false; }
+      if (reservation) reservations.push([other, reservation]);
+    }
+    // A changed authority can withdraw from a merge. Retain only reservations on its
+    // accepted route; queued bodies reserve nothing until they become visible.
+    merges.delete(t);
+    for (const pairs of merges.values()) pairs.delete(t);
+    if (active.get(t.description) === t) for (const [other, reservation] of reservations) reserveMerge(t, other, reservation);
     t.route = route; t.target = a; t.authority++; t.exiting = false; t.pendingExit = false; delete t.unmapped;
     return true;
   };
-  const reverseAtPlatform = (t: Train, a: BerthAnchor): void => {
+  const reverseAtPlatform = (t: Train, a: BerthAnchor, route?: Segment[]): void => {
     const platformBerth = t.target.berth;
     const oldBody = t.body;
     const oldPos = t.pos, oldDir = t.dir;
@@ -336,7 +423,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const nose = t.body.at(-1);
     if (nose) { t.pos = point(nose.edge, nose.toT); t.dir = direction(nose); }
     else t.dir = -t.dir;
-    if (setTarget(t, a)) {
+    if (setTarget(t, a, route)) {
       t.departing = true; t.reversals++;
       issues.push({ kind: 'reversal', description: t.description, berth: platformBerth, reason: 'stationary platform cab change' });
     } else { t.body = oldBody; t.pos = oldPos; t.dir = oldDir; }
@@ -377,8 +464,7 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const dir = direction(end), pos = point(end.edge, end.toT);
     const stop: BerthAnchor = { ...a, platform: undefined, kind: 'inferred', from: dir > 0 ? end.edge.a : end.edge.b, to: dir > 0 ? end.edge.b : end.edge.a,
       t: dir > 0 ? pos.t : 1 - pos.t, point: pos.point, evidence: 'estimated approach: held short pending this train’s mapped step' };
-    if (!setTarget(t, stop)) return;
-    t.route = shortened; t.estimated = true; t.awaitingAnchor = a.berth; t.unmapped = berth;
+    if (!setTarget(t, stop, shortened)) return; t.estimated = true; t.awaitingAnchor = a.berth; t.unmapped = berth;
     const seconds = typicalSeconds(berth, a.berth);
     if (seconds) t.estimateSpeed = distance / seconds;
   };
@@ -405,8 +491,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     const stop: BerthAnchor = { berth: t.unmapped ?? t.lastBerth, kind: 'inferred', from: endDir > 0 ? end.edge.a : end.edge.b, to: endDir > 0 ? end.edge.b : end.edge.a,
       t: endDir > 0 ? end.t : 1 - end.t, point: end.point, errorM: 0, evidence: 'unmapped chain: continue to graph boundary' };
     const missing = t.unmapped;
-    if (platform) reverseAtPlatform(t, stop);
-    else if (!setTarget(t, stop)) return;
+    if (platform) reverseAtPlatform(t, stop, route);
+    else if (!setTarget(t, stop, route)) return;
     if (t.target === stop) {
       // Keep the chosen continuation, rather than taking a different shortest branch.
       t.route = route; t.exiting = true; t.departing = true; t.unmapped = missing;
@@ -420,9 +506,9 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     }
   };
   // Distance to the first occupied interval in the remaining route.
-  const clearance = (t: Train, other: Train): number => {
+  const clearance = (t: Train, other: Train, route = t.route): number => {
     let along = 0;
-    for (const s of t.route) {
+    for (const s of route) {
       const lo = Math.min(s.fromT, s.toT), hi = Math.max(s.fromT, s.toT), dir = direction(s);
       for (const b of other.body) {
         if (b.edge !== s.edge) continue;
@@ -490,12 +576,30 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
       }
       if (event.kind === 'step' && event.from) berthOwners.delete(event.from);
       if ((event.kind === 'step' || event.kind === 'interpose') && event.to && event.descr) berthOwners.set(event.to, event.descr);
-      if (event.kind === 'cancel' && event.descr) for (const [berth, owner] of berthOwners) if (owner === event.descr) berthOwners.delete(berth);
+      if (event.kind === 'cancel' && event.descr) for (const [berth, owner] of berthOwners) {
+        // CB removes one berth, not every mirrored observation of that headcode.
+        // An empty origin is the reconciler's authoritative whole-picture removal.
+        if (owner === event.descr && (!event.from || event.from === berth)) berthOwners.delete(berth);
+      }
     }
     if (event.area !== anchors.area || !event.descr || event.descr === NOT_A_TRAIN) return;
     const description = event.descr;
     let t = active.get(description) ?? queued.get(description) ?? pendingNames.get(description);
     if (event.kind === 'cancel') {
+      // A reconnect can remove the arrival name while its evidenced replacement
+      // is waiting for the animated body to reach the platform. That is still
+      // one physical train. A removed mirror likewise cannot cancel its main berth.
+      const replacementPresent = t && replacementObserved(t);
+      const cancelledAnchor = anchorMap.get(event.from ?? '');
+      const cancelledStop = cancelledAnchor && locate(cancelledAnchor), targetStop = t && locate(t.target);
+      const samePhysicalStop = cancelledStop && targetStop && cancelledStop.edge === targetStop.edge &&
+        Math.abs(cancelledStop.t - targetStop.t) < EPS;
+      if (t && ((!samePhysicalStop && observedAtTarget(t)) || replacementPresent)) {
+        if (t.pendingRename?.description === description && !replacementPresent) {
+          pendingNames.delete(description); delete t.pendingRename;
+        }
+        return;
+      }
       lastObservation.delete(description);
       if (queued.has(description)) queued.delete(description);
       else if (t && t.fadeAt === undefined) t.fadeAt = now;
@@ -636,8 +740,15 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     let available = t.route.reduce((sum, s) => sum + size(s), 0);
     t.blocked = false;
     for (const other of active.values()) if (other !== t) {
-      let clear = clearance(t, other);
-      if (Number.isFinite(clear) && other.route.length && t.route.some((s) => other.body.some((b) => b.edge === s.edge && direction(b) !== direction(s)))) {
+      const opposing = opposingClearance(t.route, other);
+      let clear = Math.min(clearance(t, other), opposing);
+      const reservation = mergePlan(t, t.route, other);
+      if (reservation) reserveMerge(t, other, reservation);
+      const merge = merges.get(t)?.get(other);
+      if (merge && merge.winner !== t && merge.winner.distanceM < merge.releaseAt - EPS) {
+        clear = Math.min(clear, Math.max(0, merge.yieldStop - t.distanceM));
+      }
+      if (Number.isFinite(clear) && other.route.length && (Number.isFinite(opposing) || t.route.some((s) => other.body.some((b) => b.edge === s.edge && direction(b) !== direction(s))))) {
         // Opposing trains share a fixed meeting boundary until either authority changes.
         // Recomputing a moving midpoint every tick lets one train consume the other's
         // braking room. Reserve each stopping distance first, then share the free space.
@@ -705,7 +816,8 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
         if (t.fadeAt !== undefined && now - t.fadeAt >= fadeSeconds * 1000) {
           active.delete(t.description);
           if (t.pendingRename) pendingNames.delete(t.pendingRename.description);
-          meetings.delete(t);
+          meetings.delete(t); merges.delete(t);
+          for (const m of merges.values()) m.delete(t);
           for (const m of meetings.values()) m.delete(t);
           issues.push({ kind: 'vanished', description: t.description, berth: t.lastBerth, reason: 'completed fade' });
         }

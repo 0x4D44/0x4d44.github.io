@@ -42,15 +42,28 @@ class Stream implements EventStream {
   emit(type: string, data: string) { this.listeners.get(type)?.({ data } as MessageEvent<string>); }
 }
 test('malformed SSE cannot throw into the page or replace the last good scene; ping reveals stale data', () => {
-  let now = 0; const states: string[] = [], applied: unknown[] = []; const stream = new Stream();
-  const feed = createLiveFeed({ apply: e => applied.push(e), advance() {} }, s => states.push(s), { now: () => now, source: () => stream, schedule: () => 1, unschedule() {} });
-  stream.onopen?.({} as Event);
-  stream.emit('td', JSON.stringify({ e: good })); const count = applied.length;
-  for (const type of ['td', 'trust', 'snapshot']) for (const data of ['null', '{', '<html>error</html>', 'x'.repeat(1_048_577)]) assert.doesNotThrow(() => stream.emit(type, data));
-  assert.equal(applied.length, count);
-  now = 60_000; stream.emit('ping', '{"t":60000}'); assert.match(states.at(-1)!, /stale.*60s/i);
-  stream.emit('td', JSON.stringify({ e: good })); assert.doesNotMatch(states.at(-1)!, /stale|invalid/);
-  feed.dispose();
+  for (const type of ['td', 'trust', 'snapshot']) for (const data of ['null', '{', '<html>error</html>', 'x'.repeat(1_048_577)]) {
+    let now = 0; const states: string[] = [], applied: unknown[] = [], streams: Stream[] = [];
+    const jobs = new Map<object, { fn: () => void; ms: number }>();
+    const feed = createLiveFeed({ apply: e => applied.push(e), advance() {} }, s => states.push(s), {
+      now: () => now, source: () => { const stream = new Stream(); streams.push(stream); return stream; },
+      schedule: (fn, ms) => { const token = {}; jobs.set(token, { fn, ms }); return token; },
+      unschedule: token => { jobs.delete(token as object); },
+    });
+    try {
+      const stream = streams[0]!; stream.onopen?.({} as Event);
+      stream.emit('td', JSON.stringify({ e: good })); const count = applied.length;
+      assert.doesNotThrow(() => stream.emit(type, data));
+      assert.equal(applied.length, count);
+      assert.equal(stream.closed, true, 'a malformed stream is explicitly replaced');
+      assert.match(states.at(-1)!, /invalid.*reconnecting/);
+      now = 60_000;
+      [...jobs.values()].find(job => job.ms === 500)!.fn();
+      const recovered = streams[1]!; recovered.onopen?.({} as Event);
+      recovered.emit('ping', '{"t":60000}'); assert.match(states.at(-1)!, /stale.*60s/i);
+      recovered.emit('td', JSON.stringify({ e: good })); assert.doesNotMatch(states.at(-1)!, /stale|invalid/);
+    } finally { feed.dispose(); }
+  }
 });
 
 test('absent relay and HTML timetable responses retry and recover without losing the last good timetable', async () => {

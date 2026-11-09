@@ -153,8 +153,12 @@ test('seated, only y moves: x, z, normals, UVs and triangles are as built and ev
       assert.deepEqual(s.indices, p.indices, `${name}/${key}: triangles`);
     }
   }
-  // the heights the sources give are measured from the base
-  close(highest(heights(seated.hotel)) - seats.hotel.y, plans.hotel.ridge, 1e-9, 'the hotel\'s ridge above its base');
+  // The slate ridge and the assumed stacks are separate heights. The exact per-vertex
+  // translation check above still covers every dormer and chimney vertex.
+  close(highest(heights(seated.hotel, ['slate'])) - seats.hotel.y, plans.hotel.ridge, 1e-9, 'the hotel\'s slate ridge above its base');
+  const stackTop = highest(heights(plain.hotel, ['stone']));
+  assert.ok(stackTop > plans.hotel.ridge, 'the assumed chimney stacks extend above the slate ridge');
+  close(highest(heights(seated.hotel, ['stone'])) - stackTop, seats.hotel.y, 1e-9, 'the chimney stacks rise with the hotel seat');
   close(highest(heights(seated.midland)) - seats.midland.y, FIGURES.midland.clockTowerHeight, 1e-9, 'the clock tower above its base');
   close(highest(heights(seated.barlow, ['slate', 'roofGlass'])) - seats.barlow.y, FIGURES.barlow.rise, 1e-3, 'the Barlow crown above its springings');
 });

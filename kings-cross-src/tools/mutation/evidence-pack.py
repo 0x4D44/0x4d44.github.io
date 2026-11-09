@@ -30,6 +30,9 @@ MUTATIONS = [
     ('allow equivalent exceptions for every driver', "name === 'station' ? names.filter", 'true ? names.filter'),
     ('trust zero-exit mutation survivors', 'if (value.truncated || !result.mutations.passed)', 'if (false)'),
     ('omit performance evidence', "if (selected.has('08')) node", 'if (false) node'),
+    ('omit cached motion schedules', '...recArgs, ...motionScheduleArgs,', '...recArgs,'),
+    ('motion schedule omitted from provenance', "'smart', ...motionSchedules.map(i => i.role)", "'smart'"),
+    ('missing motion schedule becomes required', "i.role.startsWith('schedule:') && i.presentAtPlanning", "i.role.startsWith('schedule:')"),
     ('omit axis 05 portal capture', "if (selected.has('05')) node('05-portal-capture'", "if (false) node('05-portal-capture'"),
     ('silently skip undocumented mutation drivers', "options.only.includes('09') && undocumented.length", 'false'),
 ]

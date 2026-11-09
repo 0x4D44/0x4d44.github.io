@@ -5,8 +5,10 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { buildGraph } from '../../core/graph.ts';
 import { createMotion } from '../../core/motion.ts';
+import { loadOfflineReplay } from '../../web/src/offline-replay.ts';
+import { createReplayFeed } from '../../web/src/feed.ts';
 import { createEventReconciler, parseEvent } from '../../web/src/feed.ts';
-import { createSyntheticRelay, finalizeStatus, freshDiagnostics, hardwareRenderer, parseOptions, phaseIsComplete,
+import { createBrowserEvidenceServer, syntheticOfflineReplayFixture, createSyntheticRelay, finalizeStatus, freshDiagnostics, hardwareRenderer, parseOptions, phaseIsComplete,
   recordCdpNetworkEvent, resolveLogEntryUrl, syncDiagnostics, syntheticRelayFixture, syntheticSseFrame } from '../axis07-browser.mjs';
 
 const fixtureTrack = {
@@ -61,11 +63,13 @@ test('synthetic relay fixture supplies fake health metadata, a synthetic snapsho
 });
 
 test('browser report completeness requires all phases, attribution, status, board, counts and screenshots', () => {
-  const phases = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'].map(name => ({
-    name, conditionObserved: true, cityLoaded: true,
+  const phases = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered', 'offline-replay'].map(name => ({
+    name, conditionObserved: true, cityLoaded: true, mode: name === 'no-relay' ? 'demo' : name === 'offline-replay' ? 'replay' : 'live',
+    replayStartMs: name === 'offline-replay' ? 1000 : null, replayTimeMs: name === 'offline-replay' ? 2000 : null,
+    proxyEnabled: !['no-relay', 'stopped', 'offline-replay'].includes(name),
     statusLine: name === 'no-relay' ? 'sample trains at the buffers, not live · relay absent' : 'SYN synthetic feed · 1 trains shown',
-    connection: name === 'no-relay' ? 'relay absent' : ['stopped', 'sse-drop'].includes(name) ? 'reconnecting; retry in 0.5s' : 'connected',
-    trainCount: 1, board: { present: true, platformTrainCount: 1 }, screenshot: `${name}.png`,
+    connection: name === 'no-relay' ? 'relay absent' : name === 'offline-replay' ? 'playing' : ['stopped', 'sse-drop'].includes(name) ? 'reconnecting; retry in 0.5s' : 'connected',
+    trainCount: 1, board: { present: true, mode: name === 'no-relay' ? 'sample' : name === 'offline-replay' ? 'replay' : 'live', platformTrainCount: 1 }, screenshot: `${name}.png`,
     attribution: { present: { osm: true, environmentAgency: true, openGovernmentLicence: true } },
     cspErrorCount: 0, cspInvalidSourceCount: 0, validCsp: true, consoleErrorCount: 0, unexpectedNetworkFailures: [],
     relayRequestCounts: name === 'no-relay' ? { '/relay/health': 1 } : {},
@@ -73,6 +77,32 @@ test('browser report completeness requires all phases, attribution, status, boar
   const report = { phases, gaps: [], validGpu: true, genuineMetalGpu: true, renderer: 'ANGLE Metal Renderer: Apple M4' };
   assert.equal(phaseIsComplete(report), true);
   assert.equal(finalizeStatus(report), 'PASS');
+  const invalidObservations = [
+    ['offline replay clock frozen', r => { r.phases[5].replayTimeMs = 1000; }],
+    ['offline replay touched relay', r => { r.phases[5].relayRequestCounts['/relay/sclass'] = 1; }],
+    ['offline replay missing train', r => { r.phases[5].trainCount = 0; }],
+    ['offline replay proxy enabled', r => { r.phases[5].proxyEnabled = true; }],
+    ['offline replay wrong board', r => { r.phases[5].board.mode = 'sample'; }],
+    ['connected is reconnecting', r => { r.phases[1].connection = 'reconnecting; retry in 0.5s'; }],
+    ['recovered is reconnecting', r => { r.phases[4].connection = 'reconnecting; retry in 0.5s'; }],
+    ['recovered is demo', r => { r.phases[4].mode = 'demo'; }],
+    ['stopped is demo', r => { r.phases[2].mode = 'demo'; }],
+    ['no relay proxy enabled', r => { r.phases[0].proxyEnabled = true; }],
+    ['SSE drop proxy disabled', r => { r.phases[3].proxyEnabled = false; }],
+    ['missing board', r => { delete r.phases[1].board; }],
+    ['empty board', r => { r.phases[1].board = {}; }],
+    ['sample board in live', r => { r.phases[1].board.mode = 'sample'; }],
+    ['invalid board count', r => { r.phases[1].board.platformTrainCount = -1; }],
+    ['empty screenshot', r => { r.phases[1].screenshot = ''; }],
+    ['duplicate phase', r => { r.phases.push(structuredClone(r.phases[1])); }],
+  ].map(([reason, corrupt]) => {
+    const invalid = structuredClone(report);
+    corrupt(invalid);
+    return [reason, finalizeStatus(invalid)];
+  });
+  assert.deepEqual(invalidObservations, invalidObservations.map(([reason]) => [reason, 'GAP']),
+    'a true polling flag cannot replace the captured page and proxy observations');
+
   assert.equal(finalizeStatus({ ...report, error: 'synthetic failure' }), 'ERROR');
   const missingAttribution = structuredClone(report);
   missingAttribution.phases[2].attribution.present.osm = false;
@@ -174,4 +204,32 @@ test('a console error with no URL resolves its CDP request ID after the request 
   assert.equal(resolveLogEntryUrl({ networkRequestId: 'texture', url: 'not a URL' }, info), url);
   assert.equal(resolveLogEntryUrl({ networkRequestId: 'texture', url: 'http://127.0.0.1:43210/other' }, info), 'http://127.0.0.1:43210/other');
   assert.equal(resolveLogEntryUrl({ networkRequestId: 'unknown' }, info), null);
+});
+
+
+test('offline browser fixture serves finite static replay while the relay proxy is disabled', async (t) => {
+  const fixture = syntheticOfflineReplayFixture(fixtureTrack);
+  const control = createBrowserEvidenceServer({ dist: '/unused', relay: null }, fixture);
+  t.after(() => control.close());
+  control.setProxy(false);
+  const requested = [];
+  const fetchImpl = async (input) => {
+    const pathname = new URL(String(input)).pathname; requested.push(pathname);
+    return new Promise(resolve => {
+      let status = 200, headers;
+      const response = { writeHead(code, fields) { status = code; headers = fields; return response; },
+        end(body) { resolve(new Response(body, { status, headers })); return response; } };
+      control.server.emit('request', { method: 'GET', url: pathname, headers: { host: '127.0.0.1:1234' } }, response);
+    });
+  };
+  const bundle = await loadOfflineReplay('/axis07-offline/manifest.json', 'http://127.0.0.1:1234/kings-cross/', buildGraph(fixtureTrack), '2026-11-07', fetchImpl);
+  const motion = createMotion(buildGraph(fixtureTrack), bundle.anchors), states = [];
+  const replay = createReplayFeed(bundle.recording, 1, motion, state => states.push(state));
+  replay.advance(1);
+  assert.ok(replay.timeMs() > fixture.startMs);
+  assert.equal(motion.trains().length, 1);
+  replay.advance(120);
+  assert.equal(states.at(-1), 'recording ended');
+  assert.ok(requested.every(url => !url.startsWith('/relay/')));
+  assert.equal((await fetchImpl('http://127.0.0.1:1234/relay/health')).status, 503);
 });

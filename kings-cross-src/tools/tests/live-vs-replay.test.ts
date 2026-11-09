@@ -52,3 +52,16 @@ test('saved live summary rejects malformed samples and output outside private sc
     await assert.rejects(summarizeCapture(dir,root),/beneath worktree .scratch/);
   } finally {await rm(dir,{recursive:true,force:true});}
 });
+
+
+test('round36: saved report names stationary transport agreement as an activity gap', async () => {
+  const dir = await mkdtemp(path.join(root, '.scratch/live36-tests-'));
+  try {
+    await fixture(dir);
+    const out = path.join(dir, 'summary');
+    await summarizeCapture(dir, out);
+    const markdown = await readFile(path.join(out, 'live-vs-replay.md'), 'utf8');
+    assert.match(markdown, /Active-hour movement evidence: GAP/);
+    assert.match(markdown, /no drawn train movement/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

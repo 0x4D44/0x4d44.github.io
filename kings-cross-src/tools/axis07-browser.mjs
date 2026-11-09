@@ -16,7 +16,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(here, '..');
 const repoRoot = path.resolve(packageRoot, '..');
 const scratchRoot = path.join(repoRoot, '.scratch');
-const PHASES = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered'];
+const PHASES = ['no-relay', 'connected', 'stopped', 'sse-drop', 'recovered', 'offline-replay'];
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 export const freshDiagnostics = (phase, proxyEnabled) => ({ phase, proxyEnabled, consoleErrorCount: 0, cspErrorCount: 0, cspInvalidSourceCount: 0,
   failedRequests: [], expectedRelayFailures: [], unexpectedNetworkFailures: [], relayRequestCounts: {}, expectedRelayConsoleErrorCount: 0,
@@ -186,6 +186,30 @@ export function syntheticRelayFixture(trackData, now = Date.now()) {
   };
 }
 
+export function syntheticOfflineReplayFixture(trackData) {
+  const startMs = Date.UTC(2026, 10, 7, 12);
+  const fixture = syntheticRelayFixture(trackData, startMs);
+  return { startMs, resources: new Map([
+    ['/axis07-offline/manifest.json', { type: 'application/json', body: JSON.stringify({ anchors: 'anchors.json', recording: 'recording.ndjson' }) }],
+    ['/axis07-offline/anchors.json', { type: 'application/json', body: JSON.stringify(fixture.anchors) }],
+    ['/axis07-offline/recording.ndjson', { type: 'application/x-ndjson', body: [startMs, startMs + 60_000].map(t => JSON.stringify({ t, e: { ...syntheticSnapshot(t), kind: 'snapshot' } })).join('\n') }],
+  ]) };
+}
+
+/** Add static synthetic bundle routes without ever enabling the relay proxy. */
+export function createBrowserEvidenceServer(options, fixture) {
+  const control = createEvidenceServer(options);
+  const [serve] = control.server.listeners('request');
+  control.server.removeListener('request', serve);
+  control.server.on('request', (req, res) => {
+    const resource = fixture.resources.get(new URL(req.url ?? '/', 'http://127.0.0.1').pathname);
+    if (!resource) { void serve(req, res); return; }
+    if (req.method !== 'GET') { res.writeHead(405).end(); return; }
+    res.writeHead(200, { 'content-type': resource.type, 'cache-control': 'no-store' }).end(resource.body);
+  });
+  return control;
+}
+
 function sendJson(res, status, value) {
   res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
   res.end(JSON.stringify(value));
@@ -252,16 +276,29 @@ export function createSyntheticRelay(trackData) {
 
 export function phaseIsComplete(report) {
   const phases = new Map((report.phases ?? []).map(row => [row.name, row]));
+  if (report.phases?.length !== PHASES.length || phases.size !== PHASES.length) return false;
   const complete = PHASES.every(name => {
-    const phase = phases.get(name);
-    return phase?.conditionObserved === true && phase.cityLoaded === true && typeof phase.statusLine === 'string' && typeof phase.connection === 'string' && phase.board !== null &&
+    const phase = phases.get(name), offline = name === 'no-relay', replay = name === 'offline-replay';
+    const reconnecting = name === 'stopped' || name === 'sse-drop';
+    // Polling can succeed before the screenshot. Require the captured page to still
+    // show the intended state, including a real board rather than a truthy placeholder.
+    const observedState = phase?.mode === (offline ? 'demo' : replay ? 'replay' : 'live') &&
+      phase.proxyEnabled === !(offline || replay || name === 'stopped') &&
+      (offline ? phase.connection === 'relay absent' : replay ? ['playing', 'recording ended'].includes(phase.connection) : reconnecting ? phase.connection?.includes('reconnecting') : phase.connection === 'connected');
+    return observedState && phase?.conditionObserved === true && phase.cityLoaded === true && typeof phase.statusLine === 'string' && phase.statusLine.trim().length > 0 && typeof phase.connection === 'string' &&
+      phase.board?.present === true && phase.board.mode === (offline ? 'sample' : replay ? 'replay' : 'live') &&
+      Number.isSafeInteger(phase.board.platformTrainCount) && phase.board.platformTrainCount >= 0 &&
       Number.isSafeInteger(phase.trainCount) && phase.attribution?.present?.osm === true &&
       phase.attribution?.present?.environmentAgency === true && phase.attribution?.present?.openGovernmentLicence === true &&
       phase.cspInvalidSourceCount === 0 && phase.cspErrorCount === 0 && phase.validCsp === true && phase.consoleErrorCount === 0 &&
-      phase.unexpectedNetworkFailures?.length === 0 && typeof phase.screenshot === 'string';
+      phase.unexpectedNetworkFailures?.length === 0 && typeof phase.screenshot === 'string' && phase.screenshot.trim().length > 0;
   });
   const noRelay = phases.get('no-relay'), stopped = phases.get('stopped'), drop = phases.get('sse-drop');
-  return complete && noRelay?.connection === 'relay absent' && /sample trains/i.test(noRelay.statusLine ?? '') &&
+  const replay = phases.get('offline-replay');
+  const replayObserved = replay?.trainCount > 0 && Number.isFinite(replay.replayStartMs) &&
+    Number.isFinite(replay.replayTimeMs) && replay.replayTimeMs > replay.replayStartMs &&
+    replay.relayRequestCounts && Object.values(replay.relayRequestCounts).every(count => count === 0);
+  return complete && replayObserved && noRelay?.connection === 'relay absent' && /sample trains/i.test(noRelay.statusLine ?? '') &&
     (noRelay.relayRequestCounts?.['/relay/health'] ?? 0) <= 1 && stopped?.connection?.includes('reconnecting') &&
     (stopped.trainCount ?? 0) > 0 && drop?.connection?.includes('reconnecting') && (drop.trainCount ?? 0) > 0 &&
     (phases.get('connected')?.trainCount ?? 0) > 0 &&
@@ -323,7 +360,7 @@ function observationExpression() {
     const platformRows = rows?.platforms?.flatMap(p => p.trains.map(t => ({ platform: p.platform, headcode: t.headcode, state: t.state }))) ?? [];
     return {
       ready: !!k?.ready, webglAvailable: !!gl, renderer, statusLine, mode: k?.feed?.mode ?? null,
-      connection: k?.feed?.connection ?? null, trainCount,
+      connection: k?.feed?.connection ?? null, replayTimeMs: k?.feed?.timeMs ?? null, trainCount,
       board: boardElement ? { present: true, expanded: boardElement.querySelector('button')?.getAttribute('aria-expanded') ?? null,
         mode: rows?.mode ?? null, timetable: rows?.timetable ?? null, platformTrainCount: platformRows.length,
         platformTrains: platformRows, approachingCount: rows?.approaching?.length ?? null,
@@ -342,7 +379,8 @@ function phaseMarkdown(report) {
   const lines = [
     '# Axis 07 browser report', '',
     `Status: **${report.status}**. Genuine Metal renderer: **${report.genuineMetalGpu ? 'yes' : 'no'}** (${report.renderer ?? 'unavailable'}).`,
-    '', 'Every relay response and train description in this run is synthetic. The stopped phase cuts this report’s loopback proxy; it does not stop or alter an external relay.', '',
+    '', 'Every relay response and train description in this run is synthetic. The stopped phase cuts this report’s loopback proxy; it does not stop or alter an external relay.',
+    '', 'The no-relay phase checks labelled sample trains. The separate offline-replay phase loads a static synthetic recording bundle with the relay proxy disabled.', '',
     '| Phase | Condition | Proxy | Connection | Trains | Board rows | Attribution | CSP errors | CSP invalid sources | Console errors | Expected relay failures | Unexpected network failures | Screenshot |',
     '|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|',
   ];
@@ -418,7 +456,8 @@ export async function main(args = process.argv.slice(2)) {
     const trackData = JSON.parse(await readFile(path.join(packageRoot, 'web/src/data/kx-track.json'), 'utf8'));
     relay = createSyntheticRelay(trackData);
     const relayOrigin = await relay.listen();
-    serverControl = createEvidenceServer({ dist: options.dist, relay: new URL(relayOrigin) });
+    const replayFixture = syntheticOfflineReplayFixture(trackData);
+    serverControl = createBrowserEvidenceServer({ dist: options.dist, relay: new URL(relayOrigin) }, replayFixture);
     await new Promise((resolve, reject) => { serverControl.server.once('error', reject); serverControl.server.listen(0, '127.0.0.1', resolve); });
     const pageBase = `http://127.0.0.1:${serverControl.server.address().port}/kings-cross/`;
 
@@ -502,7 +541,7 @@ export async function main(args = process.argv.slice(2)) {
         await writeArtifact(screenshot, Buffer.from(image.data, 'base64'));
       } catch (error) { report.gaps.push(`${name}: screenshot unavailable (${error.message})`); }
       const phase = { name, expectation, conditionObserved, proxyEnabled, cityLoaded, statusLine: page.statusLine ?? '', connection: page.connection ?? null,
-        mode: page.mode ?? null, board: page.board ?? null, trainCount: Number.isSafeInteger(page.trainCount) ? page.trainCount : null,
+        mode: page.mode ?? null, replayTimeMs: page.replayTimeMs ?? null, board: page.board ?? null, trainCount: Number.isSafeInteger(page.trainCount) ? page.trainCount : null,
         renderer: page.renderer ?? null, attribution: page.attribution ?? null,
         cspErrorCount: activeDiagnostics?.cspErrorCount ?? 0,
         cspInvalidSourceCount: activeDiagnostics?.cspInvalidSourceCount ?? 0,
@@ -534,6 +573,9 @@ export async function main(args = process.argv.slice(2)) {
     };
 
     serverControl.setProxy(false);
+    const replayPhase = await navigate('offline-replay', `${pageBase}?trains=replay&date=20261107&replayBundle=/axis07-offline/manifest.json`,
+      `window.__kx?.feed?.mode === 'replay' && ['playing', 'recording ended'].includes(window.__kx?.feed?.connection) && window.__kx?.feed?.timeMs > ${replayFixture.startMs} && window.__kx?.trains?.length > 0`);
+    replayPhase.replayStartMs = replayFixture.startMs;
     await navigate('no-relay', pageBase, "window.__kx?.feed?.connection === 'relay absent' && /sample trains/i.test(document.getElementById('status')?.textContent ?? '') || document.body.classList.contains('no-webgl')");
     serverControl.setProxy(true);
     await navigate('connected', pageBase, "window.__kx?.feed?.connection === 'connected' && window.__kx?.feed?.mode === 'live' && window.__kx?.trains?.length > 0", 45000);

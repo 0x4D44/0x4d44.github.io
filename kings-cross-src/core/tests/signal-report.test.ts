@@ -109,6 +109,76 @@ test('signal report rejects an unsupported aspect even when the byte is present'
   }
 });
 
+const diagnosticWindows = { beforeMs: 100, afterMs: 10, earlyMs: 0, routeAfterMs: 120 };
+const fixedDiagnosticTable = () => ({ area: 'Y9', windows: diagnosticWindows,
+  folds: [{ startMs: 0, splitMs: 4000, endMs: 8000 }],
+  hypotheses: [
+    { ...hypothesis('A', 0), id: 'fixed-A', training: evidence, heldOut: evidence },
+    { ...hypothesis('B', 1), id: 'excluded-B', status: 'unknown' as const, training: evidence, heldOut: evidence },
+  ] });
+const diagStep = (t: number, berth = 'A'): TimedTdEvent => event(t, 'step', { from: berth, to: 'EXIT', descr: 'SYN1' });
+const diagByte = (t: number, value: number): TimedTdEvent => event(t, 'sclass', { msgType: 'SF', address: '10', data: value.toString(16).padStart(2, '0') });
+const diagnosticRows = (support: number, trials: number, lateResets = false): TimedTdEvent[] => {
+  const result: TimedTdEvent[] = [event(0), diagByte(0, 0)];
+  for (let index = 0; index < trials; index += 1) {
+    const passage = 1000 + index * 800;
+    result.push(diagStep(passage));
+    if (index < support) result.push(diagByte(passage - 20, 1), diagByte(passage + (lateResets && index >= Math.ceil(support / 2) ? 50 : 2), 0));
+  }
+  result.push(event(1000 + (trials - 1) * 800 + 200));
+  return result.sort((a, b) => a.t - b.t);
+};
+
+test('fixed signal revalidation scores admitted mappings per recording without promoting unknowns or changing the supplied table', () => {
+  const supplied = fixedDiagnosticTable();
+  const original = structuredClone(supplied);
+  const r = signalReport([diagnosticRows(6, 8, true), diagnosticRows(2, 2)], data, overlay, anchors, supplied);
+  const diagnostic = r.fixedRevalidation;
+  assert.ok(diagnostic, 'report must add fixed-mapping revalidation diagnostics');
+  assert.equal(diagnostic.admittedMappingCount, 1);
+  assert.deepEqual(diagnostic.excludedUnknownMappings.map(h => h.hypothesisId), ['excluded-B']);
+  assert.deepEqual(diagnostic.recordings.map(recording => [recording.rowCount, recording.areaRowCount, recording.spanMs]), [
+    [23, 23, 6800], [9, 9, 2000],
+  ]);
+  assert.equal(diagnostic.recordings[0]!.tableFoldRelation, 'overlaps-training-and-held-out');
+  assert.equal(diagnostic.recordings[0]!.mappings.length, 1);
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.hypothesisId, 'fixed-A');
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.heldOut.support, 3);
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.heldOut.trials, 8);
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.heldOut.cycles, 6);
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.heldOut.precision, .5);
+  assert.equal(diagnostic.recordings[0]!.mappings[0]!.heldOut.recall, .375);
+  assert.deepEqual(diagnostic.recordings[0]!.outcomes, { insufficientSupport: 0, belowPrecisionOrRecallThreshold: 1, meetsAcceptance: 0 });
+  assert.equal(diagnostic.recordings[1]!.mappings[0]!.heldOut.support, 2);
+  assert.deepEqual(diagnostic.recordings[1]!.outcomes, { insufficientSupport: 1, belowPrecisionOrRecallThreshold: 0, meetsAcceptance: 0 });
+  assert.deepEqual(supplied, original, 'fixed revalidation must leave the input table byte-for-byte equivalent');
+  assert.match(signalReportMarkdown(r), /Fixed mapping revalidation/);
+  assert.match(signalReportMarkdown(r), /Recording \| Address\.bit \| Fixed mapping/);
+});
+
+test('fixed signal revalidation resets byte history between recordings', () => {
+  const first = [diagByte(0, 0), diagByte(940, 1), event(950)];
+  const second = [diagByte(0, 0), diagStep(1000), diagByte(1002, 0), event(1200)];
+  const diagnostic = signalReport([first, second], data, overlay, anchors, fixedDiagnosticTable()).fixedRevalidation;
+  assert.ok(diagnostic, 'report must revalidate each recording separately');
+  assert.equal(diagnostic.recordings[1]!.mappings[0]!.heldOut.support, 0);
+  assert.equal(diagnostic.recordings[1]!.mappings[0]!.heldOut.trials, 1);
+  assert.equal(diagnostic.aggregate.all.support, 0, 'a clear in one recording cannot pair with a reset in another');
+});
+
+test('fixed revalidation labels only nonempty table folds as overlaps and never infers independence', () => {
+  const input = [diagnosticRows(0, 1)];
+  const relation = (fold: { startMs: number; splitMs: number; endMs: number } | null) => {
+    const supplied = fixedDiagnosticTable();
+    return signalReport(input, data, overlay, anchors, { ...supplied, folds: fold ? [fold] : [] })
+      .fixedRevalidation.recordings[0]!.tableFoldRelation;
+  };
+  assert.equal(relation({ startMs: 0, splitMs: 1000, endMs: 1000 }), 'overlaps-training');
+  assert.equal(relation({ startMs: 1000, splitMs: 1000, endMs: 8000 }), 'overlaps-held-out');
+  assert.equal(relation({ startMs: 10000, splitMs: 15000, endMs: 20000 }), 'outside-table-folds-independence-unknown');
+  assert.equal(relation(null), 'unknown-folds');
+});
+
 test('signal report CLI freezes complete input lines and refuses output outside private scratch', () => {
   const root = fileURLToPath(new URL('../../../', import.meta.url));
   const dir = mkdtempSync(`${root}/.scratch/signal-report-test-`);

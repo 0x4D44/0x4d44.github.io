@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 src = Path(sys.argv[1]).resolve()
 scratch = Path(sys.argv[2]).resolve()
-if not scratch.is_relative_to(src.parent / '.scratch'):
+if not scratch.is_relative_to((src.parent / '.scratch').resolve()):
     raise SystemExit('mutation output must be under worktree .scratch')
 scratch.mkdir(parents=True, exist_ok=True)
 R, C, F = 'tools/signal-report.ts', 'tools/signal-capture.mjs', 'tools/signal-framing.mjs'
@@ -58,6 +58,18 @@ M = [
  ('fallback never tries another head', C, 'seen.add(i.headId);result.push(', 'seen.add(i.headId);continue;result.push('),
  ('fallback admits undecoded heads', C, 'h.id === i.headId && h.berth === i.berth && h.decoded', 'h.id === i.headId && h.berth === i.berth'),
  ('missing state is success', C, 'exitCode: missingStates.length ? 1 : 0', 'exitCode: 0'),
+ ('observed state may disappear from capture plan', C, 'if (!plans.some(p=>p.recording===interval.recording && p.state===interval.state))', 'if (false)'),
+ ('other recording masks missing state evidence', C, '!shots.some(s=>s.recording===p.recording && s.state===p.state)', '!shots.some(s=>s.state===p.state)'),
+ ('mismatched callback result counts as a shot', C, "if (!shot || ['recording','headId','berth','state','timeMs','startMs','endMs'].some(key=>shot[key]!==plan[key]))", 'if (false)'),
+ ('fixed report admits formerly unknown mappings', R, 'const fixed = hypotheses.filter(admitted);', 'const fixed = hypotheses;'),
+ ('fixed report ignores supplied windows', R, 'const revalidated = revalidateSignalHypotheses(input, fixed, { area: anchors.area, windows: tableWindows });', 'const revalidated = revalidateSignalHypotheses(input, fixed, { area: anchors.area, windows: undefined });'),
+ ('fixed report joins recording histories', R, 'const revalidated = revalidateSignalHypotheses(input, fixed, { area: anchors.area, windows: tableWindows });', 'const revalidated = revalidateSignalHypotheses(recordings.flat(), fixed, { area: anchors.area, windows: tableWindows });'),
+ ('sparse evidence falsely has enough support', R, "if (e.support < MIN_SUPPORT) return 'insufficient-support';", "if (e.support < 0) return 'insufficient-support';"),
+ ('fixed report bypasses accuracy thresholds', R, "if (e.precision === null || e.precision < MIN_PRECISION || e.recall === null || e.recall < MIN_PRECISION) return 'below-precision-or-recall';", "if (e.precision === null || e.recall === null) return 'below-precision-or-recall';"),
+ ('fixed report forgets unmatched cycles', R, 'cycles: h.heldOut.support + h.heldOut.unmatchedCycles,', 'cycles: h.heldOut.support,'),
+ ('empty fold spans falsely overlap', R, 'const training = valid.some(f => f.startMs < f.splitMs && endMs >= f.startMs && startMs < f.splitMs);\n  const heldOut = valid.some(f => f.splitMs < f.endMs && endMs >= f.splitMs && startMs <= f.endMs);', 'const training = valid.some(f => endMs >= f.startMs && startMs < f.splitMs);\n  const heldOut = valid.some(f => endMs >= f.splitMs && startMs <= f.endMs);'),
+ ('outside fold claims independence', R, "return 'outside-table-folds-independence-unknown';", "return 'independent';"),
+ ('fixed recall replaced by precision', R, 'recall: h.heldOut.recall ?? null', 'recall: h.heldOut.precision'),
  ('camera accepts a fully blocked head', F, 'throw error;', 'return { visibility: { clear: false } };'),
  ('shot accepts an obstructed head', C, '!actual.visibility?.clear', 'false'),
  ('profile removal races browser exit', C, 'exited = await new Promise(resolve => {', 'exited = true; void new Promise(resolve => {'),

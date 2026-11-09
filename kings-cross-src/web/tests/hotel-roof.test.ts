@@ -1,0 +1,165 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import * as THREE from 'three';
+import { greatNorthernHotelPlan, OSM_IDS } from '../../core/landmarks.ts';
+import type { HotelPlan } from '../../core/landmarks.ts';
+import type { KxData } from '../../core/osm.ts';
+import { pointInPolygon } from '../../core/station.ts';
+import { hotelGeometry } from '../src/landmarks.ts';
+import type { Key } from '../src/landmarks.ts';
+import { Batch } from '../src/materials.ts';
+import type { PartMap, V3 } from '../src/materials.ts';
+
+const ASSUMED_DORMER_REAR_INSET = 0.68;
+const ASSUMED_STACK_CAP_DEPTH = 0.84;
+const ASSUMED_STACK_CAP_HEIGHT = 0.14;
+const ASSUMED_DORMER_STACK_GAP = 0.12;
+const ASSUMED_DORMER_WINDOW_SILL = 0.18;
+const GEOMETRY_EPSILON = 1e-4; // 0.1 mm: permits Float32 BufferGeometry vertex rounding.
+
+const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
+const plan = greatNorthernHotelPlan(data);
+const building = data.buildings.find(b => b.id === OSM_IDS.greatNorthernHotel)!;
+
+interface Tri { p: [V3, V3, V3] }
+function triangles(m: Batch): Tri[] {
+  const out: Tri[] = [];
+  for (let i = 0; i < m.indices.length; i += 3) {
+    const k = [m.indices[i], m.indices[i + 1], m.indices[i + 2]] as [number, number, number];
+    const v = (j: number): V3 => [m.positions[j * 3] as number, m.positions[j * 3 + 1] as number, m.positions[j * 3 + 2] as number];
+    out.push({ p: [v(k[0]), v(k[1]), v(k[2])] });
+  }
+  return out;
+}
+const all = (parts: PartMap<Key>, key: Key): Tri[] => triangles(parts[key] as Batch);
+const signature = (t: Tri): string => JSON.stringify(t.p);
+function roofFacetCoordinates(edgeIndex: number, p: V3): { t: number; inset: number } | undefined {
+  const a = plan.outline[edgeIndex]!, b = plan.outline[(edgeIndex + 1) % plan.outline.length]!;
+  const ra = plan.roof.ring[edgeIndex]!, rb = plan.roof.ring[(edgeIndex + 1) % plan.outline.length]!;
+  let t = 0.5, inset = 0.8;
+  for (let i = 0; i < 10; i++) {
+    const x0 = a[0] + (b[0] - a[0]) * t, z0 = a[1] + (b[1] - a[1]) * t;
+    const x1 = ra[0] + (rb[0] - ra[0]) * t, z1 = ra[1] + (rb[1] - ra[1]) * t;
+    const x = x0 + (x1 - x0) * inset, z = z0 + (z1 - z0) * inset;
+    const dt: [number, number] = [(1 - inset) * (b[0] - a[0]) + inset * (rb[0] - ra[0]), (1 - inset) * (b[1] - a[1]) + inset * (rb[1] - ra[1])];
+    const df: [number, number] = [(1 - t) * (ra[0] - a[0]) + t * (rb[0] - b[0]), (1 - t) * (ra[1] - a[1]) + t * (rb[1] - b[1])];
+    const det = dt[0] * df[1] - df[0] * dt[1];
+    if (Math.abs(det) < 1e-10) return undefined;
+    const ex = x - p[0], ez = z - p[2];
+    t -= (ex * df[1] - ez * df[0]) / det;
+    inset -= (dt[0] * ez - dt[1] * ex) / det;
+  }
+  return { t, inset };
+}
+test('Great Northern Hotel: assumed pedimented dormers and slab stacks use the existing material batches', () => {
+  const full = hotelGeometry(plan);
+  const bare = hotelGeometry({ ...plan, faces: [] });
+  const bays = plan.faces.reduce((n, face) => n + face.bays.length, 0);
+  const atticSashes = all(full, 'sash').filter(t => t.p.every(v => v[1] > plan.eaves));
+  // [HE-GNH] confirms plural dormers, but not their count. One per OSM-derived facade bay is ASSUMED.
+  assert.equal(atticSashes.length, bays * 2, 'each assumed attic dormer has one drawn sash quad');
+
+  const baselineSlate = new Set(all(bare, 'slate').map(signature));
+  const addedSlate = all(full, 'slate').filter(t => !baselineSlate.has(signature(t)));
+  assert.ok(addedSlate.length > 0, 'the dormers have drawn slate roofs and cheeks');
+  const pediments = all(full, 'stone').filter(t => t.p.every(v => v[1] >= plan.eaves - 1e-7 && v[1] <= plan.ridge + 1e-7));
+  assert.ok(pediments.some(t => {
+    const ys = t.p.map(v => v[1]).sort((a, b) => b - a);
+    return (ys[0] as number) - (ys[1] as number) > 0.35 && (ys[1] as number) - (ys[2] as number) > 0.35;
+  }), 'stone pediments have a raised gable apex');
+  assert.ok(all(full, 'stone').some(t => t.p.every(v => v[1] > plan.ridge)), 'stone chimney stacks rise above the real roof ridge');
+  const stone = all(full, 'stone');
+  const stackTopY = Math.max(...stone.flatMap(t => t.p.map(v => v[1])));
+  const capBottomY = stackTopY - ASSUMED_STACK_CAP_HEIGHT;
+  const capSides = stone.filter(t => t.p.some(v => Math.abs(v[1] - stackTopY) < 1e-6) && t.p.some(v => Math.abs(v[1] - capBottomY) < 1e-6));
+  assert.ok(capSides.length > 0, 'the chimney cap is a thin slab at shaft-top height');
+  assert.ok(capSides.every(t => Math.max(...t.p.map(v => v[1])) - Math.min(...t.p.map(v => v[1])) <= ASSUMED_STACK_CAP_HEIGHT + 1e-6), 'cap walls remain slab-thin');
+
+  // Read the cap vertices back from the drawn geometry and invert their OSM roof facet. The
+  // ASSUMED cap front must be beyond the dormer rear with a small visible roof gap.
+  const capTops = stone.filter(t => t.p.every(v => Math.abs(v[1] - stackTopY) < 1e-6));
+  assert.ok(capTops.length > 0, 'stack caps have horizontal top triangles');
+  for (const t of capTops) for (const v of t.p) {
+    let best: { inset: number; roofRun: number } | undefined;
+    let bestAlong = Infinity;
+    for (const face of plan.faces.filter(f => f.bays.length >= 8)) for (const bay of face.bays) {
+      const a = plan.outline[bay.edge]!, b = plan.outline[(bay.edge + 1) % plan.outline.length]!, ra = plan.roof.ring[bay.edge]!, rb = plan.roof.ring[(bay.edge + 1) % plan.outline.length]!;
+      const edgeLength = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const coord = roofFacetCoordinates(bay.edge, v);
+      if (!coord) continue;
+      const edgeT = ((bay.at[0] - a[0]) * (b[0] - a[0]) + (bay.at[1] - a[1]) * (b[1] - a[1])) / (edgeLength * edgeLength);
+      const along = Math.abs(coord.t - edgeT) * edgeLength;
+      if (along < bestAlong) {
+        const roofRun = (Math.hypot(ra[0] - a[0], ra[1] - a[1]) + Math.hypot(rb[0] - b[0], rb[1] - b[1])) / 2;
+        bestAlong = along;
+        best = { inset: coord.inset, roofRun };
+      }
+    }
+    assert.ok(best && bestAlong < 1, `chimney top vertex maps to a long OSM roof bay (${bestAlong} m)`);
+    const minimumInset = ASSUMED_DORMER_REAR_INSET + ASSUMED_DORMER_STACK_GAP / best!.roofRun;
+    assert.ok(best!.inset > minimumInset - GEOMETRY_EPSILON, `chimney caps clear the dormer roof run in the actual geometry (${best!.inset} <= ${minimumInset}; nearest bay ${bestAlong} m)`);
+  }
+  assert.deepEqual(Object.keys(full).sort(), ['brick', 'sash', 'sashArch', 'slate', 'stone'], 'roof details share the hotel’s five existing material batches');
+});
+
+test('Great Northern Hotel: roof details sit on the drawn OSM-derived roof without changing the hotel footprint', () => {
+  assert.deepEqual(plan.outline, building.pts, 'the hotel plan remains the OSM footprint');
+  const full = hotelGeometry(plan), bare = hotelGeometry({ ...plan, faces: [] });
+  const atticSashes = all(full, 'sash').filter(t => t.p.every(v => v[1] > plan.eaves));
+  const baselineSlate = new Set(all(bare, 'slate').map(signature));
+  const addedSlate = all(full, 'slate').filter(t => !baselineSlate.has(signature(t)));
+  const atticStone = all(full, 'stone').filter(t => t.p.some(v => v[1] > plan.eaves));
+  const detail = [...atticSashes, ...addedSlate, ...atticStone];
+  let closest = Infinity, highest = -Infinity;
+  const roof = new THREE.Mesh((bare.slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  roof.updateMatrixWorld(true);
+  for (const t of detail) for (const v of t.p) {
+    assert.ok(pointInPolygon([v[0], v[2]], plan.outline), `roof detail stays over the hotel footprint at ${v[0]},${v[2]}`);
+    const ray = new THREE.Raycaster(new THREE.Vector3(v[0], Math.max(v[1], plan.ridge) + 10, v[2]), new THREE.Vector3(0, -1, 0), 0, 100);
+    const hit = ray.intersectObject(roof)[0];
+    assert.ok(hit, `roof detail has a real slate surface below it at ${v[0]},${v[2]}`);
+    const clearance = v[1] - hit.point.y;
+    assert.ok(clearance >= -GEOMETRY_EPSILON, `roof detail does not intersect its roof surface (clearance ${clearance})`);
+    closest = Math.min(closest, clearance);
+    highest = Math.max(highest, clearance);
+  }
+  assert.ok(closest < GEOMETRY_EPSILON, `roof details touch the roof rather than float (${closest} m nearest clearance)`);
+  assert.ok(highest > 1, `roof details rise visibly above the roof (${highest} m maximum clearance)`);
+
+  // The gable feet are where each assumed dormer contacts the slope; a vertical ray confirms the
+  // support is the actual triangulated slate mesh, not a hand-computed point or a second proxy.
+  const gableTriangles = all(full, 'stone').filter(t => t.p.every(v => v[1] >= plan.eaves && v[1] < plan.ridge));
+  const feet = new Map<string, V3>();
+  for (const t of gableTriangles) for (const v of t.p) {
+    const ray = new THREE.Raycaster(new THREE.Vector3(v[0], plan.ridge + 10, v[2]), new THREE.Vector3(0, -1, 0), 0, 100);
+    const hit = ray.intersectObject(roof)[0];
+    const sashFoot = atticSashes.some(sash => {
+      const bottom = Math.min(...sash.p.map(p => p[1]));
+      const nearBottom = sash.p.filter(p => Math.abs(p[1] - bottom) < GEOMETRY_EPSILON);
+      return bottom - v[1] > 0 && bottom - v[1] < ASSUMED_DORMER_WINDOW_SILL + 0.1 && nearBottom.some(p => Math.hypot(p[0] - v[0], p[2] - v[2]) < 0.75);
+    });
+    if (sashFoot && hit && Math.abs(v[1] - hit.point.y) < GEOMETRY_EPSILON) feet.set(`${v[0].toFixed(5)},${v[2].toFixed(5)}`, v);
+  }
+  const bays = plan.faces.reduce((n, face) => n + face.bays.length, 0);
+  assert.equal(feet.size, bays * 2, 'the two feet of each assumed pediment contact its roof slope');
+  for (const foot of feet.values()) {
+    const ray = new THREE.Raycaster(new THREE.Vector3(foot[0], foot[1] + 0.08, foot[2]), new THREE.Vector3(0, -1, 0), 0, 0.2);
+    const hit = ray.intersectObject(roof)[0];
+    assert.ok(hit, `slate roof is directly under dormer foot ${foot[0]},${foot[2]}`);
+    assert.ok(Math.abs(hit.point.y - foot[1]) < GEOMETRY_EPSILON, `ray reaches the roof at the pediment foot height ${foot[1]}`);
+  }
+
+  // A ray through a drawn high slab top must hit the stone stack above the continuous roof shell.
+  const stoneTriangles = all(full, 'stone');
+  const stackTopY = Math.max(...stoneTriangles.flatMap(t => t.p.map(v => v[1])));
+  const stackTop = stoneTriangles.find(t => t.p.every(v => Math.abs(v[1] - stackTopY) < GEOMETRY_EPSILON));
+  assert.ok(stackTop, 'a high chimney cap triangle exists');
+  const centre: V3 = [stackTop.p.reduce((s, v) => s + v[0], 0) / 3, stackTop.p.reduce((s, v) => s + v[1], 0) / 3, stackTop.p.reduce((s, v) => s + v[2], 0) / 3];
+  const stone = new THREE.Mesh((full.stone as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  stone.updateMatrixWorld(true);
+  const capRay = new THREE.Raycaster(new THREE.Vector3(centre[0], centre[1] + 1, centre[2]), new THREE.Vector3(0, -1, 0), 0, 2);
+  const capHit = capRay.intersectObject(stone)[0];
+  assert.ok(capHit && Math.abs(capHit.point.y - centre[1]) < GEOMETRY_EPSILON, 'the stack top is real ray-intersectable geometry');
+  assert.ok(centre[1] > plan.ridge, 'the chimney silhouette clears the roof ridge');
+});

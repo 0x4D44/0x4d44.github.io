@@ -52,15 +52,87 @@ test('zero denominators stay null instead of becoming zero or NaN rates', () => 
   assert.match(summary.gaps.join('\n'), /no headcodes were observed/);
 });
 
+test('repeated board reports retain the legacy first-report option field', () => {
+  const first = path.join(scratch, 'board-2026-11-07', 'board-vs-trust.json');
+  const second = path.join(scratch, 'board-2026-11-08', 'board-vs-trust.json');
+  const options = axis04Options(['--out', path.join(scratch, 'axis04-repeated'), '--board-report', first,
+    '--board-report', second]);
+  assert.equal(options.boardReport, path.resolve(first));
+  assert.deepEqual(options.boardReports, [path.resolve(first), path.resolve(second)]);
+});
+
+test('multiple board reports preserve missing dates and aggregate movement and schedule counts by denominator', () => {
+  const out = path.join(scratch, 'axis04-multi-board');
+  const forDay = (date: string, complete: number, agreed: number, observed: number, matched: number) => {
+    const fromISO = `${date}T14:00:00.000Z`, toISO = `${date}T15:00:00.000Z`;
+    return board({
+      window: { fromISO, toISO, withinSeconds: 120, stepSeconds: 0.25 },
+      summary: { fullyObserved: complete, boardAgreement: agreed, agreementPercent: 1, medianLagSeconds: complete ? 3 : null },
+      scheduleMatch: { observedHeadcodes: observed, matchedHeadcodes: matched, unmatchedHeadcodes: [],
+        observedIntervals: observed * 2, matchedIntervals: matched * 2 },
+      hourly: [{ fromISO, toISO, summary: { fullyObserved: complete, boardAgreement: agreed, medianLagSeconds: complete ? 3 : null },
+        scheduleMatch: { observedHeadcodes: observed, matchedHeadcodes: matched, observedIntervals: observed * 2, matchedIntervals: matched * 2 } }],
+      reproduce: { cwd: repoRoot, command: 'node', args: ['recompute-board.ts', '--date', date] },
+    });
+  };
+  const summary = summarizeAxis04({ out, boardReports: [
+    { path: '/synthetic/board-2026-11-07/board-vs-trust.json', error: 'synthetic missing report' },
+    { path: '/synthetic/board-2026-11-08/board-vs-trust.json', board: forDay('2026-11-08', 2, 1, 2, 1) },
+    { path: '/synthetic/board-2026-11-09/board-vs-trust.json', board: forDay('2026-11-09', 8, 7, 8, 7) },
+  ] });
+
+  assert.equal(summary.boardAgreement?.fullyObserved, 10);
+  assert.equal(summary.boardAgreement?.boardAgreement, 8);
+  assert.equal(summary.boardAgreement?.agreementPercent, 80);
+  assert.equal(summary.scheduleMatch?.observedHeadcodes, 10);
+  assert.equal(summary.scheduleMatch?.matchedHeadcodes, 8);
+  assert.equal(summary.scheduleMatch?.percent, 80);
+  assert.match(summary.scheduleMatch?.headcodeMatchMeaning ?? '', /recording-date\/headcode pairs/);
+  assert.equal(summary.scheduleMatch?.observedIntervals, 20);
+  assert.equal(summary.scheduleMatch?.matchedIntervals, 16);
+  assert.deepEqual(summary.boardReports.map((report) => [report.date, report.source.loaded]), [
+    ['2026-11-07', false], ['2026-11-08', true], ['2026-11-09', true],
+  ]);
+  assert.match(summary.gaps.join('\n'), /2026-11-07.*synthetic missing report/);
+  assert.deepEqual(summary.hourly.map((hour) => hour.reportDate), ['2026-11-08', '2026-11-09']);
+  assert.deepEqual(summary.reproductions.boardReports.map((command) => command.label), [
+    'Recompute historical board comparison (2026-11-08)',
+    'Recompute historical board comparison (2026-11-09)',
+  ]);
+});
+
 test('primary recorded-checkpoint failure remains failure when the diagnostic passes', () => {
   const summary = summarizeAxis04({ out: path.join(scratch, 'axis04-primary'), board: board(), live: live() });
   assert.equal(summary.liveReplay?.status, 'FAIL');
   assert.equal(summary.liveReplay?.passed, false);
   assert.equal(summary.boardAgreement?.agreementPercent, 75);
   assert.equal(summary.liveDiagnostic?.status, 'PASS');
+  assert.equal(summary.liveReplay?.activeHourObserved, null, 'legacy reports leave active-hour coverage unknown');
   assert.match(renderAxis04Markdown(summary), /Primary live\/replay equivalence[\s\S]*\*\*FAIL\*\*/);
   assert.match(renderAxis04Markdown(summary), /2026-11-08T14:26:37\.000Z to 2026-11-08T14:31:38\.000Z UTC/);
   assert.match(renderAxis04Markdown(summary), /diagnostic only[\s\S]*does not change the primary result/i);
+  assert.match(renderAxis04Markdown(summary), /Active-hour coverage: \*\*UNKNOWN\*\*/);
+});
+
+test('active-hour fields stay separate from transport status and surface coverage warnings', () => {
+  const activity = {
+    live: { uniquePhysicalIds: 1, uniqueDescriptions: 1, initialTrains: 1, trainSampleCount: 3601, emptySamples: 0,
+      movingTransitions: 0, appearedAfterStart: 0, disappearedAfterStart: 0, renames: 0, maxDisplacementM: 0 },
+    replay: { uniquePhysicalIds: 1, uniqueDescriptions: 1, initialTrains: 1, trainSampleCount: 3601, emptySamples: 0,
+      movingTransitions: 0, appearedAfterStart: 0, disappearedAfterStart: 0, renames: 0, maxDisplacementM: 0 },
+  };
+  const summary = summarizeAxis04({ out: path.join(scratch, 'axis04-active-hour'), live: live({
+    activity, coverageWarnings: ['synthetic no movement coverage'], activeHourObserved: false,
+  }) });
+  assert.equal(summary.liveReplay?.status, 'FAIL');
+  assert.equal(summary.liveReplay?.activeHourObserved, false);
+  assert.deepEqual(summary.liveReplay?.activity, activity);
+  assert.deepEqual(summary.liveReplay?.coverageWarnings, ['synthetic no movement coverage']);
+  const markdown = renderAxis04Markdown(summary);
+  assert.match(markdown, /transport equivalence/);
+  assert.match(markdown, /Active-hour coverage: \*\*NOT OBSERVED\*\*/);
+  assert.match(markdown, /Live moving transitions: 0; replay moving transitions: 0/);
+  assert.match(markdown, /synthetic no movement coverage/);
 });
 
 test('hourly links and reproduction commands safely encode apostrophes and shell metacharacters', () => {
@@ -99,6 +171,8 @@ test('Axis 04 links a multi-recording berth report and carries its compact evide
     stepSummary: { physicalStepEvents: 3, unmeasuredEndpointEvents: 1, mappedPairs: 2, disconnectedPairs: 0, reversalPairs: 0, impliedSpeedFlagPairs: 0 },
     headcodeChurn: { physicalIds: 4, renames: 1, idsWithMultipleDescriptions: 1 },
     platforms: [{ berth: '1000', correctTargetTrack: true, actuallyHeldWrongTrackSamples: 0 }],
+    platformStepSummary: { total: 138, reachedCorrectTrack: 126, unresolved: 12,
+      outcomes: { 'reached-correct-track': 126, blocked: 2, pending: 3, queued: 2, 'route-refused': 3, 'no-body': 2 } },
     motion: { starsDrawn: 0 },
     recordings: [{ input: { path: '/private/td-20261107.ndjson', sha256: 'a'.repeat(64), capturedBytes: 100 }, metrics: {} },
       { input: { path: '/private/td-20261108.ndjson', sha256: 'b'.repeat(64), capturedBytes: 200 }, metrics: {} }],
@@ -111,9 +185,12 @@ test('Axis 04 links a multi-recording berth report and carries its compact evide
   assert.ok(summary.reproductions.replay?.shellCommand.includes('kings-cross-src/tools/replay-report.ts'));
   assert.equal(summary.berthEvidence?.recordingCount, 2);
   assert.equal((summary.berthEvidence?.coverage as Record<string, unknown>).unmapped, 1);
+  assert.deepEqual(summary.berthEvidence?.platformStepSummary, replay.platformStepSummary);
   assert.match(md, /\[Replay berth and motion report\]\(<replay%20report%20%231\/replay-report\.json>\)/);
   assert.match(md, /outside-network 1/);
   assert.match(md, /Placeholder draw check: \*\*PASS\*\*, 0 \*\*\*\* drawn samples/);
+  assert.match(md, /Platform step arrivals: 126\/138 reached the correct track; 12 unresolved/);
+  assert.match(md, /route refused 3/);
   assert.match(md, /Recompute replay berth and motion report/);
 });
 
@@ -162,4 +239,16 @@ test('CLI rejects output outside .scratch and symlinked output paths', async () 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /symlink|output directory/i);
   } finally { await unlink(link); }
+});
+
+test('Axis 04 separates same-stop transfers from the incoming arrival denominator', () => {
+  const platformStepSummary = {total:10,incoming:8,sameStopTransfers:2,reachedCorrectTrack:7,unresolved:1,
+    outcomes:{'reached-correct-track':7,blocked:0,pending:1,queued:0,'route-refused':0,'no-body':0,'same-stop-transfer':2}};
+  const summary=summarizeAxis04({out:path.join(scratch,'axis04-transfers'),replay:{ok:true,platformStepSummary}});
+  assert.deepEqual(summary.berthEvidence?.platformStepSummary,platformStepSummary);
+  const md=renderAxis04Markdown(summary);
+  assert.match(md,/Platform step arrivals: 7\/8 reached the correct track; 1 unresolved/);
+  assert.match(md,/2 same-stop transfers/);
+  assert.match(md,/10 TD platform observations/);
+  assert.match(md,/same stop transfer 2/);
 });

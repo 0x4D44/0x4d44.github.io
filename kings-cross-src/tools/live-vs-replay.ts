@@ -35,8 +35,51 @@ export function sampleTrains(trains: TrainView[]): SampleTrain[] {
     t: t.leading.t, point: [...t.leading.point] as [number, number] })).sort((a, b) => a.id - b.id);
 }
 
-/** Compare labels as well as physical ids; report id disagreement rather than remapping it. */
+/** Observed activity, not a claim that a transport comparison exercised a busy hour. */
+function sampleActivity(samples: readonly MotionSample[]) {
+  const ids = new Set<number>(), descriptions = new Set<string>();
+  let previous = new Map<number, SampleTrain>();
+  let trainSampleCount = 0, emptySamples = 0, movingTransitions = 0, appearedAfterStart = 0;
+  let disappearedAfterStart = 0, renames = 0, maxDisplacementM = 0;
+  for (const [index, sample] of samples.entries()) {
+    const current = new Map(sample.trains.map((train) => [train.id, train]));
+    trainSampleCount += sample.trains.length;
+    if (!sample.trains.length) emptySamples++;
+    for (const train of sample.trains) {
+      ids.add(train.id); descriptions.add(train.description);
+      const prior = previous.get(train.id);
+      if (prior) {
+        const displacement = Math.hypot(train.point[0] - prior.point[0], train.point[1] - prior.point[1]);
+        maxDisplacementM = Math.max(maxDisplacementM, displacement);
+        if (displacement > 0.01) movingTransitions++; // 1 cm observation threshold; not a motion tolerance.
+        if (train.description !== prior.description) renames++;
+      } else if (index > 0) appearedAfterStart++;
+    }
+    if (index > 0) for (const id of previous.keys()) if (!current.has(id)) disappearedAfterStart++;
+    previous = current;
+  }
+  return { uniquePhysicalIds: ids.size, uniqueDescriptions: descriptions.size, initialTrains: samples[0]?.trains.length ?? 0,
+    trainSampleCount, emptySamples, movingTransitions, appearedAfterStart, disappearedAfterStart, renames, maxDisplacementM };
+}
+
+/** Compare every body, preserving repeated headcodes. Id/edge disagreements remain diagnostic. */
 export function compareSamples(live: MotionSample[], replay: MotionSample[]) {
+  const validationIssues: string[] = [];
+  for (const [name, rows] of [['live', live], ['replay', replay]] as const) {
+    if (rows.some((sample, i) => !Number.isFinite(sample.atMs) || i > 0 && sample.atMs <= rows[i - 1]!.atMs))
+      validationIssues.push(`${name} sample times must be finite and strictly increasing`);
+    if (rows.some((sample) => new Set(sample.trains.map((train) => train.id)).size !== sample.trains.length))
+      validationIssues.push(`${name} sample contains duplicate physical ids`);
+    if (rows.some((sample) => sample.trains.some((train) => !Number.isFinite(train.id) ||
+      !Number.isFinite(train.t) || train.t < 0 || train.t > 1 || train.point.length !== 2 ||
+      !train.point.every(Number.isFinite) || train.edge.length !== 3 || !train.edge.every(Number.isFinite))))
+      validationIssues.push(`${name} sample contains an invalid train position or identity`);
+  }
+  const groups = (trains: SampleTrain[]) => {
+    const result = new Map<string, SampleTrain[]>();
+    for (const train of trains) { const group = result.get(train.description) ?? []; group.push(train); result.set(train.description, group); }
+    return result;
+  };
   const byTime = new Map(replay.map((s) => [s.atMs, s]));
   let sameTrainSetSeconds = 0, missingSampleSeconds = 0, liveOnly = 0, replayOnly = 0;
   let matched = 0, idsAgree = 0, edgeAgree = 0, descriptionByIdAgree = 0, commonIds = 0;
@@ -44,31 +87,55 @@ export function compareSamples(live: MotionSample[], replay: MotionSample[]) {
   const seconds = live.map((a) => {
     const b = byTime.get(a.atMs);
     if (!b) { missingSampleSeconds++; return { atMs: a.atMs, live: a.trains.length, replay: null, sameTrains: false, maxPositionDifferenceM: null }; }
-    const la = new Map(a.trains.map((t) => [t.description, t])), rb = new Map(b.trains.map((t) => [t.description, t]));
+    const la = groups(a.trains), rb = groups(b.trains);
     const bi = new Map(b.trains.map((t) => [t.id, t]));
-    const sameTrains = la.size === rb.size && [...la.keys()].every((d) => rb.has(d));
+    const sameTrains = a.trains.length === b.trains.length && la.size === rb.size &&
+      [...la].every(([description, trains]) => trains.length === rb.get(description)?.length);
     if (sameTrains) sameTrainSetSeconds++;
     let max = 0;
     for (const t of a.trains) {
       const id = bi.get(t.id);
       if (id) { commonIds++; if (id.description === t.description) descriptionByIdAgree++; }
-      const other = rb.get(t.description);
-      if (!other) { liveOnly++; continue; }
-      matched++; if (t.id === other.id) idsAgree++;
-      if (t.edge.every((v, i) => v === other.edge[i])) edgeAgree++;
-      const distance = Math.hypot(t.point[0] - other.point[0], t.point[1] - other.point[1]);
-      differences.push(distance); max = Math.max(max, distance);
     }
-    for (const t of b.trains) if (!la.has(t.description)) replayOnly++;
+    for (const [description, trains] of la) {
+      const candidates = [...(rb.get(description) ?? [])];
+      // Prefer common ids, then use spatial ordering for remaining equal labels. Each body is consumed once.
+      const ordered = [...trains].sort((a, b) => Number(candidates.some((t) => t.id === b.id)) - Number(candidates.some((t) => t.id === a.id)) ||
+        a.point[0] - b.point[0] || a.point[1] - b.point[1] || a.id - b.id);
+      for (const t of ordered) {
+        let index = candidates.findIndex((other) => other.id === t.id);
+        if (index < 0 && candidates.length) index = candidates.map((other, i) => ({ other, i })).sort((a, b) =>
+          a.other.point[0] - b.other.point[0] || a.other.point[1] - b.other.point[1] || a.other.id - b.other.id)[0]!.i;
+        if (index < 0) { liveOnly++; continue; }
+        const other = candidates.splice(index, 1)[0]!;
+        matched++; if (t.id === other.id) idsAgree++;
+        if (t.edge.every((v, i) => v === other.edge[i])) edgeAgree++;
+        const distance = Math.hypot(t.point[0] - other.point[0], t.point[1] - other.point[1]);
+        differences.push(distance); max = Math.max(max, distance);
+      }
+      replayOnly += candidates.length;
+    }
+    for (const [description, trains] of rb) if (!la.has(description)) replayOnly += trains.length;
     return { atMs: a.atMs, live: a.trains.length, replay: b.trains.length, sameTrains, maxPositionDifferenceM: max };
   });
-  const p95 = quantile(differences, 0.95);
+  const p95 = quantile(differences, 0.95), maxDifference = differences.length ? differences.reduce((a, b) => Math.max(a, b), 0) : null;
+  const activity = { live: sampleActivity(live), replay: sampleActivity(replay) };
+  const durationSeconds = live.length > 1 ? (live.at(-1)!.atMs - live[0]!.atMs) / 1000 : 0;
+  const maxGapMs = (rows: MotionSample[]) => rows.reduce((max, sample, i) => i ? Math.max(max, sample.atMs - rows[i - 1]!.atMs) : max, 0);
+  const coverageWarnings: string[] = [];
+  if (durationSeconds < 3600) coverageWarnings.push(`Observed sample window is ${durationSeconds} s, shorter than the rubric's 3600 s hour.`);
+  if (maxGapMs(live) > 1000.001 || maxGapMs(replay) > 1000.001) coverageWarnings.push('A sample gap exceeds one second; the complete hour is not observed.');
+  if (!activity.live.movingTransitions || !activity.replay.movingTransitions) coverageWarnings.push('Samples contain no drawn train movement on at least one side (observation threshold >0.01 m); stationary transport agreement does not verify moving replay.');
+  const activeHourObserved = durationSeconds >= 3600 && maxGapMs(live) <= 1000.001 && maxGapMs(replay) <= 1000.001 &&
+    activity.live.movingTransitions > 0 && activity.replay.movingTransitions > 0 && validationIssues.length === 0 && missingSampleSeconds === 0;
   return { samples: live.length, replaySamples: replay.length, sameTrainSetSeconds, missingSampleSeconds,
     liveOnlyTrainSamples: liveOnly, replayOnlyTrainSamples: replayOnly, matchedTrainSamples: matched,
     matchingPhysicalIds: idsAgree, matchingEdges: edgeAgree, commonIdSamples: commonIds, descriptionByIdAgreement: descriptionByIdAgree,
-    positionDifferenceM: { median: quantile(differences, 0.5), p95, max: differences.length ? Math.max(...differences) : null },
-    passed: live.length > 0 && live.length === replay.length && missingSampleSeconds === 0 && sameTrainSetSeconds === live.length && p95 !== null && p95 < 5,
-    seconds };
+    positionDifferenceM: { median: quantile(differences, 0.5), p95, max: maxDifference },
+    passed: validationIssues.length === 0 && live.length > 0 && live.length === replay.length && missingSampleSeconds === 0 &&
+      sameTrainSetSeconds === live.length && maxDifference !== null && maxDifference < 5,
+    acceptancePolicy: 'Exact headcode multiplicity at each sampled time; finite, strictly ordered samples; every paired leading-position difference <5 m. Physical ids and edges remain diagnostics.',
+    validationIssues, activity, activeHourObserved, coverageWarnings, seconds };
 }
 
 /** Last complete checkpoint before the requested wall clock; no fabricated initial state. */
@@ -139,14 +206,14 @@ export async function summarizeCapture(directory: string, out: string) {
   const filenames=['live-samples.json','replay-samples.json','live-vs-replay.json'];
   const texts=await Promise.all(filenames.map(f=>readFile(resolve(directory,f),'utf8')));
   const [live,replay,original]=texts.map(t=>JSON.parse(t)) as [MotionSample[],MotionSample[],Record<string,unknown>];
-  const samplesValid=(rows:MotionSample[])=>Array.isArray(rows)&&rows.every(s=>s&&Number.isFinite(s.atMs)&&Array.isArray(s.trains)&&s.trains.every(t=>t&&Number.isFinite(t.id)&&typeof t.description==='string'&&Array.isArray(t.point)&&t.point.length===2&&t.point.every(Number.isFinite)&&Array.isArray(t.edge)&&t.edge.length===3&&t.edge.every(Number.isFinite)));
+  const samplesValid=(rows:MotionSample[])=>Array.isArray(rows)&&rows.every(s=>s&&Number.isFinite(s.atMs)&&Array.isArray(s.trains)&&s.trains.every(t=>t&&Number.isFinite(t.id)&&typeof t.description==='string'&&Array.isArray(t.point)&&t.point.length===2&&t.point.every(Number.isFinite)&&Array.isArray(t.edge)&&t.edge.length===3&&t.edge.every(Number.isFinite)&&Number.isFinite(t.t)&&t.t>=0&&t.t<=1));
   if(!samplesValid(live)||!samplesValid(replay)||!original||typeof original!=='object'||Array.isArray(original))throw new Error('invalid saved comparison');
   const report={...original,...compareSamples(live,replay),
     recomputedFrom:{directory,files:Object.fromEntries(texts.map((s,i)=>[filenames[i]!,createHash('sha256').update(s).digest('hex')]))},
     reproduce:comparisonReproduction(out,resolve(out,'recomputed'))};
   for(const [i,name] of filenames.entries())if(i<2)await writePrivateFile(resolve(out,name),texts[i]!);
   await writePrivateFile(resolve(out,'live-vs-replay.json'),JSON.stringify(report,null,2)+'\n');
-  await writePrivateFile(resolve(out,'live-vs-replay.md'),`# Saved live versus replay comparison\n\nPrimary recorded-checkpoint comparison: ${report.passed?'PASS':'FAIL'}.\n\nSame description sets: ${report.sameTrainSetSeconds}/${report.samples} samples. Position difference p95: ${report.positionDifferenceM.p95??'unavailable'} m.\n\nRecomputed from the saved actual live and recorded-replay samples, without a new live connection. The same-initial-snapshot diagnostic, if present, remains diagnostic only. Source hashes and exact reproduction arguments are in live-vs-replay.json.\n`);
+  await writePrivateFile(resolve(out,'live-vs-replay.md'),`# Saved live versus replay comparison\n\nPrimary recorded-checkpoint comparison: ${report.passed?'PASS':'FAIL'}.\n\nSame description sets: ${report.sameTrainSetSeconds}/${report.samples} samples. Position difference median / p95 / max: ${report.positionDifferenceM.median??'unavailable'} / ${report.positionDifferenceM.p95??'unavailable'} / ${report.positionDifferenceM.max??'unavailable'} m.\n\n${report.acceptancePolicy}\n${report.validationIssues.map(w=>`- ${w}`).join('\n')}\n\nRecomputed from the saved actual live and recorded-replay samples, without a new live connection. The same-initial-snapshot diagnostic, if present, remains diagnostic only. Source hashes and exact reproduction arguments are in live-vs-replay.json.\n\nActive-hour movement evidence: ${report.activeHourObserved?'OBSERVED':'GAP'}.\n\n${report.coverageWarnings.map(w=>`- ${w}`).join('\n')}\n\nActivity: ${JSON.stringify(report.activity)}\n`);
   return report as typeof report & Record<string,unknown>;
 }
 
@@ -159,7 +226,7 @@ async function main(): Promise<void> {
     }
     if(!values.has('--summarize')||!values.has('--out'))throw new Error('summary requires --summarize and --out');
     const report=await summarizeCapture(resolve(values.get('--summarize')!),resolve(values.get('--out')!));
-    console.log(JSON.stringify({passed:report.passed,samples:report.samples,sameTrainSetSeconds:report.sameTrainSetSeconds,positionDifferenceM:report.positionDifferenceM},null,2));
+    console.log(JSON.stringify({passed:report.passed,samples:report.samples,sameTrainSetSeconds:report.sameTrainSetSeconds,positionDifferenceM:report.positionDifferenceM,activeHourObserved:report.activeHourObserved,activity:report.activity,coverageWarnings:report.coverageWarnings},null,2));
     if(!report.passed)process.exitCode=1;return;
   }
   for (let i = 0; i < args.length; i += 2) {
@@ -313,12 +380,12 @@ async function main(): Promise<void> {
     timetable: { date: scheduleDate, calls: schedule.calls.length, policy: 'One timetable fetched before checkpoint wait, fixed for all worlds; independent birth-kind caches. Page refresh timing is not reproduced.' },
     receiptMinusRecordedMs: { median: quantile(jitter, 0.5), p95: quantile(jitter, 0.95), max: jitter.length ? Math.max(...jitter) : null },
     initialization, initializationExplanation, statuses, ...comparison, sameInitialSnapshotControl,
-    explanation: 'Both modes use the page feed factories and identical graph, anchors, lengths and speed tags. Live advances on a 60 Hz Node timer and applies SSE messages at the latest frame, as the page does; replay uses recorder timestamps and the real nearest-prior recorded checkpoint. Sampling splits frame advances at exact one-second wall-clock offsets. Acceptance requires identical description sets at every sampled second and position p95 below 5 m; numeric physical ids and edges are reported separately without remapping. Node timer/receipt jitter and recorder-to-SSE timestamp differences remain measurable. The separately labelled sameInitialSnapshotControl uses the actual live connection snapshot plus the recording events after connection; that diagnostic seed is not claimed to be a recorded checkpoint.',
+    explanation: 'Both modes use the page feed factories and identical graph, anchors, lengths and speed tags. Live advances on a 60 Hz Node timer and applies SSE messages at the latest frame, as the page does; replay uses recorder timestamps and the real nearest-prior recorded checkpoint. Sampling splits frame advances at exact one-second wall-clock offsets. Acceptance requires identical description multiplicities at every sampled second, valid ordered samples, and every paired position difference below 5 m; numeric physical ids and edges are reported separately without remapping. Node timer/receipt jitter and recorder-to-SSE timestamp differences remain measurable. The separately labelled sameInitialSnapshotControl uses the actual live connection snapshot plus the recording events after connection; that diagnostic seed is not claimed to be a recorded checkpoint.',
   };
   await writeFile(resolve(out, 'replay-samples.json'), JSON.stringify(replaySamples) + '\n', { mode: 0o600 });
   await writeFile(resolve(out, 'same-initial-snapshot-samples.json'), JSON.stringify(alignedSamples) + '\n', { mode: 0o600 });
   await writeFile(resolve(out, 'live-vs-replay.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
-  const markdown = `# Live versus replay\n\n${duration} seconds; ${samples.length} samples. Start mode: ${startMode}; recorded checkpoint ${startWall - window[0]!.t} ms before live initialization; same initial berth picture: ${sameInitialBerths}.\n\n| Measure | Recorded checkpoint (primary) | Same live snapshot (diagnostic) |\n| --- | ---: | ---: |\n| Seconds with the same trains | ${comparison.sameTrainSetSeconds}/${comparison.samples} | ${sameInitialSnapshotControl.sameTrainSetSeconds}/${comparison.samples} |\n| Live-only / replay-only train samples | ${comparison.liveOnlyTrainSamples} / ${comparison.replayOnlyTrainSamples} | ${sameInitialSnapshotControl.liveOnlyTrainSamples} / ${sameInitialSnapshotControl.replayOnlyTrainSamples} |\n| Matching physical ids / paired descriptions | ${comparison.matchingPhysicalIds} / ${comparison.matchedTrainSamples} | ${sameInitialSnapshotControl.matchingPhysicalIds} / ${sameInitialSnapshotControl.matchedTrainSamples} |\n| Description agreement for common ids | ${comparison.descriptionByIdAgreement}/${comparison.commonIdSamples} | ${sameInitialSnapshotControl.descriptionByIdAgreement}/${sameInitialSnapshotControl.commonIdSamples} |\n| Position difference median / p95 / max (m) | ${comparison.positionDifferenceM.median} / ${comparison.positionDifferenceM.p95} / ${comparison.positionDifferenceM.max} | ${sameInitialSnapshotControl.positionDifferenceM.median} / ${sameInitialSnapshotControl.positionDifferenceM.p95} / ${sameInitialSnapshotControl.positionDifferenceM.max} |\n| Acceptance | ${comparison.passed ? 'PASS' : 'FAIL'} | ${sameInitialSnapshotControl.passed ? 'PASS' : 'FAIL'} |\n\nReceipt minus recorder timestamp median / p95 / max: ${report.receiptMinusRecordedMs.median} / ${report.receiptMinusRecordedMs.p95} / ${report.receiptMinusRecordedMs.max} ms.\n\n${report.explanation}\n`;
+  const markdown = `# Live versus replay\n\n${duration} seconds; ${samples.length} samples. Start mode: ${startMode}; recorded checkpoint ${startWall - window[0]!.t} ms before live initialization; same initial berth picture: ${sameInitialBerths}.\n\n| Measure | Recorded checkpoint (primary) | Same live snapshot (diagnostic) |\n| --- | ---: | ---: |\n| Seconds with the same trains | ${comparison.sameTrainSetSeconds}/${comparison.samples} | ${sameInitialSnapshotControl.sameTrainSetSeconds}/${comparison.samples} |\n| Live-only / replay-only train samples | ${comparison.liveOnlyTrainSamples} / ${comparison.replayOnlyTrainSamples} | ${sameInitialSnapshotControl.liveOnlyTrainSamples} / ${sameInitialSnapshotControl.replayOnlyTrainSamples} |\n| Matching physical ids / paired descriptions | ${comparison.matchingPhysicalIds} / ${comparison.matchedTrainSamples} | ${sameInitialSnapshotControl.matchingPhysicalIds} / ${sameInitialSnapshotControl.matchedTrainSamples} |\n| Description agreement for common ids | ${comparison.descriptionByIdAgreement}/${comparison.commonIdSamples} | ${sameInitialSnapshotControl.descriptionByIdAgreement}/${sameInitialSnapshotControl.commonIdSamples} |\n| Position difference median / p95 / max (m) | ${comparison.positionDifferenceM.median} / ${comparison.positionDifferenceM.p95} / ${comparison.positionDifferenceM.max} | ${sameInitialSnapshotControl.positionDifferenceM.median} / ${sameInitialSnapshotControl.positionDifferenceM.p95} / ${sameInitialSnapshotControl.positionDifferenceM.max} |\n| Acceptance | ${comparison.passed ? 'PASS' : 'FAIL'} | ${sameInitialSnapshotControl.passed ? 'PASS' : 'FAIL'} |\n\nReceipt minus recorder timestamp median / p95 / max: ${report.receiptMinusRecordedMs.median} / ${report.receiptMinusRecordedMs.p95} / ${report.receiptMinusRecordedMs.max} ms.\n\n${report.explanation}\n\nActive-hour movement evidence: ${comparison.activeHourObserved?'OBSERVED':'GAP'}.\n\n${comparison.coverageWarnings.map(w=>`- ${w}`).join('\n')}\n\nActivity: ${JSON.stringify(comparison.activity)}\n`;
   await writeFile(resolve(out, 'live-vs-replay.md'), markdown + `\nTimetable: ${scheduleDate}, ${schedule.calls.length} calls. ${report.timetable.policy}\n\n${initializationExplanation}\n`);
   console.log(JSON.stringify({ ...report, seconds: undefined, statuses: undefined, sameInitialSnapshotControl: { ...sameInitialSnapshotControl, seconds: undefined } }, null, 2));
   if (!comparison.passed) process.exitCode = 1;

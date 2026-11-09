@@ -11,7 +11,7 @@ const nonnegativeInteger = (value: unknown): number | null => Number.isSafeInteg
 const percent = (numerator: number | null, denominator: number | null): number | null =>
   numerator !== null && denominator !== null && denominator > 0 ? numerator * 100 / denominator : null;
 
-export interface SummaryOptions { out: string; boardReport?: string; liveReport?: string; replayReport?: string; relay?: string }
+export interface SummaryOptions { out: string; boardReport?: string; boardReports?: string[]; liveReport?: string; replayReport?: string; relay?: string }
 
 function isWithin(root: string, candidate: string): boolean {
   const relative = path.relative(root, candidate);
@@ -30,12 +30,14 @@ function loopbackRelay(value: string): string {
 
 export function axis04Options(args: string[]): SummaryOptions {
   const values = new Map<string, string>();
+  const boardReports: string[] = [];
   for (let i = 0; i < args.length; i += 2) {
     const key = args[i], value = args[i + 1];
-    if (!['--out', '--board-report', '--live-report', '--replay-report', '--relay'].includes(key!) || !value || value.startsWith('--') || values.has(key!)) {
-      throw new Error('usage: axis04-summary.ts --out <.scratch/dir> [--board-report <json>] [--live-report <json>] [--replay-report <json>] [--relay <loopback-origin>]');
+    if (!['--out', '--board-report', '--live-report', '--replay-report', '--relay'].includes(key!) || !value || value.startsWith('--') || (key !== '--board-report' && values.has(key!))) {
+      throw new Error('usage: axis04-summary.ts --out <.scratch/dir> [--board-report <json> ...] [--live-report <json>] [--replay-report <json>] [--relay <loopback-origin>]');
     }
-    values.set(key!, value);
+    if (key === '--board-report') boardReports.push(value);
+    else values.set(key!, value);
   }
   if (!values.has('--out')) throw new Error('--out is required');
   const out = path.resolve(values.get('--out')!);
@@ -43,7 +45,7 @@ export function axis04Options(args: string[]): SummaryOptions {
   const relay = values.has('--relay') ? loopbackRelay(values.get('--relay')!) : undefined;
   return {
     out,
-    ...(values.has('--board-report') ? { boardReport: path.resolve(values.get('--board-report')!) } : {}),
+    ...(boardReports.length ? { boardReport: path.resolve(boardReports[0]!), boardReports: boardReports.map((report) => path.resolve(report)) } : {}),
     ...(values.has('--live-report') ? { liveReport: path.resolve(values.get('--live-report')!) } : {}),
     ...(values.has('--replay-report') ? { replayReport: path.resolve(values.get('--replay-report')!) } : {}),
     ...(relay ? { relay } : {}),
@@ -114,7 +116,63 @@ function hourlyVariation(hours: Array<{ agreementPercent: number | null; medianL
   };
 }
 
-function makeBoardFallback(report: Record<string, unknown>, reportPath: string, out: string): unknown {
+function sumComplete(values: Array<number | null>): number | null {
+  return values.every((value) => value !== null) ? values.reduce<number>((sum, value) => sum + value!, 0) : null;
+}
+
+function aggregateScheduleMatches(matches: Array<ReturnType<typeof normalizeScheduleMatch>>): ReturnType<typeof normalizeScheduleMatch> | null {
+  if (!matches.length) return null;
+  const present = matches.filter((match): match is NonNullable<typeof match> => match !== null);
+  if (!present.length) return null;
+  const observedHeadcodes = sumComplete(present.map((match) => match.observedHeadcodes));
+  const matchedHeadcodes = sumComplete(present.map((match) => match.matchedHeadcodes));
+  const observedIntervals = sumComplete(present.map((match) => match.observedIntervals));
+  const matchedIntervals = sumComplete(present.map((match) => match.matchedIntervals));
+  return {
+    observedHeadcodes, matchedHeadcodes, percent: percent(matchedHeadcodes, observedHeadcodes),
+    unmatchedHeadcodes: [...new Set(present.flatMap((match) => match.unmatchedHeadcodes))],
+    headcodeMatchMeaning: present.length > 1
+      ? 'per-report headcode counts; the aggregate denominator counts recording-date/headcode pairs, so a headcode can count once on each date'
+      : 'distinct observed headcodes with a timetable UID match at least once',
+    observedIntervals, matchedIntervals, intervalPercent: percent(matchedIntervals, observedIntervals),
+  };
+}
+
+function finiteRecord(value: unknown): Record<string, number> {
+  return Object.fromEntries(Object.entries(object(value)).flatMap(([key, item]) => {
+    const number = finite(item);
+    return number === null ? [] : [[key, number]];
+  }));
+}
+
+function boardDate(report: Record<string, unknown> | undefined, reportPath: string | undefined): string | null {
+  const fromISO = object(report?.window).fromISO;
+  if (typeof fromISO === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fromISO)) return fromISO.slice(0, 10);
+  return reportPath ? /(?:^|[\\/])board-(\d{4}-\d{2}-\d{2})(?:[\\/]|$)/.exec(reportPath)?.[1] ?? null : null;
+}
+
+function aggregateBoardAgreements(
+  reports: Array<Record<string, unknown>>,
+  expectedReports: number,
+): Record<string, unknown> | null {
+  if (!reports.length) return null;
+  const fullyObserved = sumComplete(reports.map((report) => nonnegativeInteger(report.fullyObserved)));
+  const boardAgreement = sumComplete(reports.map((report) => nonnegativeInteger(report.boardAgreement)));
+  const agreementPercent = fullyObserved === 0 ? null : boardAgreement !== null && fullyObserved !== null
+    ? percent(boardAgreement, fullyObserved) : reports.length === 1 ? finite(reports[0]!.agreementPercent) : null;
+  const fromDates = reports.map((report) => report.fromISO).filter((value): value is string => typeof value === 'string').sort();
+  const toDates = reports.map((report) => report.toISO).filter((value): value is string => typeof value === 'string').sort();
+  return {
+    fromISO: fromDates[0] ?? null,
+    toISO: toDates.at(-1) ?? null,
+    agreementPercent,
+    medianLagSeconds: reports.length === 1 ? finite(reports[0]!.medianLagSeconds) : null,
+    fullyObserved, boardAgreement,
+    reports: reports.length, expectedReports, complete: reports.length === expectedReports,
+  };
+}
+
+function makeBoardFallback(report: Record<string, unknown>, reportPath: string, out: string, date?: string | null): unknown {
   const window = object(report.window), inputsDir = path.join(path.dirname(reportPath), 'inputs');
   const fromISO = typeof window.fromISO === 'string' ? window.fromISO : null;
   const toISO = typeof window.toISO === 'string' ? window.toISO : null;
@@ -124,7 +182,7 @@ function makeBoardFallback(report: Record<string, unknown>, reportPath: string, 
     '--from', fromISO, '--to', toISO];
   if (finite(window.withinSeconds) !== null) args.push('--within-seconds', String(window.withinSeconds));
   if (finite(window.stepSeconds) !== null) args.push('--step-seconds', String(window.stepSeconds));
-  args.push('--out', path.join(out, 'board-recomputed'));
+  args.push('--out', path.join(out, date ? `board-recomputed-${date}` : 'board-recomputed'));
   if (Array.isArray(report.hourly)) args.push('--hourly');
   return { cwd: repoRoot, command: 'node', args };
 }
@@ -135,6 +193,7 @@ function makeLiveFallback(reportPath: string, out: string): unknown {
 
 export function summarizeAxis04(input: {
   board?: Record<string, unknown>;
+  boardReports?: Array<{ board?: Record<string, unknown>; path?: string; error?: string }>;
   live?: Record<string, unknown>;
   replay?: Record<string, unknown>;
   boardPath?: string;
@@ -147,7 +206,6 @@ export function summarizeAxis04(input: {
   relay?: string;
 }) {
   const gaps: string[] = [];
-  const boardSource = reportSource(input.boardPath, input.out, !!input.board);
   const liveSource = reportSource(input.livePath, input.out, !!input.live);
   const replaySource = reportSource(input.replayPath, input.out, !!input.replay);
 
@@ -168,12 +226,16 @@ export function summarizeAxis04(input: {
       interval: { startISO: liveInterval.from, endISO: liveInterval.to, durationSeconds: finite(liveWindow.durationSeconds) },
       passed, samples, replaySamples, sameTrainSetSeconds,
       sameTrainSetPercent: percent(sameTrainSetSeconds, samples),
+      activity: { live: finiteRecord(object(primary.activity).live), replay: finiteRecord(object(primary.activity).replay) },
+      coverageWarnings: Array.isArray(primary.coverageWarnings) ? primary.coverageWarnings.filter((warning): warning is string => typeof warning === 'string') : [],
+      activeHourObserved: typeof primary.activeHourObserved === 'boolean' ? primary.activeHourObserved : null,
       positionDifferenceM: { median: finite(position.median), p95: finite(position.p95), max: finite(position.max) },
     };
     if (passed === null) gaps.push('Live/replay report has no primary top-level passed result.');
     if (liveInterval.from === null || liveInterval.to === null) gaps.push('Live/replay report has no UTC interval for the saved comparison.');
     if (samples === null || sameTrainSetSeconds === null) gaps.push('Live/replay report lacks a valid primary sample denominator or same-train count.');
     if (samples === 0) gaps.push('Primary live/replay sample denominator is zero; its same-train rate is unavailable.');
+    if (liveReplay.activeHourObserved === null) gaps.push('Live/replay report has no active-hour movement coverage result; active-hour coverage is unknown.');
     const diagnostic = object(primary.sameInitialSnapshotControl);
     if (Object.keys(diagnostic).length) {
       const diagnosticPassed = typeof diagnostic.passed === 'boolean' ? diagnostic.passed : null;
@@ -192,56 +254,101 @@ export function summarizeAxis04(input: {
 
   let boardAgreement: Record<string, unknown> | null = null;
   let scheduleMatch: ReturnType<typeof normalizeScheduleMatch> | null = null;
-  let hourly: Array<Record<string, unknown>> = [];
-  let variation: ReturnType<typeof hourlyVariation> | null = null;
-  if (!input.board) {
-    gaps.push(input.boardError ? `Board comparison report unavailable: ${input.boardError}` : 'No board comparison report supplied; board agreement, hourly variation, and schedule match are unavailable.');
-  } else {
-    const summary = object(input.board.summary), window = object(input.board.window);
+  const expectedBoardInputs = input.boardReports ?? (input.board || input.boardPath || input.boardError
+    ? [{ board: input.board, path: input.boardPath, error: input.boardError }]
+    : []);
+  const boardReports: Array<{
+    date: string | null;
+    source: ReturnType<typeof reportSource>;
+    boardAgreement: Record<string, unknown> | null;
+    hourly: Array<Record<string, unknown>>;
+    scheduleMatch: ReturnType<typeof normalizeScheduleMatch> | null;
+    reproduction: Reproduction | null;
+    error: string | null;
+  }> = [];
+  const boardAgreementReports: Array<Record<string, unknown>> = [];
+  const scheduleReports: Array<ReturnType<typeof normalizeScheduleMatch>> = [];
+  for (const boardInput of expectedBoardInputs) {
+    const report = boardInput.board, reportPath = boardInput.path;
+    const date = boardDate(report, reportPath);
+    const dateLabel = date ? ` for ${date}` : '';
+    const source = reportSource(reportPath, input.out, !!report);
+    if (!report) {
+      const reason = boardInput.error ?? (reportPath ? 'report file not found or could not be loaded' : 'no report supplied');
+      gaps.push(`Board comparison report unavailable${dateLabel}: ${reason}`);
+      boardReports.push({ date, source, boardAgreement: null, hourly: [], scheduleMatch: null, reproduction: null, error: reason });
+      continue;
+    }
+
+    const summary = object(report.summary), window = object(report.window);
     const fullyObserved = nonnegativeInteger(summary.fullyObserved), boardAgreementCount = nonnegativeInteger(summary.boardAgreement);
     const agreementPercent = fullyObserved === 0 ? null : boardAgreementCount !== null && fullyObserved !== null
       ? percent(boardAgreementCount, fullyObserved) : finite(summary.agreementPercent);
     const medianLagSeconds = finite(summary.medianLagSeconds);
-    boardAgreement = {
+    const reportAgreement: Record<string, unknown> = {
       fromISO: typeof window.fromISO === 'string' ? window.fromISO : null,
       toISO: typeof window.toISO === 'string' ? window.toISO : null,
       agreementPercent, medianLagSeconds, fullyObserved, boardAgreement: boardAgreementCount,
     };
-    if (agreementPercent === null) gaps.push('Board agreement percent is unavailable (no fully observed movements or missing summary value).');
-    if (medianLagSeconds === null) gaps.push('Board median lag is unavailable (no agreed observations or missing summary value).');
+    boardAgreementReports.push(reportAgreement);
+    const prefix = date ? `Board report ${date}: ` : 'Board report ';
+    if (agreementPercent === null) gaps.push(`${prefix}agreement percent is unavailable (no fully observed movements or missing summary value).`);
+    if (medianLagSeconds === null) gaps.push(`${prefix}median lag is unavailable (no agreed observations or missing summary value).`);
 
-    if (Array.isArray(input.board.hourly) && input.board.hourly.length) {
-      hourly = input.board.hourly.map((value) => {
+    const reportHourly: Array<Record<string, unknown>> = [];
+    if (Array.isArray(report.hourly) && report.hourly.length) {
+      for (const value of report.hourly) {
         const item = object(value), hourSummary = object(item.summary), interval = intervalLabel(item);
         const hourlySchedule = normalizeScheduleMatch(item.scheduleMatch);
         const completeCount = nonnegativeInteger(hourSummary.fullyObserved), agreedCount = nonnegativeInteger(hourSummary.boardAgreement);
         const hourAgreement = completeCount === 0 ? null : agreedCount !== null && completeCount !== null
           ? percent(agreedCount, completeCount) : finite(hourSummary.agreementPercent);
-        return {
+        reportHourly.push({
+          reportDate: date,
           fromISO: interval.from, toISO: interval.to,
           agreementPercent: hourAgreement, medianLagSeconds: finite(hourSummary.medianLagSeconds),
           fullyObserved: completeCount, boardAgreement: agreedCount,
           scheduleMatchPercent: hourlySchedule?.percent ?? null,
-        };
-      });
-      variation = hourlyVariation(hourly.map((hour) => ({ agreementPercent: hour.agreementPercent as number | null, medianLagSeconds: hour.medianLagSeconds as number | null })));
+          scheduleMatchObservedHeadcodes: hourlySchedule?.observedHeadcodes ?? null,
+          scheduleMatchMatchedHeadcodes: hourlySchedule?.matchedHeadcodes ?? null,
+          scheduleMatchObservedIntervals: hourlySchedule?.observedIntervals ?? null,
+          scheduleMatchMatchedIntervals: hourlySchedule?.matchedIntervals ?? null,
+        });
+      }
     } else {
-      gaps.push('Board report has no hourly comparison data; hourly variation is unavailable.');
+      gaps.push(`${prefix}has no hourly comparison data; hourly variation is unavailable.`);
     }
 
-    scheduleMatch = normalizeScheduleMatch(input.board.scheduleMatch);
-    if (!scheduleMatch) gaps.push('Board report has no valid schedule match counts.');
-    else if (scheduleMatch.observedHeadcodes === null) gaps.push('Schedule match denominator (observed headcodes) is unavailable.');
-    else if (scheduleMatch.observedHeadcodes === 0) gaps.push('Schedule match share is unavailable because no headcodes were observed.');
+    const reportScheduleMatch = normalizeScheduleMatch(report.scheduleMatch);
+    if (!reportScheduleMatch) gaps.push(`${prefix}has no valid schedule match counts.`);
+    else {
+      scheduleReports.push(reportScheduleMatch);
+      if (reportScheduleMatch.observedHeadcodes === null) gaps.push(`${prefix}schedule match denominator (observed headcodes) is unavailable.`);
+      else if (reportScheduleMatch.observedHeadcodes === 0) gaps.push(`${prefix}schedule match share is unavailable because no headcodes were observed.`);
+    }
+
+    const suffix = expectedBoardInputs.length > 1 && date ? ` (${date})` : '';
+    const fromReport = reproduction(report.reproduce, `Recompute historical board comparison${suffix}`, 'report');
+    const fallback = !fromReport && reportPath
+      ? reproduction(makeBoardFallback(report, reportPath, input.out, date), `Recompute board comparison from frozen inputs${suffix}`, 'saved-report fallback')
+      : null;
+    const reportReproduction = fromReport ?? fallback;
+    if (!reportReproduction) gaps.push(`${prefix}has no usable exact reproduction command.`);
+    boardReports.push({ date, source, boardAgreement: reportAgreement, hourly: reportHourly,
+      scheduleMatch: reportScheduleMatch, reproduction: reportReproduction, error: null });
   }
 
-  let boardReproduction: Reproduction | null = null;
-  if (input.board) {
-    const fromReport = reproduction(input.board.reproduce, 'Recompute historical board comparison', 'report');
-    const fallback = !fromReport && input.boardPath ? reproduction(makeBoardFallback(input.board, input.boardPath, input.out), 'Recompute board comparison from frozen inputs', 'saved-report fallback') : null;
-    boardReproduction = fromReport ?? fallback;
-    if (!boardReproduction) gaps.push('Board report has no usable exact reproduction command.');
+  if (!expectedBoardInputs.length) {
+    gaps.push(input.boardError ? `Board comparison report unavailable: ${input.boardError}` : 'No board comparison report supplied; board agreement, hourly variation, and schedule match are unavailable.');
   }
+  boardAgreement = aggregateBoardAgreements(boardAgreementReports, expectedBoardInputs.length);
+  scheduleMatch = aggregateScheduleMatches(scheduleReports);
+  const hourly = boardReports.flatMap((report) => report.hourly);
+  const variation = hourly.length
+    ? hourlyVariation(hourly.map((hour) => ({ agreementPercent: hour.agreementPercent as number | null, medianLagSeconds: hour.medianLagSeconds as number | null })))
+    : null;
+  const boardReproductions = boardReports.map((report) => report.reproduction).filter((value): value is Reproduction => value !== null);
+  const boardSource = boardReports.find((report) => report.source.loaded)?.source ?? boardReports[0]?.source ?? reportSource(input.boardPath, input.out, false);
 
   let liveReproduction: Reproduction | null = null;
   if (input.live) {
@@ -274,6 +381,9 @@ export function summarizeAxis04(input: {
       unmappedReasons[berth.reason] = (unmappedReasons[berth.reason] ?? 0) + 1;
     }
     const platformRows = Array.isArray(input.replay.platforms) ? input.replay.platforms.map(object) : [];
+    const platformStepSummary = object(input.replay.platformStepSummary), platformStepOutcomes = object(platformStepSummary.outcomes);
+    const platformOutcomeNames = ['reached-correct-track', 'blocked', 'pending', 'queued', 'route-refused', 'no-body',
+      ...(nonnegativeInteger(platformStepOutcomes['same-stop-transfer']) !== null ? ['same-stop-transfer'] : [])];
     const reconciliation = object(input.replay.berthsReconciliation);
     const inputHashes = object(object(input.replay.reproducibility).inputHashes);
     const recordingInputs = Array.isArray(inputHashes.recordings) ? inputHashes.recordings.map(object) :
@@ -289,6 +399,11 @@ export function summarizeAxis04(input: {
         idsWithMultipleDescriptions: nonnegativeInteger(churn.idsWithMultipleDescriptions) },
       platforms: { checked: platformRows.length, incorrectTargetTracks: platformRows.filter((item) => item.correctTargetTrack === false).length,
         wrongTrackHeldSamples: platformRows.reduce((n, item) => n + (nonnegativeInteger(item.actuallyHeldWrongTrackSamples) ?? 0), 0) },
+      platformStepSummary: { total: nonnegativeInteger(platformStepSummary.total),
+        ...(nonnegativeInteger(platformStepSummary.incoming) !== null ? {incoming: nonnegativeInteger(platformStepSummary.incoming)} : {}),
+        ...(nonnegativeInteger(platformStepSummary.sameStopTransfers) !== null ? {sameStopTransfers: nonnegativeInteger(platformStepSummary.sameStopTransfers)} : {}),
+        reachedCorrectTrack: nonnegativeInteger(platformStepSummary.reachedCorrectTrack), unresolved: nonnegativeInteger(platformStepSummary.unresolved),
+        outcomes: Object.fromEntries(platformOutcomeNames.map((name) => [name, nonnegativeInteger(platformStepOutcomes[name])])) },
       placeholderDraw: { starsDrawn: nonnegativeInteger(motion.starsDrawn), status: motion.starsDrawn === 0 ? 'PASS' : motion.starsDrawn === undefined ? 'UNAVAILABLE' : 'FAIL' },
       inputs: recordingInputs.map((record) => ({ path: typeof record.path === 'string' ? record.path : null,
         sha256: typeof record.sha256 === 'string' ? record.sha256 : null, bytes: nonnegativeInteger(record.capturedBytes) })),
@@ -305,15 +420,16 @@ export function summarizeAxis04(input: {
   return {
     schema: 1,
     axis: '04',
-    sources: { board: boardSource, live: liveSource, replay: replaySource },
+    sources: { board: boardSource, boardReports: boardReports.map(({ date, source, error }) => ({ date, ...source, error })), live: liveSource, replay: replaySource },
     liveReplay,
     liveDiagnostic,
     boardAgreement,
+    boardReports,
     hourly,
     hourlyVariation: variation,
     scheduleMatch,
     berthEvidence,
-    reproductions: { board: boardReproduction, liveReplay: liveReproduction, replay: replayReproduction, newLiveCapture: newCapture },
+    reproductions: { board: boardReproductions[0] ?? null, boardReports: boardReproductions, liveReplay: liveReproduction, replay: replayReproduction, newLiveCapture: newCapture },
     gaps,
   };
 }
@@ -352,7 +468,13 @@ export function renderAxis04Markdown(summary: ReturnType<typeof summarizeAxis04>
   else {
     const live = summary.liveReplay;
     const interval = object(live.interval);
+    const activity = object(live.activity), liveActivity = object(activity.live), replayActivity = object(activity.replay);
+    const activeHour = live.activeHourObserved === true ? 'OBSERVED' : live.activeHourObserved === false ? 'NOT OBSERVED' : 'UNKNOWN';
     lines.push(`**${live.status}** — recorded-checkpoint comparison; same-train seconds ${mdTableCell(live.sameTrainSetSeconds)}/${mdTableCell(live.samples)} (${mdTableCell(live.sameTrainSetPercent)}%). Window: ${mdTableCell(interval.startISO)} to ${mdTableCell(interval.endISO)} UTC (${mdTableCell(interval.durationSeconds)} s). Position difference median / p95 / max: ${mdTableCell(object(live.positionDifferenceM).median)} / ${mdTableCell(object(live.positionDifferenceM).p95)} / ${mdTableCell(object(live.positionDifferenceM).max)} m.`);
+    lines.push('', `This is transport equivalence, not active-hour movement proof. Active-hour coverage: **${activeHour}**. Live moving transitions: ${mdTableCell(liveActivity.movingTransitions)}; replay moving transitions: ${mdTableCell(replayActivity.movingTransitions)}.`, '');
+    if (Array.isArray(live.coverageWarnings) && live.coverageWarnings.length) {
+      lines.push(`Coverage warnings: ${live.coverageWarnings.map((warning) => mdTableCell(warning)).join('; ')}`, '');
+    }
     if (summary.liveDiagnostic) {
       const diagnostic = summary.liveDiagnostic;
       lines.push('', `Diagnostic only, same live snapshot: **${diagnostic.status}**, ${mdTableCell(diagnostic.sameTrainSetSeconds)}/${mdTableCell(diagnostic.samples)} same-train seconds (${mdTableCell(diagnostic.sameTrainSetPercent)}%). This does not change the primary result.`);
@@ -364,14 +486,36 @@ export function renderAxis04Markdown(summary: ReturnType<typeof summarizeAxis04>
   if (!summary.boardAgreement) lines.push('Unavailable: no usable board comparison report was supplied.', '');
   else {
     const board = summary.boardAgreement;
-    lines.push(`Board agreement: **${mdTableCell(board.boardAgreement)}/${mdTableCell(board.fullyObserved)} fully observed movements (${mdTableCell(board.agreementPercent)}%)**; median lag **${mdTableCell(board.medianLagSeconds)} s**. Window: ${mdTableCell(board.fromISO)} to ${mdTableCell(board.toISO)} UTC. Lag is the nearest qualifying board sample time minus TRUST actual; it measures label visibility, not board response latency.`, '');
+    const multiDate = summary.boardReports.length > 1;
+    const completeness = multiDate ? ` across ${mdTableCell(board.reports)}/${mdTableCell(board.expectedReports)} supplied date reports` : '';
+    const lagText = multiDate ? 'Median lag is retained per date; no median is averaged across dates.' : `median lag **${mdTableCell(board.medianLagSeconds)} s**.`;
+    lines.push(`Board agreement${completeness}: **${mdTableCell(board.boardAgreement)}/${mdTableCell(board.fullyObserved)} fully observed movements (${mdTableCell(board.agreementPercent)}%)**; ${lagText} Window: ${mdTableCell(board.fromISO)} to ${mdTableCell(board.toISO)} UTC. Lag is the nearest qualifying board sample time minus TRUST actual; it measures label visibility, not board response latency.`, '');
     const schedule = summary.scheduleMatch;
     if (!schedule) lines.push('Schedule match share: unavailable.', '');
-    else lines.push(`Schedule match: **${mdTableCell(schedule.matchedHeadcodes)}/${mdTableCell(schedule.observedHeadcodes)} distinct observed headcodes matched at least once (${mdTableCell(schedule.percent)}%)**; interval coverage ${mdTableCell(schedule.matchedIntervals)}/${mdTableCell(schedule.observedIntervals)} (${mdTableCell(schedule.intervalPercent)}%).`, '');
+    else {
+      const scheduleUnit = multiDate ? 'headcode/date pairs' : 'distinct observed headcodes';
+      lines.push(`Schedule match: **${mdTableCell(schedule.matchedHeadcodes)}/${mdTableCell(schedule.observedHeadcodes)} ${scheduleUnit} matched at least once (${mdTableCell(schedule.percent)}%)**; interval coverage ${mdTableCell(schedule.matchedIntervals)}/${mdTableCell(schedule.observedIntervals)} (${mdTableCell(schedule.intervalPercent)}%).`, '');
+    }
+    if (multiDate) {
+      lines.push('Board and schedule metrics by recording date (counts remain separate; aggregate percentages are weighted by their observed counts):', '',
+        '| Date | Report | Agreement % (agreed/complete) | Median lag s | Schedule headcodes matched | Schedule intervals matched |',
+        '| --- | --- | ---: | ---: | ---: | ---: |');
+      for (const report of summary.boardReports) {
+        const dateLabel = report.date ?? 'unknown date';
+        const reportLink = report.source.link ? markdownLink(dateLabel, report.source.link) : dateLabel;
+        const dayBoard = object(report.boardAgreement), daySchedule = object(report.scheduleMatch);
+        const agreement = report.boardAgreement ? `${mdTableCell(dayBoard.agreementPercent)} (${mdTableCell(dayBoard.boardAgreement)}/${mdTableCell(dayBoard.fullyObserved)})` : 'unavailable';
+        const headcodes = report.scheduleMatch ? `${mdTableCell(daySchedule.matchedHeadcodes)}/${mdTableCell(daySchedule.observedHeadcodes)} (${mdTableCell(daySchedule.percent)}%)` : 'unavailable';
+        const intervals = report.scheduleMatch ? `${mdTableCell(daySchedule.matchedIntervals)}/${mdTableCell(daySchedule.observedIntervals)} (${mdTableCell(daySchedule.intervalPercent)}%)` : 'unavailable';
+        lines.push(`| ${mdTableCell(dateLabel)} | ${reportLink} | ${agreement} | ${mdTableCell(dayBoard.medianLagSeconds)} | ${headcodes} | ${intervals} |`);
+      }
+      lines.push('');
+    }
     if (summary.hourly.length) {
       lines.push('Hourly variation (UTC):', '', '| Hour | Board agreement % (agreed/complete) | Median lag s | Schedule headcodes matched % |', '| --- | ---: | ---: | ---: |');
       for (const hour of summary.hourly) {
-        const source = summary.sources.board.link;
+        const report = summary.boardReports.find((item) => item.date === hour.reportDate);
+        const source = report?.source.link ?? summary.sources.board.link;
         const label = `${hour.fromISO ?? '?'} → ${hour.toISO ?? '?'}`;
         const linkedLabel = source ? markdownLink(label, source) : label;
         const complete = mdTableCell(hour.fullyObserved), agreed = mdTableCell(hour.boardAgreement);
@@ -387,20 +531,34 @@ export function renderAxis04Markdown(summary: ReturnType<typeof summarizeAxis04>
   if (!summary.berthEvidence) lines.push('Unavailable: no usable replay berth report was supplied.', '');
   else {
     const evidence = object(summary.berthEvidence), coverage = object(evidence.coverage), steps = object(evidence.stepSummary);
+    const platformSteps = object(evidence.platformStepSummary), platformOutcomes = object(platformSteps.outcomes);
     const churn = object(evidence.headcodeChurn), placeholders = object(evidence.placeholderDraw), platforms = object(evidence.platforms);
     const reasons = object(coverage.unmappedReasons);
     const reasonText = Object.keys(reasons).sort().map((reason) => `${reason} ${reasons[reason]}`).join(', ') || 'none';
     lines.push(`**${mdTableCell(evidence.status)}** — ${mdTableCell(evidence.recordingCount)} recording(s); ${mdTableCell(coverage.seen)} unique seen berths, ${mdTableCell(coverage.anchored)} anchored and ${mdTableCell(coverage.unmapped)} unmapped (${reasonText}). Step jumps: ${mdTableCell(steps.mappedPairs)} mapped, ${mdTableCell(steps.unmeasuredEndpointEvents)} with an unmapped endpoint, ${mdTableCell(steps.impliedSpeedFlagPairs)} implied-speed flags. Headcode churn: ${mdTableCell(churn.renames)} renames over ${mdTableCell(churn.physicalIds)} recording-local physical ids. Platform targets: ${mdTableCell(platforms.incorrectTargetTracks)} incorrect, ${mdTableCell(platforms.wrongTrackHeldSamples)} wrong-track held samples. Placeholder draw check: **${mdTableCell(placeholders.status)}**, ${mdTableCell(placeholders.starsDrawn)} ` + '****' + ' drawn samples.', '');
+    if (platformSteps.total !== null && platformSteps.total !== undefined) {
+      const outcomeText = Object.entries(platformOutcomes).filter(([, count]) => typeof count === 'number' && count > 0)
+        .map(([name, count]) => `${name.replaceAll('-', ' ')} ${mdTableCell(count)}`).join(', ') || 'none';
+      const incoming = platformSteps.incoming ?? platformSteps.total;
+      const transfers = platformSteps.sameStopTransfers === undefined ? '' : ` ${mdTableCell(platformSteps.sameStopTransfers)} same-stop transfers; ${mdTableCell(platformSteps.total)} TD platform observations total.`;
+      lines.push(`Platform step arrivals: ${mdTableCell(platformSteps.reachedCorrectTrack)}/${mdTableCell(incoming)} reached the correct track; ${mdTableCell(platformSteps.unresolved)} unresolved.${transfers} Outcomes: ${outcomeText}.`, '');
+    } else lines.push('Platform step arrival outcomes: unavailable in the saved replay report.', '');
     const reconciliation = object(evidence.reconciliation);
     if (Object.keys(reconciliation).length) lines.push(`Position-preserving candidate reconciliation: **${mdTableCell(reconciliation.status)}**; runtime anchors were compared with the candidate map. The full diff and candidate evidence are in the replay report.`, '');
   }
 
-  lines.push('## Sources', '',
-    `- ${markdownLink('Board comparison report', summary.sources.board.link)}`,
+  lines.push('## Sources', '');
+  if (summary.boardReports.length > 1) {
+    for (const report of summary.boardReports) {
+      lines.push(`- ${markdownLink(`Board comparison report ${report.date ?? '(date unknown)'}`, report.source.link)}`);
+    }
+  } else lines.push(`- ${markdownLink('Board comparison report', summary.sources.board.link)}`);
+  lines.push(
     `- ${markdownLink('Live/replay report', summary.sources.live.link)}`,
     `- ${markdownLink('Replay berth and motion report', summary.sources.replay.link)}`, '',
     '## Reproduction commands', '');
-  const commands = [summary.reproductions.board, summary.reproductions.liveReplay, summary.reproductions.replay, summary.reproductions.newLiveCapture]
+  const boardCommands = summary.reproductions.boardReports.length ? summary.reproductions.boardReports : summary.reproductions.board ? [summary.reproductions.board] : [];
+  const commands = [...boardCommands, summary.reproductions.liveReplay, summary.reproductions.replay, summary.reproductions.newLiveCapture]
     .filter((value): value is Reproduction => value !== null);
   if (!commands.length) lines.push('No reproduction command is available.', '');
   for (const command of commands) lines.push(`### ${command.label}`, '', `Working directory: \`${command.cwd.replaceAll('`', '\\`')}\``, '', fenced(command.shellCommand), '');
@@ -415,10 +573,13 @@ async function main(): Promise<void> {
     writePrivateFile(file: string, body: string): Promise<void>;
   } = await import(new URL('./evidence.mjs', import.meta.url).href);
   await safeOutputDirectory(repoRoot, options.out);
-  const [boardLoaded, liveLoaded, replayLoaded] = await Promise.all([loadReport(options.boardReport), loadReport(options.liveReport), loadReport(options.replayReport)]);
-  const summary = summarizeAxis04({ board: boardLoaded.report, live: liveLoaded.report, boardPath: options.boardReport,
+  const [boardReports, liveLoaded, replayLoaded] = await Promise.all([
+    Promise.all((options.boardReports ?? []).map(async (reportPath) => ({ path: reportPath, ...await loadReport(reportPath) }))),
+    loadReport(options.liveReport), loadReport(options.replayReport),
+  ]);
+  const summary = summarizeAxis04({ boardReports: boardReports.map(({ path: reportPath, report, error }) => ({ path: reportPath, board: report, error })), live: liveLoaded.report,
     livePath: options.liveReport, replay: replayLoaded.report, replayPath: options.replayReport,
-    boardError: boardLoaded.error, liveError: liveLoaded.error, replayError: replayLoaded.error, out: options.out, relay: options.relay });
+    liveError: liveLoaded.error, replayError: replayLoaded.error, out: options.out, relay: options.relay });
   await writePrivateFile(path.join(options.out, 'axis-04-summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
   await writePrivateFile(path.join(options.out, 'axis-04-summary.md'), renderAxis04Markdown(summary));
   console.log(JSON.stringify({ out: options.out, primaryLiveReplay: summary.liveReplay?.status ?? 'UNAVAILABLE',
@@ -426,7 +587,7 @@ async function main(): Promise<void> {
 }
 
 if (process.argv.includes('--help')) {
-  console.log('node tools/axis04-summary.ts --out .scratch/dir [--board-report <json>] [--live-report <json>] [--replay-report <json>] [--relay http://127.0.0.1:8787]');
+  console.log('node tools/axis04-summary.ts --out .scratch/dir [--board-report <json> ...] [--live-report <json>] [--replay-report <json>] [--relay http://127.0.0.1:8787]');
 } else if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => { console.error(`axis04-summary: ${(error as Error).message}`); process.exitCode = 1; });
 }

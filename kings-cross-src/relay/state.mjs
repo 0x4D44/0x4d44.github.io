@@ -22,6 +22,15 @@ export class TdState {
 
   apply(e) {
     if (!validTdEvent(e) || e.area !== this.#area) return false;
+    let sclassWidth = 0;
+    let sclassFirst = 0;
+    if (e.kind === 'sclass') {
+      const msgType = e.msgType ?? 'SF'; // Older normalized recordings omit SF.
+      sclassWidth = msgType === 'SF' ? 1 : msgType === 'SG' || msgType === 'SH' ? 4 : 0;
+      if (!sclassWidth || e.data.length !== sclassWidth * 2) return false;
+      sclassFirst = Number.parseInt(e.address, 16);
+      if (sclassFirst + sclassWidth - 1 > 0xffff) return false;
+    }
     // Keep existing entries usable at capacity; malformed/flood input cannot grow memory forever.
     if (['step', 'interpose'].includes(e.kind) && !this.#berths.has(e.to) &&
         this.#berths.size >= MAX_BERTHS && !(e.kind === 'step' && this.#berths.has(e.from))) return false;
@@ -38,8 +47,13 @@ export class TdState {
         this.#berths.set(e.to, e.descr);
         break;
       case 'sclass':
-        // One canonical key per 16-bit wire address, including differently padded/cased aliases.
-        this.#sclass.set(Number.parseInt(e.address, 16).toString(16).toUpperCase().padStart(2, '0'), e.data.toUpperCase());
+        // SF carries one byte; SG/SH refresh four bytes from the first wire address upward.
+        // One canonical key per 16-bit address also joins differently padded/cased aliases.
+        for (let offset = 0; offset < sclassWidth; offset += 1) {
+          const address = (sclassFirst + offset).toString(16).toUpperCase().padStart(2, '0');
+          const data = e.data.slice(offset * 2, offset * 2 + 2).toUpperCase();
+          this.#sclass.set(address, data);
+        }
         break;
       default:
         break;

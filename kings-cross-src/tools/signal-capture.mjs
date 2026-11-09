@@ -46,7 +46,8 @@ export async function cleanupBrowser(child, profile, { remove = rm, warn = conso
   return { exited, profileRetained: profile && (!exited || warnings.length) ? profile : null, warnings };
 }
 export function validatePack(report) {
-  if (!report?.inputs?.anchors || !report.inputs.table || !Array.isArray(report.inputs.recordings) || !Array.isArray(report.captures)) throw new Error('invalid signal report');
+  if (!report?.inputs?.anchors || !report.inputs.table || !Array.isArray(report.inputs.recordings) || !Array.isArray(report.captures) ||
+      !Array.isArray(report.heads) || !Array.isArray(report.intervals) || !Array.isArray(report.states)) throw new Error('invalid signal report');
   const plans = report.captures.flatMap(group => group.cases.map(c => ({ ...c, recording: group.recording })));
   if (!plans.length) throw new Error('no observed decoded-head states to capture');
   for (const plan of plans) {
@@ -55,6 +56,14 @@ export function validatePack(report) {
         !Number.isSafeInteger(plan.recording) || !report.inputs.recordings[plan.recording] ||
         !report.intervals.some(i => i.headId === plan.headId && i.berth === plan.berth && i.state === plan.state && i.recording === plan.recording &&
           i.startMs === plan.startMs && i.endMs === plan.endMs)) throw new Error('capture case lacks a recorded interval and positioned decoded head');
+  }
+  // Required proof comes from observed intervals, not from the cases a plan chose
+  // to retain. A state never observed in a decoded head must not be invented.
+  for (const interval of report.intervals) {
+    if (!report.states.includes(interval.state) || !Number.isFinite(interval.startMs) || !Number.isFinite(interval.endMs) ||
+        interval.endMs - interval.startMs < 2 || !report.heads.some(h=>h.id===interval.headId && h.berth===interval.berth && h.decoded)) continue;
+    if (!plans.some(p=>p.recording===interval.recording && p.state===interval.state))
+      throw new Error(`recording ${interval.recording} observed ${interval.state} has no capture case`);
   }
   return plans;
 }
@@ -72,11 +81,22 @@ export function captureAlternatives(report, preferred) {
 export async function runCapturePlans(report, capture) {
   const plans = validatePack(report), shots = [], failed = [];
   for (const preferred of plans) for (const plan of captureAlternatives(report, preferred)) {
-    try { shots.push(await capture(plan)); break; }
+    try {
+      const shot=await capture(plan);
+      if (!shot || ['recording','headId','berth','state','timeMs','startMs','endMs'].some(key=>shot[key]!==plan[key]))
+        throw new Error('capture result does not match the recorded case');
+      shots.push(shot); break;
+    }
     catch (error) { failed.push({ ...plan, reason: error.message, details: error.details ?? null }); }
   }
-  const missingStates = [...new Set(plans.map(p => p.state))].filter(state => !shots.some(s => s.state === state));
-  return { shots, failed, missingStates, exitCode: missingStates.length ? 1 : 0 };
+  const required = plans.filter((p,i)=>plans.findIndex(other=>other.recording===p.recording && other.state===p.state)===i);
+  const missingCases = required.filter(p=>!shots.some(s=>s.recording===p.recording && s.state===p.state)).map(p=>({recording:p.recording,state:p.state}));
+  const missingStates = [...new Set(missingCases.map(p=>p.state))];
+  const coverage = report.inputs.recordings.map((_,recording)=>({recording,
+    observedStates:required.filter(p=>p.recording===recording).map(p=>p.state),
+    capturedStates:[...new Set(shots.filter(s=>s.recording===recording).map(s=>s.state))],
+    missingStates:missingCases.filter(p=>p.recording===recording).map(p=>p.state)}));
+  return { shots, failed, missingStates, missingCases, coverage, exitCode: missingStates.length ? 1 : 0 };
 }
 export async function checkedInput(pack, entry) {
   if (!entry || typeof entry.file !== 'string' || path.basename(entry.file) !== entry.file || !/^[a-f0-9]{64}$/.test(entry.sha256)) throw new Error('invalid frozen input');
