@@ -174,9 +174,11 @@ test('Midland Grand [HE-STP]: 23 bays on the front, a 10 bay curved wing, towers
   const clock = plan.towers.find((t) => t.name === 'clock');
   const west = plan.towers.find((t) => t.name === 'west');
   assert.ok(clock && west);
-  // 76 m (249 ft): Wikipedia [WP-MGH], with Wikishire (about 250 ft) and the 1870s account (240 ft); exploring-london.com says 82 m and gilbertscott.org
-  // 280 ft. The sources disagree, so the test holds the model to the one figure it takes and to the published range.
-  assert.equal(clock.height, 76, 'clock tower 76 m');
+  // 240 ft: Simon Bradley, St Pancras Station (Profile Books, 2007), "240-foot (72-metre) high clock tower" [BR-STP], with the 1870s account (240 ft); Wikipedia
+  // [WP-MGH] says 76 m, exploring-london.com 82 m and gilbertscott.org 280 ft. The sources disagree, so the test holds the model to the one figure it takes (73 m,
+  // 240 ft to the metre) and to the published range.
+  assert.equal(clock.height, 73, 'clock tower 73 m');
+  assert.ok(Math.abs(clock.height - 240 * 0.3048) < 0.5, 'which is 240 ft');
   assert.ok(clock.height >= 72 && clock.height <= 86, 'inside the published 72 to 86 m range');
   assert.ok(west.height < clock.height, 'the west tower is the lower');
   assert.ok(clock.centre[0] > west.centre[0], 'the clock tower is at the east end');

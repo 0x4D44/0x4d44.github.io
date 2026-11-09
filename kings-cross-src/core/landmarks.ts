@@ -20,10 +20,12 @@
 //             long, 100 ft (30.5 m) high at the apex above the tracks; 24 ribs, one every 29 ft 4 in (8.94 m); the arch is slightly pointed and
 //             springs from station level; glass covers the middle half of the roof, timber and slate the outer quarters; the platforms sit 20 ft
 //             (6 m) above street level.
+//   [BR-STP]  Simon Bradley, "St Pancras Station" (Profile Books, 2007): "240-foot (72-metre) high clock tower". The 1870s account at
+//             victorianlondon.org/houses/midlandgrand.htm agrees (240 ft).
 //   [WP-MGH]  Wikipedia, "St Pancras Renaissance London Hotel" (https://en.wikipedia.org/wiki/St_Pancras_Renaissance_London_Hotel): clock tower
-//             76 m (249 ft). The sources disagree: Wikishire about 250 ft, the 1870s account at victorianlondon.org/houses/midlandgrand.htm
-//             240 ft, exploring-london.com 82 m, gilbertscott.org 280 ft = 85.3 m. The model takes 76 m, the figure the two encyclopaedic
-//             sources agree on (the tourist-guide 82 m is a lone secondary figure), and marks the west tower ASSUMED (refs/DIMENSIONS.md section 4).
+//             76 m (249 ft). The sources disagree: Wikishire about 250 ft, exploring-london.com 82 m, gilbertscott.org 280 ft = 85.3 m. The model
+//             takes 73 m, Bradley's 240 ft (73.15 m) which the 1870s account confirms, over the encyclopaedia's 76 m, and marks the west tower
+//             ASSUMED (refs/DIMENSIONS.md section 4).
 //   [NSC-EXT] New Steel Construction, "Rebirth of St Pancras" (newsteelconstruction.com/wp/rebirth-of-st-pancras/): the 2007 extension is "a new
 //             200m long steel canopy", "three spans across the tracks and seven 30m bays longitudinally", a flat roof "subservient to the Barlow
 //             Shed" (the arch was rejected: the extension is much wider than the old station), on "four lines of 2.6m deep Warren trusses" with
@@ -68,7 +70,7 @@ export const FIGURES = {
     roofInset: 3.2, // ASSUMED
   },
   midland: {
-    clockTowerHeight: 76, // [WP-MGH] 76 m (249 ft); other sources 73-85 m, see the references above
+    clockTowerHeight: 73, // [BR-STP] 240 ft (73.15 m; "72-metre" as printed), the 1870s account agrees; [WP-MGH] says 76 m, others 82-85 m (see the references above)
     westTowerHeight: 56, // ASSUMED (sources conflict: 76 m on exploring-london.com)
     towerSide: 10.4, // ASSUMED plan of the clock tower
     westTowerSide: 10.8, // ASSUMED

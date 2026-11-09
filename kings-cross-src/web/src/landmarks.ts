@@ -780,21 +780,42 @@ export function stackPairs(plan: MidlandPlan): StackPair[] {
   return out;
 }
 
-/** One turret: a shaft of stone and red-brick courses, then a banded spirelet (hist-c: the clock tower's four corner turrets are striped). */
+/** A spirelet banded in `n` stripes, stone and red brick by turns, tapering from `half` to a point over `h` (hist-b, hist-c: striped spirelets). */
+function addSpirelet(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y: number, half: number, h: number, n: number): void {
+  for (let k = 0; k < n; k++) addSpike(part(parts, k % 2 ? 'brickRed' : 'stone'), c, along, out, half * (1 - k / n), y + (h * k) / n, y + (h * (k + 1)) / n, half * (1 - (k + 1) / n));
+}
+
+/** One turret of the gabled bays: a shaft of stone and red-brick courses, then a banded spirelet. */
 function addTurret(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, half: number, shaft: number, cap: number): void {
   const courses = 4;
   for (let k = 0; k < courses; k++) addWalls(part(parts, k % 2 ? 'brickRed' : 'stone'), squareAbout(c, along, out, half), y0 + (shaft * k) / courses, y0 + (shaft * (k + 1)) / courses);
-  const stripes = 3;
-  for (let k = 0; k < stripes; k++) addSpike(part(parts, k % 2 ? 'brickRed' : 'stone'), c, along, out, half * (1 - k / stripes), y0 + shaft + (cap * k) / stripes, y0 + shaft + (cap * (k + 1)) / stripes, half * (1 - (k + 1) / stripes));
+  addSpirelet(parts, c, along, out, y0 + shaft, half, cap, 3);
+}
+
+/**
+ * One corner pinnacle of a tower (hist-c: the clock tower's four are clusters of slender shafts round a dark core, under a banded spirelet): a stone plinth, eight 0.3 m shafts, three
+ * to a face (the corners and the middles of a square 0.15 m inside `half`), the dark core behind them, a stone capital and a spirelet of four stripes to a point. 7.15 m in all,
+ * 1.9 m wide (hist-c: 7.2 m against a clock stage 11.4 m wide); sizes ASSUMED.
+ */
+function addPinnacle(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number, half: number): void {
+  const stone = part(parts, 'stone');
+  const rotY = yaw(along);
+  const slab = (y: number, h: number, skip: ('-y' | '+y')[]): void => stone.box([c[0], y + h / 2, c[1]], [2 * half + 0.2, h, 2 * half + 0.2], { rotY, skip });
+  const [y1, y2] = [y0 + 0.5, y0 + 2.9];
+  slab(y0, 0.5, ['-y']);
+  addWalls(part(parts, 'pane'), squareAbout(c, along, out, half - 0.35), y1, y2);
+  for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) stone.box([c[0] + (along[0] * a + out[0] * b) * (half - 0.15), (y1 + y2) / 2, c[1] + (along[1] * a + out[1] * b) * (half - 0.15)], [0.3, y2 - y1, 0.3], { rotY, skip: ['-y', '+y'] });
+  slab(y2, 0.25, []);
+  addSpirelet(parts, c, along, out, y2 + 0.25, half, 4, 4);
 }
 
 /**
  * Where a tower `H` tall's stages end: shaft, belfry, corbel table, wall head (the roof begins), roof top (the lantern stands), lantern top; the needle
- * runs on to `H`. ASSUMED, from hist-b (wall head at 0.69 H, so the spire is 31%; lantern 0.82 to 0.86 H) and hist-c (a belfry about 8 m tall), H being 76 m [WP-MGH].
+ * runs on to `H`. ASSUMED, from hist-b (wall head at 0.69 H, so the spire is 31%; lantern 0.82 to 0.86 H) and hist-c (the belfry from its balcony to the corbels about 9 m: 0.12 H), H being 73 m [BR-STP].
  */
 export function towerStages(H: number): { shaft: number; belfry: number; corbel: number; wall: number; roof: number; lantern: number } {
   const belfry = H * 0.6;
-  return { shaft: H * 0.5, belfry, corbel: belfry + 1.8, wall: H * 0.69, roof: H * 0.82, lantern: H * 0.86 };
+  return { shaft: H * 0.48, belfry, corbel: belfry + 1.8, wall: H * 0.69, roof: H * 0.82, lantern: H * 0.86 };
 }
 
 /**
@@ -804,9 +825,9 @@ export function towerStages(H: number): { shaft: number; belfry: number; corbel:
 export const ROWS = [[6.9, 4.0], [12.4, 3.4], [17.9, 2.6]] as const;
 
 /**
- * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 76 m clock tower): a brick shaft of window rows then lancets, a belfry of
- * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a dial and a brick gable on each face, [HE-STP] "gabled clocks
- * on each face"), four striped corner turrets, a steep slate roof, a lantern and a needle; a pointed portal at the foot of the front.
+ * A tower on a square plan, by stages (ASSUMED, scaled from hist-c on the 73 m clock tower): a brick shaft of window rows then lancets, a belfry of
+ * paired arches (the west tower: an arcade), a three-step corbel table, the clock stage (a brick gable on each face, with a dial on the clock tower's, [HE-STP] "gabled clocks
+ * on each face"), four corner pinnacles, a steep slate roof with a lucarne on each face, a lantern (the clock tower's) and a needle with a weathervane; a pointed portal at the foot of the front.
  */
 function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const h = t.side / 2;
@@ -831,14 +852,24 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   for (const f of faces) {
     const inside = pointInPolygon([f.at[0] + f.normal[0], f.at[1] + f.normal[1]], plan.outline);
     ROWS.forEach(([y, wh], r) => { if (!inside) addTwin(parts, f, y, r ? 2.4 : 3.2, wh, r ? 2 : 3); });
-    for (const y of [22, 31.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
+    for (const y of [22, 29.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
-  // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones)
+  // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones); hist-c: two tall groups from the balcony to the corbels,
+  // their lancets about 5 m, and slender stone shafts with capitals standing in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
+  const gh = bT - sT - 2.4;
+  const shafted = gh - 2.5 * Math.sin(Math.PI / 3) - 0.1;
   for (const f of faces) {
-    if (clockTower) for (const dx of [-1.8, 1.8]) addTwin(parts, shift(f, dx), sT + 0.9, 2.5, bT - sT - 2.4); // hist-c: two tall groups from the balcony to the corbels, their lancets about 4.3 m; sizes ASSUMED
-    else for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, shift(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
+    if (!clockTower) for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, shift(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
+    else for (const dx of [-1.8, 1.8]) {
+      addTwin(parts, shift(f, dx), sT + 0.9, 2.5, gh);
+      for (const x of [-0.775, 0.775]) stone.box(onWall(f, dx + x, sT + 0.9 + (gh - 0.9) / 2, 0.14), [0.95, 0.14, 0.12], { rotY: yaw(f.dir) }); // a transom across each lancet (hist-c: two lights stacked, the tracery between)
+      for (const x of [-1.3, 0, 1.3]) {
+        stone.box(onWall(f, dx + x, sT + 1.0 + shafted / 2, 0.12), [0.28, shafted, 0.28], { rotY: yaw(f.dir), skip: ['-y', '+y'] });
+        stone.box(onWall(f, dx + x, sT + 1.08 + shafted, 0.12), [0.4, 0.16, 0.4], { rotY: yaw(f.dir) }); // and its capital
+      }
+    }
   }
   // the corbel table: three steps, each a little farther out
   for (let k = 0; k < 3; k++) addBand(stone, ring(h), bT + 0.6 * k, 0.6, 0.25 + 0.2 * k);
@@ -857,9 +888,9 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const [rb, g, lant] = [3.3, 4.3, 1.7]; // the steep roof's base (a little over half the stage's width), the gables' height, half the lantern's side
   const top = clockTower ? rT : lT;
   const roofSlope = g / (P - rb);
-  if (clockTower) {
-    const cy = (tT + wH) / 2;
-    for (const f of stage) {
+  const cy = (tT + wH) / 2;
+  for (const f of stage) {
+    if (clockTower) {
       // the dial in a ring of stone (hist-c: a gilt ring and a cream dial 4.2 m across, ASSUMED from the tower's width)
       const q = (x: number, y: number): V3 => onWall(f, x, y, 0.14);
       const face: V3 = [f.normal[0], 0, f.normal[1]];
@@ -868,14 +899,13 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
       // u runs left to right as a viewer outside sees it; dir points to the viewer's left on the front and back faces and to the right on the sides
       const left = f.dir[0] * f.normal[1] - f.dir[1] * f.normal[0] < 0 ? half : -half;
       part(parts, 'clock').quadUV(q(left, cy - half), q(-left, cy - half), q(-left, cy + half), q(left, cy + half), [[0, 0], [1, 0], [1, 1], [0, 1]], face);
-      // the gable over the dial, brick with a stone border and a rosette in it, its sides running back into the roof
-      const gw = h - 1.0;
-      addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, gw, g, 0, 'brickRed');
-      addDisc(stone, f, 0, wH + 1.9, 0.45, 0.12);
     }
+    // the gable over the dial (the west tower has a gable too, over no dial: not a plain pyramid), brick with a stone border and a rosette in it, its sides running back into the roof
+    addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, h - 1.0, g, 0, 'brickRed');
+    addDisc(stone, f, 0, wH + 1.9, 0.45, 0.12);
   }
-  // the turrets stand on the corners of the clock stage
-  for (const c of sq(h + grow - 0.75)) addTurret(parts, c, t.along, t.out, wH, 0.65, 3.0, 3.6);
+  // the pinnacles stand on the corners of the clock stage, flush with its walls
+  for (const c of sq(h + grow - 0.95)) addPinnacle(parts, c, t.along, t.out, wH, 0.95);
   // the roof; the clock tower's open lantern (dark lights between mullions, a pinnacle on each corner) and then the needle and its rod
   addRoof(slate, sq(P), sq(rb), wH, wH + g, false, [P - rb, P - rb, P - rb, P - rb]);
   addRoof(slate, sq(rb), sq(lant), wH + g, top, false, [rb - lant, rb - lant, rb - lant, rb - lant]);
@@ -885,16 +915,20 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     addBand(stone, ring(lant), rT, 0.4, 0.1);
     addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
     for (const c of sq(lant)) addSpike(stone, c, t.along, t.out, 0.22, rT, lT + 0.9);
-    // hist-b, hist-c: a lucarne on each face of the spire, a stone gablet 1.2 m wide and 2.6 m to its apex over a pointed light, its foot 0.9 m up the slope; sizes ASSUMED
-    const yb = wH + g + 0.9;
-    const slope = (rT - wH - g) / (rb - lant);
-    for (const f of facesAt(rb - (yb - wH - g) / slope)) {
-      addGable(parts, [f.at[0], yb, f.at[1]], f.dir, f.normal, slope, 0.6, 2.6, 1.5, 'stone');
-      addFramedWindow(parts, f, yb + 0.25, 0.7, 1.5, 'pointed', 0.1);
-    }
+  }
+  // hist-b, hist-c: a lucarne on each face of the spire, a stone gablet 1.2 m wide and 2.6 m to its apex over a pointed light, its foot 0.9 m up the slope; sizes ASSUMED
+  const yb = wH + g + 0.9;
+  const slope = (top - wH - g) / (rb - lant);
+  for (const f of facesAt(rb - (yb - wH - g) / slope)) {
+    addGable(parts, [f.at[0], yb, f.at[1]], f.dir, f.normal, slope, 0.6, 2.6, 1.5, 'stone');
+    addFramedWindow(parts, f, yb + 0.25, 0.7, 1.5, 'pointed', 0.1);
   }
   addSpike(slate, t.centre, t.along, t.out, lant - 0.3, lT, H - 1.8);
   addSpike(slate, t.centre, t.along, t.out, 0.08, H - 1.8, H);
+  // hist-b, hist-c: the weathervane under the tip, a cross-bar and a vane on the rod; sizes ASSUMED
+  const metal = part(parts, 'metal');
+  for (const d of [t.along, t.out]) metal.box([t.centre[0], H - 1.1, t.centre[1]], [1.1, 0.06, 0.06], { rotY: yaw(d) });
+  metal.box([t.centre[0] + t.along[0] * 0.35, H - 0.5, t.centre[1] + t.along[1] * 0.35], [0.7, 0.4, 0.04], { rotY: yaw(t.along) });
 }
 
 /** `pavilions`: which front bays stand out as gabled bays (they have no dormers of their own; the dormer tests pass none, to test the dormers on every bay). */

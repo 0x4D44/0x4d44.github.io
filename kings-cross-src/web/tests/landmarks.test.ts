@@ -639,9 +639,9 @@ test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and 
 
 // ---- the Midland Grand -------------------------------------------------------------------------
 
-test('Midland Grand: the clock tower reaches 76 m ([WP-MGH] 249 ft; other sources give 73 to 85), the entrance tower its assumed height, and nothing is taller', () => {
+test('Midland Grand: the clock tower reaches 73 m ([BR-STP] 240 ft; Wikipedia gives 76, other sources 82 to 85), the entrance tower its assumed height, and nothing is taller', () => {
   const ys = allVertices(midlandGeometry(midland)).map((v) => v[1]);
-  close(Math.max(...ys), 76, 1e-6, 'tallest point');
+  close(Math.max(...ys), 73, 1e-6, 'tallest point');
   close(Math.max(...ys), FIGURES.midland.clockTowerHeight, 1e-6, 'the needle is the plan\'s height');
   assert.ok(ys.some((y) => Math.abs(y - FIGURES.midland.westTowerHeight) < 1e-6), 'the west tower\'s spire is there');
   close(Math.min(...ys), 0, 1e-9, 'on the ground');
@@ -952,7 +952,7 @@ test('Midland Grand: the slate roof is a true-to-scale surface: every facet is l
 });
 
 test('towerStages: the stages rise in order, with the needle running on above the lantern', () => {
-  for (const H of [56, 76, 82]) {
+  for (const H of [56, 73, 82]) {
     const s = towerStages(H);
     const order = [0, s.shaft, s.belfry, s.corbel, s.wall, s.roof, s.lantern, H];
     for (let i = 1; i < order.length; i++) assert.ok((order[i] as number) > (order[i - 1] as number), `stage ${i} of ${H} m`);
@@ -967,7 +967,7 @@ const inTower = (t: (typeof midland.towers)[number], v: V3): { a: number; o: num
   y: v[1],
 });
 
-test('Midland Grand: the clock tower has a belfry of paired arches on every face, a portal at its foot, four equal turrets at the corners of the clock stage below the roof\'s top, and one needle at 76 m', () => {
+test('Midland Grand: the clock tower has a belfry of paired arches on every face, a portal at its foot, four equal turrets at the corners of the clock stage below the roof\'s top, and one needle at 73 m', () => {
   const parts = midlandGeometry(midland);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
@@ -991,8 +991,8 @@ test('Midland Grand: the clock tower has a belfry of paired arches on every face
   assert.ok(portal.length >= 6, 'a portal');
   const py = portal.flatMap((tr) => tr.p.map((v) => v[1]));
   assert.ok(Math.min(...py) > 0.2 && Math.max(...py) < 5.7 && Math.max(...py) - Math.min(...py) > 4, `portal from ${Math.min(...py)} to ${Math.max(...py)}`);
-  // the turrets: four spirelets, one to a corner, all the same height, below the roof's top
-  const tipY = st.wall + 6.6;
+  // the pinnacles: four spirelets, one to a corner, all the same height (7.15 m over the wall head), below the roof's top
+  const tipY = st.wall + 7.15;
   const tips = all.filter((p) => Math.abs(p.y - tipY) < 1e-6);
   const corners = new Set(tips.map((p) => `${Math.sign(p.a)},${Math.sign(p.o)}`));
   assert.equal(corners.size, 4, `${tips.length} turret tips at ${[...corners]}`);
@@ -1028,7 +1028,7 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   assert.equal(mullions.length, 64, 'eight mullions, a box each with four sides of two triangles');
   const pinnacles = triangles(parts.stone as Batch).filter((s) => s.p.some((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6));
   assert.equal(new Set(pinnacles.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - (st.lantern + 0.9)) < 1e-6).map((v) => `${Math.sign(inTower(t, v).a)},${Math.sign(inTower(t, v).o)}`))).size, 4, 'a pinnacle on each corner of the lantern');
-  // the needle: slender (taller than twice its base), then a thin rod to the tower's height (76 m)
+  // the needle: slender (taller than twice its base), then a thin rod to the tower's height (73 m)
   const needle = slate.filter((s) => s.p.every((v) => v[1] >= st.lantern - 1e-6) && s.p.some((v) => v[1] > st.lantern + 1));
   assert.ok(needle.length >= 8, 'a needle and a rod');
   const baseHalf = Math.max(...needle.flatMap((s) => s.p.filter((v) => Math.abs(v[1] - st.lantern) < 1e-6).map((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)))));
@@ -1037,45 +1037,187 @@ test('Midland Grand [hist-b, hist-c]: the clock tower\'s spire is a steep slate 
   assert.ok(rod.length > 0 && rod.every((v) => Math.max(Math.abs(inTower(t, v).a), Math.abs(inTower(t, v).o)) < 0.2), 'the rod rises from the needle\'s tip');
 });
 
-test('Midland Grand [hist-b, hist-c]: a lucarne on each face of the clock tower\'s spire: a stone gablet 1.2 m wide and 2.6 m to its apex standing on the slope with its cheeks meeting the roof, over a pointed light', () => {
+test('Midland Grand [hist-b, hist-c]: a lucarne on each face of each tower\'s spire (round 5: the west tower is not a plain pyramid): a stone gablet 1.2 m wide and 2.6 m to its apex standing on the slope with its cheeks meeting the roof, over a pointed light', () => {
+  const parts = midlandGeometry(midland);
+  for (const t of midland.towers) {
+    const st = towerStages(t.height);
+    const top = t.name === 'clock' ? st.roof : st.lantern; // the clock tower's steep roof ends under its lantern, the west tower's runs up to the needle
+    const foot = st.wall + 4.3; // where the steep roof begins
+    const yb = foot + 0.9;
+    const slate = triangles(parts.slate as Batch);
+    const stone = triangles(parts.stone as Batch);
+    const pane = triangles(parts.pane as Batch);
+    for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
+      const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
+      // the spire's facet on this face, and from its own corners the depth of the slope at any height
+      const facet = slate.filter((s) => worldArea(s) > 5 && s.p.every((v) => v[1] >= foot - 1e-6 && v[1] <= top + 1e-6 && depth(v) > 1.6 - 1e-6));
+      assert.equal(facet.length, 2, `${t.name} ${n}: the facet of two triangles`);
+      const corners = facet.flatMap((s) => s.p);
+      const [low, high] = [corners.find((v) => Math.abs(v[1] - foot) < 1e-6) as V3, corners.find((v) => Math.abs(v[1] - top) < 1e-6) as V3];
+      const slope = (y: number): number => depth(low) + ((y - foot) / (top - foot)) * (depth(high) - depth(low));
+      const front = slope(yb);
+      // the gablet's stone face and its border, in one plane on the slope
+      const face = stone.filter((s) => s.p.every((v) => Math.abs(depth(v) - front) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
+      assert.equal(face.length, 11, `${n}: a face of three triangles and a border of four quads (up the sides and along the rakes)`);
+      const ys = face.flatMap((s) => s.p.map((v) => v[1]));
+      close(Math.min(...ys), yb, 1e-9, `${n}: its foot is on the slope, 0.9 m above where the steep roof begins`);
+      close(Math.max(...ys), yb + 2.6 + 1.7 * 0.14, 1e-9, `${n}: 2.6 m to the apex, and the border over it`);
+      const xs = face.flatMap((s) => s.p.map(across));
+      close(Math.max(...xs), 0.6 + 0.14, 1e-6, `${n}: 1.2 m wide, and its border`);
+      close(Math.min(...xs), -(0.6 + 0.14), 1e-6, `${n}: centred on the face`);
+      // the light: a pointed pane 0.7 x 1.5 m, 0.25 m up the face and 0.1 m in front of it
+      const light = pane.filter((s) => s.p.every((v) => Math.abs(depth(v) - front - 0.1) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
+      assert.ok(light.length >= 7, `${n}: a fan of triangles for the light`);
+      close(Math.min(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 0.25, 1e-9, `${n}: the light's sill`);
+      close(Math.max(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 1.75, 1e-9, `${n}: its head`);
+      close(Math.max(...light.flatMap((s) => s.p.map((v) => Math.abs(across(v))))), 0.35, 1e-6, `${n}: 0.7 m wide`);
+      // the cheeks and the little roof: slate, from the face back to the slope, every back corner on it
+      const cheeks = slate.filter((s) => worldArea(s) < 5 && s.p.every((v) => v[1] >= yb - 1e-6 && v[1] <= yb + 2.6 + 1e-6 && Math.abs(across(v)) <= 0.6 + 1e-6 && depth(v) > 1.6));
+      assert.equal(cheeks.length, 6, `${n}: a cheek (a triangle) and half a roof (a quad) on each side`);
+      for (const v of cheeks.flatMap((s) => s.p)) assert.ok(Math.abs(depth(v) - front) < 1e-6 || Math.abs(depth(v) - slope(v[1])) < 1e-6, `${n}: a cheek corner at height ${v[1].toFixed(2)} is on the face or on the slope`);
+      assert.ok(cheeks.flatMap((s) => s.p).filter((v) => Math.abs(depth(v) - slope(v[1])) < 1e-6 && Math.abs(depth(v) - front) > 1e-6).length >= 4, `${n}: the cheeks run back into the roof`);
+    }
+  }
+});
+
+test('Midland Grand [hist-c]: the four corner pinnacles of each tower are clusters of eight slender stone shafts (three to a face) round a dark core, on a plinth under a capital, with a spirelet banded in four stripes: 7.15 m tall, 1.9 m wide, flush with the clock stage', () => {
+  const parts = midlandGeometry(midland);
+  const [stone, brick, pane] = [parts.stone, parts.brickRed, parts.pane].map((m) => triangles(m as Batch));
+  const half = 0.95;
+  for (const t of midland.towers) {
+    const st = towerStages(t.height);
+    const P = t.side / 2 + 0.5;
+    for (const [sa, so] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+      const [ca, co] = [sa * (P - half), so * (P - half)];
+      const where = `${t.name} tower, corner ${sa},${so}`;
+      const of = (m: Tri[], y0: number, y1: number): Tri[] => m.filter((tr) => tr.p.every((v) => {
+        const p = inTower(t, v);
+        return Math.abs(p.a - ca) < half + 0.15 && Math.abs(p.o - co) < half + 0.15 && v[1] >= y0 - 1e-6 && v[1] <= y1 + 1e-6;
+      }));
+      const reach = (ts: Tri[]): number => Math.max(...ts.flatMap((tr) => tr.p.map((v) => Math.max(Math.abs(inTower(t, v).a - ca), Math.abs(inTower(t, v).o - co)))));
+      const [y1, y2, y3] = [st.wall + 0.5, st.wall + 2.9, st.wall + 3.15];
+      // a plinth 2.1 m across and 0.5 m thick on the wall head, 0.1 m proud of the shafts
+      const plinth = of(stone, st.wall, y1);
+      assert.equal(plinth.length, 10, `${where}: a plinth of five faces`);
+      close(reach(plinth), half + 0.1, 1e-6, `${where}: the plinth is 2.1 m across`);
+      close(Math.max(...plinth.flatMap((tr) => tr.p.map((v) => v[1]))), y1, 1e-9, `${where}: and 0.5 m thick, up to the foot of the shafts`);
+      close(Math.min(...plinth.flatMap((tr) => tr.p.map((v) => v[1]))), st.wall, 1e-9, `${where}: on the wall head`);
+      // eight shafts 0.3 m square, three to a face: at the corners and the middles of a square 0.8 m from the middle, from the plinth to the capital, flush with the stage's walls
+      const shafts = of(stone, y1, y2).filter((tr) => Math.abs(geoNormal(tr)[1]) < 1e-9);
+      assert.equal(shafts.length, 64, `${where}: eight shafts of four faces of two triangles`);
+      for (const [da, db] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]] as const) {
+        const mine = shafts.filter((tr) => tr.p.every((v) => Math.abs(inTower(t, v).a - ca - da * 0.8) < 0.15 + 1e-6 && Math.abs(inTower(t, v).o - co - db * 0.8) < 0.15 + 1e-6));
+        assert.equal(mine.length, 8, `${where}: a shaft at ${da},${db}`);
+        const spanOf = (f: (v: V3) => number): number => Math.max(...mine.flatMap((tr) => tr.p.map(f))) - Math.min(...mine.flatMap((tr) => tr.p.map(f)));
+        close(spanOf((v) => inTower(t, v).a), 0.3, 1e-6, `${where}: a shaft is 0.3 m wide`);
+        close(spanOf((v) => inTower(t, v).o), 0.3, 1e-6, `${where}: and 0.3 m deep`);
+      }
+      close(Math.min(...shafts.flatMap((tr) => tr.p.map((v) => v[1]))), y1, 1e-9, `${where}: the shafts rise from the plinth`);
+      close(Math.max(...shafts.flatMap((tr) => tr.p.map((v) => v[1]))), y2, 1e-9, `${where}: 2.4 m tall`);
+      close(Math.max(...shafts.flatMap((tr) => tr.p.map((v) => Math.max(sa * inTower(t, v).a, so * inTower(t, v).o)))), P, 1e-6, `${where}: flush with the stage's walls`);
+      // the dark core behind them: 1.2 m square, four faces of the library's pane
+      const core = of(pane, y1, y2);
+      assert.equal(core.length, 8, `${where}: a core of four faces`);
+      close(reach(core), half - 0.35, 1e-6, `${where}: the core is 1.2 m across, 0.35 m inside the shafts' faces`);
+      // the capital: a slab as wide as the plinth
+      const capital = of(stone, y2, y3).filter((tr) => !shafts.includes(tr) && tr.p.some((v) => v[1] > y2 + 1e-6));
+      assert.equal(capital.length, 10, `${where}: a capital of five faces`);
+      close(reach(capital), half + 0.1, 1e-6, `${where}: as wide as the plinth`);
+      // the spirelet: four stripes 1 m tall, stone and red brick by turns, from the capital to the point
+      const above = (m: Tri[]): Tri[] => of(m, y3, y3 + 4).filter((tr) => tr.p.some((v) => v[1] > y3 + 1e-6));
+      const [stripesStone, stripesBrick] = [above(stone), above(brick)];
+      assert.equal(stripesStone.length, 16, `${where}: stone stripes 1 and 3, of four faces of two triangles`);
+      assert.equal(stripesBrick.length, 12, `${where}: red stripes 2 and 4, the last a point of four triangles`);
+      for (const [k, ts] of [[0, stripesStone.filter((tr) => Math.max(...tr.p.map((v) => v[1])) < y3 + 1 + 1e-6)], [1, stripesBrick.filter((tr) => Math.max(...tr.p.map((v) => v[1])) < y3 + 2 + 1e-6)]] as const) {
+        assert.ok(ts.length >= 8, `${where}: stripe ${k + 1} is whole`);
+        close(reach(ts), half * (1 - k / 4), 1e-6, `${where}: stripe ${k + 1} starts as wide as the taper gives`);
+      }
+      const apex = [...stripesStone, ...stripesBrick].flatMap((tr) => tr.p).filter((v) => v[1] > y3 + 4 - 1e-6);
+      assert.ok(apex.length > 0 && apex.every((v) => Math.abs(inTower(t, v).a - ca) < 1e-6 && Math.abs(inTower(t, v).o - co) < 1e-6), `${where}: the spirelet ends in a point on the axis`);
+      close(Math.max(...apex.map((v) => v[1])), st.wall + 7.15, 1e-6, `${where}: 7.15 m over the wall head`);
+      assert.ok(st.wall + 7.15 < st.roof, `${where}: under the roof's top`);
+    }
+  }
+});
+
+test('Midland Grand [hist-c]: slender stone shafts with capitals stand in front of the clock tower\'s belfry lights, three to a group (the jambs and the middle), 0.28 m square, from the sill to the springing of the arch, and a transom crosses each lancet', () => {
   const parts = midlandGeometry(midland);
   const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
   const st = towerStages(t.height);
-  const foot = st.wall + 4.3; // where the steep roof begins
-  const yb = foot + 0.9;
-  const slate = triangles(parts.slate as Batch);
-  const stone = triangles(parts.stone as Batch);
-  const pane = triangles(parts.pane as Batch);
+  const h = t.side / 2;
+  const spring = st.shaft + 0.9 + (st.belfry - st.shaft - 2.4) - 2.5 * Math.sin(Math.PI / 3); // where a group's arch springs (the group is 2.5 m wide)
   for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
     const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
     const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
-    // the spire's facet on this face, and from its own corners the depth of the slope at any height
-    const facet = slate.filter((s) => worldArea(s) > 5 && s.p.every((v) => v[1] >= foot - 1e-6 && v[1] <= st.roof + 1e-6 && depth(v) > 1.6 - 1e-6));
-    assert.equal(facet.length, 2, `${n}: the facet of two triangles`);
-    const corners = facet.flatMap((s) => s.p);
-    const [low, high] = [corners.find((v) => Math.abs(v[1] - foot) < 1e-6) as V3, corners.find((v) => Math.abs(v[1] - st.roof) < 1e-6) as V3];
-    const slope = (y: number): number => depth(low) + ((y - foot) / (st.roof - foot)) * (depth(high) - depth(low));
-    const front = slope(yb);
-    // the gablet's stone face and its border, in one plane on the slope
-    const face = stone.filter((s) => s.p.every((v) => Math.abs(depth(v) - front) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
-    assert.equal(face.length, 11, `${n}: a face of three triangles and a border of four quads (up the sides and along the rakes)`);
-    const ys = face.flatMap((s) => s.p.map((v) => v[1]));
-    close(Math.min(...ys), yb, 1e-9, `${n}: its foot is on the slope, 0.9 m above where the steep roof begins`);
-    close(Math.max(...ys), yb + 2.6 + 1.7 * 0.14, 1e-9, `${n}: 2.6 m to the apex, and the border over it`);
-    const xs = face.flatMap((s) => s.p.map(across));
-    close(Math.max(...xs), 0.6 + 0.14, 1e-6, `${n}: 1.2 m wide, and its border`);
-    close(Math.min(...xs), -(0.6 + 0.14), 1e-6, `${n}: centred on the face`);
-    // the light: a pointed pane 0.7 x 1.5 m, 0.25 m up the face and 0.1 m in front of it
-    const light = pane.filter((s) => s.p.every((v) => Math.abs(depth(v) - front - 0.1) < 1e-6 && v[1] >= yb - 1e-6 && v[1] <= yb + 3));
-    assert.ok(light.length >= 7, `${n}: a fan of triangles for the light`);
-    close(Math.min(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 0.25, 1e-9, `${n}: the light's sill`);
-    close(Math.max(...light.flatMap((s) => s.p.map((v) => v[1]))), yb + 1.75, 1e-9, `${n}: its head`);
-    close(Math.max(...light.flatMap((s) => s.p.map((v) => Math.abs(across(v))))), 0.35, 1e-6, `${n}: 0.7 m wide`);
-    // the cheeks and the little roof: slate, from the face back to the slope, every back corner on it
-    const cheeks = slate.filter((s) => worldArea(s) < 5 && s.p.every((v) => v[1] >= yb - 1e-6 && v[1] <= yb + 2.6 + 1e-6 && Math.abs(across(v)) <= 0.6 + 1e-6 && depth(v) > 1.6));
-    assert.equal(cheeks.length, 6, `${n}: a cheek (a triangle) and half a roof (a quad) on each side`);
-    for (const v of cheeks.flatMap((s) => s.p)) assert.ok(Math.abs(depth(v) - front) < 1e-6 || Math.abs(depth(v) - slope(v[1])) < 1e-6, `${n}: a cheek corner at height ${v[1].toFixed(2)} is on the face or on the slope`);
-    assert.ok(cheeks.flatMap((s) => s.p).filter((v) => Math.abs(depth(v) - slope(v[1])) < 1e-6 && Math.abs(depth(v) - front) > 1e-6).length >= 4, `${n}: the cheeks run back into the roof`);
+    const onBelfry = (tr: Tri): boolean => tr.p.every((v) => Math.abs(across(v)) < 4 && v[1] > st.shaft && v[1] < st.belfry);
+    // each shaft's front face: 0.26 m proud of the wall, two triangles, nothing else on the belfry stands so far out but the balcony and the sills (0.45 m)
+    const fronts = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.26)) < 1e-6));
+    assert.equal(fronts.length, 12, `${n}: six shafts of two triangles to a front face`);
+    const centres = [...new Set(fronts.map((tr) => ((Math.min(...tr.p.map(across)) + Math.max(...tr.p.map(across))) / 2).toFixed(6)))].map(Number).sort((a, b) => a - b);
+    assert.deepEqual(centres, [-3.1, -1.8, -0.5, 0.5, 1.8, 3.1], `${n}: on the jambs and the middle of both groups (groups 3.6 m apart, lights 0.95 m wide)`);
+    for (const tr of fronts) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.28, 1e-6, `${n}: 0.28 m wide`);
+    close(Math.min(...fronts.flatMap((tr) => tr.p.map((v) => v[1]))), st.shaft + 1.0, 1e-9, `${n}: from the sill`);
+    close(Math.max(...fronts.flatMap((tr) => tr.p.map((v) => v[1]))), spring, 1e-9, `${n}: to the springing of the arch`);
+    // each under a capital 0.4 m across and 0.16 m tall, 0.06 m proud of the shaft, standing on its top
+    const capitals = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.32)) < 1e-6));
+    assert.equal(capitals.length, 12, `${n}: six capitals of two triangles to a front face`);
+    for (const tr of capitals) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.4, 1e-6, `${n}: a capital is 0.4 m wide`);
+    close(Math.min(...capitals.flatMap((tr) => tr.p.map((v) => v[1]))), spring, 1e-9, `${n}: standing on the shaft`);
+    close(Math.max(...capitals.flatMap((tr) => tr.p.map((v) => v[1]))), spring + 0.16, 1e-9, `${n}: 0.16 m tall`);
+    // a transom across each of the four lancets, half-way up: 0.95 m wide and 0.14 m tall, its face 0.2 m out, between the lights (0.1 m) and the shafts (0.26 m)
+    const transoms = triangles(parts.stone as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.2)) < 1e-6));
+    assert.equal(transoms.length, 8, `${n}: four transoms of two triangles to a front face`);
+    for (const tr of transoms) close(Math.max(...tr.p.map(across)) - Math.min(...tr.p.map(across)), 0.95, 1e-6, `${n}: a transom is as wide as its lancet`);
+    close(Math.min(...transoms.flatMap((tr) => tr.p.map((v) => v[1]))), st.shaft + 0.9 + (st.belfry - st.shaft - 3.3) / 2 - 0.07, 1e-9, `${n}: half-way up the lancets`);
+    // in front of the lights: the dark panes of the groups stand 0.1 m out (the balustrade, 0.4 m out, is a pane too, and below them)
+    const lights = triangles(parts.pane as Batch).filter((tr) => onBelfry(tr) && tr.p.every((v) => Math.abs(depth(v) - (h + 0.1)) < 1e-6 && v[1] >= st.shaft + 0.9 - 1e-9 && v[1] < spring + 1));
+    assert.ok(lights.length >= 8, `${n}: four lancets`);
+    assert.ok(fronts.every((tr) => Math.abs(depth((tr.p[0]))) > Math.max(...lights.flatMap((l) => l.p.map(depth))) + 0.1), `${n}: the shafts stand 0.16 m in front of the lights`);
+  }
+});
+
+test('Midland Grand [hist-b, hist-c]: a weathervane under the tip of each tower: a cross-bar 1.1 m across both ways and a vane plate on the rod, in metal, all under the tip', () => {
+  const parts = midlandGeometry(midland);
+  const metal = triangles(parts.metal as Batch);
+  assert.equal(metal.length, 2 * 3 * 12, 'three boxes to a tower, two towers, nothing else in metal');
+  for (const t of midland.towers) {
+    const mine = metal.filter((tr) => tr.p.every((v) => Math.hypot(inTower(t, v).a, inTower(t, v).o) < 1));
+    assert.equal(mine.length, 36, `${t.name}: three boxes`);
+    const alongBar = mine.filter((tr) => tr.p.every((v) => Math.abs(v[1] - (t.height - 1.1)) < 0.031 && Math.abs(inTower(t, v).o) < 0.031));
+    const outBar = mine.filter((tr) => tr.p.every((v) => Math.abs(v[1] - (t.height - 1.1)) < 0.031 && Math.abs(inTower(t, v).a) < 0.031));
+    assert.equal(alongBar.length, 12, `${t.name}: a bar along the tower's side`);
+    assert.equal(outBar.length, 12, `${t.name}: and a bar across it`);
+    const span = (ts: Tri[], f: (v: V3) => number): number => Math.max(...ts.flatMap((tr) => tr.p.map(f))) - Math.min(...ts.flatMap((tr) => tr.p.map(f)));
+    close(span(alongBar, (v) => inTower(t, v).a), 1.1, 1e-6, `${t.name}: 1.1 m across`);
+    close(span(outBar, (v) => inTower(t, v).o), 1.1, 1e-6, `${t.name}: either way`);
+    const vane = mine.filter((tr) => !alongBar.includes(tr) && !outBar.includes(tr));
+    assert.equal(vane.length, 12, `${t.name}: a vane plate`);
+    close(Math.min(...vane.flatMap((tr) => tr.p.map((v) => inTower(t, v).a))), 0, 1e-6, `${t.name}: the vane starts at the rod`);
+    close(Math.max(...vane.flatMap((tr) => tr.p.map((v) => inTower(t, v).a))), 0.7, 1e-6, `${t.name}: and runs 0.7 m along`);
+    close(Math.max(...vane.flatMap((tr) => tr.p.map((v) => v[1]))), t.height - 0.3, 1e-6, `${t.name}: the vane stands under the tip`);
+    assert.ok(Math.max(...mine.flatMap((tr) => tr.p.map((v) => v[1]))) < t.height - 0.2, `${t.name}: the tip stays the top`);
+  }
+});
+
+test('Midland Grand [hist-c]: each tower\'s clock stage has a brick gable with a stone rosette (an octagon) on every face, 4.3 m to its apex (the west tower has them too, over no dial: not a plain pyramid)', () => {
+  const parts = midlandGeometry(midland);
+  const brick = triangles(parts.brickRed as Batch);
+  const stone = triangles(parts.stone as Batch);
+  for (const t of midland.towers) {
+    const st = towerStages(t.height);
+    const P = t.side / 2 + 0.5;
+    for (const n of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const depth = (v: V3): number => inTower(t, v).o * n[0] + inTower(t, v).a * n[1];
+      const across = (v: V3): number => (n[0] ? inTower(t, v).a : inTower(t, v).o);
+      const face = brick.filter((tr) => tr.p.every((v) => Math.abs(depth(v) - P) < 1e-6 && v[1] >= st.wall - 1e-6 && v[1] <= st.wall + 4.3 + 1e-6));
+      assert.equal(face.length, 1, `${t.name} ${n}: a gable of one triangle on the stage's face`);
+      const apex = (face[0] as Tri).p.find((v) => Math.abs(v[1] - (st.wall + 4.3)) < 1e-6);
+      assert.ok(apex && Math.abs(across(apex)) < 1e-6, `${t.name} ${n}: 4.3 m to the apex, on the middle line`);
+      close(Math.max(...(face[0] as Tri).p.map((v) => Math.abs(across(v)))), t.side / 2 - 1.0, 1e-6, `${t.name} ${n}: its feet 1 m in from the stage's corners`);
+      const rosette = stone.filter((tr) => tr.p.every((v) => Math.abs(depth(v) - (P + 0.12)) < 1e-6 && Math.abs(across(v)) < 0.46 && Math.abs(v[1] - (st.wall + 1.9)) < 0.46));
+      assert.equal(rosette.length, 6, `${t.name} ${n}: a rosette, an octagon of six triangles`);
+    }
   }
 });
 
@@ -1132,9 +1274,10 @@ test('Midland Grand [hist-c]: each face of the clock tower\'s belfry has two gro
       else panes.push([lo, hi]);
     }
     assert.equal(panes.length, 4, `${n}: four lancets, two groups of two`);
-    // tall: from the group's sill to under its oculus, 4.3 m of the 7.6 m stage, over half of it (the round-3 lancets were 4.0 m)
+    // tall: from the group's sill to under its oculus, over half of the stage (the round-3 lancets were 4.0 m, round 4's 4.3 m)
     const ys = triangles(parts.pane as Batch).filter((tr) => onFace(tr) && tr.p.every((v) => v[1] < lancetTop + 1e-9)).flatMap((tr) => tr.p.map((v) => v[1]));
-    close(Math.max(...ys) - Math.min(...ys), 4.3, 1e-6, `${n}: the lancets are 4.3 m tall`);
+    close(Math.max(...ys) - Math.min(...ys), st.belfry - st.shaft - 3.3, 1e-6, `${n}: the lancets stand from the group's sill to under its oculus, 3.3 m short of the stage`);
+    assert.ok(Math.max(...ys) - Math.min(...ys) > 5, `${n}: about 5 m tall (hist-c: the lights are about 5.5 m), above round 4's 4.3`);
     assert.ok((Math.max(...ys) - Math.min(...ys)) / (st.belfry - st.shaft) > 0.55, `${n}: and fill over half the stage`);
     close((panes[1] as [number, number])[0] - (panes[0] as [number, number])[1], 0.6, 1e-6, `${n}: a 0.6 m shaft between the pair`);
     close((panes[3] as [number, number])[0] - (panes[2] as [number, number])[1], 0.6, 1e-6, `${n}: and between the other pair`);
