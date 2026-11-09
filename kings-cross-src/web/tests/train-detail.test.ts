@@ -3273,6 +3273,11 @@ test('doors: an AT300 driving car has a narrow crew door each side just behind i
         const at = worldPos(d);
         const fromEnd = car.cab === 'front' ? at.z - car.start : car.end - at.z;
         near(fromEnd, nose + ASSUMED.crewDoorFromNose, 1e-6, `${kind} car ${car.index}: the crew door's place behind the car's end`);
+        // CHANGED (mutation: a crew door two metres further back passed, the test reading its place from the table the code reads): the door stands over the cab bogie, a little ahead of its
+        // centre (LUMO-03-Lumo-803004-passes-York-301023, lner-801-214-2025; the bogie is the published 4.455 m from the car's end), so within 0.6 m of it, and its leaf is a narrow one
+        const bogieFromEnd = car.cab === 'front' ? car.bogies[0] - car.start : car.end - car.bogies[1];
+        assert.ok(Math.abs(fromEnd - bogieFromEnd) < 0.6, `${kind} car ${car.index}: the crew door ${fromEnd.toFixed(2)} m from the car's end, the cab bogie ${bogieFromEnd.toFixed(2)} m`);
+        assert.ok(ASSUMED.crewDoorWidth >= 0.55 && ASSUMED.crewDoorWidth <= 0.85, `${kind} car ${car.index}: a crew door ${ASSUMED.crewDoorWidth} m wide`);
         assert.equal(d.userData.width, ASSUMED.crewDoorWidth);
         near(Math.abs(at.x), FIGURES.bodyWidth.value / 2, 1e-9, 'the crew door is on the side of the body');
         // clear of the nose (the section is full width there) and of the first passenger door
