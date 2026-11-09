@@ -310,6 +310,32 @@ test('Great Northern Hotel [hist-a]: a stucco sill course under each of the uppe
   close(Math.max(...cornice.flatMap((t) => t.p.map((v) => distance([v[0], v[2]])))), 0.8, 1e-6, 'the cornice stands 0.8 m out');
 });
 
+test('Great Northern Hotel [hist-a]: each slab stack stands 3.2 m above the roof at its centre, one and a half dormers high', () => {
+  const stone = triangles(hotelGeometry(hotel).stone as Batch);
+  const roof = new THREE.Mesh((hotelGeometry({ ...hotel, faces: [] }).slate as Batch).build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  roof.updateMatrixWorld(true);
+  const tops = stone.filter((t) => geoNormal(t)[1] > 0 && t.p.every((v) => v[1] > hotel.ridge && Math.abs(v[1] - t.p[0][1]) < 1e-9));
+  const key = (v: V3): string => v.map((c) => c.toFixed(6)).join(',');
+  const quads: V3[][] = [];
+  const used = new Set<number>();
+  tops.forEach((a, i) => {
+    if (used.has(i)) return;
+    const j = tops.findIndex((b, k) => k > i && !used.has(k) && b.p.filter((v) => a.p.some((u) => key(u) === key(v))).length === 2);
+    assert.ok(j > i, 'a cap top is a quad of two triangles');
+    used.add(i);
+    used.add(j);
+    quads.push([...new Map([...a.p, ...(tops[j] as Tri).p].map((v) => [key(v), v] as const)).values()]);
+  });
+  assert.equal(quads.length, 6, 'three stacks on each of the two long slopes');
+  for (const q of quads) {
+    assert.equal(q.length, 4);
+    const c: V3 = [q.reduce((s, v) => s + v[0], 0) / 4, 0, q.reduce((s, v) => s + v[2], 0) / 4];
+    const hit = new THREE.Raycaster(new THREE.Vector3(c[0], hotel.ridge + 10, c[2]), new THREE.Vector3(0, -1, 0), 0, 100).intersectObject(roof)[0];
+    assert.ok(hit, 'a roof under the stack');
+    close((q[0] as V3)[1] - hit.point.y, 3.2, 0.01, 'the stack top is 3.2 m above the roof under its middle');
+  }
+});
+
 test('Great Northern Hotel: walls rise to the eaves, the roof to the ridge, and no window is hidden by the cornice', () => {
   const parts = hotelGeometry(hotel);
   close(Math.max(...triangles(parts.brick as Batch).flatMap((t) => t.p.map((v) => v[1]))), hotel.eaves, 1e-9, 'brick to the eaves');
