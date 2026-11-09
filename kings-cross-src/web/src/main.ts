@@ -33,6 +33,8 @@ import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
+import { createStations } from './stations.ts';
+import { resizeViewport } from './viewport.ts';
 
 const data = trackData as unknown as KxData;
 /** A standing train's nose stops this far (metres) north of its buffer stop. */
@@ -178,9 +180,7 @@ function start(): void {
   const resize = (): void => {
     const w = host.clientWidth;
     const h = host.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+    resizeViewport(renderer, camera, w, h);
   };
   window.addEventListener('resize', resize);
   resize();
@@ -205,17 +205,21 @@ function start(): void {
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
   Object.assign(kx, { evidenceBuildTrain: buildTrain });
+  const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
+    kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
+  Object.assign(kx, { stations });
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
       : mode === 'live' ? 'live' : mode === 'demo' ? 'sample trains at the buffers, not live' : 'trains hidden';
     const signals = signalLayer?.counts() ?? { drawn: 0, decoded: 0 };
-    const text = `${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded`;
+    const text = stations.statusText(`${counts} · ${label} · ${connection} · ${trains.length} trains shown · berths unmapped: ${unmapped ?? 'unavailable'} · signals: ${signals.drawn} drawn, ${signals.decoded} decoded`);
     if (status.textContent !== text) status.textContent = text;
     Object.assign(kx.feed, { mode, connection, timeMs: feed?.timeMs() ?? 0 });
   };
   let sampleTimeMs = 0, lastBoardFrame = -Infinity;
   const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now() : feed?.timeMs() ?? 0;
+  Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
     groups: () => trains.map((t) => t.group),
@@ -236,15 +240,17 @@ function start(): void {
   };
   let lastFrame: number | undefined;
   renderer.setAnimationLoop((time) => {
+    resize(); // render at the actual host size even before a queued window.resize event
     const dt = lastFrame === undefined ? 0 : Math.max(0, (time - lastFrame) / 1000); lastFrame = time;
     feed?.advance(dt);
     if (mode === 'demo') sampleTimeMs += dt * 1000;
     if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
     paintStatus();
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
+    stations.frame(time);
     controls.update();
     world.follow(camera);
-    renderer.render(scene, camera);
+    renderer.render(stations.activeScene(), camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's
     if (kx.firstFrameMs === 0) kx.firstFrameMs = performance.now();
   });
@@ -335,6 +341,7 @@ function start(): void {
   window.addEventListener('pagehide', (event) => {
     if (event.persisted) return;
     disposed = true; if (bootstrapTimer !== undefined) clearTimeout(bootstrapTimer);
+    stations.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
   }, { once: true });
 }
