@@ -612,7 +612,16 @@ export function createMotion(graph: Graph, anchors: AnchorMap, opts: MotionOptio
     rememberStep(event, now);
     const destination = anchorMap.get(event.to ?? '');
     const destinationPos = destination ? locate(destination) : undefined;
-    const standing = [...active.values()].find((old) => old !== t && old.description !== description && old.lastBerth === event.to && old.speed === 0 && old.route.length === 0 && old.fadeAt === undefined && destinationPos &&
+    // A train that stepped to its platform's partner berth (1006 -> B006) still stands at
+    // the same stop; an arrival into the numbered berth joins that body, never queues behind it.
+    const partners = (a: string, b?: string): boolean => {
+      if (a === b) return true;
+      const x = anchorMap.get(a), y = anchorMap.get(b ?? '');
+      if (x?.platform === undefined || y?.platform === undefined) return false;
+      const p = locate(x), q = locate(y);
+      return !!p && !!q && p.edge === q.edge && Math.abs(p.t - q.t) < EPS;
+    };
+    const standing = [...active.values()].find((old) => old !== t && old.description !== description && partners(old.lastBerth, event.to) && old.speed === 0 && old.route.length === 0 && old.fadeAt === undefined && destinationPos &&
       Math.hypot(old.pos.point[0] - destinationPos.point[0], old.pos.point[1] - destinationPos.point[1]) < 0.05);
     if (standing) {
       rename(standing, description, event.to!, event.kind); t = standing;

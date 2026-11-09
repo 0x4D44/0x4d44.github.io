@@ -965,3 +965,32 @@ test('a feed observation just ahead of the frame clock cannot overbrighten a fad
   assert.ok(one(m).opacity > 0 && one(m).opacity <= 1);
   m.advance(.011); assert.deepEqual(m.trains(), []);
 });
+// Recording 0 (5S99): the occupier stepped 1006 -> B006, then 5S99 stepped into 1006.
+test('motion: a step into a platform whose partner berth holds a standing train joins that body instead of queueing behind it', () => {
+  const m = createMotion(graph, anchors);
+  m.apply(step('A', 'P', 'FRONT'), 0);
+  for (let i = 0; i < 8000 && !(m.trains()[0]!.state === 'held' && m.trains()[0]!.distanceM > 0); i++) m.advance(0.1);
+  const front = m.trains()[0]!;
+  assert.equal(front.state, 'held');
+  m.apply(step('P', 'P2', 'FRONT'), 0);                 // 1N86 1006 -> B006: same physical stop, lastBerth becomes the alias
+  m.apply(step('A', 'B', 'REAR'), 0); m.advance(5);     // 5S99 approaching
+  m.apply(step('B', 'P', 'REAR'), 0);                   // 5S99 2042 -> 1006
+  m.apply(interpose('P', 'REAR2'), 0);                  // 1S99 interposed 5 s later
+  m.advance(120);                                       // the audit's 120 s threshold
+  const trains = m.trains();
+  assert.equal(trains.length, 1, JSON.stringify(trains.map((t) => ({ d: t.description, v: t.speed, blocked: t.blocked, x: t.leading.point[0] }))));
+  assert.equal(trains[0]!.id, front.id);
+  assert.equal(trains[0]!.description, 'REAR2');
+  assert.deepEqual(trains[0]!.occupied, front.occupied);
+  assert.equal(m.diagnostics().filter((i: { kind: string }) => i.kind === 'merged').length, 1);
+});
+
+test('motion: platform partner berths at different stops still hold two trains', () => {
+  const a = { ...anchors, anchors: [...anchors.anchors, anchor('REAR', 2500, false, '1')] };
+  const m = createMotion(graph, a);
+  m.apply({ kind: 'interpose', area: 'TEST', descr: 'FRONT', to: 'P' }, 0);
+  m.apply({ kind: 'interpose', area: 'TEST', descr: 'REARTRAIN', to: 'REAR' }, 0);
+  assert.equal(m.trains().length, 2);
+  m.advance(30);
+  assert.equal(m.trains().length, 2);
+});
