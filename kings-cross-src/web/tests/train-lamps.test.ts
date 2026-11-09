@@ -16,6 +16,13 @@ interface Lens { role: 'head' | 'tail'; v0: number; v1: number }
 interface LampRec { end: 'front' | 'rear'; interior: boolean; lenses: Lens[] }
 const MODES: TrainLampMode[] = ['head', 'tail', 'off'];
 
+/**
+ * Identity checks that fail with their message only. A failed assert.equal, notEqual or deepEqual prints both operands, and a geometry's or an attribute's buffers run to
+ * megabytes: a mutation that copies one made the failure's own report outgrow the mutation driver's output cap (an OVERCAP, which counts as no kill).
+ */
+const same = (a: unknown, b: unknown, message: string): void => assert.ok(a === b, message);
+const differ = (a: unknown, b: unknown, message: string): void => assert.ok(a !== b, message);
+
 /** The detail meshes of a train's cab cars with what they record of their lamps. */
 function cabs(train: THREE.Object3D): { mesh: THREE.Mesh; rec: LampRec }[] {
   const out: { mesh: THREE.Mesh; rec: LampRec }[] = [];
@@ -129,25 +136,25 @@ test('the switch gives a car\'s detail mesh a geometry of its own (position and 
   const [cloneFront] = cabs(clone).filter((f) => f.rec.end === 'front');
   assert.ok(front && cloneFront);
   const shared = front.mesh.geometry;
-  assert.equal(cloneFront.mesh.geometry, shared, 'a clone shares its source\'s geometry before anyone switches a lamp');
+  same(cloneFront.mesh.geometry, shared, 'a clone shares its source\'s geometry before anyone switches a lamp');
   setTrainLampState(template, { front: 'off', rear: 'head' });
-  assert.notEqual(front.mesh.geometry, shared, 'the switched mesh owns a geometry now');
-  assert.equal(front.mesh.geometry.getAttribute('position'), shared.getAttribute('position'), 'positions are the shared buffer');
-  assert.equal(front.mesh.geometry.getAttribute('normal'), shared.getAttribute('normal'), 'and so are the normals');
-  assert.notEqual(front.mesh.geometry.getAttribute('color'), shared.getAttribute('color'));
-  assert.notEqual(front.mesh.geometry.getAttribute('aGlow'), shared.getAttribute('aGlow'));
+  differ(front.mesh.geometry, shared, 'the switched mesh owns a geometry now');
+  same(front.mesh.geometry.getAttribute('position'), shared.getAttribute('position'), 'positions are the shared buffer');
+  same(front.mesh.geometry.getAttribute('normal'), shared.getAttribute('normal'), 'and so are the normals');
+  differ(front.mesh.geometry.getAttribute('color'), shared.getAttribute('color'), 'the colour buffer is the switched mesh\'s own');
+  differ(front.mesh.geometry.getAttribute('aGlow'), shared.getAttribute('aGlow'), 'and so is the glow buffer');
   // the rewritten buffers are flagged for upload, and the shared ones are not
   assert.ok((front.mesh.geometry.getAttribute('color') as THREE.BufferAttribute).version >= 1, 'the colour buffer is flagged for the GPU');
   assert.ok((front.mesh.geometry.getAttribute('aGlow') as THREE.BufferAttribute).version >= 1, 'and so is the glow buffer');
   assert.equal((shared.getAttribute('color') as THREE.BufferAttribute).version, 0, 'the shared colour buffer was not touched');
   assert.equal((shared.getAttribute('aGlow') as THREE.BufferAttribute).version, 0, 'nor the shared glow buffer');
-  assert.equal(cloneFront.mesh.geometry, shared, 'the clone still has the template\'s original');
+  same(cloneFront.mesh.geometry, shared, 'the clone still has the template\'s original');
   for (const l of cloneFront.rec.lenses) expectLens(cloneFront.mesh, l, 'head', 'the clone\'s front lens');
   // and the clone can be switched on its own, leaving the first train's lamps as they were set
   setTrainLampState(clone, { front: 'tail', rear: 'off' });
   for (const l of front.rec.lenses) expectLens(front.mesh, l, 'off', 'the first train\'s front lens');
   for (const l of cloneFront.rec.lenses) expectLens(cloneFront.mesh, l, 'tail', 'the clone\'s front lens, switched');
-  assert.notEqual(cloneFront.mesh.geometry, front.mesh.geometry);
+  differ(cloneFront.mesh.geometry, front.mesh.geometry, 'the switched clone owns a geometry of its own');
   // a fresh train built after all this is in service state again
   const fresh = cabs(buildTrain('lner5'));
   for (const { mesh, rec } of fresh) for (const l of rec.lenses) expectLens(mesh, l, SERVICE_LAMPS[rec.end], 'a fresh train');
@@ -158,10 +165,10 @@ test('switching to the state a train already shows changes nothing, and the shar
   const meshes = cabs(train).map(({ mesh }) => mesh);
   const geometries = meshes.map((m) => m.geometry);
   setTrainLampState(train, SERVICE_LAMPS);
-  assert.deepEqual(meshes.map((m) => m.geometry), geometries, 'no geometry is copied for a state that is already shown');
+  meshes.forEach((m, i) => same(m.geometry, geometries[i], `no geometry is copied for a state that is already shown (cab ${i})`));
   setTrainLampState(train, { front: 'tail', rear: 'head' });
   setTrainLampState(train, { front: 'tail', rear: 'head' });
-  for (const { mesh } of cabs(train)) assert.equal(mesh.material, plain(), 'the one shared material');
+  for (const { mesh } of cabs(train)) same(mesh.material, plain(), 'the one shared material');
   let meshCount = 0;
   train.traverse((o) => { if ((o as THREE.Mesh).isMesh) meshCount++; });
   assert.equal(meshCount, (() => { let n = 0; buildTrain('gn387x8').traverse((o) => { if ((o as THREE.Mesh).isMesh) n++; }); return n; })(), 'no mesh was added or removed');

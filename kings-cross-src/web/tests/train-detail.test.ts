@@ -10,7 +10,7 @@ import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial,
 import { ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, COVER_RELIEF, END_GAP, FACE_CLEAR, faceSetback, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
-import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, kitRadiusScale, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_RAKE, SKIRT_TUCK, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle } from '../src/train-parts.ts';
 import { clipConvex, col, ellipse, Soup } from '../src/train-geom.ts';
 import { ADELANTE_FACE, AMBER, AMBER_DOOR, BUMPER, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, RECESS_LIFT, YELLOW, boxOutline } from '../src/train-face.ts';
@@ -3076,9 +3076,8 @@ test('roof kit: the tables put every insulator on its own plate, clear of the ot
     const def = ROOF_KITS[style];
     const kit = style === 'azuma' ? bodySpec('at300').roofKit : bodySpec('desiro').roofKit;
     assert.equal(kit?.style, style);
-    const k = kitRadiusScale((kit as { height: number }).height);
-    const half = (i: (typeof def.items)[number]): [number, number] => [KIT_PLATE_HALF[i.kind][0] * k, KIT_PLATE_HALF[i.kind][1] * k];
-    const radius = (i: (typeof def.items)[number]): number => (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k;
+    const half = (i: (typeof def.items)[number]): readonly [number, number] => KIT_PLATE_HALF[i.kind];
+    const radius = (i: (typeof def.items)[number]): number => (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS);
     def.items.forEach((a, ia) => {
       const [hx, hz] = half(a);
       assert.ok(Math.abs(a.x) + hx <= KIT_HALF_WIDTH + 1e-9, `${style} item ${ia}: its plate stands ${(Math.abs(a.x) + hx).toFixed(3)} m out, the roof is flat to ${KIT_HALF_WIDTH}`);
@@ -3133,7 +3132,6 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
       const sx = car.cab === 'rear' ? -1 : 1;
       const [p0, p1] = car.pantograph;
       const nearEdge = dir < 0 ? p0 : p1;
-      const k = kitRadiusScale(kit.height);
       const plateTop = spec.crown + KIT_PLATE_TOP;
       assert.ok(kit.height < spec.coverHeight, `${here}: the kit's ${kit.height} m is under the covers' ${spec.coverHeight} m`);
       // the stretch of roof the covers are cut back from: the pantograph's, and the kit's beyond it
@@ -3154,7 +3152,7 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
       for (const item of def.items) {
         const x = sx * item.x;
         const z = nearEdge + dir * item.u;
-        const [hx, hz] = [KIT_PLATE_HALF[item.kind][0] * k, KIT_PLATE_HALF[item.kind][1] * k];
+        const [hx, hz] = KIT_PLATE_HALF[item.kind];
         for (const cx of [-1, 1]) {
           for (const cz of [-1, 1]) {
             assert.ok(parts.plate.flat().some((v) => near3(v, x + cx * hx, plateTop, z + cz * hz)), `${here}: the plate of the ${item.kind} insulator at (${item.x}, ${item.u}) lacks its corner (${cx}, ${cz})`);
@@ -3163,14 +3161,14 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
         const top = item.kind === 'big' ? spec.crown + kit.height : plateTop + (kit.height - KIT_PLATE_TOP) * 0.6;
         assert.ok(parts.cap.flat().some((v) => near3(v, x, top, z)), `${here}: the ${item.kind} insulator at (${item.x}, ${item.u}) has no cap centre at ${top.toFixed(3)}`);
         // its sheds' widest ring is the radius the tables give, and no vertex of its stack is wider
-        const r = (item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k;
+        const r = item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS;
         const mine = [...parts.shed.flat(), ...parts.cap.flat()].filter((v) => Math.hypot(v.x - x, v.z - z) <= r + 1e-4 && v.y > plateTop + 1e-4);
         assert.ok(mine.length > 0, `${here}: no stack vertices over the plate at (${item.x}, ${item.u})`);
         near(Math.max(...mine.map((v) => Math.hypot(v.x - x, v.z - z))), r, 1e-4, `${here}: the widest shed of the ${item.kind} insulator at (${item.x}, ${item.u})`);
       }
       // no cap or shed anywhere that is not on an item: every stack vertex is within its radius of some item's axis
       for (const v of [...parts.shed.flat(), ...parts.cap.flat()]) {
-        const onItem = def.items.some((i) => Math.hypot(v.x - sx * i.x, v.z - (nearEdge + dir * i.u)) <= (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k + 1e-4);
+        const onItem = def.items.some((i) => Math.hypot(v.x - sx * i.x, v.z - (nearEdge + dir * i.u)) <= (i.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) + 1e-4);
         assert.ok(onItem, `${here}: a stack vertex at (${v.x.toFixed(3)}, ${v.z.toFixed(3)}) is on no insulator`);
       }
       // the cables: a box of ten triangles for each leg of each run (five faces and no bottom: two triangles each)

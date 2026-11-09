@@ -750,7 +750,7 @@ export const ROOF_KITS: Readonly<Record<RoofKitStyle, RoofKitDef>> = {
     ],
   },
 };
-/** A big insulator's sheds' radius, a small one's, and the half-sides of the plate under a big one and the block under a small one (before the kit's scale). */
+/** A big insulator's sheds' radius, a small one's, and the half-sides of the plate under a big one and the block under a small one. */
 export const KIT_BIG_RADIUS = 0.115;
 export const KIT_SMALL_RADIUS = 0.058;
 export const KIT_PLATE_HALF = { big: [0.31, 0.28], small: [0.1, 0.1] } as const;
@@ -763,9 +763,6 @@ export const KIT_HALF_WIDTH = 0.74;
 /** Sheds on a big and on a small insulator, and the sides they are drawn with. */
 const KIT_SHEDS = { big: 3, small: 2 } as const;
 const KIT_SIDES = { big: 8, small: 6 } as const;
-
-/** What a kit of `height` over the crown scales its insulators' and plates' sizes by: full size from 0.12 m up (the electric units' 0.13 m and the Azuma's 0.25 m), a lower one shrinks them, but not below 85 per cent. */
-export const kitRadiusScale = (height: number): number => Math.min(1, Math.max(0.85, height / 0.12));
 
 /** The length a kit takes beyond the pantograph base's near edge: its furthest plate and a margin. */
 export function roofKitReach(style: RoofKitStyle): number {
@@ -808,7 +805,6 @@ function insulator(soup: Soup, x: number, y0: number, z: number, radius: number,
  */
 export function roofKit(soup: Soup, o: { style: RoofKitStyle; p0: number; p1: number; dir: 1 | -1; crown: number; height: number }): void {
   const def = ROOF_KITS[o.style];
-  const k = kitRadiusScale(o.height);
   const near = o.dir < 0 ? o.p0 : o.p1;
   const zAt = (u: number): number => near + o.dir * u;
   const xAt = (x: number): number => -o.dir * x;
@@ -819,9 +815,9 @@ export function roofKit(soup: Soup, o: { style: RoofKitStyle; p0: number; p1: nu
     const [hx, hz] = KIT_PLATE_HALF[item.kind];
     const x = xAt(item.x);
     const z = zAt(item.u);
-    soup.box(x - hx * k, x + hx * k, y0, plateTop, z - hz * k, z + hz * k, plateColour, '-y');
+    soup.box(x - hx, x + hx, y0, plateTop, z - hz, z + hz, plateColour, '-y');
     const stack = o.height - KIT_PLATE_TOP;
-    insulator(soup, x, plateTop, z, (item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS) * k, item.kind === 'big' ? stack : stack * 0.6, KIT_SHEDS[item.kind], KIT_SIDES[item.kind]);
+    insulator(soup, x, plateTop, z, item.kind === 'big' ? KIT_BIG_RADIUS : KIT_SMALL_RADIUS, item.kind === 'big' ? stack : stack * 0.6, KIT_SHEDS[item.kind], KIT_SIDES[item.kind]);
   }
   const cable = col(KIT_COLOURS.cable);
   const w = KIT_CABLE_WIDTH / 2;
