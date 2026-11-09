@@ -18,7 +18,7 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { material } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
@@ -577,7 +577,9 @@ test('addRoofShade: a material with the GLOW_BELOW define has its glow multiplie
   const f = shader.fragmentShader;
   // `looksDown` is declared once in the shade's block, for this hook and the concourse's fill to share: how far down the face seen looks
   const hook = `totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;`;
-  const order = ['#include <lights_fragment_end>', 'float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );', 'reflectedLight.directDiffuse *= roofK.a;', `#ifdef ${GLOW_BELOW}`, hook, '#endif', 'vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'].map((needle) => f.indexOf(needle));
+  // (the `#endif` is the one that closes this hook: the contact shade's block, above it, has its own)
+  const order = ['#include <lights_fragment_end>', 'float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );', 'reflectedLight.directDiffuse *= roofK.a;', `#ifdef ${GLOW_BELOW}`, hook].map((needle) => f.indexOf(needle));
+  order.push(f.indexOf('#endif', f.indexOf(hook)), f.indexOf('vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'));
   assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
   assert.deepEqual([...order].sort((a, b) => a - b), order, 'in the shade\'s block, after the lights are summed and before the emissive joins the output, and only under the define');
   assert.equal(f.split(hook).length - 1, 1, 'once');
@@ -598,6 +600,65 @@ test('addRoofShade: a material with the GLOW_BELOW define has its glow multiplie
     assert.ok(Math.abs(seen(new THREE.Vector3(1, 0, 0).normalize())) < 1e-9 && Math.abs(seen(new THREE.Vector3(0, 0, 1))) < 1e-9, 'a vertical face: none');
     assert.ok(Math.abs(seen(new THREE.Vector3(0, -1, 1).normalize()) - Math.SQRT1_2) < 1e-9, 'a face tilted 45 degrees down: 0.71 of it');
   }
+});
+
+test('addRoofShade: a material with the FOOT_SHADE define has the light it reflects scaled by a contact shade of its height up the wall, after the roof\'s shade and before the concourse\'s fill; one without compiles it away (round five, E2)', () => {
+  assert.equal(FOOT_SHADE, 'FOOT_SHADE');
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  addRoofShade(m);
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  const open = f.indexOf(`#ifdef ${FOOT_SHADE}`);
+  const close = f.indexOf('#endif', open);
+  assert.ok(open > 0 && close > open, 'the block is there, under its define');
+  const block = f.slice(open, close);
+  const fill = f.indexOf('if ( roofK.b < 1.0 )');
+  assert.ok(f.indexOf('reflectedLight.directDiffuse *= roofK.a;') < open && close < fill && fill < f.indexOf('#include <opaque_fragment>'), 'after the roof\'s shade, before the fill (the fill is the concourse\'s, indoors: no wall there has a foot) and the output');
+  assert.equal(block.split('reflectedLight.directDiffuse *= foot;').length - 1, 1, 'the sun\'s light is scaled');
+  assert.equal(block.split('reflectedLight.indirectDiffuse *= foot;').length - 1, 1, 'and the sky\'s');
+  assert.equal(f.split('vMapUv.y').length - 1, 1, 'the height is the wall texture\'s own v, read once, in the block');
+  // the number as the shader has it, run: h is the height up the wall in tiles of its texture (the brick's and the stone's are 0.6 m high, and a wall's v is metres up from its foot)
+  const hExpression = /float h = (.*);/.exec(block)?.[1] ?? '';
+  const footExpression = /float foot = (.*);/.exec(block)?.[1] ?? '';
+  assert.ok(hExpression !== '' && footExpression !== '', `both lines are in the block: ${block}`);
+  const glsl = new Glsl('');
+  const footAt = (v: number): number => glsl.evaluate(footExpression, { vars: {} }, { h: glsl.evaluate(hExpression, { vars: {} }, { vMapUv: [0, v] }) }) as number;
+  const tile = 0.6;
+  assert.ok(footAt(0) > 0.4 && footAt(0) < 0.7, `a dark line where the wall meets the ground: ${footAt(0)}`);
+  assert.equal(footAt(-1), footAt(0), 'a part whose v starts below the foot (a reveal\'s front edge, a plinth sunk in the ground) is no darker than the foot: the sum does not go through zero');
+  let last = 0;
+  for (let v = 0; v <= 40; v += 0.25) {
+    const k = footAt(v);
+    assert.ok(k > last && k < 1, `rising to one and never reaching it: ${k} at ${v} tiles`);
+    last = k;
+  }
+  assert.ok(footAt(0.3 / tile) < 0.85 && footAt(0.6 / tile) > 0.85 && footAt(0.6 / tile) < 0.95, `most of it is in the first half metre: ${footAt(0.3 / tile)}, ${footAt(0.6 / tile)}`);
+  assert.ok(footAt(2.4 / tile) > 0.95 && footAt(12 / tile) > 0.99, 'and what is left is long and slight');
+  // a ground floor's mean (5 m, 8 tiles): the hotel's stone is held to a colour measured in a photograph (E3), and a long, deep fall-off (1 - 0.25 exp( -0.16 h ) - 0.2 exp( -1.25 h ), a mean of
+  // 0.855 over 8 tiles) took 4 L off it where this takes 1.2
+  let mean = 0;
+  for (let i = 0; i < 80; i++) mean += footAt((i + 0.5) / 10) / 80;
+  assert.ok(mean > 0.93, `the ground floor keeps its colour: ${mean}`);
+  // one without the define: it is a preprocessor line, compiled away, and no other line reads `foot`
+  assert.ok(!block.includes('looksDown') && f.split('foot').length - 1 === block.split('foot').length - 1, 'nothing outside the define reads the shade');
+});
+
+test('the walls that stand on the ground have the contact shade, and the Range\'s, held to its measured brick, and the rest of the stock\'s do not (round five, E2)', () => {
+  const find = (name: string): THREE.Material => {
+    const mesh = meshes.find((x) => x.name === name);
+    assert.ok(mesh, `${name} is a mesh of the scene`);
+    return materialsOf(mesh)[0] as THREE.Material;
+  };
+  for (const name of ['shed-front', 'shed-brick', 'shed-stone', 'tower-brick', 'tower-stone', 'landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '' }, `${name}: a wall on the ground`);
+  }
+  // not the Range: its brick is held at (110, 94, 71) by the concourse's fill and the sun, and not the stock the whole city shares (the city's facades have their own, in their shader)
+  for (const name of ['range-brick', 'range-stone', 'landmarks-slate', 'shed-aisle-roofs', 'kxcentral-brick', 'city-stock', 'city-red']) {
+    assert.equal(find(name).defines?.[FOOT_SHADE], undefined, `${name}: no contact shade of this kind`);
+  }
+  assert.equal((material('brick') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'the shared brick is the plain one, for the Range and the rest');
+  assert.equal((material('stone') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'and the shared stone');
 });
 
 test('the real scene holds the concourse\'s soffit as an unlit material named concourse-soffit, the one atmosphere.ts scales against the exposure (round five, E6)', () => {

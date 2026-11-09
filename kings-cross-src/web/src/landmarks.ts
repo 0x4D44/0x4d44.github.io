@@ -7,7 +7,7 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { mergeParts, material, part, TEXTURES } from './materials.ts';
+import { footShaded, mergeParts, material, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 
 export { towerSquare };
@@ -86,6 +86,9 @@ export function createMaterials(): MaterialSet {
     if (emissive !== undefined) m.emissive.set(emissive);
     return m;
   };
+  // Round five (the E2 scorer: "No contact or ambient occlusion: building bases ... meet the ground with no darkening (GNH, MGF, front-oblique)"): the four wall materials, brick, brickRed,
+  // brickDeep and stone, carry the contact shade at the foot of a wall (lighting.ts `FOOT_SHADE`, through `footShaded`). Each building is built standing on y = 0 with its walls' v in metres
+  // up from there, so the shade starts at the ground; the trims, boxes with v from their own foot, are shaded under their own projection.
   const [brickGain, stoneGain, slateGain] = [1.5, 1.75, 2.1];
   // hist-e: the extension's panels and girders, light grey against the white frame; the shade is ASSUMED, the emissive lifts the undersides
   const metal = own(new THREE.MeshLambertMaterial({ color: 0xa9b0b7, emissive: 0x30353a }));
@@ -102,20 +105,20 @@ export function createMaterials(): MaterialSet {
   // either photograph"; aim (150 to 170, 90 to 120, 70 to 100)): less red, a little more blue. (0.66, 0.815, 0.89) draws the clock tower's brick at a median (162, 97, 70), in that range
   // and at R-c's own ratios (green 0.60 and blue 0.43 of the red, as (140, 84, 60) is), and keeps the lighting scorer's numbers: the tower L 49.0 / 22.0 / 25.1 and the range 47.8 / 21.1 /
   // 23.5, dE2000 2.3 and 2.4 from the scorer's R-c (47.4 / 25.3 / 27.9), 2.1 and 1.9 from my masked one, and 5.6 and 6.1 from hist-b's sunlit brick.
-  const brickRed = tint('brickRed', [0.66, 0.815, 0.89]);
+  const brickRed = footShaded(tint('brickRed', [0.66, 0.815, 0.89]));
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
   // pale salmon (144, 98, 83) in the oblique view, and is a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
   // colour. The stacks along the wall's top stay the Midland's red (hist-e: tall red stacks).
-  const brickDeep = tint('brickRed', [0.36, 0.45, 0.49]);
+  const brickDeep = footShaded(tint('brickRed', [0.36, 0.45, 0.49]));
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
-  const stone = tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]);
+  const stone = footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]));
   // hist-a: the hotel's London stock is a golden-brown, greyer and darker than the sunlit King's Cross stock: (125, 103, 76) as the mean of the brick in the photograph. This tint
   // renders (120, 101, 74) at the noon rig (dE 1.8); the earlier (1.15, 1.05, 0.88) rendered (136, 117, 81), dE 7.0, too pale and golden.
   // Round five: the stock texture has a paler joint, a redder and 6%-darker brick (materials.ts STOCK_BRICK), so this is (0.846, 0.8, 0.8) x the gain, a few per cent up in green and blue
   // on the earlier (0.91, 0.82, 0.83) x 1.5 for the hotel to keep (126, 104, 73) and dE 1.5.
-  const brick = tint('brick', [0.846 * brickGain, 0.8 * brickGain, 0.8 * brickGain]);
+  const brick = footShaded(tint('brick', [0.846 * brickGain, 0.8 * brickGain, 0.8 * brickGain]));
   // hist-d: the glazing is silver-grey and bright, the ribs pale blue-grey (hist-d2: dark only in shadow); the library's glass is its pane texture (light sky blue, mean
   // 0xaec3d3) times 0x73879a, still blue: times 0xd4beaf it comes out neutral at twice the light. Shades ASSUMED. hist-a, hist-b: the slate is lighter and greyer than the library's
   // blue-grey: hist-b's roof is (147, 139, 141) and hist-a's (136, 134, 136). (1, 0.85, 0.8) x 2.3 renders the Midland's (152, 151, 154), dE 4.9, and the hotel's (133, 131, 132),

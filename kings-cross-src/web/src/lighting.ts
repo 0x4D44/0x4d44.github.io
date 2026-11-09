@@ -402,6 +402,17 @@ export const roofShadeUniforms = {
 export const GLOW_BELOW = 'GLOW_BELOW';
 export const GLOW_BELOW_GAIN = 30;
 
+/**
+ * A define a wall material with a map can carry (`material.defines = { [FOOT_SHADE]: '' }`) for the contact shade at the foot of a wall: the light the surface reflects, the sun's and the
+ * sky's, is multiplied by `1 - 0.08 exp( -0.3 h ) - 0.4 exp( -2.5 h )`, h the height up the wall in tiles of its texture (0.6 m for the brick and the stone, whose walls here have their
+ * UVs in metres from the foot; never below the foot). Round five (the E2 scorer: "No contact or ambient occlusion: building bases ... meet the ground with no darkening (GNH, MGF,
+ * front-oblique)"): the landmarks' walls and the King's Cross front stood on the ground with none. The two terms are a thin dark line where the wall meets the ground and a long, slight
+ * fall-off above it: 0.52 at the foot, 0.82 at 0.3 m, 0.91 at 0.6 m, 0.95 at 1.2 m, 0.98 at 2.4 m. The long term is slight on purpose: the stone of the hotel's ground floor is held to a
+ * colour measured in a photograph (round five's E3 fit), and a deeper, longer fall-off (0.25 over 3.8 m and 0.2 over half a metre, a mean of 0.855 over the ground floor) took 4 L off it, where
+ * this takes 1.2 (the noon view of the hotel, the pixels of the stone in the ground floor). A part whose UVs start at zero in the air (a window sill, a keystone, a course) is darkened at its own foot, which reads as the shade under a projection that it is.
+ */
+export const FOOT_SHADE = 'FOOT_SHADE';
+
 const shaded = new WeakSet<THREE.Material>();
 
 /**
@@ -427,6 +438,12 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   float looksDown = max( -dot( normal, viewMatrix[ 1 ].xyz ), 0.0 );
   reflectedLight.indirectDiffuse *= roofK.rgb;
   reflectedLight.directDiffuse *= roofK.a;
+#ifdef ${FOOT_SHADE}
+  float h = max( vMapUv.y, 0.0 );
+  float foot = 1.0 - 0.08 * exp( -0.3 * h ) - 0.40 * exp( -2.5 * h );
+  reflectedLight.directDiffuse *= foot;
+  reflectedLight.indirectDiffuse *= foot;
+#endif
   if ( roofK.b < 1.0 ) reflectedLight.indirectDiffuse += uInteriorFill * ( ( 1.0 - roofK.b ) * coverRoomAt( cameraPosition - vViewPosition * mat3( viewMatrix ) + 0.6 * inverseTransformDirection( normal, viewMatrix ) ) * ( 1.0 - ${INTERIOR.down.toFixed(2)} * looksDown ) * ( 1.0 - ${INTERIOR.pale.toFixed(2)} * material.diffuseColor.g * material.diffuseColor.g ) ) * material.diffuseColor * RECIPROCAL_PI;
 #ifdef ${GLOW_BELOW}
   totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;

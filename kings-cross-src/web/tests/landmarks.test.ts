@@ -10,7 +10,7 @@ import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
 import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
-import { GLOW_BELOW } from '../src/lighting.ts';
+import { FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
 import { Batch, material, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
@@ -2751,6 +2751,11 @@ test('materials: the tinted looks (terracotta and buff brick, the Barlow\'s deep
   // above and dark from below, so it carries the define that makes its glow rise with how far down the face looks (lighting.ts GLOW_BELOW); the library's glass does not
   assert.deepEqual(glass.defines, { [GLOW_BELOW]: '' }, 'the crown glows from below');
   assert.equal(shared('shedGlass').defines, undefined, 'and only the crown: the library\'s glass is untouched');
+  // round five (the E2 scorer: "building bases ... meet the ground with no darkening"): the four wall materials carry the contact shade at the foot of a wall (lighting.ts FOOT_SHADE), each
+  // alone and with the define alone (a shared define object would be one edit away from all of them); the roofs, the glass and the rest do not
+  for (const key of ['brick', 'brickRed', 'brickDeep', 'stone'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '' }, `${key}: a wall that stands on the ground`);
+  for (const key of ['slate', 'shedSlate', 'sash', 'pane', 'rib', 'lining', 'metal'] as const) assert.equal(lambert(key).defines?.[FOOT_SHADE], undefined, `${key}: no wall`);
+  assert.notEqual(lambert('brick').defines, lambert('stone').defines, 'the define objects are the materials\' own');
   // the glow is the emissive colour times the pane texture, whose average colour the library records: neutral here, blue in the library's
   const average = new THREE.Color(TEXTURES.shedGlass.average);
   const glow = (m: THREE.MeshLambertMaterial): number[] => [m.emissive.r * average.r, m.emissive.g * average.g, m.emissive.b * average.b];

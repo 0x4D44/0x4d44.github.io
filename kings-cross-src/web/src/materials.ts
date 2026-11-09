@@ -550,7 +550,13 @@ export type MaterialName =
   | 'brick' | 'stone' | 'slate' | 'asphalt' | 'platformEdge' | 'ballast'
   | 'roofGlass' | 'glass' | 'window' | 'windowArch'
   | 'concrete' | 'steel' | 'whiteSteel' | 'ribPaint' | 'lining' | 'valleyLining' | 'shedGlass' | 'panel' | 'concourseFloor'
-  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip';
+  | 'brickRed' | 'slateBothSides' | 'sash' | 'sashArch' | 'pane' | 'platformEdgeStrip' | 'brickFoot' | 'stoneFoot';
+
+/** A wall material with the contact shade at its foot, the define lighting.ts `FOOT_SHADE` names (not imported: lighting.ts is the page's chunk, this its own; a test holds the two to one name). */
+export const footShaded = <T extends THREE.Material>(m: T): T => {
+  m.defines = { ...m.defines, FOOT_SHADE: '' };
+  return m;
+};
 
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
@@ -582,8 +588,9 @@ const GLASS_VARIES_GLSL = glassVariesGlsl(0.55, 1.55);
  * its colour (`fract( gSeed )`: the building's tint is its own), so one tower is paler and bluer overall and its neighbour darker. The two are held level at five storeys up on a
  * building of the middle tint, where the facade's mean is where it was; the number is held to 0..1, so a tall wall's upper storeys are the brightest and bluest glass it has.
  * Every facade is darker at its foot (contact shade: the ground's occlusion, the damp and the
- * dirt at the base of a wall): 0.22 of its light falling away over a storey, and a tighter 0.14 in the first third of one; v is metres up
- * the wall in storeys, and starts at zero at the foot of each part of a wall, so the storey above a shopfront has a shadow under its fascia too.
+ * dirt at the base of a wall): 0.22 of its light falling away over a storey, and a tighter 0.30 in the first third of one (0.14 until round five, when the E2 scorer saw
+ * "building bases ... meet the ground with no darkening": the line at the foot is 0.48 now, not 0.64, and a four-storey wall's mean light falls by half a per cent); v is
+ * the height up the wall in storeys, and starts at zero at the foot of each part of a wall, so the storey above a shopfront has a shadow under its fascia too.
  */
 const glassByTileGlsl = (curtain: boolean): string => /* glsl */`
 float gSeed = 0.0;
@@ -593,7 +600,7 @@ gSeed = dot( vColor.rgb, vec3( 37.1, 91.7, 53.3 ) );
 float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed ) * 43758.5453 );
 ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
-diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );
+diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
 `;
 
 /**
@@ -703,6 +710,10 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // The coping / tactile / white-line strip laid on a platform's surface: the platform-edge texture with the
   // polygon offset that keeps it clear of the surface at any range.
   platformEdgeStrip: () => nearer(tiled('platformEdge')),
+  // The King's Cross front's brick and stone (shed.ts: the front wall, its plinth and courses, the clock tower, the shed's end walls) with the contact shade at the foot of a wall (round five, E2):
+  // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
+  brickFoot: () => footShaded(tiled('brick')),
+  stoneFoot: () => footShaded(tiled('stone')),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();

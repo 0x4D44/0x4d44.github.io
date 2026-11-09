@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
+import { Batch, boxProjectUV, CITY_PAINTERS, cityMaterial, footShaded, IN, material, mergeParts, PAINTERS, part, rgb, rng, TEXTURES, terrainMaterial, texelsPerMetre, texture, wallQuad, windowKey } from '../src/materials.ts';
 import type { PartMap, TextureName, V3 } from '../src/materials.ts';
 import { Glsl } from './glsl.ts';
 
@@ -433,8 +433,8 @@ test('window glass varies from window to window: the decals by their quad, the c
       const order = ['gk = mix( gk, 0.5 + 0.5 * sin(', gradient, 'float gShare'].map((needle) => s.fragmentShader.indexOf(needle));
       assert.ok(order[0] >= 0 && order[0] < order[1] && order[1] < order[2], `${name}: after the smooth field, before the glass takes its number (${order})`);
     }
-    // every facade is darker at its foot: the contact shade of the wall meeting the ground (0.22 over a storey, 0.14 in the first third of one)
-    assert.ok(s.fragmentShader.includes('diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.14 * exp( -8.0 * vMapUv.y );'), `${name}: contact shade at the foot of the wall`);
+    // every facade is darker at its foot: the contact shade of the wall meeting the ground (0.22 over a storey, 0.30 in the first third of one: round five, E2)
+    assert.ok(s.fragmentShader.includes('diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );'), `${name}: contact shade at the foot of the wall`);
   }
   assert.ok(!shader(material('window')).fragmentShader.includes('exp( -vMapUv.y )'), 'a window decal is no wall: it has no foot to darken');
 });
@@ -470,6 +470,24 @@ test('a curtain wall\'s window number rises with the height up the wall and take
   }
   assert.equal(number(1, 0.99, 40), 1, 'the brightest, bluest glass a tall wall has');
   assert.equal(number(0, 0, 0), 0, 'and the darkest, warmest, at the foot');
+});
+
+test('the King\'s Cross front\'s brick and stone carry the contact shade at the foot of a wall; the shared brick and stone, the Western Range\'s, do not, and are otherwise the same (round five, E2)', () => {
+  for (const [footed, plain] of [['brickFoot', 'brick'], ['stoneFoot', 'stone']] as const) {
+    const a = material(footed) as THREE.MeshLambertMaterial;
+    const b = material(plain) as THREE.MeshLambertMaterial;
+    assert.deepEqual(a.defines, { FOOT_SHADE: '' }, `${footed}: the define lighting.ts FOOT_SHADE is`);
+    assert.equal(b.defines, undefined, `${plain}: the shared material is the plain one`);
+    assert.notEqual(a, b, `${footed} is a material of its own`);
+    assert.equal(a.name, footed);
+    assert.equal(a.map, b.map, `${footed}: the same texture as ${plain}`);
+    assert.deepEqual(a.color.toArray(), b.color.toArray(), `${footed}: the same colour`);
+    assert.equal(material(footed), a, 'cached like every material of the library');
+  }
+  // the helper keeps any define the material already had
+  const m = new THREE.MeshLambertMaterial();
+  m.defines = { OTHER: '' };
+  assert.deepEqual(footShaded(m).defines, { OTHER: '', FOOT_SHADE: '' });
 });
 
 test('the stock brick is worn like the close-up (burnt ends, duller grey-brown bricks and none of them green, cracks, chipped corners) and the red brick is drawn as it was (R-lighting-materials-a, -c)', () => {

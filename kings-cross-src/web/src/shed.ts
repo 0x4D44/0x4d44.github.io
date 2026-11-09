@@ -571,7 +571,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
   frontGeo.translate(0, 0, -FRONT_THICK);
-  group.add(mesh(frontGeo, material('brick'), 'shed-front'));
+  group.add(mesh(frontGeo, material('brickFoot'), 'shed-front'));
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
   let plinthStart = -0.4;
@@ -633,8 +633,8 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   // ---- the Western Range -----------------------------------------------------------------------
   if (opts.range !== false) group.add(buildWesternRange());
 
-  group.add(mesh(brick.build(), material('brick'), 'shed-brick'));
-  group.add(mesh(stone.build(), material('stone'), 'shed-stone'));
+  group.add(mesh(brick.build(), material('brickFoot'), 'shed-brick'));
+  group.add(mesh(stone.build(), material('stoneFoot'), 'shed-stone'));
   group.add(mesh(slate.build(), material('slate'), 'shed-aisle-roofs'));
   group.add(mesh(windows.build(), material('sash'), 'shed-windows'));
   group.add(mesh(windowsArch.build(), material('sashArch'), 'shed-front-windows'));
@@ -700,7 +700,7 @@ export function buildTower(x: number): THREE.Group {
   vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
   const arrow: V3[] = [[0.8, vaneY - 0.18, 0], [1.35, vaneY, 0], [0.8, vaneY + 0.18, 0]];
   vane.poly(arrow); vane.poly([...arrow].reverse());
-  tower.add(mesh(tb.build(), material('brick'), 'tower-brick'), mesh(ts.build(), material('stone'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
+  tower.add(mesh(tb.build(), material('brickFoot'), 'tower-brick'), mesh(ts.build(), material('stoneFoot'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
   tower.position.set(x, 0, tw / 2 + 0.15);
   return tower;
 }
