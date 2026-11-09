@@ -33,7 +33,8 @@ test('rendered Scott tint retains its sourced appearance',()=>{
  const built=buildWaverleyCityLandmarks(ground);
  try {
   const scott=built.group.getObjectByName('waverley-scott-monument') as THREE.Mesh;
-  // round 2: lightened from 0x51463d, which rendered near-black (scorer, round 1)
-  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0x8f8172);
+  // round 2: lightened from 0x51463d, which rendered near-black (scorer, round 1). Round 3: 0x8f8172 rendered chocolate brown over the
+  // warm ashlar texture; 0xa6adc9 cancels the texture's cast to a sooted grey-brown (scorer, round 2; SCOTT_STONE's note)
+  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0xa6adc9);
  } finally {built.dispose();}
 });

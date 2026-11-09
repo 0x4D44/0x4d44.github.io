@@ -8,16 +8,21 @@ import type {Terrain} from '../../core/terrain.ts';
 import type {WaverleyScene as WaverleyData} from '../../core/waverley-data.ts';
 import {Batch,material,cityMaterial} from './materials.ts';
 import type {Rgb,MaterialName} from './materials.ts';
-import {centre,fillSurface,meshAdder,pyramid,shell,walls} from './waverley-mesh.ts';
+import {centre,fillSurface,meshAdder,walls} from './waverley-mesh.ts';
 import {cityHeight} from './waverley-city-heights.ts';
-import {roofPlan,roofSurface,roofPeak,withCreases,chimney} from './waverley-city-roofs.ts';
+import {roofPlan,roofSurface,roofPeak,withCreases,chimney,dormer,rectangleOf} from './waverley-city-roofs.ts';
 import {buildWaverleyCityGround,Footprints,LANDUSE} from './waverley-city-ground.ts';
-import {nelsonMonument,nationalColumns,castleWalls,MONUMENT_OMIT_IDS} from './waverley-city-monuments.ts';
+import {Streets,shopBand,shopTexture} from './waverley-city-shops.ts';
+import {nelsonMonument,nationalColumns,castleWalls,obelisk,stGilesCrown,stoneShell,stonePyramid,MONUMENT_OMIT_IDS} from './waverley-city-monuments.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import sceneFile from './data/waverley-scene.json' with {type:'json'};
 import data from './data/waverley-city.json' with {type:'json'};
-/** The walls' tint over the city stone facade (average 0xd2c9b0): about 0x897f72 in all, weathered Craigleith-type sandstone. ASSUMED shade. */
-export const WAVERLEY_CITY_STONE=0x9c9890;
+/** Grey-buff, not tan (lead, round 2). Each tint below is the target albedo over its texture's average colour, channel by channel, so
+ *  the texture's warm cast cancels: the target hue is OSM's building:colour for Edinburgh sandstone (#9d9592 on the Political Martyrs'
+ *  Monument, way/239888879). Brightness is ASSUMED. Facades: over the city stone facade (average 0xd2c9b0) to about 0x7d7774. */
+export const WAVERLEY_CITY_STONE=0x9796a8;
+/** Plain ashlar (materials.ts stone, average 0xa99a7c) to about 0x7d7774, the facades' grey-buff. */
+export const WAVERLEY_CITY_ASHLAR=0xbdc4ee;
 /** Blocks that are not windowed fabric: monuments, towers, columns, churches and ruins, any elevated part (a monument's stage, a
  *  spire's drum) and anything under PLAIN_AREA m2 in plan. They wear plain ashlar (materials.ts stone, 0.6 x 0.3 m blocks). */
 export const PLAIN_KINDS=new Set(['church','chapel','cathedral','ruins','bridge','column','tower','monument','castle','wall','gatehouse','kiosk','toilets']);
@@ -36,7 +41,7 @@ export interface WaverleyCityFabric extends WaverleyCityPart {/** The ids of the
 
 /** The generic city blocks, each footprint extruded from its lowest ground to its OSM (or ASSUMED) height under the roof its OSM
  *  roof tags give (or an ASSUMED pitched roof, waverley-city-roofs.ts); `omitBuildingIds` are drawn by an element. */
-export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>,options:{omitBuildingIds?:Iterable<string>}={}):WaverleyCityFabric {
+export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>&Partial<Pick<Terrain,'heightAt'>>,options:{omitBuildingIds?:Iterable<string>}={}):WaverleyCityFabric {
  const group=new THREE.Group();group.name='waverley-city';
  const stats={triangles:0,drawCalls:0},geometries=new Set<THREE.BufferGeometry>(),add=meshAdder(stats,geometries);
  // Own variants of the shared palette; never mutate the cached shared materials. The walls wear the city's stone facade (ashlar with
@@ -44,8 +49,9 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  // (R-wv3-c, -c3); the shades and the per-block variation are ASSUMED, not a facade survey.
  const sandstone=cityMaterial('stone').clone() as THREE.MeshLambertMaterial;sandstone.color.setHex(WAVERLEY_CITY_STONE);sandstone.vertexColors=true;
  const slate=material('slate').clone() as THREE.MeshLambertMaterial;slate.color.multiply(new THREE.Color(0xada99f));slate.vertexColors=true;
- const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true});
- const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(0xc4b8a4);ashlar.vertexColors=true;
+ const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=new Streets();
+ const foot=ground.heightAt?(p:Pt)=>ground.heightAt!(p[0],p[1]):undefined;
+ const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
  const omitted=new Set(options.omitBuildingIds??[]),buildingIds:string[]=[],heightBasis={OSM:0,LiDAR:0,ASSUMED:0};
  for(const b of city.buildings){
   if(omitted.has(b.id))continue;
@@ -67,11 +73,14 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   // slates vary a little block to block (ASSUMED, R-wv3-c: weathered grey slate, some darker, some bluer)
   for(let i=roofFrom;i<buildingTops.colors.length;i+=3){buildingTops.colors[i]*=roofColor[0];buildingTops.colors[i+1]*=roofColor[1];buildingTops.colors[i+2]*=roofColor[2];}
   for(const c of plan.chimneys)chimney(plainWalls,c,plan.u,plan.eave,color); // stacks are plain ashlar, not windowed fabric
+  for(const d of plan.dormers??[])dormer(plainWalls,buildingTops,d,plan.at,color);
+  if(!plain&&!b.minHeight)shopBand(shops,b.outer,base,plan.eave,streets,foot);
  }
  // Every top is a roof: the cover map (cover.ts ROOF_MESHES) knows this mesh by name.
  add(group,buildings,sandstone,'waverley-building-walls');add(group,plainWalls,ashlar,'waverley-building-ashlar');add(group,buildingTops,slate,'waverley-building-tops');
+ const shopMap=shopTexture(),shopfront=new THREE.MeshLambertMaterial({map:shopMap,color:shopMap?0xffffff:0x5a5650});add(group,shops,shopfront,'waverley-building-shops');
  let disposed=false;
- return {group,stats,omitBuildingIds:[],buildingIds,heightBasis,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();ashlar.dispose();slate.dispose();group.clear();}};
+ return {group,stats,omitBuildingIds:[],buildingIds,heightBasis,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();ashlar.dispose();slate.dispose();shopfront.dispose();shopMap?.dispose();group.clear();}};
 }
 
 /** The Scott Monument's central spire part (OSM 15 to 61.11 m, mapped as walls to 21.11 m under a 40 m pyramid). */
@@ -81,9 +90,12 @@ export const SCOTT_SPIRE='way/445166834';
  *  OSM 61.11 m. Pinnacles (ASSUMED 0.8 m square, 3.5 m tall) stand at each tier's outermost corners. */
 export const SCOTT_TIERS=[{top:29,scale:.86},{top:38,scale:.7},{top:46,scale:.55},{top:52,scale:.42}] as const;
 export const SCOTT_PINNACLE={side:.8,height:3.5} as const;
-/** The Scott Monument's stone: the ashlar texture under a dark, sooted sandstone tone (R-wv3-b: a grey-brown that catches the sun,
- *  near-black only in the hollows). ASSUMED shade. */
-export const SCOTT_STONE=0x8f8172,MONUMENT_STONE=0xcfc6b6;
+/** ASSUMED gallery recess on each tier face (R-wv3-b: an open arcade at each stage, near-black inside): 0.55 of the face wide, from
+ *  1 m over the tier's floor to 1.2 m under its top, 3 cm proud of the face, at 0.16 of the stone's tone. */
+export const SCOTT_GALLERY={width:.55,sill:1,head:1.2,proud:.03,tone:.16} as const;
+/** The Scott Monument's stone over the ashlar texture (average 0xa99a7c): to about 0x6e6962, the sooted Binny sandstone's grey-brown
+ *  that catches the sun (R-wv3-b), darker than the city. The Calton monuments' paler Craigleith stone: to about 0x87837c. ASSUMED. */
+export const SCOTT_STONE=0xa6adc9,MONUMENT_STONE=0xccd9ff;
 let sceneData:ReturnType<typeof unpackWaverleyScene>|undefined;
 const scene=()=>sceneData??=unpackWaverleyScene(sceneFile);
 
@@ -92,27 +104,35 @@ const scene=()=>sceneData??=unpackWaverleyScene(sceneFile);
 export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'heightAt'>&Partial<Terrain>):WaverleyCityPart {
  const group=new THREE.Group();group.name='waverley-city-landmarks';
  const stats={triangles:0,drawCalls:0},geometries=new Set<THREE.BufferGeometry>(),add=meshAdder(stats,geometries);
- const scott=new Batch(),sr=ringOf(data.scott.ring),sb=ground.rangeUnder(sr,2).min;
+ const scott=new Batch({colored:true}),sr=ringOf(data.scott.ring),sb=ground.rangeUnder(sr,2).min;
  for(const p of data.scott.parts){const r=ringOf(p.ring),pitched=['pyramidal','cone'].includes(p.roofShape)&&p.roofHeight>0,wallTop=p.height-(pitched?p.roofHeight:0);
-  if(wallTop>p.minHeight)shell(scott,r,()=>sb+p.minHeight,()=>sb+wallTop);
+  if(wallTop>p.minHeight)stoneShell(scott,r,sb+p.minHeight,sb+wallTop);
   if(!pitched)continue;
-  if(p.id!==SCOTT_SPIRE){pyramid(scott,r,sb+wallTop,sb+p.height);continue;}
+  if(p.id!==SCOTT_SPIRE){stonePyramid(scott,r,sb+wallTop,sb+p.height);continue;}
   const c=centre(r),at=(k:number)=>r.map(q=>[c[0]+(q[0]-c[0])*k,c[1]+(q[1]-c[1])*k] as [number,number]);
   // each tier steps in from the one below; its pinnacles stand on the ledge so left, at the lower tier's four outermost corners
   const pinnacles=(ring:[number,number][],y:number)=>{const h=SCOTT_PINNACLE.side/2;
    for(const [sx,sz]of [[1,1],[1,-1],[-1,1],[-1,-1]]){const q=ring.reduce((m,v)=>(v[0]-c[0])*sx+(v[1]-c[1])*sz>(m[0]-c[0])*sx+(m[1]-c[1])*sz?v:m),d=Math.hypot(q[0]-c[0],q[1]-c[1])||1,o=[q[0]-(q[0]-c[0])/d*h*1.5,q[1]-(q[1]-c[1])/d*h*1.5];
-    const sq:[number,number][]=[[o[0]-h,o[1]-h],[o[0]+h,o[1]-h],[o[0]+h,o[1]+h],[o[0]-h,o[1]+h]];shell(scott,sq,()=>sb+y-.1,()=>sb+y+.6);pyramid(scott,sq,sb+y+.6,sb+y+SCOTT_PINNACLE.height);}};
+    const sq:[number,number][]=[[o[0]-h,o[1]-h],[o[0]+h,o[1]-h],[o[0]+h,o[1]+h],[o[0]-h,o[1]+h]];stoneShell(scott,sq,sb+y-.1,sb+y+.6);stonePyramid(scott,sq,sb+y+.6,sb+y+SCOTT_PINNACLE.height);}};
   let y=wallTop,below=r;
-  for(const t of SCOTT_TIERS){const ring=at(t.scale);shell(scott,ring,()=>sb+y,()=>sb+t.top);pinnacles(below,y);below=ring;y=t.top;}
+  // each tier face carries its gallery: a dark recess (SCOTT_GALLERY) standing for the open arcade R-wv3-b shows at every stage
+  // on each of the four sides of the plan's minimum-area rectangle (the OSM ring is a chamfered square of many short edges)
+  const gallery=(ring:[number,number][],ya:number,yb:number)=>{const {width,sill,head,proud,tone}=SCOTT_GALLERY;if(yb-ya<sill+head+1)return;
+   const R=rectangleOf(ring),v=[-R.u[1],R.u[0]];
+   for(const [ax,half,other]of [[R.u,R.L,R.W],[R.u,R.L,-R.W],[v,R.W,R.L],[v,R.W,-R.L]] as const){const n=ax===R.u?[v[0]*Math.sign(other),v[1]*Math.sign(other)]:[R.u[0]*Math.sign(other),R.u[1]*Math.sign(other)];
+    const m=[R.c[0]+n[0]*(Math.abs(other)+proud),R.c[1]+n[1]*(Math.abs(other)+proud)],h=half*width;
+    const P=(s:number,yy:number):[number,number,number]=>[m[0]+ax[0]*s,yy,m[1]+ax[1]*s];
+    scott.poly([P(-h,ya+sill),P(h,ya+sill),P(h,yb-head),P(-h,yb-head)],undefined,{facing:[n[0],0,n[1]],color:[tone,tone,tone]});}};
+  for(const t of SCOTT_TIERS){const ring=at(t.scale);stoneShell(scott,ring,sb+y,sb+t.top);gallery(ring,sb+y,sb+t.top);pinnacles(below,y);below=ring;y=t.top;}
   pinnacles(below,y);
-  pyramid(scott,at(SCOTT_TIERS.at(-1)!.scale),sb+y,sb+p.height);
+  stonePyramid(scott,at(SCOTT_TIERS.at(-1)!.scale),sb+y,sb+p.height);
  }
- const stone=material('stone').clone() as THREE.MeshLambertMaterial;stone.color.setHex(SCOTT_STONE);
+ const stone=material('stone').clone() as THREE.MeshLambertMaterial;stone.color.setHex(SCOTT_STONE);stone.vertexColors=true;
  add(group,scott,stone,'waverley-scott-monument');
  const parts=new Map(scene().buildings.filter(b=>MONUMENT_OMIT_IDS.includes(b.id)).map(b=>[b.id,b]));
- const monuments=new Batch();nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);
+ const monuments=new Batch({colored:true});nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);obelisk(monuments,parts,ground);stGilesCrown(monuments,parts,ground);
  castleWalls(monuments,LANDUSE.castleWalls,ground);
- const pale=material('stone').clone() as THREE.MeshLambertMaterial;pale.color.setHex(MONUMENT_STONE);
+ const pale=material('stone').clone() as THREE.MeshLambertMaterial;pale.color.setHex(MONUMENT_STONE);pale.vertexColors=true;
  add(group,monuments,pale,'waverley-city-monuments');
  // The ground's land use and the trees, over the drawn terrain (a full terrain only: the real scene, not a test stub). Trees keep
  // clear of every mapped building and roof outline, whichever element draws it.

@@ -5,9 +5,9 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildWaverleyScene} from '../src/waverley-scene.ts';
 import {LANDUSE,Footprints,placeTrees,slopeOf,crownDepth,SCRUB_MAX_SLOPE_DEG,FILL_STEP} from '../src/waverley-city-ground.ts';
-import {castleWalls,castleWallSection,BATTLEMENT,NATIONAL_COLUMNS,MONUMENT_OMIT_IDS,NELSON,CASTLE_WALL} from '../src/waverley-city-monuments.ts';
-import {buildWaverleyCityLandmarks} from '../src/waverley-city.ts';
-import {Batch} from '../src/materials.ts';
+import {castleWalls,castleWallSection,walkSlopeDeg,BATTLEMENT,NATIONAL_COLUMNS,MONUMENT_OMIT_IDS,NELSON,CASTLE_WALL} from '../src/waverley-city-monuments.ts';
+import {buildWaverleyCityLandmarks,WAVERLEY_CITY_STONE,WAVERLEY_CITY_ASHLAR,SCOTT_STONE,MONUMENT_STONE} from '../src/waverley-city.ts';
+import {Batch,TEXTURES,CITY_TEXTURES} from '../src/materials.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import sceneFile from '../src/data/waverley-scene.json' with {type:'json'};
 
@@ -72,4 +72,24 @@ test('the Castle walls follow their OSM lines on Castle Rock, battlemented, with
  for(const w of LANDUSE.castleWalls)for(let i=1;i<w.line.length;i++){const a=w.line[i-1],q=w.line[i],l=Math.hypot(q[0]-a[0],q[1]-a[1]);if(!l)continue;const n:[number,number]=[-(q[1]-a[1])/l,(q[0]-a[0])/l];
   for(let s=0;s<=l;s+=1){const p:[number,number]=[a[0]+(q[0]-a[0])*s/l,a[1]+(q[1]-a[1])*s/l],sec=castleWallSection(scene.terrain,p,n,CASTLE_WALL.curtain);
    for(const k of [-1,1])assert.ok(sec.lo<scene.terrain.heightAt(p[0]+n[0]*k*CASTLE_WALL.thickness/2,p[1]+n[1]*k*CASTLE_WALL.thickness/2),'the foot is in the ground');}}
+});
+
+test('the stone is grey-buff, not tan: each tint cancels its texture’s warm cast to the OSM sandstone hue (#9d9592)',()=>{
+ const ch=(h:number)=>[(h>>16)&255,(h>>8)&255,h&255];
+ for(const [name,tint,avg]of [['facade',WAVERLEY_CITY_STONE,CITY_TEXTURES.stone.average],['ashlar',WAVERLEY_CITY_ASHLAR,TEXTURES.stone.average],['Scott',SCOTT_STONE,TEXTURES.stone.average],['Calton',MONUMENT_STONE,TEXTURES.stone.average]] as const){
+  const [r,g,b]=ch(avg).map((a,i)=>a*ch(tint)[i]/255);
+  // #9d9592: red over blue 1.075, green over blue 1.02; allow a little either way
+  assert.ok(r/b>1&&r/b<1.15&&g/b>.97&&g/b<1.1,`${name} renders ${[r,g,b].map(Math.round)}, not grey-buff`);
+ }
+});
+
+test('no Castle wall runs down the crag: where a mapped wall climbs steeper than CASTLE_WALL.maxSlopeDeg it is cut',()=>{
+ const b=new Batch();castleWalls(b,LANDUSE.castleWalls,scene.terrain);
+ // the wall's walk (its upward faces) follows its ground: none may tilt further than the cut
+ let steep=0,cut=0;for(const w of LANDUSE.castleWalls)for(let i=1;i<w.line.length;i++){const a=w.line[i-1],q=w.line[i];if(walkSlopeDeg(a,scene.terrain.heightAt(...a),q,scene.terrain.heightAt(...q))>CASTLE_WALL.maxSlopeDeg)cut++;}
+ assert.ok(cut>0,'some mapped wall does run down the crag');
+ const P=b.positions,cos=Math.cos((CASTLE_WALL.maxSlopeDeg+5)*Math.PI/180);
+ for(let t=0;t<b.indices.length;t+=3){const [i,j,k]=[0,1,2].map(n=>b.indices[t+n]*3),u=[P[j]-P[i],P[j+1]-P[i+1],P[j+2]-P[i+2]],v=[P[k]-P[i],P[k+1]-P[i+1],P[k+2]-P[i+2]];
+  const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],l=Math.hypot(...n);if(!l)continue;const ny=Math.abs(n[1])/l;if(ny>.05&&ny<cos)steep++;}
+ assert.equal(steep,0,`${steep} drawn edges climb a crag face`);
 });

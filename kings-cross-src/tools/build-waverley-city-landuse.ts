@@ -101,15 +101,17 @@ for(const {w,p}of pathPts){const mids=p.slice(1).map((q,i):Pt=>[(q[0]+p[i][0])/2
 const castle=pts(get(4301292).nodes!)!,castleWalls:[number,number[]][]=[];
 for(const e of all.values()){const t=e.tags??{};if(e.type!=='way'||!e.nodes||t.barrier!=='wall'&&t.barrier!=='retaining_wall'&&t.barrier!=='city_wall')continue;
  const p=pts(e.nodes);if(!p||p.filter(q=>pip(q,castle)).length*2<=p.length)continue;castleWalls.push([t.wall==='castle_wall'?1:0,enc(dp(p,1))]);}
-const trees:number[]=[];
-for(const e of all.values())if(e.type==='node'&&e.tags?.natural==='tree'&&e.lat!==undefined&&e.lon!==undefined){const p=project(e.lat,e.lon!,origin) as Pt;if(inBox(p,0))trees.push(Math.round(p[0]/Q),Math.round(p[1]/Q));}
-// trees as one delta run, sorted west to east for compression
-const pairs:[number,number][]=[];for(let i=0;i<trees.length;i+=2)pairs.push([trees[i],trees[i+1]]);pairs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
-const treeRun:number[]=[];{let px=0,pz=0;for(const [x,z]of pairs){treeRun.push(x-px,z-pz);px=x;pz=z;}}
+// mapped trees, with the two size tags OSM carries here: leaf_type (needleleaved is narrow) and height (m)
+const pairs:[number,number,string,number][]=[];
+for(const e of all.values())if(e.type==='node'&&e.tags?.natural==='tree'&&e.lat!==undefined&&e.lon!==undefined){const p=project(e.lat,e.lon!,origin) as Pt;
+ if(inBox(p,0))pairs.push([Math.round(p[0]/Q),Math.round(p[1]/Q),e.tags.leaf_type??'',Number(e.tags.height)>0?Number(e.tags.height):0]);}
+// trees as one delta run, sorted west to east for compression; treeTags: [index in the run, 1 if needleleaved else 0, height m or 0]
+pairs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+const treeRun:number[]=[],treeTags:number[][]=[];{let px=0,pz=0;pairs.forEach(([x,z,leaf,h],i)=>{treeRun.push(x-px,z-pz);px=x;pz=z;if(leaf==='needleleaved'||h)treeTags.push([i,leaf==='needleleaved'?1:0,h]);});}
 const out={
  attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',
  source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); land use, leisure and natural areas, highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff and barrier=city_wall ways, and the walls inside the Edinburgh Castle precinct (way/4301292)',
- q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,cliffs,walls,castleWalls,
+ q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,treeTags,cliffs,walls,castleWalls,
 };
 const json=JSON.stringify(out)+'\n';
 writeFileSync('web/src/data/waverley-city-landuse.json',json);

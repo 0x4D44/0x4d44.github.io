@@ -22,6 +22,11 @@ export const ROOF_ASSUMED={pitchDeg:40,maxRise:4.5,maxArea:3000,maxHeight:30,ski
 /** Chimney stacks: ASSUMED Edinburgh tenement gable and party-wall stacks, 2.4 m across the ridge, 0.9 m along it, 1.4 m above it,
  *  one at each gable end and one about every CHIMNEY.spacing along the ridge (every second or third tenement frontage; ASSUMED). Only on pitched residential-kind roofs. */
 export const CHIMNEY={across:2.4,along:.9,above:1.4,spacing:18} as const;
+/** Dormers: ASSUMED from R-wv3-c and -c3 (a line of dormers on the tenement and terrace roofs seen from Calton Hill): 1.4 m wide, the
+ *  front 1.5 m tall standing DORMER.setback m up the slope from the eave line, under a small 0.5 m gable; one every DORMER.spacing along
+ *  each slope of a sharp-ridged pitched residential-kind roof whose rise is at least DORMER.minRise, clear of the hips, the gable ends
+ *  and the chimney stacks. */
+export const DORMER={width:1.4,height:1.5,gable:.5,setback:.9,spacing:6,minRise:3.2,clear:2.5} as const;
 const CHIMNEY_KINDS=new Set(['yes','residential','apartments','house','terrace','tenement','hotel','church','school','university','public','civic','dormitory','detached','semidetached_house','government']);
 interface Line {n:Pt;o:number}
 export interface RoofPlan {
@@ -33,6 +38,8 @@ export interface RoofPlan {
  assumed:boolean;
  /** Chimney stack centres with their ridge height, and the ridge direction. */
  chimneys:{x:number;z:number;y:number}[];u:Pt;
+ /** Dormers: the centre of each one's front face on the roof, and the unit direction it looks (down the slope). */
+ dormers?:{x:number;z:number;y:number;n:Pt}[];
 }
 /** The minimum-area rectangle of a ring: centre, unit long axis u, half-length L along it, half-width W across it. */
 export function rectangleOf(r:readonly Pt[]):{c:Pt;u:Pt;L:number;W:number}{
@@ -95,7 +102,32 @@ export function roofPlan(b:RoofInput,base:number):RoofPlan{
   for(let i=0;i<=n;i++){const ee=-ends+2*ends*i/n,x=c[0]+u[0]*ee,z=c[1]+u[1]*ee;
    if(pip(x,z,outer)&&!b.holes.some(h=>pip(x,z,h)))chimneys.push({x,z,y:at(x,z)});}
  }
- return {shape:'planes',at,eave,top,creases,assumed,chimneys,u};
+ const dormers:{x:number;z:number;y:number;n:Pt}[]=[];
+ if(b.kind==='building'&&CHIMNEY_KINDS.has(kind)&&w<=.01&&rise>=DORMER.minRise){
+  const reach=(hipped?L-rise/s:L)-DORMER.clear,n=Math.floor(2*reach/DORMER.spacing);
+  for(let i=0;i<=n&&reach>0;i++){const ee=-n*DORMER.spacing/2+i*DORMER.spacing;if(chimneys.some(ch=>Math.abs((ch.x-c[0])*u[0]+(ch.z-c[1])*u[1]-ee)<DORMER.clear))continue;
+   for(const side of [1,-1]){const dd=side*(W-DORMER.setback),x=c[0]+u[0]*ee+v[0]*dd,z=c[1]+u[1]*ee+v[1]*dd,hw=DORMER.width/2,back=DORMER.height/s;
+    // every corner of the dormer, front and back, inside the plan
+    const corners=[[-hw,0],[hw,0],[-hw,back],[hw,back]].map(([a,k])=>[x+u[0]*a-v[0]*side*k,z+u[1]*a-v[1]*side*k] as Pt);
+    if(corners.every(q=>pip(q[0],q[1],outer)&&!b.holes.some(h=>pip(q[0],q[1],h))))dormers.push({x,z,y:at(x,z),n:[v[0]*side,v[1]*side]});}}
+ }
+ return {shape:'planes',at,eave,top,creases,assumed,chimneys,u,dormers};
+}
+/** A dormer: its front (in `front`, the walls' batch) from the roof up DORMER.height, its cheeks and its little gabled roof (in `roof`,
+ *  the slates), the cheeks and roof running back up the slope until they meet the roof plane. */
+export function dormer(front:Batch,roof:Batch,d:{x:number;z:number;y:number;n:Pt},at:(x:number,z:number)=>number,color:Rgb):void{
+ const n=d.n,t:Pt=[-n[1],n[0]],hw=DORMER.width/2,top=d.y+DORMER.height,ridge=top+DORMER.gable;
+ // how far back up the slope the roof reaches the dormer's eave and its ridge (the slope is one plane there: below the roof's ridge)
+ const grade=at(d.x-n[0],d.z-n[1])-d.y,backTo=(y:number)=>(y-d.y)/grade;
+ const kt=backTo(top),kr=backTo(ridge);
+ const P=(a:number,k:number,y:number):V3=>[d.x+t[0]*a-n[0]*k,y,d.z+t[1]*a-n[1]*k];
+ const Y=(a:number,k:number)=>at(d.x+t[0]*a-n[0]*k,d.z+t[1]*a-n[1]*k);
+ const facing:V3=[n[0],0,n[1]];
+ front.poly([P(-hw,0,Y(-hw,0)),P(hw,0,Y(hw,0)),P(hw,0,top),P(-hw,0,top)],[[0,0],[DORMER.width,0],[DORMER.width,DORMER.height],[0,DORMER.height]],{facing,color});
+ front.poly([P(-hw,0,top),P(hw,0,top),P(0,0,ridge)],undefined,{facing,color});
+ for(const sa of [-1,1]){const side:V3=[t[0]*sa,0,t[1]*sa];
+  roof.poly([P(sa*hw,0,Y(sa*hw,0)),P(sa*hw,0,top),P(sa*hw,kt,top)],undefined,{facing:side});
+  roof.poly([P(sa*hw,0,top),P(0,0,ridge),P(0,kr,ridge),P(sa*hw,kt,top)],undefined,{facing:[t[0]*sa,1,t[1]*sa]});}
 }
 
 /** Insert the points where each crease crosses the ring's edges, so a wall's top follows the roof exactly. */
