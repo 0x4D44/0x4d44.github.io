@@ -15,6 +15,10 @@ scratch = Path(sys.argv[2]).resolve()
 scratch.mkdir(parents=True, exist_ok=True)
 
 MUTATIONS = [
+    ('removed anchor step inventory is omitted', 'seen: new Map(observationInventory(recordings, builtMap.area).map(({ berth, observations }) => [berth, observations.step]))', 'seen: new Map()'),
+    ('geographic review is omitted from candidate map', 'const candidateMap = geographicReview?.map ?? builtMap;', 'const candidateMap = builtMap;'),
+    ('geographic evidence provenance is omitted', "...(geographicSourceHash ? [geographicSourceHash] : []),", ''),
+    ('geographic decisions are omitted from report', '...(geographicEvidence ? { geographicEvidence } : {}),', ''),
     ('preserve mode adopts candidate anchor geometry', 'anchors: previous.anchors,', 'anchors: candidate.anchors,'),
     ('candidate-only placement loses pending reason', "reason: 'no-evidence' as const,\n    detail: `Candidate-pending-validation:", "reason: 'conflict' as const,\n    detail: `Candidate-pending-validation:"),
     ('position displacement is erased', 'displacementM: Math.hypot(next.point[0] - old.point[0], next.point[1] - old.point[1])', 'displacementM: 0'),

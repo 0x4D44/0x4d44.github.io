@@ -1,7 +1,7 @@
 // Evidence-led TD berth placement. Missing evidence stays visible instead of becoming a guess.
 import { NOT_A_TRAIN } from './anchors.ts';
 import type { AnchorMap, BerthAnchor, UnmappedBerth } from './anchors.ts';
-import { dist } from './geo.ts';
+import { dist, project } from './geo.ts';
 import type { Pt } from './geo.ts';
 import { buildGraph, shortestPath, snap } from './graph.ts';
 import type { Graph, Edge } from './graph.ts';
@@ -14,6 +14,107 @@ export interface RecordingEvent {
 }
 export interface SmartRow { [key: string]: unknown }
 export interface AnchorOptions { area?: string; sources?: string[]; nominalSpeedMps?: number; calibrate?: boolean }
+
+export interface GeographicSignal {
+  osmId: number;
+  ref: string;
+  lat: number;
+  lon: number;
+  northOfBoundaryM: number;
+  url: string;
+}
+export interface GeographicDecision {
+  berth: string;
+  before: string;
+  after: string;
+  status: 'outside-network' | 'boundary-straddle' | 'not-north-outside' | 'no-matching-ref' | 'ambiguous-ref' | 'platform-starter-reference';
+  signals: GeographicSignal[];
+  detail: string;
+}
+
+/**
+ * A named junction locates that junction, never both endpoints of its SMART rows.
+ * Review exact YA identities independently AFTER calibration: no new inference seed,
+ * snapping hint or train-speed estimate may bypass the leave-one-out/straddle rules.
+ */
+export function reviewGeographicEvidence(data: KxData, map: AnchorMap, document: unknown,
+  options: { source: string; errorM?: number; seen?: ReadonlyMap<string, number> }) {
+  const errorM = options.errorM ?? 50;
+  if (!Number.isFinite(errorM) || errorM < 15 || !options.source?.trim()) throw new Error('invalid geographic evidence options');
+  if (!document || typeof document !== 'object' || !Array.isArray((document as { elements?: unknown }).elements)) throw new Error('geographic evidence must be an Overpass document');
+  if ((document as { remark?: unknown }).remark) throw new Error('incomplete Overpass evidence: server reported a remark');
+  const elements = (document as { elements: unknown[] }).elements;
+  if (elements.length > 100000) throw new Error('geographic evidence exceeds feature limit');
+  const northZ = Math.min(...data.nodes.map((node) => node[2]));
+  if (!Number.isFinite(northZ)) throw new Error('geographic evidence needs a finite graph boundary');
+  const signals = new Map<string, GeographicSignal[]>();
+  const namedLocations: (GeographicSignal & { name: string; tiploc: string | null })[] = [];
+  let signalNodes = 0, referencedSignals = 0, otherRefSignals = 0;
+  for (const element of elements) {
+    if (!element || typeof element !== 'object') continue;
+    const e = element as { type?: unknown; id?: unknown; lat?: unknown; lon?: unknown; tags?: Record<string, unknown> };
+    if (e.type !== 'node' || !e.tags || typeof e.tags !== 'object' || Array.isArray(e.tags)) continue;
+    const isSignal = e.tags.railway === 'signal';
+    const isJunction = e.tags.railway === 'junction' && typeof e.tags.name === 'string';
+    if (!isSignal && !isJunction) continue;
+    if (!Number.isSafeInteger(e.id) || Number(e.id) <= 0 || typeof e.lat !== 'number' || !Number.isFinite(e.lat) || Math.abs(e.lat) > 90 ||
+      typeof e.lon !== 'number' || !Number.isFinite(e.lon) || Math.abs(e.lon) > 180) throw new Error('invalid geographic node identity or coordinate');
+    const point = project(e.lat, e.lon, data.origin);
+    const ref = typeof e.tags.ref === 'string' ? e.tags.ref : '';
+    const fact: GeographicSignal = { osmId: Number(e.id), ref, lat: e.lat, lon: e.lon, northOfBoundaryM: northZ - point[1],
+      url: `https://www.openstreetmap.org/node/${e.id}` };
+    if (isJunction) namedLocations.push({ ...fact, name: String(e.tags.name), tiploc: typeof e.tags['ref:tiploc'] === 'string' ? e.tags['ref:tiploc'] : null });
+    if (!isSignal) continue;
+    signalNodes++;
+    if (ref) referencedSignals++;
+    const match = /^YA\s*(\d{4})$/i.exec(ref);
+    if (!match) { if (ref) otherRefSignals++; continue; }
+    const group = signals.get(match[1]!) ?? [];
+    const prior = group.find((item) => item.osmId === fact.osmId);
+    if (prior && (prior.lat !== fact.lat || prior.lon !== fact.lon)) throw new Error('geographic node has contradictory coordinates');
+    if (!prior) group.push(fact);
+    signals.set(match[1]!, group);
+  }
+  const decisions: GeographicDecision[] = [];
+  const remove = new Set<string>();
+  const unmapped = new Map(map.unmapped.map((item) => [item.berth, { ...item }]));
+  const inventory = [...map.unmapped, ...map.anchors.filter((a) => signals.has(a.berth))];
+  for (const item of inventory) {
+    const matching = signals.get(item.berth) ?? [];
+    const before = 'reason' in item ? item.reason : item.kind;
+    let status: GeographicDecision['status'] = 'no-matching-ref';
+    let detail = `No exact YA reference in ${options.source} locates this berth. Named junctions, numeric K-ref suffixes and observed connectivity do not locate it or prove an outside interval`;
+    if (matching.length > 1) {
+      status = 'ambiguous-ref'; detail = 'Multiple OSM nodes carry the same YA identity; no unique geographic placement is established';
+    } else if (matching.length === 1) {
+      const signal = matching[0]!;
+      const source = `OSM node ${signal.osmId}, ref ${JSON.stringify(signal.ref)}, (${signal.lat}, ${signal.lon}), ${signal.url}; ${signal.northOfBoundaryM.toFixed(1)} m north of graph boundary`;
+      if ('kind' in item && item.kind === 'platform') {
+        status = 'platform-starter-reference'; detail = `${source}. A platform YA ref identifies its departure starter, not the nose-to-buffer arrival anchor`;
+      } else if (signal.northOfBoundaryM > errorM) {
+        status = 'outside-network';
+        detail = `${source}; exceeds the ${errorM} m positional screening assumption. Exact YA identity is treated as current, as for existing OSM ref matches; no surveyed accuracy or independent operational ref-date is asserted`;
+        const prior = 'detail' in item ? item.detail : `${item.kind} anchor: ${item.evidence}`;
+        unmapped.set(item.berth, { berth: item.berth, seen: 'seen' in item ? item.seen : options.seen?.get(item.berth) ?? 0, reason: 'outside-network', detail: `${detail}. Previous evidence: ${prior}` });
+        if ('kind' in item) remove.add(item.berth);
+      } else if (signal.northOfBoundaryM >= -errorM) {
+        status = 'boundary-straddle'; detail = `${source}; its +/- ${errorM} m screening interval straddles or touches the cut. Outside status is not established`;
+      } else {
+        status = 'not-north-outside'; detail = `${source}; it does not establish a position beyond the north cut. Coordinate inside the geographic envelope alone does not establish a route on the graph`;
+      }
+    }
+    if (status !== 'outside-network' && 'reason' in item) unmapped.get(item.berth)!.detail += `. Geographic review: ${detail}`;
+    decisions.push({ berth: item.berth, before, after: status === 'outside-network' ? 'outside-network' : before, status, signals: matching, detail });
+  }
+  const result: AnchorMap = { ...map, sources: [...map.sources, `OSM geographic review: ${options.source}; ${errorM} m positional screening assumption; exact YA refs only`],
+    anchors: map.anchors.filter((a) => !remove.has(a.berth)), unmapped: [...unmapped.values()].sort((a, b) => a.berth.localeCompare(b.berth)) };
+  return { map: result, decisions, namedLocations, summary: { signalNodes, referencedSignals, yaSignals: [...signals.values()].reduce((n, group) => n + group.length, 0), otherRefSignals,
+    screeningErrorM: errorM, assumption: '50 m default is a conservative screening allowance, not measured OSM accuracy; YA reference identity is assumed current',
+    outsideDecisions: decisions.filter((d) => d.status === 'outside-network').length, removedAnchors: remove.size,
+    straddlingDecisions: decisions.filter((d) => d.status === 'boundary-straddle').length,
+    matchedBerths: decisions.filter((d) => d.signals.length > 0).length, noRefDecisions: decisions.filter((d) => d.status === 'no-matching-ref').length,
+    namedLocations: namedLocations.length, propagation: 'none: named SMART locations and observed chains never seed geographic reclassification' } };
+}
 export interface SignalTrial {
   berth: string; signalId: number; role: 'berth' | 'starter'; placed: boolean;
   /** Only an OSM YA ref establishes identity independently of this placement algorithm. */

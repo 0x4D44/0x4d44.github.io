@@ -13,7 +13,7 @@ import { gunzipSync } from 'node:zlib';
 import { NOT_A_TRAIN } from '../core/anchors.ts';
 import { buildGraph } from '../core/graph.ts';
 import { unproject } from '../core/geo.ts';
-import { analyseSteps, auditBerths, buildAnchors, describeEvidence, leaveOneOut } from '../core/berths.ts';
+import { analyseSteps, auditBerths, buildAnchors, describeEvidence, leaveOneOut, reviewGeographicEvidence } from '../core/berths.ts';
 import type { BerthAudit, RecordingEvent, SignalTrial, SmartRow } from '../core/berths.ts';
 import type { AnchorKind, AnchorMap, UnmappedReason } from '../core/anchors.ts';
 import type { KxData } from '../core/osm.ts';
@@ -24,6 +24,7 @@ interface CliArgs {
   out: string;
   previous?: string;
   graph?: string;
+  geographicEvidence?: string;
   preservePositions: boolean;
 }
 
@@ -39,6 +40,7 @@ function parseArgs(argv: string[]): CliArgs {
   let out: string | undefined;
   let previous: string | undefined;
   let graph: string | undefined;
+  let geographicEvidence: string | undefined;
   let preservePositions = false;
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -48,7 +50,7 @@ function parseArgs(argv: string[]): CliArgs {
       preservePositions = true;
       continue;
     }
-    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous' && flag !== '--graph') {
+    if (flag !== '--recording' && flag !== '--smart' && flag !== '--out' && flag !== '--previous' && flag !== '--graph' && flag !== '--geographic-evidence') {
       throw new Error(`unknown option ${flag ?? ''}; ${usage()}`);
     }
     const value = argv[i + 1];
@@ -61,6 +63,9 @@ function parseArgs(argv: string[]): CliArgs {
     } else if (flag === '--previous') {
       if (previous !== undefined) throw new Error('--previous may be given once');
       previous = value;
+    } else if (flag === '--geographic-evidence') {
+      if (geographicEvidence !== undefined) throw new Error('--geographic-evidence may be given once');
+      geographicEvidence = value;
     } else if (flag === '--graph') {
       if (graph !== undefined) throw new Error('--graph may be given once');
       graph = value;
@@ -72,11 +77,11 @@ function parseArgs(argv: string[]): CliArgs {
 
   if (recordings.length === 0 || !smart || !out) throw new Error(usage());
   if (preservePositions && !previous) throw new Error('--preserve-positions requires --previous');
-  return { recordings, smart, out, previous, graph, preservePositions };
+  return { recordings, smart, out, previous, graph, geographicEvidence, preservePositions };
 }
 
 function usage(): string {
-  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>] [--preserve-positions] [--graph <kx-track.json>]';
+  return 'usage: node tools/berths.ts --recording <td.ndjson> [--recording <td.ndjson> ...] --smart <smart.json.gz> --out <dir-inside-worktree-.scratch-or-KX_DATA_DIR> [--previous <anchors.json>] [--preserve-positions] [--graph <kx-track.json>] [--geographic-evidence <overpass.json>]';
 }
 
 function isWithinOrEqual(parent: string, candidate: string): boolean {
@@ -435,7 +440,7 @@ function graphBounds(data: KxData): {
 
 async function sourceHash(file: string, role: string): Promise<{ role: string; file: string; bytes: number; sha256: string }> {
   const bytes = await readFile(file);
-  return { role, file: path.basename(file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
+  return { role, file: role === 'geographic-evidence' ? file : path.basename(file), bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
 }
 
 function candidatePlacementSummary(candidate: AnchorMap, previous?: AnchorMap): { status: 'not-preserving' | 'pending-validation'; berths: string[]; count: number } {
@@ -539,6 +544,7 @@ function buildReport(
   audits: BerthAudit[] = [],
   preservePositions = false,
   candidatePending = 0,
+  geographicEvidence?: Omit<ReturnType<typeof reviewGeographicEvidence>, 'map'> & { source: string; sourceHash: Awaited<ReturnType<typeof sourceHash>> },
 ): string {
   const anchorCounts = counts(map.anchors.map((anchor) => anchor.kind), KINDS);
   const unmappedCounts = counts(map.unmapped.map((item) => item.reason), UNMAPPED_REASONS);
@@ -593,6 +599,18 @@ function buildReport(
         : 'The current candidate map is written to anchors.json. Review drawn-position-diff.json for any changed, new, or removed anchor geometry before using it as a runtime map.',
     ] : []),
     '',
+    ...(geographicEvidence ? [
+      '## Geographic evidence screening',
+      '',
+      'The default 50 m error is a conservative positional screening assumption, not surveyed accuracy. Exact YA four-digit references alone support these decisions; named locations and observed chains do not propagate a classification. Previous anchors remain frozen under --preserve-positions.',
+      '',
+      'Source provenance, summary, exact decisions and diagnostic named locations:',
+      '',
+      '```json',
+      JSON.stringify(geographicEvidence, null, 2),
+      '```',
+      '',
+    ] : []),
     '## Anchored berths',
     '',
     '| Berth | Kind | Track direction | Fraction | Point (m) | Error (m) | Platform | Evidence |',
@@ -734,6 +752,7 @@ async function main(): Promise<void> {
   const recordingPaths = await Promise.all(args.recordings.map(inputPath));
   const smartPath = await inputPath(args.smart);
   const previousPath = args.previous ? await inputPath(args.previous) : undefined;
+  const geographicPath = args.geographicEvidence ? await inputPath(args.geographicEvidence) : undefined;
   const graphPath = args.graph
     ? await inputPath(args.graph)
     : await realpath(path.join(packageRoot, 'web', 'src', 'data', 'kx-track.json'));
@@ -748,9 +767,19 @@ async function main(): Promise<void> {
     `SMART: ${path.basename(smartPath)} (modified ${smartStat.mtime.toISOString()})`,
     `OSM: ${data.attribution}; graph ${path.basename(graphPath)}`,
   ];
+  if (geographicPath) sources.push(`Geographic evidence: ${path.basename(geographicPath)} (raw Overpass JSON; 50 m conservative positional screening assumption, not surveyed accuracy)`);
   const reportSources = [...sources, ...(previousPath ? [`Previous map: ${path.basename(previousPath)}`] : [])];
 
-  const candidateMap = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
+  const geographicSourceHash = geographicPath ? await sourceHash(geographicPath, 'geographic-evidence') : undefined;
+  const builtMap = buildAnchors(data, recordings, smartRows, { area: 'Y9', sources });
+  const geographicReview = geographicPath
+    ? reviewGeographicEvidence(data, builtMap, JSON.parse(await readFile(geographicPath, 'utf8')), { source: path.basename(geographicPath),
+      seen: new Map(observationInventory(recordings, builtMap.area).map(({ berth, observations }) => [berth, observations.step])) })
+    : undefined;
+  const candidateMap = geographicReview?.map ?? builtMap;
+  const geographicEvidence = geographicReview
+    ? { source: geographicPath!, sourceHash: geographicSourceHash!, summary: geographicReview.summary, decisions: geographicReview.decisions, namedLocations: geographicReview.namedLocations }
+    : undefined;
   const outputMap = args.preservePositions && previousMap
     ? preservePreviousAnchors(previousMap, candidateMap, recordings, path.basename(previousPath!))
     : candidateMap;
@@ -770,6 +799,7 @@ async function main(): Promise<void> {
     ...recordingPaths.map((file) => sourceHash(file, 'recording')),
     sourceHash(smartPath, 'smart'),
     sourceHash(graphPath, 'graph'),
+    ...(geographicSourceHash ? [geographicSourceHash] : []),
     ...(previousPath ? [sourceHash(previousPath, 'previous-anchor-map')] : []),
   ]);
   const diffCounts = {
@@ -784,6 +814,7 @@ async function main(): Promise<void> {
     area: candidateMap.area,
     summary: {
       preservePositions: args.preservePositions,
+      ...(geographicEvidence ? { geographicEvidence: geographicEvidence.summary } : {}),
       counts: {
         before: previousMap ? mapCounts(previousMap, recordings) : null,
         candidate: mapCounts(candidateMap, recordings),
@@ -807,6 +838,7 @@ async function main(): Promise<void> {
     observationInventory: observationInventory(recordings, candidateMap.area),
     graphBounds: graphBounds(data),
     sourceHashes,
+    ...(geographicEvidence ? { geographicEvidence } : {}),
   };
   const outDir = await ensureOutputDirectory(args.out);
   const outputs = [
@@ -814,7 +846,7 @@ async function main(): Promise<void> {
     ['anchors-candidate.json', `${JSON.stringify(candidateMap, null, 2)}\n`],
     ['berths-report.json', `${JSON.stringify(reportJson, null, 2)}\n`],
     ['drawn-position-diff.json', `${JSON.stringify(positionDiff, null, 2)}\n`],
-    ['berths-report.md', buildReport(candidateMap, stepChecks, signalTrials, explanations, reportSources, generatedAt, recordings, previousMap, candidateAudits, args.preservePositions, candidatePending.count)],
+    ['berths-report.md', buildReport(candidateMap, stepChecks, signalTrials, explanations, reportSources, generatedAt, recordings, previousMap, candidateAudits, args.preservePositions, candidatePending.count, geographicEvidence)],
   ] as const;
   await Promise.all(outputs.map(([name]) => checkOutputFile(outDir, name)));
   await Promise.all(outputs.map(([name, body]) => writeFile(path.join(outDir, name), body, { mode: 0o600 })));
