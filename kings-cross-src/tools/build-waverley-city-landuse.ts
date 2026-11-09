@@ -14,6 +14,7 @@ const all=new Map<string,Element>();
 // The four tiles, plus any relation/<id>/full.json fetched beside them for a multipolygon the tiles hold incompletely.
 for(const name of ['sw','se','nw','ne',...readdirSync(dir).filter(f=>/^relation-\d+\.json$/.test(f)).map(f=>f.slice(0,-5))])for(const e of JSON.parse(readFileSync(`${dir}/${name}.json`,'utf8')).elements as Element[])all.set(`${e.type}/${e.id}`,e);
 const origin={lat:55.9519018,lon:-3.1904199};
+const get=(id:number)=>all.get(`way/${id}`)!;
 /** The Waverley terrain extent (web/src/data/waverley-terrain.json). */
 export const LANDUSE_EXTENT={x0:-912,z0:-624,x1:1088,z1:608} as const;
 const Q=2,M=40;
@@ -70,8 +71,9 @@ const areas:Record<AreaClass,number[][][]>={grass:[],garden:[],wood:[],scrub:[],
 const green:Pt[][]=[];
 const addArea=(cls:AreaClass,outer:number[],holes:number[][])=>{
  const o=pts(outer);if(!o||!o.some(p=>inBox(p,0)))return;
- const hs=holes.map(pts).filter((h):h is Pt[]=>!!h).map(h=>enc(dp(h.slice(0,-1),2)));
- const s=dp(o.slice(0,-1),2);if(s.length<3)return;areas[cls].push([enc(s),...hs]);green.push(...(['grass','garden','wood','scrub','pitch','flower'].includes(cls)?[s]:[]));
+ // private back greens (leisure=garden, 625 of them) are seen only from above and afar: 3 m simplification; the rest 2 m
+ const tol=cls==='garden'?3:2,hs=holes.map(pts).filter((h):h is Pt[]=>!!h).map(h=>enc(dp(h.slice(0,-1),tol)));
+ const s=dp(o.slice(0,-1),tol);if(s.length<3)return;areas[cls].push([enc(s),...hs]);green.push(...(['grass','garden','wood','scrub','pitch','flower'].includes(cls)?[s]:[]));
 };
 const roads:Record<string,number[][]>={},paths:Record<string,number[][]>={},pathPts:{w:number;p:Pt[]}[]=[],cliffs:number[][]=[],walls:number[][]=[];
 for(const e of all.values()){
@@ -94,6 +96,11 @@ for(const e of all.values()){
 // A path is drawn only where it crosses mapped green ground (park paths); elsewhere it is paving on paving.
 const pip=([x,z]:Pt,p:Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 for(const {w,p}of pathPts){const mids=p.slice(1).map((q,i):Pt=>[(q[0]+p[i][0])/2,(q[1]+p[i][1])/2]);if(mids.some(m=>green.some(g=>pip(m,g))))(paths[String(w)]??=[]).push(enc(p));}
+// The Castle's walls: every barrier=wall / retaining_wall way with most of its nodes inside the castle precinct (way/4301292,
+// historic=castle). 1 if OSM tags it wall=castle_wall (a curtain wall), else 0. No heights are mapped: the renderer's are ASSUMED.
+const castle=pts(get(4301292).nodes!)!,castleWalls:[number,number[]][]=[];
+for(const e of all.values()){const t=e.tags??{};if(e.type!=='way'||!e.nodes||t.barrier!=='wall'&&t.barrier!=='retaining_wall'&&t.barrier!=='city_wall')continue;
+ const p=pts(e.nodes);if(!p||p.filter(q=>pip(q,castle)).length*2<=p.length)continue;castleWalls.push([t.wall==='castle_wall'?1:0,enc(dp(p,1))]);}
 const trees:number[]=[];
 for(const e of all.values())if(e.type==='node'&&e.tags?.natural==='tree'&&e.lat!==undefined&&e.lon!==undefined){const p=project(e.lat,e.lon!,origin) as Pt;if(inBox(p,0))trees.push(Math.round(p[0]/Q),Math.round(p[1]/Q));}
 // trees as one delta run, sorted west to east for compression
@@ -101,8 +108,8 @@ const pairs:[number,number][]=[];for(let i=0;i<trees.length;i+=2)pairs.push([tre
 const treeRun:number[]=[];{let px=0,pz=0;for(const [x,z]of pairs){treeRun.push(x-px,z-pz);px=x;pz=z;}}
 const out={
  attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',
- source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); land use, leisure and natural areas, highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff and barrier=city_wall ways',
- q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,cliffs,walls,
+ source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); land use, leisure and natural areas, highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff and barrier=city_wall ways, and the walls inside the Edinburgh Castle precinct (way/4301292)',
+ q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,cliffs,walls,castleWalls,
 };
 const json=JSON.stringify(out)+'\n';
 writeFileSync('web/src/data/waverley-city-landuse.json',json);
@@ -134,4 +141,4 @@ const roadsJson=JSON.stringify({attribution:'© OpenStreetMap contributors (ODbL
  frame:'Waverley local metres: x east, z south, origin 55.9519018 N, 3.1904199 W (core/geo.ts project)',extent:LANDUSE_EXTENT,roads:roadLines})+'\n';
 writeFileSync('web/src/data/waverley-roads.json',roadsJson);
 console.log(JSON.stringify({roadLines:roadLines.length,classes:Object.fromEntries([...new Set(roadLines.map(r=>r.highway))].map(h=>[h,roadLines.filter(r=>r.highway===h).length])),bytes:roadsJson.length,gzip:gzipSync(roadsJson,{level:9}).length}));
-console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,walls:walls.length,bytes:json.length,gzip:gzipSync(json,{level:9}).length}));
+console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,walls:walls.length,castleWalls:castleWalls.length,bytes:json.length,gzip:gzipSync(json,{level:9}).length}));

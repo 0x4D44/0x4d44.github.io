@@ -8,15 +8,16 @@ import type {Terrain} from '../../core/terrain.ts';
 import type {WaverleyScene as WaverleyData} from '../../core/waverley-data.ts';
 import {Batch,material,cityMaterial} from './materials.ts';
 import type {Rgb,MaterialName} from './materials.ts';
-import {fillSurface,meshAdder,pyramid,shell,walls} from './waverley-mesh.ts';
+import {centre,fillSurface,meshAdder,pyramid,shell,walls} from './waverley-mesh.ts';
 import {cityHeight} from './waverley-city-heights.ts';
 import {roofPlan,roofSurface,roofPeak,withCreases,chimney} from './waverley-city-roofs.ts';
-import {buildWaverleyCityGround,Footprints} from './waverley-city-ground.ts';
+import {buildWaverleyCityGround,Footprints,LANDUSE} from './waverley-city-ground.ts';
+import {nelsonMonument,nationalColumns,castleWalls,MONUMENT_OMIT_IDS} from './waverley-city-monuments.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import sceneFile from './data/waverley-scene.json' with {type:'json'};
 import data from './data/waverley-city.json' with {type:'json'};
 /** The walls' tint over the city stone facade (average 0xd2c9b0): about 0x897f72 in all, weathered Craigleith-type sandstone. ASSUMED shade. */
-export const WAVERLEY_CITY_STONE=0x9c968f;
+export const WAVERLEY_CITY_STONE=0x9c9890;
 /** Blocks that are not windowed fabric: monuments, towers, columns, churches and ruins, any elevated part (a monument's stage, a
  *  spire's drum) and anything under PLAIN_AREA m2 in plan. They wear plain ashlar (materials.ts stone, 0.6 x 0.3 m blocks). */
 export const PLAIN_KINDS=new Set(['church','chapel','cathedral','ruins','bridge','column','tower','monument','castle','wall','gatehouse','kiosk','toilets']);
@@ -26,8 +27,9 @@ export const WAVERLEY_CITY_SOURCES={
  scott:{url:'https://www.openstreetmap.org/way/39044819',height:61.11,basis:'OSM height; explicit mapped part heights and min_height'},
  assumptions:'Unsupported Scott roof profiles remain flat at mapped height; pyramidal/conical roof heights use OSM tags. No decorative Scott figures inferred.',
 } as const;
-/** The city buildings the landmarks replace: the Scott Monument outline and its mapped parts. */
-export const WAVERLEY_CITY_OMIT_IDS=[data.scott.id,...data.scott.parts.map(p=>p.id)];
+/** The city buildings the landmarks replace: the Scott Monument outline and its mapped parts, the Nelson Monument's parts and the
+ *  National Monument's columns. */
+export const WAVERLEY_CITY_OMIT_IDS=[data.scott.id,...data.scott.parts.map(p=>p.id),...MONUMENT_OMIT_IDS];
 const ringOf=(p:number[][]):Pt[]=>p.map(q=>[q[0],q[1]]);
 export interface WaverleyCityPart {group:THREE.Group;stats:{triangles:number;drawCalls:number};omitBuildingIds:string[];dispose():void}
 export interface WaverleyCityFabric extends WaverleyCityPart {/** The ids of the mapped blocks drawn, in data order. */ buildingIds:string[];/** How many drawn blocks stand at an OSM, a LiDAR (waverley-city-heights.ts) or an ASSUMED height. */ heightBasis:{OSM:number;LiDAR:number;ASSUMED:number}}
@@ -72,25 +74,53 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  return {group,stats,omitBuildingIds:[],buildingIds,heightBasis,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();ashlar.dispose();slate.dispose();group.clear();}};
 }
 
-/** The Scott Monument from its 98 mapped OSM parts, on one common base: the lowest ground under its outline. */
-export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'>&Partial<Terrain>):WaverleyCityPart {
+/** The Scott Monument's central spire part (OSM 15 to 61.11 m, mapped as walls to 21.11 m under a 40 m pyramid). */
+export const SCOTT_SPIRE='way/445166834';
+/** ASSUMED: the spire as R-wv3-b shows it, a square tower stepping in at its galleries rather than one smooth pyramid. Each tier's top
+ *  (m above the base) and its plan scale on the OSM spire part, measured by eye off R-wv3-b; the last tier ends in a pyramid at the
+ *  OSM 61.11 m. Pinnacles (ASSUMED 0.8 m square, 3.5 m tall) stand at each tier's outermost corners. */
+export const SCOTT_TIERS=[{top:29,scale:.86},{top:38,scale:.7},{top:46,scale:.55},{top:52,scale:.42}] as const;
+export const SCOTT_PINNACLE={side:.8,height:3.5} as const;
+/** The Scott Monument's stone: the ashlar texture under a dark, sooted sandstone tone (R-wv3-b: a grey-brown that catches the sun,
+ *  near-black only in the hollows). ASSUMED shade. */
+export const SCOTT_STONE=0x8f8172,MONUMENT_STONE=0xcfc6b6;
+let sceneData:ReturnType<typeof unpackWaverleyScene>|undefined;
+const scene=()=>sceneData??=unpackWaverleyScene(sceneFile);
+
+/** The Scott Monument from its 98 mapped OSM parts, on one common base: the lowest ground under its outline; the Nelson and National
+ *  Monuments and the Castle walls (waverley-city-monuments.ts); and, over a full terrain, the ground cover and trees. */
+export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'heightAt'>&Partial<Terrain>):WaverleyCityPart {
  const group=new THREE.Group();group.name='waverley-city-landmarks';
  const stats={triangles:0,drawCalls:0},geometries=new Set<THREE.BufferGeometry>(),add=meshAdder(stats,geometries);
  const scott=new Batch(),sr=ringOf(data.scott.ring),sb=ground.rangeUnder(sr,2).min;
  for(const p of data.scott.parts){const r=ringOf(p.ring),pitched=['pyramidal','cone'].includes(p.roofShape)&&p.roofHeight>0,wallTop=p.height-(pitched?p.roofHeight:0);
   if(wallTop>p.minHeight)shell(scott,r,()=>sb+p.minHeight,()=>sb+wallTop);
-  if(pitched)pyramid(scott,r,sb+wallTop,sb+p.height);
+  if(!pitched)continue;
+  if(p.id!==SCOTT_SPIRE){pyramid(scott,r,sb+wallTop,sb+p.height);continue;}
+  const c=centre(r),at=(k:number)=>r.map(q=>[c[0]+(q[0]-c[0])*k,c[1]+(q[1]-c[1])*k] as [number,number]);
+  // each tier steps in from the one below; its pinnacles stand on the ledge so left, at the lower tier's four outermost corners
+  const pinnacles=(ring:[number,number][],y:number)=>{const h=SCOTT_PINNACLE.side/2;
+   for(const [sx,sz]of [[1,1],[1,-1],[-1,1],[-1,-1]]){const q=ring.reduce((m,v)=>(v[0]-c[0])*sx+(v[1]-c[1])*sz>(m[0]-c[0])*sx+(m[1]-c[1])*sz?v:m),d=Math.hypot(q[0]-c[0],q[1]-c[1])||1,o=[q[0]-(q[0]-c[0])/d*h*1.5,q[1]-(q[1]-c[1])/d*h*1.5];
+    const sq:[number,number][]=[[o[0]-h,o[1]-h],[o[0]+h,o[1]-h],[o[0]+h,o[1]+h],[o[0]-h,o[1]+h]];shell(scott,sq,()=>sb+y-.1,()=>sb+y+.6);pyramid(scott,sq,sb+y+.6,sb+y+SCOTT_PINNACLE.height);}};
+  let y=wallTop,below=r;
+  for(const t of SCOTT_TIERS){const ring=at(t.scale);shell(scott,ring,()=>sb+y,()=>sb+t.top);pinnacles(below,y);below=ring;y=t.top;}
+  pinnacles(below,y);
+  pyramid(scott,at(SCOTT_TIERS.at(-1)!.scale),sb+y,sb+p.height);
  }
- const stone=material('stone').clone() as THREE.MeshLambertMaterial;stone.color.setHex(0x51463d);
+ const stone=material('stone').clone() as THREE.MeshLambertMaterial;stone.color.setHex(SCOTT_STONE);
  add(group,scott,stone,'waverley-scott-monument');
+ const parts=new Map(scene().buildings.filter(b=>MONUMENT_OMIT_IDS.includes(b.id)).map(b=>[b.id,b]));
+ const monuments=new Batch();nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);
+ castleWalls(monuments,LANDUSE.castleWalls,ground);
+ const pale=material('stone').clone() as THREE.MeshLambertMaterial;pale.color.setHex(MONUMENT_STONE);
+ add(group,monuments,pale,'waverley-city-monuments');
  // The ground's land use and the trees, over the drawn terrain (a full terrain only: the real scene, not a test stub). Trees keep
  // clear of every mapped building and roof outline, whichever element draws it.
  let cover:ReturnType<typeof buildWaverleyCityGround>|undefined;
- if(ground.extent&&ground.normalAt&&ground.heightAt&&ground.stepIn){
-  const scene=unpackWaverleyScene(sceneFile);
-  cover=buildWaverleyCityGround(ground as Terrain,new Footprints([...scene.buildings,...scene.roofs].map(b=>ringOf(b.outer))));
+ if(ground.extent&&ground.normalAt&&ground.stepIn){
+  cover=buildWaverleyCityGround(ground as Terrain,new Footprints([...scene().buildings,...scene().roofs].map(b=>ringOf(b.outer))));
   group.add(cover.group);stats.triangles+=cover.stats.triangles;stats.drawCalls+=cover.stats.drawCalls;
  }
  let disposed=false;
- return {group,stats,omitBuildingIds:[...WAVERLEY_CITY_OMIT_IDS],dispose(){if(disposed)return;disposed=true;cover?.dispose();group.removeFromParent();for(const g of geometries)g.dispose();stone.dispose();group.clear();}};
+ return {group,stats,omitBuildingIds:[...WAVERLEY_CITY_OMIT_IDS],dispose(){if(disposed)return;disposed=true;cover?.dispose();group.removeFromParent();for(const g of geometries)g.dispose();stone.dispose();pale.dispose();group.clear();}};
 }

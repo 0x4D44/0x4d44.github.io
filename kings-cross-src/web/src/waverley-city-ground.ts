@@ -8,7 +8,7 @@
 // railway's flattened bed (ground at WAVERLEY_LEVELS.ground), so the ballast and the station floor draw as they did.
 // Steep ground (over ROCK_SLOPE_DEG) is painted as rock: Castle Rock and the Calton Hill crags are dolerite/basalt exposures
 // (R-wv3-a shows the bare crag between the trees); the 16 m DTM smooths a cliff into a steep slope, so slope is the honest proxy.
-// Trees: the mapped tree nodes, plus woods and scrub (7 m) filled on a jittered lattice (spacings ASSUMED). Tree sizes are
+// Trees: the mapped tree nodes, plus woods and scrub (FILL_STEP) filled on a jittered lattice (spacings ASSUMED). Tree sizes are
 // ASSUMED (no OSM height on these nodes): 8 to 14 m, crowns about 0.6 of the height across, as the mature limes, elms and
 // sycamores of R-wv3-a. No tree stands in a building or on the railway; a crown is narrowed to clear the nearest wall.
 import * as THREE from 'three';
@@ -20,6 +20,8 @@ import data from './data/waverley-city-landuse.json' with {type:'json'};
 
 export const DRAPE_LIFT=.15;
 export const ROCK_SLOPE_DEG=38;
+/** ASSUMED crag tones (R-wv3-a): dark dolerite, paler weathered faces, lichen grey, moss. */
+export const ROCK_TONES=['#4a463e','#3c3934','#5a554c','#615c53','#474a37','#524e45'] as const;
 /** sRGB paint for each ground class, matched by eye to R-wv3-a and R-wv3-c as rendered under the Waverley rig (ACES, exposure 1.25,
  *  which lifts a paint about 1.6x): ASSUMED shades. */
 export const GROUND_COLOURS={
@@ -35,6 +37,7 @@ export const LANDUSE={
  paths:Object.entries(data.paths).flatMap(([w,ls])=>(ls as number[][]).map(l=>({width:Number(w),line:decode(l)}))),
  trees:decode(data.trees),
  cliffs:data.cliffs.map(decode),
+ castleWalls:data.castleWalls.map(([curtain,line])=>({curtain:curtain===1,line:decode(line as number[])})),
 };
 const pip=(x:number,z:number,p:readonly Pt[]):boolean=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 const segDist=(x:number,z:number,a:Pt,b:Pt):number=>{const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);};
@@ -61,6 +64,12 @@ export class Footprints {
  }
 }
 
+/** Fill spacing (m) and crown spread (radius over height): ASSUMED. Woods are wider than the spacing so neighbouring crowns overlap into a
+ *  canopy (R-wv3-a, R-wv3-b: the garden banks read as one mass of foliage); mapped trees are open-grown specimens. */
+export const FILL_STEP={wood:9,scrub:9} as const,CROWN_SPREAD={tree:.36,wood:.42,scrub:.5} as const,SCRUB_MAX_SLOPE_DEG=40;
+export const crownDepth=(kind:'tree'|'wood'|'scrub')=>kind==='tree'?.33:.4;
+/** Ground slope in degrees from central differences over 2 m. */
+export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const dx=(ground.heightAt(x+2,z)-ground.heightAt(x-2,z))/4,dz=(ground.heightAt(x,z+2)-ground.heightAt(x,z-2))/4;return Math.atan(Math.hypot(dx,dz))*180/Math.PI;};
 export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub'}
 /** The trees that stand: mapped nodes and wood/scrub fill, each clear of every footprint and off the railway bed. */
 export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints):Tree[]{
@@ -68,19 +77,26 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  const take=(x:number,z:number,kind:Tree['kind']):void=>{
   if(x<x0+2||x>x1-2||z<z0+2||z>z1-2)return;
   const y=ground.heightAt(x,z);if(Math.abs(y-WAVERLEY_LEVELS.ground)<.3)return; // the railway's flattened bed (and its first blend)
-  const r=hash(x,z,1),height=kind==='scrub'?2.5+r*2:8+r*6,want=height*(kind==='scrub'?.45:.3);
-  const room=footprints.clearance(x,z,want);if(room<Math.min(1.2,want))return;
-  out.push({x,z,y,height,crown:Math.min(want,room),kind});
+  // no fill on bare crag: R-wv3-a shows Castle Rock's steepest faces as rock, the scrub on its ledges and lower banks
+  if(kind!=='tree'&&slopeOf(ground,x,z)>SCRUB_MAX_SLOPE_DEG)return;
+  const r=hash(x,z,1),height=kind==='scrub'?3+r*2.5:kind==='wood'?10+r*6:8+r*6,ch=crownDepth(kind)*height,cy=y+height-ch;
+  let crown=Math.min(height*CROWN_SPREAD[kind],footprints.clearance(x,z,height*CROWN_SPREAD[kind]));
+  // seat the crown on the slope: narrow it until no ground rises into it (its rim at the crown's middle, its underside at 0.6 of the radius)
+  const into=(c:number)=>[0,1,2,3,4,5,6,7,8,9,10,11].some(k=>{const a=k*Math.PI/6,dx=Math.cos(a),dz=Math.sin(a);return ground.heightAt(x+dx*c,z+dz*c)>cy-.2||ground.heightAt(x+dx*c*.6,z+dz*c*.6)>cy-.8*ch;});
+  while(crown>=1&&into(crown))crown*=.75;
+  if(crown<Math.min(1,height*CROWN_SPREAD[kind]))return;
+  out.push({x,z,y,height,crown,kind});
  };
  for(const [x,z]of LANDUSE.trees)take(x,z,'tree');
+ // woods and scrub: a jittered lattice with gaps (a quarter of the cells left open), so a bank reads as clumps, not a grid of dots
  const fill=(rings:Ring[][],step:number,kind:Tree['kind'])=>{for(const rs of rings){const [o,...holes]=rs;let ax=Infinity,bx=-Infinity,az=Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
-  for(let gx=Math.ceil(ax/step)*step;gx<bx;gx+=step)for(let gz=Math.ceil(az/step)*step;gz<bz;gz+=step){const x=gx+(hash(gx,gz,2)-.5)*step*.8,z=gz+(hash(gx,gz,3)-.5)*step*.8;if(pip(x,z,o)&&!holes.some(h=>pip(x,z,h)))take(x,z,kind);}}};
- fill(LANDUSE.areas.wood,7,'wood');fill(LANDUSE.areas.scrub,7,'scrub');
+  for(let gx=Math.ceil(ax/step)*step;gx<bx;gx+=step)for(let gz=Math.ceil(az/step)*step;gz<bz;gz+=step){if(hash(gx,gz,9)<.25)continue;const x=gx+(hash(gx,gz,2)-.5)*step*.9,z=gz+(hash(gx,gz,3)-.5)*step*.9;if(pip(x,z,o)&&!holes.some(h=>pip(x,z,h)))take(x,z,kind);}}};
+ fill(LANDUSE.areas.wood,FILL_STEP.wood,'wood');fill(LANDUSE.areas.scrub,FILL_STEP.scrub,'scrub');
  return out;
 }
 
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
-function paintGround(slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|null{
+function paintGround(ground:Pick<Terrain,'normalAt'>,slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -93,8 +109,11 @@ function paintGround(slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|nu
   g.fillStyle=col;for(const rs of A[k]){path(rs);g.fill('evenodd');}
  }
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
- g.fillStyle=GROUND_COLOURS.rock;const cell=4;
- for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slopeAt(x+cell/2,z+cell/2);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}}
+ // The crag is not one tone (R-wv3-a): dark dolerite, paler weathered faces, grey lichen and moss on the ledges, each 4 m cell one of
+ // ROCK_TONES by a seeded hash, then broken by short dark joints running down the fall line.
+ const cell=4;
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slopeAt(x+cell/2,z+cell/2);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
+  if(a>ROCK_SLOPE_DEG+8&&hash(x,z,12)<.5){const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(25,22,20,0.55)';g.lineWidth=.6*s;g.beginPath();g.moveTo((x+2-x0)*s,(z+2-z0)*s);g.lineTo((x+2+n[0]/l*5-x0)*s,(z+2+n[2]/l*5-z0)*s);g.stroke();}}}
  g.globalAlpha=1;g.lineCap='round';g.lineJoin='round';
  g.strokeStyle=GROUND_COLOURS.cliff;g.lineWidth=5*s;for(const l of LANDUSE.cliffs){line(l);g.stroke();}
  g.strokeStyle=GROUND_COLOURS.path;for(const p of LANDUSE.paths){g.lineWidth=p.width*s;line(p.line);g.stroke();}
@@ -119,7 +138,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  for(let i=0;i<P.length/3;i++){const x=P[i*3],z=P[i*3+2];pos[i*3]=x;pos[i*3+1]=ground.heightAt(x,z)+DRAPE_LIFT;pos[i*3+2]=z;uv[i*2]=(x-x0)/(x1-x0);uv[i*2+1]=1-(z-z0)/(z1-z0);}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(slopeAt);
+ const map=paintGround(ground,slopeAt);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
  cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
  const mesh=new THREE.Mesh(g,cover);mesh.name='waverley-ground-cover';group.add(mesh);stats.triangles+=keep.length/3;stats.drawCalls++;
@@ -134,7 +153,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);
-   list.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*(t.kind==='tree'?.33:.4);q.setFromAxisAngle(up,r*6.283);
+   list.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*crownDepth(t.kind);q.setFromAxisAngle(up,r*6.283);
     m.compose(new THREE.Vector3(t.x,t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
     col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);crowns.setColorAt(i,col);});
@@ -144,7 +163,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
   if(mapped.length)crownsOf(mapped,fineG,'waverley-tree-crowns');
   if(massed.length)crownsOf(massed,coarseG,'waverley-wood-crowns');
   if(trunked.length){const trunks=new THREE.InstancedMesh(trunkG,bark,trunked.length);
-   trunked.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*(t.kind==='tree'?.33:.4),th=t.height-ch*1.2+.4;q.setFromAxisAngle(up,r*6.283);
+   trunked.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*crownDepth(t.kind),th=t.height-ch*1.2+.4;q.setFromAxisAngle(up,r*6.283);
     m.compose(new THREE.Vector3(t.x,t.y-.4+th/2,t.z),q,new THREE.Vector3(.15+t.height*.012,th,.15+t.height*.012));trunks.setMatrixAt(i,m);});
    trunks.instanceMatrix.needsUpdate=true;trunks.name='waverley-tree-trunks';trunks.computeBoundingSphere();group.add(trunks);stats.triangles+=trunked.length*6;stats.drawCalls++;}
  }

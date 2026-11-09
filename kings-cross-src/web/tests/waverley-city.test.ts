@@ -14,8 +14,8 @@ test('the Scott Monument keeps its mapped height and its 98 cited OSM parts',()=
  assert.ok(WAVERLEY_CITY_OMIT_IDS.includes('way/39044819'));
  const omitted=[...WAVERLEY_STATION_OMIT_IDS,...WAVERLEY_FRONTAGE_OMIT_IDS,...WAVERLEY_CITY_OMIT_IDS];assert.equal(new Set(omitted).size,omitted.length,'no city block is replaced by two elements');
 });
-test('city landmarks are finite, one draw, and dispose what they own once',()=>{
- const built=buildWaverleyCityLandmarks(ground);assert.equal(built.stats.drawCalls,1);assert.ok(built.stats.triangles<40000);
+test('city landmarks are finite, two draws (the Scott Monument, the other monuments), and dispose what they own once',()=>{
+ const built=buildWaverleyCityLandmarks(ground);assert.equal(built.stats.drawCalls,2);assert.ok(built.stats.triangles<40000);
  assert.deepEqual(built.omitBuildingIds,WAVERLEY_CITY_OMIT_IDS);
  let count=0,disposed=0;
  built.group.traverse((obj:THREE.Object3D)=>{if(obj instanceof THREE.Mesh){count++;const p=obj.geometry.getAttribute('position');for(let i=0;i<p.count;i++)for(const v of [p.getX(i),p.getY(i),p.getZ(i)])assert.ok(Number.isFinite(v));obj.geometry.addEventListener('dispose',()=>disposed++);}});
@@ -33,6 +33,7 @@ test('rendered Scott tint retains its sourced appearance',()=>{
  const built=buildWaverleyCityLandmarks(ground);
  try {
   const scott=built.group.getObjectByName('waverley-scott-monument') as THREE.Mesh;
-  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0x51463d);
+  // round 2: lightened from 0x51463d, which rendered near-black (scorer, round 1)
+  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0x8f8172);
  } finally {built.dispose();}
 });

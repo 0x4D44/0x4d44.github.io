@@ -35,7 +35,8 @@ const OUTLINE_STEP_M = 2;
 /** Fewer valid DSM or DTM samples than this rejects a block. */
 const MIN_VALID = 4;
 const MIN_HEIGHT_M = 2.5, MAX_HEIGHT_M = 80;
-const Q = 0.1;
+/** Shipped resolution, metres: 0.5 m, inside the LiDAR roof's own spread (the 90th percentile of a 0.5 m DSM) and half the gzip of 0.1 m. */
+const Q = 0.5;
 
 // ---- pure geometry and statistics -------------------------------------------------------------------
 
@@ -207,8 +208,8 @@ export function decodeCityHeights(file: Pick<CityHeightsFile, 'q' | 'ids' | 'h' 
   return out;
 }
 
-/** r is kept only above this (6 m, in units of Q): the renderer uses it only to tell a tower on part of a plan (waverley-city-heights.ts LIDAR_TOWER); zeros compress to nothing. */
-export const TOWER_R = 60;
+/** r is kept only above this (6 m, in units of Q = 0.5 m): the renderer uses it only to tell a tower on part of a plan (waverley-city-heights.ts LIDAR_TOWER); zeros compress to nothing. */
+export const TOWER_R = 12;
 export function encodeCityHeights(entries: readonly { id: string; h: number; e: number }[], source: Record<string, unknown>): CityHeightsFile {
   const ways = entries.filter(e => e.id.startsWith('way/')).map(e => ({ ...e, n: Number(e.id.slice(4)) })).sort((a, b) => a.n - b.n);
   const relations = entries.filter(e => e.id.startsWith('relation/')).sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
@@ -275,13 +276,11 @@ async function main(): Promise<void> {
     kept.push({ id: b.id, h, e: Math.min(e, h), b, m });
   }
   const source = {
-    dsm: lidar.urls.dsm, dtm: lidar.urls.dtm, ostn15: OSTN_URL,
+    dsm: lidar.urls.dsm, dtm: lidar.urls.dtm,
     licence: 'Open Government Licence v3: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/',
-    licenceEvidence: 'https://registry.opendata.aws/scottish-lidar/',
     attribution: 'Contains Scottish public sector LiDAR data © Scottish Government, made available under the Open Government Licence v3.',
     accessed,
-    method: `Phase V 0.5 m DSM and DTM, local frame -> OSTN15 -> EPSG:27700, nearest native pixel. Per OSM building or part whose heightBasis is ASSUMED (minHeight 0): a ${SPACING_M} m lattice inside the footprint, outside holes, ${SHRINK_M} m in from every wall (finer and unshrunk for tiny footprints). h = 90th percentile of the DSM minus the 10th percentile of all DTM samples over the footprint (the lattice plus the outline every ${OUTLINE_STEP_M} m): a robust lowest ground, as the scene seats a block on the lowest ground under it. r = h minus (median DSM minus the same ground), kept only above 6 m (else 0). Blocks with under ${MIN_VALID} valid samples, or h outside ${MIN_HEIGHT_M}-${MAX_HEIGHT_M} m, are omitted and stay ASSUMED.`,
-    format: 'q metres per unit; ids.way ascending OSM way ids, first absolute then deltas; ids.relation the text after relation/; h and r follow way then relation order; h = roof top above the lowest ground, r = h minus the median surface above it, both in units of q',
+    method: 'Phase V 0.5 m DSM minus DTM per ASSUMED-height OSM block: h = 90th-percentile DSM inside the footprint (1 m lattice, 1 m in from the walls) above the 10th-percentile DTM over it; r = h minus the median surface, kept above 6 m; full method in tools/build-waverley-city-heights.ts',
   };
   const file = encodeCityHeights(kept, source);
   const json = JSON.stringify(file) + '\n';
