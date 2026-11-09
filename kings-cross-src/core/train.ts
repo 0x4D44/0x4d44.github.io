@@ -19,21 +19,21 @@ export interface Figure {
   readonly source: string;
 }
 
-const HITACHI = 'Hitachi Review vol. 63 no. 10 (2014), as quoted in the Wikipedia infoboxes for Class 800 and 801';
+const HITACHI = 'Hitachi Review vol. 63 no. 10 (2014), p. 647 Fig. 2, https://www.hitachi.com/content/dam/hitachi/global/en/insights/media/hitachihyoron/2014/r2014_10/r2014_10_105.pdf (reviewed 2026-11-09)';
 const GBTRAINS = 'gbtrains.uk/stock/800 (an independent modeller\'s reference; figures measured from LNER livery drawing ADPL-12-01-02 and photographs, read 2026-11-07)';
 
 export const FIGURES = {
   /** Driving vehicles (the cab cars). 2 x 25.85 + 3 x 26.00 = 129.7 m, the published 5-car length. */
-  drivingCarLength: { value: 25.85, unit: 'm', basis: 'published', source: `${HITACHI}: "Driving vehicles: 25.850 m". gbtrains.uk and an older Hitachi table give other values (25.35 to 26.06 m); the unit lengths below only add up with this one.` },
+  drivingCarLength: { value: 25.85, unit: 'm', basis: 'published', source: `${HITACHI}: cab body 25.350 m plus 0.500 m (half the shared 1.000 m inter-car gap) = 25.850 m allocated car pitch. This is arithmetic from the published plan, not a directly printed overall Hull 802/3 or Lumo 803 dimension.` },
   /** Intermediate vehicles. */
-  intermediateCarLength: { value: 26.0, unit: 'm', basis: 'published', source: `${HITACHI}: "Intermediate vehicles: 26.000 m"` },
-  /** Body width. The same on 800, 801, 802 and 803 (one bodyshell). */
+  intermediateCarLength: { value: 26.0, unit: 'm', basis: 'published', source: `${HITACHI}: intermediate body 25.000 m plus a 1.000 m shared inter-car gap = 26.000 m allocated car pitch. The five-car plan totals 2*25.350 + 3*25.000 + 4*1.000 = 129.700 m.` },
+  /** Published for 800/801 and by Angel Trains for 802; its transfer to 803 is assumed. */
   bodyWidth: { value: 2.7, unit: 'm', basis: 'published', source: 'Wikipedia infoboxes for Class 800 and 801: "Width 2.7 m (8 ft 10 in)"; Angel Trains gives the 802 as 8 ft 10 in' },
   /**
-   * Height of the body's roof edge above the rail head. No printed height exists.
+   * Height of the body's roof edge above the rail head. No verified primary figure found.
    * The top of the roof covers (the highest point of the body) is this plus roofCoverHeight.
    */
-  roofEdgeHeight: { value: 3.35, unit: 'm', basis: 'assumed', source: `Not published. ${GBTRAINS} reads 3.62 m (attributed to Hitachi, with no definition), 12 ft 3 in (3.725 m) "to the body's roof edge", and about 3.85 m from photographs. Reading 3.725 m as the roof edge put the top of the covers at 3.995 m, nearly 4 m, which is too tall for a UK train (Arthur, 2026-11-08: "3.725m seems high"). Taken here: Hitachi's 3.62 m is the top of the roof covers, so the roof edge is 3.62 - 0.27 = 3.35 m. To be replaced by a printed figure.` },
+  roofEdgeHeight: { value: 3.35, unit: 'm', basis: 'assumed', source: `No verified primary roof height found (reviewed 2026-11-09). Hitachi Review 63(10), pp. 647-648, Fig. 2/Table 1, https://www.hitachi.com/content/dam/hitachi/global/en/insights/media/hitachihyoron/2014/r2014_10/r2014_10_105.pdf has no roof height. DfT IEP Train Technical Specification, section 3.4, https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/82840/tts-redacted.pdf specifies a gauge, not a measured roof envelope. ${GBTRAINS} reports 3.62 m with an undefined Hitachi attribution; that attribution is unverified. Retain ASSUMED top of roof covers 3.62 m minus drawn cover 0.27 m = 3.35 m roof edge. No primary source found for the height of Class 803 either (Beacon Rail fleet page and ORR 2021 authorisation). To be replaced by a dimensioned rail-to-roof drawing.` },
   /** The grey roof covers stand this far above the roof edge. */
   roofCoverHeight: { value: 0.27, unit: 'm', basis: 'drawn', source: `${GBTRAINS}: "the roof covers stand about 11 in (0.27 m) higher" (0.27 to 0.3 m)` },
   /** Axle spacing inside one bogie. */
@@ -99,8 +99,8 @@ const UNIT_387: readonly CarType[] = ['DMSO', 'MSO', 'PTSO', 'DMSO'];
 export const TRAIN_SPECS: Readonly<Record<TrainKind, TrainSpec>> = {
   lner5: { kind: 'lner5', family: 'at300', classes: '800/2, 801/1', operator: 'LNER', livery: 'lner', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: DPTS-MS-MS-MC-DPTF` },
   lner9: { kind: 'lner9', family: 'at300', classes: '800/1, 801/2', operator: 'LNER', livery: 'lner', cars: ['DPTS', 'MS', 'MS', 'TS', 'MS', 'TS', 'MC', 'MF', 'DPTF'], source: `${WIKI}: DPTS-MS-MS-TS-MS-TS-MC-MF-DPTF` },
-  hull5: { kind: 'hull5', family: 'at300', classes: '802/3', operator: 'Hull Trains', livery: 'hulltrains', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: "5 cars per 802/0 and 802/3 unit: DPTS-MS-MS-MC-DPTF". Cab length ASSUMED from Class 800/801 (25.85 m): https://angeltrains.co.uk/fleet/class-802/ gives only nominal 26 m, not a separate cab length; A Class 802-specific primary cab dimension was not found in the sources reviewed; Wikipedia gives 25.7 m. Retained pending a Class 802 engineering drawing (reviewed 2026-11-09).` },
-  lumo5: { kind: 'lumo5', family: 'at300', classes: '803', operator: 'Lumo', livery: 'lumo', cars: ['DPTS', 'MS', 'MS', 'MS', 'DPTS'], source: `${WIKI}: "5 cars per unit: DPTS-MS-MS-MS-DPTS"` },
+  hull5: { kind: 'hull5', family: 'at300', classes: '802/3', operator: 'Hull Trains', livery: 'hulltrains', cars: ['DPTS', 'MS', 'MS', 'MC', 'DPTF'], source: `${WIKI}: "5 cars per 802/0 and 802/3 unit: DPTS-MS-MS-MC-DPTF". Cab length ASSUMED from Class 800/801 (25.85 m including the coupling allowance). Eversholt Rail https://eversholtrail.co.uk/fleet/class-802/ publishes GWR Class 802 DPTS/DPTF 25.7 m and intermediate 26 m, without defining coupling endpoints; this is primary evidence for that fleet, not an independently verified Hull 802/3 overall cab length. Hull fleet owner https://angeltrains.co.uk/fleet/class-802/ gives nominal length 26 m and width 2.7 m only. Retain 25.85 m pending a Hull-specific drawing with comparable endpoints (reviewed 2026-11-09).` },
+  lumo5: { kind: 'lumo5', family: 'at300', classes: '803', operator: 'Lumo', livery: 'lumo', cars: ['DPTS', 'MS', 'MS', 'MS', 'DPTS'], source: `ORR Class 803 authorisation, 27 September 2021, Table 1, https://www.orr.gov.uk/sites/default/files/2021-10/2021-09-27-authorisation-letter-for-class-803-rolling-stock.pdf: DPTS-MS-MS-MS-DPTS. Lumo https://www.lumo.co.uk/who-we-are/lumonews/lumo-train-now-available-from-hornby (27 May 2025) confirms the same bodyshell as earlier UK A-trains, without numerical dimensions. Beacon Rail https://beaconrail.com/en/fleet-item/cl-803/ publishes bogie dimensions but no car length, body width or roof height. Class 803 dimensions remain ASSUMED transfers: cab 25.85 m, intermediate 26 m, width 2.7 m, roof-cover top 3.62 m; these are not independently published Class 803 figures (reviewed 2026-11-09).` },
   gn387x4: { kind: 'gn387x4', family: 'electrostar', classes: '387', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387], source: `${WIKI_387}: "4 cars per unit", DMSO-MSO-PTSO-DMSO` },
   gn387x8: { kind: 'gn387x8', family: 'electrostar', classes: '387 x2', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387], source: `${WIKI_387}: two 4-car units coupled (the units work in multiple)` },
   gn387x12: { kind: 'gn387x12', family: 'electrostar', classes: '387 x3', operator: 'Great Northern', livery: 'greatnorthern', cars: [...UNIT_387, ...UNIT_387, ...UNIT_387], source: `${WIKI_387}: three 4-car units coupled; the page says c2c ran 387s as 12-car sets` },

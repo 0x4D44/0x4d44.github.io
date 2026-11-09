@@ -43,6 +43,30 @@ test('train: the highest point is a believable height for a UK train, well under
   assert.equal(FIGURES.roofEdgeHeight.basis, 'assumed', 'no printed height exists, so the roof edge must say it is assumed');
 });
 
+test('train: the AT300 roof remains an assumption after the primary-source review', () => {
+  assert.equal(FIGURES.roofEdgeHeight.basis, 'assumed');
+  near(roofHeight(), 3.62, 1e-9, 'retained roof-cover envelope');
+  assert.match(FIGURES.roofEdgeHeight.source, /No verified primary.*height/);
+  assert.match(FIGURES.roofEdgeHeight.source, /r2014_10_105\.pdf/);
+  assert.match(FIGURES.roofEdgeHeight.source, /tts-redacted\.pdf/);
+  assert.doesNotMatch(FIGURES.roofEdgeHeight.source, /Hitachi's 3\.62/);
+});
+
+test('train: Hull cab transfer distinguishes the GWR owner figure from Hull verification', () => {
+  assert.match(TRAIN_SPECS.hull5.source, /eversholtrail\.co\.uk\/fleet\/class-802/);
+  assert.match(TRAIN_SPECS.hull5.source, /GWR.*25\.7/);
+  assert.match(TRAIN_SPECS.hull5.source, /ASSUMED/);
+  assert.match(TRAIN_SPECS.hull5.source, /coupl/);
+  near(trainLayout('hull5').length, 129.7, 1e-9, 'unchanged pending a Hull-specific dimension');
+});
+
+test('train: Lumo bodyshell evidence does not turn transferred dimensions into published numbers', () => {
+  assert.match(TRAIN_SPECS.lumo5.source, /lumo-train-now-available-from-hornby/);
+  assert.match(TRAIN_SPECS.lumo5.source, /beaconrail\.com\/en\/fleet-item\/cl-803/);
+  assert.match(TRAIN_SPECS.lumo5.source, /ASSUMED.*25\.85.*26.*2\.7.*3\.62/);
+  near(trainLayout('lumo5').length, 129.7, 1e-9, 'unchanged transferred dimensions');
+});
+
 test('train: cars abut from the front nose at 0 to the rear, with no gap and no overlap', () => {
   for (const kind of TRAIN_KINDS) {
     const { cars, length } = trainLayout(kind);
@@ -358,4 +382,13 @@ test('train: every new unit figure names its source, and the sources are readabl
     }
   }
   for (const kind of [...GC_KINDS, ...TL_KINDS]) assert.ok(TRAIN_SPECS[kind].source.length > 40, `${kind} formation is cited`);
+});
+
+
+test('train: AT300 car pitches cite Hitachi’s body lengths and the shared coupling gap', () => {
+  assert.equal(FIGURES.drivingCarLength.value, 25.85);
+  assert.equal(FIGURES.intermediateCarLength.value, 26);
+  assert.match(FIGURES.drivingCarLength.source, /r2014_10_105\.pdf/);
+  assert.match(FIGURES.drivingCarLength.source, /25\.350.*0\.500/);
+  assert.match(FIGURES.intermediateCarLength.source, /25\.000.*1\.000/);
 });

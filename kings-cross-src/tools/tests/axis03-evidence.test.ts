@@ -132,3 +132,24 @@ test('labels missing source dimensions and model-derived measurements as non-ind
   assert.match(renderAxis03Markdown(result), /Pantograph meshes and all bogie\/wheel meshes are excluded/);
   assert.match(renderAxis03Markdown(result), /not independent verification/);
 });
+
+
+test('AT300 primary-source review keeps Class 803 transfers assumed and qualifies the GWR cab comparison', () => {
+  const result = report();
+  const lumo = result.kinds.find(({ kind }) => kind === 'lumo5')!;
+  for (const car of lumo.cars) {
+    for (const dimension of [car.expected.lengthM, car.expected.widthM]) {
+      assert.equal(dimension.modelSpec.basis, 'assumed');
+      assert.equal(dimension.published.status, 'not-published');
+      assert.ok(dimension.modelSpec.sources.some(({ url }) => url.includes('lumo-train-now-available-from-hornby')));
+    }
+    assert.match(car.expected.heightAboveRailM.modelSpec.source, /No verified primary.*height/);
+  }
+  const hull = result.kinds.find(({ kind }) => kind === 'hull5')!.cars[0]!;
+  const reference = hull.expected.lengthM.published.values[0]!;
+  assert.equal(reference.valueM, 25.7);
+  assert.ok(reference.sources.some(({ url }) => url === 'https://eversholtrail.co.uk/fleet/class-802/'));
+  assert.match(reference.note ?? '', /GWR/);
+  assert.match(hull.expected.lengthM.published.note ?? '', /coupl/);
+  assert.equal(hull.expected.widthM.modelSpec.sources[0]?.url, 'https://angeltrains.co.uk/fleet/class-802/');
+});

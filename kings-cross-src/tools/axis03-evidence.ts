@@ -137,11 +137,15 @@ export interface MotionReportFile extends InputFingerprint { content: unknown }
 
 const citation = (label: string, url: string, basis: SourceCitation['basis'] = 'published'): SourceCitation => ({ label, url, basis });
 const URLS = {
+  hitachi2014: 'https://www.hitachi.com/content/dam/hitachi/global/en/insights/media/hitachihyoron/2014/r2014_10/r2014_10_105.pdf',
   wiki800: 'https://en.wikipedia.org/wiki/British_Rail_Class_800',
   wiki801: 'https://en.wikipedia.org/wiki/British_Rail_Class_801',
   wiki802: 'https://en.wikipedia.org/wiki/British_Rail_Class_802',
   wiki803: 'https://en.wikipedia.org/wiki/British_Rail_Class_803',
   angel802: 'https://angeltrains.co.uk/fleet/class-802/',
+  eversholt802: 'https://eversholtrail.co.uk/fleet/class-802/',
+  lumoBody: 'https://www.lumo.co.uk/who-we-are/lumonews/lumo-train-now-available-from-hornby',
+  beacon803: 'https://beaconrail.com/en/fleet-item/cl-803/',
   wiki387: 'https://en.wikipedia.org/wiki/British_Rail_Class_387',
   wiki717: 'https://en.wikipedia.org/wiki/British_Rail_Class_717',
   wiki700: 'https://en.wikipedia.org/wiki/British_Rail_Class_700',
@@ -152,11 +156,15 @@ const URLS = {
 } as const;
 
 const CLASS_CITATIONS = {
+  hitachi2014: citation('Hitachi Review 63(10), p. 647 Fig. 2: body lengths and inter-car gaps', URLS.hitachi2014),
   wiki800: citation('Wikipedia, British Rail Class 800', URLS.wiki800),
   wiki801: citation('Wikipedia, British Rail Class 801', URLS.wiki801),
   wiki802: citation('Wikipedia, British Rail Class 802', URLS.wiki802),
   wiki803: citation('Wikipedia, British Rail Class 803', URLS.wiki803),
   angel802: citation('Angel Trains, Class 802 fleet page', URLS.angel802),
+  eversholt802: citation('Eversholt Rail, GWR Class 802 fleet page', URLS.eversholt802),
+  lumoBody: citation('Lumo, shared A-train bodyshell statement (27 May 2025)', URLS.lumoBody),
+  beacon803: citation('Beacon Rail, Class 803 fleet page', URLS.beacon803),
   wiki387: citation('Wikipedia, British Rail Class 387', URLS.wiki387),
   wiki717: citation('Wikipedia, British Rail Class 717', URLS.wiki717),
   wiki700: citation('Wikipedia, British Rail Class 700', URLS.wiki700),
@@ -175,8 +183,8 @@ function lengthFigure(family: Family, type: string): Figure {
 function modelFigures(family: Family, type: string, kind: TrainKind): { length: Figure; width: Figure; height: { value: number; basis: string; source: string } } {
   if (family === 'at300') {
     return {
-      length: kind === 'hull5' && DRIVING.has(type as never) ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.hull5.source } : lengthFigure(family, type),
-      width: FIGURES.bodyWidth,
+      length: kind === 'lumo5' ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.lumo5.source } : kind === 'hull5' && DRIVING.has(type as never) ? { ...lengthFigure(family, type), basis: 'assumed', source: TRAIN_SPECS.hull5.source } : lengthFigure(family, type),
+      width: kind === 'lumo5' ? { ...FIGURES.bodyWidth, basis: 'assumed', source: TRAIN_SPECS.lumo5.source } : FIGURES.bodyWidth,
       height: {
         value: roofHeight(),
         basis: 'assumed + drawn',
@@ -214,8 +222,14 @@ function modelDimensionSources(kind: TrainKind, dimension: 'length' | 'width' | 
     if (dimension === 'height') return [
       { ...CLASS_CITATIONS.gb800, note: 'Drawn reference reports 3.62 m but says its Hitachi attribution is undefined; the model roof-edge input remains assumed.' },
     ];
-    const inherited = [CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801];
-    return kind === 'lumo5' ? inherited.map((source) => ({ ...source, note: 'Related AT300 model figure; Class 803 page does not publish this dimension.' })) : inherited;
+    if (kind === 'lumo5') return [
+      { ...CLASS_CITATIONS.lumoBody, note: 'Qualitative shared-bodyshell evidence only; it publishes no numerical Class 803 dimension. The numerical transfer remains assumed.' },
+      { ...CLASS_CITATIONS.beacon803, note: 'Owner publishes bogie dimensions, not overall car length, width or height.' },
+    ];
+    if (kind === 'hull5') return dimension === 'width' ? [CLASS_CITATIONS.angel802] : [
+      { ...CLASS_CITATIONS.wiki800, note: 'Assumed 800/801 cab transfer; the GWR owner’s Class 802 comparison has unspecified coupling endpoints.' },
+    ];
+    return dimension === 'length' ? [CLASS_CITATIONS.hitachi2014, CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801] : [CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801];
   }
   if (kind.startsWith('gn387')) return [CLASS_CITATIONS.wiki387];
   if (kind === 'gn717x6') return dimension === 'height'
@@ -243,7 +257,7 @@ function publishedDimensions(kind: TrainKind, type: string): {
   if (kind === 'lner5' || kind === 'lner9') {
     const sources = [CLASS_CITATIONS.wiki800, CLASS_CITATIONS.wiki801];
     return {
-      length: { values: [{ valueM: DRIVING.has(type as never) ? 25.85 : 26, basis: 'published', sources }] },
+      length: { values: [{ valueM: DRIVING.has(type as never) ? 25.85 : 26, basis: 'published', sources: [CLASS_CITATIONS.hitachi2014, ...sources], note: 'Allocated pitch from Fig. 2: cab body 25.350 m + half the 1.000 m gap; intermediate body 25.000 m + a whole gap. These are not separately printed body lengths.' }] },
       width: { values: [{ valueM: 2.7, basis: 'published', sources }] },
       height: { values: noFigure('Class 800/801 pages do not give an overall height.') , note: 'No published overall body/roof height was found for these classes.' },
     };
@@ -252,8 +266,8 @@ function publishedDimensions(kind: TrainKind, type: string): {
     const drive = DRIVING.has(type as never);
     return {
       length: {
-        values: [{ valueM: drive ? 25.7 : 26, basis: 'published', sources: [CLASS_CITATIONS.wiki802], ...(drive ? { note: 'Class 802 Wikipedia reports 25.7 m driving vehicles; the shared model uses the Class 800/801 figure 25.85 m.' } : {}) }],
-        note: drive ? 'Retain 25.85 m as an ASSUMED Class 800/801 transfer, not a verified Class 802 dimension. Angel Trains (https://angeltrains.co.uk/fleet/class-802/) gives nominal 26 m only; no type-specific primary cab figure found. Wikipedia’s 25.7 m is retained as a weaker conflicting citation, not used to rescale the model.' : undefined,
+        values: [{ valueM: drive ? 25.7 : 26, basis: 'published', sources: [CLASS_CITATIONS.wiki802, CLASS_CITATIONS.eversholt802], ...(drive ? { note: 'Eversholt publishes 25.7 m for its GWR Class 802 DPTS/DPTF, without coupling endpoint definitions; this is not a Hull 802/3-specific dimension. The shared model retains an assumed 25.85 m overall cab.' } : {}) }],
+        note: drive ? 'Retain 25.85 m as an ASSUMED Class 800/801 transfer, not a verified Class 802 dimension. Eversholt publishes 25.7 m for GWR Class 802 driving cars, without defining coupling endpoints. Hull fleet owner Angel Trains gives nominal 26 m only. No Hull-specific overall cab dimension was found; do not rescale from a different fleet with unspecified endpoints.' : undefined,
       },
       width: { values: [{ valueM: 2.7, basis: 'published', sources: [CLASS_CITATIONS.angel802] }] },
       height: { values: noFigure('Class 802 sources do not give an overall height.'), note: 'No published overall body/roof height was found for Class 802.' },
@@ -261,8 +275,8 @@ function publishedDimensions(kind: TrainKind, type: string): {
   }
   if (kind === 'lumo5') {
     return {
-      length: { values: noFigure('The Class 803 page gives formation but no per-car length; model reuses Class 800/801 figures.') , note: 'No Class 803 per-car length was found. The AT300 model reuses figures cited for Class 800/801; this transfer is not Class 803 verification.' },
-      width: { values: noFigure('The Class 803 page gives no body width; model reuses Class 800/801 width.') , note: 'No Class 803 body width was found. The AT300 model reuses the Class 800/801 figure; this transfer is not Class 803 verification.' },
+      length: { values: noFigure('The Class 803 page gives formation but no per-car length; model reuses Class 800/801 figures.') , note: 'No numerical Class 803 per-car length was found in the reviewed primary sources (Lumo, Beacon Rail and ORR). Lumo confirms a shared earlier UK A-train bodyshell; the 800/801 numerical transfer remains assumed.' },
+      width: { values: noFigure('The Class 803 page gives no body width; model reuses Class 800/801 width.') , note: 'No numerical Class 803 width was found in the reviewed primary sources. Lumo’s shared-bodyshell statement supports the relationship, not an independently published 2.7 m dimension; the transfer remains assumed.' },
       height: { values: noFigure('The Class 803 page gives no overall height.') , note: 'No published overall body/roof height was found for Class 803.' },
     };
   }
