@@ -36,7 +36,7 @@ import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-liv
 import type { TrainLivery } from './train-livery.ts';
 import { clamp01, clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { AMBER, BEZEL, boxOutline, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER } from './train-face.ts';
+import { AMBER, BEZEL, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
@@ -217,8 +217,6 @@ export function setTrainLampState(train: THREE.Object3D, state: TrainLampState):
   });
   train.userData.lampState = { front: state.front, rear: state.rear };
 }
-/** The yellow of a warning panel: the shade is approximate (the LNER livery's nose front is about the same). */
-const YELLOW = 0xf2c100;
 /** Columns of the car section (counted from the bottom, 0..12) that carry the livery texture: the wall and the lower shoulder. Above them, and below, vertex colours. */
 const SHELL_K0 = 1;
 const SHELL_K1 = 7;
@@ -641,25 +639,26 @@ const DESIRO_BODY = ((): BodySpec => {
     nose: {
       length,
       knots: [
-        // ASSUMED: a rounder, deeper front than the Electrostar's; from photographs, not drawn. The face is nearly as broad as the body
-        // (Wikimedia Commons: "Great Northern Class 717 Desiro City at Palmers Green June 2019", "20220519 Thameslink 700032": a wide flat
-        // front with small corner radii; the lamps sit at its very corners), so the tip is wide and boxy, not an egg
-        { s: 0, top: 2.1, ws: 0.92, bottom: 0.6 },
-        { s: 0.22, top: 2.22, ws: 0.935, bottom: 0.66 },
-        { s: 0.55, top: 2.75, ws: 0.95, bottom: 0.8 },
-        { s: 0.9, top: 3.22, ws: 0.978, bottom: 0.9 },
-        { s: 1.25, top: 3.5, ws: 0.992, bottom: floor - 0.02 },
+        // ASSUMED, read off photographs against the published width (2.80 m) and the assumed 3.77 m height, not drawn: a tall, nearly upright wall, nearly as broad as the
+        // body, up from the cheeks' foot at about 0.55 m to a brow at 3.3 m, then the roof's front rising over a metre and a half to the crown (GN717-03-717005-Potters-Bar,
+        // GN717-01-717013-HDW, tl700_05_0146_farringdon, tl700_01_gatwick_front: black glass in a black mask, upright to a few degrees; the first version laid the glass on a
+        // 45 degree bullet nose). The ring's own corners are rounded by `fillet`: its face loses `filletLoss` of its size, so the knots are a little taller and wider than the
+        // face they make (DESIRO_FACE's shapes are clipped to that).
+        { s: 0, top: 3.4, ws: 0.955, bottom: 0.48 },
+        { s: 0.14, top: 3.46, ws: 0.975, bottom: 0.5 },
+        { s: 0.55, top: 3.54, ws: 0.995, bottom: 0.62 },
+        { s: 1.0, top: 3.6, ws: 1, bottom: 0.8 },
         { s: length, top: crown, ws: 1, bottom: floor },
       ],
-      fillet: 0.24,
-      filletLoss: 0.18,
+      fillet: 0.22,
+      filletLoss: 0.07,
+      filletSteps: 9,
       roundLen: 1.5,
       widest: 0.45,
-      boxiness: 3.6,
+      boxiness: 4,
     },
+    // no glass on the roof: the windscreens are shapes on the face (front.face); the cab's side window stays on the flank
     glass: {
-      // the 717's emergency door stands between its two windscreens, a black panel in the black glass (GN717-03-717005-Potters-Bar, GN717-05-25.06.26-Welwyn-Garden-City-717014)
-      screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14, pillar: 0.7 },
       side: { sBack: 1.65, sFront0: 1.15, sFront1: 0.9, v0: 0.55, v1: 0.8 },
     },
     // the Desiro City's gangways are open and "full width"
@@ -669,16 +668,17 @@ const DESIRO_BODY = ((): BodySpec => {
     underframe: 1.0,
     // the skirt as the livery gives it (no photograph shows these covers closely): a plain panel, leaning in under the body's edge
     skirt: { light: 0, vents: false },
-    // ASSUMED, all of it: round headlights over round tail lamps in a dark bezel; a front evacuation door between them (the 717 works the
-    // Moorgate tunnels); the coupler stands out of the face, uncovered; and no warning panel (a 2018 train with compliant lights)
+    // A flat face (DESIRO_717_FACE, from GN717-03-717005-Potters-Bar and GN717-01-717013-HDW): a black mask over the upper front with the full-height emergency door (the 717
+    // works the Moorgate tunnels) between two screens, a lamp pod under each screen's outer foot, white cheeks, and the coupler standing out of the face, uncovered, in a
+    // recess; no yellow warning panel (a 2018 train with compliant lights). ASSUMED sizes throughout.
     front: {
-      lamps: { shape: 'round', y: 0.55, x: 0.62, head: [0.17, 0.17], tail: [0.09, 0.09], tailAt: [0, -0.17], bezel: 0.03 },
-      frame: 0.07,
-      wipers: true,
-      display: true,
-      door: { width: 0.6, height: 0.62 },
+      frame: 0,
+      wipers: false,
+      display: false,
+      door: null,
       warning: null,
       coupler: { style: 'dellner', covered: false },
+      face: DESIRO_717_FACE,
     },
     underfloor: null,
     plan: emuPlan('desiro', length),
@@ -687,28 +687,26 @@ const DESIRO_BODY = ((): BodySpec => {
 
 /**
  * The Class 700 is the same Siemens Desiro City as the 717: the body, nose, windows, doors and bogies are the 717's, from its own
- * figures (the width, height, floor and wheels are alike). Its front differs: no front door, slim LED headlight strips with a tail lamp
- * at the outer end, and a yellow warning panel (a forum post says the 700s "still have a yellow panel"). In photographs (Wikimedia Commons:
- * "20220519 Thameslink 700032", "Siemens Class 700 mock up") the panel is a patch under the glass, about two thirds of the face's width,
- * with white cheeks to each side of it, where the lamps sit; ASSUMED sizes. The cars' lengths are the 700's own (core/train.ts: DESIRO_700).
+ * figures (the width, height, floor and wheels are alike). Its front differs: one broad screen with no front door, slim pods with a headlight and a second lamp,
+ * and a yellow warning panel (a forum post says the 700s "still have a yellow panel"). In photographs (Wikimedia Commons: "20220519 Thameslink 700032", "Siemens
+ * Class 700 mock up"; the review set's tl700_05_0146_farringdon) the panel is a trapezoid under the glass, wide at the sill and narrower at its foot, with white cheeks
+ * to each side of it where the pods sit; ASSUMED sizes. The cars' lengths are the 700's own (core/train.ts: DESIRO_700).
  */
 const DESIRO700_BODY: BodySpec = {
   ...DESIRO_BODY,
   family: 'desiro700',
-  // one broad windscreen, with no emergency door between two panes (tl700_01_gatwick_front)
-  glass: { screen: { s0: 0.2, s1: 1.35, fraction: 0.87, topRadius: 0.28, bottomRadius: 0.14 }, side: DESIRO_BODY.glass.side },
+  // (the 717's glass spec: no windscreen on the roof, the side window on the flank)
   front: {
-    // a slim dark pod at the face's upper outer corner with two round lenses in it, the headlight inboard and the larger-looking pale lamp outboard of it
-    // (tl700_01_gatwick_front_29079928802: a tapered pod under each lower corner of the glass); sizes read off that photograph, not published
-    lamps: { shape: 'round', y: 0.55, x: 0.72, head: [0.13, 0.13], tail: [0.13, 0.13], tailAt: [0.16, 0], bezel: 0.03 },
-    frame: 0.07,
-    wipers: true,
-    display: true,
+    // A flat face (DESIRO_700_FACE, from tl700_05_0146_farringdon and tl700_01_gatwick_front_29079928802): one broad screen with no emergency door between two panes, the yellow
+    // warning panel under it (a trapezoid between white cheeks, drawn as a shape on the face, not wrapped over the nose), a pod at each lower outer corner of the glass with two
+    // round lenses in it, and the coupler out of the face, uncovered. Sizes read off those photographs, not published.
+    frame: 0,
+    wipers: false,
+    display: false,
     door: null,
-    warning: YELLOW,
-    warningWrap: 0.2,
-    warningWidth: 0.7,
+    warning: null,
     coupler: { style: 'dellner', covered: false },
+    face: DESIRO_700_FACE,
   },
   plan: emuPlan('desiro700', DESIRO_BODY.nose.length),
 };
@@ -1043,7 +1041,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       if (kmax <= 1) colour = def.skirt;
       // a warning panel wraps the nose above the cover (to ring `warnEnd`, and as far across as column kW), over whatever colour the livery gives the nose
       else if (front.warning !== null && inWarning && kmin >= kW) colour = front.warning;
-      else if (frontBand) colour = kmin >= J0 ? def.noseFront : (front.coupler.covered ? (front.mask ? def.noseFront : (def.swoosh ?? def.noseFront)) : def.skirt);
+      // (a flat face's black mask runs on over the roof's front: the livery's dome colour from the face back, as it is farther on, not the white of the cheeks)
+      else if (frontBand && front.face && def.noseTop !== null && kmin >= J0 && kmax > SHELL_K1 && nearS >= def.noseTopFrom - 1e-9) colour = def.noseTop;
+      else if (frontBand) colour = kmin >= J0 ? def.noseFront : (front.coupler.covered ? (front.mask ? def.noseFront : (def.swoosh ?? def.noseFront)) : front.face ? def.noseFront : def.skirt);
       // the nose's roof: a livery's own top colour from `noseTopFrom` back (the LNER's black dome over the windscreen), else the crescent, else the roof
       else if (onNose) colour = def.noseCone ?? (def.noseTop !== null && kmax > SHELL_K1 && nearS >= def.noseTopFrom - 1e-9 ? def.noseTop : kmax > SHELL_K1 && farS <= crescentEnd + 1e-9 ? def.noseBand : def.roof);
       detail.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], colourOf(colour));
@@ -1069,7 +1069,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const coverTop = flat ? flat.coverTop : yCut - 0.03;
     const covered = front.coupler.covered;
     // under the cover: the livery's lower nose; with no cover, the dark underframe colour (a valance round the coupler); over it, the warning panel where there is one
-    const lowerColour = covered ? (def.noseCone ?? (front.mask ? def.noseFront : def.swoosh) ?? def.noseFront) : def.skirt;
+    const lowerColour = covered ? (def.noseCone ?? (front.mask ? def.noseFront : def.swoosh) ?? def.noseFront) : front.face ? def.noseFront : def.skirt;
     const upperColour = front.warning ?? def.noseCone ?? def.noseFront;
     // the face is cut by a line across it (axis 0: x = value, axis 1: y = value), keeping the side `above` it
     const clip = (poly: V3[], axis: 0 | 1, value: number, above: boolean): V3[] => {

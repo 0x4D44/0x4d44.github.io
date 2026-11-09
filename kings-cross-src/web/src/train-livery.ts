@@ -16,6 +16,7 @@ import { TRAIN_SPECS } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, shellMaterial, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, textEms } from './livery.ts';
 import type { DecalCar, DecalItem, LiveryDef } from './livery.ts';
+import { MASK_700, MASK_717 } from './train-face.ts';
 
 /** A coloured polygon of the side elevation: points are [s metres from the nose tip, y metres above the rail head]. */
 export interface Shape {
@@ -368,15 +369,16 @@ const GN717: TrainLivery = asTrainLivery(LIVERIES.greatnorthern, {
   noseFront: 0xdde0e4,
   noseBand: 0xdde0e4,
   // GN717-03-717005-Potters-Bar and GN717-05-25.06.26-Welwyn-Garden-City-717014: the upper half of the front, the windscreens and the
-  // door between them, is black, over a white lower front; a black dome continues over the roof's front
-  noseTop: 0x1a1c21,
+  // door between them, is black, over a white lower front; a black dome continues over the roof's front (the face's mask, train-face.ts, is the same black)
+  noseTop: MASK_717,
   noseTopFrom: 0,
 });
 
+// (tl700_05_0146_farringdon, tl700_01_gatwick_front_29079928802: the dark dome over the roof's front runs on from the face's mask, a blue-black, so it begins at the face)
 const TL700: TrainLivery = asTrainLivery(LIVERIES.thameslink, {
   scheme: 'tl700',
-  noseTop: 0x1a2030,
-  noseTopFrom: 0.9,
+  noseTop: MASK_700,
+  noseTopFrom: 0,
 });
 
 // Hull Trains: a blue body with a cyan sweep at the cab, a spectrum band along the cars (stepped in decals) with the town's name on it, red doors, a

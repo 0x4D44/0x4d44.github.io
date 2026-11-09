@@ -148,3 +148,109 @@ export const ELECTROSTAR_FACE: FaceSpec = {
     { name: 'coupler-port', outline: discOutline(0.095, 0.9, 0.065), colour: COUPLER_PORT, lift: 0.006, mirror: true, trainEnd: true },
   ],
 };
+
+// --- the Desiro City's face (the Class 717 and the Class 700) --------------------------------------------
+
+/** The warning yellow of a Class 700's panel and a Class 180's (the loft's own panel colour, and the 700's face panel, are this). */
+export const YELLOW = 0xf2c100;
+/**
+ * The glossy black the Desiro City's upper front wears round and between its screens, and the dome over the roof's front the livery paints the same (train-livery.ts takes
+ * both from here). The 717's is a neutral black, the 700's a blue-black (photographs GN717-03-717005-Potters-Bar, tl700_05_0146_farringdon: approximate shades).
+ */
+export const MASK_717 = 0x1a1c21;
+export const MASK_700 = 0x1a2030;
+/** The thin line along the brow: the 717's orange (the livery's own pinstripe, train-livery.ts GN_PINSTRIPE) and the 700's copper (a guess at its shade). */
+const BROW_717 = 0xe8731c;
+const BROW_700 = 0xb8732f;
+/** The 717's door: its leaf's black, a shade off the glass's (it is matt where the glass is gloss), and its lower leaf, the body's white (GN717's body colour). */
+const DOOR_BLACK = 0x24272c;
+const DOOR_WHITE = 0xdde0e4;
+/** A lamp pod's housing: near black, a shade lighter than the mask it hangs under so the pod's rim shows against the cheek's white. */
+const POD = 0x1c1e22;
+/** The 700's destination display: a pale grey-blue strip under the glass's top edge (tl700_05_0146_farringdon: it is not lit amber as on a 387), and its roof marker lamp. */
+const DISPLAY_GREY = 0x5d6a78;
+const MARKER_LAMP = 0xc9ccd0;
+
+/**
+ * The 717's face, from GN717-03-717005-Potters-Bar (nearly head on, about 165 px to the metre against the 3.77 m height) and GN717-01-717013-HDW:
+ *   the mask      glossy black from the screens' sill (2.0 m) up over the whole upper front, out to the face's edge; a thin orange line along its brow (the black dome over the roof's
+ *                 front, which train-livery.ts paints, continues it) and a round marker lamp at its middle;
+ *   the door      the full-height emergency door at the middle, 1.0 m wide: black from the sill up to the brow (the destination "717005" is lettered in white at its foot in the
+ *                 photograph: text is not drawn), white from there down to 1.27 m, a thin dark seal round it;
+ *   the screens   two panes, 0.65 m wide and a metre tall, either side of the door, in black seals, each with a pantograph wiper parked upright against the door's edge; the
+ *                 cab's right one carries the lit destination display under its upper edge;
+ *   the pods      a dark rounded box 0.44 x 0.42 m under each screen's outer foot, a large headlight outboard and a small tail lamp inboard of it and under it;
+ *   the recess    the coupler's, dark, 1.24 m wide, between the white cheeks.
+ * The face is the loft's own white under all of it (the cheeks); the glass and what stands on it are laid 6 mm or more above it, as the 387's are.
+ * Sizes are read off two photographs, ASSUMED (no drawing was found).
+ */
+export const DESIRO_717_FACE: FaceSpec = {
+  setback: 0.02,
+  coverTop: 1.25,
+  recess: { half: 0.62, y0: 0.5, y1: 1.2 },
+  glassLean: -0.2,
+  shapes: [
+    // the black over the upper front, the brow's orange line round the top of it (the line is the band between two insets, laid between two layers of black)
+    { name: 'mask', outline: boxOutline(-1.5, 1.5, 2.0, 3.7), colour: MASK_717, lift: 0.0015 },
+    { name: 'brow-line', outline: boxOutline(-1.5, 1.5, 2.85, 3.7), colour: BROW_717, lift: 0.003, inset: 0.02 },
+    { name: 'brow-mask', outline: boxOutline(-1.5, 1.5, 2.8, 3.7), colour: MASK_717, lift: 0.0045, inset: 0.045 },
+    // the black seals round the screens, and round the door
+    { name: 'screen-frame', outline: boxOutline(0.52, 1.5, 1.99, 3.3, 0.05), colour: PANE_SEAL, lift: 0.006, mirror: true, inset: 0.05 },
+    { name: 'door-frame', outline: boxOutline(-0.52, 0.52, 1.25, 3.3), colour: PANE_SEAL, lift: 0.006, inset: 0.05 },
+    // the door: its upper leaf black to the brow, its lower leaf white
+    { name: 'door-leaf-upper', outline: boxOutline(-0.495, 0.495, 2.0, 3.3), colour: DOOR_BLACK, lift: 0.0075, inset: 0.07 },
+    { name: 'door-leaf-lower', outline: boxOutline(-0.495, 0.495, 1.29, 1.97), colour: DOOR_WHITE, lift: 0.0075 },
+    // the glass, and the two bands of sky over its upper rows
+    { name: 'pane', outline: boxOutline(0.57, 1.5, 2.05, 3.3, 0.05), glass: true, lift: 0.0075, mirror: true, inset: 0.075 },
+    { name: 'pane-sky-high', outline: boxOutline(0.57, 1.5, 2.98, 3.3), colour: PANE_SKY_HI, lift: 0.0135, mirror: true, inset: 0.075 },
+    { name: 'pane-sky-mid', outline: boxOutline(0.57, 1.5, 2.8, 2.98), colour: PANE_SKY_MID, lift: 0.0135, mirror: true, inset: 0.075 },
+    // the destination display behind the cab's right-hand screen's upper edge, and each screen's wiper parked upright against the door's edge
+    { name: 'display', outline: boxOutline(0.66, 1.0, 2.84, 3.02, 0.01), colour: DISPLAY_PANEL, lift: 0.0165, inset: 0.09 },
+    { name: 'display-text', outline: boxOutline(0.72, 0.94, 2.9, 2.96), colour: DISPLAY_TEXT, lift: 0.018 },
+    { name: 'wiper', outline: barOutline([0.61, 2.08], [0.64, 3.0], 0.035), colour: WIPER, lift: 0.0165, mirror: true },
+    // a round marker lamp at the brow's middle (GN717-01-717013-HDW)
+    { name: 'roof-lamp', outline: discOutline(0, 3.17, 0.05), colour: ROOF_LAMP, lift: 0.009 },
+    // the lamp pods under the screens' outer feet, and their lenses: the headlight outboard and up, the small tail lamp inboard and under it
+    { name: 'lamp-pod', outline: boxOutline(0.8, 1.3, 1.55, 1.97, 0.05), colour: POD, lift: 0.0105, mirror: true, inset: 0.01 },
+    { name: 'headlight', outline: discOutline(1.08, 1.78, 0.085), lens: 'head', lift: 0.019, mirror: true },
+    { name: 'tail-lamp', outline: discOutline(0.93, 1.67, 0.05), lens: 'tail', lift: 0.019, mirror: true },
+  ],
+};
+
+/** The right half of the 700's yellow panel, from its top corner at the sill down to the middle of its lower edge (which bows down a little). */
+const PANEL_700: readonly [number, number][] = [[0.9, 2.08], [0.86, 1.9], [0.8, 1.7], [0.72, 1.52], [0.62, 1.37], [0.5, 1.27], [0.3, 1.21], [0, 1.19]];
+
+/**
+ * The 700's face, from tl700_05_0146_farringdon and tl700_01_gatwick_front_29079928802 (the same Desiro City shell as the 717's, with its own front):
+ *   the mask      as the 717's (blue-black), its brow line copper, a small rectangular marker lamp at the middle of it;
+ *   the screen    one broad pane (2.2 m wide, 1.0 m tall) in a black seal, the destination display a grey-blue strip under its top edge, one wiper parked slantwise at its left;
+ *   the panel     the yellow warning panel under the glass, a trapezoid 1.8 m wide at the sill and 1.0 m at its foot, with white cheeks either side of it;
+ *   the pods      a dark box 0.44 x 0.36 m under each outer corner of the glass, the headlight inboard and a second lens outboard of it;
+ *   the recess    the coupler's, dark, between the cheeks.
+ * ASSUMED sizes, read off the two photographs.
+ */
+export const DESIRO_700_FACE: FaceSpec = {
+  setback: 0.02,
+  coverTop: 1.25,
+  // (the recess stands clear of the yellow panel above it, whose foot bows down to 1.19 m)
+  recess: { half: 0.62, y0: 0.5, y1: 1.15 },
+  glassLean: -0.2,
+  shapes: [
+    // the yellow panel under the glass: wide at the sill, narrower at its foot, whose lower edge bows down a little
+    { name: 'warning-panel', outline: [...PANEL_700, ...PANEL_700.slice(0, -1).reverse().map(([x, y]): [number, number] => [-x, y])], colour: YELLOW, lift: 0.003 },
+    { name: 'mask', outline: boxOutline(-1.5, 1.5, 2.06, 3.7), colour: MASK_700, lift: 0.0015 },
+    { name: 'brow-line', outline: boxOutline(-1.5, 1.5, 2.85, 3.7), colour: BROW_700, lift: 0.003, inset: 0.02 },
+    { name: 'brow-mask', outline: boxOutline(-1.5, 1.5, 2.8, 3.7), colour: MASK_700, lift: 0.0045, inset: 0.045 },
+    { name: 'screen-frame', outline: boxOutline(-1.5, 1.5, 2.06, 3.3, 0.05), colour: PANE_SEAL, lift: 0.006, inset: 0.05 },
+    { name: 'pane', outline: boxOutline(-1.5, 1.5, 2.12, 3.1, 0.05), glass: true, lift: 0.0075, inset: 0.075 },
+    { name: 'pane-sky-high', outline: boxOutline(-1.5, 1.5, 2.96, 3.1), colour: PANE_SKY_HI, lift: 0.0135, inset: 0.075 },
+    { name: 'pane-sky-mid', outline: boxOutline(-1.5, 1.5, 2.8, 2.96), colour: PANE_SKY_MID, lift: 0.0135, inset: 0.075 },
+    { name: 'display', outline: boxOutline(-0.42, 0.5, 2.9, 3.04, 0.01), colour: DISPLAY_GREY, lift: 0.0165, inset: 0.09 },
+    { name: 'wiper', outline: barOutline([0.45, 2.14], [0.62, 2.66], 0.035), colour: WIPER, lift: 0.0165 },
+    { name: 'roof-lamp', outline: boxOutline(-0.1, 0.1, 3.15, 3.25, 0.02), colour: MARKER_LAMP, lift: 0.009 },
+    // the lamp pods under the glass's outer corners (their tops under the sill), each with two round lenses: the headlight inboard, the second lamp outboard of it
+    { name: 'lamp-pod', outline: boxOutline(0.86, 1.3, 1.68, 2.04, 0.05), colour: POD, lift: 0.0105, mirror: true, inset: 0.01 },
+    { name: 'headlight', outline: discOutline(0.99, 1.86, 0.065), lens: 'head', lift: 0.019, mirror: true },
+    { name: 'tail-lamp', outline: discOutline(1.15, 1.86, 0.065), lens: 'tail', lift: 0.019, mirror: true },
+  ],
+};

@@ -10,6 +10,7 @@ import { LIGHT_GAIN, LIVERIES, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, shellMate
 import { NOSE_RECESS, bodySpec, buildTrain, frontOf } from '../src/train.ts';
 import { ringAt } from '../src/train-nose.ts';
 import { col } from '../src/train-geom.ts';
+import { MASK_700, MASK_717 } from '../src/train-face.ts';
 import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
 
@@ -237,8 +238,14 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
   // the LNER nose is a black dome over the glass; the 717's the whole nose; the others have no special top
   assert.equal(liveryFor('lner5').noseTop, 0x1a1c21);
   assert.equal(liveryFor('lner5').noseTopFrom, 2.0);
+  // CHANGED (the 717's dome was written out here, and the 700 had none): both Desiro Citys' domes are the black of their flat faces' masks, from the tip (train-face.ts), the 700's a blue-black
   assert.equal(liveryFor('gn717x6').noseTop, 0x1a1c21);
+  assert.equal(liveryFor('gn717x6').noseTop, MASK_717);
   assert.equal(liveryFor('gn717x6').noseTopFrom, 0);
+  assert.equal(liveryFor('tl700x8').noseTop, MASK_700);
+  assert.equal(liveryFor('tl700x12').noseTop, MASK_700);
+  assert.equal(liveryFor('tl700x8').noseTopFrom, 0);
+  assert.notEqual(MASK_700, MASK_717, 'the 700\'s black is a blue-black, the 717\'s a neutral one');
   assert.equal(liveryFor('gc180x5').noseTop, null);
   assert.equal(liveryFor('gn387x4').noseTopFrom, 99, 'the 387 has no dark top (a distance past any nose)');
 });
@@ -406,18 +413,24 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
     assert.ok(through);
     assert.equal(trisOfColour(detailOf(g, through.index), colour).length, 0, `${kind}: the dark dome on a through car`);
   }
-  // the 717's nose roof is dark from the very tip
-  {
-    const g = buildTrain('gn717x6');
+  // the 717's and the 700's nose roofs are dark from the very tip (CHANGED: the 700's was the body's colour; it wears its own black now, MASK_700, on its flat face's dome)
+  for (const [kind, colour] of [['gn717x6', dark], ['tl700x8', MASK_700], ['tl700x12', MASK_700]] as [TrainKind, number][]) {
+    const g = buildTrain(kind);
     g.updateMatrixWorld(true);
-    const car = trainLayout('gn717x6').cars[0] as { start: number };
-    const tris = trisOfColour(detailOf(g, 0), dark);
-    assert.ok(tris.length > 20, `717: ${tris.length} dark nose roof triangles`);
-    // it begins at the nose's front: the roof columns only rise above the shell's top about 0.85 m back from the tip, so within the first metre
-    const first = Math.min(...tris.flat().map((v) => Math.abs(v.z - car.start)));
-    assert.ok(first < 1, `the dark nose roof begins ${first.toFixed(2)} m from the tip`);
+    for (const index of cars(kind)) {
+      const car = trainLayout(kind).cars[index] as { cab: 'front' | 'rear'; start: number; end: number };
+      const tris = trisOfColour(detailOf(g, index), colour);
+      assert.ok(tris.length > 20, `${kind} car ${index}: ${tris.length} dark nose roof triangles`);
+      // it begins at the nose's front: the roof columns only rise above the shell's top a little way back from the tip, so within the first metre
+      const tip = car.cab === 'front' ? car.start : car.end;
+      const first = Math.min(...tris.flat().map((v) => Math.abs(v.z - tip)));
+      assert.ok(first < 1, `${kind} car ${index}: the dark nose roof begins ${first.toFixed(2)} m from the tip`);
+    }
+    const through = trainLayout(kind).cars.find((c) => !c.cab);
+    assert.ok(through);
+    assert.equal(trisOfColour(detailOf(g, through.index), colour).length, 0, `${kind}: the dark dome on a through car`);
   }
-  // no dark dome elsewhere: not on the Hull, 387, 700 or 180 cabs, in either of the two domes' colours
+  // no dark dome elsewhere: not on the Hull, 387 or 180 cabs, in either of the two domes' colours, nor on the 700 in the LNER's or Lumo's (its own is MASK_700)
   for (const kind of ['hull5', 'gn387x4', 'tl700x8', 'gc180x5'] as TrainKind[]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
