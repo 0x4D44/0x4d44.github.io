@@ -201,3 +201,28 @@ test('W1 platform tactile strip: blister texture in metres, 0.4 m deep, on the p
  for(let i=0;i<tactile.positions.length;i+=3)assert.ok(Math.abs(tactile.positions[i+1]-WAVERLEY_LEVELS.platform-WAVERLEY_STRUCTURE.stripLift)<1e-9);
  const [tu,tv]=WAVERLEY_STATION_TEXTURES.blister.tile;assert.ok(tu<=.4&&tv<=.4,'a texture tile is no bigger than the strip');
 });
+
+/** A made-up layout: platforms as rectangles x 0..40 m, tracks as straight lines, one big roof over all. */
+const layout=(platforms:{ref:string;z0:number;z1:number}[],tracks:[number,number,number][])=>({
+ platforms:platforms.map(({ref,z0,z1})=>({id:ref,ref,tags:{},path:[[0,z0],[40,z0],[40,z1],[0,z1]] as Pt[]})),
+ rails:tracks.map(([z,x0,x1],i)=>({id:`r${i}`,tags:{railway:'rail'},path:[[x0,z],[x1,z]] as Pt[]})),
+});
+const bigRoof={outer:[[-20,-20],[60,-20],[60,30],[-20,30]] as Pt[],holes:[]};
+
+test('W1 split islands, made up: a wide island takes a column on its seam, a narrow one none',()=>{
+ const S=WAVERLEY_STRUCTURE,need=1.6+.1+S.pedestalRadius;// the KX safety line and slack, plus the pedestal
+ for(const [half,expect]of [[2.3,true],[1.8,false]] as const){
+  // Each 2.3 m half is too narrow for a column of its own beside its track; the 4.6 m island is not.
+  const d=layout([{ref:'a',z0:0,z1:half},{ref:'b',z0:half,z1:2*half}],[[-1.7,-10,50],[2*half+1.7,-10,50]]);
+  const cols=waverleyStationPlan(d,bigRoof).columns.filter(c=>c.ref==='a/b');
+  assert.equal(cols.length>0,expect,`${2*half} m island: ${cols.length} seam columns`);
+  for(const c of cols)assert.ok(Math.min(c.z,2*half-c.z)>=need-1e-9,`seam column ${c.z.toFixed(2)} m in`);
+ }
+});
+
+test('W1 railings, made up: none where a track runs close past the end of an open edge',()=>{
+ // The far side faces a track for only 12 of its 40 m, so it is an open edge; that track passes 1.2 m off it.
+ const d=layout([{ref:'a',z0:0,z1:6}],[[-1.7,-10,50],[7.2,-10,12]]),plan=waverleyStationPlan(d,bigRoof);
+ const near=(p:Pt):number=>Math.min(...d.rails.map(r=>segDist(p,r.path as [Pt,Pt])));
+ for(const [a,b]of plan.railings)for(const p of [a,b])assert.ok(near(p)>=ENVELOPE_HALF,`railing end at ${p} is ${near(p).toFixed(2)} m from a track`);
+});
