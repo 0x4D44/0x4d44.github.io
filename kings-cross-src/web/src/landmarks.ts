@@ -414,8 +414,9 @@ const GNH_DORMER_WINDOW_HEIGHT = 1.25; // ASSUMED
 // [HE-GNH](https://historicengland.org.uk/listing/the-list/list-entry/1113244?section=official-list-entry) also records "Prominent slab chimney-stacks"; hist-a shows eight or nine in the hotel's
 // brick under pale caps with pots, each of a height and width of its own, some with a lower stack beside it. ASSUMED: six sites on each long slope, each a stack (`addStack`) of the scale,
 // shaft height and companion given here, standing on the flat top just behind the crest (the slope is too short a run for a stack this deep), clear of the dormers. Round 7 (the scorer: the stacks
-// "read as modest boxes; R-a's are tall broad slabs that dominate the skyline"): about twice the round 6 heights, 4.6 to 6.8 m over the flat top, each shaft 1.47 times as wide as it is deep.
-const GNH_STACKS = [[1.2, 5.4, 1], [1.5, 4.6, 0], [1.0, 6.4, 1], [1.4, 5.8, 0], [1.6, 5.0, 1], [1.1, 6.8, 0]] as const;
+// "read as modest boxes; R-a's are tall broad slabs that dominate the skyline"): about twice the round 6 heights and a half as wide again (round 6's tall thin shafts read as towers, not slabs), 4.4 to
+// 5.8 m over the flat top, 2.1 to 2.9 m wide, each shaft 1.47 times as wide as it is deep.
+const GNH_STACKS = [[1.7, 5.0, 1], [2.0, 4.4, 0], [1.5, 5.6, 1], [1.9, 5.2, 0], [2.1, 4.8, 1], [1.6, 5.8, 0]] as const;
 const GNH_CHIMNEY_COUNT_PER_LONG_SLOPE = GNH_STACKS.length;
 const GNH_ROOF_DETAIL_GAP = 0.12; // ASSUMED clear roof run between dormer backs and chimney-cap fronts
 
@@ -736,7 +737,7 @@ function addPavilion(parts: PartMap<Key>, b: BayPosition, eaves: number, slope: 
   stone.box(q(0, (P + 0.4) / 2, y0 - 0.45), [2 * w + 0.4, 0.9, P + 0.4], { rotY, skip: ['+z'] }); // the porch hood over the entrances: corbels out from the first floor
   for (const s of [-1, 1]) stone.box(q(s * (w - 0.185), P - 0.185, (0.9 + eaves) / 2), [0.43, eaves - 0.9, 0.43], { rotY, skip: ['-y', '+y'] }); // hist-b: stone quoins 0.4 m wide up the corners, 0.03 m proud of the brick (ASSUMED)
   stone.box(q(0, (P + 0.3) / 2, eaves - 0.5), [2 * w + 0.6, 1, P + 0.3], { rotY, skip: ['+z', '-y'] });
-  for (const y of [11.5, 17]) stone.box(q(0, (P + 0.12) / 2, y + 0.175), [2 * w + 0.24, 0.35, P + 0.12], { rotY, skip: ['+z'] });
+  for (const y of [11.5, 17]) stone.box(q(0, (P + 0.28) / 2, y + 0.175), [2 * w + 0.56, 0.35, P + 0.28], { rotY, skip: ['+z'] });
   addGable(parts, q(0, P, eaves), b.dir, b.normal, slope, w, hp, 0, 'brickRed', P);
   addTwin(parts, shift(b, 0, P), eaves + 0.8, 2.6, 4.2);
   addSpike(stone, at(0, P), b.dir, b.normal, 0.15, eaves + hp, eaves + hp + 1.4);
@@ -912,7 +913,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
 
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
-  for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.2);
+  for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.28); // (round 7: 0.28 m out like the facade's, from 0.2 m)
   addBand(stone, ring(h), sT, 0.5, 0.45); // hist-c: the belfry stands on a balcony, a slab 0.45 m out, with a stone balustrade 0.5 m tall on it, the dark of the belfry between its balusters (ASSUMED)
   addBand(part(parts, 'pane'), ring(h), sT + 0.5, 0.44, 0.3);
   addBalustrade(stone, ring(h), sT + 0.5, 0.5, 0.4);
@@ -980,6 +981,11 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   // the roof; the clock tower's open lantern (dark lights between mullions, a pinnacle on each corner) and then the needle and its rod
   addRoof(slate, sq(P), sq(rb), wH, wH + g, false, [P - rb, P - rb, P - rb, P - rb]);
   addRoof(slate, sq(rb), sq(lant), wH + g, top, false, [rb - lant, rb - lant, rb - lant, rb - lant]);
+  // hist-c (round 7, the scorer: "the spire has no crested ridges"): a stone crest 0.3 m square along each hip of the steep pyramid, from its foot to the lantern's corner (ASSUMED size)
+  sq(rb).forEach((a, i) => {
+    const [dx, dz, rise] = [(sq(lant)[i] as Pt)[0] - a[0], (sq(lant)[i] as Pt)[1] - a[1], top - wH - g];
+    stone.box([a[0] + dx / 2, wH + g + rise / 2, a[1] + dz / 2], [Math.hypot(dx, dz, rise), 0.3, 0.3], { rotY: yaw([dx, dz]), rotZ: Math.atan2(rise, Math.hypot(dx, dz)) });
+  });
   if (clockTower) {
     addWalls(stone, sq(lant), rT + 0.4, lT - 0.4);
     for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addWindow(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
@@ -1016,7 +1022,9 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   const pairs = pavilionPairs(plan, pavilions);
   const pavs = pairs.flat();
   const feet = pairs.map(([a, b]) => addPavilion(parts, { ...a, at: [(a.at[0] + b.at[0]) / 2, (a.at[1] + b.at[1]) / 2], width: a.width + b.width }, plan.eaves, frame.rise / (plan.roof.runs[a.edge] as number)));
-  for (const [y, h] of [[0, 0.9], [6, 0.35], [11.5, 0.35], [17, 0.35]] as const) addBand(stone, segs, y, h, 0.12); // a stone base under the ground storey [hist-b], then the first three string courses
+  // a stone base under the ground storey [hist-b], then the first three string courses. Round 7 (the scorer: "relief is shallow at street level next to R-b's carved strings"): the base stands 0.35 m
+  // proud (the stone feet of the road front may stand 0.5 m off the rings) and the courses 0.28 m, where round 6's were 0.12 m
+  for (const [y, h] of [[0, 0.9], [6, 0.35], [11.5, 0.35], [17, 0.35]] as const) addBand(stone, segs, y, h, y ? 0.28 : 0.35);
   addBand(stone, segs, plan.eaves - 1.0, 1.0, 0.6); // the cornice
   addBalustrade(stone, segmentsOutside(edges, [...cutters, ...feet]), plan.eaves, 0.9, 0.35); // hist-b: an open stone balustrade along the roof's edge, in front of the gutter: not where a gabled bay's cheeks start
   addRoof(slate, plan.outline, plan.roof.ring, plan.eaves, plan.ridge, true, plan.roof.runs);
@@ -1024,7 +1032,7 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
   // windows: four storeys, round-headed at the bottom and pairs of pointed lancets above; the front and the curved wing in bays, the rest evenly
   const rows = [{ y: 1.0, h: 3.9, head: 'round' as Head }, ...ROWS.map(([y, h]) => ({ y, h, head: 'pointed' as Head }))];
   // hist-b: a continuous stone sill course under each upper row, below the groups' own sills; the first floor's is its balcony, standing 0.4 m out; sizes ASSUMED
-  rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.14 : 0.4));
+  rows.slice(1).forEach((row, i) => addBand(stone, segs, row.y - 0.45, 0.25, i ? 0.25 : 0.4));
   // hist-b: a cast-iron balcony along the first floor's balcony, a hair inside its edge: a rail 0.06 m tall at the foot and at the head, 0.7 m apart, and a baluster 0.08 m wide
   // every 0.32 m between them (round 5's solid dark band read as a wall); sizes ASSUMED
   addBalustrade(part(parts, 'pane'), segs, ROWS[0][0] - 0.2, 0.7, 0.38);
