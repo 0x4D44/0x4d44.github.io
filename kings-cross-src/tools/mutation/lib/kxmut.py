@@ -243,13 +243,14 @@ class TestRun(Run):
                 and self.summary.get('tests', 0) > 0)
 
 
-def run_tests(work, files, *, name_patterns=(), skip_patterns=(), test_timeout_ms=20000, timeout=120, extra=(), force_exit=False):
+def run_tests(work, files, *, name_patterns=(), skip_patterns=(), test_timeout_ms=20000, timeout=120, extra=()):
     """`node --test` over `files` in `work`, TAP on stdout. One call is one "test command" for baselines.
 
-    `force_exit` adds --test-force-exit, which ends a test file's process as soon as the tests it knows about have
-    finished. Use it only where the driver always did: it can cut off a test that is still failing.
+    There is deliberately no --test-force-exit: it ends a test file's process as soon as its tests are done, which
+    can cut off the report of a test that is failing. The file then shows up as a crash with no failing test to name,
+    and whether that happens depends on load, so a real kill would flicker between KILLED and ERROR.
     """
-    argv = ['node', '--test', '--test-reporter=tap', *(['--test-force-exit'] if force_exit else []), f'--test-timeout={test_timeout_ms}']
+    argv = ['node', '--test', '--test-reporter=tap', f'--test-timeout={test_timeout_ms}']
     argv += [f'--test-name-pattern={p}' for p in name_patterns]
     argv += [f'--test-skip-pattern={p}' for p in skip_patterns]
     argv += [*extra, *files]
@@ -366,10 +367,9 @@ class Suite:
     a command whose baseline was never taken, because a baseline taken after the file was mutated proves nothing.
     """
 
-    def __init__(self, work, *, cwd=None, test_timeout_ms=20000, timeout=120, extra=(), force_exit=False):
+    def __init__(self, work, *, cwd=None, test_timeout_ms=20000, timeout=120, extra=()):
         # `cwd` is where node runs when that is not the package itself (the evidence-pack test runs from its parent).
         self.work, self.cwd, self.test_timeout_ms, self.timeout, self.extra = work, cwd or work, test_timeout_ms, timeout, tuple(extra)
-        self.force_exit = force_exit
         self._baselines = {}
 
     @staticmethod
@@ -378,7 +378,7 @@ class Suite:
 
     def run(self, files, name_patterns=(), skip_patterns=()):
         return run_tests(self.cwd, files, name_patterns=name_patterns, skip_patterns=skip_patterns,
-                         test_timeout_ms=self.test_timeout_ms, timeout=self.timeout, extra=self.extra, force_exit=self.force_exit)
+                         test_timeout_ms=self.test_timeout_ms, timeout=self.timeout, extra=self.extra)
 
     def baseline(self, files, name_patterns=(), skip_patterns=()):
         key = self._key(files, name_patterns, skip_patterns)

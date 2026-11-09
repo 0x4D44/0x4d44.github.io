@@ -42,7 +42,7 @@ with kxmut.workspace(src, scratch, "core") as work:
     tests = sorted(str(p.relative_to(work)) for p in (work / "core" / "tests").glob("*.test.ts"))
 
     def run():
-        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90, force_exit=True)
+        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90)
 
     baseline = kxmut.require_green(run(), "core/tests/*.test.ts")
     for label, rel, old, new, all_ in M:

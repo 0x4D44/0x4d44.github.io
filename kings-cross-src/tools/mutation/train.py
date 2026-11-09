@@ -123,7 +123,7 @@ M = [
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, "train") as work:
     def run():
-        return kxmut.run_tests(work, TESTS, test_timeout_ms=8000, timeout=60, force_exit=True)
+        return kxmut.run_tests(work, TESTS, test_timeout_ms=8000, timeout=60)
 
     # every test, from an unmutated run of the copy, so that at the end we can say which tests no mutation ever turned red
     baseline = kxmut.require_green(run(), " ".join(TESTS))

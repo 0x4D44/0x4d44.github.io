@@ -105,7 +105,7 @@ with kxmut.workspace(src, scratch, "station") as work:
     tests = sorted(str(p.relative_to(work)) for p in (work / "core" / "tests").glob("*.test.ts"))
 
     def run():
-        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90, force_exit=True)
+        return kxmut.run_tests(work, tests, test_timeout_ms=8000, timeout=90)
 
     def fid():
         return kxmut.run_command(work, ["node", "tools/fidelity.ts", "--raw", raw], timeout=60)

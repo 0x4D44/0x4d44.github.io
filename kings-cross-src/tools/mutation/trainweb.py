@@ -250,7 +250,7 @@ selected = [m for m in M if not only or any(o in m[0] for o in only)]
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, "trainweb") as work:
     def run():
-        return kxmut.run_tests(work, TESTS, test_timeout_ms=20000, timeout=120, force_exit=True)
+        return kxmut.run_tests(work, TESTS, test_timeout_ms=20000, timeout=120)
 
     # every test, from an unmutated run of the copy, so that at the end we can say which tests no mutation ever turned red
     baseline = kxmut.require_green(run(), " ".join(TESTS))

@@ -34,7 +34,7 @@ M = [
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, "scene") as work:
     def run():
-        return kxmut.run_tests(work, ["core/tests/scene.test.ts"], test_timeout_ms=8000, timeout=60, force_exit=True)
+        return kxmut.run_tests(work, ["core/tests/scene.test.ts"], test_timeout_ms=8000, timeout=60)
 
     baseline = kxmut.require_green(run(), "core/tests/scene.test.ts")
     for label, old, new in M:
