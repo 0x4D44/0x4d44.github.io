@@ -127,8 +127,18 @@ test('V07 shows a motor bogie and a trailer bogie where the model has both, and 
   const u=view(kind,'underframe'),c1=(layout.cars[1].start+layout.cars[1].end)/2;vec(u.eye,[-(f.half+3),.8,c1],1e-6);vec(u.target,[0,.7,c1],1e-6);
   for(const v of plans.get(kind).filter(x=>x.id==='V07'&&x.status==='OK'))assert.ok(v.eye[1]>CATALOGUE_GROUND()+.25,'never below the ground');
  }
- for(const kind of AT300)assert.equal(any(kind,'bogie-trailer').status,'GAP');
- for(const kind of ALL_KINDS.filter(k=>!AT300.includes(k)))assert.equal(any(kind,'bogie-trailer').status,'OK');
+ // CHANGED: the Azuma kinds were pinned as GAP here, the model giving every bogie of theirs a motor. They now run trailer bogies under the driving cars and the TS
+ // (core/train.ts AT300_TRAILER_CARS), so every kind shows both a motor and a trailer bogie: on an Azuma the first trailer bogie is the front driving car's
+ // and the first motor bogie is car 1's.
+ for(const kind of ALL_KINDS)for(const suffix of ['bogie-motor','bogie-trailer'])assert.equal(any(kind,suffix).status,'OK',kind+suffix);
+ for(const kind of AT300){assert.equal(any(kind,'bogie-trailer').car.index,0,kind);assert.equal(any(kind,'bogie-motor').car.index,1,kind);}
+ // the GAP stays where a train has no such bogie in the model: every bogie a motor bogie, or none
+ const withFlags=(kind,motor)=>F.planCatalogueViews({...formations.get(kind),cars:formations.get(kind).cars.map(c=>({...c,motor:[motor,motor]}))});
+ for(const kind of ALL_KINDS) {
+  const noTrailer=withFlags(kind,true).find(v=>v.suffix==='bogie-trailer'),noMotor=withFlags(kind,false).find(v=>v.suffix==='bogie-motor');
+  assert.equal(noTrailer.status,'GAP',kind);assert.match(noTrailer.reason,/no trailer bogie/);assert.equal(noTrailer.eye,undefined);
+  assert.equal(noMotor.status,'GAP',kind);assert.match(noMotor.reason,/traction motors/);assert.equal(noMotor.eye,undefined);
+ }
 });
 const CATALOGUE_GROUND=()=>F.CATALOGUE.groundY;
 
@@ -626,7 +636,9 @@ test('a planned view is exactly its frozen numbers: status, frame, pose, region,
  const v=view('lner5','cab-car-side-left'),p=F.poseOf(v);
  assert.deepEqual(Object.keys(p).sort(),['car','extents','eye','fov','frame','near','region','rotationY','status','target','up']);
  assert.deepEqual([p.status,p.frame,p.fov,p.near,p.rotationY],['OK','front',25,v.near,v.rotation.rotationY]);assert.equal(p.eye,v.eye);assert.equal(p.extents,v.extents);assert.equal(p.car,v.car);assert.equal(p.region,v.region);
- const gap=F.poseOf(any('lner5','bogie-trailer'));assert.deepEqual([gap.status,gap.eye,gap.rotationY],['GAP',undefined,undefined]);
+ // (a GAP is a train with no trailer bogie in the model: the Azuma kinds used to be one; here an Azuma with a motor under every bogie)
+ const allMotor=F.planCatalogueViews({...formations.get('lner5'),cars:formations.get('lner5').cars.map(c=>({...c,motor:[true,true]}))});
+ const gap=F.poseOf(allMotor.find(x=>x.suffix==='bogie-trailer'));assert.deepEqual([gap.status,gap.eye,gap.rotationY],['GAP',undefined,undefined]);
  assert.equal(F.poseDifference(p,JSON.parse(JSON.stringify(p))),null);assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.00001]}),'/a/1');assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.00001]},1e-3),null);assert.equal(F.poseDifference({a:[1,2]},{a:[1,2.0000001]}),null);
  assert.equal(F.poseDifference({a:1},{a:'1'}),'/a');assert.equal(F.poseDifference({a:null},{a:undefined}),'/a');assert.equal(F.poseDifference({a:[1]},{a:{0:1}}),'/a');assert.equal(F.poseDifference({a:1,b:2},{a:1}),'/b');
 });

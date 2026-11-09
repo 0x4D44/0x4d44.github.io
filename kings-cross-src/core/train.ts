@@ -68,6 +68,19 @@ export const FIGURES = {
 export const HULL_802_DRIVING_CAR = { value: 25.7, unit: 'm', basis: 'published', source: 'Eversholt Rail, Class 802 fleet page, "Dimensions of unit: DPTS & DPTF: 25.7m, MS-TS-MF: 26m" (https://eversholtrail.co.uk/fleet/class-802/); Wikipedia infobox for British Rail Class 802, "Driving vehicles 25.7 m (84 ft 4 in)" (both read 2026-11-09). What the length is measured between is UNVERIFIABLE: neither source says; it is read here as the allocated car pitch, as the 26 m intermediate figure matches the Hitachi pitch (an inference).' } as const satisfies Figure;
 
 /**
+ * The Azuma family's trailer cars, the ones with no traction motors: the two driving cars (DPTS and DPTF, "Driving Pantograph Trailer Standard / First") and
+ * the TS. Every MS, MC and MF is a motor car, with traction motors on both its bogies.
+ *
+ * PUBLISHED for the Class 800 and 801: the UIC classification in their Wikipedia infoboxes (read 2026-11-09) is, for the 5-car units, "2′2′+Bo′Bo′+Bo′Bo′+Bo′Bo′+2′2′"
+ * (DPTS-MS-MS-MC-DPTF) and, for the 9-car units, "2′2′+Bo′Bo′+Bo′Bo′+2′2′+Bo′Bo′+2′2′+Bo′Bo′+Bo′Bo′+2′2′" (DPTS-MS-MS-TS-MS-TS-MC-MF-DPTF), where 2′2′ is two
+ * bogies of unpowered axles and Bo′Bo′ two bogies of powered ones. The Class 801 infobox's "Wheels driven" (5-car unit 12, 9-car unit 20) says the same:
+ * three motor cars of four driven axles, and five. The Class 802 and 803 infoboxes print no UIC classification; their car codes are the same (802/3:
+ * DPTS-MS-MS-MC-DPTF; 803: DPTS-MS-MS-MS-DPTS, ORR authorisation letter, Table 1), and the model reads the same arrangement from the code, which is an
+ * ASSUMED transfer, not a published fact, for the Hull Trains 802 and the Lumo 803.
+ */
+export const AT300_TRAILER_CARS: ReadonlySet<CarType> = new Set<CarType>(['DPTS', 'DPTF', 'TS']);
+
+/**
  * The vehicle families the model draws: Hitachi AT300 (Azuma and its cousins), Bombardier Electrostar (Class 387),
  * Siemens Desiro City as the Great Northern 717 and as the Thameslink 700 (two families, because the cars differ in
  * length and the fronts differ), and the Alstom Coradia 1000 diesel Class 180 "Adelante".
@@ -167,8 +180,9 @@ export interface Car {
   readonly cab: 'front' | 'rear' | null;
   /**
    * Which of the two bogies carry traction motors: [the one nearer the train's front, the other].
-   * The Azuma model gives every bogie motors (an assumption); the commuter EMUs follow the published
-   * wheel arrangement, so a trailer bogie is drawn without them.
+   * The Azuma family follows its car codes (AT300_TRAILER_CARS: the driving cars and the TS are trailer cars; published for the Class 800 and 801 as their
+   * UIC classification, an assumed transfer by code for the 802 and 803), the commuter EMUs the published wheel arrangement, so a trailer bogie is drawn
+   * without motors.
    */
   readonly motor: readonly [boolean, boolean];
 }
@@ -217,7 +231,9 @@ export function trainLayout(kind: TrainKind): TrainLayout {
     const centre = cab === 'front' ? start + FIGURES.pantographFromNose.value : end - FIGURES.pantographFromNose.value;
     const half = FIGURES.pantographLength.value / 2;
     const pantograph = cab !== null ? ([centre - half, centre + half] as const) : null;
-    cars.push({ type, index, length, start, end, bogies, pantograph, cab, motor: [true, true] });
+    // traction motors on both bogies of a motor car (MS, MC, MF), on neither of a trailer car (DPTS, DPTF, TS)
+    const motor = !AT300_TRAILER_CARS.has(type);
+    cars.push({ type, index, length, start, end, bogies, pantograph, cab, motor: [motor, motor] });
     at = end;
   });
   return { spec, length: at, cars };

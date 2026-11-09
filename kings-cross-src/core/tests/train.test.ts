@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ADELANTE, ALL_KINDS, carLength, carLengthOf, DESIRO_700, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, HULL_802_DRIVING_CAR, roofHeight, TL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
+import { ADELANTE, ALL_KINDS, AT300_TRAILER_CARS, carLength, carLengthOf, DESIRO_700, DESIRO_CITY, DRIVING, ELECTROSTAR, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, HULL_802_DRIVING_CAR, roofHeight, TL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../train.ts';
 import type { CarType, Figure, TrainKind } from '../train.ts';
 
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -287,8 +287,28 @@ test('train: traction motors follow the published wheel arrangements (387: 2-B +
   assert.equal(m('gn387x4'), 'TM TM TT MT');
   assert.equal(m('gn387x8'), 'TM TM TT MT TM TM TT MT');
   assert.equal(m('gn717x6'), 'MM TT TT MM TT MM');
-  // the Azuma model has motors on every bogie (an assumption, stated in the Car type)
-  for (const car of trainLayout('lner9').cars) assert.deepEqual(car.motor, [true, true]);
+  // CHANGED: this pinned a motor on every Azuma bogie, an assumption the sources contradict. The arrangement is the published UIC classification of the Class 800 and 801
+  // (Wikipedia infoboxes, read 2026-11-09): 5-car units "2′2′+Bo′Bo′+Bo′Bo′+Bo′Bo′+2′2′", 9-car units "2′2′+Bo′Bo′+Bo′Bo′+2′2′+Bo′Bo′+2′2′+Bo′Bo′+Bo′Bo′+2′2′"
+  // (2′2′ two unpowered two-axle bogies, Bo′Bo′ two powered ones): trailer bogies under the driving cars and the TS, motor bogies under the rest.
+  assert.equal(m('lner5'), 'TT MM MM MM TT');
+  assert.equal(m('lner9'), 'TT MM MM TT MM TT MM MM TT');
+  // the Hull Trains 802 and the Lumo 803 print no UIC classification: the same car codes give the same arrangement, an ASSUMED transfer
+  assert.equal(m('hull5'), 'TT MM MM MM TT');
+  assert.equal(m('lumo5'), 'TT MM MM MM TT');
+});
+
+test('train: the Azuma family\'s motor bogies add up to the Class 801 infobox\'s "Wheels driven" (12 on a 5-car unit, 20 on a 9-car unit), and the code decides which cars are trailers', () => {
+  // two axles on each powered bogie; Wikipedia's Class 801 infobox (read 2026-11-09): "Wheels driven: 5-car unit: 12, 9-car unit: 20"
+  const driven = (k: TrainKind): number => trainLayout(k).cars.reduce((n, c) => n + c.motor.filter(Boolean).length * 2, 0);
+  assert.equal(driven('lner5'), 12);
+  assert.equal(driven('lner9'), 20);
+  assert.deepEqual([...AT300_TRAILER_CARS].sort(), ['DPTF', 'DPTS', 'TS']);
+  for (const kind of TRAIN_KINDS) {
+    for (const car of trainLayout(kind).cars) {
+      const trailer = car.type === 'DPTS' || car.type === 'DPTF' || car.type === 'TS';
+      assert.deepEqual(car.motor, [!trailer, !trailer], `${kind} car ${car.index} (${car.type}): both bogies alike, motors only on a motor car`);
+    }
+  }
 });
 
 test('train: every commuter-EMU figure has a source; the published ones are pinned, and a guess says so', () => {

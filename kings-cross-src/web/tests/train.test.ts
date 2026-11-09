@@ -278,7 +278,12 @@ test('train: a nine-car train draws in no more than 80 calls, with four material
   g.traverse((o) => {
     if (o.name === 'bogie-mesh') (o.userData.lod === 'far' ? far : near).add((o as THREE.Mesh).geometry);
   });
-  assert.equal(near.size, 1);
+  // CHANGED from one of each: the Azuma family now runs motor bogies under its MS, MC and MF and trailer bogies under its driving cars and TS (core/train.ts,
+  // AT300_TRAILER_CARS), so the train builds one near geometry for each of the two roles, shared by every bogie of the role; the far level draws no traction
+  // motor, so a motor and a trailer bogie still share their one far geometry
+  const roles = new Set(trainLayout('lner9').cars.flatMap((c) => [...c.motor])).size;
+  assert.equal(roles, 2, 'the Azuma runs both motor and trailer bogies');
+  assert.equal(near.size, roles);
   assert.equal(far.size, 1);
 });
 

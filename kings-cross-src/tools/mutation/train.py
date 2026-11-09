@@ -138,6 +138,20 @@ M = [
     ("Class 180 height no longer UNVERIFIABLE", "source: 'UNVERIFIABLE: not published in any page read (Wikipedia, loco-info.com and Angel Trains give no height; read 2026-11-08).", "source: 'Not published in any page read (Wikipedia, loco-info.com and Angel Trains give no height; read 2026-11-08)."),
     ("Class 387 height called UNVERIFIABLE", "height: { value: 3.77, unit: 'm', basis: 'published', source: `${WIKI_387}: \"Height 3.77 metres", "height: { value: 3.77, unit: 'm', basis: 'published', source: `UNVERIFIABLE ${WIKI_387}: \"Height 3.77 metres"),
     ("Class 180 height not the Electrostar's", "height: { value: 3.77, unit: 'm', basis: 'assumed', source: 'UNVERIFIABLE: not published in any page read", "height: { value: 3.9, unit: 'm', basis: 'assumed', source: 'UNVERIFIABLE: not published in any page read"),
+    ("every Azuma bogie a motor bogie again", "const motor = !AT300_TRAILER_CARS.has(type);", "const motor = true;"),
+    ("the trailer rule inverted", "const motor = !AT300_TRAILER_CARS.has(type);", "const motor = AT300_TRAILER_CARS.has(type);"),
+    ("the Hull Trains 802 all motor", "const motor = !AT300_TRAILER_CARS.has(type);", "const motor = kind === 'hull5' || !AT300_TRAILER_CARS.has(type);"),
+    ("the Lumo 803 all motor", "const motor = !AT300_TRAILER_CARS.has(type);", "const motor = kind === 'lumo5' || !AT300_TRAILER_CARS.has(type);"),
+    ("the TS a motor car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTS', 'DPTF'])"),
+    ("the front driving car a motor car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTF', 'TS'])"),
+    ("the rear driving car a motor car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTS', 'TS'])"),
+    ("the MS a trailer car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTS', 'DPTF', 'TS', 'MS'])"),
+    ("the MC a trailer car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTS', 'DPTF', 'TS', 'MC'])"),
+    ("the MF a trailer car", "new Set<CarType>(['DPTS', 'DPTF', 'TS'])", "new Set<CarType>(['DPTS', 'DPTF', 'TS', 'MF'])"),
+    ("a motor car with motors on one bogie only", "motor: [motor, motor] });", "motor: [motor, false] });"),
+    ("a motor car with its motors under the first bogie only", "motor: [motor, motor] });", "motor: [motor && index % 2 === 0, motor] });"),
+    ("a trailer car with a motor under its second bogie", "motor: [motor, motor] });", "motor: [motor, true] });"),
+    ("a driving car with a motor under its first bogie","motor: [motor, motor] });", "motor: [motor !== (cab !== null), motor] });"),
 ]
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, "train") as work:
