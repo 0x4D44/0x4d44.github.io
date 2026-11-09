@@ -127,6 +127,8 @@ in `web/src/main.ts`. The existing `__kx` camera handle needs no URL-camera hook
 
 ## Checks
 
+Collect the nine-axis scorer pack with `node kings-cross-src/tools/evidence-pack.mjs --gpu` (private `.scratch` output; `--dry-run` previews commands, `--only 04,07` selects axes; keychain scan remains manual).
+
 Run commands below from the repository root. `npm run test:kings-cross` delegates to the
 package test: relay (`*.test.mjs`), core and web (`*.test.ts`), and tools
 (`tools/tests/*.test.mjs` and `tools/tests/*.test.ts`). Tests use synthetic inputs or
