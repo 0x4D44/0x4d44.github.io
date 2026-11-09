@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - a vertex shade baked in one mesh's frame blackened trees in another (concourse.ts:tubeShade)
+  tubeShade darkens faces that look along +x, the Range's side only in the funnel mesh, which is turned into the shed's frame (column.rotation.y). tube() applied it to every closed tube, so it also
+  shaded the perimeter tree columns in the supports mesh, built in the world's frame: from the hotel junction all three trunks rendered near-black (mean sRGB 19 to 58) while every unit test of their
+  geometry passed, because the shade was tuned on the funnel's views alone. Pass a shade, a facing or a light direction written in one mesh's axes only to that mesh's builder (tube's shade parameter,
+  given by columnGeometry alone), look at every view where a shared builder's output appears, and pin the other meshes' colours (web/tests/concourse-supports.test.ts: every strip plain white).
 - 2026-11-09 - a cover texture built from a copy re-uploads each frame (station-weather.ts:activateSceneAtmosphere)
   activateSceneAtmosphere runs every frame and compares coverUniforms.uCoverMap.value.image.data with map.heights by identity. A rooms flag held as a second
   channel of an interleaved copy failed that test each frame, so applyCover rebuilt and re-uploaded the cover textures every frame: about 1.5 ms of a 2.5 ms
