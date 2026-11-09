@@ -40,8 +40,8 @@ import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELE
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, roofKit, roofKitSpan, skirtPanel, skirtSplit, WHEEL_WIDTH } from './train-parts.ts';
-import type { BogieStyle, CouplerStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, podHanger, roofKit, roofKitSpan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
+import type { BogieStyle, CouplerStyle, PodForm, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
 
 /**
  * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
@@ -113,6 +113,13 @@ export const NOSE_RECESS = 0.01;
  * so there the seam is what reaches the end of the car. Under NOSE_RECESS by a millimetre, so it stays inside the car.
  */
 export const COVER_RELIEF = 0.009;
+/**
+ * The seam of the AT300's coupler cover, metres (see buildCar): the strip along the face's outline (how far in from the edge it starts, and how wide it is), the split down the middle
+ * (its width; it runs from the outline's seam at the chin to the one at the crown), and the latch on the split (its width, its foot above the split's foot, its height). Read off
+ * lner-801-214-2025 and LUMO-06-803005---FPK: a fine dark outline round the cone, a split down the middle and one small dark latch low on it; the sizes are ASSUMED from those
+ * photographs' proportions.
+ */
+export const COVER_SEAM = { inset: 0.002, width: 0.022, split: 0.016, latch: [0.09, 0.1, 0.03] } as const;
 /** The colour of the nose: the front panel wraps this far back from the tip, and the crescent below the windscreen ends this far back. Both snap to the next ring. */
 const FRONT_ZONE = 0.5;
 const CRESCENT_ZONE = 1.25;
@@ -145,12 +152,16 @@ const PANE_SKY_ROWS: readonly [readonly [number, number], readonly [number, numb
  */
 export const PANE_LIFT = { swoosh: 0.012, seal: 0.014, pane: 0.016, sky: 0.022 } as const;
 /**
- * How far each layer of an AT300 lamp cluster stands off the loft, metres: the pale rim, the smoked window, the lenses. The cluster's top and back edges lie under the colour
- * mask's band over the nose's top (4 to 12 mm) and against the cab side window's swoosh (12 mm), and a layer at the same height as either of them is z-fought into a ragged
- * edge (the black window torn by shards of yellow and red in the 3/4 views), so the rim stands 2 mm over the highest of those, the window 2 mm over the rim and the lenses 3 mm
- * over the window.
+ * How far each layer of an AT300 lamp cluster stands off the loft, metres: the pale rim, the smoked window, the marker array's disc, the lenses (the headlamp, and the
+ * hexagons of the array). The cluster's top and back edges lie under the colour mask's band over the nose's top (4 to 12 mm) and against the cab side window's swoosh
+ * (12 mm), and a layer at the same height as either of them is z-fought into a ragged edge (the black window torn by shards of yellow and red in the 3/4 views), so the rim
+ * stands 2 mm over the highest of those, the window 12 mm over the rim, the array's disc 4 mm over the window and the lenses 4 mm over that (the headlamp 8 mm over the window).
  */
-export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, lens: 0.03 } as const;
+export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;
+/** The dark steel of the marker array's disc, a shade up from the window's black so the round reads in it (lner-801-214-2025: a grey honeycomb disc in the black housing). */
+export const CLUSTER_ARRAY = 0x3a3f47;
+/** The array's hexagons: the corner radius of each, as a fraction of the disc's radius (seven of them, a centre and six round it, with a thin gap, fit the disc). */
+export const ARRAY_CELL = 1 / 3.2;
 /** A lamp cluster stays on the nose's flank: where the outline's half-width falls under this fraction of the section's widest, above the window's foot, it has turned over onto the roof. */
 export const FLANK_FRACTION = 0.8;
 /**
@@ -289,19 +300,20 @@ interface FlankPatch {
 }
 
 /**
- * The AT300's lamp cluster, one each side of the nose: not two lenses on the face but a slim, dark, smoked-glass window that slants up the nose's flank, from
- * a pointed foot low at the chin's edge to a squared end under the windscreen's corner, with a headlight (the big round lens, up the window) and a tail lamp
- * (the small one, nearer its foot). Photographs LUMO-04-Lumo-803003-at-Edinburgh-Waverley (the window is a long wedge, its tail lamp in its lower third),
- * hull-802-doncaster-2024 and lner-800-113-newcastle-2025 (head on, the headlights stand about 0.9 m either side of the middle and 1.65 m up, a smaller
- * dotted lamp below and nearer the middle). Positions are in the nose's own coordinates: `s` metres from the tip, `y` metres above the rail head; the
- * numbers are read off those photographs, not published.
+ * The AT300's lamp cluster, one each side of the nose: not two lenses on the face but a slim, dark, smoked-glass housing that slants up the nose's shoulder beside
+ * the corner of the yellow band under the windscreen, with in it a headlamp (a long bright lens up the slant) and, lower and nearer the face, a round dark disc
+ * holding a honeycomb of seven small lenses (the marker or tail lamp: dark at the leading end, red at the trailing end). Photographs lner-801-214-2025 and
+ * lner-800-108-offord-cluny-2023 (the housing is a slanted rounded parallelogram, the headlamp at its upper rear end, the honeycomb at its lower front one),
+ * LUMO-06-803005---FPK and hull-802-doncaster-2024 (the honeycomb is a round disc of about 0.17 m, the headlamp a long lens with a white bezel).
+ * Positions are in the nose's own coordinates: `s` metres from the tip, `y` metres above the rail head; the numbers are read off those photographs, not published.
  */
 export interface ClusterSpec {
   /** The window: rows climb from `y0` (its foot) to `y1`, the row at each height running from its front edge to its back edge (distances from the tip, the foot's pair then the top's). */
   window: { y0: number; y1: number; sFront0: number; sBack0: number; sFront1: number; sBack1: number; colour: number };
-  /** The two round lenses: centre (s, y) and radius. */
-  head: { s: number; y: number; r: number };
-  tail: { s: number; y: number; r: number };
+  /** The headlamp: an ellipse, its centre (s, y), its half-length `a` along the window's slant and its half-width `b` across it. */
+  head: { s: number; y: number; a: number; b: number };
+  /** The marker array: a dark round disc of radius `r` about (s, y), and in it a centre lens and six round it, hexagons of ARRAY_CELL of the disc's radius across their corners. */
+  array: { s: number; y: number; r: number };
   /** The rim round the window, a pale edge to its dark glass: its colour (absent: none), and how far it stands out beyond the window all round, metres. */
   rim?: { colour: number; width: number };
 }
@@ -345,9 +357,10 @@ interface FrontSpec {
   face?: FaceSpec;
 }
 
-/** One piece of a diesel unit's underframe: its length along the car, half-width, and the height of its underside above the rail head. */
+/** One piece of a diesel unit's underframe: what it is (so what its side shows), its length along the car, half-width, and the height of its underside above the rail head. */
 interface UnderfloorItem {
   name: string;
+  form: PodForm;
   length: number;
   half: number;
   bottom: number;
@@ -447,14 +460,16 @@ function windowsIn(from: number, to: number, pitch: number, pier: number, atLeas
 export const FACE_CLEAR = 0.05;
 
 /**
- * The AT300's cluster (see ClusterSpec); a kind's own colours are laid over it (FRONT_OVERRIDES). The photographs put the headlight about 1.65 m up, level with the windscreen's lower
- * corners; this nose's flank turns over onto its roof at under 1.75 m where the cluster stands (the loft's face is lower than the real one), and the window stops there
- * (FLANK_FRACTION), so the lenses sit where the window can hold them: the headlight 1.57 m up and 0.1 m in radius, the tail lamp lower and nearer the face (ASSUMED, from the loft's own outline).
+ * The AT300's cluster (see ClusterSpec); a kind's own colours are laid over it (FRONT_OVERRIDES). The photographs put it beside the corner of the band under the windscreen, the
+ * headlamp about 0.9 m either side of the middle and level with the windscreen's lower corners (lner-800-108-offord-cluny-2023, side on: the housing 1.2 to 2.2 m behind the tip,
+ * 1.7 to 2.2 m up; lner-800-113-newcastle-2025, head on: 0.9 m out). On this nose the shoulder beside the band's corner stands 0.75 to 1.0 m out at 1.55 to 2.1 m up and 0.5 to 1.5 m back, turned
+ * 45 to 65 degrees from the way the train points, so the housing is laid there, its top edge held under the flank's stop (FLANK_FRACTION) where the roof starts: the headlamp
+ * (0.28 m long, 0.15 m across) at its upper end, the array of marker lenses (a disc 0.17 m across) at its lower front one (ASSUMED sizes, from the photographs' proportions).
  */
 export const AT300_CLUSTER: ClusterSpec = {
-  window: { y0: 1.2, y1: 1.86, sFront0: FACE_CLEAR, sBack0: 0.2, sFront1: 0.32, sBack1: 0.9, colour: POD },
-  head: { s: 0.42, y: 1.57, r: 0.1 },
-  tail: { s: 0.25, y: 1.4, r: 0.07 },
+  window: { y0: 1.5, y1: 2.12, sFront0: 0.5, sBack0: 0.92, sFront1: 0.95, sBack1: 1.5, colour: POD },
+  head: { s: 1.05, y: 1.88, a: 0.14, b: 0.075 },
+  array: { s: 0.74, y: 1.67, r: 0.085 },
   rim: { colour: 0xc7ccd3, width: 0.025 },
 };
 
@@ -475,31 +490,32 @@ const AT300: BodySpec = {
   // the window row: a long low pane with the red band round it (lner-801-214-2025, measured again against the cantrail's pinstripe at 3.05 m and the equipment cover's top at 1.0 m:
   // 1.93 to 2.55 m; lner-800-doncaster-2026: 1.95 to 2.63 m); it was 1.92 to 2.74 m (a pane 0.82 m tall, where the photographs show one about 0.65 m), and before that the generic 1.72 to 2.72 m
   windowY: [1.98, 2.62],
-  // The nose, read off photographs (heights above the rail head, s from the tip; the numbers are estimates, not published): a chin that stands well forward
-  // with its foot about 0.5 m up, a steep face rising to the windscreen's sill (about 2.0 m, 0.7 m back), the glass raked at about 34 degrees to its top
-  // (2.8 m, 1.9 m back), a low dome behind it, then the roof. lner-800-113-newcastle-2025 (head on: sill 1.9 m, glass top 2.8 m, glass about half the cab's width),
-  // lner-800-108-offord-cluny-2023 (side on: the sill 0.7 m behind the chin, the glass top 1.9 m back, the dome flat from about 3 m), hull-802-doncaster-2024.
+  // The nose, read off photographs (heights above the rail head, s from the tip; the numbers are estimates, not published): a long, sharp beak: a small face at the tip (about 0.9 m
+  // across and 0.6 m tall, its foot 0.65 m up) and a ramp rising from it at about 41 degrees to the windscreen's foot (2.4 m up, 1.3 m back), the glass raked on to its top (3.2 m up,
+  // 3.0 m back), a low dome behind it, then the roof. lner-801-214-2025 and lner-800-108-offord-cluny-2023 (side on: the glass's foot 1.3 m back and 2.3 to 2.4 m up, its top 3.0 m back and
+  // 3.3 m up, the ramp at 41 degrees), lner-800-113-newcastle-2025 (head on: the glass about half the cab's width), hull-802-doncaster-2024. (It was a blunter nose, the glass's foot
+  // 0.7 m back and its top 2.0 m back, which the round-3 score called short and bulbous.)
   nose: {
     length: ASSUMED.noseLength,
     knots: [
-      { s: 0, top: 1.66, ws: 0.6, bottom: 0.55 },
-      { s: 0.3, top: 1.9, ws: 0.72, bottom: 0.48 },
-      { s: 0.7, top: 2.02, ws: 0.79, bottom: 0.48 },
-      { s: 1.3, top: 2.45, ws: 0.85, bottom: 0.5 },
-      { s: 2.0, top: 2.9, ws: 0.9, bottom: 0.6 },
-      { s: 2.7, top: 3.08, ws: 0.95, bottom: 0.72 },
-      { s: 3.3, top: 3.2, ws: 0.98, bottom: 0.86 },
+      { s: 0, top: 1.3, ws: 0.44, bottom: 0.6 },
+      { s: 0.4, top: 1.64, ws: 0.56, bottom: 0.5 },
+      { s: 0.8, top: 2.02, ws: 0.67, bottom: 0.46 },
+      { s: 1.3, top: 2.38, ws: 0.82, bottom: 0.48 },
+      { s: 2.0, top: 2.78, ws: 0.9, bottom: 0.58 },
+      { s: 2.7, top: 3.14, ws: 0.95, bottom: 0.72 },
+      { s: 3.3, top: 3.28, ws: 0.98, bottom: 0.86 },
       { s: ASSUMED.noseLength, top: ROOF_EDGE, ws: 1, bottom: FLOOR },
     ],
     fillet: 0.3,
     filletLoss: 0.2,
     roundLen: 3.6,
-    widest: 0.5,
+    widest: 0.55,
     boxiness: 2.6,
   },
   glass: {
     // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope)
-    screen: { s0: 0.69, s1: 2.0, fraction: 0.64, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12 },
+    screen: { s0: 1.3, s1: 3.0, fraction: 0.64, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12 },
     // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
     // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
     // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
@@ -732,8 +748,9 @@ const DESIRO700_BODY: BodySpec = {
  * of a roof, with a louvre, a round vent and a smaller louvre on it behind the glass. The face is a yellow trapezoid under the glass between two big smoked-glass lamp
  * pods, one at each lower corner, each holding a round headlight and a smaller lamp above it (ADELANTE_FACE). Under it a black valance, and out of it the Scharfenberg
  * coupler, uncovered (the head stands in the open at a train's end). There is no lit destination display on the glass in any photograph. The underframe is not
- * hidden: a shallow valance, then the engine, cooler, tank and batteries hanging under the floor between the bogies (Wikipedia: one Cummins QSK19 engine and Voith
- * transmission to each car).
+ * hidden: a shallow valance, then the belly hung under the floor between the bogies, in plain sight: a tank, a cooler, the engine, the transmission and the batteries
+ * (Wikipedia: one Cummins QSK19 engine and Voith transmission to each car), each a mass with its lower edges rounded and the hatches, louvres, straps and latches
+ * GC180-01 shows on the belly's side (train-parts.ts `underfloorPod`).
  */
 const ADELANTE_BODY = ((): BodySpec => {
   const fig = EMU_FIGURES.adelante;
@@ -750,7 +767,7 @@ const ADELANTE_BODY = ((): BodySpec => {
     coverHeight: cover,
     coverBw: 0.9,
     coverTw: 0.7,
-    skirtBottom: 0.8,
+    skirtBottom: 0.9,
     cutout: 2.0,
     doorWidth: fig.doorWidth.value,
     doorY: [fig.floorHeight.value + 0.02, 2.95],
@@ -787,7 +804,7 @@ const ADELANTE_BODY = ((): BodySpec => {
     // no pantograph: this value is never used
     pantographTop: 0.14,
     underframe: 0.95,
-    // a shallow valance (0.3 m deep, black in Grand Central's livery), plain: the engine and tank hang in plain sight under it
+    // a shallow valance (black in Grand Central's livery; 0.12 m below the sill, where GC180-01 shows the belly hung straight under it), plain: the belly's masses hang in plain sight under it
     skirt: { light: 0, vents: false },
     // ASSUMED: the face is the yellow panel between two big smoked-glass pods (ADELANTE_FACE), a crisp trapezoid under the windscreen, no display on the glass, and the
     // Scharfenberg coupler out in the open
@@ -806,14 +823,17 @@ const ADELANTE_BODY = ((): BodySpec => {
       { name: 'vent', shape: 'round', x: 0.3, s: 1.58, width: 0.24, length: 0.24, rim: 0x5a6068, colour: 0x0c0d0f },
       { name: 'louvre', shape: 'louvre', x: -0.75, s: 1.66, width: 0.3, length: 0.2, rim: 0x3a3e45, colour: 0x0c0d0f },
     ],
-    // ASSUMED: sizes and order of the pods (a Cummins QSK19 is about 2 m long; the rest are guesses), laid between the bogies
+    // ASSUMED: sizes and order of the masses (a Cummins QSK19 is about 2 m long; the rest are guesses), laid between the bogies so that they fill the stretch almost wall to wall,
+    // as the belly of GC180-01 runs from one bogie to the next; the order puts the cooler beside the engine and the transmission behind it, so the middle of a car (where the
+    // underframe view looks) shows a louvred grille next to the hatches. Their colour is the belly's dusty brown-grey, a shade apart so the masses read as separate.
     underfloor: {
       clearance: 0.35,
       items: [
-        { name: 'cooler', length: 1.7, half: 0.8, bottom: 0.6, colour: 0x3b3f46 },
-        { name: 'engine', length: 3.3, half: 0.88, bottom: 0.5, colour: 0x2c2f35 },
-        { name: 'fuel-tank', length: 2.6, half: 0.95, bottom: 0.48, colour: 0x353940 },
-        { name: 'battery-box', length: 1.1, half: 0.7, bottom: 0.62, colour: 0x42464d },
+        { name: 'fuel-tank', form: 'tank', length: 2.6, half: 0.95, bottom: 0.36, colour: 0x5a564e },
+        { name: 'cooler', form: 'cooler', length: 2.0, half: 0.85, bottom: 0.46, colour: 0x625e55 },
+        { name: 'engine', form: 'engine', length: 2.8, half: 0.9, bottom: 0.38, colour: 0x55524b },
+        { name: 'transmission', form: 'transmission', length: 1.2, half: 0.8, bottom: 0.42, colour: 0x4d4a44 },
+        { name: 'battery-box', form: 'battery', length: 1.2, half: 0.72, bottom: 0.5, colour: 0x4a4843 },
       ],
     },
     // a diesel unit: no pantograph, no roof kit
@@ -832,11 +852,11 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
   // LNER: the yellow mask runs down the whole face over the cover to the chin, between red cheeks, with the lamp cluster's dark window at each of its lower
   // corners (lner-800-113-newcastle-2025, lner-801-214-2025, lner-800-doncaster-2026)
-  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.62, hwSill: 0.74 } },
-  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.62, hwSill: 0.74 } },
+  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },
+  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },
   // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp clusters, the cheeks the body's
   // blue); the cluster's window is a slate panel, a shade off the beak's own
-  hull5: { mask: { colour: HULL_BEAK, hwFoot: 0.44, hwTop: 0.6, hwSill: 0.72 }, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
+  hull5: { mask: { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
   lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },
@@ -852,9 +872,10 @@ export const faceSetback = (family: Family): number => {
   return front.coupler.covered ? (front.face?.setback ?? NOSE_RECESS) : END_GAP;
 };
 
-/** One box of a diesel car's underfloor equipment, in the train's own frame (x across, y above the rail head, z along the train). */
+/** One mass of a diesel car's underfloor equipment, in the train's own frame (x across, y above the rail head, z along the train). */
 export interface UnderfloorBlock {
   name: string;
+  form: PodForm;
   x0: number;
   x1: number;
   y0: number;
@@ -886,7 +907,7 @@ export function underfloorBlocks(car: Car, spec: Pick<BodySpec, 'family' | 'unde
   let z = from + gap;
   return u.items.map((item): UnderfloorBlock => {
     const length = item.length * k;
-    const block = { name: item.name, x0: -item.half, x1: item.half, y0: item.bottom, y1: spec.floor + 0.02, z0: z, z1: z + length, colour: item.colour };
+    const block = { name: item.name, form: item.form, x0: -item.half, x1: item.half, y0: item.bottom, y1: spec.floor + 0.02, z0: z, z1: z + length, colour: item.colour };
     z += length + gap;
     return block;
   });
@@ -1201,10 +1222,35 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         detail.bar([socketY, z0 + outward * 0.04], [socketY - 0.14, z1], 0.035, 0.035, col(0x111214), x);
       }
     } else if (covered) {
-      // the coupler cover: the lower part of the face, a dark seam across its top, and two latches (a flat face's bumper has neither: its coupler stands in a recess, below)
+      // The coupler cover: the whole of the face is its door (lner-801-214-2025, lner-800-113-newcastle-2025, hull-802-doncaster-2024, LUMO-06-803005---FPK: a thin dark outline round
+      // the cone, a split down its middle where the two halves meet, and one small dark latch low on the split), so the seam runs along the face's own outline, a strip COVER_SEAM.width
+      // wide COVER_SEAM.inset in from its edge, all the way round, the split from the chin's seam to the crown's, and the latch on it. (A flat face's bumper has none of these: its
+      // coupler stands in a recess, below.)
       if (!flat) {
-        detail.fan(onFace(roundedRect(-a * 0.92, a * 0.92, coverTop - 0.012, coverTop + 0.012, 0.01, 1), COVER_RELIEF), faceN, seam);
-        for (const sx of [-1, 1]) detail.fan(onFace(roundedRect(sx * a * 0.45 - 0.05, sx * a * 0.45 + 0.05, coverTop - 0.1, coverTop - 0.03, 0.01, 1), COVER_RELIEF), faceN, seam);
+        // the outline, a closed loop from the chin's left corner up over the crown and down the right (the last point joins the first along the chin)
+        const arch: [number, number][] = [...tipHalf.slice(0, K - 1).map(([x, y]): [number, number] => [-x, y]), ...tipHalf.slice(K - 1, K), ...tipHalf.slice(0, K - 1).reverse()];
+        const cy = (r0.bottom + r0.top) / 2;
+        // the unit vector pointing in from each point (across the chord of its two neighbours, turned toward the outline's middle)
+        const inward = arch.map(([x, y], k): [number, number] => {
+          const [px, py] = arch[(k + arch.length - 1) % arch.length] as [number, number];
+          const [nx, ny] = arch[(k + 1) % arch.length] as [number, number];
+          const len = Math.hypot(nx - px, ny - py) || 1;
+          const sign = -(ny - py) * (0 - x) + (nx - px) * (cy - y) < 0 ? -1 : 1;
+          return [(sign * -(ny - py)) / len, (sign * (nx - px)) / len];
+        });
+        const edge = (k: number, depth: number): [number, number] => {
+          const i = k % arch.length;
+          return [(arch[i] as [number, number])[0] + (inward[i] as [number, number])[0] * depth, (arch[i] as [number, number])[1] + (inward[i] as [number, number])[1] * depth];
+        };
+        const strip = (outline: [number, number][]): void => {
+          const [p0, p1, p2, p3] = onFace(outline, COVER_RELIEF) as [V3, V3, V3, V3];
+          detail.quad([p0, p1, p2, p3], [faceN, faceN, faceN, faceN], seam);
+        };
+        for (let k = 0; k < arch.length; k++) strip([edge(k, COVER_SEAM.inset), edge(k + 1, COVER_SEAM.inset), edge(k + 1, COVER_SEAM.inset + COVER_SEAM.width), edge(k, COVER_SEAM.inset + COVER_SEAM.width)]);
+        const split0 = r0.bottom + COVER_SEAM.inset + COVER_SEAM.width;
+        const split1 = yAtX(tipHalf, 0) - COVER_SEAM.inset - COVER_SEAM.width;
+        strip([[-COVER_SEAM.split / 2, split0], [COVER_SEAM.split / 2, split0], [COVER_SEAM.split / 2, split1], [-COVER_SEAM.split / 2, split1]]);
+        detail.fan(onFace(roundedRect(-COVER_SEAM.latch[0] / 2, COVER_SEAM.latch[0] / 2, split0 + COVER_SEAM.latch[1], split0 + COVER_SEAM.latch[1] + COVER_SEAM.latch[2], 0.01, 1), COVER_RELIEF), faceN, seam);
       }
       const cover = new THREE.Object3D();
       cover.name = 'coupler-cover';
@@ -1309,9 +1355,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     if (screen) {
       // the windscreen: a curved patch on the nose's roof, glass over a black frame; rows crowd toward the two edges, where the corners curve
       const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number, post = 0): void => {
-        // with a centre post the glass is two panes (each its own patch, 10 columns across), and the frame's black shows between them
+        // with a centre post the glass is two panes (each its own patch, 8 columns across), and the frame's black shows between them
+        // (24 rows by 16 columns a patch, two patches: 768 triangles each; it was 30 by 20, which the Azuma's longer nose had no triangles left for)
         for (const pane of post > 0 ? [-1, 1] : [0]) {
-          nosePatch(30, post > 0 ? 10 : 20, (v, u) => {
+          nosePatch(24, post > 0 ? 8 : 16, (v, u) => {
             const s = lerp(screen.s0 - margin, screen.s1 + margin, 0.5 - 0.5 * Math.cos(Math.PI * v));
             const hw = screenHalfWidth(s, margin);
             if (pane === 0) return [hw * (2 * u - 1), s];
@@ -1330,7 +1377,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
       if (mask) {
         // The mask's band: over the nose's top from the face's upper edge (where the cap's yellow ends) back under the windscreen's frame, a shade wider at the glass. Its
-        // first row stands ON the face's edge (no lift), where the cap's strip meets it, and the lift grows from there to the 12 mm the loft's facets need over the first fifth.
+        // first row stands ON the face's edge (no lift), where the cap's strip meets it, and the lift grows from there to the 12 mm the loft's facets need over the first 2 cm
+        // (over 6 cm, as it once did, the second and third rows' chords across the fillet's convex bend still dipped under the loft: specks of its red at the arch's two ends; over 1 cm the
+        // second row stood level with the face's plane a hand's breadth outside its outline, a flat lip).
         // (At 4 mm the row stood 2.7 mm over the edge and 3 mm in front of the face, and the red of the loft behind showed through the slit between them as a hairline along the
         // arch of the face, in the 3 m views of the LNER's yellow and the Hull Trains beak.) So that the row lies on the outline and not on chords across its corners, it has a column
         // at every vertex of the outline (and its mirror) besides the columns spread over the angle, which crowd toward the corners where the surface turns: the chord across the vertex 0.34 m out
@@ -1339,10 +1388,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const pins = bandVertices.flatMap((x) => (x > 1e-6 ? [x / bandStart, -x / bandStart] : [0]));
         const spread = Array.from({ length: 19 }, (_, q) => Math.sin(Math.PI * (q / 18 - 0.5)));
         const columns = [...pins, ...spread.filter((f) => pins.every((p) => Math.abs(p - f) > 0.02))].sort((a, b) => a - b);
-        nosePatch(12, columns.length - 1, (v, u) => {
-          const s = sEnd * (0.5 - 0.5 * Math.cos(Math.PI * v));
+        // The rows stand at the loft's own rings (and one last at the glass's frame): the band lies on the surface it is laid on, and no chord of it cuts across a ring. The fillet round
+        // the face is six rings in 0.3 m, 1 to 7 cm apart, and a chord across two of them stands under that convex surface (6 mm, where the band's rows stood 2 cm apart
+        // over the first of them, as the nose got longer), so the loft's red showed through the yellow as a ragged line along the face's upper edge.
+        const rowS = [...stations.filter((x) => x < sEnd - 0.05), sEnd];
+        const rowAt = (v: number): number => rowS[Math.round(v * (rowS.length - 1))] as number;
+        nosePatch(rowS.length - 1, columns.length - 1, (v, u) => {
+          const s = rowAt(v);
           return [lerp(bandStart, mask.hwSill, s / sEnd) * (columns[Math.round(u * (columns.length - 1))] as number), s];
-        }, detail, colourOf(mask.colour), (v) => lerp(0, 0.012, Math.min(1, v * 5)));
+        }, detail, colourOf(mask.colour), (v) => lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02)));
       }
       if (front.wipers) {
         // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying
@@ -1482,29 +1536,45 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           }
         }
       };
-      // a round lens: a disc in the tangent plane at its centre, standing `lift` off the surface; its normal is the surface's there
-      const disc = (side: number, role: 'head' | 'tail', at: { s: number; y: number; r: number }, lift: number): V3 => {
-        const c = lifted(side, at.s, at.y, lift);
-        const d = 0.03;
-        const t1 = unit([0, 1, 2].map((k) => (flank(side, at.s + d, at.y)[k] as number) - (flank(side, Math.max(0, at.s - d), at.y)[k] as number)) as V3);
-        const t2 = unit([c.n[1] * t1[2] - c.n[2] * t1[1], c.n[2] * t1[0] - c.n[0] * t1[2], c.n[0] * t1[1] - c.n[1] * t1[0]]);
-        const ring = Array.from({ length: 14 }, (_, k): V3 => {
-          const a = (2 * Math.PI * k) / 14;
-          const u = Math.cos(a) * at.r;
-          const v = Math.sin(a) * at.r;
-          return [c.p[0] + t1[0] * u + t2[0] * v, c.p[1] + t1[1] * u + t2[1] * v, c.p[2] + t1[2] * u + t2[2] * v];
-        });
-        lensFan(role, ring.map(world), wn(c.n));
-        return c.p;
+      // The tangent plane at a point of the flank, `lift` off the surface: the point, the unit vector `d` along the window's slant (the way from the middle of its foot to the
+      // middle of its top, seen on the surface), `e` across it, and the surface's outward normal `n`. The lenses are flat polygons in this plane.
+      const slant: [number, number] = [(win.sFront1 + win.sBack1 - win.sFront0 - win.sBack0) / 2, win.y1 - win.y0];
+      const plane = (side: number, s: number, y: number, lift: number): { c: V3; d: V3; e: V3; n: V3 } => {
+        const here = lifted(side, s, y, lift);
+        const k = 0.05 / Math.hypot(slant[0], slant[1]);
+        const p0 = flank(side, Math.max(0, s - slant[0] * k), y - slant[1] * k);
+        const p1 = flank(side, s + slant[0] * k, y + slant[1] * k);
+        const along = [0, 1, 2].map((i) => (p1[i] as number) - (p0[i] as number));
+        const off = (along[0] as number) * here.n[0] + (along[1] as number) * here.n[1] + (along[2] as number) * here.n[2];
+        const d = unit([(along[0] as number) - off * here.n[0], (along[1] as number) - off * here.n[1], (along[2] as number) - off * here.n[2]]);
+        const e = unit([here.n[1] * d[2] - here.n[2] * d[1], here.n[2] * d[0] - here.n[0] * d[2], here.n[0] * d[1] - here.n[1] * d[0]]);
+        return { c: here.p, d, e, n: here.n };
       };
+      // an ellipse in such a plane: `sides` points, centred `du` along the slant and `dv` across it from the plane's point, semi-axes `a` along the slant and `b` across, the first point `turn` radians round
+      const ellipse = (f: { c: V3; d: V3; e: V3 }, du: number, dv: number, a: number, b: number, sides: number, turn = 0): V3[] =>
+        Array.from({ length: sides }, (_, k): V3 => {
+          const t = turn + (2 * Math.PI * k) / sides;
+          const u = du + Math.cos(t) * a;
+          const v = dv + Math.sin(t) * b;
+          return [f.c[0] + f.d[0] * u + f.e[0] * v, f.c[1] + f.d[1] * u + f.e[1] * v, f.c[2] + f.d[2] * u + f.e[2] * v];
+        });
+      // the marker array's seven cells: the middle one and six round it, a hexagon's width and a thin gap apart (the cell's corner radius is ARRAY_CELL of the disc's)
+      const cell = cluster.array.r * ARRAY_CELL;
+      const cells: [number, number][] = [[0, 0], ...Array.from({ length: 6 }, (_, k): [number, number] => [Math.cos((Math.PI * k) / 3) * cell * 1.9, Math.sin((Math.PI * k) / 3) * cell * 1.9])];
       for (const side of [-1, 1]) {
         if (cluster.rim) windowPatch(side, CLUSTER_LIFT.rim, cluster.rim.width, cluster.rim.colour);
         windowPatch(side, CLUSTER_LIFT.window, 0, win.colour);
-        disc(side, 'tail', cluster.tail, CLUSTER_LIFT.lens);
-        const at = disc(side, 'head', cluster.head, CLUSTER_LIFT.lens);
+        // the array: its dark disc, and the cells (tail lenses) in it
+        const base = plane(side, cluster.array.s, cluster.array.y, CLUSTER_LIFT.array);
+        detail.fan(ellipse(base, 0, 0, cluster.array.r, cluster.array.r, 14).map(world), wn(base.n), col(CLUSTER_ARRAY));
+        const top = plane(side, cluster.array.s, cluster.array.y, CLUSTER_LIFT.lens);
+        for (const [du, dv] of cells) lensFan('tail', ellipse(top, du, dv, cell, cell, 6, Math.PI / 6).map(world), wn(top.n));
+        // the headlamp, and the marker the live layer finds it by
+        const head = plane(side, cluster.head.s, cluster.head.y, CLUSTER_LIFT.lens);
+        lensFan('head', ellipse(head, 0, 0, cluster.head.a, cluster.head.b, 16).map(world), wn(head.n));
         const m = new THREE.Object3D();
         m.name = 'headlight';
-        m.position.set(at[0], at[1], Z(at[2]));
+        m.position.set(head.c[0], head.c[1], Z(head.c[2]));
         m.userData = { side: side > 0 ? 'right' : 'left' };
         group.add(m);
       }
@@ -1613,8 +1683,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       for (const sx of [-1, 1] as const) skirtPanel(detail, { side: sx, z0, z1, edge, floor: spec.floor, bottom: spec.skirtBottom, colour: col(skirts.panel), vent: skirts.vent === null ? null : col(skirts.vent), rake: spec.skirt.boxes?.rake });
     }
   }
-  // a diesel unit's engine, cooler, tank and batteries hang under the floor between the bogies, in plain sight below the valance
-  for (const b of underfloorBlocks(car, spec)) detail.box(b.x0, b.x1, b.y0, b.y1, b.z0, b.z1, col(b.colour), '+y');
+  // a diesel unit's tank, cooler, engine, transmission and batteries hang under the floor between the bogies, in plain sight below the valance, a dark hanger across each gap
+  const pods = underfloorBlocks(car, spec);
+  for (const b of pods) underfloorPod(detail, b);
+  pods.forEach((b, i) => {
+    const next = pods[i + 1];
+    if (next) podHanger(detail, b, next);
+  });
 
   // doors: a dark frame, the leaf (or two leaves), and a window in each leaf; one marker per opening
   const frameC = col(0x24272b);

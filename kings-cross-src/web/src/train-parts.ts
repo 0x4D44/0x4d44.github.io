@@ -517,31 +517,54 @@ function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
 // --- the drive ----------------------------------------------------------------------------------------------------------
 
 /**
+ * Where the drive hangs. A bogie seen from the track side shows its side beam and, below the beam, whatever hangs lower between the wheels: a trailer bogie's
+ * underside is bare there, so a motor bogie's drive hangs low enough for its lower part to stand in plain sight under the beam (no photograph shows it, so the heights
+ * are ASSUMED; each stays well above the rail head: the lowest hangs 0.12 m above it). A traction motor's axis lies this far from the axle line (it was 0.08 above it,
+ * wholly behind the beam, so a motor bogie and a trailer bogie looked the same from outside).
+ */
+export const MOTOR_AXIS = -0.1;
+/** A traction motor: its barrel's radius, its length across the bogie, and how far its rim stands clear of the wheel's rim beside it (along the bogie), so the whole of it is in view between the wheels. */
+export const MOTOR_RADIUS = 0.2;
+export const MOTOR_LENGTH = 0.62;
+export const MOTOR_CLEAR = 0.02;
+/** A diesel unit's cardan shaft hangs this far from the axle line (below it), and a gearbox casing reaches this far inboard of its axle. */
+export const CARDAN_AXIS = -0.1;
+export const GEARBOX_REACH = 0.5;
+
+/**
  * A motor bogie's drive: a traction motor across the bogie on each axle's inboard side of the middle, its gear case on one end of it reaching
  * to the axle. (Frame-mounted motors with a gear case on the axle are the UK EMU arrangement; no photograph shows them, so the sizes are ASSUMED.)
+ * The motor hangs low (`MOTOR_AXIS`) so its end stands in view under the side beam; its end bells are the light steel of a hub, so they read as ends of a drum.
  */
 function tractionMotors(D: Soup, spec: BogieSpec, pal: Palette, caseX: [number, number]): void {
   const r = spec.radius;
   for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
-    const dz = az < 0 ? 0.52 : -0.52;
+    const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);
     const side = az < 0 ? 1 : -1;
-    lathe(D, axisX(-0.31, r + 0.08, az + dz), [[0, 0], [0, 0.2], [0.62, 0.2], [0.62, 0]], 14, pal.motor);
+    lathe(D, axisX(-MOTOR_LENGTH / 2, r + MOTOR_AXIS, az + dz), [[0, 0], [0, MOTOR_RADIUS], [MOTOR_LENGTH, MOTOR_RADIUS], [MOTOR_LENGTH, 0]], 14, [pal.hub, pal.motor, pal.hub]);
     const [x0, x1] = xs(side, caseX[0], caseX[1]);
-    D.box(x0, x1, r - 0.17, r + 0.2, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);
+    D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);
   }
 }
 
-/** A diesel-hydraulic unit's driven bogie: a final-drive gearbox on each axle, joined by a cardan shaft along the bogie. */
+/**
+ * A diesel-hydraulic unit's driven bogie: a final-drive gearbox on each axle, reaching inboard of the wheel so that part of it stands in the clear between the wheels, joined
+ * by a cardan shaft hanging low along the bogie with a yoke at each end (a trailer bogie has nothing there).
+ */
 function finalDrive(D: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
   const w = spec.wheelbase / 2;
   for (const az of [-w, w]) {
-    // the gearbox on the axle: a casing 0.6 m across and 0.44 m long, from 0.2 m under the axle line to 0.2 above it, round the axle's housing (ASSUMED sizes)
-    D.box(-0.3, 0.3, r - 0.2, r + 0.2, az - 0.22, az + 0.22, pal.gear);
+    // the gearbox on the axle: a casing 0.6 m across, from 0.2 m under the axle line to 0.2 above it, 0.22 m aft of the axle and `GEARBOX_REACH` inboard of it, round the axle's housing (ASSUMED sizes)
+    const inward = az < 0 ? 1 : -1;
+    D.box(-0.3, 0.3, r - 0.2, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);
     lathe(D, axisX(-0.35, r, az), [[0, 0], [0, 0.15], [0.7, 0.15], [0.7, 0]], 12, pal.motor);
   }
-  // the cardan shaft along the middle of the bogie, from the one gearbox to the other
-  tube(D, axisZ(0, r + 0.08, -(w - 0.22)), 0, 2 * (w - 0.22), 0.045, 8, pal.motor);
+  // the cardan shaft from the one gearbox's inboard face to the other's, low, with a lighter yoke on each end
+  const z0 = -(w - GEARBOX_REACH);
+  const span = 2 * (w - GEARBOX_REACH);
+  tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);
+  for (const zs of [z0, z0 + span - 0.04]) lathe(D, axisZ(0, r + CARDAN_AXIS, zs), [[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);
 }
 
 // --- the bogie ----------------------------------------------------------------------------------------------------------
@@ -1038,4 +1061,166 @@ export function skirtPanel(soup: Soup, o: SkirtPanel): void {
       soup.quad([at(y0, a), at(y0, b), at(y1, b), at(y1, a)], [n, n, n, n], o.vent);
     }
   }
+}
+
+// --- the underfloor equipment of a diesel car -------------------------------------------------------------------------------------------------------------------
+//
+// What the Class 180's underfloor is drawn from: GC180-01-180-101-Kings-Cross-8077814883- is the one photograph that shows it (the others are too far or too foreshortened;
+// the review set says so itself: "no usable close ... underframe"). Between the bogies the car's belly is a long, dusty brown-grey enclosure hung straight under the sill, its
+// lower edge rounded, with rounded-rectangle access hatches of several sizes let into its side, small louvres and latches. What is inside is not observable, so the masses'
+// names (engine, transmission, cooler, tank, battery box: Wikipedia gives one Cummins QSK19 engine and a Voith transmission to each car) and the order they hang in are
+// ASSUMED, and what each shows on its side is the photograph's vocabulary (hatches, louvres, straps, latches) laid out as a person would expect of that mass.
+
+/** What a mass hung under a diesel car is, so what its side shows: hatches (engine, transmission), a louvred grille (cooler), straps with a filler and a gauge (tank), a lid and handles (battery box). */
+export type PodForm = 'engine' | 'transmission' | 'cooler' | 'tank' | 'battery';
+
+/** One mass under a diesel car's floor: a box with its lower long edges cut back, hung from the floor. x0 = -x1: it is symmetric about the centre line. */
+export interface PodBox {
+  form: PodForm;
+  colour: number;
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  z0: number;
+  z1: number;
+}
+
+/** How a pod is shaped and what stands on its side. All ASSUMED sizes, read off the photograph above by eye. */
+export const POD_SHAPE = {
+  /** each lower long edge is cut back this far across and up: the rounded foot of the belly */
+  bevel: 0.1,
+  /** a mark on the side stands this far proud of the side: a frame, then what is in it; a louvre slat, a latch or a handle on top of that */
+  lift: { frame: 0.008, inset: 0.014, raised: 0.02 },
+  /** the border of a hatch's or a grille's frame, and where a hatch stands above the foot of the flat face, metres */
+  border: 0.03,
+  foot: 0.06,
+  /** hatch sizes: its width as a fraction of the pod's length, its height as a fraction of the flat face's height */
+  hatchWidth: 0.24,
+  hatchHeight: 0.42,
+  /** the cooler's grille: slats, the share of the pod's length it spans, its height as a fraction of the flat face's, and how deep a slat is */
+  slats: 9,
+  grilleLength: 0.8,
+  grilleHeight: 0.55,
+  slatDepth: 0.024,
+  /** the tank's straps (where along it, how wide), its gauge (where, how wide, how tall) and its filler neck (where along it, how high up the flat face, radius, length) */
+  straps: [0.2, 0.8] as readonly number[],
+  strapWidth: 0.07,
+  gauge: { at: 0.38, width: 0.04, height: 0.3 },
+  neck: { at: 0.62, up: 0.66, radius: 0.05, length: 0.07 },
+  /** the battery box's lid seam (how high up the flat face) and handles (where along it, how high up) */
+  seam: 0.62,
+  handles: [0.25, 0.75] as readonly number[],
+  handleUp: 0.3,
+} as const;
+
+/** The colours of what a pod's side carries (the pod's own colour is its item's). */
+export const POD_PARTS = {
+  frame: 0x77725f,
+  recess: 0x1f2023,
+  slat: 0x8c8777,
+  strap: 0x34322e,
+  gauge: 0x1a1b1e,
+  seam: 0x242528,
+  handle: 0x8f8a7b,
+  latch: 0x8f8a7b,
+  neck: 0x5d594f,
+  cap: 0x8f8a7b,
+} as const;
+
+export interface PodMark {
+  kind: 'frame' | 'recess' | 'slat' | 'strap' | 'gauge' | 'seam' | 'handle' | 'latch' | 'neck';
+  z0: number;
+  z1: number;
+  y0: number;
+  y1: number;
+}
+
+/** The foot of a pod's flat side (where its bevel ends) and the height of that flat face. */
+export const podFace = (p: Pick<PodBox, 'y0' | 'y1'>): { foot: number; height: number } => ({ foot: p.y0 + POD_SHAPE.bevel, height: p.y1 - p.y0 - POD_SHAPE.bevel });
+
+/** What stands on one side of a pod, as rectangles in (z, y) on its flat face (the other side mirrors it). The tank's filler is the one round thing: its box is the square about its axis. */
+export function podMarks(p: PodBox): PodMark[] {
+  const { foot, height } = podFace(p);
+  const L = p.z1 - p.z0;
+  const at = (f: number): number => p.z0 + f * L;
+  const marks: PodMark[] = [];
+  const hatch = (zc: number): void => {
+    const w = POD_SHAPE.hatchWidth * L;
+    const y = foot + POD_SHAPE.foot;
+    const h = POD_SHAPE.hatchHeight * height;
+    marks.push({ kind: 'frame', z0: zc - w / 2 - POD_SHAPE.border, z1: zc + w / 2 + POD_SHAPE.border, y0: y - POD_SHAPE.border, y1: y + h + POD_SHAPE.border });
+    marks.push({ kind: 'recess', z0: zc - w / 2, z1: zc + w / 2, y0: y, y1: y + h });
+    marks.push({ kind: 'latch', z0: zc + w / 2 - 0.2 * w, z1: zc + w / 2 - 0.1 * w, y0: y + 0.35 * h, y1: y + 0.65 * h });
+  };
+  if (p.form === 'engine') for (const f of [1 / 6, 3 / 6, 5 / 6]) hatch(at(f));
+  else if (p.form === 'transmission') hatch(at(0.5));
+  else if (p.form === 'cooler') {
+    const z0 = at((1 - POD_SHAPE.grilleLength) / 2);
+    const z1 = at(1 - (1 - POD_SHAPE.grilleLength) / 2);
+    const y0 = foot + POD_SHAPE.foot;
+    const y1 = y0 + POD_SHAPE.grilleHeight * height;
+    marks.push({ kind: 'frame', z0: z0 - POD_SHAPE.border, z1: z1 + POD_SHAPE.border, y0: y0 - POD_SHAPE.border, y1: y1 + POD_SHAPE.border });
+    marks.push({ kind: 'recess', z0, z1, y0, y1 });
+    for (let i = 0; i < POD_SHAPE.slats; i++) {
+      const yc = y0 + ((y1 - y0) * (i + 1)) / (POD_SHAPE.slats + 1);
+      marks.push({ kind: 'slat', z0: z0 + 0.04, z1: z1 - 0.04, y0: yc - POD_SHAPE.slatDepth / 2, y1: yc + POD_SHAPE.slatDepth / 2 });
+    }
+  } else if (p.form === 'tank') {
+    for (const f of POD_SHAPE.straps) marks.push({ kind: 'strap', z0: at(f) - POD_SHAPE.strapWidth / 2, z1: at(f) + POD_SHAPE.strapWidth / 2, y0: foot, y1: p.y1 - 0.02 });
+    marks.push({ kind: 'gauge', z0: at(POD_SHAPE.gauge.at) - POD_SHAPE.gauge.width / 2, z1: at(POD_SHAPE.gauge.at) + POD_SHAPE.gauge.width / 2, y0: foot + POD_SHAPE.foot, y1: foot + POD_SHAPE.foot + POD_SHAPE.gauge.height * height });
+    const yc = foot + POD_SHAPE.neck.up * height;
+    marks.push({ kind: 'neck', z0: at(POD_SHAPE.neck.at) - POD_SHAPE.neck.radius, z1: at(POD_SHAPE.neck.at) + POD_SHAPE.neck.radius, y0: yc - POD_SHAPE.neck.radius, y1: yc + POD_SHAPE.neck.radius });
+  } else {
+    marks.push({ kind: 'seam', z0: at(0.04), z1: at(0.96), y0: foot + POD_SHAPE.seam * height - 0.006, y1: foot + POD_SHAPE.seam * height + 0.006 });
+    for (const f of POD_SHAPE.handles) marks.push({ kind: 'handle', z0: at(f) - 0.06, z1: at(f) + 0.06, y0: foot + POD_SHAPE.handleUp * height - 0.0175, y1: foot + POD_SHAPE.handleUp * height + 0.0175 });
+  }
+  return marks;
+}
+
+/** How far each flat mark stands off the pod's side (the filler neck is no flat mark: it is turned, out of the face itself). */
+const MARK_LIFT: Readonly<Record<Exclude<PodMark['kind'], 'neck'>, number>> = {
+  frame: POD_SHAPE.lift.frame,
+  recess: POD_SHAPE.lift.inset,
+  slat: POD_SHAPE.lift.raised,
+  strap: POD_SHAPE.lift.inset,
+  gauge: POD_SHAPE.lift.raised,
+  seam: POD_SHAPE.lift.inset,
+  handle: POD_SHAPE.lift.raised,
+  latch: POD_SHAPE.lift.raised,
+};
+
+/**
+ * One mass under a diesel car's floor: its flat sides, the two bevels, the foot and both ends (the top is the car's floor: not drawn), and on each side the marks of its
+ * form. The section's lower corners are cut back by `POD_SHAPE.bevel`; the sides are flat (a person sees them nearly square on).
+ */
+export function underfloorPod(soup: Soup, p: PodBox): void {
+  const c = col(p.colour);
+  const b = POD_SHAPE.bevel;
+  const section: [number, number][] = [[p.x0, p.y1], [p.x0, p.y0 + b], [p.x0 + b, p.y0], [p.x1 - b, p.y0], [p.x1, p.y0 + b], [p.x1, p.y1]];
+  const centre: V3 = [(p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2, (p.z0 + p.z1) / 2];
+  for (let i = 0; i + 1 < section.length; i++) {
+    const a = section[i] as [number, number];
+    const d = section[i + 1] as [number, number];
+    soup.face([[a[0], a[1], p.z0], [d[0], d[1], p.z0], [d[0], d[1], p.z1], [a[0], a[1], p.z1]], centre, c);
+  }
+  for (const [z, nz] of [[p.z0, -1], [p.z1, 1]] as const) soup.fan(section.map(([x, y]): V3 => [x, y, z]), [0, 0, nz], c);
+  for (const sx of [-1, 1] as const) {
+    const n: V3 = [sx, 0, 0];
+    for (const m of podMarks(p)) {
+      if (m.kind === 'neck') {
+        const r = (m.y1 - m.y0) / 2;
+        lathe(soup, axisX(sx * p.x1, (m.y0 + m.y1) / 2, (m.z0 + m.z1) / 2, sx), [[0, r], [POD_SHAPE.neck.length, r], [POD_SHAPE.neck.length, 0]], 8, [col(POD_PARTS.neck), col(POD_PARTS.cap)]);
+        continue;
+      }
+      const x = sx * (p.x1 + MARK_LIFT[m.kind]);
+      soup.quad([[x, m.y0, m.z0], [x, m.y0, m.z1], [x, m.y1, m.z1], [x, m.y1, m.z0]], [n, n, n, n], col(POD_PARTS[m.kind]));
+    }
+  }
+}
+
+/** The dark plate between two neighbouring masses that joins them to the frame they hang from (the raft's cross-member): it fills the gap in the dark, a little inside both sides. */
+export function podHanger(soup: Soup, a: PodBox, b: PodBox): void {
+  const half = Math.min(a.x1, b.x1) - 0.04;
+  soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(POD_PARTS.recess), '+y');
 }

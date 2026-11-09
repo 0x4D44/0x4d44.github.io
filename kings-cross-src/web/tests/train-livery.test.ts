@@ -371,6 +371,9 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
   const mask = frontOf('hull5').mask;
   assert.ok(mask, 'the Hull Trains front has a colour mask');
   assert.equal(mask.colour, HULL_BEAK);
+  // the lines' numbers, written out (the checks below read them from the spec): 0.4 m out at the face's foot, 0.46 at its top, 0.72 at the windscreen's foot. The face is 0.94 m across at its
+  // widest, so the lines cross its outline (the mask needs that: where they never do, the band over the nose's top has no width to start from)
+  assert.deepEqual(mask, { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 });
   const r0 = ringAt(bodySpec('at300').nose, 0);
   // CHANGED (the beak was cut along the loft's own columns, an upright strip: the cheeks' inner edge one x at every height): the mask is two straight lines from the face's foot
   // (`hwFoot` either side of the middle) to its top (`hwTop`), as hull-802-doncaster-2024 shows a bullet of grey widening up the face; the beak stays inside them at every
@@ -389,9 +392,11 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
     for (const v of beak.flat()) assert.ok(Math.abs(v.x) <= half(v.y) + 1e-4, `car ${car.index}: the beak reaches x = ${v.x.toFixed(3)} at y = ${v.y.toFixed(2)}, past the line at ${half(v.y).toFixed(3)}`);
     for (const v of cheeks.flat()) assert.ok(Math.abs(v.x) >= half(v.y) - 1e-4, `car ${car.index}: a cheek vertex at x = ${v.x.toFixed(3)}, y = ${v.y.toFixed(2)} is inside the beak's line at ${half(v.y).toFixed(3)}`);
     // the beak is a bullet: narrow at the foot, wide at the top (the line's own widths, give or take the face's rounded corners)
+    // CHANGED (the lines ran 0.44 m out at the foot to 0.6 m at the top, on a face 1.3 m wide, and the beak was 0.08 m wider at its top): the longer nose's face is 0.94 m across, so the lines
+    // run 0.4 to 0.46 m out, the face's own outline closes the beak in at its chin and its crown, and the beak is a few centimetres wider a little way up than at its foot
     const foot = Math.max(...beak.flat().filter((v) => v.y < r0.bottom + 0.15).map((v) => Math.abs(v.x)));
     const upper = Math.max(...beak.flat().filter((v) => v.y > r0.top - 0.3).map((v) => Math.abs(v.x)));
-    assert.ok(foot < mask.hwFoot + 0.1 && upper > foot + 0.08, `car ${car.index}: the beak is ${foot.toFixed(2)} m either side at its foot and ${upper.toFixed(2)} m near its top`);
+    assert.ok(foot < mask.hwFoot + 0.1 && upper > foot + 0.02, `car ${car.index}: the beak is ${foot.toFixed(2)} m either side at its foot and ${upper.toFixed(2)} m near its top`);
   }
   // the doors are the Hull red
   // (the doors are vertex-coloured leaves in each car's body-detail, so the colour is looked for there: a leaf is a pair of quads of the door colour)

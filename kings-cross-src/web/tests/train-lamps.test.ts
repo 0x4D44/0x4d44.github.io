@@ -15,6 +15,8 @@ import { col, plain } from '../src/train-geom.ts';
 interface Lens { role: 'head' | 'tail'; v0: number; v1: number }
 interface LampRec { end: 'front' | 'rear'; interior: boolean; lenses: Lens[] }
 const MODES: TrainLampMode[] = ['head', 'tail', 'off'];
+/** The lenses a cab end records: two corners of a headlamp and a marker lamp each; the AT300's cheek has a headlamp and an array of seven small marker lenses. */
+const LENSES_PER_CAB = { at300: 16, other: 4 } as const;
 
 /**
  * Identity checks that fail with their message only. A failed assert.equal, notEqual or deepEqual prints both operands, and a geometry's or an attribute's buffers run to
@@ -73,7 +75,8 @@ test('every kind is built in service state: white lamps at the front end, red at
       assert.equal(outer.length, 1, `${kind}: one outer ${end} cab`);
     }
     for (const { mesh, rec } of found) {
-      assert.ok(rec.lenses.length >= 4, `${kind} ${rec.end}: ${rec.lenses.length} lenses (a white and a red one at each of two corners)`);
+      // CHANGED (a white and a red lens at each of two corners, four in all, on every kind): the AT300's cheek has a long headlamp and an array of seven small marker lenses, 16 in all
+      assert.equal(rec.lenses.length, TRAIN_KINDS.includes(kind) ? LENSES_PER_CAB.at300 : LENSES_PER_CAB.other, `${kind} ${rec.end}: ${rec.lenses.length} lenses (a headlamp and its marker lenses at each of two corners)`);
       const mode: TrainLampMode = rec.interior ? 'off' : SERVICE_LAMPS[rec.end];
       rec.lenses.forEach((l, i) => expectLens(mesh, l, mode, `${kind} ${rec.end}${rec.interior ? ' (inner)' : ''} lens ${i} (${l.role})`));
     }
@@ -122,8 +125,10 @@ test('every state of the two outer ends puts exactly the right lenses on, and to
         });
         // a train nobody switched is untouched, and every lit lens is a glowing one
         const lit = after.reduce((n, { mesh, rec }) => n + (rec.interior ? 0 : rec.lenses.filter((l) => look(mesh, l).glow === 2).length), 0);
-        const want = [front, rear].reduce((n, m) => n + (m === 'off' ? 0 : 2), 0);
-        assert.equal(lit, want, `${kind} ${front}/${rear}: lit lenses (the two white ones at a head end, the two red ones at a tail end)`);
+        // CHANGED (two lit lenses at an end, whichever its lamps show): the AT300's cheek carries one headlamp and seven marker lenses, so its head end lights 2 and its tail end 14
+        const perEnd = { head: 2, tail: TRAIN_KINDS.includes(kind) ? 14 : 2 };
+        const want = [front, rear].reduce((n, m) => n + (m === 'off' ? 0 : perEnd[m]), 0);
+        assert.equal(lit, want, `${kind} ${front}/${rear}: lit lenses (the two white ones at a head end, the two red ones, or the AT300's fourteen, at a tail end)`);
       }
     }
   }
