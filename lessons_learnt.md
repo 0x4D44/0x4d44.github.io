@@ -11,6 +11,10 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-09 - bundled data JSON grows the main chunk: review evidence tipped it past Vite's 1,200 kB warning (kings-cross-src web/src/data/kx-signals.json)
+  Embedding each signal head's positionReview (URLs, reasons, versions) took the main chunk from 1,198 to 1,264 kB and the build printed a
+  chunk-size warning, which the rubric counts as a new warning. Tests and typecheck stayed green, so only the build output showed it. Keep
+  evidence ledgers in their own file (kx-signal-review.json) and give the runtime only the fields it draws; read the build output after any data change.
 - 2026-11-08 - flat city layers dip under the drawn ground between draped vertices; lift them (kings-cross-src core/city.ts:PAGE_DRAPE)
   A layer draped at its own 2-9 cm lift is a chord across the mesh's facets, so where the ground bulges (a 16 m triangle is never tested) it shows through
   as dark patches: 31% of the grass, 13% of the squares on the page's own mesh. A constant drape.lift of 10 cm plus polygons cut at 8 m / 3 cm cut that to
