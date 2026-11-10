@@ -8,7 +8,7 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
@@ -256,25 +256,32 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
 });
 
 test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not a smooth ramp (8703; round 3, C1)', () => {
-  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs);
+  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP);
   assert.ok(blocks.length > 60, `rock blocks: ${blocks.length}`);
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const ground = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[2]!);
   for (const b of blocks) {
-    // each stands on the cliff, set into it (its foot under the ground, its top a ledge over it), in a pale rock tone
-    const ax = b.x - Math.sin(b.rotY) * (b.d - 2) / 2, az = b.z - Math.cos(b.rotY) * (b.d - 2) / 2; // where it is set into the face
-    assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, ax, az), 'on the cliff');
-    assert.ok(b.y - b.h / 2 < scene.terrain.heightAt(ax, az), 'its foot is in the ground');
-    assert.ok(b.y + b.h / 2 > scene.terrain.heightAt(ax, az) + .5, 'its top stands out of the face as a ledge');
+    // each lies on the cliff, flush (round 4): its base seated in the ground at every corner, its face out of it but no shelf
+    assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, b.x, b.z), 'on the cliff');
+    for (const p of b.base) assert.ok(p[1] <= ground(p) && p[1] > ground(p) - 1, 'its base seated in the ground');
+    for (const p of b.face) assert.ok(p[1] - ground(p) > 0 && p[1] - ground(p) < 2.5, `its face flush, not a shelf: ${(p[1] - ground(p)).toFixed(2)}`);
+    // irregular: not a rectangle (opposite sides differ)
     assert.ok(lum(b.rgb) > .18, `pale rock (linear): ${lum(b.rgb).toFixed(2)}`);
+    assert.ok(lum(b.joint) < lum(b.rgb) * .5, 'dark joints round each slab');
   }
-  // broken: the blocks differ in size and tone
+  const side = (b: typeof blocks[number], i: number) => Math.hypot(b.base[i]![0] - b.base[(i + 1) % 4]![0], b.base[i]![2] - b.base[(i + 1) % 4]![2]);
+  assert.ok(blocks.filter(b => Math.abs(side(b, 0) - side(b, 2)) > .4).length > blocks.length / 2, 'irregular slabs, not rectangles');
+  // broken: the blocks differ in size and tone; scrub on some ledges
   assert.ok(new Set(blocks.map(b => b.rgb.join())).size >= 4, 'several rock tones');
+  const scrub = blocks.filter(b => b.scrub).length; assert.ok(scrub > blocks.length * .1 && scrub < blocks.length * .4, `scrub ledges: ${scrub}`);
   // none stands in front of the cliff camera's eye, filling its frame
   const eye = (JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[] }>)['pt-kinnoull-cliff']!.pos;
   assert.deepEqual([...CLIFF_EYE], eye, 'the crag keeps clear of the frozen camera itself');
   // a 9 m block 30 m from the eye filled a third of the frame (capture at f6930822); none nearer than 50 m
   assert.equal(blocks.filter(b => Math.hypot(b.x - eye[0], b.z - eye[2]) < 50).length, 0, 'no block near the cliff camera');
-  const hs = blocks.map(b => b.h).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > (CRAG.height[1] - CRAG.height[0]) * .6, 'mixed heights');
+  // the tower's foot and annexe stay clear (round 4): no slab corner within 18 m of the tower
+  assert.equal(blocks.filter(b => b.base.some(p => Math.hypot(p[0] - KINNOULL_TOWER.x, p[2] - KINNOULL_TOWER.z) < 18)).length, 0, 'the tower\'s foot clear');
+  const hs = blocks.map(b => side(b, 1)).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > 1, 'mixed sizes');
   const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
   let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
 });

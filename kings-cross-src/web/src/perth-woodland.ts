@@ -147,33 +147,60 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
   };
 }
 
-/** ASSUMED crag form (round 3, C1). 8703 shows Kinnoull's face as pale grey rock in broken blocks with ledges and scrub, not a smooth
- *  ramp; the 16 m terrain can only draw the ramp. So rock blocks are set into the cliff's steepest ground (onCliff, over `slope` deg)
- *  on a `step` m lattice: each
- *  `width` m across, `height` m tall, standing `proud` m out of the slope down its fall line, its top a level ledge. Each is set into the
- *  slope by `bury` of its height, jittered by `jitter` m, in one of PERTH_ROCK_TONES lifted by `lift`. */
+/** ASSUMED crag form (round 3, C1; round 4 from the round-3 score). 8703 shows Kinnoull's face as pale grey rock in broken blocks with
+ *  dark joints, ledges and scrub, not a smooth ramp; the 16 m terrain can only draw the ramp, and round 3's boxes stood out of it as
+ *  shelves. So irregular slabs are laid flush on the cliff's steepest ground (onCliff, over `slope` deg) on a `step` m lattice: each
+ *  `width` m across and `height` m down the fall line, its four corners pulled in or out by up to `ragged` of its size, its base seated
+ *  on the ground `bury` m down at every corner, its face standing `proud` m out and bevelled in by `bevel` of its size. The face is one of
+ *  PERTH_ROCK_TONES lifted by `lift`; the bevels are shaded `joint` (dark joints between the slabs) and, on a share `scrub` of the
+ *  slabs, the uphill bevel is a ledge of scrub in WOODLAND.gorseRgb. None within `eyeClear` m of the cliff camera, nor within `keep`
+ *  of the given points (the tower's foot and annexe). */
 /** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag block within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, step: 6, width: [6, 10] as const, height: [2.5, 5] as const, proud: [.5, 1.3] as const, bury: .6, jitter: 2, lift: 1.3, slope: 40} as const;
-export interface CragBlock {x: number; z: number; y: number; w: number; h: number; d: number; rotY: number; rgb: [number, number, number]}
-/** The crag's blocks: centre (x, y, z), size (w across, h, d along the fall line), heading, colour (the tone's 0-1 channels, as Batch colours). */
-export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): CragBlock[] {
+export const CRAG = {eyeClear: 60, step: 6, width: [5, 8] as const, height: [3, 5.5] as const, ragged: .18, proud: [.35, .8] as const,
+  bevel: .16, bury: .25, jitter: 2, lift: 1.3, joint: .38, scrub: .22, slope: 40} as const;
+type V3 = [number, number, number];
+export interface CragBlock {
+  /** the slab's middle on the ground */
+  x: number; z: number;
+  /** its corners on the ground and on its face, in the same order round it */
+  base: [V3, V3, V3, V3]; face: [V3, V3, V3, V3];
+  /** which bevel (index i: from corner i to i + 1) faces uphill: the ledge */
+  ledge: number;
+  rgb: [number, number, number]; joint: [number, number, number]; scrub: boolean;
+}
+/** The crag's slabs (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */
+export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = []): CragBlock[] {
   const C = CRAG, out: CragBlock[] = [];
   let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
   for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
-  const r = WOODLAND.cliff.reach;
+  const r = WOODLAND.cliff.reach, lin = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255].map(v => (v / 255) ** 2.2) as V3; };
   for (let gx = Math.floor((ax - r) / C.step) * C.step; gx <= bx + r; gx += C.step) for (let gz = Math.floor((az - r) / C.step) * C.step; gz <= bz + r; gz += C.step) {
     const x = gx + (hash(gx, gz, 61) - .5) * C.jitter, z = gz + (hash(gx, gz, 62) - .5) * C.jitter;
     if (!onCliff(ground, cliffs, x, z) || slopeOf(ground, x, z) < C.slope || Math.hypot(x - CLIFF_EYE[0], z - CLIFF_EYE[2]) < C.eyeClear) continue;
-    // the fall line: down the slope
+    if (keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr)) continue;
+    // the fall line (down the slope) and across it, in plan
     const dx = ground.heightAt(x - 2, z) - ground.heightAt(x + 2, z), dz = ground.heightAt(x, z - 2) - ground.heightAt(x, z + 2), l = Math.hypot(dx, dz) || 1;
-    const w = C.width[0] + (C.width[1] - C.width[0]) * hash(gx, gz, 63), h = C.height[0] + (C.height[1] - C.height[0]) * hash(gx, gz, 64);
-    const d = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65), tone = PERTH_ROCK_TONES[Math.floor(hash(gx, gz, 66) * PERTH_ROCK_TONES.length)]!;
-    // vertex colours are linear: the sRGB tone decoded, then lifted
-    const n = parseInt(tone.slice(1), 16), rgb = [n >> 16, n >> 8 & 255, n & 255].map(v => Math.min(1, (v / 255) ** 2.2 * C.lift)) as [number, number, number];
-    const fx = dx / l, fz = dz / l, y = ground.heightAt(x, z) + h * (.5 - C.bury);
-    out.push({x: x + fx * d / 2, z: z + fz * d / 2, y, w, h, d: d + 2, rotY: Math.atan2(fx, fz), rgb});
+    const fx = dx / l, fz = dz / l, w = C.width[0] + (C.width[1] - C.width[0]) * hash(gx, gz, 63), h = C.height[0] + (C.height[1] - C.height[0]) * hash(gx, gz, 64);
+    // the plan footprint of a slab `h` m down the slope: its plan depth is the slope's run over that length
+    const g = l / 4, run = h / Math.hypot(1, g);
+    const corners: [number, number][] = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]];
+    const base = corners.map(([u, v], k) => {
+      const ru = 1 + (hash(gx + k, gz, 67) - .5) * 2 * C.ragged, rv = 1 + (hash(gx, gz + k, 68) - .5) * 2 * C.ragged;
+      const px = x + (-fz) * u * w * ru + fx * v * run * rv, pz = z + fx * u * w * ru + fz * v * run * rv;
+      return [px, ground.heightAt(px, pz) - C.bury, pz] as V3;
+    }) as CragBlock['base'];
+    // the face: the base drawn in towards its middle by `bevel` and stood out along the slope's normal
+    const nl = Math.hypot(dx / 4, 1, dz / 4), n: V3 = [dx / 4 / nl, 1 / nl, dz / 4 / nl], proud = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65) + C.bury;
+    const mx = base.reduce((a, p) => a + p[0], 0) / 4, mz = base.reduce((a, p) => a + p[2], 0) / 4;
+    // seated `proud` m over the ground under each face corner, so the slab follows the face's curve and never sinks into it
+    const face = base.map(p => { const fx2 = p[0] + (mx - p[0]) * C.bevel + n[0] * proud, fz2 = p[2] + (mz - p[2]) * C.bevel + n[2] * proud; return [fx2, ground.heightAt(fx2, fz2) + proud - C.bury, fz2] as V3; }) as CragBlock['face'];
+    const tone = lin(PERTH_ROCK_TONES[Math.floor(hash(gx, gz, 66) * PERTH_ROCK_TONES.length)]!), rgb = tone.map(v => Math.min(1, v * C.lift)) as V3;
+    // corners 0-1 lie uphill (v = -0.5: against the fall line)
+    out.push({x, z, base, face, ledge: 0, rgb, joint: rgb.map(v => v * C.joint) as V3, scrub: hash(gx, gz, 69) < C.scrub});
   }
   return out;
 }
+/** The scrub ledge's tone (linear), WOODLAND.gorseRgb. */
+export const CRAG_SCRUB = WOODLAND.gorseRgb.map(v => v) as [number, number, number];
