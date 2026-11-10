@@ -126,7 +126,8 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   assert.equal(dark, 0, 'no dark ironwork: girders pale grey, railing white');
   // round 5 (round-4 score: the web filled each pair into one flat block): two round shafts with a dark seam, not a slab; and a shaded
   // bottom flange under each girder, not a flat white wall
-  assert.ok(PIER_FORM.web <= .35 && PIER_FORM.seam <= .6, 'a thin, deep-set, dark seam between the shafts');
+  // round 6: a seam about 0.15 of the shaft, not a panel (round 5's 0.3 read as a third of the pier), between round shafts
+  assert.ok(PIER_FORM.web <= .18 && PIER_FORM.seam <= .6 && PIER_FORM.sides >= 12, 'a thin, deep-set, dark seam between round shafts');
   const mc = layout && masonry.build().getAttribute('color'); let seamV = 0;
   const seamRgb = VIADUCT_LOOK.joint.map(v => v * PIER_FORM.seam);
   for (let i = 0; i < mc.count; i++) if (Math.abs(mc.getX(i) - seamRgb[0]!) < 1e-4 && Math.abs(mc.getY(i) - seamRgb[1]!) < 1e-4) seamV++;

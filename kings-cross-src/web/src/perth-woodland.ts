@@ -159,7 +159,8 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 /** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, slope: 40, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
+/** `slope` rose from 40 to 41.5 deg in round 6, paying the piers' rounder shafts (PIER_FORM.sides) from the crag's gentlest risers. */
+export const CRAG = {eyeClear: 60, slope: 41.5, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
   lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointCell: 7, joints: .2, joint: .35} as const;
 /** Round 6 (round-5 score: "walls, not rock"; the courses ran level and the brown drape showed between them). The face now runs in
  *  vertical columns: each riser's height and tone follow smooth noise on `column` m cells (60% of the height), so a column of tall,

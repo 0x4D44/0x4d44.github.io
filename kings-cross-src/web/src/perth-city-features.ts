@@ -82,8 +82,11 @@ export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, s
  *  rusticated in bands; a cross girder closes the dark gap between the cap and the deck; the plate girders carry vertical stiffeners.
  *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
  *  other one `proud` m out; the cross girder up to `crossTop`; a stiffener every `stiffener` m, `stiffenerSize` (along, out). */
-export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 10, band: .9, proud: .07, crossTop: -.55,
-  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .3, seam: .5, flange: [.4, .12] as const, flangeShade: .66} as const;
+export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 12, band: .9, proud: .07, crossTop: -.55,
+  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .15, seam: .5, flange: [.4, .12] as const, flangeShade: .66} as const;
+/** Round 6 (round-5 score, C4: the seam was a wide dark panel, a third of the pier, and the shafts looked square): the web narrows to
+ *  0.15 of the diameter, a seam between two touching shafts, and the shafts take 12 sides (from 10; +480 triangles, paid by the crag's
+ *  `slope` floor, 40 to 41.5 deg). */
 /** Round 5 (round-4 score, C4): the web filled the pair into one flat block. 2166751 shows two round shafts touching, with a shadowed
  *  seam between them: the web is now `web` of the diameter thick (deep inside the shafts' faces) and shaded `seam` of the joint tone, so
  *  it reads as the dark seam. The deck was a flat white wall: each girder carries a bottom flange `flange` (height, proud) shaded
