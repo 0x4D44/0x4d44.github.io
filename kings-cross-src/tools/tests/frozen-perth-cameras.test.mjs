@@ -10,11 +10,11 @@ import { scenePinFrom } from '../scene-pin.mjs';
 
 const frozen = JSON.parse(await readFile(new URL('./frozen-perth-cameras.json', import.meta.url), 'utf8'));
 
-test('every Perth camera is its frozen value, field for field, in the frozen order, and there are 10 (pt-station-hotel added by lead ruling 2026-11-10)', () => {
+test('every Perth camera is its frozen value, field for field, in the frozen order, and there are 11 (pt-station-hotel and pt-kings-place-bridge added by lead rulings 2026-11-10)', () => {
   const cameras = perthCameras();
   for (const name of new Set([...Object.keys(frozen), ...Object.keys(cameras)])) assert.ok(isDeepStrictEqual(cameras[name], frozen[name]), `${name} differs from its frozen value`);
   assert.deepEqual(Object.keys(cameras), Object.keys(frozen));
-  assert.equal(Object.keys(cameras).length, 10);
+  assert.equal(Object.keys(cameras).length, 11);
   for (const [name, c] of Object.entries(cameras)) {
     assert.ok(name.startsWith('pt-') && c.pos.length === 3 && c.target.length === 3 && c.source.length > 40, `${name} is placed with a stated source`);
     assert.ok(!Object.hasOwn(waverleyCameras(), name), 'no name shared with Waverley');

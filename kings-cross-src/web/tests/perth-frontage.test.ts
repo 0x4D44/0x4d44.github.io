@@ -12,6 +12,8 @@ import type { PerthBuild } from '../src/perth-scene.ts';
 import { PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage } from '../src/perth-frontage.ts';
 import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '../src/perth-frontage-hotel.ts';
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
+import { KINGS_PLACE_LEVELS, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
+import { perthTrack } from '../src/perth-station.ts';
 
 const sceneJson = JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8'));
 // The frozen Perth cameras (tools/tests/frozen-perth-cameras.test.mjs holds this file equal to tools/evidence.mjs).
@@ -85,8 +87,35 @@ test('the frontage\'s cost: within P2\'s caps (+24 draws, +240,000 triangles), a
   try {
     assert.ok(info.drawCalls <= 24 && info.drawCalls >= 7, JSON.stringify(info));
     assert.ok(info.triangles < 240_000, JSON.stringify(info));
-    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends });
+    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends, panels: info.bridge.panels, walls: info.bridge.walls });
+    assert.ok(info.bridge.ends >= 2, 'abutments at both ends');
+    assert.ok(info.bridge.panels >= 40, `the girders are panelled on both faces (R-pt2-d): ${info.bridge.panels}`);
+    assert.ok(info.bridge.walls > 0, 'retaining walls line the cut (R-pt2-d)');
     assert.ok(info.front.edges >= 5, 'the street front walls the outline from the hotel corner to the east return');
     assert.ok(data.buildings.some(b => b.id === PERTH_STATION_BUILDING_ID));
   } finally { for (const g of geometries) g.dispose(); for (const m of mats) m.dispose(); }
+});
+
+test("King's Place is cut under the bridge to the R-pt2-d road level, and the cut leaves the platforms and open track alone", () => {
+  const t = scene.terrain, line = kingsPlaceLine(), ring = frontageJson.bridge.ring as number[][];
+  const xs = ring.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const under = line.filter(p => p[0] > x0 + 2 && p[0] < x1 - 2);
+  assert.ok(under.length > 0, 'King\'s Place passes under the bridge');
+  for (const p of under) assert.ok(Math.abs(t.heightAt(p[0], p[1]) - KINGS_PLACE_LEVELS.road) < .05, `road at ${p} is ${t.heightAt(p[0], p[1])}`);
+  // the soffit clears the road by the photo's 4.3 m
+  assert.ok(KINGS_PLACE_LEVELS.soffit - KINGS_PLACE_LEVELS.road > 4.2);
+  // platforms keep the station's flattened level
+  for (const pl of data.platforms) for (const [x, z] of pl.path) assert.ok(Math.abs(t.heightAt(x, z) + .2) < .05, `platform point ${x},${z} at ${t.heightAt(x, z)}`);
+  // open rails off the bridge stay on the flattened ground
+  const open = perthTrack(data).ground;
+  for (const [ax, az, bx, bz] of open) for (const k of [0, .5, 1]) {
+    const x = ax + (bx - ax) * k, z = az + (bz - az) * k;
+    if (x < x0 - 30 || x > x1 + 30 || z < -100 || z > -20) continue;
+    // where a ground rail meets the bridge, the abutment carries it: points within 1.5 m of the deck's outline are the abutments' business
+    if (ring.some((p, i) => { const q = ring[(i + 1) % ring.length], dx = q[0] - p[0], dz = q[1] - p[1], u = Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - p[0] - u * dx, z - p[1] - u * dz) < 1.5; })) continue;
+    assert.ok(t.heightAt(x, z) > -.3, `open rail at ${x},${z} left over the cut (${t.heightAt(x, z)})`);
+  }
+  // pt-kings-place-bridge's eye stands 1.7 m over the cut ground and sees the girders above the road
+  const cam = perthCameras()['pt-kings-place-bridge'];
+  assert.ok(Math.abs(cam.pos[1] - t.heightAt(cam.pos[0], cam.pos[2]) - 1.7) < .05, `eye ${cam.pos[1]} over ${t.heightAt(cam.pos[0], cam.pos[2])}`);
 });

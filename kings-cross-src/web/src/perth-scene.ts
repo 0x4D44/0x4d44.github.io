@@ -20,6 +20,7 @@ import {stationGround} from './station-railway.ts';
 import {addWaverleyLights} from './station-weather.ts';
 import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthTrack, stationOutline} from './perth-station.ts';
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
+import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
 export {PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, perthBuildingHeight} from './perth-city.ts';
@@ -33,7 +34,9 @@ const [{default: dataFile}, {default: terrainFile}] = await Promise.all([
  *  bridges. The other mapped roofs (OSM building=roof) are canopies elsewhere in the town, not the station's, so they do not level it. */
 export function perthGround(data: PerthData, raw: Terrain): Terrain {
   const station = stationOutline(data);
-  return stationGround(raw, perthTrack(data).ground, [...data.platforms.map(p => p.path), ...station ? [station.outer] : []]);
+  const track = perthTrack(data).ground;
+  // P2's King's Place cut (perth-frontage-bridge.ts): the road under the Tay Coast Line's 1849 bridge, which the 16 m DTM cannot resolve.
+  return kingsPlaceCut(stationGround(raw, track, [...data.platforms.map(p => p.path), ...station ? [station.outer] : []]), track);
 }
 
 /** What every element builds with: the scene's mesh adder (counts triangles and draws, owns geometries), its owned-material register, its

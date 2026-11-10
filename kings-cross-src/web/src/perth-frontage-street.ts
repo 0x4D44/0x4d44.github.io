@@ -16,10 +16,10 @@ export const FRONTAGE_WINDOW={x0:-80,x1:125,z0:-175,z1:-20} as const;
 export const PERTH_ENTRANCE:Pt=[-3.03,-34.98];
 /** ASSUMED from R-pt2-a: the single-storey street walls, the entrance pavilion (its blue-clad upper storey over a glazed, recessed ground
  *  floor on four posts), the pavement and its bollards. */
-export const STREET_LEVELS={wall:4.3,coping:.25,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.6} as const;
+export const STREET_LEVELS={wall:4.3,coping:.25,flatDeep:9,slateBack:11,slateTop:8,gableBack:2,gableDeep:12,gableEaves:4.8,gableApex:8.2,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.6} as const;
 /** ASSUMED carriageway widths (m) by OSM highway class; no widths are mapped here. */
 export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,tertiary:7,residential:6,unclassified:6,service:5,parking_aisle:6,footway:2.4,pedestrian:4,path:2,cycleway:2.5,steps:2};
-export const STREET_COLOURS={buff:0xc4b393,coping:0xd6ccb4,navy:0x34449a,glass:0x2a3238,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,asphalt:0x4d4f52,carpark:0x56585b,paving:0x8a7d74,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3,girder:0x4c5a52,abutment:0x8d8172} as const;
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x3a62c4,glass:0x14191e,lantern:0x5d6f7c,shrub:0x4f6b34,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,asphalt:0x4d4f52,carpark:0x5f5b58,block:0x7a726b,paving:0x8a7d74,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -27,11 +27,12 @@ const inRing=([x,z]:Pt,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1
 const ringOf=(r:number[][]):Pt[]=>r.map(p=>[p[0],p[1]]);
 
 /** A flat area draped on the drawn ground `lift` above it: the polygon triangulated, then split until no edge is over 3 m. */
-export function drape(b:Batch,ring:readonly Pt[],ground:Ground,lift:number,color:Rgb):void{
- const r=cleanRing(ring),y=(p:Pt)=>ground.heightAt(...p)+lift;
+export function drape(b:Batch,ring:readonly Pt[],ground:Ground,lift:number,color:Rgb,mottle=0):void{
+ const r=cleanRing(ring),y=(p:Pt)=>ground.heightAt(...p)+lift;let seed=7;
+ const tint=():Rgb=>{if(!mottle)return color;seed=(seed*16807)%2147483647;const k=1+(seed/2147483647-.5)*2*mottle;return [color[0]*k,color[1]*k,color[2]*k] as Rgb;};
  const put=(a:Pt,c:Pt,d:Pt,depth:number):void=>{
   const ab=Math.hypot(c[0]-a[0],c[1]-a[1]),bc=Math.hypot(d[0]-c[0],d[1]-c[1]),ca=Math.hypot(a[0]-d[0],a[1]-d[1]),m=Math.max(ab,bc,ca);
-  if(m<=3||depth>10){if(Math.abs((c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]))>1e-9)b.poly([[a[0],y(a),a[1]],[c[0],y(c),c[1]],[d[0],y(d),d[1]]],undefined,{facing:[0,1,0],color});return;}
+  if(m<=3||depth>10){if(Math.abs((c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]))>1e-9)b.poly([[a[0],y(a),a[1]],[c[0],y(c),c[1]],[d[0],y(d),d[1]]],undefined,{facing:[0,1,0],color:tint()});return;}
   if(m===ab){const q:Pt=[(a[0]+c[0])/2,(a[1]+c[1])/2];put(a,q,d,depth+1);put(q,c,d,depth+1);}
   else if(m===bc){const q:Pt=[(c[0]+d[0])/2,(c[1]+d[1])/2];put(a,c,q,depth+1);put(a,q,d,depth+1);}
   else {const q:Pt=[(d[0]+a[0])/2,(d[1]+a[1])/2];put(a,c,q,depth+1);put(q,c,d,depth+1);}
@@ -49,24 +50,28 @@ export function strip(b:Batch,path:readonly Pt[],half:number,ground:Ground,lift:
   b.poly(q.map(p=>[p[0],ground.heightAt(...p)+lift,p[1]] as V3),undefined,{facing:[0,1,0],color});}
 }
 
-export interface StreetBatches {front:Batch;glass:Batch;flat:Batch;paint:Batch;bridge:Batch}
+export interface StreetBatches {front:Batch;glass:Batch;flat:Batch;paint:Batch}
 
 /** The forecourt: the mapped car parks, the roads and paths round the station front and the hotel, white bay lines along the mapped
  *  parking aisles (2.5 m bays, 4.8 m deep, ASSUMED), and the zebra crossing at the entrance (R-pt2-a). Nothing is drawn inside the
  *  station outline or the hotel. */
 export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOut:readonly (readonly Pt[])[]):void{
  const C=STREET_COLOURS,W=FRONTAGE_WINDOW,out=(p:Pt)=>p[0]<W.x0||p[0]>W.x1||p[1]<W.z0||p[1]>W.z1||keepOut.some(r=>inRing(p,r));
- for(const p of file.parking)drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark));
+ for(const p of file.parking)drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark),.06);
+ const carriage=file.roads.filter(r=>!['footway','pedestrian','path','cycleway','steps'].includes(r.highway));
+ const onCarriage=(p:Pt)=>file.parking.some(q=>inRing(p,ringOf(q.ring)))||carriage.some(r=>{const h=(ROAD_WIDTHS[r.service==='parking_aisle'?'parking_aisle':r.highway]??4)/2;
+  for(let i=0;i+1<r.path.length;i++){const a=r.path[i],c=r.path[i+1],dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz||1)));
+   if(Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz)<h)return true;}return false;});
  for(const r of file.roads){
   const kind=r.service==='parking_aisle'?'parking_aisle':r.highway,half=(ROAD_WIDTHS[kind]??4)/2;
   const foot=['footway','pedestrian','path','cycleway','steps'].includes(r.highway);
   const color=rgb(foot?C.footway:r.surface==='paving_stones'?C.paving:C.asphalt);
-  strip(b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,out);
+  strip(b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,foot?(p=>out(p)||onCarriage(p)):out);
   if(kind==='parking_aisle'){// bay lines both sides of the aisle, perpendicular to it
    const [a,c]=[r.path[0],r.path.at(-1)!],l=Math.hypot(c[0]-a[0],c[1]-a[1]),t:Pt=[(c[0]-a[0])/l,(c[1]-a[1])/l],n:Pt=[-t[1],t[0]];
    for(let s=1.25;s<l;s+=2.5)for(const side of [-1,1]){const p0:Pt=[a[0]+t[0]*s+n[0]*side*half,a[1]+t[1]*s+n[1]*side*half],p1:Pt=[p0[0]+n[0]*side*4.8,p0[1]+n[1]*side*4.8];
     if(out(p1)||!file.parking.some(q=>inRing(p1,ringOf(q.ring))))continue;
-    strip(b.paint,[p0,p1],.05,ground,.1,rgb(C.paint),()=>false);}
+    strip(b.paint,[p0,p1],.06,ground,.1,rgb(C.paint),()=>false);}
   }
  }
 }
@@ -100,13 +105,42 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  const pane=(s0:number,s1:number,y0:number,y1:number,o=.04,color:number=C.glass)=>{const p=at(s0,o),q=at(s1,o);
   b.glass.poly([[p[0],P+y0,p[1]],[q[0],P+y0,q[1]],[q[0],P+y1,q[1]],[p[0],P+y1,p[1]]],undefined,{facing:[n[0],0,n[1]],color:rgb(color)});};
  const w=S.pavilionWidth,s0=sE-w/2,s1=sE+w/2;
- box(s0,s1,-S.pavilionDeep,S.pavilionOut,S.pavilionFloor,S.pavilionTop,C.navy);// the blue-clad upper storey
- pane(s0+.4,s1-.4,S.pavilionFloor+.9,S.pavilionTop-.8,S.pavilionOut+.03);// its band of windows
+ const bandLo=S.pavilionFloor+1.1,bandHi=S.pavilionTop-1;// ASSUMED from R-pt2-a: a 1.1 m lower band, a 1.9 m window strip, a 1 m upper band
+ box(s0,s1,-S.pavilionDeep,S.pavilionOut,S.pavilionFloor,bandLo,C.navy);box(s0,s1,-S.pavilionDeep,S.pavilionOut,bandHi,S.pavilionTop,C.navy);
+ box(s0+.05,s1-.05,-S.pavilionDeep,S.pavilionOut-.25,bandLo,bandHi,C.glass,b.glass);// the window strip, set back 0.25 m
+ for(let k=0;k<=12;k++){const s=s0+.1+k*(w-.2)/12;box(s-.05,s+.05,S.pavilionOut-.3,S.pavilionOut-.18,bandLo,bandHi,C.frame);}// its mullions
  pane(sE-2,sE+2,S.pavilionTop-.05,S.pavilionTop+.55,S.pavilionOut-.1,C.sign);// the blank sign panel on its parapet (no lettering drawn)
  for(const s of [s0+.3,sE-1.7,sE+1.7,s1-.3])box(s-.18,s+.18,S.pavilionOut-.5,S.pavilionOut-.14,0,S.pavilionFloor,C.navy);// four posts
  pane(s0+.2,s1-.2,.05,S.pavilionFloor-.1);// the recessed glazed entrance
  pane(s1+1.2,s1+4.4,.3,2.8);pane(s1+5.5,s1+6.9,.4,2.4,.04,C.frame);// the shop unit east of the entrance; a notice case
  pane(s0-7.2,s0-1.2,.2,3,.04,C.frame);pane(s0-6.9,s0-1.5,.35,2.7,.08);// the glazed booking-hall bay west of the entrance
+ // behind the front (lead ruling 2026-11-10 12:21: the north-front buildings' own roofs are P2's): the 1968 link's flat roof over the
+ // single-storey range (HES LB39340 "flat-roofed single-storey linking extension"), 9 m deep (ASSUMED); and east of the pavilion the two
+ // stone gable ends with slated roofs that R-pt2-a and R-pt2-e (geograph 2008570) show rising behind the street wall. Coursed grey and
+ // pink sandstone (HES LB39340). Widths, set-back, eaves and apex ASSUMED from R-pt2-e.
+ const roofY=P+S.wall-.02;
+ for(const [ra,rb] of [[0,s0-.1],[s1+.1,l]] as const){if(rb-ra<1)continue;const west=ra===0;
+  const back=west?S.slateBack:S.flatDeep,top=west?P+S.slateTop:roofY;
+  const q=[[ra,-.1,roofY],[rb,-.1,roofY],[rb,-back,top],[ra,-back,top]] as const;
+  b.front.poly(q.map(([u,o,y])=>{const p=at(u,o);return [p[0],y,p[1]] as V3;}),undefined,{facing:[n[0]*(west?.6:0),1,n[1]*(west?.6:0)],color:rgb(west?C.slate:C.felt)});
+  if(west){for(const u of [ra,rb]){const a2=at(u,-.1),b2=at(u,-back);b.front.poly([[a2[0],roofY,a2[1]],[b2[0],roofY,b2[1]],[b2[0],top,b2[1]]],undefined,{facing:[t[0]*(u===ra?-1:1),0,t[1]*(u===ra?-1:1)],color:rgb(C.buff)});}
+   for(let u=ra+2;u+4<rb;u+=7){const m0=-back*.55,m1=-back*.8,y0=roofY+(top-roofY)*.55,y1=roofY+(top-roofY)*.8;// a glazed lantern on the slope
+    const c=at(u+2,(m0+m1)/2);wallBox(b.glass,at(u,(m0+m1)/2),at(u+4,(m0+m1)/2),Math.min(y0,y1)-.1,Math.max(y0,y1)+.7,(m0-m1)/2,rgb(C.lantern));void c;}}
+ }
+ const g0=s1+.6,gw=(l-.2-g0-.2)/2,up:V3=[0,1,0];
+ for(let g=0;g<2;g++){const sa=g0+g*(gw+.2),sb=sa+gw,sm=(sa+sb)/2,of=-S.gableBack,ob=-S.gableDeep,ye=P+S.gableEaves,ya=P+S.gableApex;
+  const V=(s:number,o:number,y:number):V3=>{const q=at(s,o);return [q[0],y,q[1]];};
+  // the gable wall, its triangle and the wall below it down into the single-storey roof
+  b.front.poly([V(sa,of,roofY-.3),V(sb,of,roofY-.3),V(sb,of,ye),V(sm,of,ya),V(sa,of,ye)],undefined,{facing:[n[0],0,n[1]],color:rgb(C.sandstone)});
+  b.front.poly([V(sa,ob,roofY-.3),V(sb,ob,roofY-.3),V(sb,ob,ye),V(sm,ob,ya),V(sa,ob,ye)],undefined,{facing:[-n[0],0,-n[1]],color:rgb(C.sandstone)});
+  for(const [x,dir] of [[sa,-1],[sb,1]] as const)b.front.poly([V(x,of,roofY-.3),V(x,ob,roofY-.3),V(x,ob,ye),V(x,of,ye)],undefined,{facing:[t[0]*dir,0,t[1]*dir],color:rgb(C.sandstone)});
+  // the slated roof, oversailing the side walls by 0.3 m; a skew (coping) along each gable's raking edges
+  for(const [x,dir] of [[sa-.3,-1],[sb+.3,1]] as const){const ey=ye-.3*(S.gableApex-S.gableEaves)/(gw/2);
+   b.front.poly([V(x,of+.15,ey),V(x,ob-.15,ey),V(sm,ob-.15,ya),V(sm,of+.15,ya)],undefined,{facing:[t[0]*dir,1,t[1]*dir],color:rgb(C.slate)});}
+  for(const [x0,x1] of [[sa,sm],[sm,sb]] as const){const p=at(x0,of+.12),q=at(x1,of+.12),y0=x0===sa?ye:ya,y1=x0===sa?ya:ye;
+   b.front.poly([[p[0],y0,p[1]],[q[0],y1,q[1]],[q[0],y1+.25,q[1]],[p[0],y0+.25,p[1]]],undefined,{facing:[n[0],0,n[1]],color:rgb(C.coping)});}
+  void up;
+ }
  // the pavement: 4.2 m out to a kerb, block paving, black bollards with a yellow band at the kerb, blue planters (R-pt2-a)
  const pv:Pt[]=[at(-1,0),at(l+1,0),at(l+1,S.pavement),at(-1,S.pavement)];
  drape(b.flat,pv,ground,S.kerb,rgb(C.footway));
@@ -114,21 +148,7 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  for(let s=1;s<l;s+=S.bollardPitch){if(Math.abs(s-sE)<2.8)continue;const p=at(s,S.pavement-.35),y=ground.heightAt(...p)+S.kerb;
   prism(b.front,p[0],p[1],.11,y,y+S.bollard,8,rgb(C.bollard));prism(b.front,p[0],p[1],.115,y+.72,y+.84,8,rgb(C.yellow),Math.PI/8,false);}
  for(const s of [s1+1.5,s1+3.6,s0-2.2,s0-8.5]){const p=at(s,S.pavement-1.4),y=ground.heightAt(...p)+S.kerb;
-  wallBox(b.front,at(s-.55,S.pavement-1.4),at(s+.55,S.pavement-1.4),y,y+.7,.55,rgb(C.planter));}
+  prism(b.front,p[0],p[1],.6,y,y+.62,12,rgb(C.planter));prism(b.front,p[0],p[1],.5,y+.62,y+1.05,8,rgb(C.shrub),Math.PI/8);}
  for(let o=S.pavement+.6;o<S.pavement+6.6;o+=1){const p=at(sE-1.6,o),q=at(sE+1.6,o);strip(b.paint,[p,q],.25,ground,.1,rgb(C.paint),()=>false);}
  return {chain,P};
-}
-
-/** The rail underbridge over King's Place (OSM way/1260630142): plate-girder fascias along its two sides parallel to the rails, standing
- *  1 m above the rail as the parapet (ASSUMED: no photograph of this bridge is held), the deck soffit, and masonry abutments along its
- *  two ends. The ground under it is the drawn ground (the railway's flattening): no clearance is carved, see the round notes. */
-export function kingsPlaceBridge(b:StreetBatches,ring:readonly Pt[],railDir:Pt,ground:Ground):{sides:number;ends:number}{
- const C=STREET_COLOURS,r=cleanRing(ring);let sides=0,ends=0;
- const top=1,soffit=-1.5;
- for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length],l=Math.hypot(c[0]-a[0],c[1]-a[1]);if(l<2)continue;
-  const cos=Math.abs(((c[0]-a[0])*railDir[0]+(c[1]-a[1])*railDir[1])/l);
-  if(cos>.85){wallBox(b.bridge,a,c,soffit,top,.25,rgb(C.girder),.2);sides++;}
-  else if(cos<.75){const g=Math.min(ground.heightAt(...a),ground.heightAt(...c))-.5;if(soffit>g+.05)wallBox(b.bridge,a,c,g,soffit,.6,rgb(C.abutment));ends++;}
- }
- return {sides,ends};
 }

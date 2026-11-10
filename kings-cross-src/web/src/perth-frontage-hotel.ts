@@ -35,7 +35,7 @@ export const HOTEL_LEVELS={
 } as const;
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
-export const HOTEL_COLOURS={ashlar:0x977a68,red:0x8a4c3d,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
+export const HOTEL_COLOURS={ashlar:0x8a6352,red:0x7d5447,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];
@@ -165,8 +165,11 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
  const pitch=(L.ridge-L.eaves)/((range.d1-range.d0)/2),slopeAt=(d:number)=>L.eaves+(d-range.d0)*pitch;// the range's front slope (above P)
  const bayRidge=L.bayRidge;gableRoof(-.2,f.bayWidth+.2,f.bayFront-.25,6,P+L.bayEaves,P+bayRidge,false,C.slate);
  const eastRidge=L.eaves+(e1-e0)/2*1.2,eastBack=(eastRidge-L.eaves)/pitch+range.d0;
- gableRoof(e0-.15,e1+.15,-.8,eastBack,P+L.eaves,P+eastRidge,false,C.slate);
- // crow-stepped gable walls (HES): an outline of steps from the wallhead to the apex, 0.45 m thick, red sandstone skews
+ gableRoof(e0-.15,e1+.15,-.45,eastBack,P+L.eaves,P+eastRidge,false,C.slate);
+ // the rear: two slated ranges behind the front range (round-1 score: the rear read as a flat slab), between the footprint's west return
+// (s -3.9) and the corner tower's line (s 34.9), back to d 35.7 (all OSM vertices); the same pitch as the front range (ASSUMED)
+for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;gableRoof(-3.9,range.s1+.1,d0,d1,P+L.eaves,P+L.eaves+half*pitch,true,C.slate);}
+// crow-stepped gable walls (HES): an outline of steps from the wallhead to the apex, 0.45 m thick, red sandstone skews
  const crow=(s0:number,s1:number,d:number,base:number,apex:number,steps:number)=>{
   const w=s1-s0,o:[number,number][]=[[0,base-1.2],[w,base-1.2]];
   for(let k=0;k<steps;k++){const x=w-k*w/2/steps,y=base+(apex-base)*k/steps;o.push([x,y],[x,y+(apex-base)/steps]);}
@@ -177,16 +180,29 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
  };
  crow(0,f.bayWidth,f.bayFront-.02,L.bayEaves,L.bayApex,5);
  crow(e0,e1,-.47,L.eaves,L.eastApex,5);
- // dormer-gables on the middle front's two inner bays (R-pt2-b), and piend-roofed dormers on the outer two (HES "small piend-roofed dormers")
+ // wallhead gablets on the middle front's two inner bays (R-pt2-b): a shaped gable rising from the wall face, 3.2 m wide, its sides going up
+// 1.2 m over the eaves then curving in to a 0.7 m top under a finial, an arched attic light in a red margin; its own slated roof behind.
+// Proud of the wall by 0.4 m so the main roof's eaves pass behind it. Sizes ASSUMED from R-pt2-b.
+function gablet(sc:number){const w=3.2,base=L.eaves-1.5,side=L.eaves+1.2,apex=L.eaves+3.1,o:[number,number][]=[[0,base],[w,base],[w,side]];
+ for(let i=1;i<=6;i++){const a=i/6;o.push([w-(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
+ for(let i=6;i>=1;i--){const a=i/6;o.push([(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
+ o.push([0,side]);
+ const g=f.at(sc-w/2,-.4);slab(b.detail,o.map(([x,y])=>[x,y+P] as [number,number]),[g[0],0,g[1]],uAx,nOut,.45,C.ashlar);
+ const arch=(w2:number,y0:number,y1:number)=>{const r:[number,number][]=[[-w2/2,y0],[w2/2,y0]];for(let i=0;i<=8;i++){const a=i/8*Math.PI;r.push([Math.cos(a)*w2/2,y1-w2/2+Math.sin(a)*w2/2]);}return r;};
+ const m=f.at(sc,-.42);slab(b.detail,arch(1.6,L.eaves-.5,L.eaves+2.1).map(([x,y])=>[x,y+P] as [number,number]),[m[0],0,m[1]],uAx,nOut,.02,C.red);
+ const gl=f.at(sc,-.45);slab(b.detail,arch(1.1,L.eaves-.3,L.eaves+1.85).map(([x,y])=>[x,y+P] as [number,number]),[gl[0],0,gl[1]],uAx,nOut,.02,C.glass);
+ const fin=f.at(sc,-.2);prism(b.detail,fin[0],fin[1],.2,P+apex,P+apex+.5,4,C.ashlar);prism(b.detail,fin[0],fin[1],.09,P+apex+.5,P+apex+1.1,4,C.red);
+ gableRoof(sc-w/2+.1,sc+w/2-.1,0,2.6,P+side,P+apex-.2,false,C.slate);}
+// dormer-gables on the middle front's two inner bays (R-pt2-b), and piend-roofed dormers on the outer two (HES "small piend-roofed dormers")
  const bayW=(m1-m0)/4;
- for(const k of [1,2]){const sc=m0+(k+.5)*bayW;crow(sc-1.1,sc+1.1,-.02,L.eaves-.6,L.eaves+2.9,3);gableRoof(sc-1.1,sc+1.1,.2,1.6,P+L.eaves+.6,P+L.eaves+2.3,false,C.slate);}
+ for(const k of [1,2]){const sc=m0+(k+.5)*bayW;gablet(sc);}
  for(const k of [0,3]){const sc=m0+(k+.5)*bayW,dz=1.1,y0=P+slopeAt(dz);
   const c=f.at(sc,dz+.7);wallBoxAlong(b.detail,c,f.u,f.n,1.5,1.4,y0-.2,y0+1.5,C.ashlar);
   const g=f.at(sc,dz-.02);b.detail.poly([[g[0]-f.u[0]*.5,y0+.2,g[1]-f.u[1]*.5],[g[0]+f.u[0]*.5,y0+.2,g[1]+f.u[1]*.5],[g[0]+f.u[0]*.5,y0+1.25,g[1]+f.u[1]*.5],[g[0]-f.u[0]*.5,y0+1.25,g[1]-f.u[1]*.5]],undefined,{facing:nOut,color:C.glass});
   pyramidRect(b.detail,c,f.u,f.n,.85,.8,y0+1.5,y0+2.2,C.slate);}
  // 4. Stacks: corniced, on the ridge between the bays and over the two gables (HES "corniced wallhead and ridge stacks")
  const stack=(p:Pt,y0:number)=>{wallBoxAlong(b.detail,p,f.u,f.n,1.9,.9,y0,P+L.stack,C.ashlar);wallBoxAlong(b.detail,p,f.u,f.n,2.2,1.15,P+L.stack-.45,P+L.stack-.2,C.red);};
- stack(f.at(m0+bayW,6),P+L.ridge-.5);stack(f.at(m0+3*bayW,6),P+L.ridge-.5);stack(f.at(f.bayWidth/2,f.bayFront+.8),P+L.bayApex-1.2);stack(f.at((e0+e1)/2,-.2),P+L.eastApex-.8);
+ stack(f.at(m0+bayW,6),P+L.ridge-.5);stack(f.at(m0+3*bayW,6),P+L.ridge-.5);stack(f.at(f.bayWidth/2,f.bayFront+.8),P+L.bayApex-1.2);stack(f.at((e0+e1)/2,-.25),P+L.eastApex-1.5);
  // 5. The turrets (HES): the re-entrant turret's conical slated roof, and the south-east corner tower's tall octagonal spire (R-pt2-b,
  // R-pt2-b 5._Perth_Station_copy.jpg). Their shafts are the footprint's own polygonal outlines, walled above.
  const t=f.reentrant,k=f.corner;
@@ -202,6 +218,8 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
   for(let i=1;i<8;i++){const a=i/8;o.push([w/2-a*w,h-rise+Math.sin(a*Math.PI)*rise]);}o.push([-w/2,h-rise]);return o;};
  slab(b.detail,arch(3.3,4.1,.6).map(([x,y])=>[x,y+P-.05] as [number,number]),[dc[0],0,dc[1]],uAx,nOut,.05,C.red);
  const dd=f.at(f.bayWidth/2,f.bayFront-.09);slab(b.detail,arch(2.6,3.6,.5).map(([x,y])=>[x,y+P] as [number,number]),[dd[0],0,dd[1]],uAx,nOut,.05,C.door);
+ const fl=f.at(f.bayWidth/2,f.bayFront-.12);slab(b.detail,arch(2.3,.62,.45).map(([x,y])=>[x,y+P+2.85] as [number,number]),[fl[0],0,fl[1]],uAx,nOut,.02,C.glass);
+ for(const x of [-.65,.65]){const q=f.at(f.bayWidth/2+x,f.bayFront-.12);slab(b.detail,[[-.42,P+1.3],[.42,P+1.3],[.42,P+2.6],[-.42,P+2.6]],[q[0],0,q[1]],uAx,nOut,.02,C.glass);}
  return {P,foot,frame:f,triangles:b.facade.triangles+b.detail.triangles-start};
 }
 /** A box standing on plan point c, `w` along u and `dp` along n, y0..y1. */
@@ -210,7 +228,7 @@ function wallBoxAlong(b:Batch,c:Pt,u:Pt,_n:Pt,w:number,dp:number,y0:number,y1:nu
 function pyramidRect(b:Batch,c:Pt,u:Pt,n:Pt,hw:number,hd:number,y0:number,y1:number,color:Rgb){
  const P=(i:number,j:number):V3=>[c[0]+u[0]*i*hw+n[0]*j*hd,y0,c[1]+u[1]*i*hw+n[1]*j*hd],tip:V3=[c[0],y1,c[1]];
  const corners=[P(-1,-1),P(1,-1),P(1,1),P(-1,1)];
- for(let i=0;i<4;i++){const a=corners[i],q=corners[(i+1)%4];b.tri(a,q,tip,undefined,[(a[0]+q[0])/2-c[0],.5,(a[2]+q[2])/2-c[1]]);}
+ for(let i=0;i<4;i++){const a=corners[i],q=corners[(i+1)%4];b.poly([a,q,tip],undefined,{facing:[(a[0]+q[0])/2-c[0],.5,(a[2]+q[2])/2-c[1]],color});}
 }
 
 /** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged ashlar courses, red sandstone plinth, bands, margins and
@@ -224,7 +242,7 @@ export function hotelFacadeTexture():THREE.CanvasTexture|null{
  g.fillStyle=hex(HOTEL_COLOURS.ashlar);g.fillRect(0,0,W,H);
  let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
  for(let m=lo;m<hi;m+=.33)for(let x=(Math.round(m/.33)%2)*.45;x<HOTEL_BAY;x+=.9){const t=rnd();
-  g.fillStyle=t<.5?`rgba(70,52,40,${(.5-t)*.22})`:`rgba(220,200,180,${(t-.5)*.18})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}
+  g.fillStyle=t<.35?`rgba(62,38,30,${(.35-t)*.7})`:t<.7?`rgba(150,128,124,${(t-.35)*.45})`:`rgba(112,62,48,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}
  for(let m=lo;m<hi;m+=.33){g.fillStyle='rgba(60,45,36,.35)';g.fillRect(0,Y(m),W,2);}
  const red=hex(HOTEL_COLOURS.red);g.fillStyle=red;
  g.fillRect(0,Y(L.plinth),W,(L.plinth-lo)*ky);// plinth
