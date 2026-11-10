@@ -923,5 +923,5 @@ test('round 7: the clock dials carry R-pt1-a2\'s Roman numerals, upright from in
     if (is(i, PERTH_PAINT.gilt)) gilt++;
     if ((is(i, PERTH_PAINT.timber) || is(i, PERTH_PAINT.timberDark)) && fp[i + 1] < base - .05) tiers++;
   }
-  assert.ok(gilt >= 24 + 2 * 8 && tiers >= K.tiers * 24 - 12, `a corbel under the case, in front of the stage (gilt ${gilt}, timber ${tiers})`);
+  assert.ok(gilt >= 24 * (K.tiers + 1) && tiers >= K.tiers * 24 - 12, `a corbel under the case, in front of the stage (gilt ${gilt}, timber ${tiers})`);
 });

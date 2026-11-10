@@ -1107,15 +1107,19 @@ export const PERTH_DIAL = {numerals: .68, height: .2, stroke: .035, track: [.86,
 /** R-pt1-a2's pendant corbel under platform 4's clock case (round 7; round 8: broad, and hung in front of the stage). `tiers` stepped
  *  timber tiers, dark and mid by turns, each `drop`/`tiers` m high, stepping in from `width[0]` to `width[1]` of the case's width along
  *  the wall and from `depth[0]` to `depth[1]` m out, their backs all `back` m past the stage's face (clear of its cornice, which stands
- *  0.1 m proud of it); a gilt rib down each front corner and a gilt finial under the last tier. ASSUMED sizes, scaled from R-pt1-a2
+ *  0.1 m proud of it); a gilt moulding along each tier's lower front edge and a gilt finial under the last tier. ASSUMED sizes, scaled from R-pt1-a2
  *  against the dial. */
 export const PERTH_CLOCK_CORBEL = {drop: .7, tiers: 5, width: [.95, .3] as const, depth: [.34, .14] as const, back: .11} as const;
 export function clockCorbel(b: Batch, at: (out: number, y: number, along?: number) => V3, back: number, y0: number, caseWidth: number, rotY: number): void {
   const K = PERTH_CLOCK_CORBEL, h = K.drop / K.tiers, lerp = (r: readonly [number, number], t: number): number => r[0] + (r[1] - r[0]) * t;
   const wAt = (t: number): number => caseWidth * lerp(K.width, t), dAt = (t: number): number => lerp(K.depth, t);
-  for (let k = 0; k < K.tiers; k++) { const t = k / (K.tiers - 1), d = dAt(t); b.box(at(back + d / 2, y0 - (k + .5) * h), [d, h, wAt(t)], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')}); }
+  for (let k = 0; k < K.tiers; k++) {
+    const t = k / (K.tiers - 1), d = dAt(t), w = wAt(t), y = y0 - (k + .5) * h;
+    b.box(at(back + d / 2, y), [d, h, w], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')});
+    // A gilt moulding along the tier's lower front edge, so the steps read against the dark stage behind.
+    b.box(at(back + d + .005, y - h / 2 + .02), [.03, .04, w + .02], {rotY, color: P('gilt')});
+  }
   b.box(at(back + dAt(1) / 2, y0 - K.drop - .07), [.14, .14, .14], {rotY, color: P('gilt')});
-  for (const v of [-1, 1]) beam(b, at(back + dAt(0) + .01, y0 - .01, v * (wAt(0) / 2 + .01)), at(back + dAt(1) + .01, y0 - K.drop, v * (wAt(1) / 2 + .01)), .03, .03, P('gilt'));
 }
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
 function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
