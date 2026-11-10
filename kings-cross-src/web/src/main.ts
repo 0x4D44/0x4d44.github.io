@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { bounds, PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
+import { PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
 import type { CityData } from '../../core/city.ts';
 import { addCity } from './city.ts';
 import { buildingsUnderStation, concourseCanopy, platformSouthEnd, shedBufferStops, shedLayout, stationBuilding, stationPlatforms, worldToShed } from '../../core/station.ts';
@@ -40,6 +40,7 @@ import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
 import signalData from './data/kx-signals.json';
 import { createStations } from './stations.ts';
+import { kingsCrossLandingView } from './station-framing.ts';
 import { resizeViewport } from './viewport.ts';
 import { createStPancrasLive } from './stpancras-live.ts';
 import { createEdinburghLive } from './edinburgh-live.ts';
@@ -180,14 +181,12 @@ function start(): void {
     scene.add(platformSign(ref, [x, PLATFORM_HEIGHT + 3.1, z - 1.2]));
   }
 
-  // Frame the camera on the platform heads of King's Cross, looking north-west from the south-east.
-  const b = bounds(rails.main);
-  const cx = (b.minX + b.maxX) / 2;
-  const cz = (b.minZ + b.maxZ) / 2;
+  // The landing view: above the Gasworks Tunnel's south mouth, looking south down the throat at the train shed (station-framing.ts).
+  const landing = kingsCrossLandingView(data);
   const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 9000);
-  camera.position.set(cx + 250, 380, cz + 420);
+  camera.position.fromArray(landing.eye);
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(40, 0, -150);
+  controls.target.fromArray(landing.target);
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.minDistance = 8;
   controls.maxDistance = 3000;

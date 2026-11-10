@@ -5,6 +5,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { shedLayout, shedToWorld } from '../../core/station.ts';
 import { TOWER_SIZE } from '../../web/src/shed.ts';
+import { kingsCrossLandingView } from '../../web/src/station-framing.ts';
 import { camerasToCheck, clearanceOptions, main as clearanceMain } from '../camera-clearance.mjs';
 import { ELEMENT_VIEWS, stationCameras } from '../evidence.mjs';
 import { buildStationScene, clearanceFaults, lensFor, stationData, viewClearance } from '../station-scene.mjs';
@@ -95,6 +96,20 @@ test('the real station scene: the clock tower view is clear, and the same aim on
   const s = shedLayout(data), [x, z] = shedToWorld(s, s.width / 2, -(TOWER_SIZE + .15) - 1);
   const pressed = clearanceFaults('tower-close-moved', viewClearance({ ...tower, pos: [x, tower.pos[1], z] }, occluders, ground, { grid: 4 }));
   assert.ok(pressed.some(f => /more than half occluded|inside or touching/.test(f)), `pressed against the tower: ${pressed.join(' | ')}`);
+});
+
+test('the page\'s landing view (over the Gasworks Tunnel) has nothing on the lens and stands well above the ground; an eye in the ground is a fault', () => {
+  const { data } = stationData();
+  const { occluders, ground } = buildStationScene();
+  const landing = kingsCrossLandingView(data);
+  const camera = { pos: landing.eye, target: landing.target };
+  const view = viewClearance(camera, occluders, ground);
+  assert.deepEqual(clearanceFaults('landing', view), []);
+  assert.ok(view.eyeAboveGround >= 30 && view.eyeAboveGround <= 60, `eye ${view.eyeAboveGround.toFixed(1)} m above the drawn ground`);
+  assert.equal(view.nearBlocked, 0, 'nothing within 2 m of the lens');
+  assert.ok(view.contactM > 20, `the nearest solid thing to the eye is ${view.contactM.toFixed(1)} m away`);
+  const buried = clearanceFaults('landing-buried', viewClearance({ ...camera, pos: [camera.pos[0], ground.heightAt(camera.pos[0], camera.pos[2]) - 1, camera.pos[2]] }, occluders, ground));
+  assert.ok(buried.some(f => /above the ground .* or it is under the terrain/.test(f)), `an eye below the drawn ground is refused: ${buried.join(' | ')}`);
 });
 
 test('camera-clearance takes the same view names as the evidence pack and refuses the rest', () => {
