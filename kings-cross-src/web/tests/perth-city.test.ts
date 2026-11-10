@@ -9,7 +9,7 @@ import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
 import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
-import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
+import { PERTH_CITY_ASHLAR, PERTH_CITY_MESHES, PERTH_CITY_STONE, TOWN_LOOK, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CLIFF_PAINT, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, cliffPaintCells, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
@@ -19,7 +19,7 @@ const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
-import { Batch } from '../src/materials.ts';
+import { Batch, material } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
 import { GARDENS, PERTH_RESIDENTIAL, perthGardens, segDist, streetsNear } from '../src/perth-gardens.ts';
 import type { GardenRect } from '../src/waverley-city-ground.ts';
@@ -723,4 +723,18 @@ test('Perth\'s haze: Waverley\'s near the ground, its own clear air from the hil
   assert.equal(far(3000, 212.7), far(3000, 212.7, WAVERLEY_HAZE), 'mist keeps its own range');
   let last = far(9000, 400); for (let v = 9500; v <= 21_000; v += 500) { const f = far(v, 400); assert.ok(f >= last && f - last < 700, `no step at ${v} m`); last = f; }
   assert.equal(far(30_000, 400, WAVERLEY_HAZE), CLEAR_FOG.far, 'Waverley unchanged');
+});
+
+test('the town reads through the haze from the summit: a dark lead spire, darker roofs and bridge stone (round 8, C2)', () => {
+  // round 7 score: from the summit the town was a flat, hazy band, no spire or bridge reading. The fog is shared; Perth's own materials
+  // carry the contrast instead
+  const lin = (c: THREE.Color) => .2126 * c.r + .7152 * c.g + .0722 * c.b;
+  const spire = scene.group.getObjectByName('perth-kirk-spire') as THREE.Mesh;
+  assert.ok(lin((spire.material as THREE.MeshLambertMaterial).color) < .06, 'a dark lead spire (round 7: 0x6e7479, about 0.17 linear)');
+  const roofs = scene.group.getObjectByName(PERTH_CITY_MESHES.tops) as THREE.Mesh, slate = (material('slate') as THREE.MeshLambertMaterial).color.clone().multiply(new THREE.Color(0xada99f));
+  assert.ok(lin((roofs.material as THREE.MeshLambertMaterial).color) <= lin(slate) * .8, 'the roofs darker than the shared slate');
+  assert.ok(lin((material('slate') as THREE.MeshLambertMaterial).color) > lin((roofs.material as THREE.MeshLambertMaterial).color), 'the shared slate itself untouched');
+  const masonry = scene.group.getObjectByName('perth-city-masonry') as THREE.Mesh, col = masonry.geometry.getAttribute('color'); let bridge = 0;
+  for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - TOWN_LOOK.bridges) < 1e-4 && Math.abs(col.getZ(i) - TOWN_LOOK.bridges) < 1e-4) bridge++;
+  assert.ok(TOWN_LOOK.bridges <= .75 && bridge > 500, `the road bridges in darker stone: ${bridge} vertices`);
 });

@@ -64,6 +64,11 @@ export function addPerthMappedRoofs(data: Pick<PerthData, 'roofs'>, ground: Terr
  *  Edinburgh's), as tints over the city facade and ashlar textures (waverley-city.ts WAVERLEY_CITY_STONE explains the method). Round 2
  *  (C5) cooled both: round 1 (0x9a9aa2, 0xc2c6dc) rendered one buff-brown family, warmer and browner than R-pt3-d's grey-buff. */
 export const PERTH_CITY_STONE = 0x949aa8, PERTH_CITY_ASHLAR = 0xb8c4e2;
+/** Round 8 (round-7 score, C2: from the summit the town is a hazy, flat band; no spire or bridge reads). The shared fog is not Perth's
+ *  (lead's ruling: Perth's own materials only), so the town reads through it by contrast: St John's spire in a darker lead `spire`
+ *  (from 0x6e7479), the town's slate roofs `roofs` of their shared tone, and the road bridges' stone `bridges` of the ashlar, so the
+ *  dark roofs, the spire and the bridges stand off the pale walls and the haze. ASSUMED tones. */
+export const TOWN_LOOK = {spire: 0x383d43, roofs: .72, bridges: .7} as const;
 /** The city mesh names; the tops are a roof for the cover map (cover.ts ROOF_MESHES). */
 export const PERTH_CITY_MESHES = {walls: 'perth-city-walls', ashlar: 'perth-city-ashlar', tops: 'perth-city-roofs', shops: 'perth-city-shops'} as const;
 /** Perth's shop streets: the mapped carriageways of the main classes (primary to tertiary, 8.5 m and over) and the pedestrian High
@@ -83,6 +88,9 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   };
   const fabric = buildWaverleyCity(data, ground, {omitBuildingIds: omitted, style: {height: b => perthCityHeight(b, perthBuildingHeight), stone: PERTH_CITY_STONE, ashlar: PERTH_CITY_ASHLAR, names: PERTH_CITY_MESHES, streets: shopStreets(), dormers: false}});
   fabric.group.name = 'perth-city'; take(fabric);
+  // the town's roofs darker (TOWN_LOOK.roofs): their material is this build's own clone of the shared slate
+  const roofs = fabric.group.getObjectByName(PERTH_CITY_MESHES.tops) as THREE.Mesh | undefined;
+  if (roofs) (roofs.material as THREE.MeshLambertMaterial).color.multiplyScalar(TOWN_LOOK.roofs);
   const buildingIds = [...fabric.buildingIds], heightBasis = {...fabric.heightBasis};
   // the ground cover, trees and the Tay, over the drawn ground
   const mask = perthFrontageGroundMask(stationOutline(data)?.outer);
@@ -92,7 +100,10 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   // the bridges and towers
   const masonry = new Batch({colored: true}), ironwork = new Batch({colored: true}), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);
-  for (const b of PERTH_LANDUSE_BRIDGES) roadBridge(masonry, deck, ground, b);
+  // the road bridges' stone, darker than the ashlar (TOWN_LOOK.bridges)
+  const bridgeStone = new Batch({colored: true}); for (const b of PERTH_LANDUSE_BRIDGES) roadBridge(bridgeStone, deck, ground, b);
+  for (let i = 0; i < bridgeStone.colors.length; i++) bridgeStone.colors[i]! *= TOWN_LOOK.bridges;
+  masonry.append(bridgeStone);
   const kirk = data.buildings.find(b => b.id === PERTH_LIDAR_LANDMARKS.kirk.id);
   if (kirk) kirkTower(masonry, lead, kirk, ground.rangeUnder(kirk.outer, 4).min);
   const tower = data.buildings.find(b => b.id === KINNOULL_TOWER.id);
@@ -108,7 +119,7 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   // the girders' face seen from pt-tay-viaduct is the shaded one: pale paint keeps the sky's light there (2166751), so a little of its
   // own glow (VIADUCT_LOOK.shadeLift, linear) keeps the band from going dark grey and lets the stiffeners show
   const iron = own(new THREE.MeshLambertMaterial({vertexColors: true})); iron.name = 'perth-viaduct-paint'; iron.emissive.setScalar(VIADUCT_LOOK.shadeLift);
-  const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));
+  const leadMaterial = own(new THREE.MeshLambertMaterial({color: TOWN_LOOK.spire, side: THREE.DoubleSide}));
   add(group, masonry, ashlar, 'perth-city-masonry');
   add(group, ironwork, iron, 'perth-viaduct-iron');
   add(group, deck, own(material('asphalt').clone()), 'perth-bridge-roads');
