@@ -28,8 +28,8 @@ export const SUMMIT = {
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
   // round 5 (round-4 score: "mounds or boulders"): each bush is `lobes` overlapping lobes `lobe` of its radius, scattered over it and
   // varied in height, so its outline is uneven and shrubby; dark olive `rgb`, and a share `bloom` carry one smaller lobe in yellow flower
-  bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.7, 1.4] as const, radius: [1, 2.2] as const, bloom: .45,
-    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.11, .16, .05] as const, bloomRgb: [.42, .36, .05] as const},
+  bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.5, 1.1] as const, radius: [.7, 1.5] as const, bloom: .45,
+    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.13, .18, .06] as const, bloomRgb: [.46, .40, .08] as const},
 } as const;
 
 export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]}

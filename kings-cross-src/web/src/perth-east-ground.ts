@@ -176,7 +176,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     const ag = new THREE.BufferGeometry();
     ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3)); ag.setAttribute('color', new THREE.Float32BufferAttribute(acol, 3));
     ag.setIndex(aidx); ag.computeVertexNormals(); ag.computeBoundingSphere();
-    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({vertexColors: true})); am.name = 'perth-main-apron';
+    // drawn over the flat plane where the two run nearly level far off (in the overview they z-fought in stripes)
+    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2})); am.name = 'perth-main-apron';
     group.add(am); stats.triangles += aidx.length / 3; stats.drawCalls++;
   }
   return {group, stats, heightAt};
