@@ -1538,10 +1538,12 @@ test('an exposure pins the page to its lighting with a query appended to the bas
  // the page address and the head of the manifest carry the exposure
  assert.equal(C.cataloguePageUrl(4321,'day'),`http://127.0.0.1:4321/kings-cross/?${base}&sky=ref`);assert.equal(C.cataloguePageUrl(4321,'dusk'),`http://127.0.0.1:4321/kings-cross/?${base}&time=2026-11-09T16:30:00Z&weather=clear`);
  assert.equal(C.cataloguePageUrl(4321,'noon'),`http://127.0.0.1:4321/kings-cross/?${base}&time=2026-06-21T12%3A00%3A00%2B01%3A00&weather=clear`);
- const host={os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'h'}},head=C.catalogueManifest({exposure:'dusk',stationScene:station,host,build:{indexSha256:'x'},poses:{file:'/p.json',sha256:'abc'},generated:'2026-11-09T00:00:00.000Z'});
+ // (a manifest asked for no curve and no clip is made all the same: where a mutant makes it throw, that is a failed assertion here, not a raw TypeError, which the mutation driver does not take for a kill)
+ const host={os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'h'}};let head;
+ assert.doesNotThrow(()=>{head=C.catalogueManifest({exposure:'dusk',stationScene:station,host,build:{indexSha256:'x'},poses:{file:'/p.json',sha256:'abc'},generated:'2026-11-09T00:00:00.000Z'});},'a manifest asked for no curve and no clip is made');
  assert.deepEqual(head.exposure,C.exposureRecord('dusk'));assert.deepEqual([head.rubric,head.schema,head.generated,head.posesFrom,head.kinds,head.macModel,head.build],[F.CATALOGUE.rubric,'kx-catalogue-manifest/1','2026-11-09T00:00:00.000Z',{file:'/p.json',sha256:'abc'},{},'Mac17,6',{indexSha256:'x'}]);
  assert.match(head.sunRule.text,/always uses the day rig's sun, in every exposure/);assert.deepEqual(head.sunRule.sunPosition,[-320,520,260]);assert.deepEqual(head.station,C.stationManifest(station));
- const bare=C.catalogueManifest({exposure:'day',stationScene:null,host,build:{},poses:null});assert.deepEqual([bare.station,bare.posesFrom,bare.exposure.id],[null,null,'day']);assert.equal(typeof bare.generated,'string');
+ let bare;assert.doesNotThrow(()=>{bare=C.catalogueManifest({exposure:'day',stationScene:null,host,build:{},poses:null});},'a manifest asked for no curve, no clip and no station is made');assert.deepEqual([bare.station,bare.posesFrom,bare.exposure.id],[null,null,'day']);assert.equal(typeof bare.generated,'string');
 });
 
 test('a noon pass takes the station view V10 and nothing else: the neutral stage of V01-V09 is lit by the fixed day rig, which pinning a clock turns off',()=>{
