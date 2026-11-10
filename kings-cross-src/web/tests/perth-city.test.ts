@@ -718,10 +718,19 @@ test('Perth\'s haze: Waverley\'s near the ground, its own clear air from the hil
   const far = (visibility: number, y: number, haze: Haze = PERTH_HAZE) => fogFar(clearAir(fogRange(visibility, y), visibility, haze).far, y, haze);
   assert.equal(far(30_000, 2), WAVERLEY_HAZE.far, 'the river banks: the Scottish haze');
   assert.equal(far(30_000, 400), PERTH_CLEAR_AIR, 'above the haze: Perth\'s own clear air, not the page\'s 2.6 km');
-  const kinnoull = far(30_000, 212.7);
-  assert.ok(kinnoull > 2600 * 1.5 && kinnoull < PERTH_CLEAR_AIR, `from Kinnoull the town at 2.4 km is not lost in the fog: ${kinnoull}`);
+  // round 9 (Arthur's leave; 155: the town 2.4 km off keeps its colour, the hills about 20 km off go blue): Perth's own values pinned,
+  // and from the summit eye the town is under a fifth hazed (linear fog from CLEAR_FOG.near), the hills past 15 km gone to haze
+  assert.equal(PERTH_CLEAR_AIR, 24_000, 'Perth\'s clear air');
+  assert.ok(PERTH_HAZE.far === WAVERLEY_HAZE.far && PERTH_HAZE.fade === WAVERLEY_HAZE.fade, 'Waverley\'s haze near the ground and its fade');
+  const kinnoull = far(30_000, 212.7), cliff = far(30_000, 172.2), hazed = (d: number, f: number) => (d - CLEAR_FOG.near) / (f - CLEAR_FOG.near);
+  assert.ok(hazed(2400, kinnoull) < .2 && hazed(20_000, kinnoull) >= 1, `the town at 2.4 km ${hazed(2400, kinnoull).toFixed(2)} hazed, the hills at 20 km lost`);
+  assert.ok(kinnoull > 14_000 && kinnoull < PERTH_CLEAR_AIR && cliff > 8000, `the summit's far plane ${kinnoull}, the cliff's ${cliff}`);
+  // Waverley's haze is untouched (lead's ruling: only Perth's value changes)
+  assert.deepEqual(WAVERLEY_HAZE, { far: 2200, fade: [100, 300] }, 'Waverley\'s haze unchanged');
   assert.equal(far(3000, 212.7), far(3000, 212.7, WAVERLEY_HAZE), 'mist keeps its own range');
-  let last = far(9000, 400); for (let v = 9500; v <= 21_000; v += 500) { const f = far(v, 400); assert.ok(f >= last && f - last < 700, `no step at ${v} m`); last = f; }
+  // round 9, declared: the bound scales with the eased span (round 8: under 700 m a 500 m step, for a 4.4 km span from 2.6 to 7 km;
+  // the same 16% of the span, now 21.4 km). The same smoothness, not a looser one.
+  let last = far(9000, 400); for (let v = 9500; v <= 21_000; v += 500) { const f = far(v, 400); assert.ok(f >= last && f - last < .16 * (PERTH_CLEAR_AIR - CLEAR_FOG.far), `no step at ${v} m`); last = f; }
   assert.equal(far(30_000, 400, WAVERLEY_HAZE), CLEAR_FOG.far, 'Waverley unchanged');
 });
 

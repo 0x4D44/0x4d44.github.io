@@ -163,12 +163,15 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
 }
 
 /**
- * Perth's haze (W3 city, C6, 2026-11-10): Waverley's near the ground (WAVERLEY_HAZE: the Tay views look under a kilometre across the
- * river), but clear air of its own, PERTH_CLEAR_AIR m, above it. R-pt3-a's views from Kinnoull Hill (England_and_Scotland_155.jpg: the
- * Tay and the town 2 km off keep their colour, the hills beyond are blue) see far further than the page's 2.6 km clear air, at which
- * the town, 2.4 km from the summit, went to sky. ASSUMED, judged by eye against that photograph.
+ * Perth's haze (W3 city, C6, 2026-11-10; round 9 by Arthur's leave, 2026-11-10): Waverley's near the ground (WAVERLEY_HAZE: the Tay views
+ * look under a kilometre across the river), but clear air of its own, PERTH_CLEAR_AIR m, above it (WAVERLEY_HAZE.fade, 100-300 m up:
+ * the Kinnoull summit eye at 213 m takes 0.59 of it, a far plane of about 15 km; the cliff eye at 172 m about 8.7 km). R-pt3-a (England_and_Scotland_155.jpg, from Kinnoull Hill): the town
+ * and the Tay 2-3 km off keep their colour, the fields beyond softening by 6-8 km, and only the hills about 20 km off go blue. The fog
+ * is linear from 100 m (CLEAR_FOG.near), so a 15 km far plane leaves the town at 2.4 km about 15% hazed, fields at 6 km about 40%,
+ * and the hills past 15 km lost in blue. Round 8 had 7 km: from the summit the far plane was about 5 km and the town 46% hazed, a flat
+ * grey band (round-8 score, C2). The fade stays Waverley's, so mist and rain keep their own range. ASSUMED, judged by eye against 155.
  */
-export const PERTH_CLEAR_AIR = 7000;
+export const PERTH_CLEAR_AIR = 24_000;
 export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR } as const;
 /** Perth's sky and weather at its own origin: the same rig as Waverley's, with no night windows or street lamps yet (the lighting element's). */
 export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
