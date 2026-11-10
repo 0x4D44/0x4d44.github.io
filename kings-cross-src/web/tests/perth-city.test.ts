@@ -130,10 +130,17 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   // the pier); the web behind it is the shafts' stone, in shadow, lighter than the seam; round shafts
   assert.ok(PIER_FORM.web <= .35 && PIER_FORM.seam <= .6 && PIER_FORM.sides >= 12, 'a thin, deep-set web between round shafts');
   assert.ok(PIER_FORM.seamWidth <= .18 && PIER_FORM.webShade > PIER_FORM.seam * lum(VIADUCT_LOOK.joint) / lum(VIADUCT_LOOK.stone) + .1, 'a narrow dark seam on a lighter web, not a dark panel');
+  // round 7 (round-6 score: one block with a seam): the web is shadowed where it meets each shaft, lighter only in its middle third
+  assert.ok(PIER_FORM.webEdge <= .5 && PIER_FORM.webEdge < PIER_FORM.webShade - .1 && PIER_FORM.webMiddle <= .4, 'the web shadowed against each shaft');
   const mc = layout && masonry.build().getAttribute('color'); let seamV = 0;
   const seamRgb = VIADUCT_LOOK.joint.map(v => v * PIER_FORM.seam);
   for (let i = 0; i < mc.count; i++) if (Math.abs(mc.getX(i) - seamRgb[0]!) < 1e-4 && Math.abs(mc.getY(i) - seamRgb[1]!) < 1e-4) seamV++;
   assert.ok(seamV >= 8 * 24, `seam faces drawn: ${seamV / 24}`);
+  {
+    const edge = VIADUCT_LOOK.stone.map(v => v * PIER_FORM.webEdge), mid = VIADUCT_LOOK.stone.map(v => v * PIER_FORM.webShade); let ne = 0, nm = 0;
+    for (let i = 0; i < mc.count; i++) { if (Math.abs(mc.getX(i) - edge[0]!) < 1e-4 && Math.abs(mc.getY(i) - edge[1]!) < 1e-4) ne++; if (Math.abs(mc.getX(i) - mid[0]!) < 1e-4 && Math.abs(mc.getY(i) - mid[1]!) < 1e-4) nm++; }
+    assert.ok(ne >= 8 * 24 && nm >= 8 * 24, `web edge and middle faces drawn: ${ne / 24}, ${nm / 24}`);
+  }
   const flangeRgb = VIADUCT_LOOK.girder.map(v => v * PIER_FORM.flangeShade); let flangeV = 0;
   for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - flangeRgb[0]!) < 1e-4 && Math.abs(col.getY(i) - flangeRgb[1]!) < 1e-4) flangeV++;
   assert.ok(flangeV >= 13 * 2 * 24, `girder flanges drawn: ${flangeV / 24}`);
