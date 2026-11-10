@@ -328,6 +328,20 @@ footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule);
     <p>The bake-off agrees with the day. Terra found the right root cause on all ten bugs, with a perfect 5.00 for root cause from the reviewers. It was the fastest and second-cheapest seat. But it ranked last of seven, with the thinnest tests in the field: it repeatedly skipped test cases the bug record asked for. Sol at medium sat level with Opus at about a quarter of Opus's list cost. Sol at xhigh stayed first. Bunny's reading: Terra is fast and cheap with correct fixes, but a lead must check its tests against the record; Sol medium is the better unattended worker.</p>
     <p>Two caveats from the write-up are worth carrying over. The Astra review panel showed a clear preference for the GPT-family seats, while the Opus panel tied Opus, Sol and Astra. And model and harness are confounded: the Claude seats ran under Claude Code, the GPT seats under Codex.</p>
   </div>
+  <div class="panel">
+    <h3>Fable 5.2 on the same ten bugs (10 November)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Seat</th><th>Clean on every gate</th><th>Review mean (1–5)</th><th>Test quality (1–5)</th><th>Land as-is</th><th>Wall clock</th><th>List cost, 10 bugs</th></tr></thead>
+      <tbody>
+        <tr><td><b>Fable 5.2 high</b></td><td class="num">8 of 10</td><td class="num"><b>4.79</b></td><td class="num">4.68</td><td class="num">54/60</td><td class="num">24 min</td><td class="num">$9.78</td></tr>
+        <tr><td>Fable 5.2 medium</td><td class="num">8 of 10</td><td class="num">4.62</td><td class="num">4.12</td><td class="num">50/60</td><td class="num">16 min</td><td class="num">$6.01</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">The earlier seats' patches were not kept, so the Fable seats could not join the seven-way re-review. The same six-reviewer panel compared the two Fable seats with each other, so the ranks above do not apply and the 1–5 scores compare only loosely: a reviewer's scale shifts with what sits beside it. For scale, the seven-way review's overall means ran from 4.38 (Terra) to 4.75 (Sol xhigh). Both Fable seats ran alone on a quiet machine.</p>
+  </div>
+  <div class="stack col">
+    <p>Both Fable seats fixed every bug and kept every dependent crate green. Both missed the same two hidden tests. On one bug the record asks for a reset bit that can no longer be read back, and two existing assertions, one in another crate, say the opposite. Every other seat changed the bit. Fable alone kept it as it was, explained why and left the call to Arthur. It was the only one, apart from Opus and Sonnet, that did not break the other crate. On the other bug it chose the same error-handling design as Opus and Luna, which the hidden test does not accept. Reviewers on both panels preferred high to medium on nine bugs of ten, mostly for its tests. At $0.75 (medium) and $1.22 (high) per clean bug, Fable 5.2 is the dearest Claude seat in the bake-off; only Astra costs as much.</p>
+  </div>
 </section>
 
 <section id="lessons">
@@ -364,8 +378,8 @@ footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule);
 </section>
 
 <footer>
-  <p>Sources: the fleet's trial log for 28 October 2026 (one line per lead report, 07:08 to 19:48), the coordinating lead's notes of Arthur's rulings that day, and Bunny's bake-off write-up of 22 October with its 28 October addendum. Counts are tallied from the log by hand; where a lead's wording was ambiguous, the run is left out of the count. Bug identifiers, machine names and commit references are omitted.</p>
-  <p>Compiled 2026-10-28.</p>
+  <p>Sources: the fleet's trial log for 28 October 2026 (one line per lead report, 07:08 to 19:48), the coordinating lead's notes of Arthur's rulings that day, and Bunny's bake-off write-up of 22 October with its 28 October and 10 November addenda. Counts are tallied from the log by hand; where a lead's wording was ambiguous, the run is left out of the count. Bug identifiers, machine names and commit references are omitted.</p>
+  <p>Compiled 2026-10-28. The Fable 5.2 bake-off panel was added 2026-11-10.</p>
 </footer>
 </div>
 <script defer src="/almanac-back.js"></script>
