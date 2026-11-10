@@ -17,7 +17,7 @@ import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinno
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
-import { EAST_SKIRT, LAND_HAZE, PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
+import { EAST_SKIRT, LAND_FIELDS, LAND_HAZE, landField,PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch, material } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
@@ -694,6 +694,29 @@ test('the land past the terrain fades into the haze with depth, and the Tay fade
     else assert.ok(Math.abs(c[0]! - (tay.r + (field.r - tay.r) * f)) < 1e-3, 'faded smoothly');
   }
   assert.ok(edge >= 2 && inner > P.count * .6, `river vertices at the east edge ${edge}, in its own tone ${inner} of ${P.count}`);
+});
+
+test('the land past the terrain is a patchwork of fields, greens and fawns, not one olive (155; round 11, C6/C2)', () => {
+  // the shader's fields, sampled over the apron south-west of the summit (2.5-5 km off, the panorama's plain): every tone, none
+  // dominant, and neighbouring fields mostly differ
+  const counts = new Array(LAND_FIELDS.tones.length).fill(0); let pairs = 0, differ = 0;
+  for (let x = -2000; x < 1000; x += 37) for (let z = 1000; z < 4000; z += 41) { counts[landField(x, z)]++; pairs++; if (landField(x, z) !== landField(x + LAND_FIELDS.size[0], z)) differ++; }
+  assert.ok(counts.every(c => c > pairs * .08 && c < pairs * .3), `field tones: ${counts}`);
+  assert.ok(differ > pairs * .6, `neighbouring fields differ: ${differ} of ${pairs}`);
+  // greens and fawns: at least two tones lift green over the base, and one is a fawn (red lifted most)
+  const T = LAND_FIELDS.tones;
+  assert.ok(T.filter(t => t[1] >= 1.05).length >= 2 && T.some(t => t[0] > t[1] && t[0] > 1.2), 'greens and a fawn');
+  assert.ok(LAND_FIELDS.size.every(v => v >= 100 && v <= 400), 'fields 100-400 m, as farmland');
+  // drawn in the apron's and the east skirt's shaders (the east patch itself is left alone), after the vertex colour
+  for (const [name, box] of [['perth-main-apron', false], ['perth-east-ground', true]] as const) {
+    const m = (scene.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    const shader = {fragmentShader: THREE.ShaderLib.lambert.fragmentShader, vertexShader: THREE.ShaderLib.lambert.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+    m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
+    const f = shader.fragmentShader;
+    assert.ok(f.indexOf('diffuseColor.rgb *= k;') > f.indexOf('#include <color_fragment>') && shader.vertexShader.includes('vFieldPos = (modelMatrix'), `${name}: fields`);
+    const E = PERTH_EAST_FILE.extent;
+    assert.equal(f.includes(`vFieldPos.x > ${E.x0.toFixed(4)} && vFieldPos.x < ${E.x1.toFixed(4)}`), box, `${name}: the patch itself ${box ? 'left alone' : '-'}`);
+  }
 });
 
 test('the east patch\'s Tay is one continuous river sheet, with trees along its banks (2166751, 46028; round 3, C3)', () => {

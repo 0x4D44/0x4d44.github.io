@@ -45,15 +45,51 @@ export const LAND_HAZE = {from: 2500, to: 6000} as const;
  *  (x 4128, z 1072-1232; it runs within 300 m of the south edge all the way, so that edge is not faded): within `run` m of the east
  *  edge the river sheet and its shingle fade to EAST_SKIRT.tone, the hazed field the skirt runs out in. */
 export const RIVER_END = {run: 450} as const;
-/** Fade a Lambert material into the fog colour with view depth (LAND_HAZE). */
-export function hazeLand(m: THREE.MeshLambertMaterial): void {
+/** Round 11 (round-10 score, C6/C2: the land past the terrain, 2.5-5 km from the summit, was one flat olive; 155 shows a patchwork
+ *  of fields there in greens and fawns). Outside the drawn terrain, the apron's and the east skirt's colour is multiplied per field:
+ *  fields `size` m (along, across) on a grid turned `turn` rad, each row slid by a hash (so the boundaries do not line up), each field
+ *  one of `tones` (linear multipliers on the vertex colour: bright and dark grass, pale grass, stubble fawn, ploughed brown, and the
+ *  base). Done per fragment in Perth's own material, not in vertex colour: the apron is one strip of quads 64 m by 6 km, so its
+ *  vertices cannot carry fields. ASSUMED sizes and tones, by eye against 155. No triangles; the town is inside the terrain and
+ *  untouched. */
+export const LAND_FIELDS = {size: [210, 150] as const, turn: .35,
+  tones: [[1, 1, 1], [.85, 1.12, .75], [.7, .8, .65], [1.1, 1.15, .95], [1.45, 1.25, .95], [1.05, .85, .7]] as const} as const;
+const fieldHash = (a: number) => { const s = Math.sin(a) * 43758.5453; return s - Math.floor(s); };
+/** The field (index into LAND_FIELDS.tones) at (x, z): the shader's own formula. */
+export function landField(x: number, z: number): number {
+  const F = LAND_FIELDS, c = Math.cos(F.turn), s = Math.sin(F.turn), u = x * c - z * s, v = x * s + z * c;
+  const j = Math.floor(v / F.size[1]), i = Math.floor((u + fieldHash(j * 7.13) * F.size[0]) / F.size[0]);
+  return Math.min(F.tones.length - 1, Math.floor(fieldHash(i * 127.1 + j * 311.7) * F.tones.length));
+}
+/** Fade a Lambert material into the fog colour with view depth (LAND_HAZE); with `fields`, lay LAND_FIELDS outside `inside` (x0, z0,
+ *  x1, z1; null: everywhere). */
+export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonly [number, number, number, number] | null}): void {
+  const F = LAND_FIELDS, f = (v: number) => v.toFixed(4);
   m.onBeforeCompile = shader => {
+    if (fields) {
+      const box = fields.inside, skip = box ? `if (vFieldPos.x > ${f(box[0])} && vFieldPos.x < ${f(box[2])} && vFieldPos.y > ${f(box[1])} && vFieldPos.y < ${f(box[3])}) k = vec3(1.0);` : '';
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFieldPos;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
+varying vec2 vFieldPos;
+float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('#include <color_fragment>', `#include <color_fragment>
+  {
+    float c = ${f(Math.cos(F.turn))}, s = ${f(Math.sin(F.turn))};
+    float u = vFieldPos.x * c - vFieldPos.y * s, v = vFieldPos.x * s + vFieldPos.y * c;
+    float j = floor(v / ${f(F.size[1])}), i = floor((u + perthFieldHash(j * 7.13) * ${f(F.size[0])}) / ${f(F.size[0])});
+    int t = int(min(${F.tones.length - 1}.0, floor(perthFieldHash(i * 127.1 + j * 311.7) * ${F.tones.length}.0)));
+    vec3 tones[${F.tones.length}] = vec3[${F.tones.length}](${F.tones.map(t => `vec3(${t.map(f).join(', ')})`).join(', ')});
+    vec3 k = tones[t];
+    ${skip}
+    diffuseColor.rgb *= k;
+  }`);
+    }
     shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#include <fog_fragment>
 #ifdef USE_FOG
   gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(${LAND_HAZE.from.toFixed(1)}, ${LAND_HAZE.to.toFixed(1)}, vFogDepth));
 #endif`);
   };
-  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}`;
+  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}${fields ? `-fields-${fields.inside ?? 'all'}` : ''}`;
 }
 /** How far the river is faded at x: 1 on the patch's east edge, 0 from RIVER_END.run m in (smoothstep). */
 export function riverEnd(x: number): number {
@@ -142,7 +178,7 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(index); g.computeVertexNormals(); g.computeBoundingSphere();
-  const gm = new THREE.MeshLambertMaterial({vertexColors: true}); hazeLand(gm);
+  const gm = new THREE.MeshLambertMaterial({vertexColors: true}); hazeLand(gm, {inside: [E.x0, E.z0, E.x1, E.z1]}); // round 11: fields on the skirt only
   const mesh = new THREE.Mesh(g, gm);
   mesh.name = 'perth-east-ground';
   const group = new THREE.Group(); group.name = 'perth-east'; group.add(mesh);
@@ -212,7 +248,7 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3)); ag.setAttribute('color', new THREE.Float32BufferAttribute(acol, 3));
     ag.setIndex(aidx); ag.computeVertexNormals(); ag.computeBoundingSphere();
     // drawn over the flat plane where the two run nearly level far off (in the overview they z-fought in stripes)
-    const amat = new THREE.MeshLambertMaterial({vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2}); hazeLand(amat);
+    const amat = new THREE.MeshLambertMaterial({vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2}); hazeLand(amat, {inside: null}); // round 11: fields
     const am = new THREE.Mesh(ag, amat); am.name = 'perth-main-apron';
     group.add(am); stats.triangles += aidx.length / 3; stats.drawCalls++;
   }
