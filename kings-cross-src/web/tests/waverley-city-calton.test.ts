@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import {buildWaverleyScene} from '../src/waverley-scene.ts';
-import {Footprints,placeTrees,mownLawns,LANDUSE} from '../src/waverley-city-ground.ts';
+import {Footprints,placeTrees,mownLawns} from '../src/waverley-city-ground.ts';
 import {governorsHouse,roundBays} from '../src/waverley-city-monuments.ts';
 import {cityHeight,tinyBlock} from '../src/waverley-city-heights.ts';
 import {buildWaverleyCityLandmarks,SCOTT_GALLERY,SCOTT_TIERS,WAVERLEY_CITY_STONE,WAVERLEY_CITY_ASHLAR,TINY_CLIFF_IDS,onCliff} from '../src/waverley-city.ts';
@@ -28,22 +28,6 @@ test('Calton Hill’s south face is a hanging wood: crowns close enough to meet,
   // each tree's nearest neighbour is within its own and that one's crown reach plus 1 m: a canopy, not dots
   const apart=face.filter(t=>!face.some(q=>q!==t&&Math.hypot(q.x-t.x,q.z-t.z)<t.crown+q.crown+1)).length;
   assert.ok(apart<=face.length*.1,`${apart} of ${face.length} crowns stand alone`);
- }finally{scene.dispose();}
-});
-
-test('a walk keeps its outlook: no hanging-wood tree within 15 m of a mapped path stands more than 1.5 m over the path',()=>{
- const scene=buildWaverleyScene({lighting:false});
- try{
-  const trees=placeTrees(scene.terrain,new Footprints([...data.buildings,...data.roofs].map(b=>b.outer)));
-  const hanging=trees.filter(t=>t.hanging);assert.ok(hanging.length>500,`${hanging.length} hanging-wood trees`);
-  let checked=0;
-  for(const t of hanging){let best=15,at:Pt|undefined;
-   for(const l of LANDUSE.paths)for(let i=1;i<l.line.length;i++){const a=l.line[i-1],b=l.line[i],dx=b[0]-a[0],dz=b[1]-a[1],u=Math.max(0,Math.min(1,((t.x-a[0])*dx+(t.z-a[1])*dz)/(dx*dx+dz*dz||1))),p:Pt=[a[0]+u*dx,a[1]+u*dz],d=Math.hypot(t.x-p[0],t.z-p[1]);if(d<best){best=d;at=p;}}
-   if(!at)continue;checked++;assert.ok(t.y+t.height<=scene.terrain.heightAt(at[0],at[1])+1.5+1e-9,`a tree at ${t.x.toFixed(0)},${t.z.toFixed(0)} overtops its path`);}
-  assert.ok(checked>50,`${checked} trees beside paths, below them`);
-  // the summit scrub west of the Dugald Stewart Monument's walk (round 4: 6-8 m trees there closed the view west) is gorse
-  assert.ok(!trees.some(t=>t.kind==='wood'&&Math.hypot(t.x-352,t.z+292)<12),'no wood on the summit knoll beside the walk');
-  assert.ok(trees.some(t=>t.kind==='scrub'&&Math.hypot(t.x-352,t.z+292)<12),'gorse there instead');
  }finally{scene.dispose();}
 });
 

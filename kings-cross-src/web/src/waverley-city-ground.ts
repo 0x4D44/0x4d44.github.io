@@ -22,12 +22,62 @@ import data from './data/waverley-city-landuse.json' with {type:'json'};
  *  sagging the full tolerance still lies on the true ground. Measured against the drawn terrain mesh (0.08 m) at 18,900 points, 0.25/0.25
  *  leaves it under or within 2 cm at 10 (0.15/0.15 did at 22), and the polygon offset covers those; it costs 8,500 fewer triangles. */
 export const DRAPE_LIFT=.25,DRAPE_TOLERANCE=.25;
+/** The drape's facets still cut under the drawn ground between their corners where the ground bends (round 4: by 4 cm on Castle Rock's
+ *  summit face, which from Princes Street's grazing view left the bare terrain showing as a pale slab). So each facet is sampled every
+ *  `sample` m against the drawn surface and, where the surface comes within `clear` m of it, its corners are lifted by the shortfall.
+ *  A corner takes the largest lift of its facets; a lift only raises a neighbour, so one pass seats every facet. ASSUMED distances. */
+export const DRAPE_SEAT={sample:1,clear:.1} as const;
+/** Turn a quad of two drape facets onto its upper diagonal where its fold runs under the ground. The drape and the drawn terrain end in
+ *  the same 8 m blocks, each two triangles, but each picks its block's diagonal from a different surface, so on a steep fold they can
+ *  fold a block opposite ways and the drape's fold run up to 1.3 m under the terrain's (round 4's pale slab on Castle Rock). Where two
+ *  facets share an edge across a quad that is convex in plan, and that edge stands less than DRAPE_SEAT.clear over `ground` where the
+ *  quad's diagonals cross, it is swapped for the other diagonal if that one stands higher there. Elsewhere (a hollow, where the drawn
+ *  terrain takes the lower fold) the drape keeps its own. `index` is rewritten in place (same triangle count, same winding); returns
+ *  the swaps made. */
+export function foldUp(pos:Float32Array,index:number[],ground:Pick<Terrain,'heightAt'>):number{
+ let swaps=0;
+ for(let pass=0;pass<4;pass++){
+  const edges=new Map<string,number[]>(),done=new Set<number>();let n=0;
+  for(let t=0;t<index.length;t+=3)for(let k=0;k<3;k++){const a=index[t+k],b=index[t+(k+1)%3],key=a<b?`${a},${b}`:`${b},${a}`;let e=edges.get(key);if(!e)edges.set(key,e=[]);e.push(t);}
+  const X=(v:number)=>pos[v*3],Y=(v:number)=>pos[v*3+1],Z=(v:number)=>pos[v*3+2];
+  const area=(a:number,b:number,c:number)=>(X(b)-X(a))*(Z(c)-Z(a))-(Z(b)-Z(a))*(X(c)-X(a));
+  for(const [key,ts]of edges){if(ts.length!==2||done.has(ts[0])||done.has(ts[1]))continue;
+   const [a,b]=key.split(',').map(Number),opp=(t:number)=>index.slice(t,t+3).find(v=>v!==a&&v!==b)!,c=opp(ts[0]),d=opp(ts[1]);
+   // the diagonals a-b and c-d must cross inside both (a convex quad in plan)
+   const den=(X(b)-X(a))*(Z(d)-Z(c))-(Z(b)-Z(a))*(X(d)-X(c));if(Math.abs(den)<1e-9)continue;
+   const u=((X(c)-X(a))*(Z(d)-Z(c))-(Z(c)-Z(a))*(X(d)-X(c)))/den,w=((X(c)-X(a))*(Z(b)-Z(a))-(Z(c)-Z(a))*(X(b)-X(a)))/den;
+   if(u<=1e-6||u>=1-1e-6||w<=1e-6||w>=1-1e-6)continue;
+   const here=Y(a)+(Y(b)-Y(a))*u;if(here>=ground.heightAt(X(a)+(X(b)-X(a))*u,Z(a)+(Z(b)-Z(a))*u)+DRAPE_SEAT.clear||Y(c)+(Y(d)-Y(c))*w<=here+1e-4)continue;
+   // swap: the two new facets keep the old ones' winding sense
+   const sense=Math.sign(area(index[ts[0]],index[ts[0]+1],index[ts[0]+2])),put=(t:number,p:number,q:number,r:number)=>{if(Math.sign(area(p,q,r))!==sense)[q,r]=[r,q];index[t]=p;index[t+1]=q;index[t+2]=r;};
+   put(ts[0],c,d,a);put(ts[1],d,c,b);done.add(ts[0]);done.add(ts[1]);n++;}
+  swaps+=n;if(!n)break;
+ }
+ return swaps;
+}
+/** Lift drape corners (`pos`, x y z per vertex) so no facet of `index` comes within DRAPE_SEAT.clear of `ground`, sampled every
+ *  DRAPE_SEAT.sample m (kept just inside the ground's extent, outside which the field answers its base level). Returns the corners lifted. */
+export function seatDrape(pos:Float32Array,index:ArrayLike<number>,ground:Pick<Terrain,'heightAt'|'extent'>):number{
+ const lift=new Float32Array(pos.length/3),{x0,z0,x1,z1}=ground.extent,e=1e-3;
+ for(let i=0;i<index.length;i+=3){
+  const a=index[i]*3,b=index[i+1]*3,c=index[i+2]*3;
+  const edge=Math.max(Math.hypot(pos[a]-pos[b],pos[a+2]-pos[b+2]),Math.hypot(pos[b]-pos[c],pos[b+2]-pos[c+2]),Math.hypot(pos[c]-pos[a],pos[c+2]-pos[a+2]));
+  const m=Math.max(1,Math.ceil(edge/DRAPE_SEAT.sample));let short=0;
+  for(let u=0;u<=m;u++)for(let w=0;u+w<=m;w++){const bu=u/m,bw=w/m,bs=1-bu-bw;
+   const x=Math.min(x1-e,Math.max(x0+e,pos[a]*bs+pos[b]*bu+pos[c]*bw)),z=Math.min(z1-e,Math.max(z0+e,pos[a+2]*bs+pos[b+2]*bu+pos[c+2]*bw));
+   short=Math.max(short,ground.heightAt(x,z)+DRAPE_SEAT.clear-(pos[a+1]*bs+pos[b+1]*bu+pos[c+1]*bw));}
+  if(short>0)for(const v of [a,b,c])lift[v/3]=Math.max(lift[v/3],short);
+ }
+ let n=0;for(let v=0;v<lift.length;v++)if(lift[v]>0){pos[v*3+1]+=lift[v];n++;}
+ return n;
+}
 export const ROCK_SLOPE_DEG=38;
 /** ASSUMED: unmapped ground over this pitch is rock, not the base paving; over CLIFF_FACE_DEG a cell is a cliff face (shaded, streaked). */
 export const UNMAPPED_ROCK_DEG=28,CLIFF_FACE_DEG=55;
-/** ASSUMED painted ledges on the rock: one where the ground crosses each `step` m of height; the buff wash on faces whose normal has more
+/** ASSUMED painted jointing on the rock: two or three joints a cell down the fall line, `joint` m long (from, to), a short ledge on only
+ *  a `ledges` share of the cells (round 5's ledge on every 4 m contour read as even bands); the buff wash on faces whose normal has more
  *  than `sunward` along the noon sun (`sun`: its up and south components, 55 degrees high in the pinned midsummer views). */
-export const LEDGE={step:4,sun:[.82,.57],sunward:.75} as const;
+export const JOINT={joint:[3,9],ledges:.1,sun:[.82,.57],sunward:.75} as const;
 /** ASSUMED crag tones (R-wv3-a): dark dolerite, paler weathered faces, lichen grey, moss, and the warm brown-ochre of the weathered
  *  faces in the sun. */
 export const ROCK_TONES=['#4a463e','#55493c','#5a554c','#615c53','#474a37','#524e45','#6b5a46','#5e5040'] as const;
@@ -49,6 +99,8 @@ export const LANDUSE={
  treeTags:new Map(data.treeTags.map(([i,needle,h])=>[i,{needle:needle===1,height:h}])),
  cliffs:data.cliffs.map(decode),
  castleWalls:data.castleWalls.map(([curtain,line])=>({curtain:curtain===1,line:decode(line as number[])})),
+ /** The mapped viewing places: a viewpoint or peak (one point), or an attraction monument's outline. */
+ outlooks:data.outlooks.map(decode),
 };
 const pip=(x:number,z:number,p:readonly Pt[]):boolean=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 const segDist=(x:number,z:number,a:Pt,b:Pt):number=>{const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);};
@@ -86,15 +138,16 @@ export const FILL_STEP={wood:9,scrub:9} as const,CROWN_SPREAD={tree:.42,wood:.42
  *  continuous canopy from Regent Road down to Calton Road, so its steep cells are filled on a closer HANGING_WOOD_STEP lattice with no
  *  gaps (ASSUMED spacing, under the crown width, so the crowns meet). An OSM height tag wins over all of these. */
 export const TREE_SIZE={tree:[8,14],wood:[10,16],scrub:[1.2,2.8],scrubTree:[5,8],needleSpread:.2} as const,SCRUB_TREE_MIN_SLOPE_DEG=28,HANGING_WOOD_STEP=6;
-/** ASSUMED: a walk keeps its outlook. Within `reach` m of a mapped path, a hanging-wood tree whose top would stand more than `over` m above
- *  the path's ground is left as gorse instead (round 4: the summit scrub beside the Dugald Stewart Monument's walk grew 6-8 m trees whose
- *  crowns closed the view west from the path, where R-wv3-c2 shows it open; the parks keep their walks' slopes cut back). The wood below
- *  a path, and away from paths (the south face under the Craigs), stands. */
-export const PATH_OUTLOOK={reach:15,over:1.5} as const;
+/** ASSUMED: a viewing place keeps its outlook. Within `reach` m of a mapped viewing place (LANDUSE.outlooks: OSM viewpoints, peaks and the
+ *  attraction monuments), a hanging-wood tree whose top would stand more than `over` m above the place's ground is left as gorse instead
+ *  (round 4: the scrub on the Dugald Stewart Monument's knoll grew 6-8 m trees whose crowns closed the view west, where R-wv3-c2 shows it
+ *  open). Round 5 held every mapped path to this, and so stripped the wooded belt at the foot of Castle Rock (R-wv3-a) and the summit trees
+ *  by the obelisk (R-wv3-d2); a path is not a viewing place. */
+export const OUTLOOK={reach:20,over:1.5} as const;
 export const crownDepth=(kind:'tree'|'wood'|'scrub')=>kind==='tree'?.42:.4;
 /** Ground slope in degrees from central differences over 2 m. */
 export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const dx=(ground.heightAt(x+2,z)-ground.heightAt(x-2,z))/4,dz=(ground.heightAt(x,z+2)-ground.heightAt(x,z-2))/4;return Math.atan(Math.hypot(dx,dz))*180/Math.PI;};
-export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub';/** a hanging-wood tree (drawn without a trunk: the canopy hides it) */hanging?:true}
+export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub';/** a hanging-wood tree (round 6: with its trunk, so the crown stands on the slope, not floats over it) */hanging?:true}
 const lerp=([a,b]:readonly [number,number],r:number)=>a+(b-a)*r;
 /** The trees that stand: mapped nodes and wood/scrub fill, each clear of every footprint and off the railway bed. */
 export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints):Tree[]{
@@ -120,13 +173,13 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  fill(LANDUSE.areas.wood,FILL_STEP.wood,.25,(x,z)=>take(x,z,'wood'));
  // scrub: gorse on the gentler ground, the hanging wood on the steep faces
  fill(LANDUSE.areas.scrub,FILL_STEP.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
- // the nearest mapped path's ground within PATH_OUTLOOK.reach, or undefined
- const pathGround=(x:number,z:number):number|undefined=>{let best:number=PATH_OUTLOOK.reach,at:Pt|undefined;
-  for(const l of LANDUSE.paths)for(let i=1;i<l.line.length;i++){const a=l.line[i-1],b=l.line[i];if(Math.min(a[0],b[0])>x+best||Math.max(a[0],b[0])<x-best||Math.min(a[1],b[1])>z+best||Math.max(a[1],b[1])<z-best)continue;
-   const dx=b[0]-a[0],dz=b[1]-a[1],u=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1))),p:Pt=[a[0]+u*dx,a[1]+u*dz],d=Math.hypot(x-p[0],z-p[1]);if(d<best){best=d;at=p;}}
-  return at&&ground.heightAt(at[0],at[1]);};
+ // the lowest ground of the viewing places within OUTLOOK.reach (to a point, or to an outline's edges), or undefined
+ const places=LANDUSE.outlooks.map(r=>({r,y:Math.min(...r.map(([x,z])=>ground.heightAt(x,z)))}));
+ const outlookGround=(x:number,z:number):number|undefined=>{let low:number|undefined;
+  for(const {r,y}of places){const d=r.length===1?Math.hypot(x-r[0][0],z-r[0][1]):Math.min(...r.map((a,i)=>segDist(x,z,a,r[(i+1)%r.length])));if(d<=OUTLOOK.reach&&(low===undefined||y<low))low=y;}
+  return low;};
  fill(LANDUSE.areas.scrub,HANGING_WOOD_STEP,0,(x,z)=>{if(!steep(x,z))return;const n=out.length;take(x,z,'wood',TREE_SIZE.scrubTree,CROWN_SPREAD.wood);if(out.length===n)return;
-  const t=out[n],path=pathGround(x,z);if(path!==undefined&&t.y+t.height>path+PATH_OUTLOOK.over){out.pop();take(x,z,'scrub');}else t.hanging=true;});
+  const t=out[n],place=outlookGround(x,z);if(place!==undefined&&t.y+t.height>place+OUTLOOK.over){out.pop();take(x,z,'scrub');}else t.hanging=true;});
  return out;
 }
 
@@ -171,17 +224,24 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
   g.fillStyle='rgba(18,16,14,0.35)';g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
   const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(15,13,12,0.6)';g.lineWidth=.8*s;
   for(const o of [.8,2.6])if(hash(x+o,z,14)<.7){g.beginPath();g.moveTo((x+o-x0)*s,(z+o-z0)*s);g.lineTo((x+o+n[0]/l*(5+hash(x,z+o,15)*6)-x0)*s,(z+o+n[2]/l*(5+hash(x,z+o,15)*6)-z0)*s);g.stroke();}}
- // Ledges: the 16 m DTM smooths the crag's steps into one ramp, so on rock, wherever the ground crosses each LEDGE.step m of height, a
- // ledge is painted along the contour: a warm buff lip where the sun catches the step's top (R-wv3-a: the sunlit buff ledges of the
- // dolerite) over a dark band, the shadowed riser below it. The sunward faces (towards the south and up, ASSUMED: the noon sun of the
- // pinned views) take a buff wash. ASSUMED tones and spacing.
+ // Jointing: the 16 m DTM smooths the crag into one ramp. The dolerite breaks in mostly vertical joints (R-wv3-a: Castle Rock's faces
+ // split into columns, with few ledges), so each rock cell carries two or three dark joints down the fall line, each kinked once and of
+ // uneven length, and only a few cells (JOINT.ledges) a short ledge across the slope: a buff lip over its shadowed riser, 1.5-3 m long,
+ // set anywhere in the cell, not on a contour. The sunward faces (towards the south and up, ASSUMED: the noon sun of the pinned views)
+ // take a buff wash, except under the wood and scrub (round 5 washed Calton's wooded face buff). ASSUMED tones, counts and lengths.
+ const woods=[...A.wood,...A.scrub].map(rs=>{let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of rs[0]){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}return {rs,ax,az,bx,bz};});
+ const wooded=(x:number,z:number)=>woods.some(w=>x>=w.ax&&x<=w.bx&&z>=w.az&&z<=w.bz&&pip(x,z,w.rs[0])&&!w.rs.slice(1).some(h=>pip(x,z,h)));
+ const stroke=(pts:[number,number][],w:number,col:string)=>{g.strokeStyle=col;g.lineWidth=w*s;g.beginPath();pts.forEach(([x,z],i)=>i?g.lineTo((x-x0)*s,(z-z0)*s):g.moveTo((x-x0)*s,(z-z0)*s));g.stroke();};
  for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a<=ROCK_SLOPE_DEG)continue;
   const cx=x+cell/2,cz=z+cell/2,n=ground.normalAt(cx,cz,4),l=Math.hypot(n[0],n[2])||1,d=[n[0]/l,n[2]/l],t=[-d[1],d[0]];
-  const sun=n[1]*LEDGE.sun[0]+n[2]*LEDGE.sun[1];if(sun>LEDGE.sunward){g.fillStyle=`rgba(176,140,96,${Math.min(.3,(sun-LEDGE.sunward)*1.2)})`;g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
-  const up=ground.heightAt(cx-d[0]*2,cz-d[1]*2),dn=ground.heightAt(cx+d[0]*2,cz+d[1]*2);
-  if(Math.floor(up/LEDGE.step)===Math.floor(dn/LEDGE.step)||hash(x,z,16)>.85)continue;
-  const seg=(o:number,w:number,col:string)=>{g.strokeStyle=col;g.lineWidth=w*s;g.beginPath();g.moveTo((cx+d[0]*o-t[0]*2.4-x0)*s,(cz+d[1]*o-t[1]*2.4-z0)*s);g.lineTo((cx+d[0]*o+t[0]*2.4-x0)*s,(cz+d[1]*o+t[1]*2.4-z0)*s);g.stroke();};
-  seg(.9,1.3,'rgba(18,16,14,0.55)');seg(0,.8,'rgba(178,150,108,0.6)');}
+  const sun=n[1]*JOINT.sun[0]+n[2]*JOINT.sun[1];if(sun>JOINT.sunward&&!wooded(cx,cz)){g.fillStyle=`rgba(176,140,96,${Math.min(.3,(sun-JOINT.sunward)*1.2)})`;g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
+  for(let k=0;k<3;k++){if(k===2&&hash(x,z,20)<.5)continue;
+   const sx=x+hash(x,z,21+k)*cell,sz=z+hash(x,z,24+k)*cell,len=JOINT.joint[0]+hash(x,z,27+k)*(JOINT.joint[1]-JOINT.joint[0]),kink=(hash(x,z,30+k)-.5)*1.2;
+   stroke([[sx,sz],[sx+d[0]*len/2+t[0]*kink,sz+d[1]*len/2+t[1]*kink],[sx+d[0]*len,sz+d[1]*len]],.35+hash(x,z,33+k)*.5,'rgba(16,14,12,0.5)');}
+  if(hash(x,z,17)>=JOINT.ledges)continue;
+  const lx=x+hash(x,z,18)*cell,lz=z+hash(x,z,19)*cell,half=.75+hash(x,z,36)*.75;
+  const across=(o:number):[number,number][]=>[[lx+d[0]*o-t[0]*half,lz+d[1]*o-t[1]*half],[lx+d[0]*o+t[0]*half,lz+d[1]*o+t[1]*half]];
+  stroke(across(.9),1.2,'rgba(18,16,14,0.55)');stroke(across(0),.7,'rgba(178,150,108,0.6)');}
  g.lineCap='round';g.lineJoin='round';
  // OSM cliff lines: a broken, half-strength 2.5 m edge, not a painted stripe (the slope cells above already carry the rock)
  g.strokeStyle=GROUND_COLOURS.cliff;g.lineWidth=2.5*s;g.globalAlpha=.55;g.setLineDash([6*s,4*s]);for(const l of LANDUSE.cliffs){line(l);g.stroke();}g.setLineDash([]);g.globalAlpha=1;
@@ -207,22 +267,24 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;keep.push(a,b,c);}
  const pos=new Float32Array(P.length),uv=new Float32Array(P.length/3*2);
  for(let i=0;i<P.length/3;i++){const x=P[i*3],z=P[i*3+2];pos[i*3]=x;pos[i*3+1]=ground.heightAt(x,z)+DRAPE_LIFT;pos[i*3+2]=z;uv[i*2]=(x-x0)/(x1-x0);uv[i*2+1]=1-(z-z0)/(z1-z0);}
+ foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
  const map=paintGround(ground,slopeAt);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
- // pulled forward by the depth slope too (factor -4, ASSUMED): at a convex crest seen edge-on (the Castle summit from Princes Street) the coarser
- // drape cuts the corner by up to a metre along the ray, and a constant offset left the bare terrain showing there as a pale slab
- cover.polygonOffset=true;cover.polygonOffsetFactor=-4;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
+ // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
+ // low roofs and building bases scene-wide (round 5)
+ cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
  const mesh=new THREE.Mesh(g,cover);mesh.name='waverley-ground-cover';group.add(mesh);stats.triangles+=keep.length/3;stats.drawCalls++;
  // Trees: crowns (one icosahedron each) and trunks, two instanced draws.
  const trees=placeTrees(ground,footprints);
  if(trees.length){
-  // A mapped tree is seen close from the gardens: a rounder crown (a 7 x 4 sphere, 42 faces); woods and scrub are seen as masses (icosahedron, 20).
+  // A mapped tree is seen close from the gardens: a rounder crown (a 6 x 4 sphere, 36 faces: round 6 freed 6 a tree for the hanging wood's
+  // trunks); woods and scrub are seen as masses (icosahedron, 20).
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
-  const fineG=new THREE.SphereGeometry(1,7,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
+  const fineG=new THREE.SphereGeometry(1,6,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
-  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub'&&!t.hanging);
+  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub');
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);

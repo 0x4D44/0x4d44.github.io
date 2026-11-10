@@ -105,6 +105,13 @@ for(const {w,p}of pathPts){const mids=p.slice(1).map((q,i):Pt=>[(q[0]+p[i][0])/2
 const castle=pts(get(4301292).nodes!)!,castleWalls:[number,number[]][]=[];
 for(const e of all.values()){const t=e.tags??{};if(e.type!=='way'||!e.nodes||t.barrier!=='wall'&&t.barrier!=='retaining_wall'&&t.barrier!=='city_wall')continue;
  const p=pts(e.nodes);if(!p||p.filter(q=>pip(q,castle)).length*2<=p.length)continue;castleWalls.push([t.wall==='castle_wall'?1:0,enc(dp(p,1))]);}
+// The mapped places people stand for the view: tourism=viewpoint and natural=peak nodes (one point each), and the monuments OSM tags as
+// attractions with a building outline (historic=monument or memorial, tourism=attraction: the Dugald Stewart, Nelson and Political
+// Martyrs' monuments; their outline). The hanging wood near them is kept low (waverley-city-ground.ts, OUTLOOK).
+const outlooks:number[][]=[];
+for(const e of all.values()){const t=e.tags??{};
+ if(e.type==='node'&&(t.tourism==='viewpoint'||t.natural==='peak')&&e.lat!==undefined&&e.lon!==undefined){const p=project(e.lat,e.lon!,origin) as Pt;if(inBox(p,0))outlooks.push(enc([p]));}
+ else if(e.type==='way'&&e.nodes&&t.building&&t.tourism==='attraction'&&(t.historic==='monument'||t.historic==='memorial')){const p=pts(e.nodes);if(p&&p.some(q=>inBox(q,0)))outlooks.push(enc(p.slice(0,-1)));}}
 // mapped trees, with the two size tags OSM carries here: leaf_type (needleleaved is narrow) and height (m)
 const pairs:[number,number,string,number][]=[];
 for(const e of all.values())if(e.type==='node'&&e.tags?.natural==='tree'&&e.lat!==undefined&&e.lon!==undefined){const p=project(e.lat,e.lon!,origin) as Pt;
@@ -114,8 +121,8 @@ pairs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
 const treeRun:number[]=[],treeTags:number[][]=[];{let px=0,pz=0;pairs.forEach(([x,z,leaf,h],i)=>{treeRun.push(x-px,z-pz);px=x;pz=z;if(leaf==='needleleaved'||h)treeTags.push([i,leaf==='needleleaved'?1:0,h]);});}
 const out={
  attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',
- source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); land use, leisure and natural areas, highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff and barrier=city_wall ways, and the walls inside the Edinburgh Castle precinct (way/4301292)',
- q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,treeTags,cliffs,walls,castleWalls,
+ source:'OSM map API snapshot of tools/build-waverley.ts (four tiles, fetched 2026-11-09); land use, leisure and natural areas, highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff and barrier=city_wall ways, viewpoint and peak nodes and attraction monuments (outlooks), and the walls inside the Edinburgh Castle precinct (way/4301292)',
+ q:Q,extent:LANDUSE_EXTENT,areas,roads,paths,trees:treeRun,treeTags,cliffs,walls,castleWalls,outlooks,
 };
 const json=JSON.stringify(out)+'\n';
 writeFileSync('web/src/data/waverley-city-landuse.json',json);
@@ -147,4 +154,4 @@ const roadsJson=JSON.stringify({attribution:'© OpenStreetMap contributors (ODbL
  frame:'Waverley local metres: x east, z south, origin 55.9519018 N, 3.1904199 W (core/geo.ts project)',extent:LANDUSE_EXTENT,roads:roadLines})+'\n';
 writeFileSync('web/src/data/waverley-roads.json',roadsJson);
 console.log(JSON.stringify({roadLines:roadLines.length,classes:Object.fromEntries([...new Set(roadLines.map(r=>r.highway))].map(h=>[h,roadLines.filter(r=>r.highway===h).length])),bytes:roadsJson.length,gzip:gzipSync(roadsJson,{level:9}).length}));
-console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,walls:walls.length,castleWalls:castleWalls.length,bytes:json.length,gzip:gzipSync(json,{level:9}).length}));
+console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,walls:walls.length,castleWalls:castleWalls.length,outlooks:outlooks.length,bytes:json.length,gzip:gzipSync(json,{level:9}).length}));

@@ -99,17 +99,21 @@ export const SCOTT_SPIRE='way/445166834';
  *  (m above the base) and its plan scale on the OSM spire part, measured by eye off R-wv3-b; the last tier ends in a pyramid at the
  *  OSM 61.11 m. Pinnacles (ASSUMED 0.8 m square, 3.5 m tall) stand at each tier's outermost corners, each the head of a cluster (R-wv3-b:
  *  the tier corners bristle with pinnacles): two lesser ones, `lesserSide` square (or 0.8 of a narrower ledge) and `lesserHeight` tall,
- *  set back `lesserSet` m (or more, past a chamfer) from the corner along each of its two edges, on the ledge before the tier above. */
+ *  set back `lesserSet` m (or more, past a chamfer) from the corner along each of its two edges, on the ledge before the tier above.
+ *  Each head pinnacle is crocketed and finialled (R-wv3-b: the leafy knobs up every arris, a knob at the tip): a crocket, `crocket` m
+ *  square and rising `crocketRise` m, at each of the `crockets` shares of the way up each of the pyramid's four arrises, standing
+ *  `crocketOut` m out from it; the finial a `finial` m square knob from just under the apex to `finialRise` m over it. ASSUMED sizes. */
 export const SCOTT_TIERS=[{top:29,scale:.86},{top:38,scale:.7},{top:46,scale:.55},{top:52,scale:.42}] as const;
-export const SCOTT_PINNACLE={side:.8,height:3.5,lesserSide:.45,lesserHeight:2.3,lesserSet:1.1} as const;
+export const SCOTT_PINNACLE={side:.8,height:3.5,lesserSide:.45,lesserHeight:2.3,lesserSet:1.1,crockets:[.35,.65],crocket:.18,crocketRise:.3,crocketOut:.08,finial:.22,finialRise:.5} as const;
 /** ASSUMED gallery on each tier face (R-wv3-b: an open arcade at each stage, near-black inside): over 0.55 of the face's width, from
  *  1 m over the tier's floor to 1.2 m under its top, `lancets` pointed openings between stone mullions `mullion` m wide, each head
  *  rising `point` of its width to its apex, 3 cm proud of the face, at 0.16 of the stone's tone. */
 export const SCOTT_GALLERY={width:.55,sill:1,head:1.2,proud:.03,tone:.16,lancets:3,mullion:.35,point:.7} as const;
-/** The Scott Monument's stone over the ashlar texture (average 0xa99a7c): to about 0x534f4a, the sooted Binny sandstone's dark
- *  grey-brown (R-wv3-b: near-black in shade, only dark brown where lit; round 4 a quarter darker than round 3's 0x6e6962, scorer's
- *  round 3 note), darker than the city. The Calton monuments' paler Craigleith stone: to about 0x87837c. ASSUMED. */
-export const SCOTT_STONE=0x7d8297,MONUMENT_STONE=0xccd9ff;
+/** The Scott Monument's stone over the ashlar texture (average 0xa99a7c): to about 0x5d5953, the sooted Binny sandstone's dark
+ *  grey-brown (R-wv3-b: near-black in shade, only dark brown where lit), darker than the city. Round 4 took it a quarter darker than
+ *  round 3's 0x6e6962 (scorer's round 3 note), to 0x534f4a, which rendered near-black in sun too (scorer's round 5 note); round 6 is about
+ *  half way back (x1.12, the same hue), short of round 3's 0xa6adc9, which the round 3 scorer found too light. The Calton monuments' paler Craigleith stone: to about 0x87837c. ASSUMED. */
+export const SCOTT_STONE=0x8c92a9,MONUMENT_STONE=0xccd9ff;
 let sceneData:ReturnType<typeof unpackWaverleyScene>|undefined;
 const scene=()=>sceneData??=unpackWaverleyScene(sceneFile);
 
@@ -129,6 +133,11 @@ export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'hei
   const pinnacles=(ring:[number,number][],y:number,upper?:[number,number][])=>{const h=SCOTT_PINNACLE.side/2;
    for(const [sx,sz]of [[1,1],[1,-1],[-1,1],[-1,-1]]){const q=ring.reduce((m,v)=>(v[0]-c[0])*sx+(v[1]-c[1])*sz>(m[0]-c[0])*sx+(m[1]-c[1])*sz?v:m),d=Math.hypot(q[0]-c[0],q[1]-c[1])||1,o=[q[0]-(q[0]-c[0])/d*h*1.5,q[1]-(q[1]-c[1])/d*h*1.5];
     const sq:[number,number][]=[[o[0]-h,o[1]-h],[o[0]+h,o[1]-h],[o[0]+h,o[1]+h],[o[0]-h,o[1]+h]];stoneShell(scott,sq,sb+y-.1,sb+y+.6);stonePyramid(scott,sq,sb+y+.6,sb+y+SCOTT_PINNACLE.height);
+    // the crockets up its four arrises and the finial at its tip
+    const {crockets,crocket,crocketRise,crocketOut,finial,finialRise,height}=SCOTT_PINNACLE,box=(cx:number,cz:number,e:number):[number,number][]=>[[cx-e,cz-e],[cx+e,cz-e],[cx+e,cz+e],[cx-e,cz+e]];
+    for(const k of sq)for(const f of crockets){const ax=k[0]+(o[0]-k[0])*f,az=k[1]+(o[1]-k[1])*f,out=Math.hypot(k[0]-o[0],k[1]-o[1])||1,ay=sb+y+.6+(height-.6)*f;
+     stonePyramid(scott,box(ax+(k[0]-o[0])/out*crocketOut,az+(k[1]-o[1])/out*crocketOut,crocket/2),ay-.05,ay-.05+crocketRise);}
+    const tip=sb+y+height;stoneShell(scott,box(o[0],o[1],finial/2),tip-.25,tip+.1);stonePyramid(scott,box(o[0],o[1],finial/2),tip+.1,tip+finialRise);
    }
    // the lesser pinnacles of each corner's cluster: on the ledge between this ring and the tier above, set back along the corner's two
    // edges (the plan rectangle's axes), each square to those axes; one that would not stand wholly on the ledge is left out
