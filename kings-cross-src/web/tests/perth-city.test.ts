@@ -11,8 +11,9 @@ import { stationOutline } from '../src/perth-station.ts';
 import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
-import { CLIFF_EYE, CRAG, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
+import { SUMMIT, SUMMIT_CENTRE, inSummitHole } from '../src/perth-summit.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
@@ -228,6 +229,27 @@ test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not
   const hs = blocks.map(b => b.h).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > (CRAG.height[1] - CRAG.height[0]) * .6, 'mixed heights');
   const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
   let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
+});
+
+test('the summit clearing has its own close ground under the panorama, in a hole in the town-wide drape (152; round 3, C2)', () => {
+  const patch = scene.group.getObjectByName('perth-summit-ground') as THREE.Mesh;
+  assert.ok(patch, 'the summit patch');
+  let city = false; patch.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
+  const P = patch.geometry.getAttribute('position'), U = patch.geometry.getAttribute('uv');
+  let far = 0;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), z = P.getZ(i), d = Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]); far = Math.max(far, d);
+    assert.ok(Math.abs(P.getY(i) - scene.terrain.heightAt(x, z) - SUMMIT.lift) < 1e-3, 'on the drawn ground, lifted');
+    assert.ok(U.getX(i) >= 0 && U.getX(i) <= 1 && U.getY(i) >= 0 && U.getY(i) <= 1, 'one canvas over the disc');
+  }
+  assert.ok(far > SUMMIT.hole + SUMMIT.step && far <= SUMMIT.patch + 1e-6, `the patch reaches past the hole: ${far.toFixed(1)}`);
+  // the drape leaves the hole: no drape triangle with a corner inside it
+  const cover = scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh, cp = cover.geometry.getAttribute('position'), ci = cover.geometry.getIndex()!;
+  let over = 0; for (let i = 0; i < ci.count; i++) if (inSummitHole(cp.getX(ci.getX(i)), cp.getZ(ci.getX(i)))) over++;
+  assert.equal(over, 0, `drape corners in the summit hole: ${over}`);
+  // the panorama's eye stands over it
+  const ray = new THREE.Raycaster(new THREE.Vector3(KINNOULL_EYE.pos[0], 400, KINNOULL_EYE.pos[2]), new THREE.Vector3(0, -1, 0));
+  assert.ok(ray.intersectObject(patch).length > 0, 'the patch is under the panorama\'s eye');
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {
