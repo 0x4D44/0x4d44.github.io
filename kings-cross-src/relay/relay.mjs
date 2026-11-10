@@ -6,7 +6,7 @@
 //   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
 //   GET /sclass           local signal mapping: KX_SCLASS or <KX_DATA_DIR>/sclass.json
 //   GET /fleet?area=EB    fleet evidence {booked, ptac}: <area data dir>/fleet.json (booked diagrams) and
-//                         ptac.json (PTAC allocations), each null when absent; 404 when both are (only `area` is a query key)
+//                         ptac.json (PTAC allocations), each null when absent; 404 when both are
 //   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
@@ -92,8 +92,7 @@ export async function localFile(url, { dataDir, area, streamRecording = false, c
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/fleet') {
     // The fleet table is always <area data dir>/fleet.json: no environment override, so the
-    // canonical-directory guard below always applies. `area` is the only query key accepted.
-    if ([...url.searchParams.keys()].some(key => key !== 'area')) return { status: 400, body: JSON.stringify({ error: 'only the area query key is accepted' }), type: 'application/json; charset=utf-8' };
+    // canonical-directory guard below always applies. Other query keys are ignored, as for /anchors.
     if (!FLEET_FILES.includes(fleetFile)) throw new Error('invalid fleet file');
     file = canonical = path.join(cacheDir, fleetFile);
     type = 'application/json; charset=utf-8';
@@ -141,7 +140,6 @@ export async function fleetDocument(url, options) {
   let present = false;
   for (const [name, fleetFile] of [['booked', 'fleet.json'], ['ptac', 'ptac.json']]) {
     const file = await localFile(url, { ...options, fleetFile, streamRecording: false });
-    if (file.status === 400) return file;
     sections[name] = null;
     if (file.status === 404) continue;
     present = true;
