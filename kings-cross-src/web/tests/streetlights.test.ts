@@ -8,7 +8,7 @@ import { buildCity, PAGE_DRAPE } from '../../core/city.ts';
 import type { CityData } from '../../core/city.ts';
 import type { KxData } from '../../core/osm.ts';
 import { railSegments } from '../../core/scene.ts';
-import { forecourtMasts, LAMP_KIND, MAST_HEIGHT, POOL_REACH, poolRadius } from '../../core/streetlights.ts';
+import { forecourtMasts, LAMP_KIND, MAST_HEIGHT, MAST_LIFT, POOL_REACH, poolRadius } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import { createTerrain } from '../../core/terrain.ts';
 import { addCity } from '../src/city.ts';
@@ -68,7 +68,7 @@ test('poolTexture: a 128 px canvas with a radial gradient, white under the lamp,
     close(alpha[i] as number, (1 / Math.sqrt(1 + d * d)) ** 3, 0.0006, `the light at ${d.toFixed(2)} post heights`);
     if (i > 0) assert.ok((alpha[i] as number) < (alpha[i - 1] as number), 'falling all the way out');
   }
-  assert.equal(poolTexture(), texture, 'made once');
+  assert.ok(poolTexture() === texture, 'made once');
 });
 
 test('lampGeometry and mastGeometry: 36 and 24 triangles of flat vertex colour and no UVs; the lamp POST_HEIGHT tall with its arm along +x, the mast MAST_HEIGHT tall with its strip of LEDs near the top', () => {
@@ -84,6 +84,16 @@ test('lampGeometry and mastGeometry: 36 and 24 triangles of flat vertex colour a
   mast.computeBoundingBox();
   const [lb, mb] = [lamp.boundingBox as THREE.Box3, mast.boundingBox as THREE.Box3];
   close(lb.min.y, 0, 1e-9, 'the lamp stands on its foot');
+  // the post itself (every vertex up to the post's height; the arm and the head lie above it): a ring of six at the foot, 0.22 m across, and one at the top of the post, 0.14 m across
+  const lampAt = lamp.getAttribute('position');
+  const column: [number, number][] = [];
+  for (let i = 0; i < lampAt.count; i++) if (lampAt.getY(i) <= POST_HEIGHT + 1e-6) column.push([lampAt.getY(i), Math.hypot(lampAt.getX(i), lampAt.getZ(i))]);
+  const [footRing, topRing] = [column.filter(([y]) => Math.abs(y) < 1e-6), column.filter(([y]) => Math.abs(y - POST_HEIGHT) < 1e-6)];
+  assert.equal(column.length, 24, 'six faces of four vertices');
+  assert.equal(footRing.length, 12, 'half of them at the foot');
+  assert.equal(topRing.length, 12, 'and half at the top of the post, POST_HEIGHT up');
+  for (const [, r] of footRing) close(r, 0.11, 1e-6, 'the foot is 0.22 m across');
+  for (const [, r] of topRing) close(r, 0.07, 1e-6, 'and the top 0.14 m, so the post tapers');
   assert.ok(lb.max.y > POST_HEIGHT && lb.max.y < POST_HEIGHT + 0.5, `the head is just over the post: ${lb.max.y}`);
   assert.ok(lb.max.x > 1.5 && lb.max.x < 2.5, `the arm reaches out along +x: ${lb.max.x}`);
   assert.ok(lb.min.x > -0.2 && Math.abs(lb.max.z) < 0.35 && Math.abs(lb.min.z) < 0.35, 'and nothing the other way or sideways');
@@ -215,6 +225,7 @@ test('createStreetLights: posts there by day, a glow at each head and a pool und
   assert.equal(poolMaterial.blending, THREE.AdditiveBlending);
   assert.ok(poolMaterial.transparent && !poolMaterial.depthWrite && !poolMaterial.fog && poolMaterial.polygonOffset && poolMaterial.polygonOffsetFactor < 0 && poolMaterial.polygonOffsetUnits < 0);
   assert.ok(halos.renderOrder > pools.renderOrder, 'the glows over the pools');
+  assert.ok(!halos.frustumCulled && !pools.frustumCulled, 'neither is culled by its first point or its quad\'s bounds: their instances span the city');
 
   // by day: nothing glows. With the level: the glow at 0.9 of it, the pool at all of it, a trace of level draws nothing, and the level is held to 0..1
   assert.ok(!halos.visible && !pools.visible);
@@ -241,9 +252,12 @@ test('createStreetLights: posts there by day, a glow at each head and a pool und
   const freed: string[] = [];
   const geometries = [posts.geometry, masts.geometry, halos.geometry, pools.geometry];
   const materials = [postMaterial, haloMaterial, poolMaterial];
+  const instanced = [posts, masts, pools];
   for (const x of [...geometries, ...materials]) x.addEventListener('dispose', () => freed.push(x.type));
+  for (const m of instanced) m.addEventListener('dispose', () => freed.push(m.name));
   lights.dispose();
-  assert.equal(freed.length, geometries.length + materials.length, `freed ${freed}`);
+  assert.equal(freed.length, geometries.length + materials.length + instanced.length, `freed ${freed}`);
+  for (const m of instanced) assert.ok(freed.includes(m.name), `${m.name} (its matrices and colours) is freed`);
 });
 
 test('createStreetLights: with no lamps it draws nothing and still comes on and goes out; with only masts, only the mast post is drawn', () => {
@@ -294,7 +308,7 @@ test('addCity places the street lamps and the forecourt\'s masts, hands them to 
   assert.ok(scene.children.includes(lights.group), 'in the scene, a group of their own');
   assert.ok(!c.group.children.some((child) => child.name.startsWith('street-lamp')), 'not among the city\'s own meshes');
   assert.equal(layers.length, 1);
-  assert.equal(layers[0], lights, 'the night lights are handed the lamps');
+  assert.ok(layers[0] === lights, 'the night lights are handed the lamps');
   assert.ok((lights.group.getObjectByName('street-lamp-halos') as THREE.Points).visible, 'and the level they had (0.5) is applied at once');
   // what is placed: the city's lamps and the six masts
   const exclude = data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts);
@@ -306,20 +320,27 @@ test('addCity places the street lamps and the forecourt\'s masts, hands them to 
   assert.equal(lights.counts().lamps, c.stats.lamps);
   assert.equal((lights.group.getObjectByName('street-lamp-posts') as THREE.InstancedMesh).count, built.lamps.length);
   assert.equal((lights.group.getObjectByName('forecourt-masts') as THREE.InstancedMesh).count, masts.length);
+  // with no terrain the masts stand on the flat ground and the plaza's lift: -0.2 + 0.15 m, not at zero
+  const mastMatrix = new THREE.Matrix4();
+  (lights.group.getObjectByName('forecourt-masts') as THREE.InstancedMesh).getMatrixAt(0, mastMatrix);
+  close(new THREE.Vector3().setFromMatrixPosition(mastMatrix).y, GROUND_Y + MAST_LIFT, 1e-4, 'a mast stands on the flat ground when there is no terrain');
   // what it costs: four draw calls and a few tens of thousands of triangles, and none of it in the city's own count
   const cost = lights.counts();
   assert.ok(cost.draws <= 4, `${cost.draws} draw calls`);
   assert.ok(cost.triangles > 30_000 && cost.triangles < 60_000, `${cost.triangles} triangles`);
   const without = addCity(new THREE.Scene(), data, city, { hidden, lamps: false });
-  assert.equal(without.lights, null);
+  assert.ok(without.lights === null, 'lamps: false builds no lamp layer, and not an empty one'); // a plain comparison: a failing assert.equal would print the layer's whole scene graph
   assert.equal(without.stats.lamps, 0);
   assert.equal(without.stats.drawCalls, c.stats.drawCalls, 'the lamps are no part of the city\'s draw calls');
   assert.equal(without.stats.triangles, c.stats.triangles, 'or its triangles');
   without.dispose();
-  // disposing the city takes the lamps out of the scene and off the night lights
+  // disposing the city takes the lamps out of the scene and off the night lights, and gives their meshes back
+  let freedPosts = 0;
+  (lights.group.getObjectByName('street-lamp-posts') as THREE.InstancedMesh).addEventListener('dispose', () => { freedPosts++; });
   c.dispose();
   assert.equal(detached, 1, 'the night lights let them go');
   assert.ok(!scene.children.includes(lights.group));
+  assert.equal(freedPosts, 1, 'and the lamps are freed with the city');
   // without night lights the lamps are drawn and stay dark
   const dark = addCity(new THREE.Scene(), data, city, { hidden });
   assert.ok(dark.lights);

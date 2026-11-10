@@ -14,6 +14,7 @@ import type { LampRoad, LampRoadsFile, LampRun, LampSpot } from '../../core/stre
 import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
+import type { WaverleyScene } from '../../core/waverley-data.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 
@@ -36,6 +37,11 @@ export function footprintsOf(areas: readonly { outer: readonly Pt[]; holes: read
     const zs = area.outer.map((p) => p[1]);
     return { box: [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)], outer: area.outer, holes: area.holes };
   });
+}
+
+/** What no lamp stands in, under or on: the scene's buildings, the roofs over the station and the platforms (the station's own lamps are the station element's). */
+export function sceneFootprints(data: Pick<WaverleyScene, 'buildings' | 'roofs' | 'platforms'>): Footprint[] {
+  return footprintsOf([...data.buildings, ...data.roofs, ...data.platforms.map((p) => ({ outer: p.path, holes: [] }))]);
 }
 
 const lengthOf = (line: readonly Pt[]): number => line.slice(1).reduce((sum, p, i) => sum + Math.hypot(p[0] - (line[i] as Pt)[0], p[1] - (line[i] as Pt)[1]), 0);
@@ -134,7 +140,5 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number)
   ]);
   const context = createTerrain(terrain.default as unknown as TerrainFile);
   const data = unpackWaverleyScene(scene.default);
-  // no lamp stands in a building, under the station's roof or on a platform (the station's own lamps are the station element's)
-  const footprints = footprintsOf([...data.buildings, ...data.roofs, ...data.platforms.map((p) => ({ outer: p.path, holes: [] }))]);
-  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), footprints));
+  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data)));
 }

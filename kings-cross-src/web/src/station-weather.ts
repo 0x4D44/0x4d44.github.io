@@ -175,7 +175,8 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   return { ...climate,
     update(frame: Parameters<SceneWeather['update']>[0]): void {
       climate.update(frame);
-      lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 0);
+      const sky = climate.atmosphere.state(); // none until the climate has run once (a climate that has ended before it ran never will)
+      if (sky) lamps.setLevel(sky.rig.lampLevel);
     },
     dispose(): void {
       if (disposed) return; disposed = true;

@@ -73,6 +73,10 @@ const MARKERS = [
   ['the rails\' cutoff (track.ts)', 'vCutoff'],
   ['the wires\' pixel (ole.ts)', 'vOleDistance'],
   ['the trains\' lamps (train-geom.ts)', 'uNight'],
+  // round seven: the lit windows (the facades' and the decals' glass, the Midland's panes)
+  ['the facades\' lit windows (materials.ts)', 'winTile( vMapUv'],
+  ['the decals\' lit windows (materials.ts)', 'winDecal( vMapUv'],
+  ['the Midland\'s lit panes (materials.ts)', 'varying vec2 vWinUv;'],
 ] as const;
 
 test('lighting.ts loads on the squeezed chunks: it finds the two phrases it patches in them, and the patches are in', () => {
@@ -105,6 +109,7 @@ test('every hook of the real scene does to the squeezed program what it does to 
   const hooked = materials.filter((m) => Object.hasOwn(m, 'onBeforeCompile'));
   const landed = new Set<string>();
   const kinds = new Set<string>();
+  const flooded: string[] = [];
   for (const m of hooked) {
     const id = shaderIds[m.type];
     const name = `${m.name || '(unnamed)'} (${m.type})`;
@@ -122,7 +127,16 @@ test('every hook of the real scene does to the squeezed program what it does to 
     assert.ok(was.vertexShader !== originalPrograms[id]?.vertexShader || was.fragmentShader !== originalPrograms[id]?.fragmentShader, `${name}: and the one three wrote`);
     for (const [kind, marker] of MARKERS) if (is.vertexShader.includes(marker) || is.fragmentShader.includes(marker)) landed.add(kind);
     kinds.add(`${id}:${m.customProgramCacheKey()}`);
+    // round seven: a floodlit wall (lighting.ts FLOOD) is given the night once, in the squeezed program as in three's: it is in the uniforms, and declared once in the text
+    if ((m as THREE.MeshLambertMaterial).defines?.FLOOD !== undefined) {
+      flooded.push(name);
+      for (const [which, shader] of [['the squeezed program', is], ['three\'s', was]] as const) {
+        assert.equal(shader.fragmentShader.split('uniform float uWinNight;').length - 1, 1, `${name}: ${which} declares the night once`);
+        assert.ok('uWinNight' in (shader as unknown as { uniforms: object }).uniforms, `${name}: and has it in its uniforms in ${which}`);
+      }
+    }
   }
+  assert.ok(flooded.length >= 4, `the scene's floodlit walls (the Midland's brick and stone, the front's brick and stone): ${flooded.length}`);
   assert.ok(hooked.length >= 30, `the scene's hooked materials: ${hooked.length}`);
   for (const [kind] of MARKERS) assert.ok(landed.has(kind), `a hook of the scene's materials is ${kind}, and its text is in the squeezed program of one of them (${[...landed].join('; ')})`);
   assert.ok(kinds.size >= 8, `the kinds of program (a hook, a base shader): ${kinds.size}`);

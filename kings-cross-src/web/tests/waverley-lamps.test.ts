@@ -3,7 +3,8 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import type * as THREE from 'three';
+import { isDeepStrictEqual } from 'node:util';
+import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { pointInPolygon } from '../../core/station.ts';
 import { encodeLampRoads, LAMP_KERB, LAMP_KIND, LAMP_RULES } from '../../core/streetlights.ts';
@@ -11,7 +12,7 @@ import type { LampRoad, LampRoadsFile, LampSpot } from '../../core/streetlights.
 import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
-import { deckHeights, footprintsOf, loadWaverleyLamps, WAVERLEY_ROAD_WIDTH, waverleyLampSpots } from '../src/waverley-lamps.ts';
+import { deckHeights, footprintsOf, loadWaverleyLamps, sceneFootprints, WAVERLEY_ROAD_WIDTH, waverleyLampSpots } from '../src/waverley-lamps.ts';
 import { waverleyGround } from '../src/waverley-scene.ts';
 
 const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
@@ -41,12 +42,15 @@ test('deckHeights: a deck runs straight from the ground at one end to the ground
 });
 
 test('deckHeights: decks that meet end to end are one deck, whatever order they are listed in or way they run (Waverley Bridge is three OSM ways); the height is continuous at every joint', () => {
-  const context = (x: number, z: number): number => 5 + 0.1 * x + 0.1 * z;
+  // not a plane: on a plane the joined heights are the lone decks' heights, and a deck that failed to join its neighbour would pass
+  const context = (x: number, z: number): number => 5 + 4 * Math.sin(x / 25) + 0.1 * z + (x * x) / 500;
   const a = road('minor', [[0, 0], [40, 0]], true); // 40 m
   const b = road('pedestrian', [[40, 0], [40, 60]], true); // 60 m
-  const c = road('pedestrian', [[40, 60], [100, 60]], true); // 60 m: 160 m in all, from 5 to 21 m
+  const c = road('pedestrian', [[40, 60], [100, 60]], true); // 60 m: 160 m in all, from the ground at (0, 0) to the ground at (100, 60)
   const at = (heights: ReturnType<typeof deckHeights>, i: number, s: number): number => (heights[i] as (x: number, z: number, s: number, o: number) => number)(0, 0, s, 0);
-  const straight = (d: number): number => 5 + (16 * d) / 160;
+  const [ground0, ground1] = [context(0, 0), context(100, 60)];
+  assert.ok(Math.abs(context(40, 0) - (ground0 + (ground1 - ground0) * 0.25)) > 1, 'the ground at the first joint is off the straight line');
+  const straight = (d: number): number => ground0 + ((ground1 - ground0) * d) / 160;
   for (const [name, decks] of [
     ['in order', [a, b, c]],
     ['shuffled', [c, a, b]],
@@ -71,17 +75,19 @@ test('deckHeights: decks that meet end to end are one deck, whatever order they 
 });
 
 test('deckHeights: a node where three decks meet ends a chain and joins none; a lone deck and a ring of decks are heights all the same', () => {
-  const context = (x: number, z: number): number => x / 10;
+  const context = (x: number, z: number): number => (x * x) / 200 + z / 20; // not a plane: a spoke joined to the next would read the line between the far ends, not its own
   // three decks from one point (50, 0): each its own, from the ground at its ends
   const spokes = [road('primary', [[50, 0], [150, 0]], true), road('primary', [[50, 0], [50, 100]], true), road('primary', [[0, 0], [50, 0]], true)];
   const heights = deckHeights(spokes, context);
   const f = (i: number, s: number): number => (heights[i] as (x: number, z: number, s: number, o: number) => number)(0, 0, s, 0);
-  close(f(0, 0), 5, 1e-9);
-  close(f(0, 100), 15, 1e-9, 'the first spoke, ground to ground');
-  close(f(1, 0), 5, 1e-9);
-  close(f(1, 100), 5, 1e-9, 'the second: level, its ends are both at x 50');
-  close(f(2, 0), 0, 1e-9);
-  close(f(2, 50), 5, 1e-9, 'the third ends where the others start, and is not joined to either');
+  close(f(0, 0), context(50, 0), 1e-9);
+  close(f(0, 100), context(150, 0), 1e-9, 'the first spoke, ground to ground');
+  close(f(0, 50), (context(50, 0) + context(150, 0)) / 2, 1e-9, 'and straight between');
+  close(f(1, 0), context(50, 0), 1e-9);
+  close(f(1, 100), context(50, 100), 1e-9, 'the second, ground to ground');
+  close(f(2, 0), context(0, 0), 1e-9);
+  close(f(2, 50), context(50, 0), 1e-9, 'the third ends where the others start, and is not joined to either');
+  close(f(2, 25), (context(0, 0) + context(50, 0)) / 2, 1e-9, 'and is straight between its own ends');
   // a ring of three decks that meet end to end: none is left without a height, and none is NaN
   const ring = [road('tertiary', [[0, 0], [30, 0]], true), road('tertiary', [[30, 0], [15, 26]], true), road('tertiary', [[15, 26], [0, 0]], true)];
   const rings = deckHeights(ring, context);
@@ -89,6 +95,45 @@ test('deckHeights: a node where three decks meet ends a chain and joins none; a 
   for (const g of rings) for (const s of [0, 10, 30, 40]) assert.ok(Number.isFinite((g as (x: number, z: number, s: number, o: number) => number)(0, 0, s, 0)), 'a number');
   // no decks, no heights
   assert.deepEqual(deckHeights([], context), []);
+});
+
+test('deckHeights: a chain whose two ends are both at three-way nodes is one deck all the same, whichever of its decks is listed first', () => {
+  const context = (x: number, z: number): number => 3 * Math.sin(x / 20) + z / 10 + (x * x) / 300;
+  // P and Q meet end to end at (40, 0); at each far end two more decks go off, so the chain has no dead end to be walked from
+  const P = road('tertiary', [[0, 0], [40, 0]], true);
+  const Q = road('tertiary', [[40, 0], [80, 0]], true);
+  const spurs = [road('minor', [[0, 0], [0, 40]], true), road('minor', [[0, 0], [-40, 0]], true), road('minor', [[80, 0], [80, 40]], true), road('minor', [[80, 0], [120, 0]], true)];
+  const [ground0, ground1] = [context(0, 0), context(80, 0)];
+  assert.ok(Math.abs(context(40, 0) - (ground0 + ground1) / 2) > 1, 'the ground at the joint is off the straight line');
+  for (const [name, decks, p, q] of [['P first', [P, Q, ...spurs], 0, 1], ['Q first', [Q, P, ...spurs], 1, 0]] as const) {
+    const heights = deckHeights(decks, context);
+    assert.equal(heights.length, decks.length, name);
+    const f = (i: number, s: number): number => (heights[i] as (x: number, z: number, s: number, o: number) => number)(0, 0, s, 0);
+    for (const s of [0, 10, 20, 40]) {
+      close(f(p, s), ground0 + ((ground1 - ground0) * s) / 80, 1e-9, `${name}: P at ${s} m`);
+      close(f(q, s), ground0 + ((ground1 - ground0) * (40 + s)) / 80, 1e-9, `${name}: Q at ${s} m`);
+    }
+    // and each spur is a deck of its own, from the ground at one end to the ground at the other
+    decks.forEach((deck, i) => {
+      if (i === p || i === q) return;
+      const [start, end] = [deck.line[0] as Pt, deck.line[1] as Pt];
+      close(f(i, 0), context(start[0], start[1]), 1e-9, `${name}: spur ${i} at its start`);
+      close(f(i, 40), context(end[0], end[1]), 1e-9, `${name}: spur ${i} at its end`);
+    });
+  }
+});
+
+test('deckHeights: decks whose ends are half a metre apart are two nodes, not one (the lean file\'s grid is the half metre: a shared OSM node is the same point to it, a neighbour is not)', () => {
+  const context = (x: number): number => (x < 50 ? 0 : 10); // flat at the ground to x 50, then 10 m higher
+  const a = road('primary', [[0, 0], [40.5, 0]], true);
+  const b = road('primary', [[41, 0], [100, 0]], true);
+  const [ha, hb] = deckHeights([a, b], context) as [(x: number, z: number, s: number, o: number) => number, (x: number, z: number, s: number, o: number) => number];
+  close(ha(0, 0, 40.5, 0), 0, 1e-9, 'a stays at the ground it runs along');
+  close(hb(0, 0, 0, 0), 0, 1e-9, 'b starts at the ground at its own start');
+  close(hb(0, 0, 59, 0), 10, 1e-9, 'and rises to its own far end');
+  // the same two, meeting at one node, are one deck: from 0 to 10 over its 100 m
+  const joined = deckHeights([road('primary', [[0, 0], [40.5, 0]], true), road('primary', [[40.5, 0], [100, 0]], true)], context) as [(x: number, z: number, s: number, o: number) => number, (x: number, z: number, s: number, o: number) => number];
+  close(joined[0](0, 0, 40.5, 0), (10 * 40.5) / 100, 1e-9, 'joined at a shared node');
 });
 
 test('footprintsOf: a ring with the box round it and the courtyards it keeps', () => {
@@ -178,6 +223,35 @@ test('waverleyLampSpots: a lamp on a bridge stands on the deck (its height by th
   assert.ok(alone.length > 0 && alone.every((s) => s.x < 120 || s.x > 180), 'outside the building');
 });
 
+test('waverleyLampSpots: a lamp on a bridge keeps out of the carriageway of another bridge it meets, as a lamp on the ground keeps out of another road\'s', () => {
+  const context = (): number => 12;
+  const along = road('primary', [[0, 0], [300, 0]], true);
+  const across = road('minor', [[150, -80], [150, 80]], true);
+  const lone = waverleyLampSpots(file([along]), flat, context, []);
+  const both = waverleyLampSpots(file([along, across]), flat, context, []);
+  const half = (WAVERLEY_ROAD_WIDTH.minor as number) / 2;
+  const first = (spots: readonly LampSpot[]): LampSpot[] => spots.filter((s) => s.height === LAMP_RULES.primary?.height);
+  const nearby = (s: LampSpot): boolean => Math.abs(s.x - 150) < half + 0.3;
+  assert.ok(first(lone).some(nearby), 'a lamp would have stood in the other deck without it');
+  assert.deepEqual(first(both), first(lone).filter((s) => !nearby(s)), 'the deck\'s lamps, less the ones in the other deck\'s carriageway');
+  const second = both.filter((s) => s.height === LAMP_RULES.minor?.height);
+  assert.ok(second.length >= 4 && second.every((s) => Math.abs(s.z) >= (WAVERLEY_ROAD_WIDTH.primary as number) / 2 + 0.3 - 1e-9), 'and the other deck keeps out of this one\'s the same way');
+});
+
+test('sceneFootprints: the buildings, the roofs over the station and the platforms, in that order, a platform with no courtyard (what no lamp of the Scottish scene stands in)', () => {
+  const area = (id: string, x: number) => ({ id, outer: square(x, 0, x + 5, 5), holes: [square(x + 1, 1, x + 2, 2)] });
+  const feet = sceneFootprints({
+    buildings: [area('b1', 0), area('b2', 10)] as never,
+    roofs: [area('r1', 20)] as never,
+    platforms: [{ id: 'p1', path: square(30, 0, 36, 4) }, { id: 'p2', path: square(40, 0, 46, 4) }] as never,
+  });
+  assert.equal(feet.length, 5);
+  assert.deepEqual(feet.map((f) => f.box[0]), [0, 10, 20, 30, 40], 'buildings, roofs, platforms');
+  assert.deepEqual(feet.map((f) => f.holes.length), [1, 1, 1, 0, 0], 'a building keeps its courtyards, a platform has none');
+  assert.deepEqual(feet[3]?.outer, square(30, 0, 36, 4), 'a platform is its path');
+  assert.deepEqual(sceneFootprints({ buildings: [], roofs: [], platforms: [] }), []);
+});
+
 test('waverleyLampSpots on the real roads: some thousand lamps, sodium and warm and no cool, standing on the ground clear of every building, the decks\' lamps on the decks, the same every time', () => {
   const sceneFile = json('waverley-scene.json');
   const data = unpackWaverleyScene(sceneFile);
@@ -189,6 +263,10 @@ test('waverleyLampSpots on the real roads: some thousand lamps, sodium and warm 
   const roads = json('waverley-lamp-roads.json') as LampRoadsFile;
   const spots = waverleyLampSpots(roads, ground, context, footprintsOf(rings));
   assert.ok(spots.length >= 900 && spots.length <= 1300, `${spots.length} lamps`);
+  // the footprints the lazy chunk keeps the lamps out of are these rings: every building, every roof and every platform (compared as a boolean: a failing deepEqual of them would print the city)
+  assert.equal(rings.length, data.buildings.length + data.roofs.length + data.platforms.length);
+  assert.ok(data.roofs.length > 0 && data.platforms.length > 0, 'the scene has roofs and platforms');
+  assert.ok(isDeepStrictEqual(sceneFootprints(data), footprintsOf(rings)), 'the lazy chunk\'s footprints are the buildings, the roofs and the platforms');
   const kinds = new Set(spots.map((s) => s.kind));
   assert.ok(kinds.has(LAMP_KIND.sodium) && kinds.has(LAMP_KIND.warm) && !kinds.has(LAMP_KIND.cool));
   assert.ok(spots.every((s) => s.mast === undefined && s.height >= 5 && s.height <= 10));
@@ -225,7 +303,16 @@ test('loadWaverleyLamps: the lazy chunk makes the lamps of the real roads: a pos
     assert.ok(lamps >= 900 && lamps <= 1300, `${lamps} lamps`);
     assert.equal(draws, 3, 'the posts, the halos and the pools (no masts here)');
     assert.ok(triangles >= lamps * 36 && triangles < 80_000, `${triangles} triangles`);
-    assert.equal(lights.group.getObjectByName('forecourt-masts'), undefined, 'the forecourt\'s masts are London\'s');
+    assert.ok(lights.group.getObjectByName('forecourt-masts') === undefined, 'the forecourt\'s masts are London\'s');
+    // the lamps on the ground stand on the drawn ground (here zero) and the lamps on the bridges on the DTM-drawn decks (the context): a few lamps are up on the decks, the rest at zero
+    const posts = lights.group.getObjectByName('street-lamp-posts') as THREE.InstancedMesh;
+    const [matrix, at] = [new THREE.Matrix4(), new THREE.Vector3()];
+    let ground = 0;
+    for (let i = 0; i < posts.count; i++) {
+      posts.getMatrixAt(i, matrix);
+      if (Math.abs(at.setFromMatrixPosition(matrix).y) < 1e-6) ground++;
+    }
+    assert.ok(ground >= lamps - 40 && ground < lamps, `${ground} of ${lamps} lamps stand on the drawn ground (zero), the rest on the decks`);
     const halos = lights.group.getObjectByName('street-lamp-halos') as THREE.Points;
     const pools = lights.group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
     assert.equal(halos.visible, false);

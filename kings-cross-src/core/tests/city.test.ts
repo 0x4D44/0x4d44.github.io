@@ -20,7 +20,7 @@ import {
   windOutward,
 } from '../city.ts';
 import type { BuildingFacts, CityData, CityRoad, CityKey, FacadeKey, RawCityElement, V2, V3 } from '../city.ts';
-import { LAMP_KERB, LAMP_RULES } from '../streetlights.ts';
+import { LAMP_KERB, LAMP_KIND, LAMP_RULES } from '../streetlights.ts';
 import type { LampRule } from '../streetlights.ts';
 
 const city: CityData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-city.json', import.meta.url), 'utf8'));
@@ -1250,6 +1250,61 @@ test('buildCity: street lamps stand a kerb outside a street on its walking surfa
     if (l.x >= 0 && l.x <= 300) assert.ok(Math.abs(l.z) - half >= 0.3 - 1e-9, `lamp at ${l.x.toFixed(1)}, ${l.z.toFixed(1)} is ${(Math.abs(l.z) - half).toFixed(2)} m from the first street's carriageway`);
     if (l.z >= -100 && l.z <= 100) assert.ok(Math.abs(l.x - 150) - half2 >= 0.3 - 1e-9, `lamp at ${l.x.toFixed(1)}, ${l.z.toFixed(1)} is ${(Math.abs(l.x - 150) - half2).toFixed(2)} m from the second street's carriageway`);
   }
+});
+
+test('buildCity: street lamps stand a kerb outside a street, each road its own luck from its number: roads of one class and length, side by side, do not have the same first lamp or the same light (round seven)', () => {
+  const along = (id: number, z: number, cls: CityRoad['cls'] = 'secondary', x0 = 0): CityRoad => ({ id, cls, pts: [[x0, z], [x0 + 300, z]] });
+  const build = (roads: CityRoad[]) => buildCity([], { ...emptyCity, roads }, { groundY: 0 });
+  const firsts = new Set<number>();
+  for (let id = 1; id <= 12; id++) firsts.add(Math.round(Math.min(...build([along(id, 0)]).lamps.map((l) => l.x)) * 1000));
+  assert.ok(firsts.size >= 8, `${firsts.size} different distances to the first lamp in 12 roads of one class and length`);
+  // set side by side (far enough apart not to be in each other's way) a road keeps the lamps it has on its own, and the roads' lights are not all one
+  const roads = Array.from({ length: 40 }, (_, k) => along(k + 1, k * 100, 'minor', 1500));
+  const together = build(roads);
+  const kinds = new Set<number>();
+  for (const [k, r] of roads.entries()) {
+    const mine = together.lamps.filter((l) => Math.abs(l.z - k * 100) < 20);
+    const alone = build([r]).lamps;
+    assert.equal(JSON.stringify(mine), JSON.stringify(alone), `road ${r.id} has the lamps it has alone`);
+    for (const l of mine) kinds.add(l.kind);
+    assert.ok(mine.every((l) => l.kind === (mine[0] as (typeof mine)[number]).kind), `road ${r.id}: one light all along an old street`);
+  }
+  assert.ok(kinds.has(LAMP_KIND.sodium) && kinds.has(LAMP_KIND.warm) && !kinds.has(LAMP_KIND.cool), `forty old streets, some sodium and some warm white and none cool: ${[...kinds]}`);
+});
+
+test('buildCity: no lamp stands within 0.3 m of any other road\'s carriageway, to its edge and a margin (a lamp 0.45 m outside it stays), whatever the road, but a path or a cycleway is no carriageway (round seven)', () => {
+  const build = (roads: CityRoad[]) => buildCity([], { ...emptyCity, roads }, { groundY: 0 });
+  const cross: CityRoad = { id: 2, cls: 'secondary', pts: [[150, -100], [150, 100]] };
+  const lamps = build([cross]).lamps.filter((l) => Math.abs(l.z) < 50);
+  assert.ok(lamps.length >= 4, `${lamps.length} lamps well inside the cross street's run`);
+  const there = (list: readonly { x: number; z: number }[], l: { x: number; z: number }): boolean => list.some((m) => Math.hypot(m.x - l.x, m.z - l.z) < 1e-6);
+  for (const l of lamps.slice(0, 3)) {
+    for (const cls of ['trunk', 'primary', 'secondary', 'tertiary', 'minor', 'service', 'pedestrian', 'path', 'cycleway'] as const) {
+      const half = roadWidth({ cls }).width / 2;
+      const carriageway = cls !== 'path' && cls !== 'cycleway';
+      // a street that runs along x, at `off` from the lamp across its carriageway
+      const stands = (off: number): boolean => there(build([cross, { id: 1, cls, pts: [[0, l.z - off], [300, l.z - off]] }]).lamps, l);
+      const free = !carriageway;
+      assert.equal(stands(0), free, `${cls}: a lamp on its middle line stands only if it is no carriageway`);
+      assert.equal(stands(half * 0.5), free, `${cls}: a lamp half way to the edge`);
+      assert.equal(stands(half + 0.15), free, `${cls}: a lamp 0.15 m outside the edge`);
+      assert.equal(stands(half + 0.45), true, `${cls}: a lamp 0.45 m outside the edge stands`);
+      assert.equal(stands(-half - 0.45), true, `${cls}: nor is a lamp 0.45 m outside the edge on the street's other side in the way`);
+    }
+  }
+});
+
+test('buildCity: street lamps stand a kerb outside a street, white in the new King\'s Cross Central (warm on its streets, cool on its walkways and service ways) and sodium or warm in the old streets by each road\'s luck (round seven)', () => {
+  const build = (roads: CityRoad[]) => buildCity([], { ...emptyCity, roads }, { groundY: 0 });
+  const streets = (cls: CityRoad['cls'], x0: number, z0: number): CityRoad[] => Array.from({ length: 30 }, (_, k) => ({ id: k + 1, cls, pts: [[x0, z0 + k * 15], [x0 + 200, z0 + k * 15]] as Pt[] }));
+  const kinds = (roads: CityRoad[]) => new Set(build(roads).lamps.map((l) => l.kind));
+  const inside = KXC_BOX.minX + 50;
+  assert.ok(inKxCentral([inside, KXC_BOX.minZ + 50]) && inKxCentral([inside + 200, KXC_BOX.minZ + 50 + 29 * 15]), 'the test streets are inside the quarter');
+  assert.deepEqual([...kinds(streets('minor', inside, KXC_BOX.minZ + 50))], [LAMP_KIND.warm], 'thirty streets in the new quarter: all warm white');
+  assert.deepEqual([...kinds(streets('service', inside, KXC_BOX.minZ + 50))], [LAMP_KIND.cool], 'its service ways: cool');
+  assert.deepEqual([...kinds(streets('pedestrian', inside, KXC_BOX.minZ + 50))], [LAMP_KIND.cool], 'its walkways: cool');
+  const old = kinds(streets('minor', 1500, KXC_BOX.minZ + 50));
+  assert.ok(old.has(LAMP_KIND.sodium) && old.has(LAMP_KIND.warm) && !old.has(LAMP_KIND.cool), `the same streets out of it: some sodium, some warm, none cool: ${[...old]}`);
 });
 
 test('the real city: about a thousand lamps, none in a building or in an excluded polygon, each on the pavement layer, repeatably', () => {

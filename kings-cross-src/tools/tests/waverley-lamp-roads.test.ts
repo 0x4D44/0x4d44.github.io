@@ -51,6 +51,25 @@ test('the lean file holds every line of the lit classes, bridges apart, and noth
   assert.ok(has([218.5, 344], [224, 362]) && has([-92.5, 418.5], [-96.5, 406.5]) && has([190, -194], [209.5, -200]), 'South Bridge, George IV Bridge and Waterloo Place');
 });
 
+test('leanRoads: a line of one point is no road, a class the lamps do not stand along is left out, and the classes come out in the tool\'s order whatever order the source met them in', () => {
+  const made = leanRoads({
+    attribution: 'a', licence: 'l', frame: 'f', extent: { x0: 0, z0: 0, x1: 100, z1: 100 },
+    roads: [
+      { id: 'w1', highway: 'residential', path: [[1, 2]] }, // a point is no road
+      { id: 'w2', highway: 'service', path: [[0, 0], [10, 0]] }, // not a lit class
+      { id: 'w3', highway: 'footway', path: [[0, 0], [10, 0]] },
+      { id: 'w4', highway: 'pedestrian', path: [[0, 0], [10, 0]] },
+      { id: 'w5', highway: 'primary', path: [[0, 0], [20, 0]], bridge: true },
+      { id: 'w6', highway: 'primary', path: [[5, 5], [25, 5]] },
+      { id: 'w7', highway: 'residential', path: [[5, 9], [25, 9]] },
+      { id: 'w8', highway: 'pedestrian', path: [[1, 1], [2, 1]], bridge: true },
+    ],
+  });
+  assert.deepEqual(Object.keys(made.ways), ['primary', 'minor', 'pedestrian'], 'the lit classes of the ground, in the tool\'s order, not the source\'s (pedestrian came first)');
+  assert.deepEqual(Object.keys(made.bridges), ['primary', 'pedestrian'], 'and of the decks');
+  assert.deepEqual(decodeLampRoads(made).map((r) => [r.cls, r.bridge, r.line.length]), [['primary', false, 2], ['minor', false, 2], ['pedestrian', false, 2], ['primary', true, 2], ['pedestrian', true, 2]], 'a line of one point and the unlit classes are not in it');
+});
+
 test('the lean file keeps OpenStreetMap\'s attribution and licence, says where it comes from, and holds no id, name or tag: only classes, decks and lines', () => {
   assert.equal(lean.attribution, source.attribution);
   assert.equal(lean.licence, source.licence);

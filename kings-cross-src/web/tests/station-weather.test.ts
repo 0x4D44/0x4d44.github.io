@@ -6,6 +6,7 @@ import { CLEAR_FOG, describeSun, fogRange, lampLevelFor } from '../../core/dayli
 import { solarPosition } from '../../core/solar.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
 import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
+import { TEXTURES, WALL_CELL } from '../src/materials.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
@@ -414,11 +415,20 @@ const compileOf = (m: THREE.Material): string => {
 
 test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone is floodlit from the foot of its body and of its tower and its dials glow, each material alone, and the function it returns puts them all back (round seven)', () => {
   const { group, walls, facade, tower, dials } = nightMeshes();
-  const before = [walls, facade, tower, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile }));
+  const before = [walls, facade, tower, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile, version: lambertOf(mesh).version }));
   const undo = lightWaverleyNight(group);
   const w = lambertOf(walls), f = lambertOf(facade), t = lambertOf(tower), d = lambertOf(dials);
   assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
   assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
+  // the walls' windows are in cells over the sandstone's own tile (materials.ts TEXTURES.stone, which their map repeats): the map's unit is a tile, so the grid is the tile over the cell, along the wall and up it
+  const wallTile = String(w.defines?.WALL_TILE).replace('vec2', '').match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g)?.map(Number) ?? [];
+  assert.ok(wallTile.length === 2 && Math.abs(wallTile[0]! - TEXTURES.stone.tile[0] / WALL_CELL[0]) < 1e-9 && Math.abs(wallTile[1]! - TEXTURES.stone.tile[1] / WALL_CELL[1]) < 1e-9,
+    `the walls' grid is the stone's tile ${TEXTURES.stone.tile} over the cell ${WALL_CELL}: ${w.defines?.WALL_TILE}`);
+  // each patched or flooded material is built again (three compiles a program again only for a new version): the tower's and the dials' by the flood alone
+  const patched = [walls, facade, tower, dials].map((mesh, i) => {
+    assert.ok(lambertOf(mesh).version > before[i]!.version, `${mesh.name} is recompiled with the night's patch`);
+    return lambertOf(mesh).version;
+  });
   // the stone is lit from where the ground is under it: the lowest point of each mesh (the body 5 m up and 4 m tall: its foot is 3 m up; the tower 30 m up: its foot is 28 m)
   assert.equal(f.defines?.FLOOD, 'vec4( 0.08, 30.0, 0.5, 3.0 )', 'the body: a dim warm masonry');
   assert.equal(t.defines?.FLOOD, 'vec4( 0.02, 30.0, 0.5, 28.0 )', 'the tower: its shaft darker still');
@@ -442,14 +452,16 @@ test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone
     assert.equal(m.defines, before[i]!.defines, `${mesh.name}: its defines, as they were`);
     assert.equal(m.customProgramCacheKey(), before[i]!.key, `${mesh.name}: its key`);
     assert.equal(m.onBeforeCompile, before[i]!.compile, `${mesh.name}: its patch`);
+    assert.ok(m.version > patched[i]!, `${mesh.name}: built again as it was put back`);
   });
-  // a scene without them, or whose materials are not Lambert (a basic one has no emissive term to add to), is left alone, with nothing to undo
+  // a scene without them, or whose materials are not Lambert (a basic one has no emissive term to add to), is left alone, with nothing to undo (it is looked at while the night is on: the undo would put it right)
   const empty = new THREE.Group();
   const basic = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
   basic.name = 'waverley-building-walls';
   empty.add(basic);
-  assert.doesNotThrow(() => lightWaverleyNight(empty)());
-  assert.equal((basic.material as THREE.MeshBasicMaterial).defines, undefined);
+  const undoBasic = lightWaverleyNight(empty);
+  assert.ok((basic.material as THREE.MeshBasicMaterial).defines === undefined && basic.material.version === 0 && basic.material.customProgramCacheKey() === new THREE.MeshBasicMaterial().customProgramCacheKey(), 'a basic material is not patched while the night is on');
+  assert.doesNotThrow(undoBasic);
   assert.doesNotThrow(() => lightWaverleyNight(new THREE.Group())());
 });
 
@@ -559,7 +571,7 @@ async function lampsIn(scene: THREE.Object3D): Promise<THREE.Group> {
     if (group) return group as THREE.Group;
     await new Promise((resolve) => setTimeout(resolve, 20));
   }
-  throw new Error('the Scottish street lamps did not come into the scene');
+  return assert.fail('the Scottish street lamps did not come into the scene');
 }
 
 test('the Scottish scene has its street lamps a moment after it: dark by day, lit at the sky\'s own lamp level through the dusk and the night, and none left when its climate ends', async () => {
@@ -572,10 +584,10 @@ test('the Scottish scene has its street lamps a moment after it: dark by day, li
     return climate.atmosphere.state()!.rig.lampLevel;
   };
   try {
-    assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'not there with the scene: a lazy chunk');
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'not there with the scene: a lazy chunk');
     assert.equal(at('2026-11-09T12:00:00Z'), 0, 'noon');
     const group = await lampsIn(view.scene);
-    assert.equal(group.parent, view.scene, 'in the scene it was made for');
+    assert.ok(group.parent === view.scene, 'in the scene it was made for');
     const halos = group.getObjectByName('street-lamp-halos') as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
     const pools = group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
     assert.ok(halos && pools && pools.count >= 900, `a pool to each of ${pools?.count} lamps`);
@@ -594,9 +606,15 @@ test('the Scottish scene has its street lamps a moment after it: dark by day, li
     assert.equal(at('2026-11-10T12:00:00Z'), 0);
     assert.deepEqual([halos.visible, pools.visible], [false, false], 'dark again by day');
     at('2026-11-09T23:00:00Z');
+    // the climate takes its lamps with it: out of the scene, and every geometry freed (the posts, the glow, the pools), once (assert.ok on identities: a failure of assert.equal would print the scene)
+    let freed = 0;
+    group.traverse((o) => (o as THREE.Mesh).geometry?.addEventListener('dispose', () => freed++));
     climate.dispose();
-    assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'the climate takes its lamps with it');
-    assert.equal(group.parent, null);
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'the climate takes its lamps with it');
+    assert.ok(group.parent === null, 'out of the scene');
+    assert.equal(freed, 3, 'the geometry of the posts, of the glow and of the pools freed');
+    climate.dispose();
+    assert.equal(freed, 3, 'and once');
   } finally { climate.dispose(); view.dispose(); }
 });
 
@@ -631,7 +649,23 @@ test('a climate that ends before its lamps have loaded leaves the scene without 
     await settled();
     assert.equal(freed, 3, 'and once');
     assert.ok(!added.includes('street-lamps'), `added late: ${added}`);
-    assert.equal(view.scene.getObjectByName('street-lamps'), undefined);
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'and none in the scene');
+  } finally { THREE.BufferGeometry.prototype.dispose = dispose; view.dispose(); }
+});
+
+test('a Scottish climate that ended before it ever ran can still be updated (a frame in flight as a scene goes): it has no sky to give its lamps a level from, and says nothing to them', async () => {
+  const { view } = await viewOf();
+  const dispose = THREE.BufferGeometry.prototype.dispose;
+  let freed = 0;
+  THREE.BufferGeometry.prototype.dispose = function (this: THREE.BufferGeometry) { freed++; dispose.call(this); };
+  try {
+    const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+    climate.dispose();
+    assert.doesNotThrow(() => climate.update(frame()), 'no sky was ever worked out');
+    assert.ok(climate.atmosphere.state() === null, 'and none is now');
+    // the lamps the ended climate began to load are freed as they come (the geometry of the layer is not left allocated, and does not reach the next test's count)
+    for (let waited = 0; waited < 10_000 && freed < 3; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+    await settled();
   } finally { THREE.BufferGeometry.prototype.dispose = dispose; view.dispose(); }
 });
 
@@ -647,7 +681,7 @@ test('a scene with no ground to stand lamps on has none, and no complaint; lamps
     const controlClimate = createWaverleyWeather(control.view, sceneWeatherOptions('clear', null));
     try {
       await lampsIn(control.view.scene); // a scene with ground has its lamps: by then any the first was to have, begun earlier, has come
-      assert.equal(view.scene.getObjectByName('street-lamps'), undefined, 'no terrain, no lamps');
+      assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'no terrain, no lamps');
       assert.deepEqual(warned, [], 'and nothing to say about it');
     } finally { controlClimate.dispose(); control.view.dispose(); climate.dispose(); }
     // a ground that throws: no lamps, the scene as it was, and the reason told
@@ -659,7 +693,7 @@ test('a scene with no ground to stand lamps on has none, and no complaint; lamps
       assert.equal(warned.length, 1, 'one warning');
       assert.match(String(warned[0]?.[0]), /Waverley street lamps unavailable/);
       assert.match(String(warned[0]?.[1]), /no ground/);
-      assert.equal(view.scene.getObjectByName('street-lamps'), undefined);
+      assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'and none in the scene');
       second.update(frame());
       assert.ok(view.scene.getObjectByName('sun-disc'), 'the rest of the climate goes on');
     } finally { second.dispose(); }

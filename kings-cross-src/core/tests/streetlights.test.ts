@@ -86,6 +86,11 @@ test('lampSpots: a service road\'s lamps all stand on one side (the side is the 
 
 test('lampSpots: none near the end of a run, none on a run that is too short, and none where blocked says so (whose own road is passed to it)', () => {
   assert.deepEqual(lampSpots([run({ line: [[0, 0], [LAMP_MIN_RUN - 0.1, 0]] })], ctx()), [], 'a run under the minimum has no lamp');
+  // the end margins alone leave room for a lamp on a run a hair under the minimum (9 m to 10.9 m of a 19.9 m one), so for some roads' luck the minimum is what keeps it bare
+  const roomy = (id: number, length: number): number => lampSpots([run({ id, cls: 'trunk', line: [[0, 0], [length, 0]] })], ctx()).length;
+  const withRoom = Array.from({ length: 200 }, (_, id) => id).filter((id) => roomy(id, LAMP_MIN_RUN) > 0);
+  assert.ok(withRoom.length >= 10, `${withRoom.length} of 200 roads have their first lamp in the room a minimum run leaves`);
+  for (let id = 0; id < 200; id++) assert.equal(roomy(id, LAMP_MIN_RUN - 0.1), 0, `road ${id}: a run of ${LAMP_MIN_RUN - 0.1} m has no lamp, whatever its luck`);
   assert.deepEqual(lampSpots([run({ line: [[0, 0]] })], ctx()), [], 'a point is no road');
   const short = lampSpots([run({ line: [[0, 0], [60, 0]] })], ctx());
   assert.ok(short.length >= 1 && short.every((s) => s.x >= LAMP_END_MARGIN && s.x <= 60 - LAMP_END_MARGIN), `${short.map((s) => s.x)} all clear of the ends`);
@@ -105,6 +110,11 @@ test('lampSpots: the same lamps every time, a road of its own luck, and a bend i
   assert.deepEqual(lampSpots([run()], ctx()), a, 'repeatable');
   const other = lampSpots([run({ id: 6 })], ctx());
   assert.notDeepEqual(other.map((s) => s.x), a.map((s) => s.x), 'another road, other places');
+  // the first lamp of a road stands its own distance in from the end (a margin and up to half a spacing: each road's own luck), not the margin for all of them
+  const spacing = (LAMP_RULES.tertiary as LampRule).spacing;
+  const firsts = Array.from({ length: 30 }, (_, id) => (lampSpots([run({ id: id + 1 })], ctx())[0] as { x: number }).x);
+  assert.ok(firsts.every((x) => x >= LAMP_END_MARGIN - 1e-9 && x <= LAMP_END_MARGIN + spacing / 2 + 1e-9), `every first lamp is within half a spacing of the margin: ${firsts}`);
+  assert.ok(new Set(firsts.map((x) => x.toFixed(3))).size >= 20, `and at each road's own distance: ${new Set(firsts.map((x) => x.toFixed(3))).size} different in 30 roads`);
   // a street that turns a right angle at (100, 0): a lamp on the first leg is 4.1 m from it in z, one on the second 4.1 m in x, and the road has both
   const bent = lampSpots([run({ cls: 'primary', line: [[0, 0], [100, 0], [100, 100]] })], ctx());
   const onFirst = bent.filter((s) => s.x <= 100 && Math.abs(Math.abs(s.z) - 4.1) < 1e-9);
@@ -131,9 +141,12 @@ test('lampSpots: a lamp stands on the surface it is given and the pool lies in t
   }
   // a surface that is a function of the way along and the way across (the drape of a bridge deck): along the street it rises 0.02 a metre and across it, to the right of travel, 0.01
   const deck = lampSpots([run({ y: (_x, _z, along, across) => 0.02 * along + 0.01 * across })], ctx());
+  assert.ok(deck.length >= 8, `${deck.length} lamps on the deck`);
   for (const s of deck) {
     close(s.slope[0], 0.02, 1e-9, 'rise along the street (east)');
     close(s.slope[1], -0.01, 1e-9, 'rise to the right of travel, which is north of an eastbound street');
+    // the post stands at the kerb, 4.1 m across from the line (to the right of travel, which is north, z < 0, on an eastbound street), so the surface's height there is 0.02 a metre along and 0.01 a metre across
+    close(s.y, 0.02 * s.x - 0.01 * s.z, 1e-9, 'the height is the surface\'s at the foot of the post, across from the line, not at the line');
   }
   assert.deepEqual(lampSpots([run({ y: 1.25 })], ctx()).map((s) => [s.y, ...s.slope]).filter(([y, a, b]) => y !== 1.25 || a !== 0 || b !== 0), [], 'a level surface has no slope');
 });
@@ -146,6 +159,8 @@ test('lampKind: a repeatable share of the old streets is sodium and the rest war
   };
   close(share('primary', LAMP_KIND.sodium), 0.8, 0.07, 'a main road is mostly sodium');
   close(share('trunk', LAMP_KIND.sodium), 0.8, 0.07, 'and a trunk road');
+  close(share('secondary', LAMP_KIND.sodium), 0.8, 0.07, 'and a secondary road');
+  close(share('tertiary', LAMP_KIND.sodium), 0.55, 0.08, 'a tertiary road is a side street');
   close(share('minor', LAMP_KIND.sodium), 0.55, 0.08, 'a side street about half');
   close(share('service', LAMP_KIND.sodium), 0.55, 0.08, 'and a service road');
   assert.equal(share('pedestrian', LAMP_KIND.warm), 1, 'a pedestrian street is warm white');

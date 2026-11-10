@@ -52,15 +52,17 @@ LANES = {
     'lamps': Lane(['core/tests/streetlights.test.ts', 'web/tests/streetlights.test.ts', 'web/tests/waverley-lamps.test.ts', 'tools/tests/waverley-lamp-roads.test.ts']),
     'windows': Lane(['web/tests/windows-night.test.ts']),
     # the tests round seven added to files that were there before it
-    'city': Lane(['core/tests/city.test.ts'], ['street lamps stand a kerb outside a street', 'the real city: about a thousand lamps']),
+    'city': Lane(['core/tests/city.test.ts'], ['street lamps stand a kerb outside a street', 'no lamp stands within 0.3 m of any other road', 'the real city: about a thousand lamps']),
     'flood': Lane(['web/tests/lighting.test.ts'], ['addRoofShade: a material with the FLOOD define']),
-    'landmarks': Lane(['web/tests/landmarks.test.ts'], ['windowId: a number of 0 to', 'addGlass: the flat shape of a window', "Midland Grand: the lit pane's windows"]),
+    'landmarks': Lane(['web/tests/landmarks.test.ts'], ['windowId: a number of 0 to', 'addGlass: the flat shape of a window', "Midland Grand: the lit pane's windows", "the Midland's kinds of window each put lit glass",
+                                                         "Midland Grand: the clock tower's lantern is open to the night", "Midland Grand: the front's brick and its stone are floodlit"]),
     'night': Lane(['web/tests/night.test.ts'], ['attach: a layer is handed the level']),
     'atmosphere': Lane(['web/tests/atmosphere.test.ts'], ["a scene's own haze", 'fogFar: the range', 'the windows of the city light with the lamps']),
     'weather': Lane(['web/tests/station-weather.test.ts'], [
         'lightWaverleyNight: the city blocks get lit windows', 'the meshes the Scottish night lights are the ones the real scene builds', "the Balmoral's windows are the facade texture's",
         'the Scottish climate lights the Scottish night', 'the Scottish scene has its street lamps a moment after it', 'a lamp layer that arrives after dusk comes in lit',
-        'a climate that ends before its lamps have loaded', 'a scene with no ground to stand lamps on has none', "the Scottish clear air is hazier than London's"]),
+        'a climate that ends before its lamps have loaded', 'a Scottish climate that ended before it ever ran can still be updated', 'a scene with no ground to stand lamps on has none',
+        "the Scottish clear air is hazier than London's"]),
     # the squeeze of the build: a hook must find three's own text and nothing the page wrote (tools/tests/three-squeeze*.test.ts); only the two tests that scan the page's hooks are judged here
     # (the rest of the squeeze tests belong to lighting.py, which must see each of them fail)
     'hooks': Lane(['tools/tests/three-squeeze.test.ts', 'tools/tests/three-squeeze-hooks.test.ts'],
@@ -84,6 +86,7 @@ W = Where(STREETWEB, 'lamps')  # the lamps' drawing
 SC = Where(LAMPS, 'lamps')  # the Scottish lamps' places
 SL = Where(LAMPS, 'lamps', 'weather')  # the Scottish lamps' loading, which the scene's tests run end to end
 B = Where(BUILD, 'lamps')
+HK = Where(MATERIALS, 'hooks')  # a hook of the windows, judged on the squeezed text of three's programs
 
 MUTATIONS = []
 
@@ -250,7 +253,7 @@ MUTATIONS += [
     ('the lamps\' luck is the same for every road', SC, 'rand: hash01,', 'rand: () => 0.5,'),
     ('the buildings\' roofs let a lamp stand under them', SL, '...data.buildings, ...data.roofs, ', '...data.buildings, '),
     ('the platforms let a lamp stand on them', SL, ', ...data.platforms.map((p) => ({ outer: p.path, holes: [] }))]', ']'),
-    ('the lamps stand on the context ground and the decks on the drawn one', SL, 'waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), footprints)', 'waverleyLampSpots(roads.default as unknown as LampRoadsFile, (x, z) => context.heightAt(x, z), drawn, footprints)'),
+    ('the lamps stand on the context ground and the decks on the drawn one', SL, 'waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data))', 'waverleyLampSpots(roads.default as unknown as LampRoadsFile, (x, z) => context.heightAt(x, z), drawn, sceneFootprints(data))'),
     # ---- tools/build-waverley-lamp-roads.ts
     ('the lean file lights a service road', B, "'minor', 'pedestrian'];", "'minor', 'pedestrian', 'service'];"),
     ('the lean file leaves the pedestrian ways out', B, "'minor', 'pedestrian'];", "'minor'];"),
@@ -362,6 +365,10 @@ MUTATIONS += [
     # ---- the uniform's declaration is found by the uniforms' sign, not by a search of the text (the build squeezes three's text: tools/tests/three-squeeze*.test.ts)
     ('a wall\'s night is declared where a search of the text finds it', Where(MATERIALS, 'hooks'), 'const declared = shader.uniforms.uWinNight !== undefined;', "const declared = shader.fragmentShader.includes('uniform float uWinNight');"),
     ('a flooded wall\'s night is declared where a search of the text finds it', Where(LIGHTING, 'hooks'), 'const declared = shader.uniforms.uWinNight !== undefined;', "const declared = shader.fragmentShader.includes('uniform float uWinNight');"),
+    # three hooks anchored on three's own indentation (a tab in front of an include, which the build's squeeze takes away): each lands on the program as three wrote it and not on the squeezed one the page ships
+    ('a lit pane\'s glow is anchored on three\'s indentation', HK, r"""'#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan""", r"""'\t#include <map_fragment>', `\t#include <map_fragment>\nvec2 wSpan"""),
+    ('a lit pane\'s vertex shader is anchored on three\'s indentation', HK, r"""'#include <begin_vertex>', '#include <begin_vertex>\nvWinUv = uv;'""", r"""'\t#include <begin_vertex>', '\t#include <begin_vertex>\nvWinUv = uv;'"""),
+    ('a facade\'s lit windows are anchored on three\'s indentation', HK, r"""'#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL""", r"""'\t#include <map_fragment>', `\t#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL"""),
     # ---- the floodlight's define and the facades' glass
     ('a floodlit wall loses its other defines', WIN, 'm.defines = { ...m.defines, FLOOD:', 'm.defines = { FLOOD:'),
     ('a floodlight\'s reach is its strength', WIN, 'FLOOD: `vec4( ${glslFloat(strength)}, ${glslFloat(reach)}, ${glslFloat(floor)}, ${glslFloat(base)} )`', 'FLOOD: `vec4( ${glslFloat(reach)}, ${glslFloat(strength)}, ${glslFloat(floor)}, ${glslFloat(base)} )`'),
@@ -402,13 +409,14 @@ MUTATIONS += [
 
 # ------------------------------------------------------------------------------------------------ web/src/lighting.ts: the floodlight (FLOOD) and its share of the night
 FL = Where(LIGHTING, 'flood', 'windows')
+FLH = Where(LIGHTING, 'flood', 'windows', 'hooks')  # the floodlight's night, which the hooks test sees in the squeezed programs of the scene's floodlit walls
 FLG = "totalEmissiveRadiance += diffuseColor.rgb * vec3( 1.0, 0.82, 0.5 ) * uWinNight * ${FLOOD}.x * mix( ${FLOOD}.z, 1.0, exp( -max( ( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y - ${FLOOD}.w, 0.0 ) / ${FLOOD}.y ) );"
 MUTATIONS += [
     ('a material with no floodlight reads the night', FL, 'const flooded = material.defines?.[FLOOD] !== undefined;', 'const flooded = true;'),
     ('a floodlit material does not read the night', FL, 'const flooded = material.defines?.[FLOOD] !== undefined;', 'const flooded = false;'),
-    ('a floodlit wall is not given the night', FL, '    if (flooded) shader.uniforms.uWinNight = windowNight;\n', ''),
-    ('a floodlit wall\'s night is declared a second time', FL, 'if (flooded && !declared) fragment', 'if (flooded) fragment'),
-    ('a floodlit wall\'s night is not declared', FL, "    if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\\nuniform float uWinNight;');\n", ''),
+    ('a floodlit wall is not given the night', FLH, '    if (flooded) shader.uniforms.uWinNight = windowNight;\n', ''),
+    ('a floodlit wall\'s night is declared a second time', FLH, 'if (flooded && !declared) fragment', 'if (flooded) fragment'),
+    ('a floodlit wall\'s night is not declared', FLH, "    if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\\nuniform float uWinNight;');\n", ''),
     ('a floodlit wall\'s night is declared when an earlier patch has not', FL, 'const declared = shader.uniforms.uWinNight !== undefined;', 'const declared = true;'),
     ('a floodlit wall\'s night is declared when an earlier patch has', FL, 'const declared = shader.uniforms.uWinNight !== undefined;', 'const declared = false;'),
     ('the floodlight glows by day', FL, FLG, FLG.replace(' * uWinNight', '')),
@@ -437,7 +445,7 @@ MUTATIONS += [
     ('a lancet has no lit glass', LM, "addGlass(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);", "addWindow(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);"),
     ('an arch has no lit glass', LM, "addGlass(part(parts, 'pane'), p, y, w, h, 'round', 0.1);", "addWindow(part(parts, 'pane'), p, y, w, h, 'round', 0.1);"),
     ('the clock tower\'s lantern has no lit glass', LM, "addGlass(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);", "addWindow(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);"),
-    ('the Midland\'s panes are not lit', LM, "const pane = litPane(tint('pane', [0.05, 0.08, 0.125]));", "const pane = tint('pane', [0.05, 0.08, 0.125]);"),
+    ('the Midland\'s panes are not lit', Where(LANDMARKS, 'landmarks', 'hooks'), "const pane = litPane(tint('pane', [0.05, 0.08, 0.125]));", "const pane = tint('pane', [0.05, 0.08, 0.125]);"),
     ('the Midland\'s brick is not floodlit', LM, 'const brickRed = floodLit(footShaded(tint(\'brickRed\', midlandBrick)), ...MIDLAND_FLOOD.brick);', "const brickRed = footShaded(tint('brickRed', midlandBrick));"),
     ('the Midland\'s stone is not floodlit', LM, "const stone = floodLit(footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain])), ...MIDLAND_FLOOD.stone);", "const stone = footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]));"),
 ]
@@ -470,7 +478,8 @@ MUTATIONS += [
     ('a carriageway the lamps keep clear of is a line', CC, 'reach: roadWidth(r).width / 2 });\n  }\n  const lamps', 'reach: 0 });\n  }\n  const lamps'),
     ('no street is in the new quarter', CC, 'modern: inKxCentral,', 'modern: () => false,'),
     ('the city gives back no lamps', CC, 'return { meshes: acc, trees, lamps, stats };', 'return { meshes: acc, trees, lamps: [], stats };'),
-    ('the city\'s lamps are built when it is told none', CC, 'const lamps = opts.lamps === false ? [] : lampSpots(', 'const lamps = lampSpots('),
+    # the two guards cover for each other (a run is collected only when lamps are asked for, and the lamps are made only then): either one gone alone changes nothing, so both go together
+    ('the city\'s lamps are built when it is told none', CC, [('const lamps = opts.lamps === false ? [] : lampSpots(', 'const lamps = lampSpots('), ('if (opts.lamps !== false) lampRuns.push(', 'lampRuns.push(')]),
     ('the page asks for no lamps', WC, 'lamps: opts.lamps !== false, rails:', 'lamps: false, rails:'),
     ('the page stands no masts', WC, ': [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];', ': [...built.lamps];'),
     ('the masts stand on the flat plane on the real ground', WC, '(x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y', '() => GROUND_Y'),
@@ -537,9 +546,9 @@ MUTATIONS += [
     ('the lamps are not freed when the climate ends', SW, '      layer?.dispose();\n', ''),
     ('the climate does not light the night', SW, '  const night = lightWaverleyNight(scene);\n', '  const night = () => undefined;\n'),
     ('the climate does not make the lamps', SW, '  const lamps = waverleyLamps(view);\n', '  const lamps = { setLevel: (_: number) => undefined, dispose: () => undefined };\n'),
-    ('the lamps are not given the sky\'s level', SW, '      lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 0);\n', ''),
-    ('the lamps follow the daylight', SW, 'lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 0);', 'lamps.setLevel(climate.atmosphere.state()?.rig.daylight ?? 0);'),
-    ('the lamps are lit before the sky is known', SW, 'lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 0);', 'lamps.setLevel(climate.atmosphere.state()?.rig.lampLevel ?? 1);'),
+    ('the lamps are not given the sky\'s level', SW, '      if (sky) lamps.setLevel(sky.rig.lampLevel);\n', ''),
+    ('the lamps follow the daylight', SW, 'if (sky) lamps.setLevel(sky.rig.lampLevel);', 'if (sky) lamps.setLevel(sky.rig.daylight);'),
+    ('the lamps are given a level when there is no sky', SW, 'if (sky) lamps.setLevel(sky.rig.lampLevel);', 'lamps.setLevel(sky!.rig.lampLevel);'),
     ('the night is left patched when the climate ends', SW, '      night();\n', ''),
     ('the lamps are left when the climate ends', SW, '      lamps.dispose();\n', ''),
     # ---- the haze

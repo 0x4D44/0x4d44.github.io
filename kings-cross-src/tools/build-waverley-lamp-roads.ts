@@ -36,8 +36,9 @@ export function leanRoads(source: RoadsSource): LampRoadsFile {
     roads.push({ cls, bridge: way.bridge === true, line: way.path });
   }
   const packed = encodeLampRoads(roads, STEP);
-  // the classes in a fixed order, so the file does not change with the order the source met them in
-  const inOrder = (group: LampRoadsFile['ways']): LampRoadsFile['ways'] => Object.fromEntries(LAMP_CLASSES.filter((cls) => group[cls]).map((cls) => [cls, group[cls]]));
+  // the classes in a fixed order, so the file does not change with the order the source met them in (which classes are in is the filter above's business alone)
+  const rank = (cls: string): number => LAMP_CLASSES.indexOf(cls as RoadClass);
+  const inOrder = (group: LampRoadsFile['ways']): LampRoadsFile['ways'] => Object.fromEntries(Object.entries(group).sort(([a], [b]) => rank(a) - rank(b)));
   return {
     attribution: source.attribution,
     licence: source.licence,

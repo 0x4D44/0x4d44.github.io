@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CITY_PAINTERS, CITY_TEXTURES, cityMaterial, DECAL_GLASS, FACADE_GLASS, litPane, litWalls, material, PAINTERS, PANE_UV, paneUv, TEXTURES, WALL_CELL, WALL_RECT, windowNight } from '../src/materials.ts';
+import { CITY_PAINTERS, CITY_TEXTURES, cityMaterial, DECAL_GLASS, FACADE_GLASS, floodLit, litPane, litWalls, material, PAINTERS, PANE_UV, paneUv, TEXTURES, WALL_CELL, WALL_RECT, windowKey, windowNight } from '../src/materials.ts';
 import type { CityMaterialName } from '../src/materials.ts';
 import { Glsl } from './glsl.ts';
 import type { Env, Value } from './glsl.ts';
@@ -22,24 +22,33 @@ const numbers = (define: string | undefined): number[] => {
   return (m[1] as string).split(', ').map(Number);
 };
 
-// The night's GLSL as the shaders carry it: from its first function to the next include, in the shader of any lit facade.
-const block = ((): string => {
-  const f = compile(cityMaterial('stock')).fragmentShader;
-  const a = f.indexOf('float winHash(');
-  assert.ok(a > 0, 'the night functions are in the shader');
-  return f.slice(a, f.indexOf('#include', a));
-})();
-const glsl = new Glsl(block);
+// The night's GLSL as the shaders carry it: from its first function to the next include, in the shader of any lit facade. It is taken on first use, inside a test: a shader that lacks it fails the tests
+// that run it, by an assertion, and does not stop this file from loading (a file that cannot load is a crash, which no mutation is judged killed by).
+let interpreter: Glsl | undefined;
+const night = (): Glsl => {
+  if (!interpreter) {
+    const f = compile(cityMaterial('stock')).fragmentShader;
+    const a = f.indexOf('float winHash(');
+    assert.ok(a > 0, 'the night functions are in the shader');
+    interpreter = new Glsl(f.slice(a, f.indexOf('#include', a)));
+  }
+  return interpreter;
+};
 const env: Env = { vars: {} };
 const call = (name: string, ...args: Value[]): number[] => {
-  const v = glsl.call(name, args, env);
+  const v = night().call(name, args, env);
   return (Array.isArray(v) ? v : [v as number]) as number[];
 };
 
 const defineOf = (m: THREE.Material, name: string): string | undefined => (m.defines as Record<string, string> | undefined)?.[name];
-const HOUSE = numbers(defineOf(cityMaterial('stock'), 'WIN_MODE'));
-const CURTAIN = numbers(defineOf(cityMaterial('glass'), 'WIN_MODE'));
-const SHOP = numbers(defineOf(cityMaterial('shop'), 'WIN_MODE'));
+/** How a kind of facade's windows are lit, from the define its material carries; empty where it carries none (the test of the defines says so: this must not stop the file from loading). */
+const modeOf = (key: CityMaterialName): number[] => {
+  const d = defineOf(cityMaterial(key), 'WIN_MODE');
+  return d === undefined ? [] : numbers(d);
+};
+const HOUSE = modeOf('stock');
+const CURTAIN = modeOf('glass');
+const SHOP = modeOf('shop');
 const STOCK_RECT = [...FACADE_GLASS.stock];
 /** One window of a facade lit by `winTile`: its cell, where in the cell, the pixel's span in cells (small: the window's own light; large: the far mean), the building's seed, the night's level. */
 const tile = (cell: [number, number], o: { f?: [number, number]; w?: number; seed?: number; night?: number; rect?: number[]; mode?: number[]; glass?: number } = {}): number[] =>
@@ -63,6 +72,7 @@ test('the night\'s uniform is one shared object, 0 by day, and every lit materia
     assert.equal(s.uniforms.uWinNight, windowNight, `${name}: the uniform IS the shared object, so setting windowNight.value reaches the shader`);
     assert.ok(s.fragmentShader.includes('uniform float uWinNight;'), `${name}: declared`);
     assert.equal(s.fragmentShader.split('uniform float uWinNight;').length, 2, `${name}: declared once`);
+    assert.equal(s.fragmentShader.split('float winHash(').length, 2, `${name}: carries the night's functions, once`);
     assert.ok(s.fragmentShader.includes('if ( uWinNight > 0.003 )') || s.fragmentShader.includes('uWinNight > 0.003 )'), `${name}: by day (under a few thousandths) the glow is not computed at all`);
     assert.ok(!/\b(uTime|uClock|time|iTime)\b/.test(s.fragmentShader), `${name}: no clock in the shader, so no window can flicker`);
     assert.ok(s.fragmentShader.indexOf('totalEmissiveRadiance +=') > 0, `${name}: the light is an emissive term, no lamp in the scene`);
@@ -87,6 +97,19 @@ test('each kind of facade is lit as its own sort of wall: the panes the painters
   assert.deepEqual(['stock', 'glass', 'shop'].map((k) => cityMaterial(k as CityMaterialName).customProgramCacheKey()), ['glassVaries-tile', 'glassVaries-curtain', 'glassVaries-tile']);
   assert.equal(material('sash').customProgramCacheKey(), 'glassVaries-quad');
   assert.equal(litPane(new THREE.MeshLambertMaterial()).customProgramCacheKey(), 'litPane');
+});
+
+test('winPane: the glass is the pane r of the cell, its edge a pixel wide and never sharper than a few thousandths of the cell (a pixel finer than that is not a step)', () => {
+  const [x0, x1, y0, y1] = STOCK_RECT as [number, number, number, number];
+  const pane = (f: [number, number], w: number): number => call('winPane', f, STOCK_RECT, [w, w])[0] as number;
+  close(pane([0.5 * (x0 + x1), 0.5 * (y0 + y1)], 0.001), 1, 1e-12, 'inside the glass');
+  for (const f of [[x0 - 0.05, 0.5], [x1 + 0.05, 0.5], [0.5, y0 - 0.05], [0.5, y1 + 0.05]] as [number, number][]) close(pane(f, 0.001), 0, 1e-12, `outside it at ${f}`);
+  // a wide pixel: the edge is its width each side and a point on the line is half lit
+  close(pane([x0, 0.5], 0.01), 0.5, 1e-9, 'half lit on the line');
+  close(pane([x0 + 0.005, 0.5], 0.01), 0.84375, 1e-9, 'three quarters of the way across the edge: smoothstep of 0.75');
+  // a pixel finer than a few thousandths of the cell still has an edge that wide (0.002 each side), so the glass is never a hard step: 0.75 of the way across it, whatever the pixel
+  for (const w of [0.0005, 0.0001]) close(pane([x0 + 0.001, 0.5], w), 0.84375, 1e-9, `a pixel of ${w} of the cell`);
+  close(pane([x1 - 0.001, 0.5], 0.0005), 0.84375, 1e-9, 'and on the far side');
 });
 
 test('winHash: a number of 0 to 1 from a cell, a seed and a salt, repeatable and spread evenly, with a stream of its own for each salt', () => {
@@ -249,6 +272,16 @@ test('from far, a window\'s light is the mean of its building\'s: one steady glo
   assert.ok(level(m(0.5, 0.5)) > 0 && level(m(0.5, 0.5)) < level(m(1, 0.5)), 'rising');
   assert.ok(level(m(1, 0.6)) > level(m(1, 0.2)), 'and with the share lit');
   assert.ok(level(m(1, 0.5)) < 0.5, 'a faint glow, not a lit sheet');
+  // the mean follows the building's share of dark floors (a dark floor takes its share of the light away) and its share of cool white (all cool is blue over red, none is red over blue)
+  const lightFloors = call('winMean', 1, 0.5, 0, 0.2), darkFloors = call('winMean', 1, 0.5, 0.4, 0.2);
+  darkFloors.forEach((v, i) => close(v, 0.6 * (lightFloors[i] as number), 1e-12, 'a building with 40 in a hundred of its floors dark glows 0.6 of one with none'));
+  const warmMean = call('winMean', 1, 0.5, 0, 0), coolMean = call('winMean', 1, 0.5, 0, 1);
+  assert.ok((warmMean[0] as number) > (warmMean[2] as number) && (coolMean[2] as number) > (coolMean[0] as number), `no cool windows: ${warmMean}; all cool: ${coolMean}`);
+  // the pixel's span is the larger of its two sides: a wall seen edge on (long along it, fine across it) is far all the same, whichever side is the long one
+  const nearOwn = tile([2, 2]), farMean = tile([2, 2], { w: 0.9 });
+  assert.notDeepEqual(nearOwn, farMean, 'a window up close is not the mean');
+  assert.deepEqual(call('winTile', [2.5, 2.5], [0.9, 0.001], 0.37, 1, STOCK_RECT, HOUSE, 1), farMean, 'long along u');
+  assert.deepEqual(call('winTile', [2.5, 2.5], [0.001, 0.9], 0.37, 1, STOCK_RECT, HOUSE, 1), farMean, 'long along v');
   // in between, near to far, the light moves smoothly from the window's own to the mean: no step at any span
   let last = level(tile([2, 2], { w: 0.001 }));
   for (const w of [0.02, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8]) {
@@ -287,6 +320,13 @@ test('a decal window (a sash drawn once over a quad) is lit from four smooth num
   close(bare / blinded, 0.55, 1e-9, 'the room without a blind');
   // only the glass
   assert.deepEqual(decal([0, 0.5, 0.5, 0.5], 1, 0, [DECAL_GLASS[0] - 0.05, 0.5]), [0, 0, 0], 'the surround is stone');
+  // from far a decal's window is its building's mean glow over the glass of the quad (a share of the glass's rectangle: less than the whole of it, which the window's frame and sill take some of)
+  const farDecal = decal([0.1, 0.5, 0.5, 0.5], 1, 0, [0.5, 0.5], 0.9);
+  const meanGlow = call('winMean', 1, 0.3 + 0.4 * 0.5, 0, 0.1);
+  const quad = (DECAL_GLASS[1] - DECAL_GLASS[0]) * (DECAL_GLASS[3] - DECAL_GLASS[2]);
+  assert.deepEqual(farDecal.map((v) => v > 0), [true, true, true]);
+  farDecal.forEach((v, i) => assert.ok(v > 0.5 * quad * (meanGlow[i] as number) && v < 0.95 * quad * (meanGlow[i] as number), `far glow ${i}: ${v} of the quad's ${quad * (meanGlow[i] as number)}`));
+  assert.deepEqual(decal([0.9, 0.2, 0.7, 0.5], 1, 0, [0.5, 0.5], 0.9), farDecal, 'and the same for every window of the building');
 });
 
 test('the Midland Grand\'s lit pane: a window\'s number is floor( u ), the same all over its glass, about three in ten are lit, and the windows of a pane differ from one another', () => {
@@ -316,6 +356,13 @@ test('the Midland Grand\'s lit pane: a window\'s number is floor( u ), the same 
   // a share of one lights them all, of zero none (the share is the one thing the material gives it)
   assert.ok(level(lit(...paneUv(7, 0.5, 0.5), 1, 1)) > 0.01 && level(lit(...paneUv(9, 0.5, 0.5), 1, 1)) > 0.01);
   assert.deepEqual(lit(...paneUv(7, 0.5, 0.5), 1, 0), [0, 0, 0]);
+  // from far every window of the pane is the mean of the pane's windows (a share of the whole pane's light: less than the mean of a building's wall, the pane's glass being less of it), the same for all
+  const nearSeven = lit(...paneUv(7, 0.5, 0.5), 1, 1), nearNine = lit(...paneUv(9, 0.5, 0.5), 1, 1);
+  assert.notDeepEqual(nearSeven, nearNine, 'up close two windows are two lights');
+  const farSeven = lit(...paneUv(7, 0.5, 0.5), 1, 1, 0.9), farNine = lit(...paneUv(9, 0.5, 0.5), 1, 1, 0.9);
+  assert.deepEqual(farSeven, farNine, 'from far they are one glow');
+  const paneMean = call('winMean', 1, 1, 0, 0.1);
+  farSeven.forEach((v, i) => assert.ok(v > 0.5 * (paneMean[i] as number) && v < 0.95 * (paneMean[i] as number), `far glow ${i}: ${v} of the mean's ${paneMean[i]}`));
 });
 
 test('paneUv: a window\'s number and its way across the glass in u, minus one minus its way up in v; a number is the whole part of u all across the glass, to the last pixel', () => {
@@ -343,6 +390,10 @@ test('litPane: only a window (v under zero) is lit, the rest of the material is 
   assert.ok(s.fragmentShader.indexOf('#include <map_fragment>') < s.fragmentShader.indexOf('totalEmissiveRadiance += WIN_GAIN'), 'after the map, so the emissive term is the last word');
   assert.equal((m.defines as Record<string, string>).WIN_GAIN, '0.8');
   assert.equal(m.customProgramCacheKey(), 'litPane');
+  const kept = new THREE.MeshLambertMaterial();
+  kept.defines = { KEEP: '1' };
+  litPane(kept);
+  assert.deepEqual(Object.keys(kept.defines as object).sort(), ['KEEP', 'WIN_GAIN'], 'the defines the pane had stay');
   // the pixel's span is the number's own units: u is spread over 0.8 of a window's number, so a window is 0.8 wide in u
   assert.ok(s.fragmentShader.includes('vWinUv.x / 0.8'), 'the span of a pane, in windows');
 });
@@ -429,7 +480,9 @@ test('litWalls: a plain wall\'s windows are lit from its map\'s UVs and its buil
   m.onBeforeCompile = () => { priorRan++; };
   const priorKey = m.customProgramCacheKey(); // three's default is the text of the patch itself
   m.defines = { PRIOR: '1' };
+  const compiled = m.version;
   const undo = litWalls(m, [1.2, 0.6]);
+  assert.ok(m.version > compiled, 'the material is recompiled for its windows');
   assert.deepEqual(Object.keys(m.defines).sort(), ['PRIOR', 'WALL_TILE', 'WALL_WIN', 'WIN_GAIN', 'WIN_MODE', 'WIN_RECT']);
   assert.deepEqual(numbers(defineOf(m, 'WALL_TILE')), [1.2 / WALL_CELL[0], 0.6 / WALL_CELL[1]], 'the map\'s tile over the window\'s cell');
   assert.deepEqual(numbers(defineOf(m, 'WIN_RECT')), [...WALL_RECT]);
@@ -452,7 +505,9 @@ test('litWalls: a plain wall\'s windows are lit from its map\'s UVs and its buil
   assert.equal(both.uniforms.uWinNight, windowNight);
   assert.equal(both.fragmentShader.split('uniform float uWinNight;').length, 2, 'declared once');
   assert.equal(both.fragmentShader.split('float winHash(').length, 2, 'and the night functions, once, though the other patch did not bring them');
+  const patched = m.version;
   undo();
+  assert.ok(m.version > patched, 'and again when they are taken away');
   assert.deepEqual(m.defines, { PRIOR: '1' }, 'the defines are back');
   assert.equal(m.customProgramCacheKey(), priorKey, 'and the key');
   priorRan = 0;
@@ -462,13 +517,8 @@ test('litWalls: a plain wall\'s windows are lit from its map\'s UVs and its buil
 });
 
 /** A wall material's lit-window snippet, run: the shader's lines for `WALL_WIN`, its defines the material's (USE_MAP and USE_COLOR are what the real material would add), as a function of the pixel. */
-function wallRunner(m: THREE.MeshLambertMaterial): (over: { night?: number; colour?: number; map?: [number, number]; normal?: number[]; span?: number }) => number[] {
-  const f = compile(m).fragmentShader;
-  const start = f.indexOf('#if defined( WALL_WIN )');
-  assert.ok(start > 0, 'the walls\' windows are in the shader');
-  const snippet = f.slice(start, f.indexOf('#endif', f.indexOf('winTile( wv', start)) + '#endif'.length); // to the endif that closes the block: the first after its call
-  // a preprocessor for the lines of the snippet
-  const defines = { ...(m.defines as Record<string, string>), USE_MAP: '', USE_COLOR: '' };
+/** A snippet's lines with the preprocessor run over them: `#if defined( ... )` (all the names), `#ifdef`, `#else` and `#endif` against `defines`, and each define's value written in where its name is used. */
+function preprocess(snippet: string, defines: Record<string, string>): string {
   const keep: boolean[] = [true];
   const body: string[] = [];
   for (const line of snippet.split('\n')) {
@@ -481,11 +531,23 @@ function wallRunner(m: THREE.MeshLambertMaterial): (over: { night?: number; colo
   }
   let text = body.join('\n');
   for (const [k, v] of Object.entries(defines)) if (v !== '') text = text.replace(new RegExp(`\\b${k}\\b`, 'g'), v);
-  text = text.replace('viewMatrix[ 1 ].xyz', 'uUp').replace('fwidth( wv )', 'uSpan');
   assert.ok(!text.includes('#'), `a snippet with no preprocessor left: ${text}`);
+  return text;
+}
+
+/** A wall material's lit-window snippet, run: the shader's lines for `WALL_WIN`, its defines the material's (USE_MAP and USE_COLOR are what the real material would add; `map: false` is a material with no map), as a function of the pixel. */
+function wallRunner(m: THREE.MeshLambertMaterial, { map = true }: { map?: boolean } = {}): (over: { night?: number; colour?: number; map?: [number, number]; normal?: number[]; span?: number }) => number[] {
+  const f = compile(m).fragmentShader;
+  const start = f.indexOf('#if defined( WALL_WIN )');
+  assert.ok(start > 0, 'the walls\' windows are in the shader');
+  const snippet = f.slice(start, f.indexOf('#endif', f.indexOf('winTile( wv', start)) + '#endif'.length); // to the endif that closes the block: the first after its call
+  const kept = preprocess(snippet, { ...(m.defines as Record<string, string>), ...(map ? { USE_MAP: '' } : {}), USE_COLOR: '' });
+  if (kept.trim() === '') return () => [0, 0, 0]; // nothing of the windows is left to run
+  assert.ok(kept.includes('fwidth( wv )') && kept.includes('viewMatrix[ 1 ].xyz'), 'the wall\'s pixel span is that of its grid of cells (wv), and its up is the view\'s');
+  const text = kept.replace('viewMatrix[ 1 ].xyz', 'uUp').replace('fwidth( wv )', 'uSpan');
   return (over) => {
     const vars: Record<string, Value> = { uWinNight: over.night ?? 1, vColor: [over.colour ?? 0.55, 0.5, 0.5], vMapUv: over.map ?? [0.5, 0.5], normal: over.normal ?? [1, 0, 0], uUp: [0, 1, 0], uSpan: [over.span ?? 0.001, over.span ?? 0.001], totalEmissiveRadiance: [0, 0, 0] };
-    glsl.run(text, { vars });
+    night().run(text, { vars });
     return vars.totalEmissiveRadiance as number[];
   };
 }
@@ -523,6 +585,9 @@ test('litWalls, run: the wall\'s windows are in cells of 3 by 3.3 m, a building\
   assert.ok(other > 50, `another building, another pattern: ${other} of 400 differ`);
   // the number is quantised: a tone that wanders by a thousandth is the same building
   assert.deepEqual(run({ colour: 0.5502, map: [3, 3] }), run({ colour: 0.5498, map: [3, 3] }));
+  // a wall with no map has no windows: they are in the texture's cells, and there is none to count them by
+  const bare = wallRunner(m, { map: false });
+  assert.deepEqual(cells.map((_, i) => bare({ map: [(Math.floor(i / 20) + 0.5) * 2.5, (i % 20 + 0.5) * 5.5] })).filter((v) => level(v) > 0), [], 'nothing is lit');
   // far away the windows are the building's mean glow, the same in every cell
   const farRun = (c: number, r: number): number[] => run({ map: [(c + 0.5) * 2.5, (r + 0.5) * 5.5], span: 0.9 });
   assert.deepEqual(farRun(1, 1), farRun(6, 8), 'the same glow for every window of a distant block');
@@ -573,4 +638,125 @@ test('litWalls with a grid of its own (the Balmoral\'s, round seven): the cell, 
   // the undo puts the material back as it was
   undo();
   assert.deepEqual(m.defines, { KEEP: '1' });
+});
+
+/** What a material's patch puts after `#include <map_fragment>`, up to the next include, with the preprocessor run over it (`preprocess`). */
+function afterMap(m: THREE.Material, defines: Record<string, string>): string {
+  const f = compile(m).fragmentShader;
+  const mark = '#include <map_fragment>\n';
+  const at = f.indexOf(mark);
+  assert.ok(at > 0, 'the material\'s patch follows the map');
+  const from = at + mark.length;
+  return preprocess(f.slice(from, f.indexOf('#include', from)), defines);
+}
+/** A texel of the facade's glass (blue over red: a `gShare` of 1) and of its wall (grey: 0). */
+const GLASS_TEXEL = [0.3, 0.42, 0.6, 1];
+const WALL_TEXEL = [0.5, 0.5, 0.5, 1];
+
+/** A facade's windows, run: the lines `glassVaries` puts after the map, as a function of the pixel (its map UV, its span in tiles, the building's vertex colour, the colour of the texel). */
+function tileRunner(key: CityMaterialName): (over: { night?: number; colour?: number[]; map?: [number, number]; span?: number; diffuse?: number[] }) => number[] {
+  const m = cityMaterial(key);
+  const kept = afterMap(m, { ...(m.defines as Record<string, string>), USE_COLOR: '' });
+  assert.ok(kept.includes('fwidth( vMapUv )'), 'a facade\'s pixel span is its map\'s');
+  const text = kept.replace('fwidth( vMapUv )', 'uSpan');
+  return (over) => {
+    const vars: Record<string, Value> = { uWinNight: over.night ?? 1, vColor: over.colour ?? [0.55, 0.5, 0.5], vMapUv: over.map ?? [0.5, 0.5], uSpan: [over.span ?? 0.001, over.span ?? 0.001], diffuseColor: over.diffuse ?? GLASS_TEXEL, totalEmissiveRadiance: [0, 0, 0] };
+    night().run(text, { vars });
+    return vars.totalEmissiveRadiance as number[];
+  };
+}
+
+test('a facade\'s shader, run: its windows are the building\'s own (by its colour), only the texture\'s glass is lit up close, and from far the whole wall is the building\'s mean glow', () => {
+  const run = tileRunner('stock');
+  const at = (c: number, r: number): [number, number] => [c + 0.5, r + 0.5];
+  let lit: [number, number] | null = null;
+  for (let c = 0; c < 30 && !lit; c++) if (level(run({ map: at(c, 2) })) > 0.2) lit = at(c, 2);
+  assert.ok(lit, 'a lit window to measure');
+  // up close the glass of the texture is lit and the bars are a third as bright (the glass share of the texel is what tells them apart)
+  const glass = run({ map: lit as [number, number], diffuse: GLASS_TEXEL });
+  const wall = run({ map: lit as [number, number], diffuse: WALL_TEXEL });
+  assert.ok(level(glass) > 0.2);
+  glass.forEach((v, i) => close(wall[i] as number, 0.3 * v, 1e-12, 'where the texture is not glass a near pixel takes 0.3 of the light'));
+  // another building (another colour) lights other windows
+  let other = 0;
+  for (let c = 0; c < 30; c++) for (let r = 0; r < 20; r++) if ((level(run({ map: at(c, r) })) > 0.01) !== (level(run({ map: at(c, r), colour: [0.31, 0.5, 0.5] })) > 0.01)) other++;
+  assert.ok(other > 60, `another building, another pattern: ${other} of 600 windows differ`);
+  // from far every window of the wall is the building's mean, the same everywhere on it
+  const far = (c: number, r: number): number[] => run({ map: at(c, r), span: 0.9 });
+  assert.deepEqual(far(1, 1), far(6, 8), 'one glow for a distant wall');
+  assert.ok(level(far(1, 1)) > 0, 'and it is a glow');
+  assert.notDeepEqual(run({ map: at(1, 1) }), far(1, 1), 'up close a window is not the mean');
+  assert.deepEqual(run({ map: lit as [number, number], night: 0 }), [0, 0, 0], 'dark by day');
+});
+
+/** A decal's windows, run: the lines `glassVaries` puts after the map for a quad, as a function of the window's corner in the world (the quad is 1.4 m by 1.9 m, along x and y), the point of it the pixel is at (UV) and the pixel's span. */
+function quadRunner(): (over: { at: [number, number, number]; night?: number; uv?: [number, number]; span?: number }) => number[] {
+  const m = material('sash');
+  let text = afterMap(m, m.defines as Record<string, string>);
+  for (const [from, to] of [
+    ['vec3 gDx = dFdx( vWinPos ), gDy = dFdy( vWinPos );', 'vec3 gDx = uDxPos;\nvec3 gDy = uDyPos;'],
+    ['vec2 gUx = dFdx( vMapUv ), gUy = dFdy( vMapUv );', 'vec2 gUx = uDxUv;\nvec2 gUy = uDyUv;'],
+    ['fwidth( vMapUv )', 'uSpan'],
+  ] as const) {
+    assert.ok(text.includes(from), `a decal's shader reads ${from}`);
+    text = text.replace(from, to);
+  }
+  const s = 0.001; // the pixel in UV: the screen's x runs along the quad's u, its y against v
+  return (over) => {
+    const uv = over.uv ?? [0.5, 0.5];
+    const vars: Record<string, Value> = {
+      uWinNight: over.night ?? 1, vMapUv: uv, vWinPos: [over.at[0] + uv[0] * 1.4, over.at[1] + uv[1] * 1.9, over.at[2]],
+      uDxUv: [s, 0], uDyUv: [0, -s], uDxPos: [1.4 * s, 0, 0], uDyPos: [0, -1.9 * s, 0], uSpan: [over.span ?? s, over.span ?? s],
+      diffuseColor: GLASS_TEXEL, totalEmissiveRadiance: [0, 0, 0],
+    };
+    night().run(text, { vars });
+    return vars.totalEmissiveRadiance as number[];
+  };
+}
+
+test('a decal\'s shader, run: each window is lit or dark by a number of its own corner and comes on at an hour of its own, and a blind brightens the glass below its edge', () => {
+  const run = quadRunner();
+  const corners: [number, number, number][] = [];
+  for (let i = 0; i < 20; i++) for (let j = 0; j < 20; j++) corners.push([i, 1.2, j]);
+  const full = corners.map((at) => run({ at }));
+  const lit = corners.filter((_, i) => level(full[i] as number[]) > 0.01);
+  assert.ok(lit.length > 0.35 * corners.length && lit.length < 0.85 * corners.length, `some windows are lit and some dark: ${lit.length} of ${corners.length}`);
+  // each window comes on at its own hour: at 0.6 of the night some of the lit ones are part way up and the rest are on
+  const still = lit.filter((at) => level(run({ at, night: 0.6 })) < 0.9 * level(run({ at }))).length;
+  assert.ok(still >= 0.15 * lit.length && still < lit.length, `${still} of ${lit.length} lit windows are still coming on at 0.6`);
+  assert.deepEqual(run({ at: lit[0] as [number, number, number], night: 0 }), [0, 0, 0], 'none by day');
+  // a blind: a window whose number is in the middle of its range has a blind drawn down from the top of its glass to an edge of its own, and the glass below the edge is darker. Normalised by the room's
+  // gradient up the glass, a window's light is flat but for the blind, and steps by the blind's share (0.55 to 1) at its edge.
+  const [gx0, gx1, gy0, gy1] = DECAL_GLASS;
+  const heights = Array.from({ length: 14 }, (_, k) => gy0 + (gy1 - gy0) * (0.04 + 0.92 * (k / 13)));
+  const steps = (at: [number, number, number]): number => {
+    const n = heights.map((y) => level(run({ at, uv: [0.5 * (gx0 + gx1), y] })) / (call('winRoom', y, [...DECAL_GLASS])[0] as number));
+    return Math.max(...n) / Math.min(...n);
+  };
+  const blinded: number[] = [], plain: number[] = [];
+  for (let i = 0; i < 600; i++) {
+    const at: [number, number, number] = [i * 0.43, 1.2, 0.7];
+    if (level(run({ at, uv: [0.5 * (gx0 + gx1), gy1 - 0.02] })) < 0.05) continue; // dark, or the glass's top in the shade of a very small number
+    const k = windowKey(...at);
+    if (k > 0.46 && k < 0.54) blinded.push(steps(at));
+    else if (k < 0.3 || k > 0.7) plain.push(steps(at));
+  }
+  assert.ok(blinded.length >= 5 && plain.length >= 20, `${blinded.length} windows with a blind in reach and ${plain.length} without to measure`);
+  assert.ok(blinded.filter((r) => r > 1.7 && r < 1.9).length >= 3, `blinds step the light by 1 / 0.55 across their edge: ${blinded.map((r) => r.toFixed(2))}`);
+  assert.ok(plain.every((r) => r < 1.0001), `a window without a blind is even: ${plain.filter((r) => r >= 1.0001)}`);
+});
+
+test('floodLit: the four numbers lighting.ts FLOOD reads, in its order (strength, reach, floor, the wall\'s foot), on a material that keeps the defines it had; the King\'s Cross front\'s brick and stone are floodlit, the stone the less', () => {
+  const m = new THREE.MeshLambertMaterial();
+  m.defines = { KEEP: '1' };
+  assert.ok(floodLit(m, 0.25, 14, 0.35, 5) === m, 'the material is returned');
+  assert.deepEqual(numbers(defineOf(m, 'FLOOD')), [0.25, 14, 0.35, 5]);
+  assert.equal(defineOf(m, 'KEEP'), '1', 'the other defines stay');
+  assert.deepEqual(numbers(defineOf(floodLit(new THREE.MeshLambertMaterial(), 0.1, 8, 0.5), 'FLOOD')), [0.1, 8, 0.5, 0], 'the foot is the ground, at 0, unless it is said');
+  // the front's materials
+  const [brick, stone] = (['brickFoot', 'stoneFoot'] as const).map((name) => numbers(defineOf(material(name), 'FLOOD')) as [number, number, number, number]);
+  for (const [name, [strength, reach, floor, base]] of [['brick', brick], ['stone', stone]] as const) {
+    assert.ok(strength > 0 && strength < 1 && reach > 5 && reach < 40 && floor > 0 && floor < 1 && base === 0, `the front's ${name} is floodlit: ${[strength, reach, floor, base]}`);
+  }
+  assert.ok(stone[0] < brick[0], 'the stone, which is the lighter and takes a light the more, has the less of it');
 });
