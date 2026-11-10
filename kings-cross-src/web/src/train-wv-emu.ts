@@ -323,7 +323,8 @@ function paintCivity(p: Spot, b: Body): Paint {
   if (p.y < 1.07) return { colour: 0x878c93 };
   const apex = 0.56;
   const rise = t < apex ? (t - 0.36) / (apex - 0.36) : (0.82 - t) / (0.82 - apex);
-  if (rise > 0 && p.y < 1.07 + 0.5 * rise) return { colour: TPE_PURPLE };
+  // (tpe397-05: the triangle's peak about at the windows' foot)
+  if (rise > 0 && p.y < 1.07 + 0.72 * rise) return { colour: TPE_PURPLE };
   if (p.y > 2.76 && p.y < 3.0 && t > 0.6 && t < 0.62 + 0.26 * (1 - (p.y - 2.76) / 0.24)) return { colour: TPE_CYAN };
   if (p.y > 1.12 && p.y < 1.42 && t > 0.72 + 0.1 * ((p.y - 1.12) / 0.3) && t < 0.95) return { colour: TPE_CYAN };
   if (p.y > 3.04 && p.y < 3.08) return { colour: 0xd0603a };
