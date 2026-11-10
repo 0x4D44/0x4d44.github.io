@@ -44,8 +44,14 @@ const UNDERFRAME = 0x2f2a25;
 const VALANCE_DARK = 0x1c1d20;
 const DISPLAY = 0x0d0e10;
 const DISPLAY_TEXT = 0xffa000;
-const CHROME = 0xb8bcc2;
-const GANGWAY_RUBBER = 0x1b1c1f;
+export const CHROME = 0xb8bcc2;
+export const GANGWAY_RUBBER = 0x1b1c1f;
+/**
+ * The 158's front gangway surround, in the cab's frame (metres): the opening `inner` either side of the middle, the rubber out to
+ * `outer`, from the sill up to the head (the opening's top) and on to its round-cornered top; `depth` out of the face, the inner lip
+ * `lip` wide and stepped 4 cm back. ASSUMED, read off scotrail158-05 at about 375 px to the metre.
+ */
+export const GANGWAY_158 = { inner: 0.4, outer: 0.56, sill: 0.92, head: 3.12, top: 3.38, radius: 0.12, depth: 0.14, lip: 0.03 } as const;
 
 const END_GAP = SCOTRAIL_DMU_END_GAP.value;
 /** The first loft column of the roof's shoulder (web/src/train.ts carSection: two bottom-corner points, four up the wall, then the shoulder). */
@@ -61,6 +67,38 @@ interface FaceShape {
   lens?: 'head' | 'tail';
   mirror?: boolean;
   inset?: number;
+  /** a solid: the outline stands this far out of its `lift` plane, with walls (a lens keeps every vertex of it in its range) */
+  proud?: number;
+  /** a solid's front face scaled about its middle by this (under 1: a domed lens), default 1 */
+  crown?: number;
+}
+
+/**
+ * Convex pieces covering the rectangle x0..x1, y0..y1 except a stadium (a pill: centre cx, cy, half-length hw, half-height hh, round
+ * ends), so a raised panel built of them leaves the pill as a true recess. Each round end is followed by `n` strips.
+ */
+function aroundPill(x0: number, x1: number, y0: number, y1: number, cx: number, cy: number, hw: number, hh: number, n = 6): [number, number][][] {
+  const out: [number, number][][] = [
+    [[x0, cy + hh], [x1, cy + hh], [x1, y1], [x0, y1]],
+    [[x0, y0], [x1, y0], [x1, cy - hh], [x0, cy - hh]],
+  ];
+  const end = (y: number): number => (hw - hh) + Math.sqrt(Math.max(0, hh * hh - (y - cy) * (y - cy)));
+  for (let i = 0; i < n; i++) {
+    const ya = cy - hh + (2 * hh * i) / n; const yb = cy - hh + (2 * hh * (i + 1)) / n;
+    out.push([[x0, ya], [cx - end(ya), ya], [cx - end(yb), yb], [x0, yb]]);
+    out.push([[cx + end(ya), ya], [x1, ya], [x1, yb], [cx + end(yb), yb]]);
+  }
+  return out;
+}
+
+/** The convex hull (counter-clockwise) of some points in a plane. */
+function hull2(pts: readonly (readonly [number, number])[]): [number, number][] {
+  const p = [...pts].map(([x, y]): [number, number] => [x, y]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: [number, number], a: [number, number], b: [number, number]): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower: [number, number][] = []; const upper: [number, number][] = [];
+  for (const q of p) { while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, q) <= 0) lower.pop(); lower.push(q); }
+  for (const q of [...p].reverse()) { while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, q) <= 0) upper.pop(); upper.push(q); }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
 /** One mass hung under a car's floor between the bogies. */
@@ -96,21 +134,38 @@ interface Look {
   buffers: boolean;
   gangwayFrame: boolean;
   underfloor: readonly PodItem[];
-  /** dark roof housings: from the cab end (a cab car) or the car's start; `cabOnly` only on a driving car */
   /** The white dot field on a cab's flank: the dots' pitch up the side (the columns are 0.87 of it apart), their radius at the front, and the share of it they lose by the field's rear. */
   whiteDots: { pitch: number; r0: number; shrink: number };
-  /**
-   * A cab car's roof housing behind the dome, in profile: from `s0` it ramps up over `ramp` to a low slab `low` tall, and at `step` it rises
-   * to a block `high` tall that runs to `s1` (metres from the cab end, heights over the crown), `half` either side of the middle line.
-   */
-  cabHousing?: { s0: number; ramp: number; step: number; s1: number; half: number; low: number; high: number; colour: number };
-  /** Louvre panels on both roof shoulders: one each side at each fraction `at` of the car's length, `length` long, `across` wide, crossed by `slats`; `phi` is where on the shoulder (radians up from the wall top). */
-  louvres?: { at: readonly number[]; length: number; across: number; slats: number; phi: number; panel: number; slat: number };
-  roofKit: readonly { name: string; s0: number; s1: number; half: number; height: number; colour: number; cabOnly?: boolean; fromEnd?: boolean; /** centre off the middle line (default 0) */ x?: number; /** one at +x and one at -x */ pair?: boolean }[];
+  /** The roof's equipment, each piece placed from the roof photographs (see RoofGear). */
+  roofGear: readonly RoofGear[];
+  /** The roof's panel seams across it, `pitch` apart, and a rain strip along each shoulder; both a shade darker than the roof. */
+  roofSeams: { pitch: number; colour: number };
 }
+
+/**
+ * One piece of roof equipment. Stations s0..s1 are metres from the cab end (the car's start on a car with no cab), or from the inner
+ * end with `fromEnd`; `cab` puts it only on driving cars. Across, x0..x1 are metres from the middle line with +x on the driver's right
+ * at the cab end (so a one-sided piece keeps its side of the real car when the rear car is turned round). Heights are over the crown.
+ *   - housing: a box with chamfered top edges along the car; `cap` a low round dome on it at station `at`
+ *   - scoop: a housing whose face toward the cab end is a dark open mouth
+ *   - louvred: a box whose inner-end face slopes, crossed by `slats` dark louvres, a dark mesh at its foot
+ *   - plate: a thin flat plate (a riveted base under a group)
+ *   - vents: a panel on one roof shoulder (`side` +1 or -1, `phi` radians up the shoulder from the wall top, `across` wide), `slots` dark openings along it
+ */
+type RoofGear = { name: string; s0: number; s1: number; colour: number; cab?: boolean; fromEnd?: boolean } & (
+  | { kind: 'housing' | 'scoop' | 'louvred' | 'plate'; x0: number; x1: number; h: number; chamfer?: number; dark?: number; slats?: number; cap?: { at: number; x: number; r: number; h: number } }
+  | { kind: 'vents'; side: 1 | -1; phi: number; across: number; slots: number; dark: number }
+);
 
 const box = (x0: number, x1: number, y0: number, y1: number, r = 0): [number, number][] => (r > 0 ? roundedRect(x0, x1, y0, y1, r, 3) : [[x1, y1], [x0, y1], [x0, y0], [x1, y0]]);
 const disc = (cx: number, cy: number, r: number, n = 16): [number, number][] => ellipse(cx, cy, r, r, n);
+/** A stadium (a pill): centre (cx, cy), half-length hw, half-height hh, round ends of radius hh; counter-clockwise. */
+const pill = (cx: number, cy: number, hw: number, hh: number, n = 10): [number, number][] => {
+  const out: [number, number][] = [];
+  for (let i = 0; i <= n; i++) { const a = -Math.PI / 2 + (Math.PI * i) / n; out.push([cx + (hw - hh) + hh * Math.cos(a), cy + hh * Math.sin(a)]); }
+  for (let i = 0; i <= n; i++) { const a = Math.PI / 2 + (Math.PI * i) / n; out.push([cx - (hw - hh) + hh * Math.cos(a), cy + hh * Math.sin(a)]); }
+  return out;
+};
 /** A flat-footed arch: from y0 up to y1 at the middle, its top a superellipse of half-width `hw` and exponent `p` (larger is squarer). */
 const arch = (hw: number, y0: number, y1: number, p: number, n = 48): [number, number][] => {
   const out: [number, number][] = [];
@@ -139,6 +194,10 @@ const bar = (a: readonly [number, number], b: readonly [number, number], w: numb
 const T = SCOTRAIL_DMU_FIGURES.turbostar;
 /** The 170's round lamp lenses on the face (cab's right; mirrored): centre and radius. ASSUMED, from scotrail170-01. */
 export const LAMP_170 = { head: { x: 0.93, y: 1.43, r: 0.11 }, tail: { x: 0.71, y: 1.35, r: 0.072 } } as const;
+/** The 170's silver lamp housing on the face (cab's right; mirrored): the convex hull of a round 35 mm wider than the headlight and one 28 mm wider than the tail lamp. ASSUMED. */
+export const LAMP_170_HOUSING = hull2([...disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r + 0.035, 24), ...disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r + 0.028, 24)]);
+/** How far the housing stands out of the face (metres). ASSUMED, read off scotrail170-01's shadowed edge. */
+export const LAMP_170_PROUD = 0.03;
 const TURBOSTAR: Look = {
   family: 'turbostar',
   nose: {
@@ -178,10 +237,11 @@ const TURBOSTAR: Look = {
     // each lamp cluster (scotrail170-01): a silver bezel of two overlapping rounds, a big round headlight outboard and a smaller round tail
     // lamp inboard and a little lower, wholly on the face (round 2's headlight ran off the face's edge and was cut to a D). Sizes and
     // places ASSUMED, read off the photograph's two clusters (near and far) against the 188 px/m face scale.
-    { name: 'lamp-bezel', outline: disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r + 0.035, 24), colour: CHROME, lift: 0.006, mirror: true },
-    { name: 'lamp-bezel', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r + 0.028, 24), colour: CHROME, lift: 0.006, mirror: true },
-    { name: 'headlight', outline: disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r, 24), lens: 'head', lift: 0.0105, mirror: true },
-    { name: 'tail-lamp', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r, 24), lens: 'tail', lift: 0.0105, mirror: true },
+    // one shaped silver housing round both lamps, standing out of the face (scotrail170-01; roof-170-cowd shows it from above: the hull
+    // of the two rounds), the lenses standing a little out of its front
+    { name: 'lamp-housing', outline: LAMP_170_HOUSING, colour: CHROME, lift: 0.006, proud: LAMP_170_PROUD, mirror: true },
+    { name: 'headlight', outline: disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r, 24), lens: 'head', lift: 0.006 + LAMP_170_PROUD + 0.001, proud: 0.008, mirror: true },
+    { name: 'tail-lamp', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r, 24), lens: 'tail', lift: 0.006 + LAMP_170_PROUD + 0.001, proud: 0.008, mirror: true },
     // the coupler's recess in the valance
     { name: 'recess', outline: box(-0.42, 0.42, 0.48, 1.0, 0.04), colour: RECESS, lift: 0.0015 },
   ],
@@ -214,17 +274,23 @@ const TURBOSTAR: Look = {
     { form: 'cooler', length: 1.9, half: 0.88, bottom: 0.46, colour: 0x4a4339 },
     { form: 'battery', length: 1.2, half: 0.72, bottom: 0.5, colour: 0x433d35 },
   ],
-  // the dark housing on the roof behind the dome (scotrail170-01: its front ramps up off the dome's crown, a low slab runs back over the
-  // cab, and a taller block stands at its rear over the cab's side window; every size ASSUMED, read off the photograph against the cab)
   whiteDots: { pitch: 0.118, r0: 0.05, shrink: 0.72 },
-  cabHousing: { s0: 1.2, ramp: 0.3, step: 1.85, s1: 2.4, half: 0.5, low: 0.06, high: 0.15, colour: 0x1d2028 },
-  // the louvre groups along both roof shoulders (scotrail170-01: dark slatted panels at intervals along the roof's edge; places and sizes ASSUMED)
-  // (phi: a vertex of the shoulder's polyline, carSection's j = 3 of 5, so the panel's middle lies on the drawn surface)
-  louvres: { at: [0.22, 0.5, 0.78], length: 0.6, across: 0.16, slats: 5, phi: (3 / 5) * (Math.PI / 2), panel: 0x2a2d35, slat: 0x15161a },
-  // an exhaust outlet near the inner end of every car (glimpsed on the roof line in scotrail170-01; identity and size ASSUMED)
-  roofKit: [
-    { name: 'exhaust', s0: 2.2, s1: 2.75, half: 0.22, height: 0.12, colour: 0x1a1b1e, fromEnd: true },
+  // The roof, from two overhead photographs of 170/4 cab cars (roof-170-cowd: 170473 from Cowdenbeath's footbridge; roof-170-nott:
+  // 170103 from Nottingham's car-park deck) with scotrail170-01's side view. Behind the dome: a small scoop open toward the cab, just to
+  // the driver's right of the middle, and a long slatted grille on the driver's-left shoulder; then a broad, low, flat-topped housing a
+  // little to the right of the middle with a small round cap at its rear, and beside it on the right shoulder a panel of small square
+  // vents; further panels of square vents on the right shoulder near each car's ends and at its middle. Stations read through the
+  // footbridge view's perspective (the spacing of the repeated vent panels against the 70.85 m unit); widths against the roof's width
+  // at each station. Every size and place ASSUMED to that reading.
+  roofGear: [
+    { name: 'cab-scoop', kind: 'scoop', cab: true, s0: 1.85, s1: 2.3, x0: 0.2, x1: 0.58, h: 0.12, chamfer: 0.03, colour: 0x2a2e38, dark: 0x0b0c0e },
+    { name: 'cab-grille', kind: 'vents', cab: true, s0: 1.9, s1: 2.9, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.14, slots: 9, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'cab-roof-unit', kind: 'housing', cab: true, s0: 2.7, s1: 4.1, x0: -0.45, x1: 0.66, h: 0.1, chamfer: 0.04, colour: 0x2a2e38, cap: { at: 3.85, x: 0.22, r: 0.13, h: 0.05 } },
+    { name: 'cab-vents', kind: 'vents', cab: true, s0: 2.6, s1: 3.6, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-middle', kind: 'vents', s0: 11.3, s1: 12.3, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-inner', kind: 'vents', fromEnd: true, s0: 0.9, s1: 1.9, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
   ],
+  roofSeams: { pitch: 2.0, colour: 0x232c47 },
 };
 
 // --- the Class 158 Express Sprinter -----------------------------------------------------------------------------------------
@@ -262,22 +328,24 @@ const SPRINTER: Look = {
     { name: 'screen-surround', outline: box(0.55, 1.27, 1.74, 3.24, 0.1), colour: 0xe0ac16, lift: 0.0015, mirror: true, inset: 0.03 },
     { name: 'screen-frame', outline: box(0.6, 1.22, 1.79, 3.19, 0.07), colour: FRAME, lift: 0.003, mirror: true, inset: 0.04 },
     { name: 'screen', outline: box(0.63, 1.19, 1.82, 3.16, 0.05), glass: true, lift: 0.0045, mirror: true, inset: 0.06 },
-    { name: 'display', outline: box(-1.16, -0.66, 2.94, 3.12, 0.01), colour: DISPLAY, lift: 0.0105 },
-    { name: 'display-text', outline: box(-1.1, -0.72, 3.0, 3.06), colour: DISPLAY_TEXT, lift: 0.012 },
-    { name: 'wiper', outline: bar([0.7, 3.06], [0.82, 2.25], 0.03), colour: 0x3b4048, lift: 0.012, mirror: true },
+    // each screen split by a yellow transom about 1 m above its foot: the destination display fills the upper pane of the cab-left
+    // screen (scotrail158-05: the orange dot-matrix in its own pane over the bar); the wiper pivots on the transom, its arm down and in
+    { name: 'screen-transom', outline: box(0.6, 1.22, 2.8, 2.86), colour: 0xe0ac16, lift: 0.006, mirror: true },
+    { name: 'display', outline: box(-1.16, -0.66, 2.9, 3.13, 0.01), colour: DISPLAY, lift: 0.0105 },
+    { name: 'display-text', outline: box(-1.1, -0.72, 2.99, 3.05), colour: DISPLAY_TEXT, lift: 0.012 },
+    { name: 'wiper', outline: bar([0.98, 2.79], [0.74, 2.24], 0.03), colour: 0x3b4048, lift: 0.012, mirror: true },
     // the gangway door's leaf (its rubber frame stands out of the face in 3D, see gangwayFrame) and its handle
     { name: 'door-leaf', outline: box(-0.34, 0.34, 0.92, 3.14, 0.02), colour: 0xe9b21a, lift: 0.0015 },
     // (scotrail158-01: a short upright grab handle in a dark recess)
     { name: 'door-handle-recess', outline: box(0.15, 0.26, 1.98, 2.2, 0.02), colour: FRAME, lift: 0.003 },
     { name: 'door-handle', outline: box(0.19, 0.22, 2.0, 2.18), colour: 0x9a9fa6, lift: 0.0045 },
-    // the lamp housing under each screen, a white headlight outboard and a red tail lamp inboard, each lens in a chrome rim on the
-    // housing's yellow panel inside its dark seal (scotrail158-01)
-    { name: 'lamp-housing', outline: box(0.66, 1.2, 1.36, 1.72, 0.1), colour: 0x2a2b2e, lift: 0.003, mirror: true },
-    { name: 'lamp-bezel', outline: box(0.7, 1.16, 1.4, 1.68, 0.08), colour: 0xd9a514, lift: 0.0045, mirror: true },
-    { name: 'lamp-rim', outline: disc(1.03, 1.54, 0.105), colour: CHROME, lift: 0.006, mirror: true },
-    { name: 'lamp-rim', outline: disc(0.84, 1.54, 0.1), colour: CHROME, lift: 0.006, mirror: true },
-    { name: 'headlight', outline: disc(1.03, 1.54, 0.085), lens: 'head', lift: 0.0075, mirror: true },
-    { name: 'tail-lamp', outline: disc(0.84, 1.54, 0.08), lens: 'tail', lift: 0.0075, mirror: true },
+    // under each screen a raised yellow lamp panel with a black pill-shaped recess let into it, and in the recess, standing out of its
+    // floor, a domed round headlight outboard and a flatter round tail-and-marker cluster inboard (scotrail158-05, about 375 px to the
+    // metre across the cab-left screen: the pill about 0.34 m by 0.17 m, the lenses about 0.14 m and 0.13 m across). ASSUMED to that reading.
+    ...aroundPill(0.62, 1.2, 1.48, 1.76, 0.875, 1.615, 0.17, 0.085).map((outline): FaceShape => ({ name: 'lamp-panel', outline, colour: 0xd9a514, lift: 0.0045, proud: 0.035, mirror: true, inset: 0.0 })),
+    { name: 'lamp-housing', outline: pill(0.875, 1.615, 0.17, 0.085), colour: 0x0c0d0e, lift: 0.0045, mirror: true },
+    { name: 'headlight', outline: disc(0.96, 1.615, 0.07, 20), lens: 'head', lift: 0.005, proud: 0.03, crown: 0.8, mirror: true },
+    { name: 'tail-lamp', outline: disc(0.785, 1.615, 0.065, 20), lens: 'tail', lift: 0.005, proud: 0.02, crown: 0.92, mirror: true },
     // the black horizontal recess under each lamp housing (jumper and pipe sockets behind it)
     { name: 'socket-recess', outline: box(0.62, 1.22, 0.8, 1.1, 0.06), colour: RECESS, lift: 0.0015, mirror: true },
     // the coupler's recess under the door
@@ -311,13 +379,21 @@ const SPRINTER: Look = {
     { form: 'transmission', length: 1.2, half: 0.8, bottom: 0.44, colour: 0x3f382f },
     { form: 'battery', length: 1.1, half: 0.72, bottom: 0.52, colour: 0x433d35 },
   ],
-  // a low dark louvred housing at the roof's edge just behind the cab, one each side (scotrail158-05 shows the cab-left one, -01 the
-  // cab-right one: about a metre long and a hand high; identity, likely the cab's ventilation, ASSUMED), and an exhaust outlet near
-  // the inner end (ASSUMED). Nothing else on the cab roof: the round-1 slab across it is gone.
-  roofKit: [
-    { name: 'cab-roof-unit', s0: 1.15, s1: 2.15, half: 0.2, height: 0.08, colour: 0x1d1f23, cabOnly: true, x: 0.62, pair: true },
-    { name: 'exhaust', s0: 2.1, s1: 2.6, half: 0.2, height: 0.12, colour: 0x1a1b1e, fromEnd: true },
+  // The roof, from roof-158-filton (158956's roof from above: a riveted base plate carrying a flat square cover and a louvred exhaust
+  // box, its sloped face crossed by louvres over a mesh, and beside it toward the shoulder a low dark hump on its own base) and
+  // roof-158-pil (158767 side-on from slightly below: those humps near each car's inner end, smoke rising there, and a low dark unit at
+  // the roof's edge just behind the cab; scotrail158-05 and -01 show that unit on each side). Plain grey otherwise, with panel seams
+  // across and a rain strip along each shoulder (roof-158-filton). Every size and place ASSUMED, read off those photographs against the
+  // roof's width.
+  roofGear: [
+    { name: 'cab-roof-unit', kind: 'housing', cab: true, s0: 1.15, s1: 2.15, x0: 0.42, x1: 0.82, h: 0.08, chamfer: 0.03, colour: 0x1d1f23 },
+    { name: 'cab-roof-unit', kind: 'housing', cab: true, s0: 1.15, s1: 2.15, x0: -0.82, x1: -0.42, h: 0.08, chamfer: 0.03, colour: 0x1d1f23 },
+    { name: 'exhaust-plate', kind: 'plate', fromEnd: true, s0: 1.5, s1: 3.0, x0: -0.5, x1: 0.3, h: 0.012, colour: 0x4e5257 },
+    { name: 'exhaust-cover', kind: 'housing', fromEnd: true, s0: 2.45, s1: 2.85, x0: -0.42, x1: -0.06, h: 0.07, chamfer: 0.02, colour: 0x3a3d41 },
+    { name: 'exhaust', kind: 'louvred', fromEnd: true, s0: 1.65, s1: 2.3, x0: -0.25, x1: 0.22, h: 0.14, slats: 5, colour: 0x2a2c2f, dark: 0x0e0f10 },
+    { name: 'roof-hump', kind: 'housing', fromEnd: true, s0: 2.2, s1: 3.0, x0: 0.4, x1: 0.74, h: 0.1, chamfer: 0.04, colour: 0x2a2c2f },
   ],
+  roofSeams: { pitch: 2.2, colour: 0x686b71 },
 };
 
 const LOOKS: Readonly<Record<ScotrailDmuFamily, Look>> = { turbostar: TURBOSTAR, sprinter158: SPRINTER };
@@ -450,6 +526,28 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     // lensLook). Each lens records the vertices it covers in the detail mesh (userData.lamps, set below), which is how
     // setTrainLampState finds it again to show head, tail or off at either end.
     const lampMode = SERVICE_LAMPS[car.cab];
+    /** A shape on the face: flat at its lift, or a solid standing `proud` out of it with walls (its front scaled by `crown`). */
+    const drawShape = (poly: [number, number][], shape: FaceShape, colour: THREE.Color): void => {
+      if (!shape.proud) { detail.fan(onFace(poly, shape.lift), faceN, colour); return; }
+      const k = shape.crown ?? 1;
+      const cx = poly.reduce((acc, p) => acc + p[0], 0) / poly.length;
+      const cy = poly.reduce((acc, p) => acc + p[1], 0) / poly.length;
+      const back = onFace(poly, shape.lift);
+      const front = onFace(poly.map(([x, y]): [number, number] => [cx + (x - cx) * k, cy + (y - cy) * k]), shape.lift + shape.proud);
+      detail.fan(front, faceN, colour);
+      for (let i = 0; i < poly.length; i++) {
+        const j = (i + 1) % poly.length;
+        // the wall's normal: out of the outline in the face's plane, leaning forward as the front narrows
+        const ex = poly[j]![0] - poly[i]![0]; const ey = poly[j]![1] - poly[i]![1];
+        const mx = (poly[i]![0] + poly[j]![0]) / 2 - cx; const my = (poly[i]![1] + poly[j]![1]) / 2 - cy;
+        let nx = ey; let ny = -ex;
+        if (nx * mx + ny * my < 0) { nx = -nx; ny = -ny; }
+        const l = Math.hypot(nx, ny) || 1;
+        // (the outline is already in the train's x, y; faceN is already turned for a rear cab)
+        const n = normaliseV([nx / l + faceN[0] * (1 - k), ny / l + faceN[1] * (1 - k), faceN[2] * (1 - k)]);
+        detail.quad([back[i]!, back[j]!, front[j]!, front[i]!], [n, n, n, n], colour);
+      }
+    };
     for (const shape of look.shapes) {
       for (const m of shape.mirror ? [1, -1] : [1]) {
         // the cab's own right (x > 0) is the train's +x at a front cab (it looks along -z) and -x at a rear one
@@ -462,17 +560,17 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
           const lit = lens.glow > 0;
           const v0 = detail.glow.length;
           detail.emit = lens.glow; // a lit lens glows in its own colour after dark; an unlit one does not
-          detail.fan(onFace(poly, shape.lift), faceN, col(lens.hex));
+          drawShape(poly, shape, col(lens.hex));
           detail.emit = 0;
           lampLenses.push({ role: shape.lens, v0, v1: detail.glow.length });
           if (shape.lens === 'head') {
             const cx = poly.reduce((acc, p) => acc + p[0], 0) / poly.length;
             const cy = poly.reduce((acc, p) => acc + p[1], 0) / poly.length;
-            marker('headlight', cx, cy, tip, { lit, role: 'head' });
+            marker('headlight', cx, cy, tip, { lit, role: 'head', proud: shape.proud ?? 0 });
           }
           continue;
         }
-        detail.fan(onFace(poly, shape.lift), faceN, col(shape.colour ?? FRAME));
+        drawShape(poly, shape, col(shape.colour ?? FRAME));
       }
     }
     if (look.domeLamp) {
@@ -512,13 +610,25 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
       }
     }
     if (look.gangwayFrame) {
-      // the 158's gangway frame: heavy black rubber, standing 0.14 m out of the face round the door (scotrail158-01)
-      const z0 = tip; const z1 = tip - 0.14;
-      boxS(detail, -0.56, -0.38, 0.86, 3.38, z1, z0, GANGWAY_RUBBER);
-      boxS(detail, 0.38, 0.56, 0.86, 3.38, z1, z0, GANGWAY_RUBBER);
-      boxS(detail, -0.56, 0.56, 3.18, 3.38, z1, z0, GANGWAY_RUBBER);
-      boxS(detail, -0.56, 0.56, 0.84, 0.92, z1, z0, GANGWAY_RUBBER);
-      marker('gangway', 0, 2.1, z1, { front: true, closed: true });
+      // the 158's gangway surround (scotrail158-01, -05): heavy black rubber standing 0.14 m out of the face round the door, its posts
+      // about 0.16 m wide, its head deeper (about 0.26 m) with round outer corners, a narrower lip stepped back round the opening, and
+      // a line of light fasteners down each post and across the head. Sizes ASSUMED, read off -05 at about 375 px to the metre.
+      const g = GANGWAY_158;
+      const rubber = col(GANGWAY_RUBBER);
+      const solid = (outline: [number, number][], lift: number, proud: number, c: THREE.Color): void => drawShape(outline, { name: 'gangway', outline, lift, proud }, c);
+      for (const sx of [-1, 1]) solid(box(sx * g.inner, sx * g.outer, g.sill, g.head).map(([x, y]): [number, number] => [x, y]), 0, g.depth, rubber);
+      const corner = (cx: number, a0: number): [number, number][] => Array.from({ length: 7 }, (_, i): [number, number] => [cx + g.radius * Math.cos(a0 + (i * Math.PI) / 12), g.top - g.radius + g.radius * Math.sin(a0 + (i * Math.PI) / 12)]);
+      solid([[-g.outer, g.head], [g.outer, g.head], ...corner(g.outer - g.radius, 0), ...corner(-g.outer + g.radius, Math.PI / 2)], 0, g.depth, rubber);
+      solid(box(-g.outer, g.outer, g.sill - 0.08, g.sill), 0, g.depth, rubber);
+      // the lip, stepped back 4 cm round the opening, a shade lighter
+      const lip = col(0x2c2d30);
+      for (const sx of [-1, 1]) solid(box(sx * (g.inner - g.lip), sx * g.inner, g.sill, g.head), 0, g.depth - 0.04, lip);
+      solid(box(-g.inner, g.inner, g.head - g.lip, g.head), 0, g.depth - 0.04, lip);
+      // the fasteners on its front
+      const dot = col(0x8a8d90);
+      for (const sx of [-1, 1]) for (let y = g.sill + 0.1; y < g.head; y += 0.12) solid(disc(sx * (g.inner + g.outer) / 2, y, 0.009, 6), g.depth, 0.002, dot);
+      for (let x = -g.inner; x <= g.inner + 1e-9; x += 0.1) solid(disc(x, (g.head + g.top) / 2 + 0.03, 0.009, 6), g.depth, 0.002, dot);
+      marker('gangway', 0, 2.1, tip - g.depth, { front: true, closed: true, depth: g.depth, lip: g.lip, top: g.top, radius: g.radius });
     }
     if (look.family === 'sprinter158') {
       // the 158's plough (scotrail158-01, -05): two deep yellow plates either side of the coupler, from the valance's foot down to a hand
@@ -584,12 +694,15 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     const x0 = side * W; const x1 = side * (W + 0.003);
     boxS(detail, Math.min(x0, x1), Math.max(x0, x1), 2.93, 2.955, car.cab ? noseLen : 0.05, car.length - END_GAP - 0.05, PINSTRIPE);
   }
-  // The lettering (web/src/livery.ts atlas): the ScotRail wordmark in white low on each side of every car, a little behind the first
-  // door and behind the white field's end, over the blue dot field, which runs on under it (scotrail170-01, scotrail158-05: no plate
-  // behind the wordmark; round 2 cleared a navy hole round it). Size and place ASSUMED from the photographs.
+  // The lettering (web/src/livery.ts atlas): the ScotRail wordmark in white low on each side of every car, no plate behind it. On the
+  // 170 a little behind the first door and the white field's end, over the blue dot field, which runs on under it (scotrail170-01);
+  // on the 158 just after the blue field's rear end, over the navy (scotrail158-05). Size and place ASSUMED from the photographs.
   {
     const em = 0.2;
-    const s0 = Math.max((plan.doors[0] ?? 3) + dw / 2 + 0.55, car.cab ? whiteFieldEnd(look, plan) + 0.15 : 0);
+    // (the 158's sits at the blue field's rear end, over the navy, as scotrail158-05 shows; the 170's over the blue field, as -01 shows)
+    const s0 = look.family === 'sprinter158'
+      ? blueField(car, look, plan)[1] + 0.12
+      : Math.max((plan.doors[0] ?? 3) + dw / 2 + 0.55, car.cab ? whiteFieldEnd(look, plan) + 0.15 : 0);
     const s1 = s0 + textEms(WORDMARK) * em;
     const y0 = 1.3;
     // (laid on the drawn-in side below the waist, a flat quad: its chord sags inside the side where it spans the section's knee, so each
@@ -630,52 +743,118 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     marker('first-class-line', W, look.windowY[1] + 0.085, (from + to) / 2, { colour: 'yellow', assumed: 'height and ends read off scotrail170-02' });
   }
 
-  // --- the roof: no pantograph (diesel units); dark housings where the photographs show them ----------------------------------------
-  for (const k of look.roofKit) {
-    if (k.cabOnly && !car.cab) continue;
-    const s0 = k.fromEnd ? car.length - k.s1 : k.s0;
-    const s1 = k.fromEnd ? car.length - k.s0 : k.s1;
-    // (the roof is flat at the crown inside the shoulder, carSection: |x| under W - 0.55)
-    for (const x of k.pair ? [k.x ?? 0, -(k.x ?? 0)] : [k.x ?? 0]) {
-      boxS(detail, x - k.half, x + k.half, crown - 0.1, crown + k.height, s0, s1, k.colour);
-      marker('roof-equipment', x, crown + k.height, (s0 + s1) / 2, { name: k.name, assumed: true });
-    }
-  }
-  const hs = look.cabHousing;
-  if (hs && car.cab) {
-    // two convex pieces in profile, each drawn across the roof with both its side faces: the ramped slab, and the taller block at its rear
-    const base0 = crown - 0.04;
-    const slab: [number, number][] = [[Z(hs.s0), base0], [Z(hs.s0), crown], [Z(hs.s0 + hs.ramp), crown + hs.low], [Z(hs.step), crown + hs.low], [Z(hs.step), base0]];
-    const block: [number, number][] = [[Z(hs.step), base0], [Z(hs.step), crown + hs.low], [Z(hs.step + 0.1), crown + hs.high], [Z(hs.s1 - 0.05), crown + hs.high], [Z(hs.s1), crown + hs.high - 0.05], [Z(hs.s1), base0]];
-    for (const outline of [slab, block]) {
-      detail.prismX(outline, -hs.half, hs.half, col(hs.colour));
-      detail.prismX(outline, hs.half, -hs.half, col(hs.colour), false);
-    }
-    marker('roof-equipment', 0, crown + hs.high, (hs.step + hs.s1) / 2, { name: 'cab-roof-unit', assumed: true, low: hs.low, ramp: [hs.s0, hs.s0 + hs.ramp], step: hs.step });
-  }
-  const lv = look.louvres;
-  if (lv) {
-    // on the shoulder's curve (carSection: an elliptic quarter from the wall top, 0.55 across), laid in its tangent plane a few millimetres proud
+  // --- the roof: no pantograph (diesel units); its equipment, seams and rain strips as the roof photographs show (see roofGear) ---------
+  {
+    // the roof's half-profile from the wall top over the shoulder to the middle (carSection: an elliptic quarter, then a near-flat crown)
+    const prof = (sec.half as [number, number][]).filter(([, y]) => y >= look.wallTop - 1e-6);
     const rx = 0.55; const ry = crown - look.wallTop - 0.012;
-    const cx = W - rx + rx * Math.cos(lv.phi); const cy = look.wallTop + ry * Math.sin(lv.phi);
-    const nrm = new THREE.Vector3(Math.cos(lv.phi) / rx, Math.sin(lv.phi) / ry, 0).normalize();
-    const tan = new THREE.Vector3(-rx * Math.sin(lv.phi), ry * Math.cos(lv.phi), 0).normalize();
-    const plate = (side: number, s0: number, s1: number, a0: number, a1: number, lift: number, c: number): void => {
-      const at = (a: number, s: number): V3 => [side * (cx + tan.x * a + nrm.x * lift), cy + tan.y * a + nrm.y * lift, Z(s)];
-      const n: V3 = [side * nrm.x, nrm.y, 0];
-      detail.quad([at(a0, s0), at(a1, s0), at(a1, s1), at(a0, s1)], [n, n, n, n], col(c));
+    /** A point on the shoulder's ellipse at angle phi (radians up from the wall top), `a` along its tangent and `lift` out along its normal, on side `side`. */
+    const onShoulder = (side: number, phi: number, a: number, lift: number): { p: (s: number) => V3; n: V3 } => {
+      const cx = W - rx + rx * Math.cos(phi); const cy = look.wallTop + ry * Math.sin(phi);
+      const nrm = new THREE.Vector3(Math.cos(phi) / rx, Math.sin(phi) / ry, 0).normalize();
+      const tan = new THREE.Vector3(-rx * Math.sin(phi), ry * Math.cos(phi), 0).normalize();
+      return { p: (s) => [side * (cx + tan.x * a + nrm.x * lift), cy + tan.y * a + nrm.y * lift, Z(s)], n: [side * nrm.x, nrm.y, 0] };
     };
-    for (const f of lv.at) {
-      const sc = car.length * f;
+    const shoulderQuad = (side: number, phi: number, s0: number, s1: number, a0: number, a1: number, lift: number, c: number): void => {
+      const A = onShoulder(side, phi, a0, lift); const B = onShoulder(side, phi, a1, lift);
+      detail.quad([A.p(s0), B.p(s0), B.p(s1), A.p(s1)], [A.n, A.n, A.n, A.n], col(c));
+    };
+    const roofFrom = car.cab ? tip + noseLen : tip;
+    // the seams across the roof, from shoulder to shoulder over the crown, 2 cm wide and 2 mm proud
+    const seam = (s: number): void => {
       for (const side of [-1, 1]) {
-        plate(side, sc - lv.length / 2, sc + lv.length / 2, -lv.across / 2, lv.across / 2, 0.005, lv.panel);
-        const pitch = lv.length / lv.slats;
-        for (let k = 0; k < lv.slats; k++) {
-          const s0 = sc - lv.length / 2 + k * pitch + pitch * 0.2;
-          plate(side, s0, s0 + pitch * 0.45, -lv.across / 2 + 0.015, lv.across / 2 - 0.015, 0.009, lv.slat);
+        for (let k = 0; k + 1 < prof.length; k++) {
+          const [xa, ya] = prof[k]!; const [xb, yb] = prof[k + 1]!;
+          const e = Math.hypot(xb - xa, yb - ya) || 1;
+          const n: V3 = [side * ((yb - ya) / e), -(xb - xa) / e, 0];
+          const at = (x: number, y: number, ss: number): V3 => [side * x + n[0] * 0.002, y + n[1] * 0.002, Z(ss)];
+          detail.quad([at(xa, ya, s - 0.01), at(xb, yb, s - 0.01), at(xb, yb, s + 0.01), at(xa, ya, s + 0.01)], [n, n, n, n], col(look.roofSeams.colour));
         }
-        marker('roof-louvre', side * cx, cy, sc, { assumed: true, slats: lv.slats });
       }
+    };
+    const seams: number[] = [];
+    for (let s = roofFrom + look.roofSeams.pitch / 2; s < bodyEnd - 0.2; s += look.roofSeams.pitch) { seam(s); seams.push(s); }
+    // a rain strip along each shoulder, low on it
+    for (const side of [-1, 1]) shoulderQuad(side, (1 / 5) * (Math.PI / 2), roofFrom, bodyEnd - 0.05, -0.012, 0.012, 0.004, look.roofSeams.colour);
+    marker('roof-seams', 0, crown, (roofFrom + bodyEnd) / 2, { at: seams, rainStrips: 2 });
+
+    const base0 = crown - 0.04;
+    for (const g of look.roofGear) {
+      if (g.cab && !car.cab) continue;
+      const s0 = g.fromEnd ? car.length - g.s1 : g.s0;
+      const s1 = g.fromEnd ? car.length - g.s0 : g.s1;
+      const lo = Math.min(s0, s1); const hi = Math.max(s0, s1);
+      if (g.kind === 'vents') {
+        // a panel on the shoulder, its slots along the car (the photographs' rows of small square openings, or a long grille)
+        const side = g.side * dir;
+        shoulderQuad(side, g.phi, lo, hi, -g.across / 2, g.across / 2, 0.005, g.colour);
+        const pitch = (hi - lo) / g.slots;
+        for (let k = 0; k < g.slots; k++) {
+          const a = lo + k * pitch + pitch * 0.2;
+          shoulderQuad(side, g.phi, a, a + pitch * 0.55, -g.across / 2 + 0.025, g.across / 2 - 0.025, 0.009, g.dark);
+        }
+        const c = onShoulder(side, g.phi, 0, 0.005).p((lo + hi) / 2);
+        marker('roof-equipment', c[0], c[1], (lo + hi) / 2, { name: g.name, kind: g.kind, s: [lo, hi], side, slots: g.slots, assumed: true });
+        continue;
+      }
+      // (x0..x1 on the driver's right at the cab end: turned round with a rear car, so a one-sided piece stays on its side of the real car)
+      const xa = Math.min(g.x0 * dir, g.x1 * dir); const xb = Math.max(g.x0 * dir, g.x1 * dir);
+      const top = crown + g.h;
+      const ch = Math.min(g.chamfer ?? 0, g.h / 2, (hi - lo) / 3);
+      // toward the inner end is +s on a car with no cab or a front cab car, as Z runs; the profile is built in s, then mapped
+      const towardInner = g.fromEnd ? 1 : -1;
+      let outline: [number, number][];
+      if (g.kind === 'plate') {
+        outline = [[lo, base0], [lo, top], [hi, top], [hi, base0]];
+      } else if (g.kind === 'louvred') {
+        // the face toward the car's inner end slopes down over the box's rear 45 per cent
+        const run = 0.45 * (hi - lo);
+        const foot = crown + 0.02;
+        outline = towardInner > 0
+          ? [[lo, base0], [lo, top], [hi - run, top], [hi, foot], [hi, base0]]
+          : [[hi, base0], [hi, top], [lo + run, top], [lo, foot], [lo, base0]];
+      } else {
+        outline = [[lo, base0], [lo, top - ch], [lo + ch, top], [hi - ch, top], [hi, top - ch], [hi, base0]];
+      }
+      const zy = outline.map(([s, y]): [number, number] => [Z(s), y]);
+      detail.prismX(zy, xa, xb, col(g.colour));
+      detail.prismX(zy, xb, xa, col(g.colour), false);
+      if (g.kind === 'louvred') {
+        // the louvres on the slope, each a dark band 3 mm proud of it, and a dark mesh along its foot
+        const run = 0.45 * (hi - lo);
+        const sTop = towardInner > 0 ? hi - run : lo + run; const sFoot = towardInner > 0 ? hi : lo;
+        const foot = crown + 0.02;
+        const slope = new THREE.Vector3(0, foot - top, Z(sFoot) - Z(sTop));
+        const nrm = new THREE.Vector3(0, Math.abs(slope.z), 0).add(new THREE.Vector3(0, 0, Math.sign(Z(sFoot) - Z(sTop)) * Math.abs(slope.y))).normalize();
+        const n: V3 = [0, nrm.y, nrm.z];
+        const along = (t: number, lift: number, x: number): V3 => [x, top + (foot - top) * t + nrm.y * lift, Z(sTop) + (Z(sFoot) - Z(sTop)) * t + nrm.z * lift];
+        const slats = g.slats ?? 4;
+        for (let k = 0; k < slats; k++) {
+          const t0 = (k + 0.25) / (slats + 1); const t1 = (k + 0.75) / (slats + 1);
+          detail.quad([along(t0, 0.003, xa + 0.02), along(t0, 0.003, xb - 0.02), along(t1, 0.003, xb - 0.02), along(t1, 0.003, xa + 0.02)], [n, n, n, n], col(g.dark ?? 0x000000));
+        }
+        const m0 = slats / (slats + 1);
+        detail.quad([along(m0, 0.003, xa + 0.02), along(m0, 0.003, xb - 0.02), along(0.97, 0.003, xb - 0.02), along(0.97, 0.003, xa + 0.02)], [n, n, n, n], col(0x55585c));
+      }
+      if (g.kind === 'scoop') {
+        // its mouth: the face toward the cab end, dark, 3 mm before it
+        const zf = Z(lo - 0.003);
+        const n: V3 = [0, 0, -dir];
+        detail.quad([[xa + 0.03, crown + 0.012, zf], [xb - 0.03, crown + 0.012, zf], [xb - 0.03, top - ch - 0.01, zf], [xa + 0.03, top - ch - 0.01, zf]], [n, n, n, n], col(g.dark ?? 0x000000));
+      }
+      if (g.cap) {
+        // a low round cap on the housing: a 12-sided frustum, its top 0.55 of its foot
+        const cx = g.cap.x * dir; const cz = Z(g.cap.at); const r0 = g.cap.r; const r1 = g.cap.r * 0.55; const y0 = top - 0.005; const y1 = top + g.cap.h;
+        const ring = (r: number, y: number): V3[] => Array.from({ length: 12 }, (_, k): V3 => [cx + r * Math.cos((2 * Math.PI * k) / 12), y, cz + r * Math.sin((2 * Math.PI * k) / 12)]);
+        const a = ring(r0, y0); const b = ring(r1, y1);
+        for (let k = 0; k < 12; k++) {
+          const k1 = (k + 1) % 12; const mid = ((2 * k + 1) * Math.PI) / 12;
+          const nn: V3 = [Math.cos(mid), (r0 - r1) / g.cap.h, Math.sin(mid)];
+          detail.quad([a[k]!, a[k1]!, b[k1]!, b[k]!], [nn, nn, nn, nn], col(g.colour));
+        }
+        detail.fan(b, [0, 1, 0], col(g.colour));
+      }
+      marker('roof-equipment', (xa + xb) / 2, top + (g.cap?.h ?? 0), (lo + hi) / 2, { name: g.name, kind: g.kind, s: [lo, hi], x: [xa, xb], h: g.h, assumed: true });
     }
   }
 
@@ -796,6 +975,13 @@ function whiteFieldRear(look: Look, plan: CarPlanDmu): number {
   const d0 = plan.doors[0] ?? 3;
   return look.family === 'sprinter158' ? d0 + dw / 2 + 1.1 : d0 - dw / 2 - 0.05;
 }
+/** The light blue dot field's stretch along a car, metres from the cab end (or the car's start): from the white field's end (the 170's: 1.25 m behind the cab side window; on a car with no cab, from its start) past the first door and on for 7.5 m. */
+function blueField(car: ScotrailDmuCar, look: Look, plan: CarPlanDmu): [number, number] {
+  const dw = SCOTRAIL_DMU_FIGURES[look.family].doorWidth.value;
+  const d0 = plan.doors[0] ?? 3;
+  const a = car.cab ? (look.family === 'turbostar' ? look.cabWindow.s1 + 1.25 : whiteFieldRear(look, plan)) : END_GAP + 0.4;
+  return [a, Math.max(a + 2, Math.min(car.length - 1.5, d0 + dw / 2 + 7.5))];
+}
 /** Where a cab car's white dot field ends (the 170's stops 1.25 m behind the cab side window). */
 function whiteFieldEnd(look: Look, plan: CarPlanDmu): number {
   const rear = whiteFieldRear(look, plan);
@@ -847,8 +1033,7 @@ function saltireDots(soup: Soup, car: ScotrailDmuCar, plan: CarPlanDmu, look: Lo
   // The light blue field under the windows: from the white field (or the car's start) past the first door and on along the car, its
   // dots swelling to the middle of the field and fading at both ends (scotrail170-01, -02; scotrail158-05).
   const pitch = 0.1;
-  const a = car.cab ? (look.family === 'turbostar' ? look.cabWindow.s1 + 1.25 : fieldEnd) : END_GAP + 0.4;
-  const b = Math.max(a + 2, Math.min(car.length - 1.5, d0 + dw / 2 + 7.5));
+  const [a, b] = blueField(car, look, plan);
   for (let s = a, col_ = 0; s < b; s += pitch * 0.87, col_++) {
     for (let y = 1.12 + (col_ % 2) * pitch / 2; y < look.windowY[0] - 0.07; y += pitch) {
       const t = (s - a) / (b - a);
@@ -887,7 +1072,7 @@ export function scotrailDmuFormation(kind: ScotrailDmuKind): CaptureFormation {
   const layout = scotrailDmuLayout(kind);
   const look = LOOKS[layout.spec.family];
   const f = SCOTRAIL_DMU_FIGURES[layout.spec.family];
-  const kit = Math.max(0, ...look.roofKit.map((k) => k.height), look.cabHousing?.high ?? 0);
+  const kit = Math.max(0, ...look.roofGear.map((g) => (g.kind === 'vents' ? 0 : g.h + (g.cap?.h ?? 0))));
   const name = `SCOTRAIL_DMU_FIGURES.${layout.spec.family}`;
   const lengthBasis = [...new Set(layout.cars.map((c) => (c.cab ? f.drivingLength : f.intermediateLength).basis))].join('+');
   return {
@@ -902,7 +1087,7 @@ export function scotrailDmuFormation(kind: ScotrailDmuKind): CaptureFormation {
       lengthM: { value: layout.length, basis: lengthBasis, figures: [`${name}.drivingLength`, ...(layout.cars.length > 2 ? [`${name}.intermediateLength`] : [])] },
       widthM: { value: f.width.value, basis: f.width.basis, figures: [`${name}.width`], figureM: f.width.value },
       // (the roof housings' heights are ASSUMED, so the highest point joins the height figure's basis with 'assumed')
-      roofTopM: { value: f.height.value + kit, basis: f.height.basis === 'assumed' ? 'assumed' : `${f.height.basis}+assumed`, figures: [`${name}.height`, 'roofKit (web/src/train-scotrail-dmu.ts, ASSUMED)'], figureM: f.height.value },
+      roofTopM: { value: f.height.value + kit, basis: f.height.basis === 'assumed' ? 'assumed' : `${f.height.basis}+assumed`, figures: [`${name}.height`, 'roofGear (web/src/train-scotrail-dmu.ts, ASSUMED)'], figureM: f.height.value },
     },
   };
 }

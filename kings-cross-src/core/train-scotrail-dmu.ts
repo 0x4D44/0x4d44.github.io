@@ -56,7 +56,7 @@ export const SCOTRAIL_DMU_FIGURES: Readonly<Record<ScotrailDmuFamily, ScotrailDm
     drivingLength: published(22.57, `${ANGEL_158}: "Length 22.57 m"; endpoints unspecified, read as the allocated car pitch (an inference). The owner page is for the Class 158 family, not a separately measured ScotRail subfleet. The related Class 159/0 sheet prints 22.16 m (${PORTERBROOK_159}); the 0.41 m difference is not reconciled.`),
     intermediateLength: published(22.57, `${ANGEL_158}: a two-car unit has no intermediate car; the figure is the driving car's, carried only so the table has the same keys.`),
     width: published(2.70, `${ANGEL_158}: "Width 2.70 m".`),
-    height: assumed(3.73, `no Class 158 height was recovered. Taken from the related Class 159/0 sheet (${PORTERBROOK_159}: "Height 3.73 m", a converted 158 body, datum unstated) as a comparator only`),
+    height: assumed(3.73, `no Class 158 height was recovered. Taken from the related Class 159/0 sheet (${PORTERBROOK_159}: "Height 3.73 m", a converted 158 body, datum unstated) as a comparator only. Re-searched 2026-11-10: Wikipedia's Class 158 article prints the same 3.73 m from the same 159 brochure, so it is not a second source; a ratio off three CC photographs (Kirkton, Murthly, Inverness 170624) was tried and dropped, as none shows the rail head at the face's depth and the face is narrower than the published body width`),
     floor: assumed(1.05, 'underside of the body side, read off scotrail158-01 and scotrail158-05 against the assumed 3.73 m height'),
     wheelDiameter: assumed(0.84, 'a typical new wheel for a UK diesel multiple unit; the 158\'s is not in the sources read'),
     wheelbase: assumed(2.6, 'axle spacing of one bogie, not published in the sources read'),
