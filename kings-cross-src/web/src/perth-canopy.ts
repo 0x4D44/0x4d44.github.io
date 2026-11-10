@@ -41,11 +41,36 @@ export function crownTexture(): THREE.CanvasTexture | null {
 
 /** ASSUMED canopy shape (see the header). */
 export const CANOPY = {step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
-/** ASSUMED: a wood with at least `share` of its outline in the mapped water is an island's; its canopy is a finer `step` m lattice with
- *  mature riverside trees `base` m over the ground before the swell, single crowns `crown` m apart in height (a lumpy tree belt seen close from the banks, pt-tay-from-bridgend, not a slab), and it is not
- *  capped as hard by the summit's view (SIGHT.island: island trees may hide more of the channel behind them; round 4, C3). Only islands' belts under `maxArea` m2: the
- *  long wood on Moncreiffe Island (54,000 m2) lies along the river in the panorama, and uncapped it hid a quarter of the Tay. */
-export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 6, base: 10, crown: 7} as const;
+/** ASSUMED: a wood under `maxArea` m2 with at least `share` of its outline in the mapped water is a small island's tree belt (round 4, C3).
+ *  It is drawn as single trees, not canopy (islandBeltTrees): pt-tay-from-bridgend stands 35 m from one and looks across it to the town,
+ *  and a draped belt there was a 10 m wall; 46028 shows riverside trees as single round crowns with light between. Trees on a `step` m
+ *  grid jittered `jitter` of it, `height` m tall, crowns `crown` of the height deep and `width` of it wide, on `trunk` m trunks, capped
+ *  by the summit's view with SIGHT.island (trees standing in the river may hide more of the channel behind them). Moncreiffe Island's
+ *  long 54,000 m2 wood stays canopy: it lies along the river in the panorama. */
+export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5} as const;
+
+export interface BeltTree {x: number; z: number; y: number; height: number; crown: number; radius: number; rgb: readonly [number, number, number]}
+/** The small islands' trees (ISLAND_CANOPY), and whether a point lies in one of their woods. */
+export function islandBeltTrees(ground: Pick<Terrain, 'heightAt' | 'extent'>, woods: readonly (readonly (readonly Pt[])[])[], water: readonly (readonly (readonly Pt[])[])[]): {trees: BeltTree[]; inBelt(x: number, z: number): boolean} {
+  const I = ISLAND_CANOPY, belts = woods.filter(rs => isIslandBelt(rs, water)), trees: BeltTree[] = [];
+  const inBelt = (x: number, z: number) => belts.some(rs => pip(x, z, rs[0]!));
+  for (const rs of belts) {
+    let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
+    for (let gx = Math.floor(ax / I.step) * I.step; gx <= bx; gx += I.step) for (let gz = Math.floor(az / I.step) * I.step; gz <= bz; gz += I.step) {
+      const x = gx + (hash(gx, gz, 81) - .5) * I.jitter * I.step, z = gz + (hash(gx, gz, 82) - .5) * I.jitter * I.step;
+      if (!pip(x, z, rs[0]!)) continue;
+      const y = ground.heightAt(x, z), cap = sightHeight(ground, x, z, SIGHT.island);
+      let height = I.height[0] + (I.height[1] - I.height[0]) * hash(gx, gz, 83);
+      if (cap !== undefined) height = Math.min(height, cap - WOODLAND.sight.clear - y);
+      if (height < I.min) continue;
+      let r = hash(gx, gz, 84), pick = WOODLAND.tones[WOODLAND.tones.length - 1]!;
+      for (const t of WOODLAND.tones) { if (r < t.share) { pick = t; break; } r -= t.share; }
+      const k = .9 + .25 * hash(gx, gz, 85);
+      trees.push({x, z, y, height, crown: height * I.crown, radius: height * I.width * (.85 + .3 * hash(gx, gz, 86)), rgb: [pick.rgb[0] * k, pick.rgb[1] * k, pick.rgb[2] * k]});
+    }
+  }
+  return {trees, inBelt};
+}
 
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 const pip = (x: number, z: number, p: readonly Pt[]): boolean => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
@@ -71,10 +96,7 @@ export function isIslandBelt(rs: readonly (readonly Pt[])[], water: readonly (re
 export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[], water: readonly (readonly (readonly Pt[])[])[] = []): KinnoullCanopy {
   const C = CANOPY, [px, pz] = KINNOULL_PEAK, island = (rs: readonly (readonly Pt[])[]) => isIslandBelt(rs, water);
   const pos: number[] = [], col: number[] = [], idx: number[] = [], tone = new THREE.Color();
-  const passes = [
-    lattice(woods.filter(rs => !island(rs)), C.step, C.base, C.crown, SIGHT.shadow),
-    lattice(woods.filter(island), ISLAND_CANOPY.step, ISLAND_CANOPY.base, ISLAND_CANOPY.crown, SIGHT.island),
-  ].filter(l => l !== undefined);
+  const passes = [lattice(woods.filter(rs => !island(rs)), C.step, C.base, C.crown, SIGHT.shadow)].filter(l => l !== undefined);
   // one lattice of `step` m over `subset`, under the summit's view with a top allowed to hide `shadow` m behind it (SIGHT)
   function lattice(subset: readonly (readonly (readonly Pt[])[])[], S: number, base: number, crownAmp: number, shadow: number) {
     const boxes = subset.map(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); } return {rs, ax, az, bx, bz}; });

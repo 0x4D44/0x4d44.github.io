@@ -12,7 +12,7 @@ import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_F
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
-import { CANOPY, ISLAND_CANOPY, isIslandBelt, kinnoullCanopy } from '../src/perth-canopy.ts';
+import { CANOPY, ISLAND_CANOPY, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
 /** The small islands' tree belts, and whether (x, z) is over one (its box, plus a 6 m lattice step and a little). */
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
@@ -233,16 +233,19 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   let townWood = 0, townCovered = 0;
   for (let x = -1200; x < 1700; x += 17) for (let z = -1200; z < 900; z += 17) if (PERTH_LANDUSE.areas.wood.some(rs => pipw(x, z, rs)) && (sightHeight(scene.terrain, x, z) ?? Infinity) - WOODLAND.sight.clear - scene.terrain.heightAt(x, z) >= CANOPY.min + 1) { townWood++; if (canopy.inCanopy(x, z)) townCovered++; }
   assert.ok(townWood > 200 && townCovered / townWood > .95, `town woods (where the summit's view allows a canopy) covered ${townCovered} of ${townWood}`);
-  // the Bridgend island's wood is a tree belt standing full height (a finer, uncapped lattice), not a capped-down slab
-  const belt = islandBelts().find(rs => pipw(916, -300, rs))!, ring = belt[0]!;
-  const edgeDist = (x: number, z: number) => Math.min(...ring.map((a, i) => { const b = ring[(i + 1) % ring.length]!, dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L)) : 0; return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz); }));
-  let inner = 0, tall = 0;
-  for (let x = 890; x <= 940; x += 3) for (let z = -370; z <= -250; z += 3) {
-    if (!pipw(x, z, belt) || edgeDist(x, z) < ISLAND_CANOPY.step) continue; inner++;
-    const t = canopy.topAt(x, z); if (t !== undefined && t - scene.terrain.heightAt(x, z) >= 8) tall++;
-  }
-  for (const [x, z] of [[920.4, -278.1], [919.6, -291.8]] as const) assert.ok(canopy.inCanopy(x, z), `the island wood at ${x}, ${z} is canopy`);
-  assert.ok(inner > 20 && tall >= .8 * inner, `the island belt stands 8 m or more inside its edge: ${tall} of ${inner}`);
+  // the Bridgend island's wood is single round trees with light between (46028), not canopy and not the shared fill's faceted balls
+  const belts = islandBeltTrees(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.areas.water);
+  for (const [x, z] of [[920.4, -278.1], [919.6, -291.8]] as const) assert.ok(belts.inBelt(x, z) && !canopy.inCanopy(x, z), `the island wood at ${x}, ${z} is a belt of single trees`);
+  const near = belts.trees.filter(t => Math.hypot(t.x - 916, t.z - 310) < 1e9 && t.x > 880 && t.x < 950 && t.z > -370 && t.z < -250);
+  assert.ok(near.length >= 8 && near.filter(t => t.height >= 8).length >= .8 * near.length, `Bridgend island trees: ${near.map(t => t.height.toFixed(1))}`);
+  const isl = scene.group.getObjectByName('perth-island-trees') as THREE.InstancedMesh;
+  assert.ok(isl && isl.count === belts.trees.length, 'the island trees are drawn, one crown each');
+  // light between: from the Bridgend eye, rays toward the town over the belt clear its crowns in places
+  const bcam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-tay-from-bridgend'] as { pos: [number, number, number] };
+  const beye = new THREE.Vector3(...bcam.pos), br = new THREE.Raycaster(); scene.group.updateMatrixWorld(true);
+  let through = 0, rays = 0;
+  for (let z = -340; z <= -265; z += 3) for (const y of [-3, -1, 1]) { rays++; br.set(beye, new THREE.Vector3(900, y, z).sub(beye).normalize()); br.far = 80; if (!br.intersectObject(isl, false).length) through++; }
+  assert.ok(through > .25 * rays && through < .9 * rays, `rays through the belt: ${through} of ${rays}`);
   let crownsInWood = 0;
   for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (k.y > 1.5 && canopy.inCanopy(p.x, p.z)) crownsInWood++; }
   assert.equal(crownsInWood, 0, `massed crowns left under the canopy anywhere: ${crownsInWood}`);
@@ -283,7 +286,7 @@ test('from the frozen summit eye the Tay and the North Inch are open: no canopy 
   assert.equal(inch.length, 1, 'the North Inch polygon');
   assert.ok(islandBelts().length >= 5, `small island belts: ${islandBelts().length}`);
   const islandBelt = inIslandBelt;
-  const blockers = ['perth-kinnoull-canopy', 'waverley-wood-crowns'].map(n => scene.group.getObjectByName(n)!).filter(Boolean);
+  const blockers = ['perth-kinnoull-canopy', 'waverley-wood-crowns', 'perth-island-trees'].map(n => scene.group.getObjectByName(n)!).filter(Boolean);
   scene.group.updateMatrixWorld(true);
   const ray = new THREE.Raycaster(), eye = new THREE.Vector3(ex, ey, ez);
   const check = (rings: typeof PERTH_LANDUSE.areas.water, what: string) => {
