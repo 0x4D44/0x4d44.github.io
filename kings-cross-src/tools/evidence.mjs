@@ -822,6 +822,12 @@ const FROZEN_PERTH_CAMERAS = {
     fov: 50,
     source: "The Tay's east bank south of the railway bridge (OSM way/4438951; bank found as for pt-tay-from-bridgend at z 120), eye 1.7 m above it, looking north-west at the bridge's mid-river spans",
   },
+  'pt-kinnoull-cliff': {
+    pos: [2460,  172.2,  295],
+    target: [2659.7,  136.9,  305.5],
+    fov: 50,
+    source: "8703 standpoint (geograph 8703, Val Vannet 2004, CC BY-SA 2.0, R-pt3-a; Geograph gives only the subject square NO1322, so the camera is ASSUMED-from-photo): the west rim of the gully across from Kinnoull Tower, eye 1.7 m above the drawn ground, the tower (at its LiDAR peak, 2606, 277.5) upper left, 7 deg north of the view's centre, its base just above eye level, looking east-south-east and 10 deg down at the cliff falling to the Tay. Lead ruling 2026-11-10 12:59: a fifth P3 camera, the four kept",
+  },
   'pt-overview': {
     pos: [101.91,  551.52,  514.8],
     target: [-49.9,  5,  -92.45],
@@ -838,7 +844,7 @@ export function perthCameras() {
 export const PERTH_ELEMENT_VIEWS = {
   'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-platform-4-clock', 'pt-north-footbridge', 'pt-overview'],
   'perth-frontage': ['pt-station-frontage', 'pt-station-hotel', 'pt-kings-place-bridge', 'pt-platform-4-north', 'pt-overview'],
-  'perth-city': ['pt-kinnoull-panorama', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
+  'perth-city': ['pt-kinnoull-panorama', 'pt-kinnoull-cliff', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
 };
 
 /** The page address a Perth capture loads: the Perth scene, no trains, no board or tooltip, pinned. */

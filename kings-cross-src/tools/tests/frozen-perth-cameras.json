@@ -167,6 +167,20 @@
     "fov": 50,
     "source": "The Tay's east bank south of the railway bridge (OSM way/4438951; bank found as for pt-tay-from-bridgend at z 120), eye 1.7 m above it, looking north-west at the bridge's mid-river spans"
   },
+  "pt-kinnoull-cliff": {
+    "pos": [
+      2460,
+      172.2,
+      295
+    ],
+    "target": [
+      2659.7,
+      136.9,
+      305.5
+    ],
+    "fov": 50,
+    "source": "8703 standpoint (geograph 8703, Val Vannet 2004, CC BY-SA 2.0, R-pt3-a; Geograph gives only the subject square NO1322, so the camera is ASSUMED-from-photo): the west rim of the gully across from Kinnoull Tower, eye 1.7 m above the drawn ground, the tower (at its LiDAR peak, 2606, 277.5) upper left, 7 deg north of the view's centre, its base just above eye level, looking east-south-east and 10 deg down at the cliff falling to the Tay. Lead ruling 2026-11-10 12:59: a fifth P3 camera, the four kept"
+  },
   "pt-overview": {
     "pos": [
       101.91,
