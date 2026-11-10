@@ -67,7 +67,7 @@ test('the roofs the cover is drawn from are the real builders\' meshes, by name:
     const perth = buildPerthScene({ lighting: false });
     try {
       const perthRoofs = findRoofs(perth.group).map(m => m.name);
-      assert.deepEqual(perthRoofs.sort(), ['perth-city-roofs', 'perth-mapped-roofs', 'perth-station-roof'], 'Perth: the station roof, the mapped roofs and the city tops');
+      assert.deepEqual(perthRoofs.sort(), ['perth-city-roofs', 'perth-mapped-roofs', 'perth-station-roof', 'perth-tite-roof'], 'Perth: the station roof, Tite\'s slate roof, the mapped roofs and the city tops');
       assert.deepEqual([...ROOF_MESHES].sort(), [...found, ...findRoofs(landmarks).map((m) => m.name), ...roofs, ...perthRoofs].sort(), 'and no name is listed that is not a roof');
     } finally { perth.dispose(); }
   } finally { scottish.dispose(); }

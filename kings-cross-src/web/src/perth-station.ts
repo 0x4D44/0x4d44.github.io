@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
+import {islandBuildingBatches, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -76,13 +76,17 @@ function stationBatches(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings
  *  stands on them: the island building, the roof's columns, the footbridges, furniture and clocks (perth-station-structure.ts). */
 export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, group: THREE.Group): void {
   const {add, own} = build;
-  const tops = new Batch();
-  for (const p of data.platforms) fillSurface(tops, p.path, [], () => PERTH_LEVELS.platform);
+  // The tops: worn mid-grey flags under the roof, red and buff surfacing in the open south of it (perth-station-structure.ts PERTH_OPEN_SOUTH).
+  const tops = new Batch(), open = new Batch();
+  for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); if (parts.open.length) fillSurface(open, parts.open, [], () => PERTH_LEVELS.platform); }
   const s = stationBatches(data);
-  const faceStone = own(material('stone').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0x7a6e60));
-  const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xffffff); }
+  // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
+  const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
+  const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xb4b0a8); }
+  const surfacing = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { surfacing.map = flagMap; surfacing.color.setHex(0xd9a48c); } else surfacing.color.setHex(0xa8725c);
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
+  add(group, open, surfacing, 'perth-platform-surfaces-open');
   add(group, s.platform.faces, faceStone, 'perth-platform-faces');
   const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);
   add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');
@@ -91,11 +95,14 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // The island building (perth-station-structure.ts islandBuildingBatches), its stone coloured per vertex: divide out the stone texture's
   // own average (materials.ts stone, 0xa99a7c) as Waverley's central block does, so the texture adds only coursing.
   const station = stationOutline(data);
-  const plan = perthStationPlan(data, station?.outer), parts = islandBuildingBatches(plan.island);
+  const plan = perthStationPlan(data, station?.outer), parts = islandBuildingBatches(plan.island, perthRoofOver(plan));
   // Tite's 1848 block and its octagonal tower (perth-station-structure.ts PERTH_TITE), in the same draws.
   if (plan.tite) {
     const walls = islandBuildingBatches(plan.tite.ring), roof = titeRoofBatches(plan.tite.ring, plan.tite.tower);
-    parts.stone.append(walls.stone); parts.stone.append(roof.stone); parts.windows.append(walls.windows); parts.top.append(walls.top); parts.top.append(roof.slate);
+    parts.stone.append(walls.stone); parts.stone.append(roof.stone); parts.windows.append(walls.windows); parts.top.append(walls.top);
+    // Its hipped slate roof and spire stand outside the glazing, so they are a roof of their own for the rain cover (cover.ts ROOF_MESHES).
+    const slate = own(material('slate').clone() as THREE.MeshLambertMaterial); slate.color.multiply(new THREE.Color(0xa9a59b));
+    add(group, roof.slate, slate, 'perth-tite-roof');
   }
   const stone = own(material('stone').clone() as THREE.MeshLambertMaterial); stone.vertexColors = true;
   const avg = new THREE.Color(0xa99a7c); if (stone.map) stone.color.setRGB(1 / avg.r, 1 / avg.g, 1 / avg.b); else stone.color.setHex(0xffffff);
@@ -103,6 +110,14 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   add(group, parts.windows, material('sash'), 'perth-island-building-windows');
   const top = own(material('slate').clone() as THREE.MeshLambertMaterial); top.color.multiply(new THREE.Color(0xa9a59b));
   add(group, parts.top, top, 'perth-island-building-top');
+}
+
+/** The station roof's glazing material, from the scene's shared glass (perth-scene.ts): R-pt1-a, R-pt1-c and R-pt1-d show translucent
+ *  white panes (obscured or weathered wired glass), not clear blue sky through them: a milky, mostly opaque pane. ASSUMED shade. */
+export function perthGlazing(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
+  // The clear-pane texture (its alpha lets the sky through) gives way to a flat milky pane; the glazing bars are the roof's own rafters.
+  m.map = null; m.emissiveMap = null; m.color.setHex(0xd4d2ca); m.emissive.setHex(0x45443f); m.transparent = true; m.opacity = .84;
+  return m;
 }
 
 /** The overall roof: its glazing into `glass` (perth-scene.ts draws it, named for the rain cover), the Dundee canopies' valance into the roof
@@ -115,7 +130,7 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   glass.append(s.glass);
   if (plan.canopy.length >= 3) walls(fascia, plan.canopy, [], () => PERTH_STATION.canopy.top - PERTH_STATION.canopy.valance, () => PERTH_STATION.canopy.top);
   if (!build || !group) return;
-  const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(0x4a4d50); strips.side = THREE.DoubleSide;
+  const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(0x34312d); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
 }

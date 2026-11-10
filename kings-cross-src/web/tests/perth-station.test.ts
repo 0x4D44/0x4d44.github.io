@@ -7,8 +7,9 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_BAY_NOTCH, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_SHED_NORTH, PERTH_STATION, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
+import { WAVERLEY_ROOF_PROFILE } from '../src/waverley-roof.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const outline = stationOutline(data)!.outer;
@@ -59,7 +60,9 @@ test('two footbridges: the north lattice bridge to platforms 4, 3 and 1, the sou
   assert.deepEqual(plan.bridges.map(b => b.id), ['north', 'south']);
   assert.deepEqual(plan.bridges[0].landings.map(l => l.refs.join('/')), ['4', '3', '1']);
   assert.deepEqual(plan.bridges[1].landings.map(l => l.refs.join('/')), ['4/5', '2/3', '1']);
-  assert.ok(plan.bridges[1].landings.filter(l => l.tower).length >= 2, 'lift towers on the islands');
+  assert.equal(plan.bridges[1].landings.filter(l => l.tower).length, 3, 'a lift tower on each of the three islands (R-pt1-d Abbott, R-pt1-b)');
+  assert.ok(plan.bridges[1].landings.filter(l => l.side !== undefined).length >= 2, 'the lift bridge\'s stairs are dog-legs where the island takes one');
+  assert.ok(plan.bridges[0].landings.every(l => l.side === undefined), 'the lattice bridge\'s are straight flights');
   for (const b of plan.bridges) {
     const underside = b.deck - (b.kind === 'lattice' ? .5 : 1);
     assert.ok(underside > 4.8 && underside > PERTH_STATION.canopy.top + .3, `${b.id} deck underside ${underside}`);
@@ -104,4 +107,33 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
     const ironwork = scene.group.getObjectByName('perth-roof-ironwork') as THREE.Mesh; ironwork.geometry.computeBoundingBox();
     assert.ok(ironwork.geometry.boundingBox!.min.y > 4.8, 'the roof ironwork stays over the train envelope');
   } finally { scene.dispose(); }
+});
+
+test('the bay roof (R-pt1-c): its ridges run along the tracks over platforms 5-7, it alone rises over the main roof, an arched glazed screen closes its south end', () => {
+  const bay = plan.local.bay, main = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_PROFILE.rise, g = batches.glass.positions, n = batches.glass.normals;
+  assert.ok(bay.length >= 3 && Math.min(...bay.map(p => p[0])) >= PERTH_BAY_ROOF.north - 1e-6, 'the bay roof stops at the island building\'s west step');
+  let high = 0, screen = 0;
+  for (let i = 0; i < g.length; i += 3) {
+    const q = toLocal([g[i], g[i + 2]]);
+    if (g[i + 1] > main + .05) { high++; assert.ok(inRing(q, bay) || ringDistance(q, bay) < .05, `glazing at ${q} over the main roof's ridge outside the bay roof`); }
+    // A pane facing south (+x' in the track frame) at the bay's south end: the end screen.
+    const nl = toLocal([n[i], n[i + 2]]), o = toLocal([0, 0]), nx = nl[0] - o[0];
+    if (nx > .9 && q[0] > Math.max(...bay.map(p => p[0])) - 1) screen++;
+  }
+  assert.ok(high > 0, `the bay roof's ridges stand over the main roof's`);
+  assert.ok(screen >= 8, `an end screen at the bay roof's south end (${screen} panes)`);
+  // The ridge runs along the tracks: the same height along x', at each span's middle.
+  for (const sp of PERTH_BAY_ROOF.spans) assert.equal(bayRoofHeight((sp.z0 + sp.z1) / 2), PERTH_BAY_ROOF.gutter + sp.rise);
+  assert.equal(PERTH_ROOF_RIDGE, Math.max(main, ...PERTH_BAY_ROOF.spans.map(sp => PERTH_BAY_ROOF.gutter + sp.rise)));
+});
+
+test('the platforms are furnished as R-pt1-a and R-pt1-c show: benches and bins along the island building, its kiosk, hung boards, number boards', () => {
+  const f = plan.furniture;
+  assert.ok(f.benches.length >= 40, `benches along the island building (${f.benches.length})`);
+  assert.ok(f.bins.length >= 8, `bins (${f.bins.length})`);
+  assert.ok(f.kiosk, 'the timber kiosk on the platform 4 face');
+  assert.ok(f.boards.length >= 8, `hung direction boards (${f.boards.length})`);
+  assert.ok(f.numbers.length >= 4, `platform number boards (${f.numbers.length})`);
+  // Each bench and bin stands on a platform, clear of the tracks (the fittings check above covers every vertex of them under 4.8 m).
+  for (const p of [...f.benches.map(b => b.at), ...f.bins]) assert.ok(onPlatform(toWorld(p)) && railDistance(toWorld(p)) > 2, `furniture at ${p}`);
 });

@@ -18,7 +18,7 @@ import {Batch, material} from './materials.ts';
 import {meshAdder} from './waverley-mesh.ts';
 import {stationGround} from './station-railway.ts';
 import {addWaverleyLights} from './station-weather.ts';
-import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthTrack, stationOutline} from './perth-station.ts';
+import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthGlazing, perthTrack, stationOutline} from './perth-station.ts';
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
@@ -96,7 +96,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   const glass = new Batch(), roofTops = new Batch(), fascia = new Batch();
   addPerthStationRoof(data, glass, fascia, build, roof);
   addPerthMappedRoofs(data, ground, roofTops, fascia);
-  const glazing = own(material('shedGlass').clone() as THREE.MeshLambertMaterial); glazing.side = THREE.DoubleSide;
+  const glazing = perthGlazing(own(material('shedGlass').clone() as THREE.MeshLambertMaterial)); glazing.side = THREE.DoubleSide;
   build.add(roof, glass, glazing, 'perth-station-roof');
   const roofMaterial = own(material('slate').clone() as THREE.MeshLambertMaterial); roofMaterial.side = THREE.DoubleSide;
   build.add(roof, roofTops, roofMaterial, 'perth-mapped-roofs');
