@@ -335,7 +335,7 @@ function paintJuniper(p: Spot, b: Body): Paint {
 export const SALTIRE = { y0: 1.2, y1: 3.0, half: 0.5, bar: 0.13 } as const;
 export const SR_SALTIRE = 0xb7c0de;
 /** Where the X is centred along a car: from the cab tip on a driving car, from the start on the PTOS. */
-export const saltireAt = (car: WvEmuCar): number => (car.cab ? 3.85 : 1.95);
+export const saltireAt = (car: WvEmuCar): number => (car.cab ? 3.85 : 2.4);
 
 function paintCivity(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
