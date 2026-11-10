@@ -122,6 +122,7 @@ python3 -I -u kings-cross-src/tools/mutation/train-capture.py kings-cross-src .s
 python3 -I -u kings-cross-src/tools/mutation/train.py kings-cross-src .scratch/mutation/train
 python3 -I -u kings-cross-src/tools/mutation/trainweb.py kings-cross-src .scratch/mutation/trainweb
 python3 -I -u kings-cross-src/tools/mutation/tunnel-track.py kings-cross-src .scratch/mutation/tunnel-track
+python3 -I -u kings-cross-src/tools/mutation/waverley-station.py kings-cross-src .scratch/mutation/waverley-station
 python3 -I -u kings-cross-src/tools/mutation/weather.py kings-cross-src .scratch/mutation/weather
 python3 -I -u kings-cross-src/tools/mutation/western-front.py kings-cross-src .scratch/mutation/western-front
 ```
