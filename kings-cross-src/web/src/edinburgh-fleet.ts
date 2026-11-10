@@ -10,6 +10,8 @@ import { disposeNeutralTrain } from './train-neutral.ts';
 import { SR385_ROWS } from './train-385.ts';
 import { wvEmuLayout } from '../../core/train-wv-emu.ts';
 import { buildWvEmuTrain, disposeWvEmuTrain, wvEmuFormation } from './train-wv-emu.ts';
+import { intercityLayout } from '../../core/train-intercity.ts';
+import { buildIntercityTrain, disposeIntercityTrain, intercityFormation } from './train-intercity.ts';
 
 /** A figure the capture sidecars report, with its basis ('published', 'drawn', 'assumed', or a '+' join of them). */
 export interface CaptureDimension { readonly value: number; readonly basis: string; readonly figures: readonly string[]; readonly figureM?: number }
@@ -54,6 +56,10 @@ export const EDINBURGH_FLEET: readonly EdinburghFleetRow[] = [
   ...SR385_ROWS,
   { kind: 'sr334x3', operator: 'SR', operatorName: 'ScotRail', classes: ['334'], cars: 3, layout: () => wvEmuLayout('sr334x3'), build: () => buildWvEmuTrain('sr334x3'), dispose: disposeWvEmuTrain, formation: () => wvEmuFormation('sr334x3') },
   { kind: 'tpe397x5', operator: 'TP', operatorName: 'TransPennine Express', classes: ['397'], cars: 5, layout: () => wvEmuLayout('tpe397x5'), build: () => buildWvEmuTrain('tpe397x5'), dispose: disposeWvEmuTrain, formation: () => wvEmuFormation('tpe397x5') },
+  { kind: 'xc220x4', operator: 'XC', operatorName: 'CrossCountry', classes: ['220'], cars: 4, layout: () => intercityLayout('xc220x4'), build: () => buildIntercityTrain('xc220x4'), dispose: disposeIntercityTrain, formation: () => intercityFormation('xc220x4') },
+  { kind: 'xc221x5', operator: 'XC', operatorName: 'CrossCountry', classes: ['221'], cars: 5, layout: () => intercityLayout('xc221x5'), build: () => buildIntercityTrain('xc221x5'), dispose: disposeIntercityTrain, formation: () => intercityFormation('xc221x5') },
+  { kind: 'srhstx4', operator: 'SR', operatorName: 'ScotRail', classes: ['43', 'HST'], cars: 6, layout: () => intercityLayout('srhstx4'), build: () => buildIntercityTrain('srhstx4'), dispose: disposeIntercityTrain, formation: () => intercityFormation('srhstx4') },
+  { kind: 'srhstx5', operator: 'SR', operatorName: 'ScotRail', classes: ['43', 'HST'], cars: 7, layout: () => intercityLayout('srhstx5'), build: () => buildIntercityTrain('srhstx5'), dispose: disposeIntercityTrain, formation: () => intercityFormation('srhstx5') },
 ];
 
 export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined => EDINBURGH_FLEET.find(r => r.kind === kind);
