@@ -27,7 +27,7 @@ export const SR385_FIGURES = {
   /** Roof edge (top of the side wall's shoulder, the crown of the drawn section). */
   crown: assumed(3.55, 'rail to the roof centre line of the body shell, read off side photographs (scotrail385-04, -05) against the 1.1 m floor'),
   /** Roof equipment wells and covers stand this far above the crown. */
-  roofCoverHeight: assumed(0.2, 'height of the grey roof equipment covers over the crown, read off scotrail385-01 and -05'),
+  roofCoverHeight: assumed(0.3, 'height of the air-conditioning pods over the crown, read off scotrail385-01 and -05 (pods stand about a third of a metre proud)'),
   floorHeight: assumed(1.1, 'floor above rail, the usual UK platform-height commuter floor (the Class 700/717 publish 1.1 m)'),
   wheelDiameter: assumed(0.84, 'a typical new UK EMU wheel'),
   wheelbase: assumed(2.5, 'axle spacing in one bogie; the bogies are hidden behind skirts in every reference photograph'),

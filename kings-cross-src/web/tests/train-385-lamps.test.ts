@@ -21,17 +21,24 @@ const shows = (train: THREE.Object3D, index: number): string[] => {
   });
 };
 
+/** Which of a cab's lens halos are shown (the glow round a lit lens after dark), by role. */
+const halos = (train: THREE.Object3D, index: number): string[] =>
+  cab(train, index).mesh.children.filter(c => c.name === 'lamp-halo' && c.visible).map(c => c.userData.role as string);
+
 test('a 385 is built in service (white ahead, red behind) and setTrainLampState switches both ends', () => {
   const train = build385('sr385x3');
   assert.deepEqual([cab(train, 0).lamps.end, cab(train, 2).lamps.end, cab(train, 0).lamps.lenses.length], ['front', 'rear', 4]);
   assert.equal(train.getObjectByName('car-1')!.getObjectByName('body-detail')!.userData.lamps, undefined, 'the PTS has no cab');
   assert.deepEqual(shows(train, 0), ['head:headOn*', 'tail:tailOff', 'head:headOn*', 'tail:tailOff']);
   assert.deepEqual(shows(train, 2), ['head:headOff', 'tail:tailOn*', 'head:headOff', 'tail:tailOn*']);
+  assert.deepEqual([halos(train, 0), halos(train, 2)], [['head'], ['tail']], 'only the lit lenses carry a halo');
   setTrainLampState(train, { front: 'tail', rear: 'head' });
   assert.deepEqual(shows(train, 0), ['head:headOff', 'tail:tailOn*', 'head:headOff', 'tail:tailOn*']);
   assert.deepEqual(shows(train, 2), ['head:headOn*', 'tail:tailOff', 'head:headOn*', 'tail:tailOff']);
+  assert.deepEqual([halos(train, 0), halos(train, 2)], [['tail'], ['head']]);
   setTrainLampState(train, { front: 'off', rear: 'off' });
   assert.deepEqual(shows(train, 2), ['head:headOff', 'tail:tailOff', 'head:headOff', 'tail:tailOff']);
+  assert.deepEqual([halos(train, 0), halos(train, 2)], [[], []]);
   dispose385(train);
 });
 
@@ -42,5 +49,6 @@ test('coupled 385s: the cabs that meet are dark and stay dark; the outer cabs sw
   assert.deepEqual([shows(train, 2), shows(train, 3)], [dark, dark]);
   setTrainLampState(train, { front: 'tail', rear: 'head' });
   assert.deepEqual([shows(train, 0)[1], shows(train, 6)[0], shows(train, 2), shows(train, 3)], ['tail:tailOn*', 'head:headOn*', dark, dark]);
+  assert.deepEqual([0, 2, 3, 6].map(i => halos(train, i)), [['tail'], [], [], ['head']], 'the cabs that meet show no halo');
   disposeEdinburghTrain(train);
 });

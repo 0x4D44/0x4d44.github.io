@@ -218,6 +218,8 @@ export function setTrainLampState(train: THREE.Object3D, state: TrainLampState):
     const lamps = mesh.isMesh && mesh.name === 'body-detail' ? (mesh.userData.lamps as LampRecord | undefined) : undefined;
     if (!lamps || lamps.interior) return;
     const looks = lamps.lenses.map((l) => lensLook(l.role, state[lamps.end]));
+    // a family may hang a glow round its lenses as `lamp-halo` children (userData.role): shown only while that role is lit
+    for (const child of mesh.children) if (child.name === 'lamp-halo') child.visible = lensLook(child.userData.role as LensRole, state[lamps.end]).glow === 2;
     const current = mesh.geometry;
     const colour = current.getAttribute('color') as THREE.BufferAttribute;
     const glowNow = current.getAttribute('aGlow') as THREE.BufferAttribute;
