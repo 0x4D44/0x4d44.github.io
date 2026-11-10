@@ -422,10 +422,11 @@ MUTATIONS = [
     # ------------------------------------------------------------- the links its tests hold in other files (the walls\' define, the paving\'s, the soffit)
     ('a foot-shaded wall has no contact shade', MATERIALS, 'm.defines = { ...m.defines, FOOT_SHADE: depth };', 'm.defines = { ...m.defines };'),
     ('every foot-shaded wall takes the landmarks\' depth', MATERIALS, 'FOOT_SHADE: depth }', "FOOT_SHADE: '0.08' }"),
-    ('the front\'s brick has no contact shade', MATERIALS, "brickFoot: () => footShaded(tiled('brick'), FRONT_FOOT),", "brickFoot: () => tiled('brick'),"),
-    ('the front\'s stone has no contact shade', MATERIALS, "stoneFoot: () => footShaded(tiled('stone'), FRONT_FOOT),", "stoneFoot: () => tiled('stone'),"),
+    # anchored on the contact-shade call alone: round seven's night lighting wraps these walls' materials in `floodLit(...)`, and a retune of that wrapper's numbers leaves the anchor in place
+    ('the front\'s brick has no contact shade', MATERIALS, "footShaded(tiled('brick'), FRONT_FOOT)", "tiled('brick')"),
+    ('the front\'s stone has no contact shade', MATERIALS, "footShaded(tiled('stone'), FRONT_FOOT)", "tiled('stone')"),
     ('the plaza paving has no slab tone', MATERIALS, "if (from === 'concourseFloor') m.defines = { MOTTLE: '' };", "if (from === 'concourseFloor') m.defines = {};"),
-    ('the hotel\'s red brick has no contact shade', LANDMARKS, "const brickRed = footShaded(tint('brickRed', midlandBrick));", "const brickRed = tint('brickRed', midlandBrick);"),
+    ('the hotel\'s red brick has no contact shade', LANDMARKS, "footShaded(tint('brickRed', midlandBrick))", "tint('brickRed', midlandBrick)"),
     ('the concourse soffit has another name', CONCOURSE, "side: THREE.DoubleSide, name: 'concourse-soffit' }),", "side: THREE.DoubleSide, name: 'concourse-ceiling' }),"),
     ('the concourse soffit is lit', CONCOURSE, 'soffit: new THREE.MeshBasicMaterial({', 'soffit: new THREE.MeshLambertMaterial({'),
     # ============================================================================================================== vite.config.ts: the squeeze

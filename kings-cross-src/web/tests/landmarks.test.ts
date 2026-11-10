@@ -8,10 +8,10 @@ import type { Pt } from '../../core/geo.ts';
 import { barlowHeight, barlowPlan, barlowSection, chainBays, FIGURES, greatNorthernHotelPlan, midlandGrandPlan, OSM_IDS, polygonEdges, REPLACED_BUILDING_IDS } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { pointInPolygon, worldToShed } from '../../core/station.ts';
-import { addArch, addBand, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowOutline } from '../src/landmarks.ts';
+import { addArch, addBand, addFramedWindow, addGlass, addLandmarks, addPediment, addTwin, addWalls, barlowGeometry, createMaterials, GROUND, headArc, HOTEL_ADVANCED, hotelGeometry, LANDMARK_OSM_IDS, midlandGeometry, PAVILIONS, pointInQuad, ROWS, segmentsOutside, stackClusters, towerSquare, towerStages, windowId, windowOutline } from '../src/landmarks.ts';
 import type { Key } from '../src/landmarks.ts';
-import { FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
-import { Batch, material, TEXTURES } from '../src/materials.ts';
+import { FLOOD, FOOT_SHADE, GLOW_BELOW } from '../src/lighting.ts';
+import { Batch, material, PANE_UV, TEXTURES } from '../src/materials.ts';
 import type { PartMap, V3 } from '../src/materials.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -2761,7 +2761,9 @@ test('materials: the tinted looks (terracotta and buff brick, the Barlow\'s deep
   // round five (the E2 scorer: "building bases ... meet the ground with no darkening"): the four wall materials carry the contact shade at the foot of a wall (lighting.ts FOOT_SHADE), each
   // alone and with the define alone (a shared define object would be one edit away from all of them); the roofs, the glass and the rest do not
   // (the value is the depth of the long fall-off: the landmarks keep the slight 0.08 the hotel's measured stone was fitted to, the King's Cross front's is deeper, round six)
-  for (const key of ['brick', 'brickRed', 'brickDeep', 'stone'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08' }, `${key}: a wall that stands on the ground`);
+  // round seven (night lighting): the Midland's red brick and the stone (its dressings and the hotel's stucco strips) are floodlit from the foot as well (lighting.ts FLOOD); the stock brick and the Barlow's flank are not
+  for (const key of ['brick', 'brickDeep'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08' }, `${key}: a wall that stands on the ground`);
+  for (const key of ['brickRed', 'stone'] as const) assert.deepEqual(lambert(key).defines, { [FOOT_SHADE]: '0.08', [FLOOD]: key === 'stone' ? 'vec4( 0.12, 5.0, 0.04, 0.0 )' : 'vec4( 0.28, 5.0, 0.04, 0.0 )' }, `${key}: a wall that stands on the ground, floodlit`);
   for (const key of ['slate', 'shedSlate', 'sash', 'pane', 'rib', 'lining', 'metal'] as const) assert.equal(lambert(key).defines?.[FOOT_SHADE], undefined, `${key}: no wall`);
   assert.notEqual(lambert('brick').defines, lambert('stone').defines, 'the define objects are the materials\' own');
   // the glow is the emissive colour times the pane texture, whose average colour the library records: neutral here, blue in the library's
@@ -2865,4 +2867,171 @@ test('the replaced OSM boxes: nothing else stands inside the Barlow vault once t
     const { u, v } = worldToShed(frame, c);
     assert.ok(!(u > 0 && u < barlow.width && v > 0 && v < barlow.length), `building ${b.id} would stand inside the vault`);
   }
+});
+
+test('windowId: a number of 0 to PANE_UV.numbers for the window at a place, the same on every build, steady to a few centimetres and spread over the windows of a facade (round seven)', () => {
+  const at = (x: number, z: number) => ({ at: [x, z] as Pt, dir: [1, 0] as Pt, normal: [0, 1] as Pt });
+  const id = windowId(at(10.2, 4), 3);
+  assert.ok(Number.isInteger(id) && id >= 0 && id < PANE_UV.numbers, `${id}`);
+  assert.equal(windowId(at(10.2, 4), 3), id, 'the same every time');
+  assert.equal(windowId(at(10.24, 3.96), 3.03), id, 'steady to 4 cm either way (the place is taken to a tenth of a metre)');
+  assert.notEqual(windowId(at(10.2, 4), 6.4), id, 'the window above has a number of its own');
+  assert.notEqual(windowId(at(13.4, 4), 3), id, 'and the one beside it');
+  assert.notEqual(windowId(at(10.2, 9), 3), id, 'and the one across the street');
+  const ids = new Set<number>();
+  for (let col = 0; col < 25; col++) for (let row = 0; row < 20; row++) {
+    const n = windowId(at(col * 3.2, 4), 2 + row * 3.4);
+    assert.ok(Number.isInteger(n) && n >= 0 && n < PANE_UV.numbers, `${n}`);
+    ids.add(n);
+  }
+  assert.ok(ids.size > 380, `${ids.size} different numbers across 500 windows (of ${PANE_UV.numbers}: about 445 are expected)`);
+  assert.ok(Math.max(...ids) > PANE_UV.numbers * 0.8 && Math.min(...ids) < PANE_UV.numbers * 0.2, 'over the whole range');
+  // a tenth of a metre is another window, along the wall, up it and out from it (to the metre, a hundred of them 0.1 m apart would be ten)
+  for (const [way, number] of [
+    ['along the wall', (k: number) => windowId(at(10 + k * 0.1, 4), 3)],
+    ['up the wall', (k: number) => windowId(at(10, 4), 3 + k * 0.1)],
+    ['out from the wall', (k: number) => windowId(at(10, 4 + k * 0.1), 3)],
+  ] as const) {
+    const row = new Set<number>();
+    for (let k = 0; k < 100; k++) row.add(number(k));
+    assert.ok(row.size > 90, `${row.size} different numbers in a hundred windows a tenth of a metre apart, ${way}`);
+  }
+});
+
+test('addGlass: the flat shape of a window wearing the UVs of a lit pane: u is its number and its way across the glass (0.1 to 0.9), v is -1 at the sill and -2 at the head, the number all over the pane (round seven)', () => {
+  for (const head of ['flat', 'round', 'pointed'] as const) for (const angle of [0, 0.7, 2.4]) {
+    const dir: Pt = [Math.cos(angle), Math.sin(angle)];
+    const p = { at: [31.4, -12.7] as Pt, dir, normal: [-dir[1], dir[0]] as Pt };
+    const b = new Batch();
+    addGlass(b, p, 5.5, 1.1, 2.3, head, 0.1);
+    const id = windowId(p, 5.5);
+    assert.ok(b.positions.length / 3 >= 4, `${head}: a fan of at least four corners`);
+    const us: number[] = [];
+    const vs: number[] = [];
+    for (let i = 0; i < b.positions.length / 3; i++) {
+      const [u, v] = [b.uvs[2 * i] as number, b.uvs[2 * i + 1] as number];
+      assert.equal(Math.floor(u), id, `${head} at ${angle}: the window's number is floor( u ) at every corner`);
+      us.push(u - id);
+      vs.push(v);
+      // a lift off the wall (0.1 m along its normal), the corner's place along the wall giving u and its height giving v
+      const [x, y, z] = [b.positions[3 * i] as number, b.positions[3 * i + 1] as number, b.positions[3 * i + 2] as number];
+      close((x - p.at[0]) * p.normal[0] + (z - p.at[1]) * p.normal[1], 0.1, 1e-9, `${head}: lifted off the wall`);
+      const across = ((x - p.at[0]) * dir[0] + (z - p.at[1]) * dir[1]) / 1.1;
+      close(u - id, PANE_UV.margin + (1 - 2 * PANE_UV.margin) * (0.5 + across), 1e-9, `${head}: u is the way across the glass`);
+      close(v, -1 - (y - 5.5) / 2.3, 1e-9, `${head}: v is the way up it, negated`);
+    }
+    close(Math.min(...us), PANE_UV.margin, 1e-9, `${head}: the left edge is 0.1 of the way`);
+    close(Math.max(...us), 1 - PANE_UV.margin, 1e-9, `${head}: the right edge 0.9`);
+    close(Math.max(...vs), -1, 1e-9, `${head}: the sill is -1`);
+    close(Math.min(...vs), -2, 1e-9, `${head}: the head is -2`);
+  }
+});
+
+test('Midland Grand: the lit pane\'s windows have a negative v and nothing else of the pane material does: every window is a number of its own, whole, and the rest (the balcony, the belfry\'s lancets) have a v of zero or more', () => {
+  const pane = midlandGeometry(midland).pane as Batch;
+  const tris = triangles(pane);
+  let windows = 0;
+  let rest = 0;
+  const ids = new Set<number>();
+  for (const t of tris) {
+    const negative = t.uv.filter((q) => q[1] < 0).length;
+    assert.ok(negative === 0 || negative === 3, 'a triangle is all window or none of it');
+    if (negative === 0) { rest++; continue; }
+    windows++;
+    const numbers = t.uv.map((q) => Math.floor(q[0]));
+    assert.ok(numbers.every((n) => n === numbers[0]), `one window to a triangle: ${numbers}`);
+    assert.ok((numbers[0] as number) >= 0 && (numbers[0] as number) < PANE_UV.numbers);
+    ids.add(numbers[0] as number);
+    for (const [u, v] of t.uv) {
+      assert.ok(v >= -2 - 1e-9 && v <= -1 + 1e-9, `v from the sill to the head: ${v}`);
+      const along = u - Math.floor(u);
+      assert.ok(along >= PANE_UV.margin - 1e-9 && along <= 1 - PANE_UV.margin + 1e-9, `inside the margins: ${along}`);
+    }
+  }
+  assert.ok(windows > 300, `${windows} window triangles`);
+  assert.ok(rest > 100, `${rest} triangles of the pane that are not windows (the balcony, the lancets)`);
+  assert.ok(ids.size > 250, `${ids.size} different window numbers`);
+  // the pane material lights them: the windows only (materials.ts litPane)
+  const m = createMaterials().table.pane as THREE.MeshLambertMaterial;
+  assert.equal(m.customProgramCacheKey(), 'litPane');
+  assert.equal(m.defines?.WIN_GAIN, '0.8');
+});
+
+/** The lit windows of a batch (a lit pane's UVs: a v under zero, the window's number the whole part of u): their numbers, in order, and how many triangles are lit and how many are not. */
+function litWindows(b: Batch | undefined): { ids: number[]; lit: number; dark: number } {
+  const ids = new Set<number>();
+  let lit = 0;
+  let dark = 0;
+  for (const t of triangles(b ?? new Batch())) {
+    if (t.uv.every((q) => q[1] < 0)) {
+      lit++;
+      ids.add(Math.floor(t.uv[0][0]));
+    } else dark++;
+  }
+  return { ids: [...ids].sort((a, c) => a - c), lit, dark };
+}
+
+test('the Midland\'s kinds of window each put lit glass on the pane: a framed window, the lancets of a pair or a triple and an arch have a number each from where they stand (v from -1 to -2), and the surround, the oculus, the mullions and the voussoirs stay dark (round seven)', () => {
+  const p = { at: [31.4, -12.7] as Pt, dir: [0.6, 0.8] as Pt, normal: [-0.8, 0.6] as Pt };
+  const stand = (off: number) => ({ ...p, at: [p.at[0] + p.dir[0] * off, p.at[1] + p.dir[1] * off] as Pt });
+  for (const head of ['flat', 'round', 'pointed'] as const) {
+    const parts: PartMap<Key> = {};
+    addFramedWindow(parts, p, 6, 1.2, 2.1, head, 0.15);
+    const pane = litWindows(parts.pane);
+    assert.deepEqual(pane.ids, [windowId(p, 6)], `${head}: one lit window, numbered where it stands`);
+    assert.ok(pane.lit >= 2 && pane.dark === 0, `${head}: the whole of its pane is glass: ${pane.lit} lit triangles and ${pane.dark} dark`);
+    assert.equal(litWindows(parts.stone).lit, 0, `${head}: the surround is stone and is not lit`);
+  }
+  const W = 2.6;
+  for (const n of [2, 3]) {
+    const parts: PartMap<Key> = {};
+    addTwin(parts, p, 6, W, 4.1, n);
+    const sw = n > 2 ? 0.4 : 0.6;
+    const lw = (W - sw * (n - 1)) / n;
+    const expected = Array.from({ length: n }, (_, k) => windowId(stand((k - (n - 1) / 2) * (lw + sw)), 6)).sort((a, c) => a - c);
+    const pane = litWindows(parts.pane);
+    assert.deepEqual(pane.ids, expected, `${n} lancets: a lit window each, numbered where it stands`);
+    assert.ok(pane.dark > 0, `${n} lancets: the oculus over them is a pane that is not a window, and is not lit`);
+    assert.equal(litWindows(parts.stone).lit, 0, `${n} lancets: no stone is lit`);
+    assert.equal(litWindows(parts.brickRed).lit + litWindows(parts.stone).lit, 0, 'nor the voussoirs and the jambs');
+  }
+  const arch: PartMap<Key> = {};
+  addArch(arch, p, 6, 1.5, 3.2);
+  const pane = litWindows(arch.pane);
+  assert.deepEqual(pane.ids, [windowId(p, 6)], 'an arch: one lit window, numbered where it stands');
+  assert.ok(pane.lit >= 4 && pane.dark === 0, `an arch: all of its pane is glass: ${pane.lit} lit triangles and ${pane.dark} dark`);
+  assert.equal(litWindows(arch.stone).lit + litWindows(arch.brickRed).lit, 0, 'an arch: the mullion, the transom, the voussoirs and the jambs are not lit');
+});
+
+test('Midland Grand: the clock tower\'s lantern is open to the night: its twelve lights (three to a face) are lit panes, each with a number of its own (round seven)', () => {
+  const parts = midlandGeometry(midland);
+  const t = midland.towers.find((x) => x.name === 'clock') as (typeof midland.towers)[number];
+  const st = towerStages(t.height);
+  const lantern = (s: Tri): boolean => s.p.every((v) => v[1] >= st.roof + 0.4 - 1e-6 && v[1] <= st.lantern - 0.4 + 1e-6 && Math.abs(inTower(t, v).a) <= 2.0 && Math.abs(inTower(t, v).o) <= 2.0);
+  const lights = triangles(parts.pane as Batch).filter(lantern);
+  assert.ok(lights.length >= 12, `${lights.length} triangles of glass in the lantern`);
+  const ids = new Set<number>();
+  for (const s of lights) {
+    assert.ok(s.uv.every((q) => q[1] < 0), `a light of the lantern is lit glass (a v under zero): ${s.uv.map((q) => q[1])}`);
+    ids.add(Math.floor(s.uv[0][0]));
+  }
+  assert.equal(ids.size, 12, 'three lights to each of the four faces, a number of its own each');
+});
+
+test('Midland Grand: the front\'s brick and its stone are floodlit from the foot (lighting.ts FLOOD: a strength, a reach, a floor and the wall\'s foot), the stone the less, and the hotel\'s stock brick and the shed\'s deeper brick are not (round seven)', () => {
+  const table = createMaterials().table;
+  const flood = (key: Key): number[] | null => {
+    const d = String((table[key] as THREE.MeshLambertMaterial).defines?.[FLOOD] ?? '');
+    return d === '' ? null : (d.replace('vec4', '').match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+  };
+  const brick = flood('brickRed');
+  const stone = flood('stone');
+  for (const [name, f] of [['brickRed', brick], ['stone', stone]] as const) {
+    assert.ok(f !== null && f.length === 4, `${name} is floodlit: ${f}`);
+    const [strength, reach, floor] = f as number[];
+    assert.ok((strength as number) > 0 && (strength as number) < 1 && (reach as number) > 2 && (reach as number) < 20 && (floor as number) >= 0 && (floor as number) < 0.5, `${name}'s light is a fall of a few metres: ${f}`);
+  }
+  assert.ok((stone as number[])[0]! < (brick as number[])[0]!, 'the stone, which is the lighter, takes the less light');
+  assert.equal(flood('brick'), null, 'the hotel\'s stock brick is not');
+  assert.equal(flood('brickDeep'), null, 'nor the shed\'s flank');
 });

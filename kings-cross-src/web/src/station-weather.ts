@@ -7,6 +7,9 @@ import { describeSun } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
+import { floodLit, litWalls } from './materials.ts';
+import type { NightLayer } from './night.ts';
+import type { StreetLights } from './streetlights.ts';
 import { CLEAR_STATE, createWeatherFeed, weatherState } from './weather.ts';
 import type { WeatherFeedOptions, WeatherObservation, WeatherState } from './weather.ts';
 import { addWorld } from './world.ts';
@@ -61,6 +64,95 @@ export function addWaverleyLights(group: THREE.Group): void {
   sun.position.set(-300, 600, 250); group.add(hemisphere, sun);
 }
 
+/**
+ * The Balmoral's windows (waverley-frontage-balmoral.ts `balmoralFacadeTexture`): the facade's map is a bay (4.2 m) to a unit along the wall and 43.5 m up it, from 18 m under the street to the main
+ * cornice 25.5 m over it, with one window to a bay in each storey: the arched ground floor, a mezzanine, the first-floor band at 8.2 to 8.6 m, then windows with their sills at 9.2, 13.0, 16.7 and
+ * 20.3 m over the street, 2.6, 2.4, 2.2 and 2.0 m tall and 1.5 to 1.35 m wide, and the plain storeys of the station side under the street. The grid is those four storeys, in cells 3.65 m tall that begin
+ * at 8.7 m over the street (`shift`: 26.7 m from the map's foot, in cells), so each window is wholly in a cell of its own, the glass a rectangle (`rect`) every one of the four lies within 0.2 m of; the
+ * ground floor, the mezzanine, the station side and the frieze are not lit (`rows`: the cells 0 to 3). A third of the windows are lit (night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's windows,
+ * about a third of them warm), by floors with 12 in a hundred dark and a tenth of them cool white. ASSUMED: the share, the dark floors and the cool tenth, and the grid, which holds the texture's rows as
+ * they are (tests/station-weather.test.ts holds the levels to waverley-frontage-balmoral.ts's own). The grid counts the metres of the facade's cell by the texture's, not by the wall's length.
+ */
+export const BALMORAL_WINDOWS = {
+  tile: [4.2, 43.5],
+  grid: { cell: [4.2, 3.65], shift: [0, -26.7 / 3.65], rows: [0, 4], rect: [0.32, 0.68, 0.17, 0.77], mode: [0.33, 0, 0.12, 0.1] },
+} as const;
+
+/**
+ * Round seven (night lighting): what the Scottish scene lights after dark, done here, by mesh name, and not in waverley-city.ts and waverley-frontage.ts, which own the meshes. The city blocks' windows
+ * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's windows (`BALMORAL_WINDOWS`), its body and tower floodlit from their feet and its
+ * clock dials glowing (lighting.ts `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm, the tower's
+ * shaft dark). By day nothing changes. The function returned puts every material back as it was, the last patch first.
+ */
+export function lightWaverleyNight(scene: THREE.Object3D): () => void {
+  const undo: (() => void)[] = [];
+  const material = (name: string): THREE.MeshLambertMaterial | null => {
+    const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
+    return mesh?.isMesh && (mesh.material as THREE.MeshLambertMaterial).isMeshLambertMaterial ? mesh.material as THREE.MeshLambertMaterial : null;
+  };
+  const flood = (name: string, ...numbers: [number, number, number, number?]): void => {
+    const m = material(name);
+    if (!m) return;
+    const before = m.defines;
+    floodLit(m, ...numbers);
+    m.needsUpdate = true;
+    undo.push(() => { m.defines = before; m.needsUpdate = true; });
+  };
+  const walls = material('waverley-building-walls');
+  if (walls) undo.push(litWalls(walls, [1.2, 0.6])); // the sandstone's tile (materials.ts TEXTURES.stone)
+  const hotel = material('waverley-balmoral-facade');
+  if (hotel) undo.push(litWalls(hotel, BALMORAL_WINDOWS.tile, BALMORAL_WINDOWS.grid));
+  // the hotel's stone, the body and the tower (waverley-frontage.ts names), each lit from the lowest point of its mesh (ASSUMED: the lamps stand where the ground is under it), and dim: the photograph's
+  // storeys between the lit bands are a dark warm masonry, (43, 29, 24) at the median, and the tower's shaft is darker than the sky (the render's first, at 0.25 and 0.16 of the body's, was a flat tan of
+  // (88, 74, 55) and (80, 67, 51)). What is bright in the photograph is the gables and the cornice, which this mesh does not hold (waverley-frontage-structure, with the bridges' ribs: a flood that lit
+  // them would light the bridges); the windows are `BALMORAL_WINDOWS`.
+  for (const [name, strength] of [['waverley-balmoral-facade', 0.08], ['waverley-balmoral-tower', 0.02]] as const) {
+    const mesh = scene.getObjectByName(name);
+    if (mesh) flood(name, strength, 30, 0.5, new THREE.Box3().setFromObject(mesh).min.y);
+  }
+  flood('waverley-balmoral-clock-dials', 1.5, 1, 1); // a dial is lit all over: no fall-off
+  return () => [...undo].reverse().forEach((u) => u());
+}
+
+/**
+ * The haze of the Scottish scene's clear air (round seven, lighting; the W3 city element's C6, "distance haze consistent with the references"): the far plane of its fog, metres, nearer than London's
+ * 2.6 km (core/daylight.ts `CLEAR_FOG`), so the Castle (1.2 km from Calton Hill: about half fogged here, two fifths at 2.6 km) and the Old Town's skyline recede toward the sky's colour. London's
+ * haze is round five's (E1), tuned and pinned, and is not touched: this is an option of the Scottish scene's own atmosphere (atmosphere.ts `haze`). It is the lowest layer of the air: a camera above
+ * 300 m (the landing view's 400 m) has the page's own fog, as it had, and the views from the ground and from Calton Hill have the haze. ASSUMED, all three numbers, judged by eye against R-wv3-c's
+ * photographs of Calton Hill over Waverley (wv3-c-from-nelson-monument-over-waverley-2009.jpg: the Castle at 1.3 km keeps its stone and its shaded faces, a little veiled): at 1800 m the Castle went
+ * to a pale blue ghost, at 2200 m it is veiled and still stone, and at the page's 2600 m it stood out almost as sharply as the near roofs.
+ */
+export const WAVERLEY_HAZE = { far: 2200, fade: [100, 300] } as const;
+
+/**
+ * The Scottish scene's street lamps (waverley-lamps.ts, a lazy chunk of its own: London's page never loads it). They arrive a moment after the scene, are lit with the sky's lamp level (`setLevel`,
+ * the level the windows and the platform lamps come on with) and go with the climate. A scene with no ground to stand them on, or a chunk that does not load, has none.
+ */
+function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
+  const terrain = view.model?.terrain as { heightAt?: (x: number, z: number) => number } | undefined;
+  let layer: StreetLights | null = null;
+  let level = 0;
+  let gone = false;
+  if (typeof terrain?.heightAt === 'function') {
+    const heightAt = terrain.heightAt.bind(terrain);
+    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt)).then((made) => {
+      if (gone) { made.dispose(); return; }
+      layer = made;
+      view.scene.add(made.group);
+      made.setLevel(level);
+    }).catch((error: unknown) => console.warn('Waverley street lamps unavailable:', error));
+  }
+  return {
+    setLevel(next) { level = next; layer?.setLevel(next); },
+    dispose() {
+      gone = true;
+      layer?.group.removeFromParent();
+      layer?.dispose();
+      layer = null;
+    },
+  };
+}
+
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
@@ -75,22 +167,32 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   const extent = terrain?.extent ?? { x0: Math.min(...points.map(p => p[0])) - 100, x1: Math.max(...points.map(p => p[0])) + 100,
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   world.carve(extent);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze: WAVERLEY_HAZE, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
+  const night = lightWaverleyNight(scene);
+  const lamps = waverleyLamps(view);
   let disposed = false;
-  return { ...climate, dispose(): void {
-    if (disposed) return; disposed = true;
-    climate.dispose();
-    // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not
-    // sweep model/shared materials or the global shader-uniform textures.
-    for (const object of owned) {
-      if (object === world.sky || object.name === 'ground-outside-terrain') {
-        const mesh = object as THREE.Mesh; mesh.geometry.dispose();
-        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.dispose();
+  return { ...climate,
+    update(frame: Parameters<SceneWeather['update']>[0]): void {
+      climate.update(frame);
+      const sky = climate.atmosphere.state(); // none until the climate has run once (a climate that has ended before it ran never will)
+      if (sky) lamps.setLevel(sky.rig.lampLevel);
+    },
+    dispose(): void {
+      if (disposed) return; disposed = true;
+      night();
+      lamps.dispose();
+      climate.dispose();
+      // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not
+      // sweep model/shared materials or the global shader-uniform textures.
+      for (const object of owned) {
+        if (object === world.sky || object.name === 'ground-outside-terrain') {
+          const mesh = object as THREE.Mesh; mesh.geometry.dispose();
+          for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) material.dispose();
+        }
+        object.removeFromParent();
       }
-      object.removeFromParent();
-    }
-    for (const [light, visible] of lights) light.visible = visible;
-    scene.background = background; scene.fog = fog;
-  } };
+      for (const [light, visible] of lights) light.visible = visible;
+      scene.background = background; scene.fog = fog;
+    } };
 }

@@ -5,14 +5,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
+import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, fogRange, MOON_INTENSITY, skyRig } from '../../core/daylight.ts';
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
-import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
+import { createAtmosphere, fogFar, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
+import type { Haze } from '../src/atmosphere.ts';
 import { coverUniforms } from '../src/cover.ts';
 import { furniturePlan } from '../src/furniture.ts';
-import { cityMaterial, material, terrainMaterial } from '../src/materials.ts';
+import { cityMaterial, material, terrainMaterial, windowNight } from '../src/materials.ts';
 import { nightLightSites } from '../src/night.ts';
 import { trainNight } from '../src/train-geom.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
@@ -28,15 +29,16 @@ const NOON = '2026-06-21T12:00:00Z'; // the sun near its highest (13:00 BST; sol
 const MIDNIGHT = '2026-12-21T00:00:00Z';
 const state = (name: string): WeatherState => weatherState(forcedObservation(name));
 
-function setup(sites: NightLightSites | null = null) {
+function setup(sites: NightLightSites | null = null, haze?: Haze, height = 380) {
   trainNight.value = 0;
+  windowNight.value = 0;
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0x35465e, 1100, 3600);
   scene.background = new THREE.Color(0x35465e);
   const world = addWorld(scene, { grid: false });
-  const atmosphere = createAtmosphere({ scene, world, sites });
+  const atmosphere = createAtmosphere({ scene, world, sites, ...(haze ? { haze } : {}) });
   const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 9000);
-  camera.position.set(250, 380, 420);
+  camera.position.set(250, height, 420);
   const target = new THREE.Vector3(40, 0, -150);
   let wall = 0;
   /** one frame at that instant, a second after the last (so the quarter-second throttle never skips it) */
@@ -50,7 +52,7 @@ const luma = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * 
 const lambertShader = () => ({ uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader });
 const compile = (m: THREE.Material) => { const s = lambertShader(); m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never); return s; };
 
-test.afterEach(() => { trainNight.value = 0; });
+test.afterEach(() => { trainNight.value = 0; windowNight.value = 0; });
 
 test('the reference rig is the page\'s own DAYLIGHT, so a high sun in a clear sky changes nothing; the fixed LIGHTS stay for the bare page', () => {
   assert.equal(REFERENCE.sun.colour, DAYLIGHT.sun.colour);
@@ -88,6 +90,70 @@ test('midsummer noon: the sun is where the astronomy puts it, bright and clear; 
   assert.ok(luma(scene.background as THREE.Color) > 0.4, 'a bright sky');
 });
 
+test('a scene\'s own haze (round seven, the Scottish scene\'s): a nearer far plane for the air it is clear in, near the ground, given back to the page\'s fog by the camera\'s height, and nothing else; a scene with none has the page\'s own fog, as it always had', () => {
+  const HAZE: Haze = { far: 1800, fade: [100, 300] };
+  const fogAt = (weather: WeatherState, haze?: Haze, height = 20): { near: number; far: number } => {
+    const { scene, at, camera } = setup(null, haze, height);
+    at(NOON, weather);
+    const fog = scene.fog as THREE.Fog;
+    assert.equal(fog.near, fogRange(weather.visibilityM, camera.position.y).near, 'the near plane is the page\'s, hazed or not');
+    return { near: fog.near, far: fog.far };
+  };
+  // no haze: the clear air's own (100 m to 2.6 km) and the weather's, exactly as fogRange says, at any height; London has no haze
+  const weathers = ['rain', 'drizzle', 'mist', 'fog', 'snow'] as const;
+  for (const height of [20, 380]) {
+    assert.deepEqual(fogAt(CLEAR_STATE, undefined, height), { ...CLEAR_FOG }, `London's clear air at ${height} m`);
+    for (const name of weathers) assert.deepEqual(fogAt(state(name), undefined, height), fogRange(state(name).visibilityM, height), `London's ${name} at ${height} m`);
+  }
+  // a haze nearer than the clear air's: the far plane is there, near the ground, in clear air, and the near plane is not moved
+  assert.deepEqual(fogAt(CLEAR_STATE, HAZE), { near: CLEAR_FOG.near, far: 1800 }, 'the Scottish clear air');
+  // the camera's height gives the page's fog back: all of the haze at the first height, none at the second and above, between them a smoothstep, never nearer than the haze nor farther than the page's
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 100).far, 1800, 'all of it at the first height');
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 300).far, CLEAR_FOG.far, 'none at the second');
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 380).far, CLEAR_FOG.far, 'and none above it (the landing view\'s height)');
+  assert.ok(Math.abs(fogAt(CLEAR_STATE, HAZE, 200).far - 2200) < 1e-9, 'half of it half way');
+  let last = 1800;
+  for (let h = 100; h <= 300; h += 10) {
+    const far = fogAt(CLEAR_STATE, HAZE, h).far;
+    assert.ok(far >= last && far <= CLEAR_FOG.far, `rising with the height, to the page's: ${far} at ${h} m`);
+    last = far;
+  }
+  // weather: the nearer of the two far planes, the weather's own when it is already thicker than the haze (fog), the haze's when the weather is thinner (rain, mist, drizzle); above the haze, the weather's own
+  let thicker = 0;
+  let thinner = 0;
+  for (const name of weathers) {
+    const own = fogRange(state(name).visibilityM, 20);
+    assert.deepEqual(fogAt(state(name), HAZE), { near: own.near, far: Math.min(own.far, 1800) }, `the Scottish ${name}`);
+    assert.deepEqual(fogAt(state(name), HAZE, 380), fogRange(state(name).visibilityM, 380), `the Scottish ${name}, from above the haze`);
+    if (own.far < 1800) thicker++; else thinner++;
+  }
+  assert.ok(thicker >= 1 && thinner >= 1, `the weathers cover both sides of the haze (${thicker} thicker, ${thinner} thinner)`);
+  // a haze further than the page's own does nothing: it is a nearer plane, never a farther one
+  assert.deepEqual(fogAt(CLEAR_STATE, { far: 9000, fade: [100, 300] }), { ...CLEAR_FOG });
+  // two scenes do not share it: the haze is the atmosphere's own, not a module's
+  const london = setup(null, undefined, 20);
+  const scotland = setup(null, HAZE, 20);
+  scotland.at(NOON);
+  london.at(NOON);
+  scotland.at(NOON);
+  assert.equal((london.scene.fog as THREE.Fog).far, CLEAR_FOG.far);
+  assert.equal((scotland.scene.fog as THREE.Fog).far, 1800);
+});
+
+test('fogFar: the range\'s far plane where there is no haze; where there is, the haze\'s near the ground and the range\'s above its layer, a smoothstep between, and the weather\'s own when that is nearer', () => {
+  const haze: Haze = { far: 1800, fade: [100, 300] };
+  assert.equal(fogFar(2600, 50), 2600, 'no haze, no change');
+  assert.equal(fogFar(2600, 380), 2600);
+  for (const y of [-5, 0, 50, 100]) assert.equal(fogFar(2600, y, haze), 1800, `the haze at ${y} m`);
+  assert.equal(fogFar(2600, 200, haze), 2200, 'half way up the fade, half of it');
+  assert.ok(Math.abs(fogFar(2600, 150, haze) - 1925) < 1e-9, 'a quarter of the way up, a smoothstep\'s 0.15625 of it: 1800 + 800 x 0.15625');
+  assert.ok(Math.abs(fogFar(2600, 250, haze) - 2475) < 1e-9, 'and at three quarters, 0.84375: 1800 + 800 x 0.84375');
+  for (const y of [300, 301, 1e4]) assert.equal(fogFar(2600, y, haze), 2600, `none at ${y} m`);
+  for (const y of [0, 150, 400]) assert.equal(fogFar(900, y, haze), 900, `weather nearer than the haze keeps its own at ${y} m`);
+  assert.equal(fogFar(1800, 0, haze), 1800, 'the same far plane, either way');
+  assert.equal(fogFar(2600, 0, { far: 9000, fade: [100, 300] }), 2600, 'a haze beyond the range\'s plane does nothing');
+});
+
 test('midnight: the stylised moon is the key, the ambient is low, the lamps and the trains\' windows are on, the stars are out', () => {
   const { atmosphere, lights, world, scene, at } = setup(SITES);
   at(MIDNIGHT);
@@ -105,6 +171,34 @@ test('midnight: the stylised moon is the key, the ambient is low, the lamps and 
   assert.equal(world.sky.getObjectByName('stars')!.visible, true);
   assert.equal(world.sky.getObjectByName('sun-disc')!.visible, false, 'the sun is not in the sky');
   assert.ok(luma(scene.background as THREE.Color) < 0.1, 'a dark sky');
+});
+
+test('the windows of the city light with the lamps (round seven): the shared night uniform is 0 by day, 1 at midnight and the gloom\'s level under heavy rain, the trains\' own number; a layer attached to the night lights follows the same level', () => {
+  const { atmosphere, at } = setup(SITES);
+  assert.equal(windowNight.value, 0, 'dark before the first frame');
+  at(NOON);
+  assert.equal(windowNight.value, 0, 'no window glows by day');
+  at(MIDNIGHT);
+  assert.equal(windowNight.value, 1, 'every lit window is on at midnight');
+  assert.equal(windowNight.value, trainNight.value, 'the same number the trains\' windows read: one night, not two');
+  at(NOON, state('heavy-rain'));
+  assert.ok(windowNight.value > 0 && windowNight.value < 0.6, `the gloom of a heavy-rain noon brings the first windows on: ${windowNight.value}`);
+  assert.equal(windowNight.value, trainNight.value);
+  // dusk: the level climbs with the dark and never falls back while it deepens (the sun at the horizon, then under it)
+  const levels: number[] = [];
+  for (const hour of [15, 16, 17, 18, 19, 20, 21]) {
+    at(`2026-12-21T${String(hour).padStart(2, '0')}:00:00Z`);
+    levels.push(windowNight.value);
+  }
+  assert.ok(levels.every((v, i) => i === 0 || v >= levels[i - 1]!) && levels[0]! < 0.5 && levels[6] === 1, `a winter evening ramps: ${levels}`);
+  // a layer attached to the night lights (the street lamps are one) is handed the level the windows have
+  const seen: number[] = [];
+  const detach = atmosphere.nightLights!.attach({ setLevel: (l) => seen.push(l) });
+  at(NOON);
+  at(MIDNIGHT);
+  detach();
+  at(NOON);
+  assert.deepEqual(seen, [1, 0, 1], 'the level when attached (still night), then day, then night again; nothing after it let go');
 });
 
 test('the key light\'s direction is handed on for the sun\'s shadow: unknown before the first sky, then the sun\'s by day and the moon\'s after dark, the way the light itself shines from', () => {

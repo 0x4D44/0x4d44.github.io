@@ -7,7 +7,7 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { footShaded, mergeParts, material, part, TEXTURES } from './materials.ts';
+import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 import type { ClockDial } from './clocks.ts';
 
@@ -29,6 +29,13 @@ export interface MaterialSet {
   /** the materials (and textures) this set made itself, to dispose; the shared ones from materials.ts are not ours */
   owned: (THREE.Material | THREE.Texture)[];
 }
+
+/**
+ * The Midland's floodlight (lighting.ts `FLOOD`: the strength, how far up the wall it carries in metres, and what is left above that): the arcade and the porch lit from below and the brick above
+ * only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg). The numbers are ASSUMED from those photographs' look and tuned to it; the stone,
+ * which is the lighter and takes a light the more, has the less of it. The hotel's stucco strips are the same material and take the same wash (ASSUMED: no night photograph of it).
+ */
+const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as const;
 
 export function createMaterials(): MaterialSet {
   const owned: (THREE.Material | THREE.Texture)[] = [];
@@ -102,7 +109,9 @@ export function createMaterials(): MaterialSet {
   // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
   // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
   const midlandBrick: [number, number, number] = [0.88, 0.92, 0.885];
-  const brickRed = footShaded(tint('brickRed', midlandBrick));
+  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
+  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD).
+  const brickRed = floodLit(footShaded(tint('brickRed', midlandBrick)), ...MIDLAND_FLOOD.brick);
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
   // pale salmon (144, 98, 83) in the oblique view, and was a median (100, 62, 51) there, L 30, over a range of L 19 (the shade) to 34 (the lit courses); the Midland's own brick keeps its
@@ -114,7 +123,7 @@ export function createMaterials(): MaterialSet {
   const brickDeep = footShaded(tint('brickRed', midlandBrick.map((c) => c * 0.55) as [number, number, number]));
   // hist-a, hist-b: the dressings are creamy, a pale buff, not the library's grey ashlar: the stone texture (average 0xa99a7c) times (1.25, 1.3, 1.43) renders (183, 169, 145)
   // on the hotel's stucco strips, dE 4.8 from hist-a's (185, 177, 158) (the earlier (1.25, 1.2, 1.15) on this texture rendered (187, 170, 139): dE 8.2, too yellow).
-  const stone = footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain]));
+  const stone = floodLit(footShaded(tint('stone', [1.25 * stoneGain, 1.3 * stoneGain, 1.43 * stoneGain])), ...MIDLAND_FLOOD.stone);
   // hist-a: the hotel's London stock is a golden-brown, greyer and darker than the sunlit King's Cross stock: (125, 103, 76) as the mean of the brick in the photograph. This tint
   // renders (120, 101, 74) at the noon rig (dE 1.8); the earlier (1.15, 1.05, 0.88) rendered (136, 117, 81), dE 7.0, too pale and golden.
   // Round five: the stock texture has a paler joint, a redder and 6%-darker brick (materials.ts STOCK_BRICK), so this is (0.846, 0.8, 0.8) x the gain, a few per cent up in green and blue
@@ -142,7 +151,8 @@ export function createMaterials(): MaterialSet {
   // Round four (the historic D6 scorer: "give the Midland windows a sky reflection instead of flat black"): the library's pane is (0.017, 0.025, 0.04), L 6 lit at the noon rig in the
   // Midland's ground-floor arches; hist-b's windows are mixed, some white with the sky and the dark ones about L 12 to 20. This is a dark blue-grey glass, L 24 (not a black hole), flat:
   // a patchy reflection would need the window shader the sash decals have (and a map, which a framed pane lacks), over the size cap.
-  const pane = tint('pane', [0.05, 0.08, 0.125]);
+  // Round seven (night lighting): the windows of this pane are lit after dark (materials.ts `litPane`: the glass `addGlass` builds, the bands and the balcony of the pane stay dark).
+  const pane = litPane(tint('pane', [0.05, 0.08, 0.125]));
   // Round five (the historic D5 scorer: the crown must be the brightest band of the vault from inside, as in hist-d and hist-d2, where the boarding is L 39 to 49 and the glazing L 56 to 63): the
   // library's pale boarding (a light grey, R-lighting-materials-b's) drew the flank panels at L 71, over the crown's L 53 and 15 under the crown's new glow. At 0.55 of its light, colour and
   // glow both, the flank is L 61 to 63 and the crown, at L 77, the brightest thing in the vault; the other users of the library's lining keep its pale grey.
@@ -385,10 +395,27 @@ export function addWindow(m: Batch, p: Placed, y: number, w: number, h: number, 
   m.fan(pts, [p.normal[0], 0, p.normal[1]], textured ? (q) => [along(q), q[1]] : undefined);
 }
 
+/**
+ * The number of the window whose sill's middle is at `p` and `y`: 0 to `PANE_UV.numbers` - 1, from where it stands (to a tenth of a metre), so that a window's light is its own and the same on every build
+ * (round seven: the lit panes of materials.ts `litPane` read their number from their UVs).
+ */
+export function windowId(p: Placed, y: number): number {
+  const [x, h, z] = [Math.round(p.at[0] * 10), Math.round(y * 10), Math.round(p.at[1] * 10)];
+  return ((Math.imul(x, 73856093) ^ Math.imul(h, 19349663) ^ Math.imul(z, 83492791)) >>> 0) % PANE_UV.numbers;
+}
+
+/** A window's glass: the flat shape of `addWindow` (`lift` off the wall), wearing the UVs of a lit pane (materials.ts `paneUv`) so that it can glow after dark. */
+export function addGlass(m: Batch, p: Placed, y: number, w: number, h: number, head: Head, lift: number): void {
+  const id = windowId(p, y);
+  const pts = windowOutline(w, h, head).map(([x, yy]) => onWall(p, x, y + yy, lift));
+  const along = (q: V3): number => (q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1];
+  m.fan(pts, [p.normal[0], 0, p.normal[1]], (q) => paneUv(id, 0.5 + along(q) / w, (q[1] - y) / h));
+}
+
 /** One window with its stone surround: the surround is `margin` bigger all round and a hair behind the glass. */
 export function addFramedWindow(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number, head: Head, margin: number): void {
   addWindow(part(parts, 'stone'), p, y - margin, w + 2 * margin, h + margin * (head === 'flat' ? 1.6 : 1.3), head, 0.05, true);
-  addWindow(part(parts, 'pane'), p, y, w, h, head, 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, head, 0.1);
 }
 
 /** A sash window from the shared texture (surround, glass and bars drawn in it): a w x h quad, UVs spanning the whole texture. */
@@ -649,7 +676,7 @@ export function addTwin(parts: PartMap<Key>, p: Placed, y: number, W: number, h:
   const sw = n > 2 ? 0.4 : 0.6; // the shafts between the lancets: stone 0.6 m wide between a pair, 0.4 m between three, so that they read as a group across the street
   const lw = (W - sw * (n - 1)) / n;
   for (let k = 0; k < n; k++) {
-    addWindow(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
+    addGlass(pane, shift(p, (k - (n - 1) / 2) * (lw + sw)), y, lw, h - 0.9, 'pointed', 0.1);
     // hist-b, hist-c: two lights stacked in each lancet, a transom 0.1 m tall at 0.45 of its height, and (between the lights) a shaft 0.2 m square with a capital standing out of the wall (ASSUMED sizes)
     addWindow(stone, shift(p, (k - (n - 1) / 2) * (lw + sw)), y + (h - 0.9) * 0.45, lw, 0.1, 'flat', 0.15, true);
     if (k) {
@@ -681,7 +708,7 @@ function addJambs(parts: PartMap<Key>, p: Placed, y: number, W: number, spring: 
 
 /** A round-headed opening in a ring of red and stone voussoirs, on jambs of red and stone courses (hist-b: the ground storey's arcade); sizes ASSUMED. */
 export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number): void {
-  addWindow(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
   // hist-b: the glazed arch is not a black hole: a stone mullion 0.18 m wide up to the springing and a transom 0.16 m tall at 0.55 of it, standing 0.05 m in front of the glass (ASSUMED)
   addWindow(part(parts, 'stone'), p, y, 0.18, h - w / 2, 'flat', 0.15, true);
   addWindow(part(parts, 'stone'), p, y + (h - w / 2) * 0.55, w, 0.16, 'flat', 0.15, true);
@@ -1031,7 +1058,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   });
   if (clockTower) {
     addWalls(stone, sq(lant), rT + 0.4, lT - 0.4);
-    for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addWindow(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
+    for (const f of facesAt(lant)) for (const dx of [-1.13, 0, 1.13]) addGlass(part(parts, 'pane'), shift(f, dx), rT + 0.6, 0.9, lT - rT - 1.2, 'pointed', 0.05);
     addBand(stone, ring(lant), rT, 0.4, 0.1);
     addBand(stone, ring(lant), lT - 0.4, 0.4, 0.2);
     for (const c of sq(lant)) addSpike(stone, c, t.along, t.out, 0.22, rT, lT + 0.9);

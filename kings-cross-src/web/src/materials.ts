@@ -358,12 +358,27 @@ function paintRoofGlass(g: Ctx, w: number, h: number): void {
   g.fillRect(0, 0, w, 4);
 }
 
+/** The stone surround's thickness and the glass's inset from the reveal, metres, in the window decal (`paintWindow`; `DECAL_GLASS` is the glass they leave). */
+const WINDOW_SURROUND = 0.14;
+const WINDOW_INSET = 0.05;
+
+/**
+ * The glass of a window decal as [left, right, bottom, top], shares of the quad (up from its foot): the pane the lit windows fill after dark (see `glassVaries`). The stone surround
+ * (`WINDOW_SURROUND`) and the glass's inset from the reveal (`WINDOW_INSET`) leave it, and the reveal is 0.6 of a surround deep at the foot. The arched decal's head is round; the rectangle
+ * runs to the top of the arch and the glass of the texture trims the corners.
+ */
+export const DECAL_GLASS: readonly [number, number, number, number] = (() => {
+  const [tw, th] = TEXTURES.window.tile;
+  const side = (WINDOW_SURROUND + WINDOW_INSET) / tw;
+  return [side, 1 - side, (0.6 * WINDOW_SURROUND + WINDOW_INSET) / th, 1 - (WINDOW_SURROUND + WINDOW_INSET) / th];
+})();
+
 /** A sash window with its stone surround, drawn once over a quad of TEXTURES.window.tile metres. */
 function paintWindow(g: Ctx, w: number, h: number, arched: boolean): void {
   const stone = '#cfc7b0';
   const pxm = w / TEXTURES.window.tile[0];
   g.clearRect(0, 0, w, h);
-  const sx = 0.14 * pxm; // surround thickness
+  const sx = WINDOW_SURROUND * pxm; // surround thickness
   // surround
   g.fillStyle = stone;
   g.beginPath();
@@ -385,7 +400,7 @@ function paintWindow(g: Ctx, w: number, h: number, arched: boolean): void {
     g.rect(gx, gy, gw, h - sx * 1.6);
   }
   g.closePath(); g.fill();
-  const inset = 0.05 * pxm;
+  const inset = WINDOW_INSET * pxm;
   const glassPath = (): void => {
     g.beginPath();
     if (arched) {
@@ -560,8 +575,22 @@ export const footShaded = <T extends THREE.Material>(m: T, depth = '0.08'): T =>
   m.defines = { ...m.defines, FOOT_SHADE: depth };
   return m;
 };
+/**
+ * A wall material floodlit after dark: the define lighting.ts `FLOOD` names (not imported, as `footShaded`'s: a test holds the two to one name). `strength`, `reach` (how far up the wall the light
+ * carries, metres), `floor` (the share of the light left far above the lamps) and `base` (the height in the world of the wall's foot, 0 by default) are lighting.ts `FLOOD`'s four numbers.
+ */
+export const floodLit = <T extends THREE.Material>(m: T, strength: number, reach: number, floor: number, base = 0): T => {
+  m.defines = { ...m.defines, FLOOD: `vec4( ${glslFloat(strength)}, ${glslFloat(reach)}, ${glslFloat(floor)}, ${glslFloat(base)} )` };
+  return m;
+};
 /** The King's Cross front's depth of the contact shade's long fall-off (see `footShaded`; the landmarks keep 0.08): 0.82 of the light at 1.2 m up the wall and 0.93 at 3 m, where 0.08 keeps 0.95 and 0.98. */
 const FRONT_FOOT = '0.32';
+/**
+ * The King's Cross front's floodlight (night-a-kx-square-2015-skinner.jpg, the brick measured at (96, 81, 60) halfway up the tower and (116, 96, 68) at its foot against the photograph's (99, 82, 37) and
+ * (122, 102, 53), the wall (94 to 109, 78 to 90, 56 to 63) against (110 to 125, 99 to 109, 56 to 80)): carries far up the wall (14 m) and leaves a third of its light at the tower's top. The stone, which
+ * is the lighter and takes a light the more, has the less of it (the ribs in the photograph are the brightest thing in the front).
+ */
+const FRONT_FLOOD = { brick: [0.25, 14, 0.35], stone: [0.14, 14, 0.35] } as const;
 
 function tiled(name: TextureName, extra: THREE.MeshLambertMaterialParameters = {}): THREE.MeshLambertMaterial {
   const t = texture(name);
@@ -599,6 +628,99 @@ diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.70, 0.62, 0.46 ) * ( 1.0 - 0.2
 `;
 
 /**
+ * How lit the windows are: 0 by day, 1 after dark. atmosphere.ts sets it from the sun and the weather (`rig.lampLevel`, the lamps' own ramp, as it sets `trainNight`), so the windows
+ * come on through the dusk and stay on all night. By day (under a few thousandths) the shaders below do nothing at all.
+ */
+export const windowNight = { value: 0 };
+
+/**
+ * Lit windows after dark (round seven: "the nighttime view is missing lighting in the buildings and streets around the stations"). Each window of a facade is lit or dark for good, by
+ * a number of its own, so a street of houses is a patchwork, none changes from one frame to the next, and nothing flickers. The light is the window's own (an emissive term, no lamp in
+ * the scene): warm (tungsten and warm white) in most, cool white in some, each at a brightness of its own, in the glass of the texture alone (the sash bars, the stone and the
+ * brick are not lit) and in a pane of the tile (`FACADE_GLASS`, `DECAL_GLASS`) that holds from a distance, where the texture's blue has washed out of its smaller mips.
+ *   winHash   a number 0..1 from a window's cell, a seed of its building's and a salt
+ *   winPane   1 inside the pane `r` (left, right, bottom, top, shares of the cell) of a point `f` in the cell, the edge a pixel wide (`w`, the cell a pixel spans)
+ *   winLight  a window's light, from four numbers of its own `h` (the first against the building's share lit, the second against the share of dark floors, then the hour of the dusk it
+ *             comes on at, then its tone: which white, how bright), the night's level, the share lit, the share of floors dark and the share that are cool
+ *   winMean   the light a pixel that spans many windows takes: what a building's windows average to
+ *   winTile   a facade's window at `v` (the storeys and bays up and along: the tile's own UV), with its seed (the building's colour)
+ *   winDecal  a decal's window, from four smooth numbers of its corner (the arcsine kind the sines give; `winUni` makes them even)
+ * A window of a facade is one of its building's lit ones when its number is under the building's share (a seed's fraction: 0.14 to 0.64 of the windows in a house, more in a tower),
+ * and is dark if its floor is one of the dark (a hash of the floor's number and the building's seed alone, so a floor is dark the whole way round the building). It comes on at an hour of
+ * the dusk of its own (a ramp of `night` from 0.04 + 0.6 h to 0.26 + 0.6 h, so the windows come on one by one as the light goes and all are on at full night). From a distance, where a pixel
+ * spans more than a quarter of a tile, it takes `winMean` and the rectangle of the pane, so a far block is a steady dim glow and not a shimmer.
+ */
+const WIN_NIGHT_GLSL = /* glsl */`
+float winHash( vec2 c, float seed, float salt ) {
+  return fract( sin( dot( c, vec2( 12.9898, 78.233 ) ) + seed * 2.713 + salt * 19.19 ) * 43758.5453 );
+}
+float winUni( float a ) {
+  return 0.63662 * asin( sqrt( clamp( a, 0.0, 1.0 ) ) );
+}
+float winPane( vec2 f, vec4 r, vec2 w ) {
+  vec2 e = max( w, vec2( 0.002 ) );
+  vec2 lo = smoothstep( r.xz - e, r.xz + e, f );
+  vec2 hi = smoothstep( -r.yw - e, -r.yw + e, -f );
+  return lo.x * lo.y * hi.x * hi.y;
+}
+vec3 winLight( vec4 h, float night, float share, float off, float cool ) {
+  float on = step( h.x, share ) * step( off, h.y ) * smoothstep( 0.04 + 0.6 * h.z, 0.26 + 0.6 * h.z, night );
+  vec3 warm = mix( vec3( 1.0, 0.58, 0.26 ), vec3( 1.0, 0.82, 0.54 ), fract( h.w * 5.3 ) );
+  vec3 col = mix( warm, vec3( 0.66, 0.82, 1.0 ), step( 1.0 - cool, fract( h.w * 9.7 + 0.37 ) ) );
+  return col * on * ( 0.5 + 0.5 * fract( h.w * 3.1 + 0.2 ) );
+}
+vec3 winMean( float night, float share, float off, float cool ) {
+  return mix( vec3( 1.0, 0.70, 0.40 ), vec3( 0.66, 0.82, 1.0 ), cool ) * ( 0.75 * share * ( 1.0 - off ) * clamp( ( night - 0.15 ) / 0.6, 0.0, 1.0 ) );
+}
+float winRoom( float y, vec4 r ) {
+  return mix( 0.72, 1.0, smoothstep( r.z, r.w, y ) );
+}
+vec3 winTile( vec2 v, vec2 w, float seed, float night, vec4 rect, vec4 mode, float glass ) {
+  vec2 cell = floor( v );
+  vec2 f = v - cell;
+  float share = mode.x + mode.y * fract( seed * 3.71 + 0.29 );
+  vec4 h = vec4( winHash( cell, seed, 1.0 ), winHash( vec2( 0.0, cell.y ), seed, 2.0 ), winHash( cell, seed, 3.0 ), winHash( cell, seed, 4.0 ) );
+  float span = max( w.x, w.y );
+  float far = smoothstep( 0.25, 0.6, span );
+  float near = 1.0 - smoothstep( 0.03, 0.1, span );
+  vec3 own = winLight( h, night, share, mode.z, mode.w ) * ( winPane( f, rect, w ) * winRoom( f.y, rect ) * mix( 1.0, 0.3 + 0.7 * glass, near ) );
+  return mix( own, winMean( night, share, mode.z, mode.w ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) * 0.86 ), far );
+}
+vec3 winDecal( vec2 v, vec2 w, vec4 g, float night, vec4 rect, float glass, float blind ) {
+  float share = 0.3 + 0.4 * g.w;
+  vec4 h = vec4( winUni( g.x ), 1.0, winUni( g.y ), winUni( g.z ) );
+  float span = max( w.x, w.y );
+  float far = smoothstep( 0.25, 0.6, span );
+  float near = 1.0 - smoothstep( 0.03, 0.1, span );
+  vec3 own = winLight( h, night, share, 0.0, 0.1 ) * ( winPane( v, rect, w ) * winRoom( v.y, rect ) * mix( 1.0, 0.3 + 0.7 * glass, near ) * mix( 0.55, 1.0, blind ) );
+  return mix( own, winMean( night, share, 0.0, 0.1 ) * ( ( rect.y - rect.x ) * ( rect.w - rect.z ) * 0.7 ), far );
+}
+vec3 winPaneLit( vec2 v, vec2 w, float night, float share ) {
+  float id = floor( v.x );
+  vec2 c = vec2( id, 0.0 );
+  vec4 h = vec4( winHash( c, 0.0, 1.0 ), 1.0, winHash( c, 0.0, 3.0 ), winHash( c, 0.0, 4.0 ) );
+  float far = smoothstep( 0.25, 0.6, max( w.x, w.y ) );
+  vec3 own = winLight( h, night, share, 0.0, 0.1 ) * winRoom( -1.0 - v.y, vec4( 0.0, 1.0, 0.0, 1.0 ) );
+  return mix( own, winMean( night, share, 0.0, 0.1 ) * 0.7, far );
+}
+`;
+
+/**
+ * How a kind of facade's windows are lit after dark: [the fewest of a building's windows lit, the range above that (a building's own share is the fewest and a fraction of the range:
+ * a house has 14 to 64 in a hundred lit), the share of its floors with every light out, the share of the lit windows that are cool white and not warm]. ASSUMED: the mix of a London
+ * evening; the lit shopfronts are the open ones, the towers' offices light by floors with some floors empty, and a house's windows are mostly warm.
+ */
+const NIGHT_MODE = {
+  house: [0.14, 0.5, 0.12, 0.18],
+  curtain: [0.4, 0.4, 0.4, 0.5],
+  shop: [0.3, 0.35, 0, 0.15],
+} as const;
+
+/** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
+const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
+const glslVec4 = (v: readonly number[]): string => `vec4( ${v.map(glslFloat).join(', ')} )`;
+
+/**
  * One window to a tile (the city's facades: stock, red, stone, panel, glass and shop repeat one storey by one bay): the window's number is the
  * tile's, mixed with the building's own (its vertex colour), so a facade is a patchwork of windows and its neighbour a different one.
  * A curtain wall (the 'glass' facade) takes three quarters of its number from a smooth field across the tiles instead, and a narrower swing
@@ -622,6 +744,7 @@ float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed )
 ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
+if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare );
 `;
 
 /**
@@ -650,32 +773,154 @@ vec2 gUx = dFdx( vMapUv ), gUy = dFdy( vMapUv );
 float gDet = gUx.x * gUy.y - gUy.x * gUx.y;
 float gk = 0.5;
 float gq = 0.5;
+float gLit = 0.5;
+float gHour = 0.5;
+float gArea = 0.5;
 if ( abs( gDet ) > 1e-12 ) {
   vec3 gA = ( gDx * gUy.y - gDy * gUx.y ) / gDet;
   vec3 gB = ( gDy * gUx.x - gDx * gUy.x ) / gDet;
   vec3 gO = vWinPos - vMapUv.x * gA - vMapUv.y * gB;
   gk = 0.5 + 0.5 * sin( dot( gO, vec3( ${WINDOW_FIELD.a.join(', ')} ) ) + ${WINDOW_FIELD.k} * sin( dot( gO, vec3( ${WINDOW_FIELD.b.join(', ')} ) ) ) );
   gq = 0.5 + 0.5 * sin( dot( gO, vec3( 4.3, 2.9, 5.1 ) ) );
+  if ( uWinNight > 0.003 ) {
+    gLit = 0.5 + 0.5 * sin( dot( gO, vec3( 3.7, 2.3, 4.9 ) ) + 2.1 * sin( dot( gO, vec3( 1.7, 3.1, 2.3 ) ) ) );
+    gHour = 0.5 + 0.5 * sin( dot( gO, vec3( 5.3, 4.1, 2.9 ) ) );
+    gArea = 0.5 + 0.5 * sin( dot( gO.xz, vec2( 0.052, 0.043 ) ) );
+  }
 }
-${GLASS_VARIES_GLSL}${GLASS_BLIND_GLSL}`;
+${GLASS_VARIES_GLSL}${GLASS_BLIND_GLSL}
+if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winDecal( vMapUv, fwidth( vMapUv ), vec4( gLit, gHour, gk, gArea ), uWinNight, WIN_RECT, gShare, gBlind * smoothstep( 0.97 - gDrop, 1.03 - gDrop, vMapUv.y ) );`;
+
+/** How bright, at the most, a window's light is, as a share of its colour: a house's, a shopfront's plate glass, a curtain wall's (the whole wall is glass, which a flat share would drown the street in) and a decal's. */
+const NIGHT_GAIN = { house: 0.8, shop: 0.45, curtain: 0.35, decal: 0.8 } as const;
 
 /**
  * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material
  * must carry a map (the windows are in the texture). Its program key says which, so the two never share a compile.
  */
-export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain'): T {
+export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain', glass: readonly number[] = DECAL_GLASS, mode: readonly number[] = NIGHT_MODE.house, gain: number = NIGHT_GAIN.decal): T {
+  // after dark (`windowNight`): the pane of the window's glass in its tile or quad, and for a facade how its windows are lit. Defines, so each kind of facade is a program of its own.
+  m.defines = { ...m.defines, WIN_RECT: glslVec4(glass), WIN_GAIN: glslFloat(gain), ...(by === 'quad' ? {} : { WIN_MODE: glslVec4(mode) }) };
   m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
     if (by === 'quad') {
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vWinPos;')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
     }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', by === 'quad' ? '#include <common>\nvarying vec3 vWinPos;' : '#include <common>')
+      .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
   };
   m.customProgramCacheKey = () => `glassVaries-${by}`;
   return m;
+}
+
+/**
+ * A lit pane's UVs. The Midland Grand's windows are flat dark panes with no texture (landmarks.ts `addGlass`), so their UVs are free: u is the window's number (0 to `PANE_UV.numbers` - 1, from where it
+ * stands: its light is its own and the same on every build) plus its way across the glass mapped into 0.1 to 0.9 (so the number is `floor( u )` all over the pane, to the last pixel), and v is -1 minus
+ * its way up (-1 at the sill to -2 at the head). Nothing else the pane's material wears has a v under zero (the bands, the walls and the balcony have metres up from the ground), so a negative v is a window.
+ */
+export const PANE_UV = { numbers: 2048, margin: 0.1, share: 0.3 } as const;
+
+/** The UV of a point `across` (0 to 1 from the left) and `up` (0 to 1 from the sill) of the window numbered `id` (a whole number, 0 to `PANE_UV.numbers` - 1). */
+export function paneUv(id: number, across: number, up: number): [number, number] {
+  return [id + PANE_UV.margin + (1 - 2 * PANE_UV.margin) * across, -1 - up];
+}
+
+/**
+ * Light a flat pane's windows after dark (a Midland Grand pane is a clone of the library's dark pane, tinted: landmarks.ts): the pane keeps its own look by day and, where its UV says it is a window
+ * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
+ * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
+ */
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T): T {
+  m.defines = { ...m.defines, WIN_GAIN: glslFloat(NIGHT_GAIN.decal) };
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vWinUv;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinUv = uv;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}`)
+      .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} );`);
+  };
+  m.customProgramCacheKey = () => 'litPane';
+  return m;
+}
+
+/** The window grid of a plain city wall: metres to a window along it and up it (a Scottish tenement's bay is about 3 m, its storey 3.3), and the glass in the cell as shares of it (`winPane`'s rectangle). ASSUMED. */
+export const WALL_CELL = [3, 3.3] as const;
+export const WALL_RECT = [0.3, 0.7, 0.25, 0.82] as const;
+
+/**
+ * Where the windows of a wall are when it is not a Scottish tenement's (`litWalls`; every part is optional): `cell`, a window's cell in metres, along the wall and up it (`WALL_CELL`); `shift`, where the
+ * grid starts, in cells (none: at the map's origin); `rows`, the rows of cells that have windows, from and up to but not including (none: every row; the wall above and below them is not lit);
+ * `rect`, the glass in a cell (`WALL_RECT`, `winPane`'s rectangle); `mode`, how the windows are lit (`NIGHT_MODE.house`).
+ */
+export interface WallGrid {
+  cell?: readonly [number, number];
+  shift?: readonly [number, number];
+  rows?: readonly [number, number];
+  rect?: readonly number[];
+  mode?: readonly number[];
+}
+
+/**
+ * GLSL for a plain wall's lit windows, after the emissive colour is read (`totalEmissiveRadiance` and the `normal` are there): the wall's map UV, in cells of `WALL_CELL` (`WALL_TILE` is the map's tile
+ * over the cell; `WALL_SHIFT` moves the grid, `WALL_ROWS` keeps the windows to some rows of it), through `winTile`, only where the face looks sideways (a wall; the roofs and the plinths of the same mesh
+ * have none), the building's number from its vertex colour (a tone to each: 17 of them in the Scottish scene, so the seed is the tone's own and a building keeps its lights whatever else is built).
+ */
+const LIT_WALL_GLSL = /* glsl */`
+#if defined( WALL_WIN ) && defined( USE_MAP )
+if ( uWinNight > 0.003 ) {
+  vec2 wv = vMapUv * WALL_TILE;
+#ifdef WALL_SHIFT
+  wv += WALL_SHIFT;
+#endif
+  vec2 ww = fwidth( wv );
+  float wrow = 1.0;
+#ifdef WALL_ROWS
+  wrow = step( WALL_ROWS.x, floor( wv.y ) ) * step( floor( wv.y ), WALL_ROWS.y - 1.0 );
+#endif
+#ifdef USE_COLOR
+  float wseed = fract( floor( vColor.r * 100.0 + 0.5 ) * 0.6180339 );
+#else
+  float wseed = 0.5;
+#endif
+  totalEmissiveRadiance += ( WIN_GAIN * wrow * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 );
+}
+#endif
+`;
+
+/**
+ * Light the windows of a plain city wall after dark (round seven, the Scottish scene: waverley-city.ts's sandstone blocks have no windows by day and showed by night as dark slabs): a Lambert wall
+ * with a map (the stone's, whose repeat is 1 / `tile` metres), UVs that are metres along the wall and up it and a vertex colour to each building, gets a grid of windows, `WALL_CELL` metres to a
+ * window, lit as the city's facades are (`winTile`: warm or a little cool, a share of each building's own, some floors dark, each its own hour of the dusk). `grid` says otherwise where the wall is not
+ * a tenement's: the Balmoral's facade is one texture tile to a bay, its windows in storeys of their own (station-weather.ts). By day nothing changes. The material is patched where it stands (a patch
+ * it already has runs first and stays in its program key) and the function returned puts it back as it was.
+ */
+export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, number], grid: WallGrid = {}): () => void {
+  const [defines, onBeforeCompile, key] = [m.defines, m.onBeforeCompile, m.customProgramCacheKey()];
+  const { cell = WALL_CELL, shift, rows, rect = WALL_RECT, mode = NIGHT_MODE.house } = grid;
+  const vec2 = (v: readonly number[]): string => `vec2( ${v.map(glslFloat).join(', ')} )`;
+  m.defines = { ...defines, WALL_WIN: '', WALL_TILE: vec2([tile[0] / cell[0], tile[1] / cell[1]]), ...(shift ? { WALL_SHIFT: vec2(shift) } : {}), ...(rows ? { WALL_ROWS: vec2(rows) } : {}), WIN_RECT: glslVec4(rect), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(mode) };
+  m.onBeforeCompile = (shader, renderer) => {
+    onBeforeCompile.call(m, shader, renderer);
+    // a patch before this one (the roof shade's flood, lighting.ts) may have declared the night's level already, and says so by having put it in the uniforms: it is declared once
+    const declared = shader.uniforms.uWinNight !== undefined;
+    shader.uniforms.uWinNight = windowNight;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>${declared ? '' : '\nuniform float uWinNight;'}${WIN_NIGHT_GLSL}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${LIT_WALL_GLSL}`);
+  };
+  m.customProgramCacheKey = () => `${key}+litWalls`;
+  m.needsUpdate = true;
+  return () => {
+    m.defines = defines;
+    m.onBeforeCompile = onBeforeCompile;
+    m.customProgramCacheKey = () => key;
+    m.needsUpdate = true;
+  };
 }
 
 /**
@@ -802,8 +1047,9 @@ const makers: Readonly<Record<MaterialName, () => THREE.Material>> = {
   // these walls stand on the ground and their UVs are in metres from it. The Western Range's walls keep the plain ones, the colour it was fitted to.
   // Round six (the E2 scorer: "the south-front foot shade is barely visible"): a deeper long fall-off than the landmarks' (FRONT_FOOT): the piers' feet, the plinth and the arcade's wall are a clear darker
   // band at the south front's own view, and the close brick view's median L falls from 51.9 to 50.6 (dE2000 to R-a2 3.3 to 4.4, to R-a 2.4 to 3.4)
-  brickFoot: () => footShaded(tiled('brick'), FRONT_FOOT),
-  stoneFoot: () => footShaded(tiled('stone'), FRONT_FOOT),
+  // Round seven (night lighting): the front is floodlit from the foot, the brick's gold and the ribs' stone brighter at the lamps (night-a-kx-square-2015-skinner.jpg, see lighting.ts `FLOOD`)
+  brickFoot: () => floodLit(footShaded(tiled('brick'), FRONT_FOOT), ...FRONT_FLOOD.brick),
+  stoneFoot: () => floodLit(footShaded(tiled('stone'), FRONT_FOOT), ...FRONT_FLOOD.stone),
 };
 
 const materials = new Map<MaterialName, THREE.Material>();
@@ -1127,6 +1373,23 @@ const facadeSpec = (key: FacadeKey, average: number, source: string): TextureSpe
   return { tile: [tile[0], tile[1]], px: [Math.round(tile[0] * FACADE_TEXELS_PER_M), Math.round(tile[1] * FACADE_TEXELS_PER_M)], density: [FACADE_TEXELS_PER_M * 0.95, FACADE_TEXELS_PER_M * 1.05], average, repeat: true, source };
 };
 
+/**
+ * Where the glass of each facade's window is in its tile, as the painters below draw it (round seven: the lit windows' panes are this glass): its width, its height and its sill (the height
+ * of its foot above the tile's foot), in texels (FACADE_TEXELS_PER_M to the metre), centred across the tile. The painters read these, and so does `FACADE_GLASS`.
+ */
+const PANE = {
+  stock: { ww: 105, wh: 175, sill: 85 },
+  red: { ww: 120, wh: 215, sill: 90 },
+  stone: { ww: 110, wh: 230, sill: 90 },
+  panel: { ww: 190, wh: 145, sill: 85 },
+} as const;
+/** The red facade's round head: its arch rises this share of the window's width above the springing. */
+const RED_RISE = 0.2;
+/** The curtain wall's vision glass: the margin at each mullion and at the transom above it, and the spandrel's depth below it, in texels. */
+const CURTAIN_PANE = { side: 2, top: 10, spandrel: 90 } as const;
+/** The shopfront's plate glass: the margin at each pilaster, the fascia's depth above it and the stall riser's below it, in texels. */
+const SHOP_PANE = { side: 14, fascia: 90, riser: 55 } as const;
+
 export const CITY_TEXTURES: Readonly<Record<CityTextureName, TextureSpec>> = {
   // 12 stretchers of 225 mm (215 mm brick + 10 mm joint) across, 44 courses of 75 mm up: metric brick. The
   // colours are London stock yellow-buff, the window a six-over-six sash; sizes and colours ASSUMED.
@@ -1139,6 +1402,22 @@ export const CITY_TEXTURES: Readonly<Record<CityTextureName, TextureSpec>> = {
   grass: { tile: [4, 4], px: [128, 128], density: [28, 36], average: 0x59753f, repeat: true, source: 'ASSUMED: mown grass drawn at 32 texels per metre' },
   water: { tile: [8, 8], px: [128, 128], density: [14, 18], average: 0x2f4d55, repeat: true, source: 'ASSUMED: canal water, ripples drawn at 16 texels per metre' },
 };
+
+/**
+ * The glass of each facade's window as [left, right, bottom, top], shares of its tile (up from the tile's foot): the panes the lit windows fill after dark (see `glassVaries`). From the numbers
+ * the painters draw it with (`PANE` and the rest above). The red facade's head is round and the rectangle runs to half way up its arch: the glass of the texture trims the corners.
+ */
+export const FACADE_GLASS: Readonly<Record<FacadeKey, readonly [number, number, number, number]>> = (() => {
+  const rect = (key: FacadeKey): readonly [number, number, number, number] => {
+    const [w, h] = CITY_TEXTURES[key].px;
+    if (key === 'glass') return [CURTAIN_PANE.side / w, 1 - CURTAIN_PANE.side / w, CURTAIN_PANE.spandrel / h, 1 - CURTAIN_PANE.top / h];
+    if (key === 'shop') return [SHOP_PANE.side / w, 1 - SHOP_PANE.side / w, SHOP_PANE.riser / h, 1 - SHOP_PANE.fascia / h];
+    const p = PANE[key];
+    const rise = key === 'red' ? p.ww * RED_RISE : 0;
+    return [(w - p.ww) / 2 / w, (w + p.ww) / 2 / w, p.sill / h, (p.sill + p.wh - rise / 2) / h];
+  };
+  return { stock: rect('stock'), red: rect('red'), stone: rect('stone'), panel: rect('panel'), glass: rect('glass'), shop: rect('shop') };
+})();
 
 type CityCtx = CanvasRenderingContext2D;
 const cityPx = (m: number): number => m * FACADE_TEXELS_PER_M;
@@ -1241,7 +1520,7 @@ function citySash(g: CityCtx, cx: number, h: number, o: SashOptions): void {
 
 function paintCityStock(g: CityCtx, w: number, h: number): void {
   cityCourses(g, w, h, 101, 0xbfa874, 0x9b8760, '#9a978a');
-  citySash(g, w / 2, h, { ww: 105, wh: 175, sill: 85, cols: 2, rows: 6, surround: '#d2cab4', frame: '#e8e5da' });
+  citySash(g, w / 2, h, { ww: PANE.stock.ww, wh: PANE.stock.wh, sill: PANE.stock.sill, cols: 2, rows: 6, surround: '#d2cab4', frame: '#e8e5da' });
   g.fillStyle = 'rgba(0,0,0,0.10)'; // the floor line
   g.fillRect(0, h - 3, w, 3);
 }
@@ -1253,11 +1532,11 @@ function paintCityRed(g: CityCtx, w: number, h: number): void {
   g.fillStyle = 'rgba(0,0,0,0.25)';
   g.fillRect(0, h - 17, w, 2);
   const cx = w / 2;
-  const ww = 120;
-  const wh = 215;
-  const yb = h - 90;
+  const ww = PANE.red.ww;
+  const wh = PANE.red.wh;
+  const yb = h - PANE.red.sill;
   const yt = yb - wh;
-  const rise = ww * 0.2;
+  const rise = ww * RED_RISE;
   const arch = (inset: number): void => {
     g.beginPath();
     g.moveTo(cx - ww / 2 + inset, yb - inset);
@@ -1300,7 +1579,7 @@ function paintCityStone(g: CityCtx, w: number, h: number): void {
       g.fillRect(x + 1, row * bh + 1, bw - 2, bh - 2);
     }
   }
-  citySash(g, w / 2, h, { ww: 110, wh: 230, sill: 90, cols: 2, rows: 6, surround: '#efe9d8', frame: '#f1eee4', hood: 16 });
+  citySash(g, w / 2, h, { ww: PANE.stone.ww, wh: PANE.stone.wh, sill: PANE.stone.sill, cols: 2, rows: 6, surround: '#efe9d8', frame: '#f1eee4', hood: 16 });
   g.fillStyle = 'rgba(0,0,0,0.10)';
   g.fillRect(0, h - 3, w, 3);
 }
@@ -1317,9 +1596,9 @@ function paintCityPanel(g: CityCtx, w: number, h: number): void {
     }
   }
   const cx = w / 2;
-  const ww = 190;
-  const wh = 145;
-  const yb = h - 85;
+  const ww = PANE.panel.ww;
+  const wh = PANE.panel.wh;
+  const yb = h - PANE.panel.sill;
   const yt = yb - wh;
   g.fillStyle = '#2d3338'; // dark aluminium frame
   g.fillRect(cx - ww / 2 - 5, yt - 5, ww + 10, wh + 10);
@@ -1345,7 +1624,7 @@ function paintCityGlass(g: CityCtx, w: number, h: number): void {
   lg.addColorStop(0, '#9db4c4');
   lg.addColorStop(1, '#4f6a7c');
   g.fillStyle = lg;
-  g.fillRect(2, 10, w - 4, h - 100); // vision glass above the spandrel, which is at the bottom of the tile
+  g.fillRect(CURTAIN_PANE.side, CURTAIN_PANE.top, w - 2 * CURTAIN_PANE.side, h - CURTAIN_PANE.top - CURTAIN_PANE.spandrel); // vision glass above the spandrel, which is at the bottom of the tile
   g.fillStyle = 'rgba(255,255,255,0.12)'; // a sky reflection streak
   g.beginPath();
   g.moveTo(w * 0.15, 10);
@@ -1373,21 +1652,22 @@ function paintCityShop(g: CityCtx, w: number, h: number): void {
   g.fillRect(14, 18, w - 28, 66);
   g.fillStyle = '#d8d4c4';
   g.fillRect(w * 0.22, 40, w * 0.56, 22);
-  const lg = g.createLinearGradient(0, 90, 0, h - 55);
+  const { side, fascia, riser } = SHOP_PANE;
+  const lg = g.createLinearGradient(0, fascia, 0, h - riser);
   lg.addColorStop(0, '#a9b9c4'); // sky reflected in the plate glass, then the lit shop behind
   lg.addColorStop(0.45, '#b8a77c');
   lg.addColorStop(1, '#6b5a3c');
   g.fillStyle = lg;
-  g.fillRect(14, 90, w - 28, h - 90 - 55);
+  g.fillRect(side, fascia, w - 2 * side, h - fascia - riser);
   g.fillStyle = '#25292d'; // frames and the door
-  g.fillRect(14, 86, w - 28, 5);
-  g.fillRect(14 + (w - 28) * 0.62, 90, 4, h - 145);
-  g.fillRect(w - 14 - 3, 90, 3, h - 145);
-  g.fillRect(14, 90, 3, h - 145);
+  g.fillRect(side, fascia - 4, w - 2 * side, 5);
+  g.fillRect(side + (w - 2 * side) * 0.62, fascia, 4, h - fascia - riser);
+  g.fillRect(w - side - 3, fascia, 3, h - fascia - riser);
+  g.fillRect(side, fascia, 3, h - fascia - riser);
   g.fillStyle = '#33383d'; // the stall riser
-  g.fillRect(14, h - 55, w - 28, 55);
+  g.fillRect(side, h - riser, w - 2 * side, riser);
   g.fillStyle = '#4d535a';
-  g.fillRect(14, h - 55, w - 28, 3);
+  g.fillRect(side, h - riser, w - 2 * side, 3);
 }
 
 function paintCityGrass(g: CityCtx, w: number, h: number): void {
@@ -1464,7 +1744,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
   // curtain walling catches the sun: a Phong sheen on top of the drawn glass
   glass: () => {
     const t = cityTexture('glass');
-    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'curtain');
+    return glassVaries(new THREE.MeshPhongMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES.glass.average, vertexColors: true, specular: 0x6f7f8c, shininess: 55 }), 'curtain', FACADE_GLASS.glass, NIGHT_MODE.curtain, NIGHT_GAIN.curtain);
   },
   roof: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
   paint: () => new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }),
@@ -1498,7 +1778,7 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
 function cityFacade(key: FacadeKey): THREE.Material {
   const t = cityTexture(key);
   // one window to a tile: each one mirrors the sky or shows its room (see glassVaries)
-  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile');
+  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile', FACADE_GLASS[key], key === 'shop' ? NIGHT_MODE.shop : NIGHT_MODE.house, key === 'shop' ? NIGHT_GAIN.shop : NIGHT_GAIN.house);
 }
 
 function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Material {

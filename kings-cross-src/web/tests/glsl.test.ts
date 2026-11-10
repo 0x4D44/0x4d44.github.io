@@ -74,6 +74,8 @@ test('vectors: constructors, swizzles in all three alphabets, component-wise mat
   near(expr('exp(-2.0)'), Math.exp(-2));
   near(expr('exp(vec2(1.0, -0.5))'), [Math.E, Math.exp(-0.5)]);
   near(expr('sin(0.0) + cos(0.0)'), 1);
+  near(expr('asin(1.0)'), Math.PI / 2);
+  near(expr('asin(vec2(0.0, 0.5))'), [0, Math.PI / 6]);
   assert.equal(expr('smoothstep(0.0, 1.0, 0.25)'), 0.15625, '3t^2 - 2t^3 at a quarter');
   assert.equal(expr('smoothstep(0.0, 1.0, 0.5)'), 0.5);
   assert.equal(expr('smoothstep(2.0, 4.0, 1.0)'), 0, 'below the lower edge');

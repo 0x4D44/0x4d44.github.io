@@ -17,7 +17,8 @@ import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
-import { createNightLights } from './night.ts';
+import { windowNight } from './materials.ts';
+import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
@@ -183,6 +184,28 @@ export interface AtmosphereOptions {
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
   sites: NightLightSites | null;
+  /**
+   * The haze of this scene's clear air: a nearer far plane for its fog than `CLEAR_FOG`'s 2.6 km (the Scottish scene's, station-weather.ts `WAVERLEY_HAZE`). It shortens the clear air's fog and
+   * nothing else: weather that is already thicker (mist, rain, fog) keeps its own, which is nearer than this. Omitted, the scene has the page's own haze, as London's does.
+   */
+  haze?: Haze;
+}
+
+/** A scene's own haze: how near its clear air's fog ends, and the camera heights it gives way to the page's own fog between. */
+export interface Haze {
+  /** the fog's far plane near the ground, metres */
+  far: number;
+  /**
+   * Camera heights, metres, between which the haze gives way to the page's own clear air: all of it below the first, none above the second, a smoothstep between. The haze is the lowest layer of the
+   * air: a camera above it looks down through a thin column, not across the whole of it (fogRange does the same for the weather's fog), and the landing view of the scene is such a camera.
+   */
+  fade: readonly [number, number];
+}
+
+/** The far plane of a scene's fog: the range's own, or, in a scene with a haze, the nearer of that and the haze's, which the camera's height gives back to the range's (see `Haze.fade`). */
+export function fogFar(rangeFar: number, cameraY: number, haze?: Haze): number {
+  if (!haze) return rangeFar;
+  return Math.min(rangeFar, haze.far + (rangeFar - haze.far) * smoothstep(haze.fade[0], haze.fade[1], cameraY));
 }
 
 export interface AtmosphereFrame {
@@ -232,12 +255,15 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
+  // the clock dials of the scene's buildings glow with the lamps (night.ts `createDialLights`); `rescan` finds them, as the landmarks arrive after the first frame
+  const dialLights = nightLights ? createDialLights() : null;
+  if (dialLights) nightLights?.attach(dialLights);
 
   // the sun disc and the stars ride on the dome, which follows the camera
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture(), color: 0xffffff, transparent: true, opacity: 0,
@@ -295,6 +321,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
         }
       }
     });
+    dialLights?.scan(scene);
   };
   rescan();
 
@@ -380,9 +407,10 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     stars.visible = rig.stars > 0.01;
     (stars.material as THREE.PointsMaterial).opacity = rig.stars * 0.9;
 
-    // lamps: halos, and the trains' windows and lenses
+    // lamps: halos, and the trains' windows and lenses, and the windows of the city's buildings
     nightLights?.setLevel(rig.lampLevel);
     trainNight.value = rig.lampLevel;
+    windowNight.value = rig.lampLevel;
     // what glowed like sky-lit day dims after dark, with a warm share from the lamps
     for (const [m, base] of standIns) {
       const day = rig.daylight;
@@ -422,7 +450,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
       if (scene.fog instanceof THREE.Fog) {
         const range = fogRange(state.weather.visibilityM, f.camera.position.y);
         scene.fog.near = range.near;
-        scene.fog.far = range.far;
+        scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
         rgb(scene.fog.color, state.rig.fog);
       }
       if (scene.background instanceof THREE.Color) rgb(scene.background, state.rig.dome.horizon);
@@ -432,6 +460,7 @@ export function createAtmosphere({ scene, world, sites, location }: AtmosphereOp
     dispose() {
       applyCover(null);
       precip.dispose();
+      dialLights?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
       sunSprite.material.dispose();

@@ -117,6 +117,7 @@ All relay settings are optional. Defaults shown are from the relay modules.
 | `KX_ANCHORS` / `KX_SCLASS` | Override the private anchor-map or S-class-table file. |
 | `KX_KEYCHAIN_SERVICE` | `kx-ntrod`, macOS Keychain item name. |
 | `KX_RELAY_TARGET` | Vite dev proxy target; defaults to `http://127.0.0.1:8787`. |
+| `KX_PTAC` | Off by default. `1` consumes Network Rail PTAC (planned unit allocations, Rail Data Marketplace Kafka, `kafkajs`) into the private `KX_DATA_DIR/areas/EB/ptac.json` (Edinburgh trains, mode 600, yesterday to tomorrow, at most 4000 trains). Login and consumer group come from the Keychain items `kx-rdm-ptac` and `kx-rdm-ptac-group`. `/health` gains a `ptac` counts block. Format and key: `relay/ptac.mjs`. |
 
 Override the STOMP host, port and topics if the account's feed settings differ.
 

@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { describeSun } from '../../core/daylight.ts';
+import { CLEAR_FOG, describeSun, fogRange, lampLevelFor } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
 import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
+import { TEXTURES, WALL_CELL } from '../src/materials.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
-import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from '../src/station-weather.ts';
+import { activateSceneAtmosphere, BALMORAL_WINDOWS, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions, WAVERLEY_HAZE } from '../src/station-weather.ts';
+import { BALMORAL_LEVELS } from '../src/waverley-frontage-balmoral.ts';
 import { coverAt, coverUniforms, findRoofs } from '../src/cover.ts';
 import { liveUrl } from '../src/weather.ts';
 import type { WeatherFeedOptions } from '../src/weather.ts';
@@ -389,4 +392,348 @@ test('disposal frees the sky and the flat ground, geometry and material, and not
   climate.dispose();
   assert.deepEqual(freed.sort(), ['flat ground geometry', 'flat ground material', 'sky geometry', 'sky material']);
   view.dispose();
+});
+
+/** The four meshes the Scottish night lighting looks for, by name (waverley-city.ts and waverley-frontage.ts's), each with a Lambert material of its own. */
+function nightMeshes() {
+  const group = new THREE.Group();
+  const add = (name: string, y: number): THREE.Mesh => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 4, 2), new THREE.MeshLambertMaterial({ vertexColors: true }));
+    mesh.name = name;
+    mesh.position.y = y;
+    group.add(mesh);
+    return mesh;
+  };
+  return { group, walls: add('waverley-building-walls', 0), facade: add('waverley-balmoral-facade', 5), tower: add('waverley-balmoral-tower', 30), dials: add('waverley-balmoral-clock-dials', 40) };
+}
+const lambertOf = (mesh: THREE.Mesh): THREE.MeshLambertMaterial => mesh.material as THREE.MeshLambertMaterial;
+const compileOf = (m: THREE.Material): string => {
+  const s = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  return s.fragmentShader;
+};
+
+test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone is floodlit from the foot of its body and of its tower and its dials glow, each material alone, and the function it returns puts them all back (round seven)', () => {
+  const { group, walls, facade, tower, dials } = nightMeshes();
+  const before = [walls, facade, tower, dials].map((mesh) => ({ defines: lambertOf(mesh).defines, key: lambertOf(mesh).customProgramCacheKey(), compile: lambertOf(mesh).onBeforeCompile, version: lambertOf(mesh).version }));
+  const undo = lightWaverleyNight(group);
+  const w = lambertOf(walls), f = lambertOf(facade), t = lambertOf(tower), d = lambertOf(dials);
+  assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
+  assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
+  // the walls' windows are in cells over the sandstone's own tile (materials.ts TEXTURES.stone, which their map repeats): the map's unit is a tile, so the grid is the tile over the cell, along the wall and up it
+  const wallTile = String(w.defines?.WALL_TILE).replace('vec2', '').match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g)?.map(Number) ?? [];
+  assert.ok(wallTile.length === 2 && Math.abs(wallTile[0]! - TEXTURES.stone.tile[0] / WALL_CELL[0]) < 1e-9 && Math.abs(wallTile[1]! - TEXTURES.stone.tile[1] / WALL_CELL[1]) < 1e-9,
+    `the walls' grid is the stone's tile ${TEXTURES.stone.tile} over the cell ${WALL_CELL}: ${w.defines?.WALL_TILE}`);
+  // each patched or flooded material is built again (three compiles a program again only for a new version): the tower's and the dials' by the flood alone
+  const patched = [walls, facade, tower, dials].map((mesh, i) => {
+    assert.ok(lambertOf(mesh).version > before[i]!.version, `${mesh.name} is recompiled with the night's patch`);
+    return lambertOf(mesh).version;
+  });
+  // the stone is lit from where the ground is under it: the lowest point of each mesh (the body 5 m up and 4 m tall: its foot is 3 m up; the tower 30 m up: its foot is 28 m)
+  assert.equal(f.defines?.FLOOD, 'vec4( 0.08, 30.0, 0.5, 3.0 )', 'the body: a dim warm masonry');
+  assert.equal(t.defines?.FLOOD, 'vec4( 0.02, 30.0, 0.5, 28.0 )', 'the tower: its shaft darker still');
+  // the body has windows of its own, on the facade texture's grid (BALMORAL_WINDOWS); the tower's shaft has none
+  assert.ok('WALL_WIN' in (f.defines ?? {}) && !('WALL_WIN' in (t.defines ?? {})), 'windows in the body and not in the tower');
+  assert.equal(f.defines?.WALL_TILE, 'vec2( 1.0, 11.917808219178083 )', 'a bay to a map unit along the wall, 43.5 m up it, in cells of a bay by 3.65 m');
+  assert.equal(f.defines?.WALL_SHIFT, 'vec2( 0.0, -7.315068493150685 )', 'the first cell at 8.7 m over the street');
+  assert.equal(f.defines?.WALL_ROWS, 'vec2( 0.0, 4.0 )', 'four storeys');
+  assert.equal(f.defines?.WIN_RECT, 'vec4( 0.32, 0.68, 0.17, 0.77 )');
+  assert.equal(f.defines?.WIN_MODE, 'vec4( 0.33, 0.0, 0.12, 0.1 )', 'a third of the windows, 12 in a hundred floors dark, a tenth cool');
+  assert.ok(!('WALL_SHIFT' in (w.defines ?? {})) && !('WALL_ROWS' in (w.defines ?? {})), 'the city\'s walls are in their own grid, all rows of it');
+  // a clock dial is lit all over: no fall-off (a reach of a metre, a floor of one), and over strength 1 so it reads as lit from within
+  assert.equal(d.defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
+  assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls'), 'the walls are a program of their own');
+  assert.equal(t.customProgramCacheKey(), before[2]!.key, 'the flood is a define: the program key is the same, the define makes the program');
+  assert.equal(f.customProgramCacheKey(), `${before[1]!.key}+litWalls`, 'the body\'s windows are a program of their own, over the flood\'s');
+  assert.ok(compileOf(w).includes('float winHash('), 'the walls compile with the night functions');
+  undo();
+  [walls, facade, tower, dials].forEach((mesh, i) => {
+    const m = lambertOf(mesh);
+    assert.equal(m.defines, before[i]!.defines, `${mesh.name}: its defines, as they were`);
+    assert.equal(m.customProgramCacheKey(), before[i]!.key, `${mesh.name}: its key`);
+    assert.equal(m.onBeforeCompile, before[i]!.compile, `${mesh.name}: its patch`);
+    assert.ok(m.version > patched[i]!, `${mesh.name}: built again as it was put back`);
+  });
+  // a scene without them, or whose materials are not Lambert (a basic one has no emissive term to add to), is left alone, with nothing to undo (it is looked at while the night is on: the undo would put it right)
+  const empty = new THREE.Group();
+  const basic = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
+  basic.name = 'waverley-building-walls';
+  empty.add(basic);
+  const undoBasic = lightWaverleyNight(empty);
+  assert.ok((basic.material as THREE.MeshBasicMaterial).defines === undefined && basic.material.version === 0 && basic.material.customProgramCacheKey() === new THREE.MeshBasicMaterial().customProgramCacheKey(), 'a basic material is not patched while the night is on');
+  assert.doesNotThrow(undoBasic);
+  assert.doesNotThrow(() => lightWaverleyNight(new THREE.Group())());
+});
+
+test('the meshes the Scottish night lights are the ones the real scene builds, each a Lambert surface: a rename in the frontage or the city would leave the night unlit, and this says so', () => {
+  const built = buildWaverleyScene({ lighting: false });
+  try {
+    const names = ['waverley-building-walls', 'waverley-balmoral-facade', 'waverley-balmoral-tower', 'waverley-balmoral-clock-dials'];
+    const surface = (name: string): THREE.MeshLambertMaterial => (built.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    for (const name of names) {
+      const mesh = built.group.getObjectByName(name) as THREE.Mesh | undefined;
+      assert.ok(mesh?.isMesh, `${name} is a mesh of the scene`);
+      assert.ok(surface(name).isMeshLambertMaterial, `${name} is a Lambert surface`);
+      assert.ok(!('WALL_WIN' in (surface(name).defines ?? {})) && !('FLOOD' in (surface(name).defines ?? {})), `${name} is unlit before the night lighting`);
+    }
+    const undo = lightWaverleyNight(built.group);
+    assert.ok('WALL_WIN' in (surface(names[0] as string).defines ?? {}), 'the blocks have windows');
+    assert.ok('WALL_WIN' in (surface('waverley-balmoral-facade').defines ?? {}), 'and the hotel\'s body');
+    for (const name of names.slice(1)) assert.ok('FLOOD' in (surface(name).defines ?? {}), `${name} is floodlit or glows`);
+    undo();
+    for (const name of names) assert.ok(!('WALL_WIN' in (surface(name).defines ?? {})) && !('FLOOD' in (surface(name).defines ?? {})), `${name} is as it was`);
+  } finally { built.dispose(); }
+});
+
+test('the Balmoral\'s windows are the facade texture\'s: its map is a bay wide and the texture\'s levels tall, each of the four storeys of windows is wholly in a cell of its own with the glass the grid\'s rectangle to a fraction of a metre, and nothing under the first-floor band is lit (round seven)', () => {
+  const L = BALMORAL_LEVELS;
+  const { tile, grid } = BALMORAL_WINDOWS;
+  assert.deepEqual([...tile], [L.bay, L.below + L.cornice], 'a bay wide and the texture\'s span tall (balmoralFacadeTexture: below + cornice)');
+  assert.equal(grid.cell[0], L.bay, 'a window to a bay');
+  // the windows the texture paints, read from its painter's own calls (`win( cx, sill, width, height, ...)`, in metres over the street): a change to them says so here and the grid is drawn again
+  const source = readFileSync(new URL('../src/waverley-frontage-balmoral.ts', import.meta.url), 'utf8');
+  const painted = [...source.matchAll(/win\(L\.bay\/2,([\d.]+),([\d.]+),([\d.]+)/g)].map((m) => ({ sill: Number(m[1]), width: Number(m[2]), height: Number(m[3]) }));
+  assert.equal(painted.length, 6, `the ground floor, the mezzanine and four storeys, in the painter: ${JSON.stringify(painted)}`);
+  const above = painted.filter((w) => w.sill > 8.6);
+  assert.deepEqual(above.map((w) => w.sill), [9.2, 13, 16.7, 20.3], 'the four storeys over the first-floor band (8.2 to 8.6 m)');
+  // the grid: cell 0 starts where the shift puts it (metres over the street), the cells are `cell[1]` tall
+  const [cellH, first] = [grid.cell[1], -grid.shift[1] * grid.cell[1] - L.below];
+  assert.ok(Math.abs(first - 8.7) < 1e-9, `the first cell starts at ${first} m, between the band and the first sill`);
+  const cells = new Set<number>();
+  for (const w of above) {
+    const k = Math.floor((w.sill - first) / cellH);
+    const start = first + k * cellH;
+    assert.ok(k >= grid.rows[0] && k < grid.rows[1], `the window at ${w.sill} m is in a lit row (${k})`);
+    assert.equal(Math.floor((w.sill + w.height - 1e-9 - first) / cellH), k, `the window at ${w.sill} m is wholly in its cell`);
+    cells.add(k);
+    // the glass the grid lights: from a fifth of a metre under the sill to a third of a metre inside the head, and across the window to a tenth of a metre
+    assert.ok(Math.abs(start + grid.rect[2] * cellH - w.sill) <= 0.2, `the lit glass starts at the sill at ${w.sill} m`);
+    assert.ok(Math.abs(start + grid.rect[3] * cellH - (w.sill + w.height)) <= 0.3, `and ends at the head of the window at ${w.sill} m`);
+    assert.ok(Math.abs(grid.rect[0] * L.bay - (L.bay / 2 - w.width / 2)) <= 0.1 && Math.abs(grid.rect[1] * L.bay - (L.bay / 2 + w.width / 2)) <= 0.1, `and across it (${w.width} m)`);
+  }
+  assert.equal(cells.size, 4, 'one cell to each storey');
+  assert.equal(grid.rows[1] - grid.rows[0], 4, 'four rows are lit');
+  // the windows under the band are not: their cells are under the rows
+  for (const w of painted.filter((p) => p.sill < 8.6)) assert.ok(Math.floor((w.sill - first) / cellH) < grid.rows[0], `the window at ${w.sill} m is not lit`);
+  // the real facade's UVs are what the grid reads: u counts bays along its walls (a horizontal edge is its length over a bay in u), v is 1 at the main cornice
+  const built = buildWaverleyScene({ lighting: false });
+  try {
+    const geometry = (built.group.getObjectByName('waverley-balmoral-facade') as THREE.Mesh).geometry;
+    const [position, uv, index] = [geometry.getAttribute('position'), geometry.getAttribute('uv'), geometry.index];
+    assert.ok(position && uv && index, 'positions, UVs and an index');
+    let top = -Infinity;
+    let edges = 0;
+    for (let i = 0; i < index.count; i += 3) {
+      for (let e = 0; e < 3; e++) {
+        const [a, b] = [index.getX(i + e), index.getX(i + ((e + 1) % 3))];
+        top = Math.max(top, uv.getY(a));
+        const across = Math.abs(uv.getX(a) - uv.getX(b));
+        if (Math.abs(position.getY(a) - position.getY(b)) > 1e-6 || across < 1e-6) continue;
+        const length = Math.hypot(position.getX(a) - position.getX(b), position.getZ(a) - position.getZ(b));
+        if (length < 0.7) continue; // the sides of the three projecting bays: 0.6 m deep, a strip of the tile's left edge (u 0 to 0.15) with no window in it
+        assert.ok(Math.abs(length / across - L.bay) < 1e-3, `a bay is ${L.bay} m in u: ${length} m over ${across}`);
+        edges++;
+      }
+    }
+    assert.ok(edges >= 8, `the walls' horizontal edges: ${edges}`);
+    assert.ok(Math.abs(top - 1) < 1e-9, `v is 1 at the main cornice, the top of the facade: ${top}`);
+  } finally { built.dispose(); }
+});
+
+test('the Scottish climate lights the Scottish night and puts it back with the climate: the walls\' windows, the Balmoral\'s flood and dials, over the roof shade the atmosphere gives every wall', async () => {
+  const { view } = await viewOf();
+  const { group, walls, facade, tower, dials } = nightMeshes();
+  view.scene.add(group);
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  try {
+    const w = lambertOf(walls);
+    assert.ok(w.defines && 'WALL_WIN' in w.defines, 'lit windows on the walls');
+    const f = compileOf(w);
+    assert.ok(f.includes('float winHash(') && f.includes('coverGroundAt'), 'over the roof shade: both patches are in the program');
+    for (const [mesh, strength] of [[facade, '0.08'], [tower, '0.02']] as const) assert.ok(String(lambertOf(mesh).defines?.FLOOD).startsWith(`vec4( ${strength}, 30.0, 0.5, `), `${mesh.name} is floodlit`);
+    assert.ok('WALL_WIN' in (lambertOf(facade).defines ?? {}), 'the hotel\'s windows are lit as well');
+    assert.equal(lambertOf(dials).defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
+    assert.ok(compileOf(lambertOf(facade)).includes('#ifdef FLOOD'), 'the flood needs the roof shade\'s patch, which the atmosphere gave the stone');
+  } finally { climate.dispose(); }
+  assert.ok(!('WALL_WIN' in (lambertOf(walls).defines ?? {})), 'the walls\' windows go with the climate');
+  assert.ok(![facade, tower, dials].some((mesh) => 'FLOOD' in (lambertOf(mesh).defines ?? {})), 'and the flood');
+  assert.ok(!compileOf(lambertOf(walls)).includes('float winHash('));
+  view.dispose();
+});
+
+// ---- the Scottish street lamps (round seven): a lazy chunk of their own, a moment after the scene --------------------------------------------------
+
+/** Wait, up to ten seconds, for the Scottish street lamps to come into the scene (they load a moment after it). */
+async function lampsIn(scene: THREE.Object3D): Promise<THREE.Group> {
+  for (let waited = 0; waited < 10_000; waited += 20) {
+    const group = scene.getObjectByName('street-lamps');
+    if (group) return group as THREE.Group;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  return assert.fail('the Scottish street lamps did not come into the scene');
+}
+
+test('the Scottish scene has its street lamps a moment after it: dark by day, lit at the sky\'s own lamp level through the dusk and the night, and none left when its climate ends', async () => {
+  const { view } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  let wall = 0;
+  const at = (iso: string | number): number => {
+    climate.update({ ...frame(), timeMs: typeof iso === 'number' ? iso : Date.parse(iso), wallMs: (wall += 1000) });
+    return climate.atmosphere.state()!.rig.lampLevel;
+  };
+  try {
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'not there with the scene: a lazy chunk');
+    assert.equal(at('2026-11-09T12:00:00Z'), 0, 'noon');
+    const group = await lampsIn(view.scene);
+    assert.ok(group.parent === view.scene, 'in the scene it was made for');
+    const halos = group.getObjectByName('street-lamp-halos') as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>;
+    const pools = group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+    assert.ok(halos && pools && pools.count >= 900, `a pool to each of ${pools?.count} lamps`);
+    // it arrived at the level the sky had at the time: none
+    assert.deepEqual([halos.visible, pools.visible], [false, false], 'nothing glows by day');
+    // dusk: the first minute the sky's lamp level is about half, the lamps are half lit
+    let dusk = Date.parse('2026-11-09T15:00:00Z');
+    while (lampLevelFor(solarPosition(dusk, location.lat, location.lon).elevationDeg) < 0.5) dusk += 60_000;
+    const half = at(dusk);
+    assert.ok(half > 0.4 && half < 0.6, `dusk is ${half}`);
+    assert.ok(Math.abs(pools.material.opacity - half) < 1e-9 && Math.abs(halos.material.opacity - 0.9 * half) < 1e-9, 'lit as the sky says');
+    assert.deepEqual([halos.visible, pools.visible], [true, true]);
+    // night: all the way on; and off again by day
+    assert.equal(at('2026-11-09T23:00:00Z'), 1);
+    assert.deepEqual([halos.material.opacity, pools.material.opacity, halos.visible, pools.visible], [0.9, 1, true, true]);
+    assert.equal(at('2026-11-10T12:00:00Z'), 0);
+    assert.deepEqual([halos.visible, pools.visible], [false, false], 'dark again by day');
+    at('2026-11-09T23:00:00Z');
+    // the climate takes its lamps with it: out of the scene, and every geometry freed (the posts, the glow, the pools), once (assert.ok on identities: a failure of assert.equal would print the scene)
+    let freed = 0;
+    group.traverse((o) => (o as THREE.Mesh).geometry?.addEventListener('dispose', () => freed++));
+    climate.dispose();
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'the climate takes its lamps with it');
+    assert.ok(group.parent === null, 'out of the scene');
+    assert.equal(freed, 3, 'the geometry of the posts, of the glow and of the pools freed');
+    climate.dispose();
+    assert.equal(freed, 3, 'and once');
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('a lamp layer that arrives after dusk comes in lit: the level it is given is the last the sky gave, not the level it was made at', async () => {
+  const { view } = await viewOf();
+  const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  view.climate = climate;
+  try {
+    climate.update({ ...frame(), timeMs: Date.parse('2026-11-09T23:00:00Z') });
+    assert.equal(climate.atmosphere.state()!.rig.lampLevel, 1);
+    const group = await lampsIn(view.scene);
+    assert.equal((group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh).visible, true, 'lit as it arrives');
+    assert.equal(((group.getObjectByName('street-lamp-halos') as THREE.Points).material as THREE.PointsMaterial).opacity, 0.9);
+  } finally { climate.dispose(); view.dispose(); }
+});
+
+test('a climate that ends before its lamps have loaded leaves the scene without them: they are not added late, and what was made is freed', async () => {
+  const { view } = await viewOf();
+  const added: string[] = [];
+  const add = view.scene.add.bind(view.scene);
+  view.scene.add = ((...objects: THREE.Object3D[]) => { added.push(...objects.map((o) => o.name)); return add(...objects); }) as typeof view.scene.add;
+  const dispose = THREE.BufferGeometry.prototype.dispose;
+  let freed = 0;
+  THREE.BufferGeometry.prototype.dispose = function (this: THREE.BufferGeometry) { freed++; dispose.call(this); };
+  try {
+    const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+    climate.dispose();
+    freed = 0;
+    // the lamps are made a moment later, and freed as they come: the post, the halo and the pool geometry
+    for (let waited = 0; waited < 10_000 && freed < 3; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(freed, 3, 'the geometry of the layer that was made too late');
+    await settled();
+    assert.equal(freed, 3, 'and once');
+    assert.ok(!added.includes('street-lamps'), `added late: ${added}`);
+    assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'and none in the scene');
+  } finally { THREE.BufferGeometry.prototype.dispose = dispose; view.dispose(); }
+});
+
+test('a Scottish climate that ended before it ever ran can still be updated (a frame in flight as a scene goes): it has no sky to give its lamps a level from, and says nothing to them', async () => {
+  const { view } = await viewOf();
+  const dispose = THREE.BufferGeometry.prototype.dispose;
+  let freed = 0;
+  THREE.BufferGeometry.prototype.dispose = function (this: THREE.BufferGeometry) { freed++; dispose.call(this); };
+  try {
+    const climate = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+    climate.dispose();
+    assert.doesNotThrow(() => climate.update(frame()), 'no sky was ever worked out');
+    assert.ok(climate.atmosphere.state() === null, 'and none is now');
+    // the lamps the ended climate began to load are freed as they come (the geometry of the layer is not left allocated, and does not reach the next test's count)
+    for (let waited = 0; waited < 10_000 && freed < 3; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+    await settled();
+  } finally { THREE.BufferGeometry.prototype.dispose = dispose; view.dispose(); }
+});
+
+test('a scene with no ground to stand lamps on has none, and no complaint; lamps that cannot be made are a warning and not a broken scene', async () => {
+  const { view } = await viewOf();
+  const bare = { ...view, model: { ...view.model, terrain: undefined } } as unknown as WaverleyView;
+  const warn = console.warn;
+  const warned: unknown[][] = [];
+  console.warn = (...args: unknown[]) => { warned.push(args); };
+  try {
+    const climate = createWaverleyWeather(bare, sceneWeatherOptions('clear', null));
+    const control = await viewOf();
+    const controlClimate = createWaverleyWeather(control.view, sceneWeatherOptions('clear', null));
+    try {
+      await lampsIn(control.view.scene); // a scene with ground has its lamps: by then any the first was to have, begun earlier, has come
+      assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'no terrain, no lamps');
+      assert.deepEqual(warned, [], 'and nothing to say about it');
+    } finally { controlClimate.dispose(); control.view.dispose(); climate.dispose(); }
+    // a ground that throws: no lamps, the scene as it was, and the reason told
+    const terrain = view.model!.terrain as unknown as Record<string, unknown>;
+    const broken = { ...view, model: { ...view.model, terrain: { ...terrain, heightAt: () => { throw new Error('no ground'); } } } } as unknown as WaverleyView;
+    const second = createWaverleyWeather(broken, sceneWeatherOptions('clear', null));
+    try {
+      for (let waited = 0; waited < 10_000 && warned.length === 0; waited += 20) await new Promise((resolve) => setTimeout(resolve, 20));
+      assert.equal(warned.length, 1, 'one warning');
+      assert.match(String(warned[0]?.[0]), /Waverley street lamps unavailable/);
+      assert.match(String(warned[0]?.[1]), /no ground/);
+      assert.ok(view.scene.getObjectByName('street-lamps') === undefined, 'and none in the scene');
+      second.update(frame());
+      assert.ok(view.scene.getObjectByName('sun-disc'), 'the rest of the climate goes on');
+    } finally { second.dispose(); }
+  } finally { console.warn = warn; view.dispose(); }
+});
+
+// ---- the Scottish haze (round seven, the W3 city element's C6): the Castle and the horizon recede from Calton Hill; London's haze is as it was --------------
+
+test('the Scottish clear air is hazier than London\'s, and London\'s is untouched: its fog ends where it always ended; in weather each scene has the nearer of the weather\'s own fog and its haze', async () => {
+  assert.ok(WAVERLEY_HAZE.far < CLEAR_FOG.far && WAVERLEY_HAZE.far >= 1000, `a haze (${WAVERLEY_HAZE.far} m) nearer than the clear air's ${CLEAR_FOG.far} m, but past the Castle, 1.2 km from Calton Hill`);
+  // the haze is the lowest layer: Calton Hill's camera (45 m) and every view from the ground is in it, the landing view (the overview, 398 m up: tools/evidence.mjs wv-overview) is above it
+  assert.ok(WAVERLEY_HAZE.fade[0] >= 45 && WAVERLEY_HAZE.fade[0] < WAVERLEY_HAZE.fade[1] && WAVERLEY_HAZE.fade[1] <= 398, `the haze fades between ${WAVERLEY_HAZE.fade} m, over Calton Hill's 45 m and under the landing view's 398 m`);
+  const seen: Record<string, { scotland: [number, number]; london: [number, number] }> = {};
+  for (const name of ['clear', 'rain', 'fog']) {
+    const { view } = await viewOf();
+    const scotland = createWaverleyWeather(view, sceneWeatherOptions(name, null));
+    const london = londonOf(sceneWeatherOptions(name, null));
+    try {
+      scotland.update(frame());
+      london.climate.update(frame());
+      const [s, l] = [view.scene.fog as THREE.Fog, london.scene.fog as THREE.Fog];
+      seen[name] = { scotland: [s.near, s.far], london: [l.near, l.far] };
+      // London is the page's own, whatever the Scottish scene does: fogRange, to the metre
+      const own = fogRange(london.climate.atmosphere.state()!.weather.visibilityM, camera.position.y);
+      assert.deepEqual([l.near, l.far], [own.near, own.far], `${name}: London's fog`);
+      // the Scottish scene is the same fog with its far plane brought in to the haze, no further
+      assert.deepEqual([s.near, s.far], [own.near, Math.min(own.far, WAVERLEY_HAZE.far)], `${name}: the Scottish fog`);
+    } finally { scotland.dispose(); london.climate.dispose(); view.dispose(); }
+  }
+  assert.deepEqual(seen.clear, { scotland: [CLEAR_FOG.near, WAVERLEY_HAZE.far], london: [CLEAR_FOG.near, CLEAR_FOG.far] }, 'clear air: the one place the two differ for the Scottish haze alone');
+  assert.ok((seen.rain as { scotland: [number, number]; london: [number, number] }).scotland[1] === WAVERLEY_HAZE.far, 'rain is thinner than the haze: the haze');
+  assert.deepEqual((seen.fog as { scotland: [number, number]; london: [number, number] }).scotland, (seen.fog as { scotland: [number, number]; london: [number, number] }).london, 'fog is thicker than the haze: the weather\'s own, the same in both');
+  // the landing view, high above the haze's layer, has the page's own fog as it had: the Scottish scene seen from the overview's camera ends its fog where London's clear air does
+  const { view } = await viewOf();
+  const scotland = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  try {
+    const landing = new THREE.PerspectiveCamera(50, 1.44, .5, 9000);
+    landing.position.set(199.04, 397.92, 422.07);
+    scotland.update({ ...frame(), camera: landing });
+    const fog = view.scene.fog as THREE.Fog;
+    assert.deepEqual([fog.near, fog.far], [CLEAR_FOG.near, CLEAR_FOG.far], 'the landing view');
+  } finally { scotland.dispose(); view.dispose(); }
 });

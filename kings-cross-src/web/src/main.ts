@@ -131,7 +131,7 @@ function start(): void {
       // buildings, streets, paving, water and trees stand on the terrain as drawn; without one (?terrain=0, or it failed to load) on the flat plane
       const ground = terrain ? { terrain } : {};
       central.addKxCentral(scene, data, ground);
-      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden, ...ground }).group;
+      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden, ...ground, night: atmosphere?.nightLights }).group; // the street lamps' glow follows the night lights (round 7)
     })).catch((err: unknown) => { console.error('city failed to load', err); });
   const shed = buildShed(layout);
   scene.add(shed);

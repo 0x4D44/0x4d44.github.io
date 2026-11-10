@@ -18,8 +18,8 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
-import { cityMaterial, material } from '../src/materials.ts';
+import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FLOOD, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { cityMaterial, material, windowNight } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
 import { Glsl, toValue } from './glsl.ts';
@@ -834,6 +834,81 @@ test('addRoofShade: a material with the FOOT_SHADE define has the light it refle
   assert.ok(!block.includes('looksDown') && f.split('foot').length - 1 === block.split('foot').length - 1, 'nothing outside the define reads the shade');
 });
 
+test('addRoofShade: a material with the FLOOD define adds its own colour in a warm light to what it glows with, at the night\'s level and by its height over the foot of the wall; one without compiles it away (round seven, night lighting)', () => {
+  assert.equal(FLOOD, 'FLOOD');
+  const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  m.defines = { [FLOOD]: 'vec4( 0.25, 14.0, 0.35, 0.0 )' };
+  addRoofShade(m);
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader;
+  assert.equal(shader.uniforms.uWinNight, windowNight, 'the level is the shared night uniform, which atmosphere.ts sets from the lamps\' ramp');
+  assert.equal(f.split('uniform float uWinNight;').length - 1, 1, 'declared once');
+  // however many patches want it: one that ran first and declared the level itself says so by having put it in the uniforms, and it is not declared again
+  const first = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  first.defines = { [FLOOD]: 'vec4( 0.25, 14.0, 0.35, 0.0 )' };
+  first.onBeforeCompile = (s) => {
+    s.uniforms.uWinNight = windowNight;
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+  };
+  addRoofShade(first);
+  const both = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  first.onBeforeCompile(both as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(both.fragmentShader.split('uniform float uWinNight;').length - 1, 1, 'declared once, however many patches want it');
+  assert.equal(both.uniforms.uWinNight, windowNight, 'the level is still the shared one');
+  assert.ok(both.fragmentShader.includes(`#ifdef ${FLOOD}`), 'and the flood is in');
+  const open = f.indexOf(`#ifdef ${FLOOD}`);
+  const end = f.indexOf('#endif', open);
+  assert.ok(open > 0 && end > open, 'the block is there, under its define');
+  const block = f.slice(open, end);
+  // after the glow's multiply for the shed's glass (the flood is its own light and not a stand-in for the day's) and before the emissive joins the output
+  assert.ok(f.indexOf(`#ifdef ${GLOW_BELOW}`) < open && end < f.indexOf('vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + totalEmissiveRadiance;'), 'in the shade\'s block, after the glow below, before the output');
+  assert.equal(block.split('totalEmissiveRadiance +=').length - 1, 1, 'one term added to the glow, not multiplied into it');
+  // the term as the shader has it, run: the wall's own colour (diffuseColor, after the map and the tone of the building), warm, at the night's level, by strength, falling with the height
+  // over the base to what is left far above the lamps. The world's height is the fragment's, read back from the view-space position as the roof's shade reads it.
+  const world = '( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y';
+  const term = /totalEmissiveRadiance \+= (.*);/.exec(block)?.[1] ?? '';
+  assert.ok(term.includes(world) && term.includes('uWinNight') && term.includes('diffuseColor.rgb'), `the term reads the world's height, the night and the wall's colour: ${term}`);
+  const glsl = new Glsl('');
+  const flood = (o: { night?: number; height: number; strength?: number; reach?: number; floor?: number; base?: number; albedo?: number[] }): number[] => {
+    const text = term.replace(world, 'uHeight').replaceAll(FLOOD, `vec4( ${[o.strength ?? 0.25, o.reach ?? 14, o.floor ?? 0.35, o.base ?? 0].map((n) => n.toFixed(4)).join(', ')} )`);
+    return glsl.evaluate(text, { vars: {} }, { uHeight: o.height, uWinNight: o.night ?? 1, diffuseColor: [...(o.albedo ?? [0.5, 0.4, 0.3]), 1] }) as number[];
+  };
+  const full = flood({ height: 0 });
+  // a warm light (1, 0.82, 0.5) on the wall's own colour, `strength` of it at the foot
+  [1, 0.82, 0.5].forEach((k, i) => close(full[i] as number, 0.25 * k * ([0.5, 0.4, 0.3][i] as number), 1e-9, `channel ${i}: the wall's colour in a warm light, a quarter of it at the foot`));
+  assert.deepEqual(flood({ height: 0, night: 0 }), [0, 0, 0], 'by day, none: the wall is the sun\'s alone');
+  assert.deepEqual(flood({ height: 0, albedo: [0, 0, 0] }), [0, 0, 0], 'and a black wall takes none');
+  close(flood({ height: 0, night: 0.5 })[0] as number, 0.5 * (full[0] as number), 1e-9, 'it comes on with the night\'s level');
+  // the fall-off: x ( z + ( 1 - z ) exp( -h / y ) ), h the height over the base; at a reach up it has lost 1 - 1 / e of what is above the floor, far above it only the floor is left
+  const at = (height: number, over: Partial<Parameters<typeof flood>[0]> = {}): number => (flood({ height, ...over })[0] as number) / (full[0] as number);
+  close(at(14), 0.35 + 0.65 * Math.exp(-1), 1e-9, 'a reach up');
+  close(at(1e5), 0.35, 1e-6, 'far above only the floor is left');
+  let last = 2;
+  for (let h = 0; h <= 60; h += 2) {
+    assert.ok(at(h) < last && at(h) >= 0.35 - 1e-9, `falling with the height and never under the floor: ${at(h)} at ${h} m`);
+    last = at(h);
+  }
+  // a base: the foot of the wall is where the ground is (the Midland's uphill end stands 2.66 m over the datum, a tower on Scotland's ground higher): under it the wall is as lit as at it
+  const based = (height: number): number => (flood({ height, base: 2.66, reach: 5, floor: 0.04 })[0] as number) / (flood({ height: 2.66, base: 2.66, reach: 5, floor: 0.04 })[0] as number);
+  close(based(2.66), 1, 1e-9);
+  close(based(-3), 1, 1e-9, 'a point under the foot (a plinth sunk in the ground) is lit as at the foot, not more');
+  close(based(2.66 + 5), (0.04 + 0.96 * Math.exp(-1)) , 1e-9, 'and falls from there');
+  assert.ok(Math.abs(at(14, { base: 0 }) - at(14 + 3, { base: 3 })) < 1e-9, 'the base only moves the whole fall-off up');
+  // under the define alone: a material without it has none of this, and nothing outside the block reads the define
+  assert.equal(f.split(FLOOD).length - 1, block.split(FLOOD).length - 1, 'nothing outside the define reads it');
+  const plain = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  assert.equal(plain.defines === undefined || !(FLOOD in plain.defines), true, 'a plain material has no define, so the compiler drops the block');
+  // and no other program changes: a material without the define is not given the night's level, nor a declaration of it (every roof-shaded surface of both scenes goes through this patch)
+  addRoofShade(plain);
+  const bare = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  plain.onBeforeCompile(bare as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(bare.uniforms.uWinNight, undefined, 'no uniform');
+  assert.ok(!bare.fragmentShader.includes('uniform float uWinNight;'), 'no declaration');
+  assert.ok(bare.fragmentShader.includes(`#ifdef ${FLOOD}`), 'the block is still there under its define, for the compiler to drop');
+});
+
 test('addRoofShade: a material with the MOTTLE define has its colour scaled by the tone of the slab it lies on, 0.8 to 1.2, one number to a slab, faded to none as a slab shrinks to a couple of pixels; one without compiles it away (round six, E5)', () => {
   assert.equal(MOTTLE, 'MOTTLE');
   const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
@@ -916,15 +991,21 @@ test('the walls that stand on the ground have the contact shade, and the Range\'
     assert.ok(mesh, `${name} is a mesh of the scene`);
     return materialsOf(mesh)[0] as THREE.Material;
   };
+  // round seven (night lighting): the front is also floodlit from its foot, and the Midland's red brick and the stone (its dressings, and the hotel's stucco strips) are; the stock brick and the Barlow's flank are not
   for (const name of ['shed-front', 'shed-brick', 'shed-stone', 'tower-brick', 'tower-stone']) {
-    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.32' }, `${name}: a wall of the front, on the ground, with the deeper shade (round six, E2)`);
+    const stone = name.endsWith('stone');
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.32', [FLOOD]: stone ? 'vec4( 0.14, 14.0, 0.35, 0.0 )' : 'vec4( 0.25, 14.0, 0.35, 0.0 )' }, `${name}: a wall of the front, on the ground, with the deeper shade (round six, E2) and the floodlight (round seven)`);
   }
-  for (const name of ['landmarks-brick', 'landmarks-brickRed', 'landmarks-brickDeep', 'landmarks-stone']) {
-    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08' }, `${name}: a wall on the ground, with the slight one the hotel's measured stone was fitted to`);
+  for (const name of ['landmarks-brick', 'landmarks-brickDeep']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08' }, `${name}: a wall on the ground, with the slight shade the hotel's measured stone was fitted to, and no floodlight`);
+  }
+  for (const name of ['landmarks-brickRed', 'landmarks-stone']) {
+    assert.deepEqual(find(name).defines, { [FOOT_SHADE]: '0.08', [FLOOD]: name.endsWith('stone') ? 'vec4( 0.12, 5.0, 0.04, 0.0 )' : 'vec4( 0.28, 5.0, 0.04, 0.0 )' }, `${name}: a wall on the ground, with the slight shade, and the Midland's floodlight (round seven)`);
   }
   // not the Range: its brick is held at (110, 94, 71) by the concourse's fill and the sun, and not the stock the whole city shares (the city's facades have their own, in their shader)
   for (const name of ['range-brick', 'range-stone', 'landmarks-slate', 'shed-aisle-roofs', 'kxcentral-brick', 'city-stock', 'city-red']) {
     assert.equal(find(name).defines?.[FOOT_SHADE], undefined, `${name}: no contact shade of this kind`);
+    assert.equal(find(name).defines?.[FLOOD], undefined, `${name}: and no floodlight (round seven)`);
   }
   assert.equal((material('brick') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'the shared brick is the plain one, for the Range and the rest');
   assert.equal((material('stone') as THREE.MeshLambertMaterial).defines?.[FOOT_SHADE], undefined, 'and the shared stone');
