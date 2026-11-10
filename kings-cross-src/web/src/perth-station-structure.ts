@@ -137,10 +137,9 @@ export const PERTH_STATION = {
  *  from platform 4 by the island building to platforms 3 and 1 under the roof (R-pt1-d north and "from platform 1": its covered span runs
  *  out to platform 1 past the roof); the south (lift) bridge stands just south of the overall roof (R-pt1-b), with a tower on each of the
  *  three islands it serves (R-pt1-d Abbott shows three). Each landing is a platform group: an island drawn as two OSM polygons is one group.
- *  Deck walking levels over rail: 6.6 m (north) and 7.0 m (south), so each deck's underside clears the 5.6 m Dundee canopy. */
-/** A landing's stair and tower set this far west (+z', m) of its island's middle: the lift bridge's on the wide 4/5 island stands on its
- *  platform 5 side (R-pt1-d Abbott: the tower and stair at the island's far side from the camera on platform 4). ASSUMED. */
-export const PERTH_LANDING_SHIFT: Readonly<Record<string, number>> = {'4/5': 6};
+ *  Deck walking levels over rail: 6.6 m (north) and 7.0 m (south), so each deck's underside clears the 5.6 m Dundee canopy.
+ *  Where on its platform a landing stands is NOT fixed by the evidence (no photograph places a stair or tower across its island): each is
+ *  put at the best estimate, the middle of its platform group on the deck's line, and moved only as far as it must be to fit (ASSUMED). */
 export const PERTH_FOOTBRIDGES = [
   {id: 'north', along: -20 + PERTH_BAY_PHASE, deck: 6.6, kind: 'lattice', landings: [['4'], ['3'], ['1']]},
   {id: 'south', along: 24 + PERTH_BAY_PHASE, deck: 7.0, kind: 'lift', landings: [['4', '5'], ['2', '3'], ['1']]},
@@ -209,9 +208,11 @@ function planBridge(b: typeof PERTH_FOOTBRIDGES[number], platforms: {ref: string
     // Candidate stairs: along the tracks (south, then north), along the platform's heading either way, each from the deck's side at the
     // landing, never back under the deck. The first whose footprint, 1.2 m clear all round, lies on the platform wins.
     // A lift bridge's tower stands on the deck's other side, on the stair's line; where no place takes both, the stair alone is drawn.
+    // ASSUMED: that is platform 1 on the lift bridge (lead ruling 12:31): on its curve no place takes a tower and a stair 1.2 m clear of
+    // both edges, though R-pt1-d Abbott shows three towers.
     const dirs: Pt[] = [[1, 0], [-1, 0], tangent, [-tangent[0], -tangent[1]]];
     for (const withTower of b.kind === 'lift' ? [true, false] : [false]) for (const dz of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
-      const z = zc + (PERTH_LANDING_SHIFT[b.landings[gi].join('/')] ?? 0) + dz;
+      const z = zc + dz;
       const found = dirs.find(d => {
         if (Math.abs(d[0]) < .3 && d[1] * (z - middle) < 0) return false;
         const start: Pt = [b.along + Math.sign(d[0]) * half, z];
