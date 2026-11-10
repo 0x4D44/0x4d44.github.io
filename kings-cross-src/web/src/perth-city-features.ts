@@ -23,6 +23,7 @@ import type {LanduseFile} from './waverley-city-ground.ts';
 import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
+import {KINNOULL_PEAK, kinnoullWoodland} from './perth-woodland.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -62,8 +63,6 @@ export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
  *  from the summit: open grass and gorse in front, the trees further down). Each is a 24-sided ring the trees keep clear of, as they
  *  do a building; the ground keeps its OSM wood paint. */
 export const OUTLOOK_CLEAR = 30, SUMMIT_OPEN = 160;
-/** The OSM peak (node/29621037) in the Perth frame. */
-export const KINNOULL_PEAK: Pt = [2372, 200];
 export const outlookClearings = (): Pt[][] => PERTH_LANDUSE.outlooks.filter(r => r.length === 1).map(([[x, z]]) => {
   const r = Math.hypot(x! - KINNOULL_PEAK[0], z! - KINNOULL_PEAK[1]) < 10 ? SUMMIT_OPEN : OUTLOOK_CLEAR;
   return Array.from({length: 24}, (_, k): Pt => [x! + r * Math.cos(k * Math.PI / 12), z! + r * Math.sin(k * Math.PI / 12)]);
@@ -113,7 +112,7 @@ export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: numbe
 /** The ground cover, trees and water; `footprints` are the outlines trees keep clear of; `uncovered` is ground P2 draws itself (the
  *  King's Place cut and the forecourt, perth-frontage-mask.ts), where the drape leaves a hole as it does over the railway bed. */
 export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
-  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, uncovered});
+  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(), uncovered});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift

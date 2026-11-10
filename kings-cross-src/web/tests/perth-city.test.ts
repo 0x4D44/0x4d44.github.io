@@ -10,6 +10,7 @@ import { KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDG
 import { perthBuildingHeight } from '../src/perth-city.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
+import { KINNOULL_PEAK, WOODLAND, sightHeight } from '../src/perth-woodland.ts';
 import { Batch } from '../src/materials.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
@@ -119,6 +120,32 @@ test('the land-use drape leaves holes where P2 draws its own ground: the King\'s
   const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
   for (const [x, z] of [[-5, -50], [90, -50]] as const) { assert.ok(inMask(x, z), `(${x}, ${z}) is in the mask`); ray.set(new THREE.Vector3(x, 200, z), down); assert.equal(ray.intersectObject(cover).length, 0, `no drape over (${x}, ${z})`); }
   assert.ok(index.count / 3 > 10_000, 'the drape is still there elsewhere');
+});
+
+test('Kinnoull\'s woods are broken mixed woodland, open westward from the summit, with gorse at the clearing', () => {
+  const wood = scene.group.getObjectByName('waverley-wood-crowns') as THREE.InstancedMesh;
+  assert.ok(wood && wood.instanceColor, 'the massed crowns, coloured per tree');
+  const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), k = new THREE.Vector3(), c = new THREE.Color();
+  const hill: {x: number; z: number; top: number; h: number; tone: string}[] = [], [px, pz] = KINNOULL_PEAK;
+  for (let i = 0; i < wood.count; i++) {
+    wood.getMatrixAt(i, m); m.decompose(p, q, k); wood.getColorAt(i, c);
+    if (Math.hypot(p.x - px, p.z - pz) > 900) continue;
+    hill.push({x: p.x, z: p.z, top: p.y + k.y, h: k.y, tone: c.getHexString()});
+  }
+  const trees = hill.filter(t => t.h > 1.5), gorse = hill.filter(t => t.h <= 1.5);
+  assert.ok(trees.length > 300, `wood crowns on the hill: ${trees.length}`);
+  // mixed size: the tallest crowns at least twice the depth of the smallest (WOODLAND.size, 0.6 to 1.3)
+  const hs = trees.map(t => t.h).sort((a, b) => a - b), q10 = hs[Math.floor(hs.length * .1)]!, q90 = hs[Math.floor(hs.length * .9)]!;
+  assert.ok(q90 / q10 > 1.5, `crown depth spread, 90th over 10th percentile: ${(q90 / q10).toFixed(2)}`);
+  // mixed tone: the darkest (pine) and the lightest (birch in sun) crowns differ in green by over a third
+  const greens = trees.map(t => new THREE.Color('#' + t.tone).g).sort((a, b) => a - b);
+  assert.ok(greens[Math.floor(greens.length * .9)]! > 1.35 * greens[Math.floor(greens.length * .1)]!, 'pine and birch tones both present');
+  // open westward: no wood crown in the panorama's frame rises above the line from the eye to the town
+  const blocking = trees.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.top > s - WOODLAND.sight.clear + 1e-3; });
+  assert.equal(blocking.length, 0, `crowns over the summit's westward sightline: ${blocking.length}`);
+  // gorse at the clearing's edge (England_and_Scotland_152)
+  const edge = gorse.filter(t => { const d = Math.hypot(t.x - px, t.z - pz); return d >= WOODLAND.gorse.inner - 10 && d <= WOODLAND.gorse.outer + 10; });
+  assert.ok(edge.length > 30, `gorse at the summit clearing's edge: ${edge.length}`);
 });
 
 test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {

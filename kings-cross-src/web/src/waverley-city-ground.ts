@@ -157,22 +157,26 @@ export const crownDepth=(kind:'tree'|'wood'|'scrub')=>kind==='tree'?.42:.4;
 /** Ground slope in degrees from central differences over 2 m. */
 export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const dx=(ground.heightAt(x+2,z)-ground.heightAt(x-2,z))/4,dz=(ground.heightAt(x,z+2)-ground.heightAt(x,z-2))/4;return Math.atan(Math.hypot(dx,dz))*180/Math.PI;};
 export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub';/** a hanging-wood tree (round 6: with its trunk, so the crown stands on the slope, not floats over it) */hanging?:true}
+/** A scene's own woodland (Perth's Kinnoull Hill; Waverley passes none): a height factor per massed tree (`size`), a veto on a placed
+ *  massed tree (`keep`: clumps and gaps, open sightlines), its leaf colour (`tone`), and scrub placed at given points (`gorse`). */
+export interface Woodland {size?(x:number,z:number,kind:'wood'|'scrub'):number;keep?(t:Tree):boolean;tone?(t:Tree,col:THREE.Color):void;gorse?:readonly Pt[]}
 const lerp=([a,b]:readonly [number,number],r:number)=>a+(b-a)*r;
 /** The trees that stand: mapped nodes and wood/scrub fill, each clear of every footprint and off the railway bed. */
-export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,step:{wood:number;scrub:number}=FILL_STEP):Tree[]{
+export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,step:{wood:number;scrub:number}=FILL_STEP,woodland:Woodland={}):Tree[]{
  const out:Tree[]=[],{x0,z0,x1,z1}=LANDUSE.extent;
  const take=(x:number,z:number,kind:Tree['kind'],size:readonly [number,number]=TREE_SIZE[kind],spread:number=CROWN_SPREAD[kind],tagged=0):void=>{
   if(x<x0+2||x>x1-2||z<z0+2||z>z1-2)return;
   const y=ground.heightAt(x,z);if(Math.abs(y-WAVERLEY_LEVELS.ground)<.3)return; // the railway's flattened bed (and its first blend)
   // no fill on bare crag: R-wv3-a shows Castle Rock's steepest faces as rock, the scrub on its ledges and lower banks
   if(kind!=='tree'&&slopeOf(ground,x,z)>SCRUB_MAX_SLOPE_DEG)return;
-  const height=tagged||lerp(size,hash(x,z,1)),ch=crownDepth(kind)*height,cy=y+height-ch;
+  const height=tagged||lerp(size,hash(x,z,1))*(kind!=='tree'&&woodland.size?woodland.size(x,z,kind):1),ch=crownDepth(kind)*height,cy=y+height-ch;
   let crown=Math.min(height*spread,footprints.clearance(x,z,height*spread));
   // seat the crown on the slope: narrow it until no ground rises into it (its rim at the crown's middle, its underside at 0.6 of the radius)
   const into=(c:number)=>[0,1,2,3,4,5,6,7,8,9,10,11].some(k=>{const a=k*Math.PI/6,dx=Math.cos(a),dz=Math.sin(a);return ground.heightAt(x+dx*c,z+dz*c)>cy-.2||ground.heightAt(x+dx*c*.6,z+dz*c*.6)>cy-.8*ch;});
   while(crown>=1&&into(crown))crown*=.75;
   if(crown<Math.min(1,height*spread))return;
-  out.push({x,z,y,height,crown,kind});
+  const t:Tree={x,z,y,height,crown,kind};if(kind!=='tree'&&woodland.keep&&!woodland.keep(t))return;
+  out.push(t);
  };
  LANDUSE.trees.forEach(([x,z],i)=>{const tag=LANDUSE.treeTags.get(i);take(x,z,'tree',TREE_SIZE.tree,tag?.needle?TREE_SIZE.needleSpread:CROWN_SPREAD.tree,tag?.height);});
  // woods and scrub: a jittered lattice with gaps (a quarter of the cells left open), so a bank reads as clumps, not a grid of dots
@@ -182,6 +186,7 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  fill(LANDUSE.areas.wood,step.wood,.25,(x,z)=>take(x,z,'wood'));
  // scrub: gorse on the gentler ground, the hanging wood on the steep faces
  fill(LANDUSE.areas.scrub,step.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
+ for(const [x,z]of woodland.gorse??[])take(x,z,'scrub');
  // the lowest ground of the viewing places within OUTLOOK.reach (to a point, or to an outline's edges), or undefined
  const places=LANDUSE.outlooks.map(r=>({r,y:Math.min(...r.map(([x,z])=>ground.heightAt(x,z)))}));
  const outlookGround=(x:number,z:number):number|undefined=>{let low:number|undefined;
@@ -267,7 +272,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -287,7 +292,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
  const mesh=new THREE.Mesh(g,cover);mesh.name='waverley-ground-cover';group.add(mesh);stats.triangles+=keep.length/3;stats.drawCalls++;
  // Trees: crowns (one icosahedron each) and trunks, two instanced draws.
- const trees=placeTrees(ground,footprints,LANDUSE,options.fillStep);
+ const trees=placeTrees(ground,footprints,LANDUSE,options.fillStep,options.woodland);
  if(trees.length){
   // A mapped tree is seen close from the gardens: a rounder crown (a 6 x 4 sphere, 36 faces: round 6 freed 6 a tree for the hanging wood's
   // trunks); woods and scrub are seen as masses (icosahedron, 20).
@@ -303,7 +308,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
     const bare=options.woodTrunks===false&&t.kind==='wood'&&!t.hanging;
     m.compose(new THREE.Vector3(t.x,bare?t.y+ch:t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
-    col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);crowns.setColorAt(i,col);});
+    col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);if(t.kind!=='tree'&&options.woodland?.tone)options.woodland.tone(t,col);crowns.setColorAt(i,col);});
    crowns.instanceMatrix.needsUpdate=true;if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;crowns.name=name;crowns.computeBoundingSphere();
    group.add(crowns);stats.triangles+=list.length*(geo.index?geo.index.count:geo.getAttribute('position').count)/3;stats.drawCalls++;
   };
