@@ -441,9 +441,17 @@ test('litWalls: a plain wall\'s windows are lit from its map\'s UVs and its buil
   assert.equal(s.uniforms.uWinNight, windowNight);
   assert.ok(s.fragmentShader.indexOf('#include <emissivemap_fragment>') < s.fragmentShader.indexOf('totalEmissiveRadiance += ('), 'after the emissive colour is read');
   assert.ok(s.fragmentShader.includes('float winHash(') && s.fragmentShader.split('float winHash(').length === 2, 'the night functions, once');
-  // the same material patched twice by another patch that declares the uniform itself (roof shade) is not declared twice: the guard is on the text
-  const again = compile(m);
-  assert.equal(again.fragmentShader.split('uniform float uWinNight;').length, 2);
+  // a patch before this one that has declared the night's level itself (the roof shade's flood does, and puts it in the uniforms) leaves it declared once, and the functions are still brought
+  const flooded = new THREE.MeshLambertMaterial({ vertexColors: true });
+  flooded.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+  };
+  litWalls(flooded, [1.2, 0.6]);
+  const both = compile(flooded);
+  assert.equal(both.uniforms.uWinNight, windowNight);
+  assert.equal(both.fragmentShader.split('uniform float uWinNight;').length, 2, 'declared once');
+  assert.equal(both.fragmentShader.split('float winHash(').length, 2, 'and the night functions, once, though the other patch did not bring them');
   undo();
   assert.deepEqual(m.defines, { PRIOR: '1' }, 'the defines are back');
   assert.equal(m.customProgramCacheKey(), priorKey, 'and the key');

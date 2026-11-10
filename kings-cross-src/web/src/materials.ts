@@ -883,11 +883,12 @@ export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, n
   m.defines = { ...defines, WALL_WIN: '', WALL_TILE: `vec2( ${glslFloat(tile[0] / WALL_CELL[0])}, ${glslFloat(tile[1] / WALL_CELL[1])} )`, WIN_RECT: glslVec4(WALL_RECT), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(NIGHT_MODE.house) };
   m.onBeforeCompile = (shader, renderer) => {
     onBeforeCompile.call(m, shader, renderer);
+    // a patch before this one (the roof shade's flood, lighting.ts) may have declared the night's level already, and says so by having put it in the uniforms: it is declared once
+    const declared = shader.uniforms.uWinNight !== undefined;
     shader.uniforms.uWinNight = windowNight;
-    let f = shader.fragmentShader;
-    if (!f.includes('uniform float uWinNight;')) f = f.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
-    if (!f.includes('float winHash(')) f = f.replace('#include <common>', `#include <common>${WIN_NIGHT_GLSL}`);
-    shader.fragmentShader = f.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${LIT_WALL_GLSL}`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>${declared ? '' : '\nuniform float uWinNight;'}${WIN_NIGHT_GLSL}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${LIT_WALL_GLSL}`);
   };
   m.customProgramCacheKey = () => `${key}+litWalls`;
   m.needsUpdate = true;

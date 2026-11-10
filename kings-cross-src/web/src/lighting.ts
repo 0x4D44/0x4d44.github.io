@@ -451,12 +451,14 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   material.onBeforeCompile = (shader, renderer) => {
     prior.call(material, shader, renderer);
     Object.assign(shader.uniforms, coverUniforms, roofShadeUniforms);
-    // the night's level is read only by a floodlit wall: every other program is as it was
+    // the night's level is read only by a floodlit wall: every other program is as it was. A patch that ran before this one (the windows', materials.ts) may have declared the level already, and says
+    // so by having put it in the uniforms: it is declared once
     const flooded = material.defines?.[FLOOD] !== undefined;
+    const declared = shader.uniforms.uWinNight !== undefined;
     if (flooded) shader.uniforms.uWinNight = windowNight;
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
-    if (flooded && !fragment.includes('uniform float uWinNight;')) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+    if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
     fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef ${MOTTLE}

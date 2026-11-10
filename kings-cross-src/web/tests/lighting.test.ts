@@ -844,7 +844,20 @@ test('addRoofShade: a material with the FLOOD define adds its own colour in a wa
   m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
   const f = shader.fragmentShader;
   assert.equal(shader.uniforms.uWinNight, windowNight, 'the level is the shared night uniform, which atmosphere.ts sets from the lamps\' ramp');
-  assert.equal(f.split('uniform float uWinNight;').length - 1, 1, 'declared once, however many patches want it');
+  assert.equal(f.split('uniform float uWinNight;').length - 1, 1, 'declared once');
+  // however many patches want it: one that ran first and declared the level itself says so by having put it in the uniforms, and it is not declared again
+  const first = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  first.defines = { [FLOOD]: 'vec4( 0.25, 14.0, 0.35, 0.0 )' };
+  first.onBeforeCompile = (s) => {
+    s.uniforms.uWinNight = windowNight;
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+  };
+  addRoofShade(first);
+  const both = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  first.onBeforeCompile(both as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(both.fragmentShader.split('uniform float uWinNight;').length - 1, 1, 'declared once, however many patches want it');
+  assert.equal(both.uniforms.uWinNight, windowNight, 'the level is still the shared one');
+  assert.ok(both.fragmentShader.includes(`#ifdef ${FLOOD}`), 'and the flood is in');
   const open = f.indexOf(`#ifdef ${FLOOD}`);
   const end = f.indexOf('#endif', open);
   assert.ok(open > 0 && end > open, 'the block is there, under its define');
