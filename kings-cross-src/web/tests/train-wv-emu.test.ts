@@ -516,3 +516,40 @@ test('the 397\'s roof cluster\'s cables run on to the pantograph\'s base, and no
     assert.ok(Math.abs(reach - toBase) < 0.03, `car ${car.index}: the cables reach ${reach.toFixed(2)} m from the end, the pantograph's base is at ${toBase.toFixed(2)} m`);
   }
 });
+
+test('the 334 driving car\'s roof as scotrail334_02 shows it from above: plain but for a low unit behind the cab and one louvred unit over the first door', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const b = wvEmuBody('sr334x3');
+  for (const car of wvEmuLayout('sr334x3').cars.filter((c) => c.cab)) {
+    const detail = (root.getObjectByName(`car-${car.index}`) as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+    // (points across each cover triangle: a unit's corners alone leave gaps along it)
+    const pos = detail.geometry.getAttribute('position');
+    const colr = detail.geometry.getAttribute('color');
+    const idx = detail.geometry.index;
+    const at = (j: number): number => (idx ? idx.getX(j) : j);
+    const c = col(b.cover);
+    const zs: number[] = [];
+    for (let t = 0; t + 2 < (idx ? idx.count : pos.count); t += 3) {
+      const i = at(t);
+      if (Math.abs(colr.getX(i) - c.r) > 1e-6 || Math.abs(colr.getY(i) - c.g) > 1e-6 || Math.abs(colr.getZ(i) - c.b) > 1e-6) continue;
+      const [p0, p1, p2] = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(pos, at(t + j))) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+      for (let u = 0; u <= 8; u++) for (let w = 0; w + u <= 8; w++) {
+        const q = p0.clone().multiplyScalar((8 - u - w) / 8).addScaledVector(p1, u / 8).addScaledVector(p2, w / 8);
+        if (q.y > b.crown - 0.05) zs.push(q.z);
+      }
+    }
+    zs.sort((p, q) => p - q);
+    // (the units, as runs of cover vertices along the car with more than half a metre between them)
+    const units: [number, number][] = [];
+    for (const z of zs) {
+      const last = units[units.length - 1];
+      if (last && z - last[1] < 0.5) last[1] = z;
+      else units.push([z, z]);
+    }
+    assert.equal(units.length, 2, `car ${car.index}: ${units.length} roof units: ${units.map(([a, c]) => `${a.toFixed(2)}..${c.toFixed(2)}`).join(" ")}`);
+    const dir = car.cab === 'rear' ? -1 : 1;
+    const base = car.cab === 'rear' ? car.end : car.start;
+    const door = base + dir * (wvEmuPlan('sr334x3', car).doors[0] as number);
+    assert.ok(units.some(([z0, z1]) => z0 <= door && door <= z1 && z1 - z0 > 2), `car ${car.index}: the louvred unit stands over the first door`);
+  }
+});

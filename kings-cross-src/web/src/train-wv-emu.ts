@@ -906,7 +906,16 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
   const to = car.cab === 'rear' ? car.end - tip - noseLen - 0.4 : car.end - WV_END_GAP - 0.6;
   const runs = Math.max(1, Math.ceil((to - from) / 6));
   const runLen = (to - from - 0.8 * (runs - 1)) / runs;
-  let covers: [number, number][] = Array.from({ length: runs }, (_, k): [number, number] => [from + k * (runLen + 0.8), from + k * (runLen + 0.8) + runLen]);
+  // (round 5: the 334's roof as scotrail334_02 shows it from the overbridge: a driving car's roof is plain but for a low unit behind the cab's dome and one
+  // louvred unit over its first door and first saloon windows; scotrail334_01 shows one raised unit in the middle of the PTOS. Places read off those
+  // photographs against the plan; ASSUMED within a metre. Round 4 laid the Civity's three long runs on every 334 car.)
+  const plan334 = family === 'juniper' ? b.plan(car) : null;
+  const span = (s0: number, s1: number): [number, number] => [Math.min(Z(s0), Z(s1)), Math.max(Z(s0), Z(s1))];
+  let covers: [number, number][] = plan334
+    ? car.cab
+      ? [span(tip + noseLen + 0.1, tip + noseLen + 1.3), span((plan334.doors[0] as number) - 0.2, (plan334.doors[0] as number) + 2.6)]
+      : [span(car.length / 2 - 1.3, car.length / 2 + 1.3)]
+    : Array.from({ length: runs }, (_, k): [number, number] => [from + k * (runLen + 0.8), from + k * (runLen + 0.8) + runLen]);
   if (car.pantograph) {
     const kitDir: 1 | -1 = (car.pantograph[0] + car.pantograph[1]) / 2 < (car.start + car.end) / 2 ? 1 : -1;
     const [k0, k1] = roofKitSpan('emu', car.pantograph[0], car.pantograph[1], kitDir);
