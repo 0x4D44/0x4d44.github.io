@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - a car is an outer skin, FrontSide: from inside it is culled and vanishes; cut a private copy (train-interior.ts)
+  Every shell, pane and decal face points outward and the windows are opaque prisms on an unbroken skin, so DoubleSide alone
+  would only show painted backs. train-interior.ts cuts window holes in a per-car geometry copy (train-interior-cut.ts) and
+  gives it back on leave. Scripted cameras: OrbitControls minDistance 8 (main.ts) drags a camera aimed at a target closer than
+  8 m back out of the car; aim at a target 10 m along the view.
+
 - 2026-11-10 - a curve through every OSM node snakes where a way was traced node by node: fair first (core/curves.ts fairNodes)
   OSM 1390691712/1390691713 (the roads north of platforms 3 and 4) wander 0.2-0.4 m at 5-15 m spacing. Hermite curves through
   them drew S-wiggles (a 3 degree turn and back, radii to 52 m) that chords had shown only as kinks. railShapes now fairs each run

@@ -31,6 +31,7 @@ import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
+import { createTrainInteriors } from './train-interior.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
 import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
@@ -275,6 +276,9 @@ function start(): void {
         services: timetable?.services() }, group.userData.id as number | undefined, t.kind) : null;
     } });
   Object.assign(kx, { tooltip }); // a script can read the card's state and time tooltip.frame() in the page
+  // A car the camera is in or beside shows its inside (train-interior.ts, built on first use); every other train stays an outer skin.
+  const interiors = params.get('interiors') === '0' ? null : createTrainInteriors({ scene, camera, trains: () => trains });
+  Object.assign(kx, { interiors });
   const paintBoard = (): void => {
     if (!stationBoard) return;
     kx.boardRows = boardRows(mode === 'demo' ? sampleBoardTrains : kx.motionState, boardAnchors, {
@@ -297,6 +301,7 @@ function start(): void {
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
     controls.update();
+    interiors?.frame(stations.activeScene() === scene); // after the trains are posed and the camera has moved, before the render
     const climate = stations.activeScene() === scene ? londonClimate : stations.remote()?.climate;
     if (climate) climate.update({ timeMs: sceneClock(), camera, target: controls.target, wallMs: time });
     else if (stations.activeScene() === scene) world.follow(camera);
@@ -412,6 +417,6 @@ function start(): void {
     stations.dispose();
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
-    sunShadow?.dispose(); londonClimate?.dispose();
+    sunShadow?.dispose(); londonClimate?.dispose(); interiors?.dispose();
   }, { once: true });
 }
