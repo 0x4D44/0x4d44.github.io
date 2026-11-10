@@ -31,7 +31,7 @@ const COUPLER_Y = 0.85;
 /** ScotRail's saltire blue (scotrail334_05 and _06 under the Waverley roof, _02 in sun): a deep blue-violet. */
 export const SR_BLUE = 0x232f6c;
 /** The slate cap over a 334's cab (scotrail334_05, _06: a lighter grey-blue than the body, round the horn disc and the two grilles). */
-export const SR_CAP = 0x58627a;
+export const SR_CAP = 0x6a7590;
 export const SR_ROOF = 0x3d4354;
 export const SR_YELLOW = 0xf0c21a;
 /** The thin orange line along the cantrail and across the top of the screens (scotrail334_05, _06). */
@@ -282,10 +282,10 @@ const lineY = (a: [number, number], b: [number, number], s: number): number => a
 function paintJuniper(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
   if (p.y < b.floor + 0.02) return { colour: UNDER };
-  if (p.y > b.wallTop + 0.25) return { colour: p.car.cab && p.s < nose + 0.6 ? SR_CAP : SR_ROOF };
-  // the cap's slate runs down round the cab's top to the orange line; the orange line runs along the cantrail
-  if (p.car.cab && p.s < nose + 0.6 && p.y > 3.34) return { colour: SR_CAP };
-  if (p.y > 3.29 && p.y < 3.34) return { colour: SR_ORANGE };
+  // the orange line along the cantrail (the band is wider than the line, so that one ring of the shell's quads always lands in it); the cap's slate over it round
+  // the cab's top, the roof's grey over it behind the cab
+  if (p.y > 3.25 && p.y < 3.34) return { colour: SR_ORANGE };
+  if (p.y >= 3.34) return { colour: p.car.cab && p.s < nose + 0.6 ? SR_CAP : SR_ROOF };
   return { colour: SR_BLUE };
 }
 
@@ -492,13 +492,13 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
           } else detail.fan(poly, faceN, col(shape.colour as number));
         }
       }
-      // the coupler out of the recess to the car's end, and the two dark blocks under the bumper (scotrail334_05: a plough-like block under each corner)
+      // the coupler out of the recess to the car's end, and the bumper's two corners carried down as blue skirts either side of it (scotrail334_05)
       couplerHalf(detail, Z(tip), (-dir) as 1 | -1, tip, COUPLER_Y, b.coupler.style);
       marker('nose-coupler', 0, COUPLER_Y, tip / 2, { end: car.cab, style: b.coupler.style, reach: tip });
       for (const sx of [-1, 1]) {
         const za = Z(tip + 0.05);
         const zb = Z(tip + 0.45);
-        detail.box(sx * 0.68 - 0.24, sx * 0.68 + 0.24, 0.22, 0.56, Math.min(za, zb), Math.max(za, zb), col(0x1a1c20));
+        detail.box(sx * 0.72 - 0.26, sx * 0.72 + 0.26, 0.24, 0.56, Math.min(za, zb), Math.max(za, zb), col(0x1e2756));
       }
       // the roof cap's fittings (scotrail334_05, _06): a round horn cover at the middle and a grille each side of it, just behind the face's top
       for (const [x, sAt, kindOf] of [[0, 0.32, 'disc'], [0.78, 0.3, 'grille'], [-0.78, 0.3, 'grille']] as const) {
