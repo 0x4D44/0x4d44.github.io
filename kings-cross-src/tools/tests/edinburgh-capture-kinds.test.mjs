@@ -14,6 +14,7 @@ const row=(kind,f=formation)=>({kind,operator:'SR',operatorName:'Test',classes:[
 test('a Waverley row with a formation is described for the view planner under its own kind', () => {
   const f=C.describeEdinburghFormation('t2',[row('t2')]);
   assert.deepEqual([f.kind,f.length,f.cars.length,f.dimensions.widthM.basis],['t2',40,2,'published']);
+  assert.match(C.manifestFormation(f).classNote,/V10 PROVISIONAL.*King's Cross buffer stop/,'every sidecar carries the provisional V10 note');
   assert.ok(planCatalogueViews(f).length>0,'the frozen views plan from the row alone');
 });
 

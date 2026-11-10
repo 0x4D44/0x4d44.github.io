@@ -325,8 +325,10 @@ export function describeEdinburghFormation(kind,rows=EDINBURGH_FLEET) {
   if(![f.length,f.half,f.crown,f.coverHeight,f.roofTop,f.doorWidth].every(finite)||!Array.isArray(f.cars)||!f.cars.length)throw new Error(`${kind}: formation needs length, half, crown, coverHeight, roofTop, doorWidth and cars`);
   if(Math.abs(f.cars.at(-1).end-f.length)>1e-6||f.cars.some((c,i)=>c.index!==i||!(c.end>c.start)||c.bogies.length!==2||c.motor.length!==2||!Array.isArray(c.doors)))throw new Error(`${kind}: formation cars are not a continuous indexed train`);
   for(const name of ['lengthM','widthM','roofTopM'])if(!finite(f.dimensions?.[name]?.value)||typeof f.dimensions[name].basis!=='string')throw new Error(`${kind}: formation dimensions.${name} needs a value and a basis`);
-  return {kind,...f};
+  return {kind,...f,classNote:[f.classNote,EDINBURGH_V10_NOTE].filter(Boolean).join('. ')};
 }
+/** Lead ruling 2026-11-10: until a Waverley V10 exists, a Waverley kind's V10 stands at a King's Cross buffer stop, and every sidecar says so. */
+export const EDINBURGH_V10_NOTE='V10 PROVISIONAL: a Waverley kind is stood at a King\'s Cross buffer stop for the station views, not at a Waverley platform';
 /** The formation block of a manifest entry: the family, the classes and the note on them, the length, the dimensions and the cars. */
 export const manifestFormation=formation=>({family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars});
 /** A plain description of one kind's formation: the input of planCatalogueViews and the sidecars' `formation`/`dimensions`. */
