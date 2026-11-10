@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
+import {islandBuildingBatches, PERTH_DIAL, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -81,6 +81,49 @@ export function perthPiercedTexture(): THREE.DataTexture {
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / P.cell, 1 / P.cell); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
   t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-pierced';
   return pierced = t;
+}
+/** Round 7 (S4, the round-6 score: "ticks, not Roman numerals"): the clocks' dial (R-pt1-a2): black Roman numerals I to XII (IIII for four,
+ *  as on R-pt1-a2's dial), each upright to the rim, on white inside a two-line minute track; laid out by PERTH_DIAL (perth-station-structure.ts)
+ *  in fractions of the dial's radius. u right, v up, the dial's centre at (0.5, 0.5); row 0 is v 0. Built as data, cached. */
+export const PERTH_ROMAN = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'] as const;
+let dial: THREE.DataTexture | undefined;
+export function perthDialTexture(): THREE.DataTexture {
+  if (dial) return dial;
+  const D = PERTH_DIAL, n = D.px, data = new Uint8Array(n * n * 4).fill(255), h = D.height, sw = D.stroke / 2, gap = .08 * h;
+  // Each numeral's strokes in its own frame (x across, y up the radius), in dial radii, centred on the numeral.
+  type Seg = [number, number, number, number];
+  const glyphs = PERTH_ROMAN.map(s => {
+    const width = (c: string): number => c === 'I' ? .12 * h : .6 * h, total = [...s].reduce((a, c) => a + width(c), 0) + gap * (s.length - 1), segs: Seg[] = [];
+    let x = -total / 2;
+    for (const c of s) {
+      const w = width(c), m = x + w / 2, t = h / 2;
+      if (c === 'I') segs.push([m, -t, m, t]);
+      else if (c === 'V') segs.push([x, t, m, -t], [m, -t, x + w, t]);
+      else segs.push([x, t, x + w, -t], [x, -t, x + w, t]);
+      x += w + gap;
+    }
+    return segs;
+  });
+  const near = (px: number, py: number, [ax, ay, bx, by]: Seg): number => {
+    const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+  };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i + .5) / n * 2 - 1, y = (j + .5) / n * 2 - 1, r = Math.hypot(x, y);
+    let ink = Math.abs(r - D.track[0]) < sw / 2 || Math.abs(r - D.track[1]) < sw / 2;
+    if (!ink && Math.abs(r - D.numerals) < h) {
+      // The nearest hour (clockwise from twelve), and the pixel in that numeral's frame: up along the radius, across clockwise.
+      const k = ((Math.round((Math.PI / 2 - Math.atan2(y, x)) / (Math.PI / 6)) % 12) + 12) % 12, a = Math.PI / 2 - k * Math.PI / 6;
+      const ux = Math.cos(a), uy = Math.sin(a), cx = x - ux * D.numerals, cy = y - uy * D.numerals;
+      const gx = cx * uy - cy * ux, gy = cx * ux + cy * uy;
+      ink = glyphs[k].some(s => near(gx, gy, s) < sw);
+    }
+    if (ink) { const q = 4 * (j * n + i); data[q] = data[q + 1] = data[q + 2] = 20; }
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 8;
+  t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; t.name = 'perth-dial';
+  return dial = t;
 }
 /** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below; round 5: lighter again,
  *  as round 4's 0x5e544b still read near-black from pt-platform-4-north and pt-roof-underside; round 6: lighter again, as round 5's 0x7d7064
@@ -174,6 +217,8 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   add(group, s.platform.tactile, blister, 'perth-platform-tactile');
   add(group, s.fittings, own(paintMaterial(material('whiteSteel'))), 'perth-columns-bridges-furniture');
   // The bridges' and kiosk's glass panels (round 3): see-through, so the platform 4 elevation reads past the lift bridge's stairs. ASSUMED opacity.
+  // Round 7 (S4): the clocks' dial faces, their Roman numerals in a texture (perthDialTexture).
+  add(group, s.dials, own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.clockFace, map: perthDialTexture()})), 'perth-clock-dials');
   add(group, s.panes, own(new THREE.MeshLambertMaterial({vertexColors: true, transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide})), 'perth-bridge-glass');
   // The island building (perth-station-structure.ts islandBuildingBatches), its stone coloured per vertex: divide out the stone texture's
   // own average (materials.ts stone, 0xa99a7c) as Waverley's central block does, so the texture adds only coursing.

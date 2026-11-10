@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_TRUSS_RING, trussRings, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { perthDialTexture, perthPiercedTexture, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
+import { archRib, boardedSide, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_TRUSS_RING, trussRings, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -290,9 +290,11 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   for (let i = 0; i < p.length; i += 3) {
     if (is(i, PERTH_PAINT.kioskMaroon)) { if (near(i, c4!, C.kiosk[0])) { maroon++; assert.ok(p[i + 1] <= deck + C.kiosk[2] + 1e-6, 'the kiosk stays under its cornice'); } else stray++; }
     if (is(i, PERTH_PAINT.timber) && near(i, c4!, C.kiosk[0]) && p[i + 1] > deck + C.stage[2] - .01) timber++;
-    if (is(i, PERTH_PAINT.clockFace) && near(i, c4!, reach) && Math.abs(p[i + 1] - (deck + C.hangHeight)) <= C.radius + 1e-6) face++;
     if (is(i, PERTH_PAINT.clockCase) && near(i, c4!, reach) && Math.abs(p[i + 1] - (deck + C.hangHeight)) <= C.radius) marks++;
   }
+  // (Round 7: the dial faces are drawn textured, in batches.dials, not white in the fittings.)
+  const d = batches.dials.positions, nearD = (i: number): boolean => { const q = toLocal([d[i], d[i + 2]]); return Math.hypot(q[0] - c4!.at[0], q[1] - c4!.at[1]) < reach; };
+  for (let i = 0; i < d.length; i += 3) if (nearD(i) && Math.abs(d[i + 1] - (deck + C.hangHeight)) <= C.radius + 1e-6) face++;
   assert.ok(maroon > 0 && stray === 0, `the maroon kiosk under the platform 4 clock only (${maroon}, stray ${stray})`);
   assert.ok(timber >= 24, `the timber stage and case over it (${timber})`);
   assert.ok(face >= 32, `two dials (${face})`);
@@ -310,10 +312,11 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
     if (!near(i, c4!, reach)) continue;
     if (is(i, PERTH_PAINT.timberDark) && Math.abs(p[i + 1] - (deck + C.door[1])) < 1e-6) door++;
     if (is(i, PERTH_PAINT.kioskGlass)) glass++;
-    if (is(i, PERTH_PAINT.clockFace)) {
-      const q = toLocal([p[i], p[i + 2]]), o = (q[0] - c4!.at[0]) * c4!.out[0] + (q[1] - c4!.at[1]) * c4!.out[1];
-      outs += o; n++; if (o < C.stage[1] / 2) back++; if (p[i + 1] < deck + C.stage[3] + .16) low++;
-    }
+  }
+  for (let i = 0; i < d.length; i += 3) {
+    if (!nearD(i)) continue;
+    const q = toLocal([d[i], d[i + 2]]), o = (q[0] - c4!.at[0]) * c4!.out[0] + (q[1] - c4!.at[1]) * c4!.out[1];
+    outs += o; n++; if (o < C.stage[1] / 2) back++; if (d[i + 1] < deck + C.stage[3] + .16) low++;
   }
   assert.ok(door >= 4, `a door in the kiosk's end (${door})`);
   assert.ok(glass >= 6 * 24, `the stage's lights glazed (${glass})`);
@@ -776,4 +779,50 @@ test('round 6: platform 4\'s clock is in clear view of the frozen pt-platform-4-
       assert.ok(h && h.distance > dist - .1, `the dial point (${du}, ${dv}) is hidden by ${h?.object.name} ${h ? (dist - h.distance).toFixed(2) : ''} m in front of it`);
     }
   } finally { scene.dispose(); }
+});
+
+test('round 7: the clock dials carry R-pt1-a2\'s Roman numerals, upright from in front; an ornamental corbel hangs under platform 4\'s case', () => {
+  // The texture: ink round each hour's place on the numeral circle, none half-way between, the minute track's two lines, and more ink for
+  // more strokes (VIII over V over I; IIII, not IV, over III).
+  const D = PERTH_DIAL, tex = perthDialTexture(), n = tex.image.width, px = tex.image.data as Uint8Array;
+  const inkAt = (a: number, r0: number, r1: number, half: number): number => {
+    let ink = 0;
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const x = (i + .5) / n * 2 - 1, y = (j + .5) / n * 2 - 1, r = Math.hypot(x, y), da = Math.abs(((Math.atan2(y, x) - a) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+      if (r >= r0 && r <= r1 && da <= half && px[4 * (j * n + i)] < 128) ink++;
+    }
+    return ink;
+  };
+  const hour = (k: number): number => Math.PI / 2 - k * Math.PI / 6, band: [number, number] = [D.numerals - D.height / 2 - D.stroke, D.numerals + D.height / 2 + D.stroke];
+  const ink = PERTH_ROMAN.map((_, k) => inkAt(hour(k), band[0], band[1], Math.PI / 13));
+  for (let k = 0; k < 12; k++) {
+    assert.ok(ink[k] > 20, `the numeral ${PERTH_ROMAN[k]} drawn (${ink[k]} px)`);
+    assert.equal(inkAt(hour(k + .5), band[0], band[1], .02), 0, `no ink between ${PERTH_ROMAN[k]} and the next`);
+  }
+  assert.ok(ink[8] > ink[5] && ink[5] > ink[1] && ink[4] > ink[3] && ink[12 % 12] > ink[10], `more strokes, more ink (${ink.join(', ')})`);
+  for (const r of D.track) assert.ok(inkAt(0, r - .015, r + .015, Math.PI) > n, `the minute track's line at ${r}`);
+  assert.ok(inkAt(0, 0, band[0] - .02, Math.PI) === 0, 'the dial\'s middle plain');
+  // The geometry: both dials of both clocks textured, and laid so the texture reads upright from in front: v up, u to the viewer's right.
+  const g = batches.dials, p = g.positions, uv = g.uvs, nm = g.normals;
+  assert.ok(p.length / 3 >= 4 * 24, `four textured dial faces (${p.length / 3} vertices)`);
+  let up = 0, right = 0;
+  for (let i = 0; i + 2 < p.length / 3; i += 3) for (const [a, b] of [[i, i + 1], [i + 1, i + 2]]) {
+    const dy = p[3 * b + 1] - p[3 * a + 1], dv = uv[2 * b + 1] - uv[2 * a + 1];
+    // The viewer's right on a face whose normal (toward the viewer) is n: up x n.
+    const rx = nm[3 * a + 2], rz = -nm[3 * a], dr = (p[3 * b] - p[3 * a]) * rx + (p[3 * b + 2] - p[3 * a + 2]) * rz, du = uv[2 * b] - uv[2 * a];
+    up += dy * dv; right += dr * du;
+  }
+  assert.ok(up > 0 && right > 0, `numerals upright and not mirrored from in front (up ${up.toFixed(3)}, right ${right.toFixed(3)})`);
+  // The corbel: under platform 4's case, inside its footprint, gilt ribs and a finial, timber tiers.
+  const C = PERTH_STATION.clock, K = PERTH_CLOCK_CORBEL, deck = WAVERLEY_LEVELS.platform, c4 = plan.clocks.find(c => c.ref === C.kioskRef)!;
+  const base = deck + C.hangHeight - C.case[2] / 2, f = batches.fittings, fc = f.colors, fp = f.positions;
+  const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(fc[i] - k[0]) < 1e-6 && Math.abs(fc[i + 1] - k[1]) < 1e-6 && Math.abs(fc[i + 2] - k[2]) < 1e-6; };
+  let gilt = 0, tiers = 0;
+  for (let i = 0; i < fp.length; i += 3) {
+    const q = toLocal([fp[i], fp[i + 2]]), o = (q[0] - c4.at[0]) * c4.out[0] + (q[1] - c4.at[1]) * c4.out[1], s = (q[1] - c4.at[1]) * c4.out[0] - (q[0] - c4.at[0]) * c4.out[1];
+    if (Math.abs(o - (C.stage[1] + C.hang)) > C.case[1] / 2 || Math.abs(s) > C.case[1] / 2 || fp[i + 1] > base + 1e-6 || fp[i + 1] < base - K.drop - .2) continue;
+    if (is(i, PERTH_PAINT.gilt)) gilt++;
+    if ((is(i, PERTH_PAINT.timber) || is(i, PERTH_PAINT.timberDark)) && fp[i + 1] < base - .05) tiers++;
+  }
+  assert.ok(gilt >= 5 * 24 && tiers >= K.tiers * 24 - 24, `a corbel under the case (gilt ${gilt}, timber ${tiers})`);
 });

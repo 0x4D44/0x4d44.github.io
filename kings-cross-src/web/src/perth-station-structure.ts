@@ -1061,7 +1061,7 @@ function bayRoof(glass: Batch, strips: Batch, iron: Batch, plan: PerthStationPla
 /** A platform clock as R-pt1-a2 shows platform 4's (track frame): a timber case `out` from the wall, its two Roman dials facing along the
  *  wall, under a moulded hood with a small pediment and over a coved bracket; on platform 4 (clock.kioskRef) it stands on a glazed
  *  timber stage over a maroon timber kiosk, all against the wall. */
-function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}): void {
+function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}, dials: Batch): void {
   const C = PERTH_STATION.clock, deck = WAVERLEY_LEVELS.platform, o = c.out, w: Pt = [-o[1], o[0]], rotY = Math.atan2(-o[1], o[0]);
   const at = (out: number, y: number, along = 0): V3 => [c.at[0] + o[0] * out + w[0] * along, y, c.at[1] + o[1] * out + w[1] * along];
   const timber = P('timber'), dark = P('timberDark'), glass = P('kioskGlass'), kiosk = c.ref === C.kioskRef;
@@ -1094,21 +1094,45 @@ function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}): void {
   b.box(at(out, yc), [cd, ch, cw], {rotY, color: timber});
   // (Round 6: platform 4's case stands on the stage itself, astride its face, so it has no bracket.)
   if (reach > .05) for (let k = 0; k < 4; k++) b.box(at(from + reach * (k + 1) / 8, yc - ch / 2 - .1 - k * .12), [reach * (k + 1) / 4, .12, cw * (.9 - k * .15)], {rotY, color: dark});
+  // Round 7 (S4, the round-6 score: "the ornamental bracket under the clock in R-pt1-a2 is missing"): under platform 4's case, R-pt1-a2's
+  // pendant corbel, hanging in front of the stage's upper lights at its front corner.
+  else if (kiosk) clockCorbel(b, at, out, yc - ch / 2, Math.min(cw, cd), rotY);
   b.box(at(out, yc + ch / 2 + .06), [cd + .14, .12, cw + .14], {rotY, color: dark});
   b.poly([at(out, yc + ch / 2 + .12, -cw / 2), at(out, yc + ch / 2 + .12, cw / 2), at(out, yc + ch / 2 + .42, 0)], undefined, {facing: [o[0], 0, o[1]], color: dark});
   b.box(at(out / 2, yc + ch / 2 - .1), [out, .1, .1], {rotY, color: P('iron')});
   for (const s of [-1, 1]) {
-    // The dial on each end of the case, facing along the wall, with twelve hour marks (Roman numerals at this scale).
+    // The dial on each end of the case, facing along the wall. Round 7 (S4, the round-6 score: "ticks, not Roman numerals"): the face is
+    // drawn textured (`dials`, perth-station.ts perthDialTexture: Roman numerals inside a minute track), its UVs laid so the numerals read
+    // upright from in front: u to the viewer's right, which on this face is s times the case's outward direction. The twelve hour marks
+    // stand on the minute track, outside the numerals.
     const ctr = (r: number, a: number, lift: number): V3 => at(out + Math.cos(a) * r, yc + Math.sin(a) * r, s * (cw / 2 + lift));
     b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius + .06, k / 16 * Math.PI * 2, .01)), undefined, {facing: [s * w[0], 0, s * w[1]], color: dark});
-    b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius, k / 16 * Math.PI * 2, .02)), undefined, {facing: [s * w[0], 0, s * w[1]], color: P('clockFace')});
+    const ring = Array.from({length: 24}, (_, k) => k / 24 * Math.PI * 2);
+    dials.poly(ring.map(a => ctr(C.radius, a, .02)), ring.map((a): [number, number] => [.5 + .5 * s * Math.cos(a), .5 + .5 * Math.sin(a)]), {facing: [s * w[0], 0, s * w[1]]});
     for (let h = 0; h < 12; h++) {
-      const a = h / 12 * Math.PI * 2, q = ctr(C.radius * .8, a, .03);
-      b.box(q, [.03, .09, .02], {rotY: rotY + Math.PI / 2, color: P('clockCase')});
+      const a = h / 12 * Math.PI * 2, q = ctr(C.radius * PERTH_DIAL.marks, a, .03);
+      b.box(q, [.03, .05, .02], {rotY: rotY + Math.PI / 2, color: P('clockCase')});
     }
     // The hands at ten past ten.
     beam(b, ctr(0, 0, .035), ctr(C.radius * .5, Math.PI * .67, .035), .02, .035, P('clockCase'));
     beam(b, ctr(0, 0, .04), ctr(C.radius * .75, Math.PI * .14, .04), .02, .025, P('clockCase'));
+  }
+}
+/** Round 7 (S4): the dial face's layout, as fractions of the dial's radius (R-pt1-a2: black Roman numerals, IIII for four, upright to the
+ *  rim, inside a minute track): the numerals' centres at `numerals`, `height` tall, strokes `stroke` wide; the track between `track[0]`
+ *  and `track[1]`, the hour marks (geometry, clockBatch) on it at `marks`. Drawn by perth-station.ts perthDialTexture, `px` square. */
+export const PERTH_DIAL = {numerals: .68, height: .2, stroke: .035, track: [.86, .93] as const, marks: .895, px: 256} as const;
+/** Round 7 (S4): R-pt1-a2's pendant corbel under platform 4's clock case: `tiers` stepped timber tiers narrowing from `top` of the case's
+ *  smaller side to `foot` m as they drop `drop` m, a ball finial under them, and a gilt rib down each corner. ASSUMED sizes, scaled from
+ *  R-pt1-a2 against the dial. */
+export const PERTH_CLOCK_CORBEL = {drop: .6, tiers: 5, top: .8, foot: .14} as const;
+function clockCorbel(b: Batch, at: (out: number, y: number, along?: number) => V3, out: number, y0: number, side: number, rotY: number): void {
+  const K = PERTH_CLOCK_CORBEL, h = K.drop / K.tiers, wAt = (k: number): number => side * (K.top + (K.foot / side - K.top) * k / K.tiers);
+  for (let k = 0; k < K.tiers; k++) { const w = wAt(k + .5); b.box(at(out, y0 - (k + .5) * h), [w, h, w], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')}); }
+  b.box(at(out, y0 - K.drop - .06), [.12, .12, .12], {rotY, color: P('gilt')});
+  for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+    const w0 = wAt(0) / 2 + .01, w1 = wAt(K.tiers) / 2 + .01;
+    beam(b, at(out + u * w0, y0 - .01, v * w0), at(out + u * w1, y0 - K.drop, v * w1), .025, .025, P('gilt'));
   }
 }
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
@@ -1165,6 +1189,8 @@ export interface PerthStationBatches {
   platform: Pick<WaverleyStructureBatches, 'edges' | 'faces' | 'tactile' | 'lip'>; fittings: Batch;
   /** The bridges' and the kiosk's glass panels (round 3), out of `fittings`: drawn see-through. */
   panes: Batch;
+  /** Round 7 (S4): the clocks' dial faces, textured with their Roman numerals (perth-station.ts perthDialTexture). */
+  dials: Batch;
 }
 const recolor = (b: Batch, swap: [Rgb, Rgb][], override?: (x: number, z: number, c: Rgb) => Rgb | undefined): Batch => {
   const c = b.colors, p = b.positions;
@@ -1261,7 +1287,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     }
   }
   for (const br of plan.bridges) bridgeBatch(fittings, br, L.roof);
-  for (const c of plan.clocks) clockBatch(fittings, c);
+  const dials = new Batch();
+  for (const c of plan.clocks) clockBatch(fittings, c, dials);
   furnitureBatch(fittings, plan);
   fittings.append(structure.fittings);
   // Round 3: the bridges' and kiosk's glass panels out into their own batch, drawn see-through (perth-station.ts), so platform 4's
@@ -1275,8 +1302,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   }
   rampEdges(plan.ramps, structure);
   for (const r of plan.ramps) rampGate(fittings, r);
-  for (const b of [glass, weather, strips, soffits, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
-  return {glass, weather, strips, soffits, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
+  for (const b of [glass, weather, strips, soffits, spandrels, structure.ironwork, fittings, panes, dials, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
+  return {glass, weather, strips, soffits, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes, dials};
 }
 /** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
 function takeColor(b: Batch, color: Rgb): Batch {
