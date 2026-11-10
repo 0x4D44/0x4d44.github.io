@@ -49,6 +49,25 @@ export const WATER = {lift: .6, reach: 120, surface: .3, colour: 0x6f8794, specu
  *  sheet's own tone is broken by a tiling wash `wash` m across: slow streaks along the flow, lighter where the overcast sky lies on the
  *  water and darker in the channel (`light`, `dark`, each at most `alpha`; ASSUMED). */
 export const SHORE = {shore: '#6e6a5c', wash: 360, light: '#a6b4ba', dark: '#4d6470', alpha: .16, streaks: 46} as const;
+/** Round 10 (round-9 score, C3: the water was one flat tone near and far). The sheet's colour is graded with distance from the eye:
+ *  `near` of its tone (linear) within `from` m, rising smoothly to the full tone by `to` m, where the low sky lies on the water. R-pt3-b
+ *  (46028) shows the near reach dark blue-grey (sRGB about [40, 56, 85]) and the far reach pale (about [117, 136, 155]); `near` takes
+ *  only part of that photograph's backlit contrast (ASSUMED). From the summit (1.5 km and more) the river is unchanged. */
+export const WATER_GRADE = {near: .62, from: 30, to: 700} as const;
+/** The grade's factor at `d` m from the eye (the shader's own formula, for the tests). */
+export function waterGrade(d: number): number {
+  const t = Math.max(0, Math.min(1, (d - WATER_GRADE.from) / (WATER_GRADE.to - WATER_GRADE.from))), s = t * t * (3 - 2 * t);
+  return WATER_GRADE.near + (1 - WATER_GRADE.near) * s;
+}
+/** Grade a Phong water material by distance (WATER_GRADE): its diffuse colour times waterGrade(|view position|). */
+export function gradeWater(m: THREE.MeshPhongMaterial): void {
+  const f = (v: number) => v.toFixed(4);
+  m.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+  diffuseColor.rgb *= mix(${f(WATER_GRADE.near)}, 1.0, smoothstep(${f(WATER_GRADE.from)}, ${f(WATER_GRADE.to)}, length(vViewPosition)));`);
+  };
+  m.customProgramCacheKey = () => `perth-water-grade-${WATER_GRADE.near}-${WATER_GRADE.from}-${WATER_GRADE.to}`;
+}
 /** The water sheet's wash: a tiling canvas around WATER.colour (browser only; null in Node). */
 function waterWash(): THREE.CanvasTexture | null {
   if (typeof document === 'undefined') return null;
@@ -64,6 +83,41 @@ function waterWash(): THREE.CanvasTexture | null {
   g.globalAlpha = 1;
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / SHORE.wash, 1 / SHORE.wash); t.colorSpace = THREE.SRGBColorSpace;
   return t;
+}
+/** Round 10 (round-9 score, C3: Bridgend's near shore was one hard, straight band of one tone). The shingle paint is broken along the
+ *  OSM water edge: every `step` m along it, a patch `r` m across. A share `grass` of them are grass tongues (GROUND_COLOURS.grass)
+ *  set within `tongue` m of the edge, so each crosses it and the grass line wanders; the rest lie up to `reach` m into the river, in
+ *  pale dry shingle or darker silt, and in `wet` tone where the bank stands under `wetRise` m over the sheet (the wet margin at the
+ *  waterline, R-pt3-a and R-pt3-b: a darker strip along the water); one lying `under` m below the sheet would not show and is left
+ *  out, and they crowd towards the edge, where the bank shows. Painted at `alpha` on the cover's own canvas. ASSUMED tones and
+ *  sizes, by eye against R-pt3-a and R-pt3-b. No triangles. */
+export const SHORE_BREAK = {step: 2, reach: 12, tongue: 1.5, r: [1.2, 3.6] as const, grass: .3, wetRise: .25, under: -.3, alpha: .85,
+  tones: {grass: '#4f6e28', dry: '#8a8475', silt: '#5d594d', wet: '#4a4943'}} as const;
+export interface ShorePatch {x: number; z: number; r: number; kind: keyof typeof SHORE_BREAK.tones}
+/** The shore's patches (SHORE_BREAK) along every mapped water edge inside the extent; `rise(x, z)` is the bank's height over the sheet. */
+export function shoreBreak(rise: (x: number, z: number) => number): ShorePatch[] {
+  const S = SHORE_BREAK, E = PERTH_LANDUSE.extent, out: ShorePatch[] = [];
+  const h = (x: number, z: number, k: number) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
+  for (const rings of PERTH_LANDUSE.areas.water) for (const ring of rings) {
+    const r = clipRing(ring, E); if (r.length < 3) continue;
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i]!, b = r[(i + 1) % r.length]!, len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < 1e-6) continue;
+      // the edge along the extent's own border is the clip, not a bank
+      if ((Math.abs(a[0] - b[0]) < 1e-6 && (Math.abs(a[0] - E.x0) < 1e-6 || Math.abs(a[0] - E.x1) < 1e-6)) || (Math.abs(a[1] - b[1]) < 1e-6 && (Math.abs(a[1] - E.z0) < 1e-6 || Math.abs(a[1] - E.z1) < 1e-6))) continue;
+      const t: Pt = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+      for (let s = h(a[0], a[1], 90) * S.step; s < len; s += S.step) {
+        const px = a[0] + t[0] * s, pz = a[1] + t[1] * s;
+        // into the river: whichever side of the edge is mapped water
+        const side = inWater(px - t[1], pz + t[0]) ? 1 : inWater(px + t[1], pz - t[0]) ? -1 : 0; if (!side) continue;
+        // shingle patches crowd towards the edge (the bank shows above the sheet only near it)
+        const n: Pt = [-t[1] * side, t[0] * side], g = h(px, pz, 91) < S.grass, d = g ? h(px, pz, 92) * S.tongue : h(px, pz, 92) ** 2 * S.reach;
+        const x = px + n[0] * d, z = pz + n[1] * d, rad = S.r[0] + (S.r[1] - S.r[0]) * h(px, pz, 93);
+        const up = rise(x, z); if (!g && up < S.under) continue; // under the sheet: the paint would not show
+        out.push({x, z, r: g ? Math.max(rad, d + .5) : rad, kind: g ? 'grass' : up < S.wetRise ? 'wet' : h(px, pz, 94) < .5 ? 'dry' : 'silt'});
+      }
+    }
+  }
+  return out;
 }
 /** The Tay Viaduct, from Wikipedia ("Tay Viaduct") and Canmore 79826: span counts and the island arches' clear span and pier width. */
 export const TAY_VIADUCT = {westSpans: 7, arches: 10, eastSpans: 6, archClear: 8.636, archPier: 1.219} as const;
@@ -216,22 +270,27 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   cover.group.name = 'perth-city-ground';
   // the crag's drape repainted rock-grey (perth-woodland.ts CLIFF_PAINT), on the cover's own canvas (none under node)
   const cragSteps = kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE), cragPaint = cliffPaintCells(cragSteps);
+  // round 10: the shore broken along the water's edge (SHORE_BREAK), on the same canvas
+  const level = waterLevel(ground), shore = shoreBreak((x, z) => ground.heightAt(x, z) - level(x, z) - WATER.lift);
   cover.group.traverse(o => {
     const map = o instanceof THREE.Mesh && o.material instanceof THREE.MeshLambertMaterial ? o.material.map : null, img = map?.image as HTMLCanvasElement | undefined;
     if (!map || !img || typeof img.getContext !== 'function') return;
     const g = img.getContext('2d'), E = PERTH_LANDUSE.extent, s = img.width / (E.x1 - E.x0); if (!g) return;
     g.save(); g.globalAlpha = CLIFF_PAINT.alpha;
     for (const c of cragPaint) { g.fillStyle = c.tone; g.fillRect((c.x - E.x0) * s, (c.z - E.z0) * s, CLIFF_PAINT.cell * s + .5, CLIFF_PAINT.cell * s + .5); }
+    g.globalAlpha = SHORE_BREAK.alpha;
+    for (const p of shore) { g.fillStyle = SHORE_BREAK.tones[p.kind]; g.beginPath(); g.arc((p.x - E.x0) * s, (p.z - E.z0) * s, Math.max(.5, p.r * s), 0, Math.PI * 2); g.fill(); }
     g.restore(); map.needsUpdate = true;
   });
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
-  const sheet = new Batch(), level = waterLevel(ground);
+  const sheet = new Batch();
   for (const [o, ...holes] of PERTH_LANDUSE.areas.water) {
     const outer = clipRing(o!, PERTH_LANDUSE.extent); if (outer.length < 3) continue;
     fillSurface(sheet, outer, holes.map(h => clipRing(h, PERTH_LANDUSE.extent)).filter(h => h.length >= 3), (x, z) => level(x, z) + PERTH_DRAPE + WATER.lift);
   }
   const wg = sheet.build(), wash = waterWash(), m = new THREE.MeshPhongMaterial({color: wash ? 0xffffff : WATER.colour, map: wash, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
+  gradeWater(m);
   const water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water);
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
   // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock

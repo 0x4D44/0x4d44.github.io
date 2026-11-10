@@ -18,7 +18,7 @@
 import * as THREE from 'three';
 import {createTerrain} from '../../core/terrain.ts';
 import {GROUND_Y} from './world.ts';
-import {SHORE, WATER} from './perth-city-features.ts';
+import {gradeWater, SHORE, WATER} from './perth-city-features.ts';
 import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import file from './data/perth-terrain-east.json' with {type: 'json'};
 
@@ -138,7 +138,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     if (a && b && e && !d) widx.push(wv(i, j), wv(i + 1, j + 1), wv(i + 1, j));
   }
   const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setIndex(widx); wg.computeVertexNormals();
-  const water = new THREE.Mesh(wg, new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess}));
+  const wm = new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess}); gradeWater(wm); // round 10: graded as the main sheet
+  const water = new THREE.Mesh(wg, wm);
   water.name = 'perth-east-water'; group.add(water); stats.triangles += widx.length / 3; stats.drawCalls++;
   // bank trees: a crown on a share of the land nodes beside wet ones
   const banks: [number, number][] = [];

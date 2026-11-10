@@ -8,7 +8,7 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, SHORE_BREAK, shoreBreak, WATER_GRADE, waterGrade, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_MESHES, PERTH_CITY_STONE, TOWN_LOOK, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CLIFF_PAINT, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, cliffPaintCells, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
@@ -675,6 +675,49 @@ test('the Tay\'s shore is shingle, not a dark band, and its water carries a wash
   assert.ok(shore - lum(GROUND_COLOURS.water) > .12, 'lighter than the old water paint that read as a dark band');
   const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh, pos = water.geometry.getAttribute('position'), uv = water.geometry.getAttribute('uv');
   for (let i = 0; i < pos.count; i += 97) assert.ok(Math.abs(uv.getX(i) - pos.getX(i)) < 1e-3 && Math.abs(uv.getY(i) - pos.getZ(i)) < 1e-3, 'the wash is placed in plan metres');
+});
+
+test('the Tay\'s tone is graded with distance: darker near the eye, the full pale tone far off (46028; round 10, C3)', () => {
+  // 46028: the near reach about [40, 56, 85], the far one about [117, 136, 155] (sRGB); the grade takes part of that, in the same direction
+  assert.ok(waterGrade(10) <= .7 && waterGrade(10) >= .5, `near: ${waterGrade(10)}`);
+  assert.equal(waterGrade(WATER_GRADE.to), 1); assert.equal(waterGrade(1500), 1, 'the summit\'s view of the river is unchanged');
+  for (let d = 0; d < 800; d += 25) assert.ok(waterGrade(d + 25) >= waterGrade(d), 'it rises with distance');
+  // both sheets carry it: the shader multiplies the diffuse colour by the same formula
+  for (const name of ['perth-tay-water', 'perth-east-water']) {
+    const m = (scene.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshPhongMaterial;
+    const shader = {fragmentShader: THREE.ShaderLib.phong.fragmentShader, vertexShader: THREE.ShaderLib.phong.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+    m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
+    const at = shader.fragmentShader.indexOf('smoothstep(30.0000, 700.0000, length(vViewPosition))');
+    assert.ok(at > shader.fragmentShader.indexOf('#include <map_fragment>') && shader.fragmentShader.includes(`mix(${WATER_GRADE.near.toFixed(4)}, 1.0,`), `${name} graded`);
+    assert.ok(m.customProgramCacheKey().includes('perth-water-grade'), `${name}: its own program`);
+  }
+});
+
+test('the shore is broken along the water\'s edge: grass tongues across it, dry shingle, silt and a wet margin, not one band (round 10, C3)', () => {
+  const level = waterLevel(scene.terrain), rise = (x: number, z: number) => scene.terrain.heightAt(x, z) - level(x, z) - WATER.lift;
+  const all = shoreBreak(rise), E = PERTH_LANDUSE.extent;
+  // the OSM water edges (less the extent's clip), to measure each patch against
+  const edges: [number, number, number, number][] = [];
+  for (const rings of PERTH_LANDUSE.areas.water) for (const r of rings) for (let i = 0; i < r.length; i++) { const a = r[i]!, b = r[(i + 1) % r.length]!; if (Math.max(a[0], b[0]) >= E.x0 && Math.min(a[0], b[0]) <= E.x1 && Math.max(a[1], b[1]) >= E.z0 && Math.min(a[1], b[1]) <= E.z1) edges.push([a[0], a[1], b[0], b[1]]); }
+  const edgeDist = (x: number, z: number) => Math.min(...edges.map(([ax, az, bx, bz]) => segDist(x, z, [[ax, az], [bx, bz]])));
+  // Bridgend's near shore (pt-tay-from-bridgend stands at 954, -300): many patches, in all four kinds
+  const near = all.filter(p => Math.hypot(p.x - 954, p.z + 300) < 120);
+  const kinds = new Set(near.map(p => p.kind));
+  assert.ok(near.length >= 100 && kinds.size === 4, `Bridgend's shore patches: ${near.length}, kinds ${[...kinds]}`);
+  for (const k of ['grass', 'dry', 'silt', 'wet'] as const) assert.ok(near.filter(p => p.kind === k).length >= 10, `${k} patches at Bridgend: ${near.filter(p => p.kind === k).length}`);
+  // every patch lies along a mapped edge; a grass tongue crosses it (the grass line wanders), the shingle shows above the sheet
+  for (const p of near) {
+    const d = edgeDist(p.x, p.z);
+    assert.ok(d <= SHORE_BREAK.reach + .1, `a patch ${d.toFixed(1)} m from the edge`);
+    if (p.kind === 'grass') assert.ok(p.r > d, `a grass tongue across the edge: r ${p.r.toFixed(1)}, ${d.toFixed(1)} m in`);
+    else assert.ok(rise(p.x, p.z) >= SHORE_BREAK.under, 'shingle where the bank shows');
+    if (p.kind === 'wet') assert.ok(rise(p.x, p.z) < SHORE_BREAK.wetRise, 'the wet margin at the waterline');
+    if (p.kind === 'dry' || p.kind === 'silt') assert.ok(rise(p.x, p.z) >= SHORE_BREAK.wetRise, 'dry shingle and silt above it');
+  }
+  // the tones differ: the band is not one tone (luma spread over the four, sRGB)
+  const lum = (hex: string) => { const n = parseInt(hex.slice(1), 16); return (.2126 * (n >> 16) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
+  const ls = Object.values(SHORE_BREAK.tones).map(lum);
+  assert.ok(Math.max(...ls) - Math.min(...ls) > .15 && SHORE_BREAK.tones.grass === GROUND_COLOURS.grass, `shore tones: ${ls.map(v => v.toFixed(2))}`);
 });
 
 test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {
