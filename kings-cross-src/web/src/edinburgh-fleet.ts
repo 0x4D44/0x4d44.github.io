@@ -7,6 +7,7 @@ import type { EdinburghKindRow } from '../../core/train-neutral.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { buildTrain } from './train.ts';
 import { disposeNeutralTrain } from './train-neutral.ts';
+import { SR385_ROWS } from './train-385.ts';
 
 /** A figure the capture sidecars report, with its basis ('published', 'drawn', 'assumed', or a '+' join of them). */
 export interface CaptureDimension { readonly value: number; readonly basis: string; readonly figures: readonly string[]; readonly figureM?: number }
@@ -48,6 +49,7 @@ const kxRow = (row: EdinburghKindRow): EdinburghFleetRow => ({ ...row, build: ()
 
 export const EDINBURGH_FLEET: readonly EdinburghFleetRow[] = [
   ...KX_REUSED_ROWS.map(kxRow),
+  ...SR385_ROWS,
 ];
 
 export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined => EDINBURGH_FLEET.find(r => r.kind === kind);
