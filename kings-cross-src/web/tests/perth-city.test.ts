@@ -322,7 +322,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
 test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges shaped over the cliff, not plates (8703; round 5, C1)', () => {
   const steps = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE);
   assert.ok(steps.length > 300, `risers: ${steps.length}`);
-  let uphill = 0;
+  let uphill = 0; const tall: typeof steps = [];
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
   const drawn = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[1]!) + PERTH_DRAPE;
   for (const k of steps) {
@@ -341,7 +341,9 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     const len = Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]);
     if (k.courses > 1) assert.ok(len >= 3 - 1e-6, `a through-riser at least 3 m wide: ${len.toFixed(2)}`);
     // round 9 (round-8 score: the toe fins remained): every riser at most 1.5 times as tall over the ground as its piece is long
-    assert.ok(over <= 1.5 * len + 1e-6, `no fin: ${over.toFixed(2)} m tall on a ${len.toFixed(2)} m piece`);
+    // round 10, declared (ordered: bring the columns back by banning tall risers only at the cliff foot and against the sky): over 1.5
+    // times only a through-riser inside the face, at most 3 times; checked below that rock steps lie under it and over its top
+    if (over > 1.5 * len + 1e-6) { assert.ok(k.courses > 1 && over <= 3 * len + 1e-6, `no fin: ${over.toFixed(2)} m tall on a ${len.toFixed(2)} m piece`); tall.push(k); }
     if (k.joint) assert.ok(k.crack > 0 && k.crack <= 1.2 && len - k.crack >= .5, `a narrow crack: ${k.crack} of ${len.toFixed(2)}`);
   }
   // round 6: the drape between the courses is repainted rock-grey: the ground under each riser and back along its ledge, in grey tones,
@@ -376,8 +378,8 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   const ul = Math.hypot(ux, uz), along = (k: typeof steps[number]) => ((k.a[0] + k.b[0]) / 2) * -uz / ul + ((k.a[1] + k.b[1]) / 2) * ux / ul;
   const stacked = joints.filter(k => joints.some(o => o !== k && Math.abs(along(o) - along(k)) < CRAG.jointWidth && Math.abs(o.top - k.top) > CRAG.band / 2 && Math.abs(o.top - k.top) < CRAG.band * 1.6));
   // round 9, declared: over 55% (round 7-8: 60%); the 1.5 aspect cap leaves out the short fin pieces (2,106 to 1,803 risers), and
-  // with them some joints' partners (176 of 303, 58%)
-  assert.ok(stacked.length > joints.length * .55, `joints running up the face: ${stacked.length} of ${joints.length}`);
+  // with them some joints' partners (176 of 303, 58%). Round 10 (round-9 ruling): 60% restored
+  assert.ok(stacked.length > joints.length * .6,`joints running up the face: ${stacked.length} of ${joints.length}`);
   // the courses broken (round 7): one-course risers' heights spread over more than half a band (10th to 90th percentile; round 6's
   // spread was under half), and some risers running through 2-3 courses
   const ones = steps.filter(k => k.courses === 1).map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), spread = ones[Math.floor(ones.length * .9)]! - ones[Math.floor(ones.length * .1)]!;
@@ -386,11 +388,22 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   // piece over 5.7 m long, which few contour pieces are, so the 5-30% through-riser share and the 3-course riser (round 7) are dropped;
   // the column spread stays
   assert.ok(spread > CRAG.band * .5 && thru < steps.length * .3, `courses broken: spread ${spread.toFixed(2)}, ${thru} through-risers of ${steps.length}`);
+  // round 10 (round-9 ruling: restore it): round 7's floor again, over 5% of the risers through 2-3 courses, and some through 3
+  assert.ok(thru > steps.length * .05 && steps.some(k => k.courses === 3), `columns: ${thru} through-risers of ${steps.length}, ${steps.filter(k => k.courses === 3).length} through 3`);
+  // round 10: a riser over the 1.5 cap stands inside the face: a rock step below it (within two cells downhill, its top under this
+  // riser's foot course) and one above its top (up its ledge's run and two cells more), so none is a toe fin or a post against the sky
+  for (const k of tall) {
+    const mx = (k.a[0] + k.b[0]) / 2, mz = (k.a[1] + k.b[1]) / 2, run = k.ledge + 2 * CRAG.grid, mid = (o: typeof k) => [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2] as const;
+    const below = steps.some(o => { const [x, z] = mid(o), dx = x - mx, dz = z - mz; return o !== k && Math.hypot(dx, dz) < 2 * CRAG.grid + 1 && dx * k.up[0] + dz * k.up[1] < 0 && o.top < k.top - CRAG.band; });
+    const above = steps.some(o => { const [x, z] = mid(o), dx = x - mx, dz = z - mz; return o !== k && Math.hypot(dx, dz) < run && dx * k.up[0] + dz * k.up[1] > 0 && o.top > k.top; });
+    assert.ok(below && above, `a tall riser inside the face: below ${below}, above ${above}, at ${mx.toFixed(0)}, ${mz.toFixed(0)}`);
+  }
+  assert.ok(tall.length > 20, `tall through-risers inside the face: ${tall.length}`);
   // round 9, restored in a form the cap can meet (round-9 score: the dropped share was a deletion): among the pieces long enough to
-  // carry a riser through two courses under the cap (over 5.7 m), at least 8 do (9 of 153 now). None runs through 3 courses: that needs
-  // a piece of about 9.7 m, and the cap leaves none, so the round-7 3-course check has no form this geometry can meet
+  // carry a riser through two courses under the cap (over 5.7 m), at least 8 do (9 of 153 then). Round 10 (ordered: raise it to
+  // match): at least 14 (16 of 153 now); the 3-course riser is back in round 7's check above
   const long = steps.filter(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]) > 5.7), longThru = long.filter(k => k.courses >= 2).length;
-  assert.ok(longThru >= 8, `through-risers on the long pieces: ${longThru} of ${long.length}`);
+  assert.ok(longThru >= 14,`through-risers on the long pieces: ${longThru} of ${long.length}`);
   // the ledges cover the drape between courses: each runs back until it meets the drawn slope (it ends in the ground, not short of it)
   const meets = steps.filter(k => { const m: [number, number] = [(k.a[0] + k.b[0]) / 2 + k.up[0] * k.ledge, (k.a[1] + k.b[1]) / 2 + k.up[1] * k.ledge]; return drawn(m) >= k.top - .3; });
   assert.ok(meets.length > steps.length * .85, `ledges running back into the slope: ${meets.length} of ${steps.length}`);
@@ -535,9 +548,15 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   const blooms = bushes.flatMap(b => b.lobes).filter(l => l.bloom);
   // round 8, declared (ordered: flecks at about luma 0.25-0.3, 152's about 0.22): a dull yellow, luma 0.22-0.34 (round 7: 0.36-0.6),
   // mean under 0.32 (round 7: 0.5); red over green and blue under 0.3 of green, so it stays yellow, not leaf
-  assert.ok(blooms.every(l => lumL(l.rgb) > .22 && lumL(l.rgb) < .34 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .3 * l.rgb[1]), 'a dull yellow bloom');
+  // round 10, declared (ordered: raise the authored blue until the render gives about 0.15-0.19 of green): sRGB blue under 0.45 of green
+  // (round 8-9: 0.3); still under half, so the bloom stays yellow
+  assert.ok(blooms.every(l => lumL(l.rgb) > .22 && lumL(l.rgb) < .34 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .45 * l.rgb[1]), 'a dull yellow bloom');
   // round 9 (round-8 score: rust): mustard, blue at least 0.15 of green
   assert.ok(blooms.every(l => l.rgb[2] >= .15 * l.rgb[1]), 'mustard, not rust: blue at least 0.15 of green');
+  // round 10 (round-9 ruling: the sRGB floor passed on round 8's rust): the ratio the light acts on, linear blue 0.15-0.3 of linear green
+  // (round 9's 0.06 was 0.063: the render's 3 of 255)
+  const linC = (v: number) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+  assert.ok(blooms.every(l => linC(l.rgb[2]) >= .15 * linC(l.rgb[1]) && linC(l.rgb[2]) <= .3 * linC(l.rgb[1])), `mustard in linear light: ${blooms.map(l => (linC(l.rgb[2]) / linC(l.rgb[1])).toFixed(3)).slice(0, 3)}`);
   // and the lobes not pyramids: turned off upright, their x/z proportions varied
   { const mq = new THREE.Matrix4(), pq = new THREE.Vector3(), qq = new THREE.Quaternion(), sq = new THREE.Vector3(), yq = new THREE.Vector3(); let tilted = 0; const ratios: number[] = [];
     for (let i = 0; i < gm.count; i++) { gm.getMatrixAt(i, mq); mq.decompose(pq, qq, sq); if (yq.set(0, 1, 0).applyQuaternion(qq).y < Math.cos(.1)) tilted++; ratios.push(sq.x / sq.z); }

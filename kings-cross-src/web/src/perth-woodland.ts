@@ -161,8 +161,13 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
 /** `slope` rose from 40 to 41.5 deg in round 6, paying the piers' rounder shafts (PIER_FORM.sides) from the crag's gentlest risers. */
 export const CRAG = {eyeClear: 60, slope: 41.5, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
-  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 60, joints: .13, joint: .3, aspect: 1.5, setback: .5,
-  offset: .5, through: [.74, .88] as const, thruMin: 3, crack: 1, ledgeRun: 9} as const;
+  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 90, joints: .13, joint: .3, aspect: 1.5, innerAspect: 3, setback: .5,
+  offset: .5, through: [.7, .84] as const, thruMin: 3, crack: 1, ledgeRun: 9} as const;
+/** Round 10 (round-9 score: the face read coursed again; the cap had cut the through-risers from 332 to 9). A through-riser inside the
+ *  face, with crag cells below it and above it up past its top, may stand `innerAspect` (3) times its piece's length; at the foot and
+ *  against the sky every riser keeps the `aspect` cap, and one-course risers keep it everywhere. The columns come more often
+ *  (`through` 0.7 and 0.84, from 0.74 and 0.88), and the joints run in `jointDepth` 90 m bands up the face (from 60), so a crack runs
+ *  on through more courses. */
 /** Round 9 (round-8 score: the toe fins were still there, and the 1 m cracks did not read). A riser is at most `aspect` times as tall
  *  as its piece is long: it drops courses to fit, a one-course riser is cut down to fit, and a piece too short to stand `rise[0]` m at
  *  that aspect is left out. The crack is set `setback` m back into the slope, in `joint` (0.3) of the rock's tone: a shadowed slot. */
@@ -221,10 +226,18 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
   const rough = (x: number, z: number) => ground.heightAt(x, z) + C.wobble * (2 * vn(x, z, 23, 71) + vn(x, z, 9, 72) - 1.5);
   const x0 = Math.floor((ax - r) / G) * G, z0 = Math.floor((az - r) / G) * G, nx = Math.ceil((bx + r - x0) / G) + 1, nz = Math.ceil((bz + r - z0) / G) + 1;
   const hv = new Float32Array(nx * nz); for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) hv[j * nx + i] = rough(x0 + i * G, z0 + j * G);
+  // the crag's cells (round 10: a riser is inside the face when crag cells lie below it and above it, up past its top)
+  const live = new Uint8Array(nx * nz);
   for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {
     const cx = x0 + (i + .5) * G, cz = z0 + (j + .5) * G;
     if (!onCliff(ground, cliffs, cx, cz) || slopeOf(ground, cx, cz) < C.slope || Math.hypot(cx - CLIFF_EYE[0], cz - CLIFF_EYE[2]) < C.eyeClear) continue;
     if (keep.some(([kx, kz, kr]) => Math.hypot(cx - kx, cz - kz) < kr)) continue;
+    live[j * nx + i] = 1;
+  }
+  const isCrag = (x: number, z: number) => { const i = Math.floor((x - x0) / G), j = Math.floor((z - z0) / G); return i >= 0 && j >= 0 && i + 1 < nx && j + 1 < nz && live[j * nx + i] === 1; };
+  for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {
+    const cx = x0 + (i + .5) * G, cz = z0 + (j + .5) * G;
+    if (!live[j * nx + i]) continue;
     const c: [number, number, number][] = [[x0 + i * G, z0 + j * G, hv[j * nx + i]!], [x0 + (i + 1) * G, z0 + j * G, hv[j * nx + i + 1]!], [x0 + (i + 1) * G, z0 + (j + 1) * G, hv[(j + 1) * nx + i + 1]!], [x0 + i * G, z0 + (j + 1) * G, hv[(j + 1) * nx + i]!]];
     const lo = Math.min(...c.map(q => q[2])), hi = Math.max(...c.map(q => q[2]));
     // the uphill direction over the cell, in plan
@@ -243,8 +256,12 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
         const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
         if (len * C.aspect < C.rise[0]) continue; // too short to stand as a riser: a fin, not a face
         let courses = len < C.thruMin ? 1 : thru > C.through[1] ? 3 : thru > C.through[0] ? 2 : 1, rise = one + (courses - 1) * C.band;
-        while (courses > 1 && rise > len * C.aspect) { courses--; rise -= C.band; }
-        rise = Math.min(rise, len * C.aspect); let top = Math.max(ya, yb) + rise;
+        // round 10: a through-riser inside the face (crag below it, and above it up past its top) may stand `innerAspect` times its
+        // length; at the foot and against the sky every riser keeps the `aspect` cap
+        const inside = (r: number) => { if (!isCrag(mx - up[0] * G, mz - up[1] * G)) return false; const run = r / Math.max(grade, .3) + G; for (let d = G; d <= run; d += G) if (!isCrag(mx + up[0] * d, mz + up[1] * d)) return false; return true; };
+        while (courses > 1 && rise > len * (inside(rise) ? C.innerAspect : C.aspect)) { courses--; rise -= C.band; }
+        if (courses === 1) rise = Math.min(rise, len * C.aspect);
+        let top = Math.max(ya, yb) + rise;
         let ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], Math.max(C.band, rise - drape) / Math.max(grade, .3)));
         // a through-riser's ledge runs uphill until it meets the drawn ground; where the slope gives out first, it runs one course fewer
         while (courses > 1) {
