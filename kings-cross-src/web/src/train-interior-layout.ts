@@ -2,7 +2,9 @@
 // vestibules. Pure data and arithmetic, no three.js: train-interior-at300.ts draws from it, and the tests hold the counts to the seat maps.
 //
 // Places along a car are `s`, metres from its cab end (a driving car) or from its start (any other), as in train.ts.
-import { ASSUMED, at300Plan, END_GAP } from './train.ts';
+import { ASSUMED, at300Plan, bodySpec, END_GAP } from './train.ts';
+import type { CarPlan } from './train.ts';
+import { TRAIN_SPECS } from '../../core/train.ts';
 import type { Car, TrainKind } from '../../core/train.ts';
 
 export type SeatClass = 'standard' | 'first';
@@ -75,6 +77,9 @@ export const SEAT_MAPS: Readonly<Partial<Record<TrainKind, SeatMap>>> = {
   lner9: { cars: [{ standard: 48, first: 0 }, { standard: 84, first: 0 }, { standard: 84, first: 0 }, { standard: 70, first: 0 }, { standard: 84, first: 0 }, { standard: 84, first: 0 }, { standard: 36, first: 30 }, { standard: 0, first: 55 }, { standard: 0, first: 15 }], standard: 490, first: 100, source: `${LNER_MAP}; coaches A, B, C, G, H, J, K, L, M` },
   hull5: { cars: [{ standard: 50, first: 0 }, { standard: 88, first: 0 }, { standard: 88, first: 0 }, { standard: 58, first: 18 }, { standard: 0, first: 25 }], standard: 284, first: 43, source: 'Hull Trains seating plan 2025 v2, https://www.hulltrains.co.uk/-/media/pdf-files/seating-plan-pdfs/hull-trains-seating-plan-2025-v2.pdf (read 2026-11-10): coaches A-E, 327 seats' },
   lumo5: { cars: [{ standard: 52, first: 0 }, { standard: 90, first: 0 }, { standard: 94, first: 0 }, { standard: 90, first: 0 }, { standard: 60, first: 0 }], standard: 386, first: 0, source: 'Lumo East Coast seat plan V11, https://www.lumo.co.uk/-/media/Lumo-East-Coast-seat-plan-V11.pdf (read 2026-11-10): coaches A-E, all standard' },
+  // Grand Central's plan: coach F is the DMSL(A), E the MFL, D the MSL, C the MSLRB, B the DMSL(B) at the London end. It adds up to 268; GC's own page says 256
+  // and Wikipedia 287 (before GC's refit), unexplained: the plan is modelled.
+  gc180x5: { cars: [{ standard: 46, first: 0 }, { standard: 0, first: 42 }, { standard: 68, first: 0 }, { standard: 56, first: 0 }, { standard: 56, first: 0 }], standard: 226, first: 42, source: 'Grand Central, "GC Seating Plans 2020" (typical 5-car), https://web.archive.org/web/2022im_/https://www.grandcentralrail.com/sites/grandcentralrail.com/files/inline-images/GC%20Seating%20Plans%202020%20-%20Social%20Distanced_3.png (read 2026-11-10): coaches F, E, D, C, B' },
 };
 
 /**
@@ -116,6 +121,15 @@ const FIT_ROWS: Readonly<Partial<Record<TrainKind, readonly FitRow[]>>> = {
     { coach: 'D', tables: [0], toilets: 1 },
     { coach: 'E', tables: [1], toilets: 1, accessible: true },
   ],
+  // the plan: a toilet in every car, the accessible one (and two wheelchair spaces) in F, one space in E, the buffet counter in C, D's luggage space in
+  // a vestibule (so no stack in its saloon); the tables a few bays a car, as the plan draws them (ASSUMED counts, fewer where the pitch would not allow)
+  gc180x5: [
+    { coach: 'F', tables: [4], toilets: 1, accessible: true, wheelchair: 2 },
+    { coach: 'E', tables: [3], toilets: 1, wheelchair: 1 },
+    { coach: 'D', tables: [2], toilets: 1, noStack: true },
+    { coach: 'C', tables: [1], toilets: 1, kiosk: true },
+    { coach: 'B', tables: [4], toilets: 1 },
+  ],
 };
 
 /** The fit-out of car `car` of a train of `kind`; undefined where none is known (the model then draws an empty saloon of the car's class). */
@@ -137,7 +151,7 @@ export interface Table { x0: number; x1: number; s: number }
 /** One zone along the car, from s0 to s1. */
 export interface Zone { kind: 'cab' | 'vestibule' | 'saloon'; s0: number; s1: number; cls?: SeatClass }
 /** A wall across the car at s, and what opening it has. */
-export interface CrossWall { s: number; kind: 'cab' | 'end' | 'partition' | 'class' }
+export interface CrossWall { s: number; kind: 'cab' | 'end' | 'partition' | 'class' | 'gangway' }
 
 export interface CarInterior {
   zones: Zone[];
@@ -171,13 +185,14 @@ export const seatHalf = (cls: SeatClass): number => (cls === 'first' ? 0.29 : 0.
  * two saloons split its length in proportion to their seats' floor. Rows of airline seats face the saloon's middle, where the table bays stand.
  */
 export function layoutCar(kind: TrainKind, car: Car): CarInterior {
-  const plan = at300Plan(car);
+  const body = intercityBody(kind, car);
+  const plan = body.plan;
   const L = car.length;
-  const tip = car.cab ? ASSUMED.noseLength : END_GAP;
+  const tip = car.cab ? body.nose : END_GAP;
   const end = L - END_GAP - FIT.endWall;
   const zones: Zone[] = [];
   const walls: CrossWall[] = [];
-  const front = car.cab ? FIT.cabWall : END_GAP + FIT.endWall;
+  const front = car.cab ? body.cabWall : END_GAP + FIT.endWall;
   if (car.cab) { zones.push({ kind: 'cab', s0: tip, s1: front }); walls.push({ s: front, kind: 'cab' }); }
   else walls.push({ s: front, kind: 'end' });
   walls.push({ s: end, kind: 'end' });
@@ -216,13 +231,27 @@ export function layoutCar(kind: TrainKind, car: Car): CarInterior {
     const atEnd = v.s1 === end;
     const depth = accessible ? 2.0 : 1.5;
     const door = atEnd ? d1 : d0;
-    const s0 = atEnd ? Math.max(door + ASSUMED.doorWidth / 2 + 0.05, end - depth) : v.s0;
-    const s1 = atEnd ? end : Math.min(door - ASSUMED.doorWidth / 2 - 0.05, v.s0 + depth);
+    const s0 = atEnd ? Math.max(door + body.doorWidth / 2 + 0.05, end - depth) : v.s0;
+    const s1 = atEnd ? end : Math.min(door - body.doorWidth / 2 - 0.05, v.s0 + depth);
     toilets.push({ s0, s1, side: t % 2 === 0 ? 1 : -1, accessible });
   }
   const first = zones.find((z) => z.kind === 'saloon') as Zone;
   const wheelchair = fit?.wheelchair ? [{ s0: first.s0 + 0.05, s1: first.s0 + 0.05 + 0.75 * fit.wheelchair, side: -1 as const }] : [];
   return { zones, walls: walls.sort((a, b) => a.s - b.s), seats, tables, stacks, toilets, wheelchair, pitch, doors: plan.doors, coach: fit?.coach ?? '' };
+}
+
+/**
+ * An intercity car's body, as the layout needs it: the plan (doors and windows), the nose's length, the door's width and where the cab's back wall
+ * stands. The Azuma's are train.ts's own and `FIT.cabWall`; another family's come from its `bodySpec`, its cab wall 1.05 m behind the nose as on
+ * the Azuma, or 0.2 m short of the first door's opening where that is nearer (the Class 180's long nose carries its cab: ASSUMED).
+ */
+function intercityBody(kind: TrainKind, car: Car): { plan: CarPlan; nose: number; doorWidth: number; cabWall: number } {
+  const family = TRAIN_SPECS[kind].family;
+  if (family === 'at300') return { plan: at300Plan(car), nose: ASSUMED.noseLength, doorWidth: ASSUMED.doorWidth, cabWall: FIT.cabWall };
+  const spec = bodySpec(family);
+  const plan = spec.plan(car, false);
+  const nose = spec.nose.length;
+  return { plan, nose, doorWidth: spec.doorWidth, cabWall: Math.min(nose + 1.05, (plan.doors[0] as number) - spec.doorWidth / 2 - 0.2) };
 }
 
 /** Lay one saloon's seats from s0 to s1: airline rows facing the middle, the table bays in the middle. Answers the airline pitch used. */

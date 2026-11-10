@@ -18,11 +18,13 @@ samples) or `?trains=none`; the default probes once before choosing live or samp
 `&signals=0` hides signals and `&board=0` hides the board. Missing timetable or undecoded
 signal bytes remain explicitly unknown. Hover a train (or tap it on a touch screen) for a
 card with everything the page knows of it; `&tooltip=0` turns the card off.
-Take the camera into an Azuma-family car (LNER 800/801, Hull Trains 802, Lumo 803), or
-within 3 m of one, and that car and its neighbours show their interior: seats laid out to
-the seat maps, tables, racks, lights, partitions and doors, with glass you can see through
-both ways (`web/src/train-interior*.ts`, loaded on first use and disposed when the camera
-leaves). Every other car stays an outer skin. `&interiors=0` turns interiors off.
+Take the camera into any train's car, or within 3 m of one, and that train's cars within
+45 m show their interior: seats laid out to the seat maps (Azumas, the 180) or the published
+counts (387, 717, 700), tables, racks, poles, lights, partitions, gangways and doors, with
+glass you can see through both ways (`web/src/train-interior*.ts`, one module a family,
+loaded on first use and disposed when the camera leaves). Toward 45 m the glass thickens to
+the car's own panes, so there is no step to the cars beyond, which stay an outer skin.
+`&interiors=0` turns interiors off.
 
 ## Time of day and weather
 
