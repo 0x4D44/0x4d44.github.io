@@ -20,10 +20,10 @@ type Ctx=CanvasRenderingContext2D;
 const PAINT:Record<StationTextureName,(g:Ctx,w:number,h:number)=>void>={
  cassettes(g,w,h){
   // u runs up the slope (x), v across it (z): mid-grey panes with a soft sheen (R-wv1-a: grey on grey, the shaded slope darker), paler bars.
-  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#8c9093');grad.addColorStop(.5,'#a1a5a8');grad.addColorStop(1,'#909497');
+  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#6f7478');grad.addColorStop(.5,'#83888c');grad.addColorStop(1,'#73787c');
   g.fillStyle=grad;g.fillRect(0,0,w,h);
-  g.fillStyle='#d2d5d7';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
-  g.fillStyle='#62676b';g.fillRect(0,h*.09,w,1);
+  g.fillStyle='#c4c8cb';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
+  g.fillStyle='#4f5458';g.fillRect(0,h*.09,w,1);
  },
  blister(g,w,h){
   g.fillStyle='#cfae3a';g.fillRect(0,0,w,h);
