@@ -162,7 +162,13 @@ export const CLIFF_EYE = [2460, 172.2, 295] as const;
 /** `slope` rose from 40 to 41.5 deg in round 6, paying the piers' rounder shafts (PIER_FORM.sides) from the crag's gentlest risers. */
 export const CRAG = {eyeClear: 60, slope: 41.5, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
   lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 90, joints: .13, joint: .3, aspect: 1.5, innerAspect: 3, setback: .5,
-  offset: .5, through: [.7, .84] as const, thruMin: 3, crack: 1, ledgeRun: 9} as const;
+  offset: .5, through: [.7, .84] as const, thruMin: 4.8, crack: 1, ledgeRun: 9, pale: [.36, .35, .33] as const, paleMix: .65,
+  moss: [.07, .085, .03] as const, mossMix: .6} as const;
+/** Round 11 (round-10 score: the columns were dark, flat boxes, near black in shade, where 8703's crag is pale grey with green-brown
+ *  growth in its joints; one tall, narrow pale slab stood proud of the face). A through-riser's tone goes `paleMix` of the way to
+ *  `pale` (linear, about 1.2 times the face's median grey), each joint's crack `mossMix` of the way to `moss`, a dark green-brown; and
+ *  a through-riser needs a piece `thruMin` 4.8 m long (round 8: 3 m), so no narrow slab stands taller than about twice its width.
+ *  ASSUMED tones, by eye against 8703. */
 /** Round 10 (round-9 score: the face read coursed again; the cap had cut the through-risers from 332 to 9). A through-riser inside the
  *  face, with crag cells below it and above it up past its top, may stand `innerAspect` (3) times its piece's length; at the foot and
  *  against the sky every riser keeps the `aspect` cap, and one-course risers keep it everywhere. The columns come more often
@@ -272,14 +278,15 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
         }
         // round 8: a one-course ledge that stops short of the drawn slope runs on uphill (up to `ledgeRun` m) until it meets it
         if (courses === 1) { const meets = (d: number) => ground.heightAt(mx + up[0] * d, mz + up[1] * d) + drape >= top - .3; let d = ledge; while (!meets(d) && d < C.ledgeRun) d += .5; if (meets(d)) ledge = d; }
-        const tone = lin(PERTH_ROCK_TONES[Math.min(PERTH_ROCK_TONES.length - 1, Math.floor(vn(mx, mz, C.column, 74) * PERTH_ROCK_TONES.length))]!).map(v => Math.min(1, v * C.lift)) as V3;
+        const base0 = lin(PERTH_ROCK_TONES[Math.min(PERTH_ROCK_TONES.length - 1, Math.floor(vn(mx, mz, C.column, 74) * PERTH_ROCK_TONES.length))]!).map(v => Math.min(1, v * C.lift)) as V3;
+        const tone = (courses > 1 ? base0.map((v, c) => v + (C.pale[c]! - v) * C.paleMix) : base0) as V3; // round 11: pale columns
         out.push({a, b, foot: [ya + drape - C.bury, yb + drape - C.bury], top, up, ledge, rgb: tone, scrub: hash(Math.round(mx), Math.round(mz), 75) < C.scrub, joint: false, crack: 0, crackRgb: tone, courses});
       }
     }
   }
   // the joints, keyed to the position along the face (its mean direction), so a strip is dark course over course
   const face = cragFace(out);
-  for (const k of out) { const [s, d] = face(k); if (hash(Math.floor(s / C.jointWidth), Math.floor(d / C.jointDepth), 77) < C.joints && Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]) > C.crack + .5) { k.joint = true; k.crack = C.crack; k.crackRgb = k.rgb.map(v => v * C.joint) as V3; } }
+  for (const k of out) { const [s, d] = face(k); if (hash(Math.floor(s / C.jointWidth), Math.floor(d / C.jointDepth), 77) < C.joints && Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]) > C.crack + .5) { k.joint = true; k.crack = C.crack; k.crackRgb = k.rgb.map((v, c) => v * C.joint + (C.moss[c]! - v * C.joint) * C.mossMix) as V3; } } // round 11: green-brown
   return out;
 }
 /** The crag's face frame: a step's midpoint as (along the face's mean direction, up it), in m. */

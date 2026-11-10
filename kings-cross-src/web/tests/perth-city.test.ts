@@ -343,7 +343,8 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
     // round 8: no toe fins: a riser through extra courses is at least CRAG.thruMin (3) m long; a joint is a narrow crack, not its piece
     const len = Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]);
-    if (k.courses > 1) assert.ok(len >= 3 - 1e-6, `a through-riser at least 3 m wide: ${len.toFixed(2)}`);
+    // round 11 (round-10 score: a narrow pale slab stood proud of the face): at least 4.8 m (tightened from 3)
+    if (k.courses > 1) assert.ok(len >= 4.8 - 1e-6, `a through-riser at least 4.8 m wide: ${len.toFixed(2)}`);
     // round 9 (round-8 score: the toe fins remained): every riser at most 1.5 times as tall over the ground as its piece is long
     // round 10, declared (ordered: bring the columns back by banning tall risers only at the cliff foot and against the sky): over 1.5
     // times only a through-riser inside the face, at most 3 times; checked below that rock steps lie under it and over its top
@@ -365,6 +366,11 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   // round 9, declared (ordered: the crack set back 0.5 m at about 0.3 of its tone, so it reads): the crack under 0.5 of the median rock
   // (round 8: 0.7; tightened), and over 0.15 of it (round 8: 0.3; loosened)
   assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.crackRgb) < median * .5 && lum(k.crackRgb) > median * .15), `dark joints: ${joints.length} of ${steps.length}`);
+  // round 11 (round-10 score: dark, near-black columns; 8703's crag is pale grey with green-brown in its joints): every through-riser
+  // at least 0.95 of the median rock's luma and their mean over 1.1 of it; every crack green-brown (green over 1.5 times blue, red over blue)
+  { const th = steps.filter(k => k.courses > 1).map(k => lum(k.rgb) / median);
+    assert.ok(th.every(v => v >= .95) && th.reduce((s, v) => s + v, 0) / th.length > 1.1, `pale columns: ${Math.min(...th).toFixed(2)} min, ${(th.reduce((s, v) => s + v, 0) / th.length).toFixed(2)} mean`);
+    assert.ok(joints.every(k => k.crackRgb[1] > 1.5 * k.crackRgb[2] && k.crackRgb[0] > k.crackRgb[2]), 'green-brown cracks'); }
   // round 8: the cracks are drawn: the crag mesh carries each joint's dark sliver
   { const cm = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh, cc = cm.geometry.getAttribute('color'), dark = new Set(joints.map(k => k.crackRgb.map(v => v.toFixed(4)).join())); let n = 0;
     for (let i = 0; i < cc.count; i++) if (dark.has([cc.getX(i), cc.getY(i), cc.getZ(i)].map(v => v.toFixed(4)).join())) n++;
