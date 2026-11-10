@@ -21,7 +21,9 @@
 //       boxes with a spring pot above, a long gold-ended damper low across the middle.
 //   gn387_03_387123_cambridge.jpg   the Electrostar's cab bogie, about a hundred pixels across: a dark frame with a damper
 //       across the middle and nothing that tells it from the generic outside-frame bogie; so it is drawn as that.
-// What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames.
+// What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames. The one exception is what tells a motor bogie from a
+// trailer bogie, which a bogie must show and no photograph here does: a motor bogie's traction motors with their gear cases (a diesel's final drives and cardan shaft), a trailer bogie's
+// brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`).
 import * as THREE from 'three';
 import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
@@ -103,7 +105,7 @@ interface Axis {
 /** u runs along x (positive away from the centre line when `dir` is the side), the ring starts upward. */
 const axisX = (x: number, y: number, z: number, dir: 1 | -1 = 1): Axis => ({ o: [x, y, z], a: [dir, 0, 0], e1: [0, 1, 0], e2: [0, 0, 1] });
 const axisY = (x: number, y: number, z: number): Axis => ({ o: [x, y, z], a: [0, 1, 0], e1: [0, 0, 1], e2: [1, 0, 0] });
-const axisZ = (x: number, y: number, z: number): Axis => ({ o: [x, y, z], a: [0, 0, 1], e1: [0, 1, 0], e2: [1, 0, 0] });
+const axisZ = (x: number, y: number, z: number, dir: 1 | -1 = 1): Axis => ({ o: [x, y, z], a: [0, 0, dir], e1: [0, 1, 0], e2: [1, 0, 0] });
 
 /**
  * A solid of revolution as one piece: `prof` is a polyline of (u, radius) pairs, `n` sides round. The surface faces to the LEFT of the
@@ -288,14 +290,14 @@ const PALETTES: Record<BogieStyle, Palette> = {
     frame: col(0x474c54), box: col(0x363a41), cap: col(0x4f545b), spring: col(0x5f646b), coil: col(0x2b2d31),
     tread: col(0x9a9fa6), rim: col(0x6b7078), web: col(0x484c53), hub: col(0x80858c), inner: col(0x2f3238),
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5c6168),
-    motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
+    motor: col(0x5b6068), gear: col(0x6a6f77), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
   // the Electrostar's: the same outside-frame kit in a slightly bluer dark grey (no photograph of its bogie is usable)
   electrostar: {
     frame: col(0x494e57), box: col(0x383c44), cap: col(0x51565f), spring: col(0x60656d), coil: col(0x2c2e33),
     tread: col(0x9a9fa6), rim: col(0x6d727a), web: col(0x4a4f57), hub: col(0x80858c), inner: col(0x30343a),
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5e636b),
-    motor: col(0x4a4e55), gear: col(0x3b3f45), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
+    motor: col(0x5b6068), gear: col(0x6a6f77), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
   // the SF7000's: light-grey frame, webs and covers, a rust-brown rim, black rubber (tl700_03_gatwick_bogie_28898326470.jpg)
   siemens: {
@@ -309,7 +311,7 @@ const PALETTES: Record<BogieStyle, Palette> = {
     frame: col(0x66625a), box: col(0x55514a), cap: col(0x7d796f), spring: col(0x5f5b53), coil: col(0x32302c),
     tread: col(0x9a9fa6), rim: col(0x6d7077), web: col(0x45474c), hub: col(0x80848a), inner: col(0x303236),
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0xb8923a), clevis: col(0x6f6a60),
-    motor: col(0x4a4e55), gear: col(0x504d46), axle: col(0x36373a), rubber: col(0x1f2125), accent: col(0xb8923a),
+    motor: col(0x5f646b), gear: col(0x777c83), axle: col(0x36373a), rubber: col(0x1f2125), accent: col(0xb8923a),
   },
 };
 
@@ -350,10 +352,21 @@ function axles(soup: Soup, spec: BogieSpec, pal: Palette, reach: number): void {
   for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) tube(soup, axisX(-reach, spec.radius, az), 0, 2 * reach, AXLE_RADIUS, 10, pal.axle);
 }
 
-/** Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED). */
+/**
+ * A trailer bogie's brake units: each disc's calliper is carried down on a strap to a brake cylinder that lies along the bogie, low between the wheel and the middle, where a motor bogie
+ * hangs its motor (round 5: the round-4 score found a motor bogie and a trailer bogie "the same frame, only a small end bell", because the discs and callipers stand behind the wheels
+ * and the side beam and nothing of the brakes was in view). The cylinder's axis is `y` over the rail head (its flange's lowest point stands `MOTOR_FLOOR` over it, as a motor's does), it is
+ * `radius` round and stands from `z0` to `z1` along the bogie from its axle, and its far end carries a flange `flange` round and `flangeLength` long; the strap is `strap` across. No photograph
+ * shows these bogies' brake units, so the shapes and sizes are ASSUMED (a calliper's cylinder of this kind is about this big), and so is that the motor bogie, whose axles carry the same
+ * discs, has no unit hanging below them (its motor is there).
+ */
+export const BRAKE_UNIT = { y: 0.18, radius: 0.065, z0: 0.3, z1: 0.74, flange: 0.08, flangeLength: 0.03, strap: 0.05, sides: 8 } as const;
+
+/** Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED), and on a trailer bogie its brake unit (`BRAKE_UNIT`). */
 function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
   const t = DISC_THICKNESS / 2;
+  const unit = BRAKE_UNIT;
   for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
     const inward = az < 0 ? 1 : -1;
     for (const sx of [-1, 1]) {
@@ -362,6 +375,17 @@ function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
       const z0 = az + inward * 0.2;
       const z1 = az + inward * 0.34;
       soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
+      if (spec.motor) continue;
+      // the strap down from the calliper, and the cylinder it carries, with its flange on the end toward the middle of the bogie
+      const [sx0, sx1] = xs(sx, 0.3 - unit.strap / 2, 0.3 + unit.strap / 2);
+      const strapZ0 = az + inward * unit.z0;
+      const strapZ1 = az + inward * (unit.z0 + unit.strap);
+      soup.box(sx0, sx1, unit.y - unit.radius, r - 0.07, Math.min(strapZ0, strapZ1), Math.max(strapZ0, strapZ1), pal.clevis);
+      const cyl = axisZ(sx * 0.3, unit.y, az + inward * unit.z0, inward);
+      const length = unit.z1 - unit.z0;
+      // (the cylinder is open at the flange's end: the flange's own cap closes it, and the two never share a plane)
+      tube(soup, cyl, 0, length, unit.radius, unit.sides, pal.disc, 'start');
+      tube(soup, cyl, length - unit.flangeLength, length, unit.flange, unit.sides, pal.discRim, 'both');
     }
   }
 }
@@ -517,33 +541,49 @@ function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
 // --- the drive ----------------------------------------------------------------------------------------------------------
 
 /**
- * Where the drive hangs. A bogie seen from the track side shows its side beam and, below the beam, whatever hangs lower between the wheels: a trailer bogie's
- * underside is bare there, so a motor bogie's drive hangs low enough for its lower part to stand in plain sight under the beam (no photograph shows it, so the heights
- * are ASSUMED; each stays well above the rail head: the lowest hangs 0.12 m above it). A traction motor's axis lies this far from the axle line (it was 0.08 above it,
- * wholly behind the beam, so a motor bogie and a trailer bogie looked the same from outside).
+ * Where the drive hangs. A bogie seen from the track side shows its side beam and, below the beam, whatever hangs lower between the wheels: a trailer bogie has its brake units
+ * there (`BRAKE_UNIT`), so a motor bogie's drive hangs low enough for its lower part to stand in plain sight under the beam (no photograph shows it, so the heights are ASSUMED).
+ * A traction motor's lowest point is this far over the rail head, in every style (its axis stands `MOTOR_FLOOR` + `MOTOR_RADIUS` up, whatever the wheel's size): a UK motor or gearbox
+ * clears the rail head by about a tenth of a metre. (Round 4 had the axis 0.1 m under the axle line, the barrel 0.2 m in radius: its lowest point stood 0.12 m up, and little of it
+ * showed under the beam.)
  */
-export const MOTOR_AXIS = -0.1;
-/** A traction motor: its barrel's radius, its length across the bogie, and how far its rim stands clear of the wheel's rim beside it (along the bogie), so the whole of it is in view between the wheels. */
-export const MOTOR_RADIUS = 0.2;
+export const MOTOR_FLOOR = 0.1;
+/** A traction motor: its barrel's radius (a UK EMU's is about 0.5 m across: ASSUMED, no photograph shows one), its length across the bogie, and how far its rim stands clear of the wheel's rim beside it (along the bogie), so the whole of it is in view between the wheels. */
+export const MOTOR_RADIUS = 0.25;
 export const MOTOR_LENGTH = 0.62;
 export const MOTOR_CLEAR = 0.02;
+/** The boss of a motor's shaft end, standing out of each end shield: its radius and how far it stands out (its end is 0.325 m from the middle, short of the 0.33 m at which a gear case's face begins). ASSUMED. */
+export const MOTOR_BOSS = { radius: 0.07, length: 0.015 } as const;
 /** A diesel unit's cardan shaft hangs this far from the axle line (below it), and a gearbox casing reaches this far inboard of its axle. */
-export const CARDAN_AXIS = -0.1;
-export const GEARBOX_REACH = 0.5;
+export const CARDAN_AXIS = -0.17;
+export const GEARBOX_REACH = 0.62;
+/** The shaft's radius and its yokes', in the diesel's final drive. ASSUMED, as the rest of it. */
+export const CARDAN_RADIUS = 0.075;
+export const YOKE_RADIUS = 0.11;
 
 /**
  * A motor bogie's drive: a traction motor across the bogie on each axle's inboard side of the middle, its gear case on one end of it reaching
  * to the axle. (Frame-mounted motors with a gear case on the axle are the UK EMU arrangement; no photograph shows them, so the sizes are ASSUMED.)
- * The motor hangs low (`MOTOR_AXIS`) so its end stands in view under the side beam; its end bells are the light steel of a hub, so they read as ends of a drum.
+ * The motor hangs low (`MOTOR_FLOOR` over the rail head) so its end stands in view under the side beam. The barrel is 16 sided: it is seen end on, and a 16-gon reads round at three
+ * metres where a 14-gon showed its corners. Each end shield is the light steel of a hub, with the dark boss of the shaft's end standing out of it, so an end reads as a motor's and not as a plain disc.
  */
 function tractionMotors(D: Soup, spec: BogieSpec, pal: Palette, caseX: [number, number]): void {
   const r = spec.radius;
+  const y = MOTOR_FLOOR + MOTOR_RADIUS;
+  const { radius: boss, length: stand } = MOTOR_BOSS;
   for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
     const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);
     const side = az < 0 ? 1 : -1;
-    lathe(D, axisX(-MOTOR_LENGTH / 2, r + MOTOR_AXIS, az + dz), [[0, 0], [0, MOTOR_RADIUS], [MOTOR_LENGTH, MOTOR_RADIUS], [MOTOR_LENGTH, 0]], 14, [pal.hub, pal.motor, pal.hub]);
+    const L = MOTOR_LENGTH;
+    lathe(
+      D,
+      axisX(-L / 2, y, az + dz),
+      [[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],
+      16,
+      [pal.axle, pal.axle, pal.hub, pal.motor, pal.hub, pal.axle, pal.axle],
+    );
     const [x0, x1] = xs(side, caseX[0], caseX[1]);
-    D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);
+    D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);
   }
 }
 
@@ -563,8 +603,8 @@ function finalDrive(D: Soup, spec: BogieSpec, pal: Palette): void {
   // the cardan shaft from the one gearbox's inboard face to the other's, low, with a lighter yoke on each end
   const z0 = -(w - GEARBOX_REACH);
   const span = 2 * (w - GEARBOX_REACH);
-  tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);
-  for (const zs of [z0, z0 + span - 0.04]) lathe(D, axisZ(0, r + CARDAN_AXIS, zs), [[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);
+  tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, CARDAN_RADIUS, 8, pal.motor);
+  for (const zs of [z0, z0 + span - 0.04]) lathe(D, axisZ(0, r + CARDAN_AXIS, zs), [[0, 0], [0, YOKE_RADIUS], [0.04, YOKE_RADIUS], [0.04, 0]], 8, pal.hub);
 }
 
 // --- the bogie ----------------------------------------------------------------------------------------------------------

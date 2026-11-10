@@ -1,5 +1,6 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts) against
-web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts and web/tests/train-azuma-front.test.ts.
+web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
+web/tests/train-azuma-front.test.ts and web/tests/train-bogie-view.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
 load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
@@ -18,7 +19,16 @@ L = "web/src/livery.ts"
 LV = "web/src/train-livery.ts"
 FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts"]
+# the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
+GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
+MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
+MOTOR_BARREL = "      16,\n      [pal.axle, pal.axle, pal.hub, pal.motor, pal.hub, pal.axle, pal.axle],"
+CARDAN = "tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, CARDAN_RADIUS, 8, pal.motor);"
+YOKE = "[[0, 0], [0, YOKE_RADIUS], [0.04, YOKE_RADIUS], [0.04, 0]], 8, pal.hub);"
+UNIT_STRAP = "soup.box(sx0, sx1, unit.y - unit.radius, r - 0.07, Math.min(strapZ0, strapZ1), Math.max(strapZ0, strapZ1), pal.clevis);"
+UNIT_BARREL = "tube(soup, cyl, 0, length, unit.radius, unit.sides, pal.disc, 'start');"
+UNIT_FLANGE = "tube(soup, cyl, length - unit.flangeLength, length, unit.flange, unit.sides, pal.discRim, 'both');"
 M = [
     # --- the train: pantograph, bogies, doors, roof covers, windows -----------------------------------------
     ("pantograph at the start of its span", "p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);", "p.position.set(0, spec.crown, car.pantograph[0]);"),
@@ -357,8 +367,8 @@ M = [
     ("the 180 with two-leaf doors", "    doorY: [fig.floorHeight.value + 0.02, 2.95],\n    doorLeaves: 1,", "    doorY: [fig.floorHeight.value + 0.02, 2.95],\n    doorLeaves: 2,"),
     ("the 700 a different width from the 717", "  ...DESIRO_BODY,\n  family: 'desiro700',", "  ...DESIRO_BODY,\n  half: 1.0,\n  family: 'desiro700',"),
     ("diesel bogie keeps traction motors", "  if (spec.motor && spec.diesel) finalDrive(", "  if (false) finalDrive(", P),
-    ('diesel bogie without its cardan shaft', '  tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);\n', '', P),
-    ('cardan shaft stops short of the gearboxes', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span - 1.0, 0.055, 8, pal.motor);', P),
+    ('diesel bogie without its cardan shaft', '  ' + CARDAN + '\n', '', P),
+    ('cardan shaft stops short of the gearboxes', CARDAN, CARDAN.replace('0, span,', '0, span - 1.0,'), P),
     ("gearbox on one axle only", "  for (const az of [-w, w]) {\n    // the gearbox on the axle", "  for (const az of [w]) {\n    // the gearbox on the axle", P),
     # --- the bogie level of detail ---------------------------------------------------------------------------------------
     ("no far level of detail", "  lod.addLevel(far, lodDistance());", "", P),
@@ -931,30 +941,14 @@ M = [
     ('hanger: through both masses', "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(POD_PARTS.recess), '+y');", "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z0, b.z1, col(POD_PARTS.recess), '+y');", P),
     ("hanger: in the pod's own colour", "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(POD_PARTS.recess), '+y');", "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(a.colour), '+y');", P),
     ('hanger: with a top and no bottom', "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(POD_PARTS.recess), '+y');", "soup.box(-half, half, Math.max(a.y0, b.y0) + 0.05, a.y1, a.z1, b.z0, col(POD_PARTS.recess), '-y');", P),
-    ('drive: the motors behind the side beam again', 'export const MOTOR_AXIS = -0.1;', 'export const MOTOR_AXIS = 0.08;', P),
-    ('drive: the motors on the rail', 'export const MOTOR_AXIS = -0.1;', 'export const MOTOR_AXIS = -0.4;', P),
-    ('drive: motors as big as the wheels', 'export const MOTOR_RADIUS = 0.2;', 'export const MOTOR_RADIUS = 0.4;', P),
-    ('drive: motors a hand across', 'export const MOTOR_RADIUS = 0.2;', 'export const MOTOR_RADIUS = 0.08;', P),
     ("drive: motors reaching to the frame's sides", 'export const MOTOR_LENGTH = 0.62;', 'export const MOTOR_LENGTH = 1.4;', P),
     ('drive: motors a stub long', 'export const MOTOR_LENGTH = 0.62;', 'export const MOTOR_LENGTH = 0.2;', P),
     ('drive: motors a hand off the wheel', 'export const MOTOR_CLEAR = 0.02;', 'export const MOTOR_CLEAR = 0.2;', P),
     ('drive: motors into the wheel', 'export const MOTOR_CLEAR = 0.02;', 'export const MOTOR_CLEAR = -0.1;', P),
-    ('drive: the cardan shaft behind the beam again', 'export const CARDAN_AXIS = -0.1;', 'export const CARDAN_AXIS = 0.08;', P),
-    ('drive: the cardan shaft on the rail', 'export const CARDAN_AXIS = -0.1;', 'export const CARDAN_AXIS = -0.4;', P),
-    ('drive: the gearbox a hand short of the middle', 'export const GEARBOX_REACH = 0.5;', 'export const GEARBOX_REACH = 0.2;', P),
-    ('drive: the gearbox past the middle', 'export const GEARBOX_REACH = 0.5;', 'export const GEARBOX_REACH = 1.1;', P),
     ('drive: the motors outboard of the wheels', 'const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);', 'const dz = (az < 0 ? -1 : 1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);', P),
     ("drive: motors touching the wheel's rim", 'const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);', 'const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS);', P),
     ('drive: motors half inside the wheel', 'const dz = (az < 0 ? 1 : -1) * (r + MOTOR_RADIUS + MOTOR_CLEAR);', 'const dz = (az < 0 ? 1 : -1) * (r + MOTOR_CLEAR);', P),
     ('drive: the gear case on the wrong side of the middle', '    const side = az < 0 ? 1 : -1;', '    const side = az < 0 ? -1 : 1;', P),
-    ('drive: motor barrels eight-sided', '[MOTOR_LENGTH, 0]], 14, [pal.hub, pal.motor, pal.hub]);', '[MOTOR_LENGTH, 0]], 8, [pal.hub, pal.motor, pal.hub]);', P),
-    ("drive: motor end bells the barrel's colour", '[MOTOR_LENGTH, 0]], 14, [pal.hub, pal.motor, pal.hub]);', '[MOTOR_LENGTH, 0]], 14, [pal.motor, pal.motor, pal.motor]);', P),
-    ("drive: motor barrels the hub's steel", '[MOTOR_LENGTH, 0]], 14, [pal.hub, pal.motor, pal.hub]);', '[MOTOR_LENGTH, 0]], 14, [pal.hub, pal.hub, pal.hub]);', P),
-    ('drive: the gear case reaching the rail', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS - 0.3, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', P),
-    ('drive: the gear case high above the motor', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS + 0.4, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', P),
-    ('drive: the gear case short of the motor', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz * 0.5), Math.max(az + 0.17, az + dz * 0.5), pal.gear);', P),
-    ('drive: the gear case a hand wide', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.5, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', P),
-    ("drive: the gear case in the gearbox's colour no more", 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);', 'D.box(x0, x1, r + MOTOR_AXIS - MOTOR_RADIUS + 0.04, r + MOTOR_AXIS + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.motor);', P),
     ('drive: gearboxes a hand across', 'D.box(-0.3, 0.3, r - 0.2, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', 'D.box(-0.1, 0.1, r - 0.2, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', P),
     ('drive: gearboxes on the rail', 'D.box(-0.3, 0.3, r - 0.2, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', 'D.box(-0.3, 0.3, r - 0.5, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', P),
     ("drive: gearboxes to the frame's top", 'D.box(-0.3, 0.3, r - 0.2, r + 0.2, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', 'D.box(-0.3, 0.3, r - 0.2, r + 0.5, Math.min(az - inward * 0.22, az + inward * GEARBOX_REACH), Math.max(az - inward * 0.22, az + inward * GEARBOX_REACH), pal.gear);', P),
@@ -962,16 +956,75 @@ M = [
     ('drive: gearboxes on the outboard side of their axle', '    const inward = az < 0 ? 1 : -1;\n    D.box(-0.3, 0.3, r - 0.2, r + 0.2,', '    const inward = az < 0 ? -1 : 1;\n    D.box(-0.3, 0.3, r - 0.2, r + 0.2,', P),
     ('drive: no axle housing round the gearbox', '    lathe(D, axisX(-0.35, r, az), [[0, 0], [0, 0.15], [0.7, 0.15], [0.7, 0]], 12, pal.motor);\n', '', P),
     ('drive: an axle housing a hand thick', '[[0, 0], [0, 0.15], [0.7, 0.15], [0.7, 0]], 12, pal.motor);', '[[0, 0], [0, 0.4], [0.7, 0.4], [0.7, 0]], 12, pal.motor);', P),
-    ('drive: a cardan shaft a hand thick', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.2, 8, pal.motor);', P),
-    ('drive: a square cardan shaft', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 4, pal.motor);', P),
-    ('drive: a cardan shaft off the middle of the bogie', 'tube(D, axisZ(0, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);', 'tube(D, axisZ(0.3, r + CARDAN_AXIS, z0), 0, span, 0.055, 8, pal.motor);', P),
     ('drive: the cardan shaft from the wrong end', '  const z0 = -(w - GEARBOX_REACH);', '  const z0 = -(w - 0.2);', P),
     ("drive: the cardan shaft's span from the wheelbase", '  const span = 2 * (w - GEARBOX_REACH);', '  const span = 2 * w;', P),
     ('drive: one yoke on the cardan shaft', 'for (const zs of [z0, z0 + span - 0.04])', 'for (const zs of [z0])', P),
     ("drive: the far yoke past the shaft's end", 'for (const zs of [z0, z0 + span - 0.04])', 'for (const zs of [z0, z0 + span])', P),
-    ("drive: yokes the shaft's steel", '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.motor);', P),
-    ('drive: yokes a hand across', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.3], [0.04, 0.3], [0.04, 0]], 8, pal.hub);', P),
-    ('drive: yokes a hand thick', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.09], [0.3, 0.09], [0.3, 0]], 8, pal.hub);', P),
+    # --- round 5: the drive hung low and big under the side beam, and the trailer's brake units (T6: motor and trailer bogies differ at V07, web/tests/train-bogie-view.test.ts) -------
+    ('drive: the motors hung up behind the side beam again', 'export const MOTOR_FLOOR = 0.1;', 'export const MOTOR_FLOOR = 0.3;', P),
+    ('drive: the motors on the rail', 'export const MOTOR_FLOOR = 0.1;', 'export const MOTOR_FLOOR = -0.05;', P),
+    ('drive: motors as big as the wheels', 'export const MOTOR_RADIUS = 0.25;', 'export const MOTOR_RADIUS = 0.4;', P),
+    ("drive: motors back at round 4's radius", 'export const MOTOR_RADIUS = 0.25;', 'export const MOTOR_RADIUS = 0.2;', P),
+    ('drive: motors a hand across', 'export const MOTOR_RADIUS = 0.25;', 'export const MOTOR_RADIUS = 0.08;', P),
+    ('drive: the motor bosses a hand across', 'export const MOTOR_BOSS = { radius: 0.07,', 'export const MOTOR_BOSS = { radius: 0.2,', P),
+    ('drive: the motor bosses a pin across', 'export const MOTOR_BOSS = { radius: 0.07,', 'export const MOTOR_BOSS = { radius: 0.01,', P),
+    ('drive: the motor bosses standing a hand out', 'length: 0.015 } as const;', 'length: 0.1 } as const;', P),
+    ('drive: the motor bosses flush with their end shields', 'length: 0.015 } as const;', 'length: 0 } as const;', P),
+    ('drive: the cardan shaft hung up behind the beam again', 'export const CARDAN_AXIS = -0.17;', 'export const CARDAN_AXIS = 0.08;', P),
+    ('drive: the cardan shaft on the rail', 'export const CARDAN_AXIS = -0.17;', 'export const CARDAN_AXIS = -0.4;', P),
+    ('drive: the gearbox a hand short of the middle', 'export const GEARBOX_REACH = 0.62;', 'export const GEARBOX_REACH = 0.2;', P),
+    ('drive: the gearbox past the middle', 'export const GEARBOX_REACH = 0.62;', 'export const GEARBOX_REACH = 1.1;', P),
+    ("drive: the gearbox back at round 4's reach", 'export const GEARBOX_REACH = 0.62;', 'export const GEARBOX_REACH = 0.5;', P),
+    ('drive: a cardan shaft a hand thick', 'export const CARDAN_RADIUS = 0.075;', 'export const CARDAN_RADIUS = 0.2;', P),
+    ("drive: a cardan shaft back at round 4's radius", 'export const CARDAN_RADIUS = 0.075;', 'export const CARDAN_RADIUS = 0.055;', P),
+    ('drive: yokes a hand across', 'export const YOKE_RADIUS = 0.11;', 'export const YOKE_RADIUS = 0.3;', P),
+    ("drive: yokes back at round 4's radius", 'export const YOKE_RADIUS = 0.11;', 'export const YOKE_RADIUS = 0.09;', P),
+    ('drive: motor barrels eight-sided', MOTOR_BARREL, MOTOR_BARREL.replace('16,', '8,'), P),
+    ("drive: motor end shields the barrel's colour", MOTOR_BARREL, MOTOR_BARREL.replace('pal.hub, pal.motor, pal.hub', 'pal.motor, pal.motor, pal.motor'), P),
+    ("drive: motor barrels the hub's steel", MOTOR_BARREL, MOTOR_BARREL.replace('pal.hub, pal.motor, pal.hub', 'pal.hub, pal.hub, pal.hub'), P),
+    ("drive: motor bosses the end shield's colour", MOTOR_BARREL, MOTOR_BARREL.replace('pal.axle, pal.axle, pal.hub, pal.motor, pal.hub, pal.axle, pal.axle', 'pal.hub, pal.hub, pal.hub, pal.motor, pal.hub, pal.hub, pal.hub'), P),
+    ('drive: motor bosses as many sided as the barrel', MOTOR_RINGS, MOTOR_RINGS.replace(', 8]', ', 16]'), P),
+    ('drive: motor bosses four sided', MOTOR_RINGS, MOTOR_RINGS.replace(', 8]', ', 4]'), P),
+    ('drive: the gear case reaching the rail', GEAR_CASE, GEAR_CASE.replace('y - MOTOR_RADIUS + 0.04', 'y - MOTOR_RADIUS - 0.3'), P),
+    ('drive: the gear case high above the motor', GEAR_CASE, GEAR_CASE.replace('y + MOTOR_RADIUS,', 'y + MOTOR_RADIUS + 0.4,'), P),
+    ('drive: the gear case short of the motor', GEAR_CASE, GEAR_CASE.replace('Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17)', 'Math.min(az - 0.17, az + dz * 0.5), Math.max(az + 0.17, az + dz * 0.5)'), P),
+    ('drive: the gear case a hand wide', GEAR_CASE, GEAR_CASE.replace('Math.min(az - 0.17,', 'Math.min(az - 0.5,'), P),
+    ("drive: the gear case in the barrel's colour", GEAR_CASE, GEAR_CASE.replace('pal.gear', 'pal.motor'), P),
+    ('drive: a square cardan shaft', CARDAN, CARDAN.replace('CARDAN_RADIUS, 8', 'CARDAN_RADIUS, 4'), P),
+    ('drive: a cardan shaft off the middle of the bogie', CARDAN, CARDAN.replace('axisZ(0,', 'axisZ(0.3,'), P),
+    ("drive: the cardan shaft the yokes' steel", CARDAN, CARDAN.replace('pal.motor', 'pal.hub'), P),
+    ("drive: yokes the shaft's steel", YOKE, YOKE.replace('pal.hub', 'pal.motor'), P),
+    ('drive: yokes a hand thick', YOKE, '[[0, 0], [0, YOKE_RADIUS], [0.3, YOKE_RADIUS], [0.3, 0]], 8, pal.hub);', P),
+    ('drive: yokes twelve-sided', YOKE, YOKE.replace('], 8, pal.hub', '], 12, pal.hub'), P),
+    ('brakes: a motor bogie hangs the brake units too', '      if (spec.motor) continue;\n', '', P),
+    ('brakes: only a motor bogie hangs the brake units', 'if (spec.motor) continue;', 'if (!spec.motor) continue;', P),
+    ('brakes: the units hung up behind the side beam', 'export const BRAKE_UNIT = { y: 0.18,', 'export const BRAKE_UNIT = { y: 0.4,', P),
+    ('brakes: the units on the rail', 'export const BRAKE_UNIT = { y: 0.18,', 'export const BRAKE_UNIT = { y: 0,', P),
+    ('brakes: the units a hand across', 'radius: 0.065, z0:', 'radius: 0.2, z0:', P),
+    ('brakes: the units a wire', 'radius: 0.065, z0:', 'radius: 0.02, z0:', P),
+    ('brakes: the units starting at the axle', 'z0: 0.3, z1:', 'z0: 0, z1:', P),
+    ('brakes: the units starting well along the bogie', 'z0: 0.3, z1:', 'z0: 0.6, z1:', P),
+    ('brakes: the units reaching across into the other axle', 'z1: 0.74,', 'z1: 1.6,', P),
+    ('brakes: the units a stub long', 'z1: 0.74,', 'z1: 0.4,', P),
+    ('brakes: flanges a hand across', 'flange: 0.08,', 'flange: 0.25,', P),
+    ('brakes: no flange on the units', 'flange: 0.08,', 'flange: 0.065,', P),
+    ('brakes: the flange a hand long', 'flangeLength: 0.03,', 'flangeLength: 0.2,', P),
+    ('brakes: the flange a hair long', 'flangeLength: 0.03,', 'flangeLength: 0.003,', P),
+    ('brakes: the straps a hand across', 'strap: 0.05,', 'strap: 0.2,', P),
+    ('brakes: the units four-sided', 'sides: 8 } as const;', 'sides: 4 } as const;', P),
+    ('brakes: the units sixteen-sided', 'sides: 8 } as const;', 'sides: 16 } as const;', P),
+    ('brakes: no strap from the calliper to its unit', '      ' + UNIT_STRAP + '\n', '', P),
+    ("brakes: the strap stops at the cylinder's axis", UNIT_STRAP, UNIT_STRAP.replace('unit.y - unit.radius', 'unit.y'), P),
+    ("brakes: the unit's cylinder runs outboard", 'axisZ(sx * 0.3, unit.y, az + inward * unit.z0, inward)', 'axisZ(sx * 0.3, unit.y, az + inward * unit.z0, -inward)', P),
+    ('brakes: the unit hung off the axle to the other side', 'az + inward * unit.z0, inward)', 'az - inward * unit.z0, inward)', P),
+    ('brakes: the units out under the wheels', 'axisZ(sx * 0.3, unit.y,', 'axisZ(sx * 0.6, unit.y,', P),
+    ("brakes: the unit's cylinder the clevis steel", UNIT_BARREL, UNIT_BARREL.replace('pal.disc', 'pal.clevis'), P),
+    ("brakes: the unit's flange the cylinder's colour", UNIT_FLANGE, UNIT_FLANGE.replace('pal.discRim', 'pal.disc'), P),
+    ('brakes: the unit capped at the flange end, open at the strap end', UNIT_BARREL, UNIT_BARREL.replace("'start'", "'end'"), P),
+    ("brakes: the unit capped at both ends, a cap in the flange's plane", UNIT_BARREL, UNIT_BARREL.replace("'start'", "'both'"), P),
+    ('brakes: the flange open at its far end', UNIT_FLANGE, UNIT_FLANGE.replace("'both'", "'start'"), P),
+    ('brakes: the flange open at its near end', UNIT_FLANGE, UNIT_FLANGE.replace("'both'", "'end'"), P),
+    ('axisZ: ignores the direction it is given', 'a: [0, 0, dir]', 'a: [0, 0, 1]', P),
     # --- the raked face (round 5: the Class 180's cab leans back, web/src/train-nose.ts NoseRake) ----------------
     ('rake: the lean at the tip is half what the spec says', 'return spec.rake ? spec.rake.lean * rakeEase(spec.rake, s) : 0;', 'return spec.rake ? spec.rake.lean * 0.5 * rakeEase(spec.rake, s) : 0;', N),
     ('rake: the lean falls in a straight line, not as a square', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t * t;', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t;', N),
