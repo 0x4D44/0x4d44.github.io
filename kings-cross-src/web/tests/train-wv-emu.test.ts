@@ -7,7 +7,8 @@ import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
 import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_SALTIRE, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
-import { CLUSTER_BAND, J_AIR, SPLIT_DEPTH, splitTri } from '../src/train-wv-emu-parts.ts';
+import { CAF, CLUSTER_BAND, J_AIR, MOTOR, SPLIT_DEPTH, SPRING_UNIT, splitTri } from '../src/train-wv-emu-parts.ts';
+import { WIPER } from '../src/train-face.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
 import type { V3 } from '../src/train-geom.ts';
 
@@ -358,4 +359,88 @@ test('the 397\'s roof cluster stands only where the photographs show it: at the 
   });
   assert.deepEqual(ends.map(([at]) => at), ends.map(([, pan]) => (pan ? [pan] : [])));
   assert.deepEqual(ends.map(([, pan]) => pan !== null), [false, true, false, true, false]);
+});
+
+/** a mesh's vertices in one colour, in the mesh's own space */
+const inColour = (m: THREE.Mesh, hex: number): THREE.Vector3[] => {
+  const c = col(hex);
+  const p = m.geometry.getAttribute('position');
+  const k = m.geometry.getAttribute('color');
+  const out: THREE.Vector3[] = [];
+  for (let i = 0; i < p.count; i++) {
+    if (Math.abs(k.getX(i) - c.r) < 1e-6 && Math.abs(k.getY(i) - c.g) < 1e-6 && Math.abs(k.getZ(i) - c.b) < 1e-6) out.push(new THREE.Vector3().fromBufferAttribute(p, i));
+  }
+  return out;
+};
+const nearBogie = (root: THREE.Object3D, name: string): THREE.Mesh => (root.getObjectByName(name) as THREE.Object3D).getObjectByName('bogie-mesh') as THREE.Mesh;
+
+test('the 397\'s motor bogies differ from its trailer bogies at a glance: a motor shows between the arms, under the damper', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const layout = wvEmuLayout('tpe397x5');
+  for (const car of layout.cars) {
+    for (const k of [0, 1] as const) {
+      // (the motor's end, low in the bogie's middle where its side is open: under 0.62 m and between the arms' pivots)
+      const shown = inColour(nearBogie(root, `bogie-${car.index}-${k}`), MOTOR).filter((v) => v.y < 0.62 && Math.abs(v.z) < 0.7 && Math.abs(v.x) > 0.55);
+      if (car.motor[k]) assert.ok(shown.length >= 28, `car ${car.index} bogie ${k} is a motor bogie, but only ${shown.length} motor vertices show`);
+      else assert.equal(shown.length, 0, `car ${car.index} bogie ${k} is a trailer bogie`);
+    }
+  }
+});
+
+test('the 397\'s primary spring shows in each cast arm, outside the wheel\'s face, on both sides of every bogie', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const spring = inColour(nearBogie(root, 'bogie-1-0'), SPRING_UNIT);
+  // (the wheel's face is 0.79 m out; four arms, each with its spring unit's face and sides)
+  for (const sx of [-1, 1]) for (const zs of [-1, 1]) {
+    const here = spring.filter((v) => v.x * sx > 0.85 && v.z * zs > 0);
+    assert.ok(here.length >= 8, `the arm at x ${sx}, z ${zs} shows ${here.length} spring vertices`);
+  }
+});
+
+test('the 397\'s bracket hangs from the body: its top meets the underframe right over it, and it is a large one', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  root.updateMatrixWorld(true);
+  const car = root.getObjectByName('car-1') as THREE.Object3D;
+  const body = ['body-shell', 'body-detail'].map((n) => car.getObjectByName(n) as THREE.Mesh);
+  const bogie = root.getObjectByName('bogie-1-0') as THREE.Object3D;
+  const B = CAF.bracket;
+  assert.ok(B.y1 - B.y0 >= 0.25 && B.z1 - B.z0 >= 0.3, `the bracket is ${(B.y1 - B.y0).toFixed(2)} m deep and ${(B.z1 - B.z0).toFixed(2)} m wide`);
+  for (const sx of [-1, 1]) {
+    const top = bogie.localToWorld(new THREE.Vector3(sx * 0.79, B.y1 - 0.005, (B.z0 + B.z1) / 2));
+    const hits = new THREE.Raycaster(top, new THREE.Vector3(0, 1, 0), 0, 2).intersectObjects(body, false);
+    assert.ok(hits.length > 0 && (hits[0] as THREE.Intersection).distance < 0.04, `side ${sx}: the body is ${hits[0]?.distance.toFixed(3) ?? 'nowhere'} m over the bracket's top`);
+  }
+});
+
+test('the 397\'s cap: a near-full-width display, an unbroken orange line, a wiper that follows the screen, and the marker housing widest at its foot', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const car = root.getObjectByName('car-0') as THREE.Object3D;
+  const shell = car.getObjectByName('body-shell') as THREE.Mesh;
+  const detail = car.getObjectByName('body-detail') as THREE.Mesh;
+  // the display (tpe397-01) runs nearly the screen's width: its dark field out past 0.85 m each side of the middle
+  const display = inColour(shell, 0x111317);
+  assert.ok(Math.min(...[-1, 1].map((sx) => Math.max(...display.map((v) => v.x * sx)))) > 0.85, 'the display reaches 0.85 m each side');
+  // the orange line along the screen's top: a strip out to more than a metre each side, no gap wider than one of its pieces
+  const xs = inColour(detail, 0xd0603a).map((v) => v.x).sort((a, b) => a - b);
+  assert.ok(xs.length > 0 && (xs[0] as number) < -1 && (xs[xs.length - 1] as number) > 1, 'the orange line runs out past a metre each side');
+  for (let i = 1; i < xs.length; i++) assert.ok((xs[i] as number) - (xs[i - 1] as number) < 0.05, `a ${((xs[i] as number) - (xs[i - 1] as number)).toFixed(3)} m gap in the orange line at x ${(xs[i] as number).toFixed(2)}`);
+  // the wiper is laid in short pieces, each on the face where it lies, so it bends with the screen: no edge of it longer than a piece
+  const p = detail.geometry.getAttribute('position');
+  const k = detail.geometry.getAttribute('color');
+  const w = col(WIPER);
+  const idx = detail.geometry.index;
+  const at = (j: number): number => (idx ? idx.getX(j) : j);
+  let pieces = 0;
+  for (let t = 0; t + 2 < (idx ? idx.count : p.count); t += 3) {
+    const i = at(t);
+    if (Math.abs(k.getX(i) - w.r) > 1e-6 || Math.abs(k.getY(i) - w.g) > 1e-6 || Math.abs(k.getZ(i) - w.b) > 1e-6) continue;
+    pieces++;
+    const v = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(p, at(t + j)));
+    for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) assert.ok((v[a] as THREE.Vector3).distanceTo(v[b] as THREE.Vector3) < 0.1, 'a wiper edge longer than a piece');
+  }
+  assert.ok(pieces >= 20, `${pieces} wiper triangles`);
+  // the marker's housing (tpe397-01): its pale rim widest where it stands on the display, narrowing to its top
+  const rim = inColour(shell, MARKER.colour);
+  const width = (y: number): number => Math.max(...rim.filter((v) => Math.abs(v.y - y) < 0.02).map((v) => Math.abs(v.x)));
+  assert.ok(width(MARKER.foot + 0.01) > width(MARKER.top - 0.01) + 0.08, `the housing is ${width(MARKER.foot + 0.01).toFixed(2)} m at its foot, ${width(MARKER.top - 0.01).toFixed(2)} m at its top`);
 });

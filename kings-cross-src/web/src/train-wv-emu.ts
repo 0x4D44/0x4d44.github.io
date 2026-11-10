@@ -92,6 +92,8 @@ interface Body {
    * crown it keeps, its ribs on each car's half of the gap, and how far each rib stands proud
    */
   gangway: { width: number; height: number; bottom: number; inset: number; topGap: number; ribs: number; depth: number };
+  /** the nose's ring spacing behind its rounded front edge, where it differs from train-nose's 0.07 m (round 5: the 397's, to pay for its bogie) */
+  noseStep?: number;
   /** the shell's ring spacing along the car where the livery changes along it (0: none needed) */
   liveryStep: (car: WvEmuCar) => { until: number; step: number };
   /** heights where a thin horizontal band of the livery begins or ends: the section gets a point at each */
@@ -195,7 +197,7 @@ const JUNIPER_BODY: Body = {
  *   mouth    the dark coupler cover low on the front, 0.72 to 1.38 m, in a cyan bumper over a navy foot.
  */
 const NOVA = {
-  hood: 3.36, display: [3.15, 3.33], screen: [2.15, 3.08], screenU: 0.7, frameU: 0.78,
+  hood: 3.375, display: [3.14, 3.34], screen: [2.15, 3.08], screenU: 0.7, frameU: 0.78,
   band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.55,
 } as const;
 /** The 397 cab side's cyan: where its back edge meets the sill (metres from the tip) and how far back it leans per metre up (tpe397-05: past the first passenger door). */
@@ -205,12 +207,19 @@ export const CAB_DIAGONALS = [
   { from: [1.2, 0.9], to: [9.4, 2.85], half: 0.1 },
   { from: [3.6, 1.1], to: [11.2, 3.0], half: 0.075 },
 ] as const satisfies readonly { from: readonly [number, number]; to: readonly [number, number]; half: number }[];
-/** The destination display's own frame, a mid-grey border round it in the dark hood (tpe397-01, -05): the display's half-width as u, the frame's width. ASSUMED. */
-const DISPLAY = { u: 0.52, frame: 0.03, colour: 0x4b5058 } as const;
+/**
+ * The destination display, a wide band across the cap in a mid-grey frame (tpe397-01, close to): nearly the screen's width at its foot, narrowing to its head
+ * (its ends lean in), the lit text across its middle. Half-widths as u at the foot and the head, the text's, the frame's width. ASSUMED, read off -01.
+ */
+const DISPLAY = { foot: 0.69, head: 0.6, text: 0.34, frame: 0.025, colour: 0x4b5058 } as const;
 /** The coupler cover: a flush dark-grey panel in the bumper (tpe397-01, -05), and the slightly lighter seam round it. */
 const MUZZLE = { colour: 0x3e434a, seam: 0x5f656d } as const;
-/** The marker lamp's peaked surround at the top of the hood (tpe397-01): pale, its top edge across the hood, its point down toward the display. ASSUMED size. */
-export const MARKER = { half: 0.22, top: 3.54, point: 3.37, colour: 0xaab0b7, lampY: 3.475, lampR: 0.05 } as const;
+/**
+ * The marker lamp's housing on the cap over the display (tpe397-01, close to): a dark panel standing on the display's frame, its sides leaning in to a
+ * narrower top, a pale rim along the top and down both sides, the round lamp in it. Half-widths in metres at its foot and its top. ASSUMED, read off -01.
+ * (Round 4 drew a downward point; the photograph shows the housing widest at its foot.)
+ */
+export const MARKER = { foot: 3.365, top: 3.54, footHalf: 0.3, topHalf: 0.13, rim: 0.028, colour: 0xaab0b7, lampY: 3.45, lampR: 0.055 } as const;
 /** A lamp housing ("eye"): from u0 to u1 across the face, its foot rising outboard by `rise` (tpe397-01: the outer end stands higher), `height` tall. ASSUMED sizes. */
 const EYE = { u0: 0.36, u1: 0.88, foot: 1.62, rise: 0.24, height: 0.3 } as const;
 const eyeFoot = (u: number): number => EYE.foot + (EYE.rise * (u - EYE.u0)) / (EYE.u1 - EYE.u0);
@@ -251,6 +260,7 @@ const CIVITY_BODY: Body = {
     boxiness: 3.0,
   },
   tip: 0.01,
+  noseStep: 0.1,
   coupler: { style: 'dellner', covered: true },
   doorWidth: 1.0,
   doorLeaves: 1,
@@ -376,18 +386,20 @@ function paintCivity(p: Spot, b: Body): Paint {
     const { y, u } = p;
     // the face (the front of the nose, not its flanks; see NOVA)
     if (s < nose && u < 0.9 && (p.top || y > NOVA.mouth[0])) {
-      // the marker lamp's peaked surround over the display (tpe397-01): a pale rim round a dark panel, painted on the cap so it follows the surface
-      if (y <= MARKER.top && y >= MARKER.point && s < nose - 0.4) {
-        const edge = (yy: number, inset: number): number => (MARKER.half - inset) * ((yy - MARKER.point - inset) / (MARKER.top - MARKER.point - inset));
-        if (p.ax <= edge(y, 0)) return { colour: y < MARKER.top - 0.03 && p.ax <= edge(y, 0.05) ? 0x1a1c20 : MARKER.colour };
+      // the marker lamp's housing over the display (see MARKER): painted on the cap, so it follows the surface
+      if (y <= MARKER.top && y >= MARKER.foot && s < nose - 0.4) {
+        const w = MARKER.footHalf + ((MARKER.topHalf - MARKER.footHalf) * (y - MARKER.foot)) / (MARKER.top - MARKER.foot);
+        if (p.ax <= w) return { colour: y < MARKER.top - MARKER.rim && p.ax <= w - MARKER.rim ? 0x1a1c20 : MARKER.colour };
       }
       if (y > NOVA.hood) return { colour: u < 0.8 && s < nose - 0.4 ? TPE_MASK : TPE_ROOF };
-      // over the screen (tpe397-01): a thin orange line along the screen frame's top, then the dark hood up to the roof, and in the hood the destination
-      // display in a frame of its own, under the marker lamp's peaked surround (drawn on the face, below). No orange beside the display.
+      // over the screen (tpe397-01): the dark hood up to the roof, in it the destination display in a frame of its own, under the marker's housing. (The
+      // thin orange line along the screen frame's top is a strip laid on the face, below: painted, a 2 cm band fell between the shell's points at the cap's
+      // corners and broke into dashes.)
       if (y > NOVA.screen[1] + 0.035 && u < 0.8) {
-        if (y < NOVA.screen[1] + 0.055) return { colour: 0xd0603a };
-        if (u < DISPLAY.u && y > NOVA.display[0] && y < NOVA.display[1]) return { colour: u < 0.32 && y > NOVA.display[0] + 0.04 && y < NOVA.display[1] - 0.04 ? 0xe39a1c : 0x111317 };
-        if (u < DISPLAY.u + DISPLAY.frame && y > NOVA.display[0] - DISPLAY.frame && y < NOVA.display[1] + DISPLAY.frame) return { colour: DISPLAY.colour };
+        const [d0, d1] = NOVA.display;
+        const du = (yy: number): number => DISPLAY.foot + ((DISPLAY.head - DISPLAY.foot) * (Math.min(d1, Math.max(d0, yy)) - d0)) / (d1 - d0);
+        if (y > d0 && y < d1 && u < du(y)) return { colour: u < DISPLAY.text && y > d0 + 0.05 && y < d1 - 0.05 ? 0xe39a1c : 0x111317 };
+        if (y > d0 - DISPLAY.frame && y < d1 + DISPLAY.frame && u < du(y) + DISPLAY.frame) return { colour: DISPLAY.colour };
         return { colour: TPE_MASK };
       }
       if (y > NOVA.screen[0] && y <= NOVA.screen[1] && u < NOVA.screenU) return { glass: true };
@@ -551,7 +563,15 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
   const ringHalf = (sn: number): [number, number][] => halfAt(sec, norm, egg, ringAt(b.nose, sn));
 
   // the rings: the nose's (cab cars), then finely through the stretch where the livery changes along the car, then coarsely to the far end
-  const stations: number[] = car.cab ? ringStations(b.nose).map((sn) => tip + sn) : [tip];
+  // (the nose's rings as train-nose spaces them, about 0.07 m apart; a body with a `noseStep` keeps the fillet's rings and spaces the rest that far)
+  const noseRings = (): number[] => {
+    const all = ringStations(b.nose);
+    if (!b.noseStep) return all;
+    const fillet = all.filter((sn) => sn <= b.nose.fillet + 1e-9);
+    const n = Math.max(1, Math.ceil((b.nose.length - b.nose.fillet) / b.noseStep));
+    return [...fillet, ...Array.from({ length: n }, (_, k) => lerp(b.nose.fillet, b.nose.length, (k + 1) / n))];
+  };
+  const stations: number[] = car.cab ? noseRings().map((sn) => tip + sn) : [tip];
   const fine = b.liveryStep(car);
   let s = stations[stations.length - 1] as number;
   while (s < bodyEnd - 1e-6) {
@@ -764,9 +784,33 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       // (its surround is painted on the shell: paintCivity)
       const roofLamp = onSurface(discOutline(0, MARKER.lampY, MARKER.lampR, 6), 0.012);
       lensFan('head', roofLamp.poly, roofLamp.n, mode);
+      // a strip laid along the face through (x, y) points, `half` wide each side, `lift` proud of the surface: cut into pieces of at most 4 cm, each laid
+      // on the surface at its own place, so a long strip follows the curving face instead of sinking into it as one flat bar does (round 4's wiper broke
+      // in two that way)
+      const ribbon = (pts: readonly (readonly [number, number])[], halfW: number, lift: number, colour: THREE.Color): void => {
+        for (let k = 0; k + 1 < pts.length; k++) {
+          const [xa, ya] = pts[k] as readonly [number, number];
+          const [xb, yb] = pts[k + 1] as readonly [number, number];
+          const n = Math.max(1, Math.ceil(Math.hypot(xb - xa, yb - ya) / 0.04));
+          for (let i = 0; i < n; i++) {
+            const at = (t: number): [number, number] => [lerp(xa, xb, t), lerp(ya, yb, t)];
+            const [x0, y0] = at(i / n);
+            const [x1, y1] = at((i + 1) / n);
+            const nm = faceNormal((x0 + x1) / 2, (y0 + y1) / 2);
+            const q0 = onFace(x0, y0);
+            const q1 = onFace(x1, y1);
+            const side = unit(cross(nm, sub(q1, q0)));
+            const corner = (q: V3, sgn: number): V3 => world([q[0] + nm[0] * lift + side[0] * halfW * sgn, q[1] + nm[1] * lift + side[1] * halfW * sgn, q[2] + nm[2] * lift + side[2] * halfW * sgn]);
+            detail.quad([corner(q0, -1), corner(q1, -1), corner(q1, 1), corner(q0, 1)], [wn(nm), wn(nm), wn(nm), wn(nm)], colour);
+          }
+        }
+      };
+      // the orange line along the screen frame's top, out to the frame's corners (tpe397-01)
+      const lineY = NOVA.screen[1] + 0.045;
+      const lineX = xAtU(NOVA.frameU, lineY);
+      ribbon(Array.from({ length: 9 }, (_, k): [number, number] => [lerp(-lineX, lineX, k / 8), lineY]), 0.011, 0.004, col(0xd0603a));
       // a single wiper parked up the screen, from its foot near the middle toward the cab's left (tpe397-01, -05)
-      const wiper = onSurface(barOutline([0.08 * dir, NOVA.screen[0] + 0.05], [-0.38 * dir, NOVA.screen[0] + 0.78], 0.03), 0.03);
-      detail.fan(wiper.poly, wiper.n, col(WIPER));
+      ribbon([[0.08 * dir, NOVA.screen[0] + 0.05], [-0.38 * dir, NOVA.screen[0] + 0.78]], 0.03, 0.012, col(WIPER));
     }
     if (plan.crewDoor !== null) for (const sx of [-1, 1]) marker('crew-door', sx * half, (b.doorY[0] + b.doorY[1]) / 2, plan.crewDoor, { side: sx > 0 ? 'right' : 'left', width: 0.7 });
   }

@@ -356,6 +356,11 @@ export interface CafBogieSpec {
 // colours read off tpe397-03 (Velim, 2019; a trailer bogie in sun)
 const STEEL = 0x8b9095;
 const FRAME = 0x4f5459;
+/** tpe397-03: the cast arm a mid grey, the spring unit in it dark with two pale plates */
+const ARM = 0x6c7176;
+export const SPRING_UNIT = 0x2e3033;
+const PLATE = 0xaeb2b6;
+export const MOTOR = 0x34373b;
 const RUBBER = 0x26272a;
 const TYRE = 0x3b3c3f;
 const WEB = 0x9a6a45;
@@ -368,18 +373,22 @@ const BOLT = 0x2f3134;
  */
 export const CAF = {
   /** the link arm from each axle toward the middle: its inner and outer ends (fraction of the half wheelbase) and its height */
-  arm: { inner: 0.46, outer: 0.83, y0: 0.23, y1: 0.52 },
+  arm: { inner: 0.46, outer: 0.83, y0: 0.23, y1: 0.52,
+    // (round 5, read off tpe397-03 close to: u from the axle toward the middle) the jaws' inner face, the pivot, the web and the spring unit between them;
+    // the top bar's top and the lower bar's foot
+    jaw: 0.22, pivot: 0.78, web: [0.27, 0.4], spring: [0.42, 0.67], top: 0.56, foot: 0.25 },
   /** the inside frame's side members: the height of their foot and top, and how far in from the wheel's back face */
   frame: { y0: 0.45, y1: 0.8, inset: 0.06 },
   /** the air spring on the frame's middle */
   airSpring: { y0: 0.79, y1: 0.93, radius: 0.31 },
   /** the long horizontal damper, from just behind the middle toward one wheel */
-  damper: { z0: -0.16, z1: 0.76, y: 0.62, radius: 0.065 },
+  damper: { z0: -0.16, z1: 0.76, y: 0.6, radius: 0.065 },
   /** the anti-roll link and its bar; the vertical damper */
   rollLink: { z: -0.53, y0: 0.28, y1: 0.91 },
   verticalDamper: { z: -0.4, y0: 0.49, y1: 0.81, radius: 0.045 },
   /** the triangular bracket hung from the body over the damper's far end */
-  bracket: { z0: 0.63, z1: 0.95, y0: 0.57, y1: 0.94 },
+  // (round 5: its top plate is bolted under the body's underframe, 1.0 m up, as the test measures it; it falls to a point at the damper's end, as -03 shows it)
+  bracket: { z0: 0.6, z1: 0.98, y0: 0.55, y1: 1.0 },
   /** the wheel's face: the tyre band, the web disc and its ring of twelve bolts, the hub and its cap of six */
   wheel: { tyre: 0.84, boltRing: 0.68, bolts: 12, hub: 0.45, cap: 0.22, capBolts: 6 },
 } as const;
@@ -452,19 +461,22 @@ function wheels(soup: Soup, s: CafBogieSpec, z: number, full: boolean, look: Whe
     const xc = (sx * s.track) / 2;
     const xo = xc + sx * (WHEEL_WIDTH / 2);
     const xi = xc - sx * (WHEEL_WIDTH / 2);
-    // (the far wheels, seen only beyond the LOD distance, are 20-sided: a few pixels across there, and half the triangles)
-    const seg = full ? SEG : 20;
+    // (the far wheels, seen only beyond the LOD distance, are 12-sided: a few pixels across there. Near, the tread and the tyre's rim are 40-sided, so
+    // the wheel's silhouette is round; the flange behind the tread, its inner face and the web's inner edge are 20 or 24, as nothing outlines them)
+    const seg = full ? SEG : 12;
+    const inner = full ? 20 : 12;
     tread(soup, Math.min(xo, xi), Math.max(xo, xi), r, z, r, col(look.tyre), seg);
     // the flange, on the inner side of the tread
-    tread(soup, Math.min(xi, xi + sx * 0.03), Math.max(xi, xi + sx * 0.03), r, z, r + FLANGE_HEIGHT, col(look.tyre), seg);
-    disc(soup, xi - sx * 0.002, r, z, r + FLANGE_HEIGHT, (-sx) as 1 | -1, col(look.tyre), seg);
+    tread(soup, Math.min(xi, xi + sx * 0.03), Math.max(xi, xi + sx * 0.03), r, z, r + FLANGE_HEIGHT, col(look.tyre), inner);
+    disc(soup, xi - sx * 0.002, r, z, r + FLANGE_HEIGHT, (-sx) as 1 | -1, col(look.tyre), inner);
     if (!full) {
       disc(soup, xo, r, z, r, sx, col(look.web), seg);
       continue;
     }
     ring(soup, xo, r, z, r * w.tyre, r, sx, col(look.tyre));
+    // (the web's ring stops short of the tread: its outer edge lies on the tyre ring, so 40 sides there; its inner edge, the hub, is 24)
     ring(soup, xo, r, z, r * w.hub, r * w.tyre, sx, col(look.web));
-    disc(soup, xo, r, z, r * w.hub, sx, col(look.hub));
+    disc(soup, xo, r, z, r * w.hub, sx, col(look.hub), 24);
     disc(soup, xo + sx * 0.03, r, z, r * w.cap, sx, col(look.hub), 20);
     for (let k = 0; k < look.bolts; k++) {
       const a = (2 * Math.PI * k) / look.bolts;
@@ -495,27 +507,51 @@ function cafSoup(s: CafBogieSpec): Soup {
       const zi = zs * half * CAF.arm.inner;
       const zo = zs * half * CAF.arm.outer;
       const axle = zs * half;
-      // the cast arm (tpe397-03): an eye round the axlebox, and a web running in from it, deep at the eye and its foot rising toward the inner end,
-      // a flange along its top and the oval lightening hole near the eye. In the (z, y) plane, extruded across from the arm's back to its face.
+      // the cast arm as tpe397-03 shows it close to (round 5): an open link, not a plate. Two bars (a flanged top and a lower bar rising a little toward the
+      // pivot) join a pair of jaws round the axlebox at one end and a round pivot boss at the other; between them a web with the oval lightening hole, and
+      // the spring unit, a dark block with two pale plates, set in the link (ASSUMED to be the primary spring: it stands where the arm carries the frame).
+      // u is the distance from the axle toward the bogie's middle, Zu its z.
+      const Zu = (u: number): number => axle - zs * u;
       const xOut = sx > 0 ? ax1 : ax0;
       const xIn = sx > 0 ? ax0 : ax1;
-      const web: [number, number][] = [[zo, CAF.arm.y1], [zi, CAF.arm.y1], [zi, CAF.arm.y0 + 0.08], [(zi + zo) / 2, CAF.arm.y0 + 0.02], [zo, CAF.arm.y0]];
-      soup.prismX(web, xIn, xOut, col(STEEL));
-      soup.box(ax0 - 0.008, ax1 + 0.008, CAF.arm.y1 - 0.03, CAF.arm.y1 + 0.005, Math.min(zi, zo), Math.max(zi, zo), col(STEEL));
-      const zh = zs * half * (CAF.arm.outer - 0.12);
-      soup.prismX(roundedRect(zh - 0.04, zh + 0.04, 0.32, 0.46, 0.04, 3), xOut, xOut + sx * 0.002, col(RUBBER), false);
-      // the eye: a drum over the axle end (the axlebox), the arm's ring round it, and the box's dark end cover with its bolts
+      const proud = (d: number): number => xOut + sx * d;
+      const A = CAF.arm;
+      const bar = (u0: number, u1: number, y0a: number, y1a: number, y0b: number, y1b: number, c: THREE.Color, out = 0): void =>
+        soup.prismX([[Zu(u0), y0a], [Zu(u1), y0b], [Zu(u1), y1b], [Zu(u0), y1a]], xIn, proud(out), c);
+      bar(A.jaw, A.pivot, A.top - 0.05, A.top, A.top - 0.05, A.top, col(ARM));
+      bar(A.jaw, A.pivot, A.foot, A.foot + 0.05, A.foot + 0.03, A.foot + 0.08, col(ARM));
+      // the top flange, a hair proud and lighter so the bar reads as a section, not a plate
+      bar(A.jaw, A.pivot, A.top - 0.012, A.top + 0.006, A.top - 0.012, A.top + 0.006, col(STEEL), 0.012);
+      // the web with its oval hole
+      bar(A.web[0], A.web[1], A.foot + 0.04, A.top - 0.04, A.foot + 0.05, A.top - 0.04, col(ARM));
+      const uh = (A.web[0] + A.web[1]) / 2;
+      soup.prismX(roundedRect(Math.min(Zu(uh - 0.035), Zu(uh + 0.035)), Math.max(Zu(uh - 0.035), Zu(uh + 0.035)), A.foot + 0.1, A.top - 0.1, 0.035, 3), xOut, proud(0.002), col(RUBBER), false);
+      // the spring unit in the link, and its two plates
+      bar(A.spring[0], A.spring[1], A.foot + 0.05, A.top - 0.05, A.foot + 0.06, A.top - 0.05, col(SPRING_UNIT), 0.015);
+      for (const [y0p, y1p] of [[A.top - 0.13, A.top - 0.07], [A.foot + 0.08, A.foot + 0.14]] as const) {
+        const [p0, p1] = [Zu(A.spring[0] + 0.03), Zu(A.spring[1] - 0.03)];
+        soup.prismX([[Math.min(p0, p1), y0p], [Math.max(p0, p1), y0p], [Math.max(p0, p1), y1p], [Math.min(p0, p1), y1p]], proud(0.015), proud(0.019), col(PLATE), false);
+      }
+      // the jaws round the axlebox: an upper and a lower block, bolted, either side of the drum
+      for (const [y0j, y1j] of [[s.radius + 0.1, A.top + 0.03], [A.foot - 0.04, s.radius - 0.1]] as const) {
+        bar(A.jaw - 0.12, A.jaw + 0.02, y0j, y1j, y0j, y1j, col(ARM), 0.02);
+        disc(soup, proud(0.021), (y0j + y1j) / 2, Zu(A.jaw - 0.05), 0.016, sx, col(BOLT), 6);
+      }
+      // the pivot: a round boss with its bolt, where the arm hangs from the frame
+      rod(soup, [xIn, (A.top + A.foot) / 2 + 0.02, Zu(A.pivot - 0.03)], [proud(0.02), (A.top + A.foot) / 2 + 0.02, Zu(A.pivot - 0.03)], 0.065, col(ARM), 12);
+      disc(soup, proud(0.022), (A.top + A.foot) / 2 + 0.02, Zu(A.pivot - 0.03), 0.025, sx, col(BOLT), 6);
+      // the axlebox drum on the axle end and its dark cover with bolts
       rod(soup, [face + sx * 0.03, s.radius, axle], [face + sx * 0.1, s.radius, axle], 0.12, col(FRAME), 14);
-      ring(soup, xOut + sx * 0.003, s.radius, axle, 0.12, 0.175, sx, col(STEEL), 16);
-      tread(soup, Math.min(xIn, xOut), Math.max(xIn, xOut), s.radius, axle, 0.175, col(STEEL), 16);
       disc(soup, face + sx * 0.104, s.radius, axle, 0.085, sx, col(RUBBER), 12);
       for (let k = 0; k < 4; k++) {
         const a = Math.PI / 4 + (k * Math.PI) / 2;
-        disc(soup, xOut + sx * 0.005, s.radius + 0.148 * Math.sin(a), axle + 0.148 * Math.cos(a), 0.013, sx, col(BOLT), 6);
+        disc(soup, face + sx * 0.105, s.radius + 0.1 * Math.sin(a), axle + 0.1 * Math.cos(a), 0.012, sx, col(BOLT), 6);
       }
-      // the primary spring and damper pack at the arm's inner end, reaching in from the arm to the frame (clear of the wheel: inboard of its rim)
-      const fIn = back - sx * (CAF.frame.inset + 0.09);
-      soup.box(Math.min(fIn, ax1), Math.max(fIn, ax1), 0.15, 0.55, zs > 0 ? zi - 0.12 : zi, zs > 0 ? zi : zi + 0.12, col(FRAME));
+      // on a motor bogie, an earth-return unit on one axle end of each side: a drum on the cover and its cable up to the frame (ASSUMED, as the motor)
+      if (s.motor && zs > 0) {
+        rod(soup, [face + sx * 0.104, s.radius, axle], [face + sx * 0.17, s.radius, axle], 0.06, col(SPRING_UNIT), 12);
+        rod(soup, [face + sx * 0.15, s.radius + 0.05, axle], [face + sx * 0.15, A.top + 0.12, Zu(0.2)], 0.012, col(RUBBER), 6);
+      }
     }
     // the side member of the frame, inboard of the wheel
     const fx = back - sx * (CAF.frame.inset + 0.09);
@@ -534,10 +570,17 @@ function cafSoup(s: CafBogieSpec): Soup {
     const B = CAF.bracket;
     const zp = (B.z0 + B.z1) / 2;
     const bxIn = dx - sx * 0.05;
-    soup.prismX([[B.z0, B.y1], [B.z1, B.y1], [B.z1 - 0.02, B.y1 - 0.06], [B.z0 + 0.02, B.y1 - 0.06]], bxIn, dx, col(STEEL));
-    soup.prismX([[B.z0 + 0.02, B.y1 - 0.06], [B.z0 + 0.09, B.y1 - 0.06], [zp + 0.03, B.y0 + 0.04], [zp - 0.03, B.y0]], bxIn, dx, col(STEEL));
-    soup.prismX([[B.z1 - 0.09, B.y1 - 0.06], [B.z1 - 0.02, B.y1 - 0.06], [zp + 0.03, B.y0], [zp - 0.03, B.y0 + 0.04]], bxIn, dx, col(STEEL));
-    rod(soup, [bxIn, B.y0 + 0.03, zp], [dx + sx * 0.012, B.y0 + 0.03, zp], 0.045, col(STEEL), 12);
+    const bxOut = dx + sx * 0.03;
+    const plateY = B.y1 - 0.05;
+    // a cast plate (tpe397-03 close to): bolted under the body across its top, its sides falling to a rounded foot at the damper's end; the big triangular
+    // opening in its upper part and the small oval one under it are dark through it. One convex outline, and the openings laid on its face.
+    soup.prismX([[B.z0, B.y1], [B.z1, B.y1], [B.z1 - 0.04, plateY - 0.06], [zp + 0.05, B.y0], [zp - 0.05, B.y0], [B.z0 + 0.04, plateY - 0.06]], bxIn, bxOut, col(STEEL));
+    // (the opening sits low in the plate: the body's side skirt hides the plate's top 0.14 m from the platform)
+    soup.prismX([[B.z0 + 0.12, B.y1 - 0.17], [B.z1 - 0.12, B.y1 - 0.17], [zp + 0.025, B.y1 - 0.31], [zp - 0.025, B.y1 - 0.31]], bxOut, bxOut + sx * 0.002, col(RUBBER), false);
+    soup.prismX(roundedRect(zp - 0.025, zp + 0.025, B.y0 + 0.08, B.y0 + 0.15, 0.025, 3), bxOut, bxOut + sx * 0.002, col(RUBBER), false);
+    for (const zb of [B.z0 + 0.04, B.z1 - 0.04]) disc(soup, bxOut + sx * 0.002, B.y1 - 0.025, zb, 0.016, sx, col(BOLT), 6);
+    // the boss at its foot, and the damper's eye on it
+    rod(soup, [bxIn, B.y0 + 0.05, zp], [bxOut + sx * 0.012, B.y0 + 0.05, zp], 0.045, col(STEEL), 12);
   }
   // the transom across the middle and the air spring on it (one each side of the middle in the real bogie; tpe397-03 shows the near one)
   soup.box(-0.5, 0.5, CAF.frame.y0 + 0.05, CAF.frame.y1 - 0.05, -0.22, 0.22, col(FRAME));
@@ -558,11 +601,16 @@ function cafSoup(s: CafBogieSpec): Soup {
     soup.fan(hi, [0, 1, 0], col(RUBBER));
   }
   if (s.motor) {
-    // ASSUMED: tpe397-03 is a trailer bogie, and no motor bogie of a 397 is in the review set. A traction motor and gearbox hung on each axle inside the frame
+    // ASSUMED: tpe397-03 is a trailer bogie, and no motor bogie of a 397 is in the review set. A traction motor hung across the bogie by each axle, its
+    // ribbed body showing under the frame from the side, and a gearbox on the axle beside it; the earth-return units on the axle ends (above)
     for (const zs of [-1, 1]) {
-      const zc = zs * half * 0.5;
-      soup.box(-0.42, 0.3, 0.2, 0.62, zc - 0.22, zc + 0.22, col(RUBBER));
-      soup.box(0.3, 0.52, 0.25, 0.6, zs * half - 0.2, zs * half + 0.2, col(FRAME));
+      // (toward the middle, where the side view is open between the arms' pivots and the transom, so the motor's end shows under the damper)
+      const zc = zs * 0.36;
+      const my = 0.36;
+      rod(soup, [-0.62, my, zc], [0.62, my, zc], 0.23, col(MOTOR), 14);
+      for (const xr of [-0.4, 0, 0.4]) rod(soup, [xr - 0.02, my, zc], [xr + 0.02, my, zc], 0.245, col(FRAME), 14);
+      for (const sx of [-1, 1]) disc(soup, sx * 0.62, my, zc, 0.23, sx as 1 | -1, col(MOTOR), 14);
+      soup.box(0.3, 0.52, 0.22, 0.58, zs * half - zs * 0.32 - 0.12, zs * half - zs * 0.32 + 0.12, col(MOTOR));
     }
   }
   return soup;
