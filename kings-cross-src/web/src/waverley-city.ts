@@ -13,7 +13,7 @@ import {cityHeight} from './waverley-city-heights.ts';
 import {roofPlan,roofSurface,roofPeak,withCreases,chimney,dormer,rectangleOf} from './waverley-city-roofs.ts';
 import {buildWaverleyCityGround,Footprints,LANDUSE} from './waverley-city-ground.ts';
 import {Streets,shopBand,shopTexture} from './waverley-city-shops.ts';
-import {nelsonMonument,nationalColumns,castleWalls,obelisk,stGilesCrown,stoneShell,stonePyramid,MONUMENT_OMIT_IDS} from './waverley-city-monuments.ts';
+import {nelsonMonument,nationalColumns,castleWalls,obelisk,stGilesCrown,governorsHouse,stoneShell,stonePyramid,MONUMENT_OMIT_IDS,GOVERNORS_HOUSE} from './waverley-city-monuments.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import sceneFile from './data/waverley-scene.json' with {type:'json'};
 import data from './data/waverley-city.json' with {type:'json'};
@@ -90,12 +90,14 @@ export const SCOTT_SPIRE='way/445166834';
  *  OSM 61.11 m. Pinnacles (ASSUMED 0.8 m square, 3.5 m tall) stand at each tier's outermost corners. */
 export const SCOTT_TIERS=[{top:29,scale:.86},{top:38,scale:.7},{top:46,scale:.55},{top:52,scale:.42}] as const;
 export const SCOTT_PINNACLE={side:.8,height:3.5} as const;
-/** ASSUMED gallery recess on each tier face (R-wv3-b: an open arcade at each stage, near-black inside): 0.55 of the face wide, from
- *  1 m over the tier's floor to 1.2 m under its top, 3 cm proud of the face, at 0.16 of the stone's tone. */
-export const SCOTT_GALLERY={width:.55,sill:1,head:1.2,proud:.03,tone:.16} as const;
-/** The Scott Monument's stone over the ashlar texture (average 0xa99a7c): to about 0x6e6962, the sooted Binny sandstone's grey-brown
- *  that catches the sun (R-wv3-b), darker than the city. The Calton monuments' paler Craigleith stone: to about 0x87837c. ASSUMED. */
-export const SCOTT_STONE=0xa6adc9,MONUMENT_STONE=0xccd9ff;
+/** ASSUMED gallery on each tier face (R-wv3-b: an open arcade at each stage, near-black inside): over 0.55 of the face's width, from
+ *  1 m over the tier's floor to 1.2 m under its top, `lancets` pointed openings between stone mullions `mullion` m wide, each head
+ *  rising `point` of its width to its apex, 3 cm proud of the face, at 0.16 of the stone's tone. */
+export const SCOTT_GALLERY={width:.55,sill:1,head:1.2,proud:.03,tone:.16,lancets:3,mullion:.35,point:.7} as const;
+/** The Scott Monument's stone over the ashlar texture (average 0xa99a7c): to about 0x534f4a, the sooted Binny sandstone's dark
+ *  grey-brown (R-wv3-b: near-black in shade, only dark brown where lit; round 4 a quarter darker than round 3's 0x6e6962, scorer's
+ *  round 3 note), darker than the city. The Calton monuments' paler Craigleith stone: to about 0x87837c. ASSUMED. */
+export const SCOTT_STONE=0x7d8297,MONUMENT_STONE=0xccd9ff;
 let sceneData:ReturnType<typeof unpackWaverleyScene>|undefined;
 const scene=()=>sceneData??=unpackWaverleyScene(sceneFile);
 
@@ -117,12 +119,15 @@ export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'hei
   let y=wallTop,below=r;
   // each tier face carries its gallery: a dark recess (SCOTT_GALLERY) standing for the open arcade R-wv3-b shows at every stage
   // on each of the four sides of the plan's minimum-area rectangle (the OSM ring is a chamfered square of many short edges)
-  const gallery=(ring:[number,number][],ya:number,yb:number)=>{const {width,sill,head,proud,tone}=SCOTT_GALLERY;if(yb-ya<sill+head+1)return;
+  const gallery=(ring:[number,number][],ya:number,yb:number)=>{const {width,sill,head,proud,tone,lancets,mullion,point}=SCOTT_GALLERY;if(yb-ya<sill+head+1)return;
    const R=rectangleOf(ring),v=[-R.u[1],R.u[0]];
    for(const [ax,half,other]of [[R.u,R.L,R.W],[R.u,R.L,-R.W],[v,R.W,R.L],[v,R.W,-R.L]] as const){const n=ax===R.u?[v[0]*Math.sign(other),v[1]*Math.sign(other)]:[R.u[0]*Math.sign(other),R.u[1]*Math.sign(other)];
     const m=[R.c[0]+n[0]*(Math.abs(other)+proud),R.c[1]+n[1]*(Math.abs(other)+proud)],h=half*width;
     const P=(s:number,yy:number):[number,number,number]=>[m[0]+ax[0]*s,yy,m[1]+ax[1]*s];
-    scott.poly([P(-h,ya+sill),P(h,ya+sill),P(h,yb-head),P(-h,yb-head)],undefined,{facing:[n[0],0,n[1]],color:[tone,tone,tone]});}};
+    // the lancets: each a dark opening with a pointed head; the stone left between them reads as the mullions
+    const lw=(2*h-(lancets-1)*mullion)/lancets,top=yb-head,spring=top-lw*point;if(lw<=0||spring<=ya+sill)continue;
+    for(let k=0;k<lancets;k++){const a=-h+k*(lw+mullion),b2=a+lw;
+     scott.poly([P(a,ya+sill),P(b2,ya+sill),P(b2,spring),P((a+b2)/2,top),P(a,spring)],undefined,{facing:[n[0],0,n[1]],color:[tone,tone,tone]});}}};
   for(const t of SCOTT_TIERS){const ring=at(t.scale);stoneShell(scott,ring,sb+y,sb+t.top);gallery(ring,sb+y,sb+t.top);pinnacles(below,y);below=ring;y=t.top;}
   pinnacles(below,y);
   stonePyramid(scott,at(SCOTT_TIERS.at(-1)!.scale),sb+y,sb+p.height);
@@ -132,6 +137,7 @@ export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'hei
  const parts=new Map(scene().buildings.filter(b=>MONUMENT_OMIT_IDS.includes(b.id)).map(b=>[b.id,b]));
  const monuments=new Batch({colored:true});nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);obelisk(monuments,parts,ground);stGilesCrown(monuments,parts,ground);
  castleWalls(monuments,LANDUSE.castleWalls,ground);
+ const house=scene().buildings.find(b=>b.id===GOVERNORS_HOUSE.id);governorsHouse(monuments,house,house?cityHeight(house).height:0,ground);
  const pale=material('stone').clone() as THREE.MeshLambertMaterial;pale.color.setHex(MONUMENT_STONE);pale.vertexColors=true;
  add(group,monuments,pale,'waverley-city-monuments');
  // The ground's land use and the trees, over the drawn terrain (a full terrain only: the real scene, not a test stub). Trees keep

@@ -18,15 +18,20 @@ import type {Terrain} from '../../core/terrain.ts';
 import {WAVERLEY_LEVELS} from './waverley-mesh.ts';
 import data from './data/waverley-city-landuse.json' with {type:'json'};
 
-export const DRAPE_LIFT=.15;
+/** The drape is a coarser mesh than the terrain (DRAPE_TOLERANCE, m of sag allowed between its vertices), so it is lifted as much: a facet
+ *  sagging the full tolerance still lies on the true ground. Measured against the drawn terrain mesh (0.08 m) at 18,900 points, 0.25/0.25
+ *  leaves it under or within 2 cm at 10 (0.15/0.15 did at 22), and the polygon offset covers those; it costs 8,500 fewer triangles. */
+export const DRAPE_LIFT=.25,DRAPE_TOLERANCE=.25;
 export const ROCK_SLOPE_DEG=38;
+/** ASSUMED: unmapped ground over this pitch is rock, not the base paving; over CLIFF_FACE_DEG a cell is a cliff face (shaded, streaked). */
+export const UNMAPPED_ROCK_DEG=28,CLIFF_FACE_DEG=55;
 /** ASSUMED crag tones (R-wv3-a): dark dolerite, paler weathered faces, lichen grey, moss, and the warm brown-ochre of the weathered
  *  faces in the sun. */
 export const ROCK_TONES=['#4a463e','#55493c','#5a554c','#615c53','#474a37','#524e45','#6b5a46','#5e5040'] as const;
 /** sRGB paint for each ground class, matched by eye to R-wv3-a and R-wv3-c as rendered under the Waverley rig (ACES, exposure 1.25,
  *  which lifts a paint about 1.6x): ASSUMED shades. */
 export const GROUND_COLOURS={
- paving:'#5c5850',road:'#3b3d3f',path:'#5f5c56',setts:'#615b51',lane:'#47474a',grass:'#4f6e28',garden:'#47652a',pitch:'#557530',flower:'#5a6530',
+ paving:'#5c5850',road:'#3b3d3f',path:'#5f5c56',setts:'#615b51',lane:'#47474a',grass:'#4f6e28',park:'#566b2e',garden:'#47652a',pitch:'#557530',flower:'#5a6530',
  wood:'#2d4120',scrub:'#45502c',water:'#2b3d48',paved:'#67635b',rock:'#4a463e',cliff:'#4f4840',
 } as const;
 type Ring=Pt[];
@@ -73,9 +78,11 @@ export const FILL_STEP={wood:9,scrub:9} as const,CROWN_SPREAD={tree:.42,wood:.42
 /** ASSUMED sizes (m), the species size every tree is held to. An urban broadleaved tree (2,100 of the mapped 2,405 are OSM
  *  denotation=urban, the rest untagged or broadleaved) 8-14 tall; a needleleaved one narrow (spread 0.2) unless tagged; woodland 10-16;
  *  scrub (gorse, broom, hawthorn on Calton Hill and the Castle banks, R-wv3-d2) 1.2-2.8; the scattered trees in scrub (R-wv3-d2: ash,
- *  sycamore and hawthorn up the Calton face) 5-8, in SCRUB_TREE_SHARE of its cells on a steep face (ground at least SCRUB_TREE_MIN_SLOPE_DEG, where R-wv3-d2 shows them clinging;
- *  the summits are open grass and gorse, R-wv3-d2, -d3). An OSM height tag wins over all of these. */
-export const TREE_SIZE={tree:[8,14],wood:[10,16],scrub:[1.2,2.8],scrubTree:[5,8],needleSpread:.2} as const,SCRUB_TREE_SHARE=.6,SCRUB_TREE_MIN_SLOPE_DEG=28;
+ *  sycamore and hawthorn up the Calton face) 5-8, on a steep face (ground at least SCRUB_TREE_MIN_SLOPE_DEG; the summits are open grass
+ *  and gorse, R-wv3-d2, -d3). There the scrub is a hanging wood, not scattered trees: R-wv3-d2 shows Calton Hill's south face one
+ *  continuous canopy from Regent Road down to Calton Road, so its steep cells are filled on a closer HANGING_WOOD_STEP lattice with no
+ *  gaps (ASSUMED spacing, under the crown width, so the crowns meet). An OSM height tag wins over all of these. */
+export const TREE_SIZE={tree:[8,14],wood:[10,16],scrub:[1.2,2.8],scrubTree:[5,8],needleSpread:.2} as const,SCRUB_TREE_MIN_SLOPE_DEG=28,HANGING_WOOD_STEP=6;
 export const crownDepth=(kind:'tree'|'wood'|'scrub')=>kind==='tree'?.42:.4;
 /** Ground slope in degrees from central differences over 2 m. */
 export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const dx=(ground.heightAt(x+2,z)-ground.heightAt(x-2,z))/4,dz=(ground.heightAt(x,z+2)-ground.heightAt(x,z-2))/4;return Math.atan(Math.hypot(dx,dz))*180/Math.PI;};
@@ -99,12 +106,20 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  };
  LANDUSE.trees.forEach(([x,z],i)=>{const tag=LANDUSE.treeTags.get(i);take(x,z,'tree',TREE_SIZE.tree,tag?.needle?TREE_SIZE.needleSpread:CROWN_SPREAD.tree,tag?.height);});
  // woods and scrub: a jittered lattice with gaps (a quarter of the cells left open), so a bank reads as clumps, not a grid of dots
- const fill=(rings:Ring[][],step:number,kind:Tree['kind'])=>{for(const rs of rings){const [o,...holes]=rs;let ax=Infinity,bx=-Infinity,az=Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
-  for(let gx=Math.ceil(ax/step)*step;gx<bx;gx+=step)for(let gz=Math.ceil(az/step)*step;gz<bz;gz+=step){if(hash(gx,gz,9)<.25)continue;const x=gx+(hash(gx,gz,2)-.5)*step*.9,z=gz+(hash(gx,gz,3)-.5)*step*.9;if(pip(x,z,o)&&!holes.some(h=>pip(x,z,h))){if(kind==='scrub'&&hash(gx,gz,13)<SCRUB_TREE_SHARE&&slopeOf(ground,x,z)>=SCRUB_TREE_MIN_SLOPE_DEG)take(x,z,'wood',TREE_SIZE.scrubTree,CROWN_SPREAD.wood);else take(x,z,kind);}}}};
- fill(LANDUSE.areas.wood,FILL_STEP.wood,'wood');fill(LANDUSE.areas.scrub,FILL_STEP.scrub,'scrub');
+ const fill=(rings:Ring[][],step:number,gaps:number,put:(x:number,z:number)=>void)=>{for(const rs of rings){const [o,...holes]=rs;let ax=Infinity,bx=-Infinity,az=Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
+  for(let gx=Math.ceil(ax/step)*step;gx<bx;gx+=step)for(let gz=Math.ceil(az/step)*step;gz<bz;gz+=step){if(hash(gx,gz,9)<gaps)continue;const x=gx+(hash(gx,gz,2)-.5)*step*.9,z=gz+(hash(gx,gz,3)-.5)*step*.9;if(pip(x,z,o)&&!holes.some(h=>pip(x,z,h)))put(x,z);}}};
+ const steep=(x:number,z:number)=>slopeOf(ground,x,z)>=SCRUB_TREE_MIN_SLOPE_DEG;
+ fill(LANDUSE.areas.wood,FILL_STEP.wood,.25,(x,z)=>take(x,z,'wood'));
+ // scrub: gorse on the gentler ground, the hanging wood on the steep faces
+ fill(LANDUSE.areas.scrub,FILL_STEP.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
+ fill(LANDUSE.areas.scrub,HANGING_WOOD_STEP,0,(x,z)=>{if(steep(x,z))take(x,z,'wood',TREE_SIZE.scrubTree,CROWN_SPREAD.wood);});
  return out;
 }
 
+/** The lawns painted with mown stripes: the lawns and kept parks (grass, garden, pitch) whose box is over 400 m2. */
+export function mownLawns():Ring[][]{
+ return (['garden','grass','pitch'] as const).flatMap(k=>LANDUSE.areas[k]).filter(([o])=>{let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}return (bx-ax)*(bz-az)>=400;});
+}
 /** A street's paint by its class, as the builder's ROAD_WIDTH (or an OSM width tag) gives it: >= 8.5 m primary to tertiary, 5-5.5 m
  *  pedestrian, the rest residential, unclassified and service. ASSUMED shades. */
 export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&&width<6?GROUND_COLOURS.setts:GROUND_COLOURS.lane;
@@ -117,21 +132,32 @@ function paintGround(ground:Pick<Terrain,'normalAt'>,slopeAt:(x:number,z:number)
  const path=(rings:readonly Ring[])=>{g.beginPath();for(const r of rings){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}};
  const line=(l:Ring)=>{g.beginPath();l.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));};
  g.fillStyle=GROUND_COLOURS.paving;g.fillRect(0,0,W,H);
+ const cell=4,cols=Math.ceil((x1-x0)/cell),slopes=new Float32Array(cols*Math.ceil((z1-z0)/cell)),slope=(x:number,z:number)=>slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)];
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)]=slopeAt(x+cell/2,z+cell/2);
+ // Unmapped ground steeper than UNMAPPED_ROCK_DEG is rough rock, not paving: nothing is paved at that pitch (round 3 drew the paving tone
+ // on the Castle's summit bank as a pale slab). Mapped land use paints over it.
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)if(slope(x,z)>UNMAPPED_ROCK_DEG){g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
  const A=LANDUSE.areas;
- for(const [k,col]of [['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',GROUND_COLOURS.water],['rock',GROUND_COLOURS.rock]] as const){
+ for(const [k,col]of [['park',GROUND_COLOURS.park],['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',GROUND_COLOURS.water],['rock',GROUND_COLOURS.rock]] as const){
   g.fillStyle=col;for(const rs of A[k]){path(rs);g.fill('evenodd');}
  }
- // mown lawns: 3 m stripes a little lighter, alternate bands, turned per lawn (ASSUMED; R-wv3-a shows the gardens' lawns striped)
- for(const k of ['garden','grass','pitch'] as const)for(const rs of A[k]){const o=rs[0];let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}
-  if((bx-ax)*(bz-az)<400)continue;g.save();path(rs);g.clip('evenodd');g.fillStyle='rgba(235,255,190,0.07)';const along=bx-ax>bz-az;
+ // mown lawns: 3 m stripes a little lighter, alternate bands, turned per lawn (ASSUMED; R-wv3-a shows the gardens' lawns striped). Only
+ // the lawns and kept parks (grass, garden, pitch): an open park's rough grass is not mown (R-wv3-d3: Calton Hill; the builder's note).
+ for(const rs of mownLawns()){const o=rs[0];let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}
+  g.save();path(rs);g.clip('evenodd');g.fillStyle='rgba(235,255,190,0.07)';const along=bx-ax>bz-az;
   for(let t=(along?az:ax);t<(along?bz:bx);t+=6){if(along)g.fillRect((ax-x0)*s,(t-z0)*s,(bx-ax)*s,3*s);else g.fillRect((t-x0)*s,(az-z0)*s,3*s,(bz-az)*s);}g.restore();}
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
  // The crag is not one tone (R-wv3-a): dark dolerite, paler weathered faces, grey lichen and moss on the ledges, each 4 m cell one of
  // ROCK_TONES by a seeded hash, then broken by short dark joints running down the fall line.
- const cell=4;
- for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slopeAt(x+cell/2,z+cell/2);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
   if(a>ROCK_SLOPE_DEG+8&&hash(x,z,12)<.5){const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(25,22,20,0.55)';g.lineWidth=.6*s;g.beginPath();g.moveTo((x+2-x0)*s,(z+2-z0)*s);g.lineTo((x+2+n[0]/l*5-x0)*s,(z+2+n[2]/l*5-z0)*s);g.stroke();}}}
- g.globalAlpha=1;g.lineCap='round';g.lineJoin='round';
+ // The steepest cells (over CLIFF_FACE_DEG) are the cliff faces themselves: shadowed and wet-streaked, so the crag reads as rock steps
+ // between ledges, not one ramp (R-wv3-a, R-wv3-d2: the dark vertical faces of Castle Rock and the Calton crags). ASSUMED tone.
+ g.globalAlpha=1;for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a<=CLIFF_FACE_DEG)continue;
+  g.fillStyle='rgba(18,16,14,0.35)';g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
+  const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(15,13,12,0.6)';g.lineWidth=.8*s;
+  for(const o of [.8,2.6])if(hash(x+o,z,14)<.7){g.beginPath();g.moveTo((x+o-x0)*s,(z+o-z0)*s);g.lineTo((x+o+n[0]/l*(5+hash(x,z+o,15)*6)-x0)*s,(z+o+n[2]/l*(5+hash(x,z+o,15)*6)-z0)*s);g.stroke();}}
+ g.lineCap='round';g.lineJoin='round';
  // OSM cliff lines: a broken, half-strength 2.5 m edge, not a painted stripe (the slope cells above already carry the rock)
  g.strokeStyle=GROUND_COLOURS.cliff;g.lineWidth=2.5*s;g.globalAlpha=.55;g.setLineDash([6*s,4*s]);for(const l of LANDUSE.cliffs){line(l);g.stroke();}g.setLineDash([]);g.globalAlpha=1;
  g.strokeStyle=GROUND_COLOURS.path;for(const p of LANDUSE.paths){g.lineWidth=p.width*s;line(p.line);g.stroke();}
@@ -151,7 +177,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
  // The drape: the terrain mesh rebuilt over the drawn surface, less the railway bed.
- const tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>.15});
+ const tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>DRAPE_TOLERANCE});
  const P=tm.positions,keep:number[]=[],bed=(i:number)=>Math.abs(P[i*3+1]-WAVERLEY_LEVELS.ground)<.01;
  for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;keep.push(a,b,c);}
  const pos=new Float32Array(P.length),uv=new Float32Array(P.length/3*2);

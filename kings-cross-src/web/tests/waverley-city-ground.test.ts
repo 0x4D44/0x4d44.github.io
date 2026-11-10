@@ -18,7 +18,7 @@ const pip=(x:number,z:number,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.le
 test.after(()=>scene.dispose());
 
 test('the gardens are OSM land use: both Princes Street Gardens and Calton Hill are mapped green, with paths and trees',()=>{
- const green=[...LANDUSE.areas.grass,...LANDUSE.areas.garden];
+ const green=[...LANDUSE.areas.park,...LANDUSE.areas.grass,...LANDUSE.areas.garden];
  const inGreen=(x:number,z:number)=>green.some(([o,...h])=>pip(x,z,o)&&!h.some(r=>pip(x,z,r)));
  // West Princes Street Gardens (relation/963806) below the Castle, East Princes Street Gardens (way/5585005) by the Scott Monument,
  // Calton Hill park (way/1519743672) by the Dugald Stewart Monument: the frozen cameras' standpoints

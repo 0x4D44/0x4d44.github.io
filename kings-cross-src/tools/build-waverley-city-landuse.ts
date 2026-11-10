@@ -20,7 +20,7 @@ export const LANDUSE_EXTENT={x0:-912,z0:-624,x1:1088,z1:608} as const;
 const Q=2,M=40;
 const pts=(ids:number[]):Pt[]|undefined=>{const out:Pt[]=[];for(const id of ids){const n=all.get(`node/${id}`);if(n?.lat===undefined||n.lon===undefined)return undefined;out.push(project(n.lat,n.lon,origin) as Pt);}return out;};
 // ---- classes (OSM tag -> ground class) --------------------------------------------------------------------------------------
-type AreaClass='grass'|'garden'|'wood'|'scrub'|'water'|'rock'|'paved'|'flower'|'pitch';
+type AreaClass='park'|'grass'|'garden'|'wood'|'scrub'|'water'|'rock'|'paved'|'flower'|'pitch';
 function areaClass(t:Record<string,string>):AreaClass|undefined{
  if(t.building||t['building:part'])return undefined;
  if(t.natural==='water'||t.water||t.leisure==='swimming_pool')return 'water';
@@ -31,7 +31,11 @@ function areaClass(t:Record<string,string>):AreaClass|undefined{
  if(t.leisure==='pitch'&&t.surface&&!/grass/.test(t.surface))return 'paved';
  if(t.leisure==='pitch')return 'pitch';
  if(t.leisure==='garden')return 'garden';
- if(t.leisure==='park'||t.landuse==='grass'||t.landuse==='meadow'||t.landuse==='village_green'||t.landuse==='recreation_ground'||t.natural==='grassland'||t.landuse==='cemetery'||t.amenity==='grave_yard')return 'grass';
+ // a mapped lawn (landuse=grass and kin) is mown, and so is a kept park: one with opening hours is gated and tended (Princes Street
+ // Gardens lock at dusk; R-wv3-a, -b show their lawns striped). An open park (Calton Hill, Holyrood Park: no hours), a meadow,
+ // grassland or burial ground is rough grass (R-wv3-d3). The opening-hours test is an ASSUMED proxy for "kept": OSM has no mowing tag.
+ if(t.landuse==='grass'||t.landuse==='village_green'||t.landuse==='recreation_ground'||t.leisure==='park'&&t.opening_hours)return 'grass';
+ if(t.leisure==='park'||t.landuse==='meadow'||t.natural==='grassland'||t.landuse==='cemetery'||t.amenity==='grave_yard')return 'park';
  // paved squares, car parks and playgrounds are left as the base paving: the ground already is paving
  return undefined;
 }
@@ -67,13 +71,13 @@ function rings(ways:number[][]):number[][]{
  }
  return out;
 }
-const areas:Record<AreaClass,number[][][]>={grass:[],garden:[],wood:[],scrub:[],water:[],rock:[],paved:[],flower:[],pitch:[]};
+const areas:Record<AreaClass,number[][][]>={park:[],grass:[],garden:[],wood:[],scrub:[],water:[],rock:[],paved:[],flower:[],pitch:[]};
 const green:Pt[][]=[];
 const addArea=(cls:AreaClass,outer:number[],holes:number[][])=>{
  const o=pts(outer);if(!o||!o.some(p=>inBox(p,0)))return;
  // private back greens (leisure=garden, 625 of them) are seen only from above and afar: 3 m simplification; the rest 2 m
  const tol=cls==='garden'?3:2,hs=holes.map(pts).filter((h):h is Pt[]=>!!h).map(h=>enc(dp(h.slice(0,-1),tol)));
- const s=dp(o.slice(0,-1),tol);if(s.length<3)return;areas[cls].push([enc(s),...hs]);green.push(...(['grass','garden','wood','scrub','pitch','flower'].includes(cls)?[s]:[]));
+ const s=dp(o.slice(0,-1),tol);if(s.length<3)return;areas[cls].push([enc(s),...hs]);green.push(...(['park','grass','garden','wood','scrub','pitch','flower'].includes(cls)?[s]:[]));
 };
 const roads:Record<string,number[][]>={},paths:Record<string,number[][]>={},pathPts:{w:number;p:Pt[]}[]=[],cliffs:number[][]=[],walls:number[][]=[];
 for(const e of all.values()){

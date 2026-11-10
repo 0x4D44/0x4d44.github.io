@@ -27,6 +27,11 @@ export const ST_GILES={id:'way/1576188742',height:49,crown:10} as const;
  *  square to 7.5 m; the spirelet to the OSM top; corner pinnacles 0.9 m square, 5.5 m tall; side pinnacles 0.6 m, 3 m. */
 export const ST_GILES_CROWN={rib:.45,spring:.5,meet:6.5,meetR:1.2,lantern:1.4,lanternTop:7.5,pinnacle:.9,pinnacleH:5.5,side:.6,sideH:3} as const;
 export const ST_GILES_TONE=.7;
+/** The Governor's House of the Old Calton Jail (OSM way/239888878; its height is the LiDAR roof, waverley-city-heights.ts): R-wv3-d2
+ *  shows it battlemented, with a round tower over its north-west corner. The tower stands on the round bay the OSM outline maps there
+ *  (a run of outline points on one circle, `roundBays`), ASSUMED `towerRise` m over the parapet, and both tops carry BATTLEMENT
+ *  merlons. Its sooted stone at ASSUMED `tone`. The fabric still draws the block itself. */
+export const GOVERNORS_HOUSE={id:'way/239888878',towerRise:3.5,tone:.7} as const;
 export const MONUMENT_OMIT_IDS:string[]=[NELSON.tower,NELSON.drum,NELSON.base,...NATIONAL_COLUMNS,OBELISK.id,ST_GILES.id];
 /** ASSUMED: merlon width, gap and height on every castellated top (a common Georgian-Gothic battlement, matched to R-wv3-d). */
 export const BATTLEMENT={merlon:.7,gap:.6,height:.8,depth:.45} as const;
@@ -35,8 +40,11 @@ export const BATTLEMENT={merlon:.7,gap:.6,height:.8,depth:.45} as const;
  *  side, so on the cliff-top it reads as the battery face over the crag (R-wv3-a). A wall is drawn only where its walk climbs or drops
  *  no steeper than maxSlopeDeg along its run (lead's ruling, round 2: "about 45 degrees"; 35 in round 3, where a run at about 40
  *  degrees still read as a slab sliding down the slope in wv-castle-from-princes-st): the mapped walls that run down the crag face read
- *  as panels on the cliff. */
-export const CASTLE_WALL={curtain:4,other:1.5,thickness:2,sink:.4,maxSlopeDeg:35} as const;
+ *  as panels on the cliff. Nor is one drawn where it climbs (walk over obliqueClimbDeg) across a crag face (ground across it over
+ *  obliqueCrossDeg): round 4, the run down Castle Rock's west flank in wv-castle-from-princes-st (walk 24-27 degrees, the rock 61-66
+ *  across it) read as a tilted slab on the cliff, where R-wv3-a shows bare rock. A battery along the cliff edge (level walk) stays.
+ *  A piece the cuts leave shorter than minPiece (m) is dropped: it stood on the face as a post. */
+export const CASTLE_WALL={curtain:4,other:1.5,thickness:2,sink:.4,maxSlopeDeg:35,obliqueClimbDeg:15,obliqueCrossDeg:55,minPiece:6} as const;
 
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
 interface Area {id:string;outer:Pt[];height:number;minHeight:number}
@@ -73,6 +81,31 @@ function merlons(b:Batch,ring:readonly Pt[],top:(p:Pt)=>number,closed:boolean,ou
    stoneShell(b,r,y-.05,y+height);}}
 }
 
+/** The round bays an outline maps: runs of at least four consecutive points on one circle (each within `fit` m of it) of radius
+ *  2 to 6 m, turning through at least 120 degrees. */
+export function roundBays(ring:readonly Pt[],fit=.35):{c:Pt;r:number}[]{
+ const n=ring.length,out:{c:Pt;r:number;len:number}[]=[];
+ const circ=(a:Pt,b:Pt,c:Pt):{c:Pt;r:number}|undefined=>{const d=2*(a[0]*(b[1]-c[1])+b[0]*(c[1]-a[1])+c[0]*(a[1]-b[1]));if(Math.abs(d)<1e-9)return undefined;
+  const A=a[0]**2+a[1]**2,B=b[0]**2+b[1]**2,C=c[0]**2+c[1]**2,x=(A*(b[1]-c[1])+B*(c[1]-a[1])+C*(a[1]-b[1]))/d,z=(A*(c[0]-b[0])+B*(a[0]-c[0])+C*(b[0]-a[0]))/d;return {c:[x,z],r:Math.hypot(a[0]-x,a[1]-z)};};
+ for(let i=0;i<n;i++)for(let len=n-1;len>=4;len--){const run=Array.from({length:len},(_,k)=>ring[(i+k)%n]),f=circ(run[0],run[Math.floor(len/2)],run[len-1]);
+  if(!f||f.r<2||f.r>6||run.some(p=>Math.abs(Math.hypot(p[0]-f.c[0],p[1]-f.c[1])-f.r)>fit))continue;
+  let turn=0;for(let k=1;k<len;k++){const a=Math.atan2(run[k-1][1]-f.c[1],run[k-1][0]-f.c[0]),b=Math.atan2(run[k][1]-f.c[1],run[k][0]-f.c[0]);let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;turn+=d;}
+  if(Math.abs(turn)>=Math.PI*2/3){out.push({...f,len});break;}}
+ // one circle per bay: keep the longest run of each
+ const kept:{c:Pt;r:number;len:number}[]=[];for(const b of out.sort((a,b)=>b.len-a.len))if(!kept.some(k=>Math.hypot(k.c[0]-b.c[0],k.c[1]-b.c[1])<k.r))kept.push(b);
+ return kept.map(({c,r})=>({c,r}));
+}
+/** The Governor's House's battlements along its roof edge, and its round tower on the outline's largest round bay (GOVERNORS_HOUSE). */
+export function governorsHouse(b:Batch,house:{outer:Pt[]}|undefined,height:number,ground:Ground):void{
+ if(!house)return;const G=GOVERNORS_HOUSE,col:[number,number,number]=[G.tone,G.tone,G.tone],y0=ground.rangeUnder(house.outer,4).min,roof=y0+height;
+ const start=b.positions.length/3;
+ merlons(b,house.outer,()=>roof,true);
+ const bay=roundBays(house.outer).sort((p,q)=>q.r-p.r)[0];
+ if(bay){const top=roof+G.towerRise,N=16;frustum(b,bay.c,bay.r,bay.r,roof-.1,top,N);cap(b,circle(bay.c,bay.r,N),()=>top);
+  merlons(b,circle(bay.c,bay.r-BATTLEMENT.depth/2,12),()=>top,true,m=>{const dx=m[0]-bay.c[0],dz=m[1]-bay.c[1],l=Math.hypot(dx,dz)||1;return [dx/l,dz/l];});}
+ // the batch is toned for the pale Calton stone: this house is the sooted city stone
+ for(let i=start*3;i<b.colors.length;i+=3)b.colors.splice(i,3,...col);
+}
 /** The Nelson Monument: star base with a battlemented top; five stages stepping in, each with a string course, the fifth battlemented;
  *  the narrower sixth stage, battlemented, to the OSM 32 m; the mast and time ball above (HES). */
 export function nelsonMonument(b:Batch,parts:ReadonlyMap<string,Area>,ground:Ground):void{
@@ -130,9 +163,13 @@ export function castleWalls(b:Batch,walls:readonly {curtain:boolean;line:Pt[]}[]
   // ... and on the walk itself: at a sharp bend its quad shears, so each of its two triangles must lie within the limit too
   const tilt=(p:V3,q:V3,r:V3)=>{const u=[q[0]-p[0],q[1]-p[1],q[2]-p[2]],v=[r[0]-p[0],r[1]-p[1],r[2]-p[2]],n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]],l=Math.hypot(n[0],n[1],n[2]);return l?Math.acos(Math.min(1,Math.abs(n[1])/l))*180/Math.PI:0;};
   const walk=(i:number):V3[]=>{const A=face(i-1,1),B=face(i,1),C=face(i,-1),D=face(i-1,-1),ya=tops[i-1].hi,yq=tops[i].hi;return [[A[0],ya,A[1]],[B[0],yq,B[1]],[C[0],yq,C[1]],[D[0],ya,D[1]]];};
-  const steep=(i:number)=>{const [A,B,C,D]=walk(i);return [1,0,-1].some(s=>walkSlopeDeg(face(i-1,s),tops[i-1].hi,face(i,s),tops[i].hi)>CASTLE_WALL.maxSlopeDeg)||tilt(A,B,C)>CASTLE_WALL.maxSlopeDeg||tilt(A,C,D)>CASTLE_WALL.maxSlopeDeg;};
+  const across=(i:number)=>{const k=half+1,g=(s:number)=>ground.heightAt(pts[i][0]+normals[i][0]*k*s,pts[i][1]+normals[i][1]*k*s);return Math.atan2(Math.abs(g(1)-g(-1)),2*k)*180/Math.PI;};
+  const oblique=(i:number)=>walkSlopeDeg(pts[i-1],tops[i-1].hi,pts[i],tops[i].hi)>CASTLE_WALL.obliqueClimbDeg&&Math.min(across(i-1),across(i))>CASTLE_WALL.obliqueCrossDeg;
+  const steep=(i:number)=>{const [A,B,C,D]=walk(i);return oblique(i)||[1,0,-1].some(s=>walkSlopeDeg(face(i-1,s),tops[i-1].hi,face(i,s),tops[i].hi)>CASTLE_WALL.maxSlopeDeg)||tilt(A,B,C)>CASTLE_WALL.maxSlopeDeg||tilt(A,C,D)>CASTLE_WALL.maxSlopeDeg;};
   for(let i=1;i<=pts.length;i++){if(i<pts.length&&!steep(i))continue;
-   if(i-from>1)wallRun(b,pts.slice(from,i),normals.slice(from,i),tops.slice(from,i));from=i;}
+   // a piece the cuts leave shorter than minPiece is a stub standing on the face like a post, not a wall: dropped too
+   const cut=from>0||i<pts.length,len=pts.slice(from+1,i).reduce((s,p,k)=>s+Math.hypot(p[0]-pts[from+k][0],p[1]-pts[from+k][1]),0);
+   if(i-from>1&&!(cut&&len<CASTLE_WALL.minPiece))wallRun(b,pts.slice(from,i),normals.slice(from,i),tops.slice(from,i));from=i;}
  }
 }
 function wallRun(b:Batch,pts:Pt[],normals:Pt[],tops:{hi:number;lo:number}[]):void{

@@ -34,7 +34,8 @@ test('rendered Scott tint retains its sourced appearance',()=>{
  try {
   const scott=built.group.getObjectByName('waverley-scott-monument') as THREE.Mesh;
   // round 2: lightened from 0x51463d, which rendered near-black (scorer, round 1). Round 3: 0x8f8172 rendered chocolate brown over the
-  // warm ashlar texture; 0xa6adc9 cancels the texture's cast to a sooted grey-brown (scorer, round 2; SCOTT_STONE's note)
-  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0xa6adc9);
+  // warm ashlar texture; 0xa6adc9 cancels the texture's cast to a sooted grey-brown (scorer, round 2; SCOTT_STONE's note). Round 4:
+  // a quarter darker, 0x7d8297, toward R-wv3-b's near-black sooted stone (scorer, round 3)
+  assert.equal((scott.material as THREE.MeshLambertMaterial).color.getHex(),0x7d8297);
  } finally {built.dispose();}
 });
