@@ -5,7 +5,7 @@
 //   GET /recent?n=200     the last n normalised events {t, e}
 //   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
 //   GET /sclass           local signal mapping: KX_SCLASS or <KX_DATA_DIR>/sclass.json
-//   GET /fleet?area=EB    booked-diagram fleet table: <area data dir>/fleet.json (only `area` is a query key)
+//   GET /fleet?area=EB    booked-diagram fleet table: <area data dir>/fleet.json
 //   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
@@ -91,8 +91,7 @@ export async function localFile(url, { dataDir, area, streamRecording = false, c
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/fleet') {
     // The fleet table is always <area data dir>/fleet.json: no environment override, so the
-    // canonical-directory guard below always applies. `area` is the only query key accepted.
-    if ([...url.searchParams.keys()].some(key => key !== 'area')) return { status: 400, body: JSON.stringify({ error: 'only the area query key is accepted' }), type: 'application/json; charset=utf-8' };
+    // canonical-directory guard below always applies. Other query keys are ignored, as for /anchors.
     file = path.join(cacheDir, 'fleet.json');
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/recording') {

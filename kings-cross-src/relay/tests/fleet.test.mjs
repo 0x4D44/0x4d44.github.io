@@ -55,14 +55,17 @@ test('fleet: a missing table is a JSON 404, a present one is served from the are
   assert.equal(JSON.parse((await get(relay.port, '/fleet?area=EB')).text).source, 'synthetic');
 });
 
-test('fleet: only the area query key is accepted, and the area must be a configured one', async (t) => {
+test('fleet: other query keys are ignored like /anchors (never a client path), and the area must be a configured one', async (t) => {
   const { relay, ebFile } = await relayFixture(t);
   await writeFile(ebFile, TABLE);
-  for (const extra of ['path=../../credentials', 'file=/etc/passwd', 'date=20260101', 'station=KGX', 'x=']) {
-    assert.equal((await get(relay.port, `/fleet?area=EB&${extra}`)).status, 400, `/fleet?area=EB&${extra}`);
-    assert.equal((await get(relay.port, `/fleet?${extra}&area=EB`)).status, 400, `/fleet?${extra}&area=EB`);
+  for (const extra of ['path=../../credentials', 'file=/etc/passwd', 'date=20260101', 'x=']) {
+    for (const query of [`area=EB&${extra}`, `${extra}&area=EB`]) {
+      const res = await get(relay.port, `/fleet?${query}`);
+      assert.deepEqual([res.status, res.text], [200, TABLE], `/fleet?${query} serves the EB table and nothing else`);
+    }
   }
-  for (const selector of ['area=ZZ', 'area=..%2FWH', 'area=EB&area=WH', 'area=', 'area=eb', 'area=EBX', 'area=%2e%2e']) {
+  // `station` is the relay's other area selector (as for every endpoint), so a clash with `area` is refused
+  for (const selector of ['area=ZZ', 'area=..%2FWH', 'area=EB&area=WH', 'area=', 'area=eb', 'area=EBX', 'area=%2e%2e', 'area=EB&station=KGX']) {
     assert.equal((await get(relay.port, `/fleet?${selector}`)).status, 400, `/fleet?${selector}`);
   }
   assert.equal((await get(relay.port, '/fleet?area=EB')).status, 200);
@@ -108,7 +111,7 @@ test('fleet: a symlinked or non-file table is not served, inside the data direct
   assert.ok(!viaDirectory.text.includes('SYNTHETIC-OUTSIDE'));
 });
 
-test('fleet: localFile uses the cache directory, refuses extra keys and oversized files, and never a client path', async (t) => {
+test('fleet: localFile uses the cache directory, ignores extra keys, refuses oversized files, and never serves a client path', async (t) => {
   const dataDir = await newTmp('kx-fleet-local-');
   t.after(() => rm(dataDir, { recursive: true, force: true }));
   const cacheDir = path.join(dataDir, 'areas', 'EB');
@@ -124,9 +127,8 @@ test('fleet: localFile uses the cache directory, refuses extra keys and oversize
   await writeFile(path.join(dataDir, 'other.json'), '{"source":"other"}');
   assert.equal((await localFile(url('/fleet'), { ...opts, anchorsFile: path.join(dataDir, 'other.json') })).body, TABLE);
   for (const query of ['?path=../../credentials', '?area=EB&path=x', '?date=20260101', '?file=other.json']) {
-    const refused = await localFile(url(`/fleet${query}`), opts);
-    assert.equal(refused.status, 400, query);
-    assert.ok(!refused.body.includes('source'));
+    const served = await localFile(url(`/fleet${query}`), opts);
+    assert.deepEqual([served.status, served.body], [200, TABLE], `${query}: still the area's own fleet.json`);
   }
   await truncate(path.join(cacheDir, 'fleet.json'), 16 * 1024 * 1024 + 1);
   const large = await localFile(url('/fleet?area=EB'), opts);
