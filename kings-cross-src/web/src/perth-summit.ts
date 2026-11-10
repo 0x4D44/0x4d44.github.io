@@ -26,6 +26,8 @@ export const SUMMIT = {
   detail: {tile: 3, px: 256, blades: 3400, grit: 500, fade: [.15, .6] as const},
   // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
+  // round 9 (round-8 score: the flecks read rust; the lobes read as pyramids): a mustard bloom [.34, .31, .06] (blue about 0.19 of
+  // green, red barely over it), and each lobe drawn turned about an axis tilted up to `tilt` rad and scaled `squash` across x and z apart
   // round 8 (round-7 score: the bushes read chocolate, the flecks big and bright against 152's gorse at about luma 0.22): leaves
   // [.25, .27, .14] (a little more blue: dark olive), and 3 flecks of 0.18 of the radius in a dull yellow [.36, .30, .06] (luma
   // about 0.27-0.3)
@@ -37,7 +39,7 @@ export const SUMMIT = {
   // round 5 (round-4 score: "mounds or boulders"): each bush is `lobes` overlapping lobes `lobe` of its radius, scattered over it and
   // varied in height, so its outline is uneven and shrubby; dark olive `rgb`, and a share `bloom` carry one smaller lobe in yellow flower
   bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.5, 1.1] as const, radius: [.7, 1.5] as const, bloom: .45,
-    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.25, .27, .14] as const, bloomRgb: [.36, .30, .06] as const, flecks: 3, fleck: .18, fleckOff: [.1, .35] as const, peek: .05},
+    lobes: [3, 5] as const, tilt: .35, squash: [.75, 1.2] as const, lobe: [.42, .7] as const, rgb: [.25, .27, .14] as const, bloomRgb: [.34, .31, .06] as const, flecks: 3, fleck: .18, fleckOff: [.1, .35] as const, peek: .05},
 } as const;
 
 export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]; bloom: boolean}

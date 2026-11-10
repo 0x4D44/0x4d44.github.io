@@ -263,7 +263,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, lobes.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
-    lobes.forEach((b, i) => { q.setFromAxisAngle(up, b.x * 3.1 % 6.283); mx.compose(new THREE.Vector3(b.x, b.y + b.h * .3, b.z), q, new THREE.Vector3(b.r, b.h * .7, b.r * .85)); bushMesh.setMatrixAt(i, mx); c.setRGB(b.rgb[0], b.rgb[1], b.rgb[2], THREE.SRGBColorSpace); bushMesh.setColorAt(i, c); });
+    // round 9: each lobe turned about a tilted axis and scaled unevenly across x and z (SUMMIT.bush tilt, squash), so none reads as a pyramid
+    const SB = SUMMIT.bush, ax = new THREE.Vector3();
+    lobes.forEach((b, i) => {
+      const h1 = Math.abs(Math.sin(b.x * 12.9898 + b.z * 78.233)), h2 = Math.abs(Math.sin(b.x * 39.346 + b.z * 11.135)), h3 = Math.abs(Math.sin(b.x * 73.156 + b.z * 52.235));
+      ax.set(Math.cos(h1 * 6.283) * Math.sin(SB.tilt * h2), Math.cos(SB.tilt * h2), Math.sin(h1 * 6.283) * Math.sin(SB.tilt * h2)).normalize();
+      q.setFromAxisAngle(ax, b.x * 3.1 % 6.283);
+      mx.compose(new THREE.Vector3(b.x, b.y + b.h * .3, b.z), q, new THREE.Vector3(b.r * (SB.squash[0] + (SB.squash[1] - SB.squash[0]) * h3), b.h * .7, b.r * (SB.squash[0] + (SB.squash[1] - SB.squash[0]) * (1 - h3)))); bushMesh.setMatrixAt(i, mx); c.setRGB(b.rgb[0], b.rgb[1], b.rgb[2], THREE.SRGBColorSpace); bushMesh.setColorAt(i, c); });
     bushMesh.count = lobes.length; bushMesh.name = 'perth-summit-gorse'; bushMesh.computeBoundingSphere(); cover.group.add(bushMesh);
     stats.triangles += lobes.length * (bushG.index ? bushG.index.count : bushG.getAttribute('position').count) / 3; stats.drawCalls++;
   }

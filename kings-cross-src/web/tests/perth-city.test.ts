@@ -517,6 +517,13 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   // round 8, declared (ordered: flecks at about luma 0.25-0.3, 152's about 0.22): a dull yellow, luma 0.22-0.34 (round 7: 0.36-0.6),
   // mean under 0.32 (round 7: 0.5); red over green and blue under 0.3 of green, so it stays yellow, not leaf
   assert.ok(blooms.every(l => lumL(l.rgb) > .22 && lumL(l.rgb) < .34 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .3 * l.rgb[1]), 'a dull yellow bloom');
+  // round 9 (round-8 score: rust): mustard, blue at least 0.15 of green
+  assert.ok(blooms.every(l => l.rgb[2] >= .15 * l.rgb[1]), 'mustard, not rust: blue at least 0.15 of green');
+  // and the lobes not pyramids: turned off upright, their x/z proportions varied
+  { const mq = new THREE.Matrix4(), pq = new THREE.Vector3(), qq = new THREE.Quaternion(), sq = new THREE.Vector3(), yq = new THREE.Vector3(); let tilted = 0; const ratios: number[] = [];
+    for (let i = 0; i < gm.count; i++) { gm.getMatrixAt(i, mq); mq.decompose(pq, qq, sq); if (yq.set(0, 1, 0).applyQuaternion(qq).y < Math.cos(.1)) tilted++; ratios.push(sq.x / sq.z); }
+    ratios.sort((a, b) => a - b);
+    assert.ok(tilted > gm.count * .5 && ratios[Math.floor(ratios.length * .9)]! - ratios[Math.floor(ratios.length * .1)]! > .3, `gorse lobes tilted (${tilted} of ${gm.count}) and unevenly scaled`); }
   assert.ok(blooms.reduce((n, l) => n + lumL(l.rgb), 0) / blooms.length < .32, 'dull on the whole');
   // the bloom crowns its bush: 2-4 flecks, each at most 0.2 of the bush's radius (round 8; round 7: 2-3 at 0.4), over every leaf
   // lobe's top and near the middle
