@@ -932,14 +932,19 @@ export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; 
 export const PERTH_SPANDREL = {strut: .5, size: .08} as const;
 /** Round 9 (S2, the round-8 score): R-pt1-a's rings sized to its corners, whole: the largest ring is near the girder's depth there, the
  *  chain shrinking along the brace. Radii `min` to `max` m, hung `top` m under the member, `clear` m above the rib, `space` m apart; a
- *  ring's outer edge `fit` of its square's side from its middle (perth-station.ts PERTH_RING_ORNAMENT: ring + bar / 2). ASSUMED sizes. */
-export const PERTH_BRACE_RINGS = {min: .12, max: .6, top: .04, clear: .06, space: .03, fit: .475} as const;
-export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch; rings?: Batch; web?: number; webSize?: number} = {}): void {
+ *  ring's outer edge `fit` of its square's side from its middle (perth-station.ts PERTH_RING_ORNAMENT: ring + bar / 2). ASSUMED sizes.
+ *  Round 10 (the round-9 score: R-pt1-a has two big rings near the girder's depth in each deep corner, the model a chain of four or so
+ *  medium ones): `count` rings a corner, and the gutter braces rise as a parabola (archRib's `parabola`), low by the springings as
+ *  R-pt1-a's braces sweep up from the column heads, where the half ellipse rose sheer and left the corner a sliver. */
+export const PERTH_BRACE_RINGS = {count: 2, min: .12, max: .6, top: .04, clear: .06, space: .03, fit: .475} as const;
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch; rings?: Batch; web?: number; webSize?: number; parabola?: boolean} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
-  // The half ellipse, held `size` under top(s) where its steep springing would rise through the members over it.
-  const y = (s: number): number => Math.min(y0 + (apex - y0) * Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2)), Math.max(y0, top(s) - size));
+  // The half ellipse (or with `parabola` a parabolic rise, low by the springings), held `size` under top(s) where it would rise
+  // through the members over it.
+  const rise = (s: number): number => opts.parabola ? Math.max(0, 1 - (2 * s / L - 1) ** 2) : Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2));
+  const y = (s: number): number => Math.min(y0 + (apex - y0) * rise(s), Math.max(y0, top(s) - size));
   // Steps even in angle round the ellipse, so the steep springings get as many pieces as the crown.
   const n = 12, sAt = (k: number): number => L / 2 * (1 - Math.cos(Math.PI * k / n));
   for (let k = 0; k < n; k++) {
@@ -962,7 +967,7 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
     };
     for (const end of [0, 1]) {
       let s0 = 0;
-      for (;;) {
+      for (let ring = 0; ring < R.count; ring++) {
         let lo = 0, hi: number = R.max;
         for (let it = 0; it < 24; it++) { const r = (lo + hi) / 2; if (fits(s0 + r / R.fit / 2, r)) lo = r; else hi = r; }
         if (lo < R.min) break;
@@ -1024,7 +1029,7 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch, ornamen
   // Round 8 (S2, the round-7 score's ruling): R-pt1-a's ring ornament where R-pt1-a has it, in the arched braces at the column heads, as
   // a cut-out plate (perth-station.ts perthRingTexture) in every brace's spandrel (`ornament`), not round 6's pierced plate; round 7's
   // rings in the girders' lattice panels, fitted to one camera, are gone.
-  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, rings: ornament, keep: g.keep});}
+  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, rings: ornament, keep: g.keep, parabola: true});}
 /** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
  *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
  *  planes face the platform cameras (pt-roof-underside, pt-north-footbridge), where the column girders' spandrels are seen edge-on. Here:

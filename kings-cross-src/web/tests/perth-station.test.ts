@@ -995,7 +995,7 @@ test('round 9: R-pt1-a\'s brace rings are big and whole in the deep corners, pla
     const ps = [0, 1, 2, 3].map(k => ({q: toLocal([o[i + 3 * k], o[i + 3 * k + 2]]), y: o[i + 3 * k + 1]}));
     const zc = ps.reduce((m, p) => m + p.q[1], 0) / 4, yc = ps.reduce((m, p) => m + p.y, 0) / 4, side = Math.max(...ps.map(p => p.y)) - Math.min(...ps.map(p => p.y)), r = R.ring * side + R.bar * side / 2;
     const k = braces.findIndex(b => Math.abs(ps[0].q[0] - b.a[0]) < 1e-3 && zc > b.a[1] && zc < b.c[1]); assert.ok(k >= 0, `a ring at ${ps[0].q} on a brace`);
-    const b = braces[k], L = b.c[1] - b.a[1], rib = (s: number): number => under - G.drop + (G.drop - .02) * Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2));
+    const b = braces[k], L = b.c[1] - b.a[1], rib = (s: number): number => under - G.drop + (G.drop - .02) * Math.max(0, 1 - (2 * s / L - 1) ** 2); // (round 10: the braces rise as a parabola, was a half ellipse)
     for (let n = 0; n < 24; n++) {
       const a = n / 24 * 2 * Math.PI, s = zc + r * Math.cos(a) - b.a[1], y = yc + r * Math.sin(a);
       assert.ok(s >= -1e-6 && s <= L + 1e-6 && y <= under + 1e-6 && y > rib(s), `the ring at ${ps[0].q[0]},${zc.toFixed(2)} whole, above the rib and under the girder`);
@@ -1103,5 +1103,23 @@ test('round 10: Abbott 6573357: the cladding near its photographed mid-grey with
     assert.equal(armed, 0, `no arm at ${l.at}`);
     for (const side of l.double ? [1, -1] : [1]) { const hb = body.filter(p => p.side === side), far = hb.reduce((m, p) => p.r > m.r ? p : m, {r: 0, y: 0, side}), near = hb.reduce((m, p) => p.r < m.r ? p : m, {r: 9, y: 0, side});
       assert.ok(far.r > H.length * .8 && far.y > near.y + .1, `a lantern reaching out and tilted up at ${l.at}, side ${side} (out ${far.r.toFixed(2)} m, rising ${(far.y - near.y).toFixed(2)} m)`); }
+  }
+});
+
+test('round 10: R-pt1-a\'s two big rings in each deep corner of the long braces, near the girder\'s depth, not a chain of medium ones', () => {
+  // Rings read from the ornament's squares (outer diameter: PERTH_BRACE_RINGS.fit x 2 of the side), by brace and by end.
+  const braces = gutterBraces(plan), o = batches.ornament.positions, W = WAVERLEY_STRUCTURE, R = PERTH_BRACE_RINGS;
+  const corners = new Map<string, number[]>();
+  for (let i = 0; i < o.length; i += 12) {
+    const q0 = toLocal([o[i], o[i + 2]]), q2 = toLocal([o[i + 6], o[i + 8]]), zc = (q0[1] + q2[1]) / 2, d = Math.abs(o[i + 7] - o[i + 1]) * 2 * R.fit;
+    const k = braces.findIndex(b => Math.abs(q0[0] - b.a[0]) < 1e-3 && zc > b.a[1] && zc < b.c[1]); if (k < 0) continue;
+    const b = braces[k], key = `${k}/${zc - b.a[1] < (b.c[1] - b.a[1]) / 2 ? 0 : 1}`;
+    corners.set(key, [...(corners.get(key) ?? []), d]);
+  }
+  const long = [...corners.entries()].filter(([key]) => { const b = braces[+key.split('/')[0]]; return b.c[1] - b.a[1] > 10; });
+  assert.ok(long.length >= 40, `the long braces' corners carry rings (${long.length})`);
+  for (const [key, ds] of long) {
+    const [big, next] = [...ds].sort((p, q) => q - p);
+    assert.ok(ds.length === R.count && big >= .65 * W.gutterGirderDepth && next >= .45 * W.gutterGirderDepth, `corner ${key}: ${R.count} big rings (${ds.map(d => d.toFixed(2)).join(', ')} m; the girder ${W.gutterGirderDepth} m deep)`);
   }
 });
