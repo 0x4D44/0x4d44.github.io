@@ -645,8 +645,16 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
     const covered = (za: number, zb: number): boolean => { const mid: Pt = [br.along, (za + zb) / 2]; return !inRing(mid, roof) && ringDistance(mid, roof) >= 1.2; };
     const runs: [number, number, boolean][] = [];
     for (let z = br.z0; z < br.z1 - 1e-9; z += 1) { const zb = Math.min(br.z1, z + 1), c = covered(z, zb), last = runs.at(-1); if (last && last[2] === c) last[1] = zb; else runs.push([z, zb, c]); }
-    // Round 5: the maroon runs' side girders arch (S.arch), above the deck, so the train envelope below stays clear.
-    for (const [za, zb, c] of runs) for (const x of [x0 + .15, x1 - .15]) diamondParapet(b, x, za, zb, br.deck, c ? 1.7 : S.arch.end, c ? P('latticeWhite') : P('lattice'), c ? P('frameNavy') : P('lattice'), c ? 0 : S.arch.rise);
+    // Round 5: the maroon runs' side girders arch (S.arch), above the deck, so the train envelope below stays clear: one arch per span
+    // between the posts on the platforms (R-pt1-d north: each span over the tracks its own arch), a span under 4 m rising in proportion.
+    const supports = [...new Set(br.posts.map(p => +p[1].toFixed(3)))].sort((u, v) => u - v);
+    for (const [za, zb, c] of runs) {
+      const cuts = c ? [za, zb] : [za, ...supports.filter(z => z > za + 1 && z < zb - 1), zb];
+      for (let k = 0; k + 1 < cuts.length; k++) for (const x of [x0 + .15, x1 - .15]) {
+        const ca = cuts[k], cb = cuts[k + 1];
+        diamondParapet(b, x, ca, cb, br.deck, c ? 1.7 : S.arch.end, c ? P('latticeWhite') : P('lattice'), c ? P('frameNavy') : P('lattice'), c ? 0 : S.arch.rise * Math.min(1, (cb - ca) / 4));
+      }
+    }
     // The covered span past the roof (R-pt1-d "from platform 1": a pitched timber roof on the lattice sides), in 1 m pieces at least 1 m
     // outside the overall roof.
     const eaves = br.deck + 2.2, ridge = br.deck + 3.0;

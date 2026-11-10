@@ -381,6 +381,10 @@ test('round 5: the north bridge as R-pt1-d north: arched side girders above the 
   // The top of the girder plane, metre by metre along the span (away from the stairs): it rises and falls by the arch, not one level.
   const ys = [...tops.values()].filter(y => y > br.deck + .5), spread = Math.max(...ys) - Math.min(...ys);
   assert.ok(spread > .5, `the side girders arch, by half a metre or more, (top ${hi.toFixed(2)}, spread ${spread.toFixed(2)} along the span)`);
+  // One arch per span between the posts (R-pt1-d north), not one over the whole bridge: the top rises through its mid level more than once.
+  const row = [...tops].filter(([, y]) => y > br.deck + .5).sort((u, v) => u[0] - v[0]).map(([, y]) => y), midY = Math.min(...row) + spread / 2;
+  let rises = 0; for (let k = 1; k < row.length; k++) if (row[k - 1] < midY && row[k] >= midY) rises++;
+  assert.ok(rises >= 2, `an arch over each span between the posts (${rises} rising)`);
   assert.equal(under, 0, 'no lattice hung under the deck slab');
   // The soffit: a pale boarded underside under the 0.3 m slab, not the slab's maroon.
   const ks = rgb(PERTH_PAINT.deckSoffit); let soffit = 0;
