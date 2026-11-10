@@ -21,7 +21,7 @@ import type {WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import {Batch, rgb} from './materials.ts';
 import type {Rgb, V3} from './materials.ts';
 import {WAVERLEY_LEVELS, cleanRing} from './waverley-mesh.ts';
-import {footprintRuns, ridgeRoofBatches, roofHeight, WAVERLEY_ROOF_PROFILE} from './waverley-roof.ts';
+import {footprintRuns, ridgeRoofBatches, roofHeight, WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT} from './waverley-roof.ts';
 import {latticeGirder, WAVERLEY_EDGE_BANDS, WAVERLEY_PAINT, WAVERLEY_STRUCTURE, waverleyStationPlan, waverleyStructureBatches} from './waverley-station-structure.ts';
 import type {WaverleyStationPlan, WaverleyStructureBatches} from './waverley-station-structure.ts';
 import {bandAt, distanceToEdges, worldPoint} from './furniture.ts';
@@ -731,7 +731,9 @@ export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; 
 /** An arched rib (R-pt1-a's curved braces, R-pt1-c's arched ribs and spandrels) from a to c, springing at y0 at both ends and rising as a
  *  half ellipse to `apex`, with a vertical bar every `strut` m from the rib up to top(s) (s: metres from a) wherever that gap is 0.1 m or
  *  more. Only the pieces `keep` accepts are drawn. */
-function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean} = {}): void {
+/** The column girders' spandrels (archedIronwork): pierced lattice in half-metre cells, R-pt1-c. */
+export const PERTH_SPANDREL = {strut: .5, size: .08, lattice: true} as const;
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; lattice?: boolean} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
@@ -743,6 +745,18 @@ function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: numb
     const s0 = sAt(k), s1 = sAt(k + 1), m = at((s0 + s1) / 2); if (!keep(m, y((s0 + s1) / 2))) continue;
     const p0 = at(s0), p1 = at(s1);
     beam(b, [p0[0], y(s0), p0[1]], [p1[0], y(s1), p1[1]], size, size, color);
+  }
+  if (opts.lattice) {
+    // Pierced infill (R-pt1-c's spandrels): bars crossing each `strut` cell corner to corner, rib to member over it, so the cells read
+    // as diamonds, with a boss where each pair crosses. Only cells 0.25 m deep or more.
+    for (let s = 0; s + strut <= L + 1e-9; s += strut) {
+      const s1 = s + strut, p0 = at(s), p1 = at(s1), pm = at((s + s1) / 2);
+      if (Math.min(top(s) - y(s), top(s1) - y(s1)) < .25 || !keep(pm, y((s + s1) / 2))) continue;
+      beam(b, [p0[0], y(s), p0[1]], [p1[0], top(s1), p1[1]], .04, .04, color);
+      beam(b, [p0[0], top(s), p0[1]], [p1[0], y(s1), p1[1]], .04, .04, color);
+      b.box([pm[0], (y(s) + top(s1) + top(s) + y(s1)) / 4, pm[1]], [.12, .12, .12], {color});
+    }
+    return;
   }
   for (let s = strut; s < L - strut / 2; s += strut) {
     const p = at(s), y1 = top(s), y2 = y(s);
@@ -760,7 +774,7 @@ function archedIronwork(b: Batch, plan: PerthStationPlan): void {
     archRib(b, a, c, under, ridge - 1.1, s => roofHeight(a[0] + s) - .4, iron, {strut: 1});
   }
   const girder = W.platformGirderTop - W.platformGirderDepth;
-  for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {strut: .5, size: .08});
+  for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, PERTH_SPANDREL);
 }
 /** The bay roof (PERTH_BAY_ROOF): its glazing, laid out in a frame turned a quarter so Waverley's ridge-and-furrow builder runs its ridges
  *  along the tracks; rafters, arched ribs, the arched glazed screen at its south end, and the screens closing it to the north, the west and
@@ -901,6 +915,11 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   const structure = waverleyStructureBatches(plan.structure);
   archedIronwork(structure.ironwork, plan);
   if (L.bay.length >= 3) bayRoof(glass, strips, structure.ironwork, plan, weather);
+  // The main and bay roofs' solid bands again, hung 6 cm under the glazing (round 3): from below, the milky panes lay over the bands that
+  // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Same batch, so no extra draw.
+  const under = new Batch(); under.append(strips);
+  for (let i = 1; i < under.positions.length; i += 3) under.positions[i] -= WAVERLEY_ROOF_STRIP_LIFT + PERTH_BAND_DROP;
+  strips.append(under);
   const swap = (Object.keys(WAVERLEY_PAINT) as (keyof typeof WAVERLEY_PAINT)[]).map((k): [Rgb, Rgb] => [rgb(WAVERLEY_PAINT[k]), P(k)]);
   // The gable screens along the island building (above its walls, up to the glazing) are drawn in the wall's stone, so the wall reads as
   // rising to the roof (R-pt1-a).
@@ -953,6 +972,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   return {glass, weather, strips, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings};
 }
 
+/** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
+export const PERTH_BAND_DROP = .06;
 /** The platform tops' split (track frame x'): north of it under the roof, in worn mid-grey concrete flags (R-pt1-a, R-pt1-c); south of
  *  it in the open, in red and buff surfacing (Abbott 6573357, R-pt1-b). The main roof's south end, ASSUMED one line across. */
 export const PERTH_OPEN_SOUTH = 24;

@@ -7,9 +7,10 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { islandBuildingBatches, perthRoofOver, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, islandBuildingBatches, PERTH_SPANDREL, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { Batch } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
-import { WAVERLEY_ROOF_PROFILE } from '../src/waverley-roof.ts';
+import { WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const outline = stationOutline(data)!.outer;
@@ -111,6 +112,33 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
     const skin = (scene.group.getObjectByName('perth-roof-weathering') as THREE.Mesh).material as THREE.Material;
     assert.ok(!skin.transparent && skin.depthWrite && skin.side === THREE.FrontSide, 'the roof\'s weathered skin is opaque and front-sided');
   } finally { scene.dispose(); }
+});
+
+test('round 3: the roof\'s solid bands have undersides hung under the glazing, so from below the milky panes do not wash them pale', () => {
+  // Every furrow band of the main roof stands WAVERLEY_ROOF_STRIP_LIFT over the gutter line; its underside hangs PERTH_BAND_DROP under it.
+  const s = batches.strips.positions, over = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_STRIP_LIFT, under = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP;
+  let up = 0, down = 0;
+  for (let i = 1; i < s.length; i += 3) { if (Math.abs(s[i] - over) < 1e-6) up++; if (Math.abs(s[i] - under) < 1e-6) down++; }
+  assert.ok(up > 100 && down === up, `${down} band vertices under the gutter line for ${up} over it`);
+});
+
+test('round 3: the column girders\' spandrels are pierced lattice (R-pt1-c): crossing bars and bosses in the deep cells by the springings, none at the crown', () => {
+  const one = new Batch(); one.box([0, 0, 0], [1, 1, 1]); const V = one.positions.length;
+  const b = new Batch(), y0 = 5.25, top = 6.55, L = 9;
+  archRib(b, [0, 0], [L, 0], y0, top - .02, () => top, [0, 0, 0], PERTH_SPANDREL);
+  const bosses: number[] = [], p = b.positions;
+  for (let i = 0; i < p.length; i += V) {
+    const xs: number[] = [], ys: number[] = [], zs: number[] = [];
+    for (let k = i; k < i + V; k += 3) { xs.push(p[k]); ys.push(p[k + 1]); zs.push(p[k + 2]); }
+    const ext = [xs, ys, zs].map(a => Math.max(...a) - Math.min(...a));
+    if (ext.every(e => Math.abs(e - .12) < 1e-6)) bosses.push((Math.max(...xs) + Math.min(...xs)) / 2);
+  }
+  for (let k = 1; k < p.length; k += 3) assert.ok(p[k] >= y0 - .15 && p[k] <= top + .05, `a spandrel member at y ${p[k]} outside the rib-to-girder band`);
+  assert.ok(bosses.filter(x => x < L / 3).length >= 2 && bosses.filter(x => x > 2 * L / 3).length >= 2, `bosses by both springings (${bosses.map(x => x.toFixed(2))})`);
+  assert.equal(bosses.filter(x => x > L / 3 && x < 2 * L / 3).length, 0, 'no lattice where the rib meets the girder at the crown');
+  // archedIronwork draws every column span with PERTH_SPANDREL, so this is the real spandrels' pattern.
+  const plain = new Batch(); archRib(plain, [0, 0], [L, 0], y0, top - .02, () => top, [0, 0, 0], {...PERTH_SPANDREL, lattice: false});
+  assert.ok(p.length > plain.positions.length, 'the lattice adds members over the plain rib');
 });
 
 test('round 3: no roof ironwork stands outside the roof (pt-platform-4-north saw a girder and rafters past its north end)', () => {
