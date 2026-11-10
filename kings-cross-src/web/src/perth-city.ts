@@ -10,6 +10,7 @@ import type {Terrain} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
 import {fillSurface, shell, walls} from './waverley-mesh.ts';
 import {prism} from './waverley-frontage-mesh.ts';
+import {buildPerthEastGround} from './perth-east-ground.ts';
 import {buildWaverleyCity} from './waverley-city.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
@@ -86,6 +87,8 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   // the ground cover, trees and the Tay, over the drawn ground
   const mask = perthFrontageGroundMask(stationOutline(data)?.outer);
   take(buildPerthCityGround(ground, new Footprints([...[...data.buildings, ...data.roofs].map(b => b.outer), ...outlookClearings()]), (x, z) => inPerthFrontageGroundMask(mask, x, z)));
+  // the Tay's corridor east of the main terrain, which the cliff camera looks over (perth-east-ground.ts)
+  take(buildPerthEastGround(ground));
   // the bridges and towers
   const masonry = new Batch({colored: true}), ironwork = new Batch(), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);

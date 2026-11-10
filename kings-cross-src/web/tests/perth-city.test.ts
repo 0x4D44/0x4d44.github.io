@@ -11,6 +11,7 @@ import { perthBuildingHeight } from '../src/perth-city.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
 import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
@@ -163,6 +164,26 @@ test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, i
   assert.ok(ratio > 1.8 && ratio < 3.2, `height over width as 8703 and 4307 show it (about 2.5): ${ratio.toFixed(2)}`);
   // the tower's base is the cliff top, not the face below it
   assert.ok(Math.abs(scene.terrain.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z) - scene.terrain.heightAt(cx, cz)) < 8, 'on the cliff top');
+});
+
+test('the east patch meets the main terrain without a seam, over the covered corridor only, falling away at its outer edges', () => {
+  const mesh = scene.group.getObjectByName('perth-east-ground') as THREE.Mesh;
+  assert.ok(mesh, 'the east patch is drawn, in the city group');
+  let inCity = false; mesh.traverseAncestors(a => { if (a === scene.parts.buildings) inCity = true; }); assert.ok(inCity, 'in the city group');
+  const E = PERTH_EAST_FILE.extent;
+  assert.deepEqual([E.x0, E.z0, E.x1, E.z1], [PERTH_CITY_EXTENT.x1, 80, 4128, 1232], 'from the main edge east, the Phase I corridor only');
+  const zMain = PERTH_CITY_EXTENT.z1;
+  // the data agree at the seam: the patch's own 32 m nodes on x 2624 against the main terrain's field there (same tile, same reference)
+  for (let z = E.z0; z <= zMain; z += 32) assert.ok(Math.abs(PERTH_EAST.heightAt(E.x0, z) - scene.terrain.heightAt(E.x0, z)) < .75, `data seam at z ${z}: ${PERTH_EAST.heightAt(E.x0, z)} vs ${scene.terrain.heightAt(E.x0, z)}`);
+  // the drawn seam is watertight: every patch vertex on x 2624 inside the corridor is the drawn main ground there, at every 16 m
+  const pos = mesh.geometry.getAttribute('position'); let seam = 0;
+  for (let v = 0; v < pos.count; v++) {
+    if (Math.abs(pos.getX(v) - E.x0) > 1e-6 || pos.getZ(v) < E.z0 - 1e-6 || pos.getZ(v) > zMain + 1e-6) continue; seam++;
+    assert.ok(Math.abs(pos.getY(v) - scene.terrain.heightAt(E.x0, pos.getZ(v))) < 1e-3, `drawn seam at z ${pos.getZ(v)}`);
+  }
+  assert.equal(seam, (zMain - E.z0) / 16 + 1, 'a seam vertex every 16 m along the main terrain');
+  // no hard wall at the north edge: the skirt falls away outward, its slope well under vertical
+  for (let v = 0; v < pos.count; v++) if (pos.getZ(v) < E.z0 - 1) assert.ok(pos.getZ(v) <= E.z0 - EAST_SKIRT.out + 1e-6 && EAST_SKIRT.down / EAST_SKIRT.out < .5, 'the north skirt slopes away');
 });
 
 test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {
