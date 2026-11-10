@@ -28,6 +28,10 @@ export const PERTH_EAST = createTerrain(PERTH_EAST_FILE);
  *  (past which the haze has the ground), still ending just under the plane, and fades to `tone`, a hazed field green-grey (ASSUMED), not
  *  the plane's grey: the land runs on into the haze. No triangles are added (it is the same skirt ring). */
 export const EAST_SKIRT = {out: 6000, to: GROUND_Y - .3, tone: 0x7c8770} as const;
+/** Round 5 (round-4 score, C2/C6): the grey world plane still showed at the panorama's horizon and the overview's corners, past the main
+ *  terrain's west, north and south edges. The same apron runs out from those edges (the east edge meets the east patch and its skirt),
+ *  `step` m pieces from the edge's own height, starting in a field tone `from` (ASSUMED) and fading to EAST_SKIRT.tone; its own mesh. */
+export const MAIN_APRON = {step: 64, from: 0x6c7a55} as const;
 /** ASSUMED: the river sheet's level is the `quantile` of the wet nodes' ground within `reach` m, lifted `lift`; the closing radius
  *  `close` m bridges the channel's breaks (up to about twice that); pieces under `minNodes` nodes are dropped. */
 export const EAST_WATER = {reach: 160, quantile: .25, lift: .35, close: 96, minNodes: 6} as const;
@@ -148,5 +152,32 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     const t = EAST_TREES.tones[Math.floor(hash(x, z, 87) * EAST_TREES.tones.length)]!; tc.setRGB(t[0], t[1], t[2], THREE.SRGBColorSpace); trees.setColorAt(n, tc); n++;
   }
   trees.count = n; trees.name = 'perth-east-bank-trees'; group.add(trees); stats.triangles += n * crown.getAttribute('position').count / 3; stats.drawCalls++;
+  // the main terrain's apron (MAIN_APRON): west edge north to south, then the north and south edges west to east, with the corners
+  {
+    const apos: number[] = [], acol: number[] = [], aidx: number[] = [], ac = new THREE.Color(), haze = new THREE.Color().setHex(EAST_SKIRT.tone, THREE.SRGBColorSpace);
+    const avert = (x: number, z: number, y: number, fade: number) => { ac.setHex(MAIN_APRON.from, THREE.SRGBColorSpace).lerp(haze, fade); apos.push(x, y, z); acol.push(ac.r, ac.g, ac.b); return apos.length / 3 - 1; };
+    const M = main.extent, O = EAST_SKIRT.out, S = MAIN_APRON.step, inner = (x: number, z: number) => avert(x, z, Math.max(main.heightAt(x, z) - .05, GROUND_Y + .3), 0); // over the plane even where the edge lies under it (the Tay's floodplain north of the town)
+    const outer = (x: number, z: number) => avert(x, z, EAST_SKIRT.to, 1);
+    const strip = (pts: [number, number][], ox: number, oz: number, flip: boolean) => {
+      for (let k = 0; k + 1 < pts.length; k++) {
+        const [ax, az] = pts[k]!, [bx, bz] = pts[k + 1]!, a = inner(ax, az), b = inner(bx, bz), d = outer(ax + ox, az + oz), e = outer(bx + ox, bz + oz);
+        if (flip) aidx.push(a, b, d, b, e, d); else aidx.push(a, d, b, b, d, e);
+      }
+    };
+    const run = (n0: number, n1: number) => { const r: number[] = []; for (let v = n0; v < n1; v += S) r.push(v); r.push(n1); return r; };
+    strip(run(M.z0, M.z1).map(z => [M.x0, z]), -O, 0, false);
+    strip(run(M.x0, M.x1).map(x => [x, M.z0]), 0, -O, true);
+    strip(run(M.x0, M.x1).map(x => [x, M.z1]), 0, O, false);
+    // the corners: from the corner out along both sides
+    for (const [cx, cz, sx, sz] of [[M.x0, M.z0, -1, -1], [M.x0, M.z1, -1, 1]] as const) {
+      const c0 = inner(cx, cz), p = outer(cx + sx * O, cz), q = outer(cx + sx * O, cz + sz * O), r = outer(cx, cz + sz * O);
+      if (sz < 0) aidx.push(c0, q, p, c0, r, q); else aidx.push(c0, p, q, c0, q, r);
+    }
+    const ag = new THREE.BufferGeometry();
+    ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3)); ag.setAttribute('color', new THREE.Float32BufferAttribute(acol, 3));
+    ag.setIndex(aidx); ag.computeVertexNormals(); ag.computeBoundingSphere();
+    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({vertexColors: true})); am.name = 'perth-main-apron';
+    group.add(am); stats.triangles += aidx.length / 3; stats.drawCalls++;
+  }
   return {group, stats, heightAt};
 }

@@ -483,6 +483,21 @@ test('the east patch meets the main terrain without a seam, over the covered cor
     assert.ok(Math.abs(col.getX(v) - plane.r) < 1e-3 && Math.abs(col.getY(v) - plane.g) < 1e-3 && Math.abs(col.getZ(v) - plane.b) < 1e-3, 'the apron ends in its hazed tone');
   }
   assert.ok(apron > 100, `apron vertices: ${apron}`);
+  // round 5 (the plane still showed at the panorama's horizon and the overview's corners): the main terrain's west, north and south
+  // edges run out in the same apron, over the plane near the edge and fading into the hazed tone under it far off
+  const main = scene.group.getObjectByName('perth-main-apron') as THREE.Mesh, M = PERTH_CITY_EXTENT, down = new THREE.Raycaster();
+  assert.ok(main, 'the main apron is drawn');
+  for (const [x, z] of [[M.x0 - 400, (M.z0 + M.z1) / 2], [(M.x0 + M.x1) / 2, M.z0 - 400], [(M.x0 + M.x1) / 2, M.z1 + 400], [M.x0 - 300, M.z0 - 300], [M.x0 - 300, M.z1 + 300]] as const) {
+    down.set(new THREE.Vector3(x, 1000, z), new THREE.Vector3(0, -1, 0));
+    const h = down.intersectObject(main, false)[0];
+    assert.ok(h && h.point.y > GROUND_Y && h.face!.normal.y > 0, `the apron covers the plane at ${x}, ${z}: ${h?.point.y} ${h?.face?.normal.y} ground ${GROUND_Y}`);
+  }
+  const mp = main.geometry.getAttribute('position'), mc = main.geometry.getAttribute('color'); let far = 0;
+  for (let v = 0; v < mp.count; v++) {
+    const out = Math.max(M.x0 - mp.getX(v), M.z0 - mp.getZ(v), mp.getZ(v) - M.z1); if (out < EAST_SKIRT.out - 1) continue; far++;
+    assert.ok(mp.getY(v) <= EAST_SKIRT.to + 1e-6 && Math.abs(mc.getY(v) - ends.g) < 1e-3, 'it ends under the plane in the hazed tone');
+  }
+  assert.ok(far > 100, `main apron outer vertices: ${far}`);
 });
 
 test('the east patch\'s Tay is one continuous river sheet, with trees along its banks (2166751, 46028; round 3, C3)', () => {
