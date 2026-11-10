@@ -592,9 +592,13 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     const s0 = Math.max((plan.doors[0] ?? 3) + dw / 2 + 0.55, car.cab ? whiteFieldEnd(look, plan) + 0.15 : 0);
     const s1 = s0 + textEms(WORDMARK) * em;
     const y0 = 1.3;
+    // (laid on the drawn-in side below the waist, a flat quad: its chord sags inside the side where it spans the section's knee, so each
+    // corner stands out by that sag plus 8 mm, clear of the dots under it, which stand 5 mm proud)
+    const chord = (y: number): number => sideX(y0) + ((y - y0) / em) * (sideX(y0 + em) - sideX(y0));
+    let sag = 0;
+    for (let i = 1; i < 20; i++) sag = Math.max(sag, sideX(y0 + (i * em) / 20) - chord(y0 + (i * em) / 20));
     for (const sx of [-1, 1]) {
-      // (laid on the drawn-in side below the waist: each corner at the side's half-width at its height)
-      const verts = ([[s0, y0], [s1, y0], [s1, y0 + em], [s0, y0 + em]] as const).map(([s, y]): V3 => [sx * (sideX(y) + 0.006), y, Z(s)]);
+      const verts = ([[s0, y0], [s1, y0], [s1, y0 + em], [s0, y0 + em]] as const).map(([s, y]): V3 => [sx * (sideX(y) + sag + 0.008), y, Z(s)]);
       // u runs with the lettering, toward the viewer's right: +z on the left side (x < 0), -z on the right
       const forward = (Z(s1) > Z(s0)) === (sx < 0);
       textQuad(decals, verts, WORDMARK, forward, [sx, 0, 0], 0xffffff);
@@ -808,8 +812,10 @@ function saltireDots(soup: Soup, car: ScotrailDmuCar, plan: CarPlanDmu, look: Lo
     if (r < 0.012 || !free(s, y, r)) return;
     const at = onNose ? nose(s, y) : { x: sideX(y), s };
     for (const side of [-1, 1]) {
-      const x = side * (at.x + 0.005);
-      soup.fan(ellipse(Z(at.s), y, r, r, 10).map(([z, yy]): V3 => [x, yy, z]), [side, 0, 0], col(colour));
+      // off the nose each rim point lies on the side at its own height, so below the waist, where the side draws in, no dot's lower
+      // edge stands off it (a centre-height disc stood ~1 cm proud there, through the wordmark)
+      const xAt = (yy: number): number => side * ((onNose ? at.x : sideX(yy)) + 0.005);
+      soup.fan(ellipse(Z(at.s), y, r, r, 10).map(([z, yy]): V3 => [xAt(yy), yy, z]), [side, 0, 0], col(colour));
     }
   };
   const dw = SCOTRAIL_DMU_FIGURES[look.family].doorWidth.value;

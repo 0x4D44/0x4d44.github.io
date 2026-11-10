@@ -514,6 +514,18 @@ test('ScotRail DMU wordmark: no plate behind it: the blue dots run on under the 
       };
       const under = centres(DOT_BLUE).filter(([y, z]) => y > y0 && y < y1 && z > z0 && z < z1);
       assert.ok(under.length >= 5, `${kind} car ${car.index}: ${under.length} blue dots under the wordmark`);
+      // under it, not through it: the lettering is one flat quad (x linear in y); every blue dot vertex in its box at least 2 mm inside it
+      const xAt = new Map<number, number>();
+      for (let i = 0; i < text.count; i++) if (text.getX(i) > 0) xAt.set(text.getY(i), text.getX(i));
+      const xText = (yy: number): number => xAt.get(y0)! + ((yy - y0) / (y1 - y0)) * (xAt.get(y1)! - xAt.get(y0)!);
+      const kb = col(DOT_BLUE);
+      let worst = Infinity;
+      for (let i = 0; i < p.count; i++) {
+        if (p.getX(i) < 0 || Math.abs(c.getX(i) - kb.r) > 1e-6 || Math.abs(c.getY(i) - kb.g) > 1e-6 || Math.abs(c.getZ(i) - kb.b) > 1e-6) continue;
+        if (p.getY(i) < y0 || p.getY(i) > y1 || p.getZ(i) < z0 || p.getZ(i) > z1) continue;
+        worst = Math.min(worst, xText(p.getY(i)) - p.getX(i));
+      }
+      assert.ok(worst >= 0.002, `${kind} car ${car.index}: a blue dot stands ${(-worst * 1000).toFixed(1)} mm through the lettering`);
       const nearWhite = centres(DOT_WHITE).filter(([y, z]) => y > y0 - 0.08 && y < y1 + 0.08 && z > z0 - 0.08 && z < z1 + 0.08);
       assert.equal(nearWhite.length, 0, `${kind} car ${car.index}: white dots by the white lettering`);
     }
