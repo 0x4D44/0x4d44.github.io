@@ -205,7 +205,10 @@ export function mownLawns(LANDUSE:Landuse=WAVERLEY_LANDUSE):Ring[][]{
  *  pedestrian, the rest residential, unclassified and service. ASSUMED shades. */
 export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&&width<6?GROUND_COLOURS.setts:GROUND_COLOURS.lane;
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
-function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES):THREE.CanvasTexture|null{
+/** Gardens painted over land use (Perth's residential land, perth-gardens.ts): plots in their tones, hedges round them and tree crowns,
+ *  clipped to `rings`. */
+export interface GardenPaint {rings:Ring[][];plots:{x:number;z:number;w:number;d:number;tone:string}[];crowns:{x:number;z:number;r:number}[];hedge:number;hedgeTone:string;crownTone:string}
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -219,7 +222,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  // on the Castle's summit bank as a pale slab). Mapped land use paints over it.
  for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)if(slope(x,z)>UNMAPPED_ROCK_DEG){g.fillStyle=TONES[Math.floor(hash(x,z,11)*TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
  const A=LANDUSE.areas;
- for(const [k,col]of [['park',GROUND_COLOURS.park],['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',GROUND_COLOURS.water],['rock',GROUND_COLOURS.rock]] as const){
+ for(const [k,col]of [['park',GROUND_COLOURS.park],['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',WATER_PAINT],['rock',GROUND_COLOURS.rock]] as const){
   g.fillStyle=col;for(const rs of A[k]){path(rs);g.fill('evenodd');}
  }
  // mown lawns: 3 m stripes a little lighter, alternate bands, turned per lawn (ASSUMED; R-wv3-a shows the gardens' lawns striped). Only
@@ -227,6 +230,11 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  for(const rs of mownLawns(LANDUSE)){const o=rs[0];let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}
   g.save();path(rs);g.clip('evenodd');g.fillStyle='rgba(235,255,190,0.07)';const along=bx-ax>bz-az;
   for(let t=(along?az:ax);t<(along?bz:bx);t+=6){if(along)g.fillRect((ax-x0)*s,(t-z0)*s,(bx-ax)*s,3*s);else g.fillRect((t-x0)*s,(az-z0)*s,3*s,(bz-az)*s);}g.restore();}
+ if(gardens){g.save();g.beginPath();for(const rs of gardens.rings)for(const r of rs){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}g.clip('evenodd');
+  for(const p of gardens.plots){g.fillStyle=p.tone;g.fillRect((p.x-x0)*s,(p.z-z0)*s,p.w*s,p.d*s);}
+  g.strokeStyle=gardens.hedgeTone;g.lineWidth=gardens.hedge*s;for(const p of gardens.plots)g.strokeRect((p.x-x0)*s,(p.z-z0)*s,p.w*s,p.d*s);
+  g.fillStyle=gardens.crownTone;for(const c of gardens.crowns){g.beginPath();g.arc((c.x-x0)*s,(c.z-z0)*s,c.r*s,0,Math.PI*2);g.fill();}
+  g.restore();}
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
  // The crag is not one tone (R-wv3-a): dark dolerite, paler weathered faces, grey lichen and moss on the ledges, each 4 m cell one of
  // ROCK_TONES by a seeded hash, then broken by short dark joints running down the fall line.
@@ -272,7 +280,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[]}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -285,7 +293,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones);
+ const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
  // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
  // low roofs and building bases scene-wide (round 5)

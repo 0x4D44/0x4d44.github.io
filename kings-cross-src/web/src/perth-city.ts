@@ -62,8 +62,9 @@ export function addPerthMappedRoofs(data: Pick<PerthData, 'roofs'>, ground: Terr
 }
 
 /** The town's tone (ASSUMED, matched by eye to R-pt3-d and R-pt3-a: Perth's buff-grey sandstone and harling, a touch warmer than
- *  Edinburgh's), as tints over the city facade and ashlar textures (waverley-city.ts WAVERLEY_CITY_STONE explains the method). */
-export const PERTH_CITY_STONE = 0x9a9aa2, PERTH_CITY_ASHLAR = 0xc2c6dc;
+ *  Edinburgh's), as tints over the city facade and ashlar textures (waverley-city.ts WAVERLEY_CITY_STONE explains the method). Round 2
+ *  (C5) cooled both: round 1 (0x9a9aa2, 0xc2c6dc) rendered one buff-brown family, warmer and browner than R-pt3-d's grey-buff. */
+export const PERTH_CITY_STONE = 0x949aa8, PERTH_CITY_ASHLAR = 0xb8c4e2;
 /** The city mesh names; the tops are a roof for the cover map (cover.ts ROOF_MESHES). */
 export const PERTH_CITY_MESHES = {walls: 'perth-city-walls', ashlar: 'perth-city-ashlar', tops: 'perth-city-roofs', shops: 'perth-city-shops'} as const;
 /** Perth's shop streets: the mapped carriageways of the main classes (primary to tertiary, 8.5 m and over) and the pedestrian High
@@ -90,7 +91,7 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   // the Tay's corridor east of the main terrain, which the cliff camera looks over (perth-east-ground.ts)
   take(buildPerthEastGround(ground));
   // the bridges and towers
-  const masonry = new Batch({colored: true}), ironwork = new Batch(), deck = new Batch(), lead = new Batch();
+  const masonry = new Batch({colored: true}), ironwork = new Batch({colored: true}), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);
   for (const b of PERTH_LANDUSE_BRIDGES) roadBridge(masonry, deck, ground, b);
   const kirk = data.buildings.find(b => b.id === PERTH_LIDAR_LANDMARKS.kirk.id);
@@ -101,7 +102,8 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
     prism(masonry, x, z, radius, base - .3, base + height, sides); buildingIds.push(tower.id); heightBasis.LiDAR++;
   }
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
-  const iron = own(material('steel').clone() as THREE.MeshLambertMaterial); iron.color.setHex(0x3c4446);
+  // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing)
+  const iron = own(material('steel').clone() as THREE.MeshLambertMaterial); iron.color.setHex(0xffffff); iron.vertexColors = true;
   const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));
   add(group, masonry, ashlar, 'perth-city-masonry');
   add(group, ironwork, iron, 'perth-viaduct-iron');

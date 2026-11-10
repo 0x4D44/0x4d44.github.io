@@ -24,6 +24,7 @@ import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
+import {perthGardens} from './perth-gardens.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -39,12 +40,41 @@ export const PERTH_DRAPE = .75;
 /** The water sheet's lift over the drape (m: covers its sag between OSM vertices, whose levels differ by up to ~0.6 m), the reach and
  *  quantile of waterLevel(), and its look: ASSUMED, a pale grey-blue reflecting an overcast sky (R-pt3-a, R-pt3-b). */
 export const WATER = {lift: .6, reach: 120, surface: .3, colour: 0x6f8794, specular: 0x8a9aa4, shininess: 40} as const;
+/** The Tay's shore (round 2, C3). Inside the OSM river outline the 16 m terrain still climbs the bank, so the drape shows above the water
+ *  sheet there; painted as water (GROUND_COLOURS.water) it read as a dark band along every bank. It is painted as wet shingle and silt
+ *  instead (`shore`, ASSUMED: R-pt3-a and the viaduct photographs show a pale grey-brown margin between the grass and the water). The
+ *  sheet's own tone is broken by a tiling wash `wash` m across: slow streaks along the flow, lighter where the overcast sky lies on the
+ *  water and darker in the channel (`light`, `dark`, each at most `alpha`; ASSUMED). */
+export const SHORE = {shore: '#6e6a5c', wash: 360, light: '#a6b4ba', dark: '#4d6470', alpha: .16, streaks: 46} as const;
+/** The water sheet's wash: a tiling canvas around WATER.colour (browser only; null in Node). */
+function waterWash(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'); if (!g) return null;
+  g.fillStyle = `#${WATER.colour.toString(16).padStart(6, '0')}`; g.fillRect(0, 0, N, N);
+  const rnd = (i: number, k: number) => { const s = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return s - Math.floor(s); };
+  for (let i = 0; i < SHORE.streaks; i++) {
+    const x = rnd(i, 1) * N, y = rnd(i, 2) * N, rx = 20 + rnd(i, 3) * 70, ry = 3 + rnd(i, 4) * 10, a = (.35 + rnd(i, 5) * .65) * SHORE.alpha;
+    g.fillStyle = rnd(i, 6) < .5 ? SHORE.light : SHORE.dark; g.globalAlpha = a;
+    // drawn at each wrap offset so the tile repeats without a seam
+    for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) { g.beginPath(); g.ellipse(x + ox, y + oy, rx, ry, (rnd(i, 7) - .5) * .5, 0, Math.PI * 2); g.fill(); }
+  }
+  g.globalAlpha = 1;
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / SHORE.wash, 1 / SHORE.wash); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 /** The Tay Viaduct, from Wikipedia ("Tay Viaduct") and Canmore 79826: span counts and the island arches' clear span and pier width. */
 export const TAY_VIADUCT = {westSpans: 7, arches: 10, eastSpans: 6, archClear: 8.636, archPier: 1.219} as const;
 /** ASSUMED viaduct sections (m; rail datum y = 0): iron side girders from y girder[0] to girder[1] (their tops the parapet), offset
  *  `girderOffset` from the centreline; masonry piers `pier` (along, across); the arch block `archWidth` wide with its crown `crown`
  *  under the rail; the walkway `walk` (inner, outer offset, top y) with a railing `rail` m above it. */
 export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, girderOffset: 2.45, pier: [2.2, 6.2] as const, archWidth: 5.4, crown: -1.3, walk: [2.65, 4.45, -.35] as const, rail: 1.1} as const;
+/** The girder spans' piers and paint from the photographs (Geograph 2166751 William Starkey 2010, 2892061 Roger Davies 2012, 4529878
+ *  Richard Webb 2014, 4599836 Rude Health 2015; CC BY-SA 2.0; round 2, C4). Each pier is a pair of tall rusticated sandstone columns,
+ *  one under each girder, under a capping course that spans both; the girders are painted pale grey and the footway's railing white.
+ *  Sizes and tones are read by eye from them (ASSUMED): `column` m square, the cap `cap` m deep and `capOver` m past the columns, the
+ *  rustication `courses` m apart, a darker joint every course. */
+export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, stone: [.80, .70, .60] as Rgb, joint: [.62, .53, .45] as Rgb,
+  girder: [.66, .68, .67] as Rgb, railing: [.93, .93, .91] as Rgb} as const;
 /** ASSUMED road-bridge forms: arches per bridge (no published counts found), the parapet height and the humpback rise of Perth Bridge
  *  (OSM bridge:structure=humpback). */
 export const PERTH_ROAD_BRIDGES: Readonly<Record<string, {arches: number; hump: number}>> = {
@@ -118,7 +148,7 @@ export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: numbe
 /** The ground cover, trees and water; `footprints` are the outlines trees keep clear of; `uncovered` is ground P2 draws itself (the
  *  King's Place cut and the forecourt, perth-frontage-mask.ts), where the drape leaves a hole as it does over the railway bed. */
 export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
-  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs), rockTones: PERTH_ROCK_TONES, uncovered});
+  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
@@ -127,10 +157,10 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
     const outer = clipRing(o!, PERTH_LANDUSE.extent); if (outer.length < 3) continue;
     fillSurface(sheet, outer, holes.map(h => clipRing(h, PERTH_LANDUSE.extent)).filter(h => h.length >= 3), (x, z) => level(x, z) + PERTH_DRAPE + WATER.lift);
   }
-  const wg = sheet.build(), m = new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
+  const wg = sheet.build(), wash = waterWash(), m = new THREE.MeshPhongMaterial({color: wash ? 0xffffff : WATER.colour, map: wash, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
   const water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water);
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
-  return {group: cover.group, stats, dispose() { wg.dispose(); m.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------
@@ -151,7 +181,7 @@ export function arch(b: Batch, a: Pt, e: Pt, width: number, spring: number, crow
   }
 }
 /** A box from plan point p, `along` the unit tangent t, `across` it, from y0 to y1. */
-const post = (b: Batch, p: Pt, t: Pt, along: number, across: number, y0: number, y1: number, color?: Rgb) => {
+const post = (b: Batch, p: Pt, t: Pt, along: number, across: number, y0: number, y1: number, color?: Rgb): void => {
   if (!(y1 > y0)) return;
   b.box([p[0], (y0 + y1) / 2, p[1]], [across, y1 - y0, along], {rotY: Math.atan2(t[0], t[1]), color});
 };
@@ -169,7 +199,7 @@ function walker(line: readonly Pt[]) {
 }
 
 /** The Tay Viaduct along its mapped path: piers, iron spans, the island arches, the walkway. Returns the layout for the tests. */
-export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain, 'heightAt'>, line: readonly Pt[] = file.bridges.viaduct.line as Pt[]): {piers: number[]; arches: [number, number]; island: [number, number]; length: number} {
+export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain, 'heightAt'>, line: readonly Pt[] = file.bridges.viaduct.line as Pt[]): {piers: number[]; pierPlan: {p: Pt; t: Pt}[]; arches: [number, number]; island: [number, number]; length: number} {
   const w = walker(line), F = VIADUCT_FORM, V = TAY_VIADUCT;
   // the island crossing: the longest dry run between wet ones along the path
   const wet: boolean[] = []; for (let s = 0; s <= w.length; s += 1) { const {p} = w.at(s); wet.push(inWater(p[0], p[1])); }
@@ -189,17 +219,32 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
   const girders = (from: number, to: number) => {
     const A = w.at(from), B = w.at(to), d: Pt = [B.p[0] - A.p[0], B.p[1] - A.p[1]], len = Math.hypot(d[0], d[1]), t: Pt = [d[0] / len, d[1] / len], n: Pt = [-t[1], t[0]];
     const c: Pt = [(A.p[0] + B.p[0]) / 2, (A.p[1] + B.p[1]) / 2];
-    for (const side of [-1, 1]) post(ironwork, [c[0] + n[0] * side * F.girderOffset, c[1] + n[1] * side * F.girderOffset], t, len, F.girderThick, F.girder[0], F.girder[1]);
+    const L = VIADUCT_LOOK;
+    for (const side of [-1, 1]) post(ironwork, [c[0] + n[0] * side * F.girderOffset, c[1] + n[1] * side * F.girderOffset], t, len, F.girderThick, F.girder[0], F.girder[1], L.girder);
     // the walkway, outside the girder on the outer side of the curve, and its railing (top and mid rails)
     const o = -turn, wc = (F.walk[0] + F.walk[1]) / 2;
-    post(ironwork, [c[0] + n[0] * o * wc, c[1] + n[1] * o * wc], t, len, F.walk[1] - F.walk[0], F.walk[2] - .25, F.walk[2]);
-    for (const h of [F.rail, F.rail / 2]) post(ironwork, [c[0] + n[0] * o * (F.walk[1] - .05), c[1] + n[1] * o * (F.walk[1] - .05)], t, len, .06, F.walk[2] + h - .06, F.walk[2] + h);
-    for (let s = 1; s < len; s += 2.5) post(ironwork, [A.p[0] + t[0] * s + n[0] * o * (F.walk[1] - .05), A.p[1] + t[1] * s + n[1] * o * (F.walk[1] - .05)], t, .08, .08, F.walk[2], F.walk[2] + F.rail);
+    post(ironwork, [c[0] + n[0] * o * wc, c[1] + n[1] * o * wc], t, len, F.walk[1] - F.walk[0], F.walk[2] - .25, F.walk[2], L.girder);
+    for (const h of [F.rail, F.rail / 2]) post(ironwork, [c[0] + n[0] * o * (F.walk[1] - .05), c[1] + n[1] * o * (F.walk[1] - .05)], t, len, .06, F.walk[2] + h - .06, F.walk[2] + h, L.railing);
+    for (let s = 1; s < len; s += 2.5) post(ironwork, [A.p[0] + t[0] * s + n[0] * o * (F.walk[1] - .05), A.p[1] + t[1] * s + n[1] * o * (F.walk[1] - .05)], t, .08, .08, F.walk[2], F.walk[2] + F.rail, L.railing);
   };
   for (let k = 0; k < V.westSpans; k++) girders(piers[k]!, piers[k + 1]!);
   for (let k = 0; k < V.eastSpans; k++) girders(piers[V.westSpans + 1 + k]!, piers[V.westSpans + 2 + k]!);
-  // masonry piers under the girder spans (into the river bed), the abutments at the ends
-  for (const s of piers) { const {p, t} = w.at(s); post(masonry, p, t, F.pier[0], F.pier[1], ground.heightAt(p[0], p[1]) - 1.5, F.girder[0]); }
+  // masonry piers under the girder spans (into the river bed), the abutments at the ends: twin rusticated columns, one under each girder,
+  // under a capping course across both (VIADUCT_LOOK)
+  const L = VIADUCT_LOOK, pierPlan: {p: Pt; t: Pt}[] = [];
+  for (const s of piers) {
+    const {p, t} = w.at(s), n: Pt = [-t[1], t[0]], foot = ground.heightAt(p[0], p[1]) - 1.5, capY = F.girder[0] - L.cap; pierPlan.push({p, t});
+    for (const side of [-1, 1]) {
+      const q: Pt = [p[0] + n[0] * side * F.girderOffset, p[1] + n[1] * side * F.girderOffset];
+      // courses: alternately the full column and a joint course set back 6 cm, so the column reads as rusticated blocks
+      for (let y = foot, k = 0; y < capY; y += L.courses, k++) {
+        const top = Math.min(capY, y + L.courses), joint = Math.min(top, y + .12);
+        post(masonry, q, t, L.column - .12, L.column - .12, y, joint, L.joint);
+        post(masonry, q, t, L.column, L.column, joint, top, k % 2 ? L.stone : [L.stone[0] * .95, L.stone[1] * .95, L.stone[2] * .95]);
+      }
+    }
+    post(masonry, p, t, L.column + 2 * L.capOver, 2 * F.girderOffset + L.column + 2 * L.capOver, capY, F.girder[0], L.stone);
+  }
   // the arches: pier, arch, pier ... from a0 to a1
   for (let k = 0; k <= V.arches; k++) {
     const s = a0 + k * pitch + V.archPier / 2, {p, t} = w.at(s);
@@ -212,7 +257,7 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     // the spandrel down to the ground under the springing, so no gap shows under a low arch
     for (const q of [A, B]) post(masonry, q, t, .05, F.archWidth, ground.heightAt(q[0], q[1]) - .5, spring);
   }
-  return {piers, arches: [a0, a1], island, length: w.length};
+  return {piers, pierPlan, arches: [a0, a1], island, length: w.length};
 }
 
 /** A mapped road bridge over the Tay: a deck from bank to bank over its outline's rectangle, its parapets, its arches and piers. */

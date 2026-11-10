@@ -72,17 +72,19 @@ function rings(ways:number[][]):number[][]{
 }
 const areas:Record<AreaClass,number[][][]>={park:[],grass:[],garden:[],wood:[],scrub:[],water:[],rock:[],paved:[],flower:[],pitch:[]};
 const green:Pt[][]=[];
-const addArea=(cls:AreaClass,outer:number[],holes:number[][])=>{
+// landuse=residential again, apart (they are also drawn as `park` above): the runtime paints them as gardens over the park (round 2, C6)
+const residential:number[][][]=[];
+const addArea=(cls:AreaClass,outer:number[],holes:number[][],also?:number[][][])=>{
  const o=pts(outer);if(!o||!o.some(p=>inBox(p,0)))return;
  const tol=cls==='garden'?3:2,hs=holes.map(pts).filter((h):h is Pt[]=>!!h).map(h=>enc(dp(h.slice(0,-1),tol)));
- const s=dp(o.slice(0,-1),tol);if(s.length<3)return;areas[cls].push([enc(s),...hs]);if(cls!=='water'&&cls!=='rock'&&cls!=='paved')green.push(s);
+ const s=dp(o.slice(0,-1),tol);if(s.length<3)return;areas[cls].push([enc(s),...hs]);also?.push([enc(s),...hs]);if(cls!=='water'&&cls!=='rock'&&cls!=='paved')green.push(s);
 };
 const roads:Record<string,number[][]>={},paths:Record<string,number[][]>={},pathPts:{w:number;p:Pt[]}[]=[],cliffs:number[][]=[];
 for(const e of all.values()){
  const t=e.tags??{};
  if(e.type==='way'&&e.nodes){
   const closed=e.nodes[0]===e.nodes.at(-1),cls=closed?areaClass(t):undefined;
-  if(cls)addArea(cls,e.nodes,[]);
+  if(cls)addArea(cls,e.nodes,[],t.landuse==='residential'?residential:undefined);
   const kind=roadKind(t);
   if(kind){const p=pts(e.nodes);if(p&&p.some(q=>inBox(q,M))){const w=Number(t.width)>0&&Number(t.width)<30?Number(t.width):ROAD_WIDTH[t.highway!]!;const key=String(Math.round(w*2)/2);if(kind==='road')(roads[key]??=[]).push(enc(dp(p,2)));else pathPts.push({w:Math.round(w*2)/2,p:dp(p,2)});}}
   if(t.natural==='cliff'){const p=pts(e.nodes);if(p&&p.some(q=>inBox(q,M)))cliffs.push(enc(dp(p,2)));}
@@ -91,7 +93,7 @@ for(const e of all.values()){
   const cls=areaClass(t);if(!cls)continue;
   const member=(role:string)=>(e.members??[]).filter(m=>m.type==='way'&&m.role===role).map(m=>all.get(`way/${m.ref}`)?.nodes).filter((n):n is number[]=>!!n);
   if((e.members??[]).some(m=>m.type==='way'&&!all.has(`way/${m.ref}`)))console.error(`incomplete relation/${e.id} (${cls}): drawn from its complete rings only`);
-  const inner=rings(member('inner'));for(const o of rings(member('outer')))addArea(cls,o,inner);
+  const inner=rings(member('inner'));for(const o of rings(member('outer')))addArea(cls,o,inner,t.landuse==='residential'?residential:undefined);
  }
 }
 const pip=([x,z]:Pt,p:Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i]![1]>z)!==(p[j]![1]>z)&&x<(p[j]![0]-p[i]![0])*(z-p[i]![1])/(p[j]![1]-p[i]![1])+p[i]![0])yes=!yes;return yes;};
@@ -126,7 +128,8 @@ const out={
  source:'OSM map API snapshot of tools/build-perth.ts (six tiles, fetched 2026-11-10); land use, leisure and natural areas (the Tay: relation/956087 and way/82223450, natural=water water=river), highways (no tunnels, bridges or indoor), natural=tree nodes, natural=cliff ways, viewpoint and peak nodes (outlooks); bridges: the Tay viaduct way/4438951 and the man_made=bridge outlines over water with their carriageways',
  q:Q,extent:EXT,areas,roads,paths,trees:treeRun,treeTags,cliffs,walls:[] as number[][],castleWalls:[] as [number,number[]][],outlooks,
  bridges:{viaduct:{id:'way/4438951',line:viaduct},roads:roadBridges},
+ residential,
 };
 const json=JSON.stringify(out)+'\n';
 writeFileSync(new URL('../web/src/data/perth-city-landuse.json',import.meta.url),json);
-console.log(JSON.stringify({areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,outlooks:outlooks.length,viaduct:viaduct.length,roadBridges:roadBridges.map(b=>`${b.id} ${b.name} ${b.structure} decks ${b.decks.map(d=>d.id).join(',')}`),bytes:json.length,gzip:gzipSync(json,{level:9}).length}));
+console.log(JSON.stringify({residential:residential.length,areas:Object.fromEntries(Object.entries(areas).map(([k,v])=>[k,v.length])),roads:Object.values(roads).flat().length,paths:Object.values(paths).flat().length,trees:pairs.length,cliffs:cliffs.length,outlooks:outlooks.length,viaduct:viaduct.length,roadBridges:roadBridges.map(b=>`${b.id} ${b.name} ${b.structure} decks ${b.decks.map(d=>d.id).join(',')}`),bytes:json.length,gzip:gzipSync(json,{level:9}).length}));

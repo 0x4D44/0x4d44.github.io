@@ -6,13 +6,16 @@ import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { PERTH_TERRAIN_EXTENT } from '../../tools/build-perth-terrain.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
-import { KINNOULL_TOWER, KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
-import { perthBuildingHeight } from '../src/perth-city.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
+import { KINNOULL_TOWER, KIRK_TOWER, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
+import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
+import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
+import { GARDENS, PERTH_RESIDENTIAL, perthGardens } from '../src/perth-gardens.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
 import { PERTH_CLEAR_AIR, PERTH_HAZE, WAVERLEY_HAZE } from '../src/station-weather.ts';
@@ -88,6 +91,32 @@ test('the Tay Viaduct: seven girder spans, ten arches on Moncreiffe Island, six 
   assert.ok(layout.arches[0] > 0 && layout.arches[1] < layout.length, 'the arch block lies inside the bridge');
   for (const name of ['perth-viaduct-iron', 'perth-city-masonry', 'perth-bridge-roads']) assert.ok(scene.group.getObjectByName(name), name);
   assert.deepEqual(PERTH_LANDUSE_BRIDGES.map(b => b.name).filter(Boolean).sort(), ['Perth Bridge', "Queen's Bridge"]);
+});
+
+test('the viaduct\'s girder piers are twin columns under a cap, its girders pale grey and its railing white, as photographed (round 2, C4)', () => {
+  const masonry = new Batch({ colored: true }), iron = new Batch({ colored: true });
+  const layout = tayViaduct(masonry, iron, scene.terrain), mesh = new THREE.Mesh(masonry.build(), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  const ray = new THREE.Raycaster(), F = VIADUCT_FORM, L = VIADUCT_LOOK;
+  let gaps = 0, columns = 0, caps = 0;
+  layout.pierPlan.forEach(({ p, t }, k) => {
+    const n = [-t[1], t[0]], y = F.girder[0] - L.cap - 1.5;
+    if (y < scene.terrain.heightAt(p[0], p[1]) + .5) return; // a pier standing too low to see between its columns
+    if (layout.arches.some(a => Math.abs(a - layout.piers[k]!) < 3)) return; // the arch block's end piers carry its masonry beside them
+    // along the track through the pier's centreline: open between the two columns
+    ray.set(new THREE.Vector3(p[0] - t[0] * 5, y, p[1] - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); ray.far = 10;
+    if (ray.intersectObject(mesh).length === 0) gaps++;
+    // under each girder: a column
+    for (const side of [-1, 1]) { ray.set(new THREE.Vector3(p[0] + n[0] * side * F.girderOffset - t[0] * 5, y, p[1] + n[1] * side * F.girderOffset - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); if (ray.intersectObject(mesh).length) columns++; }
+    // the cap spans across, over the gap
+    ray.set(new THREE.Vector3(p[0] - t[0] * 5, F.girder[0] - L.cap / 2, p[1] - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); if (ray.intersectObject(mesh).length) caps++;  });
+  assert.ok(gaps >= 8, `piers open between their columns: ${gaps}`);
+  assert.equal(columns, 2 * gaps, 'two columns at each open pier');
+  assert.equal(caps, gaps, 'a cap over each');
+  const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const ig = iron.build(), col = ig.getAttribute('color');
+  let dark = 0; for (let i = 0; i < col.count; i++) if (lum([col.getX(i), col.getY(i), col.getZ(i)]) < .5) dark++;
+  assert.equal(dark, 0, 'no dark ironwork: girders pale grey, railing white');
+  assert.ok(lum(L.railing) > lum(L.girder), 'the railing is whiter than the girders');
 });
 
 test('Kinnoull Hill\'s woods, the Inches and the kirk come from OSM, the DSM and HES, not by eye', () => {
@@ -185,6 +214,40 @@ test('the east patch meets the main terrain without a seam, over the covered cor
   assert.equal(seam, (zMain - E.z0) / 16 + 1, 'a seam vertex every 16 m along the main terrain');
   // no hard wall at the north edge: the skirt falls away outward, its slope well under vertical
   for (let v = 0; v < pos.count; v++) if (pos.getZ(v) < E.z0 - 1) assert.ok(pos.getZ(v) <= E.z0 - EAST_SKIRT.out + 1e-6 && EAST_SKIRT.down / EAST_SKIRT.out < .5, 'the north skirt slopes away');
+});
+
+test('the Tay\'s shore is shingle, not a dark band, and its water carries a wash in metres (round 2, C3)', () => {
+  const lum = (hex: string) => { const n = parseInt(hex.slice(1), 16); return (.2126 * (n >> 16) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
+  const sheet = lum(`#${WATER.colour.toString(16).padStart(6, '0')}`), grass = lum(GROUND_COLOURS.grass), shore = lum(SHORE.shore);
+  // the bank inside the river outline shows above the sheet: its paint sits between the grass and the water, not far below both
+  assert.ok(shore >= Math.min(grass, sheet) - .02 && shore <= Math.max(grass, sheet) + .02, `shore ${shore.toFixed(3)} against grass ${grass.toFixed(3)}, water ${sheet.toFixed(3)}`);
+  assert.ok(shore - lum(GROUND_COLOURS.water) > .12, 'lighter than the old water paint that read as a dark band');
+  const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh, pos = water.geometry.getAttribute('position'), uv = water.geometry.getAttribute('uv');
+  for (let i = 0; i < pos.count; i += 97) assert.ok(Math.abs(uv.getX(i) - pos.getX(i)) < 1e-3 && Math.abs(uv.getY(i) - pos.getZ(i)) < 1e-3, 'the wash is placed in plan metres');
+});
+
+test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {
+  assert.equal(PERTH_RESIDENTIAL.length, 51, 'the 51 OSM landuse=residential polygons');
+  const g = perthGardens(), lum = (hex: string) => { const n = parseInt(hex.slice(1), 16); return (.2126 * (n >> 16) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
+  assert.ok(g.plots.length > 500, `plots: ${g.plots.length}`);
+  const pip = (x: number, z: number, p: readonly (readonly number[])[]) => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1]! > z) !== (p[j]![1]! > z) && x < (p[j]![0]! - p[i]![0]!) * (z - p[i]![1]!) / (p[j]![1]! - p[i]![1]!) + p[i]![0]!) yes = !yes; return yes; };
+  for (const p of g.plots.filter((_, i) => i % 23 === 0)) assert.ok(PERTH_RESIDENTIAL.some(rs => pip(p.x + p.w / 2, p.z + p.d / 2, rs[0]!)), 'each plot is in residential land');
+  // broken: no one tone covers most of it, and several show
+  const share = new Map<string, number>(); for (const p of g.plots) share.set(p.tone, (share.get(p.tone) ?? 0) + 1);
+  assert.ok(share.size >= 4, `tones: ${share.size}`);
+  assert.ok(Math.max(...share.values()) / g.plots.length < .5, 'no tone over half the plots');
+  // darker than the park paint it replaces, with hedges and tree crowns darker still
+  const mean = g.plots.reduce((a, p) => a + lum(p.tone), 0) / g.plots.length;
+  assert.ok(mean < lum(GROUND_COLOURS.park) - .02, `gardens ${mean.toFixed(3)} against park ${lum(GROUND_COLOURS.park).toFixed(3)}`);
+  assert.ok(lum(GARDENS.hedgeTone) < mean && lum(GARDENS.crownTone) < mean, 'hedges and crowns darker than the plots');
+  assert.ok(g.crowns.length > g.plots.length / 3, `tree-dotted: ${g.crowns.length} crowns`);
+});
+
+test('Perth\'s stone tints are grey-buff: cooler than round 1\'s buff-brown, still a touch warmer than Edinburgh\'s (round 2, C5)', () => {
+  const cool = (c: number) => (c & 255) / (c >> 16); // blue over red: the tint's coolness over the warm facade textures
+  assert.ok(cool(PERTH_CITY_STONE) >= 1.1, `stone ${cool(PERTH_CITY_STONE).toFixed(3)}`);
+  assert.ok(cool(PERTH_CITY_ASHLAR) >= 1.18, `ashlar ${cool(PERTH_CITY_ASHLAR).toFixed(3)}`);
+  assert.ok(cool(PERTH_CITY_STONE) < cool(WAVERLEY_CITY_STONE) && cool(PERTH_CITY_ASHLAR) < cool(WAVERLEY_CITY_ASHLAR), 'warmer than Edinburgh\'s');
 });
 
 test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {
