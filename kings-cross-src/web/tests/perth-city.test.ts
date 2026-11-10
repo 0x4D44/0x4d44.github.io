@@ -386,6 +386,11 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   // piece over 5.7 m long, which few contour pieces are, so the 5-30% through-riser share and the 3-course riser (round 7) are dropped;
   // the column spread stays
   assert.ok(spread > CRAG.band * .5 && thru < steps.length * .3, `courses broken: spread ${spread.toFixed(2)}, ${thru} through-risers of ${steps.length}`);
+  // round 9, restored in a form the cap can meet (round-9 score: the dropped share was a deletion): among the pieces long enough to
+  // carry a riser through two courses under the cap (over 5.7 m), at least 8 do (9 of 153 now). None runs through 3 courses: that needs
+  // a piece of about 9.7 m, and the cap leaves none, so the round-7 3-course check has no form this geometry can meet
+  const long = steps.filter(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]) > 5.7), longThru = long.filter(k => k.courses >= 2).length;
+  assert.ok(longThru >= 8, `through-risers on the long pieces: ${longThru} of ${long.length}`);
   // the ledges cover the drape between courses: each runs back until it meets the drawn slope (it ends in the ground, not short of it)
   const meets = steps.filter(k => { const m: [number, number] = [(k.a[0] + k.b[0]) / 2 + k.up[0] * k.ledge, (k.a[1] + k.b[1]) / 2 + k.up[1] * k.ledge]; return drawn(m) >= k.top - .3; });
   assert.ok(meets.length > steps.length * .85, `ledges running back into the slope: ${meets.length} of ${steps.length}`);
