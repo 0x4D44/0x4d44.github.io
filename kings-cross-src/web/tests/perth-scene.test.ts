@@ -85,9 +85,18 @@ test('fallback heights: OSM heights stand, a Perth house is two storeys, not the
   assert.equal(scene.heightBasis.OSM + scene.heightBasis.LiDAR + scene.heightBasis.ASSUMED, scene.buildingIds.length);
 });
 
+/** The scene's draw-call bound (lead ruling 2026-11-10): the phase-1 scene's own draws plus each phase-2 element's cap, and never past
+ *  the per-frame ceiling. Each figure from the rubric that sets it (gfx-rubrics/, held in the round's scratch):
+ *  - phase 1: 11 draws (perth-station.md, "Phase 1 baseline (Node build)");
+ *  - P1 station +24 (perth-station.md "Cost caps"), P2 frontage +24 (perth-frontage.md; perth-frontage.test.ts holds it), P3 city +24
+ *    (perth-city.md; perth-city.test.ts holds it);
+ *  - the per-frame ceiling: fewer than 1,000 draw calls (rubric-common.md, and each Perth rubric's "Per frame" row). */
+const PERTH_DRAW_BOUND = {phase1: 11, caps: {station: 24, frontage: 24, city: 24}, frame: 1000} as const;
+const drawBound = Math.min(PERTH_DRAW_BOUND.frame - 1, PERTH_DRAW_BOUND.phase1 + Object.values(PERTH_DRAW_BOUND.caps).reduce((a, b) => a + b, 0));
+
 test('the scene\'s parts, costs and credits; the roof and city toggles; dispose empties it', () => {
   for (const part of ['terrain', 'track', 'platforms', 'roof', 'buildings'] as const) assert.ok(scene.parts[part].children.length > 0, `${part} drawn`);
-  assert.ok(scene.stats.triangles < 2_000_000 && scene.stats.drawCalls < 40, JSON.stringify(scene.stats));
+  assert.ok(scene.stats.triangles < 2_000_000 && scene.stats.drawCalls <= drawBound, `${JSON.stringify(scene.stats)} against ${drawBound} draws`);
   assert.match(scene.attribution, /OpenStreetMap.*Scottish public sector LiDAR/);
   const hidden = buildPerthScene({ lighting: false, roofVisible: false, cityVisible: false });
   try { assert.equal(hidden.parts.roof.visible, false); assert.equal(hidden.parts.buildings.visible, false); assert.equal(hidden.parts.track.visible, true); }
