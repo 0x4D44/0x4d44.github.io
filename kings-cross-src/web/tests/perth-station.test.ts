@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, clockCorbel, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { perthRampTexture, PERTH_RAMP_FINISH, perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
+import { archRib, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -559,7 +559,7 @@ test('round 6: the platforms\' open ends run down to rail level in ramps, clear 
   // Drawn: a sloping open-surfacing quad from the deck to rail level, and its brick sides.
   const scene = buildPerthScene({ lighting: false });
   try {
-    const g = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal');
+    const g = (scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh).geometry, /* round 9: the ramps' own mesh */ pos = g.getAttribute('position'), nrm = g.getAttribute('normal');
     let slope = 0;
     for (let i = 0; i < pos.count; i++) {
       const q = toLocal([pos.getX(i), pos.getZ(i)]);
@@ -996,4 +996,49 @@ test('round 9: R-pt1-a\'s brace rings are big and whole in the deep corners, pla
   assert.ok(long.length >= 20 && long.every(k => largest.get(k)! >= .7), `big rings in the long braces' corners (${long.map(k => largest.get(k)!.toFixed(2)).join(' ')})`);
   assert.ok(Math.max(...largest.values()) <= 2 * PERTH_BRACE_RINGS.max + 1e-6, 'none past the largest');
   assert.equal([...middle].filter(k => braces[k].c[1] - braces[k].a[1] > 10).length, 0, 'the long braces\' shallow middles plain');
+});
+
+test('round 9: the ramps leave the deck in their own grooved concrete, grooves across the fall, edged on the side away from the tracks; in pt-platform-4-south-end, in view through the fence', () => {
+  // The finish: grooves across the fall (rows vary along v, the fall; constant along u), close-pitched, on a grey well off the deck's red.
+  const F = PERTH_RAMP_FINISH, t = perthRampTexture(), d = t.image.data as Uint8Array, n = t.image.width;
+  const row = (j: number): number => { let s = 0; for (let i = 0; i < n; i++) s += d[4 * (j * n + i)]; return s / n; };
+  const rows = Array.from({length: n}, (_, j) => row(j)), dark = rows.filter(v => v < 255 * (F.tone + .05)).length;
+  assert.ok(dark > 0 && dark < n * .5 && Math.max(...rows) > 255 * .9, `grooves across the ramp (${dark} of ${n} rows)`);
+  assert.ok(F.pitch <= .2 && t.repeat.y === 1 / F.tile, 'close-pitched, in metres');
+  const lum = (h: number): number => .3 * (h >> 16) + .59 * ((h >> 8) & 255) + .11 * (h & 255), sat = (h: number): number => Math.max(h >> 16, (h >> 8) & 255, h & 255) - Math.min(h >> 16, (h >> 8) & 255, h & 255);
+  assert.ok(lum(F.color) - lum(PERTH_OPEN_ASPHALT) > 40 && sat(F.color) < 0x14, `a pale grey, not the deck's red (${F.color.toString(16)} on ${PERTH_OPEN_ASPHALT.toString(16)})`);
+  // Edged on every side away from the tracks: a coper strip down the fall, deck to rail.
+  const e = batches.platform.edges.positions, deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail;
+  for (const r of plan.ramps) for (const i of [0, 1] as const) {
+    if (r.track[i]) continue;
+    const a = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, len = Math.hypot(f[0] - a[0], f[1] - a[1]);
+    let head = false, foot = false;
+    for (let k = 0; k < e.length; k += 3) {
+      const q = toLocal([e[k], e[k + 2]]);
+      if (Math.hypot(q[0] - a[0], q[1] - a[1]) < RAMP_EDGING + .01 && Math.abs(e[k + 1] - deck) < .05) head = true;
+      if (Math.hypot(q[0] - f[0], q[1] - f[1]) < RAMP_EDGING + .01 && Math.abs(e[k + 1] - rail) < .05) foot = true;
+    }
+    assert.ok(head && foot && len > 5, `ramp ${r.ref} edged down its side ${i} away from the tracks`);
+  }
+  // Drawn in its own material, UVs in metres across (z') and down (x') the ramp; in the frozen view, seen through the fence's mesh.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const mesh = scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
+    assert.ok(m.map === t && mesh.parent === scene.parts.platforms, 'the ramps in their own finish, in the platforms part');
+    const pos = mesh.geometry.getAttribute('position'), uv = mesh.geometry.getAttribute('uv');
+    for (let i = 0; i < pos.count; i++) { const q = toLocal([pos.getX(i), pos.getZ(i)]); assert.ok(Math.abs(uv.getX(i) - q[1]) < 1e-3 && Math.abs(uv.getY(i) - q[0]) < 1e-3, `ramp UVs in track metres at ${q}`); }
+    const r4 = plan.ramps.find(r => r.ref === '4' && r.e0[0] > 100)!, fence = scene.group.getObjectByName('perth-ramp-fence-mesh');
+    const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+    const k = cams['pt-platform-4-south-end'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000), eye = new THREE.Vector3(k.pos[0], k.pos[1], k.pos[2]);
+    cam.position.copy(eye); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true); scene.group.updateMatrixWorld(true);
+    // A 3 x 3 grid on the ramp (its upper half, where the eye looks down on it); the fence's mesh is a cut-out, mostly open, so it is passed.
+    let seen = 0;
+    for (const s of [.15, .3, .45]) for (const u of [.25, .5, .75]) {
+      const q: Pt = [r4.e0[0] + (r4.f0[0] - r4.e0[0]) * s, r4.e0[1] + (r4.e1[1] - r4.e0[1]) * u], w = toWorld(q), pt = new THREE.Vector3(w[0], deck + (rail - deck) * s, w[1]), v = pt.clone().project(cam);
+      if (!(Math.abs(v.x) < .95 && Math.abs(v.y) < .95 && v.z < 1)) continue;
+      const dir = pt.clone().sub(eye), dist = dir.length(), h = new THREE.Raycaster(eye, dir.normalize(), 0, dist + .5).intersectObject(scene.group, true).find(x => x.object !== fence);
+      if (h && h.object === mesh && Math.abs(h.distance - dist) < .05) seen++;
+    }
+    assert.ok(seen >= 3, `platform 4's ramp in view (${seen} of 9 points)`);
+  } finally { scene.dispose(); }
 });

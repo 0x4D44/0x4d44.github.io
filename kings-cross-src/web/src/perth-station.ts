@@ -7,7 +7,7 @@ import type {Pt} from '../../core/geo.ts';
 import type {WaverleyArea, WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
 import {Batch, material} from './materials.ts';
-import type {V3} from './materials.ts';
+import type {V2, V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
@@ -157,6 +157,25 @@ export function perthRingTexture(): THREE.DataTexture {
   t.generateMipmaps = false; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-rings';
   return rings = t;
 }
+/** Round 9 (S3, the round-8 score: "the ramp still reads as a flat red quad"): the ramps' own finish, so the slope reads where it leaves
+ *  the deck: pale broom-finished concrete crossed by grip grooves, `groove` m wide every `pitch` m down the slope, on a light concrete
+ *  grey (`color`), where the deck is red asphalt. Its UVs are track metres across and down the ramp (u = z', v = x'). ASSUMED finish (no
+ *  photograph shows the ramps; grooved concrete is the usual finish of a platform-end ramp). Cached. */
+export const PERTH_RAMP_FINISH = {color: 0xb4b2ab, pitch: .15, groove: .035, tone: .58, tile: .6, px: 128} as const;
+let rampFinish: THREE.DataTexture | undefined;
+export function perthRampTexture(): THREE.DataTexture {
+  if (rampFinish) return rampFinish;
+  const F = PERTH_RAMP_FINISH, n = F.px, data = new Uint8Array(n * n * 4), m = n / F.tile;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const v = (j + .5) / m, d = ((v % F.pitch) + F.pitch) % F.pitch, groove = Math.min(d, F.pitch - d) < F.groove / 2;
+    const broom = .94 + .06 * (((i * 7919 + j * 104729) % 97) / 97), q = 4 * (j * n + i), g = Math.round(255 * (groove ? F.tone : broom));
+    data[q] = data[q + 1] = data[q + 2] = g; data[q + 3] = 255;
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / F.tile, 1 / F.tile); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; t.name = 'perth-ramp-finish';
+  return rampFinish = t;
+}
 /** Round 8 (S3): Rosser1954's close steel mesh (the fence across the 4/5 island's south end: grey welded-mesh panels) as a cut-out over
  *  the fence's panels, whose UVs are metres along the fence and up: vertical wires every `pitch[0]` m, horizontal every `pitch[1]` m,
  *  `wire` m thick. ASSUMED mesh (the photograph resolves panels, not wires); a common security-mesh pitch. Cached. */
@@ -266,10 +285,12 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // but dark grey on the Dundee platforms (PERTH_GREY_PLATFORMS).
   const tops = new Batch(), open = new Batch(), grey = new Batch();
   for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); for (const q of parts.open) fillSurface(PERTH_GREY_PLATFORMS.includes(p.ref ?? '') ? grey : open, q, [], () => PERTH_LEVELS.platform); }
-  // Round 6: the end ramps (perth-station-structure.ts platformRamps) in their platform's open surfacing, from the deck down to rail level.
+  // Round 6: the end ramps (perth-station-structure.ts platformRamps), from the deck down to rail level. Round 9 (S3): in their own
+  // grooved concrete (perthRampTexture), not the platform's surfacing, so the slope reads where it leaves the deck.
+  const ramps = new Batch();
   for (const r of perthStationPlan(data, stationOutline(data)?.outer).ramps) {
     const [e0, e1, f0, f1] = [r.e0, r.e1, r.f0, r.f1].map(toWorld), y = PERTH_LEVELS.platform, rail = WAVERLEY_LEVELS.rail;
-    (PERTH_GREY_PLATFORMS.includes(r.ref) ? grey : open).poly([[e0[0], y, e0[1]], [e1[0], y, e1[1]], [f1[0], rail, f1[1]], [f0[0], rail, f0[1]]], [e0, e1, f1, f0], {facing: [0, 1, 0]});
+    ramps.poly([[e0[0], y, e0[1]], [e1[0], y, e1[1]], [f1[0], rail, f1[1]], [f0[0], rail, f0[1]]], [r.e0, r.e1, r.f1, r.f0].map(p => [p[1], p[0]] as V2), {facing: [0, 1, 0]});
   }
   const s = stationBatches(data);
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
@@ -281,6 +302,7 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
   add(group, grey, own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_GREY, map: perthSurfaceTexture('asphalt')})), 'perth-platform-surfaces-open-grey');
+  add(group, ramps, own(new THREE.MeshLambertMaterial({color: PERTH_RAMP_FINISH.color, map: perthRampTexture()})), 'perth-platform-ramps');
   add(group, s.platform.faces, faceStone, 'perth-platform-faces');
   const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);
   add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');

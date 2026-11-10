@@ -1519,14 +1519,17 @@ export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | '
 /** Round 7 (S3, the round-6 score: "the coper and tactile strip stop dead at the end"): on each track side of a ramp, the platform's
  *  coper (with its nosing) carried down the slope (round 7 carried the warning strip too; round 8 drops it, unsourced), at the platform's own offsets (WAVERLEY_EDGE_BANDS) in from the
  *  ramp's side; where the side was drawn in from the platform's corner, the coper turns along the end to meet it. Track frame. */
+export const RAMP_EDGING = .3;
 export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructureBatches, 'edges' | 'tactile' | 'lip'>): void {
   const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, lift = WAVERLEY_STRUCTURE.stripLift, [coper] = WAVERLEY_EDGE_BANDS, cc = P('coper');
   for (const r of ramps) for (const i of [0, 1] as const) {
-    if (!r.track[i]) continue;
     const e = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, o = i ? r.e0 : r.e1, ol = Math.hypot(o[0] - e[0], o[1] - e[1]), n: Pt = [(o[0] - e[0]) / ol, (o[1] - e[1]) / ol];
     const len = Math.hypot(f[0] - e[0], f[1] - e[1]);
     // t along the side (0 head, 1 foot), u metres in from it; y on the ramp's surface plus the strips' lift.
     const at = (t: number, u: number, dy: number = lift): V3 => [e[0] + (f[0] - e[0]) * t + n[0] * u, deck + (rail - deck) * t + dy, e[1] + (f[1] - e[1]) * t + n[1] * u];
+    // Round 9 (S3, the round-8 score: an edge on the side facing the eye): the side away from the tracks edged too, a buff coper strip
+    // `RAMP_EDGING` m wide down the fall, so the slope's line reads beside the grooved concrete. ASSUMED (no photograph shows it).
+    if (!r.track[i]) { s.edges.poly([at(0, 0), at(1, 0), at(1, RAMP_EDGING), at(0, RAMP_EDGING)], undefined, {facing: [0, 1, 0], color: cc}); continue; }
     s.edges.poly([at(0, coper.from), at(1, coper.from), at(1, coper.to), at(0, coper.to)], undefined, {facing: [0, 1, 0], color: cc});
     // (Round 8: no warning strip down the ramp. Neither Rosser1954 nor geograph 591926 shows one past the gate, and a gated staff ramp
     // is not a public platform edge; round 7 drew it unsourced.)
