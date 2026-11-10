@@ -161,8 +161,11 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
 /** `slope` rose from 40 to 41.5 deg in round 6, paying the piers' rounder shafts (PIER_FORM.sides) from the crag's gentlest risers. */
 export const CRAG = {eyeClear: 60, slope: 41.5, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
-  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 60, joints: .13, joint: .5,
+  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 60, joints: .13, joint: .3, aspect: 1.5, setback: .5,
   offset: .5, through: [.74, .88] as const, thruMin: 3, crack: 1, ledgeRun: 9} as const;
+/** Round 9 (round-8 score: the toe fins were still there, and the 1 m cracks did not read). A riser is at most `aspect` times as tall
+ *  as its piece is long: it drops courses to fit, a one-course riser is cut down to fit, and a piece too short to stand `rise[0]` m at
+ *  that aspect is left out. The crack is set `setback` m back into the slope, in `joint` (0.3) of the rock's tone: a shadowed slot. */
 /** Round 8 (round-7 score: thin through-risers stood out as toe fins; a joint darkened its whole piece, a dark buttress several
  *  metres wide). A riser runs through extra courses only where its piece is at least `thruMin` m long. A joint is a `crack` m sliver
  *  at the piece's `b` end, in `joint` of the rock's tone (`crackRgb`), the rest of the piece rock; each crack adds one quad, so the
@@ -238,7 +241,10 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
         const base = C.rise[0] + (C.rise[1] - C.rise[0]) * Math.min(1, .6 * col + .4 * hash(Math.round(mx), Math.round(mz), 73));
         const one = Math.max(C.rise[0], base + (vn(mx, mz, C.column, 79) - .5) * 2 * C.offset * C.band);
         const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        let courses = len < C.thruMin ? 1 : thru > C.through[1] ? 3 : thru > C.through[0] ? 2 : 1, rise = one + (courses - 1) * C.band, top = Math.max(ya, yb) + rise;
+        if (len * C.aspect < C.rise[0]) continue; // too short to stand as a riser: a fin, not a face
+        let courses = len < C.thruMin ? 1 : thru > C.through[1] ? 3 : thru > C.through[0] ? 2 : 1, rise = one + (courses - 1) * C.band;
+        while (courses > 1 && rise > len * C.aspect) { courses--; rise -= C.band; }
+        rise = Math.min(rise, len * C.aspect); let top = Math.max(ya, yb) + rise;
         let ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], Math.max(C.band, rise - drape) / Math.max(grade, .3)));
         // a through-riser's ledge runs uphill until it meets the drawn ground; where the slope gives out first, it runs one course fewer
         while (courses > 1) {

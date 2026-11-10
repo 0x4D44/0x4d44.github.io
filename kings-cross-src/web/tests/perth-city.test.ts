@@ -340,6 +340,8 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     // round 8: no toe fins: a riser through extra courses is at least CRAG.thruMin (3) m long; a joint is a narrow crack, not its piece
     const len = Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]);
     if (k.courses > 1) assert.ok(len >= 3 - 1e-6, `a through-riser at least 3 m wide: ${len.toFixed(2)}`);
+    // round 9 (round-8 score: the toe fins remained): every riser at most 1.5 times as tall over the ground as its piece is long
+    assert.ok(over <= 1.5 * len + 1e-6, `no fin: ${over.toFixed(2)} m tall on a ${len.toFixed(2)} m piece`);
     if (k.joint) assert.ok(k.crack > 0 && k.crack <= 1.2 && len - k.crack >= .5, `a narrow crack: ${k.crack} of ${len.toFixed(2)}`);
   }
   // round 6: the drape between the courses is repainted rock-grey: the ground under each riser and back along its ledge, in grey tones,
@@ -354,11 +356,18 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   const joints = steps.filter(k => k.joint);
   // round 7, declared (ordered: joints lifted from 0.35 to about 0.55 of their tone, here 0.5, cracks, not black blocks): under 0.7 of the median rock
   // (round 6: under 0.5), and over 0.3 of it (new: not black)
-  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.crackRgb) < median * .7 && lum(k.crackRgb) > median * .3), `dark joints: ${joints.length} of ${steps.length}`);
+  // round 9, declared (ordered: the crack set back 0.5 m at about 0.3 of its tone, so it reads): the crack under 0.5 of the median rock
+  // (round 8: 0.7; tightened), and over 0.15 of it (round 8: 0.3; loosened)
+  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.crackRgb) < median * .5 && lum(k.crackRgb) > median * .15), `dark joints: ${joints.length} of ${steps.length}`);
   // round 8: the cracks are drawn: the crag mesh carries each joint's dark sliver
   { const cm = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh, cc = cm.geometry.getAttribute('color'), dark = new Set(joints.map(k => k.crackRgb.map(v => v.toFixed(4)).join())); let n = 0;
     for (let i = 0; i < cc.count; i++) if (dark.has([cc.getX(i), cc.getY(i), cc.getZ(i)].map(v => v.toFixed(4)).join())) n++;
-    assert.ok(n >= joints.length * 4 * .95, `crack slivers drawn: ${n / 4} of ${joints.length}`); }
+    assert.ok(n >= joints.length * 4 * .95, `crack slivers drawn: ${n / 4} of ${joints.length}`);
+    // round 9: the crack set back about 0.5 m into the slope (a slot, not paint on the face): its b-end foot vertex lies behind b
+    const cp = cm.geometry.getAttribute('position'), keys = new Set<string>();
+    for (let i = 0; i < cp.count; i++) keys.add([cp.getX(i), cp.getY(i), cp.getZ(i)].map(v => v.toFixed(2)).join());
+    const set = joints.filter(k => CRAG.setback >= .4 && keys.has([k.b[0] + k.up[0] * CRAG.setback, k.foot[1], k.b[1] + k.up[1] * CRAG.setback].map(v => v.toFixed(2)).join())).length;
+    assert.ok(set >= joints.length * .95, `cracks set back: ${set} of ${joints.length}`); }
   const rises = steps.map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), lens = steps.map(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1])).sort((a, b) => a - b);
   assert.ok(rises.at(-1)! - rises[0]! > 2.5 && lens[Math.floor(lens.length * .9)]! - lens[Math.floor(lens.length * .1)]! > 1.5, 'mixed sizes');
   // vertical, not coursed (round 7, tightened): most joints have a partner on the next course up or down, within a joint's width along
@@ -366,12 +375,17 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   let ux = 0, uz = 0; for (const k of steps) { ux += k.up[0]; uz += k.up[1]; }
   const ul = Math.hypot(ux, uz), along = (k: typeof steps[number]) => ((k.a[0] + k.b[0]) / 2) * -uz / ul + ((k.a[1] + k.b[1]) / 2) * ux / ul;
   const stacked = joints.filter(k => joints.some(o => o !== k && Math.abs(along(o) - along(k)) < CRAG.jointWidth && Math.abs(o.top - k.top) > CRAG.band / 2 && Math.abs(o.top - k.top) < CRAG.band * 1.6));
-  assert.ok(stacked.length > joints.length * .6, `joints running up the face: ${stacked.length} of ${joints.length}`);
+  // round 9, declared: over 55% (round 7-8: 60%); the 1.5 aspect cap leaves out the short fin pieces (2,106 to 1,803 risers), and
+  // with them some joints' partners (176 of 303, 58%)
+  assert.ok(stacked.length > joints.length * .55, `joints running up the face: ${stacked.length} of ${joints.length}`);
   // the courses broken (round 7): one-course risers' heights spread over more than half a band (10th to 90th percentile; round 6's
   // spread was under half), and some risers running through 2-3 courses
   const ones = steps.filter(k => k.courses === 1).map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), spread = ones[Math.floor(ones.length * .9)]! - ones[Math.floor(ones.length * .1)]!;
   const thru = steps.filter(k => k.courses > 1).length;
-  assert.ok(spread > CRAG.band * .5 && thru > steps.length * .05 && thru < steps.length * .3 && steps.some(k => k.courses === 3), `courses broken: spread ${spread.toFixed(2)}, ${thru} through-risers of ${steps.length}`);
+  // round 9, declared (ordered: the aspect cap, 1.5 times the piece's length): a riser through 2-3 courses (8.6 m and more) now needs a
+  // piece over 5.7 m long, which few contour pieces are, so the 5-30% through-riser share and the 3-course riser (round 7) are dropped;
+  // the column spread stays
+  assert.ok(spread > CRAG.band * .5 && thru < steps.length * .3, `courses broken: spread ${spread.toFixed(2)}, ${thru} through-risers of ${steps.length}`);
   // the ledges cover the drape between courses: each runs back until it meets the drawn slope (it ends in the ground, not short of it)
   const meets = steps.filter(k => { const m: [number, number] = [(k.a[0] + k.b[0]) / 2 + k.up[0] * k.ledge, (k.a[1] + k.b[1]) / 2 + k.up[1] * k.ledge]; return drawn(m) >= k.top - .3; });
   assert.ok(meets.length > steps.length * .85, `ledges running back into the slope: ${meets.length} of ${steps.length}`);
