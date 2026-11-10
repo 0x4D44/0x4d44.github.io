@@ -27,6 +27,37 @@ test('each 385 car is a named group with its two named bogies, and the geometry 
   }
 });
 
+test('every 385 roof pod is closed on both sides: each side plane is covered by outward-facing faces, so no grille stands against the sky', () => {
+  for (const kind of SR385_KINDS) {
+    const root = build385(kind);
+    let pods = 0;
+    for (const car of root.children) {
+      const detail = car.getObjectByName('body-detail') as THREE.Mesh;
+      const pos = detail.geometry.getAttribute('position'), nrm = detail.geometry.getAttribute('normal');
+      car.traverse(o => {
+        if (o.name !== 'roof-pod') return;
+        pods++;
+        const { halfWidth: w, top } = o.userData as { halfWidth: number; top: number; s0: number; s1: number };
+        const len = Math.abs(o.userData.s1 - o.userData.s0), z0 = o.position.z - len / 2, z1 = o.position.z + len / 2;
+        for (const side of [-1, 1]) {
+          let area = 0;
+          for (let i = 0; i < pos.count; i += 3) {
+            const v = [0, 1, 2].map(k => new THREE.Vector3().fromBufferAttribute(pos, i + k));
+            if (!v.every(p => Math.abs(p.x - side * w) < 1e-4 && p.z >= z0 - 1e-4 && p.z <= z1 + 1e-4 && p.y <= top + 1e-4)) continue;
+            if (nrm.getX(i) * side <= 0.5) continue; // must face outward
+            area += new THREE.Triangle(v[0], v[1], v[2]).getArea();
+          }
+          // the side outline is at least the pod's length by its height above the crown, less the rounded corners
+          const need = 0.9 * len * (top - SR385_FIGURES.crown.value);
+          assert.ok(area >= need, `${kind} ${car.name} pod at z ${o.position.z.toFixed(2)}: the ${side < 0 ? 'left (-x)' : 'right (+x)'} side covers ${area.toFixed(3)} m², needs ${need.toFixed(3)}`);
+        }
+      });
+    }
+    assert.ok(pods >= root.children.length, `${kind}: every car carries a pod (${pods})`);
+    dispose385(root);
+  }
+});
+
 test('every 385 car stays inside the 40,000-triangle budget', () => {
   for (const kind of SR385_KINDS) {
     const root = build385(kind);

@@ -360,7 +360,10 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   // roof: the body's own rounded roof, with separate raised pods on it: a low fairing behind the cab dome and an
   // air-conditioning pod with two fan grilles on each car (scotrail385-01, -04, -05; positions and sizes ASSUMED)
   const pod =(a: number, b: number, w: number, h: number, fans: number): void => {
-    detail.prismX(roundedRect(a, b, CROWN - 0.22, CROWN + h, Math.min(0.14, h * 0.6), 3).map(([s, y]) => [zAt(s), y] as [number, number]), -w, w, col(C.roofKit));
+    const outline = roundedRect(a, b, CROWN - 0.22, CROWN + h, Math.min(0.14, h * 0.6), 3).map(([s, y]) => [zAt(s), y] as [number, number]);
+    detail.prismX(outline, -w, w, col(C.roofKit)); // the walls and the +x side
+    detail.prismX(outline, w, -w, col(C.roofKit), false); // prismX caps only its xOut side: this closes the -x side
+    marker('roof-pod', 0, CROWN + h / 2, (a + b) / 2, { halfWidth: w, top: CROWN + h, s0: a, s1: b });
     // slatted grilles down each side of the pod
     for (const sx of [-1, 1]) for (let s = a + 0.35; s + 0.05 < b - 0.35; s += 0.12) box(sx * w - 0.006, sx * w + 0.006, CROWN - 0.06, CROWN + h - 0.05, s, s + 0.05, C.grille);
     // fan grilles on top: dark discs with a lighter hub
