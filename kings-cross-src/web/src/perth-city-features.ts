@@ -27,7 +27,7 @@ import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
 import {crownTexture, kinnoullCanopy} from './perth-canopy.ts';
-import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitGround} from './perth-summit.ts';
+import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitDetail, summitGround} from './perth-summit.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -210,13 +210,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   stats.triangles += (cg.index ? cg.index.count : cg.getAttribute('position').count) / 3; stats.drawCalls++;
   // the summit clearing's own close ground (perth-summit.ts), in the drape's hole there
   const near = PERTH_LANDUSE.paths.filter(p => p.line.some(([x, z]) => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.patch + 20));
-  const summit = summitGround(ground, near), sm = new THREE.MeshLambertMaterial({map: summit.texture, color: summit.texture ? 0xffffff : 0x5b7431});
+  const summit = summitGround(ground, near), sm = new THREE.MeshLambertMaterial({map: summit.texture, color: summit.texture ? 0xffffff : 0x5b7431}), detail = summitDetail(sm);
   const summitMesh = new THREE.Mesh(summit.geometry, sm); summitMesh.name = 'perth-summit-ground'; cover.group.add(summitMesh);
   stats.triangles += summit.geometry.index!.count / 3; stats.drawCalls++;
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
   const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); sm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------

@@ -1,7 +1,9 @@
 // P3 round 3, C1/C2: Kinnoull Hill's woods as one continuous canopy, not separate crowns. Round 2 drew the hill's woods as low-poly
 // balls on bare grass. 4307 and 4599836 show a closed canopy over the whole hill: a lumpy, many-toned roof of crowns, broken only at the
 // summit clearing and on the cliff.
-// - One draped mesh on a CANOPY.step lattice over each Kinnoull wood polygon (OSM wood with a vertex east of CANOPY.hillX). A node
+// - One draped mesh on a CANOPY.step lattice over each of Perth's OSM wood polygons: Kinnoull's, and (round 3, after the 9e565a39
+//   pack) the town's and the riverside woods', whose massed fill crowns read as huge faceted balls close to (pt-tay-from-bridgend:
+//   two 8 to 10 m icosahedra on the island 35 m from the eye). A node
 //   inside the wood stands at the ground plus a crown height: a smooth 64 m swell (woodNoise) for stands of old and young trees, and a
 //   node hash for single crowns. A node outside the wood is tucked just under the ground, so the canopy's edge slopes down to a woodland
 //   margin instead of ending in a wall.
@@ -37,7 +39,7 @@ export function crownTexture(): THREE.CanvasTexture | null {
 }
 
 /** ASSUMED canopy shape (see the header). */
-export const CANOPY = {hillX: 1700, step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
+export const CANOPY = {step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
 
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 const pip = (x: number, z: number, p: readonly Pt[]): boolean => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
@@ -53,7 +55,7 @@ export interface KinnoullCanopy {
 
 /** The canopy over Kinnoull's OSM woods (`woods`: rings, outer first), on `ground`, keeping clear of the OSM `cliffs`. */
 export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[]): KinnoullCanopy {
-  const C = CANOPY, hill = woods.filter(rs => rs[0]!.some(([x]) => x > C.hillX));
+  const C = CANOPY, hill = woods;
   const boxes = hill.map(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); } return {rs, ax, az, bx, bz}; });
   const inWood = (x: number, z: number) => boxes.some(b => x >= b.ax && x <= b.bx && z >= b.az && z <= b.bz && pip(x, z, b.rs[0]!) && !b.rs.slice(1).some(h => pip(x, z, h)));
   const [px, pz] = KINNOULL_PEAK;

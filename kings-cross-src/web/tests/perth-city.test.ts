@@ -189,7 +189,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   // continuous: nearly every point of the hill's woods (away from the clearing, the cliff and the sightline) is under it
   const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs);
   const pipw = (x: number, z: number, rs: readonly (readonly (readonly number[])[])[]) => { const p = rs[0]!; let yes = false; for (let a = 0, b = p.length - 1; a < p.length; b = a++) if ((p[a]![1]! > z) !== (p[b]![1]! > z) && x < (p[b]![0]! - p[a]![0]!) * (z - p[a]![1]!) / (p[b]![1]! - p[a]![1]!) + p[a]![0]!) yes = !yes; return yes; };
-  const hillWoods = PERTH_LANDUSE.areas.wood.filter(rs => rs[0]!.some(([x]) => x! > CANOPY.hillX));
+  const hillWoods = PERTH_LANDUSE.areas.wood.filter(rs => rs[0]!.some(([x]) => x! > 1700));
   let inWood = 0, covered = 0;
   for (let x = 1700; x < 3000; x += 23) for (let z = -800; z < 900; z += 23) {
     if (!hillWoods.some(rs => pipw(x, z, rs)) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner + 10 || onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z) || sightHeight(x, z) !== undefined) continue;
@@ -225,6 +225,15 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const tri = (o: THREE.Mesh) => (o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count) / 3;
   const crowns = (wood.geometry.index ? wood.geometry.index.count : wood.geometry.getAttribute('position').count) / 3 * wood.count;
   assert.ok(tri(mesh) + crowns < 51_580, `canopy ${tri(mesh)} + crowns ${crowns}`);
+  // every Perth wood is canopy, not massed crowns: the town's and riverside woods too (the 9e565a39 Bridgend view had two 8 to 10 m
+  // faceted crowns on the island 35 m from its eye)
+  let townWood = 0, townCovered = 0;
+  for (let x = -1200; x < 1700; x += 17) for (let z = -1200; z < 900; z += 17) if (PERTH_LANDUSE.areas.wood.some(rs => pipw(x, z, rs))) { townWood++; if (canopy.inCanopy(x, z)) townCovered++; }
+  assert.ok(townWood > 200 && townCovered / townWood > .95, `town woods covered ${townCovered} of ${townWood}`);
+  for (const [x, z] of [[920.4, -278.1], [919.6, -291.8]] as const) assert.ok(canopy.inCanopy(x, z), `the island wood at ${x}, ${z} is canopy`);
+  let crownsInWood = 0;
+  for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (k.y > 1.5 && canopy.inCanopy(p.x, p.z)) crownsInWood++; }
+  assert.equal(crownsInWood, 0, `massed crowns left under the canopy anywhere: ${crownsInWood}`);
 });
 
 test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not a smooth ramp (8703; round 3, C1)', () => {
@@ -284,6 +293,13 @@ test('the summit clearing has its own close ground under the panorama, in a hole
     ray.set(new THREE.Vector3(x, 400, z), new THREE.Vector3(0, -1, 0)); if (!ray.intersectObject(patch).length) gaps++;
   }
   assert.ok(holes > 500 && gaps === 0, `hole points ${holes}, uncovered ${gaps}`);
+  // close grain: the paint is multiplied by a tiling detail map, right after it is sampled, fading out with distance
+  const mat = patch.material as THREE.MeshLambertMaterial, shader = { uniforms: {} as Record<string, { value: unknown }>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  mat.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, {} as THREE.WebGLRenderer);
+  const f = shader.fragmentShader, at = f.indexOf('texture2D( uDetail, detailUv )');
+  assert.ok(f.indexOf('#include <map_fragment>') >= 0 && at > f.indexOf('#include <map_fragment>') && at < f.indexOf('#include <color_fragment>') && f.includes('uniform sampler2D uDetail;') && f.includes('fwidth( detailUv )'), 'the detail multiplies the paint after it is sampled, with a distance fade');
+  assert.equal((shader.uniforms.uDetailRepeat!.value as number), 2 * SUMMIT.patch / SUMMIT.detail.tile, 'one detail tile every SUMMIT.detail.tile m');
+  assert.equal(mat.customProgramCacheKey(), 'perth-summit-detail', 'its own program');
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {
