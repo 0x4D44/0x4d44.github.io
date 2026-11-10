@@ -532,16 +532,26 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
     furniture.benches = furniture.benches.filter(q => Math.hypot(q.at[0] - c.at[0], q.at[1] - c.at[1]) > r); furniture.bins = furniture.bins.filter(q => Math.hypot(q[0] - c.at[0], q[1] - c.at[1]) > r);
   }
   // Round 9 (S5, Abbott 6573357: tall galvanised lamp standards down the open island round the lift bridge, each a plain column with a
-  // luminaire on a short arm): one every PERTH_LAMP.every m down each platform's middle where it is open (not under the roof or the Dundee
-  // canopies), half-way between the benches, 2.2 m clear of the track edges, 2 m from any bench or bin, and clear of the bridges; its arm
-  // along the platform. ASSUMED spacing (Abbott shows four in about 50 m of platform).
+  // luminaire on a short arm, their bases a little back from the coper on the side facing the photographer): where the platforms are open
+  // (not under the roof or the Dundee canopies), one every PERTH_LAMP.every m along each, PERTH_LAMP.back m from a track centreline on
+  // each of its track sides; 2 m from any bench or bin and clear of the bridges; its arm along the platform.
+  // ASSUMED spacing and set-back (Abbott shows four in about 50 m of platform).
   for (const f of s.frames) {
-    const c = f.pts.reduce((m, p) => m + p[0] * f.n[0] + p[1] * f.n[1], 0) / f.pts.length;
-    for (let t = f.tLo + F.openEvery / 2 + 3; t < f.tHi - 3; t += PERTH_LAMP.every) {
-      const p: Pt = [f.axis[0] * t + f.n[0] * c, f.axis[1] * t + f.n[1] * c];
-      if (inRing(p, local.roof) || (local.canopy.length >= 3 && inRing(p, local.canopy)) || !roomy(p, 2.2)) continue;
-      if ([...furniture.benches.map(q => q.at), ...furniture.bins].some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 2)) continue;
-      furniture.lamps.push({at: p, arm: [f.axis[0], f.axis[1]]});
+    const ns = f.pts.map(p => p[0] * f.n[0] + p[1] * f.n[1]), lo = Math.min(...ns), hi = Math.max(...ns);
+    for (let t = f.tLo + F.openEvery / 2; t < f.tHi - 3; t += PERTH_LAMP.every) {
+      // The across offsets PERTH_LAMP.back (to .3 m more) from the nearest track's centreline, scanning in from each side of the platform
+      // (one lamp on each track side; an island half mapped on its own has one).
+      const at = (o: number): Pt => [f.axis[0] * t + f.n[0] * o, f.axis[1] * t + f.n[1] * o];
+      const railDist = (p: Pt): number => { let m = Infinity; for (const r of localData.rails) for (let i = 1; i < r.path.length; i++) { const a = r.path[i - 1], b = r.path[i], dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, u = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l)) : 0; m = Math.min(m, Math.hypot(p[0] - a[0] - u * dx, p[1] - a[1] - u * dz)); } return m; };
+      const sides: Pt[] = [];
+      for (const dir of [1, -1]) for (let o = dir > 0 ? lo : hi; dir > 0 ? o <= hi : o >= lo; o += dir * .1) {
+        const dd = railDist(at(o)); if (dd >= PERTH_LAMP.back && dd <= PERTH_LAMP.back + .3 && inRing(at(o), f.pts)) { if (sides.every(q => Math.hypot(q[0] - at(o)[0], q[1] - at(o)[1]) > 1)) sides.push(at(o)); break; }
+      }
+      for (const p of sides) {
+        if (inRing(p, local.roof) || (local.canopy.length >= 3 && inRing(p, local.canopy)) || !roomy(p, 2.2)) continue;
+        if ([...furniture.benches.map(q => q.at), ...furniture.bins].some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 2)) continue;
+        furniture.lamps.push({at: p, arm: [f.axis[0], f.axis[1]]});
+      }
     }
   }
   if (furniture.kiosk) { const k = furniture.kiosk; furniture.benches = furniture.benches.filter(q => Math.hypot(q.at[0] - k.at[0], q.at[1] - k.at[1]) > F.kiosk[0] / 2 + 1.5); furniture.bins = furniture.bins.filter(q => Math.hypot(q[0] - k.at[0], q[1] - k.at[1]) > F.kiosk[0] / 2 + 1); }
@@ -1170,9 +1180,9 @@ export function clockCorbel(b: Batch, at: (out: number, y: number, along?: numbe
   b.box(at(back + dAt(1) / 2, y0 - K.drop - .07), [.14, .14, .14], {rotY, color: P('gilt')});
 }
 /** Round 9 (S5): the open platforms' lamp standards (Abbott 6573357): `height` m to the arm, a column of radius `radius` m on a 0.6 m
- *  plinth of radius `base`, an `arm` m arm and a flat `head` (along, deep, across) luminaire. Spacing `every` m. ASSUMED sizes, scaled
- *  from Abbott against the 8 m lift towers. */
-export const PERTH_LAMP = {every: 15, height: 6.5, radius: .075, base: .13, arm: .5, head: [.55, .12, .28] as const} as const;
+ *  plinth of radius `base`, an `arm` m arm and a flat `head` (along, deep, across) luminaire, every `every` m, `back` m from a track's
+ *  centreline (about 2.4 m back from the coper). ASSUMED sizes, scaled from Abbott against the 8 m lift towers. */
+export const PERTH_LAMP = {every: 15, back: 4, height: 6.5, radius: .075, base: .13, arm: .5, head: [.55, .12, .28] as const} as const;
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
 function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
   const F = PERTH_STATION.furniture, deck = WAVERLEY_LEVELS.platform, slat = P('benchSlat'), frame = P('benchFrame');
