@@ -275,8 +275,9 @@ export function buildWvPantograph(len: number, top: number): THREE.Group {
   for (const dz of [-0.075, 0.075]) soup.box(-0.6, 0.6, headY + 0.005, Math.min(top, headY + 0.045), headZ + dz - 0.022, headZ + dz + 0.022, col(C.strip));
   for (const sx of [-1, 1]) {
     for (const dz of [-0.075, 0.075]) {
-      rod(soup, [sx * 0.6, headY + 0.01, headZ + dz], [sx * 0.74, headY - 0.02, headZ + dz], 0.016, col(C.head), 8);
-      rod(soup, [sx * 0.74, headY - 0.02, headZ + dz], [sx * 0.82, headY - 0.1, headZ + dz], 0.016, col(C.head), 8);
+      // (the horn's tip stays above the roof: the head is folded only `top` over the crown, and the roof falls away little this far out)
+      rod(soup, [sx * 0.6, headY + 0.01, headZ + dz], [sx * 0.74, headY - 0.015, headZ + dz], 0.016, col(C.head), 8);
+      rod(soup, [sx * 0.74, headY - 0.015, headZ + dz], [sx * 0.8, headY - 0.05, headZ + dz], 0.016, col(C.head), 8);
     }
   }
   const mesh = new THREE.Mesh(soup.build(), plain());
