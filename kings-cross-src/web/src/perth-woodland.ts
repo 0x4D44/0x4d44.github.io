@@ -147,59 +147,58 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
   };
 }
 
-/** ASSUMED crag form (round 3, C1; round 4 from the round-3 score). 8703 shows Kinnoull's face as pale grey rock in broken blocks with
- *  dark joints, ledges and scrub, not a smooth ramp; the 16 m terrain can only draw the ramp, and round 3's boxes stood out of it as
- *  shelves. So irregular slabs are laid flush on the cliff's steepest ground (onCliff, over `slope` deg) on a `step` m lattice: each
- *  `width` m across and `height` m down the fall line, its four corners pulled in or out by up to `ragged` of its size, its base seated
- *  `bury` m under the drawn ground (the terrain plus `drape`) at every corner, its face `proud` m over it and bevelled in by `bevel` of
- *  its size (the drawn ground's facets on the cliff stand up to half a metre off the terrain's own height, so less is lost under it). The face is one of
- *  PERTH_ROCK_TONES lifted by `lift`; the bevels are shaded `joint` (dark joints between the slabs) and, on a share `scrub` of the
- *  slabs, the uphill bevel is a ledge of scrub in WOODLAND.gorseRgb. None within `eyeClear` m of the cliff camera, nor within `keep`
- *  of the given points (the tower's foot and annexe). */
-/** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag block within
+/** ASSUMED crag form (round 5, from the round-4 score: "a face, not plates"). 8703 shows Kinnoull's face as a broken grey cliff in steps:
+ *  near-vertical risers with vertical joints, narrow ledges with scrub on them. The 16 m terrain can only draw a ramp, and the DTM is not
+ *  edited, so the cliff's steepest ground (onCliff, over `slope` deg) is shaped into steps over it: the terrain, roughened by `wobble` m
+ *  of noise, is contoured every `band` m on a `grid` m lattice (marching squares), and along each contour stands a vertical riser of rock
+ *  from `bury` m under the drawn ground (the terrain plus `drape`) to `rise` m over the terrain, its top level along each `grid`-long
+ *  piece and stepping between pieces (the vertical joints). Each riser's top carries a level ledge back into the slope until it meets
+ *  the ground, its depth capped by `ledge`. Risers are PERTH_ROCK_TONES lifted by `lift` (flat-shaded, so each piece's turn shows as a joint); a share
+ *  `scrub` of the ledges are scrub (WOODLAND.gorseRgb), the rest worn earth-grey. None within `eyeClear` m of the cliff camera, nor
+ *  within `keep` of the given points (the tower's foot and annexe). */
+/** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, step: 6, width: [6.5, 10] as const, height: [5, 7.5] as const, ragged: .25, proud: [.8, 1.4] as const,
-  bevel: .16, bury: 1, jitter: 2, lift: 1.3, joint: .38, scrub: .22, slope: 40} as const;
+export const CRAG = {eyeClear: 60, slope: 40, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.4, 4.6] as const, ledge: [.6, 3.5] as const,
+  lift: 1.3, scrub: .35, ledgeRgb: [.30, .28, .24] as const} as const;
 type V3 = [number, number, number];
-export interface CragBlock {
-  /** the slab's middle on the ground */
-  x: number; z: number;
-  /** its corners on the ground and on its face, in the same order round it */
-  base: [V3, V3, V3, V3]; face: [V3, V3, V3, V3];
-  /** which bevel (index i: from corner i to i + 1) faces uphill: the ledge */
-  ledge: number;
-  rgb: [number, number, number]; joint: [number, number, number]; scrub: boolean;
+export interface CragStep {
+  /** the riser's ends on the ground (plan), its foot and its top (y), the uphill direction (plan), the ledge's depth */
+  a: Pt; b: Pt; foot: [number, number]; top: number; up: Pt; ledge: number;
+  rgb: V3; scrub: boolean;
 }
-/** The crag's slabs (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */
-export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = [], drape = 0): CragBlock[] {
-  const C = CRAG, out: CragBlock[] = [];
+/** The crag's steps (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */
+export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = [], drape = 0): CragStep[] {
+  const C = CRAG, G = C.grid, out: CragStep[] = [];
   let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
   for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
   const r = WOODLAND.cliff.reach, lin = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255].map(v => (v / 255) ** 2.2) as V3; };
-  for (let gx = Math.floor((ax - r) / C.step) * C.step; gx <= bx + r; gx += C.step) for (let gz = Math.floor((az - r) / C.step) * C.step; gz <= bz + r; gz += C.step) {
-    const x = gx + (hash(gx, gz, 61) - .5) * C.jitter, z = gz + (hash(gx, gz, 62) - .5) * C.jitter;
-    if (!onCliff(ground, cliffs, x, z) || slopeOf(ground, x, z) < C.slope || Math.hypot(x - CLIFF_EYE[0], z - CLIFF_EYE[2]) < C.eyeClear) continue;
-    if (keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr)) continue;
-    // the fall line (down the slope) and across it, in plan
-    const dx = ground.heightAt(x - 2, z) - ground.heightAt(x + 2, z), dz = ground.heightAt(x, z - 2) - ground.heightAt(x, z + 2), l = Math.hypot(dx, dz) || 1;
-    const fx = dx / l, fz = dz / l, w = C.width[0] + (C.width[1] - C.width[0]) * hash(gx, gz, 63), h = C.height[0] + (C.height[1] - C.height[0]) * hash(gx, gz, 64);
-    // the plan footprint of a slab `h` m down the slope: its plan depth is the slope's run over that length
-    const g = l / 4, run = h / Math.hypot(1, g);
-    const corners: [number, number][] = [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]];
-    const base = corners.map(([u, v], k) => {
-      const ru = 1 + (hash(gx + k, gz, 67) - .5) * 2 * C.ragged, rv = 1 + (hash(gx, gz + k, 68) - .5) * 2 * C.ragged;
-      const px = x + (-fz) * u * w * ru + fx * v * run * rv, pz = z + fx * u * w * ru + fz * v * run * rv;
-      return [px, ground.heightAt(px, pz) + drape - C.bury, pz] as V3;
-    }) as CragBlock['base'];
-    // the face: the base drawn in towards its middle by `bevel` and stood out along the slope's normal
-    const nl = Math.hypot(dx / 4, 1, dz / 4), n: V3 = [dx / 4 / nl, 1 / nl, dz / 4 / nl], proud = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65);
-    const mx = base.reduce((a, p) => a + p[0], 0) / 4, mz = base.reduce((a, p) => a + p[2], 0) / 4;
-    // seated `proud` m over the ground under each face corner, so the slab follows the face's curve and never sinks into it
-    const face = base.map(p => { const fx2 = p[0] + (mx - p[0]) * C.bevel + n[0] * proud, fz2 = p[2] + (mz - p[2]) * C.bevel + n[2] * proud; return [fx2, ground.heightAt(fx2, fz2) + drape + proud, fz2] as V3; }) as CragBlock['face'];
-    const tone = lin(PERTH_ROCK_TONES[Math.floor(hash(gx, gz, 66) * PERTH_ROCK_TONES.length)]!), rgb = tone.map(v => Math.min(1, v * C.lift)) as V3;
-    // corners 0-1 lie uphill (v = -0.5: against the fall line)
-    out.push({x, z, base, face, ledge: 0, rgb, joint: rgb.map(v => v * C.joint) as V3, scrub: hash(gx, gz, 69) < C.scrub});
+  // the roughened height the steps follow: low-frequency noise on 23 m and 9 m cells
+  const vn = (x: number, z: number, c: number, k: number) => { const gx = Math.floor(x / c), gz = Math.floor(z / c), fx = x / c - gx, fz = z / c - gz, v = (i: number, j: number) => hash((gx + i) * c, (gz + j) * c, k); return (v(0, 0) * (1 - fx) + v(1, 0) * fx) * (1 - fz) + (v(0, 1) * (1 - fx) + v(1, 1) * fx) * fz; };
+  const rough = (x: number, z: number) => ground.heightAt(x, z) + C.wobble * (2 * vn(x, z, 23, 71) + vn(x, z, 9, 72) - 1.5);
+  const x0 = Math.floor((ax - r) / G) * G, z0 = Math.floor((az - r) / G) * G, nx = Math.ceil((bx + r - x0) / G) + 1, nz = Math.ceil((bz + r - z0) / G) + 1;
+  const hv = new Float32Array(nx * nz); for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) hv[j * nx + i] = rough(x0 + i * G, z0 + j * G);
+  for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {
+    const cx = x0 + (i + .5) * G, cz = z0 + (j + .5) * G;
+    if (!onCliff(ground, cliffs, cx, cz) || slopeOf(ground, cx, cz) < C.slope || Math.hypot(cx - CLIFF_EYE[0], cz - CLIFF_EYE[2]) < C.eyeClear) continue;
+    if (keep.some(([kx, kz, kr]) => Math.hypot(cx - kx, cz - kz) < kr)) continue;
+    const c: [number, number, number][] = [[x0 + i * G, z0 + j * G, hv[j * nx + i]!], [x0 + (i + 1) * G, z0 + j * G, hv[j * nx + i + 1]!], [x0 + (i + 1) * G, z0 + (j + 1) * G, hv[(j + 1) * nx + i + 1]!], [x0 + i * G, z0 + (j + 1) * G, hv[(j + 1) * nx + i]!]];
+    const lo = Math.min(...c.map(q => q[2])), hi = Math.max(...c.map(q => q[2]));
+    // the uphill direction over the cell, in plan
+    const gx = ground.heightAt(cx + 2, cz) - ground.heightAt(cx - 2, cz), gz = ground.heightAt(cx, cz + 2) - ground.heightAt(cx, cz - 2), gl = Math.hypot(gx, gz) || 1, up: Pt = [gx / gl, gz / gl], grade = gl / 4;
+    for (let L = Math.ceil(lo / C.band) * C.band; L < hi; L += C.band) {
+      // where the contour at L crosses the cell's edges
+      const cut: Pt[] = [];
+      for (let e = 0; e < 4; e++) { const p = c[e]!, q = c[(e + 1) % 4]!; if ((p[2] < L) !== (q[2] < L)) { const f = (L - p[2]) / (q[2] - p[2]); cut.push([p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]); } }
+      for (let k = 0; k + 1 < cut.length; k += 2) {
+        const a = cut[k]!, b = cut[k + 1]!, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, ya = ground.heightAt(a[0], a[1]), yb = ground.heightAt(b[0], b[1]);
+        if (!onCliff(ground, cliffs, mx, mz)) continue;
+        const rise = C.rise[0] + (C.rise[1] - C.rise[0]) * hash(Math.round(mx), Math.round(mz), 73), top = Math.max(ya, yb) + rise;
+        const ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], (rise - drape) / Math.max(grade, .3)));
+        const tone = lin(PERTH_ROCK_TONES[Math.floor(hash(Math.round(mx), Math.round(mz), 74) * PERTH_ROCK_TONES.length)]!).map(v => Math.min(1, v * C.lift)) as V3;
+        out.push({a, b, foot: [ya + drape - C.bury, yb + drape - C.bury], top, up, ledge, rgb: tone, scrub: hash(Math.round(mx), Math.round(mz), 75) < C.scrub});
+      }
+    }
   }
   return out;
 }

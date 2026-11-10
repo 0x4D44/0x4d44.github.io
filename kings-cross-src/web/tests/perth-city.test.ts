@@ -274,33 +274,35 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   assert.equal(crownsInWood, 0, `massed crowns left under the canopy anywhere: ${crownsInWood}`);
 });
 
-test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not a smooth ramp (8703; round 3, C1)', () => {
-  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE);
-  assert.ok(blocks.length > 60, `rock blocks: ${blocks.length}`);
+test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges shaped over the cliff, not plates (8703; round 5, C1)', () => {
+  const steps = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE);
+  assert.ok(steps.length > 300, `risers: ${steps.length}`);
+  let uphill = 0;
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
-  const ground = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[2]!) + PERTH_DRAPE; // the drawn ground
-  for (const b of blocks) {
-    // each lies on the cliff, flush (round 4): its base seated in the ground at every corner, its face out of it but no shelf
-    assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, b.x, b.z), 'on the cliff');
-    for (const p of b.base) assert.ok(p[1] <= ground(p) - .5 && p[1] > ground(p) - 2, 'its base seated in the ground');
-    for (const p of b.face) assert.ok(p[1] - ground(p) > .5 && p[1] - ground(p) < 1.8, `its face flush, not a shelf, nor lost under the drawn ground: ${(p[1] - ground(p)).toFixed(2)}`);
-    // irregular: not a rectangle (opposite sides differ)
-    assert.ok(lum(b.rgb) > .18, `pale rock (linear): ${lum(b.rgb).toFixed(2)}`);
-    assert.ok(lum(b.joint) < lum(b.rgb) * .5, 'dark joints round each slab');
+  const drawn = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[1]!) + PERTH_DRAPE;
+  for (const k of steps) {
+    // a riser on the cliff: its foot under the drawn ground, its top a vertical step over it, level along the piece
+    const mid: [number, number] = [(k.a[0] + k.b[0]) / 2, (k.a[1] + k.b[1]) / 2];
+    assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, mid[0], mid[1]), 'on the cliff');
+    assert.ok(k.foot[0] < drawn(k.a) && k.foot[1] < drawn(k.b), 'its foot in the ground');
+    const over = k.top - Math.max(drawn(k.a), drawn(k.b)); assert.ok(over > 1.2 && over < 4.5, `a step, not a plate and not a tower: ${over.toFixed(2)}`);
+    // the ledge on top runs back into the slope (uphill; counted below: the terrain's own bumps turn a few)
+    const back: [number, number] = [mid[0] + k.up[0] * k.ledge, mid[1] + k.up[1] * k.ledge];
+    if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;
+    assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
   }
-  const side = (b: typeof blocks[number], i: number) => Math.hypot(b.base[i]![0] - b.base[(i + 1) % 4]![0], b.base[i]![2] - b.base[(i + 1) % 4]![2]);
-  assert.ok(blocks.filter(b => Math.abs(side(b, 0) - side(b, 2)) > .4).length > blocks.length / 2, 'irregular slabs, not rectangles');
-  // broken: the blocks differ in size and tone; scrub on some ledges
-  assert.ok(new Set(blocks.map(b => b.rgb.join())).size >= 4, 'several rock tones');
-  const scrub = blocks.filter(b => b.scrub).length; assert.ok(scrub > blocks.length * .1 && scrub < blocks.length * .4, `scrub ledges: ${scrub}`);
+  assert.ok(uphill > steps.length * .95, `ledges running back uphill: ${uphill} of ${steps.length}`);
+  // a face: risers stack up the cliff at many levels, not scattered plates
+  const levels = new Set(steps.map(k => Math.round(k.top / CRAG.band))); assert.ok(levels.size >= 8, `step levels: ${levels.size}`);
+  // broken: several rock tones; scrub on a share of the ledges
+  assert.ok(new Set(steps.map(k => k.rgb.join())).size >= 4, 'several rock tones');
+  const scrub = steps.filter(k => k.scrub).length; assert.ok(scrub > steps.length * .2 && scrub < steps.length * .5, `scrub ledges: ${scrub}`);
   // none stands in front of the cliff camera's eye, filling its frame
   const eye = (JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[] }>)['pt-kinnoull-cliff']!.pos;
   assert.deepEqual([...CLIFF_EYE], eye, 'the crag keeps clear of the frozen camera itself');
-  // a 9 m block 30 m from the eye filled a third of the frame (capture at f6930822); none nearer than 50 m
-  assert.equal(blocks.filter(b => Math.hypot(b.x - eye[0], b.z - eye[2]) < 50).length, 0, 'no block near the cliff camera');
-  // the tower's foot and annexe stay clear (round 4): no slab corner within 18 m of the tower
-  assert.equal(blocks.filter(b => b.base.some(p => Math.hypot(p[0] - KINNOULL_TOWER.x, p[2] - KINNOULL_TOWER.z) < 18)).length, 0, 'the tower\'s foot clear');
-  const hs = blocks.map(b => side(b, 1)).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > 1, 'mixed sizes');
+  assert.equal(steps.filter(k => [k.a, k.b].some(p => Math.hypot(p[0] - eye[0]!, p[1] - eye[2]!) < 50)).length, 0, 'none near the cliff camera');
+  // the tower's foot and annexe stay clear (round 4): no riser within 18 m of the tower
+  assert.equal(steps.filter(k => [k.a, k.b].some(p => Math.hypot(p[0] - KINNOULL_TOWER.x, p[1] - KINNOULL_TOWER.z) < 18)).length, 0, 'the tower\'s foot clear');
   const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
   let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
 });

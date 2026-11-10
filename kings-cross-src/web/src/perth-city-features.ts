@@ -24,7 +24,7 @@ import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
+import {CRAG, CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
 import {CROWNS, crownTexture, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
 import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitBushes, summitDetail, summitGround} from './perth-summit.ts';
@@ -211,13 +211,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
   // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock
   const crag = new Batch({colored: true});
-  // flush slabs: the face in the rock's tone, the bevels dark (the joints), the uphill bevel of some a scrub ledge
+  // the stepped face: each riser a vertical quad facing downhill, and its level ledge back into the slope
   for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE)) {
-    crag.poly(k.face, undefined, {color: k.rgb, facing: [0, 1, 0]});
-    for (let i = 0; i < 4; i++) {
-      const j = (i + 1) % 4, mid: [number, number, number] = [(k.base[i]![0] + k.base[j]![0]) / 2 - k.x, 0, (k.base[i]![2] + k.base[j]![2]) / 2 - k.z];
-      crag.poly([k.base[i]!, k.base[j]!, k.face[j]!, k.face[i]!], undefined, {color: k.scrub && i === k.ledge ? CRAG_SCRUB : k.joint, facing: mid});
-    }
+    const fa: [number, number, number] = [k.a[0], k.foot[0], k.a[1]], fb: [number, number, number] = [k.b[0], k.foot[1], k.b[1]];
+    const ta: [number, number, number] = [k.a[0], k.top, k.a[1]], tb: [number, number, number] = [k.b[0], k.top, k.b[1]];
+    crag.poly([fa, fb, tb, ta], undefined, {color: k.rgb, facing: [-k.up[0], 0, -k.up[1]]});
+    const ba: [number, number, number] = [ta[0] + k.up[0] * k.ledge, k.top, ta[2] + k.up[1] * k.ledge], bb: [number, number, number] = [tb[0] + k.up[0] * k.ledge, k.top, tb[2] + k.up[1] * k.ledge];
+    crag.poly([ta, tb, bb, ba], undefined, {color: k.scrub ? CRAG_SCRUB : [...CRAG.ledgeRgb] as [number, number, number], facing: [0, 1, 0]});
   }
   const cg = crag.build(), rock = new THREE.MeshLambertMaterial({vertexColors: true});
   const cragMesh = new THREE.Mesh(cg, rock); cragMesh.name = 'perth-kinnoull-crag'; cover.group.add(cragMesh);
