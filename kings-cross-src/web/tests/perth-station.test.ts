@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_OPEN_ASPHALT } from '../src/perth-station.ts';
+import { PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY } from '../src/perth-station.ts';
 import { archRib, islandBuildingBatches, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
@@ -202,6 +202,21 @@ test('round 3: the platforms are red asphalt in the open beyond both roof ends, 
   try {
     const m = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).material as THREE.MeshLambertMaterial;
     assert.ok(!m.map && m.color.getHex() === PERTH_OPEN_ASPHALT, 'continuous red asphalt, no flag texture');
+    // Lead ruling after round 3: the Dundee platforms' open ends are dark grey (R-pt1-c, Champion 2011), the red stays off them.
+    const greyMesh = scene.group.getObjectByName('perth-platform-surfaces-open-grey') as THREE.Mesh;
+    assert.ok(greyMesh, 'the Dundee platforms\' open ends are drawn grey');
+    assert.equal((greyMesh.material as THREE.MeshLambertMaterial).color.getHex(), PERTH_OPEN_GREY);
+    const dundee = data.platforms.filter(p => PERTH_GREY_PLATFORMS.includes(p.ref ?? '')).map(p => cleanRing(p.path));
+    assert.equal(dundee.length, 2, 'platforms 1 and 2 are mapped');
+    const inDundee = (x: number, z: number): boolean => dundee.some(r => inRing([x, z], r) || ringDistance([x, z], r) < .05);
+    const gp = greyMesh.geometry.getAttribute('position'), red = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).geometry, rp = red.getAttribute('position');
+    assert.ok(gp.count > 0, 'grey open surfacing drawn');
+    for (let i = 0; i < gp.count; i++) assert.ok(inDundee(gp.getX(i), gp.getZ(i)), 'grey surfacing only on platforms 1 and 2');
+    const ix = red.index ? Array.from(red.index.array) : Array.from({length: rp.count}, (_, k) => k);
+    for (let t = 0; t < ix.length; t += 3) {
+      const [a, b, c] = [ix[t], ix[t + 1], ix[t + 2]], cx = (rp.getX(a) + rp.getX(b) + rp.getX(c)) / 3, cz = (rp.getZ(a) + rp.getZ(b) + rp.getZ(c)) / 3;
+      assert.ok(!dundee.some(r => inRing([cx, cz], r)), 'no red surfacing on platforms 1 and 2');
+    }
     // The bridges' glass panels are drawn see-through, and none is left opaque among the fittings.
     const glass = scene.group.getObjectByName('perth-bridge-glass') as THREE.Mesh, gm = glass.material as THREE.Material;
     assert.ok(gm.transparent && gm.opacity < .5 && glass.geometry.getAttribute('position').count > 100, 'see-through bridge glass');

@@ -25,6 +25,10 @@ export const onBridge = (tags: Record<string, string>): boolean => !!tags.bridge
 /** The surface track segments, split into those on the ground and those on a mapped bridge. */
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
 export const PERTH_OPEN_ASPHALT = 0x6e4c45;
+/** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and
+ *  Champion 2011, geograph 2687800, both show platform 1 grey). ASSUMED shade. */
+export const PERTH_OPEN_GREY = 0x4c4d4f;
+export const PERTH_GREY_PLATFORMS: readonly string[] = ['1', '2'];
 export function perthTrack(data: Pick<PerthData, 'rails'>): {ground: TrackSegment[]; bridge: TrackSegment[]} {
   return {ground: stationTrackSegments({rails: data.rails.filter(r => !onBridge(r.tags))}), bridge: stationTrackSegments({rails: data.rails.filter(r => onBridge(r.tags))})};
 }
@@ -79,9 +83,10 @@ function stationBatches(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings
 export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, group: THREE.Group): void {
   const {add, own} = build;
   // The tops: worn mid-grey flags under the roof; in the open beyond both its ends (perth-station-structure.ts platformParts), continuous
-  // red asphalt, untextured (round 3: the flag texture had read as a tile chequer; Abbott 6573357, R-pt1-b, shows plain red surfacing).
-  const tops = new Batch(), open = new Batch();
-  for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); for (const q of parts.open) fillSurface(open, q, [], () => PERTH_LEVELS.platform); }
+  // red asphalt, untextured (round 3: the flag texture had read as a tile chequer; Abbott 6573357, R-pt1-b, shows plain red surfacing),
+  // but dark grey on the Dundee platforms (PERTH_GREY_PLATFORMS).
+  const tops = new Batch(), open = new Batch(), grey = new Batch();
+  for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); for (const q of parts.open) fillSurface(PERTH_GREY_PLATFORMS.includes(p.ref ?? '') ? grey : open, q, [], () => PERTH_LEVELS.platform); }
   const s = stationBatches(data);
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
@@ -90,6 +95,7 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
+  add(group, grey, own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_GREY})), 'perth-platform-surfaces-open-grey');
   add(group, s.platform.faces, faceStone, 'perth-platform-faces');
   const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);
   add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');
