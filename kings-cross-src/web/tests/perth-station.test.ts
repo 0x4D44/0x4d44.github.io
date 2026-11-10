@@ -7,8 +7,9 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { archRib, islandBuildingBatches, PERTH_SPANDREL, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
-import { Batch } from '../src/materials.ts';
+import { PERTH_OPEN_ASPHALT } from '../src/perth-station.ts';
+import { archRib, islandBuildingBatches, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { Batch, rgb } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
 
@@ -111,6 +112,7 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
     // below (its back faces) it is culled.
     const skin = (scene.group.getObjectByName('perth-roof-weathering') as THREE.Mesh).material as THREE.Material;
     assert.ok(!skin.transparent && skin.depthWrite && skin.side === THREE.FrontSide, 'the roof\'s weathered skin is opaque and front-sided');
+    assert.ok(skin.polygonOffset && skin.polygonOffsetUnits < 0, 'the skin is pulled toward the eye in depth steps, so it beats the panes under it at any range');
   } finally { scene.dispose(); }
 });
 
@@ -184,6 +186,47 @@ test('the platforms are furnished as R-pt1-a and R-pt1-c show: benches and bins 
   assert.ok(f.numbers.length >= 4, `platform number boards (${f.numbers.length})`);
   // Each bench and bin stands on a platform, clear of the tracks (the fittings check above covers every vertex of them under 4.8 m).
   for (const p of [...f.benches.map(b => b.at), ...f.bins]) assert.ok(onPlatform(toWorld(p)) && railDistance(toWorld(p)) > 2, `furniture at ${p}`);
+});
+
+test('round 3: the platforms are red asphalt in the open beyond both roof ends, flags under it, and the parts add up to the platform', () => {
+  const area = (r: readonly Pt[]): number => Math.abs(r.reduce((s, p, i) => { const q = r[(i + 1) % r.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+  let north = 0;
+  for (const p of data.platforms) {
+    const parts = platformParts(p.path), whole = area(cleanRing(p.path)), sum = area(parts.covered) + parts.open.reduce((s, q) => s + area(q), 0);
+    assert.ok(Math.abs(sum - whole) < .01 * whole + .5, `platform ${p.ref}: parts ${sum.toFixed(1)} m² of ${whole.toFixed(1)} m²`);
+    for (const q of parts.open) for (const v of q) { const x = toLocal(v)[0]; assert.ok(x <= PERTH_SHED_NORTH + 1e-6 || x >= 24 - 1e-6, `platform ${p.ref}: open surfacing at x' ${x.toFixed(1)}, under the roof`); }
+    north += parts.open.filter(q => q.every(v => toLocal(v)[0] <= PERTH_SHED_NORTH + 1e-6)).length;
+  }
+  assert.ok(north >= 2, `${north} platforms open north of the shed (4 and 7 run past it in OSM)`);
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const m = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    assert.ok(!m.map && m.color.getHex() === PERTH_OPEN_ASPHALT, 'continuous red asphalt, no flag texture');
+    // The bridges' glass panels are drawn see-through, and none is left opaque among the fittings.
+    const glass = scene.group.getObjectByName('perth-bridge-glass') as THREE.Mesh, gm = glass.material as THREE.Material;
+    assert.ok(gm.transparent && gm.opacity < .5 && glass.geometry.getAttribute('position').count > 100, 'see-through bridge glass');
+  } finally { scene.dispose(); }
+  const pane = rgb(PERTH_PAINT.glassPanel), c = batches.fittings.colors;
+  for (let i = 0; i < c.length; i += 3) assert.ok(!(Math.abs(c[i] - pane[0]) < 1e-6 && Math.abs(c[i + 1] - pane[1]) < 1e-6 && Math.abs(c[i + 2] - pane[2]) < 1e-6), 'an opaque glass panel left among the fittings');
+  assert.equal(batches.fittings.indices.length % 3, 0);
+  assert.ok(batches.fittings.indices.reduce((m, k) => Math.max(m, k), 0) < batches.fittings.positions.length / 3, 'the fittings\' indices stay in range after the split');
+});
+
+test('round 3: the frozen platform views see furniture: benches in the near view of pt-platform-4-north and pt-roof-underside', () => {
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+  // A bench is in the near view when it is within `range` m of the camera and inside the view's horizontal half-angle.
+  const seen = (name: string, range: number): number => {
+    const c = cams[name], d = [c.target[0] - c.pos[0], c.target[2] - c.pos[2]], dl = Math.hypot(d[0], d[1]), half = c.fov / 2 * 1280 / 800 * Math.PI / 180 * .8;
+    return plan.furniture.benches.filter(b => {
+      const w = toWorld(b.at), v = [w[0] - c.pos[0], w[1] - c.pos[2]], l = Math.hypot(v[0], v[1]);
+      return l < range && l > 2 && Math.acos((v[0] * d[0] + v[1] * d[1]) / (l * dl)) < half;
+    }).length;
+  };
+  assert.ok(seen('pt-platform-4-north', 30) >= 2, `pt-platform-4-north sees ${seen('pt-platform-4-north', 30)} benches within 30 m`);
+  assert.ok(seen('pt-roof-underside', 25) >= 2, `pt-roof-underside sees ${seen('pt-roof-underside', 25)} benches within 25 m`);
+  // The bench run down the column lines, away from the island building's walls.
+  const away = plan.furniture.benches.filter(b => ringDistance(b.at, plan.local.island) > 3).length;
+  assert.ok(away >= 20, `${away} benches down the column lines`);
 });
 
 test('round 2b: the roof reads dark from above only, the island building\'s chimneys stand through it, the Dundee canopies are pitched', () => {

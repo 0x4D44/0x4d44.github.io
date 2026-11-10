@@ -183,7 +183,7 @@ export const PERTH_STATION = {
    *  - benches 1.8 m long, their seat 0.45 m up, standing benchOff m out from the wall;
    *  - the kiosk 4.2 m along the wall, 2.2 m out, 3.2 m to its eaves, centred near x' = kioskAlong;
    *  - direction boards 2.4 x 0.9 m, their foot 3.0 m up; number boards 0.6 m square, 3.0 m up. */
-  furniture: {benchOff: .75, bench: [1.8, .45] as const, kiosk: [4.2, 2.2, 3.2] as const, kioskAlong: -26 + PERTH_BAY_PHASE, board: [2.4, .9, 3.0] as const, number: [.6, 3.0] as const},
+  furniture: {benchOff: .75, columnBench: 1.6, openEvery: 15, bench: [1.8, .45] as const, kiosk: [4.2, 2.2, 3.2] as const, kioskAlong: -26 + PERTH_BAY_PHASE, board: [2.4, .9, 3.0] as const, number: [.6, 3.0] as const},
 } as const;
 
 /** The bay roof over platforms 5-7 (R-pt1-c, looking along platform 5: the ridges run along the tracks, the pitched glazing on arched iron
@@ -226,7 +226,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xa3a8ab, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -460,6 +460,30 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
     const pf4 = platforms.find(q => q.ref === '4'), t = Math.max(F.kiosk[0], Math.min(len - F.kiosk[0], Math.abs(d[0]) > 1e-6 ? (F.kioskAlong - a[0]) / d[0] : -1)), c = at(t, F.kiosk[1] / 2 + .05);
     const corners = [-1, 1].flatMap(e => [at(t + e * F.kiosk[0] / 2, .1), at(t + e * F.kiosk[0] / 2, F.kiosk[1])]);
     if (pf4 && len > F.kiosk[0] + 2 && inRing(c, pf4.pts) && roomy(c, 1.8) && corners.every(q => roomy(q, 1)) && (!kioskMiss || Math.abs(c[0] - F.kioskAlong) < kioskMiss)) { furniture.kiosk = {at: at(t, 0), out}; kioskMiss = Math.abs(c[0] - F.kioskAlong); }
+  }
+  // Round 3: the bench run down the column lines (R-pt1-a, R-pt1-c: benches between the columns, out where the platforms are open of the
+  // building): a bench either side of every second column, 1.6 m along the platform from it, one facing each track; a bin by every third
+  // column. Wherever the spot is 2.2 m clear of the track edges and of the bridges and 1.5 m from any other bench. ASSUMED positions.
+  s.columns.forEach((c, i) => {
+    const f = frameOf([c.x, c.z]); if (!f) return;
+    const ax: Pt = [f.axis[0], f.axis[1]], across: Pt = [-ax[1], ax[0]];
+    if (i % 2 === 0) for (const sg of [-1, 1]) {
+      const p: Pt = [c.x + ax[0] * sg * F.columnBench, c.z + ax[1] * sg * F.columnBench];
+      if (roomy(p, 2.2) && furniture.benches.every(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) > 1.5)) furniture.benches.push({at: p, out: [across[0] * sg, across[1] * sg]});
+    }
+    if (i % 3 === 1) { const p: Pt = [c.x + across[0] * .6, c.z + across[1] * .6]; if (roomy(p, 2.2)) furniture.bins.push(p); }
+  });
+  // And out in the open, south of the roof where the platforms have no columns (pt-platform-4-north stands there): a bench every
+  // F.openEvery m down each platform's middle, its ends kept clear, facing each way in turn, a bin by every second. ASSUMED positions and spacing.
+  for (const f of s.frames) {
+    const c = f.pts.reduce((m, p) => m + p[0] * f.n[0] + p[1] * f.n[1], 0) / f.pts.length;
+    let k = 0;
+    for (let t = f.tLo + F.openEvery; t < f.tHi - F.openEvery / 2; t += F.openEvery) {
+      const p: Pt = [f.axis[0] * t + f.n[0] * c, f.axis[1] * t + f.n[1] * c];
+      if (inRing(p, local.roof) || !roomy(p, 2.2) || furniture.benches.some(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) < 4)) continue;
+      const sg = k++ % 2 ? 1 : -1; furniture.benches.push({at: p, out: [f.n[0] * sg, f.n[1] * sg]});
+      if (k % 2 === 0) { const q: Pt = [p[0] + f.axis[0] * 1.6, p[1] + f.axis[1] * 1.6]; if (roomy(q, 2.2)) furniture.bins.push(q); }
+    }
   }
   if (furniture.kiosk) { const k = furniture.kiosk; furniture.benches = furniture.benches.filter(q => Math.hypot(q.at[0] - k.at[0], q.at[1] - k.at[1]) > F.kiosk[0] / 2 + 1.5); furniture.bins = furniture.bins.filter(q => Math.hypot(q[0] - k.at[0], q[1] - k.at[1]) > F.kiosk[0] / 2 + 1); }
   // Direction boards under the girders (R-pt1-a, R-pt1-c: white boards hung over the platforms): one at every second girder's middle,
@@ -893,6 +917,8 @@ export interface PerthStationBatches {
   weather: Batch;
   /** Platforms part: Waverley's platform strips, faces and fittings, the footbridges, clocks and canopy columns. */
   platform: Pick<WaverleyStructureBatches, 'edges' | 'faces' | 'tactile' | 'lip'>; fittings: Batch;
+  /** The bridges' and the kiosk's glass panels (round 3), out of `fittings`: drawn see-through. */
+  panes: Batch;
 }
 const recolor = (b: Batch, swap: [Rgb, Rgb][], override?: (x: number, z: number, c: Rgb) => Rgb | undefined): Batch => {
   const c = b.colors, p = b.positions;
@@ -968,8 +994,28 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   }
   furnitureBatch(fittings, plan);
   fittings.append(structure.fittings);
-  for (const b of [glass, weather, strips, structure.ironwork, fittings, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
-  return {glass, weather, strips, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings};
+  // Round 3: the bridges' and kiosk's glass panels out into their own batch, drawn see-through (perth-station.ts), so platform 4's
+  // elevation reads past the lift bridge's stairs instead of behind pale opaque sheets.
+  const panes = takeColor(fittings, P('glassPanel'));
+  for (const b of [glass, weather, strips, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
+  return {glass, weather, strips, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
+}
+/** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
+function takeColor(b: Batch, color: Rgb): Batch {
+  if (!b.colored || b.textured) throw new Error('takeColor: a coloured batch without UVs');
+  const out = new Batch({colored: true, uv: false}), keep = {p: [] as number[], n: [] as number[], c: [] as number[], i: [] as number[]};
+  const map = [new Map<number, number>(), new Map<number, number>()], same = (v: number): boolean => Math.abs(b.colors[3 * v] - color[0]) < 1e-6 && Math.abs(b.colors[3 * v + 1] - color[1]) < 1e-6 && Math.abs(b.colors[3 * v + 2] - color[2]) < 1e-6;
+  const to = [{p: out.positions, n: out.normals, c: out.colors, i: out.indices}, keep];
+  for (let t = 0; t < b.indices.length; t += 3) {
+    const side = same(b.indices[t]) ? 0 : 1, dst = to[side], m = map[side];
+    for (const v of b.indices.slice(t, t + 3)) {
+      let k = m.get(v);
+      if (k === undefined) { k = dst.p.length / 3; m.set(v, k); for (let j = 0; j < 3; j++) { dst.p.push(b.positions[3 * v + j]); dst.n.push(b.normals[3 * v + j]); dst.c.push(b.colors[3 * v + j]); } }
+      dst.i.push(k);
+    }
+  }
+  for (const [a, src] of [[b.positions, keep.p], [b.normals, keep.n], [b.colors, keep.c], [b.indices, keep.i]] as [number[], number[]][]) { a.length = 0; for (const x of src) a.push(x); }
+  return out;
 }
 
 /** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
@@ -977,10 +1023,12 @@ export const PERTH_BAND_DROP = .06;
 /** The platform tops' split (track frame x'): north of it under the roof, in worn mid-grey concrete flags (R-pt1-a, R-pt1-c); south of
  *  it in the open, in red and buff surfacing (Abbott 6573357, R-pt1-b). The main roof's south end, ASSUMED one line across. */
 export const PERTH_OPEN_SOUTH = 24;
-/** A platform outline (scene frame) split at PERTH_OPEN_SOUTH: the covered part and the open part (scene frame; either may be empty). */
-export function platformParts(path: readonly Pt[]): {covered: Pt[]; open: Pt[]} {
-  const r = cleanRing(path).map(toLocal), part = (g: boolean): Pt[] => { const q = clipHalf(r, 0, PERTH_OPEN_SOUTH, g); return q.length >= 3 ? q.map(toWorld) : []; };
-  return {covered: part(false), open: part(true)};
+/** A platform outline (scene frame) split at the shed's north end (PERTH_SHED_NORTH) and at PERTH_OPEN_SOUTH: the covered part between,
+ *  and the open parts beyond each end (round 3: the north end is open too, in the same surfacing). Scene frame; any may be empty. */
+export function platformParts(path: readonly Pt[]): {covered: Pt[]; open: Pt[][]} {
+  const r = cleanRing(path).map(toLocal), keep = (q: Pt[]): Pt[] => q.length >= 3 ? q.map(toWorld) : [];
+  const covered = keep(clipHalf(clipHalf(r, 0, PERTH_SHED_NORTH, true), 0, PERTH_OPEN_SOUTH, false));
+  return {covered, open: [keep(clipHalf(r, 0, PERTH_SHED_NORTH, false)), keep(clipHalf(r, 0, PERTH_OPEN_SOUTH, true))].filter(q => q.length)};
 }
 
 /** The roof's ridge height over rail (the glazing's top): the gutter plus the rise. */

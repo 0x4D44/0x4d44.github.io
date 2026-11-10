@@ -23,6 +23,8 @@ export const PERTH_LEVELS = {...WAVERLEY_LEVELS, deckTop: -.3, deckDepth: 1.2, d
 /** The rails on a mapped bridge, which stand on a deck rather than pull the ground up (bridge=yes, or any bridge tag but "no"). */
 export const onBridge = (tags: Record<string, string>): boolean => !!tags.bridge && tags.bridge !== 'no';
 /** The surface track segments, split into those on the ground and those on a mapped bridge. */
+/** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
+export const PERTH_OPEN_ASPHALT = 0x6e4c45;
 export function perthTrack(data: Pick<PerthData, 'rails'>): {ground: TrackSegment[]; bridge: TrackSegment[]} {
   return {ground: stationTrackSegments({rails: data.rails.filter(r => !onBridge(r.tags))}), bridge: stationTrackSegments({rails: data.rails.filter(r => onBridge(r.tags))})};
 }
@@ -76,14 +78,15 @@ function stationBatches(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings
  *  stands on them: the island building, the roof's columns, the footbridges, furniture and clocks (perth-station-structure.ts). */
 export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, group: THREE.Group): void {
   const {add, own} = build;
-  // The tops: worn mid-grey flags under the roof, red and buff surfacing in the open south of it (perth-station-structure.ts PERTH_OPEN_SOUTH).
+  // The tops: worn mid-grey flags under the roof; in the open beyond both its ends (perth-station-structure.ts platformParts), continuous
+  // red asphalt, untextured (round 3: the flag texture had read as a tile chequer; Abbott 6573357, R-pt1-b, shows plain red surfacing).
   const tops = new Batch(), open = new Batch();
-  for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); if (parts.open.length) fillSurface(open, parts.open, [], () => PERTH_LEVELS.platform); }
+  for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); for (const q of parts.open) fillSurface(open, q, [], () => PERTH_LEVELS.platform); }
   const s = stationBatches(data);
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
   const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xb4b0a8); }
-  const surfacing = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { surfacing.map = flagMap; surfacing.color.setHex(0xc9a596); } else surfacing.color.setHex(0xa07b6c);
+  const surfacing = own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_ASPHALT}));
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
@@ -92,6 +95,8 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');
   add(group, s.platform.tactile, blister, 'perth-platform-tactile');
   add(group, s.fittings, own(paintMaterial(material('whiteSteel'))), 'perth-columns-bridges-furniture');
+  // The bridges' and kiosk's glass panels (round 3): see-through, so the platform 4 elevation reads past the lift bridge's stairs. ASSUMED opacity.
+  add(group, s.panes, own(new THREE.MeshLambertMaterial({vertexColors: true, transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide})), 'perth-bridge-glass');
   // The island building (perth-station-structure.ts islandBuildingBatches), its stone coloured per vertex: divide out the stone texture's
   // own average (materials.ts stone, 0xa99a7c) as Waverley's central block does, so the texture adds only coursing.
   const station = stationOutline(data);
@@ -136,6 +141,8 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.
   // Round 3: opaque, so the transparent sort can no longer put the milky panes over it (round 2's overview read white and streaky); its
   // faces look up, so from under the roof it is culled and the panes show. A weathered grey, ASSUMED shade.
-  const weather = build.own(new THREE.MeshLambertMaterial({color: 0x7a7b78, side: THREE.FrontSide}));
+  // Pulled toward the eye by a polygon offset: from pt-overview's 1.5 km the 4 cm lift is under the depth buffer's resolution and the panes
+  // beneath won the depth test in patches (the white stripes); the offset counts in depth steps, so it holds at any range.
+  const weather = build.own(new THREE.MeshLambertMaterial({color: 0x7a7b78, side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -8}));
   build.add(group, s.weather, weather, 'perth-roof-weathering');
 }
