@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import type {WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import {createTerrain} from '../../core/terrain.ts';
-import type {Terrain, TerrainFile} from '../../core/terrain.ts';
+import type {Extent, Terrain, TerrainFile} from '../../core/terrain.ts';
 import {Batch, material} from './materials.ts';
 import {meshAdder} from './waverley-mesh.ts';
 import {stationGround} from './station-railway.ts';
@@ -22,6 +22,7 @@ import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthGlazing, per
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
+import {PERTH_EAST_FILE} from './perth-east-ground.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
 export {PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, perthBuildingHeight} from './perth-city.ts';
 // Separate lazy assets: neither OSM nor Scottish terrain enters the London entry chunk.
@@ -66,6 +67,8 @@ export interface PerthScene {
   groundAttribution: string;
   /** Ground of the drawn mesh, including the railway flattening, not a rail survey. */
   terrain: Terrain;
+  /** Drawn ground beyond `terrain.extent` (the city's east patch, perth-east-ground.ts): the world's flat plane is carved there too. */
+  terrainMore: Extent[];
   stats: {triangles: number; drawCalls: number; platforms: number; buildings: number; roofs: number; sleepers: number; bridgeSegments: number};
   /** The mapped city blocks drawn, in data order: not those standing on the railway. */
   buildingIds: string[];
@@ -110,6 +113,6 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   if (options.lighting !== false) addWaverleyLights(group);
   let disposed = false;
   return {group, parts, origin: {...data.origin}, attribution: `${data.attribution}; ${terrainFile.attribution}`, groundAttribution: terrainFile.attribution,
-    terrain: ground, stats, buildingIds, heightBasis,
+    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}], stats, buildingIds, heightBasis,
     dispose() { if (disposed) return; disposed = true; group.removeFromParent(); for (const g of geometries) g.dispose(); for (const m of ownedMaterials) m.dispose(); group.clear(); }};
 }

@@ -39,6 +39,36 @@ test('world: GROUND_Y is the terrain file\'s own groundY, so the flat plane meet
   close(field.heightAt(file.extent.x0, file.extent.z0), GROUND_Y, 1e-6, 'the corner of the extent is the flat plane');
 });
 
+test('flatRing with no extra rectangles is byte-identical to the four strips it always drew (London and Waverley unchanged)', () => {
+  // the four-strip ring as it stood before the extra rectangles (2026-11-10), for London's and Waverley's terrain extents
+  const before = (hole: { x0: number; z0: number; x1: number; z1: number }, half = 4500, y = GROUND_Y): number[] => {
+    const rects = [[-half, -half, half, hole.z0], [-half, hole.z1, half, half], [-half, hole.z0, hole.x0, hole.z1], [hole.x1, hole.z0, half, hole.z1]];
+    const pos: number[] = []; for (const [x0, z0, x1, z1] of rects) pos.push(x0!, y, z0!, x0!, y, z1!, x1!, y, z1!, x0!, y, z0!, x1!, y, z1!, x1!, y, z0!);
+    return [...new Float32Array(pos)];
+  };
+  const waverley: TerrainFile = JSON.parse(readFileSync(new URL('../src/data/waverley-terrain.json', import.meta.url), 'utf8'));
+  for (const extent of [file.extent, waverley.extent]) {
+    for (const g of [flatRing(extent), flatRing(extent, 4500, GROUND_Y, [])]) {
+      assert.deepEqual([...(g.getAttribute('position').array as Float32Array)], before(extent), 'the same vertices in the same order');
+      assert.equal(g.getAttribute('normal').count, before(extent).length / 3);
+    }
+  }
+});
+
+test('flatRing with extra rectangles: nothing over any of them, the rest of the plane covered, every triangle facing up', () => {
+  const main = { x0: -1200, z0: -1200, x1: 2624, z1: 912 }, east = { x0: 2624, z0: 80, x1: 4128, z1: 1232 }, half = 4500;
+  const p = flatRing(main, half, GROUND_Y, [east]).getAttribute('position') as THREE.BufferAttribute;
+  let area = 0;
+  for (let i = 0; i < p.count; i += 3) {
+    const [ax, az, bx, bz, cx, cz] = [p.getX(i), p.getZ(i), p.getX(i + 1), p.getZ(i + 1), p.getX(i + 2), p.getZ(i + 2)];
+    const up = ((bz - az) * (cx - ax) - (bx - ax) * (cz - az)) / 2; assert.ok(up > 0, `triangle ${i / 3} faces down`); area += up;
+    const mx = (ax + bx + cx) / 3, mz = (az + bz + cz) / 3;
+    for (const h of [main, east]) assert.ok(!(mx > h.x0 && mx < h.x1 && mz > h.z0 && mz < h.z1), 'a ring triangle lies over a carved rectangle');
+  }
+  const holes = (main.x1 - main.x0) * (main.z1 - main.z0) + (east.x1 - east.x0) * (east.z1 - east.z0);
+  close(area, (2 * half) ** 2 - holes, 1, 'the plane less the two rectangles');
+});
+
 test('flatRing: the plane outside a rectangle and nothing inside it, level at GROUND_Y, every triangle facing up', () => {
   const hole = { x0: -100, z0: -200, x1: 300, z1: 400 };
   const g = flatRing(hole, 1000);

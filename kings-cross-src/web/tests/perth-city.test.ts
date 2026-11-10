@@ -173,6 +173,7 @@ test('the east patch meets the main terrain without a seam, over the covered cor
   const E = PERTH_EAST_FILE.extent;
   assert.deepEqual([E.x0, E.z0, E.x1, E.z1], [PERTH_CITY_EXTENT.x1, 80, 4128, 1232], 'from the main edge east, the Phase I corridor only');
   const zMain = PERTH_CITY_EXTENT.z1;
+  assert.deepEqual(scene.terrainMore, [E], 'the scene hands the patch to the world, which carves its flat plane there too');
   // the data agree at the seam: the patch's own 32 m nodes on x 2624 against the main terrain's field there (same tile, same reference)
   for (let z = E.z0; z <= zMain; z += 32) assert.ok(Math.abs(PERTH_EAST.heightAt(E.x0, z) - scene.terrain.heightAt(E.x0, z)) < .75, `data seam at z ${z}: ${PERTH_EAST.heightAt(E.x0, z)} vs ${scene.terrain.heightAt(E.x0, z)}`);
   // the drawn seam is watertight: every patch vertex on x 2624 inside the corridor is the drawn main ground there, at every 16 m

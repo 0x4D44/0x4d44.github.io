@@ -190,7 +190,8 @@ function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haz
   // ASSUMED fallback context margin (100 m) only for model adapters without terrain metadata.
   const extent = terrain?.extent ?? { x0: Math.min(...points.map(p => p[0])) - 100, x1: Math.max(...points.map(p => p[0])) + 100,
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
-  world.carve(extent);
+  // drawn ground beyond the terrain's extent (Perth's east patch) is carved out too
+  world.carve(extent, (view.model as { terrainMore?: Extent[] } | undefined)?.terrainMore ?? []);
   const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
   const lamps = night();

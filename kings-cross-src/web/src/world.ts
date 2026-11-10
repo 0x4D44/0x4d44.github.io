@@ -67,8 +67,8 @@ const FLAT_SIZE = 9000;
 export interface World {
   /** keep the dome centred on the camera so it never reaches an edge */
   follow(camera: THREE.Camera): void;
-  /** the terrain covers `extent`: draw the flat plane only outside it (four strips) */
-  carve(extent: Extent): void;
+  /** the terrain covers `extent` (and any `more` rectangles, such as Perth's east patch): draw the flat plane only outside them */
+  carve(extent: Extent, more?: readonly Extent[]): void;
   /** the scene's lights, which start as `LIGHTS` and which web/src/atmosphere.ts drives from the sun and the weather */
   lights: { hemisphere: THREE.HemisphereLight; sun: THREE.DirectionalLight; fills: readonly THREE.DirectionalLight[] };
   /** the sky dome, vertex-coloured (atmosphere.ts repaints it) */
@@ -116,8 +116,18 @@ function measuringGrid(): THREE.Group {
 }
 
 /** The flat ground outside a rectangle: four strips (north, south, west, east) as one mesh, counter-clockwise from above. */
-export function flatRing(hole: Extent, half = FLAT_SIZE / 2, y = GROUND_Y): THREE.BufferGeometry {
-  const rects: [number, number, number, number][] = [
+/** The plane less several rectangles: the cells of the grid their edges cut, each kept when its centre is in none of them. */
+function ringCells(holes: readonly Extent[], half: number): [number, number, number, number][] {
+  const cut = (vs: number[]) => [...new Set([-half, half, ...vs.map(v => Math.max(-half, Math.min(half, v)))])].sort((a, b) => a - b);
+  const xs = cut(holes.flatMap(h => [h.x0, h.x1])), zs = cut(holes.flatMap(h => [h.z0, h.z1])), out: [number, number, number, number][] = [];
+  for (let i = 0; i + 1 < xs.length; i++) for (let j = 0; j + 1 < zs.length; j++) {
+    const mx = (xs[i]! + xs[i + 1]!) / 2, mz = (zs[j]! + zs[j + 1]!) / 2;
+    if (!holes.some(h => mx > h.x0 && mx < h.x1 && mz > h.z0 && mz < h.z1)) out.push([xs[i]!, zs[j]!, xs[i + 1]!, zs[j + 1]!]);
+  }
+  return out;
+}
+export function flatRing(hole: Extent, half = FLAT_SIZE / 2, y = GROUND_Y, more: readonly Extent[] = []): THREE.BufferGeometry {
+  const rects: [number, number, number, number][] = more.length ? ringCells([hole, ...more], half) : [
     [-half, -half, half, hole.z0],
     [-half, hole.z1, half, half],
     [-half, hole.z0, hole.x0, hole.z1],
@@ -167,10 +177,10 @@ export function addWorld(scene: THREE.Scene, opts: { grid: boolean; bare?: boole
     follow(camera) {
       sky.position.copy(camera.position);
     },
-    carve(extent) {
+    carve(extent, more = []) {
       scene.remove(ground);
       ground.geometry.dispose();
-      const ring = new THREE.Mesh(flatRing(extent), flat);
+      const ring = new THREE.Mesh(flatRing(extent, FLAT_SIZE / 2, GROUND_Y, more), flat);
       ring.name = 'ground-outside-terrain';
       scene.add(ring);
     },
