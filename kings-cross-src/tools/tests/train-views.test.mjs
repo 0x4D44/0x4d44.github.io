@@ -1502,6 +1502,8 @@ test('the in-page driver adds only the specimen for V10, keeps every piece of sc
 test('an exposure pins the page to its lighting with a query appended to the base query; the day pass keeps the page\'s scenery, and the page must be lit as the pass says',()=>{
  const base='trains=none&board=0&tooltip=0&signals=0';
  assert.equal(C.CATALOGUE_URL_QUERY,base);assert.deepEqual(C.EXPOSURE_IDS,['day','noon','dusk']);
+ // an entry carries its own id (nothing in the tool reads it back, so a pass named for another would pass every other check here)
+ for(const id of C.EXPOSURE_IDS)assert.equal(C.EXPOSURES[id].id,id,`the ${id} entry is named ${id}`);
  assert.equal(C.catalogueUrlQuery(),`${base}&sky=ref`,'the default is the day pass');assert.equal(C.catalogueUrlQuery('day'),`${base}&sky=ref`);assert.equal(C.catalogueUrlQuery('dusk'),`${base}&time=2026-11-09T16:30:00Z&weather=clear`);
  // the noon pass is the daylight pin of the other capture tools (scene-pin.mjs), and its `+01:00` is percent-encoded: a bare `+` reads back as a space, and the page then ignores the time
  assert.equal(C.catalogueUrlQuery('noon'),`${base}&time=2026-06-21T12%3A00%3A00%2B01%3A00&weather=clear`);
