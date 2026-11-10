@@ -91,7 +91,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   addPerthPlatforms(build, data, platforms);
   // The roof part: the station's glazed roof (P1) and the town's mapped roofs (P3), with one shared fascia draw, station's first.
   const glass = new Batch(), roofTops = new Batch(), fascia = new Batch();
-  addPerthStationRoof(data, glass, fascia);
+  addPerthStationRoof(data, glass, fascia, build, roof);
   addPerthMappedRoofs(data, ground, roofTops, fascia);
   const glazing = own(material('shedGlass').clone() as THREE.MeshLambertMaterial); glazing.side = THREE.DoubleSide;
   build.add(roof, glass, glazing, 'perth-station-roof');

@@ -1,8 +1,7 @@
 // P1 station: the track, the platforms and the station roof. perth-scene.ts calls these once, in this order, and adds what they fill to its
 // track, platforms and roof parts. Horizontal geometry is OSM (ODbL, core/perth-data.ts). ASSUMED, not measured Perth dimensions: the
-// 0.915 m platform height, rail and sleeper sizes, the deck depth and the roof height. Phase 1 scaffold, moved here unchanged from
-// perth-scene.ts: the station element replaces the single glazed roof with the sourced structure (trusses, glazed bays, the stone
-// buildings, the footbridges), from the photographs in gfx-rubrics/perth-station.md.
+// 0.915 m platform height, rail and sleeper sizes, the deck depth. The roof, the island building, the canopies, the footbridges and the
+// fittings are planned and shaped in perth-station-structure.ts, from the photographs in gfx-rubrics/perth-station.md (sources there).
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {WaverleyArea, WaverleyScene as PerthData} from '../../core/waverley-data.ts';
@@ -10,6 +9,10 @@ import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
 import {Batch, material} from './materials.ts';
 import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
+import {stationTexture} from './waverley-station-textures.ts';
+import {paintMaterial} from './waverley-station-structure.ts';
+import {islandBuildingBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
+import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
 import type {PerthBuild} from './perth-scene.ts';
@@ -25,10 +28,11 @@ export function perthTrack(data: Pick<PerthData, 'rails'>): {ground: TrackSegmen
 }
 /** The mapped station (OSM way/4064272, building=train_station, layer 1): its 14,500 m2 outline spans the main platforms and their tracks,
  *  so it is the station's roofed area, not a solid block (the railway rule, stationRailwayIntrusions, already keeps it out of the city).
- *  Phase 1 draws it as one glazed roof at PERTH_STATION_ROOF_HEIGHT; the station element replaces it with the sourced structure. */
+ *  The overall roof covers it (perth-station-structure.ts perthRoofRings), the island building standing under it. */
 export const stationOutline = (data: Pick<PerthData, 'buildings'>): WaverleyArea | undefined => data.buildings.find(b => b.id === PERTH_STATION_BUILDING_ID);
-/** ASSUMED eaves height (m above rail) of the phase 1 station roof: no published figure found yet. */
-export const PERTH_STATION_ROOF_HEIGHT = 9;
+/** The overall roof's ridge (m above rail): the glazing's top. ASSUMED (perth-station-structure.ts: Waverley's profile, 8 m gutter + 2.4 m rise). */
+/** (Rounded to float32, as the drawn geometry holds it, so the scene test can compare the two exactly.) */
+export const PERTH_STATION_ROOF_HEIGHT = Math.fround(PERTH_ROOF_RIDGE);
 /** ASSUMED fascia depth (m) of the station roof and the town's mapped roofs (perth-city.ts addPerthMappedRoofs). */
 export const PERTH_FASCIA = .6;
 
@@ -60,25 +64,52 @@ export function addPerthTrack(build: PerthBuild, track: {ground: TrackSegment[];
   }
 }
 
-/** Platforms: OSM outlines at the ASSUMED 0.915 m deck, with faces down to the station floor. */
-export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'platforms'>, group: THREE.Group): void {
-  const {add, own} = build;
-  const tops = new Batch(), faces = new Batch();
-  for (const p of data.platforms) {
-    fillSurface(tops, p.path, [], () => PERTH_LEVELS.platform);
-    walls(faces, p.path, [], () => PERTH_LEVELS.ground, () => PERTH_LEVELS.platform);
-  }
-  const faceStone = own(material('stone').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0x7a6e60));
-  add(group, tops, material('concourseFloor'), 'perth-platform-surfaces');
-  add(group, faces, faceStone, 'perth-platform-faces');
+/** The element's plan and batches, made once per scene data (the platforms and the roof both draw from them). */
+const batchCache = new WeakMap<object, PerthStationBatches>();
+function stationBatches(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>): PerthStationBatches {
+  let b = batchCache.get(data);
+  if (!b) { b = perthStationBatches(perthStationPlan(data, stationOutline(data)?.outer)); batchCache.set(data, b); }
+  return b;
 }
 
-/** The station roof over the mapped station outline (stationOutline), glazed, into `glass`, with its fascia into the roof part's shared
- *  `fascia` batch (the town's mapped roofs add theirs after it; perth-scene.ts draws the batches). */
-export function addPerthStationRoof(data: Pick<PerthData, 'buildings'>, glass: Batch, fascia: Batch): void {
+/** Platforms: OSM outlines at the ASSUMED 0.915 m deck in pale flags, the coper and tactile strip on every track edge, the faces, and what
+ *  stands on them: the island building, the roof's columns, the footbridges, furniture and clocks (perth-station-structure.ts). */
+export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, group: THREE.Group): void {
+  const {add, own} = build;
+  const tops = new Batch();
+  for (const p of data.platforms) fillSurface(tops, p.path, [], () => PERTH_LEVELS.platform);
+  const s = stationBatches(data);
+  const faceStone = own(material('stone').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0x7a6e60));
+  const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xffffff); }
+  const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
+  add(group, tops, paving, 'perth-platform-surfaces');
+  add(group, s.platform.faces, faceStone, 'perth-platform-faces');
+  const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);
+  add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');
+  add(group, s.platform.tactile, blister, 'perth-platform-tactile');
+  add(group, s.fittings, own(paintMaterial(material('whiteSteel'))), 'perth-columns-bridges-furniture');
+  // The island building (perth-station-structure.ts islandBuildingBatches), its stone coloured per vertex: divide out the stone texture's
+  // own average (materials.ts stone, 0xa99a7c) as Waverley's central block does, so the texture adds only coursing.
+  const station = stationOutline(data);
+  const parts = islandBuildingBatches(perthStationPlan(data, station?.outer).island), stone = own(material('stone').clone() as THREE.MeshLambertMaterial); stone.vertexColors = true;
+  const avg = new THREE.Color(0xa99a7c); if (stone.map) stone.color.setRGB(1 / avg.r, 1 / avg.g, 1 / avg.b); else stone.color.setHex(0xffffff);
+  add(group, parts.stone, stone, 'perth-island-building');
+  add(group, parts.windows, material('sash'), 'perth-island-building-windows');
+  const top = own(material('slate').clone() as THREE.MeshLambertMaterial); top.color.multiply(new THREE.Color(0xa9a59b));
+  add(group, parts.top, top, 'perth-island-building-top');
+}
+
+/** The overall roof: its glazing into `glass` (perth-scene.ts draws it, named for the rain cover), the Dundee canopies' valance into the roof
+ *  part's shared `fascia` batch (the town's mapped roofs add theirs after it), and, given the scene's adder and roof group, the solid strips
+ *  and the ironwork (trusses, girders, gables) as their own draws. */
+export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platforms' | 'rails'>, glass: Batch, fascia: Batch, build?: PerthBuild, group?: THREE.Group): void {
   const station = stationOutline(data);
   if (!station) return;
-  const top = PERTH_STATION_ROOF_HEIGHT;
-  fillSurface(glass, station.outer, station.holes, () => top);
-  walls(fascia, station.outer, station.holes, () => top - PERTH_FASCIA, () => top);
+  const s = stationBatches(data), plan = perthStationPlan(data, station.outer);
+  glass.append(s.glass);
+  if (plan.canopy.length >= 3) walls(fascia, plan.canopy, [], () => PERTH_STATION.canopy.top - PERTH_STATION.canopy.valance, () => PERTH_STATION.canopy.top);
+  if (!build || !group) return;
+  const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(0x4a4d50); strips.side = THREE.DoubleSide;
+  build.add(group, s.strips, strips, 'perth-roof-strips');
+  build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
 }
