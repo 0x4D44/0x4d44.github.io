@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY } from '../src/perth-station.ts';
-import { archRib, islandBuildingBatches, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
@@ -242,6 +242,41 @@ test('round 3: the frozen platform views see furniture: benches in the near view
   // The bench run down the column lines, away from the island building's walls.
   const away = plan.furniture.benches.filter(b => ringDistance(b.at, plan.local.island) > 3).length;
   assert.ok(away >= 20, `${away} benches down the column lines`);
+});
+
+test('round 4: the Dundee canopies as Champion 2011 shows them: ridges across the platforms, platform 1 boarded on grey-blue columns, a white lattice valance', () => {
+  const C = PERTH_STATION.canopy, canopy = plan.local.canopy, near = (p: Pt): boolean => inRing(p, canopy) || ringDistance(p, canopy) < .3;
+  const pf1 = plan.local.platforms.filter(q => q.ref === PERTH_BOARDED_PLATFORM).map(q => q.pts), on1 = (p: Pt): boolean => pf1.some(r => inRing(p, r) || ringDistance(p, r) < .3);
+  const pf2 = plan.local.platforms.filter(q => q.ref === '2').map(q => q.pts), side = boardedSide(plan.local)!;
+  assert.ok(side, 'platforms 1 and 2 are both mapped');
+  // Ridges across: over the canopy, the glazing's height depends on x' (along the tracks) alone, so its gables face the tracks.
+  const g = batches.glass.positions, byX = new Map<number, number[]>();
+  for (let i = 0; i < g.length; i += 3) {
+    if (g[i + 1] < C.top - .01 || g[i + 1] > C.top + C.rise + .01) continue;
+    const q = toLocal([g[i], g[i + 2]]); if (!inRing(q, canopy)) continue;
+    const k = Math.round(q[0] * 20); byX.set(k, [...(byX.get(k) ?? []), g[i + 1]]);
+  }
+  let rows = 0;
+  for (const ys of byX.values()) if (ys.length > 1) { rows++; assert.ok(Math.max(...ys) - Math.min(...ys) < .01, 'the canopy glazing is level across the tracks: its ridges run across them'); }
+  assert.ok(rows > 20, `${rows} lines of constant x' across the canopy glazing`);
+  // Colours from the fittings (world frame, coloured per vertex).
+  const f = batches.fittings, c = f.colors, p = f.positions, is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(c[i] - k[0]) < 1e-6 && Math.abs(c[i + 1] - k[1]) < 1e-6 && Math.abs(c[i + 2] - k[2]) < 1e-6; };
+  let soffit = 0, blue = 0, valance = 0;
+  for (let i = 0; i < p.length; i += 3) {
+    const q = toLocal([p[i], p[i + 2]]), y = p[i + 1];
+    // The soffit covers platform 1's canopy, overhang included (Champion 2011): under the canopy glazing, on platform 1's side of the line
+    // halfway to platform 2, never over platform 2.
+    if (is(i, PERTH_PAINT.soffit)) {
+      soffit++;
+      const sp = side.split(q[0]), onSide = sp !== undefined && (side.greater ? q[1] >= sp - .5 : q[1] <= sp + .5);
+      assert.ok(near(q) && onSide && !pf2.some(r => inRing(q, r)) && y < C.top + C.rise - C.soffit + .01 && y > C.top - C.soffit - .01, `soffit at ${q} y ${y} off platform 1's canopy`);
+    }
+    if (is(i, PERTH_PAINT.columnBlue)) { blue++; assert.ok(on1(q), `a grey-blue column off platform 1 at ${q}`); }
+    if (is(i, PERTH_PAINT.latticeWhite) && near(q) && y > C.top - C.valance - .1 && y < C.top + .1) valance++;
+  }
+  assert.ok(soffit > 100, `the boarded soffit over platform 1 (${soffit} vertices)`);
+  assert.ok(blue >= 8, `grey-blue columns on platform 1 (${blue} vertices)`);
+  assert.ok(valance > 1000, `the white lattice valance round the canopy (${valance} vertices)`);
 });
 
 test('round 2b: the roof reads dark from above only, the island building\'s chimneys stand through it, the Dundee canopies are pitched', () => {

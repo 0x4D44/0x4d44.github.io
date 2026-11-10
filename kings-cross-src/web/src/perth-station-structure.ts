@@ -162,11 +162,12 @@ export const PERTH_STATION = {
   /** The island building: walls to the gutter girders' tops (7.9 m over rail), so the roof bears on them as R-pt1-a shows; the screen above
    *  them up to the glazing is drawn in the wall's stone. Plinth 0.6 m, string course at 4.6 m over rail, cornice 0.35 m (R-pt1-a). */
   building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03},
-  /** The Dundee canopies: their eaves 5.6 m over rail (above the 4.8 m train envelope the scene test holds), a 0.6 m valance with a fretted
-   *  edge (teeth `tooth` m wide and deep), columns every 7 m. A shallow ridge-and-furrow, `pitch` m pitch and `rise` m rise, in glass
-   *  with dark bands as the main roof's (the station's other glazing, R-pt1-a, R-pt1-c); curved brackets reach `bracket` m each way. All
-   *  ASSUMED: no photograph of these canopies is held, so the form follows the station's own. */
-  canopy: {top: 5.6, valance: .6, columnEvery: 7, column: .2, pitch: 6, rise: .4, tooth: .3, bracket: 1.4},
+  /** The Dundee canopies (Champion 2011, geograph 2687800, CC BY-SA 2.0): their eaves 5.6 m over rail (above the 4.8 m train envelope
+   *  the scene test holds), a 0.6 m white diamond-lattice valance in `lattice` m cells, columns every 7 m. A shallow ridge-and-furrow
+   *  across the platforms, gables to the tracks, `pitch` m pitch and `rise` m rise, in glass with dark bands; curved brackets reach
+   *  `bracket` m each way; over platform 1 a boarded soffit `soffit` m under the glazing. Form from the photograph; every dimension
+   *  ASSUMED. */
+  canopy: {top: 5.6, valance: .6, columnEvery: 7, column: .2, pitch: 6, rise: .4, lattice: .6, bracket: 1.4, soffit: .25},
   /** The deck half-width of both footbridges (3 m wide: R-pt1-d's lattice bridge, about two people abreast). */
   deckHalf: 1.5,
   /** Stairs: 1.8 m wide, 0.28 m going, rises of at most 0.18 m (Building Standards range); kept 1.2 m clear of a platform's sides. The lift
@@ -226,7 +227,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -956,28 +957,51 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   recolor(structure.fittings, swap); recolor(structure.edges, [...swap, coper]); recolor(structure.lip, [...swap, coper]);
   // Its normals all straight up (round 3): lit as one flat sheet, the ridge-and-furrow's sunward and shaded slopes no longer stripe it.
   for (let i = 1; i < weather.positions.length; i += 3) { weather.positions[i] += .04; weather.normals[i - 1] = 0; weather.normals[i] = 1; weather.normals[i + 1] = 0; }
-  // The Dundee canopies: a shallow ridge-and-furrow from canopy.top, cut round the stairs that pass through them, on a column row down
-  // each platform, with curved brackets and a fretted valance.
+  // The Dundee canopies (Champion 2011, geograph 2687800): a shallow ridge-and-furrow from canopy.top, its ridges across the platforms so
+  // its gables face the tracks, cut round the stairs that pass through them, on a column row down each platform, with curved brackets
+  // and a white diamond-lattice valance. Over platform 1 a boarded soffit under the glazing, on grey-blue columns; platform 2's cream.
   if (L.canopy.length >= 3) {
     const C = S.canopy, cuts = plan.clear.map(([x0, x1, z0, z1]): Pt[] => [[x0 - .3, z0 - .3], [x1 + .3, z0 - .3], [x1 + .3, z1 + .3], [x0 - .3, z1 + .3]]);
     const shaped2 = ridgeRoofBatches(L.canopy, [], {gutter: C.top, rise: C.rise, pitch: C.pitch, phase: 0}, {gutter: .5, ridge: .25}, cuts);
     glass.append(shaped2.glass); strips.append(shaped2.solid);
+    const pf1 = L.platforms.filter(q => q.ref === PERTH_BOARDED_PLATFORM).map(q => q.pts), overPf1 = (p: Pt): boolean => pf1.some(r => inRing(p, r));
+    // The soffit: the glazing again, C.soffit under it, facing down, in pale boards, clipped to platform 1's canopy (boardedSide): each
+    // glazing strip runs right across both platforms, so its triangles are cut, the height kept on each triangle's own plane.
+    const g = shaped2.glass, side = boardedSide(L);
+    if (side) for (let t = 0; t < g.indices.length; t += 3) {
+      const tri = [0, 1, 2].map(k => { const i = 3 * g.indices[t + k]; return [g.positions[i], g.positions[i + 1] - C.soffit, g.positions[i + 2]] as V3; });
+      // Clip on the chord of the split line across this triangle's x' range (the triangles are at most half a pitch wide in x').
+      const xs = tri.map(v => v[0]), xa = Math.min(...xs), xb = Math.max(...xs), za = side.split(xa), zb = side.split(xb);
+      if (za === undefined || zb === undefined || xb - xa < 1e-6) continue;
+      // Keep the larger-z' side of a line running +x' when (p - a) x (b - a) <= 0, i.e. keep = -1.
+      const cut = clipLine(tri.map((v): Pt => [v[0], v[2]]), [xa, za], [xb, zb], side.greater ? -1 : 1); if (cut.length < 3) continue;
+      const [p0, p1, p2] = tri, ux = p1[0] - p0[0], uz = p1[2] - p0[2], vx = p2[0] - p0[0], vz = p2[2] - p0[2], det = ux * vz - uz * vx;
+      if (Math.abs(det) < 1e-9) continue;
+      const y = (q: Pt): number => { const dx = q[0] - p0[0], dz = q[1] - p0[2], a = (dx * vz - dz * vx) / det, b = (ux * dz - uz * dx) / det; return p0[1] + a * (p1[1] - p0[1]) + b * (p2[1] - p0[1]); };
+      fittings.poly(cut.map((q): V3 => [q[0], y(q), q[1]]), undefined, {facing: [0, -1, 0], color: P('soffit')});
+    }
     for (const p of plan.canopyColumns) {
-      fittings.box([p[0], (WAVERLEY_LEVELS.platform + C.top - C.valance) / 2, p[1]], [C.column, C.top - C.valance - WAVERLEY_LEVELS.platform, C.column], {color: P('column')});
+      const shaft = overPf1(p) ? P('columnBlue') : P('column');
+      fittings.box([p[0], (WAVERLEY_LEVELS.platform + C.top - C.valance) / 2, p[1]], [C.column, C.top - C.valance - WAVERLEY_LEVELS.platform, C.column], {color: shaft});
       // A curved bracket each way across the platform (R-pt1-c's columns' brackets): a quarter ellipse from the shaft up to the eaves.
       for (const sg of [-1, 1]) for (let k = 0; k < 6; k++) {
         const t0 = k / 6 * Math.PI / 2, t1 = (k + 1) / 6 * Math.PI / 2, pt = (t: number): V3 => [p[0], C.top - .05 - 1.4 * Math.cos(t), p[1] + sg * C.bracket * (1 - Math.sin(t))];
         beam(fittings, pt(t0), pt(t1), .08, .1, P('iron'));
       }
     }
-    // The valance's fretted lower edge: a row of pointed teeth under it, all round.
-    const v = L.canopy, y0 = C.top - C.valance;
+    // The valance: a white diamond lattice C.valance deep all round (Champion 2011), chords top and bottom, flats crossed at 45 degrees,
+    // stopped where a stair passes.
+    const v = L.canopy, y0 = C.top - C.valance, h = C.valance, white = P('latticeWhite');
     for (let i = 0; i < v.length; i++) {
-      const a = v[i], b = v[(i + 1) % v.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.floor(len / C.tooth);
-      for (let k = 0; k < n; k++) {
-        const t0 = k * C.tooth / len, t1 = (k + 1) * C.tooth / len, tm = (t0 + t1) / 2, q = (t: number, y: number): V3 => [a[0] + (b[0] - a[0]) * t, y, a[1] + (b[1] - a[1]) * t];
-        if (plan.clear.some(r => inRect([a[0] + (b[0] - a[0]) * tm, a[1] + (b[1] - a[1]) * tm], r, .3))) continue;
-        strips.poly([q(t0, y0), q(t1, y0), q(tm, y0 - C.tooth)], undefined, {facing: [b[1] - a[1], 0, a[0] - b[0]]});
+      const a = v[i], b = v[(i + 1) % v.length], len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (len < .3) continue;
+      const at = (u: number, y: number): V3 => [a[0] + (b[0] - a[0]) * u / len, y, a[1] + (b[1] - a[1]) * u / len];
+      const open = (u: number): boolean => !plan.clear.some(r => inRect([a[0] + (b[0] - a[0]) * u / len, a[1] + (b[1] - a[1]) * u / len], r, .3));
+      for (let u = 0; u < len - 1e-9; u += C.lattice) {
+        const u1 = Math.min(len, u + C.lattice); if (!open((u + u1) / 2)) continue;
+        for (const y of [y0 + .03, y0 + h - .03]) beam(fittings, at(u, y), at(u1, y), .05, .06, white);
+        // Two flats per cell, corner to corner, so the cells read as diamonds where they meet.
+        beam(fittings, at(u, y0), at(u1, y0 + h), .04, .04, white);
+        beam(fittings, at(u, y0 + h), at(u1, y0), .04, .04, white);
       }
     }
   }
@@ -1020,6 +1044,33 @@ function takeColor(b: Batch, color: Rgb): Batch {
 
 /** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
 export const PERTH_BAND_DROP = .06;
+/** Platform 1's side of the Dundee canopies (track frame). The Dundee platforms curve across the frame, so the line between them is a
+ *  function of x': `split(x)` is the z' halfway between platform 1's and platform 2's facing edges there (undefined where either is
+ *  absent), and `greater` says platform 1 lies on the larger-z' side. Undefined unless both are mapped. */
+export function boardedSide(L: {platforms: {ref: string; pts: Pt[]}[]}): {split: (x: number) => number | undefined; greater: boolean} | undefined {
+  const r1 = L.platforms.filter(q => q.ref === PERTH_BOARDED_PLATFORM).map(q => q.pts), r2 = L.platforms.filter(q => q.ref === '2').map(q => q.pts);
+  if (!r1.length || !r2.length) return undefined;
+  const at = (rs: Pt[][], x: number): number[] => section(rs, x, 0).flat();
+  const mean = (rs: Pt[][]): number => { const pts = rs.flat(); return pts.reduce((m, p) => m + p[1], 0) / pts.length; };
+  const greater = mean(r1) > mean(r2);
+  const split = (x: number): number | undefined => {
+    const a = at(r1, x), b = at(r2, x); if (!a.length || !b.length) return undefined;
+    return greater ? (Math.min(...a) + Math.max(...b)) / 2 : (Math.max(...a) + Math.min(...b)) / 2;
+  };
+  return {split, greater};
+}
+/** A ring clipped to the side of the line a-b where (p - a) x (b - a) has the sign `keep` (+1 or -1), crossing points added. */
+function clipLine(r: readonly Pt[], a: Pt, b: Pt, keep: number): Pt[] {
+  const side = (p: Pt): number => keep * ((p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])), out: Pt[] = [];
+  for (let i = 0; i < r.length; i++) {
+    const p = r[i], q = r[(i + 1) % r.length], sp = side(p), sq = side(q);
+    if (sp >= 0) out.push(p);
+    if ((sp >= 0) !== (sq >= 0)) { const t = sp / (sp - sq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); }
+  }
+  return out;
+}
+/** The Dundee platform whose canopy has a boarded soffit and grey-blue columns (Champion 2011, geograph 2687800). */
+export const PERTH_BOARDED_PLATFORM = '1';
 /** The platform tops' split (track frame x'): north of it under the roof, in worn mid-grey concrete flags (R-pt1-a, R-pt1-c); south of
  *  it in the open, in red and buff surfacing (Abbott 6573357, R-pt1-b). The main roof's south end, ASSUMED one line across. */
 export const PERTH_OPEN_SOUTH = 24;
