@@ -236,8 +236,10 @@ export const PERTH_FOOTBRIDGES = [
  *  end and platform 4 elevation (where a landing stands across its island is ASSUMED; see PERTH_FOOTBRIDGES). */
 export const PERTH_LANDING_LEAN: Readonly<Record<string, number>> = {'4/5': 1};
 
-/** Where along the platform (x', m) each island clock hangs: platform 4's south of the north footbridge, platform 5's by the bay ends. ASSUMED. */
-export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PERTH_BAY_PHASE, '5': -30 + PERTH_BAY_PHASE};
+/** Where along the platform (x', m) each island clock hangs: platform 4's south of the north footbridge, platform 5's by the bay ends. ASSUMED.
+ *  Round 6: platform 4's moved 6 m north (was -8), so the frozen pt-platform-4-clock camera, which stands 4 m behind a roof column on the
+ *  column's own line, sees the hung dial past that column rather than behind it (the photographs do not fix where along the wall it hangs). */
+export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -14 + PERTH_BAY_PHASE, '5': -30 + PERTH_BAY_PHASE};
 
 /** Paint (R-pt1-a, R-pt1-c, R-pt1-d): dark brown roof ironwork, cream columns, a maroon lattice bridge, a grey modern bridge. ASSUMED shades. */
 export const PERTH_PAINT = {
@@ -875,6 +877,29 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
   }
   const girder = W.platformGirderTop - W.platformGirderDepth;
   for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});
+  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: plates, keep: g.keep});
+}
+/** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
+ *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
+ *  planes face the platform cameras (pt-roof-underside, pt-north-footbridge), where the column girders' spandrels are seen edge-on. Here:
+ *  an arched rib with a pierced spandrel plate under every gutter girder, from support to support (column, wall or edge girder) across
+ *  the tracks, `min` to `max` m apart, springing `drop` m
+ *  under the girder (ASSUMED from R-pt1-a, where the braces spring about a girder's depth below it). Not where a bridge's deck, stairs
+ *  or tower stand (plan.clear, `clear` m round), nor inside the island building's walls below its top. */
+export const PERTH_GUTTER_BRACE = {drop: 1.3, inset: .3, min: 3, max: 30, clear: 1} as const;
+export function gutterBraces(plan: PerthStationPlan): {a: Pt; c: Pt; keep: (p: Pt, y: number) => boolean}[] {
+  const G = PERTH_GUTTER_BRACE, island = plan.local.island, top = PERTH_STATION.building.top, out: {a: Pt; c: Pt; keep: (p: Pt, y: number) => boolean}[] = [];
+  const keep = (p: Pt, y: number): boolean => !plan.clear.some(([x0, x1, z0, z1]) => p[0] > x0 - G.clear && p[0] < x1 + G.clear && p[1] > z0 - G.clear && p[1] < z1 + G.clear)
+    && (island.length < 3 || y > top || !inRing(p, island));
+  for (const [x, z0, z1] of plan.structure.gutters) {
+    // Its supports: the columns on its line, and its two ends (a wall, or the edge girder at the roof's outline).
+    const zs = [z0, z1, ...plan.structure.columns.filter(c => Math.abs(c.x - x) < .05 && c.z > z0 + .5 && c.z < z1 - .5).map(c => c.z)].sort((p, q) => p - q);
+    for (let i = 1; i < zs.length; i++) {
+      const gap = zs[i] - zs[i - 1]; if (gap < G.min || gap > G.max) continue;
+      out.push({a: [x, zs[i - 1] + G.inset], c: [x, zs[i] - G.inset], keep});
+    }
+  }
+  return out;
 }
 /** The bay roof (PERTH_BAY_ROOF): its glazing, laid out in a frame turned a quarter so Waverley's ridge-and-furrow builder runs its ridges
  *  along the tracks; rafters, arched ribs, the arched glazed screen at its south end, and the screens closing it to the north, the west and

@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -267,7 +267,8 @@ test('round 4: the bands are brown-grey, not black, and the Dundee canopies are 
     const m = (scene.group.getObjectByName('perth-roof-strips') as THREE.Mesh).material as THREE.MeshLambertMaterial, c = m.color;
     assert.equal(c.getHex(), PERTH_BAND_BROWN);
     // Round 5: lighter again, toward R-pt1-a's brown-grey lit from below (round 4's 0x5e544b still read near-black from the platforms).
-    assert.ok(c.r + c.g + c.b > .4 && c.r > c.b, `bands brown-grey (${c.getHexString()}), not dark`);
+    // Round 6: lighter again (round 5's 0x7d7064, sum about 0.53, did not change the read from below).
+    assert.ok(c.r + c.g + c.b > .8 && c.r > c.b, `bands brown-grey (${c.getHexString()}), not dark`);
   } finally { scene.dispose(); }
   const w = batches.weather.positions; let over = 0;
   for (let i = 0; i < w.length; i += 3) if (inRing(toLocal([w[i], w[i + 2]]), plan.local.canopy) && w[i + 1] < PERTH_STATION.canopy.top + PERTH_STATION.canopy.rise + .1) over++;
@@ -485,4 +486,53 @@ test('round 2b: the roof reads dark from above only, the island building\'s chim
   let top = 0;
   for (let i = 0; i < g.length; i += 3) if (inRing([g[i], g[i + 2]], canopy) && ringDistance([g[i], g[i + 2]], canopy) > .2) top = Math.max(top, g[i + 1]);
   assert.ok(Math.abs(top - (C.top + C.rise)) < 1e-6, `the canopies' ridge at ${top}`);
+});
+
+test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders, in the across-track planes the platform cameras face', () => {
+  const W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, G = PERTH_GUTTER_BRACE, braces = gutterBraces(plan);
+  const lines = new Set(braces.map(b => b.a[0]));
+  assert.ok(braces.length >= 30 && lines.size >= 15, `braces under most gutter girders (${braces.length} on ${lines.size} lines)`);
+  for (const b of braces) assert.ok(b.a[0] === b.c[0] && plan.structure.gutters.some(([x, z0, z1]) => x === b.a[0] && b.a[1] >= z0 && b.c[1] <= z1), `brace ${b.a}-${b.c} lies under a gutter girder`);
+  // The pierced plates in those planes: facing along the tracks (toward the platform cameras), from the rib up to the girder's underside,
+  // deep by the springings, and nowhere a bridge stands.
+  const s = batches.spandrels, p = s.positions, n = s.normals, o = toLocal([0, 0]);
+  let facing = 0;
+  const depth = new Map<string, {lo: number}>();
+  for (let i = 0; i < p.length; i += 3) {
+    const q = toLocal([p[i], p[i + 2]]), b = braces.find(r => Math.abs(q[0] - r.a[0]) < 1e-3 && q[1] >= r.a[1] - 1e-3 && q[1] <= r.c[1] + 1e-3);
+    if (!b) continue;
+    const nl = toLocal([n[i], n[i + 2]]);
+    assert.ok(Math.abs(nl[0] - o[0]) > .99, `a brace plate at ${q} faces along the tracks`);
+    assert.ok(p[i + 1] <= under + 1e-6 && p[i + 1] >= under - G.drop - 1e-6, `a brace plate at ${q} y ${p[i + 1]} between the springing and the girder`);
+    assert.ok(!plan.clear.some(([x0, x1, z0, z1]) => q[0] > x0 && q[0] < x1 && q[1] > z0 && q[1] < z1), `a brace plate in a bridge at ${q}`);
+    facing++;
+    const k = `${b.a[0]}/${b.a[1]}`, e = depth.get(k) ?? {lo: Infinity}, t = (q[1] - b.a[1]) / (b.c[1] - b.a[1]);
+    if (t < .15 || t > .85) e.lo = Math.min(e.lo, p[i + 1]);
+    depth.set(k, e);
+  }
+  assert.ok(facing >= braces.length * 12, `pierced plates under the braces (${facing} vertices)`);
+  let deep = 0;
+  for (const e of depth.values()) if (under - e.lo > .5) deep++;
+  assert.ok(deep >= braces.length * .8, `deep plates by the springings (${deep} of ${braces.length})`);
+});
+
+test('round 6: platform 4\'s hung clock is in clear view of the frozen pt-platform-4-clock camera, its dial not behind a column', () => {
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]}>;
+  const C = PERTH_STATION.clock, c = plan.clocks.find(k => k.ref === C.kioskRef)!, eye = new THREE.Vector3(...cams['pt-platform-4-clock'].pos as [number, number, number]);
+  // The dial facing the camera: on the case's end nearer it, `out` = past the stage's face by the hang, its centre hangHeight over the deck.
+  const w: Pt = [-c.out[1], c.out[0]], out = C.stage[1] + C.hang, yc = WAVERLEY_LEVELS.platform + C.hangHeight;
+  const ends = [-1, 1].map(s => { const q: Pt = [c.at[0] + c.out[0] * out + w[0] * s * (C.case[0] / 2 + .02), c.at[1] + c.out[1] * out + w[1] * s * (C.case[0] / 2 + .02)], p = toWorld(q); return new THREE.Vector3(p[0], yc, p[1]); });
+  const dial = ends.sort((a, b) => a.distanceTo(eye) - b.distanceTo(eye))[0];
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    scene.group.updateMatrixWorld(true);
+    // The centre and four points round the hour ring, each reached by a ray from the eye with nothing in front of the dial.
+    const up = new THREE.Vector3(0, 1, 0), side = new THREE.Vector3(c.out[0], 0, c.out[1]);
+    const sw = toWorld([c.out[0], c.out[1]]), o = toWorld([0, 0]); side.set(sw[0] - o[0], 0, sw[1] - o[1]).normalize();
+    for (const [du, dv] of [[0, 0], [.8, 0], [-.8, 0], [0, .8], [0, -.8]]) {
+      const t = dial.clone().addScaledVector(side, du * C.radius).addScaledVector(up, dv * C.radius), dir = t.clone().sub(eye), dist = dir.length();
+      const h = new THREE.Raycaster(eye, dir.normalize(), 0, dist + 1).intersectObject(scene.group, true)[0];
+      assert.ok(h && h.distance > dist - .1, `the dial point (${du}, ${dv}) is hidden by ${h?.object.name} ${h ? (dist - h.distance).toFixed(2) : ''} m in front of it`);
+    }
+  } finally { scene.dispose(); }
 });
