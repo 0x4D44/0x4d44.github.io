@@ -2,7 +2,7 @@
 // rectangles read off the photograph in ITS OWN PIXELS, beside the two points that calibrate it, so a reader with the photograph can lay the one over the other.
 //
 // How a photograph becomes metres (`tracer` in train-parts.ts): the two axle-end caps are the centres of the two axles of the bogie, so their distance in pixels is the
-// published wheelbase (`FIGURES.bogieWheelbase`) and the scale follows; the row of the caps is the axle line, whose height over the rail head is the wheel's radius. Everything
+// wheelbase (`FIGURES.bogieWheelbase`: published for the AT300, ASSUMED for the Electrostar) and the scale follows; the row of the caps is the axle line, whose height over the rail head is the wheel's radius. Everything
 // else is measured from those two numbers, in the plane of the side beam (the photograph is a close-up with strong perspective: the wheels stand further from the lens than the
 // beam, so a wheel's size is NOT read from it and stays the figure's). Depths across the bogie cannot be read from a side-on photograph and are ASSUMED (see `AT300_DEPTH` in
 // train-parts.ts): the trace is the outline in the side view.
@@ -80,4 +80,69 @@ export const AT300_TRACE = {
   step: { z: [1013, 1207] as readonly [number, number], wallTop: 866, wingTop: 897, treadTop: 912, treadBottom: 937 },
   /** The air spring over the middle: the row of the rubber bag's lower rim, which stands on a pedestal between it and the beam's top. */
   air: { base: 688 },
+} as const;
+
+/**
+ * The Bombardier (ex Adtranz) Electrostar bogie, P3-25 under a motor car and T3-25 under a trailer (Class 375, 377, 378 and 387), from `Bogie and traction equipment beneath Door A1 of
+ * Class 375 Electrostar .jpg`: unit 375831 at Gillingham (Kent), by OathOn, 2025-06-25, CC0 (Wikimedia Commons), 1920 x 1116 as reviewed. `Adtranz P3-25 bogie 6647161053.jpg` (Hugh
+ * Llewelyn, 2012-01-06, CC BY-SA 2.0, 597 x 400) and `British Rail Class 378 bogie and shoegear.jpg` (Chris McKenna, 2014-03-14, CC BY-SA 3.0) show the same bogie from further off and
+ * at an angle, and were used to check the shape, not to take numbers.
+ *
+ * The picture is a close-up taken a little rolled: its two caps stand 31.7 px apart in height, so it is turned 1.2531 degrees (counter-clockwise, about the left cap, bicubic) to put them level,
+ * and the numbers below are read off the turned picture. Its scale is the caps' distance over the wheelbase, which no page gives for the Electrostar (`EMU_FIGURES.electrostar.wheelbaseMotor` is ASSUMED, 2.7 m), so every
+ * length here is as good as that figure. Unlike the AT300's, the two ends of this bogie are NOT each other's mirror (the right cap is the earth-return housing, larger and with its mark of a
+ * lightning bolt; the right end block carries a tongue the left has not; the dampers stand 102 px and 169 px from their caps), so each end is traced for itself and nothing is mirrored. What
+ * the picture shows of perspective is small (the heights of the ends' features agree to 6%), and none is corrected. Depths across the bogie are ASSUMED (see `ES_DEPTH` in train-parts.ts).
+ * The shoe beam is the 375's third-rail shoe gear carrier: Wikipedia's Class 387 page lists a DC contact shoe for the class (dual voltage), but no page read says whether the Great Northern
+ * 387/1s carry it, so that it is drawn on them is ASSUMED. The photograph is of a powered bogie and shows nothing hung between the wheels: what a motor bogie carries there is a GAP, and a
+ * trailer bogie is drawn the same.
+ */
+export const ELECTROSTAR_TRACE = {
+  /** The centres of the two axle-end caps, left and right, in the turned picture: the axle line and the wheelbase. */
+  caps: [[215, 890], [1664, 890]] as readonly [Px, Px],
+  /** The caps' centres as the picture has them, before it is turned, and the turn (atan2 of their rise over their run, in degrees). */
+  level: { caps: [[215.5, 890.5], [1664.7, 922.2]] as readonly [Px, Px], degrees: 1.2531 },
+  /**
+   * The side beam as one outline, clockwise from the left end block's top: over the top (the end blocks stand high and the middle low, between them a swan neck at each end), the right end
+   * block with its tongue, its underside, the deep middle's lower edge (a shallow bow) and the shoulder at each end back up to the end block's underside, and the left end block's face.
+   */
+  beam: [
+    [142, 662], [320, 661], [340, 667], [360, 681], [380, 687], [400, 694], [420, 705], [440, 715], [460, 724], [480, 733], [500, 738], [520, 741], [1360, 740], [1380, 739], [1400, 734],
+    [1420, 725], [1440, 716], [1460, 704], [1480, 699], [1500, 682], [1520, 670], [1540, 659], [1560, 651], [1580, 649], [1600, 648], [1760, 646], [1790, 655], [1795, 665], [1878, 665],
+    [1880, 691], [1808, 692], [1806, 714], [1548, 718], [1548, 722], [1545, 735], [1535, 752], [1520, 772], [1495, 797], [1470, 818], [1440, 835], [1410, 848], [1380, 855], [1340, 858],
+    [1300, 860], [1100, 852], [900, 854], [700, 854], [500, 859], [480, 856], [460, 852], [440, 846], [425, 838], [410, 828], [395, 815], [380, 800], [365, 785], [352, 770], [340, 755],
+    [320, 740], [300, 730], [285, 724], [140, 724], [117, 727], [118, 710], [122, 690], [128, 673], [135, 665],
+  ] as readonly Px[],
+  /**
+   * What stands at each end. `plate` is the spring seat under the end block, `pack` the dark pack of the primary springs and their guides under it, `damper` the vertical damper beside the
+   * end block, `bracket` the cast lug on the axle box's inboard side, `arm` the axle-box arm (an outline, from its eye to the axle box), `housing` and `cap` the radii of the round housing
+   * and of the cap standing on it, both on the axle (a calibration point).
+   */
+  left: {
+    plate: [142, 722, 285, 745] as PxRect,
+    pack: [160, 745, 300, 828] as PxRect,
+    damper: [93, 728, 133, 957] as PxRect,
+    bracket: [285, 860, 345, 945] as PxRect,
+    arm: [[12, 949], [40, 942], [62, 938], [62, 927], [120, 905], [170, 884], [200, 884], [200, 967], [62, 963], [35, 964], [12, 960]] as readonly Px[],
+    housing: 55,
+    cap: 36,
+  },
+  right: {
+    plate: [1590, 718, 1730, 742] as PxRect,
+    pack: [1572, 742, 1762, 810] as PxRect,
+    damper: [1806, 693, 1862, 930] as PxRect,
+    bracket: [1520, 850, 1585, 945] as PxRect,
+    // (the photograph's arm runs on to x 1912; it is cut at 1900, 1.790 m from the middle, because no part of a bogie may be longer than its wheels reach, 1.798 m)
+    arm: [[1700, 880], [1745, 872], [1800, 898], [1850, 922], [1900, 934], [1900, 975], [1790, 968], [1700, 964]] as readonly Px[],
+    housing: 75,
+    cap: 46,
+  },
+  /**
+   * The air spring over the middle: the rubber bag (a pancake) and, under it, the beam's top (`base`, the row of the lower end of the beam's flat top; the pedestal stands on it). The picture shows the bag's
+   * left edge and its shaded right one, and it stands over the middle of the caps.
+   */
+  air: { bag: [738, 597, 1141, 715] as PxRect, base: 741 },
+  /** The bolted shelf hung under the middle of the beam, and the shoe beam along the bottom of the bogie (a long bar between the axle boxes, the third-rail shoe gear's carrier). */
+  shelf: [890, 868, 1295, 885] as PxRect,
+  shoe: [300, 960, 1560, 1005] as PxRect,
 } as const;

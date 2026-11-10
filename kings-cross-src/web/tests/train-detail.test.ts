@@ -1864,9 +1864,16 @@ test('bogies: wheels have flanges and the bogie has brake discs and springs, mot
   // CHANGED (round 6: it asked the AT300's motor bogie for motors and its trailer for none): the AT300's bogie is the one its photograph shows (`train-bogie-trace.test.ts`), the same under a
   // motor car and a trailer car, with nothing hung between the wheels: the photograph of a trailer bogie shows nothing there and none shows a motor bogie's, so no motor is drawn on a guess.
   // The makers whose motors are drawn are the other three.
+  // CHANGED (round 6, the second frame traced): the Electrostar's frame is traced from its photographs (`train-bogie-trace-electrostar.test.ts`), and the photograph of a P3-25 (a powered bogie) shows nothing hung
+  // between its wheels either, so the Electrostar's motor bogie and trailer bogie are the one bogie as the AT300's are, and neither draws a motor (the makers whose motors are drawn are the Siemens' and the Alstom's)
   assert.equal(motorRings(motor), 0, 'the AT300 draws no traction motor');
   assert.equal(motorRings(trailer), 0);
-  for (const style of ['electrostar', 'siemens', 'alstom'] as const) {
+  for (const isMotor of [true, false]) {
+    const s = bogieSoup({ ...spec, motor: isMotor, style: 'electrostar' });
+    assert.equal(motorRings(s), 0, `the Electrostar draws no traction motor (motor ${isMotor})`);
+    assert.ok(count(s) > 1200 && count(s) < 4500, `Electrostar bogie triangles ${count(s)}`);
+  }
+  for (const style of ['siemens', 'alstom'] as const) {
     const m = bogieSoup({ ...spec, motor: true, style });
     const t = bogieSoup({ ...spec, motor: false, style });
     assert.ok(motorRings(m) >= 4 * 16 && motorRings(t) === 0, `${style}: a motor bogie has its traction motors: ${motorRings(m)} vertices of end shields against a trailer's ${motorRings(t)}`);
@@ -2061,13 +2068,19 @@ test('bogies: a driven bogie of the diesel Class 180 has a final-drive gearbox o
     assert.ok(!xs(driven).some((x) => Math.abs(Math.abs(x) - 0.31) < 1e-5), `car ${car.index}: the driven bogie has traction motors`);
     assert.ok(xs(driven).filter((x) => Math.abs(x) < 0.05).length >= 8, `car ${car.index}: the driven bogie has no cardan shaft`);
   }
-  // an electric unit has no diesel bogie: the 387's motor bogie is the one with traction motors
-  const e = built('gn387x4');
-  const motorCar = trainLayout('gn387x4').cars.find((c) => c.type === 'MSO') as Car;
+  // an electric unit has no diesel bogie: the Class 700's motor bogie is the one with traction motors
+  // CHANGED (round 6): it read the 387's, whose frame is now traced from its photographs, which show nothing hung between the wheels of a powered bogie (a GAP: what a motor bogie of the Electrostar
+  // carries is not observable here), so the 387's motor bogie draws no motor and the Siemens' is the electric one drawn here
+  const e = built('tl700x8');
+  const motorCar = trainLayout('tl700x8').cars.find((c) => c.type === 'MSO') as Car;
   const bogieGeo = (k: number): THREE.BufferGeometry => meshes(named(e, `bogie-${motorCar.index}-${k}`), 'near').geometry;
   const motorK = motorCar.motor.findIndex(Boolean);
   const pos = (geo: THREE.BufferGeometry): THREE.BufferAttribute => geo.getAttribute('position') as THREE.BufferAttribute;
   assert.ok(Array.from({ length: pos(bogieGeo(motorK)).count }, (_, i) => Math.abs(Math.abs(pos(bogieGeo(motorK)).getX(i)) - 0.31) < 1e-5).some(Boolean), 'the electric motor bogie has traction motors');
+  const e387 = built('gn387x4');
+  const motorCar387 = trainLayout('gn387x4').cars.find((c) => c.type === 'MSO') as Car;
+  const geo387 = meshes(named(e387, `bogie-${motorCar387.index}-${motorCar387.motor.findIndex(Boolean)}`), 'near').geometry;
+  assert.ok(!Array.from({ length: pos(geo387).count }, (_, i) => Math.abs(Math.abs(pos(geo387).getX(i)) - 0.31) < 1e-5).some(Boolean), 'the Electrostar\'s motor bogie draws no traction motor');
 });
 
 test('bogies: far off, a bogie is drawn bare: wheels, side frames and a transom, a tenth of the triangles, on the same wheels', () => {
@@ -2303,13 +2316,14 @@ test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, a t
     const parts = bogieParts(spec);
     const twin = bogieParts({ ...spec, motor: !spec.motor });
     const [motor, trailer] = spec.motor ? [parts, twin] : [twin, parts];
-    if (spec.style === 'hitachi') {
+    if (spec.style === 'hitachi' || spec.style === 'electrostar') {
       // CHANGED (round 6; it asked the AT300's motor bogie for a drive of 100 triangles or more and its trailer bogie for four brake units): the AT300's bogie is traced from the photograph of a trailer
       // bogie (`train-bogie-trace.test.ts`), which shows nothing hanging between the wheels, and no photograph shows what a motor bogie carries there. A motor bogie's drive and a trailer's brake units
       // were ASSUMED shapes, so they are not drawn: a motor bogie and a trailer bogie are the same bogie, in every part, with the wheels' discs and callipers and no more.
+      // CHANGED (round 6, the second frame traced): the Electrostar's too (`train-bogie-trace-electrostar.test.ts`): the photograph of its P3-25, a powered bogie, shows nothing hung between its wheels
       for (const part of ['wheels', 'axles', 'brakes', 'frame', 'springs', 'drive'] as const) assert.deepEqual(motor[part].pos, trailer[part].pos, `${label}: a motor bogie's ${part} are a trailer's`);
       assert.equal(trisOf(motor.drive), 0, `${label}: no drive is drawn`);
-      const discsOnly = bogieParts({ ...spec, style: 'electrostar', diesel: false, motor: true }).brakes;
+      const discsOnly = bogieParts({ ...spec, style: 'siemens', diesel: false, motor: true }).brakes;
       assert.equal(trisOf(trailer.brakes), trisOf(discsOnly), `${label}: the brakes are the discs and callipers alone, as a motor bogie of any other maker has them, with no brake unit`);
       for (const soup of [motor.brakes, trailer.brakes]) {
         const discs = vertsOf(soup).filter((v) => Math.abs(Math.abs(v[0]) - 0.3) <= DISC_THICKNESS / 2 + 1e-9);
@@ -2391,10 +2405,11 @@ test('bogie drives hang in view: a motor bogie\'s drive and a trailer bogie\'s b
     const beam = vertsOf(parts.frame).filter((v) => Math.abs(v[0]) >= 0.4 && Math.abs(v[2]) <= 0.6 && v[1] >= spec.radius - 0.17);
     assert.ok(beam.length >= 8, `${label}: found the side beams`);
     const beamBottom = Math.min(...beam.map((v) => v[1]));
-    if (spec.style === 'hitachi') {
+    if (spec.style === 'hitachi' || spec.style === 'electrostar') {
       // CHANGED (round 6; it held the AT300's motor bogie's drive and its trailer bogie's brake units to MOTOR_FLOOR over the rail head, 10 cm under the beam): neither is drawn (see 'bogie drives' above), so
       // nothing of the brakes or the drive stands in the clear between the wheels; what hangs lowest there is the frame's, and `train-bogie-trace.test.ts` holds that to the photograph
-      assert.equal(trisOf(parts.drive), 0, `${label}: the AT300 draws no drive`);
+      // (the Electrostar's too, from its own: `train-bogie-trace-electrostar.test.ts`)
+      assert.equal(trisOf(parts.drive), 0, `${label}: the AT300 and the Electrostar draw no drive`);
       assert.equal(vertsOf(parts.brakes).filter(clear).length, 0, `${label}: no brake unit hangs in the clear between the wheels`);
       continue;
     }
@@ -2451,8 +2466,8 @@ const soupTris = (s: Soup): { v: [V3t, V3t, V3t]; c: [number, number, number] }[
 const linearLuma = (c: [number, number, number]): number => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
 test('bogie drives: a traction motor\'s gear case is a box from its axle to the motor\'s far end, on the opposite sides for the two axles, in the gear colour and not the barrel\'s', () => {
-  // (round 6: not the AT300's, which draws no motor)
-  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel && c.spec.style !== 'hitachi')) {
+  // (round 6: not the AT300's nor the Electrostar's, which draw no motor)
+  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel && c.spec.style !== 'hitachi' && c.spec.style !== 'electrostar')) {
     const r = spec.radius;
     const w = spec.wheelbase / 2;
     const tris = soupTris(bogieParts(spec).drive);
@@ -2535,11 +2550,12 @@ test('bogie drives: a diesel unit\'s final drive is a gearbox on each axle, a ca
 // CHANGED (round 5: the caps were 2,600 (a motor bogie) and 2,400 (a trailer), the AT300's 2,700 and 2,550): a motor bogie's motors are 16 sided and carry bosses (144 triangles more) and a trailer bogie
 // draws its brake units (272 more), so a motor and a trailer bogie are about the same size now (2,740 and 2,732 triangles at most, the AT300's), and each style has the one cap.
 // The real limit is the rubric's 6.0 x per kind near growth and 40,000 triangles a car (the 2026-11-09 budget ruling; see the cost counter), which every kind meets with room to spare.
-test('bogie budgets: a near bogie is at most 2,500 triangles, the AT300\'s 4,500, a far one at most 300, in every style', () => {
+test('bogie budgets: a near bogie is at most 2,500 triangles, the AT300\'s and the Electrostar\'s 4,500, a far one at most 300, in every style', () => {
   for (const { label, spec } of BOGIE_CASES) {
     const nearN = trisOf(bogieSoup(spec));
     const farN = trisOf(bogieFarSoup(spec));
-    const cap = spec.style === 'hitachi' ? 4500 : 2500;
+    // CHANGED (round 6; the Electrostar's was 2,500 like the others'): its frame is traced from its photographs, as the AT300's is (`train-bogie-trace-electrostar.test.ts` holds the parts to them)
+    const cap = spec.style === 'hitachi' || spec.style === 'electrostar' ? 4500 : 2500;
     assert.ok(nearN <= cap, `${label}: ${nearN} triangles in the near bogie (at most ${cap})`);
     assert.ok(nearN >= 1800, `${label}: ${nearN} triangles is too bare for a bogie that reads as one at three metres`);
     assert.ok(farN <= 300 && farN >= 100, `${label}: ${farN} triangles in the far bogie`);

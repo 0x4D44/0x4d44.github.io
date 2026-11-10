@@ -21,16 +21,17 @@
 //   GC180-01-180-101-Kings-Cross-8077814883-.jpg   the Class 180's leading bogie from the cab end: a boxy dusty frame, axle
 //       boxes with a spring pot above, a long gold-ended damper low across the middle.
 //   gn387_03_387123_cambridge.jpg   the Electrostar's cab bogie, about a hundred pixels across: a dark frame with a damper
-//       across the middle and nothing that tells it from the generic outside-frame bogie; so it is drawn as that.
+//       across the middle (round 5: drawn as the generic outside-frame bogie from this one). Round 6: the Electrostar's frame is traced from
+//       `Bogie and traction equipment beneath Door A1 of Class 375 Electrostar .jpg` (OathOn, CC0), point by point, in `train-bogie-trace.ts`.
 // What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames. The one exception is what tells a motor bogie from a
 // trailer bogie, which a bogie must show and no photograph here does: a motor bogie's traction motors with their gear cases (a diesel's final drives and cardan shaft), a trailer bogie's
-// brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`). Not the AT300's: round 6 traced
-// its frame from the photograph of a trailer bogie, which shows nothing hung between the wheels, and no photograph shows a motor bogie's, so a motor bogie and a trailer bogie of the AT300 are the
-// same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here).
+// brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`). Not the AT300's nor the Electrostar's: round 6 traced
+// their frames from photographs, the AT300's of a trailer bogie and the Electrostar's of a powered one, which show nothing hung between the wheels, and no photograph shows what a motor bogie of the
+// AT300 carries, so a motor bogie and a trailer bogie of each are the same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here).
 import * as THREE from 'three';
 import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { AT300_TRACE } from './train-bogie-trace.ts';
+import { AT300_TRACE, ELECTROSTAR_TRACE } from './train-bogie-trace.ts';
 import type { Px, PxCircle, PxRect } from './train-bogie-trace.ts';
 
 /** Wheel tread width. Assumed. */
@@ -297,11 +298,11 @@ const PALETTES: Record<BogieStyle, Palette> = {
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5c6168),
     motor: col(0x5b6068), gear: col(0x6a6f77), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
-  // the Electrostar's: the same outside-frame kit in a slightly bluer dark grey (no photograph of its bogie is usable)
+  // the Electrostar's: the neutral dark grey of the bogie in OathOn's photograph (brake dust and dirt over cast grey: the beam body 0x373635 in shade, the pack black, the cap 0x525152, the shoe beam 0x454341, the bag 0x67645e lit); the wheels' are as they were
   electrostar: {
-    frame: col(0x494e57), box: col(0x383c44), cap: col(0x51565f), spring: col(0x60656d), coil: col(0x2c2e33),
+    frame: col(0x4a4947), box: col(0x2f2e2c), cap: col(0x555453), spring: col(0x67645e), coil: col(0x2c2b29),
     tread: col(0x9a9fa6), rim: col(0x6d727a), web: col(0x4a4f57), hub: col(0x80858c), inner: col(0x30343a),
-    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x1d1f23), clevis: col(0x5e636b),
+    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x302f2e), clevis: col(0x4f4e4b),
     motor: col(0x5b6068), gear: col(0x6a6f77), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
   // the SF7000's: light-grey frame, webs and covers, a rust-brown rim, black rubber (tl700_03_gatwick_bogie_28898326470.jpg)
@@ -384,7 +385,7 @@ function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
       const z0 = az + inward * 0.2;
       const z1 = az + inward * 0.34;
       soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
-      if (spec.motor || style === 'hitachi') continue;
+      if (spec.motor || style === 'hitachi' || style === 'electrostar') continue;
       // the strap down from the calliper, and the cylinder it carries, with its flange on the end toward the middle of the bogie
       const [sx0, sx1] = xs(sx, 0.3 - unit.strap / 2, 0.3 + unit.strap / 2);
       const strapZ0 = az + inward * unit.z0;
@@ -600,18 +601,112 @@ function at300Frame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
 }
 
 /**
- * An outside-frame bogie of the Electrostar's or the Class 180's makers: an axle box and a coil spring on each journal, a side beam resting on the springs,
- * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams. (The AT300's is `at300Frame`, traced from a photograph.)
+ * How far out from the centre line each part of the Electrostar's frame stands, as [from, to] or one centre line (metres). ASSUMED: a side-on photograph shows no depth. The beam keeps the
+ * depths the AT300's gives its own (0.975 to 1.065 m), so the wheel zone and the 1.15 m envelope are as they were; the seat and the pack stand under the end block, the arm beside the axle
+ * box, the housing and the cap on the axle box's end (the outermost, 1.13 m), the shelf under the beam, the shoe beam outboard of the arms, and the air spring on the beam's middle, its bag
+ * standing 0.77 m out so that its outer edge is inside the envelope (1.145 m). No two parts of the frame share a plane of the same facing, so a face is told from its neighbour's by its plane.
  */
-function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: 'electrostar' | 'alstom'): void {
+const ES_DEPTH = {
+  beam: [0.975, 1.065],
+  seat: [0.985, 1.07],
+  pack: [0.99, 1.06],
+  damper: 1.02,
+  arm: [1.0, 1.05],
+  housing: [1.065, 1.095],
+  cap: [1.095, 1.13],
+  bracket: [1.06, 1.1],
+  shelf: [0.995, 1.055],
+  shoe: [1.035, 1.105],
+  air: 0.77,
+} as const;
+/** The Electrostar's air spring: the radius of the dark pedestal between the beam and the bag (ASSUMED: the photograph shows the pedestal's height, not its width). */
+const ES_AIR_PEDESTAL = 0.3;
+
+/** The profile (height, radius) of a pancake air spring of height `h` and radius `rho`: a flat bottom, a rolled edge of radius `h` / 2 in six steps, and a flat top. */
+function pancake(h: number, rho: number): [number, number][] {
+  const roll = h / 2;
+  const out: [number, number][] = [[0, 0]];
+  for (let k = -3; k <= 3; k++) {
+    const phi = (k * Math.PI) / 6;
+    out.push([roll + roll * Math.sin(phi), rho - roll + roll * Math.cos(phi)]);
+  }
+  out.push([h, 0]);
+  return out;
+}
+
+/**
+ * The Electrostar's side frame, traced from `ELECTROSTAR_TRACE`'s photograph: what is drawn is what the photograph shows, in the plane of the side beam, and the depths across the bogie
+ * (`ES_DEPTH`) are ASSUMED. The beam is one plate of the traced outline on each side; at each end stand the spring seat and the dark pack of the primary springs under the end block, the
+ * vertical damper, the axle-box arm, the round housing with its cap on the axle, and the cast lug; along the middle the bolted shelf under the beam, the shoe beam low along the bogie, and
+ * over the middle the air spring (a pancake bag on a pedestal). The two ends are not each other's mirror, so each is traced; the far side beam is the near one turned half a turn about the
+ * vertical (z -> -z), ASSUMED. A trailer bogie and a motor bogie are the same here: the photograph of a P3-25 (a powered bogie) shows nothing hung between its wheels, and none shows a trailer bogie's.
+ */
+function electrostarFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
+  const t = ELECTROSTAR_TRACE;
+  const T = tracer(t.caps, spec);
+  const D = ES_DEPTH;
+  const r = spec.radius;
+  const metres = (p: Px): P2 => [T.z(p[0]), T.y(p[1])];
+  /** A rectangle of the photograph as the metres it spans: along the bogie (z0 < z1) and up (y0 < y1). */
+  const span = (q: PxRect): { z0: number; z1: number; y0: number; y1: number } => ({ z0: Math.min(T.z(q[0]), T.z(q[2])), z1: Math.max(T.z(q[0]), T.z(q[2])), y0: T.y(q[3]), y1: T.y(q[1]) });
+  const beam = t.beam.map(metres);
+  const bag = span(t.air.bag);
+  const beamTop = T.y(t.air.base);
+  for (const sx of [-1, 1] as const) {
+    /** The far side beam turns everything half a turn about the vertical. */
+    const turn = (p: P2): P2 => [sx * p[0], p[1]];
+    const zs = (s: { z0: number; z1: number }): [number, number] => (sx > 0 ? [s.z0, s.z1] : [-s.z1, -s.z0]);
+    const [bx0, bx1] = xs(sx, D.beam[0], D.beam[1]);
+    plate(F, beam.map(turn), bx0, bx1, pal.frame, pal.box, sx);
+    for (const [end, cap] of [[t.left, t.caps[0]], [t.right, t.caps[1]]] as const) {
+      const seat = span(end.plate);
+      const [sz0, sz1] = zs(seat);
+      const [qx0, qx1] = xs(sx, D.seat[0], D.seat[1]);
+      F.box(qx0, qx1, seat.y0, seat.y1, sz0, sz1, pal.frame);
+      const pack = span(end.pack);
+      const [kz0, kz1] = zs(pack);
+      const [kx0, kx1] = xs(sx, D.pack[0], D.pack[1]);
+      S.box(kx0, kx1, pack.y0, pack.y1, kz0, kz1, pal.box);
+      const damper = span(end.damper);
+      const [dz0, dz1] = zs(damper);
+      tube(F, axisY(sx * D.damper, damper.y0, (dz0 + dz1) / 2), 0, damper.y1 - damper.y0, (damper.z1 - damper.z0) / 2, 10, pal.frame, 'start');
+      const [ax0, ax1] = xs(sx, D.arm[0], D.arm[1]);
+      plate(F, end.arm.map(metres).map(turn), ax0, ax1, pal.frame, pal.box, sx);
+      const az = sx * T.z(cap[0]);
+      tube(F, axisX(sx * D.housing[0], r, az, sx), 0, D.housing[1] - D.housing[0], T.len(end.housing), 14, pal.box, 'end');
+      tube(F, axisX(sx * D.cap[0], r, az, sx), 0, D.cap[1] - D.cap[0], T.len(end.cap), 12, pal.cap, 'end');
+      const lug = span(end.bracket);
+      const [lz0, lz1] = zs(lug);
+      const [lx0, lx1] = xs(sx, D.bracket[0], D.bracket[1]);
+      F.box(lx0, lx1, lug.y0, lug.y1, lz0, lz1, pal.clevis);
+    }
+    // the bolted shelf under the middle of the beam, and the shoe beam along the bottom of the bogie
+    const shelf = span(t.shelf);
+    const [hz0, hz1] = zs(shelf);
+    const [hx0, hx1] = xs(sx, D.shelf[0], D.shelf[1]);
+    F.box(hx0, hx1, shelf.y0, shelf.y1, hz0, hz1, pal.frame);
+    const shoe = span(t.shoe);
+    const [oz0, oz1] = zs(shoe);
+    const [ox0, ox1] = xs(sx, D.shoe[0], D.shoe[1]);
+    F.box(ox0, ox1, shoe.y0, shoe.y1, oz0, oz1, pal.box);
+    // the air spring over the middle of the beam: a pedestal and the pancake bag on it, up to the underside of the body
+    tube(S, axisY(sx * D.air, beamTop, 0), 0, bag.y0 - beamTop, ES_AIR_PEDESTAL, 14, pal.box);
+    lathe(S, axisY(sx * D.air, bag.y0, 0), pancake(bag.y1 - bag.y0, (bag.z1 - bag.z0) / 2), 16, pal.spring);
+  }
+  // the cross beam between the side beams, under the beam's top
+  F.box(-0.98, 0.98, r + 0.07, r + 0.27, -0.08, 0.08, pal.box);
+}
+
+/**
+ * An outside-frame bogie of the Class 180's maker: an axle box and a coil spring on each journal, a side beam resting on the springs,
+ * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams. (The AT300's is `at300Frame` and the Electrostar's
+ * `electrostarFrame`, each traced from a photograph; the Class 180's has none to be traced from, and is drawn by eye from the one that shows its leading bogie.)
+ */
+function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
   const w = spec.wheelbase / 2;
-  const beam =
-    style === 'alstom'
-      ? // a boxy straight beam with shallow ends (GC180-01: a squarer frame than the Hitachi's)
-        beamOutline([[0, r + 0.02], [0.5, r + 0.02], [0.9, r + 0.2], [w + 0.32, r + 0.2], [w + 0.32, r + 0.46], [0.7, r + 0.46], [0, r + 0.4]])
-      : // a flatter, lower beam
-        beamOutline([[0, r + 0.04], [0.5, r + 0.04], [0.85, r + 0.2], [w + 0.34, r + 0.2], [w + 0.34, r + 0.44], [0.8, r + 0.44], [0, r + 0.4]]);
+  // a boxy straight beam with shallow ends (GC180-01: a squarer frame than the Hitachi's)
+  const beam = beamOutline([[0, r + 0.02], [0.5, r + 0.02], [0.9, r + 0.2], [w + 0.32, r + 0.2], [w + 0.32, r + 0.46], [0.7, r + 0.46], [0, r + 0.4]]);
   const springTop = r + 0.26;
   for (const sx of [-1, 1]) {
     const [bx0, bx1] = xs(sx, 0.975, 1.065);
@@ -760,10 +855,11 @@ export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
   } else {
     axles(parts.axles, spec, pal, 0.96);
     if (style === 'hitachi') at300Frame(parts.frame, parts.springs, spec, pal);
-    else outsideFrame(parts.frame, parts.springs, spec, pal, style === 'alstom' ? 'alstom' : 'electrostar');
+    else if (style === 'electrostar') electrostarFrame(parts.frame, parts.springs, spec, pal);
+    else outsideFrame(parts.frame, parts.springs, spec, pal);
   }
   if (spec.motor && spec.diesel) finalDrive(parts.drive, spec, pal);
-  else if (spec.motor && style !== 'hitachi') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
+  else if (spec.motor && style !== 'hitachi' && style !== 'electrostar') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
   return parts;
 }
 
