@@ -17,7 +17,7 @@ import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinno
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
-import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
+import { EAST_SKIRT, LAND_HAZE, PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch, material } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
@@ -658,6 +658,32 @@ test('the east patch meets the main terrain without a seam, over the covered cor
     assert.ok(mp.getY(v) <= EAST_SKIRT.to + 1e-6 && Math.abs(mc.getY(v) - ends.g) < 1e-3, 'it ends under the plane in the hazed tone');
   }
   assert.ok(far > 100, `main apron outer vertices: ${far}`);
+});
+
+test('the land past the terrain fades into the haze with depth, and the Tay fades out at the patch\'s east edge (155; round 10, C6/C3)', () => {
+  // the apron and the east patch (Perth's own materials) mix to the fog colour from LAND_HAZE.from to .to m of view depth: past the
+  // town (2.4 km from the summit, untouched) and inside the camera's 9 km far plane, so the land has gone into the haze before it is cut off
+  assert.ok(LAND_HAZE.from >= 2400 && LAND_HAZE.to <= 9000 && LAND_HAZE.to - LAND_HAZE.from >= 3000, `land haze ${LAND_HAZE.from}-${LAND_HAZE.to}`);
+  for (const name of ['perth-main-apron', 'perth-east-ground']) {
+    const m = (scene.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    const shader = {fragmentShader: THREE.ShaderLib.lambert.fragmentShader, vertexShader: THREE.ShaderLib.lambert.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+    m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
+    const f = shader.fragmentShader, at = f.indexOf(`smoothstep(${LAND_HAZE.from.toFixed(1)}, ${LAND_HAZE.to.toFixed(1)}, vFogDepth)`);
+    assert.ok(at > f.indexOf('#include <fog_fragment>') && f.slice(at - 80, at).includes('mix(gl_FragColor.rgb, fogColor'), `${name} fades into the haze`);
+    assert.ok(m.customProgramCacheKey().includes('perth-land-haze'), `${name}: its own program`);
+  }
+  // the river's end: its sheet runs out by the patch's east edge, and there takes the skirt's hazed field tone, smoothly back to the
+  // water's own tone RIVER_END.run m in; the rest of the river (most of it) keeps its tone
+  const E = PERTH_EAST_FILE.extent, water = scene.group.getObjectByName('perth-east-water') as THREE.Mesh, P = water.geometry.getAttribute('position'), C = water.geometry.getAttribute('color');
+  const field = new THREE.Color().setHex(EAST_SKIRT.tone, THREE.SRGBColorSpace), tay = new THREE.Color().setHex(WATER.colour, THREE.SRGBColorSpace);
+  let edge = 0, inner = 0;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i), d = E.x1 - x, c = [C.getX(i), C.getY(i), C.getZ(i)], f = riverEnd(x);
+    if (d < 1) { edge++; assert.ok(Math.abs(c[0]! - field.r) < 1e-3 && Math.abs(c[2]! - field.b) < 1e-3, `the river's end in the field tone at x ${x}`); }
+    if (d >= RIVER_END.run) { inner++; assert.ok(f === 0 && Math.abs(c[0]! - tay.r) < 1e-3 && Math.abs(c[2]! - tay.b) < 1e-3, 'the river in its own tone'); }
+    else assert.ok(Math.abs(c[0]! - (tay.r + (field.r - tay.r) * f)) < 1e-3, 'faded smoothly');
+  }
+  assert.ok(edge >= 2 && inner > P.count * .6, `river vertices at the east edge ${edge}, in its own tone ${inner} of ${P.count}`);
 });
 
 test('the east patch\'s Tay is one continuous river sheet, with trees along its banks (2166751, 46028; round 3, C3)', () => {

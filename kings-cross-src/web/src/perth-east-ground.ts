@@ -35,6 +35,31 @@ export const EAST_SKIRT = {out: 6000, to: GROUND_Y - .3, tone: 0x7c8770} as cons
  *  under the plane on the Tay's floodplain), so the plane showed past it; the apron also runs out from the patch's east and south edges
  *  and its south-east corner, in `eastStep` m pieces (fewer triangles: those edges are only seen far off). */
 export const MAIN_APRON = {step: 64, from: 0x6c7a55, eastStep: 192} as const;
+/** Round 10 (round-9 score, C6/C2: with the clearer air the land past the terrain showed as a flat olive plain to the horizon, ending
+ *  hard against the sky at the camera's far plane, 9 km). The apron and the east patch fade on into the scene's own haze colour
+ *  (fogColor) with view depth, from none at `from` m to all of it by `to` m, on top of the scene's fog, so the land softens into the
+ *  haze before the far plane cuts it off, as 155's fields do by 6-8 km. Perth's own materials; the shared fog is unchanged. No
+ *  hills: none is sourced. */
+export const LAND_HAZE = {from: 2500, to: 8500} as const;
+/** Round 10 (round-9 score: the Tay ended on the patch's straight edge in the cliff view). The river leaves the patch by its east edge
+ *  (x 4128, z 1072-1232; it runs within 300 m of the south edge all the way, so that edge is not faded): within `run` m of the east
+ *  edge the river sheet and its shingle fade to EAST_SKIRT.tone, the hazed field the skirt runs out in. */
+export const RIVER_END = {run: 450} as const;
+/** Fade a Lambert material into the fog colour with view depth (LAND_HAZE). */
+export function hazeLand(m: THREE.MeshLambertMaterial): void {
+  m.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#include <fog_fragment>
+#ifdef USE_FOG
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(${LAND_HAZE.from.toFixed(1)}, ${LAND_HAZE.to.toFixed(1)}, vFogDepth));
+#endif`);
+  };
+  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}`;
+}
+/** How far the river is faded at x: 1 on the patch's east edge, 0 from RIVER_END.run m in (smoothstep). */
+export function riverEnd(x: number): number {
+  const d = Math.max(0, PERTH_EAST_FILE.extent.x1 - x), t = Math.min(1, d / RIVER_END.run);
+  return 1 - t * t * (3 - 2 * t);
+}
 /** ASSUMED: the river sheet's level is the `quantile` of the wet nodes' ground within `reach` m, lifted `lift`; the closing radius
  *  `close` m bridges the channel's breaks (up to about twice that); pieces under `minNodes` nodes are dropped. */
 export const EAST_WATER = {reach: 160, quantile: .25, lift: .35, close: 96, minNodes: 6} as const;
@@ -105,7 +130,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
       const sx = i === nx ? EAST_SKIRT.out : 0, sz = j === -1 ? -EAST_SKIRT.out : j === nz ? EAST_SKIRT.out : 0;
       // the apron's outer edge: just under the world's flat plane, in the plane's colour
       if (ci === 0 && (j === -1 || j === nz)) { r.push(vertex(x, z + sz, Math.min(y, EAST_SKIRT.to), tone, 1)); continue; }
-      r.push(sx || sz ? vertex(x + sx, z + sz, Math.min(y, EAST_SKIRT.to), tone, 1) : vertex(x, z, y, tone));
+      // round 10: the shingle by the river's end fades with it (RIVER_END)
+      r.push(sx || sz ? vertex(x + sx, z + sz, Math.min(y, EAST_SKIRT.to), tone, 1) : vertex(x, z, y, tone, wetAt(x, z) ? riverEnd(x) : 0));
     }
     id.push(r);
   }
@@ -116,7 +142,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(index); g.computeVertexNormals(); g.computeBoundingSphere();
-  const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({vertexColors: true}));
+  const gm = new THREE.MeshLambertMaterial({vertexColors: true}); hazeLand(gm);
+  const mesh = new THREE.Mesh(g, gm);
   mesh.name = 'perth-east-ground';
   const group = new THREE.Group(); group.name = 'perth-east'; group.add(mesh);
   const stats = {triangles: index.length / 3, drawCalls: 1};
@@ -127,8 +154,9 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     const hs = wetNodes.filter(([wx, wz]) => Math.hypot(wx - x, wz - z) <= EAST_WATER.reach).map(w => w[2]).sort((a, b) => a - b);
     return Math.max((hs[Math.floor(hs.length * EAST_WATER.quantile)] ?? heightAt(x, z)) + EAST_WATER.lift, heightAt(x, z) + .15);
   };
-  const wpos: number[] = [], widx: number[] = [], wid = new Int32Array(G.nx * G.nz).fill(-1);
-  const wv = (i: number, j: number) => { const k = j * G.nx + i; if (wid[k]! < 0) { const x = G.x0 + i * G.step, z = G.z0 + j * G.step; wpos.push(x, level(x, z), z); wid[k] = wpos.length / 3 - 1; } return wid[k]!; };
+  const wpos: number[] = [], wcol: number[] = [], widx: number[] = [], wid = new Int32Array(G.nx * G.nz).fill(-1), wc = new THREE.Color();
+  // round 10: the sheet's colour per vertex, faded to the skirt's hazed field at the patch's open edges (RIVER_END)
+  const wv = (i: number, j: number) => { const k = j * G.nx + i; if (wid[k]! < 0) { const x = G.x0 + i * G.step, z = G.z0 + j * G.step; wpos.push(x, level(x, z), z); wc.setHex(WATER.colour, THREE.SRGBColorSpace).lerp(plane, riverEnd(x)); wcol.push(wc.r, wc.g, wc.b); wid[k] = wpos.length / 3 - 1; } return wid[k]!; };
   for (let j = 0; j + 1 < G.nz; j++) for (let i = 0; i + 1 < G.nx; i++) {
     const a = wet[j * G.nx + i], b = wet[j * G.nx + i + 1], d = wet[(j + 1) * G.nx + i], e = wet[(j + 1) * G.nx + i + 1];
     if (a && b && d && e) { widx.push(wv(i, j), wv(i, j + 1), wv(i + 1, j), wv(i + 1, j), wv(i, j + 1), wv(i + 1, j + 1)); continue; }
@@ -137,8 +165,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     if (a && d && e && !b) widx.push(wv(i, j), wv(i, j + 1), wv(i + 1, j + 1));
     if (a && b && e && !d) widx.push(wv(i, j), wv(i + 1, j + 1), wv(i + 1, j));
   }
-  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setIndex(widx); wg.computeVertexNormals();
-  const wm = new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess}); gradeWater(wm); // round 10: graded as the main sheet
+  const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.Float32BufferAttribute(wpos, 3)); wg.setAttribute('color', new THREE.Float32BufferAttribute(wcol, 3)); wg.setIndex(widx); wg.computeVertexNormals();
+  const wm = new THREE.MeshPhongMaterial({color: 0xffffff, vertexColors: true, specular: WATER.specular, shininess: WATER.shininess}); gradeWater(wm); // round 10: graded as the main sheet
   const water = new THREE.Mesh(wg, wm);
   water.name = 'perth-east-water'; group.add(water); stats.triangles += widx.length / 3; stats.drawCalls++;
   // bank trees: a crown on a share of the land nodes beside wet ones
@@ -184,7 +212,8 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
     ag.setAttribute('position', new THREE.Float32BufferAttribute(apos, 3)); ag.setAttribute('color', new THREE.Float32BufferAttribute(acol, 3));
     ag.setIndex(aidx); ag.computeVertexNormals(); ag.computeBoundingSphere();
     // drawn over the flat plane where the two run nearly level far off (in the overview they z-fought in stripes)
-    const am = new THREE.Mesh(ag, new THREE.MeshLambertMaterial({vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2})); am.name = 'perth-main-apron';
+    const amat = new THREE.MeshLambertMaterial({vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2}); hazeLand(amat);
+    const am = new THREE.Mesh(ag, amat); am.name = 'perth-main-apron';
     group.add(am); stats.triangles += aidx.length / 3; stats.drawCalls++;
   }
   return {group, stats, heightAt};
