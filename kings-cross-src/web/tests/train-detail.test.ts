@@ -2293,6 +2293,40 @@ test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, a t
     assert.ok(trailerBrakes.length > 0 && [...motorBrakes].every((k) => trailerBrakes.includes(k)), `${label}: a trailer bogie has a motor bogie's discs and callipers`);
     assert.equal(trailerBrakes.filter((k) => !motorBrakes.has(k)).length, 4 * (12 + 24 + 32), `${label}: and four brake units besides`);
     assert.equal(trailerBrakes.length - motorBrakes.size, 4 * 68, `${label}: nothing else of the trailer's brakes is new`);
+    // the units' places, read off those new triangles' corners: the strap and the cylinder start 0.30 m along the bogie from their axle and the flange's far face stands 0.74 m from it, short of the
+    // middle of the bogie; the flange is a ring of 8 cm round the cylinder's axis (0.18 m over the rail head, 0.30 m out), 3 cm long
+    const unitTris = soupTris(trailer.brakes).filter((_, t) => !motorBrakes.has(trailerBrakes[t] as string));
+    const unitCorners = unitTris.flatMap(({ v }) => v);
+    const fromAxle = (v: V3t): number => Math.min(Math.abs(v[2] - spec.wheelbase / 2), Math.abs(v[2] + spec.wheelbase / 2));
+    near(Math.min(...unitCorners.map(fromAxle)), 0.3, 1e-5, `${label}: a brake unit starts 0.30 m along the bogie from its axle`);
+    near(Math.max(...unitCorners.map(fromAxle)), 0.74, 1e-5, `${label}: and ends 0.74 m from it`);
+    const flangeCorners = unitCorners.filter((v) => Math.abs(Math.hypot(Math.abs(v[0]) - 0.3, v[1] - 0.18) - 0.08) < 1e-5);
+    assert.deepEqual([...new Set(flangeCorners.map((v) => fromAxle(v).toFixed(5)))].sort(), ['0.71000', '0.74000'], `${label}: the flange is a ring of 8 cm round the axis, 3 cm long`);
+    // the strap: a box 5 cm across (0.025 either side of the cylinder's axis plane) and 5 cm long (0.30 to 0.35 m from the axle), from the cylinder's lower edge (0.18 - 0.065 m over the rail head) up to the
+    // calliper's foot (7 cm under the axle line)
+    const strapCorners = unitCorners.filter((v) => Math.abs(Math.abs(Math.abs(v[0]) - 0.3) - 0.025) < 1e-5);
+    assert.equal(strapCorners.length, 4 * 12 * 3, `${label}: four straps, each a box of 12 triangles 5 cm across`);
+    assert.deepEqual([...new Set(strapCorners.map((v) => fromAxle(v).toFixed(5)))].sort(), ['0.30000', '0.35000'], `${label}: each strap 5 cm long, from 0.30 m along the bogie`);
+    near(Math.min(...strapCorners.map((v) => v[1])), 0.18 - 0.065, 1e-5, `${label}: a strap's foot is at the cylinder's lower edge`);
+    near(Math.max(...strapCorners.map((v) => v[1])), spec.radius - 0.07, 1e-5, `${label}: and its head at the calliper's foot`);
+    // the colours: the cylinder is a disc's steel, the flange a disc's rim steel and the strap a calliper's, each read off the discs and callipers of the motor bogie's own brakes (so the palette may change);
+    // and the caps: the cylinder is closed at the strap's end only, the flange's own two caps close the other (the fans, told by the plane they lie in)
+    const onFace = (p: V3t, side: 1 | -1): boolean => Math.abs(Math.abs(p[0]) - (0.3 + (side * DISC_THICKNESS) / 2)) < 1e-6;
+    const discTris = soupTris(motor.brakes);
+    const faceSteel = discTris.find(({ v }) => v.every((p) => onFace(p, 1)))!.c;
+    const rimSteel = discTris.find(({ v }) => v.some((p) => onFace(p, 1)) && v.some((p) => onFace(p, -1)))!.c;
+    const calliperSteel = discTris.find(({ v }) => v.every((p) => Math.abs(Math.abs(p[0]) - 0.25) < 1e-6))!.c;
+    const fromAxis = (p: V3t): number => Math.hypot(Math.abs(p[0]) - 0.3, p[1] - 0.18);
+    for (const { v, c } of unitTris) {
+      const strap = v.every((p) => Math.abs(Math.abs(Math.abs(p[0]) - 0.3) - 0.025) < 1e-5);
+      const part = strap ? 'strap' : Math.max(...v.map(fromAxis)) > 0.0725 ? 'flange' : 'cylinder';
+      assert.deepEqual(c, { strap: calliperSteel, flange: rimSteel, cylinder: faceSteel }[part], `${label}: a brake unit's ${part} is the steel of a ${{ strap: 'calliper', flange: "disc's rim", cylinder: 'disc' }[part]}`);
+    }
+    const planes = new Map<string, number>();
+    for (const { v } of unitTris) {
+      if (v.every((p) => Math.abs(p[2] - v[0][2]) < 1e-6) && v.some((p) => fromAxis(p) < 1e-5)) planes.set(fromAxle(v[0]).toFixed(5), (planes.get(fromAxle(v[0]).toFixed(5)) ?? 0) + 1);
+    }
+    assert.deepEqual([...planes].sort(), [['0.30000', 4 * 8], ['0.71000', 4 * 8], ['0.74000', 4 * 8]], `${label}: the cylinder is closed at the strap's end only and the flange at both of its own`);
     // brake discs on both: two a side of the middle on each axle, in the plane |x| = 0.3, the callipers on them
     for (const soup of [motor.brakes, trailer.brakes]) {
       const discs = vertsOf(soup).filter((v) => Math.abs(Math.abs(v[0]) - 0.3) <= DISC_THICKNESS / 2 + 1e-9);
@@ -2442,6 +2476,11 @@ test('bogie drives: a diesel unit\'s final drive is a gearbox on each axle, a ca
     const yokes = tris.filter(({ v }) => v.every((p) => Math.abs(p[0]) < 0.12) && v.some((p) => Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - YOKE_RADIUS) < 1e-6));
     const startRing = tube.flatMap(({ v }) => v).filter((p) => Math.abs(p[2] - z0) < 1e-6 && Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - CARDAN_RADIUS) < 1e-6);
     assert.equal(distinct(startRing), 8, `${label}: the shaft is eight sided`);
+    // ...and each yoke is too: the ring of its outer end (the end of the tube it stands on) has eight corners. The count of triangles below is a floor, which a yoke of more sides meets as well
+    for (const z of [z0, -z0]) {
+      const yokeRing = yokes.flatMap(({ v }) => v).filter((p) => Math.abs(p[2] - z) < 1e-6 && Math.abs(Math.hypot(p[0], p[1] - (r + CARDAN_AXIS)) - YOKE_RADIUS) < 1e-6);
+      assert.equal(distinct(yokeRing), 8, `${label}: the yoke at the shaft's end ${z.toFixed(3)} is eight sided`);
+    }
     assert.ok(tube.length >= 16 && yokes.length >= 16, `${label}: ${tube.length} triangles of the tube, ${yokes.length} of the yokes`);
     for (const { c } of yokes) assert.ok(linearLuma(c) > linearLuma(tube[0]!.c) + 0.05, `${label}: a yoke is no lighter than the shaft`);
   }
