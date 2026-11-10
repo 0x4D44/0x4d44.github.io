@@ -739,8 +739,11 @@ test('the town reads through the haze from the summit: a dark lead spire, darker
   // carry the contrast instead
   const lin = (c: THREE.Color) => .2126 * c.r + .7152 * c.g + .0722 * c.b;
   const spire = scene.group.getObjectByName('perth-kirk-spire') as THREE.Mesh;
-  assert.ok(lin((spire.material as THREE.MeshLambertMaterial).color) < .06, 'a dark lead spire (round 7: 0x6e7479, about 0.17 linear)');
   const roofs = scene.group.getObjectByName(PERTH_CITY_MESHES.tops) as THREE.Mesh, slate = (material('slate') as THREE.MeshLambertMaterial).color.clone().multiply(new THREE.Color(0xada99f));
+  // round 9 (round-8 score: the 'under 0.06' spire sank into the roofs; replaces that check): the spire lighter than the roofs round it,
+  // at least 3 times their tint (the roofs' slate map, which node does not build, only darkens them further; the spire has no map)
+  const sp = lin((spire.material as THREE.MeshLambertMaterial).color), rf = lin((roofs.material as THREE.MeshLambertMaterial).color);
+  assert.ok(!(spire.material as THREE.MeshLambertMaterial).map && sp > rf * 3, `the spire against the roofs: ${sp.toFixed(3)} vs ${rf.toFixed(3)}`);
   assert.ok(lin((roofs.material as THREE.MeshLambertMaterial).color) <= lin(slate) * .8, 'the roofs darker than the shared slate');
   assert.ok(lin((material('slate') as THREE.MeshLambertMaterial).color) > lin((roofs.material as THREE.MeshLambertMaterial).color), 'the shared slate itself untouched');
   const masonry = scene.group.getObjectByName('perth-city-masonry') as THREE.Mesh, col = masonry.geometry.getAttribute('color'); let bridge = 0;

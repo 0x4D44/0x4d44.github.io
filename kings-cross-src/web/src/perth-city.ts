@@ -68,7 +68,10 @@ export const PERTH_CITY_STONE = 0x949aa8, PERTH_CITY_ASHLAR = 0xb8c4e2;
  *  (lead's ruling: Perth's own materials only), so the town reads through it by contrast: St John's spire in a darker lead `spire`
  *  (from 0x6e7479), the town's slate roofs `roofs` of their shared tone, and the road bridges' stone `bridges` of the ashlar, so the
  *  dark roofs, the spire and the bridges stand off the pale walls and the haze. ASSUMED tones. */
-export const TOWN_LOOK = {spire: 0x383d43, roofs: .72, bridges: .7} as const;
+export const TOWN_LOOK = {spire: 0x6e7479, roofs: .72, bridges: .7} as const;
+/** Round 9 (round-8 score: the dark spire sank into the darker roofs round it, and C2 lost the gain): the spire back to round 7's
+ *  0x6e7479, a mid-grey lead that stands lighter than the darkened roofs; the clearer air (station-weather.ts PERTH_CLEAR_AIR) now
+ *  carries it against the sky. */
 /** The city mesh names; the tops are a roof for the cover map (cover.ts ROOF_MESHES). */
 export const PERTH_CITY_MESHES = {walls: 'perth-city-walls', ashlar: 'perth-city-ashlar', tops: 'perth-city-roofs', shops: 'perth-city-shops'} as const;
 /** Perth's shop streets: the mapped carriageways of the main classes (primary to tertiary, 8.5 m and over) and the pedestrian High
