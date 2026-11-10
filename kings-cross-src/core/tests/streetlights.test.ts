@@ -6,10 +6,12 @@ import test from 'node:test';
 import { buildCity, hash01, inKxCentral } from '../city.ts';
 import type { CityData, RoadClass } from '../city.ts';
 import type { Pt } from '../geo.ts';
-import type { KxData } from '../osm.ts';
-import { pointInPolygon, shedLayout, shedToWorld, worldToShed } from '../station.ts';
+import { distToRing } from '../kxcentral.ts';
+import type { Building, KxData } from '../osm.ts';
+import { pointInPolygon, shedLayout, shedToWorld, stationBuilding, worldToShed } from '../station.ts';
 import {
-  decodeLampRoads, encodeLampRoads, forecourtMasts, FORECOURT_MASTS, LAMP_END_MARGIN, LAMP_KERB, LAMP_KIND, LAMP_MIN_RUN, LAMP_RULES, lampKind, lampSpots, MAST_HEIGHT, MAST_LIFT, POOL_REACH, poolRadius,
+  decodeLampRoads, encodeLampRoads, forecourtMasts, FORECOURT_MASTS, LAMP_END_MARGIN, LAMP_KERB, LAMP_KIND, LAMP_MIN_RUN, LAMP_RULES, lampKind, lampSpots, MAST_CLEAR, MAST_HEIGHT, MAST_LIFT, mastIsClear,
+  POOL_REACH, poolRadius,
 } from '../streetlights.ts';
 import type { LampContext, LampRoad, LampRule, LampRun } from '../streetlights.ts';
 
@@ -194,10 +196,14 @@ test('a pool of light reaches POOL_REACH post heights, to where the light, falli
   close(edge ** 3, 1 / 11, 0.005, 'a eleventh at the edge');
 });
 
+// the shed's frame needs the station building and no other: with it alone no building is near any place of the table, so every place has its mast
+const station = stationBuilding(data) as Building;
+const lone: Pick<KxData, 'platforms' | 'buildings'> = { platforms: data.platforms, buildings: [station] };
+
 test('forecourtMasts: a row of masts in front of the station front, in the shed\'s frame, each on the ground it is given and tilted to it', () => {
   const layout = shedLayout(data);
   const plane = (x: number, z: number): number => 4.2 + 0.02 * x + 0.01 * z;
-  const masts = forecourtMasts(data, plane);
+  const masts = forecourtMasts(lone, plane);
   assert.equal(masts.length, FORECOURT_MASTS.length);
   assert.ok(masts.length >= 4 && masts.length <= 10);
   masts.forEach((m, i) => {
@@ -221,16 +227,74 @@ test('forecourtMasts: a row of masts in front of the station front, in the shed\
   assert.deepEqual(forecourtMasts({ platforms: data.platforms, buildings: [] }, plane), []);
 });
 
-test('the real forecourt: no mast stands in a building or within two metres of a street lamp, and the masts are spaced apart along the front', () => {
+test('mastIsClear: in the clear is outside every building and MAST_CLEAR or more from every outline, the nearest building deciding, whichever order they come in', () => {
+  const ring = (x0: number, x1: number, h = 2): Pt[] => [[x0, -h], [x1, -h], [x1, h], [x0, h]];
+  const wall = (gap: number): Pick<Building, 'pts'> => ({ pts: ring(gap, gap + 4) });
+  const here: Pt = [0, 0];
+  assert.equal(mastIsClear(here, []), true, 'no building, no wall to be against');
+  assert.equal(mastIsClear(here, [wall(MAST_CLEAR + 5)]), true, 'a building well clear');
+  assert.equal(mastIsClear(here, [wall(MAST_CLEAR)]), true, 'a wall exactly MAST_CLEAR away is the nearest a mast may stand to it');
+  assert.equal(mastIsClear(here, [wall(MAST_CLEAR - 0.01)]), false, 'a hair nearer is against it');
+  assert.equal(mastIsClear(here, [wall(1)]), false, 'a wall a metre off');
+  // the edge is what counts, not the corners: this wall's corners are all further than MAST_CLEAR from the mast, its face is not
+  const face: Pt[] = [[MAST_CLEAR - 0.5, -50], [MAST_CLEAR + 4, -50], [MAST_CLEAR + 4, 50], [MAST_CLEAR - 0.5, 50]];
+  assert.equal(mastIsClear(here, [{ pts: face }]), false, 'a long wall is judged by its face');
+  // under a roof is not in the clear, however deep inside it is: nowhere near an outline
+  const deep = 4 * MAST_CLEAR;
+  assert.ok(distToRing(here, ring(-deep, deep, deep)) > MAST_CLEAR, 'the test\'s building is deeper than MAST_CLEAR from every wall');
+  assert.equal(mastIsClear(here, [{ pts: ring(-deep, deep, deep) }]), false, 'inside a building');
+  // the nearest building decides, in whatever order the map lists them
+  assert.equal(mastIsClear(here, [wall(MAST_CLEAR + 5), wall(2)]), false, 'the near one last');
+  assert.equal(mastIsClear(here, [wall(2), wall(MAST_CLEAR + 5)]), false, 'the near one first');
+});
+
+test('forecourtMasts: a place of the table with a building nearer than MAST_CLEAR, or under one, has no mast, and the others keep theirs, whichever building it is', () => {
+  const layout = shedLayout(data);
+  const plane = (): number => 0;
+  const places = FORECOURT_MASTS.map(([u, v]) => shedToWorld(layout, u, v));
+  // the places that have a mast, as indexes into the table
+  const standing = (buildings: Building[]): number[] => forecourtMasts({ platforms: data.platforms, buildings }, plane).map((m) => places.findIndex(([x, z]) => Math.hypot(m.x - x, m.z - z) < 1e-6));
+  // a four-metre building with its near face `gap` metres east of place i
+  const beside = (i: number, gap: number): Building => {
+    const [x, z] = places[i] as Pt;
+    return { id: 1, kind: 'retail', pts: [[x + gap, z - 2], [x + gap + 4, z - 2], [x + gap + 4, z + 2], [x + gap, z + 2]] };
+  };
+  assert.deepEqual(standing([station]), [0, 1, 2, 3, 4, 5], 'nothing near: all six');
+  for (const i of [0, 2, 5]) {
+    assert.deepEqual(standing([beside(i, MAST_CLEAR - 0.1), station]), [0, 1, 2, 3, 4, 5].filter((k) => k !== i), `a building ${MAST_CLEAR - 0.1} m from place ${i} takes that place and no other`);
+    assert.deepEqual(standing([station, beside(i, MAST_CLEAR - 0.1)]), [0, 1, 2, 3, 4, 5].filter((k) => k !== i), `the same with the building listed last (place ${i})`);
+    assert.deepEqual(standing([station, beside(i, MAST_CLEAR + 0.1)]), [0, 1, 2, 3, 4, 5], `a building ${MAST_CLEAR + 0.1} m from place ${i} takes none`);
+  }
+  // under a roof: place 3 is deeper than MAST_CLEAR from every wall, so only its being inside takes its mast; the other places are further than MAST_CLEAR from the roof
+  const [cx, cz] = places[3] as Pt;
+  const half = MAST_CLEAR + 4;
+  const roof: Building = { id: 2, kind: 'retail', pts: [[cx - half, cz - half], [cx + half, cz - half], [cx + half, cz + half], [cx - half, cz + half]] };
+  assert.ok(distToRing([cx, cz], roof.pts) > MAST_CLEAR, 'place 3 is deeper than MAST_CLEAR inside the roof');
+  assert.deepEqual(standing([station, roof]), [0, 1, 2, 4, 5], 'under a roof: no mast, and no other place lost');
+});
+
+test('the real forecourt: the masts stand in the clear of every building and more than two metres from a street lamp, are spaced apart along the front, and are the four places the buildings leave', () => {
   const layout = shedLayout(data);
   const masts = forecourtMasts(data, () => 0);
   const real = buildCity(data.buildings, city, { groundY: 0, trees: false });
   for (const m of masts) {
-    for (const b of data.buildings) assert.equal(pointInPolygon([m.x, m.z], b.pts), false, `mast at ${m.x.toFixed(1)}, ${m.z.toFixed(1)} is inside building ${b.id}`);
+    for (const b of data.buildings) {
+      assert.equal(pointInPolygon([m.x, m.z], b.pts), false, `mast at ${m.x.toFixed(1)}, ${m.z.toFixed(1)} is inside building ${b.id}`);
+      assert.ok(distToRing([m.x, m.z], b.pts) >= MAST_CLEAR, `mast at ${m.x.toFixed(1)}, ${m.z.toFixed(1)} is ${distToRing([m.x, m.z], b.pts).toFixed(2)} m from building ${b.id}`);
+    }
     for (const l of real.lamps) assert.ok(Math.hypot(l.x - m.x, l.z - m.z) > 2, `mast at ${m.x.toFixed(1)}, ${m.z.toFixed(1)} is ${Math.hypot(l.x - m.x, l.z - m.z).toFixed(2)} m from a street lamp`);
   }
   const us = masts.map((m) => worldToShed(layout, [m.x, m.z]).u).sort((p, q) => p - q);
   for (let i = 1; i < us.length; i++) assert.ok((us[i] as number) - (us[i - 1] as number) >= 15, `masts ${i - 1} and ${i} are ${((us[i] as number) - (us[i - 1] as number)).toFixed(1)} m apart along the front`);
+  // which places the real map leaves: the two at u -30 and u 10 are 5.6 m and 5.1 m from a building (OSM 96299681 and 234296717), and stand no mast. (Any clearance from 5.7 to 9.4 m leaves these four.)
+  const want: [number, number][] = [[-10, -28], [30, -30], [50, -28], [68, -28]];
+  assert.equal(masts.length, want.length, 'four masts');
+  masts.forEach((m, i) => {
+    const at = worldToShed(layout, [m.x, m.z]);
+    const [u, v] = want[i] as [number, number];
+    close(at.u, u, 1e-6, `mast ${i}'s u`);
+    close(at.v, v, 1e-6, `mast ${i}'s v`);
+  });
 });
 
 test('encodeLampRoads and decodeLampRoads: a line is its first point and then its steps, in whole units, by class, the decks of bridges apart; decoding gives the same lines back', () => {

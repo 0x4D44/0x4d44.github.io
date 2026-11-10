@@ -151,6 +151,15 @@ MUTATIONS += [
     ('the masts\' u and v are swapped', C, 'const [x, z] = shedToWorld(layout, u, v);', 'const [x, z] = shedToWorld(layout, v, u);'),
     ('a mast\'s slope along x is read across a step', C, 'heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);', 'heightAt(x - SLOPE_STEP, z)) / SLOPE_STEP;'),
     ('a mast\'s slope along z is read along x', C, 'const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);', 'const gz = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);'),
+    # ---- the forecourt's masts keep clear of the buildings (the rule that is camera-independent: core/streetlights.ts `mastIsClear`)
+    ('a mast may stand against a wall', C, '!pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR', '!pointInPolygon(p, b.pts)'),
+    ('a mast may stand under a roof', C, '!pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR', 'distToRing(p, b.pts) >= MAST_CLEAR'),
+    ('a wall exactly the clearance away is too near', C, 'distToRing(p, b.pts) >= MAST_CLEAR', 'distToRing(p, b.pts) > MAST_CLEAR'),
+    ('a mast is clear when any one building is far enough', C, 'buildings.every((b) =>', 'buildings.some((b) =>'),
+    ('only the first building keeps a mast off', C, 'buildings.every((b) =>', 'buildings.slice(0, 1).every((b) =>'),
+    ('only the last building keeps a mast off', C, 'buildings.every((b) =>', 'buildings.slice(-1).every((b) =>'),
+    ('a place that is not clear still has its mast', C, '    if (!mastIsClear([x, z], data.buildings)) return [];\n', ''),
+    ('the forecourt\'s masts are placed with no buildings to keep clear of', C, 'mastIsClear([x, z], data.buildings)', 'mastIsClear([x, z], [])'),
 ]
 
 

@@ -310,12 +310,12 @@ test('addCity places the street lamps and the forecourt\'s masts, hands them to 
   assert.equal(layers.length, 1);
   assert.ok(layers[0] === lights, 'the night lights are handed the lamps');
   assert.ok((lights.group.getObjectByName('street-lamp-halos') as THREE.Points).visible, 'and the level they had (0.5) is applied at once');
-  // what is placed: the city's lamps and the six masts
+  // what is placed: the city's lamps and the masts the map leaves of the table's six places (core/streetlights.ts `mastIsClear`: two stand within 6 m of a building and have none)
   const exclude = data.buildings.filter((b) => hidden.has(b.id)).map((b) => b.pts);
   const rails = railSegments(data);
   const built = buildCity(data.buildings, city, { hidden, exclude, groundY: GROUND_Y, rails: [...rails.main, ...rails.siding] });
   const masts = forecourtMasts(data, () => GROUND_Y);
-  assert.equal(masts.length, 6);
+  assert.equal(masts.length, 4);
   assert.equal(c.stats.lamps, built.lamps.length + masts.length);
   assert.equal(lights.counts().lamps, c.stats.lamps);
   assert.equal((lights.group.getObjectByName('street-lamp-posts') as THREE.InstancedMesh).count, built.lamps.length);

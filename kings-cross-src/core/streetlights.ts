@@ -10,8 +10,9 @@
 // lamps are sodium and which white (the photographs show both on the Euston Road, so a repeatable share of the streets are each), and the kerb offset.
 import type { Pt } from './geo.ts';
 import type { Extent } from './terrain.ts';
-import type { KxData } from './osm.ts';
-import { shedLayout, shedToWorld } from './station.ts';
+import { distToRing } from './kxcentral.ts';
+import type { Building, KxData } from './osm.ts';
+import { pointInPolygon, shedLayout, shedToWorld } from './station.ts';
 import type { Height, RoadClass } from './city.ts';
 
 /** What colour a lamp's light is: the sodium lamps' orange, a warm-white LED, a cool-white LED (the forecourt's masts and the new King's Cross Central's streets). */
@@ -214,8 +215,8 @@ export const MAST_HEIGHT = 12;
 /**
  * Where the masts stand, in the shed's frame (u along the front from its west end, v out from it, negative in front): a loose row 28 to 30 m in front of the station front, about 20 m apart, the
  * clock tower between two of them (night-a-kx-square-2015-skinner.jpg: tall steel masts with a strip of white LEDs near the top stand across the square, a few tens of metres in front of the
- * front; night-e-kx-elevated-2016-itsnogame.jpg shows them as white dots in the square). ASSUMED: the places, placed by eye (no photograph gives them), clear of the buildings and of the
- * street lamps (checked against the city's data).
+ * front; night-e-kx-elevated-2016-itsnogame.jpg shows them as white dots in the square). ASSUMED: the places, placed by eye (no photograph gives them). `forecourtMasts` keeps the places that
+ * are in the clear of the mapped buildings (`mastIsClear`), so a place the buildings have taken is dropped, not moved; that they are clear of the street lamps is the real-data test's.
  */
 export const FORECOURT_MASTS: readonly (readonly [number, number])[] = [[-30, -28], [-10, -28], [10, -28], [30, -30], [50, -28], [68, -28]];
 
@@ -223,8 +224,19 @@ export const FORECOURT_MASTS: readonly (readonly [number, number])[] = [[-30, -2
 export const MAST_LIFT = 0.15;
 
 /**
- * The forecourt's masts, a lamp each (`mast`), on the ground `heightAt` gives (metres at x, z). None where there is no station to stand in front of (a data set without platform 8 and the
- * station building, which `shedLayout` needs).
+ * A mast stands at least this far from every building's outline, metres: half its own height (ASSUMED). The masts of the photographs are free-standing columns in the open square, none against a
+ * wall, and the by-eye places above were not checked against the map: two of the six fall within 5.7 m of a building. Any clearance from 5.7 to 9.4 m keeps the same four.
+ */
+export const MAST_CLEAR = MAST_HEIGHT / 2;
+
+/** Is a mast at `p` in the clear: outside every building, and `MAST_CLEAR` or more from every building's outline? */
+export function mastIsClear(p: Pt, buildings: readonly Pick<Building, 'pts'>[]): boolean {
+  return buildings.every((b) => !pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR);
+}
+
+/**
+ * The forecourt's masts, a lamp each (`mast`), on the ground `heightAt` gives (metres at x, z): the places of `FORECOURT_MASTS` that are in the clear of the buildings (`mastIsClear`). None where
+ * there is no station to stand in front of (a data set without platform 8 and the station building, which `shedLayout` needs).
  */
 export function forecourtMasts(data: Pick<KxData, 'platforms' | 'buildings'>, heightAt: (x: number, z: number) => number): LampSpot[] {
   let layout: ReturnType<typeof shedLayout>;
@@ -233,10 +245,11 @@ export function forecourtMasts(data: Pick<KxData, 'platforms' | 'buildings'>, he
   } catch {
     return [];
   }
-  return FORECOURT_MASTS.map(([u, v]) => {
+  return FORECOURT_MASTS.flatMap(([u, v]): LampSpot[] => {
     const [x, z] = shedToWorld(layout, u, v);
+    if (!mastIsClear([x, z], data.buildings)) return [];
     const gx = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);
     const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);
-    return { x, y: heightAt(x, z) + MAST_LIFT, z, yaw: 0, height: MAST_HEIGHT, kind: LAMP_KIND.cool, slope: [gx, gz], mast: true };
+    return [{ x, y: heightAt(x, z) + MAST_LIFT, z, yaw: 0, height: MAST_HEIGHT, kind: LAMP_KIND.cool, slope: [gx, gz], mast: true }];
   });
 }
