@@ -50,7 +50,7 @@ function onLine(line:readonly Pt[],x:number,z:number):{d:number;s:number}{
 /** The cut (grades ASSUMED): carriageway half widths (OSM classes primary and tertiary, ROAD_WIDTHS), a 1.8 m pavement each side,
  *  King's Place level under the deck and climbing `kpGrade` either side; St Leonard's Bank climbing from the junction to the standpoint
  *  (where R-pt2-d's eye is 1.7 m over it) and on at `bankGrade`. The cut keeps `railClear` m from any open rail outside the deck. */
-export const KINGS_PLACE_CUT={kpHalf:4.5,bankHalf:3,pavement:1.8,kpGrade:.11,bankGrade:.1,railClear:3.5,edge:1.5,step:.5} as const;
+export const KINGS_PLACE_CUT={kpHalf:4.5,bankHalf:3,pavement:1.8,kpGrade:.11,bankGrade:.1,railClear:2.5,railEdge:.8,edge:1.5,step:.5} as const;
 /** St Leonard's Bank (OSM way/24215785, ODbL) from its junction with King's Place, north to south. */
 export function stLeonardsBankLine(file:{roads:{id:string;path:number[][]}[]}=frontageFile):Pt[]{
  const r=file.roads.find(q=>q.id==='way/24215785');if(!r)throw Error("St Leonard's Bank way/24215785 missing from perth-frontage.json");
@@ -78,7 +78,7 @@ function cutLevel(roads:readonly CutRoad[],ring:readonly Pt[],rails:readonly Tra
   const v=d<=edge?lv:lv+(base-lv)*smooth((d-edge)/C.edge);y=y===null?v:Math.min(y,v);}
  if(y===null)return null;
  if(!inRing(x,z,ring)){let r=Infinity;for(const [ax,az,bx,bz] of rails)r=Math.min(r,segDist(x,z,ax,az,bx,bz));
-  if(r<C.railClear+C.edge)y=base+(y-base)*smooth((r-C.railClear)/C.edge);}
+  if(r<C.railClear+C.railEdge)y=base+(y-base)*smooth((r-C.railClear)/C.railEdge);}
  return y;
 }
 const smooth=(t:number)=>{const u=Math.max(0,Math.min(1,t));return u*u*(3-2*u);};
@@ -143,8 +143,9 @@ export function kingsPlaceBridge(b:Batch,ring:readonly Pt[],railDir:Pt,ground:Pi
  *  parapet; under the deck they stop at its underside, and there they are the far abutment face R-pt2-d shows behind the road. */
 export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:readonly TrackSegment[]=[],bridgeRails:readonly TrackSegment[]=[],bridgeRing:readonly Pt[]=frontageFile.bridge.ring.map(p=>[p[0],p[1]] as Pt)):number{
  const C=KINGS_PLACE_CUT,L=KINGS_PLACE_LEVELS,K=KINGS_PLACE_COLOURS,roads=cutRoads(bridgeRing),all=[...openRails,...bridgeRails];let n=0;
+ const ringDist=(e:Pt)=>{let d=Infinity;for(let i=0;i<bridgeRing.length;i++){const u=bridgeRing[i],v=bridgeRing[(i+1)%bridgeRing.length];d=Math.min(d,segDist(e[0],e[1],u[0],u[1],v[0],v[1]));}return d;};
  const wall=(p:Pt,q:Pt,out:Pt,inner:number)=>{// out: unit normal toward the high side; inner: the cut's level at the wall's foot
-  const m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2],under=inRing(m[0],m[1],bridgeRing);
+  const m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2],under=inRing(m[0],m[1],bridgeRing)&&ringDist(m)>1;// under the deck, clear of its edge
   let hi=-Infinity;for(const e of [p,m,q])for(const o of [KINGS_PLACE_CUT.edge+.3,3,4.5,6])hi=Math.max(hi,ground.heightAt(e[0]+out[0]*o,e[1]+out[1]*o));// the ground the wall retains, up to 6 m behind it
   if(hi-inner<.6)return;
   if(!under&&[p,q,m].some(e=>all.some(([cx,cz,dx,dz])=>segDist(e[0],e[1],cx,cz,dx,dz)<2.3)))return;// the train envelope (1.75 m, plus the wall's half thickness)
@@ -165,7 +166,7 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
  // the railway's own walls (R-pt2-d, left): on the guard line of each open rail, where the cut lies beyond it
  for(const [ax,az,bx,bz] of openRails){
   const l=Math.hypot(bx-ax,bz-az);if(l<.1)continue;const k=Math.ceil(l/1.5),tx=(bx-ax)/l,tz=(bz-az)/l;
-  for(const side of [1,-1])for(let j=0;j<k;j++){const s0=j*l/k,s1=(j+1)*l/k,nx=-tz*side,nz=tx*side,o=C.railClear+C.edge-.35;
+  for(const side of [1,-1])for(let j=0;j<k;j++){const s0=j*l/k,s1=(j+1)*l/k,nx=-tz*side,nz=tx*side,o=C.railClear+C.railEdge-.35;
    const p:Pt=[ax+tx*s0+nx*o,az+tz*s0+nz*o],q:Pt=[ax+tx*s1+nx*o,az+tz*s1+nz*o],m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2];
    if(inRing(m[0],m[1],bridgeRing)||openRails.some(([cx,cz,dx,dz])=>segDist(m[0],m[1],cx,cz,dx,dz)<o-.3))continue;
    const lo=Math.min(ground.heightAt(p[0]+nx*.4,p[1]+nz*.4),ground.heightAt(q[0]+nx*.4,q[1]+nz*.4));
