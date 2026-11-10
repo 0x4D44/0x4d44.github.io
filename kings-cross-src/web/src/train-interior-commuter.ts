@@ -28,7 +28,7 @@ export function buildCommuter(kind: TrainKind, car: Car, shell: Shell, pal: Comm
   const { box, quad } = d;
   const C = (hex: number): THREE.Color => col(hex);
   const { XI, FL, YC, YT } = shell;
-  const openings = drawShell(d, shell, lay, pal);
+  const { openings, ends } = drawShell(d, shell, lay, pal);
   const trimC = C(pal.trim), poleC = C(pal.pole);
 
   // the racks over the saloons' seats, each side
@@ -86,5 +86,5 @@ export function buildCommuter(kind: TrainKind, car: Car, shell: Shell, pal: Comm
 
   const seats = lay.seats.length;
   const { group, triangles } = d.finish(`interior-${car.index}`, { kind, car: car.index, seats });
-  return { group, openings, skin: shell.SKIN, layout: lay, seats, triangles };
+  return { group, openings, ends, skin: shell.SKIN, layout: lay, seats, triangles };
 }

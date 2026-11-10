@@ -119,7 +119,7 @@ export function createTrainInteriors(options: InteriorOptions) {
     for (const name of CUT_MESHES) {
       const mesh = node.getObjectByName(name) as THREE.Mesh | undefined;
       if (!mesh?.isMesh) continue;
-      const cut = cutOpenings(mesh.geometry, build.openings, build.skin - 0.03);
+      const cut = cutOpenings(mesh.geometry, build.openings, build.skin - 0.03, build.ends);
       swapped.push({ mesh, original: mesh.geometry, cut });
       mesh.geometry = cut;
     }

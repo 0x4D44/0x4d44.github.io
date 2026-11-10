@@ -20,7 +20,7 @@ import type { V3 } from './train-geom.ts';
 import type { Car, Family } from '../../core/train.ts';
 import { FIT, seatHalf } from './train-interior-layout.ts';
 import type { CarInterior, Seat } from './train-interior-layout.ts';
-import type { Opening } from './train-interior-cut.ts';
+import type { EndOpening, Opening } from './train-interior-cut.ts';
 
 /** A family's body seen from inside, metres in the car's frame (x across, y above the rail head). */
 export interface Shell {
@@ -128,8 +128,9 @@ function bake(g: THREE.BufferGeometry): THREE.BufferGeometry {
 
 export interface InteriorBuild {
   group: THREE.Group;
-  /** the rectangles to cut out of the car's outer skin (train-interior-cut.ts) */
+  /** the rectangles to cut out of the car's outer skin (train-interior-cut.ts), and out of the plates across its ends at an open gangway */
   openings: Opening[];
+  ends: EndOpening[];
   /** the skin's face (the cut takes the faces at least this far out, less a little) */
   skin: number;
   /** the layout drawn, for the tests and the status */
@@ -200,7 +201,7 @@ export class InteriorDraw {
  * The shell of one car seen from inside: the openings to cut, the side walls with their reveals and door linings, the glass, the floor, the
  * cove and the lamp lines, and the cross walls. Answers the openings.
  */
-export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: BasePalette): Opening[] {
+export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: BasePalette): { openings: Opening[]; ends: EndOpening[] } {
   const { car, box, quad, Z } = d;
   const C = (hex: number): THREE.Color => col(hex);
   const { XI, FL, YC, YT, SKIN } = shell;
@@ -210,6 +211,7 @@ export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: 
   const [wy0, wy1] = shell.windowY;
   const [, dy1] = shell.doorY;
   const openings: Opening[] = [];
+  const ends: EndOpening[] = [];
   const holes: { s0: number; s1: number; y0: number; y1: number; kind: 'window' | 'door' }[] = [];
   const plan = lay.doors;
   for (const [s0, s1] of shell.windows(car)) holes.push({ s0, s1, y0: wy0, y1: wy1, kind: 'window' });
@@ -301,9 +303,14 @@ export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: 
       quad(d.fit, [[x0, head, s - 0.03], [x1, head, s - 0.03], [x1, head, s + 0.03], [x0, head, s + 0.03]], [0, -1, 0], revealC);
     }
   };
-  // the passage from a doorway at s out to the car's end, where the next car's half meets it: inner faces only (the bellows are train.ts's, outside)
+  // the passage from a doorway at s out to the car's end, where the next car's half meets it: inner faces only (the bellows are train.ts's, outside);
+  // the plate across the car's end (train.ts, the gangway's face) is cut open to match, within the last 0.7 m of the car, so a look through the
+  // doorway goes on into the next car
   const passage = (s: number, hw: number, head: number): void => {
     const sEnd = s > (front + back) / 2 ? car.length : 0;
+    const zEnd = Z(sEnd);
+    const inward = zEnd > (car.start + car.end) / 2 ? -1 : 1;
+    ends.push({ zMin: Math.min(zEnd - 0.1 * inward, zEnd + 0.7 * inward), zMax: Math.max(zEnd - 0.1 * inward, zEnd + 0.7 * inward), x0: -hw, x1: hw, y0: FL, y1: head });
     const gw = C(0x4b4f55);
     quad(d.fit, [[hw, FL, s], [hw, head, s], [hw, head, sEnd], [hw, FL, sEnd]], [-1, 0, 0], gw);
     quad(d.fit, [[-hw, FL, s], [-hw, head, s], [-hw, head, sEnd], [-hw, FL, sEnd]], [1, 0, 0], gw);
@@ -338,7 +345,7 @@ export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: 
       if (w.kind === 'partition') for (const f of [1, -1] as const) pis(d, w.s + f * 0.035, f, FL, YT);
     }
   }
-  return openings;
+  return { openings, ends };
 }
 
 /** A passenger information panel hung over a doorway at s, its screen facing f. */

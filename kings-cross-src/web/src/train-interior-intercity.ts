@@ -27,7 +27,7 @@ export function buildIntercity(kind: TrainKind, car: Car, shell: Shell, pal: Pal
   const C = (hex: number): THREE.Color => col(hex);
   const { XI, FL, YC } = shell;
   const wy1 = shell.windowY[1];
-  const openings = drawShell(d, shell, lay, pal);
+  const { openings, ends } = drawShell(d, shell, lay, pal);
 
   // --- the saloons' fittings ---
   const stackC = C(0x9aa0a6);
@@ -82,5 +82,5 @@ export function buildIntercity(kind: TrainKind, car: Car, shell: Shell, pal: Pal
   }
 
   const { group, triangles } = d.finish(`interior-${car.index}`, { kind, car: car.index, seats: lay.seats.length });
-  return { group, openings, skin: shell.SKIN, layout: lay, seats: lay.seats.length, triangles };
+  return { group, openings, ends, skin: shell.SKIN, layout: lay, seats: lay.seats.length, triangles };
 }

@@ -146,6 +146,17 @@ test('every family: from inside, every look meets an inner surface; through a wi
     // up, down, and along the car both ways a little off the centre line (on a walk-through unit, through the gangways into the next cars)
     const solid = [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0), new THREE.Vector3(0.25, 0.04, 1), new THREE.Vector3(-0.25, 0.04, -1)].map((d) => d.applyQuaternion(q));
     assert.equal(frontHits(inner, camera.position, solid), solid.length, kind);
+    // a look straight along the aisle goes through the gangways (a walk-through unit's open portal, or the open door in an end wall) into the next
+    // cars' interiors, not onto a car's end plate
+    {
+      for (const way of [1, -1]) {
+        const dir = new THREE.Vector3(0.002, -0.08, way).normalize().applyQuaternion(q);
+        const hit = new THREE.Raycaster(camera.position, dir).intersectObjects([...inner, group], true)
+          .find((h) => h.face && h.face.normal.clone().transformDirection(h.object.matrixWorld).dot(dir) < 0);
+        const owner = hit ? root.children.find((o) => o.name.startsWith('interior-') && o.getObjectById(hit.object.id)) : undefined;
+        assert.ok(owner && owner.name !== `interior-${index}`, `${kind} way ${way}: the look along the aisle ends on ${hit?.object.name} of ${owner?.name ?? 'the exterior'}`);
+      }
+    }
     const yw = (shell.windowY[0] + shell.windowY[1]) / 2;
     for (const side of [1, -1]) {
       const eye = toWorld(group, index, new THREE.Vector3(0, yw, zm));
@@ -165,16 +176,21 @@ test('every family: from inside, every look meets an inner surface; through a wi
     // the exterior's own triangles off the side are kept bit for bit in the cut copy (the cut takes only the side's faces)
     const b = moduleOf(kind).buildInterior(kind, car);
     const detail = buildTrain(kind).getObjectByName(`car-${index}`)!.getObjectByName('body-detail') as THREE.Mesh;
-    const cut = cutOpenings(detail.geometry, b.openings, b.skin - 0.03);
+    // (and off the plates across the ends, which are cut only within their gangway's rectangle, in the last 0.7 m of the car)
+    assert.equal(b.ends.length, 2, `${kind}: a gangway at each end of a car without a cab`);
+    const cut = cutOpenings(detail.geometry, b.openings, b.skin - 0.03, b.ends);
     const key = (g: THREE.BufferGeometry, i: number): string => [0, 1, 2].map((k) => [...new THREE.Vector3().fromBufferAttribute(g.getAttribute('position'), i + k).toArray()].join(',')).join('|');
     const keep = new Set<string>();
     for (let i = 0; i < cut.getAttribute('position').count; i += 3) keep.add(key(cut, i));
     const pos = detail.geometry.getAttribute('position');
-    let off = 0, kept = 0;
+    let off = 0, kept = 0, plate = 0;
     for (let i = 0; i < pos.count; i += 3) {
+      const [p0, p1, p2] = [0, 1, 2].map((k) => new THREE.Vector3().fromBufferAttribute(pos, i + k)) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+      const n = p1.clone().sub(p0).cross(p2.clone().sub(p0)).normalize();
+      if (Math.abs(n.z) >= 0.98 && b.ends.some((e) => [p0, p1, p2].every((p) => p.z >= e.zMin && p.z <= e.zMax))) { plate++; continue; }
       if (Math.min(...[0, 1, 2].map((k) => Math.abs(pos.getX(i + k)))) < b.skin - 0.03) { off++; if (keep.has(key(detail.geometry, i))) kept++; }
     }
-    assert.ok(off > 300, `${kind}: ${off}`);
+    assert.ok(off > 300 && plate > 0, `${kind}: ${off}, ${plate}`);
     assert.equal(kept, off, kind);
     interiors.dispose();
   }

@@ -7,6 +7,8 @@
 // on the car's side (normal along x, in the outer few centimetres). Each vertex attribute (position, normal, colour, uv, the lamp tag)
 // of a piece is interpolated from the triangle it was cut from, so what remains of the skin is drawn exactly as it was: the same
 // texture at the same place, the same colours. The copies are the active car's only; every other car keeps the shared geometry.
+// A walk-through unit's gangway is cut the same way through the plate across each end of the car (`EndOpening`), so a look along the train
+// goes on into the next car.
 import * as THREE from 'three';
 
 /** A rectangle on one side of the car, in the car's own frame: z along the car, y above the rail head. */
@@ -15,6 +17,16 @@ export interface Opening {
   side: 1 | -1;
   z0: number;
   z1: number;
+  y0: number;
+  y1: number;
+}
+
+/** A rectangle across one end of the car (x across, y above the rail head), cut from the faces that face along the car between zMin and zMax. */
+export interface EndOpening {
+  zMin: number;
+  zMax: number;
+  x0: number;
+  x1: number;
   y0: number;
   y1: number;
 }
@@ -41,47 +53,58 @@ function clip(poly: Poly, axis: number, limit: number, keepAbove: boolean): Poly
   return out;
 }
 
-/** A convex polygon less a rectangle in (z, y): up to four convex pieces (above, below, and the two beside it). Position is x, y, z at 0, 1, 2. */
-export function subtractRect(poly: Poly, r: Pick<Opening, 'z0' | 'z1' | 'y0' | 'y1'>): Poly[] {
-  const ys = poly.map((v) => v[1] as number), zs = poly.map((v) => v[2] as number);
+/**
+ * A convex polygon less a rectangle in (z, y), or in (x, y) with `axis` 0 (then z0, z1 bound x): up to four convex pieces (above, below, and the
+ * two beside it). Position is x, y, z at 0, 1, 2.
+ */
+export function subtractRect(poly: Poly, r: Pick<Opening, 'z0' | 'z1' | 'y0' | 'y1'>, axis: 0 | 2 = 2): Poly[] {
+  const ys = poly.map((v) => v[1] as number), zs = poly.map((v) => v[axis] as number);
   if (Math.max(...zs) <= r.z0 || Math.min(...zs) >= r.z1 || Math.max(...ys) <= r.y0 || Math.min(...ys) >= r.y1) return [poly];
   const pieces: Poly[] = [];
   pieces.push(clip(poly, 1, r.y1, true));
   pieces.push(clip(poly, 1, r.y0, false));
   const band = clip(clip(poly, 1, r.y0, true), 1, r.y1, false);
   if (band.length >= 3) {
-    pieces.push(clip(band, 2, r.z0, false));
-    pieces.push(clip(band, 2, r.z1, true));
+    pieces.push(clip(band, axis, r.z0, false));
+    pieces.push(clip(band, axis, r.z1, true));
   }
-  return pieces.filter((p) => p.length >= 3 && area(p) > 1e-9);
+  return pieces.filter((p) => p.length >= 3 && area(p, axis) > 1e-9);
 }
 
-/** Twice the area of a polygon projected on (z, y). */
-function area(p: Poly): number {
+/** Twice the area of a polygon projected on (z, y), or on (x, y) with `axis` 0. */
+function area(p: Poly, axis: 0 | 2): number {
   let s = 0;
   for (let i = 0; i < p.length; i++) {
     const a = p[i] as number[], b = p[(i + 1) % p.length] as number[];
-    s += (a[2] as number) * (b[1] as number) - (b[2] as number) * (a[1] as number);
+    s += (a[axis] as number) * (b[1] as number) - (b[axis] as number) * (a[1] as number);
   }
   return Math.abs(s);
 }
 
-/** Does this triangle lie flat on the car's outer side at `side`: its normal along x, every corner at least `skin` (|x|) out? */
-function onSide(p: number[][], side: number, skin: number): boolean {
+/** How much of a triangle's normal lies along `axis` (0 for x, 2 for z), 0 for a degenerate one. */
+function along(p: number[][], axis: 0 | 2): number {
   const [a, b, c] = p as [number[], number[], number[]];
   const ux = (b[0] as number) - (a[0] as number), uy = (b[1] as number) - (a[1] as number), uz = (b[2] as number) - (a[2] as number);
   const vx = (c[0] as number) - (a[0] as number), vy = (c[1] as number) - (a[1] as number), vz = (c[2] as number) - (a[2] as number);
   const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
   const len = Math.hypot(nx, ny, nz);
-  if (len < 1e-12 || Math.abs(nx) / len < 0.98) return false;
-  return p.every((v) => (v[0] as number) * side >= skin);
+  return len < 1e-12 ? 0 : Math.abs(axis === 0 ? nx : nz) / len;
 }
+
+/** Does this triangle lie flat on the car's outer side at `side`: its normal along x, every corner at least `skin` (|x|) out? */
+function onSide(p: number[][], side: number, skin: number): boolean {
+  return along(p, 0) >= 0.98 && p.every((v) => (v[0] as number) * side >= skin);
+}
+
+/** Does this triangle lie flat across the car within an end opening's z band? */
+const onEnd = (p: number[][], e: EndOpening): boolean => along(p, 2) >= 0.98 && p.every((v) => (v[2] as number) >= e.zMin && (v[2] as number) <= e.zMax);
 
 /**
  * A copy of a non-indexed car geometry with the openings cut out of the triangles that lie flat on the car's outer side (|x| >= `skin`, the
- * normal along x, facing in or out). Other triangles are copied unchanged, in order. The source geometry is not changed.
+ * normal along x, facing in or out), and the end openings out of those that lie flat across an end. Other triangles are copied unchanged, in
+ * order. The source geometry is not changed.
  */
-export function cutOpenings(source: THREE.BufferGeometry, openings: readonly Opening[], skin: number): THREE.BufferGeometry {
+export function cutOpenings(source: THREE.BufferGeometry, openings: readonly Opening[], skin: number, ends: readonly EndOpening[] = []): THREE.BufferGeometry {
   const g = source.index ? source.toNonIndexed() : source;
   const names = Object.keys(g.attributes);
   // position first, so a flat vertex reads x, y, z at 0, 1, 2
@@ -104,6 +127,12 @@ export function cutOpenings(source: THREE.BufferGeometry, openings: readonly Ope
     const x0 = (tri[0] as number[])[0] as number;
     const side = x0 >= 0 ? 1 : -1;
     const mine = openings.filter((o) => o.side === side);
+    const end = ends.find((e) => onEnd(tri, e));
+    if (end) {
+      const pieces = subtractRect(tri, { z0: end.x0, z1: end.x1, y0: end.y0, y1: end.y1 }, 0);
+      for (const p of pieces) for (let k = 1; k + 1 < p.length; k++) { emit(p[0] as number[]); emit(p[k] as number[]); emit(p[k + 1] as number[]); }
+      continue;
+    }
     if (!mine.length || !onSide(tri, side, skin)) { tri.forEach(emit); continue; }
     let pieces: Poly[] = [tri];
     for (const r of mine) pieces = pieces.flatMap((p) => subtractRect(p, r));
