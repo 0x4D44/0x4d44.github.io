@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { bsiCoupler, buildScotrailDmu, CHROME, disposeScotrailDmu, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_INNER, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { bsiCoupler, buildScotrailDmu, CHROME, disposeScotrailDmu, FRAME as FRAME_COLOUR, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_INNER, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -274,6 +274,68 @@ test('ScotRail 158 underfloor, as bogie-158-a2 shows it: from the cab end a rake
     }
   }
   disposeScotrailDmu(root);
+});
+
+
+test('ScotRail DMU side glazing (t3c/a-inner, t3c/e-inner): the 170 one flush dark band between doors with thin pillars; the 158 thin-framed panes, two a side with hopper top-lights', () => {
+  const hit = (mesh: THREE.Mesh, x: number, y: number, z: number, side: number): THREE.Intersection | undefined => {
+    const r = new THREE.Raycaster(new THREE.Vector3(side * (x + 1), y, z), new THREE.Vector3(-side, 0, 0));
+    return r.intersectObject(mesh, false)[0];
+  };
+  const colourAt = (mesh: THREE.Mesh, h: THREE.Intersection): number[] => {
+    const c = mesh.geometry.getAttribute('color'); const i = h.face!.a; return [c.getX(i), c.getY(i), c.getZ(i)];
+  };
+  const same = (a: number[], hex: number): boolean => { const k = col(hex); return Math.abs(a[0]! - k.r) < 1e-6 && Math.abs(a[1]! - k.g) < 1e-6 && Math.abs(a[2]! - k.b) < 1e-6; };
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const look = scotrailDmuLook(kind === 'sr170x3' ? 'turbostar' : 'sprinter158');
+    const gz = look.glazing;
+    const W = SCOTRAIL_DMU_FIGURES[look.family].width.value / 2 - 0.02;
+    const [y0, y1] = look.windowY; const ym = (y0 + y1) / 2;
+    const root = buildScotrailDmu(kind);
+    root.updateMatrixWorld(true);
+    for (const car of scotrailDmuLayout(kind).cars) {
+      const g = root.getObjectByName(`car-${car.index}`)!;
+      const glass = g.getObjectByName('cab-glass') as THREE.Mesh; const detail = g.getObjectByName('body-detail') as THREE.Mesh;
+      const dir = car.cab === 'rear' ? -1 : 1; const base = car.cab === 'rear' ? car.end : car.start;
+      const Z = (s: number): number => base + dir * s;
+      const marks: THREE.Object3D[] = []; g.traverse((o) => { if (o.name === 'glazing') marks.push(o); });
+      const plan = dmuCarPlan(car, look);
+      for (const side of [-1, 1]) {
+        if (gz.kind === 'band') {
+          // every pier between two panes of a run is glazed over, with a dark pillar on the glass
+          assert.ok(marks.length >= 2 && marks.every((m) => m.userData.kind === 'band' && (m.userData.panes as number) >= 1), `${kind} car ${car.index}: bands`);
+          const panes = marks.reduce((acc, m) => acc + (m.userData.panes as number), 0);
+          assert.equal(panes, plan.windows.length, `${kind} car ${car.index}: every pane in a band`);
+          assert.ok(marks.some((m) => (m.userData.panes as number) >= 3), `${kind} car ${car.index}: the panes between the doors one band`);
+          for (const m of marks) for (const s of m.userData.pillars as number[]) {
+            assert.ok(hit(glass, W, ym, Z(s), side), `${kind} car ${car.index} side ${side}: glass across the pier at ${s}`);
+            const d = hit(detail, W, ym, Z(s), side);
+            assert.ok(d && same(colourAt(detail, d), gz.pillarColour) && Math.abs(Math.abs(d.point.x) - (W + 0.011)) < 1e-3, `${kind} car ${car.index} side ${side}: a pillar on the glass at ${s}`);
+            assert.ok(!hit(detail, W, ym, Z(s + gz.pillar / 2 + 0.01), side) || Math.abs(hit(detail, W, ym, Z(s + gz.pillar / 2 + 0.01), side)!.point.x) < W + 0.005, `${kind} car ${car.index}: the pillar ${gz.pillar} m wide`);
+          }
+        } else {
+          assert.equal(marks.length, plan.windows.length, `${kind} car ${car.index}: a frame for each pane`);
+          assert.deepEqual(marks.filter((m) => m.userData.hopper).length, 2, `${kind} car ${car.index}: two hoppers a side`);
+          for (const m of marks) {
+            const [s0, s1] = m.userData.s as number[];
+            const sm = (s0! + s1!) / 2;
+            if (m.userData.hopper) {
+              const yb = m.userData.hopperY as number;
+              const d = hit(detail, W, yb, Z(sm), side);
+              assert.ok(d && same(colourAt(detail, d), gz.frameColour), `${kind} car ${car.index} side ${side}: the hopper's transom at ${sm}`);
+              const top = hit(glass, W, (yb + y1) / 2, Z(sm), side); const low = hit(glass, W, (y0 + yb) / 2, Z(sm), side);
+              assert.ok(top && low && Math.abs(top.point.x) - Math.abs(low.point.x) > 0.008, `${kind} car ${car.index} side ${side}: the top-light stands proud`);
+            }
+          }
+        }
+        // thin frames: just outside a pane's top edge, 2.5 cm up, is body, not frame
+        const [s0, s1] = plan.windows[1]!;
+        const d = hit(detail, W, y1 + 0.025, Z((s0 + s1) / 2), side);
+        assert.ok(!d || !(same(colourAt(detail, d), FRAME_COLOUR) || (gz.kind === 'framed' && same(colourAt(detail, d), gz.frameColour))), `${kind} car ${car.index} side ${side}: a frame wider than 2.5 cm`);
+      }
+    }
+    disposeScotrailDmu(root);
+  }
 });
 
 test('ScotRail DMU lettering: the wordmark on both sides of every car, from a row of the shared atlas, and no unit number (no allocated unit reaches the builder)', () => {

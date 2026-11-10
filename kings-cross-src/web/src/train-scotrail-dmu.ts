@@ -38,7 +38,7 @@ export const DOT_WHITE = 0xe6e9ee;
 export const DOT_BLUE = 0x3d86c8;
 /** The thin orange line at the cantrail and over the 170's windscreen (scotrail170-01). */
 const PINSTRIPE = 0xd8642a;
-const FRAME = 0x14161a;
+export const FRAME = 0x14161a;
 const RECESS = 0x0d0e10;
 const UNDERFRAME = 0x2f2a25;
 const VALANCE_DARK = 0x1c1d20;
@@ -128,6 +128,13 @@ interface Look {
   windowPitch: number;
   windowPier: number;
   windowRadius: number;
+  /**
+   * How the side windows are glazed. `band`: each run of panes between doors is one flush dark band (its corners at windowRadius), a
+   * thin rubber `edge` round it and a dark `pillar` wide pillar standing on the glass where two panes meet. `framed`: every pane in its
+   * own `frame`-wide surround, and the panes counted in `hoppers` (from the car's inner end, per side) carrying a hopper top-light: a
+   * transom bar `drop` below the pane's top, the light above it standing a little proud.
+   */
+  glazing: { kind: 'band'; edge: number; pillar: number; pillarColour: number } | { kind: 'framed'; frame: number; frameColour: number; hoppers: readonly number[]; drop: number };
   /** door centres, metres from the cab end (a cab car) or from the car's start */
   doors(car: ScotrailDmuCar): number[];
   doorY: readonly [number, number];
@@ -265,6 +272,9 @@ const TURBOSTAR: Look = {
   windowPitch: 1.5,
   windowPier: 0.1,
   windowRadius: 0.06,
+  // flush glazing: between the doors one dark band with thin pillars, no frame standing round each pane (t3c/a-inner, 170396 at
+  // Inverkeithing, CC BY-SA; scotrail170-01, -02). Widths ASSUMED.
+  glazing: { kind: 'band', edge: 0.012, pillar: 0.04, pillarColour: 0x1b1f27 },
   // two twin-leaf doors a side at about the thirds of every car (scotrail170-01: a single window and the cab ahead of the first door,
   // four bays between the doors, two behind the second on the driving car)
   doors: (car) => [car.length / 3, (2 * car.length) / 3],
@@ -368,6 +378,9 @@ const SPRINTER: Look = {
   windowPitch: 1.62,
   windowPier: 0.3,
   windowRadius: 0.1,
+  // separate panes in thin frames, the second and sixth from the inner end with a hopper top-light (t3c/e-inner, 158725 at
+  // Dingwall, CC BY-SA 2.0). Frame width, transom drop and which panes ASSUMED from that photograph.
+  glazing: { kind: 'framed', frame: 0.015, frameColour: 0x24262a, hoppers: [1, 5], drop: 0.26 },
   // a door at each end of every car (scotrail158-05: the cab side window, then the door; the inner door by the gangway)
   doors: (car) => [2.75, car.length - 1.4],
   doorY: [1.08, 2.92],
@@ -779,14 +792,55 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     marker('door', side * W, (look.doorY[0] + look.doorY[1]) / 2, s, { side: side < 0 ? 'left' : 'right', width: dw, leaves: 2 });
   }
   for (const s of plan.doors) holes.push([s - dw / 2 - 0.12, s + dw / 2 + 0.12, 0, 9]);
+  const gz = look.glazing;
+  const frameW = gz.kind === 'framed' ? gz.frame : gz.edge;
+  const frameC = gz.kind === 'framed' ? gz.frameColour : FRAME;
   const windowFrame = (s0: number, s1: number, y0: number, y1: number, r: number): void => {
     for (const side of [-1, 1]) {
-      detail.prismX(roundedRect(Math.min(Z(s0), Z(s1)) - 0.04, Math.max(Z(s0), Z(s1)) + 0.04, y0 - 0.04, y1 + 0.04, r + 0.04, 3), side * W, side * (W + 0.004), col(FRAME), false);
+      detail.prismX(roundedRect(Math.min(Z(s0), Z(s1)) - frameW, Math.max(Z(s0), Z(s1)) + frameW, y0 - frameW, y1 + frameW, r + frameW, 3), side * W, side * (W + 0.004), col(frameC), false);
       glass.prismX(roundedRect(Math.min(Z(s0), Z(s1)), Math.max(Z(s0), Z(s1)), y0, y1, r, 3), side * W, side * (W + 0.008), col(0x000000));
     }
     holes.push([s0 - 0.1, s1 + 0.1, y0 - 0.1, y1 + 0.1]);
   };
-  for (const [s0, s1] of plan.windows) windowFrame(s0, s1, look.windowY[0], look.windowY[1], look.windowRadius);
+  const [wy0, wy1] = look.windowY;
+  if (gz.kind === 'band') {
+    // runs of panes no more than a pier apart become one band; a pillar stands on the glass where each pair met
+    const runs: [number, number][][] = [];
+    for (const w of plan.windows) {
+      const last = runs[runs.length - 1];
+      if (last && w[0] - last[last.length - 1]![1] <= look.windowPier + 1e-6) last.push(w); else runs.push([w]);
+    }
+    for (const run of runs) {
+      const a = run[0]![0]; const b = run[run.length - 1]![1];
+      windowFrame(a, b, wy0, wy1, look.windowRadius);
+      const pillars: number[] = [];
+      for (let i = 0; i + 1 < run.length; i++) pillars.push((run[i]![1] + run[i + 1]![0]) / 2);
+      for (const side of [-1, 1]) for (const s of pillars) {
+        const x0 = side * (W + 0.008); const x1 = side * (W + 0.011);
+        boxS(detail, Math.min(x0, x1), Math.max(x0, x1), wy0, wy1, s - gz.pillar / 2, s + gz.pillar / 2, gz.pillarColour);
+      }
+      marker('glazing', W, (wy0 + wy1) / 2, (a + b) / 2, { kind: 'band', s: [a, b], panes: run.length, pillars });
+    }
+  } else {
+    // the panes counted from the car's inner end (the end without a cab; on a car with no cab, from its far end)
+    const n = plan.windows.length;
+    plan.windows.forEach(([s0, s1], i) => {
+      windowFrame(s0, s1, wy0, wy1, look.windowRadius);
+      const fromInner = n - 1 - i;
+      const hopper = gz.hoppers.includes(fromInner);
+      if (hopper) {
+        const yb = wy1 - gz.drop;
+        for (const side of [-1, 1]) {
+          // the transom bar across the pane, and the top-light standing proud of the pane below it
+          const x0 = side * (W + 0.008); const x1 = side * (W + 0.012);
+          boxS(detail, Math.min(x0, x1), Math.max(x0, x1), yb - 0.0125, yb + 0.0125, s0, s1, gz.frameColour);
+          const lo = Math.min(Z(s0), Z(s1)) + 0.01; const hi = Math.max(Z(s0), Z(s1)) - 0.01;
+          glass.prismX(roundedRect(lo, hi, yb + 0.0125, wy1 - 0.01, Math.min(look.windowRadius, 0.05), 3), side * (W + 0.008), side * (W + 0.02), col(0x000000));
+        }
+      }
+      marker('glazing', W, (wy0 + wy1) / 2, (s0 + s1) / 2, { kind: 'framed', s: [s0, s1], frame: gz.frame, hopper, hopperY: hopper ? wy1 - gz.drop : null });
+    });
+  }
   if (car.cab) windowFrame(look.cabWindow.s0, look.cabWindow.s1, look.cabWindow.y0, look.cabWindow.y1, 0.06);
   // the thin orange line along the cantrail
   for (const side of [-1, 1]) {
