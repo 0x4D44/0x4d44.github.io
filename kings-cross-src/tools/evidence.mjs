@@ -775,10 +775,16 @@ const FROZEN_PERTH_CAMERAS = {
     source: "OSM platform 4 at its north end (z -300), eye 1.6 m above deck, looking south down the station along the through lines",
   },
   'pt-station-frontage': {
-    pos: [-150,  1.4,  -120],
-    target: [-46,  6,  -79],
+    pos: [-6.1,  0.9,  -56.3],
+    target: [-9.4,  4,  -27.3],
     fov: 60,
-    source: "Open ground west of the station building (way/4064272, centroid about x -46, z -79), eye 1.7 m above model ground, looking east at its west front",
+    source: "R-pt2-a standpoint (geograph 6872924, JThomas 2021: camera NO 11294 23119, looking S at the entrance, subject NO 1129 2309), in the station car park (OSM way/24505868), eye 1.7 m above model ground, looking south at the entrance front (OSM entrance node/561381370). Lead ruling 2026-11-10: re-pointed from the old west standpoint, which stood on the through rails and saw no front",
+  },
+  'pt-station-hotel': {
+    pos: [-12.3,  0.82,  -68.2],
+    target: [-20.9,  9,  -97],
+    fov: 60,
+    source: "R-pt2-b standpoint (geograph 6872925, JThomas 2021: camera NO 11288 23131, looking N, subject NO 1128 2316), in the station car park (OSM way/24505868), eye 1.7 m above model ground, looking north at the Station Hotel's south front (OSM way/234811330; HES LB39538). Lead ruling 2026-11-10",
   },
   'pt-kinnoull-panorama': {
     pos: [2368,  212.7,  208],
@@ -813,7 +819,7 @@ export function perthCameras() {
 /** The fixed Perth views each phase 2 element is scored from (the Perth plan, "Cameras"). */
 export const PERTH_ELEMENT_VIEWS = {
   'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-overview'],
-  'perth-frontage': ['pt-station-frontage', 'pt-platform-4-north', 'pt-overview'],
+  'perth-frontage': ['pt-station-frontage', 'pt-station-hotel', 'pt-platform-4-north', 'pt-overview'],
   'perth-city': ['pt-kinnoull-panorama', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
 };
 
