@@ -5,7 +5,11 @@ import { buildGraph } from '../../core/graph.ts';
 import { waverleyTrackData } from '../../core/waverley-anchors.ts';
 import type { WaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import type { AnchorMap } from '../../core/anchors.ts';
-import { createEdinburghLive, createEdinburghMotion, edinburghLiveDependencies, validateEdinburghAnchors } from '../src/edinburgh-live.ts';
+import { rowsForEvidence } from '../../core/train-neutral.ts';
+import { matchBooked } from '../../core/edinburgh-diagrams.ts';
+import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
+import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
+import { bookedServiceFor, createEdinburghLive, createEdinburghMotion, edinburghLiveDependencies, validateEdinburghAnchors } from '../src/edinburgh-live.ts';
 
 // Invented local graph/berths. No operational fixtures or route assumptions.
 const geometry: WaverleyAnchorScene = { origin: { lat: 0, lon: 0 }, attribution: 'synthetic',
@@ -57,12 +61,13 @@ test('private EB replay uses area endpoints, shared UTC, flat neutral bodies and
   const { parent, roots } = parentFixture(), scene = new THREE.Scene(), urls: string[] = [];
   const runtime = createEdinburghLive({ geometry, scene, camera: new THREE.PerspectiveCamera(), parent,
     mode: 'replay', hostname: 'localhost', date: '20260101', speed: 10,
-    fetchImpl: async input => { urls.push(String(input)); return new Response(String(input).includes('/anchors') ? JSON.stringify(anchors)
+    fetchImpl: async input => { urls.push(String(input)); return String(input).includes('/fleet') ? new Response('{}', { status: 404 }) : new Response(String(input).includes('/anchors') ? JSON.stringify(anchors)
       : JSON.stringify({ t: 5000, e: { kind: 'snapshot', area: 'EB', berths: { SYN1: '1A11' } } }) + '\n'); } });
   await runtime.load(); runtime.frame(0, true, 4000);
   assert.equal(runtime.state().trains.length, 0, 'do not publish a future snapshot');
   runtime.frame(0, true, 5000);
-  assert.deepEqual(urls, ['/relay/anchors?area=EB', '/relay/recording?area=EB&date=20260101']);
+  assert.deepEqual(urls, ['/relay/anchors?area=EB', '/relay/fleet?area=EB', '/relay/recording?area=EB&date=20260101']);
+  assert.match(runtime.status(), /fleet: no evidence \(no table\); neutral/, 'a missing fleet table is noted, not fatal');
   assert.equal(runtime.state().ready, true); assert.equal(runtime.timeMs(), 5000);
   assert.equal(runtime.group.children.length, 1); const train = runtime.group.children[0]!;
   assert.equal(train.userData.kind, 'neutral'); assert.equal(train.userData.area, 'EB'); assert.equal(train.userData.allocation, 'assumed fleet');
@@ -84,4 +89,88 @@ test('unresolved EB headings stay unavailable and never start a stream; public/d
     fetchImpl: async () => new Response(JSON.stringify({ ...anchors, anchors: [] })),
     liveDependencies: { source: () => { ++streams; return {} as EventSource; } } });
   await runtime.load(); assert.equal(streams, 0); assert.equal(runtime.state().ready, false); assert.match(runtime.status(), /headings unresolved/); runtime.dispose();
+});
+
+// A synthetic booked-diagram table. The replay clock below starts on Thursday 1970-01-01; whichever offset London had
+// that year, its first hour is within 30 minutes of 00:30 or 01:30.
+const fleetTable: FleetTable = { source: 'synthetic', builtAt: '2026-11-10T00:00:00.000Z', workings: [
+  { headcode: '1A11', days: 'ThO', edinburghMinutes: [30, 90], units: [{ diagram: 'ZZ101', class: '385', cars: 3 }] },
+  { headcode: '1A12', days: 'SX', edinburghMinutes: [600], units: [{ diagram: 'ZZ101', class: '385', cars: 3 }, { diagram: 'ZZ102', class: '385', cars: 4 }] },
+] };
+
+test('bookedServiceFor answers from the table as it stands at each birth, and gives nothing without one', () => {
+  let table: FleetTable | undefined;
+  const serviceFor = bookedServiceFor(() => table);
+  const tuesday = Date.UTC(2026, 10, 10, 10, 0);
+  assert.equal(serviceFor('1A12', tuesday), undefined, 'no table yet: neutral');
+  table = fleetTable;
+  assert.deepEqual(serviceFor('1A12', tuesday), { operator: 'SR', units: [{ class: '385', cars: 3 }, { class: '385', cars: 4 }], orderAssumed: true, basis: 'booked diagram' });
+  assert.equal(serviceFor('1A99', tuesday), undefined, 'a headcode the diagrams do not book');
+  assert.equal(serviceFor('1A12', Date.UTC(2026, 10, 7, 10, 0)), undefined, 'Saturday: not a day of the working');
+});
+
+async function replayWith(fleet: (init?: RequestInit) => Response | Promise<Response>, anchorsStatus = 200) {
+  const { parent } = parentFixture(), calls: { url: string; cache?: RequestCache }[] = [];
+  const runtime = createEdinburghLive({ geometry, scene: new THREE.Scene(), camera: new THREE.PerspectiveCamera(), parent,
+    mode: 'replay', hostname: 'localhost', date: '20260101', speed: 10,
+    fetchImpl: async (input, init) => {
+      const url = String(input); calls.push({ url, cache: init?.cache });
+      if (url.includes('/fleet')) return fleet(init);
+      if (url.includes('/anchors')) return new Response(JSON.stringify(anchors), { status: anchorsStatus });
+      return new Response(JSON.stringify({ t: 5000, e: { kind: 'snapshot', area: 'EB', berths: { SYN1: '1A11' } } }) + '\n');
+    } });
+  await runtime.load(); runtime.frame(0, true, 5000);
+  return { runtime, calls };
+}
+
+test('EB fetches the booked fleet after the anchors and reports it; the booked evidence reaches the births', async () => {
+  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify({ booked: fleetTable, ptac: null })));
+  assert.deepEqual(calls.map(c => c.url), ['/relay/anchors?area=EB', '/relay/fleet?area=EB', '/relay/recording?area=EB&date=20260101']);
+  assert.ok(calls.every(c => c.cache === 'no-store'));
+  assert.equal(runtime.state().ready, true);
+  assert.match(runtime.status(), /fleet: booked diagrams \(2 workings\)/);
+  assert.doesNotMatch(runtime.status(), /allocations unavailable/);
+  // 1A11 is booked as one 385 3-car. The train is drawn from it when the fleet table has a ScotRail row for it,
+  // and stays the neutral assumed fleet when it has none.
+  const expected = rowsForEvidence(EDINBURGH_FLEET, matchBooked(fleetTable, '1A11', 5000)) ? 'booked diagram' : 'assumed fleet';
+  assert.equal(runtime.group.children[0]!.userData.allocation, expected);
+  runtime.dispose();
+});
+
+test('EB carries on neutral, and says so, when the fleet table is absent, refused, invalid or unreachable', async () => {
+  const cases: [() => Response | Promise<Response>, RegExp][] = [
+    [() => new Response('{}', { status: 404 }), /fleet: no evidence \(no table\); neutral/],
+    [() => new Response('{}', { status: 502 }), /fleet: no evidence \(502\); neutral/],
+    [() => new Response('not json'), /fleet: no evidence \(table unreadable or invalid\); neutral/],
+    [() => new Response(JSON.stringify({ booked: { ...fleetTable, workings: [{ ...fleetTable.workings[0]!, headcode: 'x' }] }, ptac: null })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: { ...fleetTable, extra: 1 }, ptac: null })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify(fleetTable)), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: fleetTable, ptac: null, extra: 1 })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: null, ptac: { format: 'kx-ptac/0', trains: {} } })), /table unreadable or invalid/],
+    [() => { throw new Error('network down'); }, /table unreadable or invalid/],
+  ];
+  for (const [fleet, message] of cases) {
+    const { runtime } = await replayWith(fleet);
+    assert.equal(runtime.state().ready, true, 'positions still work');
+    assert.equal(runtime.state().error, undefined);
+    assert.match(runtime.status(), message);
+    assert.doesNotMatch(runtime.status(), /booked diagrams/);
+    assert.equal(runtime.group.children[0]!.userData.allocation, 'assumed fleet');
+    runtime.dispose();
+  }
+});
+
+test('EB asks for no fleet table while its anchors are unavailable', async () => {
+  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify({ booked: fleetTable, ptac: null })), 404);
+  assert.deepEqual(calls.map(c => c.url), ['/relay/anchors?area=EB']);
+  assert.equal(runtime.state().ready, false);
+  runtime.dispose();
+  // ... nor while the anchors resolve to no placed berth.
+  const urls: string[] = [], { parent } = parentFixture();
+  const unresolved = createEdinburghLive({ geometry, scene: new THREE.Scene(), camera: new THREE.Camera(), parent, mode: 'auto', hostname: 'localhost', date: '', speed: 1,
+    fetchImpl: async input => { urls.push(String(input)); return new Response(JSON.stringify({ ...anchors, anchors: [] })); } });
+  await unresolved.load();
+  assert.deepEqual(urls, ['/relay/anchors?area=EB']);
+  assert.match(unresolved.status(), /headings unresolved/);
+  unresolved.dispose();
 });

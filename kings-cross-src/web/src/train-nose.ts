@@ -19,6 +19,21 @@ export interface NoseKnot {
   bottom: number;
 }
 
+/**
+ * A raked face: the whole front of a cab leans back (a Class 180's face and its screen, GC180-01, GC180-02 and GC180-05), by shearing the loft along its length. A point of the
+ * loft at distance `s` from the tip and height `y` stands `rakeSet` metres farther back than the ring it is on: nothing at the chin, `lean` metres per metre of height over
+ * `from` at the tip, easing to nothing by `reach`. The section and the plan are the rings' own and the roof line's heights are the knots' own: what changes is how far back
+ * each height stands, so the face is a plane leaning back and the glass over it steepens (its foot is set back the most), with no new ring and no kink in the surface.
+ */
+export interface NoseRake {
+  /** Metres set back per metre of height over `from`, at the tip: the tangent of the face's lean off the vertical (0.36 is 20 degrees). */
+  lean: number;
+  /** The height the lean is measured from, metres over the rail head: at or under the lowest point of the loft at the chin, so nothing is drawn forward of the tip. */
+  from: number;
+  /** By this distance from the tip the lean has gone, metres. It falls as (1 - s / reach) squared, which leaves the shear's own bend smooth where it ends. */
+  reach: number;
+}
+
 export interface NoseSpec {
   /** Tip to where the body goes full section. */
   length: number;
@@ -38,6 +53,8 @@ export interface NoseSpec {
   /** Where the tip section is widest, as a fraction of its height (0 at the underside, 1 at the roof), and how boxy it is (2 = ellipse). */
   widest: number;
   boxiness: number;
+  /** The face's lean, where it has one (an upright face, and the AT300's beak, have none). Everything laid on the nose follows it: see `rakeSet`. */
+  rake?: NoseRake;
 }
 
 export interface Ring {
@@ -75,6 +92,32 @@ export function filletFactor(spec: NoseSpec, s: number): number {
   if (s >= spec.fillet) return 1;
   const t = 1 - Math.max(0, s) / spec.fillet;
   return 1 - spec.filletLoss + spec.filletLoss * Math.sqrt(Math.max(0, 1 - t * t));
+}
+
+/** How much of the tip's lean is left at distance `s` from the tip: 1 at the tip, 0 from `reach` back, falling as a quadratic. */
+export function rakeEase(rake: NoseRake, s: number): number {
+  if (s >= rake.reach) return 0;
+  const t = 1 - Math.max(0, s) / rake.reach;
+  return t * t;
+}
+
+/** The lean at distance `s`: metres set back per metre of height (the rake's `lean` at the tip), 0 for a nose without one. */
+export function rakeLean(spec: NoseSpec, s: number): number {
+  return spec.rake ? spec.rake.lean * rakeEase(spec.rake, s) : 0;
+}
+
+/** How fast the lean falls with the distance from the tip, per metre of height per metre of length (never positive). */
+export function rakeLeanSlope(spec: NoseSpec, s: number): number {
+  const r = spec.rake;
+  return r && s < r.reach ? (-2 * r.lean * (1 - Math.max(0, s) / r.reach)) / r.reach : 0;
+}
+
+/**
+ * How far back the rake sets the point at distance `s` from the tip and height `y`, metres: the lean there times its height over the rake's `from` (0 for a point under it,
+ * and for a nose with no rake). The point's place along the car is `s + rakeSet`; its place across and its height stay.
+ */
+export function rakeSet(spec: NoseSpec, s: number, y: number): number {
+  return rakeLean(spec, s) * Math.max(0, y - (spec.rake?.from ?? 0));
 }
 
 /** The ring at distance `s` from the nose tip. */

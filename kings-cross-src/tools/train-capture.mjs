@@ -9,8 +9,10 @@ import {fileURLToPath} from 'node:url';
 import {deflateSync,crc32} from 'node:zlib';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
+import {pinParameters,scenePinFrom} from './scene-pin.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
 import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
+import {EDINBURGH_FLEET} from '../web/src/edinburgh-fleet.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
@@ -308,10 +310,30 @@ export const chromeArgs=profile=>['--headless=new','--remote-debugging-pipe',`--
  */
 const lnerNote=(electric,cars,bimode)=>`stated class: the electric Class ${electric} (${cars}). The bi-mode Class ${bimode} has the same body shape and car pattern but carries diesel engines under its cars; the model draws none (a plain underframe, one roof and pantograph pattern), so it is stated as the 801 and is not claimed to match the 800`;
 export const CLASS_NOTES=Object.freeze({lner5:lnerNote('801/1','five cars','800/2'),lner9:lnerNote('801/2','nine cars','800/1')});
+/**
+ * The Waverley kinds the catalogue can photograph: every web/src/edinburgh-fleet.ts row that carries a `formation`. Adding a row is all a
+ * family needs: its formation stands in for describeFormation, and the page builds it through window.__kx.evidenceBuildEdinburgh.
+ */
+export const EDINBURGH_CAPTURE_KINDS=Object.freeze(EDINBURGH_FLEET.filter(row=>row.formation).map(row=>row.kind));
+/** Run once on the page when a run takes a Waverley kind: every specimen build then tries the Edinburgh table first, then the King's Cross builder. */
+export const EDINBURGH_BUILD_HOOK=`(()=>{const k=window.__kx;if(typeof k.evidenceBuildEdinburgh!=='function')throw new Error('page has no evidenceBuildEdinburgh hook');if(k.__edinburghBuild)return true;const kx=k.evidenceBuildTrain;k.evidenceBuildTrain=kind=>k.evidenceBuildEdinburgh(kind)??kx(kind);k.__edinburghBuild=true;return true;})()`;
+/** A Waverley row's own description, checked for the fields the view planner reads. */
+export function describeEdinburghFormation(kind,rows=EDINBURGH_FLEET) {
+  const row=rows.find(r=>r.kind===kind&&r.formation);
+  if(!row)throw new Error(`no Edinburgh capture formation for ${kind}`);
+  const f=row.formation(),finite=v=>typeof v==='number'&&Number.isFinite(v);
+  if(![f.length,f.half,f.crown,f.coverHeight,f.roofTop,f.doorWidth].every(finite)||!Array.isArray(f.cars)||!f.cars.length)throw new Error(`${kind}: formation needs length, half, crown, coverHeight, roofTop, doorWidth and cars`);
+  if(Math.abs(f.cars.at(-1).end-f.length)>1e-6||f.cars.some((c,i)=>c.index!==i||!(c.end>c.start)||c.bogies.length!==2||c.motor.length!==2||!Array.isArray(c.doors)))throw new Error(`${kind}: formation cars are not a continuous indexed train`);
+  for(const name of ['lengthM','widthM','roofTopM'])if(!finite(f.dimensions?.[name]?.value)||typeof f.dimensions[name].basis!=='string')throw new Error(`${kind}: formation dimensions.${name} needs a value and a basis`);
+  return {kind,...f,classNote:[f.classNote,EDINBURGH_V10_NOTE].filter(Boolean).join('. ')};
+}
+/** Lead ruling 2026-11-10: until a Waverley V10 exists, a Waverley kind's V10 stands at a King's Cross buffer stop, and every sidecar says so. */
+export const EDINBURGH_V10_NOTE='V10 PROVISIONAL: a Waverley kind is stood at a King\'s Cross buffer stop for the station views, not at a Waverley platform';
 /** The formation block of a manifest entry: the family, the classes and the note on them, the length, the dimensions and the cars. */
 export const manifestFormation=formation=>({family:formation.family,classes:formation.classes,classNote:formation.classNote,lengthM:formation.length,dimensions:formation.dimensions,cars:formation.cars});
 /** A plain description of one kind's formation: the input of planCatalogueViews and the sidecars' `formation`/`dimensions`. */
 export function describeFormation(kind) {
+  if(EDINBURGH_CAPTURE_KINDS.includes(kind))return describeEdinburghFormation(kind);
   const layout=trainLayout(kind),family=layout.spec.family,body=bodySpec(family),figures=family==='at300'?FIGURES:EMU_FIGURES[family];
   const cars=layout.cars.map(car=>{
     // doors are metres from the cab end of a cab car (the rear cab car counts back from its end) or from the car's start (web/src/train.ts buildCar)
@@ -363,8 +385,9 @@ export function stationManifest(scene) {
 export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
 /**
- * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`.
+ * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|noon|dusk] [--timeout-seconds N]`.
  * Without `--views` a run takes V01-V10; `M01` (the motion clip), `C01` (the tightest curve) and `C02` (the curve of the radius that is typical of the page's track) are opt-in, `--views M01`, `--views C01,C02` or with others, and are taken at day only.
+ * A `noon` run (the page's clock pinned to midsummer noon, see EXPOSURES) takes V10 only, which is its default, and no other view.
  */
 export function parseCatalogueArgs(args) {
   const options=new Map();
@@ -390,11 +413,14 @@ export function parseCatalogueArgs(args) {
   if(!isExposure(exposure))throw new Error(`--exposure: unknown ${exposure}; expected ${EXPOSURE_IDS.join(',')}`);
   const seconds=Number(options.get('--timeout-seconds')??CATALOGUE_TIMEOUT_S.default);
   if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
-  const views=list('--views',ASKABLE_VIEW_IDS,VIEW_IDS);
+  const views=list('--views',ASKABLE_VIEW_IDS,exposure==='noon'?['V10']:VIEW_IDS);
+  if(exposure==='noon'&&views.some(id=>id!=='V10'))throw new Error(`--views ${views.filter(id=>id!=='V10').join(',')}: the noon pass takes the station view V10 only; the neutral stage of the other views is lit by the fixed day rig`);
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
   if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
   if(views.includes(CURVE_NORMAL.id)&&exposure!=='day')throw new Error(`--views ${CURVE_NORMAL.id}: the curve is taken at day only, not ${exposure}`);
-  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
+  const waverley=list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS).filter(kind=>EDINBURGH_CAPTURE_KINDS.includes(kind)),trackViews=[MOTION.id,CURVE.id,CURVE_NORMAL.id].filter(id=>views.includes(id));
+  if(waverley.length&&trackViews.length)throw new Error(`--views ${trackViews.join(',')}: the motion and curve views place a train on the King's Cross track by its core/train.ts layout, which the Waverley kinds (${waverley.join(',')}) do not have`);
+  return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
 /** Host and build identity for every sidecar: the machine, the git head and the exact page that was photographed. */
@@ -707,9 +733,16 @@ export const CATALOGUE_URL_QUERY='trains=none&board=0&tooltip=0&signals=0';
  * (`?time=` and `?weather=`; no weather request is made): the sun, sky, lamps and ground of 16:30 UTC on 2026-11-09 under clear skies. The poses of a pass
  * do not depend on its exposure: the sun-bearing rule turns the specimen by CATALOGUE.sunPosition (the day rig's sun) in both, and a dusk pass reuses the
  * poses of a day pass (--poses).
+ * `noon` pins the same two things to the daylight pin of the other capture tools (scene-pin.mjs: midsummer noon in London, 2026-06-21T12:00:00+01:00, under clear skies; the `+` of
+ * the offset is percent-encoded, or the page would read it as a space and ignore the time). It is how V10 is taken, the one view that stands in the page's scenery: under the day
+ * rig the page has no clock of its own to pin (`?time=` turns that rig off), so its station clocks showed the wall clock's time and its sidecars recorded `pinnedTime: null`, and
+ * the round-4 score found day V10 not time-pinned. A noon pass takes V10 only (the neutral stage of V01-V09 stays on the day rig), and reuses the frozen poses of an earlier
+ * pass (--poses), as a dusk pass does.
  */
+const NOON_PIN=scenePinFrom();
 export const EXPOSURES=Object.freeze({
   day:Object.freeze({id:'day',query:'sky=ref',rig:'fixed',pinnedTime:null,pinnedWeather:null}),
+  noon:Object.freeze({id:'noon',query:pinParameters(NOON_PIN),rig:'atmosphere',pinnedTime:NOON_PIN.time,pinnedWeather:NOON_PIN.weather}),
   dusk:Object.freeze({id:'dusk',query:'time=2026-11-09T16:30:00Z&weather=clear',rig:'atmosphere',pinnedTime:'2026-11-09T16:30:00Z',pinnedWeather:'clear'}),
 });
 export const EXPOSURE_IDS=Object.freeze(Object.keys(EXPOSURES));
@@ -1328,6 +1361,7 @@ export async function catalogueMain(args) {
     if(!/Metal/i.test(session.renderer)||/SwiftShader|llvmpipe|software/i.test(session.renderer))throw new Error(`real Metal GPU required: ${session.renderer}`);
     if(session.size[0]!==CATALOGUE.viewport.width||session.size[1]!==CATALOGUE.viewport.height||session.devicePixelRatio!==1||Math.abs(session.aspect-CATALOGUE.aspect)>1e-9)throw new Error(`page viewport is ${session.size.join('x')} at ${session.devicePixelRatio}x, aspect ${session.aspect}; need ${CATALOGUE.viewport.width}x${CATALOGUE.viewport.height} at 1x`);
     checkExposure(opts.exposure,session);
+    if(opts.kinds.some(kind=>EDINBURGH_CAPTURE_KINDS.includes(kind)))await evaluate(EDINBURGH_BUILD_HOOK);
     await evaluate(`(${catalogueDriver.toString()})()`);
     Object.assign(manifest.exposure,{atmosphere:await evaluate('window.__cat.atmosphere()')});
     const shoot=async()=>Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64');

@@ -69,7 +69,7 @@ test('filtering keeps only trains with a segment starting or ending at Edinburgh
   assert.deepEqual(r, {
     date: '2001-02-03', headcode: '1Z99', uid: 'Q00001', ru: '9960', operator: 'SR',
     edbArr: '2001-02-03T11:00:00', edbDep: '2001-02-03T11:05:00', origin: 'AAAAAAA', dest: 'BBBBBBB',
-    classes: ['999', '998'], fleets: ['999/0', '998/1'], units: ['999001', '998002'], unitVehicles: [3, 4], vehicles: 7,
+    classes: ['999', '998'], fleets: ['999/0', '998/1'], units: ['999001', '998002'], unitVehicles: [3, 4], unitFleets: ['999/0', '998/1'], vehicles: 7,
     messageTime: '2001-02-03T05:00:00', receivedAt: 5,
   });
   const elsewhere = message({ allocations: [{ from: 'AAAAAAA', fromTime: '2001-02-03T10:00:00', to: 'BBBBBBB', toTime: '2001-02-03T11:00:00', unit: '999003', fleet: '999/0', cars: 2 }] });

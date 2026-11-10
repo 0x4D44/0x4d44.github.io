@@ -154,8 +154,10 @@ function lnerShapes(nose: number): Shape[] {
   // the pale crescent just under the wing's lower edge (a broader one at the cab, a thin line along the band's foot behind it)
   const under = bottom.map((p): [number, number] => [p[0], p[1] - (p[0] <= nose + 0.5 ? 0.12 : 0.04)]);
   const crescent = between(bottom, under);
-  // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded
-  const cheek: [number, number][] = [[0, TEX_Y0], [0.5, TEX_Y0], [0.8, 0.75], [0.92, 1.05], [0.85, 1.3], [0.7, 1.5], [0, 1.5]];
+  // the cheek: the red strip beside the face, from the nose's foot up under the lamp window, its back edge rounded (a smooth curve through the readings, s as a function of y:
+  // drawn through the same five points as a polygon it showed its facets on the nose's flank, a stair where a photograph has one curve)
+  const cheekBack = smoothCurve([[TEX_Y0, 0.5], [0.75, 0.8], [1.05, 0.92], [1.3, 0.85], [1.5, 0.7]], 32).map(([y, s]): [number, number] => [s, y]);
+  const cheek: [number, number][] = [[0, TEX_Y0], ...cheekBack, [0, 1.5]];
   return [
     // the dark underframe, from just behind the crew door (the nose's own lower flank is white-silver)
     { colour: 0x2d3036, pts: rect(nose + 0.2, TEX_SPAN, TEX_Y0, 1.0) },
@@ -328,7 +330,7 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   surround: null,
   foot: 0x2d3036,
   noseTop: 0x1a1c21,
-  noseTopFrom: 2.0,
+  noseTopFrom: 2.5,
   // small red lettering on the white lower body, between the doors (photographs show the Azuma name and the LNER mark small, at the car ends)
   decals: (c) => [{ text: 'LNER', colour: LNER_RED, rect: [bay(c) - 0.5 * 2.722 * 0.26, 1.12, 0, 1.38] }],
 });
@@ -430,7 +432,7 @@ const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
 
 // Lumo: livery.ts's row unchanged, and over the windscreen a dark grey dome (LUMO-03-Lumo-803004-passes-York-301023, LUMO-05-Lumo-803005-at-King-s-Cross-Platform-10:
 // the cab's top is a smooth dark cap from the glass's upper edge back, the shoulders beside the glass the body's blue; the shade approximate).
-const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.0 });
+const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.5 });
 
 const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   lner5: LNER,

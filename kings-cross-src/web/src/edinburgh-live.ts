@@ -9,8 +9,12 @@ import type { Car } from '../../core/train.ts';
 import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverley-anchors.ts';
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
-import { buildNeutralTrain, disposeNeutralTrain } from './train-neutral.ts';
-import { buildTrain } from './train.ts';
+import { bookedSource, firstEvidence, matchBooked, validateFleetTable } from '../../core/edinburgh-diagrams.ts';
+import { ptacSource, validatePtacStore } from '../../core/edinburgh-ptac.ts';
+import type { PtacStore } from '../../core/edinburgh-ptac.ts';
+import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
+import { buildNeutralTrain } from './train-neutral.ts';
+import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
 import { carPoses } from './trains-live.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
@@ -45,7 +49,7 @@ export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMa
 export function createEdinburghMotion(geometry: unknown, value: unknown,
   serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined) {
   const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry)), graph = buildGraph(data);
-  const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor);
+  const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
   const motion = createMotion(graph, anchors, { lengthM: kinds.lengthM,
     // ASSUMED conservative station speed until a sourced local restriction table exists.
     defaultSpeedMps: 25 / 3.6, stationSpeedMps: 25 / 3.6, estimatedMotion: false });
@@ -53,6 +57,33 @@ export function createEdinburghMotion(geometry: unknown, value: unknown,
     if (event.area === 'EB') motion.apply(event, at, observed);
   } };
   return { data, graph, anchors, kinds, motion, sink };
+}
+
+/** serviceFor for createEdinburghMotion: the booked table as it stands at each birth (absent: no evidence, so neutral). */
+export const bookedServiceFor = (table: () => FleetTable | undefined) =>
+  (description: string, atMs: number): EdinburghServiceEvidence | undefined => { const t = table(); return t ? matchBooked(t, description, atMs) : undefined; };
+
+/** serviceFor with PTAC ahead of the booked diagrams, each as it stands at each birth; an absent source is skipped. */
+export const fleetServiceFor = (ptac: () => PtacStore | undefined, table: () => FleetTable | undefined) =>
+  (description: string, atMs: number): EdinburghServiceEvidence | undefined => {
+    const p = ptac(), t = table();
+    return firstEvidence(p && ptacSource(p), t && bookedSource(t))(description, atMs);
+  };
+
+/**
+ * Reads GET /fleet's {booked, ptac} document. Each section is checked on its own: an invalid one is dropped and
+ * named in the note, the other still counts. Throws when the body is not that document.
+ */
+export function readFleetDocument(body: unknown): { booked?: FleetTable; ptac?: PtacStore; note: string } {
+  if (typeof body !== 'object' || body === null || Array.isArray(body) || !('booked' in body) || !('ptac' in body) || Object.keys(body).length !== 2) throw new Error('fleet document required');
+  const doc = body as { booked: unknown; ptac: unknown };
+  let booked: FleetTable | undefined, ptac: PtacStore | undefined;
+  const bad: string[] = [];
+  if (doc.booked !== null) { try { booked = validateFleetTable(doc.booked); } catch { bad.push('booked table invalid'); } }
+  if (doc.ptac !== null) { try { ptac = validatePtacStore(doc.ptac); } catch { bad.push('PTAC store invalid'); } }
+  const found = [ptac && `PTAC allocation (${Object.keys(ptac.trains).length} trains)`, booked && `booked diagrams (${booked.workings.length} workings)`].filter(Boolean);
+  if (!found.length) throw new Error('no valid fleet section');
+  return { booked, ptac, note: `fleet: ${found.join(' + ')}${bad.length ? ` (${bad.join(', ')})` : ''}` };
 }
 
 export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDependencies {
@@ -72,15 +103,29 @@ export function createEdinburghLive(options: {
   let session: ReturnType<typeof createEdinburghMotion> | undefined, feed: TrainFeed | undefined;
   let replay: ReturnType<typeof createAreaReplay> | undefined, disposed = false, loading = false, retryAt = 0, attempt = 0;
   let connection = 'live trains unavailable; private EB anchors required', error: string | undefined;
+  // The fleet evidence (private, from the relay): PTAC allocations first, then the booked diagrams. Without either every
+  // train is the neutral assumed fleet.
+  let fleet: FleetTable | undefined, ptac: PtacStore | undefined, fleetNote = 'fleet: no evidence; neutral';
   const fetchImpl = options.fetchImpl ?? fetch, abort = new AbortController();
+  const loadFleet = async (): Promise<void> => {
+    fleet = undefined; ptac = undefined; fleetNote = 'fleet: no evidence; neutral';
+    try {
+      const response = await fetchImpl('/relay/fleet?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+      if (!response.ok) { fleetNote = `fleet: no evidence (${response.status === 404 ? 'no table' : response.status}); neutral`; return; }
+      const doc = readFleetDocument(await response.json());
+      fleet = doc.booked; ptac = doc.ptac; fleetNote = doc.note;
+    } catch { fleetNote = 'fleet: no evidence (table unreadable or invalid); neutral'; }
+  };
   const load = async (): Promise<void> => {
     if (disposed || loading || session || ['none', 'demo'].includes(options.mode) || !relayReachable(options.hostname)) return;
     loading = true;
     try {
       const response = await fetchImpl('/relay/anchors?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
       if (!response.ok) throw new Error(`EB anchors unavailable (${response.status})`);
-      const candidate = createEdinburghMotion(options.geometry, await response.json());
+      // serviceFor reads the table as it stands at each birth; the fleet is fetched below, before any train can be born.
+      const candidate = createEdinburghMotion(options.geometry, await response.json(), fleetServiceFor(() => ptac, () => fleet));
       if (!candidate.anchors.anchors.length) throw new Error('EB positions/headings unresolved; no placed anchors');
+      await loadFleet();
       if (options.mode === 'replay') {
         const recording = await fetchImpl(`/relay/recording?area=EB&date=${encodeURIComponent(options.date)}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(30_000)]) });
         if (!recording.ok) throw new Error(`EB recording unavailable (${recording.status})`);
@@ -95,8 +140,8 @@ export function createEdinburghLive(options: {
     } finally { loading = false; }
   };
   const disposeTrain = (train: THREE.Group): void => {
-    // Both the neutral and existing builders share plain()/bogies and own other geometry.
-    disposeNeutralTrain(train);
+    // Each builder shares plain()/bogies and owns its other geometry; its row says how to free it.
+    disposeEdinburghTrain(train);
   };
   const update = (views: TrainView[]): void => {
     const present = new Set(views.map(v => v.id));
@@ -105,7 +150,7 @@ export function createEdinburghLive(options: {
       const choice = session!.kinds.formationFor(view)!;
       let item = drawn.get(view.id);
       if (!item) {
-        const train = choice.kind === 'neutral' ? buildNeutralTrain() : buildTrain(choice.kind);
+        const train = buildEdinburghTrain(choice) ?? buildNeutralTrain();
         const label = labels.ownerDocument.createElement('span'); label.style.cssText = 'position:absolute;font:11px system-ui;color:white;background:#27323cdd;padding:3px 5px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-100%)';
         Object.assign(train.userData, { area: 'EB', id: view.id, kind: choice.kind, allocation: choice.allocation, length: view.lengthM });
         group.add(train); labels.append(label); item = { group: train, label }; drawn.set(view.id, item);
@@ -130,7 +175,7 @@ export function createEdinburghLive(options: {
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
     state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [] }),
-    status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · neutral assumed fleet; allocations unavailable · provisional berth positions/headings` : ''}`,
+    status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}`,
     frame(dt: number, selected: boolean, utcMs?: number): void {
       group.visible = selected; labels.hidden = !selected;
       if (selected && performance.now() >= retryAt) void load();

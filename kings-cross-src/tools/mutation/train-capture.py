@@ -12,8 +12,11 @@ import kxmut  # only for run_process: the timeout, the memory cap and no orphane
 
 src = Path(sys.argv[1]).resolve()
 out = Path(sys.argv[2]).resolve()
-# optional third argument: run only the mutants whose label contains it, or any of several joined with | (a quick check while writing tests; the full run takes none)
+# optional third argument: run only the mutants whose label contains it, or any of several joined with | (a quick check while writing tests; the full run takes none), or
+# `#a-b`: the mutants at positions a up to (not including) b of the list below, counted from 0 (the full run in slices, each through the machine's one-driver gate; the
+# never-failed test names of every slice then have to be intersected by hand, since a slice cannot see what the others observed)
 only = sys.argv[3] if len(sys.argv) > 3 else None
+span = re.fullmatch(r'#(\d+)-(\d+)', only) if only else None
 if not out.is_relative_to(src.parent / '.scratch'):
     raise SystemExit('output must be under worktree .scratch')
 out.mkdir(parents=True, exist_ok=True)
@@ -428,6 +431,28 @@ M = [
  ('day pass tolerates a page with no sun', C, 'if(!sun||sun.position.some(', 'if(sun&&sun.position.some('),
  ('dusk pass tolerates a page with no atmosphere', C, "if(!session.atmosphereState)throw new Error(`the ${exposure} pass needs the page's atmosphere", "if(false)throw new Error(`the ${exposure} pass needs the page's atmosphere"),
  ('dusk pass tolerates the wrong page clock', C, 'if(session.atmosphereState.timeMs!==Date.parse(e.pinnedTime))throw', 'if(false)throw'),
+ ('exposure noon is the bare page', C, "query:pinParameters(NOON_PIN),", "query:'bare=1&'+pinParameters(NOON_PIN),"),
+ ('exposure noon keeps the fixed sky', C, "query:pinParameters(NOON_PIN),", "query:'sky=ref&'+pinParameters(NOON_PIN),"),
+ ('exposure noon sends the offset as a bare plus, which the page reads as a space', C, "query:pinParameters(NOON_PIN),", "query:`time=${NOON_PIN.time}&weather=${NOON_PIN.weather}`,"),
+ ('exposure noon is pinned to another hour than it records', C, "query:pinParameters(NOON_PIN),", "query:pinParameters({...NOON_PIN,time:'2026-06-21T13:00:00+01:00'}),"),
+ ('exposure noon leaves the weather to the network', C, "query:pinParameters(NOON_PIN),", "query:pinParameters(NOON_PIN).split('&')[0],"),
+ ('exposure noon is not the daylight pin of the other capture tools', C, 'const NOON_PIN=scenePinFrom();', "const NOON_PIN=scenePinFrom({weather:'rain'});"),
+ ('exposure noon is the old fixed look', C, 'const NOON_PIN=scenePinFrom();', "const NOON_PIN=scenePinFrom({sky:'ref'});"),
+ ('exposure noon is on the fixed rig', C, "query:pinParameters(NOON_PIN),rig:'atmosphere',", "query:pinParameters(NOON_PIN),rig:'fixed',"),
+ ('exposure noon records no time', C, "rig:'atmosphere',pinnedTime:NOON_PIN.time,", "rig:'atmosphere',pinnedTime:null,"),
+ ('exposure noon records the dusk clock', C, 'pinnedTime:NOON_PIN.time,', "pinnedTime:'2026-11-09T16:30:00Z',"),
+ ('exposure noon records no weather', C, 'pinnedWeather:NOON_PIN.weather}),', 'pinnedWeather:null}),'),
+ ('exposure noon is named day', C, "noon:Object.freeze({id:'noon',", "noon:Object.freeze({id:'day',"),
+ ('exposure ids come in the other order', C, 'export const EXPOSURE_IDS=Object.freeze(Object.keys(EXPOSURES));', 'export const EXPOSURE_IDS=Object.freeze(Object.keys(EXPOSURES).reverse());'),
+ ('noon argv: the noon pass takes the whole V01-V10 by default', C, "exposure==='noon'?['V10']:VIEW_IDS", 'VIEW_IDS'),
+ ('noon argv: the dusk pass takes V10 only by default', C, "exposure==='noon'?['V10']:VIEW_IDS", "exposure!=='day'?['V10']:VIEW_IDS"),
+ ('noon argv: the noon pass takes the stage, the clip and the curves too', C, "if(exposure==='noon'&&views.some(id=>id!=='V10'))throw", 'if(false)throw'),
+ ('noon argv: the noon pass is refused only when none of its views is V10', C, "views.some(id=>id!=='V10'))throw", "views.every(id=>id!=='V10'))throw"),
+ ('noon argv: the dusk pass is refused its stage views too', C, "if(exposure==='noon'&&views.some(", "if(exposure!=='day'&&views.some("),
+ ('noon argv: V09 is taken as a station view', C, "views.some(id=>id!=='V10'))throw", "views.some(id=>id!=='V10'&&id!=='V09'))throw"),
+ ('noon argv: the refusal names V10 among the views it refuses', C, "${views.filter(id=>id!=='V10').join(',')}: the noon pass", "${views.join(',')}: the noon pass"),
+ ('noon argv: the refusal does not say what a noon pass takes', C, 'the noon pass takes the station view V10 only;', 'the noon pass takes it;'),
+ ('noon run: a noon pass may change the poses', C, "if(opts.exposure!=='day'&&!opts.poses)throw new Error(", "if(opts.exposure==='dusk'&&!opts.poses)throw new Error("),
  ('train night is read from the wrong atmosphere field', C, '{trainNight:atmosphere.rig.lampLevel,', '{trainNight:atmosphere.rig.daylight,'),
  ('train night of the fixed rig is guessed as lit', C, "{trainNight:0,trainNightSource:'inferred:", "{trainNight:1,trainNightSource:'inferred:"),
  ('train night is invented when the page gave no atmosphere', C, "{trainNight:null,trainNightSource:'unavailable:", "{trainNight:0,trainNightSource:'unavailable:"),
@@ -523,7 +548,7 @@ M = [
  ('frozen drift looks for a dusk view under its own name only', C, 'const entry=frozenEntryOf(held,view);', 'const entry=held.views?.[view.suffix];'),
  # ---- M01, the motion clip (tools/tests/train-motion.test.mjs, tools/tests/train-motion-clip.test.mjs)
  ('M01 cannot be asked for', F, 'Object.freeze([...VIEW_IDS, ...OPT_IN_VIEW_IDS])', 'Object.freeze([...VIEW_IDS])'),
- ('M01 is taken without being asked for', C, "list('--views',ASKABLE_VIEW_IDS,VIEW_IDS)", "list('--views',ASKABLE_VIEW_IDS,ASKABLE_VIEW_IDS)"),
+ ('M01 is taken without being asked for', C, "list('--views',ASKABLE_VIEW_IDS,exposure==='noon'?['V10']:VIEW_IDS)", "list('--views',ASKABLE_VIEW_IDS,exposure==='noon'?['V10']:ASKABLE_VIEW_IDS)"),
  ('M01 is taken at dusk too', C, "if(views.includes(MOTION.id)&&exposure!=='day')throw", 'if(false)throw'),
  ('M01 is refused by day', C, "if(views.includes(MOTION.id)&&exposure!=='day')throw", 'if(views.includes(MOTION.id))throw'),
  ('the clip runs at 25 m/s', F, 'speedMps: 20, stepS: 1,', 'speedMps: 25, stepS: 1,'),
@@ -2482,8 +2507,8 @@ with tempfile.TemporaryDirectory(prefix='train-capture-', dir=out) as directory:
     baseline=run(work)
     if baseline.returncode:raise SystemExit(baseline.stdout+baseline.stderr)
     names=set(re.findall(r'^ok \d+ - (.+)$',baseline.stdout,re.M));seen=set();survivors=[]
-    selected=[m for m in M if only is None or any(part in m[0] for part in only.split('|'))]
-    if not selected:raise SystemExit('no mutant label contains: '+str(only))
+    selected=M[int(span[1]):int(span[2])] if span else [m for m in M if only is None or any(part in m[0] for part in only.split('|'))]
+    if not selected:raise SystemExit('no mutant '+('at positions '+only[1:] if span else 'label contains: '+str(only)))
     for label,target,old,new in selected:
         file=work/target;original=file.read_text()
         if old not in original:raise SystemExit('missing mutation pattern: '+label)

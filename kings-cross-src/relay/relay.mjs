@@ -5,6 +5,8 @@
 //   GET /recent?n=200     the last n normalised events {t, e}
 //   GET /events           SSE: `snapshot` first, one `td` per event, `ping` every 5 seconds
 //   GET /sclass           local signal mapping: KX_SCLASS or <KX_DATA_DIR>/sclass.json
+//   GET /fleet?area=EB    fleet evidence {booked, ptac}: <area data dir>/fleet.json (booked diagrams) and
+//                         ptac.json (PTAC allocations), each null when absent; 404 when both are
 //   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
@@ -80,13 +82,19 @@ export function requestFailure(host, port, method, origin) {
   return method === 'GET' ? null : 405;
 }
 
-export async function localFile(url, { dataDir, area, streamRecording = false, cacheDir = dataDir, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json'), sclassFile = process.env.KX_SCLASS ?? path.join(dataDir, 'sclass.json') }) {
-  let file, type;
+export async function localFile(url, { dataDir, area, streamRecording = false, cacheDir = dataDir, anchorsFile = process.env.KX_ANCHORS ?? path.join(dataDir, 'anchors.json'), sclassFile = process.env.KX_SCLASS ?? path.join(dataDir, 'sclass.json'), fleetFile = 'fleet.json' }) {
+  let file, type, canonical;
   if (url.pathname === '/anchors') {
     file = anchorsFile;
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/sclass') {
     file = sclassFile;
+    type = 'application/json; charset=utf-8';
+  } else if (url.pathname === '/fleet') {
+    // The fleet table is always <area data dir>/fleet.json: no environment override, so the
+    // canonical-directory guard below always applies. Other query keys are ignored, as for /anchors.
+    if (!FLEET_FILES.includes(fleetFile)) throw new Error('invalid fleet file');
+    file = canonical = path.join(cacheDir, fleetFile);
     type = 'application/json; charset=utf-8';
   } else if (url.pathname === '/recording') {
     const dates = url.searchParams.getAll('date');
@@ -99,7 +107,7 @@ export async function localFile(url, { dataDir, area, streamRecording = false, c
   try {
     // Configured override files are operator-selected. Client-selected recordings
     // and default cache files must remain beneath the canonical data directory.
-    const configuredOverride = url.pathname !== '/recording' && path.resolve(file) !== path.resolve(cacheDir, url.pathname.slice(1) + '.json');
+    const configuredOverride = url.pathname !== '/recording' && path.resolve(file) !== path.resolve(canonical ?? path.join(cacheDir, url.pathname.slice(1) + '.json'));
     if (!configuredOverride) {
       const base = await realpath(dataDir), actual = await realpath(file), relative = path.relative(base, actual);
       if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
@@ -118,6 +126,28 @@ export async function localFile(url, { dataDir, area, streamRecording = false, c
     if (!['ENOENT', 'ENOTDIR', 'ELOOP'].includes(error.code)) throw new Error('local file unavailable');
     return { status: 404, body: JSON.stringify({ error: 'not found' }), type: 'application/json; charset=utf-8' };
   } finally { await handle?.close(); }
+}
+
+/** The /fleet sections: the booked-diagram table and the PTAC store, each from the area data directory only. */
+const FLEET_FILES = ['fleet.json', 'ptac.json'];
+
+/**
+ * GET /fleet as one document: {booked, ptac}. Each section is the parsed file, or null when it is absent,
+ * oversized or not JSON; 404 only when neither is there. Both go through localFile's guards.
+ */
+export async function fleetDocument(url, options) {
+  const sections = {};
+  let present = false;
+  for (const [name, fleetFile] of [['booked', 'fleet.json'], ['ptac', 'ptac.json']]) {
+    const file = await localFile(url, { ...options, fleetFile, streamRecording: false });
+    sections[name] = null;
+    if (file.status === 404) continue;
+    present = true;
+    if (file.status !== 200) continue;
+    try { sections[name] = JSON.parse(file.body); } catch { /* unreadable: the section is null */ }
+  }
+  const type = 'application/json; charset=utf-8';
+  return present ? { status: 200, body: JSON.stringify(sections), type } : { status: 404, body: JSON.stringify({ error: 'not found' }), type };
 }
 
 function json(res, status, body) {
@@ -241,7 +271,8 @@ export async function startRelay({
         area = requestArea(url, allowedAreas, defaultArea);
       } catch { return json(res, 400, { error: 'unknown or invalid area' }); }
       const { state, recent, listeners, status, recorder, trust, schedules, cacheDir, station, anchorsFile, sclassFile } = contexts.get(area);
-      const file = await localFile(url, { dataDir, area, cacheDir, anchorsFile, sclassFile, streamRecording: true });
+      const file = url.pathname === '/fleet' ? await fleetDocument(url, { dataDir, area, cacheDir })
+        : await localFile(url, { dataDir, area, cacheDir, anchorsFile, sclassFile, streamRecording: true });
       if (file) {
         res.writeHead(file.status, { 'content-type': file.type, 'cache-control': 'no-store' });
         if (file.stream) return await pipeline(file.stream, res);

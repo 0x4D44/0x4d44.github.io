@@ -43,6 +43,7 @@ import { createStations } from './stations.ts';
 import { resizeViewport } from './viewport.ts';
 import { createStPancrasLive } from './stpancras-live.ts';
 import { createEdinburghLive } from './edinburgh-live.ts';
+import { evidenceBuildEdinburgh } from './edinburgh-fleet.ts';
 
 const data = trackData as unknown as KxData;
 /** A standing train's nose stops this far (metres) north of its buffer stop. */
@@ -237,6 +238,8 @@ function start(): void {
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
   Object.assign(kx, { evidenceBuildTrain: buildTrain, setTrainLampState, atmosphere, weatherFeed });
+  // tools/train-capture.mjs builds the Waverley kinds (web/src/edinburgh-fleet.ts rows) through this hook.
+  Object.assign(kx, { evidenceBuildEdinburgh });
   const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,

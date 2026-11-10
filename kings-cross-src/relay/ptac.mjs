@@ -121,7 +121,9 @@ export const ptacKey = (msg) => `${msg.startDate} ${msg.headcode} ${msg.uid ?? '
 /**
  * The train's planned formation at one of `tiplocs`, or null when no allocation segment
  * starts or ends there. Units are the union (de-duplicated, by formation position) of the
- * segments arriving at and leaving the station.
+ * segments arriving at and leaving the station, in PTAC's ResourceGroupPosition order. `units`, `unitVehicles`
+ * and `unitFleets` are aligned per unit; `fleets` and `classes` are the distinct values. Position 1 is not
+ * proven to be the front in the direction of travel.
  */
 export function stationRecord(msg, { tiplocs, receivedAt = Date.now() }) {
   const at = new Set(tiplocs);
@@ -129,12 +131,13 @@ export function stationRecord(msg, { tiplocs, receivedAt = Date.now() }) {
   const leaving = msg.allocations.filter((a) => at.has(a.from));
   if (!arriving.length && !leaving.length) return null;
   const earliest = (times) => times.filter(Boolean).sort()[0] ?? null;
-  const units = [], unitVehicles = [], fleets = [], classes = [];
+  const units = [], unitVehicles = [], unitFleets = [], fleets = [], classes = [];
   for (const a of [...leaving, ...arriving].sort((x, y) => x.position - y.position)) {
     const id = a.unit ?? `?${units.length}`;
     if (units.includes(id)) continue;
     units.push(id);
     unitVehicles.push(a.vehicles);
+    unitFleets.push(a.fleet);
     if (a.fleet && !fleets.includes(a.fleet)) fleets.push(a.fleet);
     const cls = a.fleet ? a.fleet.split('/')[0] : null;
     if (cls && !classes.includes(cls)) classes.push(cls);
@@ -153,6 +156,7 @@ export function stationRecord(msg, { tiplocs, receivedAt = Date.now() }) {
     fleets,
     units,
     unitVehicles,
+    unitFleets,
     vehicles: unitVehicles.reduce((n, v) => n + v, 0),
     messageTime: msg.messageTime,
     receivedAt,
