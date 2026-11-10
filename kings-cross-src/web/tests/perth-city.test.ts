@@ -102,9 +102,13 @@ test('Kinnoull Hill\'s woods, the Inches and the kirk come from OSM, the DSM and
   assert.ok(pip(PERTH_LIDAR_LANDMARKS.kirk.x, PERTH_LIDAR_LANDMARKS.kirk.z, kirk.outer), 'the tower stands on the kirk');
 });
 
-test('P3 cost: the city stays inside its caps over phase 1 (579,835 triangles, 12 draws)', () => {
-  assert.ok(scene.stats.triangles - 579_835 <= 320_000, `triangles +${scene.stats.triangles - 579_835}`);
-  assert.ok(scene.stats.drawCalls - 12 <= 24, `draws +${scene.stats.drawCalls - 12}`);
+test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {
+  // measured on the city group alone (parts.buildings), so the station and frontage elements' own growth does not count against P3:
+  // the blockout city on main at a3244d8e, before this branch, was 84,441 triangles in 2 meshes
+  let triangles = 0, draws = 0;
+  scene.parts.buildings.traverse(o => { if (!(o instanceof THREE.Mesh)) return; const g = o.geometry, n = (g.index ? g.index.count : g.getAttribute('position').count) / 3; triangles += o instanceof THREE.InstancedMesh ? o.count * n : n; draws++; });
+  assert.ok(triangles - 84_441 <= 320_000, `triangles +${triangles - 84_441}`);
+  assert.ok(draws - 2 <= 24, `draws +${draws - 2}`);
   const hidden = buildPerthScene({ lighting: false, cityVisible: false });
   try { for (const name of ['perth-tay-water', 'perth-viaduct-iron', 'perth-city-roofs', 'perth-kirk-spire']) { let shown = false; hidden.group.getObjectByName(name)!.traverseAncestors(a => { if (a === hidden.parts.buildings) shown = a.visible; }); assert.equal(shown, false, `${name} hides with the city`); } }
   finally { hidden.dispose(); }
