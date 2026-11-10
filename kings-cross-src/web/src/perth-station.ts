@@ -126,23 +126,35 @@ export function perthDialTexture(): THREE.DataTexture {
   return dial = t;
 }
 /** Round 8 (S2): R-pt1-a's ring ornament in the arched braces at the column heads (its top right: open iron circles, each with a scroll
- *  curled inside, filling the spandrel between the curved brace and the girder over it). A cut-out (alpha 0 but on the iron) over the
- *  braces' spandrel plates, whose UVs are metres along the brace and up: rings of centre-line radius `ring` m, `bar` m wide, one per
- *  `cell` m square so neighbours almost touch, each with a C-scroll of radius `scroll` m inside, open on its `gap` (radians) toward +u.
- *  ASSUMED sizes, scaled from R-pt1-a against the girder's 1.5 m depth. Cached. */
-export const PERTH_RING_ORNAMENT = {cell: .56, ring: .23, bar: .045, scroll: .1, scrollBar: .035, gap: 1.6, px: 128} as const;
+ *  curled inside, filling the spandrel between the curved brace and the girder over it). Round 9 (the round-8 score: the rings were too
+ *  small, cut to lower arcs where the brace is shallow, and lost on far braces): one ring per tile, drawn on its own square
+ *  (perth-station-structure.ts PERTH_BRACE_RINGS sizes and places each to fit its corner), its UVs 0-1 across the square. A cut-out (alpha
+ *  0 but on the iron): a ring of centre-line radius `ring`, `bar` wide, with a C-scroll of radius `scroll` inside, open on its `gap`
+ *  (radians) toward +u; all in UV units (the square is 1). The mip levels are built by hand, each texel's alpha the MAX of the four
+ *  under it, so a thin bar keeps alpha over the cut (alphaTest .5) as the brace recedes, where averaged mips fade it out. Cached. */
+export const PERTH_RING_ORNAMENT = {ring: .44, bar: .07, scroll: .2, scrollBar: .06, gap: 1.6, px: 256} as const;
 let rings: THREE.DataTexture | undefined;
 export function perthRingTexture(): THREE.DataTexture {
   if (rings) return rings;
-  const R = PERTH_RING_ORNAMENT, n = R.px, data = new Uint8Array(n * n * 4), m = n / R.cell;
+  const R = PERTH_RING_ORNAMENT, n = R.px, data = new Uint8Array(n * n * 4);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const x = (i + .5) / m - R.cell / 2, y = (j + .5) / m - R.cell / 2, r = Math.hypot(x, y), a = Math.abs(Math.atan2(y, x));
+    const x = (i + .5) / n - .5, y = (j + .5) / n - .5, r = Math.hypot(x, y), a = Math.abs(Math.atan2(y, x));
     const iron = Math.abs(r - R.ring) < R.bar / 2 || (Math.abs(r - R.scroll) < R.scrollBar / 2 && a > R.gap / 2), q = 4 * (j * n + i);
     data[q] = data[q + 1] = data[q + 2] = 255; data[q + 3] = iron ? 255 : 0;
   }
   const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / R.cell, 1 / R.cell); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
-  t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-rings';
+  const mips: {data: Uint8Array; width: number; height: number}[] = [{data, width: n, height: n}];
+  for (let w = n / 2; w >= 1; w /= 2) {
+    const up = mips[mips.length - 1].data, uw = w * 2, d = new Uint8Array(w * w * 4);
+    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) {
+      const q = 4 * (j * w + i); d[q] = d[q + 1] = d[q + 2] = 255;
+      d[q + 3] = Math.max(up[4 * (2 * j * uw + 2 * i) + 3], up[4 * (2 * j * uw + 2 * i + 1) + 3], up[4 * ((2 * j + 1) * uw + 2 * i) + 3], up[4 * ((2 * j + 1) * uw + 2 * i + 1) + 3]);
+    }
+    mips.push({data: d, width: w, height: w});
+  }
+  t.mipmaps = mips as unknown as THREE.DataTexture['mipmaps'];
+  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = false; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-rings';
   return rings = t;
 }
 /** Round 8 (S3): Rosser1954's close steel mesh (the fence across the 4/5 island's south end: grey welded-mesh panels) as a cut-out over

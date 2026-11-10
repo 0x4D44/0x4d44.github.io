@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, clockCorbel, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, clockCorbel, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -756,9 +756,10 @@ test('round 8: the bands\' undersides are R-pt1-a\'s dark brown-grey boarding, b
 });
 
 test('round 8: R-pt1-a\'s ring ornament fills every arched brace\'s spandrel at the column heads, cut out; no rings in the girders\' lattice panels', () => {
-  // The cut-out: open rings, neighbours nearly touching, each with a scroll inside; open between them.
+  // The cut-out: an open ring with a scroll inside; open between them. (Round 9: one ring per tile, its sizes in UV units, the tile 1
+  // across; round 8 tiled rings at R.cell m.)
   const R = PERTH_RING_ORNAMENT, t = perthRingTexture(), d = t.image.data as Uint8Array, n = t.image.width;
-  const alpha = (x: number, y: number): number => d[4 * (Math.floor((y / R.cell + .5) * n) * n + Math.floor((x / R.cell + .5) * n)) + 3];
+  const alpha = (x: number, y: number): number => d[4 * (Math.floor((y + .5) * n) * n + Math.floor((x + .5) * n)) + 3];
   for (let k = 0; k < 8; k++) { const a = k / 8 * 2 * Math.PI; assert.equal(alpha(R.ring * Math.cos(a), R.ring * Math.sin(a)), 255, `the ring drawn at ${k}/8`); }
   assert.equal(alpha(0, 0), 0, 'open in the ring\'s middle');
   assert.equal(alpha(-R.scroll, 0), 255, 'the scroll inside it');
@@ -839,8 +840,10 @@ test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders,
     depth.set(k, e);
   }
   assert.ok(facing >= braces.length * 12, `pierced plates under the braces (${facing} vertices)`);
+  // (Round 9: the plates became rings sized to their corners, so the depth reached follows the brace's span: over 0.75 m on a long brace
+  // (was 0.5 m for all), over 0.4 m on a short one, whose half-round rib leaves room for one 0.42 m ring a side.)
   let deep = 0;
-  for (const e of depth.values()) if (under - e.lo > .5) deep++;
+  for (const [k, e] of depth) { const b = braces.find(r => `${r.a[0]}/${r.a[1]}` === k)!; if (under - e.lo > (b.c[1] - b.a[1] > 10 ? .75 : .4)) deep++; }
   assert.ok(deep >= braces.length * .8, `deep plates by the springings (${deep} of ${braces.length})`);
 });
 
@@ -958,4 +961,39 @@ test('round 9: Abbott 6573357\'s lift bridge: the off-white frame stands well cl
   cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
   const seen = lamps.filter(l => { const w = toWorld(l.at), v = new THREE.Vector3(w[0], deck + L.height / 2, w[1]).project(cam); return Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1; }).length;
   assert.ok(seen >= 2, `lamps in pt-platform-4-north's frame (${seen})`);
+});
+
+test('round 9: R-pt1-a\'s brace rings are big and whole in the deep corners, plain in the shallow middle, and keep their iron at a distance', () => {
+  // Every mip level down to 8 texels keeps the ring's centre line over the cut (alphaTest .5): the far braces keep the ornament.
+  const R = PERTH_RING_ORNAMENT, t = perthRingTexture(), mips = t.mipmaps as unknown as {data: Uint8Array; width: number}[];
+  assert.ok(mips.length >= 6 && !t.generateMipmaps, `hand-built mip levels (${mips.length})`);
+  for (const m of mips) {
+    if (m.width < 8) continue;
+    let held = 0;
+    for (let k = 0; k < 32; k++) {
+      const a = k / 32 * 2 * Math.PI, i = Math.min(m.width - 1, Math.floor((.5 + R.ring * Math.cos(a)) * m.width)), j = Math.min(m.width - 1, Math.floor((.5 + R.ring * Math.sin(a)) * m.width));
+      if (m.data[4 * (j * m.width + i) + 3] >= 128) held++;
+    }
+    assert.ok(held >= 30, `the ring held at mip ${m.width} (${held} of 32)`);
+  }
+  // The rings: one square each, the ring's outer edge `fit` of its side from its middle, every one whole above the rib.
+  const braces = gutterBraces(plan), o = batches.ornament.positions, W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, G = PERTH_GUTTER_BRACE;
+  const largest = new Map<number, number>(), middle = new Set<number>();
+  for (let i = 0; i < o.length; i += 12) {
+    const ps = [0, 1, 2, 3].map(k => ({q: toLocal([o[i + 3 * k], o[i + 3 * k + 2]]), y: o[i + 3 * k + 1]}));
+    const zc = ps.reduce((m, p) => m + p.q[1], 0) / 4, yc = ps.reduce((m, p) => m + p.y, 0) / 4, side = Math.max(...ps.map(p => p.y)) - Math.min(...ps.map(p => p.y)), r = R.ring * side + R.bar * side / 2;
+    const k = braces.findIndex(b => Math.abs(ps[0].q[0] - b.a[0]) < 1e-3 && zc > b.a[1] && zc < b.c[1]); assert.ok(k >= 0, `a ring at ${ps[0].q} on a brace`);
+    const b = braces[k], L = b.c[1] - b.a[1], rib = (s: number): number => under - G.drop + (G.drop - .02) * Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2));
+    for (let n = 0; n < 24; n++) {
+      const a = n / 24 * 2 * Math.PI, s = zc + r * Math.cos(a) - b.a[1], y = yc + r * Math.sin(a);
+      assert.ok(s >= -1e-6 && s <= L + 1e-6 && y <= under + 1e-6 && y > rib(s), `the ring at ${ps[0].q[0]},${zc.toFixed(2)} whole, above the rib and under the girder`);
+    }
+    largest.set(k, Math.max(largest.get(k) ?? 0, 2 * r));
+    if (Math.abs((zc - b.a[1]) / L - .5) < .25) middle.add(k);
+  }
+  // R-pt1-a's size: on every long brace the largest ring is near the spandrel's depth (round 8's were 0.46 m across, everywhere).
+  const long = [...largest.keys()].filter(k => braces[k].c[1] - braces[k].a[1] > 10);
+  assert.ok(long.length >= 20 && long.every(k => largest.get(k)! >= .7), `big rings in the long braces' corners (${long.map(k => largest.get(k)!.toFixed(2)).join(' ')})`);
+  assert.ok(Math.max(...largest.values()) <= 2 * PERTH_BRACE_RINGS.max + 1e-6, 'none past the largest');
+  assert.equal([...middle].filter(k => braces[k].c[1] - braces[k].a[1] > 10).length, 0, 'the long braces\' shallow middles plain');
 });

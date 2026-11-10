@@ -918,7 +918,11 @@ export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; 
 /** The column girders' spandrels (archedIronwork, R-pt1-c). Round 5: plates (archRib's `plate`) carrying a pierced pattern (perth-station.ts
  *  PERTH_PIERCED, alpha-tested), which reads from pt-roof-underside where round 4's lattice bars and bosses did not, in fewer triangles. */
 export const PERTH_SPANDREL = {strut: .5, size: .08} as const;
-export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch} = {}): void {
+/** Round 9 (S2, the round-8 score): R-pt1-a's rings sized to its corners, whole: the largest ring is near the girder's depth there, the
+ *  chain shrinking along the brace. Radii `min` to `max` m, hung `top` m under the member, `clear` m above the rib, `space` m apart; a
+ *  ring's outer edge `fit` of its square's side from its middle (perth-station.ts PERTH_RING_ORNAMENT: ring + bar / 2). ASSUMED sizes. */
+export const PERTH_BRACE_RINGS = {min: .12, max: .6, top: .04, clear: .06, space: .03, fit: .475} as const;
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch; rings?: Batch} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
@@ -930,6 +934,35 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
     const s0 = sAt(k), s1 = sAt(k + 1), m = at((s0 + s1) / 2); if (!keep(m, y((s0 + s1) / 2))) continue;
     const p0 = at(s0), p1 = at(s1);
     beam(b, [p0[0], y(s0), p0[1]], [p1[0], y(s1), p1[1]], size, size, color);
+  }
+  if (opts.rings) {
+    // Round 9: rings in the spandrel, one square each (perth-station.ts perthRingTexture, UVs 0-1), sized to their corner: from each
+    // springing a chain, each ring hung `top` m under the member, as large as fits above the rib (`clear` m off it, its outer edge
+    // `fit` of the square's side from its middle) up to `max` m radius, the next `space` m on, until one would be under `min` m or past the crown.
+    const R = PERTH_BRACE_RINGS, dir: Pt = [(c[0] - a[0]) / L, (c[1] - a[1]) / L], facing: V3 = [-dir[1], 0, dir[0]];
+    const fits = (sc: number, r: number): boolean => {
+      if (sc + r > L / 2) return false;
+      for (let k = 0; k <= 16; k++) {
+        const x = -r + 2 * r * k / 16, s = sc + x, bottom = top(sc) - R.top - r - Math.sqrt(Math.max(0, r * r - x * x));
+        if (s < 0 || bottom < y(s) + R.clear) return false;
+      }
+      return true;
+    };
+    for (const end of [0, 1]) {
+      let s0 = 0;
+      for (;;) {
+        let lo = 0, hi: number = R.max;
+        for (let it = 0; it < 24; it++) { const r = (lo + hi) / 2; if (fits(s0 + r / R.fit / 2, r)) lo = r; else hi = r; }
+        if (lo < R.min) break;
+        const r = lo, h = r / R.fit / 2, sc = s0 + h, s = end ? L - sc : sc, p = at(s), yc = top(s) - R.top - r;
+        s0 = sc + h + R.space;
+        if (!keep(p, yc)) continue;
+        const q = (u: number): V3 => [p[0] + dir[0] * u, 0, p[1] + dir[1] * u];
+        const [l0, l1] = [q(-h), q(h)];
+        opts.rings.poly([[l0[0], yc - h, l0[2]], [l1[0], yc - h, l1[2]], [l1[0], yc + h, l1[2]], [l0[0], yc + h, l0[2]]], [[0, 0], [1, 0], [1, 1], [0, 1]], {facing});
+      }
+    }
+    return;
   }
   if (opts.plate) {
     // Round 5: the spandrel as a plate from the rib up to the member over it, piece by piece with the rib, its UVs in metres along the span
@@ -963,7 +996,7 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch, ornamen
   // Round 8 (S2, the round-7 score's ruling): R-pt1-a's ring ornament where R-pt1-a has it, in the arched braces at the column heads, as
   // a cut-out plate (perth-station.ts perthRingTexture) in every brace's spandrel (`ornament`), not round 6's pierced plate; round 7's
   // rings in the girders' lattice panels, fitted to one camera, are gone.
-  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: ornament, keep: g.keep});}
+  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, rings: ornament, keep: g.keep});}
 /** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
  *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
  *  planes face the platform cameras (pt-roof-underside, pt-north-footbridge), where the column girders' spandrels are seen edge-on. Here:
