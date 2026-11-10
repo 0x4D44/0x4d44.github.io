@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { KX_REUSED_ROWS } from '../../core/train-neutral.ts';
 import type { EdinburghKindRow, EdinburghUnit } from '../../core/train-neutral.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { buildTrain } from './train.ts';
+import { buildTrain, setTrainLampState } from './train.ts';
 import { disposeNeutralTrain } from './train-neutral.ts';
 import { SR385_ROWS } from './train-385.ts';
 
@@ -79,6 +79,13 @@ export function buildEdinburghTrain(choice: { readonly kind: string; readonly un
       car.traverse(o => { const m = /^bogie-(\d+)-(\d+)$/.exec(o.name); if (m) o.name = `bogie-${base + Number(m[1])}-${m[2]}`; });
       for (const part of car.children) part.position.z += unit.offset;
       car.userData = { ...car.userData, unit: u, unitKind: unit.kind };
+      // a unit's cab that meets another unit is an inner cab end: dark, and left alone by setTrainLampState
+      for (const mesh of car.children) {
+        const lamps = mesh.name === 'body-detail' ? mesh.userData.lamps as { end: 'front' | 'rear'; interior: boolean } | undefined : undefined;
+        if (!lamps || lamps.interior || !((lamps.end === 'front' && u > 0) || (lamps.end === 'rear' && u < choice.units.length - 1))) continue;
+        setTrainLampState(mesh, { front: 'off', rear: 'off' });
+        lamps.interior = true;
+      }
       root.add(car);
     }
     base += unit.cars;

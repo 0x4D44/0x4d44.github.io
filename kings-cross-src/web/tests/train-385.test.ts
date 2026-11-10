@@ -72,3 +72,17 @@ test('the Waverley table draws a 385 only for ScotRail class 385 with 3 or 4 veh
   assert.equal(evidenceBuildEdinburgh('no-such-kind'), undefined);
   assert.equal(formation385('sr385x3').cars.length, 3);
 });
+
+test('385 windows by span (scotrail385-04, -05): two small at each intermediate-car end, one between crew door and first door, large between the doors', () => {
+  const root = build385('sr385x4');
+  // the window widths along one side of a car, in order from its front pitch start
+  const along = (index: number): number[] => {
+    const car = root.getObjectByName(`car-${index}`)!, out: { z: number; w: number }[] = [];
+    car.traverse(o => { if (o.name === 'window' && o.userData.side === 'left') out.push({ z: o.position.z, w: o.userData.width }); });
+    return out.sort((a, b) => a.z - b.z).map(o => o.w);
+  };
+  for (const index of [1, 2]) assert.deepEqual(along(index), [0.85, 0.85, 1.85, 1.85, 1.85, 1.85, 0.85, 0.85], `car-${index}`);
+  assert.deepEqual(along(0), [1.3, 1.85, 1.85, 1.85, 1.85, 0.85, 0.85]);
+  assert.deepEqual(along(3), [0.85, 0.85, 1.85, 1.85, 1.85, 1.85, 1.3], 'the rear cab car, front to rear');
+  dispose385(root);
+});

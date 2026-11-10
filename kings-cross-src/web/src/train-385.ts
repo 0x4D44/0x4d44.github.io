@@ -8,7 +8,7 @@ import { Soup, col, ellipse, plain, roundedRect } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec } from './train-nose.ts';
-import { carSection } from './train.ts';
+import { carSection, lensLook } from './train.ts';
 import { buildBogie, buildPantograph, couplerHalf } from './train-parts.ts';
 import type { CaptureFormation, EdinburghFleetRow } from './edinburgh-fleet.ts';
 
@@ -27,26 +27,28 @@ const CROWN = F.crown.value;
 const WALL_TOP = CROWN - 0.42;
 const TIP = F.hoodFromCoupler.value;
 /** Window band of the passenger saloons, metres over the rail (ASSUMED from scotrail385-03/-04). */
-const WIN = { y0: 1.95, y1: 2.86, width: 1.5, r: 0.16 } as const;
+const WIN = { y0: 1.95, y1: 2.86, width: 1.3, small: 0.85, large: 1.85, r: 0.16 } as const;
 const HOOD = { half: 0.53, y0: 0.98, y1: 3.62, depth: 1.25 } as const;
 
 /**
- * The cab's side profile, metres from the hood face (ASSUMED from scotrail385-01, -02 and -05): a near-upright lower
- * front up to the screen's foot at about 2.05 m, the screen raked back to about 3.25 m, then the cab roof easing up
- * into the body's crown about 2.4 m behind the face.
+ * The cab's side profile, metres from the hood face (ASSUMED from scotrail385-01, -02 and -05): a near-upright front up
+ * to the screen's foot at about 2.0 m, a near-upright screen to about 3.25 m within a quarter metre, then the dark cab
+ * roof carried forward at almost full height, so the hood's top stands about level with it.
  */
 export const SR385_NOSE: NoseSpec = {
-  length: 2.4, fillet: 0.16, filletLoss: 0.1, roundLen: 2.4, widest: 0.42, boxiness: 4.5,
+  length: 2.0, fillet: 0.16, filletLoss: 0.1, roundLen: 2.0, widest: 0.42, boxiness: 4.5,
   knots: [
-    { s: 0, top: 2.04, ws: 0.86, bottom: 0.52 },
-    { s: 0.16, top: 2.12, ws: 0.92, bottom: 0.5 },
-    { s: 0.62, top: 3.2, ws: 0.975, bottom: 0.58 },
-    { s: 1.25, top: 3.46, ws: 0.997, bottom: 0.85 },
-    { s: 2.4, top: CROWN, ws: 1, bottom: FLOOR },
+    { s: 0, top: 2.0, ws: 0.9, bottom: 0.5 },
+    { s: 0.24, top: 3.26, ws: 0.95, bottom: 0.5 },
+    { s: 0.55, top: 3.47, ws: 0.98, bottom: 0.56 },
+    { s: 1.05, top: 3.535, ws: 0.995, bottom: 0.8 },
+    { s: 2.0, top: CROWN, ws: 1, bottom: FLOOR },
   ],
 };
-/** The windscreen on the loft, metres from the hood face, and its glass's inner edge beside the hood. */
-const SCREEN = { s0: 0.17, s1: 0.66, xIn: HOOD.half + 0.05 } as const;
+/** The windscreen on the loft, metres from the hood face; its glass's inner edge beside the hood, and its outer edge short of the cab's corner (blue between). */
+const SCREEN = { s0: 0.02, s1: 0.22, xIn: HOOD.half + 0.06, xOut: HALF * 0.8 } as const;
+/** The lamp housing at each front corner: inner edge across, foot and head over the rail (ASSUMED from scotrail385-01, -02). */
+const LAMP = { xIn: HALF * 0.64, y0: 1.18, y1: 1.98, head: { y: 1.78, r: 0.085 }, tail: { y: 1.46, r: 0.075 } } as const;
 
 const section = carSection({ half: HALF, floor: FLOOR, crown: CROWN, wallTop: WALL_TOP });
 const norm = normalised(section);
@@ -133,35 +135,58 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       if (sd < sBody0 + (cab ? 3.6 : 0.6) || sd > sBody1 - 0.6) continue;
       if (car.doors.some(o => sOf(o) !== s && Math.abs(sOf(o) - sd) < doorW / 2 + 0.3)) continue;
       const r = 0.062 * (1 - i / 19);
-      for (let row = 0; row < 6; row++) field.push({ s: sd + (row % 2) * 0.08 * dir, y: 1.3 + row * 0.13, r: r * (1 - Math.abs(row - 2.5) / 9) });
+      // below the window frames' foot (scotrail385-04: the field runs under the windows, not into them)
+      for (let row = 0; row < 6; row++) field.push({ s: sd + (row % 2) * 0.08 * dir, y: 1.16 + row * 0.12, r: r * (1 - Math.abs(row - 2.5) / 9) });
     }
-    dots(field, C.lowerDot);
+    dots(field, C.lowerDot, 0.012);
   }
 
-  // saloon windows: between and beyond the doors, kept off the doors, the cab and a toilet bay at the inner end of a cab car
+  // saloon windows, by span (scotrail385-04, -05): two small windows between a body end and its nearest door; one
+  // window between the crew door and the first passenger door; large windows between the doors. A cab car's inner end
+  // keeps an ASSUMED windowless toilet bay (Fig. 2 places both toilets there) and two small windows short of it.
   const doorS = car.doors.map(sOf).sort((p, q) => p - q);
-  const spans: [number, number][] = [];
-  const lo = cab ? Math.max(TIP + 3.5, F.crewDoorFromNose.value + 0.75) : sBody0 + 0.45;
-  const hi = cab ? sBody1 - 2.2 : sBody1 - 0.45; // ASSUMED windowless toilet bay at a cab car's inner end (Fig. 2 places both toilets there)
+  const spans: { a: number; b: number; width: number; count?: number }[] = [];
+  const lo = cab ? F.crewDoorFromNose.value + 0.6 : sBody0 + 0.45; // clear of the crew door and its saltire dots
+  const hi = cab ? sBody1 - 2.2 : sBody1 - 0.45;
   let from = lo;
-  for (const d of doorS) { spans.push([from, d - doorW / 2 - 0.2]); from = d + doorW / 2 + 0.2; }
-  spans.push([from, hi]);
-  for (const [a, b] of spans) {
-    const n = Math.floor((b - a + 0.45) / (WIN.width + 0.45));
-    if (n < 1) continue;
+  doorS.forEach((d, k) => {
+    spans.push(k === 0 ? { a: from, b: d - doorW / 2 - 0.2, width: cab ? WIN.width : WIN.small, count: cab ? 1 : 2 } : { a: from, b: d - doorW / 2 - 0.2, width: WIN.large });
+    from = d + doorW / 2 + 0.2;
+  });
+  spans.push({ a: from, b: hi, width: WIN.small, count: 2 });
+  for (const { a, b, width, count } of spans) {
+    const n = count ?? Math.floor((b - a + 0.5) / (width + 0.5));
+    if (n < 1 || b - a < n * width + 0.2) continue;
     const pitch = (b - a) / n;
     for (let i = 0; i < n; i++) {
       const c = a + pitch * (i + 0.5);
-      onSide(roundedRect(c - WIN.width / 2 - 0.04, c + WIN.width / 2 + 0.04, WIN.y0 - 0.04, WIN.y1 + 0.04, WIN.r, 3), 0.006, C.frame);
-      onSide(roundedRect(c - WIN.width / 2, c + WIN.width / 2, WIN.y0, WIN.y1, WIN.r, 3), 0.01, C.glass, 1);
+      onSide(roundedRect(c - width / 2 - 0.04, c + width / 2 + 0.04, WIN.y0 - 0.04, WIN.y1 + 0.04, WIN.r, 3), 0.006, C.frame);
+      onSide(roundedRect(c - width / 2, c + width / 2, WIN.y0, WIN.y1, WIN.r, 3), 0.01, C.glass, 1);
+      for (const side of [-1, 1]) marker('window', side * HALF, (WIN.y0 + WIN.y1) / 2, c, { side: side < 0 ? 'left' : 'right', width });
     }
   }
   // the orange cantrail line along the top of each side, over the door tops (scotrail385-01, -04)
   const cantS0 = cab ? TIP + 2.0 : sBody0, cantS1 = sBody1;
   onSide([[cantS0, WALL_TOP - 0.04], [cantS1, WALL_TOP - 0.04], [cantS1, WALL_TOP - 0.015], [cantS0, WALL_TOP - 0.015]], 0.005, C.cantrail);
 
+  const lampLenses: { role: 'head' | 'tail'; v0: number; v1: number }[] = [];
   if (cab) {
     const crew = F.crewDoorFromNose.value;
+    /** A patch of the body side laid over the loft's own surface (both sides), `lift` metres off it: a grid fine enough that no part of the loft shows through. */
+    const skin = (s0: number, s1: number, y0: number, y1: number, lift: number, colour: number, emit = 0): void => {
+      detail.emit = emit;
+      const ni = Math.max(2, Math.ceil((s1 - s0) / 0.08)), nj = Math.max(2, Math.ceil((y1 - y0) / 0.1));
+      for (const side of [-1, 1]) {
+        const at = (i: number, j: number): V3 => {
+          const s = s0 + (s1 - s0) * i / ni, y = y0 + (y1 - y0) * j / nj;
+          return [side * (xAtY(halfBehindFace(s - TIP), y) + lift), y, zAt(s)];
+        };
+        for (let i = 0; i < ni; i++) for (let j = 0; j < nj; j++) {
+          detail.face([at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)], [0, (y0 + y1) / 2, zAt((s0 + s1) / 2)], col(colour));
+        }
+      }
+      detail.emit = 0;
+    };
     // the crew door: a dark-edged outline with one tall narrow light (scotrail385-01, -05)
     onSide(roundedRect(crew - 0.36, crew + 0.36, FLOOR + 0.1, 3.05, 0.05, 2), 0.006, C.frame);
     onSide(roundedRect(crew - 0.33, crew + 0.33, FLOOR + 0.13, 3.02, 0.04, 2), 0.009, C.body);
@@ -173,25 +198,18 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       const y = 1.22 + row * 0.11;
       for (let c = 0; c < 9; c++) {
         const s = chev(y) + c * 0.11 + (row % 2) * 0.055;
-        if (s > crew + 0.55) continue;
+        if (s > crew + 0.55 || s < TIP + 1.0) continue;
         sal.push({ s, y, r: 0.047 * (1 - c / 13) });
       }
     }
     dots(sal, C.saltireDot, 0.011); // over the crew door's skin, under its light
-    // cab side window, behind the screen
-    for (const side of [-1, 1]) {
-      const s0 = TIP + 0.78, s1 = TIP + 1.5;
-      const pts: [number, number][] = [[s0, 2.15], [s1, 2.15], [s1, 2.98], [s0 + 0.22, 2.98]];
-      const at = ([s, y]: [number, number]): V3 => [side * (xAtY(halfBehindFace(s - TIP), y) + 0.008), y, zAt(s)];
-      detail.fan(pts.map(at), [side, 0, 0], col(C.glass));
-    }
-    // the windscreen: two panes either side of the hood, on the loft, with a black frame under each
-    const pane = (xa: number, xb: number, s0: number, s1: number, lift: number, colour: number, name: string): void => {
+    // the windscreen: two near-upright panes either side of the hood in a black surround, blue between the pane and the cab's corner
+    const pane = (xa: number, xb: number, s0: number, s1: number, lift: number, colour: number, name: string, emit = 0): void => {
       const soup = new Soup();
+      soup.emit = emit;
       const at = (i: number, j: number): V3 => {
         const u = s0 + (s1 - s0) * i / 10, h = halfBehindFace(u);
-        const half = Math.max(...h.map(p => p[0]));
-        const x = Math.sign(xa) * Math.min(Math.abs(xa) + (Math.abs(xb) - Math.abs(xa)) * j / 8, half * 0.93);
+        const x = Math.sign(xa) * (Math.abs(xa) + (Math.abs(xb) - Math.abs(xa)) * j / 8);
         return world([x, yAtX(h, Math.abs(x)) + lift, TIP + u]);
       };
       for (let i = 0; i < 10; i++) for (let j = 0; j < 8; j++) {
@@ -201,53 +219,76 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       const mesh = new THREE.Mesh(soup.build(), plain()); mesh.name = name; group.add(mesh);
     };
     for (const sx of [-1, 1]) {
-      pane(sx * (SCREEN.xIn - 0.04), sx * HALF, SCREEN.s0 - 0.05, SCREEN.s1 + 0.06, 0.01, C.frame, 'windscreen-frame');
-      pane(sx * SCREEN.xIn, sx * HALF, SCREEN.s0, SCREEN.s1, 0.02, C.glass, 'cab-glass');
+      pane(sx * (SCREEN.xIn - 0.05), sx * (SCREEN.xOut + 0.06), 0, SCREEN.s1 + 0.07, 0.012, C.frame, 'windscreen-frame');
+      pane(sx * SCREEN.xIn, sx * SCREEN.xOut, SCREEN.s0, SCREEN.s1, 0.024, C.glass, 'cab-glass');
+      // one wiper parked along the pane's foot, rising toward the outer pillar (scotrail385-01, -02)
+      pane(sx * (SCREEN.xIn + 0.1), sx * (SCREEN.xOut - 0.08), SCREEN.s0 + 0.008, SCREEN.s0 + 0.022, 0.034, C.frame, 'wiper');
     }
-    // a point on the screen, `lift` metres over the loft: x across, u from the hood face
-    const onScreen = (x: number, u: number, lift: number): V3 => world([x, yAtX(halfBehindFace(u), Math.abs(x)) + lift, TIP + u]);
-    const strip = (a: [number, number], b: [number, number], w: number, lift: number, colour: number): void => {
-      const dx = b[0] - a[0], du = b[1] - a[1], n = Math.hypot(dx, du), ox = (-du / n) * w / 2, ou = (dx / n) * w / 2;
-      const p = [onScreen(a[0] + ox, a[1] + ou, lift), onScreen(b[0] + ox, b[1] + ou, lift), onScreen(b[0] - ox, b[1] - ou, lift), onScreen(a[0] - ox, a[1] - ou, lift)] as [V3, V3, V3, V3];
-      detail.face(p, world([0, 1, TIP + 2]), col(colour));
-    };
-    // one wiper on each pane, parked along its foot and rising toward the outer pillar (scotrail385-01, -02)
-    for (const sx of [-1, 1]) strip([sx * (SCREEN.xIn + 0.08), SCREEN.s0 + 0.04], [sx * (HALF * 0.82), SCREEN.s0 + 0.3], 0.03, 0.03, C.frame);
-    // the destination display behind the glass at the top of one pane: amber characters on black (scotrail385-01, -02; text not drawn)
+    // the destination display behind the glass across the top of one pane: one amber band on black (scotrail385-01, -02; characters not drawn)
     const dsx = cab === 'rear' ? -1 : 1;
-    strip([dsx * (SCREEN.xIn + 0.06), SCREEN.s1 - 0.09], [dsx * (SCREEN.xIn + 0.5), SCREEN.s1 - 0.09], 0.11, 0.025, C.frame);
-    detail.emit = 2;
-    strip([dsx * (SCREEN.xIn + 0.1), SCREEN.s1 - 0.09], [dsx * (SCREEN.xIn + 0.46), SCREEN.s1 - 0.09], 0.04, 0.028, 0xf09a2a);
-    detail.emit = 0;
-    // the gangway hood: a tall dark box standing proud at the centre, its door with the yellow warning panel (scotrail385-02, -05)
+    pane(dsx * (SCREEN.xIn + 0.05), dsx * (SCREEN.xOut - 0.05), SCREEN.s1 - 0.055, SCREEN.s1 - 0.005, 0.03, C.frame, 'destination-surround');
+    pane(dsx * (SCREEN.xIn + 0.12), dsx * (SCREEN.xOut - 0.14), SCREEN.s1 - 0.045, SCREEN.s1 - 0.015, 0.034, 0xf09a2a, 'destination-display', 2);
+    // the cab side window wraps round from the screen in the same black surround (scotrail385-01, -05), laid on the loft's own surface
+    skin(TIP + 0.24, TIP + 1.0, 2.08, 3.12, 0.01, C.frame);
+    skin(TIP + 0.3, TIP + 0.94, 2.14, 3.06, 0.018, C.glass, 1);
+    // the gangway hood: a tall dark box standing proud at the centre, its top level with the cab roof, its door with the yellow warning panel (scotrail385-02, -05)
     box(-HOOD.half, HOOD.half, HOOD.y0, HOOD.y1, TIP, TIP + HOOD.depth, C.hood);
     box(-HOOD.half + 0.06, HOOD.half - 0.06, 1.12, 3.32, TIP - 0.012, TIP, C.frame);
     box(-HOOD.half + 0.08, HOOD.half - 0.08, 1.2, 1.98, TIP - 0.02, TIP - 0.012, C.yellow);
     for (const k of [-1, 0, 1]) box(k * 0.13 - 0.008, k * 0.13 + 0.008, 1.2, 1.98, TIP - 0.024, TIP - 0.019, C.frame);
-    for (const sx of [-1, 1]) for (let f = 0; f < 6; f++) box(sx * HOOD.half - 0.02, sx * HOOD.half + 0.02, HOOD.y0 + 0.25, HOOD.y1 - 0.25, TIP + 0.12 + f * 0.17, TIP + 0.18 + f * 0.17, C.frame);
-    box(-0.09, 0.09, 3.38, 3.52, TIP - 0.03, TIP, 0xcfd2d4); // the marker lamp atop the hood
+    // the bellows down each side of the hood: close folds, alternately proud and set in (scotrail385-02, -05)
+    for (const sx of [-1, 1]) for (let f = 0; f < 14; f++) {
+      const proud = f % 2 ? 0.035 : 0.01;
+      box(sx * HOOD.half - proud, sx * HOOD.half + proud, HOOD.y0 + 0.2, HOOD.y1 - 0.12, TIP + 0.1 + f * 0.075, TIP + 0.15 + f * 0.075, f % 2 ? C.hood : C.frame);
+    }
+    detail.fan(ellipse(0, 3.47, 0.075, 0.075, 12).map(([x, y]): V3 => [x, y, zAt(TIP - 0.03)]), [0, 0, out], col(0xcfd2d4)); // the marker lamp atop the hood
+    box(-0.11, 0.11, 3.38, 3.56, TIP - 0.025, TIP, C.frame);
     marker('gangway-hood', 0, 2.3, TIP, { width: 2 * HOOD.half });
-    // the yellow cheek panels under each screen, on the front face
+    // the yellow panels between the hood and each lamp housing, from the screen's foot down to the chin (scotrail385-01, -02, -05)
     for (const sx of [-1, 1]) {
-      const xa = sx * (HOOD.half + 0.02), xb = sx * HALF * 0.74;
-      box(Math.min(xa, xb), Math.max(xa, xb), 1.3, 1.93, TIP - 0.01, TIP + 0.02, C.yellow);
+      const xa = sx * (HOOD.half + 0.02), xb = sx * (LAMP.xIn - 0.02);
+      box(Math.min(xa, xb), Math.max(xa, xb), 1.0, 1.99, TIP - 0.01, TIP + 0.02, C.yellow);
     }
-    // lamp pods at the screen's outer foot: a black pod, the headlight over the marker/tail lamp (scotrail385-01, -02)
+    // the lamp housings: a dark recess at each front corner, angled round onto the cab side, the headlight over the tail lamp (scotrail385-01, -02)
+    const faceHalf = xAtY(halfBehindFace(0), (LAMP.y0 + LAMP.y1) / 2);
     for (const sx of [-1, 1]) {
-      const x = sx * HALF * 0.74;
-      box(x - 0.13, x + 0.13, 1.42, 1.98, TIP - 0.02, TIP + 0.3, C.frame);
-      detail.emit = 2;
-      detail.fan(ellipse(x, 1.86, 0.075, 0.075, 14).map(([xx, y]): V3 => [xx, y, zAt(TIP - 0.026)]), [0, 0, out], col(C.headLens));
-      detail.fan(ellipse(x, 1.6, 0.07, 0.07, 14).map(([xx, y]): V3 => [xx, y, zAt(TIP - 0.026)]), [0, 0, out], col(cab === 'rear' ? C.tailLens : C.headLens));
-      detail.emit = 0;
-      marker('headlight', x, 1.86, TIP, { rear: cab === 'rear' });
-      marker('tail-lamp', x, 1.6, TIP, { rear: cab === 'rear' });
+      const a = sx * LAMP.xIn, b = sx * (faceHalf + 0.004);
+      box(Math.min(a, b), Math.max(a, b), LAMP.y0, LAMP.y1, TIP - 0.014, TIP + 0.02, C.frame);
     }
-    // the coupler: a Dellner head with its face at the drawing's zero, under the hood
-    couplerHalf(detail, zAt(TIP), (cab === 'rear' ? 1 : -1) as 1 | -1, TIP, 0.86, 'dellner');
-    marker('coupler', 0, 0.86, 0, { nose: true });
-    // the obstacle deflector under the front
-    box(-HALF * 0.72, HALF * 0.72, 0.28, 0.6, TIP + 0.1, TIP + 0.5, C.underframe);
+    skin(TIP + 0.005, TIP + 0.5, LAMP.y0, LAMP.y1, 0.008, C.frame);
+    const lx = (LAMP.xIn + faceHalf) / 2;
+    for (const sx of [-1, 1]) {
+      const x = sx * lx;
+      for (const [r, y] of [[LAMP.head.r + 0.03, LAMP.head.y], [LAMP.tail.r + 0.03, LAMP.tail.y]] as const) {
+        detail.fan(ellipse(x, y, r, r, 16).map(([xx, yy]): V3 => [xx, yy, zAt(TIP - 0.02)]), [0, 0, out], col(0x0b0c0e)); // the recessed rim
+      }
+      const mode = cab === 'front' ? 'head' : 'tail';
+      for (const role of ['head', 'tail'] as const) {
+        const spec = LAMP[role], look = lensLook(role, mode);
+        detail.emit = look.glow;
+        const v0 = detail.pos.length / 3;
+        detail.fan(ellipse(x, spec.y, spec.r, spec.r, 16).map(([xx, yy]): V3 => [xx, yy, zAt(TIP - 0.026)]), [0, 0, out], col(look.hex));
+        lampLenses.push({ role, v0, v1: detail.pos.length / 3 });
+        detail.emit = 0;
+      }
+      marker('headlight', x, LAMP.head.y, TIP, { rear: cab === 'rear' });
+      marker('tail-lamp', x, LAMP.tail.y, TIP, { rear: cab === 'rear' });
+    }
+    // the chin: blue, swept forward under the yellow panels round a pocket for the coupler (scotrail385-02, -05)
+    const chinHalf = xAtY(halfBehindFace(0), 0.75) - 0.01;
+    for (let k = 0; k < 8; k++) {
+      const x0 = 0.32 + k * (chinHalf - 0.32) / 8, x1 = 0.32 + (k + 1) * (chinHalf - 0.32) / 8;
+      const t = (k + 0.5) / 8, reach = 0.22 * Math.sqrt(Math.max(0, 1 - t ** 4)); // rounded back toward the corners
+      for (const sx of [-1, 1]) box(sx * x0, sx * x1, 0.5, 1.0, TIP - reach, TIP + 0.3, C.body);
+    }
+    box(-0.32, 0.32, 0.5, 0.6, TIP - 0.1, TIP + 0.3, C.body); // the pocket's floor
+    box(-0.32, 0.32, 0.6, 1.0, TIP + 0.02, TIP + 0.3, C.frame); // the pocket's back
+    // the coupler: a compact Dellner head with its face at the drawing's zero, and the electrical box over it (scotrail385-02)
+    box(-0.06, 0.06, 0.74, 0.86, 0.12, TIP + 0.05, 0x3c3f44); // the shank
+    box(-0.16, 0.16, 0.66, 0.92, 0.004, 0.12, 0x2b2d31); // the head
+    box(-0.07, 0.07, 0.72, 0.86, 0, 0.004, 0x111214); // the gathering cone, its face at the zero
+    box(-0.22, 0.22, 0.95, 1.06, TIP - 0.12, TIP + 0.02, 0x9a9d9f); // the electrical box
+    marker('coupler', 0, 0.8, 0, { nose: true });
   }
 
   // underframe: equipment cases between the bogies (shapes ASSUMED; the photographs show dark boxes, no detail)
@@ -255,14 +296,25 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   const u0 = bz[0]! + 1.7, u1 = bz[1]! - 1.7;
   box(-HALF * 0.86, HALF * 0.86, FLOOR - 0.12, FLOOR + 0.02, Math.max(sBody0, cab ? TIP + 1.6 : sBody0), sBody1, C.underframe);
   for (let s = u0; s + 1.4 < u1; s += 2.6) box(-0.9, 0.9, 0.55, FLOOR - 0.12, s, s + 1.9, 0x2f3134);
-  // roof: long equipment covers with dark grilles, broken over the pantograph on the PTS (scotrail385-01, -04, -05)
-  const r0 = cab ? TIP + 2.6 : sBody0 + 0.8, r1 = sBody1 - 0.8;
+  // roof: the body's own rounded roof, with separate raised pods on it: a low fairing behind the cab dome and an
+  // air-conditioning pod with two fan grilles on each car (scotrail385-01, -04, -05; positions and sizes ASSUMED)
+  const pod =(a: number, b: number, w: number, h: number, fans: number): void => {
+    detail.prismX(roundedRect(a, b, CROWN - 0.22, CROWN + h, Math.min(0.14, h * 0.6), 3).map(([s, y]) => [zAt(s), y] as [number, number]), -w, w, col(C.roofKit));
+    // slatted grilles down each side of the pod
+    for (const sx of [-1, 1]) for (let s = a + 0.35; s + 0.05 < b - 0.35; s += 0.12) box(sx * w - 0.006, sx * w + 0.006, CROWN - 0.06, CROWN + h - 0.05, s, s + 0.05, C.grille);
+    // fan grilles on top: dark discs with a lighter hub
+    for (let k = 0; k < fans; k++) {
+      const s = a + (b - a) * (k + 0.5) / fans, z = zAt(s);
+      detail.fan(ellipse(0, z, Math.min(0.5, w * 0.7), Math.min(0.5, w * 0.7), 18).map(([x, zz]): V3 => [x, CROWN + h + 0.006, zz]), [0, 1, 0], col(C.grille));
+      detail.fan(ellipse(0, z, 0.1, 0.1, 10).map(([x, zz]): V3 => [x, CROWN + h + 0.01, zz]), [0, 1, 0], col(C.roofKit));
+    }
+  };
   const panto = car.pantograph ? car.pantograph.map(sOf).sort((p, q) => p - q) as [number, number] : null;
-  const roofRuns: [number, number][] = panto ? [[r0, panto[0] - 0.8], [panto[1] + 0.8, r1]] : [[r0, r1]];
-  for (const [a, b] of roofRuns) {
-    if (b - a < 1) continue;
-    box(-0.82, 0.82, CROWN - 0.06, CROWN + F.roofCoverHeight.value, a, b, C.roofKit);
-    for (let s = a + 0.5; s + 1.2 < b; s += 2.4) box(-0.55, 0.55, CROWN + F.roofCoverHeight.value, CROWN + F.roofCoverHeight.value + 0.01, s, s + 1.2, C.grille);
+  if (cab) {
+    pod(TIP + 1.75, TIP + 3.5, 0.82, 0.12, 0);
+    pod(TIP + 4.1, TIP + 7.9, 0.72, F.roofCoverHeight.value, 2);
+  } else {
+    pod(sBody0 + 1.4, sBody0 + 5.2, 0.72, F.roofCoverHeight.value, 2);
   }
   if (panto) {
     box(-0.7, 0.7, CROWN - 0.06, CROWN + 0.05, panto[0] - 0.6, panto[1] + 0.6, C.roof);
@@ -285,6 +337,8 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   }
   const shellMesh = new THREE.Mesh(shell.build(), plain()); shellMesh.name = 'body-shell';
   const details = new THREE.Mesh(detail.build(), plain()); details.name = 'body-detail';
+  // setTrainLampState (train.ts) switches these lenses; a coupled unit's inner cab is marked interior by buildEdinburghTrain
+  if (cab) details.userData.lamps = { end: cab, interior: false, lenses: lampLenses };
   group.add(shellMesh, details);
   return group;
 }
