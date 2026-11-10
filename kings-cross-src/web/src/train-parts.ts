@@ -1130,6 +1130,152 @@ export function roofKit(soup: Soup, o: { style: RoofKitStyle; p0: number; p1: nu
   }
 }
 
+// --- the roof hatches and the pantograph deck of the Electrostar ---------------------------------------------------------------
+//
+// An Electrostar's roof is a smooth silver deck with a hatch row let into it every so often, not a run of raised covers (the round-5 score: "AC fairings/vents/insulators/pan
+// arrangement are generic"). Read off the roof of a Class 377 car from above, the same Electrostar body the 387 is (`377208 roof 5Y63 Blackfriars to Grove Park CSD.jpg` and its
+// four sisters, train_photos, 2015-03-12, CC BY-SA 2.0; private review assets, not shipped): a panel across the whole flat of the roof, standing a few centimetres proud, with two
+// rows of five rectangular louvre openings at one end of it, a round-cornered plate in the middle and an oval mesh grille at the other (and slotted tabs along both outer edges, not
+// drawn). The Great Northern 387's footbridge photographs (`387115 Shepreth Branch Junc 210619.jpg` and `387118 on Shepreth Branch Junction 210619.jpg`, kitmasterbloke, 2019-06-21,
+// CC BY 2.0) show the same rows on a 387, two to a car on a middle car (three on a cab car), the louvres on the near side of every row in both pictures: the train's left in the
+// first (a unit with its left side in view), its right in the second, so the side varies with which way a unit faces (the 377's neighbouring cars differ too). The model draws the
+// louvres on the right of a front car and of the cars behind it, on the left of a rear cab car (the same car turned about). The pantograph car's roof (the 377's, from the same
+// photographs) is a dirty cream deck in a pocket: a high end casing at the car-end side, the hatch row on the other, the pantograph and its insulators standing on the deck
+// between them. HOW MANY to a car and where along it (the photographs are oblique, so a place along a car is good to about a tenth of its length), every size (measured in the
+// proportions of one hatch row, scaled so that the row's foot is the roof's width: a 1.7 m foot is itself an assumption) and the colours are ASSUMED; that the 387's pantograph
+// car is built like the 377's is family evidence, not a 387 photograph.
+
+export type RoofHatchStyle = 'electrostar';
+export interface RoofHatchDef {
+  /** metres along the car; the top's height over the crown; the half-width at the foot (which stands below the crown, in the roof) and at the top (the flat of the roof); the run of each sloping end */
+  length: number;
+  height: number;
+  bw: number;
+  tw: number;
+  run: number;
+  /** where on a car's stretch of roof the hatches' centres stand, as fractions of it, and how far a row keeps clear of the well and its casing */
+  at: readonly number[];
+  clear: number;
+  /** the louvre cage: openings across by along, one opening's width across and length along, the pitch across and along, the cage's centre across (+ is the louvre side) */
+  louvre: { cols: number; rows: number; w: number; l: number; pitchX: number; pitchZ: number; cx: number };
+  /** the plate in the middle: half-sides across and along, and how far it stands over the top */
+  plate: { hx: number; hz: number; lift: number };
+  /** the oval grille on the side without the cage: its centre across, half-axes (across, along), and sides */
+  oval: { cx: number; rx: number; rz: number; sides: number };
+  /** how far the louvre openings and the oval stand over the top */
+  lift: number;
+  colours: { panel: number; plate: number; slot: number; oval: number };
+  /** the pantograph car's deck under the kit and the pantograph: its half-width, its colour, and its top over the crown */
+  deck: { half: number; colour: number; top: number };
+  /** the high casing at the kit's end of the well: its length, and its clear gap from the kit's stretch */
+  hump: { length: number; gap: number };
+}
+export const ROOF_HATCHES: Readonly<Record<RoofHatchStyle, RoofHatchDef>> = {
+  electrostar: {
+    length: 0.5,
+    height: 0.025,
+    bw: 0.85,
+    tw: 0.74,
+    run: 0.08,
+    at: [0.3, 0.7],
+    clear: 0.1,
+    louvre: { cols: 5, rows: 2, w: 0.075, l: 0.09, pitchX: 0.105, pitchZ: 0.12, cx: 0.44 },
+    plate: { hx: 0.16, hz: 0.18, lift: 0.004 },
+    oval: { cx: -0.47, rx: 0.23, rz: 0.11, sides: 12 },
+    lift: 0.003,
+    colours: { panel: 0xb4b8be, plate: 0xc4c8cd, slot: 0x2b2e33, oval: 0x4a4e54 },
+    deck: { half: 0.74, colour: 0x98927a, top: 0.004 },
+    hump: { length: 1.6, gap: 0.1 },
+  },
+};
+
+/**
+ * The stretch of the high casing at the kit's end of a pantograph car's well [k0, k1] (see above), for the kit on the side `dir` of the pantograph (-1: toward lower z): it stands `gap` clear of
+ * the well, `length` long, on the kit's own side of it.
+ */
+export function roofCasing(style: RoofHatchStyle, k0: number, k1: number, dir: 1 | -1): [number, number] {
+  const c = ROOF_HATCHES[style].hump;
+  return dir < 0 ? [k0 - c.gap - c.length, k0 - c.gap] : [k1 + c.gap, k1 + c.gap + c.length];
+}
+
+/** The stretch of a pantograph car's roof the hatch rows keep off: its well and its casing together. */
+export function roofKeepOut(well: readonly [number, number], casing: readonly [number, number]): [number, number] {
+  return [Math.min(well[0], casing[0]), Math.max(well[1], casing[1])];
+}
+
+/**
+ * The z of each hatch row on the stretch [from, to] of a car's roof: one at each fraction of it (ROOF_HATCHES.at), less any whose panel comes within `clear` of `keep` (a pantograph car's well
+ * and its casing, [start, end]) or lies on it.
+ */
+export function roofHatchCentres(style: RoofHatchStyle, from: number, to: number, keep: readonly [number, number] | null): number[] {
+  const h = ROOF_HATCHES[style];
+  return h.at.map((f) => from + f * (to - from)).filter((zc) => keep === null || !(zc + h.length / 2 + h.clear > keep[0] && zc - h.length / 2 - h.clear < keep[1]));
+}
+
+/** What a car's roof carries between its nose or end gap and its other end: the pantograph deck (null on a car without a well), the casing (null likewise) and the z of each hatch row. */
+export interface RoofPlan {
+  deck: [number, number] | null;
+  casing: [number, number] | null;
+  rows: number[];
+}
+
+/**
+ * The plan of one car's roof over the stretch [from, to]: with no well, the hatch rows alone; with the well [k0, k1] of a pantograph car (its kit toward `dir`), the deck over the well, the casing
+ * on the kit's side of it and only those rows that keep clear of both.
+ */
+export function roofPlan(style: RoofHatchStyle, from: number, to: number, well: readonly [number, number] | null, dir: 1 | -1): RoofPlan {
+  if (well === null) return { deck: null, casing: null, rows: roofHatchCentres(style, from, to, null) };
+  const casing = roofCasing(style, well[0], well[1], dir);
+  return { deck: [well[0], well[1]], casing, rows: roofHatchCentres(style, from, to, roofKeepOut(well, casing)) };
+}
+
+/**
+ * One hatch row of a roof (see above), centred on `zc` along a car whose crown is at `crown`; `side` is +1 for a car whose louvre cage is on the +x side (a front cab car's, the
+ * train's right) and -1 for one turned about (a rear cab car's).
+ */
+export function roofHatch(soup: Soup, o: { style: RoofHatchStyle; zc: number; crown: number; side: 1 | -1 }): void {
+  const h = ROOF_HATCHES[o.style];
+  const z0 = o.zc - h.length / 2;
+  const z1 = o.zc + h.length / 2;
+  const yb = o.crown - 0.04;
+  const yt = o.crown + h.height;
+  const panel = col(h.colours.panel);
+  // the panel: a flat-topped frustum, the covers' shape: it slopes from its foot to the top at each side and over `run` at each end
+  const lo: V3[] = [[-h.bw, yb, z0], [h.bw, yb, z0], [h.bw, yb, z1], [-h.bw, yb, z1]];
+  const hi: V3[] = [[-h.tw, yt, z0 + h.run], [h.tw, yt, z0 + h.run], [h.tw, yt, z1 - h.run], [-h.tw, yt, z1 - h.run]];
+  const mid: V3 = [0, (yb + yt) / 2, o.zc];
+  const f = (a: V3, b: V3, c: V3, d: V3): void => soup.face([a, b, c, d], mid, panel);
+  f(hi[0] as V3, hi[1] as V3, hi[2] as V3, hi[3] as V3);
+  for (let k = 0; k < 4; k++) f(lo[k] as V3, lo[(k + 1) % 4] as V3, hi[(k + 1) % 4] as V3, hi[k] as V3);
+  const up: V3 = [0, 1, 0];
+  // the louvre cage: a grid of dark openings on the top
+  const L = h.louvre;
+  const slot = col(h.colours.slot);
+  const ys = yt + h.lift;
+  for (let i = 0; i < L.cols; i++) {
+    for (let j = 0; j < L.rows; j++) {
+      const xc = o.side * (L.cx + (i - (L.cols - 1) / 2) * L.pitchX);
+      const zc = o.zc + (j - (L.rows - 1) / 2) * L.pitchZ;
+      soup.quad([[xc - L.w / 2, ys, zc - L.l / 2], [xc + L.w / 2, ys, zc - L.l / 2], [xc + L.w / 2, ys, zc + L.l / 2], [xc - L.w / 2, ys, zc + L.l / 2]], [up, up, up, up], slot);
+    }
+  }
+  // the plate in the middle, a little proud of the top
+  soup.box(-h.plate.hx, h.plate.hx, yt, yt + h.plate.lift, o.zc - h.plate.hz, o.zc + h.plate.hz, col(h.colours.plate), '-y');
+  // the oval grille on the other side
+  const poly: V3[] = [];
+  for (let k = 0; k < h.oval.sides; k++) {
+    const a = (2 * Math.PI * k) / h.oval.sides;
+    poly.push([o.side * h.oval.cx + h.oval.rx * Math.cos(a), ys, o.zc + h.oval.rz * Math.sin(a)]);
+  }
+  soup.fan(poly, up, col(h.colours.oval));
+}
+
+/** The deck of a pantograph car's well: a flat slab on the roof's flat, over the stretch [k0, k1] the kit and the pantograph take, under everything that stands on it. */
+export function pantographDeck(soup: Soup, o: { style: RoofHatchStyle; k0: number; k1: number; crown: number }): void {
+  const d = ROOF_HATCHES[o.style].deck;
+  soup.box(-d.half, d.half, o.crown - 0.012, o.crown + d.top, o.k0, o.k1, col(d.colour), '-y');
+}
+
 /** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City), a Scharfenberg (Class 180) and a BSI (the Sprinters' and Turbostars'). */
 export type CouplerStyle = 'plain' | 'dellner' | 'scharfenberg' | 'bsi';
 

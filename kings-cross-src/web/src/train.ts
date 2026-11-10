@@ -40,8 +40,8 @@ import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELE
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeLeanSlope, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, podHanger, roofKit, roofKitSpan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
-import type { BogieStyle, CouplerStyle, PodForm, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, pantographDeck, podHanger, roofHatch, roofKit, roofKitSpan, roofPlan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
+import type { BogieStyle, CouplerStyle, PodForm, RoofHatchStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
 
 /**
  * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
@@ -438,6 +438,11 @@ interface BodySpec {
   skirt: { light: number; vents: boolean; boxes?: SkirtBoxes; hem?: boolean; hatches?: boolean };
   /** what a pantograph car's roof carries beside the pantograph (insulators, a cable run): the style, and the height over the roof's crown nothing of it passes (null: none) */
   roofKit: { style: RoofKitStyle; height: number } | null;
+  /**
+   * hatch rows let into the roof in place of the run of raised covers (the Electrostar's: ROOF_HATCHES): the covers are then only the high casing at the kit's end of a
+   * pantograph car's well, and the well has a deck under the kit and the pantograph. Absent: the covers along the whole roof.
+   */
+  roofHatches?: { style: RoofHatchStyle };
   /** the cab front's lamps, frame, coupler and warning panel */
   front: FrontSpec;
   /** louvres and vents on the nose's roof behind the glass (the Class 180's: GC180-01, GC180-05) */
@@ -669,7 +674,9 @@ const ELECTROSTAR_BODY = ((): BodySpec => {
       coupler: { style: 'dellner', covered: true },
       face: ELECTROSTAR_FACE,
     },
-    // ASSUMED (no photograph shows the roof; every AC unit has an insulator and a cable beside its pantograph): one big insulator and two small, 0.13 m over the crown (the covers' 0.14 m: the published 3.77 m stays the highest point)
+    // CHANGED (round 6): hatch rows let into a smooth roof, a deck in the pantograph car's well and a casing at its car-end side, read off the 377's roof from above and the 387's from a footbridge (see ROOF_HATCHES)
+    roofHatches: { style: 'electrostar' },
+    // ASSUMED (no 387 photograph shows the pantograph car's roof, and the 377's holds other fittings; every AC unit has an insulator and a cable beside its pantograph): one big insulator and two small, 0.13 m over the crown (the casing's 0.14 m: the published 3.77 m stays the highest point)
     roofKit: { style: 'emu', height: 0.13 },
     underfloor: null,
     plan: emuPlan('electrostar', length),
@@ -1725,6 +1732,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     covers = without(covers, k0, k1);
     roofKit(detail, { style: spec.roofKit.style, p0: car.pantograph[0], p1: car.pantograph[1], dir: kitDir, crown: spec.crown, height: spec.roofKit.height });
   } else if (car.pantograph) covers = without(covers, car.pantograph[0] - 0.35, car.pantograph[1] + 0.35);
+  // an Electrostar's roof: hatch rows let into it (ROOF_HATCHES), the high casing at the kit's end of a pantograph car's well the only cover, and the well a deck
+  if (spec.roofHatches) {
+    const style = spec.roofHatches.style;
+    const well = car.pantograph && spec.roofKit ? roofKitSpan(spec.roofKit.style, car.pantograph[0], car.pantograph[1], kitDir) : null;
+    const plan = roofPlan(style, carFrom, carTo, well, kitDir);
+    if (plan.deck) pantographDeck(detail, { style, k0: plan.deck[0], k1: plan.deck[1], crown: spec.crown });
+    covers = plan.casing ? [plan.casing] : [];
+    for (const zc of plan.rows) roofHatch(detail, { style, zc, crown: spec.crown, side: car.cab === 'rear' ? -1 : 1 });
+  }
   const coverColour = col(spec.coverStyle?.colour ?? 0xb4b8be);
   const ridges = spec.coverStyle?.ridges;
   for (const [z0, z1] of covers) {

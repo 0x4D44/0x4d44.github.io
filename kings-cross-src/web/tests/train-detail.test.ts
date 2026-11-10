@@ -4331,7 +4331,11 @@ test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the
       }
       assert.equal(seen, ridges.length, `${kind} car ${car.index}: every ridge is on a hatch`);
     }
-    assert.ok(covers >= 4, `${kind}: ${covers} covers on the first three cars`);
+    // CHANGED (round 6: the Electrostar's roof is hatch rows let into a smooth deck, not a run of raised covers, see train-roof.test.ts): its only cover is the high casing at the kit's end of its pantograph car's well,
+    // and the first three cars of a 387 hold the one pantograph car
+    const hatched = spec.roofHatches !== undefined;
+    assert.ok(covers >= (hatched ? 1 : 4), `${kind}: ${covers} covers on the first three cars`);
+    if (hatched) assert.equal(covers, 1, `${kind}: the pantograph car's casing is the one cover on the first three cars`);
   }
   // darker than the roof they stand on: black panels on the lighter roof (GC180-01)
   assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof) - 0.1, `hatches (${lumaOf(HATCH).toFixed(2)}) darker than the roof (${lumaOf(liveryFor('gc180x5').roof).toFixed(2)})`);
