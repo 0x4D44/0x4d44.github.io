@@ -175,19 +175,21 @@ export interface CragStep {
   rgb: V3; scrub: boolean; joint: boolean;
 }
 /** Round 6 (round-5 score: the brown, streaked drape showed between the courses, so each read as a wall on an earth bank). The drape's
- *  map is repainted over the crag (onCliff, over `slope` deg), each `cell` m cell one of PERTH_ROCK_TONES at `alpha`, so the ground
- *  between the risers is the same grey rock (the shared paint's buff wash and dark wet streaks go under it). Perth-only: it paints the
+ *  map is repainted round the crag's steps (every `cell` m cell within `reach` m of a riser's ends or its ledge's back), each cell one
+ *  of PERTH_ROCK_TONES shaded `shade` (the ground between the risers is in their shadow) at `alpha`, so it is the same grey rock (the
+ *  shared paint's buff wash and dark wet streaks go under it), and the grass round the crag is left alone. Perth-only: it paints the
  *  Perth cover's own canvas after the shared builder, and draws nothing new. */
-export const CLIFF_PAINT = {cell: 4, slope: 32, alpha: .9} as const;
-/** The crag's repainted cells (CLIFF_PAINT): each cell's corner (x, z) and its tone. */
-export function cliffPaintCells(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): {x: number; z: number; tone: string}[] {
-  const P = CLIFF_PAINT, out: {x: number; z: number; tone: string}[] = [], r = WOODLAND.cliff.reach;
-  let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
-  for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
-  for (let x = Math.floor((ax - r) / P.cell) * P.cell; x < bx + r; x += P.cell) for (let z = Math.floor((az - r) / P.cell) * P.cell; z < bz + r; z += P.cell) {
-    const cx = x + P.cell / 2, cz = z + P.cell / 2;
-    if (onCliff(ground, cliffs, cx, cz) && slopeOf(ground, cx, cz) >= P.slope) out.push({x, z, tone: PERTH_ROCK_TONES[Math.floor(hash(x, z, 78) * PERTH_ROCK_TONES.length)]!});
-  }
+export const CLIFF_PAINT = {cell: 4, reach: 3, shade: .7, alpha: .9} as const;
+/** The crag's repainted cells (CLIFF_PAINT) round `steps`: each cell's corner (x, z) and its tone. */
+export function cliffPaintCells(steps: readonly CragStep[]): {x: number; z: number; tone: string}[] {
+  const P = CLIFF_PAINT, seen = new Set<string>(), out: {x: number; z: number; tone: string}[] = [];
+  const tones = PERTH_ROCK_TONES.map(t => { const n = parseInt(t.slice(1), 16); return `rgb(${[n >> 16, n >> 8 & 255, n & 255].map(v => Math.round(v * P.shade)).join(',')})`; });
+  const mark = (px: number, pz: number) => {
+    for (let x = Math.floor((px - P.reach) / P.cell) * P.cell; x <= px + P.reach; x += P.cell) for (let z = Math.floor((pz - P.reach) / P.cell) * P.cell; z <= pz + P.reach; z += P.cell) {
+      const k = `${x},${z}`; if (seen.has(k)) continue; seen.add(k); out.push({x, z, tone: tones[Math.floor(hash(x, z, 78) * tones.length)]!});
+    }
+  };
+  for (const k of steps) { const mx = (k.a[0] + k.b[0]) / 2, mz = (k.a[1] + k.b[1]) / 2; mark(k.a[0], k.a[1]); mark(k.b[0], k.b[1]); mark(mx + k.up[0] * k.ledge, mz + k.up[1] * k.ledge); }
   return out;
 }
 /** The crag's steps (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */

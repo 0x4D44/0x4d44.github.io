@@ -208,12 +208,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs, covered), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered: (x, z) => inSummitHole(ground, x, z) || (uncovered?.(x, z) ?? false)});
   cover.group.name = 'perth-city-ground';
   // the crag's drape repainted rock-grey (perth-woodland.ts CLIFF_PAINT), on the cover's own canvas (none under node)
+  const cragSteps = kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE), cragPaint = cliffPaintCells(cragSteps);
   cover.group.traverse(o => {
     const map = o instanceof THREE.Mesh && o.material instanceof THREE.MeshLambertMaterial ? o.material.map : null, img = map?.image as HTMLCanvasElement | undefined;
     if (!map || !img || typeof img.getContext !== 'function') return;
     const g = img.getContext('2d'), E = PERTH_LANDUSE.extent, s = img.width / (E.x1 - E.x0); if (!g) return;
     g.save(); g.globalAlpha = CLIFF_PAINT.alpha;
-    for (const c of cliffPaintCells(ground, PERTH_LANDUSE.cliffs)) { g.fillStyle = c.tone; g.fillRect((c.x - E.x0) * s, (c.z - E.z0) * s, CLIFF_PAINT.cell * s + .5, CLIFF_PAINT.cell * s + .5); }
+    for (const c of cragPaint) { g.fillStyle = c.tone; g.fillRect((c.x - E.x0) * s, (c.z - E.z0) * s, CLIFF_PAINT.cell * s + .5, CLIFF_PAINT.cell * s + .5); }
     g.restore(); map.needsUpdate = true;
   });
   const stats = {...cover.stats};
@@ -229,7 +230,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock
   const crag = new Batch({colored: true});
   // the stepped face: each riser a vertical quad facing downhill, and its level ledge back into the slope
-  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE)) {
+  for (const k of cragSteps) {
     const fa: [number, number, number] = [k.a[0], k.foot[0], k.a[1]], fb: [number, number, number] = [k.b[0], k.foot[1], k.b[1]];
     const ta: [number, number, number] = [k.a[0], k.top, k.a[1]], tb: [number, number, number] = [k.b[0], k.top, k.b[1]];
     crag.poly([fa, fb, tb, ta], undefined, {color: k.rgb, facing: [-k.up[0], 0, -k.up[1]]});
