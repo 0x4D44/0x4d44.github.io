@@ -14,7 +14,8 @@ import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole } from '../src/perth-summit.ts';
-import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
+import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
+import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
 import { GARDENS, PERTH_RESIDENTIAL, perthGardens } from '../src/perth-gardens.ts';
@@ -317,8 +318,41 @@ test('the east patch meets the main terrain without a seam, over the covered cor
     assert.ok(Math.abs(pos.getY(v) - scene.terrain.heightAt(E.x0, pos.getZ(v))) < 1e-3, `drawn seam at z ${pos.getZ(v)}`);
   }
   assert.equal(seam, (zMain - E.z0) / 16 + 1, 'a seam vertex every 16 m along the main terrain');
-  // no hard wall at the north edge: the skirt falls away outward, its slope well under vertical
-  for (let v = 0; v < pos.count; v++) if (pos.getZ(v) < E.z0 - 1) assert.ok(pos.getZ(v) <= E.z0 - EAST_SKIRT.out + 1e-6 && EAST_SKIRT.down / EAST_SKIRT.out < .5, 'the north skirt slopes away');
+  // no hard wall and no ruled edge (round 3, C3): the skirt runs out EAST_SKIRT.out m to just under the world's flat plane, in its colour
+  const col = mesh.geometry.getAttribute('color'), plane = new THREE.Color().setHex(GROUND_COLOUR, THREE.SRGBColorSpace); let apron = 0;
+  for (let v = 0; v < pos.count; v++) {
+    const out = pos.getZ(v) < E.z0 - 1 || pos.getZ(v) > E.z1 + 1 || pos.getX(v) > E.x1 + 1; if (!out) continue; apron++;
+    assert.ok(pos.getZ(v) <= E.z0 - EAST_SKIRT.out + 1e-6 || pos.getZ(v) >= E.z1 + EAST_SKIRT.out - 1e-6 || pos.getX(v) >= E.x1 + EAST_SKIRT.out - 1e-6, 'the apron runs out its full width');
+    assert.ok(pos.getY(v) <= EAST_SKIRT.to + 1e-6 && EAST_SKIRT.to < GROUND_Y, 'the apron ends under the flat plane');
+    assert.ok(Math.abs(col.getX(v) - plane.r) < 1e-3 && Math.abs(col.getY(v) - plane.g) < 1e-3 && Math.abs(col.getZ(v) - plane.b) < 1e-3, 'the apron ends in the plane\'s colour');
+  }
+  assert.ok(apron > 100, `apron vertices: ${apron}`);
+});
+
+test('the east patch\'s Tay is one continuous river sheet, with trees along its banks (2166751, 46028; round 3, C3)', () => {
+  const water = scene.group.getObjectByName('perth-east-water') as THREE.Mesh, trees = scene.group.getObjectByName('perth-east-bank-trees') as THREE.InstancedMesh;
+  assert.ok(water && trees, 'the river sheet and the bank trees');
+  // one connected sheet: union the triangles' vertices, and the largest component holds nearly all the sheet's area
+  const idx = water.geometry.getIndex()!, P = water.geometry.getAttribute('position'), parent = [...Array(P.count).keys()];
+  const find = (a: number): number => parent[a] === a ? a : (parent[a] = find(parent[a]!));
+  for (let i = 0; i < idx.count; i += 3) { const a = find(idx.getX(i)), b = find(idx.getX(i + 1)), c = find(idx.getX(i + 2)); parent[b] = a; parent[c] = a; }
+  const area = new Map<number, number>(); let total = 0;
+  for (let i = 0; i < idx.count; i += 3) {
+    const [a, b, c] = [idx.getX(i), idx.getX(i + 1), idx.getX(i + 2)], ar = Math.abs((P.getX(b) - P.getX(a)) * (P.getZ(c) - P.getZ(a)) - (P.getX(c) - P.getX(a)) * (P.getZ(b) - P.getZ(a))) / 2;
+    total += ar; area.set(find(a), (area.get(find(a)) ?? 0) + ar);
+  }
+  const big = Math.max(...area.values());
+  assert.ok(total > 2e5 && big / total > .9, `the largest sheet holds ${(100 * big / total).toFixed(1)}% of ${total.toFixed(0)} m²`);
+  // the sheet lies on or over the ground everywhere
+  for (let i = 0; i < P.count; i++) assert.ok(P.getY(i) >= PERTH_EAST.heightAt(P.getX(i), P.getZ(i)) + .1, 'the sheet is over the ground');
+  // bank trees: many, each standing on land within a lattice step of the wet nodes
+  const wet = eastWater(), G = PERTH_EAST_FILE.grids[0]!, m = new THREE.Matrix4(), v = new THREE.Vector3();
+  assert.ok(trees.count > 150, `bank trees: ${trees.count}`);
+  for (let k = 0; k < trees.count; k++) {
+    trees.getMatrixAt(k, m); v.setFromMatrixPosition(m);
+    let near = false; for (let j = 0; j < G.nz && !near; j++) for (let i = 0; i < G.nx; i++) if (wet[j * G.nx + i] && Math.hypot(G.x0 + i * G.step - v.x, G.z0 + j * G.step - v.z) < 2 * G.step) { near = true; break; }
+    assert.ok(near, `tree ${k} by the river`);
+  }
 });
 
 test('the Tay\'s shore is shingle, not a dark band, and its water carries a wash in metres (round 2, C3)', () => {
