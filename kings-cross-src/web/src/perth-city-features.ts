@@ -78,6 +78,12 @@ export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, gird
  *  rustication `courses` m apart, a darker joint every course. */
 export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, stone: [.80, .70, .60] as Rgb, joint: [.62, .53, .45] as Rgb,
   girder: [.66, .68, .67] as Rgb, railing: [.93, .93, .91] as Rgb} as const;
+/** Round 3 (C4), from 2166751: the girder piers' columns are round and tall, about three times as high as they are wide over the water,
+ *  rusticated in bands; a cross girder closes the dark gap between the cap and the deck; the plate girders carry vertical stiffeners.
+ *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
+ *  other one `proud` m out; the cross girder up to `crossTop`; a stiffener every `stiffener` m, `stiffenerSize` (along, out). */
+export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 10, band: .9, proud: .07, crossTop: -.55,
+  stiffener: 1.8, stiffenerSize: [.14, .1] as const, stiffenerShade: .9} as const;
 /** Road-bridge forms. Arch counts are sourced (round 2):
  *  - Perth Bridge (Smeaton, 1771) has nine arches: seven over the river and two smaller land arches at the ends (HES LB39339;
  *    Canmore 28308, "nine arches ... total span of 268m").
@@ -249,7 +255,7 @@ function walker(line: readonly Pt[]) {
 }
 
 /** The Tay Viaduct along its mapped path: piers, iron spans, the island arches, the walkway. Returns the layout for the tests. */
-export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain, 'heightAt'>, line: readonly Pt[] = file.bridges.viaduct.line as Pt[]): {piers: number[]; pierPlan: {p: Pt; t: Pt}[]; arches: [number, number]; island: [number, number]; length: number} {
+export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain, 'heightAt'>, line: readonly Pt[] = file.bridges.viaduct.line as Pt[]): {piers: number[]; pierPlan: {p: Pt; t: Pt}[]; columns: {p: Pt; diameter: number; visible: number}[]; arches: [number, number]; island: [number, number]; length: number} {
   const w = walker(line), F = VIADUCT_FORM, V = TAY_VIADUCT;
   // the island crossing: the longest dry run between wet ones along the path
   const wet: boolean[] = []; for (let s = 0; s <= w.length; s += 1) { const {p} = w.at(s); wet.push(inWater(p[0], p[1])); }
@@ -271,6 +277,12 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     const c: Pt = [(A.p[0] + B.p[0]) / 2, (A.p[1] + B.p[1]) / 2];
     const L = VIADUCT_LOOK;
     for (const side of [-1, 1]) post(ironwork, [c[0] + n[0] * side * F.girderOffset, c[1] + n[1] * side * F.girderOffset], t, len, F.girderThick, F.girder[0], F.girder[1], L.girder);
+    // the plate girders' vertical stiffeners, on each girder's outer face (PIER_FORM)
+    const shade: Rgb = [L.girder[0] * PIER_FORM.stiffenerShade, L.girder[1] * PIER_FORM.stiffenerShade, L.girder[2] * PIER_FORM.stiffenerShade], [sa, so] = PIER_FORM.stiffenerSize;
+    for (const side of [-1, 1]) for (let u = PIER_FORM.stiffener / 2; u < len; u += PIER_FORM.stiffener) {
+      const off = side * (F.girderOffset + F.girderThick / 2 + so / 2);
+      post(ironwork, [A.p[0] + t[0] * u + n[0] * off, A.p[1] + t[1] * u + n[1] * off], t, sa, so, F.girder[0], F.girder[1], shade);
+    }
     // the walkway, outside the girder on the outer side of the curve, and its railing (top and mid rails)
     const o = -turn, wc = (F.walk[0] + F.walk[1]) / 2;
     post(ironwork, [c[0] + n[0] * o * wc, c[1] + n[1] * o * wc], t, len, F.walk[1] - F.walk[0], F.walk[2] - .25, F.walk[2], L.girder);
@@ -281,19 +293,20 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
   for (let k = 0; k < V.eastSpans; k++) girders(piers[V.westSpans + 1 + k]!, piers[V.westSpans + 2 + k]!);
   // masonry piers under the girder spans (into the river bed), the abutments at the ends: twin rusticated columns, one under each girder,
   // under a capping course across both (VIADUCT_LOOK)
-  const L = VIADUCT_LOOK, pierPlan: {p: Pt; t: Pt}[] = [];
+  const L = VIADUCT_LOOK, pierPlan: {p: Pt; t: Pt}[] = [], columns: {p: Pt; diameter: number; visible: number}[] = [];
   for (const s of piers) {
     const {p, t} = w.at(s), n: Pt = [-t[1], t[0]], foot = ground.heightAt(p[0], p[1]) - 1.5, capY = F.girder[0] - L.cap; pierPlan.push({p, t});
+    const water = ground.heightAt(p[0], p[1]) + PERTH_DRAPE + WATER.lift, diameter = Math.max(PIER_FORM.diameter[0], Math.min(PIER_FORM.diameter[1], (capY - water) / PIER_FORM.aspect));
     for (const side of [-1, 1]) {
       const q: Pt = [p[0] + n[0] * side * F.girderOffset, p[1] + n[1] * side * F.girderOffset];
-      // courses: alternately the full column and a joint course set back 6 cm, so the column reads as rusticated blocks
-      for (let y = foot, k = 0; y < capY; y += L.courses, k++) {
-        const top = Math.min(capY, y + L.courses), joint = Math.min(top, y + .12);
-        post(masonry, q, t, L.column - .12, L.column - .12, y, joint, L.joint);
-        post(masonry, q, t, L.column, L.column, joint, top, k % 2 ? L.stone : [L.stone[0] * .95, L.stone[1] * .95, L.stone[2] * .95]);
-      }
+      // a round column, rusticated in bands (every other band proud), its diameter a third of its height over the water (PIER_FORM)
+      ring(masonry, q[0], q[1], diameter / 2, foot, capY, PIER_FORM.sides, L.joint);
+      for (let y = foot, k = 0; y < capY; y += PIER_FORM.band, k++) if (k % 2) ring(masonry, q[0], q[1], diameter / 2 + PIER_FORM.proud, y, Math.min(capY, y + PIER_FORM.band), PIER_FORM.sides, L.stone);
     }
-    post(masonry, p, t, L.column + 2 * L.capOver, 2 * F.girderOffset + L.column + 2 * L.capOver, capY, F.girder[0], L.stone);
+    post(masonry, p, t, diameter + 2 * L.capOver, 2 * F.girderOffset + diameter + 2 * L.capOver, capY, F.girder[0], L.stone);
+    // the cross girder on the cap, between the plate girders up to the deck: no dark gap over the cap
+    post(ironwork, p, t, diameter, 2 * F.girderOffset - F.girderThick, F.girder[0], PIER_FORM.crossTop, L.girder);
+    columns.push({p, diameter, visible: capY - water});
   }
   // the arches: pier, arch, pier ... from a0 to a1
   for (let k = 0; k <= V.arches; k++) {
@@ -307,7 +320,7 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     // the spandrel down to the ground under the springing, so no gap shows under a low arch
     for (const q of [A, B]) post(masonry, q, t, .05, F.archWidth, ground.heightAt(q[0], q[1]) - .5, spring);
   }
-  return {piers, pierPlan, arches: [a0, a1], island, length: w.length};
+  return {piers, pierPlan, columns, arches: [a0, a1], island, length: w.length};
 }
 
 /** A mapped road bridge over the Tay: a deck from bank to bank over its outline's rectangle, its parapets, its arches and piers. */

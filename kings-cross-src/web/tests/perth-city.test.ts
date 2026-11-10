@@ -8,7 +8,7 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
@@ -119,6 +119,24 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   let dark = 0; for (let i = 0; i < col.count; i++) if (lum([col.getX(i), col.getY(i), col.getZ(i)]) < .5) dark++;
   assert.equal(dark, 0, 'no dark ironwork: girders pale grey, railing white');
   assert.ok(lum(L.railing) > lum(L.girder), 'the railing is whiter than the girders');
+  // round 3 (2166751): tall round columns, about 3:1 over the water where the deck's height allows it
+  for (const c of layout.columns) assert.ok(c.diameter <= PIER_FORM.diameter[1] + 1e-9 && (c.visible / c.diameter >= PIER_FORM.aspect - 1e-6 || c.diameter === PIER_FORM.diameter[0]), `column ${c.diameter.toFixed(2)} m wide, ${c.visible.toFixed(2)} m over the water`);
+  // in the river (where the deck stands high enough over the water for a 3:1 column of the least diameter), every column is about 3:1
+  const wet = layout.columns.filter(c => c.visible >= PIER_FORM.aspect * PIER_FORM.diameter[0]);
+  assert.ok(wet.length >= 8 && wet.every(c => Math.abs(c.visible / c.diameter - PIER_FORM.aspect) < .05), `river columns: ${wet.map(c => (c.visible / c.diameter).toFixed(2))}`);
+  const mp = mesh.geometry.getAttribute('position');
+  for (const c of layout.columns.slice(0, 3)) {
+    // round: the column's ring corners all lie at one radius about its axis
+    const n = [-layout.pierPlan.find(q => q.p === c.p)!.t[1], layout.pierPlan.find(q => q.p === c.p)!.t[0]], ax = c.p[0] + n[0]! * F.girderOffset, az = c.p[1] + n[1]! * F.girderOffset;
+    const radii = new Set<string>(); for (let i = 0; i < mp.count; i++) { const r = Math.hypot(mp.getX(i) - ax, mp.getZ(i) - az); if (r < c.diameter) radii.add(r.toFixed(2)); }
+    assert.ok([...radii].some(r => Math.abs(Number(r) - c.diameter / 2) < .01), `a ring at radius ${(c.diameter / 2).toFixed(2)}`);
+  }
+  // no gap over the cap: a cross girder between the plate girders, from the cap up towards the deck; and stiffeners on the girders
+  const ip = ig.getAttribute('position'); let cross = 0, stiff = 0;
+  for (const { p } of layout.pierPlan) for (let i = 0; i < ip.count; i++) if (Math.hypot(ip.getX(i) - p[0], ip.getZ(i) - p[1]) < F.girderOffset && Math.abs(ip.getY(i) - PIER_FORM.crossTop) < 1e-3) { cross++; break; }
+  for (let i = 0; i < ip.count; i++) if (Math.abs(ip.getY(i) - F.girder[1]) < 1e-3) stiff++;
+  assert.equal(cross, layout.pierPlan.length, 'a cross girder over every girder pier');
+  assert.ok(stiff / 8 > 2 * (layout.length * .6) / PIER_FORM.stiffener, `stiffener tops: ${stiff / 8}`);
 });
 
 test('Kinnoull Hill\'s woods, the Inches and the kirk come from OSM, the DSM and HES, not by eye', () => {

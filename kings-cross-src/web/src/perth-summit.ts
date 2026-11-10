@@ -16,7 +16,7 @@ export const SUMMIT = {
   hole: 150, patch: 175, step: 6, lift: .12, px: 1024,
   grass: ['#5b7431', '#4f6a2a', '#6d7a3a', '#7a7444'] as const, tuft: ['rgba(40,58,22,0.55)', 'rgba(150,150,90,0.45)'] as const, tufts: 9000,
   gorse: {count: 70, r: [1.2, 3] as const, tone: '#3a4a1c', bloom: 'rgba(200,170,40,0.35)'},
-  worn: {r: 14, tone: 'rgba(120,104,80,0.55)'}, path: {tone: '#7d6c55', edge: 'rgba(90,100,60,0.6)'},
+  worn: {r: 14, tone: 'rgba(120,104,80,0.55)'}, path: {tone: '#8a6a48', edge: 'rgba(90,100,60,0.6)'},
   stones: {count: 60, tone: '#9a968c'},
 } as const;
 
