@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY } from '../src/perth-station.ts';
+import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
 import { archRib, boardedSide, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
@@ -201,7 +201,18 @@ test('round 3: the platforms are red asphalt in the open beyond both roof ends, 
   const scene = buildPerthScene({ lighting: false });
   try {
     const m = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).material as THREE.MeshLambertMaterial;
-    assert.ok(!m.map && m.color.getHex() === PERTH_OPEN_ASPHALT, 'continuous red asphalt, no flag texture');
+    // Round 4: continuous red asphalt with a fine grain (not the flag chequer, not a flat fill), lightened toward R-pt1-b's salmon.
+    const grain = m.map as THREE.DataTexture | null;
+    assert.ok(grain?.name === 'perth-asphalt' && m.color.getHex() === PERTH_OPEN_ASPHALT, 'red asphalt with its grain map');
+    const gd = grain.image.data as Uint8Array, vals = new Set<number>(); for (let i = 0; i < gd.length; i += 4) vals.add(gd[i]);
+    assert.ok(vals.size > 10, `the asphalt map has grain (${vals.size} tones)`);
+    assert.ok(m.color.r > m.color.g && m.color.g > m.color.b && m.color.r > .3, `salmon, not dark brown (${m.color.getHexString()})`);
+    // Under the roof: smooth grey concrete with fine joints (R-pt1-d north), not the blotched flags.
+    const pave = (scene.group.getObjectByName('perth-platform-surfaces') as THREE.Mesh).material as THREE.MeshLambertMaterial, pm = pave.map as THREE.DataTexture | null;
+    assert.ok(pm?.name === 'perth-concrete', 'the covered platforms are concrete');
+    const pd = pm.image.data as Uint8Array, n = pm.image.width, every = Math.round(n * PERTH_SURFACE_TILE.joint / PERTH_SURFACE_TILE.concrete);
+    assert.ok(pd[4 * (5 * n + every)] < pd[4 * (5 * n + every + 3)] - 20, 'a joint line darker than the slab beside it');
+    const c = pave.color; assert.ok(Math.abs(c.r - c.g) < .05 && Math.abs(c.g - c.b) < .05, `grey concrete (${c.getHexString()})`);
     // Lead ruling after round 3: the Dundee platforms' open ends are dark grey (R-pt1-c, Champion 2011), the red stays off them.
     const greyMesh = scene.group.getObjectByName('perth-platform-surfaces-open-grey') as THREE.Mesh;
     assert.ok(greyMesh, 'the Dundee platforms\' open ends are drawn grey');

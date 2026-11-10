@@ -23,10 +23,34 @@ export const PERTH_LEVELS = {...WAVERLEY_LEVELS, deckTop: -.3, deckDepth: 1.2, d
 /** The rails on a mapped bridge, which stand on a deck rather than pull the ground up (bridge=yes, or any bridge tag but "no"). */
 export const onBridge = (tags: Record<string, string>): boolean => !!tags.bridge && tags.bridge !== 'no';
 /** The surface track segments, split into those on the ground and those on a mapped bridge. */
+/** The covered platforms' concrete (R-pt1-d north: smooth grey with fine joints). ASSUMED shade. */
+export const PERTH_CONCRETE = 0xaeaca6;
+/** The platform surfaces' detail maps (round 4), multiplied over the material colour; UVs are world metres (fillSurface). Built as data
+ *  (deterministic hash noise), so they need no canvas: 'asphalt' a fine grain over a 2 m tile; 'concrete' a faint grain with a 2 mm
+ *  joint every 1.5 m both ways. ASSUMED scales. Cached per kind, as stationTexture's are: the scene disposes its materials, not their
+ *  maps, so one shared texture per kind is never leaked by a rebuild. */
+const surfaceCache = new Map<string, THREE.DataTexture>();
+export const PERTH_SURFACE_TILE = {asphalt: 2, concrete: 3, px: 128, joint: 1.5} as const;
+export function perthSurfaceTexture(kind: 'asphalt' | 'concrete'): THREE.DataTexture {
+  const hit = surfaceCache.get(kind); if (hit) return hit;
+  const T = PERTH_SURFACE_TILE, n = T.px, tile = T[kind], data = new Uint8Array(n * n * 4);
+  const hash = (x: number, y: number): number => { let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const every = Math.round(n * T.joint / tile);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const grain = kind === 'asphalt' ? .86 + .14 * hash(x, y) : .95 + .05 * hash(x, y);
+    const joint = kind === 'concrete' && (x % every === 0 || y % every === 0) ? .78 : 1, v = Math.round(255 * grain * joint), k = 4 * (y * n + x);
+    data[k] = data[k + 1] = data[k + 2] = v; data[k + 3] = 255;
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / tile, 1 / tile); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true; t.name = `perth-${kind}`;
+  surfaceCache.set(kind, t);
+  return t;
+}
 /** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below). ASSUMED shade. */
 export const PERTH_BAND_BROWN = 0x5e544b;
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
-export const PERTH_OPEN_ASPHALT = 0x6e4c45;
+export const PERTH_OPEN_ASPHALT = 0xa0705f;
 /** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and
  *  Champion 2011, geograph 2687800, both show platform 1 grey). ASSUMED shade. */
 export const PERTH_OPEN_GREY = 0x4c4d4f;
@@ -92,12 +116,13 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   const s = stationBatches(data);
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
-  const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xb4b0a8); }
-  const surfacing = own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_ASPHALT}));
+  // Round 4: smooth grey concrete with fine joints under the roof (R-pt1-d north), not the blotched flags.
+  const paving = own(new THREE.MeshLambertMaterial({color: PERTH_CONCRETE, map: perthSurfaceTexture('concrete')}));
+  const surfacing = own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_ASPHALT, map: perthSurfaceTexture('asphalt')}));
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
-  add(group, grey, own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_GREY})), 'perth-platform-surfaces-open-grey');
+  add(group, grey, own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_GREY, map: perthSurfaceTexture('asphalt')})), 'perth-platform-surfaces-open-grey');
   add(group, s.platform.faces, faceStone, 'perth-platform-faces');
   const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);
   add(group, edges, own(paintMaterial(material('platformEdgeStrip'))), 'perth-platform-edges');
