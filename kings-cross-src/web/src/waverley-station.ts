@@ -65,7 +65,8 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  // From above, the aluminium cassettes (R-wv1-a, R-wv1-a3): silver-grey, near opaque, the bars visible (waverley-station-textures.ts). The
  // underside keeps the translucent KX glazing. Each mesh shows one face, so neither is drawn over the other.
  const cassettes=own(material('shedGlass').clone() as THREE.MeshLambertMaterial),cassetteMap=stationTexture('cassettes');cassettes.vertexColors=false;cassettes.side=THREE.FrontSide;
- cassettes.color.setHex(cassetteMap?0xffffff:0x7d8286);cassettes.map=cassetteMap;cassettes.emissive.setHex(0x1e2124);cassettes.emissiveMap=cassetteMap;cassettes.opacity=.97;cassettes.forceSinglePass=true;
+ // The pinned noon light is strong (sun 3.24, sky 1.02, exposure 1.25): the panes are toned down so a lit slope reads mid-grey, as in R-wv1-a.
+ cassettes.color.setHex(cassetteMap?0x7a7a7a:0x606468);cassettes.map=cassetteMap;cassettes.emissive.setHex(0x101214);cassettes.emissiveMap=cassetteMap;cassettes.opacity=.97;cassettes.forceSinglePass=true;
  const stationRoof=waverleyStationRoof(data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)),plan=waverleyStationPlan(data,stationRoof,WAVERLEY_ROOF_CUTOUTS),structure=waverleyStructureBatches(plan);
  // Platforms: pale slab paving (R-wv1-b, R-wv1-b2: light grey flags, not asphalt), the KX coper/tactile/white-line strip on every track edge,
  // and darker faces (R-wv1-b: the platform wall under the coper is dark, weathered stone). Faces skip the seam between two polygons of one island.
