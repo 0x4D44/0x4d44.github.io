@@ -162,8 +162,14 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   });
 }
 
-/** Perth's haze: ASSUMED Waverley's (WAVERLEY_HAZE) until the lighting element tunes it against Perth photographs. */
-export const PERTH_HAZE = WAVERLEY_HAZE;
+/**
+ * Perth's haze (W3 city, C6, 2026-11-10): Waverley's near the ground (WAVERLEY_HAZE: the Tay views look under a kilometre across the
+ * river), but clear air of its own, PERTH_CLEAR_AIR m, above it. R-pt3-a's views from Kinnoull Hill (England_and_Scotland_155.jpg: the
+ * Tay and the town 2 km off keep their colour, the hills beyond are blue) see far further than the page's 2.6 km clear air, at which
+ * the town, 2.4 km from the summit, went to sky. ASSUMED, judged by eye against that photograph.
+ */
+export const PERTH_CLEAR_AIR = 7000;
+export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR } as const;
 /** Perth's sky and weather at its own origin: the same rig as Waverley's, with no night windows or street lamps yet (the lighting element's). */
 export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Perth weather requires a built geographic scene');
@@ -171,7 +177,7 @@ export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptio
 }
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
-function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number] },
+function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number]; clear?: number },
   night: () => { setLevel(level: number): void; dispose(): void }): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();

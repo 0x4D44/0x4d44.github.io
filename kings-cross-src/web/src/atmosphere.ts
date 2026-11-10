@@ -200,6 +200,19 @@ export interface Haze {
    * air: a camera above it looks down through a thin column, not across the whole of it (fogRange does the same for the weather's fog), and the landing view of the scene is such a camera.
    */
   fade: readonly [number, number];
+  /**
+   * The scene's own clear air, metres: the far plane its fog takes in place of `CLEAR_FOG`'s 2.6 km when the weather is clear (`clearAir`),
+   * which the haze then shortens near the ground as above. Perth's (station-weather.ts `PERTH_HAZE`):
+   * its hill views look 2 to 4 km across the town. Omitted, the page's own clear air; thicker weather always keeps its own range.
+   */
+  clear?: number;
+}
+
+/** The range with a scene's own clear air (`Haze.clear`): its far plane eased from the page's to the scene's as the visibility goes from
+ *  10 to 20 km (fogRange's clear-air band), so no visibility steps it; thicker weather, and a scene without one, keep the range as it is. */
+export function clearAir(range: { near: number; far: number }, visibilityM: number, haze?: Haze): { near: number; far: number } {
+  if (haze?.clear === undefined || visibilityM < 10_000) return range;
+  return { near: range.near, far: range.far + (haze.clear - range.far) * (Number.isNaN(visibilityM) ? 1 : smoothstep(10_000, 20_000, visibilityM)) };
 }
 
 /** The far plane of a scene's fog: the range's own, or, in a scene with a haze, the nearer of that and the haze's, which the camera's height gives back to the range's (see `Haze.fade`). */
@@ -448,7 +461,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
       if (!state) return;
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
       if (scene.fog instanceof THREE.Fog) {
-        const range = fogRange(state.weather.visibilityM, f.camera.position.y);
+        const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y), state.weather.visibilityM, haze);
         scene.fog.near = range.near;
         scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
         rgb(scene.fog.color, state.rig.fog);

@@ -9,6 +9,10 @@ import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_
 import { KIRK_TOWER, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { perthBuildingHeight } from '../src/perth-city.ts';
 import { Batch } from '../src/materials.ts';
+import { clearAir, fogFar } from "../src/atmosphere.ts";
+import type { Haze } from "../src/atmosphere.ts";
+import { PERTH_CLEAR_AIR, PERTH_HAZE, WAVERLEY_HAZE } from '../src/station-weather.ts';
+import { CLEAR_FOG, fogRange } from '../../core/daylight.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const scene = buildPerthScene({ lighting: false });
@@ -76,4 +80,15 @@ test('P3 cost: the city stays inside its caps over phase 1 (579,835 triangles, 1
   const hidden = buildPerthScene({ lighting: false, cityVisible: false });
   try { for (const name of ['perth-tay-water', 'perth-viaduct-iron', 'perth-city-roofs', 'perth-kirk-spire']) { let shown = false; hidden.group.getObjectByName(name)!.traverseAncestors(a => { if (a === hidden.parts.buildings) shown = a.visible; }); assert.equal(shown, false, `${name} hides with the city`); } }
   finally { hidden.dispose(); }
+});
+
+test('Perth\'s haze: Waverley\'s near the ground, its own clear air from the hill; thicker weather keeps its own', () => {
+  const far = (visibility: number, y: number, haze: Haze = PERTH_HAZE) => fogFar(clearAir(fogRange(visibility, y), visibility, haze).far, y, haze);
+  assert.equal(far(30_000, 2), WAVERLEY_HAZE.far, 'the river banks: the Scottish haze');
+  assert.equal(far(30_000, 400), PERTH_CLEAR_AIR, 'above the haze: Perth\'s own clear air, not the page\'s 2.6 km');
+  const kinnoull = far(30_000, 212.7);
+  assert.ok(kinnoull > 2600 * 1.5 && kinnoull < PERTH_CLEAR_AIR, `from Kinnoull the town at 2.4 km is not lost in the fog: ${kinnoull}`);
+  assert.equal(far(3000, 212.7), far(3000, 212.7, WAVERLEY_HAZE), 'mist keeps its own range');
+  let last = far(9000, 400); for (let v = 9500; v <= 21_000; v += 500) { const f = far(v, 400); assert.ok(f >= last && f - last < 700, `no step at ${v} m`); last = f; }
+  assert.equal(far(30_000, 400, WAVERLEY_HAZE), CLEAR_FOG.far, 'Waverley unchanged');
 });
