@@ -47,8 +47,9 @@ export function perthSurfaceTexture(kind: 'asphalt' | 'concrete'): THREE.DataTex
   surfaceCache.set(kind, t);
   return t;
 }
-/** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below). ASSUMED shade. */
-export const PERTH_BAND_BROWN = 0x5e544b;
+/** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below; round 5: lighter again,
+ *  as round 4's 0x5e544b still read near-black from pt-platform-4-north and pt-roof-underside). ASSUMED shade. */
+export const PERTH_BAND_BROWN = 0x7d7064;
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
 export const PERTH_OPEN_ASPHALT = 0xa0705f;
 /** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and

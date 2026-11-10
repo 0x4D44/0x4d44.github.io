@@ -234,7 +234,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -1032,6 +1032,11 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   if (shaped) { glass.append(shaped.glass); strips.append(shaped.solid); weather.append(shaped.glass); }
   const structure = waverleyStructureBatches(plan.structure);
   archedIronwork(structure.ironwork, plan);
+  // Round 5: the main roof's ends gabled (R-pt1-b), replacing Waverley's flat fascia screen along them (its colour, on those edges).
+  { const wf = rgb(WAVERLEY_PAINT.fascia), ends = mainRoofEnds(plan.structure.outline), ir = structure.ironwork;
+    const onEnd = (v: number): boolean => ends.some(([a, c]) => segDist([ir.positions[3 * v], ir.positions[3 * v + 2]], a, c) < .05);
+    takeWhere(ir, t => { const v = ir.indices[t]; return Math.abs(ir.colors[3 * v] - wf[0]) < 1e-6 && Math.abs(ir.colors[3 * v + 1] - wf[1]) < 1e-6 && Math.abs(ir.colors[3 * v + 2] - wf[2]) < 1e-6 && ir.indices.slice(t, t + 3).every(onEnd); });
+    roofEnds(ir, plan.structure.outline); }
   if (L.bay.length >= 3) bayRoof(glass, strips, structure.ironwork, plan, weather);
   // The main and bay roofs' solid bands again, hung 6 cm under the glazing (round 3): from below, the milky panes lay over the bands that
   // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Same batch, so no extra draw.
@@ -1112,11 +1117,17 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
 /** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
 function takeColor(b: Batch, color: Rgb): Batch {
   if (!b.colored || b.textured) throw new Error('takeColor: a coloured batch without UVs');
+  const same = (v: number): boolean => Math.abs(b.colors[3 * v] - color[0]) < 1e-6 && Math.abs(b.colors[3 * v + 1] - color[1]) < 1e-6 && Math.abs(b.colors[3 * v + 2] - color[2]) < 1e-6;
+  return takeWhere(b, t => same(b.indices[t]));
+}
+/** Moves the triangles `pick` chooses (by the index of their first index) out of a coloured batch without UVs, into a new one. */
+function takeWhere(b: Batch, pick: (t: number) => boolean): Batch {
+  if (!b.colored || b.textured) throw new Error('takeWhere: a coloured batch without UVs');
   const out = new Batch({colored: true, uv: false}), keep = {p: [] as number[], n: [] as number[], c: [] as number[], i: [] as number[]};
-  const map = [new Map<number, number>(), new Map<number, number>()], same = (v: number): boolean => Math.abs(b.colors[3 * v] - color[0]) < 1e-6 && Math.abs(b.colors[3 * v + 1] - color[1]) < 1e-6 && Math.abs(b.colors[3 * v + 2] - color[2]) < 1e-6;
+  const map = [new Map<number, number>(), new Map<number, number>()];
   const to = [{p: out.positions, n: out.normals, c: out.colors, i: out.indices}, keep];
   for (let t = 0; t < b.indices.length; t += 3) {
-    const side = same(b.indices[t]) ? 0 : 1, dst = to[side], m = map[side];
+    const side = pick(t) ? 0 : 1, dst = to[side], m = map[side];
     for (const v of b.indices.slice(t, t + 3)) {
       let k = m.get(v);
       if (k === undefined) { k = dst.p.length / 3; m.set(v, k); for (let j = 0; j < 3; j++) { dst.p.push(b.positions[3 * v + j]); dst.n.push(b.normals[3 * v + j]); dst.c.push(b.colors[3 * v + j]); } }
@@ -1126,7 +1137,33 @@ function takeColor(b: Batch, color: Rgb): Batch {
   for (const [a, src] of [[b.positions, keep.p], [b.normals, keep.n], [b.colors, keep.c], [b.indices, keep.i]] as [number[], number[]][]) { a.length = 0; for (const x of src) a.push(x); }
   return out;
 }
-
+/** The main roof's ends: its outline edges that run across the tracks (mostly along z'), at least `PERTH_ROOF_ENDS.min` long. */
+export function mainRoofEnds(main: readonly Pt[]): [Pt, Pt][] {
+  const out: [Pt, Pt][] = [];
+  for (let i = 0; i < main.length; i++) {
+    const a = main[i], c = main[(i + 1) % main.length], dx = Math.abs(c[0] - a[0]), dz = Math.abs(c[1] - a[1]);
+    if (dz > 3 * dx && dz >= PERTH_ROOF_ENDS.min) out.push([a, c]);
+  }
+  return out;
+}
+/** Round 5: the main roof's ends as R-pt1-b shows them from outside, a row of pitched gables (each `width` wide, `rise` high, its apex at
+ *  the roof's edge) over a `band`-deep eaves beam, with iron barge boards; in place of Waverley's flat fascia screen, which from
+ *  pt-platform-4-north read as a flat brown lid 2 m deep. ASSUMED sizes, scaled from R-pt1-b. */
+export const PERTH_ROOF_ENDS = {min: 6, width: 6, rise: 1.6, band: .35, barge: .12} as const;
+function roofEnds(b: Batch, main: readonly Pt[]): void {
+  const E = PERTH_ROOF_ENDS, gable = P('gable'), iron = P('iron'), eaves = P('fascia');
+  for (const [a, c] of mainRoofEnds(main)) {
+    const len = Math.hypot(c[0] - a[0], c[1] - a[1]), n = Math.max(1, Math.round(len / E.width)), p = (t: number): Pt => [a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t];
+    for (let k = 0; k < n; k++) {
+      const q0 = p(k / n), q1 = p((k + 1) / n), qm = p((k + .5) / n), h0 = roofHeight(q0[0]), h1 = roofHeight(q1[0]), hm = roofHeight(qm[0]);
+      const base = Math.min(h0, h1, hm) - E.rise, apex: V3 = [qm[0], hm, qm[1]], v0: V3 = [q0[0], base, q0[1]], v1: V3 = [q1[0], base, q1[1]];
+      b.poly([v0, v1, apex], undefined, {color: gable}); b.poly([apex, v1, v0], undefined, {color: gable});
+      const band: V3[] = [[q0[0], base - E.band, q0[1]], [q1[0], base - E.band, q1[1]], v1, v0];
+      b.poly(band, undefined, {color: eaves}); b.poly([...band].reverse(), undefined, {color: eaves});
+      beam(b, v0, apex, E.barge, E.barge, iron); beam(b, apex, v1, E.barge, E.barge, iron);
+    }
+  }
+}
 /** Nothing may hang lower than this over a track (m over rail): the 4.8 m train envelope the scene test holds, plus 0.1 m. */
 export const PERTH_TRAIN_CLEAR = 4.9;
 /** How far the weathered skin stands over the glazing it covers (m); the polygon offset does the rest at range. */

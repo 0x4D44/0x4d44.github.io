@@ -8,10 +8,11 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
-import { WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
+import { WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
+import { roofHeight, WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const outline = stationOutline(data)!.outer;
@@ -260,7 +261,8 @@ test('round 4: the bands are brown-grey, not black, and the Dundee canopies are 
   try {
     const m = (scene.group.getObjectByName('perth-roof-strips') as THREE.Mesh).material as THREE.MeshLambertMaterial, c = m.color;
     assert.equal(c.getHex(), PERTH_BAND_BROWN);
-    assert.ok(c.r + c.g + c.b > .25 && c.r > c.b, `bands brown-grey (${c.getHexString()}), not near-black`);
+    // Round 5: lighter again, toward R-pt1-a's brown-grey lit from below (round 4's 0x5e544b still read near-black from the platforms).
+    assert.ok(c.r + c.g + c.b > .4 && c.r > c.b, `bands brown-grey (${c.getHexString()}), not dark`);
   } finally { scene.dispose(); }
   const w = batches.weather.positions; let over = 0;
   for (let i = 0; i < w.length; i += 3) if (inRing(toLocal([w[i], w[i + 2]]), plan.local.canopy) && w[i + 1] < PERTH_STATION.canopy.top + PERTH_STATION.canopy.rise + .1) over++;
@@ -284,6 +286,30 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   assert.ok(face >= 32, `two dials (${face})`);
   assert.ok(marks >= 2 * 12 * 24, `twelve hour marks and two hands on each dial (${marks})`);
   for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
+});
+
+test('round 5: the main roof\'s ends are a row of pitched gables (R-pt1-b), not the flat 2 m fascia lid', () => {
+  const E = PERTH_ROOF_ENDS, ends = mainRoofEnds(plan.structure.outline), ir = batches.ironwork, p = ir.positions, col = ir.colors;
+  assert.ok(ends.length >= 2, `both ends (${ends.length})`);
+  const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6; };
+  for (const [a, c] of ends) {
+    const len = Math.hypot(c[0] - a[0], c[1] - a[1]), x = (a[0] + c[0]) / 2, apexes = new Set<string>();
+    const on = (i: number): boolean => ringDistance(toLocal([p[i], p[i + 2]]), [a, c]) < .05;
+    for (let i = 0; i < p.length; i += 3) {
+      if (!on(i)) continue;
+      const q = toLocal([p[i], p[i + 2]]);
+      if (is(i, PERTH_PAINT.gable) && Math.abs(p[i + 1] - roofHeight(q[0])) < .05) apexes.add(`${q[1].toFixed(1)}`);
+    }
+    // Waverley's flat screen: fascia-painted triangles lying wholly on the end, from WAVERLEY_STRUCTURE.fasciaBottom up to the roof
+    // (neighbouring screens only touch the end at a vertex).
+    let low = 0;
+    for (let t = 0; t < ir.indices.length; t += 3) {
+      const vs = ir.indices.slice(t, t + 3).map(v => 3 * v);
+      if (vs.every(on) && vs.every(i => is(i, PERTH_PAINT.fascia)) && vs.some(i => Math.abs(p[i + 1] - WAVERLEY_STRUCTURE.fasciaBottom) < .01) && vs.some(i => Math.abs(p[i + 1] - roofHeight(toLocal([p[i], p[i + 2]])[0])) < .05)) low++;
+    }
+    assert.ok(apexes.size >= Math.max(1, Math.round(len / E.width)), `gables along the end at x' ${x.toFixed(1)} (${apexes.size} apexes)`);
+    assert.equal(low, 0, `no flat fascia screen left along the end at x' ${x.toFixed(1)}`);
+  }
 });
 
 test('round 4: the north bridge as R-pt1-d north: cambered side girders over the train envelope, diamond-lattice stair balustrades; the lift stair thin', () => {
