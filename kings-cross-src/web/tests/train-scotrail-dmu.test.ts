@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, DOT_WHITE, LAMP_170, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, DOT_BLUE, DOT_WHITE, LAMP_170, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -490,4 +490,33 @@ test('ScotRail 170 face: round headlight and tail lenses wholly on the face, in 
     assert.ok(Math.min(...depths) >= 0.18 && Math.max(...depths) <= 0.26, `car ${index}: the brow about 0.2 m deep`);
   }
   disposeScotrailDmu(root);
+});
+
+test('ScotRail DMU wordmark: no plate behind it: the blue dots run on under the lettering, and no white dot comes near it', () => {
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const root = buildScotrailDmu(kind);
+    for (const car of scotrailDmuLayout(kind).cars) {
+      const g = root.getObjectByName(`car-${car.index}`)!;
+      const text = (g.getObjectByName('livery-decals') as THREE.Mesh).geometry.getAttribute('position');
+      const zs: number[] = []; const ys: number[] = [];
+      for (let i = 0; i < text.count; i++) if (text.getX(i) > 0) { zs.push(text.getZ(i)); ys.push(text.getY(i)); }
+      const [z0, z1, y0, y1] = [Math.min(...zs), Math.max(...zs), Math.min(...ys), Math.max(...ys)];
+      const detail = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+      const p = detail.getAttribute('position'); const c = detail.getAttribute('color');
+      // the dots' centres on the +x side (every triangle of a dot's fan starts at its centre), by colour
+      const centres = (hex: number): [number, number][] => {
+        const k = col(hex); const out = new Map<string, [number, number]>();
+        for (let i = 0; i + 2 < p.count; i += 3) {
+          if (p.getX(i) < 0 || Math.abs(c.getX(i) - k.r) > 1e-6 || Math.abs(c.getY(i) - k.g) > 1e-6 || Math.abs(c.getZ(i) - k.b) > 1e-6) continue;
+          out.set(`${p.getY(i).toFixed(4)},${p.getZ(i).toFixed(4)}`, [p.getY(i), p.getZ(i)]);
+        }
+        return [...out.values()];
+      };
+      const under = centres(DOT_BLUE).filter(([y, z]) => y > y0 && y < y1 && z > z0 && z < z1);
+      assert.ok(under.length >= 5, `${kind} car ${car.index}: ${under.length} blue dots under the wordmark`);
+      const nearWhite = centres(DOT_WHITE).filter(([y, z]) => y > y0 - 0.08 && y < y1 + 0.08 && z > z0 - 0.08 && z < z1 + 0.08);
+      assert.equal(nearWhite.length, 0, `${kind} car ${car.index}: white dots by the white lettering`);
+    }
+    disposeScotrailDmu(root);
+  }
 });

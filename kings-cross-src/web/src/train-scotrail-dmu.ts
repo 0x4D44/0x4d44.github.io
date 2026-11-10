@@ -585,10 +585,11 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     boxS(detail, Math.min(x0, x1), Math.max(x0, x1), 2.93, 2.955, car.cab ? noseLen : 0.05, car.length - END_GAP - 0.05, PINSTRIPE);
   }
   // The lettering (web/src/livery.ts atlas): the ScotRail wordmark in white low on each side of every car, a little behind the first
-  // door, in the blue dot field, which keeps clear of it (scotrail170-01, scotrail158-05). Size and place ASSUMED from the photographs.
+  // door and behind the white field's end, over the blue dot field, which runs on under it (scotrail170-01, scotrail158-05: no plate
+  // behind the wordmark; round 2 cleared a navy hole round it). Size and place ASSUMED from the photographs.
   {
     const em = 0.2;
-    const s0 = (plan.doors[0] ?? 3) + dw / 2 + 0.55;
+    const s0 = Math.max((plan.doors[0] ?? 3) + dw / 2 + 0.55, car.cab ? whiteFieldEnd(look, plan) + 0.15 : 0);
     const s1 = s0 + textEms(WORDMARK) * em;
     const y0 = 1.3;
     for (const sx of [-1, 1]) {
@@ -598,7 +599,6 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
       const forward = (Z(s1) > Z(s0)) === (sx < 0);
       textQuad(decals, verts, WORDMARK, forward, [sx, 0, 0], 0xffffff);
     }
-    holes.push([s0 - 0.1, s1 + 0.1, y0 - 0.06, y0 + em + 0.04]);
     marker('lettering', W, y0 + em / 2, (s0 + s1) / 2, { text: WORDMARK, em });
   }
   // where the nose's loft is at (s from the cab end, height y): its half-width, from the ring's outline at that height, and the rake's set-back
@@ -783,6 +783,18 @@ function normaliseV(v: V3): V3 {
   return [v[0] / l, v[1] / l, v[2] / l];
 }
 
+/** The white field's rear limit, metres from the cab end: up to the first door (the 158's door is just behind its cab, and the field wraps round it: scotrail158-05). */
+function whiteFieldRear(look: Look, plan: CarPlanDmu): number {
+  const dw = SCOTRAIL_DMU_FIGURES[look.family].doorWidth.value;
+  const d0 = plan.doors[0] ?? 3;
+  return look.family === 'sprinter158' ? d0 + dw / 2 + 1.1 : d0 - dw / 2 - 0.05;
+}
+/** Where a cab car's white dot field ends (the 170's stops 1.25 m behind the cab side window). */
+function whiteFieldEnd(look: Look, plan: CarPlanDmu): number {
+  const rear = whiteFieldRear(look, plan);
+  return Math.min(rear, look.family === 'turbostar' ? look.cabWindow.s1 + 1.25 : rear);
+}
+
 /**
  * The Saltire dot pattern as round dots laid a few millimetres proud of the side: a field of white dots on the cab's flank behind the
  * front and round the cab side window, shrinking toward the passenger saloon (scotrail170-01, -02; scotrail158-05), and a band of light
@@ -802,15 +814,14 @@ function saltireDots(soup: Soup, car: ScotrailDmuCar, plan: CarPlanDmu, look: Lo
   };
   const dw = SCOTRAIL_DMU_FIGURES[look.family].doorWidth.value;
   const d0 = plan.doors[0] ?? 3;
-  // the field's rear edge: up to the first door (the 158's door is just behind its cab, and the field wraps round it: scotrail158-05)
-  const fieldEnd = look.family === 'sprinter158' ? d0 + dw / 2 + 1.1 : d0 - dw / 2 - 0.05;
+  const fieldEnd = whiteFieldRear(look, plan);
   if (car.cab) {
     // The white field over the whole cab side, from the cab corner (the 170: from round its nose's front corner) back to the first door,
     // cantrail to solebar, its dots largest at the front and shrinking toward the saloon (scotrail170-01, -02; scotrail158-01, -05).
     const { pitch, r0, shrink } = look.whiteDots;
     // (from the cab end: the face stands END_GAP back; the 158's yellow wraps the first 0.32 m of its nose)
     const s0 = END_GAP + (look.family === 'turbostar' ? 0.3 : 0.38);
-    const s1 = Math.min(fieldEnd, look.family === 'turbostar' ? look.cabWindow.s1 + 1.25 : fieldEnd);
+    const s1 = whiteFieldEnd(look, plan);
     for (let s = s0, col_ = 0; s < s1; s += pitch * 0.87, col_++) {
       for (let y = 1.1 + (col_ % 2) * pitch / 2; y < look.wallTop - 0.06; y += pitch) {
         const t = (s - s0) / (s1 - s0);
