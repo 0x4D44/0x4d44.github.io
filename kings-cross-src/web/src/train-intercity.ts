@@ -202,6 +202,7 @@ function voyagerCuts(car: IntercityCar): Cut[] {
   return [
     ...cuts,
     (_s, y) => y - 0.95,
+    (_s, y) => y - 2.0,
     (s, y) => s - vYellowEdge(y),
     (s) => s - V_YELLOW_ROOF,
     (s) => s - V_PIN_TOP[0],
@@ -234,9 +235,9 @@ const VOYAGER_BODY: BodyDef = {
     { name: 'coupler-recess', outline: roundedRect(-0.42, 0.42, 0.56, 0.96, 0.04, 2), lift: 0.003, colour: 0x111214 },
     // the pods stand proud of the face, smoked domes about 0.1 m deep (xc220-03); each lens lies on the dome's skin
     { name: 'lamp-pod', outline: [], lift: 0, colour: POD_GLASS, mirror: true, dome: { cx: 0.95, cy: 1.3, rx: 0.24, ry: 0.29, h: 0.1 } },
-    { name: 'headlight', outline: ellipse(0.97, 1.21, 0.1, 0.1, 16), lift: 0.098, lens: 'head', mirror: true },
-    { name: 'tail-lamp', outline: ellipse(0.88, 1.45, 0.055, 0.055, 14), lift: 0.085, lens: 'tail', mirror: true },
-    { name: 'marker', outline: ellipse(1.05, 1.43, 0.04, 0.04, 12), lift: 0.083, lens: 'marker', mirror: true },
+    { name: 'headlight', outline: ellipse(0.97, 1.21, 0.1, 0.1, 16), lift: 0, lens: 'head', mirror: true },
+    { name: 'tail-lamp', outline: ellipse(0.86, 1.45, 0.055, 0.055, 14), lift: 0, lens: 'tail', mirror: true },
+    { name: 'marker', outline: ellipse(1.0, 1.43, 0.035, 0.035, 12), lift: 0, lens: 'marker', mirror: true },
     // a pale grab rail under the screen (xc220-03)
     { name: 'grab-rail', outline: roundedRect(-0.42, 0.42, 2.02, 2.06, 0.015, 2), lift: 0.004, colour: 0xa9adb3 },
   ],
@@ -285,40 +286,40 @@ const H_CROWN = HST.height.value - 0.02;
 const H_WALL = 3.0;
 
 /**
- * The Class 43's nose, read off scotrail-hst-03 (side 3/4) and scotrail-hst-04 against the published 3.90 m: a low, blunt lower front about 1.25 m tall leaning back,
- * the lamps and the grille along its top at about 1.55 m; the long bonnet rising from 1.75 m to the windscreen's foot (2.85 m, 2.1 m back), the glass raked to 3.45 m
- * at 2.95 m, and the cab roof easing into the crown by 4.2 m. ASSUMED to about 0.1 m.
+ * The Class 43's nose, read off scotrail-hst-03 (side 3/4) and scotrail-hst-04 (head on) against the published 3.90 m: a low, blunt navy wedge about 1.2 m tall
+ * leaning back, the lamps and the grille along its top at about 1.5 m; over it the yellow panel, flat and steep (about 55 degrees), from 1.72 m at the tip to the
+ * cab roof's edge at 3.3 m 1.3 m back, the screen in its upper half; then the cab roof easing into the crown by 3.0 m. ASSUMED to about 0.1 m.
  */
 const CLASS43_NOSE: NoseSpec = {
-  length: 4.2,
+  length: 3.0,
   knots: [
-    { s: 0, top: 1.78, ws: 0.88, bottom: 0.52 },
-    { s: 0.3, top: 1.98, ws: 0.93, bottom: 0.52 },
-    { s: 0.9, top: 2.32, ws: 0.97, bottom: 0.56 },
-    { s: 1.6, top: 2.64, ws: 0.99, bottom: 0.66 },
-    { s: 2.1, top: 2.86, ws: 1, bottom: 0.76 },
-    { s: 2.95, top: 3.45, ws: 1, bottom: 0.92 },
-    { s: 3.55, top: 3.74, ws: 1, bottom: H_FLOOR - 0.02 },
-    { s: 4.2, top: H_CROWN, ws: 1, bottom: H_FLOOR },
+    { s: 0, top: 1.72, ws: 0.9, bottom: 0.55 },
+    { s: 0.25, top: 1.95, ws: 0.95, bottom: 0.56 },
+    { s: 0.6, top: 2.38, ws: 0.98, bottom: 0.62 },
+    { s: 0.95, top: 2.82, ws: 1, bottom: 0.72 },
+    { s: 1.3, top: 3.3, ws: 1, bottom: 0.85 },
+    { s: 1.7, top: 3.62, ws: 1, bottom: 1.0 },
+    { s: 2.3, top: 3.82, ws: 1, bottom: H_FLOOR - 0.02 },
+    { s: 3.0, top: H_CROWN, ws: 1, bottom: H_FLOOR },
   ],
   fillet: 0.32,
   filletLoss: 0.2,
   filletSteps: 9,
-  roundLen: 3.8,
+  roundLen: 2.7,
   widest: 0.42,
   boxiness: 3.2,
   rake: { lean: 0.42, from: 0.52, reach: 1.25 },
 };
 
-/** The Class 43's screen on the bonnet (s from the tip): large and in the middle of the yellow (scotrail-hst-04 head on: from about 2.6 m to 3.4 m, about 0.75 of
- * the cab's width at its foot, a little less at its head). ASSUMED. */
-const H_SCREEN = { s0: 1.45, s1: 2.9, foot: 1.0, head: 0.9, frame: 0.07 };
+/** The Class 43's screen in the upper half of the yellow panel (s from the tip): from about 2.55 m to 3.3 m, with about as much yellow below it as its own
+ * height (scotrail-hst-04 head on), about 0.7 of the cab's width at its foot, a little less at its head. ASSUMED. */
+const H_SCREEN = { s0: 0.74, s1: 1.28, foot: 0.95, head: 0.86, frame: 0.07 };
 const hScreenHalf = (s: number): number => lerp(H_SCREEN.foot, H_SCREEN.head, (s - H_SCREEN.s0) / (H_SCREEN.s1 - H_SCREEN.s0));
 /** Navy below this height all round the nose, the lamps and grille in it; yellow above (scotrail-hst-04: a near-horizontal edge just over the lamps). */
 const H_NAVY_TOP = 1.72;
 /** The yellow wraps the cab side back to here, short of the cab side window; over the roof it runs this far behind the screen. ASSUMED. */
-const H_YELLOW_SIDE = 2.65;
-const H_YELLOW_ROOF = H_SCREEN.s1 + 0.2;
+const H_YELLOW_SIDE = 1.95;
+const H_YELLOW_ROOF = H_SCREEN.s1 + 0.18;
 const H_ROOF = H_WALL + 0.32;
 /** The navy foot under the grey, on the power car's rear and every coach (scotrail-hst-06). ASSUMED height. */
 const SR_FOOT = 1.42;
@@ -350,7 +351,7 @@ export function skylineHeight(t: number): number {
 
 function class43Paint(_car: IntercityCar, s: number, y: number, ax: number): number {
   const f = H_SCREEN.frame;
-  if (y > 2.2 && s > H_SCREEN.s0 - f && s < H_SCREEN.s1 + f) {
+  if (y > 2.1 && s > H_SCREEN.s0 - f && s < H_SCREEN.s1 + f) {
     const h = hScreenHalf(s);
     if (ax < h && s > H_SCREEN.s0 && s < H_SCREEN.s1) return GLASS;
     if (ax < h + f) return FRAME;
@@ -373,7 +374,7 @@ const class43Cuts = (car: IntercityCar): Cut[] => {
   if (!car.cab) return cuts;
   return [
     ...cuts,
-    (_s, y) => y - H_NAVY_TOP, (s) => s - H_YELLOW_SIDE, (s) => s - H_YELLOW_ROOF,
+    (_s, y) => y - H_NAVY_TOP, (_s, y) => y - 2.1, (s) => s - H_YELLOW_SIDE, (s) => s - H_YELLOW_ROOF,
     (s) => s - H_SCREEN.s0, (s) => s - H_SCREEN.s1, (s) => s - (H_SCREEN.s0 - f), (s) => s - (H_SCREEN.s1 + f),
     (s, _y, x) => x - hScreenHalf(s), (s, _y, x) => x + hScreenHalf(s), (s, _y, x) => x - hScreenHalf(s) - f, (s, _y, x) => x + hScreenHalf(s) + f,
   ];
@@ -392,12 +393,12 @@ const CLASS43_BODY: BodyDef = {
   face: [
     // ASSUMED, from scotrail-hst-04 head on: the dark air grille between the lamps, and each side two round lamps side by side in dark bezels, the headlight
     // outboard, a small marker over the pair
-    { name: 'grille', outline: roundedRect(-0.3, 0.3, 1.4, 1.6, 0.02, 2), lift: 0.003, colour: 0x121316 },
-    { name: 'lamp-bezel', outline: ellipse(0.66, 1.5, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
-    { name: 'lamp-bezel', outline: ellipse(0.45, 1.5, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
-    { name: 'headlight', outline: ellipse(0.66, 1.5, 0.08, 0.08, 16), lift: 0.008, lens: 'head', mirror: true },
-    { name: 'tail-lamp', outline: ellipse(0.45, 1.5, 0.08, 0.08, 16), lift: 0.008, lens: 'tail', mirror: true },
-    { name: 'marker', outline: ellipse(0.555, 1.615, 0.028, 0.028, 10), lift: 0.006, lens: 'marker', mirror: true },
+    { name: 'grille', outline: roundedRect(-0.3, 0.3, 1.34, 1.53, 0.02, 2), lift: 0.003, colour: 0x121316 },
+    { name: 'lamp-bezel', outline: ellipse(0.66, 1.43, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
+    { name: 'lamp-bezel', outline: ellipse(0.45, 1.43, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
+    { name: 'headlight', outline: ellipse(0.66, 1.43, 0.08, 0.08, 16), lift: 0.008, lens: 'head', mirror: true },
+    { name: 'tail-lamp', outline: ellipse(0.45, 1.43, 0.08, 0.08, 16), lift: 0.008, lens: 'tail', mirror: true },
+    { name: 'marker', outline: ellipse(0.555, 1.27, 0.032, 0.032, 12), lift: 0.006, lens: 'marker', mirror: true },
   ],
   noseCoupler: null,
   // the HST's buckeye couplers (not a Dellner head) between its vehicles: ASSUMED proportions
@@ -410,11 +411,11 @@ const CLASS43_BODY: BodyDef = {
     return Math.max((1 - t) * (H_WALL - 0.02 - SR_FOOT), 1.6 * skylineHeight(t));
   } } : null),
   // one wiper parked across the screen's foot (scotrail-hst-04): ASSUMED length
-  wipers: [[[1.65, 0.15], [2.25, 0.7]]],
+  wipers: [[[0.8, 0.12], [1.18, 0.62]]],
   // the cab side window behind the screen's corner (scotrail-hst-03): ASSUMED 0.67 m by 0.58 m
-  cabWindow: { kind: 'box', s0: 2.78, s1: 3.42, y0: 2.4, y1: 2.98 },
+  cabWindow: { kind: 'box', s0: 2.06, s1: 2.7, y0: 2.4, y1: 2.98 },
   // the cab door just behind the yellow, navy with a tall window (scotrail-hst-03); no passenger doors
-  doors: () => [{ s: 3.95, width: 0.68, crew: true, colour: SR.navy }],
+  doors: () => [{ s: 3.2, width: 0.68, crew: true, colour: SR.navy }],
   windows: () => [],
   windowY: [2.0, 2.7],
   doorY: [H_FLOOR + 0.02, 2.98],
@@ -596,6 +597,23 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     const faceN: V3 = wn(unit([0, lean, -1]));
     const run = Math.hypot(1, lean);
     const onFace = (poly: [number, number][], lift: number): V3[] => poly.map(([x, y]): V3 => world([x * dir, y, tip + setBack(tip, y) - lift * run]));
+    // how far a dome on the face stands out at (x, y), so a shape laid over a dome rides 6 mm off its skin at every vertex
+    const domes = b.face.flatMap((f) => (f.dome ? (f.mirror ? [f.dome, { ...f.dome, cx: -f.dome.cx }] : [f.dome]) : []));
+    const domeAt = (x: number, y: number): number => Math.max(0, ...domes.map((d) => {
+      const r = ((x - d.cx) / d.rx) ** 2 + ((y - d.cy) / d.ry) ** 2;
+      return r < 1 ? d.h * Math.sqrt(1 - r) : 0;
+    }));
+    const onFaceOver = (poly: [number, number][], lift: number): V3[] => poly.map(([x, y]): V3 => {
+      const l = Math.max(lift, domeAt(x, y) > 0 ? domeAt(x, y) + 0.006 : 0);
+      return world([x * dir, y, tip + setBack(tip, y) - l * run]);
+    });
+    // a shape fanned from its own centre, lifted there too (the mean of a lifted rim lies under a dome's crown, and the dome showed through it)
+    const fanOver = (poly: [number, number][], lift: number, c: THREE.Color): void => {
+      const centre: [number, number] = [poly.reduce((s, p) => s + p[0], 0) / poly.length, poly.reduce((s, p) => s + p[1], 0) / poly.length];
+      const [C] = onFaceOver([centre], lift) as [V3];
+      const rim = onFaceOver(poly, lift);
+      for (let k = 0; k < rim.length; k++) detail.tri([C, rim[k] as V3, rim[(k + 1) % rim.length] as V3], [faceN, faceN, faceN], c);
+    };
     let below = -Infinity;
     for (const [topY, colour] of b.faceBands) {
       const band = clipConvex(outline, [[-9, below === -Infinity ? -9 : below], [9, below === -Infinity ? -9 : below], [9, topY], [-9, topY]]);
@@ -631,7 +649,7 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
           const look = lensLook(shape.lens, lampMode);
           const v0 = detail.glow.length;
           detail.emit = look.glow;
-          detail.fan(onFace(poly, shape.lift), faceN, col(look.hex));
+          fanOver(poly, shape.lift, col(look.hex));
           detail.emit = 0;
           lenses.push({ role: shape.lens, v0, v1: detail.glow.length });
           if (shape.lens === 'head') {
@@ -643,13 +661,13 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
             m.userData = { side: cx * dir > 0 ? 'right' : 'left' };
             group.add(m);
           }
-        } else detail.fan(onFace(poly, shape.lift), faceN, col(shape.colour ?? 0));
+        } else fanOver(poly, shape.lift, col(shape.colour ?? 0));
       }
     }
     if (b.noseCoupler) {
       const y = 0.8;
       const wall = tip + setBack(tip, y);
-      couplerHalf(detail, Z(wall), (-dir) as 1 | -1, wall, y, b.noseCoupler);
+      dellnerNose(detail, Z(wall), (-dir) as 1 | -1, wall, y);
       const m = new THREE.Object3D();
       m.name = 'nose-coupler';
       m.position.set(0, y, Z(wall / 2));
@@ -879,6 +897,46 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     group.add(m);
   }
   return group;
+}
+
+/**
+ * The Voyager's nose coupler, a Dellner automatic head (xc220-03, xc220-02): a dark draft-gear housing at the face, a steel shank, and at the car's end the
+ * square head with its face plate, the cone and the funnel; a yellow-painted tube lying across the top of the head and a yellow block beside it, two air
+ * hoses and the electrical box under the head. Everything stops at the car's end. ASSUMED sizes.
+ */
+function dellnerNose(soup: Soup, zFace: number, out: 1 | -1, reach: number, y: number): void {
+  const dark = col(0x24272b);
+  const steel = col(0x4c5056);
+  const plate = col(0x60646b);
+  const yellow = col(0xe8b812);
+  const hose = col(0x111214);
+
+  const span = (a: number, b: number): [number, number] => {
+    const p = zFace + out * a;
+    const q = zFace + out * b;
+    return [Math.min(p, q), Math.max(p, q)];
+  };
+  const box = (x0: number, x1: number, y0: number, y1: number, a: number, b: number, c: THREE.Color): void => {
+    const [z0, z1] = span(a, b);
+    soup.box(x0, x1, y0, y1, z0, z1, c);
+  };
+  box(-0.13, 0.13, y - 0.11, y + 0.11, 0, 0.14, dark);
+  box(-0.07, 0.07, y - 0.07, y + 0.07, 0.14, reach - 0.14, steel);
+  box(-0.19, 0.19, y - 0.17, y + 0.17, reach - 0.14, reach - 0.012, dark);
+  box(-0.19, 0.19, y - 0.17, y + 0.17, reach - 0.012, reach - 0.004, plate);
+  // the funnel (a dark square in the plate) and the cone's boss beside it, both within the plate
+  box(-0.15, -0.03, y - 0.06, y + 0.06, reach - 0.006, reach, hose);
+  box(0.04, 0.15, y - 0.05, y + 0.05, reach - 0.05, reach, steel);
+  // the yellow tube across the head's top, and the yellow block on its far side
+  const [tz0, tz1] = span(reach - 0.2, reach - 0.06);
+  const tube = ellipse((tz0 + tz1) / 2, y + 0.25, (tz1 - tz0) / 2, 0.07, 12);
+  soup.prismX(tube, 0.06, -0.46, yellow);
+  soup.prismX(tube, -0.46, 0.06, yellow, false);
+  box(0.08, 0.3, y + 0.17, y + 0.31, reach - 0.18, reach - 0.04, yellow);
+  // the air hoses and the electrical box under the head
+  for (const x of [-0.12, 0.12]) box(x - 0.025, x + 0.025, y - 0.42, y - 0.17, reach - 0.1, reach - 0.05, hose);
+  box(-0.17, 0.17, y - 0.33, y - 0.18, reach - 0.3, reach - 0.12, dark);
+
 }
 
 /** The HST's buckeye coupler, one car's half: a round shank from the headstock and, at the gap's middle, the knuckle head, taller than wide, its jaw to one side. ASSUMED sizes. */

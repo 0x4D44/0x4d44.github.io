@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { HST, INTERCITY_KINDS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import { checkEdinburghRows } from '../../core/train-neutral.ts';
 import { EDINBURGH_FLEET, edinburghFleetRow } from '../src/edinburgh-fleet.ts';
-import { buildIntercityTrain, disposeIntercityTrain, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
+import { buildIntercityTrain, disposeIntercityTrain, INTERCITY_BODIES, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
 import { col, plain } from '../src/train-geom.ts';
 import { lensLook, setTrainLampState } from '../src/train.ts';
 
@@ -225,4 +225,54 @@ test('intercity couplers meet: at every joint the two coupler heads touch within
       assert.ok(Math.abs(headA - a.end) <= 0.01, `${kind} joint ${i}/${i + 1}: they meet at the cars' common end ${a.end}, not ${headA.toFixed(3)}`);
     }
   }
+});
+
+test('every lamp lens is drawn whole: its area is its outline\'s, not a crescent clipped by the face or sunk in a pod', () => {
+  const area3 = (pos: THREE.BufferAttribute, v0: number, v1: number): number => {
+    let a = 0;
+    for (let v = v0; v < v1; v += 3) {
+      const p = [0, 1, 2].map((k) => new THREE.Vector3(pos.getX(v + k), pos.getY(v + k), pos.getZ(v + k)));
+      a += p[1]!.clone().sub(p[0]!).cross(p[2]!.clone().sub(p[0]!)).length() / 2;
+    }
+    return a;
+  };
+  const area2 = (poly: [number, number][]): number => Math.abs(poly.reduce((a, p, i) => { const q = poly[(i + 1) % poly.length]!; return a + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+  for (const kind of ['xc220x4', 'srhstx4'] as const) {
+    const root = buildIntercityTrain(kind);
+    const car = intercityLayout(kind).cars[0]!;
+    const detail = (root.getObjectByName('car-0') as THREE.Group).getObjectByName('body-detail') as THREE.Mesh;
+    const lenses = detail.userData.lamps.lenses as { role: string; v0: number; v1: number }[];
+    const shapes = INTERCITY_BODIES[car.body].face.filter((f) => f.lens).flatMap((f) => (f.mirror ? [f, f] : [f]));
+    assert.equal(lenses.length, shapes.length, kind);
+    lenses.forEach((l, i) => {
+      const want = area2(shapes[i]!.outline);
+      const got = area3(detail.geometry.getAttribute('position') as THREE.BufferAttribute, l.v0, l.v1);
+      // a lens on a flat face leans with it, one on a pod follows its curve (more area toward the pod's steep edge): never less than its outline
+      assert.ok(got >= want * 0.98 && got <= want * 1.4, `${kind} ${l.role} lens ${i}: area ${got.toFixed(5)} against its outline's ${want.toFixed(5)}`);
+    });
+  }
+});
+
+test('the Class 43 screen sits in the upper half of the yellow panel, with yellow below it, and the Voyager nose has a Dellner head with its yellow fittings', () => {
+  const root = buildIntercityTrain('srhstx4');
+  const glass = (root.getObjectByName('car-0') as THREE.Group).getObjectByName('cab-glass') as THREE.Mesh;
+  const pos = glass.geometry.getAttribute('position');
+  let lo = Infinity; let hi = -Infinity;
+  for (let v = 0; v < pos.count; v++) if (Math.abs(pos.getX(v)) < 0.9) { lo = Math.min(lo, pos.getY(v)); hi = Math.max(hi, pos.getY(v)); }
+  // scotrail-hst-04: the navy band tops out at 1.72 m, the yellow panel reaches the cab roof at about 3.3 m; the screen is its upper half and about 0.75 m tall
+  assert.ok(lo > 2.4 && lo < 2.7, `screen foot ${lo.toFixed(2)}`);
+  assert.ok(hi > 3.15 && hi < 3.4, `screen head ${hi.toFixed(2)}`);
+  assert.ok(hi - lo > 0.6, `screen height ${(hi - lo).toFixed(2)}`);
+  const xc = buildIntercityTrain('xc220x4');
+  const detail = (xc.getObjectByName('car-0') as THREE.Group).getObjectByName('body-detail') as THREE.Mesh;
+  const rgb = detail.geometry.getAttribute('color');
+  const dp = detail.geometry.getAttribute('position');
+  const yellow = col(0xe8b812);
+  let fittings = 0;
+  for (let v = 0; v < rgb.count; v++) {
+    if (Math.abs(rgb.getX(v) - yellow.r) > 1e-6 || Math.abs(rgb.getY(v) - yellow.g) > 1e-6 || Math.abs(rgb.getZ(v) - yellow.b) > 1e-6) continue;
+    assert.ok(dp.getZ(v) >= -0.001 && dp.getZ(v) < 0.36 && dp.getY(v) < 1.3, `a yellow fitting at z ${dp.getZ(v)}, y ${dp.getY(v)} is on the coupler`);
+    fittings++;
+  }
+  assert.ok(fittings >= 24, `yellow coupler fittings: ${fittings} vertices`);
 });
