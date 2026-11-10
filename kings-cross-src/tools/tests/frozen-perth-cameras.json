@@ -55,6 +55,34 @@
     "fov": 55,
     "source": "OSM platform 4 at its north end (z -300), eye 1.6 m above deck, looking south down the station along the through lines"
   },
+  "pt-platform-4-clock": {
+    "pos": [
+      -44.44,
+      2.515,
+      -17.78
+    ],
+    "target": [
+      -10.48,
+      4,
+      11.74
+    ],
+    "fov": 60,
+    "source": "OSM platform 4 (way/44200505) at track-frame x' -28 (perth-station-structure.ts), eye 1.6 m above the ASSUMED 0.915 m deck, looking south-east down the platform at the island building's platform 4 bracket clock (R-pt1-a2) about 24 m ahead and the Dundee canopies over platforms 1 and 2 beyond. Lead ruling 2026-11-10 13:02"
+  },
+  "pt-north-footbridge": {
+    "pos": [
+      -14.38,
+      2.515,
+      15.88
+    ],
+    "target": [
+      -39.69,
+      4,
+      -32.33
+    ],
+    "fov": 60,
+    "source": "OSM platform 3 (way/44200499) at track-frame x' 14 (perth-station-structure.ts), about 30 m south of the north (lattice) footbridge's deck, eye 1.6 m above the ASSUMED 0.915 m deck, looking north along the tracks at the deck crossing and its stairs to platforms 3 and 4, as Sheppard 2018 \"footbridge south\" (R-pt1-d) frames it. Lead ruling 2026-11-10 13:02"
+  },
   "pt-station-frontage": {
     "pos": [
       -6.1,
