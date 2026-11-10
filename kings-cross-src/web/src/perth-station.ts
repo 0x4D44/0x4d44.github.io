@@ -24,7 +24,7 @@ export const PERTH_LEVELS = {...WAVERLEY_LEVELS, deckTop: -.3, deckDepth: 1.2, d
 export const onBridge = (tags: Record<string, string>): boolean => !!tags.bridge && tags.bridge !== 'no';
 /** The surface track segments, split into those on the ground and those on a mapped bridge. */
 /** The covered platforms' concrete (R-pt1-d north: smooth grey with fine joints). ASSUMED shade. */
-export const PERTH_CONCRETE = 0xaeaca6;
+export const PERTH_CONCRETE = 0x9a9b99;
 /** The platform surfaces' detail maps (round 4), multiplied over the material colour; UVs are world metres (fillSurface). Built as data
  *  (deterministic hash noise), so they need no canvas: 'asphalt' a fine grain over a 2 m tile; 'concrete' a faint grain with a 2 mm
  *  joint every 1.5 m both ways. ASSUMED scales. Cached per kind, as stationTexture's are: the scene disposes its materials, not their
@@ -38,7 +38,7 @@ export function perthSurfaceTexture(kind: 'asphalt' | 'concrete'): THREE.DataTex
   const every = Math.round(n * T.joint / tile);
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const grain = kind === 'asphalt' ? .86 + .14 * hash(x, y) : .95 + .05 * hash(x, y);
-    const joint = kind === 'concrete' && (x % every === 0 || y % every === 0) ? .78 : 1, v = Math.round(255 * grain * joint), k = 4 * (y * n + x);
+    const joint = kind === 'concrete' && (x % every === 0 || y % every === 0) ? .86 : 1, v = Math.round(255 * grain * joint), k = 4 * (y * n + x);
     data[k] = data[k + 1] = data[k + 2] = v; data[k + 3] = 255;
   }
   const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
