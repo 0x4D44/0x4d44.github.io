@@ -20,11 +20,14 @@ const lidar=new Map<string,{height:number;median:number}>();
  for(const d of file.ids.way){id+=d;put(`way/${id}`);}for(const r of file.ids.relation)put(`relation/${r}`);}
 export const LIDAR_HEIGHTS:ReadonlyMap<string,{height:number;median:number}>=lidar;
 const area=(r:readonly Pt[])=>{let s=0;for(let i=0;i<r.length;i++){const a=r[i],b=r[(i+1)%r.length];s+=a[0]*b[1]-b[0]*a[1];}return Math.abs(s)/2;};
+/** A tiny block: a building (not a part) on under TINY_AREA m2 with no OSM height or levels. */
+export const tinyBlock=(b:{outer:readonly Pt[];minHeight:number;heightBasis:string;tags?:Readonly<Record<string,string>>}):boolean=>
+ b.heightBasis.startsWith('ASSUMED 12m')&&b.minHeight===0&&!b.tags?.['building:part']&&area(b.outer)<TINY_AREA;
 /** The height a block is drawn at, with its basis: OSM's where mapped, else LiDAR's where usable, else the ASSUMED fallback. */
 export function cityHeight(b:{id:string;outer:readonly Pt[];height:number;minHeight:number;heightBasis:string;tags?:Readonly<Record<string,string>>}):{height:number;basis:'OSM'|'LiDAR'|'ASSUMED'}{
  if(!b.heightBasis.startsWith('ASSUMED'))return {height:b.height,basis:'OSM'};
  const l=lidar.get(b.id);
- if(b.heightBasis.startsWith('ASSUMED 12m')&&b.minHeight===0&&!b.tags?.['building:part']&&area(b.outer)<TINY_AREA)return {height:TINY_HEIGHT,basis:'ASSUMED'};
+ if(tinyBlock(b))return {height:TINY_HEIGHT,basis:'ASSUMED'};
  if(!l||b.minHeight>0||area(b.outer)<LIDAR_MIN_AREA||b.outer.some(([x,z])=>x<EXTENT.x0||x>EXTENT.x1||z<EXTENT.z0||z>EXTENT.z1))return {height:b.height,basis:'ASSUMED'};
  const height=l.height-l.median>LIDAR_TOWER?l.median+LIDAR_TOWER_RISE:l.height;
  return {height:Math.max(2.5,Math.round(height*10)/10),basis:'LiDAR'};

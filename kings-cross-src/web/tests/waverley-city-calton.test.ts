@@ -5,13 +5,14 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import {buildWaverleyScene} from '../src/waverley-scene.ts';
-import {Footprints,placeTrees,mownLawns} from '../src/waverley-city-ground.ts';
+import {Footprints,placeTrees,mownLawns,LANDUSE} from '../src/waverley-city-ground.ts';
 import {governorsHouse,roundBays} from '../src/waverley-city-monuments.ts';
-import {cityHeight} from '../src/waverley-city-heights.ts';
-import {buildWaverleyCityLandmarks,SCOTT_GALLERY,SCOTT_TIERS} from '../src/waverley-city.ts';
-import {Batch} from '../src/materials.ts';
+import {cityHeight,tinyBlock} from '../src/waverley-city-heights.ts';
+import {buildWaverleyCityLandmarks,SCOTT_GALLERY,SCOTT_TIERS,WAVERLEY_CITY_STONE,WAVERLEY_CITY_ASHLAR,TINY_CLIFF_IDS,onCliff} from '../src/waverley-city.ts';
+import {Batch,TEXTURES,CITY_TEXTURES} from '../src/materials.ts';
 import {unpackWaverleyScene} from '../../core/waverley-data.ts';
 import sceneFile from '../src/data/waverley-scene.json' with {type:'json'};
+import cityData from '../src/data/waverley-city.json' with {type:'json'};
 
 const data=unpackWaverleyScene(sceneFile);
 const flat={heightAt:()=>0,rangeUnder:()=>({min:0,max:0,mean:0})};
@@ -27,6 +28,22 @@ test('Calton Hill’s south face is a hanging wood: crowns close enough to meet,
   // each tree's nearest neighbour is within its own and that one's crown reach plus 1 m: a canopy, not dots
   const apart=face.filter(t=>!face.some(q=>q!==t&&Math.hypot(q.x-t.x,q.z-t.z)<t.crown+q.crown+1)).length;
   assert.ok(apart<=face.length*.1,`${apart} of ${face.length} crowns stand alone`);
+ }finally{scene.dispose();}
+});
+
+test('a walk keeps its outlook: no hanging-wood tree within 15 m of a mapped path stands more than 1.5 m over the path',()=>{
+ const scene=buildWaverleyScene({lighting:false});
+ try{
+  const trees=placeTrees(scene.terrain,new Footprints([...data.buildings,...data.roofs].map(b=>b.outer)));
+  const hanging=trees.filter(t=>t.hanging);assert.ok(hanging.length>500,`${hanging.length} hanging-wood trees`);
+  let checked=0;
+  for(const t of hanging){let best=15,at:Pt|undefined;
+   for(const l of LANDUSE.paths)for(let i=1;i<l.line.length;i++){const a=l.line[i-1],b=l.line[i],dx=b[0]-a[0],dz=b[1]-a[1],u=Math.max(0,Math.min(1,((t.x-a[0])*dx+(t.z-a[1])*dz)/(dx*dx+dz*dz||1))),p:Pt=[a[0]+u*dx,a[1]+u*dz],d=Math.hypot(t.x-p[0],t.z-p[1]);if(d<best){best=d;at=p;}}
+   if(!at)continue;checked++;assert.ok(t.y+t.height<=scene.terrain.heightAt(at[0],at[1])+1.5+1e-9,`a tree at ${t.x.toFixed(0)},${t.z.toFixed(0)} overtops its path`);}
+  assert.ok(checked>50,`${checked} trees beside paths, below them`);
+  // the summit scrub west of the Dugald Stewart Monument's walk (round 4: 6-8 m trees there closed the view west) is gorse
+  assert.ok(!trees.some(t=>t.kind==='wood'&&Math.hypot(t.x-352,t.z+292)<12),'no wood on the summit knoll beside the walk');
+  assert.ok(trees.some(t=>t.kind==='scrub'&&Math.hypot(t.x-352,t.z+292)<12),'gorse there instead');
  }finally{scene.dispose();}
 });
 
@@ -69,6 +86,21 @@ test('the Scott galleries are arcades: three pointed lancets with mullions betwe
  }finally{built.dispose();}
 });
 
+test('each Scott tier corner is a cluster of pinnacles: a 3.5 m head and two 2.3 m lesser ones, on each of the four corners',()=>{
+ const built=buildWaverleyCityLandmarks(flat);
+ try{
+  const pos=(built.group.getObjectByName('waverley-scott-monument') as THREE.Mesh).geometry.getAttribute('position');
+  const apexes=(y:number)=>{const s=new Set<string>();for(let i=0;i<pos.count;i++)if(Math.abs(pos.getY(i)-y)<1e-6)s.add(`${pos.getX(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`);return s.size;};
+  // the head pinnacles on the spire part's wall top (21.11 m) and every tier top; the lesser ones on each ledge below a tier above
+  for(const y of [21.11,29,38,46,52])assert.equal(apexes(y+3.5),4,`head pinnacles over ${y} m`);
+  const spire=cityData.scott.parts.find(p=>p.id==='way/445166834')!.ring as Pt[],c=spire.reduce((a,p)=>[a[0]+p[0]/spire.length,a[1]+p[1]/spire.length],[0,0]),scaled=(k:number)=>spire.map(p=>[c[0]+(p[0]-c[0])*k,c[1]+(p[1]-c[1])*k] as Pt);
+  // tier plan scales .86, .7, .55, .42 on the OSM spire part (SCOTT_TIERS)
+  [[21.11,1,.86],[29,.86,.7],[38,.7,.55],[46,.55,.42]].forEach(([y,lower,upper])=>{assert.equal(apexes(y+2.3),8,`lesser pinnacles over ${y} m`);
+   for(let i=0;i<pos.count;i++)if(Math.abs(pos.getY(i)-y-2.3)<1e-6)assert.ok(pip(pos.getX(i),pos.getZ(i),scaled(lower))&&!pip(pos.getX(i),pos.getZ(i),scaled(upper)),`a lesser pinnacle over ${y} m stands on its ledge`);});
+  assert.equal(apexes(52+2.3),0,'no ledge round the last tier, under the spire');
+ }finally{built.dispose();}
+});
+
 test('a tiny footprint with no height is one storey, not a 12 m post; a tiny building:part keeps its height up on its building',()=>{
  for(const id of ['way/258095237','way/258095246']){const b=data.buildings.find(q=>q.id===id)!;assert.ok(b,id);assert.deepEqual(cityHeight(b),{height:3,basis:'ASSUMED'},`${id} on Castle Rock`);}
  const sq=(w:number):Pt[]=>[[0,0],[w,0],[w,w],[0,w]];
@@ -76,4 +108,26 @@ test('a tiny footprint with no height is one storey, not a 12 m post; a tiny bui
  assert.equal(cityHeight({...base,outer:sq(1.9),tags:{building:'yes'}}).height,3,'3.6 m2');
  assert.equal(cityHeight({...base,outer:sq(1.9),tags:{'building:part':'yes'}}).height,12,'a part');
  assert.equal(cityHeight({...base,outer:sq(2.1),tags:{building:'yes'}}).height,12,'4.4 m2: the fallback');
+});
+
+test('a tiny unmeasured block on a cliff face is not drawn; one on ordinary ground is',()=>{
+ const scene=buildWaverleyScene({lighting:false});
+ try{
+  const drawn=new Set(scene.buildingIds);
+  // way/258095237 (Castle summit edge, ground about 55 degrees) and way/258095246 (west face, about 62): the round 3-4 post and fleck
+  for(const id of ['way/258095237','way/258095246'])assert.ok(!drawn.has(id),`${id} on Castle Rock's face`);
+  // the rule over the real terrain finds exactly these two, and the listed omissions are the rule's
+  assert.deepEqual(data.buildings.filter(b=>onCliff(b,scene.terrain)).map(b=>b.id),['way/258095237','way/258095246']);
+  assert.deepEqual([...TINY_CLIFF_IDS],['way/258095237','way/258095246']);
+  const tiny=data.buildings.filter(b=>tinyBlock(b)),kept=tiny.filter(b=>drawn.has(b.id));
+  assert.ok(tiny.length>=40&&kept.length===tiny.length-2,`${kept.length} of ${tiny.length} tiny blocks drawn`);
+ }finally{scene.dispose();}
+});
+
+test('the city stone renders a neutral grey, not mauve: red no further over green than blue is (round 4 scorer, R-wv3-c3)',()=>{
+ const ch=(h:number)=>[(h>>16)&255,(h>>8)&255,h&255];
+ for(const [name,tint,avg]of [['facade',WAVERLEY_CITY_STONE,CITY_TEXTURES.stone.average],['ashlar',WAVERLEY_CITY_ASHLAR,TEXTURES.stone.average]] as const){
+  const [r,g,b]=ch(avg).map((a,i)=>a*ch(tint)[i]/255);
+  assert.ok(r-g<=1&&Math.abs(r-b)<=3&&g>=b-1,`${name} renders ${[r,g,b].map(Math.round)}`);
+ }
 });

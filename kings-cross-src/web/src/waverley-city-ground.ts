@@ -25,6 +25,9 @@ export const DRAPE_LIFT=.25,DRAPE_TOLERANCE=.25;
 export const ROCK_SLOPE_DEG=38;
 /** ASSUMED: unmapped ground over this pitch is rock, not the base paving; over CLIFF_FACE_DEG a cell is a cliff face (shaded, streaked). */
 export const UNMAPPED_ROCK_DEG=28,CLIFF_FACE_DEG=55;
+/** ASSUMED painted ledges on the rock: one where the ground crosses each `step` m of height; the buff wash on faces whose normal has more
+ *  than `sunward` along the noon sun (`sun`: its up and south components, 55 degrees high in the pinned midsummer views). */
+export const LEDGE={step:4,sun:[.82,.57],sunward:.75} as const;
 /** ASSUMED crag tones (R-wv3-a): dark dolerite, paler weathered faces, lichen grey, moss, and the warm brown-ochre of the weathered
  *  faces in the sun. */
 export const ROCK_TONES=['#4a463e','#55493c','#5a554c','#615c53','#474a37','#524e45','#6b5a46','#5e5040'] as const;
@@ -83,10 +86,15 @@ export const FILL_STEP={wood:9,scrub:9} as const,CROWN_SPREAD={tree:.42,wood:.42
  *  continuous canopy from Regent Road down to Calton Road, so its steep cells are filled on a closer HANGING_WOOD_STEP lattice with no
  *  gaps (ASSUMED spacing, under the crown width, so the crowns meet). An OSM height tag wins over all of these. */
 export const TREE_SIZE={tree:[8,14],wood:[10,16],scrub:[1.2,2.8],scrubTree:[5,8],needleSpread:.2} as const,SCRUB_TREE_MIN_SLOPE_DEG=28,HANGING_WOOD_STEP=6;
+/** ASSUMED: a walk keeps its outlook. Within `reach` m of a mapped path, a hanging-wood tree whose top would stand more than `over` m above
+ *  the path's ground is left as gorse instead (round 4: the summit scrub beside the Dugald Stewart Monument's walk grew 6-8 m trees whose
+ *  crowns closed the view west from the path, where R-wv3-c2 shows it open; the parks keep their walks' slopes cut back). The wood below
+ *  a path, and away from paths (the south face under the Craigs), stands. */
+export const PATH_OUTLOOK={reach:15,over:1.5} as const;
 export const crownDepth=(kind:'tree'|'wood'|'scrub')=>kind==='tree'?.42:.4;
 /** Ground slope in degrees from central differences over 2 m. */
 export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const dx=(ground.heightAt(x+2,z)-ground.heightAt(x-2,z))/4,dz=(ground.heightAt(x,z+2)-ground.heightAt(x,z-2))/4;return Math.atan(Math.hypot(dx,dz))*180/Math.PI;};
-export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub'}
+export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub';/** a hanging-wood tree (drawn without a trunk: the canopy hides it) */hanging?:true}
 const lerp=([a,b]:readonly [number,number],r:number)=>a+(b-a)*r;
 /** The trees that stand: mapped nodes and wood/scrub fill, each clear of every footprint and off the railway bed. */
 export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints):Tree[]{
@@ -112,7 +120,13 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  fill(LANDUSE.areas.wood,FILL_STEP.wood,.25,(x,z)=>take(x,z,'wood'));
  // scrub: gorse on the gentler ground, the hanging wood on the steep faces
  fill(LANDUSE.areas.scrub,FILL_STEP.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
- fill(LANDUSE.areas.scrub,HANGING_WOOD_STEP,0,(x,z)=>{if(steep(x,z))take(x,z,'wood',TREE_SIZE.scrubTree,CROWN_SPREAD.wood);});
+ // the nearest mapped path's ground within PATH_OUTLOOK.reach, or undefined
+ const pathGround=(x:number,z:number):number|undefined=>{let best:number=PATH_OUTLOOK.reach,at:Pt|undefined;
+  for(const l of LANDUSE.paths)for(let i=1;i<l.line.length;i++){const a=l.line[i-1],b=l.line[i];if(Math.min(a[0],b[0])>x+best||Math.max(a[0],b[0])<x-best||Math.min(a[1],b[1])>z+best||Math.max(a[1],b[1])<z-best)continue;
+   const dx=b[0]-a[0],dz=b[1]-a[1],u=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1))),p:Pt=[a[0]+u*dx,a[1]+u*dz],d=Math.hypot(x-p[0],z-p[1]);if(d<best){best=d;at=p;}}
+  return at&&ground.heightAt(at[0],at[1]);};
+ fill(LANDUSE.areas.scrub,HANGING_WOOD_STEP,0,(x,z)=>{if(!steep(x,z))return;const n=out.length;take(x,z,'wood',TREE_SIZE.scrubTree,CROWN_SPREAD.wood);if(out.length===n)return;
+  const t=out[n],path=pathGround(x,z);if(path!==undefined&&t.y+t.height>path+PATH_OUTLOOK.over){out.pop();take(x,z,'scrub');}else t.hanging=true;});
  return out;
 }
 
@@ -124,7 +138,7 @@ export function mownLawns():Ring[][]{
  *  pedestrian, the rest residential, unclassified and service. ASSUMED shades. */
 export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&&width<6?GROUND_COLOURS.setts:GROUND_COLOURS.lane;
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
-function paintGround(ground:Pick<Terrain,'normalAt'>,slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|null{
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -157,6 +171,17 @@ function paintGround(ground:Pick<Terrain,'normalAt'>,slopeAt:(x:number,z:number)
   g.fillStyle='rgba(18,16,14,0.35)';g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
   const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(15,13,12,0.6)';g.lineWidth=.8*s;
   for(const o of [.8,2.6])if(hash(x+o,z,14)<.7){g.beginPath();g.moveTo((x+o-x0)*s,(z+o-z0)*s);g.lineTo((x+o+n[0]/l*(5+hash(x,z+o,15)*6)-x0)*s,(z+o+n[2]/l*(5+hash(x,z+o,15)*6)-z0)*s);g.stroke();}}
+ // Ledges: the 16 m DTM smooths the crag's steps into one ramp, so on rock, wherever the ground crosses each LEDGE.step m of height, a
+ // ledge is painted along the contour: a warm buff lip where the sun catches the step's top (R-wv3-a: the sunlit buff ledges of the
+ // dolerite) over a dark band, the shadowed riser below it. The sunward faces (towards the south and up, ASSUMED: the noon sun of the
+ // pinned views) take a buff wash. ASSUMED tones and spacing.
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a<=ROCK_SLOPE_DEG)continue;
+  const cx=x+cell/2,cz=z+cell/2,n=ground.normalAt(cx,cz,4),l=Math.hypot(n[0],n[2])||1,d=[n[0]/l,n[2]/l],t=[-d[1],d[0]];
+  const sun=n[1]*LEDGE.sun[0]+n[2]*LEDGE.sun[1];if(sun>LEDGE.sunward){g.fillStyle=`rgba(176,140,96,${Math.min(.3,(sun-LEDGE.sunward)*1.2)})`;g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
+  const up=ground.heightAt(cx-d[0]*2,cz-d[1]*2),dn=ground.heightAt(cx+d[0]*2,cz+d[1]*2);
+  if(Math.floor(up/LEDGE.step)===Math.floor(dn/LEDGE.step)||hash(x,z,16)>.85)continue;
+  const seg=(o:number,w:number,col:string)=>{g.strokeStyle=col;g.lineWidth=w*s;g.beginPath();g.moveTo((cx+d[0]*o-t[0]*2.4-x0)*s,(cz+d[1]*o-t[1]*2.4-z0)*s);g.lineTo((cx+d[0]*o+t[0]*2.4-x0)*s,(cz+d[1]*o+t[1]*2.4-z0)*s);g.stroke();};
+  seg(.9,1.3,'rgba(18,16,14,0.55)');seg(0,.8,'rgba(178,150,108,0.6)');}
  g.lineCap='round';g.lineJoin='round';
  // OSM cliff lines: a broken, half-strength 2.5 m edge, not a painted stripe (the slope cells above already carry the rock)
  g.strokeStyle=GROUND_COLOURS.cliff;g.lineWidth=2.5*s;g.globalAlpha=.55;g.setLineDash([6*s,4*s]);for(const l of LANDUSE.cliffs){line(l);g.stroke();}g.setLineDash([]);g.globalAlpha=1;
@@ -186,7 +211,9 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
  const map=paintGround(ground,slopeAt);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
- cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
+ // pulled forward by the depth slope too (factor -4, ASSUMED): at a convex crest seen edge-on (the Castle summit from Princes Street) the coarser
+ // drape cuts the corner by up to a metre along the ray, and a constant offset left the bare terrain showing there as a pale slab
+ cover.polygonOffset=true;cover.polygonOffsetFactor=-4;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
  const mesh=new THREE.Mesh(g,cover);mesh.name='waverley-ground-cover';group.add(mesh);stats.triangles+=keep.length/3;stats.drawCalls++;
  // Trees: crowns (one icosahedron each) and trunks, two instanced draws.
  const trees=placeTrees(ground,footprints);
@@ -195,7 +222,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):Wa
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
   const fineG=new THREE.SphereGeometry(1,7,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
-  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub');
+  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub'&&!t.hanging);
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);
