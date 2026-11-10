@@ -280,7 +280,9 @@ const CIVITY_BODY: Body = {
   // (round 4: on a cab car the rings are fine only as far back as the livery changes along the car, the cyan's raked edge and the diagonals ending about
   // 11.2 m from the tip; behind that the side is silver with horizontal lines, which are points of the section, so coarse rings draw it exactly)
   liveryStep: (car) => ({ until: car.cab ? 12.5 : car.length, step: 0.6 }),
-  cuts: [1.07, 3.04, 3.08],
+  // (round 6: the cyan streaks' top and foot, 1.12 / 1.42 and 2.76 / 3.0, are section points too, so their bands are cut straight along the car instead of
+  // breaking into segments where a coarse row straddles them)
+  cuts: [1.07, 1.12, 1.42, 2.76, 3.0, 3.04, 3.08],
   // ASSUMED, from window and door counts in tpe397-01, -02, -04, -05: single-leaf plug doors at both ends of every car (about 1.55 m in); a driving car has the crew door 4.1 m
   // from the tip, its first door at 7 m and six large windows; an intermediate car a blank panel (the "COACH" display) of about 2 m at one end and ten windows
   plan: (car) => {
@@ -419,7 +421,8 @@ function paintCivity(p: Spot, b: Body): Paint {
     if (p.y < b.floor + 0.02) return { colour: UNDER };
     // the cab side window: a dark pane behind the screen, leaning back with the face (tpe397-05: its top edge further back than its foot), in a navy surround
     const front = 2.0 + (p.y - 2.0) * 0.6;
-    if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { colour: 0x141921 };
+    // (round 6: glazed as the saloon windows are, the sky's light in its upper part, not the flat dark panel the scorer read as opaque)
+    if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { colour: p.y > 2.62 ? PANE_SKY_HI : p.y > 2.3 ? PANE_SKY_MID : b.window };
     if (p.y > 1.93 && p.y < 3.02 && s > front - 0.08 && s < front + 1.23) return { colour: TPE_NAVY };
     // the purple foot; the cyan of the cab running back past the first passenger door, its back edge leaning back toward the top; two navy diagonals rising
     // back across the crew door and the first passenger door to the cyan's edge (tpe397-05; positions ASSUMED, read off its perspective). Silver behind.
@@ -443,7 +446,8 @@ function paintCivity(p: Spot, b: Body): Paint {
   const rise = t < apex ? (t - 0.36) / (apex - 0.36) : (0.82 - t) / (0.82 - apex);
   // (tpe397-05: the triangle's peak about at the windows' foot)
   if (rise > 0 && p.y < 1.07 + 0.72 * rise) return { colour: TPE_PURPLE };
-  if (p.y > 2.76 && p.y < 3.0 && t > 0.6 && t < 0.62 + 0.26 * (1 - (p.y - 2.76) / 0.24)) return { colour: TPE_CYAN };
+  // (round 6: the upper streak's tail stops where it would be thinner than 5 cm: a sliver thinner than that broke into dashes at a distance)
+  if (p.y > 2.76 && p.y < 3.0 && t > 0.6 && t < 0.62 + 0.26 * Math.min(1 - 0.05 / 0.24, 1 - (p.y - 2.76) / 0.24)) return { colour: TPE_CYAN };
   if (p.y > 1.12 && p.y < 1.42 && t > 0.72 + 0.1 * ((p.y - 1.12) / 0.3) && t < 0.95) return { colour: TPE_CYAN };
   if (p.y > 3.04 && p.y < 3.08) return { colour: 0xd0603a };
   return { colour: TPE_SILVER };

@@ -7,9 +7,9 @@ import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_DOT, SR_SALTIRE, WELL, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_DOT, SR_SALTIRE, TPE_CYAN, WELL, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
 import { CAF, CLUSTER_BAND, J_AIR, MOTOR, SPLIT_DEPTH, SPRING_UNIT, splitTri } from '../src/train-wv-emu-parts.ts';
-import { WIPER } from '../src/train-face.ts';
+import { PANE_SKY_HI, WIPER } from '../src/train-face.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
 import type { V3 } from '../src/train-geom.ts';
 
@@ -571,4 +571,52 @@ test('the 334\'s pantograph stands over the PTOS\'s two-window end, in a well, a
   assert.ok(well.length > 0 && Math.min(...well.map((v) => v.z)) < pan[0] && Math.max(...well.map((v) => v.z)) > pan[1], 'a dark well under the whole pantograph');
   const shroud = inColour(detail, b.roof).filter((v) => v.z > pan[1] && v.z < car.end && v.y > b.crown + 0.05);
   assert.ok(shroud.length >= 8, `${shroud.length} shroud vertices rise over the crown between the pantograph and the end`);
+});
+
+/** points across every triangle of a mesh in one colour (corners alone leave gaps along a long triangle) */
+const colourPoints = (m: THREE.Mesh, hex: number, n = 6): THREE.Vector3[] => {
+  const pos = m.geometry.getAttribute('position');
+  const colr = m.geometry.getAttribute('color');
+  const idx = m.geometry.index;
+  const at = (j: number): number => (idx ? idx.getX(j) : j);
+  const c = col(hex);
+  const out: THREE.Vector3[] = [];
+  for (let t = 0; t + 2 < (idx ? idx.count : pos.count); t += 3) {
+    const i = at(t);
+    if (Math.abs(colr.getX(i) - c.r) > 1e-6 || Math.abs(colr.getY(i) - c.g) > 1e-6 || Math.abs(colr.getZ(i) - c.b) > 1e-6) continue;
+    const [p0, p1, p2] = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(pos, at(t + j))) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+    for (let u = 0; u <= n; u++) for (let w = 0; w + u <= n; w++) out.push(p0.clone().multiplyScalar((n - u - w) / n).addScaledVector(p1, u / n).addScaledVector(p2, w / n));
+  }
+  return out;
+};
+
+test('the 397\'s cyan streaks run unbroken along an intermediate car, and its cab side window is glazed, not a dark panel', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const shell = (root.getObjectByName('car-1') as THREE.Object3D).getObjectByName('body-shell') as THREE.Mesh;
+  // (the upper streak at several heights through it on the right side, its thin top included: no gap along it longer than a few centimetres, and the
+  // whole band there, never a scatter of pieces)
+  const cyan = colourPoints(shell, TPE_CYAN, 10).filter((v) => v.x > 1 && v.y > 2.7);
+  for (const y of [2.79, 2.85, 2.91, 2.97]) {
+    const zs = cyan.filter((v) => Math.abs(v.y - y) < 0.012).map((v) => v.z).sort((a, b) => a - b);
+    assert.ok(zs.length > 4, `${zs.length} streak points at ${y} m`);
+    let gap = 0;
+    for (let k = 1; k < zs.length; k++) gap = Math.max(gap, (zs[k] as number) - (zs[k - 1] as number));
+    assert.ok(gap < 0.15, `a ${gap.toFixed(2)} m gap in the upper cyan streak at ${y} m`);
+  }
+  // (and nowhere a sliver: along the streak, in 10 cm steps, its band is at least 4 cm deep)
+  const bins = new Map<number, number[]>();
+  for (const v of cyan) {
+    const k = Math.floor(v.z / 0.1);
+    const ys = bins.get(k) ?? [];
+    ys.push(v.y);
+    bins.set(k, ys);
+  }
+  const keys = [...bins.keys()].sort((a, b) => a - b).slice(1, -1);
+  for (const k of keys) {
+    const ys = bins.get(k) as number[];
+    assert.ok(Math.max(...ys) - Math.min(...ys) > 0.035, `the streak is ${(Math.max(...ys) - Math.min(...ys)).toFixed(3)} m deep at z ${(k * 0.1).toFixed(1)}`);
+  }
+  const cab = (root.getObjectByName('car-0') as THREE.Object3D).getObjectByName('body-shell') as THREE.Mesh;
+  const sky = colourPoints(cab, PANE_SKY_HI, 2).filter((v) => Math.abs(v.x) > 1 && v.y > 2.0 && v.y < 2.95);
+  assert.ok(sky.length > 0, 'the cab side window carries the sky\'s light, as the saloon windows do');
 });
