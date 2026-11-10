@@ -162,14 +162,25 @@ const JUNIPER_BODY: Body = {
   },
 };
 
-/** The Nova 2's nose: the screen's foot and top, as distances from the tip, and its half-width as a fraction of the ring's (tpe397-01 head on, -05 and -04 three-quarter). */
-const SCREEN = { s0: 1.05, s1: 2.45, fraction: 0.68 } as const;
-const MASK = { s1: 2.85, fraction: 0.82 } as const;
+/**
+ * The Nova 2's face, by height above the rail head and by u (the fraction of the ring's half-width out from the middle), read off tpe397-01 (head on) and -05 (three-quarter),
+ * against the assumed 3.80 m height and 2.75 m width; all ASSUMED:
+ *   hood     a dark cap over the display, from 3.47 m up, with a small marker lamp at its middle;
+ *   display  black, 3.27 to 3.45 m, the destination lit amber across its middle;
+ *   line     a thin orange line over the screen;
+ *   screen   one broad pane, 2.15 to 3.2 m, out to u 0.7, in a dark frame;
+ *   band     the dark mask below the screen, narrowing down to the white star at 1.5 m;
+ *   lamps    an angular dark housing each side, 1.62 to 2.04 m, the round headlight outboard and a block of LEDs (the tail lamp) inboard;
+ *   mouth    the dark coupler cover low on the front, 0.72 to 1.38 m, in a cyan bumper over a navy foot.
+ */
+const NOVA = {
+  hood: 3.47, display: [3.27, 3.45], screen: [2.15, 3.2], screenU: 0.7, frameU: 0.78,
+  band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.52,
+} as const;
 
 /**
- * The Class 397. A long raked nose (tpe397-01, -04, -05, -06): a low rounded chin under a dark coupler cover, the lamps on the shoulders either side of a dark band that runs up the
- * middle of the face to a broad screen raked about 35 degrees, a destination display over it in the same dark mask, then the roof. The cab side window is a dark slanted pane
- * behind the screen, the crew door behind it. All nose sizes ASSUMED, read off those photographs against the assumed 2.75 m width and 3.80 m height.
+ * The Class 397. A rounded, fairly upright face (tpe397-01, -04, -05, -06): the bumper stands furthest forward, the face leans back above it, steepest over the screen, and meets
+ * the roof about 3 m behind the bumper (read off -05's side-on profile; ASSUMED). The cab side window is a dark slanted pane behind the screen, the crew door behind it.
  */
 const CIVITY_BODY: Body = {
   family: 'civity',
@@ -179,21 +190,23 @@ const CIVITY_BODY: Body = {
   crown: CF.height.value - 0.16,
   coverHeight: 0.16,
   nose: {
-    length: 3.6,
+    length: 3.4,
     knots: [
-      { s: 0, top: 1.22, ws: 0.6, bottom: 0.42 },
-      { s: 0.35, top: 1.62, ws: 0.78, bottom: 0.4 },
-      { s: 0.8, top: 2.02, ws: 0.88, bottom: 0.42 },
-      { s: 1.4, top: 2.55, ws: 0.95, bottom: 0.5 },
-      { s: 2.1, top: 3.06, ws: 0.985, bottom: 0.66 },
-      { s: 2.8, top: 3.45, ws: 1, bottom: 0.85 },
-      { s: 3.6, top: CF.height.value - 0.16, ws: 1, bottom: CF.floorHeight.value - 0.15 },
+      { s: 0, top: 1.38, ws: 0.74, bottom: 0.42 },
+      { s: 0.25, top: 1.62, ws: 0.83, bottom: 0.38 },
+      { s: 0.5, top: 1.86, ws: 0.89, bottom: 0.38 },
+      { s: 0.85, top: 2.2, ws: 0.935, bottom: 0.42 },
+      { s: 1.4, top: 2.72, ws: 0.968, bottom: 0.5 },
+      { s: 1.9, top: 3.16, ws: 0.987, bottom: 0.6 },
+      { s: 2.4, top: 3.45, ws: 0.996, bottom: 0.72 },
+      { s: 3.0, top: 3.62, ws: 1, bottom: 0.84 },
+      { s: 3.4, top: CF.height.value - 0.16, ws: 1, bottom: CF.floorHeight.value - 0.15 },
     ],
-    fillet: 0.3,
-    filletLoss: 0.18,
-    roundLen: 3.3,
-    widest: 0.5,
-    boxiness: 2.6,
+    fillet: 0.22,
+    filletLoss: 0.1,
+    roundLen: 2.8,
+    widest: 0.45,
+    boxiness: 3.0,
   },
   tip: 0.01,
   coupler: { style: 'dellner', covered: true },
@@ -209,7 +222,7 @@ const CIVITY_BODY: Body = {
   // (tpe397-03: the wheels' faces and their bolted brake discs stand clear of the frame, which is inboard; the nearest of the drawn styles is the Siemens inside frame)
   bogie: 'siemens',
   gangway: { width: 2.0, height: 2.25, bottom: 1.1 },
-  liveryStep: (car) => (car.cab ? { until: 10.5, step: 0.2 } : { until: car.length, step: 0.25 }),
+  liveryStep: (car) => (car.cab ? { until: 10.5, step: 0.14 } : { until: car.length, step: 0.25 }),
   // ASSUMED, from window and door counts in tpe397-01, -02, -04, -05: single-leaf plug doors at both ends of every car (about 1.55 m in); a driving car has the crew door 4.1 m
   // from the tip, its first door at 7 m and six large windows; an intermediate car a blank panel (the "COACH" display) of about 2 m at one end and ten windows
   plan: (car) => {
@@ -280,21 +293,18 @@ function paintCivity(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
   if (p.car.cab) {
     const s = p.s;
-    // the nose's top: the screen in the dark mask, the display over it (lit amber, tpe397-01: "Manchester Airport"), the mask's band down the middle of the face
-    if (p.top && s < nose) {
-      if (s > SCREEN.s0 && s < SCREEN.s1 && p.u < SCREEN.fraction) return { glass: true };
-      if (s > SCREEN.s1 + 0.05 && s < SCREEN.s1 + 0.27 && p.u < 0.3) return { colour: 0xe39a1c };
-      if (s > 0.3 && s < MASK.s1 && p.u < MASK.fraction) return { colour: TPE_MASK };
-      if (s <= 0.3 && p.u < 0.5) return { colour: TPE_MASK };
+    const { y, u } = p;
+    // the face (the front of the nose, not its flanks): cyan under the draped regions (see NOVA and buildCar), navy at its foot
+    if (s < nose && u < 0.9 && (p.top || y > NOVA.mouth[0])) {
+      if (y > NOVA.hood && s > nose - 0.6) return { colour: TPE_ROOF };
+      return { colour: y < NOVA.navy ? TPE_NAVY : TPE_CYAN };
     }
-    // the chin under the cover, and the cover's edge: navy, the cyan cheeks above it
-    if (s < 0.3 && p.y < 1.0) return { colour: p.u < 0.62 ? 0x2e3239 : TPE_NAVY };
-    if (p.y > b.wallTop + 0.25 && s > MASK.s1) return { colour: TPE_ROOF };
+    if (p.y > b.wallTop + 0.25 && s > nose - 0.4) return { colour: TPE_ROOF };
     if (p.y < b.floor + 0.02) return { colour: UNDER };
-    // the cab side window: a dark slanted pane behind the screen (tpe397-05: its front edge leans forward toward the top), in a navy surround
-    const front = 2.75 - (p.y - 2.0) * 0.7;
-    if (p.y > 2.0 && p.y < 2.75 && s > front && s < 3.55) return { glass: true };
-    if (p.y > 1.93 && p.y < 2.82 && s > front - 0.08 && s < 3.63) return { colour: TPE_NAVY };
+    // the cab side window: a dark pane behind the screen, leaning back with the face (tpe397-05: its top edge further back than its foot), in a navy surround
+    const front = 2.0 + (p.y - 2.0) * 0.6;
+    if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { glass: true };
+    if (p.y > 1.93 && p.y < 3.02 && s > front - 0.08 && s < front + 1.23) return { colour: TPE_NAVY };
     // the purple foot, the navy swoosh rising back from the chin, the cyan of the cab ending in a slant behind the crew door, silver behind
     if (s > 0.6 && s < 9.6 && p.y < 0.62 + 0.42 * Math.sin((Math.PI * Math.min(1, (s - 0.6) / 9.0)))) return { colour: TPE_PURPLE };
     const cyanEdge = 5.3 + (3.3 - p.y) * 0.95;
@@ -499,50 +509,116 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       // the saltire's halftone dots on the cab side: a band of white dots falling back from the face's top corner to the sill, largest along its middle (scotrail334_05, _06)
       haltone(detail, (sAt, y, side) => surfacePoint(ringHalf, sAt, y, side, noseLen, W), world, wn, tip);
     } else {
-      // the Nova 2's coupler is under its cover; the cover's seam a lighter outline on the chin (tpe397-01, -05)
-      const seam = clipConvex(roundedRect(-0.66, 0.66, 0.48, 1.08, 0.2, 4), outline, 0.02);
-      const inner = clipConvex(roundedRect(-0.64, 0.64, 0.5, 1.06, 0.19, 4), outline, 0.02);
-      detail.fan(seam.map(([x, y]) => world([x, y, tip - 0.003])), faceN, col(0x5a6069));
-      detail.fan(inner.map(([x, y]) => world([x, y, tip - 0.005])), faceN, col(0x2e3239));
+      // the tip's flat cap is the bumper: cyan, the dark coupler cover (the "mouth") in it with a lighter seam round it, the navy foot under it (tpe397-01, -05; see NOVA)
+      const capShape = (pts: readonly (readonly [number, number])[], lift: number, colour: number): void => {
+        const c = clipConvex(pts.map(([x, y]): [number, number] => [x, y]), outline, 0.01);
+        if (c.length >= 3) detail.fan(c.map(([x, y]) => world([x, y, tip - lift])), faceN, col(colour));
+      };
+      capShape(boxOutline(-2, 2, 0, NOVA.navy), 0.002, TPE_NAVY);
+      capShape(boxOutline(-2, 2, NOVA.navy, 2), 0.002, TPE_CYAN);
+      capShape(roundedRect(-NOVA.mouthHalf - 0.03, NOVA.mouthHalf + 0.03, NOVA.mouth[0] - 0.03, NOVA.mouth[1] + 0.2, 0.22, 4), 0.004, 0x5a6069);
+      capShape(roundedRect(-NOVA.mouthHalf, NOVA.mouthHalf, NOVA.mouth[0], NOVA.mouth[1] + 0.2, 0.2, 4), 0.006, TPE_MASK);
       const cover = new THREE.Object3D();
       cover.name = 'coupler-cover';
-      cover.position.set(0, 0.8, Z(tip));
-      cover.userData = { y0: 0.48, y1: 1.08, hidesCoupler: true };
+      cover.position.set(0, (NOVA.mouth[0] + NOVA.mouth[1]) / 2, Z(tip));
+      cover.userData = { y0: NOVA.mouth[0], y1: NOVA.mouth[1], hidesCoupler: true };
       group.add(cover);
-      // the lamps on the shoulders: a slanted dark housing each side of the mask's band, the round headlight outboard, an LED block (the tail lamp) inboard; and a small white star at the band's foot
-      const top = (x: number, sAt: number, lift: number): V3 => {
-        const h = ringHalf(sAt);
-        return [x, yAtX(h, Math.abs(x)) + lift, tip + sAt];
+      // a point on the face at (x, y): how far back from the tip the face stands there (the ring whose roof line passes through it), so shapes drawn in the
+      // face's own (x, y) frame land on the leaning surface
+      // (the nose's rings sampled every 2 cm once, and the face's roof line searched among them: the face rises monotonically from the tip)
+      const ds = 0.02;
+      const halves = Array.from({ length: Math.ceil(noseLen / ds) + 1 }, (_, i) => ringHalf(Math.min(noseLen, i * ds)));
+      const sAtY = (x: number, y: number): number => {
+        const h = (i: number): number => yAtX(halves[i] as [number, number][], Math.abs(x));
+        if (h(0) >= y) return 0;
+        let lo = 0;
+        let hi = halves.length - 1;
+        if (h(hi) < y) return noseLen;
+        while (hi - lo > 1) {
+          const mid = (lo + hi) >> 1;
+          if (h(mid) < y) lo = mid;
+          else hi = mid;
+        }
+        const a = h(lo);
+        const c = h(hi);
+        return Math.min(noseLen, (lo + (c > a ? (y - a) / (c - a) : 0)) * ds);
       };
-      const topN = (x: number, sAt: number): V3 => {
+      const onFace = (x: number, y: number): V3 => [x, y, tip + sAtY(x, y)];
+      const faceNormal = (x: number, y: number): V3 => {
         const d = 0.03;
-        const a = top(x + d, sAt, 0);
-        const c = top(x - d, sAt, 0);
-        const e = top(x, sAt + d, 0);
-        const f = top(x, Math.max(0, sAt - d), 0);
-        const n = unit(cross(sub(e, f), sub(a, c)));
-        return n[1] < 0 ? [-n[0], -n[1], -n[2]] : n;
+        const n = unit(cross(sub(onFace(x + d, y), onFace(x - d, y)), sub(onFace(x, y + d), onFace(x, y - d))));
+        return n[2] > 0 ? [-n[0], -n[1], -n[2]] : n;
       };
-      const onTop = (pts: readonly (readonly [number, number])[], lift: number): { poly: V3[]; n: V3 } => {
+      const onSurface = (pts: readonly (readonly [number, number])[], lift: number): { poly: V3[]; n: V3 } => {
         const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
-        const cs = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-        return { poly: pts.map(([x, sAt]) => world(top(x, sAt, lift))), n: wn(topN(cx, cs)) };
+        const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+        const n = faceNormal(cx, cy);
+        return {
+          poly: pts.map(([x, y]) => {
+            const q = onFace(x, y);
+            return world([q[0] + n[0] * lift, q[1] + n[1] * lift, q[2] + n[2] * lift]);
+          }),
+          n: wn(n),
+        };
       };
+      // the face's regions (NOVA), each laid on the surface as a 4 cm grid of cells (a cell is drawn where its middle is inside the region), so their edges are
+      // finer than the shell's quads; the shell under them is plain cyan
+      const cell = 0.04;
+      const ringW = (x: number, y: number): number => ringAt(b.nose, sAtY(x, y)).ws * W;
+      const drape = (inside: (y: number, u: number, sn: number) => boolean, y0: number, y1: number, lift: number, colour: number | null): void => {
+        const pts = new Map<string, V3>();
+        const at = (i: number, j: number): V3 => {
+          const key = `${i},${j}`;
+          let q = pts.get(key);
+          if (!q) {
+            q = onFace(i * cell, y0 + j * cell);
+            pts.set(key, q);
+          }
+          return q;
+        };
+        const nx = Math.ceil(1.45 / cell);
+        const ny = Math.ceil((y1 - y0) / cell);
+        for (let j = 0; j < ny; j++) {
+          for (let i = -nx; i < nx; i++) {
+            const cx = (i + 0.5) * cell;
+            const cy = y0 + (j + 0.5) * cell;
+            const sn = sAtY(cx, cy);
+            if (sn >= noseLen - 1e-6 || !inside(cy, Math.abs(cx) / ringW(cx, cy), sn)) continue;
+            const c4 = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)] as [V3, V3, V3, V3];
+            let n = unit(cross(sub(c4[2], c4[0]), sub(c4[3], c4[1])));
+            if (n[2] > 0) n = [-n[0], -n[1], -n[2]];
+            const lifted = c4.map((q) => world([q[0] + n[0] * lift, q[1] + n[1] * lift, q[2] + n[2] * lift])) as [V3, V3, V3, V3];
+            const wn4 = wn(n);
+            if (colour === null) glass.quad(lifted, [wn4, wn4, wn4, wn4], null);
+            else detail.quad(lifted, [wn4, wn4, wn4, wn4], col(colour));
+          }
+        }
+      };
+      drape((y, u, sn) => y > NOVA.hood && u < 0.8 && sn < noseLen - 0.4, NOVA.hood, b.crown, 0.006, TPE_MASK);
+      drape((_, u) => u < 0.5, NOVA.display[0], NOVA.display[1], 0.006, 0x111317);
+      drape((_, u) => u < 0.3, 3.31, 3.41, 0.01, 0xe39a1c);
+      drape((_, u) => u < 0.8, NOVA.screen[1] + 0.035, NOVA.display[0], 0.006, 0xd0603a);
+      drape((_, u) => u < NOVA.frameU, NOVA.screen[0] - 0.07, NOVA.screen[1] + 0.035, 0.006, TPE_MASK);
+      drape((_, u) => u < NOVA.screenU, NOVA.screen[0], NOVA.screen[1], 0.01, null);
+      drape((y, u) => u < 0.16 + 0.55 * (y - NOVA.band[0]), NOVA.band[0], NOVA.screen[0] - 0.07, 0.006, TPE_MASK);
+      drape((y, u) => u > 0.36 + 0.25 * (y - NOVA.lamps[0]) && u < 0.88, NOVA.lamps[0], NOVA.lamps[1], 0.006, TPE_MASK);
+      // the lamps: in each housing the round headlight outboard and the LED block (the tail lamp) inboard; the white star at the band's foot
       for (const side of [-1, 1]) {
         const xs = side * dir;
-        const housing = onTop([[0.42 * xs, 0.68], [0.9 * xs, 0.44], [0.97 * xs, 0.62], [0.5 * xs, 0.84]], 0.012);
-        detail.fan(housing.poly, housing.n, col(0x111317));
-        const head = onTop(discOutline(0.8 * xs, 0.56, 0.065, 14), 0.02);
+        const head = onSurface(discOutline(0.86 * xs, 1.83, 0.075, 14), 0.016);
         lensFan('head', head.poly, head.n, mode);
-        const tail = onTop(boxOutline(Math.min(0.52 * xs, 0.66 * xs), Math.max(0.52 * xs, 0.66 * xs), 0.62, 0.72), 0.02);
+        const tail = onSurface(boxOutline(Math.min(0.55 * xs, 0.71 * xs), Math.max(0.55 * xs, 0.71 * xs), 1.74, 1.9), 0.016);
         lensFan('tail', tail.poly, tail.n, mode);
-        const at = top(0.8 * xs, 0.56, 0);
+        const at = onFace(0.86 * xs, 1.83);
         marker('headlight', at[0], at[1], at[2], { side: xs > 0 ? 'right' : 'left' });
       }
-      const star = onTop(discOutline(0, 0.22, 0.06, 10), 0.012);
+      const star = onSurface(discOutline(0, NOVA.star, 0.07, 10), 0.01);
       detail.fan(star.poly, star.n, col(0xf2f4f6));
-      // a single wiper parked across the screen's foot, from the middle toward the cab's left (tpe397-01, -05)
-      const wiper = onTop(barOutline([0.05 * dir, SCREEN.s0 + 0.06], [-0.55 * dir, SCREEN.s0 + 0.5], 0.035), 0.03);
+      // the marker lamp on the hood over the display (tpe397-01, -05)
+      const roofLamp = onSurface(boxOutline(-0.12, 0.12, NOVA.hood + 0.04, NOVA.hood + 0.12), 0.01);
+      detail.fan(roofLamp.poly, roofLamp.n, col(0xd9dde2));
+      // a single wiper parked up the screen, from its foot near the middle toward the cab's left (tpe397-01, -05)
+      const wiper = onSurface(barOutline([0.08 * dir, NOVA.screen[0] + 0.05], [-0.38 * dir, NOVA.screen[0] + 0.78], 0.03), 0.03);
       detail.fan(wiper.poly, wiper.n, col(WIPER));
     }
     if (plan.crewDoor !== null) for (const sx of [-1, 1]) marker('crew-door', sx * half, (b.doorY[0] + b.doorY[1]) / 2, plan.crewDoor, { side: sx > 0 ? 'right' : 'left', width: 0.7 });
