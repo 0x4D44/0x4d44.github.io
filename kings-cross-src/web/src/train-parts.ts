@@ -1276,6 +1276,81 @@ export function pantographDeck(soup: Soup, o: { style: RoofHatchStyle; k0: numbe
   soup.box(-d.half, d.half, o.crown - 0.012, o.crown + d.top, o.k0, o.k1, col(d.colour), '-y');
 }
 
+// --- the roof ends of the Desiro City ---------------------------------------------------------------------------------------------------------------------------------
+//
+// A Desiro City's roof is smooth between its car ends, with no raised covers along it (the round-5 score: "AC fairings/vents/insulators/pan arrangement are generic": the model laid the
+// Electrostar's run of pale covers on it). What the Class 700's roofs show from a footbridge (`700116 Shepreth Branch Junction 210619.jpg`, `700155 Shepreth Branch JUnc 210619.jpg`,
+// `700019 Shepreth Branch Junc 210619.jpg`, kitmasterbloke, 2019-06-21, CC BY 2.0; private review assets, not shipped) is at the car ends, at every joint and behind the nose of each cab car (700019
+// and 700155 look at the lead car's roof from the front, from its left side and its right): a dark pocket at the roof's near edge holding a louvre grille on a raised pad, amber studs at the pad's
+// ends and some equipment boxes, and along the far edge a dark casing carrying three grey posts and an amber label, the middle of the roof between them left pale. That arrangement is read off the
+// photographs; EVERY SIZE, the place along the car, which side each part is on and the colours are ASSUMED, from pictures that are oblique and small. (Both pictures show the pocket on the side
+// nearer the camera, and they look at opposite sides of the train: the module may be symmetric, or turned about at each end; the model draws the pocket on the train's left of a front car and
+// of its far end, the casing on its right, and turns a rear cab car about.) The pocket is drawn as a dark slab on the roof, not cut into it (the shell has no step); the equipment boxes and the arched
+// rim of the casing are not drawn (GAP). The 717 shares the body: family evidence, no 717 roof photograph.
+
+export type RoofEndStyle = 'desiro';
+export interface RoofEndDef {
+  /** `u` is the distance along the roof from the car's end gap inward; `x` is across (the module's own side: the louvres at -x, the casing at +x for a front car; turned about for a rear cab car) */
+  pocket: { u0: number; u1: number; x0: number; x1: number; lift: number; colour: number };
+  pad: { x0: number; x1: number; u0: number; u1: number; height: number; colour: number };
+  /** the louvre openings on the pad: across by along, one opening's width across and length along, the pitch across and along, the grid's centre; they stand `lift` over the pad's top */
+  slots: { cols: number; rows: number; w: number; l: number; pitchX: number; pitchU: number; cx: number; cu: number; lift: number; colour: number };
+  /** the amber studs: across positions, along positions, the box's sides across and along and its height over the pocket */
+  studs: { xs: readonly number[]; us: readonly number[]; sx: number; su: number; height: number; colour: number };
+  /** the casing: across and along, its height over the crown, its colour; the posts on it (along positions, section, height over the casing's top, colour) and the label (along extent, height extent over the crown, colour) on its inner face */
+  trough: { x0: number; x1: number; u0: number; u1: number; height: number; colour: number };
+  posts: { us: readonly number[]; side: number; height: number; colour: number };
+  label: { u0: number; u1: number; y0: number; y1: number; colour: number };
+}
+export const ROOF_ENDS: Readonly<Record<RoofEndStyle, RoofEndDef>> = {
+  desiro: {
+    pocket: { u0: 0.1, u1: 2.5, x0: -0.7, x1: -0.05, lift: 0.008, colour: 0x2b3034 },
+    pad: { x0: -0.62, x1: -0.1, u0: 0.35, u1: 1.45, height: 0.03, colour: 0x4a5258 },
+    slots: { cols: 6, rows: 2, w: 0.055, l: 0.08, pitchX: 0.08, pitchU: 0.14, cx: -0.36, cu: 0.9, lift: 0.003, colour: 0x14171a },
+    studs: { xs: [-0.52, -0.36, -0.2], us: [0.28, 1.52], sx: 0.04, su: 0.04, height: 0.045, colour: 0xd9972b },
+    trough: { x0: 0.46, x1: 0.72, u0: 0.3, u1: 2.5, height: 0.06, colour: 0x3f4a4f },
+    posts: { us: [0.85, 1.4, 1.95], side: 0.035, height: 0.075, colour: 0x8d9298 },
+    label: { u0: 1.1, u1: 1.3, y0: 0.015, y1: 0.05, colour: 0xd9972b },
+  },
+};
+
+/**
+ * One roof end of a car (see above): the module that stands at a joint, on a roof whose crown is at `crown`. `zEnd` is the z of the car's end gap, `inward` is +1 where the car's body lies toward
+ * +z of it (the car's start end) and -1 where it lies toward -z (its far end); `side` is +1 for a front car and -1 for a rear cab car, which is turned about (its x mirrored).
+ */
+export function roofEnd(soup: Soup, o: { style: RoofEndStyle; zEnd: number; inward: 1 | -1; crown: number; side: 1 | -1 }): void {
+  const d = ROOF_ENDS[o.style];
+  const X = (x: number): number => o.side * x;
+  const Z = (u: number): number => o.zEnd + o.inward * u;
+  const box = (x0: number, x1: number, y0: number, y1: number, u0: number, u1: number, hex: number, skip = '-y'): void =>
+    soup.box(Math.min(X(x0), X(x1)), Math.max(X(x0), X(x1)), y0, y1, Math.min(Z(u0), Z(u1)), Math.max(Z(u0), Z(u1)), col(hex), skip);
+  const y = o.crown;
+  // the pocket: a low dark slab on the louvres' side of the roof's flat, the middle of the roof left pale (700019, 700155: the dark pocket is a notch at the near side, not across the roof)
+  box(d.pocket.x0, d.pocket.x1, y - 0.012, y + d.pocket.lift, d.pocket.u0, d.pocket.u1, d.pocket.colour);
+  const top = y + d.pocket.lift;
+  // the louvre pad and its openings
+  box(d.pad.x0, d.pad.x1, top - 0.004, top + d.pad.height, d.pad.u0, d.pad.u1, d.pad.colour);
+  const S = d.slots;
+  const ys = top + d.pad.height + S.lift;
+  const up: V3 = [0, 1, 0];
+  for (let i = 0; i < S.cols; i++) {
+    for (let j = 0; j < S.rows; j++) {
+      const xc = X(S.cx + (i - (S.cols - 1) / 2) * S.pitchX);
+      const zc = Z(S.cu + (j - (S.rows - 1) / 2) * S.pitchU);
+      soup.quad([[xc - S.w / 2, ys, zc - S.l / 2], [xc + S.w / 2, ys, zc - S.l / 2], [xc + S.w / 2, ys, zc + S.l / 2], [xc - S.w / 2, ys, zc + S.l / 2]], [up, up, up, up], col(S.colour));
+    }
+  }
+  // the amber studs at the pad's two ends
+  for (const x of d.studs.xs) for (const u of d.studs.us) box(x - d.studs.sx / 2, x + d.studs.sx / 2, top - 0.004, top + d.studs.height, u - d.studs.su / 2, u + d.studs.su / 2, d.studs.colour);
+  // the casing along the far side, its three posts and its amber label
+  box(d.trough.x0, d.trough.x1, y - 0.012, y + d.trough.height, d.trough.u0, d.trough.u1, d.trough.colour);
+  const postX = (d.trough.x0 + d.trough.x1) / 2;
+  for (const u of d.posts.us) box(postX - d.posts.side / 2, postX + d.posts.side / 2, y + d.trough.height - 0.004, y + d.trough.height + d.posts.height, u - d.posts.side / 2, u + d.posts.side / 2, d.posts.colour);
+  const L = d.label;
+  const nx = -o.side;
+  soup.quad([[X(d.trough.x0) + nx * 0.001, y + L.y0, Z(L.u0)], [X(d.trough.x0) + nx * 0.001, y + L.y0, Z(L.u1)], [X(d.trough.x0) + nx * 0.001, y + L.y1, Z(L.u1)], [X(d.trough.x0) + nx * 0.001, y + L.y1, Z(L.u0)]], [[nx, 0, 0], [nx, 0, 0], [nx, 0, 0], [nx, 0, 0]], col(L.colour));
+}
+
 /** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City), a Scharfenberg (Class 180) and a BSI (the Sprinters' and Turbostars'). */
 export type CouplerStyle = 'plain' | 'dellner' | 'scharfenberg' | 'bsi';
 

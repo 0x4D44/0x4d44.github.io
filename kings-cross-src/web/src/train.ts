@@ -40,8 +40,8 @@ import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELE
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeLeanSlope, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, pantographDeck, podHanger, roofHatch, roofKit, roofKitSpan, roofPlan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
-import type { BogieStyle, CouplerStyle, PodForm, RoofHatchStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
+import { bellowsRings, buildBogie, buildPantograph, couplerHalf, pantographDeck, podHanger, roofEnd, roofHatch, roofKit, roofKitSpan, roofPlan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
+import type { BogieStyle, CouplerStyle, PodForm, RoofEndStyle, RoofHatchStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
 
 /**
  * Everything the published figures do not give. Each is a guess chosen so the model reads as the train it is,
@@ -443,6 +443,10 @@ interface BodySpec {
    * pantograph car's well, and the well has a deck under the kit and the pantograph. Absent: the covers along the whole roof.
    */
   roofHatches?: { style: RoofHatchStyle };
+  /**
+   * a module at each end of a car, at a joint and behind a nose (the Desiro City's: ROOF_ENDS), in place of the run of raised covers: a smooth roof between them. Absent: the covers along the whole roof.
+   */
+  roofEnds?: { style: RoofEndStyle };
   /** the cab front's lamps, frame, coupler and warning panel */
   front: FrontSpec;
   /** louvres and vents on the nose's roof behind the glass (the Class 180's: GC180-01, GC180-05) */
@@ -746,6 +750,8 @@ const DESIRO_BODY = ((): BodySpec => {
       coupler: { style: 'dellner', covered: false },
       face: DESIRO_717_FACE,
     },
+    // CHANGED (round 6): a smooth roof with a module at each end of a car, read off the Class 700's roofs from a footbridge and from in front (see ROOF_ENDS); the 717 shares the body
+    roofEnds: { style: 'desiro' },
     // ASSUMED, as the Electrostar's
     roofKit: { style: 'emu', height: 0.13 },
     underfloor: null,
@@ -1740,6 +1746,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     if (plan.deck) pantographDeck(detail, { style, k0: plan.deck[0], k1: plan.deck[1], crown: spec.crown });
     covers = plan.casing ? [plan.casing] : [];
     for (const zc of plan.rows) roofHatch(detail, { style, zc, crown: spec.crown, side: car.cab === 'rear' ? -1 : 1 });
+  }
+  // a Desiro City's roof: smooth between its two ends, a module at each (ROOF_ENDS): at a joint, from the car's end gap; at a nose, from just behind the nose, where the covers would have begun (the cab car's
+  // roof behind its dark front, 700155 and 700019)
+  if (spec.roofEnds) {
+    covers = [];
+    const style = spec.roofEnds.style;
+    const side = car.cab === 'rear' ? -1 : 1;
+    roofEnd(detail, { style, zEnd: car.cab === 'front' ? carFrom : car.start + END_GAP, inward: 1, crown: spec.crown, side });
+    roofEnd(detail, { style, zEnd: car.cab === 'rear' ? carTo : car.end - END_GAP, inward: -1, crown: spec.crown, side });
   }
   const coverColour = col(spec.coverStyle?.colour ?? 0xb4b8be);
   const ridges = spec.coverStyle?.ridges;
