@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { ALL_KINDS, TRAIN_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { Family, TrainKind } from '../../core/train.ts';
-import { at300Plan, bodySpec, buildTrain } from '../src/train.ts';
+import { at300Plan, bodySpec, buildTrain, carPlan } from '../src/train.ts';
 import { liveryFor } from '../src/train-livery.ts';
 import { cutOpenings, subtractRect } from '../src/train-interior-cut.ts';
 import type { Opening } from '../src/train-interior-cut.ts';
@@ -134,7 +134,8 @@ test('every family: from inside, every look meets an inner surface; through a wi
     const node = group.getObjectByName(`car-${index}`)!;
     const interiors = createTrainInteriors({ scene: root, camera, trains: () => trains, load });
     // (a window between the doors, its middle; the car has no cab, so its z is start + s)
-    const win = shell.windows(car);
+    // CHANGED (round 6): the shell no longer carries a window function (the interior cuts the windows its layout holds, from the car's plan for the train it stands in); the plan is asked directly
+    const win = carPlan(car, family, kind).windows;
     const [w0, w1] = win[Math.floor(win.length / 2)]!.map((s) => car.start + s) as [number, number];
     const zm = (w0 + w1) / 2;
     camera.position.copy(toWorld(group, index, new THREE.Vector3(0, shell.FL + 1.2, zm)));

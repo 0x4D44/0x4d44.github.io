@@ -332,6 +332,7 @@ test('train: a standing train is nose-in at its buffer stop with every car north
 test('train: windows sit between the doors, about 2 m apart: nine on a through car, six on a driving car', () => {
   for (const kind of TRAIN_KINDS) {
     for (const car of trainLayout(kind).cars) {
+      // (the family's own plan, asked with no kind: round 6 leaves the first-class driving car's three or two bays of a train of its operator without a window, train-azuma-plan.test.ts)
       const p = carPlan(car);
       // gbtrains.uk: "the DPTS has six saloon windows"; the through cars are the same length with a door at each end
       assert.equal(p.windows.length, car.cab !== null ? 6 : 9, `${kind} car ${car.index} ${car.type} window count`);

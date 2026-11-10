@@ -1,6 +1,6 @@
-"""Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-bogie-trace.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts) against
+"""Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-bogie-trace.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts, train-interior-layout.ts, train-interior-kit.ts) against
 web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
-web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-roof.test.ts and web/tests/train-roof-ends.test.ts.
+web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts and web/tests/train-roof-ends.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ... | #a-b]
 `#a-b` runs the mutants at positions a up to (not including) b of the list below, counted from 0: the full run in slices, each through the machine's one-driver gate, with the
 never-red test names of every slice intersected afterwards (a slice cannot see what the others turned red).
@@ -23,7 +23,9 @@ L = "web/src/livery.ts"
 LV = "web/src/train-livery.ts"
 FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts"]
+ILAY = "web/src/train-interior-layout.ts"
+IKIT = "web/src/train-interior-kit.ts"
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts"]
 # the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
 GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
 MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
@@ -74,7 +76,7 @@ M = [
     ("covers: ridge count ignores the hatch's sloped ends", "const room = z1 - z0 - 2 * ez - 2 * ridges.margin - ridges.width;", "const room = z1 - z0 - 2 * ridges.margin - ridges.width;"),
     ("covers: ridges in the hatch's colour", "[up, up, up, up], col(ridges.colour));", "[up, up, up, up], coverColour);"),
     ("half as many windows", "const n = Math.max(1, Math.round((to - from) / 2.0));", "const n = Math.max(1, Math.round((to - from) / 4.0));"),
-    ("windows 0.6 m shorter", "windows.push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);", "windows.push([from + k * pitch + 0.5, from + (k + 1) * pitch - 0.5]);"),
+    ("windows 0.6 m shorter", "(k < blankBays ? blanks : windows).push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);", "(k < blankBays ? blanks : windows).push([from + k * pitch + 0.5, from + (k + 1) * pitch - 0.5]);"),
     ("EMU windows run onto the doors", "windows.push(...windowsIn((doors[0] as number) + dw / 2 + 0.35,", "windows.push(...windowsIn((doors[0] as number) + dw / 2 - 0.35,"),
     ("EMU windows run off the car", "const innerZone: [number, number] = [(doors[1] as number) + dw / 2 + 0.35, L - END_GAP - 0.45];", "const innerZone: [number, number] = [(doors[1] as number) + dw / 2 + 0.35, L - END_GAP + 0.45];"),
     ("Electrostar one car wider than the figure", "    half: fig.bodyWidth.value / 2,", "    half: fig.bodyWidth.value / 2.2,"),
@@ -910,6 +912,26 @@ M = [
     ("Desiro City far level: the bar in the castings' paint", "soup.box(yx0, yx1, barLow, barHigh, yz0, yz1, C.yaw);", "soup.box(yx0, yx1, barLow, barHigh, yz0, yz1, C.centre);", P),
     ("Desiro City frame: a tube along the damper with a skewed axis", "const e2 = unit([dir[2], 0, -dir[0]]);", "const e2 = unit([dir[2], 0.1, -dir[0]]);", P),
     ("Desiro City frame: a tube along the damper of the wrong length", "return { axis: { o: a, a: dir, e1, e2 }, length };", "return { axis: { o: a, a: dir, e1, e2 }, length: length * 0.9 };", P),
+    # --- the Azuma's windows and windowless bays by car role (round 6, T3): the table of first-class bays, which cars have them and at which end, the bay pitch, the plan's lists, and that the body, the carPlan
+    # call, the interior's layout and the interior's shell all read the plan of the train they stand in, not the family's. Each is caught by web/tests/train-azuma-plan.test.ts alone. -------------------------
+    ('plan: the first-class blank-bay table emptied', '{ lner5: 3, lner9: 3, hull5: 2 }', '{}'),
+    ('plan: LNER lead car blank bays 3 -> 2', '{ lner5: 3, lner9: 3, hull5: 2 }', '{ lner5: 2, lner9: 3, hull5: 2 }'),
+    ('plan: LNER nine blank bays 3 -> 4', '{ lner5: 3, lner9: 3, hull5: 2 }', '{ lner5: 3, lner9: 4, hull5: 2 }'),
+    ('plan: Hull blank bays 2 -> 3', '{ lner5: 3, lner9: 3, hull5: 2 }', '{ lner5: 3, lner9: 3, hull5: 3 }'),
+    ('plan: Hull blank bays 2 -> 1', '{ lner5: 3, lner9: 3, hull5: 2 }', '{ lner5: 3, lner9: 3, hull5: 1 }'),
+    ('plan: Lumo given blank bays', '{ lner5: 3, lner9: 3, hull5: 2 }', '{ lner5: 3, lner9: 3, hull5: 2, lumo5: 3 }'),
+    ('plan: blank bays at the inner end', '(k < blankBays ? blanks : windows)', '(k >= n - blankBays ? blanks : windows)'),
+    ('plan: the standard-class car gets the blank bays', "car.type === 'DPTF' && kind !== undefined", "car.type === 'DPTS' && kind !== undefined"),
+    ("plan: blank bays dropped from the plan's list", 'return { length: L, nose, doors, windows, blanks, crewDoors };', 'return { length: L, nose, doors, windows, crewDoors };'),
+    ("plan: a blank bay's window kept too", 'for (let k = 0; k < n; k++) (k < blankBays ? blanks : windows).push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);', 'for (let k = 0; k < n; k++) { if (k < blankBays) blanks.push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]); windows.push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]); }'),
+    ('plan: window pitch 2.0 -> 1.8', 'Math.round((to - from) / 2.0));\n  const pitch = (to - from) / n;\n  const blankBays', 'Math.round((to - from) / 1.8));\n  const pitch = (to - from) / n;\n  const blankBays'),
+    ('plan: the body ignores the kind', 'const plan = spec.plan(car, false, ctx.kind);', 'const plan = spec.plan(car, false);'),
+    ("plan: the AT300's plan drops the kind", 'plan: (car, _interior, kind) => at300Plan(car, kind),', 'plan: (car) => at300Plan(car),'),
+    ('plan: carPlan drops the kind', 'return BODIES[family].plan(car, false, kind);', 'return BODIES[family].plan(car, false);'),
+    ('layout: the interior plan drops the kind', 'plan: at300Plan(car, kind), nose: ASSUMED.noseLength', 'plan: at300Plan(car), nose: ASSUMED.noseLength', ILAY),
+    ("layout: the interior's windows emptied", "doors: plan.doors, windows: plan.windows, coach: fit?.coach ?? '' };\n}", "doors: plan.doors, windows: [], coach: fit?.coach ?? '' };\n}", ILAY),
+    ('kit: the shell cuts only the first window', 'for (const [s0, s1] of lay.windows) holes.push', 'for (const [s0, s1] of lay.windows.slice(0, 1)) holes.push', IKIT),
+    ('kit: the shell cuts no window', 'for (const [s0, s1] of lay.windows) holes.push', 'for (const [s0, s1] of ([] as [number, number][])) holes.push', IKIT),
     # --- and each number of the trace and of the depths the photograph cannot give (moved one unit of its last decimal, or 0.01 m) ---------------------------------------------------------------
     ("AT300 trace: caps: [[347", "caps: [[347", "caps: [[348", TRACE),
     ("AT300 trace: top: [[175", "top: [[175", "top: [[176", TRACE),

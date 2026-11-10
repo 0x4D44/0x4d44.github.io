@@ -266,6 +266,11 @@ export interface CarPlan {
   doors: number[];
   /** [from, to] of each passenger window */
   windows: [number, number][];
+  /**
+   * [from, to] of each windowless bay: a bay of the saloon's row (the same pitch as a window's) with no window in it, plain body panel (a first-class driving car's, at the AT300's
+   * cab end of the saloon: see FIRST_CLASS_BLANK_BAYS). The windows and these bays tile the stretch between the doors; absent: no such bay.
+   */
+  blanks?: [number, number][];
   /** narrow crew doors (the AT300's driver's access door), each a centre and a width in the same measure as `doors`; none where absent */
   crewDoors?: { s: number; width: number }[];
 }
@@ -454,7 +459,8 @@ interface BodySpec {
   noseRoof?: readonly NoseFitting[];
   /** a diesel unit's engine, transmission, cooler and tank hanging under the floor (null: an electric unit's underframe is hidden behind its skirts) */
   underfloor: UnderfloorSpec | null;
-  plan(car: Car, interior: boolean): CarPlan;
+  /** the plan of a car of this body; `kind` is the train it stands in, for a family whose cars differ by operator (the AT300's first-class driving car) */
+  plan(car: Car, interior: boolean, kind?: TrainKind): CarPlan;
 }
 
 const BW = FIGURES.bodyWidth.value;
@@ -580,11 +586,28 @@ const AT300: BodySpec = {
   // ASSUMED places and sizes, read off lner-800-pantograph-leeds-2019 (see roofKit in train-parts.ts): nothing over 0.25 m above the roof edge, under the covers' 0.27 m
   roofKit: { style: 'azuma', height: 0.25 },
   underfloor: null,
-  plan: (car) => at300Plan(car),
+  plan: (car, _interior, kind) => at300Plan(car, kind),
 };
 
-/** Doors at 3 m from the inner end and 2.6 m behind the nose of a driving car, and a crew door just behind its nose; windows (six on a driving car, nine on a through car) between the passenger doors. */
-export function at300Plan(car: Car): CarPlan {
+/**
+ * How many of the six bays of a first-class driving car's (DPTF's) saloon, counted from the passenger door beside the cab toward the car's inner end, have no window: plain body panel
+ * in the livery's band where a window would stand (round 6, T3: "windowless bays"). Read off the photographs, which show the right side of a car at the head of its train:
+ *   lner-801-214-2025 and lner-800-108-offord-cluny-2023 (the 800 108's lead car, side on): the passenger door, three blank bays with the faint outline of a window each, then three windows
+ *     by the inner-end door; hull-802-paragon-2025 (802 304's lead car, with the "First Class" sign by its inner-end door): the door, two blank panels, then four windows. The standard-class
+ *     driving car (DPTS) shows all six (lner-800-doncaster-2026; hull-802-home-2023, 802 302; LUMO-04-Lumo-803003-at-Edinburgh-Waverley, where both driving cars are standard class; and
+ *     gbtrains.uk, "the DPTS has six saloon windows"), so a car with fewer is the first-class one.
+ * INFERRED: that the LNER lead cars with the blank bays are the DPTF (no sign is legible in those photographs; the Hull car's sign and the same pattern say so). ASSUMED: that a blank bay is as wide
+ * as a window's pitch (the outlines in the photographs are about that wide), and that the left side of each car is the right side turned about (no photograph shows a left side). A through car
+ * (MS, MC, TS, MF) has none: the through cars in lner-801-214-2025 and hull-802-paragon-2025 show nine windows between their end doors, and no photograph shows a TS, MC or MF as such (ASSUMED the same).
+ * The Lumo 803 has no first class: both its driving cars are DPTS.
+ */
+export const FIRST_CLASS_BLANK_BAYS: Readonly<Partial<Record<TrainKind, number>>> = { lner5: 3, lner9: 3, hull5: 2 };
+
+/**
+ * Doors at 3 m from the inner end and 4.1 m behind the nose's end on a driving car, and a crew door just behind its nose; windows (six on a driving car, nine on a through car) between the passenger
+ * doors, except the first-class driving car's blank bays (FIRST_CLASS_BLANK_BAYS, for the `kind` it stands in: with no kind, every bay has its window).
+ */
+export function at300Plan(car: Car, kind?: TrainKind): CarPlan {
   const L = car.length;
   const nose = car.cab ? ASSUMED.noseLength : 0;
   const doors = [car.cab ? nose + ASSUMED.doorFromNose : ASSUMED.doorFromEnd, L - ASSUMED.doorFromEnd];
@@ -592,11 +615,13 @@ export function at300Plan(car: Car): CarPlan {
   const to = (doors[1] as number) - ASSUMED.doorWidth / 2 - 0.5;
   const n = Math.max(1, Math.round((to - from) / 2.0));
   const pitch = (to - from) / n;
+  const blankBays = car.cab !== null && car.type === 'DPTF' && kind !== undefined ? FIRST_CLASS_BLANK_BAYS[kind] ?? 0 : 0;
   const windows: [number, number][] = [];
-  for (let k = 0; k < n; k++) windows.push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);
+  const blanks: [number, number][] = [];
+  for (let k = 0; k < n; k++) (k < blankBays ? blanks : windows).push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);
   // a driving car has the narrow crew door just behind its nose, as well as its two passenger doors
   const crewDoors = car.cab ? [{ s: nose + ASSUMED.crewDoorFromNose, width: ASSUMED.crewDoorWidth }] : [];
-  return { length: L, nose, doors, windows, crewDoors };
+  return { length: L, nose, doors, windows, blanks, crewDoors };
 }
 
 /**
@@ -979,9 +1004,9 @@ export function underfloorBlocks(car: Car, spec: Pick<BodySpec, 'family' | 'unde
   });
 }
 
-/** The plan (doors and windows) of a car of any family. The Azuma's is the one the tests pin. */
-export function carPlan(car: Car, family: Family = 'at300'): CarPlan {
-  return BODIES[family].plan(car, false);
+/** The plan (doors and windows) of a car of any family, in the train of this `kind` (an Azuma's first-class driving car has windowless bays: see FIRST_CLASS_BLANK_BAYS). The Azuma's is the one the tests pin. */
+export function carPlan(car: Car, family: Family = 'at300', kind?: TrainKind): CarPlan {
+  return BODIES[family].plan(car, false, kind);
 }
 
 // --- the car section -----------------------------------------------------------------------------
@@ -1032,7 +1057,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const norm = normalised(sec);
   const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
   const M = sec.half.length * 2 - 1;
-  const plan = spec.plan(car, false);
+  const plan = spec.plan(car, false, ctx.kind);
   // distance along the car (s) to z: from the cab end for a driving car, from the start otherwise
   const dir = car.cab === 'rear' ? -1 : 1;
   const base = car.cab === 'rear' ? car.end : car.start;

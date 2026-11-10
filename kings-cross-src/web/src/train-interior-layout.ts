@@ -167,6 +167,8 @@ export interface CarInterior {
   /** the airline pitch each saloon came to */
   pitch: number[];
   doors: number[];
+  /** [from, to] of each passenger window, as the car's plan has them for the train it stands in (train.ts `CarPlan`): the openings the shell cuts, where a first-class driving car's blank bays have none */
+  windows: [number, number][];
 }
 
 /** Seat centres across the car for a class, right (+x) side first, as [x, side]. */
@@ -237,7 +239,7 @@ export function layoutCar(kind: TrainKind, car: Car): CarInterior {
   }
   const first = zones.find((z) => z.kind === 'saloon') as Zone;
   const wheelchair = fit?.wheelchair ? [{ s0: first.s0 + 0.05, s1: first.s0 + 0.05 + 0.75 * fit.wheelchair, side: -1 as const }] : [];
-  return { zones, walls: walls.sort((a, b) => a.s - b.s), seats, tables, stacks, toilets, wheelchair, pitch, doors: plan.doors, coach: fit?.coach ?? '' };
+  return { zones, walls: walls.sort((a, b) => a.s - b.s), seats, tables, stacks, toilets, wheelchair, pitch, doors: plan.doors, windows: plan.windows, coach: fit?.coach ?? '' };
 }
 
 /**
@@ -247,7 +249,7 @@ export function layoutCar(kind: TrainKind, car: Car): CarInterior {
  */
 function intercityBody(kind: TrainKind, car: Car): { plan: CarPlan; nose: number; doorWidth: number; cabWall: number } {
   const family = TRAIN_SPECS[kind].family;
-  if (family === 'at300') return { plan: at300Plan(car), nose: ASSUMED.noseLength, doorWidth: ASSUMED.doorWidth, cabWall: FIT.cabWall };
+  if (family === 'at300') return { plan: at300Plan(car, kind), nose: ASSUMED.noseLength, doorWidth: ASSUMED.doorWidth, cabWall: FIT.cabWall };
   const spec = bodySpec(family);
   const plan = spec.plan(car, false);
   const nose = spec.nose.length;

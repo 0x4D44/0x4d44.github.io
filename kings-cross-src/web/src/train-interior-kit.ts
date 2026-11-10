@@ -34,8 +34,6 @@ export interface Shell {
   doorY: readonly [number, number];
   doorWidth: number;
   doorLeaves: 1 | 2;
-  /** the car's passenger windows, from train.ts's own plan (the same spans it lays its panes on) */
-  windows: (car: Car) => [number, number][];
   /** the wide open gangway's clear opening (a walk-through unit), half its width and its head over the floor */
   gangway: { half: number; head: number };
 }
@@ -62,7 +60,6 @@ export function shellFor(family: Family): Shell {
     doorY: spec.doorY,
     doorWidth: spec.doorWidth,
     doorLeaves: spec.doorLeaves,
-    windows: (car) => spec.plan(car, false).windows,
     // the bellows' own opening less a 0.25 m frame each side, to 2.05 m over the floor (ASSUMED)
     gangway: { half: spec.gangway.width / 2 - 0.25, head: FL + 2.05 },
   };
@@ -207,14 +204,15 @@ export function drawShell(d: InteriorDraw, shell: Shell, lay: CarInterior, pal: 
   const { XI, FL, YC, YT, SKIN } = shell;
   const front = lay.walls[0]!.s, back = lay.walls[lay.walls.length - 1]!.s;
 
-  // --- the openings: every passenger window, and the lights in each passenger door's leaves (train.ts draws them at these places) ---
+  // --- the openings: every passenger window (the spans the car's plan gives for the train it stands in: a first-class Azuma driving car's blank bays have none), and the lights in
+  // each passenger door's leaves (train.ts draws them at these places) ---
   const [wy0, wy1] = shell.windowY;
   const [, dy1] = shell.doorY;
   const openings: Opening[] = [];
   const ends: EndOpening[] = [];
   const holes: { s0: number; s1: number; y0: number; y1: number; kind: 'window' | 'door' }[] = [];
   const plan = lay.doors;
-  for (const [s0, s1] of shell.windows(car)) holes.push({ s0, s1, y0: wy0, y1: wy1, kind: 'window' });
+  for (const [s0, s1] of lay.windows) holes.push({ s0, s1, y0: wy0, y1: wy1, kind: 'window' });
   for (const s of plan) for (const l of doorLights(shell, s)) holes.push({ ...l, kind: 'door' });
   for (const h of holes) for (const side of [1, -1] as const) {
     const za = Z(h.s0), zb = Z(h.s1);

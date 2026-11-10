@@ -173,7 +173,7 @@ export function layoutCommuter(kind: TrainKind, car: Car): CommuterInterior {
     }
     pitch.push(layBays(sp, cls, a0, a1, seats, tables));
   });
-  return { zones: zones.sort((p, q) => p.s0 - q.s0), walls: walls.sort((p, q) => p.s - q.s), seats, tables, stacks: [], toilets, wheelchair, pitch, doors: plan.doors, coach: fit?.coach ?? '', vestibules };
+  return { zones: zones.sort((p, q) => p.s0 - q.s0), walls: walls.sort((p, q) => p.s - q.s), seats, tables, stacks: [], toilets, wheelchair, pitch, doors: plan.doors, windows: plan.windows, coach: fit?.coach ?? '', vestibules };
 }
 
 /** Lay one saloon's bays and rows from a0 to a1: rows facing +s, the bays, rows facing -s, centred. Answers the airline pitch used (0 with none). */
