@@ -179,6 +179,9 @@ committed OSM geometry, fake credentials and browser transports; socket tests us
 only. No real recordings, keychain access, upstream feed or Chrome is required. Sandboxes
 that deny loopback cannot run the socket cases. Typecheck covers the TypeScript source.
 Use the area's mutation driver after changing a rule; it tests isolated scratch copies.
+On a machine shared with GPU timing work, run the suite as `npm --prefix kings-cross-src run
+test:shared-host`: it runs at `nice -n 19` with at most two test files at once, so it does
+not disturb other jobs' timings.
 
 ```sh
 timeout 120 node --test kings-cross-src/relay/tests/relay.test.mjs kings-cross-src/relay/tests/schedule.test.mjs </dev/null
