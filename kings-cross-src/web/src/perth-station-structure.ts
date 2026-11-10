@@ -255,7 +255,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -11 + P
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xd8dad5, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x858b8e, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xd8dad5, seam: 0x55595b, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x747672, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -285,7 +285,7 @@ export interface PerthStationPlan {
   /** R-pt1-a's and R-pt1-c's platform furniture (track frame): benches and bins along the island building's faces (`out` from the wall),
    *  the timber kiosk on its platform 4 face, direction boards hung from the column-to-column girders (`dir` along the girder) and
    *  platform number boards on the columns. */
-  furniture: {benches: {at: Pt; out: Pt}[]; bins: Pt[]; kiosk?: {at: Pt; out: Pt}; boards: {at: Pt; dir: Pt}[]; numbers: {at: Pt; dir: Pt}[]; lamps: {at: Pt; arm: Pt}[]};
+  furniture: {benches: {at: Pt; out: Pt}[]; bins: Pt[]; kiosk?: {at: Pt; out: Pt}; boards: {at: Pt; dir: Pt}[]; numbers: {at: Pt; dir: Pt}[]; lamps: {at: Pt; arm: Pt; double: boolean}[]};
   /** Round 6: the platforms' end ramps (platformRamps), track frame. */
   ramps: PerthRamp[];
 }
@@ -550,7 +550,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
       for (const p of sides) {
         if (inRing(p, local.roof) || (local.canopy.length >= 3 && inRing(p, local.canopy)) || !roomy(p, 2.2)) continue;
         if ([...furniture.benches.map(q => q.at), ...furniture.bins].some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 2)) continue;
-        furniture.lamps.push({at: p, arm: [f.axis[0], f.axis[1]]});
+        furniture.lamps.push({at: p, arm: [f.axis[0], f.axis[1]], double: furniture.lamps.length % PERTH_LAMP.doubleEvery === 0});
       }
     }
   }
@@ -766,7 +766,9 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
       // Round 6 (Abbott 6573357, the round-5 score): clad in mid-grey panels (towerClad), not the pale frame grey, each panel column
       // broken by horizontal joints every T.joint m, staggered half a panel between neighbouring columns as Abbott shows them. Round 9 (the
       // round-8 score: the cladding read lighter than Abbott's mid-grey, so the off-white frame hardly stood out): towerClad 0x858b8e (was
-      // 0x9a9fa1). Abbott is overcast; under the scene's sun the old albedo rendered paler than the photograph's panels.
+      // 0x9a9fa1). Abbott is overcast; under the scene's sun the old albedo rendered paler than the photograph's panels. Round 10 (the
+      // round-9 score: about 153 rendered, Abbott's panels 125-134): towerClad 0x747672, a touch warm as Abbott's (its panels average
+      // about 129, 128, 120), rendering near 130; the seams darkened to 0x55595b so the joints still read on it.
       b.box([xc, (y0 + y1) / 2, zc], [T.size, y1 - y0, T.size], {rotY, color: P('towerClad'), skip: ['-y']});
       b.box([xc, y1 + .1, zc], [T.size + .3, .2, T.size + .3], {rotY, color: P('frame')});
       const u: Pt = l.tower.dir, v: Pt = [-u[1], u[0]], hs = T.size / 2 + .015;
@@ -1200,10 +1202,31 @@ export function clockCorbel(b: Batch, at: (out: number, y: number, along?: numbe
   b.box(at(back + K.depth / 2 + .02, y0 - K.lip / 2), [K.depth + .04, K.lip, 2 * W + .04], {rotY, color: P('timberDark')});
   b.box(at(back + .07, y0 - K.drop - .06), [.12, .12, .12], {rotY, color: P('gilt')});
 }
-/** Round 9 (S5): the open platforms' lamp standards (Abbott 6573357): `height` m to the arm, a column of radius `radius` m on a 0.6 m
- *  plinth of radius `base`, an `arm` m arm and a flat `head` (along, deep, across) luminaire, every `every` m, `back` m from a track's
- *  centreline (about 2.4 m back from the coper). ASSUMED sizes, scaled from Abbott against the 8 m lift towers. */
-export const PERTH_LAMP = {every: 15, back: 4, height: 6.5, radius: .075, base: .13, arm: .5, head: [.55, .12, .28] as const} as const;
+/** Round 9 (S5): the open platforms' lamp standards (Abbott 6573357): a column of radius `radius` m, `height` m to its top, on a 0.6 m
+ *  plinth of radius `base`, every `every` m, `back` m from a track's centreline (about 2.4 m back from the coper). Round 10 (the round-9
+ *  score: Abbott's luminaires are pole-top lanterns, some doubled, not a flat head on an arm): at the top a dark grey teardrop lantern
+ *  (`lantern`: `length` m long, `width` across, `depth` deep, its nose tilted `tilt` rad up, on a `reach` m bracket), its pale lens
+ *  underneath; every `doubleEvery`-th standard carries a second back to back, `drop` m lower (Abbott's doubled heads). ASSUMED sizes,
+ *  scaled from Abbott against the 8 m lift towers. */
+export const PERTH_LAMP = {every: 15, back: 4, height: 6.5, radius: .075, base: .13, doubleEvery: 2,
+  lantern: {length: .62, width: .3, depth: .2, tilt: .3, reach: .1, drop: .3, color: 0x6c7173}} as const;
+/** One lantern head (PERTH_LAMP.lantern) from `root`, pointing along the unit `dir` and tilted up: a six-sided teardrop, narrow at the
+ *  bracket, fullest past half-way, closed at the nose; the lens (the `lamp` paint) a flat hexagon under its fullest part. */
+function lanternHead(b: Batch, root: V3, dir: Pt, grey: Rgb): void {
+  const H = PERTH_LAMP.lantern, c = Math.cos(H.tilt), s = Math.sin(H.tilt);
+  const u: V3 = [dir[0] * c, s, dir[1] * c], v: V3 = [-dir[1], 0, dir[0]], w: V3 = [-dir[0] * s, c, -dir[1] * s];
+  const at = (t: number, a: number, r: [number, number], lift = 0): V3 => [0, 1, 2].map(i => root[i] + u[i] * t * H.length + v[i] * Math.cos(a) * r[0] + w[i] * (Math.sin(a) * r[1] + lift)) as V3;
+  const rings: [number, [number, number]][] = [[0, [.05, .04]], [.6, [H.width / 2, H.depth / 2]], [1, [H.width / 4, H.depth / 4]]];
+  for (let k = 0; k < rings.length - 1; k++) for (let j = 0; j < 6; j++) {
+    const a0 = j / 6 * 2 * Math.PI, a1 = (j + 1) / 6 * 2 * Math.PI, am = (a0 + a1) / 2;
+    b.poly([at(rings[k][0], a0, rings[k][1]), at(rings[k][0], a1, rings[k][1]), at(rings[k + 1][0], a1, rings[k + 1][1]), at(rings[k + 1][0], a0, rings[k + 1][1])], undefined,
+      {facing: [v[0] * Math.cos(am) + w[0] * Math.sin(am), v[1] * Math.cos(am) + w[1] * Math.sin(am), v[2] * Math.cos(am) + w[2] * Math.sin(am)], color: grey});
+  }
+  b.poly([0, 1, 2, 3, 4, 5].map(j => at(1, j / 6 * 2 * Math.PI, rings[2][1])), undefined, {facing: u, color: grey});
+  // The lens: a hexagon in the head's underside plane, just below its fullest ring, 0.7 of its width across and half its length along.
+  const lens = [0, 1, 2, 3, 4, 5].map(j => { const a = j / 6 * 2 * Math.PI, q = at(.6 + .25 * Math.sin(a), 0, [0, 0], -H.depth / 2 - .005); return [0, 1, 2].map(i => q[i] + v[i] * Math.cos(a) * H.width * .35) as V3; });
+  b.poly(lens, undefined, {facing: [-w[0], -w[1], -w[2]], color: P('lamp')});
+}
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
 function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
   const F = PERTH_STATION.furniture, deck = WAVERLEY_LEVELS.platform, slat = P('benchSlat'), frame = P('benchFrame');
@@ -1214,14 +1237,17 @@ function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
     for (const y of [.62, .8]) b.box(p(-.24, y), [L, .1, .04], {rotY, color: slat});
     for (const u of [-L / 2 + .1, L / 2 - .1]) { b.box(p(0, h / 2, u), [.06, h, .45], {rotY, color: frame}); b.box(p(-.24, .65, u), [.06, .45, .05], {rotY, color: frame}); }
   }
-  for (const {at, arm} of plan.furniture.lamps) {
-    // Abbott 6573357's lamp standards: a plinth, a tapering galvanised column, a short arm and a flat luminaire under its end.
-    const L = PERTH_LAMP, grey = P('modern'), top = deck + L.height, e: V3 = [at[0] + arm[0] * L.arm, top, at[1] + arm[1] * L.arm];
+  for (const {at, arm, double} of plan.furniture.lamps) {
+    // Abbott 6573357's lamp standards: a plinth, a galvanised column capped at its top, and pole-top lanterns on short brackets (round 10).
+    const L = PERTH_LAMP, H = L.lantern, grey = P('modern'), dark = rgb(H.color), top = deck + L.height;
     roundColumn(b, at[0], at[1], L.base, deck, deck + .6, grey);
     roundColumn(b, at[0], at[1], L.radius, deck + .6, top, grey);
-    beam(b, [at[0], top - .05, at[1]], e, .07, .07, grey);
-    b.box([e[0], top - .1, e[2]], [L.head[0], L.head[1], L.head[2]], {rotY: Math.atan2(-arm[1], arm[0]), color: grey});
-    b.box([e[0], top - .1 - L.head[1] / 2 - .005, e[2]], [L.head[0] - .06, .01, L.head[2] - .06], {rotY: Math.atan2(-arm[1], arm[0]), color: P('lamp')});
+    b.box([at[0], top + .03, at[1]], [.18, .06, .18], {color: grey});
+    for (const [sg, dy] of double ? [[1, 0], [-1, -H.drop]] : [[1, 0]]) {
+      const d: Pt = [arm[0] * sg, arm[1] * sg], y = top - .08 + dy, root: V3 = [at[0] + d[0] * (L.radius + H.reach), y, at[1] + d[1] * (L.radius + H.reach)];
+      beam(b, [at[0], y, at[1]], root, .05, .05, grey);
+      lanternHead(b, root, d, dark);
+    }
   }
   for (const at of plan.furniture.bins) { b.box([at[0], deck + .45, at[1]], [.5, .9, .5], {color: P('bin')}); b.box([at[0], deck + .93, at[1]], [.56, .06, .56], {color: P('benchFrame')}); }
   if (plan.furniture.kiosk) {

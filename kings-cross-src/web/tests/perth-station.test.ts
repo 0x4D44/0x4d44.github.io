@@ -688,8 +688,10 @@ test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, wi
   }
   const g = PERTH_PAINT.towerClad, [r, gg, b] = [g >> 16, (g >> 8) & 255, g & 255], m = PERTH_PAINT.modern;
   // (Round 9: floor 0x80, was 0x88: Abbott's overcast mid-grey renders paler under the scene's sun, and the round-8 score asked for it
-  // darker so the off-white frame stands out; the round-9 test below bounds the frame-to-cladding contrast.)
-  assert.ok(r >= 0x80 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
+  // darker so the off-white frame stands out; the round-9 test below bounds the frame-to-cladding contrast. Round 10: floor 0x68, was
+  // 0x80: Abbott's panels measure 125-134 and the round-9 cladding rendered about 153, so the albedo goes nearer 0x74; the floor still
+  // keeps it a mid grey, well off the dark seams and iron.)
+  assert.ok(r >= 0x68 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
 });
 
 test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift door under a glass hood at platform and deck level on every tower; the island building\'s windows set deep', () => {
@@ -952,16 +954,17 @@ test('round 9: Abbott 6573357\'s lift bridge: the off-white frame stands well cl
     assert.ok(plan.local.platforms.some(q => inRing(l.at, q.pts) || ringDistance(l.at, q.pts) < .05) && railDistance(toWorld(l.at)) > 3.5, `a lamp at ${l.at} on a platform, clear of its tracks (${railDistance(toWorld(l.at)).toFixed(2)} m)`);
     assert.ok([...plan.furniture.benches.map(q => q.at), ...plan.furniture.bins].every(q => Math.hypot(q[0] - l.at[0], q[1] - l.at[1]) >= 2 - 1e-9), `a lamp at ${l.at} by a bench or bin`);
   }
-  // Drawn: the luminaire's lens (the lamp paint) at the head of each, 6 m up.
+  // Drawn: the luminaire's lens (the lamp paint) at the head of each, 6 m up. (Round 10: anywhere within 0.8 m of the pole and 0.7 m
+  // under its top, the lanterns' lenses; was under the end of round 9's 0.5 m arm, 0.17 m under the top.)
   const f = batches.fittings, lens = rgb(PERTH_PAINT.lamp); let heads = 0;
   for (const l of lamps) {
     let n = 0;
     for (let i = 0; i < f.positions.length; i += 3) {
       if (Math.abs(f.colors[i] - lens[0]) > 1e-6 || Math.abs(f.colors[i + 2] - lens[2]) > 1e-6) continue;
-      const q = toLocal([f.positions[i], f.positions[i + 2]]);
-      if (Math.hypot(q[0] - l.at[0] - l.arm[0] * L.arm, q[1] - l.at[1] - l.arm[1] * L.arm) < .4 && Math.abs(f.positions[i + 1] - (deck + L.height - .17)) < .05) n++;
+      const q = toLocal([f.positions[i], f.positions[i + 2]]), dy = deck + L.height - f.positions[i + 1];
+      if (Math.hypot(q[0] - l.at[0], q[1] - l.at[1]) < .8 && dy > 0 && dy < .7) n++;
     }
-    if (n >= 8) heads++;
+    if (n >= 6) heads++;
   }
   assert.equal(heads, lamps.length, 'each lamp drawn with its luminaire');
   // In the frozen view Abbott's photograph matches: two or more lamps in pt-platform-4-north's frame.
@@ -1074,4 +1077,31 @@ test('round 9: R-pt1-a\'s principal trusses: a heavy rib and an open Warren web 
   assert.ok(P >= 2 && (n - rib.positions.length / 3) / per <= 2 * k, `open panels (${P.toFixed(1)} m, ${((n - rib.positions.length / 3) / per).toFixed(0)} members)`);
   // The rib heavier than the round-8 rib (0.1 m).
   assert.ok(T.size > .1, `a heavy rib (${T.size} m)`);
+});
+
+test('round 10: Abbott 6573357: the cladding near its photographed mid-grey with its seams darker; pole-top lanterns, some doubled, not a flat head on an arm', () => {
+  // The cladding: each channel 0x6c-0x7c (Abbott's panels measure 125-134 under cloud; the scene's sun lifts an albedo about a tenth),
+  // a touch warm (blue lowest), and the seams 0x10 or more darker in every channel.
+  const ch = (h: number): number[] => [h >> 16, (h >> 8) & 255, h & 255], c = ch(PERTH_PAINT.towerClad), s = ch(PERTH_PAINT.seam);
+  assert.ok(c.every(v => v >= 0x6c && v <= 0x7c) && c[2] <= c[0] && c[2] <= c[1], `the cladding near Abbott's (${PERTH_PAINT.towerClad.toString(16)})`);
+  assert.ok(s.every((v, i) => v <= c[i] - 0x10), `seams darker than the cladding (${PERTH_PAINT.seam.toString(16)})`);
+  // The lanterns: at each standard's top, one lens per head (a hexagon), two heads on the doubled ones, each head's dark body reaching
+  // past the pole and its nose higher than its root (tilted up); nothing of the pole's grey more than 0.25 m out (no arm).
+  const L = PERTH_LAMP, H = L.lantern, lamps = plan.furniture.lamps, f = batches.fittings, deck = WAVERLEY_LEVELS.platform, top = deck + L.height;
+  const is = (i: number, hex: number): boolean => { const k = rgb(hex); return [0, 1, 2].every(j => Math.abs(f.colors[i + j] - k[j]) < 1e-6); };
+  assert.ok(lamps.some(l => l.double) && lamps.some(l => !l.double), 'some doubled, some single');
+  for (const l of lamps) {
+    let lens = 0, armed = 0; const body: {r: number; y: number; side: number}[] = [];
+    for (let i = 0; i < f.positions.length; i += 3) {
+      const q = toLocal([f.positions[i], f.positions[i + 2]]), r = Math.hypot(q[0] - l.at[0], q[1] - l.at[1]), y = f.positions[i + 1];
+      if (r > 1.2 || y < top - 1 || y > top + .5) continue;
+      if (is(i, PERTH_PAINT.lamp)) lens++;
+      if (is(i, H.color)) body.push({r, y, side: Math.sign((q[0] - l.at[0]) * l.arm[0] + (q[1] - l.at[1]) * l.arm[1])});
+      if (is(i, PERTH_PAINT.modern) && r > .25) armed++;
+    }
+    assert.equal(lens, 6 * (l.double ? 2 : 1), `a lens per head at ${l.at} (${lens} vertices)`);
+    assert.equal(armed, 0, `no arm at ${l.at}`);
+    for (const side of l.double ? [1, -1] : [1]) { const hb = body.filter(p => p.side === side), far = hb.reduce((m, p) => p.r > m.r ? p : m, {r: 0, y: 0, side}), near = hb.reduce((m, p) => p.r < m.r ? p : m, {r: 9, y: 0, side});
+      assert.ok(far.r > H.length * .8 && far.y > near.y + .1, `a lantern reaching out and tilted up at ${l.at}, side ${side} (out ${far.r.toFixed(2)} m, rising ${(far.y - near.y).toFixed(2)} m)`); }
+  }
 });
