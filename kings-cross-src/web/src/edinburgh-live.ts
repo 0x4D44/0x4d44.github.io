@@ -9,7 +9,9 @@ import type { Car } from '../../core/train.ts';
 import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverley-anchors.ts';
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
-import { matchBooked, validateFleetTable } from '../../core/edinburgh-diagrams.ts';
+import { bookedSource, firstEvidence, matchBooked, validateFleetTable } from '../../core/edinburgh-diagrams.ts';
+import { ptacSource, validatePtacStore } from '../../core/edinburgh-ptac.ts';
+import type { PtacStore } from '../../core/edinburgh-ptac.ts';
 import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
 import { buildNeutralTrain } from './train-neutral.ts';
 import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
@@ -61,6 +63,29 @@ export function createEdinburghMotion(geometry: unknown, value: unknown,
 export const bookedServiceFor = (table: () => FleetTable | undefined) =>
   (description: string, atMs: number): EdinburghServiceEvidence | undefined => { const t = table(); return t ? matchBooked(t, description, atMs) : undefined; };
 
+/** serviceFor with PTAC ahead of the booked diagrams, each as it stands at each birth; an absent source is skipped. */
+export const fleetServiceFor = (ptac: () => PtacStore | undefined, table: () => FleetTable | undefined) =>
+  (description: string, atMs: number): EdinburghServiceEvidence | undefined => {
+    const p = ptac(), t = table();
+    return firstEvidence(p && ptacSource(p), t && bookedSource(t))(description, atMs);
+  };
+
+/**
+ * Reads GET /fleet's {booked, ptac} document. Each section is checked on its own: an invalid one is dropped and
+ * named in the note, the other still counts. Throws when the body is not that document.
+ */
+export function readFleetDocument(body: unknown): { booked?: FleetTable; ptac?: PtacStore; note: string } {
+  if (typeof body !== 'object' || body === null || Array.isArray(body) || !('booked' in body) || !('ptac' in body) || Object.keys(body).length !== 2) throw new Error('fleet document required');
+  const doc = body as { booked: unknown; ptac: unknown };
+  let booked: FleetTable | undefined, ptac: PtacStore | undefined;
+  const bad: string[] = [];
+  if (doc.booked !== null) { try { booked = validateFleetTable(doc.booked); } catch { bad.push('booked table invalid'); } }
+  if (doc.ptac !== null) { try { ptac = validatePtacStore(doc.ptac); } catch { bad.push('PTAC store invalid'); } }
+  const found = [ptac && `PTAC allocation (${Object.keys(ptac.trains).length} trains)`, booked && `booked diagrams (${booked.workings.length} workings)`].filter(Boolean);
+  if (!found.length) throw new Error('no valid fleet section');
+  return { booked, ptac, note: `fleet: ${found.join(' + ')}${bad.length ? ` (${bad.join(', ')})` : ''}` };
+}
+
 export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDependencies {
   const source = deps.source ?? (url => new EventSource(url));
   return { ...deps, source: () => source('/relay/events?area=EB') };
@@ -78,16 +103,17 @@ export function createEdinburghLive(options: {
   let session: ReturnType<typeof createEdinburghMotion> | undefined, feed: TrainFeed | undefined;
   let replay: ReturnType<typeof createAreaReplay> | undefined, disposed = false, loading = false, retryAt = 0, attempt = 0;
   let connection = 'live trains unavailable; private EB anchors required', error: string | undefined;
-  // The booked-diagram fleet table (private, from the relay). Without it every train is the neutral assumed fleet.
-  let fleet: FleetTable | undefined, fleetNote = 'fleet: no evidence; neutral';
+  // The fleet evidence (private, from the relay): PTAC allocations first, then the booked diagrams. Without either every
+  // train is the neutral assumed fleet.
+  let fleet: FleetTable | undefined, ptac: PtacStore | undefined, fleetNote = 'fleet: no evidence; neutral';
   const fetchImpl = options.fetchImpl ?? fetch, abort = new AbortController();
   const loadFleet = async (): Promise<void> => {
-    fleet = undefined; fleetNote = 'fleet: no evidence; neutral';
+    fleet = undefined; ptac = undefined; fleetNote = 'fleet: no evidence; neutral';
     try {
       const response = await fetchImpl('/relay/fleet?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
       if (!response.ok) { fleetNote = `fleet: no evidence (${response.status === 404 ? 'no table' : response.status}); neutral`; return; }
-      const table = validateFleetTable(await response.json());
-      fleet = table; fleetNote = `fleet: booked diagrams (${table.workings.length} workings)`;
+      const doc = readFleetDocument(await response.json());
+      fleet = doc.booked; ptac = doc.ptac; fleetNote = doc.note;
     } catch { fleetNote = 'fleet: no evidence (table unreadable or invalid); neutral'; }
   };
   const load = async (): Promise<void> => {
@@ -97,7 +123,7 @@ export function createEdinburghLive(options: {
       const response = await fetchImpl('/relay/anchors?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
       if (!response.ok) throw new Error(`EB anchors unavailable (${response.status})`);
       // serviceFor reads the table as it stands at each birth; the fleet is fetched below, before any train can be born.
-      const candidate = createEdinburghMotion(options.geometry, await response.json(), bookedServiceFor(() => fleet));
+      const candidate = createEdinburghMotion(options.geometry, await response.json(), fleetServiceFor(() => ptac, () => fleet));
       if (!candidate.anchors.anchors.length) throw new Error('EB positions/headings unresolved; no placed anchors');
       await loadFleet();
       if (options.mode === 'replay') {

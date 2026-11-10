@@ -39,7 +39,8 @@ export function neutralTrainLayout(lengthM = NEUTRAL_ASSUMED.length.value, carCo
  * a booked diagram (the operator's published unit diagram for that working) is a plan,
  * not an observation of the unit on the day. A later source (an actual allocation feed)
  * feeds the same rows with its own basis. */
-export type EvidenceBasis = 'service evidence' | 'booked diagram' | 'actual allocation';
+/** 'PTAC allocation': Network Rail's planned unit allocation (core/edinburgh-ptac.ts), a plan like a diagram but per day. */
+export type EvidenceBasis = 'service evidence' | 'booked diagram' | 'actual allocation' | 'PTAC allocation';
 /** One unit of a train: its class and its own vehicle count (power cars included). */
 export interface EvidenceUnit { readonly class: string; readonly cars: number }
 export interface EdinburghServiceEvidence {

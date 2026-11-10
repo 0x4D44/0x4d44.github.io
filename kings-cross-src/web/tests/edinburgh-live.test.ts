@@ -124,7 +124,7 @@ async function replayWith(fleet: (init?: RequestInit) => Response | Promise<Resp
 }
 
 test('EB fetches the booked fleet after the anchors and reports it; the booked evidence reaches the births', async () => {
-  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify(fleetTable)));
+  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify({ booked: fleetTable, ptac: null })));
   assert.deepEqual(calls.map(c => c.url), ['/relay/anchors?area=EB', '/relay/fleet?area=EB', '/relay/recording?area=EB&date=20260101']);
   assert.ok(calls.every(c => c.cache === 'no-store'));
   assert.equal(runtime.state().ready, true);
@@ -142,8 +142,11 @@ test('EB carries on neutral, and says so, when the fleet table is absent, refuse
     [() => new Response('{}', { status: 404 }), /fleet: no evidence \(no table\); neutral/],
     [() => new Response('{}', { status: 502 }), /fleet: no evidence \(502\); neutral/],
     [() => new Response('not json'), /fleet: no evidence \(table unreadable or invalid\); neutral/],
-    [() => new Response(JSON.stringify({ ...fleetTable, workings: [{ ...fleetTable.workings[0]!, headcode: 'x' }] })), /table unreadable or invalid/],
-    [() => new Response(JSON.stringify({ ...fleetTable, extra: 1 })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: { ...fleetTable, workings: [{ ...fleetTable.workings[0]!, headcode: 'x' }] }, ptac: null })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: { ...fleetTable, extra: 1 }, ptac: null })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify(fleetTable)), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: fleetTable, ptac: null, extra: 1 })), /table unreadable or invalid/],
+    [() => new Response(JSON.stringify({ booked: null, ptac: { format: 'kx-ptac/0', trains: {} } })), /table unreadable or invalid/],
     [() => { throw new Error('network down'); }, /table unreadable or invalid/],
   ];
   for (const [fleet, message] of cases) {
@@ -158,7 +161,7 @@ test('EB carries on neutral, and says so, when the fleet table is absent, refuse
 });
 
 test('EB asks for no fleet table while its anchors are unavailable', async () => {
-  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify(fleetTable)), 404);
+  const { runtime, calls } = await replayWith(() => new Response(JSON.stringify({ booked: fleetTable, ptac: null })), 404);
   assert.deepEqual(calls.map(c => c.url), ['/relay/anchors?area=EB']);
   assert.equal(runtime.state().ready, false);
   runtime.dispose();
