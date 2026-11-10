@@ -292,12 +292,30 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
     }
     // the lamp housings: a dark recess at each front corner, angled round onto the cab side, the headlight over the tail lamp (scotrail385-01, -02)
     const faceHalf = xAtY(halfBehindFace(0), (LAMP.y0 + LAMP.y1) / 2);
-    for (const sx of [-1, 1]) {
-      // proud of the corner by a few centimetres, so its outer face turns the housing round onto the side without a ragged edge
-      const a = sx * LAMP.xIn, b = sx * (faceHalf + 0.035);
-      box(Math.min(a, b), Math.max(a, b), LAMP.y0, LAMP.y1, TIP - 0.014, TIP + 0.08, C.frame);
-    }
     const lx = (LAMP.xIn + faceHalf) / 2;
+    // in plan, flat across the lenses, then angled back to the corner and wrapped round onto the cab side (scotrail385-01:
+    // the housing's outer face turns the corner); a prism from LAMP.y0 to LAMP.y1, each level following the body's width
+    const plan = (y: number): [number, number][] => {
+      const side = (u: number): number => xAtY(halfBehindFace(u), y);
+      // the wrap follows the curved side closely (every 3 cm of depth), so the loft cannot bulge through between points
+      const wrap = Array.from({ length: 9 }, (_, i): [number, number] => { const u = 0.06 + i * 0.03; return [side(u) + 0.03, u]; });
+      return [[LAMP.xIn, -0.014], [lx + LAMP.head.r + 0.06, -0.014], ...wrap, [side(0.3) - 0.06, 0.3], [LAMP.xIn, 0.08]];
+    };
+    for (const sx of [-1, 1]) {
+      // five levels, so the wrap follows the side's bulge between the housing's foot and top
+      const ys = Array.from({ length: 5 }, (_, k) => LAMP.y0 + (LAMP.y1 - LAMP.y0) * k / 4), rings = ys.map(plan);
+      const at = ([x, u]: [number, number], y: number): V3 => [sx * x, y, zAt(TIP + u)];
+      const core: V3 = [sx * (LAMP.xIn + 0.15), (LAMP.y0 + LAMP.y1) / 2, zAt(TIP + 0.12)];
+      for (let k = 0; k + 1 < ys.length; k++) {
+        const lo = rings[k]!, hi = rings[k + 1]!;
+        for (let i = 0; i < lo.length; i++) {
+          const j = (i + 1) % lo.length;
+          detail.face([at(lo[i]!, ys[k]!), at(lo[j]!, ys[k]!), at(hi[j]!, ys[k + 1]!), at(hi[i]!, ys[k + 1]!)], core, col(C.frame));
+        }
+      }
+      detail.fan(rings.at(-1)!.map(p => at(p, LAMP.y1)), [0, 1, 0], col(C.frame));
+      detail.fan(rings[0]!.map(p => at(p, LAMP.y0)), [0, -1, 0], col(C.frame));
+    }
     for (const sx of [-1, 1]) {
       const x = sx * lx;
       for (const [r, y] of [[LAMP.head.r + 0.03, LAMP.head.y], [LAMP.tail.r + 0.03, LAMP.tail.y]] as const) {
@@ -418,12 +436,18 @@ let haloMaterial: THREE.MeshBasicMaterial | null = null;
  */
 function lampHalo(role: 'head' | 'tail', centres: V3[], lit: boolean): THREE.Mesh {
   const pos: number[] = [], rgb: number[] = [];
-  const c = col(role === 'head' ? LENS.headOn : LENS.tailOn), r = HALO.radius[role], n = 20;
+  const c = col(role === 'head' ? LENS.headOn : LENS.tailOn), r = HALO.radius[role], n = 32;
+  // rings out from the centre with the strength falling off roughly as a gaussian, so the rim is black and no edge shows
+  const rings: [number, number][] = [[0, 1], [0.2, 0.8], [0.42, 0.42], [0.66, 0.14], [1, 0]];
   for (const [x, y, z] of centres) {
-    for (let i = 0; i < n; i++) {
-      const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
-      pos.push(x, y, z, x + r * Math.cos(a0), y + r * Math.sin(a0), z, x + r * Math.cos(a1), y + r * Math.sin(a1), z);
-      rgb.push(c.r, c.g, c.b, 0, 0, 0, 0, 0, 0);
+    const p = (k: number, i: number): [number, number, number] => {
+      const a = (i / n) * Math.PI * 2, rr = r * rings[k]![0];
+      return [x + rr * Math.cos(a), y + rr * Math.sin(a), z];
+    };
+    const w = (k: number): number[] => { const g = rings[k]![1]; return [c.r * g, c.g * g, c.b * g]; };
+    for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
+      pos.push(...p(k, i), ...p(k + 1, i), ...p(k + 1, i + 1)); rgb.push(...w(k), ...w(k + 1), ...w(k + 1));
+      if (k > 0) { pos.push(...p(k, i), ...p(k + 1, i + 1), ...p(k, i + 1)); rgb.push(...w(k), ...w(k + 1), ...w(k)); }
     }
   }
   const geometry = new THREE.BufferGeometry();

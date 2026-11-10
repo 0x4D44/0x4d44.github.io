@@ -12,7 +12,7 @@ import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs
 import {pinParameters,scenePinFrom} from './scene-pin.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
 import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
-import {EDINBURGH_FLEET} from '../web/src/edinburgh-fleet.ts';
+import {EDINBURGH_CAPTURE_PAIRS,EDINBURGH_FLEET,capturePairFormation} from '../web/src/edinburgh-fleet.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
 import {PLATFORM_HEIGHT} from '../core/scene.ts';
 import {readPng} from './axis01-pixels.mjs';
@@ -314,14 +314,14 @@ export const CLASS_NOTES=Object.freeze({lner5:lnerNote('801/1','five cars','800/
  * The Waverley kinds the catalogue can photograph: every web/src/edinburgh-fleet.ts row that carries a `formation`. Adding a row is all a
  * family needs: its formation stands in for describeFormation, and the page builds it through window.__kx.evidenceBuildEdinburgh.
  */
-export const EDINBURGH_CAPTURE_KINDS=Object.freeze(EDINBURGH_FLEET.filter(row=>row.formation).map(row=>row.kind));
+export const EDINBURGH_CAPTURE_KINDS=Object.freeze([...EDINBURGH_FLEET.filter(row=>row.formation).map(row=>row.kind),...EDINBURGH_CAPTURE_PAIRS.map(pair=>pair.kind)]);
 /** Run once on the page when a run takes a Waverley kind: every specimen build then tries the Edinburgh table first, then the King's Cross builder. */
 export const EDINBURGH_BUILD_HOOK=`(()=>{const k=window.__kx;if(typeof k.evidenceBuildEdinburgh!=='function')throw new Error('page has no evidenceBuildEdinburgh hook');if(k.__edinburghBuild)return true;const kx=k.evidenceBuildTrain;k.evidenceBuildTrain=kind=>k.evidenceBuildEdinburgh(kind)??kx(kind);k.__edinburghBuild=true;return true;})()`;
 /** A Waverley row's own description, checked for the fields the view planner reads. */
 export function describeEdinburghFormation(kind,rows=EDINBURGH_FLEET) {
-  const row=rows.find(r=>r.kind===kind&&r.formation);
-  if(!row)throw new Error(`no Edinburgh capture formation for ${kind}`);
-  const f=row.formation(),finite=v=>typeof v==='number'&&Number.isFinite(v);
+  const row=rows.find(r=>r.kind===kind&&r.formation),f=row?row.formation():capturePairFormation(kind);
+  if(!f)throw new Error(`no Edinburgh capture formation for ${kind}`);
+  const finite=v=>typeof v==='number'&&Number.isFinite(v);
   if(![f.length,f.half,f.crown,f.coverHeight,f.roofTop,f.doorWidth].every(finite)||!Array.isArray(f.cars)||!f.cars.length)throw new Error(`${kind}: formation needs length, half, crown, coverHeight, roofTop, doorWidth and cars`);
   if(Math.abs(f.cars.at(-1).end-f.length)>1e-6||f.cars.some((c,i)=>c.index!==i||!(c.end>c.start)||c.bogies.length!==2||c.motor.length!==2||!Array.isArray(c.doors)))throw new Error(`${kind}: formation cars are not a continuous indexed train`);
   for(const name of ['lengthM','widthM','roofTopM'])if(!finite(f.dimensions?.[name]?.value)||typeof f.dimensions[name].basis!=='string')throw new Error(`${kind}: formation dimensions.${name} needs a value and a basis`);

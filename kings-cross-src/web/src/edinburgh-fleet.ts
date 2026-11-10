@@ -67,8 +67,49 @@ export const EDINBURGH_FLEET: readonly EdinburghFleetRow[] = [
 
 export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined => EDINBURGH_FLEET.find(r => r.kind === kind);
 
-/** The page's capture hook (window.__kx.evidenceBuildEdinburgh): builds a row's kind, or undefined for a kind not in the table. */
-export const evidenceBuildEdinburgh = (kind: string): THREE.Group | undefined => edinburghFleetRow(kind)?.build();
+/**
+ * Capture-only coupled pairs: never rows (the live layer composes pairs from single-unit rows), here only so the
+ * rubric catalogue can photograph two units' cabs meeting (V08 unit-coupling). Each unit must be a row with a formation.
+ */
+export const EDINBURGH_CAPTURE_PAIRS: readonly { readonly kind: string; readonly units: readonly string[] }[] = [
+  { kind: 'sr385x3+sr385x4', units: ['sr385x3', 'sr385x4'] },
+];
+const capturePair = (kind: string) => EDINBURGH_CAPTURE_PAIRS.find(p => p.kind === kind);
+/** A pair's units laid end to end as composeUnits does: each next unit starts at the previous one's length. */
+function pairUnits(kinds: readonly string[]): { units: EdinburghUnit[]; formations: CaptureFormation[] } {
+  let offset = 0;
+  const units: EdinburghUnit[] = [], formations: CaptureFormation[] = [];
+  for (const kind of kinds) {
+    const f = edinburghFleetRow(kind)?.formation?.();
+    if (!f) throw new Error(`capture pair unit ${kind} has no row with a formation`);
+    units.push({ kind, offset, cars: f.cars.length }); formations.push(f); offset += f.length;
+  }
+  return { units, formations };
+}
+/** The formation of a capture-only pair: the units' cars renumbered and shifted along the train, or undefined if `kind` is not a pair. */
+export function capturePairFormation(kind: string): CaptureFormation | undefined {
+  const pair = capturePair(kind);
+  if (!pair) return undefined;
+  const { units, formations } = pairUnits(pair.units);
+  const cars: CaptureFormation['cars'][number][] = [];
+  formations.forEach((f, u) => {
+    const at = (z: number): number => z + units[u]!.offset;
+    for (const c of f.cars) cars.push({ ...c, index: cars.length, start: at(c.start), end: at(c.end), bogies: c.bogies.map(at), doors: c.doors.map(at), pantograph: c.pantograph ? c.pantograph.map(at) : null });
+  });
+  const first = formations[0]!, length = cars.at(-1)!.end;
+  return { ...first, classNote: `capture only: ${pair.units.join(' + ')} coupled cab to cab`, length, cars,
+    dimensions: { ...first.dimensions, lengthM: { ...first.dimensions.lengthM, value: length } } };
+}
+
+/** The page's capture hook (window.__kx.evidenceBuildEdinburgh): builds a row's kind or a capture pair, or undefined for a kind in neither. */
+export const evidenceBuildEdinburgh = (kind: string): THREE.Group | undefined => {
+  const pair = capturePair(kind);
+  if (!pair) return edinburghFleetRow(kind)?.build();
+  const { units, formations } = pairUnits(pair.units);
+  const train = buildEdinburghTrain({ kind, units })!;
+  train.userData.length = formations.reduce((n, f) => n + f.length, 0);
+  return train;
+};
 
 /**
  * Builds a chosen train (core createEdinburghKinds' EdinburghChoice): one row's own model, or for coupled units each

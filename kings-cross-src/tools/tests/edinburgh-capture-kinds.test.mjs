@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import * as C from '../train-capture.mjs';
 import {planCatalogueViews} from '../train-framing.mjs';
-import {EDINBURGH_FLEET} from '../../web/src/edinburgh-fleet.ts';
+import {EDINBURGH_CAPTURE_PAIRS,EDINBURGH_FLEET,disposeEdinburghTrain,evidenceBuildEdinburgh} from '../../web/src/edinburgh-fleet.ts';
 
 const dim=(value,basis='assumed')=>({value,basis,figures:['test']});
 const formation=()=>({family:'test',classes:'999',classNote:null,length:40,half:1.4,crown:3.5,coverHeight:.2,roofTop:3.7,doorWidth:1.3,
@@ -30,8 +30,12 @@ test('a Waverley formation that the planner cannot trust is refused, and a row w
   assert.throws(()=>C.describeEdinburghFormation('none',[{...row('none'),formation:undefined}]),/no Edinburgh capture formation/);
 });
 
-test('the capturable Waverley kinds are exactly the fleet rows with a formation, and the default run is unchanged', () => {
-  assert.deepEqual([...C.EDINBURGH_CAPTURE_KINDS],EDINBURGH_FLEET.filter(r=>r.formation).map(r=>r.kind));
+test('the capturable Waverley kinds are exactly the fleet rows with a formation, then exactly the capture pairs, and the default run is unchanged', () => {
+  const singles=EDINBURGH_FLEET.filter(r=>r.formation).map(r=>r.kind);
+  assert.deepEqual(singles,['sr385x3','sr385x4'],'the single-unit capture kinds, pinned');
+  assert.deepEqual(EDINBURGH_CAPTURE_PAIRS.map(p=>[p.kind,[...p.units]]),[['sr385x3+sr385x4',['sr385x3','sr385x4']]],'the capture-only pairs, pinned');
+  assert.deepEqual([...C.EDINBURGH_CAPTURE_KINDS],[...singles,'sr385x3+sr385x4'],'singles first, then pairs, nothing else');
+  assert.ok(EDINBURGH_CAPTURE_PAIRS.every(p=>!EDINBURGH_FLEET.some(r=>r.kind===p.kind)&&p.units.every(u=>singles.includes(u))),'a pair is never a fleet row, and its units are capturable singles');
   const base=['--mode','catalogue','--dist','d','--out','o'];
   assert.ok(C.EDINBURGH_CAPTURE_KINDS.every(k=>!C.parseCatalogueArgs(base).kinds.includes(k)),'a run without --kinds takes the King\'s Cross kinds only');
   for(const kind of C.EDINBURGH_CAPTURE_KINDS) {
@@ -52,4 +56,21 @@ test('the page hook makes every specimen build try the Edinburgh table first, on
     globalThis.window={__kx:{evidenceBuildTrain:()=>null}};
     assert.throws(()=>eval(C.EDINBURGH_BUILD_HOOK),/no evidenceBuildEdinburgh hook/);
   } finally { delete globalThis.window; }
+});
+
+test('a capture pair is its units end to end: one cab-to-cab joint, so V08 plans the unit-coupling views, and the page builds it with the meeting cabs dark', () => {
+  const [a,b]=['sr385x3','sr385x4'].map(k=>C.describeFormation(k)),f=C.describeFormation('sr385x3+sr385x4');
+  assert.equal(f.cars.length,a.cars.length+b.cars.length);
+  assert.ok(Math.abs(f.length-(a.length+b.length))<1e-9&&Math.abs(f.dimensions.lengthM.value-f.length)<1e-9);
+  assert.deepEqual(f.cars.map(c=>c.cab),[...a.cars,...b.cars].map(c=>c.cab));
+  assert.ok(Math.abs(f.cars[a.cars.length].start-a.length)<1e-9&&Math.abs(f.cars[a.cars.length].bogies[0]-(b.cars[0].bogies[0]+a.length))<1e-9,'the second unit is shifted by the first unit\'s length');
+  const v08=planCatalogueViews(f).filter(v=>v.id==='V08');
+  assert.deepEqual(v08.filter(v=>v.suffix.startsWith('unit-coupling')).map(v=>[v.suffix,v.status]),
+    [['unit-coupling','OK'],['unit-coupling-low','OK'],['unit-coupling-2','N/A'],['unit-coupling-2-low','N/A']]);
+  const train=evidenceBuildEdinburgh('sr385x3+sr385x4');
+  try {
+    assert.deepEqual(train.children.map(c=>c.name),f.cars.map(c=>`car-${c.index}`));
+    const inner=[a.cars.length-1,a.cars.length].map(i=>train.getObjectByName(`car-${i}`).getObjectByName('body-detail').userData.lamps.interior);
+    assert.deepEqual(inner,[true,true],'the cabs that meet are dark');
+  } finally { disposeEdinburghTrain(train); }
 });
