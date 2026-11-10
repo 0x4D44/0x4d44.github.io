@@ -17,7 +17,7 @@ import type {Terrain} from '../../core/terrain.ts';
 import {KINNOULL_PEAK, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
 
 /** ASSUMED canopy shape (see the header). */
-export const CANOPY = {hillX: 1700, step: 10, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
+export const CANOPY = {hillX: 1700, step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
 
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 const pip = (x: number, z: number, p: readonly Pt[]): boolean => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };

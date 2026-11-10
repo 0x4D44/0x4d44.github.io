@@ -197,7 +197,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
   // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock
   const crag = new Batch({colored: true});
-  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs)) crag.box([k.x, k.y, k.z], [k.w, k.h, k.d], {rotY: k.rotY, color: k.rgb});
+  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs)) crag.box([k.x, k.y, k.z], [k.w, k.h, k.d], {rotY: k.rotY, color: k.rgb, skip: ['-y']});
   const cg = crag.build(), rock = new THREE.MeshLambertMaterial({vertexColors: true});
   const cragMesh = new THREE.Mesh(cg, rock); cragMesh.name = 'perth-kinnoull-crag'; cover.group.add(cragMesh);
   stats.triangles += (cg.index ? cg.index.count : cg.getAttribute('position').count) / 3; stats.drawCalls++;

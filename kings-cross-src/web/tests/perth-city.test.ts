@@ -210,11 +210,10 @@ test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
   for (const b of blocks) {
     // each stands on the cliff, set into it (its foot under the ground, its top a ledge over it), in a pale rock tone
-    const back = [b.x - Math.sin(b.rotY) * b.d / 2, b.z - Math.cos(b.rotY) * b.d / 2] as const, g = scene.terrain.heightAt(back[0], back[1]);
     const ax = b.x - Math.sin(b.rotY) * (b.d - 2) / 2, az = b.z - Math.cos(b.rotY) * (b.d - 2) / 2; // where it is set into the face
     assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, ax, az), 'on the cliff');
     assert.ok(b.y - b.h / 2 < scene.terrain.heightAt(ax, az), 'its foot is in the ground');
-    assert.ok(b.y + b.h / 2 > g - b.h, 'not buried out of sight');
+    assert.ok(b.y + b.h / 2 > scene.terrain.heightAt(ax, az) + .5, 'its top stands out of the face as a ledge');
     assert.ok(lum(b.rgb) > .18, `pale rock (linear): ${lum(b.rgb).toFixed(2)}`);
   }
   // broken: the blocks differ in size and tone

@@ -103,7 +103,7 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: read
  *  on a `step` m lattice: each
  *  `width` m across, `height` m tall, standing `proud` m out of the slope down its fall line, its top a level ledge. Each is set into the
  *  slope by `bury` of its height, jittered by `jitter` m, in one of PERTH_ROCK_TONES lifted by `lift`. */
-export const CRAG = {step: 9, width: [5, 9] as const, height: [3, 6] as const, proud: [.8, 2] as const, bury: .55, jitter: 2.5, lift: 1.3, slope: 40} as const;
+export const CRAG = {step: 6, width: [6, 10] as const, height: [2.5, 5] as const, proud: [.5, 1.3] as const, bury: .6, jitter: 2, lift: 1.3, slope: 40} as const;
 export interface CragBlock {x: number; z: number; y: number; w: number; h: number; d: number; rotY: number; rgb: [number, number, number]}
 /** The crag's blocks: centre (x, y, z), size (w across, h, d along the fall line), heading, colour (the tone's 0-1 channels, as Batch colours). */
 export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): CragBlock[] {
