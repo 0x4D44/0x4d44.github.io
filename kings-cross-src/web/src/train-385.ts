@@ -204,6 +204,21 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       pane(sx * (SCREEN.xIn - 0.04), sx * HALF, SCREEN.s0 - 0.05, SCREEN.s1 + 0.06, 0.01, C.frame, 'windscreen-frame');
       pane(sx * SCREEN.xIn, sx * HALF, SCREEN.s0, SCREEN.s1, 0.02, C.glass, 'cab-glass');
     }
+    // a point on the screen, `lift` metres over the loft: x across, u from the hood face
+    const onScreen = (x: number, u: number, lift: number): V3 => world([x, yAtX(halfBehindFace(u), Math.abs(x)) + lift, TIP + u]);
+    const strip = (a: [number, number], b: [number, number], w: number, lift: number, colour: number): void => {
+      const dx = b[0] - a[0], du = b[1] - a[1], n = Math.hypot(dx, du), ox = (-du / n) * w / 2, ou = (dx / n) * w / 2;
+      const p = [onScreen(a[0] + ox, a[1] + ou, lift), onScreen(b[0] + ox, b[1] + ou, lift), onScreen(b[0] - ox, b[1] - ou, lift), onScreen(a[0] - ox, a[1] - ou, lift)] as [V3, V3, V3, V3];
+      detail.face(p, world([0, 1, TIP + 2]), col(colour));
+    };
+    // one wiper on each pane, parked along its foot and rising toward the outer pillar (scotrail385-01, -02)
+    for (const sx of [-1, 1]) strip([sx * (SCREEN.xIn + 0.08), SCREEN.s0 + 0.04], [sx * (HALF * 0.82), SCREEN.s0 + 0.3], 0.03, 0.03, C.frame);
+    // the destination display behind the glass at the top of one pane: amber characters on black (scotrail385-01, -02; text not drawn)
+    const dsx = cab === 'rear' ? -1 : 1;
+    strip([dsx * (SCREEN.xIn + 0.06), SCREEN.s1 - 0.09], [dsx * (SCREEN.xIn + 0.5), SCREEN.s1 - 0.09], 0.11, 0.025, C.frame);
+    detail.emit = 2;
+    strip([dsx * (SCREEN.xIn + 0.1), SCREEN.s1 - 0.09], [dsx * (SCREEN.xIn + 0.46), SCREEN.s1 - 0.09], 0.04, 0.028, 0xf09a2a);
+    detail.emit = 0;
     // the gangway hood: a tall dark box standing proud at the centre, its door with the yellow warning panel (scotrail385-02, -05)
     box(-HOOD.half, HOOD.half, HOOD.y0, HOOD.y1, TIP, TIP + HOOD.depth, C.hood);
     box(-HOOD.half + 0.06, HOOD.half - 0.06, 1.12, 3.32, TIP - 0.012, TIP, C.frame);
