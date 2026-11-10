@@ -1,9 +1,12 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts) against
 web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
 web/tests/train-azuma-front.test.ts and web/tests/train-bogie-view.test.ts.
-usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
+usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ... | #a-b]
+`#a-b` runs the mutants at positions a up to (not including) b of the list below, counted from 0: the full run in slices, each through the machine's one-driver gate, with the
+never-red test names of every slice intersected afterwards (a slice cannot see what the others turned red).
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
 load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
+import re
 import sys
 from pathlib import Path
 
@@ -1067,7 +1070,8 @@ M = [
     ("rake: the 180's lamps not one over the other", "discOutline(0.97, 1.68, 0.055)", "discOutline(0.9, 1.68, 0.055)", FACE),
 ]
 only = sys.argv[3:]
-selected = [m for m in M if not only or any(o in m[0] for o in only)]
+span = re.fullmatch(r'#(\d+)-(\d+)', only[0]) if len(only) == 1 else None
+selected = M[int(span[1]):int(span[2])] if span else [m for m in M if not only or any(o in m[0] for o in only)]
 tally = kxmut.Tally()
 with kxmut.workspace(src, scratch, "trainweb") as work:
     def run():
@@ -1084,12 +1088,12 @@ with kxmut.workspace(src, scratch, "trainweb") as work:
         except kxmut.StalePattern as error:
             tally.stale(label, error)
             continue
-        if only and verdict.kind == kxmut.KILLED:
+        if only and not span and verdict.kind == kxmut.KILLED:
             # with a filter, say every test that went red, so a run of a few mutations shows which tests they exercise
             verdict.detail = " | ".join(verdict.failed)
         tally.record(label, verdict)
 status = tally.finish()
-if not only:
+if not only or span:
     print(f"{len(tally.red & baseline.passed)}/{len(baseline.passed)} tests turned red by at least one mutation")
     for t in sorted(baseline.passed - tally.red): print("  NEVER RED:", t)
 sys.exit(status)
