@@ -250,11 +250,12 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -11 + P
 
 /** Paint (R-pt1-a, R-pt1-c, R-pt1-d): dark brown roof ironwork, cream columns, a maroon lattice bridge, a grey modern bridge. ASSUMED shades.
  *  Round 7 (S5, the round-6 score: "the tower's frame and stair are still white"): the lift bridge's `frame` (stairs, columns, parapet
- *  frames, the towers' caps and hood brackets) a light grey, between the cladding and white, as Abbott 6573357 shows it (was 0xe2e3df). */
+ *  frames, the towers' caps and hood brackets) a light grey (0xaeb3b5, was 0xe2e3df). Round 8 (the round-7 score: in Abbott 6573357 the
+ *  frame and posts are off-white against the mid-grey cladding, and 0xaeb3b5 was darker than the photo): back toward off-white. */
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xaeb3b5, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x9a9fa1, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xd8dad5, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x9a9fa1, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -935,7 +936,7 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
 /** The ironwork that makes the main roof Perth's rather than Waverley's (R-pt1-a, R-pt1-d): a pitched truss on every second rafter pair,
  *  its principals the rafters and an arched brace under them from gutter girder to gutter girder, and an arched spandrel under every
  *  column-to-column girder. ASSUMED proportions: springing at the girders' undersides, the crown 1.1 m under the ridge. */
-function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
+function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch, ornament: Batch): void {
   const W = WAVERLEY_STRUCTURE, iron = P('iron'), under = W.gutterGirderTop - W.gutterGirderDepth, ridge = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_PROFILE.rise;
   for (const [x0, x1, z] of plan.structure.purlins) {
     if (Math.round(z / W.purlinSpacing) % 2) continue;
@@ -944,29 +945,10 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
   }
   const girder = W.platformGirderTop - W.platformGirderDepth;
   for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});
-  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: plates, keep: g.keep});
-  for (const s of trussRings(plan)) ring(b, s.x, s.z, s.y, iron);
-}
-/** Round 7 (S2, the round-6 score: "the across-track trusses are still plain triangulated lattice"): R-pt1-a's open-circle ironwork (the
- *  rings at the top right of R-pt1-a), as a ring round the crossing of the diagonals in each square panel of the gutter girders' lattice
- *  (latticeGirder: n panels, each crossed by both diagonals), read against the glazing behind. Only on the girders the frozen
- *  pt-roof-underside camera (standpoint `camera`, scene frame) looks along: up to `ahead` m north of it (-x') and within `across` m of it
- *  across the tracks; elsewhere they would cost triangles no frozen view resolves. ASSUMED sizes, scaled from R-pt1-a against the girder. */
-export const PERTH_TRUSS_RING = {radius: .32, bar: .05, flats: 6, ahead: 50, across: 10, camera: [-39.93, -60] as const} as const;
-export function trussRings(plan: PerthStationPlan): {x: number; z: number; y: number}[] {
-  const R = PERTH_TRUSS_RING, W = WAVERLEY_STRUCTURE, cam = toLocal([R.camera[0], R.camera[1]]), out: {x: number; z: number; y: number}[] = [];
-  for (const [x, z0, z1] of plan.structure.gutters) {
-    if (x > cam[0] || x < cam[0] - R.ahead) continue;
-    const len = z1 - z0, n = Math.max(1, Math.round(len / (W.gutterGirderDepth - W.chordDepth)));
-    for (let i = 0; i < n; i++) { const z = z0 + len * (i + .5) / n; if (Math.abs(z - cam[1]) <= R.across) out.push({x, z, y: W.gutterGirderTop - W.gutterGirderDepth / 2}); }
-  }
-  return out;
-}
-/** One ring of `flats` flats in the plane x' = x. */
-function ring(b: Batch, x: number, z: number, y: number, color: Rgb): void {
-  const R = PERTH_TRUSS_RING, pt = (t: number): V3 => [x, y + R.radius * Math.sin(t), z + R.radius * Math.cos(t)];
-  for (let k = 0; k < R.flats; k++) beam(b, pt(k / R.flats * 2 * Math.PI), pt((k + 1) / R.flats * 2 * Math.PI), R.bar, R.bar, color);
-}
+  // Round 8 (S2, the round-7 score's ruling): R-pt1-a's ring ornament where R-pt1-a has it, in the arched braces at the column heads, as
+  // a cut-out plate (perth-station.ts perthRingTexture) in every brace's spandrel (`ornament`), not round 6's pierced plate; round 7's
+  // rings in the girders' lattice panels, fitted to one camera, are gone.
+  for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: ornament, keep: g.keep});}
 /** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
  *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
  *  planes face the platform cameras (pt-roof-underside, pt-north-footbridge), where the column girders' spandrels are seen edge-on. Here:
@@ -1095,8 +1077,8 @@ function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}, dials: Batch): 
   // (Round 6: platform 4's case stands on the stage itself, astride its face, so it has no bracket.)
   if (reach > .05) for (let k = 0; k < 4; k++) b.box(at(from + reach * (k + 1) / 8, yc - ch / 2 - .1 - k * .12), [reach * (k + 1) / 4, .12, cw * (.9 - k * .15)], {rotY, color: dark});
   // Round 7 (S4, the round-6 score: "the ornamental bracket under the clock in R-pt1-a2 is missing"): under platform 4's case, R-pt1-a2's
-  // pendant corbel, hanging in front of the stage's upper lights at its front corner.
-  else if (kiosk) clockCorbel(b, at, out, yc - ch / 2, Math.min(cw, cd), rotY);
+  // pendant corbel. Round 8 (the round-7 score: it hung half inside the stage): wholly in front of the stage and its cornice.
+  else if (kiosk) clockCorbel(b, at, C.stage[1] + PERTH_CLOCK_CORBEL.back, yc - ch / 2, cw, rotY);
   b.box(at(out, yc + ch / 2 + .06), [cd + .14, .12, cw + .14], {rotY, color: dark});
   b.poly([at(out, yc + ch / 2 + .12, -cw / 2), at(out, yc + ch / 2 + .12, cw / 2), at(out, yc + ch / 2 + .42, 0)], undefined, {facing: [o[0], 0, o[1]], color: dark});
   b.box(at(out / 2, yc + ch / 2 - .1), [out, .1, .1], {rotY, color: P('iron')});
@@ -1122,18 +1104,18 @@ function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}, dials: Batch): 
  *  rim, inside a minute track): the numerals' centres at `numerals`, `height` tall, strokes `stroke` wide; the track between `track[0]`
  *  and `track[1]`, the hour marks (geometry, clockBatch) on it at `marks`. Drawn by perth-station.ts perthDialTexture, `px` square. */
 export const PERTH_DIAL = {numerals: .68, height: .2, stroke: .035, track: [.86, .93] as const, marks: .895, px: 256} as const;
-/** Round 7 (S4): R-pt1-a2's pendant corbel under platform 4's clock case: `tiers` stepped timber tiers narrowing from `top` of the case's
- *  smaller side to `foot` m as they drop `drop` m, a ball finial under them, and a gilt rib down each corner. ASSUMED sizes, scaled from
- *  R-pt1-a2 against the dial. */
-export const PERTH_CLOCK_CORBEL = {drop: .6, tiers: 5, top: .8, foot: .14} as const;
-function clockCorbel(b: Batch, at: (out: number, y: number, along?: number) => V3, out: number, y0: number, side: number, rotY: number): void {
-  const K = PERTH_CLOCK_CORBEL, h = K.drop / K.tiers, wAt = (k: number): number => side * (K.top + (K.foot / side - K.top) * k / K.tiers);
-  for (let k = 0; k < K.tiers; k++) { const w = wAt(k + .5); b.box(at(out, y0 - (k + .5) * h), [w, h, w], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')}); }
-  b.box(at(out, y0 - K.drop - .06), [.12, .12, .12], {rotY, color: P('gilt')});
-  for (const [u, v] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-    const w0 = wAt(0) / 2 + .01, w1 = wAt(K.tiers) / 2 + .01;
-    beam(b, at(out + u * w0, y0 - .01, v * w0), at(out + u * w1, y0 - K.drop, v * w1), .025, .025, P('gilt'));
-  }
+/** R-pt1-a2's pendant corbel under platform 4's clock case (round 7; round 8: broad, and hung in front of the stage). `tiers` stepped
+ *  timber tiers, dark and mid by turns, each `drop`/`tiers` m high, stepping in from `width[0]` to `width[1]` of the case's width along
+ *  the wall and from `depth[0]` to `depth[1]` m out, their backs all `back` m past the stage's face (clear of its cornice, which stands
+ *  0.1 m proud of it); a gilt rib down each front corner and a gilt finial under the last tier. ASSUMED sizes, scaled from R-pt1-a2
+ *  against the dial. */
+export const PERTH_CLOCK_CORBEL = {drop: .7, tiers: 5, width: [.95, .3] as const, depth: [.34, .14] as const, back: .11} as const;
+export function clockCorbel(b: Batch, at: (out: number, y: number, along?: number) => V3, back: number, y0: number, caseWidth: number, rotY: number): void {
+  const K = PERTH_CLOCK_CORBEL, h = K.drop / K.tiers, lerp = (r: readonly [number, number], t: number): number => r[0] + (r[1] - r[0]) * t;
+  const wAt = (t: number): number => caseWidth * lerp(K.width, t), dAt = (t: number): number => lerp(K.depth, t);
+  for (let k = 0; k < K.tiers; k++) { const t = k / (K.tiers - 1), d = dAt(t); b.box(at(back + d / 2, y0 - (k + .5) * h), [d, h, wAt(t)], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')}); }
+  b.box(at(back + dAt(1) / 2, y0 - K.drop - .07), [.14, .14, .14], {rotY, color: P('gilt')});
+  for (const v of [-1, 1]) beam(b, at(back + dAt(0) + .01, y0 - .01, v * (wAt(0) / 2 + .01)), at(back + dAt(1) + .01, y0 - K.drop, v * (wAt(1) / 2 + .01)), .03, .03, P('gilt'));
 }
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
 function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
@@ -1180,6 +1162,10 @@ export interface PerthStationBatches {
   glass: Batch; strips: Batch; ironwork: Batch;
   /** Round 5: the column girders' pierced spandrel plates (UVs in metres), in the roof part, drawn alpha-tested. */
   spandrels: Batch;
+  /** Round 8: the gutter braces' spandrel plates (UVs in metres), in the roof part, cut out as R-pt1-a's rings (perthRingTexture). */
+  ornament: Batch;
+  /** Round 8: the ramp fences' mesh panels (UVs in metres), in the platforms part, cut out as Rosser's close mesh (perthMeshTexture). */
+  mesh: Batch;
   /** The main and bay roofs' glazing again, 4 cm over it, facing up only, with straight-up normals: drawn opaque grey and culled from
    *  below, it is the weathered outer face of old station glazing that makes the roof read dark grey from above (R-pt1-b) while the panes still read milky white from below. */
   weather: Batch;
@@ -1212,7 +1198,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   if (shaped) { glass.append(shaped.glass); strips.append(shaped.solid); weather.append(shaped.glass); }
   const structure = waverleyStructureBatches(plan.structure);
   const spandrels = new Batch();
-  archedIronwork(structure.ironwork, plan, spandrels);
+  const ornament = new Batch(), mesh = new Batch();
+  archedIronwork(structure.ironwork, plan, spandrels, ornament);
   // Round 5: the main roof's ends gabled (R-pt1-b), replacing Waverley's flat fascia screen along them (its colour, on those edges).
   { const wf = rgb(WAVERLEY_PAINT.fascia), ends = mainRoofEnds(plan.structure.outline), ir = structure.ironwork;
     const onEnd = (v: number): boolean => ends.some(([a, c]) => segDist([ir.positions[3 * v], ir.positions[3 * v + 2]], a, c) < .05);
@@ -1220,8 +1207,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     roofEnds(ir, plan.structure.outline); }
   if (L.bay.length >= 3) bayRoof(glass, strips, structure.ironwork, plan, weather);
   // The main and bay roofs' solid bands again, hung 6 cm under the glazing (round 3): from below, the milky panes lay over the bands that
-  // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Round 7 (S2): their own batch (`soffits`), drawn
-  // in a sky-lit boarding tone (perth-station.ts), not the bands' brown: seen from below they face away from the sun.
+  // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Round 7: their own batch (`soffits`); round 8:
+  // drawn as R-pt1-a's dark boarding, its boards mapped (perth-station.ts perthBoardTexture), with no glow.
   const soffits = new Batch(); soffits.append(strips);
   for (let i = 1; i < soffits.positions.length; i += 3) soffits.positions[i] -= WAVERLEY_ROOF_STRIP_LIFT + PERTH_BAND_DROP;
   const swap = (Object.keys(WAVERLEY_PAINT) as (keyof typeof WAVERLEY_PAINT)[]).map((k): [Rgb, Rgb] => [rgb(WAVERLEY_PAINT[k]), P(k)]);
@@ -1301,9 +1288,9 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     structure.faces.poly([[e[0], g, e[1]], [f[0], g, f[1]], [f[0], rail, f[1]], [e[0], deck, e[1]]], [[0, g], [l, g], [l, rail], [0, deck]], {normal: [n[0] / nl, 0, n[1] / nl]});
   }
   rampEdges(plan.ramps, structure);
-  for (const r of plan.ramps) rampGate(fittings, r);
-  for (const b of [glass, weather, strips, soffits, spandrels, structure.ironwork, fittings, panes, dials, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
-  return {glass, weather, strips, soffits, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes, dials};
+  for (const r of plan.ramps) { rampGate(fittings, mesh, r); rampRails(fittings, r); }
+  for (const b of [glass, weather, strips, soffits, spandrels, ornament, mesh, structure.ironwork, fittings, panes, dials, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
+  return {glass, weather, strips, soffits, spandrels, ornament, mesh, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes, dials};
 }
 /** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
 function takeColor(b: Batch, color: Rgb): Batch {
@@ -1465,18 +1452,19 @@ export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | '
   return out;
 }
 /** Round 7 (S3, the round-6 score: "the coper and tactile strip stop dead at the end"): on each track side of a ramp, the platform's
- *  coper (with its nosing) and warning strip carried down the slope, at the platform's own offsets (WAVERLEY_EDGE_BANDS) in from the
+ *  coper (with its nosing) carried down the slope (round 7 carried the warning strip too; round 8 drops it, unsourced), at the platform's own offsets (WAVERLEY_EDGE_BANDS) in from the
  *  ramp's side; where the side was drawn in from the platform's corner, the coper turns along the end to meet it. Track frame. */
 export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructureBatches, 'edges' | 'tactile' | 'lip'>): void {
-  const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, lift = WAVERLEY_STRUCTURE.stripLift, [coper, warning] = WAVERLEY_EDGE_BANDS, cc = P('coper');
+  const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, lift = WAVERLEY_STRUCTURE.stripLift, [coper] = WAVERLEY_EDGE_BANDS, cc = P('coper');
   for (const r of ramps) for (const i of [0, 1] as const) {
     if (!r.track[i]) continue;
     const e = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, o = i ? r.e0 : r.e1, ol = Math.hypot(o[0] - e[0], o[1] - e[1]), n: Pt = [(o[0] - e[0]) / ol, (o[1] - e[1]) / ol];
-    const len = Math.hypot(f[0] - e[0], f[1] - e[1]), slope = Math.hypot(len, deck - rail);
+    const len = Math.hypot(f[0] - e[0], f[1] - e[1]);
     // t along the side (0 head, 1 foot), u metres in from it; y on the ramp's surface plus the strips' lift.
     const at = (t: number, u: number, dy: number = lift): V3 => [e[0] + (f[0] - e[0]) * t + n[0] * u, deck + (rail - deck) * t + dy, e[1] + (f[1] - e[1]) * t + n[1] * u];
     s.edges.poly([at(0, coper.from), at(1, coper.from), at(1, coper.to), at(0, coper.to)], undefined, {facing: [0, 1, 0], color: cc});
-    s.tactile.poly([at(0, warning.from), at(1, warning.from), at(1, warning.to), at(0, warning.to)], [[0, 0], [slope, 0], [slope, warning.to - warning.from], [0, warning.to - warning.from]], {facing: [0, 1, 0]});
+    // (Round 8: no warning strip down the ramp. Neither Rosser1954 nor geograph 591926 shows one past the gate, and a gated staff ramp
+    // is not a public platform edge; round 7 drew it unsourced.)
     // The nosing: the coper's face proud of the side, down the slope.
     const S = WAVERLEY_STRUCTURE, out = -S.coperLip;
     s.lip.poly([at(0, out, -S.coperNose), at(1, out, -S.coperNose), at(1, out), at(0, out)], undefined, {facing: [-n[0], 0, -n[1]], color: cc});
@@ -1491,10 +1479,11 @@ export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructure
 }
 /** Round 7 (S3): the end fence across each ramp's head, as the view south from the south footbridge shows the 4/5 island's south end
  *  (Rosser1954, "Perth railway station - view south from overbridge", Wikimedia Commons, 2016, CC BY-SA 4.0): grey steel mesh panels
- *  between posts, about chest high. Drawn as posts, top and bottom rails and close vertical bars. Height, bar pitch and post spacing
- *  ASSUMED from that photo (no dimensions). */
-export const PERTH_RAMP_FENCE = {height: 1.2, post: 1.6, bar: .15, inset: .2, color: 0x7d8487} as const;
-export function rampGate(b: Batch, r: PerthRamp): void {
+ *  between posts, about chest high. Drawn as posts, top and bottom rails, and (round 8, the round-7 score: round 7's 0.15 m bars read as
+ *  a railing) one close-mesh panel between the rails, cut out by perth-station.ts perthMeshTexture, in `mesh` (UVs: metres along the
+ *  fence, metres up). Height and post spacing ASSUMED from that photo (no dimensions). */
+export const PERTH_RAMP_FENCE = {height: 1.2, post: 1.6, inset: .2, panel: [.12, 1.14] as const, color: 0x7d8487} as const;
+export function rampGate(b: Batch, mesh: Batch, r: PerthRamp): void {
   const F = PERTH_RAMP_FENCE, deck = WAVERLEY_LEVELS.platform, w = Math.hypot(r.e1[0] - r.e0[0], r.e1[1] - r.e0[1]), color = rgb(F.color);
   const at = (u: number): Pt => [r.e0[0] + (r.e1[0] - r.e0[0]) * u / w, r.e0[1] + (r.e1[1] - r.e0[1]) * u / w];
   const rotY = Math.atan2(-(r.e1[1] - r.e0[1]), r.e1[0] - r.e0[0]);
@@ -1503,7 +1492,24 @@ export function rampGate(b: Batch, r: PerthRamp): void {
   const posts = Math.max(1, Math.round(span / F.post));
   for (let k = 0; k <= posts; k++) { const p = at(u0 + span * k / posts); b.box([p[0], deck + F.height / 2, p[1]], [.06, F.height, .06], {rotY, color}); }
   for (const y of [.1, F.height - .04]) { const m = at(u0 + span / 2); b.box([m[0], deck + y, m[1]], [span, .05, .04], {rotY, color}); }
-  for (let u = u0 + F.bar; u < u1 - F.bar / 2; u += F.bar) { const p = at(u); b.box([p[0], deck + (F.height + .1) / 2, p[1]], [.02, F.height - .14, .02], {rotY, color}); }
+  const a = at(u0), c = at(u1), [y0, y1] = F.panel, facing: V3 = [-(r.e1[1] - r.e0[1]) / w, 0, (r.e1[0] - r.e0[0]) / w];
+  mesh.poly([[a[0], deck + y0, a[1]], [c[0], deck + y0, c[1]], [c[0], deck + y1, c[1]], [a[0], deck + y1, a[1]]], [[u0, y0], [u1, y0], [u1, y1], [u0, y1]], {facing});
+}
+/** Round 8 (S3, the round-7 score: "the slope still does not read as a slope"): a handrail down each side of each ramp, following its
+ *  fall: posts every `post` m and a top and a knee rail `heights` m over the slope, `inset` m in from the side (`trackInset` on a track
+ *  side, which keeps it 1.6 m or more from the track: the side stands PERTH_RAMP.clear from it). In the fence's grey. ASSUMED: neither
+ *  Rosser1954 nor geograph 591926 shows the ramps; a handrail is the usual fitting on a platform-end ramp. */
+export const PERTH_RAMP_RAIL = {heights: [1.0, .5] as const, post: 2, inset: .1, trackInset: .35, bar: .05} as const;
+export function rampRails(b: Batch, r: PerthRamp): void {
+  const H = PERTH_RAMP_RAIL, deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, color = rgb(PERTH_RAMP_FENCE.color);
+  for (const i of [0, 1] as const) {
+    const e = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, o = i ? r.e0 : r.e1, ol = Math.hypot(o[0] - e[0], o[1] - e[1]), u = r.track[i] ? H.trackInset : H.inset;
+    const at = (t: number, y: number): V3 => [e[0] + (f[0] - e[0]) * t + (o[0] - e[0]) / ol * u, deck + (rail - deck) * t + y, e[1] + (f[1] - e[1]) * t + (o[1] - e[1]) / ol * u];
+    const len = Math.hypot(f[0] - e[0], f[1] - e[1]), n = Math.max(1, Math.round(len / H.post));
+    // (From just past the fence at the head to the foot.)
+    for (let k = 0; k <= n; k++) { const t = .03 + .97 * k / n; beam(b, at(t, 0), at(t, H.heights[0]), H.bar, H.bar, color); }
+    for (const y of H.heights) beam(b, at(.03, y), at(1, y), H.bar, H.bar, color);
+  }
 }
 
 /** The roof's ridge height over rail (the glazing's top): the gutter plus the rise. */

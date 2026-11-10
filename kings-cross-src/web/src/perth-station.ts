@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, PERTH_DIAL, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
+import {islandBuildingBatches, PERTH_DIAL, PERTH_PAINT, PERTH_RAMP_FENCE, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -125,13 +125,71 @@ export function perthDialTexture(): THREE.DataTexture {
   t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; t.name = 'perth-dial';
   return dial = t;
 }
+/** Round 8 (S2): R-pt1-a's ring ornament in the arched braces at the column heads (its top right: open iron circles, each with a scroll
+ *  curled inside, filling the spandrel between the curved brace and the girder over it). A cut-out (alpha 0 but on the iron) over the
+ *  braces' spandrel plates, whose UVs are metres along the brace and up: rings of centre-line radius `ring` m, `bar` m wide, one per
+ *  `cell` m square so neighbours almost touch, each with a C-scroll of radius `scroll` m inside, open on its `gap` (radians) toward +u.
+ *  ASSUMED sizes, scaled from R-pt1-a against the girder's 1.5 m depth. Cached. */
+export const PERTH_RING_ORNAMENT = {cell: .56, ring: .23, bar: .045, scroll: .1, scrollBar: .035, gap: 1.6, px: 128} as const;
+let rings: THREE.DataTexture | undefined;
+export function perthRingTexture(): THREE.DataTexture {
+  if (rings) return rings;
+  const R = PERTH_RING_ORNAMENT, n = R.px, data = new Uint8Array(n * n * 4), m = n / R.cell;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i + .5) / m - R.cell / 2, y = (j + .5) / m - R.cell / 2, r = Math.hypot(x, y), a = Math.abs(Math.atan2(y, x));
+    const iron = Math.abs(r - R.ring) < R.bar / 2 || (Math.abs(r - R.scroll) < R.scrollBar / 2 && a > R.gap / 2), q = 4 * (j * n + i);
+    data[q] = data[q + 1] = data[q + 2] = 255; data[q + 3] = iron ? 255 : 0;
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / R.cell, 1 / R.cell); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-rings';
+  return rings = t;
+}
+/** Round 8 (S3): Rosser1954's close steel mesh (the fence across the 4/5 island's south end: grey welded-mesh panels) as a cut-out over
+ *  the fence's panels, whose UVs are metres along the fence and up: vertical wires every `pitch[0]` m, horizontal every `pitch[1]` m,
+ *  `wire` m thick. ASSUMED mesh (the photograph resolves panels, not wires); a common security-mesh pitch. Cached. */
+export const PERTH_FENCE_MESH = {pitch: [.05, .2] as const, wire: .008, tile: .4, px: 256} as const;
+let mesh: THREE.DataTexture | undefined;
+export function perthMeshTexture(): THREE.DataTexture {
+  if (mesh) return mesh;
+  const M = PERTH_FENCE_MESH, n = M.px, data = new Uint8Array(n * n * 4), m = n / M.tile;
+  const on = (p: number, pitch: number): boolean => { const d = ((p % pitch) + pitch) % pitch; return Math.min(d, pitch - d) < M.wire / 2 + .5 / m; };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const q = 4 * (j * n + i); data[q] = data[q + 1] = data[q + 2] = 255; data[q + 3] = on((i + .5) / m, M.pitch[0]) || on((j + .5) / m, M.pitch[1]) ? 255 : 0;
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / M.tile, 1 / M.tile); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-fence-mesh';
+  return mesh = t;
+}
 /** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below; round 5: lighter again,
  *  as round 4's 0x5e544b still read near-black from pt-platform-4-north and pt-roof-underside; round 6: lighter again, as round 5's 0x7d7064
  *  did not change the read: the undersides face down, away from the sun, so only the sky light reaches them). ASSUMED shade. */
 export const PERTH_BAND_BROWN = 0xa59886;
-/** Round 7: the bands' undersides (PerthStationBatches.soffits): a pale boarding tone, and the sky light that reaches them as an emissive
- *  (it faces down, away from the sun and the scene's key light). ASSUMED shades, matched by eye to R-pt1-a's undersides. */
-export const PERTH_BAND_SOFFIT = 0xb8ac98, PERTH_BAND_SKYLIT = 0x4a4438;
+/** The bands' undersides (PerthStationBatches.soffits): R-pt1-a's and R-pt1-d north's dark brown-grey timber boarding, the roof reading
+ *  from the platforms as bright glazing between dark boards. Round 8: round 7's pale tone with a sky-lit glow was wrong against both
+ *  photographs and is gone (no emissive). The paint is the bands' own brown-grey a little lifted, so that under the board map
+ *  (perthBoardTexture, mean about 0.86) the boards average the round-6 tone and their joints show. ASSUMED shade. */
+export const PERTH_BAND_SOFFIT = 0xc6b7a2;
+/** Round 8 (S2): the boarding's map, multiplied over PERTH_BAND_SOFFIT. The soffits' UVs are track-frame metres (u along x', v along z',
+ *  ridgeRoofBatches), and the bands run along z', so the boards (R-pt1-a: narrow boards laid across each band) are `board` m wide in v,
+ *  each a little lighter or darker by a hash (`tone`), with a dark joint (`joint`, `jointPx` px) between them, over a `tile` m repeat.
+ *  ASSUMED sizes. Cached. */
+export const PERTH_BOARDS = {tile: 1.2, board: .15, tone: [.8, .95] as const, joint: .5, jointPx: 2, px: 128} as const;
+let boards: THREE.DataTexture | undefined;
+export function perthBoardTexture(): THREE.DataTexture {
+  if (boards) return boards;
+  const B = PERTH_BOARDS, n = B.px, data = new Uint8Array(n * n * 4), per = n * B.board / B.tile;
+  const hash = (k: number): number => { let h = Math.imul(k ^ 0x5bd1e995, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  for (let j = 0; j < n; j++) {
+    const k = Math.floor(j / per), joint = j - k * per < B.jointPx, tone = joint ? B.joint : B.tone[0] + (B.tone[1] - B.tone[0]) * hash(k + 1);
+    for (let i = 0; i < n; i++) { const grain = .97 + .03 * hash(1000 + j * n + i), v = Math.round(255 * tone * grain), q = 4 * (j * n + i); data[q] = data[q + 1] = data[q + 2] = v; data[q + 3] = 255; }
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / B.tile, 1 / B.tile); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-boards';
+  return boards = t;
+}
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
 export const PERTH_OPEN_ASPHALT = 0xa0705f;
 /** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and
@@ -217,6 +275,8 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   add(group, s.platform.tactile, blister, 'perth-platform-tactile');
   add(group, s.fittings, own(paintMaterial(material('whiteSteel'))), 'perth-columns-bridges-furniture');
   // The bridges' and kiosk's glass panels (round 3): see-through, so the platform 4 elevation reads past the lift bridge's stairs. ASSUMED opacity.
+  // Round 8 (S3): the ramp fences' close mesh (Rosser1954), a cut-out in the fence's grey.
+  add(group, s.mesh, own(new THREE.MeshLambertMaterial({color: PERTH_RAMP_FENCE.color, map: perthMeshTexture(), alphaTest: .5, side: THREE.DoubleSide})), 'perth-ramp-fence-mesh');
   // Round 7 (S4): the clocks' dial faces, their Roman numerals in a texture (perthDialTexture).
   add(group, s.dials, own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.clockFace, map: perthDialTexture()})), 'perth-clock-dials');
   add(group, s.panes, own(new THREE.MeshLambertMaterial({vertexColors: true, transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide})), 'perth-bridge-glass');
@@ -262,13 +322,14 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   if (!build || !group) return;
   const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(PERTH_BAND_BROWN); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
-  // Round 7 (S2, the round-6 score: lighter albedo did not lift the undersides, as only sky light reaches them): the bands' undersides in a
-  // pale boarding tone with a sky-lit glow, which the atmosphere scales with daylight as it does the glazing's.
-  const soffit = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); soffit.color.setHex(PERTH_BAND_SOFFIT); soffit.emissive.setHex(PERTH_BAND_SKYLIT); soffit.side = THREE.DoubleSide;
+  // The bands' undersides (round 7: their own draw): R-pt1-a's dark boarding, its boards mapped (round 8, perthBoardTexture), no glow.
+  const soffit = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); soffit.color.setHex(PERTH_BAND_SOFFIT); soffit.emissive.setHex(0); soffit.map = perthBoardTexture(); soffit.side = THREE.DoubleSide;
   build.add(group, s.soffits, soffit, 'perth-roof-band-soffits');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
   // Round 5: the spandrels' pierced plates (R-pt1-a, R-pt1-c), in the ironwork's paint, cut by the pattern's alpha.
   build.add(group, s.spandrels, build.own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.iron, map: perthPiercedTexture(), alphaTest: .5, side: THREE.DoubleSide})), 'perth-roof-spandrels');
+  // Round 8: the gutter braces' ring ornament (R-pt1-a), a cut-out in the ironwork's paint.
+  build.add(group, s.ornament, build.own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.iron, map: perthRingTexture(), alphaTest: .5, side: THREE.DoubleSide})), 'perth-roof-brace-ornament');
   // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.
   // Round 3: opaque, so the transparent sort can no longer put the milky panes over it (round 2's overview read white and streaky); its
   // faces look up, so from under the roof it is culled and the panes show. A weathered grey, ASSUMED shade.

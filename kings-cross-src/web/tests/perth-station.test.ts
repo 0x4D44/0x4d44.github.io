@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { perthDialTexture, perthPiercedTexture, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_TRUSS_RING, trussRings, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
+import { archRib, boardedSide, clockCorbel, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -119,7 +119,7 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
 
 test('round 3: the roof\'s solid bands have undersides hung under the glazing, so from below the milky panes do not wash them pale', () => {
   // Every furrow band of the main roof stands WAVERLEY_ROOF_STRIP_LIFT over the gutter line; its underside hangs PERTH_BAND_DROP under it.
-  // (Round 7: the undersides are their own batch, `soffits`, drawn in a sky-lit tone; round 3 to 6 had them in `strips`.)
+  // (Round 7: the undersides are their own batch, `soffits`, drawn as mapped boarding; round 3 to 6 had them in `strips`.)
   const s = batches.strips.positions, u = batches.soffits.positions, over = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_STRIP_LIFT, under = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP;
   let up = 0, down = 0;
   for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - over) < 1e-6) up++;
@@ -598,22 +598,70 @@ test('round 7: the coper and warning strip run down the ramps\' track sides and 
   const coperC = rgb(coperRgb), isCoper = (i: number): boolean => Math.abs(P.edges.colors[i] - coperC[0]) < 1e-6 && Math.abs(P.edges.colors[i + 1] - coperC[1]) < 1e-6;
   const foot = near(P.edges, (q, y, i) => isCoper(i) && side(q, coper.to, 1) && Math.abs(y - rail - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
   assert.ok(foot >= 1, `the coper reaches the ramp's foot at rail level (${foot})`);
-  const tact = near(P.tactile, (q, y) => side(q, warning.to, 1) && Math.abs(y - rail - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
-  assert.ok(tact >= 1, `the warning strip reaches the ramp's foot (${tact})`);
+  // Round 8 (corrected): no warning strip down the gated ramp (round 7 drew one unsourced; neither Rosser1954 nor 591926 shows it).
+  const tact = near(P.tactile, q => q[0] > r4.e0[0] + .05 && q[0] < r4.f0[0] + .05 && Math.abs(q[1] - (e[1] + (warning.from + warning.to) / 2)) < 1);
+  assert.equal(tact, 0, `no warning strip on the ramp (${tact})`);
   const nose = near(P.lip, (q, y) => Math.abs(q[0] - r4.f0[0]) < .02 && y < rail);
   assert.ok(nose >= 1, `the coper's nosing runs down the slope (${nose})`);
   // The turn: coper on the deck from the platform's corner to the ramp's side.
   const c = r4.corner[ti]!, turn = near(P.edges, (q, y, i) => isCoper(i) && Math.hypot(q[0] - c[0], q[1] - c[1]) < .02 && Math.abs(y - deck - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
   assert.ok(turn >= 1, `the coper turns along the end from the platform's corner (${turn})`);
-  // The fence: posts and bars in its grey, standing on the head line, about chest high.
-  const fc = rgb(PERTH_RAMP_FENCE.color), f = batches.fittings; let bars = 0, top = 0;
+  // The fence: posts and rails in its grey, standing on the head line, about chest high. (Round 8: round 7's 0.15 m bars are now one
+  // close-mesh panel between the rails, batches.mesh, cut out by perthMeshTexture; the round-8 test below checks the panel.)
+  const fc = rgb(PERTH_RAMP_FENCE.color), f = batches.fittings; let frame = 0, top = 0;
   for (let i = 0; i < f.positions.length; i += 3) {
     if (Math.abs(f.colors[i] - fc[0]) > 1e-6 || Math.abs(f.colors[i + 2] - fc[2]) > 1e-6) continue;
     const q = toLocal([f.positions[i], f.positions[i + 2]]);
-    if (Math.abs(q[0] - r4.e0[0]) < .1 && q[1] > Math.min(r4.e0[1], r4.e1[1]) - .1 && q[1] < Math.max(r4.e0[1], r4.e1[1]) + .1) { bars++; top = Math.max(top, f.positions[i + 1]); }
+    if (Math.abs(q[0] - r4.e0[0]) < .1 && q[1] > Math.min(r4.e0[1], r4.e1[1]) - .1 && q[1] < Math.max(r4.e0[1], r4.e1[1]) + .1) { frame++; top = Math.max(top, f.positions[i + 1]); }
   }
-  assert.ok(bars >= 8 * 12, `a barred fence across the head (${bars} vertices)`);
+  assert.ok(frame >= 3 * 24, `posts and rails across the head (${frame} vertices)`);
   assert.ok(top > deck + 1 && top < deck + 1.6, `chest high (${(top - deck).toFixed(2)} m)`);
+});
+
+test('round 8: the ramps read as slopes: a handrail down each side follows the fall; the head\'s fence is a close-mesh panel, in pt-platform-4-south-end\'s frame and in clear view', () => {
+  const H = PERTH_RAMP_RAIL, F = PERTH_RAMP_FENCE, M = PERTH_FENCE_MESH, deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail;
+  const r4 = plan.ramps.find(r => r.ref === '4' && r.e0[0] > 100)!, fc = rgb(F.color), f = batches.fittings, p = f.positions;
+  // Handrails: on both sides of every ramp, the top rail H.heights[0] over the slope at its head and its foot (so it falls with it).
+  for (const r of plan.ramps) for (const i of [0, 1] as const) {
+    const e = i ? r.e1 : r.e0, fo = i ? r.f1 : r.f0;
+    let head = 0, foot = 0;
+    for (let k = 0; k < p.length; k += 3) {
+      if (Math.abs(f.colors[k] - fc[0]) > 1e-6 || Math.abs(f.colors[k + 2] - fc[2]) > 1e-6) continue;
+      const q = toLocal([p[k], p[k + 2]]);
+      const near = (c: Pt, t: number): boolean => Math.hypot(q[0] - (e[0] + (fo[0] - e[0]) * t), q[1] - (e[1] + (fo[1] - e[1]) * t)) < .6 && Math.abs(p[k + 1] - (deck + (rail - deck) * t + H.heights[0])) < .06;
+      if (near(e, .03)) head++; if (near(fo, 1)) foot++;
+    }
+    assert.ok(head >= 4 && foot >= 4, `the ${r.ref} ramp's handrail on side ${i} falls from head to foot (${head}, ${foot})`);
+  }
+  // The mesh: a cut-out of close wires (more open than not), drawn alpha-tested in the platforms part.
+  const t = perthMeshTexture(), d = t.image.data as Uint8Array; let open = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i] === 0) open++;
+  assert.ok(M.pitch[0] <= .06 && open / (d.length / 4) > .6 && open / (d.length / 4) < .95, `close mesh (${(open / (d.length / 4) * 100).toFixed(0)} % open)`);
+  // The panel across platform 4's south ramp head, from near the deck to near the top rail.
+  const m = batches.mesh.positions; let lo = Infinity, hi = -Infinity, zlo = Infinity, zhi = -Infinity;
+  for (let i = 0; i < m.length; i += 3) { const q = toLocal([m[i], m[i + 2]]); if (Math.abs(q[0] - r4.e0[0]) > .05) continue; lo = Math.min(lo, m[i + 1]); hi = Math.max(hi, m[i + 1]); zlo = Math.min(zlo, q[1]); zhi = Math.max(zhi, q[1]); }
+  assert.ok(lo < deck + .2 && hi > deck + 1, `a mesh panel across the head (${(lo - deck).toFixed(2)}-${(hi - deck).toFixed(2)} m)`);
+  assert.ok(zhi - zlo > Math.abs(r4.e1[1] - r4.e0[1]) - 2 * F.inset - .05, `the panel spans the head (${(zhi - zlo).toFixed(2)} m)`);
+  // In the frozen view, and the first thing a ray from the eye meets there: three points along the panel, mid-height.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+    const k = cams['pt-platform-4-south-end'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
+    cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
+    const eye = new THREE.Vector3(...k.pos as [number, number, number]), mesh = scene.group.getObjectByName('perth-ramp-fence-mesh') as THREE.Mesh;
+    assert.ok(mesh && (mesh.material as THREE.MeshLambertMaterial).map === t && (mesh.material as THREE.MeshLambertMaterial).alphaTest > 0 && mesh.parent === scene.parts.platforms, 'the panel drawn cut out, in the platforms part');
+    // (Nine points along it, mid-height: the eye stands near its east end, so its west part is out of frame; a post may block one.)
+    let inFrame = 0, clear = 0; const misses: string[] = [];
+    for (const s of [.1, .2, .3, .4, .5, .6, .7, .8, .9]) {
+      const z = zlo + (zhi - zlo) * s, w = toWorld([r4.e0[0], z]), pt = new THREE.Vector3(w[0], deck + .6, w[1]), v = pt.clone().project(cam);
+      if (!(Math.abs(v.x) < .95 && Math.abs(v.y) < .95 && v.z < 1)) continue;
+      inFrame++;
+      const dir = pt.clone().sub(eye), dist = dir.length(), h = new THREE.Raycaster(eye, dir.normalize(), 0, dist + .5).intersectObject(scene.group, true)[0];
+      if (h && h.object === mesh && Math.abs(h.distance - dist) < .05) clear++; else misses.push(`${s}: ${h?.object.name} at ${h?.distance.toFixed(2)} of ${dist.toFixed(2)} m`);
+    }
+    assert.ok(inFrame >= 3, `the fence in pt-platform-4-south-end's frame (${inFrame} of 9 points)`);
+    assert.ok(clear >= 2, `the fence panel in clear view (${clear} of ${inFrame}; ${misses.join('; ')})`);
+  } finally { scene.dispose(); }
 });
 
 test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, with staggered horizontal joints', () => {
@@ -643,10 +691,11 @@ test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, wi
 });
 
 test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift door under a glass hood at platform and deck level on every tower; the island building\'s windows set deep', () => {
-  // The frame paint: a light grey, between the cladding and white, not round 6's near-white.
+  // The frame paint. Round 8 (the round-7 score: Abbott 6573357 shows the frame and posts off-white against the mid-grey cladding; round
+  // 7's 0xaeb3b5 was darker than the photo): an off-white, well over the cladding, short of pure white. (Round 7 asserted <= 0xc0.)
   const hexes = (h: number): number[] => [h >> 16, (h >> 8) & 255, h & 255], [fr, fg, fb] = hexes(PERTH_PAINT.frame);
   assert.ok(Math.abs(fr - fg) <= 0x08 && Math.abs(fr - fb) <= 0x08, `grey (${PERTH_PAINT.frame.toString(16)})`);
-  assert.ok(fr > (PERTH_PAINT.towerClad >> 16) && fr <= 0xc0, `lighter than the cladding and clearly not white (${fr.toString(16)})`);
+  assert.ok(fr >= (PERTH_PAINT.towerClad >> 16) + 0x30 && fr >= 0xd0 && fr <= 0xec, `off-white, well over the cladding (${fr.toString(16)})`);
   // Doors and hoods: at each tower, leaf-coloured vertices on two opposite faces, one at each level, each under a hood pane.
   const T = PERTH_STATION.tower, D = PERTH_LIFT_DOOR, f = batches.fittings, p = f.positions, col = f.colors, leaf = rgb(D.leaf), glassF = batches.panes.positions;
   const towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, u: l.tower!.dir, deck: br.deck})));
@@ -676,35 +725,72 @@ test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift
   assert.ok(deep >= 100, `deep jambs and mullions at the ground-floor windows (${deep} vertices 0.28 m out)`);
 });
 
-test('round 7: the bands\' undersides are drawn sky-lit and pale, apart from the bands; R-pt1-a\'s rings stand in the lattice panels of the girders pt-roof-underside looks along', () => {
+test('round 8: the bands\' undersides are R-pt1-a\'s dark brown-grey boarding, boards mapped, no glow; drawn apart from the bands', () => {
+  // (Round 7 asserted a pale, sky-lit tone, which the round-7 score found wrong against R-pt1-a and R-pt1-d north; corrected here.)
   const scene = buildPerthScene({ lighting: false });
   try {
     const m = (scene.group.getObjectByName('perth-roof-band-soffits') as THREE.Mesh).material as THREE.MeshLambertMaterial;
-    const band = new THREE.Color(PERTH_BAND_BROWN), lum = (c: THREE.Color): number => c.r + c.g + c.b;
+    const lum = (c: THREE.Color): number => c.r + c.g + c.b, t = perthBoardTexture(), d = t.image.data as Uint8Array, n = t.image.width;
     assert.equal(m.color.getHex(), PERTH_BAND_SOFFIT);
-    assert.ok(lum(m.color) > lum(band) * 1.1, `paler than the bands' brown (${m.color.getHexString()} vs ${band.getHexString()})`);
-    assert.ok(lum(m.emissive) > .02 && lum(m.emissive) < lum(m.color) / 2, `a sky-lit glow, well under the paint (${m.emissive.getHexString()})`);
-    assert.equal(m.side, THREE.DoubleSide);
+    assert.ok(m.map === t && m.side === THREE.DoubleSide, 'the boards mapped, seen from both sides');
+    assert.equal(lum(m.emissive), 0, `no glow (${m.emissive.getHexString()})`);
+    // The tone the eye sees: the paint times the map's mean, about the bands' brown-grey (round 6, which read dark from the platforms),
+    // brown-grey (red over blue), and well under the milky glazing over it (perthGlazing, 0xc9c7bf).
+    let mean = 0; for (let i = 0; i < d.length; i += 4) mean += d[i] / 255; mean /= d.length / 4;
+    const seen = m.color.clone().multiplyScalar(new THREE.Color().setRGB(mean, mean, mean, THREE.SRGBColorSpace).r), band = new THREE.Color(PERTH_BAND_BROWN);
+    assert.ok(lum(seen) <= lum(band) * 1.12 && lum(seen) >= lum(band) * .88, `the boards' tone about the bands' (${seen.getHexString()} vs ${band.getHexString()})`);
+    assert.ok(seen.r > seen.b && lum(seen) < lum(new THREE.Color(0xc9c7bf)) * .8, `dark brown-grey under the glazing (${seen.getHexString()})`);
+    // The boards: a dark joint row every PERTH_BOARDS.board m, and the boards between them not all one tone.
+    const B = PERTH_BOARDS, row = (j: number): number => d[4 * j * n] / 255, joints: number[] = [], tones = new Set<number>();
+    for (let j = 0; j < n; j++) { if (row(j) < B.joint + .02) { if (!joints.length || j - joints[joints.length - 1] > 1) joints.push(j); } else tones.add(Math.round(row(j) * 20)); }
+    assert.equal(joints.length, Math.round(B.tile / B.board), `a joint per board (${joints.length})`);
+    assert.ok(tones.size >= 3, `the boards vary in tone (${tones.size})`);
   } finally { scene.dispose(); }
-  { const low = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP, s = batches.strips.positions; let n = 0; for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - low) < 1e-6) n++;
-    assert.ok(batches.soffits.count > 100 && n === 0, `the undersides are a batch of their own (${batches.soffits.count}; ${n} left in the bands' batch)`); }
-  // The rings: in the gutter girders' lattice panels, between the chords, round the diagonals' crossing, near the pt-roof-underside camera.
-  const W = WAVERLEY_STRUCTURE, S = PERTH_TRUSS_RING, sc = trussRings(plan);
-  assert.ok(sc.length >= 30, `rings in the near girders' panels (${sc.length})`);
-  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
-  const k = cams['pt-roof-underside'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
-  cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
-  let seen = 0;
-  for (const s of sc) {
-    assert.ok(s.y + S.radius < W.gutterGirderTop - W.chordDepth && s.y - S.radius > W.gutterGirderTop - W.gutterGirderDepth + W.chordDepth, `a ring between the chords at ${s.x.toFixed(1)}, ${s.z.toFixed(1)}`);
-    assert.ok(plan.structure.gutters.some(([x, z0, z1]) => Math.abs(x - s.x) < 1e-9 && s.z > z0 && s.z < z1), 'on a gutter girder\'s line');
-    const w = toWorld([s.x, s.z]), v = new THREE.Vector3(w[0], s.y, w[1]).project(cam); if (Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1) seen++;
-    // Drawn: ironwork vertices on the ring, in the girder's plane.
-    const p = batches.ironwork.positions; let on = 0;
-    for (let i = 0; i < p.length; i += 3) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - s.x) < .05 && Math.abs(Math.hypot(q[1] - s.z, p[i + 1] - s.y) - S.radius) < .06) on++; }
-    assert.ok(on >= 12, `the ring at ${s.x.toFixed(1)}, ${s.z.toFixed(1)} drawn (${on} vertices)`);
+  { const low = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP, s = batches.strips.positions; let k = 0; for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - low) < 1e-6) k++;
+    assert.ok(batches.soffits.count > 100 && k === 0, `the undersides are a batch of their own (${batches.soffits.count}; ${k} left in the bands' batch)`); }
+  // The boards run across the bands: the soffits' UVs are track-frame metres with v along z', the bands' long side.
+  const u = batches.soffits.uvs, p = batches.soffits.positions;
+  for (let i = 0; i < Math.min(u.length / 2, 300); i++) { const q = toLocal([p[3 * i], p[3 * i + 2]]); assert.ok(Math.abs(u[2 * i] - q[0]) < 1e-3 && Math.abs(u[2 * i + 1] - q[1]) < 1e-3, 'soffit UVs in track-frame metres'); }
+});
+
+test('round 8: R-pt1-a\'s ring ornament fills every arched brace\'s spandrel at the column heads, cut out; no rings in the girders\' lattice panels', () => {
+  // The cut-out: open rings, neighbours nearly touching, each with a scroll inside; open between them.
+  const R = PERTH_RING_ORNAMENT, t = perthRingTexture(), d = t.image.data as Uint8Array, n = t.image.width;
+  const alpha = (x: number, y: number): number => d[4 * (Math.floor((y / R.cell + .5) * n) * n + Math.floor((x / R.cell + .5) * n)) + 3];
+  for (let k = 0; k < 8; k++) { const a = k / 8 * 2 * Math.PI; assert.equal(alpha(R.ring * Math.cos(a), R.ring * Math.sin(a)), 255, `the ring drawn at ${k}/8`); }
+  assert.equal(alpha(0, 0), 0, 'open in the ring\'s middle');
+  assert.equal(alpha(-R.scroll, 0), 255, 'the scroll inside it');
+  assert.equal(alpha((R.ring + R.scroll) / 2, (R.ring + R.scroll) / 2 * .3), 0, 'open between the ring and the scroll');
+  let open = 0; for (let i = 3; i < d.length; i += 4) if (d[i] === 0) open++;
+  assert.ok(open / (d.length / 4) > .55 && open / (d.length / 4) < .9, `mostly open, as R-pt1-a's scrollwork (${(open / (d.length / 4) * 100).toFixed(0)} %)`);
+  // Drawn, alpha-tested, in the roof part.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const mesh = scene.group.getObjectByName('perth-roof-brace-ornament') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
+    assert.ok(m.map === t && m.alphaTest > 0 && m.side === THREE.DoubleSide && mesh.parent === scene.parts.roof, 'the ornament drawn cut out, in the roof part');
+  } finally { scene.dispose(); }
+  // On every brace, the whole roof over, not near one camera: each brace with a piece drawn carries plates.
+  const braces = gutterBraces(plan), o = batches.ornament.positions, W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth;
+  const has = new Set<number>();
+  for (let i = 0; i < o.length; i += 3) { const q = toLocal([o[i], o[i + 2]]); const k = braces.findIndex(b => Math.abs(q[0] - b.a[0]) < 1e-3 && q[1] >= b.a[1] - 1e-3 && q[1] <= b.c[1] + 1e-3); if (k >= 0) has.add(k); }
+  const drawn = braces.filter(b => [.1, .3, .7, .9].some(s => { const z = b.a[1] + (b.c[1] - b.a[1]) * s; return b.keep([b.a[0], z], under - .5); }));
+  assert.ok(has.size >= drawn.length && drawn.length >= 30, `ornament on every brace drawn (${has.size} of ${drawn.length})`);
+  const xs = [...has].map(k => braces[k].a[0]);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 150, `from end to end of the roof (${(Math.max(...xs) - Math.min(...xs)).toFixed(0)} m)`);
+  // No rings in the girders' lattice panels: no ironwork vertex in a girder's plane 0.2-0.45 m to either side of a panel's middle and
+  // level with it (round 7's rings had flats meeting there; the panels' own members end at its corners, 0.57 m or more out, and the roof
+  // members crossing the girder's plane do so 0.28 m or more above or below its middle).
+  const ir = batches.ironwork.positions, mid = W.gutterGirderTop - W.gutterGirderDepth / 2;
+  const centres = plan.structure.gutters.flatMap(([x, z0, z1]) => { const len = z1 - z0, k = Math.max(1, Math.round(len / (W.gutterGirderDepth - W.chordDepth))); return Array.from({length: k}, (_, i) => [x, z0 + len * (i + .5) / k] as Pt); });
+  const byX = new Map<number, number[]>(); for (const [x, z] of centres) byX.set(x, [...(byX.get(x) ?? []), z]);
+  // (Counted per panel: a ring puts 8 or more there; a stray roof member's end, a few.)
+  const per = new Map<string, number>();
+  for (let i = 0; i < ir.length; i += 3) {
+    const q = toLocal([ir[i], ir[i + 2]]), x = [...byX.keys()].find(v => Math.abs(v - q[0]) < .05); if (x === undefined || Math.abs(ir[i + 1] - mid) >= .1) continue;
+    for (const z of byX.get(x)!) if (Math.abs(q[1] - z) > .2 && Math.abs(q[1] - z) < .45) per.set(`${x}/${z}`, (per.get(`${x}/${z}`) ?? 0) + 1);
   }
-  assert.ok(seen >= 15, `rings in pt-roof-underside's frame (${seen})`);
+  const most = Math.max(0, ...per.values());
+  assert.ok(most < 4, `no rings in the girders' lattice panels (at most ${most} vertices in a panel)`);
 });
 
 test('round 7: the north bridge\'s lattice fills its side girders\' whole depth, down past a thin maroon slab (R-pt1-d north)', () => {
@@ -733,8 +819,9 @@ test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders,
   assert.ok(braces.length >= 30 && lines.size >= 15, `braces under most gutter girders (${braces.length} on ${lines.size} lines)`);
   for (const b of braces) assert.ok(b.a[0] === b.c[0] && plan.structure.gutters.some(([x, z0, z1]) => x === b.a[0] && b.a[1] >= z0 && b.c[1] <= z1), `brace ${b.a}-${b.c} lies under a gutter girder`);
   // The pierced plates in those planes: facing along the tracks (toward the platform cameras), from the rib up to the girder's underside,
-  // deep by the springings, and nowhere a bridge stands.
-  const s = batches.spandrels, p = s.positions, n = s.normals, o = toLocal([0, 0]);
+  // deep by the springings, and nowhere a bridge stands. (Round 8: these plates carry R-pt1-a's ring ornament, in batches.ornament; round 6
+  // and 7 drew them pierced, in batches.spandrels with the column girders' spandrels.)
+  const s = batches.ornament, p = s.positions, n = s.normals, o = toLocal([0, 0]);
   let facing = 0;
   const depth = new Map<string, {lo: number}>();
   for (let i = 0; i < p.length; i += 3) {
@@ -813,16 +900,28 @@ test('round 7: the clock dials carry R-pt1-a2\'s Roman numerals, upright from in
     up += dy * dv; right += dr * du;
   }
   assert.ok(up > 0 && right > 0, `numerals upright and not mirrored from in front (up ${up.toFixed(3)}, right ${right.toFixed(3)})`);
-  // The corbel: under platform 4's case, inside its footprint, gilt ribs and a finial, timber tiers.
+  // The corbel (round 8, the round-7 score: it hung half inside the stage, reading as a thin gilt V): broad and stepped, wholly in front
+  // of the stage's face and its cornice (0.1 m proud of it). First alone, in the case's frame (out along +x, along the wall in z).
   const C = PERTH_STATION.clock, K = PERTH_CLOCK_CORBEL, deck = WAVERLEY_LEVELS.platform, c4 = plan.clocks.find(c => c.ref === C.kioskRef)!;
+  const front = C.stage[1] + .1, cw = C.case[0], solo = new Batch({colored: true, uv: false});
+  clockCorbel(solo, (o, y, along = 0) => [o, y, along], C.stage[1] + K.back, 0, cw, 0);
+  const sx = solo.positions.filter((_, i) => i % 3 === 0), sz = solo.positions.filter((_, i) => i % 3 === 2), sy = solo.positions.filter((_, i) => i % 3 === 1);
+  assert.ok(Math.min(...sx) >= front + 1e-6, `clear of the stage and its cornice (back ${Math.min(...sx).toFixed(3)} m out, the cornice ${front.toFixed(2)})`);
+  assert.ok(Math.max(...sz) - Math.min(...sz) >= .9 * cw, `broad: nearly the case's width (${(Math.max(...sz) - Math.min(...sz)).toFixed(2)} of ${cw} m)`);
+  // Stepped: the timber tiers' widths along the wall, read at each tier joint (the wider of the two tiers meeting there), all different.
+  const wood = [rgb(PERTH_PAINT.timber), rgb(PERTH_PAINT.timberDark)], isWood = (i: number): boolean => wood.some(k => Math.abs(solo.colors[3 * i] - k[0]) < 1e-6 && Math.abs(solo.colors[3 * i + 2] - k[2]) < 1e-6);
+  const levels = new Map<string, number[]>(); sy.forEach((y, i) => { if (isWood(i)) { const key = y.toFixed(3); levels.set(key, [...(levels.get(key) ?? []), sz[i]]); } });
+  const widths = new Set([...levels.values()].map(zs => (Math.max(...zs) - Math.min(...zs)).toFixed(2)));
+  assert.ok(levels.size === K.tiers + 1 && widths.size === K.tiers, `stepped: ${K.tiers} tiers of ${widths.size} widths (${[...widths].join(', ')})`);
+  // Then in place: under platform 4's case, gilt and timber in front of the stage.
   const base = deck + C.hangHeight - C.case[2] / 2, f = batches.fittings, fc = f.colors, fp = f.positions;
   const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(fc[i] - k[0]) < 1e-6 && Math.abs(fc[i + 1] - k[1]) < 1e-6 && Math.abs(fc[i + 2] - k[2]) < 1e-6; };
   let gilt = 0, tiers = 0;
   for (let i = 0; i < fp.length; i += 3) {
     const q = toLocal([fp[i], fp[i + 2]]), o = (q[0] - c4.at[0]) * c4.out[0] + (q[1] - c4.at[1]) * c4.out[1], s = (q[1] - c4.at[1]) * c4.out[0] - (q[0] - c4.at[0]) * c4.out[1];
-    if (Math.abs(o - (C.stage[1] + C.hang)) > C.case[1] / 2 || Math.abs(s) > C.case[1] / 2 || fp[i + 1] > base + 1e-6 || fp[i + 1] < base - K.drop - .2) continue;
+    if (o < front || o > front + K.depth[0] + .1 || Math.abs(s) > cw / 2 + .05 || fp[i + 1] > base + 1e-6 || fp[i + 1] < base - K.drop - .25) continue;
     if (is(i, PERTH_PAINT.gilt)) gilt++;
     if ((is(i, PERTH_PAINT.timber) || is(i, PERTH_PAINT.timberDark)) && fp[i + 1] < base - .05) tiers++;
   }
-  assert.ok(gilt >= 5 * 24 && tiers >= K.tiers * 24 - 24, `a corbel under the case (gilt ${gilt}, timber ${tiers})`);
+  assert.ok(gilt >= 24 + 2 * 8 && tiers >= K.tiers * 24 - 12, `a corbel under the case, in front of the stage (gilt ${gilt}, timber ${tiers})`);
 });
