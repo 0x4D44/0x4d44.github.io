@@ -38,7 +38,7 @@ import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roun
 import type { V3 } from './train-geom.ts';
 import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
-import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
+import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeLeanSlope, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, buildBogie, buildPantograph, couplerHalf, podHanger, roofKit, roofKitSpan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
 import type { BogieStyle, CouplerStyle, PodForm, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
@@ -801,6 +801,10 @@ const ADELANTE_BODY = ((): BodySpec => {
       roundLen: 2.8,
       widest: 0.47,
       boxiness: 4.5,
+      // ASSUMED, read off GC180-01 (the panel's right-hand edge leans back about a third of a metre in each metre of height, seen at 50 degrees to the axis) and GC180-02: the
+      // face leans back about 20 degrees at the tip and the lean is gone 1.6 m back, over the glass's top (the lean needs that run: over less, the sheared roof line would turn
+      // back on itself behind the face). `from` is the lowest point of any ring (0.641 m, 0.04 m back), so nothing stands forward of the chin.
+      rake: { lean: 0.36, from: 0.64, reach: 1.6 },
     },
     glass: {
       // two panes, a 10 cm post between them; the glass wraps close to the corners (ASSUMED sizes, from the photographs)
@@ -1009,10 +1013,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     rings.push({ s: tip, pts: loopFromHalf(sec.half as [number, number][]), round: 0 });
   }
   rings.push({ s: bodyEnd, pts: loopFromHalf(sec.half as [number, number][]), round: 0 });
-  const P: V3[][] = rings.map((r) => r.pts.map(([x, y]): V3 => [x, y, r.s]));
+  // (a raked nose's rings lean: each point is set back by how high it stands, see NoseRake. A car with no nose has no rake, and its far ring is past the rake's reach)
+  const setBack = (sn: number, y: number): number => (car.cab ? rakeSet(spec.nose, sn, y) : 0);
+  // (a cab end coupled to another unit, with its open recess, sockets and jumper cable on an upright face, is not drawn for a raked one: refuse it, not draw it off the face)
+  if (interiorCab && spec.nose.rake) throw new Error(`${spec.family}: a coupled cab end on a raked nose`);
+  const P: V3[][] = rings.map((r) => r.pts.map(([x, y]): V3 => [x, y, r.s + setBack(r.s - tip, y)]));
   const centre = (i: number): V3 => {
     const ys = (rings[i] as { pts: [number, number][] }).pts.map((p) => p[1]);
-    return [0, (Math.max(...ys) + Math.min(...ys)) / 2, (rings[i] as { s: number }).s];
+    const mid = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const s = (rings[i] as { s: number }).s;
+    return [0, mid, s + setBack(s - tip, mid)];
   };
   const N = gridNormals(P, true, centre);
   const R = rings.length - 1;
@@ -1115,7 +1125,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     // the nose's front face
     const r0 = ringAt(spec.nose, 0);
     const tipHalf = halfAt(sec, norm, egg, r0);
-    const face = loopFromHalf(tipHalf).map(([x, y]): V3 => world([x, y, tip]));
+    const face = loopFromHalf(tipHalf).map(([x, y]): V3 => world([x, y, tip + setBack(0, y)]));
     // the face splits where the loft's column J0 meets it (yCut), so the panel's edge continues, unbroken, round the fillet
     // (a flat face says where its bumper ends itself: its panels are shapes laid on it, and the loft's column is not at the photographs' height)
     const flat = front.face;
@@ -1142,7 +1152,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
       return out;
     };
-    const faceN: V3 = [0, 0, -dir];
+    // (a raked face looks a little up: its plane leans back at the top by `lean` metres a metre, so its normal does too)
+    const faceLean = rakeLean(spec.nose, 0);
+    const faceN: V3 = unit([0, faceLean, -dir]);
     // two flat caps, split at yCut; where the warning panel is narrower than the face, its upper cap is split again, the panel between two cheeks in the livery's own colour
     const lowerCap = clip(face, 1, yCut, false);
     const upper = clip(face, 1, yCut, true);
@@ -1208,7 +1220,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
     }
     // flat details laid on the face, `depth` metres in front of it (so the lens stands proud of its bezel, and the bezel of the face)
-    const onFace = (poly: [number, number][], depth: number): V3[] => poly.map(([x, y]): V3 => world([x, y, tip - depth]));
+    // (on a raked face the plane leans back with height; `depth` is measured along its normal, so the layers stand as far apart as on an upright face)
+    const depthRun = Math.hypot(1, faceLean);
+    const onFace = (poly: [number, number][], depth: number): V3[] => poly.map(([x, y]): V3 => world([x, y, tip + setBack(0, y) - depth * depthRun]));
     // the cover's seam and latches: near black, or a mid grey where the face under the cover is itself dark (the Hull Trains nose cone, luma 0.19; under a colour mask, the mask's colour)
     const faceLuma = (hex: number): number => (0.2126 * ((hex >> 16) & 255) + 0.7152 * ((hex >> 8) & 255) + 0.0722 * (hex & 255)) / 255;
     const seam = col(faceLuma(mask ? mask.colour : lowerColour) < 0.2 ? 0x484c53 : 0x1b1d21);
@@ -1267,11 +1281,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     }
     if (interiorCab || !covered) {
       // the coupler out of the face: to the middle of the gap between two coupled noses, or to the end of the car at the end of a train
-      couplerHalf(detail, Z(tip), outward, tip, ASSUMED.couplerHeight, front.coupler.style);
+      // (on a raked face the wall the coupler comes out of stands back by how high the coupler is: its barrel is that much longer to reach the same end)
+      const wall = tip + setBack(0, ASSUMED.couplerHeight);
+      couplerHalf(detail, Z(wall), outward, wall, ASSUMED.couplerHeight, front.coupler.style);
       const m = new THREE.Object3D();
       m.name = interiorCab ? 'coupler' : 'nose-coupler';
-      m.position.set(0, ASSUMED.couplerHeight, interiorCab ? Z(tip) : Z(tip / 2));
-      m.userData = interiorCab ? { end: car.cab, nose: true } : { end: car.cab, style: front.coupler.style, reach: tip };
+      m.position.set(0, ASSUMED.couplerHeight, interiorCab ? Z(wall) : Z(wall / 2));
+      m.userData = interiorCab ? { end: car.cab, nose: true } : { end: car.cab, style: front.coupler.style, reach: wall };
       group.add(m);
     }
     // Lamps. Every family but the AT300 has a headlight and a tail lamp at each lower corner of its flat face, shapes of the face (below); the AT300's is a window on the flank
@@ -1290,7 +1306,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // A flat face: the coupler's recess in the bumper, then the face's shapes (train-face.ts), each clipped to the face's outline (a convex loop) and laid on its plane at
       // its own lift. A shape's x is the cab's own, to its right: a rear cab's right is the train's left, and `mirror` draws the other hand's copy.
       const outline = loopFromHalf(tipHalf);
-      const glassN = unit([0, flat.glassLean, faceN[2]]);
+      const glassN = unit([0, flat.glassLean + faceLean, -dir]);
       const place = (shape: FaceShape, mirrored: boolean): void => {
         const flip = (mirrored ? -1 : 1) * dir;
         const clipped = clipConvex(shape.outline.map(([x, y]): [number, number] => [x * flip, y]), outline, shape.inset ?? 0);
@@ -1304,7 +1320,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
             const m = new THREE.Object3D();
             m.name = 'headlight';
             const cx = clipped.reduce((sum, p) => sum + p[0], 0) / clipped.length;
-            m.position.set(cx, clipped.reduce((sum, p) => sum + p[1], 0) / clipped.length, Z(tip));
+            const cy = clipped.reduce((sum, p) => sum + p[1], 0) / clipped.length;
+            m.position.set(cx, cy, Z(tip + setBack(0, cy)));
             m.userData = { side: cx > 0 ? 'right' : 'left' };
             group.add(m);
           }
@@ -1324,8 +1341,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     // (v runs along the rows, u across them, both 0..1). The windscreen, its frame and the wipers are such patches.
     const nosePatch = (rows: number, cols: number, at: (v: number, u: number) => [number, number], target: Soup, colour: THREE.Color | null, lift: number | ((v: number) => number)): void => {
       const grid: V3[][] = [];
+      // (the ring distance of each point: on a raked nose the point's own z is that and the set-back with its height)
+      const along: number[][] = [];
       for (let p = 0; p <= rows; p++) {
         const row: V3[] = [];
+        const rowS: number[] = [];
         let h: [number, number][] | null = null;
         let hAt = NaN;
         for (let q = 0; q <= cols; q++) {
@@ -1335,19 +1355,31 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
             h = glassHalf(s);
             hAt = s;
           }
-          row.push([x, yAtX(h, Math.abs(x)), tip + s]);
+          const y = yAtX(h, Math.abs(x));
+          row.push([x, y, tip + s + setBack(s, y)]);
+          rowS.push(s);
         }
         grid.push(row);
+        along.push(rowS);
       }
       // The nose's own normal at each point, from its height field y(x, s), pointing up and forward. (The grid's differences do not give it:
       // at the two lower corners of the outline both the rows and the columns run along x, and the normal they give is noise, with its
       // z component of either sign.) The steps are wide enough to smooth the polyline of the section, narrow enough to follow the rake.
+      // On a raked nose the surface is the height field sheared along z by its lean k(s) times the height over the rake's foot, so its tangents are (1, y_x, k y_x) across and
+      // (0, y_s, 1 + k' h + k y_s) along (h the height over the foot, k' the lean's fall along the nose) and their cross product is (-y_x (1 + k' h), 1 + k' h + k y_s, -y_s):
+      // the plain (-y_x, 1, -y_s) where there is no lean.
       const hx = 0.06;
       const hs = 0.04;
       const heightAt = (x: number, s: number): number => yAtX(glassHalf(Math.max(0, s)), Math.abs(x));
-      const Ng = grid.map((row) => row.map((p): V3 => {
-        const s = p[2] - tip;
-        return unit([-(heightAt(p[0] + hx, s) - heightAt(p[0] - hx, s)) / (2 * hx), 1, -(heightAt(p[0], s + hs) - heightAt(p[0], s - hs)) / (2 * hs)]);
+      const rakeFoot = spec.nose.rake?.from ?? 0;
+      const Ng = grid.map((row, i) => row.map((p, j): V3 => {
+        const s = (along[i] as number[])[j] as number;
+        const yx = (heightAt(p[0] + hx, s) - heightAt(p[0] - hx, s)) / (2 * hx);
+        const ys = (heightAt(p[0], s + hs) - heightAt(p[0], s - hs)) / (2 * hs);
+        const over = p[1] > rakeFoot ? p[1] - rakeFoot : 0;
+        const k = over > 0 ? rakeLean(spec.nose, s) : 0;
+        const kSlope = over > 0 ? rakeLeanSlope(spec.nose, s) : 0;
+        return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);
       }));
       const liftOf = (i: number): number => (typeof lift === 'number' ? lift : lift(i / rows));
       const lifted = grid.map((row, i) => row.map((p, j): V3 => [p[0] + (Ng[i] as V3[])[j]![0] * liftOf(i), p[1] + (Ng[i] as V3[])[j]![1] * liftOf(i), p[2] + (Ng[i] as V3[])[j]![2] * liftOf(i)]));
@@ -1456,7 +1488,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           const rr = ringAt(spec.nose, s);
           const hh = halfAt(sec, norm, egg, rr);
           const y = rr.bottom + v * (rr.top - rr.bottom);
-          row.push([side * xAtY(hh, y), y, tip + s]);
+          row.push([side * xAtY(hh, y), y, tip + s + setBack(s, y)]);
         }
         grid.push(row);
       }
@@ -1484,8 +1516,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     // The AT300's lamp cluster (see ClusterSpec), a patch on each flank: a point at distance s from the tip and height y, and the surface's outward normal there,
     // both from the section's own outline (so the cluster lies on the loft however it bends).
     const cluster = front.cluster;
+    // (the cluster's points and normals are the section's own, with no set-back: a raked nose has none, and a spec that gave it both would draw it off the surface)
+    if (cluster && spec.nose.rake) throw new Error(`${spec.family}: a lamp cluster on a raked nose`);
     if (cluster) {
-      const flank = (side: number, s: number, y: number): V3 => [side * xAtY(glassHalf(Math.max(0, s)), y), y, tip + s];
+      const flank =(side: number, s: number, y: number): V3 => [side * xAtY(glassHalf(Math.max(0, s)), y), y, tip + s];
       const flankNormal = (side: number, s: number, y: number): V3 => {
         const d = 0.03;
         const sx = (xAtY(glassHalf(s + d), y) - xAtY(glassHalf(Math.max(0, s - d)), y)) / (s + d - Math.max(0, s - d));

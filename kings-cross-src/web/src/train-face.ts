@@ -265,24 +265,33 @@ export const DESIRO_700_FACE: FaceSpec = {
 const POD_180 = 0x3c4149;
 
 /**
- * The Class 180's face, from GC180-05 and GC180-01 (the Halifax and Kings Cross photographs, 235 to 305 px to the metre against the 3.77 m height) and GC180-03:
- *   the panel   a flat yellow trapezoid under the windscreen: its top edge the glass's foot, about 1.85 m across; its sides slant in to about 1.4 m at its foot, a metre
- *               and a fifth lower (the photographs show the pods cutting its lower corners); the rest of the face is the livery's black;
- *   the pods    a big smoked-glass pod outboard of each lower slanted edge, about 0.45 m wide and 0.95 m tall, a round headlight in its lower half and a smaller lamp above it.
+ * The right half of the 180's yellow panel, from its top corner (above the face's own top, which cuts it off at the glass's foot) down the curved side to the middle of its
+ * lower edge, which bows down: a bowl under the glass, not a trapezoid. Every step turns the edge the same way (convex), so the panel is one convex outline.
+ */
+const PANEL_180: readonly [number, number][] = [[0.99, 2.3], [0.96, 2.0], [0.9, 1.72], [0.82, 1.56], [0.72, 1.46], [0.58, 1.39], [0.4, 1.35], [0.2, 1.33], [0, 1.32]];
+
+/**
+ * The Class 180's face, from GC180-05 and GC180-01 (the Halifax and Kings Cross photographs, 235 to 305 px to the metre against the 3.77 m height), GC180-03 and GC180-02. The face
+ * leans back (NoseRake on the 180's nose: about 20 degrees), so every height below is the elevation, the front view's, and the shapes stand on the leaning plane:
+ *   the panel   the yellow bowl under the windscreen, 0.9 m of it under the glass's foot: about 1.95 m across at the foot, its sides curving in, its lower edge bowed down to 1.32 m
+ *               at the middle and rising to the pods at the corners (the round-4 scorer's "large flat yellow trapezoid" against GC180-05 and GC180-02's smaller, curved panel); the
+ *               rest of the face is the livery's black;
+ *   the pods    a smoked-glass pod outboard of each side of the panel, about 0.3 m wide where the face's edge turns and 0.9 m tall, a round headlight low in it and a smaller lamp
+ *               above it; its inner edge is the straight line along the panel's curve, so the panel's outline is not cut and the two never overlap.
  * The coupler stands in the open under the panel (train.ts draws it), and the windscreen over it is a patch on the nose's roof, not a shape of the face. Sizes ASSUMED, read off
- * the photographs (the panel's slant and the pods' places to a few centimetres).
+ * the photographs (the panel's curve and the pods' places to a few centimetres).
  */
 export const ADELANTE_FACE: FaceSpec = {
   setback: 0.02,
   coverTop: 0.95,
-  // the recess ends where the panel begins
+  // the recess ends under the panel
   recess: { half: 0.5, y0: 0.62, y1: 0.95 },
   // (no glass on this face: the windscreen is a patch on the nose's roof)
   glassLean: 0,
   shapes: [
-    { name: 'warning-panel', outline: [[0.95, 2.4], [0.69, 1.08], [-0.69, 1.08], [-0.95, 2.4]], colour: YELLOW, lift: 0.0015 },
-    { name: 'lamp-pod', outline: [[0.94, 2.0], [1.6, 2.0], [1.6, 1.05], [0.74, 1.05]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
-    { name: 'headlight', outline: discOutline(1.0, 1.32, 0.095), lens: 'head', lift: 0.019, mirror: true },
-    { name: 'tail-lamp', outline: discOutline(1.0, 1.7, 0.055), lens: 'tail', lift: 0.019, mirror: true },
+    { name: 'warning-panel', outline: [...PANEL_180, ...PANEL_180.slice(0, -1).reverse().map(([x, y]): [number, number] => [-x, y])], colour: YELLOW, lift: 0.0015 },
+    { name: 'lamp-pod', outline: [[1.0, 2.0], [1.6, 2.0], [1.6, 1.1], [0.68, 1.1]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
+    { name: 'headlight', outline: discOutline(0.97, 1.3, 0.095), lens: 'head', lift: 0.019, mirror: true },
+    { name: 'tail-lamp', outline: discOutline(0.97, 1.68, 0.055), lens: 'tail', lift: 0.019, mirror: true },
   ],
 };

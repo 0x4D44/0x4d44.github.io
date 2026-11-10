@@ -1,5 +1,5 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts) against
-web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts and web/tests/train-lamps.test.ts.
+web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts and web/tests/train-rake.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ...]
 The tests run in a copy with the real node_modules linked in; the unmodified copy must pass first and a
 load or crash error is an ERROR, not a kill (tools/mutation/lib/kxmut.py)."""
@@ -18,7 +18,7 @@ L = "web/src/livery.ts"
 LV = "web/src/train-livery.ts"
 FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts"]
 M = [
     # --- the train: pantograph, bogies, doors, roof covers, windows -----------------------------------------
     ("pantograph at the start of its span", "p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);", "p.position.set(0, spec.crown, car.pantograph[0]);"),
@@ -911,6 +911,46 @@ M = [
     ("drive: yokes the shaft's steel", '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.motor);', P),
     ('drive: yokes a hand across', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.3], [0.04, 0.3], [0.04, 0]], 8, pal.hub);', P),
     ('drive: yokes a hand thick', '[[0, 0], [0, 0.09], [0.04, 0.09], [0.04, 0]], 8, pal.hub);', '[[0, 0], [0, 0.09], [0.3, 0.09], [0.3, 0]], 8, pal.hub);', P),
+    # --- the raked face (round 5: the Class 180's cab leans back, web/src/train-nose.ts NoseRake) ----------------
+    ('rake: the lean at the tip is half what the spec says', 'return spec.rake ? spec.rake.lean * rakeEase(spec.rake, s) : 0;', 'return spec.rake ? spec.rake.lean * 0.5 * rakeEase(spec.rake, s) : 0;', N),
+    ('rake: the lean falls in a straight line, not as a square', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t * t;', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t;', N),
+    ('rake: the lean falls as a cube', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t * t;', '  const t = 1 - Math.max(0, s) / rake.reach;\n  return t * t * t;', N),
+    ('rake: the lean runs on past its reach', 'if (s >= rake.reach) return 0;', 'if (s >= rake.reach * 2) return 0;', N),
+    ("rake: more than the tip's lean in front of the tip", '  const t = 1 - Math.max(0, s) / rake.reach;', '  const t = 1 - s / rake.reach;', N),
+    ("rake: the lean's slope rises", '(-2 * r.lean * (1 - Math.max(0, s) / r.reach)) / r.reach', '(2 * r.lean * (1 - Math.max(0, s) / r.reach)) / r.reach', N),
+    ("rake: the lean's slope is not per reach", '(-2 * r.lean * (1 - Math.max(0, s) / r.reach)) / r.reach', '(-2 * r.lean * (1 - Math.max(0, s) / r.reach))', N),
+    ("rake: the lean's slope runs on past the reach", 'return r && s < r.reach ?', 'return r ?', N),
+    ('rake: set back from the rail head, not the foot', 'return rakeLean(spec, s) * Math.max(0, y - (spec.rake?.from ?? 0));', 'return rakeLean(spec, s) * Math.max(0, y);', N),
+    ('rake: what stands under the foot is set forward', 'Math.max(0, y - (spec.rake?.from ?? 0))', '(y - (spec.rake?.from ?? 0))', N),
+    ("rake: the loft's rings are not set back", '[x, y, r.s + setBack(r.s - tip, y)]', '[x, y, r.s]'),
+    ("rake: the loft is set back by the distance from the car's end, not from the tip", '[x, y, r.s + setBack(r.s - tip, y)]', '[x, y, r.s + setBack(r.s, y)]'),
+    ("rake: the loft's fan centres are not set back", 'return [0, mid, s + setBack(s - tip, mid)];', 'return [0, mid, s];'),
+    ('rake: a car with no cab is set back too', '(car.cab ? rakeSet(spec.nose, sn, y) : 0)', 'rakeSet(spec.nose, sn, y)'),
+    ("rake: the face's cap is upright", 'world([x, y, tip + setBack(0, y)]));', 'world([x, y, tip]));'),
+    ('rake: the face is shaded upright', 'const faceN: V3 = unit([0, faceLean, -dir]);', 'const faceN: V3 = unit([0, 0, -dir]);'),
+    ("rake: the face's shapes are not set back", 'world([x, y, tip + setBack(0, y) - depth * depthRun])', 'world([x, y, tip - depth * depthRun])'),
+    ("rake: the face's layers stand a lift apart along z, not along the normal", 'world([x, y, tip + setBack(0, y) - depth * depthRun])', 'world([x, y, tip + setBack(0, y) - depth])'),
+    ("rake: the coupler's wall is not set back", 'const wall = tip + setBack(0, ASSUMED.couplerHeight);', 'const wall = tip;'),
+    ('rake: the headlight markers are not set back', 'm.position.set(cx, cy, Z(tip + setBack(0, cy)));', 'm.position.set(cx, cy, Z(tip));'),
+    ('rake: the patches on the nose are not set back', 'row.push([x, y, tip + s + setBack(s, y)]);', 'row.push([x, y, tip + s]);'),
+    ("rake: the patches' normals are the unsheared nose's", 'return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);', 'return unit([-yx, 1, -ys]);'),
+    ("rake: the patches' normals ignore the lean's fall", 'return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);', 'return unit([-yx, 1 + k * ys, -ys]);'),
+    ("rake: the patches' normals ignore the lean along the slope", 'return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);', 'return unit([-yx * (1 + kSlope * over), 1 + kSlope * over, -ys]);'),
+    ("rake: the patches' normals ignore the lean's fall across", 'return unit([-yx * (1 + kSlope * over), 1 + kSlope * over + k * ys, -ys]);', 'return unit([-yx, 1 + kSlope * over + k * ys, -ys]);'),
+    ("rake: the patches' lean is the tip's all along", 'const k = over > 0 ? rakeLean(spec.nose, s) : 0;', 'const k = over > 0 ? rakeLean(spec.nose, 0) : 0;'),
+    ("rake: the patches' height is measured from the rail head", 'const over = p[1] > rakeFoot ? p[1] - rakeFoot : 0;', 'const over = p[1];'),
+    ('rake: the cab side windows are not set back', 'row.push([side * xAtY(hh, y), y, tip + s + setBack(s, y)]);', 'row.push([side * xAtY(hh, y), y, tip + s]);'),
+    ('rake: a lamp cluster on a raked nose is drawn', 'if (cluster && spec.nose.rake) throw', 'if (cluster && false) throw'),
+    ('rake: a coupled cab on a raked nose is drawn', 'if (interiorCab && spec.nose.rake) throw', 'if (false) throw'),
+    ("rake: the 180's lean is half", 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', 'rake: { lean: 0.18, from: 0.64, reach: 1.6 },'),
+    ("rake: the 180's lean is 31 degrees", 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', 'rake: { lean: 0.6, from: 0.64, reach: 1.6 },'),
+    ("rake: the 180's lean is measured from the rail head", 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', 'rake: { lean: 0.36, from: 0, reach: 1.6 },'),
+    ("rake: the 180's lean has gone in a metre", 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', 'rake: { lean: 0.36, from: 0.64, reach: 1.0 },'),
+    ("rake: the 180's lean runs the whole length of its nose", 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', 'rake: { lean: 0.36, from: 0.64, reach: 3.1 },'),
+    ('rake: the 180 has no rake', 'rake: { lean: 0.36, from: 0.64, reach: 1.6 },', ''),
+    ("rake: the 180's panel foot 10 cm up", '[0.2, 1.33], [0, 1.32]];', '[0.2, 1.43], [0, 1.42]];', FACE),
+    ("rake: the 180's panel a trapezoid", '[[0.99, 2.3], [0.96, 2.0], [0.9, 1.72], [0.82, 1.56], [0.72, 1.46], [0.58, 1.39], [0.4, 1.35], [0.2, 1.33], [0, 1.32]];', '[[0.99, 2.3], [0.72, 1.46], [0, 1.32]];', FACE),
+    ("rake: the 180's lamps not one over the other", "discOutline(0.97, 1.68, 0.055)", "discOutline(0.9, 1.68, 0.055)", FACE),
 ]
 only = sys.argv[3:]
 selected = [m for m in M if not only or any(o in m[0] for o in only)]

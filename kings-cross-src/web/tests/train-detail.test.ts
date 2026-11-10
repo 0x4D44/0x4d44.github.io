@@ -94,6 +94,80 @@ const facePlane = (car: Car, covered: boolean, interior: boolean, flat = false):
   const back = interior || !covered ? END_GAP : flat ? FLAT_SETBACK : NOSE_RECESS;
   return car.cab === 'front' ? car.start + back : car.end - back;
 };
+/**
+ * How far back a leaning face (the 180's, NoseRake) stands at height `y` over its chin, metres: the spec's lean times the height over its foot, falling as (1 - s / reach) squared back
+ * along the nose, written out here as the rule is in the spec's own docs (a test of the nose does not ask the code under test where its points are). 0 for a family with no rake.
+ */
+const leanSet = (family: Family, y: number, s = 0): number => {
+  const r = bodySpec(family).nose.rake;
+  if (!r || s >= r.reach) return 0;
+  return r.lean * (1 - Math.max(0, s) / r.reach) ** 2 * Math.max(0, y - r.from);
+};
+const noseSurfaces = new Map<Family, { sec: ReturnType<typeof carSection>; norm: ReturnType<typeof normalised>; egg: ReturnType<typeof eggSection> }>();
+/**
+ * The distance along the nose (the loft's own s) of the place on a car's nose that a point `v` (in train coordinates) stands on or over, given the plane of the face at the chin. On a nose
+ * with no rake it is the distance behind that plane, as every test of the nose took it to be. On a raked one a point stands further back with height, so the place is the nearest point of
+ * the nose's own surface at the point's x (the unsheared loft, `yAtX` of `halfAt` of the ring, set back by `leanSet`), found by a scan along the nose and a ternary search round the best
+ * step: a point lifted off the surface along its normal (the glass, the wipers, the fittings) is then taken to the foot of that normal, not to the place a ray along z would give (on a nose
+ * whose set-back falls at 0.4 m a metre that is off by a good deal more than the lift).
+ */
+function noseS(family: Family, car: Car, face: number, v: THREE.Vector3): number {
+  const behind = car.cab === 'front' ? v.z - face : face - v.z;
+  return bodySpec(family).nose.rake ? noseFoot(family, car, face, v).s : behind;
+}
+/** The foot of a point's normal on a car's nose (see `noseS`): its place along the nose, and how far it stands off the surface there, metres, straight (not up). */
+function noseFoot(family: Family, car: Car, face: number, v: THREE.Vector3): { s: number; gap: number } {
+  const behind = car.cab === 'front' ? v.z - face : face - v.z;
+  const spec = bodySpec(family);
+  let surface = noseSurfaces.get(family);
+  if (!surface) {
+    const sec = carSection(spec);
+    const norm = normalised(sec);
+    surface = { sec, norm, egg: eggSection(norm, spec.nose.widest, spec.nose.boxiness) };
+    noseSurfaces.set(family, surface);
+  }
+  const { sec, norm, egg } = surface;
+  const gap = (s: number): number => {
+    const y = yAtX(halfAt(sec, norm, egg, ringAt(spec.nose, s)), Math.abs(v.x));
+    return Math.hypot(y - v.y, s + leanSet(family, y, s) - behind);
+  };
+  const STEP = 0.05;
+  let best = 0;
+  for (let s = 0; s <= spec.nose.length; s += STEP) if (gap(s) < gap(best)) best = s;
+  let lo = Math.max(0, best - STEP);
+  let hi = Math.min(spec.nose.length, best + STEP);
+  for (let i = 0; i < 24; i++) {
+    const a = lo + (hi - lo) / 3;
+    const b = hi - (hi - lo) / 3;
+    if (gap(a) < gap(b)) hi = b;
+    else lo = a;
+  }
+  return { s: (lo + hi) / 2, gap: gap((lo + hi) / 2) };
+}
+/** `noseFoot` for one car's face, remembered for each point. */
+function noseGapOf(family: Family, car: Car, face: number): (v: THREE.Vector3) => number {
+  const seen = new WeakMap<THREE.Vector3, number>();
+  return (v) => {
+    let gap = seen.get(v);
+    if (gap === undefined) {
+      gap = noseFoot(family, car, face, v).gap;
+      seen.set(v, gap);
+    }
+    return gap;
+  };
+}
+/** `noseS` for one car's face, remembered for each point (a test asks about the same vertices again and again, and a raked nose's answer is a search). */
+function noseSOf(family: Family, car: Car, face: number): (v: THREE.Vector3) => number {
+  const seen = new WeakMap<THREE.Vector3, number>();
+  return (v) => {
+    let s = seen.get(v);
+    if (s === undefined) {
+      s = noseS(family, car, face, v);
+      seen.set(v, s);
+    }
+    return s;
+  };
+}
 /** Which way along z a cab's face looks: -1 at the front of a train (it runs along +z), +1 at its rear. */
 const outwards = (car: Car): number => (car.cab === 'front' ? -1 : 1);
 /** The cab cars at the two ends of a train, not the ones inside a coupled set. */
@@ -319,14 +393,22 @@ test('nose: the face stands NOSE_RECESS behind the end of the train (where a cov
     // CHANGED (the plane with the most area): a flat face's panels tile it a millimetre and a half in front of its plane, so two planes hold all its area, and the face is the deeper
     const covered = spec.front.coupler.covered;
     const flat = spec.front.face !== undefined;
+    // CHANGED (a face was a plane across the train, its triangles all at one z): the 180's leans back with height (NoseRake), so a triangle of its face has its corners on the plane
+    // z = (the chin's) + `leanSet` of its height, its normal tilted up by the lean; each is measured at the foot of the plane (its height over the rake's foot taken off) and the face is
+    // the deepest of the planes that hold most of the area, as before
+    const family = layout.spec.family;
+    const lean = spec.nose.rake?.lean ?? 0;
+    const norm = Math.hypot(1, lean);
     const faceOf = (car: Car): number => {
       const out = outwards(car);
       const end = car.cab === 'front' ? car.start : car.end;
       const planes = new Map<number, { z: number; inset: number; area: number }>();
       for (const t of triangles(detailOf(g, car))) {
-        const inset = (t[0].z - end) * -out;
-        if (faceNormal(t).z * out < 0.999 || inset < -0.001 || inset > 0.4 || t.some((v) => Math.abs(v.z - t[0].z) > 1e-4)) continue;
-        const plane = planes.get(Math.round(inset * 1000)) ?? { z: t[0].z, inset, area: 0 };
+        // how far behind the end the triangle's plane would be at the rake's foot: its own inset less the set-back of its height
+        const inset = (t[0].z - end) * -out - leanSet(family, t[0].y);
+        const n = faceNormal(t);
+        if (n.z * out < 0.999 / norm || n.y < (lean / norm) * 0.999 - 1e-9 || inset < -0.001 || inset > 0.4 || t.some((v) => Math.abs((v.z - end) * -out - leanSet(family, v.y) - inset) > 1e-4)) continue;
+        const plane = planes.get(Math.round(inset * 1000)) ?? { z: end - out * inset, inset, area: 0 };
         plane.area += areaOf(t);
         planes.set(Math.round(inset * 1000), plane);
       }
@@ -378,7 +460,14 @@ test('glass: the windscreen is a raked, curved, wide pane that stands on the out
     const minWidth = layout.spec.family === 'at300' ? 1.3 : 1.6;
     assert.ok(Math.max(...xs) - Math.min(...xs) >= minWidth && Math.max(...xs) - Math.min(...xs) < sec.width * 2, `${kind} windscreen width ${Math.max(...xs) - Math.min(...xs)}`);
     assert.ok(Math.max(...ys) - Math.min(...ys) >= 0.7, `${kind} windscreen height`);
-    assert.ok(Math.max(...zs) - Math.min(...zs) >= 1.0, `${kind} windscreen reach ${Math.max(...zs) - Math.min(...zs)} m back from the bonnet`);
+    // CHANGED (the glass ran 1.0 m back in z): the 180's face leans back (NoseRake), so the glass's foot stands up to half a metre further back than its top does and the pane is steeper; it
+    // is the reach along the nose (the loft's own s) that stays at 1.0 m or more, and the reach in z that is a good deal less (0.6 m: the pane is then steeper than 45 degrees to the road)
+    const family = layout.spec.family;
+    const face = car.start + faceSetback(family);
+    // (every 6th triangle: the search for a raked nose's place is a scan, and a row of the pane is far more than six triangles, so both its edges are sampled)
+    const along = screen.filter((_, i) => i % 6 === 0).flatMap((t) => t.map((v) => noseS(family, car, face, v)));
+    assert.ok(Math.max(...along) - Math.min(...along) >= 1.0, `${kind} windscreen reach ${Math.max(...along) - Math.min(...along)} m back along the nose from the bonnet`);
+    assert.ok(Math.max(...zs) - Math.min(...zs) >= (spec.nose.rake ? 0.6 : 1.0), `${kind} windscreen reach ${Math.max(...zs) - Math.min(...zs)} m back from the bonnet`);
     assert.ok(Math.min(...zs) >= 0.1, `${kind}: the glass starts on the nose face`);
     assert.ok(Math.min(...ys) > 1.9, `${kind}: the windscreen starts ${Math.min(...ys)} m up, in the bonnet`);
     // raked: it faces forward (the front is -z) and up, area-weighted
@@ -404,7 +493,8 @@ test('glass: the windscreen is a raked, curved, wide pane that stands on the out
     for (let i = 0; i < pos.count; i++) {
       const v = new THREE.Vector3().fromBufferAttribute(pos, i);
       if (Math.abs(v.x) >= 1.15) continue;
-      const s = v.z - car.start - faceSetback(layout.spec.family);
+      // CHANGED (s was the distance behind the face): on a raked nose a point's place along it is found with its set-back taken off (`noseS`)
+      const s = noseS(family, car, face, v);
       const surface = yAtX(halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, Math.min(spec.nose.length, s)))), Math.abs(v.x));
       assert.ok(v.y - surface > 0.0002 && v.y - surface < 0.06, `${kind}: glass ${((v.y - surface) * 1000).toFixed(2)} mm over the nose at x=${v.x.toFixed(2)}, s=${s.toFixed(2)}`);
       const n = new THREE.Vector3().fromBufferAttribute(normals, i);
@@ -547,11 +637,17 @@ function flatFaceOutline(family: Family = 'electrostar'): [number, number][] {
   const norm = normalised(sec);
   return loopFromHalf(halfAt(sec, norm, eggSection(norm, spec.nose.widest, spec.nose.boxiness), ringAt(spec.nose, 0)));
 }
-/** The triangles of one of a cab's face layers: every corner `lift` metres in front of the face's plane, and (given a colour) in that colour. */
-function faceLayer(mesh: THREE.Mesh, car: Car, interior: boolean, lift: number, hex?: number, covered = true): Tri[] {
-  const plane = facePlane(car, covered, interior, true) + outwards(car) * lift;
-  return (hex === undefined ? triangles(mesh) : trisOfColour(mesh, hex)).filter((t) => t.every((v) => Math.abs(v.z - plane) < ZTOL));
+/**
+ * The triangles of one of a cab's face layers: every corner `lift` metres in front of the face's plane (measured along its normal), and (given a colour) in that colour. The plane
+ * of a leaning face (the 180's) stands further back with height, `leanSet`; its layers stand `lift` times sqrt(1 + lean squared) in front of it along z.
+ */
+function faceLayer(mesh: THREE.Mesh, car: Car, interior: boolean, lift: number, hex?: number, covered = true, family: Family = 'electrostar'): Tri[] {
+  const run = Math.hypot(1, bodySpec(family).nose.rake?.lean ?? 0);
+  const plane = (y: number): number => facePlane(car, covered, interior, true) + outwards(car) * (lift * run - leanSet(family, y));
+  return (hex === undefined ? triangles(mesh) : trisOfColour(mesh, hex)).filter((t) => t.every((v) => Math.abs(v.z - plane(v.y)) < ZTOL));
 }
+/** The least z component of the unit normal of a face's cap facing out of the end of the train: 1 on an upright face, the cosine of the lean (less a hair) on a leaning one. */
+const capFacing = (family: Family): number => Math.min(0.99, Math.cos(Math.atan(bodySpec(family).nose.rake?.lean ?? 0)) - 0.005);
 const isInterior = (car: Car, layout: ReturnType<typeof trainLayout>): boolean => car.index > 0 && car.index < layout.cars.length - 1;
 /** The colour a lens of the 387's face wears in service: lit headlights and dark tail lenses at the leading end, the other way round at the trailing end, all dark where two units couple. */
 const lensColour = (role: 'head' | 'tail', car: Car, interior: boolean): number => {
@@ -611,7 +707,7 @@ test('flat faces: every shape lies on its own layer in front of the face, inside
         const first = shapes[0] as FaceShape;
         const here = `${c.label}, car ${car.index} (${car.cab} cab${interior ? ', coupled' : ''}), ${shapes.map((sh) => sh.name).join(' + ')}`;
         assert.ok(shapes.every((sh) => !!sh.trainEnd === !!first.trainEnd), `${here}: the shapes of a layer are all drawn at a train's end, or none`);
-        const tris = faceLayer(mesh, car, interior, first.lift, first.lens ? lensColour(first.lens, car, interior) : (first.colour as number), c.covered);
+        const tris = faceLayer(mesh, car, interior, first.lift, first.lens ? lensColour(first.lens, car, interior) : (first.colour as number), c.covered, c.family);
         // a coupler's head and ports are drawn where the train ends; where two units couple, the coupler is the 3D one out in the gap
         if (first.trainEnd && interior) {
           assert.equal(tris.length, 0, `${here}: drawn where the coupler stands out in the gap`);
@@ -625,7 +721,8 @@ test('flat faces: every shape lies on its own layer in front of the face, inside
           assert.ok(insideConvex(face, v.x, v.y, inset - 1e-6), `${here}: a corner at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) is outside the face's outline less ${inset} m`);
         }
         const declared = outlines.reduce((a, o) => a + polyArea(o), 0);
-        const area = tris.reduce((a, t) => a + areaOf(t), 0);
+        // (the outlines are the front view's: a leaning face's triangles hold their own area over the cosine of the lean, so the area is taken as it projects onto the front)
+        const area = tris.reduce((a, t) => a + areaOf(t) * Math.abs(faceNormal(t).z), 0);
         const whole = shapes.every((sh) => placedOutlines(sh, car).every((o) => o.every(([x, y]) => insideConvex(face, x, y, sh.inset ?? 0))));
         if (whole) near(area, declared, 1e-5, `${here}: the area it holds`);
         else {
@@ -909,9 +1006,12 @@ test('flat faces: the base of a Desiro City\'s or a 180\'s face is the livery\'s
       const mesh = detailOf(g, car);
       // the whole ring is one flat cap in the front colour: the 717, the 700 and the 180 have no warning panel in the loft, so no other colour lies on the plane
       // (the 3D coupler\'s base also lies on the plane, turned in toward the car: only what faces out of the end of the train is the cap)
-      const cap = faceLayer(mesh, car, false, 0, undefined, c.covered).filter((t) => faceNormal(t).z * outwards(car) > 0.99);
-      near(cap.reduce((a, t) => a + areaOf(t), 0), whole, 1e-4, `${here}: the cap`);
-      near(faceLayer(mesh, car, false, 0, front, c.covered).filter((t) => faceNormal(t).z * outwards(car) > 0.99).reduce((a, t) => a + areaOf(t), 0), whole, 1e-4, `${here}: all of the cap is the front colour`);
+      // (a leaning face's cap is `whole` in the front view: its own area is that over the cosine of the lean, so the area is measured on the plane the cap is projected onto)
+      const facing = (t: Tri): boolean => faceNormal(t).z * outwards(car) > capFacing(c.family);
+      const flatArea = (ts: Tri[]): number => ts.reduce((a, t) => a + areaOf(t) * Math.abs(faceNormal(t).z), 0);
+      const cap = faceLayer(mesh, car, false, 0, undefined, c.covered, c.family).filter(facing);
+      near(flatArea(cap), whole, 1e-4, `${here}: the cap`);
+      near(flatArea(faceLayer(mesh, car, false, 0, front, c.covered, c.family).filter(facing)), whole, 1e-4, `${here}: all of the cap is the front colour`);
       for (const hex of [AMBER, AMBER_DOOR, BUMPER]) assert.equal(trisOfColour(mesh, hex).length, 0, `${here}: ${hex.toString(16)}, a 387's colour`);
     }
   }
@@ -1086,7 +1186,8 @@ test('lamps: two headlight clusters on every cab, one each side, level and mirro
         near(Math.abs(a.x), (lens.x0 + lens.x1) / 2, 1e-6, `${kind} car ${car.index}: the headlight's place across`);
         near(a.y, (lens.y0 + lens.y1) / 2, 1e-6, `${kind} car ${car.index}: the headlight's height`);
         assert.ok(Math.abs(a.x) + (lens.x1 - lens.x0) / 2 + 0.02 < xAtY(tipHalf, a.y), `${kind} lamp at x = ${a.x}, face half-width ${xAtY(tipHalf, a.y)} there`);
-        assert.ok(Math.abs(a.z - face) < 0.4, `${kind} car ${car.index} lamps ${a.z} are at the face, ${face}`);
+        // CHANGED (the face was upright, so 0.4 m from the end covered it): the 180's face leans back (NoseRake), so at a lamp's height it stands `leanSet` further back
+        assert.ok(Math.abs(a.z - face) < 0.4 + leanSet(layout.spec.family, a.y), `${kind} car ${car.index} lamps ${a.z} are at the face, ${face}`);
       } else {
         // a lamp is 0.26 m wide: all of it stands inside the face's outline at its height, and clear of the middle
         assert.ok(Math.abs(a.x) > 0.2 && Math.abs(a.x) + 0.15 < xAtY(tipHalf, a.y), `${kind} lamp at x = ${a.x}, face half-width ${xAtY(tipHalf, a.y)} there`);
@@ -1203,6 +1304,7 @@ test('fronts: a yellow warning panel is a shape of the 700\'s face and of the 18
   // CHANGED (the 700's was the loft's, wrapped over the nose): the 700's panel is a shape on its flat face, a trapezoid between white cheeks (the Class 700's face)
   // CHANGED (the 180's was too: a yellow cap over the face above the cover and 0.3 m of the nose behind it): the 180's is a shape of its flat face, a trapezoid under the glass between its pods (the
   // Class 180's face); GC180-05 and GC180-01 show it ending at the glass's foot with the black dome behind it
+  // CHANGED (round 5: a bowl, its lower edge curving down to the middle, not a trapezoid; and the face leans back, so its shape stands on a leaning plane): see 'Class 180 face' and 'Class 180 rake'
   // CHANGED (how far back and how far across were two more fields, `warningWrap` and `warningWidth`, which no other family set): a 387's brow is amber, 0.3 m back over the top nine
   // tenths of the face's width (the photographs' cheeks beside the screens are white); no other family has one
   assert.deepEqual(warning, { at300: null, electrostar: { colour: AMBER, wrap: 0.3, width: 0.9 }, desiro: null, desiro700: null, adelante: null });
@@ -1219,7 +1321,7 @@ test('fronts: a yellow warning panel is a shape of the 700\'s face and of the 18
         assert.equal(yellow.length, 0, `${c.kind} car ${car.index}: yellow on a car with no warning panel`);
         continue;
       }
-      const onFace = faceLayer(detailOf(g, car), car, false, shape.lift, YELLOW, c.covered);
+      const onFace = faceLayer(detailOf(g, car), car, false, shape.lift, YELLOW, c.covered, c.family);
       // a convex polygon is drawn as a fan from its middle, a triangle to a point: the panel's outline clipped to the face's
       const clipped = clipConvex((placedOutlines(shape, car)[0] as [number, number][]), flatFaceOutline(c.family), shape.inset ?? 0);
       assert.ok(clipped.length >= 4, `${c.kind} car ${car.index}: the panel clipped to the face has ${clipped.length} points`);
@@ -1254,7 +1356,8 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen, lif
     for (const car of endCabs(layout)) {
       const mesh = detailOf(g, car);
       const face = facePlane(car, spec.front.coupler.covered, false);
-      const sOf = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+      // CHANGED (a point's place along the nose was its distance behind the face): on the 180's raked nose a point stands further back with height, so its place is the foot of its normal on the surface (`noseS`)
+      const sOf = noseSOf(layout.spec.family, car, face);
       const wipers = trisOfColour(mesh, WIPER);
       const display = trisOfColour(mesh, DISPLAY);
       assert.equal(wipers.length > 0, spec.front.wipers, `${kind} car ${car.index}: wipers`);
@@ -1348,10 +1451,12 @@ test('couplers: the nose coupler is under its cover at the two train ends where 
       assert.equal(covers.length, 0, `${kind}: no cover where the coupler is out`);
       assert.equal(outs.length, 2, `${kind}: a coupler out of each end of the train`);
       const zs = outs.map((c) => worldPos(c).z).sort((a, b) => a - b);
-      near(zs[0] as number, END_GAP / 2, 1e-9, `${kind} front coupler`);
-      near(zs[1] as number, layout.length - END_GAP / 2, 1e-9, `${kind} rear coupler`);
+      // (a leaning face, the 180's, stands further back at the coupler's height, so the coupler is that much longer to reach the same end: `leanSet`)
+      const reach = END_GAP + leanSet(layout.spec.family, 0.85);
+      near(zs[0] as number, reach / 2, 1e-9, `${kind} front coupler`);
+      near(zs[1] as number, layout.length - reach / 2, 1e-9, `${kind} rear coupler`);
       for (const c of outs) {
-        near(c.userData.reach as number, END_GAP, 1e-9, `${kind} coupler reach`);
+        near(c.userData.reach as number, reach, 1e-9, `${kind} coupler reach`);
         assert.equal(c.userData.style, front.coupler.style);
         near(worldPos(c).y, 0.85, 1e-9, `${kind} coupler height`);
       }
@@ -2845,13 +2950,13 @@ test('flat faces: a bar is a rectangle of its width along its line, each wiper i
   }
 });
 
-test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod outboard of each slanting side with a round headlight low in it and a smaller lamp straight above, the recess under the panel, and no glass on the face', () => {
+test('Class 180 face: a yellow bowl under the glass with a curved lower edge, a smoked-glass pod outboard of each side with a round headlight low in it and a smaller lamp straight above, the recess under the panel, and no glass on the face', () => {
   const S = shapesOf(ADELANTE_FACE);
   const box = (name: string): ReturnType<typeof boxOfOutline> => boxOfOutline((S[name] as FaceShape).outline);
   assert.deepEqual(ADELANTE_FACE.shapes.map((sh) => sh.name), ['warning-panel', 'lamp-pod', 'headlight', 'tail-lamp']);
   assert.deepEqual(ADELANTE_FACE.shapes.filter((sh) => sh.glass), [], 'the glass is on the nose, not on the face');
   assert.ok(bodySpec('adelante').glass.screen, 'a windscreen on the nose');
-  // the panel: one trapezoid across the middle, symmetric, narrower the lower it goes, cut off at the top by the face's own top edge (the glass's foot)
+  // the panel: one bowl across the middle, symmetric, narrower the lower it goes, cut off at the top by the face's own top edge (the glass's foot)
   const panelShape = S['warning-panel'] as FaceShape;
   const panel = panelShape.outline.map((pt): [number, number] => [pt[0], pt[1]]);
   assert.equal(panelShape.mirror, undefined, 'one panel across the middle');
@@ -2870,12 +2975,18 @@ test('Class 180 face: a yellow trapezoid under the glass, a smoked-glass pod out
     return a[0] + ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1]);
   };
   const across = 2 * half(faceTop - 0.01);
-  assert.ok(across > 1.6 && across < 2.0, `a panel ${across.toFixed(2)} m across at the glass's foot (GC180-05: about 1.8 m)`);
-  assert.ok(2 * half(foot + 0.01) > 1.2 && 2 * half(foot + 0.01) < 1.6, 'and about 1.4 m at its foot');
-  // CHANGED (the panel's foot was 0.95 m, a panel 1.3 m tall under the glass's foot: the round-3 scorer's "oversized flat trapezoid" on gc180x5-front-3m): GC180-02 and GC180-03,
-  // read against the 3.77 m height, put the yellow between about 1.1 m and 2.2 m, a panel about 1.1 m tall; its foot stands at 1.08 m, 13 cm over the recess's top
-  near(foot, 1.08, 1e-9, 'the panel\'s foot stands 1.08 m over the rail head');
-  near(faceTop - foot, 1.1, 0.03, `a panel ${(faceTop - foot).toFixed(2)} m tall under the glass's foot (GC180-02, GC180-03: about 1.1 m)`);
+  assert.ok(across > 1.6 && across < 2.0, `a panel ${across.toFixed(2)} m across at the glass's foot (GC180-05: about 1.8 to 1.95 m)`);
+  // CHANGED (the panel was a trapezoid 1.4 m across at its foot, 1.08 m up and 1.1 m tall under the glass's foot: the round-4 scorer's "large flat yellow trapezoid", gc180x5 T2 5.0, and the
+  // round-3 scorer's "oversized flat trapezoid" before it): GC180-05 and GC180-02 show a yellow panel a good deal smaller than the glass above it, its lower edge curving down to the middle
+  // from the lamp pods at its corners, about 0.9 m tall under the glass's foot (ASSUMED, read off the photographs against the 3.77 m height). The bowl: the lowest point is the middle's,
+  // at 1.32 m, 0.87 m under the face's top; the edge is a curve of eight or more steps, not four corners; it is 1.3 to 1.7 m across 0.2 m over its foot
+  near(foot, 1.32, 1e-9, 'the panel\'s foot, the middle of its lower edge, stands 1.32 m over the rail head');
+  assert.equal((right[right.length - 1] as [number, number])[0], 0, 'and that is the middle');
+  assert.ok(right.length >= 8, `a lower edge of ${right.length} steps on the right: a curve, not a trapezoid's corner`);
+  near(faceTop - foot, 0.87, 0.03, `a panel ${(faceTop - foot).toFixed(2)} m tall under the glass's foot (GC180-02, GC180-05: about 0.9 m)`);
+  assert.ok(2 * half(foot + 0.2) > 1.3 && 2 * half(foot + 0.2) < 1.7, `${(2 * half(foot + 0.2)).toFixed(2)} m across 0.2 m over its foot`);
+  // and it holds a good deal less of the face than the trapezoid's 1.76 m2 did (1.8 m across the top, 1.4 m at the foot, 1.1 m tall): the part of it the face holds is under 1.55 m2
+  assert.ok(polyArea(clipConvex(signedArea(panel) < 0 ? [...panel].reverse() : panel, ring)) < 1.55, 'the yellow holds under 1.55 m2 of the face');
   // the recess under it: centred, and not cutting into the panel
   assert.ok(ADELANTE_FACE.recess.y1 <= foot + 1e-9, 'the coupler recess ends where the panel begins');
   // (the 180 has no cover to seam, so `coverTop` is only the bumper line the table records: where the recess ends, as its comment says)
@@ -2923,16 +3034,16 @@ test('Class 180 nose: a bright post between the two panes of the glass, and on t
     assert.equal(bodySpec(f).noseRoof, undefined, `${f}: roof fittings`);
     assert.equal(bodySpec(f).glass.screen?.pillarColour, undefined, `${f}: a coloured post`);
   }
-  const sec = carSection(spec);
-  const norm = normalised(sec);
-  const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
-  const surface = (x: number, s: number): number => yAtX(halfAt(sec, norm, egg, ringAt(spec.nose, Math.max(0, Math.min(spec.nose.length, s)))), Math.abs(x));
   const g = built('gc180x5');
   const layout = trainLayout('gc180x5');
   for (const car of endCabs(layout)) {
     const mesh = detailOf(g, car);
     const face = facePlane(car, false, false);
-    const sOf = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+    // CHANGED (a point's place along the nose was its distance behind the face, and its height over the surface the height straight up from there): the nose is raked, so a point stands
+    // further back with height; its place is the foot of its normal (`noseS`), and how far it stands over the nose is its distance from that foot (`noseGapOf`): the surface is steeper at
+    // the glass's foot now, so the post's lift of 17 mm along the normal is under 11 mm straight up
+    const sOf = noseSOf('adelante', car, face);
+    const gapOf = noseGapOf('adelante', car, face);
     const here = `car ${car.index} (${car.cab} cab)`;
     // the post: a strip 10 cm wide down the middle of the glass, from its foot to its top, a little over the surface
     const post = trisOfColour(mesh, screen.pillarColour as number);
@@ -2941,7 +3052,7 @@ test('Class 180 nose: a bright post between the two panes of the glass, and on t
       // (lifted along the nose's normal, which leans a little across at the crown: a couple of millimetres at most)
       assert.ok(Math.abs(v.x) <= (screen.pillar as number) / 2 + 0.002, `${here}: a post vertex ${v.x.toFixed(4)} m out`);
       assert.ok(sOf(v) >= screen.s0 - 0.03 && sOf(v) <= screen.s1 + 0.03, `${here}: a post vertex ${sOf(v).toFixed(3)} m back, the glass runs ${screen.s0}..${screen.s1}`);
-      const over = v.y - surface(v.x, sOf(v));
+      const over = gapOf(v);
       assert.ok(over > 0.01 && over < 0.05, `${here}: a post vertex ${(over * 1000).toFixed(0)} mm over the nose`);
     }
     const postBox = boxOfTris(post);
@@ -2961,7 +3072,7 @@ test('Class 180 nose: a bright post between the two panes of the glass, and on t
       near((rb.min.x + rb.max.x) / 2, cx, 0.02, `${here}: the ${f.shape}'s place across`);
       near((Math.min(...rim.flat().map(sOf)) + Math.max(...rim.flat().map(sOf))) / 2, f.s, 0.03, `${here}: the ${f.shape}'s place along the nose`);
       for (const v of [...rim.flat(), ...inner.flat()]) {
-        const over = v.y - surface(v.x, sOf(v));
+        const over = gapOf(v);
         assert.ok(over > 0.005 && over < 0.04, `${here}: a ${f.shape} vertex ${(over * 1000).toFixed(0)} mm over the nose`);
         assert.ok(sOf(v) > screen.s1 + spec.front.frame + 0.03, `${here}: a ${f.shape} vertex ${sOf(v).toFixed(2)} m back, over the glass's frame (the glass ends at ${screen.s1})`);
       }
