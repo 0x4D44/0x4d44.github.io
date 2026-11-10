@@ -83,7 +83,7 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
   const flagMap = stationTexture('flags'), paving = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { paving.map = flagMap; paving.color.setHex(0xb4b0a8); }
-  const surfacing = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { surfacing.map = flagMap; surfacing.color.setHex(0xd9a48c); } else surfacing.color.setHex(0xa8725c);
+  const surfacing = own(material('concourseFloor').clone() as THREE.MeshLambertMaterial); if (flagMap) { surfacing.map = flagMap; surfacing.color.setHex(0xc9a596); } else surfacing.color.setHex(0xa07b6c);
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
@@ -116,7 +116,7 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
  *  white panes (obscured or weathered wired glass), not clear blue sky through them: a milky, mostly opaque pane. ASSUMED shade. */
 export function perthGlazing(m: THREE.MeshLambertMaterial): THREE.MeshLambertMaterial {
   // The clear-pane texture (its alpha lets the sky through) gives way to a flat milky pane; the glazing bars are the roof's own rafters.
-  m.map = null; m.emissiveMap = null; m.color.setHex(0xd4d2ca); m.emissive.setHex(0x45443f); m.transparent = true; m.opacity = .84;
+  m.map = null; m.emissiveMap = null; m.color.setHex(0xc9c7bf); m.emissive.setHex(0x7d7b74); m.transparent = true; m.opacity = .84;
   return m;
 }
 

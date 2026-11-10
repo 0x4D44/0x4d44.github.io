@@ -146,7 +146,7 @@ export function perthIslandRing(data: Pick<PerthData, 'platforms' | 'buildings'>
 export const PERTH_STATION = {
   /** The roof's solid strips (R-pt1-a, R-pt1-d: wide dark bands between the glazed slopes, at the furrows and the ridges, about as wide as
    *  the glass between them), half-widths in plan (m). */
-  bands: {gutter: 1.5, ridge: .75},
+  bands: {gutter: 2, ridge: 1},
   /** The island building: walls to the gutter girders' tops (7.9 m over rail), so the roof bears on them as R-pt1-a shows; the screen above
    *  them up to the glazing is drawn in the wall's stone. Plinth 0.6 m, string course at 4.6 m over rail, cornice 0.35 m (R-pt1-a). */
   building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03},
@@ -211,7 +211,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xa3958d, stoneDressing: 0xbcb0a6, stonePlinth: 0x6a5f5a, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xa3a8ab, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xa3a8ab, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -684,7 +684,8 @@ function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: numb
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
-  const y = (s: number): number => y0 + (apex - y0) * Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2));
+  // The half ellipse, held `size` under top(s) where its steep springing would rise through the members over it.
+  const y = (s: number): number => Math.min(y0 + (apex - y0) * Math.sqrt(Math.max(0, 1 - (2 * s / L - 1) ** 2)), Math.max(y0, top(s) - size));
   // Steps even in angle round the ellipse, so the steep springings get as many pieces as the crown.
   const n = 12, sAt = (k: number): number => L / 2 * (1 - Math.cos(Math.PI * k / n));
   for (let k = 0; k < n; k++) {
