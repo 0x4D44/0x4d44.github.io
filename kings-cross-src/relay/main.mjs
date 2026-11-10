@@ -16,6 +16,7 @@
 //   KX_SCLASS      Y9 signal map JSON                      (default <KX_DATA_DIR>/sclass.json)
 //   KX_KEYCHAIN_SERVICE  keychain item name              (default kx-ntrod)
 //   KX_NO_FEED     "1" to serve static data only, no STOMP connection
+//   KX_PTAC        "1" to consume PTAC (RDM Kafka) into <KX_DATA_DIR>/areas/EB/ptac.json (default off)
 //
 // STOMP host, port and topic are the documented defaults but have not been confirmed
 // against the portal's connection-details page: override them if the feed refuses.
@@ -27,6 +28,7 @@ import { DEFAULT_SERVICE, readCredentials } from './keychain.mjs';
 import { startRelay } from './relay.mjs';
 import { createAreaSclassJobs } from './sclass-areas.mjs';
 import { configuredAreas } from './areas.mjs';
+import { startPtacFromEnv } from './ptac.mjs';
 
 const env = process.env;
 const host = env.KX_STOMP_HOST ?? 'publicdatafeeds.networkrail.co.uk';
@@ -39,7 +41,11 @@ const dataDir = env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data');
 
 const log = (line) => console.error(`${new Date().toISOString()} ${line}`);
 
+// PTAC failures are counted and retried inside runPtac; they never stop the relay.
+const ptac = await startPtacFromEnv(env, { dataDir, readKeychain: readCredentials, log }).catch(() => { log('ptac: unavailable'); return null; });
+
 const relay = await startRelay({
+  ptac,
   area,
   areas,
   topic: env.KX_TD_TOPIC ?? '/topic/TD_ALL_SIG_AREA',
@@ -67,6 +73,7 @@ log(`relay: listening on http://127.0.0.1:${relay.port}  (area ${areas.join(',')
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     await sclassJob?.stop();
+    await ptac?.stop();
     await relay.close();
     process.exit(0);
   });

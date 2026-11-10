@@ -145,6 +145,7 @@ export async function startRelay({
   log = () => {},
   now = Date.now,
   createServer = http.createServer,
+  ptac = null, // runPtac() handle; /health reports its counts
 }) {
   const allowedAreas = configuredAreas(areas, area);
   const defaultArea = allowedAreas.includes(area) ? area : allowedAreas[0];
@@ -260,6 +261,7 @@ export async function startRelay({
             recording: recorder.stats(),
             schedule: schedules.stats(),
             trust: trust.stats(),
+            ptac: ptac ? ptac.stats() : { state: 'disabled' },
           });
         case '/schedule': {
           const dates = url.searchParams.getAll('date');
