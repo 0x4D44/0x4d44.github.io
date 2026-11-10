@@ -42,7 +42,9 @@ if not scratch.is_relative_to(src.parent / '.scratch'):
 
 SOLAR, DAYLIGHT = 'core/solar.ts', 'core/daylight.ts'
 WEATHER, STATION, COVER, PRECIP, ATMOSPHERE = 'web/src/weather.ts', 'web/src/station-weather.ts', 'web/src/cover.ts', 'web/src/precip.ts', 'web/src/atmosphere.ts'
-SHED, CONCOURSE, FURNITURE, LANDMARKS, WAVERLEY = 'web/src/shed.ts', 'web/src/concourse.ts', 'web/src/furniture.ts', 'web/src/landmarks.ts', 'web/src/waverley-scene.ts'
+SHED, CONCOURSE, FURNITURE, LANDMARKS = 'web/src/shed.ts', 'web/src/concourse.ts', 'web/src/furniture.ts', 'web/src/landmarks.ts'
+# the Waverley roofs' builders: the station's mapped roofs and the city fabric's building tops (both moved out of waverley-scene.ts)
+WAVERLEY_STATION, WAVERLEY_CITY = 'web/src/waverley-station.ts', 'web/src/waverley-city.ts'
 WORLD = 'web/src/world.ts'
 TESTS = [
     'core/tests/solar.test.ts', 'core/tests/daylight.test.ts',
@@ -568,8 +570,8 @@ MUTATIONS = [
     ('the concourse\'s panels are renamed', CONCOURSE, "'concourse-panels'", "'concourse-panel'"),
     ('the platform canopies are renamed', FURNITURE, "roof.name = 'canopy-glass';", "roof.name = 'canopy-glasses';"),
     ('the landmarks\' roofs are renamed', LANDMARKS, "'landmarks', { roofGlass: 2 }", "'landmark', { roofGlass: 2 }"),
-    ('the Scottish roofs are renamed', WAVERLEY, "'waverley-mapped-roofs'", "'waverley-mapped-roof'"),
-    ('the Scottish building tops are renamed', WAVERLEY, "'waverley-building-tops'", "'waverley-building-top'"),
+    ('the Scottish roofs are renamed', WAVERLEY_STATION, "add(roofGroup,roof,cassettes,'waverley-mapped-roofs');", "add(roofGroup,roof,cassettes,'waverley-mapped-roof');"),
+    ('the Scottish building tops are renamed', WAVERLEY_CITY, "'waverley-building-tops'", "'waverley-building-top'"),
 
     # ----------------------------------------------------------------------------------------------------- web/src/precip.ts
     ('there are twice as many streaks', PRECIP, 'export const RAIN_STREAKS = 3200;', 'export const RAIN_STREAKS = 6400;'),
