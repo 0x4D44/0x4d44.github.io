@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - Build kings-cross from kings-cross-src, not web/: web/ skips vite.config.ts base ./ and the page never readies
+  Running `vite build` inside kings-cross-src/web ignores the root vite.config.ts, so dist/index.html loads /assets/... instead of ./assets/....
+  Under the evidence server the scripts 404 as aborted requests, the module graph never runs, and capture fails with "page condition timed
+  out: !!window.__kx?.ready", 0 console errors and renderer null. It looks like a GPU or trunk fault, but isn't. Build from kings-cross-src
+  (npm run build, or vite build there) into an absolute outDir outside the repo. Seen by the Perth frontage worker, 2026-11-10.
 - 2026-11-10 - Hull band hues differ per unit and its gloss mirrors trees: read sunlit photos (train-livery.ts HULL_BAND_STOPS)
   802 302's rear car reads cyan to its rear door (hull-802-home-2023, dusk) where 802 304's rear car runs teal, green, violet (hull-802-paragon-2025), and the band is a glossy photographic
   wrap: in hull-802-304-werrington-2021 its left side reads trees and gravel, not a colour. Only the Paragon photograph shows every car's band, side-on in sun; its far cars sit in shade and read
