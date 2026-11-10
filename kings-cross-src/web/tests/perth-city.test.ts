@@ -16,7 +16,7 @@ import { CANOPY, ISLAND_CANOPY, isIslandBelt, islandBeltTrees, kinnoullCanopy } 
 /** The small islands' tree belts, and whether (x, z) is over one (its box, plus a 6 m lattice step and a little). */
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
-import { SUMMIT, SUMMIT_CENTRE, inSummitHole } from '../src/perth-summit.ts';
+import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch } from '../src/materials.ts';
@@ -351,6 +351,20 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   assert.ok(f.indexOf('#include <map_fragment>') >= 0 && at > f.indexOf('#include <map_fragment>') && at < f.indexOf('#include <color_fragment>') && f.includes('uniform sampler2D uDetail;') && f.includes('fwidth( detailUv )'), 'the detail multiplies the paint after it is sampled, with a distance fade');
   assert.equal((shader.uniforms.uDetailRepeat!.value as number), 2 * SUMMIT.patch / SUMMIT.detail.tile, 'one detail tile every SUMMIT.detail.tile m');
   assert.equal(mat.customProgramCacheKey(), 'perth-summit-detail', 'its own program');
+  // the path is worn grey-green earth, not salmon (round 3 score): green at least red, red little over blue
+  const rgbOf = (c: string) => { const m = c.match(/\d+/g); if (c.startsWith('#')) { const n = parseInt(c.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255]; } return m!.slice(0, 3).map(Number); };
+  for (const c of [SUMMIT.path.tone, SUMMIT.worn.tone]) { const [r, g, bl] = rgbOf(c) as [number, number, number]; assert.ok(g >= r - 2 && r - bl < 30, `grey-green, not orange: ${c}`); }
+  // low gorse bushes near the eye, in the frame, off the paths (152)
+  const nearPaths = PERTH_LANDUSE.paths.filter(q => q.line.some(([x, z]) => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.patch + 20));
+  const bushes = summitBushes(scene.terrain, nearPaths), gm = scene.group.getObjectByName('perth-summit-gorse') as THREE.InstancedMesh;
+  assert.ok(gm && gm.count === bushes.length, 'the bushes are drawn');
+  const axisB = Math.atan2(KINNOULL_EYE.target[2] - SUMMIT_CENTRE[1], KINNOULL_EYE.target[0] - SUMMIT_CENTRE[0]);
+  const framed = bushes.filter(b => { const a = Math.atan2(b.z - SUMMIT_CENTRE[1], b.x - SUMMIT_CENTRE[0]) - axisB; return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < KINNOULL_EYE.halfWidthDeg * Math.PI / 180; });
+  assert.ok(bushes.length >= 8 && framed.length >= 5, `bushes ${bushes.length}, in frame ${framed.length}`);
+  for (const b of bushes) {
+    const d = Math.hypot(b.x - SUMMIT_CENTRE[0], b.z - SUMMIT_CENTRE[1]); assert.ok(d >= SUMMIT.bush.ring[0] && d <= SUMMIT.bush.ring[1] && b.height <= SUMMIT.bush.height[1], 'low and near the eye');
+    for (const q of nearPaths) for (let i = 1; i < q.line.length; i++) { const a0 = q.line[i - 1]!, b0 = q.line[i]!, dx = b0[0] - a0[0], dz = b0[1] - a0[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((b.x - a0[0]) * dx + (b.z - a0[1]) * dz) / L)) : 0; assert.ok(Math.hypot(b.x - a0[0] - u * dx, b.z - a0[1] - u * dz) - q.width / 2 >= b.radius, 'off the path'); }
+  }
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {

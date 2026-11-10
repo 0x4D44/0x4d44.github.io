@@ -20,10 +20,32 @@ export const SUMMIT = {
   hole: 150, patch: 175, step: 6, lift: .12, px: 1024, maxSlope: 40, margin: 9,
   grass: ['#5b7431', '#4f6a2a', '#6d7a3a', '#7a7444'] as const, tuft: ['rgba(40,58,22,0.55)', 'rgba(150,150,90,0.45)'] as const, tufts: 9000,
   gorse: {count: 70, r: [1.2, 3] as const, tone: '#3a4a1c', bloom: 'rgba(200,170,40,0.35)'},
-  worn: {r: 14, tone: 'rgba(120,104,80,0.55)'}, path: {tone: '#8a6a48', edge: 'rgba(90,100,60,0.6)'},
+  // round 4: the path and the worn ground grey-green worn earth, as 152 (round 3's #8a6a48 rendered salmon under the sun)
+  worn: {r: 14, tone: 'rgba(118,117,93,0.55)'}, path: {tone: '#76755d', edge: 'rgba(96,106,70,0.6)'},
   stones: {count: 60, tone: '#9a968c'},
-  detail: {tile: 3, px: 256, blades: 2600, grit: 500, fade: [.15, .6] as const},
+  detail: {tile: 3, px: 256, blades: 3400, grit: 500, fade: [.15, .6] as const},
+  // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
+  // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
+  bush: {count: 22, ring: [8, 45] as const, pathClear: 1.5, height: [.7, 1.4] as const, radius: [.9, 2] as const, bloom: .4,
+    rgb: [.15, .22, .07] as const, bloomRgb: [.42, .38, .08] as const},
 } as const;
+
+export interface SummitBush {x: number; z: number; y: number; height: number; radius: number; rgb: readonly [number, number, number]}
+/** The low gorse bushes near the panorama's eye (SUMMIT.bush): in the ring round the eye, off the paths, seated on the ground. */
+export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly {width: number; line: readonly Pt[]}[]): SummitBush[] {
+  const B = SUMMIT.bush, [cx, cz] = SUMMIT_CENTRE, out: SummitBush[] = [];
+  const pathDist = (x: number, z: number) => Math.min(Infinity, ...paths.flatMap(p => p.line.slice(1).map((b, i) => { const a = p.line[i]!, dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L)) : 0; return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz) - p.width / 2; })));
+  // a little more than half in the panorama's frame (towards its target), the rest round about
+  const axis = Math.atan2(KINNOULL_EYE.target[2] - cz, KINNOULL_EYE.target[0] - cx);
+  for (let i = 0; i < B.count; i++) {
+    const inFrame = i % 5 < 3, a = inFrame ? axis + (hash(i, 1, 101) - .5) * 1.1 : hash(i, 1, 101) * Math.PI * 2, d = B.ring[0] + (B.ring[1] - B.ring[0]) * hash(i, 2, 102);
+    const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d, radius = B.radius[0] + (B.radius[1] - B.radius[0]) * hash(i, 3, 103);
+    if (pathDist(x, z) < B.pathClear + radius) continue;
+    const height = B.height[0] + (B.height[1] - B.height[0]) * hash(i, 4, 104), k = .85 + .3 * hash(i, 5, 105), c = hash(i, 6, 106) < B.bloom ? B.bloomRgb : B.rgb;
+    out.push({x, z, y: ground.heightAt(x, z), height, radius, rgb: [c[0] * k, c[1] * k, c[2] * k]});
+  }
+  return out;
+}
 
 /** Multiply the summit material's paint by the tiling detail canvas (browser only: in Node the patch still compiles, with no texture). */
 export function summitDetail(material: THREE.MeshLambertMaterial): THREE.CanvasTexture | null {
@@ -57,7 +79,7 @@ function detailCanvas(): THREE.CanvasTexture | null {
   g.lineCap = 'round';
   for (let i = 0; i < D.blades; i++) {
     const x = hash(i, 5, 92) * N, y = hash(i, 6, 92) * N, l = (.04 + hash(i, 7, 92) * .08) * s, a = (hash(i, 8, 92) - .5) * 1.2, lit = hash(i, 9, 92) < .4;
-    g.strokeStyle = lit ? 'rgba(185,185,170,0.7)' : 'rgba(70,72,64,0.7)'; g.lineWidth = Math.max(1, .012 * s);
+    g.strokeStyle = lit ? 'rgba(200,200,180,0.8)' : 'rgba(58,62,52,0.8)'; g.lineWidth = Math.max(1, .012 * s);
     wrap((ox, oy) => { g.beginPath(); g.moveTo(x + ox, y + oy); g.lineTo(x + ox + Math.sin(a) * l, y + oy - Math.cos(a) * l); g.stroke(); });
   }
   for (let i = 0; i < D.grit; i++) { const x = hash(i, 10, 93) * N, y = hash(i, 11, 93) * N, r = (.006 + hash(i, 12, 93) * .015) * s; g.fillStyle = hash(i, 13, 93) < .5 ? 'rgb(190,186,176)' : 'rgb(80,76,70)'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }

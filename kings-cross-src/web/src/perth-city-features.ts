@@ -26,8 +26,8 @@ import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
-import {crownTexture, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
-import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitDetail, summitGround} from './perth-summit.ts';
+import {CROWNS, crownTexture, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
+import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitBushes, summitDetail, summitGround} from './perth-summit.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -214,27 +214,37 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const near = PERTH_LANDUSE.paths.filter(p => p.line.some(([x, z]) => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.patch + 20));
   const summit = summitGround(ground, near), sm = new THREE.MeshLambertMaterial({map: summit.texture, color: summit.texture ? 0xffffff : 0x5b7431}), detail = summitDetail(sm);
   const summitMesh = new THREE.Mesh(summit.geometry, sm); summitMesh.name = 'perth-summit-ground'; cover.group.add(summitMesh);
+  // low gorse bushes near the eye (perth-summit.ts summitBushes): flattened smooth spheres, half buried
+  const bushes = summitBushes(ground, near), bushG = new THREE.SphereGeometry(1, 7, 4), bushM = new THREE.MeshLambertMaterial();
+  const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, bushes.length));
+  {
+    const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
+    bushes.forEach((b, i) => { q.setFromAxisAngle(up, b.x * 3.1 % 6.283); mx.compose(new THREE.Vector3(b.x, b.y + b.height * .35, b.z), q, new THREE.Vector3(b.radius, b.height * .65, b.radius * .8)); bushMesh.setMatrixAt(i, mx); c.setRGB(b.rgb[0], b.rgb[1], b.rgb[2], THREE.SRGBColorSpace); bushMesh.setColorAt(i, c); });
+    bushMesh.count = bushes.length; bushMesh.name = 'perth-summit-gorse'; bushMesh.computeBoundingSphere(); cover.group.add(bushMesh);
+    stats.triangles += bushes.length * (bushG.index ? bushG.index.count : bushG.getAttribute('position').count) / 3; stats.drawCalls++;
+  }
   stats.triangles += summit.geometry.index!.count / 3; stats.drawCalls++;
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
   const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
   // the small islands' tree belts (perth-canopy.ts islandBeltTrees): round crowns (a 7 x 4 sphere, smooth) on bare trunks
   const beltCrown = new THREE.SphereGeometry(1, 7, 4), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
-  const beltLeaf = new THREE.MeshLambertMaterial(), beltBark = new THREE.MeshLambertMaterial({color: 0x4a3f33});
+  const beltMap = crownMap?.clone() ?? null; if (beltMap) { beltMap.repeat.set(3, 1.5); beltMap.needsUpdate = true; }
+  const beltLeaf = new THREE.MeshLambertMaterial({map: beltMap}), beltBark = new THREE.MeshLambertMaterial({color: 0x4a3f33});
   const crowns = new THREE.InstancedMesh(beltCrown, beltLeaf, Math.max(1, belts.trees.length)), trunks = new THREE.InstancedMesh(beltTrunk, beltBark, Math.max(1, belts.trees.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
     belts.trees.forEach((t, i) => {
       q.setFromAxisAngle(up, (t.x * 7.1 + t.z * 3.3) % 6.283);
       mx.compose(new THREE.Vector3(t.x, t.y + t.height - t.crown / 2, t.z), q, new THREE.Vector3(t.radius, t.crown / 2, t.radius)); crowns.setMatrixAt(i, mx);
-      c.setRGB(t.rgb[0], t.rgb[1], t.rgb[2], THREE.SRGBColorSpace); crowns.setColorAt(i, c);
+      c.setRGB(t.rgb[0] * CROWNS.lift, t.rgb[1] * CROWNS.lift, t.rgb[2] * CROWNS.lift, THREE.SRGBColorSpace); crowns.setColorAt(i, c);
       const th = t.height - t.crown * .7 + .4; mx.compose(new THREE.Vector3(t.x, t.y - .4 + th / 2, t.z), q, new THREE.Vector3(ISLAND_CANOPY.trunk, th, ISLAND_CANOPY.trunk)); trunks.setMatrixAt(i, mx);
     });
     crowns.count = trunks.count = belts.trees.length; crowns.name = 'perth-island-trees'; trunks.name = 'perth-island-trunks';
     crowns.computeBoundingSphere(); trunks.computeBoundingSphere(); cover.group.add(crowns, trunks);
     stats.triangles += belts.trees.length * ((beltCrown.index ? beltCrown.index.count : beltCrown.getAttribute('position').count) / 3 + 6); stats.drawCalls += 2;
   }
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); beltCrown.dispose(); beltTrunk.dispose(); beltLeaf.dispose(); beltBark.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); beltCrown.dispose(); beltTrunk.dispose(); beltMap?.dispose(); beltLeaf.dispose(); beltBark.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); bushG.dispose(); bushM.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------
