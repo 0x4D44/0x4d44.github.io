@@ -63,12 +63,14 @@ function bearingOff(x: number, z: number): number {
  *  the eye is not under the highest angle before it. The cap at a distance is the lowest angle of the ground in view from SIGHT.shadow
  *  m beyond it outward (so a top may hide the strip just behind itself, as a real tree or an island's trees do, but nothing further
  *  off: not the river, the Inch or the town), or the horizon angle there, whichever is higher (a top under the brow before it is out of
- *  view itself). */
-export const SIGHT = {bearing: .2, margin: 3, step: 6, near: 20, shadow: 40} as const;
+ *  view itself). The small islands' tree belts (perth-canopy.ts ISLAND_CANOPY) take SIGHT.island m: trees standing in the river may hide
+ *  more of the channel behind them. */
+export const SIGHT = {bearing: .2, margin: 3, step: 6, near: 20, shadow: 40, island: 90} as const;
 type View = {b0: number; nb: number; nt: number; cap: Float32Array};
-const views = new WeakMap<object, View>();
-function viewOf(ground: Pick<Terrain, 'heightAt' | 'extent'>): View {
-  const hit = views.get(ground); if (hit) return hit;
+const views = new WeakMap<object, Map<number, View>>();
+function viewOf(ground: Pick<Terrain, 'heightAt' | 'extent'>, shadow: number): View {
+  const byShadow = views.get(ground) ?? new Map<number, View>(); views.set(ground, byShadow);
+  const hit = byShadow.get(shadow); if (hit) return hit;
   const [ex, ey, ez] = KINNOULL_EYE.pos, [tx, , tz] = KINNOULL_EYE.target, axis = Math.atan2(tz - ez, tx - ex), E = ground.extent;
   const b0 = -KINNOULL_EYE.halfWidthDeg - SIGHT.margin, nb = Math.ceil(2 * (KINNOULL_EYE.halfWidthDeg + SIGHT.margin) / SIGHT.bearing) + 1;
   const reach = Math.hypot(Math.max(E.x1 - ex, ex - E.x0), Math.max(E.z1 - ez, ez - E.z0)), nt = Math.ceil(reach / SIGHT.step) + 1;
@@ -84,16 +86,16 @@ function viewOf(ground: Pick<Terrain, 'heightAt' | 'extent'>): View {
       ang[i] = (ground.heightAt(x, z) - ey) / t; seen[i] = ang[i]! >= top ? 1 : 0; top = Math.max(top, ang[i]!); last = i;
     }
     // the lowest angle in view from SIGHT.shadow m beyond each distance out to the end
-    const w = Math.round(SIGHT.shadow / SIGHT.step), low = new Float32Array(last + 2).fill(Infinity);
+    const w = Math.round(shadow / SIGHT.step), low = new Float32Array(last + 2).fill(Infinity);
     for (let i = last; i >= 0; i--) low[i] = Math.min(low[i + 1]!, seen[i] ? ang[i]! : Infinity);
     for (let i = 0; i <= last; i++) { const l = i + w <= last ? low[i + w]! : Infinity; if (Number.isFinite(l)) cap[k * nt + i] = Math.max(l, horizon[i]!); }
   }
-  const v = {b0, nb, nt, cap}; views.set(ground, v); return v;
+  const v = {b0, nb, nt, cap}; byShadow.set(shadow, v); return v;
 }
 /** The highest a top may stand at (x, z) without hiding ground in view from the summit, or undefined where it hides nothing (out of the
  *  frame, or no ground in view beyond it). The lower of the two bearings either side, so it holds between them. */
-export function sightHeight(ground: Pick<Terrain, 'heightAt' | 'extent'>, x: number, z: number): number | undefined {
-  const [ex, ey, ez] = KINNOULL_EYE.pos, d = Math.hypot(x - ex, z - ez), V = viewOf(ground), f = (bearingOff(x, z) - V.b0) / SIGHT.bearing;
+export function sightHeight(ground: Pick<Terrain, 'heightAt' | 'extent'>, x: number, z: number, shadow: number = SIGHT.shadow): number | undefined {
+  const [ex, ey, ez] = KINNOULL_EYE.pos, d = Math.hypot(x - ex, z - ez), V = viewOf(ground, shadow), f = (bearingOff(x, z) - V.b0) / SIGHT.bearing;
   if (f < 0 || f > V.nb - 1 || d < SIGHT.near) return undefined;
   const i = Math.min(V.nt - 1, Math.round(d / SIGHT.step));
   let c = Infinity;

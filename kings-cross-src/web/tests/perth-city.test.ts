@@ -12,7 +12,10 @@ import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_F
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
-import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
+import { CANOPY, ISLAND_CANOPY, isIslandBelt, kinnoullCanopy } from '../src/perth-canopy.ts';
+/** The small islands' tree belts, and whether (x, z) is over one (its box, plus a 6 m lattice step and a little). */
+const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
+const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole } from '../src/perth-summit.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
@@ -187,7 +190,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   // the crown texture is laid in plan metres
   const UV = mesh.geometry.getAttribute('uv'); for (let i = 0; i < P.count; i += 101) assert.ok(Math.abs(UV.getX(i) - P.getX(i)) < 1e-3 && Math.abs(UV.getY(i) - P.getZ(i)) < 1e-3, 'crown UVs in metres');
   // continuous: nearly every point of the hill's woods (away from the clearing, the cliff and the sightline) is under it
-  const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs);
+  const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs, PERTH_LANDUSE.areas.water);
   const pipw = (x: number, z: number, rs: readonly (readonly (readonly number[])[])[]) => { const p = rs[0]!; let yes = false; for (let a = 0, b = p.length - 1; a < p.length; b = a++) if ((p[a]![1]! > z) !== (p[b]![1]! > z) && x < (p[b]![0]! - p[a]![0]!) * (z - p[a]![1]!) / (p[b]![1]! - p[a]![1]!) + p[a]![0]!) yes = !yes; return yes; };
   const hillWoods = PERTH_LANDUSE.areas.wood.filter(rs => rs[0]!.some(([x]) => x! > 1700));
   let inWood = 0, covered = 0;
@@ -203,7 +206,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const greens = top.map(t => t.g).sort((a, b) => a - b);
   assert.ok(greens[Math.floor(greens.length * .9)]! > 1.35 * greens[Math.floor(greens.length * .1)]!, 'pine and birch tones both present');
   // open westward: no canopy node in the panorama's frame rises above the line from the eye to the town
-  const over = top.filter(t => { const s = sightHeight(scene.terrain, t.x, t.z); return s !== undefined && t.y > s - WOODLAND.sight.clear + 1e-3; });
+  const over = top.filter(t => { const s = sightHeight(scene.terrain, t.x, t.z, inIslandBelt(t.x, t.z) ? SIGHT.island : SIGHT.shadow); return s !== undefined && t.y > s - WOODLAND.sight.clear + 1e-3; });
   assert.equal(over.length, 0, `canopy over the summit's westward sightline: ${over.length}`);
   // the summit clearing and the cliff stay open
   assert.equal(top.filter(t => Math.hypot(t.x - px, t.z - pz) < WOODLAND.gorse.inner - CANOPY.step).length, 0, 'the summit clearing is open');
@@ -230,7 +233,16 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   let townWood = 0, townCovered = 0;
   for (let x = -1200; x < 1700; x += 17) for (let z = -1200; z < 900; z += 17) if (PERTH_LANDUSE.areas.wood.some(rs => pipw(x, z, rs)) && (sightHeight(scene.terrain, x, z) ?? Infinity) - WOODLAND.sight.clear - scene.terrain.heightAt(x, z) >= CANOPY.min + 1) { townWood++; if (canopy.inCanopy(x, z)) townCovered++; }
   assert.ok(townWood > 200 && townCovered / townWood > .95, `town woods (where the summit's view allows a canopy) covered ${townCovered} of ${townWood}`);
+  // the Bridgend island's wood is a tree belt standing full height (a finer, uncapped lattice), not a capped-down slab
+  const belt = islandBelts().find(rs => pipw(916, -300, rs))!, ring = belt[0]!;
+  const edgeDist = (x: number, z: number) => Math.min(...ring.map((a, i) => { const b = ring[(i + 1) % ring.length]!, dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L)) : 0; return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz); }));
+  let inner = 0, tall = 0;
+  for (let x = 890; x <= 940; x += 3) for (let z = -370; z <= -250; z += 3) {
+    if (!pipw(x, z, belt) || edgeDist(x, z) < ISLAND_CANOPY.step) continue; inner++;
+    const t = canopy.topAt(x, z); if (t !== undefined && t - scene.terrain.heightAt(x, z) >= 8) tall++;
+  }
   for (const [x, z] of [[920.4, -278.1], [919.6, -291.8]] as const) assert.ok(canopy.inCanopy(x, z), `the island wood at ${x}, ${z} is canopy`);
+  assert.ok(inner > 20 && tall >= .8 * inner, `the island belt stands 8 m or more inside its edge: ${tall} of ${inner}`);
   let crownsInWood = 0;
   for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (k.y > 1.5 && canopy.inCanopy(p.x, p.z)) crownsInWood++; }
   assert.equal(crownsInWood, 0, `massed crowns left under the canopy anywhere: ${crownsInWood}`);
@@ -269,11 +281,13 @@ test('from the frozen summit eye the Tay and the North Inch are open: no canopy 
   const area = (r: readonly (readonly number[])[]) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j]![0]! - r[i]![0]!) * (r[j]![1]! + r[i]![1]!); return Math.abs(a / 2); };
   const inch = PERTH_LANDUSE.areas.park.filter(rs => pip(1339, -801, rs[0]!) && area(rs[0]!) > 1e6);
   assert.equal(inch.length, 1, 'the North Inch polygon');
+  assert.ok(islandBelts().length >= 5, `small island belts: ${islandBelts().length}`);
+  const islandBelt = inIslandBelt;
   const blockers = ['perth-kinnoull-canopy', 'waverley-wood-crowns'].map(n => scene.group.getObjectByName(n)!).filter(Boolean);
   scene.group.updateMatrixWorld(true);
   const ray = new THREE.Raycaster(), eye = new THREE.Vector3(ex, ey, ez);
   const check = (rings: typeof PERTH_LANDUSE.areas.water, what: string) => {
-    let open = 0, blocked = 0, far = 0;
+    let open = 0, blocked = 0, far = 0, islands = 0;
     for (let x = -1200; x < 2624; x += 50) for (let z = -1200; z < 912; z += 50) {
       const b = Math.atan2(z - ez, x - ex) - axis; if (Math.abs(Math.atan2(Math.sin(b), Math.cos(b))) > half) continue;
       if (!rings.some(rs => pip(x, z, rs[0]!))) continue;
@@ -284,9 +298,11 @@ test('from the frozen summit eye the Tay and the North Inch are open: no canopy 
       const to = new THREE.Vector3(x, y, z).sub(eye), length = to.length(); ray.set(eye, to.normalize()); ray.far = length - 5;
       const hit = ray.intersectObjects(blockers, false)[0];
       // a canopy may hide only the strip just behind itself (SIGHT.shadow m, plus a lattice step), never ground further off
-      if (hit) { blocked++; if (Math.hypot(hit.point.x - x, hit.point.z - z) > SIGHT.shadow + CANOPY.step) far++; }
+      // the small islands' tree belts (ISLAND_CANOPY) stand full height in the river and may hide the channel behind them; counted apart
+      if (hit && islandBelt(hit.point.x, hit.point.z)) islands++;
+      else if (hit) { blocked++; if (Math.hypot(hit.point.x - x, hit.point.z - z) > SIGHT.shadow + CANOPY.step) far++; }
     }
-    assert.ok(open > 40 && far === 0 && blocked <= open * .15, `${what}: ${blocked} of ${open} open points hidden by the canopy, ${far} of them further than ${SIGHT.shadow} m behind it`);
+    assert.ok(open > 40 && far === 0 && blocked <= open * .15 && islands <= open * .2, `${what}: ${blocked} of ${open} open points hidden by the canopy, ${far} of them further than ${SIGHT.shadow} m behind it; ${islands} behind island belts`);
   };
   check(PERTH_LANDUSE.areas.water, 'the Tay');
   check(inch, 'the North Inch');

@@ -17,7 +17,7 @@
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
-import {KINNOULL_PEAK, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
+import {KINNOULL_PEAK, SIGHT, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
 
 /** ASSUMED crown texture: a tile `tile` m square of `crowns` round crowns `r` m in radius, lit at the top and shaded at the rim, which
  *  multiplies the canopy's vertex colours, so the 12 m lattice reads as a roof of single crowns (4307, 4599836). */
@@ -41,6 +41,11 @@ export function crownTexture(): THREE.CanvasTexture | null {
 
 /** ASSUMED canopy shape (see the header). */
 export const CANOPY = {step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
+/** ASSUMED: a wood with at least `share` of its outline in the mapped water is an island's; its canopy is a finer `step` m lattice with
+ *  mature riverside trees `base` m over the ground before the swell, single crowns `crown` m apart in height (a lumpy tree belt seen close from the banks, pt-tay-from-bridgend, not a slab), and it is not
+ *  capped as hard by the summit's view (SIGHT.island: island trees may hide more of the channel behind them; round 4, C3). Only islands' belts under `maxArea` m2: the
+ *  long wood on Moncreiffe Island (54,000 m2) lies along the river in the panorama, and uncapped it hid a quarter of the Tay. */
+export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 6, base: 10, crown: 7} as const;
 
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 const pip = (x: number, z: number, p: readonly Pt[]): boolean => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
@@ -54,63 +59,82 @@ export interface KinnoullCanopy {
   nodes: number;
 }
 
-/** The canopy over Kinnoull's OSM woods (`woods`: rings, outer first), on `ground`, keeping clear of the OSM `cliffs`. */
-export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[]): KinnoullCanopy {
-  const C = CANOPY, hill = woods;
-  const boxes = hill.map(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); } return {rs, ax, az, bx, bz}; });
-  const inWood = (x: number, z: number) => boxes.some(b => x >= b.ax && x <= b.bx && z >= b.az && z <= b.bz && pip(x, z, b.rs[0]!) && !b.rs.slice(1).some(h => pip(x, z, h)));
-  const [px, pz] = KINNOULL_PEAK;
-  // the crown height at a lattice node, or undefined where the node is open
-  const crownAt = (x: number, z: number): number | undefined => {
-    if (!inWood(x, z) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner || onCliff(ground, cliffs, x, z)) return undefined;
-    let h = C.base + C.swell * woodNoise(x, z) + C.crown * (hash(x, z, 51) - .5);
-    const s = sightHeight(ground, x, z), y = ground.heightAt(x, z);
-    if (s !== undefined) h = Math.min(h, s - WOODLAND.sight.clear - y);
-    return h >= C.min ? h : undefined;
-  };
-  if (!boxes.length) return {geometry: null, inCanopy: () => false, topAt: () => undefined, nodes: 0};
-  const S = C.step, x0 = Math.floor(Math.min(...boxes.map(b => b.ax)) / S) * S - S, z0 = Math.floor(Math.min(...boxes.map(b => b.az)) / S) * S - S;
-  const nx = Math.ceil((Math.max(...boxes.map(b => b.bx)) - x0) / S) + 2, nz = Math.ceil((Math.max(...boxes.map(b => b.bz)) - z0) / S) + 2;
-  const crowns = new Float32Array(nx * nz).fill(NaN);
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const h = crownAt(x0 + i * S, z0 + j * S); if (h !== undefined) crowns[j * nx + i] = h; }
-  const at = (i: number, j: number) => i < 0 || j < 0 || i >= nx || j >= nz ? NaN : crowns[j * nx + i]!;
-  const cellLive = (i: number, j: number) => !Number.isNaN(at(i, j)) || !Number.isNaN(at(i + 1, j)) || !Number.isNaN(at(i, j + 1)) || !Number.isNaN(at(i + 1, j + 1));
-  // vertices: every node of a live cell; an open node is tucked under the ground
-  const vid = new Int32Array(nx * nz).fill(-1), pos: number[] = [], col: number[] = [], idx: number[] = [];
-  const tone = new THREE.Color();
-  const vertex = (i: number, j: number): number => {
-    const k = j * nx + i; if (vid[k]! >= 0) return vid[k]!;
-    const x = x0 + i * S, z = z0 + j * S, y = ground.heightAt(x, z), h = at(i, j), open = Number.isNaN(h);
-    pos.push(x, open ? y - C.tuck : y + h, z);
-    // species patch, then crown-top light and hollow shade
-    const px2 = Math.floor(x / C.patch), pz2 = Math.floor(z / C.patch);
-    let r = hash(px2 * C.patch + (hash(x, z, 52) < .3 ? S : 0), pz2 * C.patch, 53), pick = WOODLAND.tones[WOODLAND.tones.length - 1]!;
-    for (const t of WOODLAND.tones) { if (r < t.share) { pick = t; break; } r -= t.share; }
-    const lift = open ? -.25 : (hash(x, z, 51) - .5) * 2 * C.light;
-    const k2 = (1 + lift) * (.9 + .2 * hash(x, z, 54)) * CROWNS.lift;
-    tone.setRGB(pick.rgb[0] * k2, pick.rgb[1] * k2, pick.rgb[2] * k2, THREE.SRGBColorSpace); col.push(tone.r, tone.g, tone.b);
-    vid[k] = pos.length / 3 - 1; return vid[k]!;
-  };
-  for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {
-    if (!cellLive(i, j)) continue;
-    const a = vertex(i, j), b = vertex(i + 1, j), c = vertex(i + 1, j + 1), d = vertex(i, j + 1);
-    // counter-clockwise from above (x east, z south: a, d, c then a, c, b faces up)
-    idx.push(a, d, c, a, c, b);
+/** Is the wood `rs` a small island's tree belt (ISLAND_CANOPY): under `maxArea`, with `share` of its outline inside a water body's outline
+ *  (an island is a hole in the river's multipolygon, so the holes are not subtracted)? */
+export function isIslandBelt(rs: readonly (readonly Pt[])[], water: readonly (readonly (readonly Pt[])[])[]): boolean {
+  const r = rs[0]!; let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j]![0] - r[i]![0]) * (r[j]![1] + r[i]![1]);
+  return Math.abs(a / 2) < ISLAND_CANOPY.maxArea && r.filter(([x, z]) => water.some(w => pip(x, z, w[0]!))).length >= ISLAND_CANOPY.share * r.length;
+}
+
+/** The canopy over Perth's OSM woods (`woods`: rings, outer first), on `ground`, keeping clear of the OSM `cliffs`. Woods lying in the
+ *  mapped `water` (islands) are their own lattice (see ISLAND_CANOPY). */
+export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[], water: readonly (readonly (readonly Pt[])[])[] = []): KinnoullCanopy {
+  const C = CANOPY, [px, pz] = KINNOULL_PEAK, island = (rs: readonly (readonly Pt[])[]) => isIslandBelt(rs, water);
+  const pos: number[] = [], col: number[] = [], idx: number[] = [], tone = new THREE.Color();
+  const passes = [
+    lattice(woods.filter(rs => !island(rs)), C.step, C.base, C.crown, SIGHT.shadow),
+    lattice(woods.filter(island), ISLAND_CANOPY.step, ISLAND_CANOPY.base, ISLAND_CANOPY.crown, SIGHT.island),
+  ].filter(l => l !== undefined);
+  // one lattice of `step` m over `subset`, under the summit's view with a top allowed to hide `shadow` m behind it (SIGHT)
+  function lattice(subset: readonly (readonly (readonly Pt[])[])[], S: number, base: number, crownAmp: number, shadow: number) {
+    const boxes = subset.map(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); } return {rs, ax, az, bx, bz}; });
+    if (!boxes.length) return undefined;
+    const inWood = (x: number, z: number) => boxes.some(b => x >= b.ax && x <= b.bx && z >= b.az && z <= b.bz && pip(x, z, b.rs[0]!) && !b.rs.slice(1).some(h => pip(x, z, h)));
+    // the crown height at a lattice node, or undefined where the node is open
+    const crownAt = (x: number, z: number): number | undefined => {
+      if (!inWood(x, z) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner || onCliff(ground, cliffs, x, z)) return undefined;
+      let h = base + C.swell * woodNoise(x, z) + crownAmp * (hash(x, z, 51) - .5);
+      const s = sightHeight(ground, x, z, shadow), y = ground.heightAt(x, z);
+      if (s !== undefined) h = Math.min(h, s - WOODLAND.sight.clear - y);
+      return h >= C.min ? h : undefined;
+    };
+    const x0 = Math.floor(Math.min(...boxes.map(b => b.ax)) / S) * S - S, z0 = Math.floor(Math.min(...boxes.map(b => b.az)) / S) * S - S;
+    const nx = Math.ceil((Math.max(...boxes.map(b => b.bx)) - x0) / S) + 2, nz = Math.ceil((Math.max(...boxes.map(b => b.bz)) - z0) / S) + 2;
+    const crowns = new Float32Array(nx * nz).fill(NaN);
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const h = crownAt(x0 + i * S, z0 + j * S); if (h !== undefined) crowns[j * nx + i] = h; }
+    const at = (i: number, j: number) => i < 0 || j < 0 || i >= nx || j >= nz ? NaN : crowns[j * nx + i]!;
+    const cellLive = (i: number, j: number) => !Number.isNaN(at(i, j)) || !Number.isNaN(at(i + 1, j)) || !Number.isNaN(at(i, j + 1)) || !Number.isNaN(at(i + 1, j + 1));
+    // vertices: every node of a live cell; an open node is tucked under the ground
+    const vid = new Int32Array(nx * nz).fill(-1);
+    const vertex = (i: number, j: number): number => {
+      const k = j * nx + i; if (vid[k]! >= 0) return vid[k]!;
+      const x = x0 + i * S, z = z0 + j * S, y = ground.heightAt(x, z), h = at(i, j), open = Number.isNaN(h);
+      pos.push(x, open ? y - C.tuck : y + h, z);
+      // species patch, then crown-top light and hollow shade
+      const px2 = Math.floor(x / C.patch), pz2 = Math.floor(z / C.patch);
+      let r = hash(px2 * C.patch + (hash(x, z, 52) < .3 ? S : 0), pz2 * C.patch, 53), pick = WOODLAND.tones[WOODLAND.tones.length - 1]!;
+      for (const t of WOODLAND.tones) { if (r < t.share) { pick = t; break; } r -= t.share; }
+      const lift = open ? -.25 : (hash(x, z, 51) - .5) * 2 * C.light;
+      const k2 = (1 + lift) * (.9 + .2 * hash(x, z, 54)) * CROWNS.lift;
+      tone.setRGB(pick.rgb[0] * k2, pick.rgb[1] * k2, pick.rgb[2] * k2, THREE.SRGBColorSpace); col.push(tone.r, tone.g, tone.b);
+      vid[k] = pos.length / 3 - 1; return vid[k]!;
+    };
+    for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {
+      if (!cellLive(i, j)) continue;
+      const a = vertex(i, j), b = vertex(i + 1, j), c = vertex(i + 1, j + 1), d = vertex(i, j + 1);
+      // counter-clockwise from above (x east, z south: a, d, c then a, c, b faces up)
+      idx.push(a, d, c, a, c, b);
+    }
+    const cell = (x: number, z: number): [number, number] => [Math.floor((x - x0) / S), Math.floor((z - z0) / S)];
+    return {
+      inCanopy: (x: number, z: number) => { const [i, j] = cell(x, z); return i >= 0 && j >= 0 && i + 1 < nx && j + 1 < nz && cellLive(i, j); },
+      topAt: (x: number, z: number) => {
+        const [i, j] = cell(x, z); if (i < 0 || j < 0 || i + 1 >= nx || j + 1 >= nz || !cellLive(i, j)) return undefined;
+        const fx = (x - x0) / S - i, fz = (z - z0) / S - j, y = (ii: number, jj: number) => { const h = at(ii, jj); const xx = x0 + ii * S, zz = z0 + jj * S, g = ground.heightAt(xx, zz); return Number.isNaN(h) ? g - C.tuck : g + h; };
+        return (y(i, j) * (1 - fx) + y(i + 1, j) * fx) * (1 - fz) + (y(i, j + 1) * (1 - fx) + y(i + 1, j + 1) * fx) * fz;
+      },
+    };
   }
+  if (!passes.length) return {geometry: null, inCanopy: () => false, topAt: () => undefined, nodes: 0};
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   // UVs in plan metres, for the crown texture (crownTexture)
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(pos.flatMap((v, i) => i % 3 === 0 ? [v, pos[i + 2]!] : []), 2));
   geometry.setIndex(idx); geometry.computeVertexNormals();
-  const cell = (x: number, z: number): [number, number] => [Math.floor((x - x0) / S), Math.floor((z - z0) / S)];
   return {
     geometry, nodes: pos.length / 3,
-    inCanopy: (x, z) => { const [i, j] = cell(x, z); return i >= 0 && j >= 0 && i + 1 < nx && j + 1 < nz && cellLive(i, j); },
-    topAt: (x, z) => {
-      const [i, j] = cell(x, z); if (i < 0 || j < 0 || i + 1 >= nx || j + 1 >= nz || !cellLive(i, j)) return undefined;
-      const fx = (x - x0) / S - i, fz = (z - z0) / S - j, y = (ii: number, jj: number) => { const h = at(ii, jj); const xx = x0 + ii * S, zz = z0 + jj * S, g = ground.heightAt(xx, zz); return Number.isNaN(h) ? g - C.tuck : g + h; };
-      return (y(i, j) * (1 - fx) + y(i + 1, j) * fx) * (1 - fz) + (y(i, j + 1) * (1 - fx) + y(i + 1, j + 1) * fx) * fz;
-    },
+    inCanopy: (x, z) => passes.some(l => l.inCanopy(x, z)),
+    topAt: (x, z) => { for (const l of passes) { const t = l.topAt(x, z); if (t !== undefined) return t; } return undefined; },
   };
 }
