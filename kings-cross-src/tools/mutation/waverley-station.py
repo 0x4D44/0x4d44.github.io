@@ -74,11 +74,11 @@ MUTATIONS = [
     ('the south edge girder runs under the bridges', STRUCT, 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05,cutouts)))', 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05)))'),
     ('the south edge girder hangs into the trains', STRUCT, 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,S.platformGirderDepth,C.iron);', 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,3.5,C.iron);'),
     # round 2: platform furniture and finish
-    ('the flutes are filled in', STRUCT, 'fluteDepth:.88,leafWidth:.16,leafOut:.08,', 'fluteDepth:1,leafWidth:.16,leafOut:.08,'),
+    ('the flutes are filled in', STRUCT, 'flutes:12,fluteDepth:.88,', 'flutes:12,fluteDepth:1,'),
     ('the capital has no leaves', STRUCT, 'const leaf:V3[]=[[c.x+ca*r0+tx*w,y2,c.z+sa*r0+tz*w],[c.x+ca*r0-tx*w,y2,c.z+sa*r0-tz*w],[c.x+ca*r1,ym,c.z+sa*r1]];', 'const leaf:V3[]=[];'),
     ('the office has no railings', STRUCT, '    if(room)for(const sgn of [-1,1])plan.railings.push(', '    if(false)for(const sgn of [-1,1])plan.railings.push('),
     ('office railings ignore the safety line', STRUCT, 'if(!bandAt(f,t,S.buildingDepth/2+S.officeRail))room=false;', ''),
-    ('the office has no windows', STRUCT, 'n=Math.max(1,Math.floor((o.length-1.4)/2.4));', 'n=0;'),
+    ('the office has no windows', STRUCT, 'n=Math.max(1,Math.floor((o.length-S.doorBay)/S.windowEvery));', 'n=0;'),
     ('rafters touch the glazing', STRUCT, 'rafterDepth:.3,rafterGap:.03,', 'rafterDepth:.3,rafterGap:0,'),
     ('rafters are shallow', STRUCT, 'rafterDepth:.3,rafterGap:.03,', 'rafterDepth:.16,rafterGap:.03,'),
     ('a platform chord is 0.05 m from a gutter chord', STRUCT, 'platformGirderTop:7.70,platformGirderDepth:1.15,', 'platformGirderTop:7.72,platformGirderDepth:1.15,'),

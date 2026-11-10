@@ -55,8 +55,9 @@ export const WAVERLEY_STRUCTURE={
  chordWidth:.3,chordDepth:.18,latticeWidth:.12,latticeDepth:.08,
  /** Column: pedestal 0.66 m across and 1.2 m tall, shaft 0.34 m across, capital flaring to 0.84 m over 0.6 m, abacus 0.15 m (ASSUMED, R-wv1-b against the 0.915 m platform). */
  pedestalRadius:.33,pedestalHeight:1.2,shaftRadius:.17,capitalRadius:.42,capitalHeight:.6,abacus:.15,
- /** Flute bottoms at 0.88 of the shaft radius; capital leaves 0.16 m wide reaching 0.08 m past the bell (ASSUMED, R-wv1-b). */
- fluteDepth:.88,leafWidth:.16,leafOut:.08,
+ /** 12 flutes, their bottoms at 0.88 of the shaft radius; 8 capital leaves 0.16 m wide reaching 0.08 m past the bell, their tips 0.75 of
+  *  the way up it. ASSUMED counts and sizes, read off R-wv1-b's gilt Corinthian heads (no published figure). */
+ flutes:12,fluteDepth:.88,leaves:8,leafWidth:.16,leafOut:.08,leafTip:.75,
  /** A column stands this far inside the roof outline and its hole at least (m). ASSUMED. */
  roofMargin:1.0,
  /** Two columns from neighbouring polygons of one island closer than this are one column (m). ASSUMED. */
@@ -75,6 +76,9 @@ export const WAVERLEY_STRUCTURE={
  buildingDepth:3,buildingHeight:3.2,buildingEnd:.8,
  /** ... and its railings stand this far out from its long walls (m). ASSUMED, R-wv1-b. */
  officeRail:.6,
+ /** The office's windows: one every 2.4 m along each long wall after a 1.4 m door bay, a 1.3 m square pale frame round 1.1 m square glass,
+  *  centred 1.65 m up; a door 1.0 m wide and 2.2 m high centred 0.7 m from the west end. ASSUMED, read off R-wv1-b's BTP office. */
+ windowEvery:2.4,doorBay:1.4,windowFrame:1.3,windowGlass:1.1,windowCentre:1.65,doorSize:[1,2.2] as const,doorAt:.7,
  /** The coper's nosing: 0.04 m proud of the platform face, 0.1 m deep, under the coper band (R-wv1-b: a pale lip with a shadow line). ASSUMED. */
  coperLip:.04,coperNose:.1,
  /** Platform-number signs: a 0.55 m square, 3.0-3.55 m up a column, on every third column (ASSUMED, R-wv1-b; generic, no lettering). */
@@ -372,15 +376,15 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
  for(const c of plan.columns){
   const y1=deck+S.pedestalHeight,y3=underGirder-S.abacus,y2=y3-S.capitalHeight;
   frustum(fittings,c.x,c.z,S.pedestalRadius,S.pedestalRadius,deck,y1,8,C.pedestal);
-  // A fluted shaft (R-wv1-b, b3): 12 flutes, the arrises at the full radius, the flute bottoms 0.88 of it.
-  const ring=(r:number,k:number):[number,number]=>{const a=k/24*Math.PI*2,f=k%2?S.fluteDepth:1;return [c.x+r*f*Math.cos(a),c.z+r*f*Math.sin(a)];};
-  for(let k=0;k<24;k++){const [ax,az]=ring(S.shaftRadius,k),[bx,bz]=ring(S.shaftRadius,k+1),m=(k+.5)/24*Math.PI*2;
+  // A fluted shaft (R-wv1-b, b3): S.flutes flutes, the arrises at the full radius, the flute bottoms S.fluteDepth of it.
+  const sides=2*S.flutes,ring=(r:number,k:number):[number,number]=>{const a=k/sides*Math.PI*2,f=k%2?S.fluteDepth:1;return [c.x+r*f*Math.cos(a),c.z+r*f*Math.sin(a)];};
+  for(let k=0;k<sides;k++){const [ax,az]=ring(S.shaftRadius,k),[bx,bz]=ring(S.shaftRadius,k+1),m=(k+.5)/sides*Math.PI*2;
    fittings.poly([[ax,y1,az],[bx,y1,bz],[bx,y2,bz],[ax,y2,az]],undefined,{facing:[Math.cos(m),0,Math.sin(m)],color:C.column});}
   frustum(fittings,c.x,c.z,S.shaftRadius,S.capitalRadius,y2,y3,8,C.gilt,false);
-  // The leafy capital (R-wv1-b's gilt Corinthian heads): eight leaves curling out from the bell, each a gilt blade from the necking out
+  // The leafy capital (R-wv1-b's gilt Corinthian heads): S.leaves leaves curling out from the bell, each a gilt blade from the necking out
   // past the bell to its tip, both faces.
-  for(let k=0;k<8;k++){
-   const a=(k+.5)/8*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a),tx=-sa,tz=ca,w=S.leafWidth/2,r0=S.shaftRadius,r1=S.capitalRadius+S.leafOut,ym=y2+S.capitalHeight*.75;
+  for(let k=0;k<S.leaves;k++){
+   const a=(k+.5)/S.leaves*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a),tx=-sa,tz=ca,w=S.leafWidth/2,r0=S.shaftRadius,r1=S.capitalRadius+S.leafOut,ym=y2+S.capitalHeight*S.leafTip;
    const leaf:V3[]=[[c.x+ca*r0+tx*w,y2,c.z+sa*r0+tz*w],[c.x+ca*r0-tx*w,y2,c.z+sa*r0-tz*w],[c.x+ca*r1,ym,c.z+sa*r1]];
    fittings.poly(leaf,undefined,{color:C.gilt});fittings.poly([...leaf].reverse(),undefined,{color:C.gilt});
   }
@@ -402,12 +406,13 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
   const along=o.rotY+Math.PI/2,H=S.buildingHeight,D=S.buildingDepth;
   fittings.box([o.x,deck+H/2,o.z],[o.length,H,D],{rotY:along,color:C.render,skip:['-y']});
   fittings.box([o.x,deck+H+.075,o.z],[o.length+.3,.15,D+.3],{rotY:along,color:C.officeRoof});
-  // Framed windows (a pale frame box, the dark glass 0.02 m proud of it) every 2.4 m on both long sides, a door at the west end of each.
-  const ax=Math.cos(along),az=-Math.sin(along),at=(u:number):[number,number]=>[o.x+ax*u,o.z+az*u],n=Math.max(1,Math.floor((o.length-1.4)/2.4));
-  for(let k=0;k<n;k++){const u=-o.length/2+1.4+(k+.5)*(o.length-1.4)/n,[x,z]=at(u);
-   fittings.box([x,deck+1.65,z],[1.3,1.3,D+.06],{rotY:along,color:C.signFace,skip:['+y','-y','+x','-x']});
-   fittings.box([x,deck+1.65,z],[1.1,1.1,D+.1],{rotY:along,color:C.office,skip:['+y','-y','+x','-x']});}
-  {const [x,z]=at(-o.length/2+.7);fittings.box([x,deck+1.1,z],[1,2.2,D+.06],{rotY:along,color:C.door,skip:['+y','-y','+x','-x']});}
+  // Framed windows (a pale frame box, the dark glass 0.02 m proud of it) every S.windowEvery on both long sides after the door bay, and a
+  // door at the west end of each (sizes in WAVERLEY_STRUCTURE, ASSUMED from R-wv1-b).
+  const ax=Math.cos(along),az=-Math.sin(along),at=(u:number):[number,number]=>[o.x+ax*u,o.z+az*u],n=Math.max(1,Math.floor((o.length-S.doorBay)/S.windowEvery));
+  for(let k=0;k<n;k++){const u=-o.length/2+S.doorBay+(k+.5)*(o.length-S.doorBay)/n,[x,z]=at(u);
+   fittings.box([x,deck+S.windowCentre,z],[S.windowFrame,S.windowFrame,D+.06],{rotY:along,color:C.signFace,skip:['+y','-y','+x','-x']});
+   fittings.box([x,deck+S.windowCentre,z],[S.windowGlass,S.windowGlass,D+.1],{rotY:along,color:C.office,skip:['+y','-y','+x','-x']});}
+  {const [dw,dh]=S.doorSize,[x,z]=at(-o.length/2+S.doorAt);fittings.box([x,deck+dh/2,z],[dw,dh,D+.06],{rotY:along,color:C.door,skip:['+y','-y','+x','-x']});}
  }
  for(const s of plan.benches){
   // The bench runs along the platform (local x along the axis): a seat of slats with gaps, a back of slats leaning 10 degrees, and a cast

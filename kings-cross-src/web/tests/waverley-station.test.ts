@@ -58,12 +58,11 @@ test('W1 ironwork: under the glazing, above every train, and no chord coplanar w
   for(const t of ts){const x=ax+(bx-ax)*t,y=pos[a+1]+(pos[b+1]-pos[a+1])*t;sampled++;assert.ok(y<=roofHeight(x)+1e-6,`an ironwork edge at x ${x.toFixed(2)} is ${(y-roofHeight(x)).toFixed(3)} m through the glazing`);}
  }
  assert.ok(sampled>idx.length);
- let over=0;
- for(let i=0;i<ironwork.positions.length;i+=3){
-  const x=ironwork.positions[i],y=ironwork.positions[i+1],z=ironwork.positions[i+2],p:Pt=[x,z];
-  // ... or a rafter, which lies just under the glazing: no deeper than its own depth (measured vertically) plus its gap, no shallower than the gap.
-  const cos=Math.cos(Math.atan2(WAVERLEY_ROOF_PROFILE.rise,WAVERLEY_ROOF_PROFILE.pitch/2)),below=roofHeight(x)-y,rafter=below>=S.rafterGap*.5&&below<=(S.rafterGap+S.rafterDepth)/cos+.06;
-  if(y>S.gutterGirderTop+1e-6)assert.ok(onScreenLine(p)||rafter,`ironwork at ${p} rises above the girders ${below.toFixed(3)} m under the glass, off the screen lines`);
+ // Everything but the rafters: above the girders only on the screen lines. The rafters alone are checked in the rafter test.
+ const rest=waverleyStructureBatches({...plan,purlins:[]}).ironwork;let over=0;
+ for(let i=0;i<rest.positions.length;i+=3){
+  const x=rest.positions[i],y=rest.positions[i+1],z=rest.positions[i+2],p:Pt=[x,z];
+  if(y>S.gutterGirderTop+1e-6)assert.ok(onScreenLine(p),`ironwork at ${p} rises above the girders off the hole, outline and bridge lines`);
   if(trackDist(p)<ENVELOPE_HALF){over++;assert.ok(y>=ENVELOPE_TOP,`ironwork over a track at ${p} is ${y.toFixed(2)} m up`);}
  }
  assert.ok(over>1000,'girders do span the tracks');
@@ -192,11 +191,13 @@ test('W1 glazing: near-opaque silver cassettes from above, the translucent glazi
 test('W1 rafters and the south edge girder: under the glazing, gutter to ridge on each slope, clear of every train',()=>{
  const S=WAVERLEY_STRUCTURE;assert.ok(plan.purlins.length>300,`${plan.purlins.length} rafter pairs`);assert.ok(plan.edgeGirders.length>100,`${plan.edgeGirders.length} m of south edge girder`);
  assert.ok(S.rafterDepth>=.3&&S.rafterGap>=.02,'rafters 0.3 m deep, clear of the glazing (R-wv1-b3)');
- // Every corner of one rafter pair drawn alone stays at least half the gap under the glass, and the pair climbs gutter to ridge.
- const one=waverleyStructureBatches({...plan,gutters:[],spans:[],lamps:[],holes:[],outline:[],cutouts:[],edgeGirders:[],purlins:plan.purlins.slice(0,1)}).ironwork;
- const ys=one.positions.filter((_,i)=>i%3===1),xs=one.positions.filter((_,i)=>i%3===0);
- for(let i=0;i<xs.length;i++)assert.ok(roofHeight(xs[i])-ys[i]>=S.rafterGap*.5,`rafter corner ${(roofHeight(xs[i])-ys[i]).toFixed(3)} m under the glass`);
- assert.ok(Math.max(...ys)-Math.min(...ys)>=WAVERLEY_ROOF_PROFILE.rise,'the rafters climb from gutter to ridge');
+ // Every corner of every rafter, all of them drawn alone, lies in the band just under the glass: at least half the gap, at most the gap and
+ // the depth measured vertically (plus the end corners' run past the fold), and every pair climbs gutter to ridge.
+ const all=waverleyStructureBatches({...plan,gutters:[],spans:[],lamps:[],holes:[],outline:[],cutouts:[],edgeGirders:[]}).ironwork;
+ const cos=Math.cos(Math.atan2(WAVERLEY_ROOF_PROFILE.rise,WAVERLEY_ROOF_PROFILE.pitch/2)),deepest=(S.rafterGap+S.rafterDepth)/cos+.06;
+ for(let i=0;i<all.positions.length;i+=3){const below=roofHeight(all.positions[i])-all.positions[i+1];assert.ok(below>=S.rafterGap*.5&&below<=deepest,`rafter corner ${below.toFixed(3)} m under the glass`);}
+ assert.equal(all.positions.length/3,plan.purlins.length*2*3*4,'every rafter pair is drawn: two bars, three faces of four corners');
+ for(const [x0,x1]of plan.purlins){const xm=(x0+x1)/2;assert.ok(roofHeight(xm)-roofHeight(x0)>=WAVERLEY_ROOF_PROFILE.rise-.1,'each pair climbs from gutter to ridge');}
  for(const [x0,x1,z]of plan.purlins){
   assert.ok(Math.abs(x1-x0-(WAVERLEY_ROOF_PROFILE.pitch-S.chordWidth))<1e-9,'a rafter pair spans gutter girder to gutter girder');
   for(const x of [x0,x1])assert.ok(inRing([x,z],roof.outer)&&!plan.cutouts.some(c=>inRing([x,z],c)),'under the roof, not under a deck');
