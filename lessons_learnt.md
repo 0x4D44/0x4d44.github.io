@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - while the lead sits in an EnterWorktree lane, its subagents' Bash is refused; exit before spawning (EnterWorktree)
+  Two background agents (a scorer and a camera placer) had every Bash call refused mid-task with "this session is isolated in the
+  worktree ...": the isolation guard is per session, and subagents share it. Exit the lane (ExitWorktree keep) before spawning an
+  agent that needs Bash, or give it an isolation:"worktree" of its own. The same guard refuses `nice -n 19 npm ... test`
+  (it reads "test" after nice as a possible git); `deltic timeout 900 nice -n 19 npm --prefix kings-cross-src run test` passes.
+
 - 2026-11-09 - an unbound GLSL name throws in the test evaluator, so its mutant is an ERROR, not a kill (web/tests/glsl.ts:Glsl)
   kxmut counts a kill only when a test fails by assertion. The MOTTLE test ran the slab line with only vMapUv bound, so the mutant that reads gl_FragCoord threw "unknown name" and was judged ERROR in
   tools/mutation/lighting.py. Bind the built-in to one fixed point in the test: every slab then gets the same tone, and the spread assertion fails. The same goes for any call a mutant can make throw (squeezeGlsl
