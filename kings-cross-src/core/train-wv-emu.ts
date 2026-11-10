@@ -39,8 +39,8 @@ export interface WvEmuFigures {
 export const JUNIPER: WvEmuFigures = {
   drivingCarLength: published(21.01, `${EVERSHOLT_334}: DMS`),
   carLength: published(19.94, `${EVERSHOLT_334}: PTOS`),
-  bodyWidth: assumed(2.8, 'no primary width recovered (the electric research pass found a secondary 2.80 m but did not adopt it: its endpoint is unverified). 2.80 m is the UK EMU gauge width the photographs agree with; to be replaced by an owner or Alstom figure'),
-  height: assumed(3.77, 'no primary height recovered (secondary 3.77 m seen, not adopted). Rail to the top of the roof equipment, pantograph folded; to be replaced'),
+  bodyWidth: assumed(2.8, 'no primary width recovered. Round 5 searched again: Eversholt\'s Class 334 page gives lengths only (DMS 21.01 m, PTOS 19.94 m); no Alstom, Network Rail or RSSB figure was found. The Wikipedia infobox gives 2.80 m, uncited, and the same for its Juniper siblings 458 and 460; nothing contradicts it. Secondary and unverified, so still ASSUMED'),
+  height: assumed(3.77, 'no primary height recovered. Round 5: the Wikipedia infobox gives 3.77 m, uncited, the same for the 458 and 460, and nothing contradicts it. Secondary and unverified, so still ASSUMED. Rail to the top of the roof equipment, pantograph folded'),
   floorHeight: assumed(1.1, 'not published in any source read; a UK suburban EMU floor, consistent with the door sills in scotrail334_01 and _06 standing about one third of the body height up'),
   wheelDiameter: assumed(0.84, 'not published in any source read; a typical new UK EMU wheel'),
   wheelbase: assumed(2.6, 'not published in any source read; no close bogie photograph of a Class 334 in the review set'),
@@ -52,8 +52,8 @@ export const JUNIPER: WvEmuFigures = {
 export const CIVITY: WvEmuFigures = {
   drivingCarLength: published(24.03, `${EVERSHOLT_397}: DMFLW and DMSL`),
   carLength: published(23.35, `${EVERSHOLT_397}: PTS, MSL, PTSL`),
-  bodyWidth: assumed(2.75, 'no primary width recovered for the Class 397 (the intercity research pass lists width as unknown); a UK gauge intercity body, to be replaced'),
-  height: assumed(3.8, 'no primary height recovered (unknown in the research pass); to be replaced. The window band below is read off tpe397-02 against this height, so it carries the same assumption'),
+  bodyWidth: assumed(2.75, 'no Class 397 width published in any source read (round 5: Eversholt, the ORR authorisation, Wikipedia, Wikidata). The nearest is its sibling Class 331 (Northern\'s datasheet, Jan 2018: 2.712 m wide, 3.870 m high, the same 24.026 / 23.350 m car lengths), which is not adopted here: the face and roof are read against this width. ASSUMED'),
+  height: assumed(3.8, 'no Class 397 height published in any source read (round 5); the sibling Class 331 datasheet gives 3.870 m, not adopted (see the width). The window band below is read off tpe397-02 against this height, so it carries the same assumption'),
   floorHeight: assumed(1.15, 'not published; tpe397-02 puts the sill about 1.0 m up against the assumed 3.8 m height, and the floor a little over it'),
   wheelDiameter: drawn(0.85, 'tpe397-03 (a trailer bogie side on, Velim 2019): the wheel outline is 435 px against an 85 px rail of 172 mm (UIC60 assumed at the Velim test ring), so 0.88 m over the flange and about 0.85 m on the tread, +-5%'),
   wheelbase: drawn(2.5, 'tpe397-03: axle centres 1230 px apart against the same 85 px / 172 mm rail, so 2.49 m, +-5%. The rail\'s section at Velim is an assumption, so is the scale'),
