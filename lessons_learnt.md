@@ -11,6 +11,13 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - a curve through every OSM node snakes where a way was traced node by node: fair first (core/curves.ts fairNodes)
+  OSM 1390691712/1390691713 (the roads north of platforms 3 and 4) wander 0.2-0.4 m at 5-15 m spacing. Hermite curves through
+  them drew S-wiggles (a 3 degree turn and back, radii to 52 m) that chords had shown only as kinks. railShapes now fairs each run
+  of plain track first; junctions, corners and track ends never move, no node moves over FAIR_MAX_SHIFT, graph.pos stays OSM's.
+  A minimum-radius or quadratic-fit test cannot tell a wiggle from a sparse-node curve: measure turn-and-turn-back (curves.test.ts
+  reversals). Any change to the drawn curves moves the pinned figures in tools/tests/train-curve*.test.mjs: re-derive them.
+
 - 2026-11-10 - while the lead sits in an EnterWorktree lane, its subagents' Bash is refused; exit before spawning (EnterWorktree)
   Two background agents (a scorer and a camera placer) had every Bash call refused mid-task with "this session is isolated in the
   worktree ...": the isolation guard is per session, and subagents share it. Exit the lane (ExitWorktree keep) before spawning an

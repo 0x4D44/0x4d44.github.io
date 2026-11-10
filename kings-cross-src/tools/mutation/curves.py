@@ -35,6 +35,16 @@ M = [
     ('platform edges classified against the chords', 'web/src/furniture.ts', 'const curve = shapeFrom(shapes, r.nodes[i] as number, r.nodes[i + 1] as number) ?? [a, b];', 'const curve = [a, b];'),
     ('tunnel cuttings follow the chords', 'core/landmarks.ts', 'const shapes = railShapes(data); // the rails as drawn', 'const shapes = new Map() as ReturnType<typeof railShapes>; // the rails as drawn'),
     ('rails butted, not mitred', 'web/src/track.ts', 'return { x, z, mx: (before[0] + after[0]) / k, mz: (before[1] + after[1]) / k };', 'return { x, z, mx: after[0], mz: after[1] };'),
+    # the fairing (core/curves.ts fairNodes): the wobbly OSM nodes are faired before the curves are built
+    ('curves built on the unfaired nodes', C, '  const pos = fairNodes(data);', '  const pos = raw;'),
+    ('no run is faired', C, 'if (shift < FAIR_MIN_SHIFT || shift > FAIR_MAX_SHIFT) continue;', 'continue;'),
+    ('a run under FAIR_MIN_SHIFT is faired too', C, 'if (shift < FAIR_MIN_SHIFT || shift > FAIR_MAX_SHIFT) continue;', 'if (shift > FAIR_MAX_SHIFT) continue;'),
+    ('a run over FAIR_MAX_SHIFT is faired too', C, 'if (shift < FAIR_MIN_SHIFT || shift > FAIR_MAX_SHIFT) continue;', 'if (shift < FAIR_MIN_SHIFT) continue;'),
+    ('corners are faired through', C, 'if (u[0] * v[0] + u[1] * v[1] < cosSmooth) {', 'if (false) {'),
+    ('the run ends move too', C, 'for (let i = 1; i + 1 < run.length; i++) out.set(run[i] as number, faired[i] as Pt);', 'for (let i = 0; i < run.length; i++) out.set(run[i] as number, [(faired[i] as Pt)[0] + 0.01, (faired[i] as Pt)[1]]);'),
+    ('a weak fairing: FAIR_LENGTH 4 m', C, 'export const FAIR_LENGTH = 12;', 'export const FAIR_LENGTH = 4;'),
+    ('fairing ignores the change of curvature', C, '    const w = l6 * hi;', '    const w = 0;'),
+    ('fairing weights every node alike', C, 'for (let i = 1; i + 1 < n; i++) (m[i] as number[])[i] = ((h[i - 1] as number) + (h[i] as number)) / 2;', 'for (let i = 1; i + 1 < n; i++) (m[i] as number[])[i] = 1;'),
 ]
 TESTS = ['core/tests/curves.test.ts', 'core/tests/motion.test.ts', 'web/tests/track.test.ts', 'web/tests/trains-live.test.ts', 'web/tests/signals.test.ts']
 tally = kxmut.Tally()

@@ -1190,25 +1190,25 @@ const checkJoints=(curve,pose,pins)=>{
   const other=brute(C.curvePoses(f,curve).poses,f);plan.joints.forEach((j,i)=>{near(j.bodyGapM,other[i].gap,1e-9);near(j.coupler.distanceM,other[i].coupler,1e-9);near(j.gangway.right.distanceM,other[i].right,1e-9);});
  }
 };
-check('on the page\'s own track the tightest bend the longest train fits is 81.8 m, in a tunnel under the station, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
+check('on the page\'s own track the tightest bend the longest train fits is 98.7 m, in a tunnel under the station, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
  const curve=await C.loadCurveRoute(),route=curve.route;
  const bytes=await readFile(fileURLToPath(new URL('../../web/src/data/kx-track.json',import.meta.url)));
  assert.equal(curve.trackData.sha256,sha(bytes));
  assert.equal(curve.trackData.sha256,'ae5b95e46601e9f72d2bb8861138438fbf564c7b53dc96d16bce7481f71ba2a9','the track data changed: re-derive every number below, then update this pin');
  assert.deepEqual(curve.longest,{kind:'gn387x12',lengthM:244.67999999999995});
- assert.deepEqual([route.source,route.smooth,route.radiusM,route.turnDeg,route.baselineM],['real',true,81.807625,18.209675,26]);
- assert.deepEqual(route.apex,[-174.072165,25.852338]);assert.deepEqual(route.ways,[111564944,164434922]);assert.deepEqual(route.services,['main']);assert.deepEqual(route.tunnel,{apexInTunnel:true,windowM:264.68,fraction:1});
- assert.deepEqual([route.steps.length,route.points.length,route.lengthM,route.apexS],[13,168,376.428027,239.12465]);assert.deepEqual(route.apexAt,{step:6,share:.994912});
- assert.deepEqual(route.chain,{lengthM:1084.080884,nodes:45,from:[-299.3,-316.8],to:[469.8,184.8]});assert.deepEqual(route.searched,{chains:209,pieces:210,fitting:69});
- assert.deepEqual([route.local.insideSign,route.local.outsideSign,route.local.headingDeg],[-1,1,122.862958]);
+ assert.deepEqual([route.source,route.smooth,route.radiusM,route.turnDeg,route.baselineM],['real',true,98.668366,15.097952,26]);
+ assert.deepEqual(route.apex,[-178.331158,17.05965]);assert.deepEqual(route.ways,[111564943,109850074]);assert.deepEqual(route.services,['main']);assert.deepEqual(route.tunnel,{apexInTunnel:true,windowM:264.68,fraction:1});
+ assert.deepEqual([route.steps.length,route.points.length,route.lengthM,route.apexS],[13,169,348.287284,206.648459]);assert.deepEqual(route.apexAt,{step:7,share:.067873});
+ assert.deepEqual(route.chain,{lengthM:1118.192829,nodes:44,from:[-289,-301.2],to:[511.8,219.5]});assert.deepEqual(route.searched,{chains:209,pieces:210,fitting:69});
+ assert.deepEqual([route.local.insideSign,route.local.outsideSign,route.local.headingDeg],[-1,1,128.843418]);
  // every node of the route\'s edges is on the page\'s drawn curve, and the route is that curve: a bogie placed by the page lies on it
  const graph=buildGraph(JSON.parse(bytes.toString('utf8')),{curves:true});
  for(const s of route.steps){const e=graph.adj.get(s.from).find(x=>x.wayId===s.way&&(x.a===s.to||x.b===s.to));const pts=shapeFrom(graph.shapes,s.from,s.to);assert.equal(pts.length,s.toIndex-s.fromIndex+1,'the edge is its curve\'s points');pts.forEach((p,k)=>vec(route.points[s.fromIndex+k],p,6e-7));assert.ok(e);}
- near(curve.placement.apexM,239.056752,1e-6);near(curve.placement.chain.lengthM,376.293379,1e-6);
+ near(curve.placement.apexM,206.610138,1e-6);near(curve.placement.chain.lengthM,348.185028,1e-6);
  const pins={
-  lner5:[.511717,2,.605581,1,.649089,1,'right',7,{coupler:2,gangway:5}],lner9:[.506372,7,.605581,3,.649089,3,'right',7,{coupler:2,gangway:5}],hull5:[.511717,2,.605581,1,.649089,1,'right',7,{coupler:2,gangway:5}],lumo5:[.511717,2,.605581,1,.649089,1,'right',7,{coupler:2,gangway:5}],
-  gn387x4:[.373719,1,.153676,2,.311825,1,'right',0,{}],gn387x8:[.373719,3,.153676,4,.311825,3,'right',0,{}],gn387x12:[.373719,5,.171946,10,.311825,5,'right',0,{}],gn717x6:[.373727,2,.148899,3,.383738,2,'right',1,{gangway:1}],
-  gc180x5:[.501641,2,.490887,1,.520994,1,'right',6,{coupler:2,gangway:4}],tl700x8:[.374182,3,.144755,4,.383025,3,'right',1,{gangway:1}],tl700x12:[.374182,5,.144755,6,.383025,5,'right',1,{gangway:1}],
+  lner5:[.474077,1,.373103,2,.447383,2,'right',3,{coupler:1,gangway:2}],lner9:[.474077,3,.373103,4,.447383,4,'right',3,{coupler:1,gangway:2}],hull5:[.474077,1,.373103,2,.447383,2,'right',3,{coupler:1,gangway:2}],lumo5:[.474077,1,.373103,2,.447383,2,'right',3,{coupler:1,gangway:2}],
+  gn387x4:[.444412,1,.112286,2,.233257,1,'right',0,{}],gn387x8:[.444412,3,.112689,6,.233257,3,'right',0,{}],gn387x12:[.444412,5,.207459,10,.233257,5,'right',0,{}],gn717x6:[.444779,2,.110857,3,.286475,2,'right',0,{}],
+  gc180x5:[.480707,1,.241332,2,.309292,2,'right',0,{}],tl700x8:[.445691,3,.111509,4,.285119,3,'right',0,{}],tl700x12:[.445691,5,.229764,10,.285119,5,'right',0,{}],
  };
  checkJoints(curve,F.CURVE,pins);
 });
@@ -1235,31 +1235,35 @@ check('the route of a C02 run is read from a track file the same way, with the t
  } finally {await rm(dir,{recursive:true,force:true});}
 });
 
-check('on the page\'s own track the radius that is typical of a bend is 451.9 m, the bend nearest it is on the surface at 474.8 m, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
+check('on the page\'s own track the radius that is typical of a bend is 452.0 m, the bend nearest it is on the surface at 433.1 m, and each kind\'s joints on it are these numbers (pinned to this data; a change of the track data changes them)',async()=>{
  const curve=await C.loadCurveRoute(undefined,{typical:true}),route=curve.route,{typical}=curve;
  const bytes=await readFile(fileURLToPath(new URL('../../web/src/data/kx-track.json',import.meta.url)));
  assert.equal(curve.trackData.sha256,sha(bytes));
  assert.equal(curve.trackData.sha256,'ae5b95e46601e9f72d2bb8861138438fbf564c7b53dc96d16bce7481f71ba2a9','the track data changed: re-derive every number below, then update this pin');
  assert.deepEqual(curve.longest,{kind:'gn387x12',lengthM:244.67999999999995});
- // the radius: the median of the 13,859 m of bend on the 40,627 m of main line the track has, in its 210 pieces, a quarter of it tighter than 277 m and a quarter wider than 774 m
- assert.deepEqual(typical,{radiusM:451.89688,baselineM:26,bendMinDeg:1,services:['main'],stepM:.5,trackM:40627,bendM:13859,quartilesM:[277.370828,774.190879],pieces:210});
+ // the radius: the median of the 13,868 m of bend on the 40,625 m of main line the track has, in its 210 pieces, a quarter of it tighter than 287 m and a quarter wider than 778 m
+ assert.deepEqual(typical,{radiusM:452.02016,baselineM:26,bendMinDeg:1,services:['main'],stepM:.5,trackM:40625,bendM:13867.5,quartilesM:[286.99676,777.988604],pieces:210});
  // the bend: on the surface (no tunnel in its window), three ways, within the band of that radius, under a train that is on a bend of about that radius along its length and straight for 9 m of it
- assert.deepEqual([route.source,route.smooth,route.radiusM,route.turnDeg,route.baselineM],['real',true,474.836107,3.137273,26]);
- assert.deepEqual(route.apex,[-110.735902,-1135.891177]);assert.deepEqual(route.ways,[22758713,22597498,4480807]);assert.deepEqual(route.services,['main']);assert.deepEqual(route.tunnel,{apexInTunnel:false,windowM:0,fraction:0});
- assert.deepEqual([route.steps.length,route.points.length,route.lengthM,route.apexS],[12,67,297.773371,142.927318]);assert.deepEqual(route.apexAt,{step:6,share:.330004});
- assert.deepEqual(route.chain,{lengthM:1498.444024,nodes:35,from:[-535.2,-1148.8],to:[891,-1517.2]});assert.deepEqual(route.searched,{chains:209,pieces:210,fitting:69});
- assert.deepEqual(route.pick,{kind:'typical',typicalRadiusM:451.89688,bandShare:.1,meanDeviation:.289293,tightestM:334.907162,straightM:9});
- assert.deepEqual([route.local.insideSign,route.local.outsideSign,route.local.headingDeg],[-1,1,80.781862]);
+ assert.deepEqual([route.source,route.smooth,route.radiusM,route.turnDeg,route.baselineM],['real',true,433.07032,3.439835,26]);
+ assert.deepEqual(route.apex,[-115.873297,-1139.165521]);assert.deepEqual(route.ways,[116569772,116569771,116569770]);assert.deepEqual(route.services,['main']);assert.deepEqual(route.tunnel,{apexInTunnel:false,windowM:0,fraction:0});
+ assert.deepEqual([route.steps.length,route.points.length,route.lengthM,route.apexS],[12,58,298.567483,160.819522]);assert.deepEqual(route.apexAt,{step:5,share:.839433});
+ assert.deepEqual(route.chain,{lengthM:1398.323154,nodes:34,from:[891,-1517.2],to:[-436.6,-1148.3]});assert.deepEqual(route.searched,{chains:209,pieces:210,fitting:69});
+ assert.deepEqual(route.pick,{kind:'typical',typicalRadiusM:452.02016,bandShare:.1,meanDeviation:.280491,tightestM:386.350018,straightM:20});
+ assert.deepEqual([route.local.insideSign,route.local.outsideSign,route.local.headingDeg],[1,-1,-98.35391]);
  assert.ok(Math.abs(route.radiusM/typical.radiusM-1)<=.1,'the bend is within the band of the typical radius');
- const circle=circumradius(route);assert.ok(Math.abs(route.radiusM-circle)<.05*circle,`the radius is the drawn curve\'s: ${route.radiusM}, and three points of it say ${circle}`);
+ // the radius is the drawn curve's: the baseline over the turn of the route's own points between 13 m before and after the apex (not a three-point circle: on this
+ // bend the drawn curve's curvature rises and falls node to node, so a circle through three points of it says 468.7 m where the turn says 433.1 m)
+ const cum=F.cumulative(route.points),dir=s=>{const a=F.pointAlong(route.points,cum,s-.05),b=F.pointAlong(route.points,cum,s+.05);return Math.atan2(b[1]-a[1],b[0]-a[0]);};
+ let turn=dir(route.apexS+13)-dir(route.apexS-13);while(turn>Math.PI)turn-=2*Math.PI;while(turn<-Math.PI)turn+=2*Math.PI;
+ assert.ok(Math.abs(route.radiusM-26/Math.abs(turn))<.005*route.radiusM,`the radius is the drawn curve\'s: ${route.radiusM}, and its turn across 26 m says ${26/Math.abs(turn)}`);
  // every node of the route\'s edges is on the page\'s drawn curve, and the route is that curve
  const graph=buildGraph(JSON.parse(bytes.toString('utf8')),{curves:true});
  for(const s of route.steps){const e=graph.adj.get(s.from).find(x=>x.wayId===s.way&&(x.a===s.to||x.b===s.to));const pts=shapeFrom(graph.shapes,s.from,s.to);assert.equal(pts.length,s.toIndex-s.fromIndex+1,'the edge is its curve\'s points');pts.forEach((p,k)=>vec(route.points[s.fromIndex+k],p,6e-7));assert.ok(e);}
- near(curve.placement.apexM,142.918748,1e-6);near(curve.placement.chain.lengthM,297.75361,1e-6);
- // each kind: no joint fails, which is the point of a typical bend (the tightest one fails on 8 of 11)
+ near(curve.placement.apexM,160.811201,1e-6);near(curve.placement.chain.lengthM,298.554342,1e-6);
+ // each kind: no joint fails, which is the point of a typical bend (the tightest one fails on 4 of 11)
  checkJoints(curve,F.CURVE_NORMAL,{
-  lner5:[.611582,2,.069734,0,.090039,2,'right',0,{}],lner9:[.611582,4,.126106,1,.13354,1,'right',0,{}],hull5:[.611582,2,.071655,0,.090039,2,'right',0,{}],lumo5:[.611582,2,.069734,0,.090039,2,'right',0,{}],
-  gn387x4:[.633792,2,.054989,1,.07132,2,'right',0,{}],gn387x8:[.633792,4,.054989,3,.07132,4,'right',0,{}],gn387x12:[.62036,1,.054989,5,.075675,1,'right',0,{}],gn717x6:[.633718,3,.053555,2,.080444,3,'right',0,{}],
-  gc180x5:[.615086,2,.041458,0,.065464,2,'right',0,{}],tl700x8:[.633798,4,.052826,2,.080851,4,'right',0,{}],tl700x12:[.618932,1,.052826,4,.080851,6,'right',0,{}],
+  lner5:[.634841,1,.071551,1,.094779,1,'left',0,{}],lner9:[.61894,1,.104005,7,.123071,7,'left',0,{}],hull5:[.634841,1,.071551,1,.094779,1,'left',0,{}],lumo5:[.634841,1,.071551,1,.094779,1,'left',0,{}],
+  gn387x4:[.642454,1,.053884,2,.060982,2,'left',0,{}],gn387x8:[.630801,0,.053884,4,.060982,4,'left',0,{}],gn387x12:[.62757,9,.074033,0,.088366,0,'left',0,{}],gn717x6:[.642737,2,.052811,3,.064118,3,'left',0,{}],
+  gc180x5:[.63677,1,.04922,3,.064449,1,'left',0,{}],tl700x8:[.631775,0,.05237,4,.064321,0,'left',0,{}],tl700x12:[.628888,9,.064551,0,.091191,0,'left',0,{}],
  });
 });

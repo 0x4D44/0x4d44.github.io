@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import type { KxData } from '../../core/osm.ts';
-import { railShapes } from '../../core/curves.ts';
+import { FAIR_MAX_SHIFT, fairNodes, railNeighbours, railShapes } from '../../core/curves.ts';
 import { railSegments, TUNNEL_DEPTH, twinRails } from '../../core/scene.ts';
 import { GAUGE, RAIL_HEAD_WIDTH, shedBufferStops, shedLayout, worldToShed } from '../../core/station.ts';
 import { TEXTURES } from '../src/materials.ts';
@@ -336,7 +336,7 @@ test('zone: on the real extract it holds about 131 main segments, 4.5 km, and no
   assert.equal(main.near.length + main.far.length, rails.main.length);
 });
 
-test('curves: in the station zone the drawn track has no visible angle where it runs on, every OSM node is still on it, and a turnout branch leaves along its through route', () => {
+test('curves: in the station zone the drawn track has no visible angle where it runs on, every node is on it where the fairing puts it, and a turnout branch leaves along its through route', () => {
   // the joints of the drawn pieces along every chain, and at every junction the sharpest fork (a branch's first piece
   // against the nearest other branch's, both leaving the node): the OSM chords turned by up to 5.5 degrees at a node
   // and forked at up to 7.7 degrees; the curves (core/curves.ts) by under a degree
@@ -382,13 +382,26 @@ test('curves: in the station zone the drawn track has no visible angle where it 
   assert.ok(curves.junctions >= 10, `${curves.junctions} junctions`);
   assert.ok(curves.joint < 1, `a drawn joint turns ${curves.joint.toFixed(2)} degrees`);
   assert.ok(curves.fork < 1, `a turnout branch leaves ${curves.fork.toFixed(2)} degrees off its through route`);
-  // every OSM node of the zone's track is a vertex of the drawn track, exactly where OSM puts it
+  // every node of the zone's track is a vertex of the drawn track, where the fairing puts it: OSM's
+  // own position at every junction and track end, and within FAIR_MAX_SHIFT of it elsewhere
   const near = splitByZone(railSegments(ecml, railShapes(data)).main, layout).near;
   const vertices = new Set<string>();
   for (let i = 0; i + 2 < near.length; i += 3) vertices.add(`${near[i]},${near[i + 2]}`);
-  const zoneNodes = new Set(splitByZone(railSegments(ecml).main, layout).near.flatMap((v, i, a) => (i % 3 === 0 ? [`${v},${a[i + 2]}`] : [])));
+  const faired = fairNodes(data);
+  const fairedEcml = { nodes: data.nodes.map(([id]) => [id, ...(faired.get(id) as Pt)] as KxData['nodes'][number]), rails: ecml.rails };
+  const zoneNodes = new Set(splitByZone(railSegments(fairedEcml).main, layout).near.flatMap((v, i, a) => (i % 3 === 0 ? [`${v},${a[i + 2]}`] : [])));
   assert.ok(zoneNodes.size > 100);
-  for (const n of zoneNodes) assert.ok(vertices.has(n), `OSM node ${n} is on the drawn track`);
+  for (const n of zoneNodes) assert.ok(vertices.has(n), `node ${n} is on the drawn track`);
+  const neighbours = railNeighbours(data, new Map(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt])));
+  let moved = 0;
+  for (const [id, x, z] of data.nodes) {
+    const p = faired.get(id) as Pt;
+    const d = Math.hypot(p[0] - x, p[1] - z);
+    if (neighbours.has(id) && neighbours.get(id)?.size !== 2) assert.equal(d, 0, `junction or end ${id} stays where OSM puts it`);
+    assert.ok(d <= FAIR_MAX_SHIFT, `node ${id} moves ${d.toFixed(3)} m`);
+    if (d > 0) moved++;
+  }
+  assert.ok(moved > 0, 'the fairing moved some node');
 });
 
 // ---- the group -----------------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { DIVERGE_TURN, railShapes, shapeFrom, SMOOTH_TURN, STEP_TURN } from '../curves.ts';
+import { DIVERGE_TURN, FAIR_LENGTH, FAIR_MAX_SHIFT, FAIR_MIN_SHIFT, fairNodes, fairRun, plainRuns, railNeighbours, railShapes, shapeFrom, shapeKey, SMOOTH_TURN, STEP_TURN } from '../curves.ts';
 import type { Pt } from '../geo.ts';
 import { buildGraph, edgePoint } from '../graph.ts';
 import type { KxData } from '../osm.ts';
@@ -162,11 +162,11 @@ test('curves: edgePoint on a curved graph is on the drawn pieces at every t, bot
   assert.equal(straight.shapes, undefined);
 });
 
-test('curves: on the real extract every segment has a curve, every node stays put, and no joint where a track runs on turns over 1.5 degrees', () => {
+test('curves: on the real extract every segment has a curve, every node is where the fairing puts it, and no joint where a track runs on turns over 1.5 degrees', () => {
   const data: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
   const shapes = railShapes(data);
   const g = buildGraph(data);
-  const pos = new Map(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const pos = fairNodes(data);
   let worst = 0;
   for (const e of g.edges) {
     const s = shapeFrom(shapes, e.a, e.b);
@@ -177,4 +177,151 @@ test('curves: on the real extract every segment has a curve, every node stays pu
   }
   assert.ok(worst < 1.5, `a joint inside a segment turns ${worst.toFixed(2)} degrees`);
   assert.ok(STEP_TURN <= (0.5 * Math.PI) / 180);
+});
+
+// ---- fairing ----------------------------------------------------------------------------------
+
+/** How far p is from the line through a and b. */
+const offLine = (p: Pt, a: Pt, b: Pt): number => Math.abs((p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+
+test('fairing: a straight whose nodes wander 0.3 m either side is drawn straight, the ends exactly where they were', () => {
+  const o: Pt[] = [];
+  for (let k = 0; k <= 25; k++) o.push([k === 0 || k === 25 ? 0 : (k % 2 ? 0.3 : -0.3) * (k % 3 ? 1 : 0.5), -8 * k]);
+  const f = fairRun(o);
+  assert.deepEqual(f[0], o[0]);
+  assert.deepEqual(f.at(-1), o.at(-1));
+  const worst = Math.max(...f.map((p) => offLine(p, o[0] as Pt, o.at(-1) as Pt)));
+  assert.ok(worst < 0.06, `a faired node is ${worst.toFixed(3)} m off the straight (OSM's: 0.3)`);
+  // and on the graph: the run between two ends, drawn
+  const curve = along(ways(o));
+  const drawn = Math.max(...curve.map((p) => offLine(p, o[0] as Pt, o.at(-1) as Pt)));
+  assert.ok(drawn < 0.06, `the drawn track is ${drawn.toFixed(3)} m off the straight`);
+});
+
+test('fairing: a curve keeps its alignment; with its nodes wandering it is faired back onto the circle, and a clean one does not move', () => {
+  const R = 300;
+  const on = (k: number): Pt => [R * Math.sin(k / 30), R - R * Math.cos(k / 30)]; // nodes 10 m apart
+  const clean: Pt[] = [];
+  const wobbly: Pt[] = [];
+  for (let k = 0; k <= 20; k++) {
+    const p = on(k);
+    clean.push(p);
+    const n = Math.hypot(p[0], p[1] - R);
+    const off = k === 0 || k === 20 ? 0 : k % 2 ? 0.25 : -0.2;
+    wobbly.push([p[0] + (off * p[0]) / n, p[1] + (off * (p[1] - R)) / n]);
+  }
+  const still = Math.max(...fairRun(clean).map((p, i) => Math.hypot(p[0] - (clean[i] as Pt)[0], p[1] - (clean[i] as Pt)[1])));
+  assert.ok(still < 0.01, `a clean circle's node moves ${still.toFixed(4)} m`); // the change of direction of its curvature, 1/R^2: millimetres, and under FAIR_MIN_SHIFT
+  const f = fairRun(wobbly);
+  const worst = Math.max(...f.map((p) => Math.abs(Math.hypot(p[0], p[1] - R) - R)));
+  assert.ok(worst < 0.06, `a faired node is ${worst.toFixed(3)} m off the circle (OSM's: 0.25)`);
+  // the drawn curve: no S left in it
+  const curve = along(ways(wobbly));
+  const inner = curve.filter((p) => p[0] > (wobbly[2] as Pt)[0] && p[0] < (wobbly[18] as Pt)[0]);
+  assert.ok(reversals(inner) < 0.2, `the drawn curve turns back by ${reversals(inner).toFixed(2)} degrees`);
+});
+
+test('fairing: junctions, corners and ends never move; a run under FAIR_MIN_SHIFT keeps OSM\'s nodes exactly; FAIR_LENGTH is the stated scale', () => {
+  assert.equal(FAIR_LENGTH, 12);
+  // a wobbly straight with a branch off its middle node: that node is a junction
+  const main: Pt[] = [];
+  for (let k = 0; k <= 12; k++) main.push([k === 0 || k === 6 || k === 12 ? 0 : k % 2 ? 0.3 : -0.3, -8 * k]);
+  const data = ways(main, [main[6] as Pt, [6, -60], [12, -75]]);
+  const f = fairNodes(data);
+  const id = (p: Pt): number => (data.nodes.find(([, x, z]) => x === p[0] && z === p[1]) as KxData['nodes'][number])[0];
+  for (const p of [main[0], main[6], main[12], [12, -75]] as Pt[]) assert.deepEqual(f.get(id(p)), p, `node ${p} stays`);
+  assert.ok(Math.abs((f.get(id(main[3] as Pt)) as Pt)[0]) < 0.15, 'an interior node of a run is faired');
+  // a corner (over SMOOTH_TURN) is held
+  const a = SMOOTH_TURN + 0.1;
+  const bent: Pt[] = [[0, 0], [0.2, -10], [0, -20], [0.2, -30], [0, -40]];
+  for (let k = 1; k <= 4; k++) bent.push([10 * k * Math.sin(a), -40 - 10 * k * Math.cos(a)]);
+  const cd = ways(bent);
+  const cf = fairNodes(cd);
+  assert.deepEqual(cf.get(5), [0, -40], 'the corner stays');
+  assert.ok(Math.abs((cf.get(2) as Pt)[0]) < 0.15, 'and the wobble before it is faired as a run of its own');
+  // under FAIR_MIN_SHIFT: exactly OSM's
+  const tiny: Pt[] = [];
+  for (let k = 0; k <= 10; k++) tiny.push([k === 0 || k === 10 ? 0 : k % 2 ? 0.02 : -0.02, -10 * k]);
+  const td = ways(tiny);
+  const tf = fairNodes(td);
+  for (const [n, x, z] of td.nodes) assert.deepEqual(tf.get(n), [x, z], `node ${n} below FAIR_MIN_SHIFT (${FAIR_MIN_SHIFT} m) stays`);
+});
+
+/**
+ * The largest heading, in degrees, that the polyline turns and then turns back within a short
+ * distance: of each pair of neighbouring bends that turn opposite ways (curvature over 1/3000 per
+ * metre, read over 3 m, the bends at most 10 m apart), the smaller of the two turns. An S-wiggle
+ * gives its own size; a curve between straights, or a curve that eases in, gives nothing.
+ */
+function reversals(pts: Pt[]): number {
+  const ds = [0];
+  for (let i = 1; i < pts.length; i++) ds.push((ds[i - 1] as number) + Math.hypot((pts[i] as Pt)[0] - (pts[i - 1] as Pt)[0], (pts[i] as Pt)[1] - (pts[i - 1] as Pt)[1]));
+  const total = ds.at(-1) as number;
+  let j = 0;
+  const sm: Pt[] = [];
+  for (let t = 0; t <= total; t += 1) {
+    while (j + 2 < pts.length && (ds[j + 1] as number) < t) j++;
+    const p = pts[j] as Pt;
+    const q = pts[j + 1] as Pt;
+    const f = (t - (ds[j] as number)) / ((ds[j + 1] as number) - (ds[j] as number) || 1);
+    sm.push([p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]);
+  }
+  const B = 3;
+  const lobes: { s: number; e: number; sign: number; turn: number }[] = [];
+  for (let c = B; c + B < sm.length; c++) {
+    const a = sm[c - B] as Pt;
+    const m = sm[c] as Pt;
+    const b = sm[c + B] as Pt;
+    let d = Math.atan2(b[1] - m[1], b[0] - m[0]) - Math.atan2(m[1] - a[1], m[0] - a[0]);
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d < -Math.PI) d += 2 * Math.PI;
+    const k = d / B;
+    if (Math.abs(k) < 1 / 3000) continue;
+    const last = lobes.at(-1);
+    if (last && last.sign === Math.sign(k) && c - last.e <= 2) {
+      last.e = c;
+      last.turn += k;
+    } else lobes.push({ s: c, e: c, sign: Math.sign(k), turn: k });
+  }
+  let worst = 0;
+  for (let i = 0; i + 1 < lobes.length; i++) {
+    const l = lobes[i] as (typeof lobes)[number];
+    const m = lobes[i + 1] as (typeof lobes)[number];
+    if (l.sign === -m.sign && m.s - l.e <= 10) worst = Math.max(worst, deg(Math.min(Math.abs(l.turn), Math.abs(m.turn))));
+  }
+  return worst;
+}
+
+/** The worst reversal (degrees) on the drawn surface track in a box, over every run of plain track's interior (its end segments take a junction's tangent). */
+function worstReversal(data: KxData, box: { minX: number; maxX: number; minZ: number; maxZ: number }, shapes = railShapes(data)): { deg: number; runs: number } {
+  const pos = new Map(data.nodes.map(([id, x, z]) => [id, [x, z] as Pt]));
+  const tunnel = new Set<string>();
+  for (const r of data.rails) if (r.tunnel) for (let i = 0; i + 1 < r.nodes.length; i++) tunnel.add(shapeKey(r.nodes[i] as number, r.nodes[i + 1] as number));
+  const inBox = (p: Pt): boolean => p[0] >= box.minX && p[0] <= box.maxX && p[1] >= box.minZ && p[1] <= box.maxZ;
+  let worst = 0;
+  let runs = 0;
+  for (const run of plainRuns(railNeighbours(data, pos))) {
+    if (run.length < 4 || !run.some((n) => inBox(pos.get(n) as Pt))) continue;
+    if (run.some((n, i) => i > 0 && tunnel.has(shapeKey(run[i - 1] as number, n)))) continue;
+    const pts: Pt[] = [];
+    for (let i = 1; i + 2 < run.length; i++) pts.push(...(shapeFrom(shapes, run[i] as number, run[i + 1] as number) as Pt[]).slice(pts.length ? 1 : 0));
+    runs++;
+    worst = Math.max(worst, reversals(pts.filter(inBox)));
+  }
+  return { deg: worst, runs };
+}
+
+test('fairing: on the real extract no surface track at King\'s Cross or St Pancras wiggles (turns and turns back) by over 1.5 degrees, and no node moves over FAIR_MAX_SHIFT', () => {
+  // OSM's nodes made the curves wiggle by up to 2.97 degrees at King's Cross (OSM 1390691713, the road
+  // north of platform 4, at about x 48, z -296) and 4.64 at St Pancras; faired, 0.69 and 1.17
+  const data: KxData = JSON.parse(readFileSync(new URL('../../web/src/data/kx-track.json', import.meta.url), 'utf8'));
+  const kx = worstReversal(data, { minX: -60, maxX: 160, minZ: -700, maxZ: 60 });
+  const stp = worstReversal(data, { minX: -420, maxX: -40, minZ: -750, maxZ: 60 });
+  assert.ok(kx.runs >= 8 && stp.runs >= 8, `${kx.runs} and ${stp.runs} runs measured`);
+  assert.ok(kx.deg < 1.5, `King's Cross track turns back by ${kx.deg.toFixed(2)} degrees`);
+  assert.ok(stp.deg < 1.5, `St Pancras track turns back by ${stp.deg.toFixed(2)} degrees`);
+  const f = fairNodes(data);
+  let worst = 0;
+  for (const [id, x, z] of data.nodes) worst = Math.max(worst, Math.hypot((f.get(id) as Pt)[0] - x, (f.get(id) as Pt)[1] - z));
+  assert.ok(worst > FAIR_MIN_SHIFT && worst <= FAIR_MAX_SHIFT, `the largest move is ${worst.toFixed(3)} m`);
 });

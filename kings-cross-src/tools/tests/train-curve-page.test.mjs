@@ -186,7 +186,7 @@ check('a curve on the stand-in page is two pictures with a sidecar each and a re
  assert.equal(run.log.length,2+2*4+1);assert.equal(run.log[0],`window.__cat.beginCurve("${KIND}",${plan.lengthM},${JSON.stringify(plan.path)})`);assert.equal(run.log[1],`window.__cat.poseCars(${JSON.stringify(plan.cars)})`);assert.equal(run.log.at(-1),'window.__cat.end()');
  run.log.slice(2,-1).forEach((e,i)=>assert.match(e,[/^window\.__cat\.view\(\{/,/^window\.__cat\.assertChrome\(\)$/,/^window\.__cat\.isolate\('empty'\)$/,/^window\.__cat\.isolate\('all'\)$/][i%4],`call ${i}`));
  assert.equal(run.shots,4,'a picture and its empty-stage baseline for each view');
- assert.ok(run.log[2].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C01 curve-plan - tightest real bend, R 81.8 m")`));assert.ok(run.log[6].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C01 curve-oblique - tightest real bend, R 81.8 m")`));
+ assert.ok(run.log[2].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C01 curve-plan - tightest real bend, R 98.7 m")`));assert.ok(run.log[6].endsWith(`,"${KIND} catalogue specimen on ${F.CURVE_STAGE} - C01 curve-oblique - tightest real bend, R 98.7 m")`));
  // the verdict and the manifest entry
  assert.deepEqual(verdict,{status:'PASS',findings:[],bodies:plan.checks.bodies,couplers:plan.checks.couplers,gangways:plan.checks.gangways,bogies:verdict.bogies});assert.equal(verdict.bogies.ok,true);assert.equal(verdict.bogies.count,2*formations.get(KIND).cars.length);
  assert.deepEqual([entry.id,entry.suffix],['C01','curve']);assert.deepEqual(entry.plan,F.curvePoseOf(plan));assert.equal(entry.notes,plan.notes);
@@ -240,15 +240,15 @@ check('a curve on the synthetic arc says so in the label of each picture and in 
 
 check('a curve with joints that fail the bellows check is OK as a set of pictures, and a FINDING in the report, the entry and each sidecar',async()=>{
  const run=await runCurve({kind:FINDINGS_KIND}),{entry,verdict,plan}=run;
- assert.equal(plan.checks.findings.length,7,'five gangway edges and two couplers are further apart than a bellows reaches on the 81.8 m bend');
- assert.equal(verdict.status,'FINDING');assert.equal(verdict.findings.length,7);assert.equal(entry.outcome.status,'OK','a finding is the model\'s, not a failed picture');assert.equal(entry.outcome.reason,null);assert.deepEqual(entry.outcome.checks,{status:'FINDING',findings:7});
+ assert.equal(plan.checks.findings.length,3,'two gangway edges and a coupler are further apart than a bellows reaches on the 98.7 m bend');
+ assert.equal(verdict.status,'FINDING');assert.equal(verdict.findings.length,3);assert.equal(entry.outcome.status,'OK','a finding is the model\'s, not a failed picture');assert.equal(entry.outcome.reason,null);assert.deepEqual(entry.outcome.checks,{status:'FINDING',findings:3});
  assert.deepEqual(entry.outcome.views.map(v=>v.status),['OK','OK']);assert.deepEqual([...run.published.keys()],[`${FINDINGS_KIND}-curve-plan.png`,`${FINDINGS_KIND}-curve-oblique.png`]);
  const report=JSON.parse(run.written.get(`${FINDINGS_KIND}-curve.json`).toString('utf8'));
- assert.equal(report.status,'OK');assert.equal(report.checks.status,'FINDING');assert.equal(report.checks.findings.length,7);
- assert.deepEqual(report.checks.findings.map(x=>x.check).sort(),['coupler','coupler','gangway','gangway','gangway','gangway','gangway']);
+ assert.equal(report.status,'OK');assert.equal(report.checks.status,'FINDING');assert.equal(report.checks.findings.length,3);
+ assert.deepEqual(report.checks.findings.map(x=>x.check).sort(),['coupler','gangway','gangway']);
  for(const x of report.checks.findings){assert.ok(x.distanceM>x.reachM);assert.equal(x.reachM,.35);assert.match(x.message,/more than the 0\.35 m one bellows reaches$/);}
  assert.equal(report.checks.couplers.ok,false);assert.equal(report.checks.gangways.ok,false);assert.equal(report.checks.bodies.ok,true);assert.equal(report.checks.bogies.ok,true);
- for(const file of [`${FINDINGS_KIND}-curve-plan.png`,`${FINDINGS_KIND}-curve-oblique.png`]){const side=run.published.get(file).sidecar;assert.deepEqual([side.curve.checks.status,side.curve.checks.findings],['FINDING',7]);assert.equal(side.pixels.ok,true);}
+ for(const file of [`${FINDINGS_KIND}-curve-plan.png`,`${FINDINGS_KIND}-curve-oblique.png`]){const side=run.published.get(file).sidecar;assert.deepEqual([side.curve.checks.status,side.curve.checks.findings],['FINDING',3]);assert.equal(side.pixels.ok,true);}
 });
 
 check('a bogie the page stands off the track is a finding with its distance, and the pictures are still taken',async()=>{
