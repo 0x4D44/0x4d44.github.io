@@ -35,7 +35,7 @@ export const HOTEL_LEVELS={
 } as const;
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
-export const HOTEL_COLOURS={ashlar:0xa08672,red:0x8a4c3d,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
+export const HOTEL_COLOURS={ashlar:0x977a68,red:0x8a4c3d,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];

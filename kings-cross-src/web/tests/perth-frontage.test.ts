@@ -6,7 +6,6 @@ import { project } from '../../core/geo.ts';
 import type { Pt } from '../../core/geo.ts';
 import { PERTH_ORIGIN, PERTH_STATION_BUILDING_ID } from '../../core/perth-data.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
-import { perthCameras } from '../../tools/evidence.mjs';
 import { meshAdder } from '../src/waverley-mesh.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import type { PerthBuild } from '../src/perth-scene.ts';
@@ -15,6 +14,8 @@ import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '..
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
 
 const sceneJson = JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8'));
+// The frozen Perth cameras (tools/tests/frozen-perth-cameras.test.mjs holds this file equal to tools/evidence.mjs).
+const perthCameras = (): Record<string, { pos: number[]; target: number[] }> => JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'));
 const frontageJson = JSON.parse(readFileSync(new URL('../src/data/perth-frontage.json', import.meta.url), 'utf8'));
 const data = unpackWaverleyScene(sceneJson);
 const scene = buildPerthScene({ lighting: false });

@@ -19,7 +19,7 @@ export const PERTH_ENTRANCE:Pt=[-3.03,-34.98];
 export const STREET_LEVELS={wall:4.3,coping:.25,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.6} as const;
 /** ASSUMED carriageway widths (m) by OSM highway class; no widths are mapped here. */
 export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,tertiary:7,residential:6,unclassified:6,service:5,parking_aisle:6,footway:2.4,pedestrian:4,path:2,cycleway:2.5,steps:2};
-export const STREET_COLOURS={buff:0xc4b393,coping:0xd6ccb4,navy:0x2c3672,glass:0x2a3238,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,asphalt:0x4d4f52,carpark:0x56585b,paving:0x8a7d74,footway:0xa39d93,kerb:0xb9b3a8,paint:0xe9e9e3,girder:0x4c5a52,abutment:0x8d8172} as const;
+export const STREET_COLOURS={buff:0xc4b393,coping:0xd6ccb4,navy:0x34449a,glass:0x2a3238,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,asphalt:0x4d4f52,carpark:0x56585b,paving:0x8a7d74,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3,girder:0x4c5a52,abutment:0x8d8172} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
