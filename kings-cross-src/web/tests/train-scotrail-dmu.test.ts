@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -49,7 +49,10 @@ test('ScotRail DMU geometry: finite, the published width within a door relief, t
     root.traverse((o) => { if (o instanceof THREE.Mesh && o.name !== 'bogie-mesh') body.expandByObject(o, true); });
     assert.ok(finite);
     assert.ok(Math.abs(box.max.x - box.min.x - f.width.value) < 0.02, `${kind} width ${box.max.x - box.min.x}`);
-    assert.ok(box.max.y <= f.height.value + 0.15, `${kind} top ${box.max.y}`);
+    // the drawn top is the roof top the capture tool is told (the crown plus the tallest housing), to float32's precision
+    const roofTop = scotrailDmuFormation(kind).roofTop;
+    assert.ok(roofTop <= f.height.value + 0.15, `${kind} roof top ${roofTop}`);
+    assert.ok(Math.abs(box.max.y - roofTop) < 1e-5, `${kind} top ${box.max.y}, told ${roofTop}`);
     assert.ok(body.min.y >= 0.1, `${kind} body and fittings clear the rail head: ${body.min.y}`);
     assert.ok(triangles / root.children.length < 40000, `${kind}: ${triangles / root.children.length} triangles a car, under the 40k budget`);
   }
@@ -344,4 +347,63 @@ test('ScotRail DMU bogies: the frames the photographs show (P4: coils under the 
     assert.ok(colourAt(far, DMU_BOGIE_COLOURS[style].frame, () => true) > 0, `${style} far frame`);
     assert.equal(colourAt(far, 0x66625a, () => true) + colourAt(far, 0x55514a, () => true), 0, `${style} far: no Alstom colour left`);
   }
+});
+
+test('ScotRail DMU roof: the 170 cab housing ramps up off the dome, runs low and steps up at its rear; slatted louvres sit on both shoulders of every 170 car', () => {
+  const look = scotrailDmuLook('turbostar');
+  const hs = look.cabHousing!;
+  const lv = look.louvres!;
+  const f = SCOTRAIL_DMU_FIGURES.turbostar;
+  const crown = f.height.value;
+  const root = buildScotrailDmu('sr170x3');
+  const layout = scotrailDmuLayout('sr170x3');
+  const verts = (mesh: THREE.Mesh, hex: number): [number, number, number][] => {
+    const p = mesh.geometry.getAttribute('position'); const c = mesh.geometry.getAttribute('color'); const k = col(hex);
+    const out: [number, number, number][] = [];
+    for (let i = 0; i < p.count; i++) if (Math.abs(c.getX(i) - k.r) < 1e-6 && Math.abs(c.getY(i) - k.g) < 1e-6 && Math.abs(c.getZ(i) - k.b) < 1e-6) out.push([p.getX(i), p.getY(i), p.getZ(i)]);
+    return out;
+  };
+  for (const car of layout.cars) {
+    const g = root.getObjectByName(`car-${car.index}`)!;
+    const detail = g.getObjectByName('body-detail') as THREE.Mesh;
+    const dir = car.cab === 'rear' ? -1 : 1;
+    const base = car.cab === 'rear' ? car.end : car.start;
+    const sOf = (z: number): number => (z - base) * dir;
+    const housing = verts(detail, hs.colour);
+    if (!car.cab) {
+      assert.equal(housing.length, 0, `car ${car.index}: no cab housing on an intermediate car`);
+    } else {
+      const topIn = (a: number, b: number): number => Math.max(...housing.filter((v) => sOf(v[2]) >= a - 1e-4 && sOf(v[2]) <= b + 1e-4).map((v) => v[1]));
+      // the front edge stands at the roof, the slab is `low` tall once the ramp is climbed, the rear block `high`
+      assert.ok(Math.abs(Math.min(...housing.map((v) => sOf(v[2]))) - hs.s0) < 1e-4, `car ${car.index}: the housing starts at ${hs.s0}`);
+      assert.ok(Math.abs(topIn(hs.s0, hs.s0) - crown) < 1e-4, `car ${car.index}: its front edge is at the crown, ramped (${topIn(hs.s0, hs.s0)})`);
+      assert.ok(Math.abs(topIn(hs.s0 + hs.ramp, hs.step - 0.01) - (crown + hs.low)) < 1e-4, `car ${car.index}: the low slab`);
+      assert.ok(Math.abs(topIn(hs.step + 0.1, hs.s1) - (crown + hs.high)) < 1e-4, `car ${car.index}: the rear block`);
+      assert.ok(hs.high > 2 * hs.low, 'the block stands well above the slab (scotrail170-01)');
+      // across the roof, inside the flat of the crown (carSection: |x| under W - 0.55)
+      assert.ok(Math.max(...housing.map((v) => Math.abs(v[0]))) <= hs.half + 1e-6);
+    }
+    // louvres: one panel a side at each station, its slats on it, every vertex on or just proud of the shoulder's ellipse
+    const markers = g.children.filter((o) => o.name === 'roof-louvre');
+    assert.equal(markers.length, 2 * lv.at.length, `car ${car.index}: louvre groups`);
+    assert.deepEqual(markers.map((m) => Math.sign(m.position.x)).sort(), [...lv.at.map(() => -1), ...lv.at.map(() => 1)]);
+    const W = f.width.value / 2 - 0.02; // carSection's W: the half-width less DOOR_RELIEF (web/src/train.ts, 0.02)
+    const rx = 0.55; const ry = crown - look.wallTop - 0.012;
+    for (const hex of [lv.panel, lv.slat]) {
+      const vs = verts(detail, hex);
+      assert.equal(vs.length, 2 * lv.at.length * (hex === lv.panel ? 1 : lv.slats) * 6, `car ${car.index}: ${hex === lv.panel ? 'panels' : 'slats'}`);
+      for (const v of vs) {
+        const e = ((Math.abs(v[0]) - (W - rx)) / rx) ** 2 + ((v[1] - look.wallTop) / ry) ** 2;
+        assert.ok(e >= 1 && e <= 1.08, `car ${car.index}: louvre vertex off the shoulder (${e})`);
+      }
+    }
+  }
+  disposeScotrailDmu(root);
+  // the 158 has neither
+  const s158 = scotrailDmuLook('sprinter158');
+  assert.equal(s158.cabHousing, undefined);
+  assert.equal(s158.louvres, undefined);
+  const r158 = buildScotrailDmu('sr158x2');
+  assert.equal(names(r158).filter((n) => n === 'roof-louvre').length, 0);
+  disposeScotrailDmu(r158);
 });
