@@ -3,6 +3,10 @@ import { project, round } from './geo.ts';
 import type { LatLon, Pt } from './geo.ts';
 export const WAVERLEY_ORIGIN: LatLon = {lat:55.9519018,lon:-3.1904199};
 export const WAVERLEY_BBOX: [number,number,number,number] = [55.9465,-3.205,55.9575,-3.173];
+/** The area one station's OSM scene is cut to: its local frame's origin, the bbox (south,west,north,east) a way must touch, and the
+ *  mapped station building's name, whose footprint is never simplified and whose name is kept. Perth uses the same builder (perth-data.ts). */
+export interface StationArea {origin:LatLon;bbox:[number,number,number,number];stationName:string}
+export const WAVERLEY_AREA:StationArea={origin:WAVERLEY_ORIGIN,bbox:WAVERLEY_BBOX,stationName:'Edinburgh Waverley'};
 type Tags=Record<string,string>;
 export interface WaverleyRawElement {type:'node'|'way'|'relation';id:number;lat?:number;lon?:number;nodes?:number[];geometry?:LatLon[];tags?:Tags;members?:{type:string;ref:number;role:string;geometry?:LatLon[]}[]}
 export interface WaverleySource {url:string;fetchedAt:string;sha256:string;license:string;query:string}
@@ -19,8 +23,8 @@ function segmentHits(a:Pt,b:Pt,box:number[]):boolean {
  let lo=0,hi=1;const dx=b[0]-a[0],dz=b[1]-a[1];
  for(const [p,q] of [[-dx,a[0]-box[0]],[dx,box[2]-a[0]],[-dz,a[1]-box[1]],[dz,box[3]-a[1]]]){if(p===0){if(q<0)return false;continue;}const t=q/p;if(p<0)lo=Math.max(lo,t);else hi=Math.min(hi,t);if(lo>hi)return false;}return true;
 }
-function intersects(p:Pt[],closed:boolean):boolean {
- const sw=project(WAVERLEY_BBOX[0],WAVERLEY_BBOX[1],WAVERLEY_ORIGIN),ne=project(WAVERLEY_BBOX[2],WAVERLEY_BBOX[3],WAVERLEY_ORIGIN),box=[sw[0],ne[1],ne[0],sw[1]];
+function intersects(p:Pt[],closed:boolean,area:StationArea):boolean {
+ const sw=project(area.bbox[0],area.bbox[1],area.origin),ne=project(area.bbox[2],area.bbox[3],area.origin),box=[sw[0],ne[1],ne[0],sw[1]];
  if(p.some(v=>v[0]>=box[0]&&v[0]<=box[2]&&v[1]>=box[1]&&v[1]<=box[3]))return true;
  for(let i=1;i<p.length;i++)if(segmentHits(p[i-1],p[i],box))return true;
  return closed&&(segmentHits(p[p.length-1],p[0],box)||inside([box[0],box[1]],p));
@@ -78,30 +82,30 @@ function simplifyCity(area:WaverleyArea):void {
  for(let i=1;i<rings.length;i++)for(let j=1;j<rings.length;j++)if(i!==j&&inside(rings[i][0],rings[j]))return;
  area.outer=rings[0];area.holes=rings.slice(1);
 }
-export function buildWaverleyScene(raw:{elements:WaverleyRawElement[]},source:WaverleySource):WaverleyScene {
- const scene:WaverleyScene={origin:{...WAVERLEY_ORIGIN},bbox:[...WAVERLEY_BBOX],attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',source,rails:[],platforms:[],roofs:[],buildings:[],warnings:[]};
+export function buildWaverleyScene(raw:{elements:WaverleyRawElement[]},source:WaverleySource,site:StationArea=WAVERLEY_AREA):WaverleyScene {
+ const scene:WaverleyScene={origin:{...site.origin},bbox:[...site.bbox],attribution:'© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright',source,rails:[],platforms:[],roofs:[],buildings:[],warnings:[]};
  const elements=[...new Map(raw.elements.map(e=>[`${e.type}/${e.id}`,e])).values()],nodes=new Map(elements.filter(e=>e.type==='node').map(e=>[e.id,e])),ways=new Map(elements.filter(e=>e.type==='way').map(e=>[e.id,e]));
- const projected=(g:LatLon[]):Pt[]=>g.map(v=>project(v.lat,v.lon,WAVERLEY_ORIGIN)).map(([x,z])=>[round(x),round(z)]);
+ const projected=(g:LatLon[]):Pt[]=>g.map(v=>project(v.lat,v.lon,site.origin)).map(([x,z])=>[round(x),round(z)]);
  const path=(e:WaverleyRawElement):Pt[]|undefined=>{if(e.geometry)return projected(e.geometry);if(!e.nodes)return undefined;const pts=e.nodes.map(id=>nodes.get(id));return pts.every(n=>n?.lat!==undefined&&n.lon!==undefined)?projected(pts.map(n=>({lat:n!.lat!,lon:n!.lon!}))):undefined;};
  const drawnMembers=new Set<number>();
  for(const e of elements.filter(e=>e.type==='relation'&&(e.tags?.building||e.tags?.['building:part']))){
   const tags=e.tags??{},members=e.members??[];if(tags.type!=='multipolygon')continue;
   const collect=(role:string):Pt[][]|undefined=>{const relevant=members.filter(m=>m.type==='way'&&(m.role===role||(role==='outer'&&!m.role))),paths=relevant.map(m=>m.geometry?projected(m.geometry):ways.has(m.ref)?path(ways.get(m.ref)!):undefined);return paths.every(p=>p&&p.length>=2)?assemble(paths as Pt[][]):undefined;};
   const outers=collect('outer'),inners=collect('inner');if(!outers?.length||!inners){scene.warnings.push(`Incomplete building relation/${e.id} omitted`);continue;}
-  let drawn=false;outers.forEach((outer,index)=>{if(!intersects(outer,true))return;const roof=tags.building==='roof'||tags['building:part']==='roof';const area:WaverleyArea={id:`relation/${e.id}${outers.length>1?`/${index}`:''}`,outer,holes:inners.filter(h=>inside(h[0],outer)),tags,kind:tags['building:part']?'part':'building',...heights(tags,roof)};(roof?scene.roofs:scene.buildings).push(area);drawn=true;});
+  let drawn=false;outers.forEach((outer,index)=>{if(!intersects(outer,true,site))return;const roof=tags.building==='roof'||tags['building:part']==='roof';const area:WaverleyArea={id:`relation/${e.id}${outers.length>1?`/${index}`:''}`,outer,holes:inners.filter(h=>inside(h[0],outer)),tags,kind:tags['building:part']?'part':'building',...heights(tags,roof)};(roof?scene.roofs:scene.buildings).push(area);drawn=true;});
   if(drawn)for(const m of members)if(m.type==='way'&&(m.role==='outer'||!m.role))drawnMembers.add(m.ref);
  }
  for(const e of ways.values()){
-  const tags=e.tags??{},p=path(e);if(!p||p.length<2)continue;const closed=equal(p[0],p[p.length-1]);if(!intersects(p,closed))continue;const id=`way/${e.id}`;
+  const tags=e.tags??{},p=path(e);if(!p||p.length<2)continue;const closed=equal(p[0],p[p.length-1]);if(!intersects(p,closed,site))continue;const id=`way/${e.id}`;
   if(tags.railway==='rail')scene.rails.push({id,path:p,tags});else if(tags.railway==='platform'&&tags.train==='yes'&&tags.tram!=='yes'&&closed)scene.platforms.push({id,path:p.slice(0,-1),...(tags.ref?{ref:tags.ref}:{}),tags});
   if((tags.building||tags['building:part'])&&closed&&!drawnMembers.has(e.id)){const roof=tags.building==='roof'||tags['building:part']==='roof';const area:WaverleyArea={id,outer:p.slice(0,-1),holes:[],tags,kind:tags['building:part']?'part':'building',...heights(tags,roof)};(roof?scene.roofs:scene.buildings).push(area);}
  }
  // A parent outline represented by OSM parts must not fill the parts' gaps again.
  const parts=scene.buildings.filter(b=>b.kind==='part');scene.buildings=scene.buildings.filter(b=>b.kind==='part'||!parts.some(p=>p.outer.every(v=>(inside(v,b.outer)||b.outer.some(q=>equal(v,q)))&&!b.holes.some(h=>inside(v,h)))));
- for(const area of scene.buildings)if(area.tags.name!=='Edinburgh Waverley')simplifyCity(area);
+ for(const area of scene.buildings)if(area.tags.name!==site.stationName)simplifyCity(area);
  const keep=new Set(['railway','train','tram','ref','building','building:part','building:levels','building:min_level','height','min_height','roof:shape','roof:height','roof:levels','roof:direction','roof:orientation','layer','tunnel','bridge','service','usage','ele']);
  for(const list of [scene.rails,scene.platforms,scene.roofs,scene.buildings])for(const item of list){
-  const named=scene.platforms.includes(item as WaverleyPlatform)||item.tags.name==='Edinburgh Waverley';
+  const named=scene.platforms.includes(item as WaverleyPlatform)||item.tags.name===site.stationName;
   item.tags=Object.fromEntries(Object.entries(item.tags).filter(([k])=>keep.has(k)||(k==='name'&&named)));
  }
  for(const list of [scene.rails,scene.platforms,scene.roofs,scene.buildings])list.sort((a,b)=>a.id.localeCompare(b.id,'en',{numeric:true}));return scene;

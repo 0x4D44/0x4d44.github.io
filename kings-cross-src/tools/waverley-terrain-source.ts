@@ -42,6 +42,8 @@ export function sampleRaster(g: GeoTiff, e: number, n: number): number | null {
 }
 
 export const SCOTTISH_DTM_BASE = 'https://srsp-open-data.s3.eu-west-2.amazonaws.com/lidar/phase-5/dtm/27700/gridded/';
+/** Phase I (2011-12), 1 m DTM in 10 km tiles: the phase that covers Perth (NO12). Same TIFF layout as Phase V. */
+export const SCOTTISH_DTM_PHASE1_BASE = 'https://srsp-open-data.s3.eu-west-2.amazonaws.com/lidar/phase-1/dtm/27700/gridded/';
 
 async function cachedRange(url: string, first: number, count: number, cache: string): Promise<Uint8Array> {
   const dest = path.join(cache, `${path.basename(new URL(url).pathname)}-${first}-${count}.bin`);
@@ -55,8 +57,8 @@ async function cachedRange(url: string, first: number, count: number, cache: str
 }
 
 /** Supports only the verified Phase V float32, predictor 1, little-endian LZW TIFF layout. */
-export async function openScottishDtm(name: string, cache: string): Promise<{ at(e: number, n: number): Promise<number | null>; url: string; resolution: number }> {
-  const url = SCOTTISH_DTM_BASE + name;
+export async function openScottishDtm(name: string, cache: string, base = SCOTTISH_DTM_BASE): Promise<{ at(e: number, n: number): Promise<number | null>; url: string; resolution: number }> {
+  const url = base + name;
   const bytes = await cachedRange(url, 0, 65536, cache);
   const d = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (d.getUint16(0, true) !== 0x4949 || d.getUint16(2, true) !== 42) throw new Error('expected little-endian TIFF');

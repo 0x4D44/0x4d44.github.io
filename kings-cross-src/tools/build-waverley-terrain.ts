@@ -30,15 +30,34 @@ export interface WaverleyTerrainFile extends TerrainFile {
     sampleCount: number;
     missingSamples: number;
     referenceGroundAod: number;
-    origin: typeof WAVERLEY_TERRAIN_ORIGIN;
+    origin: { lat: number; lon: number };
     railwayWarp: false;
     method: string;
     limitations: string;
   };
 }
 
+/** What differs between the Scottish stations' terrain files (tools/build-perth-terrain.ts gives Perth's). */
+export interface ScottishTerrainSite {
+  origin: { lat: number; lon: number };
+  urls: string[];
+  /** The source dataset as the file's attribution and source lines name it. */
+  dataset: string;
+  resolutionM: number;
+  step: number;
+  /** The day the tiles were read, as the attribution states it. */
+  accessed: string;
+  /** How a node that falls on a nodata pixel is sampled, when the site allows anything but a refusal (appended to the method). */
+  nodata?: string;
+}
+export const WAVERLEY_TERRAIN_SITE: ScottishTerrainSite = {
+  origin: WAVERLEY_TERRAIN_ORIGIN, urls: SOURCE_NAMES.map(name => `https://srsp-open-data.s3.eu-west-2.amazonaws.com/lidar/phase-5/dtm/27700/gridded/${name}`),
+  dataset: 'Phase V 0.5 m DTM', resolutionM: 0.5, step: STEP, accessed: '2026-11-09',
+};
+
 /** Sample physical AOD ground; the origin ground becomes -0.2 m, rails remain the scene's responsibility. */
-export async function buildWaverleyTerrain(sampleAod: (x: number, z: number) => Promise<number | null>, extent = WAVERLEY_TERRAIN_EXTENT): Promise<WaverleyTerrainFile> {
+export async function buildWaverleyTerrain(sampleAod: (x: number, z: number) => Promise<number | null>, extent = WAVERLEY_TERRAIN_EXTENT, site = WAVERLEY_TERRAIN_SITE): Promise<WaverleyTerrainFile> {
+  const STEP = site.step;
   const reference = await sampleAod(0, 0);
   if (reference === null || !Number.isFinite(reference)) throw new Error('missing DTM at reference ground');
   const nx = Math.round((extent.x1 - extent.x0) / STEP) + 1;
@@ -54,21 +73,21 @@ export async function buildWaverleyTerrain(sampleAod: (x: number, z: number) => 
     heights.set(row, j * nx);
   }
   return {
-    attribution: 'Contains Scottish public sector LiDAR data © Scottish Government, made available under the Open Government Licence v3. Scottish Public Sector LiDAR Dataset accessed 2026-11-09 from https://registry.opendata.aws/scottish-lidar/.',
-    source: 'Scottish Government LiDAR Phase V 0.5 m DTM, 16 m nearest-pixel lattice, 0.1 m quantisation. Physical relative terrain; no railway warp. Datum is sampled station-origin ground plus 0.2 m, not a surveyed rail-head level.',
+    attribution: 'Contains Scottish public sector LiDAR data © Scottish Government, made available under the Open Government Licence v3. Scottish Public Sector LiDAR Dataset accessed '+site.accessed+' from https://registry.opendata.aws/scottish-lidar/.',
+    source: `Scottish Government LiDAR ${site.dataset}, ${STEP} m nearest-pixel lattice, 0.1 m quantisation.`+' Physical relative terrain; no railway warp. Datum is sampled station-origin ground plus 0.2 m, not a surveyed rail-head level.',
     groundY: GROUND_Y,
     datumAod: reference - GROUND_Y,
     extent,
     grids: [encodeGrid(heights, { step: STEP, x0: extent.x0, z0: extent.z0, nx, nz, q: 0.1 })],
     provenance: {
-      urls: SOURCE_NAMES.map(name => `https://srsp-open-data.s3.eu-west-2.amazonaws.com/lidar/phase-5/dtm/27700/gridded/${name}`),
+      urls: site.urls,
       licence: 'https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/',
       licenceEvidence: 'https://registry.opendata.aws/scottish-lidar/',
-      crs: 'EPSG:27700', sourceResolutionM: 0.5, outputSpacingM: STEP,
+      crs: 'EPSG:27700', sourceResolutionM: site.resolutionM, outputSpacingM: STEP,
       sampleCount: heights.length, missingSamples: 0, referenceGroundAod: reference,
-      origin: WAVERLEY_TERRAIN_ORIGIN, railwayWarp: false,
-      method: 'Local x east/z south equirectangular frame; WGS84 treated as ETRS89 then OSTN15 to OSGB36/BNG. Each lattice node samples its containing native DTM pixel. Model y=AOD-referenceGroundAod-0.2.',
-      limitations: '16 m point sampling does not resolve track beds, retaining walls, bridge decks or narrow cuttings; 0.1 m quantisation is not source accuracy. Official DTM contains elevated surfaces/interpolation near the station (independently verified with Pillow/libtiff); it is not a rail profile. DTM beneath the station roof is processed/interpolated bare-earth, not independently surveyed rail height. No source vertical RMSE is asserted. Rails drawn at y=0 need a separate consistent scene ground treatment. Outside the extent the existing terrain API returns flat groundY.',
+      origin: site.origin, railwayWarp: false,
+      method: 'Local x east/z south equirectangular frame; WGS84 treated as ETRS89 then OSTN15 to OSGB36/BNG. Each lattice node samples its containing native DTM pixel. Model y=AOD-referenceGroundAod-0.2.'+(site.nodata?` ${site.nodata}`:''),
+      limitations: `${STEP} m point sampling`+' does not resolve track beds, retaining walls, bridge decks or narrow cuttings; 0.1 m quantisation is not source accuracy. Official DTM contains elevated surfaces/interpolation near the station (independently verified with Pillow/libtiff); it is not a rail profile. DTM beneath the station roof is processed/interpolated bare-earth, not independently surveyed rail height. No source vertical RMSE is asserted. Rails drawn at y=0 need a separate consistent scene ground treatment. Outside the extent the existing terrain API returns flat groundY.',
     },
   };
 }
