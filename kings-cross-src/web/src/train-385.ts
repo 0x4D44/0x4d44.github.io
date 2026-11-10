@@ -49,8 +49,8 @@ export const SR385_NOSE: NoseSpec = {
 const SCREEN = { s0: 0.02, s1: 0.22, xIn: HOOD.half + 0.06, xOut: HALF * 0.8 } as const;
 /** The lamp housing at each front corner: inner edge across, foot and head over the rail (ASSUMED from scotrail385-01, -02). */
 const LAMP = { xIn: HALF * 0.64, y0: 1.18, y1: 1.98, head: { y: 1.78, r: 0.085 }, tail: { y: 1.46, r: 0.075 } } as const;
-/** The glow round a lit lens after dark: its radius by role, and how strong it is at full night (ASSUMED, for the dusk views). */
-const HALO = { radius: { head: 0.34, tail: 0.24 }, strength: 0.75 } as const;
+/** The glow round a lit lens after dark: its outer radius as a multiple of the lens radius, and its strength at full night (ASSUMED). */
+const HALO = { scale: 1.8, strength: 0.85 } as const;
 
 /**
  * The 385's body section: carSection's lower body and wall (DOOR_RELIEF 0.02 inside the half-width), with the roof one
@@ -338,12 +338,21 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
     // tucking back at its top, dropped to a low lip across the middle where the coupler's pocket is (scotrail385-02, -05)
     const chinHalf = xAtY(halfBehindFace(0), 0.75) - 0.01, pocketHalf = 0.32, chinBack = TIP + 0.3, reach0 = 0.22;
     const across = (a: number, b: number, n: number): number[] => Array.from({ length: n + 1 }, (_, i) => a + (b - a) * i / n);
-    const xs = [...across(-chinHalf, -pocketHalf, 10), ...across(-pocketHalf, pocketHalf, 6), ...across(pocketHalf, chinHalf, 10)];
-    // columns 11..17 are the lip under the pocket; 10 and 18 stand at the pocket's edges at full height, so the
-    // zero-width steps between them and the lip close the pocket's sides
-    const topOf = (k: number): number => (k >= 11 && k <= 17 ? 0.6 : 1.0);
+    // the outer columns close up toward the pocket, where the top rounds down into it
+    const outer = (i: number): number => pocketHalf + (chinHalf - pocketHalf) * ((10 - i) / 10) ** 1.6;
+    const xs = [...Array.from({ length: 11 }, (_, i) => -outer(i)), ...across(-pocketHalf, pocketHalf, 6), ...Array.from({ length: 11 }, (_, i) => outer(10 - i))];
+    // columns 11..17 are the lip under the pocket; 10 and 18 stand at the pocket's edges, so the zero-width steps
+    // between them and the lip close the pocket's sides. Either side of the pocket the top rounds down into it on a
+    // CHIN_ROUND radius, so head-on the apron reads as one rounded form, not two flat-topped blocks (scotrail385-02).
+    const CHIN_ROUND = 0.18;
+    const topOf = (k: number): number => {
+      if (k >= 11 && k <= 17) return 0.6;
+      const dx = Math.abs(xs[k]!) - pocketHalf;
+      return dx >= CHIN_ROUND ? 1.0 : 1.0 - (CHIN_ROUND - Math.sqrt(CHIN_ROUND ** 2 - (CHIN_ROUND - dx) ** 2));
+    };
     const reachOf = (x: number): number => { const t = Math.max(0, (Math.abs(x) - pocketHalf) / (chinHalf - pocketHalf)); return reach0 * Math.sqrt(Math.max(0, 1 - t ** 4)); };
-    const rowF = [0, 0.3, 0.65, 1], rowG = [0.95, 1.05, 1.0, 0.72];
+    // the face rolls back over its top edge into the top: the last rows step up less and set back more
+    const rowF = [0, 0.3, 0.62, 0.83, 0.95, 1], rowG = [0.95, 1.05, 1.0, 0.9, 0.7, 0.42];
     const P = (k: number, r: number): V3 => { const top = topOf(k); return world([xs[k]!, 0.5 + (top - 0.5) * rowF[r]!, TIP - reachOf(xs[k]!) * rowG[r]!]); };
     const back = (k: number, y: number): V3 => world([xs[k]!, y, chinBack]);
     const inside = world([0, 0.7, chinBack + 0.5]);
@@ -351,7 +360,7 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       // the two steps (10-11, 17-18) are the pocket's side walls: they face into the pocket, away from their own side
       const step = k === 10 || k === 17 ? world([xs[k]! * 3, 0.8, TIP]) : null;
       for (let r = 0; r + 1 < rowF.length; r++) detail.face([P(k, r), P(k + 1, r), P(k + 1, r + 1), P(k, r + 1)], step ?? inside, col(C.body));
-      detail.face([P(k, 3), P(k + 1, 3), back(k + 1, topOf(k + 1)), back(k, topOf(k))], step ?? world([0, 0, chinBack]), col(C.body)); // top
+      detail.face([P(k, rowF.length - 1), P(k + 1, rowF.length - 1), back(k + 1, topOf(k + 1)), back(k, topOf(k))], step ?? world([0, 0, chinBack]), col(C.body)); // top
       detail.face([P(k, 0), P(k + 1, 0), back(k + 1, 0.5), back(k, 0.5)], world([0, 2, chinBack]), col(C.body)); // underside
     }
     box(-pocketHalf, pocketHalf, 0.6, 1.0, TIP + 0.02, chinBack, C.frame); // the pocket's back
@@ -431,23 +440,24 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
 
 let haloMaterial: THREE.MeshBasicMaterial | null = null;
 /**
- * The soft glow round a lens: a disc in the lens's lit colour fading to black at its rim, drawn additively, so black adds
- * nothing. Its strength follows trainNight (0 by day, so it does not show; up to HALO.strength after dark).
+ * The soft glow round a lens: a ring from the lens's rim out to HALO.scale times its radius, in the lens's lit colour
+ * fading smoothly to black, drawn additively, so black adds nothing. It leaves the lens itself alone (adding over a red
+ * lens washes it pink) and stays inside the housing. Its strength follows trainNight (0 by day, so it does not show).
  */
 function lampHalo(role: 'head' | 'tail', centres: V3[], lit: boolean): THREE.Mesh {
   const pos: number[] = [], rgb: number[] = [];
-  const c = col(role === 'head' ? LENS.headOn : LENS.tailOn), r = HALO.radius[role], n = 32;
-  // rings out from the centre with the strength falling off roughly as a gaussian, so the rim is black and no edge shows
-  const rings: [number, number][] = [[0, 1], [0.2, 0.8], [0.42, 0.42], [0.66, 0.14], [1, 0]];
+  const c = col(role === 'head' ? LENS.headOn : LENS.tailOn), r0 = LAMP[role].r, r1 = r0 * HALO.scale, n = 32;
+  // ring k at fraction t of the way from the lens rim to the halo's edge, at strength 1 - smoothstep(t): full at the rim, black at the edge
+  const steps = 6, ringAt = (k: number): [number, number] => { const t = k / steps; return [r0 + (r1 - r0) * t, (1 - t) ** 2 * (1 + 2 * t)]; };
   for (const [x, y, z] of centres) {
     const p = (k: number, i: number): [number, number, number] => {
-      const a = (i / n) * Math.PI * 2, rr = r * rings[k]![0];
+      const a = (i / n) * Math.PI * 2, rr = ringAt(k)[0];
       return [x + rr * Math.cos(a), y + rr * Math.sin(a), z];
     };
-    const w = (k: number): number[] => { const g = rings[k]![1]; return [c.r * g, c.g * g, c.b * g]; };
-    for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
+    const w = (k: number): number[] => { const g = ringAt(k)[1]; return [c.r * g, c.g * g, c.b * g]; };
+    for (let k = 0; k < steps; k++) for (let i = 0; i < n; i++) {
       pos.push(...p(k, i), ...p(k + 1, i), ...p(k + 1, i + 1)); rgb.push(...w(k), ...w(k + 1), ...w(k + 1));
-      if (k > 0) { pos.push(...p(k, i), ...p(k + 1, i + 1), ...p(k, i + 1)); rgb.push(...w(k), ...w(k + 1), ...w(k)); }
+      pos.push(...p(k, i), ...p(k + 1, i + 1), ...p(k, i + 1)); rgb.push(...w(k), ...w(k + 1), ...w(k));
     }
   }
   const geometry = new THREE.BufferGeometry();

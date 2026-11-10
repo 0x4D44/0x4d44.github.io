@@ -25,6 +25,26 @@ const shows = (train: THREE.Object3D, index: number): string[] => {
 const halos = (train: THREE.Object3D, index: number): string[] =>
   cab(train, index).mesh.children.filter(c => c.name === 'lamp-halo' && c.visible).map(c => c.userData.role as string);
 
+test('a 385 halo is a ring round its lens: clear of the lens (no wash over it), out to at most twice its radius, inside the housing', () => {
+  const train = build385('sr385x3');
+  for (const index of [0, 2]) {
+    const car = train.getObjectByName(`car-${index}`)!, { mesh } = cab(train, index);
+    const lenses: { role: string; c: THREE.Vector3 }[] = [];
+    car.traverse(o => { if (o.name === 'headlight' || o.name === 'tail-lamp') lenses.push({ role: o.name === 'headlight' ? 'head' : 'tail', c: o.position }); });
+    const radius = { head: 0.085, tail: 0.075 } as Record<string, number>; // LAMP.head.r, LAMP.tail.r
+    for (const halo of mesh.children.filter(c => c.name === 'lamp-halo')) {
+      const pos = (halo as THREE.Mesh).geometry.getAttribute('position'), role = halo.userData.role as string;
+      for (let i = 0; i < pos.count; i++) {
+        const [x, y] = [pos.getX(i), pos.getY(i)];
+        const d = Math.min(...lenses.filter(l => l.role === role).map(l => Math.hypot(x - l.c.x, y - l.c.y)));
+        assert.ok(d >= radius[role]! - 1e-6 && d <= 2 * radius[role]! + 1e-6, `car ${index} ${role} halo vertex ${d.toFixed(3)} m from its lens`);
+        assert.ok(y >= 1.18 && y <= 1.98, `car ${index} ${role} halo inside the housing's height: ${y.toFixed(3)}`); // LAMP.y0..y1
+      }
+    }
+  }
+  dispose385(train);
+});
+
 test('a 385 is built in service (white ahead, red behind) and setTrainLampState switches both ends', () => {
   const train = build385('sr385x3');
   assert.deepEqual([cab(train, 0).lamps.end, cab(train, 2).lamps.end, cab(train, 0).lamps.lenses.length], ['front', 'rear', 4]);
