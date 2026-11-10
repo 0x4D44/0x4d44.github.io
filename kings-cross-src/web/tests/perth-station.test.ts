@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY } from '../src/perth-station.ts';
+import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY } from '../src/perth-station.ts';
 import { archRib, boardedSide, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
@@ -133,7 +133,7 @@ test('round 3: the column girders\' spandrels are pierced lattice (R-pt1-c): cro
     const xs: number[] = [], ys: number[] = [], zs: number[] = [];
     for (let k = i; k < i + V; k += 3) { xs.push(p[k]); ys.push(p[k + 1]); zs.push(p[k + 2]); }
     const ext = [xs, ys, zs].map(a => Math.max(...a) - Math.min(...a));
-    if (ext.every(e => Math.abs(e - .12) < 1e-6)) bosses.push((Math.max(...xs) + Math.min(...xs)) / 2);
+    if (ext.every(e => Math.abs(e - PERTH_SPANDREL.boss) < 1e-6)) bosses.push((Math.max(...xs) + Math.min(...xs)) / 2);
   }
   for (let k = 1; k < p.length; k += 3) assert.ok(p[k] >= y0 - .15 && p[k] <= top + .05, `a spandrel member at y ${p[k]} outside the rib-to-girder band`);
   assert.ok(bosses.filter(x => x < L / 3).length >= 2 && bosses.filter(x => x > 2 * L / 3).length >= 2, `bosses by both springings (${bosses.map(x => x.toFixed(2))})`);
@@ -244,6 +244,18 @@ test('round 3: the frozen platform views see furniture: benches in the near view
   assert.ok(away >= 20, `${away} benches down the column lines`);
 });
 
+test('round 4: the bands are brown-grey, not black, and the Dundee canopies are weathered grey from above too', () => {
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const m = (scene.group.getObjectByName('perth-roof-strips') as THREE.Mesh).material as THREE.MeshLambertMaterial, c = m.color;
+    assert.equal(c.getHex(), PERTH_BAND_BROWN);
+    assert.ok(c.r + c.g + c.b > .25 && c.r > c.b, `bands brown-grey (${c.getHexString()}), not near-black`);
+  } finally { scene.dispose(); }
+  const w = batches.weather.positions; let over = 0;
+  for (let i = 0; i < w.length; i += 3) if (inRing(toLocal([w[i], w[i + 2]]), plan.local.canopy) && w[i + 1] < PERTH_STATION.canopy.top + PERTH_STATION.canopy.rise + .1) over++;
+  assert.ok(over > 50, `the weathered skin over the Dundee canopies (${over} vertices)`);
+});
+
 test('round 4: every lift tower has a glass hood over its deck-level door (Abbott 6573357), drawn see-through', () => {
   const [out, , over] = PERTH_STATION.tower.hood, towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, y: br.deck + over})));
   assert.equal(towers.length, 3, 'three lift towers');
@@ -299,7 +311,12 @@ test('round 2b: the roof reads dark from above only, the island building\'s chim
   assert.ok(w.positions.length >= batches.glass.positions.length / 2, 'the weathered face covers the station glazing');
   // Round 3: its normals are all straight up (one flat grey from above), so facing is read from each triangle's winding, which is what
   // the renderer culls by: counter-clockwise seen from above.
-  for (let i = 0; i < n.length; i += 3) assert.deepEqual([n[i], n[i + 1], n[i + 2]], [0, 1, 0], 'the weathered face is lit as one flat sheet');
+  // Round 4: the glazing's own normals, so the slopes shade apart (the ridge-and-furrow reads from above), each still facing up.
+  const tilts = new Map<number, number>();
+  // Counted over the main roof alone, so the canopies' skin cannot stand in for it.
+  for (let i = 0; i < n.length; i += 3) { assert.ok(n[i + 1] > 0, 'the weathered face faces up'); if (inRing(toLocal([w.positions[i], w.positions[i + 2]]), plan.local.main)) { const k = Math.round(n[i] * 100) * 1000 + Math.round(n[i + 2] * 100); tilts.set(k, (tilts.get(k) ?? 0) + 1); } }
+  const slopes = [...tilts.values()].filter(c => c >= 100).length;
+  assert.ok(slopes >= 2, `the main roof's skin shades by slope (${slopes} slopes of 100 vertices or more)`);
   const p = w.positions, ix = w.indices;
   for (let t = 0; t < ix.length; t += 3) {
     const [a, b, c] = [ix[t], ix[t + 1], ix[t + 2]].map(k => [p[3 * k], p[3 * k + 1], p[3 * k + 2]]);

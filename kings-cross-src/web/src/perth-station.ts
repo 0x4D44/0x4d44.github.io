@@ -23,6 +23,8 @@ export const PERTH_LEVELS = {...WAVERLEY_LEVELS, deckTop: -.3, deckDepth: 1.2, d
 /** The rails on a mapped bridge, which stand on a deck rather than pull the ground up (bridge=yes, or any bridge tag but "no"). */
 export const onBridge = (tags: Record<string, string>): boolean => !!tags.bridge && tags.bridge !== 'no';
 /** The surface track segments, split into those on the ground and those on a mapped bridge. */
+/** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below). ASSUMED shade. */
+export const PERTH_BAND_BROWN = 0x5e544b;
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
 export const PERTH_OPEN_ASPHALT = 0x6e4c45;
 /** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and
@@ -141,7 +143,7 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   glass.append(s.glass);
   if (plan.canopy.length >= 3) walls(fascia, plan.canopy, [], () => PERTH_STATION.canopy.top - PERTH_STATION.canopy.valance, () => PERTH_STATION.canopy.top);
   if (!build || !group) return;
-  const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(0x34312d); strips.side = THREE.DoubleSide;
+  const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(PERTH_BAND_BROWN); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
   // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.

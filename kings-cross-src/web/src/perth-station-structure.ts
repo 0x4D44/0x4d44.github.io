@@ -768,8 +768,8 @@ export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; 
  *  half ellipse to `apex`, with a vertical bar every `strut` m from the rib up to top(s) (s: metres from a) wherever that gap is 0.1 m or
  *  more. Only the pieces `keep` accepts are drawn. */
 /** The column girders' spandrels (archedIronwork): pierced lattice in half-metre cells, R-pt1-c. */
-export const PERTH_SPANDREL = {strut: .5, size: .08, lattice: true} as const;
-export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; lattice?: boolean} = {}): void {
+export const PERTH_SPANDREL = {strut: .5, size: .08, lattice: true, bar: .08, boss: .22} as const;
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; lattice?: boolean; bar?: number; boss?: number} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
@@ -788,9 +788,11 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
     for (let s = 0; s + strut <= L + 1e-9; s += strut) {
       const s1 = s + strut, p0 = at(s), p1 = at(s1), pm = at((s + s1) / 2);
       if (Math.min(top(s) - y(s), top(s1) - y(s1)) < .25 || !keep(pm, y((s + s1) / 2))) continue;
-      beam(b, [p0[0], y(s), p0[1]], [p1[0], top(s1), p1[1]], .04, .04, color);
-      beam(b, [p0[0], top(s), p0[1]], [p1[0], y(s1), p1[1]], .04, .04, color);
-      b.box([pm[0], (y(s) + top(s1) + top(s) + y(s1)) / 4, pm[1]], [.12, .12, .12], {color});
+      // Round 4: bars and bosses heavy enough to read from the frozen views (round 3's 4 cm bars and 12 cm bosses did not).
+      const bar = opts.bar ?? .04, boss = opts.boss ?? .12;
+      beam(b, [p0[0], y(s), p0[1]], [p1[0], top(s1), p1[1]], bar, bar, color);
+      beam(b, [p0[0], top(s), p0[1]], [p1[0], y(s1), p1[1]], bar, bar, color);
+      b.box([pm[0], (y(s) + top(s1) + top(s) + y(s1)) / 4, pm[1]], [boss, boss, boss], {color});
     }
     return;
   }
@@ -966,8 +968,9 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   // The coper and its nosing in buff (Abbott 6573357, R-pt1-b: a buff coping over red brick faces), not Waverley's pale grey.
   const coper: [Rgb, Rgb] = [rgb(WAVERLEY_EDGE_BANDS[0].color), P('coper')];
   recolor(structure.fittings, swap); recolor(structure.edges, [...swap, coper]); recolor(structure.lip, [...swap, coper]);
-  // Its normals all straight up (round 3): lit as one flat sheet, the ridge-and-furrow's sunward and shaded slopes no longer stripe it.
-  for (let i = 1; i < weather.positions.length; i += 3) { weather.positions[i] += .04; weather.normals[i - 1] = 0; weather.normals[i] = 1; weather.normals[i + 1] = 0; }
+  // Round 4: the glazing's own normals again, so the grey skin shades slope by slope and the ridge-and-furrow reads from above (round
+  // 3's straight-up normals made it one flat slab; its stripes had come from the panes showing through, which the offset now stops).
+  for (let i = 1; i < weather.positions.length; i += 3) weather.positions[i] += PERTH_SKIN_LIFT;
   // The Dundee canopies (Champion 2011, geograph 2687800): a shallow ridge-and-furrow from canopy.top, its ridges across the platforms so
   // its gables face the tracks, cut round the stairs that pass through them, on a column row down each platform, with curved brackets
   // and a white diamond-lattice valance. Over platform 1 a boarded soffit under the glazing, on grey-blue columns; platform 2's cream.
@@ -975,6 +978,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     const C = S.canopy, cuts = plan.clear.map(([x0, x1, z0, z1]): Pt[] => [[x0 - .3, z0 - .3], [x1 + .3, z0 - .3], [x1 + .3, z1 + .3], [x0 - .3, z1 + .3]]);
     const shaped2 = ridgeRoofBatches(L.canopy, [], {gutter: C.top, rise: C.rise, pitch: C.pitch, phase: 0}, {gutter: .5, ridge: .25}, cuts);
     glass.append(shaped2.glass); strips.append(shaped2.solid);
+    // Round 4: the canopies get the weathered skin too (Champion 2011 shows grey sheeting from above, not bare glass).
+    const skin = new Batch(); skin.append(shaped2.glass); for (let i = 1; i < skin.positions.length; i += 3) skin.positions[i] += PERTH_SKIN_LIFT; weather.append(skin);
     const pf1 = L.platforms.filter(q => q.ref === PERTH_BOARDED_PLATFORM).map(q => q.pts), overPf1 = (p: Pt): boolean => pf1.some(r => inRing(p, r));
     // The soffit: the glazing again, C.soffit under it, facing down, in pale boards, clipped to platform 1's canopy (boardedSide): each
     // glazing strip runs right across both platforms, so its triangles are cut, the height kept on each triangle's own plane.
@@ -1053,6 +1058,8 @@ function takeColor(b: Batch, color: Rgb): Batch {
   return out;
 }
 
+/** How far the weathered skin stands over the glazing it covers (m); the polygon offset does the rest at range. */
+export const PERTH_SKIN_LIFT = .04;
 /** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
 export const PERTH_BAND_DROP = .06;
 /** Platform 1's side of the Dundee canopies (track frame). The Dundee platforms curve across the frame, so the line between them is a
