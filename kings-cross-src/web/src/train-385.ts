@@ -252,10 +252,10 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
     // the lamp housings: a dark recess at each front corner, angled round onto the cab side, the headlight over the tail lamp (scotrail385-01, -02)
     const faceHalf = xAtY(halfBehindFace(0), (LAMP.y0 + LAMP.y1) / 2);
     for (const sx of [-1, 1]) {
-      const a = sx * LAMP.xIn, b = sx * (faceHalf + 0.004);
-      box(Math.min(a, b), Math.max(a, b), LAMP.y0, LAMP.y1, TIP - 0.014, TIP + 0.02, C.frame);
+      // proud of the corner by a few centimetres, so its outer face turns the housing round onto the side without a ragged edge
+      const a = sx * LAMP.xIn, b = sx * (faceHalf + 0.035);
+      box(Math.min(a, b), Math.max(a, b), LAMP.y0, LAMP.y1, TIP - 0.014, TIP + 0.08, C.frame);
     }
-    skin(TIP + 0.005, TIP + 0.5, LAMP.y0, LAMP.y1, 0.008, C.frame);
     const lx = (LAMP.xIn + faceHalf) / 2;
     for (const sx of [-1, 1]) {
       const x = sx * lx;
