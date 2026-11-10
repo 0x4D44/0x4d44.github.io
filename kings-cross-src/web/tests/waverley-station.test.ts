@@ -47,13 +47,21 @@ test('W1 furniture keeps out of the train envelope and stays on its platform',()
 
 test('W1 ironwork: under the glazing, above every train, and no chord coplanar with another',()=>{
  const {ironwork}=waverleyStructureBatches(plan),S=WAVERLEY_STRUCTURE,holes=plan.holes;
- // The valance round the hole and the clad gables round the outline and along the bridges' flanks are the only screens above the girders.
- const nearHole=(p:Pt):boolean=>[...holes,plan.outline,...plan.cutouts as Pt[][]].some(h=>onRing(p,h));
+ // Above the girders there are only the valance on the hole's edge and the gable cladding on the outline or on a bridge's flank inside it,
+ // exactly on those lines.
+ const onScreenLine=(p:Pt):boolean=>holes.some(h=>onRing(p,h,1e-6))||onRing(p,plan.outline,1e-6)||plan.cutouts.some(c=>onRing(p,c as Pt[],1e-6)&&inRing(p,plan.outline));
+ // Every edge of every face stays under the glass along its whole length, not only at its ends: sampled every 0.5 m and at each fold it crosses.
+ const P=WAVERLEY_ROOF_PROFILE,half=P.pitch/2,pos=ironwork.positions,idx=ironwork.indices;let sampled=0;
+ for(let i=0;i<idx.length;i+=3)for(let k=0;k<3;k++){
+  const a=idx[i+k]*3,b=idx[i+(k+1)%3]*3,ax=pos[a],bx=pos[b],len=Math.hypot(bx-ax,pos[b+2]-pos[a+2]),ts=[...Array(Math.ceil(len/.5)+1).keys()].map(j=>Math.min(1,j*.5/(len||1)));
+  if(Math.abs(bx-ax)>1e-9)for(let f=Math.ceil((Math.min(ax,bx)-P.phase)/half);P.phase+f*half<=Math.max(ax,bx);f++)ts.push((P.phase+f*half-ax)/(bx-ax));
+  for(const t of ts){const x=ax+(bx-ax)*t,y=pos[a+1]+(pos[b+1]-pos[a+1])*t;sampled++;assert.ok(y<=roofHeight(x)+1e-6,`an ironwork edge at x ${x.toFixed(2)} is ${(y-roofHeight(x)).toFixed(3)} m through the glazing`);}
+ }
+ assert.ok(sampled>idx.length);
  let over=0;
  for(let i=0;i<ironwork.positions.length;i+=3){
   const x=ironwork.positions[i],y=ironwork.positions[i+1],z=ironwork.positions[i+2],p:Pt=[x,z];
-  assert.ok(y<=roofHeight(x)+1e-6,`ironwork at ${p} y ${y} is above the glazing`);
-  if(y>S.gutterGirderTop+1e-6)assert.ok(nearHole(p),'only the valance and the gable cladding rise above the girders, on the hole, outline or bridge edges');
+  if(y>S.gutterGirderTop+1e-6)assert.ok(onScreenLine(p),`ironwork at ${p} rises above the girders off the hole, outline and bridge lines`);
   if(trackDist(p)<ENVELOPE_HALF){over++;assert.ok(y>=ENVELOPE_TOP,`ironwork over a track at ${p} is ${y.toFixed(2)} m up`);}
  }
  assert.ok(over>1000,'girders do span the tracks');

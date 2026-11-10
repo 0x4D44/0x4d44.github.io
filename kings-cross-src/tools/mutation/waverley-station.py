@@ -61,6 +61,7 @@ MUTATIONS = [
     ('the roof runs on under the bridges', STATION, 'ridgeRoofBatches(stationRoof!.outer,r.holes,undefined,undefined,WAVERLEY_ROOF_CUTOUTS)', 'ridgeRoofBatches(stationRoof!.outer,r.holes)'),
     ('a cut-out keeps the piece inside it', ROOF, 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);', 'if(outside.length>=3&&Math.abs(area2(outside))>1e-9)pieces.push(outside);if(i===c.length-1&&rest.length>=3)pieces.push(clipSide(rest,a,b,1));'),
     ('the valance runs on under North Bridge', STRUCT, 'S.valanceBottom,S.valancePiece,C.valance,underDeck);', 'S.valanceBottom,S.valancePiece,C.valance,()=>false);'),
+    ('a screen panel spans a furrow in one straight top', STRUCT, 'if(t>t0+1e-9&&t<t1-1e-9)ts.push(t);', ''),
     ('the gable cladding runs on under the bridges', STRUCT, 'S.fasciaBottom,S.valancePiece,C.fascia,underDeck);', 'S.fasciaBottom,S.valancePiece,C.fascia,()=>false);'),
     # round 2: the roof's west extension and the glazing
     ('the roof stops at OSM short of Waverley Bridge', STATION, 'return [...ring.slice(0,i+1),c2,face,...ring.slice(i+1)];', 'return ring;'),

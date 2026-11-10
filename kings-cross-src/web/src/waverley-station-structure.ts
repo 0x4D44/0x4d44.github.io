@@ -277,13 +277,22 @@ function edgeStrip(b:Batch,tactile:Batch,chain:StripChain):void{
   tactile.poly([at(k,warning.from),at(k+1,warning.from),at(k+1,warning.to),at(k,warning.to)],[[s0,0],[s1,0],[s1,warning.to-warning.from],[s0,warning.to-warning.from]],{normal:[0,1,0],facing:[0,1,0]});
  }
 }
-/** Vertical pieces of `piece` metres along a-b from `bottom` up to the glazing, both faces (gable cladding, the valance). */
+/** Vertical pieces of `piece` metres along a-b from `bottom` up to the glazing, both faces (gable cladding, the valance). Each piece is cut
+ *  again at every fold (furrow or ridge) it crosses, so its straight top follows the roof's profile and never rises through a furrow. */
 function roofScreen(b:Batch,a:Pt,c:Pt,bottom:number,piece:number,color:Rgb,skip:(p:Pt)=>boolean):void{
  const len=Math.hypot(c[0]-a[0],c[1]-a[1]),n=Math.max(1,Math.ceil(len/piece)),p=(t:number):Pt=>[a[0]+(c[0]-a[0])*t,a[1]+(c[1]-a[1])*t];
+ const P=WAVERLEY_ROOF_PROFILE,half=P.pitch/2;
  for(let k=0;k<n;k++){
-  const p0=p(k/n),p1=p((k+1)/n);if([p0,p1,p((k+.5)/n)].some(skip))continue;
-  const quad:V3[]=[[p0[0],bottom,p0[1]],[p1[0],bottom,p1[1]],[p1[0],roofHeight(p1[0]),p1[1]],[p0[0],roofHeight(p0[0]),p0[1]]];
-  b.poly(quad,undefined,{color});b.poly([...quad].reverse(),undefined,{color});
+  const t0=k/n,t1=(k+1)/n,p0=p(t0),p1=p(t1);if([p0,p1,p((k+.5)/n)].some(skip))continue;
+  const ts=[t0];
+  if(Math.abs(p1[0]-p0[0])>1e-9)for(let f=Math.ceil((Math.min(p0[0],p1[0])-P.phase)/half);P.phase+f*half<Math.max(p0[0],p1[0]);f++){
+   const t=t0+(t1-t0)*(P.phase+f*half-p0[0])/(p1[0]-p0[0]);if(t>t0+1e-9&&t<t1-1e-9)ts.push(t);
+  }
+  ts.sort((u,v)=>u-v);ts.push(t1);
+  for(let i=0;i+1<ts.length;i++){
+   const q0=p(ts[i]),q1=p(ts[i+1]),quad:V3[]=[[q0[0],bottom,q0[1]],[q1[0],bottom,q1[1]],[q1[0],roofHeight(q1[0]),q1[1]],[q0[0],roofHeight(q0[0]),q0[1]]];
+   b.poly(quad,undefined,{color});b.poly([...quad].reverse(),undefined,{color});
+  }
  }
 }
 export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStructureBatches{
