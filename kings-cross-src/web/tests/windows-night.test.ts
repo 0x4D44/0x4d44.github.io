@@ -461,13 +461,13 @@ test('litWalls: a plain wall\'s windows are lit from its map\'s UVs and its buil
   assert.ok(!plain.fragmentShader.includes('winHash'), 'no trace of the windows');
 });
 
-test('litWalls, run: the wall\'s windows are in cells of 3 by 3.3 m, a building\'s own number from its colour, lit only on a side wall and only at night', () => {
-  const m = new THREE.MeshLambertMaterial({ vertexColors: true });
-  litWalls(m, [1.2, 0.6]);
+/** A wall material's lit-window snippet, run: the shader's lines for `WALL_WIN`, its defines the material's (USE_MAP and USE_COLOR are what the real material would add), as a function of the pixel. */
+function wallRunner(m: THREE.MeshLambertMaterial): (over: { night?: number; colour?: number; map?: [number, number]; normal?: number[]; span?: number }) => number[] {
   const f = compile(m).fragmentShader;
   const start = f.indexOf('#if defined( WALL_WIN )');
-  const snippet = f.slice(start, f.indexOf('#endif', f.indexOf('#endif', start) + 1) + '#endif'.length);
-  // a preprocessor for the lines of the snippet: its defines are the material's, and USE_MAP and USE_COLOR are what the real material would add
+  assert.ok(start > 0, 'the walls\' windows are in the shader');
+  const snippet = f.slice(start, f.indexOf('#endif', f.indexOf('winTile( wv', start)) + '#endif'.length); // to the endif that closes the block: the first after its call
+  // a preprocessor for the lines of the snippet
   const defines = { ...(m.defines as Record<string, string>), USE_MAP: '', USE_COLOR: '' };
   const keep: boolean[] = [true];
   const body: string[] = [];
@@ -483,11 +483,17 @@ test('litWalls, run: the wall\'s windows are in cells of 3 by 3.3 m, a building\
   for (const [k, v] of Object.entries(defines)) if (v !== '') text = text.replace(new RegExp(`\\b${k}\\b`, 'g'), v);
   text = text.replace('viewMatrix[ 1 ].xyz', 'uUp').replace('fwidth( wv )', 'uSpan');
   assert.ok(!text.includes('#'), `a snippet with no preprocessor left: ${text}`);
-  const run = (over: { night?: number; colour?: number; map?: [number, number]; normal?: number[]; span?: number }): number[] => {
+  return (over) => {
     const vars: Record<string, Value> = { uWinNight: over.night ?? 1, vColor: [over.colour ?? 0.55, 0.5, 0.5], vMapUv: over.map ?? [0.5, 0.5], normal: over.normal ?? [1, 0, 0], uUp: [0, 1, 0], uSpan: [over.span ?? 0.001, over.span ?? 0.001], totalEmissiveRadiance: [0, 0, 0] };
     glsl.run(text, { vars });
     return vars.totalEmissiveRadiance as number[];
   };
+}
+
+test('litWalls, run: the wall\'s windows are in cells of 3 by 3.3 m, a building\'s own number from its colour, lit only on a side wall and only at night', () => {
+  const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+  litWalls(m, [1.2, 0.6]);
+  const run = wallRunner(m);
   // the cell is metres over 3 x 3.3: the stone tile is 1.2 x 0.6, so a cell is 2.5 x 5.5 tiles
   const cellAt = (cx: number, cy: number): number[] => run({ map: [(cx + 0.5) * WALL_CELL[0] / 1.2, (cy + 0.5) * WALL_CELL[1] / 0.6] });
   let lit = 0;
@@ -521,4 +527,50 @@ test('litWalls, run: the wall\'s windows are in cells of 3 by 3.3 m, a building\
   const farRun = (c: number, r: number): number[] => run({ map: [(c + 0.5) * 2.5, (r + 0.5) * 5.5], span: 0.9 });
   assert.deepEqual(farRun(1, 1), farRun(6, 8), 'the same glow for every window of a distant block');
   assert.ok(level(farRun(1, 1)) > 0, 'and it is a glow');
+});
+
+test('litWalls with a grid of its own (the Balmoral\'s, round seven): the cell, where the grid starts, the rows that have windows, the glass and the mode are the grid\'s; the rest of the wall is dark, and the undo puts every define back', () => {
+  const GRID = { cell: [4.2, 3.65], shift: [0, -7.5], rows: [0, 4], rect: [0.32, 0.68, 0.17, 0.77], mode: [0.33, 0, 0.12, 0.1] } as const;
+  const m = new THREE.MeshLambertMaterial();
+  m.defines = { KEEP: '1' };
+  const undo = litWalls(m, [4.2, 43.5], GRID);
+  assert.deepEqual(Object.keys(m.defines as object).sort(), ['KEEP', 'WALL_ROWS', 'WALL_SHIFT', 'WALL_TILE', 'WALL_WIN', 'WIN_GAIN', 'WIN_MODE', 'WIN_RECT']);
+  assert.deepEqual(numbers(defineOf(m, 'WALL_TILE')), [1, 43.5 / 3.65], 'a bay to a map unit along, the map\'s 43.5 m in cells of 3.65 up');
+  assert.deepEqual(numbers(defineOf(m, 'WALL_SHIFT')), [0, -7.5]);
+  assert.deepEqual(numbers(defineOf(m, 'WALL_ROWS')), [0, 4]);
+  assert.deepEqual(numbers(defineOf(m, 'WIN_RECT')), [...GRID.rect]);
+  assert.deepEqual(numbers(defineOf(m, 'WIN_MODE')), [...GRID.mode]);
+  const run = wallRunner(m);
+  // the centre of cell (c, r): its UV is the cell's, less the shift, over the cells to a map unit
+  const scale = 43.5 / 3.65;
+  const at = (c: number, r: number, over: { night?: number; span?: number } = {}): number[] => run({ map: [c + 0.5, (r + 0.5 + 7.5) / scale], ...over });
+  const seed = (Math.floor(0.55 * 100 + 0.5) * 0.6180339) % 1;
+  let lit = 0;
+  for (let r = -3; r < 8; r++) {
+    let row = 0;
+    for (let c = 0; c < 40; c++) {
+      const v = at(c, r);
+      if (level(v) > 0.01) row++;
+      if (r >= 0 && r < 4) {
+        const want = tile([c, r], { seed, rect: [...GRID.rect], mode: [...GRID.mode] }).map((x) => x * 0.8);
+        v.forEach((x, i) => close(x, want[i] as number, 1e-6, `cell ${c},${r}: lit by winTile, with the grid's glass and mode`));
+      }
+    }
+    if (r >= 0 && r < 4) lit += row;
+    else assert.equal(row, 0, `no window is lit in row ${r}, outside the rows`);
+  }
+  assert.ok(lit > 15 && lit < 120, `a third of the four storeys' windows, more or less (some floors dark): ${lit} of 160`);
+  // the rows are the grid's: the cell just under the first row and the one just over the last are dark however they would have been lit
+  assert.equal(level(at(5, -1)), 0);
+  assert.equal(level(at(5, 4)), 0);
+  assert.deepEqual(at(5, 1, { night: 0 }), [0, 0, 0], 'dark by day');
+  // from far, the rows have the building's mean glow and what is outside them none
+  const far = (r: number): number[] => at(5, r, { span: 0.9 });
+  assert.ok(level(far(0)) > 0 && level(far(3)) > 0, 'a glow over the windows');
+  assert.deepEqual(far(0), far(2), 'the same in every row of them');
+  assert.equal(level(far(-1)), 0);
+  assert.equal(level(far(4)), 0);
+  // the undo puts the material back as it was
+  undo();
+  assert.deepEqual(m.defines, { KEEP: '1' });
 });

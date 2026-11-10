@@ -65,10 +65,24 @@ export function addWaverleyLights(group: THREE.Group): void {
 }
 
 /**
+ * The Balmoral's windows (waverley-frontage-balmoral.ts `balmoralFacadeTexture`): the facade's map is a bay (4.2 m) to a unit along the wall and 43.5 m up it, from 18 m under the street to the main
+ * cornice 25.5 m over it, with one window to a bay in each storey: the arched ground floor, a mezzanine, the first-floor band at 8.2 to 8.6 m, then windows with their sills at 9.2, 13.0, 16.7 and
+ * 20.3 m over the street, 2.6, 2.4, 2.2 and 2.0 m tall and 1.5 to 1.35 m wide, and the plain storeys of the station side under the street. The grid is those four storeys, in cells 3.65 m tall that begin
+ * at 8.7 m over the street (`shift`: 26.7 m from the map's foot, in cells), so each window is wholly in a cell of its own, the glass a rectangle (`rect`) every one of the four lies within 0.2 m of; the
+ * ground floor, the mezzanine, the station side and the frieze are not lit (`rows`: the cells 0 to 3). A third of the windows are lit (night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's windows,
+ * about a third of them warm), by floors with 12 in a hundred dark and a tenth of them cool white. ASSUMED: the share, the dark floors and the cool tenth, and the grid, which holds the texture's rows as
+ * they are (tests/station-weather.test.ts holds the levels to waverley-frontage-balmoral.ts's own). The grid counts the metres of the facade's cell by the texture's, not by the wall's length.
+ */
+export const BALMORAL_WINDOWS = {
+  tile: [4.2, 43.5],
+  grid: { cell: [4.2, 3.65], shift: [0, -26.7 / 3.65], rows: [0, 4], rect: [0.32, 0.68, 0.17, 0.77], mode: [0.33, 0, 0.12, 0.1] },
+} as const;
+
+/**
  * Round seven (night lighting): what the Scottish scene lights after dark, done here, by mesh name, and not in waverley-city.ts and waverley-frontage.ts, which own the meshes. The city blocks' windows
- * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's body and tower floodlit from their feet and its clock dials glowing
- * (lighting.ts `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm). By day nothing
- * changes. The function returned puts every material back as it was.
+ * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's windows (`BALMORAL_WINDOWS`), its body and tower floodlit from their feet and its
+ * clock dials glowing (lighting.ts `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm, the tower's
+ * shaft dark). By day nothing changes. The function returned puts every material back as it was, the last patch first.
  */
 export function lightWaverleyNight(scene: THREE.Object3D): () => void {
   const undo: (() => void)[] = [];
@@ -86,13 +100,18 @@ export function lightWaverleyNight(scene: THREE.Object3D): () => void {
   };
   const walls = material('waverley-building-walls');
   if (walls) undo.push(litWalls(walls, [1.2, 0.6])); // the sandstone's tile (materials.ts TEXTURES.stone)
-  // the hotel's stone, the body and the tower (waverley-frontage.ts names), each lit from the lowest point of its mesh (ASSUMED: the lamps stand where the ground is under it)
-  for (const name of ['waverley-balmoral-facade', 'waverley-balmoral-tower']) {
+  const hotel = material('waverley-balmoral-facade');
+  if (hotel) undo.push(litWalls(hotel, BALMORAL_WINDOWS.tile, BALMORAL_WINDOWS.grid));
+  // the hotel's stone, the body and the tower (waverley-frontage.ts names), each lit from the lowest point of its mesh (ASSUMED: the lamps stand where the ground is under it), and dim: the photograph's
+  // storeys between the lit bands are a dark warm masonry, (43, 29, 24) at the median, and the tower's shaft is darker than the sky (the render's first, at 0.25 and 0.16 of the body's, was a flat tan of
+  // (88, 74, 55) and (80, 67, 51)). What is bright in the photograph is the gables and the cornice, which this mesh does not hold (waverley-frontage-structure, with the bridges' ribs: a flood that lit
+  // them would light the bridges); the windows are `BALMORAL_WINDOWS`.
+  for (const [name, strength] of [['waverley-balmoral-facade', 0.08], ['waverley-balmoral-tower', 0.02]] as const) {
     const mesh = scene.getObjectByName(name);
-    if (mesh) flood(name, 0.25, 30, 0.25, new THREE.Box3().setFromObject(mesh).min.y);
+    if (mesh) flood(name, strength, 30, 0.5, new THREE.Box3().setFromObject(mesh).min.y);
   }
   flood('waverley-balmoral-clock-dials', 1.5, 1, 1); // a dial is lit all over: no fall-off
-  return () => undo.forEach((u) => u());
+  return () => [...undo].reverse().forEach((u) => u());
 }
 
 /**

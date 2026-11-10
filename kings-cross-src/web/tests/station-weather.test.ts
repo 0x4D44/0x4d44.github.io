@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import { CLEAR_FOG, describeSun, fogRange, lampLevelFor } from '../../core/daylight.ts';
@@ -8,7 +9,8 @@ import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
-import { activateSceneAtmosphere, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions, WAVERLEY_HAZE } from '../src/station-weather.ts';
+import { activateSceneAtmosphere, BALMORAL_WINDOWS, createSceneWeather, createWaverleyWeather, lightWaverleyNight, sceneWeatherOptions, WAVERLEY_HAZE } from '../src/station-weather.ts';
+import { BALMORAL_LEVELS } from '../src/waverley-frontage-balmoral.ts';
 import { coverAt, coverUniforms, findRoofs } from '../src/cover.ts';
 import { liveUrl } from '../src/weather.ts';
 import type { WeatherFeedOptions } from '../src/weather.ts';
@@ -418,13 +420,21 @@ test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone
   assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
   assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
   // the stone is lit from where the ground is under it: the lowest point of each mesh (the body 5 m up and 4 m tall: its foot is 3 m up; the tower 30 m up: its foot is 28 m)
-  assert.equal(f.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 3.0 )');
-  assert.equal(t.defines?.FLOOD, 'vec4( 0.25, 30.0, 0.25, 28.0 )');
-  assert.ok(!('WALL_WIN' in (f.defines ?? {})) && !('WALL_WIN' in (t.defines ?? {})), 'and have no windows of their own');
+  assert.equal(f.defines?.FLOOD, 'vec4( 0.08, 30.0, 0.5, 3.0 )', 'the body: a dim warm masonry');
+  assert.equal(t.defines?.FLOOD, 'vec4( 0.02, 30.0, 0.5, 28.0 )', 'the tower: its shaft darker still');
+  // the body has windows of its own, on the facade texture's grid (BALMORAL_WINDOWS); the tower's shaft has none
+  assert.ok('WALL_WIN' in (f.defines ?? {}) && !('WALL_WIN' in (t.defines ?? {})), 'windows in the body and not in the tower');
+  assert.equal(f.defines?.WALL_TILE, 'vec2( 1.0, 11.917808219178083 )', 'a bay to a map unit along the wall, 43.5 m up it, in cells of a bay by 3.65 m');
+  assert.equal(f.defines?.WALL_SHIFT, 'vec2( 0.0, -7.315068493150685 )', 'the first cell at 8.7 m over the street');
+  assert.equal(f.defines?.WALL_ROWS, 'vec2( 0.0, 4.0 )', 'four storeys');
+  assert.equal(f.defines?.WIN_RECT, 'vec4( 0.32, 0.68, 0.17, 0.77 )');
+  assert.equal(f.defines?.WIN_MODE, 'vec4( 0.33, 0.0, 0.12, 0.1 )', 'a third of the windows, 12 in a hundred floors dark, a tenth cool');
+  assert.ok(!('WALL_SHIFT' in (w.defines ?? {})) && !('WALL_ROWS' in (w.defines ?? {})), 'the city\'s walls are in their own grid, all rows of it');
   // a clock dial is lit all over: no fall-off (a reach of a metre, a floor of one), and over strength 1 so it reads as lit from within
   assert.equal(d.defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
   assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls'), 'the walls are a program of their own');
-  assert.equal(f.customProgramCacheKey(), before[1]!.key, 'the flood is a define: the program key is the same, the define makes the program');
+  assert.equal(t.customProgramCacheKey(), before[2]!.key, 'the flood is a define: the program key is the same, the define makes the program');
+  assert.equal(f.customProgramCacheKey(), `${before[1]!.key}+litWalls`, 'the body\'s windows are a program of their own, over the flood\'s');
   assert.ok(compileOf(w).includes('float winHash('), 'the walls compile with the night functions');
   undo();
   [walls, facade, tower, dials].forEach((mesh, i) => {
@@ -456,9 +466,65 @@ test('the meshes the Scottish night lights are the ones the real scene builds, e
     }
     const undo = lightWaverleyNight(built.group);
     assert.ok('WALL_WIN' in (surface(names[0] as string).defines ?? {}), 'the blocks have windows');
+    assert.ok('WALL_WIN' in (surface('waverley-balmoral-facade').defines ?? {}), 'and the hotel\'s body');
     for (const name of names.slice(1)) assert.ok('FLOOD' in (surface(name).defines ?? {}), `${name} is floodlit or glows`);
     undo();
     for (const name of names) assert.ok(!('WALL_WIN' in (surface(name).defines ?? {})) && !('FLOOD' in (surface(name).defines ?? {})), `${name} is as it was`);
+  } finally { built.dispose(); }
+});
+
+test('the Balmoral\'s windows are the facade texture\'s: its map is a bay wide and the texture\'s levels tall, each of the four storeys of windows is wholly in a cell of its own with the glass the grid\'s rectangle to a fraction of a metre, and nothing under the first-floor band is lit (round seven)', () => {
+  const L = BALMORAL_LEVELS;
+  const { tile, grid } = BALMORAL_WINDOWS;
+  assert.deepEqual([...tile], [L.bay, L.below + L.cornice], 'a bay wide and the texture\'s span tall (balmoralFacadeTexture: below + cornice)');
+  assert.equal(grid.cell[0], L.bay, 'a window to a bay');
+  // the windows the texture paints, read from its painter's own calls (`win( cx, sill, width, height, ...)`, in metres over the street): a change to them says so here and the grid is drawn again
+  const source = readFileSync(new URL('../src/waverley-frontage-balmoral.ts', import.meta.url), 'utf8');
+  const painted = [...source.matchAll(/win\(L\.bay\/2,([\d.]+),([\d.]+),([\d.]+)/g)].map((m) => ({ sill: Number(m[1]), width: Number(m[2]), height: Number(m[3]) }));
+  assert.equal(painted.length, 6, `the ground floor, the mezzanine and four storeys, in the painter: ${JSON.stringify(painted)}`);
+  const above = painted.filter((w) => w.sill > 8.6);
+  assert.deepEqual(above.map((w) => w.sill), [9.2, 13, 16.7, 20.3], 'the four storeys over the first-floor band (8.2 to 8.6 m)');
+  // the grid: cell 0 starts where the shift puts it (metres over the street), the cells are `cell[1]` tall
+  const [cellH, first] = [grid.cell[1], -grid.shift[1] * grid.cell[1] - L.below];
+  assert.ok(Math.abs(first - 8.7) < 1e-9, `the first cell starts at ${first} m, between the band and the first sill`);
+  const cells = new Set<number>();
+  for (const w of above) {
+    const k = Math.floor((w.sill - first) / cellH);
+    const start = first + k * cellH;
+    assert.ok(k >= grid.rows[0] && k < grid.rows[1], `the window at ${w.sill} m is in a lit row (${k})`);
+    assert.equal(Math.floor((w.sill + w.height - 1e-9 - first) / cellH), k, `the window at ${w.sill} m is wholly in its cell`);
+    cells.add(k);
+    // the glass the grid lights: from a fifth of a metre under the sill to a third of a metre inside the head, and across the window to a tenth of a metre
+    assert.ok(Math.abs(start + grid.rect[2] * cellH - w.sill) <= 0.2, `the lit glass starts at the sill at ${w.sill} m`);
+    assert.ok(Math.abs(start + grid.rect[3] * cellH - (w.sill + w.height)) <= 0.3, `and ends at the head of the window at ${w.sill} m`);
+    assert.ok(Math.abs(grid.rect[0] * L.bay - (L.bay / 2 - w.width / 2)) <= 0.1 && Math.abs(grid.rect[1] * L.bay - (L.bay / 2 + w.width / 2)) <= 0.1, `and across it (${w.width} m)`);
+  }
+  assert.equal(cells.size, 4, 'one cell to each storey');
+  assert.equal(grid.rows[1] - grid.rows[0], 4, 'four rows are lit');
+  // the windows under the band are not: their cells are under the rows
+  for (const w of painted.filter((p) => p.sill < 8.6)) assert.ok(Math.floor((w.sill - first) / cellH) < grid.rows[0], `the window at ${w.sill} m is not lit`);
+  // the real facade's UVs are what the grid reads: u counts bays along its walls (a horizontal edge is its length over a bay in u), v is 1 at the main cornice
+  const built = buildWaverleyScene({ lighting: false });
+  try {
+    const geometry = (built.group.getObjectByName('waverley-balmoral-facade') as THREE.Mesh).geometry;
+    const [position, uv, index] = [geometry.getAttribute('position'), geometry.getAttribute('uv'), geometry.index];
+    assert.ok(position && uv && index, 'positions, UVs and an index');
+    let top = -Infinity;
+    let edges = 0;
+    for (let i = 0; i < index.count; i += 3) {
+      for (let e = 0; e < 3; e++) {
+        const [a, b] = [index.getX(i + e), index.getX(i + ((e + 1) % 3))];
+        top = Math.max(top, uv.getY(a));
+        const across = Math.abs(uv.getX(a) - uv.getX(b));
+        if (Math.abs(position.getY(a) - position.getY(b)) > 1e-6 || across < 1e-6) continue;
+        const length = Math.hypot(position.getX(a) - position.getX(b), position.getZ(a) - position.getZ(b));
+        if (length < 0.7) continue; // the sides of the three projecting bays: 0.6 m deep, a strip of the tile's left edge (u 0 to 0.15) with no window in it
+        assert.ok(Math.abs(length / across - L.bay) < 1e-3, `a bay is ${L.bay} m in u: ${length} m over ${across}`);
+        edges++;
+      }
+    }
+    assert.ok(edges >= 8, `the walls' horizontal edges: ${edges}`);
+    assert.ok(Math.abs(top - 1) < 1e-9, `v is 1 at the main cornice, the top of the facade: ${top}`);
   } finally { built.dispose(); }
 });
 
@@ -473,7 +539,8 @@ test('the Scottish climate lights the Scottish night and puts it back with the c
     assert.ok(w.defines && 'WALL_WIN' in w.defines, 'lit windows on the walls');
     const f = compileOf(w);
     assert.ok(f.includes('float winHash(') && f.includes('coverGroundAt'), 'over the roof shade: both patches are in the program');
-    for (const mesh of [facade, tower]) assert.ok(String(lambertOf(mesh).defines?.FLOOD).startsWith('vec4( 0.25, 30.0, 0.25, '), `${mesh.name} is floodlit`);
+    for (const [mesh, strength] of [[facade, '0.08'], [tower, '0.02']] as const) assert.ok(String(lambertOf(mesh).defines?.FLOOD).startsWith(`vec4( ${strength}, 30.0, 0.5, `), `${mesh.name} is floodlit`);
+    assert.ok('WALL_WIN' in (lambertOf(facade).defines ?? {}), 'the hotel\'s windows are lit as well');
     assert.equal(lambertOf(dials).defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
     assert.ok(compileOf(lambertOf(facade)).includes('#ifdef FLOOD'), 'the flood needs the roof shade\'s patch, which the atmosphere gave the stone');
   } finally { climate.dispose(); }

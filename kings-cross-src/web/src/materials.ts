@@ -853,21 +853,41 @@ export const WALL_CELL = [3, 3.3] as const;
 export const WALL_RECT = [0.3, 0.7, 0.25, 0.82] as const;
 
 /**
+ * Where the windows of a wall are when it is not a Scottish tenement's (`litWalls`; every part is optional): `cell`, a window's cell in metres, along the wall and up it (`WALL_CELL`); `shift`, where the
+ * grid starts, in cells (none: at the map's origin); `rows`, the rows of cells that have windows, from and up to but not including (none: every row; the wall above and below them is not lit);
+ * `rect`, the glass in a cell (`WALL_RECT`, `winPane`'s rectangle); `mode`, how the windows are lit (`NIGHT_MODE.house`).
+ */
+export interface WallGrid {
+  cell?: readonly [number, number];
+  shift?: readonly [number, number];
+  rows?: readonly [number, number];
+  rect?: readonly number[];
+  mode?: readonly number[];
+}
+
+/**
  * GLSL for a plain wall's lit windows, after the emissive colour is read (`totalEmissiveRadiance` and the `normal` are there): the wall's map UV, in cells of `WALL_CELL` (`WALL_TILE` is the map's tile
- * over the cell), through `winTile`, only where the face looks sideways (a wall; the roofs and the plinths of the same mesh have none), the building's number from its vertex colour (a tone to each: 17
- * of them in the Scottish scene, so the seed is the tone's own and a building keeps its lights whatever else is built).
+ * over the cell; `WALL_SHIFT` moves the grid, `WALL_ROWS` keeps the windows to some rows of it), through `winTile`, only where the face looks sideways (a wall; the roofs and the plinths of the same mesh
+ * have none), the building's number from its vertex colour (a tone to each: 17 of them in the Scottish scene, so the seed is the tone's own and a building keeps its lights whatever else is built).
  */
 const LIT_WALL_GLSL = /* glsl */`
 #if defined( WALL_WIN ) && defined( USE_MAP )
 if ( uWinNight > 0.003 ) {
   vec2 wv = vMapUv * WALL_TILE;
+#ifdef WALL_SHIFT
+  wv += WALL_SHIFT;
+#endif
   vec2 ww = fwidth( wv );
+  float wrow = 1.0;
+#ifdef WALL_ROWS
+  wrow = step( WALL_ROWS.x, floor( wv.y ) ) * step( floor( wv.y ), WALL_ROWS.y - 1.0 );
+#endif
 #ifdef USE_COLOR
   float wseed = fract( floor( vColor.r * 100.0 + 0.5 ) * 0.6180339 );
 #else
   float wseed = 0.5;
 #endif
-  totalEmissiveRadiance += ( WIN_GAIN * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 );
+  totalEmissiveRadiance += ( WIN_GAIN * wrow * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 );
 }
 #endif
 `;
@@ -875,12 +895,15 @@ if ( uWinNight > 0.003 ) {
 /**
  * Light the windows of a plain city wall after dark (round seven, the Scottish scene: waverley-city.ts's sandstone blocks have no windows by day and showed by night as dark slabs): a Lambert wall
  * with a map (the stone's, whose repeat is 1 / `tile` metres), UVs that are metres along the wall and up it and a vertex colour to each building, gets a grid of windows, `WALL_CELL` metres to a
- * window, lit as the city's facades are (`winTile`: warm or a little cool, a share of each building's own, some floors dark, each its own hour of the dusk). By day nothing changes. The material is
- * patched where it stands (a patch it already has runs first and stays in its program key) and the function returned puts it back as it was.
+ * window, lit as the city's facades are (`winTile`: warm or a little cool, a share of each building's own, some floors dark, each its own hour of the dusk). `grid` says otherwise where the wall is not
+ * a tenement's: the Balmoral's facade is one texture tile to a bay, its windows in storeys of their own (station-weather.ts). By day nothing changes. The material is patched where it stands (a patch
+ * it already has runs first and stays in its program key) and the function returned puts it back as it was.
  */
-export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, number]): () => void {
+export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, number], grid: WallGrid = {}): () => void {
   const [defines, onBeforeCompile, key] = [m.defines, m.onBeforeCompile, m.customProgramCacheKey()];
-  m.defines = { ...defines, WALL_WIN: '', WALL_TILE: `vec2( ${glslFloat(tile[0] / WALL_CELL[0])}, ${glslFloat(tile[1] / WALL_CELL[1])} )`, WIN_RECT: glslVec4(WALL_RECT), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(NIGHT_MODE.house) };
+  const { cell = WALL_CELL, shift, rows, rect = WALL_RECT, mode = NIGHT_MODE.house } = grid;
+  const vec2 = (v: readonly number[]): string => `vec2( ${v.map(glslFloat).join(', ')} )`;
+  m.defines = { ...defines, WALL_WIN: '', WALL_TILE: vec2([tile[0] / cell[0], tile[1] / cell[1]]), ...(shift ? { WALL_SHIFT: vec2(shift) } : {}), ...(rows ? { WALL_ROWS: vec2(rows) } : {}), WIN_RECT: glslVec4(rect), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(mode) };
   m.onBeforeCompile = (shader, renderer) => {
     onBeforeCompile.call(m, shader, renderer);
     // a patch before this one (the roof shade's flood, lighting.ts) may have declared the night's level already, and says so by having put it in the uniforms: it is declared once
