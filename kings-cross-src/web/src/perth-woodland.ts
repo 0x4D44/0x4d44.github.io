@@ -54,7 +54,6 @@ export function sightHeight(x: number, z: number): number | undefined {
   return ey + (ty - ey) * d / Math.hypot(tx - ex, tz - ez);
 }
 
-/** Kinnoull's woodland for buildWaverleyCityGround (options.woodland). */
 /** ASSUMED rock tones for Kinnoull's cliff (8703, 4307: pale grey andesite, lichen grey-green, cream and rust where it weathers). */
 export const PERTH_ROCK_TONES = ['#8a877f', '#7d7a72', '#96918a', '#6f6c66', '#86826f', '#9a9384', '#7a7466', '#8f8b80'] as const;
 
@@ -68,7 +67,9 @@ export function onCliff(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (rea
   return cliffs.some(l => l.some((p, i) => i > 0 && segDist(x, z, l[i - 1]!, p) <= WOODLAND.cliff.reach));
 }
 
-export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): Woodland {
+/** Kinnoull's woodland for buildWaverleyCityGround (options.woodland); `canopy` (perth-canopy.ts) is where one draped canopy stands in
+ *  for the massed crowns, so no massed tree is placed under it. */
+export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], canopy?: {inCanopy(x: number, z: number): boolean}): Woodland {
   const gorse: Pt[] = [], g = WOODLAND.gorse, [px, pz] = KINNOULL_PEAK;
   for (let a = 0; a < 360; a += 360 * g.step / (2 * Math.PI * g.inner)) for (const r of [g.inner, (g.inner + g.outer) / 2, g.outer]) {
     const x = px + r * Math.cos(a * Math.PI / 180), z = pz + r * Math.sin(a * Math.PI / 180);
@@ -82,6 +83,7 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: read
     size: (x, z, kind) => kind === 'scrub' ? 1 : WOODLAND.size[0] + (WOODLAND.size[1] - WOODLAND.size[0]) * (.6 * woodNoise(x, z) + .4 * hash(x, z, 31)),
     keep: (t: Tree) => {
       if (onCliff(ground, cliffs, t.x, t.z)) return false;
+      if (canopy && t.kind === 'wood' && canopy.inCanopy(t.x, t.z)) return false;
       if (t.kind === 'wood' && !t.hanging && woodNoise(t.x, t.z) < WOODLAND.clump) return false;
       const s = sightHeight(t.x, t.z); if (s !== undefined && t.kind === 'wood' && t.y + t.height > s - WOODLAND.sight.clear) return false;
       return true;

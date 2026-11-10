@@ -26,6 +26,7 @@ import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
+import {kinnoullCanopy} from './perth-canopy.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -182,7 +183,8 @@ export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: numbe
 /** The ground cover, trees and water; `footprints` are the outlines trees keep clear of; `uncovered` is ground P2 draws itself (the
  *  King's Place cut and the forecourt, perth-frontage-mask.ts), where the drape leaves a hole as it does over the railway bed. */
 export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
-  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered});
+  const canopy = kinnoullCanopy(ground, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs);
+  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs, canopy), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
@@ -194,7 +196,10 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const wg = sheet.build(), wash = waterWash(), m = new THREE.MeshPhongMaterial({color: wash ? 0xffffff : WATER.colour, map: wash, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
   const water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water);
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); cover.dispose(); }};
+  // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
+  const cm = new THREE.MeshLambertMaterial({vertexColors: true});
+  if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); cm.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------

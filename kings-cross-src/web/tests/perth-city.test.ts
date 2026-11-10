@@ -12,6 +12,7 @@ import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_F
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
@@ -152,35 +153,55 @@ test('the land-use drape leaves holes where P2 draws its own ground: the King\'s
   assert.ok(index.count / 3 > 10_000, 'the drape is still there elsewhere');
 });
 
-test('Kinnoull\'s woods are broken mixed woodland, open westward from the summit, with gorse at the clearing', () => {
-  const wood = scene.group.getObjectByName('waverley-wood-crowns') as THREE.InstancedMesh;
-  assert.ok(wood && wood.instanceColor, 'the massed crowns, coloured per tree');
-  const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), k = new THREE.Vector3(), c = new THREE.Color();
-  const hill: {x: number; z: number; top: number; h: number; tone: string}[] = [], [px, pz] = KINNOULL_PEAK;
-  for (let i = 0; i < wood.count; i++) {
-    wood.getMatrixAt(i, m); m.decompose(p, q, k); wood.getColorAt(i, c);
-    if (Math.hypot(p.x - px, p.z - pz) > 900) continue;
-    hill.push({x: p.x, z: p.z, top: p.y + k.y, h: k.y, tone: c.getHexString()});
+test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the summit, with gorse at the clearing (round 3, C1/C2)', () => {
+  const [px, pz] = KINNOULL_PEAK;
+  // the canopy: one draped mesh over the hill's OSM woods, in place of separate crowns (4307, 4599836: a closed canopy)
+  const mesh = scene.group.getObjectByName('perth-kinnoull-canopy') as THREE.Mesh;
+  assert.ok(mesh, 'the canopy mesh');
+  let cityGroup = false; mesh.traverseAncestors(a => { if (a === scene.parts.buildings) cityGroup = true; }); assert.ok(cityGroup, 'in the city group');
+  const P = mesh.geometry.getAttribute('position'), C = mesh.geometry.getAttribute('color');
+  const top: { x: number; z: number; h: number; y: number; g: number }[] = [];
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), h = P.getY(i) - scene.terrain.heightAt(x, z); if (h > 0) top.push({ x, z, h, y: P.getY(i), g: C.getY(i) }); }
+  assert.ok(top.length > 3000, `canopy nodes over the woods: ${top.length}`);
+  // continuous: nearly every point of the hill's woods (away from the clearing, the cliff and the sightline) is under it
+  const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs);
+  const pipw = (x: number, z: number, rs: readonly (readonly (readonly number[])[])[]) => { const p = rs[0]!; let yes = false; for (let a = 0, b = p.length - 1; a < p.length; b = a++) if ((p[a]![1]! > z) !== (p[b]![1]! > z) && x < (p[b]![0]! - p[a]![0]!) * (z - p[a]![1]!) / (p[b]![1]! - p[a]![1]!) + p[a]![0]!) yes = !yes; return yes; };
+  const hillWoods = PERTH_LANDUSE.areas.wood.filter(rs => rs[0]!.some(([x]) => x! > CANOPY.hillX));
+  let inWood = 0, covered = 0;
+  for (let x = 1700; x < 3000; x += 23) for (let z = -800; z < 900; z += 23) {
+    if (!hillWoods.some(rs => pipw(x, z, rs)) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner + 10 || onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z) || sightHeight(x, z) !== undefined) continue;
+    inWood++; if (canopy.inCanopy(x, z)) covered++;
   }
-  const trees = hill.filter(t => t.h > 1.5), gorse = hill.filter(t => t.h <= 1.5);
-  assert.ok(trees.length > 300, `wood crowns on the hill: ${trees.length}`);
-  // mixed size: the tallest crowns at least twice the depth of the smallest (WOODLAND.size, 0.6 to 1.3)
-  const hs = trees.map(t => t.h).sort((a, b) => a - b), q10 = hs[Math.floor(hs.length * .1)]!, q90 = hs[Math.floor(hs.length * .9)]!;
-  assert.ok(q90 / q10 > 1.5, `crown depth spread, 90th over 10th percentile: ${(q90 / q10).toFixed(2)}`);
-  // mixed tone: the darkest (pine) and the lightest (birch in sun) crowns differ in green by over a third
-  const greens = trees.map(t => new THREE.Color('#' + t.tone).g).sort((a, b) => a - b);
+  assert.ok(inWood > 500 && covered / inWood > .95, `covered ${covered} of ${inWood} wood points`);
+  // mixed size: stands of old and young trees (the crown height's 90th percentile over its 10th)
+  const hs = top.map(t => t.h).sort((a, b) => a - b), q10 = hs[Math.floor(hs.length * .1)]!, q90 = hs[Math.floor(hs.length * .9)]!;
+  assert.ok(q90 / q10 > 1.5, `canopy height spread: ${(q90 / q10).toFixed(2)}`);
+  // mixed tone: pine and birch both present
+  const greens = top.map(t => t.g).sort((a, b) => a - b);
   assert.ok(greens[Math.floor(greens.length * .9)]! > 1.35 * greens[Math.floor(greens.length * .1)]!, 'pine and birch tones both present');
-  // open westward: no wood crown in the panorama's frame rises above the line from the eye to the town
-  const blocking = trees.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.top > s - WOODLAND.sight.clear + 1e-3; });
-  assert.equal(blocking.length, 0, `crowns over the summit's westward sightline: ${blocking.length}`);
-  // gorse at the clearing's edge (England_and_Scotland_152)
+  // open westward: no canopy node in the panorama's frame rises above the line from the eye to the town
+  const over = top.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.y > s - WOODLAND.sight.clear + 1e-3; });
+  assert.equal(over.length, 0, `canopy over the summit's westward sightline: ${over.length}`);
+  // the summit clearing and the cliff stay open
+  assert.equal(top.filter(t => Math.hypot(t.x - px, t.z - pz) < WOODLAND.gorse.inner - CANOPY.step).length, 0, 'the summit clearing is open');
+  assert.equal(top.filter(t => onCliff(scene.terrain, PERTH_LANDUSE.cliffs, t.x, t.z)).length, 0, 'no canopy on the cliff');
+  // the crowns still placed: none under the canopy, none over the sightline or on the cliff; gorse at the clearing's edge (152)
+  const wood = scene.group.getObjectByName('waverley-wood-crowns') as THREE.InstancedMesh;
+  const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), k = new THREE.Vector3();
+  const hill: { x: number; z: number; top: number; h: number }[] = [];
+  for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (Math.hypot(p.x - px, p.z - pz) <= 900) hill.push({ x: p.x, z: p.z, top: p.y + k.y, h: k.y }); }
+  const trees = hill.filter(t => t.h > 1.5), gorse = hill.filter(t => t.h <= 1.5);
+  assert.equal(trees.filter(t => canopy.inCanopy(t.x, t.z)).length, 0, 'no separate crowns under the canopy');
+  assert.equal(trees.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.top > s - WOODLAND.sight.clear + 1e-3; }).length, 0, 'no crown over the sightline');
   const edge = gorse.filter(t => { const d = Math.hypot(t.x - px, t.z - pz); return d >= WOODLAND.gorse.inner - 10 && d <= WOODLAND.gorse.outer + 10; });
   assert.ok(edge.length > 30, `gorse at the summit clearing's edge: ${edge.length}`);
-  // the cliff is bare rock (8703, 4307): no crown on its steep ground beside the OSM cliff line, and Kinnoull's paler rock is used
-  const onIt = hill.filter(t => onCliff(scene.terrain, PERTH_LANDUSE.cliffs, t.x, t.z));
-  assert.equal(onIt.length, 0, `crowns on the cliff: ${onIt.length}`);
+  assert.equal(hill.filter(t => onCliff(scene.terrain, PERTH_LANDUSE.cliffs, t.x, t.z)).length, 0, 'no crowns on the cliff');
   let face = 0; for (let x = 2400; x < 2620; x += 8) for (let z = 260; z < 380; z += 8) if (onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z)) face++;
   assert.ok(face > 40, `the cliff below the tower is steep ground by the OSM line: ${face} points`);
+  // it frees triangles: the canopy and the remaining crowns cost less than round 2's crowns alone (51,580)
+  const tri = (o: THREE.Mesh) => (o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count) / 3;
+  const crowns = (wood.geometry.index ? wood.geometry.index.count : wood.geometry.getAttribute('position').count) / 3 * wood.count;
+  assert.ok(tri(mesh) + crowns < 51_580, `canopy ${tri(mesh)} + crowns ${crowns}`);
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {
