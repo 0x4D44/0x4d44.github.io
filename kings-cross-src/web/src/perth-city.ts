@@ -16,7 +16,8 @@ import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {buildPerthCityGround, KINNOULL_TOWER, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
 import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
-import {PERTH_FASCIA} from './perth-station.ts';
+import {PERTH_FASCIA, stationOutline} from './perth-station.ts';
+import {inPerthFrontageGroundMask, perthFrontageGroundMask} from './perth-frontage-mask.ts';
 import type {PerthBuild} from './perth-scene.ts';
 
 /** ASSUMED fallback heights (m) by OSM building type, where OSM gives neither height nor levels: Perth's houses are mostly two storeys
@@ -82,7 +83,8 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   fabric.group.name = 'perth-city'; take(fabric);
   const buildingIds = [...fabric.buildingIds], heightBasis = {...fabric.heightBasis};
   // the ground cover, trees and the Tay, over the drawn ground
-  take(buildPerthCityGround(ground, new Footprints([...[...data.buildings, ...data.roofs].map(b => b.outer), ...outlookClearings()])));
+  const mask = perthFrontageGroundMask(stationOutline(data)?.outer);
+  take(buildPerthCityGround(ground, new Footprints([...[...data.buildings, ...data.roofs].map(b => b.outer), ...outlookClearings()]), (x, z) => inPerthFrontageGroundMask(mask, x, z)));
   // the bridges and towers
   const masonry = new Batch({colored: true}), ironwork = new Batch(), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);

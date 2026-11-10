@@ -8,6 +8,8 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { perthBuildingHeight } from '../src/perth-city.ts';
+import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
+import { stationOutline } from '../src/perth-station.ts';
 import { Batch } from '../src/materials.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
@@ -100,6 +102,23 @@ test('Kinnoull Hill\'s woods, the Inches and the kirk come from OSM, the DSM and
   const base = scene.terrain.rangeUnder(kirk.outer, 4).min;
   assert.ok(Math.abs(spire.geometry.boundingBox!.max.y - (base + KIRK_TOWER.top)) < 1e-3, 'the spire top at 155 ft (HES LB39300)');
   assert.ok(pip(PERTH_LIDAR_LANDMARKS.kirk.x, PERTH_LIDAR_LANDMARKS.kirk.z, kirk.outer), 'the tower stands on the kirk');
+});
+
+test('the land-use drape leaves holes where P2 draws its own ground: the King\'s Place cut and the forecourt (lead ruling 13:18)', () => {
+  const cover = scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh;
+  const mask = perthFrontageGroundMask(stationOutline(data)?.outer), inMask = (x: number, z: number) => inPerthFrontageGroundMask(mask, x, z);
+  const pos = cover.geometry.getAttribute('position'), index = cover.geometry.getIndex()!;
+  let over = 0;
+  for (let i = 0; i < index.count; i += 3) {
+    const v = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
+    const cx = v.reduce((a, k) => a + pos.getX(k), 0) / 3, cz = v.reduce((a, k) => a + pos.getZ(k), 0) / 3;
+    if (inMask(cx, cz) || v.some(k => inMask(pos.getX(k), pos.getZ(k)))) over++;
+  }
+  assert.equal(over, 0, `drape triangles over P2's ground: ${over}`);
+  // the two places the lead found covered: the forecourt and the 0.5 m road cut
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+  for (const [x, z] of [[-5, -50], [90, -50]] as const) { assert.ok(inMask(x, z), `(${x}, ${z}) is in the mask`); ray.set(new THREE.Vector3(x, 200, z), down); assert.equal(ray.intersectObject(cover).length, 0, `no drape over (${x}, ${z})`); }
+  assert.ok(index.count / 3 > 10_000, 'the drape is still there elsewhere');
 });
 
 test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {

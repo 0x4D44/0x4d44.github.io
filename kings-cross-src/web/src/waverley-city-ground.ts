@@ -267,14 +267,14 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
  // The drape: the terrain mesh rebuilt over the drawn surface, less the railway bed.
  const drape=options.drape??DRAPE_TOLERANCE,tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>drape});
  const P=tm.positions,keep:number[]=[],bed=(i:number)=>Math.abs(P[i*3+1]-WAVERLEY_LEVELS.ground)<.01;
- for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;keep.push(a,b,c);}
+ for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;if(options.uncovered&&[a,b,c].some(v=>options.uncovered!(P[v*3],P[v*3+2]))||options.uncovered?.((P[a*3]+P[b*3]+P[c*3])/3,(P[a*3+2]+P[b*3+2]+P[c*3+2])/3))continue;keep.push(a,b,c);}
  const pos=new Float32Array(P.length),uv=new Float32Array(P.length/3*2);
  for(let i=0;i<P.length/3;i++){const x=P[i*3],z=P[i*3+2];pos[i*3]=x;pos[i*3+1]=ground.heightAt(x,z)+(options.drape??DRAPE_LIFT);pos[i*3+2]=z;uv[i*2]=(x-x0)/(x1-x0);uv[i*2+1]=1-(z-z0)/(z1-z0);}
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);

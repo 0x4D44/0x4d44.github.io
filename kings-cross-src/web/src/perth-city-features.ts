@@ -110,9 +110,10 @@ export function waterLevel(ground: Pick<Terrain, 'heightAt'>): (x: number, z: nu
 
 export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: number; drawCalls: number}; dispose(): void}
 
-/** The ground cover, trees and water; `footprints` are the outlines trees keep clear of. */
-export function buildPerthCityGround(ground: Terrain, footprints: Footprints): PerthCityFeatures {
-  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE});
+/** The ground cover, trees and water; `footprints` are the outlines trees keep clear of; `uncovered` is ground P2 draws itself (the
+ *  King's Place cut and the forecourt, perth-frontage-mask.ts), where the drape leaves a hole as it does over the railway bed. */
+export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
+  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, uncovered});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
