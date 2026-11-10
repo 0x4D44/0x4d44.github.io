@@ -312,6 +312,30 @@ test('Class 180 rake: the windscreen\'s shading normals follow the sheared surfa
   }
 });
 
+test('Class 180 rake: the windscreen\'s shading normals as a whole: the median is under 2 degrees from their triangle\'s and nine in ten are within 8', () => {
+  // (round 6) A second guard beside the one above, which counts the normals within 4 degrees against four fifths and stands about a point over that: the car's section is a polyline of 13 points,
+  // so a pane's columns chord across corners that turn 13 to 20 degrees a segment on the shoulder, and a change to the nose that moves one of them moves that share by a point (it was 79.8%
+  // with the glass rows spaced as a cosine spaces them and is 81.2% now). The median and the share within 8 degrees barely feel those corners (1.05 degrees and 97.1% now; 1.08 and 95.6% with the
+  // cosine rows), and a formula wrong over the whole pane fails them by a wide margin (9.3 degrees and 39.7% with the lean's fall left out of it, 8.9 and 40.3% with no lean at all).
+  const layout = trainLayout('gc180x5');
+  for (const car of endCabs(layout)) {
+    const mesh = part(raked, car, 'cab-glass');
+    const normals = mesh.geometry.getAttribute('normal');
+    const angles: number[] = [];
+    triangles(mesh).forEach((t, k) => {
+      if (!t.every((v) => Math.abs(v.x) < 1.15) || areaOf(t) < 1e-9) return;
+      const n = faceNormal(t);
+      for (let j = 0; j < 3; j++) angles.push((n.angleTo(new THREE.Vector3().fromBufferAttribute(normals, 3 * k + j)) * 180) / Math.PI);
+    });
+    angles.sort((a, b) => a - b);
+    assert.ok(angles.length > 1000, `car ${car.index}: ${angles.length} vertex normals`);
+    const median = angles[Math.floor(angles.length / 2)] as number;
+    assert.ok(median < 2, `car ${car.index}: the median normal is ${median.toFixed(2)} degrees from its triangle's`);
+    const within = angles.filter((a) => a < 8).length / angles.length;
+    assert.ok(within > 0.9, `car ${car.index}: ${(100 * within).toFixed(1)}% of the normals are within 8 degrees of their triangle's`);
+  }
+});
+
 test('Class 180 rake: the coupler still reaches the end of the car, and the lamps stand on the leaning face at their own heights', () => {
   const layout = trainLayout('gc180x5');
   for (const car of endCabs(layout)) {
