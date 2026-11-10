@@ -26,16 +26,18 @@ export const SUMMIT = {
   detail: {tile: 3, px: 256, blades: 3400, grit: 500, fade: [.15, .6] as const},
   // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
+  // round 7 (round-6 score: greener and brighter than 152, the bloom one big cap): brown-olive leaves, sRGB [.27, .26, .12] (luma
+  // about 0.25, 0.21-0.29 with the tone spread; red at least 0.75 of green, as 152), and the bloom 2 small dull yellow flecks
   // round 6 (round-5 score: the gorse went black): a mid olive `rgb` (152, sRGB about [.30, .36, .14]), a brighter yellow bloom, drawn
   // on perth-canopy.ts softLobe. The flowering lobe crowns the bush (`crest`: set in `crest[0]` of the radius, `crest[1]` of its
   // height), so the yellow shows over the olive from the eye; round 5's sat at the edge, under the others, and showed as a smear at the foot
   // round 5 (round-4 score: "mounds or boulders"): each bush is `lobes` overlapping lobes `lobe` of its radius, scattered over it and
   // varied in height, so its outline is uneven and shrubby; dark olive `rgb`, and a share `bloom` carry one smaller lobe in yellow flower
   bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.5, 1.1] as const, radius: [.7, 1.5] as const, bloom: .45,
-    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.30, .36, .14] as const, bloomRgb: [.66, .56, .12] as const, flower: .8, crest: [.2, 1.15] as const},
+    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.27, .26, .12] as const, bloomRgb: [.55, .48, .12] as const, flecks: 2, fleck: .3, fleckOff: [.1, .35] as const, peek: .05},
 } as const;
 
-export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]}
+export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]; bloom: boolean}
 export interface SummitBush {x: number; z: number; y: number; height: number; radius: number; lobes: BushLobe[]}
 /** The low gorse bushes near the panorama's eye (SUMMIT.bush): in the ring round the eye, off the paths, seated on the ground. */
 export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly {width: number; line: readonly Pt[]}[]): SummitBush[] {
@@ -49,10 +51,20 @@ export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly 
     if (pathDist(x, z) < B.pathClear + radius) continue;
     const height = B.height[0] + (B.height[1] - B.height[0]) * hash(i, 4, 104), bloom = hash(i, 6, 106) < B.bloom, lobes: BushLobe[] = [];
     const n = B.lobes[0] + Math.floor((B.lobes[1] - B.lobes[0] + 1) * hash(i, 7, 107));
-    for (let l = 0; l < n; l++) {
-      const flower = bloom && l === n - 1, a2 = (l / n + .3 * hash(i, l, 108)) * Math.PI * 2, off = radius * (l === 0 ? .1 : flower ? B.crest[0] : .45 + .25 * hash(i, l, 109)), lx = x + Math.cos(a2) * off, lz = z + Math.sin(a2) * off;
-      const r = radius * (l === 0 ? B.lobe[1] : B.lobe[0] + (B.lobe[1] * .85 - B.lobe[0]) * hash(i, l, 110)) * (flower ? B.flower : 1), k = .85 + .3 * hash(i, l, 111), c = flower ? B.bloomRgb : B.rgb;
-      lobes.push({x: lx, z: lz, y: ground.heightAt(lx, lz), r, h: flower ? height * B.crest[1] : height * (.6 + .4 * hash(i, l, 112)), rgb: [c[0] * k, c[1] * k, c[2] * k]});
+    for (let l = 0; l < (bloom ? n - 1 : n); l++) {
+      const a2 = (l / n + .3 * hash(i, l, 108)) * Math.PI * 2, off = radius * (l === 0 ? .1 : .45 + .25 * hash(i, l, 109)), lx = x + Math.cos(a2) * off, lz = z + Math.sin(a2) * off;
+      const r = radius * (l === 0 ? B.lobe[1] : B.lobe[0] + (B.lobe[1] * .85 - B.lobe[0]) * hash(i, l, 110)), k = .85 + .3 * hash(i, l, 111), c = B.rgb;
+      lobes.push({x: lx, z: lz, y: ground.heightAt(lx, lz), r, h: height * (.6 + .4 * hash(i, l, 112)), rgb: [c[0] * k, c[1] * k, c[2] * k], bloom: false});
+    }
+    // the bloom (round 7, round-6 score: one big yellow cap): `flecks` small lobes, `fleck` of the radius, set `fleckOff` of the radius
+    // from the middle and peeking `peek` m over the leaves' top
+    if (bloom) {
+      const crown = Math.max(...lobes.map(l => l.y + l.h)) + B.peek;
+      for (let f = 0; f < B.flecks; f++) {
+        const a2 = (f / B.flecks + .4 * hash(i, f, 113)) * Math.PI * 2, off = radius * (B.fleckOff[0] + (B.fleckOff[1] - B.fleckOff[0]) * hash(i, f, 114)), lx = x + Math.cos(a2) * off, lz = z + Math.sin(a2) * off;
+        const r = radius * B.fleck, h = r * 1.4, k = .85 + .3 * hash(i, f, 115), c = B.bloomRgb;
+        lobes.push({x: lx, z: lz, y: crown - h, r, h, rgb: [c[0] * k, c[1] * k, c[2] * k], bloom: true});
+      }
     }
     out.push({x, z, y: ground.heightAt(x, z), height, radius, lobes});
   }

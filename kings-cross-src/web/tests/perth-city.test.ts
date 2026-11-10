@@ -481,15 +481,22 @@ test('the summit clearing has its own close ground under the panorama, in a hole
     assert.ok(b.lobes.some(l => Math.hypot(l.x - b.x, l.z - b.z) > .3 * b.radius), 'spread, not one mound');
   }
   const lumL = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
-  const leafy = bushes.flatMap(b => b.lobes).filter(l => l.rgb[1] > l.rgb[0]);
-  // round 6, declared: the ceiling rises from 0.2 to 0.42 (152's mid olive, sRGB about [.30, .36, .14], at its brightest variation):
-  // round 5's 0.2 drove the gorse to black under backlight. A floor keeps it from going black again.
-  assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) > .2 && lumL(l.rgb) < .42), 'mid olive leaves, neither black nor lawn');
-  const blooms = bushes.flatMap(b => b.lobes).filter(l => l.rgb[0] > l.rgb[1]);
-  assert.ok(blooms.every(l => lumL(l.rgb) > .45), 'a bright yellow bloom');
-  // the bloom crowns its bush (round 5's hid under the others at the edge, a smear at the foot): the tallest lobe, near the middle
-  for (const b of bushes) for (const f of b.lobes.filter(l => l.rgb[0] > l.rgb[1])) assert.ok(b.lobes.every(l => l === f || f.y + f.h > l.y + l.h) && Math.hypot(f.x - b.x, f.z - b.z) < b.radius * .3, 'the bloom crowns the bush');
-  assert.ok(bushes.filter(b => b.lobes.some(l => l.rgb[0] > l.rgb[1])).length >= 3, 'a yellow fleck in some');
+  const leafy = bushes.flatMap(b => b.lobes).filter(l => !l.bloom);
+  // sRGB luma (the colours are set in sRGB). Round 6 raised the ceiling from 0.2 to 0.42; the round-6 score ruled that a weakening.
+  // Round 7, per the ruling: under 0.32 (round 6's mean), over 0.2 (round 5's black gorse), and 152's hue: red at least 0.75 of green
+  assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) > .2 && lumL(l.rgb) < .32), 'olive leaves, neither black nor lawn');
+  assert.ok(leafy.every(l => l.rgb[0] >= .75 * l.rgb[1]), 'brown-olive, not green: red at least 0.75 of green');
+  const blooms = bushes.flatMap(b => b.lobes).filter(l => l.bloom);
+  // round 7 (round-6 score: one big bright cap): a dull yellow (luma 0.36-0.6, red over green, little blue), in small flecks
+  assert.ok(blooms.every(l => lumL(l.rgb) > .36 && lumL(l.rgb) < .6 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .5 * l.rgb[1]), 'a dull yellow bloom');
+  assert.ok(blooms.reduce((n, l) => n + lumL(l.rgb), 0) / blooms.length < .5, 'dull on the whole (round 6\'s mean was about 0.54)');
+  // the bloom crowns its bush: 2-3 flecks, each at most 0.4 of the bush's radius, over every leaf lobe's top and near the middle
+  for (const b of bushes) {
+    const fl = b.lobes.filter(l => l.bloom); if (!fl.length) continue;
+    assert.ok(fl.length >= 2 && fl.length <= 3, 'two or three flecks');
+    for (const f of fl) assert.ok(f.r <= .4 * b.radius && b.lobes.every(l => l.bloom || f.y + f.h > l.y + l.h) && Math.hypot(f.x - b.x, f.z - b.z) < b.radius * .5, 'the bloom crowns the bush, in small flecks');
+  }
+  assert.ok(bushes.filter(b => b.lobes.some(l => l.bloom)).length >= 3, 'a yellow fleck in some');
   const axisB = Math.atan2(KINNOULL_EYE.target[2] - SUMMIT_CENTRE[1], KINNOULL_EYE.target[0] - SUMMIT_CENTRE[0]);
   const framed = bushes.filter(b => { const a = Math.atan2(b.z - SUMMIT_CENTRE[1], b.x - SUMMIT_CENTRE[0]) - axisB; return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < KINNOULL_EYE.halfWidthDeg * Math.PI / 180; });
   assert.ok(bushes.length >= 8 && framed.length >= 5, `bushes ${bushes.length}, in frame ${framed.length}`);
