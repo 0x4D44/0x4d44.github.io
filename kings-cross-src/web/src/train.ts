@@ -96,10 +96,11 @@ export const END_GAP = ASSUMED.endGap;
 
 /**
  * The maker's bogie each family runs on, each drawn in train-parts.ts from its own photographs: the Hitachi AT300's (lner-gwr800-bogie-detail-2017),
- * the Electrostar's (no usable photograph: a generic outside-frame bogie), the Desiro City's, which the 700 shares (tl700_03_gatwick_bogie_28898326470:
- * an inside frame) and the Class 180's Alstom (GC180-01-180-101-Kings-Cross).
+ * the Electrostar's (a generic outside-frame bogie until round 6: no usable photograph then), the Desiro City's, which the 700 shares (tl700_03_gatwick_bogie_28898326470:
+ * an inside frame) and the Class 180's Alstom (GC180-01-180-101-Kings-Cross). Round 6 traces the AT300's, the Electrostar's and the Desiro City's frames from photographs (`train-bogie-trace.ts`);
+ * the Desiro City's is the 'sf7000' style, so that the 'siemens' one, which the Voyagers wear (train-intercity.ts), is not touched.
  */
-export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitachi', electrostar: 'electrostar', desiro: 'siemens', desiro700: 'siemens', adelante: 'alstom' };
+export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitachi', electrostar: 'electrostar', desiro: 'sf7000', desiro700: 'sf7000', adelante: 'alstom' };
 
 /** How far the doors stand proud of the shell, so they, not the shell, set the body width. */
 const DOOR_RELIEF = 0.02;

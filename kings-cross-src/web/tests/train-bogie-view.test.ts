@@ -146,12 +146,11 @@ function v07(kind: TrainKind, motor: boolean): { pose: Pose; spec: BogieSpec; pi
  * brake unit, on a motor car or a trailer car (`train-bogie-trace.test.ts`), so it has its own test below, and these are the other makers'.
  * CHANGED (round 6, the second frame traced; the 387's floors were 20,800 pixels of drive and 11,800 of brake units): the Electrostar's frame is traced from its photographs, of a powered bogie among them,
  * which show nothing hung between the wheels, so the 387's motor bogie and trailer bogie are the one bogie too (`train-bogie-trace-electrostar.test.ts`), with a test of its own below.
+ * CHANGED (round 6, the third frame traced; the 717's and the 700's floors were 5,900 pixels of drive and 5,900 of brake units): the Desiro City's frame is traced from the photograph of a bogie under a motor
+ * car's number, which shows castings, an air spring, a rod, dampers and a yaw damper and no motor, gearbox or brake unit between the wheels, so the 717's and the 700's motor bogie and trailer bogie are the one
+ * bogie too (`train-bogie-trace-siemens.test.ts`), with a test of its own below. The Class 180's is the one kind left that draws a drive and brake units.
  */
-const CASES: { kind: TrainKind; drive: number; units: number }[] = [
-  { kind: 'gn717x6', drive: 5_900, units: 5_900 },
-  { kind: 'tl700x8', drive: 5_900, units: 5_900 },
-  { kind: 'gc180x5', drive: 17_600, units: 13_000 },
-];
+const CASES: { kind: TrainKind; drive: number; units: number }[] = [{ kind: 'gc180x5', drive: 17_600, units: 13_000 }];
 
 test('V07 motor bogie: the drive fills the pixels the floor asks of it, on every kind, and a trailer bogie draws none', () => {
   for (const { kind, drive } of CASES) {
@@ -181,6 +180,27 @@ test('V07 AT300 bogie: a motor car\'s bogie and a trailer car\'s are the one bog
   // the floors sit about 12% under what the model draws (162,296 pixels of frame and 14,796 of spring, in a 1600 x 1000 frame): the side beam with its bracket, step and boxes, and the springs and the air spring
   assert.ok(motor.pixels.frame >= 142_000, `${motor.pixels.frame} pixels of frame at V07 (the floor is 142,000)`);
   assert.ok(motor.pixels.springs >= 13_000, `${motor.pixels.springs} pixels of springs at V07 (the floor is 13,000)`);
+});
+
+test('V07 Desiro City bogie: a motor car\'s bogie and a trailer car\'s are the one bogie the photograph shows, with no drive and no brake unit, and its castings and air spring fill the pixels the floor asks of them, on the 717 and the 700', () => {
+  for (const kind of ['gn717x6', 'tl700x8'] as const) {
+    const motor = v07(kind, true);
+    const trailer = v07(kind, false);
+    assert.equal(motor.pixels.drive, 0, `${kind}: a motor car's Desiro City bogie draws no drive (${motor.pixels.drive} pixels)`);
+    assert.equal(trailer.pixels.drive, 0, `${kind}: a trailer car's Desiro City bogie draws no drive (${trailer.pixels.drive} pixels)`);
+    // no brake unit: the trailer's brakes are the motor bogie's, the discs and callipers on the axles (240 triangles), which a wheel hides from the side, so each fills a few dozen pixels and not the
+    // thousands a brake unit hung between the wheels does (the 180's floor is 13,000). The two differ by a few pixels because the trailer bogie's wheels stand 5 cm nearer (2.1 m against 2.2 m)
+    assert.equal(bogieParts(trailer.spec).brakes.pos.length, bogieParts(motor.spec).brakes.pos.length, `${kind}: the trailer bogie's brakes are the motor bogie's triangles, with no brake unit besides`);
+    for (const [role, one] of [['motor', motor], ['trailer', trailer]] as const) {
+      assert.ok(one.pixels.brakes < 300, `${kind}: ${one.pixels.brakes} pixels of brakes on the ${role} bogie at V07: a brake unit hangs there`);
+    }
+    // the floors sit about 12% under what the model draws (54,612 pixels of frame on the motor bogie and 52,196 on the trailer's, and 12,644 of spring on each, in a 1600 x 1000 frame): the castings, the
+    // rod, the dampers, the yaw damper and the bracket, and the air spring. The wheels of the shorter trailer bogie hide a little more of the castings.
+    for (const [role, one] of [['motor', motor], ['trailer', trailer]] as const) {
+      assert.ok(one.pixels.frame >= 45_900, `${kind}: ${one.pixels.frame} pixels of frame on the ${role} bogie at V07 (the floor is 45,900)`);
+      assert.ok(one.pixels.springs >= 11_100, `${kind}: ${one.pixels.springs} pixels of springs on the ${role} bogie at V07 (the floor is 11,100)`);
+    }
+  }
 });
 
 test('V07 Electrostar bogie: a motor car\'s bogie and a trailer car\'s are the one bogie the photographs show, with no drive and no brake unit, and its frame and air spring fill the pixels the floor asks of them', () => {

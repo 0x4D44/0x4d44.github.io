@@ -16,7 +16,8 @@
 //       `train-bogie-trace.ts`; the wheels, discs and the palette are still read from this one.)
 //   tl700_03_gatwick_bogie_28898326470.jpg   a Siemens SF7000 (Class 700) bogie: INSIDE frame (the wheels stand outside it),
 //       plain light-grey wheel webs with a hub cover and a rust-brown rim band, the frame, a grey yaw damper and the air spring
-//       in a cluster between the wheels.
+//       in a cluster between the wheels. (Round 6: the Desiro City's frame is traced from `Class 700 Thameslink at Gatwick station - 28898326470.jpg` (Elsie esq., CC BY 2.0), the same picture
+//       in its Commons form, point by point, in `train-bogie-trace.ts`: the 'sf7000' style. The 'siemens' style is the frame first drawn from it by eye, which the Voyager (train-intercity.ts) wears.)
 //   tl700_02_gatwick_side_28563922734.jpg   the same bogie from the platform: the same plain wheels, the cluster between them.
 //   GC180-01-180-101-Kings-Cross-8077814883-.jpg   the Class 180's leading bogie from the cab end: a boxy dusty frame, axle
 //       boxes with a spring pot above, a long gold-ended damper low across the middle.
@@ -27,11 +28,12 @@
 // trailer bogie, which a bogie must show and no photograph here does: a motor bogie's traction motors with their gear cases (a diesel's final drives and cardan shaft), a trailer bogie's
 // brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`). Not the AT300's nor the Electrostar's: round 6 traced
 // their frames from photographs, the AT300's of a trailer bogie and the Electrostar's of a powered one, which show nothing hung between the wheels, and no photograph shows what a motor bogie of the
-// AT300 carries, so a motor bogie and a trailer bogie of each are the same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here).
+// AT300 carries, so a motor bogie and a trailer bogie of each are the same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here). Nor the Desiro City's
+// ('sf7000'): its frame is traced from a photograph of a bogie under a car numbered 403102, and the castings it shows between the wheels are the whole of what is drawn there, on either kind of bogie.
 import * as THREE from 'three';
 import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { AT300_TRACE, ELECTROSTAR_TRACE } from './train-bogie-trace.ts';
+import { AT300_TRACE, ELECTROSTAR_TRACE, SIEMENS_TRACE } from './train-bogie-trace.ts';
 import type { Px, PxCircle, PxRect } from './train-bogie-trace.ts';
 
 /** Wheel tread width. Assumed. */
@@ -49,8 +51,11 @@ export const FAR_WHEEL_SEGMENTS = 12;
 export const BOGIE_HALF_WIDTH = 1.15;
 export const BOGIE_TOP = 0.95;
 
-/** Whose bogie is drawn: the Hitachi AT300 (Class 800/801), the Bombardier Electrostar (Class 387), the Siemens SF7000 (Class 700/717) or the Alstom Coradia 1000's (Class 180). */
-export type BogieStyle = 'hitachi' | 'electrostar' | 'siemens' | 'alstom';
+/**
+ * Whose bogie is drawn: the Hitachi AT300 (Class 800/801), the Bombardier Electrostar (Class 387), the Siemens SF7000 traced from a photograph (Class 700/717: 'sf7000'), an inside-frame bogie drawn by eye
+ * from the same photograph before it was traced ('siemens': the Voyagers wear it, train-intercity.ts) or the Alstom Coradia 1000's (Class 180).
+ */
+export type BogieStyle = 'hitachi' | 'electrostar' | 'siemens' | 'sf7000' | 'alstom';
 
 export interface BogieSpec {
   /** Wheel radius, metres. */
@@ -290,6 +295,13 @@ interface Palette {
   rubber: THREE.Color;
   accent: THREE.Color;
 }
+/** The SF7000's: light-grey frame, webs and covers, a rust-brown rim, black rubber (tl700_03_gatwick_bogie_28898326470.jpg). The traced frame ('sf7000') takes its wheels, discs and axles from it and paints its own parts (`SF7000_PAINT`). */
+const SIEMENS_PALETTE: Palette = {
+  frame: col(0x8d939a), box: col(0x7d838a), cap: col(0xa4a9af), spring: col(0x5d6168), coil: col(0x2f3135),
+  tread: col(0x8f949b), rim: col(0x9b5b36), web: col(0xa7acb2), hub: col(0xb3b8be), inner: col(0x6f747a),
+  disc: col(0x62676e), discRim: col(0x7d8289), damper: col(0x959ba1), clevis: col(0x7a8087),
+  motor: col(0x4d5259), gear: col(0x73787f), axle: col(0x575b61), rubber: col(0x25272a), accent: col(0xb0262c),
+};
 const PALETTES: Record<BogieStyle, Palette> = {
   // the AT300's: near-black frame and boxes with a lighter steel cap and rim (lner-gwr800-bogie-detail-2017.jpg), a yellow step
   hitachi: {
@@ -305,13 +317,8 @@ const PALETTES: Record<BogieStyle, Palette> = {
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x302f2e), clevis: col(0x4f4e4b),
     motor: col(0x5b6068), gear: col(0x6a6f77), axle: col(0x34373c), rubber: col(0x1f2125), accent: col(0xd9b11a),
   },
-  // the SF7000's: light-grey frame, webs and covers, a rust-brown rim, black rubber (tl700_03_gatwick_bogie_28898326470.jpg)
-  siemens: {
-    frame: col(0x8d939a), box: col(0x7d838a), cap: col(0xa4a9af), spring: col(0x5d6168), coil: col(0x2f3135),
-    tread: col(0x8f949b), rim: col(0x9b5b36), web: col(0xa7acb2), hub: col(0xb3b8be), inner: col(0x6f747a),
-    disc: col(0x62676e), discRim: col(0x7d8289), damper: col(0x959ba1), clevis: col(0x7a8087),
-    motor: col(0x4d5259), gear: col(0x73787f), axle: col(0x575b61), rubber: col(0x25272a), accent: col(0xb0262c),
-  },
+  siemens: SIEMENS_PALETTE,
+  sf7000: SIEMENS_PALETTE,
   // the Class 180's: dusty brown-grey frame, gold-ended dampers (GC180-01-180-101-Kings-Cross-8077814883-.jpg)
   alstom: {
     frame: col(0x66625a), box: col(0x55514a), cap: col(0x7d796f), spring: col(0x5f5b53), coil: col(0x32302c),
@@ -370,7 +377,8 @@ export const BRAKE_UNIT = { y: 0.18, radius: 0.065, z0: 0.3, z1: 0.74, flange: 0
 
 /**
  * Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED), and on a trailer bogie its brake unit (`BRAKE_UNIT`)
- * (not the AT300's: its photograph, of a trailer bogie, shows nothing hung between the wheels, so none is drawn there, on a trailer or on a motor bogie).
+ * (not the AT300's: its photograph, of a trailer bogie, shows nothing hung between the wheels, so none is drawn there, on a trailer or on a motor bogie; nor the Electrostar's, nor the Desiro City's,
+ * whose frames are traced from photographs that show no brake unit hung under the beam).
  */
 function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
@@ -385,7 +393,7 @@ function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
       const z0 = az + inward * 0.2;
       const z1 = az + inward * 0.34;
       soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
-      if (spec.motor || style === 'hitachi' || style === 'electrostar') continue;
+      if (spec.motor || style === 'hitachi' || style === 'electrostar' || style === 'sf7000') continue;
       // the strap down from the calliper, and the cylinder it carries, with its flange on the end toward the middle of the bogie
       const [sx0, sx1] = xs(sx, 0.3 - unit.strap / 2, 0.3 + unit.strap / 2);
       const strapZ0 = az + inward * unit.z0;
@@ -465,15 +473,31 @@ const AT300_AIR = { x: 0.91, pedestal: 0.2, bag: 0.23 } as const;
  */
 interface Tracer {
   z(px: number): number;
-  y(py: number): number;
+  /** The height over the rail head of the photograph's row `py`. A photograph that looks down on the bogie (a `view`) lifts a part that stands further in than the plane of its calibration points: `x` is how far out from the centre line the part stands (absent: in that plane). */
+  y(py: number, x?: number): number;
   len(p: number): number;
   mirror(px: number): number;
 }
-function tracer(caps: readonly [Px, Px], spec: Pick<BogieSpec, 'radius' | 'wheelbase'>): Tracer {
+/** A photograph taken looking down on the bogie from outside: the camera's elevation in degrees, and how far out from the centre line the plane of the calibration points stands. */
+interface TracerView {
+  elevation: number;
+  ref: number;
+}
+function tracer(caps: readonly [Px, Px], spec: Pick<BogieSpec, 'radius' | 'wheelbase'>, view?: TracerView): Tracer {
   const scale = (caps[1][0] - caps[0][0]) / spec.wheelbase;
   const centre = (caps[0][0] + caps[1][0]) / 2;
   const axleRow = (caps[0][1] + caps[1][1]) / 2;
-  return { z: (px) => -(px - centre) / scale, y: (py) => spec.radius + (axleRow - py) / scale, len: (p) => p / scale, mirror: (px) => 2 * centre - px };
+  // a point `d` nearer the camera than the reference plane appears d * sin(elevation) lower, and every height is foreshortened by cos(elevation): a part's height over the axle line
+  // is its apparent height, less the lift its depth gives it, over that cosine (a photograph taken level has neither: sin 0, cos 1)
+  const sin = view ? Math.sin((view.elevation * Math.PI) / 180) : 0;
+  const cos = view ? Math.cos((view.elevation * Math.PI) / 180) : 1;
+  const ref = view ? view.ref : 0;
+  return {
+    z: (px) => -(px - centre) / scale,
+    y: (py, x = ref) => spec.radius + ((axleRow - py) / scale - (ref - x) * sin) / cos,
+    len: (p) => p / scale,
+    mirror: (px) => 2 * centre - px,
+  };
 }
 
 /** The AT300's side beam as one outline in the photograph's pixels, clockwise from the left end block's top corner: over the top, down the right end block, the slot's roof, arch and floor and the arm's lower edge on the right, the deep middle's lower edge, and the same on the left. */
@@ -734,9 +758,10 @@ function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
 }
 
 /**
- * An inside-frame bogie (Siemens SF7000): the frame lies between the wheels with the axle boxes inboard of them, so from the side one sees
+ * An inside-frame bogie, drawn by eye (the 'siemens' style): the frame lies between the wheels with the axle boxes inboard of them, so from the side one sees
  * the plain wheels and, between them, the frame, a coil spring at each axle box, the air spring over the middle and a yaw damper
- * (tl700_03_gatwick_bogie_28898326470.jpg).
+ * (tl700_03_gatwick_bogie_28898326470.jpg). Round 6 traces the Desiro City's own from that photograph (`sf7000Frame`); this one stays for the Voyagers (train-intercity.ts), which
+ * wear it with a traction motor on their inner axle.
  */
 function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
@@ -767,6 +792,120 @@ function insideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
     F.box(hx0, hx1, r - 0.1, r + 0.12, -0.62, -0.46, pal.box);
   }
   F.box(-0.5, 0.5, r + 0.1, r + 0.24, -0.08, 0.08, pal.box);
+}
+
+/**
+ * How far out from the centre line each part of the Desiro City's bogie stands, as [from, to] or one centre line (metres). ASSUMED: a photograph shows no depth, and this one looks down on the
+ * bogie, so each part's height follows from its depth too (`tracer`). The castings stand between the wheels, inboard of their inner faces (0.6525 m): the end castings reach 0.60 m, which keeps them
+ * out of the wheels' discs, the grey casing and the centre casting stand where they do, the rod and the big vertical damper in front of them (rod 0.62 m, damper 0.70 m out), and the black air
+ * spring is centred 0.42 m out (its outer edge 0.665 m). The yaw damper and the Y bracket hang from the body outboard of the wheels (the wheel's face is 0.7825 m out and its hub cover 0.8155 m): the
+ * bracket's plate 0.83 to 0.87 m, the damper's axis 0.88 m, its two eyes out to 0.93 m, so the bogie reaches 0.935 m (the envelope is 1.15 m). No part of the frame shares a plane of the same
+ * facing with another, except where one part stands against the next (the eyes overlap what they stand on by a centimetre), so a face is told from its neighbour's by its plane.
+ */
+const SF7000_DEPTH = {
+  end: [0.44, 0.6],
+  label: [0.46, 0.58],
+  centre: [0.44, 0.62],
+  rod: 0.62,
+  damper: 0.7,
+  bag: 0.42,
+  yaw: 0.88,
+  eyeLeft: [0.61, 0.93],
+  eyeRight: [0.86, 0.93],
+  bracket: [0.83, 0.87],
+} as const;
+
+/**
+ * What each part of the Desiro City's bogie is painted: the median of its pixels in the photograph (`SIEMENS_TRACE`'s picture), as the Electrostar's palette is. The castings stand in the shade of the
+ * body, so they are dark (the near end casting brown with brake dust); the yaw damper and the bracket stand outboard of the wheel, in the light.
+ */
+const SF7000_PAINT = {
+  endLeft: col(0x423d36),
+  endRight: col(0x272829),
+  label: col(0x414141),
+  centre: col(0x3b3e3f),
+  eyeLeft: col(0x636366),
+  eyeRight: col(0x53555c),
+  rod: col(0x5b5a5a),
+  damper: col(0x5c5e5e),
+  bag: col(0x20201c),
+  yaw: col(0x747a85),
+  bracket: col(0x6e7683),
+} as const;
+
+/** The tracer of the Desiro City's photograph for a bogie: calibrated to the photograph's own wheelbase (the frame is the traced one whatever the wheelbase), looking down at the picture's elevation. */
+function sf7000Tracer(spec: Pick<BogieSpec, 'radius' | 'track'>): Tracer {
+  const t = SIEMENS_TRACE;
+  return tracer(t.caps, { radius: spec.radius, wheelbase: t.wheelbase }, { elevation: t.elevation, ref: spec.track / 2 + WHEEL_WIDTH / 2 });
+}
+
+/** An axis along the line from `a` to `b`, with its length: the rings start upward, so a tube along a line near the horizontal has its first corner on top. */
+function axisBetween(a: V3, b: V3): { axis: Axis; length: number } {
+  const d: V3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+  const length = Math.hypot(d[0], d[1], d[2]);
+  const dir: V3 = [d[0] / length, d[1] / length, d[2] / length];
+  // e2 is horizontal and across the line (up x dir), e1 the other way round the ring (dir x e2), which stands up
+  const e2 = unit([dir[2], 0, -dir[0]]);
+  const e1: V3 = [dir[1] * e2[2] - dir[2] * e2[1], dir[2] * e2[0] - dir[0] * e2[2], dir[0] * e2[1] - dir[1] * e2[0]];
+  return { axis: { o: a, a: dir, e1, e2 }, length };
+}
+
+/**
+ * The Desiro City's bogie frame (the Class 700 and 717), traced from `SIEMENS_TRACE`'s photograph: what is drawn is what the photograph shows between the wheels, each part at its depth
+ * (`SF7000_DEPTH`, ASSUMED), with its height corrected for the camera looking down. At each end a casting (a box: the near one carries the brake block beside the wheel), then the grey casing with
+ * its label, the centre casting that carries the wheelbase's mark, the vertical rod in front of the casing and the big vertical damper in front of the centre casting, the black air spring on the
+ * centre casting, and outboard of the wheels the yaw damper (a thin cylinder and a thick one rising toward the right) between its two eyes, hung from the body's Y bracket. The two ends are not each
+ * other's mirror, so each is traced; the far side beam is the near one turned half a turn about the vertical (z -> -z), ASSUMED. A trailer bogie and a motor bogie are the same here (the
+ * photographs show one bogie, and what a bogie of the other kind carries is a GAP).
+ */
+function sf7000Frame(F: Soup, S: Soup, spec: BogieSpec): void {
+  const t = SIEMENS_TRACE;
+  const D = SF7000_DEPTH;
+  const C = SF7000_PAINT;
+  const T = sf7000Tracer(spec);
+  /** A rectangle of the photograph as the metres it spans at depth `x`: along the bogie (z0 < z1) and up (y0 < y1). */
+  const span = (q: PxRect, x: number): { z0: number; z1: number; y0: number; y1: number } => ({ z0: Math.min(T.z(q[0]), T.z(q[2])), z1: Math.max(T.z(q[0]), T.z(q[2])), y0: T.y(q[3], x), y1: T.y(q[1], x) });
+  for (const sx of [-1, 1] as const) {
+    /** The far side turns everything half a turn about the vertical. */
+    const zs = (s: { z0: number; z1: number }): [number, number] => (sx > 0 ? [s.z0, s.z1] : [-s.z1, -s.z0]);
+    /** A box over a rectangle of the photograph, from depth `d[0]` to `d[1]`; its outer face sets the heights. */
+    const block = (q: PxRect, d: readonly [number, number], colour: THREE.Color): void => {
+      const s = span(q, d[1]);
+      const [z0, z1] = zs(s);
+      const [x0, x1] = xs(sx, d[0], d[1]);
+      F.box(x0, x1, s.y0, s.y1, z0, z1, colour);
+    };
+    block(t.casting.left, D.end, C.endLeft);
+    block(t.casting.label, D.label, C.label);
+    block(t.casting.centre, D.centre, C.centre);
+    block(t.casting.right, D.end, C.endRight);
+    // the vertical rod and the big vertical damper: ten-sided cylinders standing on their feet, closed at both ends
+    for (const [q, depth, colour] of [[t.rod, D.rod, C.rod], [t.damper, D.damper, C.damper]] as const) {
+      const s = span(q, depth);
+      const [z0, z1] = zs(s);
+      tube(F, axisY(sx * depth, s.y0, (z0 + z1) / 2), 0, s.y1 - s.y0, (s.z1 - s.z0) / 2, 10, colour, 'both');
+    }
+    // the air spring: a fourteen-sided drum on the centre casting's top, up to the underside of the body, centred on the middle of the bogie
+    const foot = T.y(t.casting.centre[1], D.centre[1]);
+    tube(S, axisY(sx * D.bag, foot, 0), 0, BOGIE_TOP - 0.005 - foot, Math.abs(T.z(t.bag.edge)), 14, C.bag, 'end');
+    // the yaw damper: one straight line from the eye on the centre casting to the eye on the Y bracket, a thin ten-sided cylinder and, from the step on, a thick one, each closed where it
+    // starts; the thick one is closed at its far end too
+    const y = t.yaw;
+    const a: V3 = [sx * D.yaw, T.y(y.from[1], D.yaw), sx * T.z(y.from[0])];
+    const b: V3 = [sx * D.yaw, T.y(y.to[1], D.yaw), sx * T.z(y.to[0])];
+    const { axis, length } = axisBetween(a, b);
+    const step = ((y.step - y.from[0]) / (y.to[0] - y.from[0])) * length;
+    tube(F, axis, 0, step, T.len(y.rodRadius), 10, C.yaw, 'start');
+    tube(F, axis, step, length, T.len(y.bodyRadius), 10, C.yaw, 'both');
+    block(y.eyeLeft, D.eyeLeft, C.eyeLeft);
+    block(y.eyeRight, D.eyeRight, C.eyeRight);
+    // the Y bracket in front of the wheel: one plate of the traced outline
+    const [bx0, bx1] = xs(sx, D.bracket[0], D.bracket[1]);
+    plate(F, t.bracket.map((p): P2 => [sx * T.z(p[0]), T.y(p[1], D.bracket[1])]), bx0, bx1, C.bracket, C.bracket, sx);
+  }
+  // the transom between the two sides' centre castings, which no photograph shows (it stands between them): 0.16 m along the bogie and 0.2 m deep, at the centre casting's mid height
+  const mid = (T.y(t.casting.centre[1], D.centre[1]) + T.y(t.casting.centre[3], D.centre[1])) / 2;
+  F.box(-(D.centre[0] + 0.01), D.centre[0] + 0.01, mid - 0.1, mid + 0.1, -0.08, 0.08, C.centre);
 }
 
 // --- the drive ----------------------------------------------------------------------------------------------------------
@@ -849,7 +988,10 @@ export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
   const parts: Record<BogiePart, Soup> = { wheels: new Soup(), axles: new Soup(), brakes: new Soup(), frame: new Soup(), springs: new Soup(), drive: new Soup() };
   wheelsets(parts.wheels, spec, pal);
   brakes(parts.brakes, spec, pal);
-  if (style === 'siemens') {
+  if (style === 'sf7000') {
+    axles(parts.axles, spec, pal, spec.track / 2 + 0.05);
+    sf7000Frame(parts.frame, parts.springs, spec);
+  } else if (style === 'siemens') {
     axles(parts.axles, spec, pal, spec.track / 2 + 0.05);
     insideFrame(parts.frame, parts.springs, spec, pal);
   } else {
@@ -859,7 +1001,7 @@ export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
     else outsideFrame(parts.frame, parts.springs, spec, pal);
   }
   if (spec.motor && spec.diesel) finalDrive(parts.drive, spec, pal);
-  else if (spec.motor && style !== 'hitachi' && style !== 'electrostar') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
+  else if (spec.motor && style !== 'hitachi' && style !== 'electrostar' && style !== 'sf7000') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
   return parts;
 }
 
@@ -889,6 +1031,38 @@ export function bogieFarSoup(spec: Pick<BogieSpec, 'radius' | 'wheelbase' | 'tra
       lathe(soup, ax, [[-WHEEL_WIDTH / 2, r], [WHEEL_WIDTH / 2, r]], n, pal.tread);
       lathe(soup, ax, [[WHEEL_WIDTH / 2, r], [WHEEL_WIDTH / 2, 0]], n, pal.web);
     }
+  }
+  if (style === 'sf7000') {
+    // the Desiro City's bogie from far off: the castings between the wheels as one box a side (as high and as long as the traced four together), the air spring as a square drum up to the body, and the
+    // yaw damper outboard of the wheel as a bar (the eyes' width), each in the colour of what it stands for, and the transom
+    const t = SIEMENS_TRACE;
+    const D = SF7000_DEPTH;
+    const C = SF7000_PAINT;
+    const T = sf7000Tracer(spec);
+    const castings = [[t.casting.left, D.end], [t.casting.label, D.label], [t.casting.centre, D.centre], [t.casting.right, D.end]] as const;
+    const zFirst = Math.max(...castings.map(([q]) => T.z(q[0])));
+    const zLast = Math.min(...castings.map(([q]) => T.z(q[2])));
+    const yLow = Math.min(...castings.map(([q, d]) => T.y(q[3], d[1])));
+    const yHigh = Math.max(...castings.map(([q, d]) => T.y(q[1], d[1])));
+    const foot = T.y(t.casting.centre[1], D.centre[1]);
+    const bag = Math.abs(T.z(t.bag.edge)) * 0.8;
+    const reach = T.len(t.yaw.bodyRadius);
+    const barLow = Math.min(T.y(t.yaw.from[1], D.yaw), T.y(t.yaw.to[1], D.yaw)) - reach;
+    const barHigh = Math.max(T.y(t.yaw.from[1], D.yaw), T.y(t.yaw.to[1], D.yaw)) + reach;
+    for (const sx of [-1, 1] as const) {
+      const [z0, z1] = sx > 0 ? [zLast, zFirst] : [-zFirst, -zLast];
+      const [x0, x1] = xs(sx, D.centre[0], D.end[1]);
+      soup.box(x0, x1, yLow, yHigh, z0, z1, C.centre);
+      const [bx0, bx1] = xs(sx, D.bag - bag, D.bag + bag);
+      soup.box(bx0, bx1, foot, BOGIE_TOP - 0.005, -bag, bag, C.bag);
+      const zEnds = [T.z(t.yaw.to[0]), T.z(t.yaw.from[0])];
+      const [yz0, yz1] = sx > 0 ? [zEnds[0] as number, zEnds[1] as number] : [-(zEnds[1] as number), -(zEnds[0] as number)];
+      const [yx0, yx1] = xs(sx, D.eyeRight[0], D.eyeRight[1]);
+      soup.box(yx0, yx1, barLow, barHigh, yz0, yz1, C.yaw);
+    }
+    const mid = (foot + T.y(t.casting.centre[3], D.centre[1])) / 2;
+    soup.box(-(D.centre[0] + 0.01), D.centre[0] + 0.01, mid - 0.1, mid + 0.1, -0.08, 0.08, C.centre);
+    return soup;
   }
   if (style === 'siemens') {
     for (const sx of [-1, 1]) {

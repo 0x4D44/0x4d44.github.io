@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - a photo taken from above lifts what stands inward: trace with its elevation (train-parts.ts tracer)
+  The Class 700 bogie picture (Gatwick, 28898326470) is taken from above: the near wheel is bigger than the far one and a casting 0.18 m inboard of the wheel face appears about
+  0.06 m higher than it stands. tracer(caps, spec, { elevation, ref }) takes that out: y = r + ((axleRow - py) / scale - (ref - x) sin e) / cos e, x being how far out the part stands.
+  Both are ASSUMED and pinned as such: e = 20 degrees (15 from the hub plate's roundness, 30 to 36 from the tyre's outline), and every depth (SF7000_DEPTH). The 'siemens' style is
+  the Voyagers' bogie as well (train-intercity.ts), so the traced Desiro City frame is its own style 'sf7000': search a style's users before replacing it.
+
 - 2026-11-10 - glass-normals share sits near 80% on any nose: section polyline corners, not the formula (train.ts glassRow)
   train-rake.test.ts compares each windscreen vertex normal with its triangle's. On the Class 180, 84% of the misses stand at |x| >= 0.6 m, where the car's 13-point
   section turns 13-20 degrees a segment and a pane's 8 columns chord across its corners; 61% stand in the first 0.3 m, where cosine-crowded rows 6.5 mm apart over the

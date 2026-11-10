@@ -1868,7 +1868,7 @@ test('bogies: wheels have flanges and the bogie has brake discs and springs, mot
   const motorRings = (s: { pos: number[] }): number => s.pos.filter((x, i) => i % 3 === 0 && Math.abs(Math.abs(x) - 0.31) < 1e-5).length;
   // CHANGED (round 6: it asked the AT300's motor bogie for motors and its trailer for none): the AT300's bogie is the one its photograph shows (`train-bogie-trace.test.ts`), the same under a
   // motor car and a trailer car, with nothing hung between the wheels: the photograph of a trailer bogie shows nothing there and none shows a motor bogie's, so no motor is drawn on a guess.
-  // The makers whose motors are drawn are the other three.
+  // The makers whose motors are drawn are the other three (until the Desiro City's frame was traced: see below).
   // CHANGED (round 6, the second frame traced): the Electrostar's frame is traced from its photographs (`train-bogie-trace-electrostar.test.ts`), and the photograph of a P3-25 (a powered bogie) shows nothing hung
   // between its wheels either, so the Electrostar's motor bogie and trailer bogie are the one bogie as the AT300's are, and neither draws a motor (the makers whose motors are drawn are the Siemens' and the Alstom's)
   assert.equal(motorRings(motor), 0, 'the AT300 draws no traction motor');
@@ -1877,6 +1877,13 @@ test('bogies: wheels have flanges and the bogie has brake discs and springs, mot
     const s = bogieSoup({ ...spec, motor: isMotor, style: 'electrostar' });
     assert.equal(motorRings(s), 0, `the Electrostar draws no traction motor (motor ${isMotor})`);
     assert.ok(count(s) > 1200 && count(s) < 4500, `Electrostar bogie triangles ${count(s)}`);
+  }
+  // CHANGED (round 6, the third frame traced): the Desiro City's frame (the 'sf7000' style, which the 700 and the 717 run on) is traced from the photograph of a bogie under a motor car's number
+  // (`train-bogie-trace-siemens.test.ts`), which shows no traction motor between the wheels, so it draws none, motor car or trailer car; the 'siemens' style, the Voyagers' bogie, still draws its motors
+  for (const isMotor of [true, false]) {
+    const s = bogieSoup({ ...spec, motor: isMotor, style: 'sf7000' });
+    assert.equal(motorRings(s), 0, `the Desiro City draws no traction motor (motor ${isMotor})`);
+    assert.ok(count(s) > 1200 && count(s) < 2500, `Desiro City bogie triangles ${count(s)}`);
   }
   for (const style of ['siemens', 'alstom'] as const) {
     const m = bogieSoup({ ...spec, motor: true, style });
@@ -2073,15 +2080,17 @@ test('bogies: a driven bogie of the diesel Class 180 has a final-drive gearbox o
     assert.ok(!xs(driven).some((x) => Math.abs(Math.abs(x) - 0.31) < 1e-5), `car ${car.index}: the driven bogie has traction motors`);
     assert.ok(xs(driven).filter((x) => Math.abs(x) < 0.05).length >= 8, `car ${car.index}: the driven bogie has no cardan shaft`);
   }
-  // an electric unit has no diesel bogie: the Class 700's motor bogie is the one with traction motors
-  // CHANGED (round 6): it read the 387's, whose frame is now traced from its photographs, which show nothing hung between the wheels of a powered bogie (a GAP: what a motor bogie of the Electrostar
-  // carries is not observable here), so the 387's motor bogie draws no motor and the Siemens' is the electric one drawn here
+  // an electric unit has no diesel bogie, and draws no cardan shaft
+  // CHANGED (round 6; it read the 387's, whose frame is now traced from its photographs, which show nothing hung between the wheels of a powered bogie (a GAP: what a motor bogie of the Electrostar
+  // carries is not observable here), so the 387's motor bogie draws no motor, and then the Siemens' as "the electric one drawn here" with its traction motors; the Class 700's frame is traced too now,
+  // from a photograph of a bogie under a motor car's number, and shows castings and no traction motor between the wheels): no electric kind built here draws a traction motor, and none a cardan shaft
   const e = built('tl700x8');
   const motorCar = trainLayout('tl700x8').cars.find((c) => c.type === 'MSO') as Car;
   const bogieGeo = (k: number): THREE.BufferGeometry => meshes(named(e, `bogie-${motorCar.index}-${k}`), 'near').geometry;
   const motorK = motorCar.motor.findIndex(Boolean);
   const pos = (geo: THREE.BufferGeometry): THREE.BufferAttribute => geo.getAttribute('position') as THREE.BufferAttribute;
-  assert.ok(Array.from({ length: pos(bogieGeo(motorK)).count }, (_, i) => Math.abs(Math.abs(pos(bogieGeo(motorK)).getX(i)) - 0.31) < 1e-5).some(Boolean), 'the electric motor bogie has traction motors');
+  assert.ok(!Array.from({ length: pos(bogieGeo(motorK)).count }, (_, i) => Math.abs(Math.abs(pos(bogieGeo(motorK)).getX(i)) - 0.31) < 1e-5).some(Boolean), 'the Desiro City\'s motor bogie draws no traction motor');
+  assert.ok(!Array.from({ length: pos(bogieGeo(motorK)).count }, (_, i) => i).some((i) => Math.abs(pos(bogieGeo(motorK)).getX(i)) < 0.05 && Math.abs(Math.abs(pos(bogieGeo(motorK)).getZ(i)) - 0.8) < 0.3 && Math.abs(pos(bogieGeo(motorK)).getY(i) - (0.41 + CARDAN_AXIS)) < 0.1), 'and no cardan shaft');
   const e387 = built('gn387x4');
   const motorCar387 = trainLayout('gn387x4').cars.find((c) => c.type === 'MSO') as Car;
   const geo387 = meshes(named(e387, `bogie-${motorCar387.index}-${motorCar387.motor.findIndex(Boolean)}`), 'near').geometry;
@@ -2242,6 +2251,8 @@ test('bogies: a train far from the camera draws the same calls and far fewer tri
 /**
  * Every bogie the model draws, as its maker's style and the sizes its family gives it (core/train.ts: wheel diameter, motor and trailer wheelbase):
  * the Hitachi AT300 (Class 800/801), the Electrostar (387), the Siemens SF7000 (700 and 717) and the Class 180's. Each as a motor and a trailer bogie.
+ * CHANGED (round 6, the third frame traced): the 700 and the 717 run on the 'sf7000' style, traced from a photograph (`train-bogie-trace-siemens.test.ts`), at the motor bogie's 2.2 m and the trailer's 2.1 m;
+ * the 'siemens' style stays, as the Voyagers' bogie (train-intercity.ts), at the same two wheelbases it was held to before.
  */
 const BOGIE_CASES: { label: string; spec: BogieSpec }[] = [];
 for (const [label, style, radius, wheelbase, diesel] of [
@@ -2249,6 +2260,8 @@ for (const [label, style, radius, wheelbase, diesel] of [
   ['Electrostar', 'electrostar', 0.42, 2.7, false],
   ['Siemens motor', 'siemens', 0.41, 2.2, false],
   ['Siemens trailer', 'siemens', 0.41, 2.1, false],
+  ['Desiro City motor', 'sf7000', 0.41, 2.2, false],
+  ['Desiro City trailer', 'sf7000', 0.41, 2.1, false],
   ['Class 180', 'alstom', 0.42, 2.7, true],
 ] as const) {
   for (const motor of [true, false]) BOGIE_CASES.push({ label: `${label} ${motor ? 'motor' : 'trailer'}`, spec: { radius, wheelbase, track: FIGURES.gauge.value, motor, style, ...(diesel ? { diesel } : {}) } });
@@ -2321,11 +2334,13 @@ test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, a t
     const parts = bogieParts(spec);
     const twin = bogieParts({ ...spec, motor: !spec.motor });
     const [motor, trailer] = spec.motor ? [parts, twin] : [twin, parts];
-    if (spec.style === 'hitachi' || spec.style === 'electrostar') {
+    if (spec.style === 'hitachi' || spec.style === 'electrostar' || spec.style === 'sf7000') {
       // CHANGED (round 6; it asked the AT300's motor bogie for a drive of 100 triangles or more and its trailer bogie for four brake units): the AT300's bogie is traced from the photograph of a trailer
       // bogie (`train-bogie-trace.test.ts`), which shows nothing hanging between the wheels, and no photograph shows what a motor bogie carries there. A motor bogie's drive and a trailer's brake units
       // were ASSUMED shapes, so they are not drawn: a motor bogie and a trailer bogie are the same bogie, in every part, with the wheels' discs and callipers and no more.
       // CHANGED (round 6, the second frame traced): the Electrostar's too (`train-bogie-trace-electrostar.test.ts`): the photograph of its P3-25, a powered bogie, shows nothing hung between its wheels
+      // CHANGED (round 6, the third frame traced): the Desiro City's (`train-bogie-trace-siemens.test.ts`), from the photograph of a bogie under car 403102's number (a motor car, by inference): it shows
+      // its castings, air spring, rod, dampers and yaw damper and no traction motor or gearbox hung between the wheels, and none shows a trailer bogie's brake units; so neither is drawn here
       for (const part of ['wheels', 'axles', 'brakes', 'frame', 'springs', 'drive'] as const) assert.deepEqual(motor[part].pos, trailer[part].pos, `${label}: a motor bogie's ${part} are a trailer's`);
       assert.equal(trisOf(motor.drive), 0, `${label}: no drive is drawn`);
       const discsOnly = bogieParts({ ...spec, style: 'siemens', diesel: false, motor: true }).brakes;
@@ -2410,11 +2425,11 @@ test('bogie drives hang in view: a motor bogie\'s drive and a trailer bogie\'s b
     const beam = vertsOf(parts.frame).filter((v) => Math.abs(v[0]) >= 0.4 && Math.abs(v[2]) <= 0.6 && v[1] >= spec.radius - 0.17);
     assert.ok(beam.length >= 8, `${label}: found the side beams`);
     const beamBottom = Math.min(...beam.map((v) => v[1]));
-    if (spec.style === 'hitachi' || spec.style === 'electrostar') {
+    if (spec.style === 'hitachi' || spec.style === 'electrostar' || spec.style === 'sf7000') {
       // CHANGED (round 6; it held the AT300's motor bogie's drive and its trailer bogie's brake units to MOTOR_FLOOR over the rail head, 10 cm under the beam): neither is drawn (see 'bogie drives' above), so
       // nothing of the brakes or the drive stands in the clear between the wheels; what hangs lowest there is the frame's, and `train-bogie-trace.test.ts` holds that to the photograph
-      // (the Electrostar's too, from its own: `train-bogie-trace-electrostar.test.ts`)
-      assert.equal(trisOf(parts.drive), 0, `${label}: the AT300 and the Electrostar draw no drive`);
+      // (the Electrostar's too, from its own: `train-bogie-trace-electrostar.test.ts`, and the Desiro City's: `train-bogie-trace-siemens.test.ts`)
+      assert.equal(trisOf(parts.drive), 0, `${label}: the AT300, the Electrostar and the Desiro City draw no drive`);
       assert.equal(vertsOf(parts.brakes).filter(clear).length, 0, `${label}: no brake unit hangs in the clear between the wheels`);
       continue;
     }
@@ -2471,8 +2486,8 @@ const soupTris = (s: Soup): { v: [V3t, V3t, V3t]; c: [number, number, number] }[
 const linearLuma = (c: [number, number, number]): number => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
 test('bogie drives: a traction motor\'s gear case is a box from its axle to the motor\'s far end, on the opposite sides for the two axles, in the gear colour and not the barrel\'s', () => {
-  // (round 6: not the AT300's nor the Electrostar's, which draw no motor)
-  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel && c.spec.style !== 'hitachi' && c.spec.style !== 'electrostar')) {
+  // (round 6: not the AT300's, the Electrostar's nor the Desiro City's, which draw no motor)
+  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel && c.spec.style !== 'hitachi' && c.spec.style !== 'electrostar' && c.spec.style !== 'sf7000')) {
     const r = spec.radius;
     const w = spec.wheelbase / 2;
     const tris = soupTris(bogieParts(spec).drive);
@@ -2632,20 +2647,24 @@ test('bogie styles: absent a style a bogie is the Hitachi\'s, or the Alstom\'s i
   assert.equal(bogieStyle({}), 'hitachi');
   assert.equal(bogieStyle({ diesel: false }), 'hitachi');
   assert.equal(bogieStyle({ diesel: true }), 'alstom');
-  for (const style of ['hitachi', 'electrostar', 'siemens', 'alstom'] as const) assert.equal(bogieStyle({ style }), style);
+  // CHANGED (round 6, the third frame traced; four styles were five now): the Desiro City's is the 'sf7000', a style of its own beside the Voyagers' 'siemens'
+  for (const style of ['hitachi', 'electrostar', 'siemens', 'sf7000', 'alstom'] as const) assert.equal(bogieStyle({ style }), style);
   assert.equal(bogieStyle({ style: 'siemens', diesel: true }), 'siemens', 'an explicit style wins');
   const spec = { radius: 0.42, wheelbase: 2.7, track: FIGURES.gauge.value, motor: true };
   const meshOf = (b: THREE.Object3D, lod: string): THREE.Mesh => all(b, 'bogie-mesh').find((m) => m.userData.lod === lod) as THREE.Mesh;
-  const styles = ['hitachi', 'electrostar', 'siemens', 'alstom'] as const;
+  const styles = ['hitachi', 'electrostar', 'siemens', 'sf7000', 'alstom'] as const;
   for (const lod of ['near', 'far']) {
     const geos = styles.map((style) => meshOf(buildBogie({ ...spec, style }), lod).geometry);
-    assert.equal(new Set(geos).size, 4, `${lod}: one geometry for each of the four styles`);
+    assert.equal(new Set(geos).size, 5, `${lod}: one geometry for each of the five styles`);
     styles.forEach((style, k) => assert.equal(meshOf(buildBogie({ ...spec, style }), lod).geometry, geos[k], `${lod}: two ${style} bogies share a geometry`));
   }
   // the styles differ where the photographs differ: the Siemens' inside frame keeps everything within the wheels' hubs, the others carry axle boxes and beams outboard of the wheels
   const reach = (style: BogieStyle): number => Math.max(...vertsOf(bogieSoup({ ...spec, style })).map((v) => Math.abs(v[0])));
   assert.ok(reach('siemens') <= spec.track / 2 + 0.12, `the Siemens bogie is ${reach('siemens')} m out`);
   for (const style of ['hitachi', 'electrostar', 'alstom'] as const) assert.ok(reach(style) >= 1.05, `the ${style} bogie is ${reach(style)} m out: no outside frame`);
+  // the Desiro City's is an inside frame too, its castings between the wheels, but the yaw damper's eyes and bar stand outboard of the wheel and make it the widest part, 0.935 m out (traced), not the
+  // 1.05 m or more of an outside frame
+  assert.ok(reach('sf7000') > spec.track / 2 + 0.12 && reach('sf7000') < 1.0, `the Desiro City bogie is ${reach('sf7000')} m out`);
   // and only the AT300 carries the yellow maintenance step the photograph shows
   const yellow = col(0xd9b11a);
   const hasYellow = (style: BogieStyle): boolean => {
@@ -2653,7 +2672,7 @@ test('bogie styles: absent a style a bogie is the Hitachi\'s, or the Alstom\'s i
     for (let i = 0; i < s.clr.length; i += 3) if (Math.abs((s.clr[i] as number) - yellow.r) < 1e-6 && Math.abs((s.clr[i + 1] as number) - yellow.g) < 1e-6 && Math.abs((s.clr[i + 2] as number) - yellow.b) < 1e-6) return true;
     return false;
   };
-  assert.deepEqual(styles.map(hasYellow), [true, false, false, false]);
+  assert.deepEqual(styles.map(hasYellow), [true, false, false, false, false]);
 });
 
 test('bogies: the AT300 frame is the one its photograph is traced to, with the bracket, rod, lever, yaw damper and pedestal straps standing in planes of their own, and no other maker\'s frame has a vertex on them', () => {
@@ -2667,7 +2686,7 @@ test('bogies: the AT300 frame is the one its photograph is traced to, with the b
   const onPlane = (verts: V3t[], x: number): number => verts.filter((p) => Math.abs(Math.abs(p[0]) - x) < 1e-9).length;
   const at300 = vertsOf(bogieParts(spec).frame);
   for (const x of planes) assert.ok(onPlane(at300, x) > 0, `the AT300's frame has no vertex ${x} m from the middle`);
-  for (const style of ['electrostar', 'alstom', 'siemens'] as const) {
+  for (const style of ['electrostar', 'alstom', 'siemens', 'sf7000'] as const) {
     const v = vertsOf(bogieParts({ ...spec, style, diesel: style === 'alstom' }).frame);
     for (const x of planes) assert.equal(onPlane(v, x), 0, `${style}: ${onPlane(v, x)} vertices ${x} m from the middle, a plane the AT300's frame alone stands in`);
   }
@@ -5026,7 +5045,9 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
 });
 
 test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electrostar\'s, the Siemens Desiro City and 700, the Alstom 180), every car on its own family\'s', () => {
-  assert.deepEqual(BOGIE_STYLE, { at300: 'hitachi', electrostar: 'electrostar', desiro: 'siemens', desiro700: 'siemens', adelante: 'alstom' });
+  // CHANGED (round 6; the Desiro City and the 700 were 'siemens'): their frame is traced from a photograph (`train-bogie-trace-siemens.test.ts`) and is the 'sf7000' style, so that the 'siemens' style,
+  // which the Voyagers wear (train-intercity.ts), is not touched; the loop below holds a Desiro car to the one and to none of the others
+  assert.deepEqual(BOGIE_STYLE, { at300: 'hitachi', electrostar: 'electrostar', desiro: 'sf7000', desiro700: 'sf7000', adelante: 'alstom' });
   const nearOf = (bogie: THREE.Object3D): THREE.BufferGeometry => ((named(bogie, 'bogie-lod') as THREE.LOD).levels[0] as unknown as { object: THREE.Mesh }).object.geometry;
   for (const kind of ALL_KINDS) {
     const g = built(kind);
@@ -5045,7 +5066,7 @@ test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electro
         };
         // the build shares one geometry per spec and maker, so a bogie of the right maker is the very geometry built here with that maker's style
         const actual = nearOf(named(named(g, `car-${car.index}`), `bogie-${car.index}-${k}`));
-        for (const style of ['hitachi', 'electrostar', 'siemens', 'alstom'] as const) {
+        for (const style of ['hitachi', 'electrostar', 'siemens', 'sf7000', 'alstom'] as const) {
           assert.equal(actual === nearOf(buildBogie({ ...spec, style })), style === BOGIE_STYLE[family], `${kind} car ${car.index} bogie ${k}: the ${style} geometry`);
         }
       });

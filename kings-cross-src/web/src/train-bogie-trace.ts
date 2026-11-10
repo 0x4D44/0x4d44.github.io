@@ -7,6 +7,9 @@
 // beam, so a wheel's size is NOT read from it and stays the figure's). Depths across the bogie cannot be read from a side-on photograph and are ASSUMED (see `AT300_DEPTH` in
 // train-parts.ts): the trace is the outline in the side view.
 //
+// The Desiro City's picture (`SIEMENS_TRACE`) is the exception: it looks down on the bogie from outside the train, so it is calibrated on the two wheels' outer faces (the plane the tyres'
+// front edges stand in) and `tracer` is given the camera's elevation, ASSUMED, to take out the height a part gains by standing inboard of that plane. Its depths are ASSUMED too.
+//
 // The photograph's right is the bogie's -z on the +x side (seen from outside the train). The two ends of the bogie are each other's mirror about the middle of the caps
 // to within 3 pixels at the tops of the end blocks and 5 at the arches, so an end is traced once (the photograph's left, +z) and mirrored; the features of the middle (the
 // bracket, the damper, the anti-roll rod and lever, the step) are one-sided, and the bogie's other side beam carries them turned half a turn about the vertical (z -> -z).
@@ -145,4 +148,56 @@ export const ELECTROSTAR_TRACE = {
   /** The bolted shelf hung under the middle of the beam, and the shoe beam along the bottom of the bogie (a long bar between the axle boxes, the third-rail shoe gear's carrier). */
   shelf: [890, 868, 1295, 885] as PxRect,
   shoe: [300, 960, 1560, 1005] as PxRect,
+} as const;
+
+/**
+ * The Siemens SF7000 bogie of the Desiro City (the Class 700 and 717), from `Class 700 Thameslink at Gatwick station - 28898326470.jpg`: the inside frame of a Class 700's bogie from outside the train
+ * at Gatwick, by Elsie esq., 2016-08-23 14:50, CC BY 2.0 (Wikimedia Commons), 5442 x 3626 as published, 1920 x 1279 as reviewed. `... - 28898329080.jpg` (four seconds later) and `... - 29079950332.jpg`
+ * (thirty-seven), from further round, show the same kind of bogie under a car numbered 403102, and `... - 29107917221.jpg` the near wheel's hub; they were used to check the shape, not to take numbers.
+ * (If the 403xxx cars are the 700's motor cars, an inference from the car number that no page read confirms for this car, the bogie is a powered one; what a trailer bogie carries instead is a GAP, and
+ * a trailer bogie is drawn the same.)
+ *
+ * The picture is turned twice to put the two wheels level (counter-clockwise about the point given, bicubic): first 4.8763 degrees clockwise about the left axle cap (which levelled the caps, but they
+ * stand at different depths, so the wheels were still 1.7 degrees out), then 1.7749 degrees about the left wheel's face. The numbers below are read off the turned picture, each to about 8 pixels.
+ *
+ * It is NOT a side-on view. The camera looks down on the bogie from outside the train and from the left (the left wheel stands nearer and looks bigger), so a part that stands further in from
+ * the wheel's face appears higher on the screen than it is. `tracer` (train-parts.ts) takes that out: a part's real height over the axle line is its apparent height less the lift its depth gives
+ * it, over the cosine of the camera's elevation. The elevation is ASSUMED, 20 degrees: 15 from how round the wheel's hub plate looks (117 px high, 122 wide) and from how high the body skirt is
+ * drawn, 30 to 36 from the tyres' outline (which includes the tread's far edge). The depths across the bogie are ASSUMED too (`SF7000_DEPTH` in train-parts.ts), and the heights follow from them.
+ * The scale is the two wheel faces' distance over the wheelbase, 2.2 m (the label on the centre casting reads "2.20m"); the trailer's 2.1 m only moves its wheels, the frame is the traced one.
+ *
+ * What is traced is what the picture shows between the wheels: the two end castings (the left carries the brake block beside the wheel), the grey casing with its label, the centre casting with the
+ * wheelbase's mark, the vertical rod with its clamps, the big vertical damper, the black air spring over the centre, and the long yaw damper with its two eyes running out to the body-mounted Y bracket
+ * that stands in front of the right wheel. The two ends are not each other's mirror, so each is traced; the far side is the near one turned half a turn about the vertical (z -> -z), ASSUMED. NOT
+ * drawn (GAP): the near wheel's sensor plate, lever and earthing cable, the brake block's stepped outline, the U-shaped pipe under the rod, the pipes and cables over the right casting, and everything
+ * the body's skirt hides; each casting is a box.
+ */
+export const SIEMENS_TRACE = {
+  /** The centres of the two wheels' outer faces (the tyre's front edge) in the turned picture: the axle line and the wheelbase. */
+  caps: [[491, 733.5], [1685.6, 733.5]] as readonly [Px, Px],
+  /** The wheelbase the picture is calibrated to, metres: the label on the centre casting, and the family's motor bogie. */
+  wheelbase: 2.2,
+  /** The two turns that levelled the picture: degrees, counter-clockwise, about the point. */
+  level: { first: { degrees: -4.8763, about: [497, 762] as Px }, second: { degrees: 1.7749, about: [491, 733.5] as Px } },
+  /** The camera's elevation over the bogie, degrees: ASSUMED (see above). */
+  elevation: 20,
+  /** The castings between the wheels: the dark one by the near wheel (its brake block), the grey casing with the label, the centre casting, and the dark one at the far end. */
+  casting: {
+    left: [681, 515, 832, 784] as PxRect,
+    label: [826, 585, 926, 768] as PxRect,
+    centre: [958, 619, 1180, 801] as PxRect,
+    right: [1234, 529, 1491, 689] as PxRect,
+  },
+  /** The vertical rod with its clamps (to the left of the centre) and the big vertical damper (to the right of it), each a cylinder: the picture gives its width and the rows of its two ends. */
+  rod: [912, 561, 951, 779] as PxRect,
+  damper: [1177, 517, 1236, 717] as PxRect,
+  /** The black air spring over the centre: the column of its left edge (its radius is that column's distance from the middle); it stands on the centre casting. */
+  bag: { edge: 955 },
+  /**
+   * The yaw damper: the centres of its two ends in the picture (it rises 6.7 degrees toward the right, where the Y bracket hangs higher than the casting), the column at which its thinner cylinder
+   * (the left) meets the thicker one, the radius of each in pixels, and the two eyes it ends in (the left one is a bracket on the centre casting, the right one a boss on the Y).
+   */
+  yaw: { from: [1151, 744] as Px, to: [1534, 699] as Px, step: 1305, rodRadius: 27, bodyRadius: 30, eyeLeft: [1063, 710, 1142, 798] as PxRect, eyeRight: [1540, 674, 1602, 718] as PxRect },
+  /** The body-mounted bracket in front of the right wheel: a Y of two arms and a stem, as one outline (clockwise from the left arm's top left); its arms run on up behind the skirt. */
+  bracket: [[1539, 531], [1568, 531], [1603, 649], [1662, 536], [1695, 538], [1648, 644], [1630, 733], [1583, 734], [1574, 654]] as readonly Px[],
 } as const;
