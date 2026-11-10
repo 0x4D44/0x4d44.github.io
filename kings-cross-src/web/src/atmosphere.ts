@@ -185,10 +185,27 @@ export interface AtmosphereOptions {
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
   sites: NightLightSites | null;
   /**
-   * The haze of this scene's clear air: a nearer far plane for its fog than `CLEAR_FOG`'s 2.6 km, metres (the Scottish scene's, station-weather.ts `WAVERLEY_HAZE`). It shortens the clear air's fog and
+   * The haze of this scene's clear air: a nearer far plane for its fog than `CLEAR_FOG`'s 2.6 km (the Scottish scene's, station-weather.ts `WAVERLEY_HAZE`). It shortens the clear air's fog and
    * nothing else: weather that is already thicker (mist, rain, fog) keeps its own, which is nearer than this. Omitted, the scene has the page's own haze, as London's does.
    */
-  haze?: { far: number };
+  haze?: Haze;
+}
+
+/** A scene's own haze: how near its clear air's fog ends, and the camera heights it gives way to the page's own fog between. */
+export interface Haze {
+  /** the fog's far plane near the ground, metres */
+  far: number;
+  /**
+   * Camera heights, metres, between which the haze gives way to the page's own clear air: all of it below the first, none above the second, a smoothstep between. The haze is the lowest layer of the
+   * air: a camera above it looks down through a thin column, not across the whole of it (fogRange does the same for the weather's fog), and the landing view of the scene is such a camera.
+   */
+  fade: readonly [number, number];
+}
+
+/** The far plane of a scene's fog: the range's own, or, in a scene with a haze, the nearer of that and the haze's, which the camera's height gives back to the range's (see `Haze.fade`). */
+export function fogFar(rangeFar: number, cameraY: number, haze?: Haze): number {
+  if (!haze) return rangeFar;
+  return Math.min(rangeFar, haze.far + (rangeFar - haze.far) * smoothstep(haze.fade[0], haze.fade[1], cameraY));
 }
 
 export interface AtmosphereFrame {
@@ -429,7 +446,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
       if (scene.fog instanceof THREE.Fog) {
         const range = fogRange(state.weather.visibilityM, f.camera.position.y);
         scene.fog.near = range.near;
-        scene.fog.far = haze ? Math.min(range.far, haze.far) : range.far;
+        scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
         rgb(scene.fog.color, state.rig.fog);
       }
       if (scene.background instanceof THREE.Color) rgb(scene.background, state.rig.dome.horizon);

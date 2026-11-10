@@ -603,6 +603,8 @@ test('a scene with no ground to stand lamps on has none, and no complaint; lamps
 
 test('the Scottish clear air is hazier than London\'s, and London\'s is untouched: its fog ends where it always ended; in weather each scene has the nearer of the weather\'s own fog and its haze', async () => {
   assert.ok(WAVERLEY_HAZE.far < CLEAR_FOG.far && WAVERLEY_HAZE.far >= 1000, `a haze (${WAVERLEY_HAZE.far} m) nearer than the clear air's ${CLEAR_FOG.far} m, but past the Castle, 1.2 km from Calton Hill`);
+  // the haze is the lowest layer: Calton Hill's camera (45 m) and every view from the ground is in it, the landing view (the overview, 398 m up: tools/evidence.mjs wv-overview) is above it
+  assert.ok(WAVERLEY_HAZE.fade[0] >= 45 && WAVERLEY_HAZE.fade[0] < WAVERLEY_HAZE.fade[1] && WAVERLEY_HAZE.fade[1] <= 398, `the haze fades between ${WAVERLEY_HAZE.fade} m, over Calton Hill's 45 m and under the landing view's 398 m`);
   const seen: Record<string, { scotland: [number, number]; london: [number, number] }> = {};
   for (const name of ['clear', 'rain', 'fog']) {
     const { view } = await viewOf();
@@ -623,4 +625,14 @@ test('the Scottish clear air is hazier than London\'s, and London\'s is untouche
   assert.deepEqual(seen.clear, { scotland: [CLEAR_FOG.near, WAVERLEY_HAZE.far], london: [CLEAR_FOG.near, CLEAR_FOG.far] }, 'clear air: the one place the two differ for the Scottish haze alone');
   assert.ok((seen.rain as { scotland: [number, number]; london: [number, number] }).scotland[1] === WAVERLEY_HAZE.far, 'rain is thinner than the haze: the haze');
   assert.deepEqual((seen.fog as { scotland: [number, number]; london: [number, number] }).scotland, (seen.fog as { scotland: [number, number]; london: [number, number] }).london, 'fog is thicker than the haze: the weather\'s own, the same in both');
+  // the landing view, high above the haze's layer, has the page's own fog as it had: the Scottish scene seen from the overview's camera ends its fog where London's clear air does
+  const { view } = await viewOf();
+  const scotland = createWaverleyWeather(view, sceneWeatherOptions('clear', null));
+  try {
+    const landing = new THREE.PerspectiveCamera(50, 1.44, .5, 9000);
+    landing.position.set(199.04, 397.92, 422.07);
+    scotland.update({ ...frame(), camera: landing });
+    const fog = view.scene.fog as THREE.Fog;
+    assert.deepEqual([fog.near, fog.far], [CLEAR_FOG.near, CLEAR_FOG.far], 'the landing view');
+  } finally { scotland.dispose(); view.dispose(); }
 });

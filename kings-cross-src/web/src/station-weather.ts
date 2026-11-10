@@ -97,10 +97,13 @@ export function lightWaverleyNight(scene: THREE.Object3D): () => void {
 
 /**
  * The haze of the Scottish scene's clear air (round seven, lighting; the W3 city element's C6, "distance haze consistent with the references"): the far plane of its fog, metres, nearer than London's
- * 2.6 km (core/daylight.ts `CLEAR_FOG`), so the Castle (1.2 km from Calton Hill) and the Old Town's skyline recede toward the sky's colour. London's haze is round five's (E1), tuned and pinned, and
- * is not touched: this is an option of the Scottish scene's own atmosphere (atmosphere.ts `haze`). ASSUMED, judged by eye against R-wv3-c's photographs of Calton Hill over Waverley.
+ * 2.6 km (core/daylight.ts `CLEAR_FOG`), so the Castle (1.2 km from Calton Hill: about half fogged here, two fifths at 2.6 km) and the Old Town's skyline recede toward the sky's colour. London's
+ * haze is round five's (E1), tuned and pinned, and is not touched: this is an option of the Scottish scene's own atmosphere (atmosphere.ts `haze`). It is the lowest layer of the air: a camera above
+ * 300 m (the landing view's 400 m) has the page's own fog, as it had, and the views from the ground and from Calton Hill have the haze. ASSUMED, all three numbers, judged by eye against R-wv3-c's
+ * photographs of Calton Hill over Waverley (wv3-c-from-nelson-monument-over-waverley-2009.jpg: the Castle at 1.3 km keeps its stone and its shaded faces, a little veiled): at 1800 m the Castle went
+ * to a pale blue ghost, at 2200 m it is veiled and still stone, and at the page's 2600 m it stood out almost as sharply as the near roofs.
  */
-export const WAVERLEY_HAZE = { far: 1800 } as const;
+export const WAVERLEY_HAZE = { far: 2200, fade: [100, 300] } as const;
 
 /**
  * The Scottish scene's street lamps (waverley-lamps.ts, a lazy chunk of its own: London's page never loads it). They arrive a moment after the scene, are lit with the sky's lamp level (`setLevel`,

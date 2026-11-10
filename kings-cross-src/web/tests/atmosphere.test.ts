@@ -9,7 +9,8 @@ import { CLEAR_FOG, cloudDeck, DAY_EXPOSURE, DAYLIGHT_FLOOR, fogRange, MOON_INTE
 import type { KxData } from '../../core/osm.ts';
 import { solarPosition, sunDirection } from '../../core/solar.ts';
 import { concourseCanopy, shedLayout, stationBuilding } from '../../core/station.ts';
-import { createAtmosphere, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
+import { createAtmosphere, fogFar, LAMP_SHARE, RAIL_NIGHT, REFERENCE, SOFFIT_LEVEL, SURFACES } from '../src/atmosphere.ts';
+import type { Haze } from '../src/atmosphere.ts';
 import { coverUniforms } from '../src/cover.ts';
 import { furniturePlan } from '../src/furniture.ts';
 import { cityMaterial, material, terrainMaterial, windowNight } from '../src/materials.ts';
@@ -28,7 +29,7 @@ const NOON = '2026-06-21T12:00:00Z'; // the sun near its highest (13:00 BST; sol
 const MIDNIGHT = '2026-12-21T00:00:00Z';
 const state = (name: string): WeatherState => weatherState(forcedObservation(name));
 
-function setup(sites: NightLightSites | null = null, haze?: { far: number }) {
+function setup(sites: NightLightSites | null = null, haze?: Haze, height = 380) {
   trainNight.value = 0;
   windowNight.value = 0;
   const scene = new THREE.Scene();
@@ -37,7 +38,7 @@ function setup(sites: NightLightSites | null = null, haze?: { far: number }) {
   const world = addWorld(scene, { grid: false });
   const atmosphere = createAtmosphere({ scene, world, sites, ...(haze ? { haze } : {}) });
   const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 9000);
-  camera.position.set(250, 380, 420);
+  camera.position.set(250, height, 420);
   const target = new THREE.Vector3(40, 0, -150);
   let wall = 0;
   /** one frame at that instant, a second after the last (so the quarter-second throttle never skips it) */
@@ -89,41 +90,68 @@ test('midsummer noon: the sun is where the astronomy puts it, bright and clear; 
   assert.ok(luma(scene.background as THREE.Color) > 0.4, 'a bright sky');
 });
 
-test('a scene\'s own haze (round seven, the Scottish scene\'s): a nearer far plane for the air it is clear in, and nothing else; a scene with none has the page\'s own fog, as it always had', () => {
-  const fogAt = (weather: WeatherState, haze?: { far: number }): { near: number; far: number } => {
-    const { scene, at, camera } = setup(null, haze);
+test('a scene\'s own haze (round seven, the Scottish scene\'s): a nearer far plane for the air it is clear in, near the ground, given back to the page\'s fog by the camera\'s height, and nothing else; a scene with none has the page\'s own fog, as it always had', () => {
+  const HAZE: Haze = { far: 1800, fade: [100, 300] };
+  const fogAt = (weather: WeatherState, haze?: Haze, height = 20): { near: number; far: number } => {
+    const { scene, at, camera } = setup(null, haze, height);
     at(NOON, weather);
     const fog = scene.fog as THREE.Fog;
     assert.equal(fog.near, fogRange(weather.visibilityM, camera.position.y).near, 'the near plane is the page\'s, hazed or not');
     return { near: fog.near, far: fog.far };
   };
-  const camera = { y: 380 }; // setup()'s camera
-  // no haze: the clear air's own (100 m to 2.6 km) and the weather's, exactly as fogRange says; London has no haze
-  assert.deepEqual(fogAt(CLEAR_STATE), { ...CLEAR_FOG }, 'London\'s clear air');
+  // no haze: the clear air's own (100 m to 2.6 km) and the weather's, exactly as fogRange says, at any height; London has no haze
   const weathers = ['rain', 'drizzle', 'mist', 'fog', 'snow'] as const;
-  for (const name of weathers) assert.deepEqual(fogAt(state(name)), fogRange(state(name).visibilityM, camera.y), `London's ${name}`);
-  // a haze nearer than the clear air's: the far plane is there, in clear air, and the near plane is not moved
-  const hazy = fogAt(CLEAR_STATE, { far: 1800 });
-  assert.deepEqual(hazy, { near: CLEAR_FOG.near, far: 1800 }, 'the Scottish clear air');
-  // weather: the nearer of the two far planes, the weather's own when it is already thicker than the haze (fog), the haze's when the weather is thinner (rain, mist, drizzle)
+  for (const height of [20, 380]) {
+    assert.deepEqual(fogAt(CLEAR_STATE, undefined, height), { ...CLEAR_FOG }, `London's clear air at ${height} m`);
+    for (const name of weathers) assert.deepEqual(fogAt(state(name), undefined, height), fogRange(state(name).visibilityM, height), `London's ${name} at ${height} m`);
+  }
+  // a haze nearer than the clear air's: the far plane is there, near the ground, in clear air, and the near plane is not moved
+  assert.deepEqual(fogAt(CLEAR_STATE, HAZE), { near: CLEAR_FOG.near, far: 1800 }, 'the Scottish clear air');
+  // the camera's height gives the page's fog back: all of the haze at the first height, none at the second and above, between them a smoothstep, never nearer than the haze nor farther than the page's
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 100).far, 1800, 'all of it at the first height');
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 300).far, CLEAR_FOG.far, 'none at the second');
+  assert.equal(fogAt(CLEAR_STATE, HAZE, 380).far, CLEAR_FOG.far, 'and none above it (the landing view\'s height)');
+  assert.ok(Math.abs(fogAt(CLEAR_STATE, HAZE, 200).far - 2200) < 1e-9, 'half of it half way');
+  let last = 1800;
+  for (let h = 100; h <= 300; h += 10) {
+    const far = fogAt(CLEAR_STATE, HAZE, h).far;
+    assert.ok(far >= last && far <= CLEAR_FOG.far, `rising with the height, to the page's: ${far} at ${h} m`);
+    last = far;
+  }
+  // weather: the nearer of the two far planes, the weather's own when it is already thicker than the haze (fog), the haze's when the weather is thinner (rain, mist, drizzle); above the haze, the weather's own
   let thicker = 0;
   let thinner = 0;
   for (const name of weathers) {
-    const own = fogRange(state(name).visibilityM, camera.y);
-    assert.deepEqual(fogAt(state(name), { far: 1800 }), { near: own.near, far: Math.min(own.far, 1800) }, `the Scottish ${name}`);
+    const own = fogRange(state(name).visibilityM, 20);
+    assert.deepEqual(fogAt(state(name), HAZE), { near: own.near, far: Math.min(own.far, 1800) }, `the Scottish ${name}`);
+    assert.deepEqual(fogAt(state(name), HAZE, 380), fogRange(state(name).visibilityM, 380), `the Scottish ${name}, from above the haze`);
     if (own.far < 1800) thicker++; else thinner++;
   }
   assert.ok(thicker >= 1 && thinner >= 1, `the weathers cover both sides of the haze (${thicker} thicker, ${thinner} thinner)`);
-  // a haze further than the page\'s own does nothing: it is a nearer plane, never a farther one
-  assert.deepEqual(fogAt(CLEAR_STATE, { far: 9000 }), { ...CLEAR_FOG });
-  // two scenes do not share it: the haze is the atmosphere\'s own, not a module\'s
-  const london = setup(null);
-  const scotland = setup(null, { far: 1800 });
+  // a haze further than the page's own does nothing: it is a nearer plane, never a farther one
+  assert.deepEqual(fogAt(CLEAR_STATE, { far: 9000, fade: [100, 300] }), { ...CLEAR_FOG });
+  // two scenes do not share it: the haze is the atmosphere's own, not a module's
+  const london = setup(null, undefined, 20);
+  const scotland = setup(null, HAZE, 20);
   scotland.at(NOON);
   london.at(NOON);
   scotland.at(NOON);
   assert.equal((london.scene.fog as THREE.Fog).far, CLEAR_FOG.far);
   assert.equal((scotland.scene.fog as THREE.Fog).far, 1800);
+});
+
+test('fogFar: the range\'s far plane where there is no haze; where there is, the haze\'s near the ground and the range\'s above its layer, a smoothstep between, and the weather\'s own when that is nearer', () => {
+  const haze: Haze = { far: 1800, fade: [100, 300] };
+  assert.equal(fogFar(2600, 50), 2600, 'no haze, no change');
+  assert.equal(fogFar(2600, 380), 2600);
+  for (const y of [-5, 0, 50, 100]) assert.equal(fogFar(2600, y, haze), 1800, `the haze at ${y} m`);
+  assert.equal(fogFar(2600, 200, haze), 2200, 'half way up the fade, half of it');
+  assert.ok(Math.abs(fogFar(2600, 150, haze) - 1925) < 1e-9, 'a quarter of the way up, a smoothstep\'s 0.15625 of it: 1800 + 800 x 0.15625');
+  assert.ok(Math.abs(fogFar(2600, 250, haze) - 2475) < 1e-9, 'and at three quarters, 0.84375: 1800 + 800 x 0.84375');
+  for (const y of [300, 301, 1e4]) assert.equal(fogFar(2600, y, haze), 2600, `none at ${y} m`);
+  for (const y of [0, 150, 400]) assert.equal(fogFar(900, y, haze), 900, `weather nearer than the haze keeps its own at ${y} m`);
+  assert.equal(fogFar(1800, 0, haze), 1800, 'the same far plane, either way');
+  assert.equal(fogFar(2600, 0, { far: 9000, fade: [100, 300] }), 2600, 'a haze beyond the range\'s plane does nothing');
 });
 
 test('midnight: the stylised moon is the key, the ambient is low, the lamps and the trains\' windows are on, the stars are out', () => {
