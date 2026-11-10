@@ -248,8 +248,8 @@ const CIVITY_BODY: Body = {
       { s: 2.0, top: 3.36, ws: 0.99, bottom: 0.63 },
       { s: 2.1, top: 3.5, ws: 0.992, bottom: 0.65 },
       { s: 2.2, top: 3.585, ws: 0.994, bottom: 0.67 },
-      { s: 2.45, top: 3.632, ws: 0.996, bottom: 0.72 },
-      { s: 2.8, top: 3.64, ws: 0.999, bottom: 0.8 },
+      { s: 2.45, top: 3.652, ws: 0.996, bottom: 0.72 },
+      { s: 2.8, top: 3.685, ws: 0.999, bottom: 0.8 },
       { s: 3.4, top: CF.height.value - 0.16, ws: 1, bottom: CF.floorHeight.value - 0.15 },
     ],
     fillet: 0.22,
@@ -274,7 +274,7 @@ const CIVITY_BODY: Body = {
   bogie: 'caf',
   // the Civity's wide bellows: nearly the body's width, from below the floor to just under the roof, deep rounded ribs standing proud (tpe397-02; sizes ASSUMED)
   // (round 4: five ribs a car, ten across the gap as -02 shows about ten, each 9 cm proud; the half-width kept 0.1 m inside the body so the crests stay within it)
-  gangway: { width: 2.52, height: 2.59, bottom: 0.95, inset: 0.03, topGap: 0.12, ribs: 5, depth: 0.09 },
+  gangway: { width: 2.47, height: 2.59, bottom: 0.95, inset: 0.03, topGap: 0.12, ribs: 5, depth: 0.09 },
   // (0.6 m rings on every car: the livery is cut along its edges, so the rings no longer have to be fine where it changes; the cab car's 0.4 m rings
   // put it over the triangle budget once its diagonals ran back past the first door)
   // (round 4: on a cab car the rings are fine only as far back as the livery changes along the car, the cyan's raked edge and the diagonals ending about

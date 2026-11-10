@@ -50,10 +50,13 @@ test('every figure names its basis and source, and every figure nobody published
       assert.ok(f.source.length > 40, `${family}.${key} cites a source`);
       if (f.basis === 'assumed') assert.match(f.source, /^ASSUMED: /, `${family}.${key}`);
       if (f.basis === 'drawn') assert.match(f.source, /^DRAWN: .*(scotrail334|tpe397)/, `${family}.${key} names its photograph`);
-      if (f.basis === 'published') assert.match(f.source, /Eversholt/, `${family}.${key}`);
+      // (a published figure is the owner's, or one of the ruled secondary or borrowed ones, which say so first)
+      if (f.basis === 'published') assert.match(f.source, /Eversholt|^SECONDARY, UNCITED: |^BORROWED FROM THE CLASS 331/, `${family}.${key}`);
     }
   }
-  // the widths and heights are not published for either class: they must stay labelled so until a figure is found
-  assert.deepEqual([JUNIPER.bodyWidth.basis, JUNIPER.height.basis, CIVITY.bodyWidth.basis, CIVITY.height.basis], ['assumed', 'assumed', 'assumed', 'assumed']);
+  // (Arthur's ruling, 2026-11-10 17:04) the 334 takes Wikipedia's uncited width and height, labelled uncited; the 397 the Class 331's, labelled borrowed
+  assert.deepEqual([JUNIPER.bodyWidth.value, JUNIPER.height.value, CIVITY.bodyWidth.value, CIVITY.height.value], [2.8, 3.77, 2.712, 3.87]);
+  for (const f of [JUNIPER.bodyWidth, JUNIPER.height]) assert.match(f.source, /^SECONDARY, UNCITED: the Wikipedia infobox for the Class 334.*Arthur/);
+  for (const f of [CIVITY.bodyWidth, CIVITY.height]) assert.match(f.source, /^BORROWED FROM THE CLASS 331.*not a 397 figure|^BORROWED FROM THE CLASS 331.*No 397 width is published/);
   assert.deepEqual(WV_EMU_KINDS.map((k) => [WV_EMU_SPECS[k].operatorCode, WV_EMU_SPECS[k].classes, WV_EMU_SPECS[k].cars.length]), [['SR', '334', 3], ['TP', '397', 5]]);
 });

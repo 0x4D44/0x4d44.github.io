@@ -132,8 +132,8 @@ test('the Waverley fleet rows: one per kind, the published codes, and a capture 
       roofTop: +f.roofTop.toFixed(3),
     };
   }), [
-    { row: ['SR', '334', 3, true, 'function'], cars: wvEmuLayout('sr334x3').cars.map((c) => [c.index, c.start, c.end, c.cab]), doorsInside: true, bases: ['published', 'assumed', 'assumed'], roofTop: 3.77 },
-    { row: ['TP', '397', 5, true, 'function'], cars: wvEmuLayout('tpe397x5').cars.map((c) => [c.index, c.start, c.end, c.cab]), doorsInside: true, bases: ['published', 'assumed', 'assumed'], roofTop: 3.8 },
+    { row: ['SR', '334', 3, true, 'function'], cars: wvEmuLayout('sr334x3').cars.map((c) => [c.index, c.start, c.end, c.cab]), doorsInside: true, bases: ['published', 'published', 'published'], roofTop: 3.77 },
+    { row: ['TP', '397', 5, true, 'function'], cars: wvEmuLayout('tpe397x5').cars.map((c) => [c.index, c.start, c.end, c.cab]), doorsInside: true, bases: ['published', 'published', 'published'], roofTop: 3.87 },
   ]);
   // a rear cab's doors are measured from its own nose: the last car's first door is nearer the train's rear than its second
   const last = wvEmuFormation('sr334x3').cars[2] as { doors: readonly number[] };
