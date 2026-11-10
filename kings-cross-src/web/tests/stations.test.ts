@@ -139,7 +139,7 @@ function fixture(data = {} as KxData, aspect = 1, search?: string, overrides: Pa
   };
 }
 
-async function switchAndFinish(rig: ReturnType<typeof fixture>, id: 'kings-cross' | 'edinburgh-waverley') {
+async function switchAndFinish(rig: ReturnType<typeof fixture>, id: 'kings-cross' | 'edinburgh-waverley' | 'perth') {
   const before = rig.stations.activeScene();
   rig.stations.frame(rig.time);
   await rig.stations.select(id, false);
@@ -285,6 +285,37 @@ test('real Waverley activation attaches only its EB runtime and removes the unav
   });
 });
 
+test('Perth hops in as its own scene with its own attach, the Edinburgh view stays empty, and a hop on to Waverley releases Perth', async () => {
+  await withResizeObserver(async () => {
+    const { loadPerthScene } = await import('../src/perth.ts');
+    const { loadWaverleyScene } = await import('../src/waverley.ts');
+    let perthAttached = 0, edinburghAttached = 0, perthDisposed = 0;
+    const geometry = { default: { origin: { lat: 56.39, lon: -3.44 }, attribution: 'synthetic', rails: [],
+      platforms: [{ id: 'synthetic', ref: '4', tags: {}, path: [[0, 0], [100, 0], [100, 5], [0, 5]] }] } };
+    const perth = await loadPerthScene({ modelLoader: async () => ({ buildPerthScene: () => ({ group: new THREE.Group(), dispose: () => { ++perthDisposed; } }) }),
+      geometryLoader: async () => geometry });
+    const waverley = await loadWaverleyScene({ modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose: () => {} }) }),
+      geometryLoader: async () => geometry });
+    assert.equal(perth.placeholder, false);
+    const rig = fixture(undefined, 1, undefined, { loadPerth: async () => perth, attachPerth: view => { ++perthAttached; same(view, perth, 'Perth attaches its own view'); },
+      loadEdinburgh: async () => waverley, attachEdinburgh: () => { ++edinburghAttached; } });
+    await switchAndFinish(rig, 'perth'); rig.stations.frame(rig.time);
+    assert.equal(perthAttached, 1); assert.equal(edinburghAttached, 0, 'selecting Perth attaches no Edinburgh runtime');
+    same(rig.stations.activeScene(), perth.scene, 'the Perth scene is shown');
+    same(rig.stations.perth(), perth, 'the loaded model is the Perth view');
+    same(rig.stations.remote(), perth, 'and the remote view');
+    assert.equal(rig.stations.edinburgh(), null, 'the Edinburgh view is empty while Perth is held');
+    assert.equal(rig.placeholder.hidden, true);
+    assert.equal(rig.stations.statusText('KX trains'), perth.message);
+    assert.equal(rig.stations.accounting().londonGpuReleases, 1);
+    await switchAndFinish(rig, 'edinburgh-waverley');
+    assert.equal(perthDisposed, 1, 'hopping on to Waverley releases Perth');
+    assert.equal(rig.stations.perth(), null); same(rig.stations.edinburgh(), waverley, 'Edinburgh now held');
+    assert.equal(rig.stations.accounting().londonGpuReleases, 1, 'London is not released a second time');
+    rig.stations.dispose();
+  });
+});
+
 test('disposing a Waverley hop before its midpoint releases the built pending model', async () => {
   await withResizeObserver(async () => {
     const { loadWaverleyScene } = await import('../src/waverley.ts'); let disposed = 0;
@@ -356,7 +387,7 @@ test('the station buttons select a station: loading label, heading, pressed stat
     const rig = fixture(mapData);
     const [kings, pancras] = [...rig.stationButtons];
     const pressed = (): string[] => [...rig.stationButtons].map(button => button.attributes.get('aria-pressed')!);
-    assert.deepEqual(pressed(), ['true', 'false', 'false']);
+    assert.deepEqual(pressed(), ['true', 'false', 'false', 'false'], 'four stations: King\'s Cross, St Pancras, Edinburgh Waverley, Perth');
     assert.equal(rig.doc.bodyDataset.station, 'kings-cross');
     rig.stations.frame(rig.time);
     pancras!.dispatch('click');
@@ -375,7 +406,7 @@ test('the station buttons select a station: loading label, heading, pressed stat
     assert.equal(rig.doc.bodyDataset.station, 'st-pancras');
     assert.equal(rig.doc.heading.textContent, 'St Pancras');
     assert.equal(rig.doc.app.attributes.get('aria-label'), 'St Pancras station view');
-    assert.deepEqual(pressed(), ['false', 'true', 'false']);
+    assert.deepEqual(pressed(), ['false', 'true', 'false', 'false']);
     assert.equal(pancras!.textContent, 'St Pancras');
     assert.equal(rig.nav.attributes.get('aria-busy'), 'false');
     assert.deepEqual(rig.win.history.pushes, ['https://example.test/kings-cross/?trains=replay&date=20261109&speed=8&station=st-pancras']);

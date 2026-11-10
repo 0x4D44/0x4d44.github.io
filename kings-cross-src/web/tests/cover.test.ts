@@ -14,6 +14,7 @@ import { buildFurniture, furniturePlan } from '../src/furniture.ts';
 import { addLandmarks } from '../src/landmarks.ts';
 import { buildShed, ROOF_SKIN } from '../src/shed.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
+import { buildPerthScene } from '../src/perth-scene.ts';
 import { forcedObservation, weatherState } from '../src/weather.ts';
 import type { CoverMap } from '../src/cover.ts';
 
@@ -63,7 +64,12 @@ test('the roofs the cover is drawn from are the real builders\' meshes, by name:
   try {
     const roofs = findRoofs(scottish.group).map(m => m.name);
     assert.deepEqual(roofs.sort(), ['waverley-building-tops', 'waverley-mapped-roofs']);
-    assert.deepEqual([...ROOF_MESHES].sort(), [...found, ...findRoofs(landmarks).map((m) => m.name), ...roofs].sort(), 'and no name is listed that is not a roof');
+    const perth = buildPerthScene({ lighting: false });
+    try {
+      const perthRoofs = findRoofs(perth.group).map(m => m.name);
+      assert.deepEqual(perthRoofs.sort(), ['perth-city-roofs', 'perth-mapped-roofs', 'perth-station-roof'], 'Perth: the station roof, the mapped roofs and the city tops');
+      assert.deepEqual([...ROOF_MESHES].sort(), [...found, ...findRoofs(landmarks).map((m) => m.name), ...roofs, ...perthRoofs].sort(), 'and no name is listed that is not a roof');
+    } finally { perth.dispose(); }
   } finally { scottish.dispose(); }
   for (const m of findRoofs(scene)) assert.ok(m.geometry.getAttribute('position').count >= 3, `${m.name} has triangles`);
   assert.deepEqual(findRoofs(new THREE.Scene()), []);

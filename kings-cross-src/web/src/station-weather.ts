@@ -156,6 +156,24 @@ function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
+  return remoteSceneWeather(view, weather, WAVERLEY_HAZE, () => {
+    const night = lightWaverleyNight(view.scene), lamps = waverleyLamps(view);
+    return { setLevel: (level: number) => lamps.setLevel(level), dispose: () => { night(); lamps.dispose(); } };
+  });
+}
+
+/** Perth's haze: ASSUMED Waverley's (WAVERLEY_HAZE) until the lighting element tunes it against Perth photographs. */
+export const PERTH_HAZE = WAVERLEY_HAZE;
+/** Perth's sky and weather at its own origin: the same rig as Waverley's, with no night windows or street lamps yet (the lighting element's). */
+export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
+  if (view.placeholder || !view.geometry) throw new Error('Perth weather requires a built geographic scene');
+  return remoteSceneWeather(view, weather, PERTH_HAZE, () => ({ setLevel: () => {}, dispose: () => {} }));
+}
+
+/** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
+function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number] },
+  night: () => { setLevel(level: number): void; dispose(): void }): SceneWeather {
+  if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();
   scene.traverse(o => { if (o instanceof THREE.Light) { lights.set(o, o.visible); o.visible = false; } });
   const background = scene.background, fog = scene.fog;
@@ -167,10 +185,9 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   const extent = terrain?.extent ?? { x0: Math.min(...points.map(p => p[0])) - 100, x1: Math.max(...points.map(p => p[0])) + 100,
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   world.carve(extent);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze: WAVERLEY_HAZE, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
-  const night = lightWaverleyNight(scene);
-  const lamps = waverleyLamps(view);
+  const lamps = night();
   let disposed = false;
   return { ...climate,
     update(frame: Parameters<SceneWeather['update']>[0]): void {
@@ -180,7 +197,6 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
     },
     dispose(): void {
       if (disposed) return; disposed = true;
-      night();
       lamps.dispose();
       climate.dispose();
       // Atmosphere owns its precip/sprites; world owns its dome and ground. Do not

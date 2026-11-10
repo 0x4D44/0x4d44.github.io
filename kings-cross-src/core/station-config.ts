@@ -1,6 +1,6 @@
 // Station identity is separate from map extents and TD signalling areas. These are
 // configuration labels, never SMART rows, recordings, or derived operational data.
-export type StationId = 'kings-cross' | 'st-pancras' | 'edinburgh-waverley';
+export type StationId = 'kings-cross' | 'st-pancras' | 'edinburgh-waverley' | 'perth';
 export interface StationConfig {
   readonly id: StationId;
   readonly name: string;
@@ -26,6 +26,14 @@ export const STATIONS: Readonly<Record<StationId, StationConfig>> = {
     id: 'edinburgh-waverley', name: 'Edinburgh Waverley', tdAreas: ['EB'],
     // TODO: verify schedule location identifiers before enabling this station's schedule.
     tiplocs: [], stanox: [], platformRefs: Array.from({ length: 20 }, (_, n) => String(n + 1)),
+    schedule: 'unavailable', legacyLnerFallback: false,
+  },
+  perth: {
+    // TODO: the train-describer area that covers Perth is not yet identified from the feed, and the relay does not record one, so no
+    // TD area is configured and no live trains are drawn. The lead adds the area once it is confirmed.
+    id: 'perth', name: 'Perth', tdAreas: [],
+    // TODO: verify schedule location identifiers before enabling this station's schedule.
+    tiplocs: [], stanox: [], platformRefs: Array.from({ length: 7 }, (_, n) => String(n + 1)),
     schedule: 'unavailable', legacyLnerFallback: false,
   },
 };

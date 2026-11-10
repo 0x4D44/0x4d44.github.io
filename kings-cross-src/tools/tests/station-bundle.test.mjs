@@ -28,4 +28,12 @@ test('landmark geometry is lazy and the station entry stays below the unchanged 
  assert.ok(lazyRoot,'geometry has no genuine lazy entry');
  assert.ok(chunks.some(x=>x.dynamicImports.includes(lazyRoot.fileName)),'landmark module has a dynamic importer');
  assert.ok(Buffer.byteLength(entry.code)<1200_000,`main chunk is ${Buffer.byteLength(entry.code)} bytes`);
+ // Perth's model and its OSM/terrain data load lazily too, like Waverley's: none of it is in the eager closure, and a dynamic entry reaches it.
+ const eager=importsOf(entry.fileName);
+ for(const tail of ['/web/src/perth-scene.ts','/web/src/data/perth-scene.json','/web/src/data/perth-terrain.json']){
+  const chunk=chunks.find(c=>c.moduleIds.some(id=>id.endsWith(tail)));
+  assert.ok(chunk,`${tail} emitted`);
+  assert.equal(eager.has(chunk.fileName),false,`${tail} is in the eager import closure`);
+  assert.ok(chunks.some(c=>c.isDynamicEntry&&importsOf(c.fileName).has(chunk.fileName)),`${tail} has no lazy entry`);
+ }
 });

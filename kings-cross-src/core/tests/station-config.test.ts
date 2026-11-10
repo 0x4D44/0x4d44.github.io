@@ -11,12 +11,15 @@ test('station selection owns explicit TD areas independently of map extent', () 
   assert.deepEqual(STATIONS['kings-cross'].stanox, ['54311']);
   assert.deepEqual(STATIONS['kings-cross'].platformRefs, Array.from({ length: 11 }, (_, n) => String(n)));
   assert.deepEqual(STATIONS['edinburgh-waverley'].platformRefs, Array.from({ length: 20 }, (_, n) => String(n + 1)));
+  // Perth: the seven OSM platforms (refs 1-7); no TD area until one is confirmed and recorded, so no live trains are claimed
+  assert.deepEqual(STATIONS.perth.platformRefs, ['1', '2', '3', '4', '5', '6', '7']);
+  assert.deepEqual(STATIONS.perth.tdAreas, []);
   // only King's Cross has a schedule, and the legacy LNER fallback belongs to it alone
   assert.equal(STATIONS['kings-cross'].schedule, 'available');
   assert.equal(STATIONS['kings-cross'].legacyLnerFallback, true);
-  assert.deepEqual(Object.keys(STATIONS), ['kings-cross', 'st-pancras', 'edinburgh-waverley']);
+  assert.deepEqual(Object.keys(STATIONS), ['kings-cross', 'st-pancras', 'edinburgh-waverley', 'perth']);
   for (const [id, station] of Object.entries(STATIONS)) assert.equal(station.id, id, 'each entry carries its own key as its id');
-  for (const id of ['st-pancras', 'edinburgh-waverley'] as const) {
+  for (const id of ['st-pancras', 'edinburgh-waverley', 'perth'] as const) {
     assert.equal(STATIONS[id].schedule, 'unavailable');
     assert.equal(STATIONS[id].legacyLnerFallback, false);
     assert.deepEqual(STATIONS[id].tiplocs, []);

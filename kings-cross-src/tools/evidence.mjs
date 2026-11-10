@@ -158,11 +158,12 @@ export function optionsFrom(args) {
   }
   // --scene waverley: the frozen Edinburgh Waverley cameras only (waverleyMain); none of the London pack's relay or replay options apply.
   const scene = values.get('--scene') ?? 'kings-cross';
-  if (!['kings-cross', 'waverley'].includes(scene)) throw new Error('--scene must be kings-cross or waverley');
-  if (scene === 'waverley') {
+  if (!['kings-cross', 'waverley', 'perth'].includes(scene)) throw new Error('--scene must be kings-cross, waverley or perth');
+  if (scene !== 'kings-cross') {
+    const site = REMOTE_CAPTURE_SITES[scene];
     const london = ['--relay', '--live-window', '--live-report', '--raw-osm', '--date', '--speed', '--signal-at'].filter(key => values.has(key));
-    if (london.length) throw new Error(`--scene waverley captures the frozen Waverley cameras only; remove ${london.join(', ')}`);
-    resolveWaverleyViews(views);
+    if (london.length) throw new Error(`--scene ${scene} captures the frozen ${site.label} cameras only; remove ${london.join(', ')}`);
+    resolveWaverleyViews(views, site.cameras(), site.elements, site.label);
   }
   const commit = values.get('--commit') ?? null;
   if (commit !== null && !/^[0-9a-f]{7,40}$/.test(commit)) throw new Error('--commit must be the commit the --dist was built from (7 to 40 hex digits)');
@@ -730,17 +731,100 @@ export const WAVERLEY_ELEMENT_VIEWS = {
   'waverley-city': ['wv-calton-hill-panorama', 'wv-castle-from-princes-st', 'wv-scott-monument', 'wv-calton-hill-from-north-bridge', 'wv-overview'],
 };
 
-/** `--views` for `--scene waverley`: null for every camera (`all`), else the set of camera names its elements and names select. */
-export function resolveWaverleyViews(spec, cameras = waverleyCameras()) {
+/** `--views` for `--scene waverley` (or perth, given its cameras and elements): null for every camera (`all`), else the set of camera names its elements and names select. */
+export function resolveWaverleyViews(spec, cameras = waverleyCameras(), elements = WAVERLEY_ELEMENT_VIEWS, label = 'Waverley') {
   if (spec === undefined || spec === 'all') return null;
   const names = new Set();
   for (const token of String(spec).split(',').map(t => t.trim())) {
-    if (Object.hasOwn(WAVERLEY_ELEMENT_VIEWS, token)) for (const view of WAVERLEY_ELEMENT_VIEWS[token]) names.add(view);
+    if (Object.hasOwn(elements, token)) for (const view of elements[token]) names.add(view);
     else if (Object.hasOwn(cameras, token)) names.add(token);
-    else throw new Error(`unknown Waverley view or element: ${token || '(empty)'}. Elements: ${Object.keys(WAVERLEY_ELEMENT_VIEWS).join(', ')}. Views: ${Object.keys(cameras).join(', ')}`);
+    else throw new Error(`unknown ${label} view or element: ${token || '(empty)'}. Elements: ${Object.keys(elements).join(', ')}. Views: ${Object.keys(cameras).join(', ')}`);
   }
   return names;
 }
+
+/**
+ * Perth's phase 1 cameras (Perth's own frame: x east, y up, z south, origin 56.3914751 N 3.4383963 W, core/perth-data.ts PERTH_ORIGIN,
+ * rail datum y = 0), placed by the lead from OSM geometry and the DTM and ray-checked against the Node build (eye on a platform or the
+ * ground, clear of every mapped block); tools/tests/frozen-perth-cameras.json is the copy tools/tests/frozen-perth-cameras.test.mjs holds
+ * perthCameras to. Frozen as the Waverley cameras are: change one only on purpose, here and in the copy together. No fov: the page's 50.
+ */
+const FROZEN_PERTH_CAMERAS = {
+  'pt-platform-4-north': {
+    pos: [-21.94,  2.515,  60],
+    target: [-61.13,  4,  -60],
+    fov: 60,
+    source: "OSM platform 4 (way/44200505) centreline at z 60 (width 8.3 m), eye 1.6 m above the ASSUMED 0.915 m deck, looking north along the island toward the station building (way/4064272)",
+  },
+  'pt-platform-1-dundee': {
+    pos: [15.68,  2.515,  120],
+    target: [22.18,  4,  40],
+    fov: 60,
+    source: "OSM platform 1 (way/44200498) centreline at z 120 (width 6.12 m), eye 1.6 m above deck, looking north along the Dundee platforms' curve",
+  },
+  'pt-roof-underside': {
+    pos: [-39.93,  2.515,  -60],
+    target: [-40.93,  8.5,  -72],
+    fov: 70,
+    source: "OSM platform 3 (way/44200499) centreline at z -60 (width 7.48 m), inside the mapped station outline (way/4064272), looking up and north at the station roof's underside",
+  },
+  'pt-south-approach': {
+    pos: [-156.43,  2.515,  -300],
+    target: [-12.51,  3,  100],
+    fov: 55,
+    source: "OSM platform 4 at its north end (z -300), eye 1.6 m above deck, looking south down the station along the through lines",
+  },
+  'pt-station-frontage': {
+    pos: [-150,  1.4,  -120],
+    target: [-46,  6,  -79],
+    fov: 60,
+    source: "Open ground west of the station building (way/4064272, centroid about x -46, z -79), eye 1.7 m above model ground, looking east at its west front",
+  },
+  'pt-kinnoull-panorama': {
+    pos: [2368,  212.7,  208],
+    target: [0,  10,  0],
+    fov: 50,
+    source: "Kinnoull Hill summit: the highest DTM node of the model's terrain (221.71 m AOD), eye 1.7 m above it, looking west over the Tay and the town to the station",
+  },
+  'pt-tay-from-bridgend': {
+    pos: [954,  -1.52,  -300],
+    target: [0,  8,  -80],
+    fov: 50,
+    source: "The Tay's east bank at Bridgend (z -300: the first DTM node east of the river standing above -5 m, plus 6 m), eye 1.7 m above it, looking west across the Tay to the town and the station",
+  },
+  'pt-tay-viaduct': {
+    pos: [1078,  -1.16,  120],
+    target: [922,  -1,  -43],
+    fov: 50,
+    source: "The Tay's east bank south of the railway bridge (OSM way/4438951; bank found as for pt-tay-from-bridgend at z 120), eye 1.7 m above it, looking north-west at the bridge's mid-river spans",
+  },
+  'pt-overview': {
+    pos: [101.91,  551.52,  514.8],
+    target: [-49.9,  5,  -92.45],
+    source: "waverleyView(geometry, 1.6): the app landing view fitted to the OSM platform extent",
+  },
+};
+
+/** The Perth cameras by name: a fresh copy of FROZEN_PERTH_CAMERAS on every call. */
+export function perthCameras() {
+  return structuredClone(FROZEN_PERTH_CAMERAS);
+}
+
+/** The fixed Perth views each phase 2 element is scored from (the Perth plan, "Cameras"). */
+export const PERTH_ELEMENT_VIEWS = {
+  'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-overview'],
+  'perth-frontage': ['pt-station-frontage', 'pt-platform-4-north', 'pt-overview'],
+  'perth-city': ['pt-kinnoull-panorama', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
+};
+
+/** The page address a Perth capture loads: the Perth scene, no trains, no board or tooltip, pinned. */
+export function perthAddress(pin) {
+  return withPin('?station=perth&trains=none&board=0&tooltip=0', pin);
+}
+/** Page script that waits for the city, then switches the page to Perth. */
+export const PERTH_SELECT_SCRIPT = "(async()=>{const k=window.__kx;await k.cityLoaded;if(k.stations.state().selected!=='perth')await k.stations.select('perth',false);return true;})()";
+/** Page condition true once the Perth scene is loaded, real (not the placeholder) and the one on show. */
+export const PERTH_READY_CONDITION = "(()=>{const k=window.__kx,s=k.stations.state(),e=k.stations.perth();return s.phase==='ready'&&s.selected==='perth'&&!!e&&!e.placeholder&&k.stations.activeScene()===e.scene;})()";
 
 /** The page address a Waverley capture loads: the Edinburgh scene, no trains (so no relay and no EB anchors), no board or tooltip, pinned. */
 export function waverleyAddress(pin) {
@@ -767,8 +851,8 @@ export function cameraDeparture(frozen, actual, epsilon = 1e-6) {
 }
 
 /** The per-shot sidecar: the build, the frozen and the page's camera, the GPU, the pin and lighting, and what the renderer drew. */
-export function waverleySidecar({ name, file, camera, metadata, build, pin, pinHonoured: honoured, lighting, lightingState, flicker, hud, when }) {
-  return { schema: 1, scene: 'edinburgh-waverley', view: name, file, when,
+export function waverleySidecar({ name, file, camera, metadata, build, pin, pinHonoured: honoured, lighting, lightingState, flicker, hud, when, scene = 'edinburgh-waverley' }) {
+  return { schema: 1, scene, view: name, file, when,
     build, camera: { frozen: { pos: camera.pos, target: camera.target, fov: camera.fov ?? null }, actual: metadata.camera, source: camera.source, departure: cameraDeparture(camera, metadata.camera) },
     renderer: metadata.renderer, validGpu: realMetal(metadata.renderer), viewport: metadata.viewport, url: metadata.url,
     pin: { ...pin, parameters: pinParameters(pin) }, pinHonoured: honoured, sunElevationDeg: metadata.sun,
@@ -781,14 +865,23 @@ export function waverleySidecar({ name, file, camera, metadata, build, pin, pinH
  * weather. Needs no relay and no EB anchor data (trains are off). Writes waverley/<view>.png, its sidecar waverley/<view>.json and
  * waverley.json (every sidecar, the cameras, the build and the page's errors).
  */
-async function waverleyMain(options) {
+/** What a remote station's capture needs: its scene id, its output folder, its cameras and elements, its address, select script and
+ *  ready condition, and the page expression for its loaded view. `--scene waverley` and `--scene perth` share waverleyMain. */
+export const REMOTE_CAPTURE_SITES = {
+  waverley: { scene: 'edinburgh-waverley', dir: 'waverley', label: 'Waverley', cameras: () => waverleyCameras(), elements: WAVERLEY_ELEMENT_VIEWS,
+    address: pin => waverleyAddress(pin), select: WAVERLEY_SELECT_SCRIPT, ready: WAVERLEY_READY_CONDITION, view: 'k.stations.edinburgh()' },
+  perth: { scene: 'perth', dir: 'perth', label: 'Perth', cameras: () => perthCameras(), elements: PERTH_ELEMENT_VIEWS,
+    address: pin => perthAddress(pin), select: PERTH_SELECT_SCRIPT, ready: PERTH_READY_CONDITION, view: 'k.stations.perth()' },
+};
+
+async function waverleyMain(options, site = REMOTE_CAPTURE_SITES.waverley) {
   await stat(path.join(options.dist, 'index.html'));
   await safeOutputDirectory(repoRoot, options.out);
   await walk(options.out);
-  const cameras = waverleyCameras(), selected = resolveWaverleyViews(options.views, cameras);
+  const cameras = site.cameras(), selected = resolveWaverleyViews(options.views, cameras, site.elements, site.label);
   const files = await Promise.all((await walk(options.dist)).sort().map(async f => { const b = await readFile(f); return { file: path.relative(options.dist, f), bytes: b.length, sha256: createHash('sha256').update(b).digest('hex') }; }));
   const build = { dist: options.dist, commit: options.commit, id: buildId(files), files: files.length, totalBytes: files.reduce((n, f) => n + f.bytes, 0), index: files.find(f => f.file === 'index.html')?.sha256 ?? null };
-  const report = { schema: 1, scene: 'edinburgh-waverley', when: new Date().toISOString(), machine: `${os.type()} ${os.release()}, ${os.cpus()[0]?.model}`,
+  const report = { schema: 1, scene: site.scene, when: new Date().toISOString(), machine: `${os.type()} ${os.release()}, ${os.cpus()[0]?.model}`,
     requestedGpu: options.gpu ? 'ANGLE Metal' : 'SwiftShader (diagnostic only)', renderer: null, validGpu: false, build,
     views: { requested: options.views, names: selected ? [...selected] : Object.keys(cameras) }, cameras,
     pin: { ...options.pin, parameters: pinParameters(options.pin) }, hud: { mode: options.hud, note: HUD_NOTE },
@@ -823,21 +916,21 @@ async function waverleyMain(options) {
     await S('Emulation.setDeviceMetricsOverride', { ...VIEWPORTS.desktop, deviceScaleFactor: 1, mobile: false });
     // Reduced motion: the station switch swaps scenes at once instead of hopping, so no flight moves a posed camera.
     await S('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
-    await S('Page.navigate', { url: `${base}${waverleyAddress(options.pin)}` });
+    await S('Page.navigate', { url: `${base}${site.address(options.pin)}` });
     await until('!!window.__kx?.ready');
-    await evaluate(WAVERLEY_SELECT_SCRIPT);
-    await until(WAVERLEY_READY_CONDITION, 120000);
+    await evaluate(site.select);
+    await until(site.ready, 120000);
     await twoFrames();
     const hudControl = hudController({ evaluate, settle: twoFrames });
     for (const [name, camera] of Object.entries(cameras).filter(([name]) => !selected || selected.has(name))) {
       try {
         await evaluate(`(() => { const k=window.__kx; k.controls.minDistance=.05; k.controls.maxDistance=20000; k.controls.maxPolarAngle=Math.PI; k.camera.far=20000; k.camera.near=${camera.near ?? .1}; k.camera.fov=${camera.fov ?? 50}; k.camera.updateProjectionMatrix(); k.camera.position.set(${camera.pos}); k.controls.target.set(${camera.target}); k.controls.update(); return true; })()`);
         await twoFrames();
-        const metadata = await evaluate(`(() => { const k=window.__kx,g=k.renderer.getContext(),d=g.getExtension('WEBGL_debug_renderer_info'),e=k.stations.edinburgh(); let sun=null; try { sun=e.climate?.atmosphere.state()?.sun?.elevationDeg??null; } catch {} return {
+        const metadata = await evaluate(`(() => { const k=window.__kx,g=k.renderer.getContext(),d=g.getExtension('WEBGL_debug_renderer_info'),e=${site.view}; let sun=null; try { sun=e.climate?.atmosphere.state()?.sun?.elevationDeg??null; } catch {} return {
           url:location.href,camera:{pos:k.camera.position.toArray(),target:k.controls.target.toArray(),fov:k.camera.fov,near:k.camera.near},
           renderer:d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'unknown',drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,
           viewport:{width:innerWidth,height:innerHeight},sun}; })()`);
-        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=k.stations.edinburgh();return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,atmosphere:e.climate?.atmosphere??null});})()`);
+        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=${site.view};return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,atmosphere:e.climate?.atmosphere??null});})()`);
         report.renderer ??= metadata.renderer;
         if (options.gpu && !realMetal(metadata.renderer)) throw new Error(`real Metal required, observed renderer: ${metadata.renderer}`);
         const departure = cameraDeparture(camera, metadata.camera);
@@ -849,11 +942,11 @@ async function waverleyMain(options) {
           await sleep(FLICKER_GAP_MS); await twoFrames();
           second = Buffer.from((await S('Page.captureScreenshot', { format: 'png' })).data, 'base64');
         } finally { if (hud) hud.restored = await hudControl.restore(hud.mode); }
-        const file = `waverley/${name}.png`;
+        const file = `${site.dir}/${name}.png`;
         await writePrivateFile(path.join(options.out, file), first);
         const sidecar = waverleySidecar({ name, file, camera, metadata, build, pin: options.pin, pinHonoured: pinHonoured(options.pin, lightingState.atmosphere),
-          lighting: lightingFingerprint(lightingState), lightingState, flicker: compareFrames(first, second), hud, when: new Date().toISOString() });
-        await writePrivateFile(path.join(options.out, `waverley/${name}.json`), `${JSON.stringify(sidecar, null, 2)}\n`);
+          lighting: lightingFingerprint(lightingState), lightingState, flicker: compareFrames(first, second), hud, when: new Date().toISOString(), scene: site.scene });
+        await writePrivateFile(path.join(options.out, `${site.dir}/${name}.json`), `${JSON.stringify(sidecar, null, 2)}\n`);
         report.shots.push(sidecar);
       } catch (error) { report.failures.push(`${name}: ${error.message}`); }
     }
@@ -867,7 +960,7 @@ async function waverleyMain(options) {
   report.validGpu = report.shots.length > 0 && report.shots.every(s => s.validGpu);
   report.flicker = { checked: report.shots.length, failed: report.shots.filter(s => !s.flicker.pass).map(s => s.view) };
   report.complete = !report.failures.length && report.validGpu && !report.flicker.failed.length && report.shots.length === report.views.names.length;
-  await writePrivateFile(path.join(options.out, 'waverley.json'), `${JSON.stringify(report, null, 2)}\n`);
+  await writePrivateFile(path.join(options.out, `${site.dir}.json`), `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify({ out: options.out, renderer: report.renderer, validGpu: report.validGpu, build: build.id, shots: report.shots.length, failures: report.failures, flickerFailed: report.flicker.failed, consoleErrors: report.consoleErrors.length }, null, 2));
   if (!report.complete) process.exitCode = 1;
   return report;
@@ -1122,6 +1215,8 @@ node tools/evidence.mjs --gpu --dist <built dir> --out <worktree/.scratch/pack> 
   elements: ${Object.keys(ELEMENT_VIEWS).join(', ')}; or station for every fixed station view
 node tools/evidence.mjs --gpu --scene waverley --dist <built dir> --out <worktree/.scratch/dir> [--views <element|view>,...] [--commit <sha>]   (the frozen Edinburgh Waverley cameras; no relay or EB data)
   elements: ${Object.keys(WAVERLEY_ELEMENT_VIEWS).join(', ')}; views: ${Object.keys(FROZEN_WAVERLEY_CAMERAS).join(', ')}
+node tools/evidence.mjs --gpu --scene perth --dist <built dir> --out <worktree/.scratch/dir> [--views <element|view>,...] [--commit <sha>]   (the frozen Perth cameras; no relay)
+  elements: ${Object.keys(PERTH_ELEMENT_VIEWS).join(', ')}; views: ${Object.keys(FROZEN_PERTH_CAMERAS).join(', ')}
   scoring views (VIEW_ROLES): ${Object.entries(VIEW_ROLES).map(([view, r]) => `${view} is ${r.element} ${r.criterion}'s ${r.role} view`).join('; ')}
 Every fixed station view is shot twice, 150 ms apart, to check it for flicker; exit code 1 if the capture stops or a view flickers.
 Every page load pins the scene clock and weather in its address (a build that predates the sky and weather work ignores them):
@@ -1131,7 +1226,7 @@ Every page load pins the scene clock and weather in its address (a build that pr
 The page draws its own overlays (station switcher, status and attribution panels, title, Almanac pill) over the canvas:
   --hud <on|off>   default off: every fixed station view is shot with them hidden (and restored after each shot), plus overview-hud-on, the
                    overview with them shown; the axis-01 grid views keep them. on shows them in every station view.`); return; }
-  if (options.scene === 'waverley') return waverleyMain(options);
+  if (options.scene === 'waverley' || options.scene === 'perth') return waverleyMain(options, REMOTE_CAPTURE_SITES[options.scene]);
   await stat(path.join(options.dist, 'index.html'));
   await safeOutputDirectory(repoRoot, options.out);
   await walk(options.out); // Reject reused input/report links before fetching any private data.

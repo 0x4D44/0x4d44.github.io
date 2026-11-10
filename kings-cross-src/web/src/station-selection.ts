@@ -14,6 +14,7 @@ export function stationHref(href: string, station: StationId): string {
 export function stationMessage(station: StationId): string {
   if (station === 'st-pancras') return 'St Pancras: view only, live trains not yet enabled';
   if (station === 'edinburgh-waverley') return 'Edinburgh Waverley: model not built yet. Live trains not enabled.';
+  if (station === 'perth') return 'Perth: model not built yet. Live trains not enabled.';
   return "King's Cross: London model · live / replay clock continues across views";
 }
 

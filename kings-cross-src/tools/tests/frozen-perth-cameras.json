@@ -1,0 +1,127 @@
+{
+  "pt-platform-4-north": {
+    "pos": [
+      -21.94,
+      2.515,
+      60
+    ],
+    "target": [
+      -61.13,
+      4,
+      -60
+    ],
+    "fov": 60,
+    "source": "OSM platform 4 (way/44200505) centreline at z 60 (width 8.3 m), eye 1.6 m above the ASSUMED 0.915 m deck, looking north along the island toward the station building (way/4064272)"
+  },
+  "pt-platform-1-dundee": {
+    "pos": [
+      15.68,
+      2.515,
+      120
+    ],
+    "target": [
+      22.18,
+      4,
+      40
+    ],
+    "fov": 60,
+    "source": "OSM platform 1 (way/44200498) centreline at z 120 (width 6.12 m), eye 1.6 m above deck, looking north along the Dundee platforms' curve"
+  },
+  "pt-roof-underside": {
+    "pos": [
+      -39.93,
+      2.515,
+      -60
+    ],
+    "target": [
+      -40.93,
+      8.5,
+      -72
+    ],
+    "fov": 70,
+    "source": "OSM platform 3 (way/44200499) centreline at z -60 (width 7.48 m), inside the mapped station outline (way/4064272), looking up and north at the station roof's underside"
+  },
+  "pt-south-approach": {
+    "pos": [
+      -156.43,
+      2.515,
+      -300
+    ],
+    "target": [
+      -12.51,
+      3,
+      100
+    ],
+    "fov": 55,
+    "source": "OSM platform 4 at its north end (z -300), eye 1.6 m above deck, looking south down the station along the through lines"
+  },
+  "pt-station-frontage": {
+    "pos": [
+      -150,
+      1.4,
+      -120
+    ],
+    "target": [
+      -46,
+      6,
+      -79
+    ],
+    "fov": 60,
+    "source": "Open ground west of the station building (way/4064272, centroid about x -46, z -79), eye 1.7 m above model ground, looking east at its west front"
+  },
+  "pt-kinnoull-panorama": {
+    "pos": [
+      2368,
+      212.7,
+      208
+    ],
+    "target": [
+      0,
+      10,
+      0
+    ],
+    "fov": 50,
+    "source": "Kinnoull Hill summit: the highest DTM node of the model's terrain (221.71 m AOD), eye 1.7 m above it, looking west over the Tay and the town to the station"
+  },
+  "pt-tay-from-bridgend": {
+    "pos": [
+      954,
+      -1.52,
+      -300
+    ],
+    "target": [
+      0,
+      8,
+      -80
+    ],
+    "fov": 50,
+    "source": "The Tay's east bank at Bridgend (z -300: the first DTM node east of the river standing above -5 m, plus 6 m), eye 1.7 m above it, looking west across the Tay to the town and the station"
+  },
+  "pt-tay-viaduct": {
+    "pos": [
+      1078,
+      -1.16,
+      120
+    ],
+    "target": [
+      922,
+      -1,
+      -43
+    ],
+    "fov": 50,
+    "source": "The Tay's east bank south of the railway bridge (OSM way/4438951; bank found as for pt-tay-from-bridgend at z 120), eye 1.7 m above it, looking north-west at the bridge's mid-river spans"
+  },
+  "pt-overview": {
+    "pos": [
+      101.91,
+      551.52,
+      514.8
+    ],
+    "target": [
+      -49.9,
+      5,
+      -92.45
+    ],
+    "source": "waverleyView(geometry, 1.6): the app landing view fitted to the OSM platform extent"
+  }
+}

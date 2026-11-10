@@ -17,6 +17,7 @@ export const ROOF_MESHES: readonly string[] = [
   'concourse-glass', 'concourse-panels', // web/src/concourse.ts: the Western Concourse's dome
   'canopy-glass', // web/src/furniture.ts: the canopies over platforms 9 and 10
   'waverley-mapped-roofs', 'waverley-building-tops', // Scottish station glazing and the mapped solid building roofs
+  'perth-station-roof', 'perth-mapped-roofs', 'perth-city-roofs', // web/src/perth-scene.ts: Perth's station roof, the town's mapped roofs and its building tops
   'landmarks-roofGlass', 'landmarks-slate', // web/src/landmarks.ts: the Barlow shed's roof (and the hotels' slate, which cover only their own, solid, footprints)
 ];
 

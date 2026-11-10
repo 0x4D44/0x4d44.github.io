@@ -33,7 +33,7 @@ import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
-import { createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
+import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
 import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
 import { parseSceneTime } from './weather.ts';
@@ -245,7 +245,8 @@ function start(): void {
     attachEdinburgh: view => { view.live = createEdinburghLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
       mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
       if (!fixedSky) view.climate = createWaverleyWeather(view, weatherOptions); },
-    stationSuffix: id => (id === 'edinburgh-waverley' ? stations.edinburgh()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
+    attachPerth: view => { if (!fixedSky) view.climate = createPerthWeather(view, weatherOptions); },
+    stationSuffix: id => (id === 'edinburgh-waverley' || id === 'perth' ? stations.remote()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
   Object.assign(kx, { stations, stPancras });
@@ -296,7 +297,7 @@ function start(): void {
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
     controls.update();
-    const climate = stations.activeScene() === scene ? londonClimate : stations.edinburgh()?.climate;
+    const climate = stations.activeScene() === scene ? londonClimate : stations.remote()?.climate;
     if (climate) climate.update({ timeMs: sceneClock(), camera, target: controls.target, wallMs: time });
     else if (stations.activeScene() === scene) world.follow(camera);
     stations.refreshPresentation();

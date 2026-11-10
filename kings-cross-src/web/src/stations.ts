@@ -12,10 +12,16 @@ import type { StationView } from './station-transition.ts';
 import { releaseSceneGpu } from './station-resources.ts';
 import { kingsCrossView } from './station-framing.ts';
 import type { WaverleyView } from './waverley.ts';
+import type { PerthView } from './perth.ts';
+
+/** The stations drawn in a separate scene of their own (a map hop away from London), each lazily loaded: Edinburgh Waverley and Perth. */
+export const REMOTE_STATIONS: readonly StationId[] = ['edinburgh-waverley', 'perth'];
+const isRemote = (id: StationId): boolean => REMOTE_STATIONS.includes(id);
 
 export const STATION_CSS = `
 .station-switcher{position:fixed;top:48px;left:16px;right:16px;max-width:660px;z-index:30;box-sizing:border-box;color:var(--fg);font:13px/1.4 system-ui,sans-serif}
-.station-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.station-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+@media(max-width:560px){.station-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .station-buttons button{min-width:0;min-height:44px;padding:6px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:inherit;font:inherit;cursor:pointer;overflow-wrap:anywhere}
 .station-buttons button[aria-pressed=true]{border-color:#e4b65b;background:#394354;color:#fff}
 .station-buttons button:focus-visible{outline:3px solid #ffd077;outline-offset:2px}
@@ -61,6 +67,8 @@ export function createStations(options: {
   stationSuffix?(id: StationId): string;
   attachEdinburgh?(view: WaverleyView): void;
   loadEdinburgh?(): Promise<WaverleyView>;
+  attachPerth?(view: PerthView): void;
+  loadPerth?(): Promise<PerthView>;
 }) {
   const { scene: london, camera, controls, renderer } = options;
   const doc = renderer.domElement.ownerDocument, win = doc.defaultView!;
@@ -84,6 +92,8 @@ export function createStations(options: {
   let hop: { start: number; to: StationId; swap: () => void; swapped: boolean } | null = null;
   let placeholderScene: WaverleyView | null = null;
   let pendingEdinburgh: WaverleyView | null = null;
+  // Which remote station placeholderScene holds (Edinburgh's or Perth's), or null while London is on show.
+  let remoteId: StationId | null = null;
   let disposed = false, releases = 0;
   let viewportAspect = camera.aspect;
   let cancelInput = (): void => {};
@@ -102,6 +112,7 @@ export function createStations(options: {
   const selection = createStationSelection({
     load: async (id) => {
       if (id === 'edinburgh-waverley') return options.loadEdinburgh ? options.loadEdinburgh() : (await import('./waverley.ts')).loadWaverleyScene();
+      if (id === 'perth') return options.loadPerth ? options.loadPerth() : (await import('./perth.ts')).loadPerthScene();
       await options.ready; roofCeiling = londonRoofCeiling(london); return null;
     },
     discard: loaded => loaded?.dispose(),
@@ -109,21 +120,21 @@ export function createStations(options: {
       pendingEdinburgh?.dispose(); pendingEdinburgh = null;
       cancelInput(); flight = null; hop = null; renderer.domElement.style.opacity = '1';
       const destination = viewOf(id);
-      if (id === 'edinburgh-waverley' || activeScene !== london) {
-        if (id === 'edinburgh-waverley') pendingEdinburgh = loaded;
+      if (isRemote(id) || activeScene !== london) {
+        if (isRemote(id)) pendingEdinburgh = loaded;
         const swap = (): void => {
-          if (id === 'edinburgh-waverley') {
+          if (isRemote(id)) {
             if (activeScene === london) { releaseSceneGpu(london); ++releases; }
             placeholderScene?.dispose();
-            placeholderScene = loaded!; activeScene = placeholderScene.scene;
+            placeholderScene = loaded!; activeScene = placeholderScene.scene; remoteId = id;
             pendingEdinburgh = null;
-            explanation.textContent = placeholderScene.message;
-            if (!placeholderScene.placeholder) options.attachEdinburgh?.(placeholderScene);
+            heading.textContent = STATIONS[id].name; explanation.textContent = placeholderScene.message;
+            if (!placeholderScene.placeholder) (id === 'perth' ? options.attachPerth : options.attachEdinburgh)?.(placeholderScene);
             pose(placeholderScene.view(camera.aspect));
           } else {
-            placeholderScene?.dispose(); placeholderScene = null; activeScene = london; pose(viewOf(id));
+            placeholderScene?.dispose(); placeholderScene = null; remoteId = null; activeScene = london; pose(viewOf(id));
           }
-          renderer.renderLists.dispose(); active = id; placeholder.hidden = id !== 'edinburgh-waverley' || !placeholderScene?.placeholder;
+          renderer.renderLists.dispose(); active = id; placeholder.hidden = !isRemote(id) || !placeholderScene?.placeholder;
         };
         if (reduced.matches) { swap(); return 'ready'; }
         hop = { start: lastTime, to: id, swap, swapped: false }; return 'hopping';
@@ -159,7 +170,7 @@ export function createStations(options: {
   const refreshPresentation = (): void => {
     if (disposed) return;
     const state = selection.state();
-    const message = state.phase === 'ready' ? state.selected === 'edinburgh-waverley' && placeholderScene
+    const message = state.phase === 'ready' ? isRemote(state.selected) && placeholderScene
       ? placeholderScene.live?.status() ?? placeholderScene.message : options.stationStatus?.(state.selected) : undefined;
     const text = message ? message + (options.stationSuffix?.(state.selected) ?? '') : undefined;
     if (text && notice.textContent !== text) notice.textContent = text;
@@ -182,12 +193,17 @@ export function createStations(options: {
     refreshPresentation,
     select, state: () => {
       const state = selection.state();
-      return state.phase === 'ready' && state.selected === 'edinburgh-waverley' && placeholderScene
+      return state.phase === 'ready' && isRemote(state.selected) && placeholderScene
         ? { ...state, message: placeholderScene.live?.status() ?? placeholderScene.message } : state;
     }, activeScene: () => activeScene,
-    edinburgh: () => placeholderScene,
+    /** The loaded Edinburgh scene while it is the remote one held; null otherwise (London, or Perth on show). */
+    edinburgh: () => remoteId === 'edinburgh-waverley' ? placeholderScene : null,
+    /** The loaded Perth scene while it is the remote one held. */
+    perth: () => remoteId === 'perth' ? placeholderScene : null,
+    /** Whichever remote scene is held (Edinburgh's or Perth's), or null. */
+    remote: () => placeholderScene,
     statusText: (kx: string): string => (selection.state().selected === 'kings-cross' ? kx
-      : selection.state().selected === 'edinburgh-waverley' && placeholderScene ? placeholderScene.live?.status() ?? placeholderScene.message
+      : isRemote(selection.state().selected) && placeholderScene ? placeholderScene.live?.status() ?? placeholderScene.message
       : options.stationStatus?.(selection.state().selected) ?? stationMessage(selection.state().selected)) + (options.stationSuffix?.(selection.state().selected) ?? ''),
     accounting: () => ({ londonGpuReleases: releases, scene: active, placeholder: !!placeholderScene?.placeholder }),
     frame(time: number): void {
@@ -220,7 +236,7 @@ export function createStations(options: {
       if (disposed) return; disposed = true; flight = null; hop = null; selection.dispose(); cancelInput(); observer.disconnect();
       win.removeEventListener('popstate', onPop); win.removeEventListener('resize', sizeNav);
       pendingEdinburgh?.dispose(); pendingEdinburgh = null;
-      placeholderScene?.dispose(); for (const [object, visible] of masked) object.visible = visible;
+      placeholderScene?.dispose(); remoteId = null; for (const [object, visible] of masked) object.visible = visible;
       if (groundCredit) groundCredit.textContent = londonGroundCredit;
       nav.remove(); placeholder.remove(); delete doc.body.dataset.station; renderer.domElement.style.opacity = '1';
     },
