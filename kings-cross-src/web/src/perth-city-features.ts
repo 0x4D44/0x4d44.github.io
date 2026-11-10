@@ -292,7 +292,7 @@ function walker(line: readonly Pt[]) {
     const a = line[i - 1]!, b = line[i]!, l = cum[i]! - cum[i - 1]! || 1, f = (s - cum[i - 1]!) / l;
     return {p: [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], t: [(b[0] - a[0]) / l, (b[1] - a[1]) / l]};
   };
-  return {length, at};
+  return {length, at, vertices: cum};
 }
 
 /** The Tay Viaduct along its mapped path: piers, iron spans, the island arches, the walkway. Returns the layout for the tests. */
@@ -330,8 +330,11 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     for (const h of [F.rail, F.rail / 2]) post(ironwork, [c[0] + n[0] * o * (F.walk[1] - .05), c[1] + n[1] * o * (F.walk[1] - .05)], t, len, .06, F.walk[2] + h - .06, F.walk[2] + h, L.railing);
     for (let s = 1; s < len; s += 2.5) post(ironwork, [A.p[0] + t[0] * s + n[0] * o * (F.walk[1] - .05), A.p[1] + t[1] * s + n[1] * o * (F.walk[1] - .05)], t, .08, .08, F.walk[2], F.walk[2] + F.rail, L.railing);
   };
-  for (let k = 0; k < V.westSpans; k++) girders(piers[k]!, piers[k + 1]!);
-  for (let k = 0; k < V.eastSpans; k++) girders(piers[V.westSpans + 1 + k]!, piers[V.westSpans + 2 + k]!);
+  // each span in straight pieces broken at the mapped path's bends (round 4): a single chord pier to pier cut inside the curve, and the
+  // track's deck, which follows the path, stood out past the girder there as a dark concrete band in pt-tay-viaduct
+  const span = (from: number, to: number) => { const cuts = [from, ...w.vertices.filter(v => v > from + 1 && v < to - 1), to]; for (let i = 1; i < cuts.length; i++) girders(cuts[i - 1]!, cuts[i]!); };
+  for (let k = 0; k < V.westSpans; k++) span(piers[k]!, piers[k + 1]!);
+  for (let k = 0; k < V.eastSpans; k++) span(piers[V.westSpans + 1 + k]!, piers[V.westSpans + 2 + k]!);
   // masonry piers under the girder spans (into the river bed), the abutments at the ends: twin rusticated columns, one under each girder,
   // under a capping course across both (VIADUCT_LOOK)
   const L = VIADUCT_LOOK, pierPlan: {p: Pt; t: Pt}[] = [], columns: {p: Pt; diameter: number; visible: number}[] = [];

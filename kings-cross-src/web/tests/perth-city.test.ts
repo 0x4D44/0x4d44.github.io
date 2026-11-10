@@ -143,6 +143,24 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   for (let i = 0; i < ip.count; i++) if (Math.abs(ip.getY(i) - F.girder[1]) < 1e-3) stiff++;
   assert.equal(cross, layout.pierPlan.length, 'a cross girder over every girder pier');
   assert.ok(lum(L.girder) > .75 && PIER_FORM.stiffenerShade < .8, 'a pale girder band with stiffeners that read');
+  // the girders, not the track's concrete deck, are the span's outer face (round 4: chords pier to pier cut inside the path's bends, and
+  // the deck stood out past them as a dark band in pt-tay-viaduct): rays in from both sides at the deck's height meet the iron first
+  {
+    const line = JSON.parse(readFileSync(new URL('../src/data/perth-city-landuse.json', import.meta.url), 'utf8')).bridges.viaduct.line as [number, number][], deckMesh = scene.group.getObjectByName('perth-bridge-decks')!, ironM = scene.group.getObjectByName('perth-viaduct-iron')!;
+    const cum = [0]; for (let i = 1; i < line.length; i++) cum.push(cum[i - 1]! + Math.hypot(line[i]![0] - line[i - 1]![0], line[i]![1] - line[i - 1]![1]));
+    const at = (u: number) => { let i = 1; while (i < line.length - 1 && cum[i]! < u) i++; const a = line[i - 1]!, b = line[i]!, l = cum[i]! - cum[i - 1]!, f = (u - cum[i - 1]!) / l; return {p: [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], t: [(b[0] - a[0]) / l, (b[1] - a[1]) / l]}; };
+    const spans: [number, number][] = [];
+    for (let k = 0; k < TAY_VIADUCT.westSpans; k++) spans.push([layout.piers[k]!, layout.piers[k + 1]!]);
+    for (let k = 0; k < TAY_VIADUCT.eastSpans; k++) spans.push([layout.piers[TAY_VIADUCT.westSpans + 1 + k]!, layout.piers[TAY_VIADUCT.westSpans + 2 + k]!]);
+    const rr = new THREE.Raycaster(); let tried = 0, deckFirst = 0;
+    for (const [u0, u1] of spans) for (let u = u0 + 3; u < u1 - 3; u += 4) for (const side of [-1, 1]) {
+      const {p, t} = at(u), n = [-t[1]! * side, t[0]! * side];
+      rr.set(new THREE.Vector3(p[0]! + n[0]! * 8, -.9, p[1]! + n[1]! * 8), new THREE.Vector3(-n[0]!, 0, -n[1]!)); rr.far = 8;
+      const h = rr.intersectObjects([deckMesh, ironM], false)[0]; if (!h) continue; tried++;
+      if (h.object === deckMesh) deckFirst++;
+    }
+    assert.ok(tried > 100 && deckFirst === 0, `the deck's edge stands outside the girders at ${deckFirst} of ${tried}`);
+  }
   const ironMesh = scene.group.getObjectByName('perth-viaduct-iron') as THREE.Mesh, ironMat = ironMesh.material as THREE.MeshLambertMaterial;
   assert.ok(ironMat.name === 'perth-viaduct-paint' && !ironMat.map && ironMat.vertexColors, 'the ironwork in its own plain painted material, no darkening map');
   assert.ok(ironMat.emissive.r >= .1, 'the shaded girder face keeps some light');
