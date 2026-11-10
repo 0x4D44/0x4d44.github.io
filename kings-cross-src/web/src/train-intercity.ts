@@ -15,11 +15,11 @@
 import * as THREE from 'three';
 import { HST, INTERCITY_END_GAP, INTERCITY_SPECS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import type { IntercityBody, IntercityCar, IntercityKind, IntercityLayout } from '../../core/train-intercity.ts';
-import { clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
+import { add, clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, scale, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY } from './train-nose.ts';
+import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, couplerHalf, podHanger, underfloorPod } from './train-parts.ts';
+import { bellowsRings, bogieParts, buildBogie, couplerHalf, podHanger, underfloorPod } from './train-parts.ts';
 import type { BogieStyle, CouplerStyle, PodBox, PodForm } from './train-parts.ts';
 import type { CaptureFormation } from './edinburgh-fleet.ts';
 import { lensLook } from './train.ts';
@@ -51,7 +51,13 @@ interface FaceShapeDef {
   colour?: number;
   lens?: LensRole;
   mirror?: boolean;
+  /** a smoked pod standing proud of the face: a half-ellipsoid of this centre, these radii and this height (the outline is then not drawn) */
+  dome?: { cx: number; cy: number; rx: number; ry: number; h: number };
 }
+/** A line the paint changes along: a function of (s, y, x) that is zero on the line and linear in them. Every loft quad a line crosses is cut along it, so a livery edge is exact, not stepped. */
+type Cut = (s: number, y: number, x: number) => number;
+/** A silhouette laid on each side wall over the paint, from s0 to s1 (from the cab tip, or the car's front end), from `base` up to base + height(s). */
+interface Skyline { s0: number; s1: number; base: number; height: (s: number) => number; colour: number }
 interface UnderItem { name: string; form: PodForm; length: number; half: number; bottom: number; colour: number }
 interface BodyDef {
   half: number;
@@ -63,14 +69,18 @@ interface BodyDef {
   nose: NoseSpec;
   /** the face stands this far behind the car's end (an uncovered coupler needs the whole gap) */
   faceSetback: number;
-  /** windscreen on the nose's roof: from s0 to s1 (from the tip), a fraction of the ring's half-width, above `above` metres */
-  screen: { s0: number; s1: number; fraction: number; fractionTop: number; above: number; frame: number };
   /** the face's colour bands, bottom up: [top of band, colour] */
   faceBands: [number, number][];
   face: FaceShapeDef[];
   noseCoupler: CouplerStyle | null;
   /** the colour of a quad of the loft: `s` from the cab tip (cab car) or from the car's front end, y above the rail, ax = |x|, rh the ring's half-width; GLASS for glass */
-  paint(car: IntercityCar, s: number, y: number, ax: number, rh: number, row: number): number;
+  paint(car: IntercityCar, s: number, y: number, ax: number, rh: number): number;
+  cuts(car: IntercityCar): Cut[];
+  skyline?(car: IntercityCar): Skyline | null;
+  /** wiper arms parked on the screen: each from (s, x) to (s, x) on the nose's top surface, s from the tip */
+  wipers?: [[number, number], [number, number]][];
+  /** the coupler at each inner end */
+  innerCoupler: CouplerStyle | 'buckeye';
   /** cab side windows laid on the nose's flank: an ellipse (centre s, y; semi-axes a, b) or a box (s0..s1, y0..y1), both sides */
   cabWindow?: { kind: 'ellipse'; s: number; y: number; a: number; b: number } | { kind: 'box'; s0: number; s1: number; y0: number; y1: number };
   doors(car: IntercityCar): { s: number; width: number; crew?: boolean; colour: number }[];
@@ -152,28 +162,60 @@ function windowsBetween(a: number, b: number, width: number, pitch: number): [nu
   return Array.from({ length: n }, (_, k): [number, number] => [from + k * pitch, from + k * pitch + width]);
 }
 
-function voyagerPaint(car: IntercityCar, s: number, y: number, ax: number, rh: number, row: number): number {
-  const top = y > V_WALL + 0.3;
+/** The Voyager's screen on the nose's roof (s from the tip): a trapezoid, straight sided, its half-width falling from 1.12 m at its foot to 0.98 m at its head
+ * (xc220-02 head on: about 0.85 of the cab's width at the foot, 0.7 at the head; xc220-03). ASSUMED. */
+const V_SCREEN = { s0: 0.16, s1: 1.4, foot: 1.12, head: 0.98, frame: 0.07 };
+const vScreenHalf = (s: number): number => lerp(V_SCREEN.foot, V_SCREEN.head, (s - V_SCREEN.s0) / (V_SCREEN.s1 - V_SCREEN.s0));
+/** The yellow's edge on the cab side: from just behind the lamp pod at the valance's top (s 0.75 m at 0.95 m) back to the cantrail at about 2.3 m (xc220-03, xc220-02). ASSUMED. */
+const vYellowEdge = (y: number): number => 0.75 + (y - 0.95) * 0.75;
+/** The orange line: along the cantrail of every car, and over the screen's head on the cab (xc220-03). ASSUMED heights. */
+const V_PIN: [number, number] = [V_WALL + 0.04, V_WALL + 0.11];
+const V_PIN_TOP: [number, number] = [V_SCREEN.s1 + 0.1, V_SCREEN.s1 + 0.17];
+/** The yellow runs over the screen's head to the cab roof this far behind the screen (xc220-03: a band about 0.3 m deep). ASSUMED. */
+const V_YELLOW_ROOF = V_SCREEN.s1 + 0.3;
+const V_PLUM_END = 6.45;
+
+function voyagerPaint(car: IntercityCar, s: number, y: number, ax: number): number {
+  const top = y > V_PIN[1];
   if (car.cab) {
-    const b = VOYAGER_BODY.screen;
-    // the windscreen and its black frame on the nose's roof
-    if (s > b.s0 - b.frame && s < b.s1 + b.frame && y > b.above) {
-      const f = lerp(b.fraction, b.fractionTop, (s - b.s0) / (b.s1 - b.s0)) * rh;
-      if (ax < f && s > b.s0 && s < b.s1) return GLASS;
-      if (ax < f + b.frame) return FRAME;
+    const f = V_SCREEN.frame;
+    if (y > 2.0 && s > V_SCREEN.s0 - f && s < V_SCREEN.s1 + f) {
+      const h = vScreenHalf(s);
+      if (ax < h && s > V_SCREEN.s0 && s < V_SCREEN.s1) return GLASS;
+      if (ax < h + f) return FRAME;
     }
-    // the yellow front: over the face and up the cheek, its edge sloping back to the cantrail at about 3.1 m (xc220-03)
-    // (the edge follows the loft's columns, `row` the height each column has on the body, so it runs smooth over the nose's curves)
-    if (row > 0.95 && row < V_WALL + 0.25 && s < 0.45 + Math.max(0, row - 1.35) * 1.55) return XC.yellow;
-    if (y > 0.95 && s < b.s1 + 0.25 && y >= V_WALL + 0.25 && ax > rh * 0.55) return XC.yellow;
-    // a thin orange line along the cantrail from the yellow back (xc220-03)
-    if (y > V_WALL + 0.05 && y < V_WALL + 0.14 && s < 6.6) return XC.pin;
-    // the plum cab end, back to the first passenger door
-    if (s < 6.45) return top ? XC.roof : XC.plum;
+    if (y > 2.6 && s > V_PIN_TOP[0] && s < V_PIN_TOP[1]) return XC.pin;
+    if (y > V_PIN[0] && y < V_PIN[1]) return XC.pin;
+    if (top ? y > 0.95 && s < V_YELLOW_ROOF : y > 0.95 && s < vYellowEdge(y)) return XC.yellow;
+    if (s < V_PLUM_END) return top ? XC.roof : XC.plum;
   }
+  if (y > V_PIN[0] && y < V_PIN[1]) return XC.pin;
   if (top) return XC.roof;
   if (y < 1.32) return XC.plumDark;
   return XC.silver;
+}
+
+function voyagerCuts(car: IntercityCar): Cut[] {
+  const cuts: Cut[] = [(_s, y) => y - V_PIN[0], (_s, y) => y - V_PIN[1], (_s, y) => y - 1.32];
+  if (!car.cab) return cuts;
+  const f = V_SCREEN.frame;
+  return [
+    ...cuts,
+    (_s, y) => y - 0.95,
+    (s, y) => s - vYellowEdge(y),
+    (s) => s - V_YELLOW_ROOF,
+    (s) => s - V_PIN_TOP[0],
+    (s) => s - V_PIN_TOP[1],
+    (s) => s - V_PLUM_END,
+    (s) => s - V_SCREEN.s0,
+    (s) => s - V_SCREEN.s1,
+    (s) => s - (V_SCREEN.s0 - f),
+    (s) => s - (V_SCREEN.s1 + f),
+    (s, _y, x) => x - vScreenHalf(s),
+    (s, _y, x) => x + vScreenHalf(s),
+    (s, _y, x) => x - vScreenHalf(s) - f,
+    (s, _y, x) => x + vScreenHalf(s) + f,
+  ];
 }
 
 const VOYAGER_BODY: BodyDef = {
@@ -184,23 +226,26 @@ const VOYAGER_BODY: BodyDef = {
   rows: [1.32, 1.6, 1.84, 2.0, 2.2, 2.4, 2.55, 2.66, 2.8],
   nose: VOYAGER_NOSE,
   faceSetback: GAP,
-  // ASSUMED: the screen wraps close to the cab's width (xc220-02 head on: about 0.85 of it at the foot)
-  screen: { s0: 0.16, s1: 1.4, fraction: 0.86, fractionTop: 0.74, above: 2.15, frame: 0.07 },
   // the plum valance round the coupler, then the yellow face (xc220-02, xc220-03)
   faceBands: [[0.98, XC.plum], [9, XC.yellow]],
   face: [
     // the coupler's dark recess in the valance, and the smoked-glass lamp pods at the face's lower corners, a big headlight low in each and a smaller lamp above
     // and inboard (xc220-02, xc220-03, xc221-01: the pods are rounded, about 0.45 m across and 0.5 m tall). ASSUMED sizes.
     { name: 'coupler-recess', outline: roundedRect(-0.42, 0.42, 0.56, 0.96, 0.04, 2), lift: 0.003, colour: 0x111214 },
-    { name: 'lamp-pod', outline: ellipse(0.98, 1.3, 0.25, 0.28, 18), lift: 0.004, colour: POD_GLASS, mirror: true },
-    { name: 'headlight', outline: ellipse(1.0, 1.22, 0.1, 0.1, 16), lift: 0.008, lens: 'head', mirror: true },
-    { name: 'tail-lamp', outline: ellipse(0.92, 1.45, 0.06, 0.06, 14), lift: 0.008, lens: 'tail', mirror: true },
-    { name: 'marker', outline: ellipse(1.08, 1.43, 0.045, 0.045, 12), lift: 0.008, lens: 'marker', mirror: true },
+    // the pods stand proud of the face, smoked domes about 0.1 m deep (xc220-03); each lens lies on the dome's skin
+    { name: 'lamp-pod', outline: [], lift: 0, colour: POD_GLASS, mirror: true, dome: { cx: 0.95, cy: 1.3, rx: 0.24, ry: 0.29, h: 0.1 } },
+    { name: 'headlight', outline: ellipse(0.97, 1.21, 0.1, 0.1, 16), lift: 0.098, lens: 'head', mirror: true },
+    { name: 'tail-lamp', outline: ellipse(0.88, 1.45, 0.055, 0.055, 14), lift: 0.085, lens: 'tail', mirror: true },
+    { name: 'marker', outline: ellipse(1.05, 1.43, 0.04, 0.04, 12), lift: 0.083, lens: 'marker', mirror: true },
     // a pale grab rail under the screen (xc220-03)
     { name: 'grab-rail', outline: roundedRect(-0.42, 0.42, 2.02, 2.06, 0.015, 2), lift: 0.004, colour: 0xa9adb3 },
   ],
   noseCoupler: 'dellner',
+  innerCoupler: 'dellner',
   paint: voyagerPaint,
+  cuts: voyagerCuts,
+  // two pantograph wipers parked leaning across the screen, both the same way (xc220-03, xc220-02): ASSUMED lengths
+  wipers: [[[0.3, -0.55], [1.15, -0.1]], [[0.3, 0.05], [1.15, 0.5]]],
   // the oval cab side window behind the screen (xc220-02, xc220-03): ASSUMED 0.96 m by 0.72 m
   cabWindow: { kind: 'ellipse', s: 2.15, y: 2.55, a: 0.48, b: 0.36 },
   doors: voyagerDoors,
@@ -214,7 +259,8 @@ const VOYAGER_BODY: BodyDef = {
   windowY: V_WINDOW_Y,
   doorY: [V_FLOOR + 0.02, 2.98],
   gangway: true,
-  bogie: { style: 'electrostar', radius: VOYAGER.wheelDiameter.value / 2, wheelbase: VOYAGER.wheelbase.value },
+  // inside-frame bogies on both classes (xc220-05 shows bare wheel faces; Bombardier on the 221: "internally supported bogies"); see voyagerBogie
+  bogie: { style: 'siemens', radius: VOYAGER.wheelDiameter.value / 2, wheelbase: VOYAGER.wheelbase.value },
   // ASSUMED masses: the engine and alternator raft, its cooler (the louvred grilles under each car in xc221-02), the fuel tank and batteries
   underfloor: [
     { name: 'fuel-tank', form: 'tank', length: 2.4, half: 0.95, bottom: 0.42, colour: 0x403c3e },
@@ -231,8 +277,6 @@ const VOYAGER_BODY: BodyDef = {
   },
 };
 
-/** The 221 shares the 220's body (the photographs show the same nose, doors and windows); its bogies differ (Bombardier: "internally supported"). */
-const VOYAGER221_BODY: BodyDef = { ...VOYAGER_BODY, bogie: { ...VOYAGER_BODY.bogie, style: 'siemens' } };
 
 // --- the HST: Class 43 power car ------------------------------------------------------------------------------------------------
 
@@ -266,32 +310,74 @@ const CLASS43_NOSE: NoseSpec = {
   rake: { lean: 0.42, from: 0.52, reach: 1.25 },
 };
 
-/** The power car's skyline: the edge between the navy front half and the grey rear, a stepped run of Edinburgh roofs (scotrail-hst-03, -04). ASSUMED steps. */
-export function hstSkyline(s: number): number {
-  if (s < 8.6) return 9;
-  if (s > 13.2) return 0;
-  const fall = 3.05 - (s - 8.6) * 0.38;
-  const step = Math.floor(s / 0.45) % 3 === 0 ? 0.32 : Math.floor(s / 0.45) % 3 === 1 ? 0.1 : 0;
-  return fall + step;
+/** The Class 43's screen on the bonnet (s from the tip): large and in the middle of the yellow (scotrail-hst-04 head on: from about 2.6 m to 3.4 m, about 0.75 of
+ * the cab's width at its foot, a little less at its head). ASSUMED. */
+const H_SCREEN = { s0: 1.45, s1: 2.9, foot: 1.0, head: 0.9, frame: 0.07 };
+const hScreenHalf = (s: number): number => lerp(H_SCREEN.foot, H_SCREEN.head, (s - H_SCREEN.s0) / (H_SCREEN.s1 - H_SCREEN.s0));
+/** Navy below this height all round the nose, the lamps and grille in it; yellow above (scotrail-hst-04: a near-horizontal edge just over the lamps). */
+const H_NAVY_TOP = 1.72;
+/** The yellow wraps the cab side back to here, short of the cab side window; over the roof it runs this far behind the screen. ASSUMED. */
+const H_YELLOW_SIDE = 2.65;
+const H_YELLOW_ROOF = H_SCREEN.s1 + 0.2;
+const H_ROOF = H_WALL + 0.32;
+/** The navy foot under the grey, on the power car's rear and every coach (scotrail-hst-06). ASSUMED height. */
+const SR_FOOT = 1.42;
+/** Where the power car's navy front half ends in the skyline, and where the louvres run (scotrail-hst-03, -04). ASSUMED. */
+const H_SKY: [number, number] = [8.6, 13.3];
+const H_LOUVRE: [number, number] = [4.55, 13.3];
+
+/**
+ * A skyline of Edinburgh and Glasgow landmarks over t in [0, 1], heights in metres above its base (scotrail-hst-06, scotrail-hst-04): roofs and spires,
+ * the Scott Monument, the castle on its rock, a statue on horseback, a clock tower, the Finnieston crane and a bridge's arch. ASSUMED shapes, drawn by eye.
+ */
+const SKYLINE: { t0: number; t1: number; h: number; form: 'box' | 'spike' | 'dome' }[] = [
+  { t0: 0.0, t1: 0.06, h: 0.12, form: 'box' }, { t0: 0.05, t1: 0.08, h: 0.32, form: 'spike' }, { t0: 0.08, t1: 0.14, h: 0.2, form: 'box' },
+  { t0: 0.135, t1: 0.165, h: 0.46, form: 'spike' }, { t0: 0.16, t1: 0.22, h: 0.24, form: 'box' }, { t0: 0.2, t1: 0.48, h: 0.36, form: 'dome' },
+  { t0: 0.29, t1: 0.42, h: 0.56, form: 'box' }, { t0: 0.32, t1: 0.35, h: 0.66, form: 'box' }, { t0: 0.38, t1: 0.4, h: 0.62, form: 'box' },
+  { t0: 0.48, t1: 0.55, h: 0.16, form: 'box' }, { t0: 0.545, t1: 0.575, h: 0.48, form: 'box' }, { t0: 0.575, t1: 0.67, h: 0.14, form: 'box' },
+  { t0: 0.67, t1: 0.695, h: 0.52, form: 'box' }, { t0: 0.69, t1: 0.8, h: 0.1, form: 'box' }, { t0: 0.8, t1: 0.815, h: 0.44, form: 'box' },
+  { t0: 0.8, t1: 0.87, h: 0.44, form: 'spike' }, { t0: 0.87, t1: 0.92, h: 0.06, form: 'box' }, { t0: 0.92, t1: 0.99, h: 0.18, form: 'dome' },
+];
+export function skylineHeight(t: number): number {
+  let h = 0;
+  for (const p of SKYLINE) {
+    if (t < p.t0 || t > p.t1) continue;
+    const u = (2 * (t - p.t0)) / (p.t1 - p.t0) - 1;
+    h = Math.max(h, p.form === 'box' ? p.h : p.form === 'spike' ? p.h * (1 - Math.abs(u)) : p.h * Math.sqrt(Math.max(0, 1 - u * u)));
+  }
+  return h;
 }
 
-function class43Paint(car: IntercityCar, s: number, y: number, ax: number, rh: number, row: number): number {
-  const b = CLASS43_BODY.screen;
-  if (s > b.s0 - b.frame && s < b.s1 + b.frame && y > b.above) {
-    const f = lerp(b.fraction, b.fractionTop, (s - b.s0) / (b.s1 - b.s0)) * rh;
-    if (ax < f && s > b.s0 && s < b.s1) return GLASS;
-    if (ax < f + b.frame) return FRAME;
+function class43Paint(_car: IntercityCar, s: number, y: number, ax: number): number {
+  const f = H_SCREEN.frame;
+  if (y > 2.2 && s > H_SCREEN.s0 - f && s < H_SCREEN.s1 + f) {
+    const h = hScreenHalf(s);
+    if (ax < h && s > H_SCREEN.s0 && s < H_SCREEN.s1) return GLASS;
+    if (ax < h + f) return FRAME;
   }
-  const roof = y > H_WALL + 0.32;
-  // the yellow front: above the lamps over the bonnet and round the screen, back along the cab side to the cab door, its lower edge rising (scotrail-hst-03)
-  // (the edge follows the loft's columns: `row` is the height each column has on the body)
-  if (s < 3.55 && row >= 1.85 && !(roof && s > b.s1 + 0.08)) return SR.yellow;
-  if (roof) return SR.roof;
+  const roof = y > H_ROOF;
+  if (roof) return s < H_YELLOW_ROOF ? SR.yellow : SR.roof;
+  if (y > H_NAVY_TOP && s < H_YELLOW_SIDE) return SR.yellow;
   // the black louvres along the top of the engine room's sides (scotrail-hst-03)
-  if (s > 4.55 && s < 13.3 && y > H_WALL - 0.02 && y < H_WALL + 0.3) return SR.louvre;
-  if (y < hstSkyline(s) && s < 13.3) return SR.navy;
+  if (s > H_LOUVRE[0] && s < H_LOUVRE[1] && y > H_WALL - 0.02 && y < H_WALL + 0.3) return SR.louvre;
+  // the navy front half; behind it grey over a navy foot, the skyline laid on the wall over both
+  if (s < H_SKY[0] || y < SR_FOOT) return SR.navy;
   return SR.grey;
 }
+
+const class43Cuts = (car: IntercityCar): Cut[] => {
+  const f = H_SCREEN.frame;
+  const cuts: Cut[] = [
+    (_s, y) => y - SR_FOOT, (s) => s - H_SKY[0], (s) => s - H_LOUVRE[0], (s) => s - H_LOUVRE[1], (_s, y) => y - (H_WALL - 0.02), (_s, y) => y - (H_WALL + 0.3), (_s, y) => y - H_ROOF,
+  ];
+  if (!car.cab) return cuts;
+  return [
+    ...cuts,
+    (_s, y) => y - H_NAVY_TOP, (s) => s - H_YELLOW_SIDE, (s) => s - H_YELLOW_ROOF,
+    (s) => s - H_SCREEN.s0, (s) => s - H_SCREEN.s1, (s) => s - (H_SCREEN.s0 - f), (s) => s - (H_SCREEN.s1 + f),
+    (s, _y, x) => x - hScreenHalf(s), (s, _y, x) => x + hScreenHalf(s), (s, _y, x) => x - hScreenHalf(s) - f, (s, _y, x) => x + hScreenHalf(s) + f,
+  ];
+};
 
 const CLASS43_BODY: BodyDef = {
   half: HST.bodyWidth.value / 2,
@@ -301,19 +387,30 @@ const CLASS43_BODY: BodyDef = {
   rows: [1.35, 1.6, 1.85, 2.1, 2.35, 2.6, 2.85],
   nose: CLASS43_NOSE,
   faceSetback: 0.02,
-  screen: { s0: 2.12, s1: 2.93, fraction: 0.66, fractionTop: 0.6, above: 2.6, frame: 0.06 },
   // the lower front is navy, with the lamps and grille in it; the yellow starts just over them (scotrail-hst-04)
   faceBands: [[1.72, SR.navy], [9, SR.yellow]],
   face: [
-    // ASSUMED, from scotrail-hst-04 head on: the dark air grille between the lamps, and each side a dark housing with two round lenses, the headlight outboard
-    { name: 'grille', outline: roundedRect(-0.25, 0.25, 1.46, 1.64, 0.02, 2), lift: 0.003, colour: 0x121316 },
-    { name: 'lamp-housing', outline: roundedRect(0.31, 0.76, 1.45, 1.67, 0.09, 3), lift: 0.003, colour: 0x15171b, mirror: true },
-    { name: 'headlight', outline: ellipse(0.645, 1.56, 0.08, 0.08, 16), lift: 0.007, lens: 'head', mirror: true },
-    { name: 'tail-lamp', outline: ellipse(0.42, 1.56, 0.07, 0.07, 14), lift: 0.007, lens: 'tail', mirror: true },
-    { name: 'marker', outline: ellipse(0.53, 1.56, 0.035, 0.035, 10), lift: 0.007, lens: 'marker', mirror: true },
+    // ASSUMED, from scotrail-hst-04 head on: the dark air grille between the lamps, and each side two round lamps side by side in dark bezels, the headlight
+    // outboard, a small marker over the pair
+    { name: 'grille', outline: roundedRect(-0.3, 0.3, 1.4, 1.6, 0.02, 2), lift: 0.003, colour: 0x121316 },
+    { name: 'lamp-bezel', outline: ellipse(0.66, 1.5, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
+    { name: 'lamp-bezel', outline: ellipse(0.45, 1.5, 0.1, 0.1, 18), lift: 0.004, colour: 0x15171b, mirror: true },
+    { name: 'headlight', outline: ellipse(0.66, 1.5, 0.08, 0.08, 16), lift: 0.008, lens: 'head', mirror: true },
+    { name: 'tail-lamp', outline: ellipse(0.45, 1.5, 0.08, 0.08, 16), lift: 0.008, lens: 'tail', mirror: true },
+    { name: 'marker', outline: ellipse(0.555, 1.615, 0.028, 0.028, 10), lift: 0.006, lens: 'marker', mirror: true },
   ],
   noseCoupler: null,
+  // the HST's buckeye couplers (not a Dellner head) between its vehicles: ASSUMED proportions
+  innerCoupler: 'buckeye',
   paint: class43Paint,
+  cuts: class43Cuts,
+  // the power car's skyline: the navy front half's trailing edge, falling from the cantrail to the foot as the landmarks pass (scotrail-hst-04, -03)
+  skyline: (car) => (car.cab ? { s0: H_SKY[0], s1: H_SKY[1], base: SR_FOOT, colour: SR.navy, height: (s) => {
+    const t = (s - H_SKY[0]) / (H_SKY[1] - H_SKY[0]);
+    return Math.max((1 - t) * (H_WALL - 0.02 - SR_FOOT), 1.6 * skylineHeight(t));
+  } } : null),
+  // one wiper parked across the screen's foot (scotrail-hst-04): ASSUMED length
+  wipers: [[[1.65, 0.15], [2.25, 0.7]]],
   // the cab side window behind the screen's corner (scotrail-hst-03): ASSUMED 0.67 m by 0.58 m
   cabWindow: { kind: 'box', s0: 2.78, s1: 3.42, y0: 2.4, y1: 2.98 },
   // the cab door just behind the yellow, navy with a tall window (scotrail-hst-03); no passenger doors
@@ -342,30 +439,31 @@ const CLASS43_BODY: BodyDef = {
 
 // --- the HST: Mk3 coach ---------------------------------------------------------------------------------------------------------
 
-/** Inter7City coach (scotrail-hst-06): navy foot to about 1.45 m with a skyline rising from it mid-car, grey sides, a navy window band, an orange line at the cantrail. ASSUMED heights. */
-const MK3_BAND: [number, number] = [1.76, 2.84];
+/** Inter7City coach (scotrail-hst-06): a navy foot, pale grey sides with the skyline rising from the foot mid-car, a navy window band, pale grey over it to an orange line at the cantrail, a grey roof. ASSUMED heights. */
+const MK3_BAND: [number, number] = [1.78, 2.84];
+const MK3_PIN: [number, number] = [H_WALL + 0.1, H_WALL + 0.17];
 const MK3_DOOR_FROM_END = 0.95;
 
-function mk3Paint(car: IntercityCar, s: number, y: number): number {
-  if (y > H_WALL + 0.32) return SR.roof;
-  if (y > H_WALL + 0.12 && y < H_WALL + 0.22) return SR.orange;
+function mk3Paint(_car: IntercityCar, _s: number, y: number): number {
+  if (y > H_ROOF) return SR.roof;
+  if (y > MK3_PIN[0] && y < MK3_PIN[1]) return SR.orange;
   if (y >= MK3_BAND[0] && y <= MK3_BAND[1]) return SR.navyBand;
-  const L = car.length;
-  // the skyline of Edinburgh landmarks along the middle of the side, a navy silhouette rising from the foot (scotrail-hst-06): ASSUMED steps
-  const t = (s - 0.3 * L) / (0.45 * L);
-  const sky = t > 0 && t < 1 ? 1.45 + 0.28 * Math.sin(Math.PI * t) + (Math.floor(s / 0.5) % 4 === 1 ? 0.22 : 0) : 1.45;
-  if (y < sky) return SR.navy;
+  if (y < SR_FOOT) return SR.navy;
   return SR.grey;
 }
 
 const MK3_BODY: BodyDef = {
   ...CLASS43_BODY,
-  rows: [1.45, 1.62, MK3_BAND[0], 2.0, 2.3, 2.6, MK3_BAND[1]],
+  rows: [SR_FOOT, 1.6, MK3_BAND[0], 2.0, 2.3, 2.6, MK3_BAND[1]],
   paint: (car, s, y) => mk3Paint(car, s, y),
+  cuts: () => [(_s, y) => y - MK3_PIN[0], (_s, y) => y - MK3_PIN[1], (_s, y) => y - H_ROOF],
+  // the skyline from the foot, over the middle half of the side (scotrail-hst-06): ASSUMED span
+  skyline: (car) => ({ s0: 0.32 * car.length, s1: 0.92 * car.length, base: SR_FOOT, colour: SR.navy, height: (s) => 0.55 * skylineHeight((s - 0.32 * car.length) / (0.6 * car.length)) }),
+  wipers: undefined,
   doors: (car) => [MK3_DOOR_FROM_END, car.length - MK3_DOOR_FROM_END].map((s) => ({ s, width: HST.coachDoorWidth.value, colour: SR.grey })),
-  // ASSUMED: eight windows of 1.45 m a side between the vestibules (scotrail-hst-06 shows long windows; the first-class coach's narrower ones are not drawn apart)
-  windows: (car) => windowsBetween(MK3_DOOR_FROM_END + 1.15, car.length - MK3_DOOR_FROM_END - 1.15, 1.45, 2.32),
-  windowY: [1.84, 2.74],
+  // ASSUMED: eight wide windows a side, 1.9 m with 0.35 m piers, filling most of the navy band (scotrail-hst-06; the first-class coach's narrower ones are not drawn apart)
+  windows: (car) => windowsBetween(MK3_DOOR_FROM_END + 1.15, car.length - MK3_DOOR_FROM_END - 1.15, 1.9, 2.25),
+  windowY: [1.88, 2.76],
   gangway: true,
   bogie: { style: 'electrostar', radius: HST.coachWheelDiameter.value / 2, wheelbase: HST.wheelbase.value },
   underfloor: [
@@ -382,11 +480,38 @@ const MK3_BODY: BodyDef = {
 };
 
 export const INTERCITY_BODIES: Readonly<Record<IntercityBody, BodyDef>> = { voyager: VOYAGER_BODY, class43: CLASS43_BODY, mk3: MK3_BODY };
-const bodyFor = (layout: IntercityLayout, car: IntercityCar): BodyDef => (layout.spec.family === 'voyager221' ? VOYAGER221_BODY : INTERCITY_BODIES[car.body]);
+/** The 221 shares the 220's body: the photographs show the same nose, doors and windows, and both ride on inside-frame bogies. Its tilt gear is not drawn. */
+const bodyFor = (_layout: IntercityLayout, car: IntercityCar): BodyDef => INTERCITY_BODIES[car.body];
 
 // --- one car ---------------------------------------------------------------------------------------------------------------------
 
 interface LampLens { role: LensRole; v0: number; v1: number }
+/** A vertex of the loft: where it is (car frame, before the car's own turn), its normal (turned), and its s along the car. */
+interface LoftVertex { p: V3; n: V3; s: number }
+
+/** Cut a convex polygon of the loft along the line where `cut` is zero: one piece each side (an edge the line crosses gets the same point from both its quads). */
+export function splitPolygon(poly: LoftVertex[], cut: Cut): LoftVertex[][] {
+  const f = poly.map((v) => cut(v.s, v.p[1], v.p[0]));
+  const eps = 1e-9;
+  if (f.every((x) => x >= -eps) || f.every((x) => x <= eps)) return [poly];
+  const pos: LoftVertex[] = [];
+  const neg: LoftVertex[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i] as LoftVertex;
+    const bv = poly[(i + 1) % poly.length] as LoftVertex;
+    const fa = f[i] as number;
+    const fb = f[(i + 1) % poly.length] as number;
+    if (fa >= -eps) pos.push(a);
+    if (fa <= eps) neg.push(a);
+    if ((fa > eps && fb < -eps) || (fa < -eps && fb > eps)) {
+      const t = fa / (fa - fb);
+      const v: LoftVertex = { p: [lerp(a.p[0], bv.p[0], t), lerp(a.p[1], bv.p[1], t), lerp(a.p[2], bv.p[2], t)], n: unit([lerp(a.n[0], bv.n[0], t), lerp(a.n[1], bv.n[1], t), lerp(a.n[2], bv.n[2], t)]), s: lerp(a.s, bv.s, t) };
+      pos.push(v);
+      neg.push(v);
+    }
+  }
+  return [pos, neg].filter((piece) => piece.length >= 3);
+}
 
 function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
   const b = bodyFor(layout, car);
@@ -431,23 +556,29 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     return [0, mid, r.s + setBack(r.s, mid)];
   });
   const M = (rings[0] as { pts: unknown[] }).pts.length;
-  const K = sec.half.length;
-  const kOf = (m: number): number => (m < K ? m : M - 1 - m);
+  const cuts = b.cuts(car);
+  const sOf = (i: number): number => (rings[i] as { s: number }).s - (car.cab ? tip : 0);
   for (let i = 0; i + 1 < rings.length; i++) {
     const r0 = rings[i] as { s: number; rh: number };
     const r1 = rings[i + 1] as { s: number; rh: number };
+    const rh = (r0.rh + r1.rh) / 2;
     for (let j = 0; j < M; j++) {
       const j1 = (j + 1) % M;
       const idx: [number, number][] = [[i, j], [i, j1], [i + 1, j1], [i + 1, j]];
-      const ps = idx.map(([a, c]) => (P[a] as V3[])[c] as V3) as [V3, V3, V3, V3];
-      const ns = idx.map(([a, c]) => wn((N[a] as V3[])[c] as V3)) as [V3, V3, V3, V3];
-      const sMid = (r0.s + r1.s) / 2 - (car.cab ? tip : 0);
-      const yMid = ps.reduce((a, p) => a + p[1], 0) / 4;
-      const axMid = ps.reduce((a, p) => a + Math.abs(p[0]), 0) / 4;
-      const kmin = Math.min(kOf(j), kOf(j1));
-      const colour = b.paint(car, sMid, yMid, axMid, (r0.rh + r1.rh) / 2, (sec.half[kmin] as [number, number])[1]);
-      if (colour === GLASS) glass.quad(ps.map(world) as [V3, V3, V3, V3], ns, null);
-      else shell.quad(ps.map(world) as [V3, V3, V3, V3], ns, col(colour));
+      const quad: LoftVertex[] = idx.map(([a, c]) => ({ p: (P[a] as V3[])[c] as V3, n: wn((N[a] as V3[])[c] as V3), s: sOf(a) }));
+      let pieces = [quad];
+      for (const cut of cuts) pieces = pieces.flatMap((piece) => splitPolygon(piece, cut));
+      for (const piece of pieces) {
+        const k = piece.length;
+        const colour = b.paint(car, piece.reduce((a, v) => a + v.s, 0) / k, piece.reduce((a, v) => a + v.p[1], 0) / k, piece.reduce((a, v) => a + Math.abs(v.p[0]), 0) / k, rh);
+        const into = colour === GLASS ? glass : shell;
+        const c = colour === GLASS ? null : col(colour);
+        if (k === 4) into.quad(piece.map((v) => world(v.p)) as [V3, V3, V3, V3], piece.map((v) => v.n) as [V3, V3, V3, V3], c);
+        else for (let m = 1; m + 1 < k; m++) {
+          const tri = [piece[0], piece[m], piece[m + 1]] as [LoftVertex, LoftVertex, LoftVertex];
+          into.tri(tri.map((v) => world(v.p)) as [V3, V3, V3], tri.map((v) => v.n) as [V3, V3, V3], c);
+        }
+      }
     }
   }
 
@@ -473,6 +604,27 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     }
     for (const shape of b.face) {
       for (const mirrored of shape.mirror ? [false, true] : [false]) {
+        if (shape.dome) {
+          // a half-ellipsoid standing out of the face: rings of falling radius, lifted along the face's normal, the normals the ellipsoid's
+          const d = shape.dome;
+          const cx = mirrored ? -d.cx : d.cx;
+          const R = 6;
+          const S = 22;
+          const at = (k: number, j: number): [V3, V3] => {
+            const phi = (Math.min(k, R - 0.02) / R) * (Math.PI / 2);
+            const th = (j / S) * Math.PI * 2;
+            const c = Math.cos(phi);
+            const sn = Math.sin(phi);
+            const p = onFace([[cx + d.rx * c * Math.cos(th), d.cy + d.ry * c * Math.sin(th)]], d.h * sn)[0] as V3;
+            const g: V3 = [(c * Math.cos(th)) / d.rx, (c * Math.sin(th)) / d.ry, sn / d.h];
+            return [p, unit(add(add(scale([dir, 0, 0], g[0]), scale([0, 1, 0], g[1])), scale(faceN, g[2])))];
+          };
+          for (let k = 0; k < R; k++) for (let j = 0; j < S; j++) {
+            const q = [at(k, j), at(k, j + 1), at(k + 1, j + 1), at(k + 1, j)];
+            detail.quad(q.map((v) => v[0]) as [V3, V3, V3, V3], q.map((v) => v[1]) as [V3, V3, V3, V3], col(shape.colour ?? POD_GLASS));
+          }
+          continue;
+        }
         const poly = clipConvex(shape.outline.map(([x, y]): [number, number] => [mirrored ? -x : x, y]), outline, 0.01);
         if (poly.length < 3) continue;
         if (shape.lens) {
@@ -536,6 +688,21 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
         patch(side, 0, 0.012, glass, null);
       }
     }
+    // the wipers: each a pantograph pair of thin dark arms lying on the screen, a little off the glass
+    for (const [[sa, xa], [sb, xb]] of b.wipers ?? []) {
+      const onTop = (s: number, x: number): V3 => {
+        const y = yAtX(halfAt(sec, norm, egg, ringAt(b.nose, s)), Math.abs(x)) + 0.02;
+        return world([x, y, tip + s + setBack(tip + s, y)]);
+      };
+      const len = Math.hypot(sb - sa, xb - xa);
+      const [ps, px] = [-(xb - xa) / len, (sb - sa) / len];
+      for (const off of [-0.03, 0.03]) {
+        const w = 0.012;
+        const q = [onTop(sa + ps * (off - w), xa + px * (off - w)), onTop(sb + ps * (off - w), xb + px * (off - w)), onTop(sb + ps * (off + w), xb + px * (off + w)), onTop(sa + ps * (off + w), xa + px * (off + w))];
+        const up: V3 = [0, 1, 0];
+        detail.quad(q as [V3, V3, V3, V3], [up, up, up, up], col(0x0c0d0f));
+      }
+    }
   } else cap(0, -1);
   cap(rings.length - 1, 1);
 
@@ -566,10 +733,14 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
       m.userData = { width: g.width, height: g.height, depth: GAP };
       group.add(m);
     }
-    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, GAP, 0.85);
+    // each car's half of the coupling reaches the middle of the gap, where it meets its neighbour's
+    const out = (Math.sign(zOut - zWall) || 1) as 1 | -1;
+    if (b.innerCoupler === 'buckeye') buckeyeHalf(detail, zWall, out, GAP / 2, 0.95);
+    else couplerHalf(detail, zWall, out, GAP / 2, 0.85, b.innerCoupler);
     const cm = new THREE.Object3D();
     cm.name = 'coupler';
-    cm.position.set(0, 0.85, (zWall + zOut) / 2);
+    cm.position.set(0, b.innerCoupler === 'buckeye' ? 0.95 : 0.85, (zWall + zOut) / 2);
+    cm.userData = { style: b.innerCoupler };
     group.add(cm);
   }
 
@@ -636,6 +807,25 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
       detail.prismX(roundedRect(za + 0.05, zb - 0.05, wy1 - 0.24, wy1 - 0.04, 0.06, 2), out(0.0125), out(0.0115), col(SKY), false);
     }
   }
+  // the skyline: columns of navy laid on each side wall over the paint, from the foot up to the silhouette
+  const sky = b.skyline?.(car);
+  if (sky) {
+    const step = 0.06;
+    const n = Math.ceil((sky.s1 - sky.s0) / step);
+    for (let k = 0; k < n; k++) {
+      const s0 = sky.s0 + (k * (sky.s1 - sky.s0)) / n;
+      const s1 = sky.s0 + ((k + 1) * (sky.s1 - sky.s0)) / n;
+      const top = Math.min(b.wallTop - 0.02, sky.base + sky.height((s0 + s1) / 2));
+      if (top <= sky.base + 0.005) continue;
+      const za = Math.min(Z(s0), Z(s1));
+      const zb = Math.max(Z(s0), Z(s1));
+      for (const sx of [-1, 1]) {
+        const x = sx * (W + 0.003);
+        const nrm: V3 = [sx, 0, 0];
+        detail.quad([[x, sky.base, za], [x, sky.base, zb], [x, top, zb], [x, top, za]], [nrm, nrm, nrm, nrm], col(sky.colour));
+      }
+    }
+  }
   // side fittings (the power car's radiator grille): a dark panel standing just proud of the wall, with ribs across it
   for (const f of b.sideFittings?.(car) ?? []) {
     const za = Math.min(Z(f.s0), Z(f.s1));
@@ -658,7 +848,10 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
 
   // bogies: every powered bogie carries its traction motor (both Voyager and Class 43 are diesel-electric); the Mk3's are trailers
   car.bogies.forEach((z, k) => {
-    const bogie = buildBogie({ radius: b.bogie.radius, wheelbase: b.bogie.wheelbase, track: TRACK, motor: car.motor[k] as boolean, style: b.bogie.style });
+    // a Voyager bogie drives its inner axle only (1A'A1': the axle toward the car's middle); the bogies are in z order, so the first's inner axle is its +z one
+    const bogie = car.body === 'voyager'
+      ? voyagerBogie(b.bogie.radius, b.bogie.wheelbase, z < (car.start + car.end) / 2 ? 1 : -1)
+      : buildBogie({ radius: b.bogie.radius, wheelbase: b.bogie.wheelbase, track: TRACK, motor: car.motor[k] as boolean, style: b.bogie.style });
     bogie.name = `bogie-${car.index}-${k}`;
     bogie.position.set(0, 0, z);
     group.add(bogie);
@@ -676,6 +869,54 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     m.name = 'cab-glass';
     group.add(m);
   }
+  return group;
+}
+
+/** The HST's buckeye coupler, one car's half: a round shank from the headstock and, at the gap's middle, the knuckle head, taller than wide, its jaw to one side. ASSUMED sizes. */
+function buckeyeHalf(soup: Soup, zWall: number, out: 1 | -1, reach: number, y: number): void {
+  const steel = col(0x3f4247);
+  const dark = col(0x24262a);
+  const zEnd = zWall + out * reach;
+  const lo = Math.min(zWall, zEnd);
+  const hi = Math.max(zWall, zEnd);
+  soup.box(-0.065, 0.065, y - 0.065, y + 0.065, lo, hi, steel);
+  const h0 = out > 0 ? hi - 0.17 : lo;
+  soup.box(-0.17, 0.08, y - 0.18, y + 0.18, h0, h0 + 0.17, dark);
+  soup.box(0.08, 0.19, y - 0.13, y + 0.13, out > 0 ? hi - 0.1 : lo, (out > 0 ? hi - 0.1 : lo) + 0.1, steel);
+}
+
+/** The Voyager bogie's geometry, by its driven axle's side: shared between the cars like every bogie's (named `bogie-mesh`, never disposed with a train). */
+const voyagerBogieGeometry = new Map<string, THREE.BufferGeometry>();
+/** The inside-frame bogie (train-parts.ts's 'siemens' frame) with its traction motor on the inner axle only and its wheel rims in plain steel, not that frame's rust brown (no Voyager photograph shows a coloured rim). */
+const RUST_RIM = col(0x9b5b36);
+const STEEL_RIM = col(0x6d727a);
+function voyagerBogie(radius: number, wheelbase: number, inner: 1 | -1): THREE.Group {
+  const spec = { radius, wheelbase, track: TRACK, motor: true, style: 'siemens' as const };
+  const group = buildBogie(spec);
+  const key = `${radius}/${wheelbase}/${inner}`;
+  let geometry = voyagerBogieGeometry.get(key);
+  if (!geometry) {
+    const soup = new Soup();
+    for (const [name, part] of Object.entries(bogieParts(spec))) {
+      for (let v = 0; v < part.pos.length / 3; v += 3) {
+        if (name === 'drive' && Math.sign((part.pos[v * 3 + 2]! + part.pos[v * 3 + 5]! + part.pos[v * 3 + 8]!) / 3) !== inner) continue;
+        for (let m = v; m < v + 3; m++) {
+          soup.pos.push(part.pos[m * 3]!, part.pos[m * 3 + 1]!, part.pos[m * 3 + 2]!);
+          soup.nrm.push(part.nrm[m * 3]!, part.nrm[m * 3 + 1]!, part.nrm[m * 3 + 2]!);
+          const [r, g, bl] = [part.clr[m * 3]!, part.clr[m * 3 + 1]!, part.clr[m * 3 + 2]!];
+          const rust = Math.abs(r - RUST_RIM.r) < 1e-6 && Math.abs(g - RUST_RIM.g) < 1e-6 && Math.abs(bl - RUST_RIM.b) < 1e-6;
+          soup.clr.push(rust ? STEEL_RIM.r : r, rust ? STEEL_RIM.g : g, rust ? STEEL_RIM.b : bl);
+          soup.glow.push(0);
+        }
+      }
+    }
+    geometry = soup.build();
+    voyagerBogieGeometry.set(key, geometry);
+  }
+  group.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.userData.lod === 'near') o.geometry = geometry;
+  });
+  group.userData.driven = inner > 0 ? 'axle +z' : 'axle -z';
   return group;
 }
 

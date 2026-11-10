@@ -4,8 +4,9 @@ import * as THREE from 'three';
 import { HST, INTERCITY_KINDS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import { checkEdinburghRows } from '../../core/train-neutral.ts';
 import { EDINBURGH_FLEET, edinburghFleetRow } from '../src/edinburgh-fleet.ts';
-import { buildIntercityTrain, disposeIntercityTrain, intercityFormation } from '../src/train-intercity.ts';
-import { plain } from '../src/train-geom.ts';
+import { buildIntercityTrain, disposeIntercityTrain, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
+import { col, plain } from '../src/train-geom.ts';
+import { lensLook, setTrainLampState } from '../src/train.ts';
 
 const ownedTriangles = (car: THREE.Object3D): number => {
   let n = 0;
@@ -119,4 +120,82 @@ test('intercity disposal frees the builder geometry and keeps the shared bogie g
   assert.ok(owned > 10);
   assert.equal(disposed, owned);
   assert.equal(shared, 0);
+});
+
+test('intercity lamps are wired to setTrainLampState: turning the train round swaps white and red at both cabs, and off darkens them', () => {
+  type Lens = { role: 'head' | 'tail' | 'marker'; v0: number; v1: number };
+  const shows = (root: THREE.Group, end: 'front' | 'rear', mode: 'head' | 'tail' | 'off'): boolean => {
+    let ok = false;
+    root.traverse((o) => {
+      const lamps = o instanceof THREE.Mesh && o.name === 'body-detail' ? (o.userData.lamps as { end: string; lenses: Lens[] } | undefined) : undefined;
+      if (!lamps || lamps.end !== end) return;
+      const g = (o as THREE.Mesh).geometry;
+      const rgb = g.getAttribute('color');
+      const glow = g.getAttribute('aGlow');
+      ok = lamps.lenses.every((l) => {
+        const look = lensLook(l.role, mode);
+        const c = col(look.hex);
+        return glow.getX(l.v0) === look.glow && Math.abs(rgb.getX(l.v1 - 1) - c.r) < 1e-6 && Math.abs(rgb.getY(l.v0) - c.g) < 1e-6 && Math.abs(rgb.getZ(l.v0) - c.b) < 1e-6;
+      });
+    });
+    return ok;
+  };
+  for (const kind of INTERCITY_KINDS) {
+    const root = buildIntercityTrain(kind);
+    assert.ok(shows(root, 'front', 'head') && shows(root, 'rear', 'tail'), `${kind} built in service state`);
+    setTrainLampState(root, { front: 'tail', rear: 'head' });
+    assert.ok(shows(root, 'front', 'tail') && shows(root, 'rear', 'head'), `${kind} turned round`);
+    setTrainLampState(root, { front: 'off', rear: 'off' });
+    assert.ok(shows(root, 'front', 'off') && shows(root, 'rear', 'off'), `${kind} dark`);
+    assert.deepEqual(root.userData.lampState, { front: 'off', rear: 'off' });
+  }
+});
+
+test('Voyager bogies: inside frames with plain steel rims, each driving only its inner axle (1A\'A1\'); HST couplers are buckeyes, the Voyager\'s Dellners', () => {
+  const rust = col(0x9b5b36);
+  const motor = col(0x4d5259);
+  for (const kind of ['xc220x4', 'xc221x5'] as const) {
+    const root = buildIntercityTrain(kind);
+    for (const car of intercityLayout(kind).cars) {
+      car.bogies.forEach((z, k) => {
+        const bogie = root.getObjectByName(`bogie-${car.index}-${k}`) as THREE.Object3D;
+        let near: THREE.BufferGeometry | undefined;
+        bogie.traverse((o) => { if (o instanceof THREE.Mesh && o.userData.lod === 'near') near = o.geometry; });
+        const rgb = near!.getAttribute('color');
+        const pos = near!.getAttribute('position');
+        let rusty = 0; const motorZ: number[] = [];
+        for (let v = 0; v < rgb.count; v++) {
+          const is = (c: THREE.Color): boolean => Math.abs(rgb.getX(v) - c.r) < 1e-6 && Math.abs(rgb.getY(v) - c.g) < 1e-6 && Math.abs(rgb.getZ(v) - c.b) < 1e-6;
+          if (is(rust)) rusty++;
+          if (is(motor)) motorZ.push(pos.getZ(v));
+        }
+        assert.equal(rusty, 0, `${kind} bogie-${car.index}-${k} rims`);
+        assert.ok(motorZ.length > 0, `${kind} bogie-${car.index}-${k} has a motor`);
+        const inner = z < (car.start + car.end) / 2 ? 1 : -1;
+        assert.ok(motorZ.every((mz) => Math.sign(mz) === inner), `${kind} bogie-${car.index}-${k} drives only its inner axle`);
+        // inside frame: nothing of the frame stands outboard of the wheels' outer faces
+        const box = new THREE.Box3().setFromBufferAttribute(pos as THREE.BufferAttribute);
+        assert.ok(box.max.x < 0.86, `${kind} bogie-${car.index}-${k} inside frame (max x ${box.max.x})`);
+      });
+    }
+  }
+  const couplers = (kind: 'xc220x4' | 'srhstx4'): string[] => {
+    const names: string[] = [];
+    buildIntercityTrain(kind).traverse((o) => { if (o.name === 'coupler') names.push(o.userData.style); });
+    return [...new Set(names)];
+  };
+  assert.deepEqual(couplers('srhstx4'), ['buckeye']);
+  assert.deepEqual(couplers('xc220x4'), ['dellner']);
+});
+
+test('a loft quad is cut exactly along a paint line, one piece each side, the cut points on the line', () => {
+  const v = (s: number, y: number) => ({ p: [1.3, y, s] as [number, number, number], n: [1, 0, 0] as [number, number, number], s });
+  const quad = [v(0, 1), v(1, 1), v(1, 2), v(0, 2)];
+  const pieces = splitPolygon(quad, (s, y) => s - (y - 1));
+  assert.equal(pieces.length, 2);
+  assert.deepEqual(pieces.map((p) => p.length).sort(), [3, 3]);
+  for (const piece of pieces) for (const w of piece) assert.ok(Math.abs(w.s - (w.p[1] - 1)) < 1e-12 || [0, 1].includes(w.s));
+  assert.deepEqual(splitPolygon(quad, (s) => s - 5), [quad]);
+  const three = splitPolygon(quad, (s) => s - 0.25);
+  assert.deepEqual(three.map((p) => p.map((w) => w.s).sort()), [[0.25, 0.25, 1, 1], [0, 0, 0.25, 0.25]]);
 });
