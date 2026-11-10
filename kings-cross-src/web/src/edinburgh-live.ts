@@ -10,7 +10,7 @@ import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverle
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
 import { buildNeutralTrain, disposeNeutralTrain } from './train-neutral.ts';
-import { buildTrain } from './train.ts';
+import { EDINBURGH_FLEET, edinburghFleetRow } from './edinburgh-fleet.ts';
 import { carPoses } from './trains-live.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
@@ -45,7 +45,7 @@ export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMa
 export function createEdinburghMotion(geometry: unknown, value: unknown,
   serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined) {
   const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry)), graph = buildGraph(data);
-  const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor);
+  const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
   const motion = createMotion(graph, anchors, { lengthM: kinds.lengthM,
     // ASSUMED conservative station speed until a sourced local restriction table exists.
     defaultSpeedMps: 25 / 3.6, stationSpeedMps: 25 / 3.6, estimatedMotion: false });
@@ -95,8 +95,8 @@ export function createEdinburghLive(options: {
     } finally { loading = false; }
   };
   const disposeTrain = (train: THREE.Group): void => {
-    // Both the neutral and existing builders share plain()/bogies and own other geometry.
-    disposeNeutralTrain(train);
+    // Each builder shares plain()/bogies and owns its other geometry; its row says how to free it.
+    (edinburghFleetRow(String(train.userData.kind))?.dispose ?? disposeNeutralTrain)(train);
   };
   const update = (views: TrainView[]): void => {
     const present = new Set(views.map(v => v.id));
@@ -105,7 +105,7 @@ export function createEdinburghLive(options: {
       const choice = session!.kinds.formationFor(view)!;
       let item = drawn.get(view.id);
       if (!item) {
-        const train = choice.kind === 'neutral' ? buildNeutralTrain() : buildTrain(choice.kind);
+        const train = edinburghFleetRow(choice.kind)?.build() ?? buildNeutralTrain();
         const label = labels.ownerDocument.createElement('span'); label.style.cssText = 'position:absolute;font:11px system-ui;color:white;background:#27323cdd;padding:3px 5px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-100%)';
         Object.assign(train.userData, { area: 'EB', id: view.id, kind: choice.kind, allocation: choice.allocation, length: view.lengthM });
         group.add(train); labels.append(label); item = { group: train, label }; drawn.set(view.id, item);
