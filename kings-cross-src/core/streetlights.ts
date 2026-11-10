@@ -10,7 +10,6 @@
 // lamps are sodium and which white (the photographs show both on the Euston Road, so a repeatable share of the streets are each), and the kerb offset.
 import type { Pt } from './geo.ts';
 import type { Extent } from './terrain.ts';
-import { distToRing } from './kxcentral.ts';
 import type { Building, KxData } from './osm.ts';
 import { pointInPolygon, shedLayout, shedToWorld } from './station.ts';
 import type { Height, RoadClass } from './city.ts';
@@ -229,9 +228,28 @@ export const MAST_LIFT = 0.15;
  */
 export const MAST_CLEAR = MAST_HEIGHT / 2;
 
+/**
+ * How far `p` is from the nearest edge of the closed ring `ring`, metres: `distToRing` of core/kxcentral.ts, written out here. That module is a lazy chunk of the page, and a lamp rule in
+ * the first load that imports one function from it drags the whole chunk into the first load with it (measured: the eager `materials` chunk took 12 kB gzipped of it).
+ */
+function ringDistance(p: Pt, ring: readonly Pt[]): number {
+  let best = Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const [ax, az] = ring[i] as Pt;
+    const [bx, bz] = ring[(i + 1) % ring.length] as Pt;
+    const dx = bx - ax;
+    const dz = bz - az;
+    const l2 = dx * dx + dz * dz;
+    // the nearest point of the edge: the foot of the perpendicular, held to the edge (an edge of no length, two equal neighbours, is just its point)
+    const t = l2 === 0 ? 0 : Math.min(1, Math.max(0, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2));
+    best = Math.min(best, Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t)));
+  }
+  return best;
+}
+
 /** Is a mast at `p` in the clear: outside every building, and `MAST_CLEAR` or more from every building's outline? */
 export function mastIsClear(p: Pt, buildings: readonly Pick<Building, 'pts'>[]): boolean {
-  return buildings.every((b) => !pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR);
+  return buildings.every((b) => !pointInPolygon(p, b.pts) && ringDistance(p, b.pts) >= MAST_CLEAR);
 }
 
 /**

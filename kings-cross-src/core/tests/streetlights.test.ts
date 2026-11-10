@@ -246,6 +246,61 @@ test('mastIsClear: in the clear is outside every building and MAST_CLEAR or more
   // the nearest building decides, in whatever order the map lists them
   assert.equal(mastIsClear(here, [wall(MAST_CLEAR + 5), wall(2)]), false, 'the near one last');
   assert.equal(mastIsClear(here, [wall(2), wall(MAST_CLEAR + 5)]), false, 'the near one first');
+  // whichever edge of a ring is the near one decides, the first or the last: the same wall, the ring starting at each of its four corners in turn (the near face is its last edge, then the one before, and so on)
+  for (let k = 0; k < 4; k++) {
+    const startAt = (gap: number): Pick<Building, 'pts'> => ({ pts: [...wall(gap).pts.slice(k), ...wall(gap).pts.slice(0, k)] });
+    assert.equal(mastIsClear(here, [startAt(MAST_CLEAR - 0.01)]), false, `a hair nearer is against it (the ring starts at its corner ${k})`);
+    assert.equal(mastIsClear(here, [startAt(MAST_CLEAR)]), true, `exactly MAST_CLEAR is the nearest a mast may stand (the ring starts at its corner ${k})`);
+  }
+  // a face that is not square to the axes, `gap` metres from the mast at its middle, its ends further than that
+  const slanting = (gap: number): Pick<Building, 'pts'> => {
+    const s = gap * Math.SQRT2;
+    return { pts: [[s, 0], [0, s], [3, s + 3], [s + 3, 3]] };
+  };
+  assert.equal(mastIsClear(here, [slanting(MAST_CLEAR - 0.01)]), false, 'a slanting face a hair nearer');
+  assert.equal(mastIsClear(here, [slanting(MAST_CLEAR + 0.01)]), true, 'a slanting face a hair further');
+  // the nearest of a building can be a corner: this one's faces, as endless lines, run nearer than MAST_CLEAR to the mast, and its corner is `corner * sqrt 2` away
+  const cornerAt = (corner: number): Pt[] => [[corner, corner], [corner + 4, corner], [corner + 4, corner + 4], [corner, corner + 4]];
+  assert.ok(Math.hypot(0.8 * MAST_CLEAR, 0.8 * MAST_CLEAR) > MAST_CLEAR && 0.8 * MAST_CLEAR < MAST_CLEAR, 'the faces are nearer than MAST_CLEAR, the corner is not');
+  assert.equal(mastIsClear(here, [{ pts: cornerAt(0.8 * MAST_CLEAR) }]), true, 'a corner is as far as the corner is');
+  assert.equal(mastIsClear(here, [{ pts: cornerAt(0.8 * MAST_CLEAR).reverse() }]), true, 'the same ring the other way round');
+  assert.equal(mastIsClear(here, [{ pts: cornerAt(0.6 * MAST_CLEAR) }]), false, 'a corner nearer than MAST_CLEAR');
+  // an edge of no length (a point twice running, the first repeated at the end) is no reason for a ring to go missing from the rule
+  const far = wall(MAST_CLEAR + 5).pts;
+  const near = wall(MAST_CLEAR - 0.01).pts;
+  assert.equal(mastIsClear(here, [{ pts: [...far, far[0] as Pt] }]), true, 'a far ring with its first point repeated at the end');
+  assert.equal(mastIsClear(here, [{ pts: [far[0] as Pt, ...far] }]), true, 'a far ring with its first point twice at the start');
+  assert.equal(mastIsClear(here, [{ pts: [...far.slice(0, 2), far[1] as Pt, ...far.slice(2)] }]), true, 'a far ring with a point twice in the middle');
+  assert.equal(mastIsClear(here, [{ pts: [...near, near[0] as Pt] }]), false, 'a near ring with its first point repeated at the end');
+});
+
+test('mastIsClear: the answer core/kxcentral.ts distToRing gives with pointInPolygon, for rings of every shape and a mast anywhere about them', () => {
+  const rand = (n: number): number => hash01(n, 77);
+  let clear = 0;
+  let against = 0;
+  let under = 0;
+  for (let r = 0; r < 120; r++) {
+    // a ring of 5 to 12 corners about a centre, a star shape (the angles only go up), radii 3 to 20 m: concave in places
+    const corners = 5 + Math.floor(rand(r * 4) * 8);
+    const cx = (rand(r * 4 + 1) - 0.5) * 60;
+    const cz = (rand(r * 4 + 2) - 0.5) * 60;
+    const pts: Pt[] = [];
+    for (let k = 0; k < corners; k++) {
+      const a = ((k + 0.7 * rand(r * 97 + k)) / corners) * 2 * Math.PI;
+      const rad = 3 + 17 * rand(r * 131 + k + 1000);
+      pts.push([cx + rad * Math.cos(a), cz + rad * Math.sin(a)]);
+    }
+    for (let i = 0; i < 40; i++) {
+      const p: Pt = [cx + (rand(r * 50 + i + 5000) - 0.5) * 60, cz + (rand(r * 50 + i + 9000) - 0.5) * 60];
+      const inside = pointInPolygon(p, pts);
+      const want = !inside && distToRing(p, pts) >= MAST_CLEAR;
+      assert.equal(mastIsClear(p, [{ pts }]), want, `ring ${r}, point ${i}`);
+      if (want) clear++;
+      else if (inside) under++;
+      else against++;
+    }
+  }
+  assert.ok(clear > 300 && against > 300 && under > 300, `the sample has all three kinds: ${clear} clear, ${against} against a wall, ${under} under a roof`);
 });
 
 test('forecourtMasts: a place of the table with a building nearer than MAST_CLEAR, or under one, has no mast, and the others keep theirs, whichever building it is', () => {

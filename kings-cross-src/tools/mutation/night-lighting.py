@@ -155,14 +155,27 @@ MUTATIONS += [
     ('a mast\'s slope along x is read across a step', C, 'heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);', 'heightAt(x - SLOPE_STEP, z)) / SLOPE_STEP;'),
     ('a mast\'s slope along z is read along x', C, 'const gz = (heightAt(x, z + SLOPE_STEP) - heightAt(x, z - SLOPE_STEP)) / (2 * SLOPE_STEP);', 'const gz = (heightAt(x + SLOPE_STEP, z) - heightAt(x - SLOPE_STEP, z)) / (2 * SLOPE_STEP);'),
     # ---- the forecourt's masts keep clear of the buildings (the rule that is camera-independent: core/streetlights.ts `mastIsClear`)
-    ('a mast may stand against a wall', C, '!pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR', '!pointInPolygon(p, b.pts)'),
-    ('a mast may stand under a roof', C, '!pointInPolygon(p, b.pts) && distToRing(p, b.pts) >= MAST_CLEAR', 'distToRing(p, b.pts) >= MAST_CLEAR'),
-    ('a wall exactly the clearance away is too near', C, 'distToRing(p, b.pts) >= MAST_CLEAR', 'distToRing(p, b.pts) > MAST_CLEAR'),
+    ('a mast may stand against a wall', C, '!pointInPolygon(p, b.pts) && ringDistance(p, b.pts) >= MAST_CLEAR', '!pointInPolygon(p, b.pts)'),
+    ('a mast may stand under a roof', C, '!pointInPolygon(p, b.pts) && ringDistance(p, b.pts) >= MAST_CLEAR', 'ringDistance(p, b.pts) >= MAST_CLEAR'),
+    ('a wall exactly the clearance away is too near', C, 'ringDistance(p, b.pts) >= MAST_CLEAR', 'ringDistance(p, b.pts) > MAST_CLEAR'),
     ('a mast is clear when any one building is far enough', C, 'buildings.every((b) =>', 'buildings.some((b) =>'),
     ('only the first building keeps a mast off', C, 'buildings.every((b) =>', 'buildings.slice(0, 1).every((b) =>'),
     ('only the last building keeps a mast off', C, 'buildings.every((b) =>', 'buildings.slice(-1).every((b) =>'),
     ('a place that is not clear still has its mast', C, '    if (!mastIsClear([x, z], data.buildings)) return [];\n', ''),
     ('the forecourt\'s masts are placed with no buildings to keep clear of', C, 'mastIsClear([x, z], data.buildings)', 'mastIsClear([x, z], [])'),
+    # ---- the distance from a ring that rule uses (core/streetlights.ts `ringDistance`, written out because core/kxcentral.ts is a lazy chunk)
+    ('a mast is measured from the nearest corner, not the nearest face', C, 'Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t))', 'Math.hypot(p[0] - ax, p[1] - az)'),
+    ('a face is measured as an endless line', C, 'Math.min(1, Math.max(0, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2))', '((p[0] - ax) * dx + (p[1] - az) * dz) / l2'),
+    ('a face goes on for ever past its second corner', C, 'Math.min(1, Math.max(0, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2))', 'Math.max(0, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2)'),
+    ('a face goes on for ever past its first corner', C, 'Math.min(1, Math.max(0, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2))', 'Math.min(1, ((p[0] - ax) * dx + (p[1] - az) * dz) / l2)'),
+    ('the foot of the perpendicular is found along the wrong axis', C, '(p[1] - az) * dz) / l2', '(p[1] - az) * dx) / l2'),
+    ('the last face of a ring is left out', C, 'for (let i = 0; i < ring.length; i++) {\n    const [ax, az] = ring[i] as Pt;', 'for (let i = 0; i < ring.length - 1; i++) {\n    const [ax, az] = ring[i] as Pt;'),
+    ('the first face of a ring is left out', C, 'for (let i = 0; i < ring.length; i++) {\n    const [ax, az] = ring[i] as Pt;', 'for (let i = 1; i < ring.length; i++) {\n    const [ax, az] = ring[i] as Pt;'),
+    ('a ring closes on its second corner, not its first', C, 'ring[(i + 1) % ring.length] as Pt;', 'ring[(i + 1) % (ring.length - 1)] as Pt;'),
+    ('a face of no length is a division by nothing', C, 'l2 === 0 ? 0 : ', ''),
+    ('only the last face of a ring counts', C, 'best = Math.min(best, Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t)));', 'best = Math.hypot(p[0] - (ax + dx * t), p[1] - (az + dz * t));'),
+    ('the farthest face is taken for the nearest', C, 'best = Math.min(best, Math.hypot(', 'best = Math.max(best, Math.hypot('),
+    ('a ring starts at no distance', C, 'let best = Infinity;', 'let best = 0;'),
 ]
 
 
