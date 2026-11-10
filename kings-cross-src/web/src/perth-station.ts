@@ -133,4 +133,7 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(0x34312d); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
+  // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.
+  const weather = build.own(new THREE.MeshLambertMaterial({color: 0x34332f, transparent: true, opacity: .62, depthWrite: false, side: THREE.FrontSide}));
+  build.add(group, s.weather, weather, 'perth-roof-weathering');
 }

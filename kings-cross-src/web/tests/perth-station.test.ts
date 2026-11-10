@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { islandBuildingBatches, perthRoofOver, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_ROOF_PROFILE } from '../src/waverley-roof.ts';
 
@@ -102,7 +102,7 @@ test('clearances: columns, posts, stairs and towers stand on platforms, clear of
 test('the roof toggle hides the whole station roof: glazing, strips and ironwork are in the roof part, the bridges are not', () => {
   const scene = buildPerthScene({ lighting: false });
   try {
-    for (const name of ['perth-station-roof', 'perth-roof-strips', 'perth-roof-ironwork']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.roof, name);
+    for (const name of ['perth-station-roof', 'perth-roof-strips', 'perth-roof-ironwork', 'perth-roof-weathering']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.roof, name);
     for (const name of ['perth-island-building', 'perth-columns-bridges-furniture']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.platforms, name);
     const ironwork = scene.group.getObjectByName('perth-roof-ironwork') as THREE.Mesh; ironwork.geometry.computeBoundingBox();
     assert.ok(ironwork.geometry.boundingBox!.min.y > 4.8, 'the roof ironwork stays over the train envelope');
@@ -136,4 +136,21 @@ test('the platforms are furnished as R-pt1-a and R-pt1-c show: benches and bins 
   assert.ok(f.numbers.length >= 4, `platform number boards (${f.numbers.length})`);
   // Each bench and bin stands on a platform, clear of the tracks (the fittings check above covers every vertex of them under 4.8 m).
   for (const p of [...f.benches.map(b => b.at), ...f.bins]) assert.ok(onPlatform(toWorld(p)) && railDistance(toWorld(p)) > 2, `furniture at ${p}`);
+});
+
+test('round 2b: the roof reads dark from above only, the island building\'s chimneys stand through it, the Dundee canopies are pitched', () => {
+  // The weathered outer face covers the main and bay glazing and faces up everywhere, so it is culled from below.
+  const w = batches.weather, n = w.normals;
+  assert.ok(w.positions.length >= batches.glass.positions.length / 2, 'the weathered face covers the station glazing');
+  for (let i = 1; i < n.length; i += 3) assert.ok(n[i] > 0, 'the weathered face faces up');
+  // Chimney stacks rise through the glazing (R-pt1-b); nothing else of the building does.
+  const stone = islandBuildingBatches(plan.island, perthRoofOver(plan)).stone.positions, over = perthRoofOver(plan);
+  let stacks = 0;
+  for (let i = 0; i < stone.length; i += 3) if (stone[i + 1] > over([stone[i], stone[i + 2]]) + .5) stacks++;
+  assert.ok(stacks >= 8 * 24, `chimney stacks over the glazing (${stacks} vertices)`);
+  // The canopies' glazing rises from the eaves to a ridge rise m over them, and no higher.
+  const g = batches.glass.positions, canopy = plan.canopy, C = PERTH_STATION.canopy;
+  let top = 0;
+  for (let i = 0; i < g.length; i += 3) if (inRing([g[i], g[i + 2]], canopy) && ringDistance([g[i], g[i + 2]], canopy) > .2) top = Math.max(top, g[i + 1]);
+  assert.ok(Math.abs(top - (C.top + C.rise)) < 1e-6, `the canopies' ridge at ${top}`);
 });
