@@ -124,6 +124,16 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   const ig = iron.build(), col = ig.getAttribute('color');
   let dark = 0; for (let i = 0; i < col.count; i++) if (lum([col.getX(i), col.getY(i), col.getZ(i)]) < .5) dark++;
   assert.equal(dark, 0, 'no dark ironwork: girders pale grey, railing white');
+  // round 5 (round-4 score: the web filled each pair into one flat block): two round shafts with a dark seam, not a slab; and a shaded
+  // bottom flange under each girder, not a flat white wall
+  assert.ok(PIER_FORM.web <= .35 && PIER_FORM.seam <= .6, 'a thin, deep-set, dark seam between the shafts');
+  const mc = layout && masonry.build().getAttribute('color'); let seamV = 0;
+  const seamRgb = VIADUCT_LOOK.joint.map(v => v * PIER_FORM.seam);
+  for (let i = 0; i < mc.count; i++) if (Math.abs(mc.getX(i) - seamRgb[0]!) < 1e-4 && Math.abs(mc.getY(i) - seamRgb[1]!) < 1e-4) seamV++;
+  assert.ok(seamV >= 8 * 24, `seam faces drawn: ${seamV / 24}`);
+  const flangeRgb = VIADUCT_LOOK.girder.map(v => v * PIER_FORM.flangeShade); let flangeV = 0;
+  for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - flangeRgb[0]!) < 1e-4 && Math.abs(col.getY(i) - flangeRgb[1]!) < 1e-4) flangeV++;
+  assert.ok(flangeV >= 13 * 2 * 24, `girder flanges drawn: ${flangeV / 24}`);
   assert.ok(lum(L.railing) > lum(L.girder), 'the railing is whiter than the girders');
   // round 3 (2166751): tall round columns, about 3:1 over the water where the deck's height allows it
   for (const c of layout.columns) assert.ok(c.diameter <= PIER_FORM.diameter[1] + 1e-9 && (c.visible / c.diameter >= PIER_FORM.aspect - 1e-6 || c.diameter === PIER_FORM.diameter[0]), `column ${c.diameter.toFixed(2)} m wide, ${c.visible.toFixed(2)} m over the water`);

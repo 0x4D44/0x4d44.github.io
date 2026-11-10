@@ -83,7 +83,12 @@ export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, s
  *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
  *  other one `proud` m out; the cross girder up to `crossTop`; a stiffener every `stiffener` m, `stiffenerSize` (along, out). */
 export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 10, band: .9, proud: .07, crossTop: -.55,
-  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .62} as const;
+  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .3, seam: .5, flange: [.4, .12] as const, flangeShade: .66} as const;
+/** Round 5 (round-4 score, C4): the web filled the pair into one flat block. 2166751 shows two round shafts touching, with a shadowed
+ *  seam between them: the web is now `web` of the diameter thick (deep inside the shafts' faces) and shaded `seam` of the joint tone, so
+ *  it reads as the dark seam. The deck was a flat white wall: each girder carries a bottom flange `flange` (height, proud) shaded
+ *  `flangeShade` (still pale paint, round 2: no dark ironwork; its down-facing soffit takes only the sky's light), the photograph's
+ *  shaded underside. */
 /** Round 4 (C4, round-3 score): 2166751's twin columns stand together as one dumbbell mass, not apart under a slab like a trestle: a
  *  masonry web `PIER_FORM.web` of the diameter thick joins each pair from its foot to the cap, set back inside the columns' faces. The
  *  girder band was flat and dark: the girders are paler (VIADUCT_LOOK.girder) and the stiffeners stand prouder and darker, so they read. */
@@ -318,6 +323,9 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     const c: Pt = [(A.p[0] + B.p[0]) / 2, (A.p[1] + B.p[1]) / 2];
     const L = VIADUCT_LOOK;
     for (const side of [-1, 1]) post(ironwork, [c[0] + n[0] * side * F.girderOffset, c[1] + n[1] * side * F.girderOffset], t, len, F.girderThick, F.girder[0], F.girder[1], L.girder);
+    // the bottom flange, proud and shaded: the girder's dark underside (PIER_FORM.flange)
+    const [fh, fp] = PIER_FORM.flange, fs: Rgb = [L.girder[0] * PIER_FORM.flangeShade, L.girder[1] * PIER_FORM.flangeShade, L.girder[2] * PIER_FORM.flangeShade];
+    for (const side of [-1, 1]) post(ironwork, [c[0] + n[0] * side * F.girderOffset, c[1] + n[1] * side * F.girderOffset], t, len, F.girderThick + 2 * fp, F.girder[0] - .02, F.girder[0] + fh, fs);
     // the plate girders' vertical stiffeners, on each girder's outer face (PIER_FORM)
     const shade: Rgb = [L.girder[0] * PIER_FORM.stiffenerShade, L.girder[1] * PIER_FORM.stiffenerShade, L.girder[2] * PIER_FORM.stiffenerShade], [sa, so] = PIER_FORM.stiffenerSize;
     for (const side of [-1, 1]) for (let u = PIER_FORM.stiffener / 2; u < len; u += PIER_FORM.stiffener) {
@@ -348,7 +356,7 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
       for (let y = foot, k = 0; y < capY; y += PIER_FORM.band, k++) if (k % 2) ring(masonry, q[0], q[1], diameter / 2 + PIER_FORM.proud, y, Math.min(capY, y + PIER_FORM.band), PIER_FORM.sides, L.stone);
     }
     // the web joining the pair into one mass (PIER_FORM.web)
-    post(masonry, p, t, diameter * PIER_FORM.web, 2 * F.girderOffset, foot, capY, L.joint);
+    post(masonry, p, t, diameter * PIER_FORM.web, 2 * F.girderOffset, foot, capY, [L.joint[0] * PIER_FORM.seam, L.joint[1] * PIER_FORM.seam, L.joint[2] * PIER_FORM.seam]);
     post(masonry, p, t, diameter + 2 * L.capOver, 2 * F.girderOffset + diameter + 2 * L.capOver, capY, F.girder[0], L.stone);
     // the cross girder on the cap, between the plate girders up to the deck: no dark gap over the cap
     post(ironwork, p, t, diameter, 2 * F.girderOffset - F.girderThick, F.girder[0], PIER_FORM.crossTop, L.girder);
