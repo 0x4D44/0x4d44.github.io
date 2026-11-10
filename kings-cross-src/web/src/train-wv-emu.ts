@@ -18,7 +18,7 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { couplerHalf, roofKit, roofKitSpan } from './train-parts.ts';
-import { buildCafBogie, buildJuniperBogie, buildWvPantograph, CLUSTER_SPAN, ribbedBellows, roofEndCluster, splitTri, starOutline } from './train-wv-emu-parts.ts';
+import { buildCafBogie, buildJuniperBogie, buildWvPantograph, CLUSTER_SPAN, juniperCoupler, ribbedBellows, roofEndCluster, splitTri, starOutline } from './train-wv-emu-parts.ts';
 import type { Look } from './train-wv-emu-parts.ts';
 import type { CouplerStyle } from './train-parts.ts';
 
@@ -150,8 +150,9 @@ const JUNIPER_BODY: Body = {
   cover: 0x4a5062,
   // the 334's own outside-frame bogie, built from scotrail334_07 (train-wv-emu-parts buildJuniperBogie)
   bogie: 'juniper',
-  // a narrow bellows, kept 0.12 m inside the end's outline and 0.3 m under the crown, so it sits within the roof line (scotrail334_01, _02; sizes ASSUMED)
-  gangway: { width: 1.9, height: 2.2, bottom: 1.15, inset: 0.12, topGap: 0.3, ribs: 5, depth: 0.025 },
+  // a narrow bellows, kept 0.12 m inside the end's outline and 0.3 m under the crown, so it sits within the roof line (scotrail334_01, _02; sizes ASSUMED).
+  // (round 4: four deeper ribs a car, eight across the gap, so they read from the side)
+  gangway: { width: 1.9, height: 2.2, bottom: 1.15, inset: 0.12, topGap: 0.3, ribs: 4, depth: 0.05 },
   liveryStep: (car) => ({ until: car.length, step: 0.5 }),
   cuts: [3.29, 3.33],
   // ASSUMED, read off scotrail334_01 and _02 (window and door counts; spacings scaled along the car): a driving car has the crew door 2.25 m behind the face, three windows,
@@ -184,16 +185,17 @@ const JUNIPER_BODY: Body = {
 /**
  * The Nova 2's face, by height above the rail head and by u (the fraction of the ring's half-width out from the middle), read off tpe397-01 (head on) and -05 (three-quarter),
  * against the assumed 3.80 m height and 2.75 m width; all ASSUMED:
- *   hood     a dark cap over the display, from 3.47 m up, with a small marker lamp at its middle;
- *   display  black, 3.27 to 3.45 m, the destination lit amber across its middle;
+ *   hood     a dark cap over the display, from 3.36 m up, with the marker lamp in its peaked surround at its middle;
+ *   display  black, 3.15 to 3.33 m, the destination lit amber across its middle;
  *   line     a thin orange line over the screen;
- *   screen   one broad pane, 2.15 to 3.2 m, out to u 0.7, in a dark frame;
+ *   screen   one broad pane, 2.15 to 3.08 m, out to u 0.7, in a dark frame;
+ * (round 4: the screen's head, the display and the marker were lowered 0.12 m so all three stand on the cap's upright face; see the nose's knots)
  *   band     the dark mask below the screen, narrowing down to the white star at 1.5 m;
  *   lamps    an angular dark housing each side, 1.62 to 2.04 m, the round headlight outboard and a block of LEDs (the tail lamp) inboard;
  *   mouth    the dark coupler cover low on the front, 0.72 to 1.38 m, in a cyan bumper over a navy foot.
  */
 const NOVA = {
-  hood: 3.47, display: [3.27, 3.45], screen: [2.15, 3.2], screenU: 0.7, frameU: 0.78,
+  hood: 3.36, display: [3.15, 3.33], screen: [2.15, 3.08], screenU: 0.7, frameU: 0.78,
   band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.55,
 } as const;
 /** The 397 cab side's cyan: where its back edge meets the sill (metres from the tip) and how far back it leans per metre up (tpe397-05: past the first passenger door). */
@@ -208,7 +210,7 @@ const DISPLAY = { u: 0.52, frame: 0.03, colour: 0x4b5058 } as const;
 /** The coupler cover: a flush dark-grey panel in the bumper (tpe397-01, -05), and the slightly lighter seam round it. */
 const MUZZLE = { colour: 0x3e434a, seam: 0x5f656d } as const;
 /** The marker lamp's peaked surround at the top of the hood (tpe397-01): pale, its top edge across the hood, its point down toward the display. ASSUMED size. */
-const MARKER = { half: 0.24, top: 3.61, point: 3.48, colour: 0xaab0b7, lampY: 3.565, lampR: 0.045 } as const;
+export const MARKER = { half: 0.22, top: 3.54, point: 3.37, colour: 0xaab0b7, lampY: 3.475, lampR: 0.05 } as const;
 /** A lamp housing ("eye"): from u0 to u1 across the face, its foot rising outboard by `rise` (tpe397-01: the outer end stands higher), `height` tall. ASSUMED sizes. */
 const EYE = { u0: 0.36, u1: 0.88, foot: 1.62, rise: 0.24, height: 0.3 } as const;
 const eyeFoot = (u: number): number => EYE.foot + (EYE.rise * (u - EYE.u0)) / (EYE.u1 - EYE.u0);
@@ -233,8 +235,13 @@ const CIVITY_BODY: Body = {
       { s: 0.85, top: 2.2, ws: 0.935, bottom: 0.42 },
       { s: 1.4, top: 2.72, ws: 0.968, bottom: 0.5 },
       { s: 1.9, top: 3.16, ws: 0.987, bottom: 0.6 },
-      { s: 2.4, top: 3.45, ws: 0.996, bottom: 0.72 },
-      { s: 3.0, top: 3.62, ws: 1, bottom: 0.84 },
+      // (round 4: the cap over the screen stands upright, as tpe397-01 shows it: it climbs from the screen's head to the marker's top in about 0.3 m, so
+      // the framed display and the marker's peaked surround stand on a face, not on the crest; then it rounds over into the roof)
+      { s: 2.0, top: 3.36, ws: 0.99, bottom: 0.63 },
+      { s: 2.1, top: 3.5, ws: 0.992, bottom: 0.65 },
+      { s: 2.2, top: 3.585, ws: 0.994, bottom: 0.67 },
+      { s: 2.45, top: 3.632, ws: 0.996, bottom: 0.72 },
+      { s: 2.8, top: 3.64, ws: 0.999, bottom: 0.8 },
       { s: 3.4, top: CF.height.value - 0.16, ws: 1, bottom: CF.floorHeight.value - 0.15 },
     ],
     fillet: 0.22,
@@ -257,10 +264,13 @@ const CIVITY_BODY: Body = {
   // CAF's inside-frame bogie, built from tpe397-03 (train-wv-emu-parts buildCafBogie)
   bogie: 'caf',
   // the Civity's wide bellows: nearly the body's width, from below the floor to just under the roof, deep rounded ribs standing proud (tpe397-02; sizes ASSUMED)
-  gangway: { width: 2.6, height: 2.59, bottom: 0.95, inset: 0.03, topGap: 0.1, ribs: 6, depth: 0.055 },
+  // (round 4: five ribs a car, ten across the gap as -02 shows about ten, each 9 cm proud; the half-width kept 0.1 m inside the body so the crests stay within it)
+  gangway: { width: 2.52, height: 2.59, bottom: 0.95, inset: 0.03, topGap: 0.12, ribs: 5, depth: 0.09 },
   // (0.6 m rings on every car: the livery is cut along its edges, so the rings no longer have to be fine where it changes; the cab car's 0.4 m rings
   // put it over the triangle budget once its diagonals ran back past the first door)
-  liveryStep: (car) => ({ until: car.length, step: 0.6 }),
+  // (round 4: on a cab car the rings are fine only as far back as the livery changes along the car, the cyan's raked edge and the diagonals ending about
+  // 11.2 m from the tip; behind that the side is silver with horizontal lines, which are points of the section, so coarse rings draw it exactly)
+  liveryStep: (car) => ({ until: car.cab ? 12.5 : car.length, step: 0.6 }),
   cuts: [1.07, 3.04, 3.08],
   // ASSUMED, from window and door counts in tpe397-01, -02, -04, -05: single-leaf plug doors at both ends of every car (about 1.55 m in); a driving car has the crew door 4.1 m
   // from the tip, its first door at 7 m and six large windows; an intermediate car a blank panel (the "COACH" display) of about 2 m at one end and ten windows
@@ -366,12 +376,17 @@ function paintCivity(p: Spot, b: Body): Paint {
     const { y, u } = p;
     // the face (the front of the nose, not its flanks; see NOVA)
     if (s < nose && u < 0.9 && (p.top || y > NOVA.mouth[0])) {
+      // the marker lamp's peaked surround over the display (tpe397-01): a pale rim round a dark panel, painted on the cap so it follows the surface
+      if (y <= MARKER.top && y >= MARKER.point && s < nose - 0.4) {
+        const edge = (yy: number, inset: number): number => (MARKER.half - inset) * ((yy - MARKER.point - inset) / (MARKER.top - MARKER.point - inset));
+        if (p.ax <= edge(y, 0)) return { colour: y < MARKER.top - 0.03 && p.ax <= edge(y, 0.05) ? 0x1a1c20 : MARKER.colour };
+      }
       if (y > NOVA.hood) return { colour: u < 0.8 && s < nose - 0.4 ? TPE_MASK : TPE_ROOF };
       // over the screen (tpe397-01): a thin orange line along the screen frame's top, then the dark hood up to the roof, and in the hood the destination
       // display in a frame of its own, under the marker lamp's peaked surround (drawn on the face, below). No orange beside the display.
       if (y > NOVA.screen[1] + 0.035 && u < 0.8) {
         if (y < NOVA.screen[1] + 0.055) return { colour: 0xd0603a };
-        if (u < DISPLAY.u && y > NOVA.display[0] && y < NOVA.display[1]) return { colour: u < 0.32 && y > 3.31 && y < 3.41 ? 0xe39a1c : 0x111317 };
+        if (u < DISPLAY.u && y > NOVA.display[0] && y < NOVA.display[1]) return { colour: u < 0.32 && y > NOVA.display[0] + 0.04 && y < NOVA.display[1] - 0.04 ? 0xe39a1c : 0x111317 };
         if (u < DISPLAY.u + DISPLAY.frame && y > NOVA.display[0] - DISPLAY.frame && y < NOVA.display[1] + DISPLAY.frame) return { colour: DISPLAY.colour };
         return { colour: TPE_MASK };
       }
@@ -443,6 +458,37 @@ interface FaceShape {
  *   the pods      black, wrapping the face's corners, each with three lenses one over another: the tail lamp, a marker, the headlight;
  *   the recess    the coupler's, dark, in the blue bumper.
  */
+/**
+ * A 334 lamp pod, the cab's right-hand one (mirrored for the left): flat across its top under the screen's corner, its inner edge bowing in toward the
+ * middle, its foot rounded up into the outer corner, so it reads as the curved housing of scotrail334_05 and _07, not a box. The outer edge runs off the face
+ * (the face's outline clips it). ASSUMED sizes, read off _05.
+ */
+function podOutline(): [number, number][] {
+  const out: [number, number][] = [[1.7, 2.3], [0.98, 2.3]];
+  for (let k = 1; k < 8; k++) {
+    const t = k / 8;
+    out.push([0.99 - 0.15 * Math.sin(Math.PI * t * 0.85), 2.3 - 0.75 * t]);
+  }
+  // the foot: a quarter ellipse from the inner edge's foot round to the outer edge
+  const [cx, cy, rx, ry] = [1.3, 1.55, 0.4, 0.27];
+  for (let k = 0; k <= 6; k++) {
+    const a = Math.PI + (k / 6) * (Math.PI / 2);
+    out.push([cx + rx * Math.cos(a), cy + ry * Math.sin(a)]);
+  }
+  out.push([1.7, 1.28]);
+  return out;
+}
+
+/** The coupler's arched opening in the bumper (scotrail334_05, _07): straight sides from `foot` (the face's outline cuts it) up to `spring`, a round-topped arch `rise` over that. */
+function archOutline(half: number, foot: number, spring: number, rise: number): [number, number][] {
+  const out: [number, number][] = [[-half, foot], [half, foot]];
+  for (let k = 0; k <= 10; k++) {
+    const a = (k / 10) * Math.PI;
+    out.push([half * Math.cos(a), spring + rise * Math.sin(a)]);
+  }
+  return out;
+}
+
 const JUNIPER_FACE: readonly FaceShape[] = [
   { name: 'cap', outline: boxOutline(-1.5, 1.5, 3.33, 3.8), colour: SR_CAP, lift: 0.0015 },
   { name: 'brow-line', outline: boxOutline(-1.5, 1.5, 3.29, 3.33), colour: SR_ORANGE, lift: 0.0015 },
@@ -459,11 +505,15 @@ const JUNIPER_FACE: readonly FaceShape[] = [
   { name: 'hatch-seam-side', outline: boxOutline(0.6, 0.615, 1.78, 2.3), colour: 0x6b5a1a, lift: 0.003, mirror: true },
   { name: 'hatch-seam-foot', outline: boxOutline(-0.615, 0.615, 1.78, 1.795), colour: 0x6b5a1a, lift: 0.003 },
   { name: 'hatch-seam-mid', outline: boxOutline(-0.0075, 0.0075, 1.79, 2.3), colour: 0x6b5a1a, lift: 0.003 },
-  { name: 'lamp-pod', outline: boxOutline(0.84, 1.5, 1.3, 2.3, 0.18), colour: BEZEL, lift: 0.006, mirror: true },
-  { name: 'tail-lamp', outline: discOutline(1.05, 2.12, 0.065), lens: 'tail', lift: 0.009, mirror: true },
-  { name: 'marker-lamp', outline: discOutline(1.05, 1.9, 0.05), lens: 'head', lift: 0.009, mirror: true },
-  { name: 'headlight', outline: discOutline(1.03, 1.6, 0.095), lens: 'head', lift: 0.009, mirror: true },
-  { name: 'coupler-recess', outline: boxOutline(-0.5, 0.5, 0.55, 1.22, 0.05), colour: RECESS, lift: 0.003 },
+  { name: 'lamp-pod', outline: podOutline(), colour: BEZEL, lift: 0.006, mirror: true },
+  // each lens in a bright metal ring (scotrail334_05)
+  { name: 'tail-bezel', outline: discOutline(1.06, 2.1, 0.085), colour: 0x8d939b, lift: 0.0075, mirror: true },
+  { name: 'marker-bezel', outline: discOutline(1.06, 1.87, 0.068), colour: 0x8d939b, lift: 0.0075, mirror: true },
+  { name: 'head-bezel', outline: discOutline(1.05, 1.58, 0.118), colour: 0x8d939b, lift: 0.0075, mirror: true },
+  { name: 'tail-lamp', outline: discOutline(1.06, 2.1, 0.065), lens: 'tail', lift: 0.009, mirror: true },
+  { name: 'marker-lamp', outline: discOutline(1.06, 1.87, 0.05), lens: 'head', lift: 0.009, mirror: true },
+  { name: 'headlight', outline: discOutline(1.05, 1.58, 0.095), lens: 'head', lift: 0.009, mirror: true },
+  { name: 'coupler-recess', outline: archOutline(0.46, 0.2, 1.02, 0.3), colour: RECESS, lift: 0.003 },
 ];
 
 // --- one car ---------------------------------------------------------------------------------------------
@@ -610,7 +660,7 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
         }
       }
       // the coupler out of the recess to the car's end, and the bumper's two corners carried down as blue skirts either side of it (scotrail334_05)
-      couplerHalf(detail, Z(tip), (-dir) as 1 | -1, tip, COUPLER_Y, b.coupler.style);
+      juniperCoupler(detail, Z(tip), (-dir) as 1 | -1, tip, COUPLER_Y);
       marker('nose-coupler', 0, COUPLER_Y, tip / 2, { end: car.cab, style: b.coupler.style, reach: tip });
       for (const sx of [-1, 1]) {
         const za = Z(tip + 0.05);
@@ -711,8 +761,7 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       detail.fan(star.poly, star.n, col(0xf2f4f6));
       // the marker lamp at the top of the hood, in its pale peaked surround over the display (tpe397-01, -05). It is a lens like the others: a top marker,
       // white when its end leads, dark when it trails (the `head` role)
-      const surround = onSurface([[-MARKER.half, MARKER.top], [0, MARKER.point], [MARKER.half, MARKER.top]], 0.008);
-      detail.fan(surround.poly, surround.n, col(MARKER.colour));
+      // (its surround is painted on the shell: paintCivity)
       const roofLamp = onSurface(discOutline(0, MARKER.lampY, MARKER.lampR, 6), 0.012);
       lensFan('head', roofLamp.poly, roofLamp.n, mode);
       // a single wiper parked up the screen, from its foot near the middle toward the cab's left (tpe397-01, -05)
@@ -732,7 +781,7 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     const g = b.gangway;
     // each car draws its own share of the space between bodies (WV_END_GAP), so the two halves meet at the face frame in the middle and nothing is drawn twice
     const zSeat = zWall + Math.sign(zOut - zWall) * 0.002;
-    ribbedBellows(detail, { half: sec.half, bottom: g.bottom, halfWidth: g.width / 2, inset: g.inset, topGap: g.topGap, ribs: g.ribs, depth: g.depth }, zSeat, zOut, col(0x2a2c31), col(0x17181b));
+    ribbedBellows(detail, { half: sec.half, bottom: g.bottom, halfWidth: g.width / 2, inset: g.inset, topGap: g.topGap, ribs: g.ribs, depth: g.depth }, zSeat, zOut, { crest: col(0x4a4d54), valley: col(0x111215), frame: col(0x17181b) });
     const end = e.sign > 0 ? (car.cab === 'rear' ? 'front' : 'rear') : 'front';
     marker('gangway', 0, g.bottom + g.height / 2, e.s + (e.sign * WV_END_GAP) / 2, { end, width: g.width, height: g.height, depth: WV_END_GAP });
     couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, WV_END_GAP, COUPLER_Y);
@@ -824,11 +873,18 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     p.position.set(0, b.crown, (car.pantograph[0] + car.pantograph[1]) / 2);
     group.add(p);
   }
-  // the Civity's high-voltage gear at each end of an intermediate car (tpe397-02; ASSUMED on every intermediate car, both ends: the roof line runs the unit)
-  if (family === 'civity' && !car.cab) {
-    for (const [zEnd, dir] of [[car.start + WV_END_GAP + 0.05, 1], [car.end - WV_END_GAP - 0.05, -1]] as const) {
-      roofEndCluster(detail, zEnd, dir, b.crown, fig.height.value - b.crown + 0.04);
-      const [c0, c1] = [Math.min(zEnd, zEnd + dir * (CLUSTER_SPAN + 0.3)), Math.max(zEnd, zEnd + dir * (CLUSTER_SPAN + 0.3))];
+  // the Civity's high-voltage gear at a car end (tpe397-02): only where the photographs show it, at the pantograph's end of a pantograph car, between the
+  // car's end and the pantograph's base (tpe397-02 shows it there beside the folded pantograph, -05 and -06 the same end of car 2; no photograph shows it on
+  // the MSL or at a pantograph car's other end, so neither carries it). It stops short of the pantograph's base.
+  if (family === 'civity' && car.pantograph) {
+    const nearStart = (car.pantograph[0] + car.pantograph[1]) / 2 < (car.start + car.end) / 2;
+    const zEnd = nearStart ? car.start + WV_END_GAP + 0.05 : car.end - WV_END_GAP - 0.05;
+    const dir: 1 | -1 = nearStart ? 1 : -1;
+    const reach = Math.max(0.6, (nearStart ? car.pantograph[0] - zEnd : zEnd - car.pantograph[1]) - 0.15);
+    {
+      roofEndCluster(detail, zEnd, dir, b.crown, fig.height.value - b.crown + 0.04, Math.min(CLUSTER_SPAN, reach));
+      const span = Math.min(CLUSTER_SPAN, reach) + 0.3;
+      const [c0, c1] = [Math.min(zEnd, zEnd + dir * span), Math.max(zEnd, zEnd + dir * span)];
       covers = covers.flatMap(([a, c]): [number, number][] => (c <= c0 || a >= c1 ? [[a, c]] : [...(a < c0 ? [[a, c0] as [number, number]] : []), ...(c > c1 ? [[c1, c] as [number, number]] : [])]));
     }
   }
@@ -920,13 +976,14 @@ function haltone(soup: Soup, at: (s: number, y: number, side: number) => { p: V3
     if (y < 1.05) break;
     // the band's middle falls back about a metre for every metre down; it is about 1.4 m wide along the car (ASSUMED, read off scotrail334_06)
     // (it starts at the face's corner beside the screens: scotrail334_05)
-    const centre = 0.18 + (3.24 - y) * 1.0;
+    // (round 4: it begins on the face's rounded corner beside the screen, as _05 and _07 show the top rows wrapping onto the front)
+    const centre = 0.1 + (3.24 - y) * 1.0;
     const offset = (row % 2) * pitch * 0.5;
     for (let k = -6; k <= 6; k++) {
       const sAt = centre + k * pitch + offset;
       const d = Math.abs(sAt - centre) / 0.75;
       const r = 0.066 * (1 - d * d);
-      if (r < 0.02 || sAt < 0.06) continue;
+      if (r < 0.02 || sAt < 0.012) continue;
       for (const side of [-1, 1]) {
         const { p, n } = at(sAt, y, side);
         // a disc in the tangent plane: e1 along the surface (s mostly), e2 up

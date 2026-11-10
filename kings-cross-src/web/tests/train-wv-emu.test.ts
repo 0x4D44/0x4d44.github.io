@@ -6,8 +6,8 @@ import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { buildWvEmuTrain, disposeWvEmuTrain, SR_SALTIRE, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
-import { SPLIT_DEPTH, splitTri } from '../src/train-wv-emu-parts.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_SALTIRE, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
+import { CLUSTER_BAND, J_AIR, SPLIT_DEPTH, splitTri } from '../src/train-wv-emu-parts.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
 import type { V3 } from '../src/train-geom.ts';
 
@@ -255,4 +255,107 @@ test('every 334 car carries the Saltire X on both sides, and the 397\'s two cab 
   const b = wvEmuPlan('tpe397x5', standard as never);
   assert.notEqual(a.windows.length, b.windows.length, 'DMFLW and DMSL glaze differently');
   assert.ok(a.windows.every(([s0, s1]) => s1 - s0 > 1.7) && b.windows.every(([s0, s1]) => s1 - s0 < 1.4), 'first-class windows are the large ones');
+});
+
+// --- round 4: the 397's upright cap, two-tone bellows, the 334's air spring in view, the roof cluster where the photographs show it ---
+
+/** The triangles of a mesh whose first vertex has colour `hex`: their area-weighted normals summed, and how many. */
+const paintedNormal = (m: THREE.Mesh, hex: number): { n: THREE.Vector3; count: number } => {
+  const c = col(hex);
+  const pos = m.geometry.getAttribute('position');
+  const colr = m.geometry.getAttribute('color');
+  const idx = m.geometry.index;
+  const at = (k: number): number => (idx ? idx.getX(k) : k);
+  const n = new THREE.Vector3();
+  let count = 0;
+  const total = idx ? idx.count : pos.count;
+  for (let k = 0; k + 2 < total; k += 3) {
+    const v = at(k);
+    if (Math.abs(colr.getX(v) - c.r) > 1e-6 || Math.abs(colr.getY(v) - c.g) > 1e-6 || Math.abs(colr.getZ(v) - c.b) > 1e-6) continue;
+    const a = new THREE.Vector3().fromBufferAttribute(pos, v);
+    const b = new THREE.Vector3().fromBufferAttribute(pos, at(k + 1));
+    const d = new THREE.Vector3().fromBufferAttribute(pos, at(k + 2));
+    n.add(b.sub(a).cross(d.sub(a)));
+    count++;
+  }
+  return { n, count };
+};
+
+test('the 397\'s display and marker stand on an upright cap: their paint faces forward more than up, so they show from the platform', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const shell = (root.getObjectByName('car-0') as THREE.Object3D).getObjectByName('body-shell') as THREE.Mesh;
+  // (the leading cab faces -z; the display's lit amber, and the marker surround's pale rim, both painted on the shell)
+  for (const [name, hex] of [['display', 0xe39a1c], ['marker surround', MARKER.colour]] as const) {
+    const { n, count } = paintedNormal(shell, hex);
+    assert.ok(count > 0, `${name} is painted on the cap`);
+    const forward = -n.z;
+    const up = n.y;
+    assert.ok(forward > up, `${name}: its surface leans ${Math.atan2(up, forward).toFixed(2)} rad back from upright, more up than forward`);
+  }
+});
+
+test('the bellows ribs read from the side: two tones alternating along the gap, deep enough to stand out', () => {
+  for (const kind of WV_EMU_KINDS) {
+    const b = wvEmuBody(kind);
+    const root = buildWvEmuTrain(kind);
+    root.updateMatrixWorld(true);
+    const car = root.getObjectByName('car-1') as THREE.Object3D;
+    const gw = car.children.find((o) => o.name === 'gangway') as THREE.Object3D;
+    const gz = gw.getWorldPosition(new THREE.Vector3()).z;
+    const detail = car.getObjectByName('body-detail') as THREE.Mesh;
+    const p = detail.geometry.getAttribute('position');
+    const c = detail.geometry.getAttribute('color');
+    // walk the bellows' side at mid height along the gap: at each z, the outermost point's tone and how far out it stands
+    const midY = b.gangway.bottom + b.gangway.height / 2;
+    const byZ = new Map<string, { x: number; tone: string }>();
+    for (let i = 0; i < p.count; i++) {
+      if (Math.abs(p.getZ(i) - gz) > WV_END_GAP / 2 - 0.035 || Math.abs(p.getY(i) - midY) > 0.4 || p.getX(i) < 0.5) continue;
+      const key = p.getZ(i).toFixed(3);
+      const tone = c.getX(i).toFixed(3);
+      const was = byZ.get(key);
+      if (!was || p.getX(i) > was.x) byZ.set(key, { x: p.getX(i), tone });
+    }
+    const along = [...byZ.entries()].sort((a, d) => +a[0] - +d[0]).map(([, v]) => v);
+    let changes = 0;
+    for (let k = 1; k < along.length; k++) if ((along[k] as { tone: string }).tone !== (along[k - 1] as { tone: string }).tone) changes++;
+    const xs = along.map((v) => v.x);
+    const relief = Math.max(...xs) - Math.min(...xs);
+    // (each rib changes tone twice; the window holds most of the ribs of both cars' halves)
+    assert.ok(changes >= b.gangway.ribs * 2 - 2, `${kind}: ${changes} changes of tone along the gap`);
+    assert.ok(relief >= 0.04, `${kind}: the ribs stand ${relief.toFixed(3)} m proud of the folds`);
+  }
+});
+
+test('the 334\'s air spring shows: it stands outside the underframe\'s width, under the body', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const mesh = (root.getObjectByName('bogie-0-0') as THREE.Object3D).getObjectByName('bogie-mesh') as THREE.Mesh;
+  const pos = mesh.geometry.getAttribute('position');
+  const c = mesh.geometry.getAttribute('color');
+  const air = col(J_AIR);
+  let outside = 0;
+  for (let i = 0; i < pos.count; i++) {
+    if (Math.abs(c.getX(i) - air.r) > 1e-6 || Math.abs(c.getY(i) - air.g) > 1e-6) continue;
+    // (the underframe's slab is 0.95 m each side of the middle, from 0.18 m under the floor up)
+    if (Math.abs(pos.getX(i)) > 0.95 && pos.getY(i) < wvEmuBody('sr334x3').floor - 0.18) outside++;
+  }
+  assert.ok(outside >= 16, `${outside} air-spring vertices stand clear of the underframe`);
+});
+
+test('the 397\'s roof cluster stands only where the photographs show it: at the pantograph end of each pantograph car', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const band = col(CLUSTER_BAND);
+  const ends = wvEmuLayout('tpe397x5').cars.map((car): [string[], string | null] => {
+    const m = (root.getObjectByName(`car-${car.index}`) as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+    const p = m.geometry.getAttribute('position');
+    const c = m.geometry.getAttribute('color');
+    const at = new Set<string>();
+    for (let i = 0; i < p.count; i++) {
+      if (Math.abs(c.getX(i) - band.r) > 1e-6 || Math.abs(c.getY(i) - band.g) > 1e-6 || Math.abs(c.getZ(i) - band.b) > 1e-6) continue;
+      at.add(p.getZ(i) < (car.start + car.end) / 2 ? 'start' : 'end');
+    }
+    const pan = car.pantograph ? ((car.pantograph[0] + car.pantograph[1]) / 2 < (car.start + car.end) / 2 ? 'start' : 'end') : null;
+    return [[...at].sort(), pan];
+  });
+  assert.deepEqual(ends.map(([at]) => at), ends.map(([, pan]) => (pan ? [pan] : [])));
+  assert.deepEqual(ends.map(([, pan]) => pan !== null), [false, true, false, true, false]);
 });

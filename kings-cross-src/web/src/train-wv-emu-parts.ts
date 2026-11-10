@@ -1,7 +1,7 @@
 // Parts of the Waverley EMUs that no King's Cross kind has: a livery cut into the shell along its own edges (so a painted boundary is a straight cut
 // across each triangle, not a staircase of whole quads), and the CAF inside-frame bogie of the Class 397, read off tpe397-03.
 import * as THREE from 'three';
-import { col, plain, Soup, unit } from './train-geom.ts';
+import { col, plain, roundedRect, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { BOGIE_LOD_DISTANCE, FLANGE_HEIGHT, WHEEL_WIDTH } from './train-parts.ts';
 
@@ -173,29 +173,44 @@ export function bellowsOutline(s: BellowsSpec): [number, number][] {
 /**
  * A ribbed bellows from the end wall (`zWall`) to the middle of the gap (`zMid`), its outline scaled out at each rib's crest along a half-sine, so the edge is
  * a row of rounded ribs and never a sawtooth; a dark face frame closes it where it meets the neighbour's half.
+ *
+ * Two tones, so the ribs read from the side as tpe397-02's do: each rib's crest (`colours.crest`, catching the light) and the fold between ribs
+ * (`colours.valley`, in shadow). The flanks are shaded by their own lean (their normals tilt along the gap), not as a smooth tube.
  */
-export function ribbedBellows(soup: Soup, s: BellowsSpec, zWall: number, zMid: number, colour: THREE.Color, frame: THREE.Color): void {
+export function ribbedBellows(soup: Soup, s: BellowsSpec, zWall: number, zMid: number, colours: { crest: THREE.Color; valley: THREE.Color; frame: THREE.Color }): void {
+  const frame = colours.frame;
   const base = bellowsOutline(s);
   const cy = (s.bottom + Math.max(...base.map((p) => p[1]))) / 2;
   // six samples a rib, the crest a rounded tube (sin^0.6) and the valley narrow, as the ribs of tpe397-02's bellows
   const per = 6;
   const rings = s.ribs * per + 1;
   const pts: V3[][] = [];
+  const grows: number[] = [];
   for (let i = 0; i < rings; i++) {
     const t = i / (rings - 1);
     const crest = Math.sin(Math.PI * ((i % per) / per)) ** 0.6;
     const grow = s.depth * crest;
+    grows.push(grow);
     pts.push(base.map(([x, y]): V3 => {
       const r = Math.hypot(x, y - cy) || 1;
       return [x + (x / r) * grow, y + ((y - cy) / r) * grow, zWall + (zMid - zWall) * t];
     }));
   }
+  const dzRing = (zMid - zWall) / (rings - 1);
   for (let i = 0; i + 1 < rings; i++) {
     const a = pts[i] as V3[];
     const b = pts[i + 1] as V3[];
+    // the segment's place in its rib: the middle four of six samples are the crest, the outer two the fold
+    const phase = ((i % per) + 0.5) / per;
+    const colour = phase > 0.2 && phase < 0.8 ? colours.crest : colours.valley;
+    // the flank's lean: how fast it grows outward along the gap, so a rising flank faces back toward the wall and a falling one away from it
+    const slope = ((grows[i + 1] as number) - (grows[i] as number)) / dzRing;
     for (let j = 0; j < a.length; j++) {
       const j1 = (j + 1) % a.length;
-      const nrm = (p: V3): V3 => unit([p[0], p[1] - cy, 0]);
+      const nrm = (p: V3): V3 => {
+        const r = unit([p[0], p[1] - cy, 0]);
+        return unit([r[0], r[1], -slope]);
+      };
       soup.quad([a[j] as V3, a[j1] as V3, b[j1] as V3, b[j] as V3], [nrm(a[j] as V3), nrm(a[j1] as V3), nrm(b[j1] as V3), nrm(b[j] as V3)], colour);
     }
   }
@@ -290,22 +305,26 @@ export function buildWvPantograph(len: number, top: number): THREE.Group {
  * The high-voltage gear at a Civity car's end, as tpe397-02 shows it from the end inward along the roof: the cable termination where the roof line crosses to
  * the next car (a dark box, a red band on it), a tall ribbed insulator, smaller ones on blocks, and the cable runs between them. Drawn into `soup` in car
  * coordinates: `zEnd` the roof's end, `dir` +1 or -1 into the car, `crown` the roof's height, `cap` the most it may stand above the crown. Sizes ASSUMED, spaced
- * along the first `CLUSTER_SPAN` metres as the photograph spaces them against the 23.35 m car.
+ * along the first `CLUSTER_SPAN` metres as the photograph spaces them against the 23.35 m car. `reach` cuts it short: only the parts within that distance of
+ * the end are drawn, and the cables stop there (where a pantograph's base begins).
  */
 export const CLUSTER_SPAN = 4.4;
-export function roofEndCluster(soup: Soup, zEnd: number, dir: 1 | -1, crown: number, cap: number): void {
-  const at = (u: number): number => zEnd + dir * u;
+/** The red band round the cluster's termination box (tpe397-02). */
+export const CLUSTER_BAND = 0xa8302b;
+export function roofEndCluster(soup: Soup, zEnd: number, dir: 1 | -1, crown: number, cap: number, reach = CLUSTER_SPAN): void {
+  const at = (u: number): number => zEnd + dir * Math.min(u, reach);
   const y = crown - 0.01;
   const dark = col(0x1c1d21);
   const plate = col(0x7c8086);
   const C = PAN_COLOURS;
   // the termination box and its red band
   soup.box(-0.18, 0.18, y, y + Math.min(cap, 0.16), Math.min(at(0.15), at(0.45)), Math.max(at(0.15), at(0.45)), dark);
-  soup.box(-0.185, 0.185, y + Math.min(cap, 0.16) - 0.035, y + Math.min(cap, 0.16) - 0.012, Math.min(at(0.15), at(0.45)), Math.max(at(0.15), at(0.45)), col(0xa8302b));
+  soup.box(-0.185, 0.185, y + Math.min(cap, 0.16) - 0.035, y + Math.min(cap, 0.16) - 0.012, Math.min(at(0.15), at(0.45)), Math.max(at(0.15), at(0.45)), col(CLUSTER_BAND));
   // the tall insulator on its plate, and two small ones on blocks
   soup.box(0.05, 0.45, y, y + 0.02, Math.min(at(0.75), at(1.15)), Math.max(at(0.75), at(1.15)), plate);
   insulator(soup, 0.25, y + 0.02, at(0.95), Math.min(cap - 0.02, 0.19), 0.075, 5, col(C.shed), col(C.cap));
   for (const [u, x] of [[2.2, -0.25], [3.6, 0.25]] as const) {
+    if (u + 0.1 > reach) continue;
     soup.box(x - 0.1, x + 0.1, y, y + 0.04, Math.min(at(u - 0.1), at(u + 0.1)), Math.max(at(u - 0.1), at(u + 0.1)), plate);
     insulator(soup, x, y + 0.04, at(u), Math.min(cap - 0.04, 0.1), 0.045, 3, col(C.shed), col(C.cap));
   }
@@ -315,6 +334,7 @@ export function roofEndCluster(soup: Soup, zEnd: number, dir: 1 | -1, crown: num
     for (let k = 0; k + 1 < pts.length; k++) {
       const [x0, u0] = pts[k] as [number, number];
       const [x1, u1] = pts[k + 1] as [number, number];
+      if (u0 >= reach) continue;
       rod(soup, [x0, cy, at(u0)], [x1, cy, at(u1)], 0.016, dark, 6);
     }
   };
@@ -374,20 +394,20 @@ function disc(soup: Soup, cx: number, cy: number, cz: number, r: number, nx: 1 |
   soup.fan(poly, [nx, 0, 0], colour);
 }
 
-function ring(soup: Soup, cx: number, cy: number, cz: number, r0: number, r1: number, nx: 1 | -1, colour: THREE.Color): void {
-  for (let k = 0; k < SEG; k++) {
-    const a0 = (2 * Math.PI * k) / SEG;
-    const a1 = (2 * Math.PI * (k + 1)) / SEG;
+function ring(soup: Soup, cx: number, cy: number, cz: number, r0: number, r1: number, nx: 1 | -1, colour: THREE.Color, seg = SEG): void {
+  for (let k = 0; k < seg; k++) {
+    const a0 = (2 * Math.PI * k) / seg;
+    const a1 = (2 * Math.PI * (k + 1)) / seg;
     const at = (r: number, a: number): V3 => [cx, cy + r * Math.sin(a), cz + r * Math.cos(a)];
     soup.quad([at(r0, a0), at(r1, a0), at(r1, a1), at(r0, a1)], [[nx, 0, 0], [nx, 0, 0], [nx, 0, 0], [nx, 0, 0]], colour);
   }
 }
 
 /** A cylinder along x (a wheel's tread), from x0 to x1. */
-function tread(soup: Soup, x0: number, x1: number, cy: number, cz: number, r: number, colour: THREE.Color): void {
-  for (let k = 0; k < SEG; k++) {
-    const a0 = (2 * Math.PI * k) / SEG;
-    const a1 = (2 * Math.PI * (k + 1)) / SEG;
+function tread(soup: Soup, x0: number, x1: number, cy: number, cz: number, r: number, colour: THREE.Color, seg = SEG): void {
+  for (let k = 0; k < seg; k++) {
+    const a0 = (2 * Math.PI * k) / seg;
+    const a1 = (2 * Math.PI * (k + 1)) / seg;
     const pt = (x: number, a: number): V3 => [x, cy + r * Math.sin(a), cz + r * Math.cos(a)];
     const nn = (a: number): V3 => [0, Math.sin(a), Math.cos(a)];
     soup.quad([pt(x0, a0), pt(x1, a0), pt(x1, a1), pt(x0, a1)], [nn(a0), nn(a0), nn(a1), nn(a1)], colour);
@@ -432,12 +452,14 @@ function wheels(soup: Soup, s: CafBogieSpec, z: number, full: boolean, look: Whe
     const xc = (sx * s.track) / 2;
     const xo = xc + sx * (WHEEL_WIDTH / 2);
     const xi = xc - sx * (WHEEL_WIDTH / 2);
-    tread(soup, Math.min(xo, xi), Math.max(xo, xi), r, z, r, col(look.tyre));
+    // (the far wheels, seen only beyond the LOD distance, are 20-sided: a few pixels across there, and half the triangles)
+    const seg = full ? SEG : 20;
+    tread(soup, Math.min(xo, xi), Math.max(xo, xi), r, z, r, col(look.tyre), seg);
     // the flange, on the inner side of the tread
-    tread(soup, Math.min(xi, xi + sx * 0.03), Math.max(xi, xi + sx * 0.03), r, z, r + FLANGE_HEIGHT, col(look.tyre));
-    disc(soup, xi - sx * 0.002, r, z, r + FLANGE_HEIGHT, (-sx) as 1 | -1, col(look.tyre));
+    tread(soup, Math.min(xi, xi + sx * 0.03), Math.max(xi, xi + sx * 0.03), r, z, r + FLANGE_HEIGHT, col(look.tyre), seg);
+    disc(soup, xi - sx * 0.002, r, z, r + FLANGE_HEIGHT, (-sx) as 1 | -1, col(look.tyre), seg);
     if (!full) {
-      disc(soup, xo, r, z, r, sx, col(look.web));
+      disc(soup, xo, r, z, r, sx, col(look.web), seg);
       continue;
     }
     ring(soup, xo, r, z, r * w.tyre, r, sx, col(look.tyre));
@@ -472,10 +494,25 @@ function cafSoup(s: CafBogieSpec): Soup {
     for (const zs of [-1, 1] as const) {
       const zi = zs * half * CAF.arm.inner;
       const zo = zs * half * CAF.arm.outer;
-      soup.box(ax0, ax1, CAF.arm.y0, CAF.arm.y1, Math.min(zi, zo), Math.max(zi, zo), col(STEEL));
-      // the arm's oval hole, a dark slot through its face near the axle end
+      const axle = zs * half;
+      // the cast arm (tpe397-03): an eye round the axlebox, and a web running in from it, deep at the eye and its foot rising toward the inner end,
+      // a flange along its top and the oval lightening hole near the eye. In the (z, y) plane, extruded across from the arm's back to its face.
+      const xOut = sx > 0 ? ax1 : ax0;
+      const xIn = sx > 0 ? ax0 : ax1;
+      const web: [number, number][] = [[zo, CAF.arm.y1], [zi, CAF.arm.y1], [zi, CAF.arm.y0 + 0.08], [(zi + zo) / 2, CAF.arm.y0 + 0.02], [zo, CAF.arm.y0]];
+      soup.prismX(web, xIn, xOut, col(STEEL));
+      soup.box(ax0 - 0.008, ax1 + 0.008, CAF.arm.y1 - 0.03, CAF.arm.y1 + 0.005, Math.min(zi, zo), Math.max(zi, zo), col(STEEL));
       const zh = zs * half * (CAF.arm.outer - 0.12);
-      soup.box(sx > 0 ? ax1 : ax0 - 0.002, sx > 0 ? ax1 + 0.002 : ax0, 0.3, 0.45, zh - 0.035, zh + 0.035, col(RUBBER));
+      soup.prismX(roundedRect(zh - 0.04, zh + 0.04, 0.32, 0.46, 0.04, 3), xOut, xOut + sx * 0.002, col(RUBBER), false);
+      // the eye: a drum over the axle end (the axlebox), the arm's ring round it, and the box's dark end cover with its bolts
+      rod(soup, [face + sx * 0.03, s.radius, axle], [face + sx * 0.1, s.radius, axle], 0.12, col(FRAME), 14);
+      ring(soup, xOut + sx * 0.003, s.radius, axle, 0.12, 0.175, sx, col(STEEL), 16);
+      tread(soup, Math.min(xIn, xOut), Math.max(xIn, xOut), s.radius, axle, 0.175, col(STEEL), 16);
+      disc(soup, face + sx * 0.104, s.radius, axle, 0.085, sx, col(RUBBER), 12);
+      for (let k = 0; k < 4; k++) {
+        const a = Math.PI / 4 + (k * Math.PI) / 2;
+        disc(soup, xOut + sx * 0.005, s.radius + 0.148 * Math.sin(a), axle + 0.148 * Math.cos(a), 0.013, sx, col(BOLT), 6);
+      }
       // the primary spring and damper pack at the arm's inner end, reaching in from the arm to the frame (clear of the wheel: inboard of its rim)
       const fIn = back - sx * (CAF.frame.inset + 0.09);
       soup.box(Math.min(fIn, ax1), Math.max(fIn, ax1), 0.15, 0.55, zs > 0 ? zi - 0.12 : zi, zs > 0 ? zi : zi + 0.12, col(FRAME));
@@ -492,9 +529,15 @@ function cafSoup(s: CafBogieSpec): Soup {
     rod(soup, [dx, CAF.rollLink.y0, CAF.rollLink.z], [dx, CAF.rollLink.y1, CAF.rollLink.z], 0.03, col(STEEL), 8);
     rod(soup, [dx, CAF.rollLink.y0, CAF.rollLink.z], [dx - sx * 0.25, CAF.rollLink.y0, CAF.rollLink.z + 0.38], 0.045, col(STEEL), 8);
     rod(soup, [dx, CAF.verticalDamper.y0, CAF.verticalDamper.z], [dx, CAF.verticalDamper.y1, CAF.verticalDamper.z], CAF.verticalDamper.radius, col(STEEL), 10);
-    soup.box(Math.min(dx, dx - sx * 0.05), Math.max(dx, dx - sx * 0.05), CAF.bracket.y1 - 0.06, CAF.bracket.y1, CAF.bracket.z0, CAF.bracket.z1, col(STEEL));
-    soup.box(Math.min(dx, dx - sx * 0.05), Math.max(dx, dx - sx * 0.05), CAF.bracket.y0, CAF.bracket.y1, CAF.bracket.z1 - 0.07, CAF.bracket.z1, col(STEEL));
-    soup.box(Math.min(dx, dx - sx * 0.05), Math.max(dx, dx - sx * 0.05), CAF.bracket.y0, CAF.bracket.y1 - 0.06, CAF.bracket.z0 + 0.1, CAF.bracket.z0 + 0.16, col(STEEL));
+    // the bracket hung from the body (tpe397-03): a cast triangle, its top a plate under the body and its two legs meeting in a boss at the damper's end,
+    // open in the middle; each bar a quad in the (z, y) plane, extruded across
+    const B = CAF.bracket;
+    const zp = (B.z0 + B.z1) / 2;
+    const bxIn = dx - sx * 0.05;
+    soup.prismX([[B.z0, B.y1], [B.z1, B.y1], [B.z1 - 0.02, B.y1 - 0.06], [B.z0 + 0.02, B.y1 - 0.06]], bxIn, dx, col(STEEL));
+    soup.prismX([[B.z0 + 0.02, B.y1 - 0.06], [B.z0 + 0.09, B.y1 - 0.06], [zp + 0.03, B.y0 + 0.04], [zp - 0.03, B.y0]], bxIn, dx, col(STEEL));
+    soup.prismX([[B.z1 - 0.09, B.y1 - 0.06], [B.z1 - 0.02, B.y1 - 0.06], [zp + 0.03, B.y0], [zp - 0.03, B.y0 + 0.04]], bxIn, dx, col(STEEL));
+    rod(soup, [bxIn, B.y0 + 0.03, zp], [dx + sx * 0.012, B.y0 + 0.03, zp], 0.045, col(STEEL), 12);
   }
   // the transom across the middle and the air spring on it (one each side of the middle in the real bogie; tpe397-03 shows the near one)
   soup.box(-0.5, 0.5, CAF.frame.y0 + 0.05, CAF.frame.y1 - 0.05, -0.22, 0.22, col(FRAME));
@@ -561,7 +604,9 @@ export function buildCafBogie(s: CafBogieSpec): THREE.Group {
 const J_FRAME = 0x3a3733;
 const J_SPRING = 0x262422;
 const J_BOX = 0x4a4642;
-const J_DAMPER = 0x84817a;
+// (the damper is as dark as the rest under its dust: round 3's pale rod read as a white stick against _07's all-dark bogie)
+const J_DAMPER = 0x4a4743;
+export const J_AIR = 0x46433f;
 const J_WHEEL: WheelLook = { tyre: 0x2b2927, web: 0x3b3530, hub: 0x34312e, bolt: 0x24221f, axle: J_FRAME, bolts: 0 };
 
 /**
@@ -572,15 +617,18 @@ const J_WHEEL: WheelLook = { tyre: 0x2b2927, web: 0x3b3530, hub: 0x34312e, bolt:
 export const JUNIPER_BOGIE = {
   /** the side frame outside the wheels: its depth across the track (from just outside the wheel face) and the heights of its top beam and dropped middle */
   // (the beam's top sits just under the body's valance, about 0.85 m, so the beam shows as it does in the photograph)
-  frame: { x0: 0.05, x1: 0.15, top: 0.84, beam: 0.68, drop: 0.38, middleHalf: 0.62 },
+  // (round 4: a shaped side frame, not plates. High over each axlebox, a sloped neck, and a deep middle whose top drops to carry the air spring in view;
+  // two lightening holes through the middle, as _07's left-hand frame shows them. `middleTop` is the middle's top, `neck` the slope's length along the track)
+  frame: { x0: 0.05, x1: 0.15, top: 0.84, beam: 0.68, drop: 0.36, middleHalf: 0.45, middleTop: 0.6, neck: 0.3 },
   /** the axlebox housing on each axle end, a drum along the axle */
   axlebox: { radius: 0.15, x0: 0.035, x1: 0.16, cover: 0.1 },
   /** the primary coil springs either side of each axlebox, standing on its wings and carrying the beam */
   spring: { offset: 0.2, radius: 0.075, y0: 0.53, y1: 0.68 },
   /** the secondary air spring on the frame's middle, under the body */
-  airSpring: { radius: 0.24, y0: 0.84, y1: 0.95 },
+  // (it stands on the frame's dropped middle, outboard, between it and the body: a dark rubber drum under a metal plate, its top at the body's underframe)
+  airSpring: { radius: 0.17, y0: 0.6, y1: 0.79 },
   /** the damper, from the frame's middle down toward the leading axle */
-  damper: { z0: 0.2, y0: 0.6, z1: -1.0, y1: 0.5, radius: 0.055 },
+  damper: { z0: 0.15, y0: 0.52, z1: -1.0, y1: 0.5, radius: 0.055 },
 } as const;
 
 function juniperSoup(s: CafBogieSpec): Soup {
@@ -593,14 +641,7 @@ function juniperSoup(s: CafBogieSpec): Soup {
     const fx0 = face + sx * J.frame.x0;
     const fx1 = face + sx * J.frame.x1;
     const [x0, x1] = [Math.min(fx0, fx1), Math.max(fx0, fx1)];
-    // the top beam over both axleboxes, and the dropped middle between the wheels
-    soup.box(x0, x1, J.frame.beam, J.frame.top, -half - 0.3, half + 0.3, col(J_FRAME));
-    soup.box(x0, x1, J.frame.drop, J.frame.beam, -J.frame.middleHalf, J.frame.middleHalf, col(J_FRAME));
-    // the slopes from the dropped middle up to the beam (a step each side, to keep the outline closed)
-    for (const zs of [-1, 1]) {
-      const zm = zs * J.frame.middleHalf;
-      soup.box(x0, x1, (J.frame.drop + J.frame.beam) / 2, J.frame.beam, Math.min(zm, zm + zs * 0.18), Math.max(zm, zm + zs * 0.18), col(J_FRAME));
-    }
+    juniperFrame(soup, sx, x0, x1, half, true);
     for (const z of [-half, half]) {
       // the axlebox drum on the axle end, outboard of the wheel, with its cover and bolts
       const bx0 = face + sx * J.axlebox.x0;
@@ -634,23 +675,31 @@ function juniperSoup(s: CafBogieSpec): Soup {
     const bx: [number, number] = [Math.min(dx, dx - sx * 0.08), Math.max(dx, dx - sx * 0.08)];
     soup.box(bx[0], bx[1], a[1] - 0.06, a[1] + 0.06, a[2] - 0.05, a[2] + 0.05, col(J_FRAME));
     soup.box(bx[0], bx[1], b[1] - 0.05, b[1] + 0.05, b[2] - 0.05, b[2] + 0.05, col(J_FRAME));
-    // the air spring over the frame's middle
-    const ax = face + sx * ((J.frame.x0 + J.frame.x1) / 2) - sx * 0.08;
-    const pts = (y: number): V3[] => Array.from({ length: 16 }, (_, k): V3 => {
+    // the air spring on the frame's dropped middle: a bulging rubber drum (wider at its waist), a metal plate on top under the body
+    const ax = face + sx * ((J.frame.x0 + J.frame.x1) / 2);
+    const A = J.airSpring;
+    const band = (y: number, r: number): V3[] => Array.from({ length: 16 }, (_, k): V3 => {
       const t = (2 * Math.PI * k) / 16;
-      return [ax + J.airSpring.radius * 0.6 * Math.cos(t), y, J.airSpring.radius * Math.sin(t)];
+      return [ax + r * Math.cos(t), y, r * Math.sin(t)];
     });
-    const lo = pts(J.airSpring.y0);
-    const hi = pts(J.airSpring.y1);
-    for (let k = 0; k < 16; k++) {
-      const k1 = (k + 1) % 16;
-      soup.quad([lo[k]!, lo[k1]!, hi[k1]!, hi[k]!], [unit([lo[k]![0] - ax, 0, lo[k]![2]]), unit([lo[k1]![0] - ax, 0, lo[k1]![2]]), unit([lo[k1]![0] - ax, 0, lo[k1]![2]]), unit([lo[k]![0] - ax, 0, lo[k]![2]])], col(J_SPRING));
+    const levels: [number, number][] = [[A.y0, A.radius * 0.8], [(A.y0 + A.y1) / 2, A.radius], [A.y1 - 0.03, A.radius * 0.85]];
+    for (let l = 0; l + 1 < levels.length; l++) {
+      const [ya, ra] = levels[l] as [number, number];
+      const [yb, rb] = levels[l + 1] as [number, number];
+      const lo = band(ya, ra);
+      const hi = band(yb, rb);
+      const tilt = (ra - rb) / (yb - ya);
+      for (let k = 0; k < 16; k++) {
+        const k1 = (k + 1) % 16;
+        const nrm = (q: V3): V3 => unit([q[0] - ax, tilt * Math.hypot(q[0] - ax, q[2]), q[2]]);
+        soup.quad([lo[k]!, lo[k1]!, hi[k1]!, hi[k]!], [nrm(lo[k]!), nrm(lo[k1]!), nrm(hi[k1]!), nrm(hi[k]!)], col(J_AIR));
+      }
     }
-    soup.fan(hi, [0, 1, 0], col(J_SPRING));
+    rod(soup, [ax, A.y1 - 0.03, 0], [ax, A.y1, 0], A.radius * 0.95, col(J_BOX), 16);
   }
   // the transom between the side frames
   const inner = s.track / 2 + WHEEL_WIDTH / 2 + J.frame.x0;
-  soup.box(-inner, inner, J.frame.drop + 0.04, J.frame.beam - 0.04, -0.2, 0.2, col(J_FRAME));
+  soup.box(-inner, inner, J.frame.drop + 0.04, J.frame.middleTop - 0.04, -0.2, 0.2, col(J_FRAME));
   if (s.motor) {
     // ASSUMED: no motor bogie is seen closely; a traction motor and gearbox hung on each axle inside the frame, as on the 397
     for (const zs of [-1, 1]) {
@@ -670,10 +719,37 @@ function juniperFarSoup(s: CafBogieSpec): Soup {
   for (const sx of [-1, 1] as const) {
     const face = (s.track / 2 + WHEEL_WIDTH / 2) * sx;
     const [x0, x1] = [Math.min(face + sx * J.frame.x0, face + sx * J.frame.x1), Math.max(face + sx * J.frame.x0, face + sx * J.frame.x1)];
-    soup.box(x0, x1, J.frame.beam, J.frame.top, -half - 0.3, half + 0.3, col(J_FRAME));
-    soup.box(x0, x1, J.frame.drop, J.frame.beam, -J.frame.middleHalf, J.frame.middleHalf, col(J_FRAME));
+    juniperFrame(soup, sx, x0, x1, half, false);
   }
   return soup;
+}
+
+/**
+ * One side frame of the 334's bogie, in pieces along the track, each a convex outline in the (z, y) plane extruded across the frame's depth and capped on
+ * both faces: the end chamfers, the beam over each axlebox, the necks sloping down to the deep middle, and the middle (with its two lightening holes, near
+ * only). Its outline is closed: each piece shares its edge with the next.
+ */
+function juniperFrame(soup: Soup, sx: 1 | -1, x0: number, x1: number, half: number, holes: boolean): void {
+  const F = JUNIPER_BOGIE.frame;
+  const c = col(J_FRAME);
+  const [xOut, xIn] = sx > 0 ? [x1, x0] : [x0, x1];
+  const piece = (pts: [number, number][]): void => {
+    soup.prismX(pts, xIn, xOut, c);
+    soup.prismX(pts.slice().reverse(), xOut, xIn, c, false);
+  };
+  const m = F.middleHalf;
+  const n = m + F.neck;
+  const end = half + 0.3;
+  piece([[-m, F.drop], [m, F.drop], [m, F.middleTop], [-m, F.middleTop]]);
+  for (const zs of [-1, 1]) {
+    const Z = (z: number): number => zs * z;
+    const quad = (q: [number, number][]): [number, number][] => (zs > 0 ? q : q.map(([z, y]): [number, number] => [z, y]).reverse());
+    piece(quad([[Z(m), F.drop], [Z(n), F.beam - 0.02], [Z(n), F.top], [Z(m), F.middleTop]]));
+    piece(quad([[Z(n), F.beam - 0.02], [Z(end - 0.12), F.beam], [Z(end - 0.12), F.top], [Z(n), F.top]]));
+    piece(quad([[Z(end - 0.12), F.beam], [Z(end), F.beam + 0.06], [Z(end), F.top - 0.04], [Z(end - 0.12), F.top]]));
+  }
+  if (!holes) return;
+  for (const zh of [-0.3, 0.3]) soup.prismX(roundedRect(zh - 0.075, zh + 0.075, F.drop + 0.06, F.middleTop - 0.06, 0.06, 3), xOut, xOut + sx * 0.002, col(0x111111), false);
 }
 
 /** The 334's outside-frame bogie, made as buildCafBogie makes its own (`userData.style = 'juniper'`). */
@@ -708,4 +784,44 @@ function assembleBogie(s: CafBogieSpec, style: 'caf' | 'juniper', near0: () => S
   lod.addLevel(far, typeof o === 'number' && o >= 0 ? o : BOGIE_LOD_DISTANCE);
   group.add(lod);
   return group;
+}
+
+// --- the 334's coupler (scotrail334_05, _07) -----------------------------------------------------------------
+
+/**
+ * The 334's automatic coupler as scotrail334_05 and _07 show it standing in the bumper's arched opening: a dark shank, a cast grey head with a square face,
+ * the guide cone on one side and the funnel on the other, a yellow release handle over it and the black electrical coupler box hung under it. Drawn from
+ * the face (`z0`) out along `dir` to `reach` (the car's end): nothing stands beyond it. `y` is the coupler's height. Sizes ASSUMED, read against the assumed
+ * 2.80 m width in _05's head-on view.
+ */
+export function juniperCoupler(soup: Soup, z0: number, dir: 1 | -1, reach: number, y: number): void {
+  const zr = (u0: number, u1: number): [number, number] => (dir > 0 ? [z0 + u0, z0 + u1] : [z0 - u1, z0 - u0]);
+  const at = (u: number): number => z0 + dir * u;
+  const shank = col(0x2c2e31);
+  const cast = col(0x74777b);
+  const plate = col(0x878a8e);
+  // the shank, from the recess to the head
+  rod(soup, [0, y, at(0.02)], [0, y, at(reach - 0.16)], 0.07, shank, 12);
+  // the head's body and its face plate, the face set back so the cone's tip stands at the car's end
+  const [h0, h1] = zr(reach - 0.17, reach - 0.08);
+  soup.box(-0.2, 0.2, y - 0.15, y + 0.14, h0, h1, cast);
+  const [p0, p1] = zr(reach - 0.08, reach - 0.06);
+  soup.box(-0.21, 0.21, y - 0.16, y + 0.15, p0, p1, plate);
+  // the cone on one side of the face (_05: the left seen from ahead; mirrored with the cab, so a coupled pair meets cone to funnel), the funnel on the other
+  const cx = 0.085 * dir;
+  rod(soup, [cx, y - 0.02, at(reach - 0.06)], [cx, y - 0.02, at(reach - 0.03)], 0.055, cast, 12);
+  rod(soup, [cx, y - 0.02, at(reach - 0.03)], [cx, y - 0.02, at(reach - 0.002)], 0.035, plate, 12);
+  const fx = -cx;
+  rod(soup, [fx, y - 0.02, at(reach - 0.06)], [fx, y - 0.02, at(reach - 0.045)], 0.075, cast, 16);
+  const mouth: V3[] = Array.from({ length: 16 }, (_, k): V3 => {
+    const t = (2 * Math.PI * k) / 16;
+    return [fx + 0.055 * Math.cos(t), y - 0.02 + 0.055 * Math.sin(t), at(reach - 0.044)];
+  });
+  soup.fan(mouth, [0, 0, dir], col(0x141516));
+  // the release handle over the head, yellow
+  rod(soup, [-0.05 * dir, y + 0.15, at(reach - 0.12)], [-0.16 * dir, y + 0.27, at(reach - 0.1)], 0.012, col(0xd8b21c), 6);
+  // the electrical coupler's box under the head
+  const [e0, e1] = zr(reach - 0.24, reach - 0.07);
+  soup.box(-0.17, 0.17, y - 0.36, y - 0.19, e0, e1, col(0x1b1c1e));
+  soup.box(-0.035, 0.035, y - 0.19, y - 0.15, e0, e1, shank);
 }
