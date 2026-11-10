@@ -34,7 +34,7 @@ import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
-import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, unit } from './train-geom.ts';
+import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, trainNight, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
@@ -212,6 +212,8 @@ interface LampLens { role: LensRole; v0: number; v1: number }
 interface LampRecord { end: 'front' | 'rear'; interior: boolean; lenses: LampLens[] }
 /** The detail meshes `setTrainLampState` has given a geometry of their own, with that geometry: a clone of a train shares its source's geometry, and must not write to it. */
 const ownLampGeometry = new WeakMap<THREE.Mesh, THREE.BufferGeometry>();
+/** The geometry each of those meshes had before (a template's, for a clone; the train's own, for a train built for itself). */
+const builtLampGeometry = new WeakMap<THREE.Mesh, THREE.BufferGeometry>();
 
 /**
  * Set the lamps of a built train: each outer cab end shows white lamps (`head`), red lamps (`tail`) or none (`off`). The coupled units' inner cab ends
@@ -244,6 +246,7 @@ export function setTrainLampState(train: THREE.Object3D, state: TrainLampState):
       geometry.boundingBox = current.boundingBox?.clone() ?? null;
       geometry.boundingSphere = current.boundingSphere?.clone() ?? null;
       ownLampGeometry.set(mesh, geometry);
+      if (!builtLampGeometry.has(mesh)) builtLampGeometry.set(mesh, current);
       mesh.geometry = geometry;
     }
     const rgb = geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -260,6 +263,78 @@ export function setTrainLampState(train: THREE.Object3D, state: TrainLampState):
     glow.needsUpdate = true;
   });
   train.userData.lampState = { front: state.front, rear: state.rear };
+}
+
+/**
+ * Before a train is thrown away: frees the colour and glow buffers `setTrainLampState` gave its detail meshes and puts each
+ * mesh's built geometry back. The copy's position and normal buffers are its built geometry's (a template's, for a clone), so
+ * they are taken off the copy before it is disposed and stay on the GPU for every train still using them; the built geometry
+ * is then the caller's to dispose as before (a template's is not).
+ */
+export function releaseTrainLamps(train: THREE.Object3D): void {
+  train.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    const own = mesh.isMesh ? ownLampGeometry.get(mesh) : undefined;
+    if (!own) return;
+    const built = builtLampGeometry.get(mesh)!;
+    for (const name of Object.keys(own.attributes)) if (own.getAttribute(name) === built.getAttribute(name)) own.deleteAttribute(name);
+    own.dispose();
+    if (mesh.geometry === own) mesh.geometry = built;
+    ownLampGeometry.delete(mesh); builtLampGeometry.delete(mesh);
+  });
+}
+
+/** The warm light of a lit driver's cab, seen through its glass after dark. */
+export const CAB_LIGHT = { colour: 0xffc98a, strength: 0.55 } as const;
+let cabLight: THREE.MeshStandardMaterial | null = null;
+/**
+ * The cab glass of a cab with its light on: the cab glass (`glassMaterial`, dark and reflective) with a warm emissive glow
+ * scaled in the shader by the shared night uniform (train-geom.ts `trainNight`), so by day it is the plain glass and after dark
+ * the cab reads lit. One material for every lit cab: no light, no draw call of its own (it takes the cab glass's place), and a
+ * copy made with its shader hooks (trains-live.ts cloneWithShaderHooks) follows the same uniform.
+ */
+export function cabLightMaterial(): THREE.MeshStandardMaterial {
+  if (!cabLight) {
+    const lit = glassMaterial().clone();
+    lit.name = 'cab-light';
+    lit.emissive.setHex(CAB_LIGHT.colour);
+    lit.emissiveIntensity = CAB_LIGHT.strength;
+    lit.onBeforeCompile = (shader): void => {
+      shader.uniforms.uNight = trainNight;
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uNight;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= uNight;');
+    };
+    lit.customProgramCacheKey = (): string => 'kx-cab-light';
+    cabLight = lit;
+  }
+  return cabLight;
+}
+/** The material each cab-glass mesh had before its cab was lit, as an original (not a per-opacity copy). */
+const unlitCabGlass = new WeakMap<THREE.Mesh, THREE.Material>();
+/**
+ * Lights the driver's cab at one outer end of a built train (`front`: car 0's, `rear`: the last car's), or none (null): the
+ * `cab-glass` meshes of that end's cab car take `cabLightMaterial`, and every other outer cab's glass has its own material back.
+ * The coupled units' inner cabs (userData.lamps.interior) are never lit. `materialFor` maps an original material to the one a
+ * mesh draws with (trains-live.ts: its per-opacity copy) and `originalOf` maps back; both default to the material itself.
+ */
+export function setCabLight(train: THREE.Object3D, end: 'front' | 'rear' | null,
+  materialFor: (m: THREE.Material) => THREE.Material = (m) => m, originalOf: (m: THREE.Material) => THREE.Material = (m) => m): void {
+  const lit = cabLightMaterial();
+  train.traverse((o) => {
+    const detail = o as THREE.Mesh;
+    const lamps = detail.isMesh && detail.name === 'body-detail' ? (detail.userData.lamps as LampRecord | undefined) : undefined;
+    if (!lamps || lamps.interior || !detail.parent) return;
+    for (const child of detail.parent.children) {
+      const glass = child as THREE.Mesh;
+      if (!glass.isMesh || glass.name !== 'cab-glass' || Array.isArray(glass.material)) continue;
+      const current = originalOf(glass.material);
+      if (lamps.end === end) {
+        if (current !== lit) { unlitCabGlass.set(glass, current); glass.material = materialFor(lit); }
+      } else if (current === lit) glass.material = materialFor(unlitCabGlass.get(glass) ?? glassMaterial());
+    }
+  });
+  train.userData.cabLight = end;
 }
 /** Columns of the car section (counted from the bottom, 0..12) that carry the livery texture: the wall and the lower shoulder. Above them, and below, vertex colours. */
 const SHELL_K0 = 1;

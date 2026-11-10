@@ -380,7 +380,9 @@ function start(): void {
       motion = createMotion(graph, anchors, { lengthM: trainKinds.lengthM,
         wayMaxspeed: new Map(data.rails.filter((r) => r.maxspeed !== undefined).map((r) => [r.id, r.maxspeed!])) });
       kx.motion = motion;
-      liveTrains = createLiveTrains(graph, scene, trainKinds.kindFor);
+      // a standing train's lamps and cab light follow its departure time (core/cab-lamps.ts): the scene's clock, the board's timetable, the anchors' platforms
+      const platforms = new Map(anchors.anchors.filter((a) => a.platform !== undefined).map((a) => [a.berth, { platform: a.platform!, point: a.point }]));
+      liveTrains = createLiveTrains(graph, scene, trainKinds.kindFor, { nowMs: simNow, services: () => timetable?.services(), platformOf: (berth) => platforms.get(berth) });
       timetable?.dispose();
       timetable = createScheduleFeed({ mode: requested, hostname: bundle ? 'localhost' : location.hostname,
         ...(bundle ? { relayPresent: true, fetchImpl: bundle.fetchSchedule } : {}),

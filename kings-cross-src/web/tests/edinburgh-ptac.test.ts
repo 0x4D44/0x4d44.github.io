@@ -4,10 +4,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
-import { londonWallMs, matchPtac, ptacEvidence, validatePtacStore } from '../../core/edinburgh-ptac.ts';
+import { londonWallMs, matchPtac, ptacEvidence, ptacTimes, validatePtacStore } from '../../core/edinburgh-ptac.ts';
 import type { PtacStore, PtacTrain } from '../../core/edinburgh-ptac.ts';
+import type { TrainView } from '../../core/motion.ts';
 import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
-import { fleetServiceFor, readFleetDocument } from '../src/edinburgh-live.ts';
+import { fleetServiceFor, readFleetDocument, waverleyLampSubject } from '../src/edinburgh-live.ts';
 
 const train = (over: Partial<PtacTrain> & { headcode: string }): PtacTrain => ({
   date: '2026-11-10', operator: 'SR', edbArr: null, edbDep: '2026-11-10T10:00:00', classes: ['385'],
@@ -101,4 +102,32 @@ test('the /fleet document is read section by section', () => {
   assert.equal(readFleetDocument({ booked: { ...booked, extra: 1 }, ptac }).note, 'fleet: PTAC allocation (1 trains) (booked table invalid)');
   assert.equal(readFleetDocument({ booked, ptac: { format: 'x' } }).booked, booked);
   for (const body of [booked, { booked: null, ptac: null }, { booked }, { booked: null, ptac: null, x: 1 }, null, []]) assert.throws(() => readFleetDocument(body));
+});
+
+test('PTAC keeps a train\'s Edinburgh times: a through train has both, and only a through train standing at a platform berth gets its cab lamps planned', () => {
+  const ptac = store(
+    train({ headcode: '1Z05', edbArr: '2026-11-10T09:56:00', edbDep: '2026-11-10T10:00:00' }),
+    train({ headcode: '1Z06', edbArr: '2026-11-10T09:58:00', edbDep: null }),
+    // two records of one headcode, equally near, with different times: no answer
+    train({ headcode: '1Z07', edbArr: null, edbDep: '2026-11-10T10:04:00' }), train({ headcode: '1Z07', edbArr: null, edbDep: '2026-11-10T09:56:00', units: ['999102'] }));
+  assert.deepEqual(ptacTimes(ptac, '1Z05', TUE_10), { arrivalMs: TUE_10 - 4 * 60_000, departureMs: TUE_10 });
+  assert.deepEqual(ptacTimes(ptac, '1Z06', TUE_10), { arrivalMs: TUE_10 - 2 * 60_000, departureMs: null });
+  assert.equal(ptacTimes(ptac, '1Z07', TUE_10), undefined);
+  assert.equal(ptacTimes(ptac, '1Z05', TUE_10 + 40 * 60_000), undefined, 'outside the window');
+  const view = (description: string, over: Partial<TrainView> = {}): TrainView => ({ id: 3, description, leading: { point: [10, 20] } as TrainView['leading'], heading: 0, speed: 0,
+    lengthM: 100, occupiedLengthM: 100, occupied: [], state: 'held', opacity: 1, targetBerth: 'S1', lastBerth: 'S1', blocked: false, distanceM: 50, reversals: 0, ...over });
+  const stops = { platformBerths: true, pointOf: (berth: string): [number, number] | undefined => berth === 'S1' ? [10, 21] : undefined };
+  const at = TUE_10 - 5 * 60_000;
+  assert.deepEqual(waverleyLampSubject(view('1Z05'), ptacTimes(ptac, '1Z05', at), stops, at),
+    { subject: { id: 3, description: '1Z05', reversals: 0, atPlatform: true }, departure: { departureMs: TUE_10, source: 'ptac' } }, 'a through train at its platform');
+  assert.equal(waverleyLampSubject(view('1Z06'), ptacTimes(ptac, '1Z06', at), stops, at).subject.atPlatform, false, 'a terminating train is left in service state');
+  assert.equal(waverleyLampSubject(view('1Z05', { lastBerth: 'S2' }), ptacTimes(ptac, '1Z05', at), stops, at).subject.atPlatform, false, 'not a platform berth');
+  assert.equal(waverleyLampSubject(view('1Z05', { blocked: true }), ptacTimes(ptac, '1Z05', at), stops, at).subject.atPlatform, false, 'held short behind another train');
+  assert.equal(waverleyLampSubject(view('1Z05', { leading: { point: [10, 40] } as TrainView['leading'] }), ptacTimes(ptac, '1Z05', at), stops, at).subject.atPlatform, false, 'its nose is not at the berth');
+  assert.equal(waverleyLampSubject(view('1Z05', { state: 'moving' }), ptacTimes(ptac, '1Z05', at), stops, at).subject.atPlatform, false, 'moving');
+  // anchors with no platform berths: any berth's anchor, from shortly before the planned arrival
+  const anyStop = { platformBerths: false, pointOf: (): [number, number] => [10, 21] };
+  assert.equal(waverleyLampSubject(view('1Z05'), ptacTimes(ptac, '1Z05', at), anyStop, at).subject.atPlatform, true);
+  const early = TUE_10 - 15 * 60_000;
+  assert.equal(waverleyLampSubject(view('1Z05'), ptacTimes(ptac, '1Z05', early), anyStop, early).subject.atPlatform, false, 'held outside, before its arrival');
 });

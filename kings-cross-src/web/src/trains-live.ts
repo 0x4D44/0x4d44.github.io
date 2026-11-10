@@ -13,7 +13,9 @@ import { platformFormationLimits } from '../../core/station.ts';
 import type { ScheduleCall } from '../../core/schedule.ts';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { Car, TrainKind, TrainLayout } from '../../core/train.ts';
-import { buildTrain, END_GAP } from './train.ts';
+import { buildTrain, END_GAP, releaseTrainLamps, setCabLight, setTrainLampState } from './train.ts';
+import { createCabLampTracker, kingsCrossDepartures } from '../../core/cab-lamps.ts';
+import type { DepartureCall } from '../../core/cab-lamps.ts';
 import trackData from './data/kx-track.json' with { type: 'json' };
 
 /** Per body end, inside the layout's coupling-inclusive length: train.ts insets each body by this. */
@@ -195,7 +197,25 @@ export function cloneWithShaderHooks<M extends THREE.Material>(original: M): M {
   return copy;
 }
 
-export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: KindResolver) {
+/**
+ * What the King's Cross layer needs to set a standing train's lamps and cab light (core/cab-lamps.ts): the simulation clock, the
+ * timetable as the board holds it (TRUST applied), and the platform of a berth (the anchor map's). Absent: every train is
+ * drawn in service state, as before.
+ */
+export interface LiveLampOptions {
+  nowMs: () => number;
+  services: () => readonly DepartureCall[] | undefined;
+  /** The platform stop of a berth: the platform, and the buffer anchor's point. */
+  platformOf: (berth: string) => { platform: string; point: Pt } | undefined;
+}
+/** A held train is standing at its platform when its nose is this close to the platform's buffer anchor (the motion core stops it DEFAULT_BUFFER_CLEARANCE_M short). */
+export const AT_STOP_M = DEFAULT_BUFFER_CLEARANCE_M + 1.5;
+/** Standing at its platform: held, not held short behind another train, its nose at the stop (a train just born at a signal is held too). */
+export function standingAt(view: Pick<TrainView, 'state' | 'blocked' | 'leading'>, stop: { point: Pt } | undefined): boolean {
+  return !!stop && view.state === 'held' && !view.blocked && Math.hypot(view.leading.point[0] - stop.point[0], view.leading.point[1] - stop.point[1]) <= AT_STOP_M;
+}
+
+export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?: KindResolver, lampOptions?: LiveLampOptions) {
   const templates = new Map<TrainKind, THREE.Group>();
   const drawn = new Map<number, DrawnTrain>();
   const palettes = new Map<TrainKind, Map<number, MaterialPalette>>();
@@ -224,17 +244,20 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     buckets.set(opacity, palette);
     return palette;
   };
+  /** A material's copy in a palette (made on first use): every material a live train draws with, the lit cab glass included, is one. */
+  const copyIn = (palette: MaterialPalette, material: THREE.Material): THREE.Material => {
+    const original = originals.get(material) ?? material;
+    if (!palette.copies.has(original)) {
+      const shared = cloneWithShaderHooks(original);
+      setOpacity(shared, palette.opacity);
+      palette.copies.set(original, shared); originals.set(shared, original);
+    }
+    return palette.copies.get(original)!;
+  };
+  const originalOf = (material: THREE.Material): THREE.Material => originals.get(material) ?? material;
   const bind = (train: DrawnTrain, palette: MaterialPalette): void => {
     if (assigned.get(train.id) === palette) return;
-    const copy = (material: THREE.Material): THREE.Material => {
-      const original = originals.get(material) ?? material;
-      if (!palette.copies.has(original)) {
-        const shared = cloneWithShaderHooks(original);
-        setOpacity(shared, palette.opacity);
-        palette.copies.set(original, shared); originals.set(shared, original);
-      }
-      return palette.copies.get(original)!;
-    };
+    const copy = (material: THREE.Material): THREE.Material => copyIn(palette, material);
     train.group.traverse((node) => {
       if (node instanceof THREE.Mesh) node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
     });
@@ -262,11 +285,32 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
     drawn.set(view.id, record);
     return record;
   };
+  // King's Cross is a terminus: a train leaves by the end it arrived at, after a cab change (core/cab-lamps.ts)
+  const lamps = lampOptions && createCabLampTracker({ terminus: true,
+    resolve: (standing, nowMs) => kingsCrossDepartures(standing, lampOptions.services() ?? [], nowMs) });
+  let lampServices: readonly DepartureCall[] | undefined;
+  const updateLamps = (views: readonly TrainView[]): void => {
+    if (!lamps || !lampOptions) return;
+    const services = lampOptions.services();
+    if (services !== lampServices) { lampServices = services; lamps.invalidate(); }
+    const subjects = views.map((view) => {
+      const stop = lampOptions.platformOf(view.targetBerth);
+      return { id: view.id, description: view.description, reversals: view.reversals, platform: stop?.platform, atPlatform: standingAt(view, stop) };
+    });
+    for (const [id, plan] of lamps.update(subjects, lampOptions.nowMs())) {
+      const t = drawn.get(id), palette = assigned.get(id);
+      if (!t || !palette) continue;
+      setTrainLampState(t.group, plan);
+      setCabLight(t.group, plan.cabLit, (m) => copyIn(palette, m), originalOf);
+    }
+  };
   const remove = (id: number): void => {
     const t = drawn.get(id);
     if (!t) return;
     parent.remove(t.group); drawn.delete(id);
-    assigned.delete(id);
+    assigned.delete(id); lamps?.forget(id);
+    // the lamp geometry setTrainLampState gave this train is its own (the rest is the template's): free it
+    releaseTrainLamps(t.group);
   };
   const update = (incoming: readonly FormationView[]): void => {
     for (const view of incoming) view.formationNote = kindFor?.formationFor?.(view)?.note;
@@ -299,6 +343,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
         }
       }
     }
+    updateLamps(views);
     releaseUnused(used);
   };
   const dispose = (): void => {

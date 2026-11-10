@@ -10,12 +10,16 @@ import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverle
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
 import { bookedSource, firstEvidence, matchBooked, validateFleetTable } from '../../core/edinburgh-diagrams.ts';
-import { ptacSource, validatePtacStore } from '../../core/edinburgh-ptac.ts';
+import { ptacSource, ptacTimes, validatePtacStore } from '../../core/edinburgh-ptac.ts';
+import { createCabLampTracker, RESOLVE_EVERY_MS } from '../../core/cab-lamps.ts';
+import type { Departure, LampSubject } from '../../core/cab-lamps.ts';
+import { releaseTrainLamps, setCabLight, setTrainLampState } from './train.ts';
 import type { PtacStore } from '../../core/edinburgh-ptac.ts';
 import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
 import { buildNeutralTrain } from './train-neutral.ts';
 import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
-import { carPoses } from './trains-live.ts';
+import { carPoses, standingAt } from './trains-live.ts';
+import type { Pt } from '../../core/geo.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
 import type { LiveDependencies, MotionSink, TrainFeed } from './feed.ts';
@@ -86,6 +90,25 @@ export function readFleetDocument(body: unknown): { booked?: FleetTable; ptac?: 
   return { booked, ptac, note: `fleet: ${found.join(' + ')}${bad.length ? ` (${bad.join(', ')})` : ''}` };
 }
 
+/** Before its planned arrival by more than this, a held through train is taken to be short of the platform (when the anchors name no platform berths). */
+export const THROUGH_EARLY_MS = 5 * 60_000;
+/**
+ * The cab-lamp subject of a Waverley train (core/cab-lamps.ts), and its departure: only a through train (PTAC plans both an
+ * Edinburgh arrival and departure under its headcode) is planned. It stands at a platform when it is held (not blocked) with its
+ * nose at the anchor of its last berth, and that berth is one of the anchors' platform berths (`stops`, berth to anchor point);
+ * where the anchors name none (`platformBerths` false: the anchor of any berth), from shortly before its planned arrival. Every other train (one that
+ * terminates here and reverses, which the model cannot reverse, or one with no PTAC record) stays in service state.
+ */
+export function waverleyLampSubject(view: TrainView, times: ReturnType<typeof ptacTimes>, stops: { platformBerths: boolean; pointOf: (berth: string) => Pt | undefined },
+  nowMs: number): { subject: LampSubject; departure?: Departure } {
+  const through = times?.arrivalMs != null && times.departureMs != null ? times as { arrivalMs: number; departureMs: number } : undefined;
+  const point = stops.pointOf(view.lastBerth);
+  const there = standingAt(view, point && { point }) && (stops.platformBerths || (!!through && nowMs >= through.arrivalMs - THROUGH_EARLY_MS));
+  const atPlatform = !!through && there;
+  return { subject: { id: view.id, description: view.description, reversals: view.reversals, atPlatform },
+    ...(through ? { departure: { departureMs: through.departureMs, source: 'ptac' as const } } : {}) };
+}
+
 export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDependencies {
   const source = deps.source ?? (url => new EventSource(url));
   return { ...deps, source: () => source('/relay/events?area=EB') };
@@ -140,12 +163,46 @@ export function createEdinburghLive(options: {
     } finally { loading = false; }
   };
   const disposeTrain = (train: THREE.Group): void => {
+    // the lamp geometry setTrainLampState gave the train back to the one it was built with, which the row's disposer frees
+    releaseTrainLamps(train);
     // Each builder shares plain()/bogies and owns its other geometry; its row says how to free it.
     disposeEdinburghTrain(train);
   };
+  // Waverley through trains leave by their leading end (core/cab-lamps.ts), at PTAC's planned departure
+  let lampDepartures = new Map<number, Departure>();
+  const lamps = createCabLampTracker({ terminus: false, resolve: () => lampDepartures });
+  let lampStore: PtacStore | undefined, lampStops: { anchors: AnchorMap; platformBerths: boolean; pointOf: (berth: string) => Pt | undefined } | undefined;
+  // PTAC's times for a description, looked up again after RESOLVE_EVERY_MS of the scene's clock (londonWallMs is not free every frame)
+  const timesCache = new Map<string, { atMs: number; times: ReturnType<typeof ptacTimes> }>();
+  const timesFor = (description: string, nowMs: number): ReturnType<typeof ptacTimes> => {
+    const hit = timesCache.get(description);
+    if (hit && nowMs >= hit.atMs && nowMs - hit.atMs < RESOLVE_EVERY_MS) return hit.times;
+    const times = ptac ? ptacTimes(ptac, description, nowMs) : undefined;
+    timesCache.set(description, { atMs: nowMs, times });
+    return times;
+  };
+  const updateLamps = (views: readonly TrainView[]): void => {
+    if (!session) return;
+    if (ptac !== lampStore) { lampStore = ptac; timesCache.clear(); lamps.invalidate(); }
+    const nowMs = replay?.timeMs() ?? Date.now();
+    if (lampStops?.anchors !== session.anchors) {
+      const anchors = session.anchors, associations = (anchors as AnchorMap & { platformAssociations?: { berth: string }[] }).platformAssociations ?? [];
+      const berths = new Set(associations.map(a => a.berth)), points = new Map(anchors.anchors.map(a => [a.berth, a.point]));
+      lampStops = { anchors, platformBerths: berths.size > 0, pointOf: berth => berths.size && !berths.has(berth) ? undefined : points.get(berth) };
+    }
+    for (const description of [...timesCache.keys()]) if (!views.some(v => v.description === description)) timesCache.delete(description);
+    const planned = views.map(view => waverleyLampSubject(view, timesFor(view.description, nowMs), lampStops!, nowMs));
+    lampDepartures = new Map(planned.flatMap(p => p.departure ? [[p.subject.id, p.departure] as const] : []));
+    for (const [id, plan] of lamps.update(planned.map(p => p.subject), nowMs)) {
+      const item = drawn.get(id);
+      if (!item) continue;
+      setTrainLampState(item.group, plan);
+      setCabLight(item.group, plan.cabLit);
+    }
+  };
   const update = (views: TrainView[]): void => {
     const present = new Set(views.map(v => v.id));
-    for (const [id, item] of drawn) if (!present.has(id)) { item.group.removeFromParent(); item.label.remove(); disposeTrain(item.group); drawn.delete(id); }
+    for (const [id, item] of drawn) if (!present.has(id)) { item.group.removeFromParent(); item.label.remove(); disposeTrain(item.group); drawn.delete(id); lamps.forget(id); }
     for (const view of views) {
       const choice = session!.kinds.formationFor(view)!;
       let item = drawn.get(view.id);
@@ -171,6 +228,7 @@ export function createEdinburghLive(options: {
       item.label.style.left = `${(p.x + 1) * 50}%`; item.label.style.top = `${(1 - p.y) * 50}%`;
       item.group.visible = view.opacity > 0;
     }
+    updateLamps(views);
   };
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,

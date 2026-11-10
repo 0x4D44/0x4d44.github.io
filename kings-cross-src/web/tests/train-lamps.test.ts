@@ -6,11 +6,15 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
-import { TRAIN_KINDS } from '../../core/train.ts';
+import { buildGraph } from '../../core/graph.ts';
+import type { Graph } from '../../core/graph.ts';
+import type { TrainView } from '../../core/motion.ts';
+import { TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { LENS, lensLook, SERVICE_LAMPS, buildTrain, setTrainLampState } from '../src/train.ts';
+import { LENS, lensLook, SERVICE_LAMPS, buildTrain, cabLightMaterial, setCabLight, setTrainLampState } from '../src/train.ts';
 import type { TrainLampMode, TrainLampState } from '../src/train.ts';
-import { col, plain } from '../src/train-geom.ts';
+import { col, plain, trainNight } from '../src/train-geom.ts';
+import { createLiveTrains } from '../src/trains-live.ts';
 
 interface Lens { role: 'head' | 'tail' | 'marker'; v0: number; v1: number }
 interface LampRec { end: 'front' | 'rear'; interior: boolean; lenses: Lens[] }
@@ -257,6 +261,128 @@ test('a lamp lens covers whole triangles of the car\'s detail mesh and no window
       for (let v = 0; v < count; v++) if (glow.getX(v) === 2) assert.ok(seen.has(v), `${kind}: tag-2 vertex ${v} is in no recorded lens`);
     }
   }
+});
+
+test('two clones of one template switch their lamps independently, and the template is left as it was built', () => {
+  const template = buildTrain('lner5');
+  const before = cabs(template).map(({ mesh }) => ({ geometry: mesh.geometry, colour: (mesh.geometry.getAttribute('color') as THREE.BufferAttribute).version, glow: (mesh.geometry.getAttribute('aGlow') as THREE.BufferAttribute).version }));
+  const a = template.clone(true), b = template.clone(true);
+  setTrainLampState(a, { front: 'off', rear: 'tail' });
+  setTrainLampState(b, { front: 'tail', rear: 'head' });
+  for (const [train, state] of [[a, { front: 'off', rear: 'tail' }], [b, { front: 'tail', rear: 'head' }], [template, SERVICE_LAMPS]] as [THREE.Object3D, TrainLampState][]) {
+    for (const { mesh, rec } of cabs(train)) for (const l of rec.lenses) expectLens(mesh, l, state[rec.end], `${train === template ? 'the template' : train === a ? 'clone a' : 'clone b'} ${rec.end} lens`);
+  }
+  cabs(template).forEach(({ mesh }, i) => {
+    const was = before[i]!;
+    same(mesh.geometry, was.geometry, 'the template keeps its geometry');
+    assert.equal((mesh.geometry.getAttribute('color') as THREE.BufferAttribute).version, was.colour, 'its colour buffer untouched');
+    assert.equal((mesh.geometry.getAttribute('aGlow') as THREE.BufferAttribute).version, was.glow, 'its glow buffer untouched');
+  });
+  cabs(a).forEach(({ mesh }, i) => differ(mesh.geometry, cabs(b)[i]!.mesh.geometry, 'each clone its own lamp geometry'));
+});
+
+/** Every cab-glass mesh of a train with the outer-cab record of the car it is in (undefined: not an outer cab car's). */
+function cabGlass(train: THREE.Object3D): { mesh: THREE.Mesh; rec: LampRec | undefined }[] {
+  const out: { mesh: THREE.Mesh; rec: LampRec | undefined }[] = [];
+  train.traverse((o) => {
+    if (o.name !== 'cab-glass') return;
+    const detail = o.parent?.children.find((c) => c.name === 'body-detail');
+    out.push({ mesh: o as THREE.Mesh, rec: detail?.userData.lamps as LampRec | undefined });
+  });
+  return out;
+}
+
+test('the cab light takes the place of the glass of the leaving end\'s outer cab only, never an inner cab\'s, and goes back to the glass', () => {
+  for (const kind of ['gn387x8', 'lner9'] as TrainKind[]) {
+    const train = buildTrain(kind);
+    const glass = cabGlass(train);
+    assert.ok(glass.length >= 2, `${kind}: its cab glass`);
+    const built = new Map(glass.map(({ mesh }) => [mesh, mesh.material]));
+    const others = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+    train.traverse((o) => { if ((o as THREE.Mesh).isMesh && o.name !== 'cab-glass') others.set(o as THREE.Mesh, (o as THREE.Mesh).material); });
+    for (const end of ['front', 'rear', null] as const) {
+      setCabLight(train, end);
+      assert.equal(train.userData.cabLight, end);
+      const lit = glass.filter(({ mesh }) => mesh.material === cabLightMaterial());
+      for (const { mesh, rec } of glass) {
+        const outerAtEnd = !!rec && !rec.interior && rec.end === end;
+        same(mesh.material, outerAtEnd ? cabLightMaterial() : built.get(mesh), `${kind} ${end}: ${rec ? `${rec.interior ? 'inner' : 'outer'} ${rec.end}` : 'no'} cab's glass`);
+      }
+      assert.equal(lit.length > 0, end !== null, `${kind} ${end}: a lit cab`);
+      for (const [mesh, material] of others) same(mesh.material, material, `${kind} ${end}: ${mesh.name} keeps its material`);
+    }
+    if (kind === 'gn387x8') assert.ok(glass.some(({ rec }) => rec?.interior), 'the 387x8 has inner cabs to leave alone');
+  }
+  // one shared material whose glow follows the shared night uniform in the shader (its copy keeps the hook), not a light
+  const material = cabLightMaterial();
+  same(cabLightMaterial(), material, 'one material');
+  const shader = { uniforms: {} as Record<string, unknown>, fragmentShader: '#include <common>\n#include <emissivemap_fragment>', vertexShader: '' };
+  material.onBeforeCompile(shader as never, undefined as never);
+  same(shader.uniforms.uNight, trainNight, 'the night uniform');
+  assert.match(shader.fragmentShader, /totalEmissiveRadiance \*= uNight;/);
+});
+
+/** A straight line of track with a train of `kind`'s length on it, its nose at the origin, standing (held) at a platform stop there. */
+function standingFixture(id: number, description: string, opacity = 1): { graph: Graph; view: TrainView } {
+  const nodes: [number, number, number][] = [];
+  for (let i = 0; i <= 80; i++) nodes.push([i + 1, 0, i * 5]);
+  const graph = buildGraph({ nodes, rails: [{ id: 1, nodes: nodes.map(([n]) => n), service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const length = trainLayout('lner9').length, occupied = [];
+  let left = length;
+  for (const edge of graph.edges) {
+    const take = Math.min(left, edge.length);
+    occupied.push({ edge, fromT: take / edge.length, toT: 0 }); left -= take;
+    if (left <= 1e-8) break;
+  }
+  occupied.reverse();
+  return { graph, view: { id, description, leading: { edge: graph.edges[0]!, t: 0, point: [0, 0] }, heading: Math.PI, speed: 0, lengthM: length, occupiedLengthM: length, occupied,
+    state: 'held', opacity, targetBerth: 'PLAT', lastBerth: 'PLAT', blocked: false, distanceM: 100, reversals: 0 } };
+}
+
+test('a live King\'s Cross train standing at T-5 shows white at its leaving end (the rear) with the cab lit; a palette rebind keeps the cab light; remove() frees its own lamp geometry', () => {
+  const DEP = Date.UTC(2026, 10, 10, 12, 0);
+  let now = DEP - 5 * 60_000;
+  const services = [{ uid: 'Z1', headcode: '1Z01', operator: 'GR', category: 'XX', date: '2026-11-10', serviceDate: '2026-11-10', stp: 'P' as const, startDate: '2026-01-01', endDate: '2026-12-31',
+    platform: '4', origin: 'KNGX', destination: 'ZZZZ', arrival: null, departure: '12:00', publicArrival: null, publicDeparture: '12:00', arrivalMs: null, departureMs: DEP, publicArrivalMs: null, publicDepartureMs: DEP }];
+  const { graph, view } = standingFixture(1, '1Z01');
+  const other = { ...standingFixture(2, '1Z99').view, state: 'moving' as const, speed: 5, targetBerth: 'ELSEWHERE' };
+  const scene = new THREE.Scene();
+  const layer = createLiveTrains(graph, scene, undefined, { nowMs: () => now, services: () => services,
+    platformOf: (berth) => berth === 'PLAT' ? { platform: '4', point: [0, 0] } : undefined });
+  layer.update([view, other]);
+  const group = layer.trains().find((t) => t.id === 1)!.group;
+  assert.deepEqual(group.userData.lampState, { front: 'tail', rear: 'head' }, 'white at the leaving end (rear), red at the buffer end');
+  const lastCar = `car-${trainLayout('lner9').cars.length - 1}`;
+  const lit = (): THREE.Mesh[] => cabGlass(group).filter(({ mesh }) => (mesh.material as THREE.Material).name === 'cab-light').map(({ mesh }) => mesh);
+  assert.deepEqual(lit().map((m) => m.parent!.name), [lastCar], 'the rear cab is lit, and only it');
+  const litCopy = lit()[0]!.material as THREE.MeshStandardMaterial;
+  differ(litCopy, cabLightMaterial(), 'drawn with the palette\'s copy of the lit glass, not the shared original');
+  assert.equal(litCopy.opacity, 1);
+  // the same train fading into another palette (the other train holds the opaque one): the copy in the new palette is lit too
+  layer.update([{ ...view, opacity: 0.5 }, other]);
+  assert.deepEqual(lit().map((m) => m.parent!.name), [lastCar], 'the cab stays lit through the rebind');
+  const rebound = lit()[0]!.material as THREE.MeshStandardMaterial;
+  differ(rebound, litCopy, 'a new copy for the new palette');
+  assert.equal(rebound.opacity, 0.5);
+  assert.equal(rebound.emissive.getHex(), cabLightMaterial().emissive.getHex());
+  // T-1: the cab goes dark, the lamps stay white
+  now = DEP - 60_000;
+  layer.update([{ ...view, opacity: 0.5 }, other]);
+  assert.deepEqual(lit(), [], 'T-1: no cab lit');
+  assert.equal((cabGlass(group).find(({ mesh }) => mesh.parent!.name === lastCar)!.mesh.material as THREE.Material).name, (cabGlass(group).find(({ mesh }) => mesh.parent!.name === 'car-0')!.mesh.material as THREE.Material).name, 'back to the glass');
+  // remove(): the lamp geometry this train was given is disposed, without its shared position buffer; the template's is not
+  const owned = cabs(group).filter(({ rec }) => !rec.interior).map(({ mesh }) => ({ mesh, own: mesh.geometry, position: mesh.geometry.getAttribute('position') }));
+  const disposed = new Map<THREE.BufferGeometry, string[]>();
+  const realDispose = THREE.BufferGeometry.prototype.dispose;
+  THREE.BufferGeometry.prototype.dispose = function (this: THREE.BufferGeometry) { disposed.set(this, Object.keys(this.attributes)); realDispose.call(this); };
+  try { layer.update([other]); } finally { THREE.BufferGeometry.prototype.dispose = realDispose; }
+  for (const { mesh, own, position } of owned) {
+    assert.deepEqual(disposed.get(own)?.sort(), ['aGlow', 'color'], 'the own lamp geometry is disposed holding only its own colour and glow');
+    differ(mesh.geometry, own, 'the mesh has its built geometry back');
+    same(mesh.geometry.getAttribute('position'), position, 'which still holds the shared positions');
+    assert.ok(!disposed.has(mesh.geometry), 'the template\'s geometry is not disposed');
+  }
+  layer.dispose();
 });
 
 test('the page exposes the switch next to evidenceBuildTrain, so a capture can set the lamps of a train it built or one drawn in the scene', () => {

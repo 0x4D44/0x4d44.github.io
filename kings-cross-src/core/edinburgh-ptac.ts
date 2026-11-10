@@ -125,9 +125,18 @@ const signature = (e: EdinburghServiceEvidence | undefined): string => e ? `${e.
  * Two different answers at the same distance give undefined, as in matchBooked.
  */
 export function matchPtac(store: PtacStore, description: string, atMs: number, windowMin = 30): EdinburghServiceEvidence | undefined {
-  if (!HEADCODE.test(description) || !Number.isFinite(atMs) || !(windowMin >= 0)) return undefined;
+  const nearest = nearestPtacTrains(store, description, atMs, windowMin);
+  if (!nearest.length) return undefined;
+  const answers = nearest.map(ptacEvidence);
+  if (new Set(answers.map(signature)).size !== 1) return undefined;
+  return answers[0];
+}
+
+/** The stored trains of a description whose planned Edinburgh arrival or departure is nearest `atMs` (within `windowMin`, ties within TIE_MINUTES). */
+function nearestPtacTrains(store: PtacStore, description: string, atMs: number, windowMin: number): PtacTrain[] {
+  if (!HEADCODE.test(description) || !Number.isFinite(atMs) || !(windowMin >= 0)) return [];
   const list = indexOf(store).get(description);
-  if (!list) return undefined;
+  if (!list) return [];
   const hits: { train: PtacTrain; distance: number }[] = [];
   for (const train of list) {
     for (const wall of [train.edbArr, train.edbDep]) {
@@ -136,11 +145,22 @@ export function matchPtac(store: PtacStore, description: string, atMs: number, w
       if (distance <= windowMin) hits.push({ train, distance });
     }
   }
-  if (!hits.length) return undefined;
+  if (!hits.length) return [];
   const nearest = Math.min(...hits.map(h => h.distance));
-  const answers = [...new Set(hits.filter(h => h.distance - nearest < TIE_MINUTES).map(h => h.train))].map(ptacEvidence);
-  if (new Set(answers.map(signature)).size !== 1) return undefined;
-  return answers[0];
+  return [...new Set(hits.filter(h => h.distance - nearest < TIE_MINUTES).map(h => h.train))];
+}
+
+/**
+ * The planned Edinburgh arrival and departure (epoch ms, null where PTAC has none) of the train a TD description is at an
+ * instant, matched as matchPtac matches it; undefined when nothing matches or two nearest trains disagree on the times.
+ * A train with both is a through train (it arrives and leaves under one headcode); the cab lamps (core/cab-lamps.ts) use it.
+ */
+export function ptacTimes(store: PtacStore, description: string, atMs: number, windowMin = 30): { arrivalMs: number | null; departureMs: number | null } | undefined {
+  const times = nearestPtacTrains(store, description, atMs, windowMin).map(t => ({
+    arrivalMs: t.edbArr === null ? null : londonWallMs(t.edbArr), departureMs: t.edbDep === null ? null : londonWallMs(t.edbDep) }));
+  if (!times.length || new Set(times.map(t => `${t.arrivalMs}/${t.departureMs}`)).size !== 1) return undefined;
+  const [only] = times;
+  return Number.isNaN(only!.arrivalMs) || Number.isNaN(only!.departureMs) ? undefined : only;
 }
 
 /** matchPtac as an EvidenceSource. */
