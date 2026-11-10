@@ -24,7 +24,7 @@ export const PERTH_FRONTAGE_OMIT_IDS:readonly string[]=[PERTH_HOTEL_ID];
 const KINGS_PLACE_RAILS=['way/1260630143','way/1260630144'];
 
 /** What the element drew, for tests and the round notes. */
-export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;walls:number;roadSegments:number};triangles:number;drawCalls:number}
+export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;piers:number;walls:number;roadSegments:number};triangles:number;drawCalls:number}
 
 export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,parent:THREE.Group):PerthFrontageInfo{
  const {add,own,stats}=build,before={t:stats.triangles,d:stats.drawCalls};
@@ -45,8 +45,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  let dir:Pt=[0,0];for(const r of rails){const a=r.path[0],c=r.path.at(-1)!,l=Math.hypot(c[0]-a[0],c[1]-a[1])||1,sgn=dir[0]*(c[0]-a[0])+dir[1]*(c[1]-a[1])<0?-1:1;dir=[dir[0]+sgn*(c[0]-a[0])/l,dir[1]+sgn*(c[1]-a[1])/l];}
  const dl=Math.hypot(...dir)||1;
  const ring=file.bridge.ring.map(p=>[p[0],p[1]] as Pt),track=perthTrack(data);
- const bridge=kingsPlaceBridge(bridgeBatch,ring,[dir[0]/dl,dir[1]/dl],ground,rubble);
- const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge);
+ const bridge=kingsPlaceBridge(bridgeBatch,ring,[dir[0]/dl,dir[1]/dl],ground,rubble,[...track.ground,...track.bridge]);
+ const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge,ring,bridgeBatch);
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();

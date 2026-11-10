@@ -17,10 +17,13 @@ export const FRONTAGE_WINDOW={x0:-80,x1:125,z0:-175,z1:-20} as const;
 export const PERTH_ENTRANCE:Pt=[-3.03,-34.98];
 /** ASSUMED from R-pt2-a: the single-storey street walls, the entrance pavilion (its blue-clad upper storey over a glazed, recessed ground
  *  floor on four posts), the pavement and its bollards. */
-export const STREET_LEVELS={wall:4.3,coping:.25,flatDeep:9,slateBack:11,slateTop:8,gableBack:2,gableDeep:12,gableEaves:4.8,gableApex:8.2,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.6} as const;
+export const STREET_LEVELS={wall:4.3,coping:.25,flatDeep:9,slateBack:11,slateTop:8,gableBack:2,gableDeep:12,gableEaves:4.8,gableApex:8.2,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.9,bollardPitchKerb:3.3} as const;
 /** ASSUMED carriageway widths (m) by OSM highway class; no widths are mapped here. */
 export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,tertiary:7,residential:6,unclassified:6,service:5,parking_aisle:6,footway:2.4,pedestrian:4,path:2,cycleway:2.5,steps:2};
-export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x3a62c4,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x7f909c,mullion:0xdfe2e3,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
+/** `navy` and `strip` read from R-pt2-a by eye (round 5): the pavilion's bands are a dark navy, about rgb 34,43,95 in the shade (the lit upper band
+ *  reads paler), the glazed strip a grey-blue about rgb 93,100,110 mid-reflection; the model's lighting lifts both, so the base colours sit a step
+ *  darker than the photo's. The greens, `bark` and `boulder` are ASSUMED from R-pt2-a/b's bushes, tree and kerbside stones. */
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x607386,mullion:0xdfe2e3,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -65,7 +68,13 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
    if(d<best){best=d;side=Math.sign(dx*(q[1]-a[1])-dz*(q[0]-a[0]));}}
   const a=paved.path[0],c=paved.path[1],e=Math.sign((c[0]-a[0])*(PERTH_ENTRANCE[1]-a[1])-(c[1]-a[1])*(PERTH_ENTRANCE[0]-a[0]));return side===e;};
  const ST=PERTH_TEXTURE_TILE.setts;
- for(const p of file.parking){drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark),.05,undefined,q=>!stationSide(q));drape(b.setts,ringOf(p.ring),ground,.05,rgb(C.block),.04,undefined,stationSide,ST);}
+ // R-pt2-a's foreground is block paving all the way to the camera, which stands 6 m north of the paved loop road (way/44356824): the setts
+ // reach 9 m either side of that road's line (ASSUMED), not just its station side, so the frozen view has no asphalt wedge under it
+ const SETT_REACH=9,nearPaved=(q:Pt):boolean=>{if(!paved)return false;
+  for(let i=0;i+1<paved.path.length;i++){const a=paved.path[i],c=paved.path[i+1],dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((q[0]-a[0])*dx+(q[1]-a[1])*dz)/(dx*dx+dz*dz||1)));
+   if(Math.hypot(q[0]-a[0]-t*dx,q[1]-a[1]-t*dz)<SETT_REACH)return true;}return false;};
+ const settsAt=(q:Pt)=>stationSide(q)||nearPaved(q);
+ for(const p of file.parking){drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark),.05,undefined,q=>!settsAt(q));drape(b.setts,ringOf(p.ring),ground,.05,rgb(C.block),.04,undefined,settsAt,ST);}
  const carriage=file.roads.filter(r=>!['footway','pedestrian','path','cycleway','steps'].includes(r.highway));
  const onCarriage=(p:Pt)=>file.parking.some(q=>inRing(p,ringOf(q.ring)))||carriage.some(r=>{const h=(ROAD_WIDTHS[r.service==='parking_aisle'?'parking_aisle':r.highway]??4)/2;
   for(let i=0;i+1<r.path.length;i++){const a=r.path[i],c=r.path[i+1],dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz||1)));
@@ -76,8 +85,9 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
   const byEntrance=!foot&&r.path.some(q=>Math.hypot(q[0]-PERTH_ENTRANCE[0],q[1]-PERTH_ENTRANCE[1])<25)&&r.service!=='parking_aisle';
   const sett=!foot&&(r.surface==='paving_stones'||byEntrance),color=rgb(foot?C.footway:sett?C.paving:C.asphalt);
   if(byEntrance){const pts=ringOf(r.path);
-   for(let i=0;i+1<pts.length;i++){const a=pts[i],c=pts[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]);for(let x=1;x+1<l;){const p0:Pt=[a[0]+(c[0]-a[0])*x/l,a[1]+(c[1]-a[1])*x/l],p1:Pt=[a[0]+(c[0]-a[0])*(x+1.5)/l,a[1]+(c[1]-a[1])*(x+1.5)/l];
-    if(!out(p0)&&!out(p1))strip(b.paint,[p0,p1],.06,ground,.12,rgb(C.paint),()=>false);x+=4.5;}}
+   // the road's broken centre line: R-pt2-a's dashes are short, about 1 m with 2.5 m gaps (ASSUMED from the photo's foreground, ~25 px/m there)
+   for(let i=0;i+1<pts.length;i++){const a=pts[i],c=pts[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]);for(let x=1;x+1<l;){const p0:Pt=[a[0]+(c[0]-a[0])*x/l,a[1]+(c[1]-a[1])*x/l],p1:Pt=[a[0]+(c[0]-a[0])*(x+1)/l,a[1]+(c[1]-a[1])*(x+1)/l];
+    if(!out(p0)&&!out(p1))strip(b.paint,[p0,p1],.06,ground,.12,rgb(C.paint),()=>false);x+=3.5;}}
    for(const [e,f2] of [[pts[0],pts[1]],[pts.at(-1)!,pts.at(-2)!]] as const){if(out(e))continue;const l=Math.hypot(f2[0]-e[0],f2[1]-e[1])||1,t2:Pt=[(f2[0]-e[0])/l,(f2[1]-e[1])/l],n2:Pt=[-t2[1],t2[0]];
     for(const k of [1.2,1.6])for(let o=-half+.2;o<half-.4;o+=1){const c0:Pt=[e[0]+t2[0]*k+n2[0]*o,e[1]+t2[1]*k+n2[1]*o],c1:Pt=[c0[0]+n2[0]*.6,c0[1]+n2[1]*.6];strip(b.paint,[c0,c1],.1,ground,.12,rgb(C.paint),()=>false);}}}
   strip(sett?b.setts:b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,foot?(p=>out(p)||onCarriage(p)):out,sett?ST:0);
@@ -90,11 +100,17 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
      prism(b.front,arm[0],arm[1],.04,y+6.45,y+6.8,6,k);// the hanger
      prism(b.front,arm[0],arm[1],.22,y+5.9,y+6.35,6,rgb(C.lit));// the lantern's glazed body (pale, as R-pt2-b's read by day)
      prism(b.front,arm[0],arm[1],.28,y+6.35,y+6.45,6,k);prism(b.front,arm[0],arm[1],.12,y+5.82,y+5.9,6,k);}}
-   // direction arrows down the aisle (R-pt2-b, foreground): a 3 m shaft and a head, white, every third of its length, ASSUMED sizes
-   for(const f of [.33,.66]){const q:Pt=[a0[0]+(c0[0]-a0[0])*f,a0[1]+(c0[1]-a0[1])*f];if(out(q))continue;
-    const P2=(u:number,v:number):V3=>{const x=q[0]+tt[0]*u+nn0[0]*v,z=q[1]+tt[1]*u+nn0[1]*v;return [x,ground.heightAt(x,z)+.11,z];},nn0:Pt=[-tt[1],tt[0]];
-    b.paint.poly([P2(-1.8,-.1),P2(.6,-.1),P2(.6,.1),P2(-1.8,.1)],undefined,{facing:[0,1,0],color:rgb(C.paint)});
-    b.paint.poly([P2(.5,-.45),P2(1.6,0),P2(.5,.45)],undefined,{facing:[0,1,0],color:rgb(C.paint)});}
+   // two white arrows per aisle, the pair R-pt2-b shows in its foreground (the frozen hotel view stands on aisle way/454950537, 5.7 m up from its
+   // station end, looking up it): one straight on, pointing away up the aisle toward the hotel, and one to its right turned 150 degrees, so
+   // it points back and to the right (R-pt2-b's second: head lower right). Each is 3 m long, a 2 m shaft 0.36 m wide under a 1 m head 1 m wide (ASSUMED
+   // by eye at ~19 px/m; the photo's are chunkier than the 0.2 m shaft this replaces). Placed 0.64/0.68 of the way up, 2.3 m left and 1.2 m
+   // right of the centre line (ASSUMED): 9 to 14 m ahead of that camera, the lowest sixth of its frame, as in the photo.
+   const aSouth=a0[1]>c0[1],hd:Pt=aSouth?tt:[-tt[0],-tt[1]],sp=aSouth?a0:c0,rt:Pt=[-hd[1],hd[0]];
+   for(const [f,e,deg] of [[.64,-2.3,0],[.68,1.2,150]] as const){const q:Pt=[sp[0]+hd[0]*la*f+rt[0]*e,sp[1]+hd[1]*la*f+rt[1]*e];if(out(q))continue;
+    const th=deg*Math.PI/180,d:Pt=[hd[0]*Math.cos(th)+rt[0]*Math.sin(th),hd[1]*Math.cos(th)+rt[1]*Math.sin(th)],pp:Pt=[-d[1],d[0]];
+    const P2=(u:number,v:number):V3=>{const x=q[0]+d[0]*u+pp[0]*v,z=q[1]+d[1]*u+pp[1]*v;return [x,ground.heightAt(x,z)+.11,z];};
+    b.paint.poly([P2(-1.5,-.18),P2(.5,-.18),P2(.5,.18),P2(-1.5,.18)],undefined,{facing:[0,1,0],color:rgb(C.paint)});
+    b.paint.poly([P2(.4,-.5),P2(1.5,0),P2(.4,.5)],undefined,{facing:[0,1,0],color:rgb(C.paint)});}
   }
   if(kind==='parking_aisle'){// bay lines both sides of the aisle, perpendicular to it
    const [a,c]=[r.path[0],r.path.at(-1)!],l=Math.hypot(c[0]-a[0],c[1]-a[1]),t:Pt=[(c[0]-a[0])/l,(c[1]-a[1])/l],n:Pt=[-t[1],t[0]];
@@ -202,29 +218,113 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
    b.front.poly([[p[0],y0,p[1]],[q[0],y1,q[1]],[q[0],y1+.25,q[1]],[p[0],y0+.25,p[1]]],undefined,{facing:[n[0],0,n[1]],color:rgb(C.coping)});}
   void up;
  }
- // the pavement: 4.2 m out to a kerb, block paving, black bollards with a yellow band at the kerb, blue planters (R-pt2-a)
- const pv:Pt[]=[at(-1,0),at(l+1,0),at(l+1,S.pavement),at(-1,S.pavement)];
+ // the pavement: 4.2 m out to a kerb, block paving, black bollards with two yellow bands, blue planters, kerbside boulders (R-pt2-a). It runs
+ // the whole frontage the photo shows: 16.5 m either side of the entrance, so the shop front and the glazed bay stand on it (the walls beyond
+ // the edge's end are within 0.1 m of its line for that far), and never less than the edge itself.
+ const sLo=Math.min(-1,sE-16.5),sHi=Math.max(l+1,sE+16.5);
+ const pv:Pt[]=[at(sLo,0),at(sHi,0),at(sHi,S.pavement),at(sLo,S.pavement)];
  drape(b.setts,pv,ground,S.kerb,rgb(C.footway),0,undefined,()=>true,PERTH_TEXTURE_TILE.setts);
- const k0=at(-1,S.pavement),k1=at(l+1,S.pavement);wallBox(b.flat,k0,k1,ground.heightAt(...k0)-.05,P+S.kerb+.01,.08,rgb(C.kerb));
- for(let s=1;s<l;s+=S.bollardPitch){if(Math.abs(s-sE)<2.8)continue;const p=at(s,S.pavement-.35),y=ground.heightAt(...p)+S.kerb;
-  prism(b.front,p[0],p[1],.11,y,y+S.bollard,8,rgb(C.bollard));prism(b.front,p[0],p[1],.115,y+.72,y+.84,8,rgb(C.yellow),Math.PI/8,false);}
+ for(let s=sLo;s<sHi;s+=4){const k0=at(s,S.pavement),k1=at(Math.min(sHi,s+4),S.pavement),g=ground.heightAt((k0[0]+k1[0])/2,(k0[1]+k1[1])/2);wallBox(b.flat,k0,k1,g-.05,g+S.kerb+.01,.08,rgb(C.kerb));}
+ // R-pt2-a's bollards: dark posts, 1 m tall and about 0.16 m across, two yellow bands near the top, in two rows the length of the front: a back
+ // row by the wall (R-pt2-a: about every 55 px at 19.5 px/m, 2.9 m) and a kerb row (every 73 to 97 px at about 26 px/m, 3.3 m), a gap at the crossing
+ // (ASSUMED from the photo's count: ten to a row across the frame). The back row stands 1.7 m out, clear of the pavilion's 1.2 m projection.
+ const post=(s:number,o:number)=>{const p=at(s,o),y=ground.heightAt(...p)+S.kerb;
+  prism(b.front,p[0],p[1],.08,y,y+S.bollard,8,rgb(C.bollard));
+  for(const [y0,y1] of [[.68,.76],[.84,.92]])prism(b.front,p[0],p[1],.085,y+y0,y+y1,8,rgb(C.yellow),Math.PI/8,false);};
+ for(let j=0;j<5;j++)for(const sg of [-1,1]){post(sE+sg*(2.5+S.bollardPitchKerb*j),S.pavement-.35);post(sE+sg*(1.5+S.bollardPitch*j),1.7);}
+ // a few kerbside boulders by the blue planters (R-pt2-a, left: a rock beside the planters): low grey stones 0.4 to 0.6 m across, 0.45 to 0.6 m high, ASSUMED
+ for(const [s,o,R,H,key] of [[s1+5.4,3.0,.55,.6,11],[s1+6.4,3.5,.4,.45,12],[s0-3.4,3.3,.5,.55,13]] as const){const p=at(s,o);
+  lobe(b.front,p[0],p[1],ground.heightAt(...p)+S.kerb-.06,R,H,6,shade(rgb(C.boulder),.9+hash(key,1)*.2),key,.28,.95);}
  for(const s of [s1+1.5,s1+3.6,s0-2.2,s0-8.5]){const p=at(s,S.pavement-1.4),y=ground.heightAt(...p)+S.kerb;
   prism(b.front,p[0],p[1],.6,y,y+.62,12,rgb(C.planter));prism(b.front,p[0],p[1],.5,y+.62,y+1.05,8,rgb(C.shrub),Math.PI/8);}
  for(let o=S.pavement+.6;o<S.pavement+6.6;o+=1){const p=at(sE-1.6,o),q=at(sE+1.6,o);strip(b.paint,[p,q],.25,ground,.1,rgb(C.paint),()=>false);}
  return {chain,P};
 }
 
-/** Shrubs on the grass strip before the hotel's front (R-pt2-b: low rounded bushes before the centre bays): along each hotel edge facing
- *  the car park, 1.8 m out from the wall, every 3.5 m with gaps, clear of the car park. Rounded from two stacked prisms; ASSUMED sizes. */
+/** A seeded hash of a few numbers into [0,1): the same input gives the same number in every build (no Math.random, so the scene is deterministic). */
+function hash(...k:number[]):number{let h=0x811c9dc5;for(const v of k){h^=Math.imul(Math.round(v*64)|0,0x85ebca6b);h=Math.imul(h^(h>>>15),0xc2b2ae35);h^=h>>>13;}return (h>>>0)/4294967296;}
+const shade=(c:Rgb,k:number):Rgb=>[c[0]*k,c[1]*k,c[2]*k];
+
+/**
+ * A low-sided rounded mass about (x, z) rising H from y0: a foot ring (`foot` of R), a belly ring (R, at 0.4 H), a shoulder ring (0.74 R, at 0.8 H) and a
+ * cap, each facet flat. Every vertex's radius, height and angle is pulled about by up to `jit` from the hash of `key`, so no two read alike.
+ * One lobe is 5 x `sides` triangles; bushes, tree crowns and boulders are built from them.
+ */
+function lobe(b:Batch,x:number,z:number,y0:number,R:number,H:number,sides:number,color:Rgb,key:number,jit:number,foot=.78):void{
+ const ring:[number,number][]=[[R*foot,0],[R,.4],[R*.74,.8]],ang=(i:number)=>(i+(hash(key,i,3)-.5)*.5)*2*Math.PI/sides;
+ const at=(k:number,i:number):V3=>{const a=ang(i),r=ring[k][0]*(1+(hash(key,i,k)-.5)*2*jit);return [x+r*Math.cos(a),y0+ring[k][1]*H*(1+(hash(key,i,k+5)-.5)*jit),z+r*Math.sin(a)];};
+ const apex:V3=[x+(hash(key,7)-.5)*R*.3,y0+H*(1+(hash(key,8)-.5)*jit*.5),z+(hash(key,9)-.5)*R*.3];
+ for(let i=0;i<sides;i++){const j=(i+1)%sides,am=(i+.5)*2*Math.PI/sides,out:V3=[Math.cos(am),0,Math.sin(am)];
+  for(let k=0;k<2;k++){const c=shade(color,.88+.1*k),p0=at(k,i),p1=at(k,j),p2=at(k+1,j),p3=at(k+1,i);
+   b.poly([p0,p1,p2],undefined,{facing:out,color:c});b.poly([p0,p2,p3],undefined,{facing:out,color:c});}
+  b.poly([at(2,i),at(2,j),apex],undefined,{facing:[out[0]*.3,1,out[2]*.3],color:shade(color,1.08)});}
+}
+
+/** A bush: 2 to 4 overlapping lobes (a tall one in the middle, the rest round it) of varied greens, about `w` across and `h` high. Returns the lobes placed. */
+function bush(b:Batch,ground:Ground,ok:(p:Pt)=>boolean,x:number,z:number,w:number,h:number,key:number):number{
+ const C=STREET_COLOURS,greens=[C.shrub,C.shrubDark,C.bushMid,C.bushLight],n=2+Math.floor(hash(key,1)*3),a0=hash(key,2)*2*Math.PI;let placed=0;
+ for(let i=0;i<n;i++){
+  const a=a0+(i-1)*2*Math.PI/Math.max(1,n-1)+(hash(key,3,i)-.5)*.7,d=i===0?0:w*(.2+.1*hash(key,4,i)),px=x+Math.cos(a)*d,pz=z+Math.sin(a)*d;
+  if(!ok([px,pz]))continue;
+  const R=w*(i===0?.3:.24+.04*hash(key,5,i)),H=h*(i===0?1:.66+.24*hash(key,6,i));
+  lobe(b,px,pz,ground.heightAt(px,pz)-.12,R,H+.12,8,shade(rgb(greens[Math.floor(hash(key,7,i)*greens.length)]),.92+.16*hash(key,8,i)),key*10+i,.14);placed++;}
+ return placed;
+}
+
+/** A clipped hedge run from `from` to `to`: 1.4 m lengths, each a wide base under two narrower, slightly paler steps (a clipped, rounded top), `h` high. */
+function hedge(b:Batch,ground:Ground,from:Pt,to:Pt,half:number,h:number,key:number):void{
+ const n=Math.max(1,Math.round(Math.hypot(to[0]-from[0],to[1]-from[1])/1.4));
+ for(let i=0;i<n;i++){const p:Pt=[from[0]+(to[0]-from[0])*i/n,from[1]+(to[1]-from[1])*i/n],q:Pt=[from[0]+(to[0]-from[0])*(i+1)/n,from[1]+(to[1]-from[1])*(i+1)/n];
+  const y=ground.heightAt((p[0]+q[0])/2,(p[1]+q[1])/2)-.05,col=shade(rgb(STREET_COLOURS.hedge),.94+.12*hash(key,i)),top=h*(.96+.08*hash(key,i,2));
+  wallBox(b,p,q,y,y+top*.55,half,col,.02);wallBox(b,p,q,y+top*.55,y+top*.85,half*.86,shade(col,1.04),.02);wallBox(b,p,q,y+top*.85,y+top,half*.6,shade(col,1.1),.02);}
+}
+
+/** A cordyline (R-pt2-b's palm-like plant before the centre bays): a short stout trunk 2.2 m tall and a tuft of narrow lens-shaped leaves (0.28 m wide), 24 of them in four tiers (steep to drooping), the tuft about 3.4 m across. */
+function cordyline(b:Batch,ground:Ground,x:number,z:number,key:number):void{
+ const C=STREET_COLOURS,y=ground.heightAt(x,z),top=y+2.2,leaf=rgb(C.leaf);
+ prism(b,x,z,.11,y-.1,top,6,rgb(C.bark));
+ for(let i=0;i<24;i++){const tier=i%4,al=(i+(hash(key,i)-.5)*.6)*2*Math.PI/24,el=[75,50,28,6][tier]*Math.PI/180,L=[1.1,1.5,1.7,1.6][tier]*(.9+.2*hash(key,i,2));
+  const dx=Math.cos(al)*Math.cos(el),dy=Math.sin(el),dz=Math.sin(al)*Math.cos(el),sx=-Math.sin(al),sz=Math.cos(al);
+  const at=(f:number,w:number):V3=>[x+dx*L*f+sx*w,top+dy*L*f-(tier===3?.4*f*f:0),z+dz*L*f+sz*w];// along the leaf (0..1) and across it, a leaf drooping toward its tip in the last tier
+  const N:V3=[-Math.cos(al)*dy,Math.cos(el),-Math.sin(al)*dy],col=shade(leaf,.85+.3*hash(key,i,3)),leafPts=[at(0,.05),at(.35,.14),at(1,0),at(.35,-.14),at(0,-.05)];// a lens 0.28 m wide
+  b.poly(leafPts,undefined,{facing:N,color:col});b.poly([...leafPts].reverse(),undefined,{facing:[-N[0],-N[1],-N[2]],color:col});}// both faces: a leaf has no back
+}
+
+/** A small tree (R-pt2-b's, right of the corner tower, is about 9 m): a 0.34 m trunk 2.9 m tall and a crown of five lobes, about 5.6 m across, to 6.1 m. ASSUMED. */
+function tree(b:Batch,ground:Ground,x:number,z:number,key:number):void{
+ const y=ground.heightAt(x,z),greens=[0x45682c,0x557a35,0x3d5c29];
+ prism(b,x,z,.17,y-.1,y+2.9,6,rgb(STREET_COLOURS.bark));
+ const crown:[number,number,number,number,number][]=[[0,0,2.5,2,3],[1.3,.3,2.3,1.5,2.2],[-.9,1.1,2.4,1.5,2.1],[-.5,-1.2,2.3,1.4,2.2],[.3,.2,4.3,1.5,1.8]];
+ crown.forEach(([dx,dz,y0,R,H],i)=>lobe(b,x+dx,z+dz,y+y0,R,H,8,shade(rgb(greens[i%3]),.95+.1*hash(key,i)),key*10+i,.12,.7));
+}
+
+/**
+ * The planting before the Station Hotel (R-pt2-b), in plan on the hotel's own frame: A is the middle front's west end (OSM -25.3,-97.8, as hotelFrame),
+ * `m` runs along the front toward its east end (OSM -8.7,-104.7, 18 m) and `o` out from it over the car park. R-pt2-b, read at about 18.6 px/m along
+ * the front: a clipped hedge-like bush 4.7 m along, a dark mass at 8.9, a cordyline at 12.5, a bush at 14.6, a tall narrow shrub at the east end, and a
+ * big tree east of the corner tower (about 26 m along); the model draws them 1.4 to 2.2 m out from the wall (ASSUMED), a clipped hedge run (1.1 m)
+ * in place of the first bush, bush clusters 1.2 to 1.6 m high and 2 to 3 m across, each of 2 to 4 lobes 1.2 to 1.8 m wide (the photo's are a little
+ * bigger; the round's brief caps them), the cordyline 3.5 m and the tree 6.1 m. Along every other hotel edge facing the car park that is 6 m or more:
+ * clusters 1.9 m out every 4.4 m with gaps, 0.9 to 1.5 m high. Nothing stands in the car park or within 0.9 m of the building. Returns the plants
+ * drawn (lobes, the hedge, the cordyline and the tree each count one).
+ */
 export function hotelShrubs(b:Batch,hotel:readonly Pt[],park:readonly Pt[],ground:Ground):number{
- const C=STREET_COLOURS,r=cleanRing(hotel),cx=park.reduce((s,p)=>s+p[0],0)/park.length,cz=park.reduce((s,p)=>s+p[1],0)/park.length;let n=0,seed=5;
- const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
- for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length],l=Math.hypot(c[0]-a[0],c[1]-a[1]);if(l<6)continue;
+ const r=cleanRing(hotel),cx=park.reduce((s,p)=>s+p[0],0)/park.length,cz=park.reduce((s,p)=>s+p[1],0)/park.length;let n=0;
+ const segDist=(p:Pt,a:Pt,c:Pt)=>{const dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz);};
+ const ok=(p:Pt)=>!inRing(p,park)&&!inRing(p,r)&&Math.min(...r.map((q,i)=>segDist(p,q,r[(i+1)%r.length])))>.9;
+ const near=(p:Pt)=>r.reduce((k,q)=>Math.hypot(q[0]-p[0],q[1]-p[1])<Math.hypot(k[0]-p[0],k[1]-p[1])?q:k,r[0]);
+ const A=near([-25.3,-97.8]),B=near([-8.7,-104.7]),lm=Math.hypot(B[0]-A[0],B[1]-A[1])||1,u:Pt=[(B[0]-A[0])/lm,(B[1]-A[1])/lm],nf:Pt=[-u[1],u[0]];
+ const at=(m:number,o:number):Pt=>[A[0]+u[0]*m+nf[0]*o,A[1]+u[1]*m+nf[1]*o];
+ const h0=at(1.6,1.6),h1=at(6.6,1.6);if(ok(h0)&&ok(h1)){hedge(b,ground,h0,h1,.45,1.1,31);n++;}
+ for(const [m,o,w,h,key] of [[9.3,2.2,2.7,1.6,21],[14.9,2.1,2.4,1.4,22],[17.2,1.9,1.7,1.6,23],[21,1.9,2,1.2,24]] as const){const p=at(m,o);n+=bush(b,ground,ok,p[0],p[1],w,h,key);}
+ const cp=at(12.4,1.4);if(ok(cp)){cordyline(b,ground,cp[0],cp[1],41);n++;}
+ const tp=at(33.5,-1);if(ok(tp)){tree(b,ground,tp[0],tp[1],51);n++;}
+ for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length],l=Math.hypot(c[0]-a[0],c[1]-a[1]);if(l<6||(a===A&&c===B)||(a===B&&c===A))continue;
   let nn:Pt=[-(c[1]-a[1])/l,(c[0]-a[0])/l];const m:Pt=[(a[0]+c[0])/2,(a[1]+c[1])/2];if(inRing([m[0]+nn[0]*.5,m[1]+nn[1]*.5],r))nn=[-nn[0],-nn[1]];
   const toPark=Math.hypot(cx-m[0],cz-m[1])||1;if((nn[0]*(cx-m[0])+nn[1]*(cz-m[1]))/toPark<.6)continue;
-  for(let s=2;s<l-2;s+=3.5){if(rnd()<.35)continue;const p:Pt=[a[0]+(c[0]-a[0])*s/l+nn[0]*1.8,a[1]+(c[1]-a[1])*s/l+nn[1]*1.8];if(inRing(p,park)||inRing(p,r))continue;
-   const y=ground.heightAt(...p),R=.6+rnd()*.35,H=.9+rnd()*.5,col=rnd()<.5?C.shrub:C.shrubDark;
-   prism(b,p[0],p[1],R,y-.1,y+H*.6,8,rgb(col));prism(b,p[0],p[1],R*.7,y+H*.6,y+H,8,rgb(col),Math.PI/8);n++;}
+  for(let s=2;s<l-2;s+=4.4){const key=100+i*37+Math.round(s);if(hash(key,1)<.3)continue;
+   const p:Pt=[a[0]+(c[0]-a[0])*s/l+nn[0]*1.9,a[1]+(c[1]-a[1])*s/l+nn[1]*1.9];if(!ok(p))continue;
+   n+=bush(b,ground,ok,p[0],p[1],1.7+.7*hash(key,2),.9+.6*hash(key,3),key);}
  }
  return n;
 }

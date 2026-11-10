@@ -88,7 +88,8 @@ test('the frontage\'s cost: within P2\'s caps (+24 draws, +240,000 triangles), a
   try {
     assert.ok(info.drawCalls <= 24 && info.drawCalls >= 7, JSON.stringify(info));
     assert.ok(info.triangles < 240_000, JSON.stringify(info));
-    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends, panels: info.bridge.panels, walls: info.bridge.walls, roadSegments: info.bridge.roadSegments });
+    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends, panels: info.bridge.panels, piers: info.bridge.piers, walls: info.bridge.walls, roadSegments: info.bridge.roadSegments });
+    assert.ok(info.bridge.piers >= 1, `a pier at the girders' north-east end (R-pt2-d): ${info.bridge.piers}`);
     assert.ok(info.bridge.roadSegments > 20, 'the cut roads are surfaced, with pavements');
     assert.ok(info.bridge.ends >= 2, 'abutments at both ends');
     assert.ok(info.bridge.panels >= 40, `the girders are panelled on both faces (R-pt2-d): ${info.bridge.panels}`);
@@ -138,6 +139,24 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   // the aim (lead 13:35, from R-pt2-d): the near girder's NE end at photo x 1085 of 1280 at f 2334 px puts the axis about 11.9 deg east of north
   const yaw = Math.atan2(cam.target[0] - cam.pos[0], -(cam.target[2] - cam.pos[2])) * 180 / Math.PI;
   assert.ok(Math.abs(yaw - 12) < .2, `pt-kings-place-bridge bears ${yaw.toFixed(2)} deg`);
+  // round 5 (R-pt2-d): the kerbs curve round the junction's corners. Where both roads' kerb lines pass within 0.4 m (the corner a plain
+  // union of the two carriageways would make), it is carriageway
+  const lineDist = (line: readonly Pt[], p: Pt) => Math.min(...line.slice(1).map((q, i) => segDist(p, line[i], q)));
+  let corners = 0;
+  for (let x = 80; x <= 112; x += .25) for (let z = -80; z <= -55; z += .25) {
+    const a = roads.map(r => r.inRamp(x, z) ? lineDist(r.line, [x, z]) - r.half : Infinity);
+    if (!a.every(v => v > 0 && v < .4)) continue; corners++;
+    assert.ok(surface(x, z)?.asphalt, `the kerb is rounded at the junction's corner ${x},${z}`);
+  }
+  assert.ok(corners > 0, 'the junction has corners');
+  // from the frozen view: the girder's last panels show to its north-east end (photo x about 1085), and the pier stands beyond it
+  const view = new THREE.PerspectiveCamera(cam.fov, 1280 / 800, .1, 20000), ray = new THREE.Raycaster();
+  view.position.set(cam.pos[0], cam.pos[1], cam.pos[2]); view.lookAt(cam.target[0], cam.target[1], cam.target[2]); view.updateMatrixWorld();
+  const near = ['perth-kings-place-bridge', 'perth-kings-place-walls'].map(mesh);
+  const hit = (px: number, py: number) => { ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view); return ray.intersectObjects(near, false)[0]; };
+  for (const px of [980, 1030, 1070]) assert.equal(hit(px, 330)?.object.name, 'perth-kings-place-bridge', `the girder shows at capture x ${px}`);
+  const pier = hit(1130, 340);
+  assert.ok(pier && pier.point.y > KINGS_PLACE_LEVELS.soffit && pier.distance < 50, `the pier at capture x 1130: ${pier?.object.name} ${pier?.point.y}`);
 });
 
 test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data and covers the King\'s Place cut and the forecourt', () => {

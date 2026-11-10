@@ -2,7 +2,7 @@
 // lie over them (lead ruling 2026-11-10 13:18). Pure data: no THREE objects. The polygons are in the Perth frame (x east, z south), each a
 // ring of [x, z] points, and may overlap; a point is masked if it is inside any of them.
 import type {Pt} from '../../core/geo.ts';
-import {KINGS_PLACE_CUT,cutRoads} from './perth-frontage-bridge.ts';
+import {KINGS_PLACE_CUT,cutField,cutRoads} from './perth-frontage-bridge.ts';
 import {FRONTAGE_WINDOW,ROAD_WIDTHS} from './perth-frontage-street.ts';
 import type {FrontageFile} from './perth-frontage-street.ts';
 import frontageFile from './data/perth-frontage.json' with {type:'json'};
@@ -39,7 +39,12 @@ function band(line:readonly Pt[],half:number,keep:(p:Pt)=>boolean,step=3):[numbe
  */
 export function perthFrontageGroundMask(stationOuter?:readonly (readonly number[])[],file:FrontageFile=frontageFile as FrontageFile):PerthFrontageGroundMask{
  const M=PERTH_FRONTAGE_MASK_MARGIN,W=FRONTAGE_WINDOW,inWindow=(p:Pt)=>p[0]>=W.x0&&p[0]<=W.x1&&p[1]>=W.z0&&p[1]<=W.z1;
- const cut=cutRoads().flatMap(r=>band(r.line,r.half+KINGS_PLACE_CUT.pavement+.7+M,p=>r.inRamp(...p),1.5));
+ const roads=cutRoads(),cut=roads.flatMap(r=>band(r.line,r.half+KINGS_PLACE_CUT.pavement+.7+M,p=>r.inRamp(...p),1.5));
+ // the junction's rounded corners (cutField's smooth union reaches past the straight bands there): 1 m squares where it does
+ const reach=KINGS_PLACE_CUT.pavement+.7+M,pts=cut.flat(),bx0=Math.floor(Math.min(...pts.map(q=>q[0]))),bx1=Math.ceil(Math.max(...pts.map(q=>q[0])));
+ const bz0=Math.floor(Math.min(...pts.map(q=>q[1]))),bz1=Math.ceil(Math.max(...pts.map(q=>q[1]))),straight=cut.slice();
+ for(let z=bz0;z<=bz1;z++)for(let x=bx0;x<=bx1;x++){const f=cutField(roads,x,z)?.f;if(f===undefined||f>reach+.75)continue;
+  if(inPerthFrontageGroundMask({cut:straight,forecourt:[]},x,z))continue;cut.push([[x-.75,z-.75],[x+.75,z-.75],[x+.75,z+.75],[x-.75,z+.75]]);}
  // the deck's paved floor (cutSurfaceAt), its outline pushed out by the margin plus the abutments' and closing walls' 1.05 m
  const ring=file.bridge.ring.map(q=>[q[0],q[1]] as Pt),cx=ring.reduce((s,q)=>s+q[0],0)/ring.length,cz=ring.reduce((s,q)=>s+q[1],0)/ring.length;
  cut.push(ring.map(([x,z])=>{const l=Math.hypot(x-cx,z-cz)||1,o=1.05+M;return [x+(x-cx)/l*o,z+(z-cz)/l*o] as [number,number];}));
