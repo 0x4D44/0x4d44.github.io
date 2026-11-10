@@ -9,6 +9,7 @@ import {fileURLToPath} from 'node:url';
 import {deflateSync,crc32} from 'node:zlib';
 import {manualFrames,cdpPipe} from './signal-capture.mjs';
 import {createCaptureLifetime,cleanupCaptureBrowser} from './capture-runtime.mjs';
+import {pinParameters,scenePinFrom} from './scene-pin.mjs';
 import {ALL_KINDS,FIGURES,EMU_FIGURES,trainLayout} from '../core/train.ts';
 import {END_GAP,bodySpec,carPlan} from '../web/src/train.ts';
 import {shedLayout,shedBufferStops,standingTrainPose,stationPlatforms,platformFormationLimits,platformSouthEnd,pointInPolygon,worldToShed} from '../core/station.ts';
@@ -363,8 +364,9 @@ export function stationManifest(scene) {
 export const CATALOGUE_TIMEOUT_S={default:1800,max:3600};
 const CATALOGUE_FLAGS=['--mode','--dist','--out','--kinds','--views','--chrome','--poses','--exposure','--timeout-seconds'];
 /**
- * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|dusk] [--timeout-seconds N]`.
+ * `--mode catalogue --dist <dist> --out <dir> [--kinds a,b] [--views V01,V04] [--chrome none|path] [--poses <manifest>] [--exposure day|noon|dusk] [--timeout-seconds N]`.
  * Without `--views` a run takes V01-V10; `M01` (the motion clip), `C01` (the tightest curve) and `C02` (the curve of the radius that is typical of the page's track) are opt-in, `--views M01`, `--views C01,C02` or with others, and are taken at day only.
+ * A `noon` run (the page's clock pinned to midsummer noon, see EXPOSURES) takes V10 only, which is its default, and no other view.
  */
 export function parseCatalogueArgs(args) {
   const options=new Map();
@@ -390,7 +392,8 @@ export function parseCatalogueArgs(args) {
   if(!isExposure(exposure))throw new Error(`--exposure: unknown ${exposure}; expected ${EXPOSURE_IDS.join(',')}`);
   const seconds=Number(options.get('--timeout-seconds')??CATALOGUE_TIMEOUT_S.default);
   if(!Number.isFinite(seconds)||seconds<=0||seconds>CATALOGUE_TIMEOUT_S.max)throw new Error(`--timeout-seconds must be positive and at most ${CATALOGUE_TIMEOUT_S.max}`);
-  const views=list('--views',ASKABLE_VIEW_IDS,VIEW_IDS);
+  const views=list('--views',ASKABLE_VIEW_IDS,exposure==='noon'?['V10']:VIEW_IDS);
+  if(exposure==='noon'&&views.some(id=>id!=='V10'))throw new Error(`--views ${views.filter(id=>id!=='V10').join(',')}: the noon pass takes the station view V10 only; the neutral stage of the other views is lit by the fixed day rig`);
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
   if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
   if(views.includes(CURVE_NORMAL.id)&&exposure!=='day')throw new Error(`--views ${CURVE_NORMAL.id}: the curve is taken at day only, not ${exposure}`);
@@ -707,9 +710,16 @@ export const CATALOGUE_URL_QUERY='trains=none&board=0&tooltip=0&signals=0';
  * (`?time=` and `?weather=`; no weather request is made): the sun, sky, lamps and ground of 16:30 UTC on 2026-11-09 under clear skies. The poses of a pass
  * do not depend on its exposure: the sun-bearing rule turns the specimen by CATALOGUE.sunPosition (the day rig's sun) in both, and a dusk pass reuses the
  * poses of a day pass (--poses).
+ * `noon` pins the same two things to the daylight pin of the other capture tools (scene-pin.mjs: midsummer noon in London, 2026-06-21T12:00:00+01:00, under clear skies; the `+` of
+ * the offset is percent-encoded, or the page would read it as a space and ignore the time). It is how V10 is taken, the one view that stands in the page's scenery: under the day
+ * rig the page has no clock of its own to pin (`?time=` turns that rig off), so its station clocks showed the wall clock's time and its sidecars recorded `pinnedTime: null`, and
+ * the round-4 score found day V10 not time-pinned. A noon pass takes V10 only (the neutral stage of V01-V09 stays on the day rig), and reuses the frozen poses of an earlier
+ * pass (--poses), as a dusk pass does.
  */
+const NOON_PIN=scenePinFrom();
 export const EXPOSURES=Object.freeze({
   day:Object.freeze({id:'day',query:'sky=ref',rig:'fixed',pinnedTime:null,pinnedWeather:null}),
+  noon:Object.freeze({id:'noon',query:pinParameters(NOON_PIN),rig:'atmosphere',pinnedTime:NOON_PIN.time,pinnedWeather:NOON_PIN.weather}),
   dusk:Object.freeze({id:'dusk',query:'time=2026-11-09T16:30:00Z&weather=clear',rig:'atmosphere',pinnedTime:'2026-11-09T16:30:00Z',pinnedWeather:'clear'}),
 });
 export const EXPOSURE_IDS=Object.freeze(Object.keys(EXPOSURES));

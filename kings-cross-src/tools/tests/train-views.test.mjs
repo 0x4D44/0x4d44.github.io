@@ -16,11 +16,14 @@ import {buildTrain,bodySpec,carPlan} from '../../web/src/train.ts';
 import {trainNight} from '../../web/src/train-geom.ts';
 import * as F from '../train-framing.mjs';
 import * as C from '../train-capture.mjs';
+import {PIN_TIME,PIN_WEATHER,pinParameters,scenePinFrom} from '../scene-pin.mjs';
 
 const D2R=Math.PI/180,SUN=Math.atan2(-320,260)/D2R;
 const wrapDeg=a=>{let r=((a%360)+360)%360;return r>180?r-360:r;};
 const near=(a,b,tol=1e-6,note='')=>assert.ok(Math.abs(a-b)<=tol,`${note} ${a} is not ${b}`);
 const vec=(a,b,tol=1e-6,note='')=>{assert.equal(a.length,b.length,note);a.forEach((v,i)=>near(v,b[i],tol,`${note}[${i}]`));};
+/** A call that must succeed, so a mutation that makes it throw fails an assertion (the mutation driver counts a plain Error in a test as no kill). */
+const safely=work=>{let out;assert.doesNotThrow(()=>{out=work();});return out;};
 const formations=new Map(ALL_KINDS.map(kind=>[kind,C.describeFormation(kind)]));
 const plans=new Map(ALL_KINDS.map(kind=>[kind,F.planCatalogueViews(formations.get(kind))]));
 const any=(kind,suffix)=>{const v=plans.get(kind).find(x=>x.suffix===suffix);assert.ok(v,`${kind} has no ${suffix}`);return v;};
@@ -444,10 +447,10 @@ test('catalogue argv takes known options once with values, in rubric order, and 
  const defaults=parse([]);assert.deepEqual(defaults.kinds,ALL_KINDS);assert.deepEqual(defaults.views,F.VIEW_IDS);assert.equal(defaults.chrome,null);assert.equal(defaults.poses,null);assert.equal(defaults.exposure,'day','the default exposure is the day rig of the earlier rounds');assert.equal(defaults.timeoutMs,1800000);assert.equal(defaults.dist,'d');assert.equal(defaults.out,'o');
  const picked=parse(['--kinds','tl700x8,lner5','--views','V04,V01','--chrome','none','--poses','m.json','--timeout-seconds','90']);
  assert.deepEqual(picked.kinds,['lner5','tl700x8'],'catalogue order, not argv order');assert.deepEqual(picked.views,['V01','V04']);assert.equal(picked.chrome,'none');assert.equal(picked.poses,'m.json');assert.equal(picked.timeoutMs,90000);
- assert.equal(parse(['--timeout-seconds','3600']).timeoutMs,3600000);assert.equal(parse(['--exposure','dusk']).exposure,'dusk');assert.equal(parse(['--exposure','day']).exposure,'day');
+ assert.equal(parse(['--timeout-seconds','3600']).timeoutMs,3600000);assert.equal(safely(()=>parse(['--exposure','dusk'])).exposure,'dusk');assert.equal(parse(['--exposure','day']).exposure,'day');assert.equal(safely(()=>parse(['--exposure','noon'])).exposure,'noon');
  for(const [extra,message] of [[['--kinds','lner5,nope'],/--kinds: unknown nope/],[['--kinds','lner5,,hull5'],/unknown \(empty\)/],[['--kinds','lner5,lner5'],/lner5 repeated/],[['--views','V11'],/--views: unknown V11/],[['--views','v01'],/unknown v01/],
    [['--bogus','1'],/unknown catalogue option --bogus/],[['--kinds','lner5','--kinds','hull5'],/repeated catalogue option --kinds/],[['--kinds'],/missing value for --kinds/],[['--kinds','--views','V01'],/missing value for --kinds/],
-   [['--exposure','noon'],/--exposure: unknown noon; expected day,dusk/],[['--exposure','day','--exposure','dusk'],/repeated catalogue option --exposure/],[['--exposure'],/missing value for --exposure/],[['--timeout-seconds','0'],/positive and at most 3600/],[['--timeout-seconds','-5'],/positive/],[['--timeout-seconds','abc'],/positive/],[['--timeout-seconds','3601'],/at most 3600/],[['--chrome',''],/missing value for --chrome/]])
+   [['--exposure','midnight'],/--exposure: unknown midnight; expected day,noon,dusk/],[['--exposure','day','--exposure','dusk'],/repeated catalogue option --exposure/],[['--exposure'],/missing value for --exposure/],[['--timeout-seconds','0'],/positive and at most 3600/],[['--timeout-seconds','-5'],/positive/],[['--timeout-seconds','abc'],/positive/],[['--timeout-seconds','3601'],/at most 3600/],[['--chrome',''],/missing value for --chrome/]])
   assert.throws(()=>parse(extra),message,extra.join(' '));
  assert.throws(()=>C.parseCatalogueArgs(['--mode','catalogue','--out','o']),/missing --dist/);assert.throws(()=>C.parseCatalogueArgs(['--mode','catalogue','--dist','d']),/missing --out/);
  assert.throws(()=>C.parseCatalogueArgs(['--mode','portal','--dist','d','--out','o']),/--mode must be catalogue/);assert.throws(()=>C.parseCatalogueArgs(['--dist','d','--out','o']),/--mode must be catalogue/);
@@ -1498,12 +1501,16 @@ test('the in-page driver adds only the specimen for V10, keeps every piece of sc
 // (the next test uses the station scene, which is loaded above)
 test('an exposure pins the page to its lighting with a query appended to the base query; the day pass keeps the page\'s scenery, and the page must be lit as the pass says',()=>{
  const base='trains=none&board=0&tooltip=0&signals=0';
- assert.equal(C.CATALOGUE_URL_QUERY,base);assert.deepEqual(C.EXPOSURE_IDS,['day','dusk']);
+ assert.equal(C.CATALOGUE_URL_QUERY,base);assert.deepEqual(C.EXPOSURE_IDS,['day','noon','dusk']);
  assert.equal(C.catalogueUrlQuery(),`${base}&sky=ref`,'the default is the day pass');assert.equal(C.catalogueUrlQuery('day'),`${base}&sky=ref`);assert.equal(C.catalogueUrlQuery('dusk'),`${base}&time=2026-11-09T16:30:00Z&weather=clear`);
+ // the noon pass is the daylight pin of the other capture tools (scene-pin.mjs), and its `+01:00` is percent-encoded: a bare `+` reads back as a space, and the page then ignores the time
+ assert.equal(C.catalogueUrlQuery('noon'),`${base}&time=2026-06-21T12%3A00%3A00%2B01%3A00&weather=clear`);
+ assert.deepEqual([PIN_TIME,PIN_WEATHER],['2026-06-21T12:00:00+01:00','clear']);assert.equal(C.catalogueUrlQuery('noon'),`${base}&${pinParameters(scenePinFrom())}`);
+ for(const id of ['noon','dusk']){const q=new URLSearchParams(C.catalogueUrlQuery(id));assert.equal(q.get('time'),C.EXPOSURES[id].pinnedTime,`${id}: the page reads the instant the sidecar records`);assert.equal(q.get('weather'),C.EXPOSURES[id].pinnedWeather);}
  // ?bare=1 also removes the terrain, the city and the landmarks and draws a grid (web/src/main.ts), so V10 would not stand in the same station: neither pass pins it
  for(const id of C.EXPOSURE_IDS)assert.ok(!/(^|&)(bare|grid|terrain)(=|&|$)/.test(C.catalogueUrlQuery(id)),`${id}: scenery is the page as built`);
- assert.ok(!/time=|weather=/.test(C.catalogueUrlQuery('day')),'a pinned clock or weather turns the fixed rig off (main.ts fixedSky)');assert.ok(!/sky=/.test(C.catalogueUrlQuery('dusk')));
- assert.throws(()=>C.catalogueUrlQuery('noon'),/unknown exposure noon/);
+ assert.ok(!/time=|weather=/.test(C.catalogueUrlQuery('day')),'a pinned clock or weather turns the fixed rig off (main.ts fixedSky)');for(const id of ['noon','dusk'])assert.ok(!/sky=/.test(C.catalogueUrlQuery(id)),`${id} pins the clock, which turns the fixed rig off`);
+ assert.throws(()=>C.catalogueUrlQuery('midnight'),/unknown exposure midnight/);
  for(const inherited of ['toString','constructor','__proto__','hasOwnProperty']) {
   assert.throws(()=>C.catalogueUrlQuery(inherited),new RegExp(`unknown exposure ${inherited}`),`${inherited} is a property of every object, not an exposure`);
   assert.throws(()=>C.checkExposure(inherited,{lights:[],atmosphereState:null}),new RegExp(`unknown exposure ${inherited}`));
@@ -1511,6 +1518,7 @@ test('an exposure pins the page to its lighting with a query appended to the bas
  }
  assert.deepEqual(C.exposureRecord('day'),{id:'day',urlQuery:`${base}&sky=ref`,rig:'fixed',pinnedTime:null,pinnedWeather:null});
  assert.deepEqual(C.exposureRecord('dusk'),{id:'dusk',urlQuery:`${base}&time=2026-11-09T16:30:00Z&weather=clear`,rig:'atmosphere',pinnedTime:'2026-11-09T16:30:00Z',pinnedWeather:'clear'});
+ assert.deepEqual(C.exposureRecord('noon'),{id:'noon',urlQuery:`${base}&time=2026-06-21T12%3A00%3A00%2B01%3A00&weather=clear`,rig:'atmosphere',pinnedTime:'2026-06-21T12:00:00+01:00',pinnedWeather:'clear'});
  // the page must be lit as the pass says, or the run stops
  const lights=[{type:'HemisphereLight',intensity:1.25,position:[0,1,0]},{type:'DirectionalLight',intensity:1.7,position:[-320,520,260]}];
  C.checkExposure('day',{lights,atmosphereState:null});
@@ -1519,13 +1527,33 @@ test('an exposure pins the page to its lighting with a query appended to the bas
  C.checkExposure('dusk',{lights:[],atmosphereState:{timeMs:Date.parse('2026-11-09T16:30:00Z')}});
  assert.throws(()=>C.checkExposure('dusk',{lights,atmosphereState:null}),/the dusk pass needs the page's atmosphere, but the page has none/);
  assert.throws(()=>C.checkExposure('dusk',{lights,atmosphereState:{timeMs:Date.parse('2026-11-09T16:31:00Z')}}),/the page clock is 2026-11-09T16:31:00\.000Z, not the pinned 2026-11-09T16:30:00Z/);
+ // the noon pass: the page's own clock, at midsummer noon (11:00 UTC), and no other
+ assert.doesNotThrow(()=>C.checkExposure('noon',{lights:[],atmosphereState:{timeMs:Date.parse('2026-06-21T11:00:00Z')}}),'the page clock at midsummer noon (11:00 UTC) is the pinned instant');
+ assert.throws(()=>C.checkExposure('noon',{lights,atmosphereState:null}),/the noon pass needs the page's atmosphere, but the page has none/);
+ assert.throws(()=>C.checkExposure('noon',{lights,atmosphereState:{timeMs:Date.parse('2026-06-21T11:01:00Z')}}),/the page clock is 2026-06-21T11:01:00\.000Z, not the pinned 2026-06-21T12:00:00\+01:00/);
+ assert.throws(()=>C.checkExposure('noon',{lights,atmosphereState:{timeMs:Date.parse('2026-11-09T16:30:00Z')}}),/the page clock is 2026-11-09T16:30:00\.000Z, not the pinned 2026-06-21T12:00:00\+01:00/,"dusk's clock is not noon's");
  assert.throws(()=>C.checkExposure('night',{}),/unknown exposure night/);
  // the page address and the head of the manifest carry the exposure
  assert.equal(C.cataloguePageUrl(4321,'day'),`http://127.0.0.1:4321/kings-cross/?${base}&sky=ref`);assert.equal(C.cataloguePageUrl(4321,'dusk'),`http://127.0.0.1:4321/kings-cross/?${base}&time=2026-11-09T16:30:00Z&weather=clear`);
+ assert.equal(C.cataloguePageUrl(4321,'noon'),`http://127.0.0.1:4321/kings-cross/?${base}&time=2026-06-21T12%3A00%3A00%2B01%3A00&weather=clear`);
  const host={os:{platform:'darwin'},macModel:'Mac17,6',git:{head:'h'}},head=C.catalogueManifest({exposure:'dusk',stationScene:station,host,build:{indexSha256:'x'},poses:{file:'/p.json',sha256:'abc'},generated:'2026-11-09T00:00:00.000Z'});
  assert.deepEqual(head.exposure,C.exposureRecord('dusk'));assert.deepEqual([head.rubric,head.schema,head.generated,head.posesFrom,head.kinds,head.macModel,head.build],[F.CATALOGUE.rubric,'kx-catalogue-manifest/1','2026-11-09T00:00:00.000Z',{file:'/p.json',sha256:'abc'},{},'Mac17,6',{indexSha256:'x'}]);
  assert.match(head.sunRule.text,/always uses the day rig's sun, in every exposure/);assert.deepEqual(head.sunRule.sunPosition,[-320,520,260]);assert.deepEqual(head.station,C.stationManifest(station));
  const bare=C.catalogueManifest({exposure:'day',stationScene:null,host,build:{},poses:null});assert.deepEqual([bare.station,bare.posesFrom,bare.exposure.id],[null,null,'day']);assert.equal(typeof bare.generated,'string');
+});
+
+test('a noon pass takes the station view V10 and nothing else: the neutral stage of V01-V09 is lit by the fixed day rig, which pinning a clock turns off',()=>{
+ const args=(...rest)=>['--mode','catalogue','--dist','d','--out','o',...rest];
+ const parsed=(...rest)=>safely(()=>C.parseCatalogueArgs(args(...rest)));
+ const noon=parsed('--exposure','noon');assert.deepEqual([noon.exposure,noon.views],['noon',['V10']],'V10 is the default of a noon pass');
+ assert.deepEqual(parsed('--exposure','noon','--views','V10').views,['V10']);
+ assert.deepEqual(parsed('--exposure','day').views,F.VIEW_IDS,'the day pass keeps the whole V01-V10');assert.deepEqual(parsed('--exposure','dusk').views,F.VIEW_IDS,'and so does the dusk pass');
+ assert.deepEqual(parsed('--exposure','dusk','--views','V09').views,['V09'],'the dusk pass takes the lamp views V09, which a noon pass may not');
+ for(const [views,named] of [['V01','V01'],['V09','V09'],['V10,V02','V02'],['V01,V10','V01'],['V09,V01','V01,V09'],['M01','M01'],['C01','C01'],['V10,C02','C02']])
+  assert.throws(()=>C.parseCatalogueArgs(args('--exposure','noon','--views',views)),new RegExp(`--views ${named}: the noon pass takes the station view V10 only`),`--views ${views} is not for a noon pass`);
+ assert.throws(()=>C.parseCatalogueArgs(args('--exposure','noon','--views','V10,V10')),/--views: V10 repeated/);
+ // V10 is the one view of the day pass that stands in the page's scenery, and a day pass may still take it (the frozen poses are searched there): it is the noon pass that pins its clock
+ assert.deepEqual(parsed('--views','V10').views,['V10']);assert.equal(C.EXPOSURES.day.pinnedTime,null);assert.notEqual(C.EXPOSURES.noon.pinnedTime,null);
 });
 
 test('a view is photographed after the page is checked for chrome, then without the specimen, and for a whole-car subject with only that car',async()=>{
@@ -1596,6 +1624,13 @@ test('a V10 manifest entry freezes the placement and the search, and its sidecar
  assert.deepEqual([s?.placement?.id,s?.distanceM,s?.azimuthDeg,s?.platform,s?.platformHeightM,s?.scenery,s?.ground],[B,25,ok.azimuthDeg,ok.platform,.9,'kept: x','the page terrain']);near(s?.horizontalDistanceM,25.5,1e-12,"the distance the page measured, not the planned one");near(s?.eyeAbovePlatformM,1.7,1e-12);assert.equal(s?.search,ok.search);
  const stage=C.catalogueSidecar({kind:'lner5',view:view('lner5','front-3m'),file:'f.png',formation:formations.get('lner5'),session,host:{os:{}},build:{},state:{hidden:[],hiddenDom:[],stage:{}},result:{verdict:{ok:true},live:{...live,local:undefined}},timings:{}});
  assert.equal('station' in stage,false,'only V10 has a station block');vec(stage.pose.trainLocal.eye,view('lner5','front-3m').eye,1e-12,'a stage view reports the pose it was planned in');
+ // the day pass has no clock of its own to pin, and says so; the noon pass (the one V10 is taken in) records the clock and the weather it pinned, the page's atmosphere at that instant and the rig
+ assert.deepEqual([sidecar.renderState.exposure,sidecar.renderState.rig,sidecar.renderState.pinnedTime,sidecar.renderState.pinnedWeather],['day','fixed',null,null]);
+ const midsummer={timeMs:Date.parse('2026-06-21T11:00:00Z'),iso:'2026-06-21T11:00:00.000Z',sun:{elevationDeg:61.2,azimuthDeg:180},weather:{label:'clear sky',visibilityM:null},rig:{daylight:1,lampLevel:0}};
+ const noon=C.catalogueSidecar({kind:'lner5',view:ok,file:'lner5-station-25m.png',formation:formations.get('lner5'),session,host:{os:{platform:'darwin'},macModel:'M',git:{head:'h'}},build:{indexSha256:'x'},
+  state:{hidden:[],hiddenDom:['h1'],stage:null,scenery:'kept: x',ground:'the page terrain'},result:{verdict:{ok:true},live:{...live,atmosphere:midsummer}},timings:{},exposure:C.exposureRecord('noon')});
+ assert.deepEqual([noon.renderState.exposure,noon.renderState.urlQuery,noon.renderState.rig,noon.renderState.pinnedTime,noon.renderState.pinnedWeather],['noon',C.catalogueUrlQuery('noon'),'atmosphere','2026-06-21T12:00:00+01:00','clear']);
+ assert.deepEqual(noon.renderState.atmosphere,midsummer);assert.equal(noon.renderState.trainNight,0);assert.match(noon.renderState.trainNightSource,/rig\.lampLevel/);assert.equal(noon.station?.placement?.id,B,'the station block is there under noon too');
 });
 
 test('catalogue preflight and frozen poses cover V10: the planned counts, the frozen reuse, and a refusal when a camera or placement moved',async()=>{
@@ -1619,6 +1654,11 @@ test('catalogue preflight and frozen poses cover V10: the planned counts, the fr
   await assert.rejects(run('--kinds','lner5','--views','V10','--poses',poses),/lner5\/station-150m-coach view missing from the frozen poses/);
   await run('--kinds','lner5','--views','V02','--poses',poses).then(()=>assert.fail('the stage views are missing from this manifest'),e=>assert.match(e.message,/lner5\/front-3m view missing from the frozen poses/));
   await save(manifest());const [only]=await ok('--kinds','lner5','--views','V10','--poses',poses);assert.equal(only.posesFrozen,true,'V01-V09 entries are not needed when only V10 is captured');
+  // the noon pass (the page's clock pinned to midsummer noon) takes V10 alone, by default, on the frozen poses of an earlier pass, which it needs as the dusk pass does
+  const [noon]=await ok('--kinds','lner5','--exposure','noon','--poses',poses);assert.deepEqual([noon.exposure,noon.views,noon.posesFrozen,noon.planned],['noon',['V10'],true,{lner5:{OK:5,GAP:1}}],'V10 by default, and nothing of the stage');
+  await assert.rejects(run('--kinds','lner5','--exposure','noon'),/--exposure noon reuses the poses of a day pass/);
+  await save(manifest(m=>{m.kinds.lner5.views['station-25m'].plan.eye[0]+=.5;}));
+  await assert.rejects(run('--kinds','lner5','--exposure','noon','--poses',poses),/lner5\/station-25m pose differs from the frozen pose at \/eye\/0/,'a noon pass refuses a moved camera, as every pass does');await save(manifest());
   const manifestOfRun=C.stationManifest(station);assert.deepEqual([manifestOfRun.stopIndex,manifestOfRun.stop?.id,manifestOfRun.orientations,manifestOfRun.platformHeightM,manifestOfRun.eyeAbovePlatformM,manifestOfRun.noseToStopM],[3,station.stops[3].id,F.STATION_ORIENTATIONS,.9,1.7,1.5]);
   // CHANGED (V10 thinned-out neighbours): the manifest's search block names the two passes
   assert.deepEqual(manifestOfRun.search,{azimuthStepDeg:1,maxCandidates:48,minSeparationDeg:2,edgeClearM:.5,frontAngleDeg:45,minScreenSpan:.03,passes:['spread','neighbour']});assert.equal(manifestOfRun.trackData.sha256,station.sha256);assert.match(manifestOfRun.rule,/nose at the buffers first/);assert.deepEqual(manifestOfRun.platforms.slice(0,3),station.platforms.slice(0,3).map(p=>p.ref));
