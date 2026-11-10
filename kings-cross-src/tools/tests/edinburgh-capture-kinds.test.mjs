@@ -32,7 +32,8 @@ test('a Waverley formation that the planner cannot trust is refused, and a row w
 
 test('the capturable Waverley kinds are exactly the fleet rows with a formation, then exactly the capture pairs, and the default run is unchanged', () => {
   const singles=EDINBURGH_FLEET.filter(r=>r.formation).map(r=>r.kind);
-  assert.deepEqual(singles,['sr385x3','sr385x4'],'the single-unit capture kinds, pinned');
+  // a family that adds a captured row adds its kind here, in fleet order
+  assert.deepEqual(singles,['sr385x3','sr385x4','sr334x3','tpe397x5','xc220x4','xc221x5','srhstx4','srhstx5','sr170x3','sr158x2'],'the single-unit capture kinds, pinned');
   assert.deepEqual(EDINBURGH_CAPTURE_PAIRS.map(p=>[p.kind,[...p.units]]),[['sr385x3+sr385x4',['sr385x3','sr385x4']]],'the capture-only pairs, pinned');
   assert.deepEqual([...C.EDINBURGH_CAPTURE_KINDS],[...singles,'sr385x3+sr385x4'],'singles first, then pairs, nothing else');
   assert.ok(EDINBURGH_CAPTURE_PAIRS.every(p=>!EDINBURGH_FLEET.some(r=>r.kind===p.kind)&&p.units.every(u=>singles.includes(u))),'a pair is never a fleet row, and its units are capturable singles');
