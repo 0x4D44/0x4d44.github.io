@@ -61,8 +61,10 @@ LANES = {
         'lightWaverleyNight: the city blocks get lit windows', 'the meshes the Scottish night lights are the ones the real scene builds', "the Balmoral's windows are the facade texture's",
         'the Scottish climate lights the Scottish night', 'the Scottish scene has its street lamps a moment after it', 'a lamp layer that arrives after dusk comes in lit',
         'a climate that ends before its lamps have loaded', 'a scene with no ground to stand lamps on has none', "the Scottish clear air is hazier than London's"]),
-    # the squeeze of the build: a hook must find three's own text and nothing the page wrote (tools/tests/three-squeeze*.test.ts)
-    'hooks': Lane(['tools/tests/three-squeeze.test.ts', 'tools/tests/three-squeeze-hooks.test.ts']),
+    # the squeeze of the build: a hook must find three's own text and nothing the page wrote (tools/tests/three-squeeze*.test.ts); only the two tests that scan the page's hooks are judged here
+    # (the rest of the squeeze tests belong to lighting.py, which must see each of them fail)
+    'hooks': Lane(['tools/tests/three-squeeze.test.ts', 'tools/tests/three-squeeze-hooks.test.ts'],
+                  ['every match the page makes on three', 'every hook of the real scene does to the squeezed program']),
 }
 
 
