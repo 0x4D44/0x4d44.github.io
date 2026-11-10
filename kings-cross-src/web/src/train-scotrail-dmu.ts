@@ -616,10 +616,13 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     }
     return { x, s: s + setBack(sn, y) };
   };
+  // the yellow line over the first-class windows of the 170's DMCL, from behind the cab to the first door (scotrail170-02); the white
+  // dot field, which runs on 1.25 m past the cab side window, stops 2 cm short of it (a lone dot sat on the line's start)
+  const firstClass = car.type === 'DMCL' ? { from: look.cabWindow.s1 + 0.2, to: (plan.doors[0] ?? 3) - dw / 2 - 0.12 } : null;
+  if (firstClass) holes.push([firstClass.from - 0.02, firstClass.to + 0.02, look.windowY[1] + 0.05, look.windowY[1] + 0.12]);
   saltireDots(detail, car, plan, look, sideX, Z, holes, noseSide);
-  // the yellow line over the first-class windows of the 170's DMCL, from behind the cab to the first door (scotrail170-02)
-  if (car.type === 'DMCL') {
-    const from = look.cabWindow.s1 + 0.2; const to = (plan.doors[0] ?? 3) - dw / 2 - 0.12;
+  if (firstClass) {
+    const { from, to } = firstClass;
     for (const side of [-1, 1]) {
       const x0 = side * W; const x1 = side * (W + 0.0045);
       boxS(detail, Math.min(x0, x1), Math.max(x0, x1), look.windowY[1] + 0.07, look.windowY[1] + 0.1, from, to, SR_YELLOW);
@@ -810,12 +813,18 @@ function saltireDots(soup: Soup, car: ScotrailDmuCar, plan: CarPlanDmu, look: Lo
   /** A dot centred (s, y) on the side; on the nose it is laid on the loft (its half-width and rake there), a few mm proud. */
   const dot = (s: number, y: number, r: number, colour: number, onNose: boolean): void => {
     if (r < 0.012 || !free(s, y, r)) return;
+    // each rim point stands out from the body at its own height and place along the car: below the waist the side draws in and on the
+    // nose the loft narrows, so a disc set at its centre's half-width stood ~1 cm proud low on the side (through the wordmark) and sank
+    // into the loft on the nose (clipped dots). The rim stays a true circle seen side-on, round the centre's place; the fan's centre is
+    // the body's point there, not the rim's mean, which a dot over the section's lower knee pulls inside the body.
     const at = onNose ? nose(s, y) : { x: sideX(y), s };
+    const xAt = (ds: number, yy: number): number => (onNose ? nose(s + ds, yy).x : sideX(yy));
+    const rim = ellipse(0, y, r, r, 10).map(([ds, yy]) => ({ ds, yy, x: xAt(ds, yy) }));
     for (const side of [-1, 1]) {
-      // off the nose each rim point lies on the side at its own height, so below the waist, where the side draws in, no dot's lower
-      // edge stands off it (a centre-height disc stood ~1 cm proud there, through the wordmark)
-      const xAt = (yy: number): number => side * ((onNose ? at.x : sideX(yy)) + 0.005);
-      soup.fan(ellipse(Z(at.s), y, r, r, 10).map(([z, yy]): V3 => [xAt(yy), yy, z]), [side, 0, 0], col(colour));
+      const n: V3 = [side, 0, 0];
+      const c0: V3 = [side * (at.x + 0.005), y, Z(at.s)];
+      const pts = rim.map(({ ds, yy, x }): V3 => [side * (x + 0.005), yy, Z(at.s + ds)]);
+      for (let k = 0; k < pts.length; k++) soup.tri([c0, pts[k]!, pts[(k + 1) % pts.length]!], [n, n, n], col(colour));
     }
   };
   const dw = SCOTRAIL_DMU_FIGURES[look.family].doorWidth.value;

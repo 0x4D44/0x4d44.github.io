@@ -492,6 +492,68 @@ test('ScotRail 170 face: round headlight and tail lenses wholly on the face, in 
   disposeScotrailDmu(root);
 });
 
+test('ScotRail DMU dots: every point of every dot on the leading cab car lies just outside the body, on the nose as on the drawn-in side', () => {
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const root = buildScotrailDmu(kind);
+    const g = root.getObjectByName('car-0')!;
+    // the shell and the dots share the car's frame; cast in it, from 0.3 m outboard of each dot point straight in (-x), either face
+    const shell = new THREE.Mesh((g.getObjectByName('body-shell') as THREE.Mesh).geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+    shell.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster();
+    const detail = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    const p = detail.getAttribute('position'); const c = detail.getAttribute('color');
+    for (const [hex, name] of [[DOT_WHITE, 'white'], [DOT_BLUE, 'blue']] as const) {
+      const k = col(hex);
+      const seen = new Set<string>();
+      let worst = Infinity; let at = '';
+      for (let i = 0; i < p.count; i++) {
+        if (p.getX(i) < 0 || Math.abs(c.getX(i) - k.r) > 1e-6 || Math.abs(c.getY(i) - k.g) > 1e-6 || Math.abs(c.getZ(i) - k.b) > 1e-6) continue;
+        const key = `${p.getX(i).toFixed(4)},${p.getY(i).toFixed(4)},${p.getZ(i).toFixed(4)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        ray.set(new THREE.Vector3(p.getX(i) + 0.3, p.getY(i), p.getZ(i)), new THREE.Vector3(-1, 0, 0));
+        const hit = ray.intersectObject(shell, false)[0];
+        if (!hit) continue;
+        const gap = p.getX(i) - hit.point.x;
+        if (gap < worst) { worst = gap; at = key; }
+      }
+      assert.ok(seen.size > 100, `${kind}: ${seen.size} ${name} dot points`);
+      assert.ok(worst >= 0.001, `${kind}: a ${name} dot point ${(worst * 1000).toFixed(1)} mm off the body at ${at} (buried if negative)`);
+    }
+    disposeScotrailDmu(root);
+  }
+});
+
+test('ScotRail 170 first-class line: the white dot field keeps 2 cm clear of the yellow line over the DMCL windows', () => {
+  const kind = 'sr170x3';
+  const root = buildScotrailDmu(kind);
+  const look = scotrailDmuLook('turbostar');
+  const ly0 = look.windowY[1] + 0.07; const ly1 = look.windowY[1] + 0.1;
+  let cars = 0;
+  for (const car of scotrailDmuLayout(kind).cars) {
+    const g = root.getObjectByName(`car-${car.index}`)!;
+    let line = false;
+    g.traverse((o) => { if (o.name === 'first-class-line') line = true; });
+    if (!line) continue;
+    cars++;
+    const detail = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    const p = detail.getAttribute('position'); const c = detail.getAttribute('color');
+    const is = (i: number, hex: number): boolean => { const k = col(hex); return Math.abs(c.getX(i) - k.r) < 1e-6 && Math.abs(c.getY(i) - k.g) < 1e-6 && Math.abs(c.getZ(i) - k.b) < 1e-6; };
+    // the line's length along the car: the +x side's yellow at its height
+    const zs: number[] = [];
+    for (let i = 0; i < p.count; i++) if (p.getX(i) > 1 && is(i, SR_YELLOW) && p.getY(i) >= ly0 - 1e-4 && p.getY(i) <= ly1 + 1e-4) zs.push(p.getZ(i));
+    assert.ok(zs.length > 0, `car ${car.index}: the line drawn`);
+    const z0 = Math.min(...zs) - 0.02; const z1 = Math.max(...zs) + 0.02;
+    const near: string[] = [];
+    for (let i = 0; i < p.count; i++) {
+      if (p.getX(i) > 0 && is(i, DOT_WHITE) && p.getY(i) > ly0 - 0.02 && p.getY(i) < ly1 + 0.02 && p.getZ(i) > z0 && p.getZ(i) < z1) near.push(`${p.getY(i).toFixed(3)},${p.getZ(i).toFixed(3)}`);
+    }
+    assert.deepEqual([...new Set(near)], [], `car ${car.index}: white dot points on the yellow line`);
+  }
+  assert.ok(cars >= 1, 'a DMCL with its first-class line');
+  disposeScotrailDmu(root);
+});
+
 test('ScotRail DMU wordmark: no plate behind it: the blue dots run on under the lettering, and no white dot comes near it', () => {
   for (const kind of SCOTRAIL_DMU_KINDS) {
     const root = buildScotrailDmu(kind);
