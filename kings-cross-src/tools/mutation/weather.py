@@ -783,7 +783,7 @@ MUTATIONS = [
     ('the rain is given no wind', ATMOSPHERE, 'windMs: state.weather.windMs, daylight', 'windMs: 0, daylight'),
     ('the rain ignores the daylight', ATMOSPHERE, 'daylight: state.rig.daylight', 'daylight: 1'),
     ('disposal leaves the roofs', ATMOSPHERE, '      applyCover(null);\n      precip.dispose();', '      precip.dispose();'),
-    ('disposal leaves the precipitation allocated', ATMOSPHERE, 'precip.dispose();\n      nightLights?.dispose();', 'nightLights?.dispose();'),
+    ('disposal leaves the precipitation allocated', ATMOSPHERE, 'precip.dispose();\n      dialLights?.dispose();', 'dialLights?.dispose();'),
     ('disposal leaves the night lights allocated', ATMOSPHERE, 'nightLights?.dispose();', ''),
     ('disposal leaves the sun disc on the dome', ATMOSPHERE, 'world.sky.remove(sunSprite, stars);', ''),
     ('disposal leaves the sun disc material allocated', ATMOSPHERE, 'sunSprite.material.dispose();', ''),
