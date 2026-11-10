@@ -275,11 +275,15 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
       // a cluster of overlapping lobes (ISLAND_CANOPY.cluster), not one lollipop
       for (let l = 0; l < CL.lobes; l++) {
         const a = (t.x * 1.7 + t.z * .9) % 6.283 + l * 6.283 / Math.max(1, CL.lobes - 1), off = l ? CL.spread * t.radius : 0, r = t.radius * (l ? CL.side : CL.main);
-        const lq = new THREE.Quaternion().setFromAxisAngle(up, (a * 3.3) % 6.283);
-        mx.compose(new THREE.Vector3(t.x + Math.cos(a) * off, t.y + t.height - t.crown / 2 - (l ? CL.drop * t.crown : 0), t.z + Math.sin(a) * off), lq, new THREE.Vector3(r, t.crown / 2 * (l ? .85 : 1), r));
+        // a turn about a tilted axis, and uneven x and z, so the outline is not a hexagon (ISLAND_CANOPY.cluster tilt, squash)
+        const h1 = Math.abs(Math.sin(t.x * 12.9898 + t.z * 78.233 + l * 37.719)), h2 = Math.abs(Math.sin(t.x * 39.346 + t.z * 11.135 + l * 83.155)), h3 = Math.abs(Math.sin(t.x * 73.156 + t.z * 52.235 + l * 9.151));
+        const tiltA = h1 * 6.283, axis = new THREE.Vector3(Math.cos(tiltA) * Math.sin(CL.tilt * h2), Math.cos(CL.tilt * h2), Math.sin(tiltA) * Math.sin(CL.tilt * h2)).normalize();
+        const lq = new THREE.Quaternion().setFromAxisAngle(axis, (a * 3.3) % 6.283), sx = CL.squash[0] + (CL.squash[1] - CL.squash[0]) * h3, sz = CL.squash[0] + (CL.squash[1] - CL.squash[0]) * (1 - h3);
+        mx.compose(new THREE.Vector3(t.x + Math.cos(a) * off, t.y + t.height - t.crown / 2 - (l ? CL.drop * t.crown : 0), t.z + Math.sin(a) * off), lq, new THREE.Vector3(r * sx, t.crown / 2 * (l ? .85 : 1), r * sz));
         crowns.setMatrixAt(i * CL.lobes + l, mx);
         const k = CROWNS.lift * (l ? .92 + .1 * l : 1), grey = (t.rgb[0] + t.rgb[1] + t.rgb[2]) / 3, tone = (v: number) => (v + (grey - v) * CL.mute) * k;
         c.setRGB(tone(t.rgb[0]), tone(t.rgb[1]), tone(t.rgb[2]), THREE.SRGBColorSpace);
+        c.b = Math.min(c.b, c.g * CL.blue); c.r = Math.max(c.r, c.g * CL.red); // olive, not teal (linear)
         const top = Math.max(c.r, c.g, c.b); if (top < CL.floor) c.multiplyScalar(CL.floor / top); // the floor, in linear light
         crowns.setColorAt(i * CL.lobes + l, c);
       }

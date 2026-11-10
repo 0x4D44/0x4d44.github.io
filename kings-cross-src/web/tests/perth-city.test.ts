@@ -294,6 +294,12 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
     // round 6: the floor is in linear light, at least 0.15 (round 5's 0.07, set in sRGB, let a crown go near-black)
     assert.ok(CL.floor >= .15, 'crown floor');
     for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(Math.max(lc.r, lc.g, lc.b) >= CL.floor - 1e-6, 'no near-black crown'); }
+    // round 7 (round-6 score: a teal crown): olive, blue at most half of green, red at least 0.5 of it (linear)
+    for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(lc.b <= lc.g * .5 + 1e-6 && lc.r >= lc.g * .5 - 1e-6, `olive, not teal: ${lc.r.toFixed(3)} ${lc.g.toFixed(3)} ${lc.b.toFixed(3)}`); }
+    // and outlines not hexagons: lobes turned off upright, and scaled unevenly across x and z
+    let tilted = 0, uneven = 0; const mq = new THREE.Matrix4(), pq = new THREE.Vector3(), qq = new THREE.Quaternion(), sq = new THREE.Vector3(), yq = new THREE.Vector3();
+    for (let i = 0; i < isl.count; i++) { isl.getMatrixAt(i, mq); mq.decompose(pq, qq, sq); if (yq.set(0, 1, 0).applyQuaternion(qq).y < Math.cos(.1)) tilted++; if (Math.abs(sq.x / sq.z - 1) > .1) uneven++; }
+    assert.ok(tilted > isl.count * .5 && uneven > isl.count * .5, `broken outlines: ${tilted} tilted, ${uneven} uneven of ${isl.count}`);
     // soft, not faceted: the lobe's normals lean up towards the sky, so its few facets do not show as dice (every normal faces the sky)
     const nl = isl.geometry.getAttribute('normal'); let low = 1; for (let i = 0; i < nl.count; i++) low = Math.min(low, nl.getY(i));
     assert.ok(low > 0, `soft lobe normals: lowest ${low.toFixed(2)}`);

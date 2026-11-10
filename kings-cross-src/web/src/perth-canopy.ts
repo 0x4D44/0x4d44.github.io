@@ -59,7 +59,7 @@ export function inEyeClear(x: number, z: number): boolean {
  *  by the summit's view with SIGHT.island (trees standing in the river may hide more of the channel behind them). Moncreiffe Island's
  *  long 54,000 m2 wood stays canopy: it lies along the river in the panorama. */
 export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5,
-  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .15}} as const;
+  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .15, blue: .5, red: .55, tilt: .4, squash: [.8, 1.2] as const}} as const;
 /** Round 5 (round-4 score, C3: "lollipops"): each island tree's crown is a cluster of `cluster.lobes` overlapping lobes, the top one
  *  `main` of the crown's radius and the others `side` of it, set out `spread` of it and `drop` of the crown's depth lower, each turned and
  *  toned a little apart, muted `mute` towards grey and lifted so its brightest channel is at least `floor` (linear; round 6: 0.07 let
@@ -67,6 +67,9 @@ export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, 
 /** Round 6 (round-5 score: the lobes read as faceted dice and black rocks). A low sphere (`w` x `h` segments, so no triangles are added)
  *  whose normals are bent `soft` of the way towards straight up: the lobe is shaded as a soft, sky-lit mass, not by its few facets, and a
  *  backlit lobe still takes the sky's light on its face. */
+/** Round 7 (round-6 score: one crown teal; hexagon outlines): each lobe's blue is capped at `blue` of its green and its red lifted to
+ *  `red` of it (linear), an olive, not teal; and each lobe turns about a tilted axis (up to `tilt` rad off upright) and is scaled
+ *  `squash` across x and z apart, so the 6-sided outline breaks. No triangles. */
 export const SOFT_LOBE = {soft: .45} as const;
 export function softLobe(w: number, h: number): THREE.SphereGeometry {
   const g = new THREE.SphereGeometry(1, w, h), n = g.getAttribute('normal'), v = new THREE.Vector3();
