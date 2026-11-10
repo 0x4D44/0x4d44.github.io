@@ -18,7 +18,8 @@ import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
-import { GARDENS, PERTH_RESIDENTIAL, perthGardens } from '../src/perth-gardens.ts';
+import { GARDENS, PERTH_RESIDENTIAL, perthGardens, segDist, streetsNear } from '../src/perth-gardens.ts';
+import type { GardenRect } from '../src/waverley-city-ground.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
 import { PERTH_CLEAR_AIR, PERTH_HAZE, WAVERLEY_HAZE } from '../src/station-weather.ts';
@@ -380,6 +381,33 @@ test('Perth\'s residential land is painted as gardens, darker and broken, not pa
   assert.ok(mean < lum(GROUND_COLOURS.park) - .02, `gardens ${mean.toFixed(3)} against park ${lum(GROUND_COLOURS.park).toFixed(3)}`);
   assert.ok(lum(GARDENS.hedgeTone) < mean && lum(GARDENS.crownTone) < mean, 'hedges and crowns darker than the plots');
   assert.ok(g.crowns.length > g.plots.length / 3, `tree-dotted: ${g.crowns.length} crowns`);
+});
+
+test('Perth\'s garden plots run with their streets in varied sizes, and the town centre\'s bare paving is broken into yards (round 3, C6)', () => {
+  const g = perthGardens(), quarter = Math.PI / 2;
+  const off = (a: number, b: number) => { const d = Math.abs(((a - b) % quarter + quarter) % quarter); return Math.min(d, quarter - d); };
+  // aligned: a plot within 15 m of a street lies within 12 degrees (modulo a right angle) of that street, for most plots
+  const check = (rects: readonly GardenRect[], what: string) => {
+    let near = 0, along = 0;
+    for (const r of rects) {
+      const cx = r.x + r.w / 2, cz = r.z + r.d / 2, segs = streetsNear(cx, cz, 15); if (!segs.length) continue; near++;
+      const [a, b] = segs.sort((p, q) => segDist(cx, cz, p) - segDist(cx, cz, q))[0]!;
+      if (off(r.rot ?? 0, Math.atan2(b[1] - a[1], b[0] - a[0])) < 12 * Math.PI / 180) along++;
+    }
+    assert.ok(near > 200 && along / near > .7, `${what} along their streets: ${along} of ${near}`);
+  };
+  check(g.plots, 'plots');
+  // varied: widths and depths spread over several metres, not one size
+  const spread = (v: number[]) => Math.max(...v) - Math.min(...v);
+  assert.ok(spread(g.plots.map(p => p.w)) > 10 && spread(g.plots.map(p => p.d)) > 12 && new Set(g.plots.map(p => Math.round(p.w))).size >= 8, 'varied plot sizes');
+  // the town centre: patches outside the residential land, several tones with none over half, street-aligned
+  const patches = g.patches ?? [];
+  assert.ok(patches.length > 2000, `town patches: ${patches.length}`);
+  const pip = (x: number, z: number, p: readonly (readonly number[])[]) => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1]! > z) !== (p[j]![1]! > z) && x < (p[j]![0]! - p[i]![0]!) * (z - p[i]![1]!) / (p[j]![1]! - p[i]![1]!) + p[i]![0]!) yes = !yes; return yes; };
+  for (const r of patches.filter((_, i) => i % 41 === 0)) assert.ok(!PERTH_RESIDENTIAL.some(rs => pip(r.x + r.w / 2, r.z + r.d / 2, rs[0]!) && !rs.slice(1).some(h => pip(r.x + r.w / 2, r.z + r.d / 2, h))), 'patches stay off the gardens');
+  const share = new Map<string, number>(); for (const r of patches) share.set(r.tone, (share.get(r.tone) ?? 0) + 1);
+  assert.ok(share.size >= 5 && Math.max(...share.values()) / patches.length < .4, `patch tones: ${[...share.values()]}`);
+  check(patches, 'patches');
 });
 
 test('Perth\'s stone tints are grey-buff: cooler than round 1\'s buff-brown, still a touch warmer than Edinburgh\'s (round 2, C5)', () => {

@@ -207,7 +207,9 @@ export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
 /** Gardens painted over land use (Perth's residential land, perth-gardens.ts): plots in their tones, hedges round them and tree crowns,
  *  clipped to `rings`. */
-export interface GardenPaint {rings:Ring[][];plots:{x:number;z:number;w:number;d:number;tone:string}[];crowns:{x:number;z:number;r:number}[];hedge:number;hedgeTone:string;crownTone:string}
+export interface GardenPaint {rings:Ring[][];plots:GardenRect[];crowns:{x:number;z:number;r:number}[];hedge:number;hedgeTone:string;crownTone:string;/** rects painted under the land use, over the bare paving (Perth's yards and back greens) */patches?:GardenRect[]}
+/** A painted rect: corner (x, z), w along x and d along z before it is turned `rot` radians about its centre. */
+export interface GardenRect {x:number;z:number;w:number;d:number;tone:string;rot?:number}
 function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
@@ -216,6 +218,8 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  const path=(rings:readonly Ring[])=>{g.beginPath();for(const r of rings){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}};
  const line=(l:Ring)=>{g.beginPath();l.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));};
  g.fillStyle=GROUND_COLOURS.paving;g.fillRect(0,0,W,H);
+ const rect=(r:GardenRect,stroke=false)=>{if(!r.rot){(stroke?g.strokeRect:g.fillRect).call(g,(r.x-x0)*s,(r.z-z0)*s,r.w*s,r.d*s);return;}g.save();g.translate((r.x+r.w/2-x0)*s,(r.z+r.d/2-z0)*s);g.rotate(r.rot);(stroke?g.strokeRect:g.fillRect).call(g,-r.w/2*s,-r.d/2*s,r.w*s,r.d*s);g.restore();};
+ if(gardens?.patches)for(const r of gardens.patches){g.fillStyle=r.tone;rect(r);}
  const cell=4,cols=Math.ceil((x1-x0)/cell),slopes=new Float32Array(cols*Math.ceil((z1-z0)/cell)),slope=(x:number,z:number)=>slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)];
  for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)]=slopeAt(x+cell/2,z+cell/2);
  // Unmapped ground steeper than UNMAPPED_ROCK_DEG is rough rock, not paving: nothing is paved at that pitch (round 3 drew the paving tone
@@ -231,8 +235,8 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
   g.save();path(rs);g.clip('evenodd');g.fillStyle='rgba(235,255,190,0.07)';const along=bx-ax>bz-az;
   for(let t=(along?az:ax);t<(along?bz:bx);t+=6){if(along)g.fillRect((ax-x0)*s,(t-z0)*s,(bx-ax)*s,3*s);else g.fillRect((t-x0)*s,(az-z0)*s,3*s,(bz-az)*s);}g.restore();}
  if(gardens){g.save();g.beginPath();for(const rs of gardens.rings)for(const r of rs){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}g.clip('evenodd');
-  for(const p of gardens.plots){g.fillStyle=p.tone;g.fillRect((p.x-x0)*s,(p.z-z0)*s,p.w*s,p.d*s);}
-  g.strokeStyle=gardens.hedgeTone;g.lineWidth=gardens.hedge*s;for(const p of gardens.plots)g.strokeRect((p.x-x0)*s,(p.z-z0)*s,p.w*s,p.d*s);
+  for(const p of gardens.plots){g.fillStyle=p.tone;rect(p);}
+  g.strokeStyle=gardens.hedgeTone;g.lineWidth=gardens.hedge*s;for(const p of gardens.plots)rect(p,true);
   g.fillStyle=gardens.crownTone;for(const c of gardens.crowns){g.beginPath();g.arc((c.x-x0)*s,(c.z-z0)*s,c.r*s,0,Math.PI*2);g.fill();}
   g.restore();}
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
