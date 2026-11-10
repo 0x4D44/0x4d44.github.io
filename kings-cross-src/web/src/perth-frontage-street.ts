@@ -23,8 +23,11 @@ export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,
 /** `navy` and `strip` read from R-pt2-a by eye: the pavilion's bands are a dark navy, about rgb 34,43,95 in the shade (the lit upper band reads
  *  paler). Round 6: the glazed strip (and the transoms under it) is R-pt2-a's reflective blue-black, about rgb 30,38,48 to 38,48,60 (ASSUMED, by eye);
  *  round 5's grey-blue 0x607386 read too light. The model's lighting lifts both, so the base colours sit a step darker than the photo's. The
- *  greens, `bark` and `boulder` are ASSUMED from R-pt2-a/b's bushes, tree and kerbside stones. */
-export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0xdfe2e3,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
+ *  greens, `bark` and `boulder` are ASSUMED from R-pt2-a/b's bushes, tree and kerbside stones. Round 7: `mullion` is a navy-black (ASSUMED, by eye: the
+ *  photo's strip frames are thin and dark, not white); the concourse behind the entrance glazing is a bright warm white (`concourse` 0xf4ead8, `concourseHi`
+ *  0xfff6e6, and a floor, side returns and a grey dado, all ASSUMED) so it reads as a lit interior and not as more of the buff wall; the door and transom
+ *  glass (`doorGlass`, `doorGlassHi`, `transom`) is a pale sky-blue, ASSUMED, the daylight reflection R-pt2-a's glazing shows over a bright interior. */
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0x182034,concourse:0xf4ead8,concourseHi:0xfff6e6,concourseFloor:0xded3be,concourseSide:0xe9dec9,dado:0xb2aea4,doorGlass:0x8fa8bd,doorGlassHi:0xb4c8d8,transom:0x9bb2c6,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -162,35 +165,40 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  const w=S.pavilionWidth,s0=sE-w/2,s1=sE+w/2;
  const bandLo=S.pavilionFloor+1.1,bandHi=S.pavilionTop-1;// ASSUMED from R-pt2-a: a 1.1 m lower band, a 1.9 m window strip, a 1 m upper band
  box(s0,s1,-S.pavilionDeep,S.pavilionOut,S.pavilionFloor,bandLo,C.navy);box(s0,s1,-S.pavilionDeep,S.pavilionOut,bandHi,S.pavilionTop,C.navy);
- // the window strip, set back 0.25 m: R-pt2-a's reads as lighter glazing reflecting the sky, with white mullions and a transom
+ // the window strip, set back 0.25 m: R-pt2-a's reads as dark glazing in thin frames. Round 7: the mullions are navy-black and 0.06 m wide standing 0.05 m
+ // proud (round 6: white, 0.14 m wide, 0.11 m proud, which read heavier than the photo's thin frames), and the transom rail is 0.05 m (all ASSUMED, by eye)
  box(s0+.05,s1-.05,-S.pavilionDeep,S.pavilionOut-.25,bandLo,bandHi,C.strip,b.glass);
- for(let k=0;k<=12;k++){const s=s0+.1+k*(w-.2)/12;box(s-.07,s+.07,S.pavilionOut-.3,S.pavilionOut-.14,bandLo,bandHi,C.mullion);}// its mullions
- box(s0+.1,s1-.1,S.pavilionOut-.3,S.pavilionOut-.16,bandLo+1.2,bandLo+1.3,C.mullion);
+ for(let k=0;k<=12;k++){const s=s0+.1+k*(w-.2)/12;box(s-.03,s+.03,S.pavilionOut-.3,S.pavilionOut-.2,bandLo,bandHi,C.mullion);}// its mullions
+ box(s0+.1,s1-.1,S.pavilionOut-.3,S.pavilionOut-.2,bandLo+1.2,bandLo+1.25,C.mullion);
  // the blank sign panel ON the upper band's fascia (R-pt2-a: a light panel 78 px by 10 px at 19.5 px/m, 4 m by 0.5 m, centred, ASSUMED), no lettering and no
  // logo drawn; it replaces round 5's white box standing on the roof. A thin grey frame sits behind it, on the band's face.
  pane(sE-2.06,sE+2.06,bandHi+.19,bandHi+.81,S.pavilionOut+.01,C.frame);pane(sE-2,sE+2,bandHi+.25,bandHi+.75,S.pavilionOut+.02,C.sign);
  const posts=[s0+.3,sE-1.7,sE+1.7,s1-.3];
  for(const s of posts)box(s-.18,s+.18,S.pavilionOut-.5,S.pavilionOut-.14,0,S.pavilionFloor,C.navy);// four posts
- // the ground floor (R-pt2-a), opened through the stone wall above: three glazed bays between the four posts. In each, glazed door leaves in the glazing
- // plane (0.9 to 1 m wide, 2.2 m high, from the photo's 2.2 m doors, ASSUMED) in navy frames under a dark blue-black transom; behind them a lit concourse
- // 3.6 m deep (ASSUMED, "a few metres in"): a warm pale back wall with a lit panel to each bay and a coved light band, a floor, a ceiling and side returns,
- // in the file's `lit`/`litDim` tinted as seen through dark glass. The walls are `front`, the leaves and transoms `glass`: no new batch. Every size here is
- // ASSUMED from R-pt2-a: the transom 0.5 m of dark glass over a rail at 2.64 m, a 0.3 m slot of the concourse under it, the ceiling at 3.05 m, the light band
- // at 2.55 to 2.9 m, the lit panels 0.85 to 2.4 m, the dado 0.8 m, the floor level with the 0.12 m pavement.
- {const i0=s0+.12,i1=s1-.12,D=3.6,yc=S.pavilionFloor-.15,face:V3=[n[0],0,n[1]],lw=(m:number):Rgb=>{const q=rgb(C.lit);return [q[0]*m,q[1]*m*.96,q[2]*m*.84];},dim=(m:number)=>shade(rgb(C.litDim),m);
+ // the ground floor (R-pt2-a), opened through the stone wall above: three glazed bays between the four posts. Round 7: it must read as GLAZING over a LIT
+ // interior, as R-pt2-a's mostly-glass front does, not as doors in a wall. So each bay is a thin navy frame grid (0.05 m members, ASSUMED) round open lights
+ // that show a bright warm-white concourse (`concourse`/`concourseHi`, not the buff of the wall), with pale sky-blue glass in the door leaves and over the
+ // transom (the daylight reflection R-pt2-a's glass shows, ASSUMED; the glass batch is opaque, so the open lights stand for clear glass). Glazed door leaves in
+ // the glazing plane (0.9 to 1 m wide, 2.2 m high, from the photo's 2.2 m doors, ASSUMED); behind them the concourse 3.6 m deep (ASSUMED, "a few metres in"):
+ // a back wall with a lit panel to each bay and a coved light band, a floor, a ceiling and side returns. The walls are `front`, the leaves and transoms `glass`:
+ // no new batch. Every size here is ASSUMED from R-pt2-a: the door head rail at 2.22 m, a 0.35 m open light over it to a rail at 2.62 m, the transom glass
+ // 2.66 m to the pavilion's underside (3.2 m), the ceiling at 3.15 m, the light band at 2.55 to 2.9 m, the lit panels 0.85 to 2.4 m, the dado 0.8 m, the
+ // floor level with the 0.12 m pavement, a mid-rail at 1 m and a 0.2 m kick rail across every bay (the leaves' head, push rail and kick are those rails).
+ {const i0=s0+.12,i1=s1-.12,D=3.6,yc=S.pavilionFloor-.05,face:V3=[n[0],0,n[1]],wall=rgb(C.concourse),hi=rgb(C.concourseHi);
   const V=(s:number,o:number,y:number):V3=>{const p=at(s,o);return [p[0],P+y,p[1]];};
-  b.front.poly([V(i0,-D,-.05),V(i1,-D,-.05),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:face,color:lw(.5)});// the back wall
-  b.front.poly([V(i0,-D+.01,-.05),V(i1,-D+.01,-.05),V(i1,-D+.01,.8),V(i0,-D+.01,.8)],undefined,{facing:face,color:dim(.4)});// its dado
-  b.front.poly([V(i0,-D+.01,2.55),V(i1,-D+.01,2.55),V(i1,-D+.01,2.9),V(i0,-D+.01,2.9)],undefined,{facing:face,color:lw(.95)});// the coved light band under the ceiling
-  b.front.poly([V(i0,0,.13),V(i1,0,.13),V(i1,-D,.13),V(i0,-D,.13)],undefined,{facing:[0,1,0],color:dim(.55)});// the floor, level with the pavement
-  b.front.poly([V(i0,0,yc),V(i1,0,yc),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:[0,-1,0],color:dim(.7)});// the ceiling
-  for(const [s,sg] of [[i0,1],[i1,-1]] as const)b.front.poly([V(s,0,-.05),V(s,-D,-.05),V(s,-D,yc),V(s,0,yc)],undefined,{facing:[t[0]*sg,0,t[1]*sg],color:dim(.45)});// the side returns
-  const leaf=(sa:number,sb:number)=>{box(sa,sa+.07,-.02,.1,.1,2.22,C.navy);box(sb-.07,sb,-.02,.1,.1,2.22,C.navy);box(sa,sb,-.02,.1,2.15,2.22,C.navy);box(sa,sb,-.02,.1,.1,.45,C.navy);
-   pane(sa+.07,sb-.07,.45,2.15,.05,C.glass);pane(sa+.12,sb-.12,.98,1.03,.06,C.mullion);};// stiles, head and kick rails, the darker glass, a push bar
-  for(let j=0;j<3;j++){const sa=posts[j]+.18,sb=posts[j+1]-.18,c=(sa+sb)/2;
-   pane(sa,sb,2.72,S.pavilionFloor,.05,C.strip);box(sa,sb,-.02,.1,2.64,2.72,C.navy);box(sa,sb,-.02,.1,2.22,2.3,C.navy);// the transom: dark reflective glass over a rail, a slot of the concourse under it
-   if(j===1){leaf(c-.92,c-.02);leaf(c+.02,c+.92);}else leaf(c-.5,c+.5);// a pair of leaves in the middle bay, one in each side bay
-   b.front.poly([V(sa+.3,-D+.015,.85),V(sb-.3,-D+.015,.85),V(sb-.3,-D+.015,2.4),V(sa+.3,-D+.015,2.4)],undefined,{facing:face,color:lw(.8)});}// a lit panel on the back wall behind each bay
+  b.front.poly([V(i0,-D,-.05),V(i1,-D,-.05),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:face,color:wall});// the back wall: a bright warm white, not buff
+  b.front.poly([V(i0,-D+.01,-.05),V(i1,-D+.01,-.05),V(i1,-D+.01,.8),V(i0,-D+.01,.8)],undefined,{facing:face,color:rgb(C.dado)});// its dado, a cool grey so it is not the wall's buff
+  b.front.poly([V(i0,-D+.01,2.55),V(i1,-D+.01,2.55),V(i1,-D+.01,2.9),V(i0,-D+.01,2.9)],undefined,{facing:face,color:hi});// the coved light band under the ceiling
+  b.front.poly([V(i0,0,.13),V(i1,0,.13),V(i1,-D,.13),V(i0,-D,.13)],undefined,{facing:[0,1,0],color:rgb(C.concourseFloor)});// the floor, level with the pavement
+  b.front.poly([V(i0,0,yc),V(i1,0,yc),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:[0,-1,0],color:hi});// the lit ceiling (it faces down, so it takes the least light: the brightest white)
+  for(const [s,sg] of [[i0,1],[i1,-1]] as const)b.front.poly([V(s,0,-.05),V(s,-D,-.05),V(s,-D,yc),V(s,0,yc)],undefined,{facing:[t[0]*sg,0,t[1]*sg],color:rgb(C.concourseSide)});// the side returns
+  const leaf=(sa:number,sb:number)=>{box(sa,sa+.05,-.02,.1,.1,2.22,C.navy);box(sb-.05,sb,-.02,.1,.1,2.22,C.navy);
+   pane(sa+.05,sb-.05,.3,.96,.05,C.doorGlass);pane(sa+.05,sb-.05,1.02,2.22,.05,C.doorGlassHi);};// a leaf: two stiles, a darker lower pane under a paler upper one (the bay's rails, below, are its kick, push rail and head)
+  for(let j=0;j<3;j++){const sa=posts[j]+.18,sb=posts[j+1]-.18,c=(sa+sb)/2,leaves:readonly [number,number][]=j===1?[[c-.92,c-.02],[c+.02,c+.92]]:[[c-.5,c+.5]];// a pair of leaves in the middle bay, one in each side bay
+   pane(sa,sb,2.66,S.pavilionFloor,.05,C.transom);box(sa,sb,-.02,.1,2.62,2.66,C.navy);box(sa,sb,-.02,.1,2.22,2.27,C.navy);// the glazed transom, over a rail; the light under it stays open on the concourse
+   box(sa,sb,-.02,.1,.1,.3,C.navy);box(sa,sb,-.02,.1,.96,1.02,C.navy);// a kick rail and a mid-rail across the whole bay, framing the open lights beside the leaves
+   for(const [la,lb] of leaves){leaf(la,lb);for(const x of [la,lb])box(x-.025,x+.025,-.02,.1,2.27,S.pavilionFloor,C.navy);}// each leaf's stiles run up through the transom as thin mullions
+   b.front.poly([V(sa+.3,-D+.015,.85),V(sb-.3,-D+.015,.85),V(sb-.3,-D+.015,2.4),V(sa+.3,-D+.015,2.4)],undefined,{facing:face,color:hi});}// a lit panel on the back wall behind each bay
  }
  // east of the entrance (R-pt2-a, left): a shop front - dark glazing in a blue frame with a glazed door, a blank fascia over it (no
  // lettering drawn) - and a notice case. Sizes ASSUMED from R-pt2-a at about 19.5 px/m.
@@ -293,16 +301,23 @@ const CROWN_RINGS:Rings=[[.74,0],[.97,.18],[1,.45],[.88,.7],[.6,.9]];
  * A low-sided rounded mass about (x, z) rising H from y0: by default a foot ring (`foot` of R), a belly ring (R, at 0.4 H), a shoulder ring (0.74 R, at 0.8 H)
  * and a cap, each facet flat; `rings` gives the profile instead (BUSH_RINGS, CROWN_RINGS), `under` closes the foot with a flat underside. Every vertex's
  * radius, height and angle is pulled about by up to `jit` from the hash of `key`, so no two read alike. One lobe is (2 x bands + 1) x `sides` triangles
- * (5 x `sides` by default); bushes, tree crowns and boulders are built from them.
+ * (5 x `sides` by default); bushes, tree crowns and boulders are built from them. `smooth` (round 7, the tree crown) shades every vertex with the normal of the
+ * lobe's ellipsoid (half-axes R and 0.55 H about its mid-height, ASSUMED) instead of its facet's, so the many small triangles blend into one soft mass and the
+ * ring-to-ring tone steps are small (0.94 to 1.04 of the colour, against 0.88 to 1.08).
  */
-function lobe(b:Batch,x:number,z:number,y0:number,R:number,H:number,sides:number,color:Rgb,key:number,jit:number,foot=.78,rings?:Rings,under=false):void{
+function lobe(b:Batch,x:number,z:number,y0:number,R:number,H:number,sides:number,color:Rgb,key:number,jit:number,foot=.78,rings?:Rings,under=false,smooth=false):void{
  const ring:Rings=rings??[[foot,0],[1,.4],[.74,.8]],top=ring.length-1,ang=(i:number)=>(i+(hash(key,i,3)-.5)*.5)*2*Math.PI/sides;
  const at=(k:number,i:number):V3=>{const a=ang(i),r=R*ring[k][0]*(1+(hash(key,i,k)-.5)*2*jit);return [x+r*Math.cos(a),y0+ring[k][1]*H*(1+(hash(key,i,k+5)-.5)*jit),z+r*Math.sin(a)];};
  const apex:V3=[x+(hash(key,7)-.5)*R*.3,y0+H*(1+(hash(key,8)-.5)*jit*.5),z+(hash(key,9)-.5)*R*.3];
+ const cy=y0+H*.5,ry=H*.55,nrm=(p:V3):V3=>{const nx=(p[0]-x)/(R*R),ny=(p[1]-cy)/(ry*ry),nz=(p[2]-z)/(R*R),l=Math.hypot(nx,ny,nz)||1;return [nx/l,ny/l,nz/l];};
+ const lo=smooth?.94:.88,span=smooth?.1:.2;
  for(let i=0;i<sides;i++){const j=(i+1)%sides,am=(i+.5)*2*Math.PI/sides,out:V3=[Math.cos(am),0,Math.sin(am)];
-  for(let k=0;k<top;k++){const c=shade(color,.88+.2*k/top),p0=at(k,i),p1=at(k,j),p2=at(k+1,j),p3=at(k+1,i);
-   b.poly([p0,p1,p2],undefined,{facing:out,color:c});b.poly([p0,p2,p3],undefined,{facing:out,color:c});}
-  b.poly([at(top,i),at(top,j),apex],undefined,{facing:[out[0]*.3,1,out[2]*.3],color:shade(color,1.08)});
+  for(let k=0;k<top;k++){const c=shade(color,lo+span*k/top),p0=at(k,i),p1=at(k,j),p2=at(k+1,j),p3=at(k+1,i);
+   if(smooth){b.poly([p0,p1,p2],undefined,{normals:[nrm(p0),nrm(p1),nrm(p2)],color:c});b.poly([p0,p2,p3],undefined,{normals:[nrm(p0),nrm(p2),nrm(p3)],color:c});}
+   else{b.poly([p0,p1,p2],undefined,{facing:out,color:c});b.poly([p0,p2,p3],undefined,{facing:out,color:c});}}
+  const t0=at(top,i),t1=at(top,j),cap=shade(color,smooth?1.04:1.08);
+  if(smooth)b.poly([t0,t1,apex],undefined,{normals:[nrm(t0),nrm(t1),nrm(apex)],color:cap});
+  else b.poly([t0,t1,apex],undefined,{facing:[out[0]*.3,1,out[2]*.3],color:cap});
   if(under)b.poly([[x,y0,z],at(0,j),at(0,i)],undefined,{facing:[0,-1,0],color:shade(color,.7)});}
 }
 
@@ -319,21 +334,31 @@ function bush(b:Batch,ground:Ground,ok:(p:Pt)=>boolean,x:number,z:number,w:numbe
 }
 
 /**
- * A clipped hedge run from `from` to `to`, `h` high and 2 x `half` wide (round 6: round 5's was a stack of three boxes, a flat green block). It is swept: a
- * cross-section with upright sides to 45% of its height and a rounded top (a half-ellipse closing at the crown), cut every 0.35 m, whose height and width
- * swell into a rounded lobe every 1.4 m along its length (+-7% high, +-9% wide, and each lobe a little taller or lower than the next), ending in a
- * rounded end. Lower facets are darker, upper paler. About 20 triangles a station, 14 stations for a 5 m run. The proportions are ASSUMED from R-pt2-b's bush.
+ * A clipped hedge run from `from` to `to`, `h` high and 2 x `half` wide, as a rounded mound and not a box (round 6: round 5's was a stack of three boxes; round 7:
+ * round 6's still read as a long box at the frozen view's range). It is swept: a section that tucks in at the foot, bellies out at 14% of its height and closes
+ * in a rounded crown (a half-ellipse, 17 points), cut every 0.25 m. Along its length it is a string of rounded lobes about 1.1 m long (ASSUMED), each a hump
+ * with a creased valley between it (height and width follow sin^0.6 of the lobe's phase: -12% in the crease to +5% at the crown, width -10% to +4%), each lobe
+ * also a little taller or lower than the next (+-14%) and a little wider (+-8%), so the top line steps and the sides scallop. Both ends close in a quarter-ellipse
+ * over 0.55 m (ASSUMED) down to a fifth of the width and a third of the height. Every vertex takes its normal from its neighbours, so it shades as one soft mass.
+ * Lower facets are darker, upper paler. About 600 triangles for a 4 m run. The proportions are ASSUMED from R-pt2-b's bush (about 3.9 m by 2.2 m at 20 px/m,
+ * the height here capped by the round's brief).
  */
 function hedge(b:Batch,ground:Ground,from:Pt,to:Pt,half:number,h:number,key:number):void{
- const len=Math.hypot(to[0]-from[0],to[1]-from[1])||1,d:Pt=[(to[0]-from[0])/len,(to[1]-from[1])/len],sv:Pt=[-d[1],d[0]],n=Math.max(2,Math.round(len/.35));
+ const len=Math.hypot(to[0]-from[0],to[1]-from[1])||1,d:Pt=[(to[0]-from[0])/len,(to[1]-from[1])/len],sv:Pt=[-d[1],d[0]],n=Math.max(2,Math.round(len/.25)),m=Math.max(2,Math.round(len/1.1)),tipR=Math.min(.55,len/4);
  // the section left to right over the top: [across as a fraction of half, up as a fraction of the height]
- const right:[number,number][]=[[.94,0],[1,.45],[.95,.66],[.8,.83],[.5,.95]],sec:[number,number][]=[...right.map(([u,v])=>[-u,v] as [number,number]),[0,1],...[...right].reverse()];
- const st=Array.from({length:n+1},(_,i)=>{const s=len*i/n,lobeNo=Math.min(Math.floor(s/1.4),Math.floor(len/1.4)),sw=-Math.cos(2*Math.PI*s/1.4);// the swell peaks mid-lobe
-  const p:Pt=[from[0]+d[0]*s,from[1]+d[1]*s],top=h*(1+.07*sw+.05*(hash(key,lobeNo,2)-.5)*2),wide=half*(1+.09*sw);
-  return {p,y:ground.heightAt(p[0],p[1])-.05,top,wide,col:shade(rgb(STREET_COLOURS.hedge),.94+.12*hash(key,lobeNo))};});
+ const right:[number,number][]=[[.86,0],[1,.14],[.97,.36],[.88,.56],[.74,.74],[.54,.88],[.3,.96],[.1,.995]],sec:[number,number][]=[...right.map(([u,v])=>[-u,v] as [number,number]),[0,1],...[...right].reverse()];
+ const st=Array.from({length:n+1},(_,i)=>{const s=len*i/n,f=s/len*m,lobeNo=Math.min(Math.floor(f),m-1),bump=Math.pow(Math.sin(Math.PI*(f-lobeNo)),.6);// 0 in a crease, 1 mid-lobe
+  const e=Math.min(s,len-s),tip=e<tipR?Math.sqrt(1-((tipR-e)/tipR)**2):1;// the quarter-ellipse closing each end
+  const p:Pt=[from[0]+d[0]*s,from[1]+d[1]*s],top=h*(.88+.17*bump)*(1+.14*(hash(key,lobeNo,2)-.5)*2)*(.33+.67*tip),wide=half*(.9+.14*bump)*(1+.08*(hash(key,lobeNo,5)-.5)*2)*(.2+.8*tip);
+  return {p,y:ground.heightAt(p[0],p[1])-.05,top,wide,col:shade(rgb(STREET_COLOURS.hedge),.92+.16*hash(key,lobeNo))};});
  const V=(i:number,j:number):V3=>{const q=st[i],[u,v]=sec[j];return [q.p[0]+sv[0]*u*q.wide,q.y+v*q.top,q.p[1]+sv[1]*u*q.wide];};
- for(let i=0;i<n;i++)for(let j=0;j+1<sec.length;j++){const a=sec[j],c=sec[j+1],ds=(c[0]-a[0])*st[i].wide,dy=(c[1]-a[1])*st[i].top,v=(a[1]+c[1])/2;
-  b.poly([V(i,j),V(i,j+1),V(i+1,j+1),V(i+1,j)],undefined,{facing:[sv[0]*-dy,ds,sv[1]*-dy],color:shade(st[i].col,.9+.2*v)});}
+ // a vertex's normal: the cross of its neighbours' spans along the run and across the section, turned to point away from the hedge's core (0.3 of its height up its axis)
+ const P=(i:number,j:number):V3=>V(Math.max(0,Math.min(n,i)),Math.max(0,Math.min(sec.length-1,j)));
+ const N=(i:number,j:number):V3=>{const a=P(i-1,j),c=P(i+1,j),e=P(i,j-1),f=P(i,j+1),q=V(i,j),o:V3=[q[0]-st[i].p[0],q[1]-st[i].y-.3*st[i].top,q[2]-st[i].p[1]],ol=Math.hypot(...o)||1;
+  const t1:V3=[c[0]-a[0],c[1]-a[1],c[2]-a[2]],t2:V3=[f[0]-e[0],f[1]-e[1],f[2]-e[2]];let x=t1[1]*t2[2]-t1[2]*t2[1],y=t1[2]*t2[0]-t1[0]*t2[2],z=t1[0]*t2[1]-t1[1]*t2[0];const l=Math.hypot(x,y,z);
+  if(l<1e-9)return [o[0]/ol,o[1]/ol,o[2]/ol];if(x*o[0]+y*o[1]+z*o[2]<0){x=-x;y=-y;z=-z;}return [x/l,y/l,z/l];};
+ for(let i=0;i<n;i++)for(let j=0;j+1<sec.length;j++){const v=(sec[j][1]+sec[j+1][1])/2;
+  b.poly([V(i,j),V(i,j+1),V(i+1,j+1),V(i+1,j)],undefined,{normals:[N(i,j),N(i,j+1),N(i+1,j+1),N(i+1,j)],color:shade(st[i].col,.92+.16*v)});}
  for(const [i,sg] of [[0,-1],[n,1]] as const)b.poly(sec.map((_,j)=>V(i,j)),undefined,{facing:[d[0]*sg,0,d[1]*sg],color:shade(st[i].col,1.02)});
 }
 
@@ -350,28 +375,32 @@ function cordyline(b:Batch,ground:Ground,x:number,z:number,key:number):void{
 
 /**
  * A mature broadleaf tree (R-pt2-b's, east of the hotel's corner tower; round 6 scales it to the photograph): 17 m to the crown's top, a trunk 0.9 m across at the
- * foot tapering to 0.4 m at 9 m, a crown 13 m across from 4.6 m up, built of 19 rounded 14-sided lobes in five tiers: a core, a skirt of six, a middle tier of six
- * (turned half a step), an upper tier of five and a cap. About 2,400 triangles. Size worked out from R-pt2-b against the hotel's levels (HOTEL_LEVELS: eaves 11.4 m,
+ * foot tapering to 0.4 m at 9 m, a crown 13 m across from 4.6 m up, built of 19 rounded 22-sided lobes in five tiers: a core, a skirt of six, a middle tier of six
+ * (turned half a step), an upper tier of five and a cap. About 3,900 triangles (round 6: 14-sided, flat-shaded, about 2,500). Size worked out from R-pt2-b against the hotel's levels (HOTEL_LEVELS: eaves 11.4 m,
  * east gable apex 18.6 m, corner-tower tip 22.5 m; about 22 px/m on the front at 1024 px wide): the crown's top reaches the tower tip's height (photo y 132 against
  * 118 for the tip, 170 for the apex) and its left edge the east gable bay (photo x 745), so 15 to 18 m tall and 13 m or more across. ASSUMED, by eye.
+ * Round 7 (the scorer's F2: "faceted, bright-green, gem-like", where R-pt2-b's is a soft, irregular, darker broadleaf): the crown is shaded smooth (each lobe's
+ * vertices take their ellipsoid's normal, see `lobe`), its greens are darker and less saturated (about 0x3b4f2e against 0x45682c; the photo's crown is mostly
+ * shade, an olive near rgb 40,60,35, with pale yellow-green only on its lit tops, ASSUMED by eye), they differ less from lobe to lobe, and the tiers' placing
+ * is looser (+-14% in distance, +-0.45 m in height, against +-8% and +-0.25 m) so the silhouette is irregular.
  */
 function tree(b:Batch,ground:Ground,x:number,z:number,key:number):void{
- const y=ground.heightAt(x,z),greens=[0x45682c,0x557a35,0x3d5c29,0x4d7231];
+ const y=ground.heightAt(x,z),greens=[0x3b4f2e,0x44593a,0x33452a,0x3e5231];
  revolve(b,x,z,[[.45,y-.12],[.36,y+2.5],[.28,y+5],[.2,y+9]],8,rgb(STREET_COLOURS.bark));
  // tiers: [count, ring distance from the trunk, foot height, R, H], all ASSUMED
  const tiers:[number,number,number,number,number][]=[[1,0,6.2,4.4,9.6],[6,3.9,4.6,2.9,5.2],[6,3.7,7.8,3,5.8],[5,2.1,10.8,2.6,5],[1,0,13.2,2.4,3.8]];
  let n=0;
  tiers.forEach(([count,dist,y0,R,H],t)=>{for(let i=0;i<count;i++,n++){
-  const a=(i+(t%2?.5:0)+(hash(key,n,1)-.5)*.4)*2*Math.PI/count,d=dist*(1+(hash(key,n,2)-.5)*.16),dy=(hash(key,n,3)-.5)*.5,sun=.9+.2*Math.min(1,(y0+H/2-4)/10);
-  lobe(b,x+Math.cos(a)*d,z+Math.sin(a)*d,y+y0+dy,R,H,14,shade(rgb(greens[n%4]),sun*(.95+.1*hash(key,n))),key*100+n,.1,.7,CROWN_RINGS,y0<5);}});
+  const a=(i+(t%2?.5:0)+(hash(key,n,1)-.5)*.4)*2*Math.PI/count,d=dist*(1+(hash(key,n,2)-.5)*.28),dy=(hash(key,n,3)-.5)*.9,sun=.86+.16*Math.min(1,(y0+H/2-4)/10);
+  lobe(b,x+Math.cos(a)*d,z+Math.sin(a)*d,y+y0+dy,R,H,22,shade(rgb(greens[n%4]),sun*(.96+.08*hash(key,n))),key*100+n,.12,.7,CROWN_RINGS,y0<5,true);}});
 }
 
 /**
  * The planting before the Station Hotel (R-pt2-b), in plan on the hotel's own frame: A is the middle front's west end (OSM -25.3,-97.8, as hotelFrame),
  * `m` runs along the front toward its east end (OSM -8.7,-104.7, 18 m) and `o` out from it over the car park. R-pt2-b, read at about 18.6 px/m along
  * the front: a clipped hedge-like bush 4.7 m along, a dark mass at 8.9, a cordyline at 12.5, a bush at 14.6, a tall narrow shrub at the east end, and a
- * big tree east of the corner tower (about 26 m along); the model draws them 1.4 to 2.2 m out from the wall (ASSUMED), a clipped hedge run (1.1 m)
- * in place of the first bush, rounded along its length (round 6), bush clusters 1.2 to 1.6 m high and 2 to 3 m across, each of 2 to 4 domed lobes 1.2 to 1.8 m
+ * big tree east of the corner tower (about 26 m along); the model draws them 1.4 to 2.2 m out from the wall (ASSUMED), a clipped hedge mound (1.3 m high, 4.2 m long)
+ * in place of the first bush, rounded and lobed along its length (rounds 6 and 7), bush clusters 1.2 to 1.6 m high and 2 to 3 m across, each of 2 to 4 domed lobes 1.2 to 1.8 m
  * wide (the photo's are a little bigger; the round's brief caps them), the cordyline 3.5 m, and the tree 17 m (round 6, scaled to the photograph: see `tree`),
  * 4 m out from the front at 25 m along, where the photo's trunk stands east of the corner tower's bay (its crown then falls on the right of the frozen
  * view, as the photo's does). Along every other hotel edge facing the car park that is 6 m or more: clusters 1.9 m out every 4.4 m with gaps, 0.9 to 1.5 m
@@ -384,7 +413,7 @@ export function hotelShrubs(b:Batch,hotel:readonly Pt[],park:readonly Pt[],groun
  const near=(p:Pt)=>r.reduce((k,q)=>Math.hypot(q[0]-p[0],q[1]-p[1])<Math.hypot(k[0]-p[0],k[1]-p[1])?q:k,r[0]);
  const A=near([-25.3,-97.8]),B=near([-8.7,-104.7]),lm=Math.hypot(B[0]-A[0],B[1]-A[1])||1,u:Pt=[(B[0]-A[0])/lm,(B[1]-A[1])/lm],nf:Pt=[-u[1],u[0]];
  const at=(m:number,o:number):Pt=>[A[0]+u[0]*m+nf[0]*o,A[1]+u[1]*m+nf[1]*o];
- const h0=at(1.6,1.6),h1=at(6.6,1.6);if(ok(h0)&&ok(h1)){hedge(b,ground,h0,h1,.45,1.1,31);n++;}
+ const h0=at(2,1.6),h1=at(6.2,1.6);if(ok(h0)&&ok(h1)){hedge(b,ground,h0,h1,.55,1.3,31);n++;}// 4.2 m long, 1.1 m wide, 1.3 m high, centred where round 6's 5 m run was (ASSUMED: R-pt2-b's mound is about 3.9 m by 2.2 m; the height capped by the round's brief)
  for(const [m,o,w,h,key] of [[9.3,2.2,2.7,1.6,21],[14.9,2.1,2.4,1.4,22],[17.2,1.9,1.7,1.6,23],[21,1.9,2,1.2,24]] as const){const p=at(m,o);n+=bush(b,ground,ok,p[0],p[1],w,h,key);}
  const cp=at(12.4,1.4);if(ok(cp)){cordyline(b,ground,cp[0],cp[1],41);n++;}
  const tp=at(25,4);if(ok(tp)){tree(b,ground,tp[0],tp[1],51);n++;}

@@ -38,11 +38,18 @@ export const HOTEL_LEVELS={
 } as const;
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
-/** `ashlar` is the stugged pinkish buff-grey wall (R-pt2-b, about #8e715c in shade, lit a little lighter; no yellow); `red` the darker, redder, dull sandstone of margins, bands,
- *  quoins, skews, cornice, tympana, pedestals and finials (about #845f4e in shade); `frame` the white-painted sashes; `dormer` the white-painted dormer fronts; `pipe` the pale
- *  cream-grey painted downpipes (R-pt2-b: light against the wall, not black). Round 5 (F6): the dressings were a bright orange-red and the walls a yellow tan, with too much
- *  contrast between them. Round 6 (F6): the walls a touch warmer and browner (still pinkish) and the pipes pale. Tones ASSUMED from R-pt2-b. */
-export const HOTEL_COLOURS={ashlar:0x9f8b7a,red:0x83574a,frame:0xeeeae2,dormer:0xe8e4da,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428,pipe:0xcfcabd} as const;
+/** `ashlar` is the stugged buff-brown wall; `red` the redder, dull sandstone of margins, bands, quoins, skews, cornice, tympana, pedestals and finials; `frame` the white-painted sashes;
+ *  `dormer` the white-painted dormer fronts; `pipe` the pale cream-grey painted downpipes (R-pt2-b: light against the wall, not black). Round 5 (F6): the dressings were a bright orange-red and
+ *  the walls a yellow tan. Round 6 (F6): the walls a touch warmer, the pipes pale. Round 7 (F6): `ashlar` and `red` set by PIXEL SAMPLING, not by eye. R-pt2-b (1024 x 683) wall patches
+ *  (px x0,y0..x1,y1; mean colour): 415,300..445,330 #9c7f69; 420,362..445,392 #9d846d; 240,300..268,350 #987e6a; 240,292..270,328 #977965 (these four in the light, mean #9a7e69); 507,305..527,327 #89715d;
+ *  595,305..617,340 #816958; 380,412..520,428 #8d7d6b; 706,340..724,385 #6a5b50 (these four in shade, mean #806c5c). The six bar #977965 (it overlaps #987e6a) and #6a5b50 (the east bay in the tree's shadow) average #917965, the value aimed at.
+ *  Dressing patches 222,298..230,340 #88604e; 162,312..215,322 #8d6554; 366,352..440,356 #805745; 370,433..450,438 #885c47 average #875e4c. The round-6 capture (pt-station-hotel, 1280 x 800) shows
+ *  the scene's light moving them: its wall (six patches, e.g. 642,470..660,505) averages #a8907a, its band courses (y 447-449, 523-525) #8b503d, a flat ashlar face #ac947d. Those three fit one rule,
+ *  linear colour x (1.64, 1.53, 1.41) then three's ACES filmic curve (lighting.ts grade, a warm sun), to within one 8-bit step (including the wall's lightest and darkest blocks, #ae9883 and #9a806b).
+ *  Inverted, the stored colours below render as the photo's: the facade's wall (this `ashlar` under the texture's mottle) as about #917965, `red` as about #875e4c, so both are stored greyer
+ *  than they read. The dressings stay a distinct, redder stone, 19% darker than the wall (render luma 101 against 125), where round 6's were 38% darker (91 against 146).
+ *  ASSUMED: the photo's patch averages stand for the stone's own colour. */
+export const HOTEL_COLOURS={ashlar:0x897a6d,red:0x7f6156,frame:0xeeeae2,dormer:0xe8e4da,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428,pipe:0xcfcabd} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];
@@ -195,26 +202,29 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
  };
  crow(0,f.bayWidth,f.bayFront-.02,L.bayEaves,L.bayApex,5);
  crow(e0,e1,-.47,L.eaves,L.eastApex,5);
- // Round 6 (F3): the wallhead gablets on the middle front's two inner bays RISE THROUGH the eaves (R-pt2-b: the bay's wall carries on 1.75 m over the eave line, a large
+ // Round 6 (F3): the wallhead gablets on the middle front's two inner bays RISE THROUGH the eaves (R-pt2-b: the bay's wall carries on 1.75 m over the eave line, which round 7 lifts by 0.5 m more, below; a large
  // carved arched tympanum in the red sandstone straddles the eave line, and the stepped pedestal and cross stand on the bay's apex). Each is a gabled wall face of
  // ashlar, 3.7 m wide (the 4.5 m bay less 0.4 m of ashlar a side, so the two stand 0.8 m apart; ASSUMED), standing 0.40 m out from the front on a two-step red corbel
- // course so the main roof's eave (0.35 m out) meets its side instead of crossing its face, its shoulders 0.75 m and its apex 1.75 m over the eave line (ASSUMED,
- // within the brief's 1.5-2 m), red skews and kneelers along the gable, its own two short slate slopes running back from the skews to meet the main slope, and a
- // 3.2 m segmental tympanum (rise 1.35 m, 0.45 m below the eave line and 0.9 m above it; ASSUMED, "about the bay's width") with a darker carved inset and a rosette.
+ // course so the main roof's eave (0.35 m out) meets its side instead of crossing its face, its shoulders 1.25 m and its apex 2.25 m over the eave line (round 7, F3: both
+ // lifted 0.5 m from round 6's 0.75 and 1.75, inside the brief's +0.4-0.6 m, so the gable reads clearly above the eaves and the tympanum's crown, 0.9 m over the eave line, now sits
+ // within the gable's wall instead of reaching its shoulders; ASSUMED), red skews and kneelers along the gable, its own two short slate slopes running back from the skews to meet the
+ // main slope, and a 3.2 m segmental tympanum (rise 1.35 m, 0.45 m below the eave line and 0.9 m above it; ASSUMED, "about the bay's width") with a darker carved inset and a rosette.
  // The pedestal (R-pt2-b: red sandstone, stepped, widened here to 2.3, 1.7 and 1.1 m, ASSUMED) is red, carries the cross 1.0 m high, and starts 0.65 m below the apex so
  // its foot is on the gable's slope. The window pair itself is the facade texture's. Sizes ASSUMED from R-pt2-b at about 21 px/m.
  function gablet(sc:number){
   const lens=(w2:number,y0:number,rise:number)=>{const R=(w2*w2/4+rise*rise)/(2*rise),o:[number,number][]=[[-w2/2,y0],[w2/2,y0]];
    for(let i=1;i<8;i++){const x=w2/2-w2*i/8;o.push([x,y0+Math.sqrt(R*R-x*x)-(R-rise)]);}return o;};
   const dark:Rgb=[C.red[0]*.72,C.red[1]*.72,C.red[2]*.72],cap:Rgb=[Math.min(1,C.red[0]*1.12),Math.min(1,C.red[1]*1.12),Math.min(1,C.red[2]*1.12)];
-  const half=1.85,ys=L.eaves+.75,ya=L.eaves+1.75,D0=-.4,ty0=L.eaves-.45,tRise=1.35;// the wall's half width (3.7 m); its shoulder and apex heights; its face's d; the tympanum's spring and rise
+  const half=1.85,ys=L.eaves+1.25,ya=L.eaves+2.25,D0=-.4,ty0=L.eaves-.45,tRise=1.35;// the wall's half width (3.7 m); its shoulder and apex heights; its face's d; the tympanum's spring and rise
   const at3=(d:number):V3=>{const p=f.at(sc,d);return [p[0],0,p[1]];},lift=(o:[number,number][])=>o.map(([x,y])=>[x,y+P] as [number,number]);
   // the corbel course: two steps (3.5 m by 0.30 m out, 0.15 m high; 3.9 m by 0.42 m out, 0.30 m high) under the gable's foot, the cornice's own height
   wallBoxAlong(b.detail,f.at(sc,-.15),f.u,f.n,3.5,.3,P+L.eaves-.45,P+L.eaves-.3,C.red);wallBoxAlong(b.detail,f.at(sc,-.21),f.u,f.n,3.9,.42,P+L.eaves-.3,P+L.eaves,C.red);
-  // the gable's wall: ashlar, 1.1 m deep (its side faces are the roof's cheeks), its face 0.40 m out
-  slab(b.detail,lift([[-half,L.eaves-.1],[half,L.eaves-.1],[half,ys],[0,ya],[-half,ys]]),at3(D0),uAx,nOut,1.1,C.ashlar);
-  // its two slate slopes (0.03 m over the wall's top edges), from the face back to where each meets the main front slope (the valley, 0.05 m past it)
+  // where the main front slope reaches the height y (above P): the valley a gable slope meets it at
   const dv=(y:number)=>range.d0+(y-L.eaves)/pitch;
+  // the gable's wall: ashlar, its face 0.40 m out, running back to the valley at its apex (3.1 m deep; round 6's 1.1 m met the valleys at its shoulders only while they were 0.75 m up, and
+  // the 0.5 m lift would leave a void under the slates), where it stands inside the roof; its side faces are the roof's cheeks
+  slab(b.detail,lift([[-half,L.eaves-.1],[half,L.eaves-.1],[half,ys],[0,ya],[-half,ys]]),at3(D0),uAx,nOut,dv(ya)+.05-D0,C.ashlar);
+  // its two slate slopes (0.03 m over the wall's top edges), from the face back to where each meets the main front slope (the valley, 0.05 m past it)
   for(const sg of [-1,1])b.detail.poly([V(sc+sg*half,D0,P+ys+.03),V(sc,D0,P+ya+.03),V(sc,dv(ya)+.05,P+ya+.03),V(sc+sg*half,dv(ys)+.05,P+ys+.03)],undefined,{facing:[sg*uAx[0],1,sg*uAx[2]],color:C.slate});
   // the skews (red, 0.24 m deep, 0.30 m wide, 0.07 m proud of the face) from the gable's foot to where the pedestal covers them, and a kneeler at each foot (0.5 m by 0.5 m by 0.4 m)
   const slope=(ya-ys)/half,sy=(x:number)=>ys+(half-Math.abs(x))*slope;
@@ -315,9 +325,10 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
 /** A box standing on plan point c, `w` along u and `dp` along n, y0..y1. */
 function wallBoxAlong(b:Batch,c:Pt,u:Pt,_n:Pt,w:number,dp:number,y0:number,y1:number,color:Rgb){wallBox(b,[c[0]-u[0]*w/2,c[1]-u[1]*w/2],[c[0]+u[0]*w/2,c[1]+u[1]*w/2],y0,y1,dp/2,color);}
 
-/** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged buff-grey ashlar courses, red sandstone (the darker, redder stone)
- *  plinth, bands and cornice; paired white-painted sash windows (two lights side by side in one opening, each with its meeting rail) on three storeys, framed
- *  by separate dressed blocks of the red stone, and an attic window that only the entrance bay's taller walls reach. ASSUMED sizes, read from R-pt2-b. */
+/** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged buff-brown ashlar courses, red sandstone (the redder stone)
+ *  plinth, bands and cornice; on three storeys a window of two separate white-painted sashes (each with its meeting rail) divided by a red sandstone mullion, framed
+ *  by separate dressed blocks of the red stone, the ground floor's with a transom and a small glazed light above it; and an attic window that only the entrance bay's
+ *  taller walls reach. ASSUMED sizes, read from R-pt2-b. */
 export function hotelFacadeTexture():THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const W=512,H=2048,[lo,hi]=HOTEL_TEX_SPAN,ky=H/(hi-lo),kx=W/HOTEL_BAY,Y=(m:number)=>H-(m-lo)*ky;
@@ -326,7 +337,7 @@ export function hotelFacadeTexture():THREE.CanvasTexture|null{
  g.fillStyle=hex(HOTEL_COLOURS.ashlar);g.fillRect(0,0,W,H);
  let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
  for(let m=lo;m<hi;m+=.33)for(let x=(Math.round(m/.33)%2)*.45;x<HOTEL_BAY;x+=.9){const t=rnd();
-  g.fillStyle=t<.35?`rgba(88,72,66,${(.35-t)*.7})`:t<.7?`rgba(176,166,160,${(t-.35)*.45})`:`rgba(150,118,108,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}// darker pink-grey, lighter grey, a rosy brown: stugged pinkish buff-grey ashlar, no yellow in any of them
+  g.fillStyle=t<.35?`rgba(78,58,48,${(.35-t)*.7})`:t<.7?`rgba(170,148,124,${(t-.35)*.45})`:`rgba(146,100,80,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}// round 7 (F6): a dark brown stain, a lighter buff and a red-brown block (R-pt2-b's wall is buff-brown with dark and red-brown stones, not pinkish grey); with this `ashlar` they average a render of #917965
  for(let m=lo;m<hi;m+=.33){g.fillStyle='rgba(58,46,44,.35)';g.fillRect(0,Y(m),W,2);}
  const red=hex(HOTEL_COLOURS.red),white=hex(HOTEL_COLOURS.frame),fw=.075;// the red sandstone dressings; the sashes' white paint: frame 0.075 m (ASSUMED from R-pt2-b)
  const rr=(HOTEL_COLOURS.red>>16)&255,rg=(HOTEL_COLOURS.red>>8)&255,rb=HOTEL_COLOURS.red&255;
@@ -340,26 +351,43 @@ export function hotelFacadeTexture():THREE.CanvasTexture|null{
   g.strokeStyle='rgba(40,26,24,.65)';g.lineWidth=1.5;g.strokeRect(x+.75,y+.75,w-1.5,h-1.5);};
  // A window opening: its jambs in courses of about 0.34 m, long (0.40 m out from the opening) and short (0.22 m) alternately and the other way about on the other jamb; its lintel,
  // 0.30 m, of five stones (1.2:0.8:1.4:0.8:1.2) across the opening and both jambs; its sill, 0.20 m, of three (1:2.4:1) 0.35 m past the opening each side. Sizes ASSUMED from R-pt2-b.
- // Each light is a separate white-painted sash in its own frame, a 0.05 m shadow between the pair, with the meeting rail at 0.68 of the glazed height (R-pt2-b: the upper sash
- // is the shorter, about a third of the light), a dark hairline under it.
- const sash=(cx:number,y0:number,w:number,h:number,lights:number)=>{
-  const x0=(cx-w/2)*kx,n=Math.max(2,Math.round(h/.34)),ch=h/n,jl=.4,js=.22,hc=.3;
+ // Each light is a separate white-painted sash in its own frame, with the meeting rail at 0.68 of the glazed height (R-pt2-b: the upper sash is the shorter, about a third of the
+ // light), a dark hairline under it. Round 7 (F3/F4): the two sashes of a pair stand either side of a red sandstone mullion 0.24 m wide (R-pt2-b: a stone vertical 0.2-0.25 m, where round 6 had
+ // a 0.05 m shadow), cut as stones of about 0.5 m with their own dark joints. A window given `tl` carries a transom: a red stone bar 0.13 m high across the opening (ASSUMED from R-pt2-b)
+ // with a small glazed light above it, `tl` m high, barred in six panes (0.03 m bars; R-pt2-b's ground-floor windows: a small-paned light over tall, plain lower sashes, the upper light
+ // about a quarter of the window); the lower sashes then have no meeting rail, being single tall panes there. The mullion runs through the transom and the light above.
+ const sash=(cx:number,y0:number,w:number,h:number,lights:number,tl=0)=>{
+  const x0=(cx-w/2)*kx,n=Math.max(2,Math.round(h/.34)),ch=h/n,jl=.4,js=.22,hc=.3,mw=lights>1?.24:0,tb=tl>0?.13:0;
   for(let j=0;j<n;j++){const yy=Y(y0+(j+1)*ch),lw=(j%2?js:jl)*kx,rw=(j%2?jl:js)*kx;stone(x0-lw,yy,lw,ch*ky);stone(x0+w*kx,yy,rw,ch*ky);}
   const span=(w+2*jl)*kx,wts=[1.2,.8,1.4,.8,1.2],tot=wts.reduce((a,v)=>a+v,0);let hx=x0-jl*kx;
   for(const wt of wts){const bw=span*wt/tot;stone(hx,Y(y0+h+hc),bw,hc*ky);hx+=bw;}
   const sp=(w+.7)*kx,sw=[1,2.4,1];let sx=x0-.35*kx;
   for(const wt of sw){const bw=sp*wt/4.4;stone(sx,Y(y0),bw,.2*ky);sx+=bw;}
-  g.fillStyle='#3a302c';g.fillRect(x0,Y(y0+h),w*kx,h*ky);// the opening, dark between the sashes
-  const gap=.05,lf=(w-(lights-1)*gap)/lights,ry=y0+fw+(h-2*fw)*.68;
-  for(let i=0;i<lights;i++){const lx=x0+i*(lf+gap)*kx;
-   g.fillStyle=white;g.fillRect(lx,Y(y0+h),lf*kx,h*ky);// this sash's white-painted frame
-   const grad=g.createLinearGradient(0,Y(y0+h-fw),0,Y(y0+fw));grad.addColorStop(0,'#4a5562');grad.addColorStop(1,'#20262d');
-   g.fillStyle=grad;g.fillRect(lx+fw*kx,Y(y0+h-fw),(lf-2*fw)*kx,(h-2*fw)*ky);
+  g.fillStyle='#3a302c';g.fillRect(x0,Y(y0+h),w*kx,h*ky);// the opening, dark behind the sashes
+  const lf=(w-(lights-1)*mw)/lights,yb=y0+h-tl-tb;// each light's width; the top of the lower sashes (the whole height with no transom)
+  // one sash from height ya to yz (m): its white-painted frame, its glass, and (`rail`) the meeting rail
+  const pane=(lx:number,ya:number,yz:number,rail:boolean)=>{
+   g.fillStyle=white;g.fillRect(lx,Y(yz),lf*kx,(yz-ya)*ky);// this sash's white-painted frame
+   const grad=g.createLinearGradient(0,Y(yz-fw),0,Y(ya+fw));grad.addColorStop(0,'#4a5562');grad.addColorStop(1,'#20262d');
+   g.fillStyle=grad;g.fillRect(lx+fw*kx,Y(yz-fw),(lf-2*fw)*kx,(yz-ya-2*fw)*ky);
+   if(!rail)return;
+   const ry=ya+fw+(yz-ya-2*fw)*.68;
    g.fillStyle=white;g.fillRect(lx+fw*kx,Y(ry)-.045*ky,(lf-2*fw)*kx,.09*ky);// the sashes' meeting rail, white-painted (R-pt2-b)
-   g.fillStyle='rgba(18,22,28,.55)';g.fillRect(lx+fw*kx,Y(ry)+.045*ky,(lf-2*fw)*kx,2);}
+   g.fillStyle='rgba(18,22,28,.55)';g.fillRect(lx+fw*kx,Y(ry)+.045*ky,(lf-2*fw)*kx,2);};
+  for(let i=0;i<lights;i++){const lx=x0+i*(lf+mw)*kx;
+   pane(lx,y0,yb,tl<=0);
+   if(tl>0){
+    stone(lx,Y(yb+tb),lf*kx,tb*ky);// the transom: a red stone bar, one stone to a light
+    pane(lx,yb+tb,y0+h,false);// the small light above it
+    g.fillStyle=white;
+    for(const f of [1/3,2/3])g.fillRect(lx+lf*f*kx-.015*kx,Y(y0+h-fw),.03*kx,(tl-2*fw)*ky);// its two upright glazing bars
+    g.fillRect(lx+fw*kx,Y(yb+tb+tl/2)-.015*ky,(lf-2*fw)*kx,.03*ky);}}// and its one transverse bar
+  if(mw>0){const mx=x0+lf*kx,nb=Math.max(2,Math.round(h/.5)),bh=h/nb;
+   for(let j=0;j<nb;j++)stone(mx,Y(y0+(j+1)*bh),mw*kx,bh*ky);}// the mullion, from the sill to the lintel
  };
  const cx=HOTEL_BAY/2;
- sash(cx,1.3,2.3,2.5,2);sash(cx,5.1,2.2,2.3,2);sash(cx,8.6,1.9,2,2);sash(cx,12.4,1.3,1.8,1);
+ // the ground floor: 2.3 m by 2.6 m (its lintel's top, 4.15 m, meets the carved panels' foot), a 0.55 m light over the transom; the floors above are as round 6's. ASSUMED from R-pt2-b.
+ sash(cx,1.25,2.3,2.6,2,.55);sash(cx,5.1,2.2,2.3,2);sash(cx,8.6,1.9,2,2);sash(cx,12.4,1.3,1.8,1);
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;t.wrapS=THREE.RepeatWrapping;t.wrapT=THREE.ClampToEdgeWrapping;
  return t;
 }

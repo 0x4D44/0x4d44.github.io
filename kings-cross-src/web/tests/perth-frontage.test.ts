@@ -12,7 +12,7 @@ import type { PerthBuild } from '../src/perth-scene.ts';
 import { PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage } from '../src/perth-frontage.ts';
 import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '../src/perth-frontage-hotel.ts';
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
-import { KINGS_PLACE_CUT, KINGS_PLACE_LEVELS, cutRoads, cutSurfaceAt, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
+import { KINGS_PLACE_COLOURS, KINGS_PLACE_CUT, KINGS_PLACE_LEVELS, cutRoads, cutSurfaceAt, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
 import { perthTrack } from '../src/perth-station.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 
@@ -166,6 +166,18 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   for (const px of [1110, 1150, 1185]) {
     const pier = hit(px, 270);
     assert.ok(pier?.object.name === 'perth-kings-place-bridge' && pier.point.y > KINGS_PLACE_LEVELS.top && pier.distance < 50, `the pier at capture x ${px}, over the girder: ${pier?.object.name} ${pier?.point.y}`);
+  }
+  // round 7 (R-pt2-d): under the girder the dark render stops at about capture x 1000; from there to the pier the pier's sandstone
+  // runs down to the pavement, and the render's face is lit as one face (round 6's black slot at x 908-935 was a wall's end in shade)
+  const shade = (px: number, py: number) => { const h = hit(px, py), c = (h?.object as THREE.Mesh | undefined)?.geometry.getAttribute('color'), n = (h?.object as THREE.Mesh | undefined)?.geometry.getAttribute('normal');
+    return h?.face && c && n ? { c: new THREE.Color(c.getX(h.face.a), c.getY(h.face.a), c.getZ(h.face.a)), n: new THREE.Vector3(n.getX(h.face.a), n.getY(h.face.a), n.getZ(h.face.a)), y: h.point.y } : undefined; };
+  const tone = (a: THREE.Color, hex: number) => { const b = new THREE.Color(hex); return Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < .02; };
+  for (const px of [1030, 1070, 1120]) for (const py of [450, 600]) {
+    const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pier) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
+  }
+  for (const px of [700, 915, 930, 960]) {
+    const s = shade(px, 500); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture ${px},500: ${s?.c.getHexString()}`);
+    assert.ok(s.n.dot(new THREE.Vector3(cam.pos[0] - cam.target[0], 0, cam.pos[2] - cam.target[2]).normalize()) > .7, `the render at capture x ${px} lit as the face toward the road: ${s.n.toArray()}`);
   }
 });
 

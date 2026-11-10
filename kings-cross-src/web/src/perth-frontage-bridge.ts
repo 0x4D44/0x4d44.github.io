@@ -162,15 +162,16 @@ export function kingsPlaceCut(field:Terrain,openRails:readonly TrackSegment[],br
 }
 
 /** A rubble wall from plan point p to q, `half` its half thickness, its face toward -out (the road), leaning back toward `out` by
- *  `batter` m per m of height; world-metre UVs on the coursed rubble tile (PERTH_TEXTURE_TILE.rubble), continuous along a run. */
-export function stoneWall(b:Batch,p:Pt,q:Pt,y0:number,y1:number,half:number,color:Rgb,out:Pt,batter=0):void{
+ *  `batter` m per m of height; world-metre UVs on the coursed rubble tile (PERTH_TEXTURE_TILE.rubble), continuous along a run.
+ *  smoothEnds: its end faces lit as its face, so a run of segments turning a corner (the render under the deck) shows no dark slot. */
+export function stoneWall(b:Batch,p:Pt,q:Pt,y0:number,y1:number,half:number,color:Rgb,out:Pt,batter=0,smoothEnds=false):void{
  const l=Math.hypot(q[0]-p[0],q[1]-p[1]);if(l<1e-6||y1<=y0)return;
  const T=PERTH_TEXTURE_TILE.rubble,t:Pt=[(q[0]-p[0])/l,(q[1]-p[1])/l],lean=batter*(y1-y0),u0=(p[0]*t[0]+p[1]*t[1])/T,u1=u0+l/T,v0=y0/T,v1=y1/T,w=2*half/T;
  const P=(e:Pt,o:number,y:number):V3=>[e[0]+out[0]*o,y,e[1]+out[1]*o];
  b.poly([P(p,-half,y0),P(q,-half,y0),P(q,-half+lean,y1),P(p,-half+lean,y1)],[[u0,v0],[u1,v0],[u1,v1],[u0,v1]],{facing:[-out[0],batter,-out[1]],color});
  b.poly([P(q,half,y0),P(p,half,y0),P(p,half+lean,y1),P(q,half+lean,y1)],[[u1,v0],[u0,v0],[u0,v1],[u1,v1]],{facing:[out[0],0,out[1]],color});
  b.poly([P(p,-half+lean,y1),P(q,-half+lean,y1),P(q,half+lean,y1),P(p,half+lean,y1)],[[u0,0],[u1,0],[u1,w],[u0,w]],{facing:[0,1,0],color});
- for(const [e,sg] of [[p,-1],[q,1]] as const)b.poly([P(e,-half,y0),P(e,half,y0),P(e,half+lean,y1),P(e,-half+lean,y1)],[[0,v0],[w,v0],[w,v1],[0,v1]],{facing:[t[0]*sg,0,t[1]*sg],color});
+ for(const [e,sg] of [[p,-1],[q,1]] as const)b.poly([P(e,-half,y0),P(e,half,y0),P(e,half+lean,y1),P(e,-half+lean,y1)],[[0,v0],[w,v0],[w,v1],[0,v1]],{facing:[t[0]*sg,0,t[1]*sg],color,...smoothEnds?{normals:Array.from({length:4},():V3=>[-out[0],0,-out[1]])}:{}});
 }
 const outOf=(a:Pt,c:Pt,cx:number,cz:number):Pt=>{const l=Math.hypot(c[0]-a[0],c[1]-a[1])||1;let n:Pt=[-(c[1]-a[1])/l,(c[0]-a[0])/l];if(((a[0]+c[0])/2-cx)*n[0]+((a[1]+c[1])/2-cz)*n[1]<0)n=[-n[0],-n[1]];return n;};
 
@@ -209,10 +210,10 @@ export function kingsPlaceBridge(b:Batch,ring:readonly Pt[],railDir:Pt,ground:Pi
     else quad(s0+.09,s1-.09,y0+.09,y1-.09,rgb(C.red),.012);}
   }
   // the piers at the girder's ends (R-pt2-d, right: a solid pinkish sandstone pier, x about 1085-1200 at f 2334, its coped top about 0.9 m
-  // over the girder's, at capture y about 251; long-and-short quoins at its corners). 2.2 m along the girder's line from just past its
-  // flange, 1.9 m through, its inner face about 1.95 m from the rail; sizes ASSUMED from the photo. Not over a road, and clear of the train.
-  const PO=.62,H=.95;
-  for(const [s0,s1] of [[-2.6,-.42],[l+.42,l+2.6]] as const){
+  // over the girder's, at capture y about 251; long-and-short quoins at its corners). 1.5 m along the girder's line from just past its
+  // flange, 1.2 m through and set 0.9 m out, so it spans capture x about 1089-1191; sizes ASSUMED from the photo. Not over a road, and clear of the train.
+  const PO=.9,H=.6;
+  for(const [s0,s1] of [[-2,-.5],[l+.5,l+2]] as const){
    const p=at(s0,PO),q=at(s1,PO),m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2];
    if(roads.some(r=>r.inRamp(...m)&&onLine(r.line,...m).d<r.half+KINGS_PLACE_CUT.pavement+.5))continue;
    const corners=[at(s0,PO-H-.08),at(s0,PO+H+.08),at(s1,PO-H-.08),at(s1,PO+H+.08)];// with the coping's 0.08 m overhang
@@ -256,21 +257,32 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
   for(let bi=0;bi<3;bi++)for(let k=0;k<S;k++){const q=bi<2?[P(bi,k),P(bi,k+1),P(bi+1,k+1),P(bi+1,k)]:[P(bi,k),P(bi,k+1),P(3,0)];
    b2.poly(q.map(v=>v.p),undefined,{normals:q.map(v=>v.n),color:col});}
  };
+ // how far from a deck corner the pier's sandstone runs down the railway's walls: 3.85 m back along the girders and 2.2 m across them (ASSUMED,
+ // R-pt2-d: from the pier back to capture x about 1000). endDist is < 0 inside that box round any corner; the girders run along the ring's longest edge
+ const gEdge=bridgeRing.map((u,i)=>{const v=bridgeRing[(i+1)%bridgeRing.length];return [v[0]-u[0],v[1]-u[1]] as Pt;}).reduce((a,c)=>Math.hypot(...c)>Math.hypot(...a)?c:a,[0,0] as Pt);
+ const gl=Math.hypot(...gEdge)||1,gx=gEdge[0]/gl,gz=gEdge[1]/gl;
+ const endDist=(e:Pt)=>Math.min(...bridgeRing.map(v=>{const dx=e[0]-v[0],dz=e[1]-v[1];return Math.max(Math.abs(dx*gx+dz*gz)-3.85,Math.abs(dx*gz-dz*gx)-2.2);}));
  const ringDist=(e:Pt)=>{let d=Infinity;for(let i=0;i<bridgeRing.length;i++){const u=bridgeRing[i],v=bridgeRing[(i+1)%bridgeRing.length];d=Math.min(d,segDist(e[0],e[1],u[0],u[1],v[0],v[1]));}return d;};
  // rail: a railway guard wall (and its cap round a rail's end): beside the girders (within 2 m of the deck) it stops at the deck's underside, so
  // the girder stands clear to its end and its pier (R-pt2-d); elsewhere it has no parapet, the bank's vegetation on its top instead
  const wall=(p:Pt,q:Pt,out:Pt,inner:number,batter=0,rail=false,warm=rail)=>{// out: unit normal toward the high side; inner: the cut's level at the wall's foot
   const m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2],under=inRing(m[0],m[1],bridgeRing)||ringDist(m)<(rail?2:1);// under the deck, or at its edge
+  // a railway wall under the deck that crosses that box's edge is split there, so the sandstone stops where the render starts
+  if(rail&&under){const dEnd=endDist,dp=dEnd(p),dq=dEnd(q);
+   if(dp*dq<0&&Math.abs(dp)>.05&&Math.abs(dq)>.05){let lo=0,hi=1;for(let k=0;k<20;k++){const t=(lo+hi)/2;if(dEnd([p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t])*dp>0)lo=t;else hi=t;}
+    const x:Pt=[p[0]+(q[0]-p[0])*lo,p[1]+(q[1]-p[1])*lo];wall(p,x,out,inner,batter,rail,warm);wall(x,q,out,inner,batter,rail,warm);return;}}
   const lq=Math.hypot(q[0]-p[0],q[1]-p[1])||1,dir:Pt=[(q[0]-p[0])/lq,(q[1]-p[1])/lq];
   let hi=-Infinity;for(const e of [p,m,q])for(const o of [KINGS_PLACE_CUT.edge+.3,3,4.5,6])hi=Math.max(hi,ground.heightAt(e[0]+out[0]*o,e[1]+out[1]*o));// the ground the wall retains, up to 6 m behind it
   if(hi-inner<.6)return;
   const top=under?Math.min(hi+.5,L.soffit-.05):hi+(rail?0:.5);if(top-inner<.3)return;
   if(top>-.3-1e-6&&[p,q,m].some(e=>all.some(([cx,cz,dx,dz])=>segDist(e[0],e[1],cx,cz,dx,dz)<2.3+batter*(top-inner))))return;// the train envelope (1.75 m, plus the wall's half thickness and lean)
-  // under the deck, a dark render (R-pt2-d: smooth to capture x about 1000); King's Place and the railway's walls a pink-brown sandstone
+  // under the deck, a dark render (R-pt2-d: smooth to capture x about 1000), but the railway's walls near a girder's
+  // end in the pier's sandstone, carrying it down to the pavement (R-pt2-d: x about 1000-1135); King's Place and the railway's walls a pink-brown sandstone
   // rubble (R-pt2-d, right of the pier); the Bank's west wall dark grey (R-pt2-d, left)
-  const tone=under?K.render:warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
-  stoneWall(under&&veg?veg:b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(tone),out,batter);n++;
-  if(!under&&(rail||batter>0)&&!(rail&&ringDist(m)<3.2))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?1.2:.75);
+  const atEnd=rail&&endDist(m)<0;
+  const tone=under?(atEnd?K.pier:K.render):warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
+  stoneWall(under&&veg?veg:b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(tone),out,batter,under);n++;
+  if(!under&&(rail||batter>0)&&!(rail&&ringDist(m)<3.2))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?2:.75);
  };
  for(const road of roads){
   const pts:Pt[]=[];for(let i=0;i+1<road.line.length;i++){const a=road.line[i],c=road.line[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]),k=Math.max(1,Math.ceil(l/1.5));for(let j=0;j<k;j++)pts.push([a[0]+(c[0]-a[0])*j/k,a[1]+(c[1]-a[1])*j/k]);}
@@ -383,7 +395,8 @@ export function cutRoadSurfaces(flat:Batch,paint:Batch,street:Batch,ground:Pick<
   if(road.name==="King's Place")band(road,pts,-.06,.06,.06,paint,rgb(K.white),i=>i%2===0&&!other(i));
   else{for(const o of [road.half-.25,road.half-.45])band(road,pts,o-.05,o+.05,.06,paint,rgb(K.yellow),i=>!other(i));
    const kp=roads[0],mouth=pts.findIndex((p,i)=>i>0&&!(onLine(kp.line,...p).d<kp.half+C.pavement));
-   if(mouth>0)band(road,pts.slice(mouth,mouth+2),-road.half,0,.06,paint,rgb(K.white));}
+   // the stop line (R-pt2-d: across the Bank's west, northbound half at the mouth, photo y about 1165): 0.3 m deep, centre line to kerb
+   if(mouth>0){const p=pts[mouth],c=pts[mouth+1]??p,l=Math.hypot(c[0]-p[0],c[1]-p[1])||1;band(road,[p,[p[0]+(c[0]-p[0])/l*.3,p[1]+(c[1]-p[1])/l*.3]],.1,road.half-.1,.06,paint,rgb(K.white));}}
  }
  // the lamp column (R-pt2-d): pale green-grey, a short arm over the road, on the Bank's west pavement
  const bank=roads[1],s=onLine(bank.line,...KINGS_PLACE_STANDPOINT).s-10;let acc=0,lp:Pt|null=null,dir:Pt=[0,1];
