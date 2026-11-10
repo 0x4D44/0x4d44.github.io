@@ -161,7 +161,7 @@ export const PERTH_STATION = {
   bands: {gutter: 2, ridge: 1},
   /** The island building: walls to the gutter girders' tops (7.9 m over rail), so the roof bears on them as R-pt1-a shows; the screen above
    *  them up to the glazing is drawn in the wall's stone. Plinth 0.6 m, string course at 4.6 m over rail, cornice 0.35 m (R-pt1-a). */
-  building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorArch: .6, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03},
+  building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorArch: .6, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03, reveal: .3},
   /** The Dundee canopies (Champion 2011, geograph 2687800, CC BY-SA 2.0): their eaves 5.6 m over rail (above the 4.8 m train envelope
    *  the scene test holds), a 0.6 m white diamond-lattice valance in `lattice` m cells, columns every 7 m. A shallow ridge-and-furrow
    *  across the platforms, gables to the tracks, `pitch` m pitch and `rise` m rise, in glass with dark bands; curved brackets reach
@@ -248,11 +248,13 @@ export const PERTH_LANDING_LEAN: Readonly<Record<string, number>> = {'4/5': 1};
  *  where along the wall it hangs). */
 export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -11 + PERTH_BAY_PHASE, '5': -30 + PERTH_BAY_PHASE};
 
-/** Paint (R-pt1-a, R-pt1-c, R-pt1-d): dark brown roof ironwork, cream columns, a maroon lattice bridge, a grey modern bridge. ASSUMED shades. */
+/** Paint (R-pt1-a, R-pt1-c, R-pt1-d): dark brown roof ironwork, cream columns, a maroon lattice bridge, a grey modern bridge. ASSUMED shades.
+ *  Round 7 (S5, the round-6 score: "the tower's frame and stair are still white"): the lift bridge's `frame` (stairs, columns, parapet
+ *  frames, the towers' caps and hood brackets) a light grey, between the cladding and white, as Abbott 6573357 shows it (was 0xe2e3df). */
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x9a9fa1, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xaeb3b5, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x9a9fa1, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -650,6 +652,18 @@ function diamondParapet(b: Batch, x: number, z0: number, z1: number, y0: number,
     beam(b, [x, y0 + lift(a) + sg * (a - zs), a], [x, y0 + lift(e) + sg * (e - zs), e], .05, .04, flats);
   }
 }
+/** Round 7 (S5): a lift door at `c` (track frame) on a tower face looking along `d`, its sill at `y`: a grey frame (jambs and head) round
+ *  two stainless leaves, each with a tall dark vision panel, meeting at a centre line. 1.1 x 2.2 m opening, ASSUMED (a standard lift door). */
+export const PERTH_LIFT_DOOR = {width: 1.1, height: 2.2, frame: .1, leaf: 0xc9cdcf, vision: [.18, 1.1] as const} as const;
+function liftDoor(b: Batch, c: Pt, d: Pt, y: number): void {
+  const D = PERTH_LIFT_DOOR, v: Pt = [-d[1], d[0]], rotY = Math.atan2(-d[1], d[0]), at = (o: number, s: number): Pt => [c[0] + d[0] * o + v[0] * s, c[1] + d[1] * o + v[1] * s];
+  for (const s of [-1, 1]) { const p = at(.03, s * (D.width + D.frame) / 2); b.box([p[0], y + (D.height + D.frame) / 2, p[1]], [.08, D.height + D.frame, D.frame], {rotY, color: P('frame')}); }
+  { const p = at(.03, 0); b.box([p[0], y + D.height + D.frame / 2, p[1]], [.08, D.frame, D.width + 2 * D.frame], {rotY, color: P('frame')}); }
+  for (const s of [-1, 1]) {
+    const p = at(.01, s * D.width / 4); b.box([p[0], y + D.height / 2, p[1]], [.04, D.height, D.width / 2 - .02], {rotY, color: rgb(D.leaf)});
+    const q = at(.035, s * D.width / 4); b.box([q[0], y + 1.25, q[1]], [.01, D.vision[1], D.vision[0]], {rotY, color: P('screen')});
+  }
+}
 function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
   const S = PERTH_STATION, half = S.deckHalf, lattice = br.kind === 'lattice', deckColor = lattice ? P('lattice') : P('frame');
   if (!br.landings.length) return;
@@ -736,17 +750,22 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
           for (let y = y0 + T.joint * (col % 2 ? .5 : 1); y < y1 - .3; y += T.joint) b.box([xc + f[0] * e * hs + g[0] * m, y, zc + f[1] * e * hs + g[1] * m], [.03, .04, w - .04], {rotY: Math.atan2(-f[1], f[0]), color: P('seam')});
         }
       }
-      b.box([xc + l.tower.dir[0] * (T.size / 2 + .02), y0 + 1.1, zc + l.tower.dir[1] * (T.size / 2 + .02)], [.06, 2.2, 1.1], {rotY, color: P('screen')});
       // Round 4: the deck-level lift door on the face toward the deck, under a glass hood cantilevered T.hood[0] m out on two pale brackets
       // (Abbott 6573357, R-pt1-b). The hood's glass is glassPanel, so it is drawn see-through with the bridges' glass. ASSUMED sizes.
-      const d: Pt = [-u[0], -u[1]], face = T.size / 2 + .02, [out, wide, over] = T.hood, yh = br.deck + over;
-      b.box([xc + d[0] * face, br.deck + 1.1, zc + d[1] * face], [.06, 2.2, 1.1], {rotY, color: P('screen')});
-      b.box([xc + d[0] * (face + out / 2), yh, zc + d[1] * (face + out / 2)], [out, .03, wide], {rotY, color: P('glassPanel')});
-      for (const e of [-1, 1]) {
-        const s0: V3 = [xc + d[0] * face + v[0] * e * wide / 2, yh - .6, zc + d[1] * face + v[1] * e * wide / 2];
-        const s1: V3 = [xc + d[0] * (face + out) + v[0] * e * wide / 2, yh, zc + d[1] * (face + out) + v[1] * e * wide / 2];
-        beam(b, s0, s1, .05, .06, P('frame'));
-        beam(b, [s1[0], yh + .03, s1[2]], [xc + d[0] * face + v[0] * e * wide / 2, yh + .03, zc + d[1] * face + v[1] * e * wide / 2], .05, .05, P('frame'));
+      // Round 7 (S5, the round-6 score: "add lift doors with their glass hoods at platform level"): both doors as lift doors (liftDoor), and
+      // the platform-level door, on the face away from the deck, under the same hood. Abbott 6573357 shows the deck-level hood only (its
+      // platform-level door is hidden behind the tower's base annex), so the lower hood is ASSUMED to match it.
+      const face = T.size / 2 + .02, [out, wide, over] = T.hood;
+      for (const [d, yd] of [[[-u[0], -u[1]], br.deck], [u, y0]] as [Pt, number][]) {
+        const yh = yd + over;
+        liftDoor(b, [xc + d[0] * face, zc + d[1] * face], d, yd);
+        b.box([xc + d[0] * (face + out / 2), yh, zc + d[1] * (face + out / 2)], [out, .03, wide], {rotY, color: P('glassPanel')});
+        for (const e of [-1, 1]) {
+          const s0: V3 = [xc + d[0] * face + v[0] * e * wide / 2, yh - .6, zc + d[1] * face + v[1] * e * wide / 2];
+          const s1: V3 = [xc + d[0] * (face + out) + v[0] * e * wide / 2, yh, zc + d[1] * (face + out) + v[1] * e * wide / 2];
+          beam(b, s0, s1, .05, .06, P('frame'));
+          beam(b, [s1[0], yh + .03, s1[2]], [xc + d[0] * face + v[0] * e * wide / 2, yh + .03, zc + d[1] * face + v[1] * e * wide / 2], .05, .05, P('frame'));
+        }
       }
     }
   }
@@ -777,6 +796,9 @@ export function islandBuildingBatches(ring: readonly Pt[], roofOver?: (p: Pt) =>
     if (w < B.groundWindow[0] + .8) continue;
     /** One opening `ow` wide from y0 to y1 centred at s: `lights` lights split by stone mullions, a transom at 0.7 of the height, round
      *  arched heads over each light (`arched`), and a dressed surround (jambs, sill, lintel or hood). */
+    // Round 7 (S5, the round-6 score: "give the south end's windows R-pt1-a's depth"): the dressings stand B.reveal proud of the wall
+    // (round 6: 0.1-0.14 m), so the glass, on the wall's face, reads set back behind deep jambs, mullions, sills, lintels and arch rings.
+    const rv = B.reveal;
     const opening = (s: number, ow: number, y0: number, y1: number, lights: number, transom: boolean, arched: boolean): void => {
       const lw = ow / lights, rr = lw / 2;
       for (let j = 0; j < lights; j++) {
@@ -785,14 +807,14 @@ export function islandBuildingBatches(ring: readonly Pt[], roofOver?: (p: Pt) =>
         if (arched) {
           const arc = Array.from({length: 7}, (_, q): V3 => { const t = q / 6 * Math.PI; return at(c + rr * Math.cos(t), B.lift, yh + rr * Math.sin(t)); });
           windows.poly([at(l1, B.lift, yh), ...arc.slice(1, 6), at(l0, B.lift, yh)], undefined, {facing});
-          for (let q = 0; q < 6; q++) { const t0 = q / 6 * Math.PI, t1 = (q + 1) / 6 * Math.PI, R = rr + .08; beam(stone, at(c + R * Math.cos(t0), .06, yh + R * Math.sin(t0)), at(c + R * Math.cos(t1), .06, yh + R * Math.sin(t1)), .12, .16, dressing); }
+          for (let q = 0; q < 6; q++) { const t0 = q / 6 * Math.PI, t1 = (q + 1) / 6 * Math.PI, R = rr + .08; beam(stone, at(c + R * Math.cos(t0), rv / 2, yh + R * Math.sin(t0)), at(c + R * Math.cos(t1), rv / 2, yh + R * Math.sin(t1)), rv, .16, dressing); }
         }
       }
-      for (let j = 1; j < lights; j++) stone.box(at(s - ow / 2 + j * lw, .04, (y0 + y1) / 2), [.14, y1 - y0, .1], {rotY, color: dressing});
-      if (transom) stone.box(at(s, .04, y0 + (y1 - y0) * .7), [ow, .12, .1], {rotY, color: dressing});
-      for (const e of [-1, 1]) stone.box(at(s + e * (ow / 2 + .08), .05, (y0 + y1) / 2), [.16, y1 - y0 + .1, .12], {rotY, color: dressing});
-      stone.box(at(s, .06, y0 - .08), [ow + .4, .16, .14], {rotY, color: dressing});
-      if (!arched) stone.box(at(s, .06, y1 + .14), [ow + .4, .28, .14], {rotY, color: dressing});
+      for (let j = 1; j < lights; j++) stone.box(at(s - ow / 2 + j * lw, (rv - .06) / 2, (y0 + y1) / 2), [.14, y1 - y0, rv - .06], {rotY, color: dressing});
+      if (transom) stone.box(at(s, (rv - .06) / 2, y0 + (y1 - y0) * .7), [ow, .12, rv - .06], {rotY, color: dressing});
+      for (const e of [-1, 1]) stone.box(at(s + e * (ow / 2 + .08), rv / 2, (y0 + y1) / 2), [.16, y1 - y0 + .1, rv], {rotY, color: dressing});
+      stone.box(at(s, (rv + .04) / 2, y0 - .08), [ow + .4, .16, rv + .04], {rotY, color: dressing});
+      if (!arched) stone.box(at(s, (rv + .04) / 2, y1 + .14), [ow + .4, .28, rv + .04], {rotY, color: dressing});
     };
     for (let k = 0; k < n; k++) {
       const s = (k + .5) * w, door = k % B.doorEvery === 1, [gw, gh, gs] = B.groundWindow, [dw, dh] = B.door, [uw, uh, us] = B.upperWindow;
@@ -803,9 +825,9 @@ export function islandBuildingBatches(ring: readonly Pt[], roofOver?: (p: Pt) =>
         const rr = dw / 2, spring = deck + dh - B.doorArch;
         stone.box(at(s, .02, deck + (spring - deck) / 2), [dw, spring - deck, .06], {rotY, color: P('door')});
         windows.poly(Array.from({length: 9}, (_, q): V3 => { const t = q / 8 * Math.PI; return at(s + rr * Math.cos(t), B.lift, spring + rr * Math.sin(t)); }), undefined, {facing});
-        for (const e of [-1, 1]) stone.box(at(s + e * (rr + .12), .08, (deck + spring) / 2), [.24, spring - deck, .16], {rotY, color: dressing});
-        for (let q = 0; q < 8; q++) { const t0 = q / 8 * Math.PI, t1 = (q + 1) / 8 * Math.PI, R = rr + .12; beam(stone, at(s + R * Math.cos(t0), .08, spring + R * Math.sin(t0)), at(s + R * Math.cos(t1), .08, spring + R * Math.sin(t1)), .2, .24, dressing); }
-        stone.box(at(s, .1, spring + rr + .14), [.3, .4, .2], {rotY, color: dressing});
+        for (const e of [-1, 1]) stone.box(at(s + e * (rr + .12), (rv + .04) / 2, (deck + spring) / 2), [.24, spring - deck, rv + .04], {rotY, color: dressing});
+        for (let q = 0; q < 8; q++) { const t0 = q / 8 * Math.PI, t1 = (q + 1) / 8 * Math.PI, R = rr + .12; beam(stone, at(s + R * Math.cos(t0), (rv + .04) / 2, spring + R * Math.sin(t0)), at(s + R * Math.cos(t1), (rv + .04) / 2, spring + R * Math.sin(t1)), rv + .04, .24, dressing); }
+        stone.box(at(s, (rv + .08) / 2, spring + rr + .14), [.3, .4, rv + .08], {rotY, color: dressing});
       } else opening(s, gw + .4, deck + gs, deck + gs + gh, 2, true, false);
       opening(s, k % 2 ? uw + .4 : uw + 1.2, us, us + uh, k % 2 ? 2 : 3, false, true);
       // A chimney stack over every fourth bay (R-pt1-b: the island ranges' stacks stand up through the station roof), 1.2 m inside the

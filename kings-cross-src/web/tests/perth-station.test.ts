@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -635,6 +635,40 @@ test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, wi
   }
   const g = PERTH_PAINT.towerClad, [r, gg, b] = [g >> 16, (g >> 8) & 255, g & 255], m = PERTH_PAINT.modern;
   assert.ok(r >= 0x88 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
+});
+
+test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift door under a glass hood at platform and deck level on every tower; the island building\'s windows set deep', () => {
+  // The frame paint: a light grey, between the cladding and white, not round 6's near-white.
+  const hexes = (h: number): number[] => [h >> 16, (h >> 8) & 255, h & 255], [fr, fg, fb] = hexes(PERTH_PAINT.frame);
+  assert.ok(Math.abs(fr - fg) <= 0x08 && Math.abs(fr - fb) <= 0x08, `grey (${PERTH_PAINT.frame.toString(16)})`);
+  assert.ok(fr > (PERTH_PAINT.towerClad >> 16) && fr <= 0xc0, `lighter than the cladding and clearly not white (${fr.toString(16)})`);
+  // Doors and hoods: at each tower, leaf-coloured vertices on two opposite faces, one at each level, each under a hood pane.
+  const T = PERTH_STATION.tower, D = PERTH_LIFT_DOOR, f = batches.fittings, p = f.positions, col = f.colors, leaf = rgb(D.leaf), glassF = batches.panes.positions;
+  const towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, u: l.tower!.dir, deck: br.deck})));
+  const deck0 = WAVERLEY_LEVELS.platform;
+  for (const t of towers) for (const [sg, y] of [[1, deck0], [-1, t.deck]] as [number, number][]) {
+    let leaves = 0, hood = 0;
+    for (let i = 0; i < p.length; i += 3) {
+      if (Math.abs(col[i] - leaf[0]) > 1e-6 || Math.abs(col[i + 2] - leaf[2]) > 1e-6) continue;
+      const q = toLocal([p[i], p[i + 2]]), out = sg * ((q[0] - t.c[0]) * t.u[0] + (q[1] - t.c[1]) * t.u[1]);
+      if (out > T.size / 2 && out < T.size / 2 + .1 && p[i + 1] >= y - 1e-6 && p[i + 1] <= y + D.height + 1e-6) leaves++;
+    }
+    for (let i = 0; i < glassF.length; i += 3) {
+      const q = toLocal([glassF[i], glassF[i + 2]]), out = sg * ((q[0] - t.c[0]) * t.u[0] + (q[1] - t.c[1]) * t.u[1]), yh = y + T.hood[2];
+      if (out > T.size / 2 && out < T.size / 2 + T.hood[0] + .1 && Math.abs(glassF[i + 1] - yh) < .05) hood++;
+    }
+    assert.ok(leaves >= 16, `the tower at ${t.c.map(v => v.toFixed(1))}: a two-leaf lift door at ${y.toFixed(2)} (${leaves} vertices)`);
+    assert.ok(hood >= 8, `the tower at ${t.c.map(v => v.toFixed(1))}: a glass hood over its door at ${y.toFixed(2)} (${hood} vertices)`);
+  }
+  // Windows: the dressings round the island building's ground-floor windows stand 0.28 m or more proud of its wall (round 6: 0.14 m).
+  const B = PERTH_STATION.building, st = islandBuildingBatches(plan.island).stone, kd = rgb(PERTH_PAINT.stoneDressing), ring = cleanRing(plan.island);
+  let deep = 0;
+  for (let i = 0; i < st.positions.length; i += 3) {
+    const y = st.positions[i + 1], q: Pt = [st.positions[i], st.positions[i + 2]];
+    if (Math.abs(st.colors[i] - kd[0]) > 1e-6 || y < deck0 + B.groundWindow[2] + .2 || y > deck0 + B.groundWindow[2] + B.groundWindow[1] - .2) continue;
+    if (!inRing(q, ring) && ringDistance(q, ring) > .28) deep++;
+  }
+  assert.ok(deep >= 100, `deep jambs and mullions at the ground-floor windows (${deep} vertices 0.28 m out)`);
 });
 
 test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders, in the across-track planes the platform cameras face', () => {
