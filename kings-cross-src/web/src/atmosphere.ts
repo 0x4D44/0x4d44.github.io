@@ -18,7 +18,7 @@ import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from 
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
 import { windowNight } from './materials.ts';
-import { createNightLights } from './night.ts';
+import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
@@ -261,6 +261,9 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
+  // the clock dials of the scene's buildings glow with the lamps (night.ts `createDialLights`); `rescan` finds them, as the landmarks arrive after the first frame
+  const dialLights = nightLights ? createDialLights() : null;
+  if (dialLights) nightLights?.attach(dialLights);
 
   // the sun disc and the stars ride on the dome, which follows the camera
   const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunTexture(), color: 0xffffff, transparent: true, opacity: 0,
@@ -318,6 +321,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
         }
       }
     });
+    dialLights?.scan(scene);
   };
   rescan();
 
@@ -456,6 +460,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
     dispose() {
       applyCover(null);
       precip.dispose();
+      dialLights?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
       sunSprite.material.dispose();

@@ -7,6 +7,7 @@ import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { concourseHeight, pointInPolygon, SHED_SPAN_WIDTH, shedToWorld, worldToShed } from '../../core/station.ts';
 import type { ConcourseCanopy, ShedLayout } from '../../core/station.ts';
 import type { Pt } from '../../core/geo.ts';
+import type { ClockDial } from './clocks.ts';
 import { FIGURES } from './furniture.ts';
 import type { Placement } from './furniture.ts';
 
@@ -147,6 +148,93 @@ export function createNightLights(sites: NightLightSites): NightLights {
     dispose() {
       for (const layer of layers) { layer.points.geometry.dispose(); layer.material.dispose(); }
       attached.length = 0;
+    },
+  };
+}
+
+/**
+ * What a lit clock dial adds to its face, in display colours (the glow is left out of the tone map): the face's own cream, scaled up to the bright white of the photographs (the Balmoral's dial
+ * in night-f-waverley-balmoral-2023-crowsus.jpg is (247, 244, 234); the King's Cross tower's, in night-a-kx-square-2015-skinner.jpg and night-e-kx-elevated-2016-itsnogame.jpg, is as bright, "a signature of the
+ * front at night"). ASSUMED, by eye against those.
+ */
+export const DIAL_GLOW: readonly [number, number, number] = [1.06, 1.1, 1.2];
+/** A disc this near a dial's declared centre (clocks.ts `ClockDial`) is that dial's face, metres. */
+export const DIAL_REACH = 0.05;
+/** A dial's glow stands this far off its face, metres: under the hands (clocks.ts `HANDS`, 4 cm and 8 cm off the face), over the face by more than the depth buffer tells apart from far off. */
+export const DIAL_LIFT = 0.02;
+
+export interface DialLights extends NightLayer {
+  /** Give a glow to every dial face under `root` that has none yet; how many were added. A scene's dials arrive after the first frame (the landmarks), so this is called again as they do. */
+  scan(root: THREE.Object3D): number;
+  /** How many dials have a glow. */
+  count(): number;
+  /** Take the glows out of the scene and give their materials back. */
+  dispose(): void;
+}
+
+/**
+ * The clock dials that a building declares (`userData.clockDials`, clocks.ts) and draws as a Lambert disc (the King's Cross tower's: shed.ts; the Midland's is a MeshBasicMaterial, bright by day and by
+ * night, and the Balmoral's is flooded, station-weather.ts), lit white after dark (round seven, the E4 scorer: "the King's Cross clock dials do not glow; they are the same grey face"). Each gets a second
+ * disc standing a hand's breadth off it, with the face's own texture, added to the picture and scaled by the lamps' level: the numerals and ticks stay dark, the cream goes white. The face's material is not
+ * touched (it stays what the sun and the sky light, and the atmosphere's stand-ins do not see a glow), and by day the discs are hidden, so the noon picture and the noon programs are what they were.
+ */
+export function createDialLights(): DialLights {
+  const glows = new Map<THREE.Mesh, THREE.Mesh>(); // a face to its glow
+  const materials = new Map<THREE.Texture | null, THREE.MeshBasicMaterial>(); // a glow material for each face texture
+  let level = 0;
+  const show = (): void => {
+    for (const material of materials.values()) material.color.setRGB(...DIAL_GLOW).multiplyScalar(level);
+    for (const glow of glows.values()) glow.visible = level > 0.01;
+  };
+  const glowMaterial = (map: THREE.Texture | null): THREE.MeshBasicMaterial => {
+    let material = materials.get(map);
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({ map, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, toneMapped: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      materials.set(map, material);
+    }
+    return material;
+  };
+  return {
+    setLevel(next) {
+      level = Math.max(0, Math.min(1, next));
+      show();
+    },
+    scan(root) {
+      root.updateMatrixWorld(true);
+      const centre = new THREE.Vector3();
+      const at = new THREE.Vector3();
+      const faces: THREE.Mesh[] = [];
+      root.traverse((owner) => {
+        for (const dial of (owner.userData.clockDials ?? []) as ClockDial[]) {
+          owner.localToWorld(centre.set(...dial.centre));
+          owner.traverse((o) => {
+            const face = o as THREE.Mesh;
+            if (!face.isMesh || !(face.material as THREE.MeshLambertMaterial).isMeshLambertMaterial || face.geometry.type !== 'CircleGeometry') return;
+            if (!glows.has(face) && !faces.includes(face) && face.getWorldPosition(at).distanceTo(centre) <= DIAL_REACH) faces.push(face);
+          });
+        }
+      });
+      for (const face of faces) {
+        const glow = new THREE.Mesh(face.geometry, glowMaterial((face.material as THREE.MeshLambertMaterial).map));
+        glow.name = 'clock-dial-glow';
+        glow.position.copy(face.position);
+        glow.quaternion.copy(face.quaternion);
+        glow.scale.copy(face.scale);
+        glow.translateZ(DIAL_LIFT);
+        glow.renderOrder = 6;
+        face.parent?.add(glow);
+        glows.set(face, glow);
+      }
+      show();
+      return faces.length;
+    },
+    count: () => glows.size,
+    dispose() {
+      for (const glow of glows.values()) glow.removeFromParent();
+      for (const material of materials.values()) material.dispose();
+      glows.clear();
+      materials.clear();
     },
   };
 }

@@ -2,7 +2,8 @@
 (core/streetlights.ts, web/src/streetlights.ts, the lamps' place in core/city.ts and their wiring in web/src/city.ts and web/src/night.ts, the Scottish scene's lamps in
 web/src/waverley-lamps.ts and the lean road file's tool, tools/build-waverley-lamp-roads.ts), the windows that light after dark (the GLSL, the defines and the hooks of
 web/src/materials.ts, the Midland's panes in web/src/landmarks.ts), the floodlight (web/src/lighting.ts `FLOOD`) and the Scottish night (web/src/station-weather.ts: the Balmoral's
-windows, flood and dials, the lamps' life, the haze; web/src/atmosphere.ts: the shared night uniform and the haze's far plane);
+windows, flood and dials, the lamps' life, the haze; web/src/atmosphere.ts: the shared night uniform and the haze's far plane, and the wiring of the King's Cross tower's dials' glow,
+web/src/night.ts `createDialLights`);
 usage: night-lighting.py <kings-cross-src> <.scratch/output> [--check] [label text ...].
 
 The tests run in a copy of the package with the real node_modules linked in. The unmodified copy must pass each command first, a mutant is killed only by a named test that fails by
@@ -57,6 +58,8 @@ LANES = {
     'landmarks': Lane(['web/tests/landmarks.test.ts'], ['windowId: a number of 0 to', 'addGlass: the flat shape of a window', "Midland Grand: the lit pane's windows", "the Midland's kinds of window each put lit glass",
                                                          "Midland Grand: the clock tower's lantern is open to the night", "Midland Grand: the front's brick and its stone are floodlit"]),
     'night': Lane(['web/tests/night.test.ts'], ['attach: a layer is handed the level']),
+    # the clock dials' glow (web/src/night.ts `createDialLights`, its wiring in web/src/atmosphere.ts): the whole file
+    'dials': Lane(['web/tests/dial-lights.test.ts']),
     'atmosphere': Lane(['web/tests/atmosphere.test.ts'], ["a scene's own haze", 'fogFar: the range', 'the windows of the city light with the lamps']),
     'weather': Lane(['web/tests/station-weather.test.ts'], [
         'lightWaverleyNight: the city blocks get lit windows', 'the meshes the Scottish night lights are the ones the real scene builds', "the Balmoral's windows are the facade texture's",
@@ -472,6 +475,40 @@ MUTATIONS += [
     ('the layers are kept when the lights are freed', NL, '      attached.length = 0;\n', ''),
 ]
 
+# ------------------------------------------------------------------------------------------------ web/src/night.ts: the clock dials' glow (createDialLights)
+DL = Where(NIGHT, 'dials')
+MUTATIONS += [
+    # ---- which discs get a glow
+    ('a dial\'s face is looked for in the owner\'s own frame, not the world\'s', DL, 'owner.localToWorld(centre.set(...dial.centre));', 'centre.set(...dial.centre);'),
+    ('a disc anywhere is a dial\'s face', DL, ' && face.getWorldPosition(at).distanceTo(centre) <= DIAL_REACH) faces.push(face);', ') faces.push(face);'),
+    ('a dial\'s stone ring is lit', DL, " || face.geometry.type !== 'CircleGeometry') return;", ') return;'),
+    ('an unlit disc at a dial is lit again', DL, '!(face.material as THREE.MeshLambertMaterial).isMeshLambertMaterial || ', ''),
+    ('a face that has a glow is given another', DL, '!glows.has(face) && !faces.includes(face)', '!faces.includes(face)'),
+    ('a scan counts every glow, not those it added', DL, '      return faces.length;\n', '      return glows.size;\n'),
+    ('a new glow is left as it is made, not put to the level', DL, '      show();\n      return faces.length;\n', '      return faces.length;\n'),
+    # ---- where a glow stands and what it is made of
+    ('a glow is not in its face\'s place', DL, '        glow.position.copy(face.position);\n', ''),
+    ('a glow is not turned like its face', DL, '        glow.quaternion.copy(face.quaternion);\n', ''),
+    ('a glow is not the size of its face', DL, '        glow.scale.copy(face.scale);\n', ''),
+    ('a glow is in its face\'s plane', DL, '        glow.translateZ(DIAL_LIFT);\n', ''),
+    ('a glow is in the scene\'s root, not its face\'s frame', DL, 'face.parent?.add(glow);', 'root.add(glow);'),
+    ('a glow is a flat disc, not the face\'s texture', DL, 'glowMaterial((face.material as THREE.MeshLambertMaterial).map)', 'glowMaterial(null)'),
+    ('each glow has a material of its own', DL, 'let material = materials.get(map);', 'let material: THREE.MeshBasicMaterial | undefined;'),
+    ('a glow is not added to the picture', DL, '{ map, transparent: true, blending: THREE.AdditiveBlending,', '{ map, transparent: true, blending: THREE.NormalBlending,'),
+    ('a glow is not drawn with the transparent things', DL, '{ map, transparent: true,', '{ map, transparent: false,'),
+    ('a glow writes depth', DL, 'depthWrite: false, fog: false, toneMapped: false,', 'depthWrite: true, fog: false, toneMapped: false,'),
+    ('a glow is fogged', DL, 'depthWrite: false, fog: false, toneMapped: false,', 'depthWrite: false, fog: true, toneMapped: false,'),
+    ('a glow is toned by the grade', DL, 'fog: false, toneMapped: false,', 'fog: false, toneMapped: true,'),
+    # ---- how it follows the lamps
+    ('a glow is shown by day', DL, 'for (const glow of glows.values()) glow.visible = level > 0.01;', 'for (const glow of glows.values()) glow.visible = true;'),
+    ('a glow is as bright at every level', DL, 'material.color.setRGB(...DIAL_GLOW).multiplyScalar(level);', 'material.color.setRGB(...DIAL_GLOW);'),
+    ('the dial lights\' level is not held to 0..1', DL, 'level = Math.max(0, Math.min(1, next));', 'level = next;'),
+    # ---- giving it back
+    ('the glows stay in the scene when the layer is freed', DL, '      for (const glow of glows.values()) glow.removeFromParent();\n', ''),
+    ('the glows\' materials are kept when the layer is freed', DL, '      for (const material of materials.values()) material.dispose();\n', ''),
+    ('the glows are still counted when the layer is freed', DL, '      glows.clear();\n', ''),
+]
+
 # ------------------------------------------------------------------------------------------------ core/city.ts and web/src/city.ts: where the lamps stand and how they are kept
 CC = Where(CORECITY, 'city')
 WC = Where(WEBCITY, 'lamps')
@@ -581,6 +618,15 @@ MUTATIONS += [
     ('the atmosphere does not hand its haze to the fog', AT, 'scene.fog.far = fogFar(range.far, f.camera.position.y, haze);', 'scene.fog.far = fogFar(range.far, f.camera.position.y);'),
     ('the atmosphere reads the haze at the ground', AT, 'scene.fog.far = fogFar(range.far, f.camera.position.y, haze);', 'scene.fog.far = fogFar(range.far, 0, haze);'),
     ('the atmosphere\'s fog ignores the range', AT, 'scene.fog.far = fogFar(range.far, f.camera.position.y, haze);', 'scene.fog.far = fogFar(2600, f.camera.position.y, haze);'),
+]
+
+# the clock dials' glow, as the atmosphere wires it: made with the night lights, handed the lamps' level, looking for dials at every rescan, taken out with the atmosphere
+AD = Where(ATMOSPHERE, 'dials')
+MUTATIONS += [
+    ('the dials\' glow is never handed the lamps\' level', AD, '  if (dialLights) nightLights?.attach(dialLights);\n', ''),
+    ('the atmosphere never looks for dials', AD, '    dialLights?.scan(scene);\n', ''),
+    ('a scene with no night lights has dial glows too', AD, 'const dialLights = nightLights ? createDialLights() : null;', 'const dialLights = createDialLights();'),
+    ('the dials\' glow stays in the scene when the atmosphere ends', AD, '      dialLights?.dispose();\n', ''),
 ]
 
 
