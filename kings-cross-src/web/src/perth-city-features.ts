@@ -103,7 +103,9 @@ export interface ShorePatch {x: number; z: number; r: number; kind: keyof typeof
  *  waterline the bank is painted in the water's own tone, `alpha` at the water falling to nothing `band` m over it, broken by a hash
  *  (`break` of it), so the visible edge between water and bank is the painted, wandering one, not the facet. Cells `cell` m, marched
  *  `cell` m apart up to `reach` m in from the mapped edge. ASSUMED. No triangles. */
-export const SHORE_SHEEN = {band: .7, alpha: .85, break: .45, cell: 1.5, reach: 24, tone: '#6f8794'} as const;
+export const SHORE_SHEEN = {band: .45, alpha: .85, break: .45, cell: 1.5, reach: 24, tone: '#566a74'} as const;
+/** The sheen's tone is WATER.colour times about 0.78 (sRGB): the sheet near the eye is darkened by WATER_GRADE, and the first capture
+ *  (band 0.7 m, the sheet's own tone) drew a pale blue stripe up the gentle banks at the viaduct. */
 export interface SheenCell {x: number; z: number; a: number}
 const shoreHash = (x: number, z: number, k: number) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 /** Walk every mapped water edge inside the extent (not the extent's own clip) every `step` m: the point, the unit normal into the river. */

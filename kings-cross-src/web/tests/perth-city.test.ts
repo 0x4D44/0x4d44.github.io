@@ -809,7 +809,9 @@ test('the shore is broken along the water\'s edge: grass tongues across it, dry 
 
 test('the waterline is softened: the bank just above the water is painted in the water\'s tone, fading with height (round 11, C3)', () => {
   const rise = shoreRise(scene.terrain), cells = shoreSheen(rise), W = SHORE_SHEEN;
-  assert.equal(W.tone, `#${WATER.colour.toString(16).padStart(6, '0')}`, 'the sheet\'s own tone');
+  // the sheet's own hue, darkened as the grade darkens the sheet near the eye (0.7-0.85 of each channel, sRGB)
+  const tc = [1, 2, 3].map(i => parseInt(W.tone.slice(2 * i - 1, 2 * i + 1), 16)), wc = [WATER.colour >> 16, WATER.colour >> 8 & 255, WATER.colour & 255];
+  assert.ok(tc.every((v, i) => v >= .7 * wc[i]! && v <= .85 * wc[i]!), `the sheet's tone, darkened: ${W.tone}`);
   const near = cells.filter(c => Math.hypot(c.x - 954, c.z + 300) < 400);
   assert.ok(near.length > 1000, `sheen cells about Bridgend: ${near.length}`);
   for (const c of near) { const up = rise(c.x, c.z); assert.ok(up >= -1e-9 && up < W.band && c.a <= W.alpha * (1 - up / W.band) + 1e-9 && c.a >= W.alpha * (1 - up / W.band) * (1 - W.break) - 1e-9, `sheen at ${up.toFixed(2)} m: ${c.a.toFixed(2)}`); }
