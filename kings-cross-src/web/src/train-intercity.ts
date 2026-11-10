@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { HST, INTERCITY_END_GAP, INTERCITY_SPECS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import type { IntercityBody, IntercityCar, IntercityKind, IntercityLayout } from '../../core/train-intercity.ts';
-import { add, clipConvex, col, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, scale, Soup, unit } from './train-geom.ts';
+import { add, clipConvex, col, cross, ellipse, glassMaterial, gridNormals, lerp, plain, roundedRect, scale, Soup, sub, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
@@ -690,9 +690,18 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     }
     // the wipers: each a pantograph pair of thin dark arms lying on the screen, a little off the glass
     for (const [[sa, xa], [sb, xb]] of b.wipers ?? []) {
+      // a point of the nose's top surface, then lifted 25 mm off it along its normal (a lift in y alone slides along the raked glass, not off it)
+      const surfaceAt = (s: number, x: number): V3 => {
+        const y = yAtX(halfAt(sec, norm, egg, ringAt(b.nose, s)), Math.abs(x));
+        return [x, y, tip + s + setBack(tip + s, y)];
+      };
       const onTop = (s: number, x: number): V3 => {
-        const y = yAtX(halfAt(sec, norm, egg, ringAt(b.nose, s)), Math.abs(x)) + 0.02;
-        return world([x, y, tip + s + setBack(tip + s, y)]);
+        const p = surfaceAt(s, x);
+        const ds = sub(surfaceAt(s + 0.02, x), surfaceAt(s - 0.02, x));
+        const dx = sub(surfaceAt(s, x + 0.02), surfaceAt(s, x - 0.02));
+        let nrm = unit(cross(ds, dx));
+        if (nrm[1] < 0) nrm = scale(nrm, -1);
+        return world(add(p, scale(nrm, 0.025)));
       };
       const len = Math.hypot(sb - sa, xb - xa);
       const [ps, px] = [-(xb - xa) / len, (sb - sa) / len];
