@@ -222,18 +222,26 @@ function hullShapes(nose: number): Shape[] {
 export const HULL_BAND: [number, number] = [1.0, 1.45];
 
 /**
- * The colour stops of the wrap's band, car by car from the front of the train, as [t along the car, colour]: read off hull-802-paragon-2025 (802 304,
- * 2025), where the band is a photographic wrap that runs through the spectrum along each car (cyan to green on the first, with a cut to violet at its
- * end; violet through pink and orange to yellow on the second, and so on). The photograph does not show every car's band clearly, and other units wear
- * other wraps (hull-802-home-2023 is a darker teal-and-green one): so each car's colours are an APPROXIMATION of that one unit's band, not a record of
- * every 802. Two stops a hair apart are a cut; the colours between stops are blended.
+ * The colour stops of the wrap's band, car by car from the front of the train, as [t along the car's band, colour]: t is 0 at a driving car's cab end (the rear car's cab end is the rear end of the
+ * train) or a through car's front end, and 1 at the other end, as the decals measure along a car. CHANGED (round 6): read off hull-802-paragon-2025 (unit 802 304, taken 2025-06-02: the whole train
+ * side-on in sun, nose to the right, so its right side), where the band is a photographic wrap graded through the spectrum a car at a time, one run carrying on into the next car's start:
+ *   car 0 (lead):  cyan, turquoise, green (t 0 to 0.6), a dull blue-indigo stretch, violet at the car's end (0.85 to 1)
+ *   car 1:         a violet end panel (0 to 0.09), then, past the door, gold, orange, red and crimson (the old stops had the order the other way about)
+ *   car 2:         pink, crimson, magenta, purple, blue, violet, blue-violet and magenta-pink at its end
+ *   car 3:         rose, a salmon blend to orange, amber
+ *   car 4 (rear):  from the rear end of the train: cyan-teal, teal, green, grey-blue, violet to the car's front end
+ * The numbers are that photograph's readings (web/tests/hull-band-readings.ts: 21 a car, where each was read, and the ones it skips), and web/tests/train-livery.test.ts ties every stop to them. The
+ * cars in shade (2, 3 and above all 4, the far one) read duller than the paint is: they are kept as the photograph has them. One more dated photograph shows the front car of 802 302
+ * (hull-802-doncaster-2024, 2024-03-27): azure by the cab, cyan behind the door, then teal, then green, the order of car 0's first 60 per cent. 802 302's rear car (hull-802-home-2023, 2023-02-25)
+ * reads cyan to its rear door where 802 304's rear car runs teal, green and violet: other units wear other wraps, so this is one unit's band and not every 802's. The photographs read no colour off the left side (hull-802-304-werrington-2021 shows it, but the glossy band there only
+ * mirrors the trees): the left side is ASSUMED to carry the same colours at the same place along the car. Two stops a hair apart are a cut; the colours between stops are blended.
  */
 export const HULL_BAND_STOPS: readonly (readonly (readonly [number, number])[])[] = [
-  [[0, 0x23b5e6], [0.3, 0x12b5a5], [0.55, 0x35b94a], [0.8, 0x9ad03a], [0.81, 0x8a40c0], [1, 0x7a3fc4]],
-  [[0, 0x8a3fc8], [0.12, 0xd8479c], [0.3, 0xf08a24], [0.55, 0xf4b52a], [0.8, 0xf5cf2a], [1, 0x9ad03a]],
-  [[0, 0xe0408a], [0.2, 0x7a4fd0], [0.5, 0x3f6fe0], [0.75, 0x7a4fd0], [0.76, 0xe0408a], [1, 0xe0408a]],
-  [[0, 0xe8458f], [0.2, 0xf08a24], [0.45, 0xf5cf2a], [0.7, 0x40b84a], [1, 0x2f8fe0]],
-  [[0, 0x35b94a], [0.3, 0x12b5a5], [0.55, 0x7a3fc4], [0.8, 0xe0408a], [1, 0x7a3fc4]],
+  [[0, 0x2eb3eb], [0.1, 0x40b7d4], [0.15, 0x5be0ef], [0.3, 0x38eae1], [0.4, 0x48c7b0], [0.5, 0x56e28a], [0.6, 0x71e263], [0.65, 0x478d8c], [0.7, 0x43749b], [0.75, 0x385696], [0.8, 0x4c489e], [0.85, 0x7c4dbc], [1, 0x785bb0]],
+  [[0, 0x8b65ad], [0.09, 0x8b65ad], [0.1, 0xe1a523], [0.3, 0xe1a523], [0.35, 0xebba23], [0.4, 0xefb223], [0.5, 0xeb952f], [0.6, 0xe68338], [0.7, 0xe45f2d], [0.8, 0xe82927], [0.9, 0xea2037], [1, 0xe0305a]],
+  [[0, 0xd94167], [0.1, 0xe53b6d], [0.2, 0xd52751], [0.3, 0xb72b56], [0.4, 0x953a6f], [0.45, 0x7b4a81], [0.5, 0x585c8e], [0.55, 0x3d5b99], [0.65, 0x445087], [0.7, 0x6f5184], [0.75, 0x6b538e], [0.8, 0x5062a4], [0.85, 0x77639d], [0.9, 0xa4538a], [1, 0xa64975]],
+  [[0, 0xc53e5c], [0.1, 0xe83a57], [0.25, 0xe84a69], [0.4, 0xe95167], [0.6, 0xc05f42], [0.65, 0xe37748], [0.75, 0xea8146], [0.8, 0xed914b], [0.9, 0xe4a557], [1, 0xcb9854]],
+  [[0, 0x53828b], [0.1, 0x579b9f], [0.2, 0x558d83], [0.3, 0x5e9279], [0.4, 0x5d7e6e], [0.5, 0x676b80], [0.55, 0x6b5d8a], [0.7, 0x715295], [0.8, 0x65509d], [1, 0x645880]],
 ];
 /** The number of flat steps a car's band is drawn in (a decal is one flat colour). */
 export const HULL_BAND_STEPS = 40;

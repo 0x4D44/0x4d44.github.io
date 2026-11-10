@@ -13,6 +13,7 @@ import { col } from '../src/train-geom.ts';
 import { MASK_700, MASK_717 } from '../src/train-face.ts';
 import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
+import { DONCASTER_2024, PARAGON_2025 } from './hull-band-readings.ts';
 
 const LNER_NOSE = bodySpec('at300').nose.length;
 const GC_NOSE = bodySpec('adelante').nose.length;
@@ -246,6 +247,93 @@ test('Hull Trains 802: a blue body with a cyan sweep up the cab side, a spectrum
   assert.equal(l.noseCone, null);
   assert.equal(l.swoosh, HULL_BEAK);
   assert.equal(l.noseFront, HULL_BLUE);
+});
+
+// --- the Hull Trains band, car by car, tied to the dated photographs it was read from (web/tests/hull-band-readings.ts) ---
+
+const rgbOf = (c: number): [number, number, number] => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+const colourDistance = (a: number, b: number): number => {
+  const [ar, ag, ab] = rgbOf(a);
+  const [br, bg, bb] = rgbOf(b);
+  return Math.hypot(ar - br, ag - bg, ab - bb);
+};
+/** hue in degrees, and saturation, of a 0xRRGGBB colour */
+const hueSat = (c: number): { hue: number; sat: number } => {
+  const [r, g, b] = rgbOf(c).map((v) => v / 255) as [number, number, number];
+  const hi = Math.max(r, g, b);
+  const d = hi - Math.min(r, g, b);
+  let h = 0;
+  if (d > 0) h = hi === r ? ((g - b) / d) % 6 : hi === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { hue: (h * 60 + 360) % 360, sat: hi === 0 ? 0 : d / hi };
+};
+const hueGap = (a: number, b: number): number => {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+};
+
+test('Hull Trains 802: every car\'s band reproduces what hull-802-paragon-2025 shows of it, reading by reading, and the cars run on into one another as the photograph\'s do', () => {
+  assert.equal(PARAGON_2025.length, trainLayout('hull5').cars.length, 'readings for every car of the train');
+  assert.equal(HULL_BAND_STOPS.length, PARAGON_2025.length, 'stops for every car of the train');
+  for (const { car, role, readings, skip, line } of PARAGON_2025) {
+    assert.equal(car, PARAGON_2025.findIndex((c) => c.role === role), `${role}: its place in the table`);
+    assert.equal(readings.length, 21, `${role}: 21 readings (t = 0, 0.05 ... 1)`);
+    assert.ok(line.length >= 4, `${role}: the line the readings were taken along`);
+    assert.ok(readings.length - skip.length >= 17, `${role}: at most four readings skipped`);
+    for (const k of skip) assert.ok(readings.some(([t]) => t === k), `${role}: a skipped reading at t = ${k} is in the table`);
+    // the stops: 0 to 1, strictly increasing (a cut is two stops a hair apart, never the same t twice or backwards)
+    const stops = HULL_BAND_STOPS[car] as readonly (readonly [number, number])[];
+    assert.equal((stops[0] as readonly [number, number])[0], 0, `${role}: the first stop is the first end`);
+    assert.equal((stops[stops.length - 1] as readonly [number, number])[0], 1, `${role}: the last stop is the last end`);
+    for (let k = 1; k < stops.length; k++) assert.ok((stops[k] as readonly [number, number])[0] > (stops[k - 1] as readonly [number, number])[0], `${role}: stop ${k} is after stop ${k - 1}`);
+    // each reading against the band at its t: the colour within 32 (of 441) and, of two saturated colours, the hue within 20 degrees; on the whole car, 10 on average
+    let sum = 0;
+    let used = 0;
+    for (const [t, colour] of readings) {
+      if (skip.includes(t)) continue;
+      const band = hullBandColour(car, t);
+      const d = colourDistance(band, colour);
+      assert.ok(d <= 32, `${role}, t = ${t}: the band is #${band.toString(16)} where the photograph reads #${colour.toString(16)} (${d.toFixed(0)} apart)`);
+      const [a, b] = [hueSat(band), hueSat(colour)];
+      if (a.sat >= 0.25 && b.sat >= 0.25) assert.ok(hueGap(a.hue, b.hue) <= 20, `${role}, t = ${t}: the band's hue ${a.hue.toFixed(0)} against the photograph's ${b.hue.toFixed(0)}`);
+      sum += d;
+      used++;
+    }
+    assert.ok(sum / used <= 10, `${role}: ${(sum / used).toFixed(1)} apart on average`);
+  }
+  // the band's run carries on from one car to the next where the photograph shows it (cars 0 to 3: violet into violet, crimson into pink-crimson, magenta-pink into rose)
+  for (let car = 0; car < 3; car++) {
+    const last = (HULL_BAND_STOPS[car] as readonly (readonly [number, number])[]).at(-1) as readonly [number, number];
+    const first = (HULL_BAND_STOPS[car + 1] as readonly (readonly [number, number])[])[0] as readonly [number, number];
+    assert.ok(colourDistance(last[1], first[1]) <= 45, `car ${car}'s last colour #${last[1].toString(16)} runs on into car ${car + 1}'s first #${first[1].toString(16)}`);
+  }
+  // the second car's violet end panel stops at its door, in the photograph at the first 10 to 15 per cent of the car: the cut lies there, with violet before it and gold after
+  const second = HULL_BAND_STOPS[1] as readonly (readonly [number, number])[];
+  const cut = second.findIndex((s, k) => k > 0 && s[0] - (second[k - 1] as readonly [number, number])[0] < 0.02);
+  assert.ok(cut > 0, 'car 1 has the cut after its end panel');
+  const cutAt = (second[cut] as readonly [number, number])[0];
+  assert.ok(cutAt >= 0.05 && cutAt <= 0.15, `car 1's end panel ends at ${cutAt}`);
+  assert.ok(hueSat(hullBandColour(1, cutAt - 0.03)).hue > 250 && hueSat(hullBandColour(1, cutAt + 0.03)).hue < 60, 'violet before the cut and gold after it');
+});
+
+test('Hull Trains 802: the lead car\'s band falls from azure through cyan and teal to green over its first 60 per cent, as 802 302\'s does in hull-802-doncaster-2024', () => {
+  // the premise, in the photograph: the hue only falls (it may wobble by 10 degrees), from azure to green
+  const photo = DONCASTER_2024.readings.map(([, c]) => hueSat(c).hue);
+  assert.ok((photo[0] as number) >= 195 && (photo[photo.length - 1] as number) <= 150, `the photograph runs azure to green (${photo.map((h) => h.toFixed(0)).join(', ')})`);
+  for (let k = 1; k < photo.length; k++) assert.ok((photo[k] as number) <= (photo[k - 1] as number) + 10, `the photograph's hue at reading ${k}`);
+  // the model's car 0 over t = 0 to 0.6: the same fall, through the same families
+  let prev = Infinity;
+  let sawCyanTeal = false;
+  for (let k = 0; k <= 24; k++) {
+    const t = (0.6 * k) / 24;
+    const { hue, sat } = hueSat(hullBandColour(0, t));
+    if (k === 0) assert.ok(hue >= 185 && hue <= 215, `the cab end is azure or cyan (hue ${hue.toFixed(0)})`);
+    assert.ok(sat >= 0.4, `t = ${t.toFixed(2)}: a saturated colour (${sat.toFixed(2)})`);
+    assert.ok(hue <= prev + 10, `t = ${t.toFixed(2)}: the hue ${hue.toFixed(0)} rises after ${prev.toFixed(0)}`);
+    if (hue >= 165 && hue <= 195) sawCyanTeal = true;
+    prev = hue;
+  }
+  assert.ok(sawCyanTeal, 'the band passes through cyan and teal');
+  assert.ok(prev <= 150, `and has reached green by 60 per cent (hue ${prev.toFixed(0)})`);
 });
 
 test('the other schemes: nothing on the side but the foot, or (a base scheme) nothing at all', () => {

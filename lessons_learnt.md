@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - Hull band hues differ per unit and its gloss mirrors trees: read sunlit photos (train-livery.ts HULL_BAND_STOPS)
+  802 302's rear car reads cyan to its rear door (hull-802-home-2023, dusk) where 802 304's rear car runs teal, green, violet (hull-802-paragon-2025), and the band is a glossy photographic
+  wrap: in hull-802-304-werrington-2021 its left side reads trees and gravel, not a colour. Only the Paragon photograph shows every car's band, side-on in sun; its far cars sit in shade and read
+  duller than the paint. web/tests/hull-band-readings.ts holds the readings (a window's most chromatic third, at 21 places a car) that train-livery.test.ts ties each stop to; the left
+  side is assumed to carry the right side's colours at the same place along the car.
+
 - 2026-11-10 - ringAt(s).top is not the surface height: the egg blend lifts the AT300 nose 0.15 m above it (train-nose.ts halfAt)
   At s = 0.7 the AT300's ring top is 2.07 m but the built surface at x = 0 is 2.22 m (the glass 2.24 m) and at x = 0.65 it is 1.99 m: compare a photograph's heights with yAtX(halfAt(...)),
   not with the knot. The same fall to each side makes a windscreen foot at one distance from the tip an arch 0.23 m high, the yellow's peak reaching into the glass: GlassSpec.screen.footSweep
