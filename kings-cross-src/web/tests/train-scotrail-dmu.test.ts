@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, DOT_WHITE, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -406,4 +406,44 @@ test('ScotRail DMU roof: the 170 cab housing ramps up off the dome, runs low and
   const r158 = buildScotrailDmu('sr158x2');
   assert.equal(names(r158).filter((n) => n === 'roof-louvre').length, 0);
   disposeScotrailDmu(r158);
+});
+
+test('ScotRail DMU dots: the white field on the cab flank is drawn at its pitch and sizes; the 158\'s at the size scotrail158-05 shows (0.15 m dots on a 0.17 m pitch)', () => {
+  // each dot is a fan whose triangles all start at its centre; read every white dot on the +x side of the leading cab car
+  const dots = (kind: (typeof SCOTRAIL_DMU_KINDS)[number]): { c: [number, number, number]; r: number }[] => {
+    const root = buildScotrailDmu(kind);
+    const detail = root.getObjectByName('car-0')!.getObjectByName('body-detail') as THREE.Mesh;
+    const p = detail.geometry.getAttribute('position'); const c = detail.geometry.getAttribute('color'); const w = col(DOT_WHITE);
+    const byCentre = new Map<string, { c: [number, number, number]; r: number }>();
+    for (let i = 0; i + 2 < p.count; i += 3) {
+      if (Math.abs(c.getX(i) - w.r) > 1e-6 || Math.abs(c.getY(i) - w.g) > 1e-6 || Math.abs(c.getZ(i) - w.b) > 1e-6 || p.getX(i) < 0) continue;
+      const centre: [number, number, number] = [p.getX(i), p.getY(i), p.getZ(i)];
+      const key = centre.map((v) => v.toFixed(4)).join(',');
+      const r = Math.max(...[1, 2].map((k) => Math.hypot(p.getY(i + k) - centre[1], p.getZ(i + k) - centre[2])));
+      const seen = byCentre.get(key);
+      byCentre.set(key, { c: centre, r: Math.max(r, seen?.r ?? 0) });
+    }
+    disposeScotrailDmu(root);
+    return [...byCentre.values()];
+  };
+  const pitchOf = (ds: { c: [number, number, number] }[]): number => {
+    // the smallest rise between two dots of one column (same z: on the flat side, behind the nose)
+    let best = Infinity;
+    for (const a of ds) for (const b of ds) if (a !== b && Math.abs(a.c[2] - b.c[2]) < 1e-4 && b.c[1] > a.c[1]) best = Math.min(best, b.c[1] - a.c[1]);
+    return best;
+  };
+  for (const [kind, family] of [['sr158x2', 'sprinter158'], ['sr170x3', 'turbostar']] as const) {
+    const { pitch, r0, shrink } = scotrailDmuLook(family).whiteDots;
+    const ds = dots(kind);
+    const radii = ds.map((d) => d.r);
+    assert.ok(ds.length > 20, `${kind}: ${ds.length} white dots`);
+    assert.ok(Math.max(...radii) <= r0 + 1e-5 && Math.max(...radii) >= r0 * (1 - shrink * 0.15), `${kind}: the biggest dot ${Math.max(...radii)} (front ${r0})`);
+    assert.ok(Math.min(...radii) >= r0 * (1 - shrink) - 1e-5, `${kind}: the smallest dot ${Math.min(...radii)}`);
+    assert.ok(Math.abs(pitchOf(ds) - pitch) < 1e-4, `${kind}: the pitch up the side ${pitchOf(ds)}`);
+  }
+  // the 158's, measured on scotrail158-05 against its cab side window: about 0.15 m across low in the field, 0.11 m at its rear, on a 0.17-0.18 m pitch
+  const s = scotrailDmuLook('sprinter158').whiteDots;
+  assert.ok(s.r0 * 2 >= 0.14 && s.r0 * 2 <= 0.16, `158 front dots ${s.r0 * 2} m across`);
+  assert.ok(s.r0 * (1 - s.shrink) * 2 >= 0.08, `158 rear dots ${s.r0 * (1 - s.shrink) * 2} m across`);
+  assert.ok(s.pitch >= 0.16 && s.pitch <= 0.18 && s.pitch > 2 * s.r0, `158 pitch ${s.pitch}: the dots nearly touch, never overlap`);
 });

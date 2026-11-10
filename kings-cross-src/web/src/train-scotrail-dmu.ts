@@ -97,6 +97,8 @@ interface Look {
   gangwayFrame: boolean;
   underfloor: readonly PodItem[];
   /** dark roof housings: from the cab end (a cab car) or the car's start; `cabOnly` only on a driving car */
+  /** The white dot field on a cab's flank: the dots' pitch up the side (the columns are 0.87 of it apart), their radius at the front, and the share of it they lose by the field's rear. */
+  whiteDots: { pitch: number; r0: number; shrink: number };
   /**
    * A cab car's roof housing behind the dome, in profile: from `s0` it ramps up over `ramp` to a low slab `low` tall, and at `step` it rises
    * to a block `high` tall that runs to `s1` (metres from the cab end, heights over the crown), `half` either side of the middle line.
@@ -210,6 +212,7 @@ const TURBOSTAR: Look = {
   ],
   // the dark housing on the roof behind the dome (scotrail170-01: its front ramps up off the dome's crown, a low slab runs back over the
   // cab, and a taller block stands at its rear over the cab's side window; every size ASSUMED, read off the photograph against the cab)
+  whiteDots: { pitch: 0.118, r0: 0.05, shrink: 0.72 },
   cabHousing: { s0: 1.2, ramp: 0.3, step: 1.85, s1: 2.4, half: 0.5, low: 0.06, high: 0.15, colour: 0x1d2028 },
   // the louvre groups along both roof shoulders (scotrail170-01: dark slatted panels at intervals along the roof's edge; places and sizes ASSUMED)
   // (phi: a vertex of the shoulder's polyline, carSection's j = 3 of 5, so the panel's middle lies on the drawn surface)
@@ -290,6 +293,10 @@ const SPRINTER: Look = {
   cabWindow: { s0: 1.12, s1: 1.82, y0: 1.82, y1: 2.78 },
   coupler: { y: 0.68 },
   bogie: 'brel-p4',
+  // measured on scotrail158-05 against the cab side window (0.96 m tall here, about 120 px there): the big dots low in the field are about
+  // 0.15 m across on a 0.17-0.18 m pitch, nearly touching, and those at the field's rear and top about 0.11 m (vertical sizes, which the
+  // photograph's oblique view does not foreshorten). ASSUMED to within that reading.
+  whiteDots: { pitch: 0.17, r0: 0.074, shrink: 0.4 },
   buffers: false,
   gangwayFrame: true,
   // one Cummins engine and its transmission under each car (widely documented for the class; sizes and order ASSUMED)
@@ -796,14 +803,14 @@ function saltireDots(soup: Soup, car: ScotrailDmuCar, plan: CarPlanDmu, look: Lo
   if (car.cab) {
     // The white field over the whole cab side, from the cab corner (the 170: from round its nose's front corner) back to the first door,
     // cantrail to solebar, its dots largest at the front and shrinking toward the saloon (scotrail170-01, -02; scotrail158-01, -05).
-    const pitch = 0.118;
+    const { pitch, r0, shrink } = look.whiteDots;
     // (from the cab end: the face stands END_GAP back; the 158's yellow wraps the first 0.32 m of its nose)
     const s0 = END_GAP + (look.family === 'turbostar' ? 0.3 : 0.38);
     const s1 = Math.min(fieldEnd, look.family === 'turbostar' ? look.cabWindow.s1 + 1.25 : fieldEnd);
     for (let s = s0, col_ = 0; s < s1; s += pitch * 0.87, col_++) {
       for (let y = 1.1 + (col_ % 2) * pitch / 2; y < look.wallTop - 0.06; y += pitch) {
         const t = (s - s0) / (s1 - s0);
-        dot(s, y, 0.05 * (1 - 0.72 * t), DOT_WHITE, s < END_GAP + look.nose.length);
+        dot(s, y, r0 * (1 - shrink * t), DOT_WHITE, s < END_GAP + look.nose.length);
       }
     }
   }
