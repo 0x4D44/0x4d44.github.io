@@ -132,6 +132,13 @@ const CRESCENT_ZONE = 1.25;
 const MASK_TILT = 0.45;
 /** The windscreen's frame reaches no further across than this fraction of the nose's half-width at its own place (see screenHalfWidth). */
 const FRAME_REACH = 0.91;
+/**
+ * How far off the nose the last row of a mask's band stands (the row that runs on under the windscreen's frame; the rows before it stand 12 mm off). The frame stands 14 mm off but its
+ * quads cut across the corners of the section's outline, a few millimetres under it, and the band's last row ends in the frame's strip: at 12 mm it showed through the frame as a
+ * yellow tab at each of those corners (0.5 m out either side of the middle), which a swept foot made longer. At 7 mm a thin spike of it was left in the preview; at 4 mm the frame covers it
+ * (the rows' lift is along the nose's normal, the nose's own facets sag between rings by a few mm: the 3 mm floor of the band's test is under it).
+ */
+const BAND_END_LIFT = 0.004;
 /** The smoked glass of an AT300 lamp cluster's window, on the nose's cheek: near black, a shade off the bezel's so the two read apart (Lumo, LNER). */
 export const POD = 0x181a1e;
 /** The same window on a Hull Trains cab, a dark slate a shade off the grey beak's own so the two still read apart (hull-802-doncaster-2024: slate window, lighter rim). */
@@ -285,9 +292,12 @@ interface GlassSpec {
   /**
    * windscreen: from `s0` (the bonnet end) to `s1` (the roof end), half-width as a fraction of the ring's, corner radii at the top and bottom edges;
    * `pillar` (metres, 0 or absent: none) is a centre post that divides the glass into two panes, as the Class 180's has, and `pillarColour` the colour of
-   * its strip (absent: the frame's own black shows between the panes)
+   * its strip (absent: the frame's own black shows between the panes);
+   * `footSweep` (metres, absent: 0) is how far the foot's two lower corners stand back from the middle of the foot: the foot is then a curve, the distance back growing with
+   * the square of how far out along the foot a point is, so that over the nose's rounded top (which falls away to each side) it reads as a shallow smile from the front, not
+   * the arch a foot at one distance from the tip would be (the Azuma's, lner-800-113-newcastle-2025)
    */
-  screen?: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number; pillarColour?: number };
+  screen?: { s0: number; s1: number; fraction: number; fractionTop?: number; topRadius: number; bottomRadius: number; pillar?: number; pillarColour?: number; footSweep?: number };
   /** cab side window: the back edge `sBack`, the front edge slanting from `sFront0` at the bottom to `sFront1` at the top, between the heights `v0` and `v1` (fractions of the ring's height) */
   side?: FlankPatch & { surround?: FlankPatch };
 }
@@ -560,8 +570,15 @@ const AT300: BodySpec = {
     boxiness: 2.6,
   },
   glass: {
-    // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope)
-    screen: { s0: 0.95, s1: 2.5, fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12 },
+    // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope).
+    // CHANGED (round 6): the foot's middle is 0.7 m back, where the built glass stands 2.24 m up (it was 0.95 m back and 2.48 m up), and its two lower corners stand a further 0.3 m back (`footSweep`),
+    // 2.33 m up. The round-5 score: "the yellow still fills about two thirds of the face height and the screen is a band at the top" (lner5-front-3m, against lner-800-113-newcastle-2025 and
+    // lner-801-214-2025). Read off lner-800-113-newcastle-2025, head on, with the 1.5 m between the rails in front of the train for the scale (about 130 px to the metre): the glass's foot is
+    // about 2.2 m up and its top about 3.15 m (a glass 1.0 m tall: this one's is 1.0 m now, was 0.75 m), the yellow below it 1.5 to 1.7 m, and the foot is a shallow smile (its middle about 0.05 m below its corners),
+    // where this model's was an arch 0.2 m high (a foot at one distance from the tip, over a nose that falls away to each side), the yellow's peak reaching up into the glass.
+    // lner-800-108-offord-cluny-2023, side on, reads lower (the foot 2.0 m up, the top 2.85 m) and puts the foot's corner about 1.3 m back, but its scale is the door beside it at this model's own
+    // 1.15 to 2.86 m, and a real door a tenth taller would put those 0.2 m higher: the head-on photograph, scaled by the rails, is the one followed. ASSUMED: the sizes, to about 0.1 m (neither is calibrated)
+    screen: { s0: 0.7, s1: 2.5, fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
     // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
     // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
     // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
@@ -1124,6 +1141,20 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const reach = FRAME_REACH * ringHalf;
     return Math.max(0.01, Math.min(reach, hw0 - Math.max(inset(s1 - s, screen.topRadius + margin), inset(s - s0, screen.bottomRadius + margin))));
   };
+  // a swept foot (GlassSpec.screen.footSweep): how far back the foot stands at `f`, the fraction (0 at the middle, 1 at a lower corner) of the way out along it
+  const footSweepAt = (f: number): number => (screen?.footSweep ?? 0) * f * f;
+  // and the other way: the fraction of the way out along the foot (of the glass, or of a frame `margin` wider) at which it passes across x. A point of the foot at fraction f is at
+  // f times the half-width there, and both grow with f, so the search is a bisection; an x beyond the corner gives 1
+  const footFraction = (x: number, margin: number): number => {
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 24; i++) {
+      const f = (lo + hi) / 2;
+      if (f * screenHalfWidth((screen?.s0 ?? 0) - margin + footSweepAt(f), margin) < Math.abs(x)) lo = f;
+      else hi = f;
+    }
+    return hi;
+  };
   // The loft's columns: the loop goes up the right side (columns 0..K-1, the last the crown), then down the left. A quad's colour and
   // material follow its columns, not its normal, so every colour boundary runs along a column or a ring: a clean curve, not a stair.
   const K = sec.half.length;
@@ -1483,7 +1514,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // (24 rows by 16 columns a patch, two patches: 768 triangles each; it was 30 by 20, which the Azuma's longer nose had no triangles left for)
         for (const pane of post > 0 ? [-1, 1] : [0]) {
           nosePatch(24, post > 0 ? 8 : 16, (v, u) => {
-            const s = lerp(screen.s0 - margin, screen.s1 + margin, glassRow(v));
+            // (a swept foot: each column starts at its own foot, `footSweepAt` of how far out the column is, and runs on to the one top edge)
+            const s = lerp(screen.s0 - margin + (pane === 0 ? footSweepAt(Math.abs(2 * u - 1)) : 0), screen.s1 + margin, glassRow(v));
             const hw = screenHalfWidth(s, margin);
             if (pane === 0) return [hw * (2 * u - 1), s];
             const inner = Math.min(post / 2, hw * 0.5);
@@ -1519,8 +1551,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const rowAt = (v: number): number => rowS[Math.round(v * (rowS.length - 1))] as number;
         nosePatch(rowS.length - 1, columns.length - 1, (v, u) => {
           const s = rowAt(v);
-          return [lerp(bandStart, mask.hwSill, s / sEnd) * (columns[Math.round(u * (columns.length - 1))] as number), s];
-        }, detail, colourOf(mask.colour), (v) => lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02)));
+          const x = lerp(bandStart, mask.hwSill, s / sEnd) * (columns[Math.round(u * (columns.length - 1))] as number);
+          // (the last row ends under the frame's foot, so with a swept foot it stands back from the middle's end by the sweep at that x)
+          return [x, v >= 1 ? s + footSweepAt(footFraction(x, front.frame)) : s];
+        }, detail, colourOf(mask.colour), (v) => (v >= 1 ? BAND_END_LIFT : lerp(0, 0.012, Math.min(1, rowAt(v) / 0.02))));
       }
       if (front.wipers) {
         // two wiper arms parked along the foot of the windscreen, from a pivot each side of the middle out toward the corners: dark, as the blades are, lying
@@ -1528,9 +1562,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const arm = col(WIPER);
         const pivot = (screen.pillar ?? 0) / 2 + 0.1;
         for (const sx of [-1, 1]) {
-          const a: [number, number] = [sx * pivot, screen.s0 + 0.045];
+          // (on a swept foot each end lies on the foot's curve: its distance back grows with how far out it is)
+          const a: [number, number] = [sx * pivot, screen.s0 + 0.045 + footSweepAt(footFraction(pivot, 0))];
           const rise = front.wiperRise ?? 0.08;
-          const b: [number, number] = [sx * Math.min(0.8, screenHalfWidth(screen.s0 + rise, 0) - 0.2), screen.s0 + rise];
+          const bx = Math.min(0.8, screenHalfWidth(screen.s0 + rise, 0) - 0.2);
+          const b: [number, number] = [sx * bx, screen.s0 + rise + footSweepAt(footFraction(bx, 0))];
           const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
           const perp: [number, number] = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
           nosePatch(6, 1, (v, u) => [a[0] + (b[0] - a[0]) * v + perp[0] * (u - 0.5) * 0.028, a[1] + (b[1] - a[1]) * v + perp[1] * (u - 0.5) * 0.028], detail, arm, 0.032);

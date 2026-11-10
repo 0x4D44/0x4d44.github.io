@@ -273,7 +273,7 @@ test('nose: the section morphs from an egg at the tip to the car section, and th
   }
 });
 
-test('nose: the AT300\'s beak is long and sharp: a small face under a metre across, a ramp of about 47 degrees up to the glass\'s foot 0.95 m back and the glass 2.5 m back at its top, clear above the beak', () => {
+test('nose: the AT300\'s beak is long and sharp: a small face under a metre across, a ramp of about 47 degrees up to the glass\'s foot 0.7 m back and the glass 2.5 m back at its top, clear above the beak', () => {
   // The round-3 score called the beak "still short and bulbous, with a large flat yellow face"; lner-801-214-2025 and lner-800-108-offord-cluny-2023 (side on, the scale about 75 px
   // to the metre) put the glass's foot 1.3 m behind the tip and 2.3 to 2.4 m up, its top about 3.0 m back and 3.3 m up, and the ramp between the tip and the foot at about 41 degrees;
   // lner-800-113-newcastle-2025 (head on) shows a face under a metre across. The table, written out (the checks below read it from the spec):
@@ -282,6 +282,12 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
   // upper end, 0.95 m behind the tip and 2.3 m up, its top 2.5 m back and 3.17 m up, and the nose levels into the roof edge (3.35 m: the roof line never goes back). The ramp is a little
   // steeper (47 degrees, 41 before) and so is the glass (29 degrees, 26 before). ASSUMED: the figures are readings of a photograph at about 75 px to the metre, good to 0.15 m, not
   // published; the 3 m front view's share of the glass is pinned by its own test (train-azuma-front.test.ts).
+  // CHANGED (round 6, 0.95 to 0.7 m back and 2.3 to 2.07 m up by the ring's own `top`; the built glass is 2.24 m up at the middle of its foot, was 2.48 m): the foot's middle is lower, and the foot's two
+  // lower corners stand 0.3 m further back (`footSweep`: the foot is a shallow smile seen from the front, as lner-800-113-newcastle-2025 shows it, where a foot at one distance from the tip is an
+  // arch 0.2 m high over this nose, the yellow's peak reaching into the glass). The round-5 score: "the yellow still fills about two thirds of the face height and the screen is a band at the
+  // top". Read off lner-800-113-newcastle-2025, head on, with the 1.5 m between the rails for the scale (about 130 px to the metre): the glass's foot about 2.2 m up, its top about 3.15 m, the yellow
+  // under it 1.5 to 1.7 m. (lner-800-108-offord-cluny-2023 reads lower, by the door beside it at this model's own 1.15 to 2.86 m, which is not a measured figure: not followed.) The ramp is 48.2
+  // degrees (46.9 before) and the glass 31.4 degrees (29.2 before). ASSUMED to about 0.1 m: neither photograph is calibrated.
   const spec = bodySpec('at300');
   assert.deepEqual(spec.nose, {
     length: ASSUMED.noseLength,
@@ -301,13 +307,13 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
     widest: 0.55,
     boxiness: 2.6,
   });
-  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 0.95, s1: 2.5 }, 'the glass runs from 0.95 m back to 2.5 m');
+  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 0.7, s1: 2.5 }, 'the glass runs from 0.7 m back to 2.5 m');
   // and its width: 0.7 of the cab's half-width at the foot (0.64 in round 4), narrowing to 0.52 of it at the top, the corners rounded 0.12 m at the foot and 0.3 m at the top (the glass's width is
   // read off lner-800-113-newcastle-2025, head on: ASSUMED to a few centimetres, a photograph at about 75 px to the metre)
   assert.deepEqual(
-    spec.glass.screen && { fraction: spec.glass.screen.fraction, fractionTop: spec.glass.screen.fractionTop, topRadius: spec.glass.screen.topRadius, bottomRadius: spec.glass.screen.bottomRadius },
-    { fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12 },
-    'the glass is 0.7 of the half-width wide at its foot, 0.52 at its top',
+    spec.glass.screen && { fraction: spec.glass.screen.fraction, fractionTop: spec.glass.screen.fractionTop, topRadius: spec.glass.screen.topRadius, bottomRadius: spec.glass.screen.bottomRadius, footSweep: spec.glass.screen.footSweep },
+    { fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    'the glass is 0.7 of the half-width wide at its foot, 0.52 at its top, the foot swept back 0.3 m at its corners',
   );
   // the nose never rises above the roof it runs into (the roof line must not go back: the test of every nose's profile reads it too)
   for (const k of spec.nose.knots) assert.ok(k.top <= spec.crown + 1e-9, `the knot at ${k.s} m is ${k.top} m up, over the roof edge at ${spec.crown} m`);
@@ -321,14 +327,14 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
   assert.ok(faceWidth > 0.85 && faceWidth < 1.05, `the face is ${faceWidth.toFixed(2)} m across`);
   assert.ok(faceTop - faceFoot > 0.5 && faceTop - faceFoot < 0.7, `the face is ${(faceTop - faceFoot).toFixed(2)} m tall`);
   // the ramp: from the face's top (at the tip) to the roof line over the glass's foot
-  const foot = ringAt(spec.nose, 0.95).top;
-  near(foot, 2.3, 0.05, 'the glass\'s foot stands 2.3 m up');
-  const ramp = (Math.atan2(foot - faceTop, 0.95) * 180) / Math.PI;
+  const foot = ringAt(spec.nose, 0.7).top;
+  near(foot, 2.07, 0.05, 'the glass\'s foot stands 2.07 m up');
+  const ramp = (Math.atan2(foot - faceTop, 0.7) * 180) / Math.PI;
   assert.ok(ramp > 44 && ramp < 50, `the ramp rises at ${ramp.toFixed(1)} degrees`);
   const glassTop = ringAt(spec.nose, 2.5).top;
   near(glassTop, 3.17, 0.05, 'the glass\'s top stands 3.17 m up');
   // the glass lies flatter than the yellow cone's ramp under it: the steep slope breaks into the screen's gentler one at the glass's foot, as the side-on photographs show it
-  const glassPitch = (Math.atan2(glassTop - foot, 2.5 - 0.95) * 180) / Math.PI;
+  const glassPitch = (Math.atan2(glassTop - foot, 2.5 - 0.7) * 180) / Math.PI;
   assert.ok(glassPitch > 26 && glassPitch < 33 && glassPitch < ramp - 10, `the glass rises at ${glassPitch.toFixed(1)} degrees, the ramp at ${ramp.toFixed(1)}`);
 });
 
@@ -1410,16 +1416,25 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen, lif
       assert.equal(display.length, 0, `${kind} car ${car.index}: a lit display on the glass`);
       // CHANGED (every arm lay along the glass's foot): the 180's arms are parked leaning up the glass, dark on it, about half way up each pane (GC180-05, GC180-01): `wiperRise` metres along the nose
       const rise = spec.front.wiperRise ?? 0.08;
+      // CHANGED (round 6): the Azuma's glass has a swept foot, its lower corners standing `footSweep` further back than its middle, so an arm lies along the foot where it passes across the arm's own
+      // x, not at the middle's `s0`: the foot is read off the built glass (the least distance from the tip of its vertices within 5 cm across of x; the glass stands 2 cm off the nose, and the
+      // foot slants up to 0.6 m a metre, so 4 cm of that goes to the bin) and the arm is held to the old band about it. A glass with no sweep (the 180's) is held to the old band exactly.
+      const glassMesh = named(named(g, `car-${car.index}`), 'cab-glass') as THREE.Mesh;
+      const glassPts = triangles(glassMesh).flat().filter((v) => Math.abs(v.x) < 1.15).map((v) => ({ x: Math.abs(v.x), s: sOf(v) }));
+      const footAt = (x: number): number => Math.min(...glassPts.filter((q) => Math.abs(q.x - Math.abs(x)) <= 0.05).map((q) => q.s));
+      const binTol = screen.footSweep ? 0.04 : 0;
       if (kind === 'gc180x5') assert.ok(rise >= 0.3, `${kind}: the 180's arms park leaning up the glass, not along its foot (rise ${rise})`);
       if (wipers.length) assert.ok(Math.max(...wipers.flat().map(sOf)) >= screen.s0 + rise - 0.05, `${kind} car ${car.index}: the arms rise only ${(Math.max(...wipers.flat().map(sOf)) - screen.s0).toFixed(2)} m up the glass, not ${rise}`);
       const cases: [Tri[], string, number, number, number][] = [
         // an arm lies within 12 cm of the glass's lower edge (a 180's within its rise), and no further out than 0.85 m: it never stands up the glass, where it would read as an eyebrow
-        [wipers, 'wiper', screen.s0 - 0.02, screen.s0 + rise + 0.04, 0.85],
+        [wipers, 'wiper', -0.02, rise + 0.04, 0.85],
       ];
-      for (const [tris, label, sMin, sMax, xMax] of cases) {
+      for (const [tris, label, dMin, dMax, xMax] of cases) {
         for (const v of tris.flat()) {
           const s = sOf(v);
-          assert.ok(s >= sMin && s <= sMax, `${kind} car ${car.index}: a ${label} vertex at ${s.toFixed(2)} m back, not within ${sMin.toFixed(2)}..${sMax.toFixed(2)} (the glass runs ${screen.s0}..${screen.s1})`);
+          const sMin = footAt(v.x) + dMin - binTol;
+          const sMax = footAt(v.x) + dMax + binTol;
+          assert.ok(s >= sMin && s <= sMax, `${kind} car ${car.index}: a ${label} vertex at ${s.toFixed(2)} m back, ${v.x.toFixed(2)} m out, not within ${sMin.toFixed(2)}..${sMax.toFixed(2)} (the glass's foot is at ${footAt(v.x).toFixed(2)} m there)`);
           assert.ok(Math.abs(v.x) <= xMax, `${kind} car ${car.index}: a ${label} vertex ${v.x.toFixed(2)} m out`);
           // an arm's pivot stands 10 cm outboard of the middle, or of the 180's centre post, never in it
           if (label === 'wiper') assert.ok(Math.abs(v.x) >= (screen.pillar ?? 0) / 2 + 0.08, `${kind} car ${car.index}: a wiper vertex ${v.x.toFixed(3)} m out, in or beside the centre post`);
@@ -5006,7 +5021,10 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       assert.ok(band.length >= 100, `${kind} car ${car.index}: ${band.length} triangles of mask over the nose's top`);
       const sGlass = (family.glass.screen as NonNullable<typeof family.glass.screen>).s0;
       const reach = Math.max(...band.flat().map(along));
-      assert.ok(reach > sGlass - 0.15 && reach < sGlass + 0.1, `${kind} car ${car.index}: the band reaches ${reach.toFixed(2)} m back, the windscreen starts at ${sGlass}`);
+      // CHANGED (round 6): the windscreen's foot is swept, its lower corners standing `footSweep` further back than its middle, and the band ends under the frame all along it: it reaches as far
+      // back as the corners, the sweep beyond the middle's `s0` (the middle's own end is held in train-azuma-front.test.ts)
+      const sweep = (family.glass.screen as NonNullable<typeof family.glass.screen>).footSweep ?? 0;
+      assert.ok(reach > sGlass + sweep - 0.15 && reach < sGlass + sweep + 0.1, `${kind} car ${car.index}: the band reaches ${reach.toFixed(2)} m back, the windscreen starts at ${sGlass} and sweeps back ${sweep} at its corners`);
       const bandOut = Math.max(...band.flat().map((v) => Math.abs(v.x)));
       assert.ok(bandOut <= mask.hwSill + 0.03 && bandOut > mask.hwTop - 0.1, `${kind} car ${car.index}: the band is ${bandOut.toFixed(2)} m out at its widest, the spec says ${mask.hwSill}`);
       // the band lies on the nose and not in it: at the middle of every triangle and of each of its edges (not only at the vertices, which stand on the loft's rings) it is over the nose's
@@ -5039,6 +5057,73 @@ test('fronts: the AT300\'s colour mask: the LNER\'s yellow and the Hull Trains b
       for (const [x, y] of tipHalf) {
         if (y <= cornerY + 1e-6) continue;
         for (const side of [-1, 1]) assert.ok(edgeRow.some((v) => Math.abs(v.x - side * x) < 1e-4), `${kind} car ${car.index}: the band's front row has no column at the outline's vertex x = ${(side * x).toFixed(3)}, y = ${y.toFixed(3)}`);
+      }
+    }
+  }
+});
+
+test('fronts: the Azuma\'s windscreen foot is a shallow smile and not an arch, the colour mask runs up to it and no further, and no other family\'s foot is swept', () => {
+  // The round-5 score: "the yellow still fills about two thirds of the face height and the screen is a band at the top" (lner5-front-3m, against lner-800-113-newcastle-2025). A foot at one
+  // distance from the tip is an arch over this nose, which falls away to each side: its middle 0.23 m above its corners, the yellow's peak reaching up into the glass. lner-800-113-newcastle-2025,
+  // head on, shows a shallow smile (the foot's middle about 0.05 m below its corners); `footSweep` stands the two lower corners back from the middle by 0.3 m times the square of how far out
+  // along the foot they are, which over this nose's rounded top lifts the corners 0.09 m above the middle. The foot is read off the built glass: its vertices nearest the tip within 4 cm across.
+  // (The number is ASSUMED, to about 0.1 m: the side-on photograph puts the corner further back, the head-on one nearer.)
+  const SPAN = 0.04;
+  for (const family of FAMILIES) assert.equal(bodySpec(family).glass.screen?.footSweep, family === 'at300' ? 0.3 : undefined, `${family}: the sweep of the glass's foot`);
+  for (const kind of ['lner5', 'lner9', 'hull5', 'lumo5'] as TrainKind[]) {
+    const g = built(kind);
+    const layout = trainLayout(kind);
+    const family = bodySpec(layout.spec.family);
+    const sec = carSection(family);
+    const norm = normalised(sec);
+    const egg = eggSection(norm, family.nose.widest, family.nose.boxiness);
+    const mask = frontOf(kind).mask;
+    for (const car of endCabs(layout)) {
+      const face = facePlane(car, true, false);
+      const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
+      const glass = triangles(named(named(g, `car-${car.index}`), 'cab-glass') as THREE.Mesh).flat().filter((v) => Math.abs(v.x) < 1.15).map((v) => ({ x: Math.abs(v.x), y: v.y, s: along(v) }));
+      const foot = (x: number): { x: number; y: number; s: number } => {
+        const close = glass.filter((q) => Math.abs(q.x - x) <= SPAN);
+        assert.ok(close.length > 0, `${kind} car ${car.index}: no glass within ${SPAN} m of x = ${x}`);
+        return close.reduce((a, q) => (q.s < a.s ? q : a));
+      };
+      const middle = foot(0);
+      const corner = foot(0.55);
+      near(middle.s, (family.glass.screen as NonNullable<typeof family.glass.screen>).s0, 0.03, `${kind} car ${car.index}: the foot's middle stands off the spec's`);
+      assert.ok(corner.s - middle.s > 0.15 && corner.s - middle.s < 0.4, `${kind} car ${car.index}: the foot's corner stands ${(corner.s - middle.s).toFixed(2)} m behind its middle, not the sweep's 0.15 to 0.4`);
+      assert.ok(corner.y - middle.y > 0.03 && corner.y - middle.y < 0.15, `${kind} car ${car.index}: the foot's corner stands ${(corner.y - middle.y).toFixed(3)} m over its middle: a smile is 0.03 to 0.15 m, an arch is below 0`);
+      // it curves, as the square of how far out: 0.3 m out it has swept back under 0.4 of what it has at 0.55 m (a straight sweep, a V, is about 0.55 of it), and 0.05 to 0.11 m (0.075 built:
+      // the square of the distance; a cube is about 0.04, which leaves the middle of the foot a long flat and the corners a sudden hook)
+      const third = foot(0.3);
+      assert.ok(third.s - middle.s < 0.4 * (corner.s - middle.s), `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out and ${(corner.s - middle.s).toFixed(3)} m 0.55 m out: not a curve`);
+      assert.ok(third.s - middle.s > 0.05 && third.s - middle.s < 0.11, `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out, not 0.05 to 0.11`);
+      // the frame (the livery's black round the glass) follows it: its own foot stands 7 cm nearer the tip than the glass's (3 to 14 cm, across the whole foot)
+      const frame = trisOfColour(detailOf(g, car), liveryFor(kind).glass).flat().filter((v) => Math.abs(v.x) <= 0.55 && along(v) > 0.3 && along(v) < 1.5).map((v) => ({ x: Math.abs(v.x), s: along(v) }));
+      for (const x of [0.3, 0.5]) {
+        const here = frame.filter((q) => Math.abs(q.x - x) <= 0.06);
+        assert.ok(here.length > 0, `${kind} car ${car.index}: no frame within 0.06 m of x = ${x}`);
+        const frameFoot = Math.min(...here.map((q) => q.s));
+        assert.ok(frameFoot <= foot(x).s - 0.03 && frameFoot >= foot(x).s - 0.14, `${kind} car ${car.index}: the frame's foot is ${(foot(x).s - frameFoot).toFixed(3)} m in front of the glass's at x = ${x}, not 3 to 14 cm`);
+      }
+      if (!mask) continue;
+      // the mask's band runs up to the frame under that foot and no further: no yellow stands behind the glass's foot (30 mm of slack for the frame's lift), and the band's last row (the
+      // vertices from where the spec has it end, under the frame, back: the row before it is 5 cm or more short) lies along the foot to within 12 cm, so that the band is not a flat end
+      // 0.25 m short of the corners with the red of the loft between it and the frame
+      const band = trisOfColour(detailOf(g, car), mask.colour).filter((t) => t.some((v) => along(v) > 0.03));
+      assert.ok(band.length >= 100, `${kind} car ${car.index}: ${band.length} triangles of mask over the nose's top`);
+      const sEnd = (family.glass.screen as NonNullable<typeof family.glass.screen>).s0 - family.front.frame + 0.06;
+      const within = band.flat().filter((v) => Math.abs(v.x) <= 0.6);
+      for (const v of within) {
+        assert.ok(along(v) <= foot(Math.abs(v.x)).s + 0.03, `${kind} car ${car.index}: yellow at x = ${v.x.toFixed(2)}, ${along(v).toFixed(2)} m back, behind the glass's foot at ${foot(Math.abs(v.x)).s.toFixed(2)}`);
+      }
+      const lastRow = within.filter((v) => along(v) >= sEnd - 0.02);
+      assert.ok(lastRow.length >= 8, `${kind} car ${car.index}: only ${lastRow.length} vertices in the band's last row within 0.6 m of the middle`);
+      for (const v of lastRow) {
+        assert.ok(along(v) >= foot(Math.abs(v.x)).s - 0.12, `${kind} car ${car.index}: the band ends ${along(v).toFixed(2)} m back at x = ${v.x.toFixed(2)}, the glass's foot is at ${foot(Math.abs(v.x)).s.toFixed(2)}`);
+        // the last row stands lower off the nose than the frame it runs under (14 mm along the normal): its lift is 4 mm, 6 mm straight up over this slope. At 12 mm it showed through the
+        // frame as a yellow tab at each corner of the section's outline.
+        const over = v.y - yAtX(halfAt(sec, norm, egg, ringAt(family.nose, Math.min(family.nose.length, along(v)))), Math.abs(v.x));
+        assert.ok(over < 0.009, `${kind} car ${car.index}: the band's last row stands ${(over * 1000).toFixed(1)} mm over the nose at x = ${v.x.toFixed(2)}`);
       }
     }
   }
