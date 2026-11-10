@@ -742,14 +742,14 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
       m.userData = { width: g.width, height: g.height, depth: GAP };
       group.add(m);
     }
-    // each car's half of the coupling reaches the middle of the gap, where it meets its neighbour's
+    // each car's body ends GAP short of the car's end, so its half of the coupling reaches GAP, to the car's end, where it meets its neighbour's half
     const out = (Math.sign(zOut - zWall) || 1) as 1 | -1;
-    if (b.innerCoupler === 'buckeye') buckeyeHalf(detail, zWall, out, GAP / 2, 0.95);
-    else couplerHalf(detail, zWall, out, GAP / 2, 0.85, b.innerCoupler);
+    if (b.innerCoupler === 'buckeye') buckeyeHalf(detail, zWall, out, GAP, 0.95);
+    else couplerHalf(detail, zWall, out, GAP, 0.85, b.innerCoupler);
     const cm = new THREE.Object3D();
     cm.name = 'coupler';
     cm.position.set(0, b.innerCoupler === 'buckeye' ? 0.95 : 0.85, (zWall + zOut) / 2);
-    cm.userData = { style: b.innerCoupler };
+    cm.userData = { style: b.innerCoupler, headZ: zWall + out * GAP };
     group.add(cm);
   }
 

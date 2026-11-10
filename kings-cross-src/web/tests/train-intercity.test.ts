@@ -199,3 +199,30 @@ test('a loft quad is cut exactly along a paint line, one piece each side, the cu
   const three = splitPolygon(quad, (s) => s - 0.25);
   assert.deepEqual(three.map((p) => p.map((w) => w.s).sort()), [[0.25, 0.25, 1, 1], [0, 0, 0.25, 0.25]]);
 });
+
+test('intercity couplers meet: at every joint the two coupler heads touch within 1 cm, at the cars\' common end', () => {
+  // the coupling is the only detail in the gap below the gangway and near the centre line: measure how far into the gap it reaches from each side
+  const reach = (car: THREE.Object3D, from: number, toward: 1 | -1): number => {
+    const pos = (car.getObjectByName('body-detail') as THREE.Mesh).geometry.getAttribute('position');
+    let best = from;
+    for (let v = 0; v < pos.count; v++) {
+      const z = pos.getZ(v);
+      if (Math.abs(pos.getX(v)) > 0.22 || pos.getY(v) < 0.6 || pos.getY(v) > 1.14) continue;
+      if ((z - from) * toward < -0.001 || (z - from) * toward > 0.5) continue;
+      if ((z - best) * toward > 0) best = z;
+    }
+    return best;
+  };
+  for (const kind of INTERCITY_KINDS) {
+    const root = buildIntercityTrain(kind);
+    const cars = intercityLayout(kind).cars;
+    for (let i = 0; i + 1 < cars.length; i++) {
+      const a = cars[i]!;
+      const b = cars[i + 1]!;
+      const headA = reach(root.getObjectByName(`car-${a.index}`)!, a.end - 0.35, 1);
+      const headB = reach(root.getObjectByName(`car-${b.index}`)!, b.start + 0.35, -1);
+      assert.ok(Math.abs(headA - headB) <= 0.01, `${kind} joint ${i}/${i + 1}: heads at ${headA.toFixed(3)} and ${headB.toFixed(3)}`);
+      assert.ok(Math.abs(headA - a.end) <= 0.01, `${kind} joint ${i}/${i + 1}: they meet at the cars' common end ${a.end}, not ${headA.toFixed(3)}`);
+    }
+  }
+});
