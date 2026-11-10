@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { HST, INTERCITY_KINDS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import { checkEdinburghRows } from '../../core/train-neutral.ts';
 import { EDINBURGH_FLEET, edinburghFleetRow } from '../src/edinburgh-fleet.ts';
-import { buildIntercityTrain, disposeIntercityTrain, INTERCITY_BODIES, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
+import { buildIntercityTrain, disposeIntercityTrain, INTERCITY_BODIES, intercityFormation, splitPolygon, XC } from '../src/train-intercity.ts';
 import { BOGIE_DEPTHS, BP10_TRACE, BT10_TRACE, tracer, VOYAGER221_TRACE } from '../src/train-intercity-bogie.ts';
 import { col, plain } from '../src/train-geom.ts';
 import { lensLook, setTrainLampState } from '../src/train.ts';
@@ -455,6 +455,54 @@ test('the Class 43 screen sits in the upper half of the yellow panel, with yello
     fittings++;
   }
   assert.ok(fittings >= 24, `yellow coupler fittings: ${fittings} vertices`);
+});
+
+test('Voyager sides: the saloon windows sit in one near-continuous dark band from the first window to the last (xc220-05, xc221-02)', () => {
+  for (const kind of ['xc220x4', 'xc221x5'] as const) {
+    const root = buildIntercityTrain(kind);
+    for (const car of intercityLayout(kind).cars) {
+      const g = ((root.getObjectByName(`car-${car.index}`) as THREE.Group).getObjectByName('body-shell') as THREE.Mesh).geometry;
+      const pos = g.getAttribute('position');
+      const rgb = g.getAttribute('color');
+      const band = col(0x1d1d22);
+      const wins = INTERCITY_BODIES.voyager.windows(car);
+      for (const sx of [-1, 1]) {
+        // the band's area on this side, in the side's (z, y) plane, against the span from the first window's start to the last's end times the windows' height
+        let area = 0;
+        for (let v = 0; v < pos.count; v += 3) {
+          if (Math.abs(rgb.getX(v) - band.r) > 1e-6 || Math.abs(rgb.getY(v) - band.g) > 1e-6 || Math.abs(rgb.getZ(v) - band.b) > 1e-6) continue;
+          if (Math.sign(pos.getX(v)) !== sx || Math.abs(pos.getX(v)) < 1.2) continue;
+          const [az, ay, bz, by, cz, cy] = [pos.getZ(v), pos.getY(v), pos.getZ(v + 1), pos.getY(v + 1), pos.getZ(v + 2), pos.getY(v + 2)];
+          area += Math.abs((bz - az) * (cy - ay) - (cz - az) * (by - ay)) / 2;
+        }
+        const span = (wins[wins.length - 1]![1] - wins[0]![0]) * (2.66 - 1.84);
+        assert.ok(area > span, `${kind} car ${car.index} side ${sx}: band ${area.toFixed(2)} m2 against the windows' span ${span.toFixed(2)} m2`);
+      }
+    }
+  }
+});
+
+test('Voyager face: the yellow panel under the screen is one flat plane nearly the face\'s width, turning into the sides at a tight crease (xc220-03), not a bowl', () => {
+  const root = buildIntercityTrain('xc220x4');
+  const yellow = col(XC.yellow);
+  let reach = 0;
+  (root.getObjectByName('car-0') as THREE.Group).traverse((o) => {
+    if (!(o instanceof THREE.Mesh) || o.name !== 'body-shell') return;
+    const pos = o.geometry.getAttribute('position');
+    const rgb = o.geometry.getAttribute('color');
+    for (let v = 0; v < pos.count; v += 3) {
+      if (Math.abs(rgb.getX(v) - yellow.r) > 1e-6 || Math.abs(rgb.getY(v) - yellow.g) > 1e-6 || Math.abs(rgb.getZ(v) - yellow.b) > 1e-6) continue;
+      const a = new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v));
+      const b = new THREE.Vector3(pos.getX(v + 1), pos.getY(v + 1), pos.getZ(v + 1));
+      const c = new THREE.Vector3(pos.getX(v + 2), pos.getY(v + 2), pos.getZ(v + 2));
+      const n = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a)).normalize();
+      // the face looks forward (-z) and leans back: a triangle of the flat panel faces within 30 degrees of straight ahead
+      if (Math.abs(n.z) < Math.cos(Math.PI / 6)) continue;
+      for (const q of [a, b, c]) if (q.y > 1.05 && q.y < 1.9) reach = Math.max(reach, Math.abs(q.x));
+    }
+  });
+  // the body is 1.365 m half wide; the nose at the face 0.95 of it (1.30 m): the flat panel reaches within a tight crease of that (1.248 m; round 5's bowl, its 0.3 m fillet, 1.197 m)
+  assert.ok(reach > 1.225, `the flat face reaches ${reach.toFixed(3)} m out`);
 });
 
 test('roofs after the overbridge photographs: Voyager cooler hatches with dark grilles at both ends of every car, Class 43 louvre slots along both shoulders', () => {

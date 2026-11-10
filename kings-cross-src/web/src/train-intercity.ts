@@ -36,7 +36,7 @@ const TRACK = 1.435;
 // --- colours (approximate, read off the photographs named; not published) ---------------------------------------------------
 
 /** CrossCountry: plum cab and roof, silver body, golden-yellow nose, red-pink doors (xc220-02, xc220-03, xc221-02). */
-export const XC = { plum: 0x45202c, plumDark: 0x2e1a20, silver: 0xa7a9ae, yellow: 0xf2b400, door: 0xc6213f, roof: 0x3b2229, pin: 0xe0782a, under: 0x2a2a2d } as const;
+export const XC = { plum: 0x45202c, plumDark: 0x2e1a20, silver: 0xa7a9ae, yellow: 0xf2b400, door: 0xc6213f, roof: 0x3b2229, pin: 0xe0782a, under: 0x2a2a2d, band: 0x1d1d22 } as const;
 /** ScotRail Inter7City: navy power car with a yellow front, pale grey coaches with a navy window band and foot, an orange cantrail line (scotrail-hst-03, -04, -06). */
 export const SR = { navy: 0x1d2944, navyBand: 0x1f2a42, grey: 0xc2c7ce, yellow: 0xf3c200, orange: 0xe0702c, roof: 0x45484d, louvre: 0x24272c, louvrePanel: 0x8c9299, cabRoof: 0x2a2c31, under: 0x2b2c2f } as const;
 const FRAME = 0x0e0f11;
@@ -131,7 +131,9 @@ const V_WALL = 3.02;
 /** ASSUMED window band and door heights (the drawing's window labels give widths, not heights; xc221-02 by eye). */
 const V_WINDOW_Y: [number, number] = [1.84, 2.66];
 /** The Voyager's nose, read off xc220-03 (side 3/4) and xc220-02 against the drawn 3.77 m: a face about 1.65 m tall, its top the screen's foot at
- * about 2.2 m, the glass raked to about 3.3 m over 1.3 m, then the cab roof easing into the crown by 3.0 m. The face leans back about 20 degrees. ASSUMED. */
+ * about 2.2 m, the glass raked to about 3.3 m over 1.3 m, then the cab roof easing into the crown by 3.0 m. The face leans back about 20 degrees. ASSUMED.
+ * Round 6: xc220-03 shows the face as flat planes (a flat yellow panel nearly the face's width under the screen, turning into the sides at a tight crease
+ * from the lamp pod up to the screen's corner), not round 5's bowl: the front fillet is 0.12 m (was 0.3) and the tip section boxier (8, was 4). */
 const VOYAGER_NOSE: NoseSpec = {
   length: 3.0,
   knots: [
@@ -144,12 +146,12 @@ const VOYAGER_NOSE: NoseSpec = {
     { s: 2.5, top: 3.7, ws: 1, bottom: V_FLOOR - 0.02 },
     { s: 3.0, top: V_CROWN, ws: 1, bottom: V_FLOOR },
   ],
-  fillet: 0.3,
-  filletLoss: 0.15,
-  filletSteps: 9,
+  fillet: 0.12,
+  filletLoss: 0.05,
+  filletSteps: 6,
   roundLen: 2.7,
   widest: 0.45,
-  boxiness: 4,
+  boxiness: 8,
   rake: { lean: 0.36, from: 0.6, reach: 1.6 },
 };
 
@@ -185,8 +187,23 @@ const V_PIN_TOP: [number, number] = [V_SCREEN.s1 + 0.1, V_SCREEN.s1 + 0.17];
 const V_YELLOW_ROOF = V_SCREEN.s1 + 0.3;
 const V_PLUM_END = 6.45;
 
+/**
+ * The dark window band (round 6, after xc220-05 and xc221-02: the saloon windows sit in one near-continuous black band from the first window to the last,
+ * the pillars between them dark too, its top and foot straight): the band's span along the car and its height, a margin round the windows' glass. ASSUMED margin.
+ */
+const V_BAND_MARGIN = { s: 0.12, y: 0.06 };
+function vBandSpan(car: IntercityCar): [number, number] {
+  const w = VOYAGER_BODY.windows(car);
+  return [(w[0] as [number, number])[0] - V_BAND_MARGIN.s, (w[w.length - 1] as [number, number])[1] + V_BAND_MARGIN.s];
+}
+const V_BAND_Y: [number, number] = [V_WINDOW_Y[0] - V_BAND_MARGIN.y, V_WINDOW_Y[1] + V_BAND_MARGIN.y];
+
 function voyagerPaint(car: IntercityCar, s: number, y: number, ax: number): number {
   const top = y > V_PIN[1];
+  if (y > V_BAND_Y[0] && y < V_BAND_Y[1]) {
+    const [b0, b1] = vBandSpan(car);
+    if (s > b0 && s < b1) return XC.band;
+  }
   if (car.cab) {
     const f = V_SCREEN.frame;
     if (y > 2.0 && s > V_SCREEN.s0 - f && s < V_SCREEN.s1 + f) {
@@ -206,7 +223,8 @@ function voyagerPaint(car: IntercityCar, s: number, y: number, ax: number): numb
 }
 
 function voyagerCuts(car: IntercityCar): Cut[] {
-  const cuts: Cut[] = [(_s, y) => y - V_PIN[0], (_s, y) => y - V_PIN[1], (_s, y) => y - 1.32];
+  const [b0, b1] = vBandSpan(car);
+  const cuts: Cut[] = [(_s, y) => y - V_PIN[0], (_s, y) => y - V_PIN[1], (_s, y) => y - 1.32, (_s, y) => y - V_BAND_Y[0], (_s, y) => y - V_BAND_Y[1], (s) => s - b0, (s) => s - b1];
   if (!car.cab) return cuts;
   const f = V_SCREEN.frame;
   return [
@@ -244,7 +262,7 @@ const VOYAGER_BODY: BodyDef = {
     // and inboard (xc220-02, xc220-03, xc221-01: the pods are rounded, about 0.45 m across and 0.5 m tall). ASSUMED sizes.
     { name: 'coupler-recess', outline: roundedRect(-0.42, 0.42, 0.56, 0.96, 0.04, 2), lift: 0.003, colour: 0x111214 },
     // the pods stand proud of the face, smoked domes about 0.1 m deep (xc220-03); each lens lies on the dome's skin
-    { name: 'lamp-pod', outline: [], lift: 0, colour: POD_GLASS, mirror: true, dome: { cx: 0.95, cy: 1.3, rx: 0.24, ry: 0.29, h: 0.1 } },
+    { name: 'lamp-pod', outline: [], lift: 0, colour: POD_GLASS, mirror: true, dome: { cx: 0.96, cy: 1.31, rx: 0.27, ry: 0.32, h: 0.1 } },
     { name: 'headlight', outline: ellipse(0.97, 1.21, 0.1, 0.1, 16), lift: 0, lens: 'head', mirror: true },
     { name: 'tail-lamp', outline: ellipse(0.86, 1.45, 0.055, 0.055, 14), lift: 0, lens: 'tail', mirror: true },
     { name: 'marker', outline: ellipse(1.0, 1.43, 0.035, 0.035, 12), lift: 0, lens: 'marker', mirror: true },
@@ -270,7 +288,7 @@ const VOYAGER_BODY: BodyDef = {
   windowY: V_WINDOW_Y,
   doorY: [V_FLOOR + 0.02, 2.98],
   gangway: true,
-  // inside-frame bogies on both classes (xc220-05 shows bare wheel faces; Bombardier on the 221: "internally supported bogies"); see voyagerBogie
+  // the 220's inside-frame bogie (xc220-05); the 221 rides its own outside frame, traced from voyager-bogie-01 (see intercityBogie)
   bogie: { style: 'siemens', radius: VOYAGER.wheelDiameter.value / 2, wheelbase: VOYAGER.wheelbase.value },
   // ASSUMED masses: the engine and alternator raft, its cooler (the louvred grilles under each car in xc221-02), the fuel tank and batteries
   underfloor: [
