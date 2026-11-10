@@ -286,6 +286,36 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
 });
 
+test('round 4: the north bridge as R-pt1-d north: cambered side girders over the train envelope, diamond-lattice stair balustrades; the lift stair thin', () => {
+  const br = plan.bridges.find(b => b.kind === 'lattice')!, f = batches.fittings, p = f.positions, nn = f.normals, col = f.colors, k = rgb(PERTH_PAINT.lattice);
+  const isLattice = (i: number): boolean => Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6;
+  const top = br.deck - .5;
+  // The camber: lattice under the deck slab, between the girders' planes, deepening toward the ends; never into the 4.8 m envelope.
+  let lo = Infinity, hi = -Infinity, under = 0;
+  for (let i = 0; i < p.length; i += 3) {
+    if (!isLattice(i)) continue;
+    const q = toLocal([p[i], p[i + 2]]);
+    if (Math.abs(q[0] - br.along) > PERTH_STATION.deckHalf || q[1] < br.z0 || q[1] > br.z1 || p[i + 1] > top - .1 || p[i + 1] < 3) continue;
+    under++; lo = Math.min(lo, p[i + 1]); hi = Math.max(hi, p[i + 1]);
+  }
+  assert.ok(under > 0 && hi - lo > .5, `a cambered girder under the slab (${under} vertices, ${lo.toFixed(2)}..${hi.toFixed(2)})`);
+  assert.ok(lo > 4.8, `the camber clears the train envelope (${lo.toFixed(2)})`);
+  // The stair balustrades: crossing bars, so lattice faces tilted at more than the string's one slope in each flight's vertical plane.
+  for (const l of br.landings) {
+    const d = l.dir, nrm: Pt = [-d[1], d[0]], tilts = new Set<string>();
+    for (let i = 0; i < p.length; i += 3) {
+      if (!isLattice(i)) continue;
+      const q = toLocal([p[i], p[i + 2]]), r: Pt = [q[0] - l.start[0], q[1] - l.start[1]], s = r[0] * d[0] + r[1] * d[1], u = r[0] * nrm[0] + r[1] * nrm[1];
+      if (s < .5 || s > 3 || Math.abs(u) > PERTH_STATION.stair.width / 2 + .3) continue;
+      const nl = toLocal([nn[i], nn[i + 2]]), o = toLocal([0, 0]), along = (nl[0] - o[0]) * d[0] + (nl[1] - o[1]) * d[1], ny = nn[i + 1];
+      if (Math.abs(along) > .05 && Math.abs(ny) > .05) tilts.add(`${Math.abs(along).toFixed(2)}/${Math.abs(ny).toFixed(2)}`);
+    }
+    assert.ok(tilts.size >= 3, `a lattice balustrade on the stair to ${l.refs.join('/')} (${tilts.size} tilts)`);
+  }
+  const St = PERTH_STATION.stair;
+  assert.ok(St.string.lift <= .25 && St.slab <= .2 && St.string.lattice >= St.string.lift, 'the lift stair\'s strings and landing slab thin');
+});
+
 test('round 4: every lift tower has a glass hood over its deck-level door (Abbott 6573357), drawn see-through', () => {
   const [out, , over] = PERTH_STATION.tower.hood, towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, y: br.deck + over})));
   assert.equal(towers.length, 3, 'three lift towers');

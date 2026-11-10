@@ -174,10 +174,15 @@ export const PERTH_STATION = {
    *  bridge's are dog-legs (R-pt1-d Abbott: a flight down from the deck to a half landing on round columns, a second flight back beside it):
    *  the flights 0.2 m apart, the half landing 1.8 m deep, its columns 0.36 m across. ASSUMED sizes, scaled from Abbott against the
    *  1.1 m balustrade. */
-  stair: {width: 1.8, going: .28, maxRise: .18, clear: 1.2, gap: .2, landing: 1.8, column: .18},
+  /** `string`: the strings' depth, lattice and lift stairs; `slab`: the lift stair's half-landing slab. Round 4: the lift stair's were
+   *  0.4 and 0.3 m and, pale, hid platform 4's elevation from pt-platform-4-north. ASSUMED. */
+  stair: {width: 1.8, going: .28, maxRise: .18, clear: 1.2, gap: .2, landing: 1.8, column: .18, string: {lattice: .4, lift: .22}, slab: .15},
   /** Lift towers (R-pt1-d Abbott, R-pt1-b): 3.2 m square, standing 3.6 m over the deck, clad in vertical panels about 0.8 m wide (Abbott);
    *  ASSUMED sizes scaled from Abbott against the stair's balustrade. */
   tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const},
+  /** The lattice bridge's camber (R-pt1-d north): its side girders this much deeper at the ends than at mid-span; and the lattice
+   *  cells on its girders and stair balustrades. ASSUMED. */
+  camber: 1.0, cell: .6,
   /** Bracket clocks on the island building (R-pt1-a2): a 0.9 m Roman dial in a timber case `case` (along the wall, out, high) whose
    *  dial centre stands `height` over the deck, `out` from the wall. On platform 4 (R-pt1-a2) the case sits on a glazed timber stage
    *  `stage` (along, out, from, to over the deck) over a timber kiosk `kiosk` (along, out, high). All sizes ASSUMED from the photo. */
@@ -542,9 +547,20 @@ function flight(b: Batch, l: PerthBridgeLanding, s0: number, sgn: number, t: num
   const L = (n - 1) * S.going, yBot = yTop - n * rise;
   for (const e of [-1, 1]) {
     const a0 = at(s0, t + e * (w / 2 + .05)), a1 = at(s0 + sgn * L, t + e * (w / 2 + .05));
-    beam(b, [a0[0], yTop - .2, a0[1]], [a1[0], yBot + .05, a1[1]], .1, .4, side);
+    const sd = lattice ? S.string.lattice : S.string.lift;
+    beam(b, [a0[0], yTop - sd / 2, a0[1]], [a1[0], yBot + .05, a1[1]], .1, sd, side);
     beam(b, [a0[0], yTop + 1, a0[1]], [a1[0], yBot + 1, a1[1]], .06, .06, rail);
-    if (lattice) for (let u = 0; u <= L + 1e-9; u += .6) { const p = at(s0 + sgn * u, t + e * (w / 2 + .05)), y = yTop + (yBot - yTop) * u / L; b.box([p[0], y + .5, p[1]], [.04, 1, .04], {color: side}); }
+    // Round 4: a diamond-lattice balustrade (R-pt1-d north): bars crossing each cell corner to corner between the string and the
+    // handrail, so the cells read as diamonds where they meet; a post at each end.
+    if (lattice) {
+      const cell = PERTH_STATION.cell, yAt = (u: number): number => yTop + (yBot - yTop) * u / L, pt = (u: number, dy: number): V3 => { const p = at(s0 + sgn * u, t + e * (w / 2 + .05)); return [p[0], yAt(u) + dy, p[1]]; };
+      for (let u = 0; u < L - 1e-9; u += cell) {
+        const u1 = Math.min(L, u + cell);
+        beam(b, pt(u, .05), pt(u1, 1), .04, .03, side);
+        beam(b, pt(u, 1), pt(u1, .05), .04, .03, side);
+      }
+      for (const u of [0, L]) { const p = pt(u, 0); b.box([p[0], p[1] + .55, p[2]], [.06, 1.1, .06], {color: side}); }
+    }
     else {
       beam(b, [a0[0], yTop + .6, a0[1]], [a1[0], yBot + .6, a1[1]], .02, .8, P('glassPanel'));
       beam(b, [a0[0], yTop + 1.1, a0[1]], [a1[0], yBot + 1.1, a1[1]], .07, .05, side);
@@ -563,9 +579,9 @@ function stair(b: Batch, l: PerthBridgeLanding, deck: number, lattice: boolean):
   // The half landing and its two round columns at its outer corners.
   const d = l.dir, nrm: Pt = [-d[1], d[0]], at = (s: number, u: number): Pt => [l.start[0] + d[0] * s + nrm[0] * u, l.start[1] + d[1] * s + nrm[1] * u];
   const c = at(L1 + S.landing / 2, 0), W = 2 * S.width + S.gap;
-  b.box([c[0], yMid - .15, c[1]], [S.landing, .3, W], {rotY: Math.atan2(-d[1], d[0]), color: P('frame')});
+  b.box([c[0], yMid - S.slab / 2, c[1]], [S.landing, S.slab, W], {rotY: Math.atan2(-d[1], d[0]), color: P('frame')});
   b.box([c[0], yMid + .01, c[1]], [S.landing - .1, .02, W - .1], {rotY: Math.atan2(-d[1], d[0]), color: P('tread')});
-  for (const u of [-1, 1]) { const p = at(L1 + S.landing - .3, u * (W / 2 - .3)); roundColumn(b, p[0], p[1], S.column, WAVERLEY_LEVELS.platform, yMid - .3, P('frame')); }
+  for (const u of [-1, 1]) { const p = at(L1 + S.landing - .3, u * (W / 2 - .3)); roundColumn(b, p[0], p[1], S.column, WAVERLEY_LEVELS.platform, yMid - S.slab, P('frame')); }
   // The landing's balustrade, round its three open sides.
   const e = at(L1 + S.landing - .02, 0);
   b.box([e[0], yMid + .6, e[1]], [.02, .8, W], {rotY: Math.atan2(-d[1], d[0]), color: P('glassPanel')});
@@ -603,6 +619,18 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
     const runs: [number, number, boolean][] = [];
     for (let z = br.z0; z < br.z1 - 1e-9; z += 1) { const zb = Math.min(br.z1, z + 1), c = covered(z, zb), last = runs.at(-1); if (last && last[2] === c) last[1] = zb; else runs.push([z, zb, c]); }
     for (const [za, zb, c] of runs) for (const x of [x0 + .15, x1 - .15]) diamondParapet(b, x, za, zb, br.deck, 1.7, c ? P('latticeWhite') : P('lattice'), c ? P('frameNavy') : P('lattice'));
+    // Round 4: the side girders are cambered (R-pt1-d north): under the roof, the lattice runs on below the deck slab to a segmental
+    // arch, flush with the slab at mid-span and S.camber m deeper at the ends, never into the train envelope.
+    for (const [za, zb, c] of runs) if (!c) for (const x of [x0 + .15, x1 - .15]) {
+      const top = br.deck - depth, L = zb - za, yb = (z: number): number => Math.max(PERTH_TRAIN_CLEAR, top - S.camber * (1 - Math.sin(Math.PI * Math.min(1, Math.max(0, (z - za) / L)))));
+      for (let z = za; z < zb - 1e-9; z += S.cell) {
+        const z1 = Math.min(zb, z + S.cell);
+        beam(b, [x, yb(z), z], [x, yb(z1), z1], .12, .14, P('lattice'));
+        if (top - Math.max(yb(z), yb(z1)) < .2) continue;
+        beam(b, [x, yb(z), z], [x, top, z1], .05, .04, P('lattice'));
+        beam(b, [x, top, z], [x, yb(z1), z1], .05, .04, P('lattice'));
+      }
+    }
     // The covered span past the roof (R-pt1-d "from platform 1": a pitched timber roof on the lattice sides), in 1 m pieces at least 1 m
     // outside the overall roof.
     const eaves = br.deck + 2.2, ridge = br.deck + 3.0;
@@ -1099,6 +1127,8 @@ function takeColor(b: Batch, color: Rgb): Batch {
   return out;
 }
 
+/** Nothing may hang lower than this over a track (m over rail): the 4.8 m train envelope the scene test holds, plus 0.1 m. */
+export const PERTH_TRAIN_CLEAR = 4.9;
 /** How far the weathered skin stands over the glazing it covers (m); the polygon offset does the rest at range. */
 export const PERTH_SKIN_LIFT = .04;
 /** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
