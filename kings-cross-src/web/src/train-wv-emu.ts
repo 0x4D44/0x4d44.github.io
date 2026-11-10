@@ -17,10 +17,10 @@ import { clipConvex, col, cross, glassMaterial, gridNormals, lerp, plain, rounde
 import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
-import { bellowsRings, buildBogie, buildPantograph, couplerHalf, roofKit, roofKitSpan } from './train-parts.ts';
-import { buildCafBogie, splitTri, starOutline } from './train-wv-emu-parts.ts';
+import { couplerHalf, roofKit, roofKitSpan } from './train-parts.ts';
+import { buildCafBogie, buildJuniperBogie, buildWvPantograph, CLUSTER_SPAN, ribbedBellows, roofEndCluster, splitTri, starOutline } from './train-wv-emu-parts.ts';
 import type { Look } from './train-wv-emu-parts.ts';
-import type { BogieStyle, CouplerStyle } from './train-parts.ts';
+import type { CouplerStyle } from './train-parts.ts';
 
 /** Half the gap between two bodies, metres: the same 0.35 m as the King's Cross kinds (ASSUMED there too). */
 export const WV_END_GAP = 0.35;
@@ -85,9 +85,13 @@ interface Body {
   window: number;
   roof: number;
   cover: number;
-  /** a shared bogie style, or the CAF bogie of train-wv-emu-parts */
-  bogie: BogieStyle | 'caf';
-  gangway: { width: number; height: number; bottom: number };
+  /** the family's own bogie, from train-wv-emu-parts */
+  bogie: 'caf' | 'juniper';
+  /**
+   * the gangway: its opening (width, height, foot), and its ribbed bellows (train-wv-emu-parts ribbedBellows): how far inside the end's outline and under the
+   * crown it keeps, its ribs on each car's half of the gap, and how far each rib stands proud
+   */
+  gangway: { width: number; height: number; bottom: number; inset: number; topGap: number; ribs: number; depth: number };
   /** the shell's ring spacing along the car where the livery changes along it (0: none needed) */
   liveryStep: (car: WvEmuCar) => { until: number; step: number };
   /** heights where a thin horizontal band of the livery begins or ends: the section gets a point at each */
@@ -144,8 +148,10 @@ const JUNIPER_BODY: Body = {
   window: 0x222b3a,
   roof: SR_ROOF,
   cover: 0x4a5062,
-  bogie: 'alstom',
-  gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
+  // the 334's own outside-frame bogie, built from scotrail334_07 (train-wv-emu-parts buildJuniperBogie)
+  bogie: 'juniper',
+  // a narrow bellows, kept 0.12 m inside the end's outline and 0.3 m under the crown, so it sits within the roof line (scotrail334_01, _02; sizes ASSUMED)
+  gangway: { width: 1.9, height: 2.2, bottom: 1.15, inset: 0.12, topGap: 0.3, ribs: 5, depth: 0.025 },
   liveryStep: (car) => ({ until: car.length, step: 0.5 }),
   cuts: [3.29, 3.33],
   // ASSUMED, read off scotrail334_01 and _02 (window and door counts; spacings scaled along the car): a driving car has the crew door 2.25 m behind the face, three windows,
@@ -190,6 +196,19 @@ const NOVA = {
   hood: 3.47, display: [3.27, 3.45], screen: [2.15, 3.2], screenU: 0.7, frameU: 0.78,
   band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.55,
 } as const;
+/** The 397 cab side's cyan: where its back edge meets the sill (metres from the tip) and how far back it leans per metre up (tpe397-05: past the first passenger door). */
+export const CAB_CYAN = { foot: 8.0, lean: 1.6 } as const;
+/** The two navy diagonals on the 397's cab side, (s, y) end points and half-thickness: both rise back across the crew door (4.1 m) and the first door (7 m). */
+export const CAB_DIAGONALS = [
+  { from: [1.2, 0.9], to: [9.4, 2.85], half: 0.1 },
+  { from: [3.6, 1.1], to: [11.2, 3.0], half: 0.075 },
+] as const satisfies readonly { from: readonly [number, number]; to: readonly [number, number]; half: number }[];
+/** The destination display's own frame, a mid-grey border round it in the dark hood (tpe397-01, -05): the display's half-width as u, the frame's width. ASSUMED. */
+const DISPLAY = { u: 0.52, frame: 0.03, colour: 0x4b5058 } as const;
+/** The coupler cover: a flush dark-grey panel in the bumper (tpe397-01, -05), and the slightly lighter seam round it. */
+const MUZZLE = { colour: 0x3e434a, seam: 0x5f656d } as const;
+/** The marker lamp's peaked surround at the top of the hood (tpe397-01): pale, its top edge across the hood, its point down toward the display. ASSUMED size. */
+const MARKER = { half: 0.24, top: 3.61, point: 3.48, colour: 0xaab0b7, lampY: 3.565, lampR: 0.045 } as const;
 /** A lamp housing ("eye"): from u0 to u1 across the face, its foot rising outboard by `rise` (tpe397-01: the outer end stands higher), `height` tall. ASSUMED sizes. */
 const EYE = { u0: 0.36, u1: 0.88, foot: 1.62, rise: 0.24, height: 0.3 } as const;
 const eyeFoot = (u: number): number => EYE.foot + (EYE.rise * (u - EYE.u0)) / (EYE.u1 - EYE.u0);
@@ -237,8 +256,11 @@ const CIVITY_BODY: Body = {
   cover: 0x9ea3a9,
   // CAF's inside-frame bogie, built from tpe397-03 (train-wv-emu-parts buildCafBogie)
   bogie: 'caf',
-  gangway: { width: 2.0, height: 2.25, bottom: 1.1 },
-  liveryStep: (car) => ({ until: car.length, step: car.cab ? 0.4 : 0.6 }),
+  // the Civity's wide bellows: nearly the body's width, from below the floor to just under the roof, deep rounded ribs standing proud (tpe397-02; sizes ASSUMED)
+  gangway: { width: 2.6, height: 2.59, bottom: 0.95, inset: 0.03, topGap: 0.1, ribs: 6, depth: 0.055 },
+  // (0.6 m rings on every car: the livery is cut along its edges, so the rings no longer have to be fine where it changes; the cab car's 0.4 m rings
+  // put it over the triangle budget once its diagonals ran back past the first door)
+  liveryStep: (car) => ({ until: car.length, step: 0.6 }),
   cuts: [1.07, 3.04, 3.08],
   // ASSUMED, from window and door counts in tpe397-01, -02, -04, -05: single-leaf plug doors at both ends of every car (about 1.55 m in); a driving car has the crew door 4.1 m
   // from the tip, its first door at 7 m and six large windows; an intermediate car a blank panel (the "COACH" display) of about 2 m at one end and ten windows
@@ -316,7 +338,7 @@ interface Spot { s: number; y: number; ax: number; u: number; top: boolean; car:
 type Paint = { colour: number } | { glass: true };
 
 /** A line between two (s, y) points, as y at s. */
-const lineY = (a: [number, number], b: [number, number], s: number): number => a[1] + ((b[1] - a[1]) * (s - a[0])) / (b[0] - a[0]);
+const lineY = (a: readonly [number, number], b: readonly [number, number], s: number): number => a[1] + ((b[1] - a[1]) * (s - a[0])) / (b[0] - a[0]);
 
 function paintJuniper(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
@@ -345,9 +367,14 @@ function paintCivity(p: Spot, b: Body): Paint {
     // the face (the front of the nose, not its flanks; see NOVA)
     if (s < nose && u < 0.9 && (p.top || y > NOVA.mouth[0])) {
       if (y > NOVA.hood) return { colour: u < 0.8 && s < nose - 0.4 ? TPE_MASK : TPE_ROOF };
-      if (y > NOVA.display[0] && u < 0.52) return { colour: u < 0.32 && y > 3.31 && y < 3.41 ? 0xe39a1c : 0x111317 };
-      // (the line is thin along the surface; the face lies nearly flat here, so it is thinner still in height)
-      if (y > NOVA.display[0] - 0.016 && u < 0.8) return { colour: 0xd0603a };
+      // over the screen (tpe397-01): a thin orange line along the screen frame's top, then the dark hood up to the roof, and in the hood the destination
+      // display in a frame of its own, under the marker lamp's peaked surround (drawn on the face, below). No orange beside the display.
+      if (y > NOVA.screen[1] + 0.035 && u < 0.8) {
+        if (y < NOVA.screen[1] + 0.055) return { colour: 0xd0603a };
+        if (u < DISPLAY.u && y > NOVA.display[0] && y < NOVA.display[1]) return { colour: u < 0.32 && y > 3.31 && y < 3.41 ? 0xe39a1c : 0x111317 };
+        if (u < DISPLAY.u + DISPLAY.frame && y > NOVA.display[0] - DISPLAY.frame && y < NOVA.display[1] + DISPLAY.frame) return { colour: DISPLAY.colour };
+        return { colour: TPE_MASK };
+      }
       if (y > NOVA.screen[0] && y <= NOVA.screen[1] && u < NOVA.screenU) return { glass: true };
       if (y > NOVA.screen[0] - 0.07 && y <= NOVA.screen[1] + 0.035 && u < NOVA.frameU) return { colour: TPE_MASK };
       // the V: the mask narrowing from the screen's foot to the star
@@ -365,11 +392,13 @@ function paintCivity(p: Spot, b: Body): Paint {
     const front = 2.0 + (p.y - 2.0) * 0.6;
     if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { colour: 0x141921 };
     if (p.y > 1.93 && p.y < 3.02 && s > front - 0.08 && s < front + 1.23) return { colour: TPE_NAVY };
-    // the purple foot, the navy swoosh rising back from the chin, the cyan of the cab ending in a slant behind the crew door, silver behind
+    // the purple foot; the cyan of the cab running back past the first passenger door, its back edge leaning back toward the top; two navy diagonals rising
+    // back across the crew door and the first passenger door to the cyan's edge (tpe397-05; positions ASSUMED, read off its perspective). Silver behind.
     if (s > 0.6 && s < 9.6 && p.y < 0.62 + 0.42 * Math.sin((Math.PI * Math.min(1, (s - 0.6) / 9.0)))) return { colour: TPE_PURPLE };
-    const cyanEdge = 5.3 + (3.3 - p.y) * 0.95;
-    const swoosh = lineY([0.9, 0.78], [7.6, 2.4], s);
-    if (s > 0.6 && s < cyanEdge + 0.4 && Math.abs(p.y - swoosh) < 0.11) return { colour: TPE_NAVY };
+    const cyanEdge = CAB_CYAN.foot + (p.y - 1.07) * CAB_CYAN.lean;
+    if (s > 0.6 && s < cyanEdge) {
+      for (const d of CAB_DIAGONALS) if (Math.abs(p.y - lineY(d.from, d.to, s)) < d.half) return { colour: TPE_NAVY };
+    }
     if (s < 0.6 && p.y < 0.75) return { colour: TPE_NAVY };
     if (s < cyanEdge) return { colour: TPE_CYAN };
     if (p.y > 3.04 && p.y < 3.08) return { colour: 0xd0603a };
@@ -605,8 +634,9 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       };
       capShape(boxOutline(-2, 2, 0, NOVA.navy), 0.002, TPE_NAVY);
       capShape(boxOutline(-2, 2, NOVA.navy, 2), 0.002, TPE_CYAN);
-      capShape(roundedRect(-NOVA.mouthHalf - 0.03, NOVA.mouthHalf + 0.03, NOVA.mouth[0] - 0.03, NOVA.mouth[1] + 0.2, 0.22, 4), 0.004, 0x5a6069);
-      capShape(roundedRect(-NOVA.mouthHalf, NOVA.mouthHalf, NOVA.mouth[0], NOVA.mouth[1] + 0.2, 0.2, 4), 0.006, TPE_MASK);
+      // the muzzle: flush dark grey, not a black hole (tpe397-01, -05)
+      capShape(roundedRect(-NOVA.mouthHalf - 0.02, NOVA.mouthHalf + 0.02, NOVA.mouth[0] - 0.02, NOVA.mouth[1] + 0.2, 0.22, 4), 0.003, MUZZLE.seam);
+      capShape(roundedRect(-NOVA.mouthHalf, NOVA.mouthHalf, NOVA.mouth[0], NOVA.mouth[1] + 0.2, 0.2, 4), 0.004, MUZZLE.colour);
       const cover = new THREE.Object3D();
       cover.name = 'coupler-cover';
       cover.position.set(0, (NOVA.mouth[0] + NOVA.mouth[1]) / 2, Z(tip));
@@ -679,9 +709,12 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       // TPE's star badge at the foot of the V: a five-pointed star, not a disc, so it does not read as a lamp (tpe397-01)
       const star = onSurface(starOutline(0, NOVA.star, 0.085), 0.008);
       detail.fan(star.poly, star.n, col(0xf2f4f6));
-      // the marker lamp on the hood over the display (tpe397-01, -05)
-      const roofLamp = onSurface(boxOutline(-0.12, 0.12, NOVA.hood + 0.04, NOVA.hood + 0.12), 0.01);
-      detail.fan(roofLamp.poly, roofLamp.n, col(0xd9dde2));
+      // the marker lamp at the top of the hood, in its pale peaked surround over the display (tpe397-01, -05). It is a lens like the others: a top marker,
+      // white when its end leads, dark when it trails (the `head` role)
+      const surround = onSurface([[-MARKER.half, MARKER.top], [0, MARKER.point], [MARKER.half, MARKER.top]], 0.008);
+      detail.fan(surround.poly, surround.n, col(MARKER.colour));
+      const roofLamp = onSurface(discOutline(0, MARKER.lampY, MARKER.lampR, 6), 0.012);
+      lensFan('head', roofLamp.poly, roofLamp.n, mode);
       // a single wiper parked up the screen, from its foot near the middle toward the cab's left (tpe397-01, -05)
       const wiper = onSurface(barOutline([0.08 * dir, NOVA.screen[0] + 0.05], [-0.38 * dir, NOVA.screen[0] + 0.78], 0.03), 0.03);
       detail.fan(wiper.poly, wiper.n, col(WIPER));
@@ -697,18 +730,9 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     const zWall = Z(e.s);
     const zOut = Z(e.s + e.sign * WV_END_GAP);
     const g = b.gangway;
-    const out = (k: number): [number, number][] => roundedRect((-g.width / 2) * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
-    const rs = bellowsRings(out, 0, WV_END_GAP, 1, 0.05);
+    // each car draws its own share of the space between bodies (WV_END_GAP), so the two halves meet at the face frame in the middle and nothing is drawn twice
     const zSeat = zWall + Math.sign(zOut - zWall) * 0.002;
-    const pts3: V3[][] = rs.map((r) => r.pts.map(([x, y]): V3 => [x, y, zSeat + (zOut - zSeat) * (r.z / WV_END_GAP)]));
-    const Nb = gridNormals(pts3, true, (i) => [0, g.bottom + g.height / 2, ((pts3[i] as V3[])[0] as V3)[2]]);
-    for (let i = 0; i + 1 < pts3.length; i++) {
-      const row = pts3[i] as V3[];
-      for (let j = 0; j < row.length; j++) {
-        const j1 = (j + 1) % row.length;
-        detail.quad([row[j] as V3, row[j1] as V3, (pts3[i + 1] as V3[])[j1] as V3, (pts3[i + 1] as V3[])[j] as V3], [(Nb[i] as V3[])[j] as V3, (Nb[i] as V3[])[j1] as V3, (Nb[i + 1] as V3[])[j1] as V3, (Nb[i + 1] as V3[])[j] as V3], col(0x2a2c31));
-      }
-    }
+    ribbedBellows(detail, { half: sec.half, bottom: g.bottom, halfWidth: g.width / 2, inset: g.inset, topGap: g.topGap, ribs: g.ribs, depth: g.depth }, zSeat, zOut, col(0x2a2c31), col(0x17181b));
     const end = e.sign > 0 ? (car.cab === 'rear' ? 'front' : 'rear') : 'front';
     marker('gangway', 0, g.bottom + g.height / 2, e.s + (e.sign * WV_END_GAP) / 2, { end, width: g.width, height: g.height, depth: WV_END_GAP });
     couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, WV_END_GAP, COUPLER_Y);
@@ -726,11 +750,26 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     for (const sx of [-1, 1]) {
       const lo = (a: number, c: number): [number, number] => [Math.min(sx * a, sx * c), Math.max(sx * a, sx * c)];
       const [fx0, fx1] = lo(W - 0.005, half - DOOR_RELIEF / 2);
-      detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - w / 2 - 0.05, z + w / 2 + 0.05, frameC);
+      if (!(family === 'civity' && car.cab && (crew || di === 0))) detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - w / 2 - 0.05, z + w / 2 + 0.05, frameC);
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
       const leaf = crew ? (family === 'civity' ? col(TPE_CYAN) : col(SR_BLUE)) : leafC;
-      if (crew) {
+      if (family === 'civity' && car.cab && (crew || di === 0)) {
+        // the 397 cab car's crew door and first passenger door are flush plug doors in the livery: the cyan and the navy diagonals run across them (tpe397-05),
+        // so only their seams and glass are drawn and the painted shell is the leaf
+        const [sx0, sx1] = lo(W - 0.005, W + 0.004);
+        const seam = 0.025;
+        detail.box(sx0, sx1, dy0, dy1, z - w / 2 - seam, z - w / 2, frameC);
+        detail.box(sx0, sx1, dy0, dy1, z + w / 2, z + w / 2 + seam, frameC);
+        detail.box(sx0, sx1, dy1, dy1 + seam, z - w / 2 - seam, z + w / 2 + seam, frameC);
+        detail.box(sx0, sx1, dy0 - seam, dy0, z - w / 2 - seam, z + w / 2 + seam, frameC);
+        const xIn = sx * (W - 0.005);
+        const g = crew ? { half: 0.17, foot: 1.0, head: 0.2, r: 0.08 } : { half: DOOR_GLASS.half, foot: DOOR_GLASS.foot, head: DOOR_GLASS.head, r: 0.11 };
+        detail.prismX(roundedRect(z - g.half - 0.025, z + g.half + 0.025, dy0 + g.foot - 0.025, dy1 - g.head + 0.025, g.r + 0.02, 3), xIn, sx * (W + 0.005), col(0x0d0e10));
+        detail.emit = 1;
+        detail.prismX(roundedRect(z - g.half, z + g.half, dy0 + g.foot, dy1 - g.head, g.r, 3), xIn, sx * (W + 0.007), paneC, false);
+        detail.emit = 0;
+      } else if (crew) {
         detail.box(lx0, lx1, dy0, dy1, z - w / 2, z + w / 2, leaf);
         detail.box(px0, px1, dy1 - 1.15, dy1 - 0.22, z - 0.1, z + 0.1, paneC);
       } else if (b.doorLeaves === 1) {
@@ -781,9 +820,17 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     const [k0, k1] = roofKitSpan('emu', car.pantograph[0], car.pantograph[1], kitDir);
     covers = covers.flatMap(([a, c]): [number, number][] => (c <= k0 || a >= k1 ? [[a, c]] : [...(a < k0 ? [[a, k0] as [number, number]] : []), ...(c > k1 ? [[k1, c] as [number, number]] : [])]));
     roofKit(detail, { style: 'emu', p0: car.pantograph[0], p1: car.pantograph[1], dir: kitDir, crown: b.crown, height: b.coverHeight - 0.01 });
-    const p = buildPantograph(fig.pantographLength.value, b.coverHeight);
+    const p = buildWvPantograph(fig.pantographLength.value, b.coverHeight);
     p.position.set(0, b.crown, (car.pantograph[0] + car.pantograph[1]) / 2);
     group.add(p);
+  }
+  // the Civity's high-voltage gear at each end of an intermediate car (tpe397-02; ASSUMED on every intermediate car, both ends: the roof line runs the unit)
+  if (family === 'civity' && !car.cab) {
+    for (const [zEnd, dir] of [[car.start + WV_END_GAP + 0.05, 1], [car.end - WV_END_GAP - 0.05, -1]] as const) {
+      roofEndCluster(detail, zEnd, dir, b.crown, fig.height.value - b.crown + 0.04);
+      const [c0, c1] = [Math.min(zEnd, zEnd + dir * (CLUSTER_SPAN + 0.3)), Math.max(zEnd, zEnd + dir * (CLUSTER_SPAN + 0.3))];
+      covers = covers.flatMap(([a, c]): [number, number][] => (c <= c0 || a >= c1 ? [[a, c]] : [...(a < c0 ? [[a, c0] as [number, number]] : []), ...(c > c1 ? [[c1, c] as [number, number]] : [])]));
+    }
   }
   for (const [z0, z1] of covers) {
     if (z1 - z0 < 0.8) continue;
@@ -794,6 +841,11 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     const c8: V3 = [0, (yb + yt) / 2, (z0 + z1) / 2];
     detail.face(hi[0] as V3 && [hi[0] as V3, hi[1] as V3, hi[2] as V3, hi[3] as V3], c8, col(b.cover));
     for (let k = 0; k < 4; k++) detail.face([lo[k] as V3, lo[(k + 1) % 4] as V3, hi[(k + 1) % 4] as V3, hi[k] as V3], c8, col(b.cover));
+    // the 334's cooling units carry a louvred grille along their top (scotrail334_02: dark slats across the long roof box; their number and pitch ASSUMED)
+    if (family === 'juniper' && z1 - z0 > 2.5) {
+      const zc = (z0 + z1) / 2;
+      for (let k = -4; k <= 4; k++) detail.box(-0.5, 0.5, yt, yt + 0.004, zc + k * 0.16 - 0.04, zc + k * 0.16 + 0.04, col(0x1d1f25), '-y');
+    }
   }
 
   // underframe: a dark slab, and a row of equipment cases hung between the bogies (both units run with the cases in view: scotrail334_02, tpe397-02)
@@ -827,7 +879,7 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
   // the bogies: the 397's own CAF bogie (tpe397-03), the 334's from the shared parts
   car.bogies.forEach((z, k) => {
     const spec = { radius: fig.wheelDiameter.value / 2, wheelbase: fig.wheelbase.value, track: 1.435, motor: car.motor[k] as boolean };
-    const bg = b.bogie === 'caf' ? buildCafBogie(spec) : buildBogie({ ...spec, style: b.bogie });
+    const bg = b.bogie === 'caf' ? buildCafBogie(spec) : buildJuniperBogie(spec);
     bg.name = `bogie-${car.index}-${k}`;
     bg.position.set(0, 0, z);
     group.add(bg);

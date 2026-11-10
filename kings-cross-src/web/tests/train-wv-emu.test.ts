@@ -3,9 +3,10 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { WV_EMU_FIGURES, WV_EMU_KINDS, WV_EMU_SPECS, wvEmuLayout } from '../../core/train-wv-emu.ts';
 import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
-import { lensLook, setTrainLampState } from '../src/train.ts';
+import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
+import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { buildWvEmuTrain, disposeWvEmuTrain, SR_SALTIRE, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, SR_SALTIRE, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
 import { SPLIT_DEPTH, splitTri } from '../src/train-wv-emu-parts.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
 import type { V3 } from '../src/train-geom.ts';
@@ -62,28 +63,44 @@ test('each car stays inside the round-5 budget: 40,000 triangles, and a fixed ha
   }
 });
 
-test('the cab lamps switch with setTrainLampState: white at the front in service, red at the rear, and back', () => {
+test('the cab lamps switch with setTrainLampState: white at the front in service, red at the rear, reversed, back, and off', () => {
   for (const kind of WV_EMU_KINDS) {
     const root = buildWvEmuTrain(kind);
+    const detailAt = (end: 'front' | 'rear'): THREE.Mesh => meshes(root).find((x) => x.name === 'body-detail' && x.userData.lamps?.end === end) as THREE.Mesh;
+    // every vertex of every lens, colour and glow tag: a lens shows one look, or 'mixed'
     const look = (end: 'front' | 'rear'): string[] => {
-      const m = meshes(root).find((x) => x.name === 'body-detail' && x.userData.lamps?.end === end) as THREE.Mesh;
+      const m = detailAt(end);
       const c = m.geometry.getAttribute('color') as THREE.BufferAttribute;
-      const lenses = m.userData.lamps.lenses as { role: 'head' | 'tail'; v0: number; v1: number }[];
+      const g = m.geometry.getAttribute('aGlow') as THREE.BufferAttribute;
+      const lenses = m.userData.lamps.lenses as { role: LensRole; v0: number; v1: number }[];
       assert.ok(lenses.length >= 4 && lenses.every((l) => l.v1 > l.v0), `${kind} ${end} has its lenses`);
-      return lenses.map((l) => `${l.role}:${c.getX(l.v0).toFixed(4)},${c.getY(l.v0).toFixed(4)},${c.getZ(l.v0).toFixed(4)}`);
-    };
-    const expect = (end: 'front' | 'rear', mode: 'head' | 'tail' | 'off'): string[] => {
-      const m = meshes(root).find((x) => x.name === 'body-detail' && x.userData.lamps?.end === end) as THREE.Mesh;
-      return (m.userData.lamps.lenses as { role: 'head' | 'tail' }[]).map((l) => {
-        const c = col(lensLook(l.role, mode).hex);
-        return `${l.role}:${Math.fround(c.r).toFixed(4)},${Math.fround(c.g).toFixed(4)},${Math.fround(c.b).toFixed(4)}`;
+      return lenses.map((l) => {
+        const at = (v: number): string => `${c.getX(v).toFixed(4)},${c.getY(v).toFixed(4)},${c.getZ(v).toFixed(4)}/${g.getX(v)}`;
+        const first = at(l.v0);
+        for (let v = l.v0; v < l.v1; v++) if (at(v) !== first) return `${l.role}:mixed`;
+        return `${l.role}:${first}`;
       });
     };
+    const expect = (end: 'front' | 'rear', mode: 'head' | 'tail' | 'off'): string[] =>
+      (detailAt(end).userData.lamps.lenses as { role: LensRole }[]).map((l) => {
+        const k = lensLook(l.role, mode);
+        const c = col(k.hex);
+        return `${l.role}:${Math.fround(c.r).toFixed(4)},${Math.fround(c.g).toFixed(4)},${Math.fround(c.b).toFixed(4)}/${k.glow}`;
+      });
     assert.deepEqual([look('front'), look('rear')], [expect('front', 'head'), expect('rear', 'tail')], `${kind} in service`);
     setTrainLampState(root, { front: 'tail', rear: 'head' });
     assert.deepEqual([look('front'), look('rear')], [expect('front', 'tail'), expect('rear', 'head')], `${kind} reversed`);
+    setTrainLampState(root, SERVICE_LAMPS);
+    assert.deepEqual([look('front'), look('rear')], [expect('front', 'head'), expect('rear', 'tail')], `${kind} back in service`);
+    setTrainLampState(root, { front: 'off', rear: 'off' });
+    assert.deepEqual([look('front'), look('rear')], [expect('front', 'off'), expect('rear', 'off')], `${kind} off`);
+    assert.ok(look('front').every((l) => l.endsWith('/0')), `${kind}: nothing glows with the lamps off`);
     assert.notDeepEqual(expect('front', 'head'), expect('front', 'tail'), 'the two states differ');
   }
+  // the 397's hood marker over the display is a lens too (it switched in no state before round 3): three white-when-leading lenses a cab, two headlights and it
+  const root = buildWvEmuTrain('tpe397x5');
+  const lenses = (meshes(root).find((x) => x.name === 'body-detail' && x.userData.lamps?.end === 'front') as THREE.Mesh).userData.lamps.lenses as { role: LensRole }[];
+  assert.deepEqual(lenses.map((l) => l.role).sort(), ['head', 'head', 'head', 'marker', 'marker']);
 });
 
 test('disposal frees the builder\'s geometry and leaves the shared bogie geometry alone', () => {
@@ -159,26 +176,67 @@ test('the livery is cut along its edges: every piece lies on one side of a bound
   }
 });
 
-test('the 397 runs on its own CAF bogie with round wheels; the 334 keeps the shared one', () => {
+test('each unit runs on its own bogie with round wheels: the 397 on the CAF inside frame, the 334 on its outside frame', () => {
   const style = (kind: 'sr334x3' | 'tpe397x5'): unknown[] => {
     const root = buildWvEmuTrain(kind);
     const out: unknown[] = [];
     root.traverse((o) => { if (o.name === 'bogie-mesh' && o.userData.lod === 'near') out.push(o.userData.style ?? 'shared'); });
     return [...new Set(out)];
   };
-  assert.deepEqual([style('sr334x3'), style('tpe397x5')], [['shared'], ['caf']]);
-  // a wheel's rim is a circle of at least 40 sides (the round-1 bogie's wheels were conspicuous polygons)
-  const root = buildWvEmuTrain('tpe397x5');
-  const mesh = (root.getObjectByName('bogie-0-0') as THREE.Object3D).getObjectByName('bogie-mesh') as THREE.Mesh;
-  const pos = mesh.geometry.getAttribute('position');
-  const r = WV_EMU_FIGURES.civity.wheelDiameter.value / 2;
-  const rim = new Set<string>();
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i) - r;
-    const z = pos.getZ(i) - WV_EMU_FIGURES.civity.wheelbase.value / 2;
-    if (Math.abs(Math.hypot(y, z) - r) < 1e-4 && pos.getX(i) > 0) rim.add(Math.atan2(y, z).toFixed(3));
+  assert.deepEqual([style('sr334x3'), style('tpe397x5')], [['juniper'], ['caf']]);
+  // a wheel's rim is a circle of at least 40 sides (the round-1 bogies' wheels were conspicuous polygons; round 2 left the 334's so)
+  for (const [kind, family] of [['tpe397x5', 'civity'], ['sr334x3', 'juniper']] as const) {
+    const root = buildWvEmuTrain(kind);
+    const mesh = (root.getObjectByName('bogie-0-0') as THREE.Object3D).getObjectByName('bogie-mesh') as THREE.Mesh;
+    const pos = mesh.geometry.getAttribute('position');
+    const r = WV_EMU_FIGURES[family].wheelDiameter.value / 2;
+    const rim = new Set<string>();
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i) - r;
+      const z = pos.getZ(i) - WV_EMU_FIGURES[family].wheelbase.value / 2;
+      if (Math.abs(Math.hypot(y, z) - r) < 1e-4 && pos.getX(i) > 0) rim.add(Math.atan2(y, z).toFixed(3));
+    }
+    assert.ok(rim.size >= 40, `${kind}: ${rim.size} rim directions`);
   }
-  assert.ok(rim.size >= 40, `${rim.size} rim directions`);
+});
+
+test('the 334 bogie is dark, as scotrail334_07 shows it: no part of its frame or wheels is lighter than a dark grey', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const mesh = (root.getObjectByName('bogie-0-0') as THREE.Object3D).getObjectByName('bogie-mesh') as THREE.Mesh;
+  const c = mesh.geometry.getAttribute('color');
+  // (the damper is the one pale part, a grey rod; everything else is under a fifth of full brightness, linear, after the builder's light gain)
+  let light = 0;
+  for (let i = 0; i < c.count; i++) if (Math.max(c.getX(i), c.getY(i), c.getZ(i)) > col(0x5a5a5a).r) light++;
+  // (built: 3% of vertices, all the damper's; a frame in the round-2 grey-brown slab's light tone puts it near 10%)
+  assert.ok(light / c.count < 0.05, `${light} of ${c.count} bogie vertices are lighter than dark grey`);
+});
+
+test('the gangway bellows are closed, ribbed and within the body: no ring stands outside the end\'s outline or above the crown', () => {
+  for (const kind of WV_EMU_KINDS) {
+    const family = WV_EMU_SPECS[kind].family;
+    const f = WV_EMU_FIGURES[family];
+    const root = buildWvEmuTrain(kind);
+    root.updateMatrixWorld(true);
+    const car = root.getObjectByName('car-1') as THREE.Object3D;
+    const gw = car.children.find((o) => o.name === 'gangway') as THREE.Object3D;
+    const gz = gw.getWorldPosition(new THREE.Vector3()).z;
+    const detail = car.getObjectByName('body-detail') as THREE.Mesh;
+    const p = detail.geometry.getAttribute('position');
+    let maxY = -Infinity;
+    let maxX = 0;
+    const zs = new Set<string>();
+    for (let i = 0; i < p.count; i++) {
+      // (the gap only: its ends are the body's end walls, which are the body's own outline)
+      if (Math.abs(p.getZ(i) - gz) > WV_END_GAP / 2 - 0.005 || p.getY(i) < 1.2) continue;
+      maxY = Math.max(maxY, p.getY(i));
+      maxX = Math.max(maxX, Math.abs(p.getX(i)));
+      zs.add(p.getZ(i).toFixed(3));
+    }
+    assert.ok(maxY < f.height.value - 0.12, `${kind}: the bellows' crown ${maxY.toFixed(3)} stands within the roof line`);
+    assert.ok(maxX <= f.bodyWidth.value / 2, `${kind}: the bellows' widest ${maxX.toFixed(3)} is within the body`);
+    // ribs: many distinct rings along the gap, not the round-2 handful of pleats
+    assert.ok(zs.size >= 20, `${kind}: ${zs.size} rings across the gap`);
+  }
 });
 
 test('every 334 car carries the Saltire X on both sides, and the 397\'s two cab cars are not the same car', () => {
