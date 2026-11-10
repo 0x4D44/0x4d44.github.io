@@ -40,7 +40,7 @@ export const MAIN_APRON = {step: 64, from: 0x6c7a55, eastStep: 192} as const;
  *  (fogColor) with view depth, from none at `from` m to all of it by `to` m, on top of the scene's fog, so the land softens into the
  *  haze before the far plane cuts it off, as 155's fields do by 6-8 km. Perth's own materials; the shared fog is unchanged. No
  *  hills: none is sourced. */
-export const LAND_HAZE = {from: 2500, to: 8500} as const;
+export const LAND_HAZE = {from: 2500, to: 6000} as const;
 /** Round 10 (round-9 score: the Tay ended on the patch's straight edge in the cliff view). The river leaves the patch by its east edge
  *  (x 4128, z 1072-1232; it runs within 300 m of the south edge all the way, so that edge is not faded): within `run` m of the east
  *  edge the river sheet and its shingle fade to EAST_SKIRT.tone, the hazed field the skirt runs out in. */

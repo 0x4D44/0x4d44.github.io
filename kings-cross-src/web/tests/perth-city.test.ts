@@ -307,6 +307,9 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
     // soft, not faceted: the lobe's normals lean up towards the sky, so its few facets do not show as dice (every normal faces the sky)
     const nl = isl.geometry.getAttribute('normal'); let low = 1; for (let i = 0; i < nl.count; i++) low = Math.min(low, nl.getY(i));
     assert.ok(low > 0, `soft lobe normals: lowest ${low.toFixed(2)}`);
+    // round 10 (round-9 score: still faceted): 7 sides a lobe, not 6
+    const sides = (isl.geometry as THREE.SphereGeometry).parameters.widthSegments;
+    assert.ok(sides >= 7 && sides === CL.sides, `lobe sides: ${sides}`);
   }
   // light between: from the Bridgend eye, rays toward the town over the belt clear its crowns in places
   const bcam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-tay-from-bridgend'] as { pos: [number, number, number] };
@@ -548,15 +551,15 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   const blooms = bushes.flatMap(b => b.lobes).filter(l => l.bloom);
   // round 8, declared (ordered: flecks at about luma 0.25-0.3, 152's about 0.22): a dull yellow, luma 0.22-0.34 (round 7: 0.36-0.6),
   // mean under 0.32 (round 7: 0.5); red over green and blue under 0.3 of green, so it stays yellow, not leaf
-  // round 10, declared (ordered: raise the authored blue until the render gives about 0.15-0.19 of green): sRGB blue under 0.45 of green
-  // (round 8-9: 0.3); still under half, so the bloom stays yellow
-  assert.ok(blooms.every(l => lumL(l.rgb) > .22 && lumL(l.rgb) < .34 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .45 * l.rgb[1]), 'a dull yellow bloom');
+  // round 10, declared (ordered: raise the authored blue until the render gives about 0.15-0.19 of green): sRGB blue under 0.4 of green
+  // (round 8-9: 0.3; the bloom's is 0.35); still well under half, so the bloom stays yellow
+  assert.ok(blooms.every(l => lumL(l.rgb) > .22 && lumL(l.rgb) < .34 && l.rgb[0] > l.rgb[1] && l.rgb[2] < .4 * l.rgb[1]), 'a dull yellow bloom');
   // round 9 (round-8 score: rust): mustard, blue at least 0.15 of green
   assert.ok(blooms.every(l => l.rgb[2] >= .15 * l.rgb[1]), 'mustard, not rust: blue at least 0.15 of green');
-  // round 10 (round-9 ruling: the sRGB floor passed on round 8's rust): the ratio the light acts on, linear blue 0.15-0.3 of linear green
-  // (round 9's 0.06 was 0.063: the render's 3 of 255)
+  // round 10 (round-9 ruling: the sRGB floor passed on round 8's rust): the ratio the light acts on, linear blue 0.12-0.2 of linear
+  // green (round 9's 0.06 was 0.063, drawn 0.05 of green; 0.11 is 0.149; 0.13, at 0.197, drew 0.23, over 152's 0.19)
   const linC = (v: number) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
-  assert.ok(blooms.every(l => linC(l.rgb[2]) >= .15 * linC(l.rgb[1]) && linC(l.rgb[2]) <= .3 * linC(l.rgb[1])), `mustard in linear light: ${blooms.map(l => (linC(l.rgb[2]) / linC(l.rgb[1])).toFixed(3)).slice(0, 3)}`);
+  assert.ok(blooms.every(l => linC(l.rgb[2]) >= .12 * linC(l.rgb[1]) && linC(l.rgb[2]) <= .2 * linC(l.rgb[1])), `mustard in linear light: ${blooms.map(l => (linC(l.rgb[2]) / linC(l.rgb[1])).toFixed(3)).slice(0, 3)}`);
   // and the lobes not pyramids: turned off upright, their x/z proportions varied
   { const mq = new THREE.Matrix4(), pq = new THREE.Vector3(), qq = new THREE.Quaternion(), sq = new THREE.Vector3(), yq = new THREE.Vector3(); let tilted = 0; const ratios: number[] = [];
     for (let i = 0; i < gm.count; i++) { gm.getMatrixAt(i, mq); mq.decompose(pq, qq, sq); if (yq.set(0, 1, 0).applyQuaternion(qq).y < Math.cos(.1)) tilted++; ratios.push(sq.x / sq.z); }

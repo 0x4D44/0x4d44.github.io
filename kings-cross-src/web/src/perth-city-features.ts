@@ -338,7 +338,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
   // the small islands' tree belts (perth-canopy.ts islandBeltTrees): clustered crowns (6 x 3 spheres, smooth) on bare trunks
-  const beltCrown = softLobe(6, 3), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
+  const beltCrown = softLobe(ISLAND_CANOPY.cluster.sides, 3), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
   const beltMap = crownMap?.clone() ?? null; if (beltMap) { beltMap.repeat.set(3, 1.5); beltMap.needsUpdate = true; }
   const beltLeaf = new THREE.MeshLambertMaterial({map: beltMap}), beltBark = new THREE.MeshLambertMaterial({color: 0x4a3f33});
   const CL = ISLAND_CANOPY.cluster, crowns = new THREE.InstancedMesh(beltCrown, beltLeaf, Math.max(1, belts.trees.length * CL.lobes)), trunks = new THREE.InstancedMesh(beltTrunk, beltBark, Math.max(1, belts.trees.length));
