@@ -312,20 +312,30 @@ test('round 5: the main roof\'s ends are a row of pitched gables (R-pt1-b), not 
   }
 });
 
-test('round 4: the north bridge as R-pt1-d north: cambered side girders over the train envelope, diamond-lattice stair balustrades; the lift stair thin', () => {
+test('round 5: the north bridge as R-pt1-d north: arched side girders above the deck, diamond-lattice stair balustrades; the lift stair thin', () => {
   const br = plan.bridges.find(b => b.kind === 'lattice')!, f = batches.fittings, p = f.positions, nn = f.normals, col = f.colors, k = rgb(PERTH_PAINT.lattice);
   const isLattice = (i: number): boolean => Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6;
-  const top = br.deck - .5;
-  // The camber: lattice under the deck slab, between the girders' planes, deepening toward the ends; never into the 4.8 m envelope.
-  let lo = Infinity, hi = -Infinity, under = 0;
+  const slab = br.deck - .3, half = PERTH_STATION.deckHalf;
+  // The arch: the maroon side girders' top chord rises PERTH_STATION.arch over its 1.7 m at the ends; nothing hangs under the slab (the
+  // envelope stays clear; the stairs' strings start under it at the landings), and the arch stays under the roof's lowest point over it.
+  let hi = -Infinity, under = 0; const tops = new Map<number, number>();
   for (let i = 0; i < p.length; i += 3) {
     if (!isLattice(i)) continue;
     const q = toLocal([p[i], p[i + 2]]);
-    if (Math.abs(q[0] - br.along) > PERTH_STATION.deckHalf || q[1] < br.z0 || q[1] > br.z1 || p[i + 1] > top - .1 || p[i + 1] < 3) continue;
-    under++; lo = Math.min(lo, p[i + 1]); hi = Math.max(hi, p[i + 1]);
+    if (Math.abs(q[0] - br.along) > half || q[1] < br.z0 || q[1] > br.z1) continue;
+    if (p[i + 1] < slab - .1 && p[i + 1] > 3 && br.landings.every(l => Math.hypot(q[0] - l.start[0], q[1] - l.start[1]) > 4)) under++;
+    if (Math.abs(Math.abs(q[0] - br.along) - (half - .15)) < .2) { hi = Math.max(hi, p[i + 1]); if (br.landings.every(l => Math.hypot(q[0] - l.start[0], q[1] - l.start[1]) > 4)) { const z = Math.floor(q[1]); tops.set(z, Math.max(tops.get(z) ?? -Infinity, p[i + 1])); } }
   }
-  assert.ok(under > 0 && hi - lo > .5, `a cambered girder under the slab (${under} vertices, ${lo.toFixed(2)}..${hi.toFixed(2)})`);
-  assert.ok(lo > 4.8, `the camber clears the train envelope (${lo.toFixed(2)})`);
+  // The top of the girder plane, metre by metre along the span (away from the stairs): it rises and falls by the arch, not one level.
+  const ys = [...tops.values()].filter(y => y > br.deck + .5), spread = Math.max(...ys) - Math.min(...ys);
+  assert.ok(spread > .5, `the side girders arch, by half a metre or more, (top ${hi.toFixed(2)}, spread ${spread.toFixed(2)} along the span)`);
+  assert.equal(under, 0, 'no lattice hung under the deck slab');
+  // The soffit: a pale boarded underside under the 0.3 m slab, not the slab's maroon.
+  const ks = rgb(PERTH_PAINT.deckSoffit); let soffit = 0;
+  for (let i = 0; i < p.length; i += 3) if (Math.abs(col[i] - ks[0]) < 1e-6 && Math.abs(col[i + 1] - ks[1]) < 1e-6 && Math.abs(col[i + 2] - ks[2]) < 1e-6 && nn[i + 1] < -.9 && Math.abs(p[i + 1] - (slab - .02)) < .01) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - br.along) < half && q[1] > br.z0 && q[1] < br.z1) soffit++; }
+  assert.ok(soffit >= 4, `a pale soffit under the north deck (${soffit})`);
+  const roofLow = Math.min(...[-half, half].map(d => roofHeight(br.along + d)));
+  assert.ok(hi < roofLow - .3, `the arch clears the roof over it (${hi.toFixed(2)} under ${roofLow.toFixed(2)})`);
   // The stair balustrades: crossing bars, so lattice faces tilted at more than the string's one slope in each flight's vertical plane.
   for (const l of br.landings) {
     const d = l.dir, nrm: Pt = [-d[1], d[0]], tilts = new Set<string>();

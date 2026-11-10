@@ -180,9 +180,10 @@ export const PERTH_STATION = {
   /** Lift towers (R-pt1-d Abbott, R-pt1-b): 3.2 m square, standing 3.6 m over the deck, clad in vertical panels about 0.8 m wide (Abbott);
    *  ASSUMED sizes scaled from Abbott against the stair's balustrade. */
   tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const},
-  /** The lattice bridge's camber (R-pt1-d north): its side girders this much deeper at the ends than at mid-span; and the lattice
-   *  cells on its girders and stair balustrades. ASSUMED. */
-  camber: 1.0, cell: .6,
+  /** The lattice bridge's arch (R-pt1-d north, round 5): its side girders `end` high at the ends, their top chord `rise` higher at mid-span
+   *  (kept under the roof's low point over the bridge, 8.96 m, so the girder starts low rather than rising higher);
+   *  and the lattice cells on its stair balustrades. ASSUMED. */
+  arch: {end: 1.1, rise: .85}, cell: .6,
   /** Bracket clocks on the island building (R-pt1-a2): a 0.9 m Roman dial in a timber case `case` (along the wall, out, high) whose
    *  dial centre stands `height` over the deck, `out` from the wall. On platform 4 (R-pt1-a2) the case sits on a glazed timber stage
    *  `stage` (along, out, from, to over the deck) over a timber kiosk `kiosk` (along, out, high). All sizes ASSUMED from the photo. */
@@ -234,7 +235,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, deckSoffit: 0xa99d8e, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -589,15 +590,28 @@ function stair(b: Batch, l: PerthBridgeLanding, deck: number, lattice: boolean):
 }
 /** A diamond-lattice parapet in the plane x' = x, from z0 to z1 and from the deck y0 up h: top and bottom chords and posts every 3 m in
  *  `frame`, flats crossed at 45 degrees every 0.8 m in `flats` (each clipped to the panel). */
-function diamondParapet(b: Batch, x: number, z0: number, z1: number, y0: number, h: number, flats: Rgb, frame: Rgb): void {
+function diamondParapet(b: Batch, x: number, z0: number, z1: number, y0: number, h: number, flats: Rgb, frame: Rgb, rise = 0): void {
   const L = z1 - z0, step = .8; if (L < .5) return;
-  for (const y of [y0 + .08, y0 + h - .06]) b.box([x, y, (z0 + z1) / 2], [.1, .14, L], {color: frame});
-  for (let z = z0; z <= z1 + 1e-9; z += 3) b.box([x, y0 + h / 2, Math.min(z, z1)], [.12, h, .12], {color: frame});
-  for (const sg of [1, -1]) for (let c = -h; c < L; c += step) {
-    // The flat z = z0 + c + sg-wise rise: from the bottom chord at z0 + c (sg 1) or the top chord (sg -1), clipped to [z0, z1].
-    const zs = z0 + c, ys = sg > 0 ? y0 : y0 + h, ye = sg > 0 ? y0 + h : y0, lo = Math.max(0, (z0 - zs) / h), hi = Math.min(1, (z1 - zs) / h);
-    if ((hi - lo) * h < .05) continue;
-    beam(b, [x, ys + (ye - ys) * lo, zs + h * lo], [x, ys + (ye - ys) * hi, zs + h * hi], .05, .04, flats);
+  // Round 5: with `rise`, the top chord is a segmental arch, h at the ends and h + rise at mid-span (R-pt1-d north: the side girder itself
+  // arches over the tracks).
+  const top = (z: number): number => h + rise * Math.sin(Math.PI * Math.min(1, Math.max(0, (z - z0) / L)));
+  b.box([x, y0 + .08, (z0 + z1) / 2], [.1, .14, L], {color: frame});
+  if (rise > 0) {
+    const n = Math.max(1, Math.ceil(L / 1)); for (let k = 0; k < n; k++) { const za = z0 + L * k / n, zb = z0 + L * (k + 1) / n; beam(b, [x, y0 + top(za) - .06, za], [x, y0 + top(zb) - .06, zb], .1, .14, frame); }
+  } else b.box([x, y0 + h - .06, (z0 + z1) / 2], [.1, .14, L], {color: frame});
+  for (let z = z0; z <= z1 + 1e-9; z += 3) { const zz = Math.min(z, z1), t = top(zz); b.box([x, y0 + t / 2, zz], [.12, t, .12], {color: frame}); }
+  // The flats at 45 degrees from the bottom chord, one rising each way from every `step`, each up to where it meets the top chord, clipped
+  // to [z0, z1] (as a flat that falls to the bottom chord, read from its other end).
+  const H = h + rise;
+  for (const sg of [1, -1]) for (let zs = sg > 0 ? z0 - H : z0; sg > 0 ? zs < z1 : zs < z1 + H; zs += step) {
+    // The flat: y = y0 + sg * (z - zs), from the bottom chord at zs; it meets the top where sg * (z - zs) = top(z) (bisection).
+    let a = sg > 0 ? Math.max(zs, z0) : Math.min(zs, z1);
+    if (sg * (a - zs) >= top(a)) continue;
+    let lo = a, hi = zs + sg * H;
+    for (let k = 0; k < 24; k++) { const m = (lo + hi) / 2; if (sg * (m - zs) < top(m)) lo = m; else hi = m; }
+    let e = lo; e = Math.max(z0, Math.min(z1, e)); a = Math.max(z0, Math.min(z1, a));
+    if (Math.abs(e - a) < .05) continue;
+    beam(b, [x, y0 + sg * (a - zs), a], [x, y0 + sg * (e - zs), e], .05, .04, flats);
   }
 }
 function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
@@ -605,8 +619,9 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
   if (!br.landings.length) return;
   const x0 = br.along - half, x1 = br.along + half, zc = (br.z0 + br.z1) / 2, len = br.z1 - br.z0;
   // Deck: a 0.5 m slab (lattice), or (modern, R-pt1-d Abbott) a 0.3 m slab between two 0.7 m pale edge beams, so the span reads light.
-  const depth = lattice ? .5 : .7;
-  if (lattice) b.box([br.along, br.deck - depth / 2, zc], [2 * half, depth, len], {color: deckColor});
+  // Round 5: the lattice deck 0.3 m (was 0.5) with a pale boarded soffit under it (R-pt1-d north: the deck reads light from below).
+  const depth = lattice ? .3 : .7;
+  if (lattice) { b.box([br.along, br.deck - depth / 2, zc], [2 * half, depth, len], {color: deckColor}); b.box([br.along, br.deck - depth - .01, zc], [2 * half - .3, .02, len - .2], {color: P('deckSoffit')}); }
   else {
     b.box([br.along, br.deck - .15, zc], [2 * half - .3, .3, len], {color: P('modern')});
     for (const x of [x0 + .12, x1 - .12]) b.box([x, br.deck - depth / 2 + .1, zc], [.24, depth + .2, len], {color: deckColor});
@@ -618,19 +633,8 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
     const covered = (za: number, zb: number): boolean => { const mid: Pt = [br.along, (za + zb) / 2]; return !inRing(mid, roof) && ringDistance(mid, roof) >= 1.2; };
     const runs: [number, number, boolean][] = [];
     for (let z = br.z0; z < br.z1 - 1e-9; z += 1) { const zb = Math.min(br.z1, z + 1), c = covered(z, zb), last = runs.at(-1); if (last && last[2] === c) last[1] = zb; else runs.push([z, zb, c]); }
-    for (const [za, zb, c] of runs) for (const x of [x0 + .15, x1 - .15]) diamondParapet(b, x, za, zb, br.deck, 1.7, c ? P('latticeWhite') : P('lattice'), c ? P('frameNavy') : P('lattice'));
-    // Round 4: the side girders are cambered (R-pt1-d north): under the roof, the lattice runs on below the deck slab to a segmental
-    // arch, flush with the slab at mid-span and S.camber m deeper at the ends, never into the train envelope.
-    for (const [za, zb, c] of runs) if (!c) for (const x of [x0 + .15, x1 - .15]) {
-      const top = br.deck - depth, L = zb - za, yb = (z: number): number => Math.max(PERTH_TRAIN_CLEAR, top - S.camber * (1 - Math.sin(Math.PI * Math.min(1, Math.max(0, (z - za) / L)))));
-      for (let z = za; z < zb - 1e-9; z += S.cell) {
-        const z1 = Math.min(zb, z + S.cell);
-        beam(b, [x, yb(z), z], [x, yb(z1), z1], .12, .14, P('lattice'));
-        if (top - Math.max(yb(z), yb(z1)) < .2) continue;
-        beam(b, [x, yb(z), z], [x, top, z1], .05, .04, P('lattice'));
-        beam(b, [x, top, z], [x, yb(z1), z1], .05, .04, P('lattice'));
-      }
-    }
+    // Round 5: the maroon runs' side girders arch (S.arch), above the deck, so the train envelope below stays clear.
+    for (const [za, zb, c] of runs) for (const x of [x0 + .15, x1 - .15]) diamondParapet(b, x, za, zb, br.deck, c ? 1.7 : S.arch.end, c ? P('latticeWhite') : P('lattice'), c ? P('frameNavy') : P('lattice'), c ? 0 : S.arch.rise);
     // The covered span past the roof (R-pt1-d "from platform 1": a pitched timber roof on the lattice sides), in 1 m pieces at least 1 m
     // outside the overall roof.
     const eaves = br.deck + 2.2, ridge = br.deck + 3.0;
@@ -1164,8 +1168,6 @@ function roofEnds(b: Batch, main: readonly Pt[]): void {
     }
   }
 }
-/** Nothing may hang lower than this over a track (m over rail): the 4.8 m train envelope the scene test holds, plus 0.1 m. */
-export const PERTH_TRAIN_CLEAR = 4.9;
 /** How far the weathered skin stands over the glazing it covers (m); the polygon offset does the rest at range. */
 export const PERTH_SKIN_LIFT = .04;
 /** How far under the glazing the solid bands' undersides hang (m), so the milky panes no longer cover them from below. */
