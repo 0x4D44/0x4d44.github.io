@@ -101,8 +101,15 @@ function hull2(pts: readonly (readonly [number, number])[]): [number, number][] 
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-/** One mass hung under a car's floor between the bogies. */
-interface PodItem { form: PodForm; length: number; half: number; bottom: number; colour: number }
+/** What one mass under the floor is: the shared pod forms, and the round ones the 158's underside shows (bogie-158-a2). */
+export type DmuPodForm = PodForm | 'air-cleaner' | 'silencer' | 'reservoir';
+/**
+ * One mass hung under a car's floor between the bogies, its length along the car. Its shape: a box with its lower long edges cut back
+ * (the shared pod, the default); `sloped`, that box with its ends raked in toward the bottom by `rake`; `drum-x`, a drum lying across the
+ * car `half` either side of the middle, as tall as from `bottom` to the raft, its ends capped in `cap`; `drum-z`, a drum along the car of
+ * radius `half` with its top at the raft, its middle `x` off the centre line, and a dark tail pipe out of its rear end.
+ */
+interface PodItem { form: DmuPodForm; length: number; half: number; bottom: number; colour: number; shape?: 'sloped' | 'drum-x' | 'drum-z'; rake?: number; cap?: number; x?: number }
 
 /** Everything a family's look needs beyond the figures. All ASSUMED (see the header). */
 interface Look {
@@ -134,6 +141,8 @@ interface Look {
   buffers: boolean;
   gangwayFrame: boolean;
   underfloor: readonly PodItem[];
+  /** Two raft rails under the floor over the underfloor masses (bogie-158-a2). */
+  raft: boolean;
   /** The white dot field on a cab's flank: the dots' pitch up the side (the columns are 0.87 of it apart), their radius at the front, and the share of it they lose by the field's rear. */
   whiteDots: { pitch: number; r0: number; shrink: number };
   /** The roof's equipment, each piece placed from the roof photographs (see RoofGear). */
@@ -266,6 +275,7 @@ const TURBOSTAR: Look = {
   bogie: 'b5000',
   buffers: true,
   gangwayFrame: false,
+  raft: false,
   // one MTU engine and a Voith transmission under every car (the 170's equipment, widely documented; the masses' sizes and order ASSUMED)
   underfloor: [
     { form: 'tank', length: 2.2, half: 0.95, bottom: 0.4, colour: 0x4a4238 },
@@ -371,14 +381,22 @@ const SPRINTER: Look = {
   whiteDots: { pitch: 0.17, r0: 0.074, shrink: 0.4 },
   buffers: false,
   gangwayFrame: true,
-  // one Cummins engine and its transmission under each car (widely documented for the class; sizes and order ASSUMED)
+  // one Cummins engine and its transmission under each car (widely documented for the class). The order and shapes from bogie-158-a2
+  // (158890 on a low-loader, its underside in low sun, CC BY-SA 2.0), from the cab end: the fuel tank, its ends raked in toward the
+  // bottom; a labelled equipment case; the engine's air cleaner, a drum lying across the car with a bright end cap; the engine with its
+  // yellow fittings; the silencer, a long drum along the car off the centre line; the transmission; a reservoir drum across; a battery
+  // box; all hung from a raft of two rails under the floor. Sizes ASSUMED, read off that photograph against the 2.6 m bogie wheelbase.
   underfloor: [
-    { form: 'tank', length: 2.0, half: 0.95, bottom: 0.42, colour: 0x4a4238 },
-    { form: 'cooler', length: 1.7, half: 0.85, bottom: 0.46, colour: 0x4a4339 },
-    { form: 'engine', length: 2.4, half: 0.9, bottom: 0.38, colour: 0x433b31 },
-    { form: 'transmission', length: 1.2, half: 0.8, bottom: 0.44, colour: 0x3f382f },
-    { form: 'battery', length: 1.1, half: 0.72, bottom: 0.52, colour: 0x433d35 },
+    { form: 'tank', length: 2.2, half: 0.95, bottom: 0.42, colour: 0x4a4238, shape: 'sloped', rake: 0.3 },
+    { form: 'cooler', length: 1.4, half: 0.85, bottom: 0.46, colour: 0x4a4339 },
+    { form: 'air-cleaner', length: 0.55, half: 0.72, bottom: 0.5, colour: 0x4f4a42, shape: 'drum-x', cap: 0xc9cdd2 },
+    { form: 'engine', length: 2.2, half: 0.9, bottom: 0.38, colour: 0x433b31 },
+    { form: 'silencer', length: 1.8, half: 0.17, bottom: 0.6, colour: 0x5e4a3a, shape: 'drum-z', x: 0.4 },
+    { form: 'transmission', length: 1.1, half: 0.8, bottom: 0.44, colour: 0x3f382f },
+    { form: 'reservoir', length: 0.5, half: 0.6, bottom: 0.55, colour: 0x3a3936, shape: 'drum-x', cap: 0x55534f },
+    { form: 'battery', length: 1.0, half: 0.72, bottom: 0.52, colour: 0x433d35 },
   ],
+  raft: true,
   // The roof, from roof-158-filton (158956's roof from above: a riveted base plate carrying a flat square cover and a louvred exhaust
   // box, its sloped face crossed by louvres over a mesh, and beside it toward the shoulder a low dark hump on its own base) and
   // roof-158-pil (158767 side-on from slightly below: those humps near each car's inner end, smoke rising there, and a low dark unit at
@@ -412,6 +430,87 @@ function cylinderZ(soup: Soup, x: number, y: number, r: number, z0: number, z1: 
   soup.fan(a, [0, 0, Math.sign(z0 - z1)], c);
   soup.fan(b, [0, 0, Math.sign(z1 - z0)], c);
 }
+
+/** A round bar across the car (along x): `n` flat sides, radius r, centred on (y, z), from x0 to x1, with both ends capped. */
+function cylinderX(soup: Soup, x0: number, x1: number, y: number, z: number, r: number, c: THREE.Color, n = 12): void {
+  const ring = (x: number): V3[] => Array.from({ length: n }, (_, k): V3 => [x, y + r * Math.cos((2 * Math.PI * k) / n), z + r * Math.sin((2 * Math.PI * k) / n)]);
+  const a = ring(x0); const b = ring(x1);
+  for (let k = 0; k < n; k++) {
+    const k1 = (k + 1) % n;
+    const mid = (2 * k + 1) * Math.PI / n;
+    const nn: V3 = [0, Math.cos(mid), Math.sin(mid)];
+    soup.quad([a[k]!, a[k1]!, b[k1]!, b[k]!], [nn, nn, nn, nn], c);
+  }
+  soup.fan(a, [Math.sign(x0 - x1), 0, 0], c);
+  soup.fan(b, [Math.sign(x1 - x0), 0, 0], c);
+}
+
+/** A convex outline in (x, y), counter-clockwise, stood along z from z0 to z1: walls, and caps at both ends. */
+function prismZ(soup: Soup, outline: readonly (readonly [number, number])[], z0: number, z1: number, c: THREE.Color): void {
+  const m = outline.length;
+  for (let k = 0; k < m; k++) {
+    const [ax, ay] = outline[k]!; const [bx, by] = outline[(k + 1) % m]!;
+    const l = Math.hypot(bx - ax, by - ay) || 1;
+    const nn: V3 = [(by - ay) / l, -(bx - ax) / l, 0];
+    soup.quad([[ax, ay, z0], [bx, by, z0], [bx, by, z1], [ax, ay, z1]], [nn, nn, nn, nn], c);
+  }
+  soup.fan(outline.map(([x, y]): V3 => [x, y, z0]), [0, 0, Math.sign(z0 - z1)], c);
+  soup.fan(outline.map(([x, y]): V3 => [x, y, z1]), [0, 0, Math.sign(z1 - z0)], c);
+}
+
+/** A box from y0 up to y1, `half` either side of the middle, its top corners rounded at radius r: counter-clockwise from the bottom left. */
+export function roundTop(half: number, y0: number, y1: number, r: number, n = 6): [number, number][] {
+  const pts: [number, number][] = [[-half, y0], [half, y0]];
+  for (let i = 0; i <= n; i++) { const a = (i / n) * (Math.PI / 2); pts.push([half - r + r * Math.cos(a), y1 - r + r * Math.sin(a)]); }
+  for (let i = 0; i <= n; i++) { const a = Math.PI / 2 + (i / n) * (Math.PI / 2); pts.push([-half + r + r * Math.cos(a), y1 - r + r * Math.sin(a)]); }
+  return pts;
+}
+
+/**
+ * The BSI coupler at a cab end, out from the wall at z0 (dir the way out) to `reach`, its middle at height y, as the Inverness 170624
+ * photograph shows it on 170430 and 158707 (CC BY-SA 2.0): ribbed draft-gear pads either side of the shank at the wall; the head with a
+ * wide flat top plate and its round boss; a round tongue standing out sideways on the head's left as you face it, the dark pocket that
+ * takes the other coupler's tongue right of the middle, a wedge under the pocket; a pneumatic port each side; and the electrical head, a grey drum
+ * across under the coupler with its yellow warning triangle. Sizes ASSUMED, read off that photograph at about 260 px to the metre.
+ */
+export function bsiCoupler(soup: Soup, z0: number, dir: 1 | -1, reach: number, y: number): void {
+  const zr = (u0: number, u1: number): [number, number] => (dir > 0 ? [z0 + u0, z0 + u1] : [z0 - u1, z0 - u0]);
+  const zu = (u: number): number => z0 + dir * u;
+  const steel = col(0x4d5157); const casing = col(0x5b6068); const plate = col(0x686d74); const face = col(0x17191c);
+  const pocket = col(0x0b0c0d); const rubber = col(0x1d1e21); const pin = col(0x9aa0a8);
+  // the side on the left of someone facing the coupler (+x when it points -z): the tongue's; the pocket is on the other, so two
+  // couplers facing each other meet tongue to pocket, and a coupler at the other end is this one turned round
+  const L = -dir;
+  const xs = (a: number, b: number): [number, number] => [Math.min(L * a, L * b), Math.max(L * a, L * b)];
+  // the draft gear: rubber pads and steel plates stacked out from the wall either side of the shank
+  for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) soup.box(Math.min(sx * 0.2, sx * 0.3), Math.max(sx * 0.2, sx * 0.3), y - 0.13, y + 0.13, ...zr(k * 0.035, k * 0.035 + 0.035), k % 2 ? steel : rubber);
+  soup.box(-0.08, 0.08, y - 0.08, y + 0.08, ...zr(0, reach - 0.3), steel);
+  // the head, and its top plate standing wider than it, with the round boss on the plate's front
+  soup.box(-0.16, 0.16, y - 0.12, y + 0.1, ...zr(reach - 0.3, reach - 0.012), casing);
+  soup.box(-0.21, 0.21, y + 0.1, y + 0.17, ...zr(reach - 0.3, reach - 0.02), plate);
+  cylinderZ(soup, 0, y + 0.135, 0.022, zu(reach - 0.02), zu(reach - 0.008), pin, 10);
+  // the coupling face, the pocket (the head's front) and the wedge under it
+  soup.box(-0.15, 0.15, y - 0.11, y + 0.09, ...zr(reach - 0.012, reach - 0.003), face);
+  soup.box(...xs(-0.02, -0.13), y - 0.07, y + 0.06, ...zr(reach - 0.006, reach), pocket);
+  soup.box(...xs(-0.03, -0.15), y - 0.2, y - 0.12, ...zr(reach - 0.14, reach - 0.02), casing);
+  // the tongue, standing out sideways on the left
+  cylinderX(soup, L * 0.27, L * 0.1, y - 0.01, zu(reach - 0.07), 0.035, pin);
+  // the pneumatic ports
+  for (const sx of [-1, 1]) soup.box(sx * 0.19 - 0.02, sx * 0.19 + 0.02, y - 0.1, y - 0.05, ...zr(reach - 0.12, reach - 0.03), pin);
+  // the electrical head: a hanger, the drum across under the coupler, and the warning triangle on the drum's front
+  soup.box(-0.04, 0.04, y - 0.2, y - 0.12, ...zr(reach - 0.18, reach - 0.08), steel);
+  cylinderX(soup, -0.13, 0.13, y - 0.26, zu(reach - 0.13), 0.06, casing);
+  const zl = zu(reach - 0.13 + 0.061); const nl: V3 = [0, 0, dir];
+  soup.tri([[0, y - 0.225, zl], [-0.025, y - 0.27, zl], [0.025, y - 0.27, zl]], [nl, nl, nl], col(0xf2c21c));
+}
+
+/**
+ * The gangway at a car's inner end (both classes), in metres: a rubber surround standing `frame` out of the end wall round the opening
+ * (`inner` either side of the middle, posts out to `half`, from `sill` to its round-cornered head at `top`), then the pleated bellows on
+ * to the car's end, meeting the next car's. Sizes ASSUMED: the surround as the 158's front one (scotrail158-05), the bellows from the
+ * gaps between cars in scotrail170-01 and roof-170-cowd (a dark, rounded-topped connection a little narrower than the surround).
+ */
+export const GANGWAY_INNER = { inner: 0.42, half: 0.56, sill: 1.0, top: 2.98, radius: 0.18, frame: 0.07, bellows: { half: 0.5, sill: 1.06, top: 2.9, radius: 0.16 }, pleat: 0.07 } as const;
 
 /** Window spans [from, to] of `pitch` with `pier` between, centred in the stretch (none where it is shorter than one window). */
 function windowsIn(from: number, to: number, pitch: number, pier: number): [number, number][] {
@@ -599,7 +698,7 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     // the coupler out of the face to the car's end: a BSI head on both classes (Porterbrook; scotrail158-01, scotrail170-01)
     const wall = tip + setBack(0, look.coupler.y);
     const style: CouplerStyle = 'bsi';
-    couplerHalf(detail, Z(wall), (-dir) as 1 | -1, wall, look.coupler.y, style);
+    bsiCoupler(detail, Z(wall), (-dir) as 1 | -1, wall, look.coupler.y);
     marker('nose-coupler', 0, look.coupler.y, wall / 2, { end: car.cab, style });
     if (look.buffers) {
       // two small round buffers low at the valance's outer corners (scotrail170-01, -02), out to 2 cm inside the car's end
@@ -868,12 +967,48 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
   const k = Math.min(1, Math.max(0, to - from - 0.12 * (look.underfloor.length + 1)) / total);
   const gap = (to - from - total * k) / (look.underfloor.length + 1);
   let at = from + gap;
+  const raftY = floor - 0.08;
   for (const it of look.underfloor) {
     const len = it.length * k;
     const za = Z(at); const zb = Z(at + len);
-    underfloorPod(detail, { form: it.form, colour: it.colour, x0: -it.half, x1: it.half, y0: it.bottom, y1: floor - 0.08, z0: Math.min(za, zb), z1: Math.max(za, zb) });
-    marker('underfloor', 0, it.bottom, at + len / 2, { form: it.form });
+    const [z0, z1] = [Math.min(za, zb), Math.max(za, zb)];
+    if (it.shape === 'drum-x') {
+      // a drum lying across the car, from the raft down to its bottom, its ends capped
+      const r = Math.min((raftY - it.bottom) / 2, len / 2); const yc = raftY - r; const zc = (z0 + z1) / 2;
+      cylinderX(detail, -it.half, it.half, yc, zc, r, col(it.colour), 16);
+      for (const sx of [-1, 1]) cylinderX(detail, sx * it.half, sx * (it.half + 0.02), yc, zc, r * 0.82, col(it.cap ?? it.colour), 16);
+    } else if (it.shape === 'drum-z') {
+      // a drum along the car hung from the raft, off the centre line, and its tail pipe out of the end toward the car's inner end
+      const r = it.half; const yc = raftY - r; const x = it.x ?? 0;
+      cylinderZ(detail, x, yc, r, z0, z1, col(it.colour), 14);
+      const zt = Z(at + len); const zt1 = Z(at + len + Math.min(0.5, gap * 0.8));
+      cylinderZ(detail, x, yc, 0.05, Math.min(zt, zt1), Math.max(zt, zt1), col(0x1d1c1b), 10);
+    } else if (it.shape === 'sloped') {
+      // the box's side profile a trapezium: its ends raked in by `rake` toward the bottom (the bevelled lower edges as the shared pod's)
+      const rk = Math.min(it.rake ?? 0, len / 3);
+      const sA = at; const sB = at + len;
+      const prof: [number, number][] = [[sA, raftY], [sA + rk, it.bottom], [sB - rk, it.bottom], [sB, raftY]];
+      const P3 = (x: number, [s, y]: [number, number]): V3 => [x, y, Z(s)];
+      const c = col(it.colour);
+      for (let q = 0; q < prof.length - 1; q++) {
+        const a = prof[q]!; const b = prof[q + 1]!;
+        const ds = b[0] - a[0]; const dy = b[1] - a[1]; const l = Math.hypot(ds, dy) || 1;
+        // outward in the (s, y) plane: the profile runs top-front, down, along the bottom, up to top-rear, so out is (dy, -ds); z is s by dir
+        const nn: V3 = [0, -ds / l, (dy / l) * dir];
+        detail.quad([P3(-it.half, a), P3(it.half, a), P3(it.half, b), P3(-it.half, b)], [nn, nn, nn, nn], c);
+      }
+      for (const sx of [-1, 1]) detail.fan(prof.map((pp) => P3(sx * it.half, pp)), [sx, 0, 0], c);
+    } else {
+      underfloorPod(detail, { form: it.form as PodForm, colour: it.colour, x0: -it.half, x1: it.half, y0: it.bottom, y1: raftY, z0, z1 });
+    }
+    marker('underfloor', it.x ?? 0, it.bottom, at + len / 2, { form: it.form, shape: it.shape ?? 'box', s: [at, at + len], half: it.half });
     at += len + gap;
+  }
+  if (look.raft) {
+    // the raft: two rails under the floor from the first mass to the last, a cross member at each end (bogie-158-a2)
+    for (const sx of [-1, 1]) boxS(detail, sx * 0.78 - 0.06, sx * 0.78 + 0.06, raftY - 0.12, raftY, from, to, UNDERFRAME);
+    for (const s of [from, to - 0.12]) boxS(detail, -0.84, 0.84, raftY - 0.12, raftY, s, s + 0.12, UNDERFRAME);
+    marker('raft', 0, raftY - 0.06, (from + to) / 2, { s: [from, to], rails: 2 });
   }
   for (const [index, z] of car.bogies.entries()) {
     const bogie = buildDmuBogie({ radius: f.wheelDiameter.value / 2, wheelbase: f.wheelbase.value, track: 1.435, motor: car.motor[index] ?? false, style: look.bogie });
@@ -888,10 +1023,23 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
   for (const s of innerEnds) {
     const out = s > car.length / 2 ? 1 : -1;
     const e = out > 0 ? car.length : 0;
-    boxS(detail, -0.55, 0.55, 1.08, 3.0, Math.min(s, e), Math.max(s, e), GANGWAY_RUBBER);
+    // the rubber surround (posts, sill, and the head with its outer corners rounded), standing out of the end wall
+    const g = GANGWAY_INNER; const b = g.bellows;
+    const rubber = col(GANGWAY_RUBBER);
+    const zf = Z(s + out * g.frame);
+    for (const sx of [-1, 1]) prismZ(detail, box(Math.min(sx * g.inner, sx * g.half), Math.max(sx * g.inner, sx * g.half), g.sill, g.top - g.radius), Z(s), zf, rubber);
+    prismZ(detail, box(-g.inner, g.inner, g.sill, g.sill + 0.08), Z(s), zf, rubber);
+    prismZ(detail, roundTop(g.half, g.top - g.radius, g.top, g.radius), Z(s), zf, rubber);
+    // the bellows, on to the car's end, a pleat standing out round it every `pleat`
+    const bel = roundTop(b.half, b.sill, b.top, b.radius);
+    prismZ(detail, bel, zf, Z(e), col(0x222327));
+    let pleats = 0;
+    for (let u = g.frame + g.pleat / 2; u < END_GAP - 0.01; u += g.pleat, pleats++) {
+      prismZ(detail, roundTop(b.half + 0.02, b.sill - 0.02, b.top + 0.02, b.radius + 0.02), Z(s + out * (u - 0.01)), Z(s + out * (u + 0.01)), rubber);
+    }
     const zWall = Z(s);
     couplerHalf(detail, zWall, (out * dir) as 1 | -1, END_GAP, 0.85, 'plain');
-    marker('gangway', 0, 2.0, s);
+    marker('gangway', 0, 2.0, s, { front: false, frame: g.frame, top: g.top, radius: g.radius, bellowsTop: b.top, pleats });
   }
 
   const shellMesh = new THREE.Mesh(shell.build(), plain()); shellMesh.name = 'body-shell';

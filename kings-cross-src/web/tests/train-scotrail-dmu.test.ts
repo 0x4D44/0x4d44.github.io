@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { buildScotrailDmu, CHROME, disposeScotrailDmu, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { bsiCoupler, buildScotrailDmu, CHROME, disposeScotrailDmu, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_INNER, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -74,8 +74,9 @@ test('ScotRail DMU parts: diesel units with no pantograph, two bogies and two do
   // (round 2: the 170's dome marker lamp; the 158's sloped plough, and its cab roof a low housing at each roof edge, not a slab across it)
   // (round 4, from the roof photographs: the 170 cab car's scoop, grille, housing and vent panel, and two vent panels on every car;
   // the 158's two cab-roof units and, on every car, the exhaust group of plate, cover, louvred box and hump)
+  // (round 4, from bogie-158-a2: the 158's eight masses a car, the air cleaner, silencer and reservoir drums added to the five boxes)
   assert.deepEqual(tally('sr170x3'), { pantograph: 0, bogies: 6, doors: 12, glass: 3, underfloor: 15, noseCouplers: 2, buffers: 4, litHeads: 2, heads: 4, domeLamps: 2, ploughs: 0, roofKit: 14 });
-  assert.deepEqual(tally('sr158x2'), { pantograph: 0, bogies: 4, doors: 8, glass: 2, underfloor: 10, noseCouplers: 2, buffers: 0, litHeads: 2, heads: 4, domeLamps: 0, ploughs: 2, roofKit: 12 });
+  assert.deepEqual(tally('sr158x2'), { pantograph: 0, bogies: 4, doors: 8, glass: 2, underfloor: 16, noseCouplers: 2, buffers: 0, litHeads: 2, heads: 4, domeLamps: 0, ploughs: 2, roofKit: 12 });
 });
 
 test('ScotRail DMU front: the leading cab lights its headlights, the trailing cab its tail lamps', () => {
@@ -131,6 +132,148 @@ test('ScotRail DMU coupler: both classes carry the BSI head, whose front is exac
     assert.deepEqual(styles, ['bsi', 'bsi'], `${kind}: the cab couplers`);
     disposeScotrailDmu(root);
   }
+});
+
+
+test('ScotRail DMU BSI coupler, as the Inverness 170624 photograph shows it: draft-gear pads at the wall, a top plate, a sideways tongue on the left, the pocket on the right as the head\'s front, and the electrical drum with its warning triangle', () => {
+  const y = 0.7;
+  const k = (hex: number): number[] => { const c = col(hex); return [c.r, c.g, c.b]; };
+  for (const dir of [1, -1] as const) for (const reach of [0.4, 0.7]) {
+    const s = new Soup();
+    bsiCoupler(s, 10, dir, reach, y);
+    const n = s.pos.length / 3;
+    const X = (i: number): number => s.pos[3 * i]!; const Y = (i: number): number => s.pos[3 * i + 1]!; const U = (i: number): number => (s.pos[3 * i + 2]! - 10) * dir;
+    const is = (i: number, hex: number): boolean => k(hex).every((v, j) => Math.abs(s.clr[3 * i + j]! - v) < 1e-6);
+    const all = Array.from({ length: n }, (_, i) => i);
+    const what = `dir ${dir} reach ${reach}`;
+    assert.ok(Math.abs(Math.max(...all.map(U)) - reach) < 1e-6, `${what}: the head's front`);
+    assert.ok(Math.abs(Math.min(...all.map(U))) < 1e-6, `${what}: from the wall`);
+    assert.ok(Math.min(...all.map(Y)) >= y - 0.32 - 1e-9 && Math.max(...all.map(Y)) <= y + 0.17 + 1e-9, `${what}: its height`);
+    // facing the coupler, its left is +x when it points -z (dir -1), and -x when it points +z
+    const left = -dir;
+    // the front: only the pocket, right of the middle as you face it
+    const front = all.filter((i) => Math.abs(U(i) - reach) < 1e-6);
+    assert.ok(front.length > 0 && front.every((i) => X(i) * left < 0 && Math.abs(X(i)) < 0.14), `${what}: the pocket is the head's front, on the right`);
+    // the draft gear: pads out to 0.3 either side, within 0.14 of the wall
+    for (const sx of [-1, 1]) assert.ok(all.some((i) => Math.abs(X(i) - sx * 0.3) < 1e-6 && U(i) <= 0.14 + 1e-9), `${what}: draft gear side ${sx}`);
+    assert.ok(all.every((i) => Math.abs(X(i)) <= 0.3 + 1e-9), `${what}: no wider than the draft gear`);
+    // the tongue: out past the head on the left only, near the front
+    const tongue = all.filter((i) => X(i) * left > 0.21 && U(i) > 0.15);
+    assert.ok(tongue.length > 0 && tongue.every((i) => U(i) > reach - 0.12), `${what}: the tongue on the left`);
+    assert.ok(!all.some((i) => X(i) * left < -0.21 && U(i) > 0.15), `${what}: nothing out past the head on the right`);
+    // the top plate wider than the head, over it
+    assert.ok(all.some((i) => Math.abs(Math.abs(X(i)) - 0.21) < 1e-6 && Math.abs(Y(i) - (y + 0.17)) < 1e-6), `${what}: the top plate`);
+    // the warning triangle, on the drum's front under the head, facing out
+    const label = all.filter((i) => is(i, 0xf2c21c));
+    assert.equal(label.length, 3, `${what}: one warning triangle`);
+    assert.ok(label.every((i) => Y(i) < y - 0.2 && Math.abs(U(i) - (reach - 0.069)) < 1e-6), `${what}: the triangle on the drum's front`);
+  }
+  // both classes' cab couplers are this one: each cab's detail carries the triangle under its coupler
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const root = buildScotrailDmu(kind);
+    const yc = scotrailDmuLook(kind === 'sr170x3' ? 'turbostar' : 'sprinter158').coupler.y;
+    for (const car of scotrailDmuLayout(kind).cars) {
+      const d = (root.getObjectByName(`car-${car.index}`)!.getObjectByName('body-detail') as THREE.Mesh).geometry;
+      const p = d.getAttribute('position'); const c = d.getAttribute('color'); const yl = col(0xf2c21c);
+      let tri = 0;
+      for (let i = 0; i < p.count; i++) if (Math.abs(c.getX(i) - yl.r) < 1e-6 && Math.abs(c.getY(i) - yl.g) < 1e-6 && Math.abs(c.getZ(i) - yl.b) < 1e-6 && Math.abs(p.getY(i) - (yc - 0.25)) < 0.03) tri++;
+      assert.equal(tri, car.cab ? 3 : 0, `${kind} car ${car.index}: the electrical head's triangle`);
+    }
+    disposeScotrailDmu(root);
+  }
+});
+
+test('ScotRail DMU inner ends, both classes: a rubber surround standing out of the end wall with a round-cornered head, then pleated bellows to the car\'s end', () => {
+  const g = GANGWAY_INNER;
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const root = buildScotrailDmu(kind);
+    for (const car of scotrailDmuLayout(kind).cars) {
+      const grp = root.getObjectByName(`car-${car.index}`)!;
+      const ends: THREE.Object3D[] = [];
+      grp.traverse((o) => { if (o.name === 'gangway' && o.userData.front === false) ends.push(o); });
+      assert.equal(ends.length, car.cab ? 1 : 2, `${kind} car ${car.index}: an inner gangway at each inner end`);
+      const d = (grp.getObjectByName('body-detail') as THREE.Mesh).geometry;
+      const p = d.getAttribute('position'); const c = d.getAttribute('color');
+      const is = (i: number, hex: number): boolean => { const k = col(hex); return Math.abs(c.getX(i) - k.r) < 1e-6 && Math.abs(c.getY(i) - k.g) < 1e-6 && Math.abs(c.getZ(i) - k.b) < 1e-6; };
+      for (const m of ends) {
+        const zw = m.position.z; const out = Math.sign(zw - (car.start + car.end) / 2);
+        const ze = out > 0 ? car.end : car.start;
+        const u = (i: number): number => (p.getZ(i) - zw) * out;
+        const where = `${kind} car ${car.index} end ${out}`;
+        // the surround: rubber from the wall out to `frame`, its top at `top`, posts out to `half`, the head's outer corners rounded
+        const sur = Array.from({ length: p.count }, (_, i) => i).filter((i) => is(i, GANGWAY_RUBBER) && u(i) > -1e-4 && u(i) < g.frame + 1e-4 && p.getY(i) > 0.95);
+        assert.ok(sur.length > 0, `${where}: the surround`);
+        assert.ok(Math.abs(Math.min(...sur.map(u))) < 1e-4 && Math.abs(Math.max(...sur.map(u)) - g.frame) < 1e-4, `${where}: it stands ${g.frame} m out of the wall`);
+        assert.ok(Math.abs(Math.max(...sur.map((i) => p.getY(i))) - g.top) < 1e-5, `${where}: its top`);
+        assert.ok(Math.abs(Math.max(...sur.map((i) => Math.abs(p.getX(i)))) - g.half) < 1e-5, `${where}: its width`);
+        // (in the corner square every rubber vertex lies within the radius of the arc's centre: a square corner is r·√2 out)
+        assert.ok(sur.filter((i) => Math.abs(p.getX(i)) > g.half - g.radius && p.getY(i) > g.top - g.radius).every((i) => Math.hypot(Math.abs(p.getX(i)) - (g.half - g.radius), p.getY(i) - (g.top - g.radius)) <= g.radius + 1e-5), `${where}: the head's outer corners rounded`);
+        assert.ok(sur.some((i) => Math.abs(p.getX(i)) < g.half - 0.04 && Math.abs(p.getX(i)) > g.half - g.radius && p.getY(i) > g.top - g.radius + 0.03 && p.getY(i) < g.top - 0.005), `${where}: the corner's curve`);
+        // the opening: no surround rubber between the posts above the sill and under the head
+        assert.ok(!sur.some((i) => Math.abs(p.getX(i)) < g.inner - 0.01 && p.getY(i) > 1.1 && p.getY(i) < g.top - g.radius - 0.01), `${where}: the opening`);
+        // the bellows: from the surround's front to the car's end, rounded at the top, under the surround's top
+        const bel = Array.from({ length: p.count }, (_, i) => i).filter((i) => is(i, 0x222327) && Math.abs(p.getZ(i) - zw) <= Math.abs(ze - zw) + 1e-4 && (p.getZ(i) - zw) * out >= -1e-4);
+        assert.ok(bel.some((i) => Math.abs(p.getZ(i) - ze) < 1e-4) && bel.some((i) => Math.abs(u(i) - g.frame) < 1e-4), `${where}: the bellows reach from the surround to the car's end`);
+        assert.ok(Math.abs(Math.max(...bel.map((i) => p.getY(i))) - g.bellows.top) < 1e-5 && g.bellows.top < g.top, `${where}: the bellows' top`);
+        assert.ok(bel.filter((i) => Math.abs(p.getX(i)) > g.bellows.half - g.bellows.radius && p.getY(i) > g.bellows.top - g.bellows.radius).every((i) => Math.hypot(Math.abs(p.getX(i)) - (g.bellows.half - g.bellows.radius), p.getY(i) - (g.bellows.top - g.bellows.radius)) <= g.bellows.radius + 1e-5), `${where}: the bellows' round top`);
+        assert.ok((m.userData.pleats as number) >= 3, `${where}: ${m.userData.pleats} pleats`);
+        const pleat = Array.from({ length: p.count }, (_, i) => i).filter((i) => is(i, GANGWAY_RUBBER) && u(i) > g.frame + 1e-4 && Math.abs(p.getX(i)) > g.bellows.half + 0.01);
+        assert.ok(pleat.length >= 3 * 4, `${where}: the pleats stand out round the bellows`);
+      }
+    }
+    disposeScotrailDmu(root);
+  }
+});
+
+
+test('ScotRail 158 underfloor, as bogie-158-a2 shows it: from the cab end a raked tank, a case, the air cleaner drum across, the engine, the silencer along, the transmission, a reservoir drum, a battery box, hung from a raft between the bogies', () => {
+  const root = buildScotrailDmu('sr158x2');
+  for (const car of scotrailDmuLayout('sr158x2').cars) {
+    const g = root.getObjectByName(`car-${car.index}`)!;
+    const items: THREE.Object3D[] = [];
+    g.traverse((o) => { if (o.name === 'underfloor') items.push(o); });
+    // in order from the cab end (s grows from it)
+    items.sort((a, b) => (a.userData.s as number[])[0]! - (b.userData.s as number[])[0]!);
+    assert.deepEqual(items.map((o) => o.userData.form), ['tank', 'cooler', 'air-cleaner', 'engine', 'silencer', 'transmission', 'reservoir', 'battery'], `car ${car.index}: the masses in order from the cab end`);
+    assert.deepEqual(items.map((o) => o.userData.shape), ['sloped', 'box', 'drum-x', 'box', 'drum-z', 'box', 'drum-x', 'box'], `car ${car.index}: their shapes`);
+    // the silencer off the centre line; every mass clear of the next and of both bogies' wheels
+    assert.ok(Math.abs(items[4]!.position.x) > 0.2, `car ${car.index}: the silencer off the centre line`);
+    for (let i = 1; i < items.length; i++) assert.ok((items[i]!.userData.s as number[])[0]! > (items[i - 1]!.userData.s as number[])[1]!, `car ${car.index}: mass ${i} clear of the one before`);
+    const dir = car.cab === 'rear' ? -1 : 1; const base = car.cab === 'rear' ? car.end : car.start;
+    const bs = car.bogies.map((z) => (z - base) * dir).sort((p, q) => p - q);
+    const f = SCOTRAIL_DMU_FIGURES.sprinter158;
+    const wheels = f.wheelbase.value / 2 + f.wheelDiameter.value / 2;
+    assert.ok((items[0]!.userData.s as number[])[0]! > bs[0]! + wheels && (items[7]!.userData.s as number[])[1]! < bs[1]! - wheels, `car ${car.index}: between the bogies' wheels`);
+    // the raft over them all
+    const raft = g.getObjectByName('raft')!;
+    assert.ok(raft && (raft.userData.s as number[])[0]! <= (items[0]!.userData.s as number[])[0]! && (raft.userData.s as number[])[1]! >= (items[7]!.userData.s as number[])[1]!, `car ${car.index}: the raft over the masses`);
+    // the shapes in the mesh: the tank's raked ends (its bottom shorter than its top), the drums round
+    const d = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    const p = d.getAttribute('position'); const c = d.getAttribute('color');
+    const sOf = (z: number): number => (z - base) * dir;
+    const of = (hex: number, s0: number, s1: number): number[] => {
+      const k = col(hex); const out: number[] = [];
+      for (let i = 0; i < p.count; i++) if (Math.abs(c.getX(i) - k.r) < 1e-6 && Math.abs(c.getY(i) - k.g) < 1e-6 && Math.abs(c.getZ(i) - k.b) < 1e-6 && p.getY(i) < 1.0 && sOf(p.getZ(i)) > s0 - 1e-3 && sOf(p.getZ(i)) < s1 + 1e-3) out.push(i);
+      return out;
+    };
+    const look = scotrailDmuLook('sprinter158');
+    const [t0, t1] = items[0]!.userData.s as number[];
+    const tank = of(look.underfloor[0]!.colour, t0!, t1!);
+    const yb = Math.min(...tank.map((i) => p.getY(i))); const yt = Math.max(...tank.map((i) => p.getY(i)));
+    const span = (ys: number[]): number => { const ss = ys.map((i) => sOf(p.getZ(i))); return Math.max(...ss) - Math.min(...ss); };
+    const bottomLen = span(tank.filter((i) => Math.abs(p.getY(i) - yb) < 1e-4)); const topLen = span(tank.filter((i) => Math.abs(p.getY(i) - yt) < 1e-4));
+    assert.ok(topLen - bottomLen > 0.4, `car ${car.index}: the tank's ends raked in (top ${topLen}, bottom ${bottomLen})`);
+    for (const j of [2, 6]) {
+      const [s0, s1] = items[j]!.userData.s as number[];
+      const it = look.underfloor[j]!;
+      const drum = of(it.colour, s0!, s1!).filter((i) => Math.abs(p.getX(i)) < it.half - 1e-3 || Math.abs(Math.abs(p.getX(i)) - it.half) < 1e-4);
+      const ys = drum.map((i) => p.getY(i)); const zs = drum.map((i) => p.getZ(i));
+      const yc = (Math.min(...ys) + Math.max(...ys)) / 2; const zc = (Math.min(...zs) + Math.max(...zs)) / 2;
+      const radii = drum.filter((i) => Math.abs(p.getY(i) - yc) > 1e-4 || Math.abs(p.getZ(i) - zc) > 1e-4).map((i) => Math.hypot(p.getY(i) - yc, p.getZ(i) - zc));
+      assert.ok(radii.length > 16 && Math.max(...radii) - Math.min(...radii) < 2e-3, `car ${car.index} ${it.form}: a round drum lying across the car (radii ${Math.min(...radii)}..${Math.max(...radii)})`);
+    }
+  }
+  disposeScotrailDmu(root);
 });
 
 test('ScotRail DMU lettering: the wordmark on both sides of every car, from a row of the shared atlas, and no unit number (no allocated unit reaches the builder)', () => {
