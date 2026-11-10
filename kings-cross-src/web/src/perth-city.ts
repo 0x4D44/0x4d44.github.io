@@ -9,13 +9,12 @@ import {buildTerrainMesh, overMesh} from '../../core/terrain.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
 import {fillSurface, shell, walls} from './waverley-mesh.ts';
-import {prism} from './waverley-frontage-mesh.ts';
 import {buildPerthEastGround} from './perth-east-ground.ts';
 import {buildWaverleyCity} from './waverley-city.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
 import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {buildPerthCityGround, KINNOULL_TOWER, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
+import {buildPerthCityGround, KINNOULL_TOWER, kinnoullTower, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
 import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
 import {PERTH_FASCIA, stationOutline} from './perth-station.ts';
@@ -98,8 +97,7 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   if (kirk) kirkTower(masonry, lead, kirk, ground.rangeUnder(kirk.outer, 4).min);
   const tower = data.buildings.find(b => b.id === KINNOULL_TOWER.id);
   if (tower) {
-    const {x, z, radius, height, sides} = KINNOULL_TOWER, base = ground.heightAt(x, z);
-    prism(masonry, x, z, radius, base - .3, base + height, sides); buildingIds.push(tower.id); heightBasis.LiDAR++;
+    kinnoullTower(masonry, ground.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z)); buildingIds.push(tower.id); heightBasis.LiDAR++;
   }
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
   // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing)

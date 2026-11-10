@@ -11,8 +11,8 @@
 // - Road bridges: the mapped bridge outlines over the Tay (OSM man_made=bridge: Perth Bridge way/583253156, Queen's Bridge
 //   way/742335578; the viaduct's own outline, way/611293698, is left out by the builder), deck from bank to bank. Arch counts are sourced (HES, Canmore; PERTH_ROAD_BRIDGES); equal spans are ASSUMED.
 // - St John's Kirk (way/740861202): its central tower and broach spire at the Phase I DSM's peak over the kirk, the spire's top 155 ft
-//   (47.2 m) above the pavement (Historic Environment Scotland LB39300). Kinnoull Tower (way/323543760): the OSM outline as a round
-//   tower; the 2011 DSM does not resolve it (its surface stands within 3 m of the DTM there), so its height is ASSUMED.
+//   (47.2 m) above the pavement (Historic Environment Scotland LB39300). Kinnoull Tower (way/323543760): the DSM does not resolve it
+//   over its OSM outline, but it does 8.7 m away on the same cliff top, so the tower is drawn there at that LiDAR rise (KINNOULL_TOWER).
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
@@ -22,6 +22,7 @@ import {buildWaverleyCityGround, decodeLanduse, Footprints} from './waverley-cit
 import type {LanduseFile} from './waverley-city-ground.ts';
 import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
+import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
@@ -97,6 +98,35 @@ const TOWER_NEAR = PERTH_LIDAR_LANDMARKS.kinnoullTower.near!;
 export const KINNOULL_TOWER = {id: PERTH_LIDAR_LANDMARKS.kinnoullTower.id, x: TOWER_NEAR.x, z: TOWER_NEAR.z, height: TOWER_NEAR.rise,
   radius: Math.sqrt(TOWER_NEAR.cells / Math.PI), sides: 12} as const;
 export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
+/** Kinnoull Tower's look, from 8703 and 4307 (round 3, C1). It is a pale grey rubble tower with two red sandstone string courses and a
+ *  projecting cornice, and a lower annexe against its north side about half its height (in 8703, seen from the west, the block on its
+ *  left). All ASSUMED, by eye: the courses at `bands` of the height, `band` m deep, standing `proud` m out; the cornice `cornice` m
+ *  deep and `over` m out; the annexe `annexe` (along x, across z, height share), and the stone and band tones. */
+export const TOWER_LOOK = {bands: [.55, .8] as const, band: .45, proud: .06, cornice: .5, over: .22,
+  annexe: [3.6, 3.0, .45] as const, stone: [.80, .79, .76] as Rgb, red: [.66, .45, .38] as Rgb} as const;
+/** A vertical ring of `sides` quads about (x, z), from y0 to y1 at radius r, with UVs in metres (u round the ring, v up) so the stone
+ *  texture lies as coursed masonry. prism() leaves every UV at 0, which picks one dark texel of the stone map: the round-2 black tower. */
+function ring(b: Batch, x: number, z: number, r: number, y0: number, y1: number, sides: number, color: Rgb): void {
+  for (let i = 0; i < sides; i++) {
+    const a0 = i * 2 * Math.PI / sides, a1 = (i + 1) * 2 * Math.PI / sides, am = (a0 + a1) / 2, w = 2 * r * Math.sin(Math.PI / sides);
+    const p = (a: number, y: number): V3 => [x + r * Math.cos(a), y, z + r * Math.sin(a)];
+    b.quad(p(a0, y0), p(a1, y0), p(a1, y1), p(a0, y1), [i * w, y0], [(i + 1) * w, y0], [(i + 1) * w, y1], [i * w, y1], {facing: [Math.cos(am), 0, Math.sin(am)], color});
+  }
+}
+/** Kinnoull Tower at its LiDAR place on `base` (the ground there): the coursed shaft, its red string courses and cornice, a capped top,
+ *  and the lower annexe. Returns the drawn top. */
+export function kinnoullTower(b: Batch, base: number): {top: number; annexeTop: number} {
+  const {x, z, radius: r, height, sides} = KINNOULL_TOWER, L = TOWER_LOOK, y0 = base - .3, top = base + height;
+  let y = y0;
+  for (const share of L.bands) { const yb = base + height * share; ring(b, x, z, r, y, yb, sides, L.stone); ring(b, x, z, r + L.proud, yb, yb + L.band, sides, L.red); y = yb + L.band; }
+  ring(b, x, z, r, y, top - L.cornice, sides, L.stone);
+  ring(b, x, z, r + L.over, top - L.cornice, top, sides, L.stone);
+  revolve(b, x, z, [[r, top - L.cornice], [r + L.over, top - L.cornice]], sides, L.stone); // the cornice's soffit, facing down
+  revolve(b, x, z, [[r + L.over, top], [0, top]], sides, L.stone); // the roof
+  const [ax, az, share] = L.annexe, annexeTop = base + height * share;
+  b.box([x, (y0 + annexeTop) / 2, z - r - az / 2 + .4], [ax, annexeTop - y0, az], {color: L.stone});
+  return {top, annexeTop};
+}
 /** ASSUMED: a mapped viewing place (OSM tourism=viewpoint) stands in the open, so no tree is filled within OUTLOOK_CLEAR m of it; and
  *  Kinnoull Hill's summit (the OSM peak, node/29621037, 222 m) is open grass and gorse for SUMMIT_OPEN m round it, the woods below it
  *  (Stone_table_on_Kinnoul_Hill.jpg: grass round the summit table, gorse and low trees at its edge; R-pt3-a England_and_Scotland_152.jpg,

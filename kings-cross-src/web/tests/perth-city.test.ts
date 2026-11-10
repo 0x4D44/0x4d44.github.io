@@ -8,7 +8,7 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { KINNOULL_TOWER, KIRK_TOWER, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
@@ -193,6 +193,23 @@ test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, i
   assert.ok(ratio > 1.8 && ratio < 3.2, `height over width as 8703 and 4307 show it (about 2.5): ${ratio.toFixed(2)}`);
   // the tower's base is the cliff top, not the face below it
   assert.ok(Math.abs(scene.terrain.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z) - scene.terrain.heightAt(cx, cz)) < 8, 'on the cliff top');
+});
+
+test('Kinnoull Tower is pale coursed stone with red string courses, a cornice and its lower annexe (8703, 4307; round 3, C1)', () => {
+  const b = new Batch({ colored: true }), base = 100, { top, annexeTop } = kinnoullTower(b, base), g = b.build();
+  const P = g.getAttribute('position'), U = g.getAttribute('uv'), C = g.getAttribute('color');
+  // the stone map is laid in metres: the shaft's UVs span its height and girth, not all one texel (round 2's near-black tower)
+  let vMax = 0, uMax = 0; for (let i = 0; i < U.count; i++) { vMax = Math.max(vMax, U.getY(i)); uMax = Math.max(uMax, U.getX(i)); }
+  assert.ok(vMax > top - 1 && uMax > 2 * Math.PI * KINNOULL_TOWER.radius * .9, `UVs: u to ${uMax.toFixed(1)}, v to ${vMax.toFixed(1)}`);
+  // pale overall, with red courses at the band heights
+  const lum = (i: number) => .2126 * C.getX(i) + .7152 * C.getY(i) + .0722 * C.getZ(i);
+  let pale = 0, red = 0; for (let i = 0; i < C.count; i++) { if (lum(i) > .7) pale++; if (C.getX(i) > C.getY(i) + .15) red++; }
+  assert.ok(pale > C.count / 2 && red > 0, `pale ${pale}, red ${red} of ${C.count}`);
+  for (const share of TOWER_LOOK.bands) { let at = false; for (let i = 0; i < P.count; i++) if (C.getX(i) > C.getY(i) + .15 && Math.abs(P.getY(i) - (base + KINNOULL_TOWER.height * share)) < 1e-3) at = true; assert.ok(at, `a red course at ${share}`); }
+  // the annexe: masonry beside the shaft, up to about half its height, on its north side
+  let annexe = 0; for (let i = 0; i < P.count; i++) if (P.getZ(i) < KINNOULL_TOWER.z - KINNOULL_TOWER.radius - 1 && Math.abs(P.getY(i) - annexeTop) < 1e-3) annexe++;
+  assert.ok(annexe >= 4 && annexeTop < base + KINNOULL_TOWER.height * .6, `annexe corners at its top: ${annexe}`);
+  assert.equal(top, base + KINNOULL_TOWER.height, 'the drawn top is the LiDAR rise');
 });
 
 test('the east patch meets the main terrain without a seam, over the covered corridor only, falling away at its outer edges', () => {
