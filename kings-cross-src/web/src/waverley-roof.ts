@@ -4,7 +4,9 @@
 // North Bridge photo (Liberaler Humanist, 2015, CC BY-SA3):
 // https://commons.wikimedia.org/wiki/File:Edinburgh_Waverley_Station_seen_from_North_Bridge,_Perspective_1,_07.08.2015.jpg
 // ASSUMED 12m bay pitch, 8m gutter above the schematic rail datum, 2.4m symmetric
-// rise, phase0, and 65x70mm runners. These are not measured roof dimensions.
+// rise, phase0, and 100x160mm fold rafters. These are not measured roof dimensions.
+/** The rafter under each fold (gutter and ridge), w x h (m): deep enough that the folds read from the platforms (R-wv1-b3). ASSUMED. */
+export const WAVERLEY_FOLD_RAFTER=[.1,.16] as const;
 // Reported 12.8m statutory height LIMIT (not actual height): Rail Engineer 7Jul2011,
 // https://www.railengineer.co.uk/edinburgh-waverleys-new-roof-installed/
 import * as THREE from 'three';
@@ -109,7 +111,7 @@ export function ridgeRoofBatches(outer:readonly Pt[],holes:readonly (readonly Pt
  // the central building. Fine cassette bars remain in the existing KX texture.
  for(let k=Math.ceil((lo-profile.phase)/half);profile.phase+k*half<hi;k++){
   const x=profile.phase+k*half;
-  for(const [z0,z1]of footprintRuns(outer,[...holes,...cutouts],x))if(z1-z0>.8)ribs.box([x,height(x)-.035,(z0+z1)/2],[.065,.07,z1-z0-.6]);
+  for(const [z0,z1]of footprintRuns(outer,[...holes,...cutouts],x))if(z1-z0>.8)ribs.box([x,height(x)-WAVERLEY_FOLD_RAFTER[1]/2,(z0+z1)/2],[WAVERLEY_FOLD_RAFTER[0],WAVERLEY_FOLD_RAFTER[1],z1-z0-.6]);
  }
  return {glass,ribs,solid};
 }

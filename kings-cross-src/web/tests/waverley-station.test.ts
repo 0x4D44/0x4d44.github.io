@@ -73,7 +73,7 @@ test('W1 ironwork: under the glazing, above every train, and no chord coplanar w
 });
 
 test('W1 columns: pedestal, shaft and capital fill the platform-to-girder height',()=>{
- const S=WAVERLEY_STRUCTURE,{fittings}=waverleyStructureBatches({...plan,signs:[],screens:[],benches:[],railings:[],columns:plan.columns.slice(0,1)});
+ const S=WAVERLEY_STRUCTURE,{fittings}=waverleyStructureBatches({...plan,signs:[],screens:[],benches:[],railings:[],offices:[],columns:plan.columns.slice(0,1)});
  const ys=fittings.positions.filter((_,i)=>i%3===1);
  assert.ok(Math.abs(Math.min(...ys)-WAVERLEY_LEVELS.platform)<1e-6);
  assert.ok(Math.abs(Math.max(...ys)-(S.platformGirderTop-S.platformGirderDepth))<1e-6,'the abacus carries the platform girder');
@@ -192,7 +192,7 @@ test('W1 purlins and the south edge girder: under the glazing, between the gutte
 test('W1 railings stand on their platforms along edges with no track, and benches are slatted on end frames',()=>{
  const S=WAVERLEY_STRUCTURE;assert.ok(plan.railings.length>=5,`${plan.railings.length} railings`);
  for(const [a,b]of plan.railings)for(const p of [a,b,[(a[0]+b[0])/2,(a[1]+b[1])/2] as Pt]){assert.ok(onPlatform(p),`railing at ${p}`);assert.ok(trackDist(p)>=ENVELOPE_HALF,`railing at ${p} is ${trackDist(p).toFixed(2)} m from a track`);}
- const one={...plan,columns:[],signs:[],screens:[],railings:[],lamps:[],benches:plan.benches.slice(0,1)},{fittings}=waverleyStructureBatches(one);
+ const one={...plan,columns:[],signs:[],screens:[],railings:[],lamps:[],offices:[],benches:plan.benches.slice(0,1)},{fittings}=waverleyStructureBatches(one);
  // Four seat slats, three back slats, per end two legs, a seat rail and a back post: 15 boxes of 12 triangles.
  assert.equal(fittings.triangles,15*12);
  const seat=fittings.positions.filter((_,i)=>i%3===1).filter(y=>Math.abs(y-(WAVERLEY_LEVELS.platform+S.benchSeat+.0175))<1e-6).length;assert.ok(seat>0,'slats at seat height');
@@ -233,4 +233,30 @@ test('W1 railings, made up: none where a track runs close past the end of an ope
  const d=layout([{ref:'a',z0:0,z1:6}],[[-1.7,-10,50],[7.2,-10,12]]),plan=waverleyStationPlan(d,bigRoof);
  const near=(p:Pt):number=>Math.min(...d.rails.map(r=>segDist(p,r.path as [Pt,Pt])));
  for(const [a,b]of plan.railings)for(const p of [a,b])assert.ok(near(p)>=ENVELOPE_HALF,`railing end at ${p} is ${near(p).toFixed(2)} m from a track`);
+});
+
+test('W1 platform buildings: one a platform at most, on it, clear of trains, columns, benches and screens, under the lamps',()=>{
+ const S=WAVERLEY_STRUCTURE;assert.ok(plan.offices.length>=5,`${plan.offices.length} platform buildings`);
+ assert.ok(new Set(plan.offices.map(o=>o.ref)).size===plan.offices.length,'one a platform');
+ for(const o of plan.offices){
+  const ax=Math.cos(o.rotY),az=-Math.sin(o.rotY),ux=-az,uz=ax,at=(u:number,v:number):Pt=>[o.x+ux*u+ax*v,o.z+uz*u+az*v];
+  const corners=[at(-o.length/2,-S.buildingDepth/2),at(o.length/2,-S.buildingDepth/2),at(o.length/2,S.buildingDepth/2),at(-o.length/2,S.buildingDepth/2)];
+  for(const c of corners){assert.ok(onPlatform(c),`office corner ${c} on a platform`);assert.ok(trackDist(c)>=ENVELOPE_HALF,`office corner ${c} is ${trackDist(c).toFixed(2)} m from a track`);}
+  // Local frame: u along the platform, v across it.
+  const local=(p:Pt):[number,number]=>{const dx=p[0]-o.x,dz=p[1]-o.z;return [dx*ux+dz*uz,dx*ax+dz*az];};
+  for(const c of plan.columns){const [u,v]=local([c.x,c.z]);assert.ok(Math.abs(u)>=o.length/2+S.pedestalRadius||Math.abs(v)>=S.buildingDepth/2+S.pedestalRadius,`a column stands in the office on ${o.ref}`);}
+  for(const [list,half]of [[plan.benches,S.benchLength/2],[plan.screens,S.screenWidth/2]] as const)for(const b of list){const [u,v]=local([b.x,b.z]);assert.ok(Math.abs(u)>o.length/2+half||Math.abs(v)>S.buildingDepth/2+.5,`furniture in the office on ${o.ref}`);}
+ }
+ assert.ok(S.buildingHeight+.15<S.lampRim-S.lampShade,'the roof slab clears the lamp shades');
+});
+
+test('W1 coper nosing: a lip just proud of each track face, from the coper down 0.1 m',()=>{
+ const S=WAVERLEY_STRUCTURE,{lip}=waverleyStructureBatches(plan);assert.ok(lip.triangles>200);
+ const edges=plan.frames.flatMap(f=>f.edges.filter(e=>e.kind==='track'));
+ for(let i=0;i<lip.positions.length;i+=3){
+  const p:Pt=[lip.positions[i],lip.positions[i+2]],y=lip.positions[i+1];
+  assert.ok(y>=WAVERLEY_LEVELS.platform-S.coperNose-1e-9&&y<=WAVERLEY_LEVELS.platform+S.stripLift+1e-9,`lip at ${y}`);
+  assert.ok(edges.some(e=>segDist(p,[e.a,e.b])<=S.coperLip+1e-6),`lip vertex ${p} off every track edge`);
+ }
+ assert.ok(S.coperLip>0&&S.coperLip<=.05,'proud, but only just');
 });

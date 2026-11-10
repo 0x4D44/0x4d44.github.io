@@ -40,7 +40,7 @@ MUTATIONS = [
     ('no screens are hung', STRUCT, 'plan.screens.push({x:q[0],z:q[1],rotY,ref:f.ref});', ''),
     # ironwork heights
     ('the gutter girders pierce the glazing', STRUCT, 'gutterGirderTop:7.95,', 'gutterGirderTop:8.05,'),
-    ('the gutter girders hang into the trains', STRUCT, 'gutterGirderDepth:1.0,', 'gutterGirderDepth:3.5,'),
+    ('the gutter girders hang into the trains', STRUCT, 'gutterGirderDepth:1.5,', 'gutterGirderDepth:3.5,'),
     ('a platform girder chord is coplanar with a gutter chord', STRUCT, 'platformGirderTop:7.72,', 'platformGirderTop:7.77,'),
     ('the valance drops onto the parapet', STRUCT, 'valanceBottom:7.0,', 'valanceBottom:6.8,'),
     ('the column stops short of its girder', STRUCT, 'y3=underGirder-S.abacus,', 'y3=underGirder-S.abacus-.2,'),
@@ -75,6 +75,11 @@ MUTATIONS = [
     ('the south edge girder runs under the bridges', STRUCT, 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05,cutouts)))', 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05)))'),
     ('the south edge girder hangs into the trains', STRUCT, 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,S.platformGirderDepth,C.iron);', 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,3.5,C.iron);'),
     # round 2: platform furniture and finish
+    ('the office takes the whole column gap', STRUCT, 'buildingDepth:3,buildingHeight:3.2,buildingEnd:.8,', 'buildingDepth:3,buildingHeight:3.2,buildingEnd:-.2,'),
+    ('the office ignores the safety line', STRUCT, 'const band=bandAt(f,t,S.buildingDepth/2);', 'const band=bandAt(f,t,-2);'),
+    ('benches stay in the office span', STRUCT, "plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});continue;", "plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});"),
+    ('the office roof meets the lamps', STRUCT, 'buildingDepth:3,buildingHeight:3.2,', 'buildingDepth:3,buildingHeight:3.9,'),
+    ('the coper lip sits in the track', STRUCT, 'coperLip:.04,coperNose:.1,', 'coperLip:.4,coperNose:.1,'),
     ('railings stand by a track', STRUCT, 'if([ia,ib].every(q=>inRing(q,f.pts)&&!nearTrack(q,1.75)&&', 'if([ia,ib].every(q=>inRing(q,f.pts)&&'),
     ('a bench loses a seat slat', STRUCT, 'for(let i=0;i<4;i++){const v=-D/2', 'for(let i=0;i<3;i++){const v=-D/2'),
     ('an island column stands by a track', STRUCT, 'if(!free(p,S.pedestalRadius)||', 'if(!free(p,-3)||'),

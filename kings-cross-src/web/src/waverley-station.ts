@@ -76,7 +76,7 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  const flagMap=stationTexture('flags'),paving=own(material('concourseFloor').clone() as THREE.MeshLambertMaterial);if(flagMap){paving.map=flagMap;paving.color.setHex(0xffffff);}
  const blister=own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial),blisterMap=stationTexture('blister');blister.map=blisterMap;blister.color.setHex(blisterMap?0xffffff:0xcfae3a);
  add(platforms,platformTops,paving,'waverley-platform-surfaces');add(platforms,structure.faces,faceStone,'waverley-platform-faces');
- add(platforms,structure.edges,own(paintMaterial(material('platformEdgeStrip'))),'waverley-platform-edges');
+ structure.edges.append(structure.lip);add(platforms,structure.edges,own(paintMaterial(material('platformEdgeStrip'))),'waverley-platform-edges');
  add(platforms,structure.tactile,blister,'waverley-platform-tactile');
  add(platforms,structure.fittings,own(paintMaterial(material('whiteSteel'))),'waverley-columns-and-furniture');
  // The central block (waverley-station-block.ts), standing on the flattened station floor.

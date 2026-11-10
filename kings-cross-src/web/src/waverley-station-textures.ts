@@ -5,7 +5,7 @@
 //             (about 28,000 panes over 34,000 m2 is 1.2 m2 a pane, Network Rail 2011; 2.4 x 0.6 = 1.44 m2 is the nearest even split).
 //  blister    the platform-edge warning strip: buff-yellow with raised dots (DfT, Guidance on the use of tactile paving surfaces: blister
 //             paving, dots in a square grid at about 66 mm); R-wv1-b and R-wv1-b2.
-//  flags      the platform paving: pale grey flags 0.6 m square in stretcher-free grid, slightly varied in tone (R-wv1-b; 600 mm flag ASSUMED).
+//  flags      the platform paving: mid-grey flags 0.6 m square in a grid, varied in tone and stained (R-wv1-b; 600 mm flag ASSUMED).
 import * as THREE from 'three';
 import {rng} from './materials.ts';
 
@@ -13,17 +13,17 @@ export interface StationTextureSpec {tile:[number,number];px:[number,number]}
 export const WAVERLEY_STATION_TEXTURES={
  cassettes:{tile:[2.4,.6],px:[256,64]},
  blister:{tile:[.4,.4],px:[96,96]},
- flags:{tile:[1.2,1.2],px:[256,256]},
+ flags:{tile:[2.4,2.4],px:[256,256]},
 } as const satisfies Record<string,StationTextureSpec>;
 export type StationTextureName=keyof typeof WAVERLEY_STATION_TEXTURES;
 type Ctx=CanvasRenderingContext2D;
 const PAINT:Record<StationTextureName,(g:Ctx,w:number,h:number)=>void>={
  cassettes(g,w,h){
-  // u runs up the slope (x), v across it (z): neutral silver panes with a soft sheen (R-wv1-a3 reads silver-grey, not sky blue), bright bars.
-  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#a9adb0');grad.addColorStop(.5,'#c0c3c5');grad.addColorStop(1,'#adb1b3');
+  // u runs up the slope (x), v across it (z): mid-grey panes with a soft sheen (R-wv1-a: grey on grey, the shaded slope darker), paler bars.
+  const grad=g.createLinearGradient(0,0,w,0);grad.addColorStop(0,'#8c9093');grad.addColorStop(.5,'#a1a5a8');grad.addColorStop(1,'#909497');
   g.fillStyle=grad;g.fillRect(0,0,w,h);
-  g.fillStyle='#e4e6e7';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
-  g.fillStyle='#7d8285';g.fillRect(0,h*.09,w,1);
+  g.fillStyle='#d2d5d7';g.fillRect(0,0,w,Math.max(2,h*.09));g.fillRect(0,0,Math.max(3,w*.02),h);
+  g.fillStyle='#62676b';g.fillRect(0,h*.09,w,1);
  },
  blister(g,w,h){
   g.fillStyle='#cfae3a';g.fillRect(0,0,w,h);
@@ -35,9 +35,11 @@ const PAINT:Record<StationTextureName,(g:Ctx,w:number,h:number)=>void>={
   }
  },
  flags(g,w,h){
-  const random=rng(4170),n=2,s=w/n;
-  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const t=196+Math.floor(random()*14);g.fillStyle=`rgb(${t},${t},${t-3})`;g.fillRect(i*s,j*s,s,s);}
-  g.strokeStyle='#8d8f8f';g.lineWidth=2;for(let i=0;i<=n;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,h);g.stroke();g.beginPath();g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke();}
+  // Mid-grey flags of varied tone with soft stains (R-wv1-b: mid grey, weathered, not white), four to the 2.4 m tile.
+  const random=rng(4170),n=4,s=w/n;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const t=150+Math.floor(random()*30);g.fillStyle=`rgb(${t},${t},${t-4})`;g.fillRect(i*s,j*s,s,s);}
+  for(let k=0;k<10;k++){const x=random()*w,y=random()*h,r=6+random()*18,d=random()<.5;g.fillStyle=d?'rgba(70,66,60,0.12)':'rgba(235,232,225,0.10)';g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+  g.strokeStyle='#6f7171';g.lineWidth=2;for(let i=0;i<=n;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,h);g.stroke();g.beginPath();g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke();}
  },
 };
 const cache=new Map<StationTextureName,THREE.CanvasTexture|null>();
