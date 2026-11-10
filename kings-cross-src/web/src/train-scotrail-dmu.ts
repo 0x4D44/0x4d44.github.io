@@ -111,7 +111,6 @@ interface Look {
 
 const box = (x0: number, x1: number, y0: number, y1: number, r = 0): [number, number][] => (r > 0 ? roundedRect(x0, x1, y0, y1, r, 3) : [[x1, y1], [x0, y1], [x0, y0], [x1, y0]]);
 const disc = (cx: number, cy: number, r: number, n = 16): [number, number][] => ellipse(cx, cy, r, r, n);
-const oval = (cx: number, cy: number, rx: number, ry: number, n = 20): [number, number][] => ellipse(cx, cy, rx, ry, n);
 /** A flat-footed arch: from y0 up to y1 at the middle, its top a superellipse of half-width `hw` and exponent `p` (larger is squarer). */
 const arch = (hw: number, y0: number, y1: number, p: number, n = 48): [number, number][] => {
   const out: [number, number][] = [];
@@ -138,6 +137,8 @@ const bar = (a: readonly [number, number], b: readonly [number, number], w: numb
 // under it with the coupler (a BSI head, Porterbrook) in a dark recess and two small round buffers low at its outer corners.
 // No gangway door and no front gangway: the 170/4 front is closed.
 const T = SCOTRAIL_DMU_FIGURES.turbostar;
+/** The 170's round lamp lenses on the face (cab's right; mirrored): centre and radius. ASSUMED, from scotrail170-01. */
+export const LAMP_170 = { head: { x: 0.93, y: 1.43, r: 0.11 }, tail: { x: 0.71, y: 1.35, r: 0.072 } } as const;
 const TURBOSTAR: Look = {
   family: 'turbostar',
   nose: {
@@ -160,9 +161,10 @@ const TURBOSTAR: Look = {
   wallTop: 2.98,
   faceColour: SALTIRE_BLUE,
   shapes: [
-    // the yellow brow over the screen, on the face only: its foot the screen's top, its top a smooth arch well inside the face's edge,
-    // so navy shows round it and the dome above stays navy (scotrail170-01, -02); then its orange foot line
-    { name: 'brow', outline: arch(1.02, 3.08, 3.44, 2.2), colour: SR_YELLOW, lift: 0.0015, inset: 0.03 },
+    // the yellow brow over the screen, on the face only: an even band over the orange foot line, about 0.2 m deep right across (its top
+    // a flat arch), its ends turning down with the face's own edge a navy margin inside it, so navy shows round it and the dome above
+    // stays navy (scotrail170-01, -02); then its orange foot line. (Round 2's arch was a lens, thin at its ends.)
+    { name: 'brow', outline: arch(1.25, 3.08, 3.45, 6), colour: SR_YELLOW, lift: 0.0015, inset: 0.03 },
     { name: 'brow-line', outline: box(-1.5, 1.5, 3.18, 3.215), colour: PINSTRIPE, lift: 0.003 },
     // the screen: a black frame, the glass, a centre post, the display behind the cab-right pane, two wipers parked in a V
     { name: 'screen-frame', outline: box(-1.12, 1.12, 1.9, 3.18, 0.16), colour: FRAME, lift: 0.003, inset: 0.03 },
@@ -173,11 +175,13 @@ const TURBOSTAR: Look = {
     { name: 'wiper', outline: bar([0.58, 2.02], [0.08, 2.55], 0.03), colour: 0x3b4048, lift: 0.012, mirror: true },
     // the yellow panel under the glass, its lower corners rounded off
     { name: 'warning-panel', outline: box(-1.02, 1.02, 1.14, 1.92, 0.24), colour: SR_YELLOW, lift: 0.0015 },
-    // the lamp pods: a chrome oval ring, its dark inside, a headlight outboard and a tail lamp inboard
-    { name: 'lamp-ring', outline: oval(0.98, 1.4, 0.25, 0.15), colour: CHROME, lift: 0.006, mirror: true, inset: 0.015 },
-    { name: 'lamp-pod', outline: oval(0.98, 1.4, 0.215, 0.12), colour: 0x2a2d33, lift: 0.0075, mirror: true, inset: 0.03 },
-    { name: 'headlight', outline: disc(1.07, 1.41, 0.085), lens: 'head', lift: 0.0105, mirror: true, inset: 0.04 },
-    { name: 'tail-lamp', outline: disc(0.87, 1.4, 0.06), lens: 'tail', lift: 0.0105, mirror: true },
+    // each lamp cluster (scotrail170-01): a silver bezel of two overlapping rounds, a big round headlight outboard and a smaller round tail
+    // lamp inboard and a little lower, wholly on the face (round 2's headlight ran off the face's edge and was cut to a D). Sizes and
+    // places ASSUMED, read off the photograph's two clusters (near and far) against the 188 px/m face scale.
+    { name: 'lamp-bezel', outline: disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r + 0.035, 24), colour: CHROME, lift: 0.006, mirror: true },
+    { name: 'lamp-bezel', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r + 0.028, 24), colour: CHROME, lift: 0.006, mirror: true },
+    { name: 'headlight', outline: disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r, 24), lens: 'head', lift: 0.0105, mirror: true },
+    { name: 'tail-lamp', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r, 24), lens: 'tail', lift: 0.0105, mirror: true },
     // the coupler's recess in the valance
     { name: 'recess', outline: box(-0.42, 0.42, 0.48, 1.0, 0.04), colour: RECESS, lift: 0.0015 },
   ],

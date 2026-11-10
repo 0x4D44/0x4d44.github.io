@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, DOT_WHITE, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, DOT_WHITE, LAMP_170, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -446,4 +446,48 @@ test('ScotRail DMU dots: the white field on the cab flank is drawn at its pitch 
   assert.ok(s.r0 * 2 >= 0.14 && s.r0 * 2 <= 0.16, `158 front dots ${s.r0 * 2} m across`);
   assert.ok(s.r0 * (1 - s.shrink) * 2 >= 0.08, `158 rear dots ${s.r0 * (1 - s.shrink) * 2} m across`);
   assert.ok(s.pitch >= 0.16 && s.pitch <= 0.18 && s.pitch > 2 * s.r0, `158 pitch ${s.pitch}: the dots nearly touch, never overlap`);
+});
+
+test('ScotRail 170 face: round headlight and tail lenses wholly on the face, in a two-round bezel; the yellow brow an even band right across', () => {
+  const root = buildScotrailDmu('sr170x3');
+  for (const index of [0, 2]) {
+    const detail = root.getObjectByName(`car-${index}`)!.getObjectByName('body-detail') as THREE.Mesh;
+    const p = detail.geometry.getAttribute('position');
+    const lamps = detail.userData.lamps as { lenses: { role: LensRole; v0: number; v1: number }[] };
+    // the face lenses (the dome lamp, high on the dome, is an oval by design)
+    const face = lamps.lenses.filter((l) => p.getY(l.v0) < 2.5);
+    assert.deepEqual(face.map((l) => l.role).sort(), ['head', 'head', 'tail', 'tail'], `car ${index}: two heads, two tails on the face`);
+    for (const l of face) {
+      const want = l.role === 'head' ? LAMP_170.head : LAMP_170.tail;
+      // every triangle of the lens's fan starts at its centre; every other vertex is on the rim, all at one radius: an uncut round
+      const cx = p.getX(l.v0); const cy = p.getY(l.v0);
+      const radii: number[] = [];
+      for (let i = l.v0; i < l.v1; i++) if (i % 3 !== l.v0 % 3) radii.push(Math.hypot(p.getX(i) - cx, p.getY(i) - cy));
+      assert.ok(Math.max(...radii) - Math.min(...radii) < 1e-4, `car ${index} ${l.role}: a round lens (radii ${Math.min(...radii)}..${Math.max(...radii)})`);
+      assert.ok(Math.abs(Math.max(...radii) - want.r) < 1e-4, `car ${index} ${l.role}: radius ${Math.max(...radii)}`);
+      assert.ok(Math.abs(Math.abs(cx) - want.x) < 1e-4 && Math.abs(cy - want.y) < 1e-4, `car ${index} ${l.role}: at (${cx}, ${cy})`);
+    }
+    // the headlight outboard of its tail lamp, the tail a little lower, the two bezel rounds overlapping (one peanut-shaped bezel)
+    assert.ok(LAMP_170.head.x > LAMP_170.tail.x && LAMP_170.tail.y < LAMP_170.head.y);
+    assert.ok(LAMP_170.head.x - LAMP_170.tail.x < LAMP_170.head.r + 0.035 + LAMP_170.tail.r + 0.028, 'the bezel rounds overlap');
+    // the brow: its top over the orange foot line (3.215) at each x across the middle 1.4 m, read off the yellow triangles above the screen
+    const c = detail.geometry.getAttribute('color'); const y = col(SR_YELLOW);
+    const tris: [number, number][][] = [];
+    for (let i = 0; i + 2 < p.count; i += 3) {
+      if (Math.abs(c.getX(i) - y.r) > 1e-6 || Math.abs(c.getY(i) - y.g) > 1e-6 || Math.abs(c.getZ(i) - y.b) > 1e-6 || p.getY(i) < 3.0) continue;
+      tris.push([0, 1, 2].map((k): [number, number] => [p.getX(i + k), p.getY(i + k)]));
+    }
+    const topAt = (x: number): number => {
+      let best = -Infinity;
+      for (const t of tris) for (const [a, b] of [[t[0]!, t[1]!], [t[1]!, t[2]!], [t[2]!, t[0]!]] as const) {
+        if ((a[0] - x) * (b[0] - x) > 0 || a[0] === b[0]) continue;
+        best = Math.max(best, a[1] + ((x - a[0]) / (b[0] - a[0])) * (b[1] - a[1]));
+      }
+      return best;
+    };
+    const depths = [-0.7, -0.5, -0.3, -0.1, 0.1, 0.3, 0.5, 0.7].map((x) => topAt(x) - 3.215);
+    assert.ok(Math.min(...depths) >= 0.8 * Math.max(...depths), `car ${index}: the brow's depth ${depths.map((d) => d.toFixed(3)).join(' ')} is even`);
+    assert.ok(Math.min(...depths) >= 0.18 && Math.max(...depths) <= 0.26, `car ${index}: the brow about 0.2 m deep`);
+  }
+  disposeScotrailDmu(root);
 });
