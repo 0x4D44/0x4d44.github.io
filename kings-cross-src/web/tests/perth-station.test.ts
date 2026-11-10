@@ -913,22 +913,31 @@ test('round 7: the clock dials carry R-pt1-a2\'s Roman numerals, upright from in
   const sx = solo.positions.filter((_, i) => i % 3 === 0), sz = solo.positions.filter((_, i) => i % 3 === 2), sy = solo.positions.filter((_, i) => i % 3 === 1);
   assert.ok(Math.min(...sx) >= front + 1e-6, `clear of the stage and its cornice (back ${Math.min(...sx).toFixed(3)} m out, the cornice ${front.toFixed(2)})`);
   assert.ok(Math.max(...sz) - Math.min(...sz) >= .9 * cw, `broad: nearly the case's width (${(Math.max(...sz) - Math.min(...sz)).toFixed(2)} of ${cw} m)`);
-  // Stepped: the timber tiers' widths along the wall, read at each tier joint (the wider of the two tiers meeting there), all different.
-  const wood = [rgb(PERTH_PAINT.timber), rgb(PERTH_PAINT.timberDark)], isWood = (i: number): boolean => wood.some(k => Math.abs(solo.colors[3 * i] - k[0]) < 1e-6 && Math.abs(solo.colors[3 * i + 2] - k[2]) < 1e-6);
-  const levels = new Map<string, number[]>(); sy.forEach((y, i) => { if (isWood(i)) { const key = y.toFixed(3); levels.set(key, [...(levels.get(key) ?? []), sz[i]]); } });
-  const widths = new Set([...levels.values()].map(zs => (Math.max(...zs) - Math.min(...zs)).toFixed(2)));
-  assert.ok(levels.size === K.tiers + 1 && widths.size === K.tiers, `stepped: ${K.tiers} tiers of ${widths.size} widths (${[...widths].join(', ')})`);
+  // (Round 9, the round-8 score: R-pt1-a2's corbel is a tapering bell, round 8's a stack of flat plates. Was: "stepped", 6 timber levels
+  // of 5 widths.) A bell: the fluted bowl's widths along the wall, level by level down it, every one narrower than the one above, curving
+  // in (at half its depth well over the straight line from top to foot, so not a cone), and no flat step faces in it.
+  const bowl = [rgb(PERTH_PAINT.gilt), rgb(PERTH_PAINT.coper)], inBowl = (i: number): boolean => bowl.some(k => Math.abs(solo.colors[3 * i] - k[0]) < 1e-6 && Math.abs(solo.colors[3 * i + 2] - k[2]) < 1e-6) && sy[i] > -K.drop + 1e-6;
+  const levels = new Map<string, number[]>(); sy.forEach((y, i) => { if (inBowl(i)) { const key = y.toFixed(3); levels.set(key, [...(levels.get(key) ?? []), sz[i]]); } });
+  const ws = [...levels.entries()].sort((p, q) => +q[0] - +p[0]).map(([y, zs]) => [+y, Math.max(...zs) - Math.min(...zs)] as const);
+  assert.ok(ws.length >= 6 && ws.every((w, i) => i === 0 || w[1] < ws[i - 1][1] - 1e-6), `tapering level by level (${ws.map(w => w[1].toFixed(2)).join(' ')})`);
+  const [top, foot] = [ws[0], ws[ws.length - 1]], mid = ws.reduce((m, w) => Math.abs(w[0] - (top[0] + foot[0]) / 2) < Math.abs(m[0] - (top[0] + foot[0]) / 2) ? w : m);
+  const line = top[1] + (foot[1] - top[1]) * (mid[0] - top[0]) / (foot[0] - top[0]);
+  assert.ok(mid[1] > line + .1 * top[1], `a bell's curve, not a cone (${mid[1].toFixed(2)} m wide half-way down, the straight line ${line.toFixed(2)})`);
+  for (let i = 0; i < sy.length; i++) if (inBowl(i)) assert.ok(Math.abs(solo.normals[3 * i + 1]) < .9, `no flat step in the bell at y ${sy[i].toFixed(2)}`);
   // Then in place: under platform 4's case, gilt and timber in front of the stage.
   const base = deck + C.hangHeight - C.case[2] / 2, f = batches.fittings, fc = f.colors, fp = f.positions;
   const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(fc[i] - k[0]) < 1e-6 && Math.abs(fc[i + 1] - k[1]) < 1e-6 && Math.abs(fc[i + 2] - k[2]) < 1e-6; };
-  let gilt = 0, tiers = 0;
+  // (Round 9: counted as the bell's facets, gilt and buff, and its timber lip; was gilt mouldings and timber tiers.)
+  let gilt = 0, buff = 0, lip = 0;
   for (let i = 0; i < fp.length; i += 3) {
     const q = toLocal([fp[i], fp[i + 2]]), o = (q[0] - c4.at[0]) * c4.out[0] + (q[1] - c4.at[1]) * c4.out[1], s = (q[1] - c4.at[1]) * c4.out[0] - (q[0] - c4.at[0]) * c4.out[1];
-    if (o < front || o > front + K.depth[0] + .1 || Math.abs(s) > cw / 2 + .05 || fp[i + 1] > base + 1e-6 || fp[i + 1] < base - K.drop - .25) continue;
+    if (o < front || o > front + K.depth + .1 || Math.abs(s) > cw / 2 + .05 || fp[i + 1] > base + 1e-6 || fp[i + 1] < base - K.drop - .25) continue;
     if (is(i, PERTH_PAINT.gilt)) gilt++;
-    if ((is(i, PERTH_PAINT.timber) || is(i, PERTH_PAINT.timberDark)) && fp[i + 1] < base - .05) tiers++;
+    if (is(i, PERTH_PAINT.coper)) buff++;
+    if (is(i, PERTH_PAINT.timberDark)) lip++;
   }
-  assert.ok(gilt >= 24 * (K.tiers + 1) && tiers >= K.tiers * 24 - 12, `a corbel under the case, in front of the stage (gilt ${gilt}, timber ${tiers})`);
+  const facets = K.rings * K.flutes / 2 * 4;
+  assert.ok(gilt >= facets && buff >= facets && lip >= 8, `a corbel under the case, in front of the stage (gilt ${gilt}, buff ${buff}, lip ${lip})`);
 });
 
 test('round 9: Abbott 6573357\'s lift bridge: the off-white frame stands well clear of the mid-grey cladding; lamp standards down the open island, in pt-platform-4-north', () => {

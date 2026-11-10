@@ -1162,22 +1162,27 @@ function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}, dials: Batch): 
  *  rim, inside a minute track): the numerals' centres at `numerals`, `height` tall, strokes `stroke` wide; the track between `track[0]`
  *  and `track[1]`, the hour marks (geometry, clockBatch) on it at `marks`. Drawn by perth-station.ts perthDialTexture, `px` square. */
 export const PERTH_DIAL = {numerals: .68, height: .2, stroke: .035, track: [.86, .93] as const, marks: .895, px: 256} as const;
-/** R-pt1-a2's pendant corbel under platform 4's clock case (round 7; round 8: broad, and hung in front of the stage). `tiers` stepped
- *  timber tiers, dark and mid by turns, each `drop`/`tiers` m high, stepping in from `width[0]` to `width[1]` of the case's width along
- *  the wall and from `depth[0]` to `depth[1]` m out, their backs all `back` m past the stage's face (clear of its cornice, which stands
- *  0.1 m proud of it); a gilt moulding along each tier's lower front edge and a gilt finial under the last tier. ASSUMED sizes, scaled from R-pt1-a2
- *  against the dial. */
-export const PERTH_CLOCK_CORBEL = {drop: .7, tiers: 5, width: [.95, .3] as const, depth: [.34, .14] as const, back: .11} as const;
+/** R-pt1-a2's pendant corbel under platform 4's clock case (round 7; round 8: broad, and hung in front of the stage, its back `back` m
+ *  past the stage's face, clear of its cornice, which stands 0.1 m proud of it). */
+/** Round 9 (S4, the round-8 score: "a stack of flat plates" where R-pt1-a2's is a tapering bell): a fluted half-bell, its back to the stage,
+ *  `width` of the case's width along the wall and `depth` m out at the top, curving in (r = neck + (R - neck) (1 - t^2), t
+ *  0 at the top, 1 at the foot `drop` m down) in `rings` bands, its half round in `flutes` facets, gilt and buff by turns as R-pt1-a2's
+ *  pale fluting; a timber lip `lip` m deep along its top and a gilt finial under it. ASSUMED sizes, scaled from R-pt1-a2 against the dial. */
+export const PERTH_CLOCK_CORBEL = {drop: .7, rings: 6, flutes: 10, width: .95, depth: .34, neck: .05, lip: .06, back: .11} as const;
 export function clockCorbel(b: Batch, at: (out: number, y: number, along?: number) => V3, back: number, y0: number, caseWidth: number, rotY: number): void {
-  const K = PERTH_CLOCK_CORBEL, h = K.drop / K.tiers, lerp = (r: readonly [number, number], t: number): number => r[0] + (r[1] - r[0]) * t;
-  const wAt = (t: number): number => caseWidth * lerp(K.width, t), dAt = (t: number): number => lerp(K.depth, t);
-  for (let k = 0; k < K.tiers; k++) {
-    const t = k / (K.tiers - 1), d = dAt(t), w = wAt(t), y = y0 - (k + .5) * h;
-    b.box(at(back + d / 2, y), [d, h, w], {rotY, color: P(k % 2 ? 'timber' : 'timberDark')});
-    // A gilt moulding along the tier's lower front edge, so the steps read against the dark stage behind.
-    b.box(at(back + d + .005, y - h / 2 + .02), [.03, .04, w + .02], {rotY, color: P('gilt')});
+  const K = PERTH_CLOCK_CORBEL, W = caseWidth * K.width / 2, prof = (t: number): number => 1 - t * t;
+  const pt = (t: number, a: number): V3 => {
+    const f = prof(t), w = K.neck + (W - K.neck) * f, d = K.neck + (K.depth - K.neck) * f;
+    return at(back + d * Math.sin(a), y0 - K.lip - t * (K.drop - K.lip), w * Math.cos(a));
+  };
+  for (let k = 0; k < K.rings; k++) for (let j = 0; j < K.flutes; j++) {
+    // Even steps in angle down the profile, so the steep top gets as many bands as the turned-in foot.
+    const t0 = Math.sin(Math.PI / 2 * k / K.rings), t1 = Math.sin(Math.PI / 2 * (k + 1) / K.rings), a0 = Math.PI * j / K.flutes, a1 = Math.PI * (j + 1) / K.flutes;
+    const m = pt((t0 + t1) / 2, (a0 + a1) / 2), c = at(back, m[1], 0);
+    b.poly([pt(t0, a0), pt(t0, a1), pt(t1, a1), pt(t1, a0)], undefined, {facing: [m[0] - c[0], -.4, m[2] - c[2]], color: P(j % 2 ? 'coper' : 'gilt')});
   }
-  b.box(at(back + dAt(1) / 2, y0 - K.drop - .07), [.14, .14, .14], {rotY, color: P('gilt')});
+  b.box(at(back + K.depth / 2 + .02, y0 - K.lip / 2), [K.depth + .04, K.lip, 2 * W + .04], {rotY, color: P('timberDark')});
+  b.box(at(back + .07, y0 - K.drop - .06), [.12, .12, .12], {rotY, color: P('gilt')});
 }
 /** Round 9 (S5): the open platforms' lamp standards (Abbott 6573357): `height` m to the arm, a column of radius `radius` m on a 0.6 m
  *  plinth of radius `base`, an `arm` m arm and a flat `head` (along, deep, across) luminaire, every `every` m, `back` m from a track's
