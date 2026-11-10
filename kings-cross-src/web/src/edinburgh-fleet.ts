@@ -1,9 +1,9 @@
 // The kinds the Waverley layer can draw for a live EB train, one row per kind. A row joins the
 // evidence it needs (core/train-neutral.ts EdinburghKindRow) to its builder. Append rows; never
 // reorder. A kind left out of this table is never drawn at Waverley: the train stays neutral.
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import { KX_REUSED_ROWS } from '../../core/train-neutral.ts';
-import type { EdinburghKindRow } from '../../core/train-neutral.ts';
+import type { EdinburghKindRow, EdinburghUnit } from '../../core/train-neutral.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { buildTrain } from './train.ts';
 import { disposeNeutralTrain } from './train-neutral.ts';
@@ -56,3 +56,44 @@ export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined =
 
 /** The page's capture hook (window.__kx.evidenceBuildEdinburgh): builds a row's kind, or undefined for a kind not in the table. */
 export const evidenceBuildEdinburgh = (kind: string): THREE.Group | undefined => edinburghFleetRow(kind)?.build();
+
+/**
+ * Builds a chosen train (core createEdinburghKinds' EdinburghChoice): one row's own model, or for coupled units each
+ * unit's model end to end. A unit's car groups move whole into the train: renamed car-<n> / bogie-<n>-<k> along the
+ * train (composeUnits numbers them the same way) and shifted back by the unit's offset, so carPoses places them like
+ * any other car. Undefined if a kind has no row.
+ */
+export function buildEdinburghTrain(choice: { readonly kind: string; readonly units: readonly EdinburghUnit[] }): THREE.Group | undefined {
+  if (choice.units.length <= 1) return edinburghFleetRow(choice.kind)?.build();
+  const rows = choice.units.map(u => edinburghFleetRow(u.kind));
+  if (rows.some(r => !r)) return undefined;
+  const root = new THREE.Group();
+  root.name = `train-${choice.kind}`;
+  let base = 0;
+  choice.units.forEach((unit, u) => {
+    const built = rows[u]!.build();
+    for (const car of [...built.children]) {
+      const i = Number(/^car-(\d+)$/.exec(car.name)?.[1]);
+      if (!Number.isInteger(i)) throw new Error(`${unit.kind}: unexpected child ${car.name}`);
+      car.name = `car-${base + i}`;
+      car.traverse(o => { const m = /^bogie-(\d+)-(\d+)$/.exec(o.name); if (m) o.name = `bogie-${base + Number(m[1])}-${m[2]}`; });
+      for (const part of car.children) part.position.z += unit.offset;
+      car.userData = { ...car.userData, unit: u, unitKind: unit.kind };
+      root.add(car);
+    }
+    base += unit.cars;
+  });
+  root.userData = { kind: choice.kind, units: choice.units.map(u => ({ ...u })), cars: base };
+  return root;
+}
+
+/** Frees a train buildEdinburghTrain made: each unit's cars by their own row's disposer. */
+export function disposeEdinburghTrain(root: THREE.Group): void {
+  const units = root.userData.units as readonly EdinburghUnit[] | undefined;
+  if (!units || units.length <= 1) { (edinburghFleetRow(String(root.userData.kind))?.dispose ?? disposeNeutralTrain)(root); return; }
+  units.forEach((unit, u) => {
+    const holder = new THREE.Group();
+    for (const car of root.children.filter(c => c.userData.unit === u)) holder.add(car);
+    (edinburghFleetRow(unit.kind)?.dispose ?? disposeNeutralTrain)(holder);
+  });
+}

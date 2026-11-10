@@ -40,11 +40,18 @@ export function neutralTrainLayout(lengthM = NEUTRAL_ASSUMED.length.value, carCo
  * not an observation of the unit on the day. A later source (an actual allocation feed)
  * feeds the same rows with its own basis. */
 export type EvidenceBasis = 'service evidence' | 'booked diagram' | 'actual allocation';
+/** One unit of a train: its class and its own vehicle count (power cars included). */
+export interface EvidenceUnit { readonly class: string; readonly cars: number }
 export interface EdinburghServiceEvidence {
   /** ATOC code: SR ScotRail, GR LNER, LD Lumo, TP TransPennine, XC CrossCountry, CS Caledonian Sleeper. */
   readonly operator?: string;
+  /** A single unit's class and vehicle count; ignored when `units` is given. */
   readonly class?: string;
   readonly cars?: number;
+  /** The train's units in formation order, front first. Each must match a row of its own, or the whole train stays neutral. */
+  readonly units?: readonly EvidenceUnit[];
+  /** The units' order is not known from the source (e.g. a 3+4 from two coupled diagrams): it is drawn as given and labelled ASSUMED. */
+  readonly orderAssumed?: boolean;
   readonly basis?: EvidenceBasis;
 }
 /** The car fields the Waverley layer reads (carPoses and the builders' car-<index> groups). */
@@ -89,16 +96,54 @@ export function checkEdinburghRows(rows: readonly EdinburghKindRow[]): void {
     }
   }
 }
-/** The row this evidence selects: operator, class and car count must all be present and all match. */
+const rowFor = (rows: readonly EdinburghKindRow[], operator: string, cls: string, cars: number): EdinburghKindRow | undefined =>
+  rows.find(r => r.operator === operator && r.cars === cars && r.classes.includes(cls));
+/** The row a single unit's evidence selects: operator, class and car count must all be present and all match. */
 export function rowForEvidence(rows: readonly EdinburghKindRow[], evidence: EdinburghServiceEvidence | undefined): EdinburghKindRow | undefined {
   const { operator, class: cls, cars } = evidence ?? {};
   if (!operator || !cls || cars === undefined) return undefined;
-  return rows.find(r => r.operator === operator && r.cars === cars && r.classes.includes(cls));
+  return rowFor(rows, operator, cls, cars);
+}
+/**
+ * The rows of every unit of the train, front first: from `units` when given (each unit matched on its own operator,
+ * class and vehicle count), else the single unit of `class` and `cars`. Undefined if any unit has no row: a train is
+ * drawn whole or not at all, never as a partial mix.
+ */
+export function rowsForEvidence(rows: readonly EdinburghKindRow[], evidence: EdinburghServiceEvidence | undefined): EdinburghKindRow[] | undefined {
+  if (!evidence?.operator) return undefined;
+  if (evidence.units === undefined) { const row = rowForEvidence(rows, evidence); return row ? [row] : undefined; }
+  if (!evidence.units.length) return undefined;
+  const out: EdinburghKindRow[] = [];
+  for (const u of evidence.units) {
+    const row = typeof u?.class === 'string' && Number.isInteger(u.cars) ? rowFor(rows, evidence.operator, u.class, u.cars) : undefined;
+    if (!row) return undefined;
+    out.push(row);
+  }
+  return out;
+}
+/** One unit of a drawn train: its row's kind and where its front stands, metres behind the train's front. */
+export interface EdinburghUnit { readonly kind: string; readonly offset: number; readonly cars: number }
+/**
+ * Units end to end, nose to nose with the gap their own layouts give (each layout's length already runs to its coupler
+ * face), cars renumbered along the whole train so car-<index> is unique.
+ */
+export function composeUnits(layouts: readonly { readonly kind: string; readonly layout: EdinburghLayout }[]): { layout: EdinburghLayout; units: EdinburghUnit[] } {
+  const cars: EdinburghCar[] = [], units: EdinburghUnit[] = [];
+  let offset = 0;
+  for (const { kind, layout } of layouts) {
+    units.push({ kind, offset, cars: layout.cars.length });
+    for (const c of layout.cars) cars.push({ index: cars.length, start: c.start + offset, end: c.end + offset, length: c.length, bogies: [c.bogies[0] + offset, c.bogies[1] + offset], cab: c.cab });
+    offset += layout.length;
+  }
+  return { layout: { length: offset, cars }, units };
 }
 export type EdinburghKind = string;
 export interface EdinburghChoice {
+  /** A row's kind, or the units' kinds joined with '+' front first ('sr385x3+sr385x4'). */
   readonly kind: EdinburghKind;
   readonly layout: EdinburghLayout;
+  /** The units, front first: one for a single unit. Empty for the neutral train. */
+  readonly units: readonly EdinburghUnit[];
   readonly lengthM: number;
   readonly allocation: 'assumed fleet' | EvidenceBasis;
   readonly label: string;
@@ -111,7 +156,7 @@ export function createEdinburghKinds(serviceFor?: (description: string, atTime: 
   checkEdinburghRows(rows);
   const layouts = new Map<string, EdinburghLayout>();
   const born = new Map<number, EdinburghChoice>();
-  const fallback: EdinburghChoice = Object.freeze({ kind: 'neutral', layout: neutral, lengthM: neutral.length, allocation: 'assumed fleet', label: neutral.spec.label, note: 'assumed fleet; operator, class or supported formation unavailable' });
+  const fallback: EdinburghChoice = Object.freeze({ kind: 'neutral', layout: neutral, units: [], lengthM: neutral.length, allocation: 'assumed fleet', label: neutral.spec.label, note: 'assumed fleet; operator, class or supported formation unavailable' });
   const formationFor = (view: { readonly id: number }): EdinburghChoice | undefined => born.get(view.id);
   const kindFor = (view: { readonly id: number }): EdinburghKind => (born.get(view.id) ?? fallback).kind;
   const layoutFor = (view: { readonly id: number }): EdinburghLayout => (born.get(view.id) ?? fallback).layout;
@@ -120,13 +165,22 @@ export function createEdinburghKinds(serviceFor?: (description: string, atTime: 
       const previous = born.get(birth.id);
       if (previous) return previous.lengthM;
       const evidence = serviceFor?.(description, birth.timeMs);
-      const row = rowForEvidence(rows, evidence);
+      const matched = rowsForEvidence(rows, evidence);
       let choice = fallback;
-      if (row) {
-        const layout = layouts.get(row.kind) ?? row.layout();
-        layouts.set(row.kind, layout);
+      if (matched) {
+        const parts = matched.map(row => {
+          const layout = layouts.get(row.kind) ?? row.layout();
+          layouts.set(row.kind, layout);
+          return { kind: row.kind, layout };
+        });
+        const { layout, units } = parts.length === 1 ? { layout: parts[0]!.layout, units: [{ kind: parts[0]!.kind, offset: 0, cars: parts[0]!.layout.cars.length }] } : composeUnits(parts);
         const basis = evidence!.basis ?? 'service evidence';
-        choice = Object.freeze({ kind: row.kind, layout, lengthM: layout.length, allocation: basis, label: `${row.operatorName} Class ${evidence!.class} · ${evidence!.cars} cars · ${basis}`, note: `operator, class and car count from ${basis}; model dimensional assumptions still apply` });
+        const given = evidence!.units ?? [{ class: evidence!.class!, cars: evidence!.cars! }];
+        const names = [...new Set(matched.map(r => r.operatorName))].join('/'), classes = [...new Set(given.map(u => u.class))].join('+');
+        const order = given.length > 1 && evidence!.orderAssumed ? ' · order ASSUMED' : '';
+        choice = Object.freeze({ kind: matched.map(r => r.kind).join('+'), layout, units, lengthM: layout.length, allocation: basis,
+          label: `${names} Class ${classes} · ${given.map(u => u.cars).join('+')} cars · ${basis}${order}`,
+          note: `operator, class and car count${given.length > 1 ? ' of each unit' : ''} from ${basis}${order ? '; the units\' order is ASSUMED' : ''}; model dimensional assumptions still apply` });
       }
       born.set(birth.id, choice);
       return choice.lengthM;

@@ -9,8 +9,8 @@ import type { Car } from '../../core/train.ts';
 import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverley-anchors.ts';
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
-import { buildNeutralTrain, disposeNeutralTrain } from './train-neutral.ts';
-import { EDINBURGH_FLEET, edinburghFleetRow } from './edinburgh-fleet.ts';
+import { buildNeutralTrain } from './train-neutral.ts';
+import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
 import { carPoses } from './trains-live.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
@@ -96,7 +96,7 @@ export function createEdinburghLive(options: {
   };
   const disposeTrain = (train: THREE.Group): void => {
     // Each builder shares plain()/bogies and owns its other geometry; its row says how to free it.
-    (edinburghFleetRow(String(train.userData.kind))?.dispose ?? disposeNeutralTrain)(train);
+    disposeEdinburghTrain(train);
   };
   const update = (views: TrainView[]): void => {
     const present = new Set(views.map(v => v.id));
@@ -105,7 +105,7 @@ export function createEdinburghLive(options: {
       const choice = session!.kinds.formationFor(view)!;
       let item = drawn.get(view.id);
       if (!item) {
-        const train = edinburghFleetRow(choice.kind)?.build() ?? buildNeutralTrain();
+        const train = buildEdinburghTrain(choice) ?? buildNeutralTrain();
         const label = labels.ownerDocument.createElement('span'); label.style.cssText = 'position:absolute;font:11px system-ui;color:white;background:#27323cdd;padding:3px 5px;border-radius:4px;white-space:nowrap;transform:translate(-50%,-100%)';
         Object.assign(train.userData, { area: 'EB', id: view.id, kind: choice.kind, allocation: choice.allocation, length: view.lengthM });
         group.add(train); labels.append(label); item = { group: train, label }; drawn.set(view.id, item);
