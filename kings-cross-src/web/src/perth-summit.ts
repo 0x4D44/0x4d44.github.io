@@ -26,10 +26,12 @@ export const SUMMIT = {
   detail: {tile: 3, px: 256, blades: 3400, grit: 500, fade: [.15, .6] as const},
   // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
+  // round 6 (round-5 score: the gorse went black): a mid olive `rgb` (152, sRGB about [.30, .36, .14]), the flowering lobe as large as
+  // the rest (`flower` of a lobe) and a brighter yellow; drawn on perth-canopy.ts softLobe
   // round 5 (round-4 score: "mounds or boulders"): each bush is `lobes` overlapping lobes `lobe` of its radius, scattered over it and
   // varied in height, so its outline is uneven and shrubby; dark olive `rgb`, and a share `bloom` carry one smaller lobe in yellow flower
   bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.5, 1.1] as const, radius: [.7, 1.5] as const, bloom: .45,
-    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.13, .18, .06] as const, bloomRgb: [.46, .40, .08] as const},
+    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.30, .36, .14] as const, bloomRgb: [.66, .56, .12] as const, flower: 1},
 } as const;
 
 export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]}
@@ -48,7 +50,7 @@ export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly 
     const n = B.lobes[0] + Math.floor((B.lobes[1] - B.lobes[0] + 1) * hash(i, 7, 107));
     for (let l = 0; l < n; l++) {
       const a2 = (l / n + .3 * hash(i, l, 108)) * Math.PI * 2, off = radius * (l === 0 ? .1 : .45 + .25 * hash(i, l, 109)), lx = x + Math.cos(a2) * off, lz = z + Math.sin(a2) * off;
-      const flower = bloom && l === n - 1, r = radius * (l === 0 ? B.lobe[1] : B.lobe[0] + (B.lobe[1] * .85 - B.lobe[0]) * hash(i, l, 110)) * (flower ? .7 : 1), k = .8 + .4 * hash(i, l, 111), c = flower ? B.bloomRgb : B.rgb;
+      const flower = bloom && l === n - 1, r = radius * (l === 0 ? B.lobe[1] : B.lobe[0] + (B.lobe[1] * .85 - B.lobe[0]) * hash(i, l, 110)) * (flower ? B.flower : 1), k = .85 + .3 * hash(i, l, 111), c = flower ? B.bloomRgb : B.rgb;
       lobes.push({x: lx, z: lz, y: ground.heightAt(lx, lz), r, h: height * (.6 + .4 * hash(i, l, 112)) * (flower ? .9 : 1), rgb: [c[0] * k, c[1] * k, c[2] * k]});
     }
     out.push({x, z, y: ground.heightAt(x, z), height, radius, lobes});

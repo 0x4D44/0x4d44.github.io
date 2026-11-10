@@ -281,8 +281,12 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
       isl.getMatrixAt(i * CL.lobes, ma); ma.decompose(pa, qa, sa); isl.getMatrixAt(i * CL.lobes + l, ma); ma.decompose(pb, qa, sb);
       const d = Math.hypot(pa.x - pb.x, pa.z - pb.z); assert.ok(d > .2 * sa.x && d < sa.x + sb.x, 'lobes set apart yet overlapping');
     }
-    const floor = new THREE.Color().setRGB(CL.floor, CL.floor, CL.floor, THREE.SRGBColorSpace).r; // the floor is set in sRGB
-    for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(Math.max(lc.r, lc.g, lc.b) >= floor - 1e-6, 'no near-black crown'); }
+    // round 6: the floor is in linear light, at least 0.15 (round 5's 0.07, set in sRGB, let a crown go near-black)
+    assert.ok(CL.floor >= .15, 'crown floor');
+    for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(Math.max(lc.r, lc.g, lc.b) >= CL.floor - 1e-6, 'no near-black crown'); }
+    // soft, not faceted: the lobe's normals lean up towards the sky, so its few facets do not show as dice (every normal faces the sky)
+    const nl = isl.geometry.getAttribute('normal'); let low = 1; for (let i = 0; i < nl.count; i++) low = Math.min(low, nl.getY(i));
+    assert.ok(low > 0, `soft lobe normals: lowest ${low.toFixed(2)}`);
   }
   // light between: from the Bridgend eye, rays toward the town over the belt clear its crowns in places
   const bcam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-tay-from-bridgend'] as { pos: [number, number, number] };
@@ -446,6 +450,7 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   // low gorse bushes near the eye, in the frame, off the paths (152)
   const nearPaths = PERTH_LANDUSE.paths.filter(q => q.line.some(([x, z]) => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.patch + 20));
   const bushes = summitBushes(scene.terrain, nearPaths), gm = scene.group.getObjectByName('perth-summit-gorse') as THREE.InstancedMesh;
+  { const nl = gm.geometry.getAttribute('normal'); let low = 1; for (let i = 0; i < nl.count; i++) low = Math.min(low, nl.getY(i)); assert.ok(low > 0, `soft gorse normals: lowest ${low.toFixed(2)}`); }
   assert.ok(gm && gm.count === bushes.reduce((n, b) => n + b.lobes.length, 0), 'the bushes are drawn, lobe by lobe');
   // shrubby, not boulders (round 5): several overlapping lobes of differing size, spread over the bush; dark olive, a yellow fleck in some
   for (const b of bushes) {
@@ -455,7 +460,11 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   }
   const lumL = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
   const leafy = bushes.flatMap(b => b.lobes).filter(l => l.rgb[1] > l.rgb[0]);
-  assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) < .2), 'dark olive leaves');
+  // round 6, declared: the ceiling rises from 0.2 to 0.42 (152's mid olive, sRGB about [.30, .36, .14], at its brightest variation):
+  // round 5's 0.2 drove the gorse to black under backlight. A floor keeps it from going black again.
+  assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) > .2 && lumL(l.rgb) < .42), 'mid olive leaves, neither black nor lawn');
+  const blooms = bushes.flatMap(b => b.lobes).filter(l => l.rgb[0] > l.rgb[1]);
+  assert.ok(blooms.every(l => lumL(l.rgb) > .45), 'a bright yellow bloom');
   assert.ok(bushes.filter(b => b.lobes.some(l => l.rgb[0] > l.rgb[1])).length >= 3, 'a yellow fleck in some');
   const axisB = Math.atan2(KINNOULL_EYE.target[2] - SUMMIT_CENTRE[1], KINNOULL_EYE.target[0] - SUMMIT_CENTRE[0]);
   const framed = bushes.filter(b => { const a = Math.atan2(b.z - SUMMIT_CENTRE[1], b.x - SUMMIT_CENTRE[0]) - axisB; return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < KINNOULL_EYE.halfWidthDeg * Math.PI / 180; });

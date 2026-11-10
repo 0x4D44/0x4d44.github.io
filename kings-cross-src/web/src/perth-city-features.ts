@@ -26,7 +26,7 @@ import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {CRAG, CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
-import {CROWNS, crownTexture, inEyeClear, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
+import {CROWNS, crownTexture, inEyeClear, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy, softLobe} from './perth-canopy.ts';
 import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitBushes, summitDetail, summitGround} from './perth-summit.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
@@ -233,7 +233,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const summitMesh = new THREE.Mesh(summit.geometry, sm); summitMesh.name = 'perth-summit-ground'; cover.group.add(summitMesh);
   // low gorse bushes near the eye (perth-summit.ts summitBushes): flattened smooth spheres, half buried
   const bushMap = crownTexture(); if (bushMap) bushMap.repeat.set(4, 2);
-  const lobes = summitBushes(ground, near).flatMap(b => b.lobes), bushG = new THREE.SphereGeometry(1, 6, 3), bushM = new THREE.MeshLambertMaterial({map: bushMap});
+  const lobes = summitBushes(ground, near).flatMap(b => b.lobes), bushG = softLobe(6, 3), bushM = new THREE.MeshLambertMaterial({map: bushMap});
   const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, lobes.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
@@ -246,7 +246,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
   // the small islands' tree belts (perth-canopy.ts islandBeltTrees): clustered crowns (6 x 3 spheres, smooth) on bare trunks
-  const beltCrown = new THREE.SphereGeometry(1, 6, 3), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
+  const beltCrown = softLobe(6, 3), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
   const beltMap = crownMap?.clone() ?? null; if (beltMap) { beltMap.repeat.set(3, 1.5); beltMap.needsUpdate = true; }
   const beltLeaf = new THREE.MeshLambertMaterial({map: beltMap}), beltBark = new THREE.MeshLambertMaterial({color: 0x4a3f33});
   const CL = ISLAND_CANOPY.cluster, crowns = new THREE.InstancedMesh(beltCrown, beltLeaf, Math.max(1, belts.trees.length * CL.lobes)), trunks = new THREE.InstancedMesh(beltTrunk, beltBark, Math.max(1, belts.trees.length));
@@ -260,8 +260,10 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
         const lq = new THREE.Quaternion().setFromAxisAngle(up, (a * 3.3) % 6.283);
         mx.compose(new THREE.Vector3(t.x + Math.cos(a) * off, t.y + t.height - t.crown / 2 - (l ? CL.drop * t.crown : 0), t.z + Math.sin(a) * off), lq, new THREE.Vector3(r, t.crown / 2 * (l ? .85 : 1), r));
         crowns.setMatrixAt(i * CL.lobes + l, mx);
-        const k = CROWNS.lift * (l ? .92 + .1 * l : 1), grey = (t.rgb[0] + t.rgb[1] + t.rgb[2]) / 3, tone = (v: number) => Math.max(CL.floor, (v + (grey - v) * CL.mute) * k);
-        c.setRGB(tone(t.rgb[0]), tone(t.rgb[1]), tone(t.rgb[2]), THREE.SRGBColorSpace); crowns.setColorAt(i * CL.lobes + l, c);
+        const k = CROWNS.lift * (l ? .92 + .1 * l : 1), grey = (t.rgb[0] + t.rgb[1] + t.rgb[2]) / 3, tone = (v: number) => (v + (grey - v) * CL.mute) * k;
+        c.setRGB(tone(t.rgb[0]), tone(t.rgb[1]), tone(t.rgb[2]), THREE.SRGBColorSpace);
+        const top = Math.max(c.r, c.g, c.b); if (top < CL.floor) c.multiplyScalar(CL.floor / top); // the floor, in linear light
+        crowns.setColorAt(i * CL.lobes + l, c);
       }
       const th = t.height - t.crown * .7 + .4; mx.compose(new THREE.Vector3(t.x, t.y - .4 + th / 2, t.z), q, new THREE.Vector3(ISLAND_CANOPY.trunk, th, ISLAND_CANOPY.trunk)); trunks.setMatrixAt(i, mx);
     });

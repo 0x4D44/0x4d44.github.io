@@ -59,11 +59,21 @@ export function inEyeClear(x: number, z: number): boolean {
  *  by the summit's view with SIGHT.island (trees standing in the river may hide more of the channel behind them). Moncreiffe Island's
  *  long 54,000 m2 wood stays canopy: it lies along the river in the panorama. */
 export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5,
-  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .07}} as const;
+  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .15}} as const;
 /** Round 5 (round-4 score, C3: "lollipops"): each island tree's crown is a cluster of `cluster.lobes` overlapping lobes, the top one
  *  `main` of the crown's radius and the others `side` of it, set out `spread` of it and `drop` of the crown's depth lower, each turned and
- *  toned a little apart, muted `mute` towards grey and lifted to at least `floor` (linear), so no crown goes near-black: a soft, massed
- *  outline, as 46028's riverside trees. */
+ *  toned a little apart, muted `mute` towards grey and lifted so its brightest channel is at least `floor` (linear; round 6: 0.07 let
+ *  a crown go near-black), so no crown goes near-black: a soft, massed outline, as 46028's riverside trees. Drawn on softLobe. */
+/** Round 6 (round-5 score: the lobes read as faceted dice and black rocks). A low sphere (`w` x `h` segments, so no triangles are added)
+ *  whose normals are bent `soft` of the way towards straight up: the lobe is shaded as a soft, sky-lit mass, not by its few facets, and a
+ *  backlit lobe still takes the sky's light on its face. */
+export const SOFT_LOBE = {soft: .45} as const;
+export function softLobe(w: number, h: number): THREE.SphereGeometry {
+  const g = new THREE.SphereGeometry(1, w, h), n = g.getAttribute('normal'), v = new THREE.Vector3();
+  // the bottom pole has no sideways part to keep, so it takes straight up (it faces the ground, under the lobe)
+  for (let i = 0; i < n.count; i++) { v.set(n.getX(i), n.getY(i), n.getZ(i)).lerp(new THREE.Vector3(0, 1, 0), SOFT_LOBE.soft); if (Math.hypot(v.x, v.z) < 1e-6) v.set(0, 1, 0); v.normalize(); n.setXYZ(i, v.x, v.y, v.z); }
+  n.needsUpdate = true; return g;
+}
 
 export interface BeltTree {x: number; z: number; y: number; height: number; crown: number; radius: number; rgb: readonly [number, number, number]}
 /** The small islands' trees (ISLAND_CANOPY), and whether a point lies in one of their woods. */
