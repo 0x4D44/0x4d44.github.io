@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_KINDS, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
-import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
+import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
 import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, CARDAN_AXIS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_AXIS, MOTOR_CLEAR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
@@ -273,21 +273,26 @@ test('nose: the section morphs from an egg at the tip to the car section, and th
   }
 });
 
-test('nose: the AT300\'s beak is long and sharp: a small face under a metre across, a ramp of about 40 degrees up to the glass\'s foot 1.3 m back and the glass 3 m back at its top, as the photographs show it side on', () => {
+test('nose: the AT300\'s beak is long and sharp: a small face under a metre across, a ramp of about 47 degrees up to the glass\'s foot 0.95 m back and the glass 2.5 m back at its top, clear above the beak', () => {
   // The round-3 score called the beak "still short and bulbous, with a large flat yellow face"; lner-801-214-2025 and lner-800-108-offord-cluny-2023 (side on, the scale about 75 px
   // to the metre) put the glass's foot 1.3 m behind the tip and 2.3 to 2.4 m up, its top about 3.0 m back and 3.3 m up, and the ramp between the tip and the foot at about 41 degrees;
   // lner-800-113-newcastle-2025 (head on) shows a face under a metre across. The table, written out (the checks below read it from the spec):
+  // CHANGED (round 5): the round-4 score: "the beak hides almost all of the windscreen, which is a thin strip at the top; in hull-802-doncaster-2024 the large screen sits clearly above the
+  // dark beak". The silhouette is traced again from lner-800-108-offord-cluny-2023 at a higher zoom: the beak is higher from 0.4 m back (up to 0.22 m), the glass's foot is at the yellow's
+  // upper end, 0.95 m behind the tip and 2.3 m up, its top 2.5 m back and 3.17 m up, and the nose levels into the roof edge (3.35 m: the roof line never goes back). The ramp is a little
+  // steeper (47 degrees, 41 before) and so is the glass (29 degrees, 26 before). ASSUMED: the figures are readings of a photograph at about 75 px to the metre, good to 0.15 m, not
+  // published; the 3 m front view's share of the glass is pinned by its own test (train-azuma-front.test.ts).
   const spec = bodySpec('at300');
   assert.deepEqual(spec.nose, {
     length: ASSUMED.noseLength,
     knots: [
       { s: 0, top: 1.3, ws: 0.44, bottom: 0.6 },
-      { s: 0.4, top: 1.64, ws: 0.56, bottom: 0.5 },
-      { s: 0.8, top: 2.02, ws: 0.67, bottom: 0.46 },
-      { s: 1.3, top: 2.38, ws: 0.82, bottom: 0.48 },
-      { s: 2.0, top: 2.78, ws: 0.9, bottom: 0.58 },
-      { s: 2.7, top: 3.14, ws: 0.95, bottom: 0.72 },
-      { s: 3.3, top: 3.28, ws: 0.98, bottom: 0.86 },
+      { s: 0.4, top: 1.78, ws: 0.56, bottom: 0.5 },
+      { s: 0.8, top: 2.16, ws: 0.67, bottom: 0.46 },
+      { s: 1.3, top: 2.6, ws: 0.82, bottom: 0.48 },
+      { s: 2.0, top: 2.98, ws: 0.9, bottom: 0.58 },
+      { s: 2.7, top: 3.22, ws: 0.95, bottom: 0.72 },
+      { s: 3.3, top: 3.32, ws: 0.98, bottom: 0.86 },
       { s: ASSUMED.noseLength, top: spec.crown, ws: 1, bottom: spec.floor },
     ],
     fillet: 0.3,
@@ -296,7 +301,9 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
     widest: 0.55,
     boxiness: 2.6,
   });
-  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 1.3, s1: 3.0 }, 'the glass runs from 1.3 m back to 3.0 m');
+  assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 0.95, s1: 2.5 }, 'the glass runs from 0.95 m back to 2.5 m');
+  // the nose never rises above the roof it runs into (the roof line must not go back: the test of every nose's profile reads it too)
+  for (const k of spec.nose.knots) assert.ok(k.top <= spec.crown + 1e-9, `the knot at ${k.s} m is ${k.top} m up, over the roof edge at ${spec.crown} m`);
   const sec = carSection(spec);
   const norm = normalised(sec);
   const egg = eggSection(norm, spec.nose.widest, spec.nose.boxiness);
@@ -307,11 +314,15 @@ test('nose: the AT300\'s beak is long and sharp: a small face under a metre acro
   assert.ok(faceWidth > 0.85 && faceWidth < 1.05, `the face is ${faceWidth.toFixed(2)} m across`);
   assert.ok(faceTop - faceFoot > 0.5 && faceTop - faceFoot < 0.7, `the face is ${(faceTop - faceFoot).toFixed(2)} m tall`);
   // the ramp: from the face's top (at the tip) to the roof line over the glass's foot
-  const foot = ringAt(spec.nose, 1.3).top;
-  near(foot, 2.38, 0.05, 'the glass\'s foot stands 2.38 m up');
-  const ramp = (Math.atan2(foot - faceTop, 1.3) * 180) / Math.PI;
-  assert.ok(ramp > 37 && ramp < 44, `the ramp rises at ${ramp.toFixed(1)} degrees`);
-  near(ringAt(spec.nose, 3.0).top, 3.2, 0.1, 'the glass\'s top stands 3.2 m up');
+  const foot = ringAt(spec.nose, 0.95).top;
+  near(foot, 2.3, 0.05, 'the glass\'s foot stands 2.3 m up');
+  const ramp = (Math.atan2(foot - faceTop, 0.95) * 180) / Math.PI;
+  assert.ok(ramp > 44 && ramp < 50, `the ramp rises at ${ramp.toFixed(1)} degrees`);
+  const glassTop = ringAt(spec.nose, 2.5).top;
+  near(glassTop, 3.17, 0.05, 'the glass\'s top stands 3.17 m up');
+  // the glass lies flatter than the yellow cone's ramp under it: the steep slope breaks into the screen's gentler one at the glass's foot, as the side-on photographs show it
+  const glassPitch = (Math.atan2(glassTop - foot, 2.5 - 0.95) * 180) / Math.PI;
+  assert.ok(glassPitch > 26 && glassPitch < 33 && glassPitch < ramp - 10, `the glass rises at ${glassPitch.toFixed(1)} degrees, the ramp at ${ramp.toFixed(1)}`);
 });
 
 test('nose: the built nose is smooth: no ring edge of the loft (the surface the cab is lofted on) turns the surface by more than a few degrees', () => {
@@ -1208,33 +1219,45 @@ test('lamps: the leading end shows lit headlights and dark tail lenses, the trai
   const lens = (g: THREE.Object3D, car: Car): Record<keyof typeof LENS, number> => {
     const mesh = detailOf(g, car);
     const n = (hex: number): number => trisOfColour(mesh, hex).length;
-    return { headOn: n(LENS.headOn), headOff: n(LENS.headOff), tailOn: n(LENS.tailOn), tailOff: n(LENS.tailOff) };
+    return { headOn: n(LENS.headOn), headOff: n(LENS.headOff), tailOn: n(LENS.tailOn), tailOff: n(LENS.tailOff), markerOn: n(LENS.markerOn) };
   };
   for (const kind of ALL_KINDS) {
     const g = built(kind);
     const layout = trainLayout(kind);
+    // CHANGED (round 5): the AT300's second lens is its honeycomb of marker lenses, a marker lamp: it shows what its end shows (white at the leading end, red at the trailing end), so it
+    // has no dark tail lens at a leading end (it was a tail lens: dark there, the round-4 score's "only the headlamp lights at dusk"); no other family has a marker lens
+    const at300 = TRAIN_KINDS.includes(kind);
     for (const car of layout.cars.filter((c) => c.cab)) {
       const here = `${kind} car ${car.index} (${car.cab} cab)`;
       const l = lens(g, car);
       const interior = car.cab === 'front' ? car.start > 1e-9 : car.end < layout.length - 1e-9;
-      // two clusters a cab, each with a headlight lens and a tail lens: the same number of triangles lit or dark
-      assert.ok(l.headOn + l.headOff > 0 && l.tailOn + l.tailOff > 0, `${here}: lenses`);
+      // two clusters a cab, each with a headlight lens and a tail lens (the AT300: a headlamp and a marker lens): the same number of triangles lit or dark
+      assert.ok(l.headOn + l.headOff > 0 && (at300 ? l.markerOn + l.tailOn > 0 : l.tailOn + l.tailOff > 0), `${here}: lenses`);
+      if (!at300) assert.equal(l.markerOn, 0, `${here}: a marker lens on a family with none`);
       if (interior) {
-        assert.deepEqual([l.headOn, l.tailOn], [0, 0], `${here}: a coupled cab end shows no lit lamp`);
+        assert.deepEqual([l.headOn, l.tailOn, l.markerOn], [0, 0, 0], `${here}: a coupled cab end shows no lit lamp`);
         assert.ok(l.headOff > 0 && l.tailOff > 0, `${here}: dark lenses`);
       } else if (car.cab === 'front') {
-        assert.ok(l.headOn > 0 && l.tailOff > 0, `${here}: the leading end shows its headlights lit, tail lenses dark`);
-        assert.deepEqual([l.headOff, l.tailOn], [0, 0], `${here}: and neither a dark headlight nor a lit tail lamp`);
+        if (at300) {
+          assert.ok(l.headOn > 0 && l.markerOn > 0, `${here}: the leading end shows its headlamp strip and its markers lit, white`);
+          assert.deepEqual([l.headOff, l.tailOn, l.tailOff], [0, 0, 0], `${here}: and no dark headlamp lens, no red lamp and no dark red one`);
+        } else {
+          assert.ok(l.headOn > 0 && l.tailOff > 0, `${here}: the leading end shows its headlights lit, tail lenses dark`);
+          assert.deepEqual([l.headOff, l.tailOn], [0, 0], `${here}: and neither a dark headlight nor a lit tail lamp`);
+        }
+      } else if (at300) {
+        assert.ok(l.tailOn > 0 && l.headOff > 0, `${here}: the trailing end shows its markers red and lit, its headlamp lenses dark`);
+        assert.deepEqual([l.headOn, l.markerOn, l.tailOff], [0, 0, 0], `${here}: and no lit headlamp lens, no white marker and no dark red lens`);
       } else {
         assert.ok(l.tailOn > 0 && l.headOff > 0, `${here}: the trailing end shows its tail lamps lit, headlight lenses dark`);
         assert.deepEqual([l.headOn, l.tailOff], [0, 0], `${here}: and neither a lit headlight nor a dark tail lens`);
       }
     }
   }
-  // the four lens colours differ, and a lit one is lighter or redder than its dark one
+  // the five lens colours differ, and a lit one is lighter or redder than its dark one
   const lum = (h: number): number => lumaOf(h);
-  assert.ok(lum(LENS.headOn) > lum(LENS.headOff) + 0.2 && lum(LENS.tailOn) > lum(LENS.tailOff) + 0.1, 'a lit lens is brighter than a dark one');
-  assert.equal(new Set(Object.values(LENS)).size, 4);
+  assert.ok(lum(LENS.headOn) > lum(LENS.headOff) + 0.2 && lum(LENS.tailOn) > lum(LENS.tailOff) + 0.1 && lum(LENS.markerOn) > lum(LENS.tailOff) + 0.5, 'a lit lens is brighter than a dark one');
+  assert.equal(new Set(Object.values(LENS)).size, 5);
 });
 
 // --- the finish of a cab front -----------------------------------------------------------------------
@@ -1386,7 +1409,7 @@ test('fronts: dark parked wipers lie right along the foot of the windscreen, lif
   }
 });
 
-test('fronts: the Azuma\'s front: a slanted lamp cluster on each cheek (a long headlamp and a honeycomb of marker lenses), parked wipers, a covered plain coupler, no display, door or warning panel', () => {
+test('fronts: the Azuma\'s front: a slanted lamp cluster on each cheek (a strip of headlamp lenses and a honeycomb of marker lenses), parked wipers, a covered plain coupler, no display, door or warning panel', () => {
   // CHANGED (the lamps were low and bare, at 0.56 of the face's height and 0.6 of its half-width, with no housing): lner-800-113-newcastle-2025 and
   // hull-802-doncaster-2024 show the headlamp pod in the face's upper outer corner, a dark housing round the lamp with the tail lamp beneath it
   // CHANGED again (rectangular lamps with no wipers, a pod on the face only): LUMO-04-Lumo-803003-at-Edinburgh-Waverley, hull-802-doncaster-2024 and
@@ -1401,13 +1424,18 @@ test('fronts: the Azuma\'s front: a slanted lamp cluster on each cheek (a long h
   // housing up each shoulder (1.2 to 2.25 m behind the tip, 1.66 to 2.19 m up in the side-on photograph), a long headlamp at its upper rear end (about 0.28 m by 0.15 m) and, lower and
   // nearer the face, a round dark disc of about 0.17 m holding a honeycomb of seven small lenses. The nose is longer (its glass now starts 1.3 m back), and the window stands where its
   // shoulder is: 0.5 to 1.5 m back, 1.5 to 2.12 m up
+  // CHANGED a sixth time (round 5: one round headlamp 0.28 m by 0.15 m, a housing 0.42 to 0.55 m across): the round-4 score, "in the photos the clusters are slim, slanted multi-lens strips;
+  // the model reads as an eye". The housing is 0.3 m across (0.55 to 0.84 m back at its foot, 1.02 to 1.34 at its top, 1.5 to 2.1 m up), the headlamp a strip of five small lenses up its
+  // slant (0.36 m long, each lens 0.06 by 0.066 m, centred 1.02 m back and 1.9 m up), the marker array a disc of 0.15 m (0.8 m back, 1.63 m up), and the livery's texture runs up to loft
+  // column 9 on the nose (`shellTop`: its cheek's red/white edge is then a smooth curve of the texture, not the stair of the loft's own quads under the cluster)
   assert.deepEqual(bodySpec('at300').front, {
     cluster: {
-      window: { y0: 1.5, y1: 2.12, sFront0: 0.5, sBack0: 0.92, sFront1: 0.95, sBack1: 1.5, colour: POD },
-      head: { s: 1.05, y: 1.88, a: 0.14, b: 0.075 },
-      array: { s: 0.74, y: 1.67, r: 0.085 },
+      window: { y0: 1.5, y1: 2.1, sFront0: 0.55, sBack0: 0.84, sFront1: 1.02, sBack1: 1.34, colour: POD },
+      head: { s: 1.02, y: 1.9, a: 0.18, b: 0.033, cells: 5 },
+      array: { s: 0.8, y: 1.63, r: 0.075 },
       rim: { colour: 0xc7ccd3, width: 0.025 },
     },
+    shellTop: 9,
     frame: 0.07,
     wipers: true,
     warning: null,
@@ -1589,7 +1617,7 @@ test('couplers: where two 387 units meet, each nose has an open recess, a jumper
     near(rb.max.x, r.half, 1e-6, `${here} recess edge`);
     near(rb.min.x, -rb.max.x, 1e-6, `${here} recess symmetric`);
     // no cover to seam, so no seam and no latches on the face at either kind of end
-    for (const hex of [0x1b1d21, 0x484c53]) assert.equal(trisOfColour(mesh, hex).length, 0, `${here}: a cover's seam in ${hex.toString(16)}`);
+    for (const hex of [0x2e3036, 0x484c53]) assert.equal(trisOfColour(mesh, hex).length, 0, `${here}: a cover's seam in ${hex.toString(16)}`);
     const cables = trisOfColour(mesh, CABLE);
     const onFace = faceLayer(mesh, car, interior, head.lift, head.colour);
     if (!interior) {
@@ -1614,8 +1642,10 @@ test('couplers: where two 387 units meet, each nose has an open recess, a jumper
   }
 });
 
-test('couplers: the seam of a cover is near black on a light front and lighter on a dark one (the Hull Trains cone), where black on black would not show; a front with no cover has no seam', () => {
-  const SEAM_DARK = 0x1b1d21;
+test('couplers: the seam of a cover is a fine dark slate line on a light front and lighter on a dark one (the Hull Trains cone), where the slate would not show; a front with no cover has no seam', () => {
+  // CHANGED (round 5): the seam was near black (0x1b1d21), 2.2 cm wide with a 1.6 cm split, and the round-4 score read it as "a heavy black ring": the photographs' line is a fine one, so
+  // it is a dark slate (0x2e3036), 1.2 cm wide with a 1.0 cm split
+  const SEAM_DARK = 0x2e3036;
   const SEAM_LIGHT = 0x484c53;
   // CHANGED (the 387 was one of these): a flat bumper has no cover, so no seam of either colour (below, with the 180's open coupler)
   const at300 = bodySpec('at300');
@@ -1624,7 +1654,8 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
   const egg = eggSection(norm, at300.nose.widest, at300.nose.boxiness);
   const r0 = ringAt(at300.nose, 0);
   const tipHalf = halfAt(sec, norm, egg, r0);
-  assert.deepEqual(COVER_SEAM, { inset: 0.002, width: 0.022, split: 0.016, latch: [0.09, 0.1, 0.03] }, 'the seam table (the numbers the checks below are written in)');
+  assert.deepEqual(COVER_SEAM, { inset: 0.002, width: 0.012, split: 0.01, latch: [0.09, 0.1, 0.03] }, 'the seam table (the numbers the checks below are written in)');
+  assert.ok(SEAM_ON_LIGHT === SEAM_DARK && SEAM_ON_DARK === SEAM_LIGHT, 'the seam colours the table names');
   for (const [kind, want, other] of [['lner5', SEAM_DARK, SEAM_LIGHT], ['hull5', SEAM_LIGHT, SEAM_DARK]] as const) {
     const g = built(kind);
     const layout = trainLayout(kind);
@@ -1635,24 +1666,24 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
       assert.equal(onPlane(other).length, 0, `${kind} car ${car.index}: a seam in ${other.toString(16)}`);
       // CHANGED (the seam was a strip across the top of the cover with a latch each side of it, 2.4 cm tall, out to 0.92 of the face's half-width): lner-801-214-2025 and
       // LUMO-06-803005---FPK show the cone's seam all round the face, where its two halves close (a fine dark outline), a split down the middle, and one small latch low on the split.
-      // The seam is the strip 2 mm in from the face's outline and 2.2 cm wide, all the way round (the chin too); the split between its foot and its top, 1.6 cm wide; the latch on the
+      // The seam is the strip 2 mm in from the face's outline and 1.2 cm wide, all the way round (the chin too); the split between its foot and its top, 1.0 cm wide; the latch on the
       // split, 9 cm wide and 3 cm tall, its foot 10 cm over the split's. (Written as numbers here, not read from COVER_SEAM, so that a change of the table is seen.)
-      const strip = 0.022;
+      const strip = 0.012;
       const inset = 0.002;
       const crown = yAtX(tipHalf, 0);
       const splitFoot = r0.bottom + inset + strip;
       const splitTop = crown - inset - strip;
       const seamTris = onPlane(want);
-      const isSplit = (t: Tri): boolean => t.every((v) => Math.abs(v.x) <= 0.008 + 1e-4);
+      const isSplit = (t: Tri): boolean => t.every((v) => Math.abs(v.x) <= 0.005 + 1e-4);
       const isLatch = (t: Tri): boolean => t.every((v) => Math.abs(v.x) <= 0.045 + 1e-4 && v.y >= splitFoot + 0.1 - 1e-4 && v.y <= splitFoot + 0.13 + 1e-4);
       const split = seamTris.filter(isSplit);
       const latch = seamTris.filter(isLatch);
       const arch = seamTris.filter((t) => !isSplit(t) && !isLatch(t));
       assert.ok(split.length > 0 && latch.length > 0 && arch.length >= 50, `${kind} car ${car.index}: ${arch.length} triangles of the seam's outline, ${split.length} of its split, ${latch.length} of its latch`);
-      // the split: 1.6 cm wide about the middle, from the outline's strip at the chin to the one at the crown
+      // the split: 1.0 cm wide about the middle, from the outline's strip at the chin to the one at the crown
       const splitBox = boxOfTris(split);
-      near(splitBox.min.x, -0.008, 1e-4, `${kind} car ${car.index}: the split's left edge`);
-      near(splitBox.max.x, 0.008, 1e-4, `${kind} car ${car.index}: the split's right edge`);
+      near(splitBox.min.x, -0.005, 1e-4, `${kind} car ${car.index}: the split's left edge`);
+      near(splitBox.max.x, 0.005, 1e-4, `${kind} car ${car.index}: the split's right edge`);
       near(splitBox.min.y, splitFoot, 1e-4, `${kind} car ${car.index}: the split's foot`);
       near(splitBox.max.y, splitTop, 1e-4, `${kind} car ${car.index}: the split's top`);
       // the latch: one, on the split, a hand wide
@@ -1662,7 +1693,7 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
       near(latchBox.min.y, splitFoot + 0.1, 1e-4, `${kind} car ${car.index}: the latch's foot`);
       near(latchBox.max.y, splitFoot + 0.13, 1e-4, `${kind} car ${car.index}: the latch's top`);
       // the outline's strip: the face's outline as a closed loop (up the left side from the chin's corner, over the crown, down the right; the chin's chord closes it). Every vertex of
-      // it stands between 2 mm and 2.4 cm inside that loop, its outer edge 2 mm in and its inner edge 2.4 cm (the corners' own normals leave it a few per cent short), so nothing
+      // it stands between 2 mm and 1.4 cm inside that loop, its outer edge 2 mm in and its inner edge 1.4 cm (the corners' own normals leave it a few per cent short), so nothing
       // of the seam stands outside the face or strays into it
       const K = tipHalf.length;
       const loop: [number, number][] = [...tipHalf.slice(0, K - 1).map(([x, y]): [number, number] => [-x, y]), ...tipHalf.slice(K - 1), ...tipHalf.slice(0, K - 1).reverse()];
@@ -1681,7 +1712,7 @@ test('couplers: the seam of a cover is near black on a light front and lighter o
         assert.ok(within(v.x, v.y), `${kind} car ${car.index}: a vertex of the seam at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) is outside the face's outline`);
         const d = inside(v.x, v.y);
         assert.ok(d >= 0.9 * inset - 1e-4 && d <= inset + strip + 1e-4, `${kind} car ${car.index}: a vertex of the seam at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) stands ${d.toFixed(4)} m from the face's outline`);
-        // (the vertices of the outer edge stand 2 mm in, those of the inner one 2.4 cm: nothing in between)
+        // (the vertices of the outer edge stand 2 mm in, those of the inner one 1.4 cm: nothing in between)
         assert.ok(d <= inset + 1e-4 || d >= 0.9 * (inset + strip), `${kind} car ${car.index}: a vertex of the seam at (${v.x.toFixed(3)}, ${v.y.toFixed(3)}) stands ${d.toFixed(4)} m from the face's outline, on neither edge of the strip`);
       }
       // ... and it is one unbroken ring: a point in the middle of the strip, a quarter, half and three quarters of the way along every segment of the loop, is inside one of its triangles
@@ -4389,13 +4420,16 @@ test('glass: the AT300 cab side window is a wedge raked back at the top and stan
   }
 });
 
-test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek, behind the face\'s plane, with a long slanted headlamp at its upper rear end and a round dark disc of seven hexagonal marker lenses lower and nearer the face, each kind in its own colours; no other kind has one', () => {
+test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek, behind the face\'s plane, with a slim strip of five headlamp lenses up its slant and a round dark disc of seven hexagonal marker lenses lower and nearer the face, each kind in its own colours; no other kind has one', () => {
   // photographs lner-800-113-newcastle-2025 (head on: the headlights about 0.9 m either side of the middle and 1.65 m up, in a slanted dark window with a pale rim, a smaller dotted lamp
   // below and nearer the face), lner-801-214-2025, hull-802-doncaster-2024 (a slate window) and LUMO-04-Lumo-803003-at-Edinburgh-Waverley (smoked glass with no rim of its own)
   // CHANGED (a "pod": one housing patch wrapping back from the face onto the cheek, the lenses on the face): the lenses are in the window, on the cheek
   // CHANGED again (a round headlight and a smaller round tail lamp): the round-3 score called the lamps a thin white sliver at each cheek, where the photographs show slanted multi-lens
   // clusters: a long oval headlamp up the slant (0.28 m by 0.15 m) and, lower and nearer the face, a dark disc of 0.17 m holding a honeycomb of seven small hexagonal lenses (the
   // marker or tail lamp: red at the trailing end)
+  // CHANGED a third time (round 5): the round-4 score, "in the photos the clusters are slim, slanted multi-lens strips; the model reads as an eye, and only the headlamp lights at dusk".
+  // The headlamp is a strip of five small lenses (0.06 by 0.066 m, 0.072 m apart, 0.36 m in all) up the slant of a slimmer window (0.3 m across), on a slim dark body of the array's grey;
+  // the honeycomb (a disc of 0.15 m now) is a marker lamp, white at the leading end and red at the trailing one, so it lights at dusk too
   const COLOURS: Partial<Record<TrainKind, number>> = { lner5: POD, lner9: POD, hull5: HULL_POD, lumo5: POD };
   const RIMS: Partial<Record<TrainKind, number | undefined>> = { lner5: 0xc7ccd3, lner9: 0xc7ccd3, hull5: 0x4a5160, lumo5: undefined };
   assert.notEqual(POD, HULL_POD);
@@ -4441,10 +4475,11 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
       assert.equal(cluster.rim?.colour, RIMS[kind], `${kind}: the rim's colour`);
       const face = facePlane(car, true, false);
       const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
-      // the lenses show what the cab end's service lamps do: white lit at the leading end, red lit at the trailing end, the others dark
+      // the lenses show what the cab end's service lamps do: white lit at the leading end, red lit at the trailing end, the others dark; the headlamp's lenses are lit white at the leading
+      // end and dark grey at the trailing one, the markers white at the leading end and red at the trailing one
       const headHex = car.cab === 'front' ? LENS.headOn : LENS.headOff;
-      const tailHex = car.cab === 'rear' ? LENS.tailOn : LENS.tailOff;
-      const lensCentres: Record<string, THREE.Vector3[]> = { head: [], tail: [] };
+      const markerHex = car.cab === 'front' ? LENS.markerOn : LENS.tailOn;
+      const lensCentres: Record<string, THREE.Vector3[]> = { head: [], marker: [] };
       for (const sign of [-1, 1]) {
         const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
         const onSide = (ts: Tri[]): Tri[] => ts.filter((t) => t.every((v) => v.x * sign > 0));
@@ -4477,35 +4512,57 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
           const wb = new THREE.Box3().setFromPoints(win);
           assert.ok(rim.length >= 100 && rb.min.y < wb.min.y - 0.01 && rb.max.y > wb.max.y + 0.01, `${here}: the rim (${rim.length} triangles, y ${rb.min.y.toFixed(3)}..${rb.max.y.toFixed(3)}) does not edge the window (y ${wb.min.y.toFixed(3)}..${wb.max.y.toFixed(3)})`);
         }
-        // the headlamp: an ellipse of the spec's half-length (0.14 m, along the window's slant) and half-width (0.075 m), 16 sides about a centre, at its place on the flank in the
-        // headlamp's colour, its long axis slanted up and back with the window (seen from the side its far vertex above the centre leans 25 to 55 degrees off the vertical, to the rear)
-        const headLens = ring(onSide(trisOfColour(mesh, headHex)));
-        assert.equal(headLens.pts.length, 17, `${here} headlamp: ${headLens.pts.length} vertices (16 round the edge and its centre)`);
-        const hc = headLens.centre;
+        // the headlamp: a strip of five small lenses, each an ellipse of 12 sides about a centre (13 vertices) with a half-width of 0.033 m across the window's slant and a half-length of
+        // 0.84 of half its pitch (0.072 m) along it, in a row up the slant at its place on the flank, in the headlamp's colour; the row slants up and back with the window (seen from the side,
+        // from its first lens to its last it leans 25 to 55 degrees off the vertical, to the rear), and a gap of 8 mm or more is left between one lens and the next
+        const PITCH = 0.072;
+        const HALF_ALONG = (PITCH / 2) * 0.84;
+        const HALF_ACROSS = 0.033;
+        const headLenses = parts(onSide(trisOfColour(mesh, headHex)));
+        assert.equal(headLenses.length, 5, `${here}: ${headLenses.length} lenses in the headlamp's strip`);
+        for (const lens of headLenses) {
+          assert.equal(lens.pts.length, 13, `${here} headlamp lens: ${lens.pts.length} vertices (12 round the edge and its centre)`);
+          const reach = lens.pts.map((v) => v.distanceTo(lens.centre));
+          near(Math.max(...reach), HALF_ACROSS, 2e-4, `${here} headlamp lens: its half-width across the strip`);
+          near(Math.min(...reach.filter((d) => d > 2e-4)), HALF_ALONG, 2e-4, `${here} headlamp lens: its half-length along the strip`);
+        }
+        const row = headLenses.map((l) => l.centre).sort((p, q) => p.y - q.y) as [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3];
+        const hc = new THREE.Vector3(mean(row.map((c) => c.x)), mean(row.map((c) => c.y)), mean(row.map((c) => c.z)));
         near(along(hc), cluster.head.s, 0.03, `${here} headlamp: distance behind the face`);
         near(hc.y, cluster.head.y, 0.02, `${here} headlamp: height`);
         near(Math.abs(hc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.head.s)), cluster.head.y), 0.03, `${here} headlamp: on the flank`);
-        const headReach = headLens.pts.map((v) => v.distanceTo(hc));
-        near(Math.max(...headReach), 0.14, 2e-4, `${here} headlamp: its half-length`);
-        near(Math.min(...headReach.filter((d) => d > 2e-4)), 0.075, 2e-4, `${here} headlamp: its half-width`);
-        const upper = headLens.pts.filter((v) => v.distanceTo(hc) > 0.14 - 2e-4 && v.y > hc.y);
-        assert.equal(upper.length, 1, `${here} headlamp: one far vertex above its centre`);
-        const lean = (Math.atan2(along(upper[0] as THREE.Vector3) - along(hc), (upper[0] as THREE.Vector3).y - hc.y) * 180) / Math.PI;
-        assert.ok(lean > 25 && lean < 55, `${here} headlamp: its long axis leans ${lean.toFixed(1)} degrees off the vertical, up and back`);
-        // the marker array: a dark disc of 0.085 m radius (14 sides), and in it seven hexagonal lenses of 0.085 / 3.2 m at their corners: one in the middle (4 mm over the disc: the
+        const axis = new THREE.Vector3().subVectors(row[4], row[0]).normalize();
+        row.forEach((c, k) => {
+          if (k > 0) near(c.distanceTo(row[k - 1] as THREE.Vector3), PITCH, 3e-4, `${here} headlamp: lens ${k} is a pitch from the one below it`);
+          const off = new THREE.Vector3().subVectors(c, row[0]);
+          near(off.distanceTo(axis.clone().multiplyScalar(off.dot(axis))), 0, 3e-4, `${here} headlamp: lens ${k} is on the strip's straight line`);
+        });
+        assert.ok(PITCH - 2 * HALF_ALONG >= 0.008, `a gap of ${((PITCH - 2 * HALF_ALONG) * 1000).toFixed(1)} mm between one headlamp lens and the next`);
+        const lean = (Math.atan2(along(row[4]) - along(row[0]), row[4].y - row[0].y) * 180) / Math.PI;
+        assert.ok(lean > 25 && lean < 55, `${here} headlamp: its strip leans ${lean.toFixed(1)} degrees off the vertical, up and back`);
+        // the dark grey is two pieces: the strip's slim body under its lenses (an ellipse of 20 sides, 0.012 m bigger than the strip all round: 0.192 m by 0.045 m, 21 vertices, 4 mm
+        // under the lenses) and the marker array's disc (14 sides, radius 0.075 m, 15 vertices)
+        const dark = parts(onSide(trisOfColour(mesh, CLUSTER_ARRAY)));
+        assert.equal(dark.length, 2, `${here}: ${dark.length} pieces of the lamps' dark grey (the strip's body and the array's disc)`);
+        const body = dark.find((p) => p.pts.length === 21);
+        const disc = dark.find((p) => p.pts.length === 15);
+        assert.ok(body && disc, `${here}: the dark grey pieces have ${dark.map((p) => p.pts.length).join(' and ')} vertices, not 21 (the strip's body) and 15 (the array's disc)`);
+        const bodyReach = body.pts.map((v) => v.distanceTo(body.centre));
+        near(Math.max(...bodyReach), 0.18 + 0.012, 2e-4, `${here} headlamp body: its half-length`);
+        near(Math.min(...bodyReach.filter((d) => d > 2e-4)), 0.033 + 0.012, 2e-4, `${here} headlamp body: its half-width`);
+        near(body.centre.distanceTo(hc), 0.004, 1e-3, `${here} headlamp body: 4 mm under the middle of the strip`);
+        // the marker array: a dark disc of 0.075 m radius (14 sides), and in it seven hexagonal lenses of 0.075 / 3.2 m at their corners: one in the middle (4 mm over the disc: the
         // layers' lifts), six round it, each 1.9 cells from the middle one and from its two neighbours in the ring (a regular hexagon of them), every corner well inside the disc
-        const disc = ring(onSide(trisOfColour(mesh, CLUSTER_ARRAY)));
-        assert.equal(disc.pts.length, 15, `${here} array disc: ${disc.pts.length} vertices (14 round the edge and its centre)`);
         const dc = disc.centre;
         near(along(dc), cluster.array.s, 0.03, `${here} array disc: distance behind the face`);
         near(dc.y, cluster.array.y, 0.02, `${here} array disc: height`);
         near(Math.abs(dc.x), xAtY(halfAt(sec, norm, egg, ringAt(spec.nose, cluster.array.s)), cluster.array.y), 0.03, `${here} array disc: on the flank`);
         for (const v of disc.pts) {
           const d = v.distanceTo(dc);
-          assert.ok(Math.abs(d - 0.085) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is 0.085`);
+          assert.ok(Math.abs(d - 0.075) < 2e-4 || d < 2e-4, `${here} array disc: a vertex ${d.toFixed(4)} m from its centre, the radius is 0.075`);
         }
-        const CELL = 0.085 / 3.2;
-        const cells = parts(onSide(trisOfColour(mesh, tailHex)));
+        const CELL = 0.075 / 3.2;
+        const cells = parts(onSide(trisOfColour(mesh, markerHex)));
         assert.equal(cells.length, 7, `${here}: ${cells.length} marker lenses in the array`);
         for (const cell of cells) {
           assert.equal(cell.pts.length, 7, `${here}: a marker lens has ${cell.pts.length} vertices (6 corners and its centre)`);
@@ -4521,7 +4578,7 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
           near(c.centre.distanceTo(middle.centre), 1.9 * CELL, 3e-4, `${here}: an outer marker lens's distance from the middle one`);
           const ring2 = outer.filter((o) => o !== c && Math.abs(o.centre.distanceTo(c.centre) - 1.9 * CELL) < 3e-4);
           assert.equal(ring2.length, 2, `${here}: an outer marker lens has ${ring2.length} neighbours in the ring at 1.9 cells`);
-          for (const v of c.pts) assert.ok(v.distanceTo(dc) < 0.085 - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is 0.085`);
+          for (const v of c.pts) assert.ok(v.distanceTo(dc) < 0.075 - 0.005, `${here}: a marker lens corner stands ${v.distanceTo(dc).toFixed(4)} m from the disc's centre, the disc is 0.075`);
         }
         // no two lenses touch: along the line between two neighbours' centres a gap of 3 mm or more is left between their corners' reach (their flats face each other: 1.9 cells apart is a
         // gap of 4.5 mm; turned a sixth of a turn their corners would face each other and overlap by 2.7 mm)
@@ -4535,26 +4592,30 @@ test('lamps: the AT300 kinds\' lamp clusters are a slanted window on each cheek,
           }
         }
         lensCentres.head?.push(hc);
-        lensCentres.tail?.push(dc);
+        lensCentres.marker?.push(dc);
       }
-      for (const role of ['head', 'tail']) {
+      for (const role of ['head', 'marker']) {
         const [l, r] = lensCentres[role] as [THREE.Vector3, THREE.Vector3];
-        const here = `${kind} car ${car.index} ${role === 'head' ? 'headlamps' : 'marker arrays'}`;
+        const here = `${kind} car ${car.index} ${role === 'head' ? 'headlamp strips' : 'marker arrays'}`;
         near(l.x, -r.x, 2e-4, `${here} are symmetric`);
         near(l.y, r.y, 2e-4, `${here} are level`);
         near(l.z, r.z, 2e-4, `${here} stand at one place along the train`);
       }
       const [headL] = lensCentres.head as [THREE.Vector3];
-      const [arrayC] = lensCentres.tail as [THREE.Vector3];
+      const [arrayC] = lensCentres.marker as [THREE.Vector3];
       assert.ok(headL.y > arrayC.y + 0.1 && along(headL) > along(arrayC) + 0.1, `${kind} car ${car.index}: the marker array is lower and nearer the face than the headlamp`);
     }
   }
   assert.deepEqual(frontOf('lner5').cluster, frontOf('lner9').cluster, 'both LNER kinds have the same cluster');
-  // the headlamp is a long oval, longer than the array's disc is across, and the window's top edge is longer than its foot's (a slanted wedge, as the photographs show it)
+  // the headlamp is a slim strip of five lenses (the strip over four times as long as one lens is wide, and longer than the array's disc is across), and the window's top edge is longer than its
+  // foot's (a slanted wedge, as the photographs show it)
   const base = bodySpec('at300').front.cluster;
-  assert.ok(base && base.head.a > 1.5 * base.head.b && base.head.a > base.array.r && base.window.sBack1 - base.window.sFront1 > base.window.sBack0 - base.window.sFront0, 'the headlamp is a long oval, longer than the array is wide; the window is longer at its top');
+  assert.ok(base && base.head.cells === 5 && base.head.a > 4 * base.head.b && base.head.a > base.array.r && base.window.sBack1 - base.window.sFront1 > base.window.sBack0 - base.window.sFront0, 'the headlamp is a slim strip of five lenses, longer than the array is wide; the window is longer at its top');
   assert.equal(ARRAY_CELL, 1 / 3.2, 'the array\'s cell, as a fraction of the disc\'s radius');
   assert.equal(CLUSTER_ARRAY, 0x3a3f47, 'the disc\'s colour');
+  assert.equal(HEAD_FILL, 0.84, 'how much of its pitch a headlamp lens fills');
+  assert.equal(HEAD_SIDES, 12, 'the sides of a headlamp lens');
+  assert.equal(HEAD_BODY, 0.012, 'how far the strip\'s body reaches round it');
 });
 
 test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, its layers stand apart, its grid follows the shoulder, and both lenses lie inside the window', () => {
@@ -4589,7 +4650,7 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
       const face = facePlane(car, true, false);
       const along = (v: THREE.Vector3): number => (car.cab === 'front' ? v.z - face : face - v.z);
       const headHex = car.cab === 'front' ? LENS.headOn : LENS.headOff;
-      const tailHex = car.cab === 'rear' ? LENS.tailOn : LENS.tailOff;
+      const markerHex = car.cab === 'front' ? LENS.markerOn : LENS.tailOn;
       for (const sign of [-1, 1]) {
         const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
         const onSide = (ts: Tri[]): Tri[] => ts.filter((t) => t.every((v) => v.x * sign > 0));
@@ -4615,10 +4676,13 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
         if (cluster.rim) {
           // the rim edges the window where the stop bites too: over the front of the top edge (the front 45 % of the window's length) the rim's highest vertex stands at least a rim's width
           // over the window's (less what the lifts move them, a few millimetres)
+          // CHANGED (round 5: 0.012 m): the window is slimmer and its front edge more slanted (0.55 m back at its foot, 1.02 m at its top), so over the front 45 % of its length the highest
+          // vertex of either is where the slanted edge crosses that line, and the rim (a different grid, a rim's width further out) stands 10 mm over the window there, measured. A rim
+          // dropped to the window's outline, or lost, reads 0 or less (its lift is the lower of the two: a window's top edge stands 12 mm further along its normal than the rim's)
           const winFront = Math.min(...win.map(along));
           const winBack = Math.max(...win.map(along));
           const top = (vs: THREE.Vector3[]): number => Math.max(...vs.filter((v) => along(v) < winFront + 0.45 * (winBack - winFront)).map((v) => v.y));
-          assert.ok(top(rim) - top(win) >= 0.012, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
+          assert.ok(top(rim) - top(win) >= 0.007, `${here}: the rim's top at the front is ${top(rim).toFixed(3)}, the window's ${top(win).toFixed(3)}`);
         }
         // the grid follows the shoulder: no edge of the window climbs more than 9 cm (the rows: 5 rows of its 0.66 m sag 7 mm between them on the shoulder, 8 rows 3 mm), and an edge
         // along a row (climbing under 2 cm) runs no further than 15 cm behind the face-ward one (the columns: they crowd toward the front edge, the last two are the furthest apart)
@@ -4646,7 +4710,7 @@ test('lamps: the AT300 cluster stays on the flank and clear of the colour mask, 
               return (Math.sign(area) * ((x1 - x0) * (y - y0) - (y1 - y0) * (a - x0))) / Math.hypot(x1 - x0, y1 - y0) >= -0.005;
             });
           });
-        for (const [role, hex] of [['head', headHex], ['tail', tailHex], ['array disc', CLUSTER_ARRAY]] as const) {
+        for (const [role, hex] of [['head', headHex], ['marker', markerHex], ['dark grey (the strip\'s body and the array\'s disc)', CLUSTER_ARRAY]] as const) {
           const lens = onSide(trisOfColour(mesh, hex)).flat();
           assert.ok(lens.length >= 42, `${here} ${role} lens: ${lens.length} vertices`);
           for (const v of lens) assert.ok(inWindow(along(v), v.y), `${here} ${role} lens: a vertex ${along(v).toFixed(3)} m behind the face, ${v.y.toFixed(3)} m up, is outside the window`);
