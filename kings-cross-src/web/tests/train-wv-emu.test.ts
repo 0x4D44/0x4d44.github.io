@@ -620,3 +620,20 @@ test('the 397\'s cyan streaks run unbroken along an intermediate car, and its ca
   const sky = colourPoints(cab, PANE_SKY_HI, 2).filter((v) => Math.abs(v.x) > 1 && v.y > 2.0 && v.y < 2.95);
   assert.ok(sky.length > 0, 'the cab side window carries the sky\'s light, as the saloon windows do');
 });
+
+test('the 334 PTOS\'s two blanked panels before its first door are drawn framed, as scotrail334_01 shows them, not as plain wall', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const car = wvEmuLayout('sr334x3').cars[1] as WvEmuCar;
+  const plan = wvEmuPlan('sr334x3', car);
+  const blanks = plan.blanks ?? [];
+  assert.equal(blanks.length, 2, 'two blanked panels');
+  assert.ok(blanks.every(([, s1]) => s1 < (plan.doors[0] as number) - 0.65), 'both before the first door');
+  const detail = (root.getObjectByName('car-1') as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+  const frame = colourPoints(detail, 0x0d0e10, 2);
+  for (const [s0, s1] of blanks) {
+    for (const sx of [-1, 1]) {
+      const here = frame.filter((v) => v.x * sx > 1 && v.z > car.start + s0 - 0.05 && v.z < car.start + s1 + 0.05);
+      assert.ok(here.length > 20, `the panel at ${s0.toFixed(2)} m, side ${sx}: ${here.length} frame points`);
+    }
+  }
+});

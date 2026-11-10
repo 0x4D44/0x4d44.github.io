@@ -64,6 +64,8 @@ interface CarPlan {
   doors: number[];
   windows: [number, number][];
   crewDoor: number | null;
+  /** window openings blanked off: a framed panel in the body's colour, no glass (the 334 PTOS's front bay, scotrail334_01) */
+  blanks?: [number, number][];
 }
 
 interface Body {
@@ -179,6 +181,8 @@ const JUNIPER_BODY: Body = {
       crewDoor: null,
       doors: [d1, d2],
       windows: [...windowsIn(d1 + 1.25, d2 - 1.2, 1.47, 0.3), ...windowsIn(d2 + 1.2, L - 0.77, 1.3, 0.3)],
+      // (round 6: the two blanked panels, framed as _01 shows them close to; placed by the same fit, from the body's start)
+      blanks: [[WV_END_GAP + 1.35, WV_END_GAP + 2.68], [WV_END_GAP + 2.98, WV_END_GAP + 4.36]],
     };
   },
 };
@@ -905,6 +909,17 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       detail.prismX(roundedRect(za + 0.04, zb - 0.04, wy1 - 0.24, wy1 - 0.03, 0.05, 2), outer(0.0125), outer(0.0115), col(0x4b5b73), false);
       // the 334's hopper: a frame bar across the window, the small pane over it opening inward (scotrail334_01, _02)
       if (family === 'juniper') detail.box(Math.min(outer(0.011), outer(0.0085)), Math.max(outer(0.011), outer(0.0085)), wy1 - HOPPER - 0.025, wy1 - HOPPER + 0.025, za, zb, col(0x15171b));
+    }
+  }
+
+  // blanked openings: the window's dark frame round a panel in the body's colour, a little taller than the glazed windows (scotrail334_01)
+  for (const [s0, s1] of plan.blanks ?? []) {
+    const za = Math.min(Z(s0), Z(s1));
+    const zb = Math.max(Z(s0), Z(s1));
+    for (const sx of [-1, 1]) {
+      const outer = (rel: number): number => sx * (half - rel);
+      detail.prismX(roundedRect(za - 0.03, zb + 0.03, wy0 - 0.13, wy1 + 0.05, 0.1, 2), sx * (W - 0.005), outer(0.016), col(0x0d0e10));
+      detail.prismX(roundedRect(za, zb, wy0 - 0.1, wy1 + 0.02, 0.08, 2), sx * (W - 0.005), outer(0.0125), col(SR_BLUE), false);
     }
   }
 
