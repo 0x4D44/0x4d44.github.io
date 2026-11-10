@@ -6,7 +6,7 @@ import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_SALTIRE, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_DOT, SR_SALTIRE, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
 import { CAF, CLUSTER_BAND, J_AIR, MOTOR, SPLIT_DEPTH, SPRING_UNIT, splitTri } from '../src/train-wv-emu-parts.ts';
 import { WIPER } from '../src/train-face.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
@@ -443,4 +443,59 @@ test('the 397\'s cap: a near-full-width display, an unbroken orange line, a wipe
   const rim = inColour(shell, MARKER.colour);
   const width = (y: number): number => Math.max(...rim.filter((v) => Math.abs(v.y - y) < 0.02).map((v) => Math.abs(v.x)));
   assert.ok(width(MARKER.foot + 0.01) > width(MARKER.top - 0.01) + 0.08, `the housing is ${width(MARKER.foot + 0.01).toFixed(2)} m at its foot, ${width(MARKER.top - 0.01).toFixed(2)} m at its top`);
+});
+
+// --- round 5: the 334's windows and doors as the photographs count them ---
+
+test('the 334\'s sides as scotrail334_01, _02 and _06 count them: a driving car glazes narrow and wide, five, two; the PTOS none, five, two', () => {
+  for (const car of wvEmuLayout('sr334x3').cars) {
+    const plan = wvEmuPlan('sr334x3', car);
+    const [d1, d2] = plan.doors as [number, number];
+    const before = plan.windows.filter(([, w1]) => w1 < d1);
+    const between = plan.windows.filter(([w0, w1]) => w0 > d1 && w1 < d2);
+    const beyond = plan.windows.filter(([w0]) => w0 > d2);
+    assert.equal(between.length, 5, `${car.type}: five windows between the doors`);
+    assert.equal(beyond.length, 2, `${car.type}: two windows beyond the second door`);
+    if (car.cab) {
+      assert.equal(before.length, 2, `${car.type}: two windows before the first door`);
+      const [narrow, wide] = before as [[number, number], [number, number]];
+      assert.ok(narrow[1] - narrow[0] < 0.7 && wide[1] - wide[0] > 1.0, `${car.type}: the narrow window, then the wide one`);
+      // (the projective fit puts the first door 6.0 to 6.5 m behind the face, the second 4.6 to 4.9 m from the inner end)
+      assert.ok(d1 > 5.9 && d1 < 6.7 && car.length - d2 > 4.5 && car.length - d2 < 5.0, `${car.type}: doors at ${d1}, ${d2}`);
+    } else {
+      assert.equal(before.length, 0, 'the PTOS: blanked panels, not windows, before its first door');
+      assert.ok(d1 > 5.3 && d1 < 5.9 && car.length - d2 > 4.3 && car.length - d2 < 4.8, `PTOS: doors at ${d1}, ${d2}`);
+    }
+  }
+});
+
+test('the 334\'s dot bands and Saltire stop at the glass: no dot or bar is laid over a window', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const b = wvEmuBody('sr334x3');
+  for (const car of wvEmuLayout('sr334x3').cars) {
+    const plan = wvEmuPlan('sr334x3', car);
+    const dir = car.cab === 'rear' ? -1 : 1;
+    const base = car.cab === 'rear' ? car.end : car.start;
+    const detail = (root.getObjectByName(`car-${car.index}`) as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+    for (const hex of [SR_DOT, SR_SALTIRE]) {
+      // (points across each triangle, not only its corners: a Saltire bar's corners are above and below the window band)
+      const pos = detail.geometry.getAttribute('position');
+      const colr = detail.geometry.getAttribute('color');
+      const idx = detail.geometry.index;
+      const at = (j: number): number => (idx ? idx.getX(j) : j);
+      const c = col(hex);
+      const points: THREE.Vector3[] = [];
+      for (let t = 0; t + 2 < (idx ? idx.count : pos.count); t += 3) {
+        const i = at(t);
+        if (Math.abs(colr.getX(i) - c.r) > 1e-6 || Math.abs(colr.getY(i) - c.g) > 1e-6 || Math.abs(colr.getZ(i) - c.b) > 1e-6) continue;
+        const [p0, p1, p2] = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(pos, at(t + j))) as [THREE.Vector3, THREE.Vector3, THREE.Vector3];
+        for (let u = 0; u <= 8; u++) for (let w = 0; w + u <= 8; w++) points.push(p0.clone().multiplyScalar((8 - u - w) / 8).addScaledVector(p1, u / 8).addScaledVector(p2, w / 8));
+      }
+      const over = points.filter((v) => {
+        const sAt = (v.z - base) * dir;
+        return Math.abs(v.x) > 1.2 && v.y > b.windowY[0] + 0.01 && v.y < b.windowY[1] - 0.01 && plan.windows.some(([w0, w1]) => sAt > w0 + 0.01 && sAt < w1 - 0.01);
+      });
+      assert.equal(over.length, 0, `car ${car.index}: ${over.length} ${hex === SR_DOT ? 'dot' : 'Saltire'} vertices over a window`);
+    }
+  }
 });

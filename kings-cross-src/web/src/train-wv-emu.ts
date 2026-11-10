@@ -157,29 +157,28 @@ const JUNIPER_BODY: Body = {
   gangway: { width: 1.9, height: 2.2, bottom: 1.15, inset: 0.12, topGap: 0.3, ribs: 4, depth: 0.05 },
   liveryStep: (car) => ({ until: car.length, step: 0.5 }),
   cuts: [3.29, 3.33],
-  // ASSUMED, read off scotrail334_01 and _02 (window and door counts; spacings scaled along the car): a driving car has the crew door 2.25 m behind the face, three windows,
-  // a door at 9 m, five windows, a door 3.8 m from the inner end and two windows; the middle car a door 3.8 m in from each end, eight windows between, two beyond each
+  // Round 5, counted on both sides (scotrail334_01 and _02 one side, _06 the other; the same plan mirrored) and placed by a projective fit along each car's side in
+  // _01 and _02 (.scratch proj334b.py: the door frames' edges fix the perspective; the crew door's 2.25 m and the car's length fix the scale), the two photographs
+  // agreeing within 0.5 m. A driving car: the crew door; a narrow window and a wide one; the first door at 6.3 m; five windows; the second door 4.75 m from the
+  // inner end; two windows. The PTOS: the Saltire's band at its front end, two blanked panels (not glazed: drawn as wall), the first door at 5.6 m, five windows,
+  // the second door 4.5 m from its inner end, two windows. Round 4 had the driving car's first door 2.7 m too far back and the PTOS three windows too many.
   plan: (car) => {
     const L = car.length;
-    const dw = 1.3;
-    const gap = WV_END_GAP;
     if (car.cab) {
-      const d1 = 9.0;
-      const d2 = L - 3.8;
-      // (scotrail334_01, _02: two tall windows between the Saltire and the first door, five between the doors, two beyond the second)
+      const d1 = 6.3;
+      const d2 = L - 4.75;
       return {
         crewDoor: 2.25,
         doors: [d1, d2],
-        windows: [...windowsIn(4.6, d1 - dw / 2 - 0.3, 1.45, 0.4), ...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.25, 0.4), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.95, 1.05, 0.35)],
+        windows: [[3.3, 3.8], [4.05, 5.2], ...windowsIn(d1 + 1.25, d2 - 1.4, 1.46, 0.3), ...windowsIn(d2 + 1.3, L - 0.65, 1.4, 0.3)],
       };
     }
-    const d1 = 3.8;
-    const d2 = L - 3.8;
-    // the PTOS's front end carries the Saltire, not windows (scotrail334_01)
+    const d1 = 5.6;
+    const d2 = L - 4.5;
     return {
       crewDoor: null,
       doors: [d1, d2],
-      windows: [...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.3, 0.42), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.95, 1.05, 0.35)],
+      windows: [...windowsIn(d1 + 1.25, d2 - 1.2, 1.47, 0.3), ...windowsIn(d2 + 1.2, L - 0.77, 1.3, 0.3)],
     };
   },
 };
@@ -370,14 +369,14 @@ function paintJuniper(p: Spot, b: Body): Paint {
 }
 
 /**
- * The Saltire X of the 2014-2025 ScotRail scheme as scotrail334_01 (2016) shows it: a pale X the height of the side, standing clear of the windows (drawn as
- * two flat bars on the wall, buildCar). ASSUMED: its size and place, read off that photograph's perspective; on the PTOS between its front end and its first
- * door, on a driving car between the crew door's dots and its first windows.
+ * The Saltire X of the 2014-2025 ScotRail scheme: a pale X the height of the side, standing clear of the windows (drawn as two flat bars on the wall, buildCar).
+ * Round 5: where the photographs put it. scotrail334_01, _02 and _06 show no X between a driving car's crew door and its first window (a plain panel); the X
+ * is at the cars' joins, in the PTOS's front band (_01, close to) and narrow on a driving car's inner end beside it (_02). ASSUMED: its size, read off them.
  */
-export const SALTIRE = { y0: 1.2, y1: 3.0, half: 0.5, bar: 0.13 } as const;
+export const SALTIRE = { y0: 1.2, y1: 3.0, bar: 0.13 } as const;
 export const SR_SALTIRE = 0xb7c0de;
-/** Where the X is centred along a car: from the cab tip on a driving car, from the start on the PTOS. */
-export const saltireAt = (car: WvEmuCar): number => (car.cab ? 3.85 : 2.4);
+/** Where the X is centred along a car (from the cab tip on a driving car, from the start on the PTOS), and its half-width. */
+export const saltireAt = (car: WvEmuCar): { at: number; half: number } => (car.cab ? { at: car.length - WV_END_GAP - 0.14, half: 0.14 } : { at: WV_END_GAP + 0.65, half: 0.4 });
 
 function paintCivity(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
@@ -963,10 +962,10 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
   // the bogies
   // the 334's halftone bands at its inner ends, and its Saltire X: two flat bars on each side's wall
   if (family === 'juniper') {
-    if (!car.cab) endDots(detail, tip, 1, W, world);
-    endDots(detail, bodyEnd, -1, W, world);
-    const c = saltireAt(car);
-    const { y0, y1, half: h, bar } = SALTIRE;
+    if (!car.cab) endDots(detail, tip, 1, W, world, plan.windows, b.windowY);
+    endDots(detail, bodyEnd, -1, W, world, plan.windows, b.windowY);
+    const { at: c, half: h } = saltireAt(car);
+    const { y0, y1, bar } = SALTIRE;
     for (const sx of [-1, 1] as const) {
       for (const [k, lift] of [[1, 0.005], [-1, 0.0065]] as const) {
         const x = sx * (W + lift);
@@ -1052,7 +1051,9 @@ function haltone(soup: Soup, at: (s: number, y: number, side: number) => { p: V3
  * largest along the band's middle, which leans toward the gangway at the top. `sEnd` is the body's end, `inward` the direction into the car (both in the
  * car's own s), `W` the wall's half-width. ASSUMED sizes, as the cab's band.
  */
-function endDots(soup: Soup, sEnd: number, inward: 1 | -1, W: number, world: (p: V3) => V3): void {
+/** (round 5: `windows` are the car's openings and their height, in the same frame as `sEnd`; a dot that would fall on one is left off, as the photographs show the band
+ * stopping at the glass) */
+function endDots(soup: Soup, sEnd: number, inward: 1 | -1, W: number, world: (p: V3) => V3, windows: readonly (readonly [number, number])[] = [], windowY: readonly [number, number] = [0, 0]): void {
   const pitch = 0.155;
   const white = col(SR_DOT);
   for (let row = 0; ; row++) {
@@ -1066,6 +1067,7 @@ function endDots(soup: Soup, sEnd: number, inward: 1 | -1, W: number, world: (p:
       const r = 0.06 * (1 - d * d);
       if (r < 0.018 || d0 < 0.08) continue;
       const s = sEnd + inward * d0;
+      if (y + r > windowY[0] - 0.04 && y - r < windowY[1] + 0.04 && windows.some(([w0, w1]) => s + r > w0 - 0.04 && s - r < w1 + 0.04)) continue;
       for (const sx of [-1, 1]) {
         const x = sx * (W + 0.008);
         const poly: V3[] = Array.from({ length: 10 }, (_, q): V3 => {
