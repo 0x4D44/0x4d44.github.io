@@ -109,14 +109,15 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
     const n = [-t[1], t[0]], y = F.girder[0] - L.cap - 1.5;
     if (y < scene.terrain.heightAt(p[0], p[1]) + .5) return; // a pier standing too low to see between its columns
     if (layout.arches.some(a => Math.abs(a - layout.piers[k]!) < 3)) return; // the arch block's end piers carry its masonry beside them
-    // along the track through the pier's centreline: open between the two columns
+    // along the track through the pier's centreline: joined between the two columns into one mass (round 4, lead's ruling on the round-3
+    // score: 2166751's pair reads as one dumbbell mass; round 2 asserted the opposite, an open trestle)
     ray.set(new THREE.Vector3(p[0] - t[0] * 5, y, p[1] - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); ray.far = 10;
-    if (ray.intersectObject(mesh).length === 0) gaps++;
+    if (ray.intersectObject(mesh).length > 0) gaps++;
     // under each girder: a column
     for (const side of [-1, 1]) { ray.set(new THREE.Vector3(p[0] + n[0] * side * F.girderOffset - t[0] * 5, y, p[1] + n[1] * side * F.girderOffset - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); if (ray.intersectObject(mesh).length) columns++; }
     // the cap spans across, over the gap
     ray.set(new THREE.Vector3(p[0] - t[0] * 5, F.girder[0] - L.cap / 2, p[1] - t[1] * 5), new THREE.Vector3(t[0], 0, t[1])); if (ray.intersectObject(mesh).length) caps++;  });
-  assert.ok(gaps >= 8, `piers open between their columns: ${gaps}`);
+  assert.ok(gaps >= 8, `piers joined between their columns: ${gaps}`);
   assert.equal(columns, 2 * gaps, 'two columns at each open pier');
   assert.equal(caps, gaps, 'a cap over each');
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
@@ -141,6 +142,7 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   for (const { p } of layout.pierPlan) for (let i = 0; i < ip.count; i++) if (Math.hypot(ip.getX(i) - p[0], ip.getZ(i) - p[1]) < F.girderOffset && Math.abs(ip.getY(i) - PIER_FORM.crossTop) < 1e-3) { cross++; break; }
   for (let i = 0; i < ip.count; i++) if (Math.abs(ip.getY(i) - F.girder[1]) < 1e-3) stiff++;
   assert.equal(cross, layout.pierPlan.length, 'a cross girder over every girder pier');
+  assert.ok(lum(L.girder) > .75 && PIER_FORM.stiffenerShade < .8, 'a pale girder band with stiffeners that read');
   assert.ok(stiff / 8 > 2 * (layout.length * .6) / PIER_FORM.stiffener, `stiffener tops: ${stiff / 8}`);
 });
 

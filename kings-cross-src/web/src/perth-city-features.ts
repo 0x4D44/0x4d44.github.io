@@ -77,13 +77,16 @@ export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, gird
  *  Sizes and tones are read by eye from them (ASSUMED): `column` m square, the cap `cap` m deep and `capOver` m past the columns, the
  *  rustication `courses` m apart, a darker joint every course. */
 export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, stone: [.80, .70, .60] as Rgb, joint: [.62, .53, .45] as Rgb,
-  girder: [.66, .68, .67] as Rgb, railing: [.93, .93, .91] as Rgb} as const;
+  girder: [.78, .80, .79] as Rgb, railing: [.95, .95, .93] as Rgb} as const;
 /** Round 3 (C4), from 2166751: the girder piers' columns are round and tall, about three times as high as they are wide over the water,
  *  rusticated in bands; a cross girder closes the dark gap between the cap and the deck; the plate girders carry vertical stiffeners.
  *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
  *  other one `proud` m out; the cross girder up to `crossTop`; a stiffener every `stiffener` m, `stiffenerSize` (along, out). */
 export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 10, band: .9, proud: .07, crossTop: -.55,
-  stiffener: 1.8, stiffenerSize: [.14, .1] as const, stiffenerShade: .9} as const;
+  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .62} as const;
+/** Round 4 (C4, round-3 score): 2166751's twin columns stand together as one dumbbell mass, not apart under a slab like a trestle: a
+ *  masonry web `PIER_FORM.web` of the diameter thick joins each pair from its foot to the cap, set back inside the columns' faces. The
+ *  girder band was flat and dark: the girders are paler (VIADUCT_LOOK.girder) and the stiffeners stand prouder and darker, so they read. */
 /** Road-bridge forms. Arch counts are sourced (round 2):
  *  - Perth Bridge (Smeaton, 1771) has nine arches: seven over the river and two smaller land arches at the ends (HES LB39339;
  *    Canmore 28308, "nine arches ... total span of 268m").
@@ -331,6 +334,8 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
       ring(masonry, q[0], q[1], diameter / 2, foot, capY, PIER_FORM.sides, L.joint);
       for (let y = foot, k = 0; y < capY; y += PIER_FORM.band, k++) if (k % 2) ring(masonry, q[0], q[1], diameter / 2 + PIER_FORM.proud, y, Math.min(capY, y + PIER_FORM.band), PIER_FORM.sides, L.stone);
     }
+    // the web joining the pair into one mass (PIER_FORM.web)
+    post(masonry, p, t, diameter * PIER_FORM.web, 2 * F.girderOffset, foot, capY, L.joint);
     post(masonry, p, t, diameter + 2 * L.capOver, 2 * F.girderOffset + diameter + 2 * L.capOver, capY, F.girder[0], L.stone);
     // the cross girder on the cap, between the plate girders up to the deck: no dark gap over the cap
     post(ironwork, p, t, diameter, 2 * F.girderOffset - F.girderThick, F.girder[0], PIER_FORM.crossTop, L.girder);
