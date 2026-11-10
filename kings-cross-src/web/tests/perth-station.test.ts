@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthRampTexture, PERTH_RAMP_FINISH, perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, PERTH_TRUSS, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, RAMP_KINK, PERTH_TRUSS, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -1121,5 +1121,40 @@ test('round 10: R-pt1-a\'s two big rings in each deep corner of the long braces,
   for (const [key, ds] of long) {
     const [big, next] = [...ds].sort((p, q) => q - p);
     assert.ok(ds.length === R.count && big >= .65 * W.gutterGirderDepth && next >= .45 * W.gutterGirderDepth, `corner ${key}: ${R.count} big rings (${ds.map(d => d.toFixed(2)).join(', ')} m; the girder ${W.gutterGirderDepth} m deep)`);
+  }
+});
+
+test('round 10: the ramps\' slope unmistakable: shaded darker down the fall, the side edging kinked at the break of slope, bands across head and foot', () => {
+  const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, K = RAMP_KINK;
+  // Shading by depth: vertex colour 1 at the head (deck level), PERTH_RAMP_FINISH.foot (0.65 or less) at the foot, falling with depth.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const mesh = scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh, g = mesh.geometry, pos = g.getAttribute('position'), col = g.getAttribute('color');
+    assert.ok(col && (mesh.material as THREE.MeshLambertMaterial).vertexColors, 'the ramps shaded per vertex');
+    let heads = 0, feet = 0;
+    for (let i = 0; i < pos.count; i++) {
+      const depth = (deck - pos.getY(i)) / (deck - rail), c = col.getX(i);
+      assert.ok(Math.abs(c - (1 - (1 - PERTH_RAMP_FINISH.foot) * depth)) < 1e-3 && col.getY(i) === c && col.getZ(i) === c, `grey falling with depth at vertex ${i}`);
+      if (depth < 1e-3) heads++; if (depth > 1 - 1e-3) feet++;
+    }
+    assert.ok(PERTH_RAMP_FINISH.foot <= .65 && heads >= 2 && feet >= 2, `light at the head, dark at the foot (${PERTH_RAMP_FINISH.foot})`);
+  } finally { scene.dispose(); }
+  // The kink: on every side away from the tracks, the edging runs on level along the deck K.back m back from the head.
+  const e = batches.platform.edges.positions;
+  for (const r of plan.ramps) {
+    const len = Math.hypot(r.f0[0] - r.e0[0], r.f0[1] - r.e0[1]), back: Pt = [(r.e0[0] - r.f0[0]) / len, (r.e0[1] - r.f0[1]) / len];
+    for (const i of [0, 1] as const) {
+      if (r.track[i]) continue;
+      const h = i ? r.e1 : r.e0, b: Pt = [h[0] + back[0] * K.back, h[1] + back[1] * K.back];
+      let kink = false;
+      for (let k = 0; k < e.length; k += 3) { const q = toLocal([e[k], e[k + 2]]); if (Math.hypot(q[0] - b[0], q[1] - b[1]) < RAMP_EDGING + .01 && Math.abs(e[k + 1] - deck) < .05) kink = true; }
+      assert.ok(kink, `ramp ${r.ref} side ${i}: the edging carried back along the deck`);
+    }
+    // The bands: buff vertices at both corners of the head and of the foot, on the ramp's surface.
+    for (const [p, y] of [[r.e0, deck], [r.e1, deck], [r.f0, rail], [r.f1, rail]] as [Pt, number][]) {
+      let hit = false;
+      for (let k = 0; k < e.length; k += 3) { const q = toLocal([e[k], e[k + 2]]); if (Math.hypot(q[0] - p[0], q[1] - p[1]) < 1e-3 && Math.abs(e[k + 1] - y) < .05) hit = true; }
+      assert.ok(hit, `ramp ${r.ref}: a band across it at ${p}`);
+    }
   }
 });

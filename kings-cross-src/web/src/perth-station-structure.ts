@@ -1582,8 +1582,18 @@ export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | '
  *  coper (with its nosing) carried down the slope (round 7 carried the warning strip too; round 8 drops it, unsourced), at the platform's own offsets (WAVERLEY_EDGE_BANDS) in from the
  *  ramp's side; where the side was drawn in from the platform's corner, the coper turns along the end to meet it. Track frame. */
 export const RAMP_EDGING = .3;
+/** Round 10 (S3, the round-9 score: make the slope unmistakable, the break of slope showing as a kink): the side edging carried
+ *  `back` m back along the deck before it turns down the ramp, so the strip bends at the head; and a contrasting `band` m band across
+ *  the ramp at its head and at its foot, the usual marking of a ramp's change of gradient. ASSUMED (no photograph shows the ramps). */
+export const RAMP_KINK = {back: 1.5, band: .15} as const;
 export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructureBatches, 'edges' | 'tactile' | 'lip'>): void {
   const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, lift = WAVERLEY_STRUCTURE.stripLift, [coper] = WAVERLEY_EDGE_BANDS, cc = P('coper');
+  for (const r of ramps) {
+    // The bands across the ramp, head and foot, on its surface.
+    const len = Math.hypot(r.f0[0] - r.e0[0], r.f0[1] - r.e0[1]), tb = RAMP_KINK.band / len;
+    const on = (t: number, side: 0 | 1): V3 => { const e = side ? r.e1 : r.e0, f = side ? r.f1 : r.f0; return [e[0] + (f[0] - e[0]) * t, deck + (rail - deck) * t + lift, e[1] + (f[1] - e[1]) * t]; };
+    for (const t0 of [0, 1 - tb]) s.edges.poly([on(t0, 0), on(t0, 1), on(t0 + tb, 1), on(t0 + tb, 0)], undefined, {facing: [0, 1, 0], color: cc});
+  }
   for (const r of ramps) for (const i of [0, 1] as const) {
     const e = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, o = i ? r.e0 : r.e1, ol = Math.hypot(o[0] - e[0], o[1] - e[1]), n: Pt = [(o[0] - e[0]) / ol, (o[1] - e[1]) / ol];
     const len = Math.hypot(f[0] - e[0], f[1] - e[1]);
@@ -1591,7 +1601,13 @@ export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructure
     const at = (t: number, u: number, dy: number = lift): V3 => [e[0] + (f[0] - e[0]) * t + n[0] * u, deck + (rail - deck) * t + dy, e[1] + (f[1] - e[1]) * t + n[1] * u];
     // Round 9 (S3, the round-8 score: an edge on the side facing the eye): the side away from the tracks edged too, a buff coper strip
     // `RAMP_EDGING` m wide down the fall, so the slope's line reads beside the grooved concrete. ASSUMED (no photograph shows it).
-    if (!r.track[i]) { s.edges.poly([at(0, 0), at(1, 0), at(1, RAMP_EDGING), at(0, RAMP_EDGING)], undefined, {facing: [0, 1, 0], color: cc}); continue; }
+    if (!r.track[i]) {
+      s.edges.poly([at(0, 0), at(1, 0), at(1, RAMP_EDGING), at(0, RAMP_EDGING)], undefined, {facing: [0, 1, 0], color: cc});
+      // Round 10: and back along the deck, level, from the head (RAMP_KINK.back): the kink at the break of slope.
+      const bk = (u: number): V3 => { const p = at(0, u); return [p[0] - (f[0] - e[0]) / len * RAMP_KINK.back, p[1], p[2] - (f[1] - e[1]) / len * RAMP_KINK.back]; };
+      s.edges.poly([bk(0), at(0, 0), at(0, RAMP_EDGING), bk(RAMP_EDGING)], undefined, {facing: [0, 1, 0], color: cc});
+      continue;
+    }
     s.edges.poly([at(0, coper.from), at(1, coper.from), at(1, coper.to), at(0, coper.to)], undefined, {facing: [0, 1, 0], color: cc});
     // (Round 8: no warning strip down the ramp. Neither Rosser1954 nor geograph 591926 shows one past the gate, and a gated staff ramp
     // is not a public platform edge; round 7 drew it unsourced.)
