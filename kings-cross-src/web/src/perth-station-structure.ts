@@ -822,9 +822,10 @@ export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; 
 /** An arched rib (R-pt1-a's curved braces, R-pt1-c's arched ribs and spandrels) from a to c, springing at y0 at both ends and rising as a
  *  half ellipse to `apex`, with a vertical bar every `strut` m from the rib up to top(s) (s: metres from a) wherever that gap is 0.1 m or
  *  more. Only the pieces `keep` accepts are drawn. */
-/** The column girders' spandrels (archedIronwork): pierced lattice in half-metre cells, R-pt1-c. */
-export const PERTH_SPANDREL = {strut: .5, size: .08, lattice: true, bar: .08, boss: .22} as const;
-export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; lattice?: boolean; bar?: number; boss?: number} = {}): void {
+/** The column girders' spandrels (archedIronwork, R-pt1-c). Round 5: plates (archRib's `plate`) carrying a pierced pattern (perth-station.ts
+ *  PERTH_PIERCED, alpha-tested), which reads from pt-roof-underside where round 4's lattice bars and bosses did not, in fewer triangles. */
+export const PERTH_SPANDREL = {strut: .5, size: .08} as const;
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
@@ -837,17 +838,15 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
     const p0 = at(s0), p1 = at(s1);
     beam(b, [p0[0], y(s0), p0[1]], [p1[0], y(s1), p1[1]], size, size, color);
   }
-  if (opts.lattice) {
-    // Pierced infill (R-pt1-c's spandrels): bars crossing each `strut` cell corner to corner, rib to member over it, so the cells read
-    // as diamonds, with a boss where each pair crosses. Only cells 0.25 m deep or more.
-    for (let s = 0; s + strut <= L + 1e-9; s += strut) {
-      const s1 = s + strut, p0 = at(s), p1 = at(s1), pm = at((s + s1) / 2);
-      if (Math.min(top(s) - y(s), top(s1) - y(s1)) < .25 || !keep(pm, y((s + s1) / 2))) continue;
-      // Round 4: bars and bosses heavy enough to read from the frozen views (round 3's 4 cm bars and 12 cm bosses did not).
-      const bar = opts.bar ?? .04, boss = opts.boss ?? .12;
-      beam(b, [p0[0], y(s), p0[1]], [p1[0], top(s1), p1[1]], bar, bar, color);
-      beam(b, [p0[0], top(s), p0[1]], [p1[0], y(s1), p1[1]], bar, bar, color);
-      b.box([pm[0], (y(s) + top(s1) + top(s) + y(s1)) / 4, pm[1]], [boss, boss, boss], {color});
+  if (opts.plate) {
+    // Round 5: the spandrel as a plate from the rib up to the member over it, piece by piece with the rib, its UVs in metres along the span
+    // and up (the pierced pattern is cut by alpha); none where the rib meets the member at the crown.
+    const dir: Pt = [(c[0] - a[0]) / L, (c[1] - a[1]) / L], facing: V3 = [-dir[1], 0, dir[0]];
+    for (let k = 0; k < n; k++) {
+      const s0 = sAt(k), s1 = sAt(k + 1), m = at((s0 + s1) / 2); if (!keep(m, y((s0 + s1) / 2))) continue;
+      if (Math.max(top(s0) - y(s0), top(s1) - y(s1)) < .05) continue;
+      const p0 = at(s0), p1 = at(s1);
+      opts.plate.poly([[p0[0], y(s0), p0[1]], [p1[0], y(s1), p1[1]], [p1[0], top(s1), p1[1]], [p0[0], top(s0), p0[1]]], [[s0, y(s0)], [s1, y(s1)], [s1, top(s1)], [s0, top(s0)]], {facing});
     }
     return;
   }
@@ -859,7 +858,7 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
 /** The ironwork that makes the main roof Perth's rather than Waverley's (R-pt1-a, R-pt1-d): a pitched truss on every second rafter pair,
  *  its principals the rafters and an arched brace under them from gutter girder to gutter girder, and an arched spandrel under every
  *  column-to-column girder. ASSUMED proportions: springing at the girders' undersides, the crown 1.1 m under the ridge. */
-function archedIronwork(b: Batch, plan: PerthStationPlan): void {
+function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
   const W = WAVERLEY_STRUCTURE, iron = P('iron'), under = W.gutterGirderTop - W.gutterGirderDepth, ridge = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_PROFILE.rise;
   for (const [x0, x1, z] of plan.structure.purlins) {
     if (Math.round(z / W.purlinSpacing) % 2) continue;
@@ -867,7 +866,7 @@ function archedIronwork(b: Batch, plan: PerthStationPlan): void {
     archRib(b, a, c, under, ridge - 1.1, s => roofHeight(a[0] + s) - .4, iron, {strut: 1});
   }
   const girder = W.platformGirderTop - W.platformGirderDepth;
-  for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, PERTH_SPANDREL);
+  for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});
 }
 /** The bay roof (PERTH_BAY_ROOF): its glazing, laid out in a frame turned a quarter so Waverley's ridge-and-furrow builder runs its ridges
  *  along the tracks; rafters, arched ribs, the arched glazed screen at its south end, and the screens closing it to the north, the west and
@@ -1033,6 +1032,8 @@ function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
 export interface PerthStationBatches {
   /** Roof part (track frame turned to the scene's): the glazing (into the scene's shared roof glass), the solid strips, the ironwork. */
   glass: Batch; strips: Batch; ironwork: Batch;
+  /** Round 5: the column girders' pierced spandrel plates (UVs in metres), in the roof part, drawn alpha-tested. */
+  spandrels: Batch;
   /** The main and bay roofs' glazing again, 4 cm over it, facing up only, with straight-up normals: drawn opaque grey and culled from
    *  below, it is the weathered outer face of old station glazing that makes the roof read dark grey from above (R-pt1-b) while the panes still read milky white from below. */
   weather: Batch;
@@ -1060,7 +1061,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   const weather = new Batch();
   if (shaped) { glass.append(shaped.glass); strips.append(shaped.solid); weather.append(shaped.glass); }
   const structure = waverleyStructureBatches(plan.structure);
-  archedIronwork(structure.ironwork, plan);
+  const spandrels = new Batch();
+  archedIronwork(structure.ironwork, plan, spandrels);
   // Round 5: the main roof's ends gabled (R-pt1-b), replacing Waverley's flat fascia screen along them (its colour, on those edges).
   { const wf = rgb(WAVERLEY_PAINT.fascia), ends = mainRoofEnds(plan.structure.outline), ir = structure.ironwork;
     const onEnd = (v: number): boolean => ends.some(([a, c]) => segDist([ir.positions[3 * v], ir.positions[3 * v + 2]], a, c) < .05);
@@ -1141,8 +1143,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   // Round 3: the bridges' and kiosk's glass panels out into their own batch, drawn see-through (perth-station.ts), so platform 4's
   // elevation reads past the lift bridge's stairs instead of behind pale opaque sheets.
   const panes = takeColor(fittings, P('glassPanel'));
-  for (const b of [glass, weather, strips, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
-  return {glass, weather, strips, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
+  for (const b of [glass, weather, strips, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
+  return {glass, weather, strips, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
 }
 /** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
 function takeColor(b: Batch, color: Rgb): Batch {

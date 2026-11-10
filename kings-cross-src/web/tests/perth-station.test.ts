@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
+import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
 import { archRib, boardedSide, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
@@ -125,23 +125,28 @@ test('round 3: the roof\'s solid bands have undersides hung under the glazing, s
   assert.ok(up > 100 && down === up, `${down} band vertices under the gutter line for ${up} over it`);
 });
 
-test('round 3: the column girders\' spandrels are pierced lattice (R-pt1-c): crossing bars and bosses in the deep cells by the springings, none at the crown', () => {
-  const one = new Batch(); one.box([0, 0, 0], [1, 1, 1]); const V = one.positions.length;
-  const b = new Batch(), y0 = 5.25, top = 6.55, L = 9;
-  archRib(b, [0, 0], [L, 0], y0, top - .02, () => top, [0, 0, 0], PERTH_SPANDREL);
-  const bosses: number[] = [], p = b.positions;
-  for (let i = 0; i < p.length; i += V) {
-    const xs: number[] = [], ys: number[] = [], zs: number[] = [];
-    for (let k = i; k < i + V; k += 3) { xs.push(p[k]); ys.push(p[k + 1]); zs.push(p[k + 2]); }
-    const ext = [xs, ys, zs].map(a => Math.max(...a) - Math.min(...a));
-    if (ext.every(e => Math.abs(e - PERTH_SPANDREL.boss) < 1e-6)) bosses.push((Math.max(...xs) + Math.min(...xs)) / 2);
-  }
-  for (let k = 1; k < p.length; k += 3) assert.ok(p[k] >= y0 - .15 && p[k] <= top + .05, `a spandrel member at y ${p[k]} outside the rib-to-girder band`);
-  assert.ok(bosses.filter(x => x < L / 3).length >= 2 && bosses.filter(x => x > 2 * L / 3).length >= 2, `bosses by both springings (${bosses.map(x => x.toFixed(2))})`);
-  assert.equal(bosses.filter(x => x > L / 3 && x < 2 * L / 3).length, 0, 'no lattice where the rib meets the girder at the crown');
-  // archedIronwork draws every column span with PERTH_SPANDREL, so this is the real spandrels' pattern.
-  const plain = new Batch(); archRib(plain, [0, 0], [L, 0], y0, top - .02, () => top, [0, 0, 0], {...PERTH_SPANDREL, lattice: false});
-  assert.ok(p.length > plain.positions.length, 'the lattice adds members over the plain rib');
+test('round 3 (round 5: as plates): the column girders\' spandrels are pierced (R-pt1-c): deep plates by the springings, none at the crown', () => {
+  // Round 5: round 4's bars and bosses did not read from pt-roof-underside; the spandrel is now a plate cut by a pierced pattern.
+  const b = new Batch(), plate = new Batch(), y0 = 5.25, top = 6.55, L = 9;
+  archRib(b, [0, 0], [L, 0], y0, top - .02, () => top, [0, 0, 0], {...PERTH_SPANDREL, plate});
+  const p = plate.positions;
+  assert.ok(p.length > 0, 'spandrel plates');
+  for (let k = 1; k < p.length; k += 3) assert.ok(p[k] >= y0 - .15 && p[k] <= top + .05, `a spandrel plate at y ${p[k]} outside the rib-to-girder band`);
+  // Depth of plate at each x: the span of its vertices' heights there.
+  const depthAt = (lo: number, hi: number): number => { let d = 0; for (let k = 0; k < p.length; k += 3) if (p[k] >= lo && p[k] <= hi) { const ys = []; for (let j = 0; j < p.length; j += 3) if (Math.abs(p[j] - p[k]) < 1e-9) ys.push(p[j + 1]); d = Math.max(d, Math.max(...ys) - Math.min(...ys)); } return d; };
+  assert.ok(depthAt(0, L / 3) > .5 && depthAt(2 * L / 3, L) > .5, 'deep plates by both springings');
+  assert.ok(depthAt(L / 3, 2 * L / 3) < .15, 'none to speak of where the rib meets the girder at the crown');
+  // The pattern: a real share of holes, cut by alpha.
+  const t = perthPiercedTexture(), d = t.image.data as Uint8Array; let holes = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i] === 0) holes++;
+  const share = holes / (d.length / 4);
+  assert.ok(share > .2 && share < .6, `pierced (${(share * 100).toFixed(0)} % open)`);
+  // And the scene draws the real spandrels with it, alpha-tested, in the roof part.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const mesh = scene.group.getObjectByName('perth-roof-spandrels') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
+    assert.ok(m.map === t && m.alphaTest > 0 && (mesh.geometry.getAttribute('position').count > 0), 'the spandrel plates drawn pierced');
+  } finally { scene.dispose(); }
 });
 
 test('round 3: no roof ironwork stands outside the roof (pt-platform-4-north saw a girder and rafters past its north end)', () => {

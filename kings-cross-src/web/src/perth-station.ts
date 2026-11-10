@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
+import {islandBuildingBatches, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -63,6 +63,24 @@ export function perthSurfaceTexture(kind: 'asphalt' | 'concrete' | 'ashlar'): TH
   t.generateMipmaps = true; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.needsUpdate = true; t.name = `perth-${kind}`;
   surfaceCache.set(kind, t);
   return t;
+}
+/** Round 5: the spandrels' pierced pattern (R-pt1-a, R-pt1-c: circles in the plate between scrolled ribs): a `cell` m square repeat, a
+ *  round hole of radius `hole` m at each cell's centre and quarter holes of `corner` m at its corners, so the holes read as rings
+ *  between diamonds. Alpha 0 in the holes. ASSUMED sizes. Cached, as perthSurfaceTexture's are. */
+export const PERTH_PIERCED = {cell: .3, hole: .1, corner: .05, px: 64} as const;
+let pierced: THREE.DataTexture | undefined;
+export function perthPiercedTexture(): THREE.DataTexture {
+  if (pierced) return pierced;
+  const P = PERTH_PIERCED, n = P.px, data = new Uint8Array(n * n * 4), m = n / P.cell;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const cx = (x + .5) / m - P.cell / 2, cy = (y + .5) / m - P.cell / 2, ex = Math.min((x + .5) / m, P.cell - (x + .5) / m), ey = Math.min((y + .5) / m, P.cell - (y + .5) / m);
+    const hole = Math.hypot(cx, cy) < P.hole || Math.hypot(ex, ey) < P.corner, k = 4 * (y * n + x);
+    data[k] = data[k + 1] = data[k + 2] = 255; data[k + 3] = hole ? 0 : 255;
+  }
+  const t = new THREE.DataTexture(data, n, n, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / P.cell, 1 / P.cell); t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true; t.name = 'perth-pierced';
+  return pierced = t;
 }
 /** The roof's solid bands: R-pt1-a's brown-grey sheeting (round 4: round 3's near-black read as voids from below; round 5: lighter again,
  *  as round 4's 0x5e544b still read near-black from pt-platform-4-north and pt-roof-underside). ASSUMED shade. */
@@ -191,6 +209,8 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(PERTH_BAND_BROWN); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
+  // Round 5: the spandrels' pierced plates (R-pt1-a, R-pt1-c), in the ironwork's paint, cut by the pattern's alpha.
+  build.add(group, s.spandrels, build.own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.iron, map: perthPiercedTexture(), alphaTest: .5, side: THREE.DoubleSide})), 'perth-roof-spandrels');
   // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.
   // Round 3: opaque, so the transparent sort can no longer put the milky panes over it (round 2's overview read white and streaky); its
   // faces look up, so from under the roof it is culled and the panes show. A weathered grey, ASSUMED shade.
