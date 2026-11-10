@@ -310,8 +310,20 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     // the ledge on top runs back into the slope (uphill; counted below: the terrain's own bumps turn a few)
     const back: [number, number] = [mid[0] + k.up[0] * k.ledge, mid[1] + k.up[1] * k.ledge];
     if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;
-    assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
+    if (!k.joint) assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
   }
+  // round 6 (restoring round 4's checks, which the round-5 rewrite dropped): dark joints, and mixed sizes
+  const rock = steps.filter(k => !k.joint).map(k => lum(k.rgb)).sort((a, b) => a - b), median = rock[Math.floor(rock.length / 2)]!;
+  const joints = steps.filter(k => k.joint);
+  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.rgb) < median * .5), `dark joints: ${joints.length} of ${steps.length}`);
+  const rises = steps.map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), lens = steps.map(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1])).sort((a, b) => a - b);
+  assert.ok(rises.at(-1)! - rises[0]! > 2.5 && lens[Math.floor(lens.length * .9)]! - lens[Math.floor(lens.length * .1)]! > 1.5, 'mixed sizes');
+  // vertical, not coursed: the joints line up course over course (a joint piece has another joint within its cell a course above or below)
+  const stacked = joints.filter(k => joints.some(o => o !== k && Math.floor((o.a[0] + o.b[0]) / 2 / CRAG.jointCell) === Math.floor((k.a[0] + k.b[0]) / 2 / CRAG.jointCell) && Math.floor((o.a[1] + o.b[1]) / 2 / CRAG.jointCell) === Math.floor((k.a[1] + k.b[1]) / 2 / CRAG.jointCell) && Math.abs(o.top - k.top) > CRAG.band / 2));
+  assert.ok(stacked.length > joints.length * .3, `joints running up the face: ${stacked.length} of ${joints.length}`);
+  // the ledges cover the drape between courses: each runs back until it meets the drawn slope (it ends in the ground, not short of it)
+  const meets = steps.filter(k => { const m: [number, number] = [(k.a[0] + k.b[0]) / 2 + k.up[0] * k.ledge, (k.a[1] + k.b[1]) / 2 + k.up[1] * k.ledge]; return drawn(m) >= k.top - .3; });
+  assert.ok(meets.length > steps.length * .85, `ledges running back into the slope: ${meets.length} of ${steps.length}`);
   assert.ok(uphill > steps.length * .95, `ledges running back uphill: ${uphill} of ${steps.length}`);
   // a face: risers stack up the cliff at many levels, not scattered plates
   const levels = new Set(steps.map(k => Math.round(k.top / CRAG.band))); assert.ok(levels.size >= 8, `step levels: ${levels.size}`);
