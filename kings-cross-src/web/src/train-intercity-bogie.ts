@@ -4,9 +4,11 @@
 //
 //   - the Class 221's (VOYAGER221_TRACE): voyager-bogie-01, "CrossCountry 60389 front bogie (221134).JPG" by Geof Sheppard, CC BY-SA 4.0 (Wikimedia Commons);
 //     the plate in it reads 221 139. 1280 x 768 as reviewed. Side on and close.
-//   - the Class 43's BP10 (BP10_TRACE): hst-bogie-02, "43039 rear bogie.jpg" by Oxyman, CC BY 2.5 (Wikimedia Commons), 1280 x 960 as reviewed. Taken at an angle:
-//     the near (left) end stands larger and lower than the far end, so the far end is traced and mirrored, and the scale runs along the picture (see `tracer`).
-//     hst-bogie-01 ("GWR 43027 leading bogie.JPG", Geof Sheppard, CC BY-SA 4.0) shows the same frame at a sharper angle and was used to check, not to take numbers.
+//   - the Class 43's BP10 (BP10_TRACE): hst-bogie-02, "43039 rear bogie.jpg" by Oxyman, CC BY 2.5 (Wikimedia Commons), 1280 x 960 as reviewed. Taken from above
+//     the rail and tilted (the axle line falls 58 px to the left over 675 px): calibrated against the wheels at both ends (see `BP10_TRACE.rail`), the bogie stands at
+//     one depth, so the tracer takes out the tilt and the camera's elevation, not a perspective along the bogie. The near end is mostly hidden behind its step, so the
+//     far end is traced and mirrored for it. hst-bogie-01 ("GWR 43027 leading bogie.JPG", Geof Sheppard, CC BY-SA 4.0) shows the same frame at a sharper angle and was
+//     used to check, not to take numbers.
 //   - the Mk3's BT10 (BT10_TRACE): mk3-bogie-01, "BT10 bogie (Mark 3 TSO 12142, left side).JPG" by Geof Sheppard, CC BY-SA 4.0 (Wikimedia Commons), 1280 x 384
 //     as reviewed. Side on.
 //
@@ -50,12 +52,21 @@ export const VOYAGER221_TRACE = {
 
 /**
  * The BP10 (Class 43 power car). Its far (right) end is traced in the photograph's pixels and mirrored for the near end; the step stands at the near end only and
- * is traced there. `farScale` is how big the far end stands against the near: 0.71, between the covers' radii (27/37 = 0.73) and the end blocks' depths (48/70 = 0.69).
+ * is traced there.
+ *
+ * Calibration (round 6, after the round-5 score asked for one against a known vertical at both ends): the rail head under each wheel (`rail`) stands 82 px under
+ * the near axle and 83 px under the far one (read at 4x where each wheel meets it). The gap between two parallel lines shrinks with distance, so the two ends stand at one depth within the reading
+ * (round 5's 0.71 far-to-near scale, read off the covers, was wrong: the near box's cover is simply the bigger casting). The axle line's fall is the camera's tilt,
+ * and the gap being smaller than a wheel's radius at the covers' scale (0.508 m is 132 px) is the camera looking down: 82-83 px over the 0.35 m between the
+ * covers' plane and the rail head's is an elevation of 25 degrees (ASSUMED: it rests on the depths of the cover and the rail contact, both ASSUMED).
  */
 export const BP10_TRACE = {
   caps: [[345, 530], [1020, 472]] as readonly [Px, Px],
   capRadius: 27,
-  farScale: 0.71,
+  /** The rail head's row under each axle, read where the wheel meets it. */
+  rail: [[345, 612], [1020, 555]] as readonly [Px, Px],
+  /** The camera's elevation over the bogie, degrees, and the depth of the covers' plane, metres (see above). */
+  view: { elevation: 25, ref: 1.1 },
   /** The side beam's far half, from the middle out over the end and back underneath: the end block's rounded end, the pocket over the spring. */
   beamTop: [[760, 352], [900, 347], [990, 352], [1090, 357], [1145, 360], [1162, 370], [1166, 390], [1155, 402]] as readonly Px[],
   beamBottom: [[1090, 402], [990, 402], [975, 418], [905, 418], [880, 402], [760, 402]] as readonly Px[],
@@ -63,13 +74,19 @@ export const BP10_TRACE = {
   box: [985, 440, 1060, 525] as PxRect,
   spring: [920, 420, 970, 465] as PxRect,
   damper: [1065, 407, 1095, 505] as PxRect,
-  /** The step at the near end (the photograph's left): its outline, and the rows of its three treads. */
-  step: { rect: [300, 380, 505, 590] as PxRect, treads: [385, 470, 575] as readonly number[] },
-  /** The air cylinder and the brake cylinder along the middle (their ends and radii), below the beam. */
-  cylinders: [{ from: [580, 407] as Px, to: [750, 407] as Px, radius: 12 }, { from: [600, 500] as Px, to: [820, 500] as Px, radius: 20 }] as const,
+  /**
+   * The step at the near end (the photograph's left): the chequered top plate, which alone overhangs the axle box (px 293-507), and under it the ladder, hanging wholly
+   * inboard of the box: its two stiles (px 393 and 505, down to row 590), its two treads' rows and the mesh panel between them.
+   */
+  step: { plate: [293, 385, 507, 405] as PxRect, stiles: [393, 505] as readonly number[], foot: 590, treads: [478, 578] as readonly number[], mesh: [398, 495, 500, 565] as PxRect },
+  /** The air cylinder and the brake cylinder along the middle (their ends and radii, both following the axle line's fall), below the beam. */
+  cylinders: [{ from: [605, 425] as Px, to: [740, 412] as Px, radius: 16 }, { from: [608, 505] as Px, to: [790, 495] as Px, radius: 19 }] as const,
 } as const;
 
-/** The BT10 (Mk3 coach): a straight box beam end to end, a yellow coil spring outboard of each axle box, and the bolster with its air tank in the middle. */
+/**
+ * The BT10 (Mk3 coach): a straight box beam end to end, a yellow coil spring outboard of each axle box, and in the middle a rounded tank hung under the beam over a
+ * separate lower beam, open between them (round 6: round 5 drew the middle as one slab that swallowed the tank).
+ */
 export const BT10_TRACE = {
   caps: [[340, 212], [1032, 212]] as readonly [Px, Px],
   capRadius: 38,
@@ -77,8 +94,12 @@ export const BT10_TRACE = {
   springs: [[235, 160, 300, 248], [1065, 165, 1130, 245]] as readonly PxRect[],
   seats: [[228, 240, 305, 256], [1058, 240, 1137, 256]] as readonly PxRect[],
   boxes: [[290, 170, 400, 275], [980, 170, 1090, 275]] as readonly PxRect[],
-  bolster: [545, 160, 830, 262] as PxRect,
-  tank: { from: [600, 205] as Px, to: [740, 205] as Px, radius: 30 },
+  /** The tank under the beam: its outline (rows 168-236, px 605-800) and the radius of its rounded corners, in pixels. */
+  tank: { rect: [605, 168, 800, 236] as PxRect, corner: 16 },
+  /** The lower beam under the tank, a shallow U: its two raised ends and the low middle between them. */
+  lowerBeam: [[545, 232], [575, 232], [582, 243], [793, 243], [800, 232], [830, 232], [830, 262], [545, 262]] as readonly Px[],
+  /** The hangers down from the beam to the lower beam's ends: their columns, and their rows top and foot. */
+  hangers: { cols: [592, 812] as readonly number[], rows: [160, 240] as readonly [number, number] },
   rod: { from: [760, 213] as Px, to: [940, 213] as Px, radius: 8 },
   brake: [900, 190, 980, 235] as PxRect,
 } as const;
@@ -86,39 +107,46 @@ export const BT10_TRACE = {
 /** The frames' colours. The 221's dusty brown-grey and the BT10's black and yellow are read off their photographs; the BP10's charcoal off ScotRail's power cars (scotrail-hst-03), not the grey of 43039. */
 export const BOGIE_COLOURS = {
   v221: { frame: 0x5e544a, box: 0x4c443c, cover: 0x6c6258, coil: 0x3a332d, spring: 0x544a41, tube: 0x6e6152, grille: 0x26221f },
-  bp10: { frame: 0x34373c, box: 0x2b2d31, cover: 0x474a50, spring: 0x3d4045, coil: 0x222427, damper: 0x1d1f22, step: 0x585c62, cylinder: 0x2f3236 },
-  bt10: { frame: 0x1d1e20, box: 0x2a2b2e, cover: 0x3c3d40, spring: 0xe0b020, coil: 0xb58a12, bolster: 0x232426, tank: 0x2c2d30, rod: 0x4a4c50 },
+  bp10: { frame: 0x34373c, box: 0x2b2d31, cover: 0x474a50, spring: 0x3d4045, coil: 0x222427, damper: 0x1d1f22, step: 0x585c62, mesh: 0x2a2c30, cylinder: 0x2f3236 },
+  bt10: { frame: 0x1d1e20, box: 0x2a2b2e, cover: 0x3c3d40, spring: 0xe0b020, coil: 0xb58a12, bolster: 0x232426, tank: 0x2c2d30, rod: 0x4a4c50, hanger: 0x3a3b3e },
 } as const;
 
 /** A photograph's pixel as the bogie's (z, y) in metres. */
 export interface Tracer {
-  z(px: number): number;
-  y(py: number, px: number): number;
-  /** a length in pixels at column `px`, in metres */
-  len(p: number, px: number): number;
+  /** along the bogie, of the pixel (px, py) (py absent: on the axle line) */
+  z(px: number, py?: number): number;
+  /** the height over the rail head of the pixel (px, py), for a part standing `x` out from the centre line (absent: in the covers' plane) */
+  y(py: number, px: number, x?: number): number;
+  /** a length in pixels, in metres */
+  len(p: number): number;
+}
+/** A photograph taken looking down on the bogie: the camera's elevation in degrees, and how far out from the centre line the covers' plane stands. */
+export interface TracerView {
+  elevation: number;
+  ref: number;
 }
 
 /**
- * The tracer of a photograph. Its scale (pixels a metre) runs linearly along the picture from the left cover's to the right cover's, the right's `farScale` times the
- * left's, fixed so that the covers stand a wheelbase apart; the axle line runs straight from cover to cover. A side-on photograph has `farScale` 1, and the tracer is
- * the London one (train-parts.ts `tracer`). An ASSUMED model of perspective: it keeps sizes right along the bogie but not the near end's lowering.
+ * The tracer of a photograph: the London one (train-parts.ts `tracer`, with its `view` for a camera looking down), and a tilt: the axle line runs straight from cover
+ * to cover however the picture is turned, and pixels are read square to it. The covers stand a wheelbase apart.
  */
-export function tracer(caps: readonly [Px, Px], radius: number, wheelbase: number, farScale = 1): Tracer {
+export function tracer(caps: readonly [Px, Px], radius: number, wheelbase: number, view?: TracerView): Tracer {
   const [[xL, yL], [xR, yR]] = caps;
-  const D = xR - xL;
-  // with s(px) = sL * (1 + k t), t = (px - xL) / D, the length from the left cover is (D / (sL k)) ln(1 + k t); the covers a wheelbase apart fixes sL
-  const k = farScale - 1;
-  const sL = Math.abs(k) < 1e-9 ? D / wheelbase : (D * Math.log(farScale)) / (k * wheelbase);
-  const along = (px: number): number => {
-    const t = (px - xL) / D;
-    return Math.abs(k) < 1e-9 ? (px - xL) / sL : (D / (sL * k)) * Math.log(1 + k * t);
-  };
-  const s = (px: number): number => sL * (1 + (k * (px - xL)) / D);
-  const row = (px: number): number => yL + ((yR - yL) * (px - xL)) / D;
+  const D = Math.hypot(xR - xL, yR - yL);
+  const c = (xR - xL) / D;
+  const s = (yR - yL) / D;
+  const scale = D / wheelbase;
+  const sin = view ? Math.sin((view.elevation * Math.PI) / 180) : 0;
+  const cos = view ? Math.cos((view.elevation * Math.PI) / 180) : 1;
+  const ref = view ? view.ref : 0;
+  // along the axle line from the left cover, and down from it, in pixels
+  const u = (px: number, py: number): number => (px - xL) * c + (py - yL) * s;
+  const v = (px: number, py: number): number => -(px - xL) * s + (py - yL) * c;
+  const row = (px: number): number => yL + ((yR - yL) * (px - xL)) / (xR - xL);
   return {
-    z: (px) => wheelbase / 2 - along(px),
-    y: (py, px) => radius + (row(px) - py) / s(px),
-    len: (p, px) => p / s(px),
+    z: (px, py = row(px)) => wheelbase / 2 - u(px, py) / scale,
+    y: (py, px, x = ref) => radius + (-v(px, py) / scale - (ref - x) * sin) / cos,
+    len: (p) => p / scale,
   };
 }
 
@@ -229,28 +257,92 @@ function drawParts(soup: Soup, parts: readonly Part[]): void {
 /** A pixel rectangle as a box at depth x, through the tracer (z from its columns, y from its rows at its middle column). */
 function rectBox(T: Tracer, r: PxRect, x: [number, number], colour: number): Part {
   const mid = (r[0] + r[2]) / 2;
-  const za = T.z(r[0]);
-  const zb = T.z(r[2]);
-  return { kind: 'box', z: [Math.min(za, zb), Math.max(za, zb)], y: [T.y(r[3], mid), T.y(r[1], mid)], x, colour };
+  const midY = (r[1] + r[3]) / 2;
+  const za = T.z(r[0], midY);
+  const zb = T.z(r[2], midY);
+  return { kind: 'box', z: [Math.min(za, zb), Math.max(za, zb)], y: [T.y(r[3], mid, x[1]), T.y(r[1], mid, x[1])], x, colour };
 }
 /** A coil spring standing in a pixel rectangle at depth x: five rings, alternately the spring's colour and the darker coil's, narrower. */
 function springParts(T: Tracer, r: PxRect, x: number, spring: number, coil: number): Part[] {
   const mid = (r[0] + r[2]) / 2;
-  const z = T.z(mid);
-  const rho = T.len((r[2] - r[0]) / 2, mid);
-  const y0 = T.y(r[3], mid);
-  const y1 = T.y(r[1], mid);
+  const z = T.z(mid, (r[1] + r[3]) / 2);
+  const rho = T.len((r[2] - r[0]) / 2);
+  const y0 = T.y(r[3], mid, x);
+  const y1 = T.y(r[1], mid, x);
   const n = 5;
   return Array.from({ length: n }, (_, k): Part => ({
     kind: 'cyl', a: [x, y0 + ((y1 - y0) * k) / n, z], b: [x, y0 + ((y1 - y0) * (k + 1)) / n, z], rho: k % 2 ? 0.86 * rho : rho, sides: 12, colour: k % 2 ? coil : spring,
   }));
 }
 
+/**
+ * A closed annular sector standing on a wheel's outer face: radii rho0..rho1 about the axle at (y, z), angles a0..a1 in the (z, y) plane (0 toward +z, pi/2 up),
+ * from u0 to u1 out from the wheel's centre plane at x = sx * half.
+ */
+function annulusSector(soup: Soup, sx: 1 | -1, half: number, y: number, z: number, u: [number, number], rho: [number, number], a: [number, number], segs: number, colour: number): void {
+  const c = col(colour);
+  const P = (uu: number, rr: number, aa: number): V3 => [sx * (half + uu), y + rr * Math.sin(aa), z + rr * Math.cos(aa)];
+  const R = (aa: number): V3 => [0, Math.sin(aa), Math.cos(aa)];
+  const full = Math.abs(a[1] - a[0]) >= 2 * Math.PI - 1e-9;
+  for (let k = 0; k < segs; k++) {
+    const t0 = a[0] + ((a[1] - a[0]) * k) / segs;
+    const t1 = a[0] + ((a[1] - a[0]) * (k + 1)) / segs;
+    for (const [uu, s] of [[u[1], 1], [u[0], -1]] as const) {
+      const n: V3 = [sx * s, 0, 0];
+      soup.quad([P(uu, rho[0], t0), P(uu, rho[1], t0), P(uu, rho[1], t1), P(uu, rho[0], t1)], [n, n, n, n], c);
+    }
+    const o0 = R(t0);
+    const o1 = R(t1);
+    const i0: V3 = [0, -o0[1], -o0[2]];
+    const i1: V3 = [0, -o1[1], -o1[2]];
+    soup.quad([P(u[0], rho[1], t0), P(u[1], rho[1], t0), P(u[1], rho[1], t1), P(u[0], rho[1], t1)], [o0, o0, o1, o1], c);
+    soup.quad([P(u[0], rho[0], t0), P(u[1], rho[0], t0), P(u[1], rho[0], t1), P(u[0], rho[0], t1)], [i0, i0, i1, i1], c);
+  }
+  if (full) return;
+  for (const [aa, s] of [[a[0], -1], [a[1], 1]] as const) {
+    const n: V3 = [0, s * Math.cos(aa), -s * Math.sin(aa)];
+    soup.quad([P(u[0], rho[0], aa), P(u[1], rho[0], aa), P(u[1], rho[1], aa), P(u[0], rho[1], aa)], [n, n, n, n], c);
+  }
+}
+
+/**
+ * The 220's wheel-mounted brake discs, after xc220-05 (enlarged): a bright perforated ring on each wheel's outer face, broken on the side toward the bogie's middle
+ * where a calliper grips it. The photograph is too distant to measure: the ring's radii, its holes and the calliper's size are ASSUMED (a wheel-mounted disc of
+ * this kind spans about the outer third of the web). In place of the kit's axle-mounted discs, which the 220 then does not need.
+ */
+export const V220_DISC = { u: [0.058, 0.066], rho: [0.6, 0.9], holes: 20, hole: 0.03, caliper: { span: 0.75, u: [0.05, 0.13], rho: [0.5, 0.97] } } as const;
+export const V220_DISC_COLOURS = { ring: 0xaeb3b9, hole: 0x1b1c1e, caliper: 0x26282b } as const;
+
+export function voyager220Discs(soup: Soup, radius: number, wheelbase: number, track: number): void {
+  const d = V220_DISC;
+  const C = V220_DISC_COLOURS;
+  const half = track / 2;
+  for (const az of [-wheelbase / 2, wheelbase / 2]) {
+    // the calliper's middle faces the bogie's middle: -z from the +z axle (angle pi), +z from the -z axle (angle 0)
+    const mid = az > 0 ? Math.PI : 0;
+    const h = d.caliper.span / 2;
+    for (const sx of [1, -1] as const) {
+      annulusSector(soup, sx, half, radius, az, [...d.u], [d.rho[0] * radius, d.rho[1] * radius], [mid + h, mid + 2 * Math.PI - h], 28, C.ring);
+      annulusSector(soup, sx, half, radius, az, [...d.caliper.u], [d.caliper.rho[0] * radius, d.caliper.rho[1] * radius], [mid - h, mid + h], 6, C.caliper);
+      const rm = ((d.rho[0] + d.rho[1]) / 2) * radius;
+      const n: V3 = [sx, 0, 0];
+      for (let k = 0; k < d.holes; k++) {
+        const a = mid + h + ((2 * Math.PI - 2 * h) * (k + 0.5)) / d.holes;
+        const y = radius + rm * Math.sin(a);
+        const z = az + rm * Math.cos(a);
+        const x = sx * (half + d.u[1] + 0.001);
+        const e = d.hole / 2;
+        soup.quad([[x, y - e, z - e], [x, y + e, z - e], [x, y + e, z + e], [x, y - e, z + e]], [n, n, n, n], col(C.hole));
+      }
+    }
+  }
+}
+
 /** The depths (how far out from the centre line each part stands) of the traced frames. ASSUMED: a side view shows none. */
 export const BOGIE_DEPTHS = {
   v221: { beam: [0.95, 1.05], arm: [0.95, 1.05], box: [0.92, 1.07], cover: [1.07, 1.11], spring: 1.0, tube: 1.09, grille: [1.0, 1.1], boss: [1.05, 1.08] },
   bp10: { beam: [0.97, 1.07], box: [0.93, 1.07], cover: [1.07, 1.1], spring: 1.0, damper: 1.08, step: [1.0, 1.14], cylinder: 0.85 },
-  bt10: { beam: [0.97, 1.07], box: [0.94, 1.08], cover: [1.08, 1.11], spring: 1.0, seat: [0.88, 1.12], bolster: [0.5, 1.0], tank: 0.75, rod: 1.02, brake: [0.95, 1.05] },
+  bt10: { beam: [0.97, 1.07], box: [0.94, 1.08], cover: [1.08, 1.11], spring: 1.0, seat: [0.88, 1.12], bolster: [0.55, 1.0], tank: [0.45, 0.9], hanger: [0.95, 1.0], rod: 1.02, brake: [0.95, 1.05] },
 } as const;
 
 /** The Class 221's frame from `VOYAGER221_TRACE`. */
@@ -264,16 +356,16 @@ export function voyager221Frame(soup: Soup, radius: number, wheelbase: number): 
   for (const r of t.boxes) parts.push(rectBox(T, r, [...D.box], C.box));
   t.caps.forEach(([px, py], i) => {
     const z = T.z(px);
-    parts.push({ kind: 'cyl', a: [D.cover[0], T.y(py, px), z], b: [D.cover[1], T.y(py, px), z], rho: T.len(t.capRadius[i] as number, px), sides: 14, colour: C.cover });
+    parts.push({ kind: 'cyl', a: [D.cover[0], T.y(py, px), z], b: [D.cover[1], T.y(py, px), z], rho: T.len(t.capRadius[i] as number), sides: 20, colour: C.cover });
   });
   for (const r of t.springs) parts.push(...springParts(T, r, D.spring, C.spring, C.coil));
   const [fx, fy] = t.tube.from;
   const [tx, ty] = t.tube.to;
-  parts.push({ kind: 'cyl', a: [D.tube, T.y(fy, fx), T.z(fx)], b: [D.tube, T.y(ty, tx), T.z(tx)], rho: T.len(t.tube.radius, (fx + tx) / 2), sides: 10, colour: C.tube });
+  parts.push({ kind: 'cyl', a: [D.tube, T.y(fy, fx), T.z(fx)], b: [D.tube, T.y(ty, tx), T.z(tx)], rho: T.len(t.tube.radius), sides: 10, colour: C.tube });
   parts.push(rectBox(T, t.grille, [...D.grille], C.grille));
   for (const b of t.bosses) {
     const [px, py] = b.c;
-    parts.push({ kind: 'cyl', a: [D.boss[0], T.y(py, px), T.z(px)], b: [D.boss[1], T.y(py, px), T.z(px)], rho: T.len(b.r, px), sides: 12, colour: C.cover });
+    parts.push({ kind: 'cyl', a: [D.boss[0], T.y(py, px), T.z(px)], b: [D.boss[1], T.y(py, px), T.z(px)], rho: T.len(b.r), sides: 12, colour: C.cover });
   }
   drawParts(soup, parts);
   // the transom between the side beams (hidden behind them in the photograph; ASSUMED)
@@ -283,10 +375,10 @@ export function voyager221Frame(soup: Soup, radius: number, wheelbase: number): 
 /** The BP10's frame from `BP10_TRACE`: the far end traced and mirrored about the bogie's middle for the near end, the step at the near end only. */
 export function bp10Frame(soup: Soup, radius: number, wheelbase: number): void {
   const t = BP10_TRACE;
-  const T = tracer(t.caps, radius, wheelbase, t.farScale);
+  const T = tracer(t.caps, radius, wheelbase, t.view);
   const D = BOGIE_DEPTHS.bp10;
   const C = BOGIE_COLOURS.bp10;
-  const m = (p: Px): [number, number] => [T.z(p[0]), T.y(p[1], p[0])];
+  const m = (p: Px): [number, number] => [T.z(p[0], p[1]), T.y(p[1], p[0], D.beam[1])];
   // the far half (z < 0), closed at the middle (z = 0) at the heights of its first top and last bottom points, then its mirror (z -> -z) for the near half
   const top = t.beamTop.map(m);
   const bottom = t.beamBottom.map(m);
@@ -297,14 +389,15 @@ export function bp10Frame(soup: Soup, radius: number, wheelbase: number): void {
   const parts: Part[] = [{ kind: 'plate', outline: [...half, ...back], x: [...D.beam], colour: C.frame }];
   // at each end: the axle box and its cover, a spring each side of the box (the visible inboard one and its mirror about the axle), the vertical damper outboard
   const [cx, cy] = t.caps[1];
-  const zc = T.z(cx);
+  const zc = T.z(cx, cy);
   const box = rectBox(T, t.box, [...D.box], C.box);
   const springs = springParts(T, t.spring, D.spring, C.spring, C.coil);
-  const springZ = T.z((t.spring[0] + t.spring[2]) / 2);
+  const springZ = T.z((t.spring[0] + t.spring[2]) / 2, (t.spring[1] + t.spring[3]) / 2);
   const outboard = springParts(T, t.spring, D.spring, C.spring, C.coil).map((p): Part => (p.kind === 'cyl' ? { ...p, a: [p.a[0], p.a[1], 2 * zc - springZ], b: [p.b[0], p.b[1], 2 * zc - springZ] } : p));
   const dm = (t.damper[0] + t.damper[2]) / 2;
-  const damper: Part = { kind: 'cyl', a: [D.damper, T.y(t.damper[3], dm), T.z(dm)], b: [D.damper, T.y(t.damper[1], dm), T.z(dm)], rho: T.len((t.damper[2] - t.damper[0]) / 2, dm), sides: 10, colour: C.damper };
-  const cover: Part = { kind: 'cyl', a: [D.cover[0], T.y(cy, cx), zc], b: [D.cover[1], T.y(cy, cx), zc], rho: T.len(t.capRadius, cx), sides: 14, colour: C.cover };
+  const dz = T.z(dm, (t.damper[1] + t.damper[3]) / 2);
+  const damper: Part = { kind: 'cyl', a: [D.damper, T.y(t.damper[3], dm, D.damper), dz], b: [D.damper, T.y(t.damper[1], dm, D.damper), dz], rho: T.len((t.damper[2] - t.damper[0]) / 2), sides: 10, colour: C.damper };
+  const cover: Part = { kind: 'cyl', a: [D.cover[0], radius, zc], b: [D.cover[1], radius, zc], rho: T.len(t.capRadius), sides: 20, colour: C.cover };
   const farEnd: Part[] = [box, cover, ...springs, ...outboard, damper];
   const flip = (p: Part): Part => {
     if (p.kind === 'box') return { ...p, z: [-p.z[1], -p.z[0]] };
@@ -312,24 +405,33 @@ export function bp10Frame(soup: Soup, radius: number, wheelbase: number): void {
     return { ...p, outline: p.outline.map(([z, y]): [number, number] => [-z, y]) };
   };
   parts.push(...farEnd, ...farEnd.map(flip));
-  // the step at the near end, read off the near end (its own scale): two side plates and three treads
-  const s = t.step.rect;
-  const sm = (s[0] + s[2]) / 2;
-  const z0 = T.z(s[0]);
-  const z1 = T.z(s[2]);
-  const [lo, hi] = [Math.min(z0, z1), Math.max(z0, z1)];
-  const yb = T.y(s[3], sm);
-  const yt = T.y(s[1], sm);
-  for (const z of [lo, hi - 0.03]) parts.push({ kind: 'box', z: [z, z + 0.03], y: [yb, yt], x: [...D.step], colour: C.step });
-  for (const row of t.step.treads) {
-    const y = T.y(row, sm);
-    parts.push({ kind: 'box', z: [lo, hi], y: [y - 0.02, y + 0.02], x: [...D.step], colour: C.step });
+  // the step at the near end: the top plate over the box, and the ladder (two stiles, two treads, the mesh between) hanging inboard of the box
+  const s = t.step;
+  const x = D.step;
+  const pz = (px: number, py: number): number => T.z(px, py);
+  const [pa, pb] = [pz(s.plate[0], s.plate[3]), pz(s.plate[2], s.plate[3])];
+  const pm = (s.plate[0] + s.plate[2]) / 2;
+  parts.push({ kind: 'box', z: [Math.min(pa, pb), Math.max(pa, pb)], y: [T.y(s.plate[3], pm, x[1]), T.y(s.plate[1], pm, x[1])], x: [...x], colour: C.step });
+  const top0 = T.y(s.plate[3], pm, x[1]);
+  for (const col0 of s.stiles) {
+    const z = pz(col0, s.foot);
+    parts.push({ kind: 'box', z: [z - 0.015, z + 0.015], y: [T.y(s.foot, col0, x[1]), top0], x: [...x], colour: C.step });
   }
+  const [la, lb] = [pz(s.stiles[0] as number, s.foot), pz(s.stiles[1] as number, s.foot)];
+  const [lo, hi] = [Math.min(la, lb), Math.max(la, lb)];
+  const lm = ((s.stiles[0] as number) + (s.stiles[1] as number)) / 2;
+  for (const row of s.treads) {
+    const y = T.y(row, lm, x[1]);
+    parts.push({ kind: 'box', z: [lo, hi], y: [y - 0.02, y + 0.02], x: [...x], colour: C.step });
+  }
+  const mm = (s.mesh[0] + s.mesh[2]) / 2;
+  const [ma, mb] = [pz(s.mesh[0], s.mesh[3]), pz(s.mesh[2], s.mesh[3])];
+  parts.push({ kind: 'box', z: [Math.min(ma, mb), Math.max(ma, mb)], y: [T.y(s.mesh[3], mm, x[0]), T.y(s.mesh[1], mm, x[0])], x: [x[0], x[0] + 0.02], colour: C.mesh });
   // the air and brake cylinders along the middle, under the beam
   for (const c of t.cylinders) {
     const [ax, ay] = c.from;
     const [bx, by] = c.to;
-    parts.push({ kind: 'cyl', a: [D.cylinder, T.y(ay, ax), T.z(ax)], b: [D.cylinder, T.y(by, bx), T.z(bx)], rho: T.len(c.radius, (ax + bx) / 2), sides: 12, colour: C.cylinder });
+    parts.push({ kind: 'cyl', a: [D.cylinder, T.y(ay, ax, D.cylinder), T.z(ax, ay)], b: [D.cylinder, T.y(by, bx, D.cylinder), T.z(bx, by)], rho: T.len(c.radius), sides: 12, colour: C.cylinder });
   }
   drawParts(soup, parts);
   soup.box(-0.97, 0.97, radius + 0.05, radius + 0.22, -0.12, 0.12, col(C.box));
@@ -343,14 +445,29 @@ export function bt10Frame(soup: Soup, radius: number, wheelbase: number): void {
   const C = BOGIE_COLOURS.bt10;
   const parts: Part[] = [{ kind: 'plate', outline: t.beam.map(([px, py]): [number, number] => [T.z(px), T.y(py, px)]), x: [...D.beam], colour: C.frame }];
   for (const r of t.boxes) parts.push(rectBox(T, r, [...D.box], C.box));
-  for (const [px, py] of t.caps) parts.push({ kind: 'cyl', a: [D.cover[0], T.y(py, px), T.z(px)], b: [D.cover[1], T.y(py, px), T.z(px)], rho: T.len(t.capRadius, px), sides: 6, colour: C.cover });
+  for (const [px, py] of t.caps) parts.push({ kind: 'cyl', a: [D.cover[0], T.y(py, px), T.z(px)], b: [D.cover[1], T.y(py, px), T.z(px)], rho: T.len(t.capRadius), sides: 20, colour: C.cover });
   for (const r of t.springs) parts.push(...springParts(T, r, D.spring, C.spring, C.coil));
   for (const r of t.seats) parts.push(rectBox(T, r, [...D.seat], C.box));
-  parts.push(rectBox(T, t.bolster, [...D.bolster], C.bolster));
-  for (const [c, x, colour, sides] of [[t.tank, D.tank, C.tank, 14], [t.rod, D.rod, C.rod, 8]] as const) {
-    const [ax, ay] = c.from;
-    const [bx, by] = c.to;
-    parts.push({ kind: 'cyl', a: [x, T.y(ay, ax), T.z(ax)], b: [x, T.y(by, bx), T.z(bx)], rho: T.len(c.radius, (ax + bx) / 2), sides, colour });
+  // the middle: the rounded tank, the lower beam under it and the hangers, with open space between tank and lower beam
+  const [x0, y0, x1, y1] = t.tank.rect;
+  const k = t.tank.corner;
+  const tank: Px[] = [];
+  for (const [cx, cy, a0] of [[x1 - k, y0 + k, -90], [x1 - k, y1 - k, 0], [x0 + k, y1 - k, 90], [x0 + k, y0 + k, 180]] as const) {
+    for (let i = 0; i <= 4; i++) {
+      const a = ((a0 + (90 * i) / 4) * Math.PI) / 180;
+      tank.push([cx + k * Math.cos(a), cy + k * Math.sin(a)]);
+    }
+  }
+  parts.push({ kind: 'plate', outline: tank.map(([px, py]): [number, number] => [T.z(px), T.y(py, px)]), x: [...D.tank], colour: C.tank });
+  parts.push({ kind: 'plate', outline: t.lowerBeam.map(([px, py]): [number, number] => [T.z(px), T.y(py, px)]), x: [...D.bolster], colour: C.bolster });
+  for (const c of t.hangers.cols) {
+    const z = T.z(c);
+    parts.push({ kind: 'box', z: [z - 0.012, z + 0.012], y: [T.y(t.hangers.rows[1], c), T.y(t.hangers.rows[0], c)], x: [...D.hanger], colour: C.hanger });
+  }
+  {
+    const [ax, ay] = t.rod.from;
+    const [bx, by] = t.rod.to;
+    parts.push({ kind: 'cyl', a: [D.rod, T.y(ay, ax), T.z(ax)], b: [D.rod, T.y(by, bx), T.z(bx)], rho: T.len(t.rod.radius), sides: 8, colour: C.rod });
   }
   parts.push(rectBox(T, t.brake, [...D.brake], C.box));
   drawParts(soup, parts);

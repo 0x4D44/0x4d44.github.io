@@ -22,7 +22,7 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, bogieParts, buildBogie, couplerHalf, podHanger, underfloorPod } from './train-parts.ts';
-import { bp10Frame, bt10Frame, voyager221Frame } from './train-intercity-bogie.ts';
+import { bp10Frame, bt10Frame, voyager220Discs, voyager221Frame } from './train-intercity-bogie.ts';
 import type { BogieStyle, CouplerStyle, PodBox, PodForm } from './train-parts.ts';
 import type { CaptureFormation } from './edinburgh-fleet.ts';
 import { lensLook } from './train.ts';
@@ -1037,6 +1037,8 @@ function intercityBogie(type: IntercityBogieType, radius: number, wheelbase: num
     const soup = new Soup();
     for (const [name, part] of Object.entries(bogieParts(spec))) {
       if (type !== 'v220' && (name === 'frame' || name === 'springs')) continue;
+      // the 220's discs are on its wheels (xc220-05), not on its axles
+      if (type === 'v220' && name === 'brakes') continue;
       for (let v = 0; v < part.pos.length / 3; v += 3) {
         if (name === 'drive' && inner !== 0 && Math.sign((part.pos[v * 3 + 2]! + part.pos[v * 3 + 5]! + part.pos[v * 3 + 8]!) / 3) !== inner) continue;
         for (let m = v; m < v + 3; m++) {
@@ -1049,7 +1051,8 @@ function intercityBogie(type: IntercityBogieType, radius: number, wheelbase: num
         }
       }
     }
-    if (type === 'v221') voyager221Frame(soup, radius, wheelbase);
+    if (type === 'v220') voyager220Discs(soup, radius, wheelbase, TRACK);
+    else if (type === 'v221') voyager221Frame(soup, radius, wheelbase);
     else if (type === 'bp10') bp10Frame(soup, radius, wheelbase);
     else if (type === 'bt10') bt10Frame(soup, radius, wheelbase);
     geometry = soup.build();

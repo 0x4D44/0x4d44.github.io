@@ -5,7 +5,7 @@ import { HST, INTERCITY_KINDS, intercityLayout, VOYAGER } from '../../core/train
 import { checkEdinburghRows } from '../../core/train-neutral.ts';
 import { EDINBURGH_FLEET, edinburghFleetRow } from '../src/edinburgh-fleet.ts';
 import { buildIntercityTrain, disposeIntercityTrain, INTERCITY_BODIES, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
-import { BP10_TRACE, BT10_TRACE, tracer, VOYAGER221_TRACE } from '../src/train-intercity-bogie.ts';
+import { BOGIE_DEPTHS, BP10_TRACE, BT10_TRACE, tracer, VOYAGER221_TRACE } from '../src/train-intercity-bogie.ts';
 import { col, plain } from '../src/train-geom.ts';
 import { lensLook, setTrainLampState } from '../src/train.ts';
 
@@ -193,6 +193,21 @@ test('Voyager bogies: the 220 keeps its inside frame, the 221 rides the outside 
         // inside frame (xc220-05: the wheels' faces show): nothing stands outboard of the wheels' outer faces; the 2.6 m ASSUMED wheelbase
         assert.ok(box.max.x < 0.86 && box.min.x > -0.86, `${tag} inside frame (x ${box.min.x}..${box.max.x})`);
         assert.deepEqual(wheelZ, [-VOYAGER.wheelbase.value / 2, VOYAGER.wheelbase.value / 2], `${tag} wheelbase`);
+        // xc220-05: a perforated disc ring on each wheel's outer face, broken toward the bogie's middle where its calliper grips it
+        const w = VOYAGER.wheelbase.value / 2;
+        const r = VOYAGER.wheelDiameter.value / 2;
+        for (const sx of [-1, 1]) {
+          for (const az of [-w, w]) {
+            const near = (p: THREE.Vector3): boolean => Math.sign(p.x) === sx && Math.abs(p.x) > 0.77 && Math.hypot(p.z - az, p.y - r) < r;
+            const ring = ofColour(b, 0xaeb3b9).filter(near);
+            const holes = ofColour(b, 0x1b1c1e).filter(near);
+            const caliper = ofColour(b, 0x26282b).filter(near);
+            assert.ok(ring.length >= 100 && holes.length >= 60, `${tag} disc ring at x ${sx}, z ${az}: ${ring.length} ring, ${holes.length} hole vertices`);
+            assert.ok(caliper.length >= 24 && caliper.every((p) => Math.sign(p.z - az) === -Math.sign(az)), `${tag} calliper toward the middle at x ${sx}, z ${az}`);
+            // the ring is broken where the calliper is: no ring vertex on the inboard horizontal near the axle line
+            assert.ok(!ring.some((p) => Math.abs(p.y - r) < 0.05 && Math.sign(p.z - az) === -Math.sign(az)), `${tag} ring open toward the middle at x ${sx}, z ${az}`);
+          }
+        }
         continue;
       }
       // the 221 (voyager-bogie-01, unit 221139): the stencilled 2.70 m wheelbase; the frame outboard of the wheels on both sides; a round cover on each axle's line,
@@ -249,11 +264,26 @@ test('HST bogies: the power car rides the BP10 traced from hst-bogie-02, the coa
           // the step at one end of each beam only (the near end of hst-bogie-02; the far beam's turned half a turn)
           const step = ofColour(b, 0x585c62).filter((p) => Math.sign(p.x) === sx);
           assert.ok(step.length > 0 && step.every((p) => Math.sign(p.z) === sx), `${tag} step on side ${sx}`);
+          // only its top plate overhangs the axle box; the ladder under it (stiles and treads) hangs wholly inboard of the box (hst-bogie-02: stiles at px 393 and 505,
+          // the cover at 297-377; round 5 ran the ladder across the box)
+          // the plate's underside, from its traced row; anything of the step below it is the ladder
+          const T = tracer(BP10_TRACE.caps, r, 2 * w, BP10_TRACE.view);
+          const pl = BP10_TRACE.step.plate;
+          const plateFoot = T.y(pl[3], (pl[0] + pl[2]) / 2, BOGIE_DEPTHS.bp10.step[1]);
+          const ladder = step.filter((p) => p.y < plateFoot - 0.02);
+          const boxIn = T.len(BP10_TRACE.caps[1][0] - BP10_TRACE.box[0]);
+          assert.ok(ladder.length > 0 && ladder.every((p) => Math.abs(p.z) < w - boxIn),`${tag} ladder inboard of the box on side ${sx}: |z| up to ${Math.max(...ladder.map((p) => Math.abs(p.z)))}`);
         }
         // between the axles, what hst-bogie-02 shows there: the two cylinders along the middle, under the beam (no photograph shows a traction motor, so the kit
         // draws none: train-parts.ts draws no drive for its 'electrostar' style, a GAP shared with the London families)
         const cyl = ofColour(b, 0x2f3236).filter((p) => Math.abs(p.z) < w - 0.3 && p.y < r + 0.15);
         assert.ok(cyl.length >= 48, `${tag} middle cylinders: ${cyl.length}`);
+        // the lower cylinder lies along the axle line, as the photograph's does (round 5 traced both its ends on one pixel row and tilted it 5 degrees)
+        const lower = cyl.filter((p) => p.x > 0);
+        const z0 = Math.min(...lower.map((p) => p.z));
+        const z1 = Math.max(...lower.map((p) => p.z));
+        const endY = (z: number): number => { const e = lower.filter((p) => Math.abs(p.z - z) < 0.1); return e.reduce((s, p) => s + p.y, 0) / e.length; };
+        assert.ok(Math.abs(endY(z1) - endY(z0)) / (z1 - z0) < 0.05, `${tag} lower cylinder's tilt ${(endY(z1) - endY(z0)) / (z1 - z0)}`);
       } else {
         assert.equal(b.type, 'bt10', tag);
         const r = HST.coachWheelDiameter.value / 2;
@@ -270,6 +300,15 @@ test('HST bogies: the power car rides the BP10 traced from hst-bogie-02, the coa
         const beam = ofColour(b, 0x1d1e20).filter((p) => Math.abs(p.x) > 0.96);
         const top = Math.max(...beam.map((p) => p.y));
         assert.ok(Math.abs(top - (r + (212 - 100) / (692 / HST.wheelbase.value))) < 0.005, `${tag} beam top ${top}`);
+        // the middle is open: the tank hangs under the beam over a separate lower beam, with space between them (round 5 drew one slab that swallowed the tank)
+        const tank = ofColour(b, 0x2c2d30).filter((p) => p.x > 0);
+        const lowerBeam = ofColour(b, 0x232426).filter((p) => p.x > 0);
+        const tankFoot = Math.min(...tank.map((p) => p.y));
+        assert.ok(tank.length > 0 && lowerBeam.length > 0 && Math.max(...tank.map((p) => p.x)) > 0.85, `${tag} the tank shows`);
+        const [tz0, tz1] = [Math.min(...tank.map((p) => p.z)), Math.max(...tank.map((p) => p.z))];
+        // (a plate's vertices are its outline's corners: the lower beam's dip must have corners under the tank, and every one of them clear below it)
+        const under = lowerBeam.filter((p) => p.z > tz0 + 0.02 && p.z < tz1 - 0.02);
+        assert.ok(under.length >= 4 && under.every((p) => p.y < tankFoot - 0.005),`${tag} the lower beam stands clear under the tank (foot ${tankFoot}, lower beam to ${Math.max(...lowerBeam.map((p) => p.y))})`);
         // a coach's bogie carries no traction motor, nor the BP10's cylinders
         assert.equal(ofColour(b, 0x5b6068).length, 0, `${tag} no motors`);
         assert.equal(ofColour(b, 0x2f3236).length, 0, `${tag} no BP10 cylinders`);
@@ -278,19 +317,22 @@ test('HST bogies: the power car rides the BP10 traced from hst-bogie-02, the coa
   }
 });
 
-test('the bogie tracer: the two covers land on the two axles at the wheel\'s radius, side on and in perspective', () => {
-  for (const [caps, far] of [[VOYAGER221_TRACE.caps, 1], [BT10_TRACE.caps, 1], [BP10_TRACE.caps, BP10_TRACE.farScale]] as const) {
-    const T = tracer(caps, 0.5, 2.6, far);
-    assert.ok(Math.abs(T.z(caps[0][0]) - 1.3) < 1e-9 && Math.abs(T.z(caps[1][0]) + 1.3) < 1e-9, `z of the covers ${T.z(caps[0][0])}, ${T.z(caps[1][0])}`);
+test('the bogie tracer: the two covers land on the two axles at the wheel\'s radius; the BP10\'s is calibrated against its wheels at both ends', () => {
+  for (const [caps, view] of [[VOYAGER221_TRACE.caps, undefined], [BT10_TRACE.caps, undefined], [BP10_TRACE.caps, BP10_TRACE.view]] as const) {
+    const T = tracer(caps, 0.5, 2.6, view);
+    assert.ok(Math.abs(T.z(caps[0][0], caps[0][1]) - 1.3) < 1e-9 && Math.abs(T.z(caps[1][0], caps[1][1]) + 1.3) < 1e-9, `z of the covers ${T.z(caps[0][0], caps[0][1])}, ${T.z(caps[1][0], caps[1][1])}`);
     assert.ok(Math.abs(T.y(caps[0][1], caps[0][0]) - 0.5) < 1e-9 && Math.abs(T.y(caps[1][1], caps[1][0]) - 0.5) < 1e-9, 'y of the covers');
+    // every point of the axle line is at the wheel's radius, however the picture is tilted
+    const mid: [number, number] = [(caps[0][0] + caps[1][0]) / 2, (caps[0][1] + caps[1][1]) / 2];
+    assert.ok(Math.abs(T.y(mid[1], mid[0]) - 0.5) < 1e-9 && Math.abs(T.z(mid[0], mid[1])) < 1e-9, 'the axle line');
   }
-  // in perspective the far end's pixel is longer in metres than the near end's, by 1 / farScale
-  const T = tracer(BP10_TRACE.caps, 0.5, 2.6, 0.71);
-  const ratio = T.len(1, BP10_TRACE.caps[1][0]) / T.len(1, BP10_TRACE.caps[0][0]);
-  assert.ok(Math.abs(ratio - 1 / 0.71) < 1e-9, `scale ratio ${ratio}`);
+  // the BP10: where each wheel meets the rail head (standing at the wheel's contact, ASSUMED 0.75 m out) is the rail head, within 2 cm, at both ends
+  const r = HST.powerWheelDiameter.value / 2;
+  const T = tracer(BP10_TRACE.caps, r, HST.wheelbase.value, BP10_TRACE.view);
+  for (const [px, py] of BP10_TRACE.rail) assert.ok(Math.abs(T.y(py, px, 0.75)) < 0.02, `rail head at px ${px}: ${T.y(py, px, 0.75)}`);
   // the 221's scale: 744 px over the stencilled 2.70 m
   const V = tracer(VOYAGER221_TRACE.caps, 0.43, 2.7);
-  assert.ok(Math.abs(V.len(744, 600) - 2.7) < 1e-9);
+  assert.ok(Math.abs(V.len(Math.hypot(744, 3)) - 2.7) < 1e-9);
 });
 
 test('a loft quad is cut exactly along a paint line, one piece each side, the cut points on the line', () => {
