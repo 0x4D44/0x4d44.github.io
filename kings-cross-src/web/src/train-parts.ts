@@ -12,7 +12,8 @@
 //   lner-gwr800-bogie-detail-2017.jpg   a Hitachi AT300 leading bogie, outer side, hardware only: OUTSIDE axle boxes with
 //       round end caps, a big coil primary spring on each, a deep side beam that is thick in the middle and sweeps up over
 //       the axle boxes, a long yaw damper low across the middle with a clevis at each end, a yellow step plate under it, wheels
-//       with a dark web and a lighter rim.
+//       with a dark web and a lighter rim. (Round 6: the AT300's frame is traced from `GWR 802003 835003 leading bogie revised fittings.jpg` instead, point by point, in
+//       `train-bogie-trace.ts`; the wheels, discs and the palette are still read from this one.)
 //   tl700_03_gatwick_bogie_28898326470.jpg   a Siemens SF7000 (Class 700) bogie: INSIDE frame (the wheels stand outside it),
 //       plain light-grey wheel webs with a hub cover and a rust-brown rim band, the frame, a grey yaw damper and the air spring
 //       in a cluster between the wheels.
@@ -23,10 +24,14 @@
 //       across the middle and nothing that tells it from the generic outside-frame bogie; so it is drawn as that.
 // What no photograph shows is not drawn: no pipework, no cable runs, no bolt patterns, and nothing inside the frames. The one exception is what tells a motor bogie from a
 // trailer bogie, which a bogie must show and no photograph here does: a motor bogie's traction motors with their gear cases (a diesel's final drives and cardan shaft), a trailer bogie's
-// brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`).
+// brake units, each hung low where it stands in view under the side beam; their sizes and places are ASSUMED (see `MOTOR_*`, `BRAKE_UNIT`, `GEARBOX_REACH`). Not the AT300's: round 6 traced
+// its frame from the photograph of a trailer bogie, which shows nothing hung between the wheels, and no photograph shows a motor bogie's, so a motor bogie and a trailer bogie of the AT300 are the
+// same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here).
 import * as THREE from 'three';
 import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
+import { AT300_TRACE } from './train-bogie-trace.ts';
+import type { Px, PxCircle, PxRect } from './train-bogie-trace.ts';
 
 /** Wheel tread width. Assumed. */
 export const WHEEL_WIDTH = 0.13;
@@ -362,9 +367,13 @@ function axles(soup: Soup, spec: BogieSpec, pal: Palette, reach: number): void {
  */
 export const BRAKE_UNIT = { y: 0.18, radius: 0.065, z0: 0.3, z1: 0.74, flange: 0.08, flangeLength: 0.03, strap: 0.05, sides: 8 } as const;
 
-/** Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED), and on a trailer bogie its brake unit (`BRAKE_UNIT`). */
+/**
+ * Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED), and on a trailer bogie its brake unit (`BRAKE_UNIT`)
+ * (not the AT300's: its photograph, of a trailer bogie, shows nothing hung between the wheels, so none is drawn there, on a trailer or on a motor bogie).
+ */
 function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
+  const style = bogieStyle(spec);
   const t = DISC_THICKNESS / 2;
   const unit = BRAKE_UNIT;
   for (const az of [-spec.wheelbase / 2, spec.wheelbase / 2]) {
@@ -375,7 +384,7 @@ function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
       const z0 = az + inward * 0.2;
       const z1 = az + inward * 0.34;
       soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
-      if (spec.motor) continue;
+      if (spec.motor || style === 'hitachi') continue;
       // the strap down from the calliper, and the cylinder it carries, with its flange on the end toward the middle of the bogie
       const [sx0, sx1] = xs(sx, 0.3 - unit.strap / 2, 0.3 + unit.strap / 2);
       const strapZ0 = az + inward * unit.z0;
@@ -415,87 +424,214 @@ function beamOutline(half: readonly P2[]): P2[] {
   return out;
 }
 
-/** The AT300's primary spring stack (centre x, radius) and air spring (centre x, radius): broad drums, set inboard of the beam's face so nothing outboard of 1.14 m. */
-const AT300_SPRING = { x: 0.985, radius: 0.08 } as const;
-const AT300_AIR_SPRING = { x: 0.97, radius: 0.17 } as const;
+/**
+ * How far out from the centre line each part of the AT300's frame stands, as [from, to] or one centre line (metres). ASSUMED: a side-on photograph shows no depth. The beam, the axle
+ * box, the cap, the spring and the step keep the depths round 4 gave them, so the wheel zone and the 1.15 m envelope are as they were; the parts new in round 6 stand just outboard of the
+ * beam's face (1.065 m) or, for the damper and the springs, under the end block. The pedestal strap is the outermost thing at an axle box: in the photograph it hides the middle of the spring
+ * stack, which is 0.31 m across and so stands out to 1.14 m, so the strap's face stands at 1.145 m and its window at 1.147 m (the envelope is 1.15 m).
+ */
+const AT300_DEPTH = {
+  beam: [0.975, 1.065],
+  box: [0.955, 1.085],
+  cap: [1.085, 1.12],
+  sensor: [1.085, 1.11],
+  spring: 0.985,
+  damper: 1.0,
+  lug: [1.065, 1.085],
+  pedestal: [1.0, 1.145],
+  window: 1.147,
+  bracket: [1.072, 1.117],
+  yaw: 1.095,
+  clevis: [1.07, 1.125],
+  rod: 1.09,
+  clamp: [1.065, 1.115],
+  lever: [1.082, 1.106],
+  ball: [1.07, 1.12],
+  boss: [1.065, 1.071],
+  step: [0.98, 1.14],
+  wall: [1.065, 1.1],
+} as const;
+/**
+ * The AT300's air spring: a pedestal on the middle of each beam and the rubber bag on it (centre x, radius of each). ASSUMED, as the depths are: the photograph shows the bag 0.49 m across and the
+ * pedestal's band as wide, but not how far out they stand; the bag is drawn 0.46 m across, centred 0.91 m out, so that it stays inside the 1.15 m envelope.
+ */
+const AT300_AIR = { x: 0.91, pedestal: 0.2, bag: 0.23 } as const;
 
 /**
- * What the AT300 photograph shows on an outside frame beyond the beam, boxes, springs, damper and step (lner-gwr800-bogie-detail-2017.jpg, a leading
- * bogie in GWR green; hardware only, so no paint is taken from it). A leading bogie shows its sensor cabling and end furniture; the plain
- * shapes below stand for what is plainly there, and the routing of the cable is ASSUMED (the photograph shows it looping from the axle-box end to the frame):
- *  - a narrow lug standing up the outside of each axle box to the beam end (the vertical strap with its eye over the box, in front of the spring stack);
- *  - the axle-box arm: a bar from each box inboard under the beam to where the beam deepens (the long trailing arm each box carries);
- *  - two ribs on the outer face of each beam, rising outward from the deep middle (the diagonal webs either side of the step's plate);
- *  - a cable along the beam's outer face from each lug toward the middle (a dark strip a few millimetres proud).
- * Every part is attached to the box or the beam it stands on, and nothing is wider than the 1.15 m envelope.
+ * A photograph's pixels as the bogie's metres, from the trace's two calibration points (`train-bogie-trace.ts`): the two axle-end caps stand a wheelbase apart, and their row is the
+ * axle line, a wheel's radius over the rail head. `z` is along the bogie (the photograph's right is -z on the +x side), `y` over the rail head, `len` a length, and `mirror` the
+ * column an end feature has at the other end.
  */
-function at300Detail(F: Soup, sx: 1 | -1, r: number, w: number, pal: Palette): void {
-  for (const az of [-w, w]) {
-    const inward = az < 0 ? 1 : -1;
-    const [lx0, lx1] = xs(sx, 1.085, 1.105);
-    F.box(lx0, lx1, r + 0.09, r + 0.27, az - 0.055, az + 0.055, pal.cap);
-    F.bar([r + 0.055, az + inward * 0.1], [r + 0.055, az + inward * 0.7], 0.07, 0.1, pal.frame, sx * 1.02);
-    const x = sx * 1.072;
-    const path: [number, number][] = [[az + inward * 0.09, r + 0.31], [az + inward * 0.42, r + 0.37], [az + inward * 0.72, r + 0.34]];
-    for (let k = 0; k + 1 < path.length; k++) {
-      const [za, ya] = path[k] as [number, number];
-      const [zb, yb] = path[k + 1] as [number, number];
-      F.face([[x, ya - 0.015, za], [x, ya + 0.015, za], [x, yb + 0.015, zb], [x, yb - 0.015, zb]], [0, (ya + yb) / 2, (za + zb) / 2], pal.rubber);
-    }
-  }
-  for (const zs of [-1, 1]) F.bar([r - 0.04, zs * 0.52], [r + 0.38, zs * 0.8], 0.02, 0.055, pal.cap, sx * 1.075);
+interface Tracer {
+  z(px: number): number;
+  y(py: number): number;
+  len(p: number): number;
+  mirror(px: number): number;
+}
+function tracer(caps: readonly [Px, Px], spec: Pick<BogieSpec, 'radius' | 'wheelbase'>): Tracer {
+  const scale = (caps[1][0] - caps[0][0]) / spec.wheelbase;
+  const centre = (caps[0][0] + caps[1][0]) / 2;
+  const axleRow = (caps[0][1] + caps[1][1]) / 2;
+  return { z: (px) => -(px - centre) / scale, y: (py) => spec.radius + (axleRow - py) / scale, len: (p) => p / scale, mirror: (px) => 2 * centre - px };
+}
+
+/** The AT300's side beam as one outline in the photograph's pixels, clockwise from the left end block's top corner: over the top, down the right end block, the slot's roof, arch and floor and the arm's lower edge on the right, the deep middle's lower edge, and the same on the left. */
+function at300BeamPx(): Px[] {
+  const b = AT300_TRACE.beam;
+  const centre = (AT300_TRACE.caps[0][0] + AT300_TRACE.caps[1][0]) / 2;
+  const flip = (p: Px): Px => [2 * centre - p[0], p[1]];
+  const mouth = (b.slotRoof[0] as Px)[0];
+  return [
+    ...b.top,
+    ...[...b.top].reverse().map(flip),
+    ...b.end.map(flip),
+    ...b.slotRoof.map(flip),
+    flip([b.archFoot, b.slotFloor]),
+    flip([mouth, b.slotFloor]),
+    ...b.bottom.map(flip),
+    ...[...b.bottom].reverse(),
+    [mouth, b.slotFloor],
+    [b.archFoot, b.slotFloor],
+    ...[...b.slotRoof].reverse(),
+    ...[...b.end].reverse(),
+  ];
+}
+
+/** The profile (height, radius) of the AT300's primary spring stack of height `h` and radius `rho`: a band at each end and a waist between them. */
+function springStack(h: number, rho: number): [number, number][] {
+  return [[0, 0], [0, 0.92 * rho], [0.1 * h, rho], [0.42 * h, rho], [0.5 * h, 0.8 * rho], [0.58 * h, rho], [0.9 * h, rho], [h, 0.92 * rho], [h, 0]];
 }
 
 /**
- * An outside-frame bogie (Hitachi AT300, Electrostar, Class 180): an axle box and a coil spring on each journal, a side beam resting on the springs,
- * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams.
+ * The AT300's side frame, traced from `AT300_TRACE`'s photograph: what is drawn is what the photograph shows, in the plane of the side beam, and the depths across the bogie
+ * (`AT300_DEPTH`) are ASSUMED. The beam is one plate of the traced outline on each side; at each end stand the axle box with its cap and sensor housing, the spring stack, the
+ * vertical damper, the lug and the pedestal strap; along the middle the car's cast bracket, the yaw damper, the anti-roll rod and its lever, the round bosses and the step; and
+ * over the middle the air spring on its pedestal. The far side beam carries the middle's one-sided parts turned half a turn about the vertical (z -> -z). A trailer bogie and a
+ * motor bogie are the same here: no photograph shows what a motor bogie carries between its wheels, and the photograph of a trailer bogie shows nothing hanging there.
  */
-function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: BogieStyle): void {
+function at300Frame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
+  const t = AT300_TRACE;
+  const T = tracer(t.caps, spec);
+  const D = AT300_DEPTH;
+  const r = spec.radius;
+  const metres = (p: Px): P2 => [T.z(p[0]), T.y(p[1])];
+  /** A rectangle of the photograph as the metres it spans: along the bogie (z0 < z1) and up (y0 < y1). */
+  const span = (q: PxRect): { z0: number; z1: number; y0: number; y1: number } => ({ z0: Math.min(T.z(q[0]), T.z(q[2])), z1: Math.max(T.z(q[0]), T.z(q[2])), y0: T.y(q[3]), y1: T.y(q[1]) });
+  const mirrored = (q: PxRect): PxRect => [T.mirror(q[2]), q[1], T.mirror(q[0]), q[3]];
+  const circle = (c: PxCircle, flip: boolean): { z: number; y: number; r: number } => ({ z: T.z(flip ? T.mirror(c.c[0]) : c.c[0]), y: T.y(c.c[1]), r: T.len(c.r) });
+  const beam = at300BeamPx().map(metres);
+  const bracket = t.bracket.map(metres);
+  const lever = t.lever.map(metres);
+  const topMid = T.y((t.beam.top[t.beam.top.length - 1] as Px)[1]);
+  const pedestalTop = T.y(t.air.base);
+  for (const sx of [-1, 1] as const) {
+    /** The far side beam turns the middle's parts half a turn about the vertical. */
+    const zs = (s: { z0: number; z1: number }): [number, number] => (sx > 0 ? [s.z0, s.z1] : [-s.z1, -s.z0]);
+    const [bx0, bx1] = xs(sx, D.beam[0], D.beam[1]);
+    plate(F, beam, bx0, bx1, pal.frame, pal.box, sx);
+    // the two ends: each is the left end's mirror
+    for (const flip of [false, true]) {
+      const at = (q: PxRect): { z0: number; z1: number; y0: number; y1: number } => span(flip ? mirrored(q) : q);
+      const az = (flip ? -1 : 1) * (spec.wheelbase / 2);
+      const [ax0, ax1] = xs(sx, D.box[0], D.box[1]);
+      const box = at(t.end.box);
+      F.box(ax0, ax1, box.y0, box.y1, box.z0, box.z1, pal.box);
+      tube(F, axisX(sx * D.cap[0], r, az, sx), 0, D.cap[1] - D.cap[0], T.len(t.end.capRadius), 10, pal.cap, 'end');
+      const [sx0, sx1] = xs(sx, D.sensor[0], D.sensor[1]);
+      const sensor = at(t.end.sensor);
+      F.box(sx0, sx1, sensor.y0, sensor.y1, sensor.z0, sensor.z1, pal.damper);
+      const spring = at(t.end.spring);
+      lathe(S, axisY(sx * D.spring, spring.y0, (spring.z0 + spring.z1) / 2), springStack(spring.y1 - spring.y0, (spring.z1 - spring.z0) / 2), 10, [pal.coil, pal.spring, pal.spring, pal.coil, pal.coil, pal.spring, pal.spring, pal.coil]);
+      const damper = at(t.end.damper);
+      tube(F, axisY(sx * D.damper, damper.y0, (damper.z0 + damper.z1) / 2), 0, damper.y1 - damper.y0, (damper.z1 - damper.z0) / 2, 8, pal.damper, 'start');
+      const [lx0, lx1] = xs(sx, D.lug[0], D.lug[1]);
+      const lug = at(t.end.lug);
+      F.box(lx0, lx1, lug.y0, lug.y1, lug.z0, lug.z1, pal.cap);
+      const [px0, px1] = xs(sx, D.pedestal[0], D.pedestal[1]);
+      const pedestal = at(t.end.pedestal);
+      F.box(px0, px1, pedestal.y0, pedestal.y1, pedestal.z0, pedestal.z1, pal.frame);
+      const [wx0, wx1] = xs(sx, D.pedestal[1], D.window);
+      const window = at(t.end.pedestalWindow);
+      F.box(wx0, wx1, window.y0, window.y1, window.z0, window.z1, pal.rubber);
+      const boss = circle(t.boss, flip);
+      tube(F, axisX(sx * D.boss[0], boss.y, boss.z, sx), 0, D.boss[1] - D.boss[0], boss.r, 12, pal.spring, 'end');
+    }
+    // the car's cast bracket that hangs the yaw damper, and the damper between its foot and the beam
+    const [kx0, kx1] = xs(sx, D.bracket[0], D.bracket[1]);
+    plate(F, bracket.map((p): P2 => [sx * p[0], p[1]]), kx0, kx1, pal.box, pal.box, sx);
+    const body = span(t.yaw.body);
+    tube(F, axisZ(sx * D.yaw, (body.y0 + body.y1) / 2, sx * body.z1, -sx as 1 | -1), 0, body.z1 - body.z0, (body.y1 - body.y0) / 2, 10, pal.damper, 'both');
+    const [cx0, cx1] = xs(sx, D.clevis[0], D.clevis[1]);
+    for (const q of [t.yaw.clevisNear, t.yaw.clevisFar]) {
+      const c = span(q);
+      const [z0, z1] = zs(c);
+      F.box(cx0, cx1, c.y0, c.y1, z0, z1, pal.clevis);
+    }
+    // the anti-roll rod down from the body to its ball joint, its clamps and collar, the lever it turns, and the boss on the lever's end
+    const rodZ = sx * T.z(t.rod.x);
+    tube(F, axisY(sx * D.rod, T.y(t.rod.bottom), rodZ), 0, T.y(t.rod.top) - T.y(t.rod.bottom), T.len(t.rod.radius), 8, pal.clevis, 'start');
+    const [mx0, mx1] = xs(sx, D.clamp[0], D.clamp[1]);
+    for (const q of [...t.rod.clamps, t.rod.collar]) {
+      const c = span(q);
+      const [z0, z1] = zs(c);
+      F.box(mx0, mx1, c.y0, c.y1, z0, z1, pal.box);
+    }
+    const ball = circle(t.ball, false);
+    tube(F, axisX(sx * D.ball[0], ball.y, sx * ball.z, sx), 0, D.ball[1] - D.ball[0], ball.r, 12, pal.cap, 'both');
+    const [vx0, vx1] = xs(sx, D.lever[0], D.lever[1]);
+    plate(F, lever.map((p): P2 => [sx * p[0], p[1]]), vx0, vx1, pal.clevis, pal.clevis, sx);
+    const end = circle(t.leverBoss, false);
+    tube(F, axisX(sx * D.ball[0], end.y, sx * end.z, sx), 0, D.ball[1] - D.ball[0], end.r, 12, pal.cap, 'both');
+    // the yellow maintenance step: a tread with a wing at each end and a wall behind it hung from the beam's lower edge
+    const [tx0, tx1] = xs(sx, D.step[0], D.step[1]);
+    // (the photograph's right is -z: the step's right end, its second column, is its low z)
+    const [stepZ0, stepZ1] = zs({ z0: T.z(t.step.z[1]), z1: T.z(t.step.z[0]) });
+    const treadBottom = T.y(t.step.treadBottom);
+    F.box(tx0, tx1, treadBottom, T.y(t.step.treadTop), stepZ0, stepZ1, pal.accent);
+    for (const [wz0, wz1] of [[stepZ0, stepZ0 + 0.012], [stepZ1 - 0.012, stepZ1]] as const) F.box(tx0, tx1, T.y(t.step.treadTop), T.y(t.step.wingTop), wz0, wz1, pal.frame);
+    const [ex0, ex1] = xs(sx, D.wall[0], D.wall[1]);
+    F.box(ex0, ex1, T.y(t.step.treadTop), T.y(t.step.wallTop), stepZ0 + 0.03, stepZ1 - 0.03, pal.frame);
+    // the air spring over the middle of the beam: a pedestal and the rubber bag on it, up to the underside of the body
+    tube(S, axisY(sx * AT300_AIR.x, topMid, 0), 0, pedestalTop - topMid, AT300_AIR.pedestal, 12, pal.box);
+    tube(S, axisY(sx * AT300_AIR.x, pedestalTop, 0), 0, BOGIE_TOP - pedestalTop - 0.005, AT300_AIR.bag, 12, pal.rubber, 'end');
+  }
+  // the cross beam between the side beams, under the beam's top
+  F.box(-0.98, 0.98, r + 0.07, r + 0.27, -0.08, 0.08, pal.box);
+}
+
+/**
+ * An outside-frame bogie of the Electrostar's or the Class 180's makers: an axle box and a coil spring on each journal, a side beam resting on the springs,
+ * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams. (The AT300's is `at300Frame`, traced from a photograph.)
+ */
+function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette, style: 'electrostar' | 'alstom'): void {
   const r = spec.radius;
   const w = spec.wheelbase / 2;
-  // what the AT300 photograph shows and the other makers' photographs do not: see `at300Detail`
-  const hitachi = style === 'hitachi';
   const beam =
     style === 'alstom'
       ? // a boxy straight beam with shallow ends (GC180-01: a squarer frame than the Hitachi's)
         beamOutline([[0, r + 0.02], [0.5, r + 0.02], [0.9, r + 0.2], [w + 0.32, r + 0.2], [w + 0.32, r + 0.46], [0.7, r + 0.46], [0, r + 0.4]])
-      : style === 'electrostar'
-        ? // a flatter, lower beam
-          beamOutline([[0, r + 0.04], [0.5, r + 0.04], [0.85, r + 0.2], [w + 0.34, r + 0.2], [w + 0.34, r + 0.44], [0.8, r + 0.44], [0, r + 0.4]])
-        : // the AT300's: deep in the middle, swept up and out over the axle boxes (lner-gwr800-bogie-detail-2017.jpg)
-          beamOutline([[0, r - 0.08], [0.5, r - 0.08], [0.82, r + 0.1], [w - 0.28, r + 0.26], [w + 0.33, r + 0.26], [w + 0.35, r + 0.36], [w + 0.3, r + 0.5], [w - 0.3, r + 0.5], [0.75, r + 0.44], [0, r + 0.4]]);
+      : // a flatter, lower beam
+        beamOutline([[0, r + 0.04], [0.5, r + 0.04], [0.85, r + 0.2], [w + 0.34, r + 0.2], [w + 0.34, r + 0.44], [0.8, r + 0.44], [0, r + 0.4]]);
   const springTop = r + 0.26;
   for (const sx of [-1, 1]) {
     const [bx0, bx1] = xs(sx, 0.975, 1.065);
     plate(F, beam, bx0, bx1, pal.frame, pal.box, sx as 1 | -1);
-    // the air spring on the middle of the beam, a rubber drum standing up to the underside of the body (the AT300's is the broad bag the photograph shows behind the step's plate, inboard of the beam's face)
+    // the air spring on the middle of the beam, a rubber drum standing up to the underside of the body
     const topMid = r + 0.4;
-    if (hitachi) tube(S, axisY(sx * AT300_AIR_SPRING.x, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, AT300_AIR_SPRING.radius, 12, pal.rubber, 'end');
-    else tube(S, axisY(sx * OUT_JOURNAL, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, 0.12, 10, pal.rubber, 'end');
+    tube(S, axisY(sx * OUT_JOURNAL, topMid, 0), 0, BOGIE_TOP - topMid - 0.005, 0.12, 10, pal.rubber, 'end');
     for (const az of [-w, w]) {
-      // the axle box, its round end cap, and the spring on top of it (the AT300's stack is the broad one the photograph shows, set a little inboard so the lug below stands clear of it)
+      // the axle box, its round end cap, and the spring on top of it
       const [ax0, ax1] = xs(sx, 0.955, 1.085);
       F.box(ax0, ax1, r - 0.13, r + 0.11, az - 0.125, az + 0.125, pal.box);
       tube(F, axisX(sx * 1.085, r, az, sx as 1 | -1), 0, 0.035, 0.07, 10, pal.cap, 'end');
-      if (hitachi) coilSpring(S, sx * AT300_SPRING.x, r + 0.11, az, springTop - (r + 0.11), AT300_SPRING.radius, pal);
-      else coilSpring(S, sx * OUT_JOURNAL, r + 0.11, az, springTop - (r + 0.11), 0.062, pal);
+      coilSpring(S, sx * OUT_JOURNAL, r + 0.11, az, springTop - (r + 0.11), 0.062, pal);
     }
-    if (hitachi) at300Detail(F, sx as 1 | -1, r, w, pal);
     // the yaw damper: a black cylinder along the bogie with a clevis at each end, on the outside of the beam
     const yD = r - 0.03;
     tube(F, axisZ(sx * 1.095, yD, -0.42), 0, 0.84, 0.032, 8, pal.damper);
     for (const z of [-0.47, 0.4]) {
       const [cx0, cx1] = xs(sx, 1.07, 1.125);
       F.box(cx0, cx1, yD - 0.045, yD + 0.045, z, z + 0.07, pal.clevis);
-    }
-    if (style === 'hitachi') {
-      // the yellow maintenance step under the middle of the bogie, hung from the beam on a plate (lner-gwr800-bogie-detail-2017.jpg)
-      const [px0, px1] = xs(sx, 0.98, 1.14);
-      F.box(px0, px1, 0.19, 0.21, -0.25, 0.25, pal.accent);
-      const [hx0, hx1] = xs(sx, 1.065, 1.1);
-      F.box(hx0, hx1, 0.21, r - 0.06, -0.17, 0.17, pal.frame);
-      // the two round bosses on the deep middle of the beam (the same photograph: a circle each side of the step's plate)
-      for (const z of [-0.36, 0.36]) lathe(F, axisX(sx * 1.071, r + 0.09, z, sx as 1 | -1), [[0, 0.1], [0, 0]], 12, pal.spring);
     }
   }
   // the cross beam between the side beams
@@ -623,10 +759,11 @@ export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
     insideFrame(parts.frame, parts.springs, spec, pal);
   } else {
     axles(parts.axles, spec, pal, 0.96);
-    outsideFrame(parts.frame, parts.springs, spec, pal, style);
+    if (style === 'hitachi') at300Frame(parts.frame, parts.springs, spec, pal);
+    else outsideFrame(parts.frame, parts.springs, spec, pal, style === 'alstom' ? 'alstom' : 'electrostar');
   }
   if (spec.motor && spec.diesel) finalDrive(parts.drive, spec, pal);
-  else if (spec.motor) tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
+  else if (spec.motor && style !== 'hitachi') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
   return parts;
 }
 

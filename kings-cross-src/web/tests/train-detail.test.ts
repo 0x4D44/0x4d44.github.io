@@ -1852,17 +1852,29 @@ test('gap: each body stands 0.35 m inside its car end, the clearance the live la
 
 // --- the bogies -----------------------------------------------------------------------------------
 
-test('bogies: wheels have flanges and the bogie has brake discs and springs, motors only on a motor bogie, in a bounded triangle count', () => {
+test('bogies: wheels have flanges and the bogie has brake discs and springs, motors only on a motor bogie of the makers whose motors are drawn, in a bounded triangle count', () => {
   const spec = { radius: 0.43, wheelbase: 2.6, track: FIGURES.gauge.value };
+  // (no style: the AT300's, the Hitachi bogie, is the default)
   const motor = bogieSoup({ ...spec, motor: true });
   const trailer = bogieSoup({ ...spec, motor: false });
   const count = (s: { pos: number[] }): number => s.pos.length / 9;
   // CHANGED (round 5: a trailer bogie draws its brake units as a motor bogie draws its motors, so a count of triangles no longer tells the two apart; it asked for the motor bogie to have 100 more):
   // the motors are the rings 0.31 m either side of the middle (the end shields of the barrels), which only a motor bogie has
   const motorRings = (s: { pos: number[] }): number => s.pos.filter((x, i) => i % 3 === 0 && Math.abs(Math.abs(x) - 0.31) < 1e-5).length;
-  assert.ok(motorRings(motor) >= 4 * 16 && motorRings(trailer) === 0, `a motor bogie has its traction motors: ${motorRings(motor)} vertices of end shields against a trailer's ${motorRings(trailer)}`);
-  // CHANGED (2,600 was the cap): the motors are bigger and carry their bosses, and a trailer has its brake units; the budget test below holds each style to its own
-  for (const s of [motor, trailer]) assert.ok(count(s) > 1200 && count(s) < 3000, `bogie triangles ${count(s)}`);
+  // CHANGED (round 6: it asked the AT300's motor bogie for motors and its trailer for none): the AT300's bogie is the one its photograph shows (`train-bogie-trace.test.ts`), the same under a
+  // motor car and a trailer car, with nothing hung between the wheels: the photograph of a trailer bogie shows nothing there and none shows a motor bogie's, so no motor is drawn on a guess.
+  // The makers whose motors are drawn are the other three.
+  assert.equal(motorRings(motor), 0, 'the AT300 draws no traction motor');
+  assert.equal(motorRings(trailer), 0);
+  for (const style of ['electrostar', 'siemens', 'alstom'] as const) {
+    const m = bogieSoup({ ...spec, motor: true, style });
+    const t = bogieSoup({ ...spec, motor: false, style });
+    assert.ok(motorRings(m) >= 4 * 16 && motorRings(t) === 0, `${style}: a motor bogie has its traction motors: ${motorRings(m)} vertices of end shields against a trailer's ${motorRings(t)}`);
+    // CHANGED (2,600 was the cap): the motors are bigger and carry their bosses, and a trailer has its brake units; the budget test below holds each style to its own
+    for (const s of [m, t]) assert.ok(count(s) > 1200 && count(s) < 3000, `${style} bogie triangles ${count(s)}`);
+  }
+  // CHANGED (round 6: 3,000 was the cap): the AT300's frame is traced from its photograph, with the car's bracket, the rod, the step, the dampers and the boss on it; the budget test below holds it to its own
+  for (const s of [motor, trailer]) assert.ok(count(s) > 1200 && count(s) < 4500, `bogie triangles ${count(s)}`);
   // the flange: the lowest point is FLANGE_HEIGHT under the tread, which touches the rail head at 0. A wheel flange stands about 28 mm
   // proud of the tread (a typical UK profile; not looked up, so a range, not a pin).
   assert.ok(FLANGE_HEIGHT >= 0.022 && FLANGE_HEIGHT <= 0.034, `flange ${FLANGE_HEIGHT} m is not a wheel flange`);
@@ -1871,25 +1883,35 @@ test('bogies: wheels have flanges and the bogie has brake discs and springs, mot
   assert.ok(ys.filter((y) => Math.abs(y) < 1e-6).length > 0, 'the tread touches the rail head');
   // and the top of the wheel is a flange high above the tread's top (the axle is at the wheel's radius). Look only at the flange's own
   // place, inboard of the tread, where nothing else of the bogie rises as high (the air springs stand outboard and higher).
-  const flangeBand = trailer.pos.filter((_, i) => i % 3 === 1 && Math.abs(trailer.pos[i - 1] as number) > spec.track / 2 - 0.1 && Math.abs(trailer.pos[i - 1] as number) < spec.track / 2 - 0.017);
+  // CHANGED (round 6): within 0.1 m of an axle along the bogie too: the AT300's air spring bag (0.23 m in radius, on the middle of the bogie) reaches in to 0.68 m from the centre line, over the flange's band across
+  const flangeBand = trailer.pos.filter((_, i) => i % 3 === 1 && Math.abs(trailer.pos[i - 1] as number) > spec.track / 2 - 0.1 && Math.abs(trailer.pos[i - 1] as number) < spec.track / 2 - 0.017 && Math.abs(Math.abs(trailer.pos[i + 1] as number) - spec.wheelbase / 2) < 0.1);
   near(Math.max(...flangeBand), 2 * spec.radius + FLANGE_HEIGHT, 1e-6, 'flange top');
   // air springs under the body: outboard of the wheels and standing higher than any wheel reaches
   // CHANGED (the bogie rebuild): the old bogie drew four air springs, one in each corner, each higher than the rest of the bogie. The photographs
   // (lner-gwr800-bogie-detail-2017.jpg, tl700_03_gatwick_bogie_28898326470.jpg) show one air spring over the middle of each side beam, and the new
   // side beam is itself taller than the wheel (it carries the springs), so the air springs are found as the very top of the bogie: two, one each side,
   // outboard of the wheels and centred on the middle of the bogie.
+  // CHANGED (round 6): the AT300's frame is the photograph's, and its cast bracket and the beam's end blocks stand higher than the bag's top (0.968 m and 0.955 m against 0.945 m), so the bogie's very top is not the
+  // air spring any more; the springs are found in the bogie's `springs` part, where the AT300 keeps them, and the very top of the soup is checked to stay under the body floor (the envelope test below also holds it)
   const topY = Math.max(...ys);
-  assert.ok(topY > 2 * spec.radius + FLANGE_HEIGHT + 0.012, `the air springs stand ${topY} m high, no higher than a wheel`);
-  const springSides = new Set<number>();
+  assert.ok(topY > 2 * spec.radius + FLANGE_HEIGHT + 0.012 && topY < 0.98, `the bogie stands ${topY} m high, no higher than a wheel or into the body`);
+  const springs = bogieParts({ ...spec, motor: false }).springs;
+  const bagTop = Math.max(...springs.pos.filter((_, i) => i % 3 === 1));
+  near(bagTop, BOGIE_TOP - 0.005, 1e-9, 'the air springs reach up to the body');
+  assert.ok(bagTop > 2 * spec.radius + FLANGE_HEIGHT + 0.012, `the air springs stand ${bagTop} m high, no higher than a wheel`);
+  const springSides = new Map<number, number[]>();
   let springReach = 0;
-  for (let i = 0; i < trailer.pos.length; i += 3) {
-    if ((trailer.pos[i + 1] as number) < topY - 0.01) continue;
-    assert.ok(Math.abs(trailer.pos[i] as number) > spec.track / 2 + 0.05, 'the top of the bogie is outboard of the wheels');
-    springSides.add(Math.sign(trailer.pos[i] as number));
-    springReach = Math.max(springReach, Math.abs(trailer.pos[i + 2] as number));
+  for (let i = 0; i < springs.pos.length; i += 3) {
+    if ((springs.pos[i + 1] as number) < bagTop - 1e-9) continue;
+    const side = Math.sign(springs.pos[i] as number);
+    springSides.set(side, [...(springSides.get(side) ?? []), Math.abs(springs.pos[i] as number)]);
+    springReach = Math.max(springReach, Math.abs(springs.pos[i + 2] as number));
   }
-  assert.deepEqual([...springSides].sort(), [-1, 1], 'an air spring on each side of the bogie');
-  assert.ok(springReach < 0.2, `the air springs are ${springReach} m from the middle of the bogie`);
+  assert.deepEqual([...springSides.keys()].sort(), [-1, 1], 'an air spring on each side of the bogie');
+  // CHANGED (round 6; it asked every vertex of the bag's top to be outboard of the wheels): the bag is 0.46 m across (the photograph's is 0.49 m) and stands on the middle of the beam, which the wheels' track
+  // does not reach in z, so its inboard rim is over the wheels' plane (0.68 m out) and its centre is outboard of them: the centre of each bag's top is
+  for (const [side, xs] of springSides) assert.ok((Math.min(...xs) + Math.max(...xs)) / 2 > spec.track / 2 + 0.05, `the air spring on side ${side} is centred ${(Math.min(...xs) + Math.max(...xs)) / 2} m out, not outboard of the wheels`);
+  assert.ok(springReach < 0.3, `the air springs are ${springReach} m from the middle of the bogie`);
   // brake discs: two a side of the middle on each axle, between the wheels, smaller than the wheel but not a hub (ASSUMED 0.29 m radius:
   // an axle-mounted disc is about 0.6 m across on a UK EMU; not looked up). Measure the vertices lying in the disc's plane, from the axles.
   assert.ok(DISC_RADIUS >= 0.25 && DISC_RADIUS <= 0.35, `brake disc radius ${DISC_RADIUS}`);
@@ -2281,6 +2303,20 @@ test('bogie drives: a motor bogie has traction motors a trailer bogie lacks, a t
     const parts = bogieParts(spec);
     const twin = bogieParts({ ...spec, motor: !spec.motor });
     const [motor, trailer] = spec.motor ? [parts, twin] : [twin, parts];
+    if (spec.style === 'hitachi') {
+      // CHANGED (round 6; it asked the AT300's motor bogie for a drive of 100 triangles or more and its trailer bogie for four brake units): the AT300's bogie is traced from the photograph of a trailer
+      // bogie (`train-bogie-trace.test.ts`), which shows nothing hanging between the wheels, and no photograph shows what a motor bogie carries there. A motor bogie's drive and a trailer's brake units
+      // were ASSUMED shapes, so they are not drawn: a motor bogie and a trailer bogie are the same bogie, in every part, with the wheels' discs and callipers and no more.
+      for (const part of ['wheels', 'axles', 'brakes', 'frame', 'springs', 'drive'] as const) assert.deepEqual(motor[part].pos, trailer[part].pos, `${label}: a motor bogie's ${part} are a trailer's`);
+      assert.equal(trisOf(motor.drive), 0, `${label}: no drive is drawn`);
+      const discsOnly = bogieParts({ ...spec, style: 'electrostar', diesel: false, motor: true }).brakes;
+      assert.equal(trisOf(trailer.brakes), trisOf(discsOnly), `${label}: the brakes are the discs and callipers alone, as a motor bogie of any other maker has them, with no brake unit`);
+      for (const soup of [motor.brakes, trailer.brakes]) {
+        const discs = vertsOf(soup).filter((v) => Math.abs(Math.abs(v[0]) - 0.3) <= DISC_THICKNESS / 2 + 1e-9);
+        assert.ok(discs.length >= 4 * 12 * 2, `${label}: ${discs.length} vertices in the brake discs`);
+      }
+      continue;
+    }
     assert.ok(trisOf(motor.drive) >= 100, `${label}: a motor bogie's drive is ${trisOf(motor.drive)} triangles`);
     assert.equal(trisOf(trailer.drive), 0, `${label}: a trailer bogie carries no traction motor or gearbox`);
     for (const part of ['wheels', 'axles', 'frame', 'springs'] as const) assert.deepEqual(motor[part].pos, trailer[part].pos, `${label}: a motor bogie's ${part} are a trailer's`);
@@ -2355,6 +2391,13 @@ test('bogie drives hang in view: a motor bogie\'s drive and a trailer bogie\'s b
     const beam = vertsOf(parts.frame).filter((v) => Math.abs(v[0]) >= 0.4 && Math.abs(v[2]) <= 0.6 && v[1] >= spec.radius - 0.17);
     assert.ok(beam.length >= 8, `${label}: found the side beams`);
     const beamBottom = Math.min(...beam.map((v) => v[1]));
+    if (spec.style === 'hitachi') {
+      // CHANGED (round 6; it held the AT300's motor bogie's drive and its trailer bogie's brake units to MOTOR_FLOOR over the rail head, 10 cm under the beam): neither is drawn (see 'bogie drives' above), so
+      // nothing of the brakes or the drive stands in the clear between the wheels; what hangs lowest there is the frame's, and `train-bogie-trace.test.ts` holds that to the photograph
+      assert.equal(trisOf(parts.drive), 0, `${label}: the AT300 draws no drive`);
+      assert.equal(vertsOf(parts.brakes).filter(clear).length, 0, `${label}: no brake unit hangs in the clear between the wheels`);
+      continue;
+    }
     if (!spec.motor) {
       // a trailer bogie's brake units: the cylinders' flanges are the lowest, MOTOR_FLOOR over the rail head, and the part in view stands between the wheels
       assert.equal(trisOf(parts.drive), 0, `${label}: a trailer bogie has no drive`);
@@ -2408,7 +2451,8 @@ const soupTris = (s: Soup): { v: [V3t, V3t, V3t]; c: [number, number, number] }[
 const linearLuma = (c: [number, number, number]): number => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 
 test('bogie drives: a traction motor\'s gear case is a box from its axle to the motor\'s far end, on the opposite sides for the two axles, in the gear colour and not the barrel\'s', () => {
-  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel)) {
+  // (round 6: not the AT300's, which draws no motor)
+  for (const { label, spec } of BOGIE_CASES.filter((c) => c.spec.motor && !c.spec.diesel && c.spec.style !== 'hitachi')) {
     const r = spec.radius;
     const w = spec.wheelbase / 2;
     const tris = soupTris(bogieParts(spec).drive);
@@ -2486,15 +2530,16 @@ test('bogie drives: a diesel unit\'s final drive is a gearbox on each axle, a ca
   }
 });
 
-// The AT300's budget is 300 above the others': its photograph shows the lugs, arms, ribs and cables of `at300Detail`, about 170 triangles.
+// CHANGED (round 6: the AT300's cap was 2,800, 300 above the others', for the lugs, arms, ribs and cables of the round-4 frame, about 170 triangles; its frame is the photograph's now, 2,060 triangles
+// of the 4,284 in all, with the beam's 92-cornered outline on each face, the car's bracket, the yaw damper, the anti-roll rod, the step, ten-sided caps and twelve-sided bosses, so its cap is 4,500).
 // CHANGED (round 5: the caps were 2,600 (a motor bogie) and 2,400 (a trailer), the AT300's 2,700 and 2,550): a motor bogie's motors are 16 sided and carry bosses (144 triangles more) and a trailer bogie
 // draws its brake units (272 more), so a motor and a trailer bogie are about the same size now (2,740 and 2,732 triangles at most, the AT300's), and each style has the one cap.
 // The real limit is the rubric's 6.0 x per kind near growth and 40,000 triangles a car (the 2026-11-09 budget ruling; see the cost counter), which every kind meets with room to spare.
-test('bogie budgets: a near bogie is at most 2,500 triangles, the AT300\'s 2,800, a far one at most 300, in every style', () => {
+test('bogie budgets: a near bogie is at most 2,500 triangles, the AT300\'s 4,500, a far one at most 300, in every style', () => {
   for (const { label, spec } of BOGIE_CASES) {
     const nearN = trisOf(bogieSoup(spec));
     const farN = trisOf(bogieFarSoup(spec));
-    const cap = spec.style === 'hitachi' ? 2800 : 2500;
+    const cap = spec.style === 'hitachi' ? 4500 : 2500;
     assert.ok(nearN <= cap, `${label}: ${nearN} triangles in the near bogie (at most ${cap})`);
     assert.ok(nearN >= 1800, `${label}: ${nearN} triangles is too bare for a bogie that reads as one at three metres`);
     assert.ok(farN <= 300 && farN >= 100, `${label}: ${farN} triangles in the far bogie`);
@@ -2590,104 +2635,20 @@ test('bogie styles: absent a style a bogie is the Hitachi\'s, or the Alstom\'s i
   assert.deepEqual(styles.map(hasYellow), [true, false, false, false]);
 });
 
-test('bogies: the AT300 frame carries the lugs, arms, ribs and cables its photograph shows, each standing on the box or beam it belongs to, and the springs it shows; no other maker\'s frame carries them', () => {
-  // lner-gwr800-bogie-detail-2017.jpg: the vertical lug with its eye over each axle box, the trailing arm from each box inboard, the diagonal webs on
-  // the beam's face either side of the step's plate, and the sensor cable looping from the box end to the frame. The routing of the cable is ASSUMED.
-  const r = 0.43;
-  const w = 1.3;
-  const spec: BogieSpec = { radius: r, wheelbase: 2 * w, track: FIGURES.gauge.value, motor: true, style: 'hitachi' };
-  const CAP = 0x4f545b;
-  const RUBBER = 0x1f2125;
-  const colourOf = (soup: Soup, hex: number): V3t[] => {
-    const c = col(hex);
-    const out: V3t[] = [];
-    for (let i = 0; i < soup.pos.length / 3; i++) {
-      if (Math.abs((soup.clr[3 * i] as number) - c.r) < 1e-6 && Math.abs((soup.clr[3 * i + 1] as number) - c.g) < 1e-6 && Math.abs((soup.clr[3 * i + 2] as number) - c.b) < 1e-6) out.push([soup.pos[3 * i] as number, soup.pos[3 * i + 1] as number, soup.pos[3 * i + 2] as number]);
-    }
-    return out;
-  };
-  const span = (v: V3t[], axis: 0 | 1 | 2): [number, number] => [Math.min(...v.map((p) => p[axis])), Math.max(...v.map((p) => p[axis]))];
-  // the beam's lower and upper edge at distance z from the middle: straight between the outline's corners (the same outline the source draws, here by its numbers)
-  const along = (pts: [number, number][], z: number): number => {
-    const a = Math.abs(z);
-    for (let k = 0; k + 1 < pts.length; k++) {
-      const [z0, y0] = pts[k] as [number, number];
-      const [z1, y1] = pts[k + 1] as [number, number];
-      if (a >= z0 && a <= z1) return y0 + ((y1 - y0) * (a - z0)) / (z1 - z0);
-    }
-    throw new Error(`no beam at ${z}`);
-  };
-  const bottom = (z: number): number => r + along([[0, -0.08], [0.5, -0.08], [0.82, 0.1], [w - 0.28, 0.26], [w + 0.33, 0.26]], z);
-  const top = (z: number): number => r + along([[0, 0.4], [0.75, 0.44], [w - 0.3, 0.5], [w + 0.3, 0.5]], z);
-  const parts = bogieParts(spec);
-  const frame = vertsOf(parts.frame);
-  for (const sx of [-1, 1]) {
-    const out = (p: V3t): number => sx * p[0];
-    const mine = frame.filter((p) => out(p) > 0);
-    for (const az of [-w, w]) {
-      const inward = az < 0 ? 1 : -1;
-      const where = `side ${sx}, axle at z ${az}`;
-      // the lug: one box up the outside of the axle box (whose outer face is at 1.085), reaching the beam end's underside
-      const lug = mine.filter((p) => out(p) > 1.0845 && out(p) < 1.1055 && Math.abs(p[2] - az) < 0.0555 && p[1] > r + 0.085);
-      assert.equal(lug.length, 36, `${where}: the lug is ${lug.length} vertices, not one box's 36`);
-      near(Math.min(...lug.map(out)), 1.085, 1e-9, `${where}: the lug's inner face is the box's outer face`);
-      near(Math.max(...lug.map(out)), 1.105, 1e-9, `${where}: the lug's outer face`);
-      near(span(lug, 1)[0], r + 0.09, 1e-9, `${where}: the lug's foot, inside the box's top at ${r + 0.11}`);
-      near(span(lug, 1)[1], r + 0.27, 1e-9, `${where}: the lug's head, at the beam end's underside ${r + 0.26}`);
-      near(span(lug, 2)[0], az - 0.055, 1e-9, `${where}: the lug's near edge`);
-      near(span(lug, 2)[1], az + 0.055, 1e-9, `${where}: the lug's far edge`);
-      // the arm: one bar from inside the axle box inboard to the beam
-      const arm = mine.filter((p) => out(p) > 0.981 && out(p) < 1.06 && p[1] > r - 0.01 && p[1] < r + 0.13 && Math.abs(p[2]) > 0.55 && Math.abs(p[2]) < 1.25 && Math.sign(p[2]) === Math.sign(az));
-      assert.equal(arm.length, 36, `${where}: the arm is ${arm.length} vertices, not one bar's 36`);
-      near(Math.min(...arm.map(out)), 0.985, 1e-9, `${where}: the arm's inner face, inside the beam's thickness`);
-      near(Math.max(...arm.map(out)), 1.055, 1e-9, `${where}: the arm's outer face, inside the beam's thickness`);
-      near(span(arm, 1)[0], r + 0.005, 1e-9, `${where}: the arm's underside`);
-      near(span(arm, 1)[1], r + 0.105, 1e-9, `${where}: the arm's top, under the axle box's top at ${r + 0.11}`);
-      const [a0, a1] = [az + inward * 0.1, az + inward * 0.7].sort((p, q) => p - q) as [number, number];
-      near(span(arm, 2)[0], a0, 1e-9, `${where}: the arm's end`);
-      near(span(arm, 2)[1], a1, 1e-9, `${where}: the arm's other end`);
-      assert.ok(Math.abs(az + inward * 0.1 - az) < 0.125, `${where}: the arm starts inside the axle box (0.125 m either side of the axle)`);
-      const inner = Math.abs(az + inward * 0.7);
-      assert.ok(bottom(inner) <= span(arm, 1)[1] && top(inner) >= span(arm, 1)[0], `${where}: the arm's inboard end (z ${inner}) meets the beam, which spans ${bottom(inner)} to ${top(inner)}`);
-      // the cable: two strips on the face of the beam, standing a few millimetres off it, from beside the lug inboard
-      const cable = colourOf(parts.frame, RUBBER).filter((p) => Math.abs(out(p) - 1.072) < 1e-9 && Math.sign(p[2]) === Math.sign(az) && out(p) > 0);
-      assert.equal(cable.length, 12, `${where}: the cable is ${cable.length} vertices, not two strips' 12`);
-      near(span(cable, 2)[0], Math.min(az + inward * 0.09, az + inward * 0.72), 1e-9, `${where}: the cable's end`);
-      near(span(cable, 2)[1], Math.max(az + inward * 0.09, az + inward * 0.72), 1e-9, `${where}: the cable's other end`);
-      assert.ok(1.072 - 1.065 > 0.003 && 1.072 - 1.065 < 0.012, 'the cable stands 3 to 12 mm off the beam face (1.065)');
-      for (const p of cable) assert.ok(p[1] >= bottom(p[2]) + 0.005 && p[1] <= top(p[2]) - 0.005, `${where}: the cable at z ${p[2]}, y ${p[1]} is off the beam (${bottom(p[2])} to ${top(p[2])})`);
-    }
-    // the ribs: one bar each side of the middle on the beam's face, rising outward, inside the beam's outline, in the lighter cap colour
-    for (const zs of [-1, 1]) {
-      const rib = colourOf(parts.frame, CAP).filter((p) => out(p) > 1.06 && Math.abs(p[2]) < 0.9 && Math.sign(p[2]) === zs);
-      assert.equal(rib.length, 36, `side ${sx}, ${zs > 0 ? 'forward' : 'aft'}: the rib is ${rib.length} vertices, not one bar's 36`);
-      near(Math.min(...rib.map(out)), 1.065, 1e-9, 'a rib stands on the beam face');
-      near(Math.max(...rib.map(out)), 1.085, 1e-9, 'a rib stands 2 cm proud');
-      const lowest = rib.reduce((a, b) => (b[1] < a[1] ? b : a));
-      const highest = rib.reduce((a, b) => (b[1] > a[1] ? b : a));
-      assert.ok(Math.abs(highest[2]) > Math.abs(lowest[2]) + 0.2, `side ${sx}: the rib rises outward (low end at z ${lowest[2]}, high end at ${highest[2]})`);
-      assert.ok(span(rib, 1)[1] - span(rib, 1)[0] > 0.35, `side ${sx}: the rib is ${span(rib, 1)[1] - span(rib, 1)[0]} m tall, a long web`);
-      for (const p of rib) assert.ok(p[1] >= bottom(p[2]) - 0.002 && p[1] <= top(p[2]) + 0.002, `side ${sx}: the rib's corner at z ${p[2]}, y ${p[1]} is off the beam (${bottom(p[2])} to ${top(p[2])})`);
-    }
-    // the broad springs: the primary stack on each box (a drum of 0.08 m with wraps of 0.096) and the air spring's 0.17 m bag
-    const springs = vertsOf(parts.springs).filter((p) => out(p) > 0);
-    for (const az of [-w, w]) {
-      const stack = springs.filter((p) => Math.abs(p[2] - az) < 0.2 && p[1] < r + 0.3);
-      near(Math.max(...stack.map((p) => Math.hypot(out(p) - 0.985, p[2] - az))), 0.096, 1e-9, `side ${sx}, axle at z ${az}: the primary stack's widest wrap`);
-    }
-    // its top is a fan: the rim (twelve sides, 0.17 m from the axis) and the middle
-    const bag = springs.filter((p) => Math.abs(p[1] - (BOGIE_TOP - 0.005)) < 1e-9);
-    const rim = bag.filter((p) => Math.hypot(out(p) - 0.97, p[2]) > 1e-9);
-    assert.equal(new Set(rim.map((p) => `${p[0].toFixed(6)},${p[2].toFixed(6)}`)).size, 12, `side ${sx}: the air spring's rim is not twelve-sided`);
-    for (const p of rim) near(Math.hypot(out(p) - 0.97, p[2]), 0.17, 1e-9, `side ${sx}: the air spring's top edge is a circle of 0.17 m about its axis`);
-  }
-  // no other maker's frame carries any of it
+test('bogies: the AT300 frame is the one its photograph is traced to, with the bracket, rod, lever, yaw damper and pedestal straps standing in planes of their own, and no other maker\'s frame has a vertex on them', () => {
+  // CHANGED (round 6; it held the round-4 frame's lugs, arms, ribs and cables, each at its numbers, and the stack of 0.096 m and the air spring of 0.17 m): those parts were drawn from
+  // `lner-gwr800-bogie-detail-2017.jpg` by eye, and the frame is now traced from `GWR 802003 835003 leading bogie revised fittings.jpg` (`train-bogie-trace.ts`), each part held to the photograph's numbers
+  // by `train-bogie-trace.test.ts`: the beam's outline, the axle boxes, caps, sensor housings, spring stacks, dampers, lugs, pedestal straps, the bracket, the yaw damper, the rod, the lever, the step and the air
+  // spring. What is held here is that the frame is the AT300's alone: the planes (metres from the middle) the parts new in round 6 stand in are on the AT300's frame and on no other maker's (the yaw damper's 1.095, its clevises'
+  // 1.07 and 1.125 and the cap's 1.12 are the other makers' as well: round 4 drew their yaw dampers as the AT300's).
+  const spec: BogieSpec = { radius: 0.43, wheelbase: 2.6, track: FIGURES.gauge.value, motor: true, style: 'hitachi' };
+  const planes = [1.072, 1.117, 1.082, 1.106, 1.09, 1.115, 1.071, 1.145, 1.147];
+  const onPlane = (verts: V3t[], x: number): number => verts.filter((p) => Math.abs(Math.abs(p[0]) - x) < 1e-9).length;
+  const at300 = vertsOf(bogieParts(spec).frame);
+  for (const x of planes) assert.ok(onPlane(at300, x) > 0, `the AT300's frame has no vertex ${x} m from the middle`);
   for (const style of ['electrostar', 'alstom', 'siemens'] as const) {
     const v = vertsOf(bogieParts({ ...spec, style, diesel: style === 'alstom' }).frame);
-    assert.equal(v.filter((p) => Math.abs(p[0]) > 1.0845 && Math.abs(p[0]) < 1.1055 && Math.abs(Math.abs(p[2]) - w) < 0.0555 && p[1] > r + 0.085).length, 0, `${style}: a lug over the axle box`);
-    assert.equal(v.filter((p) => Math.abs(p[0]) > 0.981 && Math.abs(p[0]) < 1.06 && p[1] > r - 0.01 && p[1] < r + 0.13 && Math.abs(p[2]) > 0.55 && Math.abs(p[2]) < 1.25).length, 0, `${style}: an axle-box arm`);
-    assert.equal(v.filter((p) => Math.abs(Math.abs(p[0]) - 1.085) < 1e-9 && Math.abs(p[2]) > 0.49 && Math.abs(p[2]) < 0.83).length, 0, `${style}: a rib on the beam`);
-    assert.equal(v.filter((p) => Math.abs(Math.abs(p[0]) - 1.072) < 1e-9).length, 0, `${style}: a cable on the beam`);
+    for (const x of planes) assert.equal(onPlane(v, x), 0, `${style}: ${onPlane(v, x)} vertices ${x} m from the middle, a plane the AT300's frame alone stands in`);
   }
 });
 

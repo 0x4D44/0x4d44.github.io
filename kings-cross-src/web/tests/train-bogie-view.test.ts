@@ -142,9 +142,10 @@ function v07(kind: TrainKind, motor: boolean): { pose: Pose; spec: BogieSpec; pi
  * 12% under what the model draws; round 4's bogies, measured the same way, drew 11,244 (the AT300), 19,672 (Electrostar), 5,372 (Siemens) and 13,368 (Class 180) pixels of drive and
  * no brake units at all (the trailer's brakes were its discs, which a wheel hides from the side). The drive floors stand over those, so a bogie drawn back to round 4's fails them.
  * The Siemens' beam is an inside frame plate hanging to 0.25 m, which hides most of a motor, and the AT300's deep beam hides the top of one; the lower Siemens floor is for that.
+ * CHANGED (round 6; the AT300's (lner5) floors were 13,200 pixels of drive and 10,000 of brake units): the AT300's bogie is traced from the photograph of a trailer bogie and draws no drive and no
+ * brake unit, on a motor car or a trailer car (`train-bogie-trace.test.ts`), so it has its own test below, and these are the other three makers'.
  */
 const CASES: { kind: TrainKind; drive: number; units: number }[] = [
-  { kind: 'lner5', drive: 13_200, units: 10_000 },
   { kind: 'gn387x4', drive: 20_800, units: 11_800 },
   { kind: 'gn717x6', drive: 5_900, units: 5_900 },
   { kind: 'tl700x8', drive: 5_900, units: 5_900 },
@@ -168,4 +169,15 @@ test('V07 trailer bogie: its brake units hang between the wheels and fill the pi
     const extra = trailer.pixels.brakes - motor.pixels.brakes;
     assert.ok(extra >= units, `${kind}: ${extra} pixels of brake units at V07 (${trailer.pixels.brakes} on the trailer, ${motor.pixels.brakes} on the motor; the floor is ${units})`);
   }
+});
+
+test('V07 AT300 bogie: a motor car\'s bogie and a trailer car\'s are the one bogie the photograph shows, with no drive and no brake unit, and its frame fills the pixels the floor asks of it', () => {
+  const motor = v07('lner5', true);
+  const trailer = v07('lner5', false);
+  assert.equal(motor.pixels.drive, 0, `a motor car's AT300 bogie draws no drive (${motor.pixels.drive} pixels)`);
+  assert.equal(trailer.pixels.drive, 0, `a trailer car's AT300 bogie draws no drive (${trailer.pixels.drive} pixels)`);
+  assert.deepEqual(trailer.pixels, motor.pixels, 'and no brake unit: every part fills the same pixels on both');
+  // the floors sit about 12% under what the model draws (162,296 pixels of frame and 14,796 of spring, in a 1600 x 1000 frame): the side beam with its bracket, step and boxes, and the springs and the air spring
+  assert.ok(motor.pixels.frame >= 142_000, `${motor.pixels.frame} pixels of frame at V07 (the floor is 142,000)`);
+  assert.ok(motor.pixels.springs >= 13_000, `${motor.pixels.springs} pixels of springs at V07 (the floor is 13,000)`);
 });
