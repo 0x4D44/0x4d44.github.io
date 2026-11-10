@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthRampTexture, PERTH_RAMP_FINISH, perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, RAMP_KINK, PERTH_TRUSS, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, RAMP_KINK, PERTH_PRINCIPAL, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -1055,10 +1055,12 @@ test('round 9: the ramps leave the deck in their own grooved concrete, grooves a
   } finally { scene.dispose(); }
 });
 
-test('round 9: R-pt1-a\'s principal trusses: a heavy rib and an open Warren web reaching the rafters, not close verticals', () => {
+test('round 9: R-pt1-a\'s principal trusses: a heavy rib and an open web reaching the rafters, not close verticals', () => {
   // One truss alone, as archedIronwork draws them (11.6 m between gutter girders, a level member over it for the test).
-  const T = PERTH_TRUSS, L = 11.6, y0 = 6.45, top = 9, truss = new Batch({colored: true, uv: false}), close = new Batch({colored: true, uv: false});
-  archRib(truss, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], T);
+  // Round 10 (declared): re-targeted from round 9's Warren web (PERTH_TRUSS, gone) to round 10's fan of long diagonals (PERTH_PRINCIPAL);
+  // the no-verticals, open and heavy-rib checks are unchanged, the reach check now asks for each fan diagonal at the rafters.
+  const T = PERTH_PRINCIPAL, L = 11.6, y0 = 6.45, top = 9, truss = new Batch({colored: true, uv: false}), close = new Batch({colored: true, uv: false});
+  archRib(truss, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], {size: T.size, fan: T.fan, webSize: T.fanSize});
   archRib(close, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], {strut: 1});
   const p = truss.positions, n = p.length / 3;
   // No verticals: no member whose two ends share a station along the span (the round-8 web had one every metre).
@@ -1066,15 +1068,14 @@ test('round 9: R-pt1-a\'s principal trusses: a heavy rib and an open Warren web 
   for (let i = 0; i < n; i++) { const k = p[3 * i].toFixed(2); ends.set(k, [...(ends.get(k) ?? []), p[3 * i + 1]]); }
   const tall = [...ends.values()].filter(ys => Math.max(...ys) - Math.min(...ys) > .6).length;
   assert.equal(tall, 0, 'no vertical struts under the rafters');
-  // Open: the web's panels near T.web m, each diagonal reaching the member over it at its panel's middle.
-  const k = Math.round(L / T.web), P = L / k;
-  let reach = 0;
-  for (let i = 0; i < k; i++) { const sm = (i + .5) * P; if ([...Array(n).keys()].some(j => Math.abs(p[3 * j] - sm) < .1 && Math.abs(p[3 * j + 1] - (top - .4)) < .1)) reach++; }
-  assert.ok(reach >= k - 1, `the web reaching the rafters at ${reach} of ${k} panel middles`);
-  // Open: panels 2 m or more (the verticals stood 1 m apart), two diagonals each and no more members than that.
+  // The web reaching the member over it: a vertex at the rafters at every fan station, from both ends.
+  const stations = T.fan.flatMap(f => [f * L, L - f * L]);
+  const reach = stations.filter(sm => [...Array(n).keys()].some(j => Math.abs(p[3 * j] - sm) < .1 && Math.abs(p[3 * j + 1] - (top - .4)) < .1)).length;
+  assert.equal(reach, stations.length, `the web reaching the rafters at ${reach} of ${stations.length} stations`);
+  // Open: no more members than the fan's diagonals (the round-8 verticals stood 1 m apart, ten a span).
   const rib = new Batch({colored: true, uv: false}); archRib(rib, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], {size: T.size, strut: 1e9});
   const per = (close.positions.length - rib.positions.length) / 3 / Math.floor(L - .5);
-  assert.ok(P >= 2 && (n - rib.positions.length / 3) / per <= 2 * k, `open panels (${P.toFixed(1)} m, ${((n - rib.positions.length / 3) / per).toFixed(0)} members)`);
+  assert.ok((n - rib.positions.length / 3) / per <= stations.length, `open (${((n - rib.positions.length / 3) / per).toFixed(0)} members)`);
   // The rib heavier than the round-8 rib (0.1 m).
   assert.ok(T.size > .1, `a heavy rib (${T.size} m)`);
 });
@@ -1122,6 +1123,25 @@ test('round 10: R-pt1-a\'s two big rings in each deep corner of the long braces,
     const [big, next] = [...ds].sort((p, q) => q - p);
     assert.ok(ds.length === R.count && big >= .65 * W.gutterGirderDepth && next >= .45 * W.gutterGirderDepth, `corner ${key}: ${R.count} big rings (${ds.map(d => d.toFixed(2)).join(', ')} m; the girder ${W.gutterGirderDepth} m deep)`);
   }
+});
+
+test('round 10: R-pt1-a\'s principal trusses deep at their ends, with long diagonals from the springings', () => {
+  // As archedIronwork draws one: springing T.drop m under the gutter girder's underside, the rafters 0.4 m under a 9 m roof.
+  const T = PERTH_PRINCIPAL, W = WAVERLEY_STRUCTURE, L = 11.6, top = 9 - .4, y0 = W.gutterGirderTop - W.gutterGirderDepth - T.drop;
+  const b = new Batch({colored: true, uv: false}), rib = new Batch({colored: true, uv: false});
+  archRib(b, [0, 0], [L, 0], y0, 9 - 1.1, () => top, [0, 0, 0], {size: T.size, fan: T.fan, webSize: T.fanSize});
+  archRib(rib, [0, 0], [L, 0], y0, 9 - 1.1, () => top, [0, 0, 0], {size: T.size, strut: 1e9});
+  // Deep at the ends: the truss stands 2 m or more from springing to rafters, below the girder (round 9's sprang at its underside).
+  assert.ok(top - y0 >= 2 && T.drop >= .5, `deep at the ends (${(top - y0).toFixed(2)} m)`);
+  // Long diagonals: the fan's members, past the rib's vertices, span from springing height to the rafters, the longest 4.5 m or more.
+  const p = b.positions.slice(rib.positions.length);
+  let longest = 0;
+  for (let i = 0; i < p.length; i += 24) {
+    const xs = [], ys = [];
+    for (let j = i; j < i + 24 && j < p.length; j += 3) { xs.push(p[j]); ys.push(p[j + 1]); }
+    longest = Math.max(longest, Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)));
+  }
+  assert.ok(longest >= 4.5, `a long diagonal from the springing (${longest.toFixed(2)} m)`);
 });
 
 test('round 10: the ramps\' slope unmistakable: shaded darker down the fall, the side edging kinked at the break of slope, bands across head and foot', () => {
