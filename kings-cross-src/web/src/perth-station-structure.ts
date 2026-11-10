@@ -177,7 +177,7 @@ export const PERTH_STATION = {
   stair: {width: 1.8, going: .28, maxRise: .18, clear: 1.2, gap: .2, landing: 1.8, column: .18},
   /** Lift towers (R-pt1-d Abbott, R-pt1-b): 3.2 m square, standing 3.6 m over the deck, clad in vertical panels about 0.8 m wide (Abbott);
    *  ASSUMED sizes scaled from Abbott against the stair's balustrade. */
-  tower: {size: 3.2, above: 3.6, panel: .8},
+  tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const},
   /** Bracket clocks on the island building (R-pt1-a2): a 0.8 m dial, 3.6 m up, 0.7 m out from the wall. */
   clock: {radius: .4, height: 3.6, out: .7},
   /** Furniture, ASSUMED sizes scaled from R-pt1-a (benches against the building's doors) and R-pt1-c:
@@ -633,6 +633,17 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
         b.box([xc + f[0] * e * hs + g[0] * k, (y0 + y1) / 2, zc + f[1] * e * hs + g[1] * k], [.04, y1 - y0 - .3, .04], {color: P('seam')});
       }
       b.box([xc + l.tower.dir[0] * (T.size / 2 + .02), y0 + 1.1, zc + l.tower.dir[1] * (T.size / 2 + .02)], [.06, 2.2, 1.1], {rotY, color: P('screen')});
+      // Round 4: the deck-level lift door on the face toward the deck, under a glass hood cantilevered T.hood[0] m out on two pale brackets
+      // (Abbott 6573357, R-pt1-b). The hood's glass is glassPanel, so it is drawn see-through with the bridges' glass. ASSUMED sizes.
+      const d: Pt = [-u[0], -u[1]], face = T.size / 2 + .02, [out, wide, over] = T.hood, yh = br.deck + over;
+      b.box([xc + d[0] * face, br.deck + 1.1, zc + d[1] * face], [.06, 2.2, 1.1], {rotY, color: P('screen')});
+      b.box([xc + d[0] * (face + out / 2), yh, zc + d[1] * (face + out / 2)], [out, .03, wide], {rotY, color: P('glassPanel')});
+      for (const e of [-1, 1]) {
+        const s0: V3 = [xc + d[0] * face + v[0] * e * wide / 2, yh - .6, zc + d[1] * face + v[1] * e * wide / 2];
+        const s1: V3 = [xc + d[0] * (face + out) + v[0] * e * wide / 2, yh, zc + d[1] * (face + out) + v[1] * e * wide / 2];
+        beam(b, s0, s1, .05, .06, P('frame'));
+        beam(b, [s1[0], yh + .03, s1[2]], [xc + d[0] * face + v[0] * e * wide / 2, yh + .03, zc + d[1] * face + v[1] * e * wide / 2], .05, .05, P('frame'));
+      }
     }
   }
 }

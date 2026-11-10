@@ -244,6 +244,20 @@ test('round 3: the frozen platform views see furniture: benches in the near view
   assert.ok(away >= 20, `${away} benches down the column lines`);
 });
 
+test('round 4: every lift tower has a glass hood over its deck-level door (Abbott 6573357), drawn see-through', () => {
+  const [out, , over] = PERTH_STATION.tower.hood, towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, y: br.deck + over})));
+  assert.equal(towers.length, 3, 'three lift towers');
+  const p = batches.panes.positions;
+  for (const t of towers) {
+    let n = 0;
+    for (let i = 0; i < p.length; i += 3) {
+      const q = toLocal([p[i], p[i + 2]]), r = Math.hypot(q[0] - t.c[0], q[1] - t.c[1]);
+      if (Math.abs(p[i + 1] - t.y) < .03 && r > PERTH_STATION.tower.size / 2 && r < PERTH_STATION.tower.size / 2 + out + 1.3) n++;
+    }
+    assert.ok(n >= 8, `a hood at the tower at ${t.c} (${n} vertices)`);
+  }
+});
+
 test('round 4: the Dundee canopies as Champion 2011 shows them: ridges across the platforms, platform 1 boarded on grey-blue columns, a white lattice valance', () => {
   const C = PERTH_STATION.canopy, canopy = plan.local.canopy, near = (p: Pt): boolean => inRing(p, canopy) || ringDistance(p, canopy) < .3;
   const pf1 = plan.local.platforms.filter(q => q.ref === PERTH_BOARDED_PLATFORM).map(q => q.pts), on1 = (p: Pt): boolean => pf1.some(r => inRing(p, r) || ringDistance(p, r) < .3);
