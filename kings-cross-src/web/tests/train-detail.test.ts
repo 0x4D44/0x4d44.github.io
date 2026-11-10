@@ -457,6 +457,11 @@ test('nose: the face stands NOSE_RECESS behind the end of the train (where a cov
     assert.ok(mid, `${kind} has an intermediate car to compare with`);
     const topOf = (mesh: THREE.Mesh, from: number): number => Math.max(...triangles(mesh).flatMap((t) => t).filter((v) => v.z > from).map((v) => v.y));
     near(topOf(shell, front.start + spec.nose.length + 0.5), topOf(named(named(g, `car-${mid.index}`), 'body-shell') as THREE.Mesh, -Infinity), 1e-6, `${kind}: the textured side reaches as high behind the nose as it does on an intermediate car`);
+    // ...and that is the section's own column 7 (SHELL_K1). The two above agree just as well when the nose's top is taken for every car, which lifts the intermediate car's side to column 9
+    // along with the cab car's, so each is held to the section as well
+    const seven = (carSection(spec).half[7] as [number, number])[1];
+    near(topOf(named(named(g, `car-${mid.index}`), 'body-shell') as THREE.Mesh, -Infinity), seven, 1e-5, `${kind}: an intermediate car's textured side ends at the section's column 7`);
+    near(topOf(shell, front.start + spec.nose.length + 0.5), seven, 1e-5, `${kind}: and so does the cab car's side behind the nose`);
   }
 });
 
