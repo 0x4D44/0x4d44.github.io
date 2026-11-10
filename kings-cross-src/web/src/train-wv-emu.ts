@@ -18,6 +18,8 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, buildBogie, buildPantograph, couplerHalf, roofKit, roofKitSpan } from './train-parts.ts';
+import { buildCafBogie, splitTri, starOutline } from './train-wv-emu-parts.ts';
+import type { Look } from './train-wv-emu-parts.ts';
 import type { BogieStyle, CouplerStyle } from './train-parts.ts';
 
 /** Half the gap between two bodies, metres: the same 0.35 m as the King's Cross kinds (ASSUMED there too). */
@@ -25,6 +27,10 @@ export const WV_END_GAP = 0.35;
 /** A passenger door stands this far proud of the body's wall, so the doors set the body's width. */
 const DOOR_RELIEF = 0.02;
 const COUPLER_Y = 0.85;
+/** The Nova 2's door window: half its width, how far above the door's foot it starts and below its head it stops (tpe397-02; ASSUMED). */
+const DOOR_GLASS = { half: 0.3, foot: 0.62, head: 0.16 } as const;
+/** The 334's hopper pane: its depth from the window's head (scotrail334_01, _02; ASSUMED). */
+const HOPPER = 0.32;
 
 // --- colours (read off the photographs; shades approximate) -------------------------------------------------
 
@@ -79,10 +85,13 @@ interface Body {
   window: number;
   roof: number;
   cover: number;
-  bogie: BogieStyle;
+  /** a shared bogie style, or the CAF bogie of train-wv-emu-parts */
+  bogie: BogieStyle | 'caf';
   gangway: { width: number; height: number; bottom: number };
   /** the shell's ring spacing along the car where the livery changes along it (0: none needed) */
   liveryStep: (car: WvEmuCar) => { until: number; step: number };
+  /** heights where a thin horizontal band of the livery begins or ends: the section gets a point at each */
+  cuts: readonly number[];
   plan: (car: WvEmuCar) => CarPlan;
 }
 
@@ -129,14 +138,16 @@ const JUNIPER_BODY: Body = {
   doorWidth: 1.3,
   doorLeaves: 2,
   doorY: [1.12, 2.98],
-  windowY: [1.62, 2.58],
+  // ASSUMED, read off scotrail334_01 and _02: tall windows with a hopper pane across the top (see HOPPER), the sill about 1.5 m up
+  windowY: [1.5, 2.72],
   door: SR_DOOR,
   window: 0x222b3a,
   roof: SR_ROOF,
   cover: 0x4a5062,
   bogie: 'alstom',
   gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
-  liveryStep: () => ({ until: 0, step: 1 }),
+  liveryStep: (car) => ({ until: car.length, step: 0.5 }),
+  cuts: [3.29, 3.33],
   // ASSUMED, read off scotrail334_01 and _02 (window and door counts; spacings scaled along the car): a driving car has the crew door 2.25 m behind the face, three windows,
   // a door at 9 m, five windows, a door 3.8 m from the inner end and two windows; the middle car a door 3.8 m in from each end, eight windows between, two beyond each
   plan: (car) => {
@@ -146,18 +157,20 @@ const JUNIPER_BODY: Body = {
     if (car.cab) {
       const d1 = 9.0;
       const d2 = L - 3.8;
+      // (scotrail334_01, _02: two tall windows between the Saltire and the first door, five between the doors, two beyond the second)
       return {
         crewDoor: 2.25,
         doors: [d1, d2],
-        windows: [...windowsIn(3.0, d1 - dw / 2 - 0.3, 1.6, 0.35), ...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.25, 0.32), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.3, 1.05, 0.3)],
+        windows: [...windowsIn(4.6, d1 - dw / 2 - 0.3, 1.45, 0.4), ...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.25, 0.4), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.95, 1.05, 0.35)],
       };
     }
     const d1 = 3.8;
     const d2 = L - 3.8;
+    // the PTOS's front end carries the Saltire, not windows (scotrail334_01)
     return {
       crewDoor: null,
       doors: [d1, d2],
-      windows: [...windowsIn(gap + 0.3, d1 - dw / 2 - 0.3, 1.1, 0.3), ...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.3, 0.32), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.3, 1.1, 0.3)],
+      windows: [...windowsIn(d1 + dw / 2 + 0.3, d2 - dw / 2 - 0.3, 1.3, 0.42), ...windowsIn(d2 + dw / 2 + 0.3, L - gap - 0.95, 1.05, 0.35)],
     };
   },
 };
@@ -175,8 +188,11 @@ const JUNIPER_BODY: Body = {
  */
 const NOVA = {
   hood: 3.47, display: [3.27, 3.45], screen: [2.15, 3.2], screenU: 0.7, frameU: 0.78,
-  band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.52,
+  band: [1.45, 2.08], lamps: [1.62, 2.04], mouth: [0.72, 1.38], mouthHalf: 0.62, navy: 0.6, star: 1.55,
 } as const;
+/** A lamp housing ("eye"): from u0 to u1 across the face, its foot rising outboard by `rise` (tpe397-01: the outer end stands higher), `height` tall. ASSUMED sizes. */
+const EYE = { u0: 0.36, u1: 0.88, foot: 1.62, rise: 0.24, height: 0.3 } as const;
+const eyeFoot = (u: number): number => EYE.foot + (EYE.rise * (u - EYE.u0)) / (EYE.u1 - EYE.u0);
 
 /**
  * The Class 397. A rounded, fairly upright face (tpe397-01, -04, -05, -06): the bumper stands furthest forward, the face leans back above it, steepest over the screen, and meets
@@ -219,10 +235,11 @@ const CIVITY_BODY: Body = {
   window: 0x26313c,
   roof: TPE_ROOF,
   cover: 0x9ea3a9,
-  // (tpe397-03: the wheels' faces and their bolted brake discs stand clear of the frame, which is inboard; the nearest of the drawn styles is the Siemens inside frame)
-  bogie: 'siemens',
+  // CAF's inside-frame bogie, built from tpe397-03 (train-wv-emu-parts buildCafBogie)
+  bogie: 'caf',
   gangway: { width: 2.0, height: 2.25, bottom: 1.1 },
-  liveryStep: (car) => (car.cab ? { until: 10.5, step: 0.14 } : { until: car.length, step: 0.25 }),
+  liveryStep: (car) => ({ until: car.length, step: car.cab ? 0.4 : 0.6 }),
+  cuts: [1.07, 3.04, 3.08],
   // ASSUMED, from window and door counts in tpe397-01, -02, -04, -05: single-leaf plug doors at both ends of every car (about 1.55 m in); a driving car has the crew door 4.1 m
   // from the tip, its first door at 7 m and six large windows; an intermediate car a blank panel (the "COACH" display) of about 2 m at one end and ten windows
   plan: (car) => {
@@ -231,7 +248,10 @@ const CIVITY_BODY: Body = {
     if (car.cab) {
       const d1 = 7.0;
       const d2 = L - 1.55;
-      return { crewDoor: 4.1, doors: [d1, d2], windows: windowsIn(d1 + dw / 2 + 0.35, d2 - dw / 2 - 0.45, 2.3, 0.42) };
+      // the two cab cars differ (ASSUMED layouts; the role codes are Eversholt's): the DMFLW's first-class saloon has six large windows, as on the leading car in
+      // tpe397-05; the DMSL's standard saloon has the intermediate cars' narrower pitch, and a windowless toilet bay by its inner door
+      if (car.type === 'DMFLW') return { crewDoor: 4.1, doors: [d1, d2], windows: windowsIn(d1 + dw / 2 + 0.35, d2 - dw / 2 - 0.45, 2.3, 0.42) };
+      return { crewDoor: 4.1, doors: [d1, d2], windows: windowsIn(d1 + dw / 2 + 0.4, d2 - dw / 2 - 2.2, 1.65, 0.38) };
     }
     const d1 = 1.55;
     const d2 = L - 1.55;
@@ -249,7 +269,26 @@ export const wvEmuBody = (kind: WvEmuKind): Readonly<Body> => BODIES[WV_EMU_SPEC
 export const wvEmuPlan = (kind: WvEmuKind, car: WvEmuCar): CarPlan => wvEmuBody(kind).plan(car);
 
 /** A section with a fine wall and crown, so the livery's edges (quads coloured by where they stand) are drawn finely across the side and the roof. */
-export function wvSection(b: Pick<Body, 'half' | 'floor' | 'wallTop' | 'crown'>): Section {
+export function wvSection(b: Pick<Body, 'half' | 'floor' | 'wallTop' | 'crown' | 'cuts'>): Section {
+  const sec = baseSection(b);
+  // a point of the outline at each livery height the body names (where a thin horizontal band begins or ends), so the band is an edge of the shell
+  const half = [...sec.half];
+  for (const y of b.cuts) {
+    for (let k = 0; k + 1 < half.length; k++) {
+      const a = half[k] as [number, number];
+      const c = half[k + 1] as [number, number];
+      if (Math.abs(a[1] - y) < 0.004 || Math.abs(c[1] - y) < 0.004) break;
+      if (a[1] < y && c[1] > y) {
+        const t = (y - a[1]) / (c[1] - a[1]);
+        half.splice(k + 1, 0, [lerp(a[0], c[0], t), y]);
+        break;
+      }
+    }
+  }
+  return { ...sec, half };
+}
+
+function baseSection(b: Pick<Body, 'half' | 'floor' | 'wallTop' | 'crown'>): Section {
   const W = b.half - DOOR_RELIEF;
   const half: [number, number][] = [[W - 0.15, b.floor], [W - 0.03, b.floor + 0.07]];
   const w0 = b.floor + 0.2;
@@ -282,28 +321,49 @@ const lineY = (a: [number, number], b: [number, number], s: number): number => a
 function paintJuniper(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
   if (p.y < b.floor + 0.02) return { colour: UNDER };
-  // the orange line along the cantrail (the band is wider than the line, so that one ring of the shell's quads always lands in it); the cap's slate over it round
-  // the cab's top, the roof's grey over it behind the cab
-  if (p.y > 3.25 && p.y < 3.34) return { colour: SR_ORANGE };
-  if (p.y >= 3.34) return { colour: p.car.cab && p.s < nose + 0.6 ? SR_CAP : SR_ROOF };
+  // the orange line along the cantrail, 4 cm (its edges are points of the section: JUNIPER_BODY.cuts); the cap's slate over it round the cab's top, the roof's grey behind
+  if (p.y >= 3.29 && p.y <= 3.33) return { colour: SR_ORANGE };
+  if (p.y > 3.33) return { colour: p.car.cab && p.s < nose + 0.6 ? SR_CAP : SR_ROOF };
   return { colour: SR_BLUE };
 }
+
+/**
+ * The Saltire X of the 2014-2025 ScotRail scheme as scotrail334_01 (2016) shows it: a pale X the height of the side, standing clear of the windows (drawn as
+ * two flat bars on the wall, buildCar). ASSUMED: its size and place, read off that photograph's perspective; on the PTOS between its front end and its first
+ * door, on a driving car between the crew door's dots and its first windows.
+ */
+export const SALTIRE = { y0: 1.2, y1: 3.0, half: 0.5, bar: 0.13 } as const;
+export const SR_SALTIRE = 0xb7c0de;
+/** Where the X is centred along a car: from the cab tip on a driving car, from the start on the PTOS. */
+export const saltireAt = (car: WvEmuCar): number => (car.cab ? 3.85 : 1.95);
 
 function paintCivity(p: Spot, b: Body): Paint {
   const nose = b.nose.length;
   if (p.car.cab) {
     const s = p.s;
     const { y, u } = p;
-    // the face (the front of the nose, not its flanks): cyan under the draped regions (see NOVA and buildCar), navy at its foot
+    // the face (the front of the nose, not its flanks; see NOVA)
     if (s < nose && u < 0.9 && (p.top || y > NOVA.mouth[0])) {
-      if (y > NOVA.hood && s > nose - 0.6) return { colour: TPE_ROOF };
+      if (y > NOVA.hood) return { colour: u < 0.8 && s < nose - 0.4 ? TPE_MASK : TPE_ROOF };
+      if (y > NOVA.display[0] && u < 0.52) return { colour: u < 0.32 && y > 3.31 && y < 3.41 ? 0xe39a1c : 0x111317 };
+      // (the line is thin along the surface; the face lies nearly flat here, so it is thinner still in height)
+      if (y > NOVA.display[0] - 0.016 && u < 0.8) return { colour: 0xd0603a };
+      if (y > NOVA.screen[0] && y <= NOVA.screen[1] && u < NOVA.screenU) return { glass: true };
+      if (y > NOVA.screen[0] - 0.07 && y <= NOVA.screen[1] + 0.035 && u < NOVA.frameU) return { colour: TPE_MASK };
+      // the V: the mask narrowing from the screen's foot to the star
+      if (y > NOVA.band[0] && u < 0.16 + 0.55 * (y - NOVA.band[0])) return { colour: TPE_MASK };
+      // the lamps' housings: angled eyes, rising outboard (tpe397-01, -05)
+      if (u > EYE.u0 && u < EYE.u1) {
+        const lo = eyeFoot(u);
+        if (y > lo && y < lo + EYE.height) return { colour: TPE_MASK };
+      }
       return { colour: y < NOVA.navy ? TPE_NAVY : TPE_CYAN };
     }
     if (p.y > b.wallTop + 0.25 && s > nose - 0.4) return { colour: TPE_ROOF };
     if (p.y < b.floor + 0.02) return { colour: UNDER };
     // the cab side window: a dark pane behind the screen, leaning back with the face (tpe397-05: its top edge further back than its foot), in a navy surround
     const front = 2.0 + (p.y - 2.0) * 0.6;
-    if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { glass: true };
+    if (p.y > 2.0 && p.y < 2.95 && s > front && s < front + 1.15) return { colour: 0x141921 };
     if (p.y > 1.93 && p.y < 3.02 && s > front - 0.08 && s < front + 1.23) return { colour: TPE_NAVY };
     // the purple foot, the navy swoosh rising back from the chin, the cyan of the cab ending in a slant behind the crew door, silver behind
     if (s > 0.6 && s < 9.6 && p.y < 0.62 + 0.42 * Math.sin((Math.PI * Math.min(1, (s - 0.6) / 9.0)))) return { colour: TPE_PURPLE };
@@ -431,21 +491,49 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     return [0, (Math.max(...ys) + Math.min(...ys)) / 2, (rings[i] as { s: number }).s];
   });
   const M = (rings[0] as { pts: [number, number][] }).pts.length;
+  // the livery at any point of the shell (car frame: x, y, distance along the car from its base), and the shell cut along its edges (splitTri)
+  const ringMemo = new Map<number, ReturnType<typeof ringAt>>();
+  const ringNear = (sn: number): ReturnType<typeof ringAt> => {
+    const key = Math.round(Math.max(0, sn) * 500);
+    let r = ringMemo.get(key);
+    if (!r) {
+      r = ringAt(b.nose, key / 500);
+      ringMemo.set(key, r);
+    }
+    return r;
+  };
+  const lookAt = (q: V3): Look => {
+    const cs = q[2] - (car.cab ? tip : 0);
+    const r = car.cab && cs < noseLen ? ringNear(cs) : null;
+    const ringW = r ? r.ws * W : W;
+    const mid = r ? (r.top + r.bottom) / 2 : (sec.floor + sec.crown) / 2;
+    const ax = Math.abs(q[0]);
+    const look = paint({ s: cs, y: q[1], ax, u: ax / ringW, top: q[1] > mid, car, L }, b);
+    return 'glass' in look ? 'glass' : look.colour;
+  };
+  const colours = new Map<number, THREE.Color>();
+  const colourOf = (hex: number): THREE.Color => {
+    let c = colours.get(hex);
+    if (!c) {
+      c = col(hex);
+      colours.set(hex, c);
+    }
+    return c;
+  };
+  const emit = (tp: [V3, V3, V3], tn: [V3, V3, V3], l: Look): void => {
+    const pw = tp.map(world) as [V3, V3, V3];
+    const nw = tn.map(wn) as [V3, V3, V3];
+    if (l === 'glass') glass.tri(pw, nw, null);
+    else shell.tri(pw, nw, colourOf(l));
+  };
   for (let i = 0; i + 1 < rings.length; i++) {
     for (let j = 0; j < M; j++) {
       const j1 = (j + 1) % M;
       const idx: [number, number][] = [[i, j], [i, j1], [i + 1, j1], [i + 1, j]];
       const ps = idx.map(([a, c]) => (P[a] as V3[])[c] as V3) as [V3, V3, V3, V3];
       const ns = idx.map(([a, c]) => (N[a] as V3[])[c] as V3) as [V3, V3, V3, V3];
-      const cx = ps.reduce((a, p) => a + Math.abs(p[0]), 0) / 4;
-      const cy = ps.reduce((a, p) => a + p[1], 0) / 4;
-      const cs = ps.reduce((a, p) => a + p[2], 0) / 4 - (car.cab ? tip : 0);
-      const ringW = car.cab && cs < noseLen ? ringAt(b.nose, Math.max(0, cs)).ws * W : W;
-      const r = car.cab && cs < noseLen ? ringAt(b.nose, Math.max(0, cs)) : null;
-      const mid = r ? (r.top + r.bottom) / 2 : (sec.floor + sec.crown) / 2;
-      const look = paint({ s: car.cab ? cs : cs + 0, y: cy, ax: cx, u: cx / ringW, top: cy > mid, car, L }, b);
-      if ('glass' in look) glass.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], null);
-      else shell.quad(ps.map(world) as [V3, V3, V3, V3], ns.map(wn) as [V3, V3, V3, V3], col(look.colour));
+      splitTri([ps[0], ps[1], ps[2]], [ns[0], ns[1], ns[2]], lookAt, emit);
+      splitTri([ps[0], ps[2], ps[3]], [ns[0], ns[2], ns[3]], lookAt, emit);
     }
   }
   // the ends: the cab's face (a flat cap at the tip) and a dark end wall at every inner end
@@ -562,58 +650,34 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
           n: wn(n),
         };
       };
-      // the face's regions (NOVA), each laid on the surface as a 4 cm grid of cells (a cell is drawn where its middle is inside the region), so their edges are
-      // finer than the shell's quads; the shell under them is plain cyan
-      const cell = 0.04;
-      const ringW = (x: number, y: number): number => ringAt(b.nose, sAtY(x, y)).ws * W;
-      const drape = (inside: (y: number, u: number, sn: number) => boolean, y0: number, y1: number, lift: number, colour: number | null): void => {
-        const pts = new Map<string, V3>();
-        const at = (i: number, j: number): V3 => {
-          const key = `${i},${j}`;
-          let q = pts.get(key);
-          if (!q) {
-            q = onFace(i * cell, y0 + j * cell);
-            pts.set(key, q);
-          }
-          return q;
-        };
-        const nx = Math.ceil(1.45 / cell);
-        const ny = Math.ceil((y1 - y0) / cell);
-        for (let j = 0; j < ny; j++) {
-          for (let i = -nx; i < nx; i++) {
-            const cx = (i + 0.5) * cell;
-            const cy = y0 + (j + 0.5) * cell;
-            const sn = sAtY(cx, cy);
-            if (sn >= noseLen - 1e-6 || !inside(cy, Math.abs(cx) / ringW(cx, cy), sn)) continue;
-            const c4 = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)] as [V3, V3, V3, V3];
-            let n = unit(cross(sub(c4[2], c4[0]), sub(c4[3], c4[1])));
-            if (n[2] > 0) n = [-n[0], -n[1], -n[2]];
-            const lifted = c4.map((q) => world([q[0] + n[0] * lift, q[1] + n[1] * lift, q[2] + n[2] * lift])) as [V3, V3, V3, V3];
-            const wn4 = wn(n);
-            if (colour === null) glass.quad(lifted, [wn4, wn4, wn4, wn4], null);
-            else detail.quad(lifted, [wn4, wn4, wn4, wn4], col(colour));
-          }
-        }
+      // the face's regions (NOVA, EYE) are painted on the shell, cut along their edges. In each eye, the round headlight outboard and the block of LEDs
+      // inboard, which shows white leading and red trailing (tpe397-01 shows it lit at the leading end): a `marker` lens. x on the face for a place u across it
+      const xAtU = (u: number, y: number): number => {
+        let x = u * W;
+        for (let k = 0; k < 3; k++) x = u * ringAt(b.nose, sAtY(x, y)).ws * W;
+        return x;
       };
-      drape((y, u, sn) => y > NOVA.hood && u < 0.8 && sn < noseLen - 0.4, NOVA.hood, b.crown, 0.006, TPE_MASK);
-      drape((_, u) => u < 0.5, NOVA.display[0], NOVA.display[1], 0.006, 0x111317);
-      drape((_, u) => u < 0.3, 3.31, 3.41, 0.01, 0xe39a1c);
-      drape((_, u) => u < 0.8, NOVA.screen[1] + 0.035, NOVA.display[0], 0.006, 0xd0603a);
-      drape((_, u) => u < NOVA.frameU, NOVA.screen[0] - 0.07, NOVA.screen[1] + 0.035, 0.006, TPE_MASK);
-      drape((_, u) => u < NOVA.screenU, NOVA.screen[0], NOVA.screen[1], 0.01, null);
-      drape((y, u) => u < 0.16 + 0.55 * (y - NOVA.band[0]), NOVA.band[0], NOVA.screen[0] - 0.07, 0.006, TPE_MASK);
-      drape((y, u) => u > 0.36 + 0.25 * (y - NOVA.lamps[0]) && u < 0.88, NOVA.lamps[0], NOVA.lamps[1], 0.006, TPE_MASK);
-      // the lamps: in each housing the round headlight outboard and the LED block (the tail lamp) inboard; the white star at the band's foot
       for (const side of [-1, 1]) {
         const xs = side * dir;
-        const head = onSurface(discOutline(0.86 * xs, 1.83, 0.075, 14), 0.016);
+        const uh = 0.76;
+        const yh = eyeFoot(uh) + EYE.height / 2;
+        const xh = xAtU(uh, yh) * xs;
+        const head = onSurface(discOutline(xh, yh, 0.075, 16), 0.012);
         lensFan('head', head.poly, head.n, mode);
-        const tail = onSurface(boxOutline(Math.min(0.55 * xs, 0.71 * xs), Math.max(0.55 * xs, 0.71 * xs), 1.74, 1.9), 0.016);
-        lensFan('tail', tail.poly, tail.n, mode);
-        const at = onFace(0.86 * xs, 1.83);
+        const um = 0.5;
+        const ym = eyeFoot(um) + EYE.height / 2;
+        const xm0 = xAtU(um - 0.06, ym);
+        const xm1 = xAtU(um + 0.07, ym);
+        // the block leans with the eye: its outer edge stands as much higher as the eye's foot rises over its width
+        const lean = (EYE.rise * 0.13) / (EYE.u1 - EYE.u0);
+        const block: [number, number][] = [[xm0 * xs, ym - 0.07], [xm1 * xs, ym - 0.07 + lean], [xm1 * xs, ym + 0.07 + lean], [xm0 * xs, ym + 0.07]];
+        const led = onSurface(block, 0.012);
+        lensFan('marker', led.poly, led.n, mode);
+        const at = onFace(xh, yh);
         marker('headlight', at[0], at[1], at[2], { side: xs > 0 ? 'right' : 'left' });
       }
-      const star = onSurface(discOutline(0, NOVA.star, 0.07, 10), 0.01);
+      // TPE's star badge at the foot of the V: a five-pointed star, not a disc, so it does not read as a lamp (tpe397-01)
+      const star = onSurface(starOutline(0, NOVA.star, 0.085), 0.008);
       detail.fan(star.poly, star.n, col(0xf2f4f6));
       // the marker lamp on the hood over the display (tpe397-01, -05)
       const roofLamp = onSurface(boxOutline(-0.12, 0.12, NOVA.hood + 0.04, NOVA.hood + 0.12), 0.01);
@@ -666,10 +730,17 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
       const leaf = crew ? (family === 'civity' ? col(TPE_CYAN) : col(SR_BLUE)) : leafC;
-      if (crew || b.doorLeaves === 1) {
+      if (crew) {
         detail.box(lx0, lx1, dy0, dy1, z - w / 2, z + w / 2, leaf);
-        const pw = crew ? 0.1 : 0.17;
-        detail.box(px0, px1, dy1 - (crew ? 1.15 : 1.0), dy1 - 0.22, z - pw, z + pw, paneC);
+        detail.box(px0, px1, dy1 - 1.15, dy1 - 0.22, z - 0.1, z + 0.1, paneC);
+      } else if (b.doorLeaves === 1) {
+        // the Nova 2's plug door: a tall rounded window filling most of the leaf (tpe397-02; ASSUMED size, read against the assumed height)
+        detail.box(lx0, lx1, dy0, dy1, z - w / 2, z + w / 2, leaf);
+        const xIn = sx * (W - 0.005);
+        detail.prismX(roundedRect(z - DOOR_GLASS.half - 0.025, z + DOOR_GLASS.half + 0.025, dy0 + DOOR_GLASS.foot - 0.025, dy1 - DOOR_GLASS.head + 0.025, 0.13, 3), xIn, sx * (half + 0.002), col(0x0d0e10));
+        detail.emit = 1;
+        detail.prismX(roundedRect(z - DOOR_GLASS.half, z + DOOR_GLASS.half, dy0 + DOOR_GLASS.foot, dy1 - DOOR_GLASS.head, 0.11, 3), xIn, sx * (half + 0.004), paneC, false);
+        detail.emit = 0;
       } else {
         const lw = (w - 0.04) / 2;
         for (const k of [-1, 1]) {
@@ -694,6 +765,8 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
       detail.prismX(roundedRect(za, zb, wy0, wy1, 0.08, 2), sx * (W - 0.005), outer(0.012), paneC, false);
       detail.emit = 0;
       detail.prismX(roundedRect(za + 0.04, zb - 0.04, wy1 - 0.24, wy1 - 0.03, 0.05, 2), outer(0.0125), outer(0.0115), col(0x4b5b73), false);
+      // the 334's hopper: a frame bar across the window, the small pane over it opening inward (scotrail334_01, _02)
+      if (family === 'juniper') detail.box(Math.min(outer(0.011), outer(0.0085)), Math.max(outer(0.011), outer(0.0085)), wy1 - HOPPER - 0.025, wy1 - HOPPER + 0.025, za, zb, col(0x15171b));
     }
   }
 
@@ -736,8 +809,25 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
   }
 
   // the bogies
+  // the 334's halftone bands at its inner ends, and its Saltire X: two flat bars on each side's wall
+  if (family === 'juniper') {
+    if (!car.cab) endDots(detail, tip, 1, W, world);
+    endDots(detail, bodyEnd, -1, W, world);
+    const c = saltireAt(car);
+    const { y0, y1, half: h, bar } = SALTIRE;
+    for (const sx of [-1, 1] as const) {
+      for (const [k, lift] of [[1, 0.005], [-1, 0.0065]] as const) {
+        const x = sx * (W + lift);
+        const quad: V3[] = [[x, y0, c - k * h - bar / 2], [x, y0, c - k * h + bar / 2], [x, y1, c + k * h + bar / 2], [x, y1, c + k * h - bar / 2]];
+        detail.fan(quad.map(world), [sx, 0, 0], col(SR_SALTIRE));
+      }
+    }
+  }
+
+  // the bogies: the 397's own CAF bogie (tpe397-03), the 334's from the shared parts
   car.bogies.forEach((z, k) => {
-    const bg = buildBogie({ radius: fig.wheelDiameter.value / 2, wheelbase: fig.wheelbase.value, track: 1.435, motor: car.motor[k] as boolean, style: b.bogie });
+    const spec = { radius: fig.wheelDiameter.value / 2, wheelbase: fig.wheelbase.value, track: 1.435, motor: car.motor[k] as boolean };
+    const bg = b.bogie === 'caf' ? buildCafBogie(spec) : buildBogie({ ...spec, style: b.bogie });
     bg.name = `bogie-${car.index}-${k}`;
     bg.position.set(0, 0, z);
     group.add(bg);
@@ -777,7 +867,8 @@ function haltone(soup: Soup, at: (s: number, y: number, side: number) => { p: V3
     const y = 3.24 - row * pitch;
     if (y < 1.05) break;
     // the band's middle falls back about a metre for every metre down; it is about 1.4 m wide along the car (ASSUMED, read off scotrail334_06)
-    const centre = 0.35 + (3.24 - y) * 1.0;
+    // (it starts at the face's corner beside the screens: scotrail334_05)
+    const centre = 0.18 + (3.24 - y) * 1.0;
     const offset = (row % 2) * pitch * 0.5;
     for (let k = -6; k <= 6; k++) {
       const sAt = centre + k * pitch + offset;
@@ -798,6 +889,37 @@ function haltone(soup: Soup, at: (s: number, y: number, side: number) => { p: V3
           return world([c[0] + e1[0] * a + e2[0] * bb, c[1] + e1[1] * a + e2[1] * bb, c[2] + e1[2] * a + e2[2] * bb]);
         });
         soup.fan(poly, wn(n), white);
+      }
+    }
+  }
+}
+
+/**
+ * The 334's halftone band at an inner car end (scotrail334_01, _02: at every gangway, on both cars, both sides): white dots in staggered rows up the flat wall,
+ * largest along the band's middle, which leans toward the gangway at the top. `sEnd` is the body's end, `inward` the direction into the car (both in the
+ * car's own s), `W` the wall's half-width. ASSUMED sizes, as the cab's band.
+ */
+function endDots(soup: Soup, sEnd: number, inward: 1 | -1, W: number, world: (p: V3) => V3): void {
+  const pitch = 0.155;
+  const white = col(SR_DOT);
+  for (let row = 0; ; row++) {
+    const y = 2.98 - row * pitch;
+    if (y < 1.1) break;
+    const centre = 0.42 + (2.98 - y) * 0.22;
+    const offset = (row % 2) * pitch * 0.5;
+    for (let k = -4; k <= 4; k++) {
+      const d0 = centre + k * pitch + offset;
+      const d = Math.abs(d0 - centre) / 0.5;
+      const r = 0.06 * (1 - d * d);
+      if (r < 0.018 || d0 < 0.08) continue;
+      const s = sEnd + inward * d0;
+      for (const sx of [-1, 1]) {
+        const x = sx * (W + 0.008);
+        const poly: V3[] = Array.from({ length: 10 }, (_, q): V3 => {
+          const t = (2 * Math.PI * q) / 10;
+          return world([x, y + Math.sin(t) * r, s + Math.cos(t) * r]);
+        });
+        soup.fan(poly, [sx, 0, 0], white);
       }
     }
   }
