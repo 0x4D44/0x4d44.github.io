@@ -9,7 +9,7 @@
 //   walkway on the outer edge of its curve. The arch block is centred on the island's mapped crossing; the girder spans divide the
 //   river sections equally (ASSUMED: no span lengths found). The deck stays the track element's (perth-station.ts), at the rail datum.
 // - Road bridges: the mapped bridge outlines over the Tay (OSM man_made=bridge: Perth Bridge way/583253156, Queen's Bridge
-//   way/742335578; the viaduct's own outline, way/611293698, is left out by the builder), deck from bank to bank. Arch counts are ASSUMED (PERTH_ROAD_BRIDGES).
+//   way/742335578; the viaduct's own outline, way/611293698, is left out by the builder), deck from bank to bank. Arch counts are sourced (HES, Canmore; PERTH_ROAD_BRIDGES); equal spans are ASSUMED.
 // - St John's Kirk (way/740861202): its central tower and broach spire at the Phase I DSM's peak over the kirk, the spire's top 155 ft
 //   (47.2 m) above the pavement (Historic Environment Scotland LB39300). Kinnoull Tower (way/323543760): the OSM outline as a round
 //   tower; the 2011 DSM does not resolve it (its surface stands within 3 m of the DTM there), so its height is ASSUMED.
@@ -75,8 +75,12 @@ export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, gird
  *  rustication `courses` m apart, a darker joint every course. */
 export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, stone: [.80, .70, .60] as Rgb, joint: [.62, .53, .45] as Rgb,
   girder: [.66, .68, .67] as Rgb, railing: [.93, .93, .91] as Rgb} as const;
-/** ASSUMED road-bridge forms: arches per bridge (no published counts found), the parapet height and the humpback rise of Perth Bridge
- *  (OSM bridge:structure=humpback). */
+/** Road-bridge forms. Arch counts are sourced (round 2):
+ *  - Perth Bridge (Smeaton, 1771) has nine arches: seven over the river and two smaller land arches at the ends (HES LB39339;
+ *    Canmore 28308, "nine arches ... total span of 268m").
+ *  - Queen's Bridge (1960) has three prestressed concrete spans on two piers (1960 Pathé press sheet, NoS 109399; Canmore 79821).
+ *  Drawing them as equal spans from bank to bank is ASSUMED: Perth Bridge's land arches are smaller and Queen's Bridge's centre span
+ *  is longer. The humpback rise follows OSM bridge:structure=humpback and is ASSUMED, as is the parapet height. */
 export const PERTH_ROAD_BRIDGES: Readonly<Record<string, {arches: number; hump: number}>> = {
   'way/583253156': {arches: 9, hump: 1.5}, 'way/742335578': {arches: 3, hump: .6},
 };
