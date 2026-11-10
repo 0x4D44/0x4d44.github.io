@@ -295,19 +295,25 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   assert.ok(marks >= 2 * 12 * 24, `twelve hour marks and two hands on each dial (${marks})`);
   for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
   // Round 5 (the round-4 score): the kiosk low and brown, not a tall maroon block; a door in its end; the stage's lights glazed, not
-  // black; the clock hung past the stage's face on its bracket, not sat on it.
+  // black.
   const kh = PERTH_PAINT.kioskMaroon, kr = kh >> 16, kg = (kh >> 8) & 255, kb = kh & 255;
   assert.ok(C.kiosk[2] <= 2.4 && kr > kg && kg - kb > 12, `a low brown kiosk (${C.kiosk[2]} m, ${PERTH_PAINT.kioskMaroon.toString(16)})`);
-  let door = 0, glass = 0, inFront = 0, behind = 0;
+  // Round 6 (R-pt1-a2 again, the round-5 score): the case stands on the stage's front top corner, astride its face, rather than hung
+  // past it: every dial vertex above the stage's cornice, the dials' middle on or past the stage's face, none of a dial over the stage's
+  // back half.
+  let door = 0, glass = 0, low = 0, outs = 0, n = 0, back = 0;
   for (let i = 0; i < p.length; i += 3) {
     if (!near(i, c4!, reach)) continue;
     if (is(i, PERTH_PAINT.timberDark) && Math.abs(p[i + 1] - (deck + C.door[1])) < 1e-6) door++;
     if (is(i, PERTH_PAINT.kioskGlass)) glass++;
-    if (is(i, PERTH_PAINT.clockFace)) { const q = toLocal([p[i], p[i + 2]]), o = (q[0] - c4!.at[0]) * c4!.out[0] + (q[1] - c4!.at[1]) * c4!.out[1]; if (o > C.stage[1] + .05) inFront++; else behind++; }
+    if (is(i, PERTH_PAINT.clockFace)) {
+      const q = toLocal([p[i], p[i + 2]]), o = (q[0] - c4!.at[0]) * c4!.out[0] + (q[1] - c4!.at[1]) * c4!.out[1];
+      outs += o; n++; if (o < C.stage[1] / 2) back++; if (p[i + 1] < deck + C.stage[3] + .16) low++;
+    }
   }
   assert.ok(door >= 4, `a door in the kiosk's end (${door})`);
   assert.ok(glass >= 6 * 24, `the stage's lights glazed (${glass})`);
-  assert.ok(inFront > 0 && behind === 0, `the dials hang past the stage's face (${inFront} past, ${behind} over it)`);
+  assert.ok(n > 0 && low === 0 && back === 0 && outs / n >= C.stage[1] - .05, `the dials on the stage's front top corner (mean out ${(outs / n).toFixed(2)}, ${low} under the cornice, ${back} over its back half)`);
 });
 
 test('round 5: the island building as R-pt1-a/a2: its south end in clear view of pt-platform-4-north, arched doorways, grey-buff ashlar', () => {
@@ -387,10 +393,24 @@ test('round 5: the north bridge as R-pt1-d north: arched side girders above the 
   let rises = 0; for (let k = 1; k < row.length; k++) if (row[k - 1] < midY && row[k] >= midY) rises++;
   assert.ok(rises >= 2, `an arch over each span between the posts (${rises} rising)`);
   assert.equal(under, 0, 'no lattice hung under the deck slab');
-  // The soffit: a pale boarded underside under the 0.3 m slab, not the slab's maroon.
-  const ks = rgb(PERTH_PAINT.deckSoffit); let soffit = 0;
-  for (let i = 0; i < p.length; i += 3) if (Math.abs(col[i] - ks[0]) < 1e-6 && Math.abs(col[i + 1] - ks[1]) < 1e-6 && Math.abs(col[i + 2] - ks[2]) < 1e-6 && nn[i + 1] < -.9 && Math.abs(p[i + 1] - (slab - .02)) < .01) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - br.along) < half && q[1] > br.z0 && q[1] < br.z1) soffit++; }
-  assert.ok(soffit >= 4, `a pale soffit under the north deck (${soffit})`);
+  // Round 6 (R-pt1-d north, the round-5 score): the whole girder bows, not its top chord alone: the side girders' bottom chord and the
+  // slab's maroon underside stand half a metre or more over their level at the posts, at the middle of the span between the platform 3
+  // and platform 4 landings (the span pt-platform-4-clock looks at). (Round 5's pale soffit is dropped: the photograph shows the
+  // underside dark.)
+  const zs = br.landings.filter(l => l.refs[0] === '3' || l.refs[0] === '4').map(l => l.z), zm = (zs[0] + zs[1]) / 2;
+  assert.ok(zs.length === 2 && Math.abs(zs[1] - zs[0]) > 8, 'a long span between the platform 3 and 4 landings');
+  let bottom = Infinity, underside = Infinity;
+  for (let i = 0; i < p.length; i += 3) {
+    if (!isLattice(i)) continue;
+    const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[1] - zm) > .5) continue;
+    const dx = Math.abs(q[0] - br.along);
+    if (Math.abs(dx - (half - .15)) < .08) bottom = Math.min(bottom, p[i + 1]);
+    // (the slab's underside: its corners lie at the deck's full half-width, past the side girders' chords)
+    if (Math.abs(dx - half) < .01 && nn[i + 1] < -.9) underside = Math.min(underside, p[i + 1]);
+  }
+  assert.ok(bottom > br.deck + .5, `the bottom chord bows with the arch (${bottom.toFixed(2)} at mid-span, deck ${br.deck})`);
+  assert.ok(underside > slab + .5 && underside < Infinity, `the deck's underside bows with the arch (${underside.toFixed(2)} at mid-span, ${slab.toFixed(2)} at the posts)`);
+  assert.ok(!Object.hasOwn(PERTH_PAINT, 'deckSoffit'), 'no pale soffit claimed');
   const roofLow = Math.min(...[-half, half].map(d => roofHeight(br.along + d)));
   assert.ok(hi < roofLow - .3, `the arch clears the roof over it (${hi.toFixed(2)} under ${roofLow.toFixed(2)})`);
   // The stair balustrades: crossing bars, so lattice faces tilted at more than the string's one slope in each flight's vertical plane.
@@ -516,13 +536,18 @@ test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders,
   assert.ok(deep >= braces.length * .8, `deep plates by the springings (${deep} of ${braces.length})`);
 });
 
-test('round 6: platform 4\'s hung clock is in clear view of the frozen pt-platform-4-clock camera, its dial not behind a column', () => {
+test('round 6: platform 4\'s clock is in clear view of the frozen pt-platform-4-clock camera, its dial not behind a column', () => {
   const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]}>;
   const C = PERTH_STATION.clock, c = plan.clocks.find(k => k.ref === C.kioskRef)!, eye = new THREE.Vector3(...cams['pt-platform-4-clock'].pos as [number, number, number]);
   // The dial facing the camera: on the case's end nearer it, `out` = past the stage's face by the hang, its centre hangHeight over the deck.
   const w: Pt = [-c.out[1], c.out[0]], out = C.stage[1] + C.hang, yc = WAVERLEY_LEVELS.platform + C.hangHeight;
   const ends = [-1, 1].map(s => { const q: Pt = [c.at[0] + c.out[0] * out + w[0] * s * (C.case[0] / 2 + .02), c.at[1] + c.out[1] * out + w[1] * s * (C.case[0] / 2 + .02)], p = toWorld(q); return new THREE.Vector3(p[0], yc, p[1]); });
   const dial = ends.sort((a, b) => a.distanceTo(eye) - b.distanceTo(eye))[0];
+  // In the frame (the capture's 1280 x 800 at the camera's fov), with a margin.
+  const k = cams['pt-platform-4-clock'] as unknown as {pos: number[]; target: number[]; fov: number}, cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
+  cam.position.copy(eye); cam.lookAt(new THREE.Vector3(...k.target as [number, number, number])); cam.updateMatrixWorld(true);
+  const ndc = dial.clone().project(cam);
+  assert.ok(Math.abs(ndc.x) < .9 && Math.abs(ndc.y) < .9 && ndc.z < 1, `the dial in pt-platform-4-clock's frame (ndc ${ndc.x.toFixed(2)}, ${ndc.y.toFixed(2)})`);
   const scene = buildPerthScene({ lighting: false });
   try {
     scene.group.updateMatrixWorld(true);
