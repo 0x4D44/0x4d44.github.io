@@ -332,7 +332,11 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     // the ledge on top runs back into the slope (uphill; counted below: the terrain's own bumps turn a few)
     const back: [number, number] = [mid[0] + k.up[0] * k.ledge, mid[1] + k.up[1] * k.ledge];
     if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;
-    if (!k.joint) assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
+    assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
+    // round 8: no toe fins: a riser through extra courses is at least CRAG.thruMin (3) m long; a joint is a narrow crack, not its piece
+    const len = Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]);
+    if (k.courses > 1) assert.ok(len >= 3 - 1e-6, `a through-riser at least 3 m wide: ${len.toFixed(2)}`);
+    if (k.joint) assert.ok(k.crack > 0 && k.crack <= 1.2 && len - k.crack >= .5, `a narrow crack: ${k.crack} of ${len.toFixed(2)}`);
   }
   // round 6: the drape between the courses is repainted rock-grey: the ground under each riser and back along its ledge, in grey tones,
   // and only round the crag (not the grass beside it: a first try painted every cliff cell over 32 deg and greyed the near grass)
@@ -346,7 +350,11 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   const joints = steps.filter(k => k.joint);
   // round 7, declared (ordered: joints lifted from 0.35 to about 0.55 of their tone, here 0.5, cracks, not black blocks): under 0.7 of the median rock
   // (round 6: under 0.5), and over 0.3 of it (new: not black)
-  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.rgb) < median * .7 && lum(k.rgb) > median * .3), `dark joints: ${joints.length} of ${steps.length}`);
+  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.crackRgb) < median * .7 && lum(k.crackRgb) > median * .3), `dark joints: ${joints.length} of ${steps.length}`);
+  // round 8: the cracks are drawn: the crag mesh carries each joint's dark sliver
+  { const cm = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh, cc = cm.geometry.getAttribute('color'), dark = new Set(joints.map(k => k.crackRgb.map(v => v.toFixed(4)).join())); let n = 0;
+    for (let i = 0; i < cc.count; i++) if (dark.has([cc.getX(i), cc.getY(i), cc.getZ(i)].map(v => v.toFixed(4)).join())) n++;
+    assert.ok(n >= joints.length * 4 * .95, `crack slivers drawn: ${n / 4} of ${joints.length}`); }
   const rises = steps.map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), lens = steps.map(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1])).sort((a, b) => a - b);
   assert.ok(rises.at(-1)! - rises[0]! > 2.5 && lens[Math.floor(lens.length * .9)]! - lens[Math.floor(lens.length * .1)]! > 1.5, 'mixed sizes');
   // vertical, not coursed (round 7, tightened): most joints have a partner on the next course up or down, within a joint's width along

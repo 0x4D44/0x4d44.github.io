@@ -238,7 +238,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   for (const k of cragSteps) {
     const fa: [number, number, number] = [k.a[0], k.foot[0], k.a[1]], fb: [number, number, number] = [k.b[0], k.foot[1], k.b[1]];
     const ta: [number, number, number] = [k.a[0], k.top, k.a[1]], tb: [number, number, number] = [k.b[0], k.top, k.b[1]];
-    crag.poly([fa, fb, tb, ta], undefined, {color: k.rgb, facing: [-k.up[0], 0, -k.up[1]]});
+    if (k.joint) {
+      // the crack: a narrow sliver at the b end (CRAG.crack), the rest rock
+      const f = 1 - k.crack / Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1]), at = (p: number[], q: number[]): [number, number, number] => [p[0]! + (q[0]! - p[0]!) * f, p[1]! + (q[1]! - p[1]!) * f, p[2]! + (q[2]! - p[2]!) * f];
+      const fm = at(fa, fb), tm = at(ta, tb);
+      crag.poly([fa, fm, tm, ta], undefined, {color: k.rgb, facing: [-k.up[0], 0, -k.up[1]]});
+      crag.poly([fm, fb, tb, tm], undefined, {color: k.crackRgb, facing: [-k.up[0], 0, -k.up[1]]});
+    } else crag.poly([fa, fb, tb, ta], undefined, {color: k.rgb, facing: [-k.up[0], 0, -k.up[1]]});
     const ba: [number, number, number] = [ta[0] + k.up[0] * k.ledge, k.top, ta[2] + k.up[1] * k.ledge], bb: [number, number, number] = [tb[0] + k.up[0] * k.ledge, k.top, tb[2] + k.up[1] * k.ledge];
     crag.poly([ta, tb, bb, ba], undefined, {color: k.scrub ? CRAG_SCRUB : [...CRAG.ledgeRgb] as [number, number, number], facing: [0, 1, 0]});
   }
