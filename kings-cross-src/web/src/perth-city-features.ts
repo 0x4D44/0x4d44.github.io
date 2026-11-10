@@ -245,22 +245,29 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
   const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
-  // the small islands' tree belts (perth-canopy.ts islandBeltTrees): round crowns (a 7 x 4 sphere, smooth) on bare trunks
-  const beltCrown = new THREE.SphereGeometry(1, 7, 4), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
+  // the small islands' tree belts (perth-canopy.ts islandBeltTrees): clustered crowns (6 x 3 spheres, smooth) on bare trunks
+  const beltCrown = new THREE.SphereGeometry(1, 6, 3), beltTrunk = new THREE.CylinderGeometry(1, 1, 1, 3, 1, true);
   const beltMap = crownMap?.clone() ?? null; if (beltMap) { beltMap.repeat.set(3, 1.5); beltMap.needsUpdate = true; }
   const beltLeaf = new THREE.MeshLambertMaterial({map: beltMap}), beltBark = new THREE.MeshLambertMaterial({color: 0x4a3f33});
-  const crowns = new THREE.InstancedMesh(beltCrown, beltLeaf, Math.max(1, belts.trees.length)), trunks = new THREE.InstancedMesh(beltTrunk, beltBark, Math.max(1, belts.trees.length));
+  const CL = ISLAND_CANOPY.cluster, crowns = new THREE.InstancedMesh(beltCrown, beltLeaf, Math.max(1, belts.trees.length * CL.lobes)), trunks = new THREE.InstancedMesh(beltTrunk, beltBark, Math.max(1, belts.trees.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
     belts.trees.forEach((t, i) => {
       q.setFromAxisAngle(up, (t.x * 7.1 + t.z * 3.3) % 6.283);
-      mx.compose(new THREE.Vector3(t.x, t.y + t.height - t.crown / 2, t.z), q, new THREE.Vector3(t.radius, t.crown / 2, t.radius)); crowns.setMatrixAt(i, mx);
-      c.setRGB(t.rgb[0] * CROWNS.lift, t.rgb[1] * CROWNS.lift, t.rgb[2] * CROWNS.lift, THREE.SRGBColorSpace); crowns.setColorAt(i, c);
+      // a cluster of overlapping lobes (ISLAND_CANOPY.cluster), not one lollipop
+      for (let l = 0; l < CL.lobes; l++) {
+        const a = (t.x * 1.7 + t.z * .9) % 6.283 + l * 6.283 / Math.max(1, CL.lobes - 1), off = l ? CL.spread * t.radius : 0, r = t.radius * (l ? CL.side : CL.main);
+        const lq = new THREE.Quaternion().setFromAxisAngle(up, (a * 3.3) % 6.283);
+        mx.compose(new THREE.Vector3(t.x + Math.cos(a) * off, t.y + t.height - t.crown / 2 - (l ? CL.drop * t.crown : 0), t.z + Math.sin(a) * off), lq, new THREE.Vector3(r, t.crown / 2 * (l ? .85 : 1), r));
+        crowns.setMatrixAt(i * CL.lobes + l, mx);
+        const k = CROWNS.lift * (l ? .92 + .1 * l : 1), grey = (t.rgb[0] + t.rgb[1] + t.rgb[2]) / 3, tone = (v: number) => Math.max(CL.floor, (v + (grey - v) * CL.mute) * k);
+        c.setRGB(tone(t.rgb[0]), tone(t.rgb[1]), tone(t.rgb[2]), THREE.SRGBColorSpace); crowns.setColorAt(i * CL.lobes + l, c);
+      }
       const th = t.height - t.crown * .7 + .4; mx.compose(new THREE.Vector3(t.x, t.y - .4 + th / 2, t.z), q, new THREE.Vector3(ISLAND_CANOPY.trunk, th, ISLAND_CANOPY.trunk)); trunks.setMatrixAt(i, mx);
     });
-    crowns.count = trunks.count = belts.trees.length; crowns.name = 'perth-island-trees'; trunks.name = 'perth-island-trunks';
+    crowns.count = belts.trees.length * CL.lobes; trunks.count = belts.trees.length; crowns.name = 'perth-island-trees'; trunks.name = 'perth-island-trunks';
     crowns.computeBoundingSphere(); trunks.computeBoundingSphere(); cover.group.add(crowns, trunks);
-    stats.triangles += belts.trees.length * ((beltCrown.index ? beltCrown.index.count : beltCrown.getAttribute('position').count) / 3 + 6); stats.drawCalls += 2;
+    stats.triangles += belts.trees.length * (CL.lobes * (beltCrown.index ? beltCrown.index.count : beltCrown.getAttribute('position').count) / 3 + 6); stats.drawCalls += 2;
   }
   return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); beltCrown.dispose(); beltTrunk.dispose(); beltMap?.dispose(); beltLeaf.dispose(); beltBark.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); bushG.dispose(); bushMap?.dispose(); bushM.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }

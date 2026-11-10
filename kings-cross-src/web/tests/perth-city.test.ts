@@ -272,7 +272,18 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const near = belts.trees.filter(t => Math.hypot(t.x - 916, t.z - 310) < 1e9 && t.x > 880 && t.x < 950 && t.z > -370 && t.z < -250);
   assert.ok(near.length >= 8 && near.filter(t => t.height >= 8).length >= .8 * near.length, `Bridgend island trees: ${near.map(t => t.height.toFixed(1))}`);
   const isl = scene.group.getObjectByName('perth-island-trees') as THREE.InstancedMesh;
-  assert.ok(isl && isl.count === belts.trees.length, 'the island trees are drawn, one crown each');
+  const CL = ISLAND_CANOPY.cluster;
+  assert.ok(isl && CL.lobes >= 3 && isl.count === belts.trees.length * CL.lobes, 'the island trees are drawn, a cluster of lobes each');
+  // clustered, not lollipops (round 5): each tree's lobes overlap one another, set apart, and none is near-black
+  {
+    const ma = new THREE.Matrix4(), pa = new THREE.Vector3(), qa = new THREE.Quaternion(), sa = new THREE.Vector3(), pb = new THREE.Vector3(), sb = new THREE.Vector3(), lc = new THREE.Color();
+    for (let i = 0; i < belts.trees.length; i++) for (let l = 1; l < CL.lobes; l++) {
+      isl.getMatrixAt(i * CL.lobes, ma); ma.decompose(pa, qa, sa); isl.getMatrixAt(i * CL.lobes + l, ma); ma.decompose(pb, qa, sb);
+      const d = Math.hypot(pa.x - pb.x, pa.z - pb.z); assert.ok(d > .2 * sa.x && d < sa.x + sb.x, 'lobes set apart yet overlapping');
+    }
+    const floor = new THREE.Color().setRGB(CL.floor, CL.floor, CL.floor, THREE.SRGBColorSpace).r; // the floor is set in sRGB
+    for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(Math.max(lc.r, lc.g, lc.b) >= floor - 1e-6, 'no near-black crown'); }
+  }
   // light between: from the Bridgend eye, rays toward the town over the belt clear its crowns in places
   const bcam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-tay-from-bridgend'] as { pos: [number, number, number] };
   const beye = new THREE.Vector3(...bcam.pos), br = new THREE.Raycaster(); scene.group.updateMatrixWorld(true);

@@ -58,7 +58,12 @@ export function inEyeClear(x: number, z: number): boolean {
  *  grid jittered `jitter` of it, `height` m tall, crowns `crown` of the height deep and `width` of it wide, on `trunk` m trunks, capped
  *  by the summit's view with SIGHT.island (trees standing in the river may hide more of the channel behind them). Moncreiffe Island's
  *  long 54,000 m2 wood stays canopy: it lies along the river in the panorama. */
-export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5} as const;
+export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5,
+  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .07}} as const;
+/** Round 5 (round-4 score, C3: "lollipops"): each island tree's crown is a cluster of `cluster.lobes` overlapping lobes, the top one
+ *  `main` of the crown's radius and the others `side` of it, set out `spread` of it and `drop` of the crown's depth lower, each turned and
+ *  toned a little apart, muted `mute` towards grey and lifted to at least `floor` (linear), so no crown goes near-black: a soft, massed
+ *  outline, as 46028's riverside trees. */
 
 export interface BeltTree {x: number; z: number; y: number; height: number; crown: number; radius: number; rgb: readonly [number, number, number]}
 /** The small islands' trees (ISLAND_CANOPY), and whether a point lies in one of their woods. */
