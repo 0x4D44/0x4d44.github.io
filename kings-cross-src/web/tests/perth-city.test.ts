@@ -475,6 +475,8 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) > .2 && lumL(l.rgb) < .42), 'mid olive leaves, neither black nor lawn');
   const blooms = bushes.flatMap(b => b.lobes).filter(l => l.rgb[0] > l.rgb[1]);
   assert.ok(blooms.every(l => lumL(l.rgb) > .45), 'a bright yellow bloom');
+  // the bloom crowns its bush (round 5's hid under the others at the edge, a smear at the foot): the tallest lobe, near the middle
+  for (const b of bushes) for (const f of b.lobes.filter(l => l.rgb[0] > l.rgb[1])) assert.ok(b.lobes.every(l => l === f || f.y + f.h > l.y + l.h) && Math.hypot(f.x - b.x, f.z - b.z) < b.radius * .3, 'the bloom crowns the bush');
   assert.ok(bushes.filter(b => b.lobes.some(l => l.rgb[0] > l.rgb[1])).length >= 3, 'a yellow fleck in some');
   const axisB = Math.atan2(KINNOULL_EYE.target[2] - SUMMIT_CENTRE[1], KINNOULL_EYE.target[0] - SUMMIT_CENTRE[0]);
   const framed = bushes.filter(b => { const a = Math.atan2(b.z - SUMMIT_CENTRE[1], b.x - SUMMIT_CENTRE[0]) - axisB; return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < KINNOULL_EYE.halfWidthDeg * Math.PI / 180; });
