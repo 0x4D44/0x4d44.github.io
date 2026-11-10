@@ -131,7 +131,9 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   assert.ok(PIER_FORM.web <= .35 && PIER_FORM.seam <= .6 && PIER_FORM.sides >= 12, 'a thin, deep-set web between round shafts');
   assert.ok(PIER_FORM.seamWidth <= .18 && PIER_FORM.webShade > PIER_FORM.seam * lum(VIADUCT_LOOK.joint) / lum(VIADUCT_LOOK.stone) + .1, 'a narrow dark seam on a lighter web, not a dark panel');
   // round 7 (round-6 score: one block with a seam): the web is shadowed where it meets each shaft, lighter only in its middle third
-  assert.ok(PIER_FORM.webEdge <= .5 && PIER_FORM.webEdge < PIER_FORM.webShade - .1 && PIER_FORM.webMiddle <= .4, 'the web shadowed against each shaft');
+  // round 8, declared (ordered: round 7's lighter, proud middle read as a third column): the middle is within 0.03-0.1 of the edge's
+  // shade (round 7: at least 0.1 lighter) and at most 1 cm proud (new)
+  assert.ok(PIER_FORM.webEdge <= .5 && PIER_FORM.webShade - PIER_FORM.webEdge >= .03 && PIER_FORM.webShade - PIER_FORM.webEdge <= .1 && PIER_FORM.webMiddle <= .4 && PIER_FORM.webProud <= .01, 'the web shadowed against each shaft, its middle flush and near the edge tone');
   const mc = layout && masonry.build().getAttribute('color'); let seamV = 0;
   const seamRgb = VIADUCT_LOOK.joint.map(v => v * PIER_FORM.seam);
   for (let i = 0; i < mc.count; i++) if (Math.abs(mc.getX(i) - seamRgb[0]!) < 1e-4 && Math.abs(mc.getY(i) - seamRgb[1]!) < 1e-4) seamV++;
@@ -296,6 +298,8 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
     for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(Math.max(lc.r, lc.g, lc.b) >= CL.floor - 1e-6, 'no near-black crown'); }
     // round 7 (round-6 score: a teal crown): olive, blue at most half of green, red at least 0.5 of it (linear)
     for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); assert.ok(lc.b <= lc.g * .5 + 1e-6 && lc.r >= lc.g * .5 - 1e-6, `olive, not teal: ${lc.r.toFixed(3)} ${lc.g.toFixed(3)} ${lc.b.toFixed(3)}`); }
+    // round 8 (round-7 score: the centre crown still teal): every crown's sRGB blue under 0.55 of its green
+    for (let i = 0; i < isl.count; i++) { isl.getColorAt(i, lc); const sc = lc.clone().convertLinearToSRGB(); assert.ok(sc.b < sc.g * .55, `olive in sRGB: ${sc.g.toFixed(3)} ${sc.b.toFixed(3)}`); }
     // and outlines not hexagons: lobes turned off upright, and scaled unevenly across x and z
     let tilted = 0, uneven = 0; const mq = new THREE.Matrix4(), pq = new THREE.Vector3(), qq = new THREE.Quaternion(), sq = new THREE.Vector3(), yq = new THREE.Vector3();
     for (let i = 0; i < isl.count; i++) { isl.getMatrixAt(i, mq); mq.decompose(pq, qq, sq); if (yq.set(0, 1, 0).applyQuaternion(qq).y < Math.cos(.1)) tilted++; if (Math.abs(sq.x / sq.z - 1) > .1) uneven++; }

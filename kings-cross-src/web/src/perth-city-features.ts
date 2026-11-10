@@ -83,7 +83,9 @@ export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, s
  *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
  *  other one `proud` m out; the cross girder up to `crossTop`; a stiffener every `stiffener` m, `stiffenerSize` (along, out). */
 export const PIER_FORM = {aspect: 3, diameter: [1.2, 2.2] as const, sides: 12, band: .9, proud: .07, crossTop: -.55,
-  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .3, webShade: .62, webEdge: .45, webMiddle: 1 / 3, seamWidth: .15, seam: .5, flange: [.4, .12] as const, flangeShade: .66} as const;
+  stiffener: 1.8, stiffenerSize: [.16, .16] as const, stiffenerShade: .72, web: .3, webShade: .52, webEdge: .45, webMiddle: 1 / 3, webProud: .01, seamWidth: .15, seam: .5, flange: [.4, .12] as const, flangeShade: .66} as const;
+/** Round 8 (round-7 score: the lighter, proud middle strip read as a third column): the middle is `webProud` (1 cm, flush to the eye)
+ *  and `webShade` 0.52, near the edge's 0.45 (from 0.62). */
 /** Round 7 (round-6 score: the pier read as one block with a seam). The web's outer parts, against each shaft, are shaded `webEdge`
  *  (the shadow where web meets shaft), and only its middle `webMiddle` is the lighter `webShade`, just proud, so each shaft stands
  *  apart from the web. 2166751 was not re-opened for the shafts' spacing, so it is unchanged. +1 box a pier. */
@@ -394,7 +396,7 @@ export function tayViaduct(masonry: Batch, ironwork: Batch, ground: Pick<Terrain
     }
     // the web joining the pair into one mass (PIER_FORM.web)
     post(masonry, p, t, diameter * PIER_FORM.web, 2 * F.girderOffset, foot, capY, [L.stone[0] * PIER_FORM.webEdge, L.stone[1] * PIER_FORM.webEdge, L.stone[2] * PIER_FORM.webEdge]);
-    post(masonry, p, t, diameter * PIER_FORM.web + .02, (2 * F.girderOffset - diameter) * PIER_FORM.webMiddle, foot, capY, [L.stone[0] * PIER_FORM.webShade, L.stone[1] * PIER_FORM.webShade, L.stone[2] * PIER_FORM.webShade]);
+    post(masonry, p, t, diameter * PIER_FORM.web + 2 * PIER_FORM.webProud, (2 * F.girderOffset - diameter) * PIER_FORM.webMiddle, foot, capY, [L.stone[0] * PIER_FORM.webShade, L.stone[1] * PIER_FORM.webShade, L.stone[2] * PIER_FORM.webShade]);
     post(masonry, p, t, diameter * PIER_FORM.web + .04, diameter * PIER_FORM.seamWidth, foot, capY, [L.joint[0] * PIER_FORM.seam, L.joint[1] * PIER_FORM.seam, L.joint[2] * PIER_FORM.seam]);
     post(masonry, p, t, diameter + 2 * L.capOver, 2 * F.girderOffset + diameter + 2 * L.capOver, capY, F.girder[0], L.stone);
     // the cross girder on the cap, between the plate girders up to the deck: no dark gap over the cap
