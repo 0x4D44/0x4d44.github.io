@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import * as C from '../train-capture.mjs';
-import {planCatalogueViews} from '../train-framing.mjs';
+import {planCatalogueViews,planMotion} from '../train-framing.mjs';
 import {EDINBURGH_CAPTURE_PAIRS,EDINBURGH_FLEET,disposeEdinburghTrain,evidenceBuildEdinburgh} from '../../web/src/edinburgh-fleet.ts';
 
 const dim=(value,basis='assumed')=>({value,basis,figures:['test']});
@@ -41,9 +41,21 @@ test('the capturable Waverley kinds are exactly the fleet rows with a formation,
   assert.ok(C.EDINBURGH_CAPTURE_KINDS.every(k=>!C.parseCatalogueArgs(base).kinds.includes(k)),'a run without --kinds takes the King\'s Cross kinds only');
   for(const kind of C.EDINBURGH_CAPTURE_KINDS) {
     assert.deepEqual(C.parseCatalogueArgs([...base,'--kinds',kind]).kinds,[kind]);
-    assert.throws(()=>C.parseCatalogueArgs([...base,'--kinds',kind,'--views','V01,M01']),/Waverley kinds/);
+    assert.deepEqual(C.parseCatalogueArgs([...base,'--kinds',kind,'--views','V01,M01']).views,['V01','M01'],'M01 takes a Waverley kind on the neutral straight stage');
+    for(const curve of ['C01','C02'])assert.throws(()=>C.parseCatalogueArgs([...base,'--kinds',kind,'--views',`V01,${curve}`]),/Waverley kinds/,`${curve} stands on the King's Cross track`);
     assert.equal(C.describeFormation(kind).kind,kind);
   }
+});
+
+test('M01 poses every Waverley kind by its own layout: the page\'s carPoses puts each car and bogie where the kind\'s formation has them', () => {
+  for(const kind of C.EDINBURGH_CAPTURE_KINDS) {
+    const f=C.describeFormation(kind),layout=C.motionLayout(kind);
+    assert.deepEqual(layout.cars.map(c=>[c.index,...c.bogies]),f.cars.map(c=>[c.index,...c.bogies]),`${kind}: the layout carPoses reads is the formation the plan reads`);
+    const poses=C.motionPoses(f,planMotion(f));
+    assert.ok(poses.ok,`${kind}: ${poses.problems.slice(0,2).join('; ')}`);
+    assert.ok(poses.frames.every(fr=>fr.cars.length===f.cars.length),`${kind}: every car is posed in every frame`);
+  }
+  assert.equal(C.motionLayout('lner5').spec.family,'at300','a King\'s Cross kind keeps its core/train.ts layout');
 });
 
 test('the page hook makes every specimen build try the Edinburgh table first, once', () => {

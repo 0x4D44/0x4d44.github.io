@@ -418,8 +418,9 @@ export function parseCatalogueArgs(args) {
   if(views.includes(MOTION.id)&&exposure!=='day')throw new Error(`--views ${MOTION.id}: the motion clip is taken at day only, not ${exposure}`);
   if(views.includes(CURVE.id)&&exposure!=='day')throw new Error(`--views ${CURVE.id}: the curve is taken at day only, not ${exposure}`);
   if(views.includes(CURVE_NORMAL.id)&&exposure!=='day')throw new Error(`--views ${CURVE_NORMAL.id}: the curve is taken at day only, not ${exposure}`);
-  const waverley=list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS).filter(kind=>EDINBURGH_CAPTURE_KINDS.includes(kind)),trackViews=[MOTION.id,CURVE.id,CURVE_NORMAL.id].filter(id=>views.includes(id));
-  if(waverley.length&&trackViews.length)throw new Error(`--views ${trackViews.join(',')}: the motion and curve views place a train on the King's Cross track by its core/train.ts layout, which the Waverley kinds (${waverley.join(',')}) do not have`);
+  // M01 poses a Waverley kind by its own layout (motionLayout) on the neutral straight stage; the curves stand on the King's Cross track by a core/train.ts layout
+  const waverley=list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS).filter(kind=>EDINBURGH_CAPTURE_KINDS.includes(kind)),trackViews=[CURVE.id,CURVE_NORMAL.id].filter(id=>views.includes(id));
+  if(waverley.length&&trackViews.length)throw new Error(`--views ${trackViews.join(',')}: the curve views place a train on the King's Cross track by its core/train.ts layout, which the Waverley kinds (${waverley.join(',')}) do not have`);
   return {dist:options.get('--dist'),out:options.get('--out'),kinds:list('--kinds',[...ALL_KINDS,...EDINBURGH_CAPTURE_KINDS],ALL_KINDS),views,chrome:options.get('--chrome')??null,poses:options.get('--poses')??null,exposure,timeoutMs:seconds*1000};
 }
 
@@ -880,13 +881,24 @@ export function pagePoses(poses) {
     bogies:[pose.frontBogie,pose.rearBogie].map((sample,k)=>({k,rotationY:Math.atan2(sample.back[0],sample.back[1])-pose.rotationY}))}));
 }
 /**
+ * The layout M01 hands carPoses: a King's Cross kind's core/train.ts layout; a Waverley row's own layout (the one web/src/edinburgh-live.ts poses it by); a capture pair's cars as its
+ * formation has them (its units end to end, as the page builds the pair). Car indices and bogie distances from the nose match the page's car-<index> groups.
+ */
+export function motionLayout(kind,rows=EDINBURGH_FLEET) {
+  if(!EDINBURGH_CAPTURE_KINDS.includes(kind))return trainLayout(kind);
+  const row=rows.find(r=>r.kind===kind);
+  if(row)return row.layout();
+  const f=capturePairFormation(kind);
+  return {length:f.length,cars:f.cars.map(c=>({index:c.index,start:c.start,end:c.end,length:c.end-c.start,bogies:[...c.bogies],cab:c.cab}))};
+}
+/**
  * The cars of every frame of the clip, posed by the page's own placement code (carPoses) over a synthetic straight path along -z, and checked against the plan's geometry: every car
  * is posed, every bogie is where the plan has it (to a micrometre), every car is unturned and unstretched and every bogie stands square to the track. `ok` is false, with the
  * reasons, if carPoses and the geometry disagree; the capture records that as a GAP and does not photograph on poses it cannot vouch for. `place` is the placement code
  * (the page's carPoses), a parameter only so that a test can hand the checks poses that are wrong.
  */
 export function motionPoses(formation,plan,place=carPoses) {
-  const [zFar,zBehind]=MOTION.zRange,steps=Math.round((zBehind-zFar)/MOTION.routeStepM),layout=trainLayout(formation.kind);
+  const [zFar,zBehind]=MOTION.zRange,steps=Math.round((zBehind-zFar)/MOTION.routeStepM),layout=motionLayout(formation.kind);
   const route=polylineRoute(Array.from({length:steps+1},(_,i)=>[0,zBehind-i*MOTION.routeStepM])),problems=[];
   let maxErrorM=0;
   const frames=plan.frames.map(frame=>{

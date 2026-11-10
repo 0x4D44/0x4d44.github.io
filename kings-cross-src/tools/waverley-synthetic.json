@@ -1,0 +1,24 @@
+{
+  "note": "SYNTHETIC, test only: made-up trains for frame-rate and capture runs at Edinburgh Waverley. Not a timetable: no Network Rail data, no berths, no headcodes. Each train stands on a platform's screened track (core/waverley-anchors.ts waverleyPlatformGeometry), centred offsetM along its heading from the screened point, or starts there and runs on at a steady speed, looping over open track that no other train uses.",
+  "trains": [
+    { "id": "SYN-01", "kind": "lner9", "platform": "5", "heading": "west" },
+    { "id": "SYN-02", "kind": "srhstx5", "platform": "6", "heading": "west" },
+    { "id": "SYN-03", "kind": "xc220x4", "platform": "4", "heading": "west" },
+    { "id": "SYN-04", "kind": "sr334x3", "platform": "3", "heading": "west" },
+    { "id": "SYN-05", "kind": "sr158x2", "platform": "20", "heading": "west" },
+    { "id": "SYN-06", "kind": "tpe397x5", "platform": "8e", "heading": "east" },
+    { "id": "SYN-07", "kind": "sr170x3", "platform": "8w", "heading": "west" },
+    { "id": "SYN-08", "kind": "sr385x4", "platform": "12", "heading": "east", "offsetM": 30 },
+    { "id": "SYN-09", "kind": "sr158x2", "platform": "13", "heading": "east", "offsetM": -40 },
+    { "id": "SYN-10", "kind": "xc221x5", "platform": "14", "heading": "east", "offsetM": 30 },
+    { "id": "SYN-11", "kind": "lumo5", "platform": "9w", "heading": "west" },
+    { "id": "SYN-12", "kind": "srhstx4", "platform": "16", "heading": "east" },
+    { "id": "SYN-13", "kind": "sr385x3", "platform": "17", "heading": "east" },
+    { "id": "SYN-14", "kind": "sr334x3", "platform": "18", "heading": "east" },
+    { "id": "SYN-15", "kind": "sr170x3", "platform": "15", "heading": "east", "offsetM": 50 },
+    { "id": "SYN-21", "kind": "sr385x3+sr385x4", "platform": "10", "heading": "east", "speedMps": 10 },
+    { "id": "SYN-23", "kind": "lner5", "platform": "19", "heading": "east", "speedMps": 12, "offsetM": -40 },
+    { "id": "SYN-24", "kind": "sr170x3", "platform": "9e", "heading": "west", "speedMps": 8 },
+    { "id": "SYN-25", "kind": "tpe397x5", "platform": "1", "heading": "west", "speedMps": 11 }
+  ]
+}

@@ -20,10 +20,12 @@
 // waverleyCameras), on a page loaded the way evidence.mjs --scene waverley loads it (trains=none), capped then uncapped with the same
 // statistics and the same report shape. It needs no relay, no recording and no EB data, so it takes none of the London replay options
 // (--relay, --peak*, --stations, --station-seconds, --no-legacy-cameras, --startup-only, --scene-ready) and measures no startup.
+// --synthetic-trains (Waverley only) adds the made-up busy station of tools/waverley-synthetic.json to each load: every Edinburgh kind, standing at
+// the platforms or running through, and reports per camera how many of them were in view (tools/waverley-synthetic.mjs; test data, not a timetable).
 // Every page load carries the scene pin (--time <ISO instant with a zone>, --weather <name>, default midsummer noon, clear; --sky ref
 // for the page's old fixed look), so a page that reads the pin shows the same sky every run and requests no weather.
 //
-//   node tools/perf.mjs [--scene kings-cross|waverley] [--dist <built dir>] [--out <output dir>] [--seconds 60]
+//   node tools/perf.mjs [--scene kings-cross|waverley [--synthetic-trains]] [--dist <built dir>] [--out <output dir>] [--seconds 60]
 //                       [--uncapped-seconds 20] [--time <ISO instant>] [--weather <name>]
 //                       [--chrome <path>] [--relay http://127.0.0.1:8787]   (--relay is London only)
 //
@@ -548,6 +550,16 @@ export function sceneFrom(args) {
 }
 
 /**
+ * `--synthetic-trains`: a Waverley run puts the made-up busy station of waverley-synthetic.json on the page (every Edinburgh kind, standing and moving;
+ * no NR data, no relay). Throws beside the London scene, which has its replay.
+ */
+export function syntheticTrainsFrom(args, scene) {
+  const synthetic = args.includes('--synthetic-trains');
+  if (synthetic && scene !== 'waverley') throw new Error('--synthetic-trains is for --scene waverley; the London scene measures its replay');
+  return synthetic;
+}
+
+/**
  * The Waverley cameras to measure, as perf's camera list wants them: the named frozen cameras of evidence.mjs (waverleyCameras, a copy of
  * FROZEN_WAVERLEY_CAMERAS), with the fov and near plane evidence.mjs shoots them at when the frozen camera gives none. Not copied here.
  */
@@ -672,6 +684,10 @@ if (process.argv.includes('--self-test')) { await selfTest(); process.exit(0); }
 const args = process.argv.slice(2);
 const scene = sceneFrom(args);
 const waverley = scene === 'waverley';
+const synthetic = syntheticTrainsFrom(args, scene);
+// The synthetic station is planned once, in Node; each Waverley load gets the same plan (imported only when asked: it builds three.js trains' layouts).
+const syntheticModule = synthetic ? await import('./waverley-synthetic.mjs') : null;
+const syntheticPlan = synthetic ? await syntheticModule.loadSyntheticPlan() : null;
 const flag = (name, fallback) => {
   const index = args.indexOf(name);
   return index < 0 ? fallback : args[index + 1];
@@ -799,7 +815,9 @@ const report = {
     scriptsWithoutSourceMap: sourceMapChoice.facades,
   },
   ...(waverley
-    ? { scene: 'edinburgh-waverley', trains: 'none', relay: null, secondsPerCamera: seconds, warmupSeconds: 2 }
+    ? { scene: 'edinburgh-waverley', trains: synthetic ? 'synthetic' : 'none', relay: null, secondsPerCamera: seconds, warmupSeconds: 2,
+      ...(synthetic ? { synthetic: { note: syntheticPlan.note, file: 'kings-cross-src/tools/waverley-synthetic.json', trains: syntheticPlan.trains.length,
+        moving: syntheticPlan.trains.filter((t) => t.loop).length, kinds: [...new Set(syntheticPlan.trains.map((t) => t.kind))] } } : {}) }
     : { replay: { date: replayDate, speed: replaySpeed, relay: relayBase.origin, warmupSeconds: 2, secondsPerCamera: seconds, stationSecondsPerCamera: stationSeconds } }),
   scenePin: { ...pin, parameters: pinParameters(pin), note: 'Added to every page address. A page built before the sky and weather work ignores it; a page that reads it shows this clock and weather and requests none.' },
   viewport,
@@ -1219,6 +1237,7 @@ try {
       await freshNavigation(`${base}/kings-cross/${camera.waverley ? waverleyQuery : replayQuery}`);
       if (camera.waverley) await awaitWaverleyPage(evaluate);
       else await awaitReplayPage(evaluate, cameraName);
+      if (camera.waverley && synthetic) await evaluate(syntheticModule.syntheticScript(syntheticPlan), 60_000);
       await evaluate(camera.station || camera.waverley ? stationCameraScript(camera) : legacyCameraScript(camera));
       await evaluate('new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
       await evaluate('new Promise((resolve) => setTimeout(resolve, 2000))', 5000);
@@ -1339,9 +1358,12 @@ try {
         frameBudget: { ...measurement.frameBudget, budgetMs: rounded(measurement.frameBudget.budgetMs, 3) },
       };
       normalized.fpsBuckets = measurement.fpsBuckets.map((fps) => rounded(fps, 2));
+      // the synthetic trains as the measurement left them: how many, how many in this camera's view, how far the moving ones ran
+      if (camera.waverley && synthetic) normalized.syntheticTrains = await evaluate('window.__kx.synthetic.summary()');
       results[cameraName] = normalized;
       if (camera.station) console.log(`${label} ${cameraName}: median ${normalized.fps.median} FPS (p5 ${normalized.fps.p5}), frame p99 ${distribution.p99} ms, ${distribution.slowFrames} slow of ${distribution.frames}, trains drawn ${normalized.trainsShown.min}/${normalized.trainsShown.median}/${normalized.trainsShown.max}, steady ${normalized.steady60}, busy ${normalized.busy}`);
-      else console.log(JSON.stringify({ session: label, camera: cameraName, fps: normalized.fps, frameMs: normalized.frameMs, renderer: normalized.renderer, replayProgress: normalized.replayProgress, trainMotion: normalized.trainMotion }, null, 2));
+      else console.log(JSON.stringify({ session: label, camera: cameraName, fps: normalized.fps, frameMs: normalized.frameMs, renderer: normalized.renderer, replayProgress: normalized.replayProgress, trainMotion: normalized.trainMotion,
+        ...(normalized.syntheticTrains ? { syntheticTrains: normalized.syntheticTrains, rendererCalls: normalized.rendererCalls, triangles: normalized.triangles } : {}) }, null, 2));
     }
     return results;
   };
@@ -1387,10 +1409,10 @@ try {
   await writeFile(file, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
   const markdown = waverley ? [
     '# Edinburgh Waverley performance', '',
-    `Scene: edinburgh-waverley, trains none; no relay, no recording, no EB data (nothing is forwarded to a relay; the page's own /relay requests, ${report.relayRequests.length} here, are answered 404 and are harmless). Cameras: ${legacyList.map((camera) => camera.name).join(', ')} (frozen, evidence.mjs).`,
+    `Scene: edinburgh-waverley, trains ${synthetic ? `synthetic (${report.synthetic.trains} made-up trains, ${report.synthetic.moving} moving, from tools/waverley-synthetic.json: test data, not a timetable)` : 'none'}; no relay, no recording, no EB data (nothing is forwarded to a relay; the page's own /relay requests, ${report.relayRequests.length} here, are answered 404 and are harmless). Cameras: ${legacyList.map((camera) => camera.name).join(', ')} (frozen, evidence.mjs).`,
     `JS/CSS gzip: ${report.build.gzipBundleBytes} / ${report.build.gzipBudgetBytes} bytes (${report.build.gzipBundleWithinBudget ? 'PASS' : 'FAIL'}, strict <2 MB).`, '',
     `Failed request URLs: ${report.requests.failedUrls.length ? report.requests.failedUrls.join(', ') : 'none'}.`, '',
-    ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS (p5 ${camera.fps.p5}), p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}.`), '',
+    ...Object.entries(report.cameras).map(([name, camera]) => `${name}: median ${camera.fps.median} FPS (p5 ${camera.fps.p5}), p95 ${camera.frameMs.p95} ms, Metal ${camera.realMetal}, throttle detected ${camera.rAFThrottleDetected}${camera.syntheticTrains ? `; synthetic trains in view ${camera.syntheticTrains.inView} of ${camera.syntheticTrains.trains} (${camera.syntheticTrains.cars} cars, ${camera.syntheticTrains.moving} moving, ${camera.syntheticTrains.travelledM} m run), draw calls p50 ${camera.rendererCalls.p50}, triangles p50 ${camera.triangles.p50}` : ''}.`), '',
     ...headroomMarkdown(report.headroom),
     `Scene pin: ${report.scenePin.parameters}.`, '',
   ].join('\n') : [
