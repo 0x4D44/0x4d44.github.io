@@ -1447,13 +1447,17 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       }
     };
     if (screen) {
-      // the windscreen: a curved patch on the nose's roof, glass over a black frame; rows crowd toward the two edges, where the corners curve
+      // the windscreen: a curved patch on the nose's roof, glass over a black frame; rows crowd toward the two edges, where the corners curve, but half as hard as a cosine
+      // would crowd them: a cosine's end rows stood 6 mm apart over a rounded corner whose columns shift 4 cm between them, thin slivers whose planes the surface does not
+      // fix (on the Class 180, whose glass stands over the face's fillet, a facet's normal was up to 70 degrees off the shading normals there; a half-and-half blend of
+      // even and cosine spacing leaves 26 degrees at worst)
+      const glassRow = (v: number): number => 0.5 * v + 0.25 * (1 - Math.cos(Math.PI * v));
       const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number, post = 0): void => {
         // with a centre post the glass is two panes (each its own patch, 8 columns across), and the frame's black shows between them
         // (24 rows by 16 columns a patch, two patches: 768 triangles each; it was 30 by 20, which the Azuma's longer nose had no triangles left for)
         for (const pane of post > 0 ? [-1, 1] : [0]) {
           nosePatch(24, post > 0 ? 8 : 16, (v, u) => {
-            const s = lerp(screen.s0 - margin, screen.s1 + margin, 0.5 - 0.5 * Math.cos(Math.PI * v));
+            const s = lerp(screen.s0 - margin, screen.s1 + margin, glassRow(v));
             const hw = screenHalfWidth(s, margin);
             if (pane === 0) return [hw * (2 * u - 1), s];
             const inner = Math.min(post / 2, hw * 0.5);

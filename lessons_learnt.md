@@ -11,6 +11,13 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-10 - glass-normals share sits near 80% on any nose: section polyline corners, not the formula (train.ts glassRow)
+  train-rake.test.ts compares each windscreen vertex normal with its triangle's. On the Class 180, 84% of the misses stand at |x| >= 0.6 m, where the car's 13-point
+  section turns 13-20 degrees a segment and a pane's 8 columns chord across its corners; 61% stand in the first 0.3 m, where cosine-crowded rows 6.5 mm apart over the
+  rounded foot corner were slivers (facets up to 70 degrees off the right normals). Only the foot is fixable: glassRow blends even and cosine rows (79.8% to 81.2%).
+  Columns crowded outward made it worse (74.7% to 65.3%); crowded inward it rose to 83.5% only by coarsening the shoulder; the glass's lift and smaller normal steps moved it
+  under 2 points. A new nose can tip it under 0.8 again: measure where the misses are (a cell map by row and column) before touching the formula or the threshold.
+
 - 2026-11-10 - a car is an outer skin, FrontSide: from inside it is culled and vanishes; cut a private copy (train-interior.ts)
   Every shell, pane and decal face points outward and the windows are opaque prisms on an unbroken skin, so DoubleSide alone
   would only show painted backs. train-interior.ts cuts window holes in a per-car geometry copy (train-interior-cut.ts) and
