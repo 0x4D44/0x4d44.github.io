@@ -10,6 +10,7 @@ import type { TerrainFile } from '../../core/terrain.ts';
 import { stationRailwayIntrusions } from '../src/station-railway.ts';
 import { PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, buildPerthScene, onBridge, perthBuildingHeight, perthGround, perthTrack } from '../src/perth-scene.ts';
 import { loadPerthScene } from '../src/perth.ts';
+import { PERTH_FRONTAGE_OMIT_IDS } from '../src/perth-frontage.ts';
 
 const json = readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8');
 const data = unpackWaverleyScene(JSON.parse(json));
@@ -66,7 +67,9 @@ test('every drawn city block stands off the railway; the station outline is the 
   const intrusions = new Set(stationRailwayIntrusions(data));
   assert.ok(intrusions.has(PERTH_STATION_BUILDING_ID), 'the station outline spans the tracks');
   assert.ok(!scene.buildingIds.some(id => intrusions.has(id)));
-  assert.equal(scene.buildingIds.length, data.buildings.length - intrusions.size);
+  // The city draws every block but those on the railway and those the frontage draws itself (perth-frontage.ts PERTH_FRONTAGE_OMIT_IDS).
+  assert.ok(PERTH_FRONTAGE_OMIT_IDS.every(id => !intrusions.has(id) && !scene.buildingIds.includes(id)));
+  assert.equal(scene.buildingIds.length, data.buildings.length - intrusions.size - PERTH_FRONTAGE_OMIT_IDS.length);
   const roof = scene.group.getObjectByName('perth-station-roof') as THREE.Mesh;
   roof.geometry.computeBoundingBox();
   assert.equal(roof.geometry.boundingBox!.max.y, PERTH_STATION_ROOF_HEIGHT);

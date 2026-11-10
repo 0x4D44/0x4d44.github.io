@@ -19,7 +19,7 @@ import {meshAdder} from './waverley-mesh.ts';
 import {stationGround} from './station-railway.ts';
 import {addWaverleyLights} from './station-weather.ts';
 import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthTrack, stationOutline} from './perth-station.ts';
-import {addPerthFrontage} from './perth-frontage.ts';
+import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
 export {PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, perthBuildingHeight} from './perth-city.ts';
@@ -99,7 +99,9 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   build.add(roof, roofTops, roofMaterial, 'perth-mapped-roofs');
   build.add(roof, fascia, own(material('whiteSteel').clone()), 'perth-roof-fascia');
   addPerthFrontage(build, data, ground, group);
-  const {buildingIds, heightBasis} = addPerthCity(build, data, ground, buildings);
+  // The blocks the frontage draws itself (the Station Hotel) are left out of the city's draw by id, never by geometry overlap.
+  const frontageOwned = new Set(PERTH_FRONTAGE_OMIT_IDS);
+  const {buildingIds, heightBasis} = addPerthCity(build, {...data, buildings: data.buildings.filter(b => !frontageOwned.has(b.id))}, ground, buildings);
 
   parts.roof.visible = options.roofVisible !== false; parts.buildings.visible = options.cityVisible !== false;
   if (options.lighting !== false) addWaverleyLights(group);
