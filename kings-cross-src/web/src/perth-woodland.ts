@@ -45,13 +45,60 @@ export function woodNoise(x: number, z: number): number {
   return (v(0, 0) * (1 - sx) + v(1, 0) * sx) * (1 - sz) + (v(0, 1) * (1 - sx) + v(1, 1) * sx) * sz;
 }
 
-/** The sight line's height over (x, z) when it is in the panorama's frame and reach, else undefined. */
-export function sightHeight(x: number, z: number): number | undefined {
-  const [ex, ey, ez] = KINNOULL_EYE.pos, [tx, ty, tz] = KINNOULL_EYE.target, dx = x - ex, dz = z - ez, d = Math.hypot(dx, dz);
-  if (d < 1 || d > WOODLAND.sight.reach) return undefined;
-  const a = Math.atan2(dz, dx) - Math.atan2(tz - ez, tx - ex), off = Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) * 180 / Math.PI;
-  if (off > KINNOULL_EYE.halfWidthDeg) return undefined;
-  return ey + (ty - ey) * d / Math.hypot(tx - ex, tz - ez);
+/** Is (x, z) in the panorama's frame (within its half width of the axis) and within WOODLAND.sight.reach of the eye: the summit's
+ *  slopes in view (where the clearing's gorse runs down). */
+export function inPanoramaNear(x: number, z: number): boolean {
+  const d = Math.hypot(x - KINNOULL_EYE.pos[0], z - KINNOULL_EYE.pos[2]);
+  return d >= 1 && d <= WOODLAND.sight.reach && Math.abs(bearingOff(x, z)) <= KINNOULL_EYE.halfWidthDeg;
+}
+/** The bearing of (x, z) from the panorama's eye off its axis, in degrees (-180 to 180). */
+function bearingOff(x: number, z: number): number {
+  const [ex, , ez] = KINNOULL_EYE.pos, [tx, , tz] = KINNOULL_EYE.target, a = Math.atan2(z - ez, x - ex) - Math.atan2(tz - ez, tx - ex);
+  return Math.atan2(Math.sin(a), Math.cos(a)) * 180 / Math.PI;
+}
+
+/** The view from the summit (round 3 score, C2: round 3's canopy, capped only within 700 m and under one straight line, rose across the
+ *  frame and hid the Tay, the North Inch and the near town). Per bearing across the frame (SIGHT.margin degrees past each edge, every
+ *  SIGHT.bearing degrees), the bare ground is marched every SIGHT.step m out to the terrain's edge: a point is in view if its angle from
+ *  the eye is not under the highest angle before it. The cap at a distance is the lowest angle of the ground in view from SIGHT.shadow
+ *  m beyond it outward (so a top may hide the strip just behind itself, as a real tree or an island's trees do, but nothing further
+ *  off: not the river, the Inch or the town), or the horizon angle there, whichever is higher (a top under the brow before it is out of
+ *  view itself). */
+export const SIGHT = {bearing: .2, margin: 3, step: 6, near: 20, shadow: 40} as const;
+type View = {b0: number; nb: number; nt: number; cap: Float32Array};
+const views = new WeakMap<object, View>();
+function viewOf(ground: Pick<Terrain, 'heightAt' | 'extent'>): View {
+  const hit = views.get(ground); if (hit) return hit;
+  const [ex, ey, ez] = KINNOULL_EYE.pos, [tx, , tz] = KINNOULL_EYE.target, axis = Math.atan2(tz - ez, tx - ex), E = ground.extent;
+  const b0 = -KINNOULL_EYE.halfWidthDeg - SIGHT.margin, nb = Math.ceil(2 * (KINNOULL_EYE.halfWidthDeg + SIGHT.margin) / SIGHT.bearing) + 1;
+  const reach = Math.hypot(Math.max(E.x1 - ex, ex - E.x0), Math.max(E.z1 - ez, ez - E.z0)), nt = Math.ceil(reach / SIGHT.step) + 1;
+  const cap = new Float32Array(nb * nt).fill(NaN), ang = new Float32Array(nt), seen = new Uint8Array(nt), horizon = new Float32Array(nt);
+  for (let k = 0; k < nb; k++) {
+    const a = axis + (b0 + k * SIGHT.bearing) * Math.PI / 180, ux = Math.cos(a), uz = Math.sin(a);
+    let top = -Infinity, last = 0;
+    for (let i = 0; i < nt; i++) {
+      const t = i * SIGHT.step, x = ex + ux * t, z = ez + uz * t;
+      horizon[i] = top;
+      if (t < SIGHT.near) { ang[i] = NaN; seen[i] = 0; continue; }
+      if (x < E.x0 || x > E.x1 || z < E.z0 || z > E.z1) break;
+      ang[i] = (ground.heightAt(x, z) - ey) / t; seen[i] = ang[i]! >= top ? 1 : 0; top = Math.max(top, ang[i]!); last = i;
+    }
+    // the lowest angle in view from SIGHT.shadow m beyond each distance out to the end
+    const w = Math.round(SIGHT.shadow / SIGHT.step), low = new Float32Array(last + 2).fill(Infinity);
+    for (let i = last; i >= 0; i--) low[i] = Math.min(low[i + 1]!, seen[i] ? ang[i]! : Infinity);
+    for (let i = 0; i <= last; i++) { const l = i + w <= last ? low[i + w]! : Infinity; if (Number.isFinite(l)) cap[k * nt + i] = Math.max(l, horizon[i]!); }
+  }
+  const v = {b0, nb, nt, cap}; views.set(ground, v); return v;
+}
+/** The highest a top may stand at (x, z) without hiding ground in view from the summit, or undefined where it hides nothing (out of the
+ *  frame, or no ground in view beyond it). The lower of the two bearings either side, so it holds between them. */
+export function sightHeight(ground: Pick<Terrain, 'heightAt' | 'extent'>, x: number, z: number): number | undefined {
+  const [ex, ey, ez] = KINNOULL_EYE.pos, d = Math.hypot(x - ex, z - ez), V = viewOf(ground), f = (bearingOff(x, z) - V.b0) / SIGHT.bearing;
+  if (f < 0 || f > V.nb - 1 || d < SIGHT.near) return undefined;
+  const i = Math.min(V.nt - 1, Math.round(d / SIGHT.step));
+  let c = Infinity;
+  for (const k of [Math.floor(f), Math.ceil(f)]) for (const j of [i - 1, i, i + 1]) if (j >= 0 && j < V.nt) { const v = V.cap[k * V.nt + j]!; if (!Number.isNaN(v)) c = Math.min(c, v); }
+  return Number.isFinite(c) ? ey + c * d : undefined;
 }
 
 /** ASSUMED rock tones for Kinnoull's cliff (8703, 4307: pale grey andesite, lichen grey-green, cream and rust where it weathers). */
@@ -69,14 +116,14 @@ export function onCliff(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (rea
 
 /** Kinnoull's woodland for buildWaverleyCityGround (options.woodland); `canopy` (perth-canopy.ts) is where one draped canopy stands in
  *  for the massed crowns, so no massed tree is placed under it. */
-export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], canopy?: {inCanopy(x: number, z: number): boolean}): Woodland {
+export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, cliffs: readonly (readonly Pt[])[], canopy?: {inCanopy(x: number, z: number): boolean}): Woodland {
   const gorse: Pt[] = [], g = WOODLAND.gorse, [px, pz] = KINNOULL_PEAK;
   for (let a = 0; a < 360; a += 360 * g.step / (2 * Math.PI * g.inner)) for (const r of [g.inner, (g.inner + g.outer) / 2, g.outer]) {
     const x = px + r * Math.cos(a * Math.PI / 180), z = pz + r * Math.sin(a * Math.PI / 180);
     if (hash(x, z, 21) < g.keep) gorse.push([x + (hash(x, z, 22) - .5) * g.step, z + (hash(x, z, 23) - .5) * g.step]);
   }
   for (let x = px - g.slope[1]; x <= px + g.slope[1]; x += g.slopeStep) for (let z = pz - g.slope[1]; z <= pz + g.slope[1]; z += g.slopeStep) {
-    const d = Math.hypot(x - px, z - pz); if (d < g.slope[0] || d > g.slope[1] || sightHeight(x, z) === undefined || hash(x, z, 24) >= g.slopeKeep) continue;
+    const d = Math.hypot(x - px, z - pz); if (d < g.slope[0] || d > g.slope[1] || !inPanoramaNear(x, z) || hash(x, z, 24) >= g.slopeKeep) continue;
     gorse.push([x + (hash(x, z, 25) - .5) * g.slopeStep, z + (hash(x, z, 26) - .5) * g.slopeStep]);
   }
   return {
@@ -85,7 +132,7 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: read
       if (onCliff(ground, cliffs, t.x, t.z)) return false;
       if (canopy && t.kind === 'wood' && canopy.inCanopy(t.x, t.z)) return false;
       if (t.kind === 'wood' && !t.hanging && woodNoise(t.x, t.z) < WOODLAND.clump) return false;
-      const s = sightHeight(t.x, t.z); if (s !== undefined && t.kind === 'wood' && t.y + t.height > s - WOODLAND.sight.clear) return false;
+      const s = sightHeight(ground, t.x, t.z); if (s !== undefined && t.kind !== 'tree' && t.y + t.height > s - WOODLAND.sight.clear) return false;
       return true;
     },
     tone: (t: Tree, col: THREE.Color) => {

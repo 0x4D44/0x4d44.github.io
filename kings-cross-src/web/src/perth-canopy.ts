@@ -8,7 +8,8 @@
 //   node hash for single crowns. A node outside the wood is tucked just under the ground, so the canopy's edge slopes down to a woodland
 //   margin instead of ending in a wall.
 // - It leaves out the summit clearing (inside WOODLAND.gorse.inner), the cliff (onCliff), and anything that would rise above the
-//   panorama's westward sightline (sightHeight; the crown is lowered under it, or dropped when that leaves under CANOPY.min).
+//   panorama's view of the ground (sightHeight, over the whole frame: round 3's 700 m line let it hide the Tay and the North Inch); the
+//   crown is lowered under it, or dropped when that leaves under CANOPY.min.
 // - Vertex colours: patches of species (WOODLAND.tones, picked per CANOPY.patch m cell), crown tops lighter and hollows darker, so it
 //   reads as crowns.
 // - The massed fill trees it covers are not placed (inCanopy, in kinnoullWoodland's keep), which frees their triangles.
@@ -54,7 +55,7 @@ export interface KinnoullCanopy {
 }
 
 /** The canopy over Kinnoull's OSM woods (`woods`: rings, outer first), on `ground`, keeping clear of the OSM `cliffs`. */
-export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[]): KinnoullCanopy {
+export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woods: readonly (readonly (readonly Pt[])[])[], cliffs: readonly (readonly Pt[])[]): KinnoullCanopy {
   const C = CANOPY, hill = woods;
   const boxes = hill.map(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [x, z] of rs[0]!) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); } return {rs, ax, az, bx, bz}; });
   const inWood = (x: number, z: number) => boxes.some(b => x >= b.ax && x <= b.bx && z >= b.az && z <= b.bz && pip(x, z, b.rs[0]!) && !b.rs.slice(1).some(h => pip(x, z, h)));
@@ -63,7 +64,7 @@ export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt'>, woods: readonl
   const crownAt = (x: number, z: number): number | undefined => {
     if (!inWood(x, z) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner || onCliff(ground, cliffs, x, z)) return undefined;
     let h = C.base + C.swell * woodNoise(x, z) + C.crown * (hash(x, z, 51) - .5);
-    const s = sightHeight(x, z), y = ground.heightAt(x, z);
+    const s = sightHeight(ground, x, z), y = ground.heightAt(x, z);
     if (s !== undefined) h = Math.min(h, s - WOODLAND.sight.clear - y);
     return h >= C.min ? h : undefined;
   };

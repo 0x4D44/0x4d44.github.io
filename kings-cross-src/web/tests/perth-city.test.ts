@@ -11,7 +11,7 @@ import { stationOutline } from '../src/perth-station.ts';
 import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
-import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole } from '../src/perth-summit.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE, eastWater } from '../src/perth-east-ground.ts';
@@ -192,7 +192,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const hillWoods = PERTH_LANDUSE.areas.wood.filter(rs => rs[0]!.some(([x]) => x! > 1700));
   let inWood = 0, covered = 0;
   for (let x = 1700; x < 3000; x += 23) for (let z = -800; z < 900; z += 23) {
-    if (!hillWoods.some(rs => pipw(x, z, rs)) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner + 10 || onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z) || sightHeight(x, z) !== undefined) continue;
+    if (!hillWoods.some(rs => pipw(x, z, rs)) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner + 10 || onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z) || (sightHeight(scene.terrain, x, z) ?? Infinity) - WOODLAND.sight.clear - scene.terrain.heightAt(x, z) < CANOPY.min + 1) continue;
     inWood++; if (canopy.inCanopy(x, z)) covered++;
   }
   assert.ok(inWood > 500 && covered / inWood > .95, `covered ${covered} of ${inWood} wood points`);
@@ -203,7 +203,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const greens = top.map(t => t.g).sort((a, b) => a - b);
   assert.ok(greens[Math.floor(greens.length * .9)]! > 1.35 * greens[Math.floor(greens.length * .1)]!, 'pine and birch tones both present');
   // open westward: no canopy node in the panorama's frame rises above the line from the eye to the town
-  const over = top.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.y > s - WOODLAND.sight.clear + 1e-3; });
+  const over = top.filter(t => { const s = sightHeight(scene.terrain, t.x, t.z); return s !== undefined && t.y > s - WOODLAND.sight.clear + 1e-3; });
   assert.equal(over.length, 0, `canopy over the summit's westward sightline: ${over.length}`);
   // the summit clearing and the cliff stay open
   assert.equal(top.filter(t => Math.hypot(t.x - px, t.z - pz) < WOODLAND.gorse.inner - CANOPY.step).length, 0, 'the summit clearing is open');
@@ -215,7 +215,7 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (Math.hypot(p.x - px, p.z - pz) <= 900) hill.push({ x: p.x, z: p.z, top: p.y + k.y, h: k.y }); }
   const trees = hill.filter(t => t.h > 1.5), gorse = hill.filter(t => t.h <= 1.5);
   assert.equal(trees.filter(t => canopy.inCanopy(t.x, t.z)).length, 0, 'no separate crowns under the canopy');
-  assert.equal(trees.filter(t => { const s = sightHeight(t.x, t.z); return s !== undefined && t.top > s - WOODLAND.sight.clear + 1e-3; }).length, 0, 'no crown over the sightline');
+  assert.equal(trees.filter(t => { const s = sightHeight(scene.terrain, t.x, t.z); return s !== undefined && t.top > s - WOODLAND.sight.clear + 1e-3; }).length, 0, 'no crown over the sightline');
   const edge = gorse.filter(t => { const d = Math.hypot(t.x - px, t.z - pz); return d >= WOODLAND.gorse.inner - 10 && d <= WOODLAND.gorse.outer + 10; });
   assert.ok(edge.length > 30, `gorse at the summit clearing's edge: ${edge.length}`);
   assert.equal(hill.filter(t => onCliff(scene.terrain, PERTH_LANDUSE.cliffs, t.x, t.z)).length, 0, 'no crowns on the cliff');
@@ -228,8 +228,8 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   // every Perth wood is canopy, not massed crowns: the town's and riverside woods too (the 9e565a39 Bridgend view had two 8 to 10 m
   // faceted crowns on the island 35 m from its eye)
   let townWood = 0, townCovered = 0;
-  for (let x = -1200; x < 1700; x += 17) for (let z = -1200; z < 900; z += 17) if (PERTH_LANDUSE.areas.wood.some(rs => pipw(x, z, rs))) { townWood++; if (canopy.inCanopy(x, z)) townCovered++; }
-  assert.ok(townWood > 200 && townCovered / townWood > .95, `town woods covered ${townCovered} of ${townWood}`);
+  for (let x = -1200; x < 1700; x += 17) for (let z = -1200; z < 900; z += 17) if (PERTH_LANDUSE.areas.wood.some(rs => pipw(x, z, rs)) && (sightHeight(scene.terrain, x, z) ?? Infinity) - WOODLAND.sight.clear - scene.terrain.heightAt(x, z) >= CANOPY.min + 1) { townWood++; if (canopy.inCanopy(x, z)) townCovered++; }
+  assert.ok(townWood > 200 && townCovered / townWood > .95, `town woods (where the summit's view allows a canopy) covered ${townCovered} of ${townWood}`);
   for (const [x, z] of [[920.4, -278.1], [919.6, -291.8]] as const) assert.ok(canopy.inCanopy(x, z), `the island wood at ${x}, ${z} is canopy`);
   let crownsInWood = 0;
   for (let i = 0; i < wood.count; i++) { wood.getMatrixAt(i, m); m.decompose(p, q, k); if (k.y > 1.5 && canopy.inCanopy(p.x, p.z)) crownsInWood++; }
@@ -258,6 +258,38 @@ test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not
   const hs = blocks.map(b => b.h).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > (CRAG.height[1] - CRAG.height[0]) * .6, 'mixed heights');
   const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
   let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
+});
+
+test('from the frozen summit eye the Tay and the North Inch are open: no canopy or massed crown stands in front of ground the bare hill leaves in view (round 3 score, C2)', () => {
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[]; target: number[] }>;
+  const cam = cams['pt-kinnoull-panorama']!, [ex, ey, ez] = cam.pos as [number, number, number], [tx, , tz] = cam.target as [number, number, number];
+  const axis = Math.atan2(tz - ez, tx - ex), half = 36 * Math.PI / 180;
+  const pip = (x: number, z: number, p: readonly (readonly number[])[]) => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1]! > z) !== (p[j]![1]! > z) && x < (p[j]![0]! - p[i]![0]!) * (z - p[i]![1]!) / (p[j]![1]! - p[i]![1]!) + p[i]![0]!) yes = !yes; return yes; };
+  // the North Inch: the 1.5 km2 park on the Tay's west bank north of the town; the Tay: the mapped water
+  const area = (r: readonly (readonly number[])[]) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j]![0]! - r[i]![0]!) * (r[j]![1]! + r[i]![1]!); return Math.abs(a / 2); };
+  const inch = PERTH_LANDUSE.areas.park.filter(rs => pip(1339, -801, rs[0]!) && area(rs[0]!) > 1e6);
+  assert.equal(inch.length, 1, 'the North Inch polygon');
+  const blockers = ['perth-kinnoull-canopy', 'waverley-wood-crowns'].map(n => scene.group.getObjectByName(n)!).filter(Boolean);
+  scene.group.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(), eye = new THREE.Vector3(ex, ey, ez);
+  const check = (rings: typeof PERTH_LANDUSE.areas.water, what: string) => {
+    let open = 0, blocked = 0, far = 0;
+    for (let x = -1200; x < 2624; x += 50) for (let z = -1200; z < 912; z += 50) {
+      const b = Math.atan2(z - ez, x - ex) - axis; if (Math.abs(Math.atan2(Math.sin(b), Math.cos(b))) > half) continue;
+      if (!rings.some(rs => pip(x, z, rs[0]!))) continue;
+      // in view over the bare ground: the eye-to-point line clears the drawn ground all the way
+      const y = scene.terrain.heightAt(x, z) + .5, d = Math.hypot(x - ex, z - ez); let clear = true;
+      for (let t = 30; t < d - 20 && clear; t += 6) { const f = t / d; if (scene.terrain.heightAt(ex + (x - ex) * f, ez + (z - ez) * f) > ey + (y - ey) * f) clear = false; }
+      if (!clear) continue; open++;
+      const to = new THREE.Vector3(x, y, z).sub(eye), length = to.length(); ray.set(eye, to.normalize()); ray.far = length - 5;
+      const hit = ray.intersectObjects(blockers, false)[0];
+      // a canopy may hide only the strip just behind itself (SIGHT.shadow m, plus a lattice step), never ground further off
+      if (hit) { blocked++; if (Math.hypot(hit.point.x - x, hit.point.z - z) > SIGHT.shadow + CANOPY.step) far++; }
+    }
+    assert.ok(open > 40 && far === 0 && blocked <= open * .15, `${what}: ${blocked} of ${open} open points hidden by the canopy, ${far} of them further than ${SIGHT.shadow} m behind it`);
+  };
+  check(PERTH_LANDUSE.areas.water, 'the Tay');
+  check(inch, 'the North Inch');
 });
 
 test('the summit clearing has its own close ground under the panorama, in a hole in the town-wide drape (152; round 3, C2)', () => {
