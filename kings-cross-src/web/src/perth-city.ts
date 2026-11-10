@@ -13,7 +13,7 @@ import {buildWaverleyCity} from './waverley-city.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
 import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {buildPerthCityGround, KINNOULL_TOWER, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
+import {buildPerthCityGround, KINNOULL_TOWER, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
 import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
 import {PERTH_FASCIA} from './perth-station.ts';
@@ -82,7 +82,7 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   fabric.group.name = 'perth-city'; take(fabric);
   const buildingIds = [...fabric.buildingIds], heightBasis = {...fabric.heightBasis};
   // the ground cover, trees and the Tay, over the drawn ground
-  take(buildPerthCityGround(ground, new Footprints([...data.buildings, ...data.roofs].map(b => b.outer))));
+  take(buildPerthCityGround(ground, new Footprints([...[...data.buildings, ...data.roofs].map(b => b.outer), ...outlookClearings()])));
   // the bridges and towers
   const masonry = new Batch({colored: true}), ironwork = new Batch(), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);

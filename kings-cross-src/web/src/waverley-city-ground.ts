@@ -299,7 +299,9 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);
    list.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*crownDepth(t.kind);q.setFromAxisAngle(up,r*6.283);
-    m.compose(new THREE.Vector3(t.x,t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
+    // a massed wood tree with no trunk (options.woodTrunks false) is foliage down to the ground, not a crown floating over it
+    const bare=options.woodTrunks===false&&t.kind==='wood'&&!t.hanging;
+    m.compose(new THREE.Vector3(t.x,bare?t.y+ch:t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
     col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);crowns.setColorAt(i,col);});
    crowns.instanceMatrix.needsUpdate=true;if(crowns.instanceColor)crowns.instanceColor.needsUpdate=true;crowns.name=name;crowns.computeBoundingSphere();

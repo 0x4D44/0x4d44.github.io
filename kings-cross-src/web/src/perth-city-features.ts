@@ -3,8 +3,7 @@
 //   builder (waverley-city-ground.ts) on a drape over the drawn terrain, so the cover never sits under the ground or z-fights it.
 // - The Tay: the DTM has no ground in the river (nodata), and tools/build-perth-terrain.ts fills each wet node with the lowest bank
 //   pixel round it (ASSUMED). The OSM river polygons (relation/956087, way/82223450) are painted as water on that drape, and a glossy
-//   sheet is laid over the same drape facets inside them, lifted WATER.lift: so the water is always over the filled river bed, never
-//   under it.
+//   sheet fills them at the drape's level, lifted WATER.lift: so the water is always over the filled river bed, never under it.
 // - The Tay Viaduct (OSM way/4438951, 443 m; Wikipedia "Tay Viaduct", Canmore 79826): seven iron girder spans on the city side, ten
 //   stone arches on Moncreiffe Island (each 28 ft 4 in clear on 4 ft piers, Canmore), six iron girder spans east of the island, and a
 //   walkway on the outer edge of its curve. The arch block is centred on the island's mapped crossing; the girder spans divide the
@@ -36,8 +35,9 @@ export const PERTH_FILL_STEP = {wood: 18, scrub: 14} as const;
 /** ASSUMED: the drape's tolerance and lift (m), three times Waverley's DRAPE_TOLERANCE: Perth's cut is three times the area, seen mostly from
  *  the hill and the river banks; seatDrape still lifts any facet that comes within 0.1 m of the drawn ground. */
 export const PERTH_DRAPE = .75;
-/** The water sheet's lift over the drape (m), and its look: ASSUMED, a pale grey-blue reflecting an overcast sky (R-pt3-a, R-pt3-b). */
-export const WATER = {lift: .08, colour: 0x6f8794, specular: 0x8a9aa4, shininess: 40} as const;
+/** The water sheet's lift over the drape (m: covers its sag between OSM vertices, whose levels differ by up to ~0.6 m), the reach and
+ *  quantile of waterLevel(), and its look: ASSUMED, a pale grey-blue reflecting an overcast sky (R-pt3-a, R-pt3-b). */
+export const WATER = {lift: .6, reach: 120, surface: .3, colour: 0x6f8794, specular: 0x8a9aa4, shininess: 40} as const;
 /** The Tay Viaduct, from Wikipedia ("Tay Viaduct") and Canmore 79826: span counts and the island arches' clear span and pier width. */
 export const TAY_VIADUCT = {westSpans: 7, arches: 10, eastSpans: 6, archClear: 8.636, archPier: 1.219} as const;
 /** ASSUMED viaduct sections (m; rail datum y = 0): iron side girders from y girder[0] to girder[1] (their tops the parapet), offset
@@ -56,10 +56,57 @@ export const KIRK_TOWER = {top: 47.24, side: 7.5, towerShare: .55, lead: [.43, .
 /** Kinnoull Tower: ASSUMED 12 m, about two and a half times its mapped width, as R-pt3-a (Kinnoull_Tower_-_geograph.org.uk_-_4307.jpg) shows it. */
 export const KINNOULL_TOWER = {id: PERTH_LIDAR_LANDMARKS.kinnoullTower.id, height: 12} as const;
 export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
+/** ASSUMED: a mapped viewing place (OSM tourism=viewpoint) stands in the open, so no tree is filled within OUTLOOK_CLEAR m of it; and
+ *  Kinnoull Hill's summit (the OSM peak, node/29621037, 222 m) is open grass and gorse for SUMMIT_OPEN m round it, the woods below it
+ *  (Stone_table_on_Kinnoul_Hill.jpg: grass round the summit table, gorse and low trees at its edge; R-pt3-a England_and_Scotland_152.jpg,
+ *  from the summit: open grass and gorse in front, the trees further down). Each is a 24-sided ring the trees keep clear of, as they
+ *  do a building; the ground keeps its OSM wood paint. */
+export const OUTLOOK_CLEAR = 30, SUMMIT_OPEN = 160;
+/** The OSM peak (node/29621037) in the Perth frame. */
+export const KINNOULL_PEAK: Pt = [2372, 200];
+export const outlookClearings = (): Pt[][] => PERTH_LANDUSE.outlooks.filter(r => r.length === 1).map(([[x, z]]) => {
+  const r = Math.hypot(x! - KINNOULL_PEAK[0], z! - KINNOULL_PEAK[1]) < 10 ? SUMMIT_OPEN : OUTLOOK_CLEAR;
+  return Array.from({length: 24}, (_, k): Pt => [x! + r * Math.cos(k * Math.PI / 12), z! + r * Math.sin(k * Math.PI / 12)]);
+});
 
 const pip = (x: number, z: number, p: readonly Pt[]): boolean => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
 const inWater = (x: number, z: number): boolean => PERTH_LANDUSE.areas.water.some(([o, ...holes]) => pip(x, z, o!) && !holes.some(h => pip(x, z, h)));
 const stone: Rgb = [.86, .82, .74], iron: Rgb = [.3, .34, .36];
+
+/** A ring clipped to an axis-aligned box (Sutherland-Hodgman): the terrain ends at its extent, and so does the water drawn on it. */
+export function clipRing(ring: readonly Pt[], box: {x0: number; z0: number; x1: number; z1: number}): Pt[] {
+  let out: Pt[] = [...ring];
+  const edges: [(p: Pt) => boolean, (a: Pt, b: Pt) => Pt][] = [
+    [p => p[0] >= box.x0, (a, b) => [box.x0, a[1] + (b[1] - a[1]) * (box.x0 - a[0]) / (b[0] - a[0])]],
+    [p => p[0] <= box.x1, (a, b) => [box.x1, a[1] + (b[1] - a[1]) * (box.x1 - a[0]) / (b[0] - a[0])]],
+    [p => p[1] >= box.z0, (a, b) => [a[0] + (b[0] - a[0]) * (box.z0 - a[1]) / (b[1] - a[1]), box.z0]],
+    [p => p[1] <= box.z1, (a, b) => [a[0] + (b[0] - a[0]) * (box.z1 - a[1]) / (b[1] - a[1]), box.z1]],
+  ];
+  for (const [inside, cut] of edges) {
+    const src = out; out = [];
+    for (let i = 0; i < src.length; i++) { const a = src[(i + src.length - 1) % src.length]!, b = src[i]!;
+      if (inside(b)) { if (!inside(a)) out.push(cut(a, b)); out.push(b); } else if (inside(a)) out.push(cut(a, b)); }
+  }
+  return out;
+}
+
+/** The river's level for the water sheet at a point: a low quantile (WATER.surface) of the drawn ground at the wet lattice nodes (16 m,
+ *  inside the OSM water) within WATER.reach m. The DTM fills the river flat; the 16 m terrain still climbs the bank inside the OSM
+ *  outline at its edge nodes, and a polygon vertex sits on the bank itself, so neither the point's own ground nor the highest node is
+ *  the river: the low quantile is. Where the ground is above it (the bank) the drape covers the sheet, and that is the shore. */
+export function waterLevel(ground: Pick<Terrain, 'heightAt'>): (x: number, z: number) => number {
+  const wet: [number, number, number][] = [];
+  for (const [o] of PERTH_LANDUSE.areas.water) {
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity; for (const [x, z] of o!) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    for (let x = Math.ceil(x0 / 16) * 16; x <= x1; x += 16) for (let z = Math.ceil(z0 / 16) * 16; z <= z1; z += 16) if (inWater(x, z)) wet.push([x, z, ground.heightAt(x, z)]);
+  }
+  return (x, z) => {
+    const near: number[] = [];
+    for (const [wx, wz, y] of wet) if (Math.abs(wx - x) <= WATER.reach && Math.abs(wz - z) <= WATER.reach && Math.hypot(wx - x, wz - z) <= WATER.reach) near.push(y);
+    if (!near.length) return ground.heightAt(x, z);
+    near.sort((a, b) => a - b); return near[Math.floor(WATER.surface * (near.length - 1))]!;
+  };
+}
 
 export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: number; drawCalls: number}; dispose(): void}
 
@@ -68,24 +115,16 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints): P
   const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
-  // the water sheet: the drape's facets whose centre is in the river, lifted
-  const drape = cover.group.getObjectByName('waverley-ground-cover') as THREE.Mesh | undefined;
-  let water: THREE.Mesh | undefined;
-  if (drape) {
-    const g = drape.geometry, pos = g.getAttribute('position') as THREE.BufferAttribute, index = g.getIndex()!;
-    const keep: number[] = [];
-    for (let i = 0; i < index.count; i += 3) {
-      const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
-      if (inWater((pos.getX(a) + pos.getX(b) + pos.getX(c)) / 3, (pos.getZ(a) + pos.getZ(b) + pos.getZ(c)) / 3)) keep.push(a, b, c);
-    }
-    if (keep.length) {
-      const p = new Float32Array(pos.array as Float32Array); for (let i = 1; i < p.length; i += 3) p[i]! += WATER.lift;
-      const wg = new THREE.BufferGeometry(); wg.setAttribute('position', new THREE.BufferAttribute(p, 3)); wg.setIndex(keep); wg.computeVertexNormals();
-      const m = new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
-      water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water); stats.triangles += keep.length / 3; stats.drawCalls++;
-    }
+  // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
+  const sheet = new Batch(), level = waterLevel(ground);
+  for (const [o, ...holes] of PERTH_LANDUSE.areas.water) {
+    const outer = clipRing(o!, PERTH_LANDUSE.extent); if (outer.length < 3) continue;
+    fillSurface(sheet, outer, holes.map(h => clipRing(h, PERTH_LANDUSE.extent)).filter(h => h.length >= 3), (x, z) => level(x, z) + PERTH_DRAPE + WATER.lift);
   }
-  return {group: cover.group, stats, dispose() { if (water) { water.geometry.dispose(); (water.material as THREE.Material).dispose(); } cover.dispose(); }};
+  const wg = sheet.build(), m = new THREE.MeshPhongMaterial({color: WATER.colour, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
+  const water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water);
+  stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
+  return {group: cover.group, stats, dispose() { wg.dispose(); m.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------

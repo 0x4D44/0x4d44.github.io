@@ -6,7 +6,7 @@ import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { PERTH_TERRAIN_EXTENT } from '../../tools/build-perth-terrain.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
-import { KIRK_TOWER, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { perthBuildingHeight } from '../src/perth-city.ts';
 import { Batch } from '../src/materials.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
@@ -38,10 +38,26 @@ test('the Tay is OSM water drawn over the DTM\'s filled river, never under it', 
   assert.ok(PERTH_LANDUSE.areas.water.length >= 2, 'the river polygons');
   const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh;
   assert.ok(water, 'the water sheet');
-  const pos = water.geometry.getAttribute('position'), index = water.geometry.getIndex()!;
-  let below = 0, n = 0;
-  for (let i = 0; i < index.count; i += 7) { const v = index.getX(i); n++; if (pos.getY(v) < scene.terrain.heightAt(pos.getX(v), pos.getZ(v)) + PERTH_DRAPE + WATER.lift - 1e-3) below++; }
-  assert.equal(below, 0, `water vertices under the land-use drape + lift: ${below} of ${n}`);
+  // down through the river at every wet lattice node (16 m): where the node is the filled river (its ground at the river's level) the
+  // sheet is over the drape; where the 16 m terrain climbs the bank inside the OSM outline, the drape covers it as a shore
+  const level = waterLevel(scene.terrain);
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+  let below = 0, n = 0, river = 0;
+  for (const [o] of PERTH_LANDUSE.areas.water) {
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity; for (const [x, z] of o!) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    for (let x = Math.ceil(x0 / 16) * 16; x <= x1; x += 16) for (let z = Math.ceil(z0 / 16) * 16; z <= z1; z += 16) {
+      if (x <= -1200 || x >= 2624 || z <= -1200 || z >= 912) continue;
+      ray.set(new THREE.Vector3(x, 500, z), down); const hit = ray.intersectObject(water)[0]; if (!hit) continue; n++;
+      const y = scene.terrain.heightAt(x, z); if (y > level(x, z) + .25) continue; river++;
+      if (hit.point.y < y + PERTH_DRAPE + .05) below++;
+    }
+  }
+  assert.ok(n > 300, `points on the water: ${n}`);
+  assert.ok(river > .6 * n, `the filled river is most of the water: ${river} of ${n}`);
+  assert.equal(below, 0, `water under the land-use drape on the filled river: ${below} of ${river}`);
+  // the Bridgend viewpoint (OSM node/737405988, on the east bank) stands above the water, not under a sheet lifted to the bank
+  assert.ok(level(938, -326) + PERTH_DRAPE + WATER.lift < scene.terrain.heightAt(938, -326), `the river below Bridgend: ${level(938, -326)}`);
+  assert.ok(level(922, -43) < -4, `the sheet at the viaduct lies at the river, not the bank: ${level(922, -43)}`);
   // mid-river under the viaduct is water
   assert.ok(PERTH_LANDUSE.areas.water.some(([o]) => pip(922, -43, o!)), 'the Tay under the viaduct');
 });
