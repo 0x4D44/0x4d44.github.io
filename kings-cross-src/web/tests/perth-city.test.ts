@@ -307,9 +307,10 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
     // soft, not faceted: the lobe's normals lean up towards the sky, so its few facets do not show as dice (every normal faces the sky)
     const nl = isl.geometry.getAttribute('normal'); let low = 1; for (let i = 0; i < nl.count; i++) low = Math.min(low, nl.getY(i));
     assert.ok(low > 0, `soft lobe normals: lowest ${low.toFixed(2)}`);
-    // round 10 (round-9 score: still faceted): 7 sides a lobe, not 6
+    // round 10 (round-9 score: still faceted): 7 sides a lobe, not 6. Round 11, declared (ordered: the round-10 score saw no gain,
+    // pay the 1,248 triangles back): 6 sides again; the lobe is drawn with CL.sides, pinned at 6 (the cost test holds the budget)
     const sides = (isl.geometry as THREE.SphereGeometry).parameters.widthSegments;
-    assert.ok(sides >= 7 && sides === CL.sides, `lobe sides: ${sides}`);
+    assert.ok(sides === 6 && sides === CL.sides, `lobe sides: ${sides}`);
   }
   // light between: from the Bridgend eye, rays toward the town over the belt clear its crowns in places
   const bcam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-tay-from-bridgend'] as { pos: [number, number, number] };

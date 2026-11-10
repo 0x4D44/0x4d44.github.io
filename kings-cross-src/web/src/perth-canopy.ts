@@ -59,9 +59,9 @@ export function inEyeClear(x: number, z: number): boolean {
  *  by the summit's view with SIGHT.island (trees standing in the river may hide more of the channel behind them). Moncreiffe Island's
  *  long 54,000 m2 wood stays canopy: it lies along the river in the panorama. */
 export const ISLAND_CANOPY = {share: .9, maxArea: 10_000, step: 14, jitter: .6, height: [9, 15] as const, crown: .6, width: .36, trunk: .3, min: 5,
-  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .15, blue: .26, red: .55, tilt: .4, squash: [.8, 1.2] as const, sides: 7}} as const;
-/** Round 10 (round-9 score, C3: still faceted crowns at Bridgend). Each lobe has `sides` 7 (from 6): a rounder outline, which the tilt
- *  and squash break further; +4 triangles a lobe, 1,248 in all, the most the cost cap leaves. */
+  cluster: {lobes: 3, main: .8, side: .66, spread: .55, drop: .2, mute: .3, floor: .15, blue: .26, red: .55, tilt: .4, squash: [.8, 1.2] as const, sides: 6}} as const;
+/** Round 10 gave each lobe 7 `sides` (+1,248 triangles); the round-10 score saw no difference at Bridgend's 35 m, so round 11 puts
+ *  them back to 6 and spends the triangles elsewhere. */
 /** Round 5 (round-4 score, C3: "lollipops"): each island tree's crown is a cluster of `cluster.lobes` overlapping lobes, the top one
  *  `main` of the crown's radius and the others `side` of it, set out `spread` of it and `drop` of the crown's depth lower, each turned and
  *  toned a little apart, muted `mute` towards grey and lifted so its brightest channel is at least `floor` (linear; round 6: 0.07 let
