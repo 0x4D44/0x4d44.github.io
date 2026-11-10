@@ -4,7 +4,7 @@
 // - Seam: the west column (x 2624), where the main terrain has ground (z up to its 912), is read off the main drawn terrain at every 16 m, its own vertices, so the two meshes share that
 //   edge exactly (the patch's other rows are the 32 m data, bilinear at the 16 m rows).
 // - Edges (round 3): the north, east and south edges are skirted outward EAST_SKIRT.out m down to just under the world's flat plane
-//   (world.ts GROUND_Y), their colour fading to the plane's (GROUND_COLOUR). So the patch runs out in a long, gentle apron that meets
+//   (world.ts GROUND_Y), their colour fading to a hazed field tone (EAST_SKIRT, round 4). So the patch runs out in a long, gentle apron that meets
 //   the plane far off in the haze, not a ruled edge with grey beyond it (round 2's cliff capture).
 // - The Tay (round 3, C3): the river nodes (DTM nodata) trace one winding channel with breaks of one to three nodes, and a stray
 //   node on the hill. eastWater closes them into one channel (a morphological closing: grown, then shrunk, by EAST_WATER.close m) and
@@ -17,14 +17,17 @@
 //   matched to the main ground paint (waverley-city-ground.ts GROUND_COLOURS) and Perth's water.
 import * as THREE from 'three';
 import {createTerrain} from '../../core/terrain.ts';
-import {GROUND_COLOUR, GROUND_Y} from './world.ts';
+import {GROUND_Y} from './world.ts';
 import {SHORE, WATER} from './perth-city-features.ts';
 import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import file from './data/perth-terrain-east.json' with {type: 'json'};
 
 export const PERTH_EAST_FILE = file as unknown as TerrainFile & {classNames: string[]; classes: string};
 export const PERTH_EAST = createTerrain(PERTH_EAST_FILE);
-export const EAST_SKIRT = {out: 1200, to: GROUND_Y - .3} as const;
+/** Round 4 (round-3 score, C3): the grey world plane still showed as a flat band at the cliff view's horizon. The apron now runs `out` m
+ *  (past which the haze has the ground), still ending just under the plane, and fades to `tone`, a hazed field green-grey (ASSUMED), not
+ *  the plane's grey: the land runs on into the haze. No triangles are added (it is the same skirt ring). */
+export const EAST_SKIRT = {out: 6000, to: GROUND_Y - .3, tone: 0x7c8770} as const;
 /** ASSUMED: the river sheet's level is the `quantile` of the wet nodes' ground within `reach` m, lifted `lift`; the closing radius
  *  `close` m bridges the channel's breaks (up to about twice that); pieces under `minNodes` nodes are dropped. */
 export const EAST_WATER = {reach: 160, quantile: .25, lift: .35, close: 96, minNodes: 6} as const;
@@ -82,7 +85,7 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
   const heightAt = (x: number, z: number) => x <= E.x0 + 1e-6 && z <= main.extent.z1 + 1e-6 ? main.heightAt(E.x0, z) : PERTH_EAST.heightAt(x, z);
   // the lattice, then a skirt ring round the three outer edges (index -1 and n are the skirt)
   const nx = xs.length, nz = zs.length, pos: number[] = [], col: number[] = [], index: number[] = [], c = new THREE.Color(), plane = new THREE.Color();
-  plane.setHex(GROUND_COLOUR, THREE.SRGBColorSpace);
+  plane.setHex(EAST_SKIRT.tone, THREE.SRGBColorSpace);
   const G = PERTH_EAST_FILE.grids[0]!, wet = eastWater(), wetAt = (x: number, z: number) => wet[Math.max(0, Math.min(G.nz - 1, Math.round((z - G.z0) / G.step))) * G.nx + Math.max(0, Math.min(G.nx - 1, Math.round((x - G.x0) / G.step)))] === 1;
   const shore = parseInt(SHORE.shore.slice(1), 16);
   const toneAt = (x: number, z: number) => wetAt(x, z) ? shore : EAST_TONES[eastClassAt(x, z)]!;

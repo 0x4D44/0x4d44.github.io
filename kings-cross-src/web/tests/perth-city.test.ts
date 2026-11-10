@@ -416,13 +416,17 @@ test('the east patch meets the main terrain without a seam, over the covered cor
     assert.ok(Math.abs(pos.getY(v) - scene.terrain.heightAt(E.x0, pos.getZ(v))) < 1e-3, `drawn seam at z ${pos.getZ(v)}`);
   }
   assert.equal(seam, (zMain - E.z0) / 16 + 1, 'a seam vertex every 16 m along the main terrain');
-  // no hard wall and no ruled edge (round 3, C3): the skirt runs out EAST_SKIRT.out m to just under the world's flat plane, in its colour
-  const col = mesh.geometry.getAttribute('color'), plane = new THREE.Color().setHex(GROUND_COLOUR, THREE.SRGBColorSpace); let apron = 0;
+  // no hard wall and no ruled edge (round 3, C3): the skirt runs out EAST_SKIRT.out m to just under the world's flat plane; round 4 (the
+  // plane still showed as a grey band at the cliff view's horizon): out at least 5 km, into the haze, ending in a hazed field tone, not grey
+  assert.ok(EAST_SKIRT.out >= 5000, 'the apron runs out into the haze');
+  const ends = new THREE.Color().setHex(EAST_SKIRT.tone, THREE.SRGBColorSpace), grey = new THREE.Color().setHex(GROUND_COLOUR, THREE.SRGBColorSpace);
+  assert.ok(ends.g > ends.r * 1.05 && ends.g > ends.b * 1.05 && Math.abs(ends.g - grey.g) > .02, 'the apron ends green-grey, not the plane\'s grey');
+  const col = mesh.geometry.getAttribute('color'), plane = ends; let apron = 0;
   for (let v = 0; v < pos.count; v++) {
     const out = pos.getZ(v) < E.z0 - 1 || pos.getZ(v) > E.z1 + 1 || pos.getX(v) > E.x1 + 1; if (!out) continue; apron++;
     assert.ok(pos.getZ(v) <= E.z0 - EAST_SKIRT.out + 1e-6 || pos.getZ(v) >= E.z1 + EAST_SKIRT.out - 1e-6 || pos.getX(v) >= E.x1 + EAST_SKIRT.out - 1e-6, 'the apron runs out its full width');
     assert.ok(pos.getY(v) <= EAST_SKIRT.to + 1e-6 && EAST_SKIRT.to < GROUND_Y, 'the apron ends under the flat plane');
-    assert.ok(Math.abs(col.getX(v) - plane.r) < 1e-3 && Math.abs(col.getY(v) - plane.g) < 1e-3 && Math.abs(col.getZ(v) - plane.b) < 1e-3, 'the apron ends in the plane\'s colour');
+    assert.ok(Math.abs(col.getX(v) - plane.r) < 1e-3 && Math.abs(col.getY(v) - plane.g) < 1e-3 && Math.abs(col.getZ(v) - plane.b) < 1e-3, 'the apron ends in its hazed tone');
   }
   assert.ok(apron > 100, `apron vertices: ${apron}`);
 });
