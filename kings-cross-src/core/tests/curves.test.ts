@@ -245,6 +245,13 @@ test('fairing: junctions, corners and ends never move; a run under FAIR_MIN_SHIF
   const td = ways(tiny);
   const tf = fairNodes(td);
   for (const [n, x, z] of td.nodes) assert.deepEqual(tf.get(n), [x, z], `node ${n} below FAIR_MIN_SHIFT (${FAIR_MIN_SHIFT} m) stays`);
+  // over FAIR_MAX_SHIFT: a 3 m dogleg is an alignment, not a wobble, and is left as OSM has it
+  const dog: Pt[] = [];
+  for (let k = 0; k <= 10; k++) dog.push([k >= 4 && k <= 6 ? 3 : 0, -10 * k]);
+  const dd = ways(dog);
+  assert.ok(Math.max(...fairRun(dog).map((p, i) => Math.abs(p[0] - (dog[i] as Pt)[0]))) > FAIR_MAX_SHIFT, 'the fairing would move it further than FAIR_MAX_SHIFT');
+  const df = fairNodes(dd);
+  for (const [n, x, z] of dd.nodes) assert.deepEqual(df.get(n), [x, z], `node ${n} of a run over FAIR_MAX_SHIFT (${FAIR_MAX_SHIFT} m) stays`);
 });
 
 /**
