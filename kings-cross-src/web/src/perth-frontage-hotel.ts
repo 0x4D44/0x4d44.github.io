@@ -1,7 +1,8 @@
-// P2 frontage: the Station Hotel, Leonard Street, Perth (Andrew Heiton jr, 1885; HES LB39538, Category B), on its OSM footprint
+// P2 frontage: the Station Hotel, Leonard Street, Perth (Andrew Heiton jr, 1885; HES LB39538, Category B; every "HES" below is that listing's text as read in the
+// britishlistedbuildings.co.uk transcript 200385227, not the HES portal), on its OSM footprint
 // way/234811330 (ODbL), unchanged. The footprint is identified by the HES grid reference NO 11260 23198, which converts (OSGB36 to
 // WGS84, then core/geo.ts project) to x -41.6, z -134.5, inside this way; the OSM hotel way/104991643 holds node 267534279 "Queens Hotel".
-// Published (HES LB39538): "3-storey and attic, asymmetric Flemish Gothic"; an 8-bay south entrance elevation; stugged ashlar with red
+// Published (HES LB39538, read 2026-11-10 as the britishlistedbuildings.co.uk transcript of the listing, 200385227, not the HES portal): "3-storey and attic, asymmetric Flemish Gothic"; an 8-bay south entrance elevation; stugged ashlar with red
 // sandstone margins and band courses; grey slates; crow-stepped gables with finials; small piend-roofed dormers; corniced wallhead and
 // ridge stacks; a segmental-arched doorway in an advanced bay at the far left; a full-height turret with a conical slated roof in the
 // re-entrant angle; an octagonal corner tower with a conical roof at the south-east, opposite the station; later single-storey additions,
@@ -20,10 +21,12 @@ import {prism,revolve,slab,wallBox} from './waverley-frontage-mesh.ts';
 
 export const PERTH_HOTEL_ID='way/234811330';
 export const PERTH_HOTEL_SOURCE={
- url:'https://portal.historicenvironment.scot/designation/LB39538',grid:'NO 11260 23198',
+ url:'https://portal.historicenvironment.scot/designation/LB39538',
+ /** Where the listing's text was read: a transcript of it, not the HES portal. */
+ transcript:'https://britishlistedbuildings.co.uk/200385227-station-hotel-leonard-street-perth-perth',grid:'NO 11260 23198',
  /** The grid reference in WGS84 (OSGB36 transverse Mercator inverse, then the OSGB36-to-WGS84 Helmert transform). */
  latLon:{lat:56.392685,lon:-3.439072},
- basis:'HES LB39538: 3-storey and attic asymmetric Flemish Gothic hotel, 1885, Andrew Heiton jr; 8-bay south elevation; stugged ashlar, red sandstone margins and bands, grey slates; crow-stepped gables; conical re-entrant turret; octagonal SE corner tower',
+ basis:'HES LB39538 (britishlistedbuildings.co.uk transcript 200385227): 3-storey and attic asymmetric Flemish Gothic hotel, 1885, Andrew Heiton jr; 8-bay south elevation; stugged ashlar, red sandstone margins and bands, grey slates; crow-stepped gables; conical re-entrant turret; octagonal SE corner tower',
 } as const;
 /** Heights above P, the car park at the front's midpoint (m). ASSUMED from R-pt2-b at about 22 px/m. */
 export const HOTEL_LEVELS={

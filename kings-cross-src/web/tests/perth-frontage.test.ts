@@ -14,10 +14,11 @@ import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '..
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
 import { KINGS_PLACE_LEVELS, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
 import { perthTrack } from '../src/perth-station.ts';
+import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 
 const sceneJson = JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8'));
 // The frozen Perth cameras (tools/tests/frozen-perth-cameras.test.mjs holds this file equal to tools/evidence.mjs).
-const perthCameras = (): Record<string, { pos: number[]; target: number[] }> => JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'));
+const perthCameras = (): Record<string, { pos: number[]; target: number[]; fov?: number }> => JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'));
 const frontageJson = JSON.parse(readFileSync(new URL('../src/data/perth-frontage.json', import.meta.url), 'utf8'));
 const data = unpackWaverleyScene(sceneJson);
 const scene = buildPerthScene({ lighting: false });
@@ -107,6 +108,9 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   assert.ok(Math.abs(KINGS_PLACE_LEVELS.soffit - KINGS_PLACE_LEVELS.eye - .15) < 1e-9);
   assert.ok(Math.abs(KINGS_PLACE_LEVELS.eye - KINGS_PLACE_LEVELS.road - 3.9) < 1e-9);
   assert.equal(perthCameras()['pt-kings-place-bridge'].pos[1], KINGS_PLACE_LEVELS.eye, 'the frozen eye is R-pt2-d\'s (12:57 re-freeze)');
+  // R-pt2-d's lens (13:18 re-freeze): the poster's 3.05 m = 178 px at about 40 m gives f ~ 2334 px; over the 800 px capture height
+  const f = 178 / 3.05 * 40, lens = 2 * Math.atan(400 / f) * 180 / Math.PI;
+  assert.ok(Math.abs(perthCameras()['pt-kings-place-bridge'].fov! - lens) < .1, `the frozen fov is R-pt2-d's lens (${lens.toFixed(2)} deg)`);
   // platforms keep the station's flattened level
   for (const pl of data.platforms) for (const [x, z] of pl.path) assert.ok(Math.abs(t.heightAt(x, z) + .2) < .05, `platform point ${x},${z} at ${t.heightAt(x, z)}`);
   // open rails off the bridge stay on the flattened ground
@@ -121,4 +125,20 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   // pt-kings-place-bridge's eye stands 1.7 m over the cut ground and sees the girders above the road
   const cam = perthCameras()['pt-kings-place-bridge'];
   assert.ok(Math.abs(cam.pos[1] - t.heightAt(cam.pos[0], cam.pos[2]) - 1.7) < .05, `eye ${cam.pos[1]} over ${t.heightAt(cam.pos[0], cam.pos[2])}`);
+});
+
+test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data and covers the King\'s Place cut and the forecourt', () => {
+  const station = data.buildings.find(b => b.id === PERTH_STATION_BUILDING_ID)!;
+  const mask = perthFrontageGroundMask(station.outer);
+  assert.deepEqual(JSON.parse(JSON.stringify(mask)), mask, 'plain numbers in plain arrays');
+  const inside = (x: number, z: number) => inPerthFrontageGroundMask(mask, x, z);
+  // the cut: King's Place under the deck and either side, St Leonard's Bank to the standpoint, the walls' feet
+  for (const p of kingsPlaceLine()) if (p[0] > 50 && p[0] < 140) assert.ok(inside(p[0], p[1]), `King's Place ${p}`);
+  for (const [x, z] of [[88, -39], [95.9, -67.1], [80, -71 - 4.5 - 1.8 - .5]]) assert.ok(inside(x, z), `cut ${x},${z}`);
+  // the forecourt: the station-side paving, the hotel car park, the pavement before the entrance
+  for (const [x, z] of [[-5, -50], [-20, -80], [PERTH_ENTRANCE[0], PERTH_ENTRANCE[1] - 2]]) assert.ok(inside(x, z), `forecourt ${x},${z}`);
+  assert.ok(inside(-40, -76), 'the pavement along the street front, off the mapped roads');
+  assert.ok(!inPerthFrontageGroundMask(perthFrontageGroundMask(), -40, -76), 'that pavement comes from the station outline');
+  // and not the town at large
+  for (const [x, z] of [[300, 300], [-300, -300], [0, 200]]) assert.ok(!inside(x, z), `town ${x},${z}`);
 });
