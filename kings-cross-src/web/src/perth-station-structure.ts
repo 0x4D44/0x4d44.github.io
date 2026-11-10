@@ -287,7 +287,9 @@ export interface PerthStationPlan {
   ramps: PerthRamp[];
 }
 /** A platform end ramp (track frame): its head `e0`-`e1` on the platform's end at deck level, its foot `f0`-`f1` at rail level. */
-export interface PerthRamp {ref: string; e0: Pt; e1: Pt; f0: Pt; f1: Pt}
+/** A platform end ramp: head e0-e1 on the end, foot f0-f1 at rail level. `track[i]`: side i (e_i-f_i) runs beside a track (round 7: its
+ *  coper and warning strip carried down it); `corner[i]`: the platform's own corner on that side where the side was drawn in from it. */
+export interface PerthRamp {ref: string; e0: Pt; e1: Pt; f0: Pt; f1: Pt; track: [boolean, boolean]; corner: [Pt | undefined, Pt | undefined]}
 const inRect = (p: Pt, r: readonly number[], m = 0): boolean => p[0] >= r[0] - m && p[0] <= r[1] + m && p[1] >= r[2] - m && p[1] <= r[3] + m;
 
 /** The rectangle (x0 x1 z0 z1, track frame) round a stair or tower footprint: start point, unit direction, length, width. */
@@ -1224,6 +1226,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     const l = Math.hypot(f[0] - e[0], f[1] - e[1]), n: Pt = [e[0] - o[0], e[1] - o[1]], nl = Math.hypot(n[0], n[1]);
     structure.faces.poly([[e[0], g, e[1]], [f[0], g, f[1]], [f[0], rail, f[1]], [e[0], deck, e[1]]], [[0, g], [l, g], [l, rail], [0, deck]], {normal: [n[0] / nl, 0, n[1] / nl]});
   }
+  rampEdges(plan.ramps, structure);
+  for (const r of plan.ramps) rampGate(fittings, r);
   for (const b of [glass, weather, strips, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
   return {glass, weather, strips, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
 }
@@ -1355,8 +1359,9 @@ export function platformParts(path: readonly Pt[]): {covered: Pt[]; open: Pt[][]
  *  as British platform ends do (and as geograph 591926 shows platform 4's south end in the open, past the roof), at 1 in `grade`, its
  *  sides `clear` m or more from every track's centreline (the side over the track is drawn in until it is; a ramp narrower than `min`
  *  is left out). An end is a platform edge running across the tracks at the platform's first or last x', with nothing but open ground
- *  past it: no platform, roof, canopy or building. ASSUMED grade and clearance (the photographs give neither). */
-export const PERTH_RAMP = {grade: 8, clear: 1.5, min: 1.5} as const;
+ *  past it: no platform, roof, canopy or building. ASSUMED grade and clearance (the photographs give neither). A side whose head is
+ *  within `track` m of a track centreline is a track side (PerthRamp.track). */
+export const PERTH_RAMP = {grade: 8, clear: 1.5, min: 1.5, track: 3.5} as const;
 export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | 'roof' | 'canopy' | 'island' | 'tite'>, rails: readonly (readonly Pt[])[]): PerthRamp[] {
   const R = PERTH_RAMP, len = WAVERLEY_LEVELS.platform * R.grade, out: PerthRamp[] = [];
   const seg = (p: Pt, a: Pt, b: Pt): number => { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz); };
@@ -1380,10 +1385,51 @@ export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | '
       while (w - ua - uc >= R.min && !sideClear(head(uc, c, -1), foot(head(uc, c, -1)))) uc += .1;
       if (w - ua - uc < R.min) continue;
       const e0 = head(ua, a, 1), e1 = head(uc, c, -1);
-      out.push({ref: pf.ref, e0, e1, f0: foot(e0), f1: foot(e1)});
+      out.push({ref: pf.ref, e0, e1, f0: foot(e0), f1: foot(e1), track: [railDist(e0) < R.track, railDist(e1) < R.track], corner: [ua > .05 ? a : undefined, uc > .05 ? c : undefined]});
     }
   }
   return out;
+}
+/** Round 7 (S3, the round-6 score: "the coper and tactile strip stop dead at the end"): on each track side of a ramp, the platform's
+ *  coper (with its nosing) and warning strip carried down the slope, at the platform's own offsets (WAVERLEY_EDGE_BANDS) in from the
+ *  ramp's side; where the side was drawn in from the platform's corner, the coper turns along the end to meet it. Track frame. */
+export function rampEdges(ramps: readonly PerthRamp[], s: Pick<WaverleyStructureBatches, 'edges' | 'tactile' | 'lip'>): void {
+  const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, lift = WAVERLEY_STRUCTURE.stripLift, [coper, warning] = WAVERLEY_EDGE_BANDS, cc = P('coper');
+  for (const r of ramps) for (const i of [0, 1] as const) {
+    if (!r.track[i]) continue;
+    const e = i ? r.e1 : r.e0, f = i ? r.f1 : r.f0, o = i ? r.e0 : r.e1, ol = Math.hypot(o[0] - e[0], o[1] - e[1]), n: Pt = [(o[0] - e[0]) / ol, (o[1] - e[1]) / ol];
+    const len = Math.hypot(f[0] - e[0], f[1] - e[1]), slope = Math.hypot(len, deck - rail);
+    // t along the side (0 head, 1 foot), u metres in from it; y on the ramp's surface plus the strips' lift.
+    const at = (t: number, u: number, dy: number = lift): V3 => [e[0] + (f[0] - e[0]) * t + n[0] * u, deck + (rail - deck) * t + dy, e[1] + (f[1] - e[1]) * t + n[1] * u];
+    s.edges.poly([at(0, coper.from), at(1, coper.from), at(1, coper.to), at(0, coper.to)], undefined, {facing: [0, 1, 0], color: cc});
+    s.tactile.poly([at(0, warning.from), at(1, warning.from), at(1, warning.to), at(0, warning.to)], [[0, 0], [slope, 0], [slope, warning.to - warning.from], [0, warning.to - warning.from]], {facing: [0, 1, 0]});
+    // The nosing: the coper's face proud of the side, down the slope.
+    const S = WAVERLEY_STRUCTURE, out = -S.coperLip;
+    s.lip.poly([at(0, out, -S.coperNose), at(1, out, -S.coperNose), at(1, out), at(0, out)], undefined, {facing: [-n[0], 0, -n[1]], color: cc});
+    s.lip.poly([at(0, out), at(1, out), at(1, 0), at(0, 0)], undefined, {facing: [0, 1, 0], color: cc});
+    // The turn along the end: the coper from the platform's corner to the ramp's side, on the deck, just inside the end.
+    const c = r.corner[i];
+    if (c) {
+      const back: Pt = [(e[0] - f[0]) / len, (e[1] - f[1]) / len], y = deck + lift;
+      s.edges.poly([[c[0], y, c[1]], [e[0], y, e[1]], [e[0] + back[0] * (coper.to - coper.from), y, e[1] + back[1] * (coper.to - coper.from)], [c[0] + back[0] * (coper.to - coper.from), y, c[1] + back[1] * (coper.to - coper.from)]], undefined, {facing: [0, 1, 0], color: cc});
+    }
+  }
+}
+/** Round 7 (S3): the end fence across each ramp's head, as the view south from the south footbridge shows the 4/5 island's south end
+ *  (Rosser1954, "Perth railway station - view south from overbridge", Wikimedia Commons, 2016, CC BY-SA 4.0): grey steel mesh panels
+ *  between posts, about chest high. Drawn as posts, top and bottom rails and close vertical bars. Height, bar pitch and post spacing
+ *  ASSUMED from that photo (no dimensions). */
+export const PERTH_RAMP_FENCE = {height: 1.2, post: 1.6, bar: .15, inset: .2, color: 0x7d8487} as const;
+export function rampGate(b: Batch, r: PerthRamp): void {
+  const F = PERTH_RAMP_FENCE, deck = WAVERLEY_LEVELS.platform, w = Math.hypot(r.e1[0] - r.e0[0], r.e1[1] - r.e0[1]), color = rgb(F.color);
+  const at = (u: number): Pt => [r.e0[0] + (r.e1[0] - r.e0[0]) * u / w, r.e0[1] + (r.e1[1] - r.e0[1]) * u / w];
+  const rotY = Math.atan2(-(r.e1[1] - r.e0[1]), r.e1[0] - r.e0[0]);
+  // Stopped `inset` short of a track side's corner, which may stand only PERTH_RAMP.clear from the track: the fence keeps 1.6 m.
+  const u0 = r.track[0] ? F.inset : 0, u1 = w - (r.track[1] ? F.inset : 0), span = u1 - u0;
+  const posts = Math.max(1, Math.round(span / F.post));
+  for (let k = 0; k <= posts; k++) { const p = at(u0 + span * k / posts); b.box([p[0], deck + F.height / 2, p[1]], [.06, F.height, .06], {rotY, color}); }
+  for (const y of [.1, F.height - .04]) { const m = at(u0 + span / 2); b.box([m[0], deck + y, m[1]], [span, .05, .04], {rotY, color}); }
+  for (let u = u0 + F.bar; u < u1 - F.bar / 2; u += F.bar) { const p = at(u); b.box([p[0], deck + (F.height + .1) / 2, p[1]], [.02, F.height - .14, .02], {rotY, color}); }
 }
 
 /** The roof's ridge height over rail (the glazing's top): the gutter plus the rise. */

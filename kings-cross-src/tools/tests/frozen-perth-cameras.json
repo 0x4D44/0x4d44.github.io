@@ -90,12 +90,12 @@
       135.28
     ],
     "target": [
-      38,
-      1.5,
-      248.14
+      0.79,
+      0,
+      148.64
     ],
     "fov": 35,
-    "source": "OSM platform 4 (way/44200505) at track-frame x' 129.5, z' 50.9 (perth-station-structure.ts), 1.4 m in from its east edge and 2.7 m short of its south end (x' 132.2; lead ruling 18:05, round 7: at the end, so the ramp's slope shows), eye 1.6 m above the ASSUMED 0.915 m deck, looking south down the through lines toward the road bridge, as geograph 591926 (Adrian Beney 2007, CC BY-SA 2.0: camera NO 113 230, subject NO 113 228, looking S) frames it: the platform edge running into the lower right, the tracks to its left, a telephoto lens. Arthur's ruling 2026-11-10 (round 6): at platform 4's south end, fov 35"
+    "source": "OSM platform 4 (way/44200505) at track-frame x' 129.5, z' 50.9 (perth-station-structure.ts), 1.4 m in from its east edge and 2.7 m short of its south end (x' 132.2; lead ruling 18:05, round 7: at the end, so the ramp's slope shows), pitched 10 degrees down on the same bearing (the target at rail level 14.3 m ahead) so the ramp below the end is in frame, eye 1.6 m above the ASSUMED 0.915 m deck, looking south down the through lines toward the road bridge, as geograph 591926 (Adrian Beney 2007, CC BY-SA 2.0: camera NO 113 230, subject NO 113 228, looking S) frames it: the platform edge running into the lower right, the tracks to its left, a telephoto lens. Arthur's ruling 2026-11-10 (round 6): at platform 4's south end, fov 35"
   },
   "pt-station-frontage": {
     "pos": [

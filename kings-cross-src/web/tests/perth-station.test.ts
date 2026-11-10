@@ -8,10 +8,10 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
-import { WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
+import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
 import { roofHeight, WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
@@ -570,7 +570,45 @@ test('round 6: the platforms\' open ends run down to rail level in ramps, clear 
   const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
   const k = cams['pt-platform-4-south-end'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
   cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
-  for (const p of [r4!.e0, r4!.e1]) { const w = toWorld(p), v = new THREE.Vector3(w[0], deck, w[1]).project(cam); assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `the ramp's head in pt-platform-4-south-end (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`); }
+  // Round 7: the eye stands 2.7 m short of the end (lead ruling 18:05), so the head itself is under the frame; the slope, from a
+  // quarter of its length down to its foot, is in it along its track side (the eye stands by that side), and its foot right across.
+  const ti = r4!.track[0] ? 0 : 1;
+  for (const [e, f, ts] of [[ti ? r4!.e1 : r4!.e0, ti ? r4!.f1 : r4!.f0, [.25, .5, 1]], [ti ? r4!.e0 : r4!.e1, ti ? r4!.f0 : r4!.f1, [1]]] as [Pt, Pt, number[]][]) for (const t of ts) {
+    const w = toWorld([e[0] + (f[0] - e[0]) * t, e[1] + (f[1] - e[1]) * t]), v = new THREE.Vector3(w[0], deck + (WAVERLEY_LEVELS.rail - deck) * t, w[1]).project(cam);
+    assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `the ramp at ${t} of its length in pt-platform-4-south-end (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
+  }
+});
+
+test('round 7: the coper and warning strip run down the ramps\' track sides and turn along the end to meet them; a mesh fence stands across each ramp\'s head', () => {
+  const [coper, warning] = WAVERLEY_EDGE_BANDS, deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail;
+  const r4 = plan.ramps.find(r => r.ref === '4' && r.e0[0] > 100)!;
+  assert.equal(r4.track.filter(Boolean).length, 1, 'platform 4\'s south ramp: its east side runs by the through lines, its west side meets platform 5\'s ramp');
+  const ti = r4.track[0] ? 0 : 1, e = ti ? r4.e1 : r4.e0, o = ti ? r4.e0 : r4.e1;
+  assert.ok(e[1] < o[1], 'the track side is the east (lower z\') side');
+  assert.ok(r4.corner[ti], 'drawn in from the platform\'s corner on the track side');
+  const coperRgb = PERTH_PAINT.coper, near = (b: Batch, test: (q: Pt, y: number, i: number) => boolean): number => { let n = 0; for (let i = 0; i < b.positions.length; i += 3) { const q = toLocal([b.positions[i], b.positions[i + 2]]); if (test(q, b.positions[i + 1], i)) n++; } return n; };
+  const P = batches.platform, len = r4.f0[0] - r4.e0[0];
+  // Down the slope: coper vertices at the foot, at rail level (plus the lift), on the track side's line and .3 m in.
+  const side = (q: Pt, u: number, t: number): boolean => Math.abs(q[0] - (e[0] + len * t)) < .02 && Math.abs(q[1] - (e[1] + u)) < .02;
+  const coperC = rgb(coperRgb), isCoper = (i: number): boolean => Math.abs(P.edges.colors[i] - coperC[0]) < 1e-6 && Math.abs(P.edges.colors[i + 1] - coperC[1]) < 1e-6;
+  const foot = near(P.edges, (q, y, i) => isCoper(i) && side(q, coper.to, 1) && Math.abs(y - rail - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
+  assert.ok(foot >= 1, `the coper reaches the ramp's foot at rail level (${foot})`);
+  const tact = near(P.tactile, (q, y) => side(q, warning.to, 1) && Math.abs(y - rail - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
+  assert.ok(tact >= 1, `the warning strip reaches the ramp's foot (${tact})`);
+  const nose = near(P.lip, (q, y) => Math.abs(q[0] - r4.f0[0]) < .02 && y < rail);
+  assert.ok(nose >= 1, `the coper's nosing runs down the slope (${nose})`);
+  // The turn: coper on the deck from the platform's corner to the ramp's side.
+  const c = r4.corner[ti]!, turn = near(P.edges, (q, y, i) => isCoper(i) && Math.hypot(q[0] - c[0], q[1] - c[1]) < .02 && Math.abs(y - deck - WAVERLEY_STRUCTURE.stripLift) < 1e-6);
+  assert.ok(turn >= 1, `the coper turns along the end from the platform's corner (${turn})`);
+  // The fence: posts and bars in its grey, standing on the head line, about chest high.
+  const fc = rgb(PERTH_RAMP_FENCE.color), f = batches.fittings; let bars = 0, top = 0;
+  for (let i = 0; i < f.positions.length; i += 3) {
+    if (Math.abs(f.colors[i] - fc[0]) > 1e-6 || Math.abs(f.colors[i + 2] - fc[2]) > 1e-6) continue;
+    const q = toLocal([f.positions[i], f.positions[i + 2]]);
+    if (Math.abs(q[0] - r4.e0[0]) < .1 && q[1] > Math.min(r4.e0[1], r4.e1[1]) - .1 && q[1] < Math.max(r4.e0[1], r4.e1[1]) + .1) { bars++; top = Math.max(top, f.positions[i + 1]); }
+  }
+  assert.ok(bars >= 8 * 12, `a barred fence across the head (${bars} vertices)`);
+  assert.ok(top > deck + 1 && top < deck + 1.6, `chest high (${(top - deck).toFixed(2)} m)`);
 });
 
 test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, with staggered horizontal joints', () => {
