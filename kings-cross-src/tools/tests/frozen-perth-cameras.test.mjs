@@ -10,11 +10,11 @@ import { scenePinFrom } from '../scene-pin.mjs';
 
 const frozen = JSON.parse(await readFile(new URL('./frozen-perth-cameras.json', import.meta.url), 'utf8'));
 
-test('every Perth camera is its frozen value, field for field, in the frozen order, and there are 14 (pt-station-hotel and pt-kings-place-bridge, then pt-platform-4-clock and pt-north-footbridge, added by lead rulings 2026-11-10, and pt-kinnoull-cliff by the 12:59 ruling)', () => {
+test('every Perth camera is its frozen value, field for field, in the frozen order, and there are 15 (pt-station-hotel and pt-kings-place-bridge, then pt-platform-4-clock and pt-north-footbridge, added by lead rulings 2026-11-10, pt-kinnoull-cliff by the 12:59 ruling, and pt-platform-4-south-end by the round-6 ruling)', () => {
   const cameras = perthCameras();
   for (const name of new Set([...Object.keys(frozen), ...Object.keys(cameras)])) assert.ok(isDeepStrictEqual(cameras[name], frozen[name]), `${name} differs from its frozen value`);
   assert.deepEqual(Object.keys(cameras), Object.keys(frozen));
-  assert.equal(Object.keys(cameras).length, 14);
+  assert.equal(Object.keys(cameras).length, 15);
   for (const [name, c] of Object.entries(cameras)) {
     assert.ok(name.startsWith('pt-') && c.pos.length === 3 && c.target.length === 3 && c.source.length > 40, `${name} is placed with a stated source`);
     assert.ok(!Object.hasOwn(waverleyCameras(), name), 'no name shared with Waverley');

@@ -786,6 +786,12 @@ const FROZEN_PERTH_CAMERAS = {
     fov: 60,
     source: "OSM platform 3 (way/44200499) at track-frame x' 14 (perth-station-structure.ts), about 30 m south of the north (lattice) footbridge's deck, eye 1.6 m above the ASSUMED 0.915 m deck, looking north along the tracks at the deck crossing and its stairs to platforms 3 and 4, as Sheppard 2018 \"footbridge south\" (R-pt1-d) frames it. Lead ruling 2026-11-10 13:02",
   },
+  'pt-platform-4-south-end': {
+    pos: [-5.4,  2.515,  127.72],
+    target: [38,  1.5,  248.14],
+    fov: 35,
+    source: "OSM platform 4 (way/44200505) at track-frame x' 122, z' 49.4 (perth-station-structure.ts), 1.4 m in from its east edge and 10 m short of its south end (x' 132.2), eye 1.6 m above the ASSUMED 0.915 m deck, looking south down the through lines toward the road bridge, as geograph 591926 (Adrian Beney 2007, CC BY-SA 2.0: camera NO 113 230, subject NO 113 228, looking S) frames it: the platform edge running into the lower right, the tracks to its left, a telephoto lens. Arthur's ruling 2026-11-10 (round 6): at platform 4's south end, fov 35",
+  },
   'pt-station-frontage': {
     pos: [-6.1,  0.9,  -56.3],
     target: [-9.4,  4,  -27.3],
@@ -842,7 +848,7 @@ export function perthCameras() {
 
 /** The fixed Perth views each phase 2 element is scored from (the Perth plan, "Cameras"). */
 export const PERTH_ELEMENT_VIEWS = {
-  'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-platform-4-clock', 'pt-north-footbridge', 'pt-overview'],
+  'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-platform-4-clock', 'pt-north-footbridge', 'pt-platform-4-south-end', 'pt-overview'],
   'perth-frontage': ['pt-station-frontage', 'pt-station-hotel', 'pt-kings-place-bridge', 'pt-platform-4-north', 'pt-overview'],
   'perth-city': ['pt-kinnoull-panorama', 'pt-kinnoull-cliff', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
 };
