@@ -151,15 +151,16 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
  *  dark joints, ledges and scrub, not a smooth ramp; the 16 m terrain can only draw the ramp, and round 3's boxes stood out of it as
  *  shelves. So irregular slabs are laid flush on the cliff's steepest ground (onCliff, over `slope` deg) on a `step` m lattice: each
  *  `width` m across and `height` m down the fall line, its four corners pulled in or out by up to `ragged` of its size, its base seated
- *  on the ground `bury` m down at every corner, its face standing `proud` m out and bevelled in by `bevel` of its size. The face is one of
+ *  `bury` m under the drawn ground (the terrain plus `drape`) at every corner, its face `proud` m over it and bevelled in by `bevel` of
+ *  its size (the drawn ground's facets on the cliff stand up to half a metre off the terrain's own height, so less is lost under it). The face is one of
  *  PERTH_ROCK_TONES lifted by `lift`; the bevels are shaded `joint` (dark joints between the slabs) and, on a share `scrub` of the
  *  slabs, the uphill bevel is a ledge of scrub in WOODLAND.gorseRgb. None within `eyeClear` m of the cliff camera, nor within `keep`
  *  of the given points (the tower's foot and annexe). */
 /** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag block within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, step: 6, width: [5, 8] as const, height: [3, 5.5] as const, ragged: .18, proud: [.35, .8] as const,
-  bevel: .16, bury: .25, jitter: 2, lift: 1.3, joint: .38, scrub: .22, slope: 40} as const;
+export const CRAG = {eyeClear: 60, step: 6, width: [5, 8] as const, height: [3, 5.5] as const, ragged: .18, proud: [.8, 1.4] as const,
+  bevel: .16, bury: 1, jitter: 2, lift: 1.3, joint: .38, scrub: .22, slope: 40} as const;
 type V3 = [number, number, number];
 export interface CragBlock {
   /** the slab's middle on the ground */
@@ -171,7 +172,7 @@ export interface CragBlock {
   rgb: [number, number, number]; joint: [number, number, number]; scrub: boolean;
 }
 /** The crag's slabs (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */
-export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = []): CragBlock[] {
+export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = [], drape = 0): CragBlock[] {
   const C = CRAG, out: CragBlock[] = [];
   let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
   for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
@@ -189,13 +190,13 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
     const base = corners.map(([u, v], k) => {
       const ru = 1 + (hash(gx + k, gz, 67) - .5) * 2 * C.ragged, rv = 1 + (hash(gx, gz + k, 68) - .5) * 2 * C.ragged;
       const px = x + (-fz) * u * w * ru + fx * v * run * rv, pz = z + fx * u * w * ru + fz * v * run * rv;
-      return [px, ground.heightAt(px, pz) - C.bury, pz] as V3;
+      return [px, ground.heightAt(px, pz) + drape - C.bury, pz] as V3;
     }) as CragBlock['base'];
     // the face: the base drawn in towards its middle by `bevel` and stood out along the slope's normal
-    const nl = Math.hypot(dx / 4, 1, dz / 4), n: V3 = [dx / 4 / nl, 1 / nl, dz / 4 / nl], proud = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65) + C.bury;
+    const nl = Math.hypot(dx / 4, 1, dz / 4), n: V3 = [dx / 4 / nl, 1 / nl, dz / 4 / nl], proud = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65);
     const mx = base.reduce((a, p) => a + p[0], 0) / 4, mz = base.reduce((a, p) => a + p[2], 0) / 4;
     // seated `proud` m over the ground under each face corner, so the slab follows the face's curve and never sinks into it
-    const face = base.map(p => { const fx2 = p[0] + (mx - p[0]) * C.bevel + n[0] * proud, fz2 = p[2] + (mz - p[2]) * C.bevel + n[2] * proud; return [fx2, ground.heightAt(fx2, fz2) + proud - C.bury, fz2] as V3; }) as CragBlock['face'];
+    const face = base.map(p => { const fx2 = p[0] + (mx - p[0]) * C.bevel + n[0] * proud, fz2 = p[2] + (mz - p[2]) * C.bevel + n[2] * proud; return [fx2, ground.heightAt(fx2, fz2) + drape + proud, fz2] as V3; }) as CragBlock['face'];
     const tone = lin(PERTH_ROCK_TONES[Math.floor(hash(gx, gz, 66) * PERTH_ROCK_TONES.length)]!), rgb = tone.map(v => Math.min(1, v * C.lift)) as V3;
     // corners 0-1 lie uphill (v = -0.5: against the fall line)
     out.push({x, z, base, face, ledge: 0, rgb, joint: rgb.map(v => v * C.joint) as V3, scrub: hash(gx, gz, 69) < C.scrub});

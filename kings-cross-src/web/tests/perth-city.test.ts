@@ -145,6 +145,7 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   assert.ok(lum(L.girder) > .75 && PIER_FORM.stiffenerShade < .8, 'a pale girder band with stiffeners that read');
   const ironMesh = scene.group.getObjectByName('perth-viaduct-iron') as THREE.Mesh, ironMat = ironMesh.material as THREE.MeshLambertMaterial;
   assert.ok(ironMat.name === 'perth-viaduct-paint' && !ironMat.map && ironMat.vertexColors, 'the ironwork in its own plain painted material, no darkening map');
+  assert.ok(ironMat.emissive.r >= .1, 'the shaded girder face keeps some light');
   assert.ok(stiff / 8 > 2 * (layout.length * .6) / PIER_FORM.stiffener, `stiffener tops: ${stiff / 8}`);
 });
 
@@ -256,15 +257,15 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
 });
 
 test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not a smooth ramp (8703; round 3, C1)', () => {
-  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP);
+  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE);
   assert.ok(blocks.length > 60, `rock blocks: ${blocks.length}`);
   const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
-  const ground = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[2]!);
+  const ground = (p: readonly number[]) => scene.terrain.heightAt(p[0]!, p[2]!) + PERTH_DRAPE; // the drawn ground
   for (const b of blocks) {
     // each lies on the cliff, flush (round 4): its base seated in the ground at every corner, its face out of it but no shelf
     assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, b.x, b.z), 'on the cliff');
-    for (const p of b.base) assert.ok(p[1] <= ground(p) && p[1] > ground(p) - 1, 'its base seated in the ground');
-    for (const p of b.face) assert.ok(p[1] - ground(p) > 0 && p[1] - ground(p) < 2.5, `its face flush, not a shelf: ${(p[1] - ground(p)).toFixed(2)}`);
+    for (const p of b.base) assert.ok(p[1] <= ground(p) - .5 && p[1] > ground(p) - 2, 'its base seated in the ground');
+    for (const p of b.face) assert.ok(p[1] - ground(p) > .5 && p[1] - ground(p) < 1.8, `its face flush, not a shelf, nor lost under the drawn ground: ${(p[1] - ground(p)).toFixed(2)}`);
     // irregular: not a rectangle (opposite sides differ)
     assert.ok(lum(b.rgb) > .18, `pale rock (linear): ${lum(b.rgb).toFixed(2)}`);
     assert.ok(lum(b.joint) < lum(b.rgb) * .5, 'dark joints round each slab');

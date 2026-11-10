@@ -77,7 +77,7 @@ export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, gird
  *  Sizes and tones are read by eye from them (ASSUMED): `column` m square, the cap `cap` m deep and `capOver` m past the columns, the
  *  rustication `courses` m apart, a darker joint every course. */
 export const VIADUCT_LOOK = {column: 2.2, cap: .8, capOver: .35, courses: 1.2, stone: [.80, .70, .60] as Rgb, joint: [.62, .53, .45] as Rgb,
-  girder: [.78, .80, .79] as Rgb, railing: [.95, .95, .93] as Rgb} as const;
+  girder: [.78, .80, .79] as Rgb, railing: [.95, .95, .93] as Rgb, shadeLift: .14} as const;
 /** Round 3 (C4), from 2166751: the girder piers' columns are round and tall, about three times as high as they are wide over the water,
  *  rusticated in bands; a cross girder closes the dark gap between the cap and the deck; the plate girders carry vertical stiffeners.
  *  ASSUMED by eye: the visible height over `aspect` gives the diameter, within `diameter`; `sides` facets; bands `band` m tall, every
@@ -212,7 +212,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock
   const crag = new Batch({colored: true});
   // flush slabs: the face in the rock's tone, the bevels dark (the joints), the uphill bevel of some a scrub ledge
-  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP)) {
+  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE)) {
     crag.poly(k.face, undefined, {color: k.rgb, facing: [0, 1, 0]});
     for (let i = 0; i < 4; i++) {
       const j = (i + 1) % 4, mid: [number, number, number] = [(k.base[i]![0] + k.base[j]![0]) / 2 - k.x, 0, (k.base[i]![2] + k.base[j]![2]) / 2 - k.z];

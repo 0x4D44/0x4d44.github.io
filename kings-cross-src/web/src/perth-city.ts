@@ -14,7 +14,7 @@ import {buildWaverleyCity} from './waverley-city.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
 import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {buildPerthCityGround, KINNOULL_TOWER, kinnoullTower, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
+import {buildPerthCityGround, KINNOULL_TOWER, kinnoullTower, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct, VIADUCT_LOOK} from './perth-city-features.ts';
 import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
 import {PERTH_FASCIA, stationOutline} from './perth-station.ts';
@@ -105,7 +105,9 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
   // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing), in its own plain material: round 4,
   // the shared steel map under it kept the girder band flat and dark (round-3 score, C4), as the ashlar did the tower
-  const iron = own(new THREE.MeshLambertMaterial({vertexColors: true})); iron.name = 'perth-viaduct-paint';
+  // the girders' face seen from pt-tay-viaduct is the shaded one: pale paint keeps the sky's light there (2166751), so a little of its
+  // own glow (VIADUCT_LOOK.shadeLift, linear) keeps the band from going dark grey and lets the stiffeners show
+  const iron = own(new THREE.MeshLambertMaterial({vertexColors: true})); iron.name = 'perth-viaduct-paint'; iron.emissive.setScalar(VIADUCT_LOOK.shadeLift);
   const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));
   add(group, masonry, ashlar, 'perth-city-masonry');
   add(group, ironwork, iron, 'perth-viaduct-iron');
