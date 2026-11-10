@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, clockCorbel, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, clockCorbel, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -687,7 +687,9 @@ test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, wi
     assert.ok(joints.size >= 2 * Math.floor((t.deck + T.above - WAVERLEY_LEVELS.platform - .3) / T.joint), `staggered horizontal joints (${joints.size} heights)`);
   }
   const g = PERTH_PAINT.towerClad, [r, gg, b] = [g >> 16, (g >> 8) & 255, g & 255], m = PERTH_PAINT.modern;
-  assert.ok(r >= 0x88 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
+  // (Round 9: floor 0x80, was 0x88: Abbott's overcast mid-grey renders paler under the scene's sun, and the round-8 score asked for it
+  // darker so the off-white frame stands out; the round-9 test below bounds the frame-to-cladding contrast.)
+  assert.ok(r >= 0x80 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
 });
 
 test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift door under a glass hood at platform and deck level on every tower; the island building\'s windows set deep', () => {
@@ -924,4 +926,36 @@ test('round 7: the clock dials carry R-pt1-a2\'s Roman numerals, upright from in
     if ((is(i, PERTH_PAINT.timber) || is(i, PERTH_PAINT.timberDark)) && fp[i + 1] < base - .05) tiers++;
   }
   assert.ok(gilt >= 24 * (K.tiers + 1) && tiers >= K.tiers * 24 - 12, `a corbel under the case, in front of the stage (gilt ${gilt}, timber ${tiers})`);
+});
+
+test('round 9: Abbott 6573357\'s lift bridge: the off-white frame stands well clear of the mid-grey cladding; lamp standards down the open island, in pt-platform-4-north', () => {
+  const ch = (h: number): number => (h >> 16) + ((h >> 8) & 255) + (h & 255);
+  assert.ok(ch(PERTH_PAINT.frame) - ch(PERTH_PAINT.towerClad) >= 3 * 0x48, `the frame ${PERTH_PAINT.frame.toString(16)} well over the cladding ${PERTH_PAINT.towerClad.toString(16)}`);
+  // The lamps: in the open (not under the roof or the Dundee canopies), on a platform, clear of its edges, none at a bench or bin.
+  const L = PERTH_LAMP, lamps = plan.furniture.lamps, deck = WAVERLEY_LEVELS.platform;
+  assert.ok(lamps.length >= 8, `lamp standards on the open platforms (${lamps.length})`);
+  for (const l of lamps) {
+    assert.ok(!inRing(l.at, plan.local.roof), `a lamp at ${l.at} under the roof`);
+    // (An island is mapped as two platforms meeting down its middle, where the lamps stand: on or in one, and well off the tracks.)
+    assert.ok(plan.local.platforms.some(q => inRing(l.at, q.pts) || ringDistance(l.at, q.pts) < .05) && railDistance(toWorld(l.at)) > 3.5, `a lamp at ${l.at} on a platform, clear of its tracks (${railDistance(toWorld(l.at)).toFixed(2)} m)`);
+    assert.ok([...plan.furniture.benches.map(q => q.at), ...plan.furniture.bins].every(q => Math.hypot(q[0] - l.at[0], q[1] - l.at[1]) >= 2 - 1e-9), `a lamp at ${l.at} by a bench or bin`);
+  }
+  // Drawn: the luminaire's lens (the lamp paint) at the head of each, 6 m up.
+  const f = batches.fittings, lens = rgb(PERTH_PAINT.lamp); let heads = 0;
+  for (const l of lamps) {
+    let n = 0;
+    for (let i = 0; i < f.positions.length; i += 3) {
+      if (Math.abs(f.colors[i] - lens[0]) > 1e-6 || Math.abs(f.colors[i + 2] - lens[2]) > 1e-6) continue;
+      const q = toLocal([f.positions[i], f.positions[i + 2]]);
+      if (Math.hypot(q[0] - l.at[0] - l.arm[0] * L.arm, q[1] - l.at[1] - l.arm[1] * L.arm) < .4 && Math.abs(f.positions[i + 1] - (deck + L.height - .17)) < .05) n++;
+    }
+    if (n >= 8) heads++;
+  }
+  assert.equal(heads, lamps.length, 'each lamp drawn with its luminaire');
+  // In the frozen view Abbott's photograph matches: two or more lamps in pt-platform-4-north's frame.
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+  const k = cams['pt-platform-4-north'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
+  cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
+  const seen = lamps.filter(l => { const w = toWorld(l.at), v = new THREE.Vector3(w[0], deck + L.height / 2, w[1]).project(cam); return Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1; }).length;
+  assert.ok(seen >= 2, `lamps in pt-platform-4-north's frame (${seen})`);
 });
