@@ -8,6 +8,8 @@ import type { TrainKind } from '../../core/train.ts';
 import { buildTrain, setTrainLampState } from './train.ts';
 import { disposeNeutralTrain } from './train-neutral.ts';
 import { SR385_ROWS } from './train-385.ts';
+import { wvEmuLayout } from '../../core/train-wv-emu.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, wvEmuFormation } from './train-wv-emu.ts';
 
 /** A figure the capture sidecars report, with its basis ('published', 'drawn', 'assumed', or a '+' join of them). */
 export interface CaptureDimension { readonly value: number; readonly basis: string; readonly figures: readonly string[]; readonly figureM?: number }
@@ -50,6 +52,8 @@ const kxRow = (row: EdinburghKindRow): EdinburghFleetRow => ({ ...row, build: ()
 export const EDINBURGH_FLEET: readonly EdinburghFleetRow[] = [
   ...KX_REUSED_ROWS.map(kxRow),
   ...SR385_ROWS,
+  { kind: 'sr334x3', operator: 'SR', operatorName: 'ScotRail', classes: ['334'], cars: 3, layout: () => wvEmuLayout('sr334x3'), build: () => buildWvEmuTrain('sr334x3'), dispose: disposeWvEmuTrain, formation: () => wvEmuFormation('sr334x3') },
+  { kind: 'tpe397x5', operator: 'TP', operatorName: 'TransPennine Express', classes: ['397'], cars: 5, layout: () => wvEmuLayout('tpe397x5'), build: () => buildWvEmuTrain('tpe397x5'), dispose: disposeWvEmuTrain, formation: () => wvEmuFormation('tpe397x5') },
 ];
 
 export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined => EDINBURGH_FLEET.find(r => r.kind === kind);
