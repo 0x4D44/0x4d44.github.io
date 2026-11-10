@@ -151,9 +151,9 @@ test('intercity lamps are wired to setTrainLampState: turning the train round sw
   }
 });
 
-test('Voyager bogies: inside frames with plain steel rims, each driving only its inner axle (1A\'A1\'); HST couplers are buckeyes, the Voyager\'s Dellners', () => {
+test('Voyager bogies: outside frames with plain steel rims, each driving only its inner axle (1A\'A1\'); HST couplers are buckeyes, the Voyager\'s Dellners', () => {
   const rust = col(0x9b5b36);
-  const motor = col(0x4d5259);
+  const motor = col(0x5f646b); // the outside-frame kit's traction motor (train-parts.ts PALETTES.alstom)
   for (const kind of ['xc220x4', 'xc221x5'] as const) {
     const root = buildIntercityTrain(kind);
     for (const car of intercityLayout(kind).cars) {
@@ -173,9 +173,27 @@ test('Voyager bogies: inside frames with plain steel rims, each driving only its
         assert.ok(motorZ.length > 0, `${kind} bogie-${car.index}-${k} has a motor`);
         const inner = z < (car.start + car.end) / 2 ? 1 : -1;
         assert.ok(motorZ.every((mz) => Math.sign(mz) === inner), `${kind} bogie-${car.index}-${k} drives only its inner axle`);
-        // inside frame: nothing of the frame stands outboard of the wheels' outer faces
+        // outside frame (voyager-bogie-01, 221134; the lead's round-4 ruling): the frame stands outboard of the wheels on both sides, a round
+        // axle-end cover sits on each axle's line outboard of the frame, and a coil spring stands beyond each axle at the bogie's end
         const box = new THREE.Box3().setFromBufferAttribute(pos as THREE.BufferAttribute);
-        assert.ok(box.max.x < 0.86, `${kind} bogie-${car.index}-${k} inside frame (max x ${box.max.x})`);
+        assert.ok(box.max.x > 1.05 && box.min.x < -1.05, `${kind} bogie-${car.index}-${k} outside frame (x ${box.min.x}..${box.max.x})`);
+        const cover = col(0x6c6258);
+        const spring = col(0x544a41);
+        const at = (c: THREE.Color): THREE.Vector3[] => {
+          const out: THREE.Vector3[] = [];
+          for (let v = 0; v < rgb.count; v++) if (Math.abs(rgb.getX(v) - c.r) < 1e-6 && Math.abs(rgb.getY(v) - c.g) < 1e-6 && Math.abs(rgb.getZ(v) - c.b) < 1e-6) out.push(new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v)));
+          return out;
+        };
+        const w = 2.6 / 2;
+        const r = 0.43;
+        for (const sx of [-1, 1]) {
+          for (const az of [-w, w]) {
+            const covers = at(cover).filter((p) => Math.sign(p.x) === sx && Math.abs(p.x) > 1.06 && Math.abs(p.z - az) < 0.14 && Math.abs(p.y - r) < 0.14);
+            assert.ok(covers.length >= 24, `${kind} bogie-${car.index}-${k} axle-end cover at x ${sx}, z ${az}: ${covers.length}`);
+            const springs = at(spring).filter((p) => Math.sign(p.x) === sx && Math.sign(p.z) === Math.sign(az) && Math.abs(p.z) > w + 0.25 && p.y > r);
+            assert.ok(springs.length >= 24, `${kind} bogie-${car.index}-${k} end spring at x ${sx}, z ${az}: ${springs.length}`);
+          }
+        }
       });
     }
   }
