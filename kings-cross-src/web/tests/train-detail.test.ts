@@ -3225,6 +3225,44 @@ test('Class 180 cab: the roof line follows the side-on photograph 180109 to 3 cm
   }
 });
 
+test('Class 180 cab: only a cab car\'s nearest door moves, to 4.8 m from the nose tip; the cars between keep the family\'s 3.8 m, and every car\'s far door stands 3.8 m from its end', () => {
+  // (round 6: the 180109 door place is for the cab end of a cab car alone; a mutant that gave it to every car, so a through car's doors stood a metre further in, was not caught)
+  const spec = bodySpec('adelante');
+  const fromEnd = EMU_FIGURES.adelante.doorFromEnd.value;
+  const layout = trainLayout('gc180x5');
+  assert.equal(fromEnd, 3.8, 'the family\'s assumed door place (core/train.ts), which the through cars keep');
+  for (const car of layout.cars) {
+    const doors = spec.plan(car, false).doors;
+    const here = `car ${car.index}${car.cab ? ` (${car.cab} cab)` : ''}`;
+    near(doors[0] as number, car.cab ? END_GAP + 4.45 : fromEnd, 1e-9, `${here}: its first door's centre`);
+    near(doors[1] as number, car.length - fromEnd, 1e-9, `${here}: its second door's centre`);
+  }
+});
+
+test('Class 180 cab: the windscreen runs up to where 180109 puts the roof, 3.0 m up and 1.66 m behind the face\'s foot, at both ends', () => {
+  // (round 6: the glass's top edge is the roof line's point of 3.0 m at 1.66 m back that the nose is fitted to; the glass stands 2 cm over the roof, so its top corner is up to a centimetre higher and 2 cm nearer)
+  const g = built('gc180x5');
+  for (const car of endCabs(trainLayout('gc180x5'))) {
+    const face = facePlane(car, false, false);
+    const glass = named(named(g, `car-${car.index}`), 'cab-glass') as THREE.Mesh;
+    const screen = triangles(glass).filter((t) => t.every((v) => Math.abs(v.x) < 1.15)).flat();
+    const top = screen.reduce((a, b) => (b.y > a.y ? b : a));
+    near(top.y, 3.0, 0.03, `car ${car.index}: the glass's top edge, up`);
+    near(car.cab === 'front' ? top.z - face : face - top.z, 1.66, 0.04, `car ${car.index}: the glass's top edge, behind the face's foot`);
+  }
+});
+
+test('Class 180 nose: the roof line\'s knots and the plan\'s rounding are pinned, so that a change of one is a decision (the fit to 180109 from 0.9 m back, ASSUMED nearer the face)', () => {
+  // (round 6: no photograph fixes these between the face and 1.1 m back, where one straight lean cannot follow the picture, and none fixes the rounding: a mutant that raised the
+  // 0.5 m knot by 10 cm, or ran the rounding over 2.8 m as it did on the 3.1 m nose, was not caught)
+  const spec = bodySpec('adelante');
+  const nose = spec.nose;
+  assert.deepEqual(nose.knots.map((k) => [k.s, k.top]), [[0, 2.32], [0.12, 2.32], [0.5, 2.36], [0.9, 2.54], [1.3, 2.75], [1.8, 3.09], [2.4, 3.38], [3.0, 3.55], [3.9, spec.crown]]);
+  // the section is the egg's, less the car's, by smootherstep over the rounding's length: 85.5% of the egg 1 m back and 14.5% 2.5 m back (the 3.5 m is 0.9 of the nose, as 2.8 m was of 3.1 m)
+  near(ringAt(nose, 1).round, 0.855, 0.002, 'the share of the egg 1 m behind the tip');
+  near(ringAt(nose, 2.5).round, 0.145, 0.002, 'the share of the egg 2.5 m behind the tip');
+});
+
 test('Class 180 nose: a bright post between the two panes of the glass, and on the roof behind it a louvre, a round vent and a smaller louvre, on both cabs, over the nose\'s surface and clear of the glass', () => {
   const spec = bodySpec('adelante');
   const screen = spec.glass.screen as NonNullable<typeof spec.glass.screen>;
