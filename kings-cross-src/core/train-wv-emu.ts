@@ -77,6 +77,8 @@ export interface WvEmuSpec {
   /** Per car, train order: which of its two bogies (nearer the front, the other) carry traction motors. */
   readonly motors: readonly (readonly [boolean, boolean])[];
   readonly pantographCars: readonly number[];
+  /** A pantograph on the unit's middle car stands at this end of it (the end cars' stand at their end nearer the middle). */
+  readonly middlePantograph?: 'start' | 'end';
   readonly source: string;
 }
 
@@ -87,6 +89,10 @@ export const WV_EMU_SPECS: Readonly<Record<WvEmuKind, WvEmuSpec>> = {
     // ASSUMED: no wheel arrangement was recovered; one motor bogie under each driving car, at its inner end (as the other EMUs are drawn), none under the trailer
     motors: [[false, true], [false, false], [true, false]],
     pantographCars: [1],
+    // (round 6) over the PTOS's end with the second door and two windows, toward the rear driving car: Blackridge 2014 (geograph 3987832, 74339 beside 65339)
+    // and scotrail334_02 (the far end of the middle car from 334002) both show it there, in a well; scotrail334_01 puts it at the other end, so units may run
+    // either way round. Two photographs to one: the model takes the two
+    middlePantograph: 'end',
     source: `ScotRail May 2026 unit diagrams ("Class 334 - 3 Car EMU HAGF"; 107 of 154 diagram blocks call at Edinburgh) and ${EVERSHOLT_334}: DMS-PTOS-DMS. The motor bogies are ASSUMED (no wheel arrangement recovered).`,
   },
   tpe397x5: {
@@ -122,7 +128,9 @@ export function wvEmuLayout(kind: WvEmuKind): WvEmuLayout {
     const cab: Car['cab'] = index === 0 ? 'front' : index === last ? 'rear' : null;
     let pantograph: [number, number] | null = null;
     if (spec.pantographCars.includes(index)) {
-      const centre = (start + end) / 2 < total / 2 - 1e-6 ? end - f.pantographFromEnd.value : start + f.pantographFromEnd.value;
+      const middle = Math.abs((start + end) / 2 - total / 2) < 1e-6;
+      const atEnd = middle ? spec.middlePantograph === 'end' : (start + end) / 2 < total / 2;
+      const centre = atEnd ? end - f.pantographFromEnd.value : start + f.pantographFromEnd.value;
       pantograph = [centre - f.pantographLength.value / 2, centre + f.pantographLength.value / 2];
     }
     const motor = spec.motors[index] as readonly [boolean, boolean];

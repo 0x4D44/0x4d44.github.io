@@ -375,6 +375,9 @@ function paintJuniper(p: Spot, b: Body): Paint {
  */
 export const SALTIRE = { y0: 1.2, y1: 3.0, bar: 0.13 } as const;
 export const SR_SALTIRE = 0xb7c0de;
+/** The 334 pantograph's well floor (dark) and the shroud behind it: half-width, rise over the crown's edge line, arch segments (round 6; ASSUMED off Blackridge). */
+export const WELL = 0x23262c;
+export const SHROUD = { half: 0.8, rise: 0.16, seg: 10 } as const;
 /** Where the X is centred along a car (from the cab tip on a driving car, from the start on the PTOS), and its half-width. */
 export const saltireAt = (car: WvEmuCar): { at: number; half: number } => (car.cab ? { at: car.length - WV_END_GAP - 0.14, half: 0.14 } : { at: WV_END_GAP + 0.65, half: 0.4 });
 
@@ -921,6 +924,30 @@ function buildCar(car: WvEmuCar, layout: WvEmuLayout, b: Body): THREE.Group {
     const [k0, k1] = roofKitSpan('emu', car.pantograph[0], car.pantograph[1], kitDir);
     covers = covers.flatMap(([a, c]): [number, number][] => (c <= k0 || a >= k1 ? [[a, c]] : [...(a < k0 ? [[a, k0] as [number, number]] : []), ...(c > k1 ? [[k1, c] as [number, number]] : [])]));
     roofKit(detail, { style: 'emu', p0: car.pantograph[0], p1: car.pantograph[1], dir: kitDir, crown: b.crown, height: b.coverHeight - 0.01 });
+    // the 334's pantograph stands in a well, a curved shroud rising behind it over the car's end (round 6, the Blackridge oblique): the well's floor a dark
+    // plate under the pantograph, the shroud an arch across the roof from the well to the end. Sizes ASSUMED, read off that photograph
+    if (family === 'juniper') {
+      const nearEnd = kitDir === -1;
+      const [w0, w1] = [car.pantograph[0] - 0.25, car.pantograph[1] + 0.25];
+      detail.box(-0.85, 0.85, b.crown - 0.04, b.crown + 0.004, w0, w1, col(WELL), '-y');
+      const bodyEdge = nearEnd ? car.end - WV_END_GAP - 0.35 : car.start + WV_END_GAP + 0.35;
+      const sh0 = Math.min(nearEnd ? w1 : bodyEdge, nearEnd ? bodyEdge : w0);
+      const sh1 = Math.max(nearEnd ? w1 : bodyEdge, nearEnd ? bodyEdge : w0);
+      const arch = (k: number): [number, number] => {
+        const x = -SHROUD.half + (2 * SHROUD.half * k) / SHROUD.seg;
+        return [x, b.crown - 0.06 + SHROUD.rise * Math.cos((Math.PI * x) / (2 * SHROUD.half))];
+      };
+      for (let k = 0; k < SHROUD.seg; k++) {
+        const [xa, ya] = arch(k);
+        const [xb, yb] = arch(k + 1);
+        const n = unit([-(yb - ya), xb - xa, 0]);
+        detail.quad([[xa, ya, sh0], [xb, yb, sh0], [xb, yb, sh1], [xa, ya, sh1]], [n, n, n, n], col(b.roof));
+      }
+      // the shroud's face toward the well, and its end
+      for (const [z, nz] of [[nearEnd ? sh0 : sh1, nearEnd ? -1 : 1], [nearEnd ? sh1 : sh0, nearEnd ? 1 : -1]] as const) {
+        detail.fan(Array.from({ length: SHROUD.seg + 1 }, (_, k): V3 => [...arch(k), z] as V3), [0, 0, nz], col(b.roof));
+      }
+    }
     const p = buildWvPantograph(fig.pantographLength.value, b.coverHeight);
     p.position.set(0, b.crown, (car.pantograph[0] + car.pantograph[1]) / 2);
     group.add(p);

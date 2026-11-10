@@ -2,11 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { WV_EMU_FIGURES, WV_EMU_KINDS, WV_EMU_SPECS, wvEmuLayout } from '../../core/train-wv-emu.ts';
+import type { WvEmuCar } from '../../core/train-wv-emu.ts';
 import { EDINBURGH_FLEET } from '../src/edinburgh-fleet.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
-import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_DOT, SR_SALTIRE, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
+import { buildWvEmuTrain, disposeWvEmuTrain, MARKER, SR_DOT, SR_SALTIRE, WELL, wvEmuBody, WV_END_GAP, wvEmuFormation, wvEmuPlan } from '../src/train-wv-emu.ts';
 import { CAF, CLUSTER_BAND, J_AIR, MOTOR, SPLIT_DEPTH, SPRING_UNIT, splitTri } from '../src/train-wv-emu-parts.ts';
 import { WIPER } from '../src/train-face.ts';
 import type { Look } from '../src/train-wv-emu-parts.ts';
@@ -552,4 +553,22 @@ test('the 334 driving car\'s roof as scotrail334_02 shows it from above: plain b
     const door = base + dir * (wvEmuPlan('sr334x3', car).doors[0] as number);
     assert.ok(units.some(([z0, z1]) => z0 <= door && door <= z1 && z1 - z0 > 2), `car ${car.index}: the louvred unit stands over the first door`);
   }
+});
+
+// --- round 6 ---
+
+test('the 334\'s pantograph stands over the PTOS\'s two-window end, in a well, a shroud rising between it and the car\'s end (Blackridge, scotrail334_02)', () => {
+  const root = buildWvEmuTrain('sr334x3');
+  const b = wvEmuBody('sr334x3');
+  const car = wvEmuLayout('sr334x3').cars[1] as WvEmuCar;
+  const pan = car.pantograph as readonly [number, number];
+  const plan = wvEmuPlan('sr334x3', car);
+  const d2 = car.start + (plan.doors[1] as number);
+  // (the PTOS's plan runs from its start: its second door and two windows are at its end)
+  assert.ok(pan[0] > d2, `the pantograph (${pan[0].toFixed(2)}-${pan[1].toFixed(2)}) stands beyond the second door (${d2.toFixed(2)})`);
+  const detail = (root.getObjectByName('car-1') as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+  const well = inColour(detail, WELL);
+  assert.ok(well.length > 0 && Math.min(...well.map((v) => v.z)) < pan[0] && Math.max(...well.map((v) => v.z)) > pan[1], 'a dark well under the whole pantograph');
+  const shroud = inColour(detail, b.roof).filter((v) => v.z > pan[1] && v.z < car.end && v.y > b.crown + 0.05);
+  assert.ok(shroud.length >= 8, `${shroud.length} shroud vertices rise over the crown between the pantograph and the end`);
 });

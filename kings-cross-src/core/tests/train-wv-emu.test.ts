@@ -33,7 +33,8 @@ test('a cab at each end only, two bogies per car inside it, and the motors and p
       pantographs: l.cars.map((c) => (c.pantograph ? +((c.pantograph[0] + c.pantograph[1]) / 2 - c.start).toFixed(2) : null)),
     };
   }), [
-    { cabs: ['front', null, 'rear'], bogiesInside: true, motored: [1, 0, 1], pantographs: [null, 3, null] },
+    // the PTOS's at its end toward the rear driving car, over its second door's two windows (Blackridge, scotrail334_02)
+    { cabs: ['front', null, 'rear'], bogiesInside: true, motored: [1, 0, 1], pantographs: [null, 16.94, null] },
     // the PTS's pantograph at its rear end (toward the MSL), the PTSL's at its front end (toward the MSL): tpe397-05, -06
     { cabs: ['front', null, null, null, 'rear'], bogiesInside: true, motored: [2, 0, 2, 0, 2], pantographs: [null, 20.45, null, 2.9, null] },
   ]);
