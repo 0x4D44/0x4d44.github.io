@@ -47,6 +47,11 @@ test('the island building is the gap OSM leaves between platforms 4, 5 and 7: ev
     assert.ok(Math.abs(x - PERTH_SHED_NORTH) < 1e-6 || PERTH_ISLAND_BUILDING.some(q => Math.hypot(p[0] - q[0], p[1] - q[1]) < .2), `corner ${p} traced or on the shed line`);
     assert.ok(railDistance(p) > 2.5, `corner ${p} clear of the tracks`);
   }
+  // Tite's block (lead ruling 12:24): on platform 3's east side, clear of every track and of every footbridge deck, stair and tower.
+  assert.ok(plan.tite, 'Tite block drawn');
+  for (const p of plan.tite!.ring) assert.ok(railDistance(p) > 2.5, `Tite corner ${p} clear of the tracks`);
+  const tl = plan.local.tite, [tx0, tx1] = [Math.min(...tl.map(p => p[0])), Math.max(...tl.map(p => p[0]))], [tz0, tz1] = [Math.min(...tl.map(p => p[1])), Math.max(...tl.map(p => p[1]))];
+  for (const r of plan.clear) assert.ok(r[1] < tx0 || r[0] > tx1 || r[3] < tz0 || r[2] > tz1, `bridge footprint ${r} clear of the Tite block`);
   for (const p of plan.roof) assert.ok(toLocal(p)[0] >= PERTH_SHED_NORTH - 1e-6, `roof corner ${p} stops at the shed line`);
 });
 

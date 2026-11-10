@@ -166,8 +166,10 @@ export interface PerthBridgeLanding {refs: string[]; z: number; width: number; s
 export interface PerthBridgePlan {id: string; along: number; deck: number; kind: 'lattice' | 'lift'; z0: number; z1: number; landings: PerthBridgeLanding[]; posts: Pt[]}
 export interface PerthStationPlan {
   roof: Pt[]; canopy: Pt[]; island: Pt[];
+  /** Tite's 1848 block (scene frame): its footprint and its tower's centre. */
+  tite: {ring: Pt[]; tower: Pt} | undefined;
   /** Track-frame copies of the above, and Waverley's plan in that frame. */
-  local: {roof: Pt[]; canopy: Pt[]; island: Pt[]; platforms: {ref: string; pts: Pt[]}[]};
+  local: {roof: Pt[]; canopy: Pt[]; island: Pt[]; tite: Pt[]; platforms: {ref: string; pts: Pt[]}[]};
   structure: WaverleyStationPlan;
   bridges: PerthBridgePlan[];
   /** Rectangles (track frame, x0 x1 z0 z1) kept clear of roof columns, girders and furniture: the decks, stairs and towers. */
@@ -234,6 +236,26 @@ function planBridge(b: typeof PERTH_FOOTBRIDGES[number], platforms: {ref: string
   return {id: b.id, along: b.along, deck: b.deck, kind: b.kind, z0, z1, landings, posts};
 }
 
+/** Tite's 1848 block (lead ruling 12:24, from W2's evidence: HES LB39340, "a multi-bay former ticket office block" whose earliest section
+ *  faces the platforms, with a 2-storey north extension by A & A Heiton; R-pt1-b shows its octagonal tower north of the main footbridge at
+ *  about x -34). OSM maps no building there: the block is drawn on platform 3's east edge (OSM way/44200499, from (-15.7, -10.7) to
+ *  (-51.9, -97.8)), PERTH_TITE.width deep to the east, from just north of the north footbridge to PERTH_TITE.north. Its depth, length,
+ *  height and the tower's sizes are ASSUMED, scaled from R-pt1-b against the platform. Its walls rise to the roof's gutter girders like the
+ *  island's; it carries its own hipped slate roof and the overall roof stops at it. */
+export const PERTH_TITE = {edge: [[-15.7, -10.7], [-51.9, -97.8]] as readonly Pt[], width: 12, north: -82, bridgeGap: 1.1, towerX: -34, towerRadius: 2.8, towerTop: 17, spireTop: 24, rise: 4} as const;
+function titeBlock(data: Pick<PerthData, 'platforms'>): {ring: Pt[]; tower: Pt} | undefined {
+  const p3 = data.platforms.find(p => p.ref === '3'); if (!p3) return undefined;
+  const snap = (q: Pt): Pt => { const v = p3.path.find(r => near(r, q)); return v ? [v[0], v[1]] : [q[0], q[1]]; };
+  const a = toLocal(snap(PERTH_TITE.edge[0] as Pt)), b = toLocal(snap(PERTH_TITE.edge[1] as Pt)), north = PERTH_FOOTBRIDGES[0].along - PERTH_STATION.deckHalf - PERTH_TITE.bridgeGap;
+  const at = (x: number): Pt => [x, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])], w0 = at(north), w1 = at(PERTH_TITE.north);
+  // The block lies on the edge's east side (-z' in the track frame: platform 3 is west of its east edge).
+  const ring: Pt[] = [w0, w1, [w1[0], w1[1] - PERTH_TITE.width], [w0[0], w0[1] - PERTH_TITE.width]];
+  // The tower on the block's middle line, where that line passes x = PERTH_TITE.towerX in the scene frame.
+  let tower: Pt = [(w0[0] + w1[0]) / 2, (w0[1] + w1[1]) / 2 - PERTH_TITE.width / 2], miss = Infinity;
+  for (let x = w1[0] + PERTH_TITE.towerRadius + 1; x <= w0[0] - PERTH_TITE.towerRadius - 1; x += .25) { const c: Pt = [x, at(x)[1] - PERTH_TITE.width / 2], m = Math.abs(toWorld(c)[0] - PERTH_TITE.towerX); if (m < miss) { miss = m; tower = c; } }
+  return {ring, tower};
+}
+
 const planCache = new WeakMap<object, PerthStationPlan>();
 /** Where everything goes (pure). Cached per data object: the platforms and the roof both read it. */
 export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, outline: readonly Pt[] | undefined): PerthStationPlan {
@@ -241,12 +263,13 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   const {roof, canopy} = outline ? perthRoofRings(outline) : {roof: [], canopy: []};
   const island = perthIslandRing(data, outline);
   const platforms = data.platforms.map(p => ({ref: p.ref ?? '', pts: cleanRing(p.path).map(toLocal)}));
-  const local = {roof: clipNorth(roof.map(toLocal), PERTH_SHED_NORTH), canopy: canopy.map(toLocal), island: clipNorth(island.map(toLocal), PERTH_SHED_NORTH), platforms};
+  const titeLocal = titeBlock(data);
+  const local = {roof: clipNorth(roof.map(toLocal), PERTH_SHED_NORTH), canopy: canopy.map(toLocal), island: clipNorth(island.map(toLocal), PERTH_SHED_NORTH), tite: titeLocal?.ring ?? [], platforms};
   const localData = {platforms: data.platforms.map(p => ({...p, path: p.path.map(toLocal)})), rails: data.rails.map(r => ({...r, path: r.path.map(toLocal)}))};
   // The island building is a cut-out of the roof's plan (no column, girder or rafter over it), grown 3 cm so the gable screens Waverley's
   // plan draws along the outline skip the edges the building shares with it. The glazing itself runs on over the building (R-pt1-a).
-  const cut = offsetRing(local.island, .03);
-  const structure = waverleyStationPlan(localData, roof.length ? {outer: local.roof, holes: []} : undefined, [cut]);
+  const cuts = [local.island, local.tite].filter(r => r.length >= 3).map(r => offsetRing(r, .03));
+  const structure = waverleyStationPlan(localData, roof.length ? {outer: local.roof, holes: []} : undefined, cuts);
   const bridges = PERTH_FOOTBRIDGES.map(b => planBridge(b, platforms));
   const clear: [number, number, number, number][] = [];
   for (const b of bridges) {
@@ -268,7 +291,8 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   for (const k of ['benches', 'signs', 'screens'] as const) s[k] = s[k].filter(o => !blocked([o.x, o.z]) && (k !== 'signs' || s.columns.some(c => near([c.x, c.z], [o.x, o.z], .05))));
   s.offices = [];
   // Railings stand along a platform's open edges: not along the island building's walls, nor across a stair.
-  s.railings = s.railings.filter(([a, b]) => !(ringDistance(a, local.island) < 1 && ringDistance(b, local.island) < 1) && !crosses([a, b]));
+  const byWall = (p: Pt): boolean => [local.island, local.tite].some(r => r.length >= 3 && ringDistance(p, r) < 1);
+  s.railings = s.railings.filter(([a, b]) => !(byWall(a) && byWall(b)) && !crosses([a, b]));
   // Canopy columns: down each Dundee platform's middle, every PERTH_STATION.canopy.columnEvery m along its axis, under the canopy, clear of
   // the track edges (the KX safety line) and of the bridges.
   const canopyColumns: Pt[] = [];
@@ -297,7 +321,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
     if (best) clocks.push({at: best.at, out: best.out});
   }
   // The scene-frame outlines, as drawn: cut at the shed line.
-  const plan: PerthStationPlan = {roof: local.roof.map(toWorld), canopy, island: local.island.map(toWorld), local, structure, bridges, clear, canopyColumns, clocks};
+  const plan: PerthStationPlan = {roof: local.roof.map(toWorld), canopy, island: local.island.map(toWorld), tite: titeLocal && {ring: titeLocal.ring.map(toWorld), tower: toWorld(titeLocal.tower)}, local, structure, bridges, clear, canopyColumns, clocks};
   planCache.set(data, plan);
   return plan;
 }
@@ -413,6 +437,27 @@ export function islandBuildingBatches(ring: readonly Pt[]): {stone: Batch; windo
   return {stone, windows, top};
 }
 
+/** Tite's block over its walls (islandBuildingBatches): a hipped slate roof from the walls' top, and the octagonal tower in stone with a
+ *  slated spire. Scene frame. */
+export function titeRoofBatches(ring: readonly Pt[], tower: Pt): {stone: Batch; slate: Batch} {
+  const T = PERTH_TITE, eaves = PERTH_STATION.building.top, stone = new Batch({colored: true}), slate = new Batch();
+  const [w0, w1, e1, e0] = ring, mid = (p: Pt, q: Pt): Pt => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], ms = mid(w0, e0), mn = mid(w1, e1);
+  const l = Math.hypot(mn[0] - ms[0], mn[1] - ms[1]), u: Pt = [(mn[0] - ms[0]) / l, (mn[1] - ms[1]) / l], hw = T.width / 2;
+  const r0: Pt = [ms[0] + u[0] * hw, ms[1] + u[1] * hw], r1: Pt = [mn[0] - u[0] * hw, mn[1] - u[1] * hw], y = (p: Pt, h: number): V3 => [p[0], h, p[1]], top = eaves + T.rise;
+  for (const face of [[w0, w1, r1, r0], [e1, e0, r0, r1], [e0, w0, r0], [w1, e1, r1]] as Pt[][]) slate.poly(face.map((p, i) => y(p, i >= 2 ? top : eaves)), undefined, {facing: [0, 1, 0]});
+  const wall = P('stoneWall'), dressing = P('stoneDressing'), n = 8, R = T.towerRadius, pt = (k: number, r: number): Pt => { const a = (k + .5) / n * Math.PI * 2; return [tower[0] + r * Math.cos(a), tower[1] + r * Math.sin(a)]; };
+  for (let k = 0; k < n; k++) {
+    const a = pt(k, R), b = pt(k + 1, R), m = (k + 1) / n * Math.PI * 2, facing: V3 = [Math.cos(m), 0, Math.sin(m)];
+    stone.poly([y(a, WAVERLEY_LEVELS.ground), y(b, WAVERLEY_LEVELS.ground), y(b, T.towerTop), y(a, T.towerTop)], undefined, {facing, color: wall});
+    // A cornice band at the eaves and at the top stage, and a tall lancet in each face of the belfry stage (R-pt1-b).
+    for (const [h0, h1] of [[eaves, eaves + .3], [T.towerTop - .4, T.towerTop]]) { const a2 = pt(k, R + .15), b2 = pt(k + 1, R + .15); stone.poly([y(a2, h0), y(b2, h0), y(b2, h1), y(a2, h1)], undefined, {facing, color: dressing}); }
+    const c = mid(a, b), d: Pt = [(b[0] - a[0]) * .18, (b[1] - a[1]) * .18], o: Pt = [Math.cos(m) * .03, Math.sin(m) * .03], h0 = T.towerTop - 4, h1 = T.towerTop - 1.2;
+    stone.poly([[c[0] - d[0] + o[0], h0, c[1] - d[1] + o[1]], [c[0] + d[0] + o[0], h0, c[1] + d[1] + o[1]], [c[0] + d[0] + o[0], h1, c[1] + d[1] + o[1]], [c[0] - d[0] + o[0], h1, c[1] - d[1] + o[1]]], undefined, {facing, color: P('clockCase')});
+    slate.poly([y(pt(k, R + .15), T.towerTop), y(pt(k + 1, R + .15), T.towerTop), [tower[0], T.spireTop, tower[1]]], undefined, {facing: [Math.cos(m), .4, Math.sin(m)]});
+  }
+  return {stone, slate};
+}
+
 export interface PerthStationBatches {
   /** Roof part (track frame turned to the scene's): the glazing (into the scene's shared roof glass), the solid strips, the ironwork. */
   glass: Batch; strips: Batch; ironwork: Batch;
@@ -433,14 +478,14 @@ const recolor = (b: Batch, swap: [Rgb, Rgb][], override?: (x: number, z: number,
 export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches {
   const L = plan.local, S = PERTH_STATION;
   const glass = new Batch(), strips = new Batch(), fittings = new Batch({colored: true, uv: false});
-  const shaped = L.roof.length >= 3 ? ridgeRoofBatches(L.roof, [], WAVERLEY_ROOF_PROFILE, S.bands) : undefined;
+  const shaped = L.roof.length >= 3 ? ridgeRoofBatches(L.roof, [], WAVERLEY_ROOF_PROFILE, S.bands, L.tite.length >= 3 ? [L.tite] : []) : undefined;
   if (shaped) { glass.append(shaped.glass); strips.append(shaped.solid); }
   const structure = waverleyStructureBatches(plan.structure);
   const swap = (Object.keys(WAVERLEY_PAINT) as (keyof typeof WAVERLEY_PAINT)[]).map((k): [Rgb, Rgb] => [rgb(WAVERLEY_PAINT[k]), P(k)]);
   // The gable screens along the island building (above its walls, up to the glazing) are drawn in the wall's stone, so the wall reads as
   // rising to the roof (R-pt1-a).
   const fascia = P('fascia'), stoneWall = P('stoneWall');
-  recolor(structure.ironwork, swap, (x, z, c) => c[0] === fascia[0] && c[1] === fascia[1] && c[2] === fascia[2] && ringDistance([x, z], L.island) < .1 ? stoneWall : undefined);
+  recolor(structure.ironwork, swap, (x, z, c) => c[0] === fascia[0] && c[1] === fascia[1] && c[2] === fascia[2] && [L.island, L.tite].some(r => r.length >= 3 && ringDistance([x, z], r) < .1) ? stoneWall : undefined);
   recolor(structure.fittings, swap); recolor(structure.edges, swap); recolor(structure.lip, swap);
   // The Dundee canopies: flat glazing at canopy.top, cut round the stairs that pass through them, on a column row down each platform.
   if (L.canopy.length >= 3) {

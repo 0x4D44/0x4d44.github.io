@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
+import {islandBuildingBatches, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -91,7 +91,13 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // The island building (perth-station-structure.ts islandBuildingBatches), its stone coloured per vertex: divide out the stone texture's
   // own average (materials.ts stone, 0xa99a7c) as Waverley's central block does, so the texture adds only coursing.
   const station = stationOutline(data);
-  const parts = islandBuildingBatches(perthStationPlan(data, station?.outer).island), stone = own(material('stone').clone() as THREE.MeshLambertMaterial); stone.vertexColors = true;
+  const plan = perthStationPlan(data, station?.outer), parts = islandBuildingBatches(plan.island);
+  // Tite's 1848 block and its octagonal tower (perth-station-structure.ts PERTH_TITE), in the same draws.
+  if (plan.tite) {
+    const walls = islandBuildingBatches(plan.tite.ring), roof = titeRoofBatches(plan.tite.ring, plan.tite.tower);
+    parts.stone.append(walls.stone); parts.stone.append(roof.stone); parts.windows.append(walls.windows); parts.top.append(walls.top); parts.top.append(roof.slate);
+  }
+  const stone = own(material('stone').clone() as THREE.MeshLambertMaterial); stone.vertexColors = true;
   const avg = new THREE.Color(0xa99a7c); if (stone.map) stone.color.setRGB(1 / avg.r, 1 / avg.g, 1 / avg.b); else stone.color.setHex(0xffffff);
   add(group, parts.stone, stone, 'perth-island-building');
   add(group, parts.windows, material('sash'), 'perth-island-building-windows');
