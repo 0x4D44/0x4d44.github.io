@@ -161,10 +161,17 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
 /** `slope` rose from 40 to 41.5 deg in round 6, paying the piers' rounder shafts (PIER_FORM.sides) from the crag's gentlest risers. */
 export const CRAG = {eyeClear: 60, slope: 41.5, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.6, 6.4] as const, ledge: [.6, 6] as const,
-  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointCell: 7, joints: .2, joint: .35} as const;
+  lift: 1.3, scrub: .3, ledgeRgb: [.34, .33, .31] as const, column: 11, jointWidth: 3, jointDepth: 60, joints: .2, joint: .5,
+  offset: .5, through: [.74, .88] as const} as const;
+/** Round 7 (round-6 score: the courses still ran level; the joints were keyed to plan cells, so they did not run up the face, and at
+ *  0.35 read as black blocks). Each column's riser tops shift by up to `offset` of a band either way (the column noise), and where a
+ *  second, coarser noise passes `through[0]` (or `through[1]`) the riser stands one (or two) courses taller, a face running through
+ *  2-3 courses, its ledge deeper to match. The joints are keyed to the position along the face (`jointWidth` m strips across the
+ *  face's mean direction, in `jointDepth` m bands up it), so the same strip is dark on every course, at `joint` of its tone: a
+ *  shadowed crack. Tones follow the `column` noise (round 6 used 0.8 of it, 8.8 m, against its own comment). */
 /** Round 6 (round-5 score: "walls, not rock"; the courses ran level and the brown drape showed between them). The face now runs in
  *  vertical columns: each riser's height and tone follow smooth noise on `column` m cells (60% of the height), so a column of tall,
- *  like-toned risers stacks up the face across the courses, beside lower ones; risers in a share `joints` of the `jointCell` m cells are
+ *  like-toned risers stacks up the face across the courses, beside lower ones; risers in a share `joints` of 7 m plan cells were (round 7: keyed to the face instead)
  *  dark joints (`joint` of their tone), which line up from course to course as vertical cracks. Each ledge runs back to the next course
  *  (the band's run at the local grade, up to `ledge`), so it covers the drape between the courses; the ledges are rock-grey, a share
  *  `scrub` of them scrub. */
@@ -173,6 +180,8 @@ export interface CragStep {
   /** the riser's ends on the ground (plan), its foot and its top (y), the uphill direction (plan), the ledge's depth */
   a: Pt; b: Pt; foot: [number, number]; top: number; up: Pt; ledge: number;
   rgb: V3; scrub: boolean; joint: boolean;
+  /** how many courses the riser runs through (1-3) */
+  courses: number;
 }
 /** Round 6 (round-5 score: the brown, streaked drape showed between the courses, so each read as a wall on an earth bank). The drape's
  *  map is repainted round the crag's steps (every `cell` m cell within `reach` m of a riser's ends or its ledge's back), each cell one
@@ -219,15 +228,33 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
         const a = cut[k]!, b = cut[k + 1]!, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, ya = ground.heightAt(a[0], a[1]), yb = ground.heightAt(b[0], b[1]);
         if (!onCliff(ground, cliffs, mx, mz)) continue;
         // the column's height and tone (smooth across the courses), and whether this piece is a joint (its cell's, the same course to course)
-        const col = vn(mx, mz, C.column, 76), rise = C.rise[0] + (C.rise[1] - C.rise[0]) * Math.min(1, .6 * col + .4 * hash(Math.round(mx), Math.round(mz), 73)), top = Math.max(ya, yb) + rise;
-        const ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], Math.max(C.band, rise - drape) / Math.max(grade, .3)));
-        const joint = hash(Math.floor(mx / C.jointCell), Math.floor(mz / C.jointCell), 77) < C.joints;
-        const tone = lin(PERTH_ROCK_TONES[Math.min(PERTH_ROCK_TONES.length - 1, Math.floor(vn(mx, mz, C.column * .8, 74) * PERTH_ROCK_TONES.length))]!).map(v => Math.min(1, v * C.lift) * (joint ? C.joint : 1)) as V3;
-        out.push({a, b, foot: [ya + drape - C.bury, yb + drape - C.bury], top, up, ledge, rgb: tone, scrub: hash(Math.round(mx), Math.round(mz), 75) < C.scrub, joint});
+        const col = vn(mx, mz, C.column, 76), thru = vn(mx, mz, C.column * 1.5, 80);
+        const base = C.rise[0] + (C.rise[1] - C.rise[0]) * Math.min(1, .6 * col + .4 * hash(Math.round(mx), Math.round(mz), 73));
+        const one = Math.max(C.rise[0], base + (vn(mx, mz, C.column, 79) - .5) * 2 * C.offset * C.band);
+        let courses = thru > C.through[1] ? 3 : thru > C.through[0] ? 2 : 1, rise = one + (courses - 1) * C.band, top = Math.max(ya, yb) + rise;
+        let ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], Math.max(C.band, rise - drape) / Math.max(grade, .3)));
+        // a through-riser's ledge runs uphill until it meets the drawn ground; where the slope gives out first, it runs one course fewer
+        while (courses > 1) {
+          let d = 0; while (d < C.ledge[1] * (2 * courses - 1) && ground.heightAt(mx + up[0] * d, mz + up[1] * d) + drape < top - .3) d += .5;
+          if (ground.heightAt(mx + up[0] * d, mz + up[1] * d) + drape >= top - .3) { ledge = Math.max(C.ledge[0], d); break; }
+          courses--; rise -= C.band; top -= C.band;
+          if (courses === 1) ledge = Math.max(C.ledge[0], Math.min(C.ledge[1], Math.max(C.band, rise - drape) / Math.max(grade, .3)));
+        }
+        const tone = lin(PERTH_ROCK_TONES[Math.min(PERTH_ROCK_TONES.length - 1, Math.floor(vn(mx, mz, C.column, 74) * PERTH_ROCK_TONES.length))]!).map(v => Math.min(1, v * C.lift)) as V3;
+        out.push({a, b, foot: [ya + drape - C.bury, yb + drape - C.bury], top, up, ledge, rgb: tone, scrub: hash(Math.round(mx), Math.round(mz), 75) < C.scrub, joint: false, courses});
       }
     }
   }
+  // the joints, keyed to the position along the face (its mean direction), so a strip is dark course over course
+  const face = cragFace(out);
+  for (const k of out) { const [s, d] = face(k); if (hash(Math.floor(s / C.jointWidth), Math.floor(d / C.jointDepth), 77) < C.joints) { k.joint = true; k.rgb = k.rgb.map(v => v * C.joint) as V3; } }
   return out;
+}
+/** The crag's face frame: a step's midpoint as (along the face's mean direction, up it), in m. */
+export function cragFace(steps: readonly CragStep[]): (k: CragStep) => [number, number] {
+  let ux = 0, uz = 0; for (const k of steps) { ux += k.up[0]; uz += k.up[1]; }
+  const l = Math.hypot(ux, uz) || 1, U: Pt = [ux / l, uz / l], T: Pt = [-U[1], U[0]];
+  return k => { const mx = (k.a[0] + k.b[0]) / 2, mz = (k.a[1] + k.b[1]) / 2; return [mx * T[0] + mz * T[1], mx * U[0] + mz * U[1]]; };
 }
 /** The scrub ledge's tone (linear): WOODLAND.gorseRgb darkened, as a top-lit ledge would otherwise read as bright lawn (round 5). */
 export const CRAG_SCRUB = WOODLAND.gorseRgb.map(v => v * .6) as [number, number, number];

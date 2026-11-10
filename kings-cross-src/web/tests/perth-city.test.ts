@@ -313,7 +313,9 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     const mid: [number, number] = [(k.a[0] + k.b[0]) / 2, (k.a[1] + k.b[1]) / 2];
     assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, mid[0], mid[1]), 'on the cliff');
     assert.ok(k.foot[0] < drawn(k.a) && k.foot[1] < drawn(k.b), 'its foot in the ground');
-    const over = k.top - Math.max(drawn(k.a), drawn(k.b)); assert.ok(over > 1.2 && over < CRAG.band, `a step, not a plate and not a tower: ${over.toFixed(2)}`);
+    // round 7, declared (ordered: tops shift up to half a band, some risers run through 2-3 courses): a step is under 1.5 bands over
+    // the ground, a through-riser under 1.5 bands plus its extra courses (round 6: under 1 band for all)
+    const over = k.top - Math.max(drawn(k.a), drawn(k.b)); assert.ok(over > 1.2 && over < CRAG.band * (1.5 + k.courses - 1), `a step, not a plate and not a tower: ${over.toFixed(2)}`);
     // the ledge on top runs back into the slope (uphill; counted below: the terrain's own bumps turn a few)
     const back: [number, number] = [mid[0] + k.up[0] * k.ledge, mid[1] + k.up[1] * k.ledge];
     if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;
@@ -329,12 +331,22 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
   // round 6 (restoring round 4's checks, which the round-5 rewrite dropped): dark joints, and mixed sizes
   const rock = steps.filter(k => !k.joint).map(k => lum(k.rgb)).sort((a, b) => a - b), median = rock[Math.floor(rock.length / 2)]!;
   const joints = steps.filter(k => k.joint);
-  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.rgb) < median * .5), `dark joints: ${joints.length} of ${steps.length}`);
+  // round 7, declared (ordered: joints lifted from 0.35 to about 0.55 of their tone, here 0.5, cracks, not black blocks): under 0.7 of the median rock
+  // (round 6: under 0.5), and over 0.3 of it (new: not black)
+  assert.ok(joints.length > steps.length * .1 && joints.length < steps.length * .35 && joints.every(k => lum(k.rgb) < median * .7 && lum(k.rgb) > median * .3), `dark joints: ${joints.length} of ${steps.length}`);
   const rises = steps.map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), lens = steps.map(k => Math.hypot(k.b[0] - k.a[0], k.b[1] - k.a[1])).sort((a, b) => a - b);
   assert.ok(rises.at(-1)! - rises[0]! > 2.5 && lens[Math.floor(lens.length * .9)]! - lens[Math.floor(lens.length * .1)]! > 1.5, 'mixed sizes');
-  // vertical, not coursed: the joints line up course over course (a joint piece has another joint within its cell a course above or below)
-  const stacked = joints.filter(k => joints.some(o => o !== k && Math.floor((o.a[0] + o.b[0]) / 2 / CRAG.jointCell) === Math.floor((k.a[0] + k.b[0]) / 2 / CRAG.jointCell) && Math.floor((o.a[1] + o.b[1]) / 2 / CRAG.jointCell) === Math.floor((k.a[1] + k.b[1]) / 2 / CRAG.jointCell) && Math.abs(o.top - k.top) > CRAG.band / 2));
-  assert.ok(stacked.length > joints.length * .3, `joints running up the face: ${stacked.length} of ${joints.length}`);
+  // vertical, not coursed (round 7, tightened): most joints have a partner on the next course up or down, within a joint's width along
+  // the face (the face's mean direction, worked out here from the steps' own uphill directions)
+  let ux = 0, uz = 0; for (const k of steps) { ux += k.up[0]; uz += k.up[1]; }
+  const ul = Math.hypot(ux, uz), along = (k: typeof steps[number]) => ((k.a[0] + k.b[0]) / 2) * -uz / ul + ((k.a[1] + k.b[1]) / 2) * ux / ul;
+  const stacked = joints.filter(k => joints.some(o => o !== k && Math.abs(along(o) - along(k)) < CRAG.jointWidth && Math.abs(o.top - k.top) > CRAG.band / 2 && Math.abs(o.top - k.top) < CRAG.band * 1.6));
+  assert.ok(stacked.length > joints.length * .6, `joints running up the face: ${stacked.length} of ${joints.length}`);
+  // the courses broken (round 7): one-course risers' heights spread over more than half a band (10th to 90th percentile; round 6's
+  // spread was under half), and some risers running through 2-3 courses
+  const ones = steps.filter(k => k.courses === 1).map(k => k.top - Math.max(drawn(k.a), drawn(k.b))).sort((a, b) => a - b), spread = ones[Math.floor(ones.length * .9)]! - ones[Math.floor(ones.length * .1)]!;
+  const thru = steps.filter(k => k.courses > 1).length;
+  assert.ok(spread > CRAG.band * .5 && thru > steps.length * .05 && thru < steps.length * .3 && steps.some(k => k.courses === 3), `courses broken: spread ${spread.toFixed(2)}, ${thru} through-risers of ${steps.length}`);
   // the ledges cover the drape between courses: each runs back until it meets the drawn slope (it ends in the ground, not short of it)
   const meets = steps.filter(k => { const m: [number, number] = [(k.a[0] + k.b[0]) / 2 + k.up[0] * k.ledge, (k.a[1] + k.b[1]) / 2 + k.up[1] * k.ledge]; return drawn(m) >= k.top - .3; });
   assert.ok(meets.length > steps.length * .85, `ledges running back into the slope: ${meets.length} of ${steps.length}`);
