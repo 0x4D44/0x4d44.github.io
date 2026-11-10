@@ -409,11 +409,21 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   assert.equal(mat.customProgramCacheKey(), 'perth-summit-detail', 'its own program');
   // the path is worn grey-green earth, not salmon (round 3 score): green at least red, red little over blue
   const rgbOf = (c: string) => { const m = c.match(/\d+/g); if (c.startsWith('#')) { const n = parseInt(c.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255]; } return m!.slice(0, 3).map(Number); };
-  for (const c of [SUMMIT.path.tone, SUMMIT.worn.tone]) { const [r, g, bl] = rgbOf(c) as [number, number, number]; assert.ok(g >= r - 2 && r - bl < 30, `grey-green, not orange: ${c}`); }
+  for (const c of [SUMMIT.path.tone, SUMMIT.worn.tone]) { const [r, g, bl] = rgbOf(c) as [number, number, number]; assert.ok(g >= r + 4 && r - bl < 30, `grey-green, not orange or beige: ${c}`); }
   // low gorse bushes near the eye, in the frame, off the paths (152)
   const nearPaths = PERTH_LANDUSE.paths.filter(q => q.line.some(([x, z]) => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.patch + 20));
   const bushes = summitBushes(scene.terrain, nearPaths), gm = scene.group.getObjectByName('perth-summit-gorse') as THREE.InstancedMesh;
-  assert.ok(gm && gm.count === bushes.length, 'the bushes are drawn');
+  assert.ok(gm && gm.count === bushes.reduce((n, b) => n + b.lobes.length, 0), 'the bushes are drawn, lobe by lobe');
+  // shrubby, not boulders (round 5): several overlapping lobes of differing size, spread over the bush; dark olive, a yellow fleck in some
+  for (const b of bushes) {
+    assert.ok(b.lobes.length >= 3, 'several lobes');
+    const rs = b.lobes.map(l => l.r); assert.ok(Math.max(...rs) - Math.min(...rs) > .1 * b.radius, 'lobes of differing size');
+    assert.ok(b.lobes.some(l => Math.hypot(l.x - b.x, l.z - b.z) > .3 * b.radius), 'spread, not one mound');
+  }
+  const lumL = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const leafy = bushes.flatMap(b => b.lobes).filter(l => l.rgb[1] > l.rgb[0]);
+  assert.ok(leafy.length > 0 && leafy.every(l => lumL(l.rgb) < .2), 'dark olive leaves');
+  assert.ok(bushes.filter(b => b.lobes.some(l => l.rgb[0] > l.rgb[1])).length >= 3, 'a yellow fleck in some');
   const axisB = Math.atan2(KINNOULL_EYE.target[2] - SUMMIT_CENTRE[1], KINNOULL_EYE.target[0] - SUMMIT_CENTRE[0]);
   const framed = bushes.filter(b => { const a = Math.atan2(b.z - SUMMIT_CENTRE[1], b.x - SUMMIT_CENTRE[0]) - axisB; return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) < KINNOULL_EYE.halfWidthDeg * Math.PI / 180; });
   assert.ok(bushes.length >= 8 && framed.length >= 5, `bushes ${bushes.length}, in frame ${framed.length}`);

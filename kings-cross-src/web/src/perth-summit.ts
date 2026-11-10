@@ -20,17 +20,20 @@ export const SUMMIT = {
   hole: 150, patch: 175, step: 6, lift: .12, px: 1024, maxSlope: 40, margin: 9,
   grass: ['#5b7431', '#4f6a2a', '#6d7a3a', '#7a7444'] as const, tuft: ['rgba(40,58,22,0.55)', 'rgba(150,150,90,0.45)'] as const, tufts: 9000,
   gorse: {count: 70, r: [1.2, 3] as const, tone: '#3a4a1c', bloom: 'rgba(200,170,40,0.35)'},
-  // round 4: the path and the worn ground grey-green worn earth, as 152 (round 3's #8a6a48 rendered salmon under the sun)
-  worn: {r: 14, tone: 'rgba(118,117,93,0.55)'}, path: {tone: '#76755d', edge: 'rgba(96,106,70,0.6)'},
+  // the path and the worn ground in grey-green worn earth, as 152 (round 3's #8a6a48 rendered salmon; round 4's #76755d read beige)
+  worn: {r: 14, tone: 'rgba(106,116,92,0.55)'}, path: {tone: '#6b745c', edge: 'rgba(92,104,70,0.6)'},
   stones: {count: 60, tone: '#9a968c'},
   detail: {tile: 3, px: 256, blades: 3400, grit: 500, fade: [.15, .6] as const},
   // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
-  bush: {count: 22, ring: [8, 45] as const, pathClear: 1.5, height: [.7, 1.4] as const, radius: [.9, 2] as const, bloom: .4,
-    rgb: [.17, .25, .08] as const, bloomRgb: [.34, .36, .09] as const},
+  // round 5 (round-4 score: "mounds or boulders"): each bush is `lobes` overlapping lobes `lobe` of its radius, scattered over it and
+  // varied in height, so its outline is uneven and shrubby; dark olive `rgb`, and a share `bloom` carry one smaller lobe in yellow flower
+  bush: {count: 30, ring: [6, 42] as const, pathClear: 1.2, height: [.7, 1.4] as const, radius: [1, 2.2] as const, bloom: .45,
+    lobes: [3, 5] as const, lobe: [.42, .7] as const, rgb: [.11, .16, .05] as const, bloomRgb: [.42, .36, .05] as const},
 } as const;
 
-export interface SummitBush {x: number; z: number; y: number; height: number; radius: number; rgb: readonly [number, number, number]}
+export interface BushLobe {x: number; z: number; y: number; r: number; h: number; rgb: readonly [number, number, number]}
+export interface SummitBush {x: number; z: number; y: number; height: number; radius: number; lobes: BushLobe[]}
 /** The low gorse bushes near the panorama's eye (SUMMIT.bush): in the ring round the eye, off the paths, seated on the ground. */
 export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly {width: number; line: readonly Pt[]}[]): SummitBush[] {
   const B = SUMMIT.bush, [cx, cz] = SUMMIT_CENTRE, out: SummitBush[] = [];
@@ -41,8 +44,14 @@ export function summitBushes(ground: Pick<Terrain, 'heightAt'>, paths: readonly 
     const inFrame = i % 5 < 3, a = inFrame ? axis + (hash(i, 1, 101) - .5) * 1.1 : hash(i, 1, 101) * Math.PI * 2, d = B.ring[0] + (B.ring[1] - B.ring[0]) * hash(i, 2, 102);
     const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d, radius = B.radius[0] + (B.radius[1] - B.radius[0]) * hash(i, 3, 103);
     if (pathDist(x, z) < B.pathClear + radius) continue;
-    const height = B.height[0] + (B.height[1] - B.height[0]) * hash(i, 4, 104), k = .85 + .3 * hash(i, 5, 105), c = hash(i, 6, 106) < B.bloom ? B.bloomRgb : B.rgb;
-    out.push({x, z, y: ground.heightAt(x, z), height, radius, rgb: [c[0] * k, c[1] * k, c[2] * k]});
+    const height = B.height[0] + (B.height[1] - B.height[0]) * hash(i, 4, 104), bloom = hash(i, 6, 106) < B.bloom, lobes: BushLobe[] = [];
+    const n = B.lobes[0] + Math.floor((B.lobes[1] - B.lobes[0] + 1) * hash(i, 7, 107));
+    for (let l = 0; l < n; l++) {
+      const a2 = (l / n + .3 * hash(i, l, 108)) * Math.PI * 2, off = radius * (l === 0 ? .1 : .45 + .25 * hash(i, l, 109)), lx = x + Math.cos(a2) * off, lz = z + Math.sin(a2) * off;
+      const flower = bloom && l === n - 1, r = radius * (l === 0 ? B.lobe[1] : B.lobe[0] + (B.lobe[1] * .85 - B.lobe[0]) * hash(i, l, 110)) * (flower ? .7 : 1), k = .8 + .4 * hash(i, l, 111), c = flower ? B.bloomRgb : B.rgb;
+      lobes.push({x: lx, z: lz, y: ground.heightAt(lx, lz), r, h: height * (.6 + .4 * hash(i, l, 112)) * (flower ? .9 : 1), rgb: [c[0] * k, c[1] * k, c[2] * k]});
+    }
+    out.push({x, z, y: ground.heightAt(x, z), height, radius, lobes});
   }
   return out;
 }

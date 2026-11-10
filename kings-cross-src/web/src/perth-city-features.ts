@@ -228,13 +228,13 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const summitMesh = new THREE.Mesh(summit.geometry, sm); summitMesh.name = 'perth-summit-ground'; cover.group.add(summitMesh);
   // low gorse bushes near the eye (perth-summit.ts summitBushes): flattened smooth spheres, half buried
   const bushMap = crownTexture(); if (bushMap) bushMap.repeat.set(4, 2);
-  const bushes = summitBushes(ground, near), bushG = new THREE.SphereGeometry(1, 7, 4), bushM = new THREE.MeshLambertMaterial({map: bushMap});
-  const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, bushes.length));
+  const lobes = summitBushes(ground, near).flatMap(b => b.lobes), bushG = new THREE.SphereGeometry(1, 6, 3), bushM = new THREE.MeshLambertMaterial({map: bushMap});
+  const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, lobes.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
-    bushes.forEach((b, i) => { q.setFromAxisAngle(up, b.x * 3.1 % 6.283); mx.compose(new THREE.Vector3(b.x, b.y + b.height * .35, b.z), q, new THREE.Vector3(b.radius, b.height * .65, b.radius * .8)); bushMesh.setMatrixAt(i, mx); c.setRGB(b.rgb[0], b.rgb[1], b.rgb[2], THREE.SRGBColorSpace); bushMesh.setColorAt(i, c); });
-    bushMesh.count = bushes.length; bushMesh.name = 'perth-summit-gorse'; bushMesh.computeBoundingSphere(); cover.group.add(bushMesh);
-    stats.triangles += bushes.length * (bushG.index ? bushG.index.count : bushG.getAttribute('position').count) / 3; stats.drawCalls++;
+    lobes.forEach((b, i) => { q.setFromAxisAngle(up, b.x * 3.1 % 6.283); mx.compose(new THREE.Vector3(b.x, b.y + b.h * .3, b.z), q, new THREE.Vector3(b.r, b.h * .7, b.r * .85)); bushMesh.setMatrixAt(i, mx); c.setRGB(b.rgb[0], b.rgb[1], b.rgb[2], THREE.SRGBColorSpace); bushMesh.setColorAt(i, c); });
+    bushMesh.count = lobes.length; bushMesh.name = 'perth-summit-gorse'; bushMesh.computeBoundingSphere(); cover.group.add(bushMesh);
+    stats.triangles += lobes.length * (bushG.index ? bushG.index.count : bushG.getAttribute('position').count) / 3; stats.drawCalls++;
   }
   stats.triangles += summit.geometry.index!.count / 3; stats.drawCalls++;
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
