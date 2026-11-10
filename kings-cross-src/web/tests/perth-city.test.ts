@@ -8,7 +8,7 @@ import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, SHORE_BREAK, shoreBreak, WATER_GRADE, waterGrade, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, SHORE_BREAK, SHORE_SHEEN, shoreBreak, shoreRise, shoreSheen,WATER_GRADE, waterGrade, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_MESHES, PERTH_CITY_STONE, TOWN_LOOK, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CLIFF_PAINT, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, cliffPaintCells, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
@@ -743,8 +743,10 @@ test('the Tay\'s tone is graded with distance: darker near the eye, the full pal
 });
 
 test('the shore is broken along the water\'s edge: grass tongues across it, dry shingle, silt and a wet margin, not one band (round 10, C3)', () => {
-  const level = waterLevel(scene.terrain), rise = (x: number, z: number) => scene.terrain.heightAt(x, z) - level(x, z) - WATER.lift;
-  const all = shoreBreak(rise), E = PERTH_LANDUSE.extent;
+  const rise = shoreRise(scene.terrain), all = shoreBreak(rise), E = PERTH_LANDUSE.extent;
+  // the cached river level (6 m lattice) is the builder's own: at the patches about Bridgend, nearly all within 5 cm of the exact one
+  { const level = waterLevel(scene.terrain), ps = all.filter(p => Math.hypot(p.x - 954, p.z + 300) < 400), ok = ps.filter(p => Math.abs(rise(p.x, p.z) - (scene.terrain.heightAt(p.x, p.z) - level(p.x, p.z) - WATER.lift)) < .05).length;
+    assert.ok(ok >= ps.length * .95, `cached level within 5 cm: ${ok} of ${ps.length}`); }
   // the OSM water edges (less the extent's clip), to measure each patch against
   const edges: [number, number, number, number][] = [];
   for (const rings of PERTH_LANDUSE.areas.water) for (const r of rings) for (let i = 0; i < r.length; i++) { const a = r[i]!, b = r[(i + 1) % r.length]!; if (Math.max(a[0], b[0]) >= E.x0 && Math.min(a[0], b[0]) <= E.x1 && Math.max(a[1], b[1]) >= E.z0 && Math.min(a[1], b[1]) <= E.z1) edges.push([a[0], a[1], b[0], b[1]]); }
@@ -767,6 +769,26 @@ test('the shore is broken along the water\'s edge: grass tongues across it, dry 
   const lum = (hex: string) => { const n = parseInt(hex.slice(1), 16); return (.2126 * (n >> 16) + .7152 * (n >> 8 & 255) + .0722 * (n & 255)) / 255; };
   const ls = Object.values(SHORE_BREAK.tones).map(lum);
   assert.ok(Math.max(...ls) - Math.min(...ls) > .15 && SHORE_BREAK.tones.grass === GROUND_COLOURS.grass, `shore tones: ${ls.map(v => v.toFixed(2))}`);
+  // round 11: the far bank and the island's edges (120-400 m from the Bridgend eye) carry large patches, 4.5-9 m, that read there:
+  // grass and shingle both, and the large grass reaching from the edge down to the water
+  const far = all.filter(p => p.large && Math.hypot(p.x - 954, p.z + 300) >= 120 && Math.hypot(p.x - 954, p.z + 300) < 400);
+  const farGrass = far.filter(p => p.kind === 'grass'), farShingle = far.filter(p => p.kind !== 'grass');
+  assert.ok(farGrass.length >= 40 && farShingle.length >= 30 && far.every(p => p.r >= SHORE_BREAK.large.r[0] - 1e-9), `far bank patches: ${farGrass.length} grass, ${farShingle.length} shingle`);
+  const wets = farGrass.filter(p => Array.from({length: 12}, (_, k) => k * Math.PI / 6).some(a => rise(p.x + Math.cos(a) * p.r * .9, p.z + Math.sin(a) * p.r * .9) < .1));
+  assert.ok(wets.length >= farGrass.length * .8, `large grass meeting the water: ${wets.length} of ${farGrass.length}`);
+});
+
+test('the waterline is softened: the bank just above the water is painted in the water\'s tone, fading with height (round 11, C3)', () => {
+  const rise = shoreRise(scene.terrain), cells = shoreSheen(rise), W = SHORE_SHEEN;
+  assert.equal(W.tone, `#${WATER.colour.toString(16).padStart(6, '0')}`, 'the sheet\'s own tone');
+  const near = cells.filter(c => Math.hypot(c.x - 954, c.z + 300) < 400);
+  assert.ok(near.length > 1000, `sheen cells about Bridgend: ${near.length}`);
+  for (const c of near) { const up = rise(c.x, c.z); assert.ok(up >= -1e-9 && up < W.band && c.a <= W.alpha * (1 - up / W.band) + 1e-9 && c.a >= W.alpha * (1 - up / W.band) * (1 - W.break) - 1e-9, `sheen at ${up.toFixed(2)} m: ${c.a.toFixed(2)}`); }
+  // strongest at the water, gone by the band's top, and broken along the bank (not one even stripe)
+  const low = near.filter(c => rise(c.x, c.z) < W.band / 3), high = near.filter(c => rise(c.x, c.z) > 2 * W.band / 3), mean = (cs: typeof near) => cs.reduce((s, c) => s + c.a, 0) / cs.length;
+  assert.ok(low.length > 100 && high.length > 100 && mean(low) > 2 * mean(high), `sheen ${mean(low).toFixed(2)} low, ${mean(high).toFixed(2)} high`);
+  const as = low.map(c => c.a), sd = Math.sqrt(as.reduce((s, a) => s + (a - mean(low)) ** 2, 0) / as.length);
+  assert.ok(sd > .08, `broken sheen: sd ${sd.toFixed(3)}`);
 });
 
 test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {

@@ -92,12 +92,23 @@ function waterWash(): THREE.CanvasTexture | null {
  *  out, and they crowd towards the edge, where the bank shows. Painted at `alpha` on the cover's own canvas. ASSUMED tones and
  *  sizes, by eye against R-pt3-a and R-pt3-b. No triangles. */
 export const SHORE_BREAK = {step: 2, reach: 12, tongue: 1.5, r: [1.2, 3.6] as const, grass: .3, wetRise: .25, under: -.3, alpha: .85,
-  tones: {grass: '#4f6e28', dry: '#8a8475', silt: '#5d594d', wet: '#4a4943'}} as const;
-export interface ShorePatch {x: number; z: number; r: number; kind: keyof typeof SHORE_BREAK.tones}
-/** The shore's patches (SHORE_BREAK) along every mapped water edge inside the extent; `rise(x, z)` is the bank's height over the sheet. */
-export function shoreBreak(rise: (x: number, z: number) => number): ShorePatch[] {
-  const S = SHORE_BREAK, E = PERTH_LANDUSE.extent, out: ShorePatch[] = [];
-  const h = (x: number, z: number, k: number) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
+  tones: {grass: '#4f6e28', dry: '#8a8475', silt: '#5d594d', wet: '#4a4943'},
+  large: {step: 14, r: [4.5, 9] as const, grass: .45}} as const;
+/** Round 11 (round-10 score: the far bank and Moncreiffe Island's edge kept their hard tan bands; the 1-4 m patches read only near the
+ *  eye). A second, coarser pass every `large.step` m along the edge lays patches `large.r` m across, painted under the small ones, a
+ *  share `large.grass` of them grass reaching from the edge down to the waterline (centred half way, so the green meets the water),
+ *  so the bank reads as alternating green and shingle at 150-300 m. */
+export interface ShorePatch {x: number; z: number; r: number; kind: keyof typeof SHORE_BREAK.tones; large: boolean}
+/** Round 11 (round-10 score: the straight 16 m facet edge of the waterline was the worst fault in both Tay views). Just above the
+ *  waterline the bank is painted in the water's own tone, `alpha` at the water falling to nothing `band` m over it, broken by a hash
+ *  (`break` of it), so the visible edge between water and bank is the painted, wandering one, not the facet. Cells `cell` m, marched
+ *  `cell` m apart up to `reach` m in from the mapped edge. ASSUMED. No triangles. */
+export const SHORE_SHEEN = {band: .7, alpha: .85, break: .45, cell: 1.5, reach: 24, tone: '#6f8794'} as const;
+export interface SheenCell {x: number; z: number; a: number}
+const shoreHash = (x: number, z: number, k: number) => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
+/** Walk every mapped water edge inside the extent (not the extent's own clip) every `step` m: the point, the unit normal into the river. */
+function alongShore(step: number, salt: number, visit: (px: number, pz: number, n: Pt) => void): void {
+  const E = PERTH_LANDUSE.extent;
   for (const rings of PERTH_LANDUSE.areas.water) for (const ring of rings) {
     const r = clipRing(ring, E); if (r.length < 3) continue;
     for (let i = 0; i < r.length; i++) {
@@ -105,18 +116,57 @@ export function shoreBreak(rise: (x: number, z: number) => number): ShorePatch[]
       // the edge along the extent's own border is the clip, not a bank
       if ((Math.abs(a[0] - b[0]) < 1e-6 && (Math.abs(a[0] - E.x0) < 1e-6 || Math.abs(a[0] - E.x1) < 1e-6)) || (Math.abs(a[1] - b[1]) < 1e-6 && (Math.abs(a[1] - E.z0) < 1e-6 || Math.abs(a[1] - E.z1) < 1e-6))) continue;
       const t: Pt = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
-      for (let s = h(a[0], a[1], 90) * S.step; s < len; s += S.step) {
+      for (let s = shoreHash(a[0], a[1], salt) * step; s < len; s += step) {
         const px = a[0] + t[0] * s, pz = a[1] + t[1] * s;
         // into the river: whichever side of the edge is mapped water
         const side = inWater(px - t[1], pz + t[0]) ? 1 : inWater(px + t[1], pz - t[0]) ? -1 : 0; if (!side) continue;
-        // shingle patches crowd towards the edge (the bank shows above the sheet only near it)
-        const n: Pt = [-t[1] * side, t[0] * side], g = h(px, pz, 91) < S.grass, d = g ? h(px, pz, 92) * S.tongue : h(px, pz, 92) ** 2 * S.reach;
-        const x = px + n[0] * d, z = pz + n[1] * d, rad = S.r[0] + (S.r[1] - S.r[0]) * h(px, pz, 93);
-        const up = rise(x, z); if (!g && up < S.under) continue; // under the sheet: the paint would not show
-        out.push({x, z, r: g ? Math.max(rad, d + .5) : rad, kind: g ? 'grass' : up < S.wetRise ? 'wet' : h(px, pz, 94) < .5 ? 'dry' : 'silt'});
+        visit(px, pz, [-t[1] * side, t[0] * side]);
       }
     }
   }
+}
+/** The bank's height over the water sheet (m) on `ground`, its river level cached on a 6 m lattice (waterLevel scans every wet node). */
+export function shoreRise(ground: Pick<Terrain, 'heightAt'>): (x: number, z: number) => number {
+  const level = waterLevel(ground), memo = new Map<number, number>();
+  const lv = (x: number, z: number) => { const i = Math.round(x / 6), j = Math.round(z / 6), k = i * 100003 + j; let v = memo.get(k); if (v === undefined) { v = level(i * 6, j * 6); memo.set(k, v); } return v; };
+  return (x, z) => ground.heightAt(x, z) - lv(x, z) - WATER.lift;
+}
+/** The shore's patches (SHORE_BREAK) along every mapped water edge inside the extent, the large ones first; `rise(x, z)` is the bank's
+ *  height over the sheet. */
+export function shoreBreak(rise: (x: number, z: number) => number): ShorePatch[] {
+  const S = SHORE_BREAK, L = S.large, out: ShorePatch[] = [], h = shoreHash;
+  alongShore(L.step, 95, (px, pz, n) => {
+    const g = h(px, pz, 96) < L.grass, rad = L.r[0] + (L.r[1] - L.r[0]) * h(px, pz, 97);
+    if (g) {
+      // grass from the edge down to the waterline: find the waterline in from the edge, centre the patch half way
+      let w = 0; while (w < S.reach * 2 && rise(px + n[0] * w, pz + n[1] * w) > 0) w += 1;
+      out.push({x: px + n[0] * w / 2, z: pz + n[1] * w / 2, r: Math.max(rad, w / 2 + 1), kind: 'grass', large: true});
+      return;
+    }
+    const d = h(px, pz, 98) * S.reach, x = px + n[0] * d, z = pz + n[1] * d, up = rise(x, z);
+    if (up < S.under) return;
+    out.push({x, z, r: rad, kind: up < S.wetRise ? 'wet' : h(px, pz, 99) < .5 ? 'dry' : 'silt', large: true});
+  });
+  alongShore(S.step, 90, (px, pz, n) => {
+    // shingle patches crowd towards the edge (the bank shows above the sheet only near it)
+    const g = h(px, pz, 91) < S.grass, d = g ? h(px, pz, 92) * S.tongue : h(px, pz, 92) ** 2 * S.reach;
+    const x = px + n[0] * d, z = pz + n[1] * d, rad = S.r[0] + (S.r[1] - S.r[0]) * h(px, pz, 93);
+    const up = rise(x, z); if (!g && up < S.under) return; // under the sheet: the paint would not show
+    out.push({x, z, r: g ? Math.max(rad, d + .5) : rad, kind: g ? 'grass' : up < S.wetRise ? 'wet' : h(px, pz, 94) < .5 ? 'dry' : 'silt', large: false});
+  });
+  return out;
+}
+/** The waterline's sheen (SHORE_SHEEN): cells just above the sheet, their alpha falling with height over it. */
+export function shoreSheen(rise: (x: number, z: number) => number): SheenCell[] {
+  const W = SHORE_SHEEN, out: SheenCell[] = [], seen = new Set<string>();
+  alongShore(W.cell, 100, (px, pz, n) => {
+    for (let d = 0; d <= W.reach; d += W.cell) {
+      const x = px + n[0] * d, z = pz + n[1] * d, k = `${Math.round(x / W.cell)},${Math.round(z / W.cell)}`; if (seen.has(k)) continue;
+      const up = rise(x, z); if (up < 0) break; // in the water from here on
+      seen.add(k); if (up >= W.band) continue;
+      out.push({x, z, a: W.alpha * (1 - up / W.band) * (1 - W.break * shoreHash(Math.round(x / 3), Math.round(z / 3), 101))});
+    }
+  });
   return out;
 }
 /** The Tay Viaduct, from Wikipedia ("Tay Viaduct") and Canmore 79826: span counts and the island arches' clear span and pier width. */
@@ -271,7 +321,8 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   // the crag's drape repainted rock-grey (perth-woodland.ts CLIFF_PAINT), on the cover's own canvas (none under node)
   const cragSteps = kinnoullCrag(ground, PERTH_LANDUSE.cliffs, CRAG_KEEP, PERTH_DRAPE), cragPaint = cliffPaintCells(cragSteps);
   // round 10: the shore broken along the water's edge (SHORE_BREAK), on the same canvas
-  const level = waterLevel(ground), shore = shoreBreak((x, z) => ground.heightAt(x, z) - level(x, z) - WATER.lift);
+  // round 11: the large patches under the small, and the waterline's sheen over both (SHORE_SHEEN)
+  const level = waterLevel(ground), rise = shoreRise(ground), shore = shoreBreak(rise), sheen = shoreSheen(rise);
   cover.group.traverse(o => {
     const map = o instanceof THREE.Mesh && o.material instanceof THREE.MeshLambertMaterial ? o.material.map : null, img = map?.image as HTMLCanvasElement | undefined;
     if (!map || !img || typeof img.getContext !== 'function') return;
@@ -280,6 +331,8 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
     for (const c of cragPaint) { g.fillStyle = c.tone; g.fillRect((c.x - E.x0) * s, (c.z - E.z0) * s, CLIFF_PAINT.cell * s + .5, CLIFF_PAINT.cell * s + .5); }
     g.globalAlpha = SHORE_BREAK.alpha;
     for (const p of shore) { g.fillStyle = SHORE_BREAK.tones[p.kind]; g.beginPath(); g.arc((p.x - E.x0) * s, (p.z - E.z0) * s, Math.max(.5, p.r * s), 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = SHORE_SHEEN.tone;
+    for (const c of sheen) { g.globalAlpha = c.a; g.fillRect((c.x - SHORE_SHEEN.cell / 2 - E.x0) * s, (c.z - SHORE_SHEEN.cell / 2 - E.z0) * s, SHORE_SHEEN.cell * s + .5, SHORE_SHEEN.cell * s + .5); }
     g.restore(); map.needsUpdate = true;
   });
   const stats = {...cover.stats};
