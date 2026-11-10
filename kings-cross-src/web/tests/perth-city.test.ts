@@ -143,6 +143,8 @@ test('the viaduct\'s girder piers are twin columns under a cap, its girders pale
   for (let i = 0; i < ip.count; i++) if (Math.abs(ip.getY(i) - F.girder[1]) < 1e-3) stiff++;
   assert.equal(cross, layout.pierPlan.length, 'a cross girder over every girder pier');
   assert.ok(lum(L.girder) > .75 && PIER_FORM.stiffenerShade < .8, 'a pale girder band with stiffeners that read');
+  const ironMesh = scene.group.getObjectByName('perth-viaduct-iron') as THREE.Mesh, ironMat = ironMesh.material as THREE.MeshLambertMaterial;
+  assert.ok(ironMat.name === 'perth-viaduct-paint' && !ironMat.map && ironMat.vertexColors, 'the ironwork in its own plain painted material, no darkening map');
   assert.ok(stiff / 8 > 2 * (layout.length * .6) / PIER_FORM.stiffener, `stiffener tops: ${stiff / 8}`);
 });
 

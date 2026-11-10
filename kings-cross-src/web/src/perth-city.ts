@@ -103,8 +103,9 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
     add(group, stone, own(new THREE.MeshLambertMaterial({vertexColors: true})), 'perth-kinnoull-tower'); buildingIds.push(tower.id); heightBasis.LiDAR++;
   }
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
-  // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing)
-  const iron = own(material('steel').clone() as THREE.MeshLambertMaterial); iron.color.setHex(0xffffff); iron.vertexColors = true;
+  // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing), in its own plain material: round 4,
+  // the shared steel map under it kept the girder band flat and dark (round-3 score, C4), as the ashlar did the tower
+  const iron = own(new THREE.MeshLambertMaterial({vertexColors: true})); iron.name = 'perth-viaduct-paint';
   const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));
   add(group, masonry, ashlar, 'perth-city-masonry');
   add(group, ironwork, iron, 'perth-viaduct-iron');

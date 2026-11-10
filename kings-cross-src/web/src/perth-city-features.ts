@@ -218,7 +218,8 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const summit = summitGround(ground, near), sm = new THREE.MeshLambertMaterial({map: summit.texture, color: summit.texture ? 0xffffff : 0x5b7431}), detail = summitDetail(sm);
   const summitMesh = new THREE.Mesh(summit.geometry, sm); summitMesh.name = 'perth-summit-ground'; cover.group.add(summitMesh);
   // low gorse bushes near the eye (perth-summit.ts summitBushes): flattened smooth spheres, half buried
-  const bushes = summitBushes(ground, near), bushG = new THREE.SphereGeometry(1, 7, 4), bushM = new THREE.MeshLambertMaterial();
+  const bushMap = crownTexture(); if (bushMap) bushMap.repeat.set(4, 2);
+  const bushes = summitBushes(ground, near), bushG = new THREE.SphereGeometry(1, 7, 4), bushM = new THREE.MeshLambertMaterial({map: bushMap});
   const bushMesh = new THREE.InstancedMesh(bushG, bushM, Math.max(1, bushes.length));
   {
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
@@ -247,7 +248,7 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
     crowns.computeBoundingSphere(); trunks.computeBoundingSphere(); cover.group.add(crowns, trunks);
     stats.triangles += belts.trees.length * ((beltCrown.index ? beltCrown.index.count : beltCrown.getAttribute('position').count) / 3 + 6); stats.drawCalls += 2;
   }
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); beltCrown.dispose(); beltTrunk.dispose(); beltMap?.dispose(); beltLeaf.dispose(); beltBark.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); bushG.dispose(); bushM.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); beltCrown.dispose(); beltTrunk.dispose(); beltMap?.dispose(); beltLeaf.dispose(); beltBark.dispose(); summit.geometry.dispose(); summit.texture?.dispose(); detail?.dispose(); sm.dispose(); bushG.dispose(); bushMap?.dispose(); bushM.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------

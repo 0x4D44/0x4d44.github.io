@@ -27,7 +27,7 @@ export const SUMMIT = {
   // round 4: low gorse bushes near the eye, as 152 shows either side of the path: `count` tried in a ring `ring` m from the eye, kept off
   // the mapped paths by `pathClear` m, `height` m tall and `radius` m round, a share `bloom` in flower
   bush: {count: 22, ring: [8, 45] as const, pathClear: 1.5, height: [.7, 1.4] as const, radius: [.9, 2] as const, bloom: .4,
-    rgb: [.15, .22, .07] as const, bloomRgb: [.42, .38, .08] as const},
+    rgb: [.17, .25, .08] as const, bloomRgb: [.34, .36, .09] as const},
 } as const;
 
 export interface SummitBush {x: number; z: number; y: number; height: number; radius: number; rgb: readonly [number, number, number]}
