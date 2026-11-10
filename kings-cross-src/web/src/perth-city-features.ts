@@ -9,7 +9,7 @@
 //   walkway on the outer edge of its curve. The arch block is centred on the island's mapped crossing; the girder spans divide the
 //   river sections equally (ASSUMED: no span lengths found). The deck stays the track element's (perth-station.ts), at the rail datum.
 // - Road bridges: the mapped bridge outlines over the Tay (OSM man_made=bridge: Perth Bridge way/583253156, Queen's Bridge
-//   way/742335578, and a beam footbridge way/611293698), deck from bank to bank. Arch counts are ASSUMED (PERTH_ROAD_BRIDGES).
+//   way/742335578; the viaduct's own outline, way/611293698, is left out by the builder), deck from bank to bank. Arch counts are ASSUMED (PERTH_ROAD_BRIDGES).
 // - St John's Kirk (way/740861202): its central tower and broach spire at the Phase I DSM's peak over the kirk, the spire's top 155 ft
 //   (47.2 m) above the pavement (Historic Environment Scotland LB39300). Kinnoull Tower (way/323543760): the OSM outline as a round
 //   tower; the 2011 DSM does not resolve it (its surface stands within 3 m of the DTM there), so its height is ASSUMED.
@@ -47,7 +47,7 @@ export const VIADUCT_FORM = {girder: [-1.7, .9] as const, girderThick: .35, gird
 /** ASSUMED road-bridge forms: arches per bridge (no published counts found), the parapet height and the humpback rise of Perth Bridge
  *  (OSM bridge:structure=humpback). */
 export const PERTH_ROAD_BRIDGES: Readonly<Record<string, {arches: number; hump: number}>> = {
-  'way/583253156': {arches: 9, hump: 1.5}, 'way/742335578': {arches: 3, hump: .6}, 'way/611293698': {arches: 0, hump: 0},
+  'way/583253156': {arches: 9, hump: 1.5}, 'way/742335578': {arches: 3, hump: .6},
 };
 export const PARAPET = 1.1;
 /** St John's Kirk: the spire's top above the pavement (HES LB39300: 155 ft); ASSUMED tower plan (m square), its parapet at `towerShare`

@@ -62,6 +62,18 @@ test('the Tay is OSM water drawn over the DTM\'s filled river, never under it', 
   assert.ok(PERTH_LANDUSE.areas.water.some(([o]) => pip(922, -43, o!)), 'the Tay under the viaduct');
 });
 
+test('no road bridge overlaps the viaduct: the railway\'s own bridge outline is not drawn as a road bridge', () => {
+  const line = PERTH_LANDUSE_BRIDGES.length ? (JSON.parse(readFileSync(new URL('../src/data/perth-city-landuse.json', import.meta.url), 'utf8')).bridges.viaduct.line as [number, number][]) : [];
+  assert.ok(PERTH_LANDUSE_BRIDGES.some(b => b.name === 'Perth Bridge') && PERTH_LANDUSE_BRIDGES.some(b => b.name === "Queen's Bridge"), 'the two road bridges');
+  for (const b of PERTH_LANDUSE_BRIDGES) {
+    // every metre of the viaduct's path, outside every road bridge's outline
+    let inside = 0;
+    for (let i = 1; i < line.length; i++) { const [ax, az] = line[i - 1]!, [bx, bz] = line[i]!, n = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az)));
+      for (let k = 0; k < n; k++) if (pip(ax + (bx - ax) * k / n, az + (bz - az) * k / n, b.outline)) inside++; }
+    assert.equal(inside, 0, `${b.id} ${b.name} overlaps the viaduct line at ${inside} points`);
+  }
+});
+
 test('the Tay Viaduct: seven girder spans, ten arches on Moncreiffe Island, six spans east, along OSM way/4438951', () => {
   const layout = tayViaduct(new Batch({ colored: true }), new Batch(), scene.terrain);
   assert.ok(Math.abs(layout.length - 443) < 3, `mapped length: ${layout.length}`);

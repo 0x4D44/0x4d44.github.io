@@ -106,14 +106,18 @@ pairs.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
 const treeRun:number[]=[],treeTags:number[][]=[];{let px=0,pz=0;pairs.forEach(([x,z,leaf,h],i)=>{treeRun.push(x-px,z-pz);px=x;pz=z;if(leaf==='needleleaved'||h)treeTags.push([i,leaf==='needleleaved'?1:0,h]);});}
 // ---- the Tay's bridges ------------------------------------------------------------------------------------------------------------
 // The railway viaduct's mapped path (way/4438951, bridge:name Tay Viaduct) at 0.5 m, and the mapped bridge outlines (man_made=bridge:
-// Perth Bridge, Queen's Bridge) with their carriageways (the highway ways on them, bridge=yes), each with its OSM name and structure.
+// Perth Bridge, Queen's Bridge) with their carriageways (the highway ways on them, bridge=yes), each with its OSM name and structure;
+// an outline holding the viaduct's path is the railway's own and is left out.
 const r1=(p:Pt):Pt=>[Math.round(p[0]*2)/2,Math.round(p[1]*2)/2];
 const viaduct=pts(all.get('way/4438951')!.nodes!)!.map(r1);
 const water=areas.water.map(([o])=>{let x=0,z=0;return o!.reduce<Pt[]>((a,_,i)=>{if(i%2)return a;x+=o![i]!;z+=o![i+1]!;a.push([x*Q,z*Q]);return a;},[]);});
 const overWater=(p:Pt[])=>p.some((a,i)=>i>0&&water.some(w=>pip([(a[0]+p[i-1]![0])/2,(a[1]+p[i-1]![1])/2],w)));
 const roadBridges:{id:string;name:string;structure:string;outline:Pt[];decks:{id:string;width:number;line:Pt[]}[]}[]=[];
 for(const e of all.values()){const t=e.tags??{};if(e.type!=='way'||t.man_made!=='bridge'||!e.nodes)continue;
- const o=pts(e.nodes);if(!o||!overWater(o))continue;const outline=o.slice(0,-1).map(r1);
+ const o=pts(e.nodes);if(!o||!overWater(o))continue;
+ // the railway's own bridge outline (way/611293698 traces the viaduct's curve) is the viaduct, drawn by tayViaduct, not a road bridge
+ if(viaduct.some(q=>pip(q,o)))continue;
+ const outline=o.slice(0,-1).map(r1);
  const decks=[...all.values()].filter(h=>h.type==='way'&&h.tags?.highway&&h.tags.bridge&&h.tags.bridge!=='no'&&h.nodes).map(h=>({h,p:pts(h.nodes!)!})).filter(({p})=>p&&p.some(q=>pip(q,o)))
   .map(({h,p})=>({id:`way/${h.id}`,width:Number(h.tags!.width)>0?Number(h.tags!.width):ROAD_WIDTH[h.tags!.highway!]??7,line:p.map(r1)}));
  roadBridges.push({id:`way/${e.id}`,name:t.name??'',structure:t['bridge:structure']??'',outline,decks});}
