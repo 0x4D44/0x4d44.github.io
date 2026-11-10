@@ -11,7 +11,7 @@ import { stationOutline } from '../src/perth-station.ts';
 import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
-import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CRAG, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
@@ -202,6 +202,26 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const tri = (o: THREE.Mesh) => (o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count) / 3;
   const crowns = (wood.geometry.index ? wood.geometry.index.count : wood.geometry.getAttribute('position').count) / 3 * wood.count;
   assert.ok(tri(mesh) + crowns < 51_580, `canopy ${tri(mesh)} + crowns ${crowns}`);
+});
+
+test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not a smooth ramp (8703; round 3, C1)', () => {
+  const blocks = kinnoullCrag(scene.terrain, PERTH_LANDUSE.cliffs);
+  assert.ok(blocks.length > 60, `rock blocks: ${blocks.length}`);
+  const lum = (c: readonly number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  for (const b of blocks) {
+    // each stands on the cliff, set into it (its foot under the ground, its top a ledge over it), in a pale rock tone
+    const back = [b.x - Math.sin(b.rotY) * b.d / 2, b.z - Math.cos(b.rotY) * b.d / 2] as const, g = scene.terrain.heightAt(back[0], back[1]);
+    const ax = b.x - Math.sin(b.rotY) * (b.d - 2) / 2, az = b.z - Math.cos(b.rotY) * (b.d - 2) / 2; // where it is set into the face
+    assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, ax, az), 'on the cliff');
+    assert.ok(b.y - b.h / 2 < scene.terrain.heightAt(ax, az), 'its foot is in the ground');
+    assert.ok(b.y + b.h / 2 > g - b.h, 'not buried out of sight');
+    assert.ok(lum(b.rgb) > .45, `pale rock: ${lum(b.rgb).toFixed(2)}`);
+  }
+  // broken: the blocks differ in size and tone
+  assert.ok(new Set(blocks.map(b => b.rgb.join())).size >= 4, 'several rock tones');
+  const hs = blocks.map(b => b.h).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > (CRAG.height[1] - CRAG.height[0]) * .6, 'mixed heights');
+  const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
+  let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {

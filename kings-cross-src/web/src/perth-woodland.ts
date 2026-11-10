@@ -97,3 +97,29 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: read
     gorse,
   };
 }
+
+/** ASSUMED crag form (round 3, C1). 8703 shows Kinnoull's face as pale grey rock in broken blocks with ledges and scrub, not a smooth
+ *  ramp; the 16 m terrain can only draw the ramp. So rock blocks are set into the cliff ground (onCliff) on a `step` m lattice: each
+ *  `width` m across, `height` m tall, standing `proud` m out of the slope down its fall line, its top a level ledge. Each is set into the
+ *  slope by `bury` of its height, jittered by `jitter` m, in one of PERTH_ROCK_TONES lifted by `lift`. */
+export const CRAG = {step: 9, width: [3, 6] as const, height: [2, 5] as const, proud: [1, 2.4] as const, bury: .45, jitter: 1.6, lift: 1.12} as const;
+export interface CragBlock {x: number; z: number; y: number; w: number; h: number; d: number; rotY: number; rgb: [number, number, number]}
+/** The crag's blocks: centre (x, y, z), size (w across, h, d along the fall line), heading, colour (the tone's 0-1 channels, as Batch colours). */
+export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): CragBlock[] {
+  const C = CRAG, out: CragBlock[] = [];
+  let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
+  for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
+  const r = WOODLAND.cliff.reach;
+  for (let gx = Math.floor((ax - r) / C.step) * C.step; gx <= bx + r; gx += C.step) for (let gz = Math.floor((az - r) / C.step) * C.step; gz <= bz + r; gz += C.step) {
+    const x = gx + (hash(gx, gz, 61) - .5) * C.jitter, z = gz + (hash(gx, gz, 62) - .5) * C.jitter;
+    if (!onCliff(ground, cliffs, x, z)) continue;
+    // the fall line: down the slope
+    const dx = ground.heightAt(x - 2, z) - ground.heightAt(x + 2, z), dz = ground.heightAt(x, z - 2) - ground.heightAt(x, z + 2), l = Math.hypot(dx, dz) || 1;
+    const w = C.width[0] + (C.width[1] - C.width[0]) * hash(gx, gz, 63), h = C.height[0] + (C.height[1] - C.height[0]) * hash(gx, gz, 64);
+    const d = C.proud[0] + (C.proud[1] - C.proud[0]) * hash(gx, gz, 65), tone = PERTH_ROCK_TONES[Math.floor(hash(gx, gz, 66) * PERTH_ROCK_TONES.length)]!;
+    const n = parseInt(tone.slice(1), 16), rgb = [n >> 16, n >> 8 & 255, n & 255].map(v => Math.min(1, v / 255 * C.lift)) as [number, number, number];
+    const fx = dx / l, fz = dz / l, y = ground.heightAt(x, z) + h * (.5 - C.bury);
+    out.push({x: x + fx * d / 2, z: z + fz * d / 2, y, w, h, d: d + 2, rotY: Math.atan2(fx, fz), rgb});
+  }
+  return out;
+}

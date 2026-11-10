@@ -24,7 +24,7 @@ import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {KINNOULL_PEAK, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
+import {KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
 import {kinnoullCanopy} from './perth-canopy.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
@@ -104,7 +104,7 @@ export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
  *  left). All ASSUMED, by eye: the courses at `bands` of the height, `band` m deep, standing `proud` m out; the cornice `cornice` m
  *  deep and `over` m out; the annexe `annexe` (along x, across z, height share), and the stone and band tones. */
 export const TOWER_LOOK = {bands: [.55, .8] as const, band: .45, proud: .06, cornice: .5, over: .22,
-  annexe: [3.6, 3.0, .45] as const, stone: [.80, .79, .76] as Rgb, red: [.66, .45, .38] as Rgb} as const;
+  annexe: [3.6, 3.0, .45] as const, stone: [.95, .94, .90] as Rgb, red: [.66, .45, .38] as Rgb} as const;
 /** A vertical ring of `sides` quads about (x, z), from y0 to y1 at radius r, with UVs in metres (u round the ring, v up) so the stone
  *  texture lies as coursed masonry. prism() leaves every UV at 0, which picks one dark texel of the stone map: the round-2 black tower. */
 function ring(b: Batch, x: number, z: number, r: number, y0: number, y1: number, sides: number, color: Rgb): void {
@@ -196,10 +196,16 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const wg = sheet.build(), wash = waterWash(), m = new THREE.MeshPhongMaterial({color: wash ? 0xffffff : WATER.colour, map: wash, specular: WATER.specular, shininess: WATER.shininess, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2});
   const water = new THREE.Mesh(wg, m); water.name = 'perth-tay-water'; cover.group.add(water);
   stats.triangles += (wg.index ? wg.index.count : wg.getAttribute('position').count) / 3; stats.drawCalls++;
+  // Kinnoull's crag (perth-woodland.ts kinnoullCrag): rock blocks and ledges set into the cliff, in plain vertex-coloured rock
+  const crag = new Batch({colored: true});
+  for (const k of kinnoullCrag(ground, PERTH_LANDUSE.cliffs)) crag.box([k.x, k.y, k.z], [k.w, k.h, k.d], {rotY: k.rotY, color: k.rgb});
+  const cg = crag.build(), rock = new THREE.MeshLambertMaterial({vertexColors: true});
+  const cragMesh = new THREE.Mesh(cg, rock); cragMesh.name = 'perth-kinnoull-crag'; cover.group.add(cragMesh);
+  stats.triangles += (cg.index ? cg.index.count : cg.getAttribute('position').count) / 3; stats.drawCalls++;
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
   const cm = new THREE.MeshLambertMaterial({vertexColors: true});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); cm.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); cm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------
