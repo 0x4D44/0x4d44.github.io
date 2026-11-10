@@ -24,7 +24,7 @@ import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {CRAG, CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
+import {CLIFF_PAINT, cliffPaintCells, CRAG, CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
 import {CROWNS, crownTexture, inEyeClear, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy, softLobe} from './perth-canopy.ts';
 import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitBushes, summitDetail, summitGround} from './perth-summit.ts';
@@ -207,6 +207,15 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const covered = {inCanopy: (x: number, z: number) => canopy.inCanopy(x, z) || belts.inBelt(x, z) || inEyeClear(x, z)};
   const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs, covered), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered: (x, z) => inSummitHole(ground, x, z) || (uncovered?.(x, z) ?? false)});
   cover.group.name = 'perth-city-ground';
+  // the crag's drape repainted rock-grey (perth-woodland.ts CLIFF_PAINT), on the cover's own canvas (none under node)
+  cover.group.traverse(o => {
+    const map = o instanceof THREE.Mesh && o.material instanceof THREE.MeshLambertMaterial ? o.material.map : null, img = map?.image as HTMLCanvasElement | undefined;
+    if (!map || !img || typeof img.getContext !== 'function') return;
+    const g = img.getContext('2d'), E = PERTH_LANDUSE.extent, s = img.width / (E.x1 - E.x0); if (!g) return;
+    g.save(); g.globalAlpha = CLIFF_PAINT.alpha;
+    for (const c of cliffPaintCells(ground, PERTH_LANDUSE.cliffs)) { g.fillStyle = c.tone; g.fillRect((c.x - E.x0) * s, (c.z - E.z0) * s, CLIFF_PAINT.cell * s + .5, CLIFF_PAINT.cell * s + .5); }
+    g.restore(); map.needsUpdate = true;
+  });
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift
   const sheet = new Batch(), level = waterLevel(ground);

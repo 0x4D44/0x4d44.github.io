@@ -174,6 +174,22 @@ export interface CragStep {
   a: Pt; b: Pt; foot: [number, number]; top: number; up: Pt; ledge: number;
   rgb: V3; scrub: boolean; joint: boolean;
 }
+/** Round 6 (round-5 score: the brown, streaked drape showed between the courses, so each read as a wall on an earth bank). The drape's
+ *  map is repainted over the crag (onCliff, over `slope` deg), each `cell` m cell one of PERTH_ROCK_TONES at `alpha`, so the ground
+ *  between the risers is the same grey rock (the shared paint's buff wash and dark wet streaks go under it). Perth-only: it paints the
+ *  Perth cover's own canvas after the shared builder, and draws nothing new. */
+export const CLIFF_PAINT = {cell: 4, slope: 32, alpha: .9} as const;
+/** The crag's repainted cells (CLIFF_PAINT): each cell's corner (x, z) and its tone. */
+export function cliffPaintCells(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): {x: number; z: number; tone: string}[] {
+  const P = CLIFF_PAINT, out: {x: number; z: number; tone: string}[] = [], r = WOODLAND.cliff.reach;
+  let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity;
+  for (const l of cliffs) for (const [x, z] of l) { ax = Math.min(ax, x); az = Math.min(az, z); bx = Math.max(bx, x); bz = Math.max(bz, z); }
+  for (let x = Math.floor((ax - r) / P.cell) * P.cell; x < bx + r; x += P.cell) for (let z = Math.floor((az - r) / P.cell) * P.cell; z < bz + r; z += P.cell) {
+    const cx = x + P.cell / 2, cz = z + P.cell / 2;
+    if (onCliff(ground, cliffs, cx, cz) && slopeOf(ground, cx, cz) >= P.slope) out.push({x, z, tone: PERTH_ROCK_TONES[Math.floor(hash(x, z, 78) * PERTH_ROCK_TONES.length)]!});
+  }
+  return out;
+}
 /** The crag's steps (CRAG), clear of `keep` (x, z, radius m). Colours are linear 0-1 channels, as Batch colours. */
 export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], keep: readonly (readonly [number, number, number])[] = [], drape = 0): CragStep[] {
   const C = CRAG, G = C.grid, out: CragStep[] = [];

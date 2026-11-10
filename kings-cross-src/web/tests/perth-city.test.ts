@@ -11,7 +11,7 @@ import { stationOutline } from '../src/perth-station.ts';
 import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
-import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CLIFF_EYE, CLIFF_PAINT, CRAG, KINNOULL_EYE, KINNOULL_PEAK, PERTH_ROCK_TONES, SIGHT, WOODLAND, cliffPaintCells, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
 /** The small islands' tree belts, and whether (x, z) is over one (its box, plus a 6 m lattice step and a little). */
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
@@ -317,6 +317,11 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;
     if (!k.joint) assert.ok(lum(k.rgb) > .18, `pale rock (linear): ${lum(k.rgb).toFixed(2)}`);
   }
+  // round 6: the drape between the courses is repainted rock-grey: every riser stands in a repainted cell, in a grey tone
+  const painted = new Set(cliffPaintCells(scene.terrain, PERTH_LANDUSE.cliffs).map(c => `${c.x},${c.z}`)), cellOf = (x: number, z: number) => `${Math.floor(x / CLIFF_PAINT.cell) * CLIFF_PAINT.cell},${Math.floor(z / CLIFF_PAINT.cell) * CLIFF_PAINT.cell}`;
+  const inPaint = steps.filter(k => painted.has(cellOf((k.a[0] + k.b[0]) / 2, (k.a[1] + k.b[1]) / 2))).length;
+  assert.ok(inPaint > steps.length * .95 && CLIFF_PAINT.alpha >= .8, `the drape round the risers is repainted: ${inPaint} of ${steps.length}`);
+  for (const t of PERTH_ROCK_TONES) { const n = parseInt(t.slice(1), 16), ch = [n >> 16, n >> 8 & 255, n & 255]; assert.ok(Math.max(...ch) - Math.min(...ch) < 36, `grey, not brown: ${t}`); }
   // round 6 (restoring round 4's checks, which the round-5 rewrite dropped): dark joints, and mixed sizes
   const rock = steps.filter(k => !k.joint).map(k => lum(k.rgb)).sort((a, b) => a - b), median = rock[Math.floor(rock.length / 2)]!;
   const joints = steps.filter(k => k.joint);
