@@ -13,7 +13,7 @@ export const PERTH_FRONTAGE_MASK_MARGIN=.6;
 const FRONT_BAND=5;
 
 export interface PerthFrontageGroundMask {
- /** The King's Place cut: carriageways, pavements and the retaining walls' feet, along each cut road's ramp. */
+ /** The King's Place cut: carriageways, pavements and the retaining walls' feet, along each cut road's ramp, and the deck's paved floor. */
  cut:[number,number][][];
  /** The forecourt: the mapped car parks and the road and path strips P2 drapes inside FRONTAGE_WINDOW, and the station front's pavement. */
  forecourt:[number,number][][];
@@ -40,6 +40,9 @@ function band(line:readonly Pt[],half:number,keep:(p:Pt)=>boolean,step=3):[numbe
 export function perthFrontageGroundMask(stationOuter?:readonly (readonly number[])[],file:FrontageFile=frontageFile as FrontageFile):PerthFrontageGroundMask{
  const M=PERTH_FRONTAGE_MASK_MARGIN,W=FRONTAGE_WINDOW,inWindow=(p:Pt)=>p[0]>=W.x0&&p[0]<=W.x1&&p[1]>=W.z0&&p[1]<=W.z1;
  const cut=cutRoads().flatMap(r=>band(r.line,r.half+KINGS_PLACE_CUT.pavement+.7+M,p=>r.inRamp(...p),1.5));
+ // the deck's paved floor (cutSurfaceAt), its outline pushed out by the margin plus the abutments' and closing walls' 1.05 m
+ const ring=file.bridge.ring.map(q=>[q[0],q[1]] as Pt),cx=ring.reduce((s,q)=>s+q[0],0)/ring.length,cz=ring.reduce((s,q)=>s+q[1],0)/ring.length;
+ cut.push(ring.map(([x,z])=>{const l=Math.hypot(x-cx,z-cz)||1,o=1.05+M;return [x+(x-cx)/l*o,z+(z-cz)/l*o] as [number,number];}));
  const forecourt:[number,number][][]=file.parking.map(p=>p.ring.map(q=>[q[0],q[1]] as [number,number]));
  for(const r of file.roads){const kind=r.service==='parking_aisle'?'parking_aisle':r.highway,half=(ROAD_WIDTHS[kind]??4)/2;
   forecourt.push(...band(r.path.map(q=>[q[0],q[1]] as Pt),half+M,inWindow));}

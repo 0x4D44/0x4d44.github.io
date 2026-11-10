@@ -38,7 +38,9 @@ export const HOTEL_LEVELS={
 } as const;
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
-export const HOTEL_COLOURS={ashlar:0x8a6352,red:0xb08a78,frame:0xdcd8cc,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
+/** `ashlar` is the stugged buff-grey wall (R-pt2-b, about #8e715c in shade); `red` the darker, redder sandstone of margins, bands, quoins, skews, cornice and finials
+ *  (about #845f4e in shade); `frame` the white-painted sashes; `dormer` the white-painted dormer fronts. Tones ASSUMED from R-pt2-b. */
+export const HOTEL_COLOURS={ashlar:0x9c8a74,red:0x8e4c3c,frame:0xeeeae2,dormer:0xe8e4da,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];
@@ -119,7 +121,7 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
  const f=hotelFrame(outer),{regions,top,main}=hotelRegions(f),L=HOTEL_LEVELS;
  const P=ground.heightAt(...f.at((f.middle[0]+f.middle[1])/2,-6)),foot=ground.rangeUnder(f.ring,4).min-.15;
  const start=b.facade.triangles+b.detail.triangles;
- const C={ashlar:rgb(HOTEL_COLOURS.ashlar),red:rgb(HOTEL_COLOURS.red),slate:rgb(HOTEL_COLOURS.slate),lead:rgb(HOTEL_COLOURS.lead),glass:rgb(HOTEL_COLOURS.glass),door:rgb(HOTEL_COLOURS.door),frame:rgb(HOTEL_COLOURS.frame)};
+ const C={ashlar:rgb(HOTEL_COLOURS.ashlar),red:rgb(HOTEL_COLOURS.red),slate:rgb(HOTEL_COLOURS.slate),lead:rgb(HOTEL_COLOURS.lead),glass:rgb(HOTEL_COLOURS.glass),door:rgb(HOTEL_COLOURS.door),frame:rgb(HOTEL_COLOURS.frame),white:rgb(HOTEL_COLOURS.dormer)};
  // 1. Walls on the OSM footprint, split where a region boundary crosses an edge; each edge's window bays fitted to its length.
  const lines=regions.flatMap(r=>r.planes);
  let area=0;for(let i=0;i<f.ring.length;i++){const p=f.ring[i],q=f.ring[(i+1)%f.ring.length];area+=p[0]*q[1]-q[0]*p[1];}
@@ -191,10 +193,10 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
  };
  crow(0,f.bayWidth,f.bayFront-.02,L.bayEaves,L.bayApex,5);
  crow(e0,e1,-.47,L.eaves,L.eastApex,5);
- // wallhead gablets on the middle front's two inner bays (R-pt2-b): a shaped gable rising from the wall face, 3.2 m wide, its sides going up
-// 1.2 m over the eaves then curving in to a 0.7 m top under a finial, an arched attic light in a red margin; its own slated roof behind.
-// Proud of the wall by 0.4 m so the main roof's eaves pass behind it. Sizes ASSUMED from R-pt2-b.
-function gablet(sc:number){const w=3.8,base=L.second-.35,side=L.eaves+1.2,apex=L.ridge-.6,o:[number,number][]=[[0,base],[w,base],[w,side]];
+ // wallhead gablets on the middle front's two inner bays (R-pt2-b): a narrow, near-flat bay (one window pair wide, 2.7 m) rising to a shaped
+// gablet, its sides going up 1.2 m over the eaves then curving in to a 0.7 m top under a finial, an arched attic light in a red margin;
+// its own slated roof behind. Proud of the wall by 0.4 m so the main roof's eaves pass behind it. Sizes ASSUMED from R-pt2-b.
+function gablet(sc:number){const w=2.7,base=L.second-.35,side=L.eaves+1.2,apex=L.ridge-.6,o:[number,number][]=[[0,base],[w,base],[w,side]];
  for(let i=1;i<=6;i++){const a=i/6;o.push([w-(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
  for(let i=6;i>=1;i--){const a=i/6;o.push([(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
  o.push([0,side]);
@@ -203,25 +205,33 @@ function gablet(sc:number){const w=3.8,base=L.second-.35,side=L.eaves+1.2,apex=L
  const light=(x:number,y0:number,y1:number,w2:number)=>{const m=f.at(sc+x,-.42);slab(b.detail,arch(w2+.36,y0-.18,y1+.18).map(([u,y])=>[u,y+P] as [number,number]),[m[0],0,m[1]],uAx,nOut,.02,C.red);
   const gl=f.at(sc+x,-.45);slab(b.detail,arch(w2,y0,y1).map(([u,y])=>[u,y+P] as [number,number]),[gl[0],0,gl[1]],uAx,nOut,.02,C.glass);
   const bar=f.at(sc+x,-.47);slab(b.detail,[[-.03,P+y0],[.03,P+y0],[.03,P+y1-w2/2],[-.03,P+y1-w2/2]],[bar[0],0,bar[1]],uAx,nOut,.01,C.frame);};
- light(-.75,8.6,10.9,.95);light(.75,8.6,10.9,.95);// the second floor's arched pair
- light(0,L.eaves+.6,L.eaves+2.9,1.1);// the attic light
+ light(-.58,8.6,10.9,.76);light(.58,8.6,10.9,.76);// the second floor's arched pair (margins 1.12 m, just clear of each other, inside the 2.7 m bay)
+ light(0,L.eaves+.6,L.eaves+2.7,.75);// the attic light (its 1.11 m margin stays inside the gablet's curved sides)
  const band=f.at(sc-w/2,-.43);slab(b.detail,[[0,P+L.eaves-.35],[w,P+L.eaves-.35],[w,P+L.eaves],[0,P+L.eaves]],[band[0],0,band[1]],uAx,nOut,.02,C.red);// the cornice carried across
  const fin=f.at(sc,-.2);prism(b.detail,fin[0],fin[1],.22,P+apex,P+apex+.55,4,C.red);prism(b.detail,fin[0],fin[1],.09,P+apex+.55,P+apex+1.3,4,C.red);
  const back=(apex-.2-L.eaves)/pitch+range.d0;gableRoof(sc-w/2+.1,sc+w/2-.1,0,back,P+side,P+apex-.2,false,C.slate);}
-// dormer-gables on the middle front's two inner bays (R-pt2-b), and piend-roofed dormers on the outer two (HES "small piend-roofed dormers")
+// the two gablets on the middle front's inner bays (R-pt2-b), and four white-faced gabled dormers on the front slope, two each side of the pair
+ // (R-pt2-b shows them at about 2.5 m and 5 m from the nearest gablet's centre; HES lists "small piend-roofed dormers", the photo's fronts are gabled
+ // and white-painted, so the photo wins). Each: a 1.0 m wide white front, 0.9 m of it above the slope, under a 0.4 m white gable, a dark light 0.56 m
+ // wide with a white mullion, a slated roof ridged back into the slope (ridge meets it 1.7 m back), slated cheeks. Sizes ASSUMED from R-pt2-b.
  const bayW=(m1-m0)/4;
  for(const k of [1,2]){const sc=m0+(k+.5)*bayW;gablet(sc);}
- for(const k of [0,3]){const sc=m0+(k+.5)*bayW,dz=1.1,y0=P+slopeAt(dz);
-  const c=f.at(sc,dz+.7);wallBoxAlong(b.detail,c,f.u,f.n,1.5,1.4,y0-.2,y0+1.5,C.ashlar);
-  const g=f.at(sc,dz-.02);b.detail.poly([[g[0]-f.u[0]*.5,y0+.2,g[1]-f.u[1]*.5],[g[0]+f.u[0]*.5,y0+.2,g[1]+f.u[1]*.5],[g[0]+f.u[0]*.5,y0+1.25,g[1]+f.u[1]*.5],[g[0]-f.u[0]*.5,y0+1.25,g[1]-f.u[1]*.5]],undefined,{facing:nOut,color:C.glass});
-  pyramidRect(b.detail,c,f.u,f.n,.85,.8,y0+1.5,y0+2.2,C.slate);}
+ for(const [k,offs] of [[1,[-2.5,-5]],[2,[2.5,5]]] as const)for(const off of offs){// outward of each gablet, away from the other
+  const sc=m0+(k+.5)*bayW+off,dz=1.1,y0=P+slopeAt(dz),hw=.5,wallTop=y0+.9,gx=f.u[0]*hw,gz=f.u[1]*hw;
+  const c=f.at(sc,dz+.85);wallBoxAlong(b.detail,c,f.u,f.n,.9,1.7,y0-.2,wallTop,C.slate);// the cheeks, slated
+  const ff=f.at(sc,dz+.03);wallBoxAlong(b.detail,ff,f.u,f.n,2*hw,.1,y0-.15,wallTop,C.white);// the white-painted front
+  const g=f.at(sc,dz-.02);b.detail.poly([[g[0]-gx,wallTop,g[1]-gz],[g[0]+gx,wallTop,g[1]+gz],[g[0],wallTop+.4,g[1]]],undefined,{facing:nOut,color:C.white});// its gable
+  const gl=f.at(sc,dz-.06),gw=.28,hf:Pt=[f.u[0]*gw,f.u[1]*gw];
+  b.detail.poly([[gl[0]-hf[0],y0+.08,gl[1]-hf[1]],[gl[0]+hf[0],y0+.08,gl[1]+hf[1]],[gl[0]+hf[0],y0+.85,gl[1]+hf[1]],[gl[0]-hf[0],y0+.85,gl[1]-hf[1]]],undefined,{facing:nOut,color:C.glass});
+  const mu=f.at(sc,dz-.07);wallBoxAlong(b.detail,mu,f.u,f.n,.06,.02,y0+.08,y0+.85,C.white);
+  gableRoof(sc-hw-.05,sc+hw+.05,dz-.02,dz+1.7,wallTop,wallTop+.4,false,C.slate);}
  // 4. Stacks: corniced, on the ridge between the bays and over the two gables (HES "corniced wallhead and ridge stacks")
  const stack=(p:Pt,y0:number)=>{wallBoxAlong(b.detail,p,f.u,f.n,1.9,.9,y0,P+L.stack,C.ashlar);wallBoxAlong(b.detail,p,f.u,f.n,2.2,1.15,P+L.stack-.45,P+L.stack-.2,C.red);};
  stack(f.at(m0+bayW,6),P+L.ridge-.5);stack(f.at(m0+3*bayW,6),P+L.ridge-.5);stack(f.at(f.bayWidth/2,f.bayFront+.8),P+L.bayApex-1.2);stack(f.at((e0+e1)/2,-.25),P+L.eastApex-1.5);
  // 5. The turrets (HES): the re-entrant turret's conical slated roof, and the south-east corner tower's tall octagonal spire (R-pt2-b,
  // R-pt2-b 5._Perth_Station_copy.jpg). Their shafts are the footprint's own polygonal outlines, walled above.
  const t=f.reentrant,k=f.corner;
- prism(b.detail,t.c[0],t.c[1],t.r+.15,P+L.eaves-.3,P+L.turret.drum,8,C.red,Math.PI/8,false);
+ prism(b.detail,t.c[0],t.c[1],t.r+.15,P+L.eaves-.3,P+L.turret.drum,8,C.ashlar,Math.PI/8,false);// the shaft is wall stone (R-pt2-b), as the corner tower's is
  revolve(b.detail,t.c[0],t.c[1],[[t.r+.3,P+L.turret.drum],[0,P+L.turret.tip]],12,C.slate);
  prism(b.detail,t.c[0],t.c[1],.07,P+L.turret.tip-.1,P+L.turret.tip+.8,4,C.lead);
  prism(b.detail,k.c[0],k.c[1],k.r+.1,P+L.eaves-.3,P+L.corner.drum,8,C.ashlar,Math.PI/8);
@@ -239,16 +249,10 @@ function gablet(sc:number){const w=3.8,base=L.second-.35,side=L.eaves+1.2,apex=L
 }
 /** A box standing on plan point c, `w` along u and `dp` along n, y0..y1. */
 function wallBoxAlong(b:Batch,c:Pt,u:Pt,_n:Pt,w:number,dp:number,y0:number,y1:number,color:Rgb){wallBox(b,[c[0]-u[0]*w/2,c[1]-u[1]*w/2],[c[0]+u[0]*w/2,c[1]+u[1]*w/2],y0,y1,dp/2,color);}
-/** A piend (hipped) cap over a w x dp rectangle centred on c. */
-function pyramidRect(b:Batch,c:Pt,u:Pt,n:Pt,hw:number,hd:number,y0:number,y1:number,color:Rgb){
- const P=(i:number,j:number):V3=>[c[0]+u[0]*i*hw+n[0]*j*hd,y0,c[1]+u[1]*i*hw+n[1]*j*hd],tip:V3=[c[0],y1,c[1]];
- const corners=[P(-1,-1),P(1,-1),P(1,1),P(-1,1)];
- for(let i=0;i<4;i++){const a=corners[i],q=corners[(i+1)%4];b.poly([a,q,tip],undefined,{facing:[(a[0]+q[0])/2-c[0],.5,(a[2]+q[2])/2-c[1]],color});}
-}
 
-/** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged ashlar courses, red sandstone plinth, bands, margins and
- *  cornice; bipartite sash windows on three storeys and an attic window that only the entrance bay's taller walls reach. ASSUMED sizes,
- *  read from R-pt2-b. */
+/** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged buff-grey ashlar courses, red sandstone (the darker, redder stone)
+ *  plinth, bands, margins and cornice; bipartite white-painted sash windows on three storeys and an attic window that only the entrance bay's
+ *  taller walls reach. ASSUMED sizes, read from R-pt2-b. */
 export function hotelFacadeTexture():THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const W=512,H=2048,[lo,hi]=HOTEL_TEX_SPAN,ky=H/(hi-lo),kx=W/HOTEL_BAY,Y=(m:number)=>H-(m-lo)*ky;
@@ -257,19 +261,20 @@ export function hotelFacadeTexture():THREE.CanvasTexture|null{
  g.fillStyle=hex(HOTEL_COLOURS.ashlar);g.fillRect(0,0,W,H);
  let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
  for(let m=lo;m<hi;m+=.33)for(let x=(Math.round(m/.33)%2)*.45;x<HOTEL_BAY;x+=.9){const t=rnd();
-  g.fillStyle=t<.35?`rgba(62,38,30,${(.35-t)*.7})`:t<.7?`rgba(150,128,124,${(t-.35)*.45})`:`rgba(112,62,48,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}
+  g.fillStyle=t<.35?`rgba(92,76,58,${(.35-t)*.7})`:t<.7?`rgba(178,170,156,${(t-.35)*.45})`:`rgba(148,116,82,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}// darker buff, lighter grey, warmer buff: stugged buff-grey ashlar
  for(let m=lo;m<hi;m+=.33){g.fillStyle='rgba(60,45,36,.35)';g.fillRect(0,Y(m),W,2);}
- const red=hex(HOTEL_COLOURS.red);g.fillStyle=red;
+ const red=hex(HOTEL_COLOURS.red),white=hex(HOTEL_COLOURS.frame),fw=.09,mw=.12;// the red sandstone dressings; the sashes' white paint: frame 0.09 m, mullion 0.12 m (ASSUMED from R-pt2-b)
+ g.fillStyle=red;
  g.fillRect(0,Y(L.plinth),W,(L.plinth-lo)*ky);// plinth
  for(const [y,h] of [[L.first,.3],[L.second,.25],[L.eaves-.35,.35]] as const)g.fillRect(0,Y(y+h),W,h*ky);// band courses, wallhead cornice
  const sash=(cx:number,y0:number,w:number,h:number,lights:number)=>{
   const x0=(cx-w/2)*kx;g.fillStyle=red;g.fillRect(x0-.22*kx,Y(y0+h+.25),(w+.44)*kx,(h+.5)*ky);// red sandstone margins
-  const lw=(w-(lights-1)*.22)/lights;
-  for(let i=0;i<lights;i++){const lx=x0+i*(lw+.22)*kx;
-   const grad=g.createLinearGradient(0,Y(y0+h),0,Y(y0));grad.addColorStop(0,'#4a5562');grad.addColorStop(1,'#20262d');
-   g.fillStyle=grad;g.fillRect(lx,Y(y0+h),lw*kx,h*ky);
-   g.fillStyle='#e4ddcf';g.fillRect(lx,Y(y0+h/2)-3,lw*kx,6);// the sashes' meeting rail, white-painted (R-pt2-b)
-   g.strokeStyle='#e4ddcf';g.lineWidth=4;g.strokeRect(lx+2,Y(y0+h)+2,lw*kx-4,h*ky-4);}
+  g.fillStyle=white;g.fillRect(x0,Y(y0+h),w*kx,h*ky);// the white-painted frame block: what the panes below leave of it is frame, mullion and rail
+  const pw=(w-2*fw-(lights-1)*mw)/lights;
+  for(let i=0;i<lights;i++){const lx=x0+(fw+i*(pw+mw))*kx;
+   const grad=g.createLinearGradient(0,Y(y0+h-fw),0,Y(y0+fw));grad.addColorStop(0,'#4a5562');grad.addColorStop(1,'#20262d');
+   g.fillStyle=grad;g.fillRect(lx,Y(y0+h-fw),pw*kx,(h-2*fw)*ky);
+   g.fillStyle=white;g.fillRect(lx,Y(y0+h/2)-.04*ky,pw*kx,.08*ky);}// the sashes' meeting rail, white-painted (R-pt2-b)
   g.fillStyle=red;g.fillRect(x0-.35*kx,Y(y0),(w+.7)*kx,.2*ky);// sill
  };
  const cx=HOTEL_BAY/2;

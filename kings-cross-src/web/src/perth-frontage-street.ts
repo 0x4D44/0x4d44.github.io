@@ -9,6 +9,7 @@ import {Batch,rgb} from './materials.ts';
 import type {Rgb,V3} from './materials.ts';
 import {cleanRing} from './waverley-mesh.ts';
 import {prism,wallBox} from './waverley-frontage-mesh.ts';
+import {PERTH_TEXTURE_TILE} from './perth-frontage-textures.ts';
 
 /** The frontage's plan window in the Perth frame (x east, z south): the car park, the entrance, the hotel and King's Place. */
 export const FRONTAGE_WINDOW={x0:-80,x1:125,z0:-175,z1:-20} as const;
@@ -19,7 +20,7 @@ export const PERTH_ENTRANCE:Pt=[-3.03,-34.98];
 export const STREET_LEVELS={wall:4.3,coping:.25,flatDeep:9,slateBack:11,slateTop:8,gableBack:2,gableDeep:12,gableEaves:4.8,gableApex:8.2,pavilionWidth:10,pavilionFloor:3.2,pavilionTop:6.4,pavilionOut:1.2,pavilionDeep:7,pavement:4.2,kerb:.12,bollard:1,bollardPitch:2.6} as const;
 /** ASSUMED carriageway widths (m) by OSM highway class; no widths are mapped here. */
 export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,tertiary:7,residential:6,unclassified:6,service:5,parking_aisle:6,footway:2.4,pedestrian:4,path:2,cycleway:2.5,steps:2};
-export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x3a62c4,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,lantern:0x5d6f7c,shrub:0x4f6b34,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x3a62c4,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x7f909c,mullion:0xdfe2e3,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -27,12 +28,13 @@ const inRing=([x,z]:Pt,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1
 const ringOf=(r:number[][]):Pt[]=>r.map(p=>[p[0],p[1]]);
 
 /** A flat area draped on the drawn ground `lift` above it: the polygon triangulated, then split until no edge is over 3 m. */
-export function drape(b:Batch,ring:readonly Pt[],ground:Ground,lift:number,color:Rgb,mottle=0,colorAt?:(p:Pt)=>Rgb):void{
+export function drape(b:Batch,ring:readonly Pt[],ground:Ground,lift:number,color:Rgb,mottle=0,colorAt?:(p:Pt)=>Rgb,keep:(p:Pt)=>boolean=()=>true,uvTile=0):void{
  const r=cleanRing(ring),y=(p:Pt)=>ground.heightAt(...p)+lift;let seed=7;
  const tint=(at?:Pt):Rgb=>{const base=at&&colorAt?colorAt(at):color;if(!mottle)return base;seed=(seed*16807)%2147483647;const k=1+(seed/2147483647-.5)*2*mottle;return [base[0]*k,base[1]*k,base[2]*k] as Rgb;};
  const put=(a:Pt,c:Pt,d:Pt,depth:number):void=>{
   const ab=Math.hypot(c[0]-a[0],c[1]-a[1]),bc=Math.hypot(d[0]-c[0],d[1]-c[1]),ca=Math.hypot(a[0]-d[0],a[1]-d[1]),m=Math.max(ab,bc,ca);
-  if(m<=3||depth>10){if(Math.abs((c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]))>1e-9)b.poly([[a[0],y(a),a[1]],[c[0],y(c),c[1]],[d[0],y(d),d[1]]],undefined,{facing:[0,1,0],color:tint([(a[0]+c[0]+d[0])/3,(a[1]+c[1]+d[1])/3])});return;}
+  if(m<=3||depth>10){const g:Pt=[(a[0]+c[0]+d[0])/3,(a[1]+c[1]+d[1])/3];
+   if(keep(g)&&Math.abs((c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]))>1e-9)b.poly([[a[0],y(a),a[1]],[c[0],y(c),c[1]],[d[0],y(d),d[1]]],uvTile?[a,c,d].map(q=>[q[0]/uvTile,q[1]/uvTile] as [number,number]):undefined,{facing:[0,1,0],color:tint(g)});return;}
   if(m===ab){const q:Pt=[(a[0]+c[0])/2,(a[1]+c[1])/2];put(a,q,d,depth+1);put(q,c,d,depth+1);}
   else if(m===bc){const q:Pt=[(c[0]+d[0])/2,(c[1]+d[1])/2];put(a,c,q,depth+1);put(a,q,d,depth+1);}
   else {const q:Pt=[(d[0]+a[0])/2,(d[1]+a[1])/2];put(a,c,q,depth+1);put(q,c,d,depth+1);}
@@ -40,17 +42,18 @@ export function drape(b:Batch,ring:readonly Pt[],ground:Ground,lift:number,color
  for(const t of THREE.ShapeUtils.triangulateShape(r.map(p=>new THREE.Vector2(...p)),[]))put(r[t[0]],r[t[1]],r[t[2]],0);
 }
 /** A strip `half` either side of a polyline, draped `lift` above the ground; segments whose midpoint `skip` refuses are left out. */
-export function strip(b:Batch,path:readonly Pt[],half:number,ground:Ground,lift:number,color:Rgb,skip:(p:Pt)=>boolean):void{
+export function strip(b:Batch,path:readonly Pt[],half:number,ground:Ground,lift:number,color:Rgb,skip:(p:Pt)=>boolean,uvTile=0):void{
  const pts:Pt[]=[];
  for(let i=0;i+1<path.length;i++){const a=path[i],c=path[i+1],n=Math.max(1,Math.ceil(Math.hypot(c[0]-a[0],c[1]-a[1])/3));for(let k=0;k<n;k++)pts.push([a[0]+(c[0]-a[0])*k/n,a[1]+(c[1]-a[1])*k/n]);}
  pts.push(path.at(-1)!);
  const off=pts.map((p,i)=>{const a=pts[Math.max(0,i-1)],c=pts[Math.min(pts.length-1,i+1)],l=Math.hypot(c[0]-a[0],c[1]-a[1])||1;return [-(c[1]-a[1])/l*half,(c[0]-a[0])/l*half] as Pt;});
  for(let i=0;i+1<pts.length;i++){const a=pts[i],c=pts[i+1];if(skip([(a[0]+c[0])/2,(a[1]+c[1])/2]))continue;
   const q=[[a[0]+off[i][0],a[1]+off[i][1]],[c[0]+off[i+1][0],c[1]+off[i+1][1]],[c[0]-off[i+1][0],c[1]-off[i+1][1]],[a[0]-off[i][0],a[1]-off[i][1]]] as Pt[];
-  b.poly(q.map(p=>[p[0],ground.heightAt(...p)+lift,p[1]] as V3),undefined,{facing:[0,1,0],color});}
+  b.poly(q.map(p=>[p[0],ground.heightAt(...p)+lift,p[1]] as V3),uvTile?q.map(p=>[p[0]/uvTile,p[1]/uvTile] as [number,number]):undefined,{facing:[0,1,0],color});}
 }
 
-export interface StreetBatches {front:Batch;glass:Batch;flat:Batch;paint:Batch}
+/** `setts` (block paving) and `coursed` (the street walls) carry world-metre UVs for perth-frontage-textures.ts. */
+export interface StreetBatches {front:Batch;glass:Batch;flat:Batch;paint:Batch;setts:Batch;coursed:Batch}
 
 /** The forecourt: the mapped car parks, the roads and paths round the station front and the hotel, white bay lines along the mapped
  *  parking aisles (2.5 m bays, 4.8 m deep, ASSUMED), and the zebra crossing at the entrance (R-pt2-a). Nothing is drawn inside the
@@ -61,7 +64,8 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
   let best=Infinity,side=0;for(let i=0;i+1<paved.path.length;i++){const a=paved.path[i],c=paved.path[i+1],dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((q[0]-a[0])*dx+(q[1]-a[1])*dz)/(dx*dx+dz*dz||1))),d=Math.hypot(q[0]-a[0]-t*dx,q[1]-a[1]-t*dz);
    if(d<best){best=d;side=Math.sign(dx*(q[1]-a[1])-dz*(q[0]-a[0]));}}
   const a=paved.path[0],c=paved.path[1],e=Math.sign((c[0]-a[0])*(PERTH_ENTRANCE[1]-a[1])-(c[1]-a[1])*(PERTH_ENTRANCE[0]-a[0]));return side===e;};
- for(const p of file.parking)drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark),.05,q=>rgb(stationSide(q)?C.block:C.carpark));
+ const ST=PERTH_TEXTURE_TILE.setts;
+ for(const p of file.parking){drape(b.flat,ringOf(p.ring),ground,.05,rgb(C.carpark),.05,undefined,q=>!stationSide(q));drape(b.setts,ringOf(p.ring),ground,.05,rgb(C.block),.04,undefined,stationSide,ST);}
  const carriage=file.roads.filter(r=>!['footway','pedestrian','path','cycleway','steps'].includes(r.highway));
  const onCarriage=(p:Pt)=>file.parking.some(q=>inRing(p,ringOf(q.ring)))||carriage.some(r=>{const h=(ROAD_WIDTHS[r.service==='parking_aisle'?'parking_aisle':r.highway]??4)/2;
   for(let i=0;i+1<r.path.length;i++){const a=r.path[i],c=r.path[i+1],dx=c[0]-a[0],dz=c[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz||1)));
@@ -70,18 +74,27 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
   const kind=r.service==='parking_aisle'?'parking_aisle':r.highway,half=(ROAD_WIDTHS[kind]??4)/2;
   const foot=['footway','pedestrian','path','cycleway','steps'].includes(r.highway);
   const byEntrance=!foot&&r.path.some(q=>Math.hypot(q[0]-PERTH_ENTRANCE[0],q[1]-PERTH_ENTRANCE[1])<25)&&r.service!=='parking_aisle';
-  const color=rgb(foot?C.footway:r.surface==='paving_stones'||byEntrance?C.paving:C.asphalt);
+  const sett=!foot&&(r.surface==='paving_stones'||byEntrance),color=rgb(foot?C.footway:sett?C.paving:C.asphalt);
   if(byEntrance){const pts=ringOf(r.path);
    for(let i=0;i+1<pts.length;i++){const a=pts[i],c=pts[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]);for(let x=1;x+1<l;){const p0:Pt=[a[0]+(c[0]-a[0])*x/l,a[1]+(c[1]-a[1])*x/l],p1:Pt=[a[0]+(c[0]-a[0])*(x+1.5)/l,a[1]+(c[1]-a[1])*(x+1.5)/l];
     if(!out(p0)&&!out(p1))strip(b.paint,[p0,p1],.06,ground,.12,rgb(C.paint),()=>false);x+=4.5;}}
    for(const [e,f2] of [[pts[0],pts[1]],[pts.at(-1)!,pts.at(-2)!]] as const){if(out(e))continue;const l=Math.hypot(f2[0]-e[0],f2[1]-e[1])||1,t2:Pt=[(f2[0]-e[0])/l,(f2[1]-e[1])/l],n2:Pt=[-t2[1],t2[0]];
     for(const k of [1.2,1.6])for(let o=-half+.2;o<half-.4;o+=1){const c0:Pt=[e[0]+t2[0]*k+n2[0]*o,e[1]+t2[1]*k+n2[1]*o],c1:Pt=[c0[0]+n2[0]*.6,c0[1]+n2[1]*.6];strip(b.paint,[c0,c1],.1,ground,.12,rgb(C.paint),()=>false);}}}
-  strip(b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,foot?(p=>out(p)||onCarriage(p)):out);
-  if(kind==='parking_aisle'){// three lamp columns along the aisle's edge (R-pt2-b), 8 m, ASSUMED
-   const [a0,c0]=[r.path[0],r.path.at(-1)!],la=Math.hypot(c0[0]-a0[0],c0[1]-a0[1]);
+  strip(sett?b.setts:b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,foot?(p=>out(p)||onCarriage(p)):out,sett?ST:0);
+  if(kind==='parking_aisle'){// three lamp columns along the aisle's edge (R-pt2-b): black, with a lantern hung from an arm either side; 7 m, ASSUMED
+   const [a0,c0]=[r.path[0],r.path.at(-1)!],la=Math.hypot(c0[0]-a0[0],c0[1]-a0[1]),tt:Pt=[(c0[0]-a0[0])/la,(c0[1]-a0[1])/la];
    for(const f of [.2,.5,.8]){const q:Pt=[a0[0]+(c0[0]-a0[0])*f,a0[1]+(c0[1]-a0[1])*f],nn:Pt=[-(c0[1]-a0[1])/la,(c0[0]-a0[0])/la],lp:Pt=[q[0]+nn[0]*(half+5.2),q[1]+nn[1]*(half+5.2)];
-    if(out(lp))continue;const y=ground.heightAt(...lp);prism(b.front,lp[0],lp[1],.09,y,y+8,8,rgb(C.column));
-    const arm:Pt=[lp[0]-nn[0]*1.4,lp[1]-nn[1]*1.4];wallBox(b.front,lp,arm,y+7.85,y+8,.05,rgb(C.column));wallBox(b.front,arm,[arm[0]-nn[0]*.5,arm[1]-nn[1]*.5],y+7.8,y+7.95,.12,rgb(C.bollard));}
+    if(out(lp))continue;const y=ground.heightAt(...lp),k=rgb(C.lampBlack);
+    prism(b.front,lp[0],lp[1],.16,y,y+.6,8,k);prism(b.front,lp[0],lp[1],.08,y+.6,y+7,8,k);prism(b.front,lp[0],lp[1],.12,y+6.9,y+7.15,8,k);
+    for(const sg of [1,-1]){const arm:Pt=[lp[0]+tt[0]*sg*1.1,lp[1]+tt[1]*sg*1.1];wallBox(b.front,lp,arm,y+6.75,y+6.85,.035,k);
+     prism(b.front,arm[0],arm[1],.04,y+6.45,y+6.8,6,k);// the hanger
+     prism(b.front,arm[0],arm[1],.22,y+5.9,y+6.35,6,rgb(C.lit));// the lantern's glazed body (pale, as R-pt2-b's read by day)
+     prism(b.front,arm[0],arm[1],.28,y+6.35,y+6.45,6,k);prism(b.front,arm[0],arm[1],.12,y+5.82,y+5.9,6,k);}}
+   // direction arrows down the aisle (R-pt2-b, foreground): a 3 m shaft and a head, white, every third of its length, ASSUMED sizes
+   for(const f of [.33,.66]){const q:Pt=[a0[0]+(c0[0]-a0[0])*f,a0[1]+(c0[1]-a0[1])*f];if(out(q))continue;
+    const P2=(u:number,v:number):V3=>{const x=q[0]+tt[0]*u+nn0[0]*v,z=q[1]+tt[1]*u+nn0[1]*v;return [x,ground.heightAt(x,z)+.11,z];},nn0:Pt=[-tt[1],tt[0]];
+    b.paint.poly([P2(-1.8,-.1),P2(.6,-.1),P2(.6,.1),P2(-1.8,.1)],undefined,{facing:[0,1,0],color:rgb(C.paint)});
+    b.paint.poly([P2(.5,-.45),P2(1.6,0),P2(.5,.45)],undefined,{facing:[0,1,0],color:rgb(C.paint)});}
   }
   if(kind==='parking_aisle'){// bay lines both sides of the aisle, perpendicular to it
    const [a,c]=[r.path[0],r.path.at(-1)!],l=Math.hypot(c[0]-a[0],c[1]-a[1]),t:Pt=[(c[0]-a[0])/l,(c[1]-a[1])/l],n:Pt=[-t[1],t[0]];
@@ -106,8 +119,10 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  // the station lies to the right of the chain walked from the hotel corner when its outward side is to the left: pick by the entrance's side
  const outward=(a:Pt,c:Pt):Pt=>{const l=Math.hypot(c[0]-a[0],c[1]-a[1]),n:Pt=[(c[1]-a[1])/l,-(c[0]-a[0])/l],m:Pt=[(a[0]+c[0])/2+n[0]*.5,(a[1]+c[1])/2+n[1]*.5];return inRing(m,ring)?[-n[0],-n[1]]:n;};
  const foot=ground.rangeUnder(chain,2).min-.15;
+ let run=0;
  for(let i=0;i+1<chain.length;i++){const a=chain[i],c=chain[i+1],n=outward(a,c);
-  b.front.poly([[a[0],foot,a[1]],[c[0],foot,c[1]],[c[0],P+S.wall,c[1]],[a[0],P+S.wall,a[1]]],undefined,{facing:[n[0],0,n[1]],color:rgb(C.buff)});
+  const T=PERTH_TEXTURE_TILE.coursed,u0=run/T,u1=(run+Math.hypot(c[0]-a[0],c[1]-a[1]))/T;run+=Math.hypot(c[0]-a[0],c[1]-a[1]);// coursed stone (R-pt2-a), UVs running along the front
+  b.coursed.poly([[a[0],foot,a[1]],[c[0],foot,c[1]],[c[0],P+S.wall,c[1]],[a[0],P+S.wall,a[1]]],[[u0,foot/T],[u1,foot/T],[u1,(P+S.wall)/T],[u0,(P+S.wall)/T]],{facing:[n[0],0,n[1]],color:rgb(C.buff)});
   const ca:Pt=[a[0]+n[0]*.1,a[1]+n[1]*.1],cc:Pt=[c[0]+n[0]*.1,c[1]+n[1]*.1];
   wallBox(b.front,[(a[0]+ca[0])/2,(a[1]+ca[1])/2],[(c[0]+cc[0])/2,(c[1]+cc[1])/2],P+S.wall,P+S.wall+S.coping,.25,rgb(C.coping),.12);
  }
@@ -123,14 +138,18 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  const w=S.pavilionWidth,s0=sE-w/2,s1=sE+w/2;
  const bandLo=S.pavilionFloor+1.1,bandHi=S.pavilionTop-1;// ASSUMED from R-pt2-a: a 1.1 m lower band, a 1.9 m window strip, a 1 m upper band
  box(s0,s1,-S.pavilionDeep,S.pavilionOut,S.pavilionFloor,bandLo,C.navy);box(s0,s1,-S.pavilionDeep,S.pavilionOut,bandHi,S.pavilionTop,C.navy);
- box(s0+.05,s1-.05,-S.pavilionDeep,S.pavilionOut-.25,bandLo,bandHi,C.glass,b.glass);// the window strip, set back 0.25 m
- for(let k=0;k<=12;k++){const s=s0+.1+k*(w-.2)/12;box(s-.05,s+.05,S.pavilionOut-.3,S.pavilionOut-.18,bandLo,bandHi,C.frame);}// its mullions
+ // the window strip, set back 0.25 m: R-pt2-a's reads as lighter glazing reflecting the sky, with white mullions and a transom
+ box(s0+.05,s1-.05,-S.pavilionDeep,S.pavilionOut-.25,bandLo,bandHi,C.strip,b.glass);
+ for(let k=0;k<=12;k++){const s=s0+.1+k*(w-.2)/12;box(s-.07,s+.07,S.pavilionOut-.3,S.pavilionOut-.14,bandLo,bandHi,C.mullion);}// its mullions
+ box(s0+.1,s1-.1,S.pavilionOut-.3,S.pavilionOut-.16,bandLo+1.2,bandLo+1.3,C.mullion);
  pane(sE-2,sE+2,S.pavilionTop-.05,S.pavilionTop+.55,S.pavilionOut-.1,C.sign);// the blank sign panel on its parapet (no lettering drawn)
  for(const s of [s0+.3,sE-1.7,sE+1.7,s1-.3])box(s-.18,s+.18,S.pavilionOut-.5,S.pavilionOut-.14,0,S.pavilionFloor,C.navy);// four posts
  pane(s0+.2,s1-.2,.05,S.pavilionFloor-.1);// the recessed glazed entrance
  // east of the entrance (R-pt2-a, left): a shop front - dark glazing in a blue frame with a glazed door, a blank fascia over it (no
  // lettering drawn) - and a notice case. Sizes ASSUMED from R-pt2-a at about 19.5 px/m.
  pane(s1+1.2,s1+5.4,.25,2.75,.03,C.navy);pane(s1+1.3,s1+5.3,.35,2.65,.06);
+ // the lit interior seen through it (R-pt2-a): pale shelving panels and a bright ceiling band, drawn just proud of the dark pane
+ for(const [u0,u1,y0,y1,col] of [[1.45,2.4,.5,2.2,C.lit],[3.8,5.15,.5,2.2,C.lit],[1.4,5.2,2.3,2.6,C.lit],[2.55,3.65,.45,1.4,C.litDim]] as const)pane(s1+u0,s1+u1,y0,y1,.065,col);
  for(const s of [s1+2.6,s1+3.6])box(s-.04,s+.04,.04,.12,.35,2.65,C.navy);// the door's frame
  box(s1+1.1,s1+5.5,0,.18,2.8,3.3,C.fascia);
  pane(s1+5.9,s1+7.1,.4,2.4,.04,C.frame);
@@ -140,6 +159,10 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
   box(b0,b1,0,dp,0,.35,C.buff);
   const glassQuad=(p:Pt,q:Pt,y0:number,y1p:number,y1q:number,face:Pt)=>b.glass.poly([[p[0],P+y0,p[1]],[q[0],P+y0,q[1]],[q[0],P+y1q,q[1]],[p[0],P+y1p,p[1]]],undefined,{facing:[face[0],0,face[1]],color:rgb(C.glass)});
   glassQuad(at(b0,dp),at(b1,dp),.35,hf,hf,n);
+  // its lit interior (R-pt2-a): white panels and a bright ceiling band behind every other light, just proud of the glass
+  for(let i=0;i<k;i++){const x0=b0+(b1-b0)*i/k,x1=b0+(b1-b0)*(i+1)/k;
+   const lit=(y0:number,y1:number)=>{const p=at(x0+.12,dp+.006),q=at(x1-.12,dp+.006);b.glass.poly([[p[0],P+y0,p[1]],[q[0],P+y0,q[1]],[q[0],P+y1,q[1]],[p[0],P+y1,p[1]]],undefined,{facing:[n[0],0,n[1]],color:rgb(C.lit)});};
+   lit(hf-.5,hf-.25);if(i%2===0)lit(.55,1.9);}
   for(const [x,sg] of [[b0,-1],[b1,1]] as const)glassQuad(at(x,0),at(x,dp),.35,hb,hf,[t[0]*sg,t[1]*sg]);
   for(let i=0;i<=k;i++){const x=b0+(b1-b0)*i/k;box(x-.05,x+.05,dp-.06,dp+.04,.35,hf,C.navy);}
   box(b0,b1,dp-.06,dp+.04,hf-.12,hf,C.navy);box(b0,b1,dp-.06,dp+.04,1.1,1.18,C.navy);
@@ -181,7 +204,7 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  }
  // the pavement: 4.2 m out to a kerb, block paving, black bollards with a yellow band at the kerb, blue planters (R-pt2-a)
  const pv:Pt[]=[at(-1,0),at(l+1,0),at(l+1,S.pavement),at(-1,S.pavement)];
- drape(b.flat,pv,ground,S.kerb,rgb(C.footway));
+ drape(b.setts,pv,ground,S.kerb,rgb(C.footway),0,undefined,()=>true,PERTH_TEXTURE_TILE.setts);
  const k0=at(-1,S.pavement),k1=at(l+1,S.pavement);wallBox(b.flat,k0,k1,ground.heightAt(...k0)-.05,P+S.kerb+.01,.08,rgb(C.kerb));
  for(let s=1;s<l;s+=S.bollardPitch){if(Math.abs(s-sE)<2.8)continue;const p=at(s,S.pavement-.35),y=ground.heightAt(...p)+S.kerb;
   prism(b.front,p[0],p[1],.11,y,y+S.bollard,8,rgb(C.bollard));prism(b.front,p[0],p[1],.115,y+.72,y+.84,8,rgb(C.yellow),Math.PI/8,false);}
@@ -189,4 +212,19 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
   prism(b.front,p[0],p[1],.6,y,y+.62,12,rgb(C.planter));prism(b.front,p[0],p[1],.5,y+.62,y+1.05,8,rgb(C.shrub),Math.PI/8);}
  for(let o=S.pavement+.6;o<S.pavement+6.6;o+=1){const p=at(sE-1.6,o),q=at(sE+1.6,o);strip(b.paint,[p,q],.25,ground,.1,rgb(C.paint),()=>false);}
  return {chain,P};
+}
+
+/** Shrubs on the grass strip before the hotel's front (R-pt2-b: low rounded bushes before the centre bays): along each hotel edge facing
+ *  the car park, 1.8 m out from the wall, every 3.5 m with gaps, clear of the car park. Rounded from two stacked prisms; ASSUMED sizes. */
+export function hotelShrubs(b:Batch,hotel:readonly Pt[],park:readonly Pt[],ground:Ground):number{
+ const C=STREET_COLOURS,r=cleanRing(hotel),cx=park.reduce((s,p)=>s+p[0],0)/park.length,cz=park.reduce((s,p)=>s+p[1],0)/park.length;let n=0,seed=5;
+ const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+ for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length],l=Math.hypot(c[0]-a[0],c[1]-a[1]);if(l<6)continue;
+  let nn:Pt=[-(c[1]-a[1])/l,(c[0]-a[0])/l];const m:Pt=[(a[0]+c[0])/2,(a[1]+c[1])/2];if(inRing([m[0]+nn[0]*.5,m[1]+nn[1]*.5],r))nn=[-nn[0],-nn[1]];
+  const toPark=Math.hypot(cx-m[0],cz-m[1])||1;if((nn[0]*(cx-m[0])+nn[1]*(cz-m[1]))/toPark<.6)continue;
+  for(let s=2;s<l-2;s+=3.5){if(rnd()<.35)continue;const p:Pt=[a[0]+(c[0]-a[0])*s/l+nn[0]*1.8,a[1]+(c[1]-a[1])*s/l+nn[1]*1.8];if(inRing(p,park)||inRing(p,r))continue;
+   const y=ground.heightAt(...p),R=.6+rnd()*.35,H=.9+rnd()*.5,col=rnd()<.5?C.shrub:C.shrubDark;
+   prism(b,p[0],p[1],R,y-.1,y+H*.6,8,rgb(col));prism(b,p[0],p[1],R*.7,y+H*.6,y+H,8,rgb(col),Math.PI/8);n++;}
+ }
+ return n;
 }

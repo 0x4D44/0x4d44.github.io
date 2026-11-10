@@ -12,7 +12,7 @@ import type { PerthBuild } from '../src/perth-scene.ts';
 import { PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage } from '../src/perth-frontage.ts';
 import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '../src/perth-frontage-hotel.ts';
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
-import { KINGS_PLACE_LEVELS, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
+import { KINGS_PLACE_CUT, KINGS_PLACE_LEVELS, cutRoads, cutSurfaceAt, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
 import { perthTrack } from '../src/perth-station.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 
@@ -77,7 +77,7 @@ test('clearance: nothing the frontage draws stands on a platform or in the train
     assert.ok(!platforms.some(r => inRing([x, z], r)), `${name} vertex ${x},${y},${z} on a platform`);
     assert.ok(railDist([x, z]) > 2.1 || y > 4.8, `${name} vertex ${x},${y},${z} in the train envelope`);
   }
-  for (const [x, y, z] of vertices('perth-kings-place-bridge')) assert.ok(railDist([x, z]) > 1.75 || y < -.3, `bridge vertex ${x},${y},${z} clear of the train`);
+  for (const name of ['perth-kings-place-bridge', 'perth-kings-place-walls']) for (const [x, y, z] of vertices(name)) assert.ok(railDist([x, z]) > 1.75 || y < -.3, `${name} vertex ${x},${y},${z} clear of the train`);
 });
 
 test('the frontage\'s cost: within P2\'s caps (+24 draws, +240,000 triangles), and every frontage part drawn', () => {
@@ -103,7 +103,18 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   const xs = ring.map(p => p[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
   const under = line.filter(p => p[0] > x0 + 2 && p[0] < x1 - 2);
   assert.ok(under.length > 0, 'King\'s Place passes under the bridge');
-  for (const p of under) assert.ok(Math.abs(t.heightAt(p[0], p[1]) - KINGS_PLACE_LEVELS.road) < .05, `road at ${p} is ${t.heightAt(p[0], p[1])}`);
+  // the road drawn (cutSurface) is at R-pt2-d's level, and the terrain lies its `sink` under it, so no terrain triangle rises through it
+  const roads = cutRoads(), open = perthTrack(data).ground, surface = (x: number, z: number) => cutSurfaceAt(roads, ring as Pt[], open, x, z);
+  for (const p of under) assert.ok(Math.abs(surface(p[0], p[1])!.y - KINGS_PLACE_LEVELS.road) < .05, `road at ${p} is ${surface(p[0], p[1])?.y}`);
+  for (const p of under) assert.ok(Math.abs(t.heightAt(p[0], p[1]) - (KINGS_PLACE_LEVELS.road - KINGS_PLACE_CUT.sink)) < .05, `terrain at ${p} is ${t.heightAt(p[0], p[1])}`);
+  let paved = 0;
+  for (let x = 40; x <= 140; x += 1.3) for (let z = -100; z <= -20; z += 1.3) { const v = surface(x, z); if (!v) continue; paved++;
+    // 0.15 m: the 0.3 m sink less the 0.12 m kerb step the 0.5 m grid blends across, less 0.03; over the terrain mesh's 0.08 m tolerance (perth-city.ts)
+    assert.ok(t.heightAt(x, z) <= v.y - .15, `terrain ${t.heightAt(x, z).toFixed(2)} rises through the drawn surface ${v.y.toFixed(2)} at ${x.toFixed(1)},${z.toFixed(1)}`); }
+  assert.ok(paved > 500, `the cut is paved (${paved} samples)`);
+  // the far wall's foot is paved: every point under the deck is
+  const edge = (p: Pt) => Math.min(...ring.map((u, i) => segDist(p, u as Pt, ring[(i + 1) % ring.length] as Pt)));
+  for (let x = x0; x <= x1; x += .7) for (let z = -80; z <= -64; z += .7) if (inRing([x, z], ring as Pt[]) && edge([x, z]) >= .55) assert.ok(surface(x, z), `under the deck at ${x},${z} unpaved`);
   // R-pt2-d's pixels: the underside 0.15 m over the eye, the road 3.9 m under it (perth-frontage-bridge.ts header)
   assert.ok(Math.abs(KINGS_PLACE_LEVELS.soffit - KINGS_PLACE_LEVELS.eye - .15) < 1e-9);
   assert.ok(Math.abs(KINGS_PLACE_LEVELS.eye - KINGS_PLACE_LEVELS.road - 3.9) < 1e-9);
@@ -114,7 +125,6 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   // platforms keep the station's flattened level
   for (const pl of data.platforms) for (const [x, z] of pl.path) assert.ok(Math.abs(t.heightAt(x, z) + .2) < .05, `platform point ${x},${z} at ${t.heightAt(x, z)}`);
   // open rails off the bridge stay on the flattened ground
-  const open = perthTrack(data).ground;
   for (const [ax, az, bx, bz] of open) for (const k of [0, .5, 1]) {
     const x = ax + (bx - ax) * k, z = az + (bz - az) * k;
     if (x < x0 - 30 || x > x1 + 30 || z < -100 || z > -20) continue;
@@ -122,9 +132,12 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
     if (ring.some((p, i) => { const q = ring[(i + 1) % ring.length], dx = q[0] - p[0], dz = q[1] - p[1], u = Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / (dx * dx + dz * dz || 1))); return Math.hypot(x - p[0] - u * dx, z - p[1] - u * dz) < 1.5; })) continue;
     assert.ok(t.heightAt(x, z) > -.3, `open rail at ${x},${z} left over the cut (${t.heightAt(x, z)})`);
   }
-  // pt-kings-place-bridge's eye stands 1.7 m over the cut ground and sees the girders above the road
-  const cam = perthCameras()['pt-kings-place-bridge'];
-  assert.ok(Math.abs(cam.pos[1] - t.heightAt(cam.pos[0], cam.pos[2]) - 1.7) < .05, `eye ${cam.pos[1]} over ${t.heightAt(cam.pos[0], cam.pos[2])}`);
+  // pt-kings-place-bridge's eye stands 1.7 m over the Bank's road (the carriageway, as R-pt2-d's photographer) and sees the girders above it
+  const cam = perthCameras()['pt-kings-place-bridge'], bank = roads[1].level(cam.pos[0], cam.pos[2]);
+  assert.ok(Math.abs(cam.pos[1] - bank - 1.7) < .05, `eye ${cam.pos[1]} over ${bank}`);
+  // the aim (lead 13:35, from R-pt2-d): the near girder's NE end at photo x 1085 of 1280 at f 2334 px puts the axis about 11.9 deg east of north
+  const yaw = Math.atan2(cam.target[0] - cam.pos[0], -(cam.target[2] - cam.pos[2])) * 180 / Math.PI;
+  assert.ok(Math.abs(yaw - 12) < .2, `pt-kings-place-bridge bears ${yaw.toFixed(2)} deg`);
 });
 
 test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data and covers the King\'s Place cut and the forecourt', () => {
@@ -135,6 +148,8 @@ test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data 
   // the cut: King's Place under the deck and either side, St Leonard's Bank to the standpoint, the walls' feet
   for (const p of kingsPlaceLine()) if (p[0] > 50 && p[0] < 140) assert.ok(inside(p[0], p[1]), `King's Place ${p}`);
   for (const [x, z] of [[88, -39], [95.9, -67.1], [80, -71 - 4.5 - 1.8 - .5]]) assert.ok(inside(x, z), `cut ${x},${z}`);
+  // the deck's paved floor and its walls' feet, past the road bands: behind the far abutment and by the deck's south-east corner
+  for (const [x, z] of [[101, -77], [86, -77.5], [72, -68.5], [90, -79.5], [85.5, -64]]) assert.ok(inside(x, z), `under the deck ${x},${z}`);
   // the forecourt: the station-side paving, the hotel car park, the pavement before the entrance
   for (const [x, z] of [[-5, -50], [-20, -80], [PERTH_ENTRANCE[0], PERTH_ENTRANCE[1] - 2]]) assert.ok(inside(x, z), `forecourt ${x},${z}`);
   assert.ok(inside(-40, -76), 'the pavement along the street front, off the mapped roads');
