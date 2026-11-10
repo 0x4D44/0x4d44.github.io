@@ -12,6 +12,7 @@ export function runFeed({
   area,
   areas,
   onEvents, // (events: normalised[]) => void
+  onAnyEvents = null, // optional read-only observer of every parsed event, before the area filter
   onTrust = () => {}, // raw TRUST body; filtered before recording or serving
   onStatus = () => {},
   log = () => {},
@@ -52,7 +53,12 @@ export function runFeed({
       }
       let events;
       try {
-        events = parseTdBody(body).filter((event) => acceptedAreas.has(event.area));
+        const parsed = parseTdBody(body);
+        if (onAnyEvents) {
+          try { onAnyEvents(parsed); }
+          catch { log('feed: census observer failed'); }
+        }
+        events = parsed.filter((event) => acceptedAreas.has(event.area));
       } catch (err) {
         onStatus({ state: 'connected', badMessage: true });
         log(`feed: dropped a bad message (${err.message})`);

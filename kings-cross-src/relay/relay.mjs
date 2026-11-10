@@ -10,6 +10,8 @@
 //   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
+//   GET /census           opt-in (census: true / KX_TD_CENSUS=1) all-area TD tally, see census.mjs;
+//                         404 when off. In memory only.
 //
 // It binds loopback only, answers only GET, rejects any Host header that is not loopback
 // (DNS-rebinding guard) and sends no CORS headers. No response ever contains the login.
@@ -27,6 +29,7 @@ import { createTrustState } from './trust.mjs';
 import { validDate } from '../core/schedule.ts';
 import { configuredAreas, requestArea, areaDataDir } from './areas.mjs';
 import { STATIONS } from '../core/station-config.ts';
+import { createCensus } from './census.mjs';
 
 const RECENT_MAX = 2000;
 const MAX_LOCAL_JSON = 16 * 1024 * 1024;
@@ -34,7 +37,7 @@ const MAX_LOCAL_JSON = 16 * 1024 * 1024;
 /** Preserve actionable categories, never arbitrary keychain/upstream exception text. */
 export function safeFeedLog(message) {
   const category = typeof message === 'string' &&
-    /^feed: (keychain: lookup failed|reconnecting in \d{1,6}s|connected|dropped a bad(?: TRUST)? message)/.exec(message);
+    /^feed: (keychain: lookup failed|reconnecting in \d{1,6}s|connected|dropped a bad(?: TRUST)? message|census observer failed)/.exec(message);
   return category ? `feed: ${category[1]}` : 'feed: connection unavailable';
 }
 
@@ -176,10 +179,12 @@ export async function startRelay({
   now = Date.now,
   createServer = http.createServer,
   ptac = null, // runPtac() handle; /health reports its counts
+  census: censusOption = false, // true or a createCensus limits object: enable GET /census
 }) {
   const allowedAreas = configuredAreas(areas, area);
   const defaultArea = allowedAreas.includes(area) ? area : allowedAreas[0];
   const contexts = new Map();
+  const census = censusOption ? createCensus({ ...(typeof censusOption === 'object' ? censusOption : {}), configured: allowedAreas, now }) : null;
   const heartbeats = new Set();
   let closing;
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
@@ -226,6 +231,7 @@ export async function startRelay({
         topic,
         trustTopic,
         areas: allowedAreas,
+        onAnyEvents: census ? (events) => census.record(events) : null,
         heartbeat,
         backoff,
         // runFeed predates the HTTP boundary and may receive arbitrary exception text.
@@ -264,6 +270,7 @@ export async function startRelay({
       const refusal = requestFailure(req.headers.host, boundPort, req.method, req.headers.origin);
       if (refusal) return json(res, refusal, { error: refusal === 403 ? 'host not allowed' : 'GET only' });
       const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
+      if (url.pathname === '/census') return census ? json(res, 200, census.snapshot()) : json(res, 404, { error: 'not found' });
 
       let area;
       try {
