@@ -8,8 +8,13 @@
 // - The westward sightline from the summit camera (pt-kinnoull-panorama) is open: a massed tree whose top would rise above the line
 //   from the eye to the town is left out, so the ground falls away in front as England_and_Scotland_152 shows from the summit.
 // - Gorse: scrub at the summit clearing's edge and scattered over the opened slope (152: gorse clumps either side of the path).
+// - The cliff is bare: no wood or scrub on ground steeper than WOODLAND.cliff.slope within WOODLAND.cliff.reach m of an OSM cliff line
+//   (8703: grey rock with only a few small trees in its clefts; 4307: the pale face bare above the woods), so the ground's rock paint
+//   shows. Kinnoull's rock is paler than Waverley's dolerite (PERTH_ROCK_TONES).
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
+import type {Terrain} from '../../core/terrain.ts';
+import {slopeOf} from './waverley-city-ground.ts';
 import type {Tree, Woodland} from './waverley-city-ground.ts';
 
 /** The OSM peak (node/29621037) in the Perth frame. */
@@ -29,6 +34,7 @@ export const WOODLAND = {
     {share: .10, rgb: [.36, .30, .13]},  // bronzed
   ],
   gorseRgb: [.16, .22, .08],
+  cliff: {slope: 34, reach: 45},
 } as const;
 
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
@@ -49,7 +55,20 @@ export function sightHeight(x: number, z: number): number | undefined {
 }
 
 /** Kinnoull's woodland for buildWaverleyCityGround (options.woodland). */
-export function kinnoullWoodland(): Woodland {
+/** ASSUMED rock tones for Kinnoull's cliff (8703, 4307: pale grey andesite, lichen grey-green, cream and rust where it weathers). */
+export const PERTH_ROCK_TONES = ['#8a877f', '#7d7a72', '#96918a', '#6f6c66', '#86826f', '#9a9384', '#7a7466', '#8f8b80'] as const;
+
+const segDist = (x: number, z: number, a: Pt, b: Pt): number => {
+  const dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz, u = L ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L)) : 0;
+  return Math.hypot(x - a[0] - u * dx, z - a[1] - u * dz);
+};
+/** Is (x, z) on the cliff: steeper than WOODLAND.cliff.slope and within its reach of an OSM cliff line? */
+export function onCliff(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[], x: number, z: number): boolean {
+  if (slopeOf(ground, x, z) <= WOODLAND.cliff.slope) return false;
+  return cliffs.some(l => l.some((p, i) => i > 0 && segDist(x, z, l[i - 1]!, p) <= WOODLAND.cliff.reach));
+}
+
+export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): Woodland {
   const gorse: Pt[] = [], g = WOODLAND.gorse, [px, pz] = KINNOULL_PEAK;
   for (let a = 0; a < 360; a += 360 * g.step / (2 * Math.PI * g.inner)) for (const r of [g.inner, (g.inner + g.outer) / 2, g.outer]) {
     const x = px + r * Math.cos(a * Math.PI / 180), z = pz + r * Math.sin(a * Math.PI / 180);
@@ -62,6 +81,7 @@ export function kinnoullWoodland(): Woodland {
   return {
     size: (x, z, kind) => kind === 'scrub' ? 1 : WOODLAND.size[0] + (WOODLAND.size[1] - WOODLAND.size[0]) * (.6 * woodNoise(x, z) + .4 * hash(x, z, 31)),
     keep: (t: Tree) => {
+      if (onCliff(ground, cliffs, t.x, t.z)) return false;
       if (t.kind === 'wood' && !t.hanging && woodNoise(t.x, t.z) < WOODLAND.clump) return false;
       const s = sightHeight(t.x, t.z); if (s !== undefined && t.kind === 'wood' && t.y + t.height > s - WOODLAND.sight.clear) return false;
       return true;

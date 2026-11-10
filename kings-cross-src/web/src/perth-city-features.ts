@@ -23,7 +23,7 @@ import type {LanduseFile} from './waverley-city-ground.ts';
 import {rectangleOf} from './waverley-city-roofs.ts';
 import {fillSurface, shell} from './waverley-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
-import {KINNOULL_PEAK, kinnoullWoodland} from './perth-woodland.ts';
+import {KINNOULL_PEAK, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -54,8 +54,14 @@ export const PARAPET = 1.1;
 /** St John's Kirk: the spire's top above the pavement (HES LB39300: 155 ft); ASSUMED tower plan (m square), its parapet at `towerShare`
  *  of the spire's height, and the spire's lead. */
 export const KIRK_TOWER = {top: 47.24, side: 7.5, towerShare: .55, lead: [.43, .45, .47] as Rgb} as const;
-/** Kinnoull Tower: ASSUMED 12 m, about two and a half times its mapped width, as R-pt3-a (Kinnoull_Tower_-_geograph.org.uk_-_4307.jpg) shows it. */
-export const KINNOULL_TOWER = {id: PERTH_LIDAR_LANDMARKS.kinnoullTower.id, height: 12} as const;
+/** Kinnoull Tower from the LiDAR, not the OSM outline (way/323543760): the DSM shows only 3 m over the outline, open ground; 8.7 m
+ *  from its centre, on the same cliff-top ground, it shows one compact 10.5 m rise about 4.5 m across (16 one-metre cells over half
+ *  its rise; tools/build-perth-city-heights.ts towerNear). That is the tower 8703 and 4307 show: a round tower about two and a half
+ *  times as tall as it is wide, standing alone at the very edge of the cliff top. So the outline is offset by the 8.7 m and the tower is
+ *  drawn round (12 sides) at the LiDAR peak, its width from the cells, its height the rise. */
+const TOWER_NEAR = PERTH_LIDAR_LANDMARKS.kinnoullTower.near!;
+export const KINNOULL_TOWER = {id: PERTH_LIDAR_LANDMARKS.kinnoullTower.id, x: TOWER_NEAR.x, z: TOWER_NEAR.z, height: TOWER_NEAR.rise,
+  radius: Math.sqrt(TOWER_NEAR.cells / Math.PI), sides: 12} as const;
 export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
 /** ASSUMED: a mapped viewing place (OSM tourism=viewpoint) stands in the open, so no tree is filled within OUTLOOK_CLEAR m of it; and
  *  Kinnoull Hill's summit (the OSM peak, node/29621037, 222 m) is open grass and gorse for SUMMIT_OPEN m round it, the woods below it
@@ -112,7 +118,7 @@ export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: numbe
 /** The ground cover, trees and water; `footprints` are the outlines trees keep clear of; `uncovered` is ground P2 draws itself (the
  *  King's Place cut and the forecourt, perth-frontage-mask.ts), where the drape leaves a hole as it does over the railway bed. */
 export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
-  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(), uncovered});
+  const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs), rockTones: PERTH_ROCK_TONES, uncovered});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};
   // the water sheet: each OSM river polygon (less its islands) at the drape's level over the filled river, lifted WATER.lift

@@ -9,6 +9,7 @@ import {buildTerrainMesh, overMesh} from '../../core/terrain.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
 import {fillSurface, shell, walls} from './waverley-mesh.ts';
+import {prism} from './waverley-frontage-mesh.ts';
 import {buildWaverleyCity} from './waverley-city.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
@@ -92,7 +93,10 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   const kirk = data.buildings.find(b => b.id === PERTH_LIDAR_LANDMARKS.kirk.id);
   if (kirk) kirkTower(masonry, lead, kirk, ground.rangeUnder(kirk.outer, 4).min);
   const tower = data.buildings.find(b => b.id === KINNOULL_TOWER.id);
-  if (tower) { const base = ground.rangeUnder(tower.outer, 4).min; shell(masonry, tower.outer, () => base - .3, () => base + KINNOULL_TOWER.height); buildingIds.push(tower.id); heightBasis.ASSUMED++; }
+  if (tower) {
+    const {x, z, radius, height, sides} = KINNOULL_TOWER, base = ground.heightAt(x, z);
+    prism(masonry, x, z, radius, base - .3, base + height, sides); buildingIds.push(tower.id); heightBasis.LiDAR++;
+  }
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
   const iron = own(material('steel').clone() as THREE.MeshLambertMaterial); iron.color.setHex(0x3c4446);
   const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));

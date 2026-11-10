@@ -6,11 +6,11 @@ import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { PERTH_TERRAIN_EXTENT } from '../../tools/build-perth-terrain.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_LIDAR_LANDMARKS, perthCityHeight } from '../src/perth-city-heights.ts';
-import { KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
+import { KINNOULL_TOWER, KIRK_TOWER, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { perthBuildingHeight } from '../src/perth-city.ts';
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
-import { KINNOULL_PEAK, WOODLAND, sightHeight } from '../src/perth-woodland.ts';
+import { KINNOULL_PEAK, WOODLAND, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { Batch } from '../src/materials.ts';
 import { clearAir, fogFar } from "../src/atmosphere.ts";
 import type { Haze } from "../src/atmosphere.ts";
@@ -49,7 +49,7 @@ test('the Tay is OSM water drawn over the DTM\'s filled river, never under it', 
   for (const [o] of PERTH_LANDUSE.areas.water) {
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity; for (const [x, z] of o!) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
     for (let x = Math.ceil(x0 / 16) * 16; x <= x1; x += 16) for (let z = Math.ceil(z0 / 16) * 16; z <= z1; z += 16) {
-      if (x <= -1200 || x >= 2624 || z <= -1200 || z >= 912) continue;
+      if (x <= PERTH_CITY_EXTENT.x0 || x >= PERTH_CITY_EXTENT.x1 || z <= PERTH_CITY_EXTENT.z0 || z >= PERTH_CITY_EXTENT.z1) continue;
       ray.set(new THREE.Vector3(x, 500, z), down); const hit = ray.intersectObject(water)[0]; if (!hit) continue; n++;
       const y = scene.terrain.heightAt(x, z); if (y > level(x, z) + .25) continue; river++;
       if (hit.point.y < y + PERTH_DRAPE + .05) below++;
@@ -146,6 +146,23 @@ test('Kinnoull\'s woods are broken mixed woodland, open westward from the summit
   // gorse at the clearing's edge (England_and_Scotland_152)
   const edge = gorse.filter(t => { const d = Math.hypot(t.x - px, t.z - pz); return d >= WOODLAND.gorse.inner - 10 && d <= WOODLAND.gorse.outer + 10; });
   assert.ok(edge.length > 30, `gorse at the summit clearing's edge: ${edge.length}`);
+  // the cliff is bare rock (8703, 4307): no crown on its steep ground beside the OSM cliff line, and Kinnoull's paler rock is used
+  const onIt = hill.filter(t => onCliff(scene.terrain, PERTH_LANDUSE.cliffs, t.x, t.z));
+  assert.equal(onIt.length, 0, `crowns on the cliff: ${onIt.length}`);
+  let face = 0; for (let x = 2400; x < 2620; x += 8) for (let z = 260; z < 380; z += 8) if (onCliff(scene.terrain, PERTH_LANDUSE.cliffs, x, z)) face++;
+  assert.ok(face > 40, `the cliff below the tower is steep ground by the OSM line: ${face} points`);
+});
+
+test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {
+  const L = PERTH_LIDAR_LANDMARKS.kinnoullTower, tower = data.buildings.find(b => b.id === L.id)!;
+  assert.ok(L.rise < 5, `the OSM outline itself is open ground in the DSM: ${L.rise} m`);
+  const cx = tower.outer.reduce((a, p) => a + p[0], 0) / tower.outer.length, cz = tower.outer.reduce((a, p) => a + p[1], 0) / tower.outer.length;
+  assert.ok(Math.hypot(KINNOULL_TOWER.x - cx, KINNOULL_TOWER.z - cz) < 15, 'the LiDAR tower within 15 m of the mapped outline');
+  assert.equal(KINNOULL_TOWER.height, L.near!.rise, 'the drawn height is the DSM rise, not an assumption');
+  const ratio = KINNOULL_TOWER.height / (2 * KINNOULL_TOWER.radius);
+  assert.ok(ratio > 1.8 && ratio < 3.2, `height over width as 8703 and 4307 show it (about 2.5): ${ratio.toFixed(2)}`);
+  // the tower's base is the cliff top, not the face below it
+  assert.ok(Math.abs(scene.terrain.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z) - scene.terrain.heightAt(cx, cz)) < 8, 'on the cliff top');
 });
 
 test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 triangles in 2 meshes)', () => {

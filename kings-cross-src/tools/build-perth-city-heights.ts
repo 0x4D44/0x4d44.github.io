@@ -38,6 +38,26 @@ export async function peakOf(lidar: Lidar, b: Pick<WaverleyArea, 'outer' | 'hole
   return { ...best, ground: quantile(ground, 0.1), p90: quantile(surface, 0.9) };
 }
 
+/** A structure the DSM resolves beside its OSM outline (Kinnoull Tower: the mapped outline shows 3 m, open ground): the greatest DSM
+ *  rise above the DTM on a 1 m lattice within `reach` m of the outline's centre, over ground within `level` m of the outline's own
+ *  ground (so trees on the cliff face below do not count), and its width (lattice cells within 3 m of the peak rising over half its
+ *  rise). */
+export async function towerNear(lidar: Lidar, b: Pick<WaverleyArea, 'outer' | 'holes'>, reach = 20, level = 3): Promise<{ x: number; z: number; rise: number; ground: number; cells: number; offset: number }> {
+  let cx = 0, cz = 0; for (const [x, z] of b.outer) { cx += x; cz += z; } cx /= b.outer.length; cz /= b.outer.length;
+  const base: number[] = []; for (const [x, z] of footprintLattice(b).pts) { const g = await lidar.dtm(x, z); if (g !== null) base.push(g); }
+  const g0 = quantile(base, 0.5);
+  let best = { x: cx, z: cz, rise: -Infinity, ground: g0 };
+  for (let dx = -reach; dx <= reach; dx++) for (let dz = -reach; dz <= reach; dz++) {
+    if (Math.hypot(dx, dz) > reach) continue;
+    const x = Math.round(cx) + dx, z = Math.round(cz * 2) / 2 + dz, [s, g] = await Promise.all([lidar.dsm(x, z), lidar.dtm(x, z)]);
+    if (s === null || g === null || Math.abs(g - g0) > level) continue;
+    if (s - g > best.rise) best = { x, z, rise: s - g, ground: g };
+  }
+  let cells = 0;
+  for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) { const [s, g] = await Promise.all([lidar.dsm(best.x + dx, best.z + dz), lidar.dtm(best.x + dx, best.z + dz)]); if (s !== null && g !== null && s - g > best.rise / 2) cells++; }
+  return { ...best, cells, offset: Math.hypot(best.x - cx, best.z - cz) };
+}
+
 export async function openPerthLidar(cache: string): Promise<Lidar> {
   await mkdir(cache, { recursive: true });
   const ostnPath = path.join(cache, 'ostn15.tif');
@@ -100,12 +120,17 @@ async function main(): Promise<void> {
     accessed,
     method: 'Phase I 1 m DSM minus DTM per ASSUMED-height OSM block: h = 90th-percentile DSM inside the footprint (1 m lattice, 1 m in from the walls) above the 10th-percentile DTM over it; r = h minus the median surface, kept above 6 m; method in tools/build-waverley-city-heights.ts, driver tools/build-perth-city-heights.ts',
   };
-  const landmarks: Record<string, { id: string; x: number; z: number; rise: number; body: number }> = {};
+  const landmarks: Record<string, { id: string; x: number; z: number; rise: number; body: number; near?: { x: number; z: number; rise: number; cells: number; offset: number } }> = {};
   for (const [key, id] of Object.entries(PERTH_LIDAR_LANDMARKS)) {
     const b = scene.buildings.find(q => q.id === id); if (!b) throw new Error(`${id} not in the scene`);
     const p = await peakOf(lidar, b), r = (v: number) => Math.round(v * 10) / 10;
     landmarks[key] = { id, x: r(p.x), z: r(p.z), rise: r(p.top - p.ground), body: r(p.p90 - p.ground) };
     console.log(`landmark ${key} ${id}: peak ${r(p.top - p.ground)} m above ground at ${r(p.x)}, ${r(p.z)}; 90th percentile ${r(p.p90 - p.ground)} m`);
+    if (key === 'kinnoullTower') {
+      const t = await towerNear(lidar, b);
+      landmarks[key]!.near = { x: r(t.x), z: r(t.z), rise: r(t.rise), cells: t.cells, offset: r(t.offset) };
+      console.log(`landmark ${key} ${id}: LiDAR tower ${r(t.rise)} m at ${r(t.x)}, ${r(t.z)} (${t.cells} cells over half), ${r(t.offset)} m from the outline's centre`);
+    }
   }
   const json = JSON.stringify({ ...encodeCityHeights(kept, source), landmarks }) + '\n';
   await mkdir(path.dirname(out), { recursive: true }); await writeFile(out, json);

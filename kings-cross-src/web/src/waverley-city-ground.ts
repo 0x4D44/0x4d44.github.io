@@ -205,7 +205,7 @@ export function mownLawns(LANDUSE:Landuse=WAVERLEY_LANDUSE):Ring[][]{
  *  pedestrian, the rest residential, unclassified and service. ASSUMED shades. */
 export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&&width<6?GROUND_COLOURS.setts:GROUND_COLOURS.lane;
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
-function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse):THREE.CanvasTexture|null{
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -217,7 +217,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)]=slopeAt(x+cell/2,z+cell/2);
  // Unmapped ground steeper than UNMAPPED_ROCK_DEG is rough rock, not paving: nothing is paved at that pitch (round 3 drew the paving tone
  // on the Castle's summit bank as a pale slab). Mapped land use paints over it.
- for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)if(slope(x,z)>UNMAPPED_ROCK_DEG){g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell)if(slope(x,z)>UNMAPPED_ROCK_DEG){g.fillStyle=TONES[Math.floor(hash(x,z,11)*TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);}
  const A=LANDUSE.areas;
  for(const [k,col]of [['park',GROUND_COLOURS.park],['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',GROUND_COLOURS.water],['rock',GROUND_COLOURS.rock]] as const){
   g.fillStyle=col;for(const rs of A[k]){path(rs);g.fill('evenodd');}
@@ -230,7 +230,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
  // The crag is not one tone (R-wv3-a): dark dolerite, paler weathered faces, grey lichen and moss on the ledges, each 4 m cell one of
  // ROCK_TONES by a seeded hash, then broken by short dark joints running down the fall line.
- for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillStyle=ROCK_TONES[Math.floor(hash(x,z,11)*ROCK_TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
+ for(let x=x0;x<x1;x+=cell)for(let z=z0;z<z1;z+=cell){const a=slope(x,z);if(a>ROCK_SLOPE_DEG){g.globalAlpha=Math.min(1,(a-ROCK_SLOPE_DEG)/10)*.9;g.fillStyle=TONES[Math.floor(hash(x,z,11)*TONES.length)];g.fillRect((x-x0)*s,(z-z0)*s,cell*s+.5,cell*s+.5);
   if(a>ROCK_SLOPE_DEG+8&&hash(x,z,12)<.5){const n=ground.normalAt(x,z,4),l=Math.hypot(n[0],n[2])||1;g.strokeStyle='rgba(25,22,20,0.55)';g.lineWidth=.6*s;g.beginPath();g.moveTo((x+2-x0)*s,(z+2-z0)*s);g.lineTo((x+2+n[0]/l*5-x0)*s,(z+2+n[2]/l*5-z0)*s);g.stroke();}}}
  // The steepest cells (over CLIFF_FACE_DEG) are the cliff faces themselves: shadowed and wet-streaked, so the crag reads as rock steps
  // between ledges, not one ramp (R-wv3-a, R-wv3-d2: the dark vertical faces of Castle Rock and the Calton crags). ASSUMED tone.
@@ -272,7 +272,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[]}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -285,7 +285,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(ground,slopeAt,LANDUSE);
+ const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
  // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
  // low roofs and building bases scene-wide (round 5)
