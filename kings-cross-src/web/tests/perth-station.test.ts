@@ -274,18 +274,34 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   assert.ok(c4 && plan.clocks.some(c => c.ref === '5'), 'the platform 4 and 5 clocks');
   const f = batches.fittings, col = f.colors, p = f.positions, is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6; };
   const near = (i: number, c: {at: Pt}, r: number): boolean => { const q = toLocal([p[i], p[i + 2]]); return Math.hypot(q[0] - c.at[0], q[1] - c.at[1]) < r; };
+  // Round 5: platform 4's clock hangs C.hang past the stage's face, its dial centre C.hangHeight over the deck.
+  const reach = C.stage[1] + C.hang + C.case[0];
   let maroon = 0, timber = 0, face = 0, marks = 0, stray = 0;
   for (let i = 0; i < p.length; i += 3) {
     if (is(i, PERTH_PAINT.kioskMaroon)) { if (near(i, c4!, C.kiosk[0])) { maroon++; assert.ok(p[i + 1] <= deck + C.kiosk[2] + 1e-6, 'the kiosk stays under its cornice'); } else stray++; }
     if (is(i, PERTH_PAINT.timber) && near(i, c4!, C.kiosk[0]) && p[i + 1] > deck + C.stage[2] - .01) timber++;
-    if (is(i, PERTH_PAINT.clockFace) && near(i, c4!, C.out + C.case[0]) && Math.abs(p[i + 1] - (deck + C.height)) <= C.radius + 1e-6) face++;
-    if (is(i, PERTH_PAINT.clockCase) && near(i, c4!, C.out + C.case[0]) && Math.abs(p[i + 1] - (deck + C.height)) <= C.radius) marks++;
+    if (is(i, PERTH_PAINT.clockFace) && near(i, c4!, reach) && Math.abs(p[i + 1] - (deck + C.hangHeight)) <= C.radius + 1e-6) face++;
+    if (is(i, PERTH_PAINT.clockCase) && near(i, c4!, reach) && Math.abs(p[i + 1] - (deck + C.hangHeight)) <= C.radius) marks++;
   }
   assert.ok(maroon > 0 && stray === 0, `the maroon kiosk under the platform 4 clock only (${maroon}, stray ${stray})`);
   assert.ok(timber >= 24, `the timber stage and case over it (${timber})`);
   assert.ok(face >= 32, `two dials (${face})`);
   assert.ok(marks >= 2 * 12 * 24, `twelve hour marks and two hands on each dial (${marks})`);
   for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
+  // Round 5 (the round-4 score): the kiosk low and brown, not a tall maroon block; a door in its end; the stage's lights glazed, not
+  // black; the clock hung past the stage's face on its bracket, not sat on it.
+  const kh = PERTH_PAINT.kioskMaroon, kr = kh >> 16, kg = (kh >> 8) & 255, kb = kh & 255;
+  assert.ok(C.kiosk[2] <= 2.4 && kr > kg && kg - kb > 12, `a low brown kiosk (${C.kiosk[2]} m, ${PERTH_PAINT.kioskMaroon.toString(16)})`);
+  let door = 0, glass = 0, inFront = 0, behind = 0;
+  for (let i = 0; i < p.length; i += 3) {
+    if (!near(i, c4!, reach)) continue;
+    if (is(i, PERTH_PAINT.timberDark) && Math.abs(p[i + 1] - (deck + C.door[1])) < 1e-6) door++;
+    if (is(i, PERTH_PAINT.kioskGlass)) glass++;
+    if (is(i, PERTH_PAINT.clockFace)) { const q = toLocal([p[i], p[i + 2]]), o = (q[0] - c4!.at[0]) * c4!.out[0] + (q[1] - c4!.at[1]) * c4!.out[1]; if (o > C.stage[1] + .05) inFront++; else behind++; }
+  }
+  assert.ok(door >= 4, `a door in the kiosk's end (${door})`);
+  assert.ok(glass >= 6 * 24, `the stage's lights glazed (${glass})`);
+  assert.ok(inFront > 0 && behind === 0, `the dials hang past the stage's face (${inFront} past, ${behind} over it)`);
 });
 
 test('round 5: the island building as R-pt1-a/a2: its south end in clear view of pt-platform-4-north, arched doorways, grey-buff ashlar', () => {

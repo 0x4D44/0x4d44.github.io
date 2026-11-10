@@ -187,7 +187,10 @@ export const PERTH_STATION = {
   /** Bracket clocks on the island building (R-pt1-a2): a 0.9 m Roman dial in a timber case `case` (along the wall, out, high) whose
    *  dial centre stands `height` over the deck, `out` from the wall. On platform 4 (R-pt1-a2) the case sits on a glazed timber stage
    *  `stage` (along, out, from, to over the deck) over a timber kiosk `kiosk` (along, out, high). All sizes ASSUMED from the photo. */
-  clock: {radius: .45, height: 5.2, out: 1.0, case: [1.2, .5, 1.3] as const, stage: [2.2, 1.3, 2.8, 4.45] as const, kiosk: [2.6, 1.6, 2.6] as const, kioskRef: '4'},
+  clock: {radius: .45, height: 5.2, out: 1.0, case: [1.2, .5, 1.3] as const, stage: [2.2, 1.3, 2.5, 4.2] as const, kiosk: [2.6, 1.6, 2.3] as const, kioskRef: '4',
+    /** Round 5 (R-pt1-a2): platform 4's clock hangs `hang` m out past the stage's face on its coved bracket, dial centre `hangHeight` over
+     *  the deck, beside the stage's top rather than on it; the kiosk a door `door` (wide, high) in its end. */
+    hang: .6, hangHeight: 4.5, door: [.8, 2.0] as const},
   /** Furniture, ASSUMED sizes scaled from R-pt1-a (benches against the building's doors) and R-pt1-c:
    *  - benches 1.8 m long, their seat 0.45 m up, standing benchOff m out from the wall;
    *  - the kiosk 4.2 m along the wall, 2.2 m out, 3.2 m to its eaves, centred near x' = kioskAlong;
@@ -240,7 +243,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, deckSoffit: 0xa99d8e, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, deckSoffit: 0xa99d8e, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -941,32 +944,41 @@ function bayRoof(glass: Batch, strips: Batch, iron: Batch, plan: PerthStationPla
 function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}): void {
   const C = PERTH_STATION.clock, deck = WAVERLEY_LEVELS.platform, o = c.out, w: Pt = [-o[1], o[0]], rotY = Math.atan2(-o[1], o[0]);
   const at = (out: number, y: number, along = 0): V3 => [c.at[0] + o[0] * out + w[0] * along, y, c.at[1] + o[1] * out + w[1] * along];
-  const timber = P('timber'), dark = P('timberDark'), glass = P('screen');
-  if (c.ref === C.kioskRef) {
-    // The kiosk: maroon timber panels to the counter, a dark glazed band, a cornice; then the glazed stage, framed in timber.
-    const [kw, kd, kh] = C.kiosk, [sw, sd, s0, s1] = C.stage;
+  const timber = P('timber'), dark = P('timberDark'), glass = P('kioskGlass'), kiosk = c.ref === C.kioskRef;
+  // Where the case hangs: platform 4's past the stage's face (C.hang), the others C.out from the wall; and from where its bracket springs.
+  const out = kiosk ? C.stage[1] + C.hang : C.out, from = kiosk ? C.stage[1] : 0, yc = deck + (kiosk ? C.hangHeight : C.height);
+  if (kiosk) {
+    // Round 5 (R-pt1-a2): a low brown timber kiosk, framed panels below a glazed band and a cornice, a door in its end; over it a glazed
+    // timber stage, its lights framed by mullions and rails.
+    const [kw, kd, kh] = C.kiosk, [sw, sd, s0, s1] = C.stage, [dw, dh] = C.door;
     b.box(at(kd / 2, deck + kh / 2), [kd, kh, kw], {rotY, color: P('kioskMaroon')});
-    for (const e of [-1, 1]) b.box(at(kd / 2, deck + 1.75, e * (kw / 2 + .01)), [kd - .3, .5, .02], {rotY, color: glass});
-    b.box(at(kd + .01, deck + 1.75), [.02, .5, kw - .3], {rotY, color: glass});
-    b.box(at(kd / 2 + .05, deck + kh + .1, 0), [kd + .1, .2, kw + .2], {rotY, color: dark});
+    for (const k of [-1, 0, 1]) b.box(at(kd + .01, deck + .55), [.03, .7, kw / 3 - .2], {rotY, color: dark}), b.box(at(kd + .015, deck + .55, k * kw / 3), [.03, .55, kw / 3 - .35], {rotY, color: P('kioskMaroon')});
+    b.box(at(kd + .01, deck + 1.55), [.02, .7, kw - .3], {rotY, color: glass});
+    for (const k of [-1, 0, 1]) b.box(at(kd + .03, deck + 1.55, k * (kw - .3) / 2), [.05, .76, .07], {rotY, color: dark});
+    b.box(at(kd / 2 + .05, deck + kh + .08, 0), [kd + .12, .16, kw + .2], {rotY, color: dark});
+    b.box(at(kd / 2, deck + dh / 2, kw / 2 + .01), [dw, dh, .03], {rotY, color: dark});
+    b.box(at(kd / 2, deck + dh / 2, kw / 2 + .02), [dw - .2, dh - .2, .03], {rotY, color: P('kioskMaroon')});
     b.box(at(sd / 2, deck + (s0 + s1) / 2), [sd, s1 - s0, sw], {rotY, color: timber});
-    // Two tiers of small lights round the stage's three open faces.
-    for (const y of [deck + s0 + .45, deck + s0 + 1.15]) {
-      for (const e of [-1, 1]) b.box(at(sd / 2, y, e * (sw / 2 + .01)), [sd - .3, .5, .02], {rotY, color: glass});
-      for (const k of [-1, 0, 1]) b.box(at(sd + .01, y, k * .65), [.02, .5, .5], {rotY, color: glass});
+    // The stage's lights: two tiers across its face and ends, each light in a frame of mullions and rails.
+    const tiers = [deck + s0 + .1, deck + (s0 + s1) / 2 + .05], lh = (s1 - s0) / 2 - .25;
+    for (const y of tiers) {
+      b.box(at(sd + .01, y + lh / 2), [.02, lh, sw - .2], {rotY, color: glass});
+      for (const e of [-1, 1]) b.box(at(sd / 2, y + lh / 2, e * (sw / 2 + .01)), [sd - .3, lh, .02], {rotY, color: glass});
+      for (let k = 0; k <= 3; k++) b.box(at(sd + .03, y + lh / 2, -sw / 2 + .1 + k * (sw - .2) / 3), [.05, lh + .08, .07], {rotY, color: timber});
+      b.box(at(sd + .03, y - .04), [.05, .08, sw - .1], {rotY, color: timber});
     }
     b.box(at(sd / 2 + .05, deck + s1 + .08, 0), [sd + .1, .16, sw + .2], {rotY, color: dark});
   }
-  // The case, on a coved bracket from the wall (stepped), under a moulded hood and pediment.
-  const [cw, cd, ch] = C.case, yc = deck + C.height, p = at(C.out, yc);
-  b.box(p, [cd, ch, cw], {rotY, color: timber});
-  for (let k = 0; k < 4; k++) b.box(at(C.out * (k + 1) / 8, yc - ch / 2 - .1 - k * .12), [C.out * (k + 1) / 4, .12, cw * (.9 - k * .15)], {rotY, color: dark});
-  b.box(at(C.out, yc + ch / 2 + .06), [cd + .14, .12, cw + .14], {rotY, color: dark});
-  b.poly([at(C.out, yc + ch / 2 + .12, -cw / 2), at(C.out, yc + ch / 2 + .12, cw / 2), at(C.out, yc + ch / 2 + .42, 0)], undefined, {facing: [o[0], 0, o[1]], color: dark});
-  b.box(at(C.out / 2, yc + ch / 2 - .1), [C.out, .1, .1], {rotY, color: P('iron')});
+  // The case, on a stepped coved bracket springing from the wall (or the stage's face), under a moulded hood and pediment.
+  const [cw, cd, ch] = C.case, reach = out - from;
+  b.box(at(out, yc), [cd, ch, cw], {rotY, color: timber});
+  for (let k = 0; k < 4; k++) b.box(at(from + reach * (k + 1) / 8, yc - ch / 2 - .1 - k * .12), [reach * (k + 1) / 4, .12, cw * (.9 - k * .15)], {rotY, color: dark});
+  b.box(at(out, yc + ch / 2 + .06), [cd + .14, .12, cw + .14], {rotY, color: dark});
+  b.poly([at(out, yc + ch / 2 + .12, -cw / 2), at(out, yc + ch / 2 + .12, cw / 2), at(out, yc + ch / 2 + .42, 0)], undefined, {facing: [o[0], 0, o[1]], color: dark});
+  b.box(at(out / 2, yc + ch / 2 - .1), [out, .1, .1], {rotY, color: P('iron')});
   for (const s of [-1, 1]) {
     // The dial on each end of the case, facing along the wall, with twelve hour marks (Roman numerals at this scale).
-    const ctr = (r: number, a: number, lift: number): V3 => { const q = at(C.out + Math.cos(a) * r, yc + Math.sin(a) * r, s * (cw / 2 + lift)); return q; };
+    const ctr = (r: number, a: number, lift: number): V3 => at(out + Math.cos(a) * r, yc + Math.sin(a) * r, s * (cw / 2 + lift));
     b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius + .06, k / 16 * Math.PI * 2, .01)), undefined, {facing: [s * w[0], 0, s * w[1]], color: dark});
     b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius, k / 16 * Math.PI * 2, .02)), undefined, {facing: [s * w[0], 0, s * w[1]], color: P('clockFace')});
     for (let h = 0; h < 12; h++) {
@@ -1114,10 +1126,11 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
       const open = (u: number): boolean => !plan.clear.some(r => inRect([a[0] + (b[0] - a[0]) * u / len, a[1] + (b[1] - a[1]) * u / len], r, .3));
       for (let u = 0; u < len - 1e-9; u += C.lattice) {
         const u1 = Math.min(len, u + C.lattice); if (!open((u + u1) / 2)) continue;
-        for (const y of [y0 + .03, y0 + h - .03]) beam(fittings, at(u, y), at(u1, y), .05, .06, white);
+        // Round 5: bold enough to read white from the far views (round 4's 4-6 cm bars read as a faint grey texture).
+        for (const y of [y0 + .05, y0 + h - .05]) beam(fittings, at(u, y), at(u1, y), .08, .12, white);
         // Two flats per cell, corner to corner, so the cells read as diamonds where they meet.
-        beam(fittings, at(u, y0), at(u1, y0 + h), .04, .04, white);
-        beam(fittings, at(u, y0 + h), at(u1, y0), .04, .04, white);
+        beam(fittings, at(u, y0), at(u1, y0 + h), .07, .06, white);
+        beam(fittings, at(u, y0 + h), at(u1, y0), .07, .06, white);
       }
     }
   }
