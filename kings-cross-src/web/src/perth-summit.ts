@@ -1,8 +1,8 @@
 // P3 round 3, C2: the summit's foreground. pt-kinnoull-panorama stands in the summit clearing, and its lower 40% was the land-use
 // drape's paint at about 1.8 m a pixel (a 2048 px canvas over the 3.7 km cut): a smooth grey-brown smear. England_and_Scotland_152 shows
 // grass, a worn path, gorse and stones from the same place. So the clearing gets its own ground: a disc of SUMMIT.patch m round the
-// eye on a SUMMIT.step m lattice, at SUMMIT.lift m over the drawn ground, with its own canvas at SUMMIT.px over the disc (about 0.35 m a
-// pixel). The main drape leaves a hole of SUMMIT.hole m (buildWaverleyCityGround's `uncovered`), inside the patch, so the two never lie
+// eye on a SUMMIT.step m lattice, at SUMMIT.lift m over the drawn ground and seated so no facet dips under it, with its own canvas at SUMMIT.px over the disc (about 0.35 m a
+// pixel). The main drape leaves a hole of SUMMIT.hole m on gentle ground (buildWaverleyCityGround's `uncovered`), inside the patch, so the two never lie
 // on each other except in the patch's outer ring, where the drape stands over it.
 // Painted: rough grass in blotches of two greens and straw, tufts as short strokes, gorse clumps, worn earth round the eye, the
 // mapped paths (OSM, PERTH_LANDUSE.paths) as trodden earth with grass edges, and scattered stones. All tones, sizes and counts ASSUMED,
@@ -11,9 +11,10 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {KINNOULL_EYE} from './perth-woodland.ts';
+import {seatDrape, slopeOf} from './waverley-city-ground.ts';
 
 export const SUMMIT = {
-  hole: 150, patch: 175, step: 6, lift: .12, px: 1024,
+  hole: 150, patch: 175, step: 6, lift: .12, px: 1024, maxSlope: 40, margin: 9,
   grass: ['#5b7431', '#4f6a2a', '#6d7a3a', '#7a7444'] as const, tuft: ['rgba(40,58,22,0.55)', 'rgba(150,150,90,0.45)'] as const, tufts: 9000,
   gorse: {count: 70, r: [1.2, 3] as const, tone: '#3a4a1c', bloom: 'rgba(200,170,40,0.35)'},
   worn: {r: 14, tone: 'rgba(120,104,80,0.55)'}, path: {tone: '#8a6a48', edge: 'rgba(90,100,60,0.6)'},
@@ -23,14 +24,24 @@ export const SUMMIT = {
 const hash = (x: number, z: number, k: number): number => { const s = Math.sin(x * 12.9898 + z * 78.233 + k * 37.719) * 43758.5453; return s - Math.floor(s); };
 /** The summit patch's centre: the panorama's eye in plan. */
 export const SUMMIT_CENTRE: Pt = [KINNOULL_EYE.pos[0], KINNOULL_EYE.pos[2]];
-/** Is (x, z) in the hole the main drape leaves for the summit patch? */
-export const inSummitHole = (x: number, z: number): boolean => Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) < SUMMIT.hole;
+/** Is (x, z) in the hole the main drape leaves for the summit patch? Within SUMMIT.hole m of the eye, where the ground at it and
+ *  SUMMIT.margin m round it is no steeper than SUMMIT.maxSlope degrees: the cliff's brink, south of the summit, stays the drape's
+ *  (6 m facets cannot follow it), and the margin keeps the hole inside the patch's gentle cells. */
+export const inSummitHole = (ground: Pick<Terrain, 'heightAt'>, x: number, z: number): boolean => {
+  if (Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]) >= SUMMIT.hole) return false;
+  const m = SUMMIT.margin;
+  for (const [dx, dz] of [[0, 0], [m, 0], [-m, 0], [0, m], [0, -m], [m, m], [m, -m], [-m, m], [-m, -m]] as const) if (slopeOf(ground, x + dx, z + dz) > SUMMIT.maxSlope) return false;
+  return true;
+};
 
 /** The summit patch's mesh data and its painter (the paint is browser only). */
-export function summitGround(ground: Pick<Terrain, 'heightAt'>, paths: readonly {width: number; line: readonly Pt[]}[]): {geometry: THREE.BufferGeometry; texture: THREE.CanvasTexture | null} {
+export function summitGround(ground: Pick<Terrain, 'heightAt' | 'extent'>, paths: readonly {width: number; line: readonly Pt[]}[]): {geometry: THREE.BufferGeometry; texture: THREE.CanvasTexture | null} {
   const S = SUMMIT, [cx, cz] = SUMMIT_CENTRE, R = S.patch, n = Math.ceil(2 * R / S.step) + 1, x0 = cx - R, z0 = cz - R;
   const pos: number[] = [], uv: number[] = [], idx: number[] = [], id = new Int32Array(n * n).fill(-1);
   const inside = (i: number, j: number) => Math.hypot(x0 + i * S.step - cx, z0 + j * S.step - cz) <= R;
+  // a cell is the patch's if its corners are on the disc and none is steeper than SUMMIT.maxSlope (the hole keeps SUMMIT.margin m
+  // inside these, so the patch covers it all)
+  const gentle = (i: number, j: number) => [[i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1]].every(([a, b]) => slopeOf(ground, x0 + a! * S.step, z0 + b! * S.step) <= S.maxSlope);
   const v = (i: number, j: number) => {
     const k = j * n + i; if (id[k]! >= 0) return id[k]!;
     const x = x0 + i * S.step, z = z0 + j * S.step;
@@ -38,12 +49,14 @@ export function summitGround(ground: Pick<Terrain, 'heightAt'>, paths: readonly 
     return (id[k] = pos.length / 3 - 1);
   };
   for (let j = 0; j + 1 < n; j++) for (let i = 0; i + 1 < n; i++) {
-    if (!(inside(i, j) && inside(i + 1, j) && inside(i, j + 1) && inside(i + 1, j + 1))) continue;
+    if (!(inside(i, j) && inside(i + 1, j) && inside(i, j + 1) && inside(i + 1, j + 1) && gentle(i, j))) continue;
     const a = v(i, j), b = v(i + 1, j), c = v(i + 1, j + 1), d = v(i, j + 1);
     idx.push(a, d, c, a, c, b);
   }
+  // seated as the drape is (seatDrape): the 6 m facets would cut chords under the convex summit, and the bare ground showed through
+  const P = new Float32Array(pos); seatDrape(P, idx, ground);
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geometry.setAttribute('position', new THREE.BufferAttribute(P, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geometry.setIndex(idx); geometry.computeVertexNormals();
   return {geometry, texture: paintSummit(paths)};

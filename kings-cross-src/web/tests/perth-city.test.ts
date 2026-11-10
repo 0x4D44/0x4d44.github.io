@@ -256,20 +256,34 @@ test('the summit clearing has its own close ground under the panorama, in a hole
   assert.ok(patch, 'the summit patch');
   let city = false; patch.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
   const P = patch.geometry.getAttribute('position'), U = patch.geometry.getAttribute('uv');
-  let far = 0;
+  let far = 0; const ups: number[] = [];
   for (let i = 0; i < P.count; i++) {
     const x = P.getX(i), z = P.getZ(i), d = Math.hypot(x - SUMMIT_CENTRE[0], z - SUMMIT_CENTRE[1]); far = Math.max(far, d);
-    assert.ok(Math.abs(P.getY(i) - scene.terrain.heightAt(x, z) - SUMMIT.lift) < 1e-3, 'on the drawn ground, lifted');
+    const up = P.getY(i) - scene.terrain.heightAt(x, z); ups.push(up); assert.ok(up >= SUMMIT.lift - 1e-3 && up < 2.5, `on the drawn ground, lifted: ${up.toFixed(2)}`);
     assert.ok(U.getX(i) >= 0 && U.getX(i) <= 1 && U.getY(i) >= 0 && U.getY(i) <= 1, 'one canvas over the disc');
   }
+  assert.ok(ups.filter(u => u < .5).length > .95 * ups.length, 'seated close: most corners within 0.5 m of the ground');
   assert.ok(far > SUMMIT.hole + SUMMIT.step && far <= SUMMIT.patch + 1e-6, `the patch reaches past the hole: ${far.toFixed(1)}`);
+  // no facet dips under the drawn ground (round 3's capture showed the bare ground through the patch's chords on the convex summit)
+  const PI = patch.geometry.getIndex()!;
+  for (let i = 0; i < PI.count; i += 3) for (const [u, w] of [[1 / 3, 1 / 3], [.5, 0], [0, .5], [.5, .5]] as const) {
+    const [a, b, c] = [PI.getX(i), PI.getX(i + 1), PI.getX(i + 2)], s = 1 - u - w;
+    const x = P.getX(a) * s + P.getX(b) * u + P.getX(c) * w, z = P.getZ(a) * s + P.getZ(b) * u + P.getZ(c) * w, y = P.getY(a) * s + P.getY(b) * u + P.getY(c) * w;
+    assert.ok(y > scene.terrain.heightAt(x, z), `facet over the ground at ${x.toFixed(0)}, ${z.toFixed(0)}: ${(y - scene.terrain.heightAt(x, z)).toFixed(2)}`);
+  }
   // the drape leaves the hole: no drape triangle with a corner inside it
   const cover = scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh, cp = cover.geometry.getAttribute('position'), ci = cover.geometry.getIndex()!;
-  let over = 0; for (let i = 0; i < ci.count; i++) if (inSummitHole(cp.getX(ci.getX(i)), cp.getZ(ci.getX(i)))) over++;
+  let over = 0; for (let i = 0; i < ci.count; i++) if (inSummitHole(scene.terrain, cp.getX(ci.getX(i)), cp.getZ(ci.getX(i)))) over++;
   assert.equal(over, 0, `drape corners in the summit hole: ${over}`);
-  // the panorama's eye stands over it
+  // the panorama's eye stands over it, and the patch covers the whole hole: no gap where neither it nor the drape is drawn
   const ray = new THREE.Raycaster(new THREE.Vector3(KINNOULL_EYE.pos[0], 400, KINNOULL_EYE.pos[2]), new THREE.Vector3(0, -1, 0));
   assert.ok(ray.intersectObject(patch).length > 0, 'the patch is under the panorama\'s eye');
+  let holes = 0, gaps = 0;
+  for (let x = SUMMIT_CENTRE[0] - SUMMIT.hole; x <= SUMMIT_CENTRE[0] + SUMMIT.hole; x += 10) for (let z = SUMMIT_CENTRE[1] - SUMMIT.hole; z <= SUMMIT_CENTRE[1] + SUMMIT.hole; z += 10) {
+    if (!inSummitHole(scene.terrain, x, z)) continue; holes++;
+    ray.set(new THREE.Vector3(x, 400, z), new THREE.Vector3(0, -1, 0)); if (!ray.intersectObject(patch).length) gaps++;
+  }
+  assert.ok(holes > 500 && gaps === 0, `hole points ${holes}, uncovered ${gaps}`);
 });
 
 test('Kinnoull Tower stands where the LiDAR resolves it, near its OSM outline, in the photographs\' proportion', () => {
