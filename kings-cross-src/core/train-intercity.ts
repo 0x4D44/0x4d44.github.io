@@ -43,6 +43,7 @@ export const VOYAGER = {
   floorHeight: assumed(1.15, 'not legible on the reached drawing; a UK intercity DMU floor, to be replaced'),
   wheelDiameter: assumed(0.86, 'not published in any page read'),
   wheelbase: assumed(2.6, 'not legible on the reached drawing; a typical intercity bogie'),
+  wheelbase221: assumed(2.7, 'the 221 bogie frame in voyager-bogie-01 (221139, Commons, CC BY-SA 4.0) is stencilled "2.70m" between inward arrows; read as its wheelbase, an inference (no page read prints it)'),
   doorWidth: drawn(1.05, `${BOMBARDIER_220_GA}: the side elevation's single-leaf doors are about 1,050 mm wide by their labels (legibility poor); ASSUMED to +-0.1 m`),
   windowWidth: drawn(1.53, `${BOMBARDIER_220_GA}: the saloon windows are labelled 1530 (mm); five on the driving car's side`),
 } as const satisfies Record<string, Figure>;

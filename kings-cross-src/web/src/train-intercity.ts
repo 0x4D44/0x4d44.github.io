@@ -11,9 +11,9 @@
 //
 // Every size here that is not in core/train-intercity.ts is read off the review photographs by eye and is ASSUMED (named per value below):
 // Voyager xc220-02, xc220-03, xc220-04, xc221-01, xc221-02 and the Bombardier driving-car drawing; HST scotrail-hst-02, -03, -04 (power car)
-// and scotrail-hst-06 (Inter7City coach). Roofs follow overbridge views (voyager-roof-01/-02, hst-roof-01/-02) and the Voyager bogie follows
-// voyager-bogie-01 (221134 side on), all Commons photographs with receipts in the round-3 and round-4 packs; their sizes are still ASSUMED. No
-// photograph shows a gangway close; it is ASSUMED throughout.
+// and scotrail-hst-06 (Inter7City coach). Roofs follow overbridge views (voyager-roof-01/-02, hst-roof-01/-02); the 221's, the BP10's and the BT10's
+// bogie frames are traced from photographs (train-intercity-bogie.ts), all Commons photographs with receipts in the round packs. No photograph shows
+// a gangway close; it is ASSUMED throughout.
 import * as THREE from 'three';
 import { HST, INTERCITY_END_GAP, INTERCITY_SPECS, intercityLayout, VOYAGER } from '../../core/train-intercity.ts';
 import type { IntercityBody, IntercityCar, IntercityKind, IntercityLayout } from '../../core/train-intercity.ts';
@@ -22,6 +22,7 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, bogieParts, buildBogie, couplerHalf, podHanger, underfloorPod } from './train-parts.ts';
+import { bp10Frame, bt10Frame, voyager221Frame } from './train-intercity-bogie.ts';
 import type { BogieStyle, CouplerStyle, PodBox, PodForm } from './train-parts.ts';
 import type { CaptureFormation } from './edinburgh-fleet.ts';
 import { lensLook } from './train.ts';
@@ -268,7 +269,7 @@ const VOYAGER_BODY: BodyDef = {
   doorY: [V_FLOOR + 0.02, 2.98],
   gangway: true,
   // inside-frame bogies on both classes (xc220-05 shows bare wheel faces; Bombardier on the 221: "internally supported bogies"); see voyagerBogie
-  bogie: { style: 'alstom', radius: VOYAGER.wheelDiameter.value / 2, wheelbase: VOYAGER.wheelbase.value },
+  bogie: { style: 'siemens', radius: VOYAGER.wheelDiameter.value / 2, wheelbase: VOYAGER.wheelbase.value },
   // ASSUMED masses: the engine and alternator raft, its cooler (the louvred grilles under each car in xc221-02), the fuel tank and batteries
   underfloor: [
     { name: 'fuel-tank', form: 'tank', length: 2.4, half: 0.95, bottom: 0.42, colour: 0x403c3e },
@@ -931,8 +932,10 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
   car.bogies.forEach((z, k) => {
     // a Voyager bogie drives its inner axle only (1A'A1': the axle toward the car's middle); the bogies are in z order, so the first's inner axle is its +z one
     const bogie = car.body === 'voyager'
-      ? voyagerBogie(b.bogie.radius, b.bogie.wheelbase, z < (car.start + car.end) / 2 ? 1 : -1)
-      : buildBogie({ radius: b.bogie.radius, wheelbase: b.bogie.wheelbase, track: TRACK, motor: car.motor[k] as boolean, style: b.bogie.style });
+      ? layout.spec.family === 'voyager221'
+        ? intercityBogie('v221', b.bogie.radius, VOYAGER.wheelbase221.value, true, z < (car.start + car.end) / 2 ? 1 : -1)
+        : intercityBogie('v220', b.bogie.radius, b.bogie.wheelbase, true, z < (car.start + car.end) / 2 ? 1 : -1)
+      : intercityBogie(car.body === 'class43' ? 'bp10' : 'bt10', b.bogie.radius, b.bogie.wheelbase, car.motor[k] as boolean, 0);
     bogie.name = `bogie-${car.index}-${k}`;
     bogie.position.set(0, 0, z);
     group.add(bogie);
@@ -1006,110 +1009,57 @@ function buckeyeHalf(soup: Soup, zWall: number, out: 1 | -1, reach: number, y: n
   soup.box(0.08, 0.19, y - 0.13, y + 0.13, out > 0 ? hi - 0.1 : lo, (out > 0 ? hi - 0.1 : lo) + 0.1, steel);
 }
 
-/** The Voyager bogie's geometry, by its driven axle's side: shared between the cars like every bogie's (named `bogie-mesh`, never disposed with a train). */
-const voyagerBogieGeometry = new Map<string, THREE.BufferGeometry>();
+/** The intercity bogies' near geometry, by kind and driven axle: shared between the cars like every bogie's (named `bogie-mesh`, never disposed with a train). */
+const intercityBogieGeometry = new Map<string, THREE.BufferGeometry>();
+/** The inside-frame kit's (train-parts.ts 'siemens') rust-brown rim, drawn in plain steel on the 220 (no Voyager photograph shows a coloured rim). */
+const RUST_RIM = col(0x9b5b36);
+const STEEL_RIM = col(0x6d727a);
 
-/** The Voyager bogie's frame colours, after voyager-bogie-01 (221134's front bogie): a dusty brown-grey frame, darker boxes and springs. ASSUMED shades. */
-const VB = { frame: 0x5e544a, box: 0x4c443c, cover: 0x6c6258, coil: 0x3a332d, spring: 0x544a41, tube: 0x6e6152, grille: 0x26221f } as const;
-
-/** A closed cylinder from `a` to `b`, `n` sided: side quads with outward normals and a fan on each end. */
-function cylinder(soup: Soup, a: V3, b: V3, rho: number, n: number, colour: number): void {
-  const axis = unit(sub(b, a));
-  const helper: V3 = Math.abs(axis[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  const u = unit(cross(axis, helper));
-  const v = cross(axis, u);
-  const c = col(colour);
-  const ring = (o: V3): V3[] => Array.from({ length: n }, (_, k): V3 => {
-    const th = (2 * Math.PI * k) / n;
-    return add(o, add(scale(u, rho * Math.cos(th)), scale(v, rho * Math.sin(th))));
-  });
-  const ra = ring(a);
-  const rb = ring(b);
-  for (let k = 0; k < n; k++) {
-    const k1 = (k + 1) % n;
-    const na = unit(sub(ra[k] as V3, a));
-    const nb = unit(sub(ra[k1] as V3, a));
-    soup.quad([ra[k] as V3, ra[k1] as V3, rb[k1] as V3, rb[k] as V3], [na, nb, nb, na], c);
-  }
-  const back = scale(axis, -1);
-  soup.fan(ra, back, c);
-  soup.fan(rb, axis, c);
-}
+/** Which traced frame a bogie carries, or the kit's own (the 220's inside frame). */
+type IntercityBogieType = 'v220' | 'v221' | 'bp10' | 'bt10';
 
 /**
- * The Voyager's frame, both sides, after voyager-bogie-01 (Geof Sheppard, CC BY-SA 4.0: CrossCountry 221134's front bogie side on). The frame stands
- * outboard of the wheels. Over each axle is an axle box with a round end cover on the axle's line. An arm runs out from the box past the wheel to a coil
- * spring at the bogie's end, under a flat top plate. Between the axles the side beam dips under the axle line. A long tube lies along the upper middle,
- * and a dark grilled box stands by one axle. ASSUMED sizes, scaled from the photograph's wheel spacing.
+ * An intercity bogie: the shared kit's bogie for its wheel markers and its bare far level, and a near level of the kit's wheels, axles, discs and drive with, except on
+ * the 220, the kit's frame and springs replaced by the frame traced from the type's photograph (train-intercity-bogie.ts). `inner` keeps a Voyager's traction motor
+ * on its inner axle only (1A'A1'); `motor` false leaves the drive off (a Mk3's BT10).
+ *   - v220: the inside-frame kit ('siemens') as drawn since round 2, its rims in plain steel. No photograph of the 220's bogie is close enough to trace; xc220-05 shows
+ *     the wheels' faces, which an inside frame leaves bare.
+ *   - v221: the outside-frame kit ('alstom') with the 221's traced frame (voyager-bogie-01), at the stencilled 2.70 m wheelbase.
+ *   - bp10, bt10: the outside-frame kit ('electrostar') with the BP10's (hst-bogie-02) or the BT10's (mk3-bogie-01) traced frame.
  */
-function voyagerFrame(soup: Soup, r: number, wheelbase: number): void {
-  const w = wheelbase / 2;
-  for (const sx of [-1, 1] as const) {
-    const xs = (a: number, b: number): [number, number] => (sx > 0 ? [a, b] : [-b, -a]);
-    const [fx0, fx1] = xs(0.95, 1.05);
-    for (const az of [-w, w]) {
-      const out = Math.sign(az);
-      const zo = (d: number): number => az + out * d;
-      // the axle box over the journal, and its round end cover on the axle's line
-      const [bx0, bx1] = xs(0.92, 1.07);
-      soup.box(bx0, bx1, r - 0.14, r + 0.12, az - 0.19, az + 0.19, col(VB.box));
-      cylinder(soup, [sx * 1.07, r, az], [sx * 1.11, r, az], 0.13, 14, VB.cover);
-      // the arm out past the wheel to the spring, the spring, and the flat top plate over both
-      soup.box(fx0, fx1, r - 0.02, r + 0.1, Math.min(az, zo(0.55)), Math.max(az, zo(0.55)), col(VB.frame));
-      for (let k = 0; k < 5; k++) {
-        const y0 = r + 0.1 + k * 0.04;
-        cylinder(soup, [sx * 1.0, y0, zo(0.42)], [sx * 1.0, y0 + 0.04, zo(0.42)], k % 2 ? 0.105 : 0.125, 12, k % 2 ? VB.coil : VB.spring);
-      }
-      soup.box(fx0, fx1, r + 0.3, r + 0.38, Math.min(zo(-0.18), zo(0.6)), Math.max(zo(-0.18), zo(0.6)), col(VB.frame));
-      // the beam from the top plate down into the dip, a convex piece in (z, y)
-      const zin = az - out * 0.18;
-      const zmid = out * 0.55;
-      soup.prismX([[zin, r - 0.06], [zin, r + 0.3], [zmid, r + 0.12], [zmid, r - 0.18]] as [number, number][], sx * 0.95, sx * 1.05, col(VB.frame));
-    }
-    // the dip between the axles, under the axle line
-    soup.prismX([[-0.55, r - 0.18], [0.55, r - 0.18], [0.55, r + 0.12], [-0.55, r + 0.12]], sx * 0.95, sx * 1.05, col(VB.frame));
-    // the long tube along the upper middle, outside the beam, from the middle toward the +z axle
-    cylinder(soup, [sx * 1.09, r + 0.2, -0.15], [sx * 1.09, r + 0.2, 0.85], 0.05, 10, VB.tube);
-    // the dark grilled box by the +z axle
-    const [gx0, gx1] = xs(1.0, 1.1);
-    soup.box(gx0, gx1, r - 0.06, r + 0.28, w - 0.62, w - 0.3, col(VB.grille));
-  }
-  // the transom between the side beams
-  soup.box(-0.95, 0.95, r + 0.04, r + 0.2, -0.1, 0.1, col(VB.box));
-}
-
-/**
- * A Voyager bogie (1A'A1'): the shared kit's outside-frame bogie for its wheel markers and its bare far level, with the near level's frame and springs
- * replaced by the Voyager's own (voyagerFrame), and a traction motor on the inner axle only. Its wheels, axles, discs and motor are the kit's.
- * (Round 2 drew an inside frame on a scorer's inference; the lead ruled for the photograph in round 4.)
- */
-function voyagerBogie(radius: number, wheelbase: number, inner: 1 | -1): THREE.Group {
-  const spec = { radius, wheelbase, track: TRACK, motor: true, style: 'alstom' as const };
+function intercityBogie(type: IntercityBogieType, radius: number, wheelbase: number, motor: boolean, inner: 1 | -1 | 0): THREE.Group {
+  const style = type === 'v220' ? 'siemens' : type === 'v221' ? 'alstom' : 'electrostar';
+  const spec = { radius, wheelbase, track: TRACK, motor, style } as const;
   const group = buildBogie(spec);
-  const key = `${radius}/${wheelbase}/${inner}`;
-  let geometry = voyagerBogieGeometry.get(key);
+  const key = `${type}/${radius}/${wheelbase}/${motor}/${inner}`;
+  let geometry = intercityBogieGeometry.get(key);
   if (!geometry) {
     const soup = new Soup();
     for (const [name, part] of Object.entries(bogieParts(spec))) {
-      if (name === 'frame' || name === 'springs') continue;
+      if (type !== 'v220' && (name === 'frame' || name === 'springs')) continue;
       for (let v = 0; v < part.pos.length / 3; v += 3) {
-        if (name === 'drive' && Math.sign((part.pos[v * 3 + 2]! + part.pos[v * 3 + 5]! + part.pos[v * 3 + 8]!) / 3) !== inner) continue;
+        if (name === 'drive' && inner !== 0 && Math.sign((part.pos[v * 3 + 2]! + part.pos[v * 3 + 5]! + part.pos[v * 3 + 8]!) / 3) !== inner) continue;
         for (let m = v; m < v + 3; m++) {
           soup.pos.push(part.pos[m * 3]!, part.pos[m * 3 + 1]!, part.pos[m * 3 + 2]!);
           soup.nrm.push(part.nrm[m * 3]!, part.nrm[m * 3 + 1]!, part.nrm[m * 3 + 2]!);
-          soup.clr.push(part.clr[m * 3]!, part.clr[m * 3 + 1]!, part.clr[m * 3 + 2]!);
+          const [r, g, bl] = [part.clr[m * 3]!, part.clr[m * 3 + 1]!, part.clr[m * 3 + 2]!];
+          const rust = Math.abs(r - RUST_RIM.r) < 1e-6 && Math.abs(g - RUST_RIM.g) < 1e-6 && Math.abs(bl - RUST_RIM.b) < 1e-6;
+          soup.clr.push(rust ? STEEL_RIM.r : r, rust ? STEEL_RIM.g : g, rust ? STEEL_RIM.b : bl);
           soup.glow.push(0);
         }
       }
     }
-    voyagerFrame(soup, radius, wheelbase);
+    if (type === 'v221') voyager221Frame(soup, radius, wheelbase);
+    else if (type === 'bp10') bp10Frame(soup, radius, wheelbase);
+    else if (type === 'bt10') bt10Frame(soup, radius, wheelbase);
     geometry = soup.build();
-    voyagerBogieGeometry.set(key, geometry);
+    intercityBogieGeometry.set(key, geometry);
   }
   group.traverse((o) => {
     if (o instanceof THREE.Mesh && o.userData.lod === 'near') o.geometry = geometry;
   });
-  group.userData.driven = inner > 0 ? 'axle +z' : 'axle -z';
+  group.userData.bogieType = type;
+  if (inner !== 0) group.userData.driven = inner > 0 ? 'axle +z' : 'axle -z';
   return group;
 }
 

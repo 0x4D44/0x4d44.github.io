@@ -5,6 +5,7 @@ import { HST, INTERCITY_KINDS, intercityLayout, VOYAGER } from '../../core/train
 import { checkEdinburghRows } from '../../core/train-neutral.ts';
 import { EDINBURGH_FLEET, edinburghFleetRow } from '../src/edinburgh-fleet.ts';
 import { buildIntercityTrain, disposeIntercityTrain, INTERCITY_BODIES, intercityFormation, splitPolygon } from '../src/train-intercity.ts';
+import { BP10_TRACE, BT10_TRACE, tracer, VOYAGER221_TRACE } from '../src/train-intercity-bogie.ts';
 import { col, plain } from '../src/train-geom.ts';
 import { lensLook, setTrainLampState } from '../src/train.ts';
 
@@ -151,50 +152,66 @@ test('intercity lamps are wired to setTrainLampState: turning the train round sw
   }
 });
 
-test('Voyager bogies: outside frames with plain steel rims, each driving only its inner axle (1A\'A1\'); HST couplers are buckeyes, the Voyager\'s Dellners', () => {
-  const rust = col(0x9b5b36);
-  const motor = col(0x5f646b); // the outside-frame kit's traction motor (train-parts.ts PALETTES.alstom)
+/** The near level of every bogie of a kind: its car, its index, its z, and its geometry's positions and colours. */
+const nearBogies = (kind: (typeof INTERCITY_KINDS)[number]) => {
+  const root = buildIntercityTrain(kind);
+  const out: { car: ReturnType<typeof intercityLayout>['cars'][number]; k: number; z: number; type: string; pos: THREE.BufferAttribute; rgb: THREE.BufferAttribute; wheels: THREE.Object3D[] }[] = [];
+  for (const car of intercityLayout(kind).cars) {
+    car.bogies.forEach((z, k) => {
+      const bogie = root.getObjectByName(`bogie-${car.index}-${k}`) as THREE.Object3D;
+      let near: THREE.BufferGeometry | undefined;
+      bogie.traverse((o) => { if (o instanceof THREE.Mesh && o.userData.lod === 'near') near = o.geometry; });
+      out.push({ car, k, z, type: bogie.userData.bogieType, pos: near!.getAttribute('position') as THREE.BufferAttribute, rgb: near!.getAttribute('color') as THREE.BufferAttribute, wheels: bogie.children.filter((o) => o.name === 'wheel') });
+    });
+  }
+  return out;
+};
+/** The vertices of a colour. */
+const ofColour = (b: { pos: THREE.BufferAttribute; rgb: THREE.BufferAttribute }, hex: number): THREE.Vector3[] => {
+  const c = col(hex);
+  const out: THREE.Vector3[] = [];
+  for (let v = 0; v < b.rgb.count; v++) if (Math.abs(b.rgb.getX(v) - c.r) < 1e-6 && Math.abs(b.rgb.getY(v) - c.g) < 1e-6 && Math.abs(b.rgb.getZ(v) - c.b) < 1e-6) out.push(new THREE.Vector3(b.pos.getX(v), b.pos.getY(v), b.pos.getZ(v)));
+  return out;
+};
+
+test('Voyager bogies: the 220 keeps its inside frame, the 221 rides the outside frame traced from voyager-bogie-01; both have plain rims and drive only the inner axle (1A\'A1\'); HST couplers are buckeyes, the Voyager\'s Dellners', () => {
+  const rust = 0x9b5b36;
+  // the inside-frame kit's motor (train-parts.ts PALETTES.siemens) on the 220, the outside-frame kit's (PALETTES.alstom) on the 221
+  const motor = { xc220x4: 0x4d5259, xc221x5: 0x5f646b } as const;
   for (const kind of ['xc220x4', 'xc221x5'] as const) {
-    const root = buildIntercityTrain(kind);
-    for (const car of intercityLayout(kind).cars) {
-      car.bogies.forEach((z, k) => {
-        const bogie = root.getObjectByName(`bogie-${car.index}-${k}`) as THREE.Object3D;
-        let near: THREE.BufferGeometry | undefined;
-        bogie.traverse((o) => { if (o instanceof THREE.Mesh && o.userData.lod === 'near') near = o.geometry; });
-        const rgb = near!.getAttribute('color');
-        const pos = near!.getAttribute('position');
-        let rusty = 0; const motorZ: number[] = [];
-        for (let v = 0; v < rgb.count; v++) {
-          const is = (c: THREE.Color): boolean => Math.abs(rgb.getX(v) - c.r) < 1e-6 && Math.abs(rgb.getY(v) - c.g) < 1e-6 && Math.abs(rgb.getZ(v) - c.b) < 1e-6;
-          if (is(rust)) rusty++;
-          if (is(motor)) motorZ.push(pos.getZ(v));
+    for (const b of nearBogies(kind)) {
+      const tag = `${kind} bogie-${b.car.index}-${b.k}`;
+      assert.equal(b.type, kind === 'xc220x4' ? 'v220' : 'v221', tag);
+      assert.equal(ofColour(b, rust).length, 0, `${tag} rims`);
+      const motorZ = ofColour(b, motor[kind]).map((p) => p.z);
+      assert.ok(motorZ.length > 0, `${tag} has a motor`);
+      const inner = b.z < (b.car.start + b.car.end) / 2 ? 1 : -1;
+      assert.ok(motorZ.every((mz) => Math.sign(mz) === inner), `${tag} drives only its inner axle`);
+      const box = new THREE.Box3().setFromBufferAttribute(b.pos);
+      const wheelZ = [...new Set(b.wheels.map((w) => +w.position.z.toFixed(3)))].sort((p, q) => p - q);
+      if (kind === 'xc220x4') {
+        // inside frame (xc220-05: the wheels' faces show): nothing stands outboard of the wheels' outer faces; the 2.6 m ASSUMED wheelbase
+        assert.ok(box.max.x < 0.86 && box.min.x > -0.86, `${tag} inside frame (x ${box.min.x}..${box.max.x})`);
+        assert.deepEqual(wheelZ, [-VOYAGER.wheelbase.value / 2, VOYAGER.wheelbase.value / 2], `${tag} wheelbase`);
+        continue;
+      }
+      // the 221 (voyager-bogie-01, unit 221139): the stencilled 2.70 m wheelbase; the frame outboard of the wheels on both sides; a round cover on each axle's line,
+      // outboard of the frame; a coil spring beyond each axle at the bogie's end, over the axle line
+      const w = VOYAGER.wheelbase221.value / 2;
+      const r = VOYAGER.wheelDiameter.value / 2;
+      assert.deepEqual(wheelZ, [-w, w], `${tag} wheelbase`);
+      assert.ok(box.max.x > 1.05 && box.min.x < -1.05 && box.max.x <= 1.15 && box.min.x >= -1.15, `${tag} outside frame inside the envelope (x ${box.min.x}..${box.max.x})`);
+      for (const sx of [-1, 1]) {
+        for (const az of [-w, w]) {
+          const covers = ofColour(b, 0x6c6258).filter((p) => Math.sign(p.x) === sx && Math.abs(p.x) > 1.06 && Math.abs(p.z - az) < 0.13 && Math.abs(p.y - r) < 0.13);
+          assert.ok(covers.length >= 24, `${tag} axle-end cover at x ${sx}, z ${az}: ${covers.length}`);
+          const springs = ofColour(b, 0x544a41).filter((p) => Math.sign(p.x) === sx && Math.sign(p.z) === Math.sign(az) && Math.abs(p.z) > w + 0.2 && p.y > r);
+          assert.ok(springs.length >= 24, `${tag} end spring at x ${sx}, z ${az}: ${springs.length}`);
         }
-        assert.equal(rusty, 0, `${kind} bogie-${car.index}-${k} rims`);
-        assert.ok(motorZ.length > 0, `${kind} bogie-${car.index}-${k} has a motor`);
-        const inner = z < (car.start + car.end) / 2 ? 1 : -1;
-        assert.ok(motorZ.every((mz) => Math.sign(mz) === inner), `${kind} bogie-${car.index}-${k} drives only its inner axle`);
-        // outside frame (voyager-bogie-01, 221134; the lead's round-4 ruling): the frame stands outboard of the wheels on both sides, a round
-        // axle-end cover sits on each axle's line outboard of the frame, and a coil spring stands beyond each axle at the bogie's end
-        const box = new THREE.Box3().setFromBufferAttribute(pos as THREE.BufferAttribute);
-        assert.ok(box.max.x > 1.05 && box.min.x < -1.05, `${kind} bogie-${car.index}-${k} outside frame (x ${box.min.x}..${box.max.x})`);
-        const cover = col(0x6c6258);
-        const spring = col(0x544a41);
-        const at = (c: THREE.Color): THREE.Vector3[] => {
-          const out: THREE.Vector3[] = [];
-          for (let v = 0; v < rgb.count; v++) if (Math.abs(rgb.getX(v) - c.r) < 1e-6 && Math.abs(rgb.getY(v) - c.g) < 1e-6 && Math.abs(rgb.getZ(v) - c.b) < 1e-6) out.push(new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v)));
-          return out;
-        };
-        const w = 2.6 / 2;
-        const r = 0.43;
-        for (const sx of [-1, 1]) {
-          for (const az of [-w, w]) {
-            const covers = at(cover).filter((p) => Math.sign(p.x) === sx && Math.abs(p.x) > 1.06 && Math.abs(p.z - az) < 0.14 && Math.abs(p.y - r) < 0.14);
-            assert.ok(covers.length >= 24, `${kind} bogie-${car.index}-${k} axle-end cover at x ${sx}, z ${az}: ${covers.length}`);
-            const springs = at(spring).filter((p) => Math.sign(p.x) === sx && Math.sign(p.z) === Math.sign(az) && Math.abs(p.z) > w + 0.25 && p.y > r);
-            assert.ok(springs.length >= 24, `${kind} bogie-${car.index}-${k} end spring at x ${sx}, z ${az}: ${springs.length}`);
-          }
-        }
-      });
+        // the grilled box stands by one axle only, on the -z side of the +x beam and the +z side of the -x beam (the far beam is the near one turned half a turn)
+        const grille = ofColour(b, 0x26221f).filter((p) => Math.sign(p.x) === sx);
+        assert.ok(grille.length > 0 && grille.every((p) => Math.sign(p.z) === -sx), `${tag} grilled box on side ${sx}`);
+      }
     }
   }
   const couplers = (kind: 'xc220x4' | 'srhstx4'): string[] => {
@@ -204,6 +221,76 @@ test('Voyager bogies: outside frames with plain steel rims, each driving only it
   };
   assert.deepEqual(couplers('srhstx4'), ['buckeye']);
   assert.deepEqual(couplers('xc220x4'), ['dellner']);
+});
+
+test('HST bogies: the power car rides the BP10 traced from hst-bogie-02, the coaches the BT10 traced from mk3-bogie-01, two different bogies', () => {
+  const w = HST.wheelbase.value / 2;
+  for (const kind of ['srhstx4', 'srhstx5'] as const) {
+    for (const b of nearBogies(kind)) {
+      const tag = `${kind} bogie-${b.car.index}-${b.k}`;
+      const box = new THREE.Box3().setFromBufferAttribute(b.pos);
+      assert.ok(box.max.x <= 1.15 && box.min.x >= -1.15, `${tag} inside the envelope (x ${box.min.x}..${box.max.x})`);
+      if (b.car.body === 'class43') {
+        assert.equal(b.type, 'bp10', tag);
+        const r = HST.powerWheelDiameter.value / 2;
+        for (const sx of [-1, 1]) {
+          for (const az of [-w, w]) {
+            // the axle box's cover on the axle's line, and a coil spring each side of the box (hst-bogie-02: the inboard one; its fellow outboard by symmetry)
+            const covers = ofColour(b, 0x474a50).filter((p) => Math.sign(p.x) === sx && Math.abs(p.z - az) < 0.15 && Math.abs(p.y - r) < 0.15);
+            assert.ok(covers.length >= 24, `${tag} cover at x ${sx}, z ${az}: ${covers.length}`);
+            const springs = ofColour(b, 0x3d4045).filter((p) => Math.sign(p.x) === sx && Math.abs(Math.abs(p.z) - w) < 0.55 && Math.sign(p.z) === Math.sign(az));
+            const inboard = springs.filter((p) => Math.abs(p.z) < w - 0.15).length;
+            const outboard = springs.filter((p) => Math.abs(p.z) > w + 0.15).length;
+            assert.ok(inboard >= 24 && outboard >= 24, `${tag} springs at x ${sx}, z ${az}: ${inboard} inboard, ${outboard} outboard`);
+            // the vertical damper outboard of the box, standing over the axle line
+            const damper = ofColour(b, 0x1d1f22).filter((p) => Math.sign(p.x) === sx && Math.sign(p.z) === Math.sign(az) && Math.abs(p.z) > w + 0.1);
+            assert.ok(damper.length >= 20 && Math.max(...damper.map((p) => p.y)) > r + 0.2, `${tag} damper at x ${sx}, z ${az}`);
+          }
+          // the step at one end of each beam only (the near end of hst-bogie-02; the far beam's turned half a turn)
+          const step = ofColour(b, 0x585c62).filter((p) => Math.sign(p.x) === sx);
+          assert.ok(step.length > 0 && step.every((p) => Math.sign(p.z) === sx), `${tag} step on side ${sx}`);
+        }
+        // between the axles, what hst-bogie-02 shows there: the two cylinders along the middle, under the beam (no photograph shows a traction motor, so the kit
+        // draws none: train-parts.ts draws no drive for its 'electrostar' style, a GAP shared with the London families)
+        const cyl = ofColour(b, 0x2f3236).filter((p) => Math.abs(p.z) < w - 0.3 && p.y < r + 0.15);
+        assert.ok(cyl.length >= 48, `${tag} middle cylinders: ${cyl.length}`);
+      } else {
+        assert.equal(b.type, 'bt10', tag);
+        const r = HST.coachWheelDiameter.value / 2;
+        for (const sx of [-1, 1]) {
+          for (const az of [-w, w]) {
+            // the yellow coil spring outboard of each axle box (mk3-bogie-01), and the hexagonal cover on the axle's line
+            const springs = ofColour(b, 0xe0b020).filter((p) => Math.sign(p.x) === sx && Math.sign(p.z) === Math.sign(az));
+            assert.ok(springs.length >= 24 && springs.every((p) => Math.abs(p.z) > w + 0.1), `${tag} yellow spring outboard at x ${sx}, z ${az}`);
+            const covers = ofColour(b, 0x3c3d40).filter((p) => Math.sign(p.x) === sx && Math.abs(p.z - az) < 0.16 && Math.abs(p.y - r) < 0.16);
+            assert.ok(covers.length >= 12, `${tag} cover at x ${sx}, z ${az}: ${covers.length}`);
+          }
+        }
+        // the straight black beam: its top level end to end (mk3-bogie-01's 100..108 px), about 0.42 m over the axle line
+        const beam = ofColour(b, 0x1d1e20).filter((p) => Math.abs(p.x) > 0.96);
+        const top = Math.max(...beam.map((p) => p.y));
+        assert.ok(Math.abs(top - (r + (212 - 100) / (692 / HST.wheelbase.value))) < 0.005, `${tag} beam top ${top}`);
+        // a coach's bogie carries no traction motor, nor the BP10's cylinders
+        assert.equal(ofColour(b, 0x5b6068).length, 0, `${tag} no motors`);
+        assert.equal(ofColour(b, 0x2f3236).length, 0, `${tag} no BP10 cylinders`);
+      }
+    }
+  }
+});
+
+test('the bogie tracer: the two covers land on the two axles at the wheel\'s radius, side on and in perspective', () => {
+  for (const [caps, far] of [[VOYAGER221_TRACE.caps, 1], [BT10_TRACE.caps, 1], [BP10_TRACE.caps, BP10_TRACE.farScale]] as const) {
+    const T = tracer(caps, 0.5, 2.6, far);
+    assert.ok(Math.abs(T.z(caps[0][0]) - 1.3) < 1e-9 && Math.abs(T.z(caps[1][0]) + 1.3) < 1e-9, `z of the covers ${T.z(caps[0][0])}, ${T.z(caps[1][0])}`);
+    assert.ok(Math.abs(T.y(caps[0][1], caps[0][0]) - 0.5) < 1e-9 && Math.abs(T.y(caps[1][1], caps[1][0]) - 0.5) < 1e-9, 'y of the covers');
+  }
+  // in perspective the far end's pixel is longer in metres than the near end's, by 1 / farScale
+  const T = tracer(BP10_TRACE.caps, 0.5, 2.6, 0.71);
+  const ratio = T.len(1, BP10_TRACE.caps[1][0]) / T.len(1, BP10_TRACE.caps[0][0]);
+  assert.ok(Math.abs(ratio - 1 / 0.71) < 1e-9, `scale ratio ${ratio}`);
+  // the 221's scale: 744 px over the stencilled 2.70 m
+  const V = tracer(VOYAGER221_TRACE.caps, 0.43, 2.7);
+  assert.ok(Math.abs(V.len(744, 600) - 2.7) < 1e-9);
 });
 
 test('a loft quad is cut exactly along a paint line, one piece each side, the cut points on the line', () => {
