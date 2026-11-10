@@ -12,6 +12,7 @@ import { wvEmuLayout } from '../../core/train-wv-emu.ts';
 import { buildWvEmuTrain, disposeWvEmuTrain, wvEmuFormation } from './train-wv-emu.ts';
 import { intercityLayout } from '../../core/train-intercity.ts';
 import { buildIntercityTrain, disposeIntercityTrain, intercityFormation } from './train-intercity.ts';
+import { build158, build170, dispose158, dispose170, formation158, formation170, layout158, layout170 } from './train-scotrail-dmu.ts';
 
 /** A figure the capture sidecars report, with its basis ('published', 'drawn', 'assumed', or a '+' join of them). */
 export interface CaptureDimension { readonly value: number; readonly basis: string; readonly figures: readonly string[]; readonly figureM?: number }
@@ -60,6 +61,8 @@ export const EDINBURGH_FLEET: readonly EdinburghFleetRow[] = [
   { kind: 'xc221x5', operator: 'XC', operatorName: 'CrossCountry', classes: ['221'], cars: 5, layout: () => intercityLayout('xc221x5'), build: () => buildIntercityTrain('xc221x5'), dispose: disposeIntercityTrain, formation: () => intercityFormation('xc221x5') },
   { kind: 'srhstx4', operator: 'SR', operatorName: 'ScotRail', classes: ['43', 'HST'], cars: 6, layout: () => intercityLayout('srhstx4'), build: () => buildIntercityTrain('srhstx4'), dispose: disposeIntercityTrain, formation: () => intercityFormation('srhstx4') },
   { kind: 'srhstx5', operator: 'SR', operatorName: 'ScotRail', classes: ['43', 'HST'], cars: 7, layout: () => intercityLayout('srhstx5'), build: () => buildIntercityTrain('srhstx5'), dispose: disposeIntercityTrain, formation: () => intercityFormation('srhstx5') },
+  { kind: 'sr170x3', operator: 'SR', operatorName: 'ScotRail', classes: ['170'], cars: 3, layout: () => layout170('sr170x3'), build: () => build170('sr170x3'), dispose: dispose170, formation: formation170 },
+  { kind: 'sr158x2', operator: 'SR', operatorName: 'ScotRail', classes: ['158'], cars: 2, layout: () => layout158('sr158x2'), build: () => build158('sr158x2'), dispose: dispose158, formation: formation158 },
 ];
 
 export const edinburghFleetRow = (kind: string): EdinburghFleetRow | undefined => EDINBURGH_FLEET.find(r => r.kind === kind);

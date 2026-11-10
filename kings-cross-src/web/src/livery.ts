@@ -429,11 +429,25 @@ const ATLAS_W = 2048;
 /** The atlas is a row tall for every text and one more for the solid patch, so a livery's lettering never runs into it. */
 const atlasH = (): number => (atlasTexts().length + 1) * ROW_H;
 
+/** Lettering registered by builders outside LIVERIES (registerAtlasTexts), so the one atlas carries it too. */
+const registered = new Set<string>();
 let texts: string[] | null = null;
+/**
+ * A builder outside LIVERIES registers the texts it letters, at its module's load (before any train is built). The atlas's rows are
+ * fixed once it is first read, so a text registered after that would have no row: that throws rather than drawing the wrong lettering.
+ */
+export function registerAtlasTexts(more: readonly string[]): void {
+  const late = texts ? more.filter((t) => !(texts as string[]).includes(t)) : [];
+  if (late.length) throw new Error(`atlas texts registered after the atlas was laid out: ${late.join(', ')}`);
+  for (const t of more) registered.add(t);
+}
+/** The atlas's height in pixels: a row for every text and one for the solid patch. */
+export const atlasHeight = (): number => atlasH();
+
 /** Every text any livery uses, sorted, so the atlas is drawn once and a text always has the same row. */
 export function atlasTexts(): string[] {
   if (texts) return texts;
-  const set = new Set<string>();
+  const set = new Set<string>(registered);
   for (const def of Object.values(LIVERIES)) {
     for (const cab of [true, false]) {
       for (let index = 0; index < 6; index++) {

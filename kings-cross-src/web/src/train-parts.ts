@@ -897,8 +897,8 @@ export function roofKit(soup: Soup, o: { style: RoofKitStyle; p0: number; p1: nu
   }
 }
 
-/** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City) and a Scharfenberg (Class 180). */
-export type CouplerStyle = 'plain' | 'dellner' | 'scharfenberg';
+/** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City), a Scharfenberg (Class 180) and a BSI (the Sprinters' and Turbostars'). */
+export type CouplerStyle = 'plain' | 'dellner' | 'scharfenberg' | 'bsi';
 
 /**
  * A coupler half: a barrel from the car's end wall (or the nose face) toward the middle of the gap, ending in a head.
@@ -946,6 +946,27 @@ export function couplerHalf(soup: Soup, z0: number, dir: 1 | -1, reach: number, 
       soup.box(sx * 0.23 - 0.02, sx * 0.23 + 0.02, y - 0.1, y - 0.02, h0, h1, pin);
       soup.box(sx * 0.13 - 0.015, sx * 0.13 + 0.015, y - 0.3, y - 0.15, h0, h1, hose);
     }
+    return;
+  }
+  if (style === 'bsi') {
+    // BSI (the Sprinters' and Turbostars'; web/src/train-scotrail-dmu.ts): a squarer head on its barrel, its flat face carrying a
+    // guide cone on one side and the matching funnel's dark mouth on the other, a pneumatic port each side, and the electrical
+    // head in its box hung under the coupler (scotrail158-01: the box with the warning label). From the general look of the type: ASSUMED.
+    const [c0, c1] = zr(reach - headLen, reach - 0.012);
+    soup.box(-0.18, 0.18, y - 0.14, y + 0.14, c0, c1, casing);
+    const [f0, f1] = zr(reach - 0.012, reach - 0.003);
+    soup.box(-0.16, 0.16, y - 0.12, y + 0.12, f0, f1, dark);
+    soup.box(-0.13, -0.03, y - 0.05, y + 0.05, ...zr(reach - 0.006, reach), face); // the funnel's mouth, the head's front
+    const cone = new THREE.CylinderGeometry(dir > 0 ? 0.015 : 0.05, dir > 0 ? 0.05 : 0.015, 0.09, 12, 1, false);
+    soup.geometry(cone, new THREE.Matrix4().makeTranslation(0.08, y, z0 + dir * (reach - 0.045)).multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2)), pin);
+    cone.dispose();
+    for (const sx of [-1, 1]) {
+      const [p0, p1] = zr(reach - 0.12, reach - 0.03);
+      soup.box(sx * 0.2 - 0.02, sx * 0.2 + 0.02, y - 0.04, y + 0.04, p0, p1, pin);
+    }
+    const [e0, e1] = zr(reach - 0.26, reach - 0.04);
+    soup.box(-0.15, 0.15, y - 0.32, y - 0.17, e0, e1, casing);
+    soup.box(-0.035, 0.035, y - 0.27, y - 0.21, ...zr(reach - 0.04, reach - 0.035), col(0xf2c21c)); // the warning label
     return;
   }
   // Scharfenberg: the casing, a conical nose (the narrow end out) and a pair of air connections under the head
