@@ -169,7 +169,7 @@ interface Look {
  *   - vents: a panel on one roof shoulder (`side` +1 or -1, `phi` radians up the shoulder from the wall top, `across` wide), `slots` dark openings along it
  */
 type RoofGear = { name: string; s0: number; s1: number; colour: number; cab?: boolean; fromEnd?: boolean } & (
-  | { kind: 'housing' | 'scoop' | 'louvred' | 'plate'; x0: number; x1: number; h: number; chamfer?: number; dark?: number; slats?: number; cap?: { at: number; x: number; r: number; h: number } }
+  | { kind: 'housing' | 'scoop' | 'louvred' | 'plate'; x0: number; x1: number; h: number; chamfer?: number; dark?: number; slats?: number; cap?: { at: number; x: number; r: number; h: number }; topVents?: { n: number; size: number; dark: number }; grille?: { slats: number; dark: number } }
   | { kind: 'vents'; side: 1 | -1; phi: number; across: number; slots: number; dark: number }
 );
 
@@ -214,6 +214,11 @@ export const LAMP_170 = { head: { x: 0.93, y: 1.43, r: 0.11 }, tail: { x: 0.71, 
 export const LAMP_170_HOUSING = hull2([...disc(LAMP_170.head.x, LAMP_170.head.y, LAMP_170.head.r + 0.035, 24), ...disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r + 0.028, 24)]);
 /** How far the housing stands out of the face (metres). ASSUMED, read off scotrail170-01's shadowed edge. */
 export const LAMP_170_PROUD = 0.03;
+/** The 170's valance box beside the coupler on the face (cab's right; mirrored), and how far it stands out. ASSUMED (Inverness 170624). */
+export const VALANCE_170 = box(0.55, 1.13, 0.6, 0.98, 0.05);
+export const VALANCE_170_PROUD = 0.08;
+/** The 170's buffers' height, under the valance boxes (scotrail170-01). ASSUMED. */
+export const BUFFER_170_Y = 0.48;
 const TURBOSTAR: Look = {
   family: 'turbostar',
   nose: {
@@ -260,6 +265,10 @@ const TURBOSTAR: Look = {
     { name: 'tail-lamp', outline: disc(LAMP_170.tail.x, LAMP_170.tail.y, LAMP_170.tail.r, 24), lens: 'tail', lift: 0.006 + LAMP_170_PROUD + 0.001, proud: 0.008, mirror: true },
     // the coupler's recess in the valance
     { name: 'recess', outline: box(-0.42, 0.42, 0.48, 1.0, 0.04), colour: RECESS, lift: 0.0015 },
+    // round 6a: a large navy valance box either side of the coupler, standing out of the face (Inverness 170624, 170430 face-on,
+    // CC BY-SA 2.0: from 0.55 m out to the face's edge, 0.38 m tall, read at about 290 px to the metre against the published 2.69 m
+    // width). ASSUMED to that.
+    { name: 'valance-box', outline: VALANCE_170, colour: SALTIRE_BLUE, lift: 0.002, proud: VALANCE_170_PROUD, mirror: true },
   ],
   // the dome over the face is Saltire navy, as the body (scotrail170-01, -02); the yellow is the face's brow only
   noseColour: (_s, k) => (k >= ROOF_COLUMN ? SALTIRE_BLUE : null),
@@ -304,11 +313,17 @@ const TURBOSTAR: Look = {
   // at each station. Every size and place ASSUMED to that reading.
   roofGear: [
     { name: 'cab-scoop', kind: 'scoop', cab: true, s0: 1.85, s1: 2.3, x0: 0.2, x1: 0.58, h: 0.12, chamfer: 0.03, colour: 0x2a2e38, dark: 0x0b0c0e },
-    { name: 'cab-grille', kind: 'vents', cab: true, s0: 1.9, s1: 2.9, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.14, slots: 9, colour: 0x2a2d35, dark: 0x111216 },
-    { name: 'cab-roof-unit', kind: 'housing', cab: true, s0: 2.7, s1: 4.1, x0: -0.45, x1: 0.66, h: 0.1, chamfer: 0.04, colour: 0x2a2e38, cap: { at: 3.85, x: 0.22, r: 0.13, h: 0.05 } },
-    { name: 'cab-vents', kind: 'vents', cab: true, s0: 2.6, s1: 3.6, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
-    { name: 'vents-middle', kind: 'vents', s0: 11.3, s1: 12.3, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
-    { name: 'vents-inner', kind: 'vents', fromEnd: true, s0: 0.9, s1: 1.9, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'cab-grille', kind: 'vents', cab: true, s0: 1.9, s1: 3.6, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.16, slots: 15, colour: 0x2a2d35, dark: 0x111216 },
+    // round 6a, the scorer's reading of roof-170-cowd: a raised housing with a row of square vents along its top, beside it the long low
+    // unit with a grille band along its top (its round cap at the rear), and further vent panels on both shoulders of every car
+    { name: 'cab-vent-housing', kind: 'housing', cab: true, s0: 2.5, s1: 3.6, x0: 0.12, x1: 0.62, h: 0.11, chamfer: 0.03, colour: 0x303644, topVents: { n: 5, size: 0.11, dark: 0x0c0d10 } },
+    { name: 'cab-roof-unit', kind: 'housing', cab: true, s0: 2.9, s1: 6.4, x0: -0.56, x1: 0.02, h: 0.08, chamfer: 0.03, colour: 0x2a2e38, cap: { at: 6.0, x: -0.27, r: 0.13, h: 0.05 }, grille: { slats: 18, dark: 0x101114 } },
+    { name: 'cab-vents', kind: 'vents', cab: true, s0: 2.6, s1: 3.6, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-front', kind: 'vents', s0: 5.4, s1: 6.4, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-middle', kind: 'vents', s0: 11.3, s1: 12.3, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-middle-left', kind: 'vents', s0: 11.3, s1: 12.3, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-rear', kind: 'vents', fromEnd: true, s0: 5.4, s1: 6.4, side: -1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
+    { name: 'vents-inner', kind: 'vents', fromEnd: true, s0: 0.9, s1: 1.9, side: 1, phi: (3 / 5) * (Math.PI / 2), across: 0.18, slots: 6, colour: 0x2a2d35, dark: 0x111216 },
   ],
   roofSeams: { pitch: 2.0, colour: 0x232c47 },
 };
@@ -714,11 +729,12 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     bsiCoupler(detail, Z(wall), (-dir) as 1 | -1, wall, look.coupler.y);
     marker('nose-coupler', 0, look.coupler.y, wall / 2, { end: car.cab, style });
     if (look.buffers) {
-      // two small round buffers low at the valance's outer corners (scotrail170-01, -02), out to 2 cm inside the car's end
+      // two small round buffers low at the valance's outer corners, under the navy valance boxes (scotrail170-01, -02), out to 2 cm
+      // inside the car's end
       for (const x of [-0.86, 0.86]) {
-        cylinderZ(detail, x, 0.6, 0.07, Z(tip), Z(0.12), col(0x2a2c30));
-        cylinderZ(detail, x, 0.6, 0.11, Z(0.12), Z(0.02), col(0x7e8288));
-        marker('buffer', x, 0.6, 0.02);
+        cylinderZ(detail, x, BUFFER_170_Y, 0.07, Z(tip), Z(0.12), col(0x2a2c30));
+        cylinderZ(detail, x, BUFFER_170_Y, 0.1, Z(0.12), Z(0.02), col(0x7e8288));
+        marker('buffer', x, BUFFER_170_Y, 0.02);
       }
     }
     if (look.gangwayFrame) {
@@ -994,6 +1010,25 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
         const zf = Z(lo - 0.003);
         const n: V3 = [0, 0, -dir];
         detail.quad([[xa + 0.03, crown + 0.012, zf], [xb - 0.03, crown + 0.012, zf], [xb - 0.03, top - ch - 0.01, zf], [xa + 0.03, top - ch - 0.01, zf]], [n, n, n, n], col(g.dark ?? 0x000000));
+      }
+      if (g.kind === 'housing' && (g.topVents || g.grille)) {
+        // on its top, 2 mm proud: a row of square vents down its middle, or a grille band of slats across it, inside the chamfers
+        const n: V3 = [0, 1, 0]; const y = top + 0.002;
+        const xm = (xa + xb) / 2; const sa = lo + ch + 0.04; const sb = hi - ch - 0.04;
+        if (g.topVents) {
+          const v = g.topVents; const pitch = (sb - sa) / v.n;
+          for (let k = 0; k < v.n; k++) {
+            const sc = sa + (k + 0.5) * pitch; const hs = Math.min(v.size, pitch * 0.8) / 2;
+            detail.quad([[xm - hs, y, Z(sc - hs)], [xm + hs, y, Z(sc - hs)], [xm + hs, y, Z(sc + hs)], [xm - hs, y, Z(sc + hs)]], [n, n, n, n], col(v.dark));
+          }
+        }
+        if (g.grille) {
+          const gr = g.grille; const pitch = (sb - sa) / gr.slats; const x0 = xa + ch + 0.05; const x1 = xb - ch - 0.05;
+          for (let k = 0; k < gr.slats; k++) {
+            const a = sa + k * pitch + pitch * 0.25; const b = a + pitch * 0.5;
+            detail.quad([[x0, y, Z(a)], [x1, y, Z(a)], [x1, y, Z(b)], [x0, y, Z(b)]], [n, n, n, n], col(gr.dark));
+          }
+        }
       }
       if (g.cap) {
         // a low round cap on the housing: a 12-sided frustum, its top 0.55 of its foot

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SCOTRAIL_DMU_FIGURES, SCOTRAIL_DMU_KINDS, scotrailDmuLayout } from '../../core/train-scotrail-dmu.ts';
-import { bsiCoupler, buildScotrailDmu, CHROME, disposeScotrailDmu, FRAME as FRAME_COLOUR, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_INNER, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
+import { bsiCoupler, BUFFER_170_Y, buildScotrailDmu, CHROME, SALTIRE_BLUE, VALANCE_170, VALANCE_170_PROUD, disposeScotrailDmu, FRAME as FRAME_COLOUR, dmuCarPlan, DOT_BLUE, DOT_WHITE, GANGWAY_158, GANGWAY_INNER, GANGWAY_RUBBER, LAMP_170, LAMP_170_HOUSING, LAMP_170_PROUD, SR_YELLOW, scotrailDmuFormation, scotrailDmuLook, TUMBLEHOME } from '../src/train-scotrail-dmu.ts';
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
@@ -75,7 +75,7 @@ test('ScotRail DMU parts: diesel units with no pantograph, two bogies and two do
   // (round 4, from the roof photographs: the 170 cab car's scoop, grille, housing and vent panel, and two vent panels on every car;
   // the 158's two cab-roof units and, on every car, the exhaust group of plate, cover, louvred box and hump)
   // (round 4, from bogie-158-a2: the 158's eight masses a car, the air cleaner, silencer and reservoir drums added to the five boxes)
-  assert.deepEqual(tally('sr170x3'), { pantograph: 0, bogies: 6, doors: 12, glass: 3, underfloor: 15, noseCouplers: 2, buffers: 4, litHeads: 2, heads: 4, domeLamps: 2, ploughs: 0, roofKit: 14 });
+  assert.deepEqual(tally('sr170x3'), { pantograph: 0, bogies: 6, doors: 12, glass: 3, underfloor: 15, noseCouplers: 2, buffers: 4, litHeads: 2, heads: 4, domeLamps: 2, ploughs: 0, roofKit: 25 });
   assert.deepEqual(tally('sr158x2'), { pantograph: 0, bogies: 4, doors: 8, glass: 2, underfloor: 16, noseCouplers: 2, buffers: 0, litHeads: 2, heads: 4, domeLamps: 0, ploughs: 2, roofKit: 12 });
 });
 
@@ -336,6 +336,35 @@ test('ScotRail DMU side glazing (t3c/a-inner, t3c/e-inner): the 170 one flush da
     }
     disposeScotrailDmu(root);
   }
+});
+
+
+test('ScotRail 170 face: a navy valance box either side of the coupler, standing out of the face (Inverness 170624), the small buffers under them', () => {
+  const root = buildScotrailDmu('sr170x3');
+  const [vx0, vx1] = [Math.min(...VALANCE_170.map(([x]) => x)), Math.max(...VALANCE_170.map(([x]) => x))];
+  const [vy0, vy1] = [Math.min(...VALANCE_170.map(([, y]) => y)), Math.max(...VALANCE_170.map(([, y]) => y))];
+  for (const index of [0, 2]) {
+    const g = root.getObjectByName(`car-${index}`)!;
+    const d = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    const p = d.getAttribute('position'); const c = d.getAttribute('color'); const navy = col(SALTIRE_BLUE);
+    for (const sx of [-1, 1]) {
+      const byXY = new Map<string, number[]>();
+      for (let i = 0; i < p.count; i++) {
+        if (Math.sign(p.getX(i)) !== sx || Math.abs(c.getX(i) - navy.r) > 1e-6 || Math.abs(c.getY(i) - navy.g) > 1e-6 || Math.abs(c.getZ(i) - navy.b) > 1e-6) continue;
+        const ax = Math.abs(p.getX(i)); const y = p.getY(i);
+        if (ax < vx0 - 1e-4 || ax > vx1 + 1e-4 || y < vy0 - 1e-4 || y > vy1 + 1e-4) continue;
+        const k = `${ax.toFixed(4)},${y.toFixed(4)}`; byXY.set(k, [...(byXY.get(k) ?? []), p.getZ(i)]);
+      }
+      const standing = [...byXY.values()].filter((zs) => Math.max(...zs) - Math.min(...zs) >= VALANCE_170_PROUD - 1e-3);
+      assert.ok(standing.length >= 8, `car ${index} side ${sx}: the valance box stands ${VALANCE_170_PROUD} m out (${standing.length} rim points)`);
+      // spanning most of its drawn width: from near the coupler's recess to near the face's edge
+      const xs = [...byXY.keys()].map((k) => Number(k.split(',')[0]));
+      assert.ok(Math.min(...xs) < vx0 + 0.02 && Math.max(...xs) > vx1 - 0.1, `car ${index} side ${sx}: the box's width (${Math.min(...xs)}..${Math.max(...xs)})`);
+    }
+    const buffers: THREE.Object3D[] = []; g.traverse((o) => { if (o.name === 'buffer') buffers.push(o); });
+    assert.ok(buffers.length === 2 && buffers.every((b) => b.position.y === BUFFER_170_Y && BUFFER_170_Y + 0.1 <= vy0), `car ${index}: the buffers under the boxes`);
+  }
+  disposeScotrailDmu(root);
 });
 
 test('ScotRail DMU lettering: the wordmark on both sides of every car, from a row of the shared atlas, and no unit number (no allocated unit reaches the builder)', () => {
@@ -613,6 +642,13 @@ test('ScotRail DMU roof: the equipment the roof photographs show, at its station
           for (let i = 0; i < p.count; i++) if (is(i, r.dark!) && p.getX(i) >= xa - 1e-4 && p.getX(i) <= xb + 1e-4 && sOf(p.getZ(i)) >= lo - 1e-4 && sOf(p.getZ(i)) <= hi + 1e-4) dark++;
           assert.equal(dark / 6, r.slats, `${kind} car ${car.index} ${r.name}: its louvres`);
         }
+        if (r.kind === 'housing' && (r.topVents || r.grille)) {
+          // the square vents or grille slats on its top, 2 mm proud, each a quad of its dark colour
+          const want = r.topVents ? [r.topVents.dark, r.topVents.n] : [r.grille!.dark, r.grille!.slats];
+          let on = 0;
+          for (let i = 0; i < p.count; i++) if (is(i, want[0]!) && Math.abs(p.getY(i) - (crown + r.h + 0.002)) < 1e-4 && p.getX(i) >= xa - 1e-4 && p.getX(i) <= xb + 1e-4 && sOf(p.getZ(i)) >= lo - 1e-4 && sOf(p.getZ(i)) <= hi + 1e-4) on++;
+          assert.equal(on / 6, want[1], `${kind} car ${car.index} ${r.name}: what stands on its top`);
+        }
         if (r.kind === 'scoop') {
           // the mouth is the face toward the cab end, just before it
           const mouth: number[] = [];
@@ -634,11 +670,17 @@ test('ScotRail DMU roof: the equipment the roof photographs show, at its station
   // 158 (roof-158-filton, roof-158-pil) its exhaust group within 3.2 m of every car's inner end, and a low unit each side behind the cab
   const t = scotrailDmuLook('turbostar').roofGear;
   const by = (name: string) => t.find((r) => r.name === name)!;
-  const unit = by('cab-roof-unit');
-  assert.ok(by('cab-scoop').s1 < unit.s0 && unit.kind !== 'vents' && unit.cap && unit.cap.at > (unit.s0 + unit.s1) / 2);
+  const unit = by('cab-roof-unit'); const housing = by('cab-vent-housing');
+  assert.ok(by('cab-scoop').s1 < unit.s0 && by('cab-scoop').s1 < housing.s0 && unit.kind !== 'vents' && unit.cap && unit.cap.at > (unit.s0 + unit.s1) / 2);
+  // (round 6a) the raised housing with its row of square vents beside the long unit with its grille, the two side by side across the roof
+  assert.ok(housing.kind === 'housing' && housing.topVents && housing.topVents.n >= 4 && unit.kind === 'housing' && unit.grille && unit.grille.slats >= 12);
+  assert.ok(housing.h > unit.h && Math.min(housing.x0, housing.x1) >= Math.max(unit.x0, unit.x1) && unit.s1 - unit.s0 > 2 * (housing.s1 - housing.s0));
   const grille = by('cab-grille'); const vents = by('cab-vents');
   assert.ok(grille.kind === 'vents' && vents.kind === 'vents' && grille.side === -vents.side);
   assert.ok(!by('vents-middle').cab && !by('vents-inner').cab && by('vents-inner').fromEnd);
+  // vent panels on both shoulders of every car, at least five a car, spread along it
+  const every = t.filter((r) => !r.cab && r.kind === 'vents');
+  assert.ok(every.length >= 5 && every.some((r) => r.kind === 'vents' && r.side === 1) && every.some((r) => r.kind === 'vents' && r.side === -1));
   const s = scotrailDmuLook('sprinter158').roofGear;
   for (const r of s.filter((q) => q.name.startsWith('exhaust') || q.name === 'roof-hump')) assert.ok(r.fromEnd && !r.cab && r.s1 <= 3.2, r.name);
   const cabUnits = s.filter((q) => q.name === 'cab-roof-unit');
