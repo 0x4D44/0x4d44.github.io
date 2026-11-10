@@ -153,9 +153,10 @@ export function createNightLights(sites: NightLightSites): NightLights {
 }
 
 /**
- * What a lit clock dial adds to its face, in display colours (the glow is left out of the tone map): the face's own cream, scaled up to the bright white of the photographs (the Balmoral's dial
- * in night-f-waverley-balmoral-2023-crowsus.jpg is (247, 244, 234); the King's Cross tower's, in night-a-kx-square-2015-skinner.jpg and night-e-kx-elevated-2016-itsnogame.jpg, is as bright, "a signature of the
- * front at night"). ASSUMED, by eye against those.
+ * What a lit clock dial adds to its face, in display colours (the glow is left out of the tone map): the face's own cream, scaled up to the bright white of the photographs. MEASURED, in
+ * night-a-kx-square-2015-skinner.jpg the tower's two dials have a median of (250, 250, 248) and (250, 250, 250) over a 20 x 20 px patch of each, their brightest pixels 255 (the Balmoral's, in
+ * night-f-waverley-balmoral-2023-crowsus.jpg, is (247, 244, 234)); this model's, added to the blue-grey the night sky leaves on the unlit face (about (63, 78, 109)), is (255, 255, 255) over the brighter half
+ * of the face (capture of 10 November: tower-close, south-front, front-oblique). A stronger glow would only clip.
  */
 export const DIAL_GLOW: readonly [number, number, number] = [1.06, 1.1, 1.2];
 /** A disc this near a dial's declared centre (clocks.ts `ClockDial`) is that dial's face, metres. */
