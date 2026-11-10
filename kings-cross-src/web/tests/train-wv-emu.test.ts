@@ -499,3 +499,20 @@ test('the 334\'s dot bands and Saltire stop at the glass: no dot or bar is laid 
     }
   }
 });
+
+test('the 397\'s roof cluster\'s cables run on to the pantograph\'s base, and no further', () => {
+  const root = buildWvEmuTrain('tpe397x5');
+  const crown = wvEmuBody('tpe397x5').crown;
+  for (const car of wvEmuLayout('tpe397x5').cars) {
+    if (!car.pantograph) continue;
+    const nearStart = (car.pantograph[0] + car.pantograph[1]) / 2 < (car.start + car.end) / 2;
+    const baseZ = nearStart ? car.pantograph[0] : car.pantograph[1];
+    const endZ = nearStart ? car.start : car.end;
+    const detail = (root.getObjectByName(`car-${car.index}`) as THREE.Object3D).getObjectByName('body-detail') as THREE.Mesh;
+    // (the cables: the cluster's dark rods low on the crown, between the car's end and the pantograph)
+    const cable = inColour(detail, 0x1c1d21).filter((v) => v.y > crown - 0.05 && v.y < crown + 0.1 && Math.abs(v.x) < 0.3 && (v.z - endZ) * (baseZ - endZ) > 0);
+    const reach = Math.max(...cable.map((v) => Math.abs(v.z - endZ)));
+    const toBase = Math.abs(baseZ - endZ);
+    assert.ok(Math.abs(reach - toBase) < 0.03, `car ${car.index}: the cables reach ${reach.toFixed(2)} m from the end, the pantograph's base is at ${toBase.toFixed(2)} m`);
+  }
+});

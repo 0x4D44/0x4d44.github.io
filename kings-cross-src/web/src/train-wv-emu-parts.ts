@@ -328,20 +328,23 @@ export function roofEndCluster(soup: Soup, zEnd: number, dir: 1 | -1, crown: num
     soup.box(x - 0.1, x + 0.1, y, y + 0.04, Math.min(at(u - 0.1), at(u + 0.1)), Math.max(at(u - 0.1), at(u + 0.1)), plate);
     insulator(soup, x, y + 0.04, at(u), Math.min(cap - 0.04, 0.1), 0.045, 3, col(C.shed), col(C.cap));
   }
-  // the cable runs: termination to the tall insulator, then along the roof to the small ones
+  // the cable runs: termination to the tall insulator, then along the roof to the small ones, and the last runs on to the pantograph's base, `reach` + 0.15
+  // (round 5: they stopped 0.15 m short of it, with the gear)
   const cy = y + 0.035;
+  const base = reach + 0.15;
+  const atCable = (u: number): number => zEnd + dir * Math.min(u, base);
   const cable = (pts: [number, number][]): void => {
     for (let k = 0; k + 1 < pts.length; k++) {
       const [x0, u0] = pts[k] as [number, number];
       const [x1, u1] = pts[k + 1] as [number, number];
-      if (u0 >= reach) continue;
-      rod(soup, [x0, cy, at(u0)], [x1, cy, at(u1)], 0.016, dark, 6);
+      if (u0 >= base) continue;
+      rod(soup, [x0, cy, atCable(u0)], [x1, cy, atCable(u1)], 0.016, dark, 6);
     }
   };
   cable([[0.1, 0.45], [0.25, 0.8]]);
   cable([[0.25, 1.1], [0.25, 3.5]]);
   cable([[-0.05, 0.45], [-0.25, 0.9], [-0.25, 2.1]]);
-  cable([[-0.25, 2.3], [-0.25, CLUSTER_SPAN]]);
+  cable([[-0.25, 2.3], [-0.25, base]]);
 }
 
 // --- the CAF bogie (tpe397-03) ---------------------------------------------------------------------------
