@@ -540,7 +540,10 @@ test('the east patch meets the main terrain without a seam, over the covered cor
   // edges run out in the same apron, over the plane near the edge and fading into the hazed tone under it far off
   const main = scene.group.getObjectByName('perth-main-apron') as THREE.Mesh, M = PERTH_CITY_EXTENT, down = new THREE.Raycaster();
   assert.ok(main, 'the main apron is drawn');
-  for (const [x, z] of [[M.x0 - 400, (M.z0 + M.z1) / 2], [(M.x0 + M.x1) / 2, M.z0 - 400], [(M.x0 + M.x1) / 2, M.z1 + 400], [M.x0 - 300, M.z0 - 300], [M.x0 - 300, M.z1 + 300]] as const) {
+  // round 6 (the cliff view's grey strip on the right horizon): also past the east patch's east and south edges and their corner
+  const EE = PERTH_EAST_FILE.extent;
+  for (const [x, z] of [[M.x0 - 400, (M.z0 + M.z1) / 2], [(M.x0 + M.x1) / 2, M.z0 - 400], [(M.x0 + M.x1) / 2, M.z1 + 400], [M.x0 - 300, M.z0 - 300], [M.x0 - 300, M.z1 + 300],
+    [EE.x1 + 400, (EE.z0 + EE.z1) / 2], [(EE.x0 + EE.x1) / 2, EE.z1 + 400], [EE.x1 + 300, EE.z1 + 300]] as const) {
     down.set(new THREE.Vector3(x, 1000, z), new THREE.Vector3(0, -1, 0));
     const h = down.intersectObject(main, false)[0];
     assert.ok(h && h.point.y > GROUND_Y && h.face!.normal.y > 0, `the apron covers the plane at ${x}, ${z}: ${h?.point.y} ${h?.face?.normal.y} ground ${GROUND_Y}`);
