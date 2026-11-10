@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, braceScrolls, gutterBraces, PERTH_BRACE_SCROLL, PERTH_GUTTER_BRACE, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_TRUSS_RING, trussRings, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -673,7 +673,7 @@ test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift
   assert.ok(deep >= 100, `deep jambs and mullions at the ground-floor windows (${deep} vertices 0.28 m out)`);
 });
 
-test('round 7: the bands\' undersides are drawn sky-lit and pale, apart from the bands; R-pt1-a\'s scrolls stand in the brace spandrels pt-roof-underside looks along', () => {
+test('round 7: the bands\' undersides are drawn sky-lit and pale, apart from the bands; R-pt1-a\'s rings stand in the lattice panels of the girders pt-roof-underside looks along', () => {
   const scene = buildPerthScene({ lighting: false });
   try {
     const m = (scene.group.getObjectByName('perth-roof-band-soffits') as THREE.Mesh).material as THREE.MeshLambertMaterial;
@@ -685,22 +685,43 @@ test('round 7: the bands\' undersides are drawn sky-lit and pale, apart from the
   } finally { scene.dispose(); }
   { const low = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP, s = batches.strips.positions; let n = 0; for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - low) < 1e-6) n++;
     assert.ok(batches.soffits.count > 100 && n === 0, `the undersides are a batch of their own (${batches.soffits.count}; ${n} left in the bands' batch)`); }
-  // The scrolls: ironwork rings in the brace spandrels, under the girder and over the brace's rib, near the pt-roof-underside camera.
-  const W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, S = PERTH_BRACE_SCROLL, sc = braceScrolls(plan);
-  assert.ok(sc.length >= 8, `scrolls in the near braces (${sc.length})`);
+  // The rings: in the gutter girders' lattice panels, between the chords, round the diagonals' crossing, near the pt-roof-underside camera.
+  const W = WAVERLEY_STRUCTURE, S = PERTH_TRUSS_RING, sc = trussRings(plan);
+  assert.ok(sc.length >= 30, `rings in the near girders' panels (${sc.length})`);
   const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
   const k = cams['pt-roof-underside'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
   cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
   let seen = 0;
   for (const s of sc) {
-    assert.ok(s.y + S.ring < under && s.y - S.ring > under - PERTH_GUTTER_BRACE.drop, `a scroll inside the spandrel's depth at ${s.x.toFixed(1)}, ${s.z.toFixed(1)}`);
+    assert.ok(s.y + S.radius < W.gutterGirderTop - W.chordDepth && s.y - S.radius > W.gutterGirderTop - W.gutterGirderDepth + W.chordDepth, `a ring between the chords at ${s.x.toFixed(1)}, ${s.z.toFixed(1)}`);
+    assert.ok(plan.structure.gutters.some(([x, z0, z1]) => Math.abs(x - s.x) < 1e-9 && s.z > z0 && s.z < z1), 'on a gutter girder\'s line');
     const w = toWorld([s.x, s.z]), v = new THREE.Vector3(w[0], s.y, w[1]).project(cam); if (Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1) seen++;
     // Drawn: ironwork vertices on the ring, in the girder's plane.
     const p = batches.ironwork.positions; let on = 0;
-    for (let i = 0; i < p.length; i += 3) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - s.x) < .05 && Math.abs(Math.hypot(q[1] - s.z, p[i + 1] - s.y) - S.ring) < .06) on++; }
-    assert.ok(on >= 16, `the ring at ${s.x.toFixed(1)}, ${s.z.toFixed(1)} drawn (${on} vertices)`);
+    for (let i = 0; i < p.length; i += 3) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - s.x) < .05 && Math.abs(Math.hypot(q[1] - s.z, p[i + 1] - s.y) - S.radius) < .06) on++; }
+    assert.ok(on >= 12, `the ring at ${s.x.toFixed(1)}, ${s.z.toFixed(1)} drawn (${on} vertices)`);
   }
-  assert.ok(seen >= 4, `scrolls in pt-roof-underside's frame (${seen})`);
+  assert.ok(seen >= 15, `rings in pt-roof-underside's frame (${seen})`);
+});
+
+test('round 7: the north bridge\'s lattice fills its side girders\' whole depth, down past a thin maroon slab (R-pt1-d north)', () => {
+  const br = plan.bridges.find(b => b.kind === 'lattice')!, half = PERTH_STATION.deckHalf, p = batches.fittings.positions, nn = batches.fittings.normals;
+  const lattice = new Map<number, number>(), slabLo = new Map<number, number>(), slabHi = new Map<number, number>();
+  for (let i = 0; i < p.length; i += 3) {
+    const q = toLocal([p[i], p[i + 2]]), dx = Math.abs(q[0] - br.along), z = Math.floor(q[1]), y = p[i + 1];
+    if (q[1] < br.z0 || q[1] > br.z1 || br.landings.some(l => Math.hypot(q[0] - l.start[0], q[1] - l.start[1]) < 4)) continue;
+    if (Math.abs(dx - (half - .15)) < .06) lattice.set(z, Math.min(lattice.get(z) ?? Infinity, y));
+    if (Math.abs(dx - half) < .01 && nn[i + 1] < -.9) slabLo.set(z, Math.min(slabLo.get(z) ?? Infinity, y));
+    if (Math.abs(dx - half) < .01 && nn[i + 1] > .9) slabHi.set(z, Math.max(slabHi.get(z) ?? -Infinity, y));
+  }
+  let below = 0, bins = 0, thick = 0;
+  for (const [z, lo] of slabLo) {
+    const g = lattice.get(z); if (g === undefined) continue;
+    bins++; if (g < lo - .1) below++;
+    const hi = slabHi.get(z); if (hi !== undefined) thick = Math.max(thick, hi - lo);
+  }
+  assert.ok(bins >= 8 && below >= bins * .8, `the girder's lattice runs down past the slab's underside (${below} of ${bins} metres)`);
+  assert.ok(thick > 0 && thick <= .16 + .05, `a thin slab edge (${thick.toFixed(2)} m, its 1 m pieces' bow included)`);
 });
 
 test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders, in the across-track planes the platform cameras face', () => {

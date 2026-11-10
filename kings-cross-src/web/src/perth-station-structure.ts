@@ -183,7 +183,7 @@ export const PERTH_STATION = {
   /** The lattice bridge's arch (R-pt1-d north, round 5): its side girders `end` high at the ends, their top chord `rise` higher at mid-span
    *  (kept under the roof's low point over the bridge, 8.96 m, so the girder starts low rather than rising higher);
    *  and the lattice cells on its stair balustrades. ASSUMED. */
-  arch: {end: 1.1, rise: .85}, cell: .6,
+  arch: {end: 1.1, rise: .85}, girderDrop: .3, cell: .6,
   /** Bracket clocks on the island building (R-pt1-a2): a 0.9 m Roman dial in a timber case `case` (along the wall, out, high) whose
    *  dial centre stands `height` over the deck, `out` from the wall. On platform 4 (R-pt1-a2) the case sits on a glazed timber stage
    *  `stage` (along, out, from, to over the deck) over a timber kiosk `kiosk` (along, out, high). All sizes ASSUMED from the photo. */
@@ -670,7 +670,9 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
   const x0 = br.along - half, x1 = br.along + half, zc = (br.z0 + br.z1) / 2, len = br.z1 - br.z0;
   // Deck: a 0.5 m slab (lattice), or (modern, R-pt1-d Abbott) a 0.3 m slab between two 0.7 m pale edge beams, so the span reads light.
   // Round 5: the lattice deck 0.3 m (was 0.5) with a pale boarded soffit under it (R-pt1-d north: the deck reads light from below).
-  const depth = lattice ? .3 : .7;
+  // Round 7 (S6, the round-6 score: "the lattice sits over a solid maroon slab edge"): the lattice slab 0.15 m (was 0.3), the side girders'
+  // lattice carried down past it to S.girderDrop under the deck, so the lattice fills the girder's whole depth (R-pt1-d north).
+  const depth = lattice ? .15 : .7;
   // Round 6 (R-pt1-d north): the lattice bridge's maroon spans arch as a whole: deck, tread and both chords of the side girders bow up
   // together between the posts, so the girder reads as one bowed band springing from the stair posts. Its underside is the slab's maroon,
   // as the photograph shows it (round 5's pale soffit claim is dropped: R-pt1-d north shows the underside dark).
@@ -705,7 +707,7 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
     // Diamond-lattice parapets, 1.7 m (R-pt1-d: flats crossed at 45 degrees between a top and a bottom chord, posts every 3 m): maroon
     // under the roof (Sheppard "footbridge south"); white lattice on a navy frame on the covered span past it (Sheppard "from platform 1").
     for (const q of pieces) for (const x of [x0 + .15, x1 - .15]) {
-      diamondParapet(b, x, q.za, q.zb, br.deck, q.c ? 1.7 : S.arch.end, q.c ? P('latticeWhite') : P('lattice'), q.c ? P('frameNavy') : P('lattice'), q.rise, true);
+      diamondParapet(b, x, q.za, q.zb, q.c ? br.deck : br.deck - S.girderDrop, q.c ? 1.7 : S.arch.end + S.girderDrop, q.c ? P('latticeWhite') : P('lattice'), q.c ? P('frameNavy') : P('lattice'), q.rise, true);
     }
     // The covered span past the roof (R-pt1-d "from platform 1": a pitched timber roof on the lattice sides), in 1 m pieces at least 1 m
     // outside the overall roof.
@@ -943,27 +945,27 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
   const girder = W.platformGirderTop - W.platformGirderDepth;
   for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});
   for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: plates, keep: g.keep});
-  for (const s of braceScrolls(plan)) scroll(b, s.x, s.z, s.y, iron);
+  for (const s of trussRings(plan)) ring(b, s.x, s.z, s.y, iron);
 }
-/** Round 7 (S2, the round-6 score: "the across-track trusses are still plain"): R-pt1-a's scrolled ironwork, where each curved brace
- *  springs from its column under the gutter girder (the open circles at the top right of R-pt1-a): an open ring with a C-scroll inside it,
- *  in the brace's spandrel `along` m in from each springing, its centre `down` m under the girder. Only on the girders the frozen
- *  pt-roof-underside camera (standpoint `camera`, scene frame) looks along: up to `ahead` m north of it (-x') and `across` m either side
- *  of it; elsewhere they would cost triangles no frozen view resolves. ASSUMED sizes, scaled from R-pt1-a against the girder's depth. */
-export const PERTH_BRACE_SCROLL = {along: .75, down: .5, ring: .3, inner: .13, bar: .04, ahead: 60, across: 25, camera: [-39.93, -60] as const} as const;
-export function braceScrolls(plan: PerthStationPlan): {x: number; z: number; y: number}[] {
-  const S = PERTH_BRACE_SCROLL, W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, cam = toLocal([S.camera[0], S.camera[1]]), out: {x: number; z: number; y: number}[] = [];
-  for (const g of gutterBraces(plan)) {
-    if (g.a[0] > cam[0] || g.a[0] < cam[0] - S.ahead || Math.min(Math.abs(g.a[1] - cam[1]), Math.abs(g.c[1] - cam[1])) > S.across) continue;
-    for (const z of [g.a[1] + S.along, g.c[1] - S.along]) if (g.keep([g.a[0], z], under - S.down)) out.push({x: g.a[0], z, y: under - S.down});
+/** Round 7 (S2, the round-6 score: "the across-track trusses are still plain triangulated lattice"): R-pt1-a's open-circle ironwork (the
+ *  rings at the top right of R-pt1-a), as a ring round the crossing of the diagonals in each square panel of the gutter girders' lattice
+ *  (latticeGirder: n panels, each crossed by both diagonals), read against the glazing behind. Only on the girders the frozen
+ *  pt-roof-underside camera (standpoint `camera`, scene frame) looks along: up to `ahead` m north of it (-x') and within `across` m of it
+ *  across the tracks; elsewhere they would cost triangles no frozen view resolves. ASSUMED sizes, scaled from R-pt1-a against the girder. */
+export const PERTH_TRUSS_RING = {radius: .32, bar: .05, flats: 6, ahead: 50, across: 10, camera: [-39.93, -60] as const} as const;
+export function trussRings(plan: PerthStationPlan): {x: number; z: number; y: number}[] {
+  const R = PERTH_TRUSS_RING, W = WAVERLEY_STRUCTURE, cam = toLocal([R.camera[0], R.camera[1]]), out: {x: number; z: number; y: number}[] = [];
+  for (const [x, z0, z1] of plan.structure.gutters) {
+    if (x > cam[0] || x < cam[0] - R.ahead) continue;
+    const len = z1 - z0, n = Math.max(1, Math.round(len / (W.gutterGirderDepth - W.chordDepth)));
+    for (let i = 0; i < n; i++) { const z = z0 + len * (i + .5) / n; if (Math.abs(z - cam[1]) <= R.across) out.push({x, z, y: W.gutterGirderTop - W.gutterGirderDepth / 2}); }
   }
   return out;
 }
-/** One scroll in the plane x' = x: a ring of 8 flats, and inside it a C of 4 opening toward the brace's crown. */
-function scroll(b: Batch, x: number, z: number, y: number, color: Rgb): void {
-  const S = PERTH_BRACE_SCROLL, pt = (r: number, t: number): V3 => [x, y + r * Math.sin(t), z + r * Math.cos(t)];
-  for (let k = 0; k < 8; k++) beam(b, pt(S.ring, k / 8 * 2 * Math.PI), pt(S.ring, (k + 1) / 8 * 2 * Math.PI), S.bar, S.bar, color);
-  for (let k = 0; k < 4; k++) beam(b, pt(S.inner, Math.PI / 4 + k / 4 * 1.5 * Math.PI), pt(S.inner, Math.PI / 4 + (k + 1) / 4 * 1.5 * Math.PI), S.bar, S.bar, color);
+/** One ring of `flats` flats in the plane x' = x. */
+function ring(b: Batch, x: number, z: number, y: number, color: Rgb): void {
+  const R = PERTH_TRUSS_RING, pt = (t: number): V3 => [x, y + R.radius * Math.sin(t), z + R.radius * Math.cos(t)];
+  for (let k = 0; k < R.flats; k++) beam(b, pt(k / R.flats * 2 * Math.PI), pt((k + 1) / R.flats * 2 * Math.PI), R.bar, R.bar, color);
 }
 /** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
  *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
