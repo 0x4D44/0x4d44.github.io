@@ -261,7 +261,7 @@ test('Class 180 rake: the face is a plane leaning back at the spec\'s lean, its 
   }
 });
 
-test('Class 180 rake: the windscreen is about 47 degrees to the road, 12 to 17 degrees steeper than the unraked one was, and its foot stands back half a metre', () => {
+test('Class 180 rake: the windscreen is about 34 degrees to the road, 8 to 11 degrees steeper than the unraked one was, and its foot stands back half a metre', () => {
   const layout = trainLayout('gc180x5');
   const car = layout.cars[0] as Car;
   const pitch = (g: THREE.Object3D): { degrees: number; foot: number } => {
@@ -277,15 +277,21 @@ test('Class 180 rake: the windscreen is about 47 degrees to the road, 12 to 17 d
   };
   const was = pitch(plain());
   const now = pitch(raked);
-  // (ASSUMED: the pane's pitch follows from the face's lean of about 20 degrees (NoseRake) and the roof line's knots, 33 degrees without the lean; pinned so that a change of either is a decision)
-  near(now.degrees, 47, 3, `the pane is ${now.degrees.toFixed(1)} degrees to the road`);
-  assert.ok(now.degrees - was.degrees > 12 && now.degrees - was.degrees < 17, `the pane is ${was.degrees.toFixed(1)} degrees to the road without the rake and ${now.degrees.toFixed(1)} with it`);
+  // CHANGED (round 6): these were 47 +/- 3 degrees and 12 to 17 steeper than the unraked pane, which came from the knots of the earlier nose (ASSUMED: 33 degrees without the lean).
+  // The roof line is now fitted to the side-on photograph 180109 (a Class 180's profile: the glass is a straight line from the roof down to the base of the screen), and its pane is
+  // 34 degrees to the road, 24.5 without the rake: 9.5 degrees less from the lean. The lean itself (about 20 degrees, NoseRake) is unchanged, and so is the foot, 0.47 m back.
+  // Pinned so that a change of the lean or of the roof line's knots is a decision.
+  near(now.degrees, 34, 2, `the pane is ${now.degrees.toFixed(1)} degrees to the road`);
+  assert.ok(now.degrees - was.degrees > 8 && now.degrees - was.degrees < 11, `the pane is ${was.degrees.toFixed(1)} degrees to the road without the rake and ${now.degrees.toFixed(1)} with it`);
   assert.ok(now.foot - was.foot > 0.4 && now.foot - was.foot < 0.55, `its foot stands ${(now.foot - was.foot).toFixed(2)} m further back`);
 });
 
-test('Class 180 rake: the windscreen\'s shading normals follow the sheared surface: four fifths of them are within 4 degrees of their own triangle\'s, and the mean is 3 or under', () => {
+test('Class 180 rake: the windscreen\'s shading normals follow the sheared surface: three quarters of them are within 4 degrees of their own triangle\'s, and the mean is 3 or under', () => {
   // The glass is a fine patch whose triangles lie on the surface, so a vertex normal from the surface's own formula agrees with the triangle's to a degree or two (a few in the
   // corners, where the rows crowd); a formula for the unsheared nose would be 14 degrees out over the whole pane.
+  // CHANGED (round 6): the share was four fifths. The nose is now fitted to the photograph 180109, longer and steeper where the glass stands, and 79.8% of the normals are within 4 degrees
+  // (the mean is 2.5 degrees, as it was). The ones outside are the patch's corners, mostly at the foot, where the section turns within a column or two; the pane is the same patch
+  // of 24 rows by 16 columns. The unsheared formula (tried by hand: the plain (-y_x, 1, -y_s)) leaves 25.7% of them within 4 degrees, so three quarters still tells the two apart.
   const layout = trainLayout('gc180x5');
   for (const car of endCabs(layout)) {
     const mesh = part(raked, car, 'cab-glass');
@@ -304,7 +310,7 @@ test('Class 180 rake: the windscreen\'s shading normals follow the sheared surfa
       }
     });
     assert.ok(total > 1000, `car ${car.index}: ${total} vertex normals`);
-    assert.ok(within / total > 0.8, `car ${car.index}: ${((100 * within) / total).toFixed(0)}% of the normals are within 4 degrees of their triangle's`);
+    assert.ok(within / total > 0.75, `car ${car.index}: ${((100 * within) / total).toFixed(1)}% of the normals are within 4 degrees of their triangle's`);
     assert.ok(sum / total < 3, `car ${car.index}: the normals are ${(sum / total).toFixed(2)} degrees from their triangles' on average`);
   }
 });

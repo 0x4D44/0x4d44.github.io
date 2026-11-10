@@ -598,14 +598,18 @@ export function at300Plan(car: Car): CarPlan {
   return { length: L, nose, doors, windows, crewDoors };
 }
 
-/** A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them. */
-function emuPlan(f: EmuFamily, noseLength: number): (car: Car) => CarPlan {
+/**
+ * A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them. `cabDoor`, where a family has it, is where the
+ * door nearest a cab stands instead, metres from the nose tip (the Class 180's: 4.8 m, the doorway's centre 4.45 m behind the face's foot in the side-on photograph 180109 plus the
+ * 0.35 m (END_GAP) the face stands behind the car's end; the family's assumed 3.8 m would stand the door a metre nearer the nose than that picture shows).
+ */
+function emuPlan(f: EmuFamily, noseLength: number, cabDoor?: number): (car: Car) => CarPlan {
   const fig = EMU_FIGURES[f];
   return (car) => {
     const L = car.length;
     const dw = fig.doorWidth.value;
     const d = fig.doorFromEnd.value;
-    const doors = [d, L - d];
+    const doors = [car.cab && cabDoor !== undefined ? cabDoor : d, L - d];
     const windows: [number, number][] = [];
     // beyond the inner door, between the doors, and (through cars only) beyond the other door; a cab car's nose end is the cab
     const innerZone: [number, number] = [(doors[1] as number) + dw / 2 + 0.35, L - END_GAP - 0.45];
@@ -802,7 +806,7 @@ const ADELANTE_BODY = ((): BodySpec => {
   const floor = fig.floorHeight.value - 0.12;
   const cover = 0.14;
   const crown = fig.height.value - cover;
-  const length = 3.1;
+  const length = 3.9;
   return {
     family: 'adelante',
     half: fig.bodyWidth.value / 2,
@@ -824,33 +828,41 @@ const ADELANTE_BODY = ((): BodySpec => {
     nose: {
       length,
       knots: [
-        // ASSUMED, read off GC180-01 and GC180-05 against the published 3.77 m: a face about 1.6 m tall and nearly the body's width, its top edge the windscreen's foot at
-        // about 2.2 m; the glass rising from there to about 3.05 m over a metre and a quarter (about 35 degrees off the horizontal: the 700's is now an upright wall);
-        // then the roof's black dome, falling away from the crown over some two metres more (the door behind the nose stands about 3.4 m from the tip in GC180-01)
+        // The roof line is read off the side-on photograph 180109 (its scale from the 3.77 m height, itself ASSUMED in core/train.ts: about 36 px to the metre), as the highest point at each distance behind the
+        // face's foot: 2.13 m at 0.69 m back, 2.58 m at 1.11 m, 3.0 m at 1.66 m, 3.3 m at 2.22 m, 3.52 m at 2.77 m, the crown at about 3.9 m: the face's top edge, the glass at about
+        // 37 degrees off the horizontal (the 700's is an upright wall) and then the roof's long dome, down to the door. The knots are the fit of the rings (each set back by the rake) to
+        // a straight glass line from the face's top to the photograph's 3.0 m at 1.66 m back and to the photograph's arc after it (`.scratch/r6/tools/fitnose.mts` at the rake's 0.36:
+        // within 0.02 m from 0.8 m back). Nearer the face one straight lean leaves the face's top 0.18 m forward of the photograph's, so the glass's foot stands 0.1 m over the
+        // photograph's line, and the first two knots are level (a dip there, to follow the line, folds the frame laid on it). ASSUMED: the width, the section's shape and the underside.
         { s: 0, top: 2.32, ws: 0.99, bottom: 0.55 },
-        { s: 0.12, top: 2.34, ws: 0.98, bottom: 0.62 },
-        { s: 0.5, top: 2.57, ws: 0.985, bottom: 0.7 },
-        { s: 0.9, top: 2.83, ws: 0.99, bottom: 0.8 },
-        { s: 1.25, top: 3.05, ws: 0.995, bottom: 0.9 },
-        { s: 1.9, top: 3.33, ws: 0.997, bottom: 0.98 },
-        { s: 2.5, top: 3.52, ws: 1, bottom: floor - 0.02 },
+        { s: 0.12, top: 2.32, ws: 0.98, bottom: 0.62 },
+        { s: 0.5, top: 2.36, ws: 0.985, bottom: 0.7 },
+        { s: 0.9, top: 2.54, ws: 0.99, bottom: 0.8 },
+        { s: 1.3, top: 2.75, ws: 0.995, bottom: 0.9 },
+        { s: 1.8, top: 3.09, ws: 0.997, bottom: 0.98 },
+        { s: 2.4, top: 3.38, ws: 1, bottom: floor - 0.02 },
+        { s: 3.0, top: 3.55, ws: 1, bottom: floor - 0.02 },
         { s: length, top: crown, ws: 1, bottom: floor },
       ],
       fillet: 0.3,
       filletLoss: 0.15,
       filletSteps: 9,
-      roundLen: 2.8,
+      roundLen: 3.5,
       widest: 0.47,
       boxiness: 4.5,
-      // ASSUMED, read off GC180-01 (the panel's right-hand edge leans back about a third of a metre in each metre of height, seen at 50 degrees to the axis) and GC180-02: the
-      // face leans back about 20 degrees at the tip and the lean is gone 1.6 m back, over the glass's top (the lean needs that run: over less, the sheared roof line would turn
-      // back on itself behind the face). `from` is the lowest point of any ring (0.641 m, 0.04 m back), so nothing stands forward of the chin.
+      // ASSUMED, read off GC180-01 (the panel's right-hand edge leans back about a third of a metre in each metre of height, seen at 50 degrees to the axis), GC180-02 and the
+      // side-on 180109 (the face's front edge leans back 0.19 m at 1.11 m up and 0.42 m at 1.75 m: 0.36 to a hand's breadth; over the top 0.4 m it curves back faster, which one straight
+      // lean cannot follow): the face leans back about 20 degrees at the tip and the lean is gone 1.6 m back, over the glass's top (the lean needs that run: over less, the sheared roof
+      // line would turn back on itself behind the face). `from` is the lowest point of any ring (0.641 m, 0.04 m back), so nothing stands forward of the chin.
       rake: { lean: 0.36, from: 0.64, reach: 1.6 },
     },
     glass: {
       // two panes, a 10 cm post between them; the glass wraps close to the corners (ASSUMED sizes, from the photographs)
-      screen: { s0: 0.14, s1: 1.3, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.12, pillar: 0.1, pillarColour: 0xa4aab2 },
-      side: { sBack: 2.85, sFront0: 2.3, sFront1: 1.7, v0: 0.55, v1: 0.8 },
+      // the screen runs from the face's top edge to about 3.0 m up, 1.65 m back (GC180-01: its slope is about 0.85 of the yellow panel's height; 180109: the roof is at 3.0 m 1.66 m back)
+      screen: { s0: 0.14, s1: 1.65, fraction: 0.88, topRadius: 0.3, bottomRadius: 0.12, pillar: 0.1, pillarColour: 0xa4aab2 },
+      // the cab's side window is a small upright one in the cab door, 0.33 m wide and 0.53 m tall (2.30 to 2.83 m up, 2.85 to 3.19 m behind the face's foot in 180109; the narrow
+      // window of the cab door in 180104), not a long wedge: no photograph shows the nose's side holding anything bigger
+      side: { sBack: 3.19, sFront0: 2.86, sFront1: 2.86, v0: 0.52, v1: 0.72 },
     },
     gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
     // no pantograph: this value is never used
@@ -868,12 +880,13 @@ const ADELANTE_BODY = ((): BodySpec => {
       coupler: { style: 'scharfenberg', covered: false },
       face: ADELANTE_FACE,
     },
-    // ASSUMED places and sizes, read off GC180-05 and GC180-01: on the roof just behind the windscreen's top edge, a louvre on the cab's right, a round vent a little right of the
-    // middle, and a smaller louvre on the cab's left
+    // ASSUMED sizes and sides, read off GC180-05 and GC180-01: a louvre on the cab's right, a round vent a little right of the middle and a smaller louvre on the cab's left, on the roof
+    // behind the windscreen's top edge. Their distance back is read off the side-on 180109, where the roof's dark louvre slots stand 2.3 to 3.3 m behind the face's foot (the nose
+    // ends 3.9 m back): 2.6 m, near the middle of that run
     noseRoof: [
-      { name: 'louvre', shape: 'louvre', x: 0.85, s: 1.62, width: 0.5, length: 0.34, rim: 0x3a3e45, colour: 0x0c0d0f },
-      { name: 'vent', shape: 'round', x: 0.3, s: 1.58, width: 0.24, length: 0.24, rim: 0x5a6068, colour: 0x0c0d0f },
-      { name: 'louvre', shape: 'louvre', x: -0.75, s: 1.66, width: 0.3, length: 0.2, rim: 0x3a3e45, colour: 0x0c0d0f },
+      { name: 'louvre', shape: 'louvre', x: 0.85, s: 2.62, width: 0.5, length: 0.34, rim: 0x3a3e45, colour: 0x0c0d0f },
+      { name: 'vent', shape: 'round', x: 0.3, s: 2.58, width: 0.24, length: 0.24, rim: 0x5a6068, colour: 0x0c0d0f },
+      { name: 'louvre', shape: 'louvre', x: -0.75, s: 2.66, width: 0.3, length: 0.2, rim: 0x3a3e45, colour: 0x0c0d0f },
     ],
     // ASSUMED: sizes and order of the masses (a Cummins QSK19 is about 2 m long; the rest are guesses), laid between the bogies so that they fill the stretch almost wall to wall,
     // as the belly of GC180-01 runs from one bogie to the next; the order puts the cooler beside the engine and the transmission behind it, so the middle of a car (where the
@@ -890,7 +903,7 @@ const ADELANTE_BODY = ((): BodySpec => {
     },
     // a diesel unit: no pantograph, no roof kit
     roofKit: null,
-    plan: emuPlan('adelante', length),
+    plan: emuPlan('adelante', length, END_GAP + 4.45),
   };
 })();
 

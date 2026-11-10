@@ -265,21 +265,20 @@ export const DESIRO_700_FACE: FaceSpec = {
 const POD_180 = 0x3c4149;
 
 /**
- * The right half of the 180's yellow panel, from its top corner (above the face's own top, which cuts it off at the glass's foot) down the curved side to the middle of its
- * lower edge, which bows down: a bowl under the glass, not a trapezoid. Every step turns the edge the same way (convex), so the panel is one convex outline.
- */
-const PANEL_180: readonly [number, number][] = [[0.99, 2.3], [0.96, 2.0], [0.9, 1.72], [0.82, 1.56], [0.72, 1.46], [0.58, 1.39], [0.4, 1.35], [0.2, 1.33], [0, 1.32]];
-
-/**
- * The Class 180's face, from GC180-05 and GC180-01 (the Halifax and Kings Cross photographs, 235 to 305 px to the metre against the 3.77 m height), GC180-03 and GC180-02. The face
- * leans back (NoseRake on the 180's nose: about 20 degrees), so every height below is the elevation, the front view's, and the shapes stand on the leaning plane:
- *   the panel   the yellow bowl under the windscreen, 0.9 m of it under the glass's foot: about 1.95 m across at the foot, its sides curving in, its lower edge bowed down to 1.32 m
- *               at the middle and rising to the pods at the corners (the round-4 scorer's "large flat yellow trapezoid" against GC180-05 and GC180-02's smaller, curved panel); the
- *               rest of the face is the livery's black;
- *   the pods    a smoked-glass pod outboard of each side of the panel, about 0.3 m wide where the face's edge turns and 0.9 m tall, a round headlight low in it and a smaller lamp
- *               above it; its inner edge is the straight line along the panel's curve, so the panel's outline is not cut and the two never overlap.
- * The coupler stands in the open under the panel (train.ts draws it), and the windscreen over it is a patch on the nose's roof, not a shape of the face. Sizes ASSUMED, read off
- * the photographs (the panel's curve and the pods' places to a few centimetres).
+ * The Class 180's face, from GC180-03 (59912 at Northallerton, the clearest near-frontal picture in the review set), GC180-04, GC180-05 and GC180-01 (the Halifax and Kings Cross
+ * photographs), with 180104 and 180102 (Old Oak Common open day, train_photos, CC BY-SA 2.0) for the pods. The face leans back (NoseRake on the 180's nose: about 20 degrees), so
+ * every height below is the elevation, the front view's, and the shapes stand on the leaning plane:
+ *   the body    the yellow panel's lower part, a trapezoid between the pods with straight sides and a flat foot: 1.4 m across at its top, 1.28 m at its foot, 0.9 m tall, its foot 1.0 m over the
+ *               rail head; the sides lean in going down by about four degrees (the pods' inner edges are the same two lines, so the yellow and the smoked glass meet without a gap);
+ *   the brow    the band over it, the foot of the windscreen's frame: it runs out past the body over each pod's top (a wing each side, 0.22 m beyond the body's top corner) and its upper edge dips
+ *               from the wings' tips (0.2 m over the middle's, in the pictures) to a point at the middle, 0.17 m under the face's top, where the centre post stands (the round-5 scorer: "an
+ *               angular panel with straight sides tracking the slanted lamp pods and a pointed upper centre"); the face's own rounded top corner cuts the wings' tips off;
+ *   the pods    a wedge of smoked glass each side, 0.75 m tall at its inner edge, its top edge the brow's foot, its inner edge the body's side running on down, its lower edge rising outward in three
+ *               steps to the face's edge (the glass is cut across its lower outer corner), the face's own rounded edge cutting the rest;
+ *   the lamps   a round headlight, 0.2 m across, low in the pod and a little inboard of its middle, and a smaller lamp (0.11 m, the dotted one) above it and outboard.
+ * The coupler stands in the open under the body (train.ts draws it), and the windscreen over it is a patch on the nose's roof, not a shape of the face. ASSUMED sizes, read off the
+ * pictures against the published 3.77 m height (about 89 px to the metre in GC180-03) and scaled to the face here, which is the loft's flat cap (2.26 m across), narrower than the
+ * photographed front (about 2.7 m): good to about 5 cm in height and a little more across.
  */
 export const ADELANTE_FACE: FaceSpec = {
   setback: 0.02,
@@ -289,9 +288,10 @@ export const ADELANTE_FACE: FaceSpec = {
   // (no glass on this face: the windscreen is a patch on the nose's roof)
   glassLean: 0,
   shapes: [
-    { name: 'warning-panel', outline: [...PANEL_180, ...PANEL_180.slice(0, -1).reverse().map(([x, y]): [number, number] => [-x, y])], colour: YELLOW, lift: 0.0015 },
-    { name: 'lamp-pod', outline: [[1.0, 2.0], [1.6, 2.0], [1.6, 1.1], [0.68, 1.1]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
-    { name: 'headlight', outline: discOutline(0.97, 1.3, 0.095), lens: 'head', lift: 0.019, mirror: true },
-    { name: 'tail-lamp', outline: discOutline(0.97, 1.68, 0.055), lens: 'tail', lift: 0.019, mirror: true },
+    { name: 'warning-panel', outline: [[-0.7, 1.9], [0.7, 1.9], [0.64, 1.0], [-0.64, 1.0]], colour: YELLOW, lift: 0.0015 },
+    { name: 'warning-brow', outline: [[0, 2.02], [0.92, 2.2], [0.92, 1.9], [0, 1.9]], colour: YELLOW, lift: 0.0015, mirror: true },
+    { name: 'lamp-pod', outline: [[0.7, 1.9], [1.4, 1.9], [1.4, 1.62], [1.15, 1.4], [0.95, 1.26], [0.65, 1.15]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
+    { name: 'headlight', outline: discOutline(0.85, 1.46, 0.1), lens: 'head', lift: 0.019, mirror: true },
+    { name: 'tail-lamp', outline: discOutline(1.03, 1.65, 0.055), lens: 'tail', lift: 0.019, mirror: true },
   ],
 };
