@@ -134,6 +134,8 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   build.add(group, s.strips, strips, 'perth-roof-strips');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
   // The glazing's weathered outer face (perth-station-structure.ts PerthStationBatches.weather): seen from above only.
-  const weather = build.own(new THREE.MeshLambertMaterial({color: 0x34332f, transparent: true, opacity: .62, depthWrite: false, side: THREE.FrontSide}));
+  // Round 3: opaque, so the transparent sort can no longer put the milky panes over it (round 2's overview read white and streaky); its
+  // faces look up, so from under the roof it is culled and the panes show. A weathered grey, ASSUMED shade.
+  const weather = build.own(new THREE.MeshLambertMaterial({color: 0x7a7b78, side: THREE.FrontSide}));
   build.add(group, s.weather, weather, 'perth-roof-weathering');
 }

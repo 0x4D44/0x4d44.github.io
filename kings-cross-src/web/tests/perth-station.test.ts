@@ -106,7 +106,22 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
     for (const name of ['perth-island-building', 'perth-columns-bridges-furniture']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.platforms, name);
     const ironwork = scene.group.getObjectByName('perth-roof-ironwork') as THREE.Mesh; ironwork.geometry.computeBoundingBox();
     assert.ok(ironwork.geometry.boundingBox!.min.y > 4.8, 'the roof ironwork stays over the train envelope');
+    // Round 3: the weathered skin is opaque and one-sided, so from above it hides the panes whatever the transparent sort does, and from
+    // below (its back faces) it is culled.
+    const skin = (scene.group.getObjectByName('perth-roof-weathering') as THREE.Mesh).material as THREE.Material;
+    assert.ok(!skin.transparent && skin.depthWrite && skin.side === THREE.FrontSide, 'the roof\'s weathered skin is opaque and front-sided');
   } finally { scene.dispose(); }
+});
+
+test('round 3: no roof ironwork stands outside the roof (pt-platform-4-north saw a girder and rafters past its north end)', () => {
+  const g = batches.ironwork.positions, rings = [plan.local.roof, ...(plan.local.canopy.length >= 3 ? [plan.local.canopy] : [])];
+  let worst = 0, at: Pt = [0, 0];
+  for (let i = 0; i < g.length; i += 3) {
+    const q = toLocal([g[i], g[i + 2]]); if (rings.some(r => inRing(q, r))) continue;
+    const d = Math.min(...rings.map(r => ringDistance(q, r))); if (d > worst) { worst = d; at = q; }
+  }
+  // 0.6 m: a gutter girder's flange, a fascia or a valance may hang just over the outline's edge, a member running on past it may not.
+  assert.ok(worst <= .6, `roof ironwork ${worst.toFixed(2)} m outside the roof at x' ${at[0].toFixed(1)}, z' ${at[1].toFixed(1)}`);
 });
 
 test('the bay roof (R-pt1-c): its ridges run along the tracks over platforms 5-7, it alone rises over the main roof, an arched glazed screen closes its south end', () => {
@@ -125,6 +140,11 @@ test('the bay roof (R-pt1-c): its ridges run along the tracks over platforms 5-7
   // The ridge runs along the tracks: the same height along x', at each span's middle.
   for (const sp of PERTH_BAY_ROOF.spans) assert.equal(bayRoofHeight((sp.z0 + sp.z1) / 2), PERTH_BAY_ROOF.gutter + sp.rise);
   assert.equal(PERTH_ROOF_RIDGE, Math.max(main, ...PERTH_BAY_ROOF.spans.map(sp => PERTH_BAY_ROOF.gutter + sp.rise)));
+  // Round 3: the arched screen is a step, not an open end. R-pt1-c, from the bay buffers looking south, shows glazing on both sides of it:
+  // the high roof ends just past the buffers and the main roof carries on south over the bays.
+  const south = Math.max(...bay.map(p => p[0])), buffers = Math.min(...plan.local.platforms.filter(p => p.ref === '5').flatMap(p => p.pts.map(q => q[0])));
+  assert.ok(south > buffers && south < buffers + 15, `the step (x' ${south.toFixed(1)}) stands just south of the bay buffers (x' ${buffers.toFixed(1)})`);
+  for (const z of [50, 60, 70]) assert.ok(inRing([south + 5, z], plan.local.main) && inRing([south + 30, z], plan.local.main), `the main roof covers the bays south of the step at z' ${z}`);
 });
 
 test('the platforms are furnished as R-pt1-a and R-pt1-c show: benches and bins along the island building, its kiosk, hung boards, number boards', () => {
@@ -142,7 +162,15 @@ test('round 2b: the roof reads dark from above only, the island building\'s chim
   // The weathered outer face covers the main and bay glazing and faces up everywhere, so it is culled from below.
   const w = batches.weather, n = w.normals;
   assert.ok(w.positions.length >= batches.glass.positions.length / 2, 'the weathered face covers the station glazing');
-  for (let i = 1; i < n.length; i += 3) assert.ok(n[i] > 0, 'the weathered face faces up');
+  // Round 3: its normals are all straight up (one flat grey from above), so facing is read from each triangle's winding, which is what
+  // the renderer culls by: counter-clockwise seen from above.
+  for (let i = 0; i < n.length; i += 3) assert.deepEqual([n[i], n[i + 1], n[i + 2]], [0, 1, 0], 'the weathered face is lit as one flat sheet');
+  const p = w.positions, ix = w.indices;
+  for (let t = 0; t < ix.length; t += 3) {
+    const [a, b, c] = [ix[t], ix[t + 1], ix[t + 2]].map(k => [p[3 * k], p[3 * k + 1], p[3 * k + 2]]);
+    const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    assert.ok(ny >= -1e-9, `the weathered face's triangle ${t / 3} is wound to face down`);
+  }
   // Chimney stacks rise through the glazing (R-pt1-b); nothing else of the building does.
   const stone = islandBuildingBatches(plan.island, perthRoofOver(plan)).stone.positions, over = perthRoofOver(plan);
   let stacks = 0;

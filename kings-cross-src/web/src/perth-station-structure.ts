@@ -87,21 +87,33 @@ export function clipHalf(r: readonly Pt[], axis: 0 | 1, v: number, greater: bool
   }
   return out;
 }
-/** A ring less its corner x' >= x, z' >= z (the region must take one bite out of the ring, entering across one of the two lines and
- *  leaving across the other): the vertices inside it go, the crossing points and the region's corner come in. */
-export function cutCorner(r: readonly Pt[], x: number, z: number): Pt[] {
-  const inside = (p: Pt): boolean => p[0] >= x && p[1] >= z, out: Pt[] = [];
-  const cross = (a: Pt, b: Pt): Pt => {
-    // Where a-b crosses the region's boundary: the line it crosses is the one whose crossing lies on the region's side of the other.
-    const tx = (x - a[0]) / (b[0] - a[0]), tz = (z - a[1]) / (b[1] - a[1]);
-    const px: Pt = [x, a[1] + (b[1] - a[1]) * tx], pz: Pt = [a[0] + (b[0] - a[0]) * tz, z];
-    return tx >= 0 && tx <= 1 && px[1] >= z ? px : pz;
+/** A ring less the region x0 <= x' <= x1, z' >= z (a notch the region bites out of the ring, entering across its boundary once and
+ *  leaving once): the vertices inside it go; the crossing points, and the region's corners between them, come in. */
+export function cutBay(r: readonly Pt[], x0: number, x1: number, z: number): Pt[] {
+  const inside = (p: Pt): boolean => p[0] >= x0 && p[0] <= x1 && p[1] >= z, out: Pt[] = [];
+  // Where a-b crosses the region's boundary (the line x' = x1 above z, the line z' = z between x0 and x1, the line x' = x0 above z), in order.
+  const crossings = (a: Pt, b: Pt): Pt[] => {
+    const hits: [number, Pt][] = [];
+    for (const x of [x0, x1]) { const t = (x - a[0]) / (b[0] - a[0]); if (t > 0 && t <= 1) { const q: Pt = [x, a[1] + (b[1] - a[1]) * t]; if (q[1] >= z) hits.push([t, q]); } }
+    const t = (z - a[1]) / (b[1] - a[1]); if (t > 0 && t <= 1) { const q: Pt = [a[0] + (b[0] - a[0]) * t, z]; if (q[0] >= x0 && q[0] <= x1) hits.push([t, q]); }
+    return hits.sort((p, q) => p[0] - q[0]).map(h => h[1]);
   };
+  // A boundary point's place along the boundary: down x' = x1, along z' = z, up x' = x0.
+  const u = (p: Pt): number => Math.abs(p[0] - x1) < 1e-9 ? z - p[1] : Math.abs(p[1] - z) < 1e-9 ? x1 - p[0] : (x1 - x0) + (p[1] - z);
+  let entry: Pt | undefined;
   for (let i = 0; i < r.length; i++) {
-    const a = r[i], b = r[(i + 1) % r.length], ia = inside(a), ib = inside(b);
-    if (!ia) out.push(a);
-    if (!ia && ib) out.push(cross(a, b));
-    if (ia && !ib) { const q = cross(a, b), last = out.at(-1); if (last && last[0] !== q[0] && last[1] !== q[1]) out.push([x, z]); out.push(q); }
+    const a = r[i], b = r[(i + 1) % r.length];
+    let within = inside(a);
+    if (!within) out.push(a);
+    // An edge may enter and leave within itself (one passing across the notch), so every crossing toggles.
+    for (const q of crossings(a, b)) {
+      if (!within) { entry = q; out.push(q); }
+      else {
+        if (entry) { const ua = u(entry), ub = u(q), corners: [number, Pt][] = [[0, [x1, z]], [x1 - x0, [x0, z]]]; for (const [uc, c] of ua < ub ? corners : [...corners].reverse()) if ((uc - ua) * (uc - ub) < 0) out.push(c); }
+        out.push(q);
+      }
+      within = !within;
+    }
   }
   return out;
 }
@@ -183,7 +195,7 @@ export const PERTH_STATION = {
  *  - the column line z' = columnZ on platforms 6/7, a column every columnEvery m where the platform takes it 1.5 m clear of both edges;
  *  - the arched ribs spring at `springing` and stand every ribEvery m. */
 export const PERTH_BAY_ROOF = {
-  north: -124.3, z0: 44.6, gutter: 8, columnZ: 63.6, columnEvery: 9, springing: 7, ribEvery: 4.5,
+  north: -124.3, south: -60, z0: 44.6, gutter: 8, columnZ: 63.6, columnEvery: 9, springing: 7, ribEvery: 4.5,
   spans: [{z0: 44.6, z1: 63.6, rise: 3.2}, {z0: 63.6, z1: 73.6, rise: 1.8}],
   bands: {gutter: .6, ridge: .3},
 } as const;
@@ -353,9 +365,9 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   const platforms = data.platforms.map(p => ({ref: p.ref ?? '', pts: cleanRing(p.path).map(toLocal)}));
   const titeLocal = titeBlock(data);
   const roofLocal = clipNorth(roof.map(toLocal), PERTH_SHED_NORTH), BR = PERTH_BAY_ROOF;
-  const bay = roofLocal.length >= 3 ? clipHalf(clipHalf(roofLocal, 0, BR.north, true), 1, BR.z0, true) : [];
+  const bay = roofLocal.length >= 3 ? clipHalf(clipHalf(clipHalf(roofLocal, 0, BR.north, true), 0, BR.south, false), 1, BR.z0, true) : [];
   const local = {roof: roofLocal, canopy: canopy.map(toLocal), island: clipNorth(island.map(toLocal), PERTH_SHED_NORTH), tite: titeLocal?.ring ?? [], platforms,
-    main: bay.length >= 3 ? cutCorner(roofLocal, BR.north, BR.z0) : roofLocal, bay: bay.length >= 3 ? bay : []};
+    main: bay.length >= 3 ? cutBay(roofLocal, BR.north, BR.south, BR.z0) : roofLocal, bay: bay.length >= 3 ? bay : []};
   const localData = {platforms: data.platforms.map(p => ({...p, path: p.path.map(toLocal)})), rails: data.rails.map(r => ({...r, path: r.path.map(toLocal)}))};
   // The island building is a cut-out of the roof's plan (no column, girder or rafter over it), grown 3 cm so the gable screens Waverley's
   // plan draws along the outline skip the edges the building shares with it. The glazing itself runs on over the building (R-pt1-a).
@@ -862,8 +874,8 @@ function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
 export interface PerthStationBatches {
   /** Roof part (track frame turned to the scene's): the glazing (into the scene's shared roof glass), the solid strips, the ironwork. */
   glass: Batch; strips: Batch; ironwork: Batch;
-  /** The main and bay roofs' glazing again, 4 cm over it, facing up only: drawn dark and half see-through, it is the weathered outer face
-   *  of old station glazing that makes the roof read dark grey from above (R-pt1-b) while the panes still read milky white from below. */
+  /** The main and bay roofs' glazing again, 4 cm over it, facing up only, with straight-up normals: drawn opaque grey and culled from
+   *  below, it is the weathered outer face of old station glazing that makes the roof read dark grey from above (R-pt1-b) while the panes still read milky white from below. */
   weather: Batch;
   /** Platforms part: Waverley's platform strips, faces and fittings, the footbridges, clocks and canopy columns. */
   platform: Pick<WaverleyStructureBatches, 'edges' | 'faces' | 'tactile' | 'lip'>; fittings: Batch;
@@ -897,7 +909,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   // The coper and its nosing in buff (Abbott 6573357, R-pt1-b: a buff coping over red brick faces), not Waverley's pale grey.
   const coper: [Rgb, Rgb] = [rgb(WAVERLEY_EDGE_BANDS[0].color), P('coper')];
   recolor(structure.fittings, swap); recolor(structure.edges, [...swap, coper]); recolor(structure.lip, [...swap, coper]);
-  for (let i = 1; i < weather.positions.length; i += 3) weather.positions[i] += .04;
+  // Its normals all straight up (round 3): lit as one flat sheet, the ridge-and-furrow's sunward and shaded slopes no longer stripe it.
+  for (let i = 1; i < weather.positions.length; i += 3) { weather.positions[i] += .04; weather.normals[i - 1] = 0; weather.normals[i] = 1; weather.normals[i + 1] = 0; }
   // The Dundee canopies: a shallow ridge-and-furrow from canopy.top, cut round the stairs that pass through them, on a column row down
   // each platform, with curved brackets and a fretted valance.
   if (L.canopy.length >= 3) {
