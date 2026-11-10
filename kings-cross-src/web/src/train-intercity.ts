@@ -35,7 +35,7 @@ const TRACK = 1.435;
 /** CrossCountry: plum cab and roof, silver body, golden-yellow nose, red-pink doors (xc220-02, xc220-03, xc221-02). */
 export const XC = { plum: 0x45202c, plumDark: 0x2e1a20, silver: 0xa7a9ae, yellow: 0xf2b400, door: 0xc6213f, roof: 0x3b2229, pin: 0xe0782a, under: 0x2a2a2d } as const;
 /** ScotRail Inter7City: navy power car with a yellow front, pale grey coaches with a navy window band and foot, an orange cantrail line (scotrail-hst-03, -04, -06). */
-export const SR = { navy: 0x1d2944, navyBand: 0x1f2a42, grey: 0xc2c7ce, yellow: 0xf3c200, orange: 0xe0702c, roof: 0x45484d, louvre: 0x24272c, under: 0x2b2c2f } as const;
+export const SR = { navy: 0x1d2944, navyBand: 0x1f2a42, grey: 0xc2c7ce, yellow: 0xf3c200, orange: 0xe0702c, roof: 0x45484d, louvre: 0x24272c, louvrePanel: 0x8c9299, cabRoof: 0x2a2c31, under: 0x2b2c2f } as const;
 const FRAME = 0x0e0f11;
 const GASKET = 0x0d0e10;
 const PANE = 0x2a3a48;
@@ -92,6 +92,11 @@ interface BodyDef {
   underfloor: UnderItem[];
   underColour: number;
   roof?(car: IntercityCar, add: (x0: number, x1: number, y0: number, y1: number, s0: number, s1: number, colour: number) => void): void;
+  /**
+   * louvre runs on the shoulder, both sides: panels `panel` long from s0 to s1 with `gap` between them, each crossed by dark slots `slot` wide at
+   * `pitch`, from y0 to y1 up the shoulder's curve (the band under them is painted by `paint`)
+   */
+  cantLouvres?(car: IntercityCar): { s0: number; s1: number; y0: number; y1: number; panel: number; gap: number; pitch: number; slot: number; colour: number }[];
   /** flat fittings laid on the side wall (grilles), each drawn on both sides: s0..s1 along, y0..y1 */
   sideFittings?(car: IntercityCar): { s0: number; s1: number; y0: number; y1: number; colour: number; ribs?: number }[];
 }
@@ -272,9 +277,17 @@ const VOYAGER_BODY: BodyDef = {
   ],
   underColour: XC.under,
   roof(car, add) {
-    // ASSUMED (no roof photograph close enough): the engine's exhaust and cooler hatch near the inner end of each car, dark and low
-    const s = car.cab ? car.length - 5.5 : car.length / 2 + 4;
-    add(-0.6, 0.6, V_CROWN - 0.05, V_CROWN + 0.06, s, s + 2.2, 0x26222a);
+    // after voyager-roof-01 and -02 (overbridge views): at each end of a car a low raised cooler hatch in the roof's colour, nearly the crown's
+    // width, with a pair of dark grilles let into it; about a third of the way along, a dark slatted exhaust box on the centre line. ASSUMED sizes.
+    const hatch = (s: number): void => {
+      add(-0.78, 0.78, V_CROWN - 0.06, V_CROWN + 0.035, s, s + 2.3, XC.roof);
+      for (const x of [-0.42, 0.42]) add(x - 0.27, x + 0.27, V_CROWN + 0.035, V_CROWN + 0.042, s + 0.35, s + 1.95, 0x17141a);
+    };
+    hatch(car.cab ? 4.2 : 0.9);
+    hatch(car.length - 3.2);
+    const e = car.length * 0.42;
+    add(-0.42, 0.42, V_CROWN - 0.05, V_CROWN + 0.03, e, e + 1.7, 0x201d22);
+    for (let k = 0; k < 9; k++) add(-0.4, 0.4, V_CROWN + 0.03, V_CROWN + 0.06, e + 0.08 + k * 0.18, e + 0.16 + k * 0.18, 0x34303a);
   },
 };
 
@@ -321,6 +334,8 @@ const H_NAVY_TOP = 1.72;
 const H_YELLOW_SIDE = 1.95;
 const H_YELLOW_ROOF = H_SCREEN.s1 + 0.18;
 const H_ROOF = H_WALL + 0.32;
+/** Where the charcoal cab roof gives way to the grey roof, under the exhaust hatch's front edge. ASSUMED. */
+const H_CAB_ROOF = 3.4;
 /** The navy foot under the grey, on the power car's rear and every coach (scotrail-hst-06). ASSUMED height. */
 const SR_FOOT = 1.42;
 /** Where the power car's navy front half ends in the skyline, and where the louvres run (scotrail-hst-03, -04). ASSUMED. */
@@ -357,10 +372,11 @@ function class43Paint(_car: IntercityCar, s: number, y: number, ax: number): num
     if (ax < h + f) return FRAME;
   }
   const roof = y > H_ROOF;
-  if (roof) return s < H_YELLOW_ROOF ? SR.yellow : SR.roof;
+  // the cab roof behind the yellow is dark charcoal back to the hatch (hst-roof-01, scotrail-hst-03)
+  if (roof) return s < H_YELLOW_ROOF ? SR.yellow : s < H_CAB_ROOF ? SR.cabRoof : SR.roof;
   if (y > H_NAVY_TOP && s < H_YELLOW_SIDE) return SR.yellow;
-  // the black louvres along the top of the engine room's sides (scotrail-hst-03)
-  if (s > H_LOUVRE[0] && s < H_LOUVRE[1] && y > H_WALL - 0.02 && y < H_WALL + 0.3) return SR.louvre;
+  // the engine room's louvre panels along the shoulder: grey, the dark slots laid over them (hst-roof-01, -02; scotrail-hst-03)
+  if (s > H_LOUVRE[0] && s < H_LOUVRE[1] && y > H_WALL - 0.02 && y < H_WALL + 0.3) return SR.louvrePanel;
   // the navy front half; behind it grey over a navy foot, the skyline laid on the wall over both
   if (s < H_SKY[0] || y < SR_FOOT) return SR.navy;
   return SR.grey;
@@ -374,7 +390,7 @@ const class43Cuts = (car: IntercityCar): Cut[] => {
   if (!car.cab) return cuts;
   return [
     ...cuts,
-    (_s, y) => y - H_NAVY_TOP, (_s, y) => y - 2.1, (s) => s - H_YELLOW_SIDE, (s) => s - H_YELLOW_ROOF,
+    (_s, y) => y - H_NAVY_TOP, (_s, y) => y - 2.1, (s) => s - H_YELLOW_SIDE, (s) => s - H_YELLOW_ROOF, (s) => s - H_CAB_ROOF,
     (s) => s - H_SCREEN.s0, (s) => s - H_SCREEN.s1, (s) => s - (H_SCREEN.s0 - f), (s) => s - (H_SCREEN.s1 + f),
     (s, _y, x) => x - hScreenHalf(s), (s, _y, x) => x + hScreenHalf(s), (s, _y, x) => x - hScreenHalf(s) - f, (s, _y, x) => x + hScreenHalf(s) + f,
   ];
@@ -429,9 +445,14 @@ const CLASS43_BODY: BodyDef = {
   ],
   underColour: SR.under,
   roof(car, add) {
-    // ASSUMED: the cooler group's roof fan housing over the rear (radiator) end
+    // after hst-roof-01 and -02 (overbridge views): behind the cab roof a dark raised hatch with the exhaust's square outlet on it; over the rear
+    // (radiator) end the cooler group's fan housing. ASSUMED sizes.
+    add(-0.85, 0.85, H_CROWN - 0.06, H_CROWN + 0.02, 3.4, 5.6, 0x26282c);
+    add(-0.3, 0.3, H_CROWN + 0.02, H_CROWN + 0.04, 4.2, 4.8, 0x141518);
     add(-0.9, 0.9, H_CROWN - 0.06, H_CROWN + 0.04, car.length - 4.3, car.length - 2.1, 0x2b2d31);
   },
+  // the engine room's louvres along both shoulders (hst-roof-01: panels of upright slots from behind the cab to the radiator end). ASSUMED pitch.
+  cantLouvres: (car) => (car.cab ? [{ s0: H_LOUVRE[0], s1: H_LOUVRE[1], y0: H_WALL - 0.01, y1: H_WALL + 0.29, panel: 1.0, gap: 0.12, pitch: 0.1, slot: 0.045, colour: SR.louvre }] : []),
   sideFittings: (car) => [
     // the radiator grille on the grey rear of the side (scotrail-hst-03), ribbed
     { s0: car.length - 4.15, s1: car.length - 2.55, y0: 1.42, y1: 2.92, colour: 0x3a3d43, ribs: 16 },
@@ -863,6 +884,37 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
       for (let k = 1; k < ribs; k++) {
         const y = lerp(f.y0, f.y1, k / ribs);
         detail.prismX(roundedRect(za + 0.03, zb - 0.03, y - 0.012, y + 0.012, 0, 1), sx * (half - 0.012), sx * (half - 0.006), col(0x55595f), false);
+      }
+    }
+  }
+  // louvres on the shoulder: dark slots on the section's quarter-ellipse (intercitySection: centre (W - 0.55, wallTop), semi-axes 0.55 and
+  // crown - wallTop - 0.04), each 5 mm out along the curve's normal, in three steps up the curve
+  for (const l of b.cantLouvres?.(car) ?? []) {
+    const rx = 0.55;
+    const ry = b.crown - b.wallTop - 0.04;
+    const at = (y: number): [number, number, number, number] => {
+      const phi = Math.asin(Math.min(1, Math.max(0, (y - b.wallTop) / ry)));
+      const nx = Math.cos(phi) / rx;
+      const ny = Math.sin(phi) / ry;
+      const n = Math.hypot(nx, ny);
+      const x = y <= b.wallTop ? W : W - rx + rx * Math.cos(phi);
+      return [x + (0.005 * nx) / n, y + (0.005 * ny) / n, nx / n, ny / n];
+    };
+    const rungs = [0, 1, 2, 3].map((k) => at(lerp(l.y0, l.y1, k / 3)));
+    const c = col(l.colour);
+    for (let p0 = l.s0; p0 + l.panel <= l.s1 + 1e-9; p0 += l.panel + l.gap) {
+      for (let s = p0 + (l.pitch - l.slot) / 2; s + l.slot <= p0 + l.panel + 1e-9; s += l.pitch) {
+        const za = Z(s);
+        const zb = Z(s + l.slot);
+        for (const sx of [-1, 1]) {
+          for (let k = 0; k < 3; k++) {
+            const [xa, ya, nxa, nya] = rungs[k] as [number, number, number, number];
+            const [xb, yb, nxb, nyb] = rungs[k + 1] as [number, number, number, number];
+            const na: V3 = [sx * nxa, nya, 0];
+            const nb: V3 = [sx * nxb, nyb, 0];
+            detail.quad([[sx * xa, ya, za], [sx * xa, ya, zb], [sx * xb, yb, zb], [sx * xb, yb, za]], [na, na, nb, nb], c);
+          }
+        }
       }
     }
   }

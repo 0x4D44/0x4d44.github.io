@@ -276,3 +276,36 @@ test('the Class 43 screen sits in the upper half of the yellow panel, with yello
   }
   assert.ok(fittings >= 24, `yellow coupler fittings: ${fittings} vertices`);
 });
+
+test('roofs after the overbridge photographs: Voyager cooler hatches with dark grilles at both ends of every car, Class 43 louvre slots along both shoulders', () => {
+  const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-6;
+  const verts = (m: THREE.Mesh, hex: number): THREE.Vector3[] => {
+    const c = col(hex);
+    const pos = m.geometry.getAttribute('position');
+    const rgb = m.geometry.getAttribute('color');
+    const out: THREE.Vector3[] = [];
+    for (let v = 0; v < pos.count; v++) if (near(rgb.getX(v), c.r) && near(rgb.getY(v), c.g) && near(rgb.getZ(v), c.b)) out.push(new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v)));
+    return out;
+  };
+  const xc = buildIntercityTrain('xc220x4');
+  const xf = intercityFormation('xc220x4');
+  for (const car of intercityLayout('xc220x4').cars) {
+    const detail = (xc.getObjectByName(`car-${car.index}`) as THREE.Group).getObjectByName('body-detail') as THREE.Mesh;
+    // the grilles stand on the crown: count them in the first and last third of the car's length
+    const grilles = verts(detail, 0x17141a).filter((p) => p.y > xf.crown);
+    const front = grilles.filter((p) => p.z < car.start + car.length / 3).length;
+    const back = grilles.filter((p) => p.z > car.end - car.length / 3).length;
+    assert.ok(front >= 48 && back >= 48, `car ${car.index}: grille vertices ${front} at the front third, ${back} at the back third`);
+  }
+  const hst = buildIntercityTrain('srhstx4');
+  const car = intercityLayout('srhstx4').cars[0]!;
+  const detail = (hst.getObjectByName('car-0') as THREE.Group).getObjectByName('body-detail') as THREE.Mesh;
+  const slots = verts(detail, 0x24272c).filter((p) => p.y > 2.95 && p.y < 3.35);
+  for (const sx of [-1, 1]) {
+    const side = slots.filter((p) => Math.sign(p.x) === sx);
+    const zs = new Set(side.map((p) => Math.round(p.z * 100)));
+    // panels of slots at 0.1 m pitch along the engine room: well over a hundred slot edges a side
+    assert.ok(zs.size > 100, `class 43 side ${sx}: ${zs.size} distinct slot edges`);
+    assert.ok(side.every((p) => p.z > car.start + 4.4 && p.z < car.start + 13.4), `class 43 side ${sx}: slots stay over the engine room`);
+  }
+});
