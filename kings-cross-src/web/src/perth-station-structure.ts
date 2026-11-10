@@ -179,7 +179,7 @@ export const PERTH_STATION = {
   stair: {width: 1.8, going: .28, maxRise: .18, clear: 1.2, gap: .2, landing: 1.8, column: .18, string: {lattice: .4, lift: .22}, slab: .15},
   /** Lift towers (R-pt1-d Abbott, R-pt1-b): 3.2 m square, standing 3.6 m over the deck, clad in vertical panels about 0.8 m wide (Abbott);
    *  ASSUMED sizes scaled from Abbott against the stair's balustrade. */
-  tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const},
+  tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const, joint: 2.4},
   /** The lattice bridge's arch (R-pt1-d north, round 5): its side girders `end` high at the ends, their top chord `rise` higher at mid-span
    *  (kept under the roof's low point over the bridge, 8.96 m, so the girder starts low rather than rising higher);
    *  and the lattice cells on its stair balustrades. ASSUMED. */
@@ -234,9 +234,12 @@ export const PERTH_FOOTBRIDGES = [
   {id: 'south', along: 24 + PERTH_BAY_PHASE, deck: 7.0, kind: 'lift', landings: [['4', '5'], ['2', '3'], ['1']]},
 ] as const;
 
-/** Round 5: landings placed as far across their island as they fit, this way (+1: toward greater z'), rather than centred. The 4/5
- *  landing goes toward platform 5: centred, its tower and dog-leg stood in pt-platform-4-north's line to the island building's south
- *  end and platform 4 elevation (where a landing stands across its island is ASSUMED; see PERTH_FOOTBRIDGES). */
+/** Round 5: landings placed as far across their island as they fit, this way (+1: toward greater z'), rather than centred.
+ *  Round 6, the source: Abbott 6573357 (R-pt1-d) shows the lift bridge's near landing off-centre: its tower stands at one side of the
+ *  island, its long face along that platform's edge, with the dog-leg stair running along the platform beside it, not a tower centred
+ *  on the island with the stair on its axis. So the 4/5 landing is drawn off-centre. WHICH side is ASSUMED: no photograph fixes it for
+ *  the 4/5 island, and toward platform 5 (+1) keeps pt-platform-4-north's line to the island building's south end clear (see
+ *  PERTH_FOOTBRIDGES). */
 export const PERTH_LANDING_LEAN: Readonly<Record<string, number>> = {'4/5': 1};
 
 /** Where along the platform (x', m) each island clock hangs: platform 4's south of the north footbridge, platform 5's by the bay ends. ASSUMED.
@@ -249,7 +252,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -11 + P
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad,columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x767d80, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xf2f2ee, gable: 0x9ea2a2, endGlass: 0xa9b6b8, towerClad: 0x9a9fa1, kioskMaroon: 0x6a3a26, timberDark: 0x4a3020, kioskGlass: 0x56636b, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -280,7 +283,11 @@ export interface PerthStationPlan {
    *  the timber kiosk on its platform 4 face, direction boards hung from the column-to-column girders (`dir` along the girder) and
    *  platform number boards on the columns. */
   furniture: {benches: {at: Pt; out: Pt}[]; bins: Pt[]; kiosk?: {at: Pt; out: Pt}; boards: {at: Pt; dir: Pt}[]; numbers: {at: Pt; dir: Pt}[]};
+  /** Round 6: the platforms' end ramps (platformRamps), track frame. */
+  ramps: PerthRamp[];
 }
+/** A platform end ramp (track frame): its head `e0`-`e1` on the platform's end at deck level, its foot `f0`-`f1` at rail level. */
+export interface PerthRamp {ref: string; e0: Pt; e1: Pt; f0: Pt; f1: Pt}
 const inRect = (p: Pt, r: readonly number[], m = 0): boolean => p[0] >= r[0] - m && p[0] <= r[1] + m && p[1] >= r[2] - m && p[1] <= r[3] + m;
 
 /** The rectangle (x0 x1 z0 z1, track frame) round a stair or tower footprint: start point, unit direction, length, width. */
@@ -532,7 +539,8 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
     const p: Pt = [c.x, c.z]; if (roomy(p, 1.8)) furniture.numbers.push({at: p, dir: [f.axis[0], f.axis[1]]});
   });
   // The scene-frame outlines, as drawn: cut at the shed line.
-  const plan: PerthStationPlan = {roof: local.roof.map(toWorld), canopy, island: local.island.map(toWorld), tite: titeLocal && {ring: titeLocal.ring.map(toWorld), tower: toWorld(titeLocal.tower)}, local, structure, bridges, clear, canopyColumns, clocks, furniture};
+  const plan: PerthStationPlan = {roof: local.roof.map(toWorld), canopy, island: local.island.map(toWorld), tite: titeLocal && {ring: titeLocal.ring.map(toWorld), tower: toWorld(titeLocal.tower)}, local, structure, bridges, clear, canopyColumns, clocks, furniture,
+    ramps: platformRamps(local, localData.rails.map(r => r.path))};
   planCache.set(data, plan);
   return plan;
 }
@@ -713,11 +721,18 @@ function bridgeBatch(b: Batch, br: PerthBridgePlan, roof: readonly Pt[]): void {
       // The lift tower (R-pt1-d Abbott): a grey box from the platform to 3.6 m over the deck, clad in vertical panels (a proud seam between
       // each), a flat cap 0.15 m proud all round, a dark door on the face away from the deck.
       const T = S.tower, [xc, zc] = l.tower.c, rotY = Math.atan2(-l.tower.dir[1], l.tower.dir[0]), y0 = WAVERLEY_LEVELS.platform, y1 = br.deck + T.above;
-      b.box([xc, (y0 + y1) / 2, zc], [T.size, y1 - y0, T.size], {rotY, color: P('modern'), skip: ['-y']});
+      // Round 6 (Abbott 6573357, the round-5 score): clad in mid-grey panels (towerClad), not the pale frame grey, each panel column
+      // broken by horizontal joints every T.joint m, staggered half a panel between neighbouring columns as Abbott shows them.
+      b.box([xc, (y0 + y1) / 2, zc], [T.size, y1 - y0, T.size], {rotY, color: P('towerClad'), skip: ['-y']});
       b.box([xc, y1 + .1, zc], [T.size + .3, .2, T.size + .3], {rotY, color: P('frame')});
       const u: Pt = l.tower.dir, v: Pt = [-u[1], u[0]], hs = T.size / 2 + .015;
-      for (const [f, g] of [[u, v], [v, u]] as [Pt, Pt][]) for (const e of [-1, 1]) for (let k = -T.size / 2 + T.panel; k < T.size / 2 - .1; k += T.panel) {
-        b.box([xc + f[0] * e * hs + g[0] * k, (y0 + y1) / 2, zc + f[1] * e * hs + g[1] * k], [.04, y1 - y0 - .3, .04], {color: P('seam')});
+      for (const [f, g] of [[u, v], [v, u]] as [Pt, Pt][]) for (const e of [-1, 1]) {
+        let col = 0;
+        for (let k = -T.size / 2 + T.panel; k < T.size / 2 - .1; k += T.panel) b.box([xc + f[0] * e * hs + g[0] * k, (y0 + y1) / 2, zc + f[1] * e * hs + g[1] * k], [.04, y1 - y0 - .3, .04], {color: P('seam')});
+        for (let k = -T.size / 2; k < T.size / 2 - .1; k += T.panel, col++) {
+          const w = Math.min(T.panel, T.size / 2 - k), m = k + w / 2;
+          for (let y = y0 + T.joint * (col % 2 ? .5 : 1); y < y1 - .3; y += T.joint) b.box([xc + f[0] * e * hs + g[0] * m, y, zc + f[1] * e * hs + g[1] * m], [.03, .04, w - .04], {rotY: Math.atan2(-f[1], f[0]), color: P('seam')});
+        }
       }
       b.box([xc + l.tower.dir[0] * (T.size / 2 + .02), y0 + 1.1, zc + l.tower.dir[1] * (T.size / 2 + .02)], [.06, 2.2, 1.1], {rotY, color: P('screen')});
       // Round 4: the deck-level lift door on the face toward the deck, under a glass hood cantilevered T.hood[0] m out on two pale brackets
@@ -1203,6 +1218,12 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   // Round 3: the bridges' and kiosk's glass panels out into their own batch, drawn see-through (perth-station.ts), so platform 4's
   // elevation reads past the lift bridge's stairs instead of behind pale opaque sheets.
   const panes = takeColor(fittings, P('glassPanel'));
+  // Round 6: the end ramps' brick sides, with the platform faces (each from the ramp's sloping edge down to the ground).
+  const deck = WAVERLEY_LEVELS.platform, g = WAVERLEY_LEVELS.ground, rail = WAVERLEY_LEVELS.rail;
+  for (const r of plan.ramps) for (const [e, f, o] of [[r.e0, r.f0, r.e1], [r.e1, r.f1, r.e0]] as [Pt, Pt, Pt][]) {
+    const l = Math.hypot(f[0] - e[0], f[1] - e[1]), n: Pt = [e[0] - o[0], e[1] - o[1]], nl = Math.hypot(n[0], n[1]);
+    structure.faces.poly([[e[0], g, e[1]], [f[0], g, f[1]], [f[0], rail, f[1]], [e[0], deck, e[1]]], [[0, g], [l, g], [l, rail], [0, deck]], {normal: [n[0] / nl, 0, n[1] / nl]});
+  }
   for (const b of [glass, weather, strips, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
   return {glass, weather, strips, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
 }
@@ -1241,11 +1262,18 @@ export function mainRoofEnds(main: readonly Pt[]): [Pt, Pt][] {
 /** Round 5: the main roof's ends as R-pt1-b shows them from outside, a row of pitched gables (each `width` wide, `rise` high, its apex at
  *  the roof's edge) over a `band`-deep eaves beam, with iron barge boards; in place of Waverley's flat fascia screen, which from
  *  pt-platform-4-north read as a flat brown lid 2 m deep. ASSUMED sizes, scaled from R-pt1-b. */
-export const PERTH_ROOF_ENDS = {min: 6, width: 6, rise: 1.6, band: .35, barge: .12} as const;
+export const PERTH_ROOF_ENDS = {min: 6, width: 6, rise: 1.6, band: .35, barge: .12,
+  /** Round 6 (R-pt1-b; the round-5 score: flat opaque triangles over a dark band): each gable glazed inside a boarded border `border`
+   *  wide, its lights divided by glazing bars every `bar` m and set `proud` m off the boarding on both faces; the eaves band painted
+   *  the gables' grey, not the dark fascia; and under it a boarded valance of pointed boards `tooth` wide hanging `drop` m. ASSUMED
+   *  sizes, scaled from R-pt1-b. */
+  border: .3, bar: .75, proud: .03, tooth: .3, drop: .35} as const;
 function roofEnds(b: Batch, main: readonly Pt[]): void {
-  const E = PERTH_ROOF_ENDS, gable = P('gable'), iron = P('iron'), eaves = P('fascia');
+  const E = PERTH_ROOF_ENDS, gable = P('gable'), iron = P('iron'), eaves = P('gable'), glass = P('endGlass'), valance = P('latticeWhite');
   for (const [a, c] of mainRoofEnds(main)) {
     const len = Math.hypot(c[0] - a[0], c[1] - a[1]), n = Math.max(1, Math.round(len / E.width)), p = (t: number): Pt => [a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t];
+    // The end's horizontal normal, for setting the glazing proud of the boarding on each face.
+    const nx = -(c[1] - a[1]) / len, nz = (c[0] - a[0]) / len;
     for (let k = 0; k < n; k++) {
       const q0 = p(k / n), q1 = p((k + 1) / n), qm = p((k + .5) / n), h0 = roofHeight(q0[0]), h1 = roofHeight(q1[0]), hm = roofHeight(qm[0]);
       const base = Math.min(h0, h1, hm) - E.rise, apex: V3 = [qm[0], hm, qm[1]], v0: V3 = [q0[0], base, q0[1]], v1: V3 = [q1[0], base, q1[1]];
@@ -1253,6 +1281,31 @@ function roofEnds(b: Batch, main: readonly Pt[]): void {
       const band: V3[] = [[q0[0], base - E.band, q0[1]], [q1[0], base - E.band, q1[1]], v1, v0];
       b.poly(band, undefined, {color: eaves}); b.poly([...band].reverse(), undefined, {color: eaves});
       beam(b, v0, apex, E.barge, E.barge, iron); beam(b, apex, v1, E.barge, E.barge, iron);
+      // The glazed light inside the border, on both faces, and its upright bars from the sill to the rake.
+      // The light: a triangle inside the border, its sill `border` over the gable's foot, its apex 1.5 borders under the gable's apex.
+      // inset(t, f): t across the light (0..1), f up from its sill to its raking edge (0..1).
+      const w = Math.hypot(q1[0] - q0[0], q1[1] - q0[1]), s = E.border / w, sill = base + E.border, peak = hm - 1.5 * E.border;
+      const inset = (t: number, f: number): V3 => {
+        const u = s + (1 - 2 * s) * t, q = p((k + u) / n), top = sill + (peak - sill) * (1 - Math.abs(t - .5) * 2);
+        return [q[0], sill + (top - sill) * f, q[1]];
+      };
+      for (const side of [1, -1]) {
+        const o = (v: V3): V3 => [v[0] + nx * E.proud * side, v[1], v[2] + nz * E.proud * side];
+        const tri = [inset(0, 0), inset(1, 0), inset(.5, 1)].map(o);
+        b.poly(side > 0 ? tri : [...tri].reverse(), undefined, {color: glass});
+        b.poly(side > 0 ? [...tri].reverse() : tri, undefined, {color: glass});
+      }
+      for (let t = E.bar / w; t < 1 - E.bar / w / 2; t += E.bar / w) {
+        const lo = inset(t, 0), hi = inset(t, 1); if (hi[1] - lo[1] < .1) continue;
+        b.box([lo[0], (lo[1] + hi[1]) / 2, lo[2]], [2 * E.proud + .04, hi[1] - lo[1], .05], {rotY: Math.atan2(-nz, nx), color: iron});
+      }
+      // The valance under the eaves band: pointed boards, each a pentagon (square top, pointed foot), both faces.
+      const m = Math.max(1, Math.round(w / E.tooth)), y0 = base - E.band;
+      for (let j = 0; j < m; j++) {
+        const ta = (k + j / m) / n, tb = (k + (j + 1) / m) / n, ra = p(ta), rb = p(tb), rm = p((ta + tb) / 2);
+        const pent: V3[] = [[ra[0], y0, ra[1]], [rb[0], y0, rb[1]], [rb[0], y0 - E.drop * .6, rb[1]], [rm[0], y0 - E.drop, rm[1]], [ra[0], y0 - E.drop * .6, ra[1]]];
+        b.poly(pent, undefined, {color: valance}); b.poly([...pent].reverse(), undefined, {color: valance});
+      }
     }
   }
 }
@@ -1296,6 +1349,41 @@ export function platformParts(path: readonly Pt[]): {covered: Pt[]; open: Pt[][]
   const r = cleanRing(path).map(toLocal), keep = (q: Pt[]): Pt[] => q.length >= 3 ? q.map(toWorld) : [];
   const covered = keep(clipHalf(clipHalf(r, 0, PERTH_SHED_NORTH, true), 0, PERTH_OPEN_SOUTH, false));
   return {covered, open: [keep(clipHalf(r, 0, PERTH_SHED_NORTH, false)), keep(clipHalf(r, 0, PERTH_OPEN_SOUTH, true))].filter(q => q.length)};
+}
+
+/** Round 6 (S3, the round-5 score: no platform end or ramp in any view): each platform's open end runs down to rail level in a ramp,
+ *  as British platform ends do (and as geograph 591926 shows platform 4's south end in the open, past the roof), at 1 in `grade`, its
+ *  sides `clear` m or more from every track's centreline (the side over the track is drawn in until it is; a ramp narrower than `min`
+ *  is left out). An end is a platform edge running across the tracks at the platform's first or last x', with nothing but open ground
+ *  past it: no platform, roof, canopy or building. ASSUMED grade and clearance (the photographs give neither). */
+export const PERTH_RAMP = {grade: 8, clear: 1.5, min: 1.5} as const;
+export function platformRamps(L: Pick<PerthStationPlan['local'], 'platforms' | 'roof' | 'canopy' | 'island' | 'tite'>, rails: readonly (readonly Pt[])[]): PerthRamp[] {
+  const R = PERTH_RAMP, len = WAVERLEY_LEVELS.platform * R.grade, out: PerthRamp[] = [];
+  const seg = (p: Pt, a: Pt, b: Pt): number => { const dx = b[0] - a[0], dz = b[1] - a[1], l = dx * dx + dz * dz, t = l ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l)) : 0; return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz); };
+  const railDist = (p: Pt): number => { let m = Infinity; for (const r of rails) for (let i = 1; i < r.length; i++) m = Math.min(m, seg(p, r[i - 1], r[i])); return m; };
+  const sideClear = (a: Pt, b: Pt): boolean => { for (let k = 0; k <= 10; k++) if (railDist([a[0] + (b[0] - a[0]) * k / 10, a[1] + (b[1] - a[1]) * k / 10]) < R.clear) return false; return true; };
+  const others = [L.roof, L.canopy, L.island, L.tite].filter(r => r.length >= 3);
+  for (const pf of L.platforms) {
+    const r = pf.pts, xs = r.map(p => p[0]), lo = Math.min(...xs), hi = Math.max(...xs);
+    for (let i = 0; i < r.length; i++) {
+      const a = r[i], c = r[(i + 1) % r.length], dx = Math.abs(c[0] - a[0]), dz = Math.abs(c[1] - a[1]), xm = (a[0] + c[0]) / 2, zm = (a[1] + c[1]) / 2;
+      if (dz < 3 * dx || dz < 2) continue;
+      const dir = Math.abs(xm - hi) < .5 ? 1 : Math.abs(xm - lo) < .5 ? -1 : 0; if (!dir) continue;
+      const blocked = [1, 2, 4, 6].some(d => { const past: Pt = [xm + dir * d * len / 6, zm]; return L.platforms.some(q => q !== pf && inRing(past, q.pts)) || others.some(q => inRing(past, q) || ringDistance(past, q) < 1); });
+      if (blocked) continue;
+      // The head on the end, the foot `len` further out along the tracks; each side drawn in, head and foot together, until it clears.
+      const s: Pt = [(c[0] - a[0]) / Math.hypot(c[0] - a[0], c[1] - a[1]), (c[1] - a[1]) / Math.hypot(c[0] - a[0], c[1] - a[1])];
+      let ua = 0, uc = 0; const w = Math.hypot(c[0] - a[0], c[1] - a[1]);
+      const head = (u: number, from: Pt, sg: number): Pt => [from[0] + s[0] * u * sg, from[1] + s[1] * u * sg];
+      const foot = (p: Pt): Pt => [p[0] + dir * len, p[1]];
+      while (w - ua - uc >= R.min && !sideClear(head(ua, a, 1), foot(head(ua, a, 1)))) ua += .1;
+      while (w - ua - uc >= R.min && !sideClear(head(uc, c, -1), foot(head(uc, c, -1)))) uc += .1;
+      if (w - ua - uc < R.min) continue;
+      const e0 = head(ua, a, 1), e1 = head(uc, c, -1);
+      out.push({ref: pf.ref, e0, e1, f0: foot(e0), f1: foot(e1)});
+    }
+  }
+  return out;
 }
 
 /** The roof's ridge height over rail (the glazing's top): the gutter plus the rise. */

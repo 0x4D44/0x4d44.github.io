@@ -11,7 +11,7 @@ import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
 import {paintMaterial} from './waverley-station-structure.ts';
-import {islandBuildingBatches, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan} from './perth-station-structure.ts';
+import {islandBuildingBatches, PERTH_PAINT, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
 import type {PerthStationBatches} from './perth-station-structure.ts';
 import {railStrip, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
@@ -150,6 +150,11 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // but dark grey on the Dundee platforms (PERTH_GREY_PLATFORMS).
   const tops = new Batch(), open = new Batch(), grey = new Batch();
   for (const p of data.platforms) { const parts = platformParts(p.path); if (parts.covered.length) fillSurface(tops, parts.covered, [], () => PERTH_LEVELS.platform); for (const q of parts.open) fillSurface(PERTH_GREY_PLATFORMS.includes(p.ref ?? '') ? grey : open, q, [], () => PERTH_LEVELS.platform); }
+  // Round 6: the end ramps (perth-station-structure.ts platformRamps) in their platform's open surfacing, from the deck down to rail level.
+  for (const r of perthStationPlan(data, stationOutline(data)?.outer).ramps) {
+    const [e0, e1, f0, f1] = [r.e0, r.e1, r.f0, r.f1].map(toWorld), y = PERTH_LEVELS.platform, rail = WAVERLEY_LEVELS.rail;
+    (PERTH_GREY_PLATFORMS.includes(r.ref) ? grey : open).poly([[e0[0], y, e0[1]], [e1[0], y, e1[1]], [f1[0], rail, f1[1]], [f0[0], rail, f0[1]]], [e0, e1, f1, f0], {facing: [0, 1, 0]});
+  }
   const s = stationBatches(data);
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));

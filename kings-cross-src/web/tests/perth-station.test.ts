@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -225,7 +225,9 @@ test('round 3: the platforms are red asphalt in the open beyond both roof ends, 
     assert.equal((greyMesh.material as THREE.MeshLambertMaterial).color.getHex(), PERTH_OPEN_GREY);
     const dundee = data.platforms.filter(p => PERTH_GREY_PLATFORMS.includes(p.ref ?? '')).map(p => cleanRing(p.path));
     assert.equal(dundee.length, 2, 'platforms 1 and 2 are mapped');
-    const inDundee = (x: number, z: number): boolean => dundee.some(r => inRing([x, z], r) || ringDistance([x, z], r) < .05);
+    // (Round 6: or on a Dundee platform's own end ramp, which runs on past its OSM outline.)
+    const dundeeRamps = plan.ramps.filter(r => PERTH_GREY_PLATFORMS.includes(r.ref)).map(r => [r.e0, r.e1, r.f1, r.f0].map(toWorld));
+    const inDundee = (x: number, z: number): boolean => [...dundee, ...dundeeRamps].some(r => inRing([x, z], r) || ringDistance([x, z], r) < .05);
     const gp = greyMesh.geometry.getAttribute('position'), red = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).geometry, rp = red.getAttribute('position');
     assert.ok(gp.count > 0, 'grey open surfacing drawn');
     for (let i = 0; i < gp.count; i++) assert.ok(inDundee(gp.getX(i), gp.getZ(i)), 'grey surfacing only on platforms 1 and 2');
@@ -506,6 +508,95 @@ test('round 2b: the roof reads dark from above only, the island building\'s chim
   let top = 0;
   for (let i = 0; i < g.length; i += 3) if (inRing([g[i], g[i + 2]], canopy) && ringDistance([g[i], g[i + 2]], canopy) > .2) top = Math.max(top, g[i + 1]);
   assert.ok(Math.abs(top - (C.top + C.rise)) < 1e-6, `the canopies' ridge at ${top}`);
+});
+
+test('round 6: the main roof\'s end gables are glazed in a boarded border over a light eaves band and a pointed-board valance (R-pt1-b)', () => {
+  const E = PERTH_ROOF_ENDS, ir = batches.ironwork, p = ir.positions, col = ir.colors;
+  const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6; };
+  for (const [a, c] of mainRoofEnds(plan.structure.outline)) {
+    const len = Math.hypot(c[0] - a[0], c[1] - a[1]), gables = Math.max(1, Math.round(len / E.width));
+    let glass = 0, fascia = 0, valance = 0, bars = 0, low = Infinity;
+    // (the end is not quite across the tracks, so the roof's height varies along it: bounds below use its lowest over the end)
+    const roofLo = Math.min(...Array.from({length: 101}, (_, k) => roofHeight(a[0] + (c[0] - a[0]) * k / 100)));
+    for (let i = 0; i < p.length; i += 3) {
+      const q = toLocal([p[i], p[i + 2]]); if (ringDistance(q, [a, c]) > E.proud + .1) continue;
+      const roof = roofHeight(q[0]);
+      if (is(i, PERTH_PAINT.endGlass)) { glass++; assert.ok(p[i + 1] < roof && p[i + 1] > roofLo - E.rise - .01, `end glazing at ${q} y ${p[i + 1]} inside its gable`); }
+      // (the eaves band's foot: gable grey, below the gables' own foot; PERTH_PAINT.fascia is the iron's shade after the recolour)
+      if (is(i, PERTH_PAINT.gable) && p[i + 1] < roof - E.rise - E.band / 2) fascia++;
+      if (is(i, PERTH_PAINT.latticeWhite)) { valance++; low = Math.min(low, p[i + 1]); }
+      if (is(i, PERTH_PAINT.iron) && p[i + 1] > roofLo - E.rise + E.border - .01 &&p[i + 1] < roof - E.border && ringDistance(q, [a, c]) < E.proud + .03) bars++;
+    }
+    assert.ok(glass >= gables * 4 * 3, `glazed gables on the end ${a}-${c} (${glass} vertices for ${gables} gables)`);
+    assert.ok(bars >= gables * 8, `glazing bars across the lights (${bars})`);
+    assert.ok(fascia >= gables * 4, `the eaves band painted the gables' grey, not the dark fascia (${fascia} vertices)`);
+    assert.ok(valance >= Math.round(len / E.tooth) * 2 * 5 * .9 && low < roofHeight((a[0] + c[0]) / 2) - E.rise - E.band - E.drop * .9, `a pointed-board valance under the band (${valance} vertices, lowest ${low.toFixed(2)})`);
+  }
+  const g = PERTH_PAINT.endGlass, gr = g >> 16, gb = g & 255;
+  assert.ok(gr > 0x90 && gb >= gr, `the end glazing pale grey-blue glass (${g.toString(16)})`);
+});
+
+test('round 6: the platforms\' open ends run down to rail level in ramps, clear of the tracks; platform 4\'s south end in pt-platform-4-south-end', () => {
+  const R = PERTH_RAMP, deck = WAVERLEY_LEVELS.platform, len = deck * R.grade;
+  const r4 = plan.ramps.find(r => r.ref === '4' && r.e0[0] > 100);
+  assert.ok(r4, 'a ramp at platform 4\'s south end');
+  assert.ok(plan.ramps.length >= 3, `ramps at the open ends (${plan.ramps.length})`);
+  for (const r of plan.ramps) {
+    for (const [e, f] of [[r.e0, r.f0], [r.e1, r.f1]]) {
+      assert.ok(Math.abs(Math.hypot(f[0] - e[0], f[1] - e[1]) - len) < 1e-6, `1 in ${R.grade}`);
+      for (let k = 0; k <= 10; k++) { const p: Pt = [e[0] + (f[0] - e[0]) * k / 10, e[1] + (f[1] - e[1]) * k / 10]; assert.ok(railDistance(toWorld(p)) >= R.clear - 1e-6, `the ${r.ref} ramp clear of the tracks at ${p}`); }
+    }
+    assert.ok(Math.hypot(r.e1[0] - r.e0[0], r.e1[1] - r.e0[1]) >= R.min, 'wide enough to walk');
+    // Its head on its platform's end: both head corners on the platform's outline.
+    const pf = plan.local.platforms.filter(q => q.ref === r.ref);
+    assert.ok([r.e0, r.e1].every(e => pf.some(q => ringDistance(e, q.pts) < 1e-6)), `the ${r.ref} ramp's head on its platform's end`);
+  }
+  // Drawn: a sloping open-surfacing quad from the deck to rail level, and its brick sides.
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const g = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal');
+    let slope = 0;
+    for (let i = 0; i < pos.count; i++) {
+      const q = toLocal([pos.getX(i), pos.getZ(i)]);
+      if (q[0] > r4!.e0[0] - .01 && q[0] < r4!.f0[0] + .01 && nrm.getY(i) < .999 && nrm.getY(i) > .9) slope++;
+    }
+    assert.ok(slope >= 4, `platform 4's ramp drawn sloping (${slope} vertices)`);
+  } finally { scene.dispose(); }
+  const faces = batches.platform.faces.positions; let side = 0;
+  // (a side's corners: its foot at rail level at the ramp's foot corners)
+  for (let i = 0; i < faces.length; i += 3) { const q = toLocal([faces[i], faces[i + 2]]); if ([r4!.f0, r4!.f1].some(f => Math.hypot(q[0] - f[0], q[1] - f[1]) < .01) && Math.abs(faces[i + 1] - WAVERLEY_LEVELS.rail) < 1e-6) side++; }
+  assert.ok(side >= 2, `the ramp's brick sides (${side})`);
+  // In the new view's frame.
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+  const k = cams['pt-platform-4-south-end'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
+  cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
+  for (const p of [r4!.e0, r4!.e1]) { const w = toWorld(p), v = new THREE.Vector3(w[0], deck, w[1]).project(cam); assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `the ramp's head in pt-platform-4-south-end (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`); }
+});
+
+test('round 6: the lift towers are clad in Abbott 6573357\'s mid-grey panels, with staggered horizontal joints', () => {
+  const T = PERTH_STATION.tower, f = batches.fittings, p = f.positions, col = f.colors;
+  const is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6; };
+  const towers = plan.bridges.flatMap(br => br.landings.filter(l => l.tower).map(l => ({c: l.tower!.c, u: l.tower!.dir, deck: br.deck})));
+  assert.equal(towers.length, 3);
+  for (const t of towers) {
+    let clad = 0, pale = 0; const joints = new Set<string>();
+    for (let i = 0; i < p.length; i += 3) {
+      // r: the distance out from the tower's middle in its own square (along its axis or across it, whichever is greater).
+      const q = toLocal([p[i], p[i + 2]]), d: Pt = [q[0] - t.c[0], q[1] - t.c[1]], r = Math.max(Math.abs(d[0] * t.u[0] + d[1] * t.u[1]), Math.abs(-d[0] * t.u[1] + d[1] * t.u[0]));
+      if (r > T.size / 2 + .3 || p[i + 1] < WAVERLEY_LEVELS.platform || p[i + 1] > t.deck + T.above) continue;
+      if (is(i, PERTH_PAINT.towerClad)) clad++;
+      // (below the deck, where only the tower stands: the lift bridge's slab is the pale grey too)
+      if (is(i, PERTH_PAINT.modern) && r > T.size / 2 - .05 && p[i + 1] < t.deck - 1) pale++;
+      // A horizontal joint: a seam box 0.04 m high (its top and bottom vertices 0.04 apart), keyed by its height to the centimetre.
+      if (is(i, PERTH_PAINT.seam) && p[i + 1] < t.deck + T.above - .3) joints.add((Math.round(p[i + 1] * 50) / 50).toFixed(2));
+    }
+    assert.ok(clad >= 16, `the tower at ${t.c} clad in towerClad (${clad} vertices)`);
+    assert.equal(pale, 0, 'no pale frame grey on the tower\'s faces');
+    // Staggered joints: heights from both the full and the half-joint rows.
+    assert.ok(joints.size >= 2 * Math.floor((t.deck + T.above - WAVERLEY_LEVELS.platform - .3) / T.joint), `staggered horizontal joints (${joints.size} heights)`);
+  }
+  const g = PERTH_PAINT.towerClad, [r, gg, b] = [g >> 16, (g >> 8) & 255, g & 255], m = PERTH_PAINT.modern;
+  assert.ok(r >= 0x88 && r <= 0xb0 && Math.abs(r - b) <= 0x10 && Math.abs(r - gg) <= 0x10 && r < (m >> 16), `mid grey, darker than the frames (${g.toString(16)})`);
 });
 
 test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders, in the across-track planes the platform cameras face', () => {
