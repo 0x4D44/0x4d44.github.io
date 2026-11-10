@@ -178,8 +178,10 @@ export const PERTH_STATION = {
   /** Lift towers (R-pt1-d Abbott, R-pt1-b): 3.2 m square, standing 3.6 m over the deck, clad in vertical panels about 0.8 m wide (Abbott);
    *  ASSUMED sizes scaled from Abbott against the stair's balustrade. */
   tower: {size: 3.2, above: 3.6, panel: .8, hood: [1.2, 1.8, 2.6] as const},
-  /** Bracket clocks on the island building (R-pt1-a2): a 0.8 m dial, 3.6 m up, 0.7 m out from the wall. */
-  clock: {radius: .4, height: 3.6, out: .7},
+  /** Bracket clocks on the island building (R-pt1-a2): a 0.9 m Roman dial in a timber case `case` (along the wall, out, high) whose
+   *  dial centre stands `height` over the deck, `out` from the wall. On platform 4 (R-pt1-a2) the case sits on a glazed timber stage
+   *  `stage` (along, out, from, to over the deck) over a timber kiosk `kiosk` (along, out, high). All sizes ASSUMED from the photo. */
+  clock: {radius: .45, height: 5.2, out: 1.0, case: [1.2, .5, 1.3] as const, stage: [2.2, 1.3, 2.8, 4.45] as const, kiosk: [2.6, 1.6, 2.6] as const, kioskRef: '4'},
   /** Furniture, ASSUMED sizes scaled from R-pt1-a (benches against the building's doors) and R-pt1-c:
    *  - benches 1.8 m long, their seat 0.45 m up, standing benchOff m out from the wall;
    *  - the kiosk 4.2 m along the wall, 2.2 m out, 3.2 m to its eaves, centred near x' = kioskAlong;
@@ -227,7 +229,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -253,7 +255,7 @@ export interface PerthStationPlan {
   /** Rectangles (track frame, x0 x1 z0 z1) kept clear of roof columns, girders and furniture: the decks, stairs and towers. */
   clear: [number, number, number, number][];
   canopyColumns: Pt[];
-  clocks: {at: Pt; out: Pt}[];
+  clocks: {at: Pt; out: Pt; ref: string}[];
   /** R-pt1-a's and R-pt1-c's platform furniture (track frame): benches and bins along the island building's faces (`out` from the wall),
    *  the timber kiosk on its platform 4 face, direction boards hung from the column-to-column girders (`dir` along the girder) and
    *  platform number boards on the columns. */
@@ -424,7 +426,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   }
   // Clocks (R-pt1-a2: platform 4 and platform 5): one bracket clock on the island building's wall facing each platform, at the wall point
   // nearest PERTH_CLOCK_ALONG (x'). ASSUMED positions: the photographs do not fix them along the platform.
-  const clocks: {at: Pt; out: Pt}[] = [];
+  const clocks: {at: Pt; out: Pt; ref: string}[] = [];
   const sgn = area2(local.island) > 0 ? 1 : -1;
   for (const [ref, target] of Object.entries(PERTH_CLOCK_ALONG)) {
     const pf = platforms.find(p => p.ref === ref); if (!pf) continue;
@@ -436,7 +438,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
       const probe: Pt = [m[0] + out[0] * 2, m[1] + out[1] * 2], miss = Math.abs(m[0] - target);
       if (inRing(probe, pf.pts) && !blocked(probe, 1) && (!best || miss < best.miss)) best = {at: m, out, miss};
     }
-    if (best) clocks.push({at: best.at, out: best.out});
+    if (best) clocks.push({at: best.at, out: best.out, ref});
   }
   // Furniture (R-pt1-a, R-pt1-c; positions ASSUMED, densities from those photographs): along each island face a bench in every bay that
   // has no door (the building's 4.5 m bays, a door in every third) and a bin by every second door, 0.75 m out from the wall, wherever the
@@ -485,6 +487,11 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
       const sg = k++ % 2 ? 1 : -1; furniture.benches.push({at: p, out: [f.n[0] * sg, f.n[1] * sg]});
       if (k % 2 === 0) { const q: Pt = [p[0] + f.axis[0] * 1.6, p[1] + f.axis[1] * 1.6]; if (roomy(q, 2.2)) furniture.bins.push(q); }
     }
+  }
+  // Round 4: clear of the platform 4 clock's kiosk (PERTH_STATION.clock.kiosk), which stands against the wall under the clock.
+  for (const c of clocks) if (c.ref === PERTH_STATION.clock.kioskRef) {
+    const r = PERTH_STATION.clock.kiosk[0] / 2 + 1.2;
+    furniture.benches = furniture.benches.filter(q => Math.hypot(q.at[0] - c.at[0], q.at[1] - c.at[1]) > r); furniture.bins = furniture.bins.filter(q => Math.hypot(q[0] - c.at[0], q[1] - c.at[1]) > r);
   }
   if (furniture.kiosk) { const k = furniture.kiosk; furniture.benches = furniture.benches.filter(q => Math.hypot(q.at[0] - k.at[0], q.at[1] - k.at[1]) > F.kiosk[0] / 2 + 1.5); furniture.bins = furniture.bins.filter(q => Math.hypot(q[0] - k.at[0], q[1] - k.at[1]) > F.kiosk[0] / 2 + 1); }
   // Direction boards under the girders (R-pt1-a, R-pt1-c: white boards hung over the platforms): one at every second girder's middle,
@@ -883,6 +890,49 @@ function bayRoof(glass: Batch, strips: Batch, iron: Batch, plan: PerthStationPla
   }
 }
 
+/** A platform clock as R-pt1-a2 shows platform 4's (track frame): a timber case `out` from the wall, its two Roman dials facing along the
+ *  wall, under a moulded hood with a small pediment and over a coved bracket; on platform 4 (clock.kioskRef) it stands on a glazed
+ *  timber stage over a maroon timber kiosk, all against the wall. */
+function clockBatch(b: Batch, c: {at: Pt; out: Pt; ref: string}): void {
+  const C = PERTH_STATION.clock, deck = WAVERLEY_LEVELS.platform, o = c.out, w: Pt = [-o[1], o[0]], rotY = Math.atan2(-o[1], o[0]);
+  const at = (out: number, y: number, along = 0): V3 => [c.at[0] + o[0] * out + w[0] * along, y, c.at[1] + o[1] * out + w[1] * along];
+  const timber = P('timber'), dark = P('timberDark'), glass = P('screen');
+  if (c.ref === C.kioskRef) {
+    // The kiosk: maroon timber panels to the counter, a dark glazed band, a cornice; then the glazed stage, framed in timber.
+    const [kw, kd, kh] = C.kiosk, [sw, sd, s0, s1] = C.stage;
+    b.box(at(kd / 2, deck + kh / 2), [kd, kh, kw], {rotY, color: P('kioskMaroon')});
+    for (const e of [-1, 1]) b.box(at(kd / 2, deck + 1.75, e * (kw / 2 + .01)), [kd - .3, .5, .02], {rotY, color: glass});
+    b.box(at(kd + .01, deck + 1.75), [.02, .5, kw - .3], {rotY, color: glass});
+    b.box(at(kd / 2 + .05, deck + kh + .1, 0), [kd + .1, .2, kw + .2], {rotY, color: dark});
+    b.box(at(sd / 2, deck + (s0 + s1) / 2), [sd, s1 - s0, sw], {rotY, color: timber});
+    // Two tiers of small lights round the stage's three open faces.
+    for (const y of [deck + s0 + .45, deck + s0 + 1.15]) {
+      for (const e of [-1, 1]) b.box(at(sd / 2, y, e * (sw / 2 + .01)), [sd - .3, .5, .02], {rotY, color: glass});
+      for (const k of [-1, 0, 1]) b.box(at(sd + .01, y, k * .65), [.02, .5, .5], {rotY, color: glass});
+    }
+    b.box(at(sd / 2 + .05, deck + s1 + .08, 0), [sd + .1, .16, sw + .2], {rotY, color: dark});
+  }
+  // The case, on a coved bracket from the wall (stepped), under a moulded hood and pediment.
+  const [cw, cd, ch] = C.case, yc = deck + C.height, p = at(C.out, yc);
+  b.box(p, [cd, ch, cw], {rotY, color: timber});
+  for (let k = 0; k < 4; k++) b.box(at(C.out * (k + 1) / 8, yc - ch / 2 - .1 - k * .12), [C.out * (k + 1) / 4, .12, cw * (.9 - k * .15)], {rotY, color: dark});
+  b.box(at(C.out, yc + ch / 2 + .06), [cd + .14, .12, cw + .14], {rotY, color: dark});
+  b.poly([at(C.out, yc + ch / 2 + .12, -cw / 2), at(C.out, yc + ch / 2 + .12, cw / 2), at(C.out, yc + ch / 2 + .42, 0)], undefined, {facing: [o[0], 0, o[1]], color: dark});
+  b.box(at(C.out / 2, yc + ch / 2 - .1), [C.out, .1, .1], {rotY, color: P('iron')});
+  for (const s of [-1, 1]) {
+    // The dial on each end of the case, facing along the wall, with twelve hour marks (Roman numerals at this scale).
+    const ctr = (r: number, a: number, lift: number): V3 => { const q = at(C.out + Math.cos(a) * r, yc + Math.sin(a) * r, s * (cw / 2 + lift)); return q; };
+    b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius + .06, k / 16 * Math.PI * 2, .01)), undefined, {facing: [s * w[0], 0, s * w[1]], color: dark});
+    b.poly(Array.from({length: 16}, (_, k) => ctr(C.radius, k / 16 * Math.PI * 2, .02)), undefined, {facing: [s * w[0], 0, s * w[1]], color: P('clockFace')});
+    for (let h = 0; h < 12; h++) {
+      const a = h / 12 * Math.PI * 2, q = ctr(C.radius * .8, a, .03);
+      b.box(q, [.03, .09, .02], {rotY: rotY + Math.PI / 2, color: P('clockCase')});
+    }
+    // The hands at ten past ten.
+    beam(b, ctr(0, 0, .035), ctr(C.radius * .5, Math.PI * .67, .035), .02, .035, P('clockCase'));
+    beam(b, ctr(0, 0, .04), ctr(C.radius * .75, Math.PI * .14, .04), .02, .025, P('clockCase'));
+  }
+}
 /** The platform furniture (PerthStationPlan.furniture), track frame. */
 function furnitureBatch(b: Batch, plan: PerthStationPlan): void {
   const F = PERTH_STATION.furniture, deck = WAVERLEY_LEVELS.platform, slat = P('benchSlat'), frame = P('benchFrame');
@@ -1022,16 +1072,7 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     }
   }
   for (const br of plan.bridges) bridgeBatch(fittings, br, L.roof);
-  for (const c of plan.clocks) {
-    // A double-sided bracket clock: the case's dials face along the wall (w), it hangs `out` from the wall on an iron bracket.
-    const C = S.clock, y = WAVERLEY_LEVELS.platform + C.height, o = c.out, w: Pt = [-o[1], o[0]], p: V3 = [c.at[0] + o[0] * C.out, y, c.at[1] + o[1] * C.out];
-    beam(fittings, [c.at[0], y + C.radius + .05, c.at[1]], [p[0], y + C.radius + .05, p[2]], .06, .08, P('iron'));
-    fittings.box(p, [C.radius * 2, C.radius * 2, .14], {rotY: Math.atan2(-o[1], o[0]), color: P('clockCase')});
-    for (const s of [-1, 1]) {
-      const face = Array.from({length: 12}, (_, k): V3 => { const a = k / 12 * Math.PI * 2, r = C.radius * .9; return [p[0] + o[0] * Math.cos(a) * r + s * .08 * w[0], y + Math.sin(a) * r, p[2] + o[1] * Math.cos(a) * r + s * .08 * w[1]]; });
-      fittings.poly(face, undefined, {facing: [s * w[0], 0, s * w[1]], color: P('clockFace')});
-    }
-  }
+  for (const c of plan.clocks) clockBatch(fittings, c);
   furnitureBatch(fittings, plan);
   fittings.append(structure.fittings);
   // Round 3: the bridges' and kiosk's glass panels out into their own batch, drawn see-through (perth-station.ts), so platform 4's

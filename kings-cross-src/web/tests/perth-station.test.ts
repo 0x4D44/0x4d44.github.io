@@ -10,7 +10,7 @@ import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
 import { archRib, boardedSide, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
-import { cleanRing } from '../src/waverley-mesh.ts';
+import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../src/waverley-roof.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
@@ -265,6 +265,25 @@ test('round 4: the bands are brown-grey, not black, and the Dundee canopies are 
   const w = batches.weather.positions; let over = 0;
   for (let i = 0; i < w.length; i += 3) if (inRing(toLocal([w[i], w[i + 2]]), plan.local.canopy) && w[i + 1] < PERTH_STATION.canopy.top + PERTH_STATION.canopy.rise + .1) over++;
   assert.ok(over > 50, `the weathered skin over the Dundee canopies (${over} vertices)`);
+});
+
+test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case on a glazed stage over a maroon kiosk, benches clear', () => {
+  const C = PERTH_STATION.clock, deck = WAVERLEY_LEVELS.platform, c4 = plan.clocks.find(c => c.ref === C.kioskRef);
+  assert.ok(c4 && plan.clocks.some(c => c.ref === '5'), 'the platform 4 and 5 clocks');
+  const f = batches.fittings, col = f.colors, p = f.positions, is = (i: number, hex: number): boolean => { const k = rgb(hex); return Math.abs(col[i] - k[0]) < 1e-6 && Math.abs(col[i + 1] - k[1]) < 1e-6 && Math.abs(col[i + 2] - k[2]) < 1e-6; };
+  const near = (i: number, c: {at: Pt}, r: number): boolean => { const q = toLocal([p[i], p[i + 2]]); return Math.hypot(q[0] - c.at[0], q[1] - c.at[1]) < r; };
+  let maroon = 0, timber = 0, face = 0, marks = 0, stray = 0;
+  for (let i = 0; i < p.length; i += 3) {
+    if (is(i, PERTH_PAINT.kioskMaroon)) { if (near(i, c4!, C.kiosk[0])) { maroon++; assert.ok(p[i + 1] <= deck + C.kiosk[2] + 1e-6, 'the kiosk stays under its cornice'); } else stray++; }
+    if (is(i, PERTH_PAINT.timber) && near(i, c4!, C.kiosk[0]) && p[i + 1] > deck + C.stage[2] - .01) timber++;
+    if (is(i, PERTH_PAINT.clockFace) && near(i, c4!, C.out + C.case[0]) && Math.abs(p[i + 1] - (deck + C.height)) <= C.radius + 1e-6) face++;
+    if (is(i, PERTH_PAINT.clockCase) && near(i, c4!, C.out + C.case[0]) && Math.abs(p[i + 1] - (deck + C.height)) <= C.radius) marks++;
+  }
+  assert.ok(maroon > 0 && stray === 0, `the maroon kiosk under the platform 4 clock only (${maroon}, stray ${stray})`);
+  assert.ok(timber >= 24, `the timber stage and case over it (${timber})`);
+  assert.ok(face >= 32, `two dials (${face})`);
+  assert.ok(marks >= 2 * 12 * 24, `twelve hour marks and two hands on each dial (${marks})`);
+  for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
 });
 
 test('round 4: every lift tower has a glass hood over its deck-level door (Abbott 6573357), drawn see-through', () => {
