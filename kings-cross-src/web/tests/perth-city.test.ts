@@ -285,7 +285,7 @@ test('Kinnoull\'s cliff is a stepped rock face: risers, joints and scrub ledges 
     const mid: [number, number] = [(k.a[0] + k.b[0]) / 2, (k.a[1] + k.b[1]) / 2];
     assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, mid[0], mid[1]), 'on the cliff');
     assert.ok(k.foot[0] < drawn(k.a) && k.foot[1] < drawn(k.b), 'its foot in the ground');
-    const over = k.top - Math.max(drawn(k.a), drawn(k.b)); assert.ok(over > 1.2 && over < 4.5, `a step, not a plate and not a tower: ${over.toFixed(2)}`);
+    const over = k.top - Math.max(drawn(k.a), drawn(k.b)); assert.ok(over > 1.2 && over < CRAG.band, `a step, not a plate and not a tower: ${over.toFixed(2)}`);
     // the ledge on top runs back into the slope (uphill; counted below: the terrain's own bumps turn a few)
     const back: [number, number] = [mid[0] + k.up[0] * k.ledge, mid[1] + k.up[1] * k.ledge];
     if (scene.terrain.heightAt(back[0], back[1]) > scene.terrain.heightAt(mid[0], mid[1])) uphill++;

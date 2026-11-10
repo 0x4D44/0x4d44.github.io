@@ -159,7 +159,7 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 /** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, slope: 40, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [2.4, 4.6] as const, ledge: [.6, 3.5] as const,
+export const CRAG = {eyeClear: 60, slope: 40, grid: 5, band: 6, wobble: 1.6, bury: 1, rise: [3.2, 5.6] as const, ledge: [.6, 3.5] as const,
   lift: 1.3, scrub: .35, ledgeRgb: [.30, .28, .24] as const} as const;
 type V3 = [number, number, number];
 export interface CragStep {
@@ -202,5 +202,5 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
   }
   return out;
 }
-/** The scrub ledge's tone (linear), WOODLAND.gorseRgb. */
-export const CRAG_SCRUB = WOODLAND.gorseRgb.map(v => v) as [number, number, number];
+/** The scrub ledge's tone (linear): WOODLAND.gorseRgb darkened, as a top-lit ledge would otherwise read as bright lawn (round 5). */
+export const CRAG_SCRUB = WOODLAND.gorseRgb.map(v => v * .6) as [number, number, number];
