@@ -61,15 +61,25 @@ test('W1 ironwork: under the glazing, above every train, and no chord coplanar w
  let over=0;
  for(let i=0;i<ironwork.positions.length;i+=3){
   const x=ironwork.positions[i],y=ironwork.positions[i+1],z=ironwork.positions[i+2],p:Pt=[x,z];
-  if(y>S.gutterGirderTop+1e-6)assert.ok(onScreenLine(p),`ironwork at ${p} rises above the girders off the hole, outline and bridge lines`);
+  // ... or a rafter, which lies just under the glazing: no deeper than its own depth (measured vertically) plus its gap, no shallower than the gap.
+  const cos=Math.cos(Math.atan2(WAVERLEY_ROOF_PROFILE.rise,WAVERLEY_ROOF_PROFILE.pitch/2)),below=roofHeight(x)-y,rafter=below>=S.rafterGap*.5&&below<=(S.rafterGap+S.rafterDepth)/cos+.06;
+  if(y>S.gutterGirderTop+1e-6)assert.ok(onScreenLine(p)||rafter,`ironwork at ${p} rises above the girders ${below.toFixed(3)} m under the glass, off the screen lines`);
   if(trackDist(p)<ENVELOPE_HALF){over++;assert.ok(y>=ENVELOPE_TOP,`ironwork over a track at ${p} is ${y.toFixed(2)} m up`);}
  }
  assert.ok(over>1000,'girders do span the tracks');
  assert.ok(S.gutterGirderTop<WAVERLEY_ROOF_PROFILE.gutter,'gutter girders stay under the gutter');
  const chords=[S.gutterGirderTop,S.gutterGirderTop-S.chordDepth,S.gutterGirderTop-S.gutterGirderDepth,S.gutterGirderTop-S.gutterGirderDepth+S.chordDepth];
  const other=[S.platformGirderTop,S.platformGirderTop-S.chordDepth,S.platformGirderTop-S.platformGirderDepth,S.platformGirderTop-S.platformGirderDepth+S.chordDepth];
- for(const a of chords)for(const b of other)assert.ok(Math.abs(a-b)>=.04,`chord faces at ${a} and ${b} are too close`);
+ for(const a of chords)for(const b of other)assert.ok(Math.abs(a-b)>=.07-1e-9,`chord faces at ${a} and ${b} are too close`);
  assert.ok(S.valanceBottom>data.buildings.find(b=>b.id===WAVERLEY_CENTRAL_BLOCK_ID)!.height+.04+.3,'the valance clears the block and its cornice');
+});
+
+test('W1 columns are fluted, with a leafy capital (R-wv1-b)',()=>{
+ const S=WAVERLEY_STRUCTURE,c=plan.columns[0],{fittings}=waverleyStructureBatches({...plan,signs:[],screens:[],benches:[],railings:[],offices:[],columns:[c]});
+ const rs:number[]=[];for(let i=0;i<fittings.positions.length;i+=3)rs.push(Math.hypot(fittings.positions[i]-c.x,fittings.positions[i+2]-c.z));
+ const near=(r:number)=>rs.some(v=>Math.abs(v-r)<1e-6);
+ assert.ok(near(S.shaftRadius)&&near(S.shaftRadius*S.fluteDepth)&&S.fluteDepth<=.9,'arrises and flute bottoms');
+ assert.ok(near(S.capitalRadius+S.leafOut)&&S.leafOut>0,'leaves curl out past the bell');
 });
 
 test('W1 columns: pedestal, shaft and capital fill the platform-to-girder height',()=>{
@@ -179,11 +189,16 @@ test('W1 glazing: near-opaque silver cassettes from above, the translucent glazi
  s.dispose();
 });
 
-test('W1 purlins and the south edge girder: under the glazing, between the gutter girders, clear of every train',()=>{
- const S=WAVERLEY_STRUCTURE;assert.ok(plan.purlins.length>300,`${plan.purlins.length} purlins`);assert.ok(plan.edgeGirders.length>100,`${plan.edgeGirders.length} m of south edge girder`);
- assert.ok(S.purlinTop<=S.gutterGirderTop-.02&&S.purlinTop-S.purlinDepth>=S.platformGirderTop+.04-1e-9,'purlin faces share no plane with a chord');
+test('W1 rafters and the south edge girder: under the glazing, gutter to ridge on each slope, clear of every train',()=>{
+ const S=WAVERLEY_STRUCTURE;assert.ok(plan.purlins.length>300,`${plan.purlins.length} rafter pairs`);assert.ok(plan.edgeGirders.length>100,`${plan.edgeGirders.length} m of south edge girder`);
+ assert.ok(S.rafterDepth>=.3&&S.rafterGap>=.02,'rafters 0.3 m deep, clear of the glazing (R-wv1-b3)');
+ // Every corner of one rafter pair drawn alone stays at least half the gap under the glass, and the pair climbs gutter to ridge.
+ const one=waverleyStructureBatches({...plan,gutters:[],spans:[],lamps:[],holes:[],outline:[],cutouts:[],edgeGirders:[],purlins:plan.purlins.slice(0,1)}).ironwork;
+ const ys=one.positions.filter((_,i)=>i%3===1),xs=one.positions.filter((_,i)=>i%3===0);
+ for(let i=0;i<xs.length;i++)assert.ok(roofHeight(xs[i])-ys[i]>=S.rafterGap*.5,`rafter corner ${(roofHeight(xs[i])-ys[i]).toFixed(3)} m under the glass`);
+ assert.ok(Math.max(...ys)-Math.min(...ys)>=WAVERLEY_ROOF_PROFILE.rise,'the rafters climb from gutter to ridge');
  for(const [x0,x1,z]of plan.purlins){
-  assert.ok(Math.abs(x1-x0-(WAVERLEY_ROOF_PROFILE.pitch-S.chordWidth))<1e-9,'a purlin spans gutter girder to gutter girder');
+  assert.ok(Math.abs(x1-x0-(WAVERLEY_ROOF_PROFILE.pitch-S.chordWidth))<1e-9,'a rafter pair spans gutter girder to gutter girder');
   for(const x of [x0,x1])assert.ok(inRing([x,z],roof.outer)&&!plan.cutouts.some(c=>inRing([x,z],c)),'under the roof, not under a deck');
  }
  for(const [a,b]of plan.edgeGirders)for(const p of [a,b]){assert.ok(inRing(p,roof.outer),'inside the outline');assert.ok(!plan.cutouts.some(c=>inRing(p,c)),'not under a bridge');}
@@ -248,6 +263,12 @@ test('W1 platform buildings: one a platform at most, on it, clear of trains, col
   for(const [list,half]of [[plan.benches,S.benchLength/2],[plan.screens,S.screenWidth/2]] as const)for(const b of list){const [u,v]=local([b.x,b.z]);assert.ok(Math.abs(u)>o.length/2+half||Math.abs(v)>S.buildingDepth/2+.5,`furniture in the office on ${o.ref}`);}
  }
  assert.ok(S.buildingHeight+.15<S.lampRim-S.lampShade,'the roof slab clears the lamp shades');
+ // Railings stand in front of the offices that have room for them, one on each long side (R-wv1-b).
+ const railed=plan.offices.filter(o=>plan.railings.filter(([a,b])=>{const m:Pt=[(a[0]+b[0])/2,(a[1]+b[1])/2];return Math.abs(Math.hypot(m[0]-o.x,m[1]-o.z)-(S.buildingDepth/2+S.officeRail))<.3;}).length===2);
+ assert.ok(railed.length>=3,`${railed.length} offices with railings`);
+ // Windows and a door on each long side: the office alone is more than its body, roof slab and nothing else.
+ const {fittings}=waverleyStructureBatches({...plan,columns:[],signs:[],screens:[],railings:[],lamps:[],benches:[],offices:plan.offices.slice(0,1)});
+ assert.ok(fittings.triangles>=10+12+2*4*3,`${fittings.triangles} office triangles`);
 });
 
 test('W1 coper nosing: a lip just proud of each track face, from the coper down 0.1 m',()=>{

@@ -41,7 +41,7 @@ MUTATIONS = [
     # ironwork heights
     ('the gutter girders pierce the glazing', STRUCT, 'gutterGirderTop:7.95,', 'gutterGirderTop:8.05,'),
     ('the gutter girders hang into the trains', STRUCT, 'gutterGirderDepth:1.5,', 'gutterGirderDepth:3.5,'),
-    ('a platform girder chord is coplanar with a gutter chord', STRUCT, 'platformGirderTop:7.72,', 'platformGirderTop:7.77,'),
+    ('a platform girder chord is coplanar with a gutter chord', STRUCT, 'platformGirderTop:7.70,', 'platformGirderTop:7.77,'),
     ('the valance drops onto the parapet', STRUCT, 'valanceBottom:7.0,', 'valanceBottom:6.8,'),
     ('the column stops short of its girder', STRUCT, 'y3=underGirder-S.abacus,', 'y3=underGirder-S.abacus-.2,'),
     # the roof's solid strips
@@ -70,14 +70,21 @@ MUTATIONS = [
     ('the underside glazing shows its top face too', STATION, 'glazing.side=THREE.BackSide;', ''),
     ('the underside copies the buffer', STATION, 'new THREE.Mesh(top.geometry,glazing)', 'new THREE.Mesh(top.geometry.clone(),glazing)'),
     # round 2: purlins and the south edge
-    ('the purlins are coplanar with the gutter chords', STRUCT, 'purlinTop:7.92,', 'purlinTop:7.95,'),
     ('purlins run on past the roof', STRUCT, 'if([x0,(x0+x1)/2,x1].every(px=>underRoof(roof,[px,z],.3,cutouts)))', 'if(true)'),
     ('the south edge girder runs under the bridges', STRUCT, 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05,cutouts)))', 'if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05)))'),
     ('the south edge girder hangs into the trains', STRUCT, 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,S.platformGirderDepth,C.iron);', 'for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,3.5,C.iron);'),
     # round 2: platform furniture and finish
+    ('the flutes are filled in', STRUCT, 'fluteDepth:.88,leafWidth:.16,leafOut:.08,', 'fluteDepth:1,leafWidth:.16,leafOut:.08,'),
+    ('the capital has no leaves', STRUCT, 'const leaf:V3[]=[[c.x+ca*r0+tx*w,y2,c.z+sa*r0+tz*w],[c.x+ca*r0-tx*w,y2,c.z+sa*r0-tz*w],[c.x+ca*r1,ym,c.z+sa*r1]];', 'const leaf:V3[]=[];'),
+    ('the office has no railings', STRUCT, '    if(room)for(const sgn of [-1,1])plan.railings.push(', '    if(false)for(const sgn of [-1,1])plan.railings.push('),
+    ('office railings ignore the safety line', STRUCT, 'if(!bandAt(f,t,S.buildingDepth/2+S.officeRail))room=false;', ''),
+    ('the office has no windows', STRUCT, 'n=Math.max(1,Math.floor((o.length-1.4)/2.4));', 'n=0;'),
+    ('rafters touch the glazing', STRUCT, 'rafterDepth:.3,rafterGap:.03,', 'rafterDepth:.3,rafterGap:0,'),
+    ('rafters are shallow', STRUCT, 'rafterDepth:.3,rafterGap:.03,', 'rafterDepth:.16,rafterGap:.03,'),
+    ('a platform chord is 0.05 m from a gutter chord', STRUCT, 'platformGirderTop:7.70,platformGirderDepth:1.15,', 'platformGirderTop:7.72,platformGirderDepth:1.15,'),
     ('the office takes the whole column gap', STRUCT, 'buildingDepth:3,buildingHeight:3.2,buildingEnd:.8,', 'buildingDepth:3,buildingHeight:3.2,buildingEnd:-.2,'),
     ('the office ignores the safety line', STRUCT, 'const band=bandAt(f,t,S.buildingDepth/2);', 'const band=bandAt(f,t,-2);'),
-    ('benches stay in the office span', STRUCT, "plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});continue;", "plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});"),
+    ('benches stay in the office span', STRUCT, '(c[1]-mid[1])]]);\n    continue;', '(c[1]-mid[1])]]);\n'),
     ('the office roof meets the lamps', STRUCT, 'buildingDepth:3,buildingHeight:3.2,', 'buildingDepth:3,buildingHeight:3.9,'),
     ('the coper lip sits in the track', STRUCT, 'coperLip:.04,coperNose:.1,', 'coperLip:.4,coperNose:.1,'),
     ('railings stand by a track', STRUCT, 'if([ia,ib].every(q=>inRing(q,f.pts)&&!nearTrack(q,1.75)&&', 'if([ia,ib].every(q=>inRing(q,f.pts)&&'),

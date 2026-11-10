@@ -33,9 +33,9 @@ export const WAVERLEY_STRUCTURE={
  gutterEnd:1.0,
  /** ... and this far short of the roof's own outline or its hole, where nothing stands over it. ASSUMED. */
  gutterEdge:.15,
- /** Purlins: the lighter secondary grid between the gutter girders (R-wv1-b3), running east-west every 3 m, 0.12 m wide and 0.16 m deep, their
-  *  tops 3 cm under the gutter girders' so no face is shared (ASSUMED, R-wv1-b3). */
- purlinSpacing:3,purlinWidth:.12,purlinTop:7.92,purlinDepth:.16,
+ /** Rafters: the secondary grid between the gutter girders (R-wv1-b, R-wv1-b3), one up each slope from gutter to ridge every 3 m, 0.12 m
+  *  wide and 0.3 m deep, their tops 0.03 m under the glazing, so the folds read from the platforms. ASSUMED sizes, R-wv1-b3. */
+ purlinSpacing:3,rafterWidth:.12,rafterDepth:.3,rafterGap:.03,
  /** The clad gable ends round the roof's edge (R-wv1-a: vertical aluminium cladding closes each ridge where the roof meets its outline):
   *  from 7.9 m up to the glazing. ASSUMED. */
  fasciaBottom:7.9,
@@ -47,13 +47,16 @@ export const WAVERLEY_STRUCTURE={
  /** The green railings of R-wv1-b along a platform edge with no track beside it: 1.1 m high, 0.3 m in from the edge, posts every 1.5 m,
   *  bars every 0.15 m (ASSUMED sizes, R-wv1-b). */
  railHeight:1.1,railInset:.3,railPost:1.5,railBar:.15,
- /** Platform girders, column to column: top 0.23 m under the gutter girders' so no chord is coplanar with another, 1.2 m deep (ASSUMED, R-wv1-b3). */
- platformGirderTop:7.72,platformGirderDepth:1.2,
+ /** Platform girders, column to column: top 0.25 m under the gutter girders', 1.15 m deep, so every chord face is at least 0.07 m from every
+  *  other girder's (ASSUMED, R-wv1-b3). */
+ platformGirderTop:7.70,platformGirderDepth:1.15,
  /** Chord 0.3 m wide x 0.18 m deep; lattice flats 0.12 x 0.08 m; the lattice is doubled (crossed diagonals and a vertical at every panel
   *  point, R-wv1-b3), panels square to the girder's depth (ASSUMED, R-wv1-b3). */
  chordWidth:.3,chordDepth:.18,latticeWidth:.12,latticeDepth:.08,
  /** Column: pedestal 0.66 m across and 1.2 m tall, shaft 0.34 m across, capital flaring to 0.84 m over 0.6 m, abacus 0.15 m (ASSUMED, R-wv1-b against the 0.915 m platform). */
  pedestalRadius:.33,pedestalHeight:1.2,shaftRadius:.17,capitalRadius:.42,capitalHeight:.6,abacus:.15,
+ /** Flute bottoms at 0.88 of the shaft radius; capital leaves 0.16 m wide reaching 0.08 m past the bell (ASSUMED, R-wv1-b). */
+ fluteDepth:.88,leafWidth:.16,leafOut:.08,
  /** A column stands this far inside the roof outline and its hole at least (m). ASSUMED. */
  roofMargin:1.0,
  /** Two columns from neighbouring polygons of one island closer than this are one column (m). ASSUMED. */
@@ -70,6 +73,8 @@ export const WAVERLEY_STRUCTURE={
   *  high, filling the span between two columns less 0.8 m at each end, in the span whose band clear of the KX safety line is widest along
   *  its whole length. Benches and screens give way in that span. ASSUMED sizes and rule, read off R-wv1-b. */
  buildingDepth:3,buildingHeight:3.2,buildingEnd:.8,
+ /** ... and its railings stand this far out from its long walls (m). ASSUMED, R-wv1-b. */
+ officeRail:.6,
  /** The coper's nosing: 0.04 m proud of the platform face, 0.1 m deep, under the coper band (R-wv1-b: a pale lip with a shadow line). ASSUMED. */
  coperLip:.04,coperNose:.1,
  /** Platform-number signs: a 0.55 m square, 3.0-3.55 m up a column, on every third column (ASSUMED, R-wv1-b; generic, no lettering). */
@@ -83,7 +88,7 @@ export const WAVERLEY_STRUCTURE={
  stripLift:FIGURES.stripLift,
 } as const;
 /** Paint, read off R-wv1-b: light grey ironwork, white columns, gilt capitals, dark green pedestals; the furniture's colours likewise. ASSUMED shades. */
-export const WAVERLEY_PAINT={iron:0xd5d8d8,column:0xeeece4,gilt:0xc9a032,pedestal:0x24493a,lamp:0xf1f0ea,bench:0x8f969b,sign:0x1f4a96,signFace:0xf4f4f0,screen:0x1b1d20,valance:0xe6dcc0,fascia:0xa9afb4,railing:0x2c5a3f,render:0xd8ccb2,office:0x34465a,officeRoof:0x6d7175} as const;
+export const WAVERLEY_PAINT={iron:0xd5d8d8,column:0xeeece4,gilt:0xc9a032,pedestal:0x24493a,lamp:0xf1f0ea,bench:0x8f969b,sign:0x1f4a96,signFace:0xf4f4f0,screen:0x1b1d20,valance:0xe6dcc0,fascia:0xa9afb4,railing:0x2c5a3f,render:0xd8ccb2,office:0x34465a,officeRoof:0x6d7175,door:0x24493a} as const;
 
 export interface WaverleyColumn {x:number;z:number;ref:string}
 export interface WaverleyPlacement {x:number;z:number;rotY:number;ref:string}
@@ -96,7 +101,7 @@ export interface WaverleyStationPlan {
  holes:Pt[][];cutouts:readonly (readonly Pt[])[];
  /** Gutter girders: [x, z0, z1]. */
  gutters:[number,number,number][];
- /** Purlins between neighbouring gutter girders: [x0, x1, z]. */
+ /** Rafter pairs between neighbouring gutter girders (up to the ridge and down again): [x0, x1, z]. */
  purlins:[number,number,number][];
  /** The roof's outline (for the clad gable ends) and the south edge girders, 1 m pieces. */
  outline:Pt[];edgeGirders:[Pt,Pt][];
@@ -149,7 +154,7 @@ export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,
   for(const [z0,z1]of footprintRuns(roof.outer,[...roof.holes,...cutouts],x)){
    const a=z0+(nearCut([x,z0])?S.gutterEnd:S.gutterEdge),b=z1-(nearCut([x,z1])?S.gutterEnd:S.gutterEdge);if(b-a>1)plan.gutters.push([x,a,b]);
   }
-  // Purlins to the next gutter line, every purlinSpacing in z, where both ends and the middle are under the roof.
+  // Rafters to the next gutter line, every purlinSpacing in z, where both ends and the ridge are under the roof.
   const x0=x+S.chordWidth/2,x1=x+P.pitch-S.chordWidth/2,zs=outer.map(p=>p[1]);
   for(let z=Math.ceil(Math.min(...zs)/S.purlinSpacing)*S.purlinSpacing;z<Math.max(...zs);z+=S.purlinSpacing)
    if([x0,(x0+x1)/2,x1].every(px=>underRoof(roof,[px,z],.3,cutouts)))plan.purlins.push([x0,x1,z]);
@@ -189,7 +194,13 @@ export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,
    plan.lamps.push({x:mid[0],z:mid[1],rotY,ref:f.ref});
    if(i===office){
     const band=bandAt(f,tm,S.buildingDepth/2)!,c=worldPoint(f,tm,band.mid),span=Math.hypot(a.c.x-b.c.x,a.c.z-b.c.z);
-    plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});continue;
+    plan.offices.push({x:c[0],z:c[1],rotY,ref:f.ref,length:span-2*(S.pedestalRadius+S.buildingEnd)});
+    // The green railings in front of the office (R-wv1-b), on both long sides, column to column less 0.5 m at each end, where the platform
+    // has room for them clear of the safety line along the whole span.
+    let room=true;for(let t=a.t;t<=b.t;t+=.5)if(!bandAt(f,t,S.buildingDepth/2+S.officeRail))room=false;
+    const ux=(b.c.x-a.c.x)/span,uz=(b.c.z-a.c.z)/span,nx=-uz,nz=ux,r=S.buildingDepth/2+S.officeRail,e=S.pedestalRadius+.5;
+    if(room)for(const sgn of [-1,1])plan.railings.push([[a.c.x+ux*e+nx*r*sgn+(c[0]-mid[0]),a.c.z+uz*e+nz*r*sgn+(c[1]-mid[1])],[b.c.x-ux*e+nx*r*sgn+(c[0]-mid[0]),b.c.z-uz*e+nz*r*sgn+(c[1]-mid[1])]]);
+    continue;
    }
    if(i%S.benchEvery===0&&bandAt(f,tm,S.benchLength/2))plan.benches.push({x:mid[0],z:mid[1],rotY,ref:f.ref});
    if(i%S.screenEvery===1&&bandAt(f,tm,S.screenWidth/2)){
@@ -244,12 +255,12 @@ const sub3=(a:V3,b:V3):V3=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
 const cross3=(a:V3,b:V3):V3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const norm3=(a:V3):V3=>{const l=Math.hypot(...a)||1;return [a[0]/l,a[1]/l,a[2]/l];};
 /** A bar from a to b, w wide and h deep, its ends left open (they always butt into a chord or a column). */
-function bar(batch:Batch,a:V3,b:V3,w:number,h:number,color:Rgb):void{
+function bar(batch:Batch,a:V3,b:V3,w:number,h:number,color:Rgb,skip:readonly ('up'|'down')[]=[]):void{
  const d=norm3(sub3(b,a));let side=cross3([0,1,0],d);if(Math.hypot(...side)<1e-6)side=[1,0,0];side=norm3(side);const up=cross3(d,side);
  const at=(e:V3,sx:number,sy:number):V3=>[e[0]+side[0]*sx*w/2+up[0]*sy*h/2,e[1]+side[1]*sx*w/2+up[1]*sy*h/2,e[2]+side[2]*sx*w/2+up[2]*sy*h/2];
  const neg=(v:V3):V3=>[-v[0],-v[1],-v[2]];
  for(const [s0,t0,s1,t1,n]of [[1,-1,1,1,side],[-1,-1,-1,1,neg(side)],[-1,1,1,1,up],[-1,-1,1,-1,neg(up)]] as [number,number,number,number,V3][])
-  batch.poly([at(a,s0,t0),at(b,s0,t0),at(b,s1,t1),at(a,s1,t1)],undefined,{facing:n,color});
+  if(!(t0===1&&t1===1&&skip.includes('up'))&&!(t0===-1&&t1===-1&&skip.includes('down')))batch.poly([at(a,s0,t0),at(b,s0,t0),at(b,s1,t1),at(a,s1,t1)],undefined,{facing:n,color});
 }
 /** A Warren lattice girder from a to b (plan), its top at `top`: two chords and diagonals at 45 degrees. */
 export function latticeGirder(batch:Batch,a:Pt,b:Pt,top:number,depth:number,color:Rgb):void{
@@ -259,10 +270,11 @@ export function latticeGirder(batch:Batch,a:Pt,b:Pt,top:number,depth:number,colo
  // Square panels, each crossed by both diagonals, a vertical at every panel point (the doubled lattice of R-wv1-b3). The verticals sit
  // between the chords; the diagonals run chord face to chord face.
  const n=Math.max(1,Math.round(len/(depth-S.chordDepth))),yi=yt-S.chordDepth/2,yo=yb+S.chordDepth/2;
- for(let i=0;i<n;i++){const s0=i/n,s1=(i+1)/n;bar(batch,p(s0,yo),p(s1,yi),S.latticeWidth,S.latticeDepth,color);bar(batch,p(s0,yi),p(s1,yo),S.latticeWidth*.8,S.latticeDepth,color);}
+ // The flats are thin plates: their two broad faces only (their 0.08 m edges are left out, which halves the lattice's triangles).
+ for(let i=0;i<n;i++){const s0=i/n,s1=(i+1)/n;bar(batch,p(s0,yo),p(s1,yi),S.latticeWidth,S.latticeDepth,color,['up','down']);bar(batch,p(s0,yi),p(s1,yo),S.latticeWidth*.8,S.latticeDepth,color,['up','down']);}
  // (The second set is narrower, so where the two cross no faces share a plane.)
  const rotY=Math.atan2(-(b[1]-a[1]),b[0]-a[0]);
- for(let i=1;i<n;i++){const c=p(i/n,(yi+yo)/2);batch.box(c,[S.latticeDepth,yi-yo,S.latticeWidth*.9],{rotY,color,skip:['+y','-y']});}
+ for(let i=1;i<n;i++){const c=p(i/n,(yi+yo)/2);batch.box(c,[S.latticeDepth,yi-yo,S.latticeWidth*.9],{rotY,color,skip:['+y','-y','+x','-x']});}
 }
 /** A vertical frustum: `sides` flat faces from radius r0 at y0 to r1 at y1, with a top cap. */
 function frustum(b:Batch,x:number,z:number,r0:number,r1:number,y0:number,y1:number,sides:number,color:Rgb,capTop=true):void{
@@ -344,7 +356,12 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
  for(let i=0;i<o.length;i++)roofScreen(ironwork,o[i],o[(i+1)%o.length],S.fasciaBottom,S.valancePiece,C.fascia,underDeck);
  const outsideRoof=(q:Pt):boolean=>!inRing(q,o)||plan.holes.some(h=>inRing(q,h));
  for(const c of plan.cutouts)for(let i=0;i<c.length;i++)roofScreen(ironwork,c[i],c[(i+1)%c.length],S.fasciaBottom,S.valancePiece,C.fascia,q=>outsideRoof(q)||edgeDistance(q,o)<.05);
- for(const [x0,x1,z]of plan.purlins)ironwork.box([(x0+x1)/2,S.purlinTop-S.purlinDepth/2,z],[x1-x0,S.purlinDepth,S.purlinWidth],{color:C.iron,skip:['+x','-x']});
+ // Rafters: a bar up each slope, its top rafterGap under the glazing (measured square to the slope; the drop is the same vertically,
+ // divided by the slope's cosine). The top face is left out: it is hidden under the cassettes.
+ for(const [x0,x1,z]of plan.purlins){
+  const xm=(x0+x1)/2,cos=Math.cos(Math.atan2(WAVERLEY_ROOF_PROFILE.rise,WAVERLEY_ROOF_PROFILE.pitch/2)),drop=(S.rafterGap+S.rafterDepth/2)/cos,at=(x:number):V3=>[x,roofHeight(x)-drop,z];
+  bar(ironwork,at(x0),at(xm),S.rafterWidth,S.rafterDepth,C.iron,['up']);bar(ironwork,at(xm),at(x1),S.rafterWidth,S.rafterDepth,C.iron,['up']);
+ }
  for(const [a,b]of plan.edgeGirders)latticeGirder(ironwork,a,b,S.platformGirderTop,S.platformGirderDepth,C.iron);
  for(const [a,b]of plan.railings){
   const len=Math.hypot(b[0]-a[0],b[1]-a[1]),d:Pt=[(b[0]-a[0])/len,(b[1]-a[1])/len],rotY=Math.atan2(-d[1],d[0]),y0=deck,y1=deck+S.railHeight,at=(s:number):Pt=>[a[0]+d[0]*s,a[1]+d[1]*s];
@@ -355,8 +372,18 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
  for(const c of plan.columns){
   const y1=deck+S.pedestalHeight,y3=underGirder-S.abacus,y2=y3-S.capitalHeight;
   frustum(fittings,c.x,c.z,S.pedestalRadius,S.pedestalRadius,deck,y1,8,C.pedestal);
-  frustum(fittings,c.x,c.z,S.shaftRadius,S.shaftRadius,y1,y2,16,C.column,false);
+  // A fluted shaft (R-wv1-b, b3): 12 flutes, the arrises at the full radius, the flute bottoms 0.88 of it.
+  const ring=(r:number,k:number):[number,number]=>{const a=k/24*Math.PI*2,f=k%2?S.fluteDepth:1;return [c.x+r*f*Math.cos(a),c.z+r*f*Math.sin(a)];};
+  for(let k=0;k<24;k++){const [ax,az]=ring(S.shaftRadius,k),[bx,bz]=ring(S.shaftRadius,k+1),m=(k+.5)/24*Math.PI*2;
+   fittings.poly([[ax,y1,az],[bx,y1,bz],[bx,y2,bz],[ax,y2,az]],undefined,{facing:[Math.cos(m),0,Math.sin(m)],color:C.column});}
   frustum(fittings,c.x,c.z,S.shaftRadius,S.capitalRadius,y2,y3,8,C.gilt,false);
+  // The leafy capital (R-wv1-b's gilt Corinthian heads): eight leaves curling out from the bell, each a gilt blade from the necking out
+  // past the bell to its tip, both faces.
+  for(let k=0;k<8;k++){
+   const a=(k+.5)/8*Math.PI*2,ca=Math.cos(a),sa=Math.sin(a),tx=-sa,tz=ca,w=S.leafWidth/2,r0=S.shaftRadius,r1=S.capitalRadius+S.leafOut,ym=y2+S.capitalHeight*.75;
+   const leaf:V3[]=[[c.x+ca*r0+tx*w,y2,c.z+sa*r0+tz*w],[c.x+ca*r0-tx*w,y2,c.z+sa*r0-tz*w],[c.x+ca*r1,ym,c.z+sa*r1]];
+   fittings.poly(leaf,undefined,{color:C.gilt});fittings.poly([...leaf].reverse(),undefined,{color:C.gilt});
+  }
   fittings.box([c.x,y3+S.abacus/2,c.z],[S.capitalRadius*2.1,S.abacus,S.capitalRadius*2.1],{color:C.column});
  }
  for(const s of plan.signs){
@@ -375,7 +402,12 @@ export function waverleyStructureBatches(plan:WaverleyStationPlan):WaverleyStruc
   const along=o.rotY+Math.PI/2,H=S.buildingHeight,D=S.buildingDepth;
   fittings.box([o.x,deck+H/2,o.z],[o.length,H,D],{rotY:along,color:C.render,skip:['-y']});
   fittings.box([o.x,deck+H+.075,o.z],[o.length+.3,.15,D+.3],{rotY:along,color:C.officeRoof});
-  fittings.box([o.x,deck+1.6,o.z],[o.length*.8,1.2,D+.04],{rotY:along,color:C.office,skip:['+y','-y']});
+  // Framed windows (a pale frame box, the dark glass 0.02 m proud of it) every 2.4 m on both long sides, a door at the west end of each.
+  const ax=Math.cos(along),az=-Math.sin(along),at=(u:number):[number,number]=>[o.x+ax*u,o.z+az*u],n=Math.max(1,Math.floor((o.length-1.4)/2.4));
+  for(let k=0;k<n;k++){const u=-o.length/2+1.4+(k+.5)*(o.length-1.4)/n,[x,z]=at(u);
+   fittings.box([x,deck+1.65,z],[1.3,1.3,D+.06],{rotY:along,color:C.signFace,skip:['+y','-y','+x','-x']});
+   fittings.box([x,deck+1.65,z],[1.1,1.1,D+.1],{rotY:along,color:C.office,skip:['+y','-y','+x','-x']});}
+  {const [x,z]=at(-o.length/2+.7);fittings.box([x,deck+1.1,z],[1,2.2,D+.06],{rotY:along,color:C.door,skip:['+y','-y','+x','-x']});}
  }
  for(const s of plan.benches){
   // The bench runs along the platform (local x along the axis): a seat of slats with gaps, a back of slats leaning 10 degrees, and a cast
