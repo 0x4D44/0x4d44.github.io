@@ -73,6 +73,7 @@ KX_NO_FEED=1 npm --prefix kings-cross-src run relay  # no STOMP connection or sc
 | `GET /anchors` | Private anchor map from `KX_ANCHORS` or `KX_DATA_DIR/anchors.json`; 404 if absent. |
 | `GET /recording?date=YYYYMMDD` | Recording from `KX_DATA_DIR/recordings/td-<area>-YYYYMMDD.ndjson`; `date` must be exactly eight digits. |
 | `GET /sclass` | Private signal hypothesis table from `KX_SCLASS` or `KX_DATA_DIR/sclass.json`; 404 if absent. |
+| `GET /fleet?area=EB` | Private booked-diagram fleet table from `KX_DATA_DIR/areas/<area>/fleet.json` (built by `tools/build-eb-fleet.ts`); 404 if absent, 400 for any query key but `area`. |
 | `GET /schedule?date=YYYY-MM-DD` | Cached King's Cross calls enriched with TRUST actuals. `date` must be one valid calendar date in this format; defaults to today's London date. |
 | `GET /static/smart?td=Y9` | SMART rows for a TD area. |
 | `GET /static/corpus?stanox=54311` | CORPUS rows for a STANOX. |
@@ -134,6 +135,7 @@ Paths in these examples are relative to the repository root.
 | `sclass.ts` | `node kings-cross-src/tools/sclass.ts --recording <recording.ndjson> --anchors <anchors.json> --out .scratch/kx-sclass [--data-dir <KX_DATA_DIR>]` |
 | `berths.ts` | `node kings-cross-src/tools/berths.ts --recording <recording.ndjson> --smart <smart.json.gz> --out .scratch/kx-berths` |
 | `build-city.ts` | `node kings-cross-src/tools/build-city.ts --raw ~/kx-data/osm/kx-city-osm.json --out kings-cross-src/web/src/data/kx-city.json` |
+| `build-eb-fleet.ts` | `node kings-cross-src/tools/build-eb-fleet.ts --text <unit-diagrams.txt> [--year 2026] [--out ~/kx-data/areas/EB/fleet.json]` (private output; refuses a path inside the repository) |
 
 `--recording` may be repeated for `sclass.ts` and `berths.ts`. The `berths.ts` output may
 also be placed in `KX_DATA_DIR`; `sclass.ts` writes reports beneath `.scratch/` and can

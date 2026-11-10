@@ -9,6 +9,8 @@ import type { Car } from '../../core/train.ts';
 import { decodeWaverleyAnchorScene, waverleyTrackData } from '../../core/waverley-anchors.ts';
 import { createEdinburghKinds } from '../../core/train-neutral.ts';
 import type { EdinburghServiceEvidence } from '../../core/train-neutral.ts';
+import { matchBooked, validateFleetTable } from '../../core/edinburgh-diagrams.ts';
+import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
 import { buildNeutralTrain } from './train-neutral.ts';
 import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
 import { carPoses } from './trains-live.ts';
@@ -55,6 +57,10 @@ export function createEdinburghMotion(geometry: unknown, value: unknown,
   return { data, graph, anchors, kinds, motion, sink };
 }
 
+/** serviceFor for createEdinburghMotion: the booked table as it stands at each birth (absent: no evidence, so neutral). */
+export const bookedServiceFor = (table: () => FleetTable | undefined) =>
+  (description: string, atMs: number): EdinburghServiceEvidence | undefined => { const t = table(); return t ? matchBooked(t, description, atMs) : undefined; };
+
 export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDependencies {
   const source = deps.source ?? (url => new EventSource(url));
   return { ...deps, source: () => source('/relay/events?area=EB') };
@@ -72,15 +78,28 @@ export function createEdinburghLive(options: {
   let session: ReturnType<typeof createEdinburghMotion> | undefined, feed: TrainFeed | undefined;
   let replay: ReturnType<typeof createAreaReplay> | undefined, disposed = false, loading = false, retryAt = 0, attempt = 0;
   let connection = 'live trains unavailable; private EB anchors required', error: string | undefined;
+  // The booked-diagram fleet table (private, from the relay). Without it every train is the neutral assumed fleet.
+  let fleet: FleetTable | undefined, fleetNote = 'fleet: no evidence; neutral';
   const fetchImpl = options.fetchImpl ?? fetch, abort = new AbortController();
+  const loadFleet = async (): Promise<void> => {
+    fleet = undefined; fleetNote = 'fleet: no evidence; neutral';
+    try {
+      const response = await fetchImpl('/relay/fleet?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+      if (!response.ok) { fleetNote = `fleet: no evidence (${response.status === 404 ? 'no table' : response.status}); neutral`; return; }
+      const table = validateFleetTable(await response.json());
+      fleet = table; fleetNote = `fleet: booked diagrams (${table.workings.length} workings)`;
+    } catch { fleetNote = 'fleet: no evidence (table unreadable or invalid); neutral'; }
+  };
   const load = async (): Promise<void> => {
     if (disposed || loading || session || ['none', 'demo'].includes(options.mode) || !relayReachable(options.hostname)) return;
     loading = true;
     try {
       const response = await fetchImpl('/relay/anchors?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
       if (!response.ok) throw new Error(`EB anchors unavailable (${response.status})`);
-      const candidate = createEdinburghMotion(options.geometry, await response.json());
+      // serviceFor reads the table as it stands at each birth; the fleet is fetched below, before any train can be born.
+      const candidate = createEdinburghMotion(options.geometry, await response.json(), bookedServiceFor(() => fleet));
       if (!candidate.anchors.anchors.length) throw new Error('EB positions/headings unresolved; no placed anchors');
+      await loadFleet();
       if (options.mode === 'replay') {
         const recording = await fetchImpl(`/relay/recording?area=EB&date=${encodeURIComponent(options.date)}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(30_000)]) });
         if (!recording.ok) throw new Error(`EB recording unavailable (${recording.status})`);
@@ -130,7 +149,7 @@ export function createEdinburghLive(options: {
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
     state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [] }),
-    status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · neutral assumed fleet; allocations unavailable · provisional berth positions/headings` : ''}`,
+    status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}`,
     frame(dt: number, selected: boolean, utcMs?: number): void {
       group.visible = selected; labels.hidden = !selected;
       if (selected && performance.now() >= retryAt) void load();
