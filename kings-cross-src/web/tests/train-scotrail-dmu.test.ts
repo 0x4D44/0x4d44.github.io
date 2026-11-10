@@ -75,7 +75,7 @@ test('ScotRail DMU parts: diesel units with no pantograph, two bogies and two do
   // (round 4, from the roof photographs: the 170 cab car's scoop, grille, housing and vent panel, and two vent panels on every car;
   // the 158's two cab-roof units and, on every car, the exhaust group of plate, cover, louvred box and hump)
   // (round 4, from bogie-158-a2: the 158's eight masses a car, the air cleaner, silencer and reservoir drums added to the five boxes)
-  assert.deepEqual(tally('sr170x3'), { pantograph: 0, bogies: 6, doors: 12, glass: 3, underfloor: 15, noseCouplers: 2, buffers: 4, litHeads: 2, heads: 4, domeLamps: 2, ploughs: 0, roofKit: 25 });
+  assert.deepEqual(tally('sr170x3'), { pantograph: 0, bogies: 6, doors: 12, glass: 3, underfloor: 21, noseCouplers: 2, buffers: 4, litHeads: 2, heads: 4, domeLamps: 2, ploughs: 0, roofKit: 25 });
   assert.deepEqual(tally('sr158x2'), { pantograph: 0, bogies: 4, doors: 8, glass: 2, underfloor: 16, noseCouplers: 2, buffers: 0, litHeads: 2, heads: 4, domeLamps: 0, ploughs: 2, roofKit: 12 });
 });
 
@@ -363,6 +363,45 @@ test('ScotRail 170 face: a navy valance box either side of the coupler, standing
     }
     const buffers: THREE.Object3D[] = []; g.traverse((o) => { if (o.name === 'buffer') buffers.push(o); });
     assert.ok(buffers.length === 2 && buffers.every((b) => b.position.y === BUFFER_170_Y && BUFFER_170_Y + 0.1 <= vy0), `car ${index}: the buffers under the boxes`);
+  }
+  disposeScotrailDmu(root);
+});
+
+
+test('ScotRail 170 underfloor, as bogie-170-tyt shows it: from the cab end a deep tank, a reservoir drum across, the engine case, the transmission, the cooler group ending in a drum, a battery box, between the bogies', () => {
+  const root = buildScotrailDmu('sr170x3');
+  const look = scotrailDmuLook('turbostar');
+  const f = SCOTRAIL_DMU_FIGURES.turbostar;
+  for (const car of scotrailDmuLayout('sr170x3').cars) {
+    const g = root.getObjectByName(`car-${car.index}`)!;
+    const items: THREE.Object3D[] = [];
+    g.traverse((o) => { if (o.name === 'underfloor') items.push(o); });
+    items.sort((a, b) => (a.userData.s as number[])[0]! - (b.userData.s as number[])[0]!);
+    assert.deepEqual(items.map((o) => o.userData.form), ['tank', 'reservoir', 'engine', 'transmission', 'cooler', 'air-cleaner', 'battery'], `car ${car.index}: the masses in order`);
+    assert.deepEqual(items.map((o) => o.userData.shape), ['box', 'drum-x', 'box', 'box', 'box', 'drum-x', 'box'], `car ${car.index}: their shapes`);
+    // the tank the deepest mass, as the photograph shows
+    assert.ok(look.underfloor[0]!.bottom <= Math.min(...look.underfloor.map((u) => u.bottom)), 'the tank hangs lowest');
+    for (let i = 1; i < items.length; i++) assert.ok((items[i]!.userData.s as number[])[0]! > (items[i - 1]!.userData.s as number[])[1]!, `car ${car.index}: mass ${i} clear of the one before`);
+    const dir = car.cab === 'rear' ? -1 : 1; const base = car.cab === 'rear' ? car.end : car.start;
+    const bs = car.bogies.map((z) => (z - base) * dir).sort((p, q) => p - q);
+    const wheels = f.wheelbase.value / 2 + f.wheelDiameter.value / 2;
+    assert.ok((items[0]!.userData.s as number[])[0]! > bs[0]! + wheels && (items[items.length - 1]!.userData.s as number[])[1]! < bs[1]! - wheels, `car ${car.index}: between the bogies' wheels`);
+    // the two drums round, lying across the car
+    const d = (g.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    const p = d.getAttribute('position'); const c = d.getAttribute('color');
+    for (const j of [1, 5]) {
+      const it = look.underfloor[j]!; const [s0, s1] = items[j]!.userData.s as number[]; const k = col(it.colour);
+      const drum: number[] = [];
+      for (let i = 0; i < p.count; i++) {
+        const s = (p.getZ(i) - base) * dir;
+        if (s < s0! - 1e-3 || s > s1! + 1e-3 || Math.abs(c.getX(i) - k.r) > 1e-6 || Math.abs(c.getY(i) - k.g) > 1e-6 || Math.abs(c.getZ(i) - k.b) > 1e-6) continue;
+        drum.push(i);
+      }
+      const ys = drum.map((i) => p.getY(i)); const zs = drum.map((i) => p.getZ(i));
+      const yc = (Math.min(...ys) + Math.max(...ys)) / 2; const zc = (Math.min(...zs) + Math.max(...zs)) / 2;
+      const radii = drum.filter((i) => Math.abs(p.getY(i) - yc) > 1e-4 || Math.abs(p.getZ(i) - zc) > 1e-4).map((i) => Math.hypot(p.getY(i) - yc, p.getZ(i) - zc));
+      assert.ok(radii.length > 16 && Math.max(...radii) - Math.min(...radii) < 2e-3, `car ${car.index} ${it.form}: a round drum (radii ${Math.min(...radii)}..${Math.max(...radii)})`);
+    }
   }
   disposeScotrailDmu(root);
 });

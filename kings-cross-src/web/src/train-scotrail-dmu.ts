@@ -295,13 +295,19 @@ const TURBOSTAR: Look = {
   buffers: true,
   gangwayFrame: false,
   raft: false,
-  // one MTU engine and a Voith transmission under every car (the 170's equipment, widely documented; the masses' sizes and order ASSUMED)
+  // one MTU engine and a Voith transmission under every car (the 170's equipment, widely documented). Round 6a: the order, shapes and
+  // depths from bogie-170-tyt (Tyseley Turbostars, CC BY-SA 2.0: a 170 broadside, its underside read at about 155 px to the metre
+  // against the 2.6 m wheelbase), from the cab end: a deep dark fuel tank with square ends; a round air reservoir lying across the car
+  // at its rear; the engine in a tall labelled case; the transmission's lower box; the cooler group, ending in a drum seen end-on.
+  // Dark grey to near black, as the photograph shows. Sizes ASSUMED to that reading.
   underfloor: [
-    { form: 'tank', length: 2.2, half: 0.95, bottom: 0.4, colour: 0x4a4238 },
-    { form: 'engine', length: 2.6, half: 0.9, bottom: 0.36, colour: 0x433b31 },
-    { form: 'transmission', length: 1.3, half: 0.8, bottom: 0.42, colour: 0x3f382f },
-    { form: 'cooler', length: 1.9, half: 0.88, bottom: 0.46, colour: 0x4a4339 },
-    { form: 'battery', length: 1.2, half: 0.72, bottom: 0.5, colour: 0x433d35 },
+    { form: 'tank', length: 1.75, half: 0.95, bottom: 0.38, colour: 0x2c2d2f },
+    { form: 'reservoir', length: 0.34, half: 0.62, bottom: 0.62, colour: 0x37393c, shape: 'drum-x', cap: 0x4b4e52 },
+    { form: 'engine', length: 2.3, half: 0.9, bottom: 0.4, colour: 0x303235 },
+    { form: 'transmission', length: 1.2, half: 0.8, bottom: 0.46, colour: 0x2a2b2e },
+    { form: 'cooler', length: 1.5, half: 0.88, bottom: 0.44, colour: 0x333538 },
+    { form: 'air-cleaner', length: 0.36, half: 0.7, bottom: 0.6, colour: 0x3a3c40, shape: 'drum-x', cap: 0x55585d },
+    { form: 'battery', length: 1.0, half: 0.72, bottom: 0.5, colour: 0x2f3033 },
   ],
   whiteDots: { pitch: 0.118, r0: 0.05, shrink: 0.72 },
   // The roof, from two overhead photographs of 170/4 cab cars (roof-170-cowd: 170473 from Cowdenbeath's footbridge; roof-170-nott:
