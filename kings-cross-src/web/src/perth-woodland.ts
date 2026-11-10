@@ -159,7 +159,7 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt' | 'extent'>, c
 /** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag block within
  *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
 export const CLIFF_EYE = [2460, 172.2, 295] as const;
-export const CRAG = {eyeClear: 60, step: 6, width: [5, 8] as const, height: [3, 5.5] as const, ragged: .18, proud: [.8, 1.4] as const,
+export const CRAG = {eyeClear: 60, step: 6, width: [6.5, 10] as const, height: [5, 7.5] as const, ragged: .25, proud: [.8, 1.4] as const,
   bevel: .16, bury: 1, jitter: 2, lift: 1.3, joint: .38, scrub: .22, slope: 40} as const;
 type V3 = [number, number, number];
 export interface CragBlock {

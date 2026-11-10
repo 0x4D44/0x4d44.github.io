@@ -109,7 +109,7 @@ const TOWER_NEAR = PERTH_LIDAR_LANDMARKS.kinnoullTower.near!;
 export const KINNOULL_TOWER = {id: PERTH_LIDAR_LANDMARKS.kinnoullTower.id, x: TOWER_NEAR.x, z: TOWER_NEAR.z, height: TOWER_NEAR.rise,
   radius: Math.sqrt(TOWER_NEAR.cells / Math.PI), sides: 12} as const;
 /** Round 4 (round-3 score, C1): the crag keeps clear of the tower's foot and its annexe (x, z, radius m; ASSUMED by eye from the cliff view). */
-export const CRAG_KEEP: readonly (readonly [number, number, number])[] = [[KINNOULL_TOWER.x, KINNOULL_TOWER.z, 22]];
+export const CRAG_KEEP: readonly (readonly [number, number, number])[] = [[KINNOULL_TOWER.x, KINNOULL_TOWER.z, 27]];
 export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
 /** Kinnoull Tower's look, from 8703 and 4307 (round 3, C1). It is a pale grey rubble tower with two red sandstone string courses and a
  *  projecting cornice, and a lower annexe against its north side about half its height (in 8703, seen from the west, the block on its
