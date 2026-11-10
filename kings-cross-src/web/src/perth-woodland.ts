@@ -103,7 +103,10 @@ export function kinnoullWoodland(ground: Pick<Terrain, 'heightAt'>, cliffs: read
  *  on a `step` m lattice: each
  *  `width` m across, `height` m tall, standing `proud` m out of the slope down its fall line, its top a level ledge. Each is set into the
  *  slope by `bury` of its height, jittered by `jitter` m, in one of PERTH_ROCK_TONES lifted by `lift`. */
-export const CRAG = {step: 6, width: [6, 10] as const, height: [2.5, 5] as const, proud: [.5, 1.3] as const, bury: .6, jitter: 2, lift: 1.3, slope: 40} as const;
+/** pt-kinnoull-cliff's eye (tools/evidence.mjs FROZEN_PERTH_CAMERAS), which stands on the gully's rim: no crag block within
+ *  CRAG.eyeClear m of it, so none fills the frame's foreground. */
+export const CLIFF_EYE = [2460, 172.2, 295] as const;
+export const CRAG = {eyeClear: 60, step: 6, width: [6, 10] as const, height: [2.5, 5] as const, proud: [.5, 1.3] as const, bury: .6, jitter: 2, lift: 1.3, slope: 40} as const;
 export interface CragBlock {x: number; z: number; y: number; w: number; h: number; d: number; rotY: number; rgb: [number, number, number]}
 /** The crag's blocks: centre (x, y, z), size (w across, h, d along the fall line), heading, colour (the tone's 0-1 channels, as Batch colours). */
 export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly (readonly Pt[])[]): CragBlock[] {
@@ -113,7 +116,7 @@ export function kinnoullCrag(ground: Pick<Terrain, 'heightAt'>, cliffs: readonly
   const r = WOODLAND.cliff.reach;
   for (let gx = Math.floor((ax - r) / C.step) * C.step; gx <= bx + r; gx += C.step) for (let gz = Math.floor((az - r) / C.step) * C.step; gz <= bz + r; gz += C.step) {
     const x = gx + (hash(gx, gz, 61) - .5) * C.jitter, z = gz + (hash(gx, gz, 62) - .5) * C.jitter;
-    if (!onCliff(ground, cliffs, x, z) || slopeOf(ground, x, z) < C.slope) continue;
+    if (!onCliff(ground, cliffs, x, z) || slopeOf(ground, x, z) < C.slope || Math.hypot(x - CLIFF_EYE[0], z - CLIFF_EYE[2]) < C.eyeClear) continue;
     // the fall line: down the slope
     const dx = ground.heightAt(x - 2, z) - ground.heightAt(x + 2, z), dz = ground.heightAt(x, z - 2) - ground.heightAt(x, z + 2), l = Math.hypot(dx, dz) || 1;
     const w = C.width[0] + (C.width[1] - C.width[0]) * hash(gx, gz, 63), h = C.height[0] + (C.height[1] - C.height[0]) * hash(gx, gz, 64);

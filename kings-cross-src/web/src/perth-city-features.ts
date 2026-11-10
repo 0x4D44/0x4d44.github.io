@@ -26,7 +26,7 @@ import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
-import {kinnoullCanopy} from './perth-canopy.ts';
+import {crownTexture, kinnoullCanopy} from './perth-canopy.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
 export const PERTH_LANDUSE = decodeLanduse(file as unknown as LanduseFile);
@@ -202,9 +202,9 @@ export function buildPerthCityGround(ground: Terrain, footprints: Footprints, un
   const cragMesh = new THREE.Mesh(cg, rock); cragMesh.name = 'perth-kinnoull-crag'; cover.group.add(cragMesh);
   stats.triangles += (cg.index ? cg.index.count : cg.getAttribute('position').count) / 3; stats.drawCalls++;
   // Kinnoull's continuous canopy (perth-canopy.ts), in place of the massed crowns it covers
-  const cm = new THREE.MeshLambertMaterial({vertexColors: true});
+  const crownMap = crownTexture(), cm = new THREE.MeshLambertMaterial({vertexColors: true, map: crownMap});
   if (canopy.geometry) { const mesh = new THREE.Mesh(canopy.geometry, cm); mesh.name = 'perth-kinnoull-canopy'; cover.group.add(mesh); stats.triangles += canopy.geometry.index!.count / 3; stats.drawCalls++; }
-  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); cm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
+  return {group: cover.group, stats, dispose() { wg.dispose(); wash?.dispose(); m.dispose(); canopy.geometry?.dispose(); crownMap?.dispose(); cm.dispose(); cg.dispose(); rock.dispose(); cover.dispose(); }};
 }
 
 // ---- arches and spans ------------------------------------------------------------------------------------------------------------

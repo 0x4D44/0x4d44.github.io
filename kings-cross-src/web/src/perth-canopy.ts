@@ -16,6 +16,26 @@ import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {KINNOULL_PEAK, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
 
+/** ASSUMED crown texture: a tile `tile` m square of `crowns` round crowns `r` m in radius, lit at the top and shaded at the rim, which
+ *  multiplies the canopy's vertex colours, so the 12 m lattice reads as a roof of single crowns (4307, 4599836). */
+export const CROWNS = {tile: 48, px: 256, crowns: 110, r: [1.8, 4.2] as const, base: '#b0b0b0', top: '#ffffff', rim: '#6a6a6a', lift: 1.4} as const;
+/** The crown texture (browser only; null in Node). */
+export function crownTexture(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const N = CROWNS.px, s = N / CROWNS.tile, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'); if (!g) return null;
+  g.fillStyle = CROWNS.rim; g.fillRect(0, 0, N, N);
+  for (let i = 0; i < CROWNS.crowns; i++) {
+    const x = hash(i, 1, 71) * N, y = hash(i, 2, 72) * N, r = (CROWNS.r[0] + (CROWNS.r[1] - CROWNS.r[0]) * hash(i, 3, 73)) * s;
+    for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) {
+      const gr = g.createRadialGradient(x + ox - r * .3, y + oy - r * .3, r * .1, x + ox, y + oy, r);
+      gr.addColorStop(0, CROWNS.top); gr.addColorStop(.6, CROWNS.base); gr.addColorStop(1, CROWNS.rim);
+      g.fillStyle = gr; g.beginPath(); g.arc(x + ox, y + oy, r, 0, Math.PI * 2); g.fill();
+    }
+  }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / CROWNS.tile, 1 / CROWNS.tile); // a linear factor (no colour space): mean about .7, so the vertex colours are lifted CROWNS.lift
+  return t;
+}
+
 /** ASSUMED canopy shape (see the header). */
 export const CANOPY = {hillX: 1700, step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
 
@@ -64,7 +84,7 @@ export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt'>, woods: readonl
     let r = hash(px2 * C.patch + (hash(x, z, 52) < .3 ? S : 0), pz2 * C.patch, 53), pick = WOODLAND.tones[WOODLAND.tones.length - 1]!;
     for (const t of WOODLAND.tones) { if (r < t.share) { pick = t; break; } r -= t.share; }
     const lift = open ? -.25 : (hash(x, z, 51) - .5) * 2 * C.light;
-    const k2 = (1 + lift) * (.9 + .2 * hash(x, z, 54));
+    const k2 = (1 + lift) * (.9 + .2 * hash(x, z, 54)) * CROWNS.lift;
     tone.setRGB(pick.rgb[0] * k2, pick.rgb[1] * k2, pick.rgb[2] * k2, THREE.SRGBColorSpace); col.push(tone.r, tone.g, tone.b);
     vid[k] = pos.length / 3 - 1; return vid[k]!;
   };
@@ -77,6 +97,8 @@ export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt'>, woods: readonl
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  // UVs in plan metres, for the crown texture (crownTexture)
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(pos.flatMap((v, i) => i % 3 === 0 ? [v, pos[i + 2]!] : []), 2));
   geometry.setIndex(idx); geometry.computeVertexNormals();
   const cell = (x: number, z: number): [number, number] => [Math.floor((x - x0) / S), Math.floor((z - z0) / S)];
   return {

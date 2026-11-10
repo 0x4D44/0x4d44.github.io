@@ -11,7 +11,7 @@ import { stationOutline } from '../src/perth-station.ts';
 import { KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, VIADUCT_FORM, VIADUCT_LOOK, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
-import { CRAG, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
+import { CLIFF_EYE, CRAG, KINNOULL_PEAK, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, kinnoullCanopy } from '../src/perth-canopy.ts';
 import { EAST_SKIRT, PERTH_EAST, PERTH_EAST_FILE } from '../src/perth-east-ground.ts';
 import { Batch } from '../src/materials.ts';
@@ -163,6 +163,8 @@ test('Kinnoull\'s woods are one continuous, mixed canopy, open westward from the
   const top: { x: number; z: number; h: number; y: number; g: number }[] = [];
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), z = P.getZ(i), h = P.getY(i) - scene.terrain.heightAt(x, z); if (h > 0) top.push({ x, z, h, y: P.getY(i), g: C.getY(i) }); }
   assert.ok(top.length > 3000, `canopy nodes over the woods: ${top.length}`);
+  // the crown texture is laid in plan metres
+  const UV = mesh.geometry.getAttribute('uv'); for (let i = 0; i < P.count; i += 101) assert.ok(Math.abs(UV.getX(i) - P.getX(i)) < 1e-3 && Math.abs(UV.getY(i) - P.getZ(i)) < 1e-3, 'crown UVs in metres');
   // continuous: nearly every point of the hill's woods (away from the clearing, the cliff and the sightline) is under it
   const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs);
   const pipw = (x: number, z: number, rs: readonly (readonly (readonly number[])[])[]) => { const p = rs[0]!; let yes = false; for (let a = 0, b = p.length - 1; a < p.length; b = a++) if ((p[a]![1]! > z) !== (p[b]![1]! > z) && x < (p[b]![0]! - p[a]![0]!) * (z - p[a]![1]!) / (p[b]![1]! - p[a]![1]!) + p[a]![0]!) yes = !yes; return yes; };
@@ -218,6 +220,11 @@ test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not
   }
   // broken: the blocks differ in size and tone
   assert.ok(new Set(blocks.map(b => b.rgb.join())).size >= 4, 'several rock tones');
+  // none stands in front of the cliff camera's eye, filling its frame
+  const eye = (JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, { pos: number[] }>)['pt-kinnoull-cliff']!.pos;
+  assert.deepEqual([...CLIFF_EYE], eye, 'the crag keeps clear of the frozen camera itself');
+  // a 9 m block 30 m from the eye filled a third of the frame (capture at f6930822); none nearer than 50 m
+  assert.equal(blocks.filter(b => Math.hypot(b.x - eye[0], b.z - eye[2]) < 50).length, 0, 'no block near the cliff camera');
   const hs = blocks.map(b => b.h).sort((a, b) => a - b); assert.ok(hs.at(-1)! - hs[0]! > (CRAG.height[1] - CRAG.height[0]) * .6, 'mixed heights');
   const mesh = scene.group.getObjectByName('perth-kinnoull-crag') as THREE.Mesh;
   let city = false; mesh.traverseAncestors(o => { if (o === scene.parts.buildings) city = true; }); assert.ok(city, 'in the city group');
