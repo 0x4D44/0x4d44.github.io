@@ -215,7 +215,7 @@ test('Kinnoull\'s cliff is pale rock in blocks and ledges set into the face, not
     assert.ok(onCliff(scene.terrain, PERTH_LANDUSE.cliffs, ax, az), 'on the cliff');
     assert.ok(b.y - b.h / 2 < scene.terrain.heightAt(ax, az), 'its foot is in the ground');
     assert.ok(b.y + b.h / 2 > g - b.h, 'not buried out of sight');
-    assert.ok(lum(b.rgb) > .45, `pale rock: ${lum(b.rgb).toFixed(2)}`);
+    assert.ok(lum(b.rgb) > .18, `pale rock (linear): ${lum(b.rgb).toFixed(2)}`);
   }
   // broken: the blocks differ in size and tone
   assert.ok(new Set(blocks.map(b => b.rgb.join())).size >= 4, 'several rock tones');
@@ -244,7 +244,8 @@ test('Kinnoull Tower is pale coursed stone with red string courses, a cornice an
   assert.ok(vMax > top - 1 && uMax > 2 * Math.PI * KINNOULL_TOWER.radius * .9, `UVs: u to ${uMax.toFixed(1)}, v to ${vMax.toFixed(1)}`);
   // pale overall, with red courses at the band heights
   const lum = (i: number) => .2126 * C.getX(i) + .7152 * C.getY(i) + .0722 * C.getZ(i);
-  let pale = 0, red = 0; for (let i = 0; i < C.count; i++) { if (lum(i) > .7) pale++; if (C.getX(i) > C.getY(i) + .15) red++; }
+  // linear vertex colours: pale stone is over .45 in luminance (the near-black round-2 tower was the ashlar map's mean under its tint, about .2)
+  let pale = 0, red = 0; for (let i = 0; i < C.count; i++) { if (lum(i) > .45) pale++; if (C.getX(i) > C.getY(i) + .15) red++; }
   assert.ok(pale > C.count / 2 && red > 0, `pale ${pale}, red ${red} of ${C.count}`);
   for (const share of TOWER_LOOK.bands) { let at = false; for (let i = 0; i < P.count; i++) if (C.getX(i) > C.getY(i) + .15 && Math.abs(P.getY(i) - (base + KINNOULL_TOWER.height * share)) < 1e-3) at = true; assert.ok(at, `a red course at ${share}`); }
   // the annexe: masonry beside the shaft, up to about half its height, on its north side

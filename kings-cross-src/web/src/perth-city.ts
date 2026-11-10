@@ -97,7 +97,10 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   if (kirk) kirkTower(masonry, lead, kirk, ground.rangeUnder(kirk.outer, 4).min);
   const tower = data.buildings.find(b => b.id === KINNOULL_TOWER.id);
   if (tower) {
-    kinnoullTower(masonry, ground.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z)); buildingIds.push(tower.id); heightBasis.LiDAR++;
+    // its own plain stone, not the town's ashlar: that map's mean (0xa99a7c) under the cool ashlar tint leaves about a fifth of the light,
+    // so the tower's shaded west face, the face the cliff camera sees, rendered near-black (round 2). Linear vertex colours (TOWER_LOOK).
+    const stone = new Batch({colored: true}); kinnoullTower(stone, ground.heightAt(KINNOULL_TOWER.x, KINNOULL_TOWER.z));
+    add(group, stone, own(new THREE.MeshLambertMaterial({vertexColors: true})), 'perth-kinnoull-tower'); buildingIds.push(tower.id); heightBasis.LiDAR++;
   }
   const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
   // the viaduct's ironwork carries its own paint (VIADUCT_LOOK: pale grey girders, a white railing)

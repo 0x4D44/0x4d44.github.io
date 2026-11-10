@@ -104,9 +104,8 @@ export const PERTH_FEATURE_OMIT_IDS = [KINNOULL_TOWER.id];
  *  left). All ASSUMED, by eye: the courses at `bands` of the height, `band` m deep, standing `proud` m out; the cornice `cornice` m
  *  deep and `over` m out; the annexe `annexe` (along x, across z, height share), and the stone and band tones. */
 export const TOWER_LOOK = {bands: [.55, .8] as const, band: .45, proud: .06, cornice: .5, over: .22,
-  annexe: [3.6, 3.0, .45] as const, stone: [.95, .94, .90] as Rgb, red: [.66, .45, .38] as Rgb} as const;
-/** A vertical ring of `sides` quads about (x, z), from y0 to y1 at radius r, with UVs in metres (u round the ring, v up) so the stone
- *  texture lies as coursed masonry. prism() leaves every UV at 0, which picks one dark texel of the stone map: the round-2 black tower. */
+  annexe: [3.6, 3.0, .45] as const, stone: [.56, .54, .50] as Rgb, red: [.36, .17, .12] as Rgb} as const;
+/** A vertical ring of `sides` quads about (x, z), from y0 to y1 at radius r, with UVs in metres (u round the ring, v up). */
 function ring(b: Batch, x: number, z: number, r: number, y0: number, y1: number, sides: number, color: Rgb): void {
   for (let i = 0; i < sides; i++) {
     const a0 = i * 2 * Math.PI / sides, a1 = (i + 1) * 2 * Math.PI / sides, am = (a0 + a1) / 2, w = 2 * r * Math.sin(Math.PI / sides);
