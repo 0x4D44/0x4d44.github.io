@@ -194,13 +194,13 @@ factor put in front of the first digit), so the night lighting and a retune do n
 Label text after the arguments runs only the mutations whose label contains it (a partial run skips the 'never failed' accounting); `--check` only looks for each search
 text, exactly once, and runs nothing. The mutations left out as equivalent, with the reason for each, are in the driver's docstring.
 
-`night-lighting.py` mutates round seven's night lighting: the street lamps (`core/streetlights.ts`, which light a lamp is and where it stands; `web/src/streetlights.ts`, the
+`night-lighting.py` mutates round seven's night lighting: the street lamps (`core/streetlights.ts`, which light a lamp is, where it stands and which of the forecourt's masts keep clear of the buildings; `web/src/streetlights.ts`, the
 posts, haloes and pools and the level that lights them; the lamps' place in `core/city.ts` and their wiring in `web/src/city.ts` and `web/src/night.ts`; the Scottish scene's
 lamps in `web/src/waverley-lamps.ts` and the tool that cuts their lean road file, `tools/build-waverley-lamp-roads.ts`), the windows that light after dark (the GLSL, the defines, the
 patches of three's own shaders and the glass rectangles of `web/src/materials.ts`; the Midland's panes in `web/src/landmarks.ts`), the floodlight (`FLOOD` and its uniform guard in
-`web/src/lighting.ts`) and the Scottish night (`web/src/station-weather.ts`: the Balmoral's window grid, flood and dials, the lamps' life, the haze; `web/src/atmosphere.ts`: the
+`web/src/lighting.ts`), the King's Cross tower's clock dials (`createDialLights` in `web/src/night.ts`, wired in `web/src/atmosphere.ts`) and the Scottish night (`web/src/station-weather.ts`: the Balmoral's window grid, flood and dials, the lamps' life, the haze; `web/src/atmosphere.ts`: the
 shared night uniform and the haze's far plane). Each mutation names the lanes (test commands) that judge it, and is killed when any of them fails by assertion: the lamps' four test
-files, `web/tests/windows-night.test.ts`, the tests round seven added to files that were there before it (picked out by name: `city`, `flood`, `landmarks`, `night`,
+files, `web/tests/windows-night.test.ts`, `web/tests/dial-lights.test.ts` (the dials), the tests round seven added to files that were there before it (picked out by name: `city`, `flood`, `landmarks`, `night`,
 `atmosphere`, `weather`), and the two squeeze tests for the two mutations of the uniform-declaration guards (a patch must find that a uniform is declared from the shader's
 uniforms, not by searching page text the build squeezes: `hooks`). The tests run one file at a time, as the machine is shared. A mutation given as a list of edits applies them
 together. The mutations are of behaviour, not of tuning: nothing anchors on a colour, a spacing, a gain or a share (they are re-tuned by eye against the night photographs). The one
