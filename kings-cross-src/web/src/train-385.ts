@@ -38,15 +38,15 @@ const HOOD = { half: 0.53, y0: 0.98, y1: 3.62, depth: 1.25 } as const;
 export const SR385_NOSE: NoseSpec = {
   length: 2.4, fillet: 0.16, filletLoss: 0.1, roundLen: 2.4, widest: 0.42, boxiness: 4.5,
   knots: [
-    { s: 0, top: 2.02, ws: 0.84, bottom: 0.52 },
-    { s: 0.35, top: 2.16, ws: 0.92, bottom: 0.5 },
-    { s: 1.0, top: 3.22, ws: 0.97, bottom: 0.62 },
-    { s: 1.6, top: 3.47, ws: 0.995, bottom: 0.9 },
+    { s: 0, top: 2.04, ws: 0.86, bottom: 0.52 },
+    { s: 0.16, top: 2.12, ws: 0.92, bottom: 0.5 },
+    { s: 0.62, top: 3.2, ws: 0.975, bottom: 0.58 },
+    { s: 1.25, top: 3.46, ws: 0.997, bottom: 0.85 },
     { s: 2.4, top: CROWN, ws: 1, bottom: FLOOR },
   ],
 };
-/** The windscreen on the loft, metres from the hood face, and its glass's outer reach across. */
-const SCREEN = { s0: 0.36, s1: 1.0, xIn: HOOD.half + 0.05 } as const;
+/** The windscreen on the loft, metres from the hood face, and its glass's inner edge beside the hood. */
+const SCREEN = { s0: 0.17, s1: 0.66, xIn: HOOD.half + 0.05 } as const;
 
 const section = carSection({ half: HALF, floor: FLOOR, crown: CROWN, wallTop: WALL_TOP });
 const norm = normalised(section);
@@ -73,8 +73,7 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   const paint = (y: number, s: number, x: number): number => {
     if (y < FLOOR + 0.04 && !(cab && s < TIP + 1.6)) return C.underframe;
     if (cab && s < TIP + 2.0 && y > 3.12) return C.cabRoof;
-    if (y > CROWN - 0.16) return C.roof;
-    if (cab && s < TIP + 0.42 && y > 1.28 && y < 2.2 && Math.abs(x) > HOOD.half && Math.abs(x) < HALF * 0.8) return C.yellow;
+    if (y > WALL_TOP + 0.12) return C.roof;
     return C.body;
   };
   for (let i = 0; i + 1 < loops.length; i++) {
@@ -110,10 +109,10 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
     }
     detail.emit = 0;
   };
-  const dots = (pts: { s: number; y: number; r: number }[], colour: number): void => {
+  const dots = (pts: { s: number; y: number; r: number }[], colour: number, proud = 0.004): void => {
     for (const side of [-1, 1]) for (const d of pts) {
       // on a cab car the body is still easing out of the nose's section just behind the cab: follow it
-      const x = side * ((cab && d.s - TIP < SR385_NOSE.length ? xAtY(halfBehindFace(d.s - TIP), d.y) : sideX) + 0.004);
+      const x = side * ((cab && d.s - TIP < SR385_NOSE.length ? xAtY(halfBehindFace(d.s - TIP), d.y) : sideX) + proud);
       detail.fan(ellipse(zAt(d.s), d.y, d.r, d.r, 8).map(([z, y]): V3 => [x, y, z]), [side, 0, 0], col(colour));
     }
   };
@@ -159,30 +158,30 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   }
   // the orange cantrail line along the top of each side, over the door tops (scotrail385-01, -04)
   const cantS0 = cab ? TIP + 2.0 : sBody0, cantS1 = sBody1;
-  onSide([[cantS0, 3.12], [cantS1, 3.12], [cantS1, 3.145], [cantS0, 3.145]], 0.005, C.cantrail);
+  onSide([[cantS0, WALL_TOP - 0.04], [cantS1, WALL_TOP - 0.04], [cantS1, WALL_TOP - 0.015], [cantS0, WALL_TOP - 0.015]], 0.005, C.cantrail);
 
   if (cab) {
     const crew = F.crewDoorFromNose.value;
     // the crew door: a dark-edged outline with one tall narrow light (scotrail385-01, -05)
     onSide(roundedRect(crew - 0.36, crew + 0.36, FLOOR + 0.1, 3.05, 0.05, 2), 0.006, C.frame);
     onSide(roundedRect(crew - 0.33, crew + 0.33, FLOOR + 0.13, 3.02, 0.04, 2), 0.009, C.body);
-    onSide(roundedRect(crew - 0.17, crew + 0.13, 2.05, 2.9, 0.04, 2), 0.013, C.glass);
+    onSide(roundedRect(crew - 0.17, crew + 0.13, 2.05, 2.9, 0.04, 2), 0.016, C.glass);
     // the cream saltire dots: a chevron pointing at the cab, over the crew door and forward of it
     const chev = (y: number): number => crew - 0.95 + Math.abs(y - 2.25) * 1.05;
     const sal: { s: number; y: number; r: number }[] = [];
-    for (let row = 0; row < 15; row++) {
-      const y = 1.3 + row * 0.125;
-      for (let c = 0; c < 8; c++) {
-        const s = chev(y) + c * 0.125 + (row % 2) * 0.0625;
-        if (s > crew + 0.5) continue;
-        sal.push({ s, y, r: 0.05 * (1 - c / 11) });
+    for (let row = 0; row < 17; row++) {
+      const y = 1.22 + row * 0.11;
+      for (let c = 0; c < 9; c++) {
+        const s = chev(y) + c * 0.11 + (row % 2) * 0.055;
+        if (s > crew + 0.55) continue;
+        sal.push({ s, y, r: 0.047 * (1 - c / 13) });
       }
     }
-    dots(sal, C.saltireDot);
+    dots(sal, C.saltireDot, 0.011); // over the crew door's skin, under its light
     // cab side window, behind the screen
     for (const side of [-1, 1]) {
-      const s0 = TIP + 1.12, s1 = TIP + 1.78;
-      const pts: [number, number][] = [[s0, 2.2], [s1, 2.2], [s1, 2.98], [s0 + 0.12, 2.98]];
+      const s0 = TIP + 0.78, s1 = TIP + 1.5;
+      const pts: [number, number][] = [[s0, 2.15], [s1, 2.15], [s1, 2.98], [s0 + 0.22, 2.98]];
       const at = ([s, y]: [number, number]): V3 => [side * (xAtY(halfBehindFace(s - TIP), y) + 0.008), y, zAt(s)];
       detail.fan(pts.map(at), [side, 0, 0], col(C.glass));
     }
@@ -191,7 +190,7 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
       const soup = new Soup();
       const at = (i: number, j: number): V3 => {
         const u = s0 + (s1 - s0) * i / 10, h = halfBehindFace(u);
-        const half = xAtY(h, 2.6);
+        const half = Math.max(...h.map(p => p[0]));
         const x = Math.sign(xa) * Math.min(Math.abs(xa) + (Math.abs(xb) - Math.abs(xa)) * j / 8, half * 0.93);
         return world([x, yAtX(h, Math.abs(x)) + lift, TIP + u]);
       };
@@ -240,7 +239,7 @@ function carModel(car: Sr385Car, layout: Sr385Layout): THREE.Group {
   const bz = car.bogies.map(sOf).sort((p, q) => p - q);
   const u0 = bz[0]! + 1.7, u1 = bz[1]! - 1.7;
   box(-HALF * 0.86, HALF * 0.86, FLOOR - 0.12, FLOOR + 0.02, Math.max(sBody0, cab ? TIP + 1.6 : sBody0), sBody1, C.underframe);
-  for (let s = u0; s + 1.4 < u1; s += 2.6) box(-0.95, 0.95, 0.45, FLOOR - 0.1, s, s + 1.9, 0x3b3d40);
+  for (let s = u0; s + 1.4 < u1; s += 2.6) box(-0.9, 0.9, 0.55, FLOOR - 0.12, s, s + 1.9, 0x2f3134);
   // roof: long equipment covers with dark grilles, broken over the pantograph on the PTS (scotrail385-01, -04, -05)
   const r0 = cab ? TIP + 2.6 : sBody0 + 0.8, r1 = sBody1 - 0.8;
   const panto = car.pantograph ? car.pantograph.map(sOf).sort((p, q) => p - q) as [number, number] : null;
