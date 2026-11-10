@@ -288,6 +288,37 @@ test('round 4: the platform 4 clock as R-pt1-a2: a Roman dial in a timber case o
   for (const b of plan.furniture.benches) assert.ok(Math.hypot(b.at[0] - c4!.at[0], b.at[1] - c4!.at[1]) > C.kiosk[0] / 2 + 1.2 - 1e-6, 'no bench against the clock kiosk');
 });
 
+test('round 5: the island building as R-pt1-a/a2: its south end in clear view of pt-platform-4-north, arched doorways, grey-buff ashlar', () => {
+  // The sightline: from the frozen camera to the platform 4 half of the island building's south end, past the 4/5 landing's tower and
+  // stair (whose place across the island is ASSUMED; PERTH_LANDING_LEAN).
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]}>;
+  const cam = toLocal([cams['pt-platform-4-north'].pos[0], cams['pt-platform-4-north'].pos[2]]), isl = plan.local.island;
+  const endX = Math.max(...isl.map(p => p[0])), zs = isl.filter(p => p[0] > endX - 1).map(p => p[1]), zLo = Math.min(...zs), zHi = Math.max(...zs);
+  const l45 = plan.bridges.flatMap(b => b.landings).find(l => l.refs.join('/') === '4/5')!, T = PERTH_STATION.tower.size / 2;
+  const boxes: [string, [number, number, number, number]][] = [['stair', l45.stair], ['tower', [l45.tower!.c[0] - T, l45.tower!.c[0] + T, l45.tower!.c[1] - T, l45.tower!.c[1] + T]]];
+  const hits = (a: Pt, b: Pt, [x0, x1, z0, z1]: [number, number, number, number]): boolean => { for (let k = 0; k <= 200; k++) { const t = k / 200, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t; if (x > x0 && x < x1 && z > z0 && z < z1) return true; } return false; };
+  for (let z = zLo + .5; z <= Math.min(zHi, zLo + 6); z += .5) for (const [name, box] of boxes) assert.ok(!hits(cam, [endX, z], box), `the ${name} hides the south end at z' ${z.toFixed(1)}`);
+  // Arched doorways: dressed voussoirs (faces tilted round the arch) between each door's springing and its keystone.
+  const B = PERTH_STATION.building, deck = WAVERLEY_LEVELS.platform, parts = islandBuildingBatches(plan.island), st = parts.stone, kd = rgb(PERTH_PAINT.stoneDressing);
+  let tilted = 0;
+  for (let i = 0; i < st.positions.length; i += 3) {
+    const y = st.positions[i + 1], ny = Math.abs(st.normals[i + 1]);
+    if (Math.abs(st.colors[i] - kd[0]) < 1e-6 && Math.abs(st.colors[i + 1] - kd[1]) < 1e-6 && Math.abs(st.colors[i + 2] - kd[2]) < 1e-6 && ny > .2 && ny < .95 && y > deck + B.door[1] - B.doorArch - .1 && y < deck + B.door[1] - B.doorArch + B.door[0] / 2 + .5) tilted++;
+  }
+  assert.ok(tilted >= 48, `arched door surrounds (${tilted} voussoir vertices)`);
+  // Grey-buff, not pink: the wall a little warmer than grey, its blue clearly under its green; on Perth's own low-contrast ashlar.
+  const [r, g, b] = rgb(PERTH_PAINT.stoneWall);
+  assert.ok(r - g < .04 && g - b > .045, `grey-buff stone (${PERTH_PAINT.stoneWall.toString(16)})`);
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const m = (scene.group.getObjectByName('perth-island-building') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    assert.equal(m.map?.name, 'perth-ashlar', 'Perth\'s ashlar map');
+    const d = (m.map as THREE.DataTexture).image.data as Uint8Array, tones = new Set<number>();
+    for (let i = 0; i < d.length; i += 4) tones.add(d[i]);
+    assert.ok(tones.size > 8, 'coursing in the map');
+  } finally { scene.dispose(); }
+});
+
 test('round 5: the main roof\'s ends are a row of pitched gables (R-pt1-b), not the flat 2 m fascia lid', () => {
   const E = PERTH_ROOF_ENDS, ends = mainRoofEnds(plan.structure.outline), ir = batches.ironwork, p = ir.positions, col = ir.colors;
   assert.ok(ends.length >= 2, `both ends (${ends.length})`);

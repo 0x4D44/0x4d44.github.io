@@ -161,7 +161,7 @@ export const PERTH_STATION = {
   bands: {gutter: 2, ridge: 1},
   /** The island building: walls to the gutter girders' tops (7.9 m over rail), so the roof bears on them as R-pt1-a shows; the screen above
    *  them up to the glazing is drawn in the wall's stone. Plinth 0.6 m, string course at 4.6 m over rail, cornice 0.35 m (R-pt1-a). */
-  building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03},
+  building: {top: 7.9, plinth: .6, string: 4.6, stringHeight: .25, cornice: .35, bay: 4.5, groundWindow: [1.4, 2.6, .55] as const, door: [1.5, 2.9] as const, doorArch: .6, doorEvery: 3, upperWindow: [1.2, 2.1, 5.2] as const, lift: .03},
   /** The Dundee canopies (Champion 2011, geograph 2687800, CC BY-SA 2.0): their eaves 5.6 m over rail (above the 4.8 m train envelope
    *  the scene test holds), a 0.6 m white diamond-lattice valance in `lattice` m cells, columns every 7 m. A shallow ridge-and-furrow
    *  across the platforms, gables to the tracks, `pitch` m pitch and `rise` m rise, in glass with dark bands; curved brackets reach
@@ -228,6 +228,11 @@ export const PERTH_FOOTBRIDGES = [
   {id: 'south', along: 24 + PERTH_BAY_PHASE, deck: 7.0, kind: 'lift', landings: [['4', '5'], ['2', '3'], ['1']]},
 ] as const;
 
+/** Round 5: landings placed as far across their island as they fit, this way (+1: toward greater z'), rather than centred. The 4/5
+ *  landing goes toward platform 5: centred, its tower and dog-leg stood in pt-platform-4-north's line to the island building's south
+ *  end and platform 4 elevation (where a landing stands across its island is ASSUMED; see PERTH_FOOTBRIDGES). */
+export const PERTH_LANDING_LEAN: Readonly<Record<string, number>> = {'4/5': 1};
+
 /** Where along the platform (x', m) each island clock hangs: platform 4's south of the north footbridge, platform 5's by the bay ends. ASSUMED. */
 export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PERTH_BAY_PHASE, '5': -30 + PERTH_BAY_PHASE};
 
@@ -235,7 +240,7 @@ export const PERTH_CLOCK_ALONG: Readonly<Record<string, number>> = {'4': -8 + PE
 export const PERTH_PAINT = {
   iron: 0x4d4238, column: 0xd9d0b6, gilt: 0xcfc4a6, pedestal: 0x5d4f42, lamp: 0xefeee8, bench: 0xa9aeb2, sign: 0x203a72, signFace: 0xf2f2ee,
   screen: 0x1b1d20, valance: 0x4d4238, fascia: 0x4d4238, railing: 0x5a3e30, render: 0xd8ccb2, office: 0x34465a, officeRoof: 0x6d7175, door: 0x3c2f27,
-  stoneWall: 0xbcafa6, stoneDressing: 0xd3c9bf, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, deckSoffit: 0xa99d8e, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
+  stoneWall: 0xb2ab9c, stoneDressing: 0xcdc2a4, stonePlinth: 0x726864, lattice: 0x6b3a2c, tread: 0xb4b1a8, modern: 0xc3c7c8, frame: 0xe2e3df, seam: 0x8d9295, glassPanel: 0x9db4ba, handrail: 0xcdd06a, clockFace: 0xf3f1e8, clockCase: 0x2b2b2e, coper: 0xcbb68e, pot: 0x9a5a3c, frameNavy: 0x1f2a55, latticeWhite: 0xe6e6e0, gable: 0x9ea2a2, kioskMaroon: 0x5a2a22, timberDark: 0x4a3020, soffit: 0xb9b6ad, deckSoffit: 0xa99d8e, columnBlue: 0x56687a, benchSlat: 0xb2602f, benchFrame: 0x2e2f31, bin: 0x2b3034, timber: 0x6e4a30,
 } as const;
 const P = (k: keyof typeof PERTH_PAINT): Rgb => rgb(PERTH_PAINT[k]);
 
@@ -306,7 +311,8 @@ function planBridge(b: typeof PERTH_FOOTBRIDGES[number], platforms: {ref: string
     // With dog-leg stairs every island the lift bridge serves takes both, platform 1's curve included: three towers, as R-pt1-d Abbott and
     // R-pt1-b show (the round 1 straight flight left platform 1 without one; lead ruling 12:31 accepted that as ASSUMED).
     const dirs: Pt[] = [[1, 0], [-1, 0], tangent, [-tangent[0], -tangent[1]]];
-    for (const [dogleg, withTower] of tries) for (const dz of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+    const lean = PERTH_LANDING_LEAN[b.landings[gi].join('/')] ?? 0, dzs = lean ? [4, 3, 2, 1, 0, -1, -2, -3, -4].map(k => k * lean) : [0, 1, -1, 2, -2, 3, -3, 4, -4];
+    for (const [dogleg, withTower] of tries) for (const dz of dzs) {
       const z = zc + dz, [length, width] = runOf(dogleg);
       // The tower's places for a stair heading d: across the deck from it, on its line, or beside it on the deck's same side (R-pt1-d
       // Abbott's nearest tower stands beside its stair's head). Each as its foot's middle point and its heading away from the deck.
@@ -487,9 +493,12 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   for (const f of s.frames) {
     const c = f.pts.reduce((m, p) => m + p[0] * f.n[0] + p[1] * f.n[1], 0) / f.pts.length;
     let k = 0;
-    for (let t = f.tLo + F.openEvery; t < f.tHi - F.openEvery / 2; t += F.openEvery) {
+    for (let t0 = f.tLo + F.openEvery; t0 < f.tHi - F.openEvery / 2; t0 += F.openEvery) {
+      // Round 5: where a stair or tower takes the spot, the bench slides along the platform to the nearest free one (up to 4 m).
+      const ok = (p: Pt): boolean => !inRing(p, local.roof) && roomy(p, 2.2) && !furniture.benches.some(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) < 4);
+      const t = [0, 2, -2, 4, -4].map(d => t0 + d).find(u => u > f.tLo && u < f.tHi && ok([f.axis[0] * u + f.n[0] * c, f.axis[1] * u + f.n[1] * c]));
+      if (t === undefined) continue;
       const p: Pt = [f.axis[0] * t + f.n[0] * c, f.axis[1] * t + f.n[1] * c];
-      if (inRing(p, local.roof) || !roomy(p, 2.2) || furniture.benches.some(q => Math.hypot(q.at[0] - p[0], q.at[1] - p[1]) < 4)) continue;
       const sg = k++ % 2 ? 1 : -1; furniture.benches.push({at: p, out: [f.n[0] * sg, f.n[1] * sg]});
       if (k % 2 === 0) { const q: Pt = [p[0] + f.axis[0] * 1.6, p[1] + f.axis[1] * 1.6]; if (roomy(q, 2.2)) furniture.bins.push(q); }
     }
@@ -732,11 +741,15 @@ export function islandBuildingBatches(ring: readonly Pt[], roofOver?: (p: Pt) =>
     for (let k = 0; k < n; k++) {
       const s = (k + .5) * w, door = k % B.doorEvery === 1, [gw, gh, gs] = B.groundWindow, [dw, dh] = B.door, [uw, uh, us] = B.upperWindow;
       if (door) {
-        // A panelled timber door in a dressed surround with a fanlight over it.
-        stone.box(at(s, .02, deck + dh / 2), [dw, dh, .06], {rotY, color: P('door')});
-        windows.poly([at(s - dw / 2, B.lift, deck + dh + .1), at(s + dw / 2, B.lift, deck + dh + .1), at(s + dw / 2, B.lift, deck + dh + .6), at(s - dw / 2, B.lift, deck + dh + .6)], [[0, 0], [dw, 0], [dw, .5], [0, .5]], {facing});
-        for (const e of [-1, 1]) stone.box(at(s + e * (dw / 2 + .12), .08, deck + (dh + .7) / 2), [.24, dh + .7, .16], {rotY, color: dressing});
-        stone.box(at(s, .1, deck + dh + .8), [dw + .7, .3, .2], {rotY, color: dressing});
+        // Round 5 (R-pt1-a2): a panelled timber door under a round-arched fanlight, in a dressed surround: jambs to the springing, a ring
+        // of voussoirs round the arch and a keystone, all under the string course. Leaf `door[1]` - B.doorArch high, the arch's radius
+        // half the door's width.
+        const rr = dw / 2, spring = deck + dh - B.doorArch;
+        stone.box(at(s, .02, deck + (spring - deck) / 2), [dw, spring - deck, .06], {rotY, color: P('door')});
+        windows.poly(Array.from({length: 9}, (_, q): V3 => { const t = q / 8 * Math.PI; return at(s + rr * Math.cos(t), B.lift, spring + rr * Math.sin(t)); }), undefined, {facing});
+        for (const e of [-1, 1]) stone.box(at(s + e * (rr + .12), .08, (deck + spring) / 2), [.24, spring - deck, .16], {rotY, color: dressing});
+        for (let q = 0; q < 8; q++) { const t0 = q / 8 * Math.PI, t1 = (q + 1) / 8 * Math.PI, R = rr + .12; beam(stone, at(s + R * Math.cos(t0), .08, spring + R * Math.sin(t0)), at(s + R * Math.cos(t1), .08, spring + R * Math.sin(t1)), .2, .24, dressing); }
+        stone.box(at(s, .1, spring + rr + .14), [.3, .4, .2], {rotY, color: dressing});
       } else opening(s, gw + .4, deck + gs, deck + gs + gh, 2, true, false);
       opening(s, k % 2 ? uw + .4 : uw + 1.2, us, us + uh, k % 2 ? 2 : 3, false, true);
       // A chimney stack over every fourth bay (R-pt1-b: the island ranges' stacks stand up through the station roof), 1.2 m inside the

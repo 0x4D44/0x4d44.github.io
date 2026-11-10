@@ -30,13 +30,30 @@ export const PERTH_CONCRETE = 0x9a9b99;
  *  joint every 1.5 m both ways. ASSUMED scales. Cached per kind, as stationTexture's are: the scene disposes its materials, not their
  *  maps, so one shared texture per kind is never leaked by a rebuild. */
 const surfaceCache = new Map<string, THREE.DataTexture>();
-export const PERTH_SURFACE_TILE = {asphalt: 2, concrete: 3, px: 128, joint: 1.5} as const;
-export function perthSurfaceTexture(kind: 'asphalt' | 'concrete'): THREE.DataTexture {
+export const PERTH_SURFACE_TILE = {asphalt: 2, concrete: 3, ashlar: 2.4, px: 128, joint: 1.5} as const;
+/** Round 5: the island building's ashlar (R-pt1-a, R-pt1-a2: grey-buff squared stone in regular courses, not a chequer). In its UVs (two
+ *  to the metre, islandBuildingBatches) one tile is 1.2 m of wall: four 0.3 m courses, blocks 0.45-0.9 m long by a hash, a fine dark
+ *  joint, each block's tone within 6 % of the next. ASSUMED sizes. */
+export const PERTH_ASHLAR = {px: 256, courses: 4, block: [.45, .9] as const, joint: .8} as const;
+export function perthSurfaceTexture(kind: 'asphalt' | 'concrete' | 'ashlar'): THREE.DataTexture {
   const hit = surfaceCache.get(kind); if (hit) return hit;
-  const T = PERTH_SURFACE_TILE, n = T.px, tile = T[kind], data = new Uint8Array(n * n * 4);
+  const T = PERTH_SURFACE_TILE, n = kind === 'ashlar' ? PERTH_ASHLAR.px : T.px, tile = T[kind], data = new Uint8Array(n * n * 4);
   const hash = (x: number, y: number): number => { let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
   const every = Math.round(n * T.joint / tile);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+  if (kind === 'ashlar') {
+    const A = PERTH_ASHLAR, ch = n / A.courses, m = n / (tile / 2);
+    for (let row = 0; row < A.courses; row++) {
+      // The row's joints: from a hashed start, blocks of hashed length, wrapping across the tile.
+      const cuts: number[] = []; let x = Math.floor(hash(row, 7) * n);
+      while (cuts.length < 12) { cuts.push(x % n); x += Math.round((A.block[0] + (A.block[1] - A.block[0]) * hash(row, cuts.length)) * m); if (x - cuts[0] > n - A.block[0] * m) break; }
+      cuts.sort((a, b) => a - b);
+      for (let y = Math.round(row * ch); y < Math.round((row + 1) * ch); y++) for (let x2 = 0; x2 < n; x2++) {
+        const bi = cuts.filter(c => c <= x2).length, tone = .94 + .06 * hash(row * 31 + bi, 3), grain = .97 + .03 * hash(x2, y);
+        const joint = y === Math.round(row * ch) || cuts.includes(x2) ? A.joint : 1, v = Math.round(255 * tone * grain * joint), k = 4 * (y * n + x2);
+        data[k] = data[k + 1] = data[k + 2] = v; data[k + 3] = 255;
+      }
+    }
+  } else for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const grain = kind === 'asphalt' ? .86 + .14 * hash(x, y) : .95 + .05 * hash(x, y);
     const joint = kind === 'concrete' && (x % every === 0 || y % every === 0) ? .86 : 1, v = Math.round(255 * grain * joint), k = 4 * (y * n + x);
     data[k] = data[k + 1] = data[k + 2] = v; data[k + 3] = 255;
@@ -143,8 +160,10 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
     const slate = own(material('slate').clone() as THREE.MeshLambertMaterial); slate.color.multiply(new THREE.Color(0xa9a59b));
     add(group, roof.slate, slate, 'perth-tite-roof');
   }
-  const stone = own(material('stone').clone() as THREE.MeshLambertMaterial); stone.vertexColors = true;
-  const avg = new THREE.Color(0xa99a7c); if (stone.map) stone.color.setRGB(1 / avg.r, 1 / avg.g, 1 / avg.b); else stone.color.setHex(0xffffff);
+  // Round 5: Perth's own low-contrast ashlar (PERTH_ASHLAR) instead of the shared stone texture, whose strong per-block tones read as a
+  // pink chequer; the vertex colours carry the grey-buff, the map only coursing (its mean divided out).
+  const ashlar = perthSurfaceTexture('ashlar'), ad = ashlar.image.data as Uint8Array; let mean = 0; for (let i = 0; i < ad.length; i += 4) mean += ad[i]; mean /= ad.length / 4 * 255;
+  const stone = own(new THREE.MeshLambertMaterial({vertexColors: true, map: ashlar})); const avg = new THREE.Color().setRGB(mean, mean, mean, THREE.SRGBColorSpace); stone.color.setRGB(1 / avg.r, 1 / avg.g, 1 / avg.b);
   add(group, parts.stone, stone, 'perth-island-building');
   add(group, parts.windows, material('sash'), 'perth-island-building-windows');
   const top = own(material('slate').clone() as THREE.MeshLambertMaterial); top.color.multiply(new THREE.Color(0xa9a59b));
