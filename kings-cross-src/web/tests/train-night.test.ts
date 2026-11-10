@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { TRAIN_KINDS } from '../../core/train.ts';
-import { buildTrain } from '../src/train.ts';
+import { LENS, buildTrain } from '../src/train.ts';
 import { col, plain, Soup, trainNight } from '../src/train-geom.ts';
+import { Glsl } from './glsl.ts';
+import type { Value } from './glsl.ts';
 
 const TRI: [[number, number, number], [number, number, number], [number, number, number]] = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
 const UP: [[number, number, number], [number, number, number], [number, number, number]] = [[0, 0, 1], [0, 0, 1], [0, 0, 1]];
@@ -93,6 +95,33 @@ test('the added line is type-correct against three\'s own declarations (the GPU 
   }
   // a plain vec3 literal times a float, and scalars, are the other terms: no other varying or attribute is read
   assert.deepEqual([...new Set([...added[0].matchAll(/\b(v[A-Z]\w*|a[A-Z]\w*|u[A-Z]\w*)\b/g)].map((m) => m[1]))].sort(), ['uNight', 'vColor', 'vGlow']);
+});
+
+/**
+ * The lamp glow as the GPU writes it: plain()'s added lines, run in the GLSL interpreter on a lens pixel (tag 2) after dark, from a
+ * dusk-lit sum of `light` times its colour, then clamped per channel as the colour write does.
+ */
+const lensPixel = (hex: number, light = 0.6): number[] => {
+  const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  plain().onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  const f = shader.fragmentShader, a = f.indexOf('outgoingLight += uNight');
+  const c = col(hex), rgb = [c.r, c.g, c.b];
+  const vars: Record<string, Value> = { outgoingLight: rgb.map((v) => v * light), uNight: 1, vGlow: 2, vColor: [...rgb, 1] };
+  new Glsl('').run(f.slice(a, f.indexOf('#include <opaque_fragment>', a)), { vars });
+  return (vars.outgoingLight as number[]).map((v) => Math.min(1, Math.max(0, v)));
+};
+
+test('a lit lens keeps its hue after dark: the glow scales all three channels together, so a red tail lamp stays red and a white head lamp white', () => {
+  const tail = col(LENS.tailOn), [r, g, b] = lensPixel(LENS.tailOn);
+  // channel clipping took red to 1 while green and blue kept climbing, washing the lamp pink; scaled together the lens keeps its own ratios
+  assert.ok(r > 0.99, `the tail lamp is at full red: ${r}`);
+  for (const [name, v, own] of [['green', g, tail.g], ['blue', b, tail.b]] as const) {
+    assert.ok(v <= (own / tail.r) * 1.05 + 1e-6, `${name} ${v.toFixed(3)} stays at the lens's own share of red (${(own / tail.r).toFixed(3)}), well below it`);
+  }
+  const head = col(LENS.headOn), white = lensPixel(LENS.headOn);
+  // LENS.headOn is a warm white (0xfff3c4, linear 1 / 0.90 / 0.55): it stays at full brightness and that warm white, not yellow
+  assert.ok(Math.max(...white) > 0.99 && Math.min(...white) >= 0.5, `the head lamp stays a bright warm white: ${white.map((v) => v.toFixed(3))}`);
+  white.forEach((v, k) => assert.ok(Math.abs(v - [head.r, head.g, head.b][k]! / Math.max(head.r, head.g, head.b)) < 0.02, `head lamp channel ${k} keeps its share`));
 });
 
 test('two trains share the material and the lamps add no meshes: the detail mesh count per car is what it was', () => {

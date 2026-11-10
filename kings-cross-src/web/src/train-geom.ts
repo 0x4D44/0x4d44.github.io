@@ -298,7 +298,9 @@ export const plain = (): THREE.MeshLambertMaterial => {
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
         .replace('#include <opaque_fragment>',
-          'outgoingLight += uNight * ( step( 0.5, vGlow ) * ( 1.0 - step( 1.5, vGlow ) ) * vec3( 1.0, 0.82, 0.52 ) * 1.1 + step( 1.5, vGlow ) * vColor.rgb * 1.6 );\n#include <opaque_fragment>');
+          'outgoingLight += uNight * ( step( 0.5, vGlow ) * ( 1.0 - step( 1.5, vGlow ) ) * vec3( 1.0, 0.82, 0.52 ) * 1.1 + step( 1.5, vGlow ) * vColor.rgb * 1.6 );\n' +
+          // a lens scales all three channels by one factor that caps the brightest at 1, so it keeps its hue (clipping each channel alone washed a red lamp pink)
+          'outgoingLight /= mix( 1.0, max( 1.0, max( outgoingLight.r, max( outgoingLight.g, outgoingLight.b ) ) ), step( 1.5, vGlow ) );\n#include <opaque_fragment>');
     };
   }
   return plainMaterial;
