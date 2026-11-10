@@ -203,8 +203,9 @@ shared night uniform and the haze's far plane). Each mutation names the lanes (t
 files, `web/tests/windows-night.test.ts`, `web/tests/dial-lights.test.ts` (the dials), the tests round seven added to files that were there before it (picked out by name: `city`, `flood`, `landmarks`, `night`,
 `atmosphere`, `weather`), and the two squeeze tests for the two mutations of the uniform-declaration guards (a patch must find that a uniform is declared from the shader's
 uniforms, not by searching page text the build squeezes: `hooks`). The tests run one file at a time, as the machine is shared. A mutation given as a list of edits applies them
-together. The mutations are of behaviour, not of tuning: nothing anchors on a colour, a spacing, a gain or a share (they are re-tuned by eye against the night photographs). The one
-exception is the Balmoral's window grid, whose digits a test holds to the facade texture's own window calls, so a digit moved off the texture is mutated. It exits 0 only when every
+together. The mutations are of behaviour, not of tuning: nothing anchors on a colour, a spacing, a gain or a share (they are re-tuned by eye against the night photographs). The two
+exceptions are the Balmoral's window grid, whose digits a test holds to the facade texture's own window calls, so a digit moved off the texture is mutated, and the lift of a dial's glow off
+its face, which a test holds above zero and below the hands' own lifts, so a lift of 0 and one over the hands are mutated. It exits 0 only when every
 mutation is caught and every test of the lanes was also seen failing by an assertion (`N/M tests observed failing`). Label text after the arguments runs only the mutations whose label contains it (a partial run skips
 that accounting); `--check` only looks for each search text, exactly once, and runs nothing.
 

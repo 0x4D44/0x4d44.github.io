@@ -15,9 +15,11 @@ Round seven's tests are whole files (the lamps' four, the windows') and, in the 
 not judged here: the lighting and weather drivers have them.
 
 The mutations are of behaviour, not of tuning: a sign or an axis wrong, a guard or a term left out, a branch the wrong way round, a call not made, a thing not put back. Nothing here
-anchors on a tuned colour, a spacing, a gain or a share (they are ASSUMED numbers, re-tuned by eye against the night photographs). The one exception is the Balmoral's window grid
+anchors on a tuned colour, a spacing, a gain or a share (they are ASSUMED numbers, re-tuned by eye against the night photographs). The two exceptions are the Balmoral's window grid
 (station-weather.ts BALMORAL_WINDOWS): its digits are not tuned, a test holds them to the facade texture's own window calls (waverley-frontage-balmoral.ts), so a digit moved off the
-texture is a behaviour wrong and is mutated; the facade textures' glass rectangles are mutated by the way they are derived, not by their digits.
+texture is a behaviour wrong and is mutated; the facade textures' glass rectangles are mutated by the way they are derived, not by their digits. And the lift of a dial's glow off its
+face (night.ts DIAL_LIFT): it is not tuned, a test holds it above zero (a glow at its face's own depth would fight it) and below the hands' own lifts (clocks.ts HANDS, so the hands stay
+dark on the glow), so a lift of 0 and one over the hands are mutated.
 
 `--check` only looks for every mutation's search text in the package (exactly once) and runs nothing. Label text on the command line runs only the mutations whose label contains it
 (any of them); the 'never failed' accounting needs the whole list, so a partial run skips it."""
@@ -520,6 +522,15 @@ MUTATIONS += [
     ('the glows stay in the scene when the layer is freed', DL, '      for (const glow of glows.values()) glow.removeFromParent();\n', ''),
     ('the glows\' materials are kept when the layer is freed', DL, '      for (const material of materials.values()) material.dispose();\n', ''),
     ('the glows are still counted when the layer is freed', DL, '      glows.clear();\n', ''),
+    # ---- the face itself is left alone (an emissive on it would be a stand-in the atmosphere keeps lit by day, a map or a new program would change what is drawn at noon), and the glow keeps its place among the
+    # hands (the lift is held to the hands' own lifts by a test, not to a number: so these two move it off the relation, not off a value)
+    ('a dial\'s face is made emissive at night', DL, 'for (const glow of glows.values()) glow.visible = level > 0.01;',
+     'for (const [face, glow] of glows) { glow.visible = level > 0.01; (face.material as THREE.MeshLambertMaterial).emissive.setRGB(level, level, level); }'),
+    ('a dial\'s face is given its own texture as an emissive map', DL, 'glows.set(face, glow);',
+     'glows.set(face, glow);\n        (face.material as THREE.MeshLambertMaterial).emissiveMap = (face.material as THREE.MeshLambertMaterial).map;'),
+    ('a dial\'s face is told to build its program again', DL, 'glows.set(face, glow);', 'glows.set(face, glow);\n        (face.material as THREE.Material).needsUpdate = true;'),
+    ('a glow stands on its face, not off it', DL, 'export const DIAL_LIFT = 0.02;', 'export const DIAL_LIFT = 0;'),
+    ('a glow stands over the clock\'s hands', DL, 'export const DIAL_LIFT = 0.02;', 'export const DIAL_LIFT = 0.05;'),
 ]
 
 # ------------------------------------------------------------------------------------------------ core/city.ts and web/src/city.ts: where the lamps stand and how they are kept
