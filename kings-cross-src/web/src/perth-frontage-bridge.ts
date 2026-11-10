@@ -34,7 +34,7 @@ export const KINGS_PLACE_COLOURS={red:0x9e5257,cream:0xe2d6bb,lining:0x1e1c1c,fl
  asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3,white:0xe9e9e3,yellow:0xd9b52c,column:0xb9c2b8,
  // R-pt2-d: the stiffeners' darker crimson strips between the panels; the deck's shadowed underside and bearing course; the abutment's
  // smoother rendered face under the deck (#585450 sampled, darkened as in shade); the NE pier's pinkish sandstone and its paler quoins
- stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x8c7466,pierQuoin:0xa9927f,
+ stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
  // the vegetation on the wall tops (R-pt2-d: buddleia and grass along the left wall, bushes right of the pier); ASSUMED greens
  leaf:0x3d4f26,leafDark:0x2e3b1d,leafLight:0x4f6131} as const;
 export const KINGS_PLACE_SOURCE={photo:'https://www.geograph.org.uk/photo/8184219',author:'habiloid',licence:'CC BY-SA 2.0',date:'2025-08-06',date1849:'https://www.perthcivictrust.org.uk/staging/?p=2081'} as const;
@@ -129,7 +129,13 @@ function cutLevel(roads:readonly CutRoad[],ring:readonly Pt[],rails:readonly Tra
  return y;
 }
 /** The distance from (x, z) to the nearest open rail, for its guard. */
-function railReach(rails:readonly TrackSegment[],x:number,z:number):number{let r=Infinity;for(const [ax,az,bx,bz] of rails)r=Math.min(r,segDist(x,z,ax,az,bx,bz));return r;}
+/** The distance to the nearest open rail, past a rail's free end counted `RAIL_END_STRETCH` times over: the guard's cap round a rail
+ *  leaving the deck reaches a third as far past the end (R-pt2-d: the road runs right up to the abutment there), still smoothly. */
+const RAIL_END_STRETCH=3;
+function railReach(rails:readonly TrackSegment[],x:number,z:number):number{let r=Infinity;
+ for(const [ax,az,bx,bz] of rails){const dx=bx-ax,dz=bz-az,l=Math.hypot(dx,dz)||1,tx=dx/l,tz=dz/l,u=(x-ax)*tx+(z-az)*tz,e=u<0?-u:u>l?u-l:0;
+  r=Math.min(r,Math.hypot((x-ax)*tz-(z-az)*tx,e*RAIL_END_STRETCH));}
+ return r;}
 const ringEdge=(ring:readonly Pt[],x:number,z:number)=>{let d=Infinity;for(let i=0;i<ring.length;i++){const u=ring[i],v=ring[(i+1)%ring.length];d=Math.min(d,segDist(x,z,u[0],u[1],v[0],v[1]));}return d;};
 const smooth=(t:number)=>{const u=Math.max(0,Math.min(1,t));return u*u*(3-2*u);};
 
@@ -196,24 +202,28 @@ export function kingsPlaceBridge(b:Batch,ring:readonly Pt[],railDir:Pt,ground:Pi
    if(i<k){panels++;const s0=s+.12,s1=s+w-.12,y0=L.soffit+.38,y1=L.top-.3,oo=o+side*.015,face:V3=[n[0]*side,0,n[1]*side];
     const quad=(u0:number,u1:number,v0:number,v1:number,col:Rgb,lift:number)=>{const p=at(u0,oo+side*lift),q=at(u1,oo+side*lift);
      b.poly([[p[0],v0,p[1]],[q[0],v0,q[1]],[q[0],v1,q[1]],[p[0],v1,p[1]]],undefined,{facing:face,color:col});};
-    quad(s0,s1,y0,y1,rgb(C.cream),.004);quad(s0+.05,s1-.05,y0+.05,y1-.05,rgb(C.lining),.008);quad(s0+.09,s1-.09,y0+.09,y1-.09,rgb(C.red),.012);}
+    quad(s0,s1,y0,y1,rgb(C.cream),.004);quad(s0+.05,s1-.05,y0+.05,y1-.05,rgb(C.lining),.008);
+    // the end two panels at each end (R-pt2-d: photo x about 1020-1075): black with yellow bars, the bridge-strike marking; ASSUMED at both ends
+    if(i<2||i>=k-2){const u0=s0+.09,u1=s1-.09,bw=(u1-u0)/5;quad(u0,u1,y0+.09,y1-.09,rgb(C.lining),.012);
+     for(const f of [1,3])quad(u0+bw*f,u0+bw*(f+1),y0+.09,y1-.09,rgb(C.hazard),.016);}
+    else quad(s0+.09,s1-.09,y0+.09,y1-.09,rgb(C.red),.012);}
   }
-  // the piers at the girder's ends (R-pt2-d, right: a sandstone pier, its top level with the girder's, long-and-short quoins at its
-  // corners; about 115 px at f 2334 from 42 m, seen obliquely: 4 m along the girder's line, 1.8 m through, 0.3 m proud of its outer
-  // face; sizes ASSUMED). Not over a road, and clear of the train.
-  const PO=GO+.3;
-  for(const [s0,s1] of [[-4.45,-.45],[l+.45,l+4.45]] as const){
+  // the piers at the girder's ends (R-pt2-d, right: a solid pinkish sandstone pier, x about 1085-1200 at f 2334, its coped top about 0.9 m
+  // over the girder's, at capture y about 251; long-and-short quoins at its corners). 2.2 m along the girder's line from just past its
+  // flange, 1.9 m through, its inner face about 1.95 m from the rail; sizes ASSUMED from the photo. Not over a road, and clear of the train.
+  const PO=.62,H=.95;
+  for(const [s0,s1] of [[-2.6,-.42],[l+.42,l+2.6]] as const){
    const p=at(s0,PO),q=at(s1,PO),m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2];
    if(roads.some(r=>r.inRamp(...m)&&onLine(r.line,...m).d<r.half+KINGS_PLACE_CUT.pavement+.5))continue;
-   const H=.9,corners=[at(s0,PO-H),at(s0,PO+H),at(s1,PO-H),at(s1,PO+H)];// and clear of the train (1.75 m, plus its own half thickness and quoins)
-   if([p,q,m].some(e=>rails.some(([cx,cz,dx,dz])=>segDist(e[0],e[1],cx,cz,dx,dz)<1.75+H+.1)))continue;
-   const foot=Math.min(...corners.map(e=>ground.heightAt(...e)))-.3,top=L.top+.12;if(top-foot<.5)continue;
-   stoneWall(stone,p,q,foot,top,H,rgb(C.pier),n);wallBox(b,at(s0-.08,PO),at(s1+.08,PO),top,top+.12,H+.08,rgb(C.pierQuoin));piers++;
-   // quoins: 0.3 m courses, each block alternately 0.45 m and 0.25 m back from the corner along the side face, 0.03 m proud
+   const corners=[at(s0,PO-H-.08),at(s0,PO+H+.08),at(s1,PO-H-.08),at(s1,PO+H+.08)];// with the coping's 0.08 m overhang
+   if(corners.some(e=>rails.some(([cx,cz,dx,dz])=>segDist(e[0],e[1],cx,cz,dx,dz)<1.78)))continue;
+   const foot=Math.min(...corners.map(e=>ground.heightAt(...e)))-.3,top=L.top+.75;if(top-foot<.5)continue;
+   wallBox(b,p,q,foot,top,H,rgb(C.pier));wallBox(b,at(s0-.08,PO),at(s1+.08,PO),top,top+.14,H+.08,rgb(C.pierCope));piers++;
+   // quoins: 0.3 m courses, each block alternately 0.45 m and 0.25 m back from the corner along the side face, 0.02 m proud
    const lo=Math.max(foot,L.road);
    for(const [se,into] of [[s0,1],[s1,-1]] as const)for(const side of [1,-1])for(let k=0,y=top-.3;y>=lo;k++,y-=.3){
     const long=k%2?.25:.45,wide=k%2?.45:.25,oFace=PO+side*H;
-    wallBox(b,at(se-into*.03,oFace-side*wide/2+side*.015),at(se+into*long,oFace-side*wide/2+side*.015),y,y+.28,wide/2+.015,rgb(C.pierQuoin));}
+    wallBox(b,at(se-into*.02,oFace-side*wide/2+side*.01),at(se+into*long,oFace-side*wide/2+side*.01),y,y+.28,wide/2+.01,rgb(C.pierQuoin));}
   }
  }
  // the deck soffit between the girders (dark), at the girders' foot
@@ -236,20 +246,31 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
  const growth=(p:Pt,q:Pt,out:Pt,top:number,lean:number,size:number)=>{if(!veg)return;const l=Math.hypot(q[0]-p[0],q[1]-p[1]),k=Math.max(1,Math.round(l/.6));
   for(let i=0;i<k;i++){const f=(i+.5)/k,x0=p[0]+(q[0]-p[0])*f,z0=p[1]+(q[1]-p[1])*f,h=hash(x0,z0,1),r=(.3+.5*hash(x0,z0,2))*size,o=lean-.15+.5*hash(x0,z0,3);
    const x=x0+out[0]*o,z=z0+out[1]*o,ht=(.35+.8*h)*size,col=rgb(greens[Math.floor(hash(x0,z0,4)*3)]);
-   prism(veg,x,z,r,top-.25,top+ht*.6,7,col,hash(x0,z0,5)*2);prism(veg,x+(hash(x0,z0,6)-.5)*.3,z+(hash(x0,z0,7)-.5)*.3,r*.65,top+ht*.4,top+ht,6,col,hash(x0,z0,8)*2);}
+   blob(veg,x,z,top-.25,r*1.15,ht+.25,col,hash(x0,z0,5));}
+ };
+ // a rounded clump: a smooth-shaded dome of 7 sides in 3 bands, its rim jittered so no two read alike (round 5's stacked prisms read as cubes)
+ const blob=(b2:Batch,x:number,z:number,y:number,r:number,h:number,col:Rgb,seed:number)=>{
+  const S=7,bands=[[0,1],[.45,.92],[.8,.55],[1,0]] as const,j=(k:number)=>.8+.4*hash(seed*91+k,seed*17,k);
+  const P=(bi:number,k:number):{p:V3;n:V3}=>{const [fy,fr]=bands[bi],a=(k%S)/S*Math.PI*2+seed*6,rr=r*fr*(bi<3?j(k%S+bi*S):1);
+   const c=Math.cos(a),sn=Math.sin(a),ny=.3+fy;const l=Math.hypot(c*fr,ny,sn*fr)||1;return {p:[x+c*rr,y+h*fy,z+sn*rr],n:[c*fr/l,ny/l,sn*fr/l]};};
+  for(let bi=0;bi<3;bi++)for(let k=0;k<S;k++){const q=bi<2?[P(bi,k),P(bi,k+1),P(bi+1,k+1),P(bi+1,k)]:[P(bi,k),P(bi,k+1),P(3,0)];
+   b2.poly(q.map(v=>v.p),undefined,{normals:q.map(v=>v.n),color:col});}
  };
  const ringDist=(e:Pt)=>{let d=Infinity;for(let i=0;i<bridgeRing.length;i++){const u=bridgeRing[i],v=bridgeRing[(i+1)%bridgeRing.length];d=Math.min(d,segDist(e[0],e[1],u[0],u[1],v[0],v[1]));}return d;};
  // rail: a railway guard wall (and its cap round a rail's end): beside the girders (within 2 m of the deck) it stops at the deck's underside, so
  // the girder stands clear to its end and its pier (R-pt2-d); elsewhere it has no parapet, the bank's vegetation on its top instead
- const wall=(p:Pt,q:Pt,out:Pt,inner:number,batter=0,rail=false)=>{// out: unit normal toward the high side; inner: the cut's level at the wall's foot
+ const wall=(p:Pt,q:Pt,out:Pt,inner:number,batter=0,rail=false,warm=rail)=>{// out: unit normal toward the high side; inner: the cut's level at the wall's foot
   const m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2],under=inRing(m[0],m[1],bridgeRing)||ringDist(m)<(rail?2:1);// under the deck, or at its edge
   const lq=Math.hypot(q[0]-p[0],q[1]-p[1])||1,dir:Pt=[(q[0]-p[0])/lq,(q[1]-p[1])/lq];
   let hi=-Infinity;for(const e of [p,m,q])for(const o of [KINGS_PLACE_CUT.edge+.3,3,4.5,6])hi=Math.max(hi,ground.heightAt(e[0]+out[0]*o,e[1]+out[1]*o));// the ground the wall retains, up to 6 m behind it
   if(hi-inner<.6)return;
   const top=under?Math.min(hi+.5,L.soffit-.05):hi+(rail?0:.5);if(top-inner<.3)return;
   if(top>-.3-1e-6&&[p,q,m].some(e=>all.some(([cx,cz,dx,dz])=>segDist(e[0],e[1],cx,cz,dx,dz)<2.3+batter*(top-inner))))return;// the train envelope (1.75 m, plus the wall's half thickness and lean)
-  stoneWall(b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(n%3?K.rubble:K.rubbleDark),out,batter);n++;
-  if(!under&&(rail||batter>0))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?1.2:.75);
+  // under the deck, a dark render (R-pt2-d: smooth to capture x about 1000); King's Place and the railway's walls a pink-brown sandstone
+  // rubble (R-pt2-d, right of the pier); the Bank's west wall dark grey (R-pt2-d, left)
+  const tone=under?K.render:warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
+  stoneWall(under&&veg?veg:b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(tone),out,batter);n++;
+  if(!under&&(rail||batter>0)&&!(rail&&ringDist(m)<3.2))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?1.2:.75);
  };
  for(const road of roads){
   const pts:Pt[]=[];for(let i=0;i+1<road.line.length;i++){const a=road.line[i],c=road.line[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]),k=Math.max(1,Math.ceil(l/1.5));for(let j=0;j<k;j++)pts.push([a[0]+(c[0]-a[0])*j/k,a[1]+(c[1]-a[1])*j/k]);}
@@ -264,7 +285,7 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
    // not past the corner's bisector, where the other road's wall carries the curve on, nor under the deck (paved to the abutments)
    const m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2],own=onLine(road.line,...m).d-road.half;if(roads.some(r=>r!==road&&r.inRamp(...m)&&onLine(r.line,...m).d-r.half<own-.05))continue;
    if(inRing(m[0],m[1],bridgeRing))continue;
-   wall(p,q,[nx,nz],Math.min(road.level(...a),road.level(...c))+.12,road.name!=="King's Place"&&nx<0?C.batter:0);
+   wall(p,q,[nx,nz],Math.min(road.level(...a),road.level(...c))+.12,road.name!=="King's Place"&&nx<0?C.batter:0,false,road.name==="King's Place");
   }
  }
  // the railway's own walls (R-pt2-d, left): on the guard line of each open rail, where the cut lies beyond it
@@ -276,11 +297,11 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
    const lo=Math.min(ground.heightAt(p[0]+nx*.4,p[1]+nz*.4),ground.heightAt(q[0]+nx*.4,q[1]+nz*.4));
    wall(p,q,[-nx,-nz],lo,0,true);
   }
-  // round the end it leaves the deck by (R-pt2-d: the masonry pier at the deck's north-east end): the guard's cap there reaches past the
-  // deck's corner over the cut, so a wall on the same line closes it, outside the deck
+  // round the end it leaves the deck by: the guard's cap there (railReach, a third as deep as it is wide) reaches past the deck's
+  // corner over the cut, so a wall on the same line closes it, outside the deck
   for(const [ex,ez,sg] of [[ax,az,-1],[bx,bz,1]] as const){if(!(inRing(ex,ez,bridgeRing)||ringEdge(bridgeRing,ex,ez)<.6))continue;
    const o=C.railClear+C.railEdge+C.guard-.35,arc=(k:number):Pt=>{const a=Math.PI*k/8,c=Math.cos(a),s2=Math.sin(a);// from one side round behind the end to the other
-    return [ex+(-tz*c+tx*sg*s2)*o,ez+(tx*c+tz*sg*s2)*o];};
+    return [ex+(-tz*c+tx*sg*s2/RAIL_END_STRETCH)*o,ez+(tx*c+tz*sg*s2/RAIL_END_STRETCH)*o];};
    for(let k=0;k<8;k++){const p=arc(k),q=arc(k+1),m:Pt=[(p[0]+q[0])/2,(p[1]+q[1])/2];if(inRing(m[0],m[1],bridgeRing))continue;
     const ml=Math.hypot(ex-m[0],ez-m[1])||1,toEnd:Pt=[(ex-m[0])/ml,(ez-m[1])/ml];
     wall(p,q,toEnd,Math.min(ground.heightAt(p[0]-toEnd[0]*.4,p[1]-toEnd[1]*.4),ground.heightAt(q[0]-toEnd[0]*.4,q[1]-toEnd[1]*.4)),0,true);}
@@ -302,7 +323,7 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
  *  roads and the deck's floor, so the junction and the far wall's foot are paved with no seam. A cell with any paved corner is drawn,
  *  its other corners at the paved ones' mean level, so the surface runs on under the walls' faces (but not into an open rail's guard,
  *  where the terrain climbs back to the field). Returns the cells drawn. */
-export function cutSurface(b:Batch,openRails:readonly TrackSegment[]=[],bridgeRing:readonly Pt[]=frontageFile.bridge.ring.map(p=>[p[0],p[1]] as Pt)):number{
+export function cutSurface(b:Batch,openRails:readonly TrackSegment[]=[],bridgeRing:readonly Pt[]=frontageFile.bridge.ring.map(p=>[p[0],p[1]] as Pt),ground?:Pick<Terrain,'heightAt'>):number{
  const C=KINGS_PLACE_CUT,K=KINGS_PLACE_COLOURS,roads=cutRoads(bridgeRing),{x0,x1,z0,z1,near}=cutExtents(roads,openRails),st=C.step;
  const nx=Math.round((x1-x0)/st)+1,nz=Math.round((z1-z0)/st)+1,grid:ReturnType<typeof cutSurfaceAt>[]=[];
  const guarded:boolean[]=[];
@@ -317,8 +338,17 @@ export function cutSurface(b:Batch,openRails:readonly TrackSegment[]=[],bridgeRi
   return {poly,cut};};
  const face=(ns:N[],lift:number,color:Rgb)=>{if(ns.length>=3)b.poly(ns.map((v):V3=>[v.x,v.r+lift,v.z]),undefined,{facing:[0,1,0],color});};
  for(let j=0;j+1<nz;j++)for(let i=0;i+1<nx;i++){const c=[grid[j*nx+i],grid[j*nx+i+1],grid[(j+1)*nx+i+1],grid[(j+1)*nx+i]],have=c.filter(v=>v!==null);
-  if(!have.length||[j*nx+i,j*nx+i+1,(j+1)*nx+i+1,(j+1)*nx+i].some(k=>guarded[k]))continue;// not over a rail's guard, where the terrain climbs
-  const xs=[x0+i*st,x0+(i+1)*st,x0+(i+1)*st,x0+i*st],zs=[z0+j*st,z0+j*st,z0+(j+1)*st,z0+(j+1)*st];cells++;
+  const xs=[x0+i*st,x0+(i+1)*st,x0+(i+1)*st,x0+i*st],zs=[z0+j*st,z0+j*st,z0+(j+1)*st,z0+(j+1)*st];
+  // a cell whose centre is inside the deck's outline is drawn even with its far corners past it, over a rail's guard or unpaved (the
+  // abutment's foot: round 5's sage sliver); with no paved corner, at the deck's floor level
+  const onDeck=inRing(xs[0]+st/2,zs[0]+st/2,bridgeRing);
+  if(!have.length&&onDeck){b.poly(xs.map((x,k):V3=>[x,KINGS_PLACE_LEVELS.road+.14,zs[k]]),undefined,{facing:[0,1,0],color:footway});cells++;continue;}
+  const overGuard=!onDeck&&[j*nx+i,j*nx+i+1,(j+1)*nx+i+1,(j+1)*nx+i].some(k=>guarded[k]);
+  if(!have.length||overGuard&&!ground)continue;// not over a rail's guard, where the terrain climbs, unless it can follow the terrain there
+  if(overGuard&&ground){// a paved cell on the guard's edge: its unpaved corners ride 0.05 m over the climbing terrain, so no hole opens beside it
+   const mean=have.reduce((s,v)=>s+v!.y,0)/have.length,tar=have.filter(v=>v!.asphalt).length*2>=c.length;
+   b.poly(c.map((v,k):V3=>[xs[k],v?v.y+.02:Math.max(mean+.02,ground.heightAt(xs[k],zs[k])+.05),zs[k]]),undefined,{facing:[0,1,0],color:tar?asphalt:footway});cells++;continue;}
+  cells++;
   if(have.length===4&&c.some(v=>v!.asphalt)&&c.some(v=>!v!.asphalt)){
    // the kerb crosses this cell: carriageway and pavement each to the line, and the kerb stone's face and top along it
    const ns:N[]=c.map((v,k)=>({x:xs[k],z:zs[k],k:v!.kerb,r:v!.road}));
@@ -338,7 +368,7 @@ export function cutSurface(b:Batch,openRails:readonly TrackSegment[]=[],bridgeRi
  *  centre line on King's Place, double yellow lines along the Bank's west kerb, the stop line at the Bank's mouth, and the lamp column
  *  on the Bank's west pavement (R-pt2-d, about 10 m ahead of the standpoint; 8 m, ASSUMED). The forecourt leaves these roads to it. */
 export function cutRoadSurfaces(flat:Batch,paint:Batch,street:Batch,ground:Pick<Terrain,'heightAt'>,bridgeRing:readonly Pt[]=frontageFile.bridge.ring.map(p=>[p[0],p[1]] as Pt),openRails:readonly TrackSegment[]=[]):{segments:number}{
- const C=KINGS_PLACE_CUT,K=KINGS_PLACE_COLOURS,roads=cutRoads(bridgeRing),segments=cutSurface(flat,openRails,bridgeRing);
+ const C=KINGS_PLACE_CUT,K=KINGS_PLACE_COLOURS,roads=cutRoads(bridgeRing),segments=cutSurface(flat,openRails,bridgeRing,ground);
  const band=(road:CutRoad,pts:Pt[],o0:number,o1:number,lift:number,b:Batch,color:Rgb,keep:(i:number)=>boolean=()=>true)=>{
   for(let i=0;i+1<pts.length;i++){const a=pts[i],c=pts[i+1];if(!keep(i)||!road.inRamp(...a)||!road.inRamp(...c))continue;
    const l=Math.hypot(c[0]-a[0],c[1]-a[1])||1,nx=-(c[1]-a[1])/l,nz=(c[0]-a[0])/l;
@@ -361,7 +391,6 @@ export function cutRoadSurfaces(flat:Batch,paint:Batch,street:Batch,ground:Pick<
  if(lp){const nx=-dir[1],nz=dir[0],west=nx<0?1:-1,o=bank.half+.5,p:Pt=[lp[0]+nx*west*o,lp[1]+nz*west*o],y=bank.level(...lp)+.12;
   prism(street,p[0],p[1],.09,y,y+8,8,rgb(K.column));
   const arm:Pt=[p[0]-nx*west*1.6,p[1]-nz*west*1.6];wallBox(street,p,arm,y+7.85,y+8,.05,rgb(K.column));wallBox(street,arm,[arm[0]-nx*west*.5,arm[1]-nz*west*.5],y+7.8,y+7.95,.12,rgb(0x3a3d40));}
- void ground;
  return {segments};
 }
 

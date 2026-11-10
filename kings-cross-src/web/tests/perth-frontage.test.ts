@@ -155,8 +155,18 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   const near = ['perth-kings-place-bridge', 'perth-kings-place-walls'].map(mesh);
   const hit = (px: number, py: number) => { ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view); return ray.intersectObjects(near, false)[0]; };
   for (const px of [980, 1030, 1070]) assert.equal(hit(px, 330)?.object.name, 'perth-kings-place-bridge', `the girder shows at capture x ${px}`);
-  const pier = hit(1130, 340);
-  assert.ok(pier && pier.point.y > KINGS_PLACE_LEVELS.soffit && pier.distance < 50, `the pier at capture x 1130: ${pier?.object.name} ${pier?.point.y}`);
+  // round 6: no bare terrain shows on the road under the girder's east end (round 5's sage sliver, capture x 815-845 and, once moved, 897-900, y 638-652)
+  const floor = ['perth-ground', 'perth-forecourt', 'perth-kings-place-bridge', 'perth-kings-place-walls'].map(mesh);
+  for (let px = 780; px <= 906; px += 3) for (let py = 600; py <= 680; py += 2) {
+    ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view);
+    const first = ray.intersectObjects(floor, false)[0];
+    assert.notEqual(first?.object.name, 'perth-ground', `bare terrain at capture ${px},${py}: ${first?.point.toArray().map(v => v.toFixed(2))}`);
+  }
+  // round 6: the pier is a solid mass rising over the girder's top (R-pt2-d: its coped top at photo y about 735, x about 1085-1200)
+  for (const px of [1110, 1150, 1185]) {
+    const pier = hit(px, 270);
+    assert.ok(pier?.object.name === 'perth-kings-place-bridge' && pier.point.y > KINGS_PLACE_LEVELS.top && pier.distance < 50, `the pier at capture x ${px}, over the girder: ${pier?.object.name} ${pier?.point.y}`);
+  }
 });
 
 test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data and covers the King\'s Place cut and the forecourt', () => {

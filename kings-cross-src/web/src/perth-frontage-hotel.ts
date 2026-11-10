@@ -39,9 +39,10 @@ export const HOTEL_LEVELS={
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
 /** `ashlar` is the stugged pinkish buff-grey wall (R-pt2-b, about #8e715c in shade, lit a little lighter; no yellow); `red` the darker, redder, dull sandstone of margins, bands,
- *  quoins, skews, cornice and finials (about #845f4e in shade); `frame` the white-painted sashes; `dormer` the white-painted dormer fronts; `pipe` the black cast-iron
- *  downpipes. Round 5 (F6): the dressings were a bright orange-red and the walls a yellow tan, with too much contrast between them. Tones ASSUMED from R-pt2-b. */
-export const HOTEL_COLOURS={ashlar:0x9a8a7e,red:0x83574a,frame:0xeeeae2,dormer:0xe8e4da,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428,pipe:0x2b2d2f} as const;
+ *  quoins, skews, cornice, tympana, pedestals and finials (about #845f4e in shade); `frame` the white-painted sashes; `dormer` the white-painted dormer fronts; `pipe` the pale
+ *  cream-grey painted downpipes (R-pt2-b: light against the wall, not black). Round 5 (F6): the dressings were a bright orange-red and the walls a yellow tan, with too much
+ *  contrast between them. Round 6 (F6): the walls a touch warmer and browner (still pinkish) and the pipes pale. Tones ASSUMED from R-pt2-b. */
+export const HOTEL_COLOURS={ashlar:0x9f8b7a,red:0x83574a,frame:0xeeeae2,dormer:0xe8e4da,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428,pipe:0xcfcabd} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];
@@ -194,37 +195,65 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
  };
  crow(0,f.bayWidth,f.bayFront-.02,L.bayEaves,L.bayApex,5);
  crow(e0,e1,-.47,L.eaves,L.eastApex,5);
- // wallhead gablets on the middle front's two inner bays (R-pt2-b): over each second-floor window pair, under the eaves, a carved arched tympanum
- // (a segmental panel of the red stone, 2.3 m on its chord, with a darker inset); over the eaves a narrow stepped pedestal (three steps, 1.9, 1.4 and
- // 0.9 m wide, red caps, 1.5 m high) on two stepped corbels either side of the tympanum, carrying a cross finial 1.0 m high. The pedestal stands proud of
- // the wall by 0.4 m so the main roof's eaves pass behind it. The window pair itself is the facade texture's. Sizes ASSUMED from R-pt2-b.
+ // Round 6 (F3): the wallhead gablets on the middle front's two inner bays RISE THROUGH the eaves (R-pt2-b: the bay's wall carries on 1.75 m over the eave line, a large
+ // carved arched tympanum in the red sandstone straddles the eave line, and the stepped pedestal and cross stand on the bay's apex). Each is a gabled wall face of
+ // ashlar, 3.7 m wide (the 4.5 m bay less 0.4 m of ashlar a side, so the two stand 0.8 m apart; ASSUMED), standing 0.40 m out from the front on a two-step red corbel
+ // course so the main roof's eave (0.35 m out) meets its side instead of crossing its face, its shoulders 0.75 m and its apex 1.75 m over the eave line (ASSUMED,
+ // within the brief's 1.5-2 m), red skews and kneelers along the gable, its own two short slate slopes running back from the skews to meet the main slope, and a
+ // 3.2 m segmental tympanum (rise 1.35 m, 0.45 m below the eave line and 0.9 m above it; ASSUMED, "about the bay's width") with a darker carved inset and a rosette.
+ // The pedestal (R-pt2-b: red sandstone, stepped, widened here to 2.3, 1.7 and 1.1 m, ASSUMED) is red, carries the cross 1.0 m high, and starts 0.65 m below the apex so
+ // its foot is on the gable's slope. The window pair itself is the facade texture's. Sizes ASSUMED from R-pt2-b at about 21 px/m.
  function gablet(sc:number){
   const lens=(w2:number,y0:number,rise:number)=>{const R=(w2*w2/4+rise*rise)/(2*rise),o:[number,number][]=[[-w2/2,y0],[w2/2,y0]];
    for(let i=1;i<8;i++){const x=w2/2-w2*i/8;o.push([x,y0+Math.sqrt(R*R-x*x)-(R-rise)]);}return o;};
-  const ty0=L.second+2.88,rise=L.eaves-.02-ty0,dark:Rgb=[C.red[0]*.72,C.red[1]*.72,C.red[2]*.72];// from the window margins' top to just under the cornice's top
-  const tp=f.at(sc,-.06);slab(b.detail,lens(2.3,ty0,rise).map(([x,y])=>[x,y+P] as [number,number]),[tp[0],0,tp[1]],uAx,nOut,.06,C.red);
-  const ti=f.at(sc,-.09);slab(b.detail,lens(1.8,ty0+.07,rise-.16).map(([x,y])=>[x,y+P] as [number,number]),[ti[0],0,ti[1]],uAx,nOut,.03,dark);// the darker carved inset
-  for(const x of [-.8,.8]){// two stepped corbels carrying the pedestal's ends, clear of the tympanum's crown
-   const lo=f.at(sc+x,-.13),hi=f.at(sc+x,-.2);wallBoxAlong(b.detail,lo,f.u,f.n,.3,.26,P+L.eaves-.3,P+L.eaves-.15,C.red);wallBoxAlong(b.detail,hi,f.u,f.n,.4,.4,P+L.eaves-.15,P+L.eaves,C.red);}
-  const pc=f.at(sc,-.2);let y=L.eaves;
-  for(const [w2,h] of [[1.9,.45],[1.4,.4],[.9,.35]] as const){wallBoxAlong(b.detail,pc,f.u,f.n,w2,.4,P+y,P+y+h,C.ashlar);wallBoxAlong(b.detail,pc,f.u,f.n,w2+.14,.46,P+y+h,P+y+h+.1,C.red);y+=h+.1;}// step and red cap
-  wallBoxAlong(b.detail,pc,f.u,f.n,.14,.14,P+y,P+y+1,C.red);wallBoxAlong(b.detail,pc,f.u,f.n,.56,.14,P+y+.5,P+y+.64,C.red);}// the cross: a shaft and a short arm
- // the two gablets on the middle front's inner bays (R-pt2-b), and four white-fronted piend-roofed dormers on the front slope, two each side of the pair
- // (R-pt2-b shows them at about 2.5 m and 5 m from the nearest gablet's centre; HES lists "small piend-roofed dormers" and the photo agrees: flat-headed
- // white-painted fronts under hipped slate roofs, not gabled fronts). Each: a 1.0 m wide white front, 1.0 m of it above the slope, a dark light 0.56 m
- // wide with a white mullion, a slated roof hipped to the front and both sides (0.4 m rise, the front hip meeting the ridge 0.56 m back) running back to
- // meet the main slope, slated cheeks. Sizes ASSUMED from R-pt2-b.
+  const dark:Rgb=[C.red[0]*.72,C.red[1]*.72,C.red[2]*.72],cap:Rgb=[Math.min(1,C.red[0]*1.12),Math.min(1,C.red[1]*1.12),Math.min(1,C.red[2]*1.12)];
+  const half=1.85,ys=L.eaves+.75,ya=L.eaves+1.75,D0=-.4,ty0=L.eaves-.45,tRise=1.35;// the wall's half width (3.7 m); its shoulder and apex heights; its face's d; the tympanum's spring and rise
+  const at3=(d:number):V3=>{const p=f.at(sc,d);return [p[0],0,p[1]];},lift=(o:[number,number][])=>o.map(([x,y])=>[x,y+P] as [number,number]);
+  // the corbel course: two steps (3.5 m by 0.30 m out, 0.15 m high; 3.9 m by 0.42 m out, 0.30 m high) under the gable's foot, the cornice's own height
+  wallBoxAlong(b.detail,f.at(sc,-.15),f.u,f.n,3.5,.3,P+L.eaves-.45,P+L.eaves-.3,C.red);wallBoxAlong(b.detail,f.at(sc,-.21),f.u,f.n,3.9,.42,P+L.eaves-.3,P+L.eaves,C.red);
+  // the gable's wall: ashlar, 1.1 m deep (its side faces are the roof's cheeks), its face 0.40 m out
+  slab(b.detail,lift([[-half,L.eaves-.1],[half,L.eaves-.1],[half,ys],[0,ya],[-half,ys]]),at3(D0),uAx,nOut,1.1,C.ashlar);
+  // its two slate slopes (0.03 m over the wall's top edges), from the face back to where each meets the main front slope (the valley, 0.05 m past it)
+  const dv=(y:number)=>range.d0+(y-L.eaves)/pitch;
+  for(const sg of [-1,1])b.detail.poly([V(sc+sg*half,D0,P+ys+.03),V(sc,D0,P+ya+.03),V(sc,dv(ya)+.05,P+ya+.03),V(sc+sg*half,dv(ys)+.05,P+ys+.03)],undefined,{facing:[sg*uAx[0],1,sg*uAx[2]],color:C.slate});
+  // the skews (red, 0.24 m deep, 0.30 m wide, 0.07 m proud of the face) from the gable's foot to where the pedestal covers them, and a kneeler at each foot (0.5 m by 0.5 m by 0.4 m)
+  const slope=(ya-ys)/half,sy=(x:number)=>ys+(half-Math.abs(x))*slope;
+  for(const sg of [-1,1]){const xa=sg*(half+.1),xe=sg*1.1,yA=sy(xa)+.08,yE=sy(xe)+.08;
+   b.detail.poly([V(sc+xa,-.47,P+yA-.24),V(sc+xe,-.47,P+yE-.24),V(sc+xe,-.47,P+yE),V(sc+xa,-.47,P+yA)],undefined,{facing:nOut,color:C.red});
+   b.detail.poly([V(sc+xa,-.47,P+yA),V(sc+xe,-.47,P+yE),V(sc+xe,-.17,P+yE),V(sc+xa,-.17,P+yA)],undefined,{facing:up,color:cap});
+   wallBoxAlong(b.detail,f.at(sc+sg*half,-.22),f.u,f.n,.5,.5,P+ys-.5,P+ys-.1,C.red);}
+  // the tympanum, a carved lunette 3.2 m on its chord, its inset 2.6 m (darker), and a rosette 0.32 m in radius at the inset's heart
+  slab(b.detail,lift(lens(3.2,ty0,tRise)),at3(-.45),uAx,nOut,.2,C.red);
+  slab(b.detail,lift(lens(2.6,ty0+.12,tRise-.4)),at3(-.48),uAx,nOut,.05,dark);
+  const rc=ty0+.12+(tRise-.4)*.5,rose:[number,number][]=Array.from({length:8},(_,i):[number,number]=>[Math.cos(i*Math.PI/4)*.32,rc+Math.sin(i*Math.PI/4)*.32]);
+  slab(b.detail,lift(rose),at3(-.5),uAx,nOut,.04,cap);
+  // the pedestal: red steps 2.3 m (1.0 m), 1.7 m (0.4 m) and 1.1 m (0.34 m) wide, each with a 0.1 m cap 0.14 m wider, 0.44 m deep, then the cross
+  const pc=f.at(sc,-.2);let y=ya-.65;
+  for(const [w2,h] of [[2.3,1],[1.7,.4],[1.1,.34]] as const){wallBoxAlong(b.detail,pc,f.u,f.n,w2,.44,P+y,P+y+h,C.red);wallBoxAlong(b.detail,pc,f.u,f.n,w2+.14,.5,P+y+h,P+y+h+.1,cap);y+=h+.1;}
+  wallBoxAlong(b.detail,pc,f.u,f.n,.16,.16,P+y,P+y+1,C.red);wallBoxAlong(b.detail,pc,f.u,f.n,.6,.16,P+y+.5,P+y+.66,C.red);}// the cross: a shaft and a short arm
+ // Carved panels between the floors in the centre bays (R-pt2-b: a red sandstone tracery panel directly under each upper window's sill, about 1.7 m wide): 1.9 m wide, 0.06 m
+ // proud, with two darker pointed-arched lights, on the band courses between the ground and first floors (y 4.15 to 4.85) and the first and second (7.75 to 8.35). ASSUMED.
+ const carved=(sc:number,y0:number,y1:number)=>{
+  const o1=f.at(sc,-.06),box:[number,number][]=[[-.95,y0+P],[.95,y0+P],[.95,y1+P],[-.95,y1+P]];slab(b.detail,box,[o1[0],0,o1[1]],uAx,nOut,.08,C.red);
+  const o2=f.at(sc,-.09),dk:Rgb=[C.red[0]*.6,C.red[1]*.6,C.red[2]*.6],yb=y0+.1+P,hh=y1-y0-.2;
+  for(const x of [-.42,.42]){const lt:[number,number][]=[[x-.34,yb],[x+.34,yb],[x+.34,yb+hh*.6],[x+.17,yb+hh*.88],[x,yb+hh],[x-.17,yb+hh*.88],[x-.34,yb+hh*.6]];
+   slab(b.detail,lt,[o2[0],0,o2[1]],uAx,nOut,.05,dk);}};
+ // the two gablets on the middle front's inner bays (R-pt2-b), the carved panels on the same two bays, and four white-fronted piend-roofed dormers on the front slope,
+ // two each side of the pair (R-pt2-b shows them at about 2.5 m and 5 m from the nearest gablet's centre; here 2.9 m and 5.1 m, clear of the wider gablet wall; HES lists
+ // "small piend-roofed dormers" and the photo agrees: flat-headed white-painted fronts under hipped slate roofs, not gabled fronts). Round 6: a little larger, as
+ // R-pt2-b's are bigger than round 5's. Each: a 1.24 m wide white front, 1.25 m of it above the slope, a dark light 0.68 m wide with a white mullion, a slated roof
+ // hipped to the front and both sides (0.5 m rise, the front hip meeting the ridge 0.62 m back) running back to meet the main slope, slated cheeks. Sizes ASSUMED from R-pt2-b.
  const bayW=(m1-m0)/4;
- for(const k of [1,2]){const sc=m0+(k+.5)*bayW;gablet(sc);}
- for(const [k,offs] of [[1,[-2.5,-5]],[2,[2.5,5]]] as const)for(const off of offs){// outward of each gablet, away from the other
-  const sc=m0+(k+.5)*bayW+off,dz=1.1,y0=P+slopeAt(dz),hw=.5,wallTop=y0+1;
-  const c=f.at(sc,dz+.85);wallBoxAlong(b.detail,c,f.u,f.n,.9,1.7,y0-.2,wallTop,C.slate);// the cheeks, slated
+ for(const k of [1,2]){const sc=m0+(k+.5)*bayW;gablet(sc);carved(sc,4.15,4.85);carved(sc,7.75,8.35);}
+ for(const [k,offs] of [[1,[-2.9,-5.1]],[2,[2.9,5.1]]] as const)for(const off of offs){// outward of each gablet, away from the other
+  const sc=m0+(k+.5)*bayW+off,dz=1.1,y0=P+slopeAt(dz),hw=.62,wallTop=y0+1.25;
+  const c=f.at(sc,dz+1);wallBoxAlong(b.detail,c,f.u,f.n,1.14,2,y0-.2,wallTop,C.slate);// the cheeks, slated
   const ff=f.at(sc,dz+.03);wallBoxAlong(b.detail,ff,f.u,f.n,2*hw,.1,y0-.15,wallTop,C.white);// the white-painted, flat-headed front
-  const gl=f.at(sc,dz-.06),gw=.28,hf:Pt=[f.u[0]*gw,f.u[1]*gw];
-  b.detail.poly([[gl[0]-hf[0],y0+.1,gl[1]-hf[1]],[gl[0]+hf[0],y0+.1,gl[1]+hf[1]],[gl[0]+hf[0],y0+.88,gl[1]+hf[1]],[gl[0]-hf[0],y0+.88,gl[1]-hf[1]]],undefined,{facing:nOut,color:C.glass});
-  const mu=f.at(sc,dz-.07);wallBoxAlong(b.detail,mu,f.u,f.n,.06,.02,y0+.1,y0+.88,C.white);
-  // the hipped roof: eaves at wallTop, 0.06 m out from the front and sides; the ridge at +0.4 m runs from the front hip's apex back into the main slope
-  const ex=hw+.06,rh=.4,d0=dz-.08,back=dz+(wallTop+rh-y0)/pitch+.1,ridge=wallTop+rh;
+  const gl=f.at(sc,dz-.06),gw=.34,hf:Pt=[f.u[0]*gw,f.u[1]*gw];
+  b.detail.poly([[gl[0]-hf[0],y0+.1,gl[1]-hf[1]],[gl[0]+hf[0],y0+.1,gl[1]+hf[1]],[gl[0]+hf[0],y0+1.1,gl[1]+hf[1]],[gl[0]-hf[0],y0+1.1,gl[1]-hf[1]]],undefined,{facing:nOut,color:C.glass});
+  const mu=f.at(sc,dz-.07);wallBoxAlong(b.detail,mu,f.u,f.n,.06,.02,y0+.1,y0+1.1,C.white);
+  // the hipped roof: eaves at wallTop, 0.06 m out from the front and sides; the ridge at +0.5 m runs from the front hip's apex back into the main slope
+  const ex=hw+.06,rh=.5,d0=dz-.08,back=dz+(wallTop+rh-y0)/pitch+.1,ridge=wallTop+rh;
   const e00=V(sc-ex,d0,wallTop),e10=V(sc+ex,d0,wallTop),e01=V(sc-ex,back,wallTop),e11=V(sc+ex,back,wallTop),r0=V(sc,d0+ex,ridge),r1=V(sc,back,ridge);
   b.detail.poly([e00,e10,r0],undefined,{facing:[nOut[0],1,nOut[2]],color:C.slate});// the front hip
   b.detail.poly([e00,e01,r1,r0],undefined,{facing:[-uAx[0],1,-uAx[2]],color:C.slate});b.detail.poly([e10,e11,r1,r0],undefined,{facing:[uAx[0],1,uAx[2]],color:C.slate});}
@@ -273,21 +302,22 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
   });
  };
  for(const at of [[-31,-87.4],[-26.2,-89.5],[-8.5,-104.3],[-3.2,-106.5]] as const)quoin([at[0],at[1]]);// the entrance bay's front corners; the east gable bay's
- // 8. Downpipes (R-pt2-b shows several): black cast-iron, 0.11 m round, from a small hopper head at the gutter to the ground, 0.06 m off the wall: five on the main
- // front (by the turret, either side of the pair of gablets and between them, by the east gable) and one on the entrance bay's front by its east quoins. ASSUMED.
+ // 8. Downpipes (R-pt2-b shows several, pale): painted cast-iron, 0.11 m round, from a small hopper head at the gutter to the ground, 0.06 m off the wall. Round 6 (F4): fewer,
+ // so they stripe the front less: three on the main front (by the turret, between the two gablets, by the east gable) and one on the entrance bay's front by its east quoins,
+ // whose hopper stops 0.12 m under the foot of the crow-stepped gable (its slab starts 1.2 m under the bay's eaves) instead of running up the gable's face. ASSUMED.
  const downpipe=(s:number,d:number,eaves:number)=>{const [x,z]=f.at(s,d-.06),yt=P+eaves-.12,yb=ground.heightAt(x,z)+.05;
   prism(b.detail,x,z,.055,yb,yt,6,C.pipe,Math.PI/6,false);
   const hd=f.at(s,d-.1);wallBoxAlong(b.detail,hd,f.u,f.n,.22,.16,yt-.24,yt,C.pipe);};
- for(const s of [m0+.55,m0+bayW,m0+2*bayW,m0+3*bayW,m1-.55])downpipe(s,0,L.eaves);
- downpipe(f.bayWidth-.72,f.bayFront,L.bayEaves);
+ for(const s of [m0+.55,m0+2*bayW,m1-.55])downpipe(s,0,L.eaves);
+ downpipe(f.bayWidth-.72,f.bayFront,L.bayEaves-1.2);// the crow-stepped gable's slab (crow(): base-1.2) starts here
  return {P,foot,frame:f,triangles:b.facade.triangles+b.detail.triangles-start};
 }
 /** A box standing on plan point c, `w` along u and `dp` along n, y0..y1. */
 function wallBoxAlong(b:Batch,c:Pt,u:Pt,_n:Pt,w:number,dp:number,y0:number,y1:number,color:Rgb){wallBox(b,[c[0]-u[0]*w/2,c[1]-u[1]*w/2],[c[0]+u[0]*w/2,c[1]+u[1]*w/2],y0,y1,dp/2,color);}
 
 /** The facade texture: one window bay (4.5 m) from P-2 m to P+16 m: stugged buff-grey ashlar courses, red sandstone (the darker, redder stone)
- *  plinth, bands, margins and cornice; bipartite white-painted sash windows on three storeys and an attic window that only the entrance bay's
- *  taller walls reach. ASSUMED sizes, read from R-pt2-b. */
+ *  plinth, bands and cornice; paired white-painted sash windows (two lights side by side in one opening, each with its meeting rail) on three storeys, framed
+ *  by separate dressed blocks of the red stone, and an attic window that only the entrance bay's taller walls reach. ASSUMED sizes, read from R-pt2-b. */
 export function hotelFacadeTexture():THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const W=512,H=2048,[lo,hi]=HOTEL_TEX_SPAN,ky=H/(hi-lo),kx=W/HOTEL_BAY,Y=(m:number)=>H-(m-lo)*ky;
@@ -298,19 +328,35 @@ export function hotelFacadeTexture():THREE.CanvasTexture|null{
  for(let m=lo;m<hi;m+=.33)for(let x=(Math.round(m/.33)%2)*.45;x<HOTEL_BAY;x+=.9){const t=rnd();
   g.fillStyle=t<.35?`rgba(88,72,66,${(.35-t)*.7})`:t<.7?`rgba(176,166,160,${(t-.35)*.45})`:`rgba(150,118,108,${(t-.7)*.8})`;g.fillRect(x*kx,Y(m+.33),.9*kx,.33*ky);}// darker pink-grey, lighter grey, a rosy brown: stugged pinkish buff-grey ashlar, no yellow in any of them
  for(let m=lo;m<hi;m+=.33){g.fillStyle='rgba(58,46,44,.35)';g.fillRect(0,Y(m),W,2);}
- const red=hex(HOTEL_COLOURS.red),white=hex(HOTEL_COLOURS.frame),fw=.09,mw=.12;// the red sandstone dressings; the sashes' white paint: frame 0.09 m, mullion 0.12 m (ASSUMED from R-pt2-b)
+ const red=hex(HOTEL_COLOURS.red),white=hex(HOTEL_COLOURS.frame),fw=.075;// the red sandstone dressings; the sashes' white paint: frame 0.075 m (ASSUMED from R-pt2-b)
+ const rr=(HOTEL_COLOURS.red>>16)&255,rg=(HOTEL_COLOURS.red>>8)&255,rb=HOTEL_COLOURS.red&255;
  g.fillStyle=red;
  g.fillRect(0,Y(L.plinth),W,(L.plinth-lo)*ky);// plinth
  for(const [y,h] of [[L.first,.3],[L.second,.25],[L.eaves-.35,.35]] as const)g.fillRect(0,Y(y+h),W,h*ky);// band courses, wallhead cornice
+ // Round 6 (F4): the window dressings are separate dressed blocks, each its own tone and with its own dark joint, not one continuous margin (R-pt2-b: jamb stones
+ // alternately long and short, a lintel of several stones, a sill in three).
+ const stone=(x:number,y:number,w:number,h:number)=>{const k=.9+rnd()*.2,cl=(v:number)=>Math.min(255,Math.round(v*k));
+  g.fillStyle=`rgb(${cl(rr)},${cl(rg)},${cl(rb)})`;g.fillRect(x,y,w,h);
+  g.strokeStyle='rgba(40,26,24,.65)';g.lineWidth=1.5;g.strokeRect(x+.75,y+.75,w-1.5,h-1.5);};
+ // A window opening: its jambs in courses of about 0.34 m, long (0.40 m out from the opening) and short (0.22 m) alternately and the other way about on the other jamb; its lintel,
+ // 0.30 m, of five stones (1.2:0.8:1.4:0.8:1.2) across the opening and both jambs; its sill, 0.20 m, of three (1:2.4:1) 0.35 m past the opening each side. Sizes ASSUMED from R-pt2-b.
+ // Each light is a separate white-painted sash in its own frame, a 0.05 m shadow between the pair, with the meeting rail at 0.68 of the glazed height (R-pt2-b: the upper sash
+ // is the shorter, about a third of the light), a dark hairline under it.
  const sash=(cx:number,y0:number,w:number,h:number,lights:number)=>{
-  const x0=(cx-w/2)*kx;g.fillStyle=red;g.fillRect(x0-.22*kx,Y(y0+h+.25),(w+.44)*kx,(h+.5)*ky);// red sandstone margins
-  g.fillStyle=white;g.fillRect(x0,Y(y0+h),w*kx,h*ky);// the white-painted frame block: what the panes below leave of it is frame, mullion and rail
-  const pw=(w-2*fw-(lights-1)*mw)/lights;
-  for(let i=0;i<lights;i++){const lx=x0+(fw+i*(pw+mw))*kx;
+  const x0=(cx-w/2)*kx,n=Math.max(2,Math.round(h/.34)),ch=h/n,jl=.4,js=.22,hc=.3;
+  for(let j=0;j<n;j++){const yy=Y(y0+(j+1)*ch),lw=(j%2?js:jl)*kx,rw=(j%2?jl:js)*kx;stone(x0-lw,yy,lw,ch*ky);stone(x0+w*kx,yy,rw,ch*ky);}
+  const span=(w+2*jl)*kx,wts=[1.2,.8,1.4,.8,1.2],tot=wts.reduce((a,v)=>a+v,0);let hx=x0-jl*kx;
+  for(const wt of wts){const bw=span*wt/tot;stone(hx,Y(y0+h+hc),bw,hc*ky);hx+=bw;}
+  const sp=(w+.7)*kx,sw=[1,2.4,1];let sx=x0-.35*kx;
+  for(const wt of sw){const bw=sp*wt/4.4;stone(sx,Y(y0),bw,.2*ky);sx+=bw;}
+  g.fillStyle='#3a302c';g.fillRect(x0,Y(y0+h),w*kx,h*ky);// the opening, dark between the sashes
+  const gap=.05,lf=(w-(lights-1)*gap)/lights,ry=y0+fw+(h-2*fw)*.68;
+  for(let i=0;i<lights;i++){const lx=x0+i*(lf+gap)*kx;
+   g.fillStyle=white;g.fillRect(lx,Y(y0+h),lf*kx,h*ky);// this sash's white-painted frame
    const grad=g.createLinearGradient(0,Y(y0+h-fw),0,Y(y0+fw));grad.addColorStop(0,'#4a5562');grad.addColorStop(1,'#20262d');
-   g.fillStyle=grad;g.fillRect(lx,Y(y0+h-fw),pw*kx,(h-2*fw)*ky);
-   g.fillStyle=white;g.fillRect(lx,Y(y0+h/2)-.04*ky,pw*kx,.08*ky);}// the sashes' meeting rail, white-painted (R-pt2-b)
-  g.fillStyle=red;g.fillRect(x0-.35*kx,Y(y0),(w+.7)*kx,.2*ky);// sill
+   g.fillStyle=grad;g.fillRect(lx+fw*kx,Y(y0+h-fw),(lf-2*fw)*kx,(h-2*fw)*ky);
+   g.fillStyle=white;g.fillRect(lx+fw*kx,Y(ry)-.045*ky,(lf-2*fw)*kx,.09*ky);// the sashes' meeting rail, white-painted (R-pt2-b)
+   g.fillStyle='rgba(18,22,28,.55)';g.fillRect(lx+fw*kx,Y(ry)+.045*ky,(lf-2*fw)*kx,2);}
  };
  const cx=HOTEL_BAY/2;
  sash(cx,1.3,2.3,2.5,2);sash(cx,5.1,2.2,2.3,2);sash(cx,8.6,1.9,2,2);sash(cx,12.4,1.3,1.8,1);
