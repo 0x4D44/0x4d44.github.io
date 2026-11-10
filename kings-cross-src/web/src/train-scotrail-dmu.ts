@@ -20,7 +20,9 @@ import type { NoseSpec } from './train-nose.ts';
 import { atlasRect, decalMaterial, registerAtlasTexts, textEms } from './livery.ts';
 import { carSection, lensLook, SERVICE_LAMPS } from './train.ts';
 import type { LensRole } from './train.ts';
-import { buildBogie, couplerHalf, underfloorPod } from './train-parts.ts';
+import { couplerHalf, underfloorPod } from './train-parts.ts';
+import { buildDmuBogie } from './train-scotrail-dmu-bogie.ts';
+import type { DmuBogieStyle } from './train-scotrail-dmu-bogie.ts';
 import type { CouplerStyle, PodForm } from './train-parts.ts';
 import type { CaptureFormation } from './edinburgh-fleet.ts';
 
@@ -89,6 +91,8 @@ interface Look {
   /** the cab's side window, metres from the tip */
   cabWindow: { s0: number; s1: number; y0: number; y1: number };
   coupler: { y: number };
+  /** whose bogie is under it (train-scotrail-dmu-bogie) */
+  bogie: DmuBogieStyle;
   buffers: boolean;
   gangwayFrame: boolean;
   underfloor: readonly PodItem[];
@@ -186,6 +190,7 @@ const TURBOSTAR: Look = {
   doorGlass: { y0: 1.72, y1: 2.72, r: 0.05, inset: 0.1 },
   cabWindow: { s0: 1.55, s1: 2.05, y0: 1.85, y1: 2.82 },
   coupler: { y: 0.72 },
+  bogie: 'b5000',
   buffers: true,
   gangwayFrame: false,
   // one MTU engine and a Voith transmission under every car (the 170's equipment, widely documented; the masses' sizes and order ASSUMED)
@@ -273,6 +278,7 @@ const SPRINTER: Look = {
   doorGlass: { y0: 1.62, y1: 2.75, r: 0.1, inset: 0.12 },
   cabWindow: { s0: 1.12, s1: 1.82, y0: 1.82, y1: 2.78 },
   coupler: { y: 0.68 },
+  bogie: 'brel-p4',
   buffers: false,
   gangwayFrame: true,
   // one Cummins engine and its transmission under each car (widely documented for the class; sizes and order ASSUMED)
@@ -625,10 +631,10 @@ function carModel(car: ScotrailDmuCar, layout: ScotrailDmuLayout, look: Look): T
     at += len + gap;
   }
   for (const [index, z] of car.bogies.entries()) {
-    const bogie = buildBogie({ radius: f.wheelDiameter.value / 2, wheelbase: f.wheelbase.value, track: 1.435, motor: car.motor[index] ?? false, diesel: true, style: 'alstom' });
+    const bogie = buildDmuBogie({ radius: f.wheelDiameter.value / 2, wheelbase: f.wheelbase.value, track: 1.435, motor: car.motor[index] ?? false, style: look.bogie });
     bogie.name = `bogie-${car.index}-${index}`;
     bogie.position.z = z;
-    bogie.userData = { motor: car.motor[index] ?? false, style: 'alstom (stand-in: no photograph shows this class\'s bogie closely)' };
+    bogie.userData = { motor: car.motor[index] ?? false, style: look.bogie };
     group.add(bogie);
   }
 
@@ -775,7 +781,7 @@ export function buildScotrailDmu(kind: ScotrailDmuKind): THREE.Group {
   root.userData = {
     kind, length: layout.length, cars: layout.cars.length, family: layout.spec.family, operator: layout.spec.operatorName, label: layout.spec.label,
     allocation: 'assumed fleet', source: layout.spec.source, diesel: true, pantographs: 0, lampState: { ...SERVICE_LAMPS },
-    assumptions: 'ASSUMED: floor, wheel, wheelbase, bogie centres, door width and positions, window layout, nose and face shapes, lamp, buffer and coupler places, roof housings, underfloor masses; the 158 height (Class 159 comparator). Lengths and widths published, endpoints unspecified.',
+    assumptions: 'ASSUMED: floor, wheel, wheelbase, bogie centres, door width and positions, window layout, nose and face shapes, lamp, buffer and coupler places, roof housings, underfloor masses, bogie frame sizes (shapes from bogie-158-a2 and bogie-170-tyt); the 158 height (Class 159 comparator). Lengths and widths published, endpoints unspecified.',
   };
   for (const car of layout.cars) root.add(carModel(car, layout, look));
   return root;

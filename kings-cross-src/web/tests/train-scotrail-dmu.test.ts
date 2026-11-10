@@ -6,7 +6,8 @@ import { buildScotrailDmu, disposeScotrailDmu, dmuCarPlan, scotrailDmuLook, TUMB
 import { lensLook, SERVICE_LAMPS, setTrainLampState } from '../src/train.ts';
 import type { LensRole, TrainLampMode, TrainLampState } from '../src/train.ts';
 import { col, Soup } from '../src/train-geom.ts';
-import { couplerHalf } from '../src/train-parts.ts';
+import { BOGIE_HALF_WIDTH, BOGIE_TOP, couplerHalf } from '../src/train-parts.ts';
+import { DMU_BOGIE_COLOURS, dmuBeamAt, dmuBogieFarSoup, dmuBogieSoup, dmuFrameSoup, P4_SPRING } from '../src/train-scotrail-dmu-bogie.ts';
 import { atlasHeight, atlasRect, atlasTexts, registerAtlasTexts, ROW_H } from '../src/livery.ts';
 import type { CouplerStyle } from '../src/train-parts.ts';
 
@@ -262,4 +263,85 @@ test('ScotRail DMU lamps: a clone sharing the template\'s geometry keeps its lam
   const [switched] = cabLamps(template);
   assert.deepEqual(shows(switched!.mesh, head).rgb, rgbOf(lensLook('head', 'tail').hex));
   disposeScotrailDmu(template);
+});
+
+test('ScotRail DMU bogies: the 170 rides on B5000s and the 158 on P4s, each a shared geometry inside the shared bogie envelope', () => {
+  const want = { sr170x3: 'b5000', sr158x2: 'brel-p4' } as const;
+  for (const kind of SCOTRAIL_DMU_KINDS) {
+    const root = buildScotrailDmu(kind);
+    const layout = scotrailDmuLayout(kind);
+    const geos = new Map<boolean, THREE.BufferGeometry>();
+    for (const car of layout.cars) {
+      car.bogies.forEach((_, k) => {
+        const b = root.getObjectByName(`bogie-${car.index}-${k}`)!;
+        assert.equal(b.userData.style, want[kind]);
+        const near = b.getObjectByName('bogie-lod')!.children.find((m) => m.userData.lod === 'near') as THREE.Mesh;
+        assert.equal(near.userData.style, want[kind], `${kind} car ${car.index} bogie ${k}`);
+        assert.equal(b.children.filter((c) => c.name === 'wheel').length, 4);
+        const motor = car.motor[k] ?? false;
+        const seen = geos.get(motor);
+        if (seen) assert.equal(near.geometry, seen, `${kind}: every ${motor ? 'driven' : 'trailer'} bogie shares one geometry`);
+        else geos.set(motor, near.geometry);
+      });
+    }
+    disposeScotrailDmu(root);
+    // (the disposer spares the bogies' shared geometry)
+    for (const g of geos.values()) assert.ok(g.getAttribute('position').count > 0);
+  }
+  for (const style of ['b5000', 'brel-p4'] as const) {
+    for (const motor of [false, true]) {
+      const s = dmuBogieSoup({ radius: 0.42, wheelbase: 2.6, track: 1.435, motor, style });
+      for (let i = 0; i < s.pos.length; i += 3) {
+        assert.ok(Math.abs(s.pos[i] as number) <= BOGIE_HALF_WIDTH + 1e-6, `${style}: x ${s.pos[i]} outside the envelope`);
+        assert.ok((s.pos[i + 1] as number) <= BOGIE_TOP + 1e-6, `${style}: y ${s.pos[i + 1]} above the bogie top`);
+      }
+      assert.equal(s.clr.length, s.pos.length, `${style}: a colour for every vertex`);
+    }
+  }
+});
+
+test('ScotRail DMU bogies: the frames the photographs show (P4: coils under the beam ends and a deep middle; B5000: a hump over each box, a low middle, rubber blocks)', () => {
+  const r = 0.42;
+  const w = 1.3;
+  const colourAt = (s: Soup, hex: number, pick: (v: [number, number, number]) => boolean): number => {
+    const c = col(hex);
+    let n = 0;
+    for (let i = 0; i < s.pos.length; i += 3) {
+      const same = Math.abs((s.clr[i] as number) - c.r) < 1e-6 && Math.abs((s.clr[i + 1] as number) - c.g) < 1e-6 && Math.abs((s.clr[i + 2] as number) - c.b) < 1e-6;
+      if (same && pick([s.pos[i] as number, s.pos[i + 1] as number, s.pos[i + 2] as number])) n++;
+    }
+    return n;
+  };
+  const p4 = dmuFrameSoup({ radius: r, wheelbase: 2 * w, style: 'brel-p4' });
+  const b5 = dmuFrameSoup({ radius: r, wheelbase: 2 * w, style: 'b5000' });
+  const P = DMU_BOGIE_COLOURS['brel-p4'];
+  const B = DMU_BOGIE_COLOURS.b5000;
+  // P4: the beam's end rests on the coil (its underside over the axle box is the spring's top), the middle hangs deeper than the ends
+  const p4End = dmuBeamAt('brel-p4', w, w)!;
+  const p4Mid = dmuBeamAt('brel-p4', w, 0)!;
+  assert.ok(Math.abs(p4End.bottom - P4_SPRING.top) < 1e-9, `P4 beam end underside ${p4End.bottom}`);
+  assert.ok(p4Mid.bottom < p4End.bottom - 0.3, `P4 middle ${p4Mid.bottom} hangs below the ends ${p4End.bottom}`);
+  // its coils stand over each axle box, between the box's top and the beam's end, on both sides
+  for (const sx of [-1, 1]) for (const az of [-w, w]) {
+    const n = colourAt(p4, P.coil, (v) => Math.sign(v[0]) === sx && Math.abs(v[2] - az) <= P4_SPRING.radius + 1e-6 && v[1] >= r + 0.11 - 1e-6 && v[1] <= r + P4_SPRING.top + 1e-6);
+    assert.ok(n > 0, `P4: a coil at x ${sx} z ${az}`);
+  }
+  // B5000: the hump over each box stands well above the low middle, and its underside clears the box
+  const hump = dmuBeamAt('b5000', w, w)!;
+  const low = dmuBeamAt('b5000', w, 0)!;
+  assert.ok(hump.top - low.top >= 0.2, `B5000 hump ${hump.top} over middle ${low.top}`);
+  assert.ok(hump.bottom >= 0.11, `B5000 hump underside ${hump.bottom} clears the box top`);
+  // its rubber blocks flank each box on both sides (outside the box's own length), and the P4 has none; the B5000 has no coils
+  for (const sx of [-1, 1]) for (const az of [-w, w]) for (const zs of [-1, 1]) {
+    const n = colourAt(b5, B.rubber, (v) => Math.sign(v[0]) === sx && (v[2] - az) * zs >= 0.125 - 1e-6 && (v[2] - az) * zs <= 0.27 + 1e-6 && v[1] < r + 0.2);
+    assert.ok(n > 0, `B5000: a rubber block at x ${sx}, z ${az}${zs > 0 ? '+' : '-'}`);
+  }
+  assert.equal(colourAt(b5, B.coil, () => true), 0, 'the B5000 has no coil springs');
+  assert.equal(colourAt(p4, P.rubber, (v) => v[1] < r + 0.25), 0, 'the P4 has no rubber blocks at its boxes (its rubber is the air bag, on the middle)');
+  // the far level wears the style's frame colour, not the shared Alstom's
+  for (const style of ['b5000', 'brel-p4'] as const) {
+    const far = dmuBogieFarSoup({ radius: r, wheelbase: 2 * w, track: 1.435, style });
+    assert.ok(colourAt(far, DMU_BOGIE_COLOURS[style].frame, () => true) > 0, `${style} far frame`);
+    assert.equal(colourAt(far, 0x66625a, () => true) + colourAt(far, 0x55514a, () => true), 0, `${style} far: no Alstom colour left`);
+  }
 });
