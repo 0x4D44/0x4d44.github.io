@@ -51,22 +51,25 @@ export interface WaverleyCityFabric extends WaverleyCityPart {/** The ids of the
 
 /** The generic city blocks, each footprint extruded from its lowest ground to its OSM (or ASSUMED) height under the roof its OSM
  *  roof tags give (or an ASSUMED pitched roof, waverley-city-roofs.ts); `omitBuildingIds` are drawn by an element. */
-export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>&Partial<Pick<Terrain,'heightAt'>>,options:{omitBuildingIds?:Iterable<string>}={}):WaverleyCityFabric {
+/** Another station's city through the same builder (Perth, perth-city.ts): its own height rule, stone tints and mesh names. */
+export interface CityFabricStyle {height:(b:WaverleyData['buildings'][number])=>{height:number;basis:'OSM'|'LiDAR'|'ASSUMED'};stone:number;ashlar:number;names:{walls:string;ashlar:string;tops:string;shops:string};/** the shop streets (waverley-city-shops.ts) */streets:Streets;/** draw the ASSUMED Edinburgh dormers (default true) */dormers?:boolean}
+export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pick<Terrain,'rangeUnder'>&Partial<Pick<Terrain,'heightAt'>>,options:{omitBuildingIds?:Iterable<string>;style?:CityFabricStyle}={}):WaverleyCityFabric {
  const group=new THREE.Group();group.name='waverley-city';
  const stats={triangles:0,drawCalls:0},geometries=new Set<THREE.BufferGeometry>(),add=meshAdder(stats,geometries);
  // Own variants of the shared palette; never mutate the cached shared materials. The walls wear the city's stone facade (ashlar with
  // a tall window and surround to each 3.0 x 3.6 m bay, materials.ts CITY_TEXTURES.stone), toned to Edinburgh's grey-buff sandstone
  // (R-wv3-c, -c3); the shades and the per-block variation are ASSUMED, not a facade survey.
- const sandstone=cityMaterial('stone').clone() as THREE.MeshLambertMaterial;sandstone.color.setHex(WAVERLEY_CITY_STONE);sandstone.vertexColors=true;
+ const style=options.style;
+ const sandstone=cityMaterial('stone').clone() as THREE.MeshLambertMaterial;sandstone.color.setHex(style?.stone??WAVERLEY_CITY_STONE);sandstone.vertexColors=true;
  const slate=material('slate').clone() as THREE.MeshLambertMaterial;slate.color.multiply(new THREE.Color(0xada99f));slate.vertexColors=true;
- const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=new Streets();
+ const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=options.style?.streets??new Streets();
  const foot=ground.heightAt?(p:Pt)=>ground.heightAt!(p[0],p[1]):undefined;
- const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
+ const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(style?.ashlar??WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
  const omitted=new Set(options.omitBuildingIds??[]),buildingIds:string[]=[],heightBasis={OSM:0,LiDAR:0,ASSUMED:0};
  for(const b of city.buildings){
   if(omitted.has(b.id))continue;
   buildingIds.push(b.id);
-  const h=cityHeight(b);heightBasis[h.basis]++;
+  const h=(style?.height??cityHeight)(b);heightBasis[h.basis]++;
   const base=ground.rangeUnder(b.outer,4).min,plan=roofPlan({...b,height:h.height},base);
   let hash=0;for(const c of b.id)hash=(hash*31+c.charCodeAt(0))>>>0;
   const tone=.8+(hash%23)*.01,warm=((hash>>>5)%7)*.008,color:Rgb=[tone*(1+warm),tone,tone*(.97-warm)];
@@ -83,12 +86,12 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   // slates vary a little block to block (ASSUMED, R-wv3-c: weathered grey slate, some darker, some bluer)
   for(let i=roofFrom;i<buildingTops.colors.length;i+=3){buildingTops.colors[i]*=roofColor[0];buildingTops.colors[i+1]*=roofColor[1];buildingTops.colors[i+2]*=roofColor[2];}
   for(const c of plan.chimneys)chimney(plainWalls,c,plan.u,plan.eave,color); // stacks are plain ashlar, not windowed fabric
-  for(const d of plan.dormers??[])dormer(plainWalls,buildingTops,d,plan.at,color);
+  if(style?.dormers!==false)for(const d of plan.dormers??[])dormer(plainWalls,buildingTops,d,plan.at,color);
   if(!plain&&!b.minHeight)shopBand(shops,b.outer,base,plan.eave,streets,foot);
  }
  // Every top is a roof: the cover map (cover.ts ROOF_MESHES) knows this mesh by name.
- add(group,buildings,sandstone,'waverley-building-walls');add(group,plainWalls,ashlar,'waverley-building-ashlar');add(group,buildingTops,slate,'waverley-building-tops');
- const shopMap=shopTexture(),shopfront=new THREE.MeshLambertMaterial({map:shopMap,color:shopMap?0xffffff:0x5a5650});add(group,shops,shopfront,'waverley-building-shops');
+ add(group,buildings,sandstone,style?.names.walls??'waverley-building-walls');add(group,plainWalls,ashlar,style?.names.ashlar??'waverley-building-ashlar');add(group,buildingTops,slate,style?.names.tops??'waverley-building-tops');
+ const shopMap=shopTexture(),shopfront=new THREE.MeshLambertMaterial({map:shopMap,color:shopMap?0xffffff:0x5a5650});add(group,shops,shopfront,style?.names.shops??'waverley-building-shops');
  let disposed=false;
  return {group,stats,omitBuildingIds:[],buildingIds,heightBasis,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();ashlar.dispose();slate.dispose();shopfront.dispose();shopMap?.dispose();group.clear();}};
 }

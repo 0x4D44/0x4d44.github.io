@@ -69,8 +69,8 @@ export interface PerthScene {
   stats: {triangles: number; drawCalls: number; platforms: number; buildings: number; roofs: number; sleepers: number; bridgeSegments: number};
   /** The mapped city blocks drawn, in data order: not those standing on the railway. */
   buildingIds: string[];
-  /** How many drawn blocks stand at an OSM or an ASSUMED height. */
-  heightBasis: {OSM: number; ASSUMED: number};
+  /** How many drawn blocks stand at an OSM, a LiDAR (perth-city-heights.ts) or an ASSUMED height. */
+  heightBasis: {OSM: number; LiDAR: number; ASSUMED: number};
   dispose(): void;
 }
 

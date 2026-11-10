@@ -16,7 +16,7 @@ import type { ScottishTerrainSite } from './build-waverley-terrain.ts';
 
 /** ASSUMED context extent (Perth frame, x east, z south): the station, the town centre, the Tay and Bridgend, and Kinnoull Hill
  *  (summit about x 2,400, z -570) with its west face, in whole 16 m steps. */
-export const PERTH_TERRAIN_EXTENT: Extent = { x0: -1200, z0: -1200, x1: 2560, z1: 912 };
+export const PERTH_TERRAIN_EXTENT: Extent = { x0: -1200, z0: -1200, x1: 2624, z1: 912 };
 const SOURCE_NAMES = ['NO12_1M_DTM_PHASE1.tif', 'NO02_1M_DTM_PHASE1.tif', 'NO11_1M_DTM_PHASE1.tif'];
 const OSTN_URL = 'https://cdn.proj.org/uk_os_OSTN15_NTv2_OSGBtoETRS.tif';
 

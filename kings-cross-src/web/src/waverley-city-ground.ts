@@ -88,20 +88,29 @@ export const GROUND_COLOURS={
  wood:'#2d4120',scrub:'#45502c',water:'#2b3d48',paved:'#67635b',rock:'#4a463e',cliff:'#4f4840',
 } as const;
 type Ring=Pt[];
-const decode=(d:number[]):Ring=>{const q=data.q,out:Ring=[];let x=0,z=0;for(let i=0;i<d.length;i+=2){x+=d[i];z+=d[i+1];out.push([x*q,z*q]);}return out;};
-export const LANDUSE={
- extent:data.extent,
- areas:Object.fromEntries(Object.entries(data.areas).map(([k,v])=>[k,(v as number[][][]).map(rs=>rs.map(decode))])) as Record<keyof typeof data.areas,Ring[][]>,
- roads:Object.entries(data.roads).flatMap(([w,ls])=>(ls as number[][]).map(l=>({width:Number(w),line:decode(l)}))),
- paths:Object.entries(data.paths).flatMap(([w,ls])=>(ls as number[][]).map(l=>({width:Number(w),line:decode(l)}))),
- trees:decode(data.trees),
+/** The land-use file layout (tools/build-waverley-city-landuse.ts; Perth's tools/build-perth-city-landuse.ts writes the same). */
+export interface LanduseFile {q:number;extent:{x0:number;z0:number;x1:number;z1:number};areas:Record<keyof typeof data.areas,number[][][]>;roads:Record<string,number[][]>;paths:Record<string,number[][]>;trees:number[];treeTags:number[][];cliffs:number[][];castleWalls:(number|number[])[][];outlooks:number[][]}
+/** Decode a land-use file into local-metre rings and lines. */
+export function decodeLanduse(file:LanduseFile){
+ const decode=(d:number[]):Ring=>{const q=file.q,out:Ring=[];let x=0,z=0;for(let i=0;i<d.length;i+=2){x+=d[i];z+=d[i+1];out.push([x*q,z*q]);}return out;};
+ return {
+ extent:file.extent,
+ areas:Object.fromEntries(Object.entries(file.areas).map(([k,v])=>[k,(v as number[][][]).map(rs=>rs.map(decode))])) as Record<keyof typeof data.areas,Ring[][]>,
+ roads:Object.entries(file.roads).flatMap(([w,ls])=>(ls as number[][]).map(l=>({width:Number(w),line:decode(l)}))),
+ paths:Object.entries(file.paths).flatMap(([w,ls])=>(ls as number[][]).map(l=>({width:Number(w),line:decode(l)}))),
+ trees:decode(file.trees),
  /** Per mapped tree (by index in `trees`): needleleaved, and its OSM height in m (0 when untagged). */
- treeTags:new Map(data.treeTags.map(([i,needle,h])=>[i,{needle:needle===1,height:h}])),
- cliffs:data.cliffs.map(decode),
- castleWalls:data.castleWalls.map(([curtain,line])=>({curtain:curtain===1,line:decode(line as number[])})),
+ treeTags:new Map(file.treeTags.map(([i,needle,h])=>[i,{needle:needle===1,height:h}])),
+ cliffs:file.cliffs.map(decode),
+ castleWalls:file.castleWalls.map(([curtain,line])=>({curtain:curtain===1,line:decode(line as number[])})),
  /** The mapped viewing places: a viewpoint or peak (one point), or an attraction monument's outline. */
- outlooks:data.outlooks.map(decode),
-};
+ outlooks:file.outlooks.map(decode),
+ };
+}
+export type Landuse=ReturnType<typeof decodeLanduse>;
+export const LANDUSE:Landuse=decodeLanduse(data as LanduseFile);
+/** Waverley's, the default every builder below takes (Perth passes its own: perth-city-ground.ts). */
+const WAVERLEY_LANDUSE=LANDUSE;
 const pip=(x:number,z:number,p:readonly Pt[]):boolean=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 const segDist=(x:number,z:number,a:Pt,b:Pt):number=>{const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz);};
 /** A seeded hash in [0,1). */
@@ -150,7 +159,7 @@ export const slopeOf=(ground:Pick<Terrain,'heightAt'>,x:number,z:number)=>{const
 export interface Tree {x:number;z:number;y:number;height:number;crown:number;kind:'tree'|'wood'|'scrub';/** a hanging-wood tree (round 6: with its trunk, so the crown stands on the slope, not floats over it) */hanging?:true}
 const lerp=([a,b]:readonly [number,number],r:number)=>a+(b-a)*r;
 /** The trees that stand: mapped nodes and wood/scrub fill, each clear of every footprint and off the railway bed. */
-export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints):Tree[]{
+export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,step:{wood:number;scrub:number}=FILL_STEP):Tree[]{
  const out:Tree[]=[],{x0,z0,x1,z1}=LANDUSE.extent;
  const take=(x:number,z:number,kind:Tree['kind'],size:readonly [number,number]=TREE_SIZE[kind],spread:number=CROWN_SPREAD[kind],tagged=0):void=>{
   if(x<x0+2||x>x1-2||z<z0+2||z>z1-2)return;
@@ -170,9 +179,9 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
  const fill=(rings:Ring[][],step:number,gaps:number,put:(x:number,z:number)=>void)=>{for(const rs of rings){const [o,...holes]=rs;let ax=Infinity,bx=-Infinity,az=Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);bx=Math.max(bx,x);az=Math.min(az,z);bz=Math.max(bz,z);}
   for(let gx=Math.ceil(ax/step)*step;gx<bx;gx+=step)for(let gz=Math.ceil(az/step)*step;gz<bz;gz+=step){if(hash(gx,gz,9)<gaps)continue;const x=gx+(hash(gx,gz,2)-.5)*step*.9,z=gz+(hash(gx,gz,3)-.5)*step*.9;if(pip(x,z,o)&&!holes.some(h=>pip(x,z,h)))put(x,z);}}};
  const steep=(x:number,z:number)=>slopeOf(ground,x,z)>=SCRUB_TREE_MIN_SLOPE_DEG;
- fill(LANDUSE.areas.wood,FILL_STEP.wood,.25,(x,z)=>take(x,z,'wood'));
+ fill(LANDUSE.areas.wood,step.wood,.25,(x,z)=>take(x,z,'wood'));
  // scrub: gorse on the gentler ground, the hanging wood on the steep faces
- fill(LANDUSE.areas.scrub,FILL_STEP.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
+ fill(LANDUSE.areas.scrub,step.scrub,.25,(x,z)=>{if(!steep(x,z))take(x,z,'scrub');});
  // the lowest ground of the viewing places within OUTLOOK.reach (to a point, or to an outline's edges), or undefined
  const places=LANDUSE.outlooks.map(r=>({r,y:Math.min(...r.map(([x,z])=>ground.heightAt(x,z)))}));
  const outlookGround=(x:number,z:number):number|undefined=>{let low:number|undefined;
@@ -184,14 +193,14 @@ export function placeTrees(ground:Pick<Terrain,'heightAt'>,footprints:Footprints
 }
 
 /** The lawns painted with mown stripes: the lawns and kept parks (grass, garden, pitch) whose box is over 400 m2. */
-export function mownLawns():Ring[][]{
+export function mownLawns(LANDUSE:Landuse=WAVERLEY_LANDUSE):Ring[][]{
  return (['garden','grass','pitch'] as const).flatMap(k=>LANDUSE.areas[k]).filter(([o])=>{let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}return (bx-ax)*(bz-az)>=400;});
 }
 /** A street's paint by its class, as the builder's ROAD_WIDTH (or an OSM width tag) gives it: >= 8.5 m primary to tertiary, 5-5.5 m
  *  pedestrian, the rest residential, unclassified and service. ASSUMED shades. */
 export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&&width<6?GROUND_COLOURS.setts:GROUND_COLOURS.lane;
 /** Paint the ground cover; `slopeAt` gives the ground's slope in degrees. Browser only (null in Node). */
-function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number):THREE.CanvasTexture|null{
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -210,7 +219,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  }
  // mown lawns: 3 m stripes a little lighter, alternate bands, turned per lawn (ASSUMED; R-wv3-a shows the gardens' lawns striped). Only
  // the lawns and kept parks (grass, garden, pitch): an open park's rough grass is not mown (R-wv3-d3: Calton Hill; the builder's note).
- for(const rs of mownLawns()){const o=rs[0];let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}
+ for(const rs of mownLawns(LANDUSE)){const o=rs[0];let ax=Infinity,az=Infinity,bx=-Infinity,bz=-Infinity;for(const [x,z]of o){ax=Math.min(ax,x);az=Math.min(az,z);bx=Math.max(bx,x);bz=Math.max(bz,z);}
   g.save();path(rs);g.clip('evenodd');g.fillStyle='rgba(235,255,190,0.07)';const along=bx-ax>bz-az;
   for(let t=(along?az:ax);t<(along?bz:bx);t+=6){if(along)g.fillRect((ax-x0)*s,(t-z0)*s,(bx-ax)*s,3*s);else g.fillRect((t-x0)*s,(az-z0)*s,3*s,(bz-az)*s);}g.restore();}
  // Steep ground is bare rock, over grass and scrub; streets and paths are drawn over it.
@@ -257,34 +266,35 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints):WaverleyCityGround{
+/** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
  // The drape: the terrain mesh rebuilt over the drawn surface, less the railway bed.
- const tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>DRAPE_TOLERANCE});
+ const drape=options.drape??DRAPE_TOLERANCE,tm=buildTerrainMesh(ground,{maxLeaf:16,tolerance:()=>drape});
  const P=tm.positions,keep:number[]=[],bed=(i:number)=>Math.abs(P[i*3+1]-WAVERLEY_LEVELS.ground)<.01;
  for(let i=0;i<tm.indices.length;i+=3){const a=tm.indices[i],b=tm.indices[i+1],c=tm.indices[i+2];/* the flattened bed is exactly at the rail datum (natural ground below it is drawn); a triangle touching it is left to the terrain, so the drape never spans the ballast */if(bed(a)||bed(b)||bed(c))continue;keep.push(a,b,c);}
  const pos=new Float32Array(P.length),uv=new Float32Array(P.length/3*2);
- for(let i=0;i<P.length/3;i++){const x=P[i*3],z=P[i*3+2];pos[i*3]=x;pos[i*3+1]=ground.heightAt(x,z)+DRAPE_LIFT;pos[i*3+2]=z;uv[i*2]=(x-x0)/(x1-x0);uv[i*2+1]=1-(z-z0)/(z1-z0);}
+ for(let i=0;i<P.length/3;i++){const x=P[i*3],z=P[i*3+2];pos[i*3]=x;pos[i*3+1]=ground.heightAt(x,z)+(options.drape??DRAPE_LIFT);pos[i*3+2]=z;uv[i*2]=(x-x0)/(x1-x0);uv[i*2+1]=1-(z-z0)/(z1-z0);}
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(ground,slopeAt);
+ const map=paintGround(ground,slopeAt,LANDUSE);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
  // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
  // low roofs and building bases scene-wide (round 5)
  cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);
  const mesh=new THREE.Mesh(g,cover);mesh.name='waverley-ground-cover';group.add(mesh);stats.triangles+=keep.length/3;stats.drawCalls++;
  // Trees: crowns (one icosahedron each) and trunks, two instanced draws.
- const trees=placeTrees(ground,footprints);
+ const trees=placeTrees(ground,footprints,LANDUSE,options.fillStep);
  if(trees.length){
   // A mapped tree is seen close from the gardens: a rounder crown (a 6 x 4 sphere, 36 faces: round 6 freed 6 a tree for the hanging wood's
   // trunks); woods and scrub are seen as masses (icosahedron, 20).
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
   const fineG=new THREE.SphereGeometry(1,6,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
-  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub');
+  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub'&&(options.woodTrunks!==false||t.kind==='tree'||t.hanging));
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);

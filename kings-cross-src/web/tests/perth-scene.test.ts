@@ -82,7 +82,7 @@ test('fallback heights: OSM heights stand, a Perth house is two storeys, not the
   assert.deepEqual(perthBuildingHeight({ ...house, tags: { building: 'yes' } }), { height: PERTH_DEFAULT_HEIGHT, basis: 'ASSUMED' });
   assert.deepEqual(perthBuildingHeight({ ...house, height: 15, heightBasis: 'ASSUMED 3m per OSM building:levels; ASSUMED minHeight 0m' }), { height: 15, basis: 'OSM' });
   assert.deepEqual(perthBuildingHeight({ ...house, height: 21, heightBasis: 'OSM height; ASSUMED minHeight 0m' }), { height: 21, basis: 'OSM' });
-  assert.equal(scene.heightBasis.OSM + scene.heightBasis.ASSUMED, scene.buildingIds.length);
+  assert.equal(scene.heightBasis.OSM + scene.heightBasis.LiDAR + scene.heightBasis.ASSUMED, scene.buildingIds.length);
 });
 
 test('the scene\'s parts, costs and credits; the roof and city toggles; dispose empties it', () => {

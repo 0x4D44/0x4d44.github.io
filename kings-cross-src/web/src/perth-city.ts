@@ -8,7 +8,13 @@ import type {WaverleyArea, WaverleyScene as PerthData} from '../../core/waverley
 import {buildTerrainMesh, overMesh} from '../../core/terrain.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
-import {fillSurface, walls} from './waverley-mesh.ts';
+import {fillSurface, shell, walls} from './waverley-mesh.ts';
+import {buildWaverleyCity} from './waverley-city.ts';
+import {Footprints} from './waverley-city-ground.ts';
+import {Streets} from './waverley-city-shops.ts';
+import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
+import {buildPerthCityGround, KINNOULL_TOWER, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct} from './perth-city-features.ts';
+import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
 import {PERTH_FASCIA} from './perth-station.ts';
 import type {PerthBuild} from './perth-scene.ts';
@@ -52,29 +58,46 @@ export function addPerthMappedRoofs(data: Pick<PerthData, 'roofs'>, ground: Terr
   }
 }
 
-/** The city: every mapped block not standing on the railway, extruded from its lowest ground to its height, with a flat top. */
-export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain, group: THREE.Group): {buildingIds: string[]; heightBasis: {OSM: number; ASSUMED: number}} {
-  const {add, own, stats} = build;
-  const omitted = new Set(stationRailwayIntrusions(data)), buildingIds: string[] = [], heightBasis = {OSM: 0, ASSUMED: 0};
-  const wallsBatch = new Batch({colored: true}), topsBatch = new Batch({colored: true});
-  for (const b of data.buildings) {
-    if (omitted.has(b.id)) continue;
-    buildingIds.push(b.id);
-    const h = perthBuildingHeight(b); heightBasis[h.basis]++;
-    const base = ground.rangeUnder(b.outer, 4).min, top = base + h.height;
-    let hash = 0; for (const c of b.id) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
-    const tone = .78 + (hash % 19) * .012;
-    walls(wallsBatch, b.outer, b.holes, () => b.minHeight ? base + b.minHeight : base - .15, () => top, [tone, tone * .98, tone * .94]);
-    const from = topsBatch.colors.length;
-    fillSurface(topsBatch, b.outer, b.holes, () => top);
-    const roofTone = .8 + ((hash >>> 7) % 11) * .02;
-    for (let i = from; i < topsBatch.colors.length; i += 3) { topsBatch.colors[i] *= roofTone; topsBatch.colors[i + 1] *= roofTone; topsBatch.colors[i + 2] *= roofTone * 1.02; }
-  }
+/** The town's tone (ASSUMED, matched by eye to R-pt3-d and R-pt3-a: Perth's buff-grey sandstone and harling, a touch warmer than
+ *  Edinburgh's), as tints over the city facade and ashlar textures (waverley-city.ts WAVERLEY_CITY_STONE explains the method). */
+export const PERTH_CITY_STONE = 0x9a9aa2, PERTH_CITY_ASHLAR = 0xc2c6dc;
+/** The city mesh names; the tops are a roof for the cover map (cover.ts ROOF_MESHES). */
+export const PERTH_CITY_MESHES = {walls: 'perth-city-walls', ashlar: 'perth-city-ashlar', tops: 'perth-city-roofs', shops: 'perth-city-shops'} as const;
+/** Perth's shop streets: the mapped carriageways of the main classes (primary to tertiary, 8.5 m and over) and the pedestrian High
+ *  Street and its kin (5 m), as data/perth-city-landuse.json carries them (ASSUMED proxy: the town centre's shops face these). */
+const shopStreets = () => new Streets(PERTH_LANDUSE.roads.filter(r => r.width >= 8.5 || r.width === 5));
+
+/** The city: every mapped block not standing on the railway, extruded from its lowest ground to its OSM, LiDAR or ASSUMED height
+ *  under its roof (waverley-city.ts buildWaverleyCity, with Perth's heights and tone); then the ground cover, the Tay, its bridges and
+ *  the towers (perth-city-features.ts). All of it is in `group`, the buildings part, so the city toggle hides it. */
+export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain, group: THREE.Group): {buildingIds: string[]; heightBasis: {OSM: number; LiDAR: number; ASSUMED: number}} {
+  const {add, own, stats, geometries} = build;
+  const omitted = new Set([...stationRailwayIntrusions(data), ...PERTH_FEATURE_OMIT_IDS]);
+  const take = (part: {group: THREE.Group; stats: {triangles: number; drawCalls: number}}) => {
+    group.add(part.group); stats.triangles += part.stats.triangles; stats.drawCalls += part.stats.drawCalls;
+    part.group.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; geometries.add(m.geometry);
+      for (const mat of [m.material].flat()) { own(mat); const map = (mat as THREE.MeshLambertMaterial).map; if (map) mat.addEventListener('dispose', () => map.dispose()); } });
+  };
+  const fabric = buildWaverleyCity(data, ground, {omitBuildingIds: omitted, style: {height: b => perthCityHeight(b, perthBuildingHeight), stone: PERTH_CITY_STONE, ashlar: PERTH_CITY_ASHLAR, names: PERTH_CITY_MESHES, streets: shopStreets(), dormers: false}});
+  fabric.group.name = 'perth-city'; take(fabric);
+  const buildingIds = [...fabric.buildingIds], heightBasis = {...fabric.heightBasis};
+  // the ground cover, trees and the Tay, over the drawn ground
+  take(buildPerthCityGround(ground, new Footprints([...data.buildings, ...data.roofs].map(b => b.outer))));
+  // the bridges and towers
+  const masonry = new Batch({colored: true}), ironwork = new Batch(), deck = new Batch(), lead = new Batch();
+  tayViaduct(masonry, ironwork, ground);
+  for (const b of PERTH_LANDUSE_BRIDGES) roadBridge(masonry, deck, ground, b);
+  const kirk = data.buildings.find(b => b.id === PERTH_LIDAR_LANDMARKS.kirk.id);
+  if (kirk) kirkTower(masonry, lead, kirk, ground.rangeUnder(kirk.outer, 4).min);
+  const tower = data.buildings.find(b => b.id === KINNOULL_TOWER.id);
+  if (tower) { const base = ground.rangeUnder(tower.outer, 4).min; shell(masonry, tower.outer, () => base - .3, () => base + KINNOULL_TOWER.height); buildingIds.push(tower.id); heightBasis.ASSUMED++; }
+  const ashlar = own(material('stone').clone() as THREE.MeshLambertMaterial); ashlar.color.setHex(PERTH_CITY_ASHLAR); ashlar.vertexColors = true;
+  const iron = own(material('steel').clone() as THREE.MeshLambertMaterial); iron.color.setHex(0x3c4446);
+  const leadMaterial = own(new THREE.MeshLambertMaterial({color: 0x6e7479, side: THREE.DoubleSide}));
+  add(group, masonry, ashlar, 'perth-city-masonry');
+  add(group, ironwork, iron, 'perth-viaduct-iron');
+  add(group, deck, own(material('asphalt').clone()), 'perth-bridge-roads');
+  add(group, lead, leadMaterial, 'perth-kirk-spire');
   stats.buildings = buildingIds.length;
-  // ASSUMED: Perth's sandstone is a paler buff-grey than Edinburgh's; the city element sources the tone from photographs.
-  const sandstone = own(material('stone').clone() as THREE.MeshLambertMaterial); sandstone.vertexColors = true; sandstone.color.setHex(0xb8b2a2);
-  const slate = own(material('slate').clone() as THREE.MeshLambertMaterial); slate.vertexColors = true;
-  add(group, wallsBatch, sandstone, 'perth-city-walls');
-  add(group, topsBatch, slate, 'perth-city-roofs');
   return {buildingIds, heightBasis};
 }
