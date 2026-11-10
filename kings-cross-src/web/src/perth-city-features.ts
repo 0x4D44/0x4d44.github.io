@@ -26,7 +26,7 @@ import {revolve} from './waverley-frontage-mesh.ts';
 import {PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {CRAG, CRAG_SCRUB, KINNOULL_PEAK, kinnoullCrag, kinnoullWoodland, PERTH_ROCK_TONES} from './perth-woodland.ts';
 import {perthGardens} from './perth-gardens.ts';
-import {CROWNS, crownTexture, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
+import {CROWNS, crownTexture, inEyeClear, ISLAND_CANOPY, islandBeltTrees, kinnoullCanopy} from './perth-canopy.ts';
 import {inSummitHole, SUMMIT, SUMMIT_CENTRE, summitBushes, summitDetail, summitGround} from './perth-summit.ts';
 import file from './data/perth-city-landuse.json' with {type: 'json'};
 
@@ -196,7 +196,7 @@ export interface PerthCityFeatures {group: THREE.Group; stats: {triangles: numbe
 export function buildPerthCityGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean): PerthCityFeatures {
   const canopy = kinnoullCanopy(ground, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs, PERTH_LANDUSE.areas.water), belts = islandBeltTrees(ground, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.areas.water);
   // the massed fill gives way to the canopy and to the islands' single trees
-  const covered = {inCanopy: (x: number, z: number) => canopy.inCanopy(x, z) || belts.inBelt(x, z)};
+  const covered = {inCanopy: (x: number, z: number) => canopy.inCanopy(x, z) || belts.inBelt(x, z) || inEyeClear(x, z)};
   const cover = buildWaverleyCityGround(ground, footprints, PERTH_LANDUSE, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, woodland: kinnoullWoodland(ground, PERTH_LANDUSE.cliffs, covered), rockTones: PERTH_ROCK_TONES, waterPaint: SHORE.shore, gardens: perthGardens(), uncovered: (x, z) => inSummitHole(ground, x, z) || (uncovered?.(x, z) ?? false)});
   cover.group.name = 'perth-city-ground';
   const stats = {...cover.stats};

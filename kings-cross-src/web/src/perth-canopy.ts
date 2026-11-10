@@ -17,7 +17,7 @@
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
-import {KINNOULL_PEAK, SIGHT, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
+import {KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, onCliff, sightHeight, woodNoise} from './perth-woodland.ts';
 
 /** ASSUMED crown texture: a tile `tile` m square of `crowns` round crowns `r` m in radius, lit at the top and shaded at the rim, which
  *  multiplies the canopy's vertex colours, so the 12 m lattice reads as a roof of single crowns (4307, 4599836). */
@@ -40,7 +40,18 @@ export function crownTexture(): THREE.CanvasTexture | null {
 }
 
 /** ASSUMED canopy shape (see the header). */
-export const CANOPY = {step: 12, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22} as const;
+export const CANOPY = {step: 13, base: 7, swell: 9, crown: 3.5, min: 3, tuck: 1.2, patch: 40, light: .22, mute: .55, eyeClear: 260, eyeFrame: 6} as const;
+/** Round 5 (round-4 score, C2 and C6). A small wood 150 to 180 m below the panorama's eye, on its left, stood as a hard green tent above
+ *  the far town's line (the summit sightline only guards ground within WOODLAND.sight.reach). No canopy stands within `eyeClear` m of the
+ *  eye inside its frame (widened `eyeFrame` deg), and the massed fill gives way there too (inEyeClear): the slope shows open, as in 152.
+ *  The town woods read garish in pt-overview: the canopy's tones are muted `mute` of the way towards their own grey (46028's muted
+ *  greens). The lattice is `step` 13 m (12 in round 4), paying for round 5's other work (costs.json). */
+export function inEyeClear(x: number, z: number): boolean {
+  const [ex, , ez] = KINNOULL_EYE.pos, [tx, , tz] = KINNOULL_EYE.target, d = Math.hypot(x - ex, z - ez);
+  if (d >= CANOPY.eyeClear) return false;
+  const a = Math.atan2(z - ez, x - ex) - Math.atan2(tz - ez, tx - ex);
+  return Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) * 180 / Math.PI < KINNOULL_EYE.halfWidthDeg + CANOPY.eyeFrame;
+}
 /** ASSUMED: a wood under `maxArea` m2 with at least `share` of its outline in the mapped water is a small island's tree belt (round 4, C3).
  *  It is drawn as single trees, not canopy (islandBeltTrees): pt-tay-from-bridgend stands 35 m from one and looks across it to the town,
  *  and a draped belt there was a 10 m wall; 46028 shows riverside trees as single round crowns with light between. Trees on a `step` m
@@ -104,7 +115,7 @@ export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woo
     const inWood = (x: number, z: number) => boxes.some(b => x >= b.ax && x <= b.bx && z >= b.az && z <= b.bz && pip(x, z, b.rs[0]!) && !b.rs.slice(1).some(h => pip(x, z, h)));
     // the crown height at a lattice node, or undefined where the node is open
     const crownAt = (x: number, z: number): number | undefined => {
-      if (!inWood(x, z) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner || onCliff(ground, cliffs, x, z)) return undefined;
+      if (!inWood(x, z) || Math.hypot(x - px, z - pz) < WOODLAND.gorse.inner || inEyeClear(x, z) || onCliff(ground, cliffs, x, z)) return undefined;
       let h = base + C.swell * woodNoise(x, z) + crownAmp * (hash(x, z, 51) - .5);
       const s = sightHeight(ground, x, z, shadow), y = ground.heightAt(x, z);
       if (s !== undefined) h = Math.min(h, s - WOODLAND.sight.clear - y);
@@ -128,7 +139,8 @@ export function kinnoullCanopy(ground: Pick<Terrain, 'heightAt' | 'extent'>, woo
       for (const t of WOODLAND.tones) { if (r < t.share) { pick = t; break; } r -= t.share; }
       const lift = open ? -.25 : (hash(x, z, 51) - .5) * 2 * C.light;
       const k2 = (1 + lift) * (.9 + .2 * hash(x, z, 54)) * CROWNS.lift;
-      tone.setRGB(pick.rgb[0] * k2, pick.rgb[1] * k2, pick.rgb[2] * k2, THREE.SRGBColorSpace); col.push(tone.r, tone.g, tone.b);
+      const grey = (pick.rgb[0] + pick.rgb[1] + pick.rgb[2]) / 3, mute = (v: number) => (v + (grey - v) * C.mute) * k2;
+      tone.setRGB(mute(pick.rgb[0]), mute(pick.rgb[1]), mute(pick.rgb[2]), THREE.SRGBColorSpace); col.push(tone.r, tone.g, tone.b);
       vid[k] = pos.length / 3 - 1; return vid[k]!;
     };
     for (let j = 0; j + 1 < nz; j++) for (let i = 0; i + 1 < nx; i++) {

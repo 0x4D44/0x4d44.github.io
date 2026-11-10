@@ -12,7 +12,7 @@ import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE
 import { PERTH_CITY_ASHLAR, PERTH_CITY_STONE, perthBuildingHeight } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
-import { CANOPY, ISLAND_CANOPY, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
+import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
 /** The small islands' tree belts, and whether (x, z) is over one (its box, plus a 6 m lattice step and a little). */
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
@@ -341,6 +341,30 @@ test('from the frozen summit eye the Tay and the North Inch are open: no canopy 
   };
   check(PERTH_LANDUSE.areas.water, 'the Tay');
   check(inch, 'the North Inch');
+});
+
+test('no canopy or massed crown stands just below the panorama\'s eye in its frame, and the canopy\'s tones are muted (round-4 score, C2/C6)', () => {
+  // round 4's "tent": a wood 150 to 180 m below the eye on the frame's left stood above the far town's line
+  const canopy = kinnoullCanopy(scene.terrain, PERTH_LANDUSE.areas.wood, PERTH_LANDUSE.cliffs, PERTH_LANDUSE.areas.water);
+  const [ex, , ez] = KINNOULL_EYE.pos; let near = 0, open = 0;
+  for (let x = ex - CANOPY.eyeClear; x <= ex + CANOPY.eyeClear; x += 6) for (let z = ez - CANOPY.eyeClear; z <= ez + CANOPY.eyeClear; z += 6) {
+    if (![[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].every(([i, j]) => inEyeClear(x + i! * CANOPY.step, z + j! * CANOPY.step))) continue; near++; // a lattice step inside the edge
+    const top = canopy.topAt(x, z); if (top === undefined || top < scene.terrain.heightAt(x, z) + 1) open++; // the lattice's edge cells tuck under the ground
+  }
+  assert.ok(near > 500 && open === near, `canopy below the eye in its frame: ${near - open} of ${near} points`);
+  assert.ok(inEyeClear(2226, 274), 'the round-4 tent lies in the cleared ground');
+  const crowns = scene.group.getObjectByName('waverley-wood-crowns') as THREE.InstancedMesh, m = new THREE.Matrix4(), v = new THREE.Vector3(); let massed = 0;
+  // the clearing's gorse (scrub, WOODLAND.gorseRgb) belongs there (152); a wood crown does not
+  const gc = new THREE.Color(), gorse = new THREE.Color().setRGB(WOODLAND.gorseRgb[0], WOODLAND.gorseRgb[1], WOODLAND.gorseRgb[2], THREE.SRGBColorSpace);
+  for (let i = 0; i < crowns.count; i++) {
+    crowns.getMatrixAt(i, m); v.setFromMatrixPosition(m); if (!inEyeClear(v.x, v.z)) continue;
+    crowns.getColorAt(i, gc); const k = gc.g / gorse.g; if (!(k > .7 && k < 1.3 && Math.abs(gc.r / gc.g - gorse.r / gorse.g) < .05)) massed++;
+  }
+  assert.equal(massed, 0, 'no massed wood crown there either');
+  // muted: no canopy vertex is strongly saturated (the town woods read garish yellow and orange in pt-overview)
+  const col = canopy.geometry!.getAttribute('color'); let hot = 0; const c = new THREE.Color(), hsl = {h: 0, s: 0, l: 0};
+  for (let i = 0; i < col.count; i++) { c.setRGB(col.getX(i), col.getY(i), col.getZ(i)); c.getHSL(hsl); if (hsl.s > .5 && hsl.h < .2) hot++; }
+  assert.ok(hot < col.count * .02, `saturated yellow-orange canopy vertices: ${hot} of ${col.count}`);
 });
 
 test('the summit clearing has its own close ground under the panorama, in a hole in the town-wide drape (152; round 3, C2)', () => {
