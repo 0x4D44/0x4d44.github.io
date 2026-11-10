@@ -33,8 +33,8 @@ test('coupled 385s: 3+3, 3+4 and 4+4 become two whole units end to end, cars num
   assert.match(x34.label, /3\+4 cars · booked diagram · order ASSUMED$/);
   assert.match(x34.note, /order is ASSUMED/);
 
-  const x44 = choose({ operator: 'SR', units: [u('385', 4), u('385', 4)], basis: 'actual allocation' });
-  assert.deepEqual([x44.kind, x44.lengthM, x44.allocation, /order ASSUMED/.test(x44.label)], ['sr385x4+sr385x4', 160, 'actual allocation', false]);
+  const x44 = choose({ operator: 'SR', units: [u('385', 4), u('385', 4)], basis: 'PTAC allocation' });
+  assert.deepEqual([x44.kind, x44.lengthM, x44.allocation, /order ASSUMED/.test(x44.label)], ['sr385x4+sr385x4', 160, 'PTAC allocation', false]);
 });
 
 test('if any unit has no row the whole train stays neutral: no partial mixes', () => {
@@ -47,9 +47,9 @@ test('if any unit has no row the whole train stays neutral: no partial mixes', (
 });
 
 test('a 2+2 class 158 pair from a stub row, and a single unit given as a units list', () => {
-  const pair = choose({ operator: 'SR', units: [u('158', 2), u('158', 2)], basis: 'actual allocation' });
+  const pair = choose({ operator: 'SR', units: [u('158', 2), u('158', 2)], basis: 'PTAC allocation' });
   assert.deepEqual([pair.kind, pair.lengthM, pair.layout.cars.map(c => c.index)], ['stub158x2+stub158x2', 80, [0, 1, 2, 3]]);
-  assert.equal(pair.label, 'ScotRail Class 158 · 2+2 cars · actual allocation');
+  assert.equal(pair.label, 'ScotRail Class 158 · 2+2 cars · PTAC allocation');
   const single = choose({ operator: 'SR', units: [u('385', 4)] });
   assert.deepEqual([single.kind, single.lengthM, single.units], ['sr385x4', 80, [{ kind: 'sr385x4', offset: 0, cars: 4 }]]);
   // `units` wins over the single-unit fields when both are given

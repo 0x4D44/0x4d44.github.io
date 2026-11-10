@@ -427,9 +427,9 @@ test('validateFleetTable is strict about shape', () => {
 
 test('sources combine: the first with an answer wins, so a later feed can lead the booked table', () => {
   const booked = bookedSource(table);
-  const actual: (d: string, t: number) => EdinburghServiceEvidence | undefined = (d) => d === '1A02' ? { operator: 'SR', units: [{ class: '385', cars: 3 }], basis: 'actual allocation' } : undefined;
+  const actual: (d: string, t: number) => EdinburghServiceEvidence | undefined = (d) => d === '1A02' ? { operator: 'SR', units: [{ class: '385', cars: 3 }], basis: 'PTAC allocation' } : undefined;
   const lead = firstEvidence(actual, booked);
-  assert.equal(lead('1A02', gmt(10, '08:31'))?.basis, 'actual allocation');
+  assert.equal(lead('1A02', gmt(10, '08:31'))?.basis, 'PTAC allocation');
   assert.equal(lead('2A06', gmt(10, '16:41'))?.basis, 'booked diagram', 'falls through to the booked table');
   assert.equal(lead('9Z99', gmt(10, '16:41')), undefined);
   assert.equal(firstEvidence(undefined, booked)('2A06', gmt(10, '16:41'))?.basis, 'booked diagram', 'an absent source is skipped');

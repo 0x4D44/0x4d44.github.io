@@ -7,8 +7,8 @@
 // One unit per coupled diagram: 3+3, 3+4 and a 158 pair are lists of units, never a summed car count.
 //
 // A booked diagram is a PLAN: units are swapped and sets cut or strengthened on the day. So the
-// answer is labelled 'booked diagram', never 'actual allocation'. A later source (an actual
-// allocation feed) feeds the same EdinburghServiceEvidence through an EvidenceSource; matching is
+// answer is labelled 'booked diagram', never 'PTAC allocation'. A second source (the PTAC
+// allocation feed, core/edinburgh-ptac.ts) feeds the same EdinburghServiceEvidence through an EvidenceSource; matching is
 // kept apart from the table format so either can change alone.
 //
 // Pure string and number code: no node: imports, no three.js. The published text and the table built
