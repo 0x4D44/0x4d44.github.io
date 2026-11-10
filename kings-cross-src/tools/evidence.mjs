@@ -787,10 +787,10 @@ const FROZEN_PERTH_CAMERAS = {
     source: "R-pt2-b standpoint (geograph 6872925, JThomas 2021: camera NO 11288 23131, looking N, subject NO 1128 2316), in the station car park (OSM way/24505868), eye 1.7 m above model ground, looking north at the Station Hotel's south front (OSM way/234811330; HES LB39538). Lead ruling 2026-11-10",
   },
   'pt-kings-place-bridge': {
-    pos: [88.0,  0.53,  -39.0],
-    target: [89.4,  -1.0,  -69.3],
+    pos: [88.0,  -1.65,  -39.0],
+    target: [89.4,  -1.65,  -69.3],
     fov: 60,
-    source: "R-pt2-d standpoint (geograph 8184219, habiloid 2025, CC BY-SA 2.0: camera NO 1138 2310, looking NNE, subject NO 1139 2313), on St Leonard's Bank's west pavement, eye 1.7 m above the cut ground, looking at the Tay Coast Line's 1849 girder bridge over King's Place (OSM way/1260630142). Lead ruling 2026-11-10 12:30",
+    source: "R-pt2-d standpoint (geograph 8184219, habiloid 2025, CC BY-SA 2.0: camera NO 1138 2310, looking NNE, subject NO 1139 2313), on St Leonard's Bank, eye 1.7 m above the cut road, level as the photograph is (its horizon is at mid-frame), looking at the Tay Coast Line's 1849 girder bridge over King's Place (OSM way/1260630142). Lead re-freeze 2026-11-10 12:57: the eye lowered to R-pt2-d's (the girders' underside 0.15 m over it; the 12:30 eye was ~2.2 m high)",
   },
   'pt-kinnoull-panorama': {
     pos: [2368,  212.7,  208],

@@ -87,7 +87,8 @@ test('the frontage\'s cost: within P2\'s caps (+24 draws, +240,000 triangles), a
   try {
     assert.ok(info.drawCalls <= 24 && info.drawCalls >= 7, JSON.stringify(info));
     assert.ok(info.triangles < 240_000, JSON.stringify(info));
-    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends, panels: info.bridge.panels, walls: info.bridge.walls });
+    assert.deepEqual(info.bridge, { sides: 2, ends: info.bridge.ends, panels: info.bridge.panels, walls: info.bridge.walls, roadSegments: info.bridge.roadSegments });
+    assert.ok(info.bridge.roadSegments > 20, 'the cut roads are surfaced, with pavements');
     assert.ok(info.bridge.ends >= 2, 'abutments at both ends');
     assert.ok(info.bridge.panels >= 40, `the girders are panelled on both faces (R-pt2-d): ${info.bridge.panels}`);
     assert.ok(info.bridge.walls > 0, 'retaining walls line the cut (R-pt2-d)');
@@ -102,8 +103,10 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   const under = line.filter(p => p[0] > x0 + 2 && p[0] < x1 - 2);
   assert.ok(under.length > 0, 'King\'s Place passes under the bridge');
   for (const p of under) assert.ok(Math.abs(t.heightAt(p[0], p[1]) - KINGS_PLACE_LEVELS.road) < .05, `road at ${p} is ${t.heightAt(p[0], p[1])}`);
-  // the soffit clears the road by the photo's 4.3 m
-  assert.ok(KINGS_PLACE_LEVELS.soffit - KINGS_PLACE_LEVELS.road > 4.2);
+  // R-pt2-d's pixels: the underside 0.15 m over the eye, the road 3.9 m under it (perth-frontage-bridge.ts header)
+  assert.ok(Math.abs(KINGS_PLACE_LEVELS.soffit - KINGS_PLACE_LEVELS.eye - .15) < 1e-9);
+  assert.ok(Math.abs(KINGS_PLACE_LEVELS.eye - KINGS_PLACE_LEVELS.road - 3.9) < 1e-9);
+  assert.equal(perthCameras()['pt-kings-place-bridge'].pos[1], KINGS_PLACE_LEVELS.eye, 'the frozen eye is R-pt2-d\'s (12:57 re-freeze)');
   // platforms keep the station's flattened level
   for (const pl of data.platforms) for (const [x, z] of pl.path) assert.ok(Math.abs(t.heightAt(x, z) + .2) < .05, `platform point ${x},${z} at ${t.heightAt(x, z)}`);
   // open rails off the bridge stay on the flattened ground

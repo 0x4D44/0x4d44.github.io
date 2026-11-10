@@ -12,7 +12,7 @@ import {Batch} from './materials.ts';
 import type {PerthBuild} from './perth-scene.ts';
 import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './perth-frontage-hotel.ts';
 import {forecourt,stationFront} from './perth-frontage-street.ts';
-import {cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
+import {cutRoadMask,cutRoadSurfaces,cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
 import {perthTrack} from './perth-station.ts';
 import type {FrontageFile} from './perth-frontage-street.ts';
 import frontageFile from './data/perth-frontage.json' with {type:'json'};
@@ -23,7 +23,7 @@ export const PERTH_FRONTAGE_OMIT_IDS:readonly string[]=[PERTH_HOTEL_ID];
 const KINGS_PLACE_RAILS=['way/1260630143','way/1260630144'];
 
 /** What the element drew, for tests and the round notes. */
-export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;walls:number};triangles:number;drawCalls:number}
+export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;walls:number;roadSegments:number};triangles:number;drawCalls:number}
 
 export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,parent:THREE.Group):PerthFrontageInfo{
  const {add,own,stats}=build,before={t:stats.triangles,d:stats.drawCalls};
@@ -36,22 +36,24 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const hotel=stationHotel({facade,detail},hotelArea.outer,ground);
  const streets={front,glass,flat,paint};
  const frontInfo=stationFront(streets,station.outer,ground);
- forecourt(streets,file,ground,[station.outer,hotelArea.outer,...data.platforms.map(p=>p.path)]);
+ forecourt(streets,file,ground,[station.outer,hotelArea.outer,...data.platforms.map(p=>p.path)],cutRoadMask());
  const rails=data.rails.filter(r=>KINGS_PLACE_RAILS.includes(r.id));
  let dir:Pt=[0,0];for(const r of rails){const a=r.path[0],c=r.path.at(-1)!,l=Math.hypot(c[0]-a[0],c[1]-a[1])||1,sgn=dir[0]*(c[0]-a[0])+dir[1]*(c[1]-a[1])<0?-1:1;dir=[dir[0]+sgn*(c[0]-a[0])/l,dir[1]+sgn*(c[1]-a[1])/l];}
  const dl=Math.hypot(...dir)||1;
  const bridge=kingsPlaceBridge(bridgeBatch,file.bridge.ring.map(p=>[p[0],p[1]] as Pt),[dir[0]/dl,dir[1]/dl],ground);
  const cutWallCount=cutWalls(bridgeBatch,ground,perthTrack(data).ground,perthTrack(data).bridge);
+ const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
  const coloured=own(new THREE.MeshLambertMaterial({vertexColors:true}));
- const glassMat=own(new THREE.MeshPhongMaterial({vertexColors:true,shininess:60,specular:0x445058,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+ // glass: dark, with a small tight highlight (round 2's broad specular lobe read as pale grey panes)
+ const glassMat=own(new THREE.MeshPhongMaterial({vertexColors:true,shininess:90,specular:0x1c2024,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
  // flat layers over the ground, lowest first, each pulled forward a step so none z-fights (as materials.ts CITY_LAYER_OFFSET)
  const flatMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
  const paintMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-6}));
  add(group,facade,facadeMat,'perth-hotel-facade');add(group,detail,coloured,'perth-hotel-roofs-and-stone');
  add(group,front,coloured,'perth-station-front');add(group,glass,glassMat,'perth-frontage-glazing');
  add(group,flat,flatMat,'perth-forecourt');add(group,paint,paintMat,'perth-forecourt-markings');add(group,bridgeBatch,coloured,'perth-kings-place-bridge');
- return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount},triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};
+ return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};
 }

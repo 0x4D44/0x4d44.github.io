@@ -35,7 +35,7 @@ export const HOTEL_LEVELS={
 } as const;
 /** Window bay (m): the 18 m middle front (OSM) carries four, as R-pt2-b shows four window columns between the turret and the east gable. */
 export const HOTEL_BAY=4.5;
-export const HOTEL_COLOURS={ashlar:0x8a6352,red:0x7d5447,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
+export const HOTEL_COLOURS={ashlar:0x8a6352,red:0xb08a78,frame:0xdcd8cc,slate:0x4b5059,lead:0x5a5d61,glass:0x262c33,door:0x6a4428} as const;
 
 type Ring=Pt[];
 const dot=(a:Pt,b:Pt)=>a[0]*b[0]+a[1]*b[1];
@@ -116,7 +116,7 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
  const f=hotelFrame(outer),{regions,top,main}=hotelRegions(f),L=HOTEL_LEVELS;
  const P=ground.heightAt(...f.at((f.middle[0]+f.middle[1])/2,-6)),foot=ground.rangeUnder(f.ring,4).min-.15;
  const start=b.facade.triangles+b.detail.triangles;
- const C={ashlar:rgb(HOTEL_COLOURS.ashlar),red:rgb(HOTEL_COLOURS.red),slate:rgb(HOTEL_COLOURS.slate),lead:rgb(HOTEL_COLOURS.lead),glass:rgb(HOTEL_COLOURS.glass),door:rgb(HOTEL_COLOURS.door)};
+ const C={ashlar:rgb(HOTEL_COLOURS.ashlar),red:rgb(HOTEL_COLOURS.red),slate:rgb(HOTEL_COLOURS.slate),lead:rgb(HOTEL_COLOURS.lead),glass:rgb(HOTEL_COLOURS.glass),door:rgb(HOTEL_COLOURS.door),frame:rgb(HOTEL_COLOURS.frame)};
  // 1. Walls on the OSM footprint, split where a region boundary crosses an edge; each edge's window bays fitted to its length.
  const lines=regions.flatMap(r=>r.planes);
  let area=0;for(let i=0;i<f.ring.length;i++){const p=f.ring[i],q=f.ring[(i+1)%f.ring.length];area+=p[0]*q[1]-q[0]*p[1];}
@@ -169,6 +169,14 @@ export function stationHotel(b:HotelBatches,outer:readonly Pt[],ground:Pick<Terr
  // the rear: two slated ranges behind the front range (round-1 score: the rear read as a flat slab), between the footprint's west return
 // (s -3.9) and the corner tower's line (s 34.9), back to d 35.7 (all OSM vertices); the same pitch as the front range (ASSUMED)
 for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;gableRoof(-3.9,range.s1+.1,d0,d1,P+L.eaves,P+L.eaves+half*pitch,true,C.slate);}
+{const ws0=-14.2,ws1=-1.0,wd0=-5.2,wd1=6.1,top=L.extension,dw=.6;
+ const glaze=(a:Pt,c:Pt,face:V3)=>{const l=Math.hypot(c[0]-a[0],c[1]-a[1]),k=Math.max(1,Math.round(l/1.1)),tt:Pt=[(c[0]-a[0])/l,(c[1]-a[1])/l];
+  b.detail.poly([[a[0],P+dw,a[1]],[c[0],P+dw,c[1]],[c[0],P+top-.25,c[1]],[a[0],P+top-.25,a[1]]],undefined,{facing:face,color:C.glass});
+  for(let i=0;i<=k;i++){const q:Pt=[a[0]+tt[0]*l*i/k,a[1]+tt[1]*l*i/k];wallBox(b.detail,[q[0]-tt[0]*.05,q[1]-tt[1]*.05],[q[0]+tt[0]*.05,q[1]+tt[1]*.05],P+dw,P+top-.25,.05,C.frame);}
+  for(const y of [P+dw,P+2.4,P+top-.3])wallBox(b.detail,a,c,y-.04,y+.04,.05,C.frame);};
+ const fA=f.at(ws0,wd0-.06),fB=f.at(ws1,wd0-.06);glaze(fA,fB,nOut);
+ const wA=f.at(ws0-.06,wd1),wB=f.at(ws0-.06,wd0);glaze(wA,wB,[-uAx[0],0,-uAx[2]]);
+ gableRoof(ws0-.25,ws1,wd0-.3,wd1,P+top,P+top+3,true,C.slate);}
 // crow-stepped gable walls (HES): an outline of steps from the wallhead to the apex, 0.45 m thick, red sandstone skews
  const crow=(s0:number,s1:number,d:number,base:number,apex:number,steps:number)=>{
   const w=s1-s0,o:[number,number][]=[[0,base-1.2],[w,base-1.2]];
@@ -183,16 +191,20 @@ for(const [d0,d1] of [[range.d1,24],[24,35.7]] as const){const half=(d1-d0)/2;ga
  // wallhead gablets on the middle front's two inner bays (R-pt2-b): a shaped gable rising from the wall face, 3.2 m wide, its sides going up
 // 1.2 m over the eaves then curving in to a 0.7 m top under a finial, an arched attic light in a red margin; its own slated roof behind.
 // Proud of the wall by 0.4 m so the main roof's eaves pass behind it. Sizes ASSUMED from R-pt2-b.
-function gablet(sc:number){const w=3.2,base=L.eaves-1.5,side=L.eaves+1.2,apex=L.eaves+3.1,o:[number,number][]=[[0,base],[w,base],[w,side]];
+function gablet(sc:number){const w=3.8,base=L.second-.35,side=L.eaves+1.2,apex=L.ridge-.6,o:[number,number][]=[[0,base],[w,base],[w,side]];
  for(let i=1;i<=6;i++){const a=i/6;o.push([w-(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
  for(let i=6;i>=1;i--){const a=i/6;o.push([(w/2-.35)*Math.sin(a*Math.PI/2),side+(apex-side)*(1-Math.cos(a*Math.PI/2))]);}
  o.push([0,side]);
  const g=f.at(sc-w/2,-.4);slab(b.detail,o.map(([x,y])=>[x,y+P] as [number,number]),[g[0],0,g[1]],uAx,nOut,.45,C.ashlar);
  const arch=(w2:number,y0:number,y1:number)=>{const r:[number,number][]=[[-w2/2,y0],[w2/2,y0]];for(let i=0;i<=8;i++){const a=i/8*Math.PI;r.push([Math.cos(a)*w2/2,y1-w2/2+Math.sin(a)*w2/2]);}return r;};
- const m=f.at(sc,-.42);slab(b.detail,arch(1.6,L.eaves-.5,L.eaves+2.1).map(([x,y])=>[x,y+P] as [number,number]),[m[0],0,m[1]],uAx,nOut,.02,C.red);
- const gl=f.at(sc,-.45);slab(b.detail,arch(1.1,L.eaves-.3,L.eaves+1.85).map(([x,y])=>[x,y+P] as [number,number]),[gl[0],0,gl[1]],uAx,nOut,.02,C.glass);
- const fin=f.at(sc,-.2);prism(b.detail,fin[0],fin[1],.2,P+apex,P+apex+.5,4,C.ashlar);prism(b.detail,fin[0],fin[1],.09,P+apex+.5,P+apex+1.1,4,C.red);
- gableRoof(sc-w/2+.1,sc+w/2-.1,0,2.6,P+side,P+apex-.2,false,C.slate);}
+ const light=(x:number,y0:number,y1:number,w2:number)=>{const m=f.at(sc+x,-.42);slab(b.detail,arch(w2+.36,y0-.18,y1+.18).map(([u,y])=>[u,y+P] as [number,number]),[m[0],0,m[1]],uAx,nOut,.02,C.red);
+  const gl=f.at(sc+x,-.45);slab(b.detail,arch(w2,y0,y1).map(([u,y])=>[u,y+P] as [number,number]),[gl[0],0,gl[1]],uAx,nOut,.02,C.glass);
+  const bar=f.at(sc+x,-.47);slab(b.detail,[[-.03,P+y0],[.03,P+y0],[.03,P+y1-w2/2],[-.03,P+y1-w2/2]],[bar[0],0,bar[1]],uAx,nOut,.01,C.frame);};
+ light(-.75,8.6,10.9,.95);light(.75,8.6,10.9,.95);// the second floor's arched pair
+ light(0,L.eaves+.6,L.eaves+2.9,1.1);// the attic light
+ const band=f.at(sc-w/2,-.43);slab(b.detail,[[0,P+L.eaves-.35],[w,P+L.eaves-.35],[w,P+L.eaves],[0,P+L.eaves]],[band[0],0,band[1]],uAx,nOut,.02,C.red);// the cornice carried across
+ const fin=f.at(sc,-.2);prism(b.detail,fin[0],fin[1],.22,P+apex,P+apex+.55,4,C.red);prism(b.detail,fin[0],fin[1],.09,P+apex+.55,P+apex+1.3,4,C.red);
+ const back=(apex-.2-L.eaves)/pitch+range.d0;gableRoof(sc-w/2+.1,sc+w/2-.1,0,back,P+side,P+apex-.2,false,C.slate);}
 // dormer-gables on the middle front's two inner bays (R-pt2-b), and piend-roofed dormers on the outer two (HES "small piend-roofed dormers")
  const bayW=(m1-m0)/4;
  for(const k of [1,2]){const sc=m0+(k+.5)*bayW;gablet(sc);}
