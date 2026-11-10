@@ -22,7 +22,7 @@ import type { V3 } from './train-geom.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
 import type { NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, bogieParts, buildBogie, couplerHalf, podHanger, underfloorPod } from './train-parts.ts';
-import { bp10Frame, bt10Frame, voyager220Discs, voyager221Frame } from './train-intercity-bogie.ts';
+import { bp10Frame, bt10Frame, cylinder, voyager220Discs, voyager221Frame } from './train-intercity-bogie.ts';
 import type { BogieStyle, CouplerStyle, PodBox, PodForm } from './train-parts.ts';
 import type { CaptureFormation } from './edinburgh-fleet.ts';
 import { lensLook } from './train.ts';
@@ -125,6 +125,8 @@ export function intercitySection(b: Pick<BodyDef, 'half' | 'floor' | 'wallTop' |
 
 const V_FLOOR = VOYAGER.floorHeight.value;
 const V_CROWN = VOYAGER.height.value;
+/** How far the Voyager's roof hatches stand over the crown (voyager-roof-01: their sides show plainly from an overbridge). ASSUMED. */
+const V_HATCH = 0.15;
 const V_WALL = 3.02;
 /** ASSUMED window band and door heights (the drawing's window labels give widths, not heights; xc221-02 by eye). */
 const V_WINDOW_Y: [number, number] = [1.84, 2.66];
@@ -280,17 +282,19 @@ const VOYAGER_BODY: BodyDef = {
   ],
   underColour: XC.under,
   roof(car, add) {
-    // after voyager-roof-01 and -02 (overbridge views): at each end of a car a low raised cooler hatch in the roof's colour, nearly the crown's
-    // width, with a pair of dark grilles let into it; about a third of the way along, a dark slatted exhaust box on the centre line. ASSUMED sizes.
+    // after voyager-roof-01 and -02 (overbridge views): at each end of a car a raised cooler hatch in the roof's colour, nearly the crown's
+    // width, with a pair of dark grilles let into its top; about a third of the way along, a dark slatted exhaust box on the centre line. Round 6:
+    // the hatches stand as proud as voyager-roof-01 shows them (their sides catch the light and they throw a shadow on the roof), V_HATCH over the
+    // crown, where round 5's stood 0.035 m. ASSUMED sizes.
     const hatch = (s: number): void => {
-      add(-0.78, 0.78, V_CROWN - 0.06, V_CROWN + 0.035, s, s + 2.3, XC.roof);
-      for (const x of [-0.42, 0.42]) add(x - 0.27, x + 0.27, V_CROWN + 0.035, V_CROWN + 0.042, s + 0.35, s + 1.95, 0x17141a);
+      add(-0.78, 0.78, V_CROWN - 0.06, V_CROWN + V_HATCH, s, s + 2.3, XC.roof);
+      for (const x of [-0.42, 0.42]) add(x - 0.27, x + 0.27, V_CROWN + V_HATCH, V_CROWN + V_HATCH + 0.008, s + 0.35, s + 1.95, 0x17141a);
     };
     hatch(car.cab ? 4.2 : 0.9);
     hatch(car.length - 3.2);
     const e = car.length * 0.42;
-    add(-0.42, 0.42, V_CROWN - 0.05, V_CROWN + 0.03, e, e + 1.7, 0x201d22);
-    for (let k = 0; k < 9; k++) add(-0.4, 0.4, V_CROWN + 0.03, V_CROWN + 0.06, e + 0.08 + k * 0.18, e + 0.16 + k * 0.18, 0x34303a);
+    add(-0.42, 0.42, V_CROWN - 0.05, V_CROWN + V_HATCH - 0.03, e, e + 1.7, 0x201d22);
+    for (let k = 0; k < 9; k++) add(-0.4, 0.4, V_CROWN + V_HATCH - 0.03, V_CROWN + V_HATCH, e + 0.08 + k * 0.18, e + 0.16 + k * 0.18, 0x34303a);
   },
 };
 
@@ -337,6 +341,9 @@ const H_NAVY_TOP = 1.72;
 const H_YELLOW_SIDE = 1.95;
 const H_YELLOW_ROOF = H_SCREEN.s1 + 0.18;
 const H_ROOF = H_WALL + 0.32;
+/** How far a louvre blade stands proud of the shell, so the slots between blades read as recessed (round 6). ASSUMED. */
+const LOUVRE_BLADE = 0.022;
+
 /** Where the charcoal cab roof gives way to the grey roof, under the exhaust hatch's front edge. ASSUMED. */
 const H_CAB_ROOF = 3.4;
 /** The navy foot under the grey, on the power car's rear and every coach (scotrail-hst-06). ASSUMED height. */
@@ -786,7 +793,10 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
     }
     // each car's body ends GAP short of the car's end, so its half of the coupling reaches GAP, to the car's end, where it meets its neighbour's half
     const out = (Math.sign(zOut - zWall) || 1) as 1 | -1;
-    if (b.innerCoupler === 'buckeye') buckeyeHalf(detail, zWall, out, GAP, 0.95);
+    if (b.innerCoupler === 'buckeye') {
+      buckeyeHalf(detail, zWall, out, GAP, 0.95);
+      hstPipework(detail, zWall, out, GAP);
+    }
     else couplerHalf(detail, zWall, out, GAP, 0.85, b.innerCoupler);
     const cm = new THREE.Object3D();
     cm.name = 'coupler';
@@ -895,16 +905,21 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
   for (const l of b.cantLouvres?.(car) ?? []) {
     const rx = 0.55;
     const ry = b.crown - b.wallTop - 0.04;
-    const at = (y: number): [number, number, number, number] => {
+    const at = (y: number, off: number): [number, number, number, number] => {
       const phi = Math.asin(Math.min(1, Math.max(0, (y - b.wallTop) / ry)));
       const nx = Math.cos(phi) / rx;
       const ny = Math.sin(phi) / ry;
       const n = Math.hypot(nx, ny);
       const x = y <= b.wallTop ? W : W - rx + rx * Math.cos(phi);
-      return [x + (0.005 * nx) / n, y + (0.005 * ny) / n, nx / n, ny / n];
+      return [x + (off * nx) / n, y + (off * ny) / n, nx / n, ny / n];
     };
-    const rungs = [0, 1, 2, 3].map((k) => at(lerp(l.y0, l.y1, k / 3)));
+    const rungs = [0, 1, 2, 3].map((k) => at(lerp(l.y0, l.y1, k / 3), 0.005));
+    // round 6: the slots are recessed. Between each two slots a blade stands LOUVRE_BLADE proud of the shell, its face in the panel's grey and its two
+    // walls (facing along the car) darker, so the slots read as the gaps between blades and the shoulder's light picks out their edges (hst-roof-01)
+    const blades = [0, 1, 2, 3].map((k) => at(lerp(l.y0, l.y1, k / 3), LOUVRE_BLADE));
     const c = col(l.colour);
+    const bladeFace = col(SR.louvrePanel);
+    const bladeWall = col(0x4a4e55);
     for (let p0 = l.s0; p0 + l.panel <= l.s1 + 1e-9; p0 += l.panel + l.gap) {
       for (let s = p0 + (l.pitch - l.slot) / 2; s + l.slot <= p0 + l.panel + 1e-9; s += l.pitch) {
         const za = Z(s);
@@ -916,6 +931,24 @@ function buildCar(car: IntercityCar, layout: IntercityLayout): THREE.Group {
             const na: V3 = [sx * nxa, nya, 0];
             const nb: V3 = [sx * nxb, nyb, 0];
             detail.quad([[sx * xa, ya, za], [sx * xa, ya, zb], [sx * xb, yb, zb], [sx * xb, yb, za]], [na, na, nb, nb], c);
+          }
+        }
+        // the blade after this slot, up to the next slot (or the panel's end)
+        const za2 = Z(s + l.slot);
+        const zb2 = Z(Math.min(s + l.pitch, p0 + l.panel));
+        for (const sx of [-1, 1]) {
+          for (let k = 0; k < 3; k++) {
+            const [xa, ya, nxa, nya] = blades[k] as [number, number, number, number];
+            const [xb, yb, nxb, nyb] = blades[k + 1] as [number, number, number, number];
+            const [ia, ja] = rungs[k] as [number, number, number, number];
+            const [ib, jb] = rungs[k + 1] as [number, number, number, number];
+            const na: V3 = [sx * nxa, nya, 0];
+            const nb: V3 = [sx * nxb, nyb, 0];
+            detail.quad([[sx * xa, ya, za2], [sx * xa, ya, zb2], [sx * xb, yb, zb2], [sx * xb, yb, za2]], [na, na, nb, nb], bladeFace);
+            for (const [z, dz] of [[za2, Math.sign(za2 - zb2)], [zb2, Math.sign(zb2 - za2)]] as const) {
+              const w: V3 = [0, 0, dz];
+              detail.quad([[sx * ia, ja, z], [sx * xa, ya, z], [sx * xb, yb, z], [sx * ib, jb, z]], [w, w, w, w], bladeWall);
+            }
           }
         }
       }
@@ -1009,6 +1042,42 @@ function buckeyeHalf(soup: Soup, zWall: number, out: 1 | -1, reach: number, y: n
   soup.box(0.08, 0.19, y - 0.13, y + 0.13, out > 0 ? hi - 0.1 : lo, (out > 0 ? hi - 0.1 : lo) + 0.1, steel);
 }
 
+/**
+ * The pipework at an HST joint, one vehicle's half (round 6: the round-5 score's T7 found the buckeye halves bare): either side of the coupler a brake-pipe
+ * hose and a main-reservoir hose, each from its angle cock on the headstock (the brake pipe's cock red, the main reservoir's yellow, as UK practice
+ * paints them) drooping to the gap's middle, where it meets its neighbour's; and over the coupler on one side the train-supply jumper, a thick cable
+ * from its receptacle sagging across the gap. Mirrored by the neighbour, so each hose and the jumper join at the gap's middle. ASSUMED places and sizes:
+ * no photograph to hand shows an HST joint close.
+ */
+export const HST_PIPES = {
+  hoses: [{ x: 0.36, colour: 0xb3261e }, { x: 0.52, colour: 0xd9a51a }],
+  /** the cock's height, the hose's lowest point at the gap's middle, its radius */
+  y: 0.9, sag: 0.68, radius: 0.028, rubber: 0x18181a,
+  jumper: { x: -0.55, y: 1.12, sag: 0.98, radius: 0.035, receptacle: 0x2e3034 },
+} as const;
+function hstPipework(soup: Soup, zWall: number, out: 1 | -1, reach: number): void {
+  const P = HST_PIPES;
+  const zEnd = zWall + out * reach;
+  const droop = (x: number, y0: number, y1: number, rho: number, colour: number): void => {
+    // three straight runs: out of the headstock, down, and level into the gap's middle
+    const a: V3 = [x, y0, zWall];
+    const b: V3 = [x, y0 - 0.04, zWall + out * reach * 0.3];
+    const c: V3 = [x, y1, zWall + out * reach * 0.75];
+    const d: V3 = [x, y1, zEnd];
+    for (const [p, q] of [[a, b], [b, c], [c, d]] as const) cylinder(soup, p, q, rho, 8, colour);
+  };
+  for (const sx of [-1, 1]) {
+    for (const h of P.hoses) {
+      const x = sx * h.x;
+      soup.box(x - 0.04, x + 0.04, P.y - 0.04, P.y + 0.04, Math.min(zWall, zWall + out * 0.06), Math.max(zWall, zWall + out * 0.06), col(h.colour));
+      droop(x, P.y, P.sag, P.radius, P.rubber);
+    }
+  }
+  const j = P.jumper;
+  soup.box(j.x - 0.08, j.x + 0.08, j.y - 0.07, j.y + 0.07, Math.min(zWall, zWall + out * 0.08), Math.max(zWall, zWall + out * 0.08), col(j.receptacle));
+  droop(j.x, j.y, j.sag, j.radius, P.rubber);
+}
+
 /** The intercity bogies' near geometry, by kind and driven axle: shared between the cars like every bogie's (named `bogie-mesh`, never disposed with a train). */
 const intercityBogieGeometry = new Map<string, THREE.BufferGeometry>();
 /** The inside-frame kit's (train-parts.ts 'siemens') rust-brown rim, drawn in plain steel on the 220 (no Voyager photograph shows a coloured rim). */
@@ -1079,7 +1148,7 @@ export function buildIntercityTrain(kind: IntercityKind): THREE.Group {
 }
 
 /** How far the highest roof fitting of each body stands over its crown (the roof hatch, fan housing or vents drawn above). */
-const ROOF_FITTING: Readonly<Record<IntercityBody, number>> = { voyager: 0.06, class43: 0.04, mk3: 0.05 };
+const ROOF_FITTING: Readonly<Record<IntercityBody, number>> = { voyager: V_HATCH + 0.008, class43: 0.04, mk3: 0.05 };
 
 /** What the rubric's capture tool plans its cameras from (web/src/edinburgh-fleet.ts CaptureFormation). */
 export function intercityFormation(kind: IntercityKind): CaptureFormation {

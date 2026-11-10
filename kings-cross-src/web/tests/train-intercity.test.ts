@@ -347,6 +347,39 @@ test('a loft quad is cut exactly along a paint line, one piece each side, the cu
   assert.deepEqual(three.map((p) => p.map((w) => w.s).sort()), [[0.25, 0.25, 1, 1], [0, 0, 0.25, 0.25]]);
 });
 
+test('HST joints carry pipework: each side of every buckeye a red-cocked brake pipe and a yellow-cocked main reservoir hose, and the supply jumper, each meeting its neighbour\'s at the gap\'s middle; the Voyager\'s Dellner joints have none', () => {
+  const at = (car: THREE.Object3D, hex: number): THREE.Vector3[] => {
+    const g = (car.getObjectByName('body-detail') as THREE.Mesh).geometry;
+    return ofColour({ pos: g.getAttribute('position') as THREE.BufferAttribute, rgb: g.getAttribute('color') as THREE.BufferAttribute }, hex);
+  };
+  for (const kind of INTERCITY_KINDS) {
+    const root = buildIntercityTrain(kind);
+    const cars = intercityLayout(kind).cars;
+    for (let i = 0; i + 1 < cars.length; i++) {
+      const a = cars[i]!;
+      const b = cars[i + 1]!;
+      const tag = `${kind} joint ${i}/${i + 1}`;
+      const sides = [root.getObjectByName(`car-${a.index}`)!, root.getObjectByName(`car-${b.index}`)!];
+      if (!kind.startsWith('srhst')) {
+        assert.ok(sides.every((c) => at(c, 0x18181a).length === 0), `${tag}: no HST pipework on a Voyager`);
+        continue;
+      }
+      for (const car of sides) {
+        const rubber = at(car, 0x18181a).filter((p) => Math.abs(p.z - a.end) < 0.4);
+        // two hoses each side and the jumper: five runs, each reaching the joint's middle
+        const meeting = rubber.filter((p) => Math.abs(p.z - a.end) < 0.002);
+        const xs = [...new Set(meeting.map((p) => Math.round(p.x * 4)))];
+        assert.ok(xs.some((x) => x <= -2) && xs.some((x) => x >= 2), `${tag}: hoses reach the middle on both sides (${xs.join(',')})`);
+        assert.ok(meeting.length >= 5 * 8, `${tag}: ${meeting.length} hose vertices at the middle`);
+        for (const [hex, name] of [[0xb3261e, 'brake pipe'], [0xd9a51a, 'main reservoir']] as const) {
+          const cocks = at(car, hex).filter((p) => Math.abs(p.z - a.end) < 0.4);
+          assert.ok(cocks.some((p) => p.x < -0.3) && cocks.some((p) => p.x > 0.3), `${tag}: ${name} cocks both sides`);
+        }
+      }
+    }
+  }
+});
+
 test('intercity couplers meet: at every joint the two coupler heads touch within 1 cm, at the cars\' common end', () => {
   // the coupling is the only detail in the gap below the gangway and near the centre line: measure how far into the gap it reaches from each side
   const reach = (car: THREE.Object3D, from: number, toward: 1 | -1): number => {
@@ -443,6 +476,8 @@ test('roofs after the overbridge photographs: Voyager cooler hatches with dark g
     const front = grilles.filter((p) => p.z < car.start + car.length / 3).length;
     const back = grilles.filter((p) => p.z > car.end - car.length / 3).length;
     assert.ok(front >= 48 && back >= 48, `car ${car.index}: grille vertices ${front} at the front third, ${back} at the back third`);
+    // round 6: the hatches stand proud enough to throw a shadow (voyager-roof-01), their grilled tops at least 0.12 m over the crown
+    assert.ok(grilles.every((p) => p.y > xf.crown + 0.12), `car ${car.index}: hatch tops at ${Math.min(...grilles.map((p) => p.y)) - xf.crown} over the crown`);
   }
   const hst = buildIntercityTrain('srhstx4');
   const car = intercityLayout('srhstx4').cars[0]!;
@@ -454,5 +489,12 @@ test('roofs after the overbridge photographs: Voyager cooler hatches with dark g
     // panels of slots at 0.1 m pitch along the engine room: well over a hundred slot edges a side
     assert.ok(zs.size > 100, `class 43 side ${sx}: ${zs.size} distinct slot edges`);
     assert.ok(side.every((p) => p.z > car.start + 4.4 && p.z < car.start + 13.4), `class 43 side ${sx}: slots stay over the engine room`);
+    // round 6: the slots are recessed between blades: a blade face beside every slot standing proud of the slot by about 2 cm, and the blades' walls
+    const faces = verts(detail, 0x8c9299).filter((p) => Math.sign(p.x) === sx && p.y > 2.95 && p.y < 3.35);
+    const walls = verts(detail, 0x4a4e55).filter((p) => Math.sign(p.x) === sx && p.y > 2.95 && p.y < 3.35);
+    assert.ok(faces.length >= side.length && walls.length >= side.length, `class 43 side ${sx}: ${faces.length} blade-face and ${walls.length} wall vertices for ${side.length} slot vertices`);
+    const outward = (p: THREE.Vector3): number => Math.abs(p.x) + (p.y - 3.0);
+    const slotOut = Math.max(...side.map(outward));
+    assert.ok(Math.min(...faces.map(outward)) > Math.min(...side.map(outward)) + 0.01 && Math.max(...faces.map(outward)) > slotOut + 0.01, `class 43 side ${sx}: blades proud of the slots`);
   }
 });
