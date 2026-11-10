@@ -7,8 +7,8 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
-import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, gutterBraces, PERTH_GUTTER_BRACE, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { perthPiercedTexture, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
+import { archRib, boardedSide, braceScrolls, gutterBraces, PERTH_BRACE_SCROLL, PERTH_GUTTER_BRACE, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -119,9 +119,11 @@ test('the roof toggle hides the whole station roof: glazing, strips and ironwork
 
 test('round 3: the roof\'s solid bands have undersides hung under the glazing, so from below the milky panes do not wash them pale', () => {
   // Every furrow band of the main roof stands WAVERLEY_ROOF_STRIP_LIFT over the gutter line; its underside hangs PERTH_BAND_DROP under it.
-  const s = batches.strips.positions, over = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_STRIP_LIFT, under = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP;
+  // (Round 7: the undersides are their own batch, `soffits`, drawn in a sky-lit tone; round 3 to 6 had them in `strips`.)
+  const s = batches.strips.positions, u = batches.soffits.positions, over = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_STRIP_LIFT, under = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP;
   let up = 0, down = 0;
-  for (let i = 1; i < s.length; i += 3) { if (Math.abs(s[i] - over) < 1e-6) up++; if (Math.abs(s[i] - under) < 1e-6) down++; }
+  for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - over) < 1e-6) up++;
+  for (let i = 1; i < u.length; i += 3) if (Math.abs(u[i] - under) < 1e-6) down++;
   assert.ok(up > 100 && down === up, `${down} band vertices under the gutter line for ${up} over it`);
 });
 
@@ -669,6 +671,36 @@ test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift
     if (!inRing(q, ring) && ringDistance(q, ring) > .28) deep++;
   }
   assert.ok(deep >= 100, `deep jambs and mullions at the ground-floor windows (${deep} vertices 0.28 m out)`);
+});
+
+test('round 7: the bands\' undersides are drawn sky-lit and pale, apart from the bands; R-pt1-a\'s scrolls stand in the brace spandrels pt-roof-underside looks along', () => {
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const m = (scene.group.getObjectByName('perth-roof-band-soffits') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+    const band = new THREE.Color(PERTH_BAND_BROWN), lum = (c: THREE.Color): number => c.r + c.g + c.b;
+    assert.equal(m.color.getHex(), PERTH_BAND_SOFFIT);
+    assert.ok(lum(m.color) > lum(band) * 1.1, `paler than the bands' brown (${m.color.getHexString()} vs ${band.getHexString()})`);
+    assert.ok(lum(m.emissive) > .02 && lum(m.emissive) < lum(m.color) / 2, `a sky-lit glow, well under the paint (${m.emissive.getHexString()})`);
+    assert.equal(m.side, THREE.DoubleSide);
+  } finally { scene.dispose(); }
+  { const low = WAVERLEY_ROOF_PROFILE.gutter - PERTH_BAND_DROP, s = batches.strips.positions; let n = 0; for (let i = 1; i < s.length; i += 3) if (Math.abs(s[i] - low) < 1e-6) n++;
+    assert.ok(batches.soffits.count > 100 && n === 0, `the undersides are a batch of their own (${batches.soffits.count}; ${n} left in the bands' batch)`); }
+  // The scrolls: ironwork rings in the brace spandrels, under the girder and over the brace's rib, near the pt-roof-underside camera.
+  const W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, S = PERTH_BRACE_SCROLL, sc = braceScrolls(plan);
+  assert.ok(sc.length >= 8, `scrolls in the near braces (${sc.length})`);
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
+  const k = cams['pt-roof-underside'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
+  cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
+  let seen = 0;
+  for (const s of sc) {
+    assert.ok(s.y + S.ring < under && s.y - S.ring > under - PERTH_GUTTER_BRACE.drop, `a scroll inside the spandrel's depth at ${s.x.toFixed(1)}, ${s.z.toFixed(1)}`);
+    const w = toWorld([s.x, s.z]), v = new THREE.Vector3(w[0], s.y, w[1]).project(cam); if (Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1) seen++;
+    // Drawn: ironwork vertices on the ring, in the girder's plane.
+    const p = batches.ironwork.positions; let on = 0;
+    for (let i = 0; i < p.length; i += 3) { const q = toLocal([p[i], p[i + 2]]); if (Math.abs(q[0] - s.x) < .05 && Math.abs(Math.hypot(q[1] - s.z, p[i + 1] - s.y) - S.ring) < .06) on++; }
+    assert.ok(on >= 16, `the ring at ${s.x.toFixed(1)}, ${s.z.toFixed(1)} drawn (${on} vertices)`);
+  }
+  assert.ok(seen >= 4, `scrolls in pt-roof-underside's frame (${seen})`);
 });
 
 test('round 6: R-pt1-a\'s arched, pierced braces stand under the gutter girders, in the across-track planes the platform cameras face', () => {

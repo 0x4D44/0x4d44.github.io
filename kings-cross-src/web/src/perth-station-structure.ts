@@ -943,6 +943,27 @@ function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch): void {
   const girder = W.platformGirderTop - W.platformGirderDepth;
   for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});
   for (const g of gutterBraces(plan)) archRib(b, g.a, g.c, under - PERTH_GUTTER_BRACE.drop, under - .02, () => under, iron, {...PERTH_SPANDREL, plate: plates, keep: g.keep});
+  for (const s of braceScrolls(plan)) scroll(b, s.x, s.z, s.y, iron);
+}
+/** Round 7 (S2, the round-6 score: "the across-track trusses are still plain"): R-pt1-a's scrolled ironwork, where each curved brace
+ *  springs from its column under the gutter girder (the open circles at the top right of R-pt1-a): an open ring with a C-scroll inside it,
+ *  in the brace's spandrel `along` m in from each springing, its centre `down` m under the girder. Only on the girders the frozen
+ *  pt-roof-underside camera (standpoint `camera`, scene frame) looks along: up to `ahead` m north of it (-x') and `across` m either side
+ *  of it; elsewhere they would cost triangles no frozen view resolves. ASSUMED sizes, scaled from R-pt1-a against the girder's depth. */
+export const PERTH_BRACE_SCROLL = {along: .75, down: .5, ring: .3, inner: .13, bar: .04, ahead: 60, across: 25, camera: [-39.93, -60] as const} as const;
+export function braceScrolls(plan: PerthStationPlan): {x: number; z: number; y: number}[] {
+  const S = PERTH_BRACE_SCROLL, W = WAVERLEY_STRUCTURE, under = W.gutterGirderTop - W.gutterGirderDepth, cam = toLocal([S.camera[0], S.camera[1]]), out: {x: number; z: number; y: number}[] = [];
+  for (const g of gutterBraces(plan)) {
+    if (g.a[0] > cam[0] || g.a[0] < cam[0] - S.ahead || Math.min(Math.abs(g.a[1] - cam[1]), Math.abs(g.c[1] - cam[1])) > S.across) continue;
+    for (const z of [g.a[1] + S.along, g.c[1] - S.along]) if (g.keep([g.a[0], z], under - S.down)) out.push({x: g.a[0], z, y: under - S.down});
+  }
+  return out;
+}
+/** One scroll in the plane x' = x: a ring of 8 flats, and inside it a C of 4 opening toward the brace's crown. */
+function scroll(b: Batch, x: number, z: number, y: number, color: Rgb): void {
+  const S = PERTH_BRACE_SCROLL, pt = (r: number, t: number): V3 => [x, y + r * Math.sin(t), z + r * Math.cos(t)];
+  for (let k = 0; k < 8; k++) beam(b, pt(S.ring, k / 8 * 2 * Math.PI), pt(S.ring, (k + 1) / 8 * 2 * Math.PI), S.bar, S.bar, color);
+  for (let k = 0; k < 4; k++) beam(b, pt(S.inner, Math.PI / 4 + k / 4 * 1.5 * Math.PI), pt(S.inner, Math.PI / 4 + (k + 1) / 4 * 1.5 * Math.PI), S.bar, S.bar, color);
 }
 /** Round 6: R-pt1-a's arched braces in the across-track planes. In R-pt1-a each across-track girder is carried from column to column
  *  on a pair of curved braces that meet under it, the gap between brace and girder filled with pierced, scrolled ironwork, and these
@@ -1136,6 +1157,8 @@ export interface PerthStationBatches {
   /** The main and bay roofs' glazing again, 4 cm over it, facing up only, with straight-up normals: drawn opaque grey and culled from
    *  below, it is the weathered outer face of old station glazing that makes the roof read dark grey from above (R-pt1-b) while the panes still read milky white from below. */
   weather: Batch;
+  /** Round 7: the main and bay roofs' solid bands again, hung PERTH_BAND_DROP under the glazing: their undersides, seen from the platforms. */
+  soffits: Batch;
   /** Platforms part: Waverley's platform strips, faces and fittings, the footbridges, clocks and canopy columns. */
   platform: Pick<WaverleyStructureBatches, 'edges' | 'faces' | 'tactile' | 'lip'>; fittings: Batch;
   /** The bridges' and the kiosk's glass panels (round 3), out of `fittings`: drawn see-through. */
@@ -1169,10 +1192,10 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
     roofEnds(ir, plan.structure.outline); }
   if (L.bay.length >= 3) bayRoof(glass, strips, structure.ironwork, plan, weather);
   // The main and bay roofs' solid bands again, hung 6 cm under the glazing (round 3): from below, the milky panes lay over the bands that
-  // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Same batch, so no extra draw.
-  const under = new Batch(); under.append(strips);
-  for (let i = 1; i < under.positions.length; i += 3) under.positions[i] -= WAVERLEY_ROOF_STRIP_LIFT + PERTH_BAND_DROP;
-  strips.append(under);
+  // stand above them and washed them pale; R-pt1-a's bands read dark from the platforms. Round 7 (S2): their own batch (`soffits`), drawn
+  // in a sky-lit boarding tone (perth-station.ts), not the bands' brown: seen from below they face away from the sun.
+  const soffits = new Batch(); soffits.append(strips);
+  for (let i = 1; i < soffits.positions.length; i += 3) soffits.positions[i] -= WAVERLEY_ROOF_STRIP_LIFT + PERTH_BAND_DROP;
   const swap = (Object.keys(WAVERLEY_PAINT) as (keyof typeof WAVERLEY_PAINT)[]).map((k): [Rgb, Rgb] => [rgb(WAVERLEY_PAINT[k]), P(k)]);
   // The gable screens along the island building (above its walls, up to the glazing) are drawn in the wall's stone, so the wall reads as
   // rising to the roof (R-pt1-a).
@@ -1250,8 +1273,8 @@ export function perthStationBatches(plan: PerthStationPlan): PerthStationBatches
   }
   rampEdges(plan.ramps, structure);
   for (const r of plan.ramps) rampGate(fittings, r);
-  for (const b of [glass, weather, strips, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
-  return {glass, weather, strips, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
+  for (const b of [glass, weather, strips, soffits, spandrels, structure.ironwork, fittings, panes, structure.edges, structure.faces, structure.tactile, structure.lip]) batchToWorld(b);
+  return {glass, weather, strips, soffits, spandrels, ironwork: structure.ironwork, platform: {edges: structure.edges, faces: structure.faces, tactile: structure.tactile, lip: structure.lip}, fittings, panes};
 }
 /** The triangles of a coloured batch whose first vertex is `color`, moved out of it into a batch of their own (still coloured). */
 function takeColor(b: Batch, color: Rgb): Batch {

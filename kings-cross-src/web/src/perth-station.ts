@@ -86,6 +86,9 @@ export function perthPiercedTexture(): THREE.DataTexture {
  *  as round 4's 0x5e544b still read near-black from pt-platform-4-north and pt-roof-underside; round 6: lighter again, as round 5's 0x7d7064
  *  did not change the read: the undersides face down, away from the sun, so only the sky light reaches them). ASSUMED shade. */
 export const PERTH_BAND_BROWN = 0xa59886;
+/** Round 7: the bands' undersides (PerthStationBatches.soffits): a pale boarding tone, and the sky light that reaches them as an emissive
+ *  (it faces down, away from the sun and the scene's key light). ASSUMED shades, matched by eye to R-pt1-a's undersides. */
+export const PERTH_BAND_SOFFIT = 0xb8ac98, PERTH_BAND_SKYLIT = 0x4a4438;
 /** The open platforms' red asphalt (R-pt1-b, Abbott 6573357). ASSUMED shade. */
 export const PERTH_OPEN_ASPHALT = 0xa0705f;
 /** The Dundee platforms' open ends in dark grey asphalt instead (lead ruling 2026-11-10, after round 3: R-pt1-c, Abbott 2012, and
@@ -214,6 +217,10 @@ export function addPerthStationRoof(data: Pick<PerthData, 'buildings' | 'platfor
   if (!build || !group) return;
   const strips = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); strips.color.setHex(PERTH_BAND_BROWN); strips.side = THREE.DoubleSide;
   build.add(group, s.strips, strips, 'perth-roof-strips');
+  // Round 7 (S2, the round-6 score: lighter albedo did not lift the undersides, as only sky light reaches them): the bands' undersides in a
+  // pale boarding tone with a sky-lit glow, which the atmosphere scales with daylight as it does the glazing's.
+  const soffit = build.own(material('whiteSteel').clone() as THREE.MeshLambertMaterial); soffit.color.setHex(PERTH_BAND_SOFFIT); soffit.emissive.setHex(PERTH_BAND_SKYLIT); soffit.side = THREE.DoubleSide;
+  build.add(group, s.soffits, soffit, 'perth-roof-band-soffits');
   build.add(group, s.ironwork, build.own(paintMaterial(material('whiteSteel'))), 'perth-roof-ironwork');
   // Round 5: the spandrels' pierced plates (R-pt1-a, R-pt1-c), in the ironwork's paint, cut by the pattern's alpha.
   build.add(group, s.spandrels, build.own(new THREE.MeshLambertMaterial({color: PERTH_PAINT.iron, map: perthPiercedTexture(), alphaTest: .5, side: THREE.DoubleSide})), 'perth-roof-spandrels');
