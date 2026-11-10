@@ -932,7 +932,7 @@ export const PERTH_SPANDREL = {strut: .5, size: .08} as const;
  *  chain shrinking along the brace. Radii `min` to `max` m, hung `top` m under the member, `clear` m above the rib, `space` m apart; a
  *  ring's outer edge `fit` of its square's side from its middle (perth-station.ts PERTH_RING_ORNAMENT: ring + bar / 2). ASSUMED sizes. */
 export const PERTH_BRACE_RINGS = {min: .12, max: .6, top: .04, clear: .06, space: .03, fit: .475} as const;
-export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch; rings?: Batch} = {}): void {
+export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (s: number) => number, color: Rgb, opts: {strut?: number; size?: number; keep?: (p: Pt, y: number) => boolean; plate?: Batch; rings?: Batch; web?: number; webSize?: number} = {}): void {
   const L = Math.hypot(c[0] - a[0], c[1] - a[1]), strut = opts.strut ?? 1, size = opts.size ?? .1, keep = opts.keep ?? (() => true);
   if (L < 1) return;
   const at = (s: number): Pt => [a[0] + (c[0] - a[0]) * s / L, a[1] + (c[1] - a[1]) * s / L];
@@ -986,6 +986,19 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
     }
     return;
   }
+  if (opts.web) {
+    // Round 9 (S2, the round-8 score: "deeper, more open principal trusses"): an open Warren web between the rib and the member over it,
+    // diagonals rising from the rib to the member and back in panels near `web` m long, `webSize` m square, in place of the close verticals.
+    const k = Math.max(2, Math.round(L / opts.web)), P = L / k, w = opts.webSize ?? .06;
+    for (let i = 0; i < k; i++) {
+      const s0 = i * P, sm = s0 + P / 2, s1 = s0 + P, pm = at(sm), up: V3 = [pm[0], top(sm), pm[1]];
+      for (const s of [s0, s1]) {
+        const p = at(s); if (top(s) - y(s) < .15 || !keep(p, y(s))) continue;
+        beam(b, [p[0], y(s), p[1]], up, w, w, color);
+      }
+    }
+    return;
+  }
   for (let s = strut; s < L - strut / 2; s += strut) {
     const p = at(s), y1 = top(s), y2 = y(s);
     if (y1 - y2 > .1 && keep(p, y2)) b.box([p[0], (y1 + y2) / 2, p[1]], [.05, y1 - y2, .05], {color});
@@ -993,13 +1006,16 @@ export function archRib(b: Batch, a: Pt, c: Pt, y0: number, apex: number, top: (
 }
 /** The ironwork that makes the main roof Perth's rather than Waverley's (R-pt1-a, R-pt1-d): a pitched truss on every second rafter pair,
  *  its principals the rafters and an arched brace under them from gutter girder to gutter girder, and an arched spandrel under every
- *  column-to-column girder. ASSUMED proportions: springing at the girders' undersides, the crown 1.1 m under the ridge. */
+ *  column-to-column girder. ASSUMED proportions: springing at the girders' undersides, the crown 1.1 m under the ridge. Round 9 (S2,
+ *  the round-8 score: R-pt1-a's principal trusses are deeper and more open than the arched rib with its close verticals): PERTH_TRUSS,
+ *  the rib a heavier `size` m member and an open Warren web of `web` m panels between it and the rafters, R-pt1-a's few diagonals. */
+export const PERTH_TRUSS = {size: .14, web: 2.4, webSize: .07} as const;
 function archedIronwork(b: Batch, plan: PerthStationPlan, plates: Batch, ornament: Batch): void {
   const W = WAVERLEY_STRUCTURE, iron = P('iron'), under = W.gutterGirderTop - W.gutterGirderDepth, ridge = WAVERLEY_ROOF_PROFILE.gutter + WAVERLEY_ROOF_PROFILE.rise;
   for (const [x0, x1, z] of plan.structure.purlins) {
     if (Math.round(z / W.purlinSpacing) % 2) continue;
     const a: Pt = [Math.min(x0, x1) + .2, z], c: Pt = [Math.max(x0, x1) - .2, z];
-    archRib(b, a, c, under, ridge - 1.1, s => roofHeight(a[0] + s) - .4, iron, {strut: 1});
+    archRib(b, a, c, under, ridge - 1.1, s => roofHeight(a[0] + s) - .4, iron, PERTH_TRUSS);
   }
   const girder = W.platformGirderTop - W.platformGirderDepth;
   for (const [a, c] of plan.structure.spans) archRib(b, a, c, girder - 1.3, girder - .02, () => girder, iron, {...PERTH_SPANDREL, plate: plates});

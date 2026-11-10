@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthRampTexture, PERTH_RAMP_FINISH, perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, PERTH_TRUSS, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -1050,4 +1050,28 @@ test('round 9: the ramps leave the deck in their own grooved concrete, grooves a
     }
     assert.ok(seen >= 3, `platform 4's ramp in view (${seen} of 9 points)`);
   } finally { scene.dispose(); }
+});
+
+test('round 9: R-pt1-a\'s principal trusses: a heavy rib and an open Warren web reaching the rafters, not close verticals', () => {
+  // One truss alone, as archedIronwork draws them (11.6 m between gutter girders, a level member over it for the test).
+  const T = PERTH_TRUSS, L = 11.6, y0 = 6.45, top = 9, truss = new Batch({colored: true, uv: false}), close = new Batch({colored: true, uv: false});
+  archRib(truss, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], T);
+  archRib(close, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], {strut: 1});
+  const p = truss.positions, n = p.length / 3;
+  // No verticals: no member whose two ends share a station along the span (the round-8 web had one every metre).
+  const ends = new Map<string, number[]>();
+  for (let i = 0; i < n; i++) { const k = p[3 * i].toFixed(2); ends.set(k, [...(ends.get(k) ?? []), p[3 * i + 1]]); }
+  const tall = [...ends.values()].filter(ys => Math.max(...ys) - Math.min(...ys) > .6).length;
+  assert.equal(tall, 0, 'no vertical struts under the rafters');
+  // Open: the web's panels near T.web m, each diagonal reaching the member over it at its panel's middle.
+  const k = Math.round(L / T.web), P = L / k;
+  let reach = 0;
+  for (let i = 0; i < k; i++) { const sm = (i + .5) * P; if ([...Array(n).keys()].some(j => Math.abs(p[3 * j] - sm) < .1 && Math.abs(p[3 * j + 1] - (top - .4)) < .1)) reach++; }
+  assert.ok(reach >= k - 1, `the web reaching the rafters at ${reach} of ${k} panel middles`);
+  // Open: panels 2 m or more (the verticals stood 1 m apart), two diagonals each and no more members than that.
+  const rib = new Batch({colored: true, uv: false}); archRib(rib, [0, 0], [L, 0], y0, top - 1.1, () => top - .4, [0, 0, 0], {size: T.size, strut: 1e9});
+  const per = (close.positions.length - rib.positions.length) / 3 / Math.floor(L - .5);
+  assert.ok(P >= 2 && (n - rib.positions.length / 3) / per <= 2 * k, `open panels (${P.toFixed(1)} m, ${((n - rib.positions.length / 3) / per).toFixed(0)} members)`);
+  // The rib heavier than the round-8 rib (0.1 m).
+  assert.ok(T.size > .1, `a heavy rib (${T.size} m)`);
 });
