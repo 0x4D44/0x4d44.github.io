@@ -12,9 +12,9 @@ import type { PerthBuild } from '../src/perth-scene.ts';
 import { PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage } from '../src/perth-frontage.ts';
 import { HOTEL_LEVELS, PERTH_HOTEL_ID, PERTH_HOTEL_SOURCE, hotelFrame } from '../src/perth-frontage-hotel.ts';
 import { PERTH_ENTRANCE } from '../src/perth-frontage-street.ts';
-import { KINGS_PLACE_COLOURS, KINGS_PLACE_CUT, KINGS_PLACE_LEVELS, cutRoads, cutSurfaceAt, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
+import { KINGS_PLACE_COLOURS, KINGS_PLACE_CUT, RENDER_STREAKS, renderStreak, KINGS_PLACE_LEVELS, cutRoads, cutSurfaceAt, kingsPlaceLine } from '../src/perth-frontage-bridge.ts';
 import { perthTrack } from '../src/perth-station.ts';
-import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
+import { PERTH_HOTEL_FRONT, inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 
 const sceneJson = JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8'));
 // The frozen Perth cameras (tools/tests/frozen-perth-cameras.test.mjs holds this file equal to tools/evidence.mjs).
@@ -182,17 +182,23 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   const sum = (h: number) => ((h >> 16) & 255) + ((h >> 8) & 255) + (h & 255), ps = new THREE.Color(KINGS_PLACE_COLOURS.pierShade);
   const slabR = (KINGS_PLACE_COLOURS.pierShade >> 16) & 255, slabG = (KINGS_PLACE_COLOURS.pierShade >> 8) & 255;
   assert.ok(Math.abs(slabR - slabG) <= 10, `the under-deck sandstone grey (#${ps.getHexString()})`);
-  const slabRendered = 154 + (sum(KINGS_PLACE_COLOURS.pierShade) - 282) * (350 - 154) / (477 - 282), renderRendered = 188 * sum(KINGS_PLACE_COLOURS.render) / 228;
-  assert.ok(slabRendered >= 1.3 * renderRendered, `the tiled slab renders 1.3 times the render or more (${(slabRendered / renderRendered).toFixed(2)})`);
+  // P2 round 11 (declared): the render beside the slab is now the strip the scores measure, capture x 920-990, which round 10 captured at
+  // (52,49,44), sum 145, from 0x4e4d49 (the round-10 score: "the test's 'render beside it' is the round-8 sliver tone at x 700-900 (sum 188)
+  // ... So the modelled 1.38 understates the measured step of 1.76"); and the step gets a ceiling, 2.0 or less (the lead, round 11).
+  const slabRendered = 154 + (sum(KINGS_PLACE_COLOURS.pierShade) - 282) * (350 - 154) / (477 - 282), renderRendered = 145 * sum(KINGS_PLACE_COLOURS.render) / 228;
+  const step = slabRendered / renderRendered;
+  assert.ok(step >= 1.3 && step <= 2, `the tiled slab renders 1.3 to 2.0 times the render beside it (${step.toFixed(2)})`);
   for (const px of [1030, 1070, 1120]) for (const py of [450, 600]) {
     const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pierShade) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
   }
   // P2 round 9 (the round-8 score: the slab flat, luminance spread 1 against R-pt2-d's 26): the sandstone is in the rubble-tiled walls mesh
   for (const px of [1030, 1070, 1120]) assert.equal(hit(px, 520)?.object.name, 'perth-kings-place-walls', `the under-deck sandstone at capture x ${px} carries the rubble tile`);
   // P2 round 8: no sandstone mid-render (the round-7 score's pink sliver at capture x 583-595, a box round a ring vertex on a straight run)
-  for (const py of [480, 500, 540]) { const s = shade(589, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture 589,${py}: ${s?.c.getHexString()}`); }
+  // P2 round 11 (declared): the render is stained in streaks, so "render" here is any of its streak tones (RENDER_STREAKS), each exact
+  const isRender = (c: THREE.Color) => RENDER_STREAKS.some((_, k) => tone(c, renderStreak(KINGS_PLACE_COLOURS.render, k)));
+  for (const py of [480, 500, 540]) { const s = shade(589, py); assert.ok(s && isRender(s.c), `render at capture 589,${py}: ${s?.c.getHexString()}`); }
   for (const px of [700, 915, 930, 960]) {
-    const s = shade(px, 500); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture ${px},500: ${s?.c.getHexString()}`);
+    const s = shade(px, 500); assert.ok(s && isRender(s.c), `render at capture ${px},500: ${s?.c.getHexString()}`);
     assert.ok(s.n.dot(new THREE.Vector3(cam.pos[0] - cam.target[0], 0, cam.pos[2] - cam.target[2]).normalize()) > .7, `the render at capture x ${px} lit as the face toward the road: ${s.n.toArray()}`);
   }
 });
@@ -226,5 +232,21 @@ test('P2 round 9: no street wall stands in the pavilion\'s glazed bays (the roun
     ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view);
     const first = ray.intersectObjects(all, false)[0];
     assert.ok(first && first.object.name !== 'perth-station-street-walls', `the left bay at capture ${px},${py} shows ${first?.object.name} at ${first?.point.toArray().map(v => v.toFixed(2))}`);
+  }
+});
+
+test('P2 round 11: no land-use grass at the hotel\'s foot (the rounds 7-10 scores\' lime line at capture y about 607 in pt-station-hotel)', () => {
+  // PERTH_HOTEL_FRONT is the OSM hotel outline's own vertices, in order
+  const ring = area(PERTH_HOTEL_ID).outer, i0 = ring.findIndex(p => Math.hypot(p[0] - PERTH_HOTEL_FRONT[0][0], p[1] - PERTH_HOTEL_FRONT[0][1]) < .06);
+  assert.ok(i0 >= 0 && PERTH_HOTEL_FRONT.every((q, k) => Math.hypot(ring[(i0 + k) % ring.length][0] - q[0], ring[(i0 + k) % ring.length][1] - q[1]) < .06), 'the hotel front is way/234811330\'s');
+  // from pt-station-hotel, along the facade's foot (round 10: x 700, y 609 hit waverley-ground-cover 0.6 m out from the facade)
+  const cam = perthCameras()['pt-station-hotel'];
+  const view = new THREE.PerspectiveCamera(cam.fov ?? 60, 1280 / 800, .1, 20000), ray = new THREE.Raycaster();
+  view.position.set(cam.pos[0], cam.pos[1], cam.pos[2]); view.lookAt(cam.target[0], cam.target[1], cam.target[2]); view.updateMatrixWorld();
+  const all: THREE.Object3D[] = []; scene.group.traverse(o => { if ((o as THREE.Mesh).isMesh) all.push(o); });
+  for (let px = 400; px <= 1100; px += 25) for (let py = 600; py <= 614; py++) {
+    ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view);
+    const first = ray.intersectObjects(all, false)[0];
+    assert.notEqual(first?.object.name, 'waverley-ground-cover', `land-use grass at the hotel's foot, capture ${px},${py}: ${first?.point.toArray().map(v => v.toFixed(2))}`);
   }
 });

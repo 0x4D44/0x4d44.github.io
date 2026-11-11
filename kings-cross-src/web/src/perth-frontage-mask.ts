@@ -11,6 +11,13 @@ import frontageFile from './data/perth-frontage.json' with {type:'json'};
 export const PERTH_FRONTAGE_MASK_MARGIN=.6;
 /** The station front's pavement band (m) out from the outline's north edge: STREET_LEVELS.pavement (4.2 m) and the kerb, plus the margin. */
 const FRONT_BAND=5;
+/** P2 round 11 (the round-7 to round-10 scores' "lime line" at capture y about 607 in pt-station-hotel): the land-use drape's grass edge lay
+ *  0.6 m out from the hotel's street front, and its polygon offset carried it over the forecourt's bushes. The hotel's street front, OSM
+ *  way/234811330's vertices from its north-west corner to the east wing's (a test holds them to the outline), and the band (m) masked
+ *  either side of it: 1.5 m out over the pavement, 10 m in under the hotel. The drape is cut in 16 m cells, each dropped only when a corner or
+ *  its centroid is masked, and the cells along the facade's foot have their centroids 3.8 m and 7.2 m inside the front. */
+export const PERTH_HOTEL_FRONT:readonly Pt[]=[[-26.9,-94.5],[-26,-95.3],[-25.3,-97.8],[-8.7,-104.7],[-8.5,-104.3],[-3.2,-106.5]];
+const HOTEL_BAND=1.5,HOTEL_DEPTH=10;
 
 export interface PerthFrontageGroundMask {
  /** The King's Place cut: carriageways, pavements and the retaining walls' feet, along each cut road's ramp, and the deck's paved floor. */
@@ -19,16 +26,17 @@ export interface PerthFrontageGroundMask {
  forecourt:[number,number][][];
 }
 
-/** Quads `half` m either side of a polyline, one per piece of at most `step` m, keeping a piece when `keep` accepts its midpoint. */
-function band(line:readonly Pt[],half:number,keep:(p:Pt)=>boolean,step=3):[number,number][][]{
+/** Quads `half` m either side of a polyline (`inner` m on the side opposite the normal (-dz, dx), when given), one per piece of at most `step` m, keeping a piece
+ *  when `keep` accepts its midpoint. */
+function band(line:readonly Pt[],half:number,keep:(p:Pt)=>boolean,step=3,inner=half):[number,number][][]{
  const out:[number,number][][]=[];
  for(let i=0;i+1<line.length;i++){const a=line[i],c=line[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]);if(l<1e-6)continue;
-  const k=Math.max(1,Math.ceil(l/step)),nx=-(c[1]-a[1])/l*half,nz=(c[0]-a[0])/l*half;
+  const k=Math.max(1,Math.ceil(l/step)),nx=-(c[1]-a[1])/l*half,nz=(c[0]-a[0])/l*half,ix=nx*inner/half,iz=nz*inner/half;
   for(let j=0;j<k;j++){const p:Pt=[a[0]+(c[0]-a[0])*j/k,a[1]+(c[1]-a[1])*j/k],q:Pt=[a[0]+(c[0]-a[0])*(j+1)/k,a[1]+(c[1]-a[1])*(j+1)/k];
    if(!keep([(p[0]+q[0])/2,(p[1]+q[1])/2]))continue;
    // overlap each quad 0.3 m onto the next, so no hairline gap opens at a bend
    const e=.3/l,p2:Pt=[p[0]-(c[0]-a[0])*e,p[1]-(c[1]-a[1])*e],q2:Pt=[q[0]+(c[0]-a[0])*e,q[1]+(c[1]-a[1])*e];
-   out.push([[p2[0]+nx,p2[1]+nz],[q2[0]+nx,q2[1]+nz],[q2[0]-nx,q2[1]-nz],[p2[0]-nx,p2[1]-nz]]);}
+   out.push([[p2[0]+nx,p2[1]+nz],[q2[0]+nx,q2[1]+nz],[q2[0]-ix,q2[1]-iz],[p2[0]-ix,p2[1]-iz]]);}
  }
  return out;
 }
@@ -51,6 +59,7 @@ export function perthFrontageGroundMask(stationOuter?:readonly (readonly number[
  const forecourt:[number,number][][]=file.parking.map(p=>p.ring.map(q=>[q[0],q[1]] as [number,number]));
  for(const r of file.roads){const kind=r.service==='parking_aisle'?'parking_aisle':r.highway,half=(ROAD_WIDTHS[kind]??4)/2;
   forecourt.push(...band(r.path.map(q=>[q[0],q[1]] as Pt),half+M,inWindow));}
+ forecourt.push(...band(PERTH_HOTEL_FRONT,HOTEL_BAND,()=>true,4,HOTEL_DEPTH));// the hotel's street front (P2 round 11)
  if(stationOuter){// the station's north edges from the hotel corner (-45,-84) to the east return (17.4,-22.4), as stationFront walks them
   const ring=stationOuter.map(p=>[p[0],p[1]] as Pt),near=(p:Pt)=>ring.reduce((k,q,i)=>Math.hypot(q[0]-p[0],q[1]-p[1])<Math.hypot(ring[k][0]-p[0],ring[k][1]-p[1])?i:k,0);
   const i0=near([-45,-84]),i1=near([17.4,-22.4]),fwd:Pt[]=[],back:Pt[]=[];

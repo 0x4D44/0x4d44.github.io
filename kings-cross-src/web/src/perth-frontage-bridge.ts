@@ -38,9 +38,15 @@ export const KINGS_PLACE_COLOURS={red:0x9e5257,cream:0xe2d6bb,lining:0x1e1c1c,fl
  // P2 round 10 (the round-9 score): under the rubble tile (round 9) it rendered (57,51,46); R-pt2-d's is about 1.5 times the render beside it.
  // So it is lifted toward (90,86,84), fitted per channel between two captures (0x615e5b rendered (57,51,46), 0x999fa5 (116,117,117)), a
  // touch bluer to offset the scene's warm cast
- stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierShade:0x808083,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
+ stiffener:0x7a3036,bearing:0x2a2826,render:0x575652,pier:0x9c7768,pierShade:0x808083,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
  // the vegetation on the wall tops (R-pt2-d: buddleia and grass along the left wall, bushes right of the pier); ASSUMED greens
  leaf:0x3d4f26,leafDark:0x2e3b1d,leafLight:0x4f6131} as const;
+/** P2 round 11 (the round-10 score: the render under the deck "too dark and flat", Y 49 and spread 8 against R-pt2-d's 60 and 17): the render
+ *  is lifted (`render`, 0x575652, was 0x4e4d49) and stained in vertical streaks, each wall segment (about 1.5 m) its own tone, `render` times one
+ *  of these factors in turn: R-pt2-d's weathering runs down the face. ASSUMED. */
+export const RENDER_STREAKS=[.86,1,1.1,.93,1.05] as const;
+/** `hex` scaled by the n-th streak factor (each channel, rounded, clamped). */
+export function renderStreak(hex:number,n:number):number{const f=RENDER_STREAKS[((n%RENDER_STREAKS.length)+RENDER_STREAKS.length)%RENDER_STREAKS.length],c=(s:number)=>Math.min(255,Math.round(((hex>>s)&255)*f));return (c(16)<<16)|(c(8)<<8)|c(0);}
 export const KINGS_PLACE_SOURCE={photo:'https://www.geograph.org.uk/photo/8184219',author:'habiloid',licence:'CC BY-SA 2.0',date:'2025-08-06',date1849:'https://www.perthcivictrust.org.uk/staging/?p=2081'} as const;
 
 /** King's Place's mapped centreline (OSM primary, ODbL) from Leonard Street to St Leonard's Bank, west to east. */
@@ -288,7 +294,7 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
   // end in the pier's sandstone, carrying it down to the pavement (R-pt2-d: x about 1000-1135); King's Place and the railway's walls a pink-brown sandstone
   // rubble (R-pt2-d, right of the pier); the Bank's west wall dark grey (R-pt2-d, left)
   const atEnd=rail&&endDist(m)<0;
-  const tone=under?(atEnd?K.pierShade:K.render):warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
+  const tone=under?(atEnd?K.pierShade:renderStreak(K.render,n)):warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
   // P2 round 9 (the round-8 score: the slab is flat, luminance spread 1 against R-pt2-d's 26): the sandstone takes the rubble tile (`b`), the render stays smooth
   stoneWall(under&&veg&&!atEnd?veg:b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(tone),out,batter,under);n++;
   if(!under&&(rail||batter>0)&&!(rail&&ringDist(m)<3.2))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?2:.75);
