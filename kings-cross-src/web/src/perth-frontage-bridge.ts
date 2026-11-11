@@ -36,8 +36,9 @@ export const KINGS_PLACE_COLOURS={red:0x9e5257,cream:0xe2d6bb,lining:0x1e1c1c,fl
  // smoother rendered face under the deck (#585450 sampled, darkened as in shade); the NE pier's pinkish sandstone and its paler quoins;
  // pierShade (P2 round 8, the round-7 score): the sandstone under the deck, R-pt2-d's weathered grey-buff (93,88,87 as rendered) in the deck's shade.
  // P2 round 10 (the round-9 score): under the rubble tile (round 9) it rendered (57,51,46); R-pt2-d's is about 1.5 times the render beside it.
- // So it is lifted per channel by round 9's measured response (0x615e5b to (57,51,46)) toward (90,86,84), bluer to offset the scene's warm cast
- stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierShade:0x999fa5,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
+ // So it is lifted toward (90,86,84), fitted per channel between two captures (0x615e5b rendered (57,51,46), 0x999fa5 (116,117,117)), a
+ // touch bluer to offset the scene's warm cast
+ stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierShade:0x808083,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
  // the vegetation on the wall tops (R-pt2-d: buddleia and grass along the left wall, bushes right of the pier); ASSUMED greens
  leaf:0x3d4f26,leafDark:0x2e3b1d,leafLight:0x4f6131} as const;
 export const KINGS_PLACE_SOURCE={photo:'https://www.geograph.org.uk/photo/8184219',author:'habiloid',licence:'CC BY-SA 2.0',date:'2025-08-06',date1849:'https://www.perthcivictrust.org.uk/staging/?p=2081'} as const;
