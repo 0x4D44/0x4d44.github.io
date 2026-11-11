@@ -29,8 +29,10 @@ export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,
  *  glass (`doorGlass`, `doorGlassHi`, `transom`) is a pale sky-blue, ASSUMED, the daylight reflection R-pt2-a's glazing shows over a bright interior.
  *  P2 round 8 (the round-7 score: the ground floor rendered (99,100,99), three times R-pt2-a's (33,32,42) over the entrance): the glass is a dark
  *  blue-grey reflective glass and the concourse behind it dim greys, with only the coved light band (`concourseHi`) bright, a lit point glimpsed
- *  through dark glass, as R-pt2-a shows; ASSUMED tones, aimed at the photo's mean. */
-export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0x182034,concourse:0x5f5b55,concourseHi:0xfff6e6,concourseCeil:0x77736b,concourseFloor:0x57534d,concourseSide:0x55524c,dado:0x4a4945,doorGlass:0x26303a,doorGlassHi:0x34404c,transom:0x2e3946,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
+ *  through dark glass, as R-pt2-a shows; ASSUMED tones, aimed at the photo's mean. P2 round 9 (the round-8 score): the entrance still rendered about
+ *  1.7 times the photo's dark, so glass and concourse are about 0.6 of round 8's; the pavilion's navy rendered (23,28,39) against R-pt2-a's
+ *  (36,45,96), so `navy` is lifted and bluer, 0x4662d8 (was 0x2d3e62), scaled by round 8's measured render-to-colour ratio; ASSUMED. */
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x4662d8,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0x182034,concourse:0x3a3836,concourseHi:0xfff6e6,concourseCeil:0x46443f,concourseFloor:0x35332f,concourseSide:0x34322e,dado:0x2e2e2c,doorGlass:0x18202a,doorGlassHi:0x202a36,transom:0x1c2532,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -153,7 +155,14 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
   const stone=(sa:number,sb:number)=>{if(sb-sa<.01)return;// coursed stone (R-pt2-a), UVs running along the front: the wall from `sa` to `sb` metres along this edge
    const p:Pt=[a[0]+(c[0]-a[0])*sa/len,a[1]+(c[1]-a[1])*sa/len],q:Pt=[a[0]+(c[0]-a[0])*sb/len,a[1]+(c[1]-a[1])*sb/len],u0=(run+sa)/T,u1=(run+sb)/T;
    b.coursed.poly([[p[0],foot,p[1]],[q[0],foot,q[1]],[q[0],P+S.wall,q[1]],[p[0],P+S.wall,p[1]]],[[u0,foot/T],[u1,foot/T],[u1,(P+S.wall)/T],[u0,(P+S.wall)/T]],{facing:[n[0],0,n[1]],color:rgb(C.buff)});};
-  if(i===k){stone(0,cut0);stone(cut1,len);}else stone(0,len);
+  if(i===k){stone(0,cut0);stone(cut1,len);}
+  else{// P2 round 9 (the round-8 score: the left bay showed this wall through its glass): the pavilion's cut runs on past edge k's end
+   // onto the next edge, so any edge lying on the pavilion's line (within 1 m of it) is cut open over the same span
+   const tk:Pt=[(eC[0]-eA[0])/eL,(eC[1]-eA[1])/eL],sk=(sa:number)=>(a[0]+(c[0]-a[0])*sa/len-eA[0])*tk[0]+(a[1]+(c[1]-a[1])*sa/len-eA[1])*tk[1];
+   const off=(sa:number)=>Math.abs((a[0]+(c[0]-a[0])*sa/len-eA[0])*tk[1]-(a[1]+(c[1]-a[1])*sa/len-eA[1])*tk[0]),k0=sk(0),k1=sk(len);
+   if(Math.abs(k1-k0)<1e-6||off(0)>1||off(len)>1)stone(0,len);
+   else{const t0=(cut0-k0)/(k1-k0)*len,t1=(cut1-k0)/(k1-k0)*len,lo=Math.max(0,Math.min(t0,t1)),hi=Math.min(len,Math.max(t0,t1));
+    if(hi<=lo)stone(0,len);else{stone(0,lo);stone(hi,len);}}}
   run+=len;
   const ca:Pt=[a[0]+n[0]*.1,a[1]+n[1]*.1],cc:Pt=[c[0]+n[0]*.1,c[1]+n[1]*.1];
   wallBox(b.front,[(a[0]+ca[0])/2,(a[1]+ca[1])/2],[(c[0]+cc[0])/2,(c[1]+cc[1])/2],P+S.wall,P+S.wall+S.coping,.25,rgb(C.coping),.12);

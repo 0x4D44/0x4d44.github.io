@@ -179,6 +179,8 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   for (const px of [1030, 1070, 1120]) for (const py of [450, 600]) {
     const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pierShade) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
   }
+  // P2 round 9 (the round-8 score: the slab flat, luminance spread 1 against R-pt2-d's 26): the sandstone is in the rubble-tiled walls mesh
+  for (const px of [1030, 1070, 1120]) assert.equal(hit(px, 520)?.object.name, 'perth-kings-place-walls', `the under-deck sandstone at capture x ${px} carries the rubble tile`);
   // P2 round 8: no sandstone mid-render (the round-7 score's pink sliver at capture x 583-595, a box round a ring vertex on a straight run)
   for (const py of [480, 500, 540]) { const s = shade(589, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture 589,${py}: ${s?.c.getHexString()}`); }
   for (const px of [700, 915, 930, 960]) {
@@ -203,4 +205,18 @@ test('the ground mask (for the land-use drape, lead ruling 13:18) is plain data 
   assert.ok(!inPerthFrontageGroundMask(perthFrontageGroundMask(), -40, -76), 'that pavement comes from the station outline');
   // and not the town at large
   for (const [x, z] of [[300, 300], [-300, -300], [0, 200]]) assert.ok(!inside(x, z), `town ${x},${z}`);
+});
+
+test('P2 round 9: no street wall stands in the pavilion\'s glazed bays (the round-8 score: the left bay showed the sandstone through its glass)', () => {
+  // the pavilion's cut runs on past the outline's vertex onto the next edge; from pt-station-frontage, the left bay's open lights
+  // (capture x 305-370, y 430-460, where round 8 hit perth-station-street-walls at z' about -34.7) show the concourse
+  const cam = perthCameras()['pt-station-frontage'];
+  const view = new THREE.PerspectiveCamera(cam.fov ?? 60, 1280 / 800, .1, 20000), ray = new THREE.Raycaster();
+  view.position.set(cam.pos[0], cam.pos[1], cam.pos[2]); view.lookAt(cam.target[0], cam.target[1], cam.target[2]); view.updateMatrixWorld();
+  const all: THREE.Object3D[] = []; scene.group.traverse(o => { if ((o as THREE.Mesh).isMesh) all.push(o); });
+  for (const [px, py] of [[305, 445], [330, 430], [370, 460], [340, 470]]) {
+    ray.setFromCamera(new THREE.Vector2(px / 640 - 1, 1 - py / 400), view);
+    const first = ray.intersectObjects(all, false)[0];
+    assert.ok(first && first.object.name !== 'perth-station-street-walls', `the left bay at capture ${px},${py} shows ${first?.object.name} at ${first?.point.toArray().map(v => v.toFixed(2))}`);
+  }
 });
