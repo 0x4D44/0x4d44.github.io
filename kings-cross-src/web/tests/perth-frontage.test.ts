@@ -173,9 +173,16 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
     return h?.face && c && n ? { c: new THREE.Color(c.getX(h.face.a), c.getY(h.face.a), c.getZ(h.face.a)), n: new THREE.Vector3(n.getX(h.face.a), n.getY(h.face.a), n.getZ(h.face.a)), y: h.point.y } : undefined; };
   const tone = (a: THREE.Color, hex: number) => { const b = new THREE.Color(hex); return Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < .02; };
   // P2 round 8 (declared): the sandstone under the girder is pierShade, R-pt2-d's grey-buff in the deck's shade (round 7's was the pier's
-  // sunlit pink, KINGS_PLACE_COLOURS.pier: the round-7 score's salmon slab); grey (R-G 10 or less of 255) and darker than the pier
-  const lum = (h: number) => { const c = new THREE.Color(h); return c.r + c.g + c.b; }, ps = new THREE.Color(KINGS_PLACE_COLOURS.pierShade);
-  assert.ok(ps.r - ps.g <= 10 / 255 && lum(KINGS_PLACE_COLOURS.pierShade) < .75 * lum(KINGS_PLACE_COLOURS.pier), `the under-deck sandstone grey-buff and shaded (#${ps.getHexString()})`);
+  // sunlit pink, KINGS_PLACE_COLOURS.pier: the round-7 score's salmon slab); grey (R-G 10 or less of 255).
+  // P2 round 10 (declared): round 8's second bound, "darker than the pier" (under 0.75 of its luminance), is replaced. The round-9 score:
+  // "In R-pt2-d, the masonry is 1.5 times as bright as the render under the deck... Round 9 nearly loses it (52 against 49)." So the bound
+  // now pins that intent: the tiled slab renders 1.3 times or more the render beside it. Rendered from the colour by the captures' measured
+  // responses (sRGB channel sums): the slab under the rubble tile 0.546 (round 9: 0x615e5b, sum 282, rendered (57,51,46), sum 154), the
+  // untiled render 0.825 (round 8: 0x4e4d49, sum 228, rendered about (68,64,56), sum 188).
+  const sum = (h: number) => ((h >> 16) & 255) + ((h >> 8) & 255) + (h & 255), ps = new THREE.Color(KINGS_PLACE_COLOURS.pierShade);
+  const slabR = (KINGS_PLACE_COLOURS.pierShade >> 16) & 255, slabG = (KINGS_PLACE_COLOURS.pierShade >> 8) & 255;
+  assert.ok(Math.abs(slabR - slabG) <= 10, `the under-deck sandstone grey (#${ps.getHexString()})`);
+  assert.ok(.546 * sum(KINGS_PLACE_COLOURS.pierShade) >= 1.3 * .825 * sum(KINGS_PLACE_COLOURS.render), `the tiled slab renders 1.3 times the render or more (${(.546 * sum(KINGS_PLACE_COLOURS.pierShade) / (.825 * sum(KINGS_PLACE_COLOURS.render))).toFixed(2)})`);
   for (const px of [1030, 1070, 1120]) for (const py of [450, 600]) {
     const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pierShade) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
   }
