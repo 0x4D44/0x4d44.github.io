@@ -26,8 +26,11 @@ export const ROAD_WIDTHS:Readonly<Record<string,number>>={primary:9,secondary:8,
  *  greens, `bark` and `boulder` are ASSUMED from R-pt2-a/b's bushes, tree and kerbside stones. Round 7: `mullion` is a navy-black (ASSUMED, by eye: the
  *  photo's strip frames are thin and dark, not white); the concourse behind the entrance glazing is a bright warm white (`concourse` 0xf4ead8, `concourseHi`
  *  0xfff6e6, and a floor, side returns and a grey dado, all ASSUMED) so it reads as a lit interior and not as more of the buff wall; the door and transom
- *  glass (`doorGlass`, `doorGlassHi`, `transom`) is a pale sky-blue, ASSUMED, the daylight reflection R-pt2-a's glazing shows over a bright interior. */
-export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0x182034,concourse:0xf4ead8,concourseHi:0xfff6e6,concourseFloor:0xded3be,concourseSide:0xe9dec9,dado:0xb2aea4,doorGlass:0x8fa8bd,doorGlassHi:0xb4c8d8,transom:0x9bb2c6,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
+ *  glass (`doorGlass`, `doorGlassHi`, `transom`) is a pale sky-blue, ASSUMED, the daylight reflection R-pt2-a's glazing shows over a bright interior.
+ *  P2 round 8 (the round-7 score: the ground floor rendered (99,100,99), three times R-pt2-a's (33,32,42) over the entrance): the glass is a dark
+ *  blue-grey reflective glass and the concourse behind it dim greys, with only the coved light band (`concourseHi`) bright, a lit point glimpsed
+ *  through dark glass, as R-pt2-a shows; ASSUMED tones, aimed at the photo's mean. */
+export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buff:0xc4b393,coping:0xd6ccb4,navy:0x2d3e62,fascia:0x2c3036,lead:0x5b6066,glass:0x14191e,strip:0x232c38,mullion:0x182034,concourse:0x5f5b55,concourseHi:0xfff6e6,concourseCeil:0x77736b,concourseFloor:0x57534d,concourseSide:0x55524c,dado:0x4a4945,doorGlass:0x26303a,doorGlassHi:0x34404c,transom:0x2e3946,lit:0xd8d0bb,litDim:0x9c968a,lantern:0x5d6f7c,lampBlack:0x232527,shrub:0x4f6b34,shrubDark:0x3b5229,bushMid:0x466332,bushLight:0x5b7b3d,hedge:0x41602f,leaf:0x6f8f42,bark:0x4b4034,boulder:0x7b776f,frame:0x8e9398,sign:0xeeeeea,bollard:0x1d1e20,yellow:0xd8b62a,planter:0x2f5d9a,column:0xb9c2b8,asphalt:0x4d4f52,carpark:0x3c3e41,block:0x6f6863,paving:0x6f6863,footway:0x9a9389,kerb:0xb9b3a8,paint:0xe9e9e3} as const;
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
@@ -186,11 +189,11 @@ export function stationFront(b:StreetBatches,station:readonly Pt[],ground:Ground
  // floor level with the 0.12 m pavement, a mid-rail at 1 m and a 0.2 m kick rail across every bay (the leaves' head, push rail and kick are those rails).
  {const i0=s0+.12,i1=s1-.12,D=3.6,yc=S.pavilionFloor-.05,face:V3=[n[0],0,n[1]],wall=rgb(C.concourse),hi=rgb(C.concourseHi);
   const V=(s:number,o:number,y:number):V3=>{const p=at(s,o);return [p[0],P+y,p[1]];};
-  b.front.poly([V(i0,-D,-.05),V(i1,-D,-.05),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:face,color:wall});// the back wall: a bright warm white, not buff
+  b.front.poly([V(i0,-D,-.05),V(i1,-D,-.05),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:face,color:wall});// the back wall: a dim grey in the interior's gloom (P2 round 8), not buff
   b.front.poly([V(i0,-D+.01,-.05),V(i1,-D+.01,-.05),V(i1,-D+.01,.8),V(i0,-D+.01,.8)],undefined,{facing:face,color:rgb(C.dado)});// its dado, a cool grey so it is not the wall's buff
   b.front.poly([V(i0,-D+.01,2.55),V(i1,-D+.01,2.55),V(i1,-D+.01,2.9),V(i0,-D+.01,2.9)],undefined,{facing:face,color:hi});// the coved light band under the ceiling
   b.front.poly([V(i0,0,.13),V(i1,0,.13),V(i1,-D,.13),V(i0,-D,.13)],undefined,{facing:[0,1,0],color:rgb(C.concourseFloor)});// the floor, level with the pavement
-  b.front.poly([V(i0,0,yc),V(i1,0,yc),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:[0,-1,0],color:hi});// the lit ceiling (it faces down, so it takes the least light: the brightest white)
+  b.front.poly([V(i0,0,yc),V(i1,0,yc),V(i1,-D,yc),V(i0,-D,yc)],undefined,{facing:[0,-1,0],color:rgb(C.concourseCeil)});// the ceiling, a dim grey (P2 round 8): only the light band reads lit
   for(const [s,sg] of [[i0,1],[i1,-1]] as const)b.front.poly([V(s,0,-.05),V(s,-D,-.05),V(s,-D,yc),V(s,0,yc)],undefined,{facing:[t[0]*sg,0,t[1]*sg],color:rgb(C.concourseSide)});// the side returns
   const leaf=(sa:number,sb:number)=>{box(sa,sa+.05,-.02,.1,.1,2.22,C.navy);box(sb-.05,sb,-.02,.1,.1,2.22,C.navy);
    pane(sa+.05,sb-.05,.3,.96,.05,C.doorGlass);pane(sa+.05,sb-.05,1.02,2.22,.05,C.doorGlassHi);};// a leaf: two stiles, a darker lower pane under a paler upper one (the bay's rails, below, are its kick, push rail and head)

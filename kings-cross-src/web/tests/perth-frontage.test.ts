@@ -172,9 +172,15 @@ test("King's Place is cut under the bridge to the R-pt2-d road level, and the cu
   const shade = (px: number, py: number) => { const h = hit(px, py), c = (h?.object as THREE.Mesh | undefined)?.geometry.getAttribute('color'), n = (h?.object as THREE.Mesh | undefined)?.geometry.getAttribute('normal');
     return h?.face && c && n ? { c: new THREE.Color(c.getX(h.face.a), c.getY(h.face.a), c.getZ(h.face.a)), n: new THREE.Vector3(n.getX(h.face.a), n.getY(h.face.a), n.getZ(h.face.a)), y: h.point.y } : undefined; };
   const tone = (a: THREE.Color, hex: number) => { const b = new THREE.Color(hex); return Math.abs(a.r - b.r) + Math.abs(a.g - b.g) + Math.abs(a.b - b.b) < .02; };
+  // P2 round 8 (declared): the sandstone under the girder is pierShade, R-pt2-d's grey-buff in the deck's shade (round 7's was the pier's
+  // sunlit pink, KINGS_PLACE_COLOURS.pier: the round-7 score's salmon slab); grey (R-G 10 or less of 255) and darker than the pier
+  const lum = (h: number) => { const c = new THREE.Color(h); return c.r + c.g + c.b; }, ps = new THREE.Color(KINGS_PLACE_COLOURS.pierShade);
+  assert.ok(ps.r - ps.g <= 10 / 255 && lum(KINGS_PLACE_COLOURS.pierShade) < .75 * lum(KINGS_PLACE_COLOURS.pier), `the under-deck sandstone grey-buff and shaded (#${ps.getHexString()})`);
   for (const px of [1030, 1070, 1120]) for (const py of [450, 600]) {
-    const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pier) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
+    const s = shade(px, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.pierShade) && s.y < KINGS_PLACE_LEVELS.soffit, `the pier's sandstone under the girder at capture ${px},${py}: ${s?.c.getHexString()}`);
   }
+  // P2 round 8: no sandstone mid-render (the round-7 score's pink sliver at capture x 583-595, a box round a ring vertex on a straight run)
+  for (const py of [480, 500, 540]) { const s = shade(589, py); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture 589,${py}: ${s?.c.getHexString()}`); }
   for (const px of [700, 915, 930, 960]) {
     const s = shade(px, 500); assert.ok(s && tone(s.c, KINGS_PLACE_COLOURS.render), `render at capture ${px},500: ${s?.c.getHexString()}`);
     assert.ok(s.n.dot(new THREE.Vector3(cam.pos[0] - cam.target[0], 0, cam.pos[2] - cam.target[2]).normalize()) > .7, `the render at capture x ${px} lit as the face toward the road: ${s.n.toArray()}`);

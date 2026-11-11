@@ -33,8 +33,9 @@ export const KINGS_PLACE_STANDPOINT:Pt=[88,-39];
 export const KINGS_PLACE_COLOURS={red:0x9e5257,cream:0xe2d6bb,lining:0x1e1c1c,flange:0x4a2b2e,rubble:0x5a5a55,rubbleDark:0x4c4d48,quoin:0x8a7a6c,soffit:0x2f2c2a,
  asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3,white:0xe9e9e3,yellow:0xd9b52c,column:0xb9c2b8,
  // R-pt2-d: the stiffeners' darker crimson strips between the panels; the deck's shadowed underside and bearing course; the abutment's
- // smoother rendered face under the deck (#585450 sampled, darkened as in shade); the NE pier's pinkish sandstone and its paler quoins
- stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
+ // smoother rendered face under the deck (#585450 sampled, darkened as in shade); the NE pier's pinkish sandstone and its paler quoins;
+ // pierShade (P2 round 8, the round-7 score): the sandstone under the deck, R-pt2-d's weathered grey-buff (93,88,87 as rendered) in the deck's shade
+ stiffener:0x7a3036,bearing:0x2a2826,render:0x4e4d49,pier:0x9c7768,pierShade:0x575352,pierQuoin:0xa88674,pierCope:0x8a6a5c,rubbleWarm:0x7b655a,rubbleWarmDark:0x6c574d,hazard:0xd9b52c,
  // the vegetation on the wall tops (R-pt2-d: buddleia and grass along the left wall, bushes right of the pier); ASSUMED greens
  leaf:0x3d4f26,leafDark:0x2e3b1d,leafLight:0x4f6131} as const;
 export const KINGS_PLACE_SOURCE={photo:'https://www.geograph.org.uk/photo/8184219',author:'habiloid',licence:'CC BY-SA 2.0',date:'2025-08-06',date1849:'https://www.perthcivictrust.org.uk/staging/?p=2081'} as const;
@@ -261,7 +262,11 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
  // R-pt2-d: from the pier back to capture x about 1000). endDist is < 0 inside that box round any corner; the girders run along the ring's longest edge
  const gEdge=bridgeRing.map((u,i)=>{const v=bridgeRing[(i+1)%bridgeRing.length];return [v[0]-u[0],v[1]-u[1]] as Pt;}).reduce((a,c)=>Math.hypot(...c)>Math.hypot(...a)?c:a,[0,0] as Pt);
  const gl=Math.hypot(...gEdge)||1,gx=gEdge[0]/gl,gz=gEdge[1]/gl;
- const endDist=(e:Pt)=>Math.min(...bridgeRing.map(v=>{const dx=e[0]-v[0],dz=e[1]-v[1];return Math.max(Math.abs(dx*gx+dz*gz)-3.85,Math.abs(dx*gz-dz*gx)-2.2);}));
+ // P2 round 8 (the round-7 score: a pink sliver mid-render, capture x 583-595): only the ring's true corners, where its outline turns by more
+ // than 30 deg; its vertices on a straight run (94.36,-78.13 and the like) are not deck corners
+ const corners=bridgeRing.filter((v,i)=>{const u=bridgeRing[(i+bridgeRing.length-1)%bridgeRing.length],w=bridgeRing[(i+1)%bridgeRing.length];
+  const a=Math.atan2(v[1]-u[1],v[0]-u[0]),c=Math.atan2(w[1]-v[1],w[0]-v[0]);return Math.abs(Math.atan2(Math.sin(c-a),Math.cos(c-a)))>Math.PI/6;});
+ const endDist=(e:Pt)=>Math.min(...corners.map(v=>{const dx=e[0]-v[0],dz=e[1]-v[1];return Math.max(Math.abs(dx*gx+dz*gz)-3.85,Math.abs(dx*gz-dz*gx)-2.2);}));
  const ringDist=(e:Pt)=>{let d=Infinity;for(let i=0;i<bridgeRing.length;i++){const u=bridgeRing[i],v=bridgeRing[(i+1)%bridgeRing.length];d=Math.min(d,segDist(e[0],e[1],u[0],u[1],v[0],v[1]));}return d;};
  // rail: a railway guard wall (and its cap round a rail's end): beside the girders (within 2 m of the deck) it stops at the deck's underside, so
  // the girder stands clear to its end and its pier (R-pt2-d); elsewhere it has no parapet, the bank's vegetation on its top instead
@@ -280,7 +285,7 @@ export function cutWalls(b:Batch,ground:Pick<Terrain,'heightAt'>,openRails:reado
   // end in the pier's sandstone, carrying it down to the pavement (R-pt2-d: x about 1000-1135); King's Place and the railway's walls a pink-brown sandstone
   // rubble (R-pt2-d, right of the pier); the Bank's west wall dark grey (R-pt2-d, left)
   const atEnd=rail&&endDist(m)<0;
-  const tone=under?(atEnd?K.pier:K.render):warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
+  const tone=under?(atEnd?K.pierShade:K.render):warm?(n%3?K.rubbleWarm:K.rubbleWarmDark):(n%3?K.rubble:K.rubbleDark);
   stoneWall(under&&veg?veg:b,[p[0]-dir[0]*.18,p[1]-dir[1]*.18],[q[0]+dir[0]*.18,q[1]+dir[1]*.18],inner-C.sink-.3,top,.35,rgb(tone),out,batter,under);n++;
   if(!under&&(rail||batter>0)&&!(rail&&ringDist(m)<3.2))growth(p,q,out,top,batter*(top-inner+C.sink+.3),rail?2:.75);
  };
