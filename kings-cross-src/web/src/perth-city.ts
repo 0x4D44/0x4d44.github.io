@@ -68,10 +68,28 @@ export const PERTH_CITY_STONE = 0x949aa8, PERTH_CITY_ASHLAR = 0xb8c4e2;
  *  (lead's ruling: Perth's own materials only), so the town reads through it by contrast: St John's spire in a darker lead `spire`
  *  (from 0x6e7479), the town's slate roofs `roofs` of their shared tone, and the road bridges' stone `bridges` of the ashlar, so the
  *  dark roofs, the spire and the bridges stand off the pale walls and the haze. ASSUMED tones. */
-export const TOWN_LOOK = {spire: 0x6e7479, roofs: .72, bridges: .7} as const;
+export const TOWN_LOOK = {spire: 0x7a8086, roofs: 1.6, bridges: .7} as const;
 /** Round 9 (round-8 score: the dark spire sank into the darker roofs round it, and C2 lost the gain): the spire back to round 7's
  *  0x6e7479, a mid-grey lead that stands lighter than the darkened roofs; the clearer air (station-weather.ts PERTH_CLEAR_AIR) now
- *  carries it against the sky. */
+ *  carries it against the sky.
+ *  Round 13, variant (c) (round-12 score, C5: the roofs rendered near black, sRGB about [33-45] at Bridgend; R-pt3-d's slate is dark to
+ *  mid grey, about [70-100]): the roofs 1.6 of the shared slate (were 0.72), and the spire lifted to 0x7a8086 (from 0x6e7479) so it
+ *  stays at least 3 times the roofs' tint. 0x7a8086, about [122, 128, 134], is weathered lead's pale grey; neither 46028 nor 155
+ *  resolves the spire, so the tone is ASSUMED, kept within a grey step of round 9's. */
+/** Round 12 (round-11 score, C5 co-minimum: the roofscape read as one near-black mass at panorama and street distance; R-pt3-d shows
+ *  Perth's roofs in dark and pale weathered slate, blue-grey and brown-grey, with a few warm clay roofs among them). The shared builder
+ *  gives each block one of 13 small slate shifts (0.82-1.06 of one grey, waverley-city.ts); Perth maps each shift to one of `tones`
+ *  (linear multipliers on the darkened slate, by a hash of the shift), so neighbouring roofs differ in value and hue. ASSUMED tones,
+ *  by eye against R-pt3-d. Perth's own mesh; no triangles. */
+export const PERTH_ROOF_TONES = [[.8, .82, .9], [1, 1, 1.04], [1.3, 1.3, 1.3], [1.6, 1.58, 1.55], [1.2, 1.08, .95], [1.15, 1.15, 1.25], [1.75, 1.15, .85]] as const;
+const roofHash = (a: number) => { const s = Math.sin(a * 91.7 + 3.1) * 43758.5453; return s - Math.floor(s); };
+/** The tone index for a block's slate shift `f` (its vertex colour's red, 0.82-1.06). */
+export const perthRoofTone = (f: number): number => Math.floor(roofHash(Math.round(f * 50)) * PERTH_ROOF_TONES.length);
+function varyPerthRoofs(g: THREE.BufferGeometry): void {
+  const c = g.getAttribute('color') as THREE.BufferAttribute | undefined; if (!c) return;
+  for (let i = 0; i < c.count; i++) { const t = PERTH_ROOF_TONES[perthRoofTone(c.getX(i))]!; c.setXYZ(i, c.getX(i) * t[0], c.getY(i) * t[1], c.getZ(i) * t[2]); }
+  c.needsUpdate = true;
+}
 /** The city mesh names; the tops are a roof for the cover map (cover.ts ROOF_MESHES). */
 export const PERTH_CITY_MESHES = {walls: 'perth-city-walls', ashlar: 'perth-city-ashlar', tops: 'perth-city-roofs', shops: 'perth-city-shops'} as const;
 /** Perth's shop streets: the mapped carriageways of the main classes (primary to tertiary, 8.5 m and over) and the pedestrian High
@@ -93,7 +111,7 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   fabric.group.name = 'perth-city'; take(fabric);
   // the town's roofs darker (TOWN_LOOK.roofs): their material is this build's own clone of the shared slate
   const roofs = fabric.group.getObjectByName(PERTH_CITY_MESHES.tops) as THREE.Mesh | undefined;
-  if (roofs) (roofs.material as THREE.MeshLambertMaterial).color.multiplyScalar(TOWN_LOOK.roofs);
+  if (roofs) { (roofs.material as THREE.MeshLambertMaterial).color.multiplyScalar(TOWN_LOOK.roofs); varyPerthRoofs(roofs.geometry); }
   const buildingIds = [...fabric.buildingIds], heightBasis = {...fabric.heightBasis};
   // the ground cover, trees and the Tay, over the drawn ground
   const mask = perthFrontageGroundMask(stationOutline(data)?.outer);

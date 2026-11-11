@@ -53,13 +53,43 @@ export const RIVER_END = {run: 450} as const;
  *  vertices cannot carry fields. ASSUMED sizes and tones, by eye against 155. No triangles; the town is inside the terrain and
  *  untouched. */
 export const LAND_FIELDS = {size: [210, 150] as const, turn: .35,
-  tones: [[1, 1, 1], [.85, 1.12, .75], [.7, .8, .65], [1.1, 1.15, .95], [1.45, 1.25, .95], [1.05, .85, .7]] as const} as const;
+  tones: [[1, 1, 1], [.85, 1.12, .75], [.7, .8, .65], [1.1, 1.15, .95], [1.25, 1.15, .92], [1.05, .85, .7], [1.18, 1.06, .84]] as const,
+  spread: [.55, 1.6] as const, hedge: 4, hedgeTone: [.42, .52, .36] as const, hedgeMix: .45, hedgeKeep: .6, near: .6, nearTo: [2500, 4500] as const} as const;
+/** Round 13 (round-12 score, C2/C6: the hedgerows read as broad, evenly spaced ruled lines, a graph-paper grid from the cliff, and
+ *  nearly every near field the same pale green). Each boundary stretch (one field's end, one field's side) carries a hedgerow only by
+ *  a hash under `hedgeKeep`, so the lines break; they are narrower (`hedge` 5 -> 4 m) and lighter (`hedgeMix` 0.85 -> 0.45); a
+ *  stubble tone joins the palette; and the near fields keep 0.6 of their contrast (was 0.5). ASSUMED, by eye against 155 and 8703. */
+/** Round 12 (round-11 score, C2/C6: near the eye the fields were a hard, high-contrast checkerboard of equal rectangles, the fawn read
+ *  yellow, and there were no hedgerows, as 155 shows). Each row's fields are `spread` (min, max) times `size[0]` long, by a hash per
+ *  row, so the sizes vary; the fawn is toned down (1.45 -> 1.25 red); a dark hedgerow or tree belt `hedge` m wide (never under about
+ *  a pixel, so it does not shimmer) runs along every field boundary, `hedgeMix` of the way to `hedgeTone`; and the field tones are
+ *  only `near` of their contrast at `nearTo[0]` m from the eye, full by `nearTo[1]`. ASSUMED, by eye against 155. */
 const fieldHash = (a: number) => { const s = Math.sin(a) * 43758.5453; return s - Math.floor(s); };
+/** The field at (x, z): row j, field i, the row's field length, and the position across the field (u, v in m): the shader's formula. */
+function fieldCell(x: number, z: number): {i: number; j: number; len: number; fu: number; fv: number} {
+  const F = LAND_FIELDS, c = Math.cos(F.turn), s = Math.sin(F.turn), u = x * c - z * s, v = x * s + z * c;
+  const j = Math.floor(v / F.size[1]), len = F.size[0] * (F.spread[0] + (F.spread[1] - F.spread[0]) * fieldHash(j * 3.71 + 1.3));
+  const w = u + fieldHash(j * 7.13) * len, i = Math.floor(w / len);
+  return {i, j, len, fu: w - i * len, fv: v - j * F.size[1]};
+}
 /** The field (index into LAND_FIELDS.tones) at (x, z): the shader's own formula. */
 export function landField(x: number, z: number): number {
-  const F = LAND_FIELDS, c = Math.cos(F.turn), s = Math.sin(F.turn), u = x * c - z * s, v = x * s + z * c;
-  const j = Math.floor(v / F.size[1]), i = Math.floor((u + fieldHash(j * 7.13) * F.size[0]) / F.size[0]);
+  const F = LAND_FIELDS, {i, j} = fieldCell(x, z);
   return Math.min(F.tones.length - 1, Math.floor(fieldHash(i * 127.1 + j * 311.7) * F.tones.length));
+}
+/** The field length (m, along its row) at (x, z). */
+export const landFieldLength = (x: number, z: number): number => fieldCell(x, z).len;
+/** Whether (x, z) lies on a hedgerow (within LAND_FIELDS.hedge / 2 m of a field boundary). */
+export function landHedge(x: number, z: number): boolean {
+  const F = LAND_FIELDS, {i, j, len, fu, fv} = fieldCell(x, z);
+  const ib = fu < len / 2 ? i : i + 1, jb = fv < F.size[1] / 2 ? j : j + 1;
+  const eu = fieldHash(ib * 17.3 + j * 5.1) < F.hedgeKeep ? Math.min(fu, len - fu) : 1e4, ev = fieldHash(i * 3.3 + jb * 41.7) < F.hedgeKeep ? Math.min(fv, F.size[1] - fv) : 1e4;
+  return Math.min(eu, ev) < F.hedge / 2;
+}
+/** How much of the field tones' contrast shows at `d` m from the eye: the shader's own formula. */
+export function fieldContrast(d: number): number {
+  const F = LAND_FIELDS, t = Math.max(0, Math.min(1, (d - F.nearTo[0]) / (F.nearTo[1] - F.nearTo[0])));
+  return F.near + (1 - F.near) * t * t * (3 - 2 * t);
 }
 /** Fade a Lambert material into the fog colour with view depth (LAND_HAZE); with `fields`, lay LAND_FIELDS outside `inside` (x0, z0,
  *  x1, z1; null: everywhere). */
@@ -68,18 +98,24 @@ export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonl
   m.onBeforeCompile = shader => {
     if (fields) {
       const box = fields.inside, skip = box ? `if (vFieldPos.x > ${f(box[0])} && vFieldPos.x < ${f(box[2])} && vFieldPos.y > ${f(box[1])} && vFieldPos.y < ${f(box[3])}) k = vec3(1.0);` : '';
-      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFieldPos;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;');
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFieldPos;\nvarying float vFieldDepth;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;\n  vFieldDepth = -mvPosition.z;');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
 varying vec2 vFieldPos;
+varying float vFieldDepth;
 float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('#include <color_fragment>', `#include <color_fragment>
   {
     float c = ${f(Math.cos(F.turn))}, s = ${f(Math.sin(F.turn))};
     float u = vFieldPos.x * c - vFieldPos.y * s, v = vFieldPos.x * s + vFieldPos.y * c;
-    float j = floor(v / ${f(F.size[1])}), i = floor((u + perthFieldHash(j * 7.13) * ${f(F.size[0])}) / ${f(F.size[0])});
+    float j = floor(v / ${f(F.size[1])}), len = ${f(F.size[0])} * (${f(F.spread[0])} + ${f(F.spread[1] - F.spread[0])} * perthFieldHash(j * 3.71 + 1.3));
+    float w = u + perthFieldHash(j * 7.13) * len, i = floor(w / len), fu = w - i * len, fv = v - j * ${f(F.size[1])};
     int t = int(min(${F.tones.length - 1}.0, floor(perthFieldHash(i * 127.1 + j * 311.7) * ${F.tones.length}.0)));
     vec3 tones[${F.tones.length}] = vec3[${F.tones.length}](${F.tones.map(t => `vec3(${t.map(f).join(', ')})`).join(', ')});
-    vec3 k = tones[t];
+    vec3 k = mix(vec3(1.0), tones[t], ${f(F.near)} + ${f(1 - F.near)} * smoothstep(${f(F.nearTo[0])}, ${f(F.nearTo[1])}, vFieldDepth));
+    float ib = fu < 0.5 * len ? i : i + 1.0, jb = fv < ${f(F.size[1] / 2)} ? j : j + 1.0;
+    float eu = perthFieldHash(ib * 17.3 + j * 5.1) < ${f(F.hedgeKeep)} ? min(fu, len - fu) : 1e4, ev = perthFieldHash(i * 3.3 + jb * 41.7) < ${f(F.hedgeKeep)} ? min(fv, ${f(F.size[1])} - fv) : 1e4;
+    float edge = min(eu, ev), hw = max(${f(F.hedge / 2)}, 0.5 * fwidth(u + v));
+    k = mix(k, vec3(${F.hedgeTone.map(f).join(', ')}), ${f(F.hedgeMix)} * (1.0 - smoothstep(0.5 * hw, 1.5 * hw, edge)));
     ${skip}
     diffuseColor.rgb *= k;
   }`);

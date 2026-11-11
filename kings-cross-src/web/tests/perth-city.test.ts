@@ -9,7 +9,7 @@ import { PERTH_CITY_EXTENT, PERTH_CITY_LIDAR_SOURCE, PERTH_LIDAR_HEIGHTS, PERTH_
 import { inPerthFrontageGroundMask, perthFrontageGroundMask } from '../src/perth-frontage-mask.ts';
 import { stationOutline } from '../src/perth-station.ts';
 import { CRAG_KEEP, KINNOULL_TOWER, KIRK_TOWER, TOWER_LOOK, kinnoullTower, SHORE, SHORE_BREAK, SHORE_SHEEN, shoreBreak, shoreRise, shoreSheen,WATER_GRADE, waterGrade, VIADUCT_FORM, VIADUCT_LOOK, PIER_FORM, waterLevel, PERTH_DRAPE, PERTH_LANDUSE, PERTH_LANDUSE_BRIDGES, TAY_VIADUCT, WATER, tayViaduct } from '../src/perth-city-features.ts';
-import { PERTH_CITY_ASHLAR, PERTH_CITY_MESHES, PERTH_CITY_STONE, TOWN_LOOK, perthBuildingHeight } from '../src/perth-city.ts';
+import { PERTH_CITY_ASHLAR, PERTH_CITY_MESHES, PERTH_CITY_STONE, TOWN_LOOK, PERTH_ROOF_TONES, perthBuildingHeight, perthRoofTone } from '../src/perth-city.ts';
 import { WAVERLEY_CITY_ASHLAR, WAVERLEY_CITY_STONE } from '../src/waverley-city.ts';
 import { CLIFF_EYE, CLIFF_PAINT, CRAG, KINNOULL_EYE, KINNOULL_PEAK, SIGHT, WOODLAND, cliffPaintCells, kinnoullCrag, onCliff, sightHeight } from '../src/perth-woodland.ts';
 import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinnoullCanopy } from '../src/perth-canopy.ts';
@@ -17,7 +17,7 @@ import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinno
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
-import { EAST_SKIRT, LAND_FIELDS, LAND_HAZE, landField,PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
+import { EAST_SKIRT, LAND_FIELDS, LAND_HAZE, fieldContrast, landField, landFieldLength, landHedge, PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch, material } from '../src/materials.ts';
 import { GROUND_COLOURS } from '../src/waverley-city-ground.ts';
@@ -707,6 +707,18 @@ test('the land past the terrain is a patchwork of fields, greens and fawns, not 
   const T = LAND_FIELDS.tones;
   assert.ok(T.filter(t => t[1] >= 1.05).length >= 2 && T.some(t => t[0] > t[1] && t[0] > 1.2), 'greens and a fawn');
   assert.ok(LAND_FIELDS.size.every(v => v >= 100 && v <= 400), 'fields 100-400 m, as farmland');
+  // round 12 (round-11 score: an equal-rectangle checkerboard, hard near the eye, a yellow fawn, no hedgerows): field lengths vary
+  // (over 1.8 times from shortest to longest over the plain), dark hedgerows along the boundaries (4-15% of the plain), the near
+  // contrast at most 0.6 of the far, and no tone over 1.3 times the base in any channel
+  const lens = new Set<number>(), hedges = { n: 0, of: 0 };
+  for (let x = -2000; x < 1000; x += 37) for (let z = 1000; z < 4000; z += 41) { lens.add(Math.round(landFieldLength(x, z))); hedges.of++; if (landHedge(x, z)) hedges.n++; }
+  assert.ok(Math.max(...lens) > 1.8 * Math.min(...lens) && lens.size > 10, `field lengths: ${Math.min(...lens)}-${Math.max(...lens)}, ${lens.size} distinct`);
+  assert.ok(hedges.n > hedges.of * .015 && hedges.n < hedges.of * .15, `hedgerows: ${hedges.n} of ${hedges.of}`); // round 13: floor 4% -> 1.5% (DECLARED: broken, narrower hedgerows)
+  // round 13 (round-12 score: ruled lines): broken, about `hedgeKeep` of the boundary stretches carry one, lighter than round 12
+  { let keep = 0, of = 0; for (let k = 0; k < 2000; k++) { of++; if (((s: number) => s - Math.floor(s))(Math.sin(k * 17.3 + 3 * 5.1) * 43758.5453) < LAND_FIELDS.hedgeKeep) keep++; }
+    assert.ok(LAND_FIELDS.hedgeKeep >= .4 && LAND_FIELDS.hedgeKeep <= .8 && keep > of * .35 && keep < of * .85 && LAND_FIELDS.hedgeMix <= .5, `broken hedgerows: ${keep} of ${of} stretches`); }
+  assert.ok(LAND_FIELDS.hedgeTone.every(v => v < .6) && LAND_FIELDS.hedgeTone[1] > LAND_FIELDS.hedgeTone[0] && LAND_FIELDS.hedgeTone[1] > LAND_FIELDS.hedgeTone[2], 'hedgerows dark green');
+  assert.ok(fieldContrast(2000) <= .6 && fieldContrast(5000) === 1 && T.every(t => t.every(v => v <= 1.3)), `near contrast ${fieldContrast(2000)}`);
   // drawn in the apron's and the east skirt's shaders (the east patch itself is left alone), after the vertex colour
   for (const [name, box] of [['perth-main-apron', false], ['perth-east-ground', true]] as const) {
     const m = (scene.group.getObjectByName(name) as THREE.Mesh).material as THREE.MeshLambertMaterial;
@@ -714,6 +726,7 @@ test('the land past the terrain is a patchwork of fields, greens and fawns, not 
     m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
     const f = shader.fragmentShader;
     assert.ok(f.indexOf('diffuseColor.rgb *= k;') > f.indexOf('#include <color_fragment>') && shader.vertexShader.includes('vFieldPos = (modelMatrix'), `${name}: fields`);
+    assert.ok(f.includes(`vec3(${LAND_FIELDS.hedgeTone.map(v => v.toFixed(4)).join(', ')})`) && f.includes('fwidth(u + v)') && shader.vertexShader.includes('vFieldDepth = -mvPosition.z;'), `${name}: hedgerows and near contrast`);
     const E = PERTH_EAST_FILE.extent;
     assert.equal(f.includes(`vFieldPos.x > ${E.x0.toFixed(4)} && vFieldPos.x < ${E.x1.toFixed(4)}`), box, `${name}: the patch itself ${box ? 'left alone' : '-'}`);
   }
@@ -915,9 +928,30 @@ test('the town reads through the haze from the summit: a dark lead spire, darker
   // at least 3 times their tint (the roofs' slate map, which node does not build, only darkens them further; the spire has no map)
   const sp = lin((spire.material as THREE.MeshLambertMaterial).color), rf = lin((roofs.material as THREE.MeshLambertMaterial).color);
   assert.ok(!(spire.material as THREE.MeshLambertMaterial).map && sp > rf * 3, `the spire against the roofs: ${sp.toFixed(3)} vs ${rf.toFixed(3)}`);
-  assert.ok(lin((roofs.material as THREE.MeshLambertMaterial).color) <= lin(slate) * .8, 'the roofs darker than the shared slate');
+  // round 14 graft of round 13 variant (c), DECLARED (round-12 score's ruling: the roofs may be lifted to the photographs' value,
+  // under its four conditions; round-13 score accepted 1.6): the ceiling 0.8 -> 1.6 of the shared slate's tint; and a new floor on
+  // roof/wall contrast, the roofs' tint at most 0.35 of the walls' (PERTH_CITY_STONE), so they stay clearly darker than the facades.
+  // The spire >= 3x check above is unchanged (the spire is lifted instead)
+  assert.ok(lin((roofs.material as THREE.MeshLambertMaterial).color) <= lin(slate) * 1.6 + 1e-9, 'the roofs no lighter than 1.6 of the shared slate\'s tint');
+  assert.ok(rf <= .35 * lin(new THREE.Color(PERTH_CITY_STONE)), `roofs against walls: ${rf.toFixed(3)} vs ${lin(new THREE.Color(PERTH_CITY_STONE)).toFixed(3)}`);
   assert.ok(lin((material('slate') as THREE.MeshLambertMaterial).color) > lin((roofs.material as THREE.MeshLambertMaterial).color), 'the shared slate itself untouched');
   const masonry = scene.group.getObjectByName('perth-city-masonry') as THREE.Mesh, col = masonry.geometry.getAttribute('color'); let bridge = 0;
   for (let i = 0; i < col.count; i++) if (Math.abs(col.getX(i) - TOWN_LOOK.bridges) < 1e-4 && Math.abs(col.getZ(i) - TOWN_LOOK.bridges) < 1e-4) bridge++;
   assert.ok(TOWN_LOOK.bridges <= .75 && bridge > 500, `the road bridges in darker stone: ${bridge} vertices`);
+});
+
+test('the roofscape varies roof to roof: dark and pale slate, blue-grey and brown-grey, a few warm clay roofs (R-pt3-d; round 12, C5)', () => {
+  const roofs = scene.group.getObjectByName(PERTH_CITY_MESHES.tops) as THREE.Mesh, c = roofs.geometry.getAttribute('color');
+  const tones = new Map<string, number>(), L: number[] = []; let warm = 0;
+  for (let i = 0; i < c.count; i += 3) {
+    const r = c.getX(i), g = c.getY(i), b = c.getZ(i); L.push(.2126 * r + .7152 * g + .0722 * b);
+    const k = `${r.toFixed(2)},${g.toFixed(2)},${b.toFixed(2)}`; tones.set(k, (tones.get(k) ?? 0) + 1); if (r > 1.25 * b) warm++;
+  }
+  L.sort((a, b) => a - b); const q = (f: number) => L[Math.floor(f * (L.length - 1))]!;
+  assert.ok(tones.size >= 8 && q(.9) > 1.5 * q(.1), `roof tones: ${tones.size}, luma q10 ${q(.1).toFixed(2)}, q90 ${q(.9).toFixed(2)}`);
+  // no one tone is most of the town, and the warm clay roofs are a few, not many
+  assert.ok(Math.max(...tones.values()) < L.length * .35, `the commonest tone: ${Math.max(...tones.values())} of ${L.length}`);
+  assert.ok(warm > L.length * .03 && warm < L.length * .25, `warm roofs: ${warm} of ${L.length}`);
+  // every tone in PERTH_ROOF_TONES is used
+  assert.equal(new Set(Array.from({length: 13}, (_, k) => perthRoofTone(.82 + k * .02))).size, PERTH_ROOF_TONES.length, 'every roof tone used');
 });
