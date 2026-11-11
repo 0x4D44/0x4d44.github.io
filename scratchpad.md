@@ -3,6 +3,12 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
+- [ ] 2026-11-11 — `kings-cross-src/web/src/train.ts:flankTop` (AT300 lamp cluster flank stop, about lines 1662–1686) is dead code for every
+  shipped kind (lner5, lner9, hull5, lumo5). The window stays at least 0.113 m inside the stop. Five mutants there survive the round-6
+  trainweb run as equivalent; a scratch probe showed identical vertices to 1e-7 m. A control showed the stop first bites at FLANK_FRACTION 0.88
+  (the code uses 0.8). Either drop the stop and its mutants, or add a kind or test case where it bites. Inference: it dates from round 5's window
+  change (bc930eb1).
+
 - [ ] 2026-10-31 — `plan-to-build/index.html:film3D` (the tour's `wk` keys): polish the independent review left as it is. (1) Z+35.3 to 36.9: between
   BATH and BED 1 the head faces the corridor's blank north wall 0.5 m away for about 1.6 s (no room is in view); a heading of about 150 on the
   35.8 key looks down the corridor but needs a slower pan (it would be 67 deg/s over one second). (2) Z+38.9 to 41.0: the pan crosses the
