@@ -860,10 +860,15 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
   for (let d = 0, open = -1; d <= 260; d += 1) { const w = along(BE, BT, d) !== null; if (w && open < 0) open = d; if (!w && open >= 0) { runs.push([open, d - 1]); open = -1; } }
   assert.ok(runs.length >= 2 && runs[1]![1] - runs[1]![0] > 60, `the near channel and the main channel: ${JSON.stringify(runs)}`);
   const near = runs[0]!, main = runs[1]!, kinds = (cs: ReturnType<typeof mirrorAt>[]) => new Set(cs.map(c => c.kind));
-  // the main channel mirrors the far bank and the town; the near channel the island's bank and trees
-  const mainHits = Array.from({length: 20}, (_, i) => mirrorAt(map, along(BE, BT, main[0] + (main[1] - main[0]) * (i + .5) / 20)!, BE));
+  // the main channel mirrors the far bank and the town, over five lines of sight across the frame (one alone may look down a street
+  // between the blocks); the near channel the island's bank and trees
+  const mainHits = [-160, -80, 0, 80, 160].flatMap(o => {
+    const to = [BT[0] + o * .225, BT[1], BT[2] + o * .974] as const, wet: number[] = [];
+    for (let d = main[0] - 20; d <= main[1] + 20; d++) if (along(BE, to, d) !== null && d > near[1] + 10) wet.push(d);
+    return Array.from({length: 8}, (_, i) => mirrorAt(map, along(BE, to, wet[Math.floor((i + .5) / 8 * wet.length)]!)!, BE));
+  });
   const nearHits = Array.from({length: 8}, (_, i) => mirrorAt(map, along(BE, BT, near[0] + (near[1] - near[0]) * (i + .5) / 8)!, BE));
-  assert.ok(mainHits.filter(h => h.cover > .5).length >= 15 && [...kinds(mainHits)].some(k => k === 'stone' || k === 'bank' || k === 'tree' || k === 'roof'), `main channel: ${mainHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
+  assert.ok(mainHits.filter(h => h.cover > .5).length >= .7 * mainHits.length && [...kinds(mainHits)].some(k => k === 'stone' || k === 'bank' || k === 'tree' || k === 'roof'), `main channel: ${mainHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
   assert.ok(nearHits.filter(h => h.cover > .5 && (h.kind === 'tree' || h.kind === 'bank')).length >= 6, `near channel: ${nearHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
   // and the mirror is stronger far out than near the eye (Fresnel), but never takes the near channel's water away (round 13's loss):
   // there the sheet's graded tone, leaning to the mirrored one, still reads as water by round 13's own test (sRGB: blue over red + 15,
@@ -904,6 +909,32 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
   assert.equal(mirrorWeight(.05, TAY_MIRROR.fade[1]), 0); assert.ok(mirrorWeight(.05, 100) > .6 * TAY_MIRROR.strength);
   // every class the map holds has a tone, and the water's own hue is kept (the tone leans, it does not replace)
   assert.ok(TAY_MIRROR.strength < .8 && MIRROR_CLASSES.slice(1).every(c => typeof (TAY_MIRROR.tones as Record<string, string>)[c] === 'string'));
+});
+
+test('the Tay\'s mirrored edges run straight down the water, not in stairs (round 15, C3; lead review of the first prediction)', () => {
+  // the mirror's cover over Bridgend's near channel as pt-tay-from-bridgend frames it (1280 x 800, fov 50), every pixel of a 640 px
+  // wide band: an edge of a mirrored tree or bank keeps its column from row to row, as a reflected vertical edge must
+  const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh;
+  const map = buildTayMirror(scene.group, water, PERTH_LANDUSE.extent, (x, z) => scene.terrain.heightAt(x, z) + PERTH_DRAPE);
+  const eye = [954, -1.52, -300] as const, cam = new THREE.PerspectiveCamera(50, 1280 / 800, .5, 5000);
+  cam.position.set(...eye); cam.lookAt(0, 8, -80); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  const ray = new THREE.Raycaster(), X0 = 200, X1 = 840, rows: number[][] = [];
+  for (let y = 575; y < 690; y += 1) {
+    const row: number[] = [];
+    for (let x = X0; x < X1; x++) {
+      ray.setFromCamera(new THREE.Vector2((x + .5) / 1280 * 2 - 1, 1 - (y + .5) / 800 * 2), cam);
+      const h = ray.intersectObject(water, false)[0];
+      row.push(h ? mirrorAt(map, [h.point.x, h.point.y, h.point.z], eye).cover : NaN);
+    }
+    rows.push(row);
+  }
+  // the edges in each row (cover changing by over 0.15 between neighbours, the local peak), matched to the nearest edge in the next row
+  const edges = rows.map(r => r.flatMap((c, i) => { const d = Math.abs((r[i + 1] ?? c) - c), l = Math.abs(c - (r[i - 1] ?? c)), n = Math.abs((r[i + 2] ?? c) - (r[i + 1] ?? c)); return d > .15 && d >= l && d >= n ? [i] : []; }));
+  const shifts: number[] = [];
+  for (let y = 0; y + 1 < edges.length; y++) for (const x of edges[y]!) { const m = edges[y + 1]!.reduce((b, e) => Math.abs(e - x) < Math.abs(b - x) ? e : b, Infinity); if (Math.abs(m - x) <= 8) shifts.push(Math.abs(m - x)); }
+  const mean = shifts.reduce((a, b) => a + b, 0) / shifts.length, moving = shifts.filter(d => d >= 2).length / shifts.length;
+  assert.ok(shifts.length > 200, `edges traced down the near channel: ${shifts.length}`);
+  assert.ok(mean < .5 && moving < .1, `edge shift row to row: mean ${mean.toFixed(2)} px, ${(100 * moving).toFixed(0)}% move 2 px or more`);
 });
 
 test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {

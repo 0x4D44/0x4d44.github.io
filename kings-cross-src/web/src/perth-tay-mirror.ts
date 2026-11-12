@@ -167,7 +167,7 @@ export function mirrorAt(map: MirrorMap, p: readonly [number, number, number], e
   const along = (p[0] * ux + p[2] * uz) / M.grain, across = (p[0] * -uz + p[2] * ux) / (M.grain * M.stretch);
   const k = (eye[1] - p[1]) / D * (1 + M.jitter * (2 * mirrorNoise(along, across) - 1)), lowK = k * (1 - M.ripple), span = 2 * M.ripple * k;
   const top = map.datum + 255 * M.unit, tones = MIRROR_TONES_LINEAR, by: number[] = MIRROR_CLASSES.map(() => 0), tone: [number, number, number] = [0, 0, 0];
-  let s = M.first, acc = 0;
+  let t = mirrorFirst(D), s = t - D, acc = 0;
   const take = (cls: number, f: number) => { by[cls]! += f; for (let c = 0; c < 3; c++) tone[c] += f * tones[cls]![c]!; acc += f; };
   for (let n = 0; n < M.steps && s <= M.reach && acc < .99; n++) {
     const yl = p[1] + lowK * s, w = span * s; if (yl > top) break;
@@ -178,7 +178,7 @@ export function mirrorAt(map: MirrorMap, p: readonly [number, number, number], e
       const f = Math.max(0, Math.min(1, (stand - yl) / w)); if (f > acc) take(cl[c]!, f - acc);
       if (cl[c + 1]!) { const lo = map.datum + cl[c + 2]! * M.unit, hi = map.datum + cl[c + 3]! * M.unit, o = Math.max(0, Math.min(1, (Math.min(hi, yl + w) - Math.max(lo, yl)) / w)); if (o > 0) take(cl[c + 1]!, o * (1 - acc)); }
     }
-    s += Math.max(M.step, s * M.grow);
+    t += Math.max(M.step, t * M.grow); s = t - D;
   }
   if (acc <= 0) return none;
   const best = by.indexOf(Math.max(...by));
@@ -191,6 +191,13 @@ export function mirrorHeights(map: MirrorMap, qx: number, qz: number): number {
   const i = Math.min(map.cols - 2, Math.floor(u)), j = Math.min(map.rows - 2, Math.floor(v)), fu = u - i, fv = v - j, d = map.heights;
   const a = d[(j * map.cols + i) * 4]!, b = d[(j * map.cols + i + 1) * 4]!, c = d[((j + 1) * map.cols + i) * 4]!, e = d[((j + 1) * map.cols + i + 1) * 4]!;
   return map.datum + ((a * (1 - fu) + b * fu) * (1 - fv) + (c * (1 - fu) + e * fu) * fv) * TAY_MIRROR.unit;
+}
+/** The first sample's distance from the eye for a fragment `d` m off: the first point of the march's lattice (every TAY_MIRROR.step m
+ *  out to step / grow m, then growing by `grow` each step) at least `first` m beyond the fragment. The lattice is the eye's, not the
+ *  fragment's, so neighbouring fragments on one line of sight sample the same ground: no stepped edges. */
+export function mirrorFirst(d: number): number {
+  const M = TAY_MIRROR, a = d + M.first, knee = M.step / M.grow;
+  return a <= knee ? Math.ceil(a / M.step) * M.step : knee * (1 + M.grow) ** Math.ceil(Math.log(a / knee) / Math.log(1 + M.grow));
 }
 /** TAY_MIRROR's tones in linear light, by class code (none first). */
 export const MIRROR_TONES_LINEAR: readonly (readonly [number, number, number])[] = MIRROR_CLASSES.map(c => {
@@ -229,7 +236,10 @@ vec4 perthMirrorAt(vec3 p, vec3 eye) {
   float along = dot(p.xz, u) / ${f(M.grain)}, across = dot(p.xz, vec2(-u.y, u.x)) / ${f(M.grain * M.stretch)};
   float k = (eye.y - p.y) / D * (1.0 + ${f(M.jitter)} * (2.0 * mirrorNoise(vec2(along, across)) - 1.0));
   float lowK = k * ${f(1 - M.ripple)}, span = ${f(2 * M.ripple)} * k;
-  float s = ${f(M.first)}, acc = 0.0; vec3 tone = vec3(0.0);
+  // the samples sit on one lattice of distances from the eye (every step m, then grow), not from the fragment: so every fragment
+  // under one line of sight tries the same points, and a mirrored edge stays one straight line down the water, not a staircase
+  float a = D + ${f(M.first)}, t = a <= ${f(M.step / M.grow)} ? ceil(a / ${f(M.step)}) * ${f(M.step)} : ${f(M.step / M.grow)} * pow(${f(1 + M.grow)}, ceil(log(a / ${f(M.step / M.grow)}) / ${f(Math.log(1 + M.grow))}));
+  float s = t - D, acc = 0.0; vec3 tone = vec3(0.0);
   for (int n = 0; n < ${M.steps}; n++) {
     if (s > ${f(M.reach)} || acc >= 0.99) break;
     float yl = p.y + lowK * s, w = span * s; if (yl > ${f(map.datum + 255 * M.unit)}) break;
@@ -244,7 +254,7 @@ vec4 perthMirrorAt(vec3 p, vec3 eye) {
         float o = clamp((min(hi, yl + w) - max(lo, yl)) / w, 0.0, 1.0); if (o > 0.0) { tone += o * (1.0 - acc) * perthMirrorTone(c.g); acc += o * (1.0 - acc); }
       }
     }
-    s += max(${f(M.step)}, s * ${f(M.grow)});
+    t += max(${f(M.step)}, t * ${f(M.grow)}); s = t - D;
   }
   if (acc <= 0.0) return vec4(0.0);
   float fade = 1.0 - smoothstep(${f(M.fade[0])}, ${f(M.fade[1])}, D);
