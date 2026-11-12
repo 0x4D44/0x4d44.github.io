@@ -6,15 +6,21 @@ import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as StationData} from '../../core/waverley-data.ts';
 import {terrainFromFunction} from '../../core/terrain.ts';
 import type {Terrain} from '../../core/terrain.ts';
+import type {KxData} from '../../core/osm.ts';
+import {railShapes,shapeFrom,shapeKey} from '../../core/curves.ts';
+import {waverleyTrackData} from '../../core/waverley-anchors.ts';
 import {Batch} from './materials.ts';
+import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS,cleanRing} from './waverley-mesh.ts';
 
 export type TrackSegment=[ax:number,az:number,bx:number,bz:number];
+/** A rail drawn as surface train track: not a tram, a tunnel or below ground. */
+const drawnRail=(r:StationData['rails'][number]):boolean=>!(r.tags.railway!=='rail'||r.tags.tram==='yes'||r.tags.tunnel&&r.tags.tunnel!=='no'||Number(r.tags.layer??0)<0);
 /** No tram/tunnel is drawn as a surface train track, nor a duplicate junction edge. */
 export function stationTrackSegments(data:Pick<StationData,'rails'>):TrackSegment[] {
  const out:TrackSegment[]=[],seen=new Set<string>();
  for(const r of data.rails){
-  if(r.tags.railway!=='rail'||r.tags.tram==='yes'||r.tags.tunnel&&r.tags.tunnel!=='no'||Number(r.tags.layer??0)<0)continue;
+  if(!drawnRail(r))continue;
   for(let i=1;i<r.path.length;i++){
    const a=r.path[i-1],b=r.path[i];if(a[0]===b[0]&&a[1]===b[1])continue;
    const keys=[a.join(','),b.join(',')].sort(),key=keys.join('|');if(seen.has(key))continue;seen.add(key);out.push([...a,...b]);
@@ -93,8 +99,86 @@ export function stationRailwayIntrusions(data:Pick<StationData,'rails'|'platform
  }).map(b=>b.id);
 }
 /** A flat strip of `halfWidth` either side of a→b at height y, its UVs in plan metres. */
-export function railStrip(batch:Batch,a:Pt,b:Pt,halfWidth:number,y:number):void {
- const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(!length)return;
- const nx=-dz/length*halfWidth,nz=dx/length*halfWidth;
- batch.quadUV([a[0]+nx,y,a[1]+nz],[a[0]-nx,y,a[1]-nz],[b[0]-nx,y,b[1]-nz],[b[0]+nx,y,b[1]+nz],[[a[0],a[1]],[a[0],a[1]],[b[0],b[1]],[b[0],b[1]]],[0,1,0]);
+export function railStrip(batch:Batch,a:Pt,b:Pt,halfWidth:number,y:number):void {railRibbon(batch,[a,b],halfWidth,y);}
+/**
+ * The unit normal (left of the direction of travel) at each point of a polyline, scaled for a mitred joint: at an interior point it is
+ * the bisector of the two pieces' normals divided by the cosine of half the turn, so a line offset along it by d stays d from both
+ * pieces. A zero-length piece is skipped; a polyline of fewer than two distinct points has no normals (empty).
+ */
+function mitreNormals(pts:readonly Pt[]):Pt[] {
+ const n:(Pt|undefined)[]=[];
+ for(let i=0;i+1<pts.length;i++){const a=pts[i],b=pts[i+1],dx=b[0]-a[0],dz=b[1]-a[1],l=Math.hypot(dx,dz);n.push(l?[-dz/l,dx/l]:undefined);}
+ const before=(i:number):Pt|undefined=>{for(let j=i-1;j>=0;j--)if(n[j])return n[j];return undefined;};
+ const after=(i:number):Pt|undefined=>{for(let j=i;j<n.length;j++)if(n[j])return n[j];return undefined;};
+ if(!n.some(v=>v))return [];
+ return pts.map((_,i)=>{
+  const p=before(i),q=after(i);if(!p||!q)return (p??q) as Pt;
+  const mx=p[0]+q[0],mz=p[1]+q[1],ml=Math.hypot(mx,mz);if(ml<1e-9)return p;
+  const c=(mx*p[0]+mz*p[1])/ml;return [mx/ml/c,mz/ml/c];
+ });
+}
+/** The polyline offset `d` to its left (mitred: see mitreNormals). */
+export function offsetLine(pts:readonly Pt[],d:number):Pt[] {
+ const n=mitreNormals(pts);return n.length?pts.map((p,i)=>[p[0]+n[i][0]*d,p[1]+n[i][1]*d]):[];
+}
+/**
+ * A flat strip of `halfWidth` either side of the polyline `pts` at height y, its UVs in plan metres: one quad per piece, the pieces
+ * meeting at mitred joints so the strip has no gap or overlap at a turn. Two points draw exactly railStrip's quad.
+ */
+export function railRibbon(batch:Batch,pts:readonly Pt[],halfWidth:number,y:number):void {
+ const n=mitreNormals(pts);if(!n.length)return;
+ for(let i=0;i+1<pts.length;i++){
+  const a=pts[i],b=pts[i+1];if(a[0]===b[0]&&a[1]===b[1])continue;
+  const ax=n[i][0]*halfWidth,az=n[i][1]*halfWidth,bx=n[i+1][0]*halfWidth,bz=n[i+1][1]*halfWidth;
+  batch.quadUV([a[0]+ax,y,a[1]+az],[a[0]-ax,y,a[1]-az],[b[0]-bx,y,b[1]-bz],[b[0]+bx,y,b[1]+bz],[[a[0],a[1]],[a[0],a[1]],[b[0],b[1]],[b[0],b[1]]],[0,1,0]);
+ }
+}
+/** The rails of a scene as the track graph's data: exactly waverleyTrackData's nodes and rails (its node ids, its layers), so a graph
+ *  built on it (buildGraph(stationTrackData(data), {curves: true})) is the live graph, and its curves are the ones drawn. */
+export function stationTrackData(data:Pick<StationData,'rails'>):Pick<KxData,'nodes'|'rails'> {
+ const {nodes,rails}=waverleyTrackData({origin:{lat:0,lon:0},attribution:'',rails:data.rails,platforms:[]});return {nodes,rails};
+}
+/** The drawn track's centre lines, one per drawn segment (the segments stationTrackSegments draws, by node pair): with `curves`, the
+ *  faired curves (core/curves.ts) that buildGraph(stationTrackData(data), {curves: true}) carries, so a train's edgePoint lies on the
+ *  drawn line; without, the chord. The curves are built on all the rails (a tunnel or tram still shapes a junction it meets), and `keep`
+ *  picks the rails drawn. */
+export function stationTrackCurves(data:Pick<StationData,'rails'>,opts:{curves?:boolean;keep?:(r:StationData['rails'][number])=>boolean}={}):Pt[][] {
+ const kx=stationTrackData(data),shapes=opts.curves===false?undefined:railShapes(kx),pos=new Map<number,Pt>();
+ for(const [id,x,z]of kx.nodes)pos.set(id,[x,z]);
+ // waverleyTrackData numbers the rails in id order (core/waverley-anchors.ts), so kx.rails[i] is the i-th rail by id
+ const sorted=[...data.rails].sort((a,b)=>a.id.localeCompare(b.id)),out:Pt[][]=[],seen=new Set<string>();
+ sorted.forEach((r,i)=>{
+  if(!drawnRail(r)||opts.keep&&!opts.keep(r))return;
+  const nodes=kx.rails[i].nodes;
+  for(let j=1;j<nodes.length;j++){
+   const a=nodes[j-1],b=nodes[j],pa=pos.get(a) as Pt,pb=pos.get(b) as Pt;if(a===b||pa[0]===pb[0]&&pa[1]===pb[1])continue;
+   const key=shapeKey(a,b);if(seen.has(key))continue;seen.add(key);
+   out.push(shapes?shapeFrom(shapes,a,b) as Pt[]:[pa,pb]);
+  }
+ });
+ return out;
+}
+/** The pieces of centre lines as segments (for the station-floor flattening and the railway footprint). */
+export const lineSegments=(lines:readonly (readonly Pt[])[]):TrackSegment[]=>lines.flatMap(l=>l.slice(1).map((b,i):TrackSegment=>[...l[i],...b]).filter(s=>s[0]!==s[2]||s[1]!==s[3]));
+/** A station's track dimensions (WAVERLEY_LEVELS, PERTH_LEVELS). */
+export interface TrackLevels {ballastHalfWidth:number;railHalfGauge:number;railHeadWidth:number}
+/** Sleeper spacing (m) and the first one's distance from a segment's start. ASSUMED, as the levels. */
+export const SLEEPER_SPACING=.65;
+/**
+ * Ballast, the two rail heads and the sleepers along each centre line: ribbons on the polyline, sleepers every SLEEPER_SPACING of arc
+ * length (from half a spacing in, each line on its own), each square to the piece it stands on. `rails` gets each rail head's centre line
+ * (for the distant-rail lines). A two-point line draws what the chord-by-chord drawing did, sleeper for sleeper.
+ */
+export function addTrackLines(lines:readonly (readonly Pt[])[],levels:TrackLevels,out:{ballast:Batch;rails:Batch;sleepers:V3[];railLines?:Pt[][]}):void {
+ const offset=levels.railHalfGauge+levels.railHeadWidth/2;
+ for(const line of lines){
+  railRibbon(out.ballast,line,levels.ballastHalfWidth,-.14);
+  for(const side of [-1,1]){const r=offsetLine(line,side*offset);railRibbon(out.rails,r,levels.railHeadWidth/2,0);out.railLines?.push(r);}
+  let s=SLEEPER_SPACING/2,start=0;
+  for(let i=0;i+1<line.length;i++){
+   const [ax,az]=line[i],[bx,bz]=line[i+1],dx=bx-ax,dz=bz-az,length=Math.hypot(dx,dz);
+   for(;s<start+length;s+=SLEEPER_SPACING)out.sleepers.push([ax+dx*(s-start)/length,Math.atan2(dx,dz),az+dz*(s-start)/length]);
+   start+=length;
+  }
+ }
 }

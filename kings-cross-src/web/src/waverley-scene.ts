@@ -17,7 +17,7 @@ import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import {Batch, material, terrainMaterial} from './materials.ts';
 import type {V3} from './materials.ts';
 import {WAVERLEY_LEVELS,meshAdder} from './waverley-mesh.ts';
-import {RAILWAY_OVERLAP_TOLERANCE,railStrip,stationGround,stationRailwayFootprint,stationRailwayIntrusions,stationTrackSegments} from './station-railway.ts';
+import {RAILWAY_OVERLAP_TOLERANCE,addTrackLines,lineSegments,stationGround,stationRailwayFootprint,stationRailwayIntrusions,stationTrackCurves,stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
 import {buildWaverleyStation,WAVERLEY_STATION_ROOF_ID,WAVERLEY_STATION_OMIT_IDS} from './waverley-station.ts';
 import {buildWaverleyFrontage,WAVERLEY_FRONTAGE_OMIT_IDS} from './waverley-frontage.ts';
@@ -42,6 +42,8 @@ export interface WaverleyOptions {
  /** Default true; hide mapped roof for track/platform inspection without removing its floor mask. */
  roofVisible?:boolean;
  cityVisible?:boolean;
+ /** Default true: draw the track on the live graph's faired curves (core/curves.ts); false draws the OSM chords. */
+ curves?:boolean;
 }
 export interface WaverleyScene {
  group:THREE.Group;
@@ -68,7 +70,8 @@ export {RAILWAY_OVERLAP_TOLERANCE};
 export const waverleyRailwayFootprint=(data:WaverleyData):Pt[][]=>stationRailwayFootprint(data);
 /** The mapped city blocks that stand on the railway (station-railway.ts stationRailwayIntrusions). */
 export const waverleyRailwayIntrusions=(data:WaverleyData,footprint:readonly Pt[][]=waverleyRailwayFootprint(data)):string[]=>stationRailwayIntrusions(data,footprint);
-const strip=railStrip;
+/** The drawn track's centre lines (station-railway.ts stationTrackCurves): the faired curves by default, the chords with curves false. */
+export const waverleyTrackLines=(data:WaverleyData,curves=true):Pt[][]=>stationTrackCurves(data,{curves});
 
 /** Lazy import contract: const {buildWaverleyScene}=await import('./waverley-scene.ts'); const w=buildWaverleyScene(); scene.add(w.group); */
 export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
@@ -95,16 +98,10 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  // polygons; real roads/parks are not classified by this context-only DTM.
  groundMaterial.color.setHex(0x757568);ownedMaterials.add(groundMaterial);
  const terrainMesh=new THREE.Mesh(tg,groundMaterial);terrainMesh.name='waverley-ground';terrain.add(terrainMesh);geometries.add(tg);stats.triangles+=tm.triangles;stats.drawCalls++;
- const ballast=new Batch(),rails=new Batch(),lines:number[]=[],sleepers:V3[]=[];
- for(const [ax,az,bx,bz]of waverleyTrackSegments(data)){
-  const a:Pt=[ax,az],b:Pt=[bx,bz],dx=bx-ax,dz=bz-az,length=Math.hypot(dx,dz),nx=-dz/length,nz=dx/length;
-  strip(ballast,a,b,WAVERLEY_LEVELS.ballastHalfWidth,-.14);
-  for(const side of [-1,1]){
-   const offset=side*(WAVERLEY_LEVELS.railHalfGauge+WAVERLEY_LEVELS.railHeadWidth/2),r0:Pt=[ax+nx*offset,az+nz*offset],r1:Pt=[bx+nx*offset,bz+nz*offset];
-   strip(rails,r0,r1,WAVERLEY_LEVELS.railHeadWidth/2,0);lines.push(r0[0],.004,r0[1],r1[0],.004,r1[1]);
-  }
-  for(let s=.325;s<length;s+=.65)sleepers.push([ax+dx*s/length,Math.atan2(dx,dz),az+dz*s/length]);
- }
+ // The drawn centre lines are the live graph's curves (edinburgh-live.ts builds it with {curves: true} on the same rails).
+ const ballast=new Batch(),rails=new Batch(),lines:number[]=[],sleepers:V3[]=[],railLines:Pt[][]=[];
+ addTrackLines(waverleyTrackLines(data,options.curves!==false),WAVERLEY_LEVELS,{ballast,rails,sleepers,railLines});
+ for(const [ax,az,bx,bz]of lineSegments(railLines))lines.push(ax,.004,az,bx,.004,bz);
  add(track,ballast,material('ballast'),'waverley-ballast');add(track,rails,material('steel'),'waverley-rail-heads');
  if(lines.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(lines,3));geometries.add(g);const lineMaterial=new THREE.LineBasicMaterial({color:0xc3c8cc});ownedMaterials.add(lineMaterial);const m=new THREE.LineSegments(g,lineMaterial);m.name='waverley-distant-rails';track.add(m);stats.drawCalls++;}
  if(sleepers.length){

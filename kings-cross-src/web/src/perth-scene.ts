@@ -16,7 +16,7 @@ import {createTerrain} from '../../core/terrain.ts';
 import type {Extent, Terrain, TerrainFile} from '../../core/terrain.ts';
 import {Batch, material} from './materials.ts';
 import {meshAdder} from './waverley-mesh.ts';
-import {stationGround} from './station-railway.ts';
+import {stationGround, stationTrackCurves} from './station-railway.ts';
 import {addWaverleyLights} from './station-weather.ts';
 import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthGlazing, perthTrack, stationOutline} from './perth-station.ts';
 import {PERTH_ERA} from './perth-station-structure.ts';
@@ -62,6 +62,8 @@ export interface PerthOptions {
   cityVisible?: boolean;
   /** Which Perth the station draws (perth-station-structure.ts PERTH_ERA): default 'pre-2012', without the south lift bridge. */
   era?: PerthEra;
+  /** Default false (Perth unchanged): draw the track on the faired curves (station-railway.ts stationTrackCurves) instead of the chords. */
+  curves?: boolean;
 }
 export interface PerthScene {
   group: THREE.Group;
@@ -97,7 +99,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   for (const [key, value] of Object.entries(parts)) { value.name = `perth-${key}`; group.add(value); }
 
   const ground = addPerthGround(build, field, terrain);
-  addPerthTrack(build, track, trackGroup);
+  addPerthTrack(build, track, trackGroup, options.curves ? stationTrackCurves(data) : undefined);
   const era = options.era ?? PERTH_ERA;
   addPerthPlatforms(build, data, platforms, era);
   // The roof part: the station's glazed roof (P1) and the town's mapped roofs (P3), with one shared fascia draw, station's first.

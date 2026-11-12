@@ -52,7 +52,7 @@ export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMa
 
 export function createEdinburghMotion(geometry: unknown, value: unknown,
   serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined) {
-  const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry)), graph = buildGraph(data);
+  const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry)), graph = buildGraph(data, { curves: true });
   const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
   const motion = createMotion(graph, anchors, { lengthM: kinds.lengthM,
     // ASSUMED conservative station speed until a sourced local restriction table exists.

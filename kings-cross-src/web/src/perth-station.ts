@@ -14,7 +14,7 @@ import {paintMaterial} from './waverley-station-structure.ts';
 import {islandBuildingBatches, PERTH_DIAL, PERTH_PAINT, PERTH_RAMP_FENCE, perthRoofOver, platformParts, titeRoofBatches, PERTH_ROOF_RIDGE, PERTH_STATION, perthStationBatches, perthStationPlan, toWorld} from './perth-station-structure.ts';
 import type {PerthEra, PerthStationBatches} from './perth-station-structure.ts';
 import {PERTH_ERA} from './perth-station-structure.ts';
-import {railStrip, stationTrackSegments} from './station-railway.ts';
+import {addTrackLines, stationTrackSegments} from './station-railway.ts';
 import type {TrackSegment} from './station-railway.ts';
 import type {PerthBuild} from './perth-scene.ts';
 
@@ -241,19 +241,13 @@ export const PERTH_STATION_ROOF_HEIGHT = Math.fround(PERTH_ROOF_RIDGE);
 /** ASSUMED fascia depth (m) of the station roof and the town's mapped roofs (perth-city.ts addPerthMappedRoofs). */
 export const PERTH_FASCIA = .6;
 
-/** Track: ballast, rail heads and sleepers on every surface segment; a deck under the bridge segments. */
-export function addPerthTrack(build: PerthBuild, track: {ground: TrackSegment[]; bridge: TrackSegment[]}, group: THREE.Group): void {
+/** Track: ballast, rail heads and sleepers on every surface segment (station-railway.ts addTrackLines); a deck under the bridge segments.
+ *  `curves` (opt-in, PerthOptions.curves): draw the ballast, rails and sleepers on these centre lines (stationTrackCurves) instead of the
+ *  chords; the decks stay on the chords. */
+export function addPerthTrack(build: PerthBuild, track: {ground: TrackSegment[]; bridge: TrackSegment[]}, group: THREE.Group, curves?: readonly (readonly Pt[])[]): void {
   const {add, stats, geometries} = build;
   const ballast = new Batch(), rails = new Batch(), deck = new Batch(), sleepers: V3[] = [];
-  for (const [ax, az, bx, bz] of [...track.ground, ...track.bridge]) {
-    const a: Pt = [ax, az], b: Pt = [bx, bz], dx = bx - ax, dz = bz - az, length = Math.hypot(dx, dz), nx = -dz / length, nz = dx / length;
-    railStrip(ballast, a, b, PERTH_LEVELS.ballastHalfWidth, -.14);
-    for (const side of [-1, 1]) {
-      const offset = side * (PERTH_LEVELS.railHalfGauge + PERTH_LEVELS.railHeadWidth / 2);
-      railStrip(rails, [ax + nx * offset, az + nz * offset], [bx + nx * offset, bz + nz * offset], PERTH_LEVELS.railHeadWidth / 2, 0);
-    }
-    for (let s = .325; s < length; s += .65) sleepers.push([ax + dx * s / length, Math.atan2(dx, dz), az + dz * s / length]);
-  }
+  addTrackLines(curves ?? [...track.ground, ...track.bridge].map(([ax, az, bx, bz]): Pt[] => [[ax, az], [bx, bz]]), PERTH_LEVELS, {ballast, rails, sleepers});
   for (const [ax, az, bx, bz] of track.bridge) {
     const length = Math.hypot(bx - ax, bz - az), cx = (ax + bx) / 2, cz = (az + bz) / 2;
     deck.box([cx, PERTH_LEVELS.deckTop - PERTH_LEVELS.deckDepth / 2, cz], [PERTH_LEVELS.deckHalfWidth * 2, PERTH_LEVELS.deckDepth, length + .02], {rotY: Math.atan2(bx - ax, bz - az)});
