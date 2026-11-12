@@ -4,6 +4,7 @@
 // by the page's own hook (window.__kx.evidenceBuildEdinburgh) and posed by poseCars, which the tests hold to the page's carPoses.
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { shapeFrom } from '../core/curves.ts';
 import { buildGraph } from '../core/graph.ts';
 import { decodeWaverleyAnchorScene, waverleyPlatformGeometry, waverleyTrackData } from '../core/waverley-anchors.ts';
 import { EDINBURGH_FLEET, capturePairFormation } from '../web/src/edinburgh-fleet.ts';
@@ -101,7 +102,7 @@ export function syntheticPlan(sceneJson, timetable) {
 }
 
 export function placeTrains(sceneJson, timetable) {
-  const scene = decodeWaverleyAnchorScene(sceneJson), graph = buildGraph(waverleyTrackData(scene));
+  const scene = decodeWaverleyAnchorScene(sceneJson), graph = buildGraph(waverleyTrackData(scene), { curves: true });
   const platforms = new Map(waverleyPlatformGeometry(scene).map((p) => [p.ref, p]));
   return timetable.trains.map((entry) => {
     const { id, kind, platform, heading } = entry, speedMps = entry.speedMps ?? 0;
@@ -112,10 +113,13 @@ export function placeTrains(sceneJson, timetable) {
     if (!track) throw new Error(`synthetic Waverley ${id}: platform ${platform} has no screened track`);
     const reach = speedMps > 0 ? SYNTHETIC_REACH.movingM : SYNTHETIC_REACH.standingM;
     const back = walk(graph, track.to, track.from, reach, SYNTHETIC_REACH.maxTurnDeg), ahead = walk(graph, track.from, track.to, reach, SYNTHETIC_REACH.maxTurnDeg);
-    let points = [...back.reverse(), track.from, track.to, ...ahead].map((n) => [...graph.pos.get(n)]), at = back.length + track.t;
-    if ((heading === 'east') !== (points.at(-1)[0] > points[0][0])) { points = points.reverse(); at = points.length - 1 - at; }
-    // the middle of the train: the screened point of the platform's track, moved offsetM along the heading (to keep clear of a converging track)
-    const cum = cumulative(points), i = Math.floor(at), centreS = cum[i] + (at - i) * ((cum[i + 1] ?? cum[i]) - cum[i]) + (entry.offsetM ?? 0);
+    let nodes = [...back.reverse(), track.from, track.to, ...ahead], at = back.length + track.t;
+    if ((heading === 'east') !== (graph.pos.get(nodes.at(-1))[0] > graph.pos.get(nodes[0])[0])) { nodes = nodes.reverse(); at = nodes.length - 1 - at; }
+    // the route runs on the curves the page draws and the live graph carries (edinburgh-live.ts, {curves: true}): each edge's curve, joined at the nodes
+    const points = [[...shapeFrom(graph.shapes, nodes[0], nodes[1])[0]]], atNode = [0];
+    for (let k = 0; k + 1 < nodes.length; k++) { points.push(...shapeFrom(graph.shapes, nodes[k], nodes[k + 1]).slice(1).map((p) => [...p])); atNode.push(points.length - 1); }
+    // the middle of the train: the screened point of the platform's track (a share t of its edge's curve, as edgePoint reads it), moved offsetM along the heading
+    const cum = cumulative(points), i = Math.floor(at), si = cum[atNode[i]], centreS = si + (at - i) * ((cum[atNode[i + 1]] ?? si) - si) + (entry.offsetM ?? 0);
     const layout = syntheticLayout(kind), noseS = centreS + layout.length / 2, routeM = cum.at(-1);
     if (noseS - layout.length < 0 || noseS > routeM) throw new Error(`synthetic Waverley ${id}: ${kind} (${layout.length.toFixed(1)} m) does not fit the ${routeM.toFixed(0)} m route at platform ${platform}`);
     return { id, kind, platform, heading, speedMps, lengthM: layout.length, cars: layout.cars, noseS, loop: null, route: { points, cum } };
