@@ -847,6 +847,9 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
   m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
   const fs = shader.fragmentShader, u = shader.uniforms as Record<string, {value: THREE.DataTexture}>;
   assert.ok(fs.indexOf('perthMirrorAt(vMirrorPos, vMirrorEye)') > fs.indexOf('length(vViewPosition)'), 'mirrored after the grade');
+  // laid over the sheet's finished colour (lit and tone-mapped), before the output encoding: the tones are on-screen colours, not paint
+  // to be lit again (round 15 review: the deck's paint, lit twice, read as a white mass)
+  assert.ok(fs.indexOf('perthMirrorAt(vMirrorPos, vMirrorEye)') > fs.indexOf('#include <tonemapping_fragment>') && fs.indexOf('perthMirrorAt(vMirrorPos, vMirrorEye)') < fs.indexOf('#include <colorspace_fragment>'), 'mixed after the tone map, before the encoding');
   assert.ok(shader.vertexShader.includes('vMirrorEye = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz'), 'the eye in the sheet\'s frame');
   assert.ok(fs.includes(`n < ${TAY_MIRROR.steps}`) && fs.includes(`D >= ${TAY_MIRROR.fade[1].toFixed(5)}`), 'the shader marches as TAY_MIRROR says');
   assert.equal(u.perthMirror!.value.image.width, map.cols); assert.equal(u.perthMirror!.value.magFilter, THREE.LinearFilter); assert.equal(u.perthMirrorClass!.value.magFilter, THREE.NearestFilter);
@@ -871,14 +874,15 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
   assert.ok(mainHits.filter(h => h.cover > .5).length >= .7 * mainHits.length && [...kinds(mainHits)].some(k => k === 'stone' || k === 'bank' || k === 'tree' || k === 'roof'), `main channel: ${mainHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
   assert.ok(nearHits.filter(h => h.cover > .5 && (h.kind === 'tree' || h.kind === 'bank')).length >= 6, `near channel: ${nearHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
   // and the mirror is stronger far out than near the eye (Fresnel), but never takes the near channel's water away (round 13's loss):
-  // there the sheet's graded tone, leaning to the mirrored one, still reads as water by round 13's own test (sRGB: blue over red + 15,
-  // blue at least green)
+  // there the sheet as round 15's base frame shows it (the near channel's water pixels, mean sRGB [100, 124, 136]), leaning in linear
+  // light to the mirrored tone as the shader lays it on, still reads as water by round 13's own test (blue over red + 15, blue at
+  // least green)
   const meanW = (hs: ReturnType<typeof mirrorAt>[]) => hs.reduce((a, h) => a + h.weight, 0) / hs.length;
   assert.ok(meanW(mainHits) > .4 && meanW(mainHits) > 1.5 * meanW(nearHits), `weights: main ${meanW(mainHits).toFixed(2)}, near ${meanW(nearHits).toFixed(2)}`);
-  const sheetTone = new THREE.Color(WATER.colour);
+  const sheetTone = new THREE.Color().setRGB(100 / 255, 124 / 255, 136 / 255, THREE.SRGBColorSpace);
   nearHits.forEach((h, i) => {
-    const d = near[0] + (near[1] - near[0]) * (i + .5) / 8, g = waterGrade(d);
-    const c = new THREE.Color(sheetTone.r * g * (1 - h.weight) + h.tone[0] * h.weight, sheetTone.g * g * (1 - h.weight) + h.tone[1] * h.weight, sheetTone.b * g * (1 - h.weight) + h.tone[2] * h.weight);
+    const d = near[0] + (near[1] - near[0]) * (i + .5) / 8;
+    const c = new THREE.Color(sheetTone.r * (1 - h.weight) + h.tone[0] * h.weight, sheetTone.g * (1 - h.weight) + h.tone[1] * h.weight, sheetTone.b * (1 - h.weight) + h.tone[2] * h.weight);
     const [r, gr, b] = c.getStyle().match(/\d+/g)!.map(Number) as [number, number, number];
     assert.ok(b > r + 15 && b >= gr, `the near channel stays water at ${d.toFixed(0)} m: [${r}, ${gr}, ${b}] (weight ${h.weight.toFixed(2)})`);
   });
@@ -935,6 +939,45 @@ test('the Tay\'s mirrored edges run straight down the water, not in stairs (roun
   const mean = shifts.reduce((a, b) => a + b, 0) / shifts.length, moving = shifts.filter(d => d >= 2).length / shifts.length;
   assert.ok(shifts.length > 200, `edges traced down the near channel: ${shifts.length}`);
   assert.ok(mean < .5 && moving < .1, `edge shift row to row: mean ${mean.toFixed(2)} px, ${(100 * moving).toFixed(0)}% move 2 px or more`);
+});
+
+test('a pier\'s image in still water hangs from its waterline and runs the pier\'s height, then the deck (round 15, C3/C4; lead review of the GPU frame)', () => {
+  // pt-tay-viaduct (1280 x 800, fov 50), still water (no ripple, no jitter): down the screen column through each open-water column of
+  // a girder pier, the mirrored stone starts at the pier's own waterline and ends where the cap's top mirrors, as a true mirror
+  // puts them; the round-15 capture showed short grey trapezoids there, the stone's top read off over a cell by the bilinear heights
+  const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh;
+  const map = buildTayMirror(scene.group, water, PERTH_LANDUSE.extent, (x, z) => scene.terrain.heightAt(x, z) + PERTH_DRAPE);
+  const eye = [1078, -1.16, 120] as const, cam = new THREE.PerspectiveCamera(50, 1280 / 800, .5, 5000);
+  cam.position.set(...eye); cam.lookAt(922, -1, -43); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  const lay = tayViaduct(new Batch(), new Batch(), scene.terrain), masonry = scene.group.getObjectByName('perth-city-masonry') as THREE.Mesh;
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), still = {ripple: 0, jitter: 0};
+  const sheetAt = (x: number, z: number): number | null => { ray.set(new THREE.Vector3(x, 50, z), down); const h = ray.intersectObject(water, false)[0]; return h ? h.point.y : null; };
+  const screen = (x: number, y: number, z: number) => { const v = new THREE.Vector3(x, y, z).project(cam); return [(v.x + 1) / 2 * 1280, (1 - v.y) / 2 * 800] as const; };
+  const capTop = VIADUCT_FORM.girder[0]; // the cap course is stone too: the girders sit on it
+  let checked = 0;
+  for (const c of lay.columns) {
+    const d = Math.hypot(c.p[0] - eye[0], c.p[1] - eye[2]), ux = (c.p[0] - eye[0]) / d, uz = (c.p[1] - eye[2]) / d;
+    const fx = c.p[0] - ux * c.diameter / 2, fz = c.p[1] - uz * c.diameter / 2, wl = sheetAt(fx - ux * .5, fz - uz * .5);
+    if (d > 120 || wl === null) continue;
+    const [sx, yw] = screen(fx, wl, fz), [, yc] = screen(fx, 2 * wl - capTop, fz);
+    if (sx < 20 || sx > 1260 || yw < 0 || yc > 800) continue;
+    // the column's foot is in view (the masonry is the first thing the eye meets there)
+    ray.setFromCamera(new THREE.Vector2(sx / 1280 * 2 - 1, 1 - (yw - 3) / 800 * 2), cam);
+    const first = ray.intersectObjects([masonry, water], false)[0]; if (!first || first.object !== masonry) continue;
+    let top = NaN, end = NaN, deck = NaN;
+    for (let y = Math.floor(yw) - 2; y < Math.ceil(yc) + 30; y++) {
+      ray.setFromCamera(new THREE.Vector2(sx / 1280 * 2 - 1, 1 - (y + .5) / 800 * 2), cam);
+      const h = ray.intersectObject(water, false)[0]; if (!h) continue;
+      const m = mirrorAt(map, [h.point.x, h.point.y, h.point.z], eye, still);
+      if (m.kind === 'masonry' && m.cover > .5) { if (Number.isNaN(top)) top = y; end = y; }
+      else if (!Number.isNaN(top) && Number.isNaN(deck) && m.kind === 'paint' && m.cover > .5) deck = y;
+    }
+    assert.ok(Math.abs(top - yw) <= 3, `column at ${c.p.map(v => v.toFixed(0))}: its image starts at ${top} px, its waterline at ${yw.toFixed(0)} px`);
+    assert.ok(Math.abs(end - yc) <= 6, `column at ${c.p.map(v => v.toFixed(0))}: its image ends at ${end} px, the cap top's mirror at ${yc.toFixed(0)} px`);
+    assert.ok(deck - end <= 3, `column at ${c.p.map(v => v.toFixed(0))}: the deck's image follows at ${deck} px`);
+    checked++;
+  }
+  assert.ok(checked >= 2, `columns checked: ${checked}`);
 });
 
 test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {

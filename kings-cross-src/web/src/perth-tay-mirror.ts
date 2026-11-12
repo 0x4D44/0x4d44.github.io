@@ -21,13 +21,16 @@ import * as THREE from 'three';
  *    on moving water); the fan's middle wanders `jitter` of itself over value noise `grain` m along the eye's line and `stretch` times
  *    that across it, so the image breaks into horizontal streaks. A thing whose foot is within `stand` m of the ground stops the fan
  *    from below, as the ground does; one standing clear of it (a girder, a roof over its walls) only takes its own slice of it;
- *  - `tones` (sRGB): what each class of thing looks like in the water, by eye from the model's own render of it at the Tay views, a
- *    little darker (the reflection loses the light that the water takes in). */
+ *  - `tones` (sRGB, as on screen: the mirror is laid over the sheet's finished colour, not lit again): what each class of thing looks
+ *    like in the water, from the model's own render of it at the Tay views (round 15's base frames, the median of a box on each: the
+ *    piers' sunlit stone [69, 57, 43], the girders' lower band [173, 174, 176], island crowns [63, 93, 34], the far bank [62, 83, 44],
+ *    the town's walls [81, 77, 62]), a little darker where the water takes some light in; the roofs' tone is by eye, as before;
+ *  - `edge`: a structure's or a clear thing's footprint is where its bilinear cover passes 0.5, softened `edge` either side. */
 export const TAY_MIRROR = {
   texel: 2, margin: 320, unit: .25, first: 1, step: 1.5, grow: .03, steps: 120, reach: 700, stand: 1,
   f0: .02, fRef: .053, strength: .7, fade: [380, 900] as const,
-  ripple: .22, jitter: .1, grain: 4, stretch: 6,
-  tones: {bank: '#4c5a34', tree: '#33432a', stone: '#837b6c', masonry: '#5f5045', roof: '#4e5358', paint: '#a7acab'},
+  ripple: .22, jitter: .1, grain: 4, stretch: 6, edge: .08,
+  tones: {bank: '#3e5330', tree: '#3a5222', stone: '#5a5649', masonry: '#45392b', roof: '#4e5358', paint: '#9a9c9e'},
 } as const;
 /** The classes, by their code in the map's alpha (0: nothing over the ground). Bank is the drape itself, read from the red channel. */
 export const MIRROR_CLASSES = ['none', 'bank', 'tree', 'stone', 'roof', 'paint', 'masonry'] as const;
@@ -43,12 +46,16 @@ export const MIRROR_THINGS: Readonly<Record<string, Exclude<MirrorClass, 'none' 
 /** Where two classes stand clear of the ground in one cell, the one kept (the viaduct's paint over a road bridge's deck, ...). */
 export const MIRROR_PRIORITY: readonly MirrorClass[] = ['paint', 'masonry', 'stone', 'tree', 'roof'];
 
-/** The height map, `texel` m cells from (x0, z0), rows along z; heights are `datum` + byte x TAY_MIRROR.unit. `heights` (RGBA, read
- *  bilinear, so the images' outlines are smooth, not 2 m steps): R the top of the ground and of whatever stands on it (its foot within
- *  TAY_MIRROR.stand m of the ground: a wall, a pier, a tree). `classes` (RGBA, read nearest): R the class of R's top (MIRROR_CLASSES;
- *  taken from the tallest of the cell and its eight neighbours, so the smooth rise round a pier wears the pier's tone, not the
- *  bank's), G the class of the one thing standing clear of the ground (a girder, a roof over its walls; 0: nothing), B and A its foot
- *  and top. */
+/** The height map, `texel` m cells from (x0, z0), rows along z; heights are `datum` + byte x TAY_MIRROR.unit. Three kinds of thing:
+ *  - the soft ground: the drape and the trees on it, whose top is read bilinear, so a bank or a crown rises smoothly, not in 2 m steps;
+ *  - structures standing on the ground (a wall, a pier: their foot within TAY_MIRROR.stand m of it): a footprint, read as the half-way
+ *    contour of their bilinear cover, so its outline is smooth and it stands straight up to its top, not ramping off over a cell (round
+ *    15 review: the piers' images were short grey trapezoids);
+ *  - one thing standing clear of the ground per cell (a girder, a roof over its walls): a footprint the same way, between a foot and a top.
+ *  `heights` (RGBA, read bilinear): R the soft top, G the share of it that is trees (the tone leans from bank to tree with it), B the
+ *  structures' cover, A the clear thing's cover. `classes` (RGBA, read nearest; each spread to the cell's eight neighbours, so the
+ *  contour, which lies within half a cell of a covered cell, always finds them): R the structure's class + 8 x the clear thing's class
+ *  (MIRROR_CLASSES; 0: none), G the structure's top, B and A the clear thing's foot and top. */
 export interface MirrorMap {x0: number; z0: number; texel: number; cols: number; rows: number; datum: number; heights: Uint8Array; classes: Uint8Array}
 
 type Box = {x0: number; z0: number; x1: number; z1: number};
@@ -126,26 +133,34 @@ export function buildTayMirror(root: THREE.Object3D, water: THREE.Mesh, extent: 
       ? (i, j, _l, h) => { const k = j * cols + i; if (h > top[k]!) top[k] = h; }
       : (i, j, l, h) => { const k = (j * cols + i) * C + rank; if (l < lo[k]!) lo[k] = l; if (h > hi[k]!) hi[k] = h; }));
   }
-  const heights = new Uint8Array(n * 4), classes = new Uint8Array(n * 4), own = new Uint8Array(n), q = (y: number) => Math.max(0, Math.min(255, Math.round((y - datum) / M.unit)));
+  const heights = new Uint8Array(n * 4), classes = new Uint8Array(n * 4), q = (y: number) => Math.max(0, Math.min(255, Math.round((y - datum) / M.unit)));
+  const sTop = new Float32Array(n).fill(-Infinity), sCls = new Uint8Array(n), fLo = new Float32Array(n).fill(Infinity), fHi = new Float32Array(n).fill(-Infinity), fCls = new Uint8Array(n);
+  const tree = MIRROR_PRIORITY.indexOf('tree');
   for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
     const k = j * cols + i, g = top[k]! > -Infinity ? top[k]! : ground(x0 + (i + .5) * T, z0 + (j + .5) * T);
-    let stand = g, standCls = MIRROR_CLASSES.indexOf('bank'), clear = -1;
+    let soft = g, treed = false;
     for (let r = 0; r < C; r++) {
-      if (hi[k * C + r]! === -Infinity) continue;
-      if (lo[k * C + r]! <= g + M.stand) { if (hi[k * C + r]! > stand) { stand = hi[k * C + r]!; standCls = MIRROR_CLASSES.indexOf(MIRROR_PRIORITY[r]!); } }
-      else if (clear < 0) clear = r;
+      const l = lo[k * C + r]!, h = hi[k * C + r]!; if (h === -Infinity) continue;
+      if (l > g + M.stand) { if (!fCls[k]) { fCls[k] = MIRROR_CLASSES.indexOf(MIRROR_PRIORITY[r]!); fLo[k] = l; fHi[k] = h; } continue; }
+      if (r === tree) { if (h > soft) { soft = h; treed = true; } }
+      else if (h > sTop[k]!) { sTop[k] = h; sCls[k] = MIRROR_CLASSES.indexOf(MIRROR_PRIORITY[r]!); }
     }
-    heights[k * 4] = q(stand); own[k] = standCls;
-    if (clear >= 0) { classes[k * 4 + 1] = MIRROR_CLASSES.indexOf(MIRROR_PRIORITY[clear]!); classes[k * 4 + 2] = q(lo[k * C + clear]!); classes[k * 4 + 3] = Math.max(classes[k * 4 + 2]!, q(hi[k * C + clear]!)); }
+    if (sTop[k]! <= soft) { sTop[k] = -Infinity; sCls[k] = 0; }
+    heights[k * 4] = q(soft); heights[k * 4 + 1] = treed ? 255 : 0; heights[k * 4 + 2] = sCls[k] ? 255 : 0; heights[k * 4 + 3] = fCls[k] ? 255 : 0;
   }
-  // the standing class: the tallest of the cell and its neighbours, whose height the bilinear read spreads over the cell
+  // each cell takes its neighbours' structure (the tallest) and clear thing (the first by MIRROR_PRIORITY), for the contour round them
   for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
-    let best = j * cols + i;
+    const own = j * cols + i, rank = (m: number) => MIRROR_PRIORITY.indexOf(MIRROR_CLASSES[fCls[m]!]!);
+    let s = -1, f = fCls[own] ? own : -1;
     for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-      const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= cols || b >= rows) continue;
-      if (heights[(b * cols + a) * 4]! > heights[best * 4]!) best = b * cols + a;
+      const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= cols || b >= rows) continue; const m = b * cols + a;
+      if (sCls[m] && (s < 0 || sTop[m]! > sTop[s]!)) s = m;
+      if (fCls[m] && !fCls[own] && (f < 0 || rank(m) < rank(f))) f = m;
     }
-    classes[(j * cols + i) * 4] = own[best]!;
+    const k = (j * cols + i) * 4;
+    classes[k] = (s >= 0 ? sCls[s]! : 0) + 8 * (f >= 0 ? fCls[f]! : 0);
+    if (s >= 0) classes[k + 1] = q(sTop[s]!);
+    if (f >= 0) { classes[k + 2] = q(fLo[f]!); classes[k + 3] = Math.max(classes[k + 2]!, q(fHi[f]!)); }
   }
   return {x0, z0, texel: T, cols, rows, datum, heights, classes};
 }
@@ -160,23 +175,28 @@ export function mirrorNoise(u: number, v: number): number {
 
 /** What the sheet at `p` mirrors to an eye at `eye` (both Perth frame): the share of its ray fan that meets something (`cover`), the
  *  mean tone of what it meets (linear RGB), the class that gave most of it, and the tone's weight in the water. The shader's own march. */
-export function mirrorAt(map: MirrorMap, p: readonly [number, number, number], eye: readonly [number, number, number]): {cover: number; tone: [number, number, number]; kind: MirrorClass; weight: number} {
+export function mirrorAt(map: MirrorMap, p: readonly [number, number, number], eye: readonly [number, number, number], water: {ripple?: number; jitter?: number} = {}): {cover: number; tone: [number, number, number]; kind: MirrorClass; weight: number} {
   const M = TAY_MIRROR, dx = p[0] - eye[0], dz = p[2] - eye[2], D = Math.hypot(dx, dz), none = {cover: 0, tone: [0, 0, 0] as [number, number, number], kind: 'none' as MirrorClass, weight: 0};
   if (D < 1e-3 || eye[1] <= p[1] || D >= M.fade[1]) return none;
   const ux = dx / D, uz = dz / D;
   const along = (p[0] * ux + p[2] * uz) / M.grain, across = (p[0] * -uz + p[2] * ux) / (M.grain * M.stretch);
-  const k = (eye[1] - p[1]) / D * (1 + M.jitter * (2 * mirrorNoise(along, across) - 1)), lowK = k * (1 - M.ripple), span = 2 * M.ripple * k;
+  const ripple = water.ripple ?? M.ripple, k = (eye[1] - p[1]) / D * (1 + (water.jitter ?? M.jitter) * (2 * mirrorNoise(along, across) - 1)), lowK = k * (1 - ripple), span = Math.max(1e-6, 2 * ripple * k);
   const top = map.datum + 255 * M.unit, tones = MIRROR_TONES_LINEAR, by: number[] = MIRROR_CLASSES.map(() => 0), tone: [number, number, number] = [0, 0, 0];
+  const BANK = MIRROR_CLASSES.indexOf('bank'), TREE = MIRROR_CLASSES.indexOf('tree'), edge = (v: number) => smooth(.5 - M.edge, .5 + M.edge, v);
   let t = mirrorFirst(D), s = t - D, acc = 0;
   const take = (cls: number, f: number) => { by[cls]! += f; for (let c = 0; c < 3; c++) tone[c] += f * tones[cls]![c]!; acc += f; };
   for (let n = 0; n < M.steps && s <= M.reach && acc < .99; n++) {
     const yl = p[1] + lowK * s, w = span * s; if (yl > top) break;
     const qx = (p[0] + ux * s - map.x0) / map.texel, qz = (p[2] + uz * s - map.z0) / map.texel;
     if (qx >= 0 && qz >= 0 && qx < map.cols && qz < map.rows) {
-      const stand = mirrorHeights(map, qx, qz), c = (Math.floor(qz) * map.cols + Math.floor(qx)) * 4, cl = map.classes;
-      // the ground, and what stands on it, stops the fan from below; a thing clear of the ground takes its own slice of it
-      const f = Math.max(0, Math.min(1, (stand - yl) / w)); if (f > acc) take(cl[c]!, f - acc);
-      if (cl[c + 1]!) { const lo = map.datum + cl[c + 2]! * M.unit, hi = map.datum + cl[c + 3]! * M.unit, o = Math.max(0, Math.min(1, (Math.min(hi, yl + w) - Math.max(lo, yl)) / w)); if (o > 0) take(cl[c + 1]!, o * (1 - acc)); }
+      const c = (Math.floor(qz) * map.cols + Math.floor(qx)) * 4, cl = map.classes, sc = cl[c]! % 8, fc = cl[c]! >> 3;
+      // the soft ground and the structures stop the fan from below, whichever stands taller here
+      const fs = Math.max(0, Math.min(1, (mirrorHeights(map, qx, qz) - yl) / w));
+      const fh = sc ? edge(mirrorChannel(map, qx, qz, 2)) * Math.max(0, Math.min(1, (map.datum + cl[c + 1]! * M.unit - yl) / w)) : 0;
+      const f = Math.max(fs, fh);
+      if (f > acc) { if (fh >= fs) take(sc, f - acc); else { const tr = mirrorChannel(map, qx, qz, 1), g = f - acc; take(BANK, g * (1 - tr)); take(TREE, g * tr); } }
+      // the thing clear of the ground takes its own slice of the fan, inside its footprint's contour
+      if (fc) { const lo = map.datum + cl[c + 2]! * M.unit, hi = map.datum + cl[c + 3]! * M.unit, o = edge(mirrorChannel(map, qx, qz, 3)) * Math.max(0, Math.min(1, (Math.min(hi, yl + w) - Math.max(lo, yl)) / w)); if (o > 0) take(fc, o * (1 - acc)); }
     }
     t += Math.max(M.step, t * M.grow); s = t - D;
   }
@@ -184,14 +204,19 @@ export function mirrorAt(map: MirrorMap, p: readonly [number, number, number], e
   const best = by.indexOf(Math.max(...by));
   return {cover: Math.min(1, acc), tone: [tone[0] / acc, tone[1] / acc, tone[2] / acc], kind: MIRROR_CLASSES[best]!, weight: Math.min(1, acc) * mirrorWeight(k, D)};
 }
-/** The standing top (m) at cell coordinates (qx, qz), read bilinear between cell centres and clamped at the edge, as the GPU's linear
+/** The soft top (m) at cell coordinates (qx, qz), read bilinear between cell centres and clamped at the edge, as the GPU's linear
  *  filter reads it. */
 export function mirrorHeights(map: MirrorMap, qx: number, qz: number): number {
+  return map.datum + mirrorChannel(map, qx, qz, 0) * 255 * TAY_MIRROR.unit;
+}
+/** Channel `ch` of the heights texture at cell coordinates (qx, qz), 0 to 1, read as the GPU's linear filter reads it. */
+export function mirrorChannel(map: MirrorMap, qx: number, qz: number, ch: number): number {
   const u = Math.max(0, Math.min(map.cols - 1, qx - .5)), v = Math.max(0, Math.min(map.rows - 1, qz - .5));
   const i = Math.min(map.cols - 2, Math.floor(u)), j = Math.min(map.rows - 2, Math.floor(v)), fu = u - i, fv = v - j, d = map.heights;
-  const a = d[(j * map.cols + i) * 4]!, b = d[(j * map.cols + i + 1) * 4]!, c = d[((j + 1) * map.cols + i) * 4]!, e = d[((j + 1) * map.cols + i + 1) * 4]!;
-  return map.datum + ((a * (1 - fu) + b * fu) * (1 - fv) + (c * (1 - fu) + e * fu) * fv) * TAY_MIRROR.unit;
+  const a = d[(j * map.cols + i) * 4 + ch]!, b = d[(j * map.cols + i + 1) * 4 + ch]!, c = d[((j + 1) * map.cols + i) * 4 + ch]!, e = d[((j + 1) * map.cols + i + 1) * 4 + ch]!;
+  return ((a * (1 - fu) + b * fu) * (1 - fv) + (c * (1 - fu) + e * fu) * fv) / 255;
 }
+const smooth = (a: number, b: number, v: number) => { const t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 /** The first sample's distance from the eye for a fragment `d` m off: the first point of the march's lattice (every TAY_MIRROR.step m
  *  out to step / grow m, then growing by `grow` each step) at least `first` m beyond the fragment. The lattice is the eye's, not the
  *  fragment's, so neighbouring fragments on one line of sight sample the same ground: no stepped edges. */
@@ -245,13 +270,19 @@ vec4 perthMirrorAt(vec3 p, vec3 eye) {
     float yl = p.y + lowK * s, w = span * s; if (yl > ${f(map.datum + 255 * M.unit)}) break;
     vec2 q = (p.xz + u * s - vec2(${f(map.x0)}, ${f(map.z0)})) / ${f(map.texel)};
     if (q.x >= 0.0 && q.y >= 0.0 && q.x < ${f(map.cols)} && q.y < ${f(map.rows)}) {
-      float stand = ${f(map.datum)} + texture2D(perthMirror, q / vec2(${f(map.cols)}, ${f(map.rows)})).r * ${f(255 * M.unit)};
+      vec4 h = texture2D(perthMirror, q / vec2(${f(map.cols)}, ${f(map.rows)}));
       vec4 c = floor(texture2D(perthMirrorClass, (floor(q) + 0.5) / vec2(${f(map.cols)}, ${f(map.rows)})) * 255.0 + 0.5);
-      float f = clamp((stand - yl) / w, 0.0, 1.0);
-      if (f > acc) { tone += (f - acc) * perthMirrorTone(c.r); acc = f; }
-      if (c.g > 0.5) {
+      float sc = mod(c.r, 8.0), fc = floor(c.r / 8.0);
+      // the soft ground and the structures stop the fan from below, whichever stands taller here
+      float fs = clamp((${f(map.datum)} + h.r * ${f(255 * M.unit)} - yl) / w, 0.0, 1.0);
+      float fh = sc > 0.5 ? smoothstep(${f(.5 - M.edge)}, ${f(.5 + M.edge)}, h.b) * clamp((${f(map.datum)} + c.g * ${f(M.unit)} - yl) / w, 0.0, 1.0) : 0.0;
+      float fm = max(fs, fh);
+      if (fm > acc) { tone += (fm - acc) * (fh >= fs ? perthMirrorTone(sc) : mix(perthMirrorTone(1.0), perthMirrorTone(2.0), h.g)); acc = fm; }
+      // the thing clear of the ground takes its own slice of the fan, inside its footprint's contour
+      if (fc > 0.5) {
         float lo = ${f(map.datum)} + c.b * ${f(M.unit)}, hi = ${f(map.datum)} + c.a * ${f(M.unit)};
-        float o = clamp((min(hi, yl + w) - max(lo, yl)) / w, 0.0, 1.0); if (o > 0.0) { tone += o * (1.0 - acc) * perthMirrorTone(c.g); acc += o * (1.0 - acc); }
+        float o = smoothstep(${f(.5 - M.edge)}, ${f(.5 + M.edge)}, h.a) * clamp((min(hi, yl + w) - max(lo, yl)) / w, 0.0, 1.0);
+        if (o > 0.0) { tone += o * (1.0 - acc) * perthMirrorTone(fc); acc += o * (1.0 - acc); }
       }
     }
     t += max(${f(M.step)}, t * ${f(M.grow)}); s = t - D;
@@ -262,7 +293,7 @@ vec4 perthMirrorAt(vec3 p, vec3 eye) {
 }`;
 }
 
-/** Put the mirror on the Tay's (graded) Phong material: after its colour and grade, its diffuse colour leans to the mirrored tone. */
+/** Put the mirror on the Tay's (graded) Phong material: its finished colour (lit and tone-mapped, before the output encoding and the fog) leans to the mirrored tone. */
 export function mirrorWater(m: THREE.MeshPhongMaterial, map: MirrorMap): THREE.DataTexture[] {
   const texture = (bytes: Uint8Array, filter: THREE.MagnificationTextureFilter) => {
     const t = new THREE.DataTexture(bytes, map.cols, map.rows, THREE.RGBAFormat, THREE.UnsignedByteType);
@@ -275,9 +306,11 @@ export function mirrorWater(m: THREE.MeshPhongMaterial, map: MirrorMap): THREE.D
     shader.uniforms.perthMirror = {value: tex}; shader.uniforms.perthMirrorClass = {value: more};
     shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vMirrorPos;\nvarying vec3 vMirrorEye;')
       .replace('#include <project_vertex>', '#include <project_vertex>\n  vMirrorPos = transformed;\n  vMirrorEye = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;');
+    // the mirrored tone is what the thing looks like on screen (linear, after the tone map), so it is laid over the sheet's own finished
+    // colour, not lit again as the sheet's paint (round 15 review: the deck's paint, lit a second time, read as a white mass)
     shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${glsl}`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-  { vec4 mirrored = perthMirrorAt(vMirrorPos, vMirrorEye); diffuseColor.rgb = mix(diffuseColor.rgb, mirrored.rgb, mirrored.a); }`);
+      .replace('#include <colorspace_fragment>', `{ vec4 mirrored = perthMirrorAt(vMirrorPos, vMirrorEye); gl_FragColor.rgb = mix(gl_FragColor.rgb, mirrored.rgb, mirrored.a); }
+  #include <colorspace_fragment>`);
   };
   m.customProgramCacheKey = () => `${key.call(m)}-mirror-${map.cols}x${map.rows}-${JSON.stringify(TAY_MIRROR)}`;
   return [tex, more];
