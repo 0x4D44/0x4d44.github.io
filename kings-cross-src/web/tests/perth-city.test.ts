@@ -17,6 +17,7 @@ import { CANOPY, ISLAND_CANOPY, inEyeClear, isIslandBelt, islandBeltTrees, kinno
 const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs, PERTH_LANDUSE.areas.water));
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
+import { MIRROR_CLASSES, TAY_MIRROR, buildTayMirror, mirrorAt, mirrorHeights, mirrorWeight } from '../src/perth-tay-mirror.ts';
 import { EAST_SKIRT, LAND_FIELDS, LAND_HAZE, fieldContrast, landField, landFieldLength, landHedge, PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch, material } from '../src/materials.ts';
@@ -833,6 +834,76 @@ test('the waterline is softened: the bank just above the water is painted in the
   assert.ok(low.length > 100 && high.length > 100 && mean(low) > 2 * mean(high), `sheen ${mean(low).toFixed(2)} low, ${mean(high).toFixed(2)} high`);
   const as = low.map(c => c.a), sd = Math.sqrt(as.reduce((s, a) => s + (a - mean(low)) ** 2, 0) / as.length);
   assert.ok(sd > .08, `broken sheen: sd ${sd.toFixed(3)}`);
+});
+
+test('the Tay mirrors what is drawn round it: the far bank, the town, the island\'s trees and the viaduct, softly (46028; round 15, C3)', () => {
+  const water = scene.group.getObjectByName('perth-tay-water') as THREE.Mesh, m = water.material as THREE.MeshPhongMaterial;
+  const map = buildTayMirror(scene.group, water, PERTH_LANDUSE.extent, (x, z) => scene.terrain.heightAt(x, z) + PERTH_DRAPE);
+  // two data textures, inside the 2048 px cap, over both Tay views; no triangles, no draws (the cost test counts the city group)
+  assert.ok(map.cols <= 2048 && map.rows <= 2048 && map.heights.length === map.cols * map.rows * 4 && map.classes.length === map.heights.length, `${map.cols} x ${map.rows}`);
+  for (const [x, z] of [[954, -300], [1078, 120], [700, -200]]) assert.ok(x > map.x0 && x < map.x0 + map.cols * map.texel && z > map.z0 && z < map.z0 + map.rows * map.texel, `the map covers ${x}, ${z}`);
+  // the scene's sheet carries it: the march after the grade, on the sheet's own (Perth-frame) position and the eye in the same frame
+  const shader = {fragmentShader: THREE.ShaderLib.phong.fragmentShader, vertexShader: THREE.ShaderLib.phong.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+  m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
+  const fs = shader.fragmentShader, u = shader.uniforms as Record<string, {value: THREE.DataTexture}>;
+  assert.ok(fs.indexOf('perthMirrorAt(vMirrorPos, vMirrorEye)') > fs.indexOf('length(vViewPosition)'), 'mirrored after the grade');
+  assert.ok(shader.vertexShader.includes('vMirrorEye = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz'), 'the eye in the sheet\'s frame');
+  assert.ok(fs.includes(`n < ${TAY_MIRROR.steps}`) && fs.includes(`D >= ${TAY_MIRROR.fade[1].toFixed(5)}`), 'the shader marches as TAY_MIRROR says');
+  assert.equal(u.perthMirror!.value.image.width, map.cols); assert.equal(u.perthMirror!.value.magFilter, THREE.LinearFilter); assert.equal(u.perthMirrorClass!.value.magFilter, THREE.NearestFilter);
+  assert.ok(m.customProgramCacheKey().includes('perth-water-grade') && m.customProgramCacheKey().includes('-mirror-'), 'its own program');
+  // the sheet's height under a point, and the run of water along a line from an eye
+  const ray = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0);
+  const sheetAt = (x: number, z: number): number | null => { ray.set(new THREE.Vector3(x, 50, z), down); const h = ray.intersectObject(water, false)[0]; return h ? h.point.y : null; };
+  const along = (eye: readonly number[], to: readonly number[], d: number): [number, number, number] | null => { const dx = to[0]! - eye[0]!, dz = to[2]! - eye[2]!, L = Math.hypot(dx, dz), x = eye[0]! + dx / L * d, z = eye[2]! + dz / L * d, y = sheetAt(x, z); return y === null ? null : [x, y, z]; };
+  // Bridgend (pt-tay-from-bridgend): the near channel, the island, the main channel to the far bank
+  const BE = [954, -1.52, -300] as const, BT = [0, 8, -80] as const, runs: [number, number][] = [];
+  for (let d = 0, open = -1; d <= 260; d += 1) { const w = along(BE, BT, d) !== null; if (w && open < 0) open = d; if (!w && open >= 0) { runs.push([open, d - 1]); open = -1; } }
+  assert.ok(runs.length >= 2 && runs[1]![1] - runs[1]![0] > 60, `the near channel and the main channel: ${JSON.stringify(runs)}`);
+  const near = runs[0]!, main = runs[1]!, kinds = (cs: ReturnType<typeof mirrorAt>[]) => new Set(cs.map(c => c.kind));
+  // the main channel mirrors the far bank and the town; the near channel the island's bank and trees
+  const mainHits = Array.from({length: 20}, (_, i) => mirrorAt(map, along(BE, BT, main[0] + (main[1] - main[0]) * (i + .5) / 20)!, BE));
+  const nearHits = Array.from({length: 8}, (_, i) => mirrorAt(map, along(BE, BT, near[0] + (near[1] - near[0]) * (i + .5) / 8)!, BE));
+  assert.ok(mainHits.filter(h => h.cover > .5).length >= 15 && [...kinds(mainHits)].some(k => k === 'stone' || k === 'bank' || k === 'tree' || k === 'roof'), `main channel: ${mainHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
+  assert.ok(nearHits.filter(h => h.cover > .5 && (h.kind === 'tree' || h.kind === 'bank')).length >= 6, `near channel: ${nearHits.map(h => h.kind + ' ' + h.cover.toFixed(2)).join(', ')}`);
+  // and the mirror is stronger far out than near the eye (Fresnel), but never takes the near channel's water away (round 13's loss):
+  // there the sheet's graded tone, leaning to the mirrored one, still reads as water by round 13's own test (sRGB: blue over red + 15,
+  // blue at least green)
+  const meanW = (hs: ReturnType<typeof mirrorAt>[]) => hs.reduce((a, h) => a + h.weight, 0) / hs.length;
+  assert.ok(meanW(mainHits) > .4 && meanW(mainHits) > 1.5 * meanW(nearHits), `weights: main ${meanW(mainHits).toFixed(2)}, near ${meanW(nearHits).toFixed(2)}`);
+  const sheetTone = new THREE.Color(WATER.colour);
+  nearHits.forEach((h, i) => {
+    const d = near[0] + (near[1] - near[0]) * (i + .5) / 8, g = waterGrade(d);
+    const c = new THREE.Color(sheetTone.r * g * (1 - h.weight) + h.tone[0] * h.weight, sheetTone.g * g * (1 - h.weight) + h.tone[1] * h.weight, sheetTone.b * g * (1 - h.weight) + h.tone[2] * h.weight);
+    const [r, gr, b] = c.getStyle().match(/\d+/g)!.map(Number) as [number, number, number];
+    assert.ok(b > r + 15 && b >= gr, `the near channel stays water at ${d.toFixed(0)} m: [${r}, ${gr}, ${b}] (weight ${h.weight.toFixed(2)})`);
+  });
+  // the viaduct (pt-tay-viaduct): water just in front of a girder pier mirrors its stone; further out the deck's paint, between the piers
+  const VE = [1078, -1.16, 120] as const, lay = tayViaduct(new Batch(), new Batch(), scene.terrain);
+  // (piers out in open water: the drape lies under the sheet from the pier back towards the eye)
+  const frontOf = (c: {p: readonly number[]; diameter: number}) => along(VE, [c.p[0]!, 0, c.p[1]!], Math.hypot(c.p[0]! - VE[0], c.p[1]! - VE[2]) - c.diameter / 2 - 3);
+  const piers = lay.columns.filter(c => {
+    const f = frontOf(c); if (!f || Math.hypot(c.p[0] - VE[0], c.p[1] - VE[2]) > 300) return false;
+    return [0, 1, 2, 3].every(t => scene.terrain.heightAt(f[0] + (c.p[0] - f[0]) * t / 3, f[2] + (c.p[1] - f[2]) * t / 3) + PERTH_DRAPE < f[1] - .3);
+  });
+  assert.ok(piers.length >= 3, `piers out in the water: ${piers.length}`);
+  for (const c of piers) {
+    const h = mirrorAt(map, frontOf(c)!, VE); assert.ok(h.kind === 'masonry' && h.cover > .5, `in front of the pier at ${c.p.map(v => v.toFixed(0))}: ${h.kind} ${h.cover.toFixed(2)}`);
+  }
+  const [a, b] = [piers[0]!, piers[1]!], mid: [number, number] = [(a.p[0] + b.p[0]) / 2, (a.p[1] + b.p[1]) / 2], dm = Math.hypot(mid[0] - VE[0], mid[1] - VE[2]);
+  const deck = Array.from({length: 40}, (_, i) => along(VE, [mid[0], 0, mid[1]], dm * (i + 1) / 41)).filter(p => p !== null).map(p => mirrorAt(map, p!, VE));
+  assert.ok(deck.some(h => h.kind === 'paint' && h.cover > .3), `the deck's paint in the water between the piers: ${deck.map(h => h.kind).join(' ')}`);
+  // soft, not stepped: the bilinear heights change smoothly across a cell edge
+  const h0 = mirrorHeights(map, 100.49, 200.5), h1 = mirrorHeights(map, 100.51, 200.5);
+  assert.ok(Math.abs(h1 - h0) < .2 * TAY_MIRROR.unit * 255 / 50, `smooth across the cell edge: ${h0.toFixed(2)} ${h1.toFixed(2)}`);
+  // the summit and the landing view see the river 1.4 km and more off: the mirror is gone there, so C2's Tay is unchanged
+  const pos = water.geometry.getAttribute('position');
+  for (const eye of [[2368, 212.7, 208], [101.91, 551.52, 514.8]] as const) for (let i = 0; i < pos.count; i++) {
+    const p: [number, number, number] = [pos.getX(i), pos.getY(i), pos.getZ(i)];
+    if (Math.hypot(p[0] - eye[0], p[2] - eye[2]) >= 1000) assert.equal(mirrorAt(map, p, eye).weight, 0);
+  }
+  assert.equal(mirrorWeight(.05, TAY_MIRROR.fade[1]), 0); assert.ok(mirrorWeight(.05, 100) > .6 * TAY_MIRROR.strength);
+  // every class the map holds has a tone, and the water's own hue is kept (the tone leans, it does not replace)
+  assert.ok(TAY_MIRROR.strength < .8 && MIRROR_CLASSES.slice(1).every(c => typeof (TAY_MIRROR.tones as Record<string, string>)[c] === 'string'));
 });
 
 test('Perth\'s residential land is painted as gardens, darker and broken, not park lawn (round 2, C6)', () => {

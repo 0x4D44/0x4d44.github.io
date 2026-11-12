@@ -15,7 +15,8 @@ import {Footprints} from './waverley-city-ground.ts';
 import {Streets} from './waverley-city-shops.ts';
 import {perthCityHeight, PERTH_LIDAR_LANDMARKS} from './perth-city-heights.ts';
 import {buildPerthCityGround, KINNOULL_TOWER, kinnoullTower, outlookClearings, kirkTower, PERTH_FEATURE_OMIT_IDS, PERTH_LANDUSE_BRIDGES, roadBridge, tayViaduct, VIADUCT_LOOK} from './perth-city-features.ts';
-import {PERTH_LANDUSE} from './perth-city-features.ts';
+import {PERTH_DRAPE, PERTH_LANDUSE} from './perth-city-features.ts';
+import {buildTayMirror, mirrorWater} from './perth-tay-mirror.ts';
 import {stationRailwayIntrusions} from './station-railway.ts';
 import {PERTH_FASCIA, stationOutline} from './perth-station.ts';
 import {inPerthFrontageGroundMask, perthFrontageGroundMask} from './perth-frontage-mask.ts';
@@ -145,6 +146,12 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   add(group, ironwork, iron, 'perth-viaduct-iron');
   add(group, deck, own(material('asphalt').clone()), 'perth-bridge-roads');
   add(group, lead, leadMaterial, 'perth-kirk-spire');
+  // round 15 (C3): the Tay mirrors what is drawn round it (perth-tay-mirror.ts), once everything above is in the group
+  const water = group.getObjectByName('perth-tay-water') as THREE.Mesh | undefined;
+  if (water) {
+    const maps = mirrorWater(water.material as THREE.MeshPhongMaterial, buildTayMirror(group, water, PERTH_LANDUSE.extent, (x, z) => ground.heightAt(x, z) + PERTH_DRAPE));
+    (water.material as THREE.Material).addEventListener('dispose', () => maps.forEach(t => t.dispose()));
+  }
   stats.buildings = buildingIds.length;
   return {buildingIds, heightBasis};
 }
