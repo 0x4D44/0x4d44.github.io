@@ -2,7 +2,8 @@
 // here, for every train at once, in two instanced meshes, so two draws however many trains there are, and no triangle on a car:
 //
 //   the POOL  a soft wedge of warm light on the rails and ballast ahead of a cab end that shows `head`: a faint floor by day, full after dark (`poolStrength`);
-//   the HALO  a soft glow round each lit lens, after dark only (`haloStrength`), except on a cab that carries its own `lamp-halo` children (train-385.ts).
+//   the HALO  a soft glow round each lit lens, after dark only (`haloStrength`), except on a cab that carries its own `lamp-halo` children (train-385.ts). The halos on one side of a cab
+//             end share one halo's strength (`HaloPlacement.share`), and each fades as its lens turns from the eye (`HALO_FACING`, in the shader).
 //
 // No THREE.Light (a light per train would be a shader recompile and a pass per lit train): each is a flat additive quad with a soft falloff texture, which depth-tests against
 // the track and the cars and writes no depth. The PLACEMENT is a pure function of the trains (`poolPlacements`, `haloPlacements`: trains in, instance list out, no state of
@@ -31,9 +32,18 @@ const smooth = (e0: number, e1: number, x: number): number => {
 export const POOL = { length: 30, width: 7.5, y: 0.02, day: 0.05, night: 0.45, hex: LENS.headOn } as const;
 /**
  * The halo of a lit lens: a disc in the lens's plane, `lift` metres in front of it, that reaches `scale` times the lens group's half-width (not under `min`, not over `max`,
- * metres), at `night` strength after dark and none by day. The disc is dark in its middle (the lens keeps its own colour) and fades to nothing at its edge.
+ * metres), at `night` strength after dark and none by day. The disc is dark in its middle (the lens keeps its own colour) and fades to nothing at its edge. The halos on one side of a
+ * cab end share `night` between them (each takes `1 / n`: see `HaloPlacement.share`), because their discs overlap, as the AT300's headlamp and marker array do, and the glow where they
+ * overlap would otherwise be twice `night` and hide the lamps it surrounds.
  */
 export const HALO = { scale: 5, min: 0.35, max: 0.8, lift: 0.03, night: 0.85 } as const;
+/**
+ * How a halo gives way as its lens turns from the eye. The disc stands in its lens's plane, so from the side it is a sliver and from behind it is its back: a flare hanging off the nose
+ * that no lamp throws. The shader scales its strength by smoothstep(`from`, `to`, c), c the cosine of the angle between the lens's normal and the way to the eye: none at `from` and under
+ * (edge-on, or behind), whole from `to` up (facing the eye). `to` is under 0.4 because the AT300's lens groups face about 65 degrees off the nose's axis, so an eye dead ahead sees them at
+ * c = 0.4 and must find them whole. ASSUMED: a look, not a measurement.
+ */
+export const HALO_FACING = { from: 0.1, to: 0.35 } as const;
 
 /** The pool's strength at a night level (trainNight): a faint floor by day, rising to full. */
 export const poolStrength = (night: number): number => POOL.day + (POOL.night - POOL.day) * clamp01(night);
@@ -174,8 +184,11 @@ export function lampEnds(train: THREE.Object3D): LampEnd[] {
 export interface LampTrain { readonly group: THREE.Object3D; readonly opacity?: number }
 /** One pool: its middle (world x, y, z), the heading of its far end (a rotation about y from +z, so the far end lies along (sin, cos) in x and z: not a TrainView's compass bearing), its size, and how opaque its train is. */
 export interface PoolPlacement { end: 'front' | 'rear'; position: [number, number, number]; headingRad: number; length: number; width: number; opacity: number }
-/** One halo: its middle, the quaternion that turns the quad's +z to the way its lens faces, its radius, its colour and how opaque its train is. */
-export interface HaloPlacement { end: 'front' | 'rear'; role: LensRole; position: [number, number, number]; quaternion: [number, number, number, number]; radius: number; hex: number; opacity: number }
+/**
+ * One halo: its middle, the quaternion that turns the quad's +z to the way its lens faces, its radius, its colour, how opaque its train is, and its `share` of the strength: 1 over the number
+ * of halos on its side of its end (1 for a side with one halo), so the halos of a side add up to one halo's strength.
+ */
+export interface HaloPlacement { end: 'front' | 'rear'; role: LensRole; position: [number, number, number]; quaternion: [number, number, number, number]; radius: number; hex: number; opacity: number; share: number }
 
 /**
  * The pools of a set of trains, one for each end that shows `head`, none for any other end: starting at the lamps and reaching `POOL.length` ahead of the end along its car's axis.
@@ -203,7 +216,8 @@ export function poolPlacements(trains: Iterable<LampTrain>): PoolPlacement[] {
 const FORWARD = new THREE.Vector3(0, 0, 1);
 /**
  * The halos of a set of trains: one for each lit lens group (one role on one side of a cab) of an end showing `head` or `tail`, standing `HALO.lift` off the face; none for an
- * unlit end, and none for a cab that carries its own `lamp-halo`. Pure, like `poolPlacements`.
+ * unlit end, and none for a cab that carries its own `lamp-halo`. The halos on one side of an end share one halo's strength: each is given `share`, 1 over how many of them there are on that
+ * side. Pure, like `poolPlacements`.
  */
 export function haloPlacements(trains: Iterable<LampTrain>): HaloPlacement[] {
   const out: HaloPlacement[] = [];
@@ -213,13 +227,13 @@ export function haloPlacements(trains: Iterable<LampTrain>): HaloPlacement[] {
     for (const e of lampEnds(group)) {
       if (e.mode === 'off' || e.ownHalo) continue;
       e.car.updateWorldMatrix(true, false);
-      for (const s of e.sites) {
-        const look = lensLook(s.role, e.mode);
-        if (look.glow !== 2) continue;
+      const glowing = e.sites.map((s) => ({ s, look: lensLook(s.role, e.mode) })).filter(({ look }) => look.glow === 2);
+      for (const { s, look } of glowing) {
         at.copy(s.centre).addScaledVector(s.normal, HALO.lift).applyMatrix4(e.car.matrixWorld);
         facing.copy(s.normal).transformDirection(e.car.matrixWorld);
         q.setFromUnitVectors(FORWARD, facing);
-        out.push({ end: e.end, role: s.role, position: [at.x, at.y, at.z], quaternion: [q.x, q.y, q.z, q.w], radius: Math.min(HALO.max, Math.max(HALO.min, HALO.scale * s.radius)), hex: look.hex, opacity });
+        const share = 1 / glowing.filter((o) => o.s.side === s.side).length;
+        out.push({ end: e.end, role: s.role, position: [at.x, at.y, at.z], quaternion: [q.x, q.y, q.z, q.w], radius: Math.min(HALO.max, Math.max(HALO.min, HALO.scale * s.radius)), hex: look.hex, opacity, share });
       }
     }
   }
@@ -233,11 +247,38 @@ export function haloPlacements(trains: Iterable<LampTrain>): HaloPlacement[] {
  */
 export const LIGHT_CAPACITY = { pool: 128, halo: 512 } as const;
 
+const glslFloat = (x: number): string => (Number.isInteger(x) ? x.toFixed(1) : String(x));
+/**
+ * The lines the halo's shader is given (GLSL as three writes it, so web/tests/glsl.ts can run them). In the vertex shader, after the position is projected: the halo's own centre and its
+ * +z axis (the way its lens faces) in the world, from its instance matrix, and `HALO_FACING` applied to the cosine of that axis against the way to the camera, into a varying that is the
+ * same over the whole quad (it is made from the instance alone). In the fragment shader, after the colour is read: the alpha, which an additive blend multiplies the light by, is scaled by it.
+ * ASSUMED: the material is only ever drawn instanced (the halo mesh): `instanceMatrix` is not declared otherwise.
+ */
+export const HALO_FACING_GLSL = {
+  declare: 'varying float vHaloFacing;',
+  vertex: [
+    'vec3 haloAt = ( modelMatrix * ( instanceMatrix * vec4( 0.0, 0.0, 0.0, 1.0 ) ) ).xyz;',
+    'vec3 haloFace = normalize( ( modelMatrix * ( instanceMatrix * vec4( 0.0, 0.0, 1.0, 0.0 ) ) ).xyz );',
+    `vHaloFacing = smoothstep( ${glslFloat(HALO_FACING.from)}, ${glslFloat(HALO_FACING.to)}, dot( haloFace, normalize( cameraPosition - haloAt ) ) );`,
+  ].join('\n'),
+  fragment: 'diffuseColor.a *= vHaloFacing;',
+} as const;
+/** The halo material's `onBeforeCompile`: `HALO_FACING_GLSL` into three's own MeshBasicMaterial shaders, at the two chunks they are anchored to. */
+function faceTheEye(shader: THREE.WebGLProgramParametersWithUniforms): void {
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', `#include <common>\n${HALO_FACING_GLSL.declare}`)
+    .replace('#include <project_vertex>', `#include <project_vertex>\n${HALO_FACING_GLSL.vertex}`);
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', `#include <common>\n${HALO_FACING_GLSL.declare}`)
+    .replace('#include <color_fragment>', `#include <color_fragment>\n${HALO_FACING_GLSL.fragment}`);
+}
+
 /**
  * The two instanced meshes that draw the light of a scene's trains: `pool` (the quads on the ground) and `halo` (the discs at the lenses), under one `group` to add to the scene.
  * Given the trains once a frame: `begin()`, `add(train, opacity)` for each, `commit()`; `update(trains)` is the three in one. The strengths follow the shared `trainNight`, set at
  * `commit()` and again as each mesh is drawn (its `onBeforeRender`), so a night level set after the commit in the same frame still reaches the draw. Both meshes are additive
- * (`depthWrite` off, a polygon offset, no fog and no tone map, as the other glows are), uncullable (their instances move about the scene) and not pickable.
+ * (`depthWrite` off, a polygon offset, no fog and no tone map, as the other glows are), uncullable (their instances move about the scene) and not pickable. The halo's shader also scales
+ * each disc by how squarely its lens faces the camera (`HALO_FACING_GLSL`).
  */
 export class TrainLampLights {
   readonly group = new THREE.Group();
@@ -263,6 +304,8 @@ export class TrainLampLights {
     this.halo = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), material(haloTexture(), 1, THREE.DoubleSide), this.capacity.halo);
     this.halo.name = 'lamp-glow';
     this.halo.renderOrder = 2;
+    this.halo.material.onBeforeCompile = faceTheEye;
+    this.halo.material.customProgramCacheKey = (): string => `lamp-halo-facing-${HALO_FACING.from}-${HALO_FACING.to}`;
     for (const mesh of [this.pool, this.halo]) {
       mesh.frustumCulled = false;
       mesh.raycast = (): void => {};
@@ -301,7 +344,7 @@ export class TrainLampLights {
     halos.forEach((placement, i) => {
       m.compose(p.set(...placement.position), q.set(...placement.quaternion), s.set(2 * placement.radius, 2 * placement.radius, 1));
       this.halo.setMatrixAt(i, m);
-      this.halo.setColorAt(i, c.setHex(placement.hex).multiplyScalar(placement.opacity));
+      this.halo.setColorAt(i, c.setHex(placement.hex).multiplyScalar(placement.opacity * placement.share));
     });
     this.pool.count = pools.length;
     this.halo.count = halos.length;
