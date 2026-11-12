@@ -234,6 +234,16 @@ export const PERTH_FOOTBRIDGES = [
   {id: 'south', along: 24 + PERTH_BAY_PHASE, deck: 7.0, kind: 'lift', landings: [['4', '5'], ['2', '3'], ['1']]},
 ] as const;
 
+/** Which Perth the station draws (Arthur, 2026-11-12: Perth as before 2012). The south lift bridge, with its three lift towers, is the
+ *  modern one (R-pt1-b, habiloid 2025; R-pt1-d Abbott); before it the station had only the north lattice bridge, so the default era
+ *  'pre-2012' draws no lift bridge and leaves its plan uncut (columns, lamps, benches and girders stand where it stood). 'current'
+ *  keeps the lift bridge, and its tests run against that option. */
+export type PerthEra = 'pre-2012' | 'current';
+export const PERTH_ERA: PerthEra = 'pre-2012';
+/** The footbridges an era draws: PERTH_FOOTBRIDGES, less the ones built since (`PERTH_BRIDGES_SINCE_2012`) before 2012. */
+export const PERTH_BRIDGES_SINCE_2012: readonly string[] = ['south'];
+export const perthFootbridges = (era: PerthEra = PERTH_ERA) => PERTH_FOOTBRIDGES.filter(b => era === 'current' || !PERTH_BRIDGES_SINCE_2012.includes(b.id));
+
 /** Round 5: landings placed as far across their island as they fit, this way (+1: toward greater z'), rather than centred.
  *  Round 6, the source: Abbott 6573357 (R-pt1-d) shows the lift bridge's near landing off-centre: its tower stands at one side of the
  *  island, its long face along that platform's edge, with the dog-leg stair running along the platform beside it, not a tower centred
@@ -392,10 +402,11 @@ function titeBlock(data: Pick<PerthData, 'platforms'>): {ring: Pt[]; tower: Pt} 
   return {ring, tower};
 }
 
-const planCache = new WeakMap<object, PerthStationPlan>();
-/** Where everything goes (pure). Cached per data object: the platforms and the roof both read it. */
-export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, outline: readonly Pt[] | undefined): PerthStationPlan {
-  const hit = planCache.get(data); if (hit) return hit;
+const planCache = new WeakMap<object, Map<PerthEra, PerthStationPlan>>();
+/** Where everything goes (pure). Cached per data object and era: the platforms and the roof both read it. */
+export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | 'buildings'>, outline: readonly Pt[] | undefined, era: PerthEra = PERTH_ERA): PerthStationPlan {
+  let eras = planCache.get(data); if (!eras) { eras = new Map(); planCache.set(data, eras); }
+  const hit = eras.get(era); if (hit) return hit;
   const {roof, canopy} = outline ? perthRoofRings(outline) : {roof: [], canopy: []};
   const island = perthIslandRing(data, outline);
   const platforms = data.platforms.map(p => ({ref: p.ref ?? '', pts: cleanRing(p.path).map(toLocal)}));
@@ -409,7 +420,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   // plan draws along the outline skip the edges the building shares with it. The glazing itself runs on over the building (R-pt1-a).
   const cuts = [local.island, local.tite].filter(r => r.length >= 3).map(r => offsetRing(r, .03));
   const structure = waverleyStationPlan(localData, roof.length ? {outer: local.main, holes: []} : undefined, cuts);
-  const bridges = PERTH_FOOTBRIDGES.map(b => planBridge(b, platforms));
+  const bridges = perthFootbridges(era).map(b => planBridge(b, platforms));
   const clear: [number, number, number, number][] = [];
   for (const b of bridges) {
     clear.push([b.along - PERTH_STATION.deckHalf, b.along + PERTH_STATION.deckHalf, b.z0, b.z1]);
@@ -569,7 +580,7 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   // The scene-frame outlines, as drawn: cut at the shed line.
   const plan: PerthStationPlan = {roof: local.roof.map(toWorld), canopy, island: local.island.map(toWorld), tite: titeLocal && {ring: titeLocal.ring.map(toWorld), tower: toWorld(titeLocal.tower)}, local, structure, bridges, clear, canopyColumns, clocks, furniture,
     ramps: platformRamps(local, localData.rails.map(r => r.path))};
-  planCache.set(data, plan);
+  eras.set(era, plan);
   return plan;
 }
 

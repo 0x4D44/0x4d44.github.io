@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene, stationOutline } from '../src/perth-scene.ts';
 import { perthRampTexture, PERTH_RAMP_FINISH, perthBoardTexture, perthDialTexture, perthMeshTexture, perthPiercedTexture, perthRingTexture, PERTH_BOARDS, PERTH_FENCE_MESH, PERTH_RING_ORNAMENT, PERTH_ROMAN, PERTH_BAND_BROWN, PERTH_BAND_SOFFIT, PERTH_GREY_PLATFORMS, PERTH_OPEN_ASPHALT, PERTH_OPEN_GREY, PERTH_SURFACE_TILE } from '../src/perth-station.ts';
-import { archRib, RAMP_KINK, PERTH_PRINCIPAL, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
+import { archRib, RAMP_KINK, PERTH_PRINCIPAL, boardedSide, clockCorbel, RAMP_EDGING, PERTH_BRACE_RINGS, PERTH_LAMP, PERTH_CLOCK_CORBEL, PERTH_DIAL,gutterBraces, PERTH_GUTTER_BRACE, PERTH_RAMP_RAIL, PERTH_LIFT_DOOR, PERTH_RAMP, PERTH_RAMP_FENCE, mainRoofEnds, PERTH_ROOF_ENDS, islandBuildingBatches, PERTH_BOARDED_PLATFORM, PERTH_SPANDREL, PERTH_PAINT, platformParts, perthRoofOver, PERTH_BAND_DROP, PERTH_BAY_NOTCH, PERTH_BAY_ROOF, PERTH_CANOPY_SPLIT, PERTH_ISLAND_BUILDING, PERTH_ROOF_RIDGE, PERTH_SHED_NORTH, PERTH_STATION, PERTH_ERA, bayRoofHeight, inRing, perthRoofRings, perthStationBatches, perthStationPlan, ringDistance, toLocal, toWorld } from '../src/perth-station-structure.ts';
 import { Batch, rgb } from '../src/materials.ts';
 import { WAVERLEY_LEVELS, cleanRing } from '../src/waverley-mesh.ts';
 import { WAVERLEY_EDGE_BANDS, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
@@ -16,7 +16,7 @@ import { roofHeight, WAVERLEY_ROOF_PROFILE, WAVERLEY_ROOF_STRIP_LIFT } from '../
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const outline = stationOutline(data)!.outer;
-const plan = perthStationPlan(data, outline);
+const plan = perthStationPlan(data, outline, 'current'); // the lift-bridge era (PERTH_ERA): the tests below run against the option
 const batches = perthStationBatches(plan);
 const rails: [Pt, Pt][] = data.rails.flatMap(r => r.path.slice(1).map((p, i): [Pt, Pt] => [r.path[i], p]))
   .filter(([a, b]) => [a, b].some(p => p[0] > -260 && p[0] < 140 && p[1] > -420 && p[1] < 220));
@@ -72,6 +72,28 @@ test('two footbridges: the north lattice bridge to platforms 4, 3 and 1, the sou
   }
 });
 
+test('Perth before 2012 (the default era): only the north lattice bridge, no lift bridge or lift towers, its plan cut cleared (Arthur, 2026-11-12)', () => {
+  assert.equal(PERTH_ERA, 'pre-2012');
+  const pre = perthStationPlan(data, outline), lift = plan.bridges.find(b => b.kind === 'lift')!;
+  assert.deepEqual(pre.bridges.map(b => b.id), ['north'], 'the north lattice bridge only');
+  assert.ok(pre.bridges.every(b => b.kind === 'lattice' && b.landings.every(l => !l.tower)), 'no lift tower');
+  // The plan is no longer cut where the lift bridge stood: no cleared rectangle reaches its deck's band
+  const x0 = lift.along - PERTH_STATION.deckHalf, x1 = lift.along + PERTH_STATION.deckHalf;
+  assert.ok(pre.clear.every(r => r[1] < x0 - 1 || r[0] > x1 + 1), 'no clearance left at the lift bridge\'s line');
+  assert.ok(pre.structure.lamps.length + pre.furniture.lamps.length > plan.structure.lamps.length + plan.furniture.lamps.length, 'lamps return where it stood');
+  // The default scene draws none of it: no lift tower's cladding among the fittings, and no glass (the deck's and stairs' parapets, the
+  // towers' hoods) within 15 m of where it stood (the kiosk's panes, far north of it, stay)
+  const scene = buildPerthScene({ lighting: false });
+  try {
+    const f = (scene.group.getObjectByName('perth-columns-bridges-furniture') as THREE.Mesh).geometry.getAttribute('color');
+    const c = rgb(PERTH_PAINT.towerClad); let n = 0; for (let i = 0; i < f.count; i++) if (Math.abs(f.getX(i) - c[0]) < 1e-6 && Math.abs(f.getY(i) - c[1]) < 1e-6 && Math.abs(f.getZ(i) - c[2]) < 1e-6) n++;
+    assert.equal(n, 0, 'lift tower cladding in the default scene');
+    const glass = scene.group.getObjectByName('perth-bridge-glass') as THREE.Mesh | undefined, gp = glass?.geometry.getAttribute('position');
+    let near = 0; if (gp) for (let i = 0; i < gp.count; i++) { const x = toLocal([gp.getX(i), gp.getZ(i)])[0]; if (x > x0 - 15 && x < x1 + 15) near++; }
+    assert.equal(near, 0, 'glass vertices at the lift bridge\'s line');
+  } finally { scene.dispose(); }
+});
+
 test('clearances: columns, posts, stairs and towers stand on platforms, clear of every track; nothing low stands over a track', () => {
   const S = plan.structure, w = (p: Pt) => toWorld(p);
   const points: [string, Pt, number][] = [
@@ -103,7 +125,7 @@ test('clearances: columns, posts, stairs and towers stand on platforms, clear of
 });
 
 test('the roof toggle hides the whole station roof: glazing, strips and ironwork are in the roof part, the bridges are not', () => {
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     for (const name of ['perth-station-roof', 'perth-roof-strips', 'perth-roof-ironwork', 'perth-roof-weathering']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.roof, name);
     for (const name of ['perth-island-building', 'perth-columns-bridges-furniture']) assert.equal(scene.group.getObjectByName(name)?.parent, scene.parts.platforms, name);
@@ -144,7 +166,7 @@ test('round 3 (round 5: as plates): the column girders\' spandrels are pierced (
   const share = holes / (d.length / 4);
   assert.ok(share > .2 && share < .6, `pierced (${(share * 100).toFixed(0)} % open)`);
   // And the scene draws the real spandrels with it, alpha-tested, in the roof part.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const mesh = scene.group.getObjectByName('perth-roof-spandrels') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
     assert.ok(m.map === t && m.alphaTest > 0 && (mesh.geometry.getAttribute('position').count > 0), 'the spandrel plates drawn pierced');
@@ -206,7 +228,7 @@ test('round 3: the platforms are red asphalt in the open beyond both roof ends, 
     north += parts.open.filter(q => q.every(v => toLocal(v)[0] <= PERTH_SHED_NORTH + 1e-6)).length;
   }
   assert.ok(north >= 2, `${north} platforms open north of the shed (4 and 7 run past it in OSM)`);
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const m = (scene.group.getObjectByName('perth-platform-surfaces-open') as THREE.Mesh).material as THREE.MeshLambertMaterial;
     // Round 4: continuous red asphalt with a fine grain (not the flag chequer, not a flat fill), lightened toward R-pt1-b's salmon.
@@ -266,7 +288,7 @@ test('round 3: the frozen platform views see furniture: benches in the near view
 });
 
 test('round 4: the bands are brown-grey, not black, and the Dundee canopies are weathered grey from above too', () => {
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const m = (scene.group.getObjectByName('perth-roof-strips') as THREE.Mesh).material as THREE.MeshLambertMaterial, c = m.color;
     assert.equal(c.getHex(), PERTH_BAND_BROWN);
@@ -344,7 +366,7 @@ test('round 5: the island building as R-pt1-a/a2: its south end in clear view of
   // Grey-buff, not pink: the wall a little warmer than grey, its blue clearly under its green; on Perth's own low-contrast ashlar.
   const [r, g, b] = rgb(PERTH_PAINT.stoneWall);
   assert.ok(r - g < .04 && g - b > .045, `grey-buff stone (${PERTH_PAINT.stoneWall.toString(16)})`);
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const m = (scene.group.getObjectByName('perth-island-building') as THREE.Mesh).material as THREE.MeshLambertMaterial;
     assert.equal(m.map?.name, 'perth-ashlar', 'Perth\'s ashlar map');
@@ -557,7 +579,7 @@ test('round 6: the platforms\' open ends run down to rail level in ramps, clear 
     assert.ok([r.e0, r.e1].every(e => pf.some(q => ringDistance(e, q.pts) < 1e-6)), `the ${r.ref} ramp's head on its platform's end`);
   }
   // Drawn: a sloping open-surfacing quad from the deck to rail level, and its brick sides.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const g = (scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh).geometry, /* round 9: the ramps' own mesh */ pos = g.getAttribute('position'), nrm = g.getAttribute('normal');
     let slope = 0;
@@ -643,7 +665,7 @@ test('round 8: the ramps read as slopes: a handrail down each side follows the f
   assert.ok(lo < deck + .2 && hi > deck + 1, `a mesh panel across the head (${(lo - deck).toFixed(2)}-${(hi - deck).toFixed(2)} m)`);
   assert.ok(zhi - zlo > Math.abs(r4.e1[1] - r4.e0[1]) - 2 * F.inset - .05, `the panel spans the head (${(zhi - zlo).toFixed(2)} m)`);
   // In the frozen view, and the first thing a ray from the eye meets there: three points along the panel, mid-height.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8')) as Record<string, {pos: number[]; target: number[]; fov: number}>;
     const k = cams['pt-platform-4-south-end'], cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000);
@@ -731,7 +753,7 @@ test('round 7: the lift bridge\'s frame and stairs grey (Abbott 6573357); a lift
 
 test('round 8: the bands\' undersides are R-pt1-a\'s dark brown-grey boarding, boards mapped, no glow; drawn apart from the bands', () => {
   // (Round 7 asserted a pale, sky-lit tone, which the round-7 score found wrong against R-pt1-a and R-pt1-d north; corrected here.)
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const m = (scene.group.getObjectByName('perth-roof-band-soffits') as THREE.Mesh).material as THREE.MeshLambertMaterial;
     const lum = (c: THREE.Color): number => c.r + c.g + c.b, t = perthBoardTexture(), d = t.image.data as Uint8Array, n = t.image.width;
@@ -769,7 +791,7 @@ test('round 8: R-pt1-a\'s ring ornament fills every arched brace\'s spandrel at 
   let open = 0; for (let i = 3; i < d.length; i += 4) if (d[i] === 0) open++;
   assert.ok(open / (d.length / 4) > .55 && open / (d.length / 4) < .9, `mostly open, as R-pt1-a's scrollwork (${(open / (d.length / 4) * 100).toFixed(0)} %)`);
   // Drawn, alpha-tested, in the roof part.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const mesh = scene.group.getObjectByName('perth-roof-brace-ornament') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
     assert.ok(m.map === t && m.alphaTest > 0 && m.side === THREE.DoubleSide && mesh.parent === scene.parts.roof, 'the ornament drawn cut out, in the roof part');
@@ -861,7 +883,7 @@ test('round 6: platform 4\'s clock is in clear view of the frozen pt-platform-4-
   cam.position.copy(eye); cam.lookAt(new THREE.Vector3(...k.target as [number, number, number])); cam.updateMatrixWorld(true);
   const ndc = dial.clone().project(cam);
   assert.ok(Math.abs(ndc.x) < .9 && Math.abs(ndc.y) < .9 && ndc.z < 1, `the dial in pt-platform-4-clock's frame (ndc ${ndc.x.toFixed(2)}, ${ndc.y.toFixed(2)})`);
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     scene.group.updateMatrixWorld(true);
     // The centre and four points round the hour ring, each reached by a ray from the eye with nothing in front of the dial.
@@ -1033,7 +1055,7 @@ test('round 9: the ramps leave the deck in their own grooved concrete, grooves a
     assert.ok(head && foot && len > 5, `ramp ${r.ref} edged down its side ${i} away from the tracks`);
   }
   // Drawn in its own material, UVs in metres across (z') and down (x') the ramp; in the frozen view, seen through the fence's mesh.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const mesh = scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh, m = mesh.material as THREE.MeshLambertMaterial;
     assert.ok(m.map === t && mesh.parent === scene.parts.platforms, 'the ramps in their own finish, in the platforms part');
@@ -1147,7 +1169,7 @@ test('round 10: R-pt1-a\'s principal trusses deep at their ends, with long diago
 test('round 10: the ramps\' slope unmistakable: shaded darker down the fall, the side edging kinked at the break of slope, bands across head and foot', () => {
   const deck = WAVERLEY_LEVELS.platform, rail = WAVERLEY_LEVELS.rail, K = RAMP_KINK;
   // Shading by depth: vertex colour 1 at the head (deck level), PERTH_RAMP_FINISH.foot (0.65 or less) at the foot, falling with depth.
-  const scene = buildPerthScene({ lighting: false });
+  const scene = buildPerthScene({ lighting: false, era: 'current' });
   try {
     const mesh = scene.group.getObjectByName('perth-platform-ramps') as THREE.Mesh, g = mesh.geometry, pos = g.getAttribute('position'), col = g.getAttribute('color');
     assert.ok(col && (mesh.material as THREE.MeshLambertMaterial).vertexColors, 'the ramps shaded per vertex');

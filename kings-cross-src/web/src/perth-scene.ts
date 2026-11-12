@@ -19,6 +19,8 @@ import {meshAdder} from './waverley-mesh.ts';
 import {stationGround} from './station-railway.ts';
 import {addWaverleyLights} from './station-weather.ts';
 import {addPerthPlatforms, addPerthStationRoof, addPerthTrack, perthGlazing, perthTrack, stationOutline} from './perth-station.ts';
+import {PERTH_ERA} from './perth-station-structure.ts';
+import type {PerthEra} from './perth-station-structure.ts';
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
@@ -58,6 +60,8 @@ export interface PerthOptions {
   /** Default true; hide the canopies for track/platform inspection. */
   roofVisible?: boolean;
   cityVisible?: boolean;
+  /** Which Perth the station draws (perth-station-structure.ts PERTH_ERA): default 'pre-2012', without the south lift bridge. */
+  era?: PerthEra;
 }
 export interface PerthScene {
   group: THREE.Group;
@@ -94,10 +98,11 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
 
   const ground = addPerthGround(build, field, terrain);
   addPerthTrack(build, track, trackGroup);
-  addPerthPlatforms(build, data, platforms);
+  const era = options.era ?? PERTH_ERA;
+  addPerthPlatforms(build, data, platforms, era);
   // The roof part: the station's glazed roof (P1) and the town's mapped roofs (P3), with one shared fascia draw, station's first.
   const glass = new Batch(), roofTops = new Batch(), fascia = new Batch();
-  addPerthStationRoof(data, glass, fascia, build, roof);
+  addPerthStationRoof(data, glass, fascia, build, roof, era);
   addPerthMappedRoofs(data, ground, roofTops, fascia);
   const glazing = perthGlazing(own(material('shedGlass').clone() as THREE.MeshLambertMaterial)); glazing.side = THREE.DoubleSide;
   build.add(roof, glass, glazing, 'perth-station-roof');
