@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-12 - TrainView.heading is a compass bearing, atan2(x, -z), not atan2(dx, dz): a test built on dx/dz points the wrong way (core/motion.ts:844)
+  The live layer hands trains a heading with north at -z, so a pose rotation about y (from +z) is not the same number: a pool or any decal laid along `heading` as a y rotation lies mirrored
+  across the x axis. The round-7 lamp pool's first Edinburgh test read it as atan2(dx, dz) and its expectation was wrong while the code was right; train-lamp-pool.ts keeps its own
+  `headingRad` (a rotation about y from +z) apart from the view's bearing for this reason. Seen by the round-7 lamp worker, 2026-11-12.
+
 - 2026-11-12 - Traced plate edges on one pixel row make earClip throw "not a simple polygon": tilt one (train-parts.ts earClip)
   The Class 180 side beam's two end-block undersides both sat on row 471 of the photograph, four collinear vertices, so ear clipping ended on a zero-area remnant and plate() threw
   "bogie outline is not a simple polygon" although the outline was simple. A half-pixel slope on those two edges (CORADIA_TRACE.beam: 471.6 and 470.8 / 471.4) cleared it with no visible
