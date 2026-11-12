@@ -184,15 +184,32 @@ test('Class 180 rake: every shading normal of a cab agrees with its triangle\'s 
   }
 });
 
+/** The least a lengthened rake may set the cab side windows back by, somewhere, for the test below to tell a set-back from none: five times its tolerance (20 mm). */
+const SET_BACK_MIN = 0.1;
+
 test('Class 180 rake: whatever the rake\'s reach, the cab side windows are set back with the nose they lie on', () => {
-  // The 180's rake (1.6 m) has gone before its side windows begin (1.7 m back), so on it the windows could not tell a set-back from none: lengthen it to 3 m for one build, as for a nose
+  // The 180's rake (1.6 m) has gone before its side windows begin (about 2.9 m back), so on it the windows could not tell a set-back from none: lengthen it for one build, as for a nose
   // whose windows the rake reaches. Each vertex of a side window then stands where the unraked build had it, set back by the rake at its own place (a pane stands 16 mm off the nose
-  // along a normal that the shear tilts a little, so a couple of centimetres either way).
+  // along a normal that the shear tilts a little, so a couple of centimetres either way). How far to lengthen it is worked out from where the windows are, not a figure to go stale
+  // when they move (round 6 moved them 1.1 m back: the 3 m reach that had set them back 11 cm set them back 1.7 mm, under the tolerance, and the test passed with the set-back taken
+  // out): the reach grows until the rake sets some vertex of the windows back by SET_BACK_MIN. (The windscreen's outer corners are as wide as the side window, and the 180's own rake
+  // already sets them back by 40 cm: a vertex is the side window's only if it is that wide and lies at or past the window's front edge, which the screen's back edge is well clear of.)
   const car = trainLayout('gc180x5').cars[0] as Car;
   const b = part(plain(), car, 'cab-glass').geometry.getAttribute('position') as THREE.BufferAttribute;
+  const side = bodySpec('adelante').glass.side as { sFront0: number; sFront1: number };
+  const sideAt = (i: number): boolean => Math.abs(b.getX(i)) >= 1.15 && b.getZ(i) - END_GAP >= Math.min(side.sFront0, side.sFront1) - 0.05;
+  const windows: [number, number][] = []; // each side-window vertex's distance from the tip and its height: what a set-back depends on
+  for (let i = 0; i < b.count; i++) if (sideAt(i)) windows.push([b.getZ(i) - END_GAP, b.getY(i)]);
+  assert.ok(windows.length > 500, `${windows.length} vertices of the side windows`);
+  const setBackMost = (reach: number): number => Math.max(0, ...windows.map(([s, y]) => rakeSet({ ...nose, rake: { ...rake, reach } }, s, y)));
+  let lengthened = rake.reach;
+  while (setBackMost(lengthened) < SET_BACK_MIN) {
+    lengthened += 0.25;
+    assert.ok(lengthened <= 30, 'no reach of up to 30 m sets the side windows back by SET_BACK_MIN');
+  }
   const had = rake.reach;
   const longer = nose.rake as { reach: number };
-  longer.reach = 3;
+  longer.reach = lengthened;
   try {
     const g = buildTrain('gc180x5');
     g.updateMatrixWorld(true);
@@ -201,14 +218,14 @@ test('Class 180 rake: whatever the rake\'s reach, the cab side windows are set b
     let checked = 0;
     let most = 0;
     for (let i = 0; i < b.count; i++) {
-      if (Math.abs(b.getX(i)) < 1.15) continue;
+      if (!sideAt(i)) continue;
       const want = rakeSet(nose, b.getZ(i) - END_GAP, b.getY(i));
-      near(a.getZ(i) - b.getZ(i), want, 0.02, `a side window vertex at (${b.getX(i).toFixed(2)}, ${b.getY(i).toFixed(2)}, ${b.getZ(i).toFixed(2)})`);
+      near(a.getZ(i) - b.getZ(i), want, 0.02, `a side window vertex at (${b.getX(i).toFixed(2)}, ${b.getY(i).toFixed(2)}, ${b.getZ(i).toFixed(2)}) with the rake lengthened to ${lengthened} m`);
       checked++;
       most = Math.max(most, want);
     }
     assert.ok(checked > 500, `${checked} vertices of the side windows`);
-    assert.ok(most > 0.05, `the longer rake sets the windows back as much as ${most.toFixed(3)} m: not enough to tell`);
+    assert.ok(most >= SET_BACK_MIN - 1e-9, `the longer rake (${lengthened} m) sets the windows back as much as ${most.toFixed(3)} m: not enough to tell`);
   } finally {
     longer.reach = had;
   }
