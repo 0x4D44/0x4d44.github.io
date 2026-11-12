@@ -207,9 +207,9 @@ export function lensLook(role: LensRole, mode: TrainLampMode): { hex: number; gl
   return { hex: role === 'head' ? (lit ? LENS.headOn : LENS.headOff) : (lit ? LENS.tailOn : LENS.tailOff), glow: lit ? 2 : 0 };
 }
 /** One lamp lens in a cab car's detail mesh: its role, and the vertices `[v0, v1)` of the mesh's geometry it covers (plain numbers: `userData` is copied through JSON when a train is cloned). */
-interface LampLens { role: LensRole; v0: number; v1: number }
+export interface LampLens { role: LensRole; v0: number; v1: number }
 /** What a cab car's detail mesh records of its lamps (in `userData.lamps`): which end of the train it is, whether it is a coupled unit's inner end, and its lenses. */
-interface LampRecord { end: 'front' | 'rear'; interior: boolean; lenses: LampLens[] }
+export interface LampRecord { end: 'front' | 'rear'; interior: boolean; lenses: LampLens[] }
 /** The detail meshes `setTrainLampState` has given a geometry of their own, with that geometry: a clone of a train shares its source's geometry, and must not write to it. */
 const ownLampGeometry = new WeakMap<THREE.Mesh, THREE.BufferGeometry>();
 /** The geometry each of those meshes had before (a template's, for a clone; the train's own, for a train built for itself). */
