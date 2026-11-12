@@ -201,3 +201,77 @@ export const SIEMENS_TRACE = {
   /** The body-mounted bracket in front of the right wheel: a Y of two arms and a stem, as one outline (clockwise from the left arm's top left); its arms run on up behind the skirt. */
   bracket: [[1539, 531], [1568, 531], [1603, 649], [1662, 536], [1695, 538], [1648, 644], [1630, 733], [1583, 734], [1574, 654]] as readonly Px[],
 } as const;
+
+/**
+ * The Alstom Coradia 1000 bogie (the Class 180's), from `class180-gc-york-side-arthur-2026-11-11.png`: a Grand Central Class 180's leading cab car, side on at York, supplied by Arthur on 2026-11-11 (856 x 600; the
+ * source and the licence are unknown, so it is a private modelling reference, never copied, committed or shipped: this trace is what is kept). It shows the cab-end bogie of the car, and the cab-end bogie of a driving
+ * car is the TRAILING one (one bogie of each car is driven, the inner one: `EMU_BOGIES` in core/train.ts), so what is traced is a trailer bogie, and what a motor bogie carries between its wheels is not in it (the
+ * diesel's final drive stays as it was).
+ *
+ * The picture is a close-up taken a little rolled: its two caps stand 8 px apart in height, so it is turned 1.3783 degrees (clockwise, about the left cap, bicubic) to put them level, and the numbers below are
+ * read off the turned picture, each to about 2 pixels. Its scale is the caps' distance over the wheelbase, which no page gives for the Class 180 (`ADELANTE.wheelbaseTrailer` is ASSUMED, 2.7 m), so every length here
+ * is as good as that figure. The camera stands nearer the left end (the left wheel looks about a tenth bigger than the right) and none of that perspective is corrected: the scale is the mean across the caps. The two
+ * ends are NOT each other's mirror (the right cap is the smaller, the right damper stands 30 px from its cap and the left 42, the brake calliper differs), so each is traced for itself and nothing is mirrored; the
+ * far side is the near one turned half a turn about the vertical (z -> -z), ASSUMED, and the depths across the bogie are ASSUMED too (see `CORADIA_DEPTH` in train-parts.ts).
+ *
+ * What is traced: the side beam as one plate (a box at each end resting on the spring, a swan neck down to a low middle, a lightening pocket under each box, the arms to the axle boxes, a window cut in the middle through
+ * which the air spring shows, its edges painted yellow); at each end the axle box with its round housing and cap, the primary spring (a dark core and a drum) between the box and the beam, the vertical damper outboard of
+ * the box, the brake calliper beyond it, and a round boss on the neck; in the middle the car's bracket that hangs the yaw damper, the damper itself (a long cylinder with a yellow label, rising to the left) with its
+ * two clevises, the bar under the bogie and the air spring. The wheels' brake discs the photograph shows on the outer face of each wheel (a light ring 0.22 to 0.33 m from the axle, the tyre dark round it) are the
+ * style's palette (`PALETTES.coradia`: `web` and `rim`), not geometry. The bracket and the window's edges are cut at row 442 (0.942 m over the rail head, under the 0.95 m a bogie may reach, where the body's skirt stands); the photograph's go on up
+ * behind it, and the window's yellow top edge (rows 431 to 435) is dropped for the same reason. NOT drawn (GAP): the cable at each cap, the hoses, the thin arc round the left wheel, the bolt patterns, the white clamp under the
+ * left end block, the round castings on the arms, the strut beside each damper, the calliper's long tongue (it would pass the wheels' reach), and whatever the dark under the beam hides between the wheels (no brake unit
+ * is seen there, so none is drawn). The step and the cab door the photograph shows are the car body's, not the bogie's.
+ */
+export const CORADIA_TRACE = {
+  /** The centres of the two axle-end caps, left and right, in the turned picture: the axle line and the wheelbase. */
+  caps: [[168.5, 506.3], [501.1, 506.3]] as readonly [Px, Px],
+  /** The caps' centres as the picture has them, before it is turned, and the turn (atan2 of their rise over their run, in degrees, clockwise). */
+  level: { caps: [[168.5, 506.3], [501, 498.3]] as readonly [Px, Px], degrees: 1.3783 },
+  /**
+   * The side beam as one outline, clockwise from the left end block's top: over the top (the end block's flat, the swan neck down to the window's left edge, the window's floor, the right neck up to the right end
+   * block, which is flat again), down the right end block, back along its underside and the lightening pocket's edge to the right arm (its top edge, then its end at the axle box), the lower edge across to the left
+   * arm, the left arm's top edge, the pocket's edge and the left end block's underside. The window is a notch open at the top; the pockets are open to the spring.
+   */
+  beam: [
+    [141.5, 447.5], [225, 448.5], [251, 452], [268, 457], [276, 466], [294, 470.5], [376, 470.5], [385, 467], [430, 449], [524, 447.5], [524.5, 471.6], [470, 471], [447, 479], [446, 491],
+    [484, 489], [484, 509], [190, 509], [190, 489], [222, 491], [222, 482], [214, 474], [200, 470.8], [141.5, 471.4],
+  ] as readonly Px[],
+  /**
+   * What stands at each end. `box` is the axle box, `housing` and `cap` the radii of the round housing and of the cap standing on it, both on the axle (a calibration point), `core` the dark core of the primary
+   * spring under the end block and `drum` its light drum on the axle box, `damper` the vertical damper (a cylinder: its width is its diameter), `calliper` the brake calliper, and `boss` the round boss on the neck.
+   */
+  left: {
+    box: [147.5, 489.5, 190, 526] as PxRect,
+    housing: 20,
+    cap: 12,
+    core: [151, 471, 183, 479] as PxRect,
+    drum: [146.5, 479, 184.5, 490] as PxRect,
+    damper: [121.5, 462, 132, 505] as PxRect,
+    calliper: [119, 497, 150, 517] as PxRect,
+    boss: { c: [232, 462], r: 10 } as PxCircle,
+  },
+  right: {
+    box: [482, 489, 520, 527] as PxRect,
+    housing: 19,
+    cap: 9,
+    core: [487, 471, 515, 480] as PxRect,
+    drum: [483.5, 480, 513.5, 489] as PxRect,
+    damper: [526.5, 481, 537, 508] as PxRect,
+    calliper: [513, 500, 541, 525] as PxRect,
+    boss: { c: [434.5, 464], r: 8 } as PxCircle,
+  },
+  /** The yellow edges of the window: the left one (a bar), the floor (a bar) and the right one (slanting, as one outline). */
+  window: { left: [291, 442, 297, 471] as PxRect, floor: [296, 468, 376, 473] as PxRect, right: [[372.5, 473], [377.5, 473], [384.8, 442], [379.8, 442]] as readonly Px[] },
+  /** The car's bracket that hangs the yaw damper's left clevis (outline, clockwise from the top left; its top hides under the body's skirt). */
+  bracket: [[263.5, 442], [291, 442], [291, 478], [281, 480], [275, 470], [268, 452]] as readonly Px[],
+  /**
+   * The yaw damper: the centres of its two ends (it falls 7.4 degrees toward the right), the radius of its body in pixels, the columns of its yellow label, and the two clevises it ends in. The photograph shows
+   * it between the clevises; the label is a band round the body.
+   */
+  yaw: { from: [299, 485.7] as Px, to: [378, 495.9] as Px, radius: 7.3, label: [313, 348] as readonly [number, number], clevisLeft: [282, 476, 299, 497] as PxRect, clevisRight: [378, 486, 397, 504] as PxRect },
+  /** The flat bar hung under the middle of the bogie. */
+  bar: [303, 512.5, 378, 519] as PxRect,
+  /** The air spring over the middle: the columns of the window's bag (its radius is half their distance) and the row of the window's floor, on which it stands. */
+  air: { left: 305, right: 367, base: 470.5 },
+} as const;

@@ -21,6 +21,11 @@
 //   tl700_02_gatwick_side_28563922734.jpg   the same bogie from the platform: the same plain wheels, the cluster between them.
 //   GC180-01-180-101-Kings-Cross-8077814883-.jpg   the Class 180's leading bogie from the cab end: a boxy dusty frame, axle
 //       boxes with a spring pot above, a long gold-ended damper low across the middle.
+//   class180-gc-york-side-arthur-2026-11-11.png   a Grand Central Class 180's leading cab car side on at York (supplied by Arthur, 2026-11-11; original source and licence unknown): the whole side of the
+//       cab-end bogie, an OUTSIDE frame, a deep side beam with a window in it, an axle box with a round cap and a coil spring above it at each end, a vertical damper and a brake calliper
+//       beside each, a slanting yaw damper with a yellow label and a clevis at each end, the car's bracket, an air spring over the middle and a bar under it. (Round 7: the Class 180's frame is traced
+//       from it, point by point, in `train-bogie-trace.ts`: the 'coradia' style. The 'alstom' style is the frame first drawn by eye from the picture above; a diesel bogie given no style, the
+//       Voyager 221 and the ScotRail DMUs still use its wheels, discs and drive.)
 //   gn387_03_387123_cambridge.jpg   the Electrostar's cab bogie, about a hundred pixels across: a dark frame with a damper
 //       across the middle (round 5: drawn as the generic outside-frame bogie from this one). Round 6: the Electrostar's frame is traced from
 //       `Bogie and traction equipment beneath Door A1 of Class 375 Electrostar .jpg` (OathOn, CC0), point by point, in `train-bogie-trace.ts`.
@@ -30,10 +35,13 @@
 // their frames from photographs, the AT300's of a trailer bogie and the Electrostar's of a powered one, which show nothing hung between the wheels, and no photograph shows what a motor bogie of the
 // AT300 carries, so a motor bogie and a trailer bogie of each are the same bogie, and neither draws a drive or a brake unit (a GAP: what a motor bogie carries is not observable here). Nor the Desiro City's
 // ('sf7000'): its frame is traced from a photograph of a bogie under a car numbered 403102, and the castings it shows between the wheels are the whole of what is drawn there, on either kind of bogie.
+// Nor the Class 180's ('coradia', round 7): its frame is traced from a photograph of the cab-end bogie (a trailer bogie in this model's layout, `EMU_BOGIES` in core/train.ts: ASSUMED), which shows no
+// brake unit or motor between the wheels, so none is drawn on either kind of bogie, the discs and callipers being its brake; a motor bogie of it keeps the diesel's final drive (the 'alstom' kit's), a GAP:
+// no photograph here shows what a driven bogie carries.
 import * as THREE from 'three';
 import { add, col, plain, Soup, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
-import { AT300_TRACE, ELECTROSTAR_TRACE, SIEMENS_TRACE } from './train-bogie-trace.ts';
+import { AT300_TRACE, CORADIA_TRACE, ELECTROSTAR_TRACE, SIEMENS_TRACE } from './train-bogie-trace.ts';
 import type { Px, PxCircle, PxRect } from './train-bogie-trace.ts';
 
 /** Wheel tread width. Assumed. */
@@ -53,9 +61,10 @@ export const BOGIE_TOP = 0.95;
 
 /**
  * Whose bogie is drawn: the Hitachi AT300 (Class 800/801), the Bombardier Electrostar (Class 387), the Siemens SF7000 traced from a photograph (Class 700/717: 'sf7000'), an inside-frame bogie drawn by eye
- * from the same photograph before it was traced ('siemens': the Voyagers wear it, train-intercity.ts) or the Alstom Coradia 1000's (Class 180).
+ * from the same photograph before it was traced ('siemens': the Voyagers wear it, train-intercity.ts), the Alstom Coradia 1000's drawn by eye ('alstom': what a diesel bogie wears by default, and the
+ * Voyager 221's kit) or the Class 180's own, traced from a photograph of its cab-end bogie ('coradia', round 7: the Class 180 wears it, `BOGIE_STYLE` in train.ts).
  */
-export type BogieStyle = 'hitachi' | 'electrostar' | 'siemens' | 'sf7000' | 'alstom';
+export type BogieStyle = 'hitachi' | 'electrostar' | 'siemens' | 'sf7000' | 'alstom' | 'coradia';
 
 export interface BogieSpec {
   /** Wheel radius, metres. */
@@ -326,6 +335,16 @@ const PALETTES: Record<BogieStyle, Palette> = {
     disc: col(0x70757c), discRim: col(0x868b92), damper: col(0xb8923a), clevis: col(0x6f6a60),
     motor: col(0x5f646b), gear: col(0x777c83), axle: col(0x36373a), rubber: col(0x1f2125), accent: col(0xb8923a),
   },
+  // the Class 180's own, round 7: the medians of the parts' pixels in the cab-end bogie's photograph (`class180-gc-york-side-arthur-2026-11-11.png`; the bogie stands in the body's shade, so the beam is a warm
+  // dark grey, 0x535351 on the left and 0x625f58 on the right, the arm and neck 0x454547 to 0x5e5b53, the caps 0x535556 and 0x5a5c5e, the spring drums 0x454747 and 0x585757 and their dark cores 0x1f1e22), the
+  // yaw damper's body 0x8e8b80 and its label 0xe6d979 (the accent, which paints the window's edges too); the tyre is 0x262628 and the light ring of the brake disc on each wheel's outer face 0x4d4947, so the
+  // wheel's web (the ring) and its rim band (the tyre) take those; the rest of the wheel is as it was
+  coradia: {
+    frame: col(0x5b5954), box: col(0x504e4d), cap: col(0x565859), spring: col(0x505252), coil: col(0x1f1e22),
+    tread: col(0x9a9fa6), rim: col(0x232224), web: col(0x4d4947), hub: col(0x80848a), inner: col(0x303236),
+    disc: col(0x70757c), discRim: col(0x868b92), damper: col(0x8e8b80), clevis: col(0x4a4a4c),
+    motor: col(0x5f646b), gear: col(0x777c83), axle: col(0x36373a), rubber: col(0x1f2125), accent: col(0xe6d979),
+  },
 };
 
 // --- the parts ----------------------------------------------------------------------------------------------------------
@@ -378,7 +397,8 @@ export const BRAKE_UNIT = { y: 0.18, radius: 0.065, z0: 0.3, z1: 0.74, flange: 0
 /**
  * Two brake discs a side of the middle on each axle, each with a calliper on its rim toward the middle of the bogie (axle-mounted discs: ASSUMED), and on a trailer bogie its brake unit (`BRAKE_UNIT`)
  * (not the AT300's: its photograph, of a trailer bogie, shows nothing hung between the wheels, so none is drawn there, on a trailer or on a motor bogie; nor the Electrostar's, nor the Desiro City's,
- * whose frames are traced from photographs that show no brake unit hung under the beam).
+ * whose frames are traced from photographs that show no brake unit hung under the beam; nor the Class 180's ('coradia', round 7), whose photograph, of a trailer bogie too, shows a calliper at each
+ * end of the frame, traced with it, and no brake unit in the dark between the wheels).
  */
 function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
@@ -393,7 +413,7 @@ function brakes(soup: Soup, spec: BogieSpec, pal: Palette): void {
       const z0 = az + inward * 0.2;
       const z1 = az + inward * 0.34;
       soup.box(x0, x1, r - 0.07, r + 0.07, Math.min(z0, z1), Math.max(z0, z1), pal.clevis);
-      if (spec.motor || style === 'hitachi' || style === 'electrostar' || style === 'sf7000') continue;
+      if (spec.motor || style === 'hitachi' || style === 'electrostar' || style === 'sf7000' || style === 'coradia') continue;
       // the strap down from the calliper, and the cylinder it carries, with its flange on the end toward the middle of the bogie
       const [sx0, sx1] = xs(sx, 0.3 - unit.strap / 2, 0.3 + unit.strap / 2);
       const strapZ0 = az + inward * unit.z0;
@@ -722,9 +742,112 @@ function electrostarFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void
 }
 
 /**
+ * How far out from the centre line each part of the Class 180's frame stands, as [from, to] or one centre line (metres). ASSUMED: a side-on photograph shows no depth. The beam keeps the depths the AT300's
+ * and the Electrostar's give theirs (0.975 to 1.065 m), so the wheel zone and the 1.15 m envelope are as they were; the axle box stands under the end block with its housing and cap on its end (the cap the outermost
+ * thing, 1.13 m), the primary spring on the box's axis 0.985 m out (its drum, 0.154 m in radius at most, stands inside the envelope), the vertical damper outboard of the box along the bogie, the calliper beyond that in
+ * front of the wheel (0.84 to 0.95 m: clear of the wheel's hub cover, 0.8155 m, and inboard of the box), the bracket, the window's yellow edges and the boss on the beam's outer face, the yaw damper's axis 1.08 m out
+ * (its yellow label reaches 1.145 m) between two clevises, the bar under the beam, and the air spring centred 0.78 m out, so that its 0.252 m radius leaves it inside the beam's outer face (1.032 m).
+ */
+const CORADIA_DEPTH = {
+  beam: [0.975, 1.065],
+  box: [0.955, 1.07],
+  housing: [1.07, 1.1],
+  cap: [1.1, 1.13],
+  spring: 0.985,
+  damper: 1.025,
+  calliper: [0.84, 0.95],
+  boss: [1.065, 1.085],
+  window: [1.065, 1.085],
+  bracket: [1.07, 1.11],
+  yaw: 1.08,
+  clevis: [1.06, 1.12],
+  bar: [0.995, 1.055],
+  air: 0.78,
+} as const;
+/** How much bigger than the yaw damper's body its yellow label's band is (metres in radius). */
+const CORADIA_LABEL = 0.003;
+
+/**
+ * The Class 180's side frame, traced from `CORADIA_TRACE`'s photograph: what is drawn is what the photograph shows, in the plane of the side beam, and the depths across the bogie (`CORADIA_DEPTH`) are ASSUMED. The
+ * beam is one plate of the traced outline on each side (end blocks on the springs, swan necks, a window cut in the middle with its yellow edges, pockets under the blocks, the arms and the lower edge); at each end stand the
+ * axle box with its round housing and cap, the primary spring (a dark core and a drum), the vertical damper, the brake calliper and the round boss on the neck; along the middle the car's bracket that hangs the yaw
+ * damper, the damper (a long cylinder with its yellow label) between its two clevises, and the bar hung under the bogie; and over the middle the air spring up to the body. The two ends are not each other's mirror,
+ * so each is traced; the far side beam is the near one turned half a turn about the vertical (z -> -z), ASSUMED. A trailer bogie and a motor bogie are the same here (the photograph is of a trailer bogie, the
+ * cab end's, and shows no brake unit or drive between the wheels): a motor bogie keeps the diesel's final drive (`finalDrive`), as it had.
+ */
+function coradiaFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
+  const t = CORADIA_TRACE;
+  const T = tracer(t.caps, spec);
+  const D = CORADIA_DEPTH;
+  const r = spec.radius;
+  const metres = (p: Px): P2 => [T.z(p[0]), T.y(p[1])];
+  /** A rectangle of the photograph as the metres it spans: along the bogie (z0 < z1) and up (y0 < y1). */
+  const span = (q: PxRect): { z0: number; z1: number; y0: number; y1: number } => ({ z0: Math.min(T.z(q[0]), T.z(q[2])), z1: Math.max(T.z(q[0]), T.z(q[2])), y0: T.y(q[3]), y1: T.y(q[1]) });
+  const beam = t.beam.map(metres);
+  const bracket = t.bracket.map(metres);
+  const sill = t.window.right.map(metres);
+  const baseY = T.y(t.air.base);
+  const bag = T.len((t.air.right - t.air.left) / 2);
+  const yaw = t.yaw;
+  for (const sx of [-1, 1] as const) {
+    /** The far side beam turns everything half a turn about the vertical. */
+    const turn = (p: P2): P2 => [sx * p[0], p[1]];
+    const zs = (s: { z0: number; z1: number }): [number, number] => (sx > 0 ? [s.z0, s.z1] : [-s.z1, -s.z0]);
+    /** A box over a rectangle of the photograph, from depth `d[0]` to `d[1]`. */
+    const block = (q: PxRect, d: readonly [number, number], colour: THREE.Color): void => {
+      const s = span(q);
+      const [z0, z1] = zs(s);
+      const [x0, x1] = xs(sx, d[0], d[1]);
+      F.box(x0, x1, s.y0, s.y1, z0, z1, colour);
+    };
+    const [bx0, bx1] = xs(sx, D.beam[0], D.beam[1]);
+    plate(F, beam.map(turn), bx0, bx1, pal.frame, pal.box, sx);
+    for (const [end, cap] of [[t.left, t.caps[0]], [t.right, t.caps[1]]] as const) {
+      // the axle box, and the round housing and the cap on its end, both on the axle (a calibration point)
+      block(end.box, D.box, pal.box);
+      const az = sx * T.z(cap[0]);
+      tube(F, axisX(sx * D.housing[0], r, az, sx), 0, D.housing[1] - D.housing[0], T.len(end.housing), 14, pal.box, 'end');
+      tube(F, axisX(sx * D.cap[0], r, az, sx), 0, D.cap[1] - D.cap[0], T.len(end.cap), 12, pal.cap, 'end');
+      // the primary spring: the dark core under the end block and the drum on the axle box, each a cylinder standing on the one below
+      for (const [q, sides, colour] of [[end.core, 10, pal.coil], [end.drum, 12, pal.spring]] as const) {
+        const s = span(q);
+        const [z0, z1] = zs(s);
+        tube(S, axisY(sx * D.spring, s.y0, (z0 + z1) / 2), 0, s.y1 - s.y0, (s.z1 - s.z0) / 2, sides, colour, 'both');
+      }
+      // the vertical damper beside the box, closed at its foot only (its head is under the end block's pocket)
+      const damper = span(end.damper);
+      const [dz0, dz1] = zs(damper);
+      tube(F, axisY(sx * D.damper, damper.y0, (dz0 + dz1) / 2), 0, damper.y1 - damper.y0, (damper.z1 - damper.z0) / 2, 8, pal.frame, 'start');
+      block(end.calliper, D.calliper, pal.clevis);
+      tube(F, axisX(sx * D.boss[0], T.y(end.boss.c[1]), sx * T.z(end.boss.c[0]), sx), 0, D.boss[1] - D.boss[0], T.len(end.boss.r), 12, pal.cap, 'end');
+    }
+    // the window's yellow edges: the left one and the floor are bars, the right one slants (a plate of its outline)
+    block(t.window.left, D.window, pal.accent);
+    block(t.window.floor, D.window, pal.accent);
+    const [wx0, wx1] = xs(sx, D.window[0], D.window[1]);
+    plate(F, sill.map(turn), wx0, wx1, pal.accent, pal.accent, sx);
+    // the car's bracket that hangs the yaw damper, and the damper between its clevises: a cylinder along the line between the ends' centres, its yellow label a band round it
+    const [kx0, kx1] = xs(sx, D.bracket[0], D.bracket[1]);
+    plate(F, bracket.map(turn), kx0, kx1, pal.box, pal.box, sx);
+    const { axis, length } = axisBetween([sx * D.yaw, T.y(yaw.from[1]), sx * T.z(yaw.from[0])], [sx * D.yaw, T.y(yaw.to[1]), sx * T.z(yaw.to[0])]);
+    const along = (col: number): number => ((col - yaw.from[0]) / (yaw.to[0] - yaw.from[0])) * length;
+    tube(F, axis, 0, length, T.len(yaw.radius), 10, pal.damper, 'both');
+    tube(F, axis, along(yaw.label[0]), along(yaw.label[1]), T.len(yaw.radius) + CORADIA_LABEL, 10, pal.accent, 'both');
+    block(yaw.clevisLeft, D.clevis, pal.clevis);
+    block(yaw.clevisRight, D.clevis, pal.clevis);
+    block(t.bar, D.bar, pal.frame);
+    // the air spring over the middle: a fourteen-sided drum standing on the window's floor up to the underside of the body
+    tube(S, axisY(sx * D.air, baseY, 0), 0, BOGIE_TOP - baseY - 0.005, bag, 14, pal.rubber, 'end');
+  }
+  // the cross beam between the side beams, under the beam's top
+  F.box(-0.98, 0.98, r + 0.07, r + 0.27, -0.08, 0.08, pal.box);
+}
+
+/**
  * An outside-frame bogie of the Class 180's maker: an axle box and a coil spring on each journal, a side beam resting on the springs,
  * an air spring on the middle of each beam, a yaw damper low across the middle, and a cross beam between the beams. (The AT300's is `at300Frame` and the Electrostar's
- * `electrostarFrame`, each traced from a photograph; the Class 180's has none to be traced from, and is drawn by eye from the one that shows its leading bogie.)
+ * `electrostarFrame`, each traced from a photograph; round 7 traces the Class 180's own from a photograph of its cab-end bogie, `coradiaFrame`, the 'coradia' style. This one, drawn by eye, stays
+ * for what still wears the 'alstom' kit: a diesel bogie given no style, and the kit's wheels, discs and bare far level that the Voyager 221 (whose frame is its own trace) and the ScotRail DMUs borrow.)
  */
 function outsideFrame(F: Soup, S: Soup, spec: BogieSpec, pal: Palette): void {
   const r = spec.radius;
@@ -998,10 +1121,11 @@ export function bogieParts(spec: BogieSpec): Record<BogiePart, Soup> {
     axles(parts.axles, spec, pal, 0.96);
     if (style === 'hitachi') at300Frame(parts.frame, parts.springs, spec, pal);
     else if (style === 'electrostar') electrostarFrame(parts.frame, parts.springs, spec, pal);
+    else if (style === 'coradia') coradiaFrame(parts.frame, parts.springs, spec, pal);
     else outsideFrame(parts.frame, parts.springs, spec, pal);
   }
   if (spec.motor && spec.diesel) finalDrive(parts.drive, spec, pal);
-  else if (spec.motor && style !== 'hitachi' && style !== 'electrostar' && style !== 'sf7000') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
+  else if (spec.motor && style !== 'hitachi' && style !== 'electrostar' && style !== 'sf7000' && style !== 'coradia') tractionMotors(parts.drive, spec, pal, style === 'siemens' ? [0.34, 0.45] : [0.34, 0.56]);
   return parts;
 }
 
@@ -1070,6 +1194,24 @@ export function bogieFarSoup(spec: Pick<BogieSpec, 'radius' | 'wheelbase' | 'tra
       soup.box(x0, x1, r - 0.16, r + 0.24, -(w + 0.12), w + 0.12, pal.frame);
     }
     soup.box(-0.5, 0.5, r + 0.1, r + 0.24, -0.08, 0.08, pal.frame);
+    return soup;
+  }
+  if (style === 'coradia') {
+    // the Class 180's bogie from far off: a slab a side as long as the traced beam and as high as the beam's area over its length, hung from the beam's top (so it keeps the beam's mass and its reach), and the
+    // transom
+    const t = CORADIA_TRACE;
+    const T = tracer(t.caps, spec);
+    const outline = t.beam.map((p): P2 => [T.z(p[0]), T.y(p[1])]);
+    const zLow = Math.min(...outline.map((p) => p[0]));
+    const zHigh = Math.max(...outline.map((p) => p[0]));
+    const top = Math.max(...outline.map((p) => p[1]));
+    const area = Math.abs(outline.reduce((sum, p, i) => sum + p[0] * (outline[(i + 1) % outline.length] as P2)[1] - (outline[(i + 1) % outline.length] as P2)[0] * p[1], 0)) / 2;
+    for (const sx of [-1, 1] as const) {
+      const [x0, x1] = xs(sx, CORADIA_DEPTH.beam[0], CORADIA_DEPTH.beam[1]);
+      const [z0, z1] = sx > 0 ? [zLow, zHigh] : [-zHigh, -zLow];
+      soup.box(x0, x1, top - area / (zHigh - zLow), top, z0, z1, pal.frame);
+    }
+    soup.box(-0.98, 0.98, r + 0.07, r + 0.27, -0.08, 0.08, pal.box);
     return soup;
   }
   for (const sx of [-1, 1]) {

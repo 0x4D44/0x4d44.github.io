@@ -99,8 +99,10 @@ export const END_GAP = ASSUMED.endGap;
  * the Electrostar's (a generic outside-frame bogie until round 6: no usable photograph then), the Desiro City's, which the 700 shares (tl700_03_gatwick_bogie_28898326470:
  * an inside frame) and the Class 180's Alstom (GC180-01-180-101-Kings-Cross). Round 6 traces the AT300's, the Electrostar's and the Desiro City's frames from photographs (`train-bogie-trace.ts`);
  * the Desiro City's is the 'sf7000' style, so that the 'siemens' one, which the Voyagers wear (train-intercity.ts), is not touched.
+ * Round 7 traces the Class 180's too, from a side-on photograph of its cab-end bogie (`class180-gc-york-side-arthur-2026-11-11.png`, a private modelling reference): it is the 'coradia' style, so that
+ * the 'alstom' kit, whose wheels and drive the Voyager 221 and the ScotRail DMUs borrow and which a diesel bogie wears by default, is not touched.
  */
-export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitachi', electrostar: 'electrostar', desiro: 'sf7000', desiro700: 'sf7000', adelante: 'alstom' };
+export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitachi', electrostar: 'electrostar', desiro: 'sf7000', desiro700: 'sf7000', adelante: 'coradia' };
 
 /** How far the doors stand proud of the shell, so they, not the shell, set the body width. */
 const DOOR_RELIEF = 0.02;

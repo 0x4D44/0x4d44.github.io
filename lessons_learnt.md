@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-12 - Traced plate edges on one pixel row make earClip throw "not a simple polygon": tilt one (train-parts.ts earClip)
+  The Class 180 side beam's two end-block undersides both sat on row 471 of the photograph, four collinear vertices, so ear clipping ended on a zero-area remnant and plate() threw
+  "bogie outline is not a simple polygon" although the outline was simple. A half-pixel slope on those two edges (CORADIA_TRACE.beam: 471.6 and 470.8 / 471.4) cleared it with no visible
+  change. Expect it from any new traced outline with a flat shelf or two flush edges; the throw names no vertex, so list the polygon's last four ears to find them. Seen round 7, 2026-11-12.
+
 - 2026-11-10 - Build kings-cross from kings-cross-src, not web/: web/ skips vite.config.ts base ./ and the page never readies
   Running `vite build` inside kings-cross-src/web ignores the root vite.config.ts, so dist/index.html loads /assets/... instead of ./assets/....
   Under the evidence server the scripts 404 as aborted requests, the module graph never runs, and capture fails with "page condition timed
