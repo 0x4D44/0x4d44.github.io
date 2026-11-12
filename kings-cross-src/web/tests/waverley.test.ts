@@ -42,3 +42,15 @@ test('Waverley endpoint camera fits actual platform corners at desktop and phone
   }
   assert.throws(() => waverleyView({ ...geometry, platforms: [] }, 1), /platforms/);
 });
+
+test('the Waverley view carries the OSM signal overlay when it is installed and well formed; without one the scene still loads', async () => {
+  const overlay = { attribution: 'synthetic OSM', signals: [] };
+  const load = (signalsLoader: (() => Promise<{ default: unknown }>) | null) => loadWaverleyScene({ signalsLoader,
+    modelLoader: async () => ({ buildWaverleyScene: () => ({ group: new THREE.Group(), dispose: () => {} }) }), geometryLoader: async () => ({ default: geometry }) });
+  const installed = await load(async () => ({ default: overlay }));
+  assert.equal(installed.placeholder, false); assert.deepEqual(installed.signals, overlay); installed.dispose();
+  for (const loader of [null, async () => ({ default: { signals: 'no' } }), async () => { throw new Error('chunk failure'); }]) {
+    const view = await load(loader);
+    assert.equal(view.placeholder, false, 'the overlay is optional'); assert.equal(view.signals, undefined); view.dispose();
+  }
+});

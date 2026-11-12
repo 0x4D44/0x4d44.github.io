@@ -5,6 +5,7 @@ import type { StationView } from './station-transition.ts';
 import type { WaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import type { SceneWeather } from './station-weather.ts';
 import { decodeWaverleyAnchorScene } from '../../core/waverley-anchors.ts';
+import type { SignalOverlay } from './signals.ts';
 
 export const WAVERLEY_PLACEHOLDER_LABEL = 'Edinburgh Waverley — model not yet available';
 
@@ -24,6 +25,8 @@ export interface WaverleyView {
   message: string;
   error?: string;
   geometry?: WaverleyAnchorScene;
+  /** The public OSM signal overlay (data/waverley-signals.json), when it is installed and reads as one. */
+  signals?: SignalOverlay;
   groundAttribution?: string;
   climate?: SceneWeather;
   model?: ReturnType<WaverleyModelModule['buildWaverleyScene']>;
@@ -38,6 +41,15 @@ export interface WaverleyView {
 // guard would incorrectly suppress installed chunks in the production build.
 const models = (() => { try { return import.meta.glob<WaverleyModelModule>('./waverley-scene.ts'); } catch { return {}; } })();
 const geometries = (() => { try { return import.meta.glob<{ default: unknown }>('./data/waverley-scene.json'); } catch { return {}; } })();
+const signalOverlays = (() => { try { return import.meta.glob<{ default: unknown }>('./data/waverley-signals.json'); } catch { return {}; } })();
+
+/** An overlay only if it has the shape the signal layer reads; anything else is no overlay (the scene still loads). */
+async function loadSignals(loader: (() => Promise<{ default: unknown }>) | undefined | null): Promise<SignalOverlay | undefined> {
+  try {
+    const value = loader ? (await loader()).default as SignalOverlay : undefined;
+    return value && typeof value.attribution === 'string' && Array.isArray(value.signals) ? value : undefined;
+  } catch { return undefined; }
+}
 
 /** Fit the actual platform extent, keeping it clear of the shared phone navigation. */
 export function waverleyView(geometry: WaverleyAnchorScene, aspect: number): StationView {
@@ -63,6 +75,7 @@ export function waverleyView(geometry: WaverleyAnchorScene, aspect: number): Sta
 export async function loadWaverleyScene(options: {
   modelLoader?: (() => Promise<WaverleyModelModule>) | null;
   geometryLoader?: (() => Promise<{ default: unknown }>) | null;
+  signalsLoader?: (() => Promise<{ default: unknown }>) | null;
 } = {}): Promise<WaverleyView> {
   const modelLoader = options.modelLoader === undefined ? models['./waverley-scene.ts'] : options.modelLoader;
   const geometryLoader = options.geometryLoader === undefined ? geometries['./data/waverley-scene.json'] : options.geometryLoader;
@@ -70,12 +83,13 @@ export async function loadWaverleyScene(options: {
   try {
     if (!modelLoader) throw new Error('Waverley model chunk is not installed');
     if (!geometryLoader) throw new Error('Waverley platform geometry is not installed');
-    const [module, data] = await Promise.all([modelLoader(), geometryLoader()]);
+    const [module, data, signals] = await Promise.all([modelLoader(), geometryLoader(),
+      loadSignals(options.signalsLoader === undefined ? signalOverlays['./data/waverley-signals.json'] : options.signalsLoader)]);
     const geometry = decodeWaverleyAnchorScene(data.default);
     model = module.buildWaverleyScene();
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0x334458); scene.add(model.group);
     let disposed = false;
-    const loaded: WaverleyView = { scene, model, geometry, groundAttribution: model.groundAttribution, placeholder: false,
+    const loaded: WaverleyView = { scene, model, geometry, ...(signals ? { signals } : {}), groundAttribution: model.groundAttribution, placeholder: false,
       message: 'Edinburgh Waverley: OSM model · EB live trains unavailable until private anchors load',
       view: aspect => waverleyView(geometry, aspect),
       // The model owns its local geometry/materials. A broad scene disposer would

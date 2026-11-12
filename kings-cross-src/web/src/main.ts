@@ -250,7 +250,7 @@ function start(): void {
     mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
   const stations = createStations({ scene, camera, controls, renderer, ready: cityLoaded, data,
     attachEdinburgh: view => { view.live = createEdinburghLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
-      mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
+      mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname, signals: params.get('signals') === '0' ? null : view.signals });
       if (!fixedSky) view.climate = createWaverleyWeather(view, weatherOptions); },
     attachPerth: view => { if (!fixedSky) view.climate = createPerthWeather(view, weatherOptions); },
     stationSuffix: id => (id === 'edinburgh-waverley' || id === 'perth' ? stations.remote()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',

@@ -24,6 +24,9 @@ import type { Pt } from '../../core/geo.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
 import type { LiveDependencies, MotionSink, TrainFeed } from './feed.ts';
+import { createSignals } from './signals.ts';
+import type { SignalOverlay } from './signals.ts';
+import type { OccupiedSpan } from '../../core/signal-aspects.ts';
 
 /** Through platforms must never inherit the KX buffer-stop marker. */
 export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMap {
@@ -51,9 +54,15 @@ export function validateEdinburghAnchors(value: unknown, graph: Graph): AnchorMa
   return map;
 }
 
+/** The EB track: the local graph of the scene's rails, on the curves the page draws. */
+export function edinburghTrack(geometry: unknown): { data: ReturnType<typeof waverleyTrackData>; graph: Graph } {
+  const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry));
+  return { data, graph: buildGraph(data, { curves: true }) };
+}
+
 export function createEdinburghMotion(geometry: unknown, value: unknown,
-  serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined) {
-  const data = waverleyTrackData(decodeWaverleyAnchorScene(geometry)), graph = buildGraph(data, { curves: true });
+  serviceFor?: (description: string, atTime: number) => EdinburghServiceEvidence | undefined, track = edinburghTrack(geometry)) {
+  const { data, graph } = track;
   const anchors = validateEdinburghAnchors(value, graph), kinds = createEdinburghKinds(serviceFor, { rows: EDINBURGH_FLEET });
   const motion = createMotion(graph, anchors, { lengthM: kinds.lengthM,
     // ASSUMED conservative station speed until a sourced local restriction table exists.
@@ -115,12 +124,29 @@ export function edinburghLiveDependencies(deps: LiveDependencies = {}): LiveDepe
   return { ...deps, source: () => source('/relay/events?area=EB') };
 }
 
+/** The track a train covers, as node pairs (core/signal-aspects.ts); a fading train has left the TD picture. */
+export function edinburghOccupancy(views: readonly TrainView[]): OccupiedSpan[] {
+  return views.filter(v => v.state !== 'fading').flatMap(v => v.occupied.map(o => ({ a: o.edge.a, b: o.edge.b, fromT: o.fromT, toT: o.toT })));
+}
+/** How often the signal heads read the trains again (ms): aspects change with sections, not with frames. */
+export const SIGNAL_OCCUPANCY_MS = 500;
+
 export function createEdinburghLive(options: {
   geometry: unknown; scene: THREE.Scene; camera: THREE.Camera; parent: HTMLElement;
   mode: 'auto' | 'live' | 'replay' | 'demo' | 'none'; date: string; speed: number; hostname: string;
   fetchImpl?: typeof fetch; liveDependencies?: LiveDependencies;
+  /** The public OSM signal overlay (data/waverley-signals.json); absent or null, no signal heads. */
+  signals?: SignalOverlay | null;
+  /** How often the heads read the trains again (ms, default SIGNAL_OCCUPANCY_MS). */
+  signalOccupancyMs?: number;
 }) {
   const group = new THREE.Group(); group.name = 'edinburgh-eb-trains'; options.scene.add(group);
+  const track = edinburghTrack(options.geometry);
+  // The heads stand by the drawn curves, four instanced draws for them all. Their aspects come from the EB feed's S-class
+  // red/not-red where the private table decodes one, and are otherwise inferred from the trains ahead (Arthur, 12 Nov).
+  const signals = options.signals ? createSignals(options.signals, options.scene, { area: 'EB', track: track.graph, platforms: track.data.platforms,
+    infer: true, instanced: true, ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}) }) : undefined;
+  let occupancyAt = -Infinity;
   // the pool of light ahead of each lit headlamp and the halo round each lit lens: two instanced draws for all the trains of this scene (train-lamp-pool.ts)
   const lights = new TrainLampLights(); options.scene.add(lights.group);
   const labels = options.parent.ownerDocument.createElement('div'); labels.className = 'edinburgh-train-labels';
@@ -149,18 +175,28 @@ export function createEdinburghLive(options: {
       const response = await fetchImpl('/relay/anchors?area=EB', { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
       if (!response.ok) throw new Error(`EB anchors unavailable (${response.status})`);
       // serviceFor reads the table as it stands at each birth; the fleet is fetched below, before any train can be born.
-      const candidate = createEdinburghMotion(options.geometry, await response.json(), fleetServiceFor(() => ptac, () => fleet));
+      const candidate = createEdinburghMotion(options.geometry, await response.json(), fleetServiceFor(() => ptac, () => fleet), track);
       if (!candidate.anchors.anchors.length) throw new Error('EB positions/headings unresolved; no placed anchors');
+      // the heads hear what the trains hear: the S-class bytes and the snapshots that replace them
+      const sink: MotionSink = signals ? { advance: candidate.sink.advance, apply: (event, at, observed) => {
+        candidate.sink.apply(event, at, observed); if (event.area === 'EB') signals.apply({ t: at, e: event });
+      } } : candidate.sink;
       await loadFleet();
       if (options.mode === 'replay') {
         const recording = await fetchImpl(`/relay/recording?area=EB&date=${encodeURIComponent(options.date)}`, { cache: 'no-store', signal: AbortSignal.any([abort.signal, AbortSignal.timeout(30_000)]) });
         if (!recording.ok) throw new Error(`EB recording unavailable (${recording.status})`);
-        replay = createAreaReplay('EB', parseRecording(await recording.text()), candidate.sink, options.speed);
+        replay = createAreaReplay('EB', parseRecording(await recording.text()), sink, options.speed);
       }
       if (disposed) return;
       session = candidate; error = undefined;
+      signals?.setAnchors(candidate.anchors, candidate.graph);
+      void signals?.loadTable();
       if (replay) connection = 'frozen EB replay';
-      else feed = createLiveFeed(candidate.sink, text => { connection = text; }, edinburghLiveDependencies(options.liveDependencies));
+      else feed = createLiveFeed(sink, text => {
+        connection = text;
+        // A disconnected or invalid live stream cannot support a current aspect (as at King's Cross).
+        if (!['connected', 'playing', 'recording ended'].includes(text)) signals?.reset();
+      }, edinburghLiveDependencies(options.liveDependencies));
     } catch (err) {
       if (!disposed) { error = (err as Error).message; connection = `live trains unavailable; ${error}`; retryAt = performance.now() + backoffMs(attempt++); }
     } finally { loading = false; }
@@ -239,14 +275,21 @@ export function createEdinburghLive(options: {
   };
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
-    state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [] }),
-    status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}`,
+    state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [], signals }),
+    status: (): string => {
+      const heads = signals?.counts();
+      return `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}${heads ? ` · signals: ${heads.drawn} drawn, ${heads.decoded} lit` : ''}`;
+    },
     frame(dt: number, selected: boolean, utcMs?: number): void {
       group.visible = selected; lights.group.visible = selected; labels.hidden = !selected;
       if (selected && performance.now() >= retryAt) void load();
       feed?.advance(dt); replay?.frame(dt, utcMs && utcMs > 0 ? utcMs : undefined);
       if (session) update(session.motion.trains());
+      // no session (no relay, no anchors, demo): nothing is known of the trains, and every inferred aspect stays dark
+      if (signals && selected && performance.now() - occupancyAt >= (options.signalOccupancyMs ?? SIGNAL_OCCUPANCY_MS)) {
+        occupancyAt = performance.now(); signals.setOccupancy(session ? edinburghOccupancy(session.motion.trains()) : undefined);
+      }
     },
-    dispose(): void { disposed = true; abort.abort(); feed?.dispose(); for (const item of drawn.values()) { disposeTrain(item.group); item.label.remove(); } drawn.clear(); group.removeFromParent(); lights.dispose(); labels.remove(); },
+    dispose(): void { disposed = true; abort.abort(); feed?.dispose(); signals?.dispose(); for (const item of drawn.values()) { disposeTrain(item.group); item.label.remove(); } drawn.clear(); group.removeFromParent(); lights.dispose(); labels.remove(); },
   };
 }

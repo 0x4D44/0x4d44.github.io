@@ -213,3 +213,36 @@ test('EB gives its scene one instanced pool and one instanced halo for the light
   runtime.dispose();
   assert.equal(scene.children.length, 0, 'and disposal takes it out of the scene');
 });
+
+// Two heads facing trains toward +z (node 1 at z -500 to node 3 at z 500): one at z -400, one at z 250.
+const signalOverlay = { attribution: 'synthetic OSM', signals: [
+  { id: 1, kinds: ['main'], edge: { wayId: 1, from: 1, to: 2, t: 0.2, point: [0, -400] as [number, number] }, travel: [0, 1] as [number, number],
+    side: 'left' as const, sideSource: 'assumed-left' as const, review: 'unreviewed' as const },
+  { id: 2, kinds: ['main'], edge: { wayId: 1, from: 2, to: 3, t: 0.5, point: [0, 250] as [number, number] }, travel: [0, 1] as [number, number],
+    side: 'left' as const, sideSource: 'assumed-left' as const, review: 'unreviewed' as const }] };
+
+test('EB signal heads: instanced in the Waverley scene, dark with no trains known, then aspects from the trains ahead; none without an overlay', async () => {
+  const { parent } = parentFixture(), scene = new THREE.Scene(), urls: string[] = [];
+  const runtime = createEdinburghLive({ geometry, scene, camera: new THREE.PerspectiveCamera(), parent, signals: signalOverlay, signalOccupancyMs: 0,
+    mode: 'replay', hostname: 'localhost', date: '20260101', speed: 10,
+    fetchImpl: async input => { urls.push(String(input)); return /\/fleet|\/sclass/.test(String(input)) ? new Response('{}', { status: 404 }) : new Response(String(input).includes('/anchors') ? JSON.stringify(anchors)
+      : JSON.stringify({ t: 5000, e: { kind: 'snapshot', area: 'EB', berths: { SYN1: '1A11' } } }) + '\n'); } });
+  const parts: THREE.InstancedMesh[] = []; scene.traverse(o => { if (o instanceof THREE.InstancedMesh && o.name.startsWith('signal-')) parts.push(o); });
+  assert.deepEqual(parts.map(p => p.name).sort(), ['signal-boxes', 'signal-lamps', 'signal-posts']);
+  const heads = () => (runtime.state().signals!.signals()).map(s => s.state);
+  runtime.frame(0, false, 0); assert.deepEqual(heads(), ['unknown', 'unknown'], 'no session: dark');
+  await runtime.load(); runtime.frame(0, true, 4000);
+  assert.ok(urls.includes('/relay/sclass?area=EB'), 'the EB table, from its own area');
+  assert.deepEqual(heads(), ['caution', 'unknown'], 'no trains: one clear section, then the track ends; the far head\'s first section leaves the track');
+  runtime.frame(0, true, 5000); assert.equal(runtime.state().trains.length, 1);
+  assert.deepEqual(heads(), ['danger', 'unknown'], 'the train at SYN1 (z -100) is in the near head\'s first section');
+  assert.match(runtime.status(), /signals: 2 drawn, 1 lit/);
+  runtime.dispose(); assert.equal(scene.children.length, 0);
+  // without an overlay, or with ?signals=0 (null), no heads
+  for (const signals of [undefined, null]) {
+    const { parent } = parentFixture(), scene = new THREE.Scene();
+    const runtime = createEdinburghLive({ geometry, scene, camera: new THREE.Camera(), parent, mode: 'none', hostname: 'localhost', date: '', speed: 1, ...(signals === null ? { signals } : {}) });
+    let instanced = 0; scene.traverse(o => { if (o instanceof THREE.InstancedMesh && o.name.startsWith('signal-')) instanced++; });
+    assert.equal(instanced, 0); assert.equal(runtime.state().signals, undefined); assert.doesNotMatch(runtime.status(), /signals:/); runtime.dispose();
+  }
+});
