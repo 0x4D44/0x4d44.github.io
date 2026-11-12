@@ -107,13 +107,13 @@ const key = (v: readonly number[]): string => v.map((c) => Math.round(c * 1e6)).
 const vertsOf = (s: Soup): V3[] => Array.from({ length: s.pos.length / 3 }, (_, i): V3 => [s.pos[3 * i] as number, s.pos[3 * i + 1] as number, s.pos[3 * i + 2] as number]);
 const trisOf = (s: Soup): number => s.pos.length / 9;
 /** The bogie under test, built on first use inside a test (a builder that throws is then a failing test, not a dead file). */
-let built: { parts: ReturnType<typeof bogieParts>; frame: V3[]; frameKeys: Set<string>; springVerts: V3[]; springKeys: Set<string> } | undefined;
+let built: { parts: ReturnType<typeof bogieParts>; frame: V3[]; frameKeys: Set<string>; springVerts: V3[] } | undefined;
 function bogie(): NonNullable<typeof built> {
   if (!built) {
     const parts = bogieParts(SPEC);
     const frame = vertsOf(parts.frame);
     const springVerts = vertsOf(parts.springs);
-    built = { parts, frame, frameKeys: new Set(frame.map(key)), springVerts, springKeys: new Set(springVerts.map(key)) };
+    built = { parts, frame, frameKeys: new Set(frame.map(key)), springVerts };
   }
   return built;
 }
@@ -227,11 +227,10 @@ test('Class 180 frame: the side beam is the photograph\'s outline, 23 corners, o
   near(Z(294) + Z(376), 0.0, 0.01, 'about the middle of the bogie');
 });
 
-test('Class 180 frame: each end carries its axle box, housing, cap, spring core and drum, vertical damper, calliper and boss at the numbers the photograph gives, and the two ends are not each other\'s mirror', () => {
-  const { frame, frameKeys, springVerts, springKeys } = bogie();
-  // the two ends are two different outlines of the same parts: the cap and the damper stand different distances apart
-  assert.notEqual(ENDS[0]!.capRadius, ENDS[1]!.capRadius, 'the right cap is the smaller');
-  assert.ok(Math.abs((501.1 - 531.75) - (126.75 - 168.5)) > 10, 'the right damper stands nearer its cap than the left');
+test('Class 180 frame: each end carries its axle box, housing, cap, spring core and drum, vertical damper, calliper and boss, each end at its own numbers from the photograph', () => {
+  const { frame, frameKeys, springVerts } = bogie();
+  // (the two ends are two different outlines of the same parts, not each other's mirror: the right cap is the smaller, 9 px in radius to the left's 12, and the right damper stands nearer its
+  // axle, 0.249 m, than the left's, 0.339 m. Each end is held to its own numbers below, on both sides of the bogie)
   for (const sx of [-1, 1] as const) {
     for (const end of ENDS) {
       const where = `side ${sx}, ${end.name} end`;
