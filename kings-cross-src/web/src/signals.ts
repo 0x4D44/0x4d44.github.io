@@ -174,6 +174,14 @@ const aspectBearing = (signal: OverlaySignal): boolean => signal.kinds.includes(
 /** Lamp colours: unknown is the dark grey lamp. */
 const LAMP: Readonly<Record<Aspect, number>> = { proceed: 0x35ff69, preliminary: 0xffc21a, caution: 0xffc21a, danger: 0xff2929, unknown: 0x666666 };
 
+const colour = new THREE.Color();
+/** What an overlay head's label says of where it stands. */
+function overlayLabel(signal: OverlaySignal): string {
+  const detail = signal.positionReview?.status === 'reviewed' ? 'reviewed track position and side; height/offset schematic'
+    : signal.positionReview?.reason ?? (signal.side === 'over-track' ? 'bridge mounting; height unmeasured' : 'side not evidenced by a public position review');
+  return `Signal ${signal.ref ?? signal.id} · OSM position · ${signal.positionReview?.status === 'reviewed' ? '' : 'uncertain: '}${detail}`;
+}
+
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
 export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   options: { fetchImpl?: typeof fetch; area?: string;
@@ -184,7 +192,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     /** the track's curves (buildGraph(data, { curves: true })): heads stand off the curved centre line, square to it */
     track?: Pick<Graph, 'pos' | 'shapes'> & Partial<Pick<Graph, 'adj'>>;
     /** infer yellows and greens from setOccupancy (needs track.adj); off, a head shows only the feed's red/not-red */
-    infer?: boolean } = {}) {
+    infer?: boolean;
+    /**
+     * draw the overlay's heads as one instanced mesh to a part (post, box, lamp, and the second lamp of four-aspect heads):
+     * four draws for every head, not five a head. Each head keeps its (empty) group for its pose, label and userData.
+     * A head inferred from TD is drawn as its own group either way.
+     */
+    instanced?: boolean } = {}) {
   const area = options.area ?? 'Y9';
   const refRule = options.refRule === null ? undefined : options.refRule ?? SIGNAL_REF_RULES[area];
   const refBerth = (ref: string | undefined): string | undefined => signalRefBerth(ref, refRule ?? null);
@@ -249,6 +263,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     };
     const group = new THREE.Group(); group.name = `signal-${drawnSignal.id}`;
     pose(drawnSignal, group);
+    if (options.instanced && !inferred) {
+      const record: DrawnSignal = { signal: drawnSignal, group, state: 'unknown', inferredPosition: false, label: overlayLabel(drawnSignal) };
+      group.userData.label = record.label; group.userData.inferredPosition = false;
+      group.userData.positionReview = drawnSignal.positionReview?.status ?? 'uncertain';
+      records.push(record); parent.add(group);
+      return record;
+    }
     // OSM bridge denotes a gantry, not a freestanding mast on an assumed side.
     // Keep the glyph height schematic: no source measures the gantry's elevation.
     const post = drawnSignal.side === 'over-track' ? undefined : mesh(new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6), 0x999999, !inferred);
@@ -274,10 +295,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     question.add(new THREE.Line(lineGeometry, lineMaterial));
     const dot = mesh(new THREE.SphereGeometry(0.025, 6, 4), 0xffffff, !inferred); dot.position.y = -0.22; question.add(dot);
     question.position.set(0, 3.48, 0.16); group.add(question);
-    const detail = drawnSignal.positionReview?.status === 'reviewed' ? 'reviewed track position and side; height/offset schematic'
-      : drawnSignal.positionReview?.reason ?? (drawnSignal.side === 'over-track' ? 'bridge mounting; height unmeasured' : 'side not evidenced by a public position review');
-    const label = inferred ? `Signal ${drawnSignal.berth} · position inferred from TD · uncertain position and side`
-      : `Signal ${drawnSignal.ref ?? drawnSignal.id} · OSM position · ${drawnSignal.positionReview?.status === 'reviewed' ? '' : 'uncertain: '}${detail}`;
+    const label = inferred ? `Signal ${drawnSignal.berth} · position inferred from TD · uncertain position and side` : overlayLabel(drawnSignal);
     if (inferred) group.name = label;
     group.userData.label = label; group.userData.inferredPosition = inferred;
     group.userData.positionReview = drawnSignal.positionReview?.status ?? 'uncertain';
@@ -304,6 +322,35 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     }
   }
   directAnchors.push(...anchors.anchors);
+  /** The instanced parts, and each overlay head's index in them (options.instanced). */
+  const instances = options.instanced ? buildInstances() : undefined;
+  if (instances) refresh(); // every lamp starts dark, as a head built of its own meshes does
+  function buildInstances() {
+    const heads = records.filter(r => !r.inferredPosition), group = new THREE.Group(); group.name = 'signal-heads';
+    const part = (name: string, geometry: THREE.BufferGeometry, color: number, owners: DrawnSignal[]) => {
+      if (!owners.length) return undefined;
+      const material = new THREE.MeshBasicMaterial({ color }); resources.add(geometry); resources.add(material);
+      const instanced = new THREE.InstancedMesh(geometry, material, owners.length); instanced.name = name;
+      owners.forEach((r, i) => { r.group.updateMatrix(); instanced.setMatrixAt(i, r.group.matrix); });
+      instanced.instanceMatrix.needsUpdate = true; instanced.computeBoundingSphere(); group.add(instanced);
+      return { mesh: instanced, index: new Map(owners.map((r, i) => [r, i])) };
+    };
+    const fourAspect = heads.filter(r => r.signal.aspects === 4);
+    // A four-aspect head's aspect lamp sits low in the box and its second lamp high, lit only for double yellow.
+    const lampY = (r: DrawnSignal): number => r.signal.aspects === 4 ? 3.72 : 3.95;
+    const parts = {
+      post: part('signal-posts', new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6).translate(0, 1.85, 0), 0x999999, heads.filter(r => r.signal.side !== 'over-track')),
+      box: part('signal-boxes', new THREE.BoxGeometry(0.65, 1.15, 0.28).translate(0, 3.8, 0), 0x15191c, heads),
+      lamp: part('signal-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 0, 0.18), 0xffffff, heads),
+      upper: part('signal-upper-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 4.18, 0.18), 0xffffff, fourAspect),
+    };
+    // the lamp's height differs by head: its instance matrix carries it
+    const lift = new THREE.Matrix4();
+    for (const [r, i] of parts.lamp?.index ?? []) parts.lamp!.mesh.setMatrixAt(i, lift.makeTranslation(0, lampY(r), 0).premultiply(r.group.matrix));
+    if (parts.lamp) { parts.lamp.mesh.instanceMatrix.needsUpdate = true; parts.lamp.mesh.computeBoundingSphere(); }
+    parent.add(group);
+    return { group, ...parts };
+  }
   function install(value: unknown): void {
     table = validatedSignalHypotheses(value, area); tableValue = value;
     reconcilePositions(); refresh();
@@ -418,11 +465,19 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     for (const record of records) {
       const feed = (record.signal.kinds.includes('main') || (record.signal.kinds.length === 0 && record.mappingSource === 'reference')) ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
       record.state = options.infer && !record.inferredPosition && aspectBearing(record.signal) ? combineAspect(feed, inferred?.get(record.signal.id) ?? 'unknown') : feed;
-      const lamp = lamps.get(record)!, lampColour = LAMP[record.state];
+      const lampColour = LAMP[record.state], index = instances?.lamp?.index.get(record);
+      if (index !== undefined) {
+        instances!.lamp!.mesh.setColorAt(index, colour.setHex(lampColour));
+        const upper = instances!.upper?.index.get(record);
+        if (upper !== undefined) instances!.upper!.mesh.setColorAt(upper, colour.setHex(record.state === 'preliminary' ? LAMP.preliminary : LAMP.unknown));
+        continue;
+      }
+      const lamp = lamps.get(record)!;
       if (record.inferredPosition) lamp.material.color.setHex(lampColour); // its own material
       else lamp.material = sharedMaterial(lampColour); // the shared one of that colour
       questions.get(record)!.visible = record.state === 'unknown';
     }
+    for (const part of [instances?.lamp, instances?.upper]) if (part?.mesh.instanceColor) part.mesh.instanceColor.needsUpdate = true;
   }
   return {
     apply(row: SignalEvent): void {
@@ -477,6 +532,11 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     },
     signals(): DrawnSignal[] { return [...records]; },
     counts(): { drawn: number; decoded: number } { return { drawn: records.length, decoded: records.filter((r) => r.state !== 'unknown').length }; },
-    dispose(): void { if (disposed) return; disposed = true; generation += 1; for (const record of records) record.group.removeFromParent(); for (const resource of resources) resource.dispose(); },
+    dispose(): void {
+      if (disposed) return; disposed = true; generation += 1;
+      for (const record of records) record.group.removeFromParent();
+      if (instances) { instances.group.removeFromParent(); for (const part of [instances.post, instances.box, instances.lamp, instances.upper]) part?.mesh.dispose(); }
+      for (const resource of resources) resource.dispose();
+    },
   };
 }

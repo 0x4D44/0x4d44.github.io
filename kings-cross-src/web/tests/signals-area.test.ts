@@ -87,3 +87,47 @@ test('without infer (King\'s Cross) occupancy changes nothing: a head shows only
   assert.deepEqual(layer.signals().map(s => s.state), ['proceed', 'unknown', 'unknown']);
   layer.dispose();
 });
+
+const meshes = (root: THREE.Object3D) => { const out: THREE.Mesh[] = []; root.traverse(o => { if (o instanceof THREE.Mesh) out.push(o); }); return out; };
+const triangles = (m: THREE.Mesh) => (m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute('position').count) / 3 * (m instanceof THREE.InstancedMesh ? m.count : 1);
+
+test('instanced heads: four draws however many heads, one lamp colour each, a second lamp lit only for double yellow', () => {
+  const many = Array.from({ length: 60 }, (_, i) => head({ id: 100 + i, ref: undefined, edge: { wayId: 1, from: 1, to: 2, t: 0.5, point: [i, 50] },
+    ...(i % 2 ? { aspects: 4 as const } : {}), ...(i === 0 ? { side: 'over-track' as const } : {}) }));
+  const scene = new THREE.Scene(), graph = lineGraph();
+  const layer = createSignals({ attribution: 'synthetic', signals: [...lineHeads(4), ...many] }, scene, { area: 'ZZ', refRule: ZZ, track: graph, infer: true, instanced: true });
+  const drawn = meshes(scene);
+  assert.deepEqual(drawn.map(m => m.name).sort(), ['signal-boxes', 'signal-lamps', 'signal-posts', 'signal-upper-lamps']);
+  assert.ok(drawn.every(m => m instanceof THREE.InstancedMesh));
+  const part = (name: string) => drawn.find(m => m.name === name) as THREE.InstancedMesh;
+  assert.equal(part('signal-boxes').count, 63); assert.equal(part('signal-posts').count, 62, 'a gantry head has no post');
+  assert.equal(part('signal-upper-lamps').count, 33, 'only four-aspect heads carry the second lamp');
+  const lampOf = (id: number) => { const c = new THREE.Color(); part('signal-lamps').getColorAt(layer.signals().findIndex(s => s.signal.id === id), c); return c.getHex(); };
+  const upperOf = (i: number) => { const c = new THREE.Color(); part('signal-upper-lamps').getColorAt(i, c); return c.getHex(); };
+  assert.equal(lampOf(1), 0x666666, 'dark before any data');
+  layer.setOccupancy([]);
+  assert.deepEqual([lampOf(1), upperOf(0)], [0xffc21a, 0xffc21a], 'double yellow: both lamps');
+  assert.deepEqual([lampOf(2), upperOf(1)], [0xffc21a, 0x666666], 'single yellow: the second lamp dark');
+  layer.setOccupancy([{ a: 1, b: 2, fromT: 0.6, toT: 0.9 }]); assert.equal(lampOf(1), 0xff2929);
+  // each head still has its group, posed, for its label; the head's lamp stands where the group stands
+  const m = new THREE.Matrix4(), p = new THREE.Vector3(); part('signal-boxes').getMatrixAt(0, m); p.setFromMatrixPosition(m);
+  const g = layer.signals()[0]!.group; assert.ok(p.distanceTo(g.position) < 1e-9); assert.equal(g.children.length, 0);
+  const tris = drawn.reduce((n, mesh) => n + triangles(mesh), 0);
+  assert.equal(tris, 62 * 24 + 63 * 12 + 63 * 80 + 33 * 80, 'post 24, box 12, lamp 80 triangles, and 80 for a second lamp');
+  const released: unknown[] = []; for (const mesh of drawn) { mesh.geometry.addEventListener('dispose', () => released.push(mesh.geometry)); (mesh.material as THREE.Material).addEventListener('dispose', () => released.push(mesh.material)); }
+  layer.dispose(); assert.equal(released.length, 8); assert.equal(scene.children.length, 0);
+});
+
+test('instanced mode still draws a head inferred from TD as its own group, and disposes it with its berth', () => {
+  const scene = new THREE.Scene();
+  const layer = createSignals({ attribution: 'synthetic', signals: lineHeads() }, scene, { area: 'ZZ', refRule: ZZ, track: lineGraph(), instanced: true });
+  const before = meshes(scene).length;
+  assert.equal(before, 3, 'three-aspect overlay heads: three instanced parts');
+  layer.setTable({ ...table(), hypotheses: [{ ...table().hypotheses[0]!, berth: 'Z999' }] });
+  layer.setAnchors({ area: 'ZZ', sources: [], unmapped: [], anchors: [{ berth: 'Z999', kind: 'inferred', from: 4, to: 5, t: 0.5, point: [350, 0], errorM: 5, evidence: 'synthetic' }] }, lineGraph());
+  const td = layer.signals().filter(s => s.inferredPosition); assert.equal(td.length, 1);
+  layer.apply(row('04')); assert.equal(td[0]!.state, 'proceed');
+  assert.ok(meshes(td[0]!.group).length >= 3); assert.equal(meshes(scene).length, before + meshes(td[0]!.group).length);
+  layer.setAnchors({ area: 'ZZ', sources: [], unmapped: [], anchors: [] }, lineGraph());
+  assert.equal(meshes(scene).length, before); layer.dispose();
+});
