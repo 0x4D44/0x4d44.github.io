@@ -12,14 +12,14 @@ const states = 'GB-NR:red;GB-NR:yellow;GB-NR:double_yellow;GB-NR:green';
 function elements(): WaverleyRawElement[] {
   return [
     node(1, 0, 0), node(2, 5e-4, 0, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light', 'railway:signal:main:states': states,
-      'railway:signal:direction': 'forward', 'railway:signal:position': 'left', ref: 'EB123' }),
-    node(3, 1e-3, 0), node(4, 1.5e-3, 0, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light', 'railway:signal:direction': 'backward', ref: 'EB124' }),
+      'railway:signal:direction': 'forward', 'railway:signal:position': 'left', ref: 'ZZ123' }),
+    node(3, 1e-3, 0), node(4, 1.5e-3, 0, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light', 'railway:signal:direction': 'backward', ref: 'ZZ124' }),
     { type: 'way', id: 10, nodes: [1, 2, 3, 4], tags: { railway: 'rail' } },
     // a platform 3 to 9 m east of the track between nodes 2 and 3
     node(21, 5e-4, 5e-5), node(22, 5e-4, 1.5e-4), node(23, 1e-3, 1.5e-4), node(24, 1e-3, 5e-5),
     { type: 'way', id: 20, nodes: [21, 22, 23, 24, 21], tags: { railway: 'platform', train: 'yes', ref: '1' } },
     // a track nowhere near a platform, with a signal: not part of the station
-    node(31, 0, 3e-3), node(32, 5e-4, 3e-3, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light', ref: 'EB900' }),
+    node(31, 0, 3e-3), node(32, 5e-4, 3e-3, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light', ref: 'ZZ900' }),
     { type: 'way', id: 30, nodes: [31, 32], tags: { railway: 'rail' } },
     // a signal outside the site
     node(41, 0.02, 0, { railway: 'signal', 'railway:signal:main': 'GB-NR:colour_light' }),
@@ -46,5 +46,5 @@ test('the station overlay places each OSM signal on the scene\'s own track, with
     assert.equal(s.point, undefined); assert.equal(s.facing, undefined);
     assert.deepEqual(Object.keys(s).sort().filter(k => !['aspects', 'direction', 'edge', 'id', 'kinds', 'ref', 'review', 'side', 'sideSource', 'travel'].includes(k)), []);
   }
-  assert.deepEqual(forward.kinds, ['main', 'main:states', 'position'], 'the railway:signal:* suffixes, as compactOsm lists them'); assert.equal(forward.ref, 'EB123');
+  assert.deepEqual(forward.kinds, ['main', 'main:states', 'position'], 'the railway:signal:* suffixes, as compactOsm lists them'); assert.equal(forward.ref, 'ZZ123');
 });
