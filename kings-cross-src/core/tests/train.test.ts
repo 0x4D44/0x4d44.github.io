@@ -372,7 +372,11 @@ test('train: the Class 180 uses its fleet owner’s 23.02 m intermediate cars an
   assert.deepEqual([ADELANTE.carLength.value, ADELANTE.drivingCarLength.value, ADELANTE.bodyWidth.value], [23.02, 23.71, 2.73]);
   assert.equal(ADELANTE.height.basis, 'assumed', 'no page read gives the 180 a height');
   // the figures the model assumes are pinned too, so changing one is a deliberate edit with its source
-  assert.deepEqual([ADELANTE.bogieFromEnd.value, ADELANTE.wheelDiameter.value, ADELANTE.wheelbaseMotor.value, ADELANTE.doorWidth.value, ADELANTE.doorFromEnd.value, ADELANTE.floorHeight.value], [3.5, 0.84, 2.7, 0.9, 3.8, 1.1]);
+  // CHANGED (round 8): the door is the leaf as the photographs show it, 1.2 m (was 0.9 m, a typical opening), and it stands 1.1 m in from a car's end beside the gangway (was 3.8 m), both
+  // measured in proportion off GC180-02-180101-Arrives-at-Doncaster (their sources say so)
+  assert.deepEqual([ADELANTE.bogieFromEnd.value, ADELANTE.wheelDiameter.value, ADELANTE.wheelbaseMotor.value, ADELANTE.doorWidth.value, ADELANTE.doorFromEnd.value, ADELANTE.floorHeight.value], [3.5, 0.84, 2.7, 1.2, 1.1, 1.1]);
+  assert.match(ADELANTE.doorWidth.source, /GC180-02/);
+  assert.match(ADELANTE.doorFromEnd.source, /GC180-02/);
   assert.ok(!('pantographLength' in ADELANTE), 'no pantograph figure for a diesel unit');
 });
 

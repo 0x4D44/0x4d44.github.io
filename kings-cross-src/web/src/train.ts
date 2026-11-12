@@ -106,6 +106,8 @@ export const BOGIE_STYLE: Readonly<Record<Family, BogieStyle>> = { at300: 'hitac
 
 /** How far the doors stand proud of the shell, so they, not the shell, set the body width. */
 const DOOR_RELIEF = 0.02;
+/** How far a rounded door pane's dark seal reaches beyond the glass on every side (`BodySpec.doorGlass`; ASSUMED: a rubber seal of a hand's width is not resolved in any photograph). */
+export const DOOR_GLASS_SEAL = 0.025;
 /** The gangway bellows start this far outside the end wall. */
 const BELLOWS_SEAT = 0.002;
 /** The nose face stands this far behind the train's end, so the details laid on it stay inside the car's length. */
@@ -516,7 +518,14 @@ interface BodySpec {
   doorWidth: number;
   doorY: [number, number];
   doorLeaves: 1 | 2;
+  /**
+   * a single leaf's window, where a family has its own: half its width, its sill and head (metres above the rail head) and its corner radius, a rounded pane in the middle of the
+   * leaf. Absent: the square pane 0.54 m wide from 0.91 m to 0.21 m under the leaf's top that every single-leaf door had before the Class 180's (round 8)
+   */
+  doorGlass?: { half: number; y: [number, number]; radius: number };
   windowY: [number, number];
+  /** the passenger window's corner radius (absent: 0.08 m); its gasket's is 0.02 m more */
+  windowCorner?: number;
   nose: NoseSpec;
   glass: GlassSpec;
   /** the two seams of the gangway bellows */
@@ -721,17 +730,15 @@ export function at300Plan(car: Car, kind?: TrainKind): CarPlan {
 }
 
 /**
- * A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them. `cabDoor`, where a family has it, is where the
- * door nearest a cab stands instead, metres from the nose tip (the Class 180's: 4.8 m, the doorway's centre 4.45 m behind the face's foot in the side-on photograph 180109 plus the
- * 0.35 m (END_GAP) the face stands behind the car's end; the family's assumed 3.8 m would stand the door a metre nearer the nose than that picture shows).
+ * A commuter EMU's two doors a side at `doorFromEnd` from each car end (from the nose tip on a cab car); windows between and beyond them.
  */
-function emuPlan(f: EmuFamily, noseLength: number, cabDoor?: number): (car: Car) => CarPlan {
+function emuPlan(f: EmuFamily, noseLength: number): (car: Car) => CarPlan {
   const fig = EMU_FIGURES[f];
   return (car) => {
     const L = car.length;
     const dw = fig.doorWidth.value;
     const d = fig.doorFromEnd.value;
-    const doors = [car.cab && cabDoor !== undefined ? cabDoor : d, L - d];
+    const doors = [d, L - d];
     const windows: [number, number][] = [];
     // beyond the inner door, between the doors, and (through cars only) beyond the other door; a cab car's nose end is the cab
     const innerZone: [number, number] = [(doors[1] as number) + dw / 2 + 0.35, L - END_GAP - 0.45];
@@ -741,6 +748,48 @@ function emuPlan(f: EmuFamily, noseLength: number, cabDoor?: number): (car: Car)
     return { length: L, nose: car.cab ? noseLength : 0, doors, windows };
   };
 }
+
+/**
+ * The Class 180's side (round 8), measured off three photographs, in proportions: no drawing of the car is published, so every figure here is ASSUMED, read as below.
+ * - GC180-02-180101-Arrives-at-Doncaster (the leading DMSL and the MFL behind it, at an angle): the seven windows of the DMSL and the eight of the MFL each fit a one-dimensional
+ *   projective map (window centres evenly spaced; residual under 0.25 px on the DMSL and 0.8 px on the MFL; round 8's working, outside the repository), which puts every other edge in
+ *   window pitches. The DMSL, rear end to cab end: its end, 0.59 pitches to the inner door's centre, 1.64 to the first window's centre, six pitches of windows, 1.62 to the cab-end door's
+ *   centre. The MFL: 0.53 pitches from its end to a door, 1.65 from the door to its nearest window, seven pitches of windows. Each window fills 0.87 (DMSL) and 0.88 (MFL) of its pitch, the
+ *   pier between two windows the rest; each door's leaf 0.58 to 0.64 of a pitch. The stretch between a door and its nearest window is a blank panel the logo stands on, in every car.
+ * - class180-gc-york-side-arthur-2026-11-11 (a private photograph, never copied: the cab-end door of a leading DMSL, side on): the leaf is 152 px wide, its window 73 px wide and its
+ *   corners rounded (about 14 px of 105 px tall); its rounded window stands 0.26 to 0.72 of the way from the orange band's top to the leaf's top.
+ * - The heights are fractions of the band's top to the door's top (GC180-02's windows: 0.28 to 0.77, about level with the door's glass), laid on this model's own band top (1.5 m) and door
+ *   top (2.95 m): the photographs' side stands taller over the band than this body's wall does, so the windows keep their place between the band and the door's head, not their metres.
+ * The car's own lengths fix the pitches: the doors stand where they stand (the cab-end door 4.8 m from a cab car's end, round 6's place read off 180109, which the York photograph agrees with
+ * to 0.15 m measured from the cab door's window; the inner doors `doorFromEnd`, core/train.ts) and the windows share the stretch between: 1.92 m pitches on a driving car, 2.03 m on the
+ * others (the photographs' first class is the MFL; that the MSL's and the MSLRB's sides are the MFL's is ASSUMED, no photograph resolves them). The far side is ASSUMED this side's plan:
+ * no photograph read shows it.
+ */
+export const ADELANTE_SIDE = {
+  /** the cab-end door's centre on a driving car, metres from the car's end: 180109's 4.45 m behind the face's foot, and the 0.35 m (END_GAP) the face stands behind the end */
+  cabDoor: END_GAP + 4.45,
+  /** windows a side between the doors: a driving car's seven (GC180-02's DMSL), the others' eight (GC180-02's MFL) */
+  windows: { cab: 7, other: 8 },
+  /** from a door's centre to its nearest window's centre, in window pitches (GC180-02: 1.62 and 1.64 on the DMSL, 1.65 on the MFL) */
+  doorToWindow: 1.63,
+  /** the share of a pitch a window fills (GC180-02: 0.87 on the DMSL, 0.88 on the MFL) */
+  windowShare: 0.87,
+} as const;
+
+/** The Class 180's plan (ADELANTE_SIDE): a door near each end, and between them the windows on one even pitch, a blank panel between each door and its nearest window. */
+export const adelantePlan = (noseLength: number) => (car: Car): CarPlan => {
+  const L = car.length;
+  const d = EMU_FIGURES.adelante.doorFromEnd.value;
+  const doors = [car.cab ? ADELANTE_SIDE.cabDoor : d, L - d] as [number, number];
+  const n = car.cab ? ADELANTE_SIDE.windows.cab : ADELANTE_SIDE.windows.other;
+  const pitch = (doors[1] - doors[0]) / (n - 1 + 2 * ADELANTE_SIDE.doorToWindow);
+  const halfWindow = (ADELANTE_SIDE.windowShare * pitch) / 2;
+  const windows = Array.from({ length: n }, (_, k): [number, number] => {
+    const c = doors[0] + (ADELANTE_SIDE.doorToWindow + k) * pitch;
+    return [c - halfWindow, c + halfWindow];
+  });
+  return { length: L, nose: car.cab ? noseLength : 0, doors, windows };
+};
 
 const ELECTROSTAR_BODY = ((): BodySpec => {
   const fig = EMU_FIGURES.electrostar;
@@ -946,7 +995,13 @@ const ADELANTE_BODY = ((): BodySpec => {
     doorWidth: fig.doorWidth.value,
     doorY: [fig.floorHeight.value + 0.02, 2.95],
     doorLeaves: 1,
-    windowY: [1.62, 2.72],
+    // round 8 (ADELANTE_SIDE): the leaf's window is a rounded pane 0.57 m wide, its corners 0.09 m round (the York photograph: 73 of the leaf's 152 px, about 14 px round), standing 0.26
+    // to 0.72 of the way from the band's top (1.5 m) to the leaf's top (2.95 m); ASSUMED, from that one photograph
+    doorGlass: { half: 0.285, y: [1.88, 2.54], radius: 0.09 },
+    // CHANGED (round 8; they were 1.62 to 2.72 m, the commuter units' tall glass): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level with
+    // the doors' glass, their corners well rounded (about a sixth of their height); ASSUMED, from that photograph
+    windowY: [1.91, 2.62],
+    windowCorner: 0.11,
     nose: {
       length,
       knots: [
@@ -1025,7 +1080,8 @@ const ADELANTE_BODY = ((): BodySpec => {
     },
     // a diesel unit: no pantograph, no roof kit
     roofKit: null,
-    plan: emuPlan('adelante', length, END_GAP + 4.45),
+    // round 8: the Class 180's own side, measured off GC180-02 and the York photograph (ADELANTE_SIDE), not the commuter units' recipe
+    plan: adelantePlan(length),
   };
 })();
 
@@ -1970,7 +2026,8 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
 
   // doors: a dark frame, the leaf (or two leaves), and a window in each leaf; one marker per opening
   const frameC = col(0x24272b);
-  const leafC = col(def.doorFor ? def.doorFor(carInfo) : def.door);
+  // a livery may colour one door of a car apart from the rest (Grand Central: the cab-end door of a driving car is the body's black, round 8); a crew door wears the car's own
+  const leafOf = (di: number, crew: boolean): THREE.Color => col(def.doorFor ? def.doorFor(carInfo, crew ? undefined : di) : def.door);
   const paneC = col(def.window);
   const [dy0, dy1] = spec.doorY;
   // the passenger doors, then the narrow crew doors (a single leaf with a small window, whatever the passenger doors have)
@@ -1988,9 +2045,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
+      const leafC = leafOf(di, crew);
       if (crew) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.85, dy1 - 0.25, z - 0.12, z + 0.12, paneC);
+      } else if (spec.doorLeaves === 1 && spec.doorGlass) {
+        // the family's own pane: rounded, in a dark seal standing between the leaf and the glass
+        const { half: gh, y: [gy0, gy1], radius } = spec.doorGlass;
+        detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
+        detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (half - 0.002), col(0x0d0e10));
+        detail.prismX(roundedRect(z - gh, z + gh, gy0, gy1, radius, 3), sx * (W - 0.005), sx * half, paneC, false);
       } else if (spec.doorLeaves === 1) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.91, dy1 - 0.21, z - 0.27, z + 0.27, paneC);
@@ -2015,14 +2079,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
   const [wy0, wy1] = spec.windowY;
   const gasket = col(0x0d0e10);
   const sky = col(blend(def.window, 0xa9bdd6, 0.3));
+  const corner = spec.windowCorner ?? 0.08;
   for (const [s0, s1] of plan.windows) {
     const za = Math.min(Z(s0), Z(s1));
     const zb = Math.max(Z(s0), Z(s1));
     for (const sx of [-1, 1]) {
       const outer = (rel: number): number => sx * (half - rel);
-      detail.prismX(roundedRect(za - 0.03, zb + 0.03, wy0 - 0.03, wy1 + 0.03, 0.1, 2), sx * (W - 0.005), outer(0.016), gasket);
+      detail.prismX(roundedRect(za - 0.03, zb + 0.03, wy0 - 0.03, wy1 + 0.03, corner + 0.02, 2), sx * (W - 0.005), outer(0.016), gasket);
       detail.emit = 1; // the glass of a passenger window is lit warm after dark (train-geom.ts `trainNight`)
-      detail.prismX(roundedRect(za, zb, wy0, wy1, 0.08, 2), sx * (W - 0.005), outer(0.012), paneC, false);
+      detail.prismX(roundedRect(za, zb, wy0, wy1, corner, 2), sx * (W - 0.005), outer(0.012), paneC, false);
       detail.emit = 0;
       detail.prismX(roundedRect(za + 0.04, zb - 0.04, wy1 - 0.26, wy1 - 0.03, 0.05, 2), outer(0.0125), outer(0.0115), sky, false);
     }

@@ -75,8 +75,11 @@ export interface LiveryDef {
   stripe: number | null;
   /** where the stripe sits on the side, metres above the rail head (default STRIPE_Y): the Grand Central band is broad, the Thameslink one thin */
   stripeY?: [number, number];
-  /** the door leaf's colour for one car, where it differs from `door` (Grand Central: gold on the first-class car, silver on the rest) */
-  doorFor?(car: DecalCar): number;
+  /**
+   * the door leaf's colour for one car, where it differs from `door` (Grand Central: gold on the first-class car, silver on the rest, and the cab-end door of a driving car the
+   * body's black); `door` is the passenger door's index in the car's plan (0: the one nearer the cab end or the car's start), absent where the caller means the car's doors at large
+   */
+  doorFor?(car: DecalCar, door?: number): number;
   /** the dark band along the foot of the body, above the skirts (null: the body colour runs down) */
   foot: number | null;
   /** Lettering and solid decals for one car. */
@@ -253,8 +256,10 @@ export const LIVERIES: Readonly<Record<Livery, LiveryDef>> = {
     stripe: 0xf27a1a,
     stripeY: [1.04, 1.5],
     foot: null,
-    // gold doors on the first-class car (MFL), silver on the others
-    doorFor: (c) => (c.type === 'MFL' ? 0xc9a227 : 0xb9bec6),
+    // gold doors on the first-class car (MFL), silver on the others; but a driving car's door by the cab is the body's black (round 8: class180-gc-york-side-arthur-2026-11-11, a
+    // private photograph, shows the cab-end door of a leading DMSL black, with its seams and its window; GC180-02-180101-Arrives-at-Doncaster shows 180101's black there and silver at its
+    // inner end, beside the gangway, and the MFL's gold at both of its ends. The far side's cab-end door is ASSUMED the same: no photograph read shows it)
+    doorFor: (c, door) => (c.cab && door === 0 ? 0x17181c : c.type === 'MFL' ? 0xc9a227 : 0xb9bec6),
     // the wordmark in black on the orange band, centred in the bay between the doors
     decals: (c) => [{ text: 'Grand Central', colour: 0x17181c, rect: [bay(c) - 0.5 * textEms('Grand Central') * 0.28, 1.13, 0, 1.41] }],
   },

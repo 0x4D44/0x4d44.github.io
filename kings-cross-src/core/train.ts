@@ -342,8 +342,8 @@ export const ADELANTE = {
   wheelbaseMotor: { value: 2.7, unit: 'm', basis: 'assumed', source: 'Not published in any page read (Wikipedia names the bogies "Alstom MB2" and gives no wheelbase); a typical value, to be replaced.' },
   wheelbaseTrailer: { value: 2.7, unit: 'm', basis: 'assumed', source: 'Not published in any page read; taken equal to the motor bogie, to be replaced.' },
   bogieFromEnd: { value: 3.5, unit: 'm', basis: 'assumed', source: 'Not published in any page read: bogie centres taken about 16 m apart under a 23 m car, to be replaced.' },
-  doorWidth: { value: 0.9, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a typical single-leaf sliding-plug door opening, to be replaced.' },
-  doorFromEnd: { value: 3.8, unit: 'm', basis: 'assumed', source: 'Not published in any page read; a door near each end of every car (from the nose tip on a cab car), to be replaced.' },
+  doorWidth: { value: 1.2, unit: 'm', basis: 'assumed', source: 'Not published in any page read, to be replaced: the single sliding-plug leaf as it shows on the side, measured in proportion off photographs (round 8, 2026-11-12): 0.64 of a window pitch on GC180-02-180101-Arrives-at-Doncaster\'s DMSL (1.23 m at its 1.92 m pitch), 0.58 on its MFL (1.18 m), and 1.2 m on a private side-on photograph of a DMSL at York scaled by the ASSUMED 2.7 m wheelbase. Was 0.9 m, a typical opening, not the leaf.' },
+  doorFromEnd: { value: 1.1, unit: 'm', basis: 'assumed', source: 'Not published in any page read, to be replaced: each car\'s door beside its gangway stands this far in from the car\'s end (round 8, 2026-11-12: GC180-02-180101-Arrives-at-Doncaster, 0.59 window pitches on the DMSL and 0.53 on the MFL, 1.13 m and 1.08 m). A driving car\'s cab-end door stands 4.8 m from its end instead (web/src/train.ts ADELANTE_SIDE). Was 3.8 m, a guess.' },
 } as const satisfies Record<Exclude<keyof typeof ELECTROSTAR, 'pantographLength'> | 'drivingCarLength', Figure>;
 
 /** The figures of a commuter or regional unit (not an Azuma): the same keys for every family, so the model builder reads one table. */

@@ -389,6 +389,25 @@ test('the seat count of every commuter car is the published one, in bays and row
   }
 });
 
+test('Class 180: every toilet is a room of its own, inside a vestibule, clear of the door leaves and the windows, though its doors stand beside the gangways (round 8)', () => {
+  // round 8 put the Class 180's inner doors 1.1 m from each end (GC180-02-180101-Arrives-at-Doncaster): no toilet fits between such a door and its end wall, so it stands on the saloon's
+  // side of the door, behind the blank panel; the cab-end door leaves no room behind it either. Each toilet must keep a real depth (1.5 m, the accessible one 1.5 m or more), not collapse.
+  const spec = bodySpec('adelante');
+  for (const car of trainLayout('gc180x5').cars) {
+    const lay = layoutCar('gc180x5', car);
+    const plan = spec.plan(car, false);
+    const here = `gc180x5 ${car.type} car ${car.index}`;
+    assert.equal(lay.toilets.length, fitFor('gc180x5', car)?.toilets ?? 0, `${here}: toilets`);
+    for (const t of lay.toilets) {
+      const [a, b] = [Math.min(t.s0, t.s1), Math.max(t.s0, t.s1)];
+      assert.ok(b - a >= 1.5 - 1e-9, `${here}: a toilet [${a.toFixed(2)}, ${b.toFixed(2)}] is ${(b - a).toFixed(2)} m deep`);
+      assert.ok(lay.zones.some((z) => z.kind === 'vestibule' && a >= z.s0 - 1e-9 && b <= z.s1 + 1e-9), `${here}: a toilet [${a.toFixed(2)}, ${b.toFixed(2)}] outside every vestibule`);
+      for (const d of plan.doors) assert.ok(b <= d - spec.doorWidth / 2 + 1e-9 || a >= d + spec.doorWidth / 2 - 1e-9, `${here}: a toilet over the door at ${d.toFixed(2)}`);
+      for (const [w0, w1] of plan.windows) assert.ok(b <= w0 || a >= w1, `${here}: a toilet behind the window [${w0.toFixed(2)}, ${w1.toFixed(2)}]`);
+    }
+  }
+});
+
 test('cutting a hole keeps the rest of a face exactly as drawn: the same area less the hole, the same uv at the same place', () => {
   // one quad of skin on the right side, x = 1.33, z 0..10, y 1..3, uv = (z / 10, (y - 1) / 2)
   const g = new THREE.BufferGeometry();

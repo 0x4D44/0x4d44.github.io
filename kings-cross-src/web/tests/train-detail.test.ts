@@ -2920,8 +2920,19 @@ test('liveries: the Grand Central doors are gold on the first-class car and silv
     const mesh = detailOf(g, car);
     // four doors a car, one leaf each, six faces of two triangles
     const per = 4 * gcSpec.doorLeaves * 12;
+    // CHANGED (round 8): a driving car's cab-end door is the body's black, a leaf a side (class180-gc-york-side-arthur-2026-11-11 and GC180-02-180101-Arrives-at-Doncaster), so a
+    // driving car has silver leaves at its inner end only
+    const black = car.cab ? 2 * gcSpec.doorLeaves * 12 : 0;
     assert.equal(trisOfColour(mesh, GOLD).length, car.type === 'MFL' ? per : 0, `${car.type} car ${car.index}: gold door leaves`);
-    assert.equal(trisOfColour(mesh, SILVER).length, car.type === 'MFL' ? 0 : per, `${car.type} car ${car.index}: silver door leaves`);
+    assert.equal(trisOfColour(mesh, SILVER).length, car.type === 'MFL' ? 0 : per - black, `${car.type} car ${car.index}: silver door leaves`);
+    if (car.cab) {
+      // the black leaves are the cab-end door's, on both sides: body-black boxes standing out at the door's place
+      const s = gcSpec.plan(car, false).doors[0] as number;
+      const z = car.cab === 'rear' ? car.end - s : car.start + s;
+      const leaves = trisOfColour(mesh, LIVERIES.grandcentral.body).filter((t) => t.every((v) => Math.abs(v.z - z) <= gcSpec.doorWidth / 2 + 1e-6 && Math.abs(v.x) > gcSpec.half - 0.03));
+      assert.equal(leaves.length, black, `${car.type} car ${car.index}: black leaves at the cab-end door`);
+      assert.deepEqual([...new Set(leaves.flat().map((v) => Math.sign(v.x)))].sort(), [-1, 1], `${car.type} car ${car.index}: on both sides`);
+    }
   }
   assert.deepEqual(layout.cars.filter((c) => c.type === 'MFL').map((c) => c.index), [1], 'one first-class car');
   const t = built('tl700x8');
@@ -3299,17 +3310,89 @@ test('Class 180 cab: the roof line follows the side-on photograph 180109 to 3 cm
   }
 });
 
-test('Class 180 cab: only a cab car\'s nearest door moves, to 4.8 m from the nose tip; the cars between keep the family\'s 3.8 m, and every car\'s far door stands 3.8 m from its end', () => {
+test('Class 180 side: only a driving car\'s cab-end door stands 4.8 m in; every other door stands beside its gangway, 1.1 m from the car\'s end, as GC180-02 has them', () => {
   // (round 6: the 180109 door place is for the cab end of a cab car alone; a mutant that gave it to every car, so a through car's doors stood a metre further in, was not caught)
+  // CHANGED (round 8; every door but the cab-end one stood 3.8 m from its end, a guess): GC180-02-180101-Arrives-at-Doncaster, fitted in window pitches (ADELANTE_SIDE), puts the DMSL's
+  // inner door 0.59 pitches from its end and the MFL's 0.53, each beside its gangway
   const spec = bodySpec('adelante');
   const fromEnd = EMU_FIGURES.adelante.doorFromEnd.value;
   const layout = trainLayout('gc180x5');
-  assert.equal(fromEnd, 3.8, 'the family\'s assumed door place (core/train.ts), which the through cars keep');
+  assert.equal(fromEnd, 1.1, 'the family\'s assumed door place (core/train.ts), beside each gangway');
   for (const car of layout.cars) {
-    const doors = spec.plan(car, false).doors;
+    const plan = spec.plan(car, false);
+    const doors = plan.doors;
     const here = `car ${car.index}${car.cab ? ` (${car.cab} cab)` : ''}`;
     near(doors[0] as number, car.cab ? END_GAP + 4.45 : fromEnd, 1e-9, `${here}: its first door's centre`);
     near(doors[1] as number, car.length - fromEnd, 1e-9, `${here}: its second door's centre`);
+    // the photograph's measure: the gangway-side door's distance from the car's end in window pitches
+    const pitch = (plan.windows[1] as [number, number])[0] - (plan.windows[0] as [number, number])[0];
+    near(fromEnd / pitch, car.cab ? 0.59 : 0.53, 0.04, `${here}: the gangway-side door from the end, in window pitches`);
+  }
+});
+
+test('Class 180 side: seven windows on a driving car and eight on the others, on one even pitch, each 0.87 of it, a blank panel 1.63 pitches from each door to its nearest window (GC180-02)', () => {
+  // round 8 (ADELANTE_SIDE): GC180-02-180101-Arrives-at-Doncaster's DMSL shows seven windows between its doors and its MFL eight, every pier narrow, and between each door and its nearest
+  // window a blank panel with the logo on it; fitted in window pitches, a window fills 0.87 (DMSL) or 0.88 (MFL) of its pitch, and a door's centre stands 1.62 to 1.65 pitches from its
+  // nearest window's. The far side is ASSUMED the same: the plan is drawn on both.
+  const spec = bodySpec('adelante');
+  for (const car of trainLayout('gc180x5').cars) {
+    const plan = spec.plan(car, false);
+    const here = `${car.type} car ${car.index}`;
+    const [d0, d1] = plan.doors as [number, number];
+    assert.equal(plan.windows.length, car.cab ? 7 : 8, `${here}: windows a side`);
+    const centres = plan.windows.map(([a, b]) => (a + b) / 2);
+    const pitch = (centres[1] as number) - (centres[0] as number);
+    centres.forEach((c, k) => near(c, (centres[0] as number) + k * pitch, 1e-9, `${here}: window ${k} on the even pitch`));
+    near(pitch, car.cab ? 1.92 : 2.03, 0.01, `${here}: the pitch that fills the stretch between its doors`);
+    for (const [a, b] of plan.windows) {
+      const share = (b - a) / pitch;
+      assert.ok(share >= 0.86 && share <= 0.89, `${here}: a window fills ${share.toFixed(3)} of its pitch, not GC180-02's 0.87 to 0.88`);
+      assert.ok(a > d0 + spec.doorWidth / 2 && b < d1 - spec.doorWidth / 2, `${here}: every window stands between the doors`);
+    }
+    for (const [door, nearest] of [[d0, centres[0]], [d1, centres[centres.length - 1]]] as [number, number][]) {
+      const k = Math.abs(nearest - door) / pitch;
+      assert.ok(k >= 1.6 && k <= 1.67, `${here}: the door at ${door.toFixed(2)} m stands ${k.toFixed(3)} pitches from its nearest window, not GC180-02's 1.62 to 1.65`);
+    }
+  }
+});
+
+test('Class 180 side: the windows and the doors\' glass stand where the photographs put them between the band\'s top and the doors\' heads, the doors\' glass rounded and half the leaf wide', () => {
+  // round 8: GC180-02-180101-Arrives-at-Doncaster's windows run from 0.28 to 0.77 of the way from the orange band's top to the doors' heads; the York photograph (a private reference, viewed
+  // only) shows the cab-end door's window 0.26 to 0.72 of that way, 73 px wide in a leaf of 152 px, with corners about 14 px round in its 105 px height. Measured in the built car, both sides.
+  const spec = bodySpec('adelante');
+  const gc = liveryFor('gc180x5');
+  const bandTop = (gc.stripeY as [number, number])[1];
+  const head = spec.doorY[1];
+  const frac = (y: number): number => (y - bandTop) / (head - bandTop);
+  const g = built('gc180x5');
+  for (const car of trainLayout('gc180x5').cars) {
+    const here = `${car.type} car ${car.index}`;
+    const plan = spec.plan(car, false);
+    const z = (s: number): number => (car.cab === 'rear' ? car.end - s : car.start + s);
+    const glass = trisOfColour(detailOf(g, car), gc.window).filter((t) => t.every((v) => Math.abs(v.x) > spec.half - 0.05));
+    for (const side of [-1, 1]) {
+      const mine = glass.filter((t) => t.every((v) => Math.sign(v.x) === side));
+      for (const [s0, s1] of plan.windows) {
+        const [za, zb] = [z(s0), z(s1)].sort((a, b) => a - b) as [number, number];
+        const box = boxOfTris(mine.filter((t) => t.every((v) => v.z >= za - 1e-6 && v.z <= zb + 1e-6)));
+        near(frac(box.min.y), 0.28, 0.02, `${here} side ${side}: a window's sill, of the band's top to the doors' heads`);
+        near(frac(box.max.y), 0.77, 0.02, `${here} side ${side}: a window's head`);
+      }
+      for (const s of plan.doors) {
+        const pane = mine.filter((t) => t.every((v) => Math.abs(v.z - z(s)) <= spec.doorWidth / 2));
+        const box = boxOfTris(pane);
+        near(frac(box.min.y), 0.26, 0.02, `${here} side ${side}: the door's glass, its sill`);
+        near(frac(box.max.y), 0.72, 0.02, `${here} side ${side}: its head`);
+        near((box.max.z - box.min.z) / spec.doorWidth, 73 / 152, 0.03, `${here} side ${side}: its width, of the leaf's`);
+        // rounded: the outline turns its corners in steps, so the pane's face has more than a box's four corners at more than two heights
+        const heights = new Set(pane.flat().map((v) => v.y.toFixed(4)));
+        assert.ok(heights.size > 4, `${here} side ${side}: the door's glass has ${heights.size} heights, a square pane`);
+        // the corner's radius, measured: the sill runs flat between the two rounded corners, so the flat run is the width less two radii
+        const sill = pane.flat().filter((v) => Math.abs(v.y - box.min.y) < 1e-6).map((v) => v.z);
+        const r = (box.max.z - box.min.z - (Math.max(...sill) - Math.min(...sill))) / 2;
+        assert.ok(Math.abs(r / (box.max.y - box.min.y) - 14 / 105) < 0.03, `${here} side ${side}: its corners ${r.toFixed(3)} m round, not about a seventh of its height`);
+      }
+    }
   }
 });
 

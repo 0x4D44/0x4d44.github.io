@@ -199,10 +199,31 @@ export function layoutCar(kind: TrainKind, car: Car): CarInterior {
   else walls.push({ s: front, kind: 'end' });
   walls.push({ s: end, kind: 'end' });
   const [d0, d1] = plan.doors as [number, number];
-  const sA = d0 + FIT.vestibuleBeyondDoor, sB = d1 - FIT.vestibuleBeyondDoor;
+  const fit = fitFor(kind, car);
+  // the toilets stand in the vestibules between an end wall (or the cab's back wall) and the door: the accessible one at the cab end of a driving car,
+  // the others at the far end first, then the near one, on alternate sides. Where a door stands too near its end for a toilet to fit behind it (the Class 180's, beside
+  // its gangway: round 8), the toilet stands on the saloon's side of the door instead, behind the blank panel between the door and its nearest window (no deeper than that panel), and
+  // the vestibule's partition moves in past it (ASSUMED: no seat map read shows where)
+  const doorEdge = body.doorWidth / 2 + 0.05;
+  const firstWindow = Math.min(...plan.windows.map((w) => w[0]));
+  const lastWindow = Math.max(...plan.windows.map((w) => w[1]));
+  const toiletPlan: { s0: number; s1: number; side: 1 | -1; accessible: boolean }[] = [];
+  let sA = d0 + FIT.vestibuleBeyondDoor, sB = d1 - FIT.vestibuleBeyondDoor;
+  for (let t = 0; t < (fit?.toilets ?? 0); t++) {
+    const accessible = Boolean(fit?.accessible && t === 0);
+    const atEnd = !(accessible && car.cab) && t % 2 === 0;
+    const depth = accessible ? 2.0 : 1.5;
+    const side = t % 2 === 0 ? 1 : -1;
+    if (atEnd) {
+      if (end - (d1 + doorEdge) >= 0.5) toiletPlan.push({ s0: Math.max(d1 + doorEdge, end - depth), s1: end, side, accessible });
+      else { const s1 = Math.min(sB, d1 - doorEdge); const s0 = Math.max(s1 - depth, lastWindow + 0.05); toiletPlan.push({ s0, s1, side, accessible }); sB = s0; }
+    } else {
+      if (d0 - doorEdge - front >= 0.5) toiletPlan.push({ s0: front, s1: Math.min(d0 - doorEdge, front + depth), side, accessible });
+      else { const s0 = Math.max(sA, d0 + doorEdge); const s1 = Math.min(s0 + depth, firstWindow - 0.05); toiletPlan.push({ s0, s1, side, accessible }); sA = s1; }
+    }
+  }
   zones.push({ kind: 'vestibule', s0: front, s1: sA });
   walls.push({ s: sA, kind: 'partition' }, { s: sB, kind: 'partition' });
-  const fit = fitFor(kind, car);
   const saloons: SaloonSpec[] = fit?.saloons ?? [{ cls: car.type === 'MF' || car.type === 'DPTF' ? 'first' : 'standard', seats: 0, tables: 0 }];
   // the first saloon has the luggage stack (or the café bar) at its start; a composite's second starts at the class divide
   const lead = (i: number): number => (i > 0 || fit?.noStack ? 0 : fit?.kiosk ? FIT.kiosk : FIT.stack) + 0.15;
@@ -224,19 +245,7 @@ export function layoutCar(kind: TrainKind, car: Car): CarInterior {
     if (i === 0 && !fit?.noStack) stacks.push({ s0: s0 + 0.05, s1: s0 + 0.05 + (fit?.kiosk ? FIT.kiosk : FIT.stack), side: 1, kiosk: Boolean(fit?.kiosk) });
   });
   zones.push({ kind: 'vestibule', s0: sB, s1: end });
-  // the toilets stand in the vestibules between an end wall (or the cab's back wall) and the door: the accessible one at the cab end of a driving car,
-  // the others at the far end first, then the near one, on alternate sides
-  const vest = zones.filter((z) => z.kind === 'vestibule');
-  for (let t = 0; t < (fit?.toilets ?? 0); t++) {
-    const accessible = Boolean(fit?.accessible && t === 0);
-    const v = (accessible && car.cab ? vest[0] : vest[vest.length - 1 - (t % vest.length)]) as Zone;
-    const atEnd = v.s1 === end;
-    const depth = accessible ? 2.0 : 1.5;
-    const door = atEnd ? d1 : d0;
-    const s0 = atEnd ? Math.max(door + body.doorWidth / 2 + 0.05, end - depth) : v.s0;
-    const s1 = atEnd ? end : Math.min(door - body.doorWidth / 2 - 0.05, v.s0 + depth);
-    toilets.push({ s0, s1, side: t % 2 === 0 ? 1 : -1, accessible });
-  }
+  toilets.push(...toiletPlan);
   const first = zones.find((z) => z.kind === 'saloon') as Zone;
   const wheelchair = fit?.wheelchair ? [{ s0: first.s0 + 0.05, s1: first.s0 + 0.05 + 0.75 * fit.wheelchair, side: -1 as const }] : [];
   return { zones, walls: walls.sort((a, b) => a.s - b.s), seats, tables, stacks, toilets, wheelchair, pitch, doors: plan.doors, windows: plan.windows, coach: fit?.coach ?? '' };
