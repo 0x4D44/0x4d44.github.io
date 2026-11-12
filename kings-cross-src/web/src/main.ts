@@ -31,6 +31,7 @@ import type { SignalOverlay } from './signals.ts';
 import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
+import { TrainLampLights } from './train-lamp-pool.ts';
 import { createTrainInteriors } from './train-interior.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
@@ -224,6 +225,10 @@ function start(): void {
   // `parts` lets the evidence script hide the shed and the surrounding blocks for a side-on view of a train
   let motion: ReturnType<typeof createMotion> | null = null;
   let liveTrains: ReturnType<typeof createLiveTrains> | null = null;
+  // The light of London's trains (train-lamp-pool.ts): a pool on the rails ahead of each lit headlamp and a halo round each lit lens, two instanced draws for every train of the scene,
+  // given the trains (the sample trains or the live ones, whichever `trains` holds) once a frame. The Waverley scene's trains have their own (edinburgh-live.ts).
+  const lampLights = new TrainLampLights();
+  scene.add(lampLights.group);
   let feed: TrainFeed | null = null;
   let timetable: ReturnType<typeof createScheduleFeed> | null = null;
   let mode: 'demo' | 'live' | 'replay' | 'none' = settings.mode === 'auto' ? 'demo' : settings.mode;
@@ -250,7 +255,7 @@ function start(): void {
     stationSuffix: id => (id === 'edinburgh-waverley' || id === 'perth' ? stations.remote()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
-  Object.assign(kx, { stations, stPancras });
+  Object.assign(kx, { stations, stPancras, lampLights });
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`
@@ -297,6 +302,8 @@ function start(): void {
     stPancras.frame(dt, stations.state().selected === 'st-pancras', feed?.timeMs());
     if (mode === 'demo') sampleTimeMs += dt * 1000;
     if (motion && liveTrains) { kx.motionState = motion.trains(); liveTrains.update(kx.motionState); trains.splice(0, trains.length, ...liveTrains.trains()); }
+    // after the trains are posed and their lamps set: one accumulate-then-commit for the scene (empty while another scene is on show), the strengths following trainNight as the meshes are drawn
+    lampLights.update(stations.activeScene() === scene ? trains : []);
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
@@ -419,6 +426,6 @@ function start(): void {
     stations.dispose();
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
-    sunShadow?.dispose(); londonClimate?.dispose(); interiors?.dispose();
+    sunShadow?.dispose(); londonClimate?.dispose(); interiors?.dispose(); lampLights.dispose();
   }, { once: true });
 }

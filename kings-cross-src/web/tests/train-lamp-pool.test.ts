@@ -4,9 +4,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
-import { ALL_KINDS } from '../../core/train.ts';
+import { buildGraph } from '../../core/graph.ts';
+import type { Graph } from '../../core/graph.ts';
+import type { TrainView } from '../../core/motion.ts';
+import { ALL_KINDS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { evidenceBuildEdinburgh } from '../src/edinburgh-fleet.ts';
+import { carPoses, createLiveTrains } from '../src/trains-live.ts';
 import { HALO, LIGHT_CAPACITY, POOL, TrainLampLights, haloFalloff, haloPlacements, haloStrength, haloTexture, lampEnds, poolFalloff, poolPlacements, poolStrength, poolTexture } from '../src/train-lamp-pool.ts';
 import { trainNight } from '../src/train-geom.ts';
 import { RAIL_TOP } from '../src/track.ts';
@@ -363,4 +367,63 @@ test('begin, add and commit are the frame: nothing is drawn from a frame until i
   scene.add(lights.group);
   lights.dispose();
   assert.equal(scene.children.length, 0, 'dispose takes the lights out of the scene');
+});
+
+/** A train on the 180 m radius curve trains-live.test.ts uses (a trimmed copy of its fixture), drawn at `opacity`. */
+function curvedTrain(opacity: number, kind: TrainKind): { graph: Graph; train: TrainView } {
+  const nodes: [number, number, number][] = [];
+  for (let i = 0; i <= 60; i++) { const s = i * 5, a = s / 180; nodes.push([i + 1, 180 * (1 - Math.cos(a)), 180 * Math.sin(a)]); }
+  const graph = buildGraph({ nodes, rails: [{ id: 1, nodes: nodes.map(([id]) => id), service: 'main', tunnel: false, bridge: false, layer: 0 }] });
+  const length = trainLayout(kind).length, occupied = [];
+  let left = length;
+  for (const edge of graph.edges) {
+    const take = Math.min(left, edge.length);
+    occupied.push({ edge, fromT: take / edge.length, toT: 0 }); left -= take;
+    if (left <= 1e-8) break;
+  }
+  occupied.reverse();
+  return { graph, train: { id: 1, description: '1SYN', leading: { edge: graph.edges[0]!, t: 0, point: [0, 0] }, heading: 0, speed: 5, lengthM: length, occupiedLengthM: length, occupied,
+    state: 'moving', opacity, targetBerth: 'SYNTHETIC', lastBerth: 'SYNTHETIC', blocked: false, distanceM: 0, reversals: 0 } };
+}
+
+test('a live London train: the pool follows the pose the live layer gives car 0 on a curve, and a train drawn at half opacity gives its pool half a tint', () => {
+  const { graph, train } = curvedTrain(0.5, 'lner9');
+  const scene = new THREE.Scene(), layer = createLiveTrains(graph, scene), lamps = new TrainLampLights();
+  layer.update([train]); scene.updateMatrixWorld(true);
+  const drawn = layer.trains()[0]!;
+  assert.equal(drawn.opacity, 0.5, 'the live layer hands on the view\'s opacity');
+  lamps.update(layer.trains());
+  assert.equal(lamps.pool.count, 1, 'one lit end, one pool');
+  // car 0's node is posed on the curve: where its nose lamps are is the pose's position along the pose's own axis (scaled along it), the pool starts there and runs ahead of the nose
+  const pose = carPoses(graph, train, trainLayout('lner9'))[0]!, lamp = lampEnds(drawn.group).find((e) => e.end === 'front')!;
+  assert.ok(Math.abs(pose.rotationY) > 0.02, `a curve, not a straight: car 0 turned ${pose.rotationY.toFixed(3)} rad`);
+  const [sin, cos] = [Math.sin(pose.rotationY), Math.cos(pose.rotationY)];
+  const lampAt = [pose.position[0] + sin * lamp.z * pose.scaleZ, pose.position[1] + cos * lamp.z * pose.scaleZ];
+  const m = new THREE.Matrix4(), at = new THREE.Vector3(), q = new THREE.Quaternion(), size = new THREE.Vector3();
+  lamps.pool.getMatrixAt(0, m); m.decompose(at, q, size);
+  const far = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+  near(far.x, -sin, 1e-6, 'its far end runs the way car 0\'s nose points (x)');
+  near(far.z, -cos, 1e-6, 'its far end runs the way car 0\'s nose points (z)');
+  near(at.x, lampAt[0]! - sin * POOL.length / 2, 1e-6, 'from the lamps, half its length ahead (x)');
+  near(at.z, lampAt[1]! - cos * POOL.length / 2, 1e-6, 'from the lamps, half its length ahead (z)');
+  const tint = new THREE.Color();
+  lamps.pool.getColorAt(0, tint);
+  near(tint.r, new THREE.Color(POOL.hex).r * 0.5, 1e-6, 'half a tint');
+  // faded right out: no pool at all
+  layer.update([{ ...train, opacity: 0 }]); scene.updateMatrixWorld(true);
+  lamps.update(layer.trains());
+  assert.equal(lamps.pool.count, 0, 'a train drawn at no opacity casts nothing');
+  lamps.dispose(); layer.dispose();
+});
+
+test('the page wires London\'s train lights: one set in the London scene, fed the scene\'s trains once a frame (none while another scene is shown), disposed with the page, and on window.__kx (source pins: main.ts needs a browser)', () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.match(main, /import \{ TrainLampLights \} from '\.\/train-lamp-pool\.ts';/, 'imported');
+  assert.equal(main.match(/new TrainLampLights\(\)/g)?.length, 1, 'one set of lights for the London scene');
+  assert.match(main, /scene\.add\(lampLights\.group\);/, 'in the London scene');
+  assert.equal(main.match(/lampLights\.update\(/g)?.length, 1, 'fed once a frame');
+  assert.match(main, /lampLights\.update\(stations\.activeScene\(\) === scene \? trains : \[\]\);/, 'the scene\'s trains, and none while another scene is shown');
+  assert.match(main, /lampLights\.dispose\(\);/, 'disposed with the page');
+  assert.match(main, /Object\.assign\(kx, \{[^}]*\blampLights\b[^}]*\}\);/, 'on window.__kx beside the other hooks');
+  assert.match(main, /liveTrains\.update\(kx\.motionState\); trains\.splice\(0, trains\.length, \.\.\.liveTrains\.trains\(\)\); \}\n(?:[^\n]*\n)*?[^\n]*lampLights\.update\(/, 'after the live trains are posed, so the lights are given the poses of this frame');
 });

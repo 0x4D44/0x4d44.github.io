@@ -179,6 +179,8 @@ export interface DrawnTrain {
   readonly group: THREE.Group;
   noseWorld: [number, number, number];
   headingRad: number;
+  /** How opaque the train is drawn (a train fading in or out of the scene): what `TrainLampLights` (train-lamp-pool.ts) gives its light, so a fading train's pool fades with it. */
+  opacity?: number;
 }
 
 interface MaterialPalette {
@@ -329,7 +331,7 @@ export function createLiveTrains(graph: Graph, parent: THREE.Object3D, kindFor?:
       const palette = paletteFor(t.kind, view.opacity, needed.get(t.kind)!, assigned.get(view.id));
       bind(t, palette); used.add(palette);
       t.description = view.description; t.group.userData.description = view.description;
-      t.noseWorld = [view.leading.point[0], 0, view.leading.point[1]]; t.headingRad = view.heading;
+      t.noseWorld = [view.leading.point[0], 0, view.leading.point[1]]; t.headingRad = view.heading; t.opacity = view.opacity;
       const poses = carPoses(graph, view, t.layout);
       for (const node of t.group.children) node.visible = false;
       for (const pose of poses) {

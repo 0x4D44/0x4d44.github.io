@@ -172,7 +172,7 @@ export function lampEnds(train: THREE.Object3D): LampEnd[] {
 
 /** A train to light: its group and how opaque it is drawn (a train fading in or out of the scene), 1 if not given. */
 export interface LampTrain { readonly group: THREE.Object3D; readonly opacity?: number }
-/** One pool: its middle (world x, y, z), the heading of its far end (rotation about y from +z), its size, and how opaque its train is. */
+/** One pool: its middle (world x, y, z), the heading of its far end (a rotation about y from +z, so the far end lies along (sin, cos) in x and z: not a TrainView's compass bearing), its size, and how opaque its train is. */
 export interface PoolPlacement { end: 'front' | 'rear'; position: [number, number, number]; headingRad: number; length: number; width: number; opacity: number }
 /** One halo: its middle, the quaternion that turns the quad's +z to the way its lens faces, its radius, its colour and how opaque its train is. */
 export interface HaloPlacement { end: 'front' | 'rear'; role: LensRole; position: [number, number, number]; quaternion: [number, number, number, number]; radius: number; hex: number; opacity: number }
@@ -226,8 +226,12 @@ export function haloPlacements(trains: Iterable<LampTrain>): HaloPlacement[] {
   return out;
 }
 
-/** How many instances each of the two meshes can hold: a pool or halo past it is dropped (and counted in `dropped`), never drawn wrongly. */
-export const LIGHT_CAPACITY = { pool: 96, halo: 256 } as const;
+/**
+ * How many instances each of the two meshes can hold: a pool or halo past it is dropped (and counted in `dropped`), never drawn wrongly. A train lights at most two pools and
+ * eight halos (an LNER set showing head at both ends: four lens groups at a head end, two at a tail end; the other classes two at each end), six in service, so 128 and 512 hold
+ * the lights of 64 trains in that worst state and 85 in service, well past a London peak; the buffers are 40 KB in all.
+ */
+export const LIGHT_CAPACITY = { pool: 128, halo: 512 } as const;
 
 /**
  * The two instanced meshes that draw the light of a scene's trains: `pool` (the quads on the ground) and `halo` (the discs at the lenses), under one `group` to add to the scene.

@@ -19,6 +19,7 @@ import type { FleetTable } from '../../core/edinburgh-diagrams.ts';
 import { buildNeutralTrain } from './train-neutral.ts';
 import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
 import { carPoses, standingAt } from './trains-live.ts';
+import { TrainLampLights } from './train-lamp-pool.ts';
 import type { Pt } from '../../core/geo.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
@@ -120,6 +121,8 @@ export function createEdinburghLive(options: {
   fetchImpl?: typeof fetch; liveDependencies?: LiveDependencies;
 }) {
   const group = new THREE.Group(); group.name = 'edinburgh-eb-trains'; options.scene.add(group);
+  // the pool of light ahead of each lit headlamp and the halo round each lit lens: two instanced draws for all the trains of this scene (train-lamp-pool.ts)
+  const lights = new TrainLampLights(); options.scene.add(lights.group);
   const labels = options.parent.ownerDocument.createElement('div'); labels.className = 'edinburgh-train-labels';
   labels.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden'; options.parent.append(labels);
   const drawn = new Map<number, { group: THREE.Group; label: HTMLSpanElement }>();
@@ -229,17 +232,21 @@ export function createEdinburghLive(options: {
       item.group.visible = view.opacity > 0;
     }
     updateLamps(views);
+    // one accumulate-then-commit for the scene's trains, after their cars are posed and their lamps set
+    lights.begin();
+    for (const view of views) { const item = drawn.get(view.id); if (item) lights.add(item.group, view.opacity); }
+    lights.commit();
   };
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
     state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [] }),
     status: (): string => `Edinburgh Waverley: ${connection}${session ? ` · ${drawn.size} trains · ${fleetNote} · provisional berth positions/headings` : ''}`,
     frame(dt: number, selected: boolean, utcMs?: number): void {
-      group.visible = selected; labels.hidden = !selected;
+      group.visible = selected; lights.group.visible = selected; labels.hidden = !selected;
       if (selected && performance.now() >= retryAt) void load();
       feed?.advance(dt); replay?.frame(dt, utcMs && utcMs > 0 ? utcMs : undefined);
       if (session) update(session.motion.trains());
     },
-    dispose(): void { disposed = true; abort.abort(); feed?.dispose(); for (const item of drawn.values()) { disposeTrain(item.group); item.label.remove(); } drawn.clear(); group.removeFromParent(); labels.remove(); },
+    dispose(): void { disposed = true; abort.abort(); feed?.dispose(); for (const item of drawn.values()) { disposeTrain(item.group); item.label.remove(); } drawn.clear(); group.removeFromParent(); lights.dispose(); labels.remove(); },
   };
 }

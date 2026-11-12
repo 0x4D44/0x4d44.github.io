@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import { buildGraph } from '../../core/graph.ts';
@@ -173,4 +174,42 @@ test('EB asks for no fleet table while its anchors are unavailable', async () =>
   assert.deepEqual(urls, ['/relay/anchors?area=EB']);
   assert.match(unresolved.status(), /headings unresolved/);
   unresolved.dispose();
+});
+
+test('EB gives its scene one instanced pool and one instanced halo for the light of all its trains: a lit 385 casts a pool ahead of its nose, the view hides it and disposal takes it away', async () => {
+  const { parent } = parentFixture(), scene = new THREE.Scene();
+  const runtime = createEdinburghLive({ geometry, scene, camera: new THREE.PerspectiveCamera(), parent,
+    mode: 'replay', hostname: 'localhost', date: '20260101', speed: 10,
+    fetchImpl: async input => {
+      const url = String(input);
+      if (url.includes('/fleet')) return new Response(JSON.stringify({ booked: fleetTable, ptac: null }));
+      if (url.includes('/anchors')) return new Response(JSON.stringify(anchors));
+      return new Response(JSON.stringify({ t: 5000, e: { kind: 'snapshot', area: 'EB', berths: { SYN1: '1A11' } } }) + '\n');
+    } });
+  // two frames: the second draws the light again, it does not pile up on the first
+  await runtime.load(); runtime.frame(0, true, 5000); runtime.frame(0, true, 5100);
+  const lights = scene.getObjectByName('train-lamp-lights')!;
+  assert.ok(lights, 'the scene carries the trains\' light');
+  const instanced: THREE.InstancedMesh[] = [];
+  scene.traverse(o => { if ((o as THREE.InstancedMesh).isInstancedMesh) instanced.push(o as THREE.InstancedMesh); });
+  assert.deepEqual(instanced.map(m => m.name).sort(), ['lamp-glow', 'lamp-pool'], 'two draws for the whole scene');
+  const train = runtime.group.children[0]!, view = runtime.state().trains[0]!, pool = instanced.find(m => m.name === 'lamp-pool')!;
+  // the booked diagram has a ScotRail 385 for 1A11 (the neutral fallback has no lamps to light); it is at no platform, so it runs in service state: white at its front
+  const lit = String(train.userData.kind).startsWith('sr385');
+  assert.equal(lit, rowsForEvidence(EDINBURGH_FLEET, matchBooked(fleetTable, '1A11', 5000)) !== undefined, 'a 385 where the table books one');
+  assert.equal(pool.count, lit ? 1 : 0, 'one pool for the one lit end');
+  if (lit) {
+    const m = new THREE.Matrix4(), at = new THREE.Vector3(), q = new THREE.Quaternion(), size = new THREE.Vector3();
+    pool.getMatrixAt(0, m); m.decompose(at, q, size);
+    // a TrainView's heading is a compass bearing (core/motion.ts: atan2(x, -z), 0 towards -z), so the world direction of travel is (sin, -cos)
+    const far = new THREE.Vector3(0, 0, 1).applyQuaternion(q), ahead = [Math.sin(view.heading), -Math.cos(view.heading)];
+    assert.ok(Math.abs(far.x - ahead[0]!) < 0.05 && Math.abs(far.z - ahead[1]!) < 0.05, `the pool runs the way the train is heading: ${far.x.toFixed(3)}, ${far.z.toFixed(3)} against ${ahead}`);
+    const nose = [at.x - far.x * size.z / 2, at.z - far.z * size.z / 2];
+    assert.ok(Math.hypot(nose[0]! - view.leading.point[0], nose[1]! - view.leading.point[1]) < 1.5, `from the train's nose: ${nose} against ${view.leading.point}`);
+  }
+  assert.match(readFileSync(new URL('../src/edinburgh-live.ts', import.meta.url), 'utf8'), /lights\.add\(item\.group, view\.opacity\)/, 'a train that is fading gives its light the same fade (a source pin: the trains of this scene are all opaque)');
+  runtime.frame(0, false, 6000);
+  assert.equal(lights.visible, false, 'the view hides its light with its trains');
+  runtime.dispose();
+  assert.equal(scene.children.length, 0, 'and disposal takes it out of the scene');
 });
