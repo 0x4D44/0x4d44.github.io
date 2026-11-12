@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { createSignals, signalRefBerth, SIGNAL_REF_RULES } from '../src/signals.ts';
 import type { OverlaySignal, SignalRefRule } from '../src/signals.ts';
 import type { TimedTdEvent } from '../../core/sclass.ts';
+import { buildGraph } from '../../core/graph.ts';
 
 const ZZ: SignalRefRule = { berth: /^(?:ZZ\s*)?(Z\d{3})[A-Z]?$/, prefixed: /^ZZ\s*Z\d{3}[A-Z]?$/, prefix: 'ZZ' };
 const head = (extra: Partial<OverlaySignal> = {}): OverlaySignal => ({ id: 1, ref: 'ZZ Z123', kinds: ['main'],
@@ -52,3 +53,37 @@ test('a layer for a named area asks the relay for that area\'s table and refuses
   layer.dispose();
 });
 
+
+// A straight line along +x: nodes every 100 m. Heads facing +x trains at x 50 (ref ZZ Z123), 150 and 250.
+const lineGraph = () => buildGraph({ nodes: [[1, 0, 0], [2, 100, 0], [3, 200, 0], [4, 300, 0], [5, 400, 0]],
+  rails: [{ id: 1, nodes: [1, 2, 3, 4, 5], service: 'main', tunnel: false, bridge: false, layer: 0 }] }, { curves: true });
+const lineHeads = (aspects?: 4) => [[1, 2, 'ZZ Z123'], [2, 3, undefined], [3, 4, undefined]].map(([from, to, ref], i) =>
+  head({ id: i + 1, ref: ref as string | undefined, edge: { wayId: 1, from: from as number, to: to as number, t: 0.5, point: [50 + 100 * i, 0] }, ...(aspects ? { aspects } : {}) }));
+
+test('with infer, the trains ahead light yellows and greens, the feed\'s red wins, and no occupancy is dark', () => {
+  const layer = createSignals({ attribution: 'synthetic', signals: lineHeads(4) }, new THREE.Scene(), { area: 'ZZ', refRule: ZZ, track: lineGraph(), infer: true });
+  const states = () => layer.signals().map(s => s.state);
+  assert.deepEqual(states(), ['unknown', 'unknown', 'unknown'], 'no occupancy yet: dark');
+  layer.setOccupancy([]);
+  assert.deepEqual(states(), ['preliminary', 'caution', 'unknown'], 'clear: as permissive as the known sections allow');
+  layer.setOccupancy([{ a: 2, b: 3, fromT: 0.6, toT: 0.8 }]);
+  assert.deepEqual(states(), ['caution', 'danger', 'unknown']);
+  layer.setTable(table()); layer.apply(row('00'));
+  assert.equal(states()[0], 'danger', 'the feed\'s red beats the inferred yellow');
+  layer.apply(row('04')); assert.equal(states()[0], 'caution');
+  layer.setOccupancy([{ a: 1, b: 2, fromT: 0.6, toT: 0.9 }]);
+  assert.equal(states()[0], 'caution', 'off red in the feed: never shown red by inference, capped at single yellow');
+  layer.setOccupancy(undefined);
+  assert.deepEqual(states(), ['caution', 'unknown', 'unknown'], 'occupancy lost: the feed alone');
+  const lamp = (i: number) => (layer.signals()[i]!.group.getObjectByName('aspect') as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>).material.color.getHex();
+  assert.equal(lamp(0), 0xffc21a); assert.equal(lamp(1), 0x666666);
+  layer.dispose();
+});
+
+test('without infer (King\'s Cross) occupancy changes nothing: a head shows only the feed', () => {
+  const layer = createSignals({ attribution: 'synthetic', signals: lineHeads() }, new THREE.Scene(), { area: 'ZZ', refRule: ZZ, track: lineGraph() });
+  layer.setTable(table()); layer.apply(row('04'));
+  layer.setOccupancy([{ a: 1, b: 2, fromT: 0.6, toT: 0.9 }]);
+  assert.deepEqual(layer.signals().map(s => s.state), ['proceed', 'unknown', 'unknown']);
+  layer.dispose();
+});

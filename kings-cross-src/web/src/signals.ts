@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { qualifiesSignalEvidence, signalStates, updateBytes } from '../../core/sclass.ts';
-import type { ByteState, SignalEvidence, SignalHypothesis, SignalState, TimedTdEvent } from '../../core/sclass.ts';
+import type { ByteState, SignalEvidence, SignalHypothesis, TimedTdEvent } from '../../core/sclass.ts';
+import { combineAspect, inferAspects } from '../../core/signal-aspects.ts';
+import type { Aspect, AspectHead, OccupiedSpan } from '../../core/signal-aspects.ts';
 import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import { edgePoint } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
@@ -86,6 +88,8 @@ export interface OverlaySignal {
   facing?: [number, number];
   side: 'left' | 'right' | 'over-track';
   sideSource: 'osm' | 'assumed-left';
+  /** The aspects its OSM states tag lists (4: it can show double yellow); absent, three. */
+  aspects?: 3 | 4;
   berth?: string;
   review: 'osm-ref-match' | 'topology' | 'unreviewed';
   /** Geographic review is independent of the berth identity above. Heights/offsets remain schematic. */
@@ -94,7 +98,9 @@ export interface OverlaySignal {
 export interface SignalOverlay { attribution: string; signals: OverlaySignal[] }
 export type SignalEvent = TimedTdEvent | { t: number; e: { kind: 'snapshot'; area: string; berths?: unknown; sclass?: unknown } };
 export interface DrawnSignal {
-  signal: OverlaySignal & { facing: [number, number] }; group: THREE.Group; state: SignalState;
+  signal: OverlaySignal & { facing: [number, number] }; group: THREE.Group;
+  /** The live feed's red/not-red; with `infer`, combined with the aspect inferred from the trains ahead (core/signal-aspects.ts). */
+  state: Aspect;
   inferredPosition: boolean;
   label: string;
   mappingSource?: 'reference' | 'nearby' | 'private-topology' | 'td-anchor';
@@ -163,6 +169,11 @@ export function validatedSignalHypotheses(value: unknown, area = 'Y9'): SignalHy
   )) ? { ...h, status: 'unknown' } : h);
 }
 
+/** A stop signal's colour-light head: OSM main or combined (main and distant in one head). */
+const aspectBearing = (signal: OverlaySignal): boolean => signal.kinds.includes('main') || signal.kinds.includes('combined');
+/** Lamp colours: unknown is the dark grey lamp. */
+const LAMP: Readonly<Record<Aspect, number>> = { proceed: 0x35ff69, preliminary: 0xffc21a, caution: 0xffc21a, danger: 0xff2929, unknown: 0x666666 };
+
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
 export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   options: { fetchImpl?: typeof fetch; area?: string;
@@ -171,7 +182,9 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     /** how the area's OSM refs name berths; SIGNAL_REF_RULES[area] unless given, and null binds no head by ref */
     refRule?: SignalRefRule | null;
     /** the track's curves (buildGraph(data, { curves: true })): heads stand off the curved centre line, square to it */
-    track?: Pick<Graph, 'pos' | 'shapes'> } = {}) {
+    track?: Pick<Graph, 'pos' | 'shapes'> & Partial<Pick<Graph, 'adj'>>;
+    /** infer yellows and greens from setOccupancy (needs track.adj); off, a head shows only the feed's red/not-red */
+    infer?: boolean } = {}) {
   const area = options.area ?? 'Y9';
   const refRule = options.refRule === null ? undefined : options.refRule ?? SIGNAL_REF_RULES[area];
   const refBerth = (ref: string | undefined): string | undefined => signalRefBerth(ref, refRule ?? null);
@@ -190,6 +203,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   const runtimeBerths = new Map<DrawnSignal, string>();
   const inferredHeads = new Map<string, DrawnSignal>();
   let nextInferredId = -1;
+  /** The aspect inferred for each overlay head from the last setOccupancy; undefined until then (no data). */
+  let inferred: Map<number, Aspect> | undefined;
   // OSM reference identity does not depend on TD having located the berth.
   const matches = new Map<string, number>();
   for (const s of overlay.signals) {
@@ -269,6 +284,15 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const record: DrawnSignal = { signal: drawnSignal, group, state: 'unknown', inferredPosition: inferred, label };
     records.push(record); lamps.set(record, lamp); questions.set(record, question); parent.add(group);
     return record;
+  }
+  /** The overlay heads that bound sections and show an aspect, on the track they stand by. */
+  function aspectHeads(track: Pick<Graph, 'pos'>): AspectHead[] {
+    return records.filter(r => !r.inferredPosition && aspectBearing(r.signal)).flatMap(({ signal }) => {
+      const a = track.pos.get(signal.edge.from), b = track.pos.get(signal.edge.to);
+      if (!a || !b) return [];
+      const forward = (b[0] - a[0]) * signal.travel[0] + (b[1] - a[1]) * signal.travel[1] > 0;
+      return [{ id: signal.id, from: signal.edge.from, to: signal.edge.to, t: signal.edge.t, forward, fourAspect: signal.aspects === 4 }];
+    });
   }
   for (const signal of overlay.signals) {
     const record = makeHead(signal);
@@ -392,8 +416,9 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const proceed = table.filter((h) => (h.kind ?? 'proceed') === 'proceed');
     const states = signalStates(bytes, proceed, anchors);
     for (const record of records) {
-      record.state = (record.signal.kinds.includes('main') || (record.signal.kinds.length === 0 && record.mappingSource === 'reference')) ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
-      const lamp = lamps.get(record)!, lampColour = record.state === 'proceed' ? 0x35ff69 : record.state === 'danger' ? 0xff2929 : 0x666666;
+      const feed = (record.signal.kinds.includes('main') || (record.signal.kinds.length === 0 && record.mappingSource === 'reference')) ? states[runtimeBerths.get(record) ?? ''] ?? 'unknown' : 'unknown';
+      record.state = options.infer && !record.inferredPosition && aspectBearing(record.signal) ? combineAspect(feed, inferred?.get(record.signal.id) ?? 'unknown') : feed;
+      const lamp = lamps.get(record)!, lampColour = LAMP[record.state];
       if (record.inferredPosition) lamp.material.color.setHex(lampColour); // its own material
       else lamp.material = sharedMaterial(lampColour); // the shared one of that colour
       questions.get(record)!.visible = record.state === 'unknown';
@@ -425,6 +450,16 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       refresh();
     },
     reset(): void { bytes = {}; refresh(); },
+    /**
+     * Where the trains are (core/motion.ts TrainView.occupied, as node pairs): with `infer`, every overlay head's aspect is
+     * inferred again. undefined: no occupancy is known, and the inferred aspects go unknown.
+     */
+    setOccupancy(occupied: readonly OccupiedSpan[] | undefined): void {
+      if (disposed || !options.infer) return;
+      const track = options.track;
+      inferred = occupied && track?.adj ? inferAspects({ pos: track.pos, adj: track.adj }, aspectHeads(track), occupied) : undefined;
+      refresh();
+    },
     setAnchors(map: AnchorMap, graph: SignalGraph): void {
       if (disposed) return;
       privateAnchors = map?.area === area && Array.isArray(map.anchors) ? structuredClone(map) : undefined;

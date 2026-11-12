@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { buildGraph } from '../core/graph.ts';
 import { MIN_PRECISION, MIN_SUPPORT, qualifiesSignalEvidence, revalidateSignalHypotheses, SIGNAL_WINDOWS, trackSclass } from '../core/sclass.ts';
 import type { LooValidation, SignalHypothesis, SignalState, SignalWindows, TimedTdEvent } from '../core/sclass.ts';
+import type { Aspect } from '../core/signal-aspects.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import { createSignals, signalRefBerth, validatedSignalHypotheses } from '../web/src/signals.ts';
@@ -15,7 +16,7 @@ import { buildSignalOverlay, publicSignalReviewMatches } from './build-signals.t
 import publicReviews from '../web/src/data/kx-signal-review.json' with { type: 'json' };
 
 export const CAPTURE_STATES: readonly SignalState[] = ['proceed', 'danger', 'unknown'];
-export interface SignalInterval { headId: number; berth: string; state: SignalState; startMs: number; endMs: number }
+export interface SignalInterval { headId: number; berth: string; state: Aspect; startMs: number; endMs: number }
 export function capturePlan(intervals: readonly SignalInterval[]) {
   return CAPTURE_STATES.map(state => {
     // Prefer an OSM head and its earliest complete interval: less replay work, same evidence.
@@ -155,7 +156,7 @@ export function signalReport(recordings: readonly (readonly TimedTdEvent[])[], d
         : source === 'nearby' ? `Unique same-edge, direction-compatible OSM main signal within 20 m; ${anchor?.evidence ?? ''}`
         : r.inferredPosition ? `${r.label}; ${anchor?.evidence ?? 'anchor evidence unavailable'}`
         : 'OSM position retained; no admitted proceed identity for this head',
-      osmReview, observedStates: [] as SignalState[], heldOut: aspect?.heldOut ?? null };
+      osmReview, observedStates: [] as Aspect[], heldOut: aspect?.heldOut ?? null };
   });
   const decodedHeads = proceed.map(h => {
     const positions = headRows.filter(r => r.berth === h.berth && r.decoded);
