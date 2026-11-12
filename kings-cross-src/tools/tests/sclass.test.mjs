@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aggregate, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation } from '../sclass.ts';
+import { aggregate, AREA_ASSETS, areaTrack, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation } from '../sclass.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const evidence = (support, trials, unmatchedCycles) => ({ support, trials, unmatchedCycles, contradictions: trials - support,
@@ -314,4 +314,24 @@ test('relearn uses leave-one-recording-out once three continuous sessions exist'
   assert.equal(relearnValidation([[row(0)], [row(1e9), row(1e9 + 11 * 60_000)]], 'Y9'), 'leave-one-recording-out', 'an outage splits a day into two sessions');
   assert.equal(relearnValidation([[row(0)], [row(1e9), other(1e9 + 5 * 60_000), row(1e9 + 11 * 60_000)]], 'Y9'), 'leave-one-recording-out', 'another area does not bridge an outage');
   assert.equal(relearnValidation([[row(0)], [row(1e9), row(1e9 + 9 * 60_000)]], 'Y9'), 'last-recording');
+});
+
+/** core/waverley-data.ts's packed path: decimetre deltas, zigzag, little-endian base-128 varints, base64. */
+const packPath = points => Buffer.from(points.flatMap((p, i) => [p[0] - (points[i - 1]?.[0] ?? 0), p[1] - (points[i - 1]?.[1] ?? 0)])
+  .map(v => Math.round(v * 10)).map(v => (v < 0 ? -2 * v - 1 : 2 * v)).flatMap(n => { const out = []; while (n > 127) { out.push((n & 127) | 128); n = Math.floor(n / 128); } out.push(n); return out; })).toString('base64');
+test('each listed area names its own committed assets, and a packed station scene reads as the track its page builds', () => {
+  assert.deepEqual(AREA_ASSETS.Y9, { overlay: 'web/src/data/kx-signals.json', track: 'web/src/data/kx-track.json', legacyEnv: true });
+  assert.deepEqual(AREA_ASSETS.EB, { overlay: 'web/src/data/waverley-signals.json', track: 'web/src/data/waverley-scene.json' });
+  assert.equal(AREA_ASSETS.ZZ, undefined);
+  // two rails sharing a point: one junction node, local ids by coordinate (core/waverley-anchors.ts)
+  const scene = { origin: { lat: 0, lon: 0 }, attribution: 'synthetic', rails: [
+    { id: 'way/2', tags: { railway: 'rail' }, path: [[0, 0], [10, 0]] }, { id: 'way/1', tags: { railway: 'rail' }, path: [[10, 0], [20, 5]] }], platforms: [] };
+  const plain = { nodes: [[1, 0, 0]], rails: [], platforms: [] };
+  assert.equal(areaTrack(plain), plain, 'a KxData passes through');
+  const track = areaTrack({ ...scene, format: undefined });
+  assert.equal(track, areaTrack(track), 'an already-built track is not decoded twice');
+  const packed = areaTrack({ ...scene, format: 'waverley-varint-v1', q: 0.1,
+    rails: scene.rails.map(r => ({ ...r, path: packPath(r.path) })) });
+  assert.deepEqual(packed.nodes, [[1, 0, 0], [2, 10, 0], [3, 20, 5]]);
+  assert.deepEqual(packed.rails.map(r => r.nodes), [[2, 3], [1, 2]]);
 });

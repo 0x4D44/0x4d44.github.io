@@ -8,8 +8,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import * as THREE from 'three';
-import { createSignals } from '../web/src/signals.ts';
+import { createSignals, SIGNAL_REF_RULES } from '../web/src/signals.ts';
 import { buildGraph } from '../core/graph.ts';
+import { decodeWaverleyAnchorScene, waverleyTrackData } from '../core/waverley-anchors.ts';
 import type { KxData } from '../core/osm.ts';
 import type { SignalOverlay } from '../web/src/signals.ts';
 import { analyseSclassRecordings, qualifiesSignalEvidence, revalidateSignalHypotheses, signalStates, splitRecordingSessions } from '../core/sclass.ts';
@@ -28,6 +29,22 @@ interface CliArgs {
 }
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Each TD area's committed public render assets (package-relative): its OSM signal overlay and its track, a KxData or a
+ * packed station scene (core/waverley-data.ts). legacyEnv: the relay's older KX_ANCHORS and KX_SCLASS variables name this
+ * area's private files. An area not listed here needs --overlay and --track.
+ */
+export const AREA_ASSETS: Readonly<Record<string, { overlay: string; track: string; legacyEnv?: boolean }>> = {
+  Y9: { overlay: 'web/src/data/kx-signals.json', track: 'web/src/data/kx-track.json', legacyEnv: true },
+  EB: { overlay: 'web/src/data/waverley-signals.json', track: 'web/src/data/waverley-scene.json' },
+};
+
+/** A track asset as the renderer's KxData: a packed station scene is decoded to the same graph its page builds. */
+export function areaTrack(value: unknown): KxData {
+  if (value && typeof value === 'object' && (value as { format?: unknown }).format !== undefined) return waverleyTrackData(decodeWaverleyAnchorScene(value));
+  return value as KxData;
+}
 const packageRoot = path.resolve(here, '..');
 const repoRoot = path.resolve(packageRoot, '..');
 
@@ -223,7 +240,7 @@ function addressTable(analysis: SclassAnalysis) {
     const h = candidates.find(h => h.status === 'decoded');
     const evidence = h ?? (candidates.length === 1 ? candidates[0] : undefined);
     return { address: bit.address, bit: bit.bit, decodedAs: !h ? 'unknown'
-      : h.kind === 'route' ? `route ${h.berth} -> ${h.to}` : `signal ${/^\d+$/.test(h.berth) && analysis.area === 'Y9' ? 'YA' : ''}${h.berth} proceed`,
+      : h.kind === 'route' ? `route ${h.berth} -> ${h.to}` : `signal ${/^\d+$/.test(h.berth) ? SIGNAL_REF_RULES[analysis.area]?.prefix ?? '' : ''}${h.berth} proceed`,
       supports: evidence?.heldOut.support ?? 0, precision: evidence?.heldOut.precision ?? null, recall: evidence?.heldOut.recall ?? null,
       hypothesisId: evidence?.id ?? null, candidates: candidates.map(h => ({ id: h.id, status: h.status, reason: h.reason,
         training: h.training, heldOut: h.heldOut })) };
@@ -240,7 +257,7 @@ export function aggregate(analysis: SclassAnalysis, kind?: 'proceed' | 'route') 
 
 export function countHeads(analysis: Pick<SclassAnalysis, 'area' | 'hypotheses'>, anchors: AnchorMap,
   overlay: SignalOverlay, track: KxData, bytes: SclassAnalysis['trace']['state']) {
-  const layer = createSignals(overlay, new THREE.Group(), { area: analysis.area, platforms: track.platforms });
+  const layer = createSignals(overlay, new THREE.Group(), { area: analysis.area, platforms: track.platforms ?? [] });
   try {
     layer.setAnchors(anchors, buildGraph(track));
     layer.setTable(analysis);
@@ -500,13 +517,14 @@ async function readAreaAssets(area: string, overlayFile?: string, trackFile?: st
   if (overlayFile && trackFile) {
     [overlayPath, trackPath] = await Promise.all([inputPath(overlayFile), inputPath(trackFile)]);
   } else {
-    if (area !== 'Y9') throw new Error(`area-specific overlay and track are required for ${area}`);
-    overlayPath = path.join(packageRoot, 'web/src/data/kx-signals.json');
-    trackPath = path.join(packageRoot, 'web/src/data/kx-track.json');
+    const assets = Object.hasOwn(AREA_ASSETS, area) ? AREA_ASSETS[area] : undefined;
+    if (!assets) throw new Error(`area-specific overlay and track are required for ${area}`);
+    overlayPath = path.join(packageRoot, assets.overlay);
+    trackPath = path.join(packageRoot, assets.track);
   }
   const [overlay, track] = await Promise.all([
     readFile(overlayPath, 'utf8').then(JSON.parse) as Promise<SignalOverlay>,
-    readFile(trackPath, 'utf8').then(JSON.parse) as Promise<KxData>,
+    readFile(trackPath, 'utf8').then(text => areaTrack(JSON.parse(text))),
   ]);
   return { overlay, track, overlayPath, trackPath };
 }
@@ -640,11 +658,11 @@ async function relearnMain(argv: string[]): Promise<void> {
   }
   const area = values.get('--area') ?? process.env.KX_AREA ?? 'Y9';
   if (!/^[A-Z0-9]{2}$/.test(area)) throw new Error('Invalid area');
-  const isY9 = area === 'Y9';
+  const legacyEnv = Object.hasOwn(AREA_ASSETS, area) && AREA_ASSETS[area]!.legacyEnv === true;
   if (Boolean(values.get('--overlay')) !== Boolean(values.get('--track'))) throw new Error('--overlay and --track must be supplied together');
   const result = await relearnSclass({ dataDir: values.get('--data-dir') ?? process.env.KX_DATA_DIR ?? path.join(os.homedir(), 'kx-data'),
-    area, anchorsFile: values.get('--anchors') ?? (isY9 ? process.env.KX_ANCHORS : undefined),
-    tableFile: values.get('--table') ?? (isY9 ? process.env.KX_SCLASS : undefined),
+    area, anchorsFile: values.get('--anchors') ?? (legacyEnv ? process.env.KX_ANCHORS : undefined),
+    tableFile: values.get('--table') ?? (legacyEnv ? process.env.KX_SCLASS : undefined),
     recordingsDir: values.get('--recordings-dir'), overlayFile: values.get('--overlay'), trackFile: values.get('--track') });
   console.log(JSON.stringify({ date: result.date, validationDay: result.validationDay, published: result.published,
     candidate: result.candidate, incumbent: result.incumbent, reasons: result.reasons }));

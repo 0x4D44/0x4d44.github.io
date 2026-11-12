@@ -5,9 +5,8 @@ import type { AnchorMap, BerthAnchor } from '../../core/anchors.ts';
 import { edgePoint } from '../../core/graph.ts';
 import type { Graph } from '../../core/graph.ts';
 import { isSurfacePlatform, longAxis, platformSouthEnd, stationPlatforms } from '../../core/station.ts';
-import type { KxData, Platform } from '../../core/osm.ts';
+import type { Platform } from '../../core/osm.ts';
 import type { Pt } from '../../core/geo.ts';
-import trackData from './data/kx-track.json' with { type: 'json' };
 
 type SignalGraph = Pick<Graph, 'pos'> & Partial<Pick<Graph, 'edges'>>;
 
@@ -101,9 +100,26 @@ export interface DrawnSignal {
   mappingSource?: 'reference' | 'nearby' | 'private-topology' | 'td-anchor';
 }
 
+/**
+ * How one TD area's OSM signal refs name its berths. Public conventions only: a ref is an OSM tag, and the rule
+ * says which part of it is the TD berth. An area with no rule binds no head by its ref (its heads are placed by
+ * the private anchors, or stay unbound).
+ */
+export interface SignalRefRule {
+  /** A ref, with or without its panel prefix and with an optional variant suffix, to its berth (capture group 1). */
+  berth: RegExp;
+  /** Only the fully prefixed form: an exact identity even where OSM leaves the signal's type untagged. */
+  prefixed: RegExp;
+  /** The prefix a report puts before a berth that is all digits. */
+  prefix: string;
+}
+export const SIGNAL_REF_RULES: Readonly<Record<string, SignalRefRule>> = {
+  Y9: { berth: /^(?:YA\s*)?(\d{4})[A-Z]?$/i, prefixed: /^YA\s*\d{4}[A-Z]?$/i, prefix: 'YA' },
+};
+
 /** A suffix is a signal variant, not a different TD berth. Foreign area prefixes stay separate. */
-export function signalRefBerth(ref: string | undefined): string | undefined {
-  return ref?.match(/^(?:YA\s*)?(\d{4})[A-Z]?$/i)?.[1];
+export function signalRefBerth(ref: string | undefined, rule: SignalRefRule | null = SIGNAL_REF_RULES.Y9!): string | undefined {
+  return rule ? ref?.match(rule.berth)?.[1] : undefined;
 }
 
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -149,17 +165,25 @@ export function validatedSignalHypotheses(value: unknown, area = 'Y9'): SignalHy
 
 /** Node-safe geometry and a conservative, local-relay-only byte controller. Fetch is explicit. */
 export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
-  options: { fetchImpl?: typeof fetch; area?: string; platforms?: readonly Platform[];
+  options: { fetchImpl?: typeof fetch; area?: string;
+    /** the area's OSM platforms (KxData.platforms), for the platform starters; none, no starters */
+    platforms?: readonly Platform[];
+    /** how the area's OSM refs name berths; SIGNAL_REF_RULES[area] unless given, and null binds no head by ref */
+    refRule?: SignalRefRule | null;
     /** the track's curves (buildGraph(data, { curves: true })): heads stand off the curved centre line, square to it */
     track?: Pick<Graph, 'pos' | 'shapes'> } = {}) {
   const area = options.area ?? 'Y9';
+  const refRule = options.refRule === null ? undefined : options.refRule ?? SIGNAL_REF_RULES[area];
+  const refBerth = (ref: string | undefined): string | undefined => signalRefBerth(ref, refRule ?? null);
+  // An area named by the caller asks the relay for its own table; the bare route is the relay's default area.
+  const tableUrl = options.area === undefined ? '/relay/sclass' : `/relay/sclass?area=${encodeURIComponent(area)}`;
   const records: DrawnSignal[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const lamps = new Map<DrawnSignal, THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>();
   const questions = new Map<DrawnSignal, THREE.Group>();
   let bytes: ByteState = {}, table: SignalHypothesis[] = [], disposed = false, generation = 0;
   let tableValue: unknown, privateAnchors: AnchorMap | undefined, anchorGraph: SignalGraph | undefined;
-  const platforms = stationPlatforms({ platforms: [...(options.platforms ?? (trackData as unknown as KxData).platforms)] });
+  const platforms = stationPlatforms({ platforms: [...(options.platforms ?? [])] });
   const anchors: AnchorMap = { area, sources: [overlay.attribution], anchors: [], unmapped: [] };
   const directAnchors: AnchorMap['anchors'] = [];
   const directBerths = new Map<DrawnSignal, string>();
@@ -169,7 +193,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   // OSM reference identity does not depend on TD having located the berth.
   const matches = new Map<string, number>();
   for (const s of overlay.signals) {
-    const berth = signalRefBerth(s.ref);
+    const berth = refBerth(s.ref);
     if (berth) matches.set(berth, (matches.get(berth) ?? 0) + 1);
   }
   // One material to a look and not one to a mesh. A head is five draws (the post, the box, the lamp, the dot and the line of its question mark) and a busy view shows
@@ -248,7 +272,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   }
   for (const signal of overlay.signals) {
     const record = makeHead(signal);
-    const osmBerth = signalRefBerth(signal.ref);
+    const osmBerth = refBerth(signal.ref);
     if (signal.kinds.includes('main') && osmBerth && (signal.berth === undefined || signal.berth === osmBerth) && matches.get(osmBerth) === 1) {
       anchors.anchors.push({ berth: osmBerth, kind: 'signal', from: signal.edge.from, to: signal.edge.to,
         t: signal.edge.t, point: [...signal.edge.point], errorM: 0, evidence: 'OSM signal overlay' });
@@ -302,13 +326,13 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     }
     const proceedBerths = new Set(table.filter(h => (h.kind ?? 'proceed') === 'proceed' && h.status === 'decoded' &&
       qualifiesSignalEvidence(h.training) && qualifiesSignalEvidence(h.heldOut)).map(h => h.berth));
-    // Missing OSM type tags do not erase an exact YA identity proven by the private decoder.
+    // Missing OSM type tags do not erase an exact prefixed identity (YA at King's Cross) proven by the private decoder.
     for (const record of records.filter(r => !r.inferredPosition)) {
-      const signal = record.signal, berth = signalRefBerth(signal.ref);
-      if (signal.kinds.length === 0 && /^YA\s*\d{4}[A-Z]?$/i.test(signal.ref ?? '') && berth &&
+      const signal = record.signal, berth = refBerth(signal.ref);
+      if (signal.kinds.length === 0 && refRule?.prefixed.test(signal.ref ?? '') && berth &&
           (signal.berth === undefined || signal.berth === berth) && matches.get(berth) === 1 && proceedBerths.has(berth))
         bind(record, { berth, kind: 'signal', from: signal.edge.from, to: signal.edge.to, t: signal.edge.t,
-          point: [...signal.edge.point], errorM: 0, evidence: 'OSM YA reference with validated proceed evidence' }, 'reference');
+          point: [...signal.edge.point], errorM: 0, evidence: `OSM ${refRule!.prefix} reference with validated proceed evidence` }, 'reference');
     }
     const eligible = (privateAnchors?.anchors ?? []).filter(a => {
       if (!object(a) || typeof a.berth !== 'string' || !a.berth) return false;
@@ -335,7 +359,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       const direction = heading(anchor);
       const candidates = osm.filter(record => {
         const s = record.signal;
-        return !runtimeBerths.has(record) && (!s.ref || signalRefBerth(s.ref) === anchor.berth) &&
+        return !runtimeBerths.has(record) && (!s.ref || refBerth(s.ref) === anchor.berth) &&
           (s.berth === undefined || s.berth === anchor.berth) &&
           (s.direction === 'forward' || s.direction === 'backward') &&
           ((s.edge.from === anchor.from && s.edge.to === anchor.to) || (s.edge.from === anchor.to && s.edge.to === anchor.from)) &&
@@ -411,7 +435,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     async loadTable(): Promise<void> {
       const request = ++generation; table = []; reconcilePositions(); refresh();
       try {
-        const response = await (options.fetchImpl ?? fetch)('/relay/sclass');
+        const response = await (options.fetchImpl ?? fetch)(tableUrl);
         const value: unknown = response.ok ? await response.json() : null;
         if (!disposed && request === generation) { install(value); }
       } catch { if (!disposed && request === generation) { table = []; reconcilePositions(); refresh(); } }

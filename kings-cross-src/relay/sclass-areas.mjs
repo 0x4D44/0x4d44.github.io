@@ -1,9 +1,19 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createSclassJob } from './sclass-job.mjs';
 import { areaDataDir } from './areas.mjs';
 
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/**
+ * The committed public render assets of each area beyond Y9 (Y9's are the relearn CLI's defaults): its OSM signal overlay and
+ * its track. The relearn writes the area's private table under <dataDir>/areas/<area>/, never beside these.
+ */
+export const DEFAULT_AREA_ASSETS = Object.freeze({
+  EB: Object.freeze({ overlayPath: path.join(packageRoot, 'web/src/data/waverley-signals.json'), trackPath: path.join(packageRoot, 'web/src/data/waverley-scene.json') }),
+});
+
 /** Build daily private relearn jobs with one state directory per area. */
-export function createAreaSclassJobs({ dataDir, areas, anchorsPath, tablePath, areaAssets = {}, createJob = createSclassJob,
+export function createAreaSclassJobs({ dataDir, areas, anchorsPath, tablePath, areaAssets = DEFAULT_AREA_ASSETS, createJob = createSclassJob,
   log = () => {}, ...jobOptions } = {}) {
   if (typeof dataDir !== 'string' || !dataDir) throw new Error('area sclass dataDir is required');
   if (!Array.isArray(areas) || !areas.length) throw new Error('area sclass areas are required');

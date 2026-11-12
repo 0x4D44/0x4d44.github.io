@@ -83,7 +83,7 @@ function start(): void {
   const world = addWorld(scene, { grid: params.has('grid') || params.has('bare'), bare: params.has('bare') });
   // the track's curves (core/curves.ts): the trains run on them, and the signal heads stand beside them
   const graph = buildGraph(data, { curves: true });
-  const signalLayer = params.get('signals') === '0' ? null : createSignals(signalData as SignalOverlay, scene, { track: graph });
+  const signalLayer = params.get('signals') === '0' ? null : createSignals(signalData as SignalOverlay, scene, { track: graph, platforms: data.platforms });
 
   const rails = railSegments(data); // camera bounds
   const layout = shedLayout(data);
