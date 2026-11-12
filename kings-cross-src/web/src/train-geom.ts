@@ -281,15 +281,19 @@ export function gridNormals(P: V3[][], closedColumns: boolean, inside: (row: num
 /**
  * How lit the trains' lamps and windows are: 0 by day, 1 after dark (web/src/atmosphere.ts sets it from the sun). It drives the
  * vertices a `Soup` tagged (`emit`): lit passenger windows glow warm and the headlight and tail lamp lenses glow in their own colour.
+ * The windows glow only after dark; a lit lens (tag 2) keeps a floor by day (`LENS_GLOW.day`), so a headlamp that is on reads as on in daylight too.
  */
 export const trainNight = { value: 0 };
+/** How much of its own colour a lit lens (tag 2) adds to its lit sum: by day, and after dark (the brightest channel is capped at 1 afterwards, so the hue is kept). */
+export const LENS_GLOW = { day: 0.6, night: 1.6 } as const;
 
 let plainMaterial: THREE.MeshLambertMaterial | null = null;
 /** The one material for everything that carries its colour in the vertices; shared by every train. */
 export const plain = (): THREE.MeshLambertMaterial => {
   if (!plainMaterial) {
     plainMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
-    // Add the lamp glow after lighting. Vertices with no `aGlow` attribute read 0 and draw as before.
+    // Add the lamp glow after lighting. Vertices with no `aGlow` attribute read 0 and draw as before. A window (tag 1) glows only after dark; a lit lens (tag 2) glows in its own
+    // colour by `mix( day, night, uNight )`, so by day it keeps the floor and an unlit one (tag 0) is the paint it always was.
     plainMaterial.onBeforeCompile = (shader) => {
       shader.uniforms.uNight = trainNight;
       shader.vertexShader = shader.vertexShader
@@ -298,7 +302,7 @@ export const plain = (): THREE.MeshLambertMaterial => {
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying float vGlow;')
         .replace('#include <opaque_fragment>',
-          'outgoingLight += uNight * ( step( 0.5, vGlow ) * ( 1.0 - step( 1.5, vGlow ) ) * vec3( 1.0, 0.82, 0.52 ) * 1.1 + step( 1.5, vGlow ) * vColor.rgb * 1.6 );\n' +
+          `outgoingLight += uNight * step( 0.5, vGlow ) * ( 1.0 - step( 1.5, vGlow ) ) * vec3( 1.0, 0.82, 0.52 ) * 1.1 + step( 1.5, vGlow ) * vColor.rgb * mix( ${LENS_GLOW.day.toFixed(2)}, ${LENS_GLOW.night.toFixed(2)}, uNight );\n` +
           // a lens scales all three channels by one factor that caps the brightest at 1, so it keeps its hue (clipping each channel alone washed a red lamp pink)
           'outgoingLight /= mix( 1.0, max( 1.0, max( outgoingLight.r, max( outgoingLight.g, outgoingLight.b ) ) ), step( 1.5, vGlow ) );\n#include <opaque_fragment>');
     };
