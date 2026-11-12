@@ -14,7 +14,7 @@ import { carPoses, createLiveTrains } from '../src/trains-live.ts';
 import { HALO, LIGHT_CAPACITY, POOL, TrainLampLights, haloFalloff, haloPlacements, haloStrength, haloTexture, lampEnds, poolFalloff, poolPlacements, poolStrength, poolTexture } from '../src/train-lamp-pool.ts';
 import { trainNight } from '../src/train-geom.ts';
 import { RAIL_TOP } from '../src/track.ts';
-import { LENS, buildTrain, setTrainLampState } from '../src/train.ts';
+import { BUFFER_LAMPS, LENS, buildTrain, setTrainLampState } from '../src/train.ts';
 import type { TrainLampMode } from '../src/train.ts';
 import { build385 } from '../src/train-385.ts';
 
@@ -426,4 +426,53 @@ test('the page wires London\'s train lights: one set in the London scene, fed th
   assert.match(main, /lampLights\.dispose\(\);/, 'disposed with the page');
   assert.match(main, /Object\.assign\(kx, \{[^}]*\blampLights\b[^}]*\}\);/, 'on window.__kx beside the other hooks');
   assert.match(main, /liveTrains\.update\(kx\.motionState\); trains\.splice\(0, trains\.length, \.\.\.liveTrains\.trains\(\)\); \}\n(?:[^\n]*\n)*?[^\n]*lampLights\.update\(/, 'after the live trains are posed, so the lights are given the poses of this frame');
+});
+
+/** The kinds main.ts stands nose-in at the buffer stops as the page's sample trains: read from its `picks`, since main.ts needs a browser to run. */
+const demoKinds = (): TrainKind[] => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  const list = main.match(/const picks: \[TrainKind, number\]\[\] = (\[.*\]);/)?.[1] ?? '';
+  return [...list.matchAll(/\['(\w+)', \d+\]/g)].map((m) => m[1] as TrainKind);
+};
+
+test('the four demo trains standing at the buffers cast no pool: nothing lit toward the stops, red lamps at the outer end', () => {
+  const kinds = demoKinds();
+  assert.equal(kinds.length, 4, `main.ts stands four sample trains: ${kinds.join(', ')}`);
+  const trains: THREE.Group[] = [];
+  for (const kind of kinds) {
+    assert.ok((ALL_KINDS as readonly string[]).includes(kind), `${kind} is a train kind`);
+    const train = buildTrain(kind);
+    // the control: built in service, the same train lights the way ahead of its front, so the empty list below is the state's doing
+    assert.deepEqual(poolPlacements([{ group: train }]).map((p) => p.end), ['front'], `${kind}: in service it casts one pool, ahead of its front`);
+    setTrainLampState(train, BUFFER_LAMPS);
+    assert.deepEqual(poolPlacements([{ group: train }]), [], `${kind}: no pool at the buffers`);
+    assert.deepEqual(lampEnds(train).map((e) => [e.end, e.mode]), [['front', 'off'], ['rear', 'tail']], `${kind}: the end toward the stops is dark, the outer end shows red`);
+    const halos = haloPlacements([{ group: train }]);
+    assert.ok(halos.length > 0, `${kind}: its red lamps glow after dark`);
+    assert.ok(halos.every((h) => h.end === 'rear' && h.hex === LENS.tailOn), `${kind}: every glow is red and at the outer end: ${halos.map((h) => `${h.end} ${h.role} ${h.hex.toString(16)}`).join(', ')}`);
+    trains.push(train);
+  }
+  // and the draw: all four together put nothing in the pool mesh, by day or after dark, and glow only after dark
+  const lights = new TrainLampLights();
+  for (const night of [0, 1]) {
+    withNight(night, () => {
+      lights.update(trains.map((group) => ({ group })));
+      assert.equal(lights.pool.count, 0, `night ${night}: no pool instance for the four trains`);
+      assert.equal(lights.pool.visible, false, `night ${night}: the pool mesh is not drawn`);
+      assert.ok(lights.halo.count >= 4, `night ${night}: each train's red lamps are in the glow mesh`);
+      assert.equal(lights.halo.visible, night === 1, `night ${night}: the glow is drawn after dark only`);
+    });
+  }
+  lights.dispose();
+});
+
+test('the page puts BUFFER_LAMPS on each sample train once it stands, and gives their lamp geometry back when it drops them (source pins: main.ts needs a browser)', () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.match(main, /import \{[^}]*\bBUFFER_LAMPS\b[^}]*\} from '\.\/train\.ts';/, 'imported from the train module');
+  const loop = main.indexOf('for (const [kind, trackIndex] of picks) {'), push = main.indexOf('trains.push({ kind, group,', loop);
+  assert.ok(loop > 0 && push > loop, 'the sample loop is where the pin looks for it');
+  const body = main.slice(loop, push);
+  assert.match(body, /standTrain\(group, layout, stop, NOSE_TO_STOP\);\s*setTrainLampState\(group, BUFFER_LAMPS\);[^\n]*\n\s*scene\.add\(group\);/, 'set as the train is stood and before it joins the scene, so no frame shows its service lamps');
+  assert.equal(main.match(/setTrainLampState\(group, BUFFER_LAMPS\)/g)?.length, 1, 'once, for all four');
+  assert.match(main, /for \(const sample of samples\.splice\(0\)\) \{\s*scene\.remove\(sample\);\s*releaseTrainLamps\(sample\);[^\n]*\n\s*sample\.traverse\(/, 'dropped samples hand their lamp geometry back before it is freed');
 });

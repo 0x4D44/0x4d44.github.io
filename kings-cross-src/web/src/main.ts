@@ -22,7 +22,7 @@ import { buildConcourse } from './concourse.ts';
 import { platformSign } from './labels.ts';
 import { buildShed } from './shed.ts';
 import { createClocks } from './clocks.ts';
-import { buildTrain, setTrainLampState, standTrain } from './train.ts';
+import { BUFFER_LAMPS, buildTrain, releaseTrainLamps, setTrainLampState, standTrain } from './train.ts';
 import { backoffMs, createLiveFeed, createReplayFeed, createScheduleFeed, parseRecording, probeRelay, relayReachable, trainSettings } from './feed.ts';
 import type { MotionSink, TrainFeed } from './feed.ts';
 import { loadOfflineReplay } from './offline-replay.ts';
@@ -165,6 +165,7 @@ function start(): void {
       if (!stop) continue;
       const group = buildTrain(kind);
       const nose = standTrain(group, layout, stop, NOSE_TO_STOP);
+      setTrainLampState(group, BUFFER_LAMPS); // at the buffers: red at the outer end, none toward the stops, so no light pool
       scene.add(group);
       group.userData.id = sampleBoardTrains.length + 1; // the board's id for this sample, which the tooltip looks up
       samples.push(group);
@@ -352,6 +353,7 @@ function start(): void {
     if (disposed) return;
     for (const sample of samples.splice(0)) {
       scene.remove(sample);
+      releaseTrainLamps(sample); // the lamp state gave the detail meshes geometry of their own: put the built geometry back, then free it all
       sample.traverse((o) => { if (o instanceof THREE.Mesh && o.name !== 'bogie-mesh') o.geometry.dispose(); });
     }
     trains.splice(0);

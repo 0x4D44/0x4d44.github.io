@@ -199,6 +199,8 @@ export type TrainLampMode = 'head' | 'tail' | 'off';
 export type TrainLampState = Readonly<{ front: TrainLampMode; rear: TrainLampMode }>;
 /** The state a train is built in: white lamps at the leading end, red at the trailing end. */
 export const SERVICE_LAMPS: TrainLampState = { front: 'head', rear: 'tail' };
+/** The state of a train standing nose-in at a buffer stop (the page's four sample trains): red lamps at its outer end, and nothing at the end toward the stops, where white lamps would light only a wall. Casts no light pool. */
+export const BUFFER_LAMPS: TrainLampState = { front: 'off', rear: 'tail' };
 /** What a lens is for: a headlamp (white when its end leads), a tail lamp (red when its end trails), or a marker lamp (the AT300's honeycomb: white at the leading end and red at the trailing one). */
 export type LensRole = 'head' | 'tail' | 'marker';
 /** What a lens looks like in a cab end's mode: its colour, and its glow tag (2: it glows in its own colour after dark, 0: it does not, `Soup.emit`). */
