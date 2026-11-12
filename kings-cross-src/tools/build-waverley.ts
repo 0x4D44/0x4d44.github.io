@@ -1,11 +1,19 @@
 // node tools/build-waverley.ts --raw-dir ../.scratch/b44/osm
 // Four bounded public OSM map requests avoid its 50,000-node limit; raw stays local.
+// node tools/build-waverley.ts --signals --raw-dir ../.scratch/b44/osm
+// The OSM railway=signal overlay (web/src/data/waverley-signals.json) on the committed scene's track, from tiles already
+// in --raw-dir: it never fetches, and it never rewrites the scene.
 import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { buildWaverleyScene, packWaverleyScene, WAVERLEY_AREA } from '../core/waverley-data.ts';
+import { decodeWaverleyAnchorScene, waverleyTrackData } from '../core/waverley-anchors.ts';
+import { project, round } from '../core/geo.ts';
+import type { KxData, RawElement } from '../core/osm.ts';
+import { buildSignalOverlay, runtimeOverlay } from './build-signals.ts';
+import type { SignalOverlay } from '../web/src/signals.ts';
 import type { StationArea, WaverleyRawElement, WaverleySource } from '../core/waverley-data.ts';
 export const WAVERLEY_TILES = [
   {name:'sw',bbox:[-3.205,55.9465,-3.189,55.952]},
@@ -65,8 +73,46 @@ export async function buildStationOsm({tiles,site,rawDir,out,agent}:{tiles:reado
     gzip9:gzipSync(json,{level:9}).length,warnings:data.warnings,
   },null,2));
 }
+/**
+ * The public signal overlay of a station scene: every OSM railway=signal node inside the site, on the scene's own track
+ * (the graph its page and its relearn build, waverleyTrackData), through buildSignalOverlay as a through station.
+ * OSM fields only: no berth is named (no public ref rule is known for the area), no review ledger applies.
+ */
+export function buildStationSignalOverlay(elements:readonly WaverleyRawElement[],packedScene:unknown,site:StationArea=WAVERLEY_AREA) {
+  const track=waverleyTrackData(decodeWaverleyAnchorScene(packedScene));
+  // a signal node on a rail is one of its vertices: the same projected, rounded point names the same track node
+  const nodeAt=new Map(track.nodes.map(([id,x,z])=>[`${x},${z}`,id]));
+  const [south,west,north,east]=site.bbox;
+  const nodes=[...new Map(elements.filter(e=>e.type==='node'&&e.tags?.railway==='signal'&&e.lat!==undefined&&e.lon!==undefined).map(e=>[e.id,e])).values()]
+    .filter(e=>e.lat!>=south&&e.lat!<=north&&e.lon!>=west&&e.lon!<=east).sort((a,b)=>a.id-b.id);
+  const signals:KxData['signals']=nodes.map(e=>{
+    const [x,z]=project(e.lat!,e.lon!,site.origin).map(v=>round(v)) as [number,number],tags=e.tags??{};
+    return {id:e.id,x,z,kinds:Object.keys(tags).filter(k=>k.startsWith('railway:signal:')&&k!=='railway:signal:direction').map(k=>k.slice('railway:signal:'.length)).sort(),
+      ...(tags.ref?{ref:tags.ref}:{}),...(tags['railway:signal:direction']?{direction:tags['railway:signal:direction']}:{})};
+  });
+  const result=buildSignalOverlay({...track,signals},{raw:nodes as RawElement[],reviews:[],platformRef:/./,serving:'platform-side',publicBerth:null,
+    graphNode:s=>nodeAt.get(`${s.x},${s.z}`)});
+  return {overlay:runtimeOverlay(result.overlay) as SignalOverlay,report:result.report};
+}
+const RAW_TILES=['sw','se','nw','ne'];
+export async function buildWaverleySignals(rawDir:string,scenePath:string,out:string):Promise<void> {
+  const elements:WaverleyRawElement[]=[];
+  for(const name of RAW_TILES){
+    const file=path.join(rawDir,`${name}.json`);
+    let raw:string;
+    try{raw=await readFile(file,'utf8');}
+    catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')throw Error(`${file} missing: the signal build reads tiles already on disk and never fetches`);throw error;}
+    const parsed=JSON.parse(raw);if(!Array.isArray(parsed.elements))throw Error(`Invalid OSM snapshot ${file}`);
+    elements.push(...parsed.elements);
+  }
+  const {overlay,report}=buildStationSignalOverlay(elements,JSON.parse(await readFile(scenePath,'utf8')));
+  await writeFile(out,JSON.stringify(overlay,null,2)+'\n');
+  console.error(JSON.stringify({out,inputSignals:report.inputSignals,included:report.includedSignals,excluded:report.excludedSignals,counts:report.counts},null,2));
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(path.resolve(process.argv[1])).href) {
   const args=process.argv.slice(2),flag=(key:string)=>args[args.indexOf(key)+1];
-  await buildWaverley(args.includes('--raw-dir')?flag('--raw-dir'):'../.scratch/b44/osm',
+  if(args.includes('--signals'))await buildWaverleySignals(args.includes('--raw-dir')?flag('--raw-dir'):'../.scratch/b44/osm',
+    args.includes('--scene')?flag('--scene'):'web/src/data/waverley-scene.json',args.includes('--out')?flag('--out'):'web/src/data/waverley-signals.json');
+  else await buildWaverley(args.includes('--raw-dir')?flag('--raw-dir'):'../.scratch/b44/osm',
     args.includes('--out')?flag('--out'):'web/src/data/waverley-scene.json');
 }

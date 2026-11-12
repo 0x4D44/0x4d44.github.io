@@ -5,14 +5,41 @@ import { dirname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildGraph, components, snap } from '../core/graph.ts';
 import { dist } from '../core/geo.ts';
-import { stationPlatforms, platformSouthEnd } from '../core/station.ts';
+import { stationPlatforms, platformSouthEnd, pointInPolygon } from '../core/station.ts';
 import type { Pt } from '../core/geo.ts';
 import type { KxData, RawElement } from '../core/osm.ts';
 import type { AnchorMap } from '../core/anchors.ts';
 import type { SignalOverlay, OverlaySignal, PublicSignalReview } from '../web/src/signals.ts';
 import publicReviews from '../web/src/data/kx-signal-review.json' with { type: 'json' };
 
-export interface SignalBuildOptions { raw?: RawElement[]; anchors?: AnchorMap; reviews?: readonly PublicSignalReview[] }
+export interface SignalBuildOptions {
+  raw?: RawElement[]; anchors?: AnchorMap; reviews?: readonly PublicSignalReview[];
+  /** The station's platforms, by OSM ref (default King's Cross's 0 to 10). */
+  platformRef?: RegExp;
+  /**
+   * Which rail components serve the station: 'terminal-south' (default, King's Cross) seeds them at terminal tracks
+   * within 40 m of a platform's south end; 'platform-side' (a through station) at any track within 8 m of a platform.
+   */
+  serving?: 'terminal-south' | 'platform-side';
+  /** The public berth a ref names, capture group 1 (default the strict YA form); null: no public berth. */
+  publicBerth?: RegExp | null;
+  /** The graph node an OSM signal node is (default its OSM id: the track's nodes are OSM nodes). */
+  graphNode?: (signal: KxData['signals'][number]) => number | undefined;
+}
+/** The aspects an OSM signal's states tag lists: 4 when it can show double yellow. */
+export function signalAspects(tags: Record<string, string> | undefined): 4 | undefined {
+  const states = [tags?.['railway:signal:main:states'], tags?.['railway:signal:combined:states']].filter((v): v is string => !!v);
+  return states.some(v => /double[_ ]?yellow|\bYY\b/i.test(v)) ? 4 : undefined;
+}
+const PLATFORM_SIDE_M = 8;
+function nearPolygon(p: Pt, poly: readonly Pt[], within: number): boolean {
+  if (pointInPolygon(p, poly as Pt[])) return true;
+  return poly.some((a, i) => {
+    const b = poly[(i + 1) % poly.length]!, dx = b[0] - a[0], dz = b[1] - a[1], l2 = dx * dx + dz * dz;
+    const t = l2 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dz) / l2)) : 0;
+    return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dz) <= within;
+  });
+}
 interface ReviewNote { id: number; ref?: string; classification: string[]; notes: string[]; snapM?: number }
 type BuiltOverlaySignal = Omit<OverlaySignal, 'positionReview' | 'facing'> & {
   facing: [number, number]; positionReview?: PublicSignalReview;
@@ -31,9 +58,16 @@ export function publicSignalReviewMatches(signal: OverlaySignal, reviewed: Publi
 /** Pure build hook. No private input is read while constructing the public overlay. */
 export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {}) {
   const g = buildGraph(data);
-  const platforms = [...stationPlatforms(data).values()].filter((p) => /^(?:[0-9]|10)$/.test(p.ref ?? ''));
-  const seeds = new Set([...g.adj].filter(([id, edges]) => edges.length === 1 && !edges[0]!.tunnel &&
-    platforms.some((p) => dist(g.pos.get(id)!, platformSouthEnd(p.pts)) < 40)).map(([id]) => id));
+  const platformRef = options.platformRef ?? /^(?:[0-9]|10)$/;
+  // stationPlatforms keeps King's Cross's zone; a through station takes every surface platform it was given
+  const platforms = options.serving === 'platform-side'
+    ? data.platforms.filter((p) => p.ref !== undefined && platformRef.test(p.ref) && p.pts.length >= 3 && !p.tunnel)
+    : [...stationPlatforms(data).values()].filter((p) => platformRef.test(p.ref ?? ''));
+  const seeds = new Set([...g.adj].filter(([id, edges]) => options.serving === 'platform-side'
+    ? edges.some((e) => !e.tunnel) && platforms.some((p) => nearPolygon(g.pos.get(id)!, p.pts, PLATFORM_SIDE_M))
+    : edges.length === 1 && !edges[0]!.tunnel && platforms.some((p) => dist(g.pos.get(id)!, platformSouthEnd(p.pts)) < 40)).map(([id]) => id));
+  const publicBerth = options.publicBerth === undefined ? /^YA\s*(\d{4})$/ : options.publicBerth;
+  const graphNode = options.graphNode ?? ((signal: KxData['signals'][number]) => signal.id);
   const serving = components(g).filter((c) => c.some((id) => seeds.has(id)));
   const reachable = new Set(serving.flat());
   const rawById = new Map((options.raw ?? []).filter((e) => e.type === 'node').map((e) => [e.id, e]));
@@ -46,8 +80,9 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     const forward = signal.direction !== 'backward';
     // At a way junction, nearest geometry alone may pick an oppositely ordered way.
     // Match core/berths.ts: outgoing edge for forward, incoming for backward.
-    const incident = g.edges.filter((e) => e.a === signal.id || e.b === signal.id);
-    const chosen = incident.find((e) => forward ? e.a === signal.id : e.b === signal.id) ?? incident[0];
+    const node = graphNode(signal);
+    const incident = g.edges.filter((e) => e.a === node || e.b === node);
+    const chosen = incident.find((e) => forward ? e.a === node : e.b === node) ?? incident[0];
     const s = snap(chosen ? { ...g, edges: [chosen] } : g, [signal.x, signal.z]);
     if (!s || s.distance > 25) {
       note.notes.push('Excluded: no rail snap within 25 m.');
@@ -56,7 +91,7 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     }
     note.snapM = s.distance;
     if (!reachable.has(s.edge.a)) {
-      note.notes.push('Excluded: containing/nearest rail component does not serve a KGX platform.');
+      note.notes.push('Excluded: containing/nearest rail component does not serve a station platform.');
       excluded.push(note); continue;
     }
     const a = g.pos.get(s.edge.a)!;
@@ -73,13 +108,14 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     if (rawPosition === 'bridge') note.notes.push('OSM gantry mounting: glyph over its governed rail, no invented side mast; height unmeasured.');
     else if (!positionKnown) note.notes.push(`${rawPosition === undefined ? 'Missing position' : `Unsupported position ${JSON.stringify(rawPosition)}`}: UK left-of-travel convention assumed; not a surveyed position.`);
     else if (!forward) note.notes.push('OSM way-relative side flipped for backward train travel.');
-    const berth = signal.ref?.match(/^YA\s*(\d{4})$/)?.[1];
+    const berth = publicBerth ? signal.ref?.match(publicBerth)?.[1] : undefined;
+    const aspects = signalAspects(rawById.get(signal.id)?.tags);
     const out: BuiltOverlaySignal = {
       id: signal.id, point: [signal.x, signal.z],
       ...(signal.ref ? { ref: signal.ref } : {}), ...(signal.direction ? { direction: signal.direction } : {}),
       kinds: [...signal.kinds], edge: { wayId: s.edge.wayId, from: s.edge.a, to: s.edge.b, t: s.t, point: s.point },
       travel, facing: [-travel[0], -travel[1]], side,
-      sideSource: positionKnown || rawPosition === 'bridge' ? 'osm' : 'assumed-left',
+      sideSource: positionKnown || rawPosition === 'bridge' ? 'osm' : 'assumed-left', ...(aspects ? { aspects } : {}),
       ...(berth ? { berth } : {}), review: berth && directionKnown ? 'osm-ref-match' : 'unreviewed',
     };
     const reviews = (options.reviews ?? publicReviews.signals as PublicSignalReview[]).filter(r => r.id === signal.id);
@@ -89,7 +125,7 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     if (reviewed && publicSignalReviewMatches(out, reviewed, rawPosition ?? null)) {
       out.positionReview = structuredClone(reviewed);
     }
-    if (signal.ref && !berth) note.notes.push('Non-YA reference retained; no public berth binding.');
+    if (signal.ref && !berth) note.notes.push('Reference retained without a public berth binding.');
     if (classification.includes('train_protection') && !classification.includes('main')) note.notes.push('Protection board retained; not classified as a main signal.');
     signals.push(out); included.push(note);
   }
@@ -119,12 +155,13 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
     source: 'OpenStreetMap only; no Network Rail data in public output',
     tolerances: { railSnapM: 25, platformTerminalSeedM: 40, privateTopologyM: 40 },
     assumptions: [
-      'Serving components are seeded by non-tunnel terminal tracks within 40 m of the south end of KGX surface platforms 0–10.',
+      options.serving === 'platform-side' ? `Serving components are seeded by non-tunnel track within ${PLATFORM_SIDE_M} m of a station platform.`
+        : 'Serving components are seeded by non-tunnel terminal tracks within 40 m of the south end of KGX surface platforms 0–10.',
       'Prefer containing-way outgoing/incoming edge for forward/backward; otherwise nearest rail across all components before reachability filtering.',
       'Missing/both/unknown direction assumes way-forward and remains unreviewed.',
       'OSM railway:signal:position=left/right is relative to way direction (https://wiki.openstreetmap.org/wiki/Tag:railway%3Dsignal). Public side is relative to train travel, so backward signals flip left/right. Bridge mounting uses an over-track glyph without a side mast; elevation remains uncertain. Missing/other unsupported positions assume left of travel, explicitly marked assumed-left.',
       'Geographic approval comes only from the separate public OSM review ledger pinned to point, edge, direction and raw side tag. Reference and private topology identities do not approve a missing mast side. Offsets and heights remain schematic.',
-      'Public berth strings come only from /^YA\\s*(\\d{4})$/ OSM refs; private topology never changes public JSON.',
+      publicBerth ? `Public berth strings come only from ${publicBerth} OSM refs; private topology never changes public JSON.` : 'No public berth strings; private topology never changes public JSON.',
       'Private topology candidates require an unreferenced main signal and either an inferred anchor or a signal anchor whose private evidence starts with Topology. Platform and direct OSM-reference anchors are excluded. Candidates require the same edge, compatible direction and distance <=40 m, and must be unique one-to-one or remain unreviewed.',
     ],
     inputSignals: data.signals.length, includedSignals: signals.length, excludedSignals: excluded.length,
@@ -135,6 +172,17 @@ export function buildSignalOverlay(data: KxData, options: SignalBuildOptions = {
       effectiveReview: count(signals.map((s) => privateReview.signalMappings.some((m) => m.signalId === s.id) ? 'topology' : s.review)) }, included, excluded,
   };
   return { overlay, report, privateReview };
+}
+
+/** The overlay the page bundles: the review reduced to its status, and the builder's duplicate point and facing dropped. */
+export function runtimeOverlay(overlay: ReturnType<typeof buildSignalOverlay>['overlay']): SignalOverlay {
+  return { ...overlay, signals: overlay.signals.map(signal => {
+    const { positionReview, ...fields } = signal;
+    const compact = { ...fields, ...(positionReview ? { positionReview: { status: positionReview.status } } : {}) };
+    delete (compact as Partial<OverlaySignal>).point;
+    delete (compact as Partial<OverlaySignal>).facing;
+    return compact;
+  }) };
 }
 
 function main() {
@@ -160,14 +208,7 @@ function main() {
     raw: raw?.elements ?? raw, anchors: anchorsPath ? read(anchorsPath) : undefined,
   });
   mkdirSync(out, { recursive: true });
-  const runtimeOverlay: SignalOverlay = { ...result.overlay, signals: result.overlay.signals.map(signal => {
-    const { positionReview, ...fields } = signal;
-    const compact = { ...fields, ...(positionReview ? { positionReview: { status: positionReview.status } } : {}) };
-    delete (compact as Partial<OverlaySignal>).point;
-    delete (compact as Partial<OverlaySignal>).facing;
-    return compact;
-  }) };
-  writeFileSync(resolve(repo, 'kings-cross-src/web/src/data/kx-signals.json'), JSON.stringify(runtimeOverlay, null, 2) + '\n');
+  writeFileSync(resolve(repo, 'kings-cross-src/web/src/data/kx-signals.json'), JSON.stringify(runtimeOverlay(result.overlay), null, 2) + '\n');
   writeFileSync(resolve(out, 'report.json'), JSON.stringify(result.report, null, 2) + '\n');
   if (anchorsPath) writeFileSync(resolve(out, 'private-topology.json'), JSON.stringify(result.privateReview, null, 2) + '\n');
   console.log(JSON.stringify(result.report.counts));
