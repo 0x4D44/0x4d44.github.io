@@ -88,20 +88,23 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
       const names = BONES.concat(EXTRA), n = Math.round(plan.reduce((s, a) => s + a.dur, 0) / dt), Lc = names.length, pos = new Array(n * Lc * 3), root = new Array(n * 3), yaw = new Array(n), spd = new Array(n), st = new Array(n), ts = new Array(n), seg = new Array(n), ph = new Array(n);
       // spec.mesh: also record, every frame, the lowest point of the RENDERED shoes (the skinned vertices of the shoe / boot / sneaker meshes, in the world) - a check on the
       // floor items that does not depend on how the foot landmarks above were defined
-      const shoes = []; if (spec.mesh) p.obj.traverse((o) => { if (o.isSkinnedMesh && /shoe|boot|sneaker/i.test((o.material && o.material.name) || o.name)) shoes.push(o); });
+      const shoes = []; if (spec.mesh) p.obj.traverse((o) => { if (o.isSkinnedMesh && /shoe|boot|sneaker|flats/i.test((o.material && o.material.name) || o.name)) shoes.push(o); });
       const my = spec.mesh && shoes.length ? new Array(n) : null, sv = new THREE.Vector3();   // (a person with no shoe mesh records no channel: the metrics fall back to the landmarks)
       // The rendered-shoe channel is only worth anything if the pattern above found the SHOES. A pattern that matches nothing silently hands the floor items back to the gait's own landmarks
       // (the walker marks its own homework again); one that matches a trouser leg or a long coat measures the wrong thing. So it is checked, and a failure is reported in the recording
-      // (shoeError) for the harness to refuse the run on: every matched mesh must be mostly foot (over 70 % of its vertices skinned at least half to the foot, ball or toe bones), both feet
+      // (shoeError) for the harness to refuse the run on: every matched mesh must be mostly foot (over 70 % of its vertices skinned at least half to the foot, ball or toe bones) - or be
+      // a TALL BOOT: a shaft up the leg above a foot. At least 30 % of its vertices on the foot (the three tall boots of the 72 have 38 - 58 %; trouser legs, leggings and gaiters have
+      // next to none), at most 30 % on the thigh (a knee-high boot's top: 0 - 25 %), and under 1 % on anything above the leg (a coat or a one-piece has its pelvis and spine). The
+      // first rule alone refused all three, and they were judged on the gait's own landmarks. Both feet
       // must have one, and each must be where that foot is. (A vertex count was tried first - a shoe is under 3000 vertices - and fired on a real shoe: the simplified model of man_student
       // wears a 13715-vertex sneaker, five times the size of its full-detail one. What is NOT a shoe is a mesh that is not on the foot.)
       let shoeError = null;
       if (spec.mesh) {
-        if (!shoes.length) shoeError = 'no mesh matched /shoe|boot|sneaker/ by material or mesh name';
+        if (!shoes.length) shoeError = 'no mesh matched /shoe|boot|sneaker|flats/ by material or mesh name';
         else for (const sm of shoes) {
-          const a = sm.geometry.attributes, si = a.skinIndex, sw = a.skinWeight, bs = sm.skeleton.bones; let on = 0;
-          for (let i = 0; i < a.position.count; i++) { let w = 0; for (let j = 0; j < 4; j++) if (/^(foot|ball|toe)_[lr]$/.test(bs[si.getComponent(i, j)].name)) w += sw.getComponent(i, j); if (w >= 0.5) on++; }
-          if (on < 0.7 * a.position.count) { shoeError = `mesh "${(sm.material && sm.material.name) || sm.name}": only ${Math.round(100 * on / a.position.count)} % of its ${a.position.count} vertices are on the foot bones (a shoe has over 70 %)`; break; }
+          const a = sm.geometry.attributes, si = a.skinIndex, sw = a.skinWeight, bs = sm.skeleton.bones; let on = 0, thigh = 0, up = 0; const N = a.position.count;
+          for (let i = 0; i < N; i++) { let w = 0, c = 0, t = 0; for (let j = 0; j < 4; j++) { const nm = bs[si.getComponent(i, j)].name, x = sw.getComponent(i, j); if (/^(foot|ball|toe)_[lr]$/.test(nm)) w += x; else if (/^calf_[lr]$/.test(nm)) c += x; else if (/^thigh_[lr]$/.test(nm)) t += x; } if (w >= 0.5) on++; else if (t >= 0.5) thigh++; else if (w + c + t < 0.5) up++; }
+          if (on < 0.7 * N && !(on >= 0.3 * N && thigh <= 0.3 * N && up < 0.01 * N)) { shoeError = `mesh "${(sm.material && sm.material.name) || sm.name}": ${Math.round(100 * on / N)} % of its ${N} vertices are on the foot bones, ${Math.round(100 * thigh / N)} % on the thigh and ${(100 * up / N).toFixed(1)} % above the leg (a shoe has over 70 % on the foot; a tall boot at least 30 %, at most 30 % on the thigh and under 1 % above the leg)`; break; }
         }
       }
       // and, to judge SLIP on the rendered shoe, every shoe vertex's world position every frame (Pb: frame k, vertex i at (k * V + i) * 3), with the foot each vertex belongs to read from the

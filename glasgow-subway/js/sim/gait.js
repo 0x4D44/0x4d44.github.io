@@ -15,6 +15,12 @@
 // fingers are left to the clip), pelvis > thighs > calves > feet > balls. Every controlled bone is given by its WORLD delta from the rest pose ("delta frame": the
 // bone's world orientation = delta * rest), so a head that should stay level is just delta = identity whatever the trunk does.
 const PI = Math.PI, D2R = PI / 180;
+// A sole bends at the ball of the foot only if the toe joint is in it. Under a flat shoe the joint is 15 - 38 mm above the floor and under a stiletto bootie 70 - 73 mm (72 characters);
+// knee-high heel boots hang a rigid boot under a flat foot and have it 174 mm up. Turning the toe box about a joint that far above the sole does not bend the shoe, it tears the
+// toe box off the sole (15 cm at push-off) - and holding it level cost the heel-rise nearly all of its lift and reach, so the trailing leg ran out and the pelvis was lowered 5 - 10 cm.
+// From STIFF_LO to STIFF_HI of joint height the toe box goes over from staying level at push-off to turning with the foot: the shoe rolls up onto its toe in one piece.
+const STIFF_LO = 0.08, STIFF_HI = 0.14;
+export const HEEL_FLAT = 0.15;   // ankle height over thigh-plus-shank up to which a shoe counts as flat (makeBody: what a heel adds beyond it does not lengthen the stride)
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 // ------------------------------------------------------------------------------------------------------------------------ vectors and quaternions
@@ -175,7 +181,7 @@ export function makeBody(rig, foot) {
     const sd = SIDE[s], hip = g('thigh_' + sd), knee = g('calf_' + sd), an = g('foot_' + sd), ba = g('ball_' + sd), d0 = nrm(sub(knee, hip)), e0 = nrm(sub(an, knee)), aH = an[1];
     const bx = ba[0] - an[0], bz = ba[2] - an[2];
     const hp = 0.5 * ba[1];   // the heel-up pivot: half way between the ball-of-foot sole point and the ball joint, so the sole point and the toe tip each slide half as far
-    B.leg[s] = { sd, l1: len(sub(knee, hip)), l2: len(sub(an, knee)), d0, e0, a0t: ort([1, 0, 0], d0), a0s: ort([1, 0, 0], e0), ankleH: aH, hp, prof: (s === 1 && foot.profR) || foot.prof || null,
+    B.leg[s] = { sd, l1: len(sub(knee, hip)), l2: len(sub(an, knee)), d0, e0, a0t: ort([1, 0, 0], d0), a0s: ort([1, 0, 0], e0), ankleH: aH, hp, stiff: smoother((ba[1] - STIFF_LO) / (STIFF_HI - STIFF_LO)), prof: (s === 1 && foot.profR) || foot.prof || null,
       hA: [0, aH, -foot.heelBack],                                  // the ankle, from the heel point (foot flat)
       hB: [bx, 0, bz - foot.heelBack],                              // the heel-up pivot, from the heel point (its height is hp)
       bA: [-bx, aH - hp, -bz],                                      // the ankle, from the pivot
@@ -185,8 +191,12 @@ export function makeBody(rig, foot) {
     const sh = g('upperarm_' + sd), el = g('lowerarm_' + sd), wr = g('hand_' + sd), dU = nrm(sub(el, sh));
     B.arm[s] = { sd, sh, upper: len(sub(el, sh)), fore: len(sub(wr, el)), dU, abd0: Math.atan2(Math.abs(dU[0]), -dU[1]), tilt0: Math.atan2(-dU[2], -dU[1]) };
   }
-  B.hipY = g('thigh_l')[1]; B.hipHalf = Math.abs(g('thigh_l')[0]); B.Lh = B.hipY;
+  B.hipY = g('thigh_l')[1]; B.hipHalf = Math.abs(g('thigh_l')[0]);
   B.legLen = B.leg[0].l1 + B.leg[0].l2;
+  // Lh sizes the stride (step length, cadence, bob, clearance). It is the hip height, less whatever a high heel puts under the ankle: a heel is a rigid stilt, it raises the hip
+  // without lengthening the leg that swings. In flat shoes the ankle is 0.10 - 0.13 of the thigh-plus-shank above the sole (72 characters), so only what is beyond HEEL_FLAT comes
+  // off, and nobody in flat shoes changes. Knee-high stiletto boots (ankle 229 mm up, 0.32 of the leg) had steps sized for a 0.94 m leg on a 0.71 m one.
+  B.Lh = B.hipY - Math.max(0, B.leg[0].ankleH - HEEL_FLAT * B.legLen);
   B.shoulderHalf = Math.abs(B.arm[0].sh[0]);
   return B;
 }
@@ -426,7 +436,8 @@ function landTarget(g, s, P, rem) {
 /** the pitch of the toe bone that puts its tip on the floor while the foot above it is pitched `th` with the ankle at height ay (the toes stay flat as the heel rises) */
 function levelToe(o, ay, th) {
   const jh = ay + rotX(o.ballRel, th)[1], by = -o.toeRel[1], tz = -o.toeRel[2], R = Math.hypot(by, tz), phi = Math.atan2(by, tz);
-  return Math.max(0, phi - Math.asin(clamp(jh / R, -1, 1)));
+  const lv = Math.max(0, phi - Math.asin(clamp(jh / R, -1, 1)));
+  return o.stiff ? lv + (th - lv) * o.stiff : lv;   // (a sole with the toe joint far above it does not bend there: the toe box goes with the foot - makeBody)
 }
 
 // the foot's pose now, in the world: { A: [x, y, z] ankle, psi, th (foot pitch), thb (toe-bone pitch) }

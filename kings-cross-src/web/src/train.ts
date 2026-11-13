@@ -523,6 +523,10 @@ interface BodySpec {
    * leaf. Absent: the square pane 0.54 m wide from 0.91 m to 0.21 m under the leaf's top that every single-leaf door had before the Class 180's (round 8)
    */
   doorGlass?: { half: number; y: [number, number]; radius: number; seal?: number };
+  /** the dark frame round a passenger door: its top, metres above the rail head (absent: 0.04 m over the leaf's head) */
+  doorFrameTop?: number;
+  /** a step under each passenger door's leaf: its foot and top (metres above the rail head), how far it stands out past the body's side, and its colour (absent: none) */
+  doorStep?: { y: [number, number]; out: number; colour: number };
   windowY: [number, number];
   /** the passenger window's corner radius (absent: 0.08 m); its gasket's is 0.02 m more */
   windowCorner?: number;
@@ -991,6 +995,8 @@ export const ADELANTE_HEIGHTS = {
   windows: [2.14, 2.96] as [number, number],
   /** the wall's top, where the roof's shoulder begins (the photograph's orange cantrail line, 3.37 to 3.41 m) */
   cantrail: 3.42,
+  /** the orange cantrail line (train-livery.ts paints it at these heights) */
+  line: [3.37, 3.41] as [number, number],
 } as const;
 
 const ADELANTE_BODY = ((): BodySpec => {
@@ -1022,7 +1028,14 @@ const ADELANTE_BODY = ((): BodySpec => {
     // the leaf's window is a rounded pane 0.57 m wide, its corners 0.09 m round (round 8: the York photograph, 73 of the leaf's 152 px, about 14 px round). CHANGED (round 9; it stood
     // 1.88 to 2.54 m): 2.14 to 2.91 m, measured on the York photograph (ADELANTE_HEIGHTS), in a pale grey seal (that photograph: a light grey rubber ring that stands out on the black
     // leaf; the silver and gold leaves' seal ASSUMED the same part)
-    doorGlass: { half: 0.285, y: ADELANTE_HEIGHTS.doorGlass, radius: 0.09, seal: 0xb4b8bd },
+    // CHANGED (round 10; it was 0.57 m, 73 px of round 8's 152 px leaf): 0.54 m, the pane's 73 px at the York photograph's 132.9 px to the metre less its seal (round 9's score: ~0.53 to 0.54 m)
+    doorGlass: { half: 0.27, y: ADELANTE_HEIGHTS.doorGlass, radius: 0.09, seal: 0xb4b8bd },
+    // round 10: the frame stops under the cantrail's orange line (3.37 m, ADELANTE_HEIGHTS); 0.04 m over the leaf's head it covered the line's lower half across the door (round 9's score:
+    // a stepped kink at the line's front end)
+    doorFrameTop: ADELANTE_HEIGHTS.line[0],
+    // round 10: the York photograph shows a grey step plate under the leaf, a little wider than the leaf, its top at the leaf's foot (about rows 397 to 412: 1.06 to 1.17 m). How far
+    // it stands out is ASSUMED (8 mm past the body's half-width, 12 mm past the leaf, inside the car's published 2.73 m width; side on, the photograph cannot say); its colour ASSUMED a mid grey
+    doorStep: { y: [1.0, 1.07], out: 0.008, colour: 0x6e7276 },
     // CHANGED (round 9; round 8's were 1.91 to 2.62 m, on round 8's short wall): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level
     // with the doors' glass, their corners well rounded (about a sixth of their height); laid on the measured band top and door head, 2.14 to 2.96 m, which puts their top level with
     // the door glass's (2.91 m) to within the gasket. ASSUMED, from that photograph
@@ -2068,7 +2081,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const x = (a: number): number => sx * a;
       const lo = (a: number, b: number): [number, number] => [Math.min(x(a), x(b)), Math.max(x(a), x(b))];
       const [fx0, fx1] = lo(W - 0.005, half - DOOR_RELIEF / 2);
-      detail.box(fx0, fx1, dy0 - 0.05, dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
+      detail.box(fx0, fx1, dy0 - 0.05, spec.doorFrameTop ?? dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
+      // a step under the leaf, a hair wider than the frame (the Class 180's, round 10)
+      if (spec.doorStep && !crew) {
+        const [sx0, sx1] = lo(W - 0.005, half + spec.doorStep.out);
+        detail.box(sx0, sx1, spec.doorStep.y[0], spec.doorStep.y[1], z - dw / 2 - 0.08, z + dw / 2 + 0.08, col(spec.doorStep.colour));
+      }
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
       const leafC = leafOf(di, crew);

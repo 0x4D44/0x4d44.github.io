@@ -155,7 +155,7 @@ export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99); this.printRng = mulberry32(1149);   // prints draw from their own stream: the crowd's sequence is unchanged
     printAtlas(THREE);   // start loading the print atlas now, so the first T-shirts are not blank (null in Node)
-    this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 36 : 60; this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
+    this.rAnim = quality === 'low' ? 20 : 40; this.rVis = quality === 'low' ? 70 : 140;   // (rVis: beyond the far end of the longest platform from anywhere on it - at 60 m people at the far end blinked out as you walked away) this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
     this.chars = []; this.meas = new Map();
     const prim = gltf || lodGltf, scene = prim.scene, holder = scene.getObjectByName('people') || scene;
     const meta = prim.meta || (lodGltf && lodGltf.meta) || null;   // optional models/people_meta.json: { <id>: { height } }
@@ -456,16 +456,23 @@ export class AnimCrowd {
   // ------------------------------------------------------------------ colliders
   /** The station's floor footprint: people may only stand on the platform slabs (never over the tracks / bore / hall walls) and never inside obstacles. */
   setWorld(zones, obstacles) { this.floor = (zones || []).filter((z) => z.name === 'platform'); this.solid = obstacles || []; }
+  /** Doorways of a train standing with its doors open: strips of floor from the platform edge into the car, which only passengers on their way on or off (mode 'go') may use.
+   *  Without them boarders stopped and vanished on the platform edge and alighters appeared there. When the doors close, anyone still in a doorway is aboard and is removed. */
+  setBays(bays) {
+    const had = this.bays && this.bays.length; this.bays = bays || [];
+    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) { this._drop(q); this.people.splice(i, 1); } }
+  }
+  _floors() { return this._goNow && this.bays && this.bays.length ? this.floor.concat(this.bays) : this.floor; }
   _onFloor(x, z, m = 0.22) {
-    const F = this.floor; if (!F || !F.length) return true;
+    const F = this.floor && this._floors(); if (!F || !F.length) return true;
     let ok = false; for (const f of F) if (x >= f.x0 + m && x <= f.x1 - m && z >= f.z0 + m && z <= f.z1 - m) { ok = true; break; }
     if (!ok) return false;
     for (const o of this.solid || []) { const cx = Math.min(o.x1, Math.max(o.x0, x)), cz = Math.min(o.z1, Math.max(o.z0, z)); if ((x - cx) ** 2 + (z - cz) ** 2 < 0.25 * 0.25) return false; }
     return true;
   }
   /** nearest point on the platform slab (inset by m): where a streaming passenger heads for when its real destination (stairs, train door) is off the slab */
-  _toFloor(x, z, m = 0.3) {
-    const F = this.floor; if (!F || !F.length) return { x, z };
+  _toFloor(x, z, m = 0.3, go = false) {
+    const g0 = this._goNow; if (go) this._goNow = true; const F = this.floor && this._floors(); this._goNow = g0; if (!F || !F.length) return { x, z };
     let best = null, bd = 1e9;
     for (const f of F) { const cx = Math.min(f.x1 - m, Math.max(f.x0 + m, x)), cz = Math.min(f.z1 - m, Math.max(f.z0 + m, z)), d = (cx - x) ** 2 + (cz - z) ** 2; if (d < bd) { bd = d; best = { x: cx, z: cz }; } }
     return best;
@@ -499,7 +506,7 @@ export class AnimCrowd {
    *  off it), and `delay0 + i * 0.5` staggers the batch so it never appears stacked on one spot. */
   stream(from, to, n, y0, y1, spread = 0.4, delay0 = 0) {
     for (let i = 0; i < n && this.people.length < this.max; i++) {
-      const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread);
+      const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread, 0.3, true), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread, 0.3, true);
       const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: Math.atan2(-(f1.x - f0.x), -(f1.z - f0.z)), mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.3, delay: delay0 + i * 0.5 + this.rng() * 0.6 });
       if (p.obj) { p.hidden = true; p.obj.visible = false; }
     }
@@ -516,7 +523,7 @@ export class AnimCrowd {
   board(door, delayStep = 0.35) {
     let i = 0;
     for (const q of this.people) if (q.mode === 'queue') {
-      q.mode = 'go'; q.revert = null; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25); q.tx = d.x; q.tz = d.z; }
+      q.mode = 'go'; q.revert = null; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25, true); q.tx = d.x; q.tz = d.z; }
       q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; q.goStarted = false;
     }
     return i;
@@ -549,10 +556,10 @@ export class AnimCrowd {
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~8k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
     let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
-    this._separate(dt);
+    this._goNow = false; this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
-      p.stateT += dt;
+      p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {
         if (p.mode === 'walk') {
           if (p.wait > 0) { p.wait -= dt; p.sp = 0; if (p.wait <= 0) this._enter(p, 'walk'); }

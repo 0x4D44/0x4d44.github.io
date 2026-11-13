@@ -24,7 +24,7 @@ import { peopleVariants } from './kit.js';
 
 // Explore-mode shuttle timing (shared by both circles; the platform indicator boards and the HUD count down to the same clock)
 const ARRIVE_S = 31;    // seconds from a train appearing 220 m out to standing in the platform (measured: 30.7-31.3 s at every station)
-const CLEAR_TAIL = 70;  // a departed train keeps running until its tail is this far (m) past the station centre - ~43 m inside the bore, out of sight - and only then is recycled
+const CLEAR_TAIL = 130;  // a departed train keeps running until its tail is this far (m) past the station centre and only then is recycled. The fog (FogExp2 0.026) decides the figure: at 70 m the tail was ~50 m from someone at the platform end, where 18 % of it still shows, and it was seen to vanish; at 130 m it is over 100 m away (under 0.1 %)
 
 export function simAvailable() {
   try { return typeof WebGLRenderingContext !== 'undefined' && typeof document !== 'undefined'; } catch (e) { return false; }
@@ -96,6 +96,9 @@ class Sim {
     this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2); this.trainView.setDest(this.line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
+    // the saloon's own two lamps ride with the player's train. They are NOT in the pool below: sharing it, an arriving train took two of the nearest station lamps' places and the
+    // station's lighting changed while it stood there
+    this.saloonLights = [-5, 5].map(() => { const l = new THREE.PointLight(0xfff4e0, 0, 8, 1.4); this.scene.add(l); return l; });
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
     { const lowQ = this.quality === 'low', ok = this._peopleOk();
       this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null);
@@ -414,7 +417,7 @@ class Sim {
     else if (sh.state === 'dwell') { if (svc.phase !== 'station') { sh.state = 'leaving'; sh.t = 0; } }   // the next train's countdown is the roster's: it is already running
     else if (sh.state === 'leaving') {   // the train runs on into the bore and is only recycled once its tail is out of sight (never while it is still in the platform)
       sh.t += dt;
-      if (this._tailPast(rec, idx) > CLEAR_TAIL || sh.t > 45) { rec.view.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
+      if (this._tailPast(rec, idx) > CLEAR_TAIL || sh.t > 70) { rec.view.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
     }
   }
   /** how far (m) the tail of this circle's train is beyond the centre of its stop `idx` (negative while the train is still standing in the platform) */
@@ -886,6 +889,8 @@ class Sim {
     canvas.addEventListener('pointerdown', this._pd); canvas.addEventListener('pointermove', this._pm);
     canvas.addEventListener('pointerup', this._pu); canvas.addEventListener('pointercancel', this._pu);
     canvas.style.touchAction = 'none';
+    this.zoom = 1; this._wh = (e) => { if (this._modalOpen) return; e.preventDefault(); this.zoom = clamp(this.zoom * Math.exp(-e.deltaY * 0.0015), 1, 5); };   // mouse wheel: zoom in (up to 5x) and back out
+    canvas.addEventListener('wheel', this._wh, { passive: false });
     this._plc = () => { this._locked = document.pointerLockElement === canvas; this._hintT = this._locked ? 2.5 : 4; };
     this._ple = () => { this._lockDenied = true; this._locked = false; };
     document.addEventListener('pointerlockchange', this._plc); document.addEventListener('pointerlockerror', this._ple);
@@ -912,7 +917,7 @@ class Sim {
   _lookDelta(dx, dy) {
     if (this._modalOpen) return;
     const ms = this.mouse || { sens: 1, invertY: false };
-    const k = 0.0042 * ms.sens; this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k * (ms.invertY ? -1 : 1), -1.2, 1.2);
+    const k = 0.0042 * ms.sens / (this.zoom || 1); this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k * (ms.invertY ? -1 : 1), -1.2, 1.2);
     if (this.mode === 'drive') { this.look.yaw = clamp(this.look.yaw, -2.2, 2.2); this.look.pitch = clamp(this.look.pitch, -0.7, 0.7); }
     this._lookT = this.time;
   }
@@ -1006,13 +1011,17 @@ class Sim {
     if (w.sit) { w.sit = false; if (this._seat) { w.x = this._seat * 0.45; this._seat = null; } return; }
     this._seat = null;
     if (this.ctxKind === 'train' && this.mode !== 'drive') {
-      const sx = w.x >= 0 ? 1 : -1, tv = this.trainView, ci = tv.carAt(w.z), zc = tv.carInfo[ci].zc;
-      const busy = this.saloon ? this.saloon.people.some((p) => p.mode === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5) : false;
-      const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0);
-      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.74; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
-      else if (busy) this.hud.toast('That seat is taken', 'info', 2);
+      const sx = this._seatSide();
+      if (sx) { this._seat = sx; w.x = sx * 0.74; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
+      else if (!this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0)) this.hud.toast('Those seats are taken', 'info', 2);
     }
     w.sit = true;
+  }
+  /** which bench the walker would sit on here: the side they stand on, or the other one if that seat is taken (+1 / -1); 0 by a door or with both taken */
+  _seatSide() {
+    const w = this.walker, tv = this.trainView; if (this.ctxKind !== 'train' || !tv || this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0)) return 0;
+    const busy = (sx) => !!this.saloon && this.saloon.people.some((p) => p.state === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5);
+    const first = w.x >= 0 ? 1 : -1; return !busy(first) ? first : !busy(-first) ? -first : 0;
   }
   _saveMouse() { try { localStorage.setItem('gs.mouse', JSON.stringify(this.mouse)); } catch (_) {} }
   _menuSync() { for (const bt of this.hud.panel.querySelectorAll('button[data-a]')) { const a = bt.dataset.a; const m = /^(mode|line|diff):(.*)/.exec(a); if (m) bt.classList.toggle('on', this.sel[m[1]] === m[2]); } }
@@ -1079,6 +1088,7 @@ class Sim {
         if (nearDoor) { this.context = { kind: 'alight' }; msg = `<kbd>E</kbd> Step off at ${svc.station.name}`; }
         else msg = `${svc.station.name}: walk to an open door and press E to get off`;
       } else if (this.alightNext) msg = `Getting off at ${svc.station.name}`;
+      if (w.sit) msg = (msg ? msg + '  ' : '') + '<kbd>C</kbd> Stand up'; else if (!this.context && this._seatSide()) msg = (msg ? msg + '  ' : '') + '<kbd>C</kbd> Sit down';
     } else if (this.mode === 'street') {
       const st = this.street; if (Math.hypot(w.x - st.stair.x, w.z - st.stair.z) < 4.2) { this.context = { kind: 'descend' }; msg = '<kbd>E</kbd> Take the stairs down to the platform'; }
       else msg = 'Walk back to the station entrance to go underground';
@@ -1134,7 +1144,7 @@ class Sim {
     if (sh.state === 'wait' || sh.state === 'leaving') { const d = this._nextDue(this.line, sh.idx); sh.timer = d.eta - ARRIVE_S; sh.due = d.unit; }   // one countdown, the roster's: it only ever falls
     if (sh.state === 'leaving') {   // the train runs on into the bore and is only recycled once its tail is out of sight (never while it is still in the platform)
       sh.t += dt;
-      if (this._tailPast(this.tracks[this.line], this.exploreIdx) > CLEAR_TAIL || sh.t > 45) { this.trainView.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
+      if (this._tailPast(this.tracks[this.line], this.exploreIdx) > CLEAR_TAIL || sh.t > 70) { this.trainView.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
     } else if (sh.state === 'wait') {
       if (sh.timer <= 0) {
         this._setUnit(rec, sh.due);
@@ -1148,20 +1158,26 @@ class Sim {
       this.crowd.queue(Math.min(8, Math.round(v.crowdN * 0.3)), slots);
     }
     if (sh.state === 'wait' || sh.state === 'none') sh.queued = false;
+    // the doorways are floor for boarding and alighting passengers while the doors stand open (people.js setBays)
+    if (this.crowd.setBays) {
+      const open = sh.state === 'dwell' && svc.doorsOpen && this.activeStation;
+      if (open && !sh.bays) { const inf = this.activeStation.info, zc = this._trainCentreZl(), xa = inf.xe - inf.S * 1.75, xb = inf.xe + inf.S * 0.6; this.crowd.setBays(this.doorZ.map((dz) => ({ name: 'bay', x0: Math.min(xa, xb), x1: Math.max(xa, xb), z0: zc + dz - 0.62, z1: zc + dz + 0.62 }))); sh.bays = true; }
+      else if (!open && sh.bays) { this.crowd.setBays([]); sh.bays = false; }
+    }
     // passenger streams during dwell
     if (sh.state === 'dwell' && svc.doorsOpen && !sh.streamed && this.activeStation) {
       sh.streamed = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl();
       const door = this.doorZ.slice(), exits = this._exitPoints(v);   // exits: the stairs (hall) / ramp - passengers walk to and from THEM, never through the end wall
       const nAl = Math.min(10, Math.round(svc.pax.onboard * 0.12)), nBo0 = Math.min(10, Math.round(v.crowdN * 0.35));
-      const boarded = this.crowd.board ? this.crowd.board((q) => { let bi = 0, bd = 1e9; this.doorZ.forEach((dz, k) => { const d = Math.abs(zc + dz - q.z); if (d < bd) { bd = d; bi = k; } }); return { x: inf.xe + inf.S * 0.15, z: zc + this.doorZ[bi] }; }) : 0, nBo = Math.max(0, nBo0 - boarded);
+      const boarded = this.crowd.board ? this.crowd.board((q) => { let bi = 0, bd = 1e9; this.doorZ.forEach((dz, k) => { const d = Math.abs(zc + dz - q.z); if (d < bd) { bd = d; bi = k; } }); return { x: inf.xe - inf.S * 1.2, z: zc + this.doorZ[bi] }; }) : 0, nBo = Math.max(0, nBo0 - boarded);
       const nearest = (pts, z) => pts.reduce((b, q) => (Math.abs(q.z - z) < Math.abs(b.z - z) ? q : b), pts[0]);
       for (let i = 0; i < nAl; i++) {   // step off the train one after another (a batch stacked on one spot would shove itself apart) and head for the nearest stairs
-        const from = { x: inf.xe + inf.S * 0.4, z: zc + door[i % door.length] };
+        const from = { x: inf.xe - inf.S * 1.2, z: zc + door[i % door.length] };   // from inside the car, out through the doorway
         this.crowd.stream(from, nearest(exits, from.z), 1, inf.PY, inf.PY, 0.3, i * 0.9 + Math.random() * 0.4);
       }
       for (let i = 0; i < nBo; i++) {   // come down the stairs spread over the dwell, and make for one of the two doors nearest the stairs they used
         const ex = exits[i % exits.length], doors = door.slice().sort((a, b) => Math.abs(zc + a - ex.z) - Math.abs(zc + b - ex.z));
-        this.crowd.stream(ex, { x: inf.xe + inf.S * 0.3, z: zc + doors[i % 2] }, 1, inf.PY, inf.PY, 0.4, 0.5 + i * 0.8 + Math.random() * 0.4);
+        this.crowd.stream(ex, { x: inf.xe - inf.S * 1.2, z: zc + doors[i % 2] }, 1, inf.PY, inf.PY, 0.4, 0.5 + i * 0.8 + Math.random() * 0.4);
       }
     }
     if (sh.state !== 'dwell') sh.streamed = false;
@@ -1193,6 +1209,7 @@ class Sim {
     const href = 2 * Math.atan(Math.tan(base * Math.PI / 360) * 16 / 9);
     let v = asp >= 16 / 9 ? base : 2 * Math.atan(Math.tan(href / 2) / asp) * 180 / Math.PI;
     v = Math.min(v, drive ? 105 : 116);
+    if (this.zoom > 1) v = 2 * Math.atan(Math.tan(v * Math.PI / 360) / this.zoom) * 180 / Math.PI;
     if (Math.abs(cam.fov - v) > 0.01) { cam.fov = v; cam.updateProjectionMatrix(); }
   }
 
@@ -1225,7 +1242,8 @@ class Sim {
       this.headlight.intensity = this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160;
       // running tunnels are unlit: dim ambient between stations, full level inside / near a hall (smooth ramp)
       { let f = 1; if (this.mode !== 'explore') { let md = 1e9; const L = track.length, sN = tr.s; for (const st of track.stops) { let d = Math.abs(sN - st.sc); d = Math.min(d, L - d); if (d < md) md = d; } f = Math.min(1, Math.max(0, (68 - md) / 30)); f = f * f * (3 - 2 * f); }
-        const a = 0.35 + (2.6 - 0.35) * f; this.ambient.intensity += (a - this.ambient.intensity) * Math.min(1, dt * 4 + (dt === 0 ? 1 : 0)); }
+        // (the tunnel's own surfaces lose the ambient light, not the scene: dimming the scene's ambient made the inside of the train and its passengers go dark between stations)
+        const a = 0.135 + (1 - 0.135) * f; this._tunAmb = this._tunAmb == null ? a : this._tunAmb + (a - this._tunAmb) * Math.min(1, dt * 4 + (dt === 0 ? 1 : 0)); this.tunnel.setAmbient(this._tunAmb); }
       this.cabLight.position.copy(front).add(new THREE.Vector3(0, 0.4, 0)).addScaledVector(fwd, -0.2);
       this._lightPool();
       this._camera(front, q, dt);
@@ -1234,6 +1252,7 @@ class Sim {
       const w = this.walker; cam.position.set(w.x, w.y + w.eye + Math.sin(w.bob) * 0.03, w.z);
       cam.rotation.set(this.look.pitch, w.yaw, 0, 'YXZ');
     }
+    this._clearOfPeople(cam);
     // audio
     const inTrain = this.ctxKind === 'train';
     this.audio.update({ v: tr.v, traction: tr.tractionAct, brake: tr.brakeAct, curv: track.curvature(tr.s), inTrain, doorsOpen: svc.doors.L > 0.1 || svc.doors.R > 0.1 });
@@ -1272,13 +1291,28 @@ class Sim {
     if (d < 16) this.audio.squeak(Math.min(1, 3 / Math.max(d, 1.5)));
   }
 
+  /** The eye never goes inside a person. Nothing stopped the player walking into one (people step aside for the player, but not seated or walking ones, and not at once), and from
+   *  inside a head the back faces are not drawn: you saw out through an empty skull. The camera is slid sideways out of a 0.4 m circle round anyone it is within the height of
+   *  (people on the platform and riders in both trains; in drive mode there is nobody in the cab). */
+  _clearOfPeople(cam) {
+    if (this.mode === 'drive' || this.mode === 'street') return;
+    const R = 0.4, crowds = [this.crowd]; for (const tv of Object.values(this.views || {})) if (tv && tv.saloon && tv.root.visible) crowds.push(tv.saloon);
+    for (let pass = 0; pass < 2; pass++) for (const c of crowds) for (const p of (c && c.people) || []) {
+      const o = p.obj; if (!o || !o.visible) continue; const e = o.matrixWorld.elements, dx = cam.position.x - e[12], dz = cam.position.z - e[14];
+      if (Math.abs(dx) > R || Math.abs(dz) > R || cam.position.y < e[13] - 0.1 || cam.position.y > e[13] + 2.0) continue;
+      const d = Math.hypot(dx, dz); if (d >= R) continue;
+      if (d < 1e-4) { cam.position.x += R; continue; }
+      cam.position.x += dx / d * (R - d); cam.position.z += dz / d * (R - d);
+    }
+  }
+
   _lightPool() {
     const cam = this.camera.position, THREE = this.THREE, cands = [];
     const v = this._lp || (this._lp = new THREE.Vector3());
     for (const sv of this.stationViews.values()) for (const d of sv.lights) { v.set(d.x, d.y, d.z); sv.group.localToWorld(v); cands.push({ x: v.x, y: v.y, z: v.z, d, dist: v.distanceToSquared(cam) }); }
     // saloon lights ride with the train
     const mid = this.trainView.cars[Math.floor(this.trainView.cars.length / 2)];
-    for (const zz of [-5, 5]) { v.set(0, 2.3, zz).applyMatrix4(mid.matrix); cands.push({ x: v.x, y: v.y, z: v.z, d: { c: 0xfff4e0, i: this.ctxKind === 'train' ? 5 : 2.5, d: 12 }, dist: v.distanceToSquared(cam) }); }
+    const on = this.trainView.root.visible; [-5, 5].forEach((zz, i) => { const l = this.saloonLights[i]; l.intensity = on ? 4 : 0; if (on) { v.set(0, 2.3, zz).applyMatrix4(mid.matrix); l.position.copy(v); } });
     cands.sort((a, b) => a.dist - b.dist);
     this.poolLights.forEach((l, i) => { const c = cands[i]; if (c) { l.position.set(c.x, c.y, c.z); l.color.set(c.d.c); l.intensity = c.d.i; l.distance = c.d.d; } else l.intensity = 0; });
   }
@@ -1465,7 +1499,7 @@ class Sim {
     this.renderer.setAnimationLoop(null);
     if (this.crowd) this.crowd.clear(); for (const v of Object.values(this.views || {})) if (v && v.saloon) v.saloon.clear();   // hand the characters back to the shared no-repeat registry (people.js IN_USE) before a new sim starts
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
-    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
+    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('wheel', this._wh); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
     this.audio.dispose(); this.hud.dispose(); if (this.rats) this.rats.dispose();
     for (const v of this.stationViews.values()) v.dispose();

@@ -382,7 +382,7 @@ export function trimWebbing(THREE, root) {
 // in the air, and a toe box that is half carried by the foot then dips 7-10 mm below the floor the toe bone is standing on (measured on the rendered mesh, tools/people_motion.mjs).
 // Re-weighting the vertices that only the foot and the toe bone carry to a narrow blend about the ball joint (all foot behind it, all toe bone ahead of it) turns the shoe
 // into the two rigid parts and the hinge the gait plants: the dip falls to 3-5 mm. Patches each shared geometry once. Returns { meshes, verts } or null when there is no shoe to fit.
-const SHOE = /shoe|boot|sneaker/i;
+const SHOE = /shoe|boot|sneaker|flats/i;
 export function fitShoes(THREE, root, o = {}) {
   const half = o.blend == null ? 0.02 : o.blend, stats = { meshes: 0, verts: 0 };
   root.updateMatrixWorld(true);

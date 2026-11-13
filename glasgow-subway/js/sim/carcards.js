@@ -137,10 +137,10 @@ export function fitTrainAdverts(THREE, tv, atlases, seed = 'train') {
     for (const e of [-1, 1]) {
       if (cabZ != null && Math.sign(cabZ) === e) continue;
       const bz = bulkheadZ(THREE, tv, ci, e); if (bz == null) continue;
-      const zf = bz - e * 0.012, sw = SCREEN.w, sh = SCREEN.h, uSign = -e;   // a viewer facing the bulkhead has -e*x on their right
+      const zf = bz - e * 0.014, sw = SCREEN.w, sh = SCREEN.h, uSign = -e;   // a viewer facing the bulkhead has -e*x on their right
       const scr = new THREE.PlaneGeometry(sw, sh); scr.rotateY(e > 0 ? Math.PI : 0); scr.translate(-SCREEN.x, SCREEN.y, zf);
       const uv = scr.attributes.uv, p = scr.attributes.position; for (let i = 0; i < uv.count; i++) uv.setX(i, uSign > 0 ? (p.getX(i) - (-SCREEN.x - sw / 2)) / sw : ((-SCREEN.x + sw / 2) - p.getX(i)) / sw);
-      add(scr, scrMat, 'car_' + ci + '_pis');
+      add(scr, scrMat, 'car_' + ci + '_pis');   // (2 mm proud of the bezel's front face: on it, at 0.012, the two were coplanar and flickered against each other as the train moved)
       const bez = new THREE.BoxGeometry(sw + 0.03, sh + 0.03, 0.012); bez.translate(-SCREEN.x, SCREEN.y, bz - e * 0.006); add(bez, bezMat, 'car_' + ci + '_pis_bezel');
       res.screens++;
     }

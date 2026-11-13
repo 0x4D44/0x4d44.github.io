@@ -26,6 +26,17 @@ export async function loadTunnelTemplate(THREE, GLTFLoader, url) {
 }
 
 export class TunnelView {
+  /** How much of the scene's ambient light the tunnel's surfaces take (1 = all of it, in and near a station; ~0.13 in a running tunnel, which has no lighting of its own).
+   *  Done on the tunnel's materials - an occlusion map of one black texel, whose strength three.js applies to ambient light only - so the headlight and the lamps still light
+   *  the lining, and nothing else in the scene (the train's saloon, the people in it) is dimmed with it. */
+  setAmbient(k) {
+    k = Math.max(0, Math.min(1, k)); const T = this.THREE;
+    if (!this._ao) { this._ao = new T.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); this._ao.needsUpdate = true; this._aoMats = new Set(); this._aoN = -1; this._aoK = null; }
+    let n = 0; this.group.traverse(() => { n++; });
+    if (n !== this._aoN) { this._aoN = n; this._aoK = null; this.group.traverse((m) => { if (!m.isMesh) return; for (const mt of Array.isArray(m.material) ? m.material : [m.material]) if (mt && !mt.isMeshBasicMaterial && 'aoMap' in mt && !this._aoMats.has(mt)) { mt.aoMap = this._ao; mt.needsUpdate = true; this._aoMats.add(mt); } }); }
+    if (this._aoK !== null && Math.abs(k - this._aoK) < 0.002) return;
+    this._aoK = k; for (const mt of this._aoMats) mt.aoMapIntensity = 1 - k;
+  }
   constructor(THREE, tpl, scene, opts) {
     this.THREE = THREE; this.scene = scene;
     // quality tier: near rings are the detailed GLB (1054 tris each); everything beyond is a cheap low-poly tube.
