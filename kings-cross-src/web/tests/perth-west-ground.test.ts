@@ -16,7 +16,7 @@ import { PERTH_WEST, PERTH_WEST_FILE, buildPerthWestGround, mainApronEdge, westC
 const mainFile = JSON.parse(readFileSync(new URL('../src/data/perth-terrain.json', import.meta.url), 'utf8')) as TerrainFile;
 const mainField = createTerrain(mainFile), mainMesh = buildTerrainMesh(mainField, { maxLeaf: 16, tolerance: () => .08 }), main = overMesh(mainField, mainMesh);
 const W = PERTH_WEST_EXTENT, M = PERTH_TERRAIN_EXTENT, G = PERTH_WEST_FILE.grids[0]!, STEP = G.step, OUT = EAST_SKIRT.out;
-const tile = buildPerthWestGround(main);
+const tile = buildPerthWestGround(main, { beside: null }); // the bare tile: no curtain (the default has one: the last test)
 const mesh = tile.group.getObjectByName('perth-west-ground') as THREE.Mesh;
 const P = mesh.geometry.getAttribute('position'), C = mesh.geometry.getAttribute('color'), I = mesh.geometry.getIndex()!;
 const inside = (x: number, z: number) => x >= W.x0 - 1e-6 && x <= W.x1 + 1e-6 && z >= W.z0 - 1e-6 && z <= W.z1 + 1e-6;
@@ -32,7 +32,7 @@ test('the tile is one draw: the whole 16 m lattice over the extent, plus its ski
   assert.equal(I.count / 3, tile.stats.triangles, 'the stat is the geometry');
   const lattice = [...P.array as Float32Array].filter((_, k) => k % 3 === 0).filter((x, k) => inside(x, P.getZ(k))).length;
   assert.equal(lattice, G.nx * G.nz, 'every node of the lattice is a vertex, once');
-  assert.ok(tile.stats.triangles < 40000, `${tile.stats.triangles} triangles`);
+  assert.ok(tile.stats.triangles < 50000, `${tile.stats.triangles} triangles: about an eighth of the whole west extension's +400k budget`);
 });
 
 test('every triangle faces up, the lattice and the skirt alike', () => {
@@ -60,7 +60,7 @@ test('the seam is watertight: each vertex on the main terrain\'s west edge is th
 test('the seam is read off the DRAWN main ground, wherever it is not the DTM (a rail flattening)', () => {
   const dent = (x: number, z: number) => x === W.x1 && z % 64 === 0 ? 2.5 : 0;
   const flattened = { extent: main.extent, heightAt: (x: number, z: number) => main.heightAt(x, z) + dent(x, z) };
-  const t = buildPerthWestGround(flattened), p = (t.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
+  const t = buildPerthWestGround(flattened, { beside: null }), p = (t.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
   let raised = 0;
   for (let v = 0; v < p.count; v++) if (p.getX(v) === W.x1 && p.getZ(v) >= M.z0 && p.getZ(v) <= M.z1) {
     const want = main.heightAt(W.x1, p.getZ(v)) + dent(W.x1, p.getZ(v)); assert.ok(Math.abs(p.getY(v) - want) < 1e-4, `z ${p.getZ(v)}: ${p.getY(v)} against ${want}`); if (dent(W.x1, p.getZ(v))) raised++;
@@ -165,10 +165,16 @@ test('mainApronEdge is the main apron\'s height along its west edge, as buildPer
   assert.equal(edge(0), main.heightAt(M.x0, 0), 'within the main terrain\'s rows it is the main terrain');
 });
 
-test('beside: a curtain along the seam where the main terrain has no ground, each way round, and nothing else changes', () => {
-  const hung = buildPerthWestGround(main, { beside: mainApronEdge(main) }), hm = hung.group.getObjectByName('perth-west-ground') as THREE.Mesh;
+test('beside: by default the tile hangs a curtain along the seam where the main terrain has no ground, each way round; nothing else changes', () => {
+  const hung = buildPerthWestGround(main), hm = hung.group.getObjectByName('perth-west-ground') as THREE.Mesh; // the default
   const HP = hm.geometry.getAttribute('position'), HI = hm.geometry.getIndex()!, HN = hm.geometry.getAttribute('normal');
-  assert.equal(tile.stats.triangles, 2 * ((G.nx - 1) * (G.nz - 1) + (G.nz - 1) + 2 * (G.nx - 1) + 2), 'by default there is no curtain');
+  assert.equal(tile.stats.triangles, 2 * ((G.nx - 1) * (G.nz - 1) + (G.nz - 1) + 2 * (G.nx - 1) + 2), 'with beside: null there is no curtain');
+  // the default is the main apron's edge, asked for outright; null is none; a function of its own is followed
+  const asked = buildPerthWestGround(main, { beside: mainApronEdge(main) }), AP = (asked.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
+  assert.equal(asked.stats.triangles, hung.stats.triangles); assert.deepEqual(Array.from(AP.array as Float32Array), Array.from(HP.array as Float32Array), 'the default is mainApronEdge(main)');
+  const flat = buildPerthWestGround(main, { beside: () => 150 }), FP = (flat.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
+  let top = -Infinity; for (let v = P.count; v < FP.count; v++) top = Math.max(top, FP.getY(v));
+  assert.ok(flat.stats.triangles > tile.stats.triangles && top === 150, `a curtain up to the 150 m asked for: ${top}`);
   // what the plain tile has is untouched, vertex for vertex and triangle for triangle
   for (let k = 0; k < P.array.length; k++) assert.equal(HP.array[k], P.array[k]);
   for (let k = 0; k < I.count; k++) assert.equal(HI.getX(k), I.getX(k));

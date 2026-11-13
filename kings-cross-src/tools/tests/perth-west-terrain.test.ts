@@ -1,14 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { unproject } from '../../core/geo.ts';
-import { PERTH_ORIGIN } from '../../core/perth-data.ts';
 import { createTerrain, decodeGrid, encodeGrid } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { PERTH_TERRAIN_EXTENT, PERTH_TERRAIN_SITE, WATER_RINGS } from '../build-perth-terrain.ts';
 import { EAST_CLASSES, eastAreas, pip } from '../build-perth-east-terrain.ts';
 import { PERTH_WEST_EXTENT } from '../perth-west-extent.ts';
-import { PERTH_WEST_SITE, PERTH_WEST_STEP, WEST_CLASSES, WEST_OSM_BBOX, nodeClasses, seamMismatches } from '../build-perth-west-terrain.ts';
+import { PERTH_WEST_SITE, PERTH_WEST_STEP, WEST_CLASSES, WEST_OSM_MARGIN, nodeClasses, osmGap, osmWanted, seamMismatches } from '../build-perth-west-terrain.ts';
+import type { LonLatBox } from '../build-perth-west-terrain.ts';
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(`../../web/src/data/${name}`, import.meta.url), 'utf8'));
 type WestFile = TerrainFile & { classNames: string[]; classes: string; classSource: string; provenance: { origin: unknown; referenceGroundAod: number; urls: string[]; method: string; sourceResolutionM: number } };
@@ -104,9 +103,25 @@ test('OSM areas come from tagged ways and multipolygon outers, never from buildi
   assert.ok(areas[0]!.area <= areas[1]!.area, 'smallest first');
 });
 
-test('the OSM request covers the extent plus its margin and stays under the map API\'s area limit', () => {
-  const [w, s, e, n] = WEST_OSM_BBOX, nw = unproject(W.x0 - 40, W.z0 - 40, PERTH_ORIGIN), se = unproject(W.x1 + 40, W.z1 + 40, PERTH_ORIGIN);
-  assert.ok(w <= nw.lon && n >= nw.lat && e >= se.lon && s <= se.lat, `${WEST_OSM_BBOX} covers ${nw.lon},${se.lat},${se.lon},${nw.lat}`);
-  assert.ok(nw.lon - w < 2e-5 && n - nw.lat < 2e-5 && e - se.lon < 2e-5 && se.lat - s < 2e-5, 'and no more than the rounding');
-  assert.ok((e - w) * (n - s) < 0.25, 'one request');
+test('the OSM tiles the file names cover its extent plus the margin, each under the map API\'s area limit', () => {
+  const tiles = (west.classSource.match(/-?\d+(?:\.\d+)?(?:,-?\d+(?:\.\d+)?){3}/g) ?? []).map(t => t.split(',').map(Number) as unknown as LonLatBox);
+  assert.equal(tiles.length, 2, `the two tiles the file names: ${west.classSource}`);
+  assert.equal(osmGap(tiles, osmWanted(W)), null, `${tiles.map(String).join(' and ')} cover the extent plus ${WEST_OSM_MARGIN} m`);
+  for (const [w, s, e, n] of tiles) assert.ok((e - w) * (n - s) < 0.25, 'one request each');
+  // the margin is real: the wanted box is wider than the extent by it, on every side
+  const [w, s, e, n] = osmWanted(W), [w0, s0, e0, n0] = osmWanted(W, 0);
+  assert.ok(w < w0 && s < s0 && e > e0 && n > n0, 'beyond the extent on every side');
+});
+
+test('osmGap finds what the tiles leave uncovered, north-west first; tiles that touch or overlap leave none', () => {
+  const want: LonLatBox = [0, 0, 10, 10];
+  assert.equal(osmGap([[-1, -1, 6, 11], [5, -1, 11, 11]], want), null, 'overlapping');
+  assert.equal(osmGap([[-1, -1, 5, 11], [5, -1, 11, 11]], want), null, 'touching');
+  assert.deepEqual(osmGap([[-1, -1, 4.9, 11], [5, -1, 11, 11]], want), [4.9, 0, 5, 10], 'a slit between two tiles');
+  assert.deepEqual(osmGap([[0, 0, 6, 10], [5, 2, 10, 10]], want), [6, 0, 10, 2], 'the south-east corner, which only the first tile reaches the south of');
+  assert.deepEqual(osmGap([[0, 0, 10, 8]], want), [0, 8, 10, 10], 'the north strip');
+  assert.deepEqual(osmGap([[20, 20, 30, 30]], want), want, 'a tile elsewhere covers nothing');
+  assert.deepEqual(osmGap([], want), want, 'no tiles');
+  assert.deepEqual(osmGap([[0, 0, 10, 8], [0, 0, 8, 10]], want), [8, 8, 10, 10], 'two tiles, the corner neither holds');
+  assert.deepEqual(osmGap([[0, 0, 10, 10]], [-5, -5, 15, 15]), [-5, 10, 0, 15], 'a tile in the middle of a larger box: the north-west cell is reported first');
 });

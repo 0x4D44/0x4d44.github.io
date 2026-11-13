@@ -1,14 +1,16 @@
 // The west extension's ground (Perth west brief, 2026-11-13): the land from the main terrain's west edge (x -1200) out past the A9 western
-// bypass (x -2800), z -1600 to 1232, from tools/build-perth-west-terrain.ts (Phase I 1 m DTM, the main terrain's own 16 m lattice, a ground
-// class per node). Drawn as the main ground is (core/terrain.ts buildTerrainMesh over 16 m leaves, so the main's own cells and diagonals) and
-// as the east patch is (perth-east-ground.ts: a vertex colour per node class, a skirt out to the haze on the outer edges, Perth's haze
-// material), all in ONE draw. Not wired into the scene: perth-city.ts calls buildPerthWestGround(ground) as it calls buildPerthEastGround.
+// bypass and Broxden roundabout (x -3232), z -1600 to 1232, from tools/build-perth-west-terrain.ts (Phase I 1 m DTM, the main terrain's own
+// 16 m lattice, a ground class per node). Drawn as the main ground is (core/terrain.ts buildTerrainMesh over 16 m leaves, so the main's own
+// cells and diagonals) and as the east patch is (perth-east-ground.ts: a vertex colour per node class, a skirt out to the haze on the outer
+// edges, Perth's haze material), all in ONE draw. Not wired into the scene: perth-city.ts calls buildPerthWestGround(ground) as it calls
+// buildPerthEastGround.
 // - Seam: the east column (x -1200), where the main terrain has ground (z -1200 to 912), is read off the main DRAWN terrain at each of its
 //   16 m rows, which are this lattice's own rows, so the two meshes share that edge vertex for vertex. (The two data files agree there too:
 //   tools/tests/perth-west-terrain.test.ts.) The seam's two extra stretches, z -1600 to -1200 and 912 to 1232, lie beside the main
 //   terrain's north and south aprons: they are the DTM, and the apron beside them is a flat shelf at the main edge's height, so the tile's
-//   edge there stands up to 33 m above it (south) or 13 m below it (north), as built on 2026-11-13. Left alone by default; `opts.beside`
-//   hangs a curtain from the edge to whatever is drawn beside it (mainApronEdge is that, for the main apron as it is drawn today).
+//   edge there stands up to 33 m above it (south) or 13 m below it (north), as built on 2026-11-13. So by default the tile hangs a curtain
+//   from that edge to the main apron beside it (`opts.beside`, mainApronEdge: the apron as buildPerthEastGround draws it today; 180
+//   triangles, the same draw); `{beside: null}` leaves the edge bare, and a function gives the height of whatever else is drawn beside it.
 // - Skirt: the west, north and south edges fall away outward EAST_SKIRT.out m to just under the world's flat plane in the hazed field tone,
 //   as the east patch's do, so the tile runs out into the haze (its own triangles; no extra draw). The main terrain's apron
 //   (perth-east-ground.ts MAIN_APRON: its west strip and its north-west and south-west corner quads) lies over this ground and has to be
@@ -60,17 +62,19 @@ export interface PerthWestGround {
 export interface PerthWestOptions {
   /**
    * The height, at z, of whatever is drawn just east of the tile's shared edge where the main terrain has no ground of its own: north of
-   * its north edge and south of its south edge, out to the skirt's far corners. When given, the tile hangs a curtain along that stretch of
-   * its east edge between its own height and this one (a quad per 16 m, each way round, in the node's tone: 4 triangles a segment).
+   * its north edge and south of its south edge, out to the skirt's far corners. The tile hangs a curtain along that stretch of its east edge
+   * between its own height and this one (a quad per 16 m, each way round, in the node's tone: 4 triangles a segment). Absent: the main
+   * apron as buildPerthEastGround draws it, mainApronEdge(main). `null`: no curtain.
    */
-  beside?: (z: number) => number;
+  beside?: ((z: number) => number) | null;
 }
 
 /**
  * The height at z of the main terrain's apron (perth-east-ground.ts MAIN_APRON) along the line x = the main terrain's west edge, where it
  * leaves the main terrain's north and south edges: from the edge's own height less 5 cm, straight down to EAST_SKIRT.to over EAST_SKIRT.out
  * (what `buildPerthEastGround` draws, as the apron's strips are built). Within the main terrain's rows: the main terrain's own height.
- * Pass it as `beside` while the main apron's north and south strips still start at x = its west edge.
+ * It is what `beside` defaults to, which holds while the main apron's north and south strips still start at x = its west edge; where the apron is
+ * drawn otherwise, pass `beside` (a function, or null for no curtain).
  */
 export function mainApronEdge(main: Pick<Terrain, 'heightAt' | 'extent'>): (z: number) => number {
   const M = main.extent, inner = (z: number) => Math.max(main.heightAt(M.x0, z) - .05, GROUND_Y + .3), n0 = inner(M.z0), s0 = inner(M.z1);
@@ -80,7 +84,8 @@ export function mainApronEdge(main: Pick<Terrain, 'heightAt' | 'extent'>): (z: n
 
 /**
  * The tile over `main` (the drawn main terrain, whose west edge it meets): the mesh, one draw, with its skirt.
- * Triangles: (nx - 1)(nz - 1) cells of two, plus two per skirt quad (the west, north and south strips and the two west corners).
+ * Triangles: (nx - 1)(nz - 1) cells of two, plus two per skirt quad (the west, north and south strips and the two west corners), plus the
+ * curtain's (`opts.beside`): 4 per 16 m of the seam's two stretches beside no main ground, less 8.
  */
 export function buildPerthWestGround(main: Pick<Terrain, 'heightAt' | 'extent'>, opts: PerthWestOptions = {}): PerthWestGround {
   const W = PERTH_WEST_FILE.extent, G = PERTH_WEST_FILE.grids[0]!, step = G.step, nx = G.nx, nz = G.nz, out = EAST_SKIRT.out;
@@ -110,8 +115,9 @@ export function buildPerthWestGround(main: Pick<Terrain, 'heightAt' | 'extent'>,
   // the corners: the corner node, the two strips' first outer vertices and the corner of the skirt's own outline
   for (const [corner, a, b, oz] of [[node[0]!, westOuter[0]!, northOuter[0]!, -out], [node[(nz - 1) * nx]!, westOuter[nz - 1]!, southOuter[0]!, out]] as const)
     quad(corner, a, b, outer(P[corner * 3]! - out, P[corner * 3 + 2]! + oz, P[corner * 3 + 1]!));
-  if (opts.beside) { // the curtain along the seam's two stretches beside no main ground: the far skirt corner, then the seam nodes down to the main's rows
-    const M = main.extent, last = nx - 1, rowOf = (z: number) => Math.round((z - W.z0) / step), beside = opts.beside;
+  const beside = opts.beside === undefined ? mainApronEdge(main) : opts.beside;
+  if (beside) { // the curtain along the seam's two stretches beside no main ground: the far skirt corner, then the seam nodes down to the main's rows
+    const M = main.extent, last = nx - 1, rowOf = (z: number) => Math.round((z - W.z0) / step);
     const north = [northOuter[last]!, ...Array.from({length: rowOf(M.z0) + 1}, (_, j) => node[j * nx + last]!)];
     const south = [...Array.from({length: nz - rowOf(M.z1)}, (_, k) => node[(rowOf(M.z1) + k) * nx + last]!), southOuter[last]!];
     // each triangle on vertices of its own, once each way round: its own face normal (a quad whose two ends lie either side of the line is
