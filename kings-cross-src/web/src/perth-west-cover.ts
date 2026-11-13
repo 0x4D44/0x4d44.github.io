@@ -12,15 +12,42 @@
 import type {Pt} from '../../core/geo.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {buildWaverleyCityGround, decodeLanduse, Footprints} from './waverley-city-ground.ts';
-import type {GardenPaint, Landuse, LanduseFile, WaverleyCityGround} from './waverley-city-ground.ts';
+import type {GardenPaint, Landuse, LanduseFile, OpenGround, WaverleyCityGround} from './waverley-city-ground.ts';
+import {PERTH_WEST_FILE as WEST_TERRAIN_FILE} from './perth-west-ground.ts';
 import {perthGardens, streetIndex} from './perth-gardens.ts';
 import {PERTH_DRAPE, PERTH_FILL_STEP} from './perth-city-features.ts';
 import {PERTH_ROCK_TONES} from './perth-woodland.ts';
 import file from './data/perth-city-landuse-west.json' with {type: 'json'};
 
-/** Texels across the west extent's x span: about the context's density (2,048 over its 3,824 m is 0.54 a metre; 1,024 over 2,032 m is
- *  0.50), so the 2,032 x 2,832 m extent paints 1,024 x 1,427 texels, not the default's 2,048 x 2,854. ASSUMED. */
-export const PERTH_WEST_CANVAS = 1024;
+/** Texels across the west extent's x span. W4 review (2026-11-13: the near drape 25-40 px a texel 250-300 m off, from pt-west-broxden): as
+ *  fine as the 2,048 px cap lets the extent's long side be, 1,469 x 2,047 texels, 0.72 a metre (was 1,024 across, 0.50; the context's
+ *  is 0.54). The open land, most of what the near views see, is not on the canvas at all (OPEN_LAND). */
+export const PERTH_WEST_CANVAS = 1469;
+/** W4 review (2026-11-13, pt-west-broxden: past the A9 the drape's farmland was a flat lime with a hard straight edge against the
+ *  backdrop's olive patchwork, ruled by grey stripes, the unmapped strips between the mapped fields painted as paving). The open land is
+ *  left to the west tile under the drape (perth-west-ground.ts), which draws it as the skirt beyond it does, in the field tone under the
+ *  LAND_FIELDS patchwork: one surface out to the haze, so there is no edge. Open: a node of the tile's lattice in the 'field' class (OSM
+ *  farmland, or no mapped land use at all), with no building or mapped roof within `clear` m (a yard, a car park or a forecourt round
+ *  the buildings keeps the drape's paving). ASSUMED distance. */
+export const OPEN_LAND = {clear: 24} as const;
+/** The tile's open nodes (OPEN_LAND), for the drape to be cut out over. */
+export function perthWestOpen(rings: readonly (readonly Pt[])[]): OpenGround {
+  const g = WEST_TERRAIN_FILE.grids[0]!, field = WEST_TERRAIN_FILE.classNames.indexOf('field'), c = OPEN_LAND.clear, cell = c;
+  const near = new Map<string, Pt[]>(), key = (x: number, z: number) => `${Math.floor(x / cell)},${Math.floor(z / cell)}`;
+  for (const r of rings) for (let k = 0; k < r.length; k++) { // every vertex, and the edges' points every `c` m, so a long wall counts too
+    const a = r[k]!, b = r[(k + 1) % r.length]!, n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / c));
+    for (let t = 0; t < n; t++) { const p: Pt = [a[0] + (b[0] - a[0]) * t / n, a[1] + (b[1] - a[1]) * t / n], q = key(p[0], p[1]); let l = near.get(q); if (!l) near.set(q, l = []); l.push(p); }
+  }
+  const built = (x: number, z: number) => { const i = Math.floor(x / cell), j = Math.floor(z / cell);
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) for (const p of near.get(`${i + di},${j + dj}`) ?? []) if (Math.hypot(p[0] - x, p[1] - z) < c) return true;
+    return false; };
+  const open = new Uint8Array(g.nx * g.nz);
+  for (let j = 0; j < g.nz; j++) for (let i = 0; i < g.nx; i++) {
+    const k = j * g.nx + i; if (Number(WEST_TERRAIN_FILE.classes[k]) !== field) continue;
+    if (!built(g.x0 + i * g.step, g.z0 + j * g.step)) open[k] = 1;
+  }
+  return {x0: g.x0, z0: g.z0, step: g.step, nx: g.nx, nz: g.nz, open};
+}
 /** How a trunk way's width was found (tools/build-perth-west-landuse.ts trunkWidth). */
 export type TrunkBasis = 'OSM width' | 'OSM lanes' | 'ASSUMED';
 /** One highway=motorway or trunk way (or its slip road or roundabout ring) as the file holds it; `line` is delta integers at the block's `q`. */
@@ -94,9 +121,10 @@ export function perthWestGardens(west: PerthWest = PERTH_WEST): GardenPaint {
  *  and the trees (one instanced draw: the mapped trees are drawn with the wood). `footprints` are the outlines trees keep clear of (the west buildings and roofs; the trunk
  *  carriageways are added here); `uncovered` is ground another element draws itself, as in buildWaverleyCityGround. The meshes are named
  *  perth-west-*, not waverley-*, so they stay apart from the context's in one scene. */
-export function buildPerthWestCover(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean, west: PerthWest = PERTH_WEST): WaverleyCityGround {
+export function buildPerthWestCover(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean, west: PerthWest = PERTH_WEST,
+  open: OpenGround | null = perthWestOpen(footprints.rings)): WaverleyCityGround {
   const keep = new Footprints([...footprints.rings, ...trunkClearance(west.trunk)]);
-  const cover = buildWaverleyCityGround(ground, keep, west.landuse, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, rockTones: PERTH_ROCK_TONES, gardens: perthWestGardens(west), canvasWidth: PERTH_WEST_CANVAS, mappedWithMassed: true, uncovered});
+  const cover = buildWaverleyCityGround(ground, keep, west.landuse, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, rockTones: PERTH_ROCK_TONES, gardens: perthWestGardens(west), canvasWidth: PERTH_WEST_CANVAS, mappedWithMassed: true, uncovered, ...open ? {open} : {}});
   cover.group.name = 'perth-west-cover';
   cover.group.traverse(o => { if (o.name.startsWith('waverley-')) o.name = `perth-west-${o.name.slice('waverley-'.length)}`; });
   return cover;

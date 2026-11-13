@@ -17,12 +17,13 @@
 //   left out wherever this tile is drawn.
 // - Heights: `heightAt` is the DRAWN surface (the mesh's triangles, as overMesh); seat what stands on this ground on it or on `terrain`,
 //   not on PERTH_WEST, which is the field the mesh approximates (they agree at every node).
-// - Colour: per vertex from the node classes (water where the DTM itself has no ground, else OSM land use, else field), the east patch's tones.
+// - Colour: per vertex from the node classes (water where the DTM itself has no ground, else OSM land use, else field), the east patch's tones;
+//   the LAND_FIELDS patchwork over the field nodes and the skirt (a FIELD_WEIGHT per vertex), where the cover drape leaves the open land to it.
 import * as THREE from 'three';
 import {buildTerrainMesh, createTerrain, overMesh} from '../../core/terrain.ts';
 import type {Terrain, TerrainFile} from '../../core/terrain.ts';
 import {GROUND_Y} from './world.ts';
-import {EAST_SKIRT, EAST_TONES, hazeLand} from './perth-east-ground.ts';
+import {EAST_SKIRT, EAST_TONES, FIELD_WEIGHT, hazeLand} from './perth-east-ground.ts';
 import file from './data/perth-terrain-west.json' with {type: 'json'};
 
 export const PERTH_WEST_FILE = file as unknown as TerrainFile & {classNames: string[]; classes: string};
@@ -90,16 +91,17 @@ export function mainApronEdge(main: Pick<Terrain, 'heightAt' | 'extent'>): (z: n
 export function buildPerthWestGround(main: Pick<Terrain, 'heightAt' | 'extent'>, opts: PerthWestOptions = {}): PerthWestGround {
   const W = PERTH_WEST_FILE.extent, G = PERTH_WEST_FILE.grids[0]!, step = G.step, nx = G.nx, nz = G.nz, out = EAST_SKIRT.out;
   const tm = buildTerrainMesh({extent: W, heightAt: westField(main), stepIn: PERTH_WEST.stepIn}, {maxLeaf: WEST_MESH.maxLeaf, tolerance: () => WEST_MESH.tolerance});
-  const P = Array.from(tm.positions), C: number[] = [], index = Array.from(tm.indices), node = new Int32Array(nx * nz).fill(-1);
+  const P = Array.from(tm.positions), C: number[] = [], F: number[] = [], index = Array.from(tm.indices), node = new Int32Array(nx * nz).fill(-1);
+  const field = PERTH_WEST_FILE.classNames.indexOf('field');
   const c = new THREE.Color(), plane = new THREE.Color().setHex(EAST_SKIRT.tone, THREE.SRGBColorSpace);
   const tones = PERTH_WEST_FILE.classNames.map(n => new THREE.Color().setHex(EAST_TONES[n]!, THREE.SRGBColorSpace));
   for (let v = 0; v < tm.vertices; v++) {
     const i = Math.round((P[v * 3]! - W.x0) / step), j = Math.round((P[v * 3 + 2]! - W.z0) / step);
-    node[j * nx + i] = v; c.copy(tones[Number(PERTH_WEST_FILE.classes[j * nx + i])]!); C.push(c.r, c.g, c.b);
+    const k = Number(PERTH_WEST_FILE.classes[j * nx + i]); node[j * nx + i] = v; c.copy(tones[k]!); C.push(c.r, c.g, c.b); F.push(k === field ? 1 : 0);
   }
   if (node.some(v => v < 0)) throw new Error('the west mesh is not the whole 16 m lattice');
   // the skirt: a strip of quads off each outer edge, its far edge `out` m away at the plane's level in the hazed tone; the corners between
-  const outer = (x: number, z: number, y: number): number => { P.push(x, Math.min(y, EAST_SKIRT.to), z); C.push(plane.r, plane.g, plane.b); return P.length / 3 - 1; };
+  const outer = (x: number, z: number, y: number): number => { P.push(x, Math.min(y, EAST_SKIRT.to), z); C.push(plane.r, plane.g, plane.b); F.push(1); return P.length / 3 - 1; };
   const up = (a: number, b: number, d: number) => { // wound to face up
     const ux = P[b * 3]! - P[a * 3]!, uz = P[b * 3 + 2]! - P[a * 3 + 2]!, vx = P[d * 3]! - P[a * 3]!, vz = P[d * 3 + 2]! - P[a * 3 + 2]!;
     if (uz * vx - ux * vz > 0) index.push(a, b, d); else index.push(a, d, b);
@@ -123,7 +125,7 @@ export function buildPerthWestGround(main: Pick<Terrain, 'heightAt' | 'extent'>,
     // each triangle on vertices of its own, once each way round: its own face normal (a quad whose two ends lie either side of the line is
     // twisted: its triangles then face opposite ways, which shared vertices would average to nothing)
     const corner = (v: number, y: number): [number, number] => [v, y];
-    const emit = (corners: [number, number][]) => { for (const c of corners) { P.push(P[c[0] * 3]!, c[1], P[c[0] * 3 + 2]!); C.push(C[c[0] * 3]!, C[c[0] * 3 + 1]!, C[c[0] * 3 + 2]!); } const o = P.length / 3 - 3; index.push(o, o + 1, o + 2); };
+    const emit = (corners: [number, number][]) => { for (const c of corners) { P.push(P[c[0] * 3]!, c[1], P[c[0] * 3 + 2]!); C.push(C[c[0] * 3]!, C[c[0] * 3 + 1]!, C[c[0] * 3 + 2]!); F.push(F[c[0]]!); } const o = P.length / 3 - 3; index.push(o, o + 1, o + 2); };
     for (const path of [north, south]) for (let k = 0; k + 1 < path.length; k++) {
       const a = path[k]!, b = path[k + 1]!, ba = beside(P[a * 3 + 2]!), bb = beside(P[b * 3 + 2]!);
       if (Math.abs(P[a * 3 + 1]! - ba) < 1e-3 && Math.abs(P[b * 3 + 1]! - bb) < 1e-3) continue;
@@ -136,8 +138,11 @@ export function buildPerthWestGround(main: Pick<Terrain, 'heightAt' | 'extent'>,
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+  g.setAttribute(FIELD_WEIGHT, new THREE.Float32BufferAttribute(F, 1));
   g.setIndex(index); g.computeVertexNormals(); g.computeBoundingSphere();
-  const gm = new THREE.MeshLambertMaterial({vertexColors: true}); hazeLand(gm, {inside: [W.x0, W.z0, W.x1, W.z1]}); // fields on the skirt only, as the east patch
+  // the fields (LAND_FIELDS) on the skirt and on the tile's own field nodes, which are the open land the cover drape leaves to it
+  // (perth-west-cover.ts OPEN_LAND), so the fields run on from the tile into the skirt with no edge (W4 review 2026-11-13)
+  const gm = new THREE.MeshLambertMaterial({vertexColors: true}); hazeLand(gm, {inside: null, weight: true});
   const mesh = new THREE.Mesh(g, gm); mesh.name = 'perth-west-ground';
   const group = new THREE.Group(); group.name = 'perth-west'; group.add(mesh);
   return {group, stats: {triangles: index.length / 3, drawCalls: 1}, heightAt: tm.heightAt, terrain: overMesh(PERTH_WEST, tm)};

@@ -15,14 +15,39 @@ import type {Extent, Terrain} from '../../core/terrain.ts';
 import type {WaverleyScene} from '../../core/waverley-data.ts';
 import {buildPerthWestGround, PERTH_WEST_FILE as WEST_TERRAIN_FILE, withWest} from './perth-west-ground.ts';
 import {buildPerthWestCover, PERTH_WEST_FILE as WEST_LANDUSE_FILE} from './perth-west-cover.ts';
-import {buildPerthWestBuildings, PERTH_WEST_LIDAR_SOURCE} from './perth-west-buildings.ts';
+import {buildPerthWestBuildings, loadPerthWestScene, PERTH_WEST_LIDAR_SOURCE} from './perth-west-buildings.ts';
 import {Footprints} from './waverley-city-ground.ts';
 import type {PerthBuild} from './perth-scene.ts';
+
+/** W4 review (2026-11-13, pt-west-from-station: a jagged row of pale-blue boxes on the horizon, lighter than the sky). From a low eye the
+ *  Scottish haze is full by about 2.2 km (station-weather.ts PERTH_HAZE), and the west runs out to 3.2 km: its far blocks and tree crowns are
+ *  drawn wholly in the fog colour, which is paler than the sky behind them, so they stand up as ghosts. So, as the fog takes them, they
+ *  thin out (a screen-door dither, no blending or sorting) from `from` to gone at `to` of the fog: where they would be fog-coloured, the
+ *  ground or the sky behind them shows instead. The land stays (it is under the horizon); from the hill, in its clear air, nothing
+ *  changes. ASSUMED thresholds. */
+export const WEST_FOG_FADE = {from: .8, to: .995, meshes: ['perth-west-walls', 'perth-west-ashlar', 'perth-west-roofs', 'perth-west-wood-crowns']} as const;
+/** Patch `m` to thin out as the fog takes it (WEST_FOG_FADE), after whatever patch it already has. */
+export function fogFade(m: THREE.Material): void {
+  const before = m.onBeforeCompile, key = m.customProgramCacheKey();
+  m.onBeforeCompile = (shader, renderer) => {
+    before.call(m, shader, renderer);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#include <fog_fragment>
+#ifdef USE_FOG
+  if (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) < smoothstep(${WEST_FOG_FADE.from.toFixed(4)}, ${WEST_FOG_FADE.to.toFixed(4)}, fogFactor)) discard;
+#endif`);
+  };
+  m.customProgramCacheKey = () => `${key}+perth-west-fog-fade`;
+  m.needsUpdate = true;
+}
 
 /** The extension's group in the Perth scene: the tile ('perth-west'), the cover ('perth-west-cover') and the blocks ('perth-west-buildings'). */
 export const PERTH_WEST_GROUP = 'perth-west-extension';
 /** The drawn west ground's extent (the tile's, not its skirt). */
 export const PERTH_WEST_DRAWN: Extent = {...WEST_TERRAIN_FILE.extent};
+
+/** The west blocks and mapped roofs (perth-west-buildings.ts loadPerthWestScene: their own lazy chunk). perth-scene.ts imports this module
+ *  lazily too, so the extension's code and its terrain, land-use and heights data stay out of the main Perth chunk. */
+export const loadPerthWest = loadPerthWestScene;
 
 export interface PerthWestPart {
   group: THREE.Group;
@@ -49,6 +74,7 @@ export function addPerthWest(build: PerthBuild, ground: Terrain, data: Pick<Wave
   const tile = buildPerthWestGround(ground); take(tile);
   take(buildPerthWestCover(tile.terrain, new Footprints([...data.buildings, ...data.roofs].map(b => b.outer))));
   const blocks = buildPerthWestBuildings(data, withWest(ground, tile.terrain), {omitBuildingIds: options.omitBuildingIds}); take(blocks);
+  for (const name of WEST_FOG_FADE.meshes) { const m = group.getObjectByName(name) as THREE.Mesh | undefined; if (m) for (const mat of [m.material].flat()) fogFade(mat); }
   sceneStats.triangles += stats.triangles; sceneStats.drawCalls += stats.drawCalls;
   const attribution = [...new Set([data.attribution, WEST_LANDUSE_FILE.attribution, WEST_TERRAIN_FILE.attribution, PERTH_WEST_LIDAR_SOURCE.attribution].filter(Boolean))];
   return {group, ground: {heightAt: tile.heightAt, extent: PERTH_WEST_DRAWN}, stats, buildingIds: blocks.buildingIds, heightBasis: blocks.heightBasis, attribution};

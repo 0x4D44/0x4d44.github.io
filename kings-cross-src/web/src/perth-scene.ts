@@ -25,17 +25,17 @@ import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
 import {PERTH_EAST, PERTH_EAST_FILE} from './perth-east-ground.ts';
-import {loadPerthWestScene} from './perth-west-buildings.ts';
-import {addPerthWest, PERTH_WEST_DRAWN} from './perth-west-scene.ts';
-import type {PerthWestPart} from './perth-west-scene.ts';
+import type {addPerthWest, PerthWestPart} from './perth-west-scene.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
 export {PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, perthBuildingHeight} from './perth-city.ts';
-// Separate lazy assets: neither OSM nor Scottish terrain enters the London entry chunk. The west extension's blocks are a lazy chunk of their own.
-const [{default: dataFile}, {default: terrainFile}, westData] = await Promise.all([
+// Separate lazy assets: neither OSM nor Scottish terrain enters the London entry chunk. The west extension (its code, its terrain, land use
+// and heights) is a lazy chunk of its own, and its blocks another (perth-west-scene.ts loadPerthWest): none of it is in this module's chunk.
+const [{default: dataFile}, {default: terrainFile}, westModule] = await Promise.all([
   import('./data/perth-scene.json', {with: {type: 'json'}}),
   import('./data/perth-terrain.json', {with: {type: 'json'}}),
-  loadPerthWestScene(),
+  import('./perth-west-scene.ts'),
 ]);
+const westData = await westModule.loadPerthWest();
 
 /** The station floor (platforms and the station's roofed outline) is level; the ground blends to the DTM away from the open rail off the
  *  bridges. The other mapped roofs (OSM building=roof) are canopies elsewhere in the town, not the station's, so they do not level it. */
@@ -121,7 +121,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   for (const [key, value] of Object.entries(parts)) { value.name = `perth-${key}`; group.add(value); }
 
   const ground = addPerthGround(build, field, terrain);
-  const drawWest = options.west ?? ground.extent.x0 === PERTH_WEST_DRAWN.x1;
+  const drawWest = options.west ?? ground.extent.x0 === westModule.PERTH_WEST_DRAWN.x1;
   addPerthTrack(build, track, trackGroup, options.curves ? stationTrackCurves(data) : undefined);
   const era = options.era ?? PERTH_ERA;
   addPerthPlatforms(build, data, platforms, era);
@@ -139,7 +139,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   const frontageOwned = new Set(PERTH_FRONTAGE_OMIT_IDS);
   const {buildingIds, heightBasis} = addPerthCity(build, {...data, buildings: data.buildings.filter(b => !frontageOwned.has(b.id))}, ground, buildings, {west: drawWest});
   // the west extension (perth-west-scene.ts), its own group beside the parts, never a block the context city draws
-  const west = drawWest ? addPerthWest(build, ground, options.westData ?? westData, group, {omitBuildingIds: data.buildings.map(b => b.id)}) : null;
+  const west = drawWest ? westModule.addPerthWest(build, ground, options.westData ?? westData, group, {omitBuildingIds: data.buildings.map(b => b.id)}) : null;
 
   parts.roof.visible = options.roofVisible !== false; parts.buildings.visible = options.cityVisible !== false;
   if (west) west.group.visible = parts.buildings.visible;
@@ -150,6 +150,6 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   const credits = [data.attribution, terrainFile.attribution], creditOf = (c: string) => c.split('. ')[0]!.trim();
   for (const c of west?.attribution ?? []) if (!credits.some(k => creditOf(k) === creditOf(c))) credits.push(c);
   return {group, parts, origin: {...data.origin}, attribution: credits.join('; '), groundAttribution: terrainFile.attribution,
-    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}, ...west ? [{...PERTH_WEST_DRAWN}] : []], groundAt: perthGroundAt(ground, PERTH_EAST, west?.ground), west, stats, buildingIds, heightBasis,
+    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}, ...west ? [{...west.ground.extent}] : []], groundAt: perthGroundAt(ground, PERTH_EAST, west?.ground), west, stats, buildingIds, heightBasis,
     dispose() { if (disposed) return; disposed = true; group.removeFromParent(); for (const g of geometries) g.dispose(); for (const m of ownedMaterials) m.dispose(); group.clear(); }};
 }

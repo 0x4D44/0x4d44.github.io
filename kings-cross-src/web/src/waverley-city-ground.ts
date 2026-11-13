@@ -213,7 +213,12 @@ export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&
 export interface GardenPaint {rings:Ring[][];plots:GardenRect[];crowns:{x:number;z:number;r:number}[];hedge:number;hedgeTone:string;crownTone:string;/** rects painted under the land use, over the bare paving (Perth's yards and back greens) */patches?:GardenRect[]}
 /** A painted rect: corner (x, z), w along x and d along z before it is turned `rot` radians about its centre. */
 export interface GardenRect {x:number;z:number;w:number;d:number;tone:string;rot?:number}
-function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint,canvasWidth:number=CANVAS_WIDTH):THREE.CanvasTexture|null{
+/** Open land the drape leaves to the ground drawn under it (Perth's west: the fields and their unmapped margins, which the west tile
+ *  draws as the backdrop's patchwork, perth-west-ground.ts): a lattice of nodes, `open[j * nx + i]` 1 where the node at (x0 + i step,
+ *  z0 + j step) is open. The drape is cut out there (alpha 0, alphaTest), smoothly between nodes: its unmapped ground and its
+ *  `park` paint (Perth's farmland is drawn as park) are cleared over open nodes; every other class, the streets and paths stay. */
+export interface OpenGround {x0:number;z0:number;step:number;nx:number;nz:number;open:Uint8Array}
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint,canvasWidth:number=CANVAS_WIDTH,open?:OpenGround):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
  const {x0,z0,x1,z1}=LANDUSE.extent,W=canvasWidth,H=Math.round(W*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
@@ -221,6 +226,12 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  const path=(rings:readonly Ring[])=>{g.beginPath();for(const r of rings){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}};
  const line=(l:Ring)=>{g.beginPath();l.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));};
  g.fillStyle=GROUND_COLOURS.paving;g.fillRect(0,0,W,H);
+ // open land: the mask, one pixel a node, drawn scaled with smoothing (so the cut follows the nodes' bilinear blend, not 16 m steps) to clear
+ const mask=open?document.createElement('canvas'):null;
+ if(open&&mask){mask.width=open.nx;mask.height=open.nz;const m=mask.getContext('2d');if(m){const img=m.createImageData(open.nx,open.nz);for(let k=0;k<open.open.length;k++)img.data[k*4+3]=open.open[k]?255:0;m.putImageData(img,0,0);}}
+ const cutOpen=()=>{if(!open||!mask)return;g.save();g.globalCompositeOperation='destination-out';g.imageSmoothingEnabled=true;
+  g.drawImage(mask,(open.x0-open.step/2-x0)*s,(open.z0-open.step/2-z0)*s,open.nx*open.step*s,open.nz*open.step*s);g.restore();};
+ cutOpen();
  const rect=(r:GardenRect,stroke=false)=>{if(!r.rot){(stroke?g.strokeRect:g.fillRect).call(g,(r.x-x0)*s,(r.z-z0)*s,r.w*s,r.d*s);return;}g.save();g.translate((r.x+r.w/2-x0)*s,(r.z+r.d/2-z0)*s);g.rotate(r.rot);(stroke?g.strokeRect:g.fillRect).call(g,-r.w/2*s,-r.d/2*s,r.w*s,r.d*s);g.restore();};
  if(gardens?.patches)for(const r of gardens.patches){g.fillStyle=r.tone;rect(r);}
  const cell=4,cols=Math.ceil((x1-x0)/cell),slopes=new Float32Array(cols*Math.ceil((z1-z0)/cell)),slope=(x:number,z:number)=>slopes[Math.round((z-z0)/cell)*cols+Math.round((x-x0)/cell)];
@@ -231,6 +242,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  const A=LANDUSE.areas;
  for(const [k,col]of [['park',GROUND_COLOURS.park],['garden',GROUND_COLOURS.garden],['grass',GROUND_COLOURS.grass],['pitch',GROUND_COLOURS.pitch],['flower',GROUND_COLOURS.flower],['scrub',GROUND_COLOURS.scrub],['wood',GROUND_COLOURS.wood],['paved',GROUND_COLOURS.paved],['water',WATER_PAINT],['rock',GROUND_COLOURS.rock]] as const){
   g.fillStyle=col;for(const rs of A[k]){path(rs);g.fill('evenodd');}
+  if(k==='park')cutOpen();
  }
  // mown lawns: 3 m stripes a little lighter, alternate bands, turned per lawn (ASSUMED; R-wv3-a shows the gardens' lawns striped). Only
  // the lawns and kept parks (grass, garden, pitch): an open park's rough grass is not mown (R-wv3-d3: Calton Hill; the builder's note).
@@ -279,7 +291,9 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
  // pedestrian streets (the Royal Mile's setts, Rose Street) stone; narrow first, so a main road runs over its side streets
  for(const r of [...LANDUSE.roads].sort((a,b)=>a.width-b.width)){g.strokeStyle=roadColour(r.width);g.lineWidth=r.width*s;line(r.line);g.stroke();}
  // Texture: a low-contrast mottle so a lawn or a street is not one flat tone at close range. Seeded, so every load is the same.
+ if(open)g.globalCompositeOperation='source-atop'; // (the mottle stays off the cleared land)
  for(let i=0;i<30000;i++){const x=hash(i,1,4)*W,y=hash(i,2,5)*H,l=hash(i,3,6);g.fillStyle=l>.5?'rgba(255,255,240,0.05)':'rgba(20,20,10,0.07)';g.fillRect(x,y,2+l*3,2+l*3);}
+ g.globalCompositeOperation='source-over';
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;
  return t;
 }
@@ -287,7 +301,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint;/** texels across the extent's x span (CANVAS_WIDTH by default) */canvasWidth?:number;/** draw the mapped trees (natural=tree nodes) with the massed trees (coarse crowns, treated as wood trees: bare foliage on the ground when `woodTrunks` is false) instead of in their own crown and trunk draws, two draws fewer (Perth's west, where there are 6) */mappedWithMassed?:boolean}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint;/** texels across the extent's x span (CANVAS_WIDTH by default) */canvasWidth?:number;/** open land the drape is cut out over (OpenGround) */open?:OpenGround;/** draw the mapped trees (natural=tree nodes) with the massed trees (coarse crowns, treated as wood trees: bare foliage on the ground when `woodTrunks` is false) instead of in their own crown and trunk draws, two draws fewer (Perth's west, where there are 6) */mappedWithMassed?:boolean}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -300,8 +314,11 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens,options.canvasWidth);
+ const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens,options.canvasWidth,options.open);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
+ // open land (OpenGround): cut out where the canvas is clear. The cleared texels are transparent black, so a filtered texel at the cut is
+ // the painted colour times its alpha: dividing by the alpha takes it back to the paint (no dark rim along the cut)
+ if(options.open){cover.alphaTest=.5;cover.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n#ifdef USE_MAP\n diffuseColor.rgb /= max( sampledDiffuseColor.a, 0.004 );\n#endif');};cover.customProgramCacheKey=()=>'ground-cover-open';}
  // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
  // low roofs and building bases scene-wide (round 5)
  cover.polygonOffset=true;cover.polygonOffsetFactor=-1;cover.polygonOffsetUnits=-1;cover.name='waverley-ground-cover';materials.push(cover);

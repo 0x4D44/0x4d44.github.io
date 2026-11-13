@@ -35,6 +35,8 @@ export const EAST_SKIRT = {out: 6000, to: GROUND_Y - .3, tone: 0x7c8770} as cons
  *  under the plane on the Tay's floodplain), so the plane showed past it; the apron also runs out from the patch's east and south edges
  *  and its south-east corner, in `eastStep` m pieces (fewer triangles: those edges are only seen far off). */
 export const MAIN_APRON = {step: 64, from: 0x6c7a55, eastStep: 192} as const;
+/** The per-vertex attribute a weighted hazeLand (`fields.weight`) reads its fields' strength from. */
+export const FIELD_WEIGHT = 'fieldWeight';
 /** Round 10 (round-9 score, C6/C2: with the clearer air the land past the terrain showed as a flat olive plain to the horizon, ending
  *  hard against the sky at the camera's far plane, 9 km). The apron and the east patch fade on into the scene's own haze colour
  *  (fogColor) with view depth, from none at `from` m to all of it by `to` m, on top of the scene's fog, so the land softens into the
@@ -92,17 +94,19 @@ export function fieldContrast(d: number): number {
   return F.near + (1 - F.near) * t * t * (3 - 2 * t);
 }
 /** Fade a Lambert material into the fog colour with view depth (LAND_HAZE); with `fields`, lay LAND_FIELDS outside `inside` (x0, z0,
- *  x1, z1; null: everywhere). */
-export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonly [number, number, number, number] | null}): void {
+ *  x1, z1; null: everywhere), and with `weight`, only as much as the geometry's FIELD_WEIGHT attribute says (0 to 1, per vertex: the west
+ *  tile's fields, perth-west-ground.ts). */
+export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonly [number, number, number, number] | null; weight?: boolean}): void {
   const F = LAND_FIELDS, f = (v: number) => v.toFixed(4);
   m.onBeforeCompile = shader => {
     if (fields) {
       const box = fields.inside, skip = box ? `if (vFieldPos.x > ${f(box[0])} && vFieldPos.x < ${f(box[2])} && vFieldPos.y > ${f(box[1])} && vFieldPos.y < ${f(box[3])}) k = vec3(1.0);` : '';
-      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFieldPos;\nvarying float vFieldDepth;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;\n  vFieldDepth = -mvPosition.z;');
+      const w = fields.weight === true;
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\nvarying vec2 vFieldPos;\nvarying float vFieldDepth;${w ? `\nattribute float ${FIELD_WEIGHT};\nvarying float vFieldWeight;` : ''}`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;\n  vFieldDepth = -mvPosition.z;${w ? `\n  vFieldWeight = ${FIELD_WEIGHT};` : ''}`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
 varying vec2 vFieldPos;
-varying float vFieldDepth;
+varying float vFieldDepth;${w ? '\nvarying float vFieldWeight;' : ''}
 float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('#include <color_fragment>', `#include <color_fragment>
   {
     float c = ${f(Math.cos(F.turn))}, s = ${f(Math.sin(F.turn))};
@@ -116,7 +120,7 @@ float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('
     float eu = perthFieldHash(ib * 17.3 + j * 5.1) < ${f(F.hedgeKeep)} ? min(fu, len - fu) : 1e4, ev = perthFieldHash(i * 3.3 + jb * 41.7) < ${f(F.hedgeKeep)} ? min(fv, ${f(F.size[1])} - fv) : 1e4;
     float edge = min(eu, ev), hw = max(${f(F.hedge / 2)}, 0.5 * fwidth(u + v));
     k = mix(k, vec3(${F.hedgeTone.map(f).join(', ')}), ${f(F.hedgeMix)} * (1.0 - smoothstep(0.5 * hw, 1.5 * hw, edge)));
-    ${skip}
+    ${skip}${w ? '\n    k = mix(vec3(1.0), k, vFieldWeight);' : ''}
     diffuseColor.rgb *= k;
   }`);
     }
@@ -125,7 +129,7 @@ float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('
   gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(${LAND_HAZE.from.toFixed(1)}, ${LAND_HAZE.to.toFixed(1)}, vFogDepth));
 #endif`);
   };
-  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}${fields ? `-fields-${fields.inside ?? 'all'}` : ''}`;
+  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}${fields ? `-fields-${fields.inside ?? 'all'}${fields.weight ? '-weighted' : ''}` : ''}`;
 }
 /** How far the river is faded at x: 1 on the patch's east edge, 0 from RIVER_END.run m in (smoothstep). */
 export function riverEnd(x: number): number {

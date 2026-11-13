@@ -6,7 +6,7 @@ import { buildTerrainMesh, createTerrain, overMesh } from '../../core/terrain.ts
 import type { Terrain, TerrainFile } from '../../core/terrain.ts';
 import { PERTH_TERRAIN_EXTENT } from '../../tools/build-perth-terrain.ts';
 import { PERTH_WEST_EXTENT } from '../../tools/perth-west-extent.ts';
-import { EAST_SKIRT, EAST_TONES } from '../src/perth-east-ground.ts';
+import { EAST_SKIRT, EAST_TONES, FIELD_WEIGHT } from '../src/perth-east-ground.ts';
 import { GROUND_Y } from '../src/world.ts';
 import { buildPerthEastGround } from '../src/perth-east-ground.ts';
 import { PERTH_WEST, PERTH_WEST_FILE, buildPerthWestGround, mainApronEdge, westClassAt, westField, withWest } from '../src/perth-west-ground.ts';
@@ -131,7 +131,22 @@ test('the colours are the node classes\' tones, the east patch\'s; the material 
   }
   for (const name of ['field', 'water', 'wood', 'grass', 'houses']) assert.ok(seen.has(name), `${name} is drawn`);
   const m = mesh.material as THREE.MeshLambertMaterial;
-  assert.ok(m.vertexColors); assert.match(m.customProgramCacheKey(), /perth-land-haze/); assert.match(m.customProgramCacheKey(), new RegExp(`fields-${W.x0},${W.z0},${W.x1},${W.z1}`));
+  assert.ok(m.vertexColors); assert.match(m.customProgramCacheKey(), /perth-land-haze/);
+  // W4 review (2026-11-13): the fields run over the tile's field nodes as over the skirt, by a per-vertex weight: 1 on a field node and on
+  // the skirt, 0 on every other class, so the open land the cover drape leaves to the tile is the backdrop's patchwork with no edge
+  assert.match(m.customProgramCacheKey(), /fields-all-weighted$/);
+  const F = mesh.geometry.getAttribute(FIELD_WEIGHT); assert.ok(F, 'a field weight per vertex');
+  let fields = 0, others = 0;
+  for (let v = 0; v < P.count; v++) {
+    const want = inside(P.getX(v), P.getZ(v)) ? (westClassAt(P.getX(v), P.getZ(v)) === 'field' ? 1 : 0) : null;
+    if (want === null) continue; // the skirt and curtain: checked below
+    assert.equal(F.getX(v), want, `field weight at ${P.getX(v)}, ${P.getZ(v)}`); if (want) fields++; else others++;
+  }
+  assert.ok(fields > 1000 && others > 1000, `field nodes ${fields}, others ${others}`);
+  for (let v = 0; v < P.count; v++) if (P.getX(v) < W.x0 - 1 || P.getZ(v) < W.z0 - 1 || P.getZ(v) > W.z1 + 1) assert.equal(F.getX(v), 1, 'the skirt is fields');
+  const shader = {fragmentShader: THREE.ShaderLib.lambert.fragmentShader, vertexShader: THREE.ShaderLib.lambert.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+  m.onBeforeCompile(shader, undefined as unknown as THREE.WebGLRenderer);
+  assert.ok(shader.vertexShader.includes(`attribute float ${FIELD_WEIGHT};`) && shader.fragmentShader.includes('k = mix(vec3(1.0), k, vFieldWeight);'), 'the shader weighs the fields');
   // nearest node's class, and the nodata nodes are water
   const k = [...PERTH_WEST_FILE.classes].findIndex(ch => ch === String(PERTH_WEST_FILE.classNames.indexOf('water')));
   const wx = G.x0 + (k % G.nx) * STEP, wz = G.z0 + Math.floor(k / G.nx) * STEP;

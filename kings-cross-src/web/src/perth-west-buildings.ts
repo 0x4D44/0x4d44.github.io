@@ -20,7 +20,8 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import {ringArea} from '../../core/city.ts';
 import type {Extent, Terrain} from '../../core/terrain.ts';
-import {unpackWaverleyScene} from '../../core/waverley-data.ts';
+import {decodePerthWestBlocks} from './perth-west-blocks.ts';
+import type {PerthWestBlocksFile} from './perth-west-blocks.ts';
 import type {WaverleyArea, WaverleyScene} from '../../core/waverley-data.ts';
 import {PERTH_WEST_EXTENT} from '../../tools/perth-west-extent.ts';
 import {Batch, cityMaterial, material} from './materials.ts';
@@ -46,10 +47,11 @@ export function perthWestHeight(b: Block, fallback: (b: Block) => {height: numbe
   return perthCityHeight(b, fallback, {heights: PERTH_WEST_LIDAR_HEIGHTS, extents: PERTH_WEST_TERRAINS});
 }
 
-/** The west scene (data/perth-scene-west.json: buildings and mapped roofs only), its own lazy chunk. */
+/** The west scene (buildings and mapped roofs only), its own lazy chunk: data/perth-west-blocks.json, the page's compact copy of
+ *  data/perth-scene-west.json (perth-west-blocks.ts). */
 export async function loadPerthWestScene(): Promise<WaverleyScene> {
-  const {default: file} = await import('./data/perth-scene-west.json', {with: {type: 'json'}});
-  return unpackWaverleyScene(file);
+  const {default: file} = await import('./data/perth-west-blocks.json', {with: {type: 'json'}});
+  return decodePerthWestBlocks(file as unknown as PerthWestBlocksFile);
 }
 
 /** ASSUMED roof form by OSM building type where no roof:shape is mapped: detached houses and bungalows take a hipped roof (on a plan longer

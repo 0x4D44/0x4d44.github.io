@@ -9,8 +9,9 @@ import {terrainFromFunction} from '../../core/terrain.ts';
 import {PERTH_WEST_EXTENT} from '../../tools/perth-west-extent.ts';
 import {buildWaverleyCityGround,CANVAS_WIDTH,Footprints,GROUND_COLOURS,roadColour} from '../src/waverley-city-ground.ts';
 import {perthGardens,streetIndex} from '../src/perth-gardens.ts';
-import {buildPerthWestCover,decodePerthWest,decodeTrunk,PERTH_WEST,PERTH_WEST_CANVAS,PERTH_WEST_FILE,PERTH_WEST_LANDUSE,perthWestGardens,ribbon,trunkClearance} from '../src/perth-west-cover.ts';
+import {buildPerthWestCover,decodePerthWest,decodeTrunk,OPEN_LAND,perthWestOpen,PERTH_WEST,PERTH_WEST_CANVAS,PERTH_WEST_FILE,PERTH_WEST_LANDUSE,perthWestGardens,ribbon,trunkClearance} from '../src/perth-west-cover.ts';
 import type {PerthWestFile,TrunkRoad} from '../src/perth-west-cover.ts';
+import {PERTH_WEST_FILE as WEST_TERRAIN} from '../src/perth-west-ground.ts';
 
 const EXT={x0:0,z0:0,x1:160,z1:320};
 /** Delta integers at `q` metres, as the land-use files hold their lines and rings. */
@@ -91,8 +92,9 @@ test('the committed west file decodes to the extent: every trunk way is painted,
  for(const r of PERTH_WEST.roundabouts)assert.ok(r.radius>1&&r.radius<100&&r.x>=PERTH_WEST_EXTENT.x0-40&&r.x<=PERTH_WEST_EXTENT.x1+40,`roundabout at ${r.x}, ${r.z}`);
  assert.ok(PERTH_WEST.junctions.some(j=>j.ref==='12'&&j.name==='Broxden Roundabout'));
  assert.ok(/OpenStreetMap contributors/.test(file.attribution));
- // the one canvas: 1,024 across, so about 1,427 down, a texture no taller than 2,048 texels (a safe WebGL size)
- const {x0,z0,x1,z1}=PERTH_WEST_EXTENT;assert.equal(PERTH_WEST_CANVAS,1024);assert.ok(Math.round(PERTH_WEST_CANVAS*(z1-z0)/(x1-x0))<=2048);
+ // the canvas: as fine as a texture no taller than 2,048 texels (a safe WebGL size) lets it be, 1,469 across and 2,047 down (W4 review,
+ // 2026-11-13: the near drape was too coarse at 1,024)
+ const {x0,z0,x1,z1}=PERTH_WEST_EXTENT;assert.equal(PERTH_WEST_CANVAS,1469);assert.ok(Math.round(PERTH_WEST_CANVAS*(z1-z0)/(x1-x0))<=2048&&Math.round((PERTH_WEST_CANVAS+1)*(z1-z0)/(x1-x0))>2048,'the long side at the cap');
 });
 
 test('trees keep clear of the carriageways: no tree stands on one or overhangs its verge, and without the clearance rings some would',()=>{
@@ -150,7 +152,7 @@ test('ground another element draws itself is left uncovered: no cover triangle h
 
 /** A document whose canvases are plain objects, so the cover paints in Node: the canvases made are returned. */
 function stubCanvas():{made:{width:number;height:number}[];restore():void}{
- const made:{width:number;height:number}[]=[],ctx=new Proxy({},{get:()=>()=>undefined,set:()=>true});
+ const made:{width:number;height:number}[]=[],ctx=new Proxy({},{get:(_t,k)=>k==='createImageData'?(w:number,h:number)=>({data:new Uint8ClampedArray(w*h*4)}):()=>undefined,set:()=>true});
  (globalThis as {document?:unknown}).document={createElement:()=>{const c={width:0,height:0,getContext:()=>ctx};made.push(c);return c;}};
  return {made,restore(){delete (globalThis as {document?:unknown}).document;}};
 }
@@ -159,7 +161,9 @@ test('the west cover paints a canvas PERTH_WEST_CANVAS texels across with the he
  try{
   const g=buildPerthWestCover(ground,new Footprints([]),undefined,west);g.dispose();
   const d=buildWaverleyCityGround(ground,new Footprints([]),west.landuse,{});d.dispose();
-  assert.deepEqual(made.map(c=>[c.width,c.height]),[[PERTH_WEST_CANVAS,PERTH_WEST_CANVAS*2],[CANVAS_WIDTH,CANVAS_WIDTH*2]],'160 x 320 m: twice as tall as wide');
+  // the west's: its canvas, then the open land's mask, one pixel a node of the west tile (perth-west-cover.ts OPEN_LAND); the default has no mask
+  const G=WEST_TERRAIN.grids[0]!;
+  assert.deepEqual(made.map(c=>[c.width,c.height]),[[PERTH_WEST_CANVAS,PERTH_WEST_CANVAS*2],[G.nx,G.nz],[CANVAS_WIDTH,CANVAS_WIDTH*2]],'160 x 320 m: twice as tall as wide');
  }finally{restore();}
  assert.equal(CANVAS_WIDTH,2048);
 });
@@ -178,4 +182,37 @@ test('the gardens take the west\'s streets for their frame and its extent for th
  const w=decodePerthWest(westFile({residential:[[enc([[20,120],[140,120],[140,240],[20,240]],2)]]})),a=perthWestGardens(w);
  assert.notEqual(a,perthWestGardens(w));assert.deepEqual(a.rings,w.residential);assert.ok(a.plots.length>20);
  assert.ok(a.plots.every(p=>Math.abs((p.rot??0))<.01),'the one street across the block runs along x: the plots follow it');
+});
+
+// W4 review (2026-11-13, pt-west-broxden): the drape's flat lime farmland, its grey unmapped strips and its hard edge at the extent. The
+// open land, the tile's field nodes clear of building, is left to the tile's own patchwork: the drape is cut out over it.
+test('the open land is the tile\'s field nodes, less those within OPEN_LAND.clear of a building',()=>{
+ const G=WEST_TERRAIN.grids[0]!,field=WEST_TERRAIN.classNames.indexOf('field'),isField=(k:number)=>Number(WEST_TERRAIN.classes[k])===field;
+ const none=perthWestOpen([]);
+ assert.deepEqual([none.x0,none.z0,none.step,none.nx,none.nz],[G.x0,G.z0,G.step,G.nx,G.nz],'one flag a node of the tile');
+ let fields=0;for(let k=0;k<none.open.length;k++){assert.equal(none.open[k],isField(k)?1:0);fields+=none.open[k]!;}
+ assert.ok(fields>1000,`${fields} field nodes`);
+ // a 10 m block on a field node: the field nodes within 24 m of its outline close, those farther stay open
+ let at=-1;for(let k=0;k<none.open.length&&at<0;k++){const i=k%G.nx,j=Math.floor(k/G.nx);if(i>4&&j>4&&i<G.nx-5&&j<G.nz-5&&isField(k))at=k;}
+ const cx=G.x0+(at%G.nx)*G.step,cz=G.z0+Math.floor(at/G.nx)*G.step,ring:Pt[]=[[cx-5,cz-5],[cx+5,cz-5],[cx+5,cz+5],[cx-5,cz+5]];
+ const near=perthWestOpen([ring]),edge=(x:number,z:number)=>{let d=Infinity;for(let k=0;k<4;k++){const a=ring[k]!,b=ring[(k+1)%4]!,t=Math.max(0,Math.min(1,((x-a[0])*(b[0]-a[0])+(z-a[1])*(b[1]-a[1]))/((b[0]-a[0])**2+(b[1]-a[1])**2)));d=Math.min(d,Math.hypot(x-a[0]-t*(b[0]-a[0]),z-a[1]-t*(b[1]-a[1])));}return d;};
+ let closed=0;
+ for(let k=0;k<near.open.length;k++){
+  const d=edge(G.x0+(k%G.nx)*G.step,G.z0+Math.floor(k/G.nx)*G.step);
+  if(d<OPEN_LAND.clear-G.step/2&&isField(k)){assert.equal(near.open[k],0,`node ${k}, ${d.toFixed(1)} m from the block`);closed++;}
+  if(d>OPEN_LAND.clear+1)assert.equal(near.open[k],none.open[k],`node ${k}, ${d.toFixed(1)} m out`);
+ }
+ assert.ok(closed>=1,'the block closes the open land around it');
+});
+
+test('only an open drape is cut out: alphaTest and its own program with the open land, the opaque drape as before without',()=>{
+ const cut=buildPerthWestCover(ground,new Footprints([]),undefined,west),whole=buildPerthWestCover(ground,new Footprints([]),undefined,west,null);
+ try{
+  const a=coverOf(cut).material as THREE.MeshLambertMaterial,b=coverOf(whole).material as THREE.MeshLambertMaterial;
+  assert.equal(a.alphaTest,.5);assert.equal(a.customProgramCacheKey(),'ground-cover-open');
+  const sh={fragmentShader:THREE.ShaderLib.lambert.fragmentShader,vertexShader:'',uniforms:{}} as unknown as THREE.WebGLProgramParametersWithUniforms;
+  a.onBeforeCompile(sh,undefined as unknown as THREE.WebGLRenderer);
+  assert.ok(sh.fragmentShader.includes('diffuseColor.rgb /= max( sampledDiffuseColor.a, 0.004 );'),'the canvas\'s colour, un-premultiplied at the cut');
+  assert.equal(b.alphaTest,0);assert.notEqual(b.customProgramCacheKey(),'ground-cover-open');
+ }finally{cut.dispose();whole.dispose();}
 });

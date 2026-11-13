@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildPerthScene, perthGroundAt} from '../src/perth-scene.ts';
 import {buildPerthEastGround} from '../src/perth-east-ground.ts';
-import {PERTH_WEST_DRAWN, PERTH_WEST_GROUP} from '../src/perth-west-scene.ts';
+import {PERTH_WEST_DRAWN, PERTH_WEST_GROUP, WEST_FOG_FADE} from '../src/perth-west-scene.ts';
 import {PERTH_WEST_EXTENT} from '../../tools/perth-west-extent.ts';
 import {PERTH_DRAPE} from '../src/perth-city-features.ts';
 
@@ -86,4 +86,18 @@ test('budget: the scene inside 2M triangles and 1,000 draws, the extension insid
   let t = 0, d = 0;
   scene.west!.group.traverse(o => { if (!(o instanceof THREE.Mesh)) return; const g = o.geometry, n = (g.index ? g.index.count : g.getAttribute('position').count) / 3; t += o instanceof THREE.InstancedMesh ? o.count * n : n; d++; });
   assert.deepEqual({triangles: t, drawCalls: d}, scene.west!.stats, 'the stats are what is drawn');
+});
+
+// W4 review (2026-11-13, pt-west-from-station): from a low eye the far west blocks stood fully fogged, paler than the sky, as a jagged
+// band. The blocks and the crowns thin out (a dithered discard) as the fog takes them; the tile and the drape, the ground, do not.
+test('the west blocks and crowns thin out in the fog; the ground does not', () => {
+  const frag = (m: THREE.Material) => { const sh = {fragmentShader: THREE.ShaderLib.lambert.fragmentShader, vertexShader: THREE.ShaderLib.lambert.vertexShader, uniforms: {}} as unknown as THREE.WebGLProgramParametersWithUniforms; m.onBeforeCompile(sh, undefined as unknown as THREE.WebGLRenderer); return sh.fragmentShader; };
+  for (const name of WEST_FOG_FADE.meshes) for (const m of [mesh(scene.group, name).material].flat()) {
+    assert.match(m.customProgramCacheKey(), /\+perth-west-fog-fade$/, `${name}: its own program`);
+    const f = frag(m), at = f.indexOf('#include <fog_fragment>');
+    assert.ok(at >= 0 && f.indexOf('discard;', at) > at && f.includes(`smoothstep(${WEST_FOG_FADE.from.toFixed(4)}, ${WEST_FOG_FADE.to.toFixed(4)}, fogFactor)`), `${name}: discarded after the fog, by its factor`);
+  }
+  for (const name of ['perth-west-ground', 'perth-west-ground-cover']) for (const m of [mesh(scene.group, name).material].flat()) {
+    assert.doesNotMatch(m.customProgramCacheKey(), /fog-fade/, `${name} stays whole`); assert.ok(!frag(m).includes('discard;'), `${name}: no discard`);
+  }
 });
