@@ -15,6 +15,7 @@
 // fingers are left to the clip), pelvis > thighs > calves > feet > balls. Every controlled bone is given by its WORLD delta from the rest pose ("delta frame": the
 // bone's world orientation = delta * rest), so a head that should stay level is just delta = identity whatever the trunk does.
 const PI = Math.PI, D2R = PI / 180;
+export const HEEL_FLAT = 0.15;   // ankle height over thigh-plus-shank up to which a shoe counts as flat (makeBody: what a heel adds beyond it does not lengthen the stride)
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
 // ------------------------------------------------------------------------------------------------------------------------ vectors and quaternions
@@ -185,8 +186,12 @@ export function makeBody(rig, foot) {
     const sh = g('upperarm_' + sd), el = g('lowerarm_' + sd), wr = g('hand_' + sd), dU = nrm(sub(el, sh));
     B.arm[s] = { sd, sh, upper: len(sub(el, sh)), fore: len(sub(wr, el)), dU, abd0: Math.atan2(Math.abs(dU[0]), -dU[1]), tilt0: Math.atan2(-dU[2], -dU[1]) };
   }
-  B.hipY = g('thigh_l')[1]; B.hipHalf = Math.abs(g('thigh_l')[0]); B.Lh = B.hipY;
+  B.hipY = g('thigh_l')[1]; B.hipHalf = Math.abs(g('thigh_l')[0]);
   B.legLen = B.leg[0].l1 + B.leg[0].l2;
+  // Lh sizes the stride (step length, cadence, bob, clearance). It is the hip height, less whatever a high heel puts under the ankle: a heel is a rigid stilt, it raises the hip
+  // without lengthening the leg that swings. In flat shoes the ankle is 0.10 - 0.13 of the thigh-plus-shank above the sole (72 characters), so only what is beyond HEEL_FLAT comes
+  // off, and nobody in flat shoes changes. Knee-high stiletto boots (ankle 229 mm up, 0.32 of the leg) had steps sized for a 0.94 m leg on a 0.71 m one.
+  B.Lh = B.hipY - Math.max(0, B.leg[0].ankleH - HEEL_FLAT * B.legLen);
   B.shoulderHalf = Math.abs(B.arm[0].sh[0]);
   return B;
 }

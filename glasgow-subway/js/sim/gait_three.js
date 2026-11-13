@@ -13,7 +13,7 @@
 import * as G from './gait.js';
 
 const FOOT_FALLBACK = { heelBack: 0.06, toeFwd: 0.19 };
-const SHOE = /shoe|boot|sneaker/i;   // the meshes that are shoes: the same test as bodyfit.fitShoes and the recorder's rendered-shoe channel (tools/people_motion.html)
+const SHOE = /shoe|boot|sneaker|flats/i;   // the meshes that are shoes: the same test as bodyfit.fitShoes and the recorder's rendered-shoe channel (tools/people_motion.html)
 const REQUIRED = [...G.CONTROLLED, 'Root', 'hand_l', 'hand_r'];
 const clampN = (x, a, b) => Math.max(a, Math.min(b, x));
 const UPPER = 12;   // G.CONTROLLED: the first twelve bones (pelvis, spine, neck, head, clavicles, arms) are the upper body, the last eight (thighs, calves, feet, balls) the legs

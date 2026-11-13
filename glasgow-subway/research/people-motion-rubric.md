@@ -511,3 +511,28 @@ The same 30 people x 5 speeds x 4 scenarios, recorded afresh in the baseline's o
 | worst recording | woman_elder @1.6 m/s, 8.24 | woman_student @1.6 m/s, 8.35 |
 
 **Gate: not met at either level of detail.** Both levels fail the same four clauses: LEG's mean and 10th percentile, and the 10th percentiles of ARM and SMO. At LOD1 the TRN 10th-percentile clause, which the unfixed tree failed (6.6), is now met (9.5), because the item no longer reads a hop as a first step. Overall and the 55 points exceed 9 at both levels, and no recording is under 8. No steady recording's score changed (150 of 150 identical at each level). The whole-roster score has gone 9.26 / 9.23 (the gait made for the recordings, part 3), 9.37 / 9.33 (part 4) and 9.39 / 9.39 now; the last step is the removal of a misreading and of a hop, not a better first step (Round 2, part 7), and the independent reviewer has not seen it.
+
+### Round 2, part 8: the roster grew from 30 to 72, measured afresh (and two things it exposed)
+Other work on the site took the roster from 30 people to 72 (teens, young adults, elders, children, staff; heels, trainers, flats, boots, hats). **Every whole-roster figure above this entry is for the old 30 and no longer describes the game's crowd.** This entry re-measures all 72 on the same instrument (`dd0b860349c2`, untouched), 648 recordings per level of detail. **The reviewer has seen none of it.**
+
+**As found** (before any change): overall 9.34 at LOD0 and 9.33 at LOD1, the 55 points 9.11 and 9.05. The 30 old people score as before (mean of their steady scores 9.38 / 9.35); the 42 new ones a tenth lower (9.27 / 9.25). One person was far off: `adult_heel_boots` (knee-high stiletto boots), mean 7.85 / 7.79, worst recording 6.3. The filmstrip shows why: she walked in a crouch, knees bent 54-76 degrees at 1.2 m/s, pelvis 9-15 cm below her standing height.
+
+**Change 1, in the game: a heel does not lengthen the stride** (`gait.js` `makeBody`, `HEEL_FLAT`). The stride was sized by hip height. Her boots put the ankle 229 mm above the floor (0.32 of thigh plus shank; flat shoes are 0.10-0.13 over the 72), so her steps were sized for a 0.94 m leg on a 0.71 m one, the legs could not reach, and the pelvis was lowered to let them. Now the height beyond 0.15 of the leg is not counted. Nobody in flat shoes changes (their recordings score identically); the three in heels do. Her pelvis drop at 1.2 m/s went from 88-153 mm to 50-105 mm, and her scores at LOD0 from 8.48 / 7.66 / 6.81 to 8.85 / 8.27 / 7.52 at 0.8 / 1.2 / 1.6 m/s. **It is a partial fix.** She still walks lower than she should (a person in flat shoes drops 34-75 mm), and at 1.9 m/s she scores worse than before (6.29 -> 6.07 at LOD0, 6.89 -> 5.78 at LOD1), partly because her cadence is now 12 % above what the instrument expects for her hip height. I tried also making the heeled foot roll through a smaller angle; it made the crouch worse and is not in. What still holds the pelvis down is a sharp notch in the legs' reach just after heel strike that flat shoes do not have; I have not found its cause. Tests: `js/sim/gait_heel.test.mjs` (3).
+
+**Change 2, in the game and the recorder: ballet flats are shoes.** Four new people wear `BalletFlats`, which the pattern `/shoe|boot|sneaker/` did not match: the gait had no shoe profile for them (it fell back to the three-point foot), `fitShoes` skipped them, and the recorder judged their floor on the gait's own landmarks. The pattern is now `/shoe|boot|sneaker|flats/` in all three places (`gait_three.js`, `bodyfit.js`, `tools/people_motion.html`). This is a change to the recorder, not to `motion_metrics.mjs`; its effect is that those four are now judged on the rendered shoe, and their scores moved by -0.05 to +0.9 per recording, mostly up.
+
+**After both** (72 people; before -> after): LOD0 overall 9.34 -> 9.36, the 55 points 9.11 -> 9.13; LOD1 9.33 -> 9.35 and 9.05 -> 9.08. 327 of 360 steady recordings at LOD0 and 325 at LOD1 score identically; every one that changed belongs to the seven people named above, none to the old 30.
+
+| category | LOD0 mean (p10) | LOD1 mean (p10) |
+|---|---|---|
+| GRD | 9.5 (8.9) | 9.4 (8.7) |
+| LEG | **7.7 (5.8)** | **7.5 (5.3)** |
+| PEL | 9.8 (9.4) | 9.9 (9.8) |
+| ARM | 8.9 (**7.0**) | 9.0 (**7.1**) |
+| SMO | 8.8 (**7.0**) | 8.9 (**7.4**) |
+| TRN | 9.9 (9.7) | 9.9 (9.7) |
+| STR, TIM, HEA, RNG | 10.0 | 10.0 |
+
+**Gate: not met, and further off than on the old roster.** The same four clauses fail (LEG's mean and 10th percentile, the 10th percentiles of ARM and SMO), LEG and ARM by more than before, and two new ones: a recording under 8 (`adult_heel_boots`, five of her recordings at each level), and the floor not judged on the rendered shoe for everybody. That last one is the recorder's own rule refusing three people in tall boots (`adult_beret`, `adult_heel_boots`, `adult_lusekofta`): under 70 % of the boot's vertices are on the foot bones because the shaft is on the calf. The rule is mine and is too strict for a tall boot; I have left it alone rather than loosen a check after seeing what it rejects, so those three are judged on the gait's landmarks.
+
+*To reproduce:* `node tools/people_motion.mjs --people all --items --json out.json --rec DIR` (and `--detail 1`).
