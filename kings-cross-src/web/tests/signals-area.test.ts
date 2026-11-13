@@ -30,6 +30,20 @@ test('an area\'s own ref rule binds its heads to its berths, and its feed drives
   layer.dispose();
 });
 
+test('a ref rule may keep a letter its plates space off: its capture groups join into the berth', () => {
+  // the shape of a plate that reads "Z 123" for berth Z123 (Edinburgh's plates read so); synthetic area only
+  const spaced: SignalRefRule = { berth: /^(Z)\s*(\d{3})[A-Z]?$/, prefixed: /^Z\s*\d{3}[A-Z]?$/, prefix: 'Z' };
+  assert.equal(signalRefBerth('Z 123', spaced), 'Z123');
+  assert.equal(signalRefBerth('Z123', spaced), 'Z123');
+  assert.equal(signalRefBerth('Z 123B', spaced), 'Z123', 'a variant suffix is the same berth');
+  assert.equal(signalRefBerth('Z 123BR', spaced), undefined, 'a two-letter suffix is another object');
+  assert.equal(signalRefBerth('ZZ 123', spaced), undefined);
+  const layer = createSignals({ attribution: 'synthetic', signals: [head({ ref: 'Z 123' })] }, new THREE.Scene(), { area: 'ZZ', refRule: spaced });
+  layer.setTable(table()); layer.apply(row('04')); assert.equal(layer.signals()[0]!.state, 'proceed', 'the spaced plate drives its berth');
+  layer.dispose();
+  assert.ok(SIGNAL_REF_RULES.EB, 'EB has a ref rule');
+});
+
 test('an area without a ref rule binds no head by its ref, and never borrows King\'s Cross\'s', () => {
   assert.equal(SIGNAL_REF_RULES.ZZ, undefined);
   for (const ref of ['ZZ Z123', 'YA 1004', '1004']) {

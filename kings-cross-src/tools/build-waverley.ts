@@ -76,7 +76,7 @@ export async function buildStationOsm({tiles,site,rawDir,out,agent}:{tiles:reado
 /**
  * The public signal overlay of a station scene: every OSM railway=signal node inside the site, on the scene's own track
  * (the graph its page and its relearn build, waverleyTrackData), through buildSignalOverlay as a through station.
- * OSM fields only: no berth is named (no public ref rule is known for the area), no review ledger applies.
+ * OSM fields only: no berth is named here (the page binds a ref to its berth at runtime, by SIGNAL_REF_RULES), no review ledger applies.
  */
 export function buildStationSignalOverlay(elements:readonly WaverleyRawElement[],packedScene:unknown,site:StationArea=WAVERLEY_AREA) {
   const track=waverleyTrackData(decodeWaverleyAnchorScene(packedScene));

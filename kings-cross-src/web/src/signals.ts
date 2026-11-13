@@ -112,7 +112,10 @@ export interface DrawnSignal {
  * the private anchors, or stay unbound).
  */
 export interface SignalRefRule {
-  /** A ref, with or without its panel prefix and with an optional variant suffix, to its berth (capture group 1). */
+  /**
+   * A ref, with or without its panel prefix and with an optional variant suffix, to its berth: its capture groups
+   * joined, so a berth can keep a letter the ref spaces off from its number.
+   */
   berth: RegExp;
   /** Only the fully prefixed form: an exact identity even where OSM leaves the signal's type untagged. */
   prefixed: RegExp;
@@ -121,11 +124,15 @@ export interface SignalRefRule {
 }
 export const SIGNAL_REF_RULES: Readonly<Record<string, SignalRefRule>> = {
   Y9: { berth: /^(?:YA\s*)?(\d{4})[A-Z]?$/i, prefixed: /^YA\s*\d{4}[A-Z]?$/i, prefix: 'YA' },
+  // Edinburgh's OSM plates read "E 489" or "E489": the berth is the letter and the three digits, unspaced. A two-letter
+  // suffix (a banner repeater, "BR") and the "EH" plates are not bound. Matched against the EB feed's berths at runtime.
+  EB: { berth: /^(E)\s*(\d{3})[A-Z]?$/, prefixed: /^E\s*\d{3}[A-Z]?$/, prefix: 'E' },
 };
 
 /** A suffix is a signal variant, not a different TD berth. Foreign area prefixes stay separate. */
 export function signalRefBerth(ref: string | undefined, rule: SignalRefRule | null = SIGNAL_REF_RULES.Y9!): string | undefined {
-  return rule ? ref?.match(rule.berth)?.[1] : undefined;
+  const match = rule ? ref?.match(rule.berth) : undefined;
+  return match ? match.slice(1).filter((part) => part !== undefined).join('') || undefined : undefined;
 }
 
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
