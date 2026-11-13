@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import * as THREE from 'three';
+import type { LampTrain } from './train-lamp-pool.ts';
 import { releaseSceneGpu } from './station-resources.ts';
 import type { StationView } from './station-transition.ts';
 import type { WaverleyAnchorScene } from '../../core/waverley-anchors.ts';
@@ -32,7 +33,7 @@ export interface WaverleyView {
   groundAttribution?: string;
   climate?: SceneWeather;
   model?: ReturnType<WaverleyModelModule['buildWaverleyScene']>;
-  live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown };
+  live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown; lampTrains?(): readonly LampTrain[] };
   view(aspect: number): StationView;
   dispose(): void;
 }

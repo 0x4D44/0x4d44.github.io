@@ -32,6 +32,7 @@ import { approachPlatforms, boardRows, createBoard } from './board.ts';
 import type { BoardRows, BoardTrain } from './board.ts';
 import { createLiveTrains, createTrainKinds } from './trains-live.ts';
 import { TrainLampLights } from './train-lamp-pool.ts';
+import { HeadlampFrame } from './train-headlamp-light.ts';
 import { createTrainInteriors } from './train-interior.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
@@ -232,6 +233,8 @@ function start(): void {
   // given the trains (the sample trains or the live ones, whichever `trains` holds) once a frame. The Waverley scene's trains have their own (edinburgh-live.ts).
   const lampLights = new TrainLampLights();
   scene.add(lampLights.group);
+  // The light the headlamps throw on the walls (train-headlamp-light.ts): this loop is the one writer of its shared uniforms, once a frame, for the trains of the scene on show.
+  const headlamps = new HeadlampFrame();
   let feed: TrainFeed | null = null;
   let timetable: ReturnType<typeof createScheduleFeed> | null = null;
   let mode: 'demo' | 'live' | 'replay' | 'none' = settings.mode === 'auto' ? 'demo' : settings.mode;
@@ -258,7 +261,7 @@ function start(): void {
     stationSuffix: id => (id === 'edinburgh-waverley' || id === 'perth' ? stations.remote()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
-  Object.assign(kx, { stations, stPancras, lampLights });
+  Object.assign(kx, { stations, stPancras, lampLights, headlamps });
   // The reader's orbit moves stay above the ground of the scene on show (camera-ground.ts, ALM-BUG-FLU-00020): London's drawn terrain
   // (the flat plane without one), or the remote station's; an empty placeholder scene has none and is left unclamped.
   const londonGround: GroundAt = (x, z) => parts.terrain ? parts.terrain.heightAt(x, z) : GROUND_Y;
@@ -337,6 +340,8 @@ function start(): void {
       const toSun = climate.atmosphere.keyDirection();
       if (shown === scene && sunShadow && toSun) { if (added) sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
     }
+    // after the trains are posed, the camera has moved and the sky has set the night: the headlamps of the scene on show (none for a scene with no trains of its own)
+    headlamps.update(shown === scene ? trains : stations.state().selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.() ?? [] : [], camera, dt);
     grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud); // (the concourse's fill is London's)
     renderer.render(shown, camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's

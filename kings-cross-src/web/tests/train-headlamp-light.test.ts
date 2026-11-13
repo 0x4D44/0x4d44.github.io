@@ -1,6 +1,7 @@
 // The light the headlamps throw on what stands in front of them (web/src/train-headlamp-light.ts): one lamp's light, run in the GLSL interpreter (web/tests/glsl.ts), the
 // pure choice of which lamps get the slots, and the writer of the shared uniforms.
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import { HEADLAMP_GLSL, HEADLAMP_LIGHT, HEADLAMP_SLOTS, HeadlampFrame, headlampCandidates, headlampUniforms, selectHeadlamps, writeHeadlamps } from '../src/train-headlamp-light.ts';
@@ -182,3 +183,17 @@ test('writeHeadlamps and HeadlampFrame: the slots go into the shared uniforms at
   assert.equal(headlampUniforms.uHeadlampPos.value, uniforms, 'the same arrays every time: a uniform\'s value, never a new program');
 });
 
+test('main.ts is the one writer of the headlamps\' uniforms, once a frame, before the render; nothing else in the page writes them', () => {
+  const src = new URL('../src/', import.meta.url);
+  const files = readdirSync(src).filter((f) => f.endsWith('.ts'));
+  const writers = files.filter((f) => /uHeadlamp(Count|Pos|Aim)\.value\s*(\[[^\]]*\])?\s*(=|\.set\(|!\.set\()/.test(readFileSync(new URL(f, src), 'utf8')));
+  assert.deepEqual(writers, ['train-headlamp-light.ts'], 'only the module itself sets the values (writeHeadlamps)');
+  const callers = files.filter((f) => f !== 'train-headlamp-light.ts' && /new HeadlampFrame\(|writeHeadlamps\(/.test(readFileSync(new URL(f, src), 'utf8')));
+  assert.deepEqual(callers, ['main.ts'], 'and only main.ts drives it');
+  const main = readFileSync(new URL('main.ts', src), 'utf8');
+  const loop = main.slice(main.indexOf('renderer.setAnimationLoop('));
+  assert.equal(loop.split('headlamps.update(').length - 1, 1, 'once a frame');
+  const order = ['controls.update();', 'climate.update(', 'headlamps.update(', 'renderer.render('].map((needle) => loop.indexOf(needle));
+  assert.ok(order.every((i) => i >= 0), `${order}`);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'after the camera has moved and the sky has set the night, before the render');
+});

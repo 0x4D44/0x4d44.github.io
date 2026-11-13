@@ -20,6 +20,7 @@ import { buildNeutralTrain } from './train-neutral.ts';
 import { EDINBURGH_FLEET, buildEdinburghTrain, disposeEdinburghTrain } from './edinburgh-fleet.ts';
 import { carPoses, standingAt } from './trains-live.ts';
 import { TrainLampLights } from './train-lamp-pool.ts';
+import type { LampTrain } from './train-lamp-pool.ts';
 import type { Pt } from '../../core/geo.ts';
 import { createAreaReplay } from './area-replay.ts';
 import { backoffMs, createLiveFeed, parseRecording, relayReachable } from './feed.ts';
@@ -152,6 +153,7 @@ export function createEdinburghLive(options: {
   const labels = options.parent.ownerDocument.createElement('div'); labels.className = 'edinburgh-train-labels';
   labels.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden'; options.parent.append(labels);
   const drawn = new Map<number, { group: THREE.Group; label: HTMLSpanElement }>();
+  const lampTrains: LampTrain[] = [];
   let session: ReturnType<typeof createEdinburghMotion> | undefined, feed: TrainFeed | undefined;
   let replay: ReturnType<typeof createAreaReplay> | undefined, disposed = false, loading = false, retryAt = 0, attempt = 0;
   let connection = 'live trains unavailable; private EB anchors required', error: string | undefined;
@@ -270,11 +272,14 @@ export function createEdinburghLive(options: {
     updateLamps(views);
     // one accumulate-then-commit for the scene's trains, after their cars are posed and their lamps set
     lights.begin();
-    for (const view of views) { const item = drawn.get(view.id); if (item) lights.add(item.group, view.opacity); }
+    lampTrains.length = 0;
+    for (const view of views) { const item = drawn.get(view.id); if (item) { lights.add(item.group, view.opacity); lampTrains.push({ group: item.group, opacity: view.opacity }); } }
     lights.commit();
   };
   return {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
+    /** the trains drawn at the last frame, as the lamps see them (main.ts gives them to the headlamps' light, train-headlamp-light.ts) */
+    lampTrains: (): readonly LampTrain[] => lampTrains,
     state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [], signals }),
     status: (): string => {
       const heads = signals?.counts();
