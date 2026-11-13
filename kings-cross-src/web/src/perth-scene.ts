@@ -24,7 +24,7 @@ import type {PerthEra} from './perth-station-structure.ts';
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
-import {PERTH_EAST_FILE} from './perth-east-ground.ts';
+import {PERTH_EAST, PERTH_EAST_FILE} from './perth-east-ground.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
 export {PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, perthBuildingHeight} from './perth-city.ts';
 // Separate lazy assets: neither OSM nor Scottish terrain enters the London entry chunk.
@@ -75,6 +75,8 @@ export interface PerthScene {
   terrain: Terrain;
   /** Drawn ground beyond `terrain.extent` (the city's east patch, perth-east-ground.ts): the world's flat plane is carved there too. */
   terrainMore: Extent[];
+  /** The drawn ground's height over `terrain` and the east patch (as perth-east-ground.ts seams them), for the camera clamp (camera-ground.ts). */
+  groundAt(x: number, z: number): number;
   stats: {triangles: number; drawCalls: number; platforms: number; buildings: number; roofs: number; sleepers: number; bridgeSegments: number};
   /** The mapped city blocks drawn, in data order: not those standing on the railway. */
   buildingIds: string[];
@@ -84,6 +86,13 @@ export interface PerthScene {
 }
 
 /** Lazy import contract: const {buildPerthScene}=await import('./perth-scene.ts'); const p=buildPerthScene(); scene.add(p.group); */
+/** The drawn ground over the main terrain and the east patch: the patch's own DTM east of the seam (perth-east-ground.ts reads the main
+ *  ground on the seam itself), the main drawn ground elsewhere (its `groundY` beyond both). */
+export function perthGroundAt(main: Pick<Terrain, 'heightAt' | 'extent'>, east: Pick<Terrain, 'heightAt' | 'extent'> = PERTH_EAST): (x: number, z: number) => number {
+  const E = east.extent;
+  return (x, z) => x > E.x0 && x <= E.x1 && z >= E.z0 && z <= E.z1 && !(x <= main.extent.x1 && z <= main.extent.z1) ? east.heightAt(x, z) : main.heightAt(x, z);
+}
+
 export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   const data = options.data ?? unpackWaverleyScene(dataFile);
   const contextTerrain = options.terrain ?? createTerrain(terrainFile as unknown as TerrainFile);
@@ -120,6 +129,6 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   if (options.lighting !== false) addWaverleyLights(group);
   let disposed = false;
   return {group, parts, origin: {...data.origin}, attribution: `${data.attribution}; ${terrainFile.attribution}`, groundAttribution: terrainFile.attribution,
-    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}], stats, buildingIds, heightBasis,
+    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}], groundAt: perthGroundAt(ground), stats, buildingIds, heightBasis,
     dispose() { if (disposed) return; disposed = true; group.removeFromParent(); for (const g of geometries) g.dispose(); for (const m of ownedMaterials) m.dispose(); group.clear(); }};
 }

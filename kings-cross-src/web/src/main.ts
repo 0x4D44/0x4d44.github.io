@@ -35,6 +35,8 @@ import { TrainLampLights } from './train-lamp-pool.ts';
 import { createTrainInteriors } from './train-interior.ts';
 import { createTrainTooltip, trainTip } from './tooltip.ts';
 import { addTerrain, addWorld, GROUND_Y } from './world.ts';
+import { bindGroundClamp } from './camera-ground.ts';
+import type { GroundAt } from './camera-ground.ts';
 import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
 import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
@@ -257,6 +259,14 @@ function start(): void {
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
   Object.assign(kx, { stations, stPancras, lampLights });
+  // The reader's orbit moves stay above the ground of the scene on show (camera-ground.ts, ALM-BUG-FLU-00020): London's drawn terrain
+  // (the flat plane without one), or the remote station's; an empty placeholder scene has none and is left unclamped.
+  const londonGround: GroundAt = (x, z) => parts.terrain ? parts.terrain.heightAt(x, z) : GROUND_Y;
+  bindGroundClamp(controls, () => {
+    if (stations.activeScene() === scene) return londonGround;
+    const model = stations.remote()?.model, terrain = model?.terrain as { heightAt?: GroundAt } | undefined;
+    return model?.groundAt ?? (typeof terrain?.heightAt === 'function' ? terrain.heightAt : null);
+  });
   const counts = `${data.rails.length} track sections · ${data.platforms.length} platforms · ${data.buildings.length} buildings`;
   const paintStatus = (): void => {
     const label = mode === 'replay' ? `replay of ${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)} at ${settings.speed}x`

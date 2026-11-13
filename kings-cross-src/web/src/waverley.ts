@@ -17,7 +17,9 @@ export function createWaverleyPlaceholderScene(): { scene: THREE.Scene; dispose:
 }
 
 export interface WaverleyModelModule {
-  buildWaverleyScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group> };
+  buildWaverleyScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group>;
+    /** The drawn ground's height wherever it is drawn (beyond `terrain` too), for the camera clamp (camera-ground.ts). */
+    groundAt?(x: number, z: number): number };
 }
 export interface WaverleyView {
   scene: THREE.Scene;

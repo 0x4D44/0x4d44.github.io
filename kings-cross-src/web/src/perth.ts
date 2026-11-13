@@ -7,7 +7,9 @@ import { createWaverleyPlaceholderScene, waverleyView } from './waverley.ts';
 import type { WaverleyView } from './waverley.ts';
 
 export interface PerthModelModule {
-  buildPerthScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group> };
+  buildPerthScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group>;
+    /** The drawn ground's height wherever it is drawn (beyond `terrain` too), for the camera clamp (camera-ground.ts). */
+    groundAt?(x: number, z: number): number };
 }
 /** The loaded Perth scene: the same shape as Waverley's, so the switcher, the weather and the capture rig treat both alike. */
 export type PerthView = WaverleyView;
