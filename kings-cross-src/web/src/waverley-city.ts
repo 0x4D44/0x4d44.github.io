@@ -46,6 +46,13 @@ export const TINY_CLIFF_IDS=['way/258095237','way/258095246'] as const;
 export const onCliff=(b:Parameters<typeof tinyBlock>[0],ground:Pick<Terrain,'heightAt'>):boolean=>tinyBlock(b)&&slopeOf(ground,...centre([...b.outer]))>TINY_CLIFF_DEG;
 export const WAVERLEY_CITY_OMIT_IDS=[data.scott.id,...data.scott.parts.map(p=>p.id),...MONUMENT_OMIT_IDS,...TINY_CLIFF_IDS];
 const ringOf=(p:number[][]):Pt[]=>p.map(q=>[q[0],q[1]]);
+/** A block's own tint (walls) and slate shift (roof), from a hash of its id: the walls 0.8-1.02 of the city stone, a little warmer or cooler; the
+ *  roof 0.82-1.06 of the shared slate (ASSUMED, R-wv3-c: weathered grey slate, some darker, some bluer). Shared with the Perth west blocks (perth-west-buildings.ts). */
+export function cityBlockColours(id:string):{color:Rgb;roofColor:Rgb}{
+ let hash=0;for(const c of id)hash=(hash*31+c.charCodeAt(0))>>>0;
+ const tone=.8+(hash%23)*.01,warm=((hash>>>5)%7)*.008,roofTone=.82+((hash>>>9)%13)*.02;
+ return {color:[tone*(1+warm),tone,tone*(.97-warm)],roofColor:[roofTone,roofTone,roofTone*1.02]};
+}
 export interface WaverleyCityPart {group:THREE.Group;stats:{triangles:number;drawCalls:number};omitBuildingIds:string[];dispose():void}
 export interface WaverleyCityFabric extends WaverleyCityPart {/** The ids of the mapped blocks drawn, in data order. */ buildingIds:string[];/** How many drawn blocks stand at an OSM, a LiDAR (waverley-city-heights.ts) or an ASSUMED height. */ heightBasis:{OSM:number;LiDAR:number;ASSUMED:number}}
 
@@ -71,9 +78,7 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   buildingIds.push(b.id);
   const h=(style?.height??cityHeight)(b);heightBasis[h.basis]++;
   const base=ground.rangeUnder(b.outer,4).min,plan=roofPlan({...b,height:h.height},base);
-  let hash=0;for(const c of b.id)hash=(hash*31+c.charCodeAt(0))>>>0;
-  const tone=.8+(hash%23)*.01,warm=((hash>>>5)%7)*.008,color:Rgb=[tone*(1+warm),tone,tone*(.97-warm)];
-  const roofTone=.82+((hash>>>9)%13)*.02,roofColor:Rgb=[roofTone,roofTone,roofTone*1.02];
+  const {color,roofColor}=cityBlockColours(b.id);
   // One foundation plane, ASSUMED 0.15m rendering sink. Elevated OSM parts keep their real
   // min_height void; terrain never pulls individual wall corners into shards.
   const planes=plan.shape==='planes',outer=planes?withCreases(b.outer,plan.creases):b.outer,holes=planes?b.holes.map(h=>withCreases(h,plan.creases)):b.holes;
