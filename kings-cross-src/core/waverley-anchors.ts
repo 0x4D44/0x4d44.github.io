@@ -49,18 +49,44 @@ const layer = (r: WaverleyAnchorRail): number => Number.isFinite(Number(r.tags.l
 const key = (p: Pt, level: number): string => JSON.stringify([p[0], p[1], level]);
 const on = (tag: string | undefined): boolean => tag !== undefined && tag !== 'no';
 
+/** The layer a vertex joins the graph on. A vertex is its own coordinate+layer identity, with one exception, the
+ * structure end: where a tunnel or bridge way ends (a portal, an abutment), OSM splits the way on the shared node and
+ * the layer changes there, so the export holds the same coordinate at two layers, both as way ends. Such a vertex joins
+ * on its lowest layer, so the track runs through the portal (ALM-BUG-FLU-00018). It joins only when every tunnel or
+ * bridge way at the coordinate ends there and every layer present has a way ending there: a bridge or tunnel passing
+ * over or under track keeps its own layer even where an interior vertex lands on the same coordinate. */
+function structureEnds(rails: WaverleyAnchorRail[]): Map<string, number> {
+  const at = new Map<string, { layer: number; end: boolean; structure: boolean }[]>();
+  for (const r of rails) r.path.forEach((p, i) => {
+    const k = JSON.stringify(p), list = at.get(k) ?? [];
+    list.push({ layer: layer(r), end: i === 0 || i === r.path.length - 1, structure: on(r.tags.tunnel) || on(r.tags.bridge) });
+    at.set(k, list);
+  });
+  const joined = new Map<string, number>();
+  for (const [k, list] of at) {
+    const layers = new Set(list.map(v => v.layer));
+    if (layers.size < 2 || !list.some(v => v.structure) || list.some(v => v.structure && !v.end)) continue;
+    if ([...layers].every(l => list.some(v => v.layer === l && v.end))) joined.set(k, Math.min(...layers));
+  }
+  return joined;
+}
+
 /** Local node IDs represent exact coordinate+layer identities, never original OSM nodes.
  * No segment intersection, proximity snap or invented switch joins separate paths.
- * Layer changes remain disconnected: source node IDs were removed by the public export. */
+ * Layer changes stay disconnected except at a structure end (structureEnds): source node IDs were removed by the public export. */
 export function waverleyTrackData(scene: WaverleyAnchorScene): KxData {
+  const ends = structureEnds(scene.rails), level = (p: Pt, r: WaverleyAnchorRail): number => ends.get(JSON.stringify(p)) ?? layer(r);
+  // Ids are numbered over every coordinate+layer identity, joined or not, so a join leaves every other node's id as it
+  // was (stored berth anchors name nodes by id); a joined vertex keeps its lowest layer's id and the others go unused.
   const coordinates = new Map<string, { point: Pt; layer: number }>();
   for (const rail of scene.rails) for (const p of rail.path) coordinates.set(key(p, layer(rail)), { point: p, layer: layer(rail) });
   const sorted = [...coordinates].sort((a, b) => a[1].point[0] - b[1].point[0] || a[1].point[1] - b[1].point[1] || a[1].layer - b[1].layer);
   const ids = new Map(sorted.map(([k], i) => [k, i + 1]));
+  const kept = sorted.map(([, v], i) => [v, i + 1] as const).filter(([{ point, layer: l }]) => (ends.get(JSON.stringify(point)) ?? l) === l);
   const rails = [...scene.rails].sort((a, b) => a.id.localeCompare(b.id));
   if (new Set(rails.map(r => r.id)).size !== rails.length) throw new Error('Duplicate Waverley rail identity');
-  return { attribution: scene.attribution, origin: scene.origin, nodes: sorted.map(([_, { point }], i) => [i + 1, point[0], point[1]]),
-    rails: rails.map((r, i) => ({ id: i + 1, nodes: r.path.map(p => ids.get(key(p, layer(r)))!), layer: layer(r), tunnel: on(r.tags.tunnel), bridge: on(r.tags.bridge),
+  return { attribution: scene.attribution, origin: scene.origin, nodes: kept.map(([{ point }, id]) => [id, point[0], point[1]]),
+    rails: rails.map((r, i) => ({ id: i + 1, nodes: r.path.map(p => ids.get(key(p, level(p, r)))!), layer: layer(r), tunnel: on(r.tags.tunnel), bridge: on(r.tags.bridge),
       service: (['siding', 'crossover'].includes(r.tags.service ?? '') ? r.tags.service : r.tags.service ? 'other' : 'main') as RailService,
       ...(r.tags.ref ? { ref: r.tags.ref } : {}) })),
     platforms: scene.platforms.map((p, i) => ({ id: i + 1, ref: p.ref, pts: p.path, layer: layer(p) })), buffers: [], switches: [], signals: [], buildings: [] };
@@ -163,7 +189,7 @@ export interface WaverleyAnchorOptions {
 const text = (row: SmartRow, k: string): string => String(row[k] ?? '').trim();
 
 export function buildWaverleyAnchors(scene: WaverleyAnchorScene, smartRows: SmartRow[], observedRecords: RecordingEvent[] | RecordingEvent[][] = [], options: WaverleyAnchorOptions = {}): WaverleyAnchorMap {
-  const map: WaverleyAnchorMap = { area: 'EB', sources: [scene.attribution, 'Exact TD EB / STANME EDINBURGH associations: arrivals A/C TOBERTH; departures B/D FROMBERTH', 'Coordinate graph uses exact coordinate+layer identities; source node IDs unavailable; no proximity joins; layer changes disconnected', 'ASSUMED geometry adjacency screening, representative platform point and full platform length uncertainty; no buffer or approach placements'], anchors: [], unmapped: [], platformAssociations: [], provisionalHeadings: [] };
+  const map: WaverleyAnchorMap = { area: 'EB', sources: [scene.attribution, 'Exact TD EB / STANME EDINBURGH associations: arrivals A/C TOBERTH; departures B/D FROMBERTH', 'Coordinate graph uses exact coordinate+layer identities; source node IDs unavailable; no proximity joins; layer changes disconnected except at tunnel/bridge way ends', 'ASSUMED geometry adjacency screening, representative platform point and full platform length uncertainty; no buffer or approach placements'], anchors: [], unmapped: [], platformAssociations: [], provisionalHeadings: [] };
   const inventory = new Map<string, number>();
   for (const { e } of observedRecords.flat() as RecordingEvent[]) {
     if (e.area !== 'EB') continue;
