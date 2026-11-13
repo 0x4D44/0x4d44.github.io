@@ -22,6 +22,9 @@ import data from './data/waverley-city-landuse.json' with {type:'json'};
  *  sagging the full tolerance still lies on the true ground. Measured against the drawn terrain mesh (0.08 m) at 18,900 points, 0.25/0.25
  *  leaves it under or within 2 cm at 10 (0.15/0.15 did at 22), and the polygon offset covers those; it costs 8,500 fewer triangles. */
 export const DRAPE_LIFT=.25,DRAPE_TOLERANCE=.25;
+/** The cover's canvas is this many texels across the extent's x span (its height follows the extent's aspect), unless a scene sets `canvasWidth`:
+ *  about 1 m a texel over Waverley's 2,000 m, but a taller extent (Perth's west extension, 1,600 x 2,832 m) would paint 3,625 rows at this width. */
+export const CANVAS_WIDTH=2048;
 /** The drape's facets still cut under the drawn ground between their corners where the ground bends (round 4: by 4 cm on Castle Rock's
  *  summit face, which from Princes Street's grazing view left the bare terrain showing as a pale slab). So each facet is sampled every
  *  `sample` m against the drawn surface and, where the surface comes within `clear` m of it, its corners are lifted by the shortfall.
@@ -210,9 +213,9 @@ export const roadColour=(width:number)=>width>=8.5?GROUND_COLOURS.road:width>=5&
 export interface GardenPaint {rings:Ring[][];plots:GardenRect[];crowns:{x:number;z:number;r:number}[];hedge:number;hedgeTone:string;crownTone:string;/** rects painted under the land use, over the bare paving (Perth's yards and back greens) */patches?:GardenRect[]}
 /** A painted rect: corner (x, z), w along x and d along z before it is turned `rot` radians about its centre. */
 export interface GardenRect {x:number;z:number;w:number;d:number;tone:string;rot?:number}
-function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint):THREE.CanvasTexture|null{
+function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:number,z:number)=>number,LANDUSE:Landuse,TONES:readonly string[]=ROCK_TONES,WATER_PAINT:string=GROUND_COLOURS.water,gardens?:GardenPaint,canvasWidth:number=CANVAS_WIDTH):THREE.CanvasTexture|null{
  if(typeof document==='undefined')return null;
- const {x0,z0,x1,z1}=LANDUSE.extent,W=2048,H=Math.round(2048*(z1-z0)/(x1-x0)),s=W/(x1-x0);
+ const {x0,z0,x1,z1}=LANDUSE.extent,W=canvasWidth,H=Math.round(W*(z1-z0)/(x1-x0)),s=W/(x1-x0);
  const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');if(!g)return null;
  const px=(p:Pt):[number,number]=>[(p[0]-x0)*s,(p[1]-z0)*s];
  const path=(rings:readonly Ring[])=>{g.beginPath();for(const r of rings){r.forEach((p,i)=>i?g.lineTo(...px(p)):g.moveTo(...px(p)));g.closePath();}};
@@ -284,7 +287,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint;/** texels across the extent's x span (CANVAS_WIDTH by default) */canvasWidth?:number;/** draw the mapped trees (natural=tree nodes) with the massed trees (coarse crowns, treated as wood trees: bare foliage on the ground when `woodTrunks` is false) instead of in their own crown and trunk draws, two draws fewer (Perth's west, where there are 6) */mappedWithMassed?:boolean}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -297,7 +300,7 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  foldUp(pos,keep,ground);seatDrape(pos,keep,ground);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('uv',new THREE.BufferAttribute(uv,2));g.setIndex(keep);g.computeVertexNormals();geometries.push(g);
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
- const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens);
+ const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens,options.canvasWidth);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
  // a constant pull forward only: the drape is seated over the drawn ground (seatDrape), and a depth-slope factor would pull the cover over
  // low roofs and building bases scene-wide (round 5)
@@ -311,13 +314,13 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
   const fineG=new THREE.SphereGeometry(1,6,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
-  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub'&&(options.woodTrunks!==false||t.kind==='tree'||t.hanging));
+  const own=!options.mappedWithMassed,mapped=trees.filter(t=>t.kind==='tree'&&own),massed=trees.filter(t=>t.kind!=='tree'||!own),trunked=trees.filter(t=>t.kind!=='scrub'&&(options.woodTrunks!==false||t.kind==='tree'&&own||t.hanging));
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);
    list.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*crownDepth(t.kind);q.setFromAxisAngle(up,r*6.283);
     // a massed wood tree with no trunk (options.woodTrunks false) is foliage down to the ground, not a crown floating over it
-    const bare=options.woodTrunks===false&&t.kind==='wood'&&!t.hanging;
+    const bare=options.woodTrunks===false&&(t.kind==='wood'||t.kind==='tree'&&!own)&&!t.hanging;
     m.compose(new THREE.Vector3(t.x,bare?t.y+ch:t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
     col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);if(t.kind!=='tree'&&options.woodland?.tone)options.woodland.tone(t,col);crowns.setColorAt(i,col);});
