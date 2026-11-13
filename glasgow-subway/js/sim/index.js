@@ -95,6 +95,8 @@ class Sim {
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
     this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2); this.trainView.setDest(this.line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
+    // the shaft: what gets out of the bore mouth into a station ahead. Lights are not shadowed, so the wide beam above is cut off at the portal instead (see _headlight)
+    this.headShaft = new THREE.SpotLight(0xfff2d0, 0, 90, 0.1, 0.35, 1.1); this.scene.add(this.headShaft, this.headShaft.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     // the saloon's own two lamps ride with the player's train. They are NOT in the pool below: sharing it, an arriving train took two of the nearest station lamps' places and the
     // station's lighting changed while it stood there
@@ -160,30 +162,125 @@ class Sim {
    *  the player's train and the other circle's train (the one on the far side of an island platform) alike. */
   _populateSaloon(tv = this.trainView, maxCars = 99) {   // (a few cars per call: seating a whole train is a ~0.2-0.4 s stall the first time)
     const sc = tv.saloon, W = this.walkable; if (!sc || !sc.hasAnim) { tv.saloonDone = true; return; }
-    if (!tv.saloonJob) { const inner = tv.line === 'inner'; sc.rng = mulberry32(inner ? 1234 : 99); tv.saloonJob = { rng: mulberry32(inner ? 11 : 5), car: 0 }; tv.saloonObstacles = []; }   // a different cast on each circle
+    if (!tv.saloonJob) { const inner = tv.line === 'inner', k = (tv.trip || 0) * 977; sc.rng = mulberry32((inner ? 1234 : 99) + k); tv.saloonJob = { rng: mulberry32((inner ? 11 : 5) + k), car: 0 }; tv.saloonObstacles = []; tv.seatMap = []; if (tv.load == null) tv.load = this._loadOf(tv); }   // a different cast on each circle
     const job = tv.saloonJob, rng = job.rng, PYf = PY, seatX = 0.74, obstacles = tv.saloonObstacles;
     const ceilAt = (x) => PYf + Math.min(tv.headroomAt(Math.abs(x)), tv.headroomMeasured ? tv.headroomMeasured(Math.abs(x)) : 9);
     for (let n = 0; n < maxCars && job.car < tv.cars.length; n++) {
       const ci = job.car++, car = tv.cars[ci], info = tv.carInfo[ci], wc = W && W.cars && W.cars[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
       const ranges = (wc && wc.benchZRanges ? wc.benchZRanges : [[info.zc - info.len / 2 + 1.6, info.zc + info.len / 2 - 1.6]]).map(([a, b]) => [a - info.zc, b - info.zc]);
-      const seatY = tv.seatTopY ? tv.seatTopY(ci, seatX) : PYf + 0.43, slots = [], dens = this.quality === 'low' ? 0.22 : 0.34;
+      const seatY = tv.seatTopY ? tv.seatTopY(ci, seatX) : PYf + 0.43, slots = [], load = tv.load, low = this.quality === 'low';
       for (const [a, b] of ranges) for (let z = a + 0.35; z <= b - 0.3; z += 0.55) for (const sx of [-1, 1]) {
         if (doors.some((d) => Math.abs(z - d) < 0.9)) continue;
-        if (rng() < dens) slots.push({ x: sx * seatX, y: PYf, z, yaw: sx * Math.PI / 2, seatY, mode: 'sit', ceilAt });
+        const st = { x: sx * seatX, y: PYf, z, yaw: sx * Math.PI / 2, seatY, mode: 'sit', ceilAt, ci, p: null }; st.seatRef = st; slots.push(st); tv.seatMap.push(st);   // every seat of the car: who is on it is kept, so that boarders can find a free one
       }
       // every car gets an even share of the crowd (the head cars must not use the budget up before the tail car is reached), seated at random along the car
-      const nStand = this.quality === 'low' ? 1 : 2, standing = [], share = Math.round(sc.max * (ci + 1) / tv.cars.length) - Math.round(sc.max * ci / tv.cars.length);
+      const nStand = low ? 1 : load > 0.9 ? 3 + Math.round((load - 0.9) * 14) : load > 0.4 ? 2 : 1, gapS = load > 0.9 ? 0.62 : 0.9, standing = [], share = Math.round(sc.max * (ci + 1) / tv.cars.length) - Math.round(sc.max * ci / tv.cars.length);
       for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)), t = slots[i]; slots[i] = slots[j]; slots[j] = t; }
-      const seated = slots.slice(0, Math.max(1, share - nStand));
-      for (let k = 0; k < nStand * 6 && standing.length < nStand; k++) {
-        const z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (0.14 + rng() * 0.16);
-        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < 0.9) || seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) continue;
+      const seated = slots.slice(0, Math.max(1, Math.min(share - nStand, Math.round(Math.min(1, load) * slots.length))));
+      for (let k = 0; k < nStand * 8 && standing.length < nStand; k++) {
+        const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.04 + rng() * 0.1 : 0.14 + rng() * 0.16);
+        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75))) continue;
         standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.55 ? 'pole' : 'stand', ceilAt });
       }
-      for (const q of sc.seat(car, seated.concat(standing))) if (!q.state || q.state !== 'sit') obstacles.push({ x0: q.x - 0.17, x1: q.x + 0.17, z0: q.z + info.zc - 0.17, z1: q.z + info.zc + 0.17, y: PYf, tall: true, soft: true });   // soft: the walker slides round a rider rather than sticking
+      for (const q of sc.seat(car, seated.concat(standing))) if (q.seatRef) q.seatRef.p = q;
     }
+    this._saloonObs(tv);
     if (job.car >= tv.cars.length) { tv.saloonDone = true; tv.saloonJob = null; }
-    if (this.ctxKind === 'train' && tv === this.trainView) this.walker.obstacles = obstacles;
+  }
+  /** the standing riders of a train are things the walker goes round (soft: it slides round a rider rather than sticking); rebuilt whenever someone gets up, sits down, gets on or off */
+  _saloonObs(tv) {
+    const sc = tv.saloon, out = []; if (!sc) return;
+    for (const q of sc.people) { if (!q.obj || q.state === 'sit') continue; const ci = tv.cars.indexOf(q.parent); if (ci < 0) continue; const zc = tv.carInfo[ci].zc; out.push({ x0: q.x - 0.17, x1: q.x + 0.17, z0: q.z + zc - 0.17, z1: q.z + zc + 0.17, y: PY, tall: true, soft: true }); }
+    tv.saloonObstacles = out; if (this.ctxKind === 'train' && tv === this.trainView) this.walker.obstacles = out;
+  }
+  /** how full a train is, 0.12 (a few people) to 1.12 (every seat taken and people standing): each unit has its own, and it changes from one trip to the next */
+  _loadOf(tv) { const rec = this.tracks && this.tracks[tv.line], u = mulberry32(((rec && rec.unit) || 7) * 7919 + (tv.trip || 0) * 104729 + 13)(); return 0.12 + u; }
+  /** a train coming round again arrives with other people aboard */
+  _refillSaloon(tv) { const sc = tv && tv.saloon; if (!sc) return; sc.clear(); tv.trip = (tv.trip || 0) + 1; tv.load = null; tv.saloonDone = false; tv.saloonJob = null; tv.seatMap = []; tv.saloonSlow = true; this._saloonObs(tv); }
+  _carToCrowd(car, x, z, yaw = 0) {
+    const T = this.THREE, v = this._xv || (this._xv = new T.Vector3()), m = this._xm || (this._xm = new T.Matrix4()), g = this.crowd.group; car.updateWorldMatrix(true, false); g.updateWorldMatrix(true, false); m.copy(g.matrixWorld).invert();
+    v.set(x, 0, z).applyMatrix4(car.matrixWorld).applyMatrix4(m); const X = v.x, Z = v.z; v.set(-Math.sin(yaw), 0, -Math.cos(yaw)).transformDirection(car.matrixWorld).transformDirection(m);
+    return { x: X, z: Z, yaw: Math.atan2(-v.x, -v.z) };
+  }
+  _crowdToCar(car, x, z, yaw = 0) {
+    const T = this.THREE, v = this._xv || (this._xv = new T.Vector3()), m = this._xm || (this._xm = new T.Matrix4()), g = this.crowd.group; car.updateWorldMatrix(true, false); g.updateWorldMatrix(true, false); m.copy(car.matrixWorld).invert();
+    v.set(x, 0, z).applyMatrix4(g.matrixWorld).applyMatrix4(m); const X = v.x, Z = v.z; v.set(-Math.sin(yaw), 0, -Math.cos(yaw)).transformDirection(g.matrixWorld).transformDirection(m);
+    return { x: X, z: Z, yaw: Math.atan2(-v.x, -v.z) };
+  }
+  /** Passengers getting off and on the player's train at the platform it serves. Riders who get off here stand up from their seats as the train runs in (those already standing
+   *  just wait), and when the doors open they walk out through the nearest doorway to the stairs, one after another. People waiting on the platform and coming down the stairs walk
+   *  in through a door, along the aisle to a free seat, and sit down (or stand, when every seat is taken). A person keeps their looks through it: the rider in the train and the
+   *  walker on the platform are one character, handed between the train's crowd and the platform's (people.js take / walkOn / rise / settle). */
+  _exchange(dt) {
+    const tv = this.trainView, sc = tv && tv.saloon, svc = this.svc, v = this.crowdFor, X = this._xch || (this._xch = { state: 'idle', leavers: [] });
+    const live = !!(sc && sc.hasAnim && tv.saloonDone && v && this.crowd.walkOn && tv.root.visible && (this.mode === 'explore' || this.mode === 'ride') && Math.abs(this._trainCentreZl() - this._stopCentreZl()) < 45);
+    if (!live) { if (X.state === 'open' && this.crowd.setBays) this.crowd.setBays([]); if (X.state !== 'idle') { for (const L of X.leavers) L.p.leaving = false; X.leavers = []; X.state = 'idle'; } return; }
+    const inf = v.info, low = this.quality === 'low', atStop = svc.phase === 'station', off = Math.abs(this._trainCentreZl() - this._stopCentreZl());
+    const doorsOf = (ci) => { const i = tv.carInfo[ci]; return this.doorZ.map((z) => z - i.zc).filter((z) => Math.abs(z) < i.len / 2 + 0.2); };
+    if (X.state === 'idle' && svc.phase === 'run' && svc.distToStop < 30 && svc.distToStop > 0.5 && off < 32) {   // running in: who gets off here?
+      X.state = 'rising'; X.t = 0; X.leavers = []; const rnd = sc.rng, riders = sc.people.filter((p) => p.obj && !p.tween && !p.leaving), perDoor = new Map();
+      const want = Math.min(low ? 3 : 12, Math.round(riders.length * (0.15 + 0.25 * rnd())));
+      const rows = riders.map((p) => { const ci = tv.cars.indexOf(p.parent), ds = ci < 0 ? [] : doorsOf(ci); let dz = null, bd = 1e9; for (const d of ds) if (Math.abs(d - p.z) < bd) { bd = Math.abs(d - p.z); dz = d; } return { p, ci, dz, k: bd + rnd() * 2.5 - (p.state === 'sit' ? 0 : 1.5) }; }).filter((r) => r.dz != null).sort((a, b) => a.k - b.k);
+      for (const r of rows) {
+        if (X.leavers.length >= want) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
+        let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; }
+        perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
+      }
+    }
+    if (X.state === 'rising') { X.t += dt; let ch = false; for (const L of X.leavers) if (L.spot && X.t >= L.riseT) { if (L.p.seatRef) { L.p.seatRef.p = null; L.p.seatRef = null; } sc.rise(L.p, L.spot, 0.9); L.spot = null; ch = true; } if (ch) this._saloonObs(tv); }
+    if ((X.state === 'rising' || X.state === 'idle') && atStop && svc.doorsOpen) {   // the doors are open
+      tv.place(this.track, svc.train.s);   // (the cars' matrices are next set when the frame is drawn: the routes below are worked out from them now)
+      X.state = 'open'; X.t = 0; const zc = this._trainCentreZl(), S = inf.S, cx = this._carToCrowd(tv.cars[0], 0, 0).x, bays = [];
+      for (const dz of this.doorZ) bays.push({ name: 'bay', x0: Math.min(cx - 0.5, cx + 0.5, inf.xe + S * 0.6), x1: Math.max(cx - 0.5, cx + 0.5, inf.xe + S * 0.6), z0: zc + dz - 0.62, z1: zc + dz + 0.62 });
+      tv.cars.forEach((car, ci) => { const a = this._carToCrowd(car, 0, -(tv.carInfo[ci].len / 2 - 0.3)).z, b = this._carToCrowd(car, 0, tv.carInfo[ci].len / 2 - 0.3).z; bays.push({ name: 'bay', x0: cx - 0.62, x1: cx + 0.62, z0: Math.min(a, b), z1: Math.max(a, b) }); });   // the aisle of each car
+      this.crowd.setBays(bays); X.cx = cx; X.stands = [];
+      // boarders: the queue at the doors first, then people coming down the stairs
+      const exits = this._exitPoints(v), door = this.doorZ.slice(), before = new Set(this.crowd.people), queued = this.crowd.people.filter((q) => q.mode === 'queue');
+      const nearestDoor = (z) => { let bi = 0, bd = 1e9; door.forEach((dz, k) => { const d = Math.abs(zc + dz - z); if (d < bd) { bd = d; bi = k; } }); return bi; };
+      const boarded = this.crowd.board((q) => ({ x: inf.xe + S * 0.7, z: zc + door[nearestDoor(q.z)] }));
+      for (const q of queued) this._routeBoarder(q, nearestDoor(q.z), X);
+      const nBo = Math.max(0, Math.min(low ? 3 : 7, Math.round(v.crowdN * 0.3)) - boarded);
+      for (let i = 0; i < nBo; i++) { const ex = exits[i % exits.length], ds = door.map((d, k) => k).sort((a, b) => Math.abs(zc + door[a] - ex.z) - Math.abs(zc + door[b] - ex.z)), k = ds[i % 2];
+        this.crowd.stream(ex, { x: inf.xe + S * 0.7, z: zc + door[k] }, 1, inf.PY, inf.PY, 0.4, 0.6 + i * 0.6 + Math.random() * 0.4);
+        for (const q of this.crowd.people) if (!before.has(q)) { before.add(q); this._routeBoarder(q, k, X); } }
+    }
+    if (X.state === 'open') {
+      X.t += dt;
+      if (!svc.doorsOpen) { for (const q of this.crowd.people.slice()) if (q.routed && q.onArrive) q.rail ? this.crowd.finish(q) : (q.onArrive(q, false), this.crowd.release(q)); this.crowd.setBays([]); for (const L of X.leavers) L.p.leaving = false; X.leavers = []; X.state = 'closed'; this._saloonObs(tv); return; }   // (anyone still in a doorway is put aboard by their onArrive: see _routeBoarder)
+      const exits = this._exitPoints(v);
+      for (let i = X.leavers.length - 1; i >= 0; i--) {
+        const L = X.leavers[i], p = L.p; if (L.spot) { if (p.seatRef) { p.seatRef.p = null; p.seatRef = null; } sc.rise(p, L.spot, 0.9); L.spot = null; continue; }
+        if (X.t < L.t || p.tween) continue; X.leavers.splice(i, 1);
+        tv.place(this.track, svc.train.s);
+        const car = tv.cars[L.ci], c = this._carToCrowd(car, p.x, p.z, p.yaw), d = this._carToCrowd(car, 0, L.dz), ex = exits.reduce((b, q) => (Math.abs(q.z - d.z) < Math.abs(b.z - d.z) ? q : b), exits[0]), end = this.crowd._toFloor(ex.x, ex.z, 0.3);
+        const look = sc.take(p); if (!look) continue;
+        this.crowd.walkOn(look, c, c.yaw, [{ x: X.cx, z: d.z, rail: true }, { x: inf.xe + inf.S * 0.9, z: d.z, rail: true }, end], inf.PY, null); this._saloonObs(tv);
+      }
+    }
+    if (X.state === 'closed' && !atStop) X.state = 'idle';
+  }
+  /** send a boarding passenger (platform crowd) in through door k to a free seat they fit, or to a place to stand, and hand them to the train's crowd when they get there */
+  _routeBoarder(q, k, X) {
+    const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2); if (ci < 0 || !q.char) return;
+    const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
+    let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    let spot = null;
+    if (seat) { seat.p = q; spot = { x: Math.sign(seat.x) * 0.2, z: seat.z }; }
+    else for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
+      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
+    const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }
+    q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
+    const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;
+    q.onArrive = (p, reached) => {
+      const c = this._crowdToCar(car, p.x, p.z, p.yaw), free = (why) => { if (seat && seat.p === q) seat.p = null; T.lost++; if (T.why.length < 12) T.why.push(`${p.char.id} ${why} x=${c.x.toFixed(2)} z=${c.z.toFixed(2)} reached=${reached} legs=${p.path ? p.path.length : '-'} stuck=${(p.stuckT || 0).toFixed(1)}`); };
+      if (!p.rail) { if (seat && seat.p === q) seat.p = null; return 'keep'; }   // still on the platform: no way through, they stay there
+      if (!spot) return free('no place');   // never got past the doorway (or there was nowhere for them): gone, as before
+      const at = reached && !seat && spot.yaw != null, here = { x: at ? spot.x : Math.max(-0.25, Math.min(0.25, c.x)), y: PY, z: at ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, force: true };
+      if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
+      p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
+      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: np.char.pools.pole ? 'pole' : 'stand' }, 0.6); }
+      this._saloonObs(tv);
+    };
   }
   /** both circles' trains carry passengers: build each crowd once (one train a frame: measuring the characters is the slow part, and the second train reuses it), animate them while their train is on show */
   _updateSaloons(dt) {
@@ -192,7 +289,7 @@ class Sim {
     views.forEach((tv, k) => {
       const sc = tv && tv.saloon; if (!sc) return;
       const sv = k === 0 ? (this.mode === 'ride' || this.mode === 'explore') : true;   // the player's own riders only matter when walking; the other circle's train is seen from every underground mode
-      if (sv && !tv.saloonDone && !built) { built = true; this._populateSaloon(tv, k === 0 ? 99 : 1); }   // the player's train at once, the other one a car a frame (also while it is out of sight: it must arrive with its passengers aboard)
+      if (sv && !tv.saloonDone && !built) { built = true; this._populateSaloon(tv, k === 0 && !tv.saloonSlow ? 99 : 1); }   // the player's train at once, the other one a car a frame (also while it is out of sight: it must arrive with its passengers aboard)
       const on = sv && tv.root.visible; sc.setEnabled(on);
       if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 8 : 5) : (this.mode === 'explore' ? 5 : 4)); sc.update(dt, this.time, null, this.camera.position); }   // (nearest riders get the full-detail model: fewer when the platform crowd is the focus)
     });
@@ -290,7 +387,7 @@ class Sim {
   /** a crowd of passengers for one train (the saloon crowds share one measuring cache: same characters, same clips) */
   _makeSaloon() {
     if (!this._peopleOk()) return null;
-    const low = this.quality === 'low', sc = new AnimCrowd(this.THREE, this.SU, this.peopleGltf, low ? 8 : 24, this.quality, this.peopleLod);
+    const low = this.quality === 'low', sc = new AnimCrowd(this.THREE, this.SU, this.peopleGltf, low ? 10 : 96, this.quality, this.peopleLod);   // (96: a full train, every seat taken and people standing)
     if (this._saloonMeas) sc.meas = this._saloonMeas; else this._saloonMeas = sc.meas;
     if (low) sc.rVis = 22;   // a low-quality train hides the interior of cars beyond ~22 m (TrainView.cull): their riders must not be left floating
     return sc;
@@ -310,6 +407,7 @@ class Sim {
       const half = this.hallIndex && this.hallIndex.stations[st.station] ? HALL_FULL : stationHalfLength(stn, this.trainLen, !!this.vaultTpl) + 0.02;
       return [wrapL(st.sc - half, this.track.length), wrapL(st.sc - half, this.track.length) + 2 * half];
     });
+    this._hallSpans = spans;
     this.tunnel.setSkips(spans); this.tunnel.track = null;
   }
   setupLine(line, startIdx = 0) {
@@ -1018,6 +1116,31 @@ class Sim {
     w.sit = true;
   }
   /** which bench the walker would sit on here: the side they stand on, or the other one if that seat is taken (+1 / -1); 0 by a door or with both taken */
+  /** Headlights. three.js lights pass through walls, so the beam is shaped to what the bore lets through: it sits at the nose, aims along the track, reaches only
+   *  as far as the driver can see round the curve, and inside a running tunnel the wide beam stops at the portal ahead while a narrow shaft - the cone the bore
+   *  mouth subtends from the lamp - carries on into the station. (Before: a 40 degree, 90 m cone 12 m ahead of the cab lit the station through the tunnel wall.) */
+  _headlight(track, sN, y, power) {
+    const H = this.headlight, S = this.headShaft, L = track.length, P = this._hp || (this._hp = [{}, {}, {}]);
+    track.pose(sN + 0.6, P[0]);
+    // sightline: the furthest point of track whose chord from the lamp stays inside the bore (the arc's sagitta is greatest half way)
+    let sight = 9;
+    for (let d = 12; d <= 90; d += 3) {
+      track.pose(sN + 0.6 + d, P[1]); track.pose(sN + 0.6 + d / 2, P[2]);
+      if (Math.hypot(P[2].x - (P[0].x + P[1].x) / 2, P[2].y - (P[0].y + P[1].y) / 2, P[2].z - (P[0].z + P[1].z) / 2) > 1.1) break;
+      sight = d;
+    }
+    track.pose(sN + 0.6 + sight, P[1]);
+    const dy = y - P[0].y;
+    // distance to the next station hall ahead (0 = the nose is in one)
+    let dp = 1e9;
+    for (const sp of this._hallSpans || []) { const a = wrapL(sp[0] - sN, L), len = sp[1] - sp[0]; if (wrapL(sN - sp[0], L) < len) { dp = 0; break; } if (a < dp) dp = a; }
+    const reach = Math.min(90, sight + 6);
+    for (const l of [H, S]) { l.position.set(P[0].x, y, P[0].z); l.target.position.set(P[1].x, P[1].y + dy, P[1].z); }
+    H.intensity = power; H.distance = dp > 0 ? Math.max(6, Math.min(reach, dp + 6)) : reach;
+    const through = dp > 0 && dp < reach;
+    S.intensity = through ? power : 0; S.distance = reach;
+    if (through) S.angle = Math.max(0.03, Math.min(0.7, Math.atan2(1.9, dp)));
+  }
   _seatSide() {
     const w = this.walker, tv = this.trainView; if (this.ctxKind !== 'train' || !tv || this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0)) return 0;
     const busy = (sx) => !!this.saloon && this.saloon.people.some((p) => p.state === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5);
@@ -1131,6 +1254,7 @@ class Sim {
     }
     // shuttle (explore): recycle trains
     if (this.mode === 'explore') this._shuttle(dt);
+    this._exchange(dt);
     if (this.mode === 'ride' && this.alightNext === false) {}
     // approach announcements
     if (this.mode !== 'explore' && this.mode !== 'street' && svc.phase === 'run' && !this.annDone && svc.distToStop < 250) {
@@ -1147,7 +1271,7 @@ class Sim {
       if (this._tailPast(this.tracks[this.line], this.exploreIdx) > CLEAR_TAIL || sh.t > 70) { this.trainView.root.visible = false; sh.state = 'wait'; svc.train.v = 0; }
     } else if (sh.state === 'wait') {
       if (sh.timer <= 0) {
-        this._setUnit(rec, sh.due);
+        this._setUnit(rec, sh.due); if (sh.runs) this._refillSaloon(this.trainView); sh.runs = (sh.runs || 0) + 1;
         svc.placeApproaching(sh.idx, 220, 9); svc.ato = true; svc.autoDoors = true; this.trainView.root.visible = true; sh.state = 'arriving'; sh.arrT = 0; svc._autoOpened = false; svc._autoClosed = false;
       }
     } else if (sh.state === 'arriving') sh.arrT = (sh.arrT || 0) + dt;
@@ -1158,29 +1282,6 @@ class Sim {
       this.crowd.queue(Math.min(8, Math.round(v.crowdN * 0.3)), slots);
     }
     if (sh.state === 'wait' || sh.state === 'none') sh.queued = false;
-    // the doorways are floor for boarding and alighting passengers while the doors stand open (people.js setBays)
-    if (this.crowd.setBays) {
-      const open = sh.state === 'dwell' && svc.doorsOpen && this.activeStation;
-      if (open && !sh.bays) { const inf = this.activeStation.info, zc = this._trainCentreZl(), xa = inf.xe - inf.S * 1.75, xb = inf.xe + inf.S * 0.6; this.crowd.setBays(this.doorZ.map((dz) => ({ name: 'bay', x0: Math.min(xa, xb), x1: Math.max(xa, xb), z0: zc + dz - 0.62, z1: zc + dz + 0.62 }))); sh.bays = true; }
-      else if (!open && sh.bays) { this.crowd.setBays([]); sh.bays = false; }
-    }
-    // passenger streams during dwell
-    if (sh.state === 'dwell' && svc.doorsOpen && !sh.streamed && this.activeStation) {
-      sh.streamed = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl();
-      const door = this.doorZ.slice(), exits = this._exitPoints(v);   // exits: the stairs (hall) / ramp - passengers walk to and from THEM, never through the end wall
-      const nAl = Math.min(10, Math.round(svc.pax.onboard * 0.12)), nBo0 = Math.min(10, Math.round(v.crowdN * 0.35));
-      const boarded = this.crowd.board ? this.crowd.board((q) => { let bi = 0, bd = 1e9; this.doorZ.forEach((dz, k) => { const d = Math.abs(zc + dz - q.z); if (d < bd) { bd = d; bi = k; } }); return { x: inf.xe - inf.S * 1.2, z: zc + this.doorZ[bi] }; }) : 0, nBo = Math.max(0, nBo0 - boarded);
-      const nearest = (pts, z) => pts.reduce((b, q) => (Math.abs(q.z - z) < Math.abs(b.z - z) ? q : b), pts[0]);
-      for (let i = 0; i < nAl; i++) {   // step off the train one after another (a batch stacked on one spot would shove itself apart) and head for the nearest stairs
-        const from = { x: inf.xe - inf.S * 1.2, z: zc + door[i % door.length] };   // from inside the car, out through the doorway
-        this.crowd.stream(from, nearest(exits, from.z), 1, inf.PY, inf.PY, 0.3, i * 0.9 + Math.random() * 0.4);
-      }
-      for (let i = 0; i < nBo; i++) {   // come down the stairs spread over the dwell, and make for one of the two doors nearest the stairs they used
-        const ex = exits[i % exits.length], doors = door.slice().sort((a, b) => Math.abs(zc + a - ex.z) - Math.abs(zc + b - ex.z));
-        this.crowd.stream(ex, { x: inf.xe - inf.S * 1.2, z: zc + doors[i % 2] }, 1, inf.PY, inf.PY, 0.4, 0.5 + i * 0.8 + Math.random() * 0.4);
-      }
-    }
-    if (sh.state !== 'dwell') sh.streamed = false;
   }
   fastForward(sec, step = 0.1) { for (let t = 0; t < sec; t += step) this.tick(step); }
 
@@ -1237,9 +1338,7 @@ class Sim {
       // lights
       const front = new THREE.Vector3(), q = new THREE.Quaternion(); this.trainView.eyeWorld(front, q);
       const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-      this.headlight.position.copy(front).add(new THREE.Vector3(0, -0.6, 0)).addScaledVector(fwd, 12);
-      this.headlight.target.position.copy(front).addScaledVector(fwd, 40);
-      this.headlight.intensity = this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160;
+      this._headlight(track, tr.s, front.y - 0.6, this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160);
       // running tunnels are unlit: dim ambient between stations, full level inside / near a hall (smooth ramp)
       { let f = 1; if (this.mode !== 'explore') { let md = 1e9; const L = track.length, sN = tr.s; for (const st of track.stops) { let d = Math.abs(sN - st.sc); d = Math.min(d, L - d); if (d < md) md = d; } f = Math.min(1, Math.max(0, (68 - md) / 30)); f = f * f * (3 - 2 * f); }
         // (the tunnel's own surfaces lose the ambient light, not the scene: dimming the scene's ambient made the inside of the train and its passengers go dark between stations)

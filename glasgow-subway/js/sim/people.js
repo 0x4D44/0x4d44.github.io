@@ -326,9 +326,9 @@ export class AnimCrowd {
     return pickChar(this.chars, this._rollPool(), filter, this.rng, own);
   }
   add(p, parent, filter) {
-    if (!this.hasAnim || this.people.length >= this.max) return p;
+    if (!this.hasAnim || (this.people.length >= this.max && !p.force)) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
-    p.lod = !!ch.lodNode && (!p.static || !ch.node); const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
+    p.lod = !!ch.lodNode; const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
     this._dressTee(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
@@ -460,7 +460,7 @@ export class AnimCrowd {
    *  Without them boarders stopped and vanished on the platform edge and alighters appeared there. When the doors close, anyone still in a doorway is aboard and is removed. */
   setBays(bays) {
     const had = this.bays && this.bays.length; this.bays = bays || [];
-    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) { this._drop(q); this.people.splice(i, 1); } }
+    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) { if (q.onArrive) q.onArrive(q, false); this._drop(q); this.people.splice(i, 1); } }
   }
   _floors() { return this._goNow && this.bays && this.bays.length ? this.floor.concat(this.bays) : this.floor; }
   _onFloor(x, z, m = 0.22) {
@@ -550,6 +550,39 @@ export class AnimCrowd {
     }
     return !!(c.pools.sit && c.pools.sit.length);
   }
+  // ------------------------------------------------------------------ riders changing place (used by the game's boarding / alighting: index.js _exchange)
+  /** hand a person over to another crowd: they are removed here and what makes them recognisable (who they are, their print and shirt colour) is returned, to be given to add() there */
+  take(q) { const i = this.people.indexOf(q); if (i < 0) return null; const look = { char: q.char, print: q.print, teeColour: q.teeColour, force: true }; q.print = null; this._drop(q); this.people.splice(i, 1); return look; }
+  /** a walking passenger who is visible from the first frame and follows a route (points in the crowd's frame); onArrive(p, reached) is called at the end, then they are removed */
+  walkOn(look, from, yaw, path, y, onArrive, speed) {
+    const p = this.add({ ...look, x: from.x, z: from.z, y, yaw, yawT: yaw, mode: 'go', tx: path[0].x, tz: path[0].z, rail: !!path[0].rail, ty: y, speed: speed || 1.0 + this.rng() * 0.25, delay: 0, path: path.slice(1), onArrive, routed: true });
+    return p.obj ? p : null;
+  }
+  /** a passenger who gives up on their route (the doors closed, or no way through the crowd) is one of the people on the platform again */
+  release(q) {
+    if (q.hidden || !q.obj) { const i = this.people.indexOf(q); if (i >= 0) { this._drop(q); this.people.splice(i, 1); } return; }
+    const any = this.people.find((o) => o.rect); q.rect = q.rect || (any && any.rect); if (!q.rect) { const f = this.floor && this.floor[0]; q.rect = f ? { x0: f.x0 + 0.4, x1: f.x1 - 0.4, z0: f.z0 + 0.4, z1: f.z1 - 0.4 } : { x0: q.x - 2, x1: q.x + 2, z0: q.z - 2, z1: q.z + 2 }; }
+    q.mode = 'walk'; q.routed = false; q.onArrive = null; q.path = null; q.rail = false; q.legR = 0; q.delay = 0; q.tx = null; q.stopHere = false; q.wait = 1 + this.rng() * 3; q.sp = 0; q.stuckT = 0; q.speed = 0.9 + this.rng() * 0.35; this._enter(q, 'stand');
+  }
+  /** end a routed passenger's walk now, wherever they are (the doors are closing on someone already in the doorway) */
+  finish(q) { const i = this.people.indexOf(q); if (i < 0) return; if (q.onArrive && q.onArrive(q, false) === 'keep') return this.release(q); this._drop(q); this.people.splice(i, 1); }
+  /** a seated rider gets up: into a standing pose while moving to `to` {x,z,yaw} (the aisle in front of the seat), then(p) */
+  rise(p, to, dur = 0.9, then = null) {
+    if (p.state === 'sit' && p.m) { const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; p.x -= c * hx + s * hz; p.z -= -s * hx + c * hz; }   // from here on x,z are the root's (see _place)
+    p.mode = to.mode || 'stand'; p.seatY = null; this._enter(p, p.mode, 0.5);
+    p.tween = { x0: p.x, z0: p.z, a0: p.yaw, x1: to.x, z1: to.z, a1: to.yaw, t: 0, dur, then };
+  }
+  /** a standing rider sits down on `seat` {x,z,yaw,seatY} */
+  settle(p, seat, dur = 1.0, then = null) {
+    p.mode = 'sit'; p.seatY = seat.seatY; this._enter(p, 'sit', 0.5);
+    if (p.m) { const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; p.x += c * hx + s * hz; p.z += -s * hx + c * hz; }   // x,z become the hips' again
+    p.tween = { x0: p.x, z0: p.z, a0: p.yaw, x1: seat.x, z1: seat.z, a1: seat.yaw, t: 0, dur, then };
+  }
+  _tweenStep(p, dt) {
+    const w = p.tween; w.t += dt; const u = Math.min(1, w.t / w.dur), k = u * u * (3 - 2 * u);
+    p.x = w.x0 + (w.x1 - w.x0) * k; p.z = w.z0 + (w.z1 - w.z0) * k; p.yaw = w.a0 + angDiff(w.a0, w.a1) * k; p.dirty = true;
+    if (u >= 1) { p.tween = null; if (w.then) w.then(p); }
+  }
   setEnabled(on) { if (this.enabled === on) return; this.enabled = on; if (!on) for (const p of this.people) if (p.obj) p.obj.visible = false; }
   update(dt, t, yAt, camWorld) {
     if (this.enabled === false) return;
@@ -596,17 +629,18 @@ export class AnimCrowd {
               if (p.hidden) { p.hidden = false; p.obj.visible = true; p.yaw = p.yawT = Math.atan2(-(p.tx - p.x), -(p.tz - p.z)); p.yw = 0; }   // a streamer appears already facing the way it goes
               this._enter(p, 'go', 0.2);
             }
-            const moved = this._step(p, dt, p.speed, p.blockT > 0.8 ? 2 : 1);   // walks round people and furniture; only a person truly boxed in for a moment goes through
+            const moved = p.rail ? this._railStep(p, dt, p.speed) : this._step(p, dt, p.speed, p.blockT > 0.8 ? 2 : 1);   // walks round people and furniture; only a person truly boxed in for a moment goes through
             p.blockT = moved ? 0 : p.blockT + dt; if (yAt) p.y = yAt(p.x, p.z, p.y);
             const dd = Math.hypot(p.tx - p.x, p.tz - p.z);   // progress-based watchdog: sliding along a wall without getting closer is being stuck too
             this._progress(p, moved, dd, dt, 0.03);
-            if (dd < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
+            if (dd < (p.legR || 0.35) && p.path && p.path.length) { const n = p.path.shift(); p.tx = n.x; p.tz = n.z; p.rail = !!n.rail; p.legR = n.r || 0; p.bestD = 1e9; p.stuckT = 0; p.turnT = 0; p.stopHere = !p.path.length && !!p.onArrive; }   // the next leg of a route (door, aisle, seat)
+            else if (dd < (p.onArrive ? 0.12 : 0.35) || p.stuckT > (p.routed ? 6 : 2.5)) { if (p.onArrive && p.onArrive(p, dd < 0.6) === 'keep') { this.release(p); continue; } this._drop(p); this.people.splice(i, 1); continue; }
           }
         }
       }
       // someone standing within arm's reach of the user takes a few real steps aside (legs moving) instead of gliding away in their idle pose
       if (!p.static && this.walker && p.mode !== 'go' && p.state !== 'walk' && !p.revert) { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.0 && !this._makeWay(p, d > 1e-4 ? dx / d : 1, d > 1e-4 ? dz / d : 0) && d > 1e-4) { const k = Math.min(1.0 - d, 1.0 * dt); const nx = p.x + (dx / d) * k, nz = p.z + (dz / d) * k; if (this._onFloor(nx, nz, 0.12)) { p.x = nx; p.z = nz; } } }
-      if (!p.static) this._turn(p, dt);
+      if (!p.static) this._turn(p, dt); else if (p.tween) this._tweenStep(p, dt);
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._pace(p, dt);
@@ -729,6 +763,14 @@ export class AnimCrowd {
     if (!ok(p.x + sx, p.z + sz)) { p.sp = Math.max(0, p.sp - 2 * STEER.BMAX * dt); sx = sz = 0; }   // not facing the checked way yet and the way it faces is blocked: hold, turn, then go
     p.x += sx; p.z += sz;
     return true;
+  }
+  /** A step along a leg of a route through a doorway or down a car's aisle (a path point marked rail): straight for the point, with the same turning and braking as any walker, but
+   *  no steering round things - the platform's floor map does not reach in there, and a veer would be through the door jamb. They wait behind anyone in the way ahead. */
+  _railStep(p, dt, sp) {
+    const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
+    if (!(p.blockT > 1.5)) for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) { p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
+    const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
+    p.steered = true; p.yawT = p.yaw; p.x += -Math.sin(p.yaw) * move; p.z += -Math.cos(p.yaw) * move; return true;
   }
   /** the watchdog of a person on the way somewhere: getting closer (by tol) resets it; turning to face the way (a few seconds at most) is neither progress nor being stuck */
   _progress(p, moved, dd, dt, tol) {

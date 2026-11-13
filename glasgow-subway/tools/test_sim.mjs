@@ -559,10 +559,11 @@ try {
     n = 0; while (!(s.bg.sh && s.bg.sh.state === 'dwell') && n++ < 40000) { s.tick(0.1); s.sync(0.05); }   // the next time it stands in the station, doors open
     for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
     const uBg = s.bg.unit, uPl = s.tracks[s.line].unit;
-    await __sim.boardOther(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
-    return { after: __sim.saloons(), line1: s.line, mode: s.mode, listeners: [s.svc.listeners.length, s.bg.svc.listeners.length], units: { uBg, uPl, now: s.tracks[s.line].unit, bgNow: s.bg.unit } };
+    // riders now get on and off at every stop, so the counts are compared across the swap itself, not against the start of the test
+    const pre = __sim.saloons(); await __sim.boardOther(); const post = __sim.saloons(); for (let i = 0; i < 20; i++) { s.tick(0.05); s.sync(0.05); }
+    return { pre, post, after: __sim.saloons(), line1: s.line, mode: s.mode, listeners: [s.svc.listeners.length, s.bg.svc.listeners.length], units: { uBg, uPl, now: s.tracks[s.line].unit, bgNow: s.bg.unit } };
   });
-  ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== salA.line0 && ['outer', 'inner'].every((l) => sal.after[l].total === salA.before[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify(sal.after));
+  ok('boarding the other circle\'s train: each train keeps its riders (nobody vanishes or is re-seated)', sal.mode === 'ride' && sal.line1 !== salA.line0 && ['outer', 'inner'].every((l) => sal.post[l].total === sal.pre[l].total && sal.after[l].total >= 4) && sal.after[sal.line1].player, JSON.stringify({ pre: sal.pre, post: sal.post, after: sal.after }));
   ok('boarding the other circle\'s train: each unit stays the same train - you are now on the one that was on the other circle, and the one you left carries on under its own number', sal.units.uBg != null && sal.units.uPl != null && sal.units.uBg !== sal.units.uPl && sal.units.now === sal.units.uBg && sal.units.bgNow === sal.units.uPl, JSON.stringify(sal.units));
   // ... and the sounds follow the swap: each service has exactly one door listener again; aboard, your own doors are full level and centred; the train you left is heard through the walls
   await doorLog(p);
