@@ -892,6 +892,21 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
     const rgb = c.getStyle().match(/\d+/g)!.map(Number) as [number, number, number];
     assert.ok(rgb[1] > rgb[0] && rgb[1] > rgb[2] && luma(rgb) <= luma([100, 124, 136]) - 15, `a crown's image in the near channel: [${rgb.join(', ')}] (weight ${h.weight.toFixed(2)})`);
   }
+  // round 13's guard, kept for all else: over the near channel on five lines of sight across the frame, every hit that is not a
+  // crown's image (the bank, a crown's faint edge, clear water) still reads as water by round 13's own test (blue over red + 15,
+  // blue at least green; the round 16 frames show clear water there [102, 127, 138])
+  const rest = [-160, -80, 0, 80, 160].flatMap(o => {
+    const to = [BT[0] + o * .225, BT[1], BT[2] + o * .974] as const, wet: number[] = [];
+    for (let d = 0; d <= near[1] + 10; d++) if (along(BE, to, d) !== null) wet.push(d);
+    const end = wet.findIndex((d, i) => i > 0 && d !== wet[i - 1]! + 1), run = end < 0 ? wet : wet.slice(0, end);
+    return Array.from({length: 8}, (_, i) => { const d = run[0]! + (run[run.length - 1]! - run[0]!) * (i + .5) / 8; return {d, h: mirrorAt(map, along(BE, to, d)!, BE)}; });
+  }).filter(({h}) => !(h.kind === 'tree' && h.cover > .5));
+  assert.ok(rest.length >= 8, `near-channel hits that are not a crown's image: ${rest.length}`);
+  for (const {d, h} of rest) {
+    const c = new THREE.Color(sheetTone.r * (1 - h.weight) + h.tone[0] * h.weight, sheetTone.g * (1 - h.weight) + h.tone[1] * h.weight, sheetTone.b * (1 - h.weight) + h.tone[2] * h.weight);
+    const [r, gr, b] = c.getStyle().match(/\d+/g)!.map(Number) as [number, number, number];
+    assert.ok(b > r + 15 && b >= gr, `the near channel stays water at ${d.toFixed(0)} m (${h.kind}, cover ${h.cover.toFixed(2)}): [${r}, ${gr}, ${b}] (weight ${h.weight.toFixed(2)})`);
+  }
   // the viaduct (pt-tay-viaduct): water just in front of a girder pier mirrors its stone; further out the deck's paint, between the piers
   const VE = [1078, -1.16, 120] as const, lay = tayViaduct(new Batch(), new Batch(), scene.terrain);
   // (piers out in open water: the drape lies under the sheet from the pier back towards the eye)
@@ -919,6 +934,8 @@ test('the Tay mirrors what is drawn round it: the far bank, the town, the island
   assert.equal(mirrorWeight(.05, TAY_MIRROR.fade[1]), 0); assert.ok(mirrorWeight(.05, 100) >= .95 * TAY_MIRROR.hold);
   // every class the map holds has a tone, and some of the water always stays (the weight is capped under 1: round 16 lets a thing in
   // front of the sky take nearly all of the sheet's tone, as the sheet's blue is mirrored sky)
+  // the cap is a design value (0.96: a thing in front of the sky leaves 4% of the sheet's tone), pinned so a drift either way shows
+  assert.ok(Math.abs(TAY_MIRROR.hold - .96) <= .01, `hold ${TAY_MIRROR.hold}`);
   assert.ok(TAY_MIRROR.hold < 1 && mirrorWeight(.001, 50) <= TAY_MIRROR.hold && MIRROR_CLASSES.slice(1).every(c => typeof (TAY_MIRROR.tones as Record<string, string>)[c] === 'string'));
   assert.ok(!Object.keys(MIRROR_THINGS).some(name => /trunk/.test(name)), 'trunks are not mirrored: each raised a straight-sided column to its crown');
 });
