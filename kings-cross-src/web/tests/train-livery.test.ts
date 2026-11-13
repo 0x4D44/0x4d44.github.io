@@ -11,7 +11,7 @@ import { NOSE_RECESS, bodySpec, buildTrain, carSection, frontOf } from '../src/t
 import { eggSection, halfAt, normalised, ringAt, ringStations } from '../src/train-nose.ts';
 import { col } from '../src/train-geom.ts';
 import { MASK_700, MASK_717 } from '../src/train-face.ts';
-import { GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
+import { GC_CAB_DOOR_FRONT, GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
 import { DONCASTER_2024, PARAGON_2025 } from './hull-band-readings.ts';
 
@@ -177,6 +177,34 @@ test('Grand Central 180: an orange waist band along the car, which swings down t
   assert.equal(at('gc180x5', GC_NOSE, 0.7, 1.4), LIVERIES.grandcentral.body, 'but not above the sweep');
   // no line over the nose itself
   assert.equal(at('gc180x5', GC_NOSE, 0.5, 3.39), LIVERIES.grandcentral.body);
+});
+
+test('Grand Central 180 (round 10): ahead of the cab-end door the band runs on level, 1.37 to 1.67 m, its foot for 0.4 m and its top for 1.2 m, and only then sweeps down; the cantrail line starts square at the door frame', () => {
+  // round 9's score: "just ahead of the cab-end door, the sweep does not register with the band": the orange there stood ~0.08 m low and ran down to the sill. The York photograph (private,
+  // viewed only, ADELANTE_HEIGHTS's scale) reads the band level ahead of the leaf for ~0.4 m (foot) and ~1.2 m (top)
+  const spec = bodySpec('adelante');
+  const cab = trainLayout('gc180x5').cars.find((c) => c.cab === 'front');
+  assert.ok(cab, 'a leading driving car');
+  assert.ok(Math.abs(GC_CAB_DOOR_FRONT - ((spec.plan(cab, false).doors[0] as number) - spec.doorWidth / 2)) < 1e-9, 'GC_CAB_DOOR_FRONT is the cab-end leaf\'s front edge');
+  const [foot, top] = LIVERIES.grandcentral.stripeY as [number, number];
+  const body = LIVERIES.grandcentral.body;
+  for (const ahead of [0.02, 0.2, 0.38]) {
+    const s = GC_CAB_DOOR_FRONT - ahead;
+    assert.equal(at('gc180x5', GC_NOSE, s, foot + 0.01), GC_ORANGE, `${ahead} m ahead of the door: orange at the band's foot`);
+    assert.equal(at('gc180x5', GC_NOSE, s, top - 0.01), GC_ORANGE, `${ahead} m ahead: orange at its top`);
+    assert.equal(at('gc180x5', GC_NOSE, s, foot - 0.02), body, `${ahead} m ahead: black under the band, not the sweep down to the sill`);
+    assert.equal(at('gc180x5', GC_NOSE, s, top + 0.02), body, `${ahead} m ahead: black over it`);
+  }
+  for (const ahead of [0.6, 1.0, 1.15]) assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - ahead, top - 0.01), GC_ORANGE, `${ahead} m ahead: the top still level`);
+  // then the sweep: the foot falls (York: about 1.0 m at 1.3 m ahead, 0.77 m at 1.9 m), the top later
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 1.3, 1.05), GC_ORANGE, 'the foot down to ~1.0 m 1.3 m ahead');
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 1.9, 0.82), GC_ORANGE, 'and to ~0.77 m 1.9 m ahead');
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 2.4, top - 0.05), body, 'the top fallen away 2.4 m ahead');
+  // the cantrail line: square at the door frame's front edge (0.05 m ahead of the leaf), none on the nose's loft ahead of it
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 0.04, 3.39), GC_ORANGE, 'the line over the frame\'s front edge');
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 0.07, 3.39), body, 'no line ahead of the frame');
+  // the band on the leaf (livery.ts doorBand) takes its colour from the same place
+  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT + 0.6, (foot + top) / 2), GC_ORANGE);
 });
 
 test('Great Northern 387: a white-cream body with a thin orange pinstripe at the cantrail behind the nose, the dark foot below the windows', () => {

@@ -172,6 +172,14 @@ function lnerShapes(nose: number): Shape[] {
 // --- Grand Central ------------------------------------------------------------------------------
 
 /**
+ * The front edge of a Class 180 driving car's cab-end door leaf, metres from the car's end (the side texture's s): train.ts ADELANTE_SIDE.cabDoor (4.8 m) less half the
+ * 1.2 m leaf (core/train.ts EMU_FIGURES.adelante.doorWidth). A plain number because train.ts imports this module; web/tests/train-livery.test.ts ties it to the plan.
+ */
+export const GC_CAB_DOOR_FRONT = 4.2;
+/** how far the dark door frame stands out round a leaf (train.ts's door builder: 0.05 m) */
+const GC_DOOR_FRAME = 0.05;
+
+/**
  * The Class 180's side. GC180-01-180-101-Kings-Cross (a 180 at Kings Cross, 2012?) and GC180-05-Grand-Central-at-Halifax (180112):
  * black body, a broad orange band at the waist, and at the cab the band swings down the cab side in a sweep that widens
  * downward and ends under the lamp pod at the nose's lower corner; a thin orange pinstripe runs along the cantrail. The band
@@ -179,15 +187,22 @@ function lnerShapes(nose: number): Shape[] {
  * the pinstripe 3.37 to 3.41 m (was 3.02 to 3.06 m), both measured on the private York photograph (train.ts ADELANTE_HEIGHTS). There the band's top falls
  * slowly where the sweep begins and its foot falls fast, so the knots at the nose's end now stand 0.12 m (top) and 0.42 m (foot) under the band, where they
  * stood 0.12 m and 0.26 m; the knots nearer the tip are unchanged.
+ * CHANGED (round 10): round 9's sweep only reached the band's full height at `nose + 1.2` m, behind the cab-end door's front edge, so just ahead of that door the orange
+ * stood about 0.08 m under the band on the door and ran down to the sill (round 9's score). The York photograph (private, viewed only; 132.9 px to the metre, ADELANTE_HEIGHTS)
+ * reads, ahead of the leaf's front edge: the band's foot level for about 0.4 m, then 1.18 m at 0.85 m, 1.0 m at 1.3 m and 0.77 m at 1.9 m ahead; its top level for about
+ * 1.2 m, then 1.57 m at 1.6 m ahead, after which it falls fast to the tip. The knots behind 1.5 m from the car's end are now those readings, measured from the door
+ * (GC_CAB_DOOR_FRONT), so the band runs level 1.37 to 1.67 m from the door forward and only then sweeps down. The knots nearer the tip are unchanged.
+ * The cantrail line starts square over the door frame's front edge (it started 0.25 m further forward, on the nose's loft, where the wall's top is still under the
+ * line's top and the line bent over the shoulder: the kink round 9's score saw at 3/4). That it does not run further forward over the nose is ASSUMED.
  */
-function grandCentralShapes(nose: number): Shape[] {
+function grandCentralShapes(_nose: number): Shape[] {
   const [bandBottom, bandTop] = LIVERIES.grandcentral.stripeY ?? [1.37, 1.67];
-  const sD = nose + 1.2;
-  const top = smoothCurve([[0.1, 0.78], [0.7, 1.0], [1.5, 1.2], [nose, bandTop - 0.12], [sD, bandTop], [TEX_SPAN, bandTop]], 48);
-  const bottom = smoothCurve([[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [nose, bandBottom - 0.42], [sD, bandBottom], [TEX_SPAN, bandBottom]], 48);
+  const dF = GC_CAB_DOOR_FRONT;
+  const top = smoothCurve([[0.1, 0.78], [0.7, 1.0], [1.5, 1.2], [dF - 1.6, bandTop - 0.1], [dF - 1.2, bandTop], [TEX_SPAN, bandTop]], 96);
+  const bottom = smoothCurve([[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [dF - 1.9, 0.77], [dF - 1.3, 1.0], [dF - 0.85, 1.18], [dF - 0.4, bandBottom], [TEX_SPAN, bandBottom]], 96);
   return [
     { colour: GC_ORANGE, pts: between(top, bottom) },
-    { colour: GC_ORANGE, pts: rect(nose, TEX_SPAN, 3.37, 3.41) },
+    { colour: GC_ORANGE, pts: rect(dF - GC_DOOR_FRAME, TEX_SPAN, 3.37, 3.41) },
   ];
 }
 

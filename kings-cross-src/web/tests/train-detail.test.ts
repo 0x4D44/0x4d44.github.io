@@ -3386,7 +3386,8 @@ test('Class 180 side: the windows and the doors\' glass stand where the photogra
         const box = boxOfTris(pane);
         near(frac(box.min.y), 0.26, 0.02, `${here} side ${side}: the door's glass, its sill`);
         near(frac(box.max.y), 0.72, 0.02, `${here} side ${side}: its head`);
-        near((box.max.z - box.min.z) / spec.doorWidth, 73 / 152, 0.03, `${here} side ${side}: its width, of the leaf's`);
+        // CHANGED (round 10; it was 73 / 152 of the leaf's width, within 0.03, which let the pane stand 0.57 m wide): 0.54 m, the York photograph's (round 9's score: ~0.53 to 0.54 m)
+        near(box.max.z - box.min.z, 0.54, 0.005, `${here} side ${side}: its width`);
         // rounded: the outline turns its corners in steps, so the pane's face has more than a box's four corners at more than two heights
         const heights = new Set(pane.flat().map((v) => v.y.toFixed(4)));
         assert.ok(heights.size > 4, `${here} side ${side}: the door's glass has ${heights.size} heights, a square pane`);
@@ -3480,6 +3481,43 @@ test('Class 180 side (round 9): the band runs across the black cab-end door, a p
       assert.ok(lumaOf(w.colour) > 0.85, `${here}: white lettering`);
     });
   }
+});
+
+test('Class 180 side (round 10): every door\'s dark frame stops under the cantrail\'s orange line, and a grey step stands under every leaf, a little wider than the frame, on both sides', () => {
+  // round 9's score: the cantrail line had "a short stepped kink" at its front end over the cab door: the frame, 0.04 m over the leaf's head, covered the line's lower half across every door.
+  // The York photograph (private, viewed only) shows the line whole over the door, and a grey step plate under the leaf, its top at the leaf's foot
+  const spec = bodySpec('adelante');
+  const gc = liveryFor('gc180x5');
+  const step = spec.doorStep;
+  assert.ok(step, 'the Class 180 has a door step');
+  const g = built('gc180x5');
+  for (const car of trainLayout('gc180x5').cars) {
+    const here = `${car.type} car ${car.index}`;
+    const plan = spec.plan(car, false);
+    const z = (s: number): number => (car.cab === 'rear' ? car.end - s : car.start + s);
+    const mesh = detailOf(g, car);
+    const frames = trisOfColour(mesh, 0x24272b);
+    const steps = trisOfColour(mesh, step.colour);
+    for (const s of plan.doors) {
+      for (const side of [-1, 1]) {
+        const mine = (t: Tri): boolean => t.every((v) => Math.abs(v.z - z(s)) <= spec.doorWidth / 2 + 0.1 && Math.sign(v.x) === side && Math.abs(v.x) > spec.half - 0.05);
+        const frame = boxOfTris(frames.filter(mine));
+        assert.ok(frame.max.y <= 3.37 + 1e-6, `${here} side ${side}: the door frame reaches ${frame.max.y.toFixed(3)} m, over the line's foot at 3.37 m`);
+        assert.ok(frame.max.y > spec.doorY[1], `${here} side ${side}: the frame still rounds the leaf's head`);
+        const st = steps.filter(mine);
+        assert.ok(st.length > 0, `${here} side ${side}: a step under the door at ${s}`);
+        const sb = boxOfTris(st);
+        near(sb.max.y, spec.doorY[0] - 0.05, 1e-6, `${here} side ${side}: the step's top at the frame's foot`);
+        near(sb.min.y, 1.0, 1e-6, `${here} side ${side}: the step's foot`);
+        near(Math.max(Math.abs(sb.min.x), Math.abs(sb.max.x)), spec.half + step.out, 1e-6, `${here} side ${side}: the step stands proud of the leaf`);
+        assert.ok(step.out > 0 && step.out <= 0.01, 'proud of the leaf, but inside the published 2.73 m width');
+        assert.ok(sb.max.z - sb.min.z > spec.doorWidth + 0.1 && sb.max.z - sb.min.z < spec.doorWidth + 0.2, `${here} side ${side}: the step a little wider than the frame`);
+        assert.ok(lumaOf(step.colour) > 0.3 && lumaOf(step.colour) < 0.6, 'a mid grey step');
+      }
+    }
+  }
+  // the line itself is whole over the door: the livery paints it from the frame's front edge back, and no frame or leaf covers it
+  assert.equal(sideColourAt(gc, spec.nose.length, 4.8, 3.375), GC_ORANGE, 'the line\'s lower half over the cab door');
 });
 
 test('Class 180 cab: the windscreen runs up to where 180109 puts the roof, 3.0 m up and 1.66 m behind the face\'s foot, at both ends', () => {
