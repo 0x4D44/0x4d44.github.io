@@ -16,6 +16,8 @@
 //   KX_SCLASS      Y9 signal map JSON                      (default <KX_DATA_DIR>/sclass.json)
 //   KX_KEYCHAIN_SERVICE  keychain item name              (default kx-ntrod)
 //   KX_NO_FEED     "1" to serve static data only, no STOMP connection
+//   KX_TRUST_PROBE comma list of STANOX (e.g. 03140,03137): tally their TRUST movements, GET /trust-probe
+//                  and <KX_DATA_DIR>/trust-probe.json (default off)
 //   KX_TD_CENSUS   "1" to tally every TD area in memory and serve GET /census (default off)
 //   KX_PTAC        "1" to consume PTAC (RDM Kafka) into <KX_DATA_DIR>/areas/EB/ptac.json (default off)
 //
@@ -30,6 +32,7 @@ import { startRelay } from './relay.mjs';
 import { createAreaSclassJobs } from './sclass-areas.mjs';
 import { configuredAreas } from './areas.mjs';
 import { startPtacFromEnv } from './ptac.mjs';
+import { parseProbeStanox } from './trust-probe.mjs';
 
 const env = process.env;
 const host = env.KX_STOMP_HOST ?? 'publicdatafeeds.networkrail.co.uk';
@@ -55,6 +58,7 @@ const relay = await startRelay({
   dataDir,
   feedEnabled: env.KX_NO_FEED !== '1',
   census: env.KX_TD_CENSUS === '1',
+  trustProbe: parseProbeStanox(env.KX_TRUST_PROBE),
   scheduleEnabled: env.KX_NO_SCHEDULE !== '1' && env.KX_NO_FEED !== '1',
   readCredentials: () => readCredentials({ service }),
   connectSocket: () => (useTls ? tls.connect({ host, port: stompPort, servername: host }) : net.connect({ host, port: stompPort })),

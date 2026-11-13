@@ -30,6 +30,7 @@ import { validDate } from '../core/schedule.ts';
 import { configuredAreas, requestArea, areaDataDir } from './areas.mjs';
 import { STATIONS } from '../core/station-config.ts';
 import { createCensus } from './census.mjs';
+import { createTrustProbe } from './trust-probe.mjs';
 
 const RECENT_MAX = 2000;
 const MAX_LOCAL_JSON = 16 * 1024 * 1024;
@@ -180,11 +181,14 @@ export async function startRelay({
   createServer = http.createServer,
   ptac = null, // runPtac() handle; /health reports its counts
   census: censusOption = false, // true or a createCensus limits object: enable GET /census
+  trustProbe: trustProbeStanox = null, // array of STANOX: enable the TRUST probe, GET /trust-probe
 }) {
   const allowedAreas = configuredAreas(areas, area);
   const defaultArea = allowedAreas.includes(area) ? area : allowedAreas[0];
   const contexts = new Map();
   const census = censusOption ? createCensus({ ...(typeof censusOption === 'object' ? censusOption : {}), configured: allowedAreas, now }) : null;
+  const trustProbe = Array.isArray(trustProbeStanox) && trustProbeStanox.length
+    ? createTrustProbe({ stanox: trustProbeStanox, now, file: path.join(dataDir, 'trust-probe.json') }) : null;
   const heartbeats = new Set();
   let closing;
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
@@ -238,6 +242,7 @@ export async function startRelay({
         // Keep useful fixed categories without forwarding upstream strings or paths.
         log: (message) => log(safeFeedLog(message)),
         onTrust: (body) => {
+          try { trustProbe?.observe(body); } catch { /* observer only */ }
           for (const { trust, publishTrust } of contexts.values()) publishTrust(trust.apply(body));
         },
         onStatus: (s) => {
@@ -270,6 +275,7 @@ export async function startRelay({
       const refusal = requestFailure(req.headers.host, boundPort, req.method, req.headers.origin);
       if (refusal) return json(res, refusal, { error: refusal === 403 ? 'host not allowed' : 'GET only' });
       const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
+      if (url.pathname === '/trust-probe') return trustProbe ? json(res, 200, trustProbe.snapshot()) : json(res, 404, { error: 'not found' });
       if (url.pathname === '/census') return census ? json(res, 200, census.snapshot()) : json(res, 404, { error: 'not found' });
 
       let area;
@@ -385,12 +391,13 @@ export async function startRelay({
         // still finish the recording, and callers may share the same close promise.
         const recorded = Promise.all([...contexts.values()].map(({ recorder }) => recorder.close()));
         const scheduled = Promise.all([...contexts.values()].map(({ schedules }) => schedules.close()));
+        const probed = trustProbe?.close();
         try {
           await new Promise((resolve, reject) => {
             server.close((error) => error ? reject(error) : resolve());
             server.closeAllConnections();
           });
-        } finally { await Promise.all([recorded, scheduled]); }
+        } finally { await Promise.all([recorded, scheduled, probed]); }
       })();
     },
   };

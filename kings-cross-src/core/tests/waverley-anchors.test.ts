@@ -121,3 +121,61 @@ test('Waverley takes platform associations only from the four arrival and depart
   assert.deepEqual(odd.platformAssociations, []);
   assert.deepEqual(odd.anchors, []);
 });
+
+// ALM-BUG-FLU-00018. Invented geometry: open track, a tunnel way (layer -1) between two portals, open track again.
+function portalScene(): WaverleyAnchorScene {
+  const d = scene(); d.platforms = [];
+  d.rails = [
+    { id: 'p/west', path: [[0,0],[100,0],[200,0]], tags: {} },
+    { id: 'p/tunnel', path: [[200,0],[400,0],[600,0]], tags: { tunnel: 'yes', layer: '-1' } },
+    { id: 'p/east', path: [[600,0],[700,0],[800,0]], tags: {} },
+  ];
+  return d;
+}
+
+test('Waverley track runs through a tunnel portal and a bridge abutment where the layer changes on a shared way end', () => {
+  const d = portalScene();
+  d.rails.push({ id: 'p/viaduct', path: [[800,0],[1000,0]], tags: { bridge: 'yes', layer: '1' } }, { id: 'p/beyond', path: [[1000,0],[1100,0]], tags: {} });
+  const data = waverleyTrackData(d), graph = buildGraph(data);
+  assert.equal(components(graph).length, 1);
+  for (const x of [200, 600, 800, 1000]) assert.equal(data.nodes.filter(([,nx,nz]) => nx === x && nz === 0).length, 1, `one node at the structure end x=${x}`);
+  assert.deepEqual(data.rails.map(r => r.layer), [0, 0, -1, 1, 0], 'rails keep their own layer (in id order)');
+  // stored berth anchors name nodes by id: the join must not renumber any other node
+  const split = waverleyTrackData({ ...d, rails: d.rails.map(r => ({ ...r, tags: {} as Record<string, string>, ...(r.tags.layer ? { tags: { layer: r.tags.layer } } : {}) })) });
+  assert.equal(split.nodes.length, data.nodes.length + 4);
+  for (const [id, x, z] of data.nodes) assert.ok(split.nodes.some(n => n[0] === id && n[1] === x && n[2] === z), `node ${id} keeps its id`);
+  assert.deepEqual(waverleyTrackData({ ...d, rails: [...d.rails].reverse() }), data);
+});
+
+test('Waverley keeps a bridge or tunnel crossing over track apart, even on a shared coordinate', () => {
+  const d = scene(); d.platforms = [];
+  d.rails = [
+    { id: 'x/lower', path: [[0,0],[10,0],[20,0]], tags: {} },
+    { id: 'x/bridge', path: [[10,-10],[10,0],[10,10]], tags: { bridge: 'yes', layer: '1' } },
+    // a lower way that happens to end under the bridge's interior vertex
+    { id: 'x/stub', path: [[10,0],[10,-20]], tags: {} },
+    { id: 'x/tunnel', path: [[30,-10],[30,0],[30,10]], tags: { tunnel: 'yes', layer: '-1' } },
+    { id: 'x/over', path: [[20,0],[30,0]], tags: {} },
+  ];
+  const data = waverleyTrackData(d), graph = buildGraph(data);
+  assert.equal(components(graph).length, 3);
+  assert.equal(data.nodes.filter(([,x,z]) => x === 10 && z === 0).length, 2);
+  assert.equal(data.nodes.filter(([,x,z]) => x === 30 && z === 0).length, 2);
+});
+
+test('Waverley EB train steps through a tunnel and enters from the far end of the approach, not the portal', () => {
+  const d = portalScene(), data = waverleyTrackData(d), graph = buildGraph(data);
+  // anchors sit on edges away from the portals, so each end node is unique on either side of the fix
+  const at = (x: number): number => data.nodes.find(([,nx,nz]) => nx === x && nz === 0)![0];
+  const anchor = (berth: string, a: number, b: number, x: number) => ({ berth, kind: 'inferred' as const, from: at(a), to: at(b), t: (x - a) / (b - a), point: [x, 0] as [number, number], errorM: 5, evidence: 'synthetic' });
+  const map = { area: 'EB', sources: ['synthetic'], unmapped: [], anchors: [anchor('QQ01', 0, 100, 50), anchor('QQ02', 700, 800, 750)] };
+  const through = createMotion(graph, map);
+  through.apply({ kind: 'step', area: 'EB', descr: 'SYN1', from: 'QQ01', to: 'QQ02' }, 0);
+  for (let i = 0; i < 3000; i++) through.advance(0.1);
+  assert.deepEqual(through.diagnostics().filter(i => i.kind === 'unroutable'), []);
+  assert.equal(through.trains()[0]!.lastBerth, 'QQ02');
+  assert.ok(Math.abs(through.trains()[0]!.leading.point[0] - 750) < 1, 'the train reaches QQ02 beyond the tunnel');
+  const entering = createMotion(graph, map);
+  entering.apply({ kind: 'step', area: 'EB', descr: 'SYN2', from: 'APPR', to: 'QQ02' }, 0);
+  assert.ok(entering.trains()[0]!.leading.point[0] < 200, 'the train enters at the open end of the approach, not the tunnel mouth');
+});
