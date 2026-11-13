@@ -16,6 +16,7 @@ import { furniturePlan } from '../src/furniture.ts';
 import { cityMaterial, material, terrainMaterial, windowNight } from '../src/materials.ts';
 import { nightLightSites } from '../src/night.ts';
 import { trainNight } from '../src/train-geom.ts';
+import { headlampUniforms } from '../src/train-headlamp-light.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
 import type { WeatherState } from '../src/weather.ts';
 import { addWorld, DAYLIGHT, LIGHTS } from '../src/world.ts';
@@ -623,7 +624,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const roofOnly = compile(brick);
   assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
   assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
-  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill'].sort(), 'the cover, the shade and the concourse\'s fill, and nothing else');
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill and the headlamps\' slots, and nothing else');
 
   const s = compile(asphalt);
   const f = s.fragmentShader;
@@ -750,3 +751,4 @@ test('a configured atmosphere computes the sun at Waverley without changing the 
     assert.deepEqual(REFERENCE.sun, { colour: DAYLIGHT.sun.colour, intensity: DAYLIGHT.sun.intensity }, 'the reference rig is the page\'s daylight rig, whatever the location');
   } finally { atmosphere.dispose(); }
 });
+

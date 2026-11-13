@@ -18,11 +18,12 @@ import { COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { buildFurniture } from '../src/furniture.ts';
 import { addKxCentral } from '../src/kxcentral.ts';
 import { addLandmarks } from '../src/landmarks.ts';
-import { addRoofShade, createAdditionsWatch, createSunShadow, createUngradedScan, FLOOD, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
+import { addRoofShade, HEADLAMP_LAMBERT, createAdditionsWatch, createSunShadow, createUngradedScan, FLOOD, FOOT_SHADE, GLOW_BELOW, GLOW_BELOW_GAIN, grade, INTERIOR, interiorFillFor, leaveOutOfGrade, lightAxes, MOTTLE, ROOF_SHADE, ROOF_SHADE_GLSL, ROOM_REACH, roofShadeUniforms, SHADOW_CASTERS, SHADOW_MAP_SIZE, SHADOW_STEPS, SHADOW_TAPS, shadowFit } from '../src/lighting.ts';
 import { cityMaterial, material, windowNight } from '../src/materials.ts';
 import { buildShed, buildTower, buildWesternRange } from '../src/shed.ts';
 import { addWorld, DAYLIGHT } from '../src/world.ts';
 import { Glsl, toValue } from './glsl.ts';
+import { HEADLAMP_MARK, headlampUniforms } from '../src/train-headlamp-light.ts';
 import type { Env, Sampler, Value } from './glsl.ts';
 
 type V3 = readonly [number, number, number];
@@ -704,6 +705,55 @@ test('addRoofShade: after the lights are summed and before the output; any patch
   wet.onBeforeCompile(wetShader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
   assert.equal(wetShader.fragmentShader.split('float coverGroundAt(').length - 1, 1, 'the cover read an earlier patch added is not added again');
   assert.ok(wetShader.fragmentShader.includes('vec4 roofK = roofShade('), 'and the shade is there');
+});
+
+test('addRoofShade: the headlamps\' light is put in once, after the roof\'s shade and before the output, from the shared slots; the program\'s key does not change with the lamps', () => {
+  const m = new THREE.MeshLambertMaterial({ color: 0x808080 });
+  m.customProgramCacheKey = () => 'prior';
+  addRoofShade(m);
+  const compile = (): { uniforms: Record<string, THREE.IUniform>; fragmentShader: string } => {
+    const shader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+    m.onBeforeCompile(shader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+    return shader;
+  };
+  const shader = compile(), f = shader.fragmentShader;
+  assert.equal(f.split(HEADLAMP_MARK).length - 1, 1, 'the lamp\'s function is declared once');
+  assert.equal(f.split('vec3 headlampsAt(').length - 1, 1, 'and the sum of the slots');
+  assert.equal(f.split('uniform int uHeadlampCount;').length - 1, 1, 'and the count');
+  assert.equal(f.split(HEADLAMP_LAMBERT).length - 1, 1, 'it is added once');
+  const order = [HEADLAMP_MARK, 'vec3 headlampsAt(', '#include <lights_fragment_end>', 'reflectedLight.directDiffuse *= roofK.a;', HEADLAMP_LAMBERT, '#include <aomap_fragment>', '#include <opaque_fragment>'].map((needle) => f.indexOf(needle));
+  assert.ok(order.every((i) => i >= 0), `every piece is there: ${order}`);
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'declared before it is used; added after the lights are summed and the shade taken, before the output');
+  assert.ok(HEADLAMP_LAMBERT.startsWith('if ( uHeadlampCount > 0 )'), 'with no slot in use (the day) the program skips it');
+  for (const name of ['uHeadlampCount', 'uHeadlampPos', 'uHeadlampAim'] as const) assert.ok(shader.uniforms[name] === headlampUniforms[name], `${name} is the shared one`);
+  // the key: what it was with the shade alone, and the same whatever the lamps do (a program per key: a changed key is a recompile)
+  const key = m.customProgramCacheKey();
+  assert.equal(key, 'prior+roofShade');
+  const had = headlampUniforms.uHeadlampCount.value;
+  try {
+    headlampUniforms.uHeadlampCount.value = 8;
+    headlampUniforms.uHeadlampPos.value[3]!.set(1, 2, 3, 0);
+    assert.equal(m.customProgramCacheKey(), key, 'the lamps change no key');
+    assert.equal(compile().fragmentShader, f, 'and no source');
+  } finally { headlampUniforms.uHeadlampCount.value = had; }
+  // a shader an earlier patch has put the light in is not given a second copy (a program with two cannot compile)
+  const twice = new THREE.MeshLambertMaterial();
+  twice.onBeforeCompile = (s) => { s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>\n${HEADLAMP_MARK} vec3 p, vec3 n, vec4 lamp, vec4 aim ) { return vec3( 0.0 ); }`); };
+  addRoofShade(twice);
+  const twiceShader = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader };
+  twice.onBeforeCompile(twiceShader as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never);
+  assert.equal(twiceShader.fragmentShader.split(HEADLAMP_MARK).length - 1, 1, 'the function is there once');
+});
+
+test('the headlamps\' Lambert line, run: at count 0 (the day) the direct term is exactly what it was; with a slot in use, the slot\'s light times the albedo is added', () => {
+  const g = new Glsl('vec3 headlampsAt( vec3 p, vec3 n ) { return vec3( 0.25, 0.5, 1.0 ); }\nvec3 inverseTransformDirection( vec3 d, mat4 m ) { return d; }');
+  const env = (count: number): Record<string, Value> => ({ uHeadlampCount: count, cameraPosition: [0, 0, 0], vViewPosition: [0, 0, 1], viewMatrix: toValue(new THREE.Matrix4()), normal: [0, 0, 1] });
+  const line = HEADLAMP_LAMBERT.replace(/reflectedLight\.directDiffuse/g, 'directDiffuse').replace(/material\.diffuseColor/g, 'albedo');
+  for (const [count, want] of [[0, [0.1, 0.2, 0.3]], [1, [0.1 + 0.125, 0.2 + 0.25, 0.3 + 0.5]]] as const) {
+    const vars = { ...env(count), directDiffuse: [0.1, 0.2, 0.3], albedo: [0.5, 0.5, 0.5] };
+    g.run(line, { vars });
+    assert.deepEqual(vars.directDiffuse, want, `count ${count}`);
+  }
 });
 
 test('addRoofShade: the concourse\'s fill is weighted by how far down the face looks and by how pale the surface is, so white steel keeps its modelling and the Range\'s brick and the floor keep their fill (round five, the funnel legs)', () => {
