@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_SETTLE_MS = 60_000;
-const DEFAULT_TIMEOUT_MS = 10 * 60_000;
+// 45 min: the child runs at nice 19 on a shared host, and the relearn took 1.5-3.7 min uncontended
+// but hit a 10 min limit on 2026-11-12 and -13.
+const DEFAULT_TIMEOUT_MS = 45 * 60_000;
 const KILL_GRACE_MS = 2_000;
 const NICE_EXECUTABLE = '/usr/bin/nice';
 const MAX_OUTPUT_BYTES = 1024 * 1024;
@@ -23,6 +25,8 @@ function nextUtcMidnight(ms) {
 
 function safeErrorSummary(error) {
   if (error?.code === 'ETIMEDOUT') return 'timed out';
+  // node's execFile timeout kills the child with SIGTERM and reports code null, killed true.
+  if (error?.killed === true && typeof error.signal === 'string' && /^SIG[A-Z]{2,8}$/.test(error.signal)) return `killed ${error.signal}`;
   if (Number.isInteger(error?.code)) return `exit ${error.code}`;
   if (typeof error?.code === 'string' && /^[A-Z0-9_]{1,24}$/.test(error.code)) return error.code;
   return 'failed';

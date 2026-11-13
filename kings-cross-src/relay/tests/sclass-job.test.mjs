@@ -182,6 +182,19 @@ test('sclass job: failure is contained, redacted, and does not stop the next day
   await job.stop();
 });
 
+test('sclass job: a child killed by the execFile timeout logs as killed, not a bare failure', async () => {
+  const clock = fakeClock(instant), logs = [];
+  // The shape node gives when execFile's timeout fires: code null, killed true, signal SIGTERM.
+  const job = makeJob(clock, { log: line => logs.push(line), run: async () => {
+    throw Object.assign(new Error('Command failed: secret=private-value'), { code: null, killed: true, signal: 'SIGTERM' });
+  } });
+  job.start();
+  await clock.fireNext();
+  assert.deepEqual(logs, [`sclass relearn: killed SIGTERM for ${day}`]);
+  assert.ok(!logs.join('\n').includes('private-value'));
+  await job.stop();
+});
+
 test('sclass job: CLI results log only validated publish decisions, counts, and concise reasons', async () => {
   const clock = fakeClock(instant), logs = [];
   const results = [
