@@ -8,7 +8,8 @@ import { PERTH_AREA, PERTH_ORIGIN, PERTH_STATION_BUILDING_ID } from '../../core/
 import { createTerrain, terrainFromFunction } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { stationRailwayIntrusions } from '../src/station-railway.ts';
-import { PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, buildPerthScene, onBridge, perthBuildingHeight, perthGround, perthTrack } from '../src/perth-scene.ts';
+import { PERTH_DEFAULT_HEIGHT, PERTH_FALLBACK_HEIGHTS, PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, buildPerthScene, onBridge, perthBuildingHeight, perthGround, perthGroundAt, perthTrack } from '../src/perth-scene.ts';
+import { PERTH_EAST } from '../src/perth-east-ground.ts';
 import { loadPerthScene } from '../src/perth.ts';
 import { PERTH_FRONTAGE_OMIT_IDS } from '../src/perth-frontage.ts';
 
@@ -113,4 +114,17 @@ test('the Perth view loads the model with its geometry, or falls back to the hon
   assert.equal(empty.placeholder, true); assert.match(empty.message, /^Perth: model not built yet/);
   const broken = await loadPerthScene({ modelLoader: async () => { throw new Error('chunk 404'); }, geometryLoader: async () => ({ default: JSON.parse(json) }) });
   assert.equal(broken.placeholder, true); assert.match(broken.message, /model unavailable \(chunk 404\)/);
+});
+
+test('the camera clamp\'s ground (ALM-BUG-FLU-00020) is the drawn ground over the main terrain and the east patch\'s hill beyond it', () => {
+  const at = scene.groundAt, main = scene.terrain;
+  for (const [x, z] of [[0, 0], [1500, 400], [2600, 900]] as const) assert.equal(at(x, z), main.heightAt(x, z), `main ground at ${x},${z}`);
+  // East of the main terrain's extent its heightAt is the flat groundY; the east patch is drawn there, up Kinnoull's flank.
+  let high = 0, hx = 0, hz = 0;
+  for (let x = 2656; x <= 4128; x += 32) for (let z = 80; z <= 1232; z += 32) if (PERTH_EAST.heightAt(x, z) > high) { high = PERTH_EAST.heightAt(x, z); hx = x; hz = z; }
+  assert.ok(high > 100, `the east patch rises over 100 m (${high.toFixed(1)} m)`);
+  assert.equal(main.heightAt(hx, hz), main.groundY, 'the main terrain alone would leave it flat');
+  assert.equal(at(hx, hz), high);
+  assert.equal(at(9000, 9000), main.groundY, 'beyond both: the flat ground');
+  assert.equal(perthGroundAt(main)(hx, hz), high);
 });

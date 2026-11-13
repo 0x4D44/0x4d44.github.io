@@ -35,7 +35,7 @@ type Driven = OrbitControls & { _pan(dx: number, dy: number): void; _rotateUp(a:
 
 test('panning from low ground into a hill keeps the target on the ground and the camera above it', () => {
   const r = rig([0, 20, 40], [0, 1, 0]);
-  r.gesture(200, c => (c as Driven)._pan(-12, 0)); // screen-left drag: the view slides east, into the hill
+  r.gesture(200, c => (c as unknown as Driven)._pan(-12, 0)); // screen-left drag: the view slides east, into the hill
   assert.ok(r.camera.position.x > 120, `the pan reached the plateau (x ${r.camera.position.x.toFixed(1)})`);
   assert.ok(r.lowest.margin >= CAMERA_CLEARANCE - 1e-9, `camera margin over ground ${r.lowest.margin.toFixed(2)} m`);
   assert.ok(r.lowest.target >= -1e-9, `target margin over ground ${r.lowest.target.toFixed(2)} m`);
@@ -43,17 +43,17 @@ test('panning from low ground into a hill keeps the target on the ground and the
 
 test('rotating down toward the horizon over a hill behind the target stops the camera above the hill', () => {
   const r = rig([150, 90, 0], [0, 0, 0]); // the target on the low ground, the camera out over the plateau
-  r.gesture(120, c => (c as Driven)._rotateUp(-0.02));
-  r.gesture(60, c => (c as Driven)._rotateLeft(0.01)); // and swing round the target along the slope
+  r.gesture(120, c => (c as unknown as Driven)._rotateUp(-0.02));
+  r.gesture(60, c => (c as unknown as Driven)._rotateLeft(0.01)); // and swing round the target along the slope
   assert.ok(r.lowest.margin >= CAMERA_CLEARANCE - 1e-9, `camera margin over ground ${r.lowest.margin.toFixed(2)} m`);
   assert.ok(r.camera.position.y >= r.controls.target.y, 'the camera never ends below its target');
 });
 
 test('zooming in and out across the hill keeps the clearance', () => {
   const r = rig([120, 64, 10], [40, 0, 0]);
-  r.gesture(40, c => (c as Driven)._dollyOut(1.1));
-  r.gesture(80, c => (c as Driven)._dollyIn(1.1));
-  r.gesture(80, c => (c as Driven)._rotateUp(-0.02));
+  r.gesture(40, c => (c as unknown as Driven)._dollyOut(1.1));
+  r.gesture(80, c => (c as unknown as Driven)._dollyIn(1.1));
+  r.gesture(80, c => (c as unknown as Driven)._rotateUp(-0.02));
   assert.ok(r.lowest.margin >= CAMERA_CLEARANCE - 1e-9, `camera margin over ground ${r.lowest.margin.toFixed(2)} m`);
 });
 
@@ -68,7 +68,7 @@ test('a programmatic pose (no start event: landing views, station flights, evide
 test('after unbinding, the reader can again drive under the ground (the clamp is the only guard)', () => {
   const r = rig([0, 20, 40], [0, 1, 0]);
   r.unbind();
-  r.gesture(200, c => (c as Driven)._pan(-12, 0));
+  r.gesture(200, c => (c as unknown as Driven)._pan(-12, 0));
   assert.ok(r.lowest.margin < 0, 'without the clamp the pan goes under the hill');
 });
 
