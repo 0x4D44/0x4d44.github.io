@@ -207,3 +207,46 @@ export class HeadlampFrame {
   }
 }
 
+// ---- the unlit surfaces it reaches -------------------------------------------------------------------------------------------------------
+
+/**
+ * The lines a MeshBasic program is given to take the headlamps' light (`addHeadlampBasic`): in the vertex shader, the view-space place (as a Lambert program's `vViewPosition`);
+ * in the fragment shader, before the output, the slots' light at the fragment's world place on the face's own normal (from the place's derivatives, turned to the camera:
+ * a MeshBasic program has no normal of its own), times `albedo`, added to the colour, only while a slot is in use.
+ */
+export const HEADLAMP_BASIC_GLSL = {
+  declare: 'varying vec3 vHeadlampView;',
+  vertex: 'vHeadlampView = - mvPosition.xyz;',
+  fragment: (albedo: string): string => `if ( uHeadlampCount > 0 ) {
+  vec3 headlampP = cameraPosition - vHeadlampView * mat3( viewMatrix );
+  vec3 headlampN = normalize( cross( dFdx( headlampP ), dFdy( headlampP ) ) );
+  if ( dot( headlampN, cameraPosition - headlampP ) < 0.0 ) headlampN = - headlampN;
+  outgoingLight += headlampsAt( headlampP, headlampN ) * ${albedo};
+}`,
+} as const;
+
+const basics = new WeakSet<THREE.Material>();
+/**
+ * Give a MeshBasic material the headlamps' light (the signals' posts and heads, the tunnels' lining): their light at the fragment times `albedo` (a grey, linear, for a surface whose
+ * flat colour is darker than what it reflects: the tunnel's lining is drawn near black, and is sooty brick under a lamp) or, without one, the surface's own colour. Any
+ * `onBeforeCompile` it already has runs first, and its key is kept in the program's; a material is given it once. Instanced or not: three's `project_vertex` puts the instance matrix into `mvPosition`.
+ */
+export function addHeadlampBasic(material: THREE.MeshBasicMaterial, albedo?: number): void {
+  if (basics.has(material)) return;
+  basics.add(material);
+  const prior = material.onBeforeCompile;
+  const priorKey = material.customProgramCacheKey();
+  const reflect = albedo === undefined ? 'diffuseColor.rgb' : `vec3( ${f(albedo)} )`;
+  material.onBeforeCompile = (shader, renderer) => {
+    prior.call(material, shader, renderer);
+    Object.assign(shader.uniforms, headlampUniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${HEADLAMP_BASIC_GLSL.declare}`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${HEADLAMP_BASIC_GLSL.vertex}`);
+    let fragment = shader.fragmentShader.replace('#include <common>', `#include <common>\n${HEADLAMP_BASIC_GLSL.declare}`);
+    if (!fragment.includes(HEADLAMP_MARK)) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
+    shader.fragmentShader = fragment.replace('#include <opaque_fragment>', `${HEADLAMP_BASIC_GLSL.fragment(reflect)}\n#include <opaque_fragment>`);
+  };
+  material.customProgramCacheKey = () => `${priorKey}+headlampBasic${albedo === undefined ? '' : `-${albedo}`}`;
+  material.needsUpdate = true;
+}

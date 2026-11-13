@@ -25,11 +25,14 @@ import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { material, mergeParts, part, terrainMaterial } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
+import { addHeadlampBasic } from './train-headlamp-light.ts';
 import { GROUND_Y } from './world.ts';
 
 export type PortalKey = 'brick' | 'stone' | 'earth' | 'tube';
 
 /** ASSUMED sizes: nothing published gives them for these portals. */
+/** What the tunnel's lining reflects of a train's headlamps (train-headlamp-light.ts `addHeadlampBasic`): sooty brick. ASSUMED: a look, not a measurement. */
+export const TUBE_LIT_ALBEDO = 0.1;
 export const PORTAL = {
   voussoir: 0.75, // dressed-stone ring round each arch, metres
   cornice: { height: 0.7, out: 0.45 }, // the stone cornice along the top of the face
@@ -498,6 +501,8 @@ export function addPortals(scene: THREE.Scene, data: KxData, opts: PortalOptions
   // ASSUMED: a grass-grown embankment, dark under the night sky (flat ground); the terrain's own ground colour under the lid
   const earth = terrain ? terrainMaterial('ground') : new THREE.MeshLambertMaterial({ color: 0x3f4a35 });
   const tube = new THREE.MeshBasicMaterial({ color: 0x090b0e });
+  // drawn near black, but a train's headlamps light its lining (train-headlamp-light.ts) as the sooty brick it is (ASSUMED: albedo 0.1)
+  addHeadlampBasic(tube, TUBE_LIT_ALBEDO);
   if (!terrain) owned.push(earth);
   owned.push(tube);
   const table: Record<PortalKey, THREE.Material> = { brick: material('brick'), stone: material('stone'), earth, tube };
