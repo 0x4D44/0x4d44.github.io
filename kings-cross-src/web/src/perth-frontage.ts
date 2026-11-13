@@ -1,7 +1,7 @@
 // P2 frontage: the station's street front and entrance, its forecourt, the Station Hotel and the rail underbridge over King's Place
 // (gfx-rubrics/perth-frontage.md). perth-scene.ts calls addPerthFrontage once, after the station and before the city, with the scene's
 // build context. The station's street front faces NORTH onto the car park, not west (OSM entrance node/561381370; lead ruling 2026-11-10).
-// Parts: the hotel (perth-frontage-hotel.ts), the front, forecourt and bridge (perth-frontage-street.ts), from OSM (ODbL: core/perth-data.ts
+// Parts: the hotel (perth-frontage-hotel.ts), the front, forecourt and bridge (perth-frontage-street.ts), St Leonard's Bridge (perth-st-leonards-bridge.ts), from OSM (ODbL: core/perth-data.ts
 // and data/perth-frontage.json, written by tools/build-perth-frontage.ts). Every dimension has a cited source or an ASSUMED label.
 import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
@@ -14,6 +14,8 @@ import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './pe
 import {forecourt,hotelShrubs,stationFront} from './perth-frontage-street.ts';
 import {cutRoadMask,cutRoadSurfaces,cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
 import {perthTrack} from './perth-station.ts';
+import {stLeonardsBridge} from './perth-st-leonards-bridge.ts';
+import type {StLeonardsInfo} from './perth-st-leonards-bridge.ts';
 import {coursedTexture,rubbleTexture,settsTexture} from './perth-frontage-textures.ts';
 import type {FrontageFile} from './perth-frontage-street.ts';
 import frontageFile from './data/perth-frontage.json' with {type:'json'};
@@ -24,7 +26,7 @@ export const PERTH_FRONTAGE_OMIT_IDS:readonly string[]=[PERTH_HOTEL_ID];
 const KINGS_PLACE_RAILS=['way/1260630143','way/1260630144'];
 
 /** What the element drew, for tests and the round notes. */
-export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;piers:number;walls:number;roadSegments:number};triangles:number;drawCalls:number}
+export interface PerthFrontageInfo {hotel:{P:number;foot:number};front:{P:number;edges:number};bridge:{sides:number;ends:number;panels:number;piers:number;walls:number;roadSegments:number};stLeonards:StLeonardsInfo;triangles:number;drawCalls:number}
 
 export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,parent:THREE.Group):PerthFrontageInfo{
  const {add,own,stats}=build,before={t:stats.triangles,d:stats.drawCalls};
@@ -48,6 +50,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const bridge=kingsPlaceBridge(bridgeBatch,ring,[dir[0]/dl,dir[1]/dl],ground,rubble,[...track.ground,...track.bridge]);
  const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge,ring,bridgeBatch);
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
+ // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material
+ const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
@@ -60,8 +64,9 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  add(group,facade,facadeMat,'perth-hotel-facade');add(group,detail,coloured,'perth-hotel-roofs-and-stone');
  add(group,front,coloured,'perth-station-front');add(group,glass,glassMat,'perth-frontage-glazing');
  add(group,flat,flatMat,'perth-forecourt');add(group,paint,paintMat,'perth-forecourt-markings');add(group,bridgeBatch,coloured,'perth-kings-place-bridge');
+ add(group,stLeonardsBatch,coloured,'perth-st-leonards-bridge');
  const textured=(t:THREE.CanvasTexture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
  add(group,setts,textured(settsTexture(),-3),'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
  add(group,rubble,textured(rubbleTexture()),'perth-kings-place-walls');
- return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};
+ return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},stLeonards,triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};
 }
