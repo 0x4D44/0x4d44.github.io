@@ -60,14 +60,19 @@ test('headlampOne: N·L: a wall along the beam is lit by the cosine of its angle
   assert.equal(HEADLAMP_SLOTS, 8);
 });
 
-test('headlampOne: the floor at the lamp\'s rail level is the pool\'s (none), a platform\'s top a metre over it and a wall at the foot are lit', () => {
-  const lamp = [0, 1.5, 0], aim = [0, -0.2, -1].map((v, _, a) => v / Math.hypot(...a)), up = [0, 1, 0];
+test('headlampOne: everything within the mask over the lamp\'s rail level is the pool\'s, whichever way it faces (the sleepers\' ends too); a platform top or a wall a metre up is lit', () => {
+  const lamp = [0, 1.5, 0], aim = [0, -0.2, -1].map((v, _, a) => v / Math.hypot(...a)), up = [0, 1, 0], facing = [0, 0, 1];
   assert.deepEqual(lightAt([0, 0, -10], up, lamp, aim, 1, 0), [0, 0, 0], 'the track bed at rail level: the pool lights it');
   assert.deepEqual(lightAt([0, -0.14, -10], up, lamp, aim, 1, 0), [0, 0, 0], 'the ballast under the rails');
+  assert.deepEqual(lightAt([0, -0.17, -10], facing, lamp, aim, 1, 0), [0, 0, 0], 'a sleeper\'s end, facing up the track at the lamp (the first look pack\'s white bars)');
+  assert.deepEqual(lightAt([0.75, -0.05, -10], [-1, 0, 0], lamp, aim, 1, 0), [0, 0, 0], 'a rail\'s side');
+  assert.deepEqual(lightAt([0, 0.3, -10], facing, lamp, aim, 1, 0), [0, 0, 0], 'a wall\'s foot, under the mask');
   assert.ok(lightAt([0, 1, -10], up, lamp, aim, 1, 0)[0]! > 0, 'a platform top a metre over the rails is lit');
-  assert.ok(lightAt([0, 0.05, -10], [0, 0, 1], lamp, aim, 1, 0)[0]! > 0, 'a wall\'s foot at rail level is lit');
+  assert.ok(lightAt([0, 1, -10], facing, lamp, aim, 1, 0)[0]! > 0, 'a wall a metre up is lit');
+  const mid = lightAt([0, 0.475, -10], facing, lamp, aim, 1, 0)[0]!, full = lightAt([0, 0.7, -10], facing, lamp, aim, 1, 0)[0]!;
+  assert.ok(mid > 0 && mid < full, `it fades in over the mask's edge: ${mid} under ${full}`);
   // the mask follows the lamp's own rail level, not the world's zero
-  assert.deepEqual(lightAt([0, 3, -10], up, [0, 4.5, 0], aim, 1, 3), [0, 0, 0], 'a lamp on a viaduct 3 m up: its own track bed');
+  assert.deepEqual(lightAt([0, 3, -10], facing, [0, 4.5, 0], aim, 1, 3), [0, 0, 0], 'a lamp on a viaduct 3 m up: its own track bed');
 });
 
 /** A candidate at `x, z`, aimed along -z. */

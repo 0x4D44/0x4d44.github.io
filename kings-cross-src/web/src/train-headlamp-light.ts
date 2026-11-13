@@ -4,8 +4,8 @@
 //
 //   the LIGHT     a spotlight per slot, cone `HEADLAMP_LIGHT.inner` to `.outer` degrees, out to `.range` metres, N·L, no shadow (so it leaks through a standing train or a
 //                 wall within the range). It is added to the direct diffuse of every Lambert program (lighting.ts `addRoofShade`, which every Lambert passes through) and to the
-//                 colour of the few MeshBasic surfaces it should reach (`addHeadlampBasic`: the signals and the tunnels' lining). A floor at the lamp's own rail level is
-//                 left to the pool (`floorMask` in the GLSL), so the track bed is not lit twice.
+//                 colour of the few MeshBasic surfaces it should reach (`addHeadlampBasic`: the signals and the tunnels' lining). Everything within `floorOver` of the
+//                 lamp's own rail level, whichever way it faces, is left to the pool (`floorMask` in the GLSL), so the track bed is not lit twice.
 //   the SLOTS     `HEADLAMP_SLOTS` is fixed at compile time: the light changes only uniform values (`headlampUniforms`), never a program, so nothing recompiles after load.
 //                 The slots go to the ends showing `head` whose lit volume is in the frustum, nearest the camera first, with hysteresis (a lamp that holds a slot keeps it
 //                 against one a little nearer) and a fade of `HEADLAMP_LIGHT.fade` seconds in and out (`selectHeadlamps`, pure).
@@ -24,13 +24,14 @@ export const HEADLAMP_SLOTS = 8;
 /**
  * The light of one headlamp end. `inner` and `outer`: the cone's half-angles, degrees (full strength inside `inner`, none outside `outer`). `range`: metres, where it is gone
  * (a smooth window, `(1 - (d / range)^4)^2`). `level`: what a surface square to the beam `ref` metres away reflects, in units of its own albedo, at full strength; it falls
- * with the square of the distance, held at its value at `near` metres closer in. `floorUp` and `floorOver`: the floor mask (a face looking up by more than the first pair's
- * cosines, within the second pair's metres over the lamp's rail level, is the pool's). `fade`: seconds to fade a slot in or out. `hysteresis`: a lamp that holds a slot is
+ * with the square of the distance, held at its value at `near` metres closer in. `floorOver`: the floor mask, metres over the lamp's rail level: all of the light under the first,
+ * none over the second, whichever way the surface faces. The track bed is the pool's: the first GPU look pack (13 Nov) had a mask of up-facing faces only, and the sleepers'
+ * 5 cm ends, which face up the track at the lamp, took the whole beam, a white bar on every sleeper. A wall's foot loses this light below the mask. `fade`: seconds to fade a slot in or out. `hysteresis`: a lamp that holds a slot is
  * ranked as if this much of its distance away. ASSUMED: a look, not a measurement; the GPU look pack tunes `level`.
  */
 export const HEADLAMP_LIGHT = {
   inner: 12, outer: 25, range: 45, level: 0.8, ref: 10, near: 5,
-  floorUp: [0.6, 0.85], floorOver: [0.35, 0.6],
+  floorOver: [0.35, 0.6],
   fade: 0.25, hysteresis: 0.8,
 } as const;
 
@@ -68,7 +69,7 @@ export const HEADLAMP_GLSL = {
   float edge = 1.0 - x * x * x * x;
   float held = max( d, ${f(HEADLAMP_LIGHT.near)} );
   float fall = ${f(HEADLAMP_LIGHT.ref * HEADLAMP_LIGHT.ref)} / ( held * held );
-  float floorMask = smoothstep( ${f(HEADLAMP_LIGHT.floorUp[0])}, ${f(HEADLAMP_LIGHT.floorUp[1])}, n.y ) * ( 1.0 - smoothstep( ${f(HEADLAMP_LIGHT.floorOver[0])}, ${f(HEADLAMP_LIGHT.floorOver[1])}, p.y - lamp.w ) );
+  float floorMask = 1.0 - smoothstep( ${f(HEADLAMP_LIGHT.floorOver[0])}, ${f(HEADLAMP_LIGHT.floorOver[1])}, p.y - lamp.w );
   return vec3( ${f(lensLinear.r)}, ${f(lensLinear.g)}, ${f(lensLinear.b)} ) * ( ${f(HEADLAMP_LIGHT.level)} * aim.w * cone * facing * edge * edge * fall * ( 1.0 - floorMask ) );
 }`,
   sum: `vec3 headlampsAt( vec3 p, vec3 n ) {
