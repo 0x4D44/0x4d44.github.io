@@ -155,7 +155,7 @@ test('a trunk way is cut to the run near the extent: one vertex either side, not
 
 test('the OSM tiles: a fixed lattice covers the extent and its margin, each tile within the API limits, and a wider extent only adds tiles', () => {
   const tiles = westTiles(PERTH_WEST_EXTENT);
-  assert.equal(tiles.length, 12);
+  assert.equal(tiles.length, 16, '4 x 4 lattice tiles for the extent and its 120 m margin');
   assert.equal(new Set(tiles.map(t => t.name)).size, tiles.length, 'unique names');
   for (const t of tiles) {
     const [w, s, e, n] = t.bbox; assert.ok(e > w && n > s && (e - w) * (n - s) < 0.25, `${t.name} under the API's area limit`);
@@ -167,9 +167,12 @@ test('the OSM tiles: a fixed lattice covers the extent and its margin, each tile
     const { lat, lon } = unproject(p[0], p[1], PERTH_ORIGIN);
     assert.ok(tiles.some(t => lon >= t.bbox[0] && lon <= t.bbox[2] && lat >= t.bbox[1] && lat <= t.bbox[3]), `corner ${p} is covered`);
   }
-  const wider = westTiles({ ...PERTH_WEST_EXTENT, x0: -3232 });
-  assert.ok(tiles.every(t => wider.some(w => w.name === t.name && w.bbox.join() === t.bbox.join())), 'every tile of the narrower extent is a tile of the wider one, unchanged: a rebuild fetches only the new ones');
-  assert.equal(wider.length, 16);
+  // widening only adds tiles: the first west extent (x0 -2800, 12 tiles) is wholly inside this one's, and this one inside a wider still
+  const has = (all: typeof tiles, t: (typeof tiles)[number]) => all.some(w => w.name === t.name && w.bbox.join() === t.bbox.join());
+  const first = westTiles({ ...PERTH_WEST_EXTENT, x0: -2800 }), wider = westTiles({ ...PERTH_WEST_EXTENT, x0: -4300 });
+  assert.equal(first.length, 12);
+  assert.ok(first.every(t => has(tiles, t)), 'every tile of the narrower extent is a tile of the wider one, unchanged: a rebuild fetches only the new ones');
+  assert.ok(tiles.every(t => has(wider, t)));assert.ok(wider.length > tiles.length);
 });
 
 test('area multipolygons the tiles hold incompletely are named for a full fetch; buildings, routes and complete ones are not', () => {
@@ -197,6 +200,9 @@ test('the committed west file: the extent, the encodings, and every trunk way ca
   assert.match(bad(f => { f.attribution = 'mine'; }).join(), /attribution/);
   assert.match(bad(f => { f.q = 1; }).join(), /q/);
   assert.ok(file.trunk.ways.some((w: any) => w.ref === 'A9') && file.trunk.ways.some((w: any) => w.ref === 'M90'), 'the A9 and the M90 reach the extent');
+  const broxden = file.trunk.roundabouts.find((r: any) => r.name === 'Broxden Roundabout');
+  assert.ok(broxden && broxden.closed && broxden.hw === 'trunk' && broxden.ref === 'A9' && Math.hypot(broxden.x + 2995, broxden.z - 360) < 30, `the Broxden roundabout is one closed A9 ring at about (-2995, 360): ${JSON.stringify(broxden)}`);
+  assert.ok(file.trunk.junctions.some((j: any) => j.ref === '12' && j.name === 'Broxden Roundabout'), 'and its numbered motorway junction');
   assert.ok(file.trunk.ways.every((w: any) => w.basis !== 'ASSUMED' || w.lanes > 0), 'a way with no lanes tag is flagged ASSUMED and still has lanes');
 });
 

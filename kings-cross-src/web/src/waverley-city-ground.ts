@@ -287,7 +287,7 @@ function paintGround(ground:Pick<Terrain,'normalAt'|'heightAt'>,slopeAt:(x:numbe
 export interface WaverleyCityGround {group:THREE.Group;stats:{triangles:number;drawCalls:number};trees:Tree[];dispose():void}
 /** The draped land-use cover and the trees; `footprints` are every mapped building and roof outline (trees stand clear of them). */
 /** `options` (another station's ground, Perth's): its wood and scrub fill spacing, and whether a massed wood tree (not a mapped or hanging one) has a trunk, and the drape's tolerance and lift (DRAPE_TOLERANCE). */
-export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint;/** texels across the extent's x span (CANVAS_WIDTH by default) */canvasWidth?:number}={}):WaverleyCityGround{
+export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LANDUSE:Landuse=WAVERLEY_LANDUSE,options:{fillStep?:{wood:number;scrub:number};woodTrunks?:boolean;drape?:number;/** ground another element draws itself (Perth's frontage): no drape triangle with its centroid or any corner there */uncovered?:(x:number,z:number)=>boolean;woodland?:Woodland;rockTones?:readonly string[];/** paint for the mapped water on the drape, where it shows above a water sheet (Perth's shore) */waterPaint?:string;/** gardens painted over the land use (Perth's residential land) */gardens?:GardenPaint;/** texels across the extent's x span (CANVAS_WIDTH by default) */canvasWidth?:number;/** draw the mapped trees (natural=tree nodes) with the massed trees (coarse crowns, treated as wood trees: bare foliage on the ground when `woodTrunks` is false) instead of in their own crown and trunk draws, two draws fewer (Perth's west, where there are 6) */mappedWithMassed?:boolean}={}):WaverleyCityGround{
  const group=new THREE.Group();group.name='waverley-city-ground';
  const stats={triangles:0,drawCalls:0},geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];
  const {x0,z0,x1,z1}=LANDUSE.extent;
@@ -314,13 +314,13 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
   const ico=(detail:number)=>{const g=new THREE.IcosahedronGeometry(1,detail),p=g.getAttribute('position'),n=g.getAttribute('normal');for(let i=0;i<p.count;i++){const v=new THREE.Vector3(p.getX(i),p.getY(i),p.getZ(i)).normalize();n.setXYZ(i,v.x,v.y,v.z);}return g;}; // smooth normals: a rounded crown, not facets
   const fineG=new THREE.SphereGeometry(1,6,4),coarseG=ico(0),trunkG=new THREE.CylinderGeometry(1,1,1,3,1,true);geometries.push(fineG,coarseG,trunkG);
   const leaf=new THREE.MeshLambertMaterial({color:0xffffff}),bark=new THREE.MeshLambertMaterial({color:0x4a3f33});materials.push(leaf,bark);leaf.name='waverley-tree-crowns';bark.name='waverley-tree-trunks';
-  const mapped=trees.filter(t=>t.kind==='tree'),massed=trees.filter(t=>t.kind!=='tree'),trunked=trees.filter(t=>t.kind!=='scrub'&&(options.woodTrunks!==false||t.kind==='tree'||t.hanging));
+  const own=!options.mappedWithMassed,mapped=trees.filter(t=>t.kind==='tree'&&own),massed=trees.filter(t=>t.kind!=='tree'||!own),trunked=trees.filter(t=>t.kind!=='scrub'&&(options.woodTrunks!==false||t.kind==='tree'&&own||t.hanging));
   const m=new THREE.Matrix4(),q=new THREE.Quaternion(),col=new THREE.Color(),up=new THREE.Vector3(0,1,0);
   const crownsOf=(list:Tree[],geo:THREE.BufferGeometry,name:string)=>{
    const crowns=new THREE.InstancedMesh(geo,leaf,list.length);
    list.forEach((t,i)=>{const r=hash(t.x,t.z,7),ch=t.height*crownDepth(t.kind);q.setFromAxisAngle(up,r*6.283);
     // a massed wood tree with no trunk (options.woodTrunks false) is foliage down to the ground, not a crown floating over it
-    const bare=options.woodTrunks===false&&t.kind==='wood'&&!t.hanging;
+    const bare=options.woodTrunks===false&&(t.kind==='wood'||t.kind==='tree'&&!own)&&!t.hanging;
     m.compose(new THREE.Vector3(t.x,bare?t.y+ch:t.y+t.height-ch,t.z),q,new THREE.Vector3(t.crown,ch,t.crown));crowns.setMatrixAt(i,m);
     // ASSUMED leaf greens (R-wv3-a: fresh lime-greens in sun, darker conifers and holly between)
     col.setRGB(.24+r*.1,.36+r*.12,.14+r*.05,THREE.SRGBColorSpace);if(t.kind!=='tree')col.multiplyScalar(.85);if(t.kind!=='tree'&&options.woodland?.tone)options.woodland.tone(t,col);crowns.setColorAt(i,col);});

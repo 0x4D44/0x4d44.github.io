@@ -3,7 +3,8 @@
 // (tools/build-perth-west-landuse.ts). Pure functions for the scene's integration to call; nothing here is wired into a scene.
 // - Ground and trees: Waverley's ground builder (waverley-city-ground.ts) on a drape over the west terrain, with the context's drape
 //   tolerance and tree fill (perth-city-features.ts), its gardens over the residential land (perth-gardens.ts) and a canvas of about
-//   the context's texel density (PERTH_WEST_CANVAS). One draped mesh, and at most three instanced tree draws.
+//   the context's texel density (PERTH_WEST_CANVAS). One draped mesh and one instanced draw for every tree (the mapped trees join the
+//   wood trees' batch, `mappedWithMassed`): two draws.
 // - The trunk roads: the two carriageways of a dual carriageway are two one-way ways in OSM, each painted at its own width (the OSM
 //   width tag; else its lanes times the UK lane width plus hard strips, ASSUMED: tools/build-perth-west-landuse.ts trunkWidth); the gap
 //   between them is the central reserve. They are painted with the streets, so they add no triangles; trees keep clear of them
@@ -17,8 +18,8 @@ import {PERTH_DRAPE, PERTH_FILL_STEP} from './perth-city-features.ts';
 import {PERTH_ROCK_TONES} from './perth-woodland.ts';
 import file from './data/perth-city-landuse-west.json' with {type: 'json'};
 
-/** Texels across the west extent's x span: about the context's density (2,048 over its 3,824 m is 0.54 a metre; 1,024 over 1,600 m is
- *  0.64), so the 1,600 x 2,832 m extent paints 1,024 x 1,812 texels, not the default's 2,048 x 3,625. ASSUMED. */
+/** Texels across the west extent's x span: about the context's density (2,048 over its 3,824 m is 0.54 a metre; 1,024 over 2,032 m is
+ *  0.50), so the 2,032 x 2,832 m extent paints 1,024 x 1,427 texels, not the default's 2,048 x 2,854. ASSUMED. */
 export const PERTH_WEST_CANVAS = 1024;
 /** How a trunk way's width was found (tools/build-perth-west-landuse.ts trunkWidth). */
 export type TrunkBasis = 'OSM width' | 'OSM lanes' | 'ASSUMED';
@@ -90,12 +91,12 @@ export function perthWestGardens(west: PerthWest = PERTH_WEST): GardenPaint {
   return gardens ??= perthGardens(west.residential, {extent: west.landuse.extent, streets: streetIndex(west.landuse.roads)});
 }
 /** The west ground cover, trees and trunk roads on `ground` (the west terrain, whose extent is the file's): the draped cover (one draw)
- *  and the trees (up to three instanced draws). `footprints` are the outlines trees keep clear of (the west buildings and roofs; the trunk
+ *  and the trees (one instanced draw: the mapped trees are drawn with the wood). `footprints` are the outlines trees keep clear of (the west buildings and roofs; the trunk
  *  carriageways are added here); `uncovered` is ground another element draws itself, as in buildWaverleyCityGround. The meshes are named
  *  perth-west-*, not waverley-*, so they stay apart from the context's in one scene. */
 export function buildPerthWestGround(ground: Terrain, footprints: Footprints, uncovered?: (x: number, z: number) => boolean, west: PerthWest = PERTH_WEST): WaverleyCityGround {
   const keep = new Footprints([...footprints.rings, ...trunkClearance(west.trunk)]);
-  const cover = buildWaverleyCityGround(ground, keep, west.landuse, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, rockTones: PERTH_ROCK_TONES, gardens: perthWestGardens(west), canvasWidth: PERTH_WEST_CANVAS, uncovered});
+  const cover = buildWaverleyCityGround(ground, keep, west.landuse, {fillStep: PERTH_FILL_STEP, woodTrunks: false, drape: PERTH_DRAPE, rockTones: PERTH_ROCK_TONES, gardens: perthWestGardens(west), canvasWidth: PERTH_WEST_CANVAS, mappedWithMassed: true, uncovered});
   cover.group.name = 'perth-west-ground';
   cover.group.traverse(o => { if (o.name.startsWith('waverley-')) o.name = `perth-west-${o.name.slice('waverley-'.length)}`; });
   return cover;

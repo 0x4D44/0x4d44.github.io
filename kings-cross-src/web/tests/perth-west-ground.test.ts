@@ -79,9 +79,19 @@ test('the committed west file decodes to the extent: every trunk way is painted,
   assert.ok(PERTH_WEST_LANDUSE.roads.some(r=>r.width===t.width&&r.line.length===t.line.length&&r.line[0]![0]===t.line[0]![0]&&r.line[0]![1]===t.line[0]![1]),`${t.id} is painted at ${t.width} m`);
  }
  assert.ok(PERTH_WEST.trunk.some(t=>t.ref==='A9'&&t.dual),'the A9\'s carriageways');assert.ok(PERTH_WEST.trunk.some(t=>t.ref==='M90'&&t.oneway),'the M90');
- assert.ok(PERTH_WEST.roundabouts.length>=1);for(const r of PERTH_WEST.roundabouts)assert.ok(r.closed&&r.radius>5&&r.radius<100,`roundabout at ${r.x}, ${r.z}`);
+ // the extent was widened to take in the A9 bypass: two A9 carriageways cross each of these z, both inside the extent
+ const a9=PERTH_WEST.trunk.filter(t=>t.ref==='A9'&&!t.roundabout);
+ for(const z of [-1400,-1000,-600,-200,0,200]){
+  const xs=a9.flatMap(t=>{const out:number[]=[];for(let i=1;i<t.line.length;i++){const a=t.line[i-1]!,b=t.line[i]!;if((a[1]-z)*(b[1]-z)<=0&&a[1]!==b[1])out.push(a[0]+(b[0]-a[0])*(z-a[1])/(b[1]-a[1]));}return out;});
+  assert.ok(xs.length>=2&&xs.every(x=>x>=PERTH_WEST_EXTENT.x0&&x<=PERTH_WEST_EXTENT.x1),`the A9's carriageways at z ${z}: x ${xs.map(Math.round).join(', ')}`);
+ }
+ // and Broxden's roundabout: one closed ring of A9 ways near the lead's (-2995, 360); every roundabout a plausible size
+ const broxden=PERTH_WEST.roundabouts.find(r=>r.name==='Broxden Roundabout');
+ assert.ok(broxden&&broxden.closed&&Math.hypot(broxden.x+2995,broxden.z-360)<30&&broxden.radius>20&&broxden.radius<100,JSON.stringify(broxden));
+ for(const r of PERTH_WEST.roundabouts)assert.ok(r.radius>1&&r.radius<100&&r.x>=PERTH_WEST_EXTENT.x0-40&&r.x<=PERTH_WEST_EXTENT.x1+40,`roundabout at ${r.x}, ${r.z}`);
+ assert.ok(PERTH_WEST.junctions.some(j=>j.ref==='12'&&j.name==='Broxden Roundabout'));
  assert.ok(/OpenStreetMap contributors/.test(file.attribution));
- // the one canvas: 1,024 across, so about 1,812 down, a texture no taller than 2,048 texels (a safe WebGL size)
+ // the one canvas: 1,024 across, so about 1,427 down, a texture no taller than 2,048 texels (a safe WebGL size)
  const {x0,z0,x1,z1}=PERTH_WEST_EXTENT;assert.equal(PERTH_WEST_CANVAS,1024);assert.ok(Math.round(PERTH_WEST_CANVAS*(z1-z0)/(x1-x0))<=2048);
 });
 
@@ -99,16 +109,33 @@ test('trees keep clear of the carriageways: no tree stands on one or overhangs i
  finally{bare.dispose();}
 });
 
-test('the cover is one draped mesh named perth-west-*, with the context ground\'s instanced tree draws',()=>{
+test('the cover is one draped mesh and one instanced tree draw, all named perth-west-*: the mapped trees stand in the wood\'s batch',()=>{
  const g=buildPerthWestGround(ground,new Footprints([]),undefined,west);
  try{
   const names:string[]=[];g.group.traverse(o=>{if(o.name)names.push(o.name);});
-  assert.deepEqual(names.sort(),['perth-west-ground','perth-west-ground-cover','perth-west-tree-crowns','perth-west-tree-trunks','perth-west-wood-crowns'],'nothing is still waverley-*');
-  assert.equal(g.stats.drawCalls,4,'the cover, the mapped crowns and trunks, the wood crowns');
-  let meshes=0;g.group.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes++;});assert.equal(meshes,4);
+  assert.deepEqual(names.sort(),['perth-west-ground','perth-west-ground-cover','perth-west-wood-crowns'],'nothing is still waverley-*, and no draw of its own for the mapped trees');
+  assert.equal(g.stats.drawCalls,2,'the cover and the trees');
+  let meshes=0;g.group.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes++;});assert.equal(meshes,2);
+  const crowns=g.group.getObjectByName('perth-west-wood-crowns') as THREE.InstancedMesh;
+  assert.equal(crowns.count,g.trees.length,'every tree, wood and mapped, is an instance of it');assert.equal(g.trees.filter(t=>t.kind==='tree').length,2);
   assert.ok(g.stats.triangles>coverOf(g).geometry.index!.count/3,'the trees add triangles to the cover\'s');
  }finally{g.dispose();}
  assert.equal(g.group.children.length,0,'disposed');
+});
+
+test('mappedWithMassed draws the mapped trees with the massed ones, standing on the ground, two draws fewer; by default they keep their own draws',()=>{
+ const opts={fillStep:{wood:18,scrub:14},woodTrunks:false};
+ const separate=buildWaverleyCityGround(ground,new Footprints([]),west.landuse,opts),merged=buildWaverleyCityGround(ground,new Footprints([]),west.landuse,{...opts,mappedWithMassed:true});
+ try{
+  const counts=(g:{group:THREE.Group})=>{const out:Record<string,number>={};g.group.traverse(o=>{if((o as THREE.InstancedMesh).isInstancedMesh)out[o.name]=(o as THREE.InstancedMesh).count;});return out;};
+  const wood=separate.trees.filter(t=>t.kind==='wood').length;assert.ok(wood>50);
+  assert.equal(separate.stats.drawCalls,4);assert.deepEqual(counts(separate),{'waverley-tree-crowns':2,'waverley-wood-crowns':wood,'waverley-tree-trunks':2});
+  assert.equal(merged.stats.drawCalls,2);assert.deepEqual(counts(merged),{'waverley-wood-crowns':wood+2});
+  assert.deepEqual(merged.trees,separate.trees,'the same trees stand: only how they are drawn differs');
+  // each crown of the batch stands on the ground (bare foliage, as the wood's own, with no trunk to hold a floating crown up)
+  const crowns=merged.group.getObjectByName('waverley-wood-crowns') as THREE.InstancedMesh,m=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
+  merged.trees.forEach((t,i)=>{crowns.getMatrixAt(i,m);m.decompose(p,q,s);assert.ok(Math.abs(p.y-s.y-t.y)<1e-3,`tree ${i} (${t.kind}): crown bottom ${p.y-s.y}, ground ${t.y}`);});
+ }finally{separate.dispose();merged.dispose();}
 });
 
 test('ground another element draws itself is left uncovered: no cover triangle has a corner there',()=>{
