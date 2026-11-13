@@ -889,6 +889,8 @@ class Sim {
     canvas.addEventListener('pointerdown', this._pd); canvas.addEventListener('pointermove', this._pm);
     canvas.addEventListener('pointerup', this._pu); canvas.addEventListener('pointercancel', this._pu);
     canvas.style.touchAction = 'none';
+    this.zoom = 1; this._wh = (e) => { if (this._modalOpen) return; e.preventDefault(); this.zoom = clamp(this.zoom * Math.exp(-e.deltaY * 0.0015), 1, 5); };   // mouse wheel: zoom in (up to 5x) and back out
+    canvas.addEventListener('wheel', this._wh, { passive: false });
     this._plc = () => { this._locked = document.pointerLockElement === canvas; this._hintT = this._locked ? 2.5 : 4; };
     this._ple = () => { this._lockDenied = true; this._locked = false; };
     document.addEventListener('pointerlockchange', this._plc); document.addEventListener('pointerlockerror', this._ple);
@@ -915,7 +917,7 @@ class Sim {
   _lookDelta(dx, dy) {
     if (this._modalOpen) return;
     const ms = this.mouse || { sens: 1, invertY: false };
-    const k = 0.0042 * ms.sens; this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k * (ms.invertY ? -1 : 1), -1.2, 1.2);
+    const k = 0.0042 * ms.sens / (this.zoom || 1); this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k * (ms.invertY ? -1 : 1), -1.2, 1.2);
     if (this.mode === 'drive') { this.look.yaw = clamp(this.look.yaw, -2.2, 2.2); this.look.pitch = clamp(this.look.pitch, -0.7, 0.7); }
     this._lookT = this.time;
   }
@@ -1009,13 +1011,17 @@ class Sim {
     if (w.sit) { w.sit = false; if (this._seat) { w.x = this._seat * 0.45; this._seat = null; } return; }
     this._seat = null;
     if (this.ctxKind === 'train' && this.mode !== 'drive') {
-      const sx = w.x >= 0 ? 1 : -1, tv = this.trainView, ci = tv.carAt(w.z), zc = tv.carInfo[ci].zc;
-      const busy = this.saloon ? this.saloon.people.some((p) => p.mode === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5) : false;
-      const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0);
-      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.74; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
-      else if (busy) this.hud.toast('That seat is taken', 'info', 2);
+      const sx = this._seatSide();
+      if (sx) { this._seat = sx; w.x = sx * 0.74; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
+      else if (!this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0)) this.hud.toast('Those seats are taken', 'info', 2);
     }
     w.sit = true;
+  }
+  /** which bench the walker would sit on here: the side they stand on, or the other one if that seat is taken (+1 / -1); 0 by a door or with both taken */
+  _seatSide() {
+    const w = this.walker, tv = this.trainView; if (this.ctxKind !== 'train' || !tv || this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0)) return 0;
+    const busy = (sx) => !!this.saloon && this.saloon.people.some((p) => p.state === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5);
+    const first = w.x >= 0 ? 1 : -1; return !busy(first) ? first : !busy(-first) ? -first : 0;
   }
   _saveMouse() { try { localStorage.setItem('gs.mouse', JSON.stringify(this.mouse)); } catch (_) {} }
   _menuSync() { for (const bt of this.hud.panel.querySelectorAll('button[data-a]')) { const a = bt.dataset.a; const m = /^(mode|line|diff):(.*)/.exec(a); if (m) bt.classList.toggle('on', this.sel[m[1]] === m[2]); } }
@@ -1082,6 +1088,7 @@ class Sim {
         if (nearDoor) { this.context = { kind: 'alight' }; msg = `<kbd>E</kbd> Step off at ${svc.station.name}`; }
         else msg = `${svc.station.name}: walk to an open door and press E to get off`;
       } else if (this.alightNext) msg = `Getting off at ${svc.station.name}`;
+      if (w.sit) msg = (msg ? msg + '  ' : '') + '<kbd>C</kbd> Stand up'; else if (!this.context && this._seatSide()) msg = (msg ? msg + '  ' : '') + '<kbd>C</kbd> Sit down';
     } else if (this.mode === 'street') {
       const st = this.street; if (Math.hypot(w.x - st.stair.x, w.z - st.stair.z) < 4.2) { this.context = { kind: 'descend' }; msg = '<kbd>E</kbd> Take the stairs down to the platform'; }
       else msg = 'Walk back to the station entrance to go underground';
@@ -1202,6 +1209,7 @@ class Sim {
     const href = 2 * Math.atan(Math.tan(base * Math.PI / 360) * 16 / 9);
     let v = asp >= 16 / 9 ? base : 2 * Math.atan(Math.tan(href / 2) / asp) * 180 / Math.PI;
     v = Math.min(v, drive ? 105 : 116);
+    if (this.zoom > 1) v = 2 * Math.atan(Math.tan(v * Math.PI / 360) / this.zoom) * 180 / Math.PI;
     if (Math.abs(cam.fov - v) > 0.01) { cam.fov = v; cam.updateProjectionMatrix(); }
   }
 
@@ -1491,7 +1499,7 @@ class Sim {
     this.renderer.setAnimationLoop(null);
     if (this.crowd) this.crowd.clear(); for (const v of Object.values(this.views || {})) if (v && v.saloon) v.saloon.clear();   // hand the characters back to the shared no-repeat registry (people.js IN_USE) before a new sim starts
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
-    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
+    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('wheel', this._wh); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
     this.audio.dispose(); this.hud.dispose(); if (this.rats) this.rats.dispose();
     for (const v of this.stationViews.values()) v.dispose();
