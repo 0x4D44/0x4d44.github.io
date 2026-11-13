@@ -5,10 +5,10 @@
 // else Perth's ASSUMED fallbacks (perth-city.ts perthBuildingHeight). Nothing here touches a scene: the integration lane calls
 // buildPerthWestBuildings once, over the west ground, and adds the group:
 //   const west = buildPerthWestBuildings(await loadPerthWestScene(), ground, {omitBuildingIds}); scene.add(west.group); ... west.dispose();
-// `ground` must answer over the whole region (x -2800 to -1021: the west terrain, and the context terrain east of x -1200): the lowest ground
+// `ground` must answer over the whole region (x -3232 to -1021: the west terrain, and the context terrain east of x -1200): the lowest ground
 // under a footprint is read at its corners, edge midpoints and an interior lattice, and a terrain answers its groundY outside every grid.
 //
-// Budget. The west is about five thousand blocks, nearly all houses, so the cost is per house: three levels of detail, chosen by block when
+// Budget. The west is about six thousand blocks, nearly all houses, so the cost is per house: three levels of detail, chosen by block when
 // the mesh is built (not per frame: the camera is never in the suburbs, which lie 1.2 km or more from the station), by the footprint's
 // distance from the station. 'full' is the context city's block (true footprint, roof planes cut along every crease, a chimney stack at each
 // gable); 'lean' drops the stacks (ten triangles each, about half a house) and draws a block that already is a rectangle (within RECT_RATIO of

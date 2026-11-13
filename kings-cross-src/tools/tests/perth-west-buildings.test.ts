@@ -16,14 +16,14 @@ const west = unpackWaverleyScene(JSON.parse(read('perth-scene-west.json')));
 const context = unpackWaverleyScene(JSON.parse(read('perth-scene.json')));
 const heights = JSON.parse(read('perth-city-heights-west.json')) as { source: Record<string, unknown>; q: number; ids: { way: number[]; relation: string[] }; h: number[]; r: number[]; landmarks?: unknown };
 
-test('the shared extent is the one every lane was briefed with, byte for byte, and is never redefined', () => {
+test('the shared extent is the one every lane has (widened to x0 -3232 by the lead, 2026-11-13 17:58Z), byte for byte, and is never redefined', () => {
   assert.equal(readFileSync(new URL('../perth-west-extent.ts', import.meta.url), 'utf8'), `import type { Extent } from '../core/terrain.ts';
 
-/** ASSUMED west extension (Perth frame, x east, z south, metres): from the context extent's west edge (x -1200) out past the
- *  A9 western bypass (Broxden roundabout about x -2450, z 890; the A9 at Burghmuir about x -2250, z -840), in whole 16 m steps. */
-export const PERTH_WEST_EXTENT: Extent = { x0: -2800, z0: -1600, x1: -1200, z1: 1232 };
+/** West extension (Perth frame, x east, z south, metres): from the context extent's west edge (x -1200) out past the
+ *  A9 western bypass (OSM: the A9 runs at x -3150..-2770 from z -1600 to 200; Broxden roundabout centre about x -2995, z 360), in whole 16 m steps. */
+export const PERTH_WEST_EXTENT: Extent = { x0: -3232, z0: -1600, x1: -1200, z1: 1232 };
 `);
-  assert.deepEqual(PERTH_WEST_EXTENT, { x0: -2800, z0: -1600, x1: -1200, z1: 1232 });
+  assert.deepEqual(PERTH_WEST_EXTENT, { x0: -3232, z0: -1600, x1: -1200, z1: 1232 });
 });
 
 test('the OSM cut runs from the extent out to the context scene\'s own west edge, so no strip is in neither', () => {
@@ -41,23 +41,29 @@ test('the OSM cut runs from the extent out to the context scene\'s own west edge
   assert.equal(PERTH_WEST_AREA.origin, PERTH_ORIGIN);
 });
 
-test('the map API tiles tile the cut exactly, each no larger than the context scene\'s (50,000 nodes each at most)', () => {
+test('the map API tiles tile the cut exactly (every cell of their edge lattice in exactly one tile), none larger than the context scene\'s, the original six as fetched', () => {
   const [S, W, N, E] = PERTH_WEST_BBOX;
-  assert.equal(PERTH_WEST_TILES.length, 6);
-  const lons = new Set<number>(), lats = new Set<number>();
-  let cover = 0;
-  for (const { bbox: [w, s, e, n] } of PERTH_WEST_TILES) {
-    assert.ok(e! - w! <= 0.02 && n! - s! <= 0.01, `${w},${s},${e},${n}: no bigger than a context tile (0.02 x 0.01 degrees)`);
-    lons.add(w!); lons.add(e!); lats.add(s!); lats.add(n!); cover += (e! - w!) * (n! - s!);
+  assert.equal(PERTH_WEST_TILES.length, 9);
+  assert.equal(new Set(PERTH_WEST_TILES.map(t => t.name)).size, 9, 'names are unique (they are the raw files)');
+  for (const { name, bbox: [w, s, e, n] } of PERTH_WEST_TILES) assert.ok(e! > w! && n! > s! && e! - w! <= 0.02 && n! - s! <= 0.01, `${name}: not empty, and no bigger than a context tile (0.02 x 0.01 degrees)`);
+  // the edge lattice spans the cut, and every cell between consecutive edges is in exactly one tile: no gap and no overlap
+  const lons = [...new Set(PERTH_WEST_TILES.flatMap(t => [t.bbox[0]!, t.bbox[2]!]))].sort((a, b) => a - b);
+  const lats = [...new Set(PERTH_WEST_TILES.flatMap(t => [t.bbox[1]!, t.bbox[3]!]))].sort((a, b) => a - b);
+  assert.equal(lons[0], W); assert.equal(lons.at(-1), E); assert.equal(lats[0], S); assert.equal(lats.at(-1), N);
+  for (let i = 0; i + 1 < lons.length; i++) for (let j = 0; j + 1 < lats.length; j++) {
+    const x = (lons[i]! + lons[i + 1]!) / 2, y = (lats[j]! + lats[j + 1]!) / 2;
+    const holding = PERTH_WEST_TILES.filter(({ bbox: [w, s, e, n] }) => x > w! && x < e! && y > s! && y < n!);
+    assert.equal(holding.length, 1, `cell ${i},${j} at ${x.toFixed(5)}, ${y.toFixed(5)} is in ${holding.length} tiles`);
   }
-  assert.equal(Math.min(...lons), W); assert.equal(Math.max(...lons), E); assert.equal(Math.min(...lats), S); assert.equal(Math.max(...lats), N);
-  assert.ok(Math.abs(cover - (E - W) * (N - S)) < 1e-9, 'no gap and no overlap: the tiles\' areas sum to the cut\'s');
-  assert.equal(new Set(PERTH_WEST_TILES.map(t => t.name)).size, 6, 'names are unique (they are the raw files)');
+  // the raw tiles on disk are named and never checked against a bbox: the original six keep the bboxes they were fetched with (2026-11-13 15:21Z)
+  assert.deepEqual(PERTH_WEST_TILES.slice(0, 6).map(t => `${t.name} ${t.bbox.join(',')}`), [
+    'w00 -3.4839,56.3803,-3.4694,56.3888', 'w01 -3.4694,56.3803,-3.455,56.3888', 'w10 -3.4839,56.3888,-3.4694,56.3974',
+    'w11 -3.4694,56.3888,-3.455,56.3974', 'w20 -3.4839,56.3974,-3.4694,56.4059', 'w21 -3.4694,56.3974,-3.455,56.4059']);
 });
 
 test('the west scene: buildings and mapped roofs only, none the context scene already holds, all touching the cut', () => {
   assert.equal(west.rails.length, 0); assert.equal(west.platforms.length, 0);
-  assert.ok(west.buildings.length > 5000 && west.buildings.length < 6500, `${west.buildings.length} buildings`);
+  assert.ok(west.buildings.length > 5800 && west.buildings.length < 7000, `${west.buildings.length} buildings`);
   assert.ok(west.roofs.length >= 1 && west.roofs.length < 50);
   const ids = [...west.buildings, ...west.roofs].map(b => b.id);
   assert.equal(new Set(ids).size, ids.length, 'ids are unique');
@@ -72,6 +78,9 @@ test('the west scene: buildings and mapped roofs only, none the context scene al
   // the 178 m between the extent and the context cut is filled, not bare
   const strip = west.buildings.filter(b => { const x = b.outer.reduce((s, p) => s + p[0], 0) / b.outer.length; return x > PERTH_WEST_EXTENT.x1 && x < PERTH_WEST_REGION.x1; });
   assert.ok(strip.length > 100, `${strip.length} blocks in the strip`);
+  // the widening to x -3232 (the A9 bypass inside the extent): the land west of the first cut's edge (x -2800) is filled, not bare
+  const widened = west.buildings.filter(b => b.outer.reduce((s, p) => s + p[0], 0) / b.outer.length < -2800);
+  assert.ok(widened.length > 500, `${widened.length} blocks west of x -2800`);
   assert.match(west.attribution, /OpenStreetMap contributors \(ODbL\)/); assert.match(west.source.license, /ODbL/);
   assert.deepEqual(west.bbox, PERTH_WEST_BBOX);
 });
@@ -89,7 +98,7 @@ test('the west heights file: Phase I LiDAR credited, the region recorded, only t
     assert.ok(urls.some(u => u.includes('NO12_1M_')));
   }
   const decoded = decodeCityHeights(heights);
-  assert.ok(decoded.size > 4500, `${decoded.size} LiDAR heights`);
+  assert.ok(decoded.size > 5200, `${decoded.size} LiDAR heights`);
   const byId = new Map(west.buildings.map(b => [b.id, b]));
   for (const [id, { height, median }] of decoded) {
     const b = byId.get(id);
@@ -98,6 +107,8 @@ test('the west heights file: Phase I LiDAR credited, the region recorded, only t
     assert.ok(inExtent(b, PERTH_WEST_REGION), `${id} has a corner in the region`);
     assert.ok(height >= 2.5 && height <= 80 && median <= height, `${id}: ${height} m, median ${median}`);
   }
+  const wide = [...decoded.keys()].filter(id => byId.get(id)!.outer.reduce((s, p) => s + p[0], 0) / byId.get(id)!.outer.length < -2800);
+  assert.ok(wide.length > 400, `${wide.length} LiDAR heights west of x -2800 (NO02: the widening)`);
   const ways = heights.ids.way.reduce<number[]>((a, d) => [...a, (a.at(-1) ?? 0) + d], []);
   assert.ok(ways.every((v, i) => i === 0 || v > ways[i - 1]!), 'way ids ascend');
   assert.ok(gzipSync(read('perth-city-heights-west.json')).length < 10_000, 'a few kilobytes gzipped');
