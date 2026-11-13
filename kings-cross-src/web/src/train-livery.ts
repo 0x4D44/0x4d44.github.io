@@ -175,17 +175,19 @@ function lnerShapes(nose: number): Shape[] {
  * The Class 180's side. GC180-01-180-101-Kings-Cross (a 180 at Kings Cross, 2012?) and GC180-05-Grand-Central-at-Halifax (180112):
  * black body, a broad orange band at the waist, and at the cab the band swings down the cab side in a sweep that widens
  * downward and ends under the lamp pod at the nose's lower corner; a thin orange pinstripe runs along the cantrail. The band
- * edges (1.04 to 1.5 m) are livery.ts's; the sweep is read from the two photographs.
+ * edges are livery.ts's `stripeY`; the sweep is read from the two photographs. CHANGED (round 9): the band stands 1.37 to 1.67 m (was 1.04 to 1.5 m) and
+ * the pinstripe 3.37 to 3.41 m (was 3.02 to 3.06 m), both measured on the private York photograph (train.ts ADELANTE_HEIGHTS). There the band's top falls
+ * slowly where the sweep begins and its foot falls fast, so the knots at the nose's end now stand 0.12 m (top) and 0.42 m (foot) under the band, where they
+ * stood 0.12 m and 0.26 m; the knots nearer the tip are unchanged.
  */
 function grandCentralShapes(nose: number): Shape[] {
-  const bandTop = 1.5;
-  const bandBottom = 1.04;
+  const [bandBottom, bandTop] = LIVERIES.grandcentral.stripeY ?? [1.37, 1.67];
   const sD = nose + 1.2;
-  const top = smoothCurve([[0.1, 0.78], [0.7, 1.0], [1.5, 1.2], [nose, 1.38], [sD, bandTop], [TEX_SPAN, bandTop]], 48);
-  const bottom = smoothCurve([[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [nose, 0.78], [sD, bandBottom], [TEX_SPAN, bandBottom]], 48);
+  const top = smoothCurve([[0.1, 0.78], [0.7, 1.0], [1.5, 1.2], [nose, bandTop - 0.12], [sD, bandTop], [TEX_SPAN, bandTop]], 48);
+  const bottom = smoothCurve([[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [nose, bandBottom - 0.42], [sD, bandBottom], [TEX_SPAN, bandBottom]], 48);
   return [
     { colour: GC_ORANGE, pts: between(top, bottom) },
-    { colour: GC_ORANGE, pts: rect(nose, TEX_SPAN, 3.02, 3.06) },
+    { colour: GC_ORANGE, pts: rect(nose, TEX_SPAN, 3.37, 3.41) },
   ];
 }
 

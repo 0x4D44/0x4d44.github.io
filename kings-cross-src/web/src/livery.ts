@@ -80,6 +80,8 @@ export interface LiveryDef {
    * body's black); `door` is the passenger door's index in the car's plan (0: the one nearer the cab end or the car's start), absent where the caller means the car's doors at large
    */
   doorFor?(car: DecalCar, door?: number): number;
+  /** does the waist band (`stripeY`) run across this passenger door's leaf, in the side's colour there? (Grand Central: across the black cab-end door, round 9); absent: no door */
+  doorBand?(car: DecalCar, door: number): boolean;
   /** the dark band along the foot of the body, above the skirts (null: the body colour runs down) */
   foot: number | null;
   /** Lettering and solid decals for one car. */
@@ -87,6 +89,11 @@ export interface LiveryDef {
 }
 
 const RED = 0xc8102e;
+
+/** Grand Central's lettering: its em, so the capitals stand about 0.1 m tall (the York photograph's 14 px at 132.9 px to the metre) */
+const GC_EM = 0.15;
+/** Grand Central's blank panels, one beside each door toward the car's middle: their middles, 1.44 m in from each door's centre (the York photograph); a car with no plan has none */
+const gcPanels = (c: DecalCar): number[] => (c.doors.length >= 2 ? [(c.doors[0] as number) + 1.44, (c.doors[c.doors.length - 1] as number) - 1.44] : [c.length / 2]);
 
 /** The stretch of the car between its two doors, for lettering: its two ends (door edges and a pier), and its middle. */
 const bayEnds = (c: DecalCar): [number, number] => {
@@ -254,14 +261,20 @@ export const LIVERIES: Readonly<Record<Livery, LiveryDef>> = {
     window: 0x222c38,
     swoosh: null,
     stripe: 0xf27a1a,
-    stripeY: [1.04, 1.5],
+    // CHANGED (round 9; was 1.04 to 1.5 m): 1.37 to 1.67 m, measured on the private York photograph (web/src/train.ts ADELANTE_HEIGHTS, which carries the same figures)
+    stripeY: [1.37, 1.67],
     foot: null,
     // gold doors on the first-class car (MFL), silver on the others; but a driving car's door by the cab is the body's black (round 8: class180-gc-york-side-arthur-2026-11-11, a
     // private photograph, shows the cab-end door of a leading DMSL black, with its seams and its window; GC180-02-180101-Arrives-at-Doncaster shows 180101's black there and silver at its
     // inner end, beside the gangway, and the MFL's gold at both of its ends. The far side's cab-end door is ASSUMED the same: no photograph read shows it)
     doorFor: (c, door) => (c.cab && door === 0 ? 0x17181c : c.type === 'MFL' ? 0xc9a227 : 0xb9bec6),
-    // the wordmark in black on the orange band, centred in the bay between the doors
-    decals: (c) => [{ text: 'Grand Central', colour: 0x17181c, rect: [bay(c) - 0.5 * textEms('Grand Central') * 0.28, 1.13, 0, 1.41] }],
+    // the band runs on across that black cab-end door (round 9: the York photograph shows it unbroken over the leaf, between the leaf's pale edges); the silver and gold leaves
+    // break it (GC180-02: no orange on 180101's inner silver door)
+    doorBand: (c, door) => c.cab && door === 0,
+    // CHANGED (round 9; was "Grand Central" in black on the orange band, mid-car): white capitals on the blank black panel between each door and its nearest window, as on the York
+    // photograph (beside the cab-end door: the lettering's foot 2.25 m up, its caps 0.1 m tall, its middle 1.44 m from the door's centre) and on GC180-02 (the same panel by each door
+    // of 180101 and the MFL). The winged GC roundel above it is not drawn. The size, the panel by the far doors and the far side are ASSUMED the same
+    decals: (c) => gcPanels(c).map((mid) => ({ text: 'GRAND CENTRAL', colour: 0xf2f2f0, rect: [mid - 0.5 * textEms('GRAND CENTRAL') * GC_EM, 2.22, 0, 2.22 + GC_EM] })),
   },
   // Thameslink's Class 700: the 2013 First Capital Connect and Siemens announcement, repeated by Wikipedia: "light grey with
   // pastel blue doors and a white diagonal flash at the carriage ends". Forum posts (seen as search snippets; the threads

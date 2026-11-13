@@ -32,7 +32,7 @@ import { EMU_FIGURES, FIGURES, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind, TrainLayout } from '../../core/train.ts';
 import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
 import type { DecalItem } from './livery.ts';
-import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor } from './train-livery.ts';
+import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor, sideColourAt } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
 import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, trainNight, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
@@ -522,7 +522,7 @@ interface BodySpec {
    * a single leaf's window, where a family has its own: half its width, its sill and head (metres above the rail head) and its corner radius, a rounded pane in the middle of the
    * leaf. Absent: the square pane 0.54 m wide from 0.91 m to 0.21 m under the leaf's top that every single-leaf door had before the Class 180's (round 8)
    */
-  doorGlass?: { half: number; y: [number, number]; radius: number };
+  doorGlass?: { half: number; y: [number, number]; radius: number; seal?: number };
   windowY: [number, number];
   /** the passenger window's corner radius (absent: 0.08 m); its gasket's is 0.02 m more */
   windowCorner?: number;
@@ -972,6 +972,27 @@ const DESIRO700_BODY: BodySpec = {
  * (Wikipedia: one Cummins QSK19 engine and Voith transmission to each car), each a mass with its lower edges rounded and the hatches, louvres, straps and latches
  * GC180-01 shows on the belly's side (train-parts.ts `underfloorPod`).
  */
+/**
+ * The Class 180's heights on the side (round 9), metres above the rail head, measured on the private York photograph (class180-gc-york-side-arthur-2026-11-11, viewed only, never
+ * copied: a leading DMSL side on). Its scale is 132.9 px to the metre, from two figures that agree to 1%: the rail head (about row 553) to the roof's top (row 52) taken as the
+ * ASSUMED 3.77 m height (core/train.ts), and the door leaf, 161 px between its outer edges, taken as round 8's 1.2 m. Rows read: the leaf's foot 400 (1.15 m: the model's sill,
+ * 1.12 m, agrees), the orange band 331 to 371 (1.37 to 1.67 m), the door glass 166 to 272 (2.14 to 2.91 m), the leaf's top 104 to 108 (3.35 to 3.38 m), the cantrail's orange line
+ * 101 to 106 (3.37 to 3.41 m). Round 8's body stood its door heads at 2.95 m and its wall top at 3.02 m, so the wall over the band was 0.3 m short (round 8's score) and the band sat
+ * 0.3 m low; the band's depth (0.30 m) is the photograph's, not round 8's 0.46 m. The rail head's row is read to about 5 px (0.04 m); every figure is ASSUMED: no drawing is published.
+ */
+export const ADELANTE_HEIGHTS = {
+  /** the orange band on the side (livery.ts LIVERIES.grandcentral.stripeY reads the same figures) */
+  band: [1.37, 1.67] as [number, number],
+  /** the door leaf's top */
+  doorHead: 3.35,
+  /** the door glass's sill and head */
+  doorGlass: [2.14, 2.91] as [number, number],
+  /** the passenger windows' sill and head: GC180-02's 0.28 and 0.77 of the band's top to the door head */
+  windows: [2.14, 2.96] as [number, number],
+  /** the wall's top, where the roof's shoulder begins (the photograph's orange cantrail line, 3.37 to 3.41 m) */
+  cantrail: 3.42,
+} as const;
+
 const ADELANTE_BODY = ((): BodySpec => {
   const fig = EMU_FIGURES.adelante;
   const floor = fig.floorHeight.value - 0.12;
@@ -982,7 +1003,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     family: 'adelante',
     half: fig.bodyWidth.value / 2,
     floor,
-    wallTop: 3.02,
+    // CHANGED (round 9; was 3.02 m, the commuter units' wall): the side runs straight up past the door heads to the cantrail's orange line, 3.37 to 3.41 m up in the York photograph
+    // (ADELANTE_HEIGHTS), and only then turns into the roof
+    wallTop: ADELANTE_HEIGHTS.cantrail,
     crown,
     coverHeight: cover,
     coverBw: 0.9,
@@ -993,14 +1016,17 @@ const ADELANTE_BODY = ((): BodySpec => {
     skirtBottom: 0.9,
     cutout: 2.0,
     doorWidth: fig.doorWidth.value,
-    doorY: [fig.floorHeight.value + 0.02, 2.95],
+    // CHANGED (round 9; the head was 2.95 m): the leaf runs from the sill to 3.35 m (ADELANTE_HEIGHTS)
+    doorY: [fig.floorHeight.value + 0.02, ADELANTE_HEIGHTS.doorHead],
     doorLeaves: 1,
-    // round 8 (ADELANTE_SIDE): the leaf's window is a rounded pane 0.57 m wide, its corners 0.09 m round (the York photograph: 73 of the leaf's 152 px, about 14 px round), standing 0.26
-    // to 0.72 of the way from the band's top (1.5 m) to the leaf's top (2.95 m); ASSUMED, from that one photograph
-    doorGlass: { half: 0.285, y: [1.88, 2.54], radius: 0.09 },
-    // CHANGED (round 8; they were 1.62 to 2.72 m, the commuter units' tall glass): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level with
-    // the doors' glass, their corners well rounded (about a sixth of their height); ASSUMED, from that photograph
-    windowY: [1.91, 2.62],
+    // the leaf's window is a rounded pane 0.57 m wide, its corners 0.09 m round (round 8: the York photograph, 73 of the leaf's 152 px, about 14 px round). CHANGED (round 9; it stood
+    // 1.88 to 2.54 m): 2.14 to 2.91 m, measured on the York photograph (ADELANTE_HEIGHTS), in a pale grey seal (that photograph: a light grey rubber ring that stands out on the black
+    // leaf; the silver and gold leaves' seal ASSUMED the same part)
+    doorGlass: { half: 0.285, y: ADELANTE_HEIGHTS.doorGlass, radius: 0.09, seal: 0xb4b8bd },
+    // CHANGED (round 9; round 8's were 1.91 to 2.62 m, on round 8's short wall): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level
+    // with the doors' glass, their corners well rounded (about a sixth of their height); laid on the measured band top and door head, 2.14 to 2.96 m, which puts their top level with
+    // the door glass's (2.91 m) to within the gasket. ASSUMED, from that photograph
+    windowY: ADELANTE_HEIGHTS.windows,
     windowCorner: 0.11,
     nose: {
       length,
@@ -2050,10 +2076,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.85, dy1 - 0.25, z - 0.12, z + 0.12, paneC);
       } else if (spec.doorLeaves === 1 && spec.doorGlass) {
-        // the family's own pane: rounded, in a dark seal standing between the leaf and the glass
-        const { half: gh, y: [gy0, gy1], radius } = spec.doorGlass;
+        // the family's own pane: rounded, in a seal (dark, unless the family says) standing between the leaf and the glass
+        const { half: gh, y: [gy0, gy1], radius, seal } = spec.doorGlass;
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
-        detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (half - 0.002), col(0x0d0e10));
+        // a livery's waist band carried across this leaf (Grand Central: the black cab-end door, round 9), in the side's own colour there, a hair proud of the leaf
+        if (def.doorBand?.(carInfo, di)) {
+          const [by0, by1] = def.stripeY ?? BAND_Y;
+          const [bx0, bx1] = lo(W - 0.005, half - 0.003);
+          detail.box(bx0, bx1, by0, by1, z - dw / 2, z + dw / 2, col(sideColourAt(def, noseLen, s, (by0 + by1) / 2)));
+        }
+        detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (half - 0.002), col(seal ?? 0x0d0e10));
         detail.prismX(roundedRect(z - gh, z + gh, gy0, gy1, radius, 3), sx * (W - 0.005), sx * half, paneC, false);
       } else if (spec.doorLeaves === 1) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);

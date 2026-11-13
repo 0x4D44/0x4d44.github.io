@@ -8,7 +8,7 @@ import { ALL_KINDS, EMU_FIGURES, EMU_KINDS, FIGURES, GC_KINDS, TL_KINDS, TRAIN_K
 import type { Car, EmuFamily, Family, TrainKind } from '../../core/train.ts';
 import { LIVERIES, ROW_H, TEX_SPAN, TEX_W, atlasRect, atlasTexts, shellMaterial, texelsPerMetre, textEms } from '../src/livery.ts';
 import { ARRAY_CELL, ASSUMED, BOGIE_STYLE, bodySpec, buildTrain, CAB_SWOOSH, carPlan, carSection, CLUSTER_ARRAY, CLUSTER_LIFT, COVER_RELIEF, COVER_SEAM, END_GAP, faceSetback, FLANK_FRACTION, frontOf, HEAD_BODY, HEAD_FILL, HEAD_SIDES, HULL_POD, LENS, NOSE_RECESS, PANE_COLS, PANE_LIFT, PANE_ROWS, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, POD, SEAM_ON_DARK, SEAM_ON_LIGHT, SKIRT_PALE, skirtColours, underfloorBlocks } from '../src/train.ts';
-import { GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor } from '../src/train-livery.ts';
+import { GC_ORANGE, GN_PINSTRIPE, HULL_BEAK, LNER_YELLOW, liveryFor, sideColourAt } from '../src/train-livery.ts';
 import { eggSection, filletFactor, halfAt, loopFromHalf, normalised, planProfile, ringAt, ringStations, sideProfile, xAtY, yAtX } from '../src/train-nose.ts';
 import { BOGIE_HALF_WIDTH, BOGIE_LOD_DISTANCE, BOGIE_TOP, BRAKE_UNIT, CARDAN_AXIS, CARDAN_RADIUS, DISC_RADIUS, DISC_THICKNESS, FAR_WHEEL_SEGMENTS, FLANGE_HEIGHT, GEARBOX_REACH, KIT_BIG_RADIUS, KIT_CABLE_WIDTH, KIT_COLOURS, KIT_HALF_WIDTH, KIT_PLATE_HALF, KIT_PLATE_TOP, KIT_SMALL_RADIUS, MOTOR_BOSS, MOTOR_CLEAR, MOTOR_FLOOR, MOTOR_LENGTH, MOTOR_RADIUS, PANTOGRAPH_STRIP, PANTOGRAPH_STRIP_THICKNESS, PANTOGRAPH_STRIPS, POD_PARTS, POD_SHAPE, ROOF_KITS, SKIRT_BOX_PATTERN, SKIRT_GRILLE, SKIRT_HATCH, SKIRT_HEM, SKIRT_LEAN, SKIRT_LOUVRES, SKIRT_RAKE, SKIRT_SLIT_LIFT, SKIRT_TUCK, SKIRT_VENT_CLEAR, WHEEL_SEGMENTS, WHEEL_WIDTH, YOKE_RADIUS, bogieFarSoup, bogieParts, bogieSoup, bogieStyle, buildBogie, couplerHalf, podFace, podHanger, podMarks, roofKitReach, roofKitSpan, skirtHalfAt, skirtPanel, skirtSplit, underfloorPod } from '../src/train-parts.ts';
 import type { BogieSpec, BogieStyle, PodBox, PodForm, PodMark } from '../src/train-parts.ts';
@@ -2876,7 +2876,9 @@ test('liveries: Grand Central is black with a broad orange band and Thameslink l
   const [r, gr, b] = rgb(gc.stripe as number);
   assert.ok(r > 0xd0 && gr > 0x50 && gr < 0xa0 && b < 0x40, `the band ${(gc.stripe as number).toString(16)} is not orange`);
   const [y0, y1] = gc.stripeY as [number, number];
-  assert.ok(y1 - y0 >= 0.4 && y0 >= 0.9 && y1 <= 1.6, `the band ${y0}..${y1} m is not a broad one at the waist, under the windows`);
+  // CHANGED (round 9; the band was 1.04 to 1.5 m, and this asked for 0.4 m or more under 1.6 m): measured on the York photograph (ADELANTE_HEIGHTS), 1.37 to 1.67 m, 0.3 m deep, at the
+  // waist under the windows' sill (2.14 m)
+  assert.ok(y1 - y0 >= 0.25 && y0 >= 1.2 && y1 <= bodySpec('adelante').windowY[0] - 0.4, `the band ${y0}..${y1} m is not a broad one at the waist, well under the windows`);
   const gold = rgb(gc.doorFor?.({ ...car, type: 'MFL' }) as number);
   assert.ok(gold[0] > 0xb0 && gold[0] > gold[1] && gold[1] > gold[2] + 0x40, `first-class doors ${gold} are not gold`);
   for (const type of ['DMSL', 'MSL', 'MSLRB']) {
@@ -2886,9 +2888,10 @@ test('liveries: Grand Central is black with a broad orange band and Thameslink l
   assert.match(gc.sources.join(' '), /all black livery with doors painted gold \(first class\) and silver \(standard class\)/);
   assert.match(gc.sources.join(' '), /orange band/);
   assert.match(gc.basis, /approximate/);
+  // CHANGED (round 9; it was "Grand Central" in black on the band, once mid-car): white capitals on the blank black panel by each door (the York photograph, GC180-02)
   const gcText = gc.decals(car).filter((d) => d.text);
-  assert.deepEqual(gcText.map((d) => d.text), ['Grand Central']);
-  assert.ok(lumaOf((gcText[0] as { colour: number }).colour) < 0.15, 'black lettering on the orange band');
+  assert.deepEqual(gcText.map((d) => d.text), ['GRAND CENTRAL', 'GRAND CENTRAL']);
+  for (const t of gcText) assert.ok(lumaOf(t.colour) > 0.85 && t.rect[1] > y1 + 0.3, 'white lettering on the black, well over the band');
   // Thameslink: "light grey with pastel blue doors and a white diagonal flash at the carriage ends"; cyan doors and a pink stripe from forum snippets
   const tl = LIVERIES.thameslink;
   assert.ok(lumaOf(tl.body) > 0.8, 'light grey');
@@ -2942,7 +2945,7 @@ test('liveries: the Grand Central doors are gold on the first-class car and silv
 
 test('liveries: the lettering atlas has a row for every text any livery uses, rows within the sheet and apart, and the solid patch clear of them', () => {
   const texts = atlasTexts();
-  for (const t of ['LNER', 'Great Northern', 'Grand Central', 'Thameslink']) assert.ok(texts.includes(t), `the atlas has no row for "${t}"`);
+  for (const t of ['LNER', 'Great Northern', 'GRAND CENTRAL', 'Thameslink']) assert.ok(texts.includes(t), `the atlas has no row for "${t}"`);
   // every decal text of every livery has its row (a missing one would read as row -1: off the sheet)
   for (const [name, def] of Object.entries(LIVERIES)) {
     for (const cab of [true, false]) {
@@ -3393,6 +3396,89 @@ test('Class 180 side: the windows and the doors\' glass stand where the photogra
         assert.ok(Math.abs(r / (box.max.y - box.min.y) - 14 / 105) < 0.03, `${here} side ${side}: its corners ${r.toFixed(3)} m round, not about a seventh of its height`);
       }
     }
+  }
+});
+
+test('Class 180 side (round 9): the heights the York photograph measures, the wall over the band 1.68 m to the door heads at 3.35 m, the band 1.37 to 1.67 m, the wall up to 3.42 m', () => {
+  // round 8's score: "the wall above the band is about 0.3 m short (1.45 m against ~1.75 m at York)". Measured on the private York photograph (viewed only) at 132.9 px to the metre
+  // (ADELANTE_HEIGHTS): the band 331 to 371 px down, the door's top 104 to 108, the door glass 166 to 272, the cantrail's orange line 101 to 106, the rail head about 553
+  const spec = bodySpec('adelante');
+  const gc = liveryFor('gc180x5');
+  const [bandFoot, bandTop] = gc.stripeY as [number, number];
+  const px = 132.9;
+  near(bandTop, (553 - 331) / px, 0.02, 'the band\'s top');
+  near(bandFoot, (553 - 371) / px, 0.02, 'the band\'s foot');
+  near(spec.doorY[1] - bandTop, (331 - 106) / px, 0.05, 'the wall from the band\'s top to the door heads (round 8: 1.45 m)');
+  near(spec.doorY[1], 3.35, 0.01, 'the door heads');
+  near(spec.wallTop, 3.42, 0.01, 'the wall\'s top, the roof\'s shoulder above it');
+  // the section stands straight up to the wall's top
+  const wall = carSection(spec).half.filter(([x]) => Math.abs(x - (spec.half - 0.02)) < 1e-9).map(([, y]) => y);
+  near(Math.max(...wall), 3.42, 1e-9, 'the section\'s straight wall ends at the cantrail');
+  // the pinstripe stands on the wall, just under its top
+  assert.equal(sideColourAt(gc, spec.nose.length, 10, 3.39), GC_ORANGE, 'the cantrail\'s orange line at 3.39 m');
+  assert.equal(sideColourAt(gc, spec.nose.length, 10, 3.3), gc.body, 'black under it');
+  // in the built cars: every door's leaf reaches 3.35 m, and every passenger window's glass 2.14 to 2.96 m
+  const g = built('gc180x5');
+  for (const car of trainLayout('gc180x5').cars) {
+    const doors = all(named(g, `car-${car.index}`), 'door');
+    assert.equal(doors.length, 4, `car ${car.index}: four door markers`);
+    for (const d of doors) near(d.position.y + (d.userData.height as number) / 2, 3.35, 1e-6, `car ${car.index}: a door's head`);
+    const panes = trisOfColour(detailOf(g, car), gc.window).filter((t) => t.every((v) => Math.abs(v.x) > spec.half - 0.05));
+    const box = boxOfTris(panes);
+    near(box.min.y, 2.14, 1e-4, `car ${car.index}: the glass's lowest sill`);
+    near(box.max.y, 2.96, 1e-4, `car ${car.index}: the glass's highest head`);
+  }
+});
+
+test('Class 180 side (round 9): the band runs across the black cab-end door, a pale seal rings every door\'s glass, and the white wordmark stands on the blank panel by each door', () => {
+  const spec = bodySpec('adelante');
+  const gc = liveryFor('gc180x5');
+  const [bandFoot, bandTop] = gc.stripeY as [number, number];
+  const seal = spec.doorGlass?.seal as number;
+  assert.ok(seal !== undefined && lumaOf(seal) > 0.6, 'a pale seal (the York photograph: a light grey ring on the black leaf)');
+  const g = built('gc180x5');
+  for (const car of trainLayout('gc180x5').cars) {
+    const here = `${car.type} car ${car.index}`;
+    const plan = spec.plan(car, false);
+    const z = (s: number): number => (car.cab === 'rear' ? car.end - s : car.start + s);
+    const mesh = detailOf(g, car);
+    const orange = trisOfColour(mesh, GC_ORANGE);
+    const pale = trisOfColour(mesh, seal);
+    plan.doors.forEach((s, di) => {
+      const at = (t: Tri): boolean => t.every((v) => Math.abs(v.z - z(s)) <= spec.doorWidth / 2 + 1e-4);
+      for (const side of [-1, 1]) {
+        const mine = (t: Tri): boolean => at(t) && t.every((v) => Math.sign(v.x) === side && Math.abs(v.x) > spec.half - 0.03);
+        const band = orange.filter(mine);
+        if (car.cab && di === 0) {
+          assert.ok(band.length > 0, `${here} side ${side}: the band across the cab-end door`);
+          const box = boxOfTris(band);
+          near(box.min.y, bandFoot, 1e-4, `${here} side ${side}: its foot`);
+          near(box.max.y, bandTop, 1e-4, `${here} side ${side}: its top`);
+          near(box.max.z - box.min.z, spec.doorWidth, 1e-4, `${here} side ${side}: the leaf's whole width`);
+        } else assert.equal(band.length, 0, `${here} side ${side}: no band across door ${di}, a silver or gold leaf`);
+        const ring = pale.filter(mine);
+        assert.ok(ring.length > 0, `${here} side ${side}: a pale seal round door ${di}'s glass`);
+        const rb = boxOfTris(ring);
+        const [gy0, gy1] = spec.doorGlass?.y as [number, number];
+        near(rb.min.y, gy0 - 0.025, 1e-4, `${here} side ${side}: the seal's foot`);
+        near(rb.max.y, gy1 + 0.025, 1e-4, `${here} side ${side}: the seal's head`);
+      }
+    });
+    // the wordmark: one on the blank panel by each door, between the leaf's edge and the nearest window, over the band, as at York (its foot 2.25 m up)
+    const info = { index: car.index, count: 5, type: car.type as string, cab: car.cab !== null, length: car.length, nose: car.cab ? spec.nose.length : 0, doors: plan.doors };
+    const words = gc.decals(info).filter((d) => d.text === 'GRAND CENTRAL');
+    assert.equal(words.length, 2, `${here}: a wordmark by each door`);
+    const first = plan.windows[0] as [number, number];
+    const last = plan.windows[plan.windows.length - 1] as [number, number];
+    const panels: [number, number][] = [[(plan.doors[0] as number) + spec.doorWidth / 2, first[0]], [last[1], (plan.doors[1] as number) - spec.doorWidth / 2]];
+    words.forEach((w, k) => {
+      const [s0, y0, , y1] = w.rect;
+      const s1 = s0 + textEms('GRAND CENTRAL') * (y1 - y0);
+      const [p0, p1] = panels[k] as [number, number];
+      assert.ok(s0 > p0 + 0.05 && s1 < p1 - 0.05, `${here}: wordmark ${k} (${s0.toFixed(2)} to ${s1.toFixed(2)}) within its panel (${p0.toFixed(2)} to ${p1.toFixed(2)})`);
+      assert.ok(y0 > bandTop + 0.4 && y1 < spec.doorY[1] - 0.6, `${here}: wordmark ${k} at ${y0} to ${y1} m, on the black over the band`);
+      assert.ok(lumaOf(w.colour) > 0.85, `${here}: white lettering`);
+    });
   }
 });
 

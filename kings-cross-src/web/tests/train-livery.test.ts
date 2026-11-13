@@ -164,18 +164,19 @@ test('the nose\'s dark cap starts where the windscreen ends: the LNER\'s and Lum
 });
 
 test('Grand Central 180: an orange waist band along the car, which swings down the cab side in a sweep, and a thin orange line at the cantrail', () => {
+  // CHANGED (round 9; the band stood 1.04 to 1.5 m and the line 3.02 to 3.06 m): the York photograph's 1.37 to 1.67 m and 3.37 to 3.41 m (train.ts ADELANTE_HEIGHTS)
   for (const s of [TEX_SPAN - 0.01, 10]) {
-    assert.equal(at('gc180x5', GC_NOSE, s, 1.27), GC_ORANGE, `s = ${s}: the band`);
-    assert.equal(at('gc180x5', GC_NOSE, s, 0.8), LIVERIES.grandcentral.body, `s = ${s}: black under the band`);
-    assert.equal(at('gc180x5', GC_NOSE, s, 2.0), LIVERIES.grandcentral.body, `s = ${s}: black over the band`);
-    assert.equal(at('gc180x5', GC_NOSE, s, 3.04), GC_ORANGE, `s = ${s}: the line at the cantrail`);
+    assert.equal(at('gc180x5', GC_NOSE, s, 1.52), GC_ORANGE, `s = ${s}: the band`);
+    assert.equal(at('gc180x5', GC_NOSE, s, 1.3), LIVERIES.grandcentral.body, `s = ${s}: black under the band`);
+    assert.equal(at('gc180x5', GC_NOSE, s, 1.74), LIVERIES.grandcentral.body, `s = ${s}: black over the band`);
+    assert.equal(at('gc180x5', GC_NOSE, s, 3.39), GC_ORANGE, `s = ${s}: the line at the cantrail`);
   }
-  // the sweep: lower and wider at the nose than the band behind it (the band's edges are 1.04 and 1.5 m)
+  // the sweep: lower and wider at the nose than the band behind it (the band's edges are 1.37 and 1.67 m)
   assert.equal(at('gc180x5', GC_NOSE, 1.0, 0.8), GC_ORANGE, 'orange at 0.8 m, 1 m back from the tip');
   assert.equal(at('gc180x5', GC_NOSE, 0.7, 0.62), GC_ORANGE, 'and lower still near the tip');
   assert.equal(at('gc180x5', GC_NOSE, 0.7, 1.4), LIVERIES.grandcentral.body, 'but not above the sweep');
   // no line over the nose itself
-  assert.equal(at('gc180x5', GC_NOSE, 0.5, 3.04), LIVERIES.grandcentral.body);
+  assert.equal(at('gc180x5', GC_NOSE, 0.5, 3.39), LIVERIES.grandcentral.body);
 });
 
 test('Great Northern 387: a white-cream body with a thin orange pinstripe at the cantrail behind the nose, the dark foot below the windows', () => {
