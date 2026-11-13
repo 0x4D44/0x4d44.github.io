@@ -10,8 +10,10 @@ const DEFAULT_SETTLE_MS = 60_000;
 const DEFAULT_TIMEOUT_MS = 45 * 60_000;
 const KILL_GRACE_MS = 2_000;
 const NICE_EXECUTABLE = '/usr/bin/nice';
+const TASKPOLICY_EXECUTABLE = '/usr/sbin/taskpolicy';
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const SAFE_RESULT = Symbol('safe sclass result');
+const SKIPPED = Symbol('sclass relearn already finished today');
 const defaultLockFs = { readFile: nodeReadFile, unlink: nodeUnlink };
 
 function utcDate(ms) {
@@ -25,8 +27,11 @@ function nextUtcMidnight(ms) {
 
 function safeErrorSummary(error) {
   if (error?.code === 'ETIMEDOUT') return 'timed out';
-  // node's execFile timeout kills the child with SIGTERM and reports code null, killed true.
-  if (error?.killed === true && typeof error.signal === 'string' && /^SIG[A-Z]{2,8}$/.test(error.signal)) return `killed ${error.signal}`;
+  const signalName = typeof error?.signal === 'string' && /^SIG[A-Z]{2,8}$/.test(error.signal) ? error.signal : undefined;
+  // node's execFile timeout (or our own kill) reports code null, killed true; a signal sent from
+  // outside the relay reports killed false with the signal name.
+  if (signalName && error.killed === true) return `killed ${signalName}`;
+  if (signalName) return `signal ${signalName}`;
   if (Number.isInteger(error?.code)) return `exit ${error.code}`;
   if (typeof error?.code === 'string' && /^[A-Z0-9_]{1,24}$/.test(error.code)) return error.code;
   return 'failed';
@@ -93,7 +98,7 @@ async function removeOwnedLock(dataDir, pid, lockFs) {
 
 /** Return a bounded, stoppable runner for the private sclass relearn CLI. */
 export function createSclassRunner({ execFile = nodeExecFile, cwd = packageRoot, timeoutMs = DEFAULT_TIMEOUT_MS,
-  killGraceMs = KILL_GRACE_MS, lockFs = defaultLockFs } = {}) {
+  killGraceMs = KILL_GRACE_MS, lockFs = defaultLockFs, platform = process.platform } = {}) {
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('sclass runner timeout must be positive');
   if (!Number.isFinite(killGraceMs) || killGraceMs < 0) throw new Error('sclass runner kill grace must be non-negative');
 
@@ -131,9 +136,12 @@ export function createSclassRunner({ execFile = nodeExecFile, cwd = packageRoot,
     const onAbort = () => terminate();
 
     // Lowest scheduling priority so the nightly relearn cannot starve other work on a shared
-    // host. nice(1) execs node, so child.pid is still the node process the lock records.
-    const [executable, argv] = process.platform === 'win32' ? [process.execPath, args]
-      : [NICE_EXECUTABLE, ['-n', '19', process.execPath, ...args]];
+    // host; on macOS also background QoS (taskpolicy -b). taskpolicy and nice(1) each exec the
+    // next program, so child.pid is still the node process the lock records.
+    const niced = [NICE_EXECUTABLE, '-n', '19', process.execPath, ...args];
+    const [executable, argv] = platform === 'win32' ? [process.execPath, args]
+      : platform === 'darwin' ? [TASKPOLICY_EXECUTABLE, ['-b', ...niced]]
+        : [niced[0], niced.slice(1)];
     try {
       child = execFile(executable, argv, {
         cwd,
@@ -176,6 +184,21 @@ export function createSclassRunner({ execFile = nodeExecFile, cwd = packageRoot,
 }
 
 /**
+ * True when the relearn's own history (<dataDir>/sclass-history.json, appended by tools/sclass.ts after every finished
+ * run, published or refused) already holds a run for this UTC date. A day's validation day is the latest closed UTC
+ * recording, fixed for the whole day, so a second run would repeat the same decision. Unreadable history runs again.
+ */
+async function finishedFor(dataDir, date, readFile) {
+  try {
+    const history = JSON.parse(await readFile(path.join(dataDir, 'sclass-history.json'), 'utf8'));
+    return Array.isArray(history) && history.some(entry => entry && typeof entry === 'object' && entry.date === date
+      && typeof entry.published === 'boolean');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Run one private relearn after startup settling and after each UTC midnight.
  * The runner receives an AbortSignal so stop() can terminate an active child.
  */
@@ -193,6 +216,7 @@ export function createSclassJob({
   run = createSclassRunner(),
   log = () => {},
   settleMs = DEFAULT_SETTLE_MS,
+  readFile = nodeReadFile,
 } = {}) {
   if (typeof dataDir !== 'string' || !dataDir) throw new Error('sclass job dataDir is required');
   if (typeof area !== 'string' || !/^[A-Z0-9]{2}$/.test(area)) throw new Error('sclass job area is invalid');
@@ -225,9 +249,13 @@ export function createSclassJob({
     const controller = new AbortController();
     activeController = controller;
     activePromise = Promise.resolve()
-      .then(() => run({ date, dataDir, area, anchorsPath, tablePath, recordingsDir, overlayPath, trackPath, signal: controller.signal }))
+      .then(() => finishedFor(dataDir, date, readFile))
+      .then(finished => finished || controller.signal.aborted ? SKIPPED
+        : run({ date, dataDir, area, anchorsPath, tablePath, recordingsDir, overlayPath, trackPath, signal: controller.signal }))
       .then(result => {
-        if (!stopped) safeLog(result?.[SAFE_RESULT] === true ? result.text : `sclass relearn: completed for ${date}`);
+        if (stopped) return;
+        if (result === SKIPPED) safeLog(`sclass relearn: already finished for ${date}; skipped`);
+        else safeLog(result?.[SAFE_RESULT] === true ? result.text : `sclass relearn: completed for ${date}`);
       })
       .catch(error => { if (!stopped) safeLog(`sclass relearn: ${safeErrorSummary(error)} for ${date}`); })
       .finally(() => {

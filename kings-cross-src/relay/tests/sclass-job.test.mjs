@@ -48,9 +48,12 @@ async function flush() {
   for (let i = 0; i < 10; i++) await Promise.resolve();
 }
 
+/** No relearn history yet, without real disk I/O, so the fake clock's microtask flush covers the history check. */
+const noHistory = async () => { throw Object.assign(new Error('missing'), { code: 'ENOENT' }); };
+
 function makeJob(clock, options = {}) {
   return createSclassJob({ dataDir: '/private/kx-data', area: 'Y9', now: clock.now,
-    schedule: clock.schedule.bind(clock), cancel: clock.cancel.bind(clock), settleMs, ...options });
+    schedule: clock.schedule.bind(clock), cancel: clock.cancel.bind(clock), settleMs, readFile: noHistory, ...options });
 }
 
 async function lockDataDir(t) {
@@ -96,6 +99,42 @@ test('sclass job: startup catch-up and each UTC rollover run once after settling
   await clock.fire(rollover.id);
   assert.deepEqual(runs, [day, '2026-11-09']);
   await job.stop();
+});
+
+test('sclass job: a restart skips a day whose relearn already finished, published or refused, and runs the next day', async () => {
+  for (const published of [true, false]) {
+    const clock = fakeClock(instant), runs = [], logs = [], reads = [];
+    const history = [{ date: '2026-11-07', validationDay: '20261106', published: true },
+      { date: day, validationDay: '20261107', published, reasons: [] }];
+    const job = makeJob(clock, { log: line => logs.push(line), run: async ({ date }) => { runs.push(date); },
+      readFile: async (file) => {
+        reads.push(file);
+        if (runs.length) throw Object.assign(new Error('missing'), { code: 'ENOENT' });
+        return JSON.stringify(history);
+      } });
+    job.start();
+    const startup = [...clock.timers.values()].find(timer => timer.delay === settleMs);
+    await clock.fire(startup.id);
+    assert.deepEqual(runs, [], `today's ${published ? 'published' : 'refused'} relearn is not repeated`);
+    assert.deepEqual(logs, [`sclass relearn: already finished for ${day}; skipped`]);
+    assert.equal(reads[0], '/private/kx-data/sclass-history.json');
+    const rollover = [...clock.timers.values()][0];
+    await clock.fire(rollover.id);
+    assert.deepEqual(runs, ['2026-11-09'], 'the next UTC day has no finished run yet');
+    await job.stop();
+  }
+});
+
+test('sclass job: history with only earlier days, or unreadable history, still runs today', async () => {
+  for (const text of [JSON.stringify([{ date: '2026-11-07', validationDay: '20261106', published: true }]), 'not json', '{}',
+    JSON.stringify([{ date: day }])]) {
+    const clock = fakeClock(instant), runs = [];
+    const job = makeJob(clock, { run: async ({ date }) => { runs.push(date); }, readFile: async () => text });
+    job.start();
+    await clock.fire([...clock.timers.values()].find(timer => timer.delay === settleMs).id);
+    assert.deepEqual(runs, [day], text);
+    await job.stop();
+  }
 });
 
 test('sclass job: startup near midnight waits for the new UTC day settle window', async () => {
@@ -195,6 +234,19 @@ test('sclass job: a child killed by the execFile timeout logs as killed, not a b
   await job.stop();
 });
 
+test('sclass job: a child killed by an outside signal logs the signal, not a bare failure', async () => {
+  const clock = fakeClock(instant), logs = [];
+  // The shape node gives when something other than the relay sends SIGTERM: code null, killed false.
+  const job = makeJob(clock, { log: line => logs.push(line), run: async () => {
+    throw Object.assign(new Error('Command failed: secret=private-value'), { code: null, killed: false, signal: 'SIGTERM' });
+  } });
+  job.start();
+  await clock.fireNext();
+  assert.deepEqual(logs, [`sclass relearn: signal SIGTERM for ${day}`]);
+  assert.ok(!logs.join('\n').includes('private-value'));
+  await job.stop();
+});
+
 test('sclass job: CLI results log only validated publish decisions, counts, and concise reasons', async () => {
   const clock = fakeClock(instant), logs = [];
   const results = [
@@ -238,16 +290,15 @@ test('sclass job: CLI runner passes private paths and bounds then escalates chil
     }
     return true;
   } };
-  const runner = createSclassRunner({ timeoutMs: 500, killGraceMs: 1,
+  const runner = createSclassRunner({ timeoutMs: 500, killGraceMs: 1, platform: 'linux',
     execFile: (executable, args, options, done) => {
       received = { executable, args, options }; callback = done; return child;
     } });
   const controller = new AbortController();
   const result = runner({ dataDir: '/private/kx-data', area: 'Y9', anchorsPath: '/private/anchors.json',
     tablePath: '/private/sclass.json', signal: controller.signal });
-  const lowPriority = process.platform === 'win32' ? [] : ['-n', '19'];
-  assert.equal(received.executable, process.platform === 'win32' ? process.execPath : '/usr/bin/nice');
-  assert.deepEqual(received.args, [...lowPriority, ...(process.platform === 'win32' ? [] : [process.execPath]),
+  assert.equal(received.executable, '/usr/bin/nice');
+  assert.deepEqual(received.args, ['-n', '19', process.execPath,
     'tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9',
     '--anchors', '/private/anchors.json', '--table', '/private/sclass.json']);
   assert.equal(received.options.timeout, 500);
@@ -259,6 +310,26 @@ test('sclass job: CLI runner passes private paths and bounds then escalates chil
   clearTimeout(watchdog);
   assert.equal(outcome?.code, 'ETIMEDOUT', 'runner completes after escalating termination to SIGKILL');
   assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
+});
+
+test('sclass job: the runner adds background QoS on macOS and runs node directly on Windows', async () => {
+  const relearn = ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9'];
+  for (const [platform, executable, prefix] of [
+    ['darwin', '/usr/sbin/taskpolicy', ['-b', '/usr/bin/nice', '-n', '19', process.execPath]],
+    ['linux', '/usr/bin/nice', ['-n', '19', process.execPath]],
+    ['win32', process.execPath, []],
+  ]) {
+    let received;
+    const runner = createSclassRunner({ platform, execFile: (exe, args, _options, done) => {
+      received = { exe, args };
+      const child = { exitCode: null, signalCode: null, kill() { return true; } };
+      queueMicrotask(() => { child.exitCode = 0; done(null, JSON.stringify({ date: day, validationDay: null, published: false, reasons: [] })); });
+      return child;
+    } });
+    await runner({ dataDir: '/private/kx-data', area: 'Y9' });
+    assert.equal(received.exe, executable, platform);
+    assert.deepEqual(received.args, [...prefix, ...relearn], platform);
+  }
 });
 
 test('sclass job: CLI runner passes shared recordings and area-specific assets when configured', async () => {
