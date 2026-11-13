@@ -181,8 +181,10 @@ export function eastClassAt(x: number, z: number): string {
   return PERTH_EAST_FILE.classNames[Number(PERTH_EAST_FILE.classes[j * g.nx + i])]!;
 }
 
-/** The patch mesh over `main` (the drawn main terrain, whose east edge it meets). */
-export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>): {group: THREE.Group; stats: {triangles: number; drawCalls: number}; heightAt(x: number, z: number): number} {
+/** The patch mesh over `main` (the drawn main terrain, whose east edge it meets). `west`: the west tile (perth-west-ground.ts) is drawn
+ *  against the main terrain's west edge, so the main apron leaves out its west strip and its north-west and south-west corners, which
+ *  would lie over that tile; its north and south strips still start at the main terrain's west edge (the tile's curtain meets them). */
+export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>, opts: {west?: boolean} = {}): {group: THREE.Group; stats: {triangles: number; drawCalls: number}; heightAt(x: number, z: number): number} {
   const E = PERTH_EAST_FILE.extent, step = PERTH_EAST_FILE.grids[0]!.step, row = step / 2;
   const xs: number[] = []; for (let x = E.x0; x <= E.x1 + 1e-6; x += step) xs.push(x);
   const zs: number[] = []; for (let z = E.z0; z <= E.z1 + 1e-6; z += row) zs.push(z);
@@ -269,14 +271,14 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
       }
     };
     const run = (n0: number, n1: number, s: number = S) => { const r: number[] = []; for (let v = n0; v < n1; v += s) r.push(v); r.push(n1); return r; };
-    strip(run(M.z0, M.z1).map(z => [M.x0, z]), -O, 0, false);
+    if (!opts.west) strip(run(M.z0, M.z1).map(z => [M.x0, z]), -O, 0, false);
     strip(run(M.x0, M.x1).map(x => [x, M.z0]), 0, -O, true);
     strip(run(M.x0, M.x1).map(x => [x, M.z1]), 0, O, false);
     // past the east patch (round 6): its east edge, its south edge, and the corner between them
     strip(run(E.z0, E.z1, MAIN_APRON.eastStep).map(z => [E.x1, z]), O, 0, true);
     strip(run(E.x0, E.x1, MAIN_APRON.eastStep).map(x => [x, E.z1]), 0, O, false);
     // the corners: from the corner out along both sides
-    for (const [cx, cz, sx, sz] of [[M.x0, M.z0, -1, -1], [M.x0, M.z1, -1, 1], [E.x1, E.z1, 1, 1]] as const) {
+    for (const [cx, cz, sx, sz] of [...opts.west ? [] : [[M.x0, M.z0, -1, -1], [M.x0, M.z1, -1, 1]] as const, [E.x1, E.z1, 1, 1]] as const) {
       const c0 = inner(cx, cz), p = outer(cx + sx * O, cz), q = outer(cx + sx * O, cz + sz * O), r = outer(cx, cz + sz * O);
       if (sx * sz > 0) aidx.push(c0, q, p, c0, r, q); else aidx.push(c0, p, q, c0, q, r); // wound to face up
     }

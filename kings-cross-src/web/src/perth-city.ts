@@ -100,7 +100,7 @@ const shopStreets = () => new Streets(PERTH_LANDUSE.roads.filter(r => r.width >=
 /** The city: every mapped block not standing on the railway, extruded from its lowest ground to its OSM, LiDAR or ASSUMED height
  *  under its roof (waverley-city.ts buildWaverleyCity, with Perth's heights and tone); then the ground cover, the Tay, its bridges and
  *  the towers (perth-city-features.ts). All of it is in `group`, the buildings part, so the city toggle hides it. */
-export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain, group: THREE.Group): {buildingIds: string[]; heightBasis: {OSM: number; LiDAR: number; ASSUMED: number}} {
+export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain, group: THREE.Group, opts: {west?: boolean} = {}): {buildingIds: string[]; heightBasis: {OSM: number; LiDAR: number; ASSUMED: number}} {
   const {add, own, stats, geometries} = build;
   const omitted = new Set([...stationRailwayIntrusions(data), ...PERTH_FEATURE_OMIT_IDS]);
   const take = (part: {group: THREE.Group; stats: {triangles: number; drawCalls: number}}) => {
@@ -117,8 +117,9 @@ export function addPerthCity(build: PerthBuild, data: PerthData, ground: Terrain
   // the ground cover, trees and the Tay, over the drawn ground
   const mask = perthFrontageGroundMask(stationOutline(data)?.outer);
   take(buildPerthCityGround(ground, new Footprints([...[...data.buildings, ...data.roofs].map(b => b.outer), ...outlookClearings()]), (x, z) => inPerthFrontageGroundMask(mask, x, z)));
-  // the Tay's corridor east of the main terrain, which the cliff camera looks over (perth-east-ground.ts)
-  take(buildPerthEastGround(ground));
+  // the Tay's corridor east of the main terrain, which the cliff camera looks over (perth-east-ground.ts); `west`: the west extension's tile
+  // (perth-west-scene.ts) is drawn against the main terrain's west edge, so the main apron leaves that edge to it
+  take(buildPerthEastGround(ground, {west: opts.west}));
   // the bridges and towers
   const masonry = new Batch({colored: true}), ironwork = new Batch({colored: true}), deck = new Batch(), lead = new Batch();
   tayViaduct(masonry, ironwork, ground);
