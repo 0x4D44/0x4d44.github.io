@@ -18,6 +18,7 @@ const islandBelts = () => PERTH_LANDUSE.areas.wood.filter(rs => isIslandBelt(rs,
 const inIslandBelt = (x: number, z: number) => islandBelts().some(rs => { let ax = Infinity, az = Infinity, bx = -Infinity, bz = -Infinity; for (const [px, pz] of rs[0]!) { ax = Math.min(ax, px); az = Math.min(az, pz); bx = Math.max(bx, px); bz = Math.max(bz, pz); } const m = ISLAND_CANOPY.step + 2; return x >= ax - m && x <= bx + m && z >= az - m && z <= bz + m; });
 import { SUMMIT, SUMMIT_CENTRE, inSummitHole, summitBushes } from '../src/perth-summit.ts';
 import { MIRROR_CLASSES, MIRROR_THINGS, MIRROR_TONES_LINEAR, TAY_MIRROR, buildTayMirror, mirrorAt, mirrorHeights, mirrorWeight } from '../src/perth-tay-mirror.ts';
+import { PERTH_WEST_DRAWN } from '../src/perth-west-scene.ts';
 import { EAST_SKIRT, LAND_FIELDS, LAND_HAZE, fieldContrast, landField, landFieldLength, landHedge, PERTH_EAST, PERTH_EAST_FILE, RIVER_END, eastWater, riverEnd } from '../src/perth-east-ground.ts';
 import { GROUND_COLOUR, GROUND_Y } from '../src/world.ts';
 import { Batch, material } from '../src/materials.ts';
@@ -628,7 +629,7 @@ test('the east patch meets the main terrain without a seam, over the covered cor
   const E = PERTH_EAST_FILE.extent;
   assert.deepEqual([E.x0, E.z0, E.x1, E.z1], [PERTH_CITY_EXTENT.x1, 80, 4128, 1232], 'from the main edge east, the Phase I corridor only');
   const zMain = PERTH_CITY_EXTENT.z1;
-  assert.deepEqual(scene.terrainMore, [E], 'the scene hands the patch to the world, which carves its flat plane there too');
+  assert.deepEqual(scene.terrainMore, [E, {...PERTH_WEST_DRAWN}], 'the scene hands the patch (and the west tile, perth-west-scene.ts) to the world, which carves its flat plane there too');
   // the data agree at the seam: the patch's own 32 m nodes on x 2624 against the main terrain's field there (same tile, same reference)
   for (let z = E.z0; z <= zMain; z += 32) assert.ok(Math.abs(PERTH_EAST.heightAt(E.x0, z) - scene.terrain.heightAt(E.x0, z)) < .75, `data seam at z ${z}: ${PERTH_EAST.heightAt(E.x0, z)} vs ${scene.terrain.heightAt(E.x0, z)}`);
   // the drawn seam is watertight: every patch vertex on x 2624 inside the corridor is the drawn main ground there, at every 16 m
@@ -660,7 +661,8 @@ test('the east patch meets the main terrain without a seam, over the covered cor
   for (const [x, z] of [[M.x0 - 400, (M.z0 + M.z1) / 2], [(M.x0 + M.x1) / 2, M.z0 - 400], [(M.x0 + M.x1) / 2, M.z1 + 400], [M.x0 - 300, M.z0 - 300], [M.x0 - 300, M.z1 + 300],
     [EE.x1 + 400, (EE.z0 + EE.z1) / 2], [(EE.x0 + EE.x1) / 2, EE.z1 + 400], [EE.x1 + 300, EE.z1 + 300]] as const) {
     down.set(new THREE.Vector3(x, 1000, z), new THREE.Vector3(0, -1, 0));
-    const h = down.intersectObject(main, false)[0];
+    // west of the main terrain the west extension's tile and its skirt (perth-west-scene.ts) now cover the plane where the apron's west strip did
+    const h = down.intersectObjects([main, scene.group.getObjectByName('perth-west-ground')!], false)[0];
     assert.ok(h && h.point.y > GROUND_Y && h.face!.normal.y > 0, `the apron covers the plane at ${x}, ${z}: ${h?.point.y} ${h?.face?.normal.y} ground ${GROUND_Y}`);
   }
   const mp = main.geometry.getAttribute('position'), mc = main.geometry.getAttribute('color'); let far = 0;
@@ -1116,7 +1118,8 @@ test('P3 cost: the city stays inside its caps over its phase-1 blockout (84,441 
   assert.ok(triangles - 84_441 <= 320_000, `triangles +${triangles - 84_441}`);
   assert.ok(draws - 2 <= 24, `draws +${draws - 2}`);
   const hidden = buildPerthScene({ lighting: false, cityVisible: false });
-  try { for (const name of ['perth-tay-water', 'perth-viaduct-iron', 'perth-city-roofs', 'perth-kirk-spire']) { let shown = false; hidden.group.getObjectByName(name)!.traverseAncestors(a => { if (a === hidden.parts.buildings) shown = a.visible; }); assert.equal(shown, false, `${name} hides with the city`); } }
+  try { assert.equal(hidden.west?.group.visible, false, 'the west extension (perth-west-scene.ts) hides with the city');
+    for (const name of ['perth-tay-water', 'perth-viaduct-iron', 'perth-city-roofs', 'perth-kirk-spire']) { let shown = false; hidden.group.getObjectByName(name)!.traverseAncestors(a => { if (a === hidden.parts.buildings) shown = a.visible; }); assert.equal(shown, false, `${name} hides with the city`); } }
   finally { hidden.dispose(); }
 });
 

@@ -35,6 +35,8 @@ export const EAST_SKIRT = {out: 6000, to: GROUND_Y - .3, tone: 0x7c8770} as cons
  *  under the plane on the Tay's floodplain), so the plane showed past it; the apron also runs out from the patch's east and south edges
  *  and its south-east corner, in `eastStep` m pieces (fewer triangles: those edges are only seen far off). */
 export const MAIN_APRON = {step: 64, from: 0x6c7a55, eastStep: 192} as const;
+/** The per-vertex attribute a weighted hazeLand (`fields.weight`) reads its fields' strength from. */
+export const FIELD_WEIGHT = 'fieldWeight';
 /** Round 10 (round-9 score, C6/C2: with the clearer air the land past the terrain showed as a flat olive plain to the horizon, ending
  *  hard against the sky at the camera's far plane, 9 km). The apron and the east patch fade on into the scene's own haze colour
  *  (fogColor) with view depth, from none at `from` m to all of it by `to` m, on top of the scene's fog, so the land softens into the
@@ -92,17 +94,19 @@ export function fieldContrast(d: number): number {
   return F.near + (1 - F.near) * t * t * (3 - 2 * t);
 }
 /** Fade a Lambert material into the fog colour with view depth (LAND_HAZE); with `fields`, lay LAND_FIELDS outside `inside` (x0, z0,
- *  x1, z1; null: everywhere). */
-export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonly [number, number, number, number] | null}): void {
+ *  x1, z1; null: everywhere), and with `weight`, only as much as the geometry's FIELD_WEIGHT attribute says (0 to 1, per vertex: the west
+ *  tile's fields, perth-west-ground.ts). */
+export function hazeLand(m: THREE.MeshLambertMaterial, fields?: {inside: readonly [number, number, number, number] | null; weight?: boolean}): void {
   const F = LAND_FIELDS, f = (v: number) => v.toFixed(4);
   m.onBeforeCompile = shader => {
     if (fields) {
       const box = fields.inside, skip = box ? `if (vFieldPos.x > ${f(box[0])} && vFieldPos.x < ${f(box[2])} && vFieldPos.y > ${f(box[1])} && vFieldPos.y < ${f(box[3])}) k = vec3(1.0);` : '';
-      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vFieldPos;\nvarying float vFieldDepth;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;\n  vFieldDepth = -mvPosition.z;');
+      const w = fields.weight === true;
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>\nvarying vec2 vFieldPos;\nvarying float vFieldDepth;${w ? `\nattribute float ${FIELD_WEIGHT};\nvarying float vFieldWeight;` : ''}`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\n  vFieldPos = (modelMatrix * vec4(transformed, 1.0)).xz;\n  vFieldDepth = -mvPosition.z;${w ? `\n  vFieldWeight = ${FIELD_WEIGHT};` : ''}`);
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>
 varying vec2 vFieldPos;
-varying float vFieldDepth;
+varying float vFieldDepth;${w ? '\nvarying float vFieldWeight;' : ''}
 float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('#include <color_fragment>', `#include <color_fragment>
   {
     float c = ${f(Math.cos(F.turn))}, s = ${f(Math.sin(F.turn))};
@@ -116,7 +120,7 @@ float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('
     float eu = perthFieldHash(ib * 17.3 + j * 5.1) < ${f(F.hedgeKeep)} ? min(fu, len - fu) : 1e4, ev = perthFieldHash(i * 3.3 + jb * 41.7) < ${f(F.hedgeKeep)} ? min(fv, ${f(F.size[1])} - fv) : 1e4;
     float edge = min(eu, ev), hw = max(${f(F.hedge / 2)}, 0.5 * fwidth(u + v));
     k = mix(k, vec3(${F.hedgeTone.map(f).join(', ')}), ${f(F.hedgeMix)} * (1.0 - smoothstep(0.5 * hw, 1.5 * hw, edge)));
-    ${skip}
+    ${skip}${w ? '\n    k = mix(vec3(1.0), k, vFieldWeight);' : ''}
     diffuseColor.rgb *= k;
   }`);
     }
@@ -125,7 +129,7 @@ float perthFieldHash(float a) { return fract(sin(a) * 43758.5453); }`).replace('
   gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, smoothstep(${LAND_HAZE.from.toFixed(1)}, ${LAND_HAZE.to.toFixed(1)}, vFogDepth));
 #endif`);
   };
-  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}${fields ? `-fields-${fields.inside ?? 'all'}` : ''}`;
+  m.customProgramCacheKey = () => `perth-land-haze-${LAND_HAZE.from}-${LAND_HAZE.to}${fields ? `-fields-${fields.inside ?? 'all'}${fields.weight ? '-weighted' : ''}` : ''}`;
 }
 /** How far the river is faded at x: 1 on the patch's east edge, 0 from RIVER_END.run m in (smoothstep). */
 export function riverEnd(x: number): number {
@@ -181,8 +185,10 @@ export function eastClassAt(x: number, z: number): string {
   return PERTH_EAST_FILE.classNames[Number(PERTH_EAST_FILE.classes[j * g.nx + i])]!;
 }
 
-/** The patch mesh over `main` (the drawn main terrain, whose east edge it meets). */
-export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>): {group: THREE.Group; stats: {triangles: number; drawCalls: number}; heightAt(x: number, z: number): number} {
+/** The patch mesh over `main` (the drawn main terrain, whose east edge it meets). `west`: the west tile (perth-west-ground.ts) is drawn
+ *  against the main terrain's west edge, so the main apron leaves out its west strip and its north-west and south-west corners, which
+ *  would lie over that tile; its north and south strips still start at the main terrain's west edge (the tile's curtain meets them). */
+export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>, opts: {west?: boolean} = {}): {group: THREE.Group; stats: {triangles: number; drawCalls: number}; heightAt(x: number, z: number): number} {
   const E = PERTH_EAST_FILE.extent, step = PERTH_EAST_FILE.grids[0]!.step, row = step / 2;
   const xs: number[] = []; for (let x = E.x0; x <= E.x1 + 1e-6; x += step) xs.push(x);
   const zs: number[] = []; for (let z = E.z0; z <= E.z1 + 1e-6; z += row) zs.push(z);
@@ -269,14 +275,14 @@ export function buildPerthEastGround(main: Pick<Terrain, 'heightAt' | 'extent'>)
       }
     };
     const run = (n0: number, n1: number, s: number = S) => { const r: number[] = []; for (let v = n0; v < n1; v += s) r.push(v); r.push(n1); return r; };
-    strip(run(M.z0, M.z1).map(z => [M.x0, z]), -O, 0, false);
+    if (!opts.west) strip(run(M.z0, M.z1).map(z => [M.x0, z]), -O, 0, false);
     strip(run(M.x0, M.x1).map(x => [x, M.z0]), 0, -O, true);
     strip(run(M.x0, M.x1).map(x => [x, M.z1]), 0, O, false);
     // past the east patch (round 6): its east edge, its south edge, and the corner between them
     strip(run(E.z0, E.z1, MAIN_APRON.eastStep).map(z => [E.x1, z]), O, 0, true);
     strip(run(E.x0, E.x1, MAIN_APRON.eastStep).map(x => [x, E.z1]), 0, O, false);
     // the corners: from the corner out along both sides
-    for (const [cx, cz, sx, sz] of [[M.x0, M.z0, -1, -1], [M.x0, M.z1, -1, 1], [E.x1, E.z1, 1, 1]] as const) {
+    for (const [cx, cz, sx, sz] of [...opts.west ? [] : [[M.x0, M.z0, -1, -1], [M.x0, M.z1, -1, 1]] as const, [E.x1, E.z1, 1, 1]] as const) {
       const c0 = inner(cx, cz), p = outer(cx + sx * O, cz), q = outer(cx + sx * O, cz + sz * O), r = outer(cx, cz + sz * O);
       if (sx * sz > 0) aidx.push(c0, q, p, c0, r, q); else aidx.push(c0, p, q, c0, q, r); // wound to face up
     }

@@ -41,7 +41,7 @@ function classOf(t: Record<string, string>): (typeof EAST_CLASSES)[number] | und
   if (t.landuse === 'farmland' || t.landuse === 'farmyard') return 'field';
   return undefined;
 }
-const pip = (x: number, z: number, p: readonly Pt[]) => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
+export const pip = (x: number, z: number, p: readonly Pt[]) => { let yes = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) if ((p[i]![1] > z) !== (p[j]![1] > z) && x < (p[j]![0] - p[i]![0]) * (z - p[i]![1]) / (p[j]![1] - p[i]![1]) + p[i]![0]) yes = !yes; return yes; };
 
 /** The OSM areas (closed ways, and multipolygon outers made of closed ways) with a class, smallest first (the most specific wins). */
 export function eastAreas(elements: Element[]): { cls: (typeof EAST_CLASSES)[number]; ring: Pt[]; area: number }[] {
