@@ -79,7 +79,7 @@ KX_NO_FEED=1 npm --prefix kings-cross-src run relay  # no STOMP connection or sc
 | `GET /events` | SSE: initial `snapshot`, then `snapshot`, `td`, and `trust` events; named `ping` every 5 seconds. |
 | `GET /anchors` | Private anchor map from `KX_ANCHORS` or `KX_DATA_DIR/anchors.json`; 404 if absent. |
 | `GET /recording?date=YYYYMMDD` | Recording from `KX_DATA_DIR/recordings/td-<area>-YYYYMMDD.ndjson`; `date` must be exactly eight digits. |
-| `GET /sclass` | Private signal hypothesis table from `KX_SCLASS` or `KX_DATA_DIR/sclass.json`; 404 if absent. |
+| `GET /sclass` | Private signal hypothesis table from `KX_SCLASS` or `KX_DATA_DIR/sclass.json`; 404 if absent. The relearn publishes it without the bit-transition trace (that stays in the private `sclass-analysis.json` beside it), so it stays under the 16 MiB cap. |
 | `GET /fleet?area=EB` | Private fleet evidence as `{booked, ptac}`: the booked-diagram table `KX_DATA_DIR/areas/<area>/fleet.json` (built by `tools/build-eb-fleet.ts`) and the PTAC store `ptac.json` (written by `KX_PTAC=1`), each `null` when absent or unreadable; 404 if both are absent. Other query keys are ignored, as for `/anchors`. The page uses PTAC first, then the diagrams. |
 | `GET /schedule?date=YYYY-MM-DD` | Cached King's Cross calls enriched with TRUST actuals. `date` must be one valid calendar date in this format; defaults to today's London date. |
 | `GET /static/smart?td=Y9` | SMART rows for a TD area. |

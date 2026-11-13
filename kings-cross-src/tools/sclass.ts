@@ -1,6 +1,7 @@
 // Analyse S-class bytes in a TD recording and write a private evidence report.
 //   node tools/sclass.ts --recording <td.ndjson> --anchors <AnchorMap.json> --out ../.scratch/sclass
 //   node tools/sclass.ts --relearn --data-dir ~/kx-data
+//   node tools/sclass.ts --split-published --data-dir ~/kx-data/areas/EB   (one-off: trim a table published with its trace)
 import { copyFile, lstat, mkdir, open, readFile, readdir, realpath, rename, unlink, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import os from 'node:os';
@@ -474,6 +475,54 @@ async function atomicJson(file: string, value: unknown): Promise<void> {
   } finally { await unlink(temp).catch(error => { if (!isMissing(error)) throw error; }); }
 }
 
+/**
+ * The published table the relay serves at /sclass: what the browser's signal layer (validatedSignalHypotheses, signalMappings)
+ * and the next relearn's incumbent (area, hypotheses) read. Only the bit-transition trace is left out: it grows with every
+ * recorded day (12-17 MB at Waverley) and would push the file past the relay's 16 MiB local-JSON cap. The full analysis,
+ * trace included, goes to the private analysis file beside it.
+ */
+export function servedSclassTable<T extends { trace: SclassAnalysis['trace'] }>(analysis: T) {
+  const { transitions, ...trace } = analysis.trace;
+  return { ...analysis, trace: { ...trace, transitionCount: transitions.length }, analysisFile: 'sclass-analysis.json' };
+}
+
+/** The private full-analysis file beside a published table (sclass.json -> sclass-analysis.json). */
+export function sclassAnalysisFile(tableFile: string): string {
+  return path.join(path.dirname(tableFile), 'sclass-analysis.json');
+}
+
+/** Publish one analysis: the full analysis (trace included) first, then the trimmed served table. */
+export async function writePublishedSclass(tableFile: string, analysis: SclassAnalysis): Promise<void> {
+  await atomicJson(sclassAnalysisFile(tableFile), analysis);
+  await atomicJson(tableFile, servedSclassTable(analysis));
+}
+
+/**
+ * One-off repair for a table published before the split (it still carries trace.transitions): back it up, move the full
+ * analysis to sclass-analysis.json, and re-publish the trimmed table. Takes the relearn lock; a table already split is left alone.
+ */
+export async function splitPublishedSclass(options: { dataDir: string; tableFile?: string; now?: () => number }) {
+  const dataDir = await ensurePrivateDirectory(options.dataDir, 'Private S-class data');
+  const tableFile = path.resolve(options.tableFile ?? path.join(dataDir, 'sclass.json'));
+  const lockPath = path.join(dataDir, '.sclass-relearn.lock');
+  const nowMs = (options.now ?? Date.now)();
+  let lock;
+  try { lock = await open(lockPath, 'wx', 0o600); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new Error('S-class relearn already locked; inspect .sclass-relearn.lock before retrying');
+    throw error;
+  }
+  try {
+    await lock.writeFile(JSON.stringify({ pid: process.pid, startedAt: new Date(nowMs).toISOString() }));
+    const table = JSON.parse(await readFile(tableFile, 'utf8')) as SclassAnalysis;
+    if (!table || typeof table.area !== 'string' || !Array.isArray(table.hypotheses)) throw new Error('S-class table has the wrong schema');
+    if (!Array.isArray(table.trace?.transitions)) return { split: false, backup: null };
+    const backup = `${tableFile}.${new Date(nowMs).toISOString().replaceAll(':', '-')}-${randomUUID()}.bak`;
+    await copyFile(tableFile, backup, constants.COPYFILE_EXCL);
+    await writePublishedSclass(tableFile, table);
+    return { split: true, backup };
+  } finally { await lock.close(); await unlink(lockPath); }
+}
+
 interface RelearnOptions {
   dataDir: string;
   area?: string;
@@ -625,7 +674,7 @@ export async function relearnSclass(options: RelearnOptions) {
         try { await copyFile(file, backup, constants.COPYFILE_EXCL); backups.push(backup); } catch (error) { if (!isMissing(error)) throw error; }
       }
       await atomicJson(path.join(dataDir, 'sclass-table.json'), table);
-      await atomicJson(resolvedTableFile, candidate);
+      await writePublishedSclass(resolvedTableFile, candidate);
       Object.assign(report, { published: true, backups });
       await atomicJson(reportFile, report);
     }
@@ -668,8 +717,23 @@ async function relearnMain(argv: string[]): Promise<void> {
     candidate: result.candidate, incumbent: result.incumbent, reasons: result.reasons }));
 }
 
+async function splitMain(argv: string[]): Promise<void> {
+  const values = new Map<string, string>();
+  for (let i = 0; i < argv.length; i += 2) {
+    const flag = argv[i]!, value = argv[i + 1];
+    if (!['--data-dir', '--table'].includes(flag) || !value || value.startsWith('--') || values.has(flag)) {
+      throw new Error('usage: sclass.ts --split-published --data-dir <private-area-dir> [--table <path>]');
+    }
+    values.set(flag, value);
+  }
+  if (!values.has('--data-dir')) throw new Error('usage: sclass.ts --split-published --data-dir <private-area-dir> [--table <path>]');
+  const result = await splitPublishedSclass({ dataDir: values.get('--data-dir')!, tableFile: values.get('--table') });
+  console.log(JSON.stringify({ split: result.split, backup: result.backup === null ? null : path.basename(result.backup) }));
+}
+
 async function main(): Promise<void> {
   if (process.argv[2] === '--relearn') return relearnMain(process.argv.slice(3));
+  if (process.argv[2] === '--split-published') return splitMain(process.argv.slice(3));
   const args = parseArgs(process.argv.slice(2));
   const [recordingPaths, anchorsPath] = await Promise.all([Promise.all(args.recording.map(inputPath)), inputPath(args.anchors)]);
   if (new Set(recordingPaths).size !== recordingPaths.length) throw new Error('duplicate recording input');

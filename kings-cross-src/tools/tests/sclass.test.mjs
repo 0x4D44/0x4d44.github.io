@@ -5,7 +5,10 @@ import { spawnSync } from 'node:child_process';
 import { appendFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { aggregate, AREA_ASSETS, areaTrack, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation } from '../sclass.ts';
+import { aggregate, AREA_ASSETS, areaTrack, completedRecordingNames, countHeads, publicationDecision, relearnSclass, relearnValidation,
+  splitPublishedSclass, writePublishedSclass } from '../sclass.ts';
+import { localFile } from '../../relay/relay.mjs';
+import { validatedSignalHypotheses } from '../../web/src/signals.ts';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const evidence = (support, trials, unmatchedCycles) => ({ support, trials, unmatchedCycles, contradictions: trials - support,
@@ -232,6 +235,11 @@ test('daily relearn publishes atomically with dated backups history and common-d
   assert.equal(current.validation, 'last-recording');
   assert.equal(current.provenance.fingerprints.length, 3);
   assert.deepEqual(current.currentStates, {});
+  assert.equal(current.trace.transitions, undefined, 'the served table leaves the trace transitions to the analysis file');
+  const analysis = JSON.parse(await readFile(path.join(dir, 'sclass-analysis.json'), 'utf8'));
+  assert.ok(analysis.trace.transitions.length > 0);
+  assert.equal(current.trace.transitionCount, analysis.trace.transitions.length);
+  assert.deepEqual(current.hypotheses, analysis.hypotheses);
   const sidecar = JSON.parse(await readFile(path.join(dir, 'sclass-table.json'), 'utf8'));
   assert.equal(sidecar.summary.all.bits, 1);
   assert.equal(sidecar.summary.proceed.precision, 1);
@@ -254,6 +262,62 @@ test('daily relearn publishes atomically with dated backups history and common-d
   assert.equal(finalHistory.length, 3);
   assert.equal(finalHistory[2].published, false);
   assert.equal(finalHistory[2].bits, 1);
+});
+
+const MAX_LOCAL_JSON = 16 * 1024 * 1024;
+/** A synthetic analysis whose trace alone is over the relay's 16 MiB local-JSON cap. */
+function oversizedAnalysis() {
+  const transitions = Array.from({ length: 260_000 }, (_, i) => ({ t: 1_735_689_600_000 + i * 1000, address: '10', bit: i % 8, from: i % 2, to: (i + 1) % 2 }));
+  return { area: 'Y9', validation: 'last-recording', folds: [], windows: { beforeMs: 1, afterMs: 1 },
+    trace: { state: { 10: 1 }, transitions, acceptedMessages: transitions.length, rejectedMessages: 0 },
+    hypotheses: [hypothesis('proceed', '9901'), hypothesis('route', '9902', { address: '11', to: '9903' })], bits: [], berths: [],
+    signalMappings: [], currentStates: { 9901: 'proceed' } };
+}
+async function servedThroughRelay(dir) {
+  const response = await localFile(new URL('http://127.0.0.1/sclass'), { dataDir: dir });
+  return response;
+}
+
+test('published table stays under the relay cap when the analysis does not, and the browser reader still takes it', async () => {
+  const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(path.join(scratch, 'sclass-served-test-'));
+  try {
+    const analysis = oversizedAnalysis();
+    await writePublishedSclass(path.join(dir, 'sclass.json'), analysis);
+    const full = await readFile(path.join(dir, 'sclass-analysis.json'), 'utf8');
+    assert.ok(Buffer.byteLength(full) > MAX_LOCAL_JSON, 'the synthetic analysis must exceed the cap');
+    assert.equal(JSON.parse(full).trace.transitions.length, 260_000);
+    const response = await servedThroughRelay(dir);
+    assert.equal(response.status, 200);
+    assert.ok(Buffer.byteLength(response.body) < MAX_LOCAL_JSON);
+    const served = JSON.parse(response.body);
+    assert.deepEqual(validatedSignalHypotheses(served, 'Y9').map(h => h.id), ['9901', '9902']);
+    assert.deepEqual(served.signalMappings, []);
+    assert.deepEqual(served.currentStates, { 9901: 'proceed' });
+    assert.equal(served.trace.transitionCount, 260_000);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('one-off split re-publishes a table published with its trace, keeps a backup, and leaves a split table alone', async () => {
+  const scratch = path.join(root, '.scratch'); await mkdir(scratch, { recursive: true });
+  const dir = await mkdtemp(path.join(scratch, 'sclass-split-test-'));
+  try {
+    const legacy = `${JSON.stringify(oversizedAnalysis(), null, 2)}\n`;
+    await writeFile(path.join(dir, 'sclass.json'), legacy);
+    assert.equal((await servedThroughRelay(dir)).status, 413, 'the legacy file is over the cap');
+    const result = await splitPublishedSclass({ dataDir: dir, now: () => Date.UTC(2026, 10, 13, 12) });
+    assert.equal(result.split, true);
+    assert.equal(await readFile(result.backup, 'utf8'), legacy);
+    assert.deepEqual(JSON.parse(await readFile(path.join(dir, 'sclass-analysis.json'), 'utf8')), JSON.parse(legacy));
+    const response = await servedThroughRelay(dir);
+    assert.equal(response.status, 200);
+    assert.equal(validatedSignalHypotheses(JSON.parse(response.body), 'Y9').length, 2);
+    const again = await splitPublishedSclass({ dataDir: dir });
+    assert.deepEqual(again, { split: false, backup: null });
+    assert.equal((await readdir(dir)).some(name => name === '.sclass-relearn.lock' || name.endsWith('.tmp')), false);
+    await writeFile(path.join(dir, '.sclass-relearn.lock'), '{}');
+    await assert.rejects(splitPublishedSclass({ dataDir: dir }), /already locked/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('daily relearn over three completed days validates leave-one-recording-out and publishes the nested scores', async () => {
