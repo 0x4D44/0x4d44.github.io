@@ -16,8 +16,24 @@ const sourceText = read('perth-scene-west.json'), blocksText = read('perth-west-
 const source = unpackWaverleyScene(JSON.parse(sourceText)), file = JSON.parse(blocksText) as PerthWestBlocksFile, blocks = decodePerthWestBlocks(file);
 const byId = new Map(blocks.buildings.map(b => [b.id, b]));
 
+/** Where two JSON-able files first differ, in a few words: the key, and for a per-block array the block's index and id. Never a
+ *  deepEqual of the files: node's diff of two objects this size ran a test process past the box's memory guard (2026-11-13). */
+function firstDifference(a: Record<string, unknown>, b: Record<string, unknown>): string | null {
+  if (JSON.stringify(a) === JSON.stringify(b)) return null;
+  for (const key of [...new Set([...Object.keys(a), ...Object.keys(b)])]) {
+    const x = a[key], y = b[key]; if (JSON.stringify(x) === JSON.stringify(y)) continue;
+    if (!Array.isArray(x) || !Array.isArray(y)) return `'${key}' differs`;
+    for (let i = 0; i < Math.max(x.length, y.length); i++) if (JSON.stringify(x[i]) !== JSON.stringify(y[i])) {
+      const id = key === 'outer' || key === 'k' || key === 'tags' ? ` (block ${i}, ${decodePerthWestBlocks(a as unknown as PerthWestBlocksFile).buildings[i]?.id ?? 'past the end'})` : '';
+      return `'${key}' first differs at index ${i}${id}; lengths ${x.length} and ${y.length}`;
+    }
+  }
+  return 'the key order differs';
+}
+
 test('the committed blocks file is the source scene packed now (rerun tools/build-perth-west-blocks.ts after the source or PERTH_WEST_DETAIL changes)', () => {
-  assert.deepEqual(file, JSON.parse(JSON.stringify(packPerthWestBlocks(source))));
+  const diff = firstDifference(file as unknown as Record<string, unknown>, JSON.parse(JSON.stringify(packPerthWestBlocks(source))));
+  if (diff) assert.fail(`perth-west-blocks.json is not the source packed now: ${diff}. Rerun tools/build-perth-west-blocks.ts.`);
 });
 
 test('every source block is there once, with its own id, tags, kind and heights; the roofs and the credit as the source has them', () => {

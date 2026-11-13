@@ -186,7 +186,9 @@ test('beside: by default the tile hangs a curtain along the seam where the main 
   assert.equal(tile.stats.triangles, 2 * ((G.nx - 1) * (G.nz - 1) + (G.nz - 1) + 2 * (G.nx - 1) + 2), 'with beside: null there is no curtain');
   // the default is the main apron's edge, asked for outright; null is none; a function of its own is followed
   const asked = buildPerthWestGround(main, { beside: mainApronEdge(main) }), AP = (asked.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
-  assert.equal(asked.stats.triangles, hung.stats.triangles); assert.deepEqual(Array.from(AP.array as Float32Array), Array.from(HP.array as Float32Array), 'the default is mainApronEdge(main)');
+  assert.equal(asked.stats.triangles, hung.stats.triangles); // (compared value by value, never as one deepEqual: node's diff of two arrays this long is a memory hazard)
+  const ap = AP.array as Float32Array, hp = HP.array as Float32Array, at = ap.findIndex((v, i) => !Object.is(v, hp[i]));
+  assert.ok(ap.length === hp.length && at < 0, `the default is mainApronEdge(main): lengths ${ap.length} and ${hp.length}, first differing at ${at}`);
   const flat = buildPerthWestGround(main, { beside: () => 150 }), FP = (flat.group.getObjectByName('perth-west-ground') as THREE.Mesh).geometry.getAttribute('position');
   let top = -Infinity; for (let v = P.count; v < FP.count; v++) top = Math.max(top, FP.getY(v));
   assert.ok(flat.stats.triangles > tile.stats.triangles && top === 150, `a curtain up to the 150 m asked for: ${top}`);
