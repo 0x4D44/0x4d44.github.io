@@ -34,3 +34,11 @@ test('the change is continuous: a heel just over the flat-shoe line changes the 
   assert.equal(under.Lh, under.hipY);
   assert.ok(Math.abs(over.Lh - under.Lh) < 0.0011);
 });
+
+test('a sole only bends at the toe joint if the joint is in it: flat shoes keep their toes level at push-off, a boot with the joint 14 cm higher rolls in one piece', () => {
+  for (const id of PEOPLE) assert.equal(G.makeBody(rigOf(id), foot(id)).leg[0].stiff, 0, `${id}: an ordinary shoe bends at the ball of the foot`);
+  const id = PEOPLE[0], tall = G.makeBody(rigOf(id, 0.14), foot(id));
+  assert.equal(tall.leg[0].stiff, 1); assert.equal(tall.leg[1].stiff, 1);
+  const mid = G.makeBody(rigOf(id, 0.085), foot(id)).leg[0].stiff;
+  assert.ok(mid > 0 && mid < 1, `in between it is part way (${mid.toFixed(2)})`);
+});
