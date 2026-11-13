@@ -194,7 +194,7 @@ test('sclass job: CLI results log only validated publish decisions, counts, and 
   ];
   let index = 0;
   const runner = createSclassRunner({ execFile: (_exe, args, _options, done) => {
-    assert.deepEqual(args, ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9'],
+    assert.deepEqual(args.slice(args.indexOf('tools/sclass.ts')), ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9'],
       'optional anchor and table arguments are omitted when their environment paths are absent');
     const child = { exitCode: null, signalCode: null, kill() { return true; } };
     const stdout = JSON.stringify(results[index++]);
@@ -232,8 +232,10 @@ test('sclass job: CLI runner passes private paths and bounds then escalates chil
   const controller = new AbortController();
   const result = runner({ dataDir: '/private/kx-data', area: 'Y9', anchorsPath: '/private/anchors.json',
     tablePath: '/private/sclass.json', signal: controller.signal });
-  assert.equal(received.executable, process.execPath);
-  assert.deepEqual(received.args, ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9',
+  const lowPriority = process.platform === 'win32' ? [] : ['-n', '19'];
+  assert.equal(received.executable, process.platform === 'win32' ? process.execPath : '/usr/bin/nice');
+  assert.deepEqual(received.args, [...lowPriority, ...(process.platform === 'win32' ? [] : [process.execPath]),
+    'tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data', '--area', 'Y9',
     '--anchors', '/private/anchors.json', '--table', '/private/sclass.json']);
   assert.equal(received.options.timeout, 500);
   assert.equal(received.options.maxBuffer, 1024 * 1024);
@@ -262,7 +264,7 @@ test('sclass job: CLI runner passes shared recordings and area-specific assets w
     anchorsPath: '/private/kx-data/areas/ZZ/anchors.json', tablePath: '/private/kx-data/areas/ZZ/sclass.json',
     recordingsDir: '/private/kx-data/recordings', overlayPath: '/assets/eus-signals.json', trackPath: '/assets/eus-track.json',
     signal: controller.signal });
-  assert.deepEqual(received.args, ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data/areas/ZZ', '--area', 'ZZ',
+  assert.deepEqual(received.args.slice(received.args.indexOf('tools/sclass.ts')), ['tools/sclass.ts', '--relearn', '--data-dir', '/private/kx-data/areas/ZZ', '--area', 'ZZ',
     '--anchors', '/private/kx-data/areas/ZZ/anchors.json', '--table', '/private/kx-data/areas/ZZ/sclass.json',
     '--recordings-dir', '/private/kx-data/recordings', '--overlay', '/assets/eus-signals.json', '--track', '/assets/eus-track.json']);
   controller.abort();

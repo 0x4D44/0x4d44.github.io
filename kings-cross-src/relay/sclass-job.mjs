@@ -7,6 +7,7 @@ const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const DEFAULT_SETTLE_MS = 60_000;
 const DEFAULT_TIMEOUT_MS = 10 * 60_000;
 const KILL_GRACE_MS = 2_000;
+const NICE_EXECUTABLE = '/usr/bin/nice';
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const SAFE_RESULT = Symbol('safe sclass result');
 const defaultLockFs = { readFile: nodeReadFile, unlink: nodeUnlink };
@@ -125,8 +126,12 @@ export function createSclassRunner({ execFile = nodeExecFile, cwd = packageRoot,
     };
     const onAbort = () => terminate();
 
+    // Lowest scheduling priority so the nightly relearn cannot starve other work on a shared
+    // host. nice(1) execs node, so child.pid is still the node process the lock records.
+    const [executable, argv] = process.platform === 'win32' ? [process.execPath, args]
+      : [NICE_EXECUTABLE, ['-n', '19', process.execPath, ...args]];
     try {
-      child = execFile(process.execPath, args, {
+      child = execFile(executable, argv, {
         cwd,
         windowsHide: true,
         encoding: 'utf8',
