@@ -1,4 +1,6 @@
 // Rebuild: node tools/build-perth-city-heights.ts --cache /Users/md/kx-data/perth-lidar
+// The west extension (tools/perth-west-extent.ts): node tools/build-perth-city-heights.ts --west --cache <dir>  (perth-scene-west.json in,
+// perth-city-heights-west.json out, no landmarks; the tiles are the same three, NO02 carrying the extension's west part).
 // P3 LiDAR heights for the Perth city blocks whose OSM tags carry no height (heightBasis 'ASSUMED ...'), as Waverley's
 // tools/build-waverley-city-heights.ts: the same footprint lattice, quantiles and file format, on the Scottish Government Phase I
 // (2011-12) 1 m DSM and DTM (OGLv3), read through the range-request GeoTIFF reader and OSTN15 transform of the terrain tool. The tile
@@ -9,9 +11,11 @@ import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { unproject } from '../core/geo.ts';
+import type { Extent } from '../core/terrain.ts';
 import { unpackWaverleyScene } from '../core/waverley-data.ts';
 import type { WaverleyArea } from '../core/waverley-data.ts';
 import { PERTH_ORIGIN } from '../core/perth-data.ts';
+import { PERTH_WEST_REGION } from './perth-west-region.ts';
 import { etrs89ToGrid, readGeoTiff } from './terrain-source.ts';
 import { openScottishDtm, SCOTTISH_DTM_PHASE1_BASE } from './waverley-terrain-source.ts';
 import { encodeCityHeights, footprintArea, footprintLattice, heightsOf, measure, quantile } from './build-waverley-city-heights.ts';
@@ -85,16 +89,18 @@ async function pool<T, R>(items: readonly T[], width: number, work: (item: T) =>
 }
 const f1 = (v: number): string => v.toFixed(1);
 
-async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const value = (flag: string, fallback: string) => args.includes(flag) ? args[args.indexOf(flag) + 1]! : fallback;
-  const cache = value('--cache', '/Users/md/kx-data/perth-lidar');
-  const dataDir = fileURLToPath(new URL('../web/src/data/', import.meta.url));
-  const out = value('--out', path.join(dataDir, 'perth-city-heights.json'));
-  const accessed = value('--accessed', new Date().toISOString().slice(0, 10));
-  const scene = unpackWaverleyScene(JSON.parse(await readFile(path.join(dataDir, 'perth-scene.json'), 'utf8')));
+/** Whether a block has a vertex in `extent` (always, where there is none): the west run measures only the blocks its region holds. */
+export const inExtent = (b: Pick<WaverleyArea, 'outer'>, extent?: Extent): boolean => !extent || b.outer.some(([x, z]) => x >= extent.x0 && x <= extent.x1 && z >= extent.z0 && z <= extent.z1);
+/** One run of the heights build: the packed scene in, the JSON out, the LiDAR cache, the `accessed` date recorded, whether the file carries the
+ *  Perth landmarks' peaks, and (the west extension) the `extent` a block must have a vertex in to be measured, recorded in the file's source.
+ *  Without an `extent` every block of the scene is measured, which is how the context file is built. */
+export interface PerthHeightsRun { scene: string; out: string; cache: string; accessed: string; landmarks: boolean; extent?: Extent }
+export async function buildPerthCityHeights(run: PerthHeightsRun): Promise<void> {
+  const { out, cache, accessed, extent } = run;
+  const scene = unpackWaverleyScene(JSON.parse(await readFile(run.scene, 'utf8')));
+  const within = (b: WaverleyArea) => inExtent(b, extent);
   const lidar = await openPerthLidar(cache);
-  const flat = scene.buildings.filter(b => b.minHeight === 0);
+  const flat = scene.buildings.filter(b => b.minHeight === 0 && within(b));
   const assumed = flat.filter(b => b.heightBasis.startsWith('ASSUMED'));
   const osm = flat.filter(b => b.heightBasis.startsWith('OSM height') && footprintArea(b) >= 10);
   const sample = Array.from({ length: Math.min(300, osm.length) }, (_, i) => osm[Math.floor(i * osm.length / Math.min(300, osm.length))]!);
@@ -119,9 +125,10 @@ async function main(): Promise<void> {
     attribution: 'Contains Scottish public sector LiDAR data © Scottish Government, made available under the Open Government Licence v3.',
     accessed,
     method: 'Phase I 1 m DSM minus DTM per ASSUMED-height OSM block: h = 90th-percentile DSM inside the footprint (1 m lattice, 1 m in from the walls) above the 10th-percentile DTM over it; r = h minus the median surface, kept above 6 m; method in tools/build-waverley-city-heights.ts, driver tools/build-perth-city-heights.ts',
+    ...(extent ? { extent: { ...extent } } : {}),
   };
   const landmarks: Record<string, { id: string; x: number; z: number; rise: number; body: number; near?: { x: number; z: number; rise: number; cells: number; offset: number } }> = {};
-  for (const [key, id] of Object.entries(PERTH_LIDAR_LANDMARKS)) {
+  for (const [key, id] of run.landmarks ? Object.entries(PERTH_LIDAR_LANDMARKS) : []) {
     const b = scene.buildings.find(q => q.id === id); if (!b) throw new Error(`${id} not in the scene`);
     const p = await peakOf(lidar, b), r = (v: number) => Math.round(v * 10) / 10;
     landmarks[key] = { id, x: r(p.x), z: r(p.z), rise: r(p.top - p.ground), body: r(p.p90 - p.ground) };
@@ -132,7 +139,7 @@ async function main(): Promise<void> {
       console.log(`landmark ${key} ${id}: LiDAR tower ${r(t.rise)} m at ${r(t.x)}, ${r(t.z)} (${t.cells} cells over half), ${r(t.offset)} m from the outline's centre`);
     }
   }
-  const json = JSON.stringify({ ...encodeCityHeights(kept, source), landmarks }) + '\n';
+  const json = JSON.stringify(run.landmarks ? { ...encodeCityHeights(kept, source), landmarks } : encodeCityHeights(kept, source)) + '\n';
   await mkdir(path.dirname(out), { recursive: true }); await writeFile(out, json);
   console.log(`ASSUMED blocks with minHeight 0: ${assumed.length}; LiDAR height for ${kept.length}; rejected ${assumed.length - kept.length}`);
   for (const [why, n] of [...rejected].sort((a, b) => b[1] - a[1])) console.log(`  rejected, ${why}: ${n}`);
@@ -142,5 +149,20 @@ async function main(): Promise<void> {
   const rows = sample.map(b => ({ b, m: result.get(b)! })).filter((r): r is { b: WaverleyArea; m: Measure } => typeof r.m !== 'string');
   const err = rows.map(r => heightsOf(r.m).h - r.b.height), abs = err.map(Math.abs);
   if (rows.length) console.log(`Validation vs OSM height (${rows.length} of ${sample.length} blocks >= 10 m2): median abs ${f1(quantile(abs, 0.5))} m, p90 abs ${f1(quantile(abs, 0.9))} m, median signed ${f1(quantile(err, 0.5))} m`);
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const value = (flag: string, fallback: string) => args.includes(flag) ? args[args.indexOf(flag) + 1]! : fallback;
+  const west = args.includes('--west');
+  const dataDir = fileURLToPath(new URL('../web/src/data/', import.meta.url));
+  await buildPerthCityHeights({
+    cache: value('--cache', '/Users/md/kx-data/perth-lidar'),
+    scene: value('--scene', path.join(dataDir, west ? 'perth-scene-west.json' : 'perth-scene.json')),
+    out: value('--out', path.join(dataDir, west ? 'perth-city-heights-west.json' : 'perth-city-heights.json')),
+    accessed: value('--accessed', new Date().toISOString().slice(0, 10)),
+    landmarks: !west,
+    extent: west ? PERTH_WEST_REGION : undefined,
+  });
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) await main();
