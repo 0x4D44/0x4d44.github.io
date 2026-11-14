@@ -615,6 +615,9 @@ try {
   p = await open(browser, 'mode=explore&station=hillhead&diff=easy');
   await shot(p, '21_explore_hillhead');
   { const wa = await ev(p, () => __sim.waitAudit());
+    const sa = await ev(p, () => __sim.smileAudit());
+    ok('people can smile: every full-detail character has the smile fitted to its own mouth, and whoever the player walks up to smiles (or laughs)',
+      wa && wa.near && wa.near.smiled > 0.25 && sa && (sa.chars === 0 || (sa.rigs === sa.chars && sa.minMoved > 40 && sa.found >= 0.7 * sa.chars && sa.yMin > 0.95 && sa.yMax < 1.5)) && (!wa.near.face || wa.near.faceW > 0.2), JSON.stringify({ sa, near: wa.near }));
     ok('people wait where they stand (nobody paces the platform), a newcomer walks down the stairs to a place and stops there, and someone the player walks up to stays put, looks and turns to them',
       wa && wa.standing >= 3 && wa.drift < 0.02 && wa.pacing === 0 && wa.stairs && wa.y0 > 2 && wa.arr && wa.arr.mode === 'stand' && Math.abs(wa.arr.y) < 0.01 && wa.arr.rise <= 0.001 && wa.arr.onFloor && wa.arr.far > 1 && wa.arr.still === 0 &&
       wa.near && wa.near.moved < 0.02 && wa.near.looked >= 4 && wa.near.maxHead > 0.25 && wa.near.greeted && wa.near.turned > 0.3 && wa.near.off < 0.6 && wa.near.state === 'stand' && wa.near.rig, JSON.stringify(wa)); }

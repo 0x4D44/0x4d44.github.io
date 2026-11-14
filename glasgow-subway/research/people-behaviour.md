@@ -80,8 +80,16 @@ move, looks, turns and greets.
 
 Not done, and not claimed:
 
-- **No smile.** The faces are painted textures with no jaw, lip or brow controls. The laugh
-  is in the shoulders and head only. A real smile needs the face rebuilt with morph targets.
+- **A closed-mouth smile only.** The faces have no jaw, lip or brow controls, but the
+  full-detail heads do have lips as real geometry. `js/sim/smile.js` adds one morph target
+  to each character's skin when it loads: the corners of the mouth go up (about 7 mm), out
+  and back, the cheeks lift a little, the middle of the lips stays. The mouth is found from
+  the redness of the lips in the skin texture; where that fails, a usual place is used.
+  About seven people in ten smile a little (0.3 to 0.7 of the full shape) at someone who
+  walks up and is looked at; a nervous laugh is the full shape; phone users do not smile.
+  Limits: no teeth, the eyes do not narrow, the shading is not recomputed, the far (LOD)
+  model has no smile, and it is only applied within blinking range of the camera. It has
+  been checked in still images and by numbers, not watched in motion.
 - **Stairs are walked as a slope.** Feet do not land on the treads.
 - **No groups.** Everyone arrives and waits alone; real platforms have pairs who face each
   other and talk.

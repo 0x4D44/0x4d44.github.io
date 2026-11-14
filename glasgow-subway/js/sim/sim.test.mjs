@@ -889,6 +889,30 @@ test('attention: a stranger gets one glance; someone close is looked at (with br
   a = newAttention(rng); r = run(a, 5, { player: { yaw: 1, pitch: 0, d: 0.9 }, busy: true }); assert.ok(Math.abs(a.yaw) < 1e-6 && r.turn === 0);
 });
 
+test('people: a smile - the corners of the mouth go up, out and back, the middle of the lips barely moves, both sides alike; the mouth is found from the colour of the lips; a warm person smiles at whoever walks up', async () => {
+  const { SMILE, smileDelta, findMouth } = await import('./smile.js'), { LOOK, newAttention, attend } = await import('./waiting.js');
+  const c = smileDelta(SMILE.half, 0), l = smileDelta(-SMILE.half, 0), m = smileDelta(0, 0), far = smileDelta(0.3, 1.6), ch = smileDelta(SMILE.cheekX, SMILE.cheekY);
+  assert.ok(c[0] > 0.05 && c[1] > 0.09 && c[2] < -0.03, 'corner: ' + c);
+  assert.ok(Math.abs(l[0] + c[0]) < 1e-12 && l[1] === c[1] && l[2] === c[2], 'mirror');
+  assert.ok(Math.hypot(m[0], m[1], m[2]) < 0.15 * Math.hypot(c[0], c[1], c[2]), 'middle: ' + m);
+  assert.ok(Math.hypot(far[0], far[1], far[2]) < 0.002, 'the brow stays: ' + far);
+  assert.ok(ch[1] > 0.02 && ch[2] > 0.015, 'cheek lifts and comes forward: ' + ch);
+  const w = smileDelta(0.47, 0, 0.47), n = smileDelta(0.47, 0, 0.33); assert.ok(w[1] > 1.3 * n[1], 'the pull sits on this mouth\'s own corner');
+  // lips: a red patch on skin
+  const pts = []; for (let x = -0.7; x <= 0.7; x += 0.05) for (let y = -1.55; y <= -0.85; y += 0.05) { const lip = Math.abs(x) < 0.38 && Math.abs(y + 1.2) < 0.08; pts.push({ x, y, r: lip ? 170 : 200, g: lip ? 80 : 160, b: lip ? 85 : 140 }); }
+  const f = findMouth(pts); assert.ok(f && Math.abs(f.y + 1.2) < 0.05 && f.half >= 0.32 && f.half <= 0.42, JSON.stringify(f));
+  assert.equal(findMouth(pts.map((p) => ({ x: p.x, y: p.y, r: 200, g: 160, b: 140 }))), null); assert.equal(findMouth([]), null);
+  // who smiles: most people a little, some not at all, the same person always the same
+  let rng = mulberry32(5), warm = 0, N = 400; for (let i = 0; i < N; i++) { const a = newAttention(rng); assert.ok(a.warm === 0 || (a.warm >= LOOK.warmMin && a.warm <= LOOK.warmMax)); if (a.warm > 0) warm++; }
+  assert.ok(warm > 0.55 * N && warm < 0.85 * N, 'warm ' + warm);
+  const dt = 1 / 60, me = { player: { yaw: 0.5, pitch: 0, d: 0.9 } }; let sawWarm = false, sawLaugh = false;
+  for (let k = 0; k < 60 && !(sawWarm && sawLaugh); k++) { const a = newAttention(rng); assert.equal(a.sm, 0); let top = 0, laughed = false; for (let i = 0; i < 6 * 60; i++) { attend(a, dt, rng, me); top = Math.max(top, a.sm); if (a.laugh > 0) laughed = true; assert.ok(a.sm >= 0 && a.sm <= 1); }
+    if (laughed) { assert.ok(top > 0.9, 'a laugh is a full smile: ' + top); sawLaugh = true; } else if (a.warm > 0) { assert.ok(top > 0.25, 'warm ' + a.warm + ' -> ' + top); sawWarm = true; }
+    for (let i = 0; i < 5 * 60; i++) attend(a, dt, rng, { player: null }); assert.ok(a.sm < 0.02, 'it fades when they go: ' + a.sm);
+    const b = newAttention(rng); for (let i = 0; i < 5 * 60; i++) attend(b, dt, rng, Object.assign({ busy: true }, me)); assert.equal(b.sm, 0); }
+  assert.ok(sawWarm && sawLaugh);
+});
+
 test('audio: wheel on rail - a roar that follows the 30 log V law, a beat once a turn of the wheel, joints that knock under each wheelset as it crosses, corrugated stretches', () => {
   const R = (o) => railMix(Object.assign({ v: 0, s: 0, inTrain: true }, o));
   // standing: nothing

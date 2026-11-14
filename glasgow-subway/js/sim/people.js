@@ -10,6 +10,7 @@ import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
 import { makeHaggis, followStep, poseHaggis, poseLead } from './haggis.js';
 import { BLINK, blinkStep, eyeRig, makeLids } from './blink.js';
+import { buildSmile, smileMesh } from './smile.js';
 import { PROX, chooseSpot, newAttention, attend } from './waiting.js';
 import { LookRig } from './look_three.js';
 export const PET_OWNER = 'adult_string_vest';   // the man in the string vest walks a haggis (haggis.js)
@@ -346,9 +347,15 @@ export class AnimCrowd {
     if (ch.id === PET_OWNER) { p.pet = makeHaggis(this.THREE); this._petStep(p, 0); }
     return p;
   }
+  /** test hook: set a person's smile by hand (0..1) */
+  _smileSet(p, w) { if (p.face) p.face.morphTargetInfluences[0] = w; return !!p.face; }
   /** eyelids (blink.js) for a full-detail clone; the far model has none. Where the eyes are is read once per character. */
   _lids(p, obj) {
-    p.lids = null; const ch = p.char; if (p.lod || !ch.node || this.blinks === false) return;
+    p.lids = null; p.face = null; const ch = p.char; if (p.lod || !ch.node) return;
+    // the smile (smile.js): one morph target on the character's skin, made once; this clone's skin then carries its own amount of it
+    if (ch.smileRig === undefined) { try { ch.smileRig = buildSmile(this.THREE, this._clone(ch, false)) || null; } catch (e) { ch.smileRig = null; } }
+    p.face = smileMesh(obj, ch.smileRig);
+    if (this.blinks === false) return;
     if (ch.eyeRig === undefined) { try { ch.eyeRig = eyeRig(this.THREE, this._clone(ch, false)); } catch (e) { ch.eyeRig = null; } }
     p.lids = makeLids(this.THREE, obj, ch.eyeRig); if (!p.blink) p.blink = {};
   }
@@ -647,6 +654,7 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
+      if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (c !== p.lids.c) p.lids.set(c); }
       p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {

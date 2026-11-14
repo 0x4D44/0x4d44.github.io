@@ -36,6 +36,7 @@ export const LOOK = {
   laughDur: 1.1, laughHz: 4.6,
   nodDur: 0.7,
   restMin: 4, restMax: 13,        // s between idle glances
+  warmShare: 0.7, warmMin: 0.3, warmMax: 0.7,   // the share of people who keep a small smile while they look at you, and how much of one (1 = the full smile of a laugh)
   press: 0.7,      // s of being pressed into (inside intimate distance) before a person gives ground
 };
 
@@ -61,14 +62,15 @@ export function chooseSpot(cands, ctx, rng) {
 
 const wrap = (a) => { a = (a + Math.PI) % (2 * Math.PI); if (a < 0) a += 2 * Math.PI; return a - Math.PI; };
 const between = (rng, a, b) => a + rng() * (b - a);
-export function newAttention(rng) { return { tgt: 'rest', t: between(rng, 0.5, 8), yaw: 0, pitch: 0, wy: 0, wp: 0, vy: 0, vp: 0, near: false, seen: 0, laugh: 0, nod: 0, bob: 0, press: 0, breath: rng() * 6.28, laughs: rng() < LOOK.laugh, greeted: false }; }
+export function newAttention(rng) { const a = newAttention0(rng), u = (a.breath * 7.3) % 1; a.warm = u < LOOK.warmShare ? LOOK.warmMin + (LOOK.warmMax - LOOK.warmMin) * u / LOOK.warmShare : 0; return a; }
+function newAttention0(rng) { return { tgt: 'rest', t: between(rng, 0.5, 8), yaw: 0, pitch: 0, wy: 0, wp: 0, vy: 0, vp: 0, near: false, seen: 0, laugh: 0, nod: 0, bob: 0, press: 0, breath: rng() * 6.28, laughs: rng() < LOOK.laugh, greeted: false, sm: 0, warm: 0 }; }
 
 /** One step of a standing person's attention. a: the state (newAttention). ctx:
  *   player: null | { yaw, pitch, d }  - where the player's eyes are, as angles off the way this person's body faces (rad; yaw +ve = to their left), and how far (m)
  *   train:  null | { yaw }            - the same for the train running in (or the tunnel mouth it comes from)
  *   board:  null | { yaw, pitch }     - the next-train indicator
  *   due: 0..1 (how soon the train is), phone: on a phone (eyes stay down unless spoken to, as it were), busy: walking / boarding (no looking about)
- *  Sets a.yaw / a.pitch (head, off the body's facing), a.bob (the shake of a laugh or the dip of a nod, rad), and returns { turn: null | rad } - how far the BODY should
+ *  Sets a.sm (the smile, 0..1), a.yaw / a.pitch (head, off the body's facing), a.bob (the shake of a laugh or the dip of a nod, rad), and returns { turn: null | rad } - how far the BODY should
  *  turn - and { yield: true } once someone has pressed into them for LOOK.press. */
 export function attend(a, dt, rng, ctx) {
   const pl = ctx.player, out = { turn: null, yield: false };
@@ -115,5 +117,8 @@ export function attend(a, dt, rng, ctx) {
   if (a.laugh > 0) { const u = 1 - a.laugh / LOOK.laughDur, env = Math.sin(Math.PI * Math.min(1, u * 1.15)) * (1 - 0.5 * u); a.bob = env * Math.sin(u * LOOK.laughDur * LOOK.laughHz * 2 * Math.PI); a.drop = env; a.laugh = Math.max(0, a.laugh - dt); }
   else if (a.nod > 0) { const u = 1 - a.nod / LOOK.nodDur; a.drop = Math.sin(Math.PI * u) ** 2 * 1.3; a.nod = Math.max(0, a.nod - dt); }
   a.breath += dt * 1.6;   // about 15 breaths a minute
+  // the smile (smile.js draws it): full while they laugh, a good half with a nod, a small one kept by most people while they look at you; it comes quickly and fades slowly
+  const want = ctx.busy ? 0 : a.laugh > 0 ? 1 : a.nod > 0 ? Math.max(0.55, a.warm) : a.near && a.greeted && a.tgt === 'you' ? a.warm : 0;
+  a.sm += (want - a.sm) * (1 - Math.exp(-(want > a.sm ? 7 : 1.6) * dt)); if (a.sm < 0.002 && !want) a.sm = 0;
   return out;
 }

@@ -1600,6 +1600,11 @@ class Sim {
       crowdClearance: () => { const c = this.crowd, w = this.walker; let d = 1e9, front = 1e9; const fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw); for (const q of c.people) { if (!q.obj || q.hidden) continue; const dx = q.x - w.x, dz = q.z - w.z, dd = Math.hypot(dx, dz); d = Math.min(d, dd); if ((dx * fx + dz * fz) / (dd || 1) > Math.cos(1.15)) front = Math.min(front, dd); } return { d, front, n: c.people.length }; },
       // tests: put the man in the string vest on the platform, let a second pass, and say where his haggis is (then take him away again)
       // how the people on this platform wait, arrive and answer the player (waiting.js): run on the platform being explored, with the service left as it is
+      // the smile (smile.js): every full-detail character gets one, fitted to where its own mouth is
+      smileAudit: () => { const c = this.crowd, out = { chars: 0, rigs: 0, found: 0, minMoved: 1e9, yMin: 9, yMax: 0, halfMin: 9, halfMax: 0, none: [] }; if (!c || !c.chars) return out;
+        for (const ch of c.chars) { if (!ch.node) continue; out.chars++; const p = { char: ch, lod: false }; c._lids(p, c._clone(ch, false)); const r = ch.smileRig;
+          if (!r || !p.face) { out.none.push(ch.id); continue; } out.rigs++; if (r.found) out.found++; out.minMoved = Math.min(out.minMoved, r.moved); out.yMin = Math.min(out.yMin, r.mouthY); out.yMax = Math.max(out.yMax, r.mouthY); out.halfMin = Math.min(out.halfMin, r.half); out.halfMax = Math.max(out.halfMax, r.half); }
+        return out; },
       waitAudit: () => { const c = this.crowd, v = this.crowdFor, w = this.walker; if (!v || !c.arrive || !c.site || this.mode !== 'explore') return null;
         const PY = v.info.PY, step = (sec) => { for (let i = 0; i < sec * 30; i++) { this.tick(1 / 30); this.sync(1 / 30); } }, out = { n: c.people.length };
         const mid = { x: (v.crowdRect.x0 + v.crowdRect.x1) / 2, z: 0 }; w.place(mid.x, mid.z);
@@ -1613,8 +1618,8 @@ class Sim {
             out.arr = { t, mode: q.mode, state: q.state, y: q.y - PY, rise, onFloor: c._onFloor(q.x, q.z, 0.1), far: Math.hypot(q.x - sr.down[2].x, q.z - sr.down[2].z) }; step(3); out.arr.still = q.sp || 0; } }
         // 3. the player walks up to someone: they stay where they are, look, and turn toward the player
         const cand = c.people.filter((q) => q.mode === 'stand' && q.state === 'stand').map((q) => { for (const sg of [1, -1]) { const a = q.yaw + sg * 1.5, x = q.x - Math.sin(a) * 0.95, z = q.z - Math.cos(a) * 0.95; if (c._onFloor(x, z, 0.15) && !c.people.some((o) => o !== q && Math.hypot(o.x - x, o.z - z) < 0.7)) return { q, x, z }; } return null; }).filter(Boolean)[0];
-        if (cand) { const q = cand.q, x0 = q.x, z0 = q.z, yaw0 = q.yaw; w.place(cand.x, cand.z); let looked = 0, maxHead = 0, greeted = false; for (let i = 0; i < 8; i++) { step(0.5); if (q.att && q.att.tgt === 'you') looked++; maxHead = Math.max(maxHead, Math.abs(q.att ? q.att.yaw : 0)); greeted = greeted || !!(q.att && q.att.greeted); }
-          const rel = Math.atan2(-(w.x - q.x), -(w.z - q.z)) - q.yaw; out.near = { moved: Math.hypot(q.x - x0, q.z - z0), looked, maxHead, greeted, turned: Math.abs(Math.atan2(Math.sin(q.yaw - yaw0), Math.cos(q.yaw - yaw0))), off: Math.abs(Math.atan2(Math.sin(rel), Math.cos(rel))), state: q.state, rig: !!q.look }; }
+        if (cand) { const q = cand.q, x0 = q.x, z0 = q.z, yaw0 = q.yaw; w.place(cand.x, cand.z); let looked = 0, maxHead = 0, greeted = false, smiled = 0, faceW = 0; for (let i = 0; i < 8; i++) { step(0.5); smiled = Math.max(smiled, q.att ? q.att.sm || 0 : 0); faceW = Math.max(faceW, q.face ? q.face.morphTargetInfluences[0] : 0); if (q.att && q.att.tgt === 'you') looked++; maxHead = Math.max(maxHead, Math.abs(q.att ? q.att.yaw : 0)); greeted = greeted || !!(q.att && q.att.greeted); }
+          const rel = Math.atan2(-(w.x - q.x), -(w.z - q.z)) - q.yaw; out.near = { moved: Math.hypot(q.x - x0, q.z - z0), looked, maxHead, greeted, smiled, face: !!q.face, faceW, turned: Math.abs(Math.atan2(Math.sin(q.yaw - yaw0), Math.cos(q.yaw - yaw0))), off: Math.abs(Math.atan2(Math.sin(rel), Math.cos(rel))), state: q.state, rig: !!q.look }; }
         return out; },
       petAudit: () => { const c = this.crowd, ch = (c.chars || []).find((x) => x.id === 'adult_string_vest'); if (!ch) return null;
         const q = c.people.find((x) => x.obj && !x.hidden) || { x: 0, z: 0, y: 0 }, p = c.add({ char: ch, x: q.x, z: q.z, y: q.y, yaw: 0, mode: 'stand', static: true, force: true }, c.group); if (!p.obj || !p.pet) return { made: false };
