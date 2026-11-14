@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import { windowNight } from './materials.ts';
-import { HEADLAMP_FRAGMENT, HEADLAMP_MARK, headlampUniforms } from './train-headlamp-light.ts';
+import { HEADLAMP_FRAGMENT, headlampUniforms } from './train-headlamp-light.ts';
 
 const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
   const m = (o as { material?: THREE.Material | THREE.Material[] }).material;
@@ -465,7 +465,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
     if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
-    if (!fragment.includes(HEADLAMP_MARK)) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
+    if (!fragment.includes('vec3 headlampOne(')) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
     fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef ${MOTTLE}

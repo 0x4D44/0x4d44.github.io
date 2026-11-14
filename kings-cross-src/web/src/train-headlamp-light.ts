@@ -83,7 +83,7 @@ export const HEADLAMP_GLSL = {
 } as const;
 /** All of it, for a program's fragment shader (after `#include <common>`). */
 export const HEADLAMP_FRAGMENT = `${HEADLAMP_GLSL.declare}\n${HEADLAMP_GLSL.one}\n${HEADLAMP_GLSL.sum}`;
-/** What marks a shader that has it, so it is put in once. */
+/** What marks a shader that has it, so it is put in once. The hooks spell it out as a literal (tools/tests/three-squeeze.test.ts holds every shader match to one). */
 export const HEADLAMP_MARK = 'vec3 headlampOne(';
 
 // ---- which lamps get the slots -----------------------------------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ export function addHeadlampBasic(material: THREE.MeshBasicMaterial, albedo?: num
       .replace('#include <common>', `#include <common>\n${HEADLAMP_BASIC_GLSL.declare}`)
       .replace('#include <project_vertex>', `#include <project_vertex>\n${HEADLAMP_BASIC_GLSL.vertex}`);
     let fragment = shader.fragmentShader.replace('#include <common>', `#include <common>\n${HEADLAMP_BASIC_GLSL.declare}`);
-    if (!fragment.includes(HEADLAMP_MARK)) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
+    if (!fragment.includes('vec3 headlampOne(')) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
     shader.fragmentShader = fragment.replace('#include <opaque_fragment>', `${HEADLAMP_BASIC_GLSL.fragment(reflect)}\n#include <opaque_fragment>`);
   };
   material.customProgramCacheKey = () => `${priorKey}+headlampBasic${albedo === undefined ? '' : `-${albedo}`}`;
