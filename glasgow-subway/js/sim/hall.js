@@ -76,6 +76,7 @@ export function quadGroups(geo) {
   const groups = new Map(); for (let i = 0; i < n; i++) { const r = find(i); (groups.get(r) || groups.set(r, []).get(r)).push(i); }
   return [...groups.values()];
 }
+export const MURAL_LIFT = 0.008;   // m
 export function hallPosterZone(info) { return info && info.coved ? { y0: 1.35, y1: 2.25 } : { y0: 1.55, y1: 2.75 }; }
 export function fixHallSigns(tpl, info) {
   if (!tpl || tpl.userData.signsFixed) return; tpl.userData.signsFixed = true;
@@ -84,6 +85,12 @@ export function fixHallSigns(tpl, info) {
     if (!m.isMesh || !m.geometry || !m.material) return;
     const mn = m.material.name || '', pos = m.geometry.attributes.position; if (!pos) return;
     if (/^bandmat_/.test(mn)) { for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) + dy); pos.needsUpdate = true; }
+    else if (/^art_/.test(mn)) {   // the mural was built in the very plane of its own backing plate's face (and 2 mm off the name band): it flickered through both.
+      // Stand it 8 mm clear of the plate, towards the middle of the hall, and let it win any tie in depth that is left.
+      let cx = 0; for (let i = 0; i < pos.count; i++) cx += pos.getX(i); const s = Math.sign(cx) || 1;
+      for (let i = 0; i < pos.count; i++) pos.setX(i, pos.getX(i) - s * MURAL_LIFT); pos.needsUpdate = true;
+      m.material.polygonOffset = true; m.material.polygonOffsetFactor = -2; m.material.polygonOffsetUnits = -8; m.material.needsUpdate = true;
+    }
     else if (mn === 'advert_atlas') {   // each poster is a separate quad: find them as connected vertex groups, stand each one in the poster zone
       for (const vs of quadGroups(m.geometry)) {
         let y0 = 1e9, y1 = -1e9, z0 = 1e9, z1 = -1e9; for (const i of vs) { const y = pos.getY(i), z = pos.getZ(i); y0 = Math.min(y0, y); y1 = Math.max(y1, y); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }

@@ -9,6 +9,7 @@ import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
 import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
 import { makeHaggis, followStep, poseHaggis, poseLead } from './haggis.js';
+import { BLINK, blinkStep, eyeRig, makeLids } from './blink.js';
 export const PET_OWNER = 'adult_string_vest';   // the man in the string vest walks a haggis (haggis.js)
 import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
@@ -331,7 +332,7 @@ export class AnimCrowd {
     if (!this.hasAnim || (this.people.length >= this.max && !p.force)) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
     p.lod = !!ch.lodNode; const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
-    this._dressTee(p, obj);
+    this._dressTee(p, obj); this._lids(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
     p.parent = parent || this.group; p.obj = obj; p.parent.add(obj);
@@ -343,6 +344,12 @@ export class AnimCrowd {
     if (ch.id === PET_OWNER) { p.pet = makeHaggis(this.THREE); this._petStep(p, 0); }
     return p;
   }
+  /** eyelids (blink.js) for a full-detail clone; the far model has none. Where the eyes are is read once per character. */
+  _lids(p, obj) {
+    p.lids = null; const ch = p.char; if (p.lod || !ch.node || this.blinks === false) return;
+    if (ch.eyeRig === undefined) { try { ch.eyeRig = eyeRig(this.THREE, this._clone(ch, false)); } catch (e) { ch.eyeRig = null; } }
+    p.lids = makeLids(this.THREE, obj, ch.eyeRig); if (!p.blink) p.blink = {};
+  }
   /** a T-shirt wearer keeps one chest print and shirt colour (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
   _dressTee(p, obj) {
     let tee = false; obj.traverse((m) => { if (m.isMesh && m.material && TEE.test(m.material.name || '')) tee = true; });
@@ -353,7 +360,7 @@ export class AnimCrowd {
   /** LOD0 (people.glb) near, LOD1 (people_lod.glb, same rig/clips) beyond ~12 m: rebuild the clone and resume the same clip at the same time */
   _swapLod(p, lod) {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
-    par.remove(old); p.mixer.stopAllAction(); p.lod = lod; undressTee(old); const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; }); this._dressTee(p, obj);
+    par.remove(old); p.mixer.stopAllAction(); p.lod = lod; undressTee(old); const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; }); this._dressTee(p, obj); this._lids(p, obj);
     p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
     if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true);
   }
@@ -607,6 +614,7 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
+      if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (c !== p.lids.c) p.lids.set(c); }
       p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {
         if (p.mode === 'walk') {

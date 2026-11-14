@@ -313,7 +313,8 @@ def build_hall(cfg, out_json):
         kind = {'hillhead': 'hillhead', 'govan': 'govan', 'partick': 'partick', 'kelvinhall': 'kelvinhall'}.get(sid, 'hillhead')
         mm = f'art_{kind}'
         new_mat(f'art_{sid_}', '#ffffff', 0, 0.5, tex=mm)
-        quad_wall(art, HWR - 0.006, 4.0, 10.0, wz0 + 0.5 if not coved else wz0 + 0.2, wz0 + 2.0 if not coved else wz0 + 1.7, f'art_{sid_}', -1, (0, 0, 1, 1))
+        # 8 mm clear of the backing plate's face (HWR - 0.006): in that very plane it z-fought with the plate (hall.js fixHallSigns lifts the shipped GLBs the same 8 mm)
+        quad_wall(art, HWR - 0.014, 4.0, 10.0, wz0 + 0.5 if not coved else wz0 + 0.2, wz0 + 2.0 if not coved else wz0 + 1.7, f'art_{sid_}', -1, (0, 0, 1, 1))
         art.box((HWR - 0.003, 7.0, (wz0 + 0.5 + wz0 + 2.0) / 2 if not coved else (wz0 + 0.2 + wz0 + 1.7) / 2), (0.006, 6.1, 1.6), 'steel_dark')
     # ------------------------------------------------ lighting fixtures + anchors
     lx = [0.0] if (coved and t == 'island') else ([-1.5, 1.5] if t != 'side' else [-6.2, -3.0, 0.0, 3.0, 6.2])

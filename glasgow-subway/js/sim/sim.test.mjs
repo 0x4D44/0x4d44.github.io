@@ -829,3 +829,18 @@ test('haggis: it follows its owner, keeps its place behind them and stops there'
   o.x += 30; followStep(h, o, 1 / 60); const t2 = petPlace(o);
   assert.ok(Math.hypot(h.x - t2.x, h.z - t2.z) < 1e-9, 'an owner who is suddenly elsewhere has it with them');
 });
+
+test('blinking: lids close and reopen within a quarter of a second, 8-25 blinks a minute, fewer at a phone, and only the seated doze', async () => {
+  const { BLINK, lidAt, blinkStep } = await import('./blink.js');
+  assert.equal(lidAt(0), 0); assert.equal(lidAt(BLINK.close + 0.01), 1); assert.equal(lidAt(BLINK.close + BLINK.shut + BLINK.open), 0);
+  assert.ok(BLINK.close < BLINK.open && BLINK.close + BLINK.shut + BLINK.open < 0.25);
+  for (let t = 0, last = 0; t < BLINK.close; t += 0.005) { const c = lidAt(t); assert.ok(c >= last && c <= 1); last = c; }   // closes without a step back
+  const run = (o, seed) => { let s = seed; const rng = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; const b = {}; let n = 0, shut = 0, was = 0, longest = 0, cur = 0;
+    for (let i = 0; i < 60 * 600; i++) { const c = blinkStep(b, 1 / 60, rng, o); assert.ok(c >= 0 && c <= 1); if (c > 0.5 && was <= 0.5) n++; if (c > 0.5) { shut++; cur++; longest = Math.max(longest, cur); } else cur = 0; was = c; }
+    return { perMin: n / 10, shut: shut / 36000, longest: longest / 60 }; };
+  const stand = run({}, 7), phone = run({ phone: true }, 7), sit = run({ sit: true }, 7);
+  assert.ok(stand.perMin >= 8 && stand.perMin <= 25, JSON.stringify(stand));
+  assert.ok(phone.perMin < stand.perMin * 0.75, JSON.stringify(phone));
+  assert.ok(stand.shut < 0.05 && stand.longest < 0.2, JSON.stringify(stand));   // standing, the eyes are open 95% of the time and never shut for long
+  assert.ok(sit.longest >= BLINK.dozeMin && sit.longest <= BLINK.dozeMax + 0.3 && sit.shut < 0.2, JSON.stringify(sit));
+});
