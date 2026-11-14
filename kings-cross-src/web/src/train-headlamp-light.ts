@@ -2,8 +2,10 @@
 // The pool on the rails (train-lamp-pool.ts) lights the track bed with a decal; this lights every other lit surface, in the shader, from the HEADLAMP_SLOTS nearest lit
 // headlamps in view:
 //
-//   the LIGHT     a spotlight per slot, cone `HEADLAMP_LIGHT.inner` to `.outer` degrees, out to `.range` metres, N·L, no shadow (so it leaks through a standing train or a
-//                 wall within the range). It is added to the direct diffuse of every Lambert program (lighting.ts `addRoofShade`, which every Lambert passes through) and to the
+//   the LIGHT     a spotlight per slot, out to `.range` metres, N·L, no shadow (so it leaks through a standing train or a wall within the range). Its beam is a headlamp's,
+//                 not a floodlight's (look review, 14 Nov): an elliptical cone as wide as the pool on the rails at `poolAt` metres and `aspect` as tall, its axis dipped
+//                 so it meets the rails where the pool ends, and a fade with height over the rails (`overRail`), so the light on a wall sits over the pool and never
+//                 climbs to the shed's roof trusses. It is added to the direct diffuse of every Lambert program (lighting.ts `addRoofShade`, which every Lambert passes through) and to the
 //                 colour of the few MeshBasic surfaces it should reach (`addHeadlampBasic`: the signals and the tunnels' lining). Everything within `floorOver` of the
 //                 lamp's own rail level, whichever way it faces, is left to the pool (`floorMask` in the GLSL), so the track bed is not lit twice.
 //   the SLOTS     `HEADLAMP_SLOTS` is fixed at compile time: the light changes only uniform values (`headlampUniforms`), never a program, so nothing recompiles after load.
@@ -15,22 +17,43 @@
 // main.ts is the one writer of the uniforms, once a frame (`HeadlampFrame.update`), for the scene on show.
 import * as THREE from 'three';
 import type { LampTrain } from './train-lamp-pool.ts';
-import { lampEnds } from './train-lamp-pool.ts';
+import { lampEnds, POOL, poolFalloff } from './train-lamp-pool.ts';
 import { LENS } from './train.ts';
 
 /** How many headlamps light the scene at once: the length of the uniform arrays, so a compile-time constant of every program that takes the light. */
 export const HEADLAMP_SLOTS = 8;
 
+/** Where across the pool (0 on its axis, 1 at the quad's side) its light at `t` along it falls to `share` of its middle's: the pool's own falloff, bisected. */
+function poolAcross(t: number, share: number): number {
+  const middle = poolFalloff(0, t);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 40; i++) { const u = (lo + hi) / 2; if (poolFalloff(u, t) > share * middle) lo = u; else hi = u; }
+  return (lo + hi) / 2;
+}
+const deg = (rad: number): number => (rad * 180) / Math.PI;
+/** The beam's sideways half-angles (degrees) from the pool `at` metres ahead of the lamps: whole to where the pool is half its middle, none past its lit edge. */
+function beamWide(at: number): readonly [number, number] {
+  const t = at / POOL.length, half = POOL.width / 2;
+  return [deg(Math.atan((half * poolAcross(t, 0.5)) / at)), deg(Math.atan((half * poolAcross(t, 0)) / at))];
+}
+const POOL_AT = 17.5;
+
 /**
- * The light of one headlamp end. `inner` and `outer`: the cone's half-angles, degrees (full strength inside `inner`, none outside `outer`). `range`: metres, where it is gone
+ * The light of one headlamp end. The BEAM: `wide`, its half-angles across, degrees (whole inside the first, none outside the second), taken from the pool on the rails
+ * (train-lamp-pool.ts `POOL`, `poolFalloff`) at `poolAt` metres ahead (the middle of 15 to 20 m): the half-width where the pool is half its middle's brightness, and
+ * where it ends. `aspect`: its height over its width (tangent over tangent), so an ellipse wider than tall. `aimAt`: its axis is dipped from the car's axis to meet the
+ * lamp's rail level that far ahead (the pool's length: the beam's middle lands where the pool ends), so the dip is the lamp's own height over `aimAt`. `overRail`: metres
+ * over the lamp's rail level where the light fades out (whole under the first, none over the second): the beam stays on walls, faces and signals over the pool and off
+ * the shed's roof trusses, whatever the cone. `range`: metres, where it is gone
  * (a smooth window, `(1 - (d / range)^4)^2`). `level`: what a surface square to the beam `ref` metres away reflects, in units of its own albedo, at full strength; it falls
  * with the square of the distance, held at its value at `near` metres closer in. `floorOver`: the floor mask, metres over the lamp's rail level: all of the light under the first,
  * none over the second, whichever way the surface faces. The track bed is the pool's: the first GPU look pack (13 Nov) had a mask of up-facing faces only, and the sleepers'
  * 5 cm ends, which face up the track at the lamp, took the whole beam, a white bar on every sleeper. A wall's foot loses this light below the mask. `fade`: seconds to fade a slot in or out. `hysteresis`: a lamp that holds a slot is
- * ranked as if this much of its distance away. ASSUMED: a look, not a measurement; the GPU look pack tunes `level`.
+ * ranked as if this much of its distance away. ASSUMED: a look, not a measurement; the GPU look pack tunes `level`, `aspect` and `overRail` (the pool gives `wide` and `aimAt`).
  */
 export const HEADLAMP_LIGHT = {
-  inner: 12, outer: 25, range: 45, level: 0.8, ref: 10, near: 5,
+  wide: beamWide(POOL_AT), poolAt: POOL_AT, aspect: 0.5, aimAt: POOL.length, overRail: [3.5, 6],
+  range: 45, level: 0.8, ref: 10, near: 5,
   floorOver: [0.35, 0.6],
   fade: 0.25, hysteresis: 0.8,
 } as const;
@@ -49,7 +72,7 @@ const f = (x: number): string => {
   const s = x.toFixed(6).replace(/0+$/, '');
   return s.endsWith('.') ? `${s}0` : s;
 };
-const cos = (deg: number): number => Math.cos((deg * Math.PI) / 180);
+const tan = (d: number): number => Math.tan((d * Math.PI) / 180);
 const lensLinear = new THREE.Color(LENS.headOn);
 
 /**
@@ -63,14 +86,21 @@ export const HEADLAMP_GLSL = {
   float d = length( toLamp );
   if ( d >= ${f(HEADLAMP_LIGHT.range)} ) return vec3( 0.0 );
   vec3 l = toLamp / max( d, 0.001 );
-  float cone = smoothstep( ${f(cos(HEADLAMP_LIGHT.outer))}, ${f(cos(HEADLAMP_LIGHT.inner))}, dot( - l, aim.xyz ) );
+  vec3 axis = normalize( aim.xyz * ${f(HEADLAMP_LIGHT.aimAt)} - vec3( 0.0, lamp.y - lamp.w, 0.0 ) );
+  float c = max( length( axis.xz ), 0.001 );
+  float ahead = dot( - l, axis );
+  if ( ahead <= 0.0 ) return vec3( 0.0 );
+  float across = dot( - l, vec3( - axis.z, 0.0, axis.x ) ) / ( c * ahead * ${f(tan(HEADLAMP_LIGHT.wide[1]))} );
+  float up = dot( - l, vec3( - axis.x * axis.y, c * c, - axis.z * axis.y ) ) / ( c * ahead * ${f(tan(HEADLAMP_LIGHT.wide[1]) * HEADLAMP_LIGHT.aspect)} );
+  float cone = 1.0 - smoothstep( ${f(tan(HEADLAMP_LIGHT.wide[0]) / tan(HEADLAMP_LIGHT.wide[1]))}, 1.0, sqrt( across * across + up * up ) );
   float facing = max( dot( n, l ), 0.0 );
   float x = d / ${f(HEADLAMP_LIGHT.range)};
   float edge = 1.0 - x * x * x * x;
   float held = max( d, ${f(HEADLAMP_LIGHT.near)} );
   float fall = ${f(HEADLAMP_LIGHT.ref * HEADLAMP_LIGHT.ref)} / ( held * held );
   float floorMask = 1.0 - smoothstep( ${f(HEADLAMP_LIGHT.floorOver[0])}, ${f(HEADLAMP_LIGHT.floorOver[1])}, p.y - lamp.w );
-  return vec3( ${f(lensLinear.r)}, ${f(lensLinear.g)}, ${f(lensLinear.b)} ) * ( ${f(HEADLAMP_LIGHT.level)} * aim.w * cone * facing * edge * edge * fall * ( 1.0 - floorMask ) );
+  float low = 1.0 - smoothstep( ${f(HEADLAMP_LIGHT.overRail[0])}, ${f(HEADLAMP_LIGHT.overRail[1])}, p.y - lamp.w );
+  return vec3( ${f(lensLinear.r)}, ${f(lensLinear.g)}, ${f(lensLinear.b)} ) * ( ${f(HEADLAMP_LIGHT.level)} * aim.w * cone * facing * edge * edge * fall * ( 1.0 - floorMask ) * low );
 }`,
   sum: `vec3 headlampsAt( vec3 p, vec3 n ) {
   vec3 sum = vec3( 0.0 );
