@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { addHeadlampBasic, HEADLAMP_BASIC_GLSL, HEADLAMP_GLSL, HEADLAMP_LIGHT, HEADLAMP_SLOTS, HeadlampFrame, headlampCandidates, headlampUniforms, selectHeadlamps, writeHeadlamps } from '../src/train-headlamp-light.ts';
 import type { HeadlampCandidate } from '../src/train-headlamp-light.ts';
 import { LENS, buildTrain, setTrainLampState } from '../src/train.ts';
+import { POOL, poolFalloff } from '../src/train-lamp-pool.ts';
 import { Glsl } from './glsl.ts';
 
 const glsl = new Glsl(HEADLAMP_GLSL.one);
@@ -17,51 +18,130 @@ const lightAt = (p: number[], n: number[], lamp: number[], aim: number[], streng
 const near = (a: number, b: number, tol: number, msg: string): void => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tolerance ${tol})`);
 const window = (d: number): number => (1 - (d / HEADLAMP_LIGHT.range) ** 4) ** 2;
 
-test('headlampOne: a wall square to the beam on its axis takes the lamp\'s colour at `level` at `ref` metres, falling with the square of the distance, held inside `near`', () => {
-  const lamp = [0, 1.5, 0], aim = [0, 0, -1], wallFacing = [0, 0, 1];
-  for (const d of [3, HEADLAMP_LIGHT.near, HEADLAMP_LIGHT.ref, 20, 40]) {
-    const got = lightAt([0, 1.5, -d], wallFacing, lamp, aim);
+const rad = (d: number): number => (d * Math.PI) / 180;
+/** The beam's axis from a lamp `h` metres over its rail level aimed along `aim` (unit, horizontal here): dipped to meet the rail level `aimAt` ahead. */
+const beamAxis = (h: number, aim = [0, 0, -1]): THREE.Vector3 => new THREE.Vector3(aim[0]! * HEADLAMP_LIGHT.aimAt, aim[1]! * HEADLAMP_LIGHT.aimAt - h, aim[2]! * HEADLAMP_LIGHT.aimAt).normalize();
+/** A point `d` metres from `lamp`, `side` degrees across and `rise` degrees up from the beam's axis (tangent-space offsets, as the shader measures them), for a beam along -z. */
+const offAxis = (lamp: number[], h: number, d: number, side: number, rise: number): number[] => {
+  const ax = beamAxis(h), up = new THREE.Vector3(0, 1, 0).sub(ax.clone().multiplyScalar(ax.y)).normalize(), right = new THREE.Vector3().crossVectors(ax, up).normalize();
+  const v = ax.clone().add(right.multiplyScalar(Math.tan(rad(side)))).add(up.multiplyScalar(Math.tan(rad(rise)))).normalize().multiplyScalar(d);
+  return [lamp[0]! + v.x, lamp[1]! + v.y, lamp[2]! + v.z];
+};
+/** The light at `p` on a face square to the way to the lamp (N·L = 1). */
+const squareAt = (p: number[], lamp: number[], strength = 1, floor = 0): number => {
+  const l = new THREE.Vector3(lamp[0]! - p[0]!, lamp[1]! - p[1]!, lamp[2]! - p[2]!).normalize();
+  return lightAt(p, [l.x, l.y, l.z], lamp, [0, 0, -1], strength, floor)[0]!;
+};
+
+test('headlampOne: a wall square to the beam on its (dipped) axis takes the lamp\'s colour at `level` at `ref` metres, falling with the square of the distance, held inside `near`', () => {
+  const lamp = [0, 1.5, 0], ax = beamAxis(1.5);
+  for (const d of [3, HEADLAMP_LIGHT.near, HEADLAMP_LIGHT.ref, 15]) {
+    const p = [ax.x * d, 1.5 + ax.y * d, ax.z * d];
+    const got = lightAt(p, [-ax.x, -ax.y, -ax.z], lamp, [0, 0, -1]);
     const held = Math.max(d, HEADLAMP_LIGHT.near);
     const want = HEADLAMP_LIGHT.level * (HEADLAMP_LIGHT.ref / held) ** 2 * window(d);
     for (const [i, c] of [lens.r, lens.g, lens.b].entries()) near(got[i]!, c * want, 1e-5, `${d} m, channel ${i}`);
   }
-  near(lightAt([0, 1.5, -10], wallFacing, lamp, aim, 0.5)[0]!, 0.5 * lightAt([0, 1.5, -10], wallFacing, lamp, aim, 1)[0]!, 1e-9, 'the strength scales it');
+  const p = [ax.x * 10, 1.5 + ax.y * 10, ax.z * 10];
+  near(lightAt(p, [0, 0, 1], lamp, [0, 0, -1], 0.5)[0]!, 0.5 * lightAt(p, [0, 0, 1], lamp, [0, 0, -1], 1)[0]!, 1e-9, 'the strength scales it');
 });
 
-test('headlampOne: nothing outside the outer cone, past the range, behind the lamp, on a face turned away, or at strength 0 (the day): exactly zero', () => {
-  const lamp = [0, 1.5, 0], aim = [0, 0, -1];
+test('headlampOne: nothing outside the beam across or up, past the range, behind the lamp, on a face turned away, or at strength 0 (the day): exactly zero', () => {
+  const lamp = [0, 1.5, 0], aim = [0, 0, -1], [, wideOut] = HEADLAMP_LIGHT.wide;
+  const tallOut = (Math.atan(Math.tan(rad(wideOut)) * HEADLAMP_LIGHT.aspect) * 180) / Math.PI;
   const zero = (p: number[], n: number[], msg: string, strength = 1): void => assert.deepEqual(lightAt(p, n, lamp, aim, strength), [0, 0, 0], msg);
-  const off = (deg: number, d: number): number[] => [d * Math.sin((deg * Math.PI) / 180), 1.5, -d * Math.cos((deg * Math.PI) / 180)];
-  zero(off(HEADLAMP_LIGHT.outer + 1, 10), [0, 0, 1], 'outside the outer cone');
+  zero(offAxis(lamp, 1.5, 10, wideOut + 0.5, 0), [0, 0, 1], 'outside the beam across');
+  zero(offAxis(lamp, 1.5, 10, 0, tallOut + 0.5), [0, 0, 1], 'outside the beam up');
+  zero(offAxis(lamp, 1.5, 10, 0, -(tallOut + 0.5)), [0, 0, 1], 'outside the beam down');
   zero([0, 1.5, -HEADLAMP_LIGHT.range], [0, 0, 1], 'at the range');
   zero([0, 1.5, -(HEADLAMP_LIGHT.range + 5)], [0, 0, 1], 'past it');
   zero([0, 1.5, 5], [0, 0, -1], 'behind the lamp, facing it');
-  zero([0, 1.5, -10], [0, 0, -1], 'a face turned from the lamp');
-  zero([0, 1.5, -10], [0, 0, 1], 'by day: strength 0', 0);
-  // the cone: whole inside `inner`, between the two less, none at `outer`
-  const onAxis = lightAt([0, 1.5, -10], [0, 0, 1], lamp, aim)[0]!;
-  const wallAt = (deg: number): number => lightAt(off(deg, 10 / Math.cos((deg * Math.PI) / 180)), [0, 0, 1], lamp, aim)[0]!;
-  const inner = wallAt(HEADLAMP_LIGHT.inner - 0.5), mid = wallAt((HEADLAMP_LIGHT.inner + HEADLAMP_LIGHT.outer) / 2);
-  assert.ok(inner > 0.7 * onAxis, `inside the inner cone it is whole but for the distance and N·L: ${inner} vs ${onAxis}`);
-  assert.ok(mid > 0 && mid < 0.6 * inner, `between the cones it fades: ${mid}`);
+  zero([0, 1, -10], [0, 0, -1], 'a face turned from the lamp');
+  zero([0, 1, -10], [0, 0, 1], 'by day: strength 0', 0);
 });
 
-test('headlampOne: N·L: a wall along the beam is lit by the cosine of its angle to the lamp; the cos cone and range are what HEADLAMP_LIGHT says', () => {
-  const lamp = [0, 1.5, 0], aim = [0, 0, -1];
-  // a platform face 2 m to the side, 10 m ahead, facing the track (-x)
-  const p = [2, 1.5, -10], l = new THREE.Vector3(-2, 0, 10).normalize();
-  const face = lightAt(p, [-1, 0, 0], lamp, aim)[0]!, square = lightAt(p, [l.x, l.y, l.z], lamp, aim)[0]!;
-  near(face, square * l.dot(new THREE.Vector3(-1, 0, 0)), 1e-6, 'the face takes cos(angle) of what a face square to the lamp would');
-  assert.ok(face > 0, 'and it is lit');
-  assert.ok(HEADLAMP_GLSL.one.includes(Math.cos((HEADLAMP_LIGHT.outer * Math.PI) / 180).toFixed(6).replace(/0+$/, '')), 'the outer cone\'s cosine is in the shader');
-  assert.equal(HEADLAMP_LIGHT.inner, 12);
-  assert.equal(HEADLAMP_LIGHT.outer, 25);
+test('headlampOne: the beam is an ellipse wider than tall: whole inside its inner ellipse, fading to none at its edge, an angle that is lit across is dark up', () => {
+  const lamp = [0, 1.5, 0], [wideIn, wideOut] = HEADLAMP_LIGHT.wide, d = 10;
+  const onAxis = squareAt(offAxis(lamp, 1.5, d, 0, 0), lamp);
+  near(squareAt(offAxis(lamp, 1.5, d, wideIn * 0.9, 0), lamp), onAxis, 1e-6, 'inside the inner ellipse across: whole');
+  const mid = squareAt(offAxis(lamp, 1.5, d, (wideIn + wideOut) / 2, 0), lamp);
+  assert.ok(mid > 0.05 * onAxis && mid < 0.95 * onAxis, `between the ellipses it fades: ${mid} of ${onAxis}`);
+  const across = squareAt(offAxis(lamp, 1.5, d, wideOut * 0.75, 0), lamp), up = squareAt(offAxis(lamp, 1.5, d, 0, wideOut * 0.75), lamp);
+  assert.ok(across > 0, `three quarters of the way out across is lit: ${across}`);
+  assert.equal(up, 0, 'the same angle up is past the top of the beam');
+  // the old floodlight: 12 to 25 degrees round. A wall 20 degrees off the axis is dark now
+  assert.equal(squareAt(offAxis(lamp, 1.5, d, 20, 0), lamp), 0, '20 degrees across');
+});
+
+test('headlampOne: the beam\'s axis is dipped to meet the lamp\'s rail level `aimAt` ahead (the pool\'s far end): the light is symmetric about it, not about the car\'s axis', () => {
+  // half-way into the beam's fade up and down (tangent 0.045 off the axis: past the inner ellipse, short of the edge), 5 m out: between the floor mask and `overRail`
+  const tallInner = Math.tan(rad(HEADLAMP_LIGHT.wide[0])) * HEADLAMP_LIGHT.aspect, tallOuter = Math.tan(rad(HEADLAMP_LIGHT.wide[1])) * HEADLAMP_LIGHT.aspect;
+  assert.ok(0.045 > tallInner && 0.045 < tallOuter, 'the probe is in the fade');
+  const tallMid = (Math.atan(0.045) * 180) / Math.PI;
+  for (const [lamp, floor] of [[[0, 1.5, 0], 0], [[0, 4.8, 0], 3.6]] as const) {
+    const h = lamp[1] - floor, square = (p: number[]): number => squareAt(p, [...lamp], 1, floor);
+    const above = square(offAxis([...lamp], h, 5, 0, tallMid)), below = square(offAxis([...lamp], h, 5, 0, -tallMid)); // 5 m out: over the floor mask
+    assert.ok(above > 0, `lit half-way out above the axis: ${above}`);
+    near(above, below, 1e-6 * above, `as much below the dipped axis as above it (lamp ${h} m over its rails)`);
+    const ax = beamAxis(h);
+    near(h + ax.y * HEADLAMP_LIGHT.aimAt / -ax.z, 0, 1e-9, 'the axis meets the rail level aimAt ahead');
+  }
+  // on the car's own axis (the lamp's height), 10 m out, the light is the dipped beam's upper flank: less than on its axis
+  const lamp = [0, 1.5, 0];
+  assert.ok(squareAt([0, 1.5, -10], lamp) < squareAt(offAxis(lamp, 1.5, 10, 0, 0), lamp), 'level with the lamp is above the beam\'s middle');
+});
+
+test('headlampOne: the beam\'s numbers come from the pool on the rails: as wide as the pool at `poolAt` metres, aimed at its far end; it stays over the pool', () => {
+  const t = HEADLAMP_LIGHT.poolAt / POOL.length, half = POOL.width / 2;
+  assert.ok(HEADLAMP_LIGHT.poolAt >= 15 && HEADLAMP_LIGHT.poolAt <= 20, 'the pool is read 15 to 20 m out');
+  // scan the pool's own falloff across at t: where it is half its middle, and where it ends
+  let halfAt = 0, endAt = 0;
+  for (let u = 0; u <= 1; u += 1e-5) { const v = poolFalloff(u, t); if (v >= 0.5 * poolFalloff(0, t)) halfAt = u; if (v > 0) endAt = u; }
+  near(HEADLAMP_LIGHT.wide[0], (Math.atan((half * halfAt) / HEADLAMP_LIGHT.poolAt) * 180) / Math.PI, 1e-3, 'whole to where the pool is half its middle');
+  near(HEADLAMP_LIGHT.wide[1], (Math.atan((HEADLAMP_LIGHT.spill * half * endAt) / HEADLAMP_LIGHT.poolAt) * 180) / Math.PI, 1e-3, 'none past `spill` times where the pool ends');
+  assert.ok(HEADLAMP_LIGHT.spill >= 1 && HEADLAMP_LIGHT.spill <= 3, 'a soft spill a little past the pool, not a floodlight');
+  assert.equal(HEADLAMP_LIGHT.aimAt, POOL.length, 'the axis meets the rails where the pool ends');
+  assert.ok(HEADLAMP_LIGHT.aspect > 0 && HEADLAMP_LIGHT.aspect < 1, 'taller than wide is not a headlamp');
+  assert.ok(HEADLAMP_GLSL.one.includes(Math.tan(rad(HEADLAMP_LIGHT.wide[1])).toFixed(6).replace(/0+$/, '')), 'the edge\'s tangent is in the shader');
+  // a wall square across the track 20 m out (a buffer stop's, a portal's face): its light sits low, over the pool, from the mask up to a few metres
+  const lamp = [0, 1.5, 0], at = (y: number): number => lightAt([0, y, -20], [0, 0, 1], lamp, [0, 0, -1])[0]!;
+  assert.ok(at(0.8) > 0, 'just over the mask: lit, so the wall light meets the pool');
+  assert.equal(at(HEADLAMP_LIGHT.overRail[1]), 0, `${HEADLAMP_LIGHT.overRail[1]} m up a wall 20 m ahead: dark`);
+  assert.ok(HEADLAMP_LIGHT.overRail[1] <= 5, 'nothing lit over 4 to 5 m');
   assert.equal(HEADLAMP_LIGHT.range, 45);
   assert.equal(HEADLAMP_SLOTS, 8);
 });
 
+test('headlampOne: a facing wall 25 to 35 m ahead carries a soft patch on its bottom 2 to 3 m: at 30 m, 1 m up, a fifth of the pool\'s middle at least; a portal\'s pier beside the bore too', () => {
+  // X = 20%: the light on a wall is in units of its albedo, the pool is added light; a fifth of the pool's night strength is the round-2 look's "twice the wall light" in
+  // testable form (3c9a941f gave 12.7% here, and none on the piers). The lens's red channel is 1, so the red channel is the light itself.
+  const lamp = [0, 1.4, 0], wall = (x: number, y: number, z: number): number => lightAt([x, y, z], [0, 0, 1], lamp, [0, 0, -1])[0]!;
+  const at1 = wall(0, 1, -30);
+  assert.ok(at1 >= 0.2 * POOL.night, `30 m ahead, 1 m up: ${at1} under a fifth of the pool's ${POOL.night}`);
+  assert.ok(wall(0, 2, -30) > 0 && wall(0, 2, -30) < at1, 'it fades upward: 2 m up is lit, less');
+  assert.equal(wall(0, 5, -30), 0, '5 m up: dark');
+  // the portal: a pier's face 4.5 m beside the bore's line, 25 m ahead (the bores are 8 m wide)
+  assert.ok(wall(4.5, 1, -25) > 0.1 * POOL.night, `a pier 4.5 m off the line, 25 m ahead, 1 m up: ${wall(4.5, 1, -25)}`);
+  assert.equal(wall(4.5, 5, -25), 0, 'and dark 5 m up');
+  // a wall close in is no brighter than round 2's first constants made it (0.8 at ref 10 m, held inside 5 m: 2.21 at 6 m)
+  assert.ok(wall(0, 1, -6) <= 2.6, `a wall 6 m ahead, 1 m up: ${wall(0, 1, -6)}`);
+});
+
+test('headlampOne: no light high over the rails: it fades out over `overRail`, so a roof truss over the lamp, or one in the beam of a lamp tipped up, is dark', () => {
+  const [lo, hi] = HEADLAMP_LIGHT.overRail, floor = 0;
+  // a lamp on a train tipped well up (a steep ramp), so its beam climbs: on the beam's axis, whole under `lo`, fading, none over `hi`
+  const H = 0.8, lamp = [0, H, 0], aim = new THREE.Vector3(0, 0.45, -1).normalize(), ax = new THREE.Vector3(aim.x * HEADLAMP_LIGHT.aimAt, aim.y * HEADLAMP_LIGHT.aimAt - H, aim.z * HEADLAMP_LIGHT.aimAt).normalize();
+  const onAxisAt = (y: number): number => { const d = (y - H) / ax.y, p = [ax.x * d, y, ax.z * d]; return lightAt(p, [-ax.x, -ax.y, -ax.z], lamp, [aim.x, aim.y, aim.z], 1, floor)[0]!; };
+  const below = onAxisAt(lo - 0.3), between = onAxisAt((lo + hi) / 2);
+  assert.ok(below > 0, `under ${lo} m: lit (${below})`);
+  assert.ok(between > 0 && between < below, `between ${lo} and ${hi} m it fades: ${between}`);
+  assert.equal(onAxisAt(hi + 0.2), 0, `over ${hi} m: none`);
+  // the shed: a truss's underside 12 m over the rails, right over a level lamp and 15 m ahead of it, facing down
+  for (const z of [0, -5, -15]) assert.deepEqual(lightAt([0, 12, z], [0, -1, 0], [0, 1.5, 0], [0, 0, -1]), [0, 0, 0], `a truss ${-z} m ahead`);
+});
+
 test('headlampOne: everything within the mask over the lamp\'s rail level is the pool\'s, whichever way it faces (the sleepers\' ends too); a platform top or a wall a metre up is lit', () => {
-  const lamp = [0, 1.5, 0], aim = [0, -0.2, -1].map((v, _, a) => v / Math.hypot(...a)), up = [0, 1, 0], facing = [0, 0, 1];
+  const lamp = [0, 1.5, 0], aim = [0, 0, -1], up = [0, 1, 0], facing = [0, 0, 1]; // the shader dips the beam to the rails itself
   assert.deepEqual(lightAt([0, 0, -10], up, lamp, aim, 1, 0), [0, 0, 0], 'the track bed at rail level: the pool lights it');
   assert.deepEqual(lightAt([0, -0.14, -10], up, lamp, aim, 1, 0), [0, 0, 0], 'the ballast under the rails');
   assert.deepEqual(lightAt([0, -0.17, -10], facing, lamp, aim, 1, 0), [0, 0, 0], 'a sleeper\'s end, facing up the track at the lamp (the first look pack\'s white bars)');
