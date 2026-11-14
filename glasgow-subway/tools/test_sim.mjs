@@ -270,12 +270,12 @@ try {
   // ?sfx=synth: the recordings are not even fetched, and the doors are the synthesised ones
   { const q = await open(browser, 'sfx=synth');
     const sy = await ev(q, async () => { const A = __sim.sim.audio, W = (ms) => new Promise((r) => setTimeout(r, ms)); await __sim.audioStart(); await W(600); const o = {}; A.update({ v: 12, traction: 1, brake: 0, curv: 0, inTrain: true, doorsOpen: false }); o.st = A.state(); A.doors(true, { gain: 1 }); o.last = A.last; return o; });
-    ok('sound: ?sfx=synth keeps to the synthesised sounds (no recording is fetched or decoded - doors, rumble, whine or hiss - and no loop is started)', sy.st.ctx === 'running' && Object.values(sy.st.samples).every((v) => !v) && Object.keys(sy.st.loadErr).length === 0 && sy.st.loops.length === 0 && sy.last.via === 'synth' && sy.st.run && !sy.st.run.rumble.rec && !sy.st.run.motor.rec && !sy.st.run.hiss.rec, JSON.stringify(sy));
+    ok('sound: ?sfx=synth keeps to the synthesised sounds (no recording is fetched or decoded - doors, rumble or hiss - and no loop is started)', sy.st.ctx === 'running' && Object.values(sy.st.samples).every((v) => !v) && Object.keys(sy.st.loadErr).length === 0 && sy.st.loops.length === 0 && sy.last.via === 'synth' && sy.st.run && !sy.st.run.rumble.rec && !sy.st.run.hiss.rec, JSON.stringify(sy));
     await q.close(); }
-  // the running sound: the recordings of the rumble, the motor's whine and the brake hiss load and decode, the loops are seamless in this browser, each sits level with the synthesised layer it replaces
+  // the running sound: the recordings of the rumble and the brake hiss load and decode, the loop is seamless in this browser, each sits level with the synthesised layer it replaces; the traction drive is synthesised
   // (A-weighted - the way it was calibrated), and the engine drives them from the train
   const rn = await ev(p, async () => {
-    const W = (ms) => new Promise((r) => setTimeout(r, ms)), m = await import('/glasgow-subway/js/sim/audio.js'), A = __sim.sim.audio, o = {}, names = ['rumble', 'motor', 'brakeHiss1', 'brakeHiss2'];
+    const W = (ms) => new Promise((r) => setTimeout(r, ms)), m = await import('/glasgow-subway/js/sim/audio.js'), A = __sim.sim.audio, o = {}, names = ['rumble', 'brakeHiss1', 'brakeHiss2'];
     for (let n = 0; n < 240 && !names.every((k) => A.buf[k]) && !names.some((k) => A.loadErr[k]); n++) await W(50);
     o.loaded = Object.fromEntries(names.map((k) => [k, A.buf[k] ? { dur: +A.buf[k].duration.toFixed(3), ch: A.buf[k].numberOfChannels } : null])); o.loadErr = A.state().loadErr;
     const fft = (re, im) => { const n = re.length;
@@ -301,7 +301,7 @@ try {
       return { sr, cycle: +(P / sr).toFixed(4), whole: ls * sr === i0 && le * sr === i1, after: snr(d, i1, i0, Math.min(n, b.length - i1 - 4)), before: snr(d, i1 - n, i0 - n, n), skew: snr(d, i1, i0 + 3, Math.min(n, b.length - i1 - 4)), pass1: lagged(x, want, 8, wrap - 8), pass2: lagged(x, want, wrap + 8, x.length - 8) };
     };
     o.geo = {};
-    for (const k of ['rumble', 'motor']) if (A.buf[k]) {
+    for (const k of ['rumble']) if (A.buf[k]) {
       o.geo[k] = await geo(k, A.buf[k]);
       const bytes = await (await fetch('/glasgow-subway/audio/' + m.SAMPLES[k].file)).arrayBuffer();
       o.geo[k + '@48k'] = await geo(k, await new window.OfflineAudioContext(1, 1, 48000).decodeAudioData(bytes));
@@ -309,7 +309,15 @@ try {
     // level against the synthesised layers: the same mix rendered both ways (the recordings only where given)
     const SR = 44100, base = { v: 12, traction: 0, brake: 0, curv: 0, inTrain: true, doorsOpen: false }, at = (a, b) => [Math.round(a * SR), Math.round(b * SR)], lv = {};
     if (A.buf.rumble) { const s0 = await m.renderRunning(base, { secs: 12, sr: SR, only: 'rumble' }), s1 = await m.renderRunning(base, { secs: 12, sr: SR, only: 'rumble', rec: { rumble: A.buf.rumble } }), [a, b] = at(2, 12); lv.rumble = +(aLevel(s1, SR, a, b) - aLevel(s0, SR, a, b)).toFixed(1); }
-    if (A.buf.motor) { const st = Object.assign({}, base, { v: 6, traction: 1 }), s0 = await m.renderRunning(st, { secs: 7, sr: SR, only: 'motor' }), s1 = await m.renderRunning(st, { secs: 7, sr: SR, only: 'motor', rec: { motor: A.buf.motor } }), [a, b] = at(2, 7); lv.motor = +(aLevel(s1, SR, a, b) - aLevel(s0, SR, a, b)).toFixed(1); }
+    // the traction drive, as rendered: the strongest tones are the ones the model asks for (a 1.3 Hz bin; the drive wanders a few cents on purpose), it is silent standing, and coasting leaves only the gear
+    { const N = 32768, tones = async (st) => { const x = await m.renderRunning(Object.assign({}, base, st), { secs: 3.5, sr: SR, only: 'motor' }), re = new Float64Array(N), im = new Float64Array(N), i0 = 2 * SR;
+        for (let i = 0; i < N; i++) re[i] = x[i0 + i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1))); fft(re, im);
+        const a = new Float64Array(N / 2), pk = []; for (let k = 0; k < N / 2; k++) a[k] = Math.hypot(re[k], im[k]) * 4 / N;
+        for (let k = 8; k < N / 2 - 1; k++) if (a[k] > a[k - 1] && a[k] >= a[k + 1] && a[k] > 3e-5) pk.push([k * SR / N, a[k]]);
+        const d = m.tractionMix(Object.assign({}, base, st)), near = (hz) => { let b = 0; for (const [f, v] of pk) if (Math.abs(f - hz) < Math.max(5, hz * 0.006) && v > b) b = v; return b; }, top = pk.reduce((q, w) => Math.max(q, w[1]), 0);
+        return { lv: +aLevel(x, SR, i0, i0 + N).toFixed(1), top: +top.toFixed(5), inv: d.inv.map((hz) => +(near(hz) / (top || 1)).toFixed(3)), gear: +(near(d.gearHz) / (top || 1)).toFixed(3), growl: +(near(d.growlHz) / (top || 1)).toFixed(3), mode: d.mode, hz: d.inv.map(Math.round).concat(Math.round(d.gearHz)) }; };
+      o.drive = { stand: await tones({ v: 0 }), start: await tones({ v: 3, traction: 1 }), mid: await tones({ v: 9, traction: 1 }), fast: await tones({ v: 12, traction: 1 }), coast: await tones({ v: 12 }), regen: await tones({ v: 12, brake: 1 }) };
+      if (A.buf.rumble) { const s1 = await m.renderRunning(Object.assign({}, base, { traction: 1 }), { secs: 12, sr: SR, only: 'rumble', rec: { rumble: A.buf.rumble } }); lv.drive = +(o.drive.fast.lv - aLevel(s1, SR, 2 * SR, 2 * SR + N)).toFixed(1); } }
     { // the hiss: a full release of the synthesised hiss (gain 0.18) against each take as played at full strength, its loudest 0.45 s
       const h0 = await m.renderRunning({ v: 0, traction: 0, brake: 1, curv: 0, inTrain: true, doorsOpen: false }, { secs: 3, sr: SR, rel: 0.03, only: 'hiss' }), syn = aLevel(h0, SR, ...at(1.5, 1.95));
       for (const k of ['brakeHiss1', 'brakeHiss2']) if (A.buf[k]) { const buf = A.buf[k], d = buf.getChannelData(0), w = Math.round(0.45 * buf.sampleRate), g = m.SAMPLES[k].gain, x = new Float32Array(d.length); for (let i = 0; i < d.length; i++) x[i] = d[i] * g;
@@ -319,18 +327,21 @@ try {
     for (let i = 0; i < 20; i++) { __sim.tick(1 / 30); __sim.sync(); } await W(300); o.live = A.state(); o.liveV = __sim.sim.svc.train.v;   // (audio.update is called from sync(), not tick())
     return o;
   });
-  ok('sound: the rumble and whine loops and both brake-hiss takes are fetched and decoded - one channel, of the length they were built to (10.84, 2.42, 0.75 and 1.5 s)', Object.keys(rn.loadErr).length === 0 && ['rumble', 'motor', 'brakeHiss1', 'brakeHiss2'].every((k) => rn.loaded[k] && rn.loaded[k].ch === 1) && Math.abs(rn.loaded.rumble.dur - 10.843) < 0.12 && Math.abs(rn.loaded.motor.dur - 2.417) < 0.12 && Math.abs(rn.loaded.brakeHiss1.dur - 0.75) < 0.12 && Math.abs(rn.loaded.brakeHiss2.dur - 1.5) < 0.12, JSON.stringify([rn.loaded, rn.loadErr]));
+  ok('sound: the rumble loop and both brake-hiss takes are fetched and decoded - one channel, of the length they were built to (10.84, 0.75 and 1.5 s)', Object.keys(rn.loadErr).length === 0 && ['rumble', 'brakeHiss1', 'brakeHiss2'].every((k) => rn.loaded[k] && rn.loaded[k].ch === 1) && Math.abs(rn.loaded.rumble.dur - 10.843) < 0.12 && Math.abs(rn.loaded.brakeHiss1.dur - 0.75) < 0.12 && Math.abs(rn.loaded.brakeHiss2.dur - 1.5) < 0.12, JSON.stringify([rn.loaded, rn.loadErr]));
   { const g = rn.geo, row = (r) => r && r.whole && r.after > 18 && r.before > 18 && r.after - r.skew > 6 && r.pass1.snr > 40 && r.pass2.snr > 40 && r.pass1.lag === r.pass2.lag;
-    ok('sound: each loop is the same cycle either side of its loop points (the encoder\'s padding is never in the loop) and the browser plays it round the loop point-for-point - here, and decoded for a 48 kHz sound card', ['rumble', 'motor', 'rumble@48k', 'motor@48k'].every((k) => row(g[k])), JSON.stringify(g)); }
-  ok('sound: as played, each recording sits level with the synthesised layer it replaces (A-weighted, within 3 dB: rumble at 12 m/s, whine at 6 m/s under power, hiss for a full release)', ['rumble', 'motor', 'brakeHiss1', 'brakeHiss2'].every((k) => Math.abs(rn.lv[k]) < 3), JSON.stringify(rn.lv));
-  ok('sound: in the game, the recorded rumble and whine are running (not their synthesised stand-ins) and the rumble\'s level and pitch have come off the moving train', rn.liveV > 1 && rn.live.loops.includes('rumble') && rn.live.loops.includes('motor') && !!rn.live.run && rn.live.run.rumble.rec && rn.live.run.motor.rec && rn.live.run.rumble.gain > 0 && rn.live.run.rumble.rate >= 0.5, JSON.stringify([rn.live.loops, rn.live.run, rn.liveV]));
+    ok('sound: the loop is the same cycle either side of its loop points (the encoder\'s padding is never in the loop) and the browser plays it round the loop point-for-point - here, and decoded for a 48 kHz sound card', ['rumble', 'rumble@48k'].every((k) => row(g[k])), JSON.stringify(g)); }
+  ok('sound: as played, each recording sits level with the synthesised layer it replaces (A-weighted, within 3 dB: rumble at 12 m/s, hiss for a full release)', ['rumble', 'brakeHiss1', 'brakeHiss2'].every((k) => Math.abs(rn.lv[k]) < 3), JSON.stringify(rn.lv));
+  { const D = rn.drive, strong = (t) => t.inv[0] > 0.5 && t.inv[1] > 0.5 && t.inv[2] > 0.15 && t.inv[3] > 0.15 && t.gear > 0.1 && t.growl > 0.1;
+    ok('sound: the traction drive as rendered - under power its strongest tones are the inverter pairs, the gear mesh and the motor growl, where the model puts them (asynchronous at 3 m/s, synchronous at 9 and 12); silent standing; coasting leaves the gear tone alone, 12 dB or more down; braking is quieter than power; at 12 m/s under power it is within 4 dB (A) of the rumble',
+      !!D && D.stand.top === 0 && strong(D.start) && strong(D.mid) && strong(D.fast) && D.start.mode === 0 && D.mid.mode === 1 && D.fast.mode === 2 && D.coast.gear === 1 && D.coast.inv.every((v) => v < 0.05) && D.coast.lv < D.fast.lv - 12 && D.regen.lv < D.fast.lv - 2 && D.regen.lv > D.coast.lv + 6 && Math.abs(rn.lv.drive) < 4, JSON.stringify([D, rn.lv.drive])); }
+  ok('sound: in the game, the recorded rumble is running (not its synthesised stand-in), the rumble\'s level and pitch have come off the moving train, and the drive\'s gear tone is sounding', rn.liveV > 1 && rn.live.loops.includes('rumble') && !!rn.live.run && rn.live.run.rumble.rec && rn.live.run.drive.gear > 0 && rn.live.run.drive.gearHz > 20 && rn.live.run.rumble.gain > 0 && rn.live.run.rumble.rate >= 0.5, JSON.stringify([rn.live.loops, rn.live.run, rn.liveV]));
   const dr = await ev(p, async () => {
     const W = (ms) => new Promise((r) => setTimeout(r, ms)), m = await import('/glasgow-subway/js/sim/audio.js'), o = {}, cruise = { v: 12, traction: 0, brake: 0, curv: 0, inTrain: true, doorsOpen: false };
     const mk = async () => { const B = new m.SimAudio(); await B.start(); return B; };
     // a fresh engine of its own (the game would keep calling update): before the recordings are ready the synthesised layers play; once they are, they take over
     const B = await mk(); B.update(cruise); o.early = B.run; B.update(Object.assign({}, cruise, { brake: 1 }));
-    for (let n = 0; n < 240 && !(B.loops.rumble && B.loops.motor && B.buf.brakeHiss1 && B.buf.brakeHiss2); n++) await W(50);
-    const u = (st) => { B.update(Object.assign({}, cruise, st)); }, rd = () => ({ rum: B.loops.rumble.g.gain.value, rate: B.loops.rumble.src.playbackRate.value, mot: B.loops.motor.g.gain.value, mrate: B.loops.motor.src.playbackRate.value, sRum: B.rG.gain.value, sMot: B.mG.gain.value, sq: B.sG.gain.value });
+    for (let n = 0; n < 240 && !(B.loops.rumble && B.buf.brakeHiss1 && B.buf.brakeHiss2); n++) await W(50);
+    const u = (st) => { B.update(Object.assign({}, cruise, st)); }, rd = () => ({ rum: B.loops.rumble.g.gain.value, rate: B.loops.rumble.src.playbackRate.value, inv: B.invG.gain.value, gear: B.gearG.gain.value, growl: B.growlG.gain.value, invHz: B.inv.map((q) => Math.round(q.frequency.value)), gearHz: Math.round(B.gear.frequency.value), mode: B.run.drive.mode, sRum: B.rG.gain.value, sq: B.sG.gain.value });
     u({}); await W(1800); o.cruise = rd(); o.cruiseRun = B.run;
     u({ v: 6, traction: 1 }); await W(1800); o.accel = rd();
     u({ v: 0 }); await W(1800); o.stand = rd();
@@ -341,17 +352,17 @@ try {
     // a file that cannot be fetched: its layer keeps its synthesised stand-in, the others are recordings
     const keep = m.SAMPLES.rumble.file, keep2 = m.SAMPLES.brakeHiss1.file, keep3 = m.SAMPLES.brakeHiss2.file;
     m.SAMPLES.rumble.file = 'no-such-file.mp3'; m.SAMPLES.brakeHiss1.file = 'no-such-file.mp3'; m.SAMPLES.brakeHiss2.file = 'no-such-file.mp3';
-    try { const D = await mk(); for (let n = 0; n < 240 && !(D.loops.motor && D.loadErr.rumble && D.loadErr.brakeHiss1 && D.loadErr.brakeHiss2); n++) await W(50);
+    try { const D = await mk(); for (let n = 0; n < 240 && !(D.buf.doorOpen && D.buf.doorClose && D.loadErr.rumble && D.loadErr.brakeHiss1 && D.loadErr.brakeHiss2); n++) await W(50);
       D.update(Object.assign({}, cruise, { brake: 1 })); D.update(Object.assign({}, cruise, { brake: 0.5 })); await W(1500);
-      o.missing = { err: [!!D.loadErr.rumble, !!D.loadErr.brakeHiss1, !!D.loadErr.brakeHiss2], rumbleLoop: !!D.loops.rumble, motorLoop: !!D.loops.motor, run: D.run, sRum: D.rG.gain.value, sMot: D.mG.gain.value, sHiss: D.hG.gain.value, fired: D.plays.brakeHiss || 0 }; D.dispose(); }
+      o.missing = { err: [!!D.loadErr.rumble, !!D.loadErr.brakeHiss1, !!D.loadErr.brakeHiss2], rumbleLoop: !!D.loops.rumble, doors: !!(D.buf.doorOpen && D.buf.doorClose), run: D.run, sRum: D.rG.gain.value, sHiss: D.hG.gain.value, fired: D.plays.brakeHiss || 0 }; D.dispose(); }
     finally { m.SAMPLES.rumble.file = keep; m.SAMPLES.brakeHiss1.file = keep2; m.SAMPLES.brakeHiss2.file = keep3; }
     return o;
   });
-  ok('sound: until its recording has loaded a layer is its synthesised stand-in; once the loops run, the synthesised rumble and whine are faded out of the mix', !dr.early.rumble.rec && !dr.early.motor.rec && !dr.early.hiss.rec && dr.cruiseRun.rumble.rec && dr.cruiseRun.motor.rec && dr.cruise.sRum < 0.005 && dr.cruise.sMot < 0.002 && Math.abs(dr.cruise.rum - 0.39) < 0.02, JSON.stringify([dr.early, dr.cruise]));
+  ok('sound: until its recording has loaded a layer is its synthesised stand-in; once the loop runs, the synthesised rumble is faded out of the mix', !dr.early.rumble.rec && !dr.early.hiss.rec && dr.cruiseRun.rumble.rec && dr.cruise.sRum < 0.005 && Math.abs(dr.cruise.rum - 0.39) < 0.02, JSON.stringify([dr.early, dr.cruise]));
   ok('sound: the loops follow the train - the rumble at 12 m/s is as recorded (rate 1) and at the calibrated level, slower and quieter as the train slows, silent at a standstill, a quarter as loud from outside', Math.abs(dr.cruise.rate - 1) < 0.03 && dr.accel.rum < dr.cruise.rum * 0.6 && dr.accel.rate < dr.cruise.rate - 0.2 && dr.stand.rum < 0.005 && Math.abs(dr.outside.rum - dr.cruise.rum * 0.25) < 0.01 && Math.abs(dr.outside.rate - dr.cruise.rate) < 0.03, JSON.stringify([dr.cruise, dr.accel, dr.stand, dr.outside]));
-  ok('sound: the whine is loud under power, a murmur when coasting, and rises in pitch with speed', dr.accel.mot > 0.1 && dr.cruise.mot > 0.02 && dr.cruise.mot < dr.accel.mot * 0.4 && dr.accel.mrate > 0.7 && dr.accel.mrate < dr.cruise.mrate && dr.stand.mot < 0.005, JSON.stringify([dr.cruise, dr.accel, dr.stand]));
+  ok('sound: in the engine the drive is loud under power (inverter, gear and growl all up, tones spread either side of 1 kHz at 6 m/s), a murmur of gear when coasting (no inverter), silent standing, and its gear tone rises with speed', dr.accel.inv > 0.012 && dr.accel.growl > 0.012 && dr.accel.gear > dr.cruise.gear * 1.5 && dr.cruise.inv < 0.001 && dr.cruise.gear > 0.002 && dr.cruise.gearHz > dr.accel.gearHz * 1.8 && dr.accel.mode === 0 && dr.accel.invHz[0] < 950 && dr.accel.invHz[1] > 1050 && dr.cruise.mode === 2 && dr.stand.inv < 0.001 && dr.stand.gear < 0.001 && dr.stand.growl < 0.001, JSON.stringify([dr.cruise, dr.accel, dr.stand]));
   ok('sound: letting the brake off plays one recorded hiss (not one per frame), at a strength that follows the brake it released', dr.hiss.fired === 1 && dr.hiss.last && /^brakeHiss[12]$/.test(dr.hiss.last.name) && dr.hiss.last.strength > 0.9 && dr.hiss.last.gain > 0.15, JSON.stringify(dr.hiss));
-  ok('sound: a recording that cannot be fetched leaves its synthesised stand-in running (rumble, hiss) while the others stay recordings (whine)', JSON.stringify(dr.missing.err) === '[true,true,true]' && !dr.missing.rumbleLoop && dr.missing.motorLoop && !dr.missing.run.rumble.rec && dr.missing.run.motor.rec && !dr.missing.run.hiss.rec && dr.missing.sRum > 0.05 && dr.missing.sMot < 0.002 && dr.missing.sHiss > 0 && dr.missing.fired === 0, JSON.stringify(dr.missing));
+  ok('sound: a recording that cannot be fetched leaves its synthesised stand-in running (rumble, hiss) while the others stay recordings (doors)', JSON.stringify(dr.missing.err) === '[true,true,true]' && !dr.missing.rumbleLoop && dr.missing.doors && !dr.missing.run.rumble.rec && !dr.missing.run.hiss.rec && dr.missing.sRum > 0.05 && dr.missing.sHiss > 0 && dr.missing.fired === 0, JSON.stringify(dr.missing));
   // camera sway: low-frequency only (< 2 Hz), small amplitude; no high-frequency head jitter
   const sw = await ev(p, () => { const s = __sim.sim, T = s.THREE, f = new T.Vector3(), q = new T.Quaternion(), ys = [], ls = []; const v0 = s.svc.train.v;
     for (let i = 0; i < 240; i++) { __sim.tick(1 / 30); __sim.sync(); s.trainView.eyeWorld(f, q); ys.push(s.camera.position.y - f.y); ls.push(Math.hypot(s.camera.position.x - f.x, s.camera.position.z - f.z)); }

@@ -9,7 +9,7 @@ import { KMH, mulberry32 } from './util.js';
 import { AnimCrowd, pickChar, resetCharsInUse, charsInUse } from './people.js';
 import { LEG_RADII } from './legradii.js';
 import { Walker } from './walker.js';
-import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V } from './audio.js';
+import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V, DRIVE, driveMode, tractionMix } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
@@ -214,7 +214,7 @@ const mp3Seconds = (b) => mp3Info(b).seconds;
 
 test('audio: every recorded sound has its file, a sane level trim, and a CC0 / CC-BY credit with an author and a source link', () => {
   const dir = fileURLToPath(new URL('../../audio/', import.meta.url)), credits = JSON.parse(readFileSync(fileURLToPath(new URL('../../models/credits.json', import.meta.url)), 'utf8'));
-  assert.deepEqual(Object.keys(SAMPLES).sort(), ['brakeHiss1', 'brakeHiss2', 'doorClose', 'doorOpen', 'motor', 'rumble']);
+  assert.deepEqual(Object.keys(SAMPLES).sort(), ['brakeHiss1', 'brakeHiss2', 'doorClose', 'doorOpen', 'rumble']);
   for (const [name, s] of Object.entries(SAMPLES)) {
     const bytes = readFileSync(dir + s.file), size = statSync(dir + s.file).size;
     assert.ok(size > 5000 && size < 200000, `${name}: ${s.file} is ${size} bytes`);
@@ -229,7 +229,7 @@ test('audio: every recorded sound has its file, a sane level trim, and a CC0 / C
 
 test('audio: a looping recording keeps its loop points well inside the file, where the encoder\'s padding is never played, and the cycle between them is a sensible length', () => {
   const dir = fileURLToPath(new URL('../../audio/', import.meta.url));
-  const loops = Object.entries(SAMPLES).filter(([, s]) => s.loop); assert.deepEqual(loops.map(([n]) => n).sort(), ['motor', 'rumble']);
+  const loops = Object.entries(SAMPLES).filter(([, s]) => s.loop); assert.deepEqual(loops.map(([n]) => n).sort(), ['rumble']);
   for (const [name, s] of loops) {
     const dur = mp3Seconds(readFileSync(dir + s.file)), [a, b] = s.loop;
     assert.ok(a >= 0.25 && dur - b >= 0.25, `${name}: the loop runs ${a}..${b} s of a ${dur.toFixed(2)} s file - less than 0.25 s of margin at an end`);
@@ -251,10 +251,10 @@ test('audio: a loop starts and ends on a whole sample at the file\'s own rate an
 });
 
 test('audio: the synthesised running sound is driven exactly as it was before the recordings (they are only the layers\' replacements, so ?sfx=synth and a missing file keep the old sound)', () => {
-  // the formulas update() used before: gain and pitch of the motor, cutoff and gain of the rumble, centre and gain of the squeal, gain of the hiss
+  // the formulas update() used before: cutoff and gain of the rumble, centre and gain of the squeal, gain of the hiss
   const old = (st, rel) => {
     const v = st.v || 0, inside = st.inTrain ? 1 : 0.25, sq = Math.min(1, Math.abs(st.curv || 0) * 130) * Math.min(1, v / 8) * 0.12 + (st.brake > 0.2 && v < 6 && v > 0.4 ? 0.07 * st.brake : 0);
-    return { motorHz: 70 + v * 15 + st.traction * 40, motorGain: Math.min(0.07, v * 0.006 + st.traction * 0.035) * inside * (st.doorsOpen ? 0.5 : 1), rumbleLP: 120 + v * 22, rumbleGain: Math.min(0.5, v * 0.028) * inside,
+    return { rumbleLP: 120 + v * 22, rumbleGain: Math.min(0.5, v * 0.028) * inside,
       squealHz: 2300 + v * 60, squealGain: sq * inside, hissGain: Math.min(0.18, rel * 6 + (st.brake > 0.1 ? st.brake * 0.02 : 0)) * inside };
   };
   let n = 0;
@@ -262,10 +262,10 @@ test('audio: the synthesised running sound is driven exactly as it was before th
     const st = { v, traction, brake, curv, inTrain, doorsOpen }, a = runningMix(st, rel), b = old(st, rel);
     for (const k of Object.keys(b)) { assert.ok(Math.abs(a[k] - b[k]) < 1e-12, `${k} for ${JSON.stringify(st)} rel ${rel}: ${a[k]} against ${b[k]}`); n++; }
   }
-  assert.ok(n > 5000);
+  assert.ok(n > 5000);   // (the motor is no longer among them: its two-oscillator whine and the looped recording that replaced it both gave way to the traction drive, below)
 });
 
-test('audio: the recorded running sound follows the train - louder and higher in pitch with speed, whine under power, a murmur coasting, quieter heard from outside', () => {
+test('audio: the recorded running sound follows the train - louder and higher in pitch with speed, quieter heard from outside', () => {
   const S = (o) => runningMix(Object.assign({ v: 0, traction: 0, brake: 0, curv: 0, inTrain: true, doorsOpen: false }, o));
   // rumble: silent at a standstill, rising with speed in level and in pitch, as calibrated at RUN_V and played as recorded there, with the pitch kept within a believable range
   assert.equal(S({}).rumbleLevel, 0);
@@ -273,18 +273,41 @@ test('audio: the recorded running sound follows the train - louder and higher in
   for (let v = 0.5; v <= 18; v += 0.5) { const m = S({ v }); assert.ok(m.rumbleLevel > prevL && m.rumbleRate >= prevR, `rumble not rising at ${v} m/s`); assert.ok(m.rumbleRate >= 0.5 && m.rumbleRate <= 1.25, `rumble rate ${m.rumbleRate} at ${v}`); prevL = m.rumbleLevel; prevR = m.rumbleRate; }
   assert.equal(S({ v: RUN_V }).rumbleLevel, 1); assert.ok(Math.abs(S({ v: RUN_V }).rumbleRate - 1) < 1e-9, 'played as recorded at RUN_V');
   assert.ok(S({ v: 30 }).rumbleLevel <= 1.5 && S({ v: 30 }).rumbleRate === 1.25, 'bounded at any speed');
-  // whine: under power > braking > coasting > nothing at a standstill; it rises in pitch with speed and is never louder than the level it was calibrated at
-  const cruise = { v: RUN_V }, power = S({ v: RUN_V, traction: 1 }), brake = S({ v: RUN_V, brake: 1 }), coast = S(cruise), stand = S({});
-  assert.ok(power.motorLevel > brake.motorLevel && brake.motorLevel > coast.motorLevel && coast.motorLevel > stand.motorLevel && stand.motorLevel === 0, JSON.stringify([power.motorLevel, brake.motorLevel, coast.motorLevel, stand.motorLevel]));
-  assert.equal(power.motorLevel, 1); assert.ok(coast.motorLevel > 0.1 && coast.motorLevel < 0.4, 'a murmur when coasting');
-  assert.ok(S({ v: 12, traction: 1 }).motorRate > S({ v: 6, traction: 1 }).motorRate && S({ v: 6, traction: 1 }).motorRate > S({ v: 0, traction: 1 }).motorRate);
-  assert.equal(S({ traction: 1, brake: 1 }).motorLevel <= 1, true); assert.ok(S({ v: 0, brake: 1 }).motorLevel === 0, 'a train held at a standstill does not whine');
-  assert.ok(S({ v: 12, traction: 1, doorsOpen: true }).motorLevel === 0.5 * power.motorLevel, 'open doors let the motor down');
   // outside the train: a quarter as loud, the same pitch
   const out = runningMix({ v: 12, traction: 1, brake: 0, inTrain: false, doorsOpen: false });
-  assert.ok(Math.abs(out.rumbleLevel - 0.25) < 1e-12 && Math.abs(out.motorLevel - 0.25) < 1e-12 && out.rumbleRate === 1 && out.inside === 0.25);
+  assert.ok(Math.abs(out.rumbleLevel - 0.25) < 1e-12 && out.rumbleRate === 1 && out.inside === 0.25);
   // a state with fields missing (the first frame, a test) is still a finite mix
-  for (const x of Object.values(runningMix({}))) assert.ok(Number.isFinite(x));
+  const flat = (o) => Object.values(o).flatMap((x) => (x && typeof x === 'object' ? flat(x) : [x]));
+  for (const x of flat(runningMix({}))) assert.ok(Number.isFinite(x));
+});
+
+test('audio: the traction drive - inverter tones that spread with speed and step at each switching pattern, a gear tone in step with the wheels, loud under power, a murmur coasting, silent standing', () => {
+  const T = (o, prev) => tractionMix(Object.assign({ v: 0, traction: 0, brake: 0, inTrain: true, doorsOpen: false }, o), prev);
+  // standing with nothing applied: silent. Coasting: only the gear tone is left. Power > regenerative braking > coasting, in every part
+  const stand = T({}), coast = T({ v: 12 }), power = T({ v: 12, traction: 1 }), brake = T({ v: 12, brake: 1 });
+  assert.ok(stand.invGain === 0 && stand.gearGain === 0 && stand.growlGain === 0, 'silent at a stand');
+  assert.ok(coast.invGain === 0 && coast.growlGain === 0 && coast.gearGain > 0 && coast.gearGain < 0.5 * power.gearGain, 'coasting leaves a murmur of gear');
+  for (const k of ['invGain', 'gearGain', 'growlGain']) assert.ok(power[k] > brake[k] && brake[k] >= coast[k], `${k}: power > brake >= coast`);
+  assert.ok(T({ v: 0.2, brake: 1 }).invGain < 0.1 * brake.invGain, 'the brake at a crawl is the friction brake, not the motors');
+  assert.ok(T({ v: 0, traction: 1 }).invGain > 0, 'the inverter is heard as power goes on, before the train moves');
+  // the mechanical tones are in step with the wheels: exactly proportional to the speed
+  for (const v of [2, 5, 9, 14]) { const a = T({ v, traction: 1 }), w = v / (Math.PI * DRIVE.wheel);
+    assert.ok(Math.abs(a.gearHz - w * DRIVE.gear * DRIVE.teeth) < 1e-9 && Math.abs(a.fe - w * DRIVE.gear * DRIVE.pairs) < 1e-9 && Math.abs(a.growlHz - 6 * a.fe) < 1e-9, `at ${v} m/s`); }
+  // asynchronous: the switching frequency is fixed and the tones sit in pairs either side of it and of its double, spreading as the train speeds up
+  let spread = -1;
+  for (let v = 0.5; v < DRIVE.sync[0][0]; v += 0.5) { const a = T({ v, traction: 1 }); assert.equal(a.mode, 0); assert.equal(a.fc, DRIVE.carrier);
+    assert.ok(Math.abs((a.inv[0] + a.inv[1]) / 2 - a.fc) < 1e-9 && Math.abs((a.inv[2] + a.inv[3]) / 2 - 2 * a.fc) < 1e-9); assert.ok(a.inv[1] - a.inv[0] > spread); spread = a.inv[1] - a.inv[0]; }
+  // synchronous: N pulses per cycle, so the switching frequency rises with the train - and drops at each change to fewer pulses (the "gear change" a listener hears)
+  for (let i = 0; i < DRIVE.sync.length; i++) { const [from, N] = DRIVE.sync[i], a = T({ v: from + 0.01, traction: 1 }), below = T({ v: from - 0.01, traction: 1 });
+    assert.equal(a.mode, i + 1); assert.ok(Math.abs(a.fc - N * a.fe) < 1e-9); assert.ok(a.fc < below.fc, `the pitch steps down at ${from} m/s`); assert.ok(T({ v: from + 2, traction: 1 }).fc > a.fc); }
+  // every tone stays in the audible band at any speed the train reaches
+  for (let v = 0; v <= 16; v += 0.25) { const a = T({ v, traction: 1 }); for (const hz of [...a.inv, a.gearHz, a.growlHz]) assert.ok(hz >= 20 && hz < 4000, `${hz} Hz at ${v} m/s`); }
+  // a train holding a speed on a threshold does not flutter between two patterns
+  const edge = DRIVE.sync[0][0]; let m = driveMode(edge - 1), flips = 0;
+  for (let i = 0; i < 200; i++) { const n = driveMode(edge + (i % 2 ? 0.2 : -0.2), m); if (n !== m) flips++; m = n; }
+  assert.equal(flips, 0); assert.equal(driveMode(edge + 1, 0), 1); assert.equal(driveMode(edge - 1, 1), 0); assert.equal(driveMode(20), DRIVE.sync.length);
+  // doors open: half; heard from the platform: a quarter
+  assert.ok(Math.abs(T({ v: 12, traction: 1, doorsOpen: true }).invGain - 0.5 * power.invGain) < 1e-12 && Math.abs(T({ v: 12, traction: 1, inTrain: false }).gearGain - 0.25 * power.gearGain) < 1e-12);
 });
 
 test('audio: the brake being let off is heard once per release, at its start - not when it goes on, not when it is merely eased, and not when the train is put somewhere', () => {

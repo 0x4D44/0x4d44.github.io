@@ -54,6 +54,7 @@ const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, 
       crowd.rng = seeded(id + ':' + state);
       const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: yaw || 0, mode: state, static: q.get('forcelod') !== '1', speed: 1.2, wait: 0 }, crowd.group);
       if (!p.obj) return null;
+      if (q.get('forcelod') !== '1' && p.lod) crowd._swapLod(p, false);   // everybody starts on the simplified model now: this view wants the full one
       if (p.cur) { p.cur.time = (frac || 0) * p.cur.getClip().duration; p.cur.paused = true; }
       p.mixer.update(0.0001);
       tint(p);

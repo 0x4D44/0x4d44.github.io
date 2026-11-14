@@ -291,7 +291,7 @@ class Sim {
       const sv = k === 0 ? (this.mode === 'ride' || this.mode === 'explore') : true;   // the player's own riders only matter when walking; the other circle's train is seen from every underground mode
       if (sv && !tv.saloonDone && !built) { built = true; this._populateSaloon(tv, k === 0 && !tv.saloonSlow ? 99 : 1); }   // the player's train at once, the other one a car a frame (also while it is out of sight: it must arrive with its passengers aboard)
       const on = sv && tv.root.visible; sc.setEnabled(on);
-      if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 8 : 5) : (this.mode === 'explore' ? 5 : 4)); sc.update(dt, this.time, null, this.camera.position); }   // (nearest riders get the full-detail model: fewer when the platform crowd is the focus)
+      if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 14 : 5) : (this.mode === 'explore' ? 5 : 4)); sc.update(dt, this.time, null, this.camera.position); }   // (nearest riders get the full-detail model: fewer when the platform crowd is the focus. 14 when riding: a full train puts that many within a few metres, and the simplified models do not stand being looked at that close)
     });
   }
   /** Regression audit of every spawned person (real skinned vertices): soles on the floor/platform/seat, heads under the ceiling, inside the walls, no overlaps. */

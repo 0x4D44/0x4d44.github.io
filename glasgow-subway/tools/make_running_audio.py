@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Rebuilds glasgow-subway/audio/rumble.mp3, motor.mp3, brake-hiss-1.mp3 and brake-hiss-2.mp3 from the recordings they come from (all CC BY 3.0):
+"""(motor.mp3 is no longer used by the sim - the drive is synthesised, see research/running-sounds.md - and has been removed from audio/; this still builds it.)
+Rebuilds glasgow-subway/audio/rumble.mp3, motor.mp3, brake-hiss-1.mp3 and brake-hiss-2.mp3 from the recordings they come from (all CC BY 3.0):
 
   rumble.mp3, motor.mp3   Wu, Tsan-Cheng (Radio Aporee), "Tamsui Line, Taipei City - Tamsui Line (Taipei Metro)", 2014-01-20, binaural, Zoom H4n + Soundman OKM II
                           https://archive.org/details/aporee_21458_24940   file SoundMap2014012052.ogg  (3997980 bytes, sha256 fcc520d3...111ebd7)

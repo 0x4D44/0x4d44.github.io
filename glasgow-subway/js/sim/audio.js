@@ -15,7 +15,6 @@ export const SAMPLES = {
   doorOpen: { file: 'door-open.mp3', gain: 0.32, credit: 'London Underground 1995 Stock train doors opening' },
   doorClose: { file: 'door-close.mp3', gain: 0.4, credit: 'London Underground 1995 Stock train doors closing' },
   rumble: { file: 'rumble.mp3', gain: 0.39, loop: [120 / 300, 3133 / 300], credit: 'Tamsui Line, Taipei City - Tamsui Line (Taipei Metro)' },   // a 10.043 s cycle (241040 samples at 24 kHz, 442911 at 44.1 kHz)
-  motor: { file: 'motor.mp3', gain: 0.16, loop: [90 / 300, 635 / 300], credit: 'Tamsui Line, Taipei City - Tamsui Line (Taipei Metro)' },   // a 1.817 s cycle (87200 samples at 48 kHz, 80115 at 44.1 kHz)
   brakeHiss1: { file: 'brake-hiss-1.mp3', gain: 0.43, credit: 'Truck Air Brakes' },   // 0.75 s
   brakeHiss2: { file: 'brake-hiss-2.mp3', gain: 0.39, credit: 'Air Break' },   // 1.5 s
 };
@@ -134,21 +133,51 @@ export const RUN_V = 12;
 
 /** What the running sound is doing for a train state st = { v (m/s), traction 0..1, brake 0..1, curv (1/m), inTrain, doorsOpen }, as plain numbers: the one place the synthesised layers and the recorded
  *  ones both read it from. rel = how much the brake was let off since the last frame. For a recording, level 1 is the level SAMPLES calibrates it to and rate is its playback speed (1 = as recorded). */
-export function runningMix(st, rel = 0) {
+export function runningMix(st, rel = 0, prevMode) {
   const v = Math.abs(st.v || 0), tr = st.traction || 0, br = st.brake || 0, inside = st.inTrain ? 1 : OUTSIDE, doors = st.doorsOpen ? 0.5 : 1, run = Math.min(1, v / RUN_V);
   const sq = Math.min(1, Math.abs(st.curv || 0) * 130) * Math.min(1, v / 8) * 0.12 + (br > 0.2 && v < 6 && v > 0.4 ? 0.07 * br : 0);
   const hold = (br > 0.1 ? br * 0.02 : 0) * inside;   // the faint hiss that goes on while the brake is applied
   return {
-    inside,
+    inside, drive: tractionMix(st, prevMode),
     // the synthesised layers: pitch or cutoff (Hz), and gain
-    motorHz: 70 + v * 15 + tr * 40, motorGain: Math.min(0.07, v * 0.006 + tr * 0.035) * inside * doors,
     rumbleLP: 120 + v * 22, rumbleGain: Math.min(0.5, v * 0.028) * inside,
     squealHz: 2300 + v * 60, squealGain: sq * inside,
     hissGain: Math.min(0.18, rel * 6 + (br > 0.1 ? br * 0.02 : 0)) * inside, hissHold: hold,
     // the recorded layers. Rumble: its pitch follows the speed (rolling noise does: the same wheel and rail roughness passes faster) but less than in proportion, because the speed it was recorded
-    // at is not known; its level follows the speed. Whine: pitch rises with the speed; loud under power, some under braking (the motors generate), a murmur when coasting.
+    // at is not known; its level follows the speed.
     rumbleRate: clamp(0.35 + 0.65 * v / RUN_V, 0.5, 1.25), rumbleLevel: Math.min(1.5, v / RUN_V) * inside,
-    motorRate: 0.7 + 0.55 * run, motorLevel: clamp(0.75 * clamp(tr, 0, 1) + 0.45 * clamp(br, 0, 1) * Math.min(1, v / 6) + 0.25 * run, 0, 1) * inside * doors,
+  };
+}
+
+/** The traction drive, as the things that make its sound. Taken as typical of a small three-phase metro drive, not measured on the Subway's Stadler sets (no open recording or data found):
+ *  wheel = wheel diameter (m), gear = reduction ratio, pairs = motor pole pairs, teeth = pinion teeth, carrier = the inverter's switching frequency while it runs asynchronously (Hz),
+ *  sync = [from m/s, pulses per cycle] - above each speed the inverter locks its switching to the motor, N pulses per electrical cycle. */
+export const DRIVE = { wheel: 0.69, gear: 6.5, pairs: 2, teeth: 21, carrier: 1000, sync: [[6.5, 15], [10.5, 9]], band: 0.4 };
+/** Which switching pattern the inverter is in at v m/s: 0 = asynchronous, 1.. = DRIVE.sync[n - 1]. prev = the pattern it was in: it changes only DRIVE.band m/s past a threshold, so a train
+ *  holding a speed on a threshold does not flutter between two. */
+export function driveMode(v, prev) {
+  let m = 0; for (const [from] of DRIVE.sync) if (v >= from) m++;
+  if (prev != null && prev !== m) { const edge = DRIVE.sync[Math.min(prev, m)][0]; if (Math.abs(v - edge) < DRIVE.band) return prev; }
+  return m;
+}
+/** What the traction drive sounds like for a train state (as runningMix), as plain numbers - frequencies in Hz, gains 0..1:
+ *    inv   the inverter: four tones, the pairs fc -+ 2 fe and 2 fc -+ fe either side of the switching frequency fc and its double, which is where a three-phase PWM drive puts its noise
+ *          (fe = the motor's electrical frequency). They spread apart as the train gathers speed, and step when the switching pattern changes. Level follows the motor current: loud under
+ *          power, less in regenerative braking (which fades out as the train stops), nothing coasting.
+ *    gear  the reduction gear's mesh tone, in step with the wheels: there whenever the train moves (it is what is left when coasting), louder under load.
+ *    growl the motor's own torque ripple, six times fe: low, under load only.
+ *  mode = driveMode() for it (prev as there). The gains are set so that under full power at RUN_V the drive is about as loud as the recorded rumble, A-weighted (the end-to-end test measures it):
+ *  it leads while the train pulls away, when there is little rolling noise, and sits in the rumble at speed. */
+export function tractionMix(st, prev) {
+  const v = Math.abs(st.v || 0), tr = clamp(st.traction || 0, 0, 1), br = clamp(st.brake || 0, 0, 1), inside = st.inTrain ? 1 : OUTSIDE, doors = st.doorsOpen ? 0.5 : 1;
+  const wheelHz = v / (Math.PI * DRIVE.wheel), motorHz = wheelHz * DRIVE.gear, fe = motorHz * DRIVE.pairs, mode = driveMode(v, prev);
+  const fc = mode ? DRIVE.sync[mode - 1][1] * fe : DRIVE.carrier;
+  const load = Math.min(1, tr + 0.6 * br * Math.min(1, v / 4)) * Math.min(1, v / 0.3 + tr), k = inside * doors, moving = Math.min(1, v / 1.5);
+  return {
+    mode, fe, fc, load,
+    inv: [Math.max(20, fc - 2 * fe), fc + 2 * fe, Math.max(20, 2 * fc - fe), 2 * fc + fe], invGain: 0.018 * load * (mode ? 0.8 : 1) * k,
+    gearHz: Math.max(20, motorHz * DRIVE.teeth), gearGain: (0.0045 + 0.011 * load) * moving * Math.min(1, 0.35 + v / RUN_V) * k,
+    growlHz: Math.max(20, 6 * fe), growlGain: 0.018 * load * moving * k,
   };
 }
 
@@ -168,13 +197,21 @@ export class ReleaseDetector {
   }
 }
 
-/** the synthesised running layers - motor whine, rumble, squeal, brake hiss - on any context, feeding `out`, all at silence: { m1, m2, mLP, mG, rN, rLP, rG, sN, sBP, sG, hN, hHP, hG } */
+/** the synthesised running layers - traction drive, rumble, squeal, brake hiss - on any context, feeding `out`, all at silence: { inv[], invG, gear, gearG, growl, growlG, mLP, mG, rN, rLP, rG, sN, sBP, sG, hN, hHP, hG } */
 function buildSynthLayers(c, out) {
   const L = {}, noise = noiseBuf(c), mkNoise = () => { const s = c.createBufferSource(); s.buffer = noise; s.loop = true; s.start(); return s; };
-  // motor whine
-  L.m1 = c.createOscillator(); L.m1.type = 'sawtooth'; L.m2 = c.createOscillator(); L.m2.type = 'square';
-  L.mLP = c.createBiquadFilter(); L.mLP.type = 'lowpass'; L.mLP.frequency.value = 700; L.mG = c.createGain(); L.mG.gain.value = 0;
-  L.m1.connect(L.mLP); L.m2.connect(L.mLP); L.mLP.connect(L.mG); L.mG.connect(out); L.m1.start(); L.m2.start();
+  // traction drive (tractionMix): inverter tones, gear mesh, motor growl, through the car body (a gentle low-pass). mG is its master gain
+  L.mG = c.createGain(); L.mG.gain.value = 1; L.mLP = c.createBiquadFilter(); L.mLP.type = 'lowpass'; L.mLP.frequency.value = 3200; L.mLP.Q.value = 0.5; L.mLP.connect(L.mG); L.mG.connect(out);
+  L.invG = c.createGain(); L.invG.gain.value = 0; L.invG.connect(L.mLP);
+  L.inv = [1, 1, 0.45, 0.45].map((w) => { const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = DRIVE.carrier; g.gain.value = w; o.connect(g); g.connect(L.invG); o.start(); return o; });
+  L.gear = c.createOscillator(); L.gear.setPeriodicWave(c.createPeriodicWave(new Float32Array([0, 0, 0, 0, 0]), new Float32Array([0, 1, 0.42, 0.2, 0.08])));
+  L.gear.frequency.value = 20; L.gearG = c.createGain(); L.gearG.gain.value = 0; L.gearAM = c.createGain(); L.gearAM.gain.value = 1; L.gear.connect(L.gearG); L.gearG.connect(L.gearAM); L.gearAM.connect(L.mLP); L.gear.start();
+  L.growl = c.createOscillator(); L.growl.type = 'sawtooth'; L.growl.frequency.value = 20; L.growlLP = c.createBiquadFilter(); L.growlLP.type = 'lowpass'; L.growlLP.frequency.value = 420;
+  L.growlG = c.createGain(); L.growlG.gain.value = 0; L.growl.connect(L.growlLP); L.growlLP.connect(L.growlG); L.growlG.connect(L.mLP); L.growl.start();
+  // a real drive is never dead steady: two slow wanderings of a few cents on everything, and a slight tremor on the gear tone (one tooth is never quite like the next)
+  { const drift = c.createGain(); drift.gain.value = 1; for (const [hz, cents] of [[0.31, 5], [1.3, 2.5]]) { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = hz; g.gain.value = cents; o.connect(g); g.connect(drift); o.start(); }
+    for (const o of [...L.inv, L.gear, L.growl]) drift.connect(o.detune);
+    const tr = c.createOscillator(), tg = c.createGain(); tr.frequency.value = 11; tg.gain.value = 0.12; tr.connect(tg); tg.connect(L.gearAM.gain); tr.start(); }
   // rumble
   L.rN = mkNoise(); L.rLP = c.createBiquadFilter(); L.rLP.type = 'lowpass'; L.rLP.frequency.value = 180; L.rG = c.createGain(); L.rG.gain.value = 0;
   L.rN.connect(L.rLP); L.rLP.connect(L.rG); L.rG.connect(out);
@@ -188,8 +225,11 @@ function buildSynthLayers(c, out) {
 }
 /** steer the synthesised layers L to a mix p (runningMix) from time t. A layer named in rec has a recording playing in its place: it is faded out (the hiss keeps only its faint steady part). */
 function applySynth(L, t, p, rec = {}) {
-  L.m1.frequency.setTargetAtTime(p.motorHz, t, 0.1); L.m2.frequency.setTargetAtTime(p.motorHz * 1.505, t, 0.1);
-  L.mG.gain.setTargetAtTime(rec.motor ? 0 : p.motorGain, t, 0.12);
+  // the drive. Its frequencies follow the train at once (a change of switching pattern is a step, not a glide); its levels follow over a tenth of a second or so
+  { const d = p.drive, step = L.driveMode != null && L.driveMode !== d.mode; L.driveMode = d.mode;
+    d.inv.forEach((hz, i) => { if (step) L.inv[i].frequency.setValueAtTime(hz, t); else L.inv[i].frequency.setTargetAtTime(hz, t, 0.03); });
+    L.gear.frequency.setTargetAtTime(d.gearHz, t, 0.05); L.growl.frequency.setTargetAtTime(d.growlHz, t, 0.05);
+    L.invG.gain.setTargetAtTime(d.invGain, t, 0.09); L.gearG.gain.setTargetAtTime(d.gearGain, t, 0.15); L.growlG.gain.setTargetAtTime(d.growlGain, t, 0.12); }
   L.rLP.frequency.setTargetAtTime(p.rumbleLP, t, 0.2); L.rG.gain.setTargetAtTime(rec.rumble ? 0 : p.rumbleGain, t, 0.2);
   L.sBP.frequency.setTargetAtTime(p.squealHz, t, 0.2); L.sG.gain.setTargetAtTime(p.squealGain, t, 0.15);
   L.hG.gain.setTargetAtTime(rec.hiss ? p.hissHold : p.hissGain, t, 0.05);
@@ -201,17 +241,17 @@ function startLoop(c, out, buf, loop, phase = Math.random()) {
 }
 function driveLoop(l, t, gain, rate) { l.g.gain.setTargetAtTime(gain, t, 0.2); l.src.playbackRate.setTargetAtTime(rate, t, 0.25); }
 /** test/analysis helper: the running sound for train state st rendered offline - mono Float32Array, `secs` long at `sr`. The layers are the synthesised ones, except those with a decoded recording in
- *  rec ({ rumble, motor }), which play as the engine plays them; only = 'rumble' | 'motor' | 'squeal' | 'hiss' hears that layer alone; rel = brake let off this frame (it drives the synthesised hiss).
+ *  rec ({ rumble }), which plays as the engine plays it (the drive is always synthesised); only = 'rumble' | 'motor' | 'squeal' | 'hiss' hears that layer alone; rel = brake let off this frame (it drives the synthesised hiss).
  *  Levels settle over about a second, so judge the end of it. */
 export async function renderRunning(st, { secs = 4, sr = 22050, rel = 0, rec = {}, only } = {}) {
   const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext, c = new OC(1, Math.ceil(secs * sr), sr), m = c.createGain(); m.connect(c.destination);
   const L = buildSynthLayers(c, m), p = Object.assign({}, runningMix(st, rel)), keep = (k) => !only || only === k;
-  if (!keep('motor')) { p.motorGain = 0; p.motorLevel = 0; }
+  if (!keep('motor')) p.drive = Object.assign({}, p.drive, { invGain: 0, gearGain: 0, growlGain: 0 });
   if (!keep('rumble')) { p.rumbleGain = 0; p.rumbleLevel = 0; }
   if (!keep('squeal')) p.squealGain = 0;
   if (!keep('hiss')) { p.hissGain = 0; p.hissHold = 0; }
-  applySynth(L, 0, p, { rumble: !!rec.rumble, motor: !!rec.motor });
-  for (const k of ['rumble', 'motor']) if (rec[k]) driveLoop(startLoop(c, m, rec[k], SAMPLES[k].loop, 0), 0, SAMPLES[k].gain * p[k + 'Level'], p[k + 'Rate']);
+  applySynth(L, 0, p, { rumble: !!rec.rumble });
+  for (const k of ['rumble']) if (rec[k]) driveLoop(startLoop(c, m, rec[k], SAMPLES[k].loop, 0), 0, SAMPLES[k].gain * p[k + 'Level'], p[k + 'Rate']);
   return (await c.startRendering()).getChannelData(0);
 }
 
@@ -270,7 +310,7 @@ export class SimAudio {
     try {
       const AC = window.AudioContext || window.webkitAudioContext; const c = this.ctx = new AC();
       this.master = c.createGain(); this.master.gain.value = this.muted ? 0 : this.vol; this.master.connect(c.destination);
-      Object.assign(this, buildSynthLayers(c, this.master));   // the synthesised running layers: m1 m2 mLP mG (motor), rN rLP rG (rumble), sN sBP sG (squeal), hN hHP hG (brake hiss)
+      Object.assign(this, buildSynthLayers(c, this.master));   // the synthesised running layers: inv gear growl mLP mG (traction drive), rN rLP rG (rumble), sN sBP sG (squeal), hN hHP hG (brake hiss)
       this.started = true; this._lastBrake = 0;
       this._loadSamples();
     } catch (e) { this.ok = false; }
@@ -279,15 +319,14 @@ export class SimAudio {
   /** st: { v (m/s), traction 0..1, brake 0..1, curv (1/m), inCab (bool), inTrain, doorsOpen } */
   update(st) {
     if (!this.started || !this.ctx || this.hidden) return; const t = this.ctx.currentTime, b = st.brake || 0;
-    const p = runningMix(st, Math.max(0, this._lastBrake - b)); this._lastBrake = b;
+    const p = runningMix(st, Math.max(0, this._lastBrake - b), this._driveMode); this._lastBrake = b; this._driveMode = p.drive.mode;
     const L = this.loops, hiss = !!(this.buf.brakeHiss1 || this.buf.brakeHiss2);
-    applySynth(this, t, p, { rumble: !!L.rumble, motor: !!L.motor, hiss });   // a layer whose recording is running is faded out of the synthesised mix
-    const rumble = SAMPLES.rumble.gain * p.rumbleLevel, motor = SAMPLES.motor.gain * p.motorLevel;
+    applySynth(this, t, p, { rumble: !!L.rumble, hiss });   // a layer whose recording is running is faded out of the synthesised mix
+    const rumble = SAMPLES.rumble.gain * p.rumbleLevel, d = p.drive;
     if (L.rumble) driveLoop(L.rumble, t, rumble, p.rumbleRate);
-    if (L.motor) driveLoop(L.motor, t, motor, p.motorRate);
     const s = this.release.update(b, t);   // the brake being let off: the air goes (a recording; the synthesised hiss follows `rel` on its own)
     if (s != null && hiss && !this.muted) this._hiss(s, p.inside);
-    this.run = { rumble: { rec: !!L.rumble, gain: rumble, rate: p.rumbleRate }, motor: { rec: !!L.motor, gain: motor, rate: p.motorRate }, hiss: { rec: hiss, fired: this.plays.brakeHiss || 0 }, inside: p.inside };
+    this.run = { rumble: { rec: !!L.rumble, gain: rumble, rate: p.rumbleRate }, drive: { mode: d.mode, fc: d.fc, inv: d.invGain, gear: d.gearGain, gearHz: d.gearHz, growl: d.growlGain }, hiss: { rec: hiss, fired: this.plays.brakeHiss || 0 }, inside: p.inside };
   }
   /** one release of the brake: a recorded burst of air, the longer take for a bigger release, at a slightly different pitch each time. strength 0..1 (how much brake there was to let off) */
   _hiss(strength, inside) {

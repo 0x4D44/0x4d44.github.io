@@ -2,6 +2,26 @@
 
 What the sim plays while a train runs: the **rumble** of wheels on rail (it gets louder and higher with speed), the **whine** of the traction motor (loud under power, a murmur when coasting, silent when standing), and the **hiss** of the brakes when they are let off. All three come from real recordings with open licences, looped or triggered by `js/sim/audio.js`; each has a synthesised stand-in that plays until its recording has loaded, if its file is missing, and for good with **`?sfx=synth`**. The wheel squeal is not in this set: it is still synthesised. (Doors: `door-sounds.md`.)
 
+## The motor is now synthesised (November 2026)
+
+The looped whine described below is **no longer played** and `audio/motor.mp3` has been removed. It was 1.8 s of another train's inverter, high-passed at 1.5 kHz and played between 0.7 and 1.25 times its speed: a thin squeal whose pitch moved a little with the train and whose every component moved together, which is not how a drive sounds. The rest of this file still describes the rumble and the hiss, and is kept as written for the record of how the whine was cut; read "whine" below as history.
+
+In its place `tractionMix()` in `js/sim/audio.js` works out, from speed, traction and brake, what a three-phase drive does, and `buildSynthLayers()` plays it:
+
+| part | what it is | pitch | level |
+|---|---|---|---|
+| inverter | four tones: pairs at `fc -+ 2 fe` and `2 fc -+ fe` (fc = switching frequency, fe = the motor's electrical frequency) | below 6.5 m/s fc is fixed at 1000 Hz, so the pairs spread apart as the train accelerates; from 6.5 m/s the inverter switches 15 times per cycle and from 10.5 m/s 9 times, so the pitch climbs with speed and steps down at each change | follows motor current: full under power, 0.6 in regenerative braking (fading out below 4 m/s), nothing coasting |
+| gear | the reduction gear's mesh tone with three harmonics, a slight 11 Hz tremor | motor speed x 21 teeth: 63 Hz per m/s (21 so that neither it nor its harmonics ever lands on an inverter tone) | a murmur whenever the train moves, about 3.5 times that under load |
+| growl | torque ripple, a low-passed sawtooth | 6 fe | under load only |
+
+Everything wanders by a few cents (two slow oscillators) and passes through a 3.2 kHz low-pass for the car body. A change of switching pattern has 0.4 m/s of hysteresis so a train holding a threshold speed does not flutter.
+
+**What is assumed, not measured.** Wheel 0.69 m, gear ratio 6.5, two pole pairs, 21 pinion teeth, 1 kHz asynchronous switching and the two change-over speeds are typical figures for a small metro drive, chosen so the tones fall in a believable range. No recording or published data for the Subway's Stadler sets was found under an open licence, so this is the sound of *a* modern drive, not of theirs.
+
+**What is checked.** Unit tests: silence at a stand, power > braking > coasting, mechanical tones exactly proportional to speed, the pairs centred on fc and 2 fc, a downward step at each change of pattern, no flutter on a threshold, all tones between 20 Hz and 4 kHz. End to end, rendered in the browser: the strongest tones in the spectrum are the ones the model asks for at 3, 9 and 12 m/s; coasting leaves the gear tone alone, at least 12 dB down; under full power at 12 m/s the drive is within 4 dB (A-weighted) of the recorded rumble.
+
+**What is not checked.** Whether it sounds good. It was built and balanced from spectra and levels, without being listened to.
+
 ## Not from YouTube
 Same reason as for the doors (see `door-sounds.md`): a video's soundtrack is not the uploader's to licence, and the credits page promises "everything used is CC0 or CC-BY". Every source below states its licence on its own page.
 
