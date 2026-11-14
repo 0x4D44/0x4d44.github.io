@@ -46,7 +46,10 @@ sys.path.insert(0, HERE)
 from people_skinfit import Glb, CT, NC   # the minimal GLB reader/writer the skin repair uses
 
 MODELS = os.path.join(HERE, '..', 'models')
-RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer')   # the ponytail people; see the docstring
+RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer',   # the ponytail people; see the docstring
+               'girl_ginger', 'staff_woman', 'adult_runner', 'adult_harem', 'adult_fisherman_leggings', 'ya_ginger_braid',
+               # the bob and loose styles whose decimated hair is a few big wedges with bare scalp between them, or over the face
+               'ya_tube_heels', 'ya_smile_halter', 'adult_suit_bun', 'woman_midi', 'woman_bob', 'woman_dress', 'girl_small', 'ya_ginger_long', 'adult_heel_boots')   # people added later with the same trouble (ponytail, braid): the scalp measure in research/people-hair.md
 # part name -> (material name prefix, who: a tuple of person ids or None for everybody who has the part, default lift in metres)
 PARTS = {
     'hair': ('alpha_hair', RECIPE_HAIR, 0.006),

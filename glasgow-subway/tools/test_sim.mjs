@@ -615,6 +615,9 @@ try {
   p = await open(browser, 'mode=explore&station=hillhead&diff=easy');
   await shot(p, '21_explore_hillhead');
   { const wa = await ev(p, () => __sim.waitAudit());
+    const sc = await ev(p, () => __sim.scalpAudit());
+    ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and only the bun is a bare head with strands',
+      sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && sc.sparse.join() === 'adult_suit_bun')) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
     const sa = await ev(p, () => __sim.smileAudit());
     ok('people can smile: every full-detail character has the smile fitted to its own mouth, and whoever the player walks up to smiles (or laughs)',
       wa && wa.near && wa.near.smiled > 0.25 && sa && (sa.chars === 0 || (sa.rigs === sa.chars && sa.minMoved > 40 && sa.found >= 0.7 * sa.chars && sa.yMin > 0.95 && sa.yMax < 1.5)) && (!wa.near.face || wa.near.faceW > 0.2), JSON.stringify({ sa, near: wa.near }));

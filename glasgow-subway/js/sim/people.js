@@ -1,6 +1,6 @@
 // Instanced low-poly people (platform crowd, boarding/alighting streams).
 import { mulberry32, clamp } from './util.js';
-import { fitHair, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
+import { fitHair, fitScalp, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
 import { ARM_OUT, ARM_DROP } from './armfit.js';
 import { LEG_RADII } from './legradii.js';
 import * as G from './gait.js';
@@ -206,6 +206,7 @@ export class AnimCrowd {
     const T = this.THREE, n = c.node, f = this.fit[c.id], sk = this._skirted(c);
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
     f.hair = fitHair(T, n);
+    f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.legs = sk ? fitLegs(T, n) : null;   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
     f.web = trimWebbing(T, n);
@@ -217,6 +218,7 @@ export class AnimCrowd {
     const T = this.THREE, n = c.lodNode, f = this.fit[c.id], sk = this._skirted(c);
     if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) this._extendHem(n);
     f.hairLod = fitHair(T, n);
+    f.scalpLod = fitScalp(T, n);
     const radii = (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
     f.trimLod = sk ? trimUnderSkirt(T, n) : null;

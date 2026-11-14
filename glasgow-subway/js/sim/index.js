@@ -1600,6 +1600,11 @@ class Sim {
       crowdClearance: () => { const c = this.crowd, w = this.walker; let d = 1e9, front = 1e9; const fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw); for (const q of c.people) { if (!q.obj || q.hidden) continue; const dx = q.x - w.x, dz = q.z - w.z, dd = Math.hypot(dx, dz); d = Math.min(d, dd); if ((dx * fx + dz * fz) / (dd || 1) > Math.cos(1.15)) front = Math.min(front, dd); } return { d, front, n: c.people.length }; },
       // tests: put the man in the string vest on the platform, let a second pass, and say where his haggis is (then take him away again)
       // how the people on this platform wait, arrive and answer the player (waiting.js): run on the platform being explored, with the service left as it is
+      // the scalp under the hair (bodyfit.js fitScalp): who has the hair-coloured cap, on both models, and that the people standing about carry it
+      scalpAudit: () => { const c = this.crowd, out = { chars: 0, full: 0, lod: 0, sparse: [], people: 0, capped: 0, minTris: 1e9 }; if (!c || !c.chars || !c.fit) return out;
+        for (const ch of c.chars) { const f = c.fit[ch.id]; if (!f) continue; out.chars++; if (f.scalp) { out.full++; out.minTris = Math.min(out.minTris, f.scalp.tris); if (f.scalp.sparse) out.sparse.push(ch.id); } if (f.scalpLod) out.lod++; }
+        for (const q of c.people) { if (!q.obj) continue; const f = c.fit[q.char.id]; if (!f || !(q.lod ? f.scalpLod : f.scalp)) continue; out.people++; let has = false; q.obj.traverse((o) => { if (o.name === 'scalp_cap' && o.isSkinnedMesh) has = true; }); if (has) out.capped++; }
+        return out; },
       // the smile (smile.js): every full-detail character gets one, fitted to where its own mouth is
       smileAudit: () => { const c = this.crowd, out = { chars: 0, rigs: 0, found: 0, minMoved: 1e9, yMin: 9, yMax: 0, halfMin: 9, halfMax: 0, none: [] }; if (!c || !c.chars) return out;
         for (const ch of c.chars) { if (!ch.node) continue; out.chars++; const p = { char: ch, lod: false }; c._lids(p, c._clone(ch, false)); const r = ch.smileRig;

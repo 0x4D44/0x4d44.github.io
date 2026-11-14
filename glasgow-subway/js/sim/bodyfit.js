@@ -1,6 +1,7 @@
 // Body fitting for the animated crowd (models/people.glb, people_lod.glb).
 // The characters were authored without any collision between their layers: a ponytail hangs straight through a hoodie, a thigh swings out through a
 // skirt, a forearm can end up inside a coat. There is no Blender here, so every fix is applied to the loaded meshes (never the .glb files):
+//   fitScalp()     - load time, once per skin: the scalp under the hair is drawn again in the hair's colour, so a gap between strands is not a bare patch.
 //   fitHair()      - load time, once per geometry: hair that hangs below the neck is pushed out of the garment / skin it is sunk into (bind pose).
 //   fitLegs()      - load time: a skirt, dress or kilt is held off the thighs and calves while the character moves (shader patch), and the thigh skin hidden
 //                    under it is slimmed (bind pose), so a leg swinging forward no longer comes out through the cloth (see the long comments above fitLegs).
@@ -520,4 +521,99 @@ export function armProbe(THREE, obj) {
       return { l: pct(ds.l), r: pct(ds.r), nl: ds.l.filter((d) => d > 0.02).length, nr: ds.r.filter((d) => d > 0.02).length };
     },
   };
+}
+
+// ---- the scalp under the hair ----
+// Some hair is an open shell of strands (the ponytail, the bun) or a picture with see-through gaps: between the strands the bare, skin-coloured scalp shows in
+// patches. Nobody's scalp looks like that - hair grows out of it. So the part of the head's skin that lies under the hair is drawn once more, in the colour of
+// the hair, as a thin cap on the skin: a gap in the hair now shows hair-coloured roots. The cap uses the skin's own vertices (no new geometry, same bones).
+// Which skin is "under the hair": seen from the middle of the head, some hair lies in that direction, near the skin. Small holes in that cover are closed up
+// (they are the very patches this is for); the face, the ears and the neck are never included.
+const SCALP = { near: 0.6, under: 0.07, ang: 0.07, close: 0.34, sparse: 0.6, brow: 0.92, ear: 0.2, front: 0.3, back: 0.7, nape: 1.0, minTris: 12 };   // lengths in eye-to-eye distances
+
+/** Give a character a hair-coloured scalp under its hair. root: the character's node (bind pose). Returns { tris, verts, covered, filled, color } or null
+ *  (no hair, no eyes, no head, or nothing of the scalp is under hair). Runs once per skin geometry; a second call returns the first result. */
+export function fitScalp(THREE, root, o = {}) {
+  const T = THREE, S = Object.assign({}, SCALP, o); let skin = null, eye = null; const hair = [];
+  root.traverse((m) => { if (!m.isSkinnedMesh || !m.material || !m.geometry) return; const n = m.material.name || ''; if (isHair(m)) hair.push(m); else if (/^skin_/.test(n)) skin = skin || m; else if (/^eye_/.test(n)) eye = eye || m; });
+  if (!skin || !hair.length) return null;
+  const g = skin.geometry; if (g.userData.scalp !== undefined) return g.userData.scalp;
+  g.userData.scalp = null;
+  const P = g.attributes.position, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, head = jointBind(T, skin, /^head(_\d+)?$/), hi = skin.skeleton.bones.findIndex((b) => /^head(_\d+)?$/.test(b.name));
+  if (!head || hi < 0 || !si || !sw || !eye) return null;
+  // the eyes: the line they are on, how far apart, which way the face looks
+  const E = eye.geometry.attributes.position; let mx = 0; for (let i = 0; i < E.count; i++) mx += E.getX(i); mx /= E.count || 1;
+  const c = [[0, 0, 0, 0], [0, 0, 0, 0]]; for (let i = 0; i < E.count; i++) { const k = E.getX(i) < mx ? 0 : 1; c[k][0] += E.getX(i); c[k][1] += E.getY(i); c[k][2] += E.getZ(i); c[k][3]++; }
+  if (c[0][3] < 3 || c[1][3] < 3) return null; for (const k of c) { k[0] /= k[3]; k[1] /= k[3]; k[2] /= k[3]; }
+  const d = Math.hypot(c[0][0] - c[1][0], c[0][1] - c[1][1], c[0][2] - c[1][2]), ex = (c[0][0] + c[1][0]) / 2, ey = (c[0][1] + c[1][1]) / 2, ez = (c[0][2] + c[1][2]) / 2; if (!(d > 0.02 && d < 0.12)) return null;
+  let fx = ex - head.x, fz = ez - head.z; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+  const cx = ex - fx * 1.35 * d, cy = ey + 0.55 * d, cz = ez - fz * 1.35 * d;   // about the middle of the skull
+  // the hair, as points seen from there: which way, how far out
+  const cell = S.ang, key = (x, y, z) => (Math.floor(x / cell) + 64) * 16384 + (Math.floor(y / cell) + 64) * 128 + (Math.floor(z / cell) + 64), dirs = new Map();
+  const put = (x, y, z) => { const dx = x - cx, dy = y - cy, dz = z - cz, r = Math.hypot(dx, dy, dz); if (r < 1e-4) return; const ux = dx / r, uy = dy / r, uz = dz / r, k = key(ux, uy, uz); let a = dirs.get(k); if (!a) dirs.set(k, a = []); a.push(ux, uy, uz, r); };
+  for (const h of hair) { const t = triangles(h.geometry);
+    for (let i = 0; i < t.length; i += 9) { const L = Math.max(Math.hypot(t[i + 3] - t[i], t[i + 4] - t[i + 1], t[i + 5] - t[i + 2]), Math.hypot(t[i + 6] - t[i], t[i + 7] - t[i + 1], t[i + 8] - t[i + 2]), Math.hypot(t[i + 6] - t[i + 3], t[i + 7] - t[i + 4], t[i + 8] - t[i + 5]));
+      if (Math.min(t[i + 1], t[i + 4], t[i + 7]) < ey - 2.5 * d && Math.max(t[i + 1], t[i + 4], t[i + 7]) < ey - 2.5 * d) continue;   // (hair far below the head)
+      const n = Math.max(1, Math.min(8, Math.ceil(L / (0.09 * d))));
+      for (let a = 0; a <= n; a++) for (let b = 0; a + b <= n; b++) { const u = a / n, v = b / n, w = 1 - u - v; put(t[i] * w + t[i + 3] * u + t[i + 6] * v, t[i + 1] * w + t[i + 4] * u + t[i + 7] * v, t[i + 2] * w + t[i + 5] * u + t[i + 8] * v); } } }
+  // the skin of the head that could be scalp
+  const n = P.count, cand = new Uint8Array(n), cov = new Uint8Array(n); let nc = 0, ncov = 0;
+  for (let i = 0; i < n; i++) {
+    let w = 0; for (let k = 0; k < 4; k++) if (si.getComponent(i, k) === hi) w += sw.getComponent(i, k); if (w < 0.5) continue;
+    const x = P.getX(i), y = P.getY(i), z = P.getZ(i), up = (y - ey) / d, fw = ((x - cx) * fx + (z - cz) * fz) / d;
+    if ((up < S.ear && !(fw < -S.back && up > -S.nape)) || (fw > S.front && up < S.brow)) continue;   // the face, the ears, the neck (but the back of the head down to the nape)
+    cand[i] = 1; nc++;
+    const dx = x - cx, dy = y - cy, dz = z - cz, r = Math.hypot(dx, dy, dz), ux = dx / r, uy = dy / r, uz = dz / r;
+    look: for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) { const A = dirs.get(key(ux + a * cell, uy + b * cell, uz + e * cell)); if (!A) continue;
+      for (let j = 0; j < A.length; j += 4) if (A[j + 3] > r - S.under * d && A[j + 3] < r + S.near * d && (A[j] - ux) ** 2 + (A[j + 1] - uy) ** 2 + (A[j + 2] - uz) ** 2 < cell * cell) { cov[i] = 1; ncov++; break look; } }
+  }
+  if (!ncov) return null;
+  // close the small holes: grow the cover by a little, then shrink it back by as much
+  const R = S.close * d, gc = R, gk = (x, y, z) => (Math.floor(x / gc) + 512) * 1048576 + (Math.floor(y / gc) + 512) * 1024 + (Math.floor(z / gc) + 512), grid = new Map();
+  for (let i = 0; i < n; i++) if (cand[i]) { const k = gk(P.getX(i), P.getY(i), P.getZ(i)); let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(i); }
+  const nearAny = (i, flag, want) => { const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (let e = -1; e <= 1; e++) { const A = grid.get(gk(x + a * gc, y + b * gc, z + e * gc)); if (!A) continue;
+      for (const j of A) if (flag[j] === want && (P.getX(j) - x) ** 2 + (P.getY(j) - y) ** 2 + (P.getZ(j) - z) ** 2 < R * R) return true; }
+    return false; };
+  const dil = new Uint8Array(n), keep = new Uint8Array(n); let filled = 0, verts = 0;
+  const sparse = ncov < S.sparse * nc;   // hair that covers less than this much of the scalp is a few strands on a bare head (the bun): the whole scalp is hair then, pulled back flat
+  for (let i = 0; i < n; i++) if (cand[i]) dil[i] = sparse || cov[i] || nearAny(i, cov, 1) ? 1 : 0;
+  for (let i = 0; i < n; i++) if (cand[i] && dil[i]) { keep[i] = cov[i] || !nearAny(i, dil, 0) ? 1 : 0; if (keep[i]) { verts++; if (!cov[i]) filled++; } }
+  const idx = g.index, m = idx ? idx.count : n, out = [];
+  // (a bare head with a few strands: every triangle of the head near the scalp is in, and the hairline is cut smoothly across them when they are drawn)
+  const headW = (i) => { let w = 0; for (let k = 0; k < 4; k++) if (si.getComponent(i, k) === hi) w += sw.getComponent(i, k); return w >= 0.5 && (P.getY(i) - ey) / d > -S.nape - 0.4; };
+  for (let k = 0; k < m; k += 3) { const a = idx ? idx.getX(k) : k, b = idx ? idx.getX(k + 1) : k + 1, e = idx ? idx.getX(k + 2) : k + 2;
+    if (sparse ? (keep[a] || keep[b] || keep[e]) && headW(a) && headW(b) && headW(e) : keep[a] && keep[b] && keep[e]) out.push(a, b, e); }
+  if (out.length < S.minTris * 3) return null;
+  // the cap: the same vertices, its own triangles, the colour of the hair
+  const cg = new T.BufferGeometry(); for (const a of ['position', 'normal', 'skinIndex', 'skinWeight']) if (g.attributes[a]) cg.setAttribute(a, g.attributes[a]);
+  cg.setIndex(out); if (g.boundingSphere) cg.boundingSphere = g.boundingSphere.clone(); if (g.boundingBox) cg.boundingBox = g.boundingBox.clone();
+  const hm = hair[0].material, col = hairColour(T, hm);
+  const mat = new T.MeshStandardMaterial({ color: col, roughness: hm.roughness != null ? hm.roughness : 0.8, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); mat.name = 'scalp_' + (hm.name || '');
+  if (sparse) {   // the hairline, in the head's own (bind) space: high over the brow, down past the temple to just over the ear, down again to the nape behind it
+    const U = { uScC: { value: new T.Vector3(cx, ey, cz) }, uScF: { value: new T.Vector2(fx, fz) }, uScD: { value: d } };
+    mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
+      sh.vertexShader = sh.vertexShader.replace('void main() {', 'varying vec3 vScRest;\nvoid main() {').replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvScRest = position;');
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `varying vec3 vScRest; uniform vec3 uScC; uniform vec2 uScF; uniform float uScD;
+void main() {
+\tvec2 scq = vScRest.xz - uScC.xz; float scf = dot(scq, uScF), scs = abs(dot(scq, vec2(uScF.y, -uScF.x))), sct = atan(scs, scf);
+\tfloat scl = mix(${(S.brow - 0.1).toFixed(3)}, ${S.ear.toFixed(3)}, smoothstep(0.85, 1.5, sct)); scl = mix(scl, ${(-S.nape + 0.1).toFixed(3)}, smoothstep(2.0, 2.5, sct));
+\tif ((vScRest.y - uScC.y) / uScD < scl) discard;`); };
+    mat.customProgramCacheKey = () => 'scalpline1';
+  }
+  const cap = new T.SkinnedMesh(cg, mat); cap.name = 'scalp_cap'; cap.position.copy(skin.position); cap.quaternion.copy(skin.quaternion); cap.scale.copy(skin.scale);
+  cap.frustumCulled = skin.frustumCulled; cap.castShadow = false; cap.receiveShadow = skin.receiveShadow; cap.renderOrder = skin.renderOrder;
+  skin.parent.add(cap); cap.bind(skin.skeleton, skin.bindMatrix);
+  return (g.userData.scalp = { tris: out.length / 3, verts, covered: verts - filled, filled, cand: nc, sparse, color: '#' + col.getHexString() });
+}
+
+const HAIRCOL = new WeakMap();
+/** the colour hair is drawn in, on the whole: the middle of its picture where it is not see-through, times the material's colour */
+function hairColour(THREE, m) {
+  const col = m.color ? m.color.clone() : new THREE.Color(0x2a2018), img = m.map && m.map.image;
+  if (!img || typeof document === 'undefined') return m.map ? col.multiplyScalar(0.55) : col;
+  let a = HAIRCOL.get(img);
+  if (a === undefined) { a = null; try { const cv = document.createElement('canvas'), w = cv.width = 64, h = cv.height = 64, x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h); const px = x.getImageData(0, 0, w, h).data; let r = 0, gg = 0, b = 0, k = 0;
+      for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 128) { r += px[i]; gg += px[i + 1]; b += px[i + 2]; k++; } if (k) a = new THREE.Color().setRGB(r / k / 255, gg / k / 255, b / k / 255, THREE.SRGBColorSpace); } catch (e) { a = null; } HAIRCOL.set(img, a); }
+  return a ? col.multiply(a) : col.multiplyScalar(0.55);
 }

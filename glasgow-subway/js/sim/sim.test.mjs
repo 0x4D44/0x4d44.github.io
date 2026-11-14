@@ -913,6 +913,35 @@ test('people: a smile - the corners of the mouth go up, out and back, the middle
   assert.ok(sawWarm && sawLaugh);
 });
 
+test('people: the scalp under the hair is drawn in the hair\'s colour - under the hair and across a small gap in it, never on the face; a bare head with a few strands gets the whole scalp', async () => {
+  const { fitScalp } = await import('./bodyfit.js');
+  const d = 0.063, ey = 1.6, mk = (hairKeep) => {
+    const root = new THREE.Group(), rb = new THREE.Bone(), hb = new THREE.Bone(); rb.name = 'root'; hb.name = 'head'; hb.position.set(0, ey - 0.03, 0); rb.add(hb); root.add(rb); root.updateMatrixWorld(true);
+    const sk = new THREE.Skeleton([rb, hb]), C = new THREE.Vector3(0, ey + 0.55 * d, 0.085 - 1.35 * d);
+    const mesh = (g, name) => { const n = g.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4); for (let i = 0; i < n; i++) { si[i * 4] = 1; sw[i * 4] = 1; }
+      g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
+      const m = new THREE.SkinnedMesh(g, new THREE.MeshStandardMaterial({ color: 0x402010 })); m.material.name = name; root.add(m); m.bind(sk); return m; };
+    const skin = mesh(new THREE.SphereGeometry(0.095, 48, 32).translate(C.x, C.y, C.z), 'skin_test');
+    const eg = new THREE.BufferGeometry(), ep = []; for (const sx of [-1, 1]) for (let k = 0; k < 6; k++) ep.push(sx * d / 2 + 0.004 * Math.cos(k), ey + 0.004 * Math.sin(k), 0.085); eg.setAttribute('position', new THREE.Float32BufferAttribute(ep, 3)); mesh(eg, 'eye_test');
+    if (hairKeep) { const hg = new THREE.SphereGeometry(0.103, 48, 32).translate(C.x, C.y, C.z).toNonIndexed(), P = hg.attributes.position, out = [];
+      for (let i = 0; i < P.count; i += 3) { const x = (P.getX(i) + P.getX(i + 1) + P.getX(i + 2)) / 3, y = (P.getY(i) + P.getY(i + 1) + P.getY(i + 2)) / 3, z = (P.getZ(i) + P.getZ(i + 1) + P.getZ(i + 2)) / 3; if (hairKeep(x, y, z, C)) for (let k = 0; k < 3; k++) out.push(P.getX(i + k), P.getY(i + k), P.getZ(i + k)); }
+      const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(out, 3)); mesh(g2, 'alpha_hair_test'); }
+    return { root, skin, C }; };
+  const hole = new THREE.Vector3(0.06, ey + 0.55 * d + 0.06, 0).setLength(0.103), inHole = (x, y, z, C) => Math.hypot(x - C.x - hole.x, y - C.y - hole.y, z - C.z - hole.z) < 0.018;
+  const hat = (x, y, z, C) => y > ey + 0.04 && !(z - C.z > 0.02 && y < ey + 0.075) && !inHole(x, y, z, C);
+  const a = mk(hat), r = fitScalp(THREE, a.root); assert.ok(r && r.tris > 100 && !r.sparse, JSON.stringify(r)); assert.ok(r.filled > 0, 'the gap is closed: ' + JSON.stringify(r));
+  const cap = a.root.children.find((o) => o.name === 'scalp_cap'); assert.ok(cap && cap.isSkinnedMesh && cap.skeleton === a.skin.skeleton && cap.geometry.attributes.position === a.skin.geometry.attributes.position);
+  assert.ok(!/^(skin_|alpha_|cloth_|eye_)/.test(cap.material.name) && cap.material.polygonOffset);
+  const P = a.skin.geometry.attributes.position, ix = cap.geometry.index; let face = 0, low = 0, gap = 0;
+  for (let k = 0; k < ix.count; k++) { const i = ix.getX(k), up = (P.getY(i) - ey) / d, fw = (P.getZ(i) - a.C.z) / d; if (fw > 0.3 && up < 0.92) face++; if (up < 0.2 && fw > -0.7) low++; if (inHole(P.getX(i) * 0.103 / 0.095, a.C.y + (P.getY(i) - a.C.y) * 0.103 / 0.095, a.C.z + (P.getZ(i) - a.C.z) * 0.103 / 0.095, a.C)) gap++; }
+  assert.equal(face, 0, 'nothing on the face'); assert.equal(low, 0, 'nothing on the ears or the neck'); assert.ok(gap > 0, 'the cap runs across the gap');
+  assert.equal(fitScalp(THREE, a.root), r, 'once per head'); assert.equal(a.root.children.filter((o) => o.name === 'scalp_cap').length, 1);
+  const b = mk(hat), r0 = fitScalp(THREE, b.root, { close: 0.01 }); assert.ok(r0 && r0.filled === 0 && r0.tris < r.tris, 'without the closing the gap stays: ' + JSON.stringify(r0));
+  assert.equal(fitScalp(THREE, mk(null).root), null, 'no hair, no cap');
+  const s = mk((x, y, z, C) => y > ey + 0.04 && Math.abs(x) < 0.02 && z < C.z), rs = fitScalp(THREE, s.root); assert.ok(rs && rs.sparse && rs.tris > r.tris * 0.8, 'a strip of hair on a bare head: ' + JSON.stringify(rs));
+  assert.ok(typeof s.root.children.find((o) => o.name === 'scalp_cap').material.onBeforeCompile === 'function');
+});
+
 test('audio: wheel on rail - a roar that follows the 30 log V law, a beat once a turn of the wheel, joints that knock under each wheelset as it crosses, corrugated stretches', () => {
   const R = (o) => railMix(Object.assign({ v: 0, s: 0, inTrain: true }, o));
   // standing: nothing
