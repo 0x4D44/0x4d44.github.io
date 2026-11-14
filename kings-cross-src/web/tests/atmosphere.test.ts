@@ -16,6 +16,7 @@ import { furniturePlan } from '../src/furniture.ts';
 import { cityMaterial, material, terrainMaterial, windowNight } from '../src/materials.ts';
 import { nightLightSites } from '../src/night.ts';
 import { trainNight } from '../src/train-geom.ts';
+import { headlampNight, headlampUniforms } from '../src/train-headlamp-light.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
 import type { WeatherState } from '../src/weather.ts';
 import { addWorld, DAYLIGHT, LIGHTS } from '../src/world.ts';
@@ -52,7 +53,7 @@ const luma = (c: THREE.Color): number => 0.2126 * c.r + 0.7152 * c.g + 0.0722 * 
 const lambertShader = () => ({ uniforms: {} as Record<string, THREE.IUniform>, vertexShader: THREE.ShaderLib.lambert.vertexShader, fragmentShader: THREE.ShaderLib.lambert.fragmentShader });
 const compile = (m: THREE.Material) => { const s = lambertShader(); m.onBeforeCompile(s as unknown as THREE.WebGLProgramParametersWithUniforms, undefined as never); return s; };
 
-test.afterEach(() => { trainNight.value = 0; windowNight.value = 0; });
+test.afterEach(() => { trainNight.value = 0; windowNight.value = 0; headlampNight.value = 0; });
 
 test('the reference rig is the page\'s own DAYLIGHT, so a high sun in a clear sky changes nothing; the fixed LIGHTS stay for the bare page', () => {
   assert.equal(REFERENCE.sun.colour, DAYLIGHT.sun.colour);
@@ -623,7 +624,7 @@ test('wet ground: the shader of each named surface is patched once with the shar
   const roofOnly = compile(brick);
   assert.notEqual(roofOnly.fragmentShader, pristine.fragmentShader);
   assert.ok(roofOnly.fragmentShader.includes('uniform vec4 uRoofShade;') && !roofOnly.fragmentShader.includes('uWet'), 'the roof shade, and none of the wet ground\'s code');
-  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill'].sort(), 'the cover, the shade and the concourse\'s fill, and nothing else');
+  assert.deepEqual(Object.keys(roofOnly.uniforms).sort(), [...Object.keys(coverUniforms), 'uRoofShade', 'uInteriorFill', ...Object.keys(headlampUniforms)].sort(), 'the cover, the shade, the concourse\'s fill and the headlamps\' slots, and nothing else');
 
   const s = compile(asphalt);
   const f = s.fragmentShader;
@@ -749,4 +750,24 @@ test('a configured atmosphere computes the sun at Waverley without changing the 
     assert.ok(Math.abs(actual.elevationDeg - solarPosition(timeMs).elevationDeg) > 3, 'Waverley must not inherit London sun');
     assert.deepEqual(REFERENCE.sun, { colour: DAYLIGHT.sun.colour, intensity: DAYLIGHT.sun.intensity }, 'the reference rig is the page\'s daylight rig, whatever the location');
   } finally { atmosphere.dispose(); }
+});
+
+test('the headlamps\' light on the walls follows the sun alone ("day floor zero"): none at noon, none at a heavy-rain noon whose gloom lights the lamps, all at midnight, and it rises through dusk', () => {
+  const { at } = setup();
+  headlampNight.value = 0.5;
+  at(NOON);
+  assert.equal(headlampNight.value, 0, 'none by day');
+  at(NOON, state('heavy-rain'));
+  assert.ok(trainNight.value > 0, `the gloom lights the lamps: ${trainNight.value}`);
+  assert.equal(headlampNight.value, 0, 'but not the walls by them');
+  at(MIDNIGHT);
+  assert.equal(headlampNight.value, 1, 'all at midnight');
+  const levels: number[] = [];
+  for (const hour of [14, 15, 16, 17, 18]) {
+    at(`2026-12-21T${String(hour).padStart(2, '0')}:00:00Z`);
+    levels.push(headlampNight.value);
+  }
+  assert.equal(levels[0], 0, 'mid-afternoon in December: still none');
+  assert.equal(levels[levels.length - 1], 1, 'and all by six');
+  assert.deepEqual([...levels].sort((a, b) => a - b), levels, `it climbs through dusk: ${levels}`);
 });

@@ -239,7 +239,7 @@ function shaderMatches(file: string, code: string): Match[] {
 const webSrc = new URL('../../web/src/', import.meta.url);
 const matches = readdirSync(webSrc).filter((f) => f.endsWith('.ts')).flatMap((f) => shaderMatches(f, readFileSync(new URL(f, webSrc), 'utf8')));
 /** Text the page defines itself, which a hook looks for to see whether another has added it (it is written on one line, and the page's own squeeze keeps it so). */
-const PAGE_OWN_TEXT = new Set(['float coverGroundAt']);
+const PAGE_OWN_TEXT = new Set(['float coverGroundAt', 'vec3 headlampOne(']);
 
 test('every match the page makes on three\'s shader text, in a hook and in lighting.ts, is a one-line phrase or a pattern that the squeezed text still holds', () => {
   const where = (m: Match): string => `${m.file}:${m.line}`;

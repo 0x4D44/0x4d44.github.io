@@ -1258,7 +1258,7 @@ try {
         const focusedAtStart = document.hasFocus();
         const controlFpsMedian = ${controlFpsMedian};
         const startFeedMs = k.feed.timeMs ?? null;
-        const dt = [], calls = [], triangles = [], shown = [], trainGroups = [], inMotion = [], moving = [];
+        const dt = [], calls = [], triangles = [], shown = [], trainGroups = [], inMotion = [], moving = [], headlampSlots = [];
         const movingIds = new Set(), startDistance = new Map(), maxTravel = new Map();
         const buckets = Array(Math.ceil(durationMs / 1000)).fill(0);
         let started, last;
@@ -1299,6 +1299,8 @@ try {
             frameBudget: { targetFps: 60, budgetMs: 1000 / 60, p95WithinBudget: deltaP95 !== null && deltaP95 <= 1000 / 60, p99WithinBudget: deltaP99 !== null && deltaP99 <= 1000 / 60 },
             rendererCalls: frameStats(calls),
             triangles: frameStats(triangles),
+            // the headlamps' light (train-headlamp-light.ts): how many of its slots were in use, a frame; null for a build without it
+            headlampSlots: headlampSlots.length ? { min: Math.min(...headlampSlots), median: quantile(headlampSlots, 0.5), max: Math.max(...headlampSlots) } : null,
             trainsShown: { min: Math.min(...shown), median: quantile(shown, 0.5), max: Math.max(...shown) },
             trainGroups: { min: Math.min(...trainGroups), median: quantile(trainGroups, 0.5), max: Math.max(...trainGroups) },
             motionTrains: { min: Math.min(...inMotion), median: quantile(inMotion, 0.5), max: Math.max(...inMotion) },
@@ -1315,6 +1317,7 @@ try {
           buckets[Math.min(buckets.length - 1, Math.floor(elapsed / 1000))]++;
           calls.push(k.renderer.info.render.calls);
           triangles.push(k.renderer.info.render.triangles);
+          if (k.headlamps) headlampSlots.push(k.headlamps.slots.length);
           const trains = k.trains ?? [];
           trainGroups.push(trains.length);
           shown.push(trains.filter((train) => train.group?.visible && train.group.children.some((car) => car.visible)).length);

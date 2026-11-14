@@ -9,7 +9,7 @@ import type { Cover, Mouth } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import { Batch } from '../src/materials.ts';
 import type { V3 } from '../src/materials.ts';
-import { addBox, addPortals, coverParts, faceOutline, mouthParts, openingsIn, PORTAL, wingPath } from '../src/portals.ts';
+import { addBox, addPortals, coverParts, faceOutline, mouthParts, openingsIn, PORTAL, TUBE_LIT_ALBEDO, wingPath } from '../src/portals.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const close = (a: number, b: number, eps: number, what = ''): void => assert.ok(Math.abs(a - b) <= eps, `${what}: ${a} != ${b} (within ${eps})`);
@@ -324,4 +324,14 @@ test('addPortals({ cover: false }) leaves out the earth bank and nothing else', 
   assert.ok(without.stats.triangles < withBank.stats.triangles);
   withBank.dispose();
   without.dispose();
+});
+
+test('addPortals: the tunnels\' lining, drawn near black, takes a train\'s headlamps as sooty brick (train-headlamp-light.ts); the faces and the bank are Lambert and take them with the rest', () => {
+  const scene = new THREE.Scene();
+  const p = addPortals(scene, data);
+  const basics = (p.group.children as THREE.Mesh[]).map((m) => m.material as THREE.Material).filter((m) => (m as THREE.MeshBasicMaterial).isMeshBasicMaterial);
+  assert.equal(basics.length, 1, 'the lining is the one unlit part');
+  assert.equal(basics[0]!.customProgramCacheKey(), `${new THREE.MeshBasicMaterial().customProgramCacheKey()}+headlampBasic-${TUBE_LIT_ALBEDO}`);
+  assert.ok(TUBE_LIT_ALBEDO > 0.03 && TUBE_LIT_ALBEDO < 0.3, 'darker than most brick, brighter than its drawn colour');
+  p.dispose();
 });

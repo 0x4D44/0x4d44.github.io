@@ -9,6 +9,7 @@ import type { Graph } from '../../core/graph.ts';
 import { isSurfacePlatform, longAxis, platformSouthEnd, stationPlatforms } from '../../core/station.ts';
 import type { Platform } from '../../core/osm.ts';
 import type { Pt } from '../../core/geo.ts';
+import { addHeadlampBasic } from './train-headlamp-light.ts';
 
 type SignalGraph = Pick<Graph, 'pos'> & Partial<Pick<Graph, 'edges'>>;
 
@@ -291,6 +292,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       const ring = new THREE.Line(ringGeometry, ringMaterial); ring.name = 'inferred-position'; ring.computeLineDistances(); group.add(ring);
     }
     const head = mesh(new THREE.BoxGeometry(0.65, 1.15, 0.28), 0x15191c, !inferred); head.position.y = 3.8; group.add(head);
+    // the post and the box take a passing train's headlamps (train-headlamp-light.ts); the lamp and the question mark are their own light
+    for (const lit of [post, head]) if (lit) addHeadlampBasic(lit.material as THREE.MeshBasicMaterial);
     const lamp = mesh(new THREE.SphereGeometry(0.19, 8, 6), 0x666666, !inferred) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
     lamp.name = 'aspect'; lamp.position.set(0, 3.95, 0.18); group.add(lamp);
     const question = new THREE.Group(); question.name = 'unknown';
@@ -334,9 +337,11 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   if (instances) refresh(); // every lamp starts dark, as a head built of its own meshes does
   function buildInstances() {
     const heads = records.filter(r => !r.inferredPosition), group = new THREE.Group(); group.name = 'signal-heads';
-    const part = (name: string, geometry: THREE.BufferGeometry, color: number, owners: DrawnSignal[]) => {
+    const part = (name: string, geometry: THREE.BufferGeometry, color: number, owners: DrawnSignal[], lit = false) => {
       if (!owners.length) return undefined;
       const material = new THREE.MeshBasicMaterial({ color }); resources.add(geometry); resources.add(material);
+      // the posts and boxes take a passing train's headlamps (train-headlamp-light.ts); the lamps are their own light
+      if (lit) addHeadlampBasic(material);
       const instanced = new THREE.InstancedMesh(geometry, material, owners.length); instanced.name = name;
       owners.forEach((r, i) => { r.group.updateMatrix(); instanced.setMatrixAt(i, r.group.matrix); });
       instanced.instanceMatrix.needsUpdate = true; instanced.computeBoundingSphere(); group.add(instanced);
@@ -346,8 +351,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     // A four-aspect head's aspect lamp sits low in the box and its second lamp high, lit only for double yellow.
     const lampY = (r: DrawnSignal): number => r.signal.aspects === 4 ? 3.72 : 3.95;
     const parts = {
-      post: part('signal-posts', new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6).translate(0, 1.85, 0), 0x999999, heads.filter(r => r.signal.side !== 'over-track')),
-      box: part('signal-boxes', new THREE.BoxGeometry(0.65, 1.15, 0.28).translate(0, 3.8, 0), 0x15191c, heads),
+      post: part('signal-posts', new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6).translate(0, 1.85, 0), 0x999999, heads.filter(r => r.signal.side !== 'over-track'), true),
+      box: part('signal-boxes', new THREE.BoxGeometry(0.65, 1.15, 0.28).translate(0, 3.8, 0), 0x15191c, heads, true),
       lamp: part('signal-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 0, 0.18), 0xffffff, heads),
       upper: part('signal-upper-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 4.18, 0.18), 0xffffff, fourAspect),
     };

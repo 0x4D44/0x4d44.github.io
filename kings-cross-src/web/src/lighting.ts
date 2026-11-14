@@ -22,6 +22,7 @@
 import * as THREE from 'three';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import { windowNight } from './materials.ts';
+import { HEADLAMP_FRAGMENT, headlampUniforms } from './train-headlamp-light.ts';
 
 const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
   const m = (o as { material?: THREE.Material | THREE.Material[] }).material;
@@ -437,10 +438,15 @@ export const MOTTLE = 'MOTTLE';
 
 const shaded = new WeakSet<THREE.Material>();
 
+/** The headlamps' light in a Lambert program, after the lights are summed and the roof's shade is taken: the slots' light at the fragment, times the surface's albedo, on the direct term. */
+export const HEADLAMP_LAMBERT = 'if ( uHeadlampCount > 0 ) reflectedLight.directDiffuse += headlampsAt( cameraPosition - vViewPosition * mat3( viewMatrix ), inverseTransformDirection( normal, viewMatrix ) ) * material.diffuseColor;';
+
 /**
  * Give a Lambert material the shade under roofs: after the lights are summed, the hemisphere and direct terms are scaled by `roofShade` at the
  * fragment's world position (read back from the view-space one, as atmosphere.ts does for the wet ground). Any `onBeforeCompile` the
  * material already has still runs, first, and its cache key is kept in the program's, so a surface that is also wet-patched is its own program.
+ * The trains' headlamps light it too (train-headlamp-light.ts): their light is added to the direct term after the shade, from the shared slots, and only while a slot is in use
+ * (`uHeadlampCount` over 0: by day none is, and the program does what it did without them). The slots are a fixed number, so the program never changes with the lamps.
  * A material is shaded once, however many atmospheres or scans reach it (the station's materials are shared between scenes).
  */
 export function addRoofShade(material: THREE.MeshLambertMaterial): void {
@@ -450,7 +456,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   const priorKey = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
     prior.call(material, shader, renderer);
-    Object.assign(shader.uniforms, coverUniforms, roofShadeUniforms);
+    Object.assign(shader.uniforms, coverUniforms, roofShadeUniforms, headlampUniforms);
     // the night's level is read only by a floodlit wall: every other program is as it was. A patch that ran before this one (the windows', materials.ts) may have declared the level already, and says
     // so by having put it in the uniforms: it is declared once
     const flooded = material.defines?.[FLOOD] !== undefined;
@@ -459,6 +465,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
     let fragment = shader.fragmentShader;
     if (!fragment.includes('float coverGroundAt')) fragment = fragment.replace('#include <common>', `#include <common>\n${COVER_GLSL}`);
     if (flooded && !declared) fragment = fragment.replace('#include <common>', '#include <common>\nuniform float uWinNight;');
+    if (!fragment.includes('vec3 headlampOne(')) fragment = fragment.replace('#include <common>', `#include <common>\n${HEADLAMP_FRAGMENT}`);
     fragment = fragment.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\nuniform vec4 uRoofShade;\nuniform vec3 uInteriorFill;\n${ROOF_SHADE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
 #ifdef ${MOTTLE}
@@ -484,7 +491,8 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
 #ifdef ${FLOOD}
   totalEmissiveRadiance += diffuseColor.rgb * vec3( 1.0, 0.82, 0.5 ) * uWinNight * ${FLOOD}.x * mix( ${FLOOD}.z, 1.0, exp( -max( ( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y - ${FLOOD}.w, 0.0 ) / ${FLOOD}.y ) );
 #endif
-}`);
+}
+${HEADLAMP_LAMBERT}`);
     shader.fragmentShader = fragment;
   };
   material.customProgramCacheKey = () => `${priorKey}+roofShade`;

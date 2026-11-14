@@ -673,3 +673,20 @@ test('on a curved track a head stands 2 m beside the drawn curve, square to it a
   const s0 = signals[0]!;
   assert.ok(Math.hypot(plain.position.x - (s0.edge.point[0] + 2 * s0.travel[1]), plain.position.z - (s0.edge.point[1] - 2 * s0.travel[0])) < 1e-9);
 });
+
+test('a head\'s post and box take a passing train\'s headlamps (train-headlamp-light.ts); its lamp and its question mark, their own light, do not', () => {
+  const { drawn } = fixture();
+  const keyOf = (name: string): string => ((drawn.group.getObjectByName(name) as THREE.Mesh).material as THREE.Material).customProgramCacheKey();
+  assert.ok(keyOf('post').endsWith('+headlampBasic'), keyOf('post'));
+  const box = drawn.group.children.find((c) => (c as THREE.Mesh).isMesh && (c as THREE.Mesh).geometry instanceof THREE.BoxGeometry) as THREE.Mesh;
+  assert.ok((box.material as THREE.Material).customProgramCacheKey().endsWith('+headlampBasic'), 'the box');
+  assert.ok(!keyOf('aspect').includes('headlamp'), 'the lamp is its own light');
+});
+
+test('instanced heads (Waverley): the posts and boxes take a passing train\'s headlamps too; the lamps do not', () => {
+  const scene = new THREE.Scene();
+  createSignals({ attribution: 'synthetic', signals: [signal(), signal({ id: 2, point: [30, 40] })] }, scene, { instanced: true });
+  const part = (name: string): THREE.Material => ((scene.getObjectByName(name) as THREE.InstancedMesh).material as THREE.Material);
+  for (const name of ['signal-posts', 'signal-boxes']) assert.ok(part(name).customProgramCacheKey().endsWith('+headlampBasic'), name);
+  assert.ok(!part('signal-lamps').customProgramCacheKey().includes('headlamp'), 'the lamps are their own light');
+});

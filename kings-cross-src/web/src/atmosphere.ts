@@ -9,7 +9,7 @@
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
-import { cloudDeck, DAY_EXPOSURE, fogRange, skyRig, smoothstep } from '../../core/daylight.ts';
+import { cloudDeck, DAY_EXPOSURE, fogRange, lampLevelFor, skyRig, smoothstep } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
@@ -23,6 +23,7 @@ import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
 import { trainNight } from './train-geom.ts';
+import { headlampNight } from './train-headlamp-light.ts';
 import { DAYLIGHT } from './world.ts';
 import type { World } from './world.ts';
 import type { WeatherState } from './weather.ts';
@@ -423,6 +424,8 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
     // lamps: halos, and the trains' windows and lenses, and the windows of the city's buildings
     nightLights?.setLevel(rig.lampLevel);
     trainNight.value = rig.lampLevel;
+    // the headlamps' light on the walls follows the sun alone: a gloomy day lights the lamps (lampLevel) but not the walls by them (train-headlamp-light.ts, "day floor zero")
+    headlampNight.value = lampLevelFor(sunPos.elevationDeg);
     windowNight.value = rig.lampLevel;
     // what glowed like sky-lit day dims after dark, with a warm share from the lamps
     for (const [m, base] of standIns) {
