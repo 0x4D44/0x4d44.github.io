@@ -37,12 +37,21 @@ export const ST_LEONARDS_APPROACHES:readonly(readonly Pt[])[]=[
  *  under the road), `parapet` (its top over the road), `footway`, `kerb`; `piers` (centres, set in the gaps between the mapped tracks, which
  *  cross the way within 6 degrees of square, so each running line sits in the middle half of its arch; `pierWidth` along the way), `spring`
  *  (every arch's springing over the rail; the arches are elliptical, R-slb-a's are near semicircles), `grade` (the approaches' fall, 1 in
- *  12.5), `wallDepth` (the retaining walls' foot under the drawn ground). */
-export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.9,parapet:1.15,footway:2,kerb:.12,
- piers:[22.3,35.46,43.76,55.74],pierWidth:2.4,spring:2,grade:.08,wallDepth:.5,step:3} as const;
-/** By eye from R-slb-a (ASSUMED): the dark weathered stone, the arches' shadowed soffits, the steel fascia's pale grey-green paint; the
- *  road's asphalt and the footways' paving as the frontage's (perth-frontage-bridge.ts). */
-export const ST_LEONARDS_COLOURS={stone:0x5b544d,soffit:0x3b3733,steel:0x9aaba2,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+ *  12.5), `wallDepth` (the retaining walls' foot under the drawn ground). Round 2 (the round-1 score): `pierWidth` 1.5 m (was 2.4; R-slb-a's
+ *  piers are about a tenth of their arches' span), each arch drawn in `archSegments` facets (16-24, by span; was 6-17), and the fascia gains
+ *  a stone string course at its foot (`string`: height, projection) and a coping on the parapets (`coping`: height, overhang either side).
+ *  The fascia's foot rises to 0.5 m under the road (was 0.9, which put it under the crown) so the string course runs just over the crowns. */
+export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.5,parapet:1.15,footway:2,kerb:.12,
+ piers:[22.3,35.46,43.76,55.74],pierWidth:1.5,spring:2,grade:.08,wallDepth:.5,step:3,
+ archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.14,overhang:.08}} as const;
+/** Round 2 (the round-1 score: the stone too dark). R-slb-a is backlit, its spandrels in shade (sampled 41,44,30); the same sandstone in
+ *  sun, the wall beside the left arch, samples (158,144,100), and the lit coping along the fascia's top (178,166,142). So `stone` is that
+ *  buff sandstone, a touch greyed for weathering (150,138,112); `soffit` the same in the arches' shade; `dressed` the string course and the
+ *  coping, R-slb-a's coping sample. The steel fascia's pale grey-green paint (R-slb-a, by eye); the road's asphalt and the footways'
+ *  paving as the frontage's (perth-frontage-bridge.ts). ASSUMED beyond the samples. */
+export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x6a6253,dressed:0xb2a68e,steel:0x9aaba2,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+/** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
+export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
 
 const L=Math.hypot(ST_LEONARDS_LINE[1][0]-ST_LEONARDS_LINE[0][0],ST_LEONARDS_LINE[1][1]-ST_LEONARDS_LINE[0][1]);
 const U:Pt=[(ST_LEONARDS_LINE[1][0]-ST_LEONARDS_LINE[0][0])/L,(ST_LEONARDS_LINE[1][1]-ST_LEONARDS_LINE[0][1])/L],V:Pt=[-U[1],U[0]];
@@ -83,17 +92,18 @@ function roadSection(b:Batch,a:Pt,na:Pt,ya:number,c:Pt,nc:Pt,yc:number):void{
 }
 
 /** What the bridge drew, for tests. */
-export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;triangles:number}
+export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;triangles:number}
 
 /** St Leonard's Bridge into `b` (a vertex-coloured, untextured batch): arches, piers, spandrels, the steel fascia-parapets, the deck's road and
  *  footways, the abutments, and the approach embankments down to the drawn ground. */
 export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>):StLeonardsInfo{
- const before=b.triangles,K=ST_LEONARDS,C=ST_LEONARDS_COLOURS,stone=rgb(C.stone),soffit=rgb(C.soffit),steel=rgb(C.steel);
+ const before=b.triangles,K=ST_LEONARDS,C=ST_LEONARDS_COLOURS,stone=rgb(C.stone),soffit=rgb(C.soffit),steel=rgb(C.steel),dressed=rgb(C.dressed);
  const fasciaFoot=K.road-K.fascia,[e0,e1]=K.abutments;
  // the arches: each soffit a barrel across the deck's width, each face a spandrel from the arch up to the fascia's foot
- const spans=stLeonardsSpans();
+ const spans=stLeonardsSpans(),archSegments:number[]=[];
  for(const a of spans){
-  const n=Math.max(6,Math.ceil((a.s1-a.s0)/1.2)),ss=Array.from({length:n+1},(_,i)=>a.s0+(a.s1-a.s0)*i/n);
+  const n=stLeonardsArchSegments(a.s1-a.s0);archSegments.push(n);
+  const ss=Array.from({length:n+1},(_,i)=>a.s0+(a.s1-a.s0)*i/n);
   const ys=ss.map(s=>stLeonardsSoffit(s)),m=(a.s0+a.s1)/2;
   for(let i=0;i<n;i++){
    const p0=stLeonardsAt(ss[i],-K.half),p1=stLeonardsAt(ss[i+1],-K.half),q0=stLeonardsAt(ss[i],K.half),q1=stLeonardsAt(ss[i+1],K.half);
@@ -115,6 +125,13 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>):StLeon
  wallBox(b,stLeonardsAt(e1+.6,-K.half),stLeonardsAt(e1+.6,K.half),low(e1),fasciaFoot,.6,stone);
  // the steel fascia-parapets over the arches, either side
  for(const sg of [-1,1])wallBox(b,stLeonardsAt(e0-1.2,sg*(K.half-.2)),stLeonardsAt(e1+1.2,sg*(K.half-.2)),fasciaFoot,K.road+K.parapet,.2,steel);
+ // the string course along each face at the fascia's foot, standing proud of the spandrels; the coping along each parapet's top
+ const {string:sc,coping:cp}=K;let copings=0;
+ for(const sg of [-1,1]){
+  const o=sg*(K.half+sc.projection/2-.05);
+  wallBox(b,stLeonardsAt(e0-1.2,o),stLeonardsAt(e1+1.2,o),fasciaFoot-sc.height,fasciaFoot,(sc.projection+.1)/2,dressed);
+  wallBox(b,stLeonardsAt(e0-1.2,sg*(K.half-.2)),stLeonardsAt(e1+1.2,sg*(K.half-.2)),K.road+K.parapet,K.road+K.parapet+cp.height,.2+cp.overhang,dressed,cp.overhang);copings++;
+ }
  // the deck's road over the arches
  roadSection(b,stLeonardsAt(e0-1.2),V,K.road,stLeonardsAt(e1+1.2),V,K.road);
  // the approaches: from each abutment outward, falling at `grade` until the road meets the drawn ground; stone retaining walls and
@@ -138,10 +155,13 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>):StLeon
     const fa=ground.heightAt(pa[0],pa[1])-K.wallDepth,fc=ground.heightAt(pc[0],pc[1])-K.wallDepth;
     // the retaining wall's outer face, and the parapet over it (as high as the fascia's over the deck, while the fill stands a metre up)
     b.poly([v3(pa,fa),v3(pc,fc),v3(pc,yc+K.kerb),v3(pa,ya+K.kerb)],undefined,{facing:[sg*(na[0]+nc[0]),0,sg*(na[1]+nc[1])],color:stone});
-    if(Math.min(ya-ga,yc-gc)>1)wallBox(b,[a[0]+na[0]*sg*(K.half-.2),a[1]+na[1]*sg*(K.half-.2)],[c[0]+nc[0]*sg*(K.half-.2),c[1]+nc[1]*sg*(K.half-.2)],ya+K.kerb-.1,Math.max(ya,yc)+K.parapet,.2,stone,.1);
+    if(Math.min(ya-ga,yc-gc)>1){
+     const qa:Pt=[a[0]+na[0]*sg*(K.half-.2),a[1]+na[1]*sg*(K.half-.2)],qc:Pt=[c[0]+nc[0]*sg*(K.half-.2),c[1]+nc[1]*sg*(K.half-.2)],top=Math.max(ya,yc)+K.parapet;
+     wallBox(b,qa,qc,ya+K.kerb-.1,top,.2,stone,.1);wallBox(b,qa,qc,top,top+cp.height,.2+cp.overhang,dressed,.1);copings++;
+    }
    }
    approachSegments++;
   }
  }
- return {spans:spans.length,piers:K.piers.length,approachSegments,triangles:b.triangles-before};
+ return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,triangles:b.triangles-before};
 }
