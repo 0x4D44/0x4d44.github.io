@@ -9,7 +9,7 @@ import { KMH, mulberry32 } from './util.js';
 import { AnimCrowd, pickChar, resetCharsInUse, charsInUse } from './people.js';
 import { LEG_RADII } from './legradii.js';
 import { Walker } from './walker.js';
-import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V, DRIVE, driveMode, tractionMix } from './audio.js';
+import { reach, panOf, DOOR_SECS, BEEP_EVERY, BEEP_LEN, SAMPLES, runningMix, ReleaseDetector, RUN_V, DRIVE, driveMode, tractionMix, RAIL, railMix, jointHits, jointAt, corrugation } from './audio.js';
 import { readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import * as THREE from '../../vendor/three/build/three.module.js';
@@ -843,4 +843,84 @@ test('blinking: lids close and reopen within a quarter of a second, 8-25 blinks 
   assert.ok(phone.perMin < stand.perMin * 0.75, JSON.stringify(phone));
   assert.ok(stand.shut < 0.05 && stand.longest < 0.2, JSON.stringify(stand));   // standing, the eyes are open 95% of the time and never shut for long
   assert.ok(sit.longest >= BLINK.dozeMin && sit.longest <= BLINK.dozeMax + 0.3 && sit.shut < 0.2, JSON.stringify(sit));
+});
+
+test('waiting: people stand by the wall, off the edge, apart from each other, late arrivals near the way in', async () => {
+  const { WAIT, chooseSpot, spotCost } = await import('./waiting.js');
+  const rng = mulberry32(5), edgeDist = (x) => x, backDist = (x) => 4 - x, entrance = { x: 2, z: 18 };   // a platform 4 m deep (edge at x = 0, wall at x = 4), 40 m long, stairs at one end
+  const place = (late, wallLover) => { const others = [], out = [];
+    for (let i = 0; i < 16; i++) { const cands = []; for (let k = 0; k < 24; k++) cands.push({ x: 0.3 + rng() * 3.4, z: -20 + rng() * 40 }); const c = chooseSpot(cands, { others, edgeDist, backDist, entrance, late, wallLover, doors: [-8, -3, 3, 8] }, rng); if (c) { others.push(c); out.push(c); } }
+    return out; };
+  const early = place(0, 0.8), late = place(1, 0.8), mean = (a, f) => a.reduce((s, c) => s + f(c), 0) / a.length;
+  assert.equal(early.length, 16);
+  for (const c of early.concat(late)) assert.ok(c.x >= WAIT.edge, 'nobody waits on the platform edge: ' + c.x);
+  let near = 1e9; for (const a of early) for (const b of early) if (a !== b) near = Math.min(near, Math.hypot(a.x - b.x, a.z - b.z));
+  assert.ok(near >= WAIT.hard, 'nobody stands in someone else: ' + near);
+  assert.ok(mean(early, (c) => c.x) > 2.3, 'people who like a wall stand nearer the wall than the edge: ' + mean(early, (c) => c.x));
+  assert.ok(mean(late, (c) => Math.abs(c.z - 18)) < mean(early, (c) => Math.abs(c.z - 18)) * 0.6, 'late arrivals stop near the stairs');
+  assert.ok(spotCost({ x: 2, z: 0 }, { others: [{ x: 2, z: 0.3 }] }) > 40 && chooseSpot([{ x: 2, z: 0 }], { others: [{ x: 2, z: 0.3 }] }, rng) === null);
+});
+
+test('attention: a stranger gets one glance; someone close is looked at (with breaks), laughed or nodded at, never walked away from unless they press in', async () => {
+  const { LOOK, PROX, newAttention, attend } = await import('./waiting.js');
+  const rng = mulberry32(11), dt = 1 / 60;
+  const run = (a, sec, ctx) => { const r = { on: 0, n: 0, turn: 0, yielded: 0, laugh: 0, nod: 0, maxRate: 0, longest: 0 }; let cur = 0, py = a.yaw;
+    for (let i = 0; i < sec * 60; i++) { const o = attend(a, dt, rng, ctx); r.n++; const on = ctx.player && Math.abs(a.yaw - Math.max(-LOOK.yawMax, Math.min(LOOK.yawMax, ctx.player.yaw))) < 0.12; if (on) { r.on++; cur += dt; r.longest = Math.max(r.longest, cur); } else cur = 0;
+      if (o.turn != null) r.turn++; if (o.yield) r.yielded++; if (a.laugh > 0) r.laugh++; if (a.nod > 0) r.nod++; r.maxRate = Math.max(r.maxRate, Math.abs(a.yaw - py) / dt); py = a.yaw; assert.ok(Math.abs(a.yaw) <= LOOK.yawMax + 1e-9 && a.pitch <= LOOK.upMax && a.pitch >= -LOOK.downMax); }
+    return r; };
+  // nobody about: the head rests ahead most of the time, with glances
+  let a = newAttention(rng), r = run(a, 120, { player: null, train: { yaw: 1.2 }, board: { yaw: -0.5, pitch: 0.3 }, due: 0.15 });
+  assert.ok(r.maxRate <= LOOK.rate + 1e-6, 'the head never snaps');
+  let rest = 0; a = newAttention(rng); for (let i = 0; i < 120 * 60; i++) { attend(a, dt, rng, { player: null, train: { yaw: 1.2 }, due: 0.15 }); if (Math.abs(a.yaw) < 0.1) rest++; }
+  assert.ok(rest / 7200 > 0.5 && rest / 7200 < 0.95, 'mostly at rest, sometimes looking about: ' + rest / 7200);
+  // a stranger 2.5 m away, in view: one glance, then left alone
+  a = newAttention(rng); r = run(a, 6, { player: { yaw: 0.6, pitch: 0, d: 2.5 } });
+  assert.ok(r.on > 0.3 * 60 && r.on < 2.2 * 60 && r.turn === 0 && r.yielded === 0, JSON.stringify(r));
+  // someone 0.9 m away, off to the side: looked at, with breaks, the body turns, a laugh or a nod, and no stepping away
+  let laughs = 0, nods = 0;
+  for (let k = 0; k < 40; k++) { a = newAttention(rng); r = run(a, 20, { player: { yaw: 1.4, pitch: 0.05, d: 0.9 } });
+    assert.ok(r.on / r.n > 0.5 && r.on / r.n < 0.92, 'looks at you most of the time, not all of it: ' + r.on / r.n); assert.ok(r.longest < LOOK.gazeMax + 1, 'no stare: ' + r.longest);
+    assert.ok(r.turn > 0 && r.yielded === 0); assert.ok((r.laugh > 0) !== (r.nod > 0)); if (r.laugh) laughs++; else nods++; }
+  assert.ok(laughs > 10 && nods > 5, laughs + ' laugh, ' + nods + ' nod');
+  // pressed into (0.3 m): gives ground after LOOK.press, not before
+  a = newAttention(rng); r = run(a, LOOK.press - 0.1, { player: { yaw: 0, pitch: 0, d: 0.3 } }); assert.equal(r.yielded, 0);
+  r = run(a, 0.3, { player: { yaw: 0, pitch: 0, d: 0.3 } }); assert.equal(r.yielded, 1); assert.ok(PROX.intimate < PROX.personal);
+  // walking: no looking about
+  a = newAttention(rng); r = run(a, 5, { player: { yaw: 1, pitch: 0, d: 0.9 }, busy: true }); assert.ok(Math.abs(a.yaw) < 1e-6 && r.turn === 0);
+});
+
+test('audio: wheel on rail - a roar that follows the 30 log V law, a beat once a turn of the wheel, joints that knock under each wheelset as it crosses, corrugated stretches', () => {
+  const R = (o) => railMix(Object.assign({ v: 0, s: 0, inTrain: true }, o));
+  // standing: nothing
+  const st = R({}); assert.ok(st.roarGain === 0 && st.singGain === 0 && st.corrGain === 0 && st.jointGain === 0 && st.beat === 0);
+  // the roar: amplitude as speed to the 1.5 (9 dB a doubling), its band climbing; the top of it faster; bounded
+  assert.ok(Math.abs(R({ v: 12 }).roarGain / R({ v: 6 }).roarGain - 2 ** 1.5) < 1e-9 && Math.abs(R({ v: 6 }).roarGain / R({ v: 3 }).roarGain - 2 ** 1.5) < 1e-9);
+  assert.ok(Math.abs(R({ v: 12 }).singGain / R({ v: 6 }).singGain - 4) < 1e-9);
+  let prev = R({ v: 0.5 });
+  for (let v = 1; v <= 16; v += 0.5) { const m = R({ v }); assert.ok(m.roarGain > prev.roarGain && m.roarHz > prev.roarHz && m.singHz > prev.singHz && m.jointGain >= prev.jointGain, `not rising at ${v}`); prev = m; }
+  assert.ok(R({ v: 60 }).roarGain <= 1.6 * R({ v: RUN_V }).roarGain + 1e-12 && R({ v: 60 }).jointGain <= 1.4);
+  // once a turn: the wheel's own rate
+  assert.ok(Math.abs(R({ v: 10 }).beatHz - 10 / (Math.PI * DRIVE.wheel)) < 1e-12 && R({ v: 10 }).beat > 0.1 && R({ v: 10 }).beat < 0.25);
+  // from the platform: a quarter
+  assert.ok(Math.abs(railMix({ v: 12, s: 0, inTrain: false }).roarGain - 0.25 * R({ v: 12 }).roarGain) < 1e-12);
+  // corrugation: 0..1, there on some stretches and absent on others, no step along the line, pitch = speed / wavelength; unknown position = none
+  let lo = 1, hi = 0, clean = 0, n = 0, step = 0, last = corrugation(0);
+  for (let s = 0; s < 10000; s += 0.5) { const c = corrugation(s); assert.ok(c >= 0 && c <= 1); lo = Math.min(lo, c); hi = Math.max(hi, c); if (c === 0) clean++; n++; step = Math.max(step, Math.abs(c - last)); last = c; }
+  assert.ok(lo === 0 && hi > 0.8 && clean / n > 0.3 && clean / n < 0.8 && step < 0.05, JSON.stringify({ lo, hi, clean: clean / n, step }));
+  assert.ok(Math.abs(R({ v: 12 }).corrHz - 12 / RAIL.corr) < 1e-9 && railMix({ v: 12, inTrain: true }).corrGain === 0);
+  for (const x of Object.values(railMix({}))) assert.ok(Number.isFinite(x));
+  // joints: most are welded; each one knocks the same every time
+  let live = 0; for (let k = 0; k < 2000; k++) { const g = jointAt(k); assert.ok(g === 0 || (g >= 0.2 && g <= 1)); assert.equal(g, jointAt(k)); if (g) live++; }
+  assert.ok(live > 600 && live < 1100, `live joints ${live} of 2000`);
+  // a run of 1830 m in small steps: every heard wheelset knocks once at every live joint it crosses - and the same running the other way
+  const want = (a, b) => { let c = 0; for (const [off] of RAIL.axles) for (let k = Math.floor((a - off) / RAIL.joint) + 1; k * RAIL.joint <= b - off; k++) if (jointAt(k)) c++; return c; };
+  let fw = 0, bw = 0; const h = 0.2, N = 9150;
+  for (let i = 0; i < N; i++) { const hits = jointHits(i * h, (i + 1) * h); fw += hits.length; for (const q of hits) assert.ok(q.at > 0 && q.at <= 1 && q.gain > 0 && q.gain <= 1); bw += jointHits((i + 1) * h, i * h).length; }
+  assert.equal(fw, want(0, N * h)); assert.ok(fw > 200); assert.ok(Math.abs(bw - fw) <= 2);
+  // the two wheelsets of a bogie cross the same joint a wheelbase apart: da-dum
+  { let k = 1; while (!jointAt(k)) k++; const x = k * RAIL.joint, a = jointHits(x - 0.01, x + 0.01), b = jointHits(x + 1.9 - 0.01, x + 1.9 + 0.01); assert.ok(a.some((q) => q.gain === jointAt(k)) && b.some((q) => q.gain === jointAt(k))); }
+  // standing, or a jump of the reference point (a teleport, a new train): nothing
+  assert.equal(jointHits(50, 50).length, 0); assert.equal(jointHits(50, 500).length, 0); assert.equal(jointHits(NaN, 5).length, 0);
+  // the inverter's outer sidebands sit either side of the switching frequency and its double, as the main pairs do
+  for (const v of [2, 8, 13]) { const d = tractionMix({ v, traction: 1, inTrain: true }); assert.ok(Math.abs((d.side[0] + d.side[1]) / 2 - d.fc) < 1e-9 && Math.abs((d.side[2] + d.side[3]) / 2 - 2 * d.fc) < 1e-9 && d.side.every((f) => f >= 20 && f < 4000) && d.side[1] > d.inv[1]); }
 });

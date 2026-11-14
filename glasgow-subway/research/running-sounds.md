@@ -2,6 +2,30 @@
 
 What the sim plays while a train runs: the **rumble** of wheels on rail (it gets louder and higher with speed), the **whine** of the traction motor (loud under power, a murmur when coasting, silent when standing), and the **hiss** of the brakes when they are let off. All three come from real recordings with open licences, looped or triggered by `js/sim/audio.js`; each has a synthesised stand-in that plays until its recording has loaded, if its file is missing, and for good with **`?sfx=synth`**. The wheel squeal is not in this set: it is still synthesised. (Doors: `door-sounds.md`.)
 
+## Wheel on rail (added 14 November 2026)
+
+The complaint: the running sound was a drive whine over a faint wash, with no rail in it. Measured, that was fair: under full power the synthesised drive was 19 dB above the recorded rumble at 3 m/s and 12 dB above it at 6 m/s (A-weighted), and the rumble is one steady loop with no rhythm in it.
+
+`railMix()` and `jointHits()` in `js/sim/audio.js` now add four things, all synthesised, on top of the recorded rumble:
+
+| part | what it is | follows |
+|---|---|---|
+| roar | a broad band of noise (centre 230 Hz + 26 Hz per m/s): the roughness of wheel and rail | amplitude as speed to the power 1.5, i.e. 9 dB a doubling: the "30 log V" law for rolling noise found in railway-noise textbooks (Thompson, *Railway Noise and Vibration*; quoted from memory, not re-read for this note) |
+| sing | a higher, narrower band (1250 Hz + 90 Hz per m/s): the top of the rolling noise | speed squared |
+| beat | everything above swells by 16% once per turn of the wheel (no wheel is round), with three slow wanderings on top | wheel diameter 0.69 m, as the drive |
+| corrugation | a narrow band at speed / 48 mm, on some stretches of the line and not others (about half the line is clean) | position round the line; the same stretches every lap |
+| joints | a thump (105 Hz falling to 52) and two short bands of noise (720 Hz, 2.5 kHz) as each wheelset crosses a joint | a possible joint every 18.3 m, of which 45% knock, each always as hard as it did last time; eight wheelsets are heard (both bogies of the rider's car, and at 45% the nearest bogie of the car at each end), so a joint is a da-dum, a gap, a da-dum; loudness in proportion to speed |
+
+The drive was turned down 5 dB and given four more tones (the outer sidebands `fc -+ 4 fe` and `2 fc -+ 5 fe`), so it is a cluster and not four clean notes.
+
+**The balance now** (A-weighted, full power, rendered in the browser): the drive leads the rolling noise by about 13 dB at 3 m/s and 5 dB at 6 m/s, is about 3 dB under it at 9 m/s and about 7 dB under it at 12 m/s. So: whine pulling away, rail at speed, both in between.
+
+**What is assumed, not measured.** Every figure in the table. The Subway's track is mostly welded and I found no data on where its joints are, how corrugated it is, or its cars' axle spacing; 18.3 m is a 60 ft rail, the axle positions are guessed from a 12.6 m car. The joint sound is built from oscillators and filtered noise, not from a recording.
+
+**What is checked.** Unit tests: the speed laws, silence standing, the same joints every pass, every heard wheelset knocking once per live joint in both directions, nothing on a teleport. End to end: the roar within 4 dB of the recorded rumble at 12 m/s, 7-14 dB per doubling of speed, the drive's place against the rolling noise at 4 and 12 m/s, and 97% of the joint layer's energy falling at the moments the wheels cross.
+
+**What is not checked.** Whether it sounds like a train. Nobody has listened to it, including me: I cannot. Bands of filtered noise can sound like hiss rather than steel, and the knocks may sound synthetic. If so the knobs are `roarGain`, `singGain` and `jointGain` in `railMix()`, the three parts of `clack()`, and `invGain` / `gearGain` in `tractionMix()`.
+
 ## The motor is now synthesised (November 2026)
 
 The looped whine described below is **no longer played** and `audio/motor.mp3` has been removed. It was 1.8 s of another train's inverter, high-passed at 1.5 kHz and played between 0.7 and 1.25 times its speed: a thin squeal whose pitch moved a little with the train and whose every component moved together, which is not how a drive sounds. The rest of this file still describes the rumble and the hiss, and is kept as written for the record of how the whine was cut; read "whine" below as history.

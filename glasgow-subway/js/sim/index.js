@@ -254,7 +254,8 @@ class Sim {
         tv.place(this.track, svc.train.s);
         const car = tv.cars[L.ci], c = this._carToCrowd(car, p.x, p.z, p.yaw), d = this._carToCrowd(car, 0, L.dz), ex = exits.reduce((b, q) => (Math.abs(q.z - d.z) < Math.abs(b.z - d.z) ? q : b), exits[0]), end = this.crowd._toFloor(ex.x, ex.z, 0.3);
         const look = sc.take(p); if (!look) continue;
-        this.crowd.walkOn(look, c, c.yaw, [{ x: X.cx, z: d.z, rail: true }, { x: inf.xe + inf.S * 0.9, z: d.z, rail: true }, end], inf.PY, null); this._saloonObs(tv);
+        const st = this._stairRoute(v, ex), out = this.crowd.walkOn(look, c, c.yaw, [{ x: X.cx, z: d.z, rail: true }, { x: inf.xe + inf.S * 0.9, z: d.z, rail: true }, st ? st.out : end].concat(st ? st.up : []), inf.PY, null); this._saloonObs(tv);
+        if (out && st) out.yAt = st.yAt;   // off the train, across the platform and up the stairs
       }
     }
     if (X.state === 'closed' && !atStop) X.state = 'idle';
@@ -322,7 +323,8 @@ class Sim {
       const py = av.info.PY, list = [];
       for (const p of this.crowd.people) {
         if (!p.obj || p.hidden) continue; p.parent = this.crowd.group; const b = this.crowd.bodyOf(p); out.checked++; out.platform++;
-        const footErr = b.foot - py; out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
+        // (someone on the stairs stands on the stairs: the floor under them is the flight, not the platform)
+        const footErr = b.foot - (p.stair && p.yAt ? p.yAt(p.x, p.z) : py); out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
         if (footErr < -0.04) bad(`platform ${b.id}: feet ${(-footErr * 100).toFixed(0)} cm below the platform`); if (footErr > (p.state === 'walk' || p.state === 'go' ? 0.1 : 0.05)) bad(`platform ${b.id}: feet ${(footErr * 100).toFixed(0)} cm above the platform (levitating)`);
         if (this.crowd.avoid.some((a) => p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1)) bad(`platform ${b.id}: standing inside furniture`);
         list.push(p);
@@ -936,9 +938,41 @@ class Sim {
         const inf = cur.info; const g = cur.group;
         this.crowd.group.position.copy(g.position); this.crowd.group.rotation.copy(g.rotation);
         if (this.crowd.setWorld) this.crowd.setWorld(cur.zones, cur.obstacles.filter((o) => o.tall || Math.abs(o.y - cur.info.PY) < 1.2));
-        this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY).concat(cur.crowdAvoid || []));
+        if (this.crowd.setSite) this.crowd.setSite(this._site(cur));
+        // three quarters of the platform's people are already waiting; the rest come down the stairs while you watch (_arrivals)
+        this.crowd.populate(this.crowd.setSite ? Math.round(cur.crowdN * 0.75) : cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY).concat(cur.crowdAvoid || []));
+        this._arr = { t: 2 + Math.random() * 5 };
       }
     }
+  }
+
+  /** what the platform's crowd is told about it (people.js setSite): the edge, the wall behind (none on an island), where the doors stop, the ways in, the indicator */
+  _site(v) {
+    const inf = v.info, pl = v.ownPlat, zc = this._stopCentreZl(), back = pl ? (inf.S > 0 ? pl.x1 : pl.x0) : inf.xo;
+    return { edgeX: inf.xe, S: inf.S, backX: inf.island ? null : back, doors: this.doorZ.map((d) => zc + d), entrances: this._exitPoints(v),
+      board: inf.hall && v.indicators && v.indicators.length ? { x: pl ? (pl.x0 + pl.x1) / 2 : (inf.xe + inf.xo) / 2, y: inf.PY + 2.75, zs: [-5.5, 5.5] } : null, trainZ: null, fromZ: 0, due: 0 };
+  }
+  /** the stairs behind a way in / out of the platform: { down: route from the landing to the platform, up: the same the other way, yAt(x, z): the height of the tread, rect } or null */
+  _stairRoute(v, ex) {
+    const pt = (v.anchors.portals || []).find((q) => q.stair && Math.abs(q.x - ex.x) < 0.05 && Math.abs(q.z - ex.z) < 0.05); if (!pt) return null;
+    const st = pt.stair, PY = v.info.PY, xc = (st.x0 + st.x1) / 2, r = v.zones.find((z) => z.name === 'stairs' && xc > z.x0 && xc < z.x1 && z.z0 >= st.z0 - 0.01 && z.z1 <= st.z1 + 0.01); if (!r) return null;
+    const up = r.y1 > r.y0, zFoot = up ? r.z0 : r.z1, zTop = up ? r.z1 : r.z0, yTop = Math.max(r.y0, r.y1), dir = Math.sign(zTop - zFoot);
+    const yAt = (x, z) => { const t = (z - zFoot) / (zTop - zFoot); return t <= 0 ? PY : PY + (yTop - PY) * Math.min(1, t); };
+    const top = { x: xc, z: zTop + dir * 0.7 }, xd = xc - dir * 0.29, xu = xc + dir * 0.29;   // each keeps to their own left of the flight, so people going up and coming down pass
+    return { yAt, rect: st, down: [{ x: xd, z: top.z, stair: true }, { x: xd, z: zFoot - dir * 0.1, stair: true, speed: 0.62 }, { x: xd, z: zFoot - dir * 1.0, stair: true, speed: 0.9 }], out: { x: xu, z: zFoot - dir * 1.0 }, up: [{ x: xu, z: zFoot - dir * 0.1, stair: true, rail: true, speed: 0.8 }, { x: xu, z: top.z, stair: true, rail: true, speed: 0.55 }] };
+  }
+  /** People come on to the platform a few at a time, down the stairs, find a place to wait and stand there until a train comes (people.js arrive). The rate keeps the
+   *  platform near its usual number between trains; nobody is conjured on the platform itself. */
+  _arrivals(dt) {
+    const v = this.crowdFor, c = this.crowd; if (!v || !c.arrive || !c.site || this.mode === 'street') return;
+    const A = this._arr || (this._arr = { t: 3 }); A.t -= dt; if (A.t > 0) return;
+    const want = v.crowdN, mean = Math.max(2.5, Math.min(10, 70 / Math.max(4, want)));
+    A.t = 0.8 - Math.log(1 - Math.random() * 0.999) * mean;
+    const X = this._xch; if (X && X.state === 'open') return;   // (doors open: the last-second boarders are _exchange's)
+    if (c.people.filter((q) => !q.static && (q.mode !== 'go' || q.arriving)).length >= want) return;
+    const exits = this._exitPoints(v), ex = exits[Math.floor(Math.random() * exits.length)], st = this._stairRoute(v, ex), w = this.walker, late = c.site.due > 0.5 ? 1 : Math.random() ** 2 * 0.5;
+    if (st) { if (this.mode === 'explore' && w.x > st.rect.x0 - 0.3 && w.x < st.rect.x1 + 0.3 && w.z > st.rect.z0 - 1.5 && w.z < st.rect.z1 + 1.5) return; c.arrive(v.crowdRect, v.info.PY, { route: st.down, yAt: st.yAt, late }); }   // (not while the player is on those stairs)
+    else { const f = c._toFloor(ex.x, ex.z, 0.3); if (this.mode === 'explore' && Math.hypot(w.x - f.x, w.z - f.z) < 7) return; c.arrive(v.crowdRect, v.info.PY, { from: f, late, speed: 1.1 }); }
   }
 
   _makeSignal() {
@@ -1254,7 +1288,7 @@ class Sim {
     }
     // shuttle (explore): recycle trains
     if (this.mode === 'explore') this._shuttle(dt);
-    this._exchange(dt);
+    this._exchange(dt); this._arrivals(dt);
     if (this.mode === 'ride' && this.alightNext === false) {}
     // approach announcements
     if (this.mode !== 'explore' && this.mode !== 'street' && svc.phase === 'run' && !this.annDone && svc.distToStop < 250) {
@@ -1279,7 +1313,8 @@ class Sim {
     if (sh.state === 'arriving' && !sh.queued && this.activeStation && this.crowdFor && this.crowd.queue) {   // (crowdFor: the platform is populated - a queue of nobody would still use up this train)
       sh.queued = true; const v = this.activeStation, inf = v.info, zc = this._stopCentreZl(), slots = [];
       for (let i = 0; i < this.doorZ.length; i++) for (const o of [-0.55, 0.55]) slots.push({ x: inf.xe + inf.S * (0.75 + 0.1 * (i % 2)), z: zc + this.doorZ[i] + o, yaw: inf.S > 0 ? Math.PI / 2 : -Math.PI / 2 });
-      this.crowd.queue(Math.min(8, Math.round(v.crowdN * 0.3)), slots);
+      const here = this.crowd.people.filter((q) => !q.static && q.obj && q.mode !== 'go').length;   // most of the people waiting are waiting for THIS train
+      this.crowd.queue(Math.min(this.quality === 'low' ? 4 : 12, Math.round(here * 0.7)), slots);
     }
     if (sh.state === 'wait' || sh.state === 'none') sh.queued = false;
   }
@@ -1319,7 +1354,11 @@ class Sim {
     const THREE = this.THREE, svc = this.svc, tr = svc.train, cam = this.camera, track = this.track;
     const underground = this.mode !== 'street';
     if (underground) {
-      if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore');   // before the crowd is (re)populated
+      if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore', this.crowdFor ? cam.position.y - this.crowdFor.group.position.y : null);   // before the crowd is (re)populated
+      { const site = this.crowd.site; if (site && this.crowdFor) {   // what the people waiting can see of the train: they look up the tunnel for it, more as it comes
+        const tz = this._trainCentreZl(), off = tz - this._stopCentreZl(), coming = this.trainView.root.visible && svc.phase === 'run' && svc.distToStop > 0.5 && svc.distToStop < 230 && Math.abs(Math.abs(off) - svc.distToStop) < 30;
+        site.trainZ = coming ? tz : null; if (coming && Math.abs(off) > 20) site.fromZ = Math.sign(off); site.due = coming ? Math.max(0.3, 1 - svc.distToStop / 230) : 0.15;
+      } }
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
       this._indT = (this._indT || 0) - dt; if (this._indT <= 0) { this._indT = 0.5; this._updateIndicators(); }
       this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive'); this._bgUpdateView(dt);
@@ -1354,7 +1393,7 @@ class Sim {
     this._clearOfPeople(cam);
     // audio
     const inTrain = this.ctxKind === 'train';
-    this.audio.update({ v: tr.v, traction: tr.tractionAct, brake: tr.brakeAct, curv: track.curvature(tr.s), inTrain, doorsOpen: svc.doors.L > 0.1 || svc.doors.R > 0.1 });
+    this.audio.update({ v: tr.v, s: tr.s, traction: tr.tractionAct, brake: tr.brakeAct, curv: track.curvature(tr.s), inTrain, doorsOpen: svc.doors.L > 0.1 || svc.doors.R > 0.1 });
     // HUD
     this._computeContext();
     const info = svc.info();
@@ -1560,6 +1599,23 @@ class Sim {
       peopleTris: () => { let tris = 0, meshes = 0, hi = 0, lo = 0; for (const cr of [this.crowd, ...Object.values(this.views).map((v) => v.saloon)]) { if (!cr || !cr.people) continue; for (const q of cr.people) { if (!q.obj || !q.obj.visible) continue; q.lod ? lo++ : hi++; q.obj.traverse((o) => { if (o.isMesh) { meshes++; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; } }); } } return { tris, meshes, hi, lo }; },
       crowdClearance: () => { const c = this.crowd, w = this.walker; let d = 1e9, front = 1e9; const fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw); for (const q of c.people) { if (!q.obj || q.hidden) continue; const dx = q.x - w.x, dz = q.z - w.z, dd = Math.hypot(dx, dz); d = Math.min(d, dd); if ((dx * fx + dz * fz) / (dd || 1) > Math.cos(1.15)) front = Math.min(front, dd); } return { d, front, n: c.people.length }; },
       // tests: put the man in the string vest on the platform, let a second pass, and say where his haggis is (then take him away again)
+      // how the people on this platform wait, arrive and answer the player (waiting.js): run on the platform being explored, with the service left as it is
+      waitAudit: () => { const c = this.crowd, v = this.crowdFor, w = this.walker; if (!v || !c.arrive || !c.site || this.mode !== 'explore') return null;
+        const PY = v.info.PY, step = (sec) => { for (let i = 0; i < sec * 30; i++) { this.tick(1 / 30); this.sync(1 / 30); } }, out = { n: c.people.length };
+        const mid = { x: (v.crowdRect.x0 + v.crowdRect.x1) / 2, z: 0 }; w.place(mid.x, mid.z);
+        // 1. the people waiting stand still: nobody paces
+        const st0 = c.people.filter((q) => q.mode === 'stand').map((q) => [q, q.x, q.z]); step(8);
+        out.standing = st0.length; out.drift = Math.max(0, ...st0.filter(([q]) => q.mode === 'stand' && c.people.includes(q)).map(([q, x, z]) => Math.hypot(q.x - x, q.z - z))); out.pacing = c.people.filter((q) => q.mode === 'walk' && !q.revert).length;
+        // 2. someone comes down the stairs, walks to a place and stands there
+        const ex = this._exitPoints(v)[0], sr = this._stairRoute(v, ex); out.stairs = !!sr;
+        if (sr) { while (c.people.length >= c.max - c.reserve) { const q = c.people.find((x) => x.mode === 'stand'); if (!q) break; c._drop(q); c.people.splice(c.people.indexOf(q), 1); }
+          const q = c.arrive(v.crowdRect, PY, { route: sr.down, yAt: sr.yAt, late: 0 }); if (q) { out.y0 = q.y - PY; let yPrev = q.y, rise = 0, t = 0; while (t < 60 && q.mode === 'go') { step(0.5); t += 0.5; rise = Math.max(rise, q.y - yPrev); yPrev = q.y; }
+            out.arr = { t, mode: q.mode, state: q.state, y: q.y - PY, rise, onFloor: c._onFloor(q.x, q.z, 0.1), far: Math.hypot(q.x - sr.down[2].x, q.z - sr.down[2].z) }; step(3); out.arr.still = q.sp || 0; } }
+        // 3. the player walks up to someone: they stay where they are, look, and turn toward the player
+        const cand = c.people.filter((q) => q.mode === 'stand' && q.state === 'stand').map((q) => { for (const sg of [1, -1]) { const a = q.yaw + sg * 1.5, x = q.x - Math.sin(a) * 0.95, z = q.z - Math.cos(a) * 0.95; if (c._onFloor(x, z, 0.15) && !c.people.some((o) => o !== q && Math.hypot(o.x - x, o.z - z) < 0.7)) return { q, x, z }; } return null; }).filter(Boolean)[0];
+        if (cand) { const q = cand.q, x0 = q.x, z0 = q.z, yaw0 = q.yaw; w.place(cand.x, cand.z); let looked = 0, maxHead = 0, greeted = false; for (let i = 0; i < 8; i++) { step(0.5); if (q.att && q.att.tgt === 'you') looked++; maxHead = Math.max(maxHead, Math.abs(q.att ? q.att.yaw : 0)); greeted = greeted || !!(q.att && q.att.greeted); }
+          const rel = Math.atan2(-(w.x - q.x), -(w.z - q.z)) - q.yaw; out.near = { moved: Math.hypot(q.x - x0, q.z - z0), looked, maxHead, greeted, turned: Math.abs(Math.atan2(Math.sin(q.yaw - yaw0), Math.cos(q.yaw - yaw0))), off: Math.abs(Math.atan2(Math.sin(rel), Math.cos(rel))), state: q.state, rig: !!q.look }; }
+        return out; },
       petAudit: () => { const c = this.crowd, ch = (c.chars || []).find((x) => x.id === 'adult_string_vest'); if (!ch) return null;
         const q = c.people.find((x) => x.obj && !x.hidden) || { x: 0, z: 0, y: 0 }, p = c.add({ char: ch, x: q.x, z: q.z, y: q.y, yaw: 0, mode: 'stand', static: true, force: true }, c.group); if (!p.obj || !p.pet) return { made: false };
         for (let i = 0; i < 60; i++) c._petStep(p, 1 / 60);
