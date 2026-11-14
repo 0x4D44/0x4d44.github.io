@@ -8,6 +8,8 @@ import { readBody, GaitRig } from './gait_three.js';
 import { STEER, angDiff, arrived, steerStep, turnToward } from './steer.js';
 import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
+import { makeHaggis, followStep, poseHaggis, poseLead } from './haggis.js';
+export const PET_OWNER = 'adult_string_vest';   // the man in the string vest walks a haggis (haggis.js)
 import { dressTee, undressTee, takePrint, releasePrint, printAtlas, teeColour, TEE } from './tees.js';
 // ?gait=clip: the captured clip walk the game had before the procedural gait (to compare, and the baseline of research/people-motion-rubric.md)
 const SIT_FEET = 0.07;   // how far below the floor a seated person's soles may reach before they are lifted off the seat (people audit: 0.08)
@@ -311,7 +313,7 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
+  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.pet) { for (const o of [p.pet.root, p.pet.lead]) if (o.parent) o.parent.remove(o); p.pet = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
   _rollPool() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
     const r = this.rng(); let pool;
@@ -338,6 +340,7 @@ export class AnimCrowd {
     p.mixer.update(0.0001); p.dirty = false;   // pose the skeleton now (far people are frozen, never in the bind pose)
     if (p.hold) this._holdStep(p, 0, true);
     this.people.push(p); this._place(p, true);
+    if (ch.id === PET_OWNER) { p.pet = makeHaggis(this.THREE); this._petStep(p, 0); }
     return p;
   }
   /** a T-shirt wearer keeps one chest print and shirt colour (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
@@ -431,6 +434,17 @@ export class AnimCrowd {
   _gaitDue(p) { return this.gaitOn && !p.static && p.char[p.lod && p.char.lodNode ? 'gbLo' : 'gbHi'] !== null; }
   /** pelvis on the seat top; if that would push the shoes through the floor, shoes win; if the feet would hang, sink the pelvis up to 6 cm into the cushion */
   _sitOff(m, seatRel) { const yA = seatRel - m.contact, feet = yA + m.minY; return feet < 0 ? -m.minY : yA - Math.min(feet, 0.06); }
+  /** the haggis of PET_OWNER: follows where its owner was drawn last frame, in the owner's own group; the lead runs to the owner's left hand */
+  _petStep(p, dt) {
+    const pet = p.pet, o = p.obj, par = o.parent; if (!par) return;
+    if (pet.root.parent !== par) { par.add(pet.root); par.add(pet.lead); pet.h.v = null; }
+    const vis = o.visible && !p.hidden; pet.root.visible = pet.lead.visible = vis;
+    followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt); poseHaggis(pet, p.y);
+    if (pet.hand === undefined || pet.handOf !== o) { pet.handOf = o; pet.hand = null; o.traverse((b) => { if (b.isBone && /hand_l$/.test(b.name) && !pet.hand) pet.hand = b; }); }
+    const v = this._v;
+    if (pet.hand) { o.updateWorldMatrix(true, false); pet.hand.updateWorldMatrix(true, false); par.updateWorldMatrix(true, false); pet.hand.getWorldPosition(v); par.worldToLocal(v); } else v.set(o.position.x, p.y + 0.8, o.position.z);
+    poseLead(pet, v.x, v.y, v.z);
+  }
   _place(p, snap) {
     const tgt = this._yOffset(p); p.yOff = snap || p.yOff == null ? tgt : p.yOff + (tgt - p.yOff) * 0.25;
     let x = p.x, z = p.z;
@@ -592,6 +606,7 @@ export class AnimCrowd {
     this._goNow = false; this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
+      if (p.pet) this._petStep(p, dt);
       p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {
         if (p.mode === 'walk') {

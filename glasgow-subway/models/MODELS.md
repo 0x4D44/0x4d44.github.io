@@ -224,6 +224,41 @@ skirt, denim shorts under a tank top, and `toigo_flats` with Lycra (rest-pose co
 Player-visible skin, `tools/people_holes.mjs` (cm² per view): every new person at most 12.7 full / 8.4 LOD (batch 41.8 / 42.5); the top,
 `elder_woman_dress`, is the standing pose (49.5 / 23.3; 3-4 walking). Sizes at 72: `people.glb` 25.6 MB, `people_lod.glb` 12.6 MB.
 
+## Cloth budget shared by area; batch 4 (2026-11-14): 72 -> 85 people
+**The budget.** `budget_and_join` used to share a person's cloth triangles in proportion to each garment's SOURCE triangle count. `man_student`'s sneakers
+are 154k triangles in the asset and his top a few thousand, so the top was decimated to 67 triangles: an open chest and a torn sleeve. The share now goes
+by world-space surface area; shoes get a fixed allowance first (640 full / 260 LOD between them), and no garment is given more than it has
+(`BUDGET_LOG=1` prints the shares). Player-visible skin, `tools/people_holes.mjs` (full detail, cm2 per view, the 72 people of before): walking
+447.6 -> 254.6, nobody up more than 3.6 (`adult_cyclist` 1.6 -> 5.2); `man_student` 136.0 -> 0.5. The standing column is not comparable person for
+person: whoever happens to hold a phone up has hands in front of cloth, which the measure counts (`woman_mini`, `ya_spiky`, `teen_tee` read 25-30 so,
+and were looked at: their clothes are whole).
+
+**Batch 4**, thirteen people (specs at the end of `PEOPLE`):
+- `adult_string_vest`: a beer belly (`belly=`, MakeHuman's `stomach-pregnant-incr` target) under a string vest (`net=`: the tank top's material replaced
+  by a generated alpha-tested net), two tattoos. In the game he walks a haggis on a lead (`js/sim/haggis.js`, `PET_OWNER` in `people.js`): our own
+  primitives, legs shorter on one side, it follows a place behind his left hand and sits by his feet when he sits. It collides with nothing.
+- `adult_piper`: Highland dress and a set of pipes (`pipes=True`, `build_pipes`): bag, three drones, blowpipe and chanter, rigid on `spine_03`. Carried,
+  not played - the arms are not posed to hold them, and there is no sound.
+- Ginger hair: `ya_ginger_long`, `ya_ginger_braid` (needs `hair_lift`, or the braid's dark texture stays brown under the tint), `ya_ginger_lad`,
+  `teen_ginger`, `girl_ginger`; the piper too.
+- Smiles (`smile=`, 0..1): the faceunits targets `mouthSmile`, half as much `cheekSquint`, a quarter `mouthDimple`, baked into the mesh. Nobody's face
+  moves; there are still no blinks or changing expressions.
+- Tattoos (`tattoos=[dict(bone=, kind=, t0=, t1=, width=)]`, `build_tattoo`): a decal of the limb's skin faces 2 mm proud, full detail only. Lettering
+  runs along the limb and is flipped for left limbs (it read backwards); pictures stand upright. `flange` is the masthead and address of this site's
+  Daily Flange (`0x4d44.github.io/news`) - text on an arm, not a link anybody can click.
+- Bags: one small CC-BY asset is left (`punkduck_handbag01`, on `ya_ginger_long`). `punkduck_shopping_bag01` was tried and dropped: its weights stretch it
+  between the hand and the hip in every pose with a raised hand. `elvs_sling_purse1` was tried and dropped: the hanging hand sat inside it (arm audit 5.3 > 4.5).
+- Tried and dropped: `o4saken_curly01` and `o4saken_long01` (scalp through the hair, strands over the face), the long open cardigan (holes), the polo
+  shirt over `punkduck_male_classic_jeans` (the waistband comes through the hem; over `mindfront_male_trousers_2` it is fine).
+
+Holes of the new thirteen (full detail, walking): at most 16.1 cm2 per view (`ya_smile_dress` read 67.1 while it carried the sling purse, 1.5 without
+it); all 85 together 298.6 walking. In the game the haggis is checked by `petAudit` (`tools/test_sim.mjs`). Sizes at 85:
+`people.glb` 26.8 MB, `people_lod.glb` 14.4 MB. Armfit and legradii re-solved, credits regenerated, skin budgets re-derived (see `sim.test`).
+
+**Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
+`extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
+03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.
+
 ## Loading: people_lod.glb first (2026-11-07)
 The game fetches `people_lod.glb` with the other models and builds every crowd from it alone; `people.glb` is fetched after the first frame of a
 station (and any hall still loading), then handed to each crowd (`AnimCrowd.attachFull`), whose nearest people swap up to it a couple a frame. So

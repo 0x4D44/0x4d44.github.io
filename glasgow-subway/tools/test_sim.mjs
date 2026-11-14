@@ -392,6 +392,9 @@ try {
   ok('saloon people: feet on floor/seat, heads below the ceiling profile, inside the walls, no overlaps', au1.checked >= 5 && au1.bad.length === 0, JSON.stringify(au1));
   const pi = await ev(p, () => { const w = __sim.walker(); w.sit = false; w.sitK = 0; w.place(0, w.z, 0); return __sim.peopleInfo(); });
   ok('people scale: every character <= 1.80 m (+2 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.82 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
+  const pet = await ev(p, () => __sim.petAudit());
+  ok('the man in the string vest has his haggis: in the scene with him, on the floor 0.5-1.1 m away, on a lead of 0.4-1.6 m, standing still by him, and gone when he goes',
+    pet && pet.made && pet.inScene && pet.dist > 0.5 && pet.dist < 1.1 && Math.abs(pet.dy) < 0.01 && pet.lead > 0.4 && pet.lead < 1.6 && pet.v < 0.05 && pet.gone, JSON.stringify(pet));
   const bind = await ev(p, () => __sim.peopleBind());
   ok('every clip binds on all characters (53-bone rig) and on the LOD models', bind && bind.chars >= 20 && bind.miss === 0 && bind.lodMiss === 0, JSON.stringify(bind));
   const pf = await ev(p, () => __sim.peopleFit());

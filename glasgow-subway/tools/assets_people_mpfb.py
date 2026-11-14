@@ -187,6 +187,38 @@ PEOPLE = [
          clothes=['toigo_fisherman_sweater', 'toigo_ankle_boots_female'], lycra=('leggings', '#5a2a6a')),
     dict(id='adult_sport_cap', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.52, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes02', hair='toigo_inverted_bob', hair_col='#17120e', face=True,
          clothes=['female_sportsuit01', 'punkduck_running_shoes_01'], hat=('cap', '#e8e8e8')),
+    # --- batch 4 (2026-11-14): "more smiley, attractive looking people", "several people with ginger hair", "some people with tattoos (perhaps some link to the Daily Flange)",
+    #     "a man with a large beer belly wearing a string vest" (people.js walks a haggis behind him) and "a piper with their bagpipes".  smile= / belly= are baked
+    #     MakeHuman targets (shape_targets); tattoos= are decals (build_tattoo); net= turns a garment into a string vest; pipes= builds the bagpipes; bags are CC-BY assets.
+    dict(id='adult_string_vest', kind='man', outfit='trousers', H=1.71, gender=1, age=0.68, weight=1.0, muscle=0.3, belly=0.85, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='short04', hair_col='#b9703f', face=True,
+         clothes=['elvs_male_athletic_tank1', 'mindfront_male_trousers_1', 'toigo_ankle_boots_male'], net='athletic_tank',
+         tattoos=[dict(bone='upperarm_r', kind='anchor', t0=0.25, t1=0.75, width=110), dict(bone='lowerarm_l', kind='mum', t0=0.2, t1=0.7, width=120)]),
+    dict(id='adult_piper', kind='man', outfit='highland', H=1.78, gender=1, age=0.46, weight=0.55, muscle=0.55, smile=0.3, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow004', lashes=None, hair='short03', hair_col='#b5521c', face=True,
+         clothes=['toigo_male_suit_tie_and_jacket'], cut=('suit', 0.15), kilt=dict(kind='kilt', tart=1, sporran=True, belt=True, hose=('#ddd6bf', '#1d3a2a')), shoes='mindfront_shoes_oxford_male', hat=('beret', '#1a2a22', 'felt'), nolegs=True, pipes=True),
+    dict(id='ya_ginger_long', kind='woman', outfit='trousers', H=1.67, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='elvs_hazel_hair', hair_col='#b8541e',
+         clothes=['punkduck_lace_up_blouse', 'punkduck_female_tight_jeans', 'toigo_ankle_boots_female', 'punkduck_handbag01']),
+    dict(id='ya_ginger_braid', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.33, weight=0.45, muscle=0.4, smile=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='lightblue', brows='eyebrow009', lashes='eyelashes01', hair='braid01', hair_col='#c0602a', hair_lift=True,
+         clothes=['punkduck_retro_top', 'elvs_jeans_straight_leg', 'punkduck_comfortable_sneakers'], tattoos=[dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110)]),
+    dict(id='ya_ginger_lad', kind='man', outfit='trousers', H=1.77, gender=1, age=0.35, weight=0.45, muscle=0.6, smile=0.6, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='blue', brows='eyebrow002', lashes=None, hair='elvs_grump_hair', hair_col='#b4501c',
+         clothes=['male_casualsuit02', 'culturalibre_sneakers']),
+    dict(id='teen_ginger', kind='teen', outfit='trousers', H=1.70, gender=1, age=0.27, weight=0.4, muscle=0.45, smile=0.45, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='brown', brows='eyebrow002', lashes=None, hair='short03', hair_col='#c4662c', face=True,
+         clothes=['elvs_male_logo_tshirt1', 'mindfront_male_trousers_2', 'punkduck_tennis_shoes']),
+    dict(id='girl_ginger', kind='girl', outfit='trousers', H=1.28, gender=0, age=0.12, weight=0.45, muscle=0.35, smile=0.7, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow009', lashes='eyelashes01', hair='ponytail01', hair_col='#c8642a',
+         clothes=['female_casualsuit01', 'culturalibre_sneakers']),
+    dict(id='ya_smile_dress', kind='woman', outfit='dress', H=1.68, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.8, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes03', hair='elvs_micky_afro', hair_col='#17120e',
+         clothes=['mindfront_f_dress_08', 'toigo_ballet_flats']),
+    dict(id='ya_smile_polo', kind='man', outfit='trousers', H=1.76, gender=1, age=0.37, weight=0.45, muscle=0.6, smile=0.7, race=(0.85, 0.1, 0.05), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short02', hair_col='#17120e',
+         clothes=['namuhekam_male_polo_shirt', 'mindfront_male_trousers_2', 'mindfront_shoes_oxford_male']),
+    dict(id='ya_tattoo_tank', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.38, weight=0.42, muscle=0.5, smile=0.5, race=(0.1, 0.8, 0.1), skin='young_caucasian_female', eye='brown', brows='eyebrow006', lashes='eyelashes02', hair='elvs_short_side_do', hair_col='#17120e',
+         clothes=['mindfront_tank_top_01', 'punkduck_female_tight_jeans', 'punkduck_winter_boots'],
+         tattoos=[dict(bone='lowerarm_l', kind='flange', t0=0.12, t1=0.88, width=150), dict(bone='upperarm_r', kind='band', t0=0.35, t1=0.65, width=340), dict(bone='upperarm_l', kind='swallow', t0=0.3, t1=0.75, width=110)]),
+    dict(id='adult_tattoo_muscle', kind='man', outfit='trousers', H=1.77, gender=1, age=0.48, weight=0.6, muscle=0.85, smile=0.3, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='grey', brows='eyebrow005', lashes=None, hair='short01', hair_col='#3a281c', face=True,
+         clothes=['elvs_male_muscle_shirt1', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male'],
+         tattoos=[dict(bone='lowerarm_r', kind='flange', t0=0.12, t1=0.88, width=150), dict(bone='lowerarm_l', kind='glesga', t0=0.12, t1=0.88, width=150), dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110), dict(bone='upperarm_r', kind='band', t0=0.4, t1=0.7, width=340)]),
+    dict(id='adult_smile_blouse', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.50, weight=0.45, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow007', lashes='eyelashes03', hair='elvs_keylth_hair', hair_col='#d8b86c',
+         clothes=['punkduck_off-shoulder_long-sleeve_top', 'mindfront_female_trousers_1', 'toigo_flats']),
+    dict(id='ya_smile_halter', kind='woman', outfit='trousers', H=1.62, gender=0, age=0.35, weight=0.42, muscle=0.4, smile=0.65, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='bob01', hair_col='#17120e',
+         clothes=['toigo_turtleneck_halter_top', 'elvs_jeans_bootcut', 'toigo_ballet_flats']),
 ]
 
 # ------------------------------------------------------------------ helpers: mhmat / images / materials
@@ -332,6 +364,16 @@ def face_targets(human, seed):
             for path in groups[key][way]: TargetService.load_target(human, path, weight=w); n += 1
     print('face: %s %d targets' % (seed, n))
 
+def shape_targets(human, spec):
+    """smile=: ARKit-style face units (MakeHuman faceunits01 pack, CC0) baked into the face - a closed-mouth smile with the cheeks lifted. belly=: MakeHuman's
+    stomach target, for a paunch the macro weight alone does not give. Loaded before the rig and the assets, so eyes, brows and clothes fit the result."""
+    _, TargetService = _services()
+    sm = spec.get('smile', 0)
+    if sm:
+        for name, w in (('mouthSmileLeft', sm), ('mouthSmileRight', sm), ('cheekSquintLeft', 0.5 * sm), ('cheekSquintRight', 0.5 * sm), ('mouthDimpleLeft', 0.25 * sm), ('mouthDimpleRight', 0.25 * sm)):
+            TargetService.load_target(human, P('targets', 'faceunits', name + '.target'), weight=w)
+    if spec.get('belly'): TargetService.load_target(human, P('targets', 'stomach', 'stomach-pregnant-incr.target.gz'), weight=float(spec['belly']))
+
 def body_height(h):
     dg = bpy.context.evaluated_depsgraph_get(); ev = h.evaluated_get(dg); me = ev.to_mesh()
     zs = [v.co.z for v in me.vertices]; ev.to_mesh_clear()
@@ -356,6 +398,7 @@ def build_person(spec):
     k = (spec['H'] - 0.02) / hb
     human = HumanService.create_human(macro_detail_dict=md, scale=0.1 * k)
     if spec.get('face'): face_targets(human, spec['id'])   # before the rig and every asset, so the rig, eyes and hair fit the face
+    shape_targets(human, spec)
     rig = HumanService.add_builtin_rig(human, 'game_engine')
     pid = spec['id']
     parts = []            # (object, role, material kwargs)
@@ -447,6 +490,8 @@ def assign_materials(person, maxpx=1024):
             o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
                                                   tint=tuple(lin(c) for c in hex_rgb(spec['hair_col'])), lift=bool(spec.get('hair_lift'))))
         else:
+            if spec.get('net') and spec['net'] in o.name.lower():   # a string vest: the garment's own shape, our net for its texture (alpha-tested)
+                o.data.materials.append(make_material('alpha_stringvest', net_texture(), None, alpha=True, rough=0.85, spec=0.05, maxpx=1024)); continue
             tr = mh.get('transparent', 'False') == 'True' and False
             tn = spec.get('tint') if 'suit' in o.name.lower() else None
             if tn is None and any(w in o.name.lower() for w in ('boots_female', 'monk_strap_female')): tn = (0.22, 0.14, 0.11)
@@ -1049,6 +1094,152 @@ def build_tophat(person, colr, fabric=None):
     _wall(bb, blo, bhi)
     new_part(person, 'tophat_band', bb, solid_material('cloth_tophat_band', hex_rgb('#4a1420'), 0.6), head_weights)
 
+# ------------------------------------------------------------------ batch 4 (2026-11-14): a string vest, tattoos, bagpipes. All our own drawings and meshes.
+GEN = os.path.join(SCRATCH, 'gen')
+
+def _font(px):
+    from PIL import ImageFont
+    for f in ('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',):
+        if os.path.exists(f): return ImageFont.truetype(f, px)
+    return ImageFont.load_default(size=px)
+
+def net_texture():
+    """An off-white diamond net with solid bound edges is not knowable from the garment's UVs, so it is net all over: strings 3 px wide every 20 px, holes between."""
+    from PIL import Image, ImageDraw
+    os.makedirs(GEN, exist_ok=True); path = os.path.join(GEN, 'stringvest.png')
+    if os.path.exists(path): return path
+    n = 1024; im = Image.new('RGBA', (n, n), (236, 230, 214, 0)); d = ImageDraw.Draw(im)
+    for i in range(-n, 2 * n, 20):
+        d.line([(i, 0), (i + n, n)], fill=(236, 230, 214, 255), width=4); d.line([(i, 0), (i - n, n)], fill=(226, 219, 200, 255), width=4)
+    im.save(path); return path
+
+INK = (24, 42, 58, 255)
+def tattoo_art(kind):
+    """Tattoo drawings, 512 x 256, ink on nothing (alpha-tested). u runs ALONG the limb (so lettering reads down the arm), v round it."""
+    from PIL import Image, ImageDraw
+    os.makedirs(GEN, exist_ok=True); path = os.path.join(GEN, 'tattoo_' + kind + '.png')
+    if os.path.exists(path): return path
+    W, Hh = 512, 256; im = Image.new('RGBA', (W, Hh), INK[:3] + (0,)); d = ImageDraw.Draw(im)
+    def text(xy, t, px, anchor='mm'): d.text(xy, t, font=_font(px), fill=INK, anchor=anchor)
+    if kind == 'flange':
+        # the masthead of this site's spoof newspaper, and where to read it
+        text((256, 78), 'THE DAILY FLANGE', 50); d.line((14, 128, 498, 128), fill=INK, width=8)
+        text((256, 184), '0x4d44.github.io/news', 40)
+    elif kind == 'mum':
+        d.polygon([(256, 236), (120, 110), (140, 50), (200, 30), (256, 80), (312, 30), (372, 50), (392, 110)], outline=INK, width=8)
+        d.rectangle((90, 108, 422, 164), fill=(0, 0, 0, 0), outline=INK, width=6); text((256, 136), 'MAW', 46)
+    elif kind == 'anchor':
+        d.ellipse((226, 14, 286, 74), outline=INK, width=9); d.line((256, 74, 256, 228), fill=INK, width=12); d.line((196, 104, 316, 104), fill=INK, width=10)
+        d.arc((146, 108, 366, 236), 20, 160, fill=INK, width=12); d.polygon([(136, 150), (170, 196), (128, 200)], fill=INK); d.polygon([(376, 150), (342, 196), (384, 200)], fill=INK)
+    elif kind == 'thistle':
+        d.ellipse((216, 112, 296, 196), fill=INK)
+        for i in range(-5, 6): d.line((256 + i * 7, 122, 256 + i * 17, 26), fill=INK, width=5)
+        d.line((256, 196, 256, 250), fill=INK, width=8)
+        d.polygon([(256, 226), (196, 196), (170, 214), (214, 240)], fill=INK); d.polygon([(256, 226), (316, 196), (342, 214), (298, 240)], fill=INK)
+    elif kind == 'glesga':
+        text((256, 84), 'GLESGA', 96); d.line((40, 150, 472, 150), fill=INK, width=8); text((256, 200), 'PEOPLE MAKE GLASGOW', 38)
+    elif kind == 'band':
+        for x in range(0, W, 64):
+            d.polygon([(x, 128), (x + 32, 40), (x + 64, 128), (x + 32, 216)], outline=INK, width=9); d.ellipse((x + 22, 118, x + 42, 138), fill=INK)
+        d.line((0, 28, W, 28), fill=INK, width=8); d.line((0, 228, W, 228), fill=INK, width=8)
+    elif kind == 'swallow':
+        d.polygon([(60, 60), (250, 120), (452, 40), (330, 150), (470, 230), (260, 170), (150, 236), (190, 150)], fill=INK); d.ellipse((230, 110, 250, 130), fill=(0, 0, 0, 0))
+    else: raise ValueError(kind)
+    blank = Image.new('RGBA', (W, Hh), INK[:3] + (0,))
+    if kind in ('anchor', 'mum', 'thistle', 'swallow'):   # a picture stands upright on the limb: its top to the left edge (u = 0, the shoulder / elbow end)
+        blank.paste(im.resize((Hh, Hh), Image.LANCZOS).rotate(90), ((W - Hh) // 2, 0)); im = blank
+    elif kind in ('flange', 'glesga'):                     # lettering: a margin, or the first and last letters fall off the ends of the decal
+        blank.paste(im.resize((W * 13 // 16, Hh * 13 // 16), Image.LANCZOS), (W * 3 // 32, Hh * 3 // 32)); im = blank
+    im.save(path); return path
+
+def build_tattoo(person, bone, kind, t0=0.22, t1=0.82, face=0.0, width=150.0, flip=False):
+    """A tattoo as a decal: the skin faces of one limb segment, copied 2 mm proud of the skin, with a drawing of our own (tattoo_art) mapped round the limb.
+    A decal and not paint in the skin texture: MakeHuman's skin UVs give a forearm some 60 texels of a 1024 map, and lettering has to be read.
+    bone: the limb segment (lowerarm_l, upperarm_r, calf_l ...); t0..t1: how far along it; face: where round the limb the drawing is centred, degrees from the
+    limb's outward side (0 = outside, 90 = front); width: degrees round the limb it covers; flip: mirror the lettering's direction."""
+    import bmesh
+    if LOD: return          # the far-away model: nobody can see it, and it would cost triangles
+    human = person['human']; rig = person['rig']; b = rig.data.bones[bone]
+    h, tl = b.head_local.copy(), b.tail_local.copy(); ax = tl - h; ln = ax.length; ax.normalize()
+    side = 1.0 if h.x > 0 else -1.0
+    ref = Vector((side, 0, 0)); ref = (ref - ax * ref.dot(ax)).normalized(); fwd = Vector((0, 1, 0)); fwd = (fwd - ax * fwd.dot(ax) - ref * fwd.dot(ref)).normalized()
+    gi = {vg.index: vg.name for vg in human.vertex_groups}; stem = bone.rsplit('_', 1)[0][:5]; sfx = bone[-2:]
+    def par(v):
+        r = v.co - h; t = r.dot(ax) / ln; rr = r - ax * r.dot(ax)
+        if rr.length > 0.11: return None
+        w = sum(g.weight for g in v.groups if gi[g.group].endswith(sfx) and gi[g.group].startswith(('upperarm', 'lowerarm', 'hand', 'thigh', 'calf', 'foot')))
+        if w < 0.6: return None
+        a = math.degrees(math.atan2(rr.dot(fwd), rr.dot(ref))) - face; a = (a + 180) % 360 - 180
+        return t, a
+    pr = {v.index: par(v) for v in human.data.vertices}
+    bm = bmesh.new(); uvl = bm.loops.layers.uv.new('UVMap'); vmap = {}; src = {}
+    human.data.update()
+    for f in human.data.polygons:
+        ps = [pr[i] for i in f.vertices]
+        if any(q is None for q in ps) or not all(t0 <= q[0] <= t1 and abs(q[1]) <= width / 2 for q in ps): continue
+        vs = []
+        for i in f.vertices:
+            if i not in vmap:
+                v = human.data.vertices[i]; vmap[i] = bm.verts.new(v.co + v.normal * 0.002); src[vmap[i]] = i
+            vs.append(vmap[i])
+        try: nf = bm.faces.new(vs)
+        except ValueError: continue
+        for l, i in zip(nf.loops, f.vertices):
+            t, a = pr[i]; u = (t - t0) / (t1 - t0); vv = 0.5 + a / width
+            if sfx == '_l': vv = 1 - vv          # the angle runs the other way round a left limb: unmirrored, the lettering would read backwards
+            l[uvl].uv = ((1 - u) if flip else u, vv if not flip else 1 - vv)
+    if not bm.faces: print('tattoo: no bare skin on', bone, 'of', person['spec']['id']); bm.free(); return
+    order = [src[v] for v in bm.verts]
+    name = 'tattoo_' + kind + '_' + bone
+    ob = new_part(person, name, bm, make_material('alpha_tattoo_' + kind, tattoo_art(kind), None, alpha=True, rough=0.6, spec=0.2, maxpx=512), lambda co: [])
+    for vi, i in enumerate(order):
+        for g in human.data.vertices[i].groups:
+            nm = gi[g.group]
+            if nm in ob.vertex_groups and g.weight > 1e-4: ob.vertex_groups[nm].add([vi], g.weight, 'REPLACE')
+    print('tattoo: %s %s on %s, %d faces' % (person['spec']['id'], kind, bone, len(ob.data.polygons)))
+
+def _tube(bm, a, b_, r0, r1=None, seg=10):
+    import bmesh
+    a = Vector(a); b_ = Vector(b_); d = b_ - a; L = d.length
+    M = Matrix.Translation((a + b_) / 2) @ Vector((0, 0, 1)).rotation_difference(d.normalized()).to_matrix().to_4x4()
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r0, radius2=r0 if r1 is None else r1, depth=L, matrix=M)
+
+def build_pipes(person):
+    """Great Highland bagpipes, carried as a piper walks with them when not playing: the bag under the left arm, three drones over the left shoulder, the
+    blowpipe up by the collar, the chanter hanging in front. Our own mesh, rigid on the chest (spine_03) - the arms are not posed to hold it, and the left arm
+    swings past the bag when the piper walks."""
+    import bmesh
+    rig = person['rig']; bn = rig.data.bones; k = person['spec']['H'] / 1.75
+    sh = bn['upperarm_l'].head_local.copy(); sx = 1.0 if sh.x > 0 else -1.0
+    s = slab(person['human'], sh.z - 0.20 * k, 0.02, 0, over=worn_over(person)) if True else None
+    yfront = s[3] if s else sh.y + 0.12; half = (s[1] - s[0]) / 2 if s else 0.19
+    bagc = Vector((sx * (half * 0.80), sh.y + 0.075 * k, sh.z - 0.25 * k))
+    def P3(dx, dy, dz): return Vector((bagc.x + sx * dx * k, bagc.y + dy * k, bagc.z + dz * k))
+    bag = bmesh.new()
+    bmesh.ops.create_uvsphere(bag, u_segments=14, v_segments=9, radius=1.0, matrix=Matrix.Translation(bagc) @ Matrix.Rotation(math.radians(-25) * sx, 4, 'Y') @ Matrix.Diagonal((0.105 * k, 0.085 * k, 0.17 * k, 1.0)))
+    for a, b_ in ((P3(0.02, 0.01, 0.10), P3(0.03, -0.035, 0.30)), (P3(-0.03, 0.02, 0.10), P3(-0.045, -0.02, 0.30)), (P3(0.0, -0.03, 0.10), P3(0.0, -0.09, 0.30)),   # the three drone stocks
+                  (P3(-0.07, 0.06, 0.08), P3(-0.10, 0.07, 0.15)), (P3(-0.05, 0.06, -0.10), P3(-0.07, 0.085, -0.15))):                                        # blowpipe and chanter stocks
+        _tube(bag, a, b_, 0.017 * k)
+    bmesh.ops.recalc_face_normals(bag, faces=bag.faces[:])
+    wood = bmesh.new(); ivory = bmesh.new()
+    def drone(a, b_, r, rings):
+        _tube(wood, a, b_, r * k, r * k * 0.9); d = Vector(b_) - Vector(a)
+        for t in rings:
+            c = Vector(a) + d * t; _tube(ivory, c - d.normalized() * 0.012 * k, c + d.normalized() * 0.012 * k, (r + 0.006) * k)
+        top = Vector(b_); _tube(ivory, top - d.normalized() * 0.02 * k, top + d.normalized() * 0.012 * k, (r + 0.012) * k, (r + 0.016) * k)
+    drone(P3(0.03, -0.035, 0.30), P3(0.06, -0.19, 0.97), 0.012, (0.02, 0.42, 0.72))    # bass
+    drone(P3(-0.045, -0.02, 0.30), P3(-0.06, -0.11, 0.70), 0.011, (0.03, 0.55))          # tenors
+    drone(P3(0.0, -0.09, 0.30), P3(0.0, -0.20, 0.68), 0.011, (0.03, 0.55))
+    hd = bn['head'].head_local
+    _tube(wood, P3(-0.10, 0.07, 0.15), Vector((sx * 0.035 * k, hd.y + 0.085 * k, hd.z + 0.04 * k)), 0.008 * k)                 # blowpipe, up to the collar
+    ch0 = P3(-0.07, 0.085, -0.15); ch1 = Vector((sx * 0.02 * k, max(yfront + 0.05, ch0.y + 0.04), ch0.z - 0.34 * k))
+    _tube(wood, ch0, ch1, 0.010 * k, 0.014 * k); _tube(ivory, ch1 - (ch1 - ch0).normalized() * 0.02 * k, ch1 + (ch1 - ch0).normalized() * 0.004 * k, 0.022 * k, 0.026 * k)
+    for bm_ in (wood, ivory): bmesh.ops.recalc_face_normals(bm_, faces=bm_.faces[:])
+    rigid = lambda co: [('spine_03', 1.0)]
+    new_part(person, 'pipes_bag', bag, solid_material('pipes_bag', hex_rgb('#1d3a2a'), 0.95), rigid)
+    new_part(person, 'pipes_wood', wood, solid_material('pipes_wood', hex_rgb('#14100e'), 0.35), rigid)
+    new_part(person, 'pipes_ivory', ivory, solid_material('pipes_ivory', hex_rgb('#e9e2cf'), 0.4), rigid)
+
 def cut_below(obj, z):
     import bmesh
     bm = bmesh.new(); bm.from_mesh(obj.data)
@@ -1090,6 +1281,8 @@ def add_garments(person):
         build_belt_sporran(person, kd, zt)
         if kd.get('hose'): build_hose(person, kd, zh)
     if spec.get('sash') is not None: build_sash(person, spec['sash'])
+    for t in spec.get('tattoos', ()): build_tattoo(person, **t)
+    if spec.get('pipes'): build_pipes(person)
     if spec.get('lycra'): paint_lycra(person, *spec['lycra'])
     if spec.get('baggy'): widen_jeans(person, spec['baggy'])
     if spec.get('tuck'): tuck_waist(person, *spec['tuck'])
@@ -1135,13 +1328,35 @@ def budget_and_join(person, total):
         elif r == 'kilt': tgt[id(o)] = cnt[id(o)]
         elif r == 'body': tgt[id(o)] = left * share['body']
         elif r == 'hair': tgt[id(o)] = left * share['hair']
-        else: tgt[id(o)] = left * share['cloth'] * cnt[id(o)] / max(1, ctot)
+        else: pass   # cloth: shared out below
+    # Garments share the cloth budget by surface area, not by how finely their source mesh happens to be cut: a 154k-triangle pair of sneakers used to leave a top 67 triangles
+    # (man_student, 2026-11).  Shoes take a fixed allowance first (small, but all curvature); nobody gets more than it has, and what a coarse garment cannot use goes back to
+    # the rest.  Area is measured in world units (garments do not all share one object scale).
+    import re
+    def _shoe(o): return bool(re.search(r'shoe|sneaker|boot(?!cut)|flats|heel', o.name.lower()))   # not 'jeans_bootcut'
+    def _area(o):
+        sx, sy, sz = o.matrix_world.to_scale()
+        return sum(p.area for p in o.data.polygons) * abs(sx * sy * sz) ** (2 / 3)
+    cl = [o for o, r in parts if r in ('cloth', 'shoe')]
+    pool = left * share['cloth']
+    for o in [o for o in cl if _shoe(o)]:
+        tgt[id(o)] = min(cnt[id(o)], (260 if LOD else 640) / max(1, sum(1 for q in cl if _shoe(q)))); pool -= tgt[id(o)]
+    todo = [o for o in cl if not _shoe(o)]
+    wgt = {id(o): max(1e-6, _area(o)) for o in todo}
+    while todo:
+        ws = sum(wgt[id(o)] for o in todo)
+        full = [o for o in todo if pool * wgt[id(o)] / ws >= cnt[id(o)]]
+        if not full:
+            for o in todo: tgt[id(o)] = pool * wgt[id(o)] / ws
+            break
+        for o in full: tgt[id(o)] = cnt[id(o)]; pool -= cnt[id(o)]; todo.remove(o)
+    if os.environ.get('BUDGET_LOG'): print('AREA', person['spec']['id'], [(o.name, round(_area(o), 3)) for o in cl])
     keep = []
     for o, r in parts:
         if r == 'lashes' and LOD:
             bpy.data.objects.remove(o); continue
         wg = 'keepW' if 'keepW' in o.vertex_groups else None   # paint_lycra: a hem the decimation must keep straight
-        if r == 'cloth' and any(w in o.name.lower() for w in ('shoe', 'sneaker', 'boot')): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], 520))
+        if os.environ.get('BUDGET_LOG'): print('BUDGET', person['spec']['id'] if 'spec' in person else '?', r, o.name, cnt[id(o)], '->', int(tgt[id(o)]))
         decimate(o, tgt[id(o)] / max(1, cnt[id(o)]), wg)
         if wg:
             o.vertex_groups.remove(o.vertex_groups[wg])
