@@ -74,8 +74,11 @@ test('headlampOne: the beam is an ellipse wider than tall: whole inside its inne
 });
 
 test('headlampOne: the beam\'s axis is dipped to meet the lamp\'s rail level `aimAt` ahead (the pool\'s far end): the light is symmetric about it, not about the car\'s axis', () => {
-  const [wideIn, wideOut] = HEADLAMP_LIGHT.wide, tallMid = (Math.atan(Math.tan(rad((wideIn + wideOut) / 2)) * HEADLAMP_LIGHT.aspect) * 180) / Math.PI;
-  for (const [lamp, floor] of [[[0, 1.5, 0], 0], [[0, 6, 0], 3.6]] as const) {
+  // half-way into the beam's fade up and down (tangent 0.045 off the axis: past the inner ellipse, short of the edge), 5 m out: between the floor mask and `overRail`
+  const tallInner = Math.tan(rad(HEADLAMP_LIGHT.wide[0])) * HEADLAMP_LIGHT.aspect, tallOuter = Math.tan(rad(HEADLAMP_LIGHT.wide[1])) * HEADLAMP_LIGHT.aspect;
+  assert.ok(0.045 > tallInner && 0.045 < tallOuter, 'the probe is in the fade');
+  const tallMid = (Math.atan(0.045) * 180) / Math.PI;
+  for (const [lamp, floor] of [[[0, 1.5, 0], 0], [[0, 4.8, 0], 3.6]] as const) {
     const h = lamp[1] - floor, square = (p: number[]): number => squareAt(p, [...lamp], 1, floor);
     const above = square(offAxis([...lamp], h, 5, 0, tallMid)), below = square(offAxis([...lamp], h, 5, 0, -tallMid)); // 5 m out: over the floor mask
     assert.ok(above > 0, `lit half-way out above the axis: ${above}`);
@@ -95,24 +98,41 @@ test('headlampOne: the beam\'s numbers come from the pool on the rails: as wide 
   let halfAt = 0, endAt = 0;
   for (let u = 0; u <= 1; u += 1e-5) { const v = poolFalloff(u, t); if (v >= 0.5 * poolFalloff(0, t)) halfAt = u; if (v > 0) endAt = u; }
   near(HEADLAMP_LIGHT.wide[0], (Math.atan((half * halfAt) / HEADLAMP_LIGHT.poolAt) * 180) / Math.PI, 1e-3, 'whole to where the pool is half its middle');
-  near(HEADLAMP_LIGHT.wide[1], (Math.atan((half * endAt) / HEADLAMP_LIGHT.poolAt) * 180) / Math.PI, 1e-3, 'none past where the pool ends');
+  near(HEADLAMP_LIGHT.wide[1], (Math.atan((HEADLAMP_LIGHT.spill * half * endAt) / HEADLAMP_LIGHT.poolAt) * 180) / Math.PI, 1e-3, 'none past `spill` times where the pool ends');
+  assert.ok(HEADLAMP_LIGHT.spill >= 1 && HEADLAMP_LIGHT.spill <= 3, 'a soft spill a little past the pool, not a floodlight');
   assert.equal(HEADLAMP_LIGHT.aimAt, POOL.length, 'the axis meets the rails where the pool ends');
   assert.ok(HEADLAMP_LIGHT.aspect > 0 && HEADLAMP_LIGHT.aspect < 1, 'taller than wide is not a headlamp');
   assert.ok(HEADLAMP_GLSL.one.includes(Math.tan(rad(HEADLAMP_LIGHT.wide[1])).toFixed(6).replace(/0+$/, '')), 'the edge\'s tangent is in the shader');
   // a wall square across the track 20 m out (a buffer stop's, a portal's face): its light sits low, over the pool, from the mask up to a few metres
   const lamp = [0, 1.5, 0], at = (y: number): number => lightAt([0, y, -20], [0, 0, 1], lamp, [0, 0, -1])[0]!;
   assert.ok(at(0.8) > 0, 'just over the mask: lit, so the wall light meets the pool');
-  assert.equal(at(3.5), 0, '3.5 m up a wall 20 m ahead: dark');
+  assert.equal(at(HEADLAMP_LIGHT.overRail[1]), 0, `${HEADLAMP_LIGHT.overRail[1]} m up a wall 20 m ahead: dark`);
+  assert.ok(HEADLAMP_LIGHT.overRail[1] <= 5, 'nothing lit over 4 to 5 m');
   assert.equal(HEADLAMP_LIGHT.range, 45);
   assert.equal(HEADLAMP_SLOTS, 8);
+});
+
+test('headlampOne: a facing wall 25 to 35 m ahead carries a soft patch on its bottom 2 to 3 m: at 30 m, 1 m up, a fifth of the pool\'s middle at least; a portal\'s pier beside the bore too', () => {
+  // X = 20%: the light on a wall is in units of its albedo, the pool is added light; a fifth of the pool's night strength is the round-2 look's "twice the wall light" in
+  // testable form (3c9a941f gave 12.7% here, and none on the piers). The lens's red channel is 1, so the red channel is the light itself.
+  const lamp = [0, 1.4, 0], wall = (x: number, y: number, z: number): number => lightAt([x, y, z], [0, 0, 1], lamp, [0, 0, -1])[0]!;
+  const at1 = wall(0, 1, -30);
+  assert.ok(at1 >= 0.2 * POOL.night, `30 m ahead, 1 m up: ${at1} under a fifth of the pool's ${POOL.night}`);
+  assert.ok(wall(0, 2, -30) > 0 && wall(0, 2, -30) < at1, 'it fades upward: 2 m up is lit, less');
+  assert.equal(wall(0, 5, -30), 0, '5 m up: dark');
+  // the portal: a pier's face 4.5 m beside the bore's line, 25 m ahead (the bores are 8 m wide)
+  assert.ok(wall(4.5, 1, -25) > 0.1 * POOL.night, `a pier 4.5 m off the line, 25 m ahead, 1 m up: ${wall(4.5, 1, -25)}`);
+  assert.equal(wall(4.5, 5, -25), 0, 'and dark 5 m up');
+  // a wall close in is no brighter than round 2's first constants made it (0.8 at ref 10 m, held inside 5 m: 2.21 at 6 m)
+  assert.ok(wall(0, 1, -6) <= 2.6, `a wall 6 m ahead, 1 m up: ${wall(0, 1, -6)}`);
 });
 
 test('headlampOne: no light high over the rails: it fades out over `overRail`, so a roof truss over the lamp, or one in the beam of a lamp tipped up, is dark', () => {
   const [lo, hi] = HEADLAMP_LIGHT.overRail, floor = 0;
   // a lamp on a train tipped well up (a steep ramp), so its beam climbs: on the beam's axis, whole under `lo`, fading, none over `hi`
-  const lamp = [0, 1.5, 0], aim = new THREE.Vector3(0, 0.45, -1).normalize(), ax = new THREE.Vector3(aim.x * HEADLAMP_LIGHT.aimAt, aim.y * HEADLAMP_LIGHT.aimAt - 1.5, aim.z * HEADLAMP_LIGHT.aimAt).normalize();
-  const onAxisAt = (y: number): number => { const d = (y - 1.5) / ax.y, p = [ax.x * d, y, ax.z * d]; return lightAt(p, [-ax.x, -ax.y, -ax.z], lamp, [aim.x, aim.y, aim.z], 1, floor)[0]!; };
-  const below = onAxisAt(lo - 0.5), between = onAxisAt((lo + hi) / 2);
+  const H = 0.8, lamp = [0, H, 0], aim = new THREE.Vector3(0, 0.45, -1).normalize(), ax = new THREE.Vector3(aim.x * HEADLAMP_LIGHT.aimAt, aim.y * HEADLAMP_LIGHT.aimAt - H, aim.z * HEADLAMP_LIGHT.aimAt).normalize();
+  const onAxisAt = (y: number): number => { const d = (y - H) / ax.y, p = [ax.x * d, y, ax.z * d]; return lightAt(p, [-ax.x, -ax.y, -ax.z], lamp, [aim.x, aim.y, aim.z], 1, floor)[0]!; };
+  const below = onAxisAt(lo - 0.3), between = onAxisAt((lo + hi) / 2);
   assert.ok(below > 0, `under ${lo} m: lit (${below})`);
   assert.ok(between > 0 && between < below, `between ${lo} and ${hi} m it fades: ${between}`);
   assert.equal(onAxisAt(hi + 0.2), 0, `over ${hi} m: none`);

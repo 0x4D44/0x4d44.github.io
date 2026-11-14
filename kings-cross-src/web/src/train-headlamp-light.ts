@@ -31,20 +31,26 @@ function poolAcross(t: number, share: number): number {
   return (lo + hi) / 2;
 }
 const deg = (rad: number): number => (rad * 180) / Math.PI;
-/** The beam's sideways half-angles (degrees) from the pool `at` metres ahead of the lamps: whole to where the pool is half its middle, none past its lit edge. */
-function beamWide(at: number): readonly [number, number] {
+/**
+ * The beam's sideways half-angles (degrees) from the pool `at` metres ahead of the lamps: whole to where the pool is half its middle; its soft spill reaches `spill` times
+ * the pool's lit edge (tangent), so a facing wall just off the pool's width, a tunnel portal's piers beside the bore, still takes a fading patch.
+ */
+function beamWide(at: number, spill: number): readonly [number, number] {
   const t = at / POOL.length, half = POOL.width / 2;
-  return [deg(Math.atan((half * poolAcross(t, 0.5)) / at)), deg(Math.atan((half * poolAcross(t, 0)) / at))];
+  return [deg(Math.atan((half * poolAcross(t, 0.5)) / at)), deg(Math.atan((spill * half * poolAcross(t, 0)) / at))];
 }
+const SPILL = 2;
 const POOL_AT = 17.5;
 
 /**
  * The light of one headlamp end. The BEAM: `wide`, its half-angles across, degrees (whole inside the first, none outside the second), taken from the pool on the rails
  * (train-lamp-pool.ts `POOL`, `poolFalloff`) at `poolAt` metres ahead (the middle of 15 to 20 m): the half-width where the pool is half its middle's brightness, and
- * where it ends. `aspect`: its height over its width (tangent over tangent), so an ellipse wider than tall. `aimAt`: its axis is dipped from the car's axis to meet the
+ * `spill` times as far out as where it ends (round 2's look: at the portal the piers 4 m beside the bore, 25 m out, sat just outside a beam as narrow as the pool, so
+ * they stayed dark). `aspect`: its height over its width (tangent over tangent), so an ellipse wider than tall. `aimAt`: its axis is dipped from the car's axis to meet the
  * lamp's rail level that far ahead (the pool's length: the beam's middle lands where the pool ends), so the dip is the lamp's own height over `aimAt`. `overRail`: metres
- * over the lamp's rail level where the light fades out (whole under the first, none over the second): the beam stays on walls, faces and signals over the pool and off
- * the shed's roof trusses, whatever the cone. `range`: metres, where it is gone
+ * over the lamp's rail level where the light fades out (whole under the first, none over the second): a soft patch on the bottom 2 to 3 m of a facing wall, fading
+ * upward, nothing over 4.5 m, and so none on the shed's roof trusses, whatever the cone. `level` and `near`: round 2's look raised the light on a wall 25 to 35 m ahead
+ * twice (`level` 0.8 to 1.6) and holds it flat inside 8 m (`near`), so a wall close in is no brighter than it was. `range`: metres, where it is gone
  * (a smooth window, `(1 - (d / range)^4)^2`). `level`: what a surface square to the beam `ref` metres away reflects, in units of its own albedo, at full strength; it falls
  * with the square of the distance, held at its value at `near` metres closer in. `floorOver`: the floor mask, metres over the lamp's rail level: all of the light under the first,
  * none over the second, whichever way the surface faces. The track bed is the pool's: the first GPU look pack (13 Nov) had a mask of up-facing faces only, and the sleepers'
@@ -52,8 +58,8 @@ const POOL_AT = 17.5;
  * ranked as if this much of its distance away. ASSUMED: a look, not a measurement; the GPU look pack tunes `level`, `aspect` and `overRail` (the pool gives `wide` and `aimAt`).
  */
 export const HEADLAMP_LIGHT = {
-  wide: beamWide(POOL_AT), poolAt: POOL_AT, aspect: 0.5, aimAt: POOL.length, overRail: [3.5, 6],
-  range: 45, level: 0.8, ref: 10, near: 5,
+  wide: beamWide(POOL_AT, SPILL), poolAt: POOL_AT, spill: SPILL, aspect: 0.5, aimAt: POOL.length, overRail: [1.5, 4.5],
+  range: 45, level: 1.6, ref: 10, near: 8,
   floorOver: [0.35, 0.6],
   fade: 0.25, hysteresis: 0.8,
 } as const;
