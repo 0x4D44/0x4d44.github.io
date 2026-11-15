@@ -50,8 +50,9 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const bridge=kingsPlaceBridge(bridgeBatch,ring,[dir[0]/dl,dir[1]/dl],ground,rubble,[...track.ground,...track.bridge]);
  const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge,ring,bridgeBatch);
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
- // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material
- const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground);
+ // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material;
+ // its coursed ashlar shares the street walls' coursed-stone batch (no new draw or texture)
+ const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,coursed);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());

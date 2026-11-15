@@ -839,6 +839,12 @@ const FROZEN_PERTH_CAMERAS = {
     target: [-49.9,  5,  -92.45],
     source: "waverleyView(geometry, 1.6): the app landing view fitted to the OSM platform extent",
   },
+  'pt-st-leonards-bridge': {
+    pos: [-15.1,  2.515,  80],
+    target: [3.44,  3.2,  160.5],
+    fov: 24,
+    source: "R-slb-a standpoint (geograph 591926, Adrian Beney 2007, CC BY-SA 2.0: camera NO 113 230, subject NO 113 228, looking S; ALM-BUG-FLU-00021 round 3, lead ruling 2026-11-15): on OSM platform 4 (way/44200505) at z 80, 1.4 m in from its east edge, eye 1.6 m above the ASSUMED 0.915 m deck, about 83 m short of St Leonard's Bridge (OSM way/24228327), looking south (bearing 13 deg east of south) at the middle of its north elevation (40 m along the way, 3.2 m over the rail), a long lens (fov 24) so the central arches fill the frame, as the photo's. The grid references are only 100 m precise; the platform end (pt-platform-4-south-end) is too close (26-45 m) for the photo's flat view",
+  },
 };
 
 /** The Perth cameras by name: a fresh copy of FROZEN_PERTH_CAMERAS on every call. */
@@ -849,7 +855,7 @@ export function perthCameras() {
 /** The fixed Perth views each phase 2 element is scored from (the Perth plan, "Cameras"). */
 export const PERTH_ELEMENT_VIEWS = {
   'perth-station': ['pt-platform-4-north', 'pt-platform-1-dundee', 'pt-roof-underside', 'pt-south-approach', 'pt-platform-4-clock', 'pt-north-footbridge', 'pt-platform-4-south-end', 'pt-overview'],
-  'perth-frontage': ['pt-station-frontage', 'pt-station-hotel', 'pt-kings-place-bridge', 'pt-platform-4-north', 'pt-overview'],
+  'perth-frontage': ['pt-station-frontage', 'pt-station-hotel', 'pt-kings-place-bridge', 'pt-st-leonards-bridge', 'pt-platform-4-north', 'pt-overview'],
   'perth-city': ['pt-kinnoull-panorama', 'pt-kinnoull-cliff', 'pt-tay-from-bridgend', 'pt-tay-viaduct', 'pt-overview'],
 };
 
