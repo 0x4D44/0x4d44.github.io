@@ -367,10 +367,12 @@ export class AnimCrowd {
   _bagOn(p) {
     p.bagRig = null; if (!p.bag || !p.obj) return;
     try { p.bagRig = wearBag(this.THREE, p.obj, p.bag, this._bagFit(p.char), p.char.metaH || 1.75); } catch (e) { p.bagRig = null; }
-    if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true);
+    if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
   }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
-  _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; this._bagOn(p); return !!p.bagRig; }
+  _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
+  /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
+  _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0); this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; return this._bh; }
   /** test hook: set a person's smile by hand (0..1) */
   _smileSet(p, w) { if (p.face) p.face.morphTargetInfluences[0] = w; return !!p.face; }
   /** eyelids (blink.js) for a full-detail clone; the far model has none. Where the eyes are is read once per character. */
@@ -679,7 +681,7 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
-      if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole');
+      if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', false, this._bagHow(p));
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (c !== p.lids.c) p.lids.set(c); }
       p.stateT += dt; this._goNow = p.mode === 'go';
@@ -773,7 +775,8 @@ export class AnimCrowd {
    *  recording of one character is the same whatever else is on the platform. */
   _gaitOpts(p) {
     const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
-    return { armOut: (tab && tab.walk) || [8, 8], seed: (G.seedOf(id) + 7919 * n) >>> 0,
+    const bg = p.bag && p.bag.hand ? p.bag.kind : '', ao = ((tab && tab.walk) || [8, 8]).slice(); if (bg === 'trolley') ao[0] += 7;   // (the left hand carries: bags.js)
+    return { armOut: ao, hold: [bg === 'trolley' ? 1 : bg ? 0.5 : 0, 0], trail: [bg === 'trolley' ? 22 : 0, 0], seed: (G.seedOf(id) + 7919 * n) >>> 0,
       var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r() } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.

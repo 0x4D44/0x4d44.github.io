@@ -16,6 +16,7 @@ import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
 import { loadAdvertAtlas, applyAdverts, trackWallAdverts } from './adverts.js';
 import { fitTrainAdverts } from './carcards.js';
+import { setLuggage, luggageNames } from './bags.js';
 import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
 import { cutStairHoles } from './stairs.js';
 import { Rats } from './rats.js';
@@ -68,6 +69,7 @@ class Sim {
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
       this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._optG('models/people_lod.glb'),  this._opt('models/tunnel_station_vault.glb'), this._opt('models/signal_wall.glb'), this._opt('models/signal_boards.glb'),
     ]);
+    setLuggage(await this._optG('models/luggage.glb'));   // (before any crowd is made: the bags people carry, bags.js)
     this.hallIndex = await this._json('models/stations_index.json');
     const looksJ = await this._json('data/station_looks.json');
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
@@ -1611,10 +1613,10 @@ class Sim {
           for (const r of [ch.node, ch.lodNode]) if (r) { let legs = 0; r.traverse((m) => { if (m.isSkinnedMesh && m.material && /^hose_/.test(m.material.name || '')) out.old++; if (m.name === 'hose_legs') legs++; }); if (legs !== 1) out.old += 100; } }
         return out; },
       // bags (bags.js): everybody can be measured for one, a rucksack is strapped on both shoulders and never under long hair, and whoever carries one here has it on them, off the floor
-      bagAudit: () => { const c = this.crowd, out = { chars: 0, fits: 0, long: 0, ruck: 0, strapless: [], people: 0, carrying: 0, kinds: {}, rigged: 0, lowest: 9, underHair: 0 }; if (!c || !c.chars || !c._bagFit) return out;
+      bagAudit: () => { const c = this.crowd, out = { chars: 0, fits: 0, long: 0, ruck: 0, strapless: [], people: 0, carrying: 0, kinds: {}, rigged: 0, lowest: 9, underHair: 0, luggage: luggageNames() }; if (!c || !c.chars || !c._bagFit) return out;
         for (const ch of c.chars) { const f = c._bagFit(ch); out.chars++; if (f) out.fits++; if (f && f.longHair) out.long++; if (f && f.ok && !f.longHair) { out.ruck++; if (f.strapN < 2) out.strapless.push(ch.id); } }
         for (const q of c.people) { if (!q.obj) continue; out.people++; if (!q.bag) continue; out.carrying++; out.kinds[q.bag.kind] = (out.kinds[q.bag.kind] || 0) + 1; const r = q.bagRig; if (r && r.mesh.parent) out.rigged++;
-          if (r && r.where === 'hand') out.lowest = Math.min(out.lowest, r.mesh.position.y - r.drop - r.h); if (q.bag.kind === 'ruck' && r && r.fit.longHair) out.underHair++; }
+          if (r && r.where === 'floor') out.floor = (out.floor || 0) + 1; if (r && r.where === 'hand') out.lowest = Math.min(out.lowest, r.mesh.position.y - r.drop - r.h); if (q.bag.kind === 'ruck' && r && r.fit.longHair) out.underHair++; }
         return out; },
       // the smile (smile.js): every full-detail character gets one, fitted to where its own mouth is
       smileAudit: () => { const c = this.crowd, out = { chars: 0, rigs: 0, found: 0, minMoved: 1e9, yMin: 9, yMax: 0, halfMin: 9, halfMax: 0, none: [] }; if (!c || !c.chars) return out;

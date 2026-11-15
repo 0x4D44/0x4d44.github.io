@@ -21,7 +21,12 @@ const KID = ['#d2447e', '#1f6fd0', '#7fb62c', '#6b3fa8', '#e0672a', '#16a0a0'];
 const TOTE = ['#d8cfb8', '#2a3550', '#7a2f38', '#3d5a45', '#c7b037', '#e7e3da', '#44474d'];
 const CARRIER = ['#f1f1ee', '#e8791e', '#2e7d3c', '#1d4fa0', '#f1f1ee', '#c9202a', '#f0d23c'];
 const CASE = ['#17181b', '#2b2118', '#1d2634', '#3a3d42'];
-export const KINDS = ['ruck', 'tote', 'carrier', 'case'];
+const TROLLEY = ['#1f5560', '#a3262a', '#17181b', '#2d3a66', '#6b6f76', '#c7b037', '#5b2a6e', '#b9bdc2', '#22402f', '#d2447e'];
+const HOLDALL = ['#15171b', '#2d3a66', '#a3262a', '#3d5a45', '#6b6f76', '#1f5560'];
+const HANDBAG = ['#17181b', '#7a2f38', '#6a4526', '#c9b79a', '#2a3550', '#a3262a', '#3b3f46', '#b58a1f'];
+const SHOPPER = ['#b89464', '#f1efe8', '#17181b', '#e7b7c2', '#1d4fa0', '#b89464', '#2e7d3c'];
+const SATCHEL = ['#17181b', '#4a2e1b', '#6a4526', '#1d2634', '#3a3d42'];
+export const KINDS = ['ruck', 'tote', 'carrier', 'case', 'handbag', 'holdall', 'shopper', 'trolley'];
 
 /** Does this person carry a bag, and which?  c = { kid, staff, kind ('man' | 'woman' | 'teen' | 'elder' | ...), outfit, id, longHair, pet }.
  *  Returns null or { kind, colour (hex), hand: true for a bag carried in the hand }.  Always three draws from rng, whoever it is. */
@@ -30,16 +35,25 @@ export function pickBag(rng, c) {
   if (!c || c.staff || c.pet || /highland|kilt/.test(c.outfit || '') && !/school/.test(c.outfit || '')) return null;   // staff are at work; the piper and the Highland dress are going somewhere smart
   const ruckOK = !c.longHair;   // hair down the back would hang through a rucksack
   const teen = c.kind === 'teen', elder = c.kind === 'elder', smart = /suit|commuter|coat|office|blazer/.test(c.id || '');
-  let pR, pT, pC, pS;   // rucksack, tote, carrier, case
-  if (c.kid) { pR = 0.5; pT = 0; pC = 0; pS = 0; }
-  else if (teen) { pR = 0.5; pT = 0.04; pC = 0.08; pS = 0; }
-  else if (elder) { pR = 0.04; pT = 0.2; pC = 0.14; pS = 0; }
-  else if (smart) { pR = 0.14; pT = 0.08; pC = 0.04; pS = 0.2; }
-  else { pR = 0.2; pT = 0.11; pC = 0.09; pS = 0.03; }
-  if (a < pR) { if (ruckOK) return { kind: 'ruck', colour: pick(c.kid ? KID : RUCK), hand: false }; return c.kid || b < 0.5 ? null : { kind: 'tote', colour: pick(TOTE), hand: true }; }
-  if (a < pR + pT) return { kind: 'tote', colour: pick(TOTE), hand: true };
-  if (a < pR + pT + pC) return { kind: 'carrier', colour: pick(CARRIER), hand: true };
-  if (a < pR + pT + pC + pS) return { kind: 'case', colour: pick(CASE), hand: true };
+  const woman = c.kind === 'woman' || /woman|girl/.test(c.id || '');
+  // the share of each: rucksack, tote, carrier, case, handbag, holdall, paper shopper, wheeled suitcase
+  let P;
+  if (c.kid) P = [0.5, 0, 0, 0, 0, 0, 0, 0];
+  else if (teen) P = [0.48, 0.04, 0.06, 0, 0, 0.05, 0.03, 0];
+  else if (elder) P = [0.03, 0.15, 0.1, 0, woman ? 0.14 : 0, 0, 0.06, 0.04];
+  else if (smart) P = [0.12, 0.04, 0.03, 0.2, woman ? 0.08 : 0, 0.02, 0.02, 0.06];
+  else P = [0.18, woman ? 0.05 : 0.06, 0.06, 0.03, woman ? 0.1 : 0, woman ? 0.02 : 0.04, woman ? 0.04 : 0.03, 0.05];
+  let t = a, i = 0; while (i < P.length && t >= P[i]) t -= P[i++];
+  switch (i) {
+    case 0: if (ruckOK) return { kind: 'ruck', colour: pick(c.kid ? KID : RUCK), hand: false, style: !c.kid && !teen && b > 0.72 ? 'hike' : 'day' }; return c.kid || b < 0.5 ? null : { kind: 'tote', colour: pick(TOTE), hand: true };
+    case 1: return { kind: 'tote', colour: pick(TOTE), hand: true };
+    case 2: return { kind: 'carrier', colour: pick(CARRIER), hand: true };
+    case 3: return { kind: 'case', colour: pick(LUG ? SATCHEL : CASE), hand: true };
+    case 4: return { kind: 'handbag', colour: pick(HANDBAG), hand: true };
+    case 5: return { kind: 'holdall', colour: pick(HOLDALL), hand: true };
+    case 6: return { kind: 'shopper', colour: pick(SHOPPER), hand: true };
+    case 7: return { kind: 'trolley', colour: pick(TROLLEY), hand: true, style: b > 0.62 && !elder ? 'large' : 'cabin' };
+  }
   return null;
 }
 
@@ -108,6 +122,25 @@ function rrect(cx, y, cz, a, b, r) {
   return o;
 }
 const shade = (T, hex, k) => new T.Color(hex).multiplyScalar(k);
+
+// the luggage made in Blender (tools/assets_luggage.py -> models/luggage.glb): name -> { parts: [{ geo, mat }], ud }.  Without it the bags are the plain ones made here.
+let LUG = null;
+/** hand over the loaded models/luggage.glb (a GLTFLoader result).  Call it before the crowd is made. */
+export function setLuggage(gltf) {
+  if (!gltf || !gltf.scene) { LUG = null; return 0; } const L = {};
+  for (const o of gltf.scene.children) { const parts = []; o.traverse((m) => { if (m.isMesh) parts.push({ geo: m.geometry, mat: m.material }); }); if (parts.length) L[o.name] = { parts, ud: o.userData || {} }; }
+  LUG = Object.keys(L).length ? L : null; return LUG ? Object.keys(L).length : 0;
+}
+export const luggageNames = () => (LUG ? Object.keys(LUG) : []);
+/** one piece of luggage in a colour: a Group of meshes that share the model's geometry; the cloth takes the colour, its panels a darker shade of it */
+function lugObj(T, name, hex) {
+  const L = LUG && LUG[name]; if (!L) return null; const K = kit(T), g = new T.Group(); g.name = 'bag_' + name; if (!K.lmat) K.lmat = new Map();
+  for (const pt of L.parts) { const n = pt.mat.name, tint = n === 'lug_main' || n === 'lug_second', key = tint ? n + hex : n; let m = K.lmat.get(key);
+    if (!m) { m = pt.mat.clone(); m.name = n; if (tint) { m.color.set(hex); if (n === 'lug_second') m.color.multiplyScalar(0.58); } K.lmat.set(key, m); }
+    const me = new T.Mesh(pt.geo, m); me.name = 'bag_part'; g.add(me); }
+  return g;
+}
+const LUG_OF = { case: 'satchel', handbag: 'handbag', holdall: 'holdall', shopper: 'shopper' }, PLAIN_OF = { handbag: 'tote', holdall: 'tote', shopper: 'carrier', trolley: 'case' };
 
 const kits = new WeakMap();
 function kit(T) { let k = kits.get(T); if (!k) { k = { mat: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0, side: T.DoubleSide }), geo: new Map() }; k.mat.name = 'bag'; kits.set(T, k); } return k; }
@@ -214,17 +247,27 @@ export function fitBody(T, rest, h = 1.75) {
  *  Returns the rig { bag, kind, mesh, ... } to hand to stepBag every frame, or null (no bag, or the body could not be measured for it). */
 export function wearBag(T, obj, bag, fit, h = 1.75) {
   if (!bag || !fit) return null; const K = kit(T), B = {}; obj.traverse((o) => { if (o.isBone && !B[o.name]) B[o.name] = o; });
-  for (const n of ['spine_03', 'pelvis', 'hand_l', 'hand_r', 'thigh_l', 'thigh_r', 'calf_l', 'calf_r']) if (!B[n]) return null;
+  for (const n of ['spine_03', 'pelvis', 'hand_l', 'hand_r', 'thigh_l', 'thigh_r', 'calf_l', 'calf_r', 'foot_l', 'foot_r']) if (!B[n]) return null;
   const s = Math.min(1.05, Math.max(0.6, h / 1.75)), rig = { bag, kind: bag.kind, fit, B, s, where: null, T };
   if (bag.kind === 'ruck') {
     if (!fit.ok) return null;
     const on = new T.Group(); on.name = 'bag_on'; on.matrixAutoUpdate = false; on.matrix.copy(fit.inv); B.spine_03.add(on);
-    const body = new T.Mesh(ruckGeo(T, fit.size, bag.colour), K.mat); body.name = 'bag_ruck'; rig.home = new T.Vector3(0, fit.bot, fit.fB); rig.mesh = body; rig.on = on;
+    let body = lugObj(T, bag.style === 'hike' ? 'ruck_hike' : 'ruck_day', bag.colour);
+    if (body) body.scale.set(fit.size.W / 0.30, fit.size.H / 0.45, fit.size.D / 0.16); else { body = new T.Mesh(ruckGeo(T, fit.size, bag.colour), K.mat); body.name = 'bag_ruck'; } rig.home = new T.Vector3(0, fit.bot, fit.fB); rig.mesh = body; rig.on = on;
     if (fit.straps) { rig.straps = new T.Mesh(fit.straps, K.mat); rig.straps.name = 'bag_straps'; on.add(rig.straps); }
     rig.h = fit.size.H; rig.d = fit.size.D; rig.w = fit.size.W;
+  } else if (bag.kind === 'trolley' && LUG && LUG.trolley_cabin) {
+    // a wheeled suitcase: it stands on the floor by its owner, is towed behind them on two wheels when they walk, and is carried by its top handle on the stairs
+    const nm = bag.style === 'large' && LUG.trolley_large ? 'trolley_large' : 'trolley_cabin', ud = LUG[nm].ud, hu = LUG[nm + '_handle'].ud;
+    const g = new T.Group(); g.name = 'bag_trolley'; g.rotation.order = 'YXZ'; g.add(lugObj(T, nm, bag.colour)); rig.handle = lugObj(T, nm + '_handle', bag.colour); g.add(rig.handle);
+    rig.mesh = g; rig.kind = 'trolley'; rig.w = ud.w; rig.h = ud.h; rig.d = ud.d; rig.drop = 0; rig.travel = hu.travel; rig.gripH = hu.grip; rig.gz = -hu.gripY; rig.pz = ud.d / 2 - 0.04; rig.tow = 0;
+    rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r;
   } else {
-    const g = handGeo(T, bag.kind, bag.colour, bag.kind === 'case' ? Math.max(0.85, s) : s); rig.mesh = new T.Mesh(g.geo, K.mat); rig.mesh.name = 'bag_' + bag.kind;
-    rig.h = g.h; rig.d = g.d; rig.w = g.w; rig.drop = g.drop; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r;
+    const lg = lugObj(T, LUG_OF[bag.kind], bag.colour), kind = lg ? bag.kind : PLAIN_OF[bag.kind] || bag.kind;
+    if (lg) { const ud = LUG[LUG_OF[bag.kind]].ud, k = bag.kind === 'case' ? Math.max(0.85, s) : s; lg.scale.setScalar(k); rig.mesh = lg; rig.h = ud.h * k; rig.d = ud.w * k; rig.w = ud.d * k; rig.drop = ud.drop * k; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; }
+    else {
+    const g = handGeo(T, kind, bag.colour, kind === 'case' ? Math.max(0.85, s) : s); rig.mesh = new T.Mesh(g.geo, K.mat); rig.mesh.name = 'bag_' + bag.kind;
+    rig.h = g.h; rig.d = g.d; rig.w = g.w; rig.drop = g.drop; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; }
   }
   rig.obj = obj; rig.m = new T.Matrix4(); rig.v = new T.Vector3(); rig.u = new T.Vector3();
   return rig;
@@ -232,11 +275,11 @@ export function wearBag(T, obj, bag, fit, h = 1.75) {
 
 /** Where the bag is this frame.  sit: the person is sitting (the bag is on the lap); pole: holding on (the bag is in whichever hand is lower).
  *  Reads the skeleton as it was last drawn (matrixWorld), so it costs no update of its own; call it once with fresh = true after posing a new clone. */
-export function stepBag(rig, sit, pole, fresh) {
+export function stepBag(rig, sit, pole, fresh, o) {
   if (!rig) return; const { obj, B, mesh, fit, T } = rig, v = rig.v, u = rig.u;
   if (fresh) obj.updateMatrixWorld(true);
   const inv = rig.m.copy(obj.matrixWorld).invert(), at = (bone, out) => out.setFromMatrixPosition(bone.matrixWorld).applyMatrix4(inv);
-  const where = sit ? 'lap' : rig.kind === 'ruck' ? 'back' : 'hand';
+  const where = rig.kind === 'trolley' ? 'floor' : sit ? 'lap' : rig.kind === 'ruck' ? 'back' : 'hand';
   if (where !== rig.where) {
     rig.where = where; if (mesh.parent) mesh.parent.remove(mesh);
     if (where === 'back') { rig.on.add(mesh); mesh.position.copy(rig.home); mesh.rotation.set(0, 0, 0); } else obj.add(mesh);
@@ -244,6 +287,30 @@ export function stepBag(rig, sit, pole, fresh) {
   }
   if (where === 'back') return;
   const fz = fit.fz;
+  if (where === 'floor') {
+    const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
+    if (fresh) rig.tow = sit || pole ? 0 : walk; else rig.tow += ((sit || pole ? 0 : walk) - rig.tow) * 0.14;
+    if (sit) {   // on the floor in front of the knees, the pull handle stowed
+      at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
+      const ff = fz * Math.max(fz * kf, fz * v.z + 0.17 * rig.s, fz * u.z + 0.17 * rig.s);   // clear of the knees and of the toes
+      mesh.position.set(kx, Math.min(v.y, u.y) - 0.09 * rig.s, ff + fz * (rig.d / 2 + 0.03)); mesh.rotation.set(0, yaw + Math.PI, 0); rig.handle.position.y = -rig.travel; return;
+    }
+    at(rig.grip, v); const hx = sd0 * (v.x - fit.midx);
+    if (lift) {   // carried by the top handle, broadside to the leg
+      mesh.position.set(fit.midx + sd0 * Math.max(hx, fit.hip + rig.d / 2 + 0.03), Math.max(0.04, v.y - rig.h - 0.035), v.z); mesh.rotation.set(0, yaw + Math.PI / 2, 0); rig.handle.position.y = -rig.travel; return;
+    }
+    rig.handle.position.y = 0;
+    // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
+    const sx = fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = -fz * 0.1, t = rig.tow;
+    if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
+    const th = Math.acos(Math.min(0.985, Math.max(0.55, (v.y + 0.02) / rig.gripH))) * t, c = Math.cos(th), sn = Math.sin(th);
+    const gx = fit.midx + sd0 * Math.max(hx, 0.15 + rig.w / 2), gzw = v.z;   // where the grip is
+    // the case's own (0, gripH, gz) is at the grip; its wheels (0, 0, pz) are on the floor
+    const lz = rig.gripH * sn + rig.gz * c, wy = -rig.pz * sn;
+    const tx = gx, tz = gzw - fz * lz, ty = -wy;   // towed
+    mesh.position.set(sx + (tx - sx) * t, ty * t, sz + (tz - sz) * t); mesh.rotation.set(th, yaw, 0);
+    return;
+  }
   if (where === 'lap') {
     // on the thighs, against the body: between the hips and the knees, as high as the top of the thighs
     at(B.thigh_l, v); at(B.thigh_r, u); const hx = (v.x + u.x) / 2, hy = (v.y + u.y) / 2, hf = (v.z + u.z) / 2;

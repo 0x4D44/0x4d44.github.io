@@ -624,6 +624,12 @@ try {
     const ba = await ev(p, () => __sim.bagAudit());
     ok('people carry bags: everybody can be measured for one, a rucksack has both its straps and is never worn under long hair, and the bags on this platform are on their owners and off the floor',
       ba && ba.chars > 60 && ba.fits === ba.chars && ba.ruck >= 0.4 * ba.chars && ba.strapless.length === 0 && ba.people > 0 && ba.rigged === ba.carrying && ba.underHair === 0 && ba.lowest > 0, JSON.stringify(ba));
+    // the luggage made in Blender: the file is loaded, and a wheeled case put on somebody stands on the floor beside them with its handle out
+    const lg = await ev(p, () => { const c = __sim.sim.crowd, q = c.people.find((x) => x.obj && x.obj.visible && x.state !== 'sit' && !x.stair); if (!q) return null; const was = q.bag;
+      const ok = c._bagSet(q, { kind: 'trolley', style: 'cabin', colour: '#1f5560', hand: true }), r = q.bagRig, out = { ok, where: r && r.where, y: r && r.mesh.position.y, parts: 0, handle: r && r.handle ? r.handle.position.y : null };
+      if (r) r.mesh.traverse((o) => { if (o.isMesh) out.parts++; }); c._bagSet(q, was); return out; });
+    ok('luggage from models/luggage.glb: two wheeled cases with their pull handles, a holdall, handbag, shopper, satchel and two rucksacks; a case stands on the floor by its owner',
+      ba && ba.luggage.length === 10 && ['trolley_cabin', 'trolley_cabin_handle', 'trolley_large', 'holdall', 'handbag', 'shopper', 'satchel', 'ruck_day', 'ruck_hike'].every((n) => ba.luggage.includes(n)) && lg && lg.ok && lg.where === 'floor' && lg.y >= 0 && lg.y < 0.1 && lg.parts >= 6 && lg.handle != null, JSON.stringify({ luggage: ba && ba.luggage, lg }));
     const sa = await ev(p, () => __sim.smileAudit());
     ok('people can smile: every full-detail character has the smile fitted to its own mouth, and whoever the player walks up to smiles (or laughs)',
       wa && wa.near && wa.near.smiled > 0.25 && sa && (sa.chars === 0 || (sa.rigs === sa.chars && sa.minMoved > 40 && sa.found >= 0.7 * sa.chars && sa.yMin > 0.95 && sa.yMax < 1.5)) && (!wa.near.face || wa.near.faceW > 0.2), JSON.stringify({ sa, near: wa.near }));

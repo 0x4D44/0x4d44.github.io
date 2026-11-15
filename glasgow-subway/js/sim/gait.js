@@ -259,7 +259,7 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 
 /** A new gait state for a body. */
 export function newGait(B, opts = {}) {
-  const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8],
+  const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8], hold: opts.hold || [0, 0], trail: opts.trail || [0, 0],
     var: Object.assign({ arm: 1, bob: 1, sway: 1, yawBias: 0, cad: 1, vary: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
     rng: rng32(opts.seed != null ? opts.seed : 0x2f6e), eT: 0, rate: 1,      // eT, rate: the step-to-step wander of the timing (see VARY)
     acc: 0, vPrev: null };                                                    // acc: how fast the body is speeding up (m/s^2, smoothed): the foot is put where the body will be
@@ -513,7 +513,7 @@ export function gaitTargets(g) {
   // arms: each swings against the same-side leg; the elbow bends more as the arm goes forward; the shoulder is turned out so the hand clears the hip
   T.upD = []; T.loD = [];
   for (let s = 0; s < 2; s++) {
-    const a = B.arm[s], sgn = s ? 1 : -1, amp = 0.5 * P.armSwing * V.arm, sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + 4 * D2R * w;
+    const a = B.arm[s], sgn = s ? 1 : -1, hd = g.hold[s], amp = 0.5 * P.armSwing * V.arm * (1 - 0.85 * hd), sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + (4 - g.trail[s]) * D2R * w;   // (an arm with a load swings less; one towing a case trails behind)
     const abd = (6 + g.armOut[s]) * D2R, dAbd = abd - a.abd0;
     const up = qmul(T.spineD[2], qmul(qx(sw), qz(sgn * dAbd)));
     const el = P.elbow * (0.5 + 0.5 * w) + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w;

@@ -62,3 +62,23 @@ still a coarse polygon up close.
 
 The people audit no longer counts somebody on the stairs as "standing inside furniture"
 (the stairs' footprint is an avoid box); that was an intermittent false failure.
+
+## Luggage made in Blender (2026-11-15)
+
+`tools/assets_luggage.py` (run with a Python that has `bpy`) writes `models/luggage.glb`
+(325 kB): two hard-shell wheeled suitcases (cabin and large) with separate pull handles, a
+holdall, a handbag, a paper shopper, a satchel and two rucksack bodies (day pack, hiking
+pack with lid and bedroll). Materials are named so `bags.js` can tint the cloth per bag.
+`bags.js` uses them when the file has loaded (`setLuggage`) and falls back to the plain bags
+it makes itself when it has not.
+
+- A wheeled case stands beside its owner, is tipped on to the two wheels under the handle and
+  towed when they walk (the grip follows the hand; that arm trails and barely swings:
+  `hold` / `trail` in `gait.js`), is carried by its top handle on stairs, and stands in front
+  of the feet of a seated owner with the handle stowed.
+- Handbags are carried by women, satchels mostly by people in suits, holdalls and shoppers by
+  any adult; children and teenagers get no suitcase.
+
+Limits: the hand is not closed round a handle; a standing owner's hand does not rest on the
+case; a case in front of a seated person stands in the aisle and other riders are not steered
+round it.

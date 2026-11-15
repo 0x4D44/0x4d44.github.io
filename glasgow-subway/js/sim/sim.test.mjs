@@ -990,6 +990,11 @@ test('people: bags - about four in ten carry one, staff and Highland dress do no
   const long = roll({ kind: 'woman', outfit: 'leggings', id: 'adult_runner', longHair: true }); assert.equal(long.ruck, undefined); assert.ok(long.tote > adult.tote * 0.9);
   const kid = roll({ kid: true, kind: 'girl', outfit: 'school_kilt', id: 'girl_small' }); assert.ok(kid.ruck > 0.4 * 4000 && !kid.tote && !kid.carrier && !kid.case);
   const suit = roll({ kind: 'man', outfit: 'trousers', id: 'man_commuter' }); assert.ok(suit.case > 4 * (adult.case || 1));
+  // the luggage: wheeled cases, holdalls and paper shoppers for anybody grown up, handbags for women; a case is 'cabin' or 'large', a rucksack 'day' or 'hike'
+  assert.ok(adult.trolley > 0.03 * 4000 && adult.holdall > 0 && adult.shopper > 0 && !adult.handbag && !kid.trolley && !kid.holdall, JSON.stringify(adult));
+  const woman = roll({ kind: 'woman', outfit: 'dress', id: 'woman_dress' }); assert.ok(woman.handbag > 0.07 * 4000 && woman.none > 0.45 * 4000, JSON.stringify(woman));
+  const styles = new Set(); for (let i = 0; i < 3000; i++) { const b = pickBag(rng, { kind: 'man', outfit: 'trousers', id: 'man_hoodie' }); if (b && b.style) styles.add(b.kind + ':' + b.style); }
+  assert.deepEqual([...styles].sort(), ['ruck:day', 'ruck:hike', 'trolley:cabin', 'trolley:large']);
   // the same number of draws whoever it is: one person's bag does not change the next person's
   let n = 0; const count = () => { n++; return 0.99; }; pickBag(count, { staff: true }); const a = n; pickBag(count, { kind: 'man' }); assert.equal(n - a, a);
   const big = ruckSize(0.2, 0.5, 1.8), small = ruckSize(0.13, 0.33, 1.15);

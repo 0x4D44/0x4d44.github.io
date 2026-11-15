@@ -21,6 +21,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SU from 'three/addons/utils/SkeletonUtils.js';
 import { AnimCrowd } from '../js/sim/people.js';
+import { setLuggage } from '../js/sim/bags.js';
 const q = new URLSearchParams(location.search);
 const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
 r.outputColorSpace = THREE.SRGBColorSpace;
@@ -31,6 +32,7 @@ const L = new GLTFLoader(), load = (u) => new Promise((ok, no) => L.load(u, ok, 
 (async () => {
   try {
     const gltf = await load(q.get('glb') || '../models/people.glb'), lod = q.get('lod') === '0' ? null : await load(q.get('lod') || '../models/people_lod.glb');
+    if (q.get('luggage') !== '0') { try { setLuggage(await load('../models/luggage.glb')); } catch (e) { console.warn('no luggage.glb'); } }
     const pm = await (await fetch('../models/people_meta.json')).json(); gltf.meta = {}; for (const p of pm.people) gltf.meta[p.id] = p;
     if (lod) lod.meta = gltf.meta;
     const crowd = q.get('lodfirst') === '1' && lod ? new AnimCrowd(THREE, SU, null, 60, 'high', lod) : new AnimCrowd(THREE, SU, gltf, 60, 'high', lod);
