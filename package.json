@@ -39,6 +39,7 @@
     "test:kings-cross": "npm --prefix kings-cross-src test",
     "test:skyblitz":"node --import ./skyblitz/tests/register.mjs --test --test-concurrency=1 \"skyblitz/tests/*.test.mjs\" && node skyblitz/tests/validate-static.mjs && node --check data.js",
     "test:plan-to-build": "node plan-to-build/tests/run.mjs",
+    "test:mdbench": "node --test mdbench/tests/data.test.mjs && node mdbench/tests/browser.test.mjs && node --check mdbench/lib.js && node --check mdbench/ui.js",
     "test:plan-to-build:full": "node plan-to-build/tests/run.mjs --full --mutations"
   }
 }
