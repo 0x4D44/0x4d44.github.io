@@ -76,7 +76,8 @@ test('the scene draws it: from above, the road at the LiDAR level over each trac
     const top: THREE.Intersection | undefined = ray.intersectObject(mesh)[0];
     assert.ok(top && Math.abs(top.point.y - ST_LEONARDS.road) < .2, `${x.id}: road over the rail at ${top?.point.y}`);
     ray.set(new THREE.Vector3(x.p[0], .5, x.p[1]), new THREE.Vector3(0, 1, 0));
-    const under: THREE.Intersection | undefined = ray.intersectObject(mesh)[0];
+    // (round 7: the soffits are their own mesh)
+    const under: THREE.Intersection | undefined = ray.intersectObjects([mesh, meshNamed('perth-st-leonards-soffit')])[0];
     assert.ok(under && under.point.y >= 4.5 && under.point.y < ST_LEONARDS.road, `${x.id}: arch soffit over the rail at ${under?.point.y}`);
   }
   // its cost: one draw, a few thousand triangles
@@ -157,7 +158,7 @@ test('round 3: a voussoir ring stands proud of each arch face, impost bands at t
     }
   }
   // the soffit: its triangles' corners carry differing normals (one per station on the ellipse), not one flat normal a facet
-  const g = bridge.geometry, n = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
+  const g = meshNamed('perth-st-leonards-soffit').geometry, n = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
   const pos = g.getAttribute('position');
   let soffitTris = 0, smooth = 0;
   for (let t = 0; t < idx.count; t += 3) {
@@ -208,7 +209,7 @@ test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridg
     assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `s ${s} y ${y.toFixed(2)} in frame (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
     const eye = new THREE.Vector3(...(k.pos as [number, number, number])), dir = new THREE.Vector3(x, y, z).sub(eye), far = dir.length();
     const hit = new THREE.Raycaster(eye, dir.normalize(), .1, far + 1).intersectObjects(everything)[0];
-    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-station-street-walls'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
+    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-st-leonards-soffit', 'perth-station-street-walls'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
   }
   const evidence = readFileSync(new URL('../../tools/evidence.mjs', import.meta.url), 'utf8');
   assert.match(evidence, /'perth-frontage': \[[^\]]*'pt-st-leonards-bridge'/);
@@ -221,7 +222,7 @@ const lumaHex = (hex: number) => .2126 * ((hex >> 16) & 255) + .7152 * ((hex >> 
 // Round 4b (the lead's look at round 4): the soffits a warm brown-grey darker than the face's stone (R-slb-a's are darker than its face),
 // still in stones of several tones. Round 4c: two thirds drew black under the tone map's toe; 0.85 (see the round 4c lighting test).
 test('round 4: the soffits are a warm brown-grey stone 0.8-0.9 of the face\'s, laid as stones of several tones, not one sheet', () => {
-  const bridge = meshNamed('perth-st-leonards-bridge'), g = bridge.geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
+  const bridge = meshNamed('perth-st-leonards-soffit'), g = bridge.geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
   const tones = new Set<string>(); let sum = 0, k = 0; const mean = [0, 0, 0];
   for (let t = 0; t < idx.count; t += 3) {
     const v = [idx.getX(t), idx.getX(t + 1), idx.getX(t + 2)];
@@ -316,7 +317,7 @@ const lin = (v: number) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4
 /** The coursed texture's linear mean (perth-frontage-textures.ts coursedTexture: 3 px mortar of grey 170 round stones of 215-255, 128 px a metre). */
 const COURSED = (() => { const k = 128, h = .3 * k, w = .85 * k, stone = (w - 3) * (h - 3) / (w * h); let m = 0; for (let g = 215; g <= 255; g++) m += lin(g / 255) / 41; return stone * m + (1 - stone) * lin(170 / 255); })();
 function soffitLight(iso: string) {
-  const g = meshNamed('perth-st-leonards-bridge').geometry, nrm = g.getAttribute('normal'), col = g.getAttribute('color');
+  const g = meshNamed('perth-st-leonards-soffit').geometry, nrm = g.getAttribute('normal'), col = g.getAttribute('color');
   const sun = solarPosition(Date.parse(iso), 56.39, -3.438), rig = skyRig(sun.elevationDeg, sun.azimuthDeg, CLEAR, REFERENCE);
   const key = rig.moon.intensity > rig.sun.intensity ? rig.moon : rig.sun, toKey = new THREE.Vector3(...key.direction).normalize(), L = (c: readonly number[]) => c.map(lin);
   const lights = [{ to: toKey, colour: L(key.colour), k: key.intensity }, ...LIGHTS.fills.map((f, i) => ({ to: new THREE.Vector3(...f.position).normalize(), colour: L(rig.fills[i]!.colour), k: rig.fills[i]!.intensity }))];
@@ -327,11 +328,15 @@ function soffitLight(iso: string) {
     return [1.60475 * f[0]! - .53108 * f[1]! - .07367 * f[2]!, -.10208 * f[0]! + 1.10813 * f[1]! - .00605 * f[2]!, -.00327 * f[0]! - .07276 * f[1]! + 1.07602 * f[2]!]
       .map(x => { x = Math.min(1, Math.max(0, x)); return x <= .0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - .055; });
   };
-  const shown = (n: THREE.Vector3, albedo: number[]) => {
+  // (round 7) the soffit's lamplight, as lighting.ts FLOOD adds it to what the surface glows with: its colour in a warm light, times the
+  // lamps' level, the strength and the fall with height; the material carries the define (it is read here, not assumed)
+  const flood = String((meshNamed('perth-st-leonards-soffit').material as THREE.Material).defines?.FLOOD ?? 'vec4( 0, 1, 1, 0 )').replace('vec4', '').match(/-?[\d.]+/g)!.map(Number);
+  const shown = (n: THREE.Vector3, albedo: number[], y?: number) => {
     const w = .5 * n.y + .5, c = [0, 1, 2].map(j => {
       let e = (hemi.ground[j]! * (1 - w) + hemi.sky[j]! * w) * rig.hemisphere.intensity;
       for (const l of lights) e += Math.max(n.dot(l.to), 0) * l.colour[j]! * l.k;
-      return albedo[j]! * e / Math.PI;
+      const lamp = y === undefined ? 0 : [1, .82, .5][j]! * rig.lampLevel * flood[0]! * (flood[2]! + (1 - flood[2]!) * Math.exp(-Math.max(y - flood[3]!, 0) / flood[1]!));
+      return albedo[j]! * (e / Math.PI + lamp);
     });
     const d = aces(c);
     return 255 * (.2126 * d[0]! + .7152 * d[1]! + .0722 * d[2]!);
@@ -341,7 +346,7 @@ function soffitLight(iso: string) {
   for (let i = 0; i < col.count; i++) {
     const c = [col.getX(i), col.getY(i), col.getZ(i)];
     if (!onSoffit(pos.getX(i), pos.getY(i), pos.getZ(i))) continue;
-    const n = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).normalize(), l = shown(n, c), share = .5 * n.y + .5;
+    const n = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).normalize(), l = shown(n, c, pos.getY(i)), share = .5 * n.y + .5;
     sky = [Math.min(sky[0]!, share), Math.max(sky[1]!, share)]; keyMax = Math.max(keyMax, n.dot(toKey));
     sum += l; brightest = Math.max(brightest, l); k++;
     // by height over the springing, in thirds of the rise, to see the gradient (an unweighted mean of each band's corners)
@@ -352,7 +357,7 @@ function soffitLight(iso: string) {
   const V = new THREE.Vector3(-(ST_LEONARDS_LINE[1]![1] - ST_LEONARDS_LINE[0]![1]), 0, ST_LEONARDS_LINE[1]![0] - ST_LEONARDS_LINE[0]![0]).normalize(), north = V.z < 0 ? V : V.negate();
   const face = shown(north, rgbOf(ST_LEONARDS_COLOURS.stone).map(c => c * ST_LEONARDS.northShade * COURSED));
   const bands = [0, 1, 2].map(b => { const v = byHeight.get(b)!; return v[0]! / v[1]!; });
-  return { sun, toKey, k, mean: sum / k, brightest, sky, keyMax, face, bands };
+  return { sun, rig, toKey, k, mean: sum / k, brightest, sky, keyMax, face, bands };
 }
 
 test('round 4b: at dusk the soffits take a little sky and little of the low sun, and no stone of them is brighter than the shaded face', () => {
@@ -394,7 +399,7 @@ test('round 5: the soffit\'s bond reads: stones in a wide spread of tones, with 
   // a cross joint between each pair of stones in every course, and a bed joint at every facet of every arch: over a thousand
   assert.ok(info.soffitJoints >= 1000, `soffit joints ${info.soffitJoints}`);
   // in the scene: from under each arch's crown, looking up across the barrel, the line meets dark joints as well as stones
-  const bridge = meshNamed('perth-st-leonards-bridge'), col = bridge.geometry.getAttribute('color');
+  const bridge = meshNamed('perth-st-leonards-soffit'), col = bridge.geometry.getAttribute('color');
   for (const a of stLeonardsSpans()) {
     const s = (a.s0 + a.s1) / 2 + .2, ls: number[] = [];
     for (let o = -ST_LEONARDS.half + .1; o < ST_LEONARDS.half - .1; o += .01) {
@@ -466,4 +471,43 @@ test('round 6: the face drifts by patches 2-4 m across, the piers\' feet carry t
   const cam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-st-leonards-bridge'];
   const [bx, bz] = stLeonardsAt(40, 0), dist = Math.hypot(bx - cam.pos[0], bz - cam.pos[2]), px = 2 * dist * Math.tan(cam.fov * Math.PI / 360) / 800;
   assert.ok(ST_LEONARDS.soffitJoint.width / px >= 2, `soffit joints ${(ST_LEONARDS.soffitJoint.width / px).toFixed(2)} px at ${dist.toFixed(0)} m`);
+});
+
+// Round 7 (the round-6 pixels, LAND F5 8.5 F6 8.0): by day the springing about as bright as the crown, both near the face; at dusk the crown
+// 11 of 255; the face's drift not visible at the frozen cameras.
+test('round 7: by noon the springing about 0.7 of the shaded face and the crown under 0.8 of it; the lamps add nothing by day', () => {
+  const d = soffitLight('2026-06-21T11:00:00Z'), r = d.bands.map(b => b / d.face);
+  assert.equal(d.rig.lampLevel, 0);
+  assert.ok(r[0]! >= .72 && r[0]! <= .9 && r[2]! <= .8 && r[0]! > r[2]!, `noon soffit by height over the north face ${d.face.toFixed(1)}, springing to crown: ${r.map(v => v.toFixed(3))}`);
+});
+
+test('round 7: at dusk the soffits are lit by the lamps under them, their own mesh: the crown at least 20 of 255, still under the face, and not pink', () => {
+  const m = meshNamed('perth-st-leonards-soffit').material as THREE.Material;
+  assert.ok(m.defines?.FLOOD, 'the soffit material carries the FLOOD define');
+  const d = soffitLight('2026-11-09T16:20:00Z');
+  assert.ok(d.rig.lampLevel > .2, `dusk lamp level ${d.rig.lampLevel}`);
+  assert.ok(d.bands[2]! >= 20 && d.bands[0]! > d.bands[2]! && d.brightest <= d.face, `dusk soffit by height, springing to crown: ${d.bands.map(b => b.toFixed(1))}; brightest ${d.brightest.toFixed(1)}, face ${d.face.toFixed(1)}`);
+  // the lamps' light is warm (1, 0.82, 0.5): it takes the stone toward yellow, never toward the red-blue of pink
+  const c = rgbOf(ST_LEONARDS_COLOURS.soffit).map((v, j) => v * [1, .82, .5][j]!);
+  assert.ok(c[0]! >= c[1]! && c[1]! >= c[2]!, `lamplit soffit ${c.map(v => v.toFixed(3))}`);
+});
+
+test('round 7: the face drifts in patches with edges: each piece of coursed face one tone, the north face\'s patches spread 5% (sd) or more', () => {
+  const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  const W = ST_LEONARDS.weather, lum = (i: number) => ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!;
+  const patches = new Map<string, number>();
+  let pieces = 0;
+  for (let t = 0; t < ashlar.indices.length; t += 3) {
+    const v = [ashlar.indices[t]!, ashlar.indices[t + 1]!, ashlar.indices[t + 2]!];
+    // above the piers' stain, on the north face
+    if (v.some(i => ashlar.normals[3 * i + 2]! > -.7 || ashlar.positions[3 * i + 1]! < ST_LEONARDS.spring)) continue;
+    pieces++;
+    const ls = v.map(lum);
+    assert.ok(Math.max(...ls) - Math.min(...ls) < 1e-6, `triangle ${t / 3}: its corners' tones ${ls.map(l => l.toFixed(4))} (a gradient, not a patch)`);
+    const m = v.reduce((a, i) => [a[0]! + ashlar.positions[3 * i]! / 3, a[1]! + ashlar.positions[3 * i + 1]! / 3, a[2]! + ashlar.positions[3 * i + 2]! / 3], [0, 0, 0]);
+    patches.set([Math.floor(m[0]! / W.cell), Math.floor(m[1]! / W.cellHeight), Math.floor(m[2]! / W.cell)].join(), ls[0]!);
+  }
+  const ts = [...patches.values()], mean = ts.reduce((a, b) => a + b, 0) / ts.length, sd = Math.sqrt(ts.reduce((a, b) => a + (b - mean) ** 2, 0) / ts.length);
+  assert.ok(pieces > 50 && ts.length >= 15 && sd / mean >= .05 && sd / mean <= .09, `north face: ${pieces} pieces, ${ts.length} patches, spread ${(sd / mean).toFixed(3)}`);
 });

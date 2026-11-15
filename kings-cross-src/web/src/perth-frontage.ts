@@ -8,13 +8,13 @@ import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
-import {Batch} from './materials.ts';
+import {Batch,floodLit} from './materials.ts';
 import type {PerthBuild} from './perth-scene.ts';
 import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './perth-frontage-hotel.ts';
 import {forecourt,hotelShrubs,stationFront} from './perth-frontage-street.ts';
 import {cutRoadMask,cutRoadSurfaces,cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
 import {perthTrack} from './perth-station.ts';
-import {stLeonardsBridge} from './perth-st-leonards-bridge.ts';
+import {ST_LEONARDS,stLeonardsBridge} from './perth-st-leonards-bridge.ts';
 import type {StLeonardsInfo} from './perth-st-leonards-bridge.ts';
 import {coursedTexture,rubbleTexture,settsTexture} from './perth-frontage-textures.ts';
 import type {FrontageFile} from './perth-frontage-street.ts';
@@ -50,9 +50,9 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const bridge=kingsPlaceBridge(bridgeBatch,ring,[dir[0]/dl,dir[1]/dl],ground,rubble,[...track.ground,...track.bridge]);
  const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge,ring,bridgeBatch);
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
- // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material;
- // its coursed ashlar shares the street walls' coursed-stone batch (no new draw or texture)
- const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,coursed);
+ // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material,
+ // and its soffits another (round 7: lamp-lit after dark); its coursed ashlar shares the street walls' coursed-stone batch (no new draw or texture)
+ const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonardsSoffits=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,coursed,stLeonardsSoffits);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
@@ -66,6 +66,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  add(group,front,coloured,'perth-station-front');add(group,glass,glassMat,'perth-frontage-glazing');
  add(group,flat,flatMat,'perth-forecourt');add(group,paint,paintMat,'perth-forecourt-markings');add(group,bridgeBatch,coloured,'perth-kings-place-bridge');
  add(group,stLeonardsBatch,coloured,'perth-st-leonards-bridge');
+ // its soffits: their own draw, lit after dark by the station's and the street's lamps (lighting.ts FLOOD, round 7)
+ const SL=ST_LEONARDS.soffitLamp;add(group,stLeonardsSoffits,own(floodLit(new THREE.MeshLambertMaterial({vertexColors:true}),SL.strength,SL.reach,SL.floor)),'perth-st-leonards-soffit');
  const textured=(t:THREE.CanvasTexture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
  add(group,setts,textured(settsTexture(),-3),'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
  add(group,rubble,textured(rubbleTexture()),'perth-kings-place-walls');
