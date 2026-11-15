@@ -46,7 +46,7 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
- soffitStone:.9,joint:.05} as const;
+ soffitStone:.9,joint:.05,soffitBend:5} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -68,8 +68,16 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * stone in shade): `soffit` a mid grey, laid in stones `soffitStone` m long across the barrel in stretcher bond, each a tone of
  * SOFFIT_TONES; the voussoirs alternate `dressed` and a darker `voussoir`, with a dark `joint` (`ST_LEONARDS.joint` m wide) between
  * stones; the copings' overhangs get a dark underside (`shadow`); the approach parapets and copings are one mitred ribbon. */
+/* Round 4b (the lead's look at round 4): at dusk the soffits glowed pink, brighter than the face, and by day were lighter than R-slb-a's,
+ * whose soffits are a brown-grey darker than the face. The pink was the lighting, not the colour: a smooth soffit's normals near the
+ * springing are near horizontal, so a Lambert soffit took half the hemisphere's lavender sky and the whole of a low red sun from the side
+ * (from the west at dusk), light the barrel never sees (the spandrels, the piers and the deck hide it: nothing in this scene casts a
+ * shadow). So the soffit's normals are bent down toward the arch's open underside, `soffitBend` times the ellipse's unit normal (still one
+ * per station, so still smooth): the sky's share falls to 1% and a horizon sun to a fifth of a square-on wall's, and the barrel takes the
+ * hemisphere's ground light, as a real one takes the light off the ground under it. The global rig is untouched. `soffit` is darkened to
+ * two thirds of `stone` (a warm brown-grey), and the darker voussoir lifted to 0.88 of `dressed` (in luma): the ring read too strong. */
 export const SOFFIT_TONES=[1,.9,1,1.1,.86,1,1.06,.94] as const;
-export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0xa49c8e,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x857a65,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x645b4a,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
 
@@ -148,9 +156,10 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   const ys=ss.map(s=>stLeonardsSoffit(s)),m=(a.s0+a.s1)/2,h=(a.s1-a.s0)/2,r=a.crown-a.spring;
   // the ellipse's normal into the opening at each station, in (along, up), and as a world vector
   const nrm=ss.map((s,i)=>{const gx=(s-m)/(h*h),gy=(ys[i]-a.spring)/(r*r),l=Math.hypot(gx,gy)||1;return [-gx/l,-gy/l] as [number,number];});
-  const world=(q:[number,number]):V3=>[q[0]*U[0],q[1],q[0]*U[1]];
+  // the soffit's normal: the ellipse's, bent down into the arch's open underside (round 4b)
+  const bent=(q:[number,number]):V3=>{const y=q[1]-K.soffitBend,l=Math.hypot(q[0],y);return [q[0]/l*U[0],y/l,q[0]/l*U[1]];};
   for(let i=0;i<n;i++){
-   const n0=world(nrm[i]),n1=world(nrm[i+1]);
+   const n0=bent(nrm[i]),n1=bent(nrm[i+1]);
    // the soffit's stones: across the barrel in stretcher bond, each its own tone; the corners keep the ellipse's normals
    for(let o=-K.half-(i%2)*K.soffitStone/2;o<K.half;o+=K.soffitStone){
     const oa=Math.max(-K.half,o),ob=Math.min(K.half,o+K.soffitStone);if(ob-oa<.01)continue;
