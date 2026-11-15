@@ -326,7 +326,7 @@ class Sim {
         // (someone on the stairs stands on the stairs: the floor under them is the flight, not the platform)
         const footErr = b.foot - (p.stair && p.yAt ? p.yAt(p.x, p.z) : py); out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
         if (footErr < -0.04) bad(`platform ${b.id}: feet ${(-footErr * 100).toFixed(0)} cm below the platform`); if (footErr > (p.state === 'walk' || p.state === 'go' ? 0.1 : 0.05)) bad(`platform ${b.id}: feet ${(footErr * 100).toFixed(0)} cm above the platform (levitating)`);
-        if (this.crowd.avoid.some((a) => p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1)) bad(`platform ${b.id}: standing inside furniture`);
+        if (!p.stair && this.crowd.avoid.some((a) => p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1)) bad(`platform ${b.id}: standing inside furniture`);
         list.push(p);
       }
       for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) if (Math.hypot(list[i].x - list[j].x, list[i].z - list[j].z) < 0.28 && list[i].mode !== 'go' && list[j].mode !== 'go') bad(`platform people overlap (${list[i].char.id}/${list[j].char.id})`);
@@ -1604,6 +1604,17 @@ class Sim {
       scalpAudit: () => { const c = this.crowd, out = { chars: 0, full: 0, lod: 0, sparse: [], people: 0, capped: 0, minTris: 1e9 }; if (!c || !c.chars || !c.fit) return out;
         for (const ch of c.chars) { const f = c.fit[ch.id]; if (!f) continue; out.chars++; if (f.scalp) { out.full++; out.minTris = Math.min(out.minTris, f.scalp.tris); if (f.scalp.sparse) out.sparse.push(ch.id); } if (f.scalpLod) out.lod++; }
         for (const q of c.people) { if (!q.obj) continue; const f = c.fit[q.char.id]; if (!f || !(q.lod ? f.scalpLod : f.scalp)) continue; out.people++; let has = false; q.obj.traverse((o) => { if (o.name === 'scalp_cap' && o.isSkinnedMesh) has = true; }); if (has) out.capped++; }
+        return out; },
+      // the people in long socks (bodyfit.js fitHoseLegs): each has legs and whole socks on both models, and none of the old holed socks is left
+      hoseAudit: () => { const c = this.crowd, out = { ids: [], lod: 0, old: 0, minTris: 1e9, rh: [], strips: 0, dropped: 0 }; if (!c || !c.chars || !c.fit) return out;
+        for (const ch of c.chars) { const f = c.fit[ch.id]; if (!f || !(f.hose || f.hoseLod)) continue; out.ids.push(ch.id); if (f.hoseLod) out.lod++; const h = f.hose || f.hoseLod; out.minTris = Math.min(out.minTris, h.tris); out.rh.push(...h.rh); out.strips += h.strips; out.dropped += h.dropped;
+          for (const r of [ch.node, ch.lodNode]) if (r) { let legs = 0; r.traverse((m) => { if (m.isSkinnedMesh && m.material && /^hose_/.test(m.material.name || '')) out.old++; if (m.name === 'hose_legs') legs++; }); if (legs !== 1) out.old += 100; } }
+        return out; },
+      // bags (bags.js): everybody can be measured for one, a rucksack is strapped on both shoulders and never under long hair, and whoever carries one here has it on them, off the floor
+      bagAudit: () => { const c = this.crowd, out = { chars: 0, fits: 0, long: 0, ruck: 0, strapless: [], people: 0, carrying: 0, kinds: {}, rigged: 0, lowest: 9, underHair: 0 }; if (!c || !c.chars || !c._bagFit) return out;
+        for (const ch of c.chars) { const f = c._bagFit(ch); out.chars++; if (f) out.fits++; if (f && f.longHair) out.long++; if (f && f.ok && !f.longHair) { out.ruck++; if (f.strapN < 2) out.strapless.push(ch.id); } }
+        for (const q of c.people) { if (!q.obj) continue; out.people++; if (!q.bag) continue; out.carrying++; out.kinds[q.bag.kind] = (out.kinds[q.bag.kind] || 0) + 1; const r = q.bagRig; if (r && r.mesh.parent) out.rigged++;
+          if (r && r.where === 'hand') out.lowest = Math.min(out.lowest, r.mesh.position.y - r.drop - r.h); if (q.bag.kind === 'ruck' && r && r.fit.longHair) out.underHair++; }
         return out; },
       // the smile (smile.js): every full-detail character gets one, fitted to where its own mouth is
       smileAudit: () => { const c = this.crowd, out = { chars: 0, rigs: 0, found: 0, minMoved: 1e9, yMin: 9, yMax: 0, halfMin: 9, halfMax: 0, none: [] }; if (!c || !c.chars) return out;

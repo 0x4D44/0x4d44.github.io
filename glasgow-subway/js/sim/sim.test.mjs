@@ -977,3 +977,40 @@ test('audio: wheel on rail - a roar that follows the 30 log V law, a beat once a
   // the inverter's outer sidebands sit either side of the switching frequency and its double, as the main pairs do
   for (const v of [2, 8, 13]) { const d = tractionMix({ v, traction: 1, inTrain: true }); assert.ok(Math.abs((d.side[0] + d.side[1]) / 2 - d.fc) < 1e-9 && Math.abs((d.side[2] + d.side[3]) / 2 - 2 * d.fc) < 1e-9 && d.side.every((f) => f >= 20 && f < 4000) && d.side[1] > d.inv[1]); }
 });
+
+test('people: bags - about four in ten carry one, staff and Highland dress do not, long hair rules out a rucksack, children carry only school bags; a rucksack is sized to its wearer; a strap goes over the outside of the shoulder', async () => {
+  const { pickBag, ruckSize, overShoulder, KINDS } = await import('./bags.js');
+  let s = 12345; const rng = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const roll = (c, n = 4000) => { const k = { none: 0 }; for (let i = 0; i < n; i++) { const b = pickBag(rng, c); if (!b) { k.none++; continue; } assert.ok(KINDS.includes(b.kind) && /^#[0-9a-f]{6}$/.test(b.colour) && b.hand === (b.kind !== 'ruck')); k[b.kind] = (k[b.kind] || 0) + 1; } return k; };
+  const adult = roll({ kind: 'man', outfit: 'trousers', id: 'man_hoodie' });
+  assert.ok(adult.none > 0.5 * 4000 && adult.none < 0.65 * 4000, 'an everyday adult: ' + JSON.stringify(adult));
+  assert.ok(adult.ruck > adult.tote && adult.tote > 0 && adult.carrier > 0);
+  assert.equal(roll({ staff: true, kind: 'staff', outfit: 'trousers', id: 'staff_man' }).none, 4000);
+  assert.equal(roll({ kind: 'man', outfit: 'highland', id: 'piper' }).none, 4000);
+  const long = roll({ kind: 'woman', outfit: 'leggings', id: 'adult_runner', longHair: true }); assert.equal(long.ruck, undefined); assert.ok(long.tote > adult.tote * 0.9);
+  const kid = roll({ kid: true, kind: 'girl', outfit: 'school_kilt', id: 'girl_small' }); assert.ok(kid.ruck > 0.4 * 4000 && !kid.tote && !kid.carrier && !kid.case);
+  const suit = roll({ kind: 'man', outfit: 'trousers', id: 'man_commuter' }); assert.ok(suit.case > 4 * (adult.case || 1));
+  // the same number of draws whoever it is: one person's bag does not change the next person's
+  let n = 0; const count = () => { n++; return 0.99; }; pickBag(count, { staff: true }); const a = n; pickBag(count, { kind: 'man' }); assert.equal(n - a, a);
+  const big = ruckSize(0.2, 0.5, 1.8), small = ruckSize(0.13, 0.33, 1.15);
+  assert.ok(big.H > 0.38 && big.H <= 0.45 * 1.05 && big.W <= 0.31 && small.H < 0.3 && small.W < 0.2 && small.D < big.D);
+  assert.ok(big.H <= 0.86 * 0.5 + 1e-9 && small.H <= 0.86 * 0.33 + 1e-9, 'never longer than the back');
+  // a body in section: an ellipse (the chest) with a dent in its top that a strap must bridge, not follow
+  const pts = []; for (let i = 0; i < 80; i++) { const t = i / 80 * 2 * Math.PI; pts.push([0.11 * Math.cos(t), 1.3 + 0.16 * Math.sin(t)]); } pts.push([0, 1.40]);
+  const line = overShoulder(pts, [-0.14, 1.36], 1.3);
+  assert.ok(line && line.length >= 5 && line[0][0] === -0.14, 'starts on the bag');
+  for (let i = 1; i < line.length - 1; i++) { const [a0, b0, c0] = [line[i - 1], line[i], line[i + 1]]; assert.ok((b0[0] - a0[0]) * (c0[1] - a0[1]) - (b0[1] - a0[1]) * (c0[0] - a0[0]) < 1e-9, 'convex all the way: it never dips into the body'); }
+  assert.ok(Math.max(...line.map((q) => q[1])) > 1.455 && !line.some((q) => q[0] === 0 && q[1] === 1.40), 'over the top, and across the dent');
+  const end = line[line.length - 1]; assert.ok(end[0] > 0.08 && end[1] < 1.33, 'and down the front to the chest: ' + end);
+  assert.equal(overShoulder([[0, 1], [0.1, 1.1]], [-0.1, 1], 0.9), null);
+});
+
+test('people: legs for the kilt wearers in long socks - a thigh half as thick again as the top of the calf, a knee, a calf that swells then narrows to the ankle; smooth all the way', async () => {
+  const { hoseLegRadius, HOSE_LEGS } = await import('./bodyfit.js'), R = 0.055;
+  assert.ok(Math.abs(hoseLegRadius(0, 0, R) - R * HOSE_LEGS.thigh) < 1e-9 && Math.abs(hoseLegRadius(0, 1, R) - R * HOSE_LEGS.knee) < 1e-9);
+  assert.ok(Math.abs(hoseLegRadius(0, 1, R) - hoseLegRadius(1, 0, R)) < 1e-9, 'thigh and calf meet at the knee');
+  let prev = hoseLegRadius(0, 0, R); for (let t = 0.02; t <= 1; t += 0.02) { const r = hoseLegRadius(0, t, R); assert.ok(r <= prev + 1e-9, 'a thigh only narrows towards the knee'); prev = r; }
+  prev = hoseLegRadius(1, 0, R); let peak = 0; for (let t = 0.01; t <= 1; t += 0.01) { const r = hoseLegRadius(1, t, R); assert.ok(Math.abs(r - prev) < 0.004, 'no step in the calf at ' + t.toFixed(2)); peak = Math.max(peak, r); prev = r; }
+  assert.ok(hoseLegRadius(1, 1, R) < 0.65 * R && hoseLegRadius(1, 0.32, R) > R, 'an ankle is much thinner than the calf');
+  assert.ok(HOSE_LEGS.under < 1 && HOSE_LEGS.inside < 1, 'the leg is slimmer than what the kilt is held off, and than its sock');
+});

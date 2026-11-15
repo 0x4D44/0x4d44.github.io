@@ -289,6 +289,104 @@ export function fitLegs(THREE, root, o = {}) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Legs for the people in long socks.
+// Five people wear a kilt and knee-length hose. When they were made, the skin that a garment hid in the standing pose was deleted - and for them that was the whole
+// leg: the thigh under the kilt, the calf in the sock, and the knee between, which the hem and the sock top just cover when standing. Sitting down, or seen from
+// above, there was nothing there: an open sock like a cup, and no leg going into the kilt. The man in Highland dress had no leg skin at all below the hip.
+// The socks were holed the same way (half of one was gone), and strips of the suit's trousers were left hanging beside the legs.
+// The legs are made again here: a plain tube of skin per leg, hip to mid-calf, bending at the knee, and over it a new sock from where the old one's top was down
+// into the shoe, with its turned-over cuff. The shards of the old leg skin, the old socks and the trouser strips are dropped. The tube's radii (a little more) are what the kilt is then held off (fitLegs).
+export const HOSE_LEGS = { thigh: 1.5, knee: 1.1, inside: 0.9, under: 0.88, seg: 12, to: 0.62, minHose: 0.03, maxHose: 0.085 };
+
+/** radius of a leg tube at t along the thigh (s = 0) or the calf (s = 1), given the radius of the sock just under its top (pure, for the tests) */
+export function hoseLegRadius(s, t, rh) {
+  const H = HOSE_LEGS, sm = (x) => x * x * (3 - 2 * x);
+  if (s === 0) return rh * (H.thigh + (H.knee - H.thigh) * sm(Math.min(1, Math.max(0, t))));   // a thigh is half as thick again as the top of the calf
+  if (t < 0.18) return rh * (H.knee + (1.0 - H.knee) * sm(t / 0.18));                              // the knee
+  const C = [[0.18, 1], [0.32, 1.04], [0.6, 0.86], [0.85, 0.64], [1, 0.6]]; let i = 0; while (i < C.length - 2 && t > C[i + 1][0]) i++;   // the calf swells, then narrows to the ankle
+  const k = Math.min(1, Math.max(0, (t - C[i][0]) / (C[i + 1][0] - C[i][0]))); return rh * (C[i][1] + (C[i + 1][1] - C[i][1]) * sm(k));
+}
+
+/** Give a hose wearer legs. Returns { tris, dropped, rh: [l, r], radii (for fitLegs), color } or null (no hose, no skin). Patches the shared skin geometry once. */
+export function fitHoseLegs(THREE, root) {
+  const T = THREE, H = HOSE_LEGS; let skin = null; const hose = [];
+  root.traverse((m) => { if (!m.isSkinnedMesh || !m.material || !m.geometry) return; const n = m.material.name || ''; if (/^skin_/.test(n)) { if (!skin || m.geometry.attributes.position.count > skin.geometry.attributes.position.count) skin = m; } else if (/^hose_#/.test(n)) hose.push(m); });
+  if (!skin || !hose.length) return null;
+  const g = skin.geometry; if (g.userData.hoseLegs) return g.userData.hoseLegs;
+  const rig = legRig(T, skin); if (!rig || !g.index) return null;
+  const o = {}, rh = [], top = [];
+  for (let L = 0; L < 2; L++) {   // the sock on this leg: how wide it is just under its top, and how far up the calf the top is
+    const D = [];
+    for (const m of hose) { const hr = legRig(T, m), P = m.geometry.attributes.position; if (!hr) continue; const ha = hr.J[L * 3 + 1], hb = hr.J[L * 3 + 2];
+      for (let i = 0; i < P.count; i++) { const d = segDist(P.getX(i), P.getY(i), P.getZ(i), ha, hb, o); if (d < 0.14 && o.t > 0 && o.t < 1) D.push([o.t, d]); } }
+    if (D.length < 12) { rh.push(0.055); top.push(0.1); continue; }
+    D.sort((x, y) => x[0] - y[0]); const t0 = D[Math.floor(D.length * 0.02)][0], band = D.filter((e) => e[0] < t0 + 0.2).map((e) => e[1]).sort((x, y) => x - y);
+    rh.push(Math.min(H.maxHose, Math.max(H.minHose, band[Math.floor(band.length * 0.15)]))); top.push(t0);
+  }
+  // drop what is left of the old legs (hip to mid-calf): the tube stands in for all of it
+  const P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, idx = g.index, keep = [];
+  const legW = (i, L) => { let w = 0; for (let c = 0; c < 4; c++) { const bi = SI.getComponent(i, c); if (bi === rig.bone[L * 2] || bi === rig.bone[L * 2 + 1]) w += SW.getComponent(i, c); } return w; };
+  const inTube = (i) => { for (let L = 0; L < 2; L++) { if (legW(i, L) < 0.5) continue; const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
+      segDist(x, y, z, rig.J[L * 3], rig.J[L * 3 + 1], o); const tt = o.t; segDist(x, y, z, rig.J[L * 3 + 1], rig.J[L * 3 + 2], o); if (tt > 0.1 && o.t < H.to - 0.04) return true; } return false; };
+  for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(inTube(a) && inTube(b) && inTube(c))) keep.push(a, b, c); }
+  const dropped = (idx.count - keep.length) / 3; if (dropped) g.setIndex(new T.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
+  // strips of trousers left from a suit, hanging by the legs: no top reaches below the hips on a leg bone
+  let strips = 0;
+  root.traverse((m) => { if (!m.isSkinnedMesh || !m.material || !/^cloth_/.test(m.material.name || '') || /tartan|shoe|boot|flat|strap/i.test(m.material.name) || !m.geometry.index || m.geometry.userData.hoseStrips != null) return;
+    const mg = m.geometry, mi = mg.index, MI = mg.attributes.skinIndex, MW = mg.attributes.skinWeight; if (!MI || !MW) return; const leg = m.skeleton.bones.map((b) => /^(thigh|calf|foot|ball)_/.test(b.name)), kp = [];
+    const on = (i) => { let w = 0; for (let c = 0; c < 4; c++) if (leg[MI.getComponent(i, c)]) w += MW.getComponent(i, c); return w > 0.7; };
+    for (let t = 0; t < mi.count; t += 3) { const a = mi.getX(t), b = mi.getX(t + 1), c = mi.getX(t + 2); if (!(on(a) && on(b) && on(c))) kp.push(a, b, c); }
+    mg.userData.hoseStrips = (mi.count - kp.length) / 3; strips += mg.userData.hoseStrips; if (kp.length < mi.count) mg.setIndex(new T.BufferAttribute(mg.attributes.position.count > 65535 ? new Uint32Array(kp) : new Uint16Array(kp), 1)); });
+  let cuffCol = null; const sockCol = hose[0].material.color ? hose[0].material.color.clone() : new T.Color(0xdddddd), gone = [];
+  root.traverse((m) => { if (m.isSkinnedMesh && m.material && /^hose_/.test(m.material.name || '')) { gone.push(m); if (/^hose_cuff/.test(m.material.name) && m.material.color) cuffCol = m.material.color.clone(); } });
+  for (const m of gone) if (m.parent) m.parent.remove(m);
+  const skinCol = skinColour(T, skin, rig);
+  // the tubes
+  const pos = [], colr = [], si = [], sw = [], ind = [], N = H.seg, radii = [];
+  const st = [[0, 0.04, 1, 0], [0, 0.25, 1, 0], [0, 0.5, 1, 0], [0, 0.74, 1, 0], [0, 0.9, 0.82, 0.18], [0, 1, 0.5, 0.5], [1, 0.07, 0.2, 0.8], [1, 0.18, 0, 1], [1, 0.32, 0, 1], [1, 0.47, 0, 1], [1, H.to, 0, 1]];
+  for (let L = 0; L < 2; L++) {
+    const hip = rig.J[L * 3], knee = rig.J[L * 3 + 1], ank = rig.J[L * 3 + 2], R = rh[L], t0 = Math.min(0.3, Math.max(0.03, top[L]));
+    const sock = [[t0 - 0.006, 0.9, sockCol], [t0, 1.01, sockCol], [0.32, 1, sockCol], [0.47, 1, sockCol], [0.62, 1, sockCol], [0.78, 1, sockCol], [0.9, 1, sockCol], [0.98, 1, sockCol]].filter((e, i) => i < 2 || e[0] > t0 + 0.05);
+    const cuff = cuffCol ? [[t0 - 0.008, 0.9, cuffCol], [t0 - 0.004, 1.07, cuffCol], [t0 + 0.085, 1.07, cuffCol], [t0 + 0.088, 1.0, cuffCol]] : [];
+    for (const part of [st.map((e) => [e[0], e[1], e[2], e[3], 0, skinCol]), sock.map((e) => [1, e[0], 0, 1, e[1], e[2]]), cuff.map((e) => [1, e[0], 0, 1, e[1], e[2]])]) {
+    if (!part.length) continue; const base = pos.length / 3;
+    for (const [s, t, wt, wc, k0, cc] of part) {
+      const a = s ? knee : hip, b = s ? ank : knee, ax = new T.Vector3().subVectors(b, a).normalize(), c = new T.Vector3().lerpVectors(a, b, t);
+      const u = new T.Vector3(1, 0, 0).addScaledVector(ax, -ax.x).normalize(), v = new T.Vector3().crossVectors(ax, u);
+      const r = k0 ? hoseLegRadius(1, t, R) * k0 : hoseLegRadius(s, t, R) * (s && t > t0 ? H.inside : H.under);
+      for (let k = 0; k < N; k++) { const an = k / N * 2 * Math.PI; pos.push(c.x + (u.x * Math.cos(an) + v.x * Math.sin(an)) * r, c.y + (u.y * Math.cos(an) + v.y * Math.sin(an)) * r, c.z + (u.z * Math.cos(an) + v.z * Math.sin(an)) * r); si.push(rig.bone[L * 2], rig.bone[L * 2 + 1], 0, 0); sw.push(wt, wc, 0, 0); colr.push(cc.r, cc.g, cc.b); }
+    }
+    for (let i = 0; i + 1 < part.length; i++) for (let k = 0; k < N; k++) { const a = base + i * N + k, b = base + i * N + (k + 1) % N, c = base + (i + 1) * N + (k + 1) % N, d = base + (i + 1) * N + k; ind.push(a, b, c, a, c, d); }
+    }
+    for (const s of [0, 1]) { const r = []; for (let q = 0; q < LEG_STATIONS; q++) r.push(+hoseLegRadius(s, q / (LEG_STATIONS - 1), R).toFixed(4)); radii.push(r); }
+  }
+  const tg = new T.BufferGeometry(); tg.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); tg.setAttribute('color', new T.Float32BufferAttribute(colr, 3)); tg.setAttribute('skinIndex', new T.Uint16BufferAttribute(si, 4)); tg.setAttribute('skinWeight', new T.Float32BufferAttribute(sw, 4));
+  tg.setIndex(ind); tg.computeVertexNormals(); tg.computeBoundingSphere(); tg.computeBoundingBox();
+  const col = skinCol;
+  const mat = new T.MeshStandardMaterial({ vertexColors: true, roughness: skin.material.roughness != null ? skin.material.roughness : 0.7, metalness: 0, side: T.DoubleSide }); mat.name = 'legs_' + (skin.material.name || '');
+  const mesh = new T.SkinnedMesh(tg, mat); mesh.name = 'hose_legs'; mesh.position.copy(skin.position); mesh.quaternion.copy(skin.quaternion); mesh.scale.copy(skin.scale);
+  mesh.frustumCulled = skin.frustumCulled; mesh.castShadow = false; mesh.receiveShadow = skin.receiveShadow;
+  skin.parent.add(mesh); mesh.bind(skin.skeleton, skin.bindMatrix);
+  return (g.userData.hoseLegs = { tris: ind.length / 3, dropped, strips, socks: gone.length, rh: rh.map((x) => +x.toFixed(4)), top: top.map((x) => +x.toFixed(3)), radii, color: '#' + col.getHexString() });
+}
+
+const SKINCOL = new WeakMap();
+/** the colour of a person's skin, on the whole: the middle of what its picture shows on the forearms and hands (bare on everybody) */
+function skinColour(THREE, skin, rig) {
+  const m = skin.material, col = m.color ? m.color.clone() : new THREE.Color(0xffffff), img = m.map && m.map.image, dflt = new THREE.Color(0xc69a7e);
+  if (!img || typeof document === 'undefined') return m.map ? dflt : col;
+  let hit = SKINCOL.get(skin.geometry); if (hit) return hit.clone();
+  try {
+    const cv = document.createElement('canvas'), w = cv.width = 256, h = cv.height = 256, x = cv.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h); const px = x.getImageData(0, 0, w, h).data;
+    const g = skin.geometry, uv = g.attributes.uv, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, arm = skin.skeleton.bones.map((b) => /^(lowerarm|hand)_/.test(b.name)); let r = 0, gg = 0, b = 0, k = 0;
+    for (let i = 0; i < uv.count; i++) { let wa = 0; for (let c = 0; c < 4; c++) if (arm[SI.getComponent(i, c)]) wa += SW.getComponent(i, c); if (wa < 0.8) continue;
+      const u = uv.getX(i), vv = m.map.flipY ? 1 - uv.getY(i) : uv.getY(i), X = Math.min(w - 1, Math.max(0, Math.floor((u - Math.floor(u)) * w))), Y = Math.min(h - 1, Math.max(0, Math.floor((vv - Math.floor(vv)) * h))), j = (Y * w + X) * 4; r += px[j]; gg += px[j + 1]; b += px[j + 2]; k++; }
+    void rig; hit = k > 20 ? col.multiply(new THREE.Color().setRGB(r / k / 255, gg / k / 255, b / k / 255, THREE.SRGBColorSpace)) : dflt;
+  } catch (e) { hit = dflt; }
+  SKINCOL.set(skin.geometry, hit); return hit.clone();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Tops vs skirts.
 // A top that reaches below the waist edge of a skirt (the knit of the woman in the midi skirt) is hidden by it there, but the two are cut in different shapes and
 // skinned in different proportions: wherever the top is the wider, the part under the edge pokes out through the cloth as red, ragged shards at the hip, and more so
@@ -529,7 +627,7 @@ export function armProbe(THREE, obj) {
 // the hair, as a thin cap on the skin: a gap in the hair now shows hair-coloured roots. The cap uses the skin's own vertices (no new geometry, same bones).
 // Which skin is "under the hair": seen from the middle of the head, some hair lies in that direction, near the skin. Small holes in that cover are closed up
 // (they are the very patches this is for); the face, the ears and the neck are never included.
-const SCALP = { near: 0.6, under: 0.07, ang: 0.07, close: 0.34, sparse: 0.6, brow: 0.92, ear: 0.2, front: 0.3, back: 0.7, nape: 1.0, minTris: 12 };   // lengths in eye-to-eye distances
+const SCALP = { near: 0.6, under: 0.07, ang: 0.07, close: 0.34, sparse: 0.6, brow: 0.92, ear: 0.2, front: 0.3, back: 0.7, nape: 1.0, minTris: 12, smooth: 3 };   // lengths in eye-to-eye distances
 
 /** Give a character a hair-coloured scalp under its hair. root: the character's node (bind pose). Returns { tris, verts, covered, filled, color } or null
  *  (no hair, no eyes, no head, or nothing of the scalp is under hair). Runs once per skin geometry; a second call returns the first result. */
@@ -580,16 +678,32 @@ export function fitScalp(THREE, root, o = {}) {
   for (let i = 0; i < n; i++) if (cand[i]) dil[i] = sparse || cov[i] || nearAny(i, cov, 1) ? 1 : 0;
   for (let i = 0; i < n; i++) if (cand[i] && dil[i]) { keep[i] = cov[i] || !nearAny(i, dil, 0) ? 1 : 0; if (keep[i]) { verts++; if (!cov[i]) filled++; } }
   const idx = g.index, m = idx ? idx.count : n, out = [];
+  // how covered each vertex is, smoothed over its neighbours (welded by place: the head's seams must not stop it), so the edge of the cap runs as a line and not from vertex to vertex
+  const cv = new Float32Array(n); for (let i = 0; i < n; i++) cv[i] = keep[i];
+  if (!sparse) { const wk = (i) => Math.round(P.getX(i) * 2e4) + ',' + Math.round(P.getY(i) * 2e4) + ',' + Math.round(P.getZ(i) * 2e4), wid = new Int32Array(n).fill(-1), wm = new Map(); let nw = 0;
+    for (let i = 0; i < n; i++) if (cand[i]) { const k = wk(i); let w = wm.get(k); if (w === undefined) wm.set(k, w = nw++); wid[i] = w; }
+    const nb = Array.from({ length: nw }, () => new Set());
+    for (let k = 0; k < m; k += 3) { const t = [0, 1, 2].map((j) => wid[idx ? idx.getX(k + j) : k + j]); if (t[0] < 0 || t[1] < 0 || t[2] < 0) continue; for (let j = 0; j < 3; j++) { nb[t[j]].add(t[(j + 1) % 3]); nb[t[j]].add(t[(j + 2) % 3]); } }
+    let v = new Float32Array(nw); for (let i = 0; i < n; i++) if (wid[i] >= 0) v[wid[i]] = Math.max(v[wid[i]], keep[i]);
+    for (let it = 0; it < S.smooth; it++) { const u = new Float32Array(nw); for (let w = 0; w < nw; w++) { let a = v[w], c = 1; for (const j of nb[w]) { a += v[j]; c++; } u[w] = a / c; } v = u; }
+    for (let i = 0; i < n; i++) cv[i] = wid[i] >= 0 ? v[wid[i]] : 0; }
   // (a bare head with a few strands: every triangle of the head near the scalp is in, and the hairline is cut smoothly across them when they are drawn)
   const headW = (i) => { let w = 0; for (let k = 0; k < 4; k++) if (si.getComponent(i, k) === hi) w += sw.getComponent(i, k); return w >= 0.5 && (P.getY(i) - ey) / d > -S.nape - 0.4; };
   for (let k = 0; k < m; k += 3) { const a = idx ? idx.getX(k) : k, b = idx ? idx.getX(k + 1) : k + 1, e = idx ? idx.getX(k + 2) : k + 2;
-    if (sparse ? (keep[a] || keep[b] || keep[e]) && headW(a) && headW(b) && headW(e) : keep[a] && keep[b] && keep[e]) out.push(a, b, e); }
+    if (sparse ? (keep[a] || keep[b] || keep[e]) && headW(a) && headW(b) && headW(e) : Math.max(cv[a], cv[b], cv[e]) >= 0.5 && cand[a] && cand[b] && cand[e]) out.push(a, b, e); }
   if (out.length < S.minTris * 3) return null;
   // the cap: the same vertices, its own triangles, the colour of the hair
   const cg = new T.BufferGeometry(); for (const a of ['position', 'normal', 'skinIndex', 'skinWeight']) if (g.attributes[a]) cg.setAttribute(a, g.attributes[a]);
   cg.setIndex(out); if (g.boundingSphere) cg.boundingSphere = g.boundingSphere.clone(); if (g.boundingBox) cg.boundingBox = g.boundingBox.clone();
   const hm = hair[0].material, col = hairColour(T, hm);
-  const mat = new T.MeshStandardMaterial({ color: col, roughness: hm.roughness != null ? hm.roughness : 0.8, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); mat.name = 'scalp_' + (hm.name || '');
+  const mat = new T.MeshStandardMaterial({ color: col, roughness: Math.max(0.92, hm.roughness != null ? hm.roughness : 0), metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); mat.name = 'scalp_' + (hm.name || '');
+  if (!sparse) {   // the edge of the cap is cut across its outermost triangles, half way between a covered vertex and a bare one, so the hairline is a smooth line and not the saw-teeth of the mesh
+    cg.setAttribute('aScCov', new T.BufferAttribute(cv, 1));
+    mat.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float aScCov; varying float vScCov;\nvoid main() {').replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvScCov = aScCov;');
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'varying float vScCov;\nvoid main() {\n\tif (vScCov < 0.5) discard;'); };
+    mat.customProgramCacheKey = () => 'scalpedge1';
+  }
   if (sparse) {   // the hairline, in the head's own (bind) space: high over the brow, down past the temple to just over the ear, down again to the nape behind it
     const U = { uScC: { value: new T.Vector3(cx, ey, cz) }, uScF: { value: new T.Vector2(fx, fz) }, uScD: { value: d } };
     mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);

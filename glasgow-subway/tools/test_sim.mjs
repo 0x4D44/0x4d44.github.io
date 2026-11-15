@@ -618,6 +618,12 @@ try {
     const sc = await ev(p, () => __sim.scalpAudit());
     ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and only the bun is a bare head with strands',
       sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && sc.sparse.join() === 'adult_suit_bun')) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
+    const ha = await ev(p, () => __sim.hoseAudit());
+    ok('the five people in kilts and long socks have legs: a leg and a whole sock each on both models, sock radii a leg could have, and none of the old holed socks left',
+      ha && ha.ids.length === 5 && ha.lod === 5 && ha.old === 0 && ha.minTris >= 300 && ha.rh.every((r) => r >= 0.03 && r <= 0.085), JSON.stringify(ha));
+    const ba = await ev(p, () => __sim.bagAudit());
+    ok('people carry bags: everybody can be measured for one, a rucksack has both its straps and is never worn under long hair, and the bags on this platform are on their owners and off the floor',
+      ba && ba.chars > 60 && ba.fits === ba.chars && ba.ruck >= 0.4 * ba.chars && ba.strapless.length === 0 && ba.people > 0 && ba.rigged === ba.carrying && ba.underHair === 0 && ba.lowest > 0, JSON.stringify(ba));
     const sa = await ev(p, () => __sim.smileAudit());
     ok('people can smile: every full-detail character has the smile fitted to its own mouth, and whoever the player walks up to smiles (or laughs)',
       wa && wa.near && wa.near.smiled > 0.25 && sa && (sa.chars === 0 || (sa.rigs === sa.chars && sa.minMoved > 40 && sa.found >= 0.7 * sa.chars && sa.yMin > 0.95 && sa.yMax < 1.5)) && (!wa.near.face || wa.near.faceW > 0.2), JSON.stringify({ sa, near: wa.near }));
