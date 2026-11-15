@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
-import { ST_LEONARDS, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit } from '../src/perth-st-leonards-bridge.ts';
+import { ST_LEONARDS, ST_LEONARDS_APPROACHES, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit } from '../src/perth-st-leonards-bridge.ts';
 import { Batch, rgb as rgbOf } from '../src/materials.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
@@ -201,4 +201,84 @@ test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridg
   }
   const evidence = readFileSync(new URL('../../tools/evidence.mjs', import.meta.url), 'utf8');
   assert.match(evidence, /'perth-frontage': \[[^\]]*'pt-st-leonards-bridge'/);
+});
+
+// Round 4 (the round-3 score): mid-grey stone soffits, voussoirs in two clear tones with joints, a shadow line under the coping's
+// overhang, and the approach parapets unbroken round their bends.
+const lumaHex = (hex: number) => .2126 * ((hex >> 16) & 255) + .7152 * ((hex >> 8) & 255) + .0722 * (hex & 255);
+
+test('round 4: the soffits are mid-grey stone, laid as stones of several tones, not one dark sheet', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), g = bridge.geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
+  const tones = new Set<string>(); let sum = 0, k = 0;
+  for (let t = 0; t < idx.count; t += 3) {
+    const v = [idx.getX(t), idx.getX(t + 1), idx.getX(t + 2)];
+    const cx = v.reduce((q, i) => q + pos.getX(i), 0) / 3, cz = v.reduce((q, i) => q + pos.getZ(i), 0) / 3, cf = stLeonardsFrame([cx, cz]);
+    const under = Math.abs(cf.o) < ST_LEONARDS.half - .01 && v.every(i => { const f = stLeonardsFrame([pos.getX(i), pos.getZ(i)]); return pos.getY(i) > ST_LEONARDS.spring + .2 && pos.getY(i) < stLeonardsSoffit(f.s) + .01 && nrm.getY(i) < -.3; });
+    if (!under) continue;
+    const i = v[0]!; tones.add(`${col.getX(i).toFixed(3)},${col.getY(i).toFixed(3)},${col.getZ(i).toFixed(3)}`); sum += col.getX(i) + col.getY(i) + col.getZ(i); k++;
+  }
+  const grey = (hex: number) => rgbOf(hex).reduce((a, b) => a + b, 0);
+  assert.ok(k > 200, `soffit triangles ${k}`);
+  assert.ok(tones.size >= 4, `soffit tones ${tones.size}`);
+  assert.ok(sum / k >= grey(0x8c8c8c) && sum / k <= grey(0xc8c8c8), `soffit mean ${(sum / k).toFixed(3)} against mid grey ${grey(0x8c8c8c).toFixed(3)}-${grey(0xc8c8c8).toFixed(3)}`);
+});
+
+test('round 4: the voussoirs alternate two clearly different tones, with a dark joint between stones', () => {
+  const C = ST_LEONARDS_COLOURS as Record<string, number>;
+  assert.ok(lumaHex(C.voussoir!) / lumaHex(C.dressed!) <= .8, `voussoir tones ${C.voussoir?.toString(16)} / ${C.dressed?.toString(16)}`);
+  const g = meshNamed('perth-st-leonards-bridge').geometry, col = g.getAttribute('color'), j = rgbOf(C.joint!), shades = [1, ST_LEONARDS.northShade];
+  let joints = 0;
+  for (let i = 0; i < col.count; i++) if (shades.some(f => Math.abs(col.getX(i) - j[0] * f) < 1e-4 && Math.abs(col.getY(i) - j[1] * f) < 1e-4 && Math.abs(col.getZ(i) - j[2] * f) < 1e-4)) joints++;
+  // four corners a joint, one joint between each pair of voussoirs on both faces of every arch: well over a hundred
+  assert.ok(joints / 4 >= 100, `joints ${joints / 4}`);
+});
+
+test('round 4: from below, the coping\'s overhang shows a dark underside along both faces', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), top = ST_LEONARDS.road + ST_LEONARDS.parapet, sh = rgbOf(ST_LEONARDS_COLOURS.shadow);
+  for (const s of [20, 45.9, 66]) for (const sg of [-1, 1]) {
+    const [x, z] = stLeonardsAt(s, sg * (ST_LEONARDS.half + ST_LEONARDS.coping.overhang / 2));
+    const hit: THREE.Intersection | undefined = new THREE.Raycaster(new THREE.Vector3(x, top - .5, z), new THREE.Vector3(0, 1, 0)).intersectObject(bridge)[0];
+    assert.ok(hit && Math.abs(hit.point.y - top) < .02, `s ${s} side ${sg}: the overhang's underside at ${hit?.point.y}`);
+    const c = bridge.geometry.getAttribute('color'), i = hit!.face!.a, f = c.getX(i) / sh[0];
+    assert.ok(Math.abs(f - 1) < 1e-3 || Math.abs(f - ST_LEONARDS.northShade) < 1e-3, `s ${s} side ${sg}: the underside's colour is the shadow's`);
+  }
+});
+
+test('round 4: the approach parapet and its coping run unbroken: no steps along the fall, no notch round the bend at the way\'s east end', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), A = ST_LEONARDS_APPROACHES[0]![0]!, P1 = ST_LEONARDS_APPROACHES[0]![1]!, P0 = stLeonardsAt(ST_LEONARDS.abutments[0] - 1.2);
+  const unit = (a: Pt, b: Pt): Pt => { const l = Math.hypot(b[0] - a[0], b[1] - a[1]); return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
+  const d1 = unit(P0, A), d2 = unit(A, P1), n1: Pt = [-d1[1], d1[0]], n2: Pt = [-d2[1], d2[0]];
+  const turn = Math.acos(Math.max(-1, Math.min(1, d1[0] * d2[0] + d1[1] * d2[1])));
+  assert.ok(turn > .15, `the bend turns ${(turn * 180 / Math.PI).toFixed(0)} degrees`);
+  // the parapet's top at the bend: the road there (12.8 m from the deck at the approach's grade) plus the parapet
+  const want = ST_LEONARDS.road - ST_LEONARDS.grade * Math.hypot(A[0] - P0[0], A[1] - P0[1]) + ST_LEONARDS.parapet - .08;
+  for (const sg of [-1, 1]) {
+    const a1 = Math.atan2(sg * n1[1], sg * n1[0]), a2 = Math.atan2(sg * n2[1], sg * n2[0]);
+    let da = a2 - a1; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+    for (let k = 0; k <= 8; k++) for (const R of [ST_LEONARDS.half - .3, ST_LEONARDS.half - .1]) {
+      const th = a1 + da * k / 8, x = A[0] + R * Math.cos(th), z = A[1] + R * Math.sin(th);
+      const hit: THREE.Intersection | undefined = new THREE.Raycaster(new THREE.Vector3(x, 30, z), new THREE.Vector3(0, -1, 0)).intersectObject(bridge)[0];
+      assert.ok(hit && hit.point.y >= want, `side ${sg}, ${k}/8 round the bend at ${R.toFixed(1)} m: top ${hit?.point.y.toFixed(2)} (want >= ${want.toFixed(2)})`);
+    }
+  }
+  // along each side of the east approach, 0.25 m apart down the parapet's line: its top falls smoothly with the road (no stepped blocks)
+  const path: Pt[] = [P0, ...ST_LEONARDS_APPROACHES[0]!];
+  for (const sg of [-1, 1]) {
+    let d = 0, prev: number | null = null, on = 0;
+    for (let i = 0; i + 1 < path.length; i++) {
+      const a = path[i]!, b = path[i + 1]!, l = Math.hypot(b[0] - a[0], b[1] - a[1]), u = unit(a, b), n: Pt = [-u[1], u[0]];
+      // compared within each mapped segment: across a vertex the offset line jumps (it overlaps itself inside a bend), not the parapet
+      prev = null;
+      for (let t = .3; t < l - .3; t += .25) {
+        const x = a[0] + u[0] * t + n[0] * sg * (ST_LEONARDS.half - .2), z = a[1] + u[1] * t + n[1] * sg * (ST_LEONARDS.half - .2), road = ST_LEONARDS.road - ST_LEONARDS.grade * (d + t);
+        const hit: THREE.Intersection | undefined = new THREE.Raycaster(new THREE.Vector3(x, 30, z), new THREE.Vector3(0, -1, 0)).intersectObject(bridge)[0];
+        const y = hit && hit.point.y > road + .9 ? hit.point.y : null;
+        if (y !== null && prev !== null) assert.ok(Math.abs(y - prev) <= .05, `side ${sg}, ${(d + t).toFixed(2)} m down the approach: the parapet's top steps ${(y - prev).toFixed(3)} m`);
+        if (y !== null) on++;
+        prev = y;
+      }
+      d += l;
+    }
+    assert.ok(on >= 40, `side ${sg}: ${on} samples on the parapet`);
+  }
 });

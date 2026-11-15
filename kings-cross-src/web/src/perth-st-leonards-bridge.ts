@@ -45,7 +45,8 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  piers:[22.3,35.46,43.76,55.74],pierWidth:1.5,spring:2,grade:.08,wallDepth:.5,step:3,
  archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
- northShade:.75} as const;
+ northShade:.75,
+ soffitStone:.9,joint:.05} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -62,7 +63,13 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  *  buff sandstone, a touch greyed for weathering (150,138,112); `soffit` the same in the arches' shade; `dressed` the string course and the
  *  coping, R-slb-a's coping sample. The steel fascia's pale grey-green paint (R-slb-a, by eye); the road's asphalt and the footways'
  *  paving as the frontage's (perth-frontage-bridge.ts). ASSUMED beyond the samples. */
-export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x6a6253,dressed:0xb2a68e,voussoir:0xa69a82,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+/* Round 4 (the round-3 score, LAND F5 8.0 F6 7.0): the soffits read near black, the voussoirs as one pale band, the coping's overhang
+ * does not read and the approach parapets notch at their bends. So (ASSUMED tones, by eye from R-slb-a, whose soffits are a mid grey
+ * stone in shade): `soffit` a mid grey, laid in stones `soffitStone` m long across the barrel in stretcher bond, each a tone of
+ * SOFFIT_TONES; the voussoirs alternate `dressed` and a darker `voussoir`, with a dark `joint` (`ST_LEONARDS.joint` m wide) between
+ * stones; the copings' overhangs get a dark underside (`shadow`); the approach parapets and copings are one mitred ribbon. */
+export const SOFFIT_TONES=[1,.9,1,1.1,.86,1,1.06,.94] as const;
+export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0xa49c8e,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x857a65,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
 
@@ -105,7 +112,7 @@ function roadSection(b:Batch,a:Pt,na:Pt,ya:number,c:Pt,nc:Pt,yc:number):void{
 }
 
 /** What the bridge drew, for tests. */
-export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;imposts:number;stiffeners:number;triangles:number}
+export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;imposts:number;stiffeners:number;triangles:number}
 
 /** The plan direction the north face looks (the side of the way whose outward normal points north, -z). */
 export const ST_LEONARDS_NORTH:1|-1=V[1]<0?1:-1;
@@ -129,12 +136,12 @@ function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb):void{
  *  parapets) into `ashlar` (vertex-coloured, textured: the frontage's coursed-stone batch), or into `b` when none is given. */
 export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:Batch=b):StLeonardsInfo{
  const before=b.triangles+(ashlar===b?0:ashlar.triangles),K=ST_LEONARDS,C=ST_LEONARDS_COLOURS;
- const stone=rgb(C.stone),soffit=rgb(C.soffit),steel=rgb(C.steel),steelDark=rgb(C.steelDark),dressed=rgb(C.dressed),vous=[rgb(C.dressed),rgb(C.voussoir)];
+ const stone=rgb(C.stone),soffit=rgb(C.soffit),joint=rgb(C.joint),shadow=rgb(C.shadow),steel=rgb(C.steel),steelDark=rgb(C.steelDark),dressed=rgb(C.dressed),vous=[rgb(C.dressed),rgb(C.voussoir)];
  const fasciaFoot=K.road-K.fascia,[e0,e1]=K.abutments,{string:sc,coping:cp,voussoir:vs,impost:im,girder:gd}=K,stringFoot=fasciaFoot-sc.height;
  const out=(sg:number):V3=>[sg*V[0],0,sg*V[1]];
  // the arches: each soffit a barrel across the deck's width, smooth-shaded; each face a coursed spandrel from the arch to the fascia's
  // foot, and a ring of voussoirs proud of it, clipped under the string course
- const spans=stLeonardsSpans(),archSegments:number[]=[];let voussoirs=0;
+ const spans=stLeonardsSpans(),archSegments:number[]=[];let voussoirs=0,joints=0;
  for(const a of spans){
   const n=stLeonardsArchSegments(a.s1-a.s0);archSegments.push(n);
   const ss=Array.from({length:n+1},(_,i)=>a.s0+(a.s1-a.s0)*i/n);
@@ -143,16 +150,24 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   const nrm=ss.map((s,i)=>{const gx=(s-m)/(h*h),gy=(ys[i]-a.spring)/(r*r),l=Math.hypot(gx,gy)||1;return [-gx/l,-gy/l] as [number,number];});
   const world=(q:[number,number]):V3=>[q[0]*U[0],q[1],q[0]*U[1]];
   for(let i=0;i<n;i++){
-   const p0=stLeonardsAt(ss[i],-K.half),p1=stLeonardsAt(ss[i+1],-K.half),q0=stLeonardsAt(ss[i],K.half),q1=stLeonardsAt(ss[i+1],K.half);
    const n0=world(nrm[i]),n1=world(nrm[i+1]);
-   b.poly([v3(p0,ys[i]),v3(p1,ys[i+1]),v3(q1,ys[i+1]),v3(q0,ys[i])],undefined,{normals:[n0,n1,n1,n0],color:soffit});
+   // the soffit's stones: across the barrel in stretcher bond, each its own tone; the corners keep the ellipse's normals
+   for(let o=-K.half-(i%2)*K.soffitStone/2;o<K.half;o+=K.soffitStone){
+    const oa=Math.max(-K.half,o),ob=Math.min(K.half,o+K.soffitStone);if(ob-oa<.01)continue;
+    const f=SOFFIT_TONES[(i*7+Math.round((o+K.half)/K.soffitStone)*3+spans.indexOf(a)*5)%SOFFIT_TONES.length],c:Rgb=[soffit[0]*f,soffit[1]*f,soffit[2]*f];
+    b.poly([v3(stLeonardsAt(ss[i],oa),ys[i]),v3(stLeonardsAt(ss[i+1],oa),ys[i+1]),v3(stLeonardsAt(ss[i+1],ob),ys[i+1]),v3(stLeonardsAt(ss[i],ob),ys[i])],undefined,{normals:[n0,n1,n1,n0],color:c});
+   }
    for(const sg of [-1,1]){
     const r0=stLeonardsAt(ss[i],sg*K.half),r1=stLeonardsAt(ss[i+1],sg*K.half);
     face(ashlar,[v3(r0,ys[i]),v3(r1,ys[i+1]),v3(r1,fasciaFoot),v3(r0,fasciaFoot)],[ss[i],ss[i+1],ss[i+1],ss[i]],out(sg),stone);
     // the voussoir: from the intrados out along the ellipse's normal, its outer edge kept under the string course
     const o=sg*(K.half+vs.proud),ring=(k:number):[V3,V3]=>{const s=ss[k],y=ys[k],d=nrm[k],so=s-d[0]*vs.depth,yo=Math.min(stringFoot,y-d[1]*vs.depth);return [v3(stLeonardsAt(s,o),y),v3(stLeonardsAt(so,o),Math.max(y,yo))];};
     const [i0,o0]=ring(i),[i1,o1]=ring(i+1);
-    if(o0[1]-i0[1]>.02||o1[1]-i1[1]>.02){face(b,[i0,i1,o1,o0],[0,0,0,0],out(sg),vous[i%2]);voussoirs++;}
+    if(o0[1]-i0[1]>.02||o1[1]-i1[1]>.02){face(b,[i0,i1,o1,o0],[0,0,0,0],out(sg),vous[i%2]);voussoirs++;
+     // the joint at this voussoir's leading edge: a dark strip from the intrados out, a hair proud of the stones
+     if(i>0&&o0[1]-i0[1]>.02){const d=nrm[i],t:[number,number]=[-d[1],d[0]],w=K.joint/2,oj=o+sg*.005,at=(sa:number,ya:number):V3=>v3(stLeonardsAt(sa,oj),ya);
+      const si=ss[i],yi=ys[i],so=si-d[0]*vs.depth,yo=Math.max(yi,Math.min(stringFoot,yi-d[1]*vs.depth));
+      face(b,[at(si-t[0]*w,yi-t[1]*w),at(si+t[0]*w,yi+t[1]*w),at(so+t[0]*w,yo+t[1]*w),at(so-t[0]*w,yo-t[1]*w)],[0,0,0,0],out(sg),joint);joints++;}}
    }
   }
  }
@@ -185,6 +200,8 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   // the coping: from 0.2 m inside the web to `overhang` past its outer face
   const ci=K.half-.4,co=K.half+cp.overhang,cm=sg*(ci+co)/2;
   block(b,stLeonardsAt(g0-cp.overhang,cm),stLeonardsAt(g1+cp.overhang,cm),topY,topY+cp.height,(co-ci)/2,dressed);copings++;
+  // its overhang's underside, in shadow: the line that makes the overhang read from below
+  face(b,[v3(stLeonardsAt(g0-cp.overhang,sg*K.half),topY),v3(stLeonardsAt(g1+cp.overhang,sg*K.half),topY),v3(stLeonardsAt(g1+cp.overhang,sg*co),topY),v3(stLeonardsAt(g0-cp.overhang,sg*co),topY)],[0,0,0,0],[0,-1,0],shadow);
  }
  // the deck's road over the arches
  roadSection(b,stLeonardsAt(g0),V,K.road,stLeonardsAt(g1),V,K.road);
@@ -197,6 +214,8 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   const pts:Pt[]=[path[0]];
   for(let i=0;i+1<path.length;i++){const a=path[i],c=path[i+1],l=Math.hypot(c[0]-a[0],c[1]-a[1]),n=Math.max(1,Math.ceil(l/K.step));for(let k=1;k<=n;k++)pts.push([a[0]+(c[0]-a[0])*k/n,a[1]+(c[1]-a[1])*k/n]);}
   const side=(i:number):Pt=>{const a=pts[Math.max(0,i-1)],c=pts[Math.min(pts.length-1,i+1)],dx=c[0]-a[0],dz=c[1]-a[1],l=Math.hypot(dx,dz)||1;return [-dz/l,dx/l];};
+  // the mitre: a side offset at a bend stretched by 1/cos(half the turn), so the parapet keeps its thickness round the corner
+  const mitre=(i:number):number=>{if(i<=0||i>=pts.length-1)return 1;const a=pts[i-1],c=pts[i],dx=c[0]-a[0],dz=c[1]-a[1],l=Math.hypot(dx,dz)||1,n=side(i);return 1/Math.max(.5,(-dz/l)*n[0]+(dx/l)*n[1]);};
   let d=0;
   for(let i=0;i+1<pts.length;i++){
    const a=pts[i],c=pts[i+1],na=side(i),nc=side(i+1),dl=Math.hypot(c[0]-a[0],c[1]-a[1]);
@@ -204,19 +223,34 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    const ya=Math.max(ga+.05,K.road-K.grade*d),yc=Math.max(gc+.05,K.road-K.grade*(d+dl));
    if(ya<=ga+.05)break;
    roadSection(b,a,na,ya,c,nc,yc);
+   // the parapet stands while the fill is a metre up; it runs on to the next segment if that one's does too
+   const wall=Math.min(ya-ga,yc-gc)>1;let wallNext=false;
+   if(wall&&i+2<pts.length){const e=pts[i+2],ge=ground.heightAt(e[0],e[1]),ye=K.road-K.grade*(d+dl+Math.hypot(e[0]-c[0],e[1]-c[1]));wallNext=Math.min(yc-gc,ye-ge)>1;}
    for(const sg of [-1,1]){
     const pa:Pt=[a[0]+na[0]*sg*K.half,a[1]+na[1]*sg*K.half],pc:Pt=[c[0]+nc[0]*sg*K.half,c[1]+nc[1]*sg*K.half];
     const fa=ground.heightAt(pa[0],pa[1])-K.wallDepth,fc=ground.heightAt(pc[0],pc[1])-K.wallDepth;
     // the retaining wall's outer face, and the parapet over it (as high as the girder's over the deck, while the fill stands a metre up)
     face(ashlar,[v3(pa,fa),v3(pc,fc),v3(pc,yc+K.kerb),v3(pa,ya+K.kerb)],[d,d+dl,d+dl,d],[sg*(na[0]+nc[0])/2,0,sg*(na[1]+nc[1])/2],stone);
-    if(Math.min(ya-ga,yc-gc)>1){
-     const ex=.1,ux=(c[0]-a[0])/dl,uz=(c[1]-a[1])/dl;
-     const qa:Pt=[a[0]+na[0]*sg*(K.half-.2)-ux*ex,a[1]+na[1]*sg*(K.half-.2)-uz*ex],qc:Pt=[c[0]+nc[0]*sg*(K.half-.2)+ux*ex,c[1]+nc[1]*sg*(K.half-.2)+uz*ex],top=Math.max(ya,yc)+K.parapet;
-     block(ashlar,qa,qc,ya+K.kerb-.1,top,.2,stone);block(b,qa,qc,top,top+cp.height,.2+cp.overhang,dressed);copings++;
+    if(wall){
+     // the parapet, one mitred ribbon along the approach (no notch at the bends): its outer and inner faces, then the coping over it
+     const ma=mitre(i),mc=mitre(i+1),P=(p:Pt,nn:Pt,m:number,o:number):Pt=>[p[0]+nn[0]*sg*o*m,p[1]+nn[1]*sg*o*m];
+     const at=(o:number):[Pt,Pt]=>[P(a,na,ma,o),P(c,nc,mc,o)],ta=ya+K.parapet,tc=yc+K.parapet,ba=ya+K.kerb-.1,bc=yc+K.kerb-.1,nAvg:V3=[sg*(na[0]+nc[0])/2,0,sg*(na[1]+nc[1])/2],nIn:V3=[-nAvg[0],0,-nAvg[2]];
+     const [oa,oc]=at(K.half),[ia,ic]=at(K.half-.4);
+     face(ashlar,[v3(oa,ba),v3(oc,bc),v3(oc,tc),v3(oa,ta)],[d,d+dl,d+dl,d],nAvg,stone);
+     face(ashlar,[v3(ia,ba),v3(ic,bc),v3(ic,tc),v3(ia,ta)],[d,d+dl,d+dl,d],nIn,stone);
+     const [ca,cc]=at(K.half+cp.overhang),[ka,kc]=at(K.half-.45);
+     face(b,[v3(ka,ta+cp.height),v3(kc,tc+cp.height),v3(cc,tc+cp.height),v3(ca,ta+cp.height)],[0,0,0,0],[0,1,0],dressed);
+     face(b,[v3(ca,ta),v3(cc,tc),v3(cc,tc+cp.height),v3(ca,ta+cp.height)],[0,0,0,0],nAvg,dressed);
+     face(b,[v3(ka,ta),v3(kc,tc),v3(kc,tc+cp.height),v3(ka,ta+cp.height)],[0,0,0,0],nIn,dressed);
+     face(b,[v3(oa,ta),v3(oc,tc),v3(cc,tc),v3(ca,ta)],[0,0,0,0],[0,-1,0],shadow);
+     // the run's far end: close the wall and the coping
+     const ux=(c[0]-a[0])/dl,uz=(c[1]-a[1])/dl;
+     if(!wallNext){face(ashlar,[v3(oc,bc),v3(ic,bc),v3(ic,tc),v3(oc,tc)],[0,.4,.4,0],[ux,0,uz],stone);face(b,[v3(cc,tc),v3(kc,tc),v3(kc,tc+cp.height),v3(cc,tc+cp.height)],[0,0,0,0],[ux,0,uz],dressed);}
+     copings++;
     }
    }
    d+=dl;approachSegments++;
   }
  }
- return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,imposts,stiffeners,triangles:b.triangles+(ashlar===b?0:ashlar.triangles)-before};
+ return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,imposts,stiffeners,triangles:b.triangles+(ashlar===b?0:ashlar.triangles)-before};
 }
