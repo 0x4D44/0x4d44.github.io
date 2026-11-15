@@ -308,12 +308,19 @@ test('round 4: the approach parapet and its coping run unbroken: no steps along 
 // sun square on from the west, which the spandrels, piers and deck hide from a real barrel. Round 4c (the lead's look at 4b): bent
 // straight down the soffits drew as black voids by day; bent to about 45 degrees at the springing they keep some sky and a gradient.
 // The model: the scene's lights (world.ts: a hemisphere, the key, the two fills; nothing casts a shadow) on a Lambert surface, as three
-// draws it (each term over pi), then the frame's exposure, three's ACES filmic tone map and sRGB: a display luma, 0 to 1.
+// draws it (each term over pi), then the frame's exposure, three's ACES filmic tone map and sRGB: a display luma, 0 to 255.
+// Round 6 (the round-5 pixels): the rig's colours are sRGB (atmosphere.ts sets the lights with SRGBColorSpace), so they are made linear
+// here, as the renderer has them; and the ashlar faces wear the coursed texture, whose linear mean (COURSED) multiplies their colour.
+// So corrected, the model met the calibration capture of main 2d545dc9 within 15% at every sampled region (.scratch/sample-slb.ts).
+const lin = (v: number) => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+/** The coursed texture's linear mean (perth-frontage-textures.ts coursedTexture: 3 px mortar of grey 170 round stones of 215-255, 128 px a metre). */
+const COURSED = (() => { const k = 128, h = .3 * k, w = .85 * k, stone = (w - 3) * (h - 3) / (w * h); let m = 0; for (let g = 215; g <= 255; g++) m += lin(g / 255) / 41; return stone * m + (1 - stone) * lin(170 / 255); })();
 function soffitLight(iso: string) {
   const g = meshNamed('perth-st-leonards-bridge').geometry, nrm = g.getAttribute('normal'), col = g.getAttribute('color');
   const sun = solarPosition(Date.parse(iso), 56.39, -3.438), rig = skyRig(sun.elevationDeg, sun.azimuthDeg, CLEAR, REFERENCE);
-  const key = rig.moon.intensity > rig.sun.intensity ? rig.moon : rig.sun, toKey = new THREE.Vector3(...key.direction).normalize();
-  const lights = [{ to: toKey, colour: key.colour, k: key.intensity }, ...LIGHTS.fills.map((f, i) => ({ to: new THREE.Vector3(...f.position).normalize(), colour: rig.fills[i]!.colour, k: rig.fills[i]!.intensity }))];
+  const key = rig.moon.intensity > rig.sun.intensity ? rig.moon : rig.sun, toKey = new THREE.Vector3(...key.direction).normalize(), L = (c: readonly number[]) => c.map(lin);
+  const lights = [{ to: toKey, colour: L(key.colour), k: key.intensity }, ...LIGHTS.fills.map((f, i) => ({ to: new THREE.Vector3(...f.position).normalize(), colour: L(rig.fills[i]!.colour), k: rig.fills[i]!.intensity }))];
+  const hemi = { sky: L(rig.hemisphere.sky), ground: L(rig.hemisphere.ground) };
   const aces = (c: number[]) => {
     const v = c.map(x => x * rig.exposure / .6), m = [.59719 * v[0]! + .35458 * v[1]! + .04823 * v[2]!, .076 * v[0]! + .90834 * v[1]! + .01566 * v[2]!, .0284 * v[0]! + .13383 * v[1]! + .83777 * v[2]!];
     const f = m.map(x => (x * (x + .0245786) - .000090537) / (x * (.983729 * x + .432951) + .238081));
@@ -322,12 +329,12 @@ function soffitLight(iso: string) {
   };
   const shown = (n: THREE.Vector3, albedo: number[]) => {
     const w = .5 * n.y + .5, c = [0, 1, 2].map(j => {
-      let e = (rig.hemisphere.ground[j]! * (1 - w) + rig.hemisphere.sky[j]! * w) * rig.hemisphere.intensity;
+      let e = (hemi.ground[j]! * (1 - w) + hemi.sky[j]! * w) * rig.hemisphere.intensity;
       for (const l of lights) e += Math.max(n.dot(l.to), 0) * l.colour[j]! * l.k;
       return albedo[j]! * e / Math.PI;
     });
     const d = aces(c);
-    return .2126 * d[0]! + .7152 * d[1]! + .0722 * d[2]!;
+    return 255 * (.2126 * d[0]! + .7152 * d[1]! + .0722 * d[2]!);
   };
   let k = 0, sum = 0, brightest = 0, sky = [1, 0], keyMax = 0; const byHeight = new Map<number, number[]>();
   const pos = g.getAttribute('position');
@@ -343,7 +350,7 @@ function soffitLight(iso: string) {
   }
   // the face looking north (toward the station and the frozen camera): its stone, shaded by northShade
   const V = new THREE.Vector3(-(ST_LEONARDS_LINE[1]![1] - ST_LEONARDS_LINE[0]![1]), 0, ST_LEONARDS_LINE[1]![0] - ST_LEONARDS_LINE[0]![0]).normalize(), north = V.z < 0 ? V : V.negate();
-  const face = shown(north, rgbOf(ST_LEONARDS_COLOURS.stone).map(c => c * ST_LEONARDS.northShade));
+  const face = shown(north, rgbOf(ST_LEONARDS_COLOURS.stone).map(c => c * ST_LEONARDS.northShade * COURSED));
   const bands = [0, 1, 2].map(b => { const v = byHeight.get(b)!; return v[0]! / v[1]!; });
   return { sun, toKey, k, mean: sum / k, brightest, sky, keyMax, face, bands };
 }
@@ -364,15 +371,19 @@ test('round 4c: by noon the soffits are a visible brown-grey, not black: at leas
   // the round-4 day capture's time (capture-slb4.sh: 2026-06-21 12:00 BST)
   const d = soffitLight('2026-06-21T11:00:00Z');
   assert.ok(d.mean >= .35 * d.face, `day soffit mean ${d.mean.toFixed(4)} against the north face ${d.face.toFixed(4)} (${(d.mean / d.face).toFixed(3)})`);
-  assert.ok(d.bands[0]! > d.bands[2]! * 1.1, `soffit by height, springing to crown: ${d.bands.map(b => b.toFixed(4))}`);
+  // (round 6: the calibrated model; the springing brightest, the bound round 6's crown floor leaves room for)
+  assert.ok(d.bands[0]! > d.bands[2]!, `soffit by height, springing to crown: ${d.bands.map(b => b.toFixed(4))}`);
 });
 
 // Round 5 (the r4c score, judged by eye): the soffits' top third near black, the soffit's bond unread, the masonry evenly tiled.
-test('round 5: by noon the soffits\' crowns draw at 0.45-0.55 of the shaded face, still under the springing; at dusk still under the face', () => {
-  const d = soffitLight('2026-06-21T11:00:00Z'), r = d.bands.map(b => b / d.face);
-  assert.ok(r[2]! >= .45 && r[2]! <= .55, `noon soffit by height over the north face, springing to crown: ${r.map(x => x.toFixed(3))}`);
+// (round 6: round 5's crown bound, 0.45-0.55 of the face, was set with the uncalibrated model, which put main's crown at 0.47 where the
+// pixels were about 0.2; round 6's calibrated floors replace it)
+test('round 5/6: the soffits\' crowns are stone, not black: at least 35 of 255 by noon and 15 at dusk, under the springing; at dusk under the face', () => {
+  const d = soffitLight('2026-06-21T11:00:00Z');
+  assert.ok(d.bands[2]! >= 35, `noon soffit by height, springing to crown (display, 0-255): ${d.bands.map(b => b.toFixed(1))}`);
   assert.ok(d.bands[0]! > d.bands[2]!, `the springing's band over the crown's: ${d.bands.map(b => b.toFixed(4))}`);
   const k = soffitLight('2026-11-09T16:20:00Z');
+  assert.ok(k.bands[2]! >= 15 && k.bands[0]! > k.bands[2]!, `dusk soffit by height, springing to crown: ${k.bands.map(b => b.toFixed(1))}`);
   assert.ok(k.brightest <= k.face, `dusk soffit up to ${k.brightest.toFixed(4)} against the north face ${k.face.toFixed(4)}`);
 });
 
@@ -419,4 +430,40 @@ test('round 5: the coursed ashlar is weathered: its tone varies across each face
     }
     assert.ok(nf && nt && foot / nf <= .8 * top / nt, `pier at ${c}: foot ${(foot / nf).toFixed(3)} against springing ${(top / nt).toFixed(3)}`);
   }
+});
+
+// Round 6 (the round-5 pixels): the face's drift averaged out, the stain was spread thin, the soffit's joints drew at about 1 px.
+test('round 6: the face drifts by patches 2-4 m across, the piers\' feet carry the whole stain, and the soffit\'s joints span 2 px at R-slb-a\'s range', () => {
+  const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  const lum = (i: number) => ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!;
+  // the north face's corners above the piers' stain, by 3 m along the way: the patches' means differ by 8% or more, the corners by 3.5% (sd)
+  const bins = new Map<number, number[]>(), all: number[] = [];
+  for (let i = 0; i < ashlar.count; i++) {
+    if (ashlar.normals[3 * i + 2]! > -.7 || ashlar.positions[3 * i + 1]! < ST_LEONARDS.spring) continue;
+    const f = stLeonardsFrame([ashlar.positions[3 * i]!, ashlar.positions[3 * i + 2]!]), b = Math.floor(f.s / 3), l = lum(i);
+    all.push(l); const v = bins.get(b) ?? []; v.push(l); bins.set(b, v);
+  }
+  const means = [...bins.values()].filter(v => v.length >= 4).map(v => v.reduce((a, b) => a + b, 0) / v.length), m = all.reduce((a, b) => a + b, 0) / all.length;
+  const sd = Math.sqrt(all.reduce((a, b) => a + (b - m) ** 2, 0) / all.length);
+  assert.ok(Math.max(...means) / Math.min(...means) >= 1.08 && sd / m >= .035, `north face: patches ${means.length}, range ${(Math.max(...means) / Math.min(...means)).toFixed(3)}, sd ${(sd / m).toFixed(3)}`);
+  // each pier: the corners in its bottom half metre over the ground, against those at the same place in plan at the stain's top
+  for (const c of ST_LEONARDS.piers) {
+    let ratio = 0, k = 0;
+    for (let i = 0; i < ashlar.count; i++) {
+      const x = ashlar.positions[3 * i]!, y = ashlar.positions[3 * i + 1]!, z = ashlar.positions[3 * i + 2]!, f = stLeonardsFrame([x, z]), g = scene.terrain.heightAt(x, z);
+      if (Math.abs(f.s - c) > ST_LEONARDS.pierWidth / 2 + .01 || Math.abs(ashlar.normals[3 * i + 1]!) > .5 || y < g - .05 || y > g + ST_LEONARDS.weather.stainFull + .05) continue;
+      // the same corner's colour without the stain: the drift alone at that point, as the scene draws a stain-free face there
+      for (let j = 0; j < ashlar.count; j++) {
+        if (Math.abs(ashlar.positions[3 * j]! - x) > 1e-3 || Math.abs(ashlar.positions[3 * j + 2]! - z) > 1e-3 || Math.abs(ashlar.positions[3 * j + 1]! - (g + ST_LEONARDS.weather.stainHeight)) > .06) continue;
+        if (Math.floor(y / ST_LEONARDS.weather.cellHeight) !== Math.floor(ashlar.positions[3 * j + 1]! / ST_LEONARDS.weather.cellHeight)) continue;
+        ratio += lum(i) / lum(j); k++; break;
+      }
+    }
+    assert.ok(k >= 2 && ratio / k <= 1 - .9 * ST_LEONARDS.weather.stain, `pier at ${c}: foot over stain-free ${(ratio / k).toFixed(3)} (${k} corners)`);
+  }
+  // the soffit's joints at pt-st-leonards-bridge (fov 24, 800 px tall, the bridge 82 m off): at least 2 px wide
+  const cam = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'))['pt-st-leonards-bridge'];
+  const [bx, bz] = stLeonardsAt(40, 0), dist = Math.hypot(bx - cam.pos[0], bz - cam.pos[2]), px = 2 * dist * Math.tan(cam.fov * Math.PI / 360) / 800;
+  assert.ok(ST_LEONARDS.soffitJoint.width / px >= 2, `soffit joints ${(ST_LEONARDS.soffitJoint.width / px).toFixed(2)} px at ${dist.toFixed(0)} m`);
 });
