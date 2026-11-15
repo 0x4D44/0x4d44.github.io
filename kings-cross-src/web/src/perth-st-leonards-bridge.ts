@@ -46,7 +46,8 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
- soffitStone:.9,joint:.05,soffitBend:1} as const;
+ soffitStone:.9,joint:.05,soffitBend:1,
+ soffitFill:.25} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -81,6 +82,13 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * the crown, so the soffit grades from springing to crown. Under the filmic tone map's toe two thirds of `stone` still drew at 0.23 of
  * the shaded face's brightness by noon whatever the bend (0.27 unbent), so `soffit` is 0.85 of `stone`: 0.41 of the face by noon (the
  * lead's target, 0.4 to 0.5), and at dusk still under it. */
+/* Round 5 (the r4c score, LAND F5 8.3 F6 7.2, judged by eye): the soffits' top third still near black, where R-slb-a's whole underside
+ * reads as stone; the soffit's bond does not read at the frozen cameras' range and the masonry looks evenly
+ * tiled (round 5's next commits). So (ASSUMED amounts):
+ * - `soffitFill`: the light thrown up off the ground and the far haunch, which the hemisphere's ground term under-gives a barrel's
+ *   crown: each soffit stone's colour is lifted by `soffitFill` times the square of its height up the arch (0 at the springing, 1 at the
+ *   crown), so the crown draws at 0.47 of the shaded face's brightness by noon (the tone-mapped model in the tests; it was 0.40) and
+ *   the springing still at 1.1 times the crown. */
 export const SOFFIT_TONES=[1,.9,1,1.1,.86,1,1.06,.94] as const;
 export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
@@ -166,9 +174,11 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   for(let i=0;i<n;i++){
    const n0=bent(nrm[i]),n1=bent(nrm[i+1]);
    // the soffit's stones: across the barrel in stretcher bond, each its own tone; the corners keep the ellipse's normals
+   // (round 5) lifted by the fill with height up the arch
+   const up=Math.min(1,Math.max(0,((ys[i]+ys[i+1])/2-a.spring)/(a.crown-a.spring))),lift=1+K.soffitFill*up*up;
    for(let o=-K.half-(i%2)*K.soffitStone/2;o<K.half;o+=K.soffitStone){
     const oa=Math.max(-K.half,o),ob=Math.min(K.half,o+K.soffitStone);if(ob-oa<.01)continue;
-    const f=SOFFIT_TONES[(i*7+Math.round((o+K.half)/K.soffitStone)*3+spans.indexOf(a)*5)%SOFFIT_TONES.length],c:Rgb=[soffit[0]*f,soffit[1]*f,soffit[2]*f];
+    const f=SOFFIT_TONES[(i*7+Math.round((o+K.half)/K.soffitStone)*3+spans.indexOf(a)*5)%SOFFIT_TONES.length]*lift,c:Rgb=[soffit[0]*f,soffit[1]*f,soffit[2]*f];
     b.poly([v3(stLeonardsAt(ss[i],oa),ys[i]),v3(stLeonardsAt(ss[i+1],oa),ys[i+1]),v3(stLeonardsAt(ss[i+1],ob),ys[i+1]),v3(stLeonardsAt(ss[i],ob),ys[i])],undefined,{normals:[n0,n1,n1,n0],color:c});
    }
    for(const sg of [-1,1]){
