@@ -255,6 +255,22 @@ Holes of the new thirteen (full detail, walking): at most 16.1 cm2 per view (`ya
 it); all 85 together 298.6 walking. In the game the haggis is checked by `petAudit` (`tools/test_sim.mjs`). Sizes at 85:
 `people.glb` 26.8 MB, `people_lod.glb` 14.4 MB. Armfit and legradii re-solved, credits regenerated, skin budgets re-derived (see `sim.test`).
 
+### Batch 5 and the people review fixes (2026-11-15, 85 -> 99)
+
+Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scored the people 6.1 of 10):
+- **Fourteen summer people** (`sum_*`, `teen_crop_leggings`, `teen_cutoffs`, `teen_shorts_lad`, `elder_shorts`, `boy_shorts`, `girl_shorts`): crop tops, tube tops and
+  tees over denim cut-offs, Lycra bike shorts, leggings and loose chino shorts. Shorts are painted on the body (`paint_lycra`); loose ones get a second shell
+  (`loose_layer`) pushed out from the thigh and tapering to the waist.
+- **Range**: taller (eight people now 1.75 - 1.86 m), heavier (eight people weight 0.70 - 0.85) and older (six adults turned elders, with old skins and grey hair):
+  13 elders of 99 instead of 7.
+- **Hair**: the MakeHuman `bob01` / `bob02` (a slab over one eye) are gone from everybody, and so is `short03` (blocky fringe) and the shard-prone
+  `elvs_micky_afro` / `elvs_wavy_bob` - each replaced by a Toigo or Elvs bob or another short cut.
+- **Eyes**: the brown iris is pulled from MakeHuman's red-brown to an umber at build time (`eye_crop`); the eyes now move (`blink.js` `makeEyes`/`gazeStep`).
+- **Sitting**: `sit_base` rests the hands palms-down on the thighs (`SIT_PRON = -1.1`) instead of offering both palms up.
+- **Skin under trousers**: `bodyfit.trimUnderTrousers` drops the body triangles between a pair of trousers' waist and leg openings at load time.
+
+`people.glb` 30.3 MB, `people_lod.glb` 16.5 MB. Skinfit, lodhair, credits, legradii and armfit re-run; skin budgets re-derived (see `sim.test`).
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.

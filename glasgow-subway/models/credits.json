@@ -630,18 +630,6 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
-  "name": "hair/bob01",
-  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
-  "licence": "CC0",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
-  "name": "hair/bob02",
-  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
-  "licence": "CC0",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
   "name": "hair/braid01",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
@@ -714,18 +702,6 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
-  "name": "hair/elvs_micky_afro",
-  "author": "Elvaerwyn",
-  "licence": "CC-BY",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
-  "name": "hair/elvs_reverse_french_braid_bun",
-  "author": "Elvaerwyn",
-  "licence": "CC-BY",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
   "name": "hair/elvs_short_daisy_hair",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
@@ -733,12 +709,6 @@
  },
  {
   "name": "hair/elvs_short_side_do",
-  "author": "Elvaerwyn",
-  "licence": "CC-BY",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
-  "name": "hair/elvs_wavy_bob",
   "author": "Elvaerwyn",
   "licence": "CC-BY",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -763,12 +733,6 @@
  },
  {
   "name": "hair/short02",
-  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
-  "licence": "CC0",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
-  "name": "hair/short03",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
@@ -865,6 +829,12 @@
  },
  {
   "name": "skins/old_asian_female",
+  "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/old_asian_male",
   "author": "MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier)",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"

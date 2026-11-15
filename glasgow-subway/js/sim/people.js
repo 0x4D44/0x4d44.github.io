@@ -1,6 +1,6 @@
 // Instanced low-poly people (platform crowd, boarding/alighting streams).
 import { mulberry32, clamp } from './util.js';
-import { fitHair, fitScalp, fitHoseLegs, fitLegs, legFit, trimUnderSkirt, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
+import { fitHair, fitScalp, fitHoseLegs, fitLegs, legFit, trimUnderSkirt, trimUnderTrousers, trimWebbing, countWebbing, fitShoes, armRig, armAxes, armClip, armProbe } from './bodyfit.js';
 import { ARM_OUT, ARM_DROP } from './armfit.js';
 import { LEG_RADII } from './legradii.js';
 import * as G from './gait.js';
@@ -10,7 +10,7 @@ import { HoldRig } from './hold_three.js';
 import { VARIANTS as PHONE_VARIANTS } from './phone.js';
 import { pickBag, fitBody, wearBag, stepBag, dropBag } from './bags.js';
 import { makeHaggis, followStep, poseHaggis, poseLead } from './haggis.js';
-import { BLINK, blinkStep, eyeRig, makeLids } from './blink.js';
+import { BLINK, blinkStep, eyeRig, gazeStep, makeEyes, makeLids } from './blink.js';
 import { buildSmile, smileMesh } from './smile.js';
 import { PROX, chooseSpot, newAttention, attend } from './waiting.js';
 import { LookRig } from './look_three.js';
@@ -158,6 +158,7 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
   const least = (list, key, rare) => { const by = new Map(); for (const c of list) { const k = key(c); (by.get(k) || by.set(k, []).get(k)).push(c); } for (const k of [...by.keys()].sort((x, y) => x - y)) { const c = draw(by.get(k), rare); if (c) return c; } return null; };
   return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c), false);
 }
+const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
    *  (the game loads the small file first, so the station is drawn without waiting for the big one). */
@@ -176,7 +177,7 @@ export class AnimCrowd {
       const pools = {}; for (const k of Object.keys(shared)) { if (k === 'fidget' && !kid) continue; pools[k] = shared[k].filter((a) => !a.name.includes('__') || a.name.startsWith(m[1] + '__')); if (!pools[k].length) delete pools[k]; }
       if (!pools.idle) continue;
       const lodNode = !lodGltf ? null : gltf ? lodGltf.scene.getObjectByName('person_' + m[1]) : n;
-      this.chars.push({ id: m[1], node: gltf ? n : null, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), kind: (mt && mt.kind) || '', metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3, rare: (mt && mt.rare) || 0 });
+      this.chars.push({ id: m[1], node: gltf ? n : null, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]) || (mt && mt.kind) === 'elder', kind: (mt && mt.kind) || '', metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3, rare: (mt && mt.rare) || 0 });
     }
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
     for (const c of this.chars) { this.fit[c.id] = { hair: null, hairLod: null, legs: null, legsLod: null, trim: null, trimLod: null, web: null, webLod: null, shoes: null }; if (c.node) this._fitFull(c); if (c.lodNode) this._fitLod(c); }
@@ -213,6 +214,7 @@ export class AnimCrowd {
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
     f.legs = sk ? fitLegs(T, n, f.hose ? { radii: f.hose.radii } : {}) : null;   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
+    f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
     f.web = trimWebbing(T, n);
     f.shoes = fitShoes(T, n);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
   }
@@ -227,6 +229,7 @@ export class AnimCrowd {
     const radii = (f.hoseLod && f.hoseLod.radii) || (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
     f.trimLod = sk ? trimUnderSkirt(T, n) : null;
+    f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
     f.webLod = trimWebbing(T, n);   // the simplified body has a few triangles joining a hand to a thigh
   }
   /** people.glb has arrived (after a crowd was built from people_lod.glb alone): fit it and let the nearest people swap up to it, a couple a frame, in update().
@@ -326,12 +329,13 @@ export class AnimCrowd {
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
   _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.pet) { for (const o of [p.pet.root, p.pet.lead]) if (o.parent) o.parent.remove(o); p.pet = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
   _rollPool() {
-    // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
+    // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, ~27% shorts and leggings (denim, Lycra, chino), the rest (~40%) trousers and jeans:
+    // no garment is on more than half of a crowd (research/people-rubric.md, category 6), though 58 of the 99 people in the file wear trousers
     const r = this.rng(); let pool;
     const skirt = (c) => /skirt|dress|sash|highland_dress/.test(c.outfit), kilt = (c) => /kilt|highland/.test(c.outfit) && !skirt(c);
     if (r < 0.10) pool = this.chars.filter((c) => c.kid); else if (r < 0.13) pool = this.chars.filter((c) => c.staff);
-    else if (r < 0.25) pool = this.chars.filter((c) => skirt(c) && !c.kid); else if (r < 0.33) pool = this.chars.filter((c) => kilt(c) && !c.kid);
-    else pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c));
+    else if (r < 0.25) pool = this.chars.filter((c) => skirt(c) && !c.kid); else if (r < 0.29) pool = this.chars.filter((c) => kilt(c) && !c.kid);   // (people review 1: at 8% of the roll, with the pipers and the school kilts, tartan was a quarter of every platform)
+    else { const bare = (c) => /shorts|leggings/.test(c.outfit); pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c) && bare(c) === (r < 0.60)); }
     return pool.length ? pool : this.chars;
   }
   _pick(filter) {   // never the same person twice in a crowd, nor (while the roster allows) twice on screen across crowds: see pickChar
@@ -373,17 +377,20 @@ export class AnimCrowd {
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
   _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0); this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; return this._bh; }
+  /** a case carried up or down the stairs is held up by a bent arm (people review 1: the big case stayed at foot level and ran through the steps) */
+  _carryStep(p, dt) { const g = p.gait; if (!g || !p.bagRig || p.bagRig.kind !== 'trolley') return; const c = g.carry || (g.carry = [0, 0]), want = p.stair ? 0.5 : 0; c[0] += (want - c[0]) * (1 - Math.exp(-6 * dt)); if (c[0] < 0.002 && !want) c[0] = 0; }
   /** test hook: set a person's smile by hand (0..1) */
   _smileSet(p, w) { if (p.face) p.face.morphTargetInfluences[0] = w; return !!p.face; }
   /** eyelids (blink.js) for a full-detail clone; the far model has none. Where the eyes are is read once per character. */
   _lids(p, obj) {
-    p.lids = null; p.face = null; const ch = p.char; if (p.lod || !ch.node) return;
+    p.lids = null; p.eyes = null; p.face = null; const ch = p.char; if (p.lod || !ch.node) return;
     // the smile (smile.js): one morph target on the character's skin, made once; this clone's skin then carries its own amount of it
     if (ch.smileRig === undefined) { try { ch.smileRig = buildSmile(this.THREE, this._clone(ch, false)) || null; } catch (e) { ch.smileRig = null; } }
     p.face = smileMesh(obj, ch.smileRig);
     if (this.blinks === false) return;
     if (ch.eyeRig === undefined) { try { ch.eyeRig = eyeRig(this.THREE, this._clone(ch, false)); } catch (e) { ch.eyeRig = null; } }
     p.lids = makeLids(this.THREE, obj, ch.eyeRig); if (!p.blink) p.blink = {};
+    p.eyes = makeEyes(this.THREE, obj, ch.eyeRig); if (!p.gaze) p.gaze = {};
   }
   /** a T-shirt wearer keeps one chest print and shirt colour (tees.js) for as long as they are on screen, through LOD swaps; given back in _drop */
   _dressTee(p, obj) {
@@ -683,6 +690,7 @@ export class AnimCrowd {
       if (p.pet) this._petStep(p, dt);
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', false, this._bagHow(p));
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
+      if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (c !== p.lids.c) p.lids.set(c); }
       p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {
@@ -744,8 +752,9 @@ export class AnimCrowd {
       if (upd && p.look) p.look.restore();
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
-      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) this._gaitStep(p, dt); } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
       if (hold && upd) this._holdStep(p, dt, !animate);
+      if (upd) this._fingers(p, dt, !animate);
       // the look goes on after the hold (put on first, it sent a texting arm to 97% of full stretch at a full turn of the head). Someone holding a phone turns head and neck only: the shoulders, and so the hands, stay put
       if (animate && p.att && dist < 14) {
         const a = p.att, still = p.state !== 'walk' && p.state !== 'go', chest = still && dist < 8 ? Math.sin(a.breath) * 0.011 + a.bob * 0.03 : 0, pitch = a.pitch - (a.drop || 0) * 0.13;
@@ -773,11 +782,35 @@ export class AnimCrowd {
    *  toe out, how quick their steps are for their speed - none of it is in the clip. Fixed for the person, so a re-plant (below) does not change who they are. The traits and the
    *  seed of the step-to-step wander (gait.js VARY) come from the character's id and how many of that character have walked before, not from the order the crowd was made in, so a
    *  recording of one character is the same whatever else is on the platform. */
+  /** Fingers. The clips leave the hands nearly flat (a quarter of a radian over three joints), which reads as an open, offering palm on a swinging arm. A hand at
+   *  rest hangs half closed, and a hand on a handle is closed round it. This goes on after the mixer (which writes the fingers afresh at every update): relaxed
+   *  for both hands, a grip for the hand with a bag or a case handle in it. A hand on a phone, a pole or a rail, waving or pointing keeps the clip's own fingers. */
+  _fingers(p, dt, snap) {
+    const clip = p.cur ? p.cur.getClip().name : ''; if (/phone|pole|rail|wave|point/.test(clip)) return;
+    let f = p.fing; if (!f || f.obj !== p.obj) f = p.fing = this._fingerRig(p.obj, f); if (!f.ok) return;
+    const rg = p.bagRig, gh = rg && p.obj.visible ? rg.gh : -1, held = p.hold && p.hold.w > 0;
+    for (let s = 0; s < 2; s++) {
+      if (held) continue;
+      const want = gh === s ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
+      for (const b of f.side[s]) { const a = b.rel + (b.grip - b.rel) * c; b.bone.quaternion.copy(b.rest).multiply(q.setFromAxisAngle(X, a)); }
+    }
+  }
+  _fingerRig(obj, old) {
+    const T = this.THREE, f = { obj, ok: false, side: [[], []], c: old ? old.c : [-1, -1] }; let skel = null; obj.traverse((o) => { if (!skel && o.isSkinnedMesh) skel = o.skeleton; }); if (!skel) return f;
+    const restW = new Map(), m = new T.Matrix4(); skel.bones.forEach((b, i) => restW.set(b, m.clone().copy(skel.boneInverses[i]).invert()));
+    const REL = { index: [0.30, 0.42, 0.26], middle: [0.38, 0.50, 0.30], ring: [0.46, 0.56, 0.34], pinky: [0.52, 0.60, 0.36], thumb: [0.10, 0.16, 0.20] }, GRIP = { index: [1.05, 1.20, 0.65], middle: [1.10, 1.25, 0.70], ring: [1.12, 1.25, 0.70], pinky: [1.12, 1.22, 0.70], thumb: [0.22, 0.45, 0.50] };
+    for (const b of skel.bones) {
+      const k = /^(index|middle|ring|pinky|thumb)_0([123])_([lr])$/.exec(b.name); if (!k || !restW.has(b.parent)) continue;
+      const loc = m.clone().copy(restW.get(b.parent)).invert().multiply(restW.get(b)), rest = new T.Quaternion().setFromRotationMatrix(loc);
+      f.side[k[3] === 'l' ? 0 : 1].push({ bone: b, rest, rel: FINGER_SIGN * REL[k[1]][k[2] - 1], grip: FINGER_SIGN * GRIP[k[1]][k[2] - 1] });
+    }
+    f.ok = f.side[0].length > 0; return f;
+  }
   _gaitOpts(p) {
     const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
     const bg = p.bag && p.bag.hand ? p.bag.kind : '', ao = ((tab && tab.walk) || [8, 8]).slice(); if (bg === 'trolley') ao[0] += 7;   // (the left hand carries: bags.js)
-    return { armOut: ao, hold: [bg === 'trolley' ? 1 : bg ? 0.5 : 0, 0], trail: [bg === 'trolley' ? 22 : 0, 0], seed: (G.seedOf(id) + 7919 * n) >>> 0,
-      var: { arm: 0.85 + 0.3 * r(), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r() } };
+    return { armOut: ao, hold: [bg === 'trolley' ? 1 : bg ? 0.8 : 0, 0], trail: [bg === 'trolley' ? 22 : 0, 0], seed: (G.seedOf(id) + 7919 * n) >>> 0,
+      var: { arm: (0.8 + 0.4 * r()) * (p.char.elder ? 0.7 : p.char.kid ? 1.15 : 1), elbow: (0.7 + 0.6 * r()) * (p.char.elder ? 0.8 : p.char.kid ? 1.2 : 1), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: 0.95 + 0.1 * r(), wid: (0.75 + 0.55 * r()) * (p.char.elder ? 1.25 : 1) } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step

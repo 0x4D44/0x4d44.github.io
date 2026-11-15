@@ -296,7 +296,7 @@ export function fitLegs(THREE, root, o = {}) {
 // The socks were holed the same way (half of one was gone), and strips of the suit's trousers were left hanging beside the legs.
 // The legs are made again here: a plain tube of skin per leg, hip to mid-calf, bending at the knee, and over it a new sock from where the old one's top was down
 // into the shoe, with its turned-over cuff. The shards of the old leg skin, the old socks and the trouser strips are dropped. The tube's radii (a little more) are what the kilt is then held off (fitLegs).
-export const HOSE_LEGS = { thigh: 1.5, knee: 1.1, inside: 0.9, under: 0.88, seg: 12, to: 0.62, minHose: 0.03, maxHose: 0.085 };
+export const HOSE_LEGS = { thigh: 1.5, knee: 1.1, inside: 0.9, under: 0.88, seg: 12, to: 0.62, minHose: 0.03, maxHose: 0.085, hipTaper: 0.45 };
 
 /** radius of a leg tube at t along the thigh (s = 0) or the calf (s = 1), given the radius of the sock just under its top (pure, for the tests) */
 export function hoseLegRadius(s, t, rh) {
@@ -327,7 +327,7 @@ export function fitHoseLegs(THREE, root) {
   const P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, idx = g.index, keep = [];
   const legW = (i, L) => { let w = 0; for (let c = 0; c < 4; c++) { const bi = SI.getComponent(i, c); if (bi === rig.bone[L * 2] || bi === rig.bone[L * 2 + 1]) w += SW.getComponent(i, c); } return w; };
   const inTube = (i) => { for (let L = 0; L < 2; L++) { if (legW(i, L) < 0.5) continue; const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
-      segDist(x, y, z, rig.J[L * 3], rig.J[L * 3 + 1], o); const tt = o.t; segDist(x, y, z, rig.J[L * 3 + 1], rig.J[L * 3 + 2], o); if (tt > 0.1 && o.t < H.to - 0.04) return true; } return false; };
+      segDist(x, y, z, rig.J[L * 3], rig.J[L * 3 + 1], o); const tt = o.t; segDist(x, y, z, rig.J[L * 3 + 1], rig.J[L * 3 + 2], o); if (tt > 0.1 && o.t < 0.94) return true; } return false; };   // (to the ankle: the new sock runs down into the shoe, and the old calf and heel came out through the back of it)
   for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(inTube(a) && inTube(b) && inTube(c))) keep.push(a, b, c); }
   const dropped = (idx.count - keep.length) / 3; if (dropped) g.setIndex(new T.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
   // strips of trousers left from a suit, hanging by the legs: no top reaches below the hips on a leg bone
@@ -337,6 +337,12 @@ export function fitHoseLegs(THREE, root) {
     const on = (i) => { let w = 0; for (let c = 0; c < 4; c++) if (leg[MI.getComponent(i, c)]) w += MW.getComponent(i, c); return w > 0.7; };
     for (let t = 0; t < mi.count; t += 3) { const a = mi.getX(t), b = mi.getX(t + 1), c = mi.getX(t + 2); if (!(on(a) && on(b) && on(c))) kp.push(a, b, c); }
     mg.userData.hoseStrips = (mi.count - kp.length) / 3; strips += mg.userData.hoseStrips; if (kp.length < mi.count) mg.setIndex(new T.BufferAttribute(mg.attributes.position.count > 65535 ? new Uint32Array(kp) : new Uint16Array(kp), 1)); });
+  // an Oxford shoe comes with its own white sock, 20 cm up the leg (a few blocky triangles after the decimation): it stood out behind the new hose as a white slab at the heel
+  const ankY = Math.max(rig.J[2].y, rig.J[5].y) + 0.035;
+  root.traverse((m) => { if (!m.isSkinnedMesh || !m.material || !/shoe/i.test(m.material.name || '') || !m.geometry.index || m.geometry.userData.hoseCollar != null) return;
+    const mg = m.geometry, mi = mg.index, MP = mg.attributes.position, kp = [];
+    for (let t = 0; t < mi.count; t += 3) { const a = mi.getX(t), b = mi.getX(t + 1), c = mi.getX(t + 2); if (Math.max(MP.getY(a), MP.getY(b), MP.getY(c)) < ankY + 0.02 || Math.min(MP.getY(a), MP.getY(b), MP.getY(c)) < ankY - 0.03) kp.push(a, b, c); }
+    mg.userData.hoseCollar = (mi.count - kp.length) / 3; if (kp.length < mi.count) mg.setIndex(new T.BufferAttribute(MP.count > 65535 ? new Uint32Array(kp) : new Uint16Array(kp), 1)); });
   let cuffCol = null; const sockCol = hose[0].material.color ? hose[0].material.color.clone() : new T.Color(0xdddddd), gone = [];
   root.traverse((m) => { if (m.isSkinnedMesh && m.material && /^hose_/.test(m.material.name || '')) { gone.push(m); if (/^hose_cuff/.test(m.material.name) && m.material.color) cuffCol = m.material.color.clone(); } });
   for (const m of gone) if (m.parent) m.parent.remove(m);
@@ -353,7 +359,7 @@ export function fitHoseLegs(THREE, root) {
     for (const [s, t, wt, wc, k0, cc] of part) {
       const a = s ? knee : hip, b = s ? ank : knee, ax = new T.Vector3().subVectors(b, a).normalize(), c = new T.Vector3().lerpVectors(a, b, t);
       const u = new T.Vector3(1, 0, 0).addScaledVector(ax, -ax.x).normalize(), v = new T.Vector3().crossVectors(ax, u);
-      const r = k0 ? hoseLegRadius(1, t, R) * k0 : hoseLegRadius(s, t, R) * (s && t > t0 ? H.inside : H.under);
+      const r = k0 ? hoseLegRadius(1, t, R) * k0 : hoseLegRadius(s, t, R) * (s && t > t0 ? H.inside : H.under) * (s ? 1 : Math.min(1, H.hipTaper + (1 - H.hipTaper) * Math.max(0, t - 0.3) / 0.5));   // (narrow toward the hip: the full thigh came out through the kilt at the side and the back, a bare triangle from waist to mid-kilt - people review 1)
       for (let k = 0; k < N; k++) { const an = k / N * 2 * Math.PI; pos.push(c.x + (u.x * Math.cos(an) + v.x * Math.sin(an)) * r, c.y + (u.y * Math.cos(an) + v.y * Math.sin(an)) * r, c.z + (u.z * Math.cos(an) + v.z * Math.sin(an)) * r); si.push(rig.bone[L * 2], rig.bone[L * 2 + 1], 0, 0); sw.push(wt, wc, 0, 0); colr.push(cc.r, cc.g, cc.b); }
     }
     for (let i = 0; i + 1 < part.length; i++) for (let k = 0; k < N; k++) { const a = base + i * N + k, b = base + i * N + (k + 1) % N, c = base + (i + 1) * N + (k + 1) % N, d = base + (i + 1) * N + k; ind.push(a, b, c, a, c, d); }
@@ -428,6 +434,39 @@ export function trimUnderSkirt(THREE, root, o = {}) {
     if (keep.length < idx.count) g.setIndex(new THREE.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
   }
   return stats;
+}
+
+const NOTLEG = /arm|hand|clavicle|shoulder|neck|head|thumb|index|middle|ring|pinky|finger/i;
+/** Drop the skin under a pair of trousers or shorts. The pipeline masks the body away under the clothes only where the garment's own mask says so, and what is left
+ *  (seat, backs of the thighs, hips) comes through the cloth as soon as the person sits or strides: skin-coloured holes in the trousers (people review 1). Nothing
+ *  under trousers is ever meant to be seen, so every skin triangle that lies wholly between the garment's waist edge and its leg openings (margin 4 cm from each), and
+ *  carries no arm or hand weight (a hand beside the thigh is at the same height), goes. Not for skirts, kilts or dresses: under those the legs are seen from below.
+ *  Returns { dropped, lo, hi } or null (no such garment). */
+export function trimUnderTrousers(THREE, root, o = {}) {
+  const margin = o.margin != null ? o.margin : 0.04; let skin = null; const legs = [];
+  root.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.material || !m.geometry || !m.geometry.attributes.position) return;
+    const nm = m.material.name || '';
+    if (/^skin_/i.test(nm)) skin = m; else if (/^cloth_/i.test(nm) && !LEG_SKIP.test(nm)) legs.push(m);
+  });
+  if (!skin || !legs.length || !skin.skeleton) return null;
+  const rig = legRig(THREE, skin); if (!rig) return null;
+  const hipY = (rig.J[0].y + rig.J[3].y) / 2; let lo = null, hi = null;
+  for (const m of legs) {
+    const P = m.geometry.attributes.position, n = P.count, ys = new Float32Array(n); for (let i = 0; i < n; i++) ys[i] = P.getY(i); ys.sort();
+    const top = ys[Math.floor((n - 1) * 0.9)], bot = ys[Math.floor((n - 1) * 0.02)];
+    if (top > hipY + 0.3 || top < hipY - 0.02 || bot > hipY - 0.12) continue;   // a top, a dress, a belt: not legwear
+    lo = lo == null ? bot : Math.min(lo, bot); hi = hi == null ? top : Math.max(hi, top);
+  }
+  if (lo == null) return null;
+  const g = skin.geometry, idx = g.index, P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if (!idx || !SI || !SW) return null;
+  if (g.userData.underTrousers != null) return { dropped: g.userData.underTrousers, lo: +lo.toFixed(3), hi: +hi.toFixed(3) };
+  const leg = skin.skeleton.bones.map((b) => !NOTLEG.test(b.name)), y0 = lo + margin, y1 = hi - margin, keep = [];
+  const hidden = (i) => { const y = P.getY(i); if (y <= y0 || y >= y1) return false; for (let c = 0; c < 4; c++) if (SW.getComponent(i, c) > 0.02 && !leg[SI.getComponent(i, c)]) return false; return true; };
+  for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(hidden(a) && hidden(b) && hidden(c))) keep.push(a, b, c); }
+  g.userData.underTrousers = (idx.count - keep.length) / 3;
+  if (keep.length < idx.count) g.setIndex(new THREE.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
+  return { dropped: g.userData.underTrousers, lo: +lo.toFixed(3), hi: +hi.toFixed(3) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

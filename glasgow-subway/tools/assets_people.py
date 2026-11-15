@@ -1090,12 +1090,16 @@ def clip_defs():
         return d
     C['point'] = (48, point)
     # seated clips (rotation only; the game lowers the root by seatRootDropM from people_meta.json)
+    SIT_PRON = float(os.environ.get('SIT_PRON', '-1.1'))
+    SIT_UY = float(os.environ.get('SIT_UY', '0.06')); SIT_UZ = float(os.environ.get('SIT_UZ', '0'))
     def sit_base(p):
         return {
             'hips': [('x', 0.02)], 'spine': [('x', 0.03 * s_(p))], 'chest': [('x', 0.015 * s_(p))], 'head': [('x', -0.05)],
             'thigh_l': [('x', 1.50), ('y', -0.06)], 'thigh_r': [('x', 1.50), ('y', 0.06)], 'shin_l': [('x', -1.52)], 'shin_r': [('x', -1.52)],
             'foot_l': [('x', 0.05)], 'foot_r': [('x', 0.05)],
-            'upperarm_l': [('x', 0.28), ('y', -0.06)], 'upperarm_r': [('x', 0.28), ('y', 0.06)], 'forearm_l': [('x', 1.0)], 'forearm_r': [('x', 1.0)],
+            # (2026-11-15, people review 1: upper arm 0.28, forearm 1.0 held both forearms level in front, palms up and apart - 'offering'. The hands now lie on the thighs, palms down.)
+            'upperarm_l': [('x', 0.20), ('y', -SIT_UY), ('z', SIT_UZ)], 'upperarm_r': [('x', 0.20), ('y', SIT_UY), ('z', -SIT_UZ)], 'forearm_l': [('x', 0.70)], 'forearm_r': [('x', 0.70)],
+            'hand_l': [('z', SIT_PRON)], 'hand_r': [('z', -SIT_PRON)],
             'fingers_l': [('x', 0.3)], 'fingers_r': [('x', 0.3)],
         }
     C['sit_idle'] = (96, lambda ph: sit_base(ph * TAU))

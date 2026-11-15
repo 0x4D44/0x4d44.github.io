@@ -86,6 +86,7 @@ const wrap1 = (x) => x - Math.floor(x);
 const angDiff = (a, b) => { let d = (a - b) % (2 * PI); if (d > PI) d -= 2 * PI; if (d < -PI) d += 2 * PI; return d; };
 
 // ------------------------------------------------------------------------------------------------------------------------ the body
+const ARM_IN = 0;
 export const CONTROLLED = ['pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01', 'head', 'clavicle_l', 'clavicle_r', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r',
   'thigh_l', 'thigh_r', 'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r'];
 const SIDE = ['l', 'r'];
@@ -215,8 +216,10 @@ export function gaitParams(B, v, cad = 1) {
   P.obl = (3.5 + 2.5 * Math.min(kv, 1.4)) * D2R;
   P.thorax = 0.85;                                                    // thorax yaw against the pelvis (x the pelvis's own)
   P.armSwing = (12 + 19 * ve) * D2R;                                  // peak-to-peak shoulder swing
-  P.elbow = (16 + 14 * Math.min(kv, 1.5)) * D2R; P.elbowAmp = (7 + 6 * Math.min(kv, 1.5)) * D2R;
-  P.stepHalf = 0.5 * 0.09 * (Lh / 0.92);                             // the heels land this far either side of the line of travel
+  // (2026-11-15, people review 1: 16 + 14 kv with +-(7 + 6 kv) and the shoulder's swing centred 4 deg forward held the forward hand out at the waist, elbow at 48 deg, and gave
+  // almost no back-swing - 'offering'. The shoulder swings about a point behind the vertical (more extension than flexion) and the elbow runs from nearly straight behind to ~30 deg in front.)
+  P.elbow = (9 + 9 * Math.min(kv, 1.5)) * D2R; P.elbowAmp = (5 + 5 * Math.min(kv, 1.5)) * D2R;
+  P.stepHalf = 0.5 * 0.10 * (Lh / 0.92);   // (step width, heel centre to heel centre: about 0.08 - 0.13 m in adults at an easy pace)                             // the heels land this far either side of the line of travel
   P.clear = 0.032 * (Lh / 0.92);                                      // height of the swing foot's lowest point at its peak
   P.lean = (1.5 + 2.0 * Math.min(kv, 1.5)) * D2R;                     // forward lean of the thorax
   // no leg is ever asked to stretch further than a knee bent by `minKnee`; at mid-stance the pelvis is as high as that allows (a little less than the standing height)
@@ -260,7 +263,7 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 /** A new gait state for a body. */
 export function newGait(B, opts = {}) {
   const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8], hold: opts.hold || [0, 0], trail: opts.trail || [0, 0],
-    var: Object.assign({ arm: 1, bob: 1, sway: 1, yawBias: 0, cad: 1, vary: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
+    var: Object.assign({ arm: 1, bob: 1, sway: 1, yawBias: 0, cad: 1, vary: 1, wid: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
     rng: rng32(opts.seed != null ? opts.seed : 0x2f6e), eT: 0, rate: 1,      // eT, rate: the step-to-step wander of the timing (see VARY)
     acc: 0, vPrev: null };                                                    // acc: how fast the body is speeding up (m/s^2, smoothed): the foot is put where the body will be
   return g;
@@ -418,7 +421,7 @@ function land(g, f, P) {
 // where the heel will land: ahead of the pelvis by aH at the time of landing, stepHalf off the line of travel
 function landTarget(g, s, P, rem) {
   const fwd = [-Math.sin(g.yaw), -Math.cos(g.yaw)], rgt = [Math.cos(g.yaw), -Math.sin(g.yaw)], sgn = s ? 1 : -1;
-  const f = g.feet[s], sw = f.sw, T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), half = P.stepHalf * (sw ? sw.kW : 1);
+  const f = g.feet[s], sw = f.sw, T = rem * (1 - P.S) * 2 / Math.max(P.fs, 0.2), half = P.stepHalf * (sw ? sw.kW : 1) * (g.var.wid || 1);   // (g.var.wid: some people walk wide, some near a line - people review 1 saw everybody on the same narrow line)
   // A body that is speeding up is further on by the time the foot lands, and takes the longer step of the speed it is reaching: the foot is put where it will be (constant acceleration
   // over the rest of the swing). Placed for the speed of the moment, the first foot of a walk landed 0.1 - 0.2 m short of the pelvis's lead, and that stance foot then trailed 0.15 m
   // further behind at its toe-off than at any other step: the pelvis was dragged down by 10 cm on the second step of every walk (mean sag over the first six seconds 102 -> 65 mm).
@@ -513,11 +516,11 @@ export function gaitTargets(g) {
   // arms: each swings against the same-side leg; the elbow bends more as the arm goes forward; the shoulder is turned out so the hand clears the hip
   T.upD = []; T.loD = [];
   for (let s = 0; s < 2; s++) {
-    const a = B.arm[s], sgn = s ? 1 : -1, hd = g.hold[s], amp = 0.5 * P.armSwing * V.arm * (1 - 0.85 * hd), sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + (4 - g.trail[s]) * D2R * w;   // (an arm with a load swings less; one towing a case trails behind)
-    const abd = (6 + g.armOut[s]) * D2R, dAbd = abd - a.abd0;
+    const a = B.arm[s], sgn = s ? 1 : -1, hd = g.hold[s], amp = 0.5 * P.armSwing * V.arm * (1 - 0.85 * hd), sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + (-5 - g.trail[s]) * D2R * w;   // (an arm with a load swings less; one towing a case trails behind)
+    const abd = (3 + g.armOut[s]) * D2R, dAbd = abd - a.abd0;
     const up = qmul(T.spineD[2], qmul(qx(sw), qz(sgn * dAbd)));
-    const el = P.elbow * (0.5 + 0.5 * w) + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w;
-    T.upD[s] = up; T.loD[s] = qmul(up, qx(el));
+    const el = (P.elbow * (0.5 + 0.5 * w) + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w) * (V.elbow || 1) * (1 - 0.6 * hd) + (g.carry ? g.carry[s] : 0);   // (a loaded arm hangs straighter)
+    T.upD[s] = up; T.loD[s] = qmul(up, qmul(qy(sgn * ARM_IN * w), qx(el)));   // the forearm swings a little across the body in front, as the elbow bends
   }
   return T;
 }

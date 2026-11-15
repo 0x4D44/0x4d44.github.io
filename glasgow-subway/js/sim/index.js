@@ -294,7 +294,7 @@ class Sim {
       const sv = k === 0 ? (this.mode === 'ride' || this.mode === 'explore') : true;   // the player's own riders only matter when walking; the other circle's train is seen from every underground mode
       if (sv && !tv.saloonDone && !built) { built = true; this._populateSaloon(tv, k === 0 && !tv.saloonSlow ? 99 : 1); }   // the player's train at once, the other one a car a frame (also while it is out of sight: it must arrive with its passengers aboard)
       const on = sv && tv.root.visible; sc.setEnabled(on);
-      if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 14 : 5) : (this.mode === 'explore' ? 5 : 4)); sc.update(dt, this.time, null, this.camera.position); }   // (nearest riders get the full-detail model: fewer when the platform crowd is the focus. 14 when riding: a full train puts that many within a few metres, and the simplified models do not stand being looked at that close)
+      if (on) { sc.maxHi = this.quality === 'low' ? (k === 0 ? 3 : 2) : (k === 0 ? (this.mode === 'ride' ? 14 : 9) : (this.mode === 'explore' ? 7 : 6)); sc.update(dt, this.time, null, this.camera.position); }   // (nearest riders get the full-detail model: fewer when the platform crowd is the focus. 14 when riding: a full train puts that many within a few metres, and the simplified models do not stand being looked at that close)
     });
   }
   /** Regression audit of every spawned person (real skinned vertices): soles on the floor/platform/seat, heads under the ceiling, inside the walls, no overlaps. */
@@ -941,6 +941,8 @@ class Sim {
         this.crowd.group.position.copy(g.position); this.crowd.group.rotation.copy(g.rotation);
         if (this.crowd.setWorld) this.crowd.setWorld(cur.zones, cur.obstacles.filter((o) => o.tall || Math.abs(o.y - cur.info.PY) < 1.2));
         if (this.crowd.setSite) this.crowd.setSite(this._site(cur));
+        // a crowd of its own for every station and every visit (people review 1: one seed gave Buchanan Street and St Enoch the same ten people)
+        { const nm = String(inf.name || inf.id || ''); let h = 2166136261; for (let i = 0; i < nm.length; i++) h = Math.imul(h ^ nm.charCodeAt(i), 16777619); this._visits = (this._visits || 0) + 1; this.crowd.rng = mulberry32((h ^ (this._visits * 40503)) >>> 0); }
         // three quarters of the platform's people are already waiting; the rest come down the stairs while you watch (_arrivals)
         this.crowd.populate(this.crowd.setSite ? Math.round(cur.crowdN * 0.75) : cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY).concat(cur.crowdAvoid || []));
         this._arr = { t: 2 + Math.random() * 5 };

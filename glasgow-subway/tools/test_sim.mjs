@@ -402,7 +402,9 @@ try {
   const au1 = await ev(p, () => { __sim.render(); __sim.render(); return __sim.peopleAudit(); });
   ok('saloon people: feet on floor/seat, heads below the ceiling profile, inside the walls, no overlaps', au1.checked >= 5 && au1.bad.length === 0, JSON.stringify(au1));
   const pi = await ev(p, () => { const w = __sim.walker(); w.sit = false; w.sitK = 0; w.place(0, w.z, 0); return __sim.peopleInfo(); });
-  ok('people scale: every character <= 1.80 m (+2 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.82 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
+  // (2026-11-15: 1.80 -> 1.86 m. People review 1 found nobody over 1.80 m; tall people are real, and in the low Glasgow car they only stand where the ceiling
+  //  profile clears every vertex of their clips (AnimCrowd._fitsStandAt) - the saloon audit above checks the heads.)
+  ok('people scale: every character <= 1.86 m (+3 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.89 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
   const pet = await ev(p, () => __sim.petAudit());
   ok('the man in the string vest has his haggis: in the scene with him, on the floor 0.5-1.1 m away, on a lead of 0.4-1.6 m, standing still by him, and gone when he goes',
     pet && pet.made && pet.inScene && pet.dist > 0.5 && pet.dist < 1.1 && Math.abs(pet.dy) < 0.01 && pet.lead > 0.4 && pet.lead < 1.6 && pet.v < 0.05 && pet.gone, JSON.stringify(pet));
@@ -616,8 +618,8 @@ try {
   await shot(p, '21_explore_hillhead');
   { const wa = await ev(p, () => __sim.waitAudit());
     const sc = await ev(p, () => __sim.scalpAudit());
-    ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and only the bun is a bare head with strands',
-      sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && sc.sparse.join() === 'adult_suit_bun')) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
+    ok('hair-coloured scalp under the hair: nearly everyone with hair has the cap on both models, the people on the platform carry it, and nobody but the bun (if worn) is a bare head with strands',
+      sc && sc.chars > 60 && sc.lod >= 0.85 * sc.chars && (sc.full === 0 || (sc.full >= 0.9 * sc.chars && sc.minTris >= 12 && ['', 'adult_suit_bun'].includes(sc.sparse.join()))) && sc.people > 0 && sc.capped === sc.people, JSON.stringify(sc));
     const ha = await ev(p, () => __sim.hoseAudit());
     ok('the five people in kilts and long socks have legs: a leg and a whole sock each on both models, sock radii a leg could have, and none of the old holed socks left',
       ha && ha.ids.length === 5 && ha.lod === 5 && ha.old === 0 && ha.minTris >= 300 && ha.rh.every((r) => r >= 0.03 && r <= 0.085), JSON.stringify(ha));

@@ -113,8 +113,6 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | eyes/materials/grey | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/lightblue | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/afro01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/bob01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/bob02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/braid01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/culturalibre_hair_05 | culturalibre | CC0 |
 | hair/elvs_50s_updo | Elvaerwyn | CC-BY |
@@ -127,16 +125,12 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/elvs_keylth_hair | Elvaerwyn | CC-BY |
 | hair/elvs_lady_hippy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_maxwell_hair | Elvaerwyn | CC-BY |
-| hair/elvs_micky_afro | Elvaerwyn | CC-BY |
-| hair/elvs_reverse_french_braid_bun | Elvaerwyn | CC-BY |
 | hair/elvs_short_daisy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_short_side_do | Elvaerwyn | CC-BY |
-| hair/elvs_wavy_bob | Elvaerwyn | CC-BY |
 | hair/long01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/ponytail01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/short01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/short02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/short03 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/short04 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/toigo_blunt_bob | MRT | CC0 |
 | hair/toigo_blunt_bob_with_bangs | MRT | CC0 |
@@ -153,6 +147,7 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/old_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/old_african_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/old_asian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| skins/old_asian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/old_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/old_caucasian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | skins/young_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
@@ -169,7 +164,3 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 Station and in-train adverts in `adverts.jpg`, `adverts_land.jpg` and `adverts_cards.jpg` were generated with OpenAI image generation (via the Codex CLI) from our own briefs (`tools/adverts_prompts.md`). Every product, brand, book, author and charity in them is fictional.
 
 The T-shirt chest prints in `tee_prints.png` were generated the same way from our own briefs (`tools/tee_prompts.md`) and keyed and packed by `tools/build_tee_prints.py`. Every name, brand and logo on them is fictional or one of this site's own documents.
-
-The cloth of the made hats (`tools/fabrics/felt.png`: the top hat and the beret; `tools/fabrics/tweed.png`: `elder_man_cap`'s flat cap) was generated the same way, as plain tileable swatches, and scaled to 512 px.
-
-Batch 4 (2026-11-14): the tattoos (`tattoo_art`: an anchor, a "MAW" heart, a thistle, a swallow, an armband, "GLESGA / PEOPLE MAKE GLASGOW" and the masthead and address of this site's own Daily Flange), the string vest's net (`net_texture`), the bagpipes (`build_pipes`) and the haggis (`js/sim/haggis.js`) are our own drawings and meshes, made by the build script and the game; nothing was taken from elsewhere. The lettering is set in DejaVu Sans Bold (Bitstream Vera / DejaVu licence).

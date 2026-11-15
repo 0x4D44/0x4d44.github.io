@@ -40,9 +40,9 @@ export function pickBag(rng, c) {
   let P;
   if (c.kid) P = [0.5, 0, 0, 0, 0, 0, 0, 0];
   else if (teen) P = [0.48, 0.04, 0.06, 0, 0, 0.05, 0.03, 0];
-  else if (elder) P = [0.03, 0.15, 0.1, 0, woman ? 0.14 : 0, 0, 0.06, 0.04];
-  else if (smart) P = [0.12, 0.04, 0.03, 0.2, woman ? 0.08 : 0, 0.02, 0.02, 0.06];
-  else P = [0.18, woman ? 0.05 : 0.06, 0.06, 0.03, woman ? 0.1 : 0, woman ? 0.02 : 0.04, woman ? 0.04 : 0.03, 0.05];
+  else if (elder) P = [0.03, 0.17, 0.12, 0, woman ? 0.16 : 0, 0, 0.08, 0.07];
+  else if (smart) P = [0.14, 0.04, 0.03, 0.22, woman ? 0.1 : 0, 0.03, 0.02, 0.09];
+  else P = [0.22, woman ? 0.06 : 0.07, 0.07, 0.04, woman ? 0.13 : 0, woman ? 0.03 : 0.06, woman ? 0.05 : 0.04, 0.08];   // (people review 1: 27% of a platform carried anything and nobody towed a case; these come to about 6 in 10)
   let t = a, i = 0; while (i < P.length && t >= P[i]) t -= P[i++];
   switch (i) {
     case 0: if (ruckOK) return { kind: 'ruck', colour: pick(c.kid ? KID : RUCK), hand: false, style: !c.kid && !teen && b > 0.72 ? 'hike' : 'day' }; return c.kid || b < 0.5 ? null : { kind: 'tote', colour: pick(TOTE), hand: true };
@@ -281,7 +281,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   const inv = rig.m.copy(obj.matrixWorld).invert(), at = (bone, out) => out.setFromMatrixPosition(bone.matrixWorld).applyMatrix4(inv);
   const where = rig.kind === 'trolley' ? 'floor' : sit ? 'lap' : rig.kind === 'ruck' ? 'back' : 'hand';
   if (where !== rig.where) {
-    rig.where = where; if (mesh.parent) mesh.parent.remove(mesh);
+    rig.where = where; rig.gh = -1; if (mesh.parent) mesh.parent.remove(mesh);
     if (where === 'back') { rig.on.add(mesh); mesh.position.copy(rig.home); mesh.rotation.set(0, 0, 0); } else obj.add(mesh);
     if (rig.straps) rig.straps.visible = where === 'back';
   }
@@ -289,6 +289,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   const fz = fit.fz;
   if (where === 'floor') {
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
+    rig.gh = sit ? -1 : 0;
     if (fresh) rig.tow = sit || pole ? 0 : walk; else rig.tow += ((sit || pole ? 0 : walk) - rig.tow) * 0.14;
     if (sit) {   // on the floor in front of the knees, the pull handle stowed
       at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
@@ -316,11 +317,13 @@ export function stepBag(rig, sit, pole, fresh, o) {
     at(B.thigh_l, v); at(B.thigh_r, u); const hx = (v.x + u.x) / 2, hy = (v.y + u.y) / 2, hf = (v.z + u.z) / 2;
     at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, ky = (v.y + u.y) / 2, kf = (v.z + u.z) / 2, top = Math.max(hy, ky) + 0.075 * rig.s;
     if (rig.kind === 'ruck') { mesh.position.set(hx + (kx - hx) * 0.42, top, hf + (kf - hf) * 0.42 + fz * rig.d * 0.5); mesh.rotation.set(0, fz > 0 ? 0 : Math.PI, 0); }   // upright, its back to the belly
+    else if (/case|tote/.test(rig.kind)) { mesh.position.set(hx + (kx - hx) * 0.1, top + rig.d * 0.5, hf + fz * (0.07 - rig.drop)); mesh.rotation.set(-fz * Math.PI / 2, 0, 0); }   // lying flat on the thighs, handles to the belly (review 1: every lap bag stood bolt upright)
     else { mesh.position.set(hx + (kx - hx) * 0.45, top + rig.h + rig.drop * 0.55, hf + (kf - hf) * 0.45); mesh.rotation.set(0, Math.PI / 2, 0); }   // standing on the lap, broadside on
     return;
   }
   let g = rig.grip, sd = fit.side;
   if (pole) { at(rig.grip, v); at(rig.gripR, u); if (u.y < v.y - 0.1) { g = rig.gripR; sd = -sd; } }
+  rig.gh = g === rig.gripR ? 1 : 0;   // which hand holds the handle (0 left, 1 right): people.js closes that hand round it
   at(g, v); const off = fit.hip + rig.d / 2 + BAGS.clear, x = v.x - fit.midx;
   mesh.position.set(fit.midx + sd * Math.max(sd * x, off), Math.max(v.y - 0.012, rig.drop + rig.h + 0.012), v.z); mesh.rotation.set(0, 0, 0);
 }

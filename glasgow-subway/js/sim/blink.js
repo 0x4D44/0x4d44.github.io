@@ -64,7 +64,21 @@ export function eyeRig(THREE, obj) {
   for (let i = 0; i < sp.count; i++) { const d = world(skin, i, v).distanceToSquared(want); if (d < bd) { bd = d; best = i; } }
   if (best < 0 || !suv) return null;
   const inv = head.matrixWorld.clone().invert();
-  return { head: head.name, eyes: eyes.map((e) => ({ c: e.c.clone().applyMatrix4(inv).toArray(), r: e.r })), q: q.toArray(), uv: [suv.getX(best), suv.getY(best)], skin: lidMaterial(T, skin.material, [suv.getX(best), suv.getY(best)]), fz };
+  // each eyeball as a plain mesh of its own, in the frame of its lid's pivot (x across, y up, z out of the face, the middle of the eye at the origin), so that it
+  // can be turned: the skinned eyes are one mesh fixed in the head, and a stare that never shifts is the first thing that reads as a doll (people review 1)
+  let balls = null;
+  try {
+    const qi = q.clone().invert(), ix = eye.geometry.index, uv = eye.geometry.attributes.uv; balls = [];
+    eyes.forEach((e, k) => {
+      const side = k ? 1 : -1, cl = e.c.clone().applyMatrix4(inv), map = new Map(), ps = [], us = [], id = [];
+      const put = (i) => { let j = map.get(i); if (j === undefined) { j = ps.length / 3; map.set(i, j); const w = P[i].clone().applyMatrix4(inv).sub(cl).applyQuaternion(qi); ps.push(w.x, w.y, w.z); if (uv) us.push(uv.getX(i), uv.getY(i)); } return j; };
+      const n = ix ? ix.count : pos.count;
+      for (let t = 0; t + 2 < n; t += 3) { const a = ix ? ix.getX(t) : t, b = ix ? ix.getX(t + 1) : t + 1, c = ix ? ix.getX(t + 2) : t + 2; if (((P[a].x + P[b].x + P[c].x) / 3 - mx) * side > 0) id.push(put(a), put(b), put(c)); }
+      const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(ps, 3)); if (uv) g.setAttribute('uv', new T.Float32BufferAttribute(us, 2)); g.setIndex(id); g.computeVertexNormals(); balls.push(g);
+    });
+    if (balls.some((g) => g.index.count < 12)) balls = null;
+  } catch (e) { balls = null; }
+  return { balls, eyeMat: eye.material, head: head.name, eyes: eyes.map((e) => ({ c: e.c.clone().applyMatrix4(inv).toArray(), r: e.r })), q: q.toArray(), uv: [suv.getX(best), suv.getY(best)], skin: lidMaterial(T, skin.material, [suv.getX(best), suv.getY(best)]), fz };
 }
 
 const lidMats = new Map();
@@ -108,4 +122,25 @@ export function makeLids(THREE, obj, rig) {
     swing.add(m); pivot.add(swing); pivot.visible = false; head.add(pivot); lids.push({ pivot, swing });
   }
   return { lids, c: 0, set(c) { this.c = c; for (const l of lids) { l.pivot.visible = c > 0.01; l.swing.rotation.x = -(1 - c) * BLINK.swing; } } };
+}
+
+/** eyes that look about. GAZE: how far (rad) and how often. */
+export const GAZE = { yaw: 0.24, pitch: 0.09, gapMin: 0.5, gapMax: 3.2, rate: 34, phonePitch: -0.3, lead: 0.4 };
+/** advance one person's gaze: g = {} to start; o = { phone, want (rad: how far the thing they look at is to the side of where the head points now) }.
+ *  The eyes rest on one spot for a moment and jump to the next (a jump takes a few hundredths of a second); looking at something, they get there before the head. */
+export function gazeStep(g, dt, rng, o = {}) {
+  if (g.wait == null) { g.wait = rng() * GAZE.gapMax; g.ty = 0; g.tp = 0; g.y = 0; g.p = 0; }
+  g.wait -= dt;
+  if (g.wait <= 0) { g.wait = GAZE.gapMin + rng() * (GAZE.gapMax - GAZE.gapMin); const c = rng() < 0.35 ? 0.25 : 1; g.ty = (rng() * 2 - 1) * GAZE.yaw * c; g.tp = (rng() * 2 - 1) * GAZE.pitch * c; }
+  const lead = Math.max(-GAZE.lead, Math.min(GAZE.lead, o.want || 0)), ty = lead || o.phone ? lead + g.ty * 0.25 : g.ty, tp = o.phone ? GAZE.phonePitch + g.tp * 0.4 : g.tp;
+  const k = 1 - Math.exp(-GAZE.rate * dt); g.y += (ty - g.y) * k; g.p += (tp - g.p) * k;
+  return g;
+}
+/** give a clone eyes that turn: the skinned eye mesh is hidden and each eyeball hung on the head bone on its own pivot. Returns { set(yaw, pitch) } or null. */
+export function makeEyes(THREE, obj, rig) {
+  if (!rig || !rig.balls) return null; const T = THREE; let head = null, eye = null;
+  obj.traverse((o) => { if (o.isBone && o.name === rig.head && !head) head = o; if (o.isSkinnedMesh && o.material && /^eye_/.test(o.material.name || '')) eye = o; }); if (!head || !eye) return null;
+  const piv = rig.eyes.map((e, k) => { const g = new T.Group(); g.name = 'eyeball'; g.position.fromArray(e.c); g.quaternion.fromArray(rig.q); const sw = new T.Group(), m = new T.Mesh(rig.balls[k], rig.eyeMat); m.name = 'eyeball_mesh'; m.userData.eyelid = true; m.frustumCulled = false; sw.add(m); g.add(sw); head.add(g); return sw; });
+  eye.visible = false;
+  return { y: 0, p: 0, set(y, p) { this.y = y; this.p = p; for (const s of piv) s.rotation.set(-p, y, 0, 'YXZ'); } };
 }
