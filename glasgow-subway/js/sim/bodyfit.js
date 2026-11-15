@@ -430,6 +430,9 @@ export function trimUnderSkirt(THREE, root, o = {}) {
     const arm = m.skeleton.bones.map((b) => ARM.test(b.name)), keep = [];
     const hidden = (i) => { if (P.getY(i) >= limit) return false; for (let c = 0; c < 4; c++) if (SW.getComponent(i, c) > 0.02 && arm[SI.getComponent(i, c)]) return false; return true; };
     for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(hidden(a) && hidden(b) && hidden(c))) keep.push(a, b, c); }
+    // what is left reaching below the line is lifted on to it: the dropped triangles left the hem as saw-teeth hanging over the skirt (people review 2, woman_midi)
+    for (let i = 0; i < P.count; i++) if (hidden(i)) P.setY(i, limit);
+    P.needsUpdate = true;
     g.userData.underSkirt = (idx.count - keep.length) / 3; stats.tops++; stats.dropped += g.userData.underSkirt;
     if (keep.length < idx.count) g.setIndex(new THREE.BufferAttribute(P.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
   }
@@ -737,12 +740,20 @@ export function fitScalp(THREE, root, o = {}) {
   const hm = hair[0].material, col = hairColour(T, hm);
   const mat = new T.MeshStandardMaterial({ color: col, roughness: Math.max(0.92, hm.roughness != null ? hm.roughness : 0), metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }); mat.name = 'scalp_' + (hm.name || '');
   if (!sparse) {   // the edge of the cap is cut across its outermost triangles, half way between a covered vertex and a bare one, so the hairline is a smooth line and not the saw-teeth of the mesh
+    // ...and at the front it stops at a rounded hairline set back from the brow and curving down to the ears (people review 2: the hair's see-through wisps at the
+    // temples were filled with flat hair colour, a square notch at each side of the forehead). Behind the temples the covered cut alone decides.
     cg.setAttribute('aScCov', new T.BufferAttribute(cv, 1));
-    mat.onBeforeCompile = (sh) => {
-      sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float aScCov; varying float vScCov;\nvoid main() {').replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvScCov = aScCov;');
-      sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'varying float vScCov;\nvoid main() {\n\tif (vScCov < 0.5) discard;'); };
-    mat.customProgramCacheKey = () => 'scalpedge1';
+    const U = { uScC: { value: new T.Vector3(cx, ey, cz) }, uScF: { value: new T.Vector2(fx, fz) }, uScD: { value: d } };
+    mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
+      sh.vertexShader = sh.vertexShader.replace('void main() {', 'attribute float aScCov; varying float vScCov; varying vec3 vScRest;\nvoid main() {').replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvScCov = aScCov; vScRest = position;');
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `varying float vScCov; varying vec3 vScRest; uniform vec3 uScC; uniform vec2 uScF; uniform float uScD;
+void main() {
+\tif (vScCov < 0.5) discard;
+\tvec2 scq = vScRest.xz - uScC.xz; float scf = dot(scq, uScF), scs = abs(dot(scq, vec2(uScF.y, -uScF.x))), sct = atan(scs, scf);
+\tif (sct < 1.6 && (vScRest.y - uScC.y) / uScD < mix(${(S.brow + 1.3).toFixed(3)}, ${S.ear.toFixed(3)}, smoothstep(1.0, 1.8, sct))) discard;`); };
+    mat.customProgramCacheKey = () => 'scalpedge3';
   }
+
   if (sparse) {   // the hairline, in the head's own (bind) space: high over the brow, down past the temple to just over the ear, down again to the nape behind it
     const U = { uScC: { value: new T.Vector3(cx, ey, cz) }, uScF: { value: new T.Vector2(fx, fz) }, uScD: { value: d } };
     mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);

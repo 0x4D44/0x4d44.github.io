@@ -294,13 +294,13 @@ export function stepBag(rig, sit, pole, fresh, o) {
     if (sit) {   // on the floor in front of the knees, the pull handle stowed
       at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
       const ff = fz * Math.max(fz * kf, fz * v.z + 0.17 * rig.s, fz * u.z + 0.17 * rig.s);   // clear of the knees and of the toes
-      mesh.position.set(kx, Math.min(v.y, u.y) - 0.09 * rig.s, ff + fz * (rig.d / 2 + 0.03)); mesh.rotation.set(0, yaw + Math.PI, 0); rig.handle.position.y = -rig.travel; return;
+      mesh.position.set(kx, Math.min(v.y, u.y) - 0.09 * rig.s, ff + fz * (rig.d / 2 + 0.03)); mesh.rotation.set(0, yaw + Math.PI, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return;
     }
     at(rig.grip, v); const hx = sd0 * (v.x - fit.midx);
     if (lift) {   // carried by the top handle, broadside to the leg
-      mesh.position.set(fit.midx + sd0 * Math.max(hx, fit.hip + rig.d / 2 + 0.03), Math.max(0.04, v.y - rig.h - 0.035), v.z); mesh.rotation.set(0, yaw + Math.PI / 2, 0); rig.handle.position.y = -rig.travel; return;
+      mesh.position.set(fit.midx + sd0 * Math.max(hx, fit.hip + rig.d / 2 + 0.03), Math.max(0.04, v.y - rig.h - 0.035), v.z); mesh.rotation.set(0, yaw + Math.PI / 2, 0); if (rig.handle) rig.handle.position.y = -rig.travel; return;
     }
-    rig.handle.position.y = 0;
+    if (rig.handle) rig.handle.position.y = 0;
     // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
     const sx = fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = -fz * 0.1, t = rig.tow;
     if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }

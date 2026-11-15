@@ -26,20 +26,20 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | clothes/elvs_pencil_skirt | Elvaerwyn | CC-BY |
 | clothes/elvs_simple_60s_dress | Elvaerwyn | CC-BY |
 | clothes/elvs_zombie_killer_sneakers | Elvaerwyn | CC-BY |
-| clothes/fedora01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/female_casualsuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/female_casualsuit02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/female_elegantsuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/female_sportsuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| clothes/fedora01 | makehuman_system | CC0 |
+| clothes/female_casualsuit01 | makehuman_system | CC0 |
+| clothes/female_casualsuit02 | makehuman_system | CC0 |
+| clothes/female_elegantsuit01 | makehuman_system | CC0 |
+| clothes/female_sportsuit01 | makehuman_system | CC0 |
 | clothes/janexx_old_female_sweater | janexx | CC0 |
-| clothes/male_casualsuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_casualsuit02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_casualsuit03 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_casualsuit04 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_casualsuit05 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_casualsuit06 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_elegantsuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| clothes/male_worksuit01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| clothes/male_casualsuit01 | makehuman_system | CC0 |
+| clothes/male_casualsuit02 | makehuman_system | CC0 |
+| clothes/male_casualsuit03 | makehuman_system | CC0 |
+| clothes/male_casualsuit04 | makehuman_system | CC0 |
+| clothes/male_casualsuit05 | makehuman_system | CC0 |
+| clothes/male_casualsuit06 | makehuman_system | CC0 |
+| clothes/male_elegantsuit01 | makehuman_system | CC0 |
+| clothes/male_worksuit01 | makehuman_system | CC0 |
 | clothes/mindfront_f_dress_08 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_female_trousers_1 | Mindfront (Sweden) | CC-BY 4.0 |
 | clothes/mindfront_knitted_sweater_01 | Mindfront (Sweden) | CC-BY 4.0 |
@@ -90,30 +90,29 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | clothes/toigo_suit_with_dinner_jacket | MRT | CC0 |
 | clothes/toigo_turtleneck_halter_top | MRT | CC0 |
 | clothes/toigo_wool_pants | MRT | CC0 |
-| eyebrows/eyebrow001 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow002 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow003 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow004 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow005 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow006 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow007 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow008 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow009 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow010 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow011 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyebrows/eyebrow012 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyelashes/eyelashes01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyelashes/eyelashes02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyelashes/eyelashes03 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyelashes/eyelashes04 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyes/high-poly | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| eyebrows/eyebrow001 | makehuman_system | CC0 |
+| eyebrows/eyebrow002 | makehuman_system | CC0 |
+| eyebrows/eyebrow003 | makehuman_system | CC0 |
+| eyebrows/eyebrow004 | makehuman_system | CC0 |
+| eyebrows/eyebrow005 | makehuman_system | CC0 |
+| eyebrows/eyebrow006 | makehuman_system | CC0 |
+| eyebrows/eyebrow007 | makehuman_system | CC0 |
+| eyebrows/eyebrow008 | makehuman_system | CC0 |
+| eyebrows/eyebrow009 | makehuman_system | CC0 |
+| eyebrows/eyebrow010 | makehuman_system | CC0 |
+| eyebrows/eyebrow011 | makehuman_system | CC0 |
+| eyebrows/eyebrow012 | makehuman_system | CC0 |
+| eyelashes/eyelashes01 | makehuman_system | CC0 |
+| eyelashes/eyelashes02 | makehuman_system | CC0 |
+| eyelashes/eyelashes03 | makehuman_system | CC0 |
+| eyelashes/eyelashes04 | makehuman_system | CC0 |
+| eyes/high-poly | makehuman_system | CC0 |
 | eyes/materials/blue | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/bluegreen | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/brown | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/grey | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/lightblue | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/afro01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/braid01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| hair/afro01 | makehuman_system | CC0 |
 | hair/culturalibre_hair_05 | culturalibre | CC0 |
 | hair/elvs_50s_updo | Elvaerwyn | CC-BY |
 | hair/elvs_ashley_may_hair | Elvaerwyn | CC-BY |
@@ -121,43 +120,40 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/elvs_grump_hair | Elvaerwyn | CC-BY |
 | hair/elvs_hazel_hair | Elvaerwyn | CC-BY |
 | hair/elvs_island_princess_hair | Elvaerwyn | CC-BY |
-| hair/elvs_katherine_hair | Elvaerwyn | CC-BY |
 | hair/elvs_keylth_hair | Elvaerwyn | CC-BY |
 | hair/elvs_lady_hippy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_maxwell_hair | Elvaerwyn | CC-BY |
 | hair/elvs_short_daisy_hair | Elvaerwyn | CC-BY |
-| hair/elvs_short_side_do | Elvaerwyn | CC-BY |
-| hair/long01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/ponytail01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/short01 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/short02 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| hair/short04 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| hair/long01 | makehuman_system | CC0 |
+| hair/ponytail01 | makehuman_system | CC0 |
+| hair/short01 | makehuman_system | CC0 |
 | hair/toigo_blunt_bob | MRT | CC0 |
 | hair/toigo_blunt_bob_with_bangs | MRT | CC0 |
 | hair/toigo_curled_under_bob | MRT | CC0 |
 | hair/toigo_curled_under_bob_with_bangs | MRT | CC0 |
 | hair/toigo_inverted_bob | MRT | CC0 |
 | hair/toigo_inverted_bob_with_bangs | MRT | CC0 |
-| skins/middleage_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/middleage_african_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/middleage_asian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/middleage_asian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/middleage_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/middleage_caucasian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_african_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_asian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_asian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/old_caucasian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_african_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_african_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_asian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_asian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_caucasian_female | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_caucasian_female2 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_caucasian_male | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| skins/young_caucasian_male2 | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
+| skins/jartur69_middleage_slavic_male_with_genitals_and_beard | jartur69 | CC0 |
+| skins/middleage_african_female | makehuman_system | CC0 |
+| skins/middleage_african_male | makehuman_system | CC0 |
+| skins/middleage_asian_female | makehuman_system | CC0 |
+| skins/middleage_asian_male | makehuman_system | CC0 |
+| skins/middleage_caucasian_female | makehuman_system | CC0 |
+| skins/middleage_caucasian_male | makehuman_system | CC0 |
+| skins/old_african_female | makehuman_system | CC0 |
+| skins/old_african_male | makehuman_system | CC0 |
+| skins/old_asian_female | makehuman_system | CC0 |
+| skins/old_asian_male | makehuman_system | CC0 |
+| skins/old_caucasian_female | makehuman_system | CC0 |
+| skins/old_caucasian_male | makehuman_system | CC0 |
+| skins/young_african_female | makehuman_system | CC0 |
+| skins/young_african_male | makehuman_system | CC0 |
+| skins/young_asian_female | makehuman_system | CC0 |
+| skins/young_asian_male | makehuman_system | CC0 |
+| skins/young_caucasian_female | makehuman_system | CC0 |
+| skins/young_caucasian_female2 | makehuman_system | CC0 |
+| skins/young_caucasian_male | makehuman_system | CC0 |
+| skins/young_caucasian_male2 | makehuman_system | CC0 |
 | MPFB2 2.0.18 (character generator, used as a tool) | Joel Palmius and contributors | GPL-3.0-or-later (code only; generated meshes are CC0) |
 | MakeHuman base mesh and targets | MakeHuman Community | CC0 |
 

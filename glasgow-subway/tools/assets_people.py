@@ -1117,8 +1117,11 @@ def clip_defs():
     C['sit_look'] = (120, sit_look)
     def sit_cross(ph):
         p = ph * TAU; d = sit_base(p)
-        d['thigh_r'] = [('x', 1.58), ('z', 0.55)]; d['shin_r'] = [('x', -1.3)]; d['foot_r'] = [('x', 0.35)]
-        d['hips'] = [('z', 0.03)]; d['upperarm_r'] = [('x', 0.35), ('y', 0.1)]; d['forearm_r'] = [('x', 1.2)]
+        # (2026-11-15, people review 2: shin -1.3 left the crossed leg jutting straight out, and the right arm's own pose floated the forearm in the air. The right
+        #  knee now lies over the left one with the shin hanging down beside it; the hands stay where sit_base puts them, on the thighs.)
+        X = [float(v) for v in os.environ.get('SIT_X', '1.85,-0.5,-2.05,0.25,0').split(',')]
+        d['thigh_r'] = [('x', X[0]), ('z', X[1]), ('y', X[4])]; d['shin_r'] = [('x', X[2])]; d['foot_r'] = [('x', X[3])]
+        d['hips'] = [('z', 0.03)]
         d['head'] = [('z', 0.2 * s_(p)), ('x', -0.05)]
         return d
     C['sit_cross_legs'] = (96, sit_cross)

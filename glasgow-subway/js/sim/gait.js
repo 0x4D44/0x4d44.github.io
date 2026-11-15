@@ -505,7 +505,7 @@ export function gaitTargets(g) {
   T.feet = g.feet.map((f) => f.cur);
   T.pelvisPos[1] = lowerForReach(g, T, P);
   // trunk: counter-rotates against the pelvis, leans a little forward; the head stays level and straight ahead
-  const yawT = -P.thorax * yawP, lean = -P.lean, rollT = 0.3 * rollP;
+  const yawT = -P.thorax * yawP, lean = -(P.lean + (V.stoop || 0) * D2R), rollT = 0.3 * rollP;   // (V.stoop: older walkers carry the trunk a few degrees further forward)
   const mix = (a, b, t) => a + (b - a) * t;
   T.spineD = [1, 2, 3].map((k) => qmul(qy(mix(yawP, yawT, k / 3)), qmul(qx(lean * k / 3), qz(mix(rollP, rollT, k / 3)))));
   // the head is held nearly still in space (Pozzo et al. 1990: it is stabilised against the trunk's rotation and the body's bounce) but not rigid: a quarter of the thorax's yaw
@@ -516,7 +516,7 @@ export function gaitTargets(g) {
   // arms: each swings against the same-side leg; the elbow bends more as the arm goes forward; the shoulder is turned out so the hand clears the hip
   T.upD = []; T.loD = [];
   for (let s = 0; s < 2; s++) {
-    const a = B.arm[s], sgn = s ? 1 : -1, hd = g.hold[s], amp = 0.5 * P.armSwing * V.arm * (1 - 0.85 * hd), sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + (-5 - g.trail[s]) * D2R * w;   // (an arm with a load swings less; one towing a case trails behind)
+    const a = B.arm[s], sgn = s ? 1 : -1, hd = g.hold[s], amp = 0.5 * P.armSwing * V.arm * (1 - 0.55 * hd), sw = (s ? 1 : -1) * amp * Math.cos(2 * PI * ph) * w + (-5 - g.trail[s]) * D2R * w;   // (an arm with a load swings less; one towing a case trails behind)
     const abd = (3 + g.armOut[s]) * D2R, dAbd = abd - a.abd0;
     const up = qmul(T.spineD[2], qmul(qx(sw), qz(sgn * dAbd)));
     const el = (P.elbow * (0.5 + 0.5 * w) + P.elbowAmp * Math.cos(2 * PI * (ph - (s ? 0 : 0.5))) * w) * (V.elbow || 1) * (1 - 0.6 * hd) + (g.carry ? g.carry[s] : 0);   // (a loaded arm hangs straighter)

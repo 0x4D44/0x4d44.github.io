@@ -271,6 +271,18 @@ Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scor
 
 `people.glb` 30.3 MB, `people_lod.glb` 16.5 MB. Skinfit, lodhair, credits, legradii and armfit re-run; skin budgets re-derived (see `sim.test`).
 
+### Review 2 fixes (2026-11-15, `research/people-reviews/REVIEW_2.md`, scored 6.3)
+
+- **Hair**: `short02` / `short04` (a notched hairline) replaced on 29 people by `short01`, `elvs_grump_hair`, `culturalibre_hair_05` and `elvs_maxwell_hair`
+  (capped men keep the close `short01`); `braid01`, `elvs_short_side_do` and `elvs_katherine_hair` (slabs over an eye) are gone. In the game the scalp cap's
+  front now stops at a rounded hairline set back from the brow (`bodyfit.fitScalp`): it had filled the hair's see-through temple wisps with flat colour.
+- **Beard**: `man_beard` wears the CC0 `jartur69_middleage_slavic_male_with_genitals_and_beard` skin with a full beard painted on at build time (`paint_beard`).
+- **Elders**: `adult_camisole`, `adult_vneck`, `adult_leggings_knit` are adults again (young faces and clothes under grey hair); `man_longcoat` (1.80 m) and
+  `adult_tophat` are elders. Elders walk at ~0.78 of the crowd's pace with a few degrees more stoop; a pencil skirt shortens the step.
+- **Clips**: `sit_cross_legs` rebuilt (right knee over the left, shin hanging, hands on the thighs); the piper's drones lean out over the shoulder and the
+  blowpipe stops at the collar (they went through his face).
+- `girl` and `woman_puffer` are tagged `shorts` (they always wore them).
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.
