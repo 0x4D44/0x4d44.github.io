@@ -1,0 +1,4557 @@
+{
+ "schema": "mdbench-site/1",
+ "suite": "recall",
+ "title": "Recall",
+ "description": "Closed-book memory of exact public-domain text, speeches and music: how much is right, how much is invented, and whether the model knows which.",
+ "sample": false,
+ "group": {
+  "key": "group",
+  "label": "Category",
+  "values": [
+   {
+    "id": "literature",
+    "label": "Literature",
+    "description": "Exact passages of public-domain prose, poetry and scripture."
+   },
+   {
+    "id": "speech",
+    "label": "Speeches",
+    "description": "Historic speeches; scored against the best-matching accepted version."
+   },
+   {
+    "id": "music",
+    "label": "Music",
+    "description": "Passages written out as a score (ABC or MusicXML), part by part."
+   }
+  ]
+ },
+ "metrics": [
+  {
+   "id": "item_score",
+   "label": "Item score",
+   "role": "headline",
+   "type": "number",
+   "unit": "points",
+   "higher_is_better": true,
+   "min": 0,
+   "max": 100,
+   "format": {
+    "decimals": 1
+   },
+   "description": "accuracy x (1 - invention rate), 0-100."
+  },
+  {
+   "id": "accuracy",
+   "label": "Accuracy",
+   "type": "number",
+   "unit": "fraction",
+   "higher_is_better": true,
+   "min": 0,
+   "max": 1,
+   "format": {
+    "decimals": 0,
+    "scale": 100,
+    "suffix": "%"
+   },
+   "description": "Share of reference words (or notes) reproduced."
+  },
+  {
+   "id": "invention_rate",
+   "label": "Invention",
+   "type": "number",
+   "unit": "fraction",
+   "higher_is_better": false,
+   "min": 0,
+   "max": 1,
+   "format": {
+    "decimals": 1,
+    "scale": 100,
+    "suffix": "%"
+   },
+   "description": "Share of answer words that are inserted or wrong (gap markers excluded)."
+  },
+  {
+   "id": "exact_run",
+   "label": "Exact run",
+   "type": "number",
+   "unit": "words",
+   "higher_is_better": true,
+   "format": {
+    "decimals": 0,
+    "suffix": " w"
+   },
+   "description": "Longest correct prefix, in words."
+  },
+  {
+   "id": "brier",
+   "label": "Brier",
+   "type": "number",
+   "unit": "score",
+   "higher_is_better": false,
+   "min": 0,
+   "max": 1,
+   "format": {
+    "decimals": 3
+   },
+   "description": "Calibration: Brier score of per-line confidence (0 = perfect)."
+  },
+  {
+   "id": "ece",
+   "label": "ECE",
+   "type": "number",
+   "unit": "score",
+   "higher_is_better": false,
+   "min": 0,
+   "max": 1,
+   "format": {
+    "decimals": 3
+   },
+   "description": "Calibration: expected calibration error."
+  },
+  {
+   "id": "second_delta",
+   "label": "2nd attempt",
+   "type": "number",
+   "unit": "points",
+   "higher_is_better": true,
+   "format": {
+    "decimals": 1,
+    "signed": true
+   },
+   "description": "Change in item score after one unprompted self-review."
+  },
+  {
+   "id": "cost_usd",
+   "label": "Cost",
+   "role": "cost",
+   "type": "number",
+   "unit": "USD",
+   "higher_is_better": false,
+   "format": {
+    "decimals": 3,
+    "prefix": "$"
+   },
+   "description": "List-price cost of both attempts."
+  },
+  {
+   "id": "wall_min",
+   "label": "Wall time",
+   "role": "time",
+   "type": "number",
+   "unit": "minutes",
+   "higher_is_better": false,
+   "format": {
+    "decimals": 1,
+    "suffix": " min"
+   },
+   "description": "Wall-clock time of both attempts."
+  }
+ ],
+ "tasks": [
+  {
+   "id": "text-declaration",
+   "group": "literature",
+   "title": "Declaration of Independence",
+   "description": "the first two paragraphs of the text: from 'When in the Course of ...' through '... submitted to a candid world.' (stop before the list of grievances that begins '... refused his Assent to Laws')",
+   "tags": []
+  },
+  {
+   "id": "text-eisenhower-farewell",
+   "group": "speech",
+   "title": "Eisenhower, Farewell Address (excerpt)",
+   "description": "the section on the military establishment and the military-industrial complex: from 'A vital element in keeping ...' through '... and liberty may prosper together.' (six paragraphs)",
+   "tags": []
+  },
+  {
+   "id": "text-elizabeth-tilbury",
+   "group": "speech",
+   "title": "Elizabeth I, Tilbury speech",
+   "description": "the whole speech, from 'My loving people, we have ...' through '... kingdom, and of my people.'",
+   "tags": []
+  },
+  {
+   "id": "text-fdr-1st-inaugural",
+   "group": "speech",
+   "title": "FDR, First Inaugural (opening)",
+   "description": "the first two paragraphs after the salutation: from 'This is a day of ...' through the paragraph containing '... to fear is fear itself' and the paragraph after it, ending '... thousands of families are gone.'",
+   "tags": []
+  },
+  {
+   "id": "text-fdr-infamy",
+   "group": "speech",
+   "title": "FDR, Day of Infamy address",
+   "description": "the whole address after the salutation, from 'Yesterday, December 7, 1941' through '... States and the Japanese Empire.'",
+   "tags": []
+  },
+  {
+   "id": "text-genesis-1",
+   "group": "literature",
+   "title": "Genesis 1:1-13 (KJV)",
+   "description": "verses 1 to 13, from 'In the beginning God created ...' through '... morning were the third day.' (without verse numbers; one verse per line)",
+   "tags": []
+  },
+  {
+   "id": "text-gettysburg",
+   "group": "speech",
+   "title": "Gettysburg Address",
+   "description": "the whole address, from 'Four score and seven years ...' through '... not perish from the earth.' (Lincoln's five manuscripts differ in wording; any one of them is accepted)",
+   "tags": []
+  },
+  {
+   "id": "text-hamlet-to-be",
+   "group": "literature",
+   "title": "Hamlet: \"To be, or not to be\"",
+   "description": "from 'To be, or not to ...' through '... lose the name of action.' (33 lines of verse; stop before '... you now, The fair Ophelia!')",
+   "tags": []
+  },
+  {
+   "id": "text-house-divided",
+   "group": "speech",
+   "title": "Lincoln, House Divided (opening)",
+   "description": "the opening, nine sentences, from 'If we could first know ...' through '... thing or all the other.' and the sentence that follows it, which ends 'North as well as South.' (without the salutation '... and Gentlemen of the Convention.')",
+   "tags": []
+  },
+  {
+   "id": "text-jfk-inaugural",
+   "group": "speech",
+   "title": "JFK, Inaugural Address (excerpt)",
+   "description": "from 'We observe today not a ...' (the first sentence after the salutation) through '... can do for your country.' (stop before '... fellow citizens of the world')",
+   "tags": []
+  },
+  {
+   "id": "text-kubla-khan",
+   "group": "literature",
+   "title": "Coleridge, Kubla Khan",
+   "description": "the poem itself, 54 lines, from 'In Xanadu did Kubla Khan' through '... drank the milk of Paradise.' (not the prose preface '... the Fragment of Kubla Khan')",
+   "tags": []
+  },
+  {
+   "id": "text-lincoln-2nd-inaugural",
+   "group": "speech",
+   "title": "Lincoln, Second Inaugural Address",
+   "description": "the whole address, from 'At this second appearing to ...' through '... ourselves and with all nations.' (without the salutation 'Fellow-Countrymen:')",
+   "tags": []
+  },
+  {
+   "id": "text-moby-dick",
+   "group": "literature",
+   "title": "Moby-Dick, opening of chapter 1",
+   "description": "the opening of chapter 1 (about 310 words), from 'Call me Ishmael.' through '... men fixed in ocean reveries.'",
+   "tags": []
+  },
+  {
+   "id": "text-patrick-henry",
+   "group": "speech",
+   "title": "Patrick Henry, \"Give me liberty or give me death\"",
+   "description": "the whole speech, from 'No man thinks more highly ...' through '... liberty or give me death!' (the standard text derived from William Wirt's 1817 reconstruction)",
+   "tags": []
+  },
+  {
+   "id": "text-pride-prejudice",
+   "group": "literature",
+   "title": "Pride and Prejudice, opening of chapter 1",
+   "description": "the opening of chapter 1 (about 390 words), from 'It is a truth universally ...' through the end of Mr. Bennet's speech: '... the best of the party.'",
+   "tags": []
+  },
+  {
+   "id": "text-psalm-23",
+   "group": "literature",
+   "title": "Psalm 23 (KJV)",
+   "description": "all six verses, from 'The LORD is my shepherd; ...' through '... of the LORD for ever.' (without verse numbers or the superscription; one verse per line)",
+   "tags": []
+  },
+  {
+   "id": "text-raven",
+   "group": "literature",
+   "title": "Poe, The Raven (first six stanzas)",
+   "description": "the first six stanzas (36 lines, counting each stanza's short final refrain line as its own line), from 'Once upon a midnight dreary, ...' through the sixth stanza's last line '... wind and nothing more.'",
+   "tags": []
+  }
+ ],
+ "results": [
+  {
+   "seat": "astra-6-medium",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0001,
+    "ece": 0.0086,
+    "second_delta": 0.0,
+    "cost_usd": 0.3845,
+    "wall_min": 0.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.4081,
+    "wall_min": 0.71
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 313,
+    "brier": 0.005,
+    "ece": 0.065,
+    "second_delta": 0.0,
+    "cost_usd": 0.44,
+    "wall_min": 0.73
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 95.22,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0438,
+    "exact_run": 4,
+    "brier": 0.0687,
+    "ece": 0.1099,
+    "second_delta": -0.38,
+    "cost_usd": 0.3178,
+    "wall_min": 0.77
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0002,
+    "ece": 0.0115,
+    "second_delta": 0.0,
+    "cost_usd": 0.4554,
+    "wall_min": 1.04
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0,
+    "ece": 0.0015,
+    "second_delta": 0.0,
+    "cost_usd": 0.4852,
+    "wall_min": 0.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.3613,
+    "wall_min": 0.55
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0003,
+    "ece": 0.0142,
+    "second_delta": 0.0,
+    "cost_usd": 0.4235,
+    "wall_min": 0.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.5,
+    "accuracy": 0.995,
+    "invention_rate": 0.0,
+    "exact_run": 170,
+    "brier": 0.0007,
+    "ece": 0.021,
+    "second_delta": 0.0,
+    "cost_usd": 0.3974,
+    "wall_min": 0.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.52,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0024,
+    "exact_run": 47,
+    "brier": 0.0001,
+    "ece": 0.0057,
+    "second_delta": 0.0,
+    "cost_usd": 0.6683,
+    "wall_min": 1.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0014,
+    "ece": 0.0035,
+    "second_delta": 0.0,
+    "cost_usd": 0.4794,
+    "wall_min": 1.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0001,
+    "ece": 0.0069,
+    "second_delta": 0.0,
+    "cost_usd": 0.3374,
+    "wall_min": 1.24
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0002,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.2533,
+    "wall_min": 0.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.42,
+    "accuracy": 0.9975,
+    "invention_rate": 0.0033,
+    "exact_run": 141,
+    "brier": 0.0004,
+    "ece": 0.0099,
+    "second_delta": 0.0,
+    "cost_usd": 0.7168,
+    "wall_min": 2.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0001,
+    "ece": 0.0052,
+    "second_delta": 0.0,
+    "cost_usd": 0.4515,
+    "wall_min": 0.92
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "cost_usd": 0.3559,
+    "wall_min": 0.3
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0006,
+    "ece": 0.0036,
+    "second_delta": 0.0,
+    "cost_usd": 0.5046,
+    "wall_min": 0.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.4754,
+    "wall_min": 1.03
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0001,
+    "ece": 0.0111,
+    "second_delta": 0.0,
+    "cost_usd": 0.5415,
+    "wall_min": 1.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.0097,
+    "ece": 0.088,
+    "second_delta": 0.0,
+    "cost_usd": 0.7115,
+    "wall_min": 1.71
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 95.26,
+    "accuracy": 1.0,
+    "invention_rate": 0.0474,
+    "exact_run": 4,
+    "brier": 0.0898,
+    "ece": 0.087,
+    "second_delta": -0.38,
+    "cost_usd": 0.5273,
+    "wall_min": 1.23
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0001,
+    "ece": 0.0081,
+    "second_delta": 0.0,
+    "cost_usd": 0.6292,
+    "wall_min": 1.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0,
+    "ece": 0.0015,
+    "second_delta": 0.0,
+    "cost_usd": 0.4115,
+    "wall_min": 0.72
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0,
+    "ece": 0.001,
+    "second_delta": 0.0,
+    "cost_usd": 0.2454,
+    "wall_min": 0.73
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0002,
+    "ece": 0.0133,
+    "second_delta": 0.0,
+    "cost_usd": 0.5332,
+    "wall_min": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0006,
+    "ece": 0.018,
+    "second_delta": 0.0,
+    "cost_usd": 0.3912,
+    "wall_min": 1.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.6,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0016,
+    "exact_run": 47,
+    "brier": 0.0002,
+    "ece": 0.0089,
+    "second_delta": 0.0,
+    "cost_usd": 0.9061,
+    "wall_min": 2.6
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0012,
+    "ece": 0.0011,
+    "second_delta": 0.0,
+    "cost_usd": 0.6199,
+    "wall_min": 1.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0001,
+    "ece": 0.0115,
+    "second_delta": 0.0,
+    "cost_usd": 0.7385,
+    "wall_min": 2.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0002,
+    "ece": 0.0081,
+    "second_delta": 0.0,
+    "cost_usd": 0.3673,
+    "wall_min": 1.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.75,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0016,
+    "exact_run": 659,
+    "brier": 0.0004,
+    "ece": 0.0132,
+    "second_delta": 0.0,
+    "cost_usd": 0.8292,
+    "wall_min": 3.22
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0001,
+    "ece": 0.0052,
+    "second_delta": 0.0,
+    "cost_usd": 0.4493,
+    "wall_min": 1.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0001,
+    "ece": 0.0083,
+    "second_delta": 0.0,
+    "cost_usd": 0.3421,
+    "wall_min": 0.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0006,
+    "ece": 0.0031,
+    "second_delta": 0.0,
+    "cost_usd": 0.3699,
+    "wall_min": 1.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0021,
+    "ece": 0.0438,
+    "second_delta": 0.0,
+    "cost_usd": 0.4269,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0037,
+    "ece": 0.0583,
+    "second_delta": 0.0,
+    "cost_usd": 0.4274,
+    "wall_min": 0.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.09,
+    "accuracy": 0.9904,
+    "invention_rate": 0.0096,
+    "exact_run": 21,
+    "brier": 0.0172,
+    "ece": 0.1208,
+    "second_delta": 0.0,
+    "cost_usd": 0.4466,
+    "wall_min": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.1,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0551,
+    "exact_run": 4,
+    "brier": 0.1245,
+    "ece": 0.1922,
+    "second_delta": 5.12,
+    "cost_usd": 0.5845,
+    "wall_min": 0.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0083,
+    "ece": 0.0877,
+    "second_delta": 0.0,
+    "cost_usd": 0.5699,
+    "wall_min": 0.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.001,
+    "ece": 0.0285,
+    "second_delta": 0.0,
+    "cost_usd": 0.3664,
+    "wall_min": 0.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0017,
+    "ece": 0.04,
+    "second_delta": 0.0,
+    "cost_usd": 0.3871,
+    "wall_min": 0.3
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.33,
+    "accuracy": 0.9809,
+    "invention_rate": 0.0077,
+    "exact_run": 127,
+    "brier": 0.0062,
+    "ece": 0.0669,
+    "second_delta": 0.0,
+    "cost_usd": 0.4488,
+    "wall_min": 0.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 201,
+    "brier": 0.0068,
+    "ece": 0.0778,
+    "second_delta": 0.0,
+    "cost_usd": 0.4139,
+    "wall_min": 0.42
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 1247,
+    "brier": 0.0055,
+    "ece": 0.0657,
+    "second_delta": -0.32,
+    "cost_usd": 0.9127,
+    "wall_min": 1.17
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.002,
+    "ece": 0.0197,
+    "second_delta": 1.42,
+    "cost_usd": 0.6334,
+    "wall_min": 0.92
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.005,
+    "ece": 0.0681,
+    "second_delta": 0.0,
+    "cost_usd": 0.6016,
+    "wall_min": 0.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0022,
+    "ece": 0.0438,
+    "second_delta": 0.0,
+    "cost_usd": 0.4423,
+    "wall_min": 0.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.84,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0008,
+    "exact_run": 962,
+    "brier": 0.0053,
+    "ece": 0.0701,
+    "second_delta": -0.17,
+    "cost_usd": 0.9598,
+    "wall_min": 1.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0017,
+    "ece": 0.0375,
+    "second_delta": 0.0,
+    "cost_usd": 0.5184,
+    "wall_min": 0.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0005,
+    "ece": 0.0217,
+    "second_delta": 0.0,
+    "cost_usd": 0.3032,
+    "wall_min": 0.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0008,
+    "ece": 0.0203,
+    "second_delta": 0.0,
+    "cost_usd": 0.5204,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0362,
+    "ece": 0.1821,
+    "second_delta": 0.0,
+    "cost_usd": 0.0747,
+    "wall_min": 0.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 61.42,
+    "accuracy": 0.6206,
+    "invention_rate": 0.0103,
+    "exact_run": 33,
+    "brier": 0.0162,
+    "ece": 0.1248,
+    "second_delta": 0.0,
+    "cost_usd": 0.0688,
+    "wall_min": 0.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 2.88,
+    "accuracy": 0.0288,
+    "invention_rate": 0.0,
+    "exact_run": 5,
+    "brier": 1.0,
+    "ece": 1.0,
+    "second_delta": 0.0,
+    "cost_usd": 0.0587,
+    "wall_min": 0.05
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.88,
+    "accuracy": 1.0,
+    "invention_rate": 0.0512,
+    "exact_run": 4,
+    "brier": 0.0862,
+    "ece": 0.1542,
+    "second_delta": -1.2,
+    "cost_usd": 0.0711,
+    "wall_min": 0.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "cost_usd": 0.0231,
+    "wall_min": 0.03
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0063,
+    "ece": 0.0679,
+    "second_delta": 0.0,
+    "cost_usd": 0.0843,
+    "wall_min": 0.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0168,
+    "ece": 0.125,
+    "second_delta": 0.0,
+    "cost_usd": 0.0706,
+    "wall_min": 0.09
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.86,
+    "accuracy": 0.9924,
+    "invention_rate": 0.0038,
+    "exact_run": 169,
+    "brier": 0.0006,
+    "ece": 0.0043,
+    "second_delta": 0.0,
+    "cost_usd": 0.091,
+    "wall_min": 0.15
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 201,
+    "brier": 0.0178,
+    "ece": 0.1222,
+    "second_delta": 0.0,
+    "cost_usd": 0.0774,
+    "wall_min": 0.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.44,
+    "accuracy": 0.9968,
+    "invention_rate": 0.0024,
+    "exact_run": 41,
+    "brier": 0.0565,
+    "ece": 0.2165,
+    "second_delta": 0.0,
+    "cost_usd": 0.1184,
+    "wall_min": 0.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.1529,
+    "ece": 0.3488,
+    "second_delta": -0.29,
+    "cost_usd": 0.0775,
+    "wall_min": 0.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "cost_usd": 0.0172,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 64.01,
+    "accuracy": 0.6401,
+    "invention_rate": 0.0,
+    "exact_run": 201,
+    "brier": 0.0297,
+    "ece": 0.1438,
+    "second_delta": 0.0,
+    "cost_usd": 0.0629,
+    "wall_min": 0.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "cost_usd": 0.0232,
+    "wall_min": 0.03
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 59.72,
+    "accuracy": 0.9044,
+    "invention_rate": 0.3396,
+    "exact_run": 124,
+    "brier": 0.1195,
+    "ece": 0.118,
+    "second_delta": 0.0,
+    "cost_usd": 0.0773,
+    "wall_min": 0.24
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "cost_usd": 0.0521,
+    "wall_min": 0.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "cost_usd": 0.0173,
+    "wall_min": 0.04
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0206,
+    "ece": 0.14,
+    "second_delta": 0.0,
+    "cost_usd": 0.0074,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0084,
+    "ece": 0.0883,
+    "second_delta": 0.0,
+    "cost_usd": 0.0082,
+    "wall_min": 0.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.59,
+    "accuracy": 0.9617,
+    "invention_rate": 0.0163,
+    "exact_run": 21,
+    "brier": 0.0805,
+    "ece": 0.2634,
+    "second_delta": -0.3,
+    "cost_usd": 0.0085,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 49.38,
+    "accuracy": 0.6805,
+    "invention_rate": 0.2743,
+    "exact_run": 32,
+    "brier": 0.069,
+    "ece": 0.2338,
+    "second_delta": -10.32,
+    "cost_usd": 0.0127,
+    "wall_min": 0.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.4,
+    "accuracy": 0.996,
+    "invention_rate": 0.002,
+    "exact_run": 219,
+    "brier": 0.0135,
+    "ece": 0.1118,
+    "second_delta": 0.0,
+    "cost_usd": 0.0095,
+    "wall_min": 0.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0008,
+    "ece": 0.0269,
+    "second_delta": 0.0,
+    "cost_usd": 0.0055,
+    "wall_min": 0.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.015,
+    "ece": 0.115,
+    "second_delta": 0.0,
+    "cost_usd": 0.0061,
+    "wall_min": 0.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.33,
+    "accuracy": 0.9809,
+    "invention_rate": 0.0077,
+    "exact_run": 127,
+    "brier": 0.004,
+    "ece": 0.0538,
+    "second_delta": 0.0,
+    "cost_usd": 0.0072,
+    "wall_min": 0.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0052,
+    "ece": 0.0678,
+    "second_delta": 0.0,
+    "cost_usd": 0.0074,
+    "wall_min": 0.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.28,
+    "accuracy": 0.996,
+    "invention_rate": 0.0032,
+    "exact_run": 47,
+    "brier": 0.0051,
+    "ece": 0.0671,
+    "second_delta": 0.0,
+    "cost_usd": 0.014,
+    "wall_min": 0.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0023,
+    "ece": 0.0206,
+    "second_delta": 0.0,
+    "cost_usd": 0.0084,
+    "wall_min": 0.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.86,
+    "accuracy": 1.0,
+    "invention_rate": 0.0014,
+    "exact_run": 689,
+    "brier": 0.0173,
+    "ece": 0.124,
+    "second_delta": 0.0,
+    "cost_usd": 0.0115,
+    "wall_min": 0.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0147,
+    "ece": 0.115,
+    "second_delta": 0.0,
+    "cost_usd": 0.008,
+    "wall_min": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 96.66,
+    "accuracy": 0.9843,
+    "invention_rate": 0.0181,
+    "exact_run": 64,
+    "brier": 0.0808,
+    "ece": 0.2549,
+    "second_delta": 0.0,
+    "cost_usd": 0.0165,
+    "wall_min": 0.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.71,
+    "accuracy": 0.9922,
+    "invention_rate": 0.0052,
+    "exact_run": 59,
+    "brier": 0.0037,
+    "ece": 0.0571,
+    "second_delta": 0.0,
+    "cost_usd": 0.0091,
+    "wall_min": 0.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.002,
+    "ece": 0.0433,
+    "second_delta": 0.0,
+    "cost_usd": 0.0044,
+    "wall_min": 0.19
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0067,
+    "ece": 0.0758,
+    "second_delta": 0.0,
+    "cost_usd": 0.0094,
+    "wall_min": 0.51
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0001,
+    "ece": 0.0112,
+    "second_delta": 0.0,
+    "cost_usd": 0.0068,
+    "wall_min": 1.45
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.68,
+    "accuracy": 1.0,
+    "invention_rate": 0.0032,
+    "exact_run": 139,
+    "brier": 0.0003,
+    "ece": 0.009,
+    "second_delta": 0.0,
+    "cost_usd": 0.0064,
+    "wall_min": 2.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.77,
+    "accuracy": 0.9872,
+    "invention_rate": 0.0096,
+    "exact_run": 21,
+    "brier": 0.0038,
+    "ece": 0.0585,
+    "second_delta": 0.0,
+    "cost_usd": 0.0099,
+    "wall_min": 3.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.05,
+    "accuracy": 0.9917,
+    "invention_rate": 0.0516,
+    "exact_run": 4,
+    "brier": 0.0907,
+    "ece": 0.0884,
+    "second_delta": 0.0,
+    "cost_usd": 0.0057,
+    "wall_min": 1.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.4,
+    "accuracy": 0.996,
+    "invention_rate": 0.002,
+    "exact_run": 384,
+    "brier": 0.0008,
+    "ece": 0.0241,
+    "second_delta": 0.0,
+    "cost_usd": 0.0099,
+    "wall_min": 2.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.0051,
+    "wall_min": 0.83
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0002,
+    "ece": 0.014,
+    "second_delta": 0.0,
+    "cost_usd": 0.0063,
+    "wall_min": 1.23
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.86,
+    "accuracy": 0.9924,
+    "invention_rate": 0.0038,
+    "exact_run": 169,
+    "brier": 0.0017,
+    "ece": 0.0284,
+    "second_delta": -1.52,
+    "cost_usd": 0.0113,
+    "wall_min": 2.87
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.5,
+    "accuracy": 0.995,
+    "invention_rate": 0.0,
+    "exact_run": 170,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.0066,
+    "wall_min": 1.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.96,
+    "accuracy": 0.9904,
+    "invention_rate": 0.0008,
+    "exact_run": 391,
+    "brier": 0.0008,
+    "ece": 0.0198,
+    "second_delta": 0.88,
+    "cost_usd": 0.0114,
+    "wall_min": 3.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0018,
+    "ece": 0.0025,
+    "second_delta": 0.0,
+    "cost_usd": 0.0081,
+    "wall_min": 1.77
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.14,
+    "accuracy": 0.9957,
+    "invention_rate": 0.0043,
+    "exact_run": 232,
+    "brier": 0.0006,
+    "ece": 0.0158,
+    "second_delta": 0.0,
+    "cost_usd": 0.0091,
+    "wall_min": 2.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0002,
+    "ece": 0.0125,
+    "second_delta": 0.0,
+    "cost_usd": 0.0078,
+    "wall_min": 1.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.18,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0041,
+    "exact_run": 141,
+    "brier": 0.0003,
+    "ece": 0.0103,
+    "second_delta": 0.0,
+    "cost_usd": 0.0156,
+    "wall_min": 4.34
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "cost_usd": 0.0034,
+    "wall_min": 0.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.0038,
+    "wall_min": 0.37
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0006,
+    "ece": 0.0072,
+    "second_delta": 0.0,
+    "cost_usd": 0.0082,
+    "wall_min": 2.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0002,
+    "ece": 0.0122,
+    "second_delta": 0.0,
+    "cost_usd": 0.0043,
+    "wall_min": 0.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.68,
+    "accuracy": 0.9968,
+    "invention_rate": 0.0,
+    "exact_run": 91,
+    "second_delta": 0.0,
+    "cost_usd": 0.0031,
+    "wall_min": 0.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 51.76,
+    "accuracy": 0.5208,
+    "invention_rate": 0.0061,
+    "exact_run": 21,
+    "second_delta": 46.65,
+    "cost_usd": 0.0023,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 64.32,
+    "accuracy": 0.6471,
+    "invention_rate": 0.006,
+    "exact_run": 43,
+    "second_delta": 0.0,
+    "cost_usd": 0.0029,
+    "wall_min": 0.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.21,
+    "accuracy": 0.9861,
+    "invention_rate": 0.004,
+    "exact_run": 342,
+    "brier": 0.0013,
+    "ece": 0.0275,
+    "second_delta": 0.0,
+    "cost_usd": 0.0039,
+    "wall_min": 0.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0003,
+    "ece": 0.0154,
+    "second_delta": 0.0,
+    "cost_usd": 0.0032,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0002,
+    "ece": 0.013,
+    "second_delta": 0.0,
+    "cost_usd": 0.0032,
+    "wall_min": 0.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.34,
+    "accuracy": 0.9847,
+    "invention_rate": 0.0115,
+    "exact_run": 127,
+    "brier": 0.0004,
+    "ece": 0.02,
+    "second_delta": 0.0,
+    "cost_usd": 0.0032,
+    "wall_min": 0.44
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0003,
+    "ece": 0.0144,
+    "second_delta": 0.0,
+    "cost_usd": 0.0017,
+    "wall_min": 0.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.76,
+    "accuracy": 0.9984,
+    "invention_rate": 0.0008,
+    "exact_run": 393,
+    "brier": 0.0004,
+    "ece": 0.0163,
+    "second_delta": 0.0,
+    "cost_usd": 0.0043,
+    "wall_min": 1.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0215,
+    "ece": 0.1467,
+    "second_delta": 0.0,
+    "cost_usd": 0.0023,
+    "wall_min": 0.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.86,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 149,
+    "brier": 0.0007,
+    "ece": 0.0208,
+    "second_delta": 0.0,
+    "cost_usd": 0.0048,
+    "wall_min": 0.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0121,
+    "ece": 0.0973,
+    "second_delta": 0.0,
+    "cost_usd": 0.0021,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.26,
+    "accuracy": 0.9967,
+    "invention_rate": 0.0041,
+    "exact_run": 141,
+    "second_delta": 0.0,
+    "cost_usd": 0.0052,
+    "wall_min": 1.3
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.23,
+    "accuracy": 0.9948,
+    "invention_rate": 0.0026,
+    "exact_run": 59,
+    "brier": 0.0018,
+    "ece": 0.0343,
+    "second_delta": 0.0,
+    "cost_usd": 0.0036,
+    "wall_min": 0.59
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0001,
+    "ece": 0.0083,
+    "second_delta": 0.0,
+    "cost_usd": 0.0029,
+    "wall_min": 0.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.002,
+    "ece": 0.0228,
+    "second_delta": 0.0,
+    "cost_usd": 0.0039,
+    "wall_min": 0.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0071,
+    "ece": 0.0763,
+    "second_delta": 0.0,
+    "cost_usd": 0.1489,
+    "wall_min": 0.62
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.07,
+    "accuracy": 0.9871,
+    "invention_rate": 0.0065,
+    "exact_run": 60,
+    "brier": 0.0438,
+    "ece": 0.2008,
+    "second_delta": 0.0,
+    "cost_usd": 0.1235,
+    "wall_min": 0.6
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.14,
+    "accuracy": 0.984,
+    "invention_rate": 0.0128,
+    "exact_run": 21,
+    "brier": 0.1092,
+    "ece": 0.3233,
+    "second_delta": -0.95,
+    "cost_usd": 0.1215,
+    "wall_min": 0.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.1,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0551,
+    "exact_run": 4,
+    "brier": 0.0893,
+    "ece": 0.1122,
+    "second_delta": 0.37,
+    "cost_usd": 0.1168,
+    "wall_min": 0.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.42,
+    "accuracy": 0.9761,
+    "invention_rate": 0.002,
+    "exact_run": 76,
+    "brier": 0.0113,
+    "ece": 0.1001,
+    "second_delta": 0.59,
+    "cost_usd": 0.1254,
+    "wall_min": 0.73
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0026,
+    "ece": 0.0423,
+    "second_delta": 0.0,
+    "cost_usd": 0.0767,
+    "wall_min": 0.28
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0066,
+    "ece": 0.078,
+    "second_delta": 0.0,
+    "cost_usd": 0.0947,
+    "wall_min": 0.45
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.86,
+    "accuracy": 0.9924,
+    "invention_rate": 0.0038,
+    "exact_run": 127,
+    "brier": 0.0062,
+    "ece": 0.0729,
+    "second_delta": -0.39,
+    "cost_usd": 0.1035,
+    "wall_min": 0.48
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0258,
+    "ece": 0.15,
+    "second_delta": 0.0,
+    "cost_usd": 0.1682,
+    "wall_min": 1.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.52,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0024,
+    "exact_run": 47,
+    "brier": 0.0077,
+    "ece": 0.0802,
+    "second_delta": 0.24,
+    "cost_usd": 0.2785,
+    "wall_min": 1.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0074,
+    "ece": 0.0688,
+    "second_delta": 0.0,
+    "cost_usd": 0.1403,
+    "wall_min": 0.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 33,
+    "brier": 0.0281,
+    "ece": 0.1401,
+    "second_delta": -0.29,
+    "cost_usd": 0.1687,
+    "wall_min": 1.06
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.36,
+    "accuracy": 0.9968,
+    "invention_rate": 0.0032,
+    "exact_run": 252,
+    "brier": 0.0155,
+    "ece": 0.101,
+    "second_delta": 0.64,
+    "cost_usd": 0.1618,
+    "wall_min": 0.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.67,
+    "accuracy": 0.9984,
+    "invention_rate": 0.0016,
+    "exact_run": 426,
+    "brier": 0.0158,
+    "ece": 0.1103,
+    "second_delta": -0.33,
+    "cost_usd": 0.2147,
+    "wall_min": 0.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.48,
+    "accuracy": 0.9974,
+    "invention_rate": 0.0026,
+    "exact_run": 124,
+    "brier": 0.0145,
+    "ece": 0.1026,
+    "second_delta": 0.0,
+    "cost_usd": 0.1858,
+    "wall_min": 0.98
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0033,
+    "ece": 0.055,
+    "second_delta": 0.0,
+    "cost_usd": 0.0673,
+    "wall_min": 0.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0164,
+    "ece": 0.1167,
+    "second_delta": 0.0,
+    "cost_usd": 0.1284,
+    "wall_min": 0.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0179,
+    "ece": 0.1225,
+    "second_delta": 0.0,
+    "cost_usd": 0.353,
+    "wall_min": 1.04
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0338,
+    "ece": 0.175,
+    "second_delta": -0.96,
+    "cost_usd": 0.3161,
+    "wall_min": 0.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.0763,
+    "ece": 0.2657,
+    "second_delta": -0.95,
+    "cost_usd": 0.3089,
+    "wall_min": 0.63
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 68.99,
+    "accuracy": 0.7178,
+    "invention_rate": 0.0389,
+    "exact_run": 108,
+    "brier": 0.2001,
+    "ece": 0.3714,
+    "second_delta": -2.9,
+    "cost_usd": 0.3615,
+    "wall_min": 0.87
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0605,
+    "ece": 0.2373,
+    "second_delta": 0.0,
+    "cost_usd": 0.4164,
+    "wall_min": 1.02
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0192,
+    "ece": 0.1085,
+    "second_delta": -0.71,
+    "cost_usd": 0.3643,
+    "wall_min": 0.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0147,
+    "ece": 0.111,
+    "second_delta": 0.0,
+    "cost_usd": 0.3236,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0159,
+    "ece": 0.1176,
+    "second_delta": 0.0,
+    "cost_usd": 0.4071,
+    "wall_min": 0.87
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.1156,
+    "ece": 0.3111,
+    "second_delta": -0.5,
+    "cost_usd": 0.6396,
+    "wall_min": 2.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 1244,
+    "brier": 0.0304,
+    "ece": 0.16,
+    "second_delta": -0.08,
+    "cost_usd": 0.5341,
+    "wall_min": 1.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.035,
+    "ece": 0.1593,
+    "second_delta": 0.0,
+    "cost_usd": 0.4745,
+    "wall_min": 1.09
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.71,
+    "accuracy": 0.9986,
+    "invention_rate": 0.0014,
+    "exact_run": 120,
+    "brier": 0.0287,
+    "ece": 0.1576,
+    "second_delta": 0.0,
+    "cost_usd": 0.4438,
+    "wall_min": 1.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.022,
+    "ece": 0.1263,
+    "second_delta": -0.64,
+    "cost_usd": 0.3225,
+    "wall_min": 0.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.75,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0016,
+    "exact_run": 659,
+    "brier": 0.0588,
+    "ece": 0.2215,
+    "second_delta": -0.16,
+    "cost_usd": 0.5523,
+    "wall_min": 1.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0093,
+    "ece": 0.0856,
+    "second_delta": -0.52,
+    "cost_usd": 0.3506,
+    "wall_min": 0.72
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0015,
+    "ece": 0.035,
+    "second_delta": 0.0,
+    "cost_usd": 0.2915,
+    "wall_min": 0.44
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0151,
+    "ece": 0.1119,
+    "second_delta": 0.0,
+    "cost_usd": 0.4211,
+    "wall_min": 0.87
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0086,
+    "ece": 0.0887,
+    "second_delta": 0.0,
+    "cost_usd": 0.1606,
+    "wall_min": 0.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0049,
+    "ece": 0.0667,
+    "second_delta": 0.0,
+    "cost_usd": 0.1716,
+    "wall_min": 0.34
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.09,
+    "accuracy": 0.9904,
+    "invention_rate": 0.0096,
+    "exact_run": 21,
+    "brier": 0.049,
+    "ece": 0.2165,
+    "second_delta": 0.0,
+    "cost_usd": 0.1644,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 94.84,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0476,
+    "exact_run": 4,
+    "brier": 0.0064,
+    "ece": 0.0747,
+    "second_delta": 0.0,
+    "cost_usd": 0.1782,
+    "wall_min": 0.37
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0072,
+    "ece": 0.0808,
+    "second_delta": 0.0,
+    "cost_usd": 0.2094,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0023,
+    "ece": 0.0446,
+    "second_delta": 0.0,
+    "cost_usd": 0.1513,
+    "wall_min": 0.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0028,
+    "ece": 0.051,
+    "second_delta": 0.0,
+    "cost_usd": 0.1498,
+    "wall_min": 0.22
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0085,
+    "ece": 0.0897,
+    "second_delta": 0.0,
+    "cost_usd": 0.1738,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.5,
+    "accuracy": 0.995,
+    "invention_rate": 0.0,
+    "exact_run": 170,
+    "brier": 0.0087,
+    "ece": 0.0856,
+    "second_delta": 0.0,
+    "cost_usd": 0.1429,
+    "wall_min": 0.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 1247,
+    "brier": 0.0111,
+    "ece": 0.1006,
+    "second_delta": 0.0,
+    "cost_usd": 0.2952,
+    "wall_min": 0.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0047,
+    "ece": 0.0562,
+    "second_delta": 0.0,
+    "cost_usd": 0.2115,
+    "wall_min": 0.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0058,
+    "ece": 0.0731,
+    "second_delta": 0.0,
+    "cost_usd": 0.22,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0043,
+    "ece": 0.06,
+    "second_delta": 0.0,
+    "cost_usd": 0.1667,
+    "wall_min": 0.35
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.67,
+    "accuracy": 0.9984,
+    "invention_rate": 0.0016,
+    "exact_run": 141,
+    "brier": 0.0044,
+    "ece": 0.0637,
+    "second_delta": -0.16,
+    "cost_usd": 0.3193,
+    "wall_min": 0.82
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.71,
+    "accuracy": 0.9922,
+    "invention_rate": 0.0052,
+    "exact_run": 59,
+    "brier": 0.0067,
+    "ece": 0.0757,
+    "second_delta": 0.0,
+    "cost_usd": 0.1763,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0008,
+    "ece": 0.0267,
+    "second_delta": 0.0,
+    "cost_usd": 0.1307,
+    "wall_min": 0.2
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0026,
+    "ece": 0.0439,
+    "second_delta": 0.0,
+    "cost_usd": 0.1956,
+    "wall_min": 0.45
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.0987,
+    "wall_min": 0.91
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 179,
+    "brier": 0.0005,
+    "ece": 0.0149,
+    "second_delta": 0.96,
+    "cost_usd": 0.1293,
+    "wall_min": 1.48
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.002,
+    "ece": 0.0414,
+    "second_delta": 0.0,
+    "cost_usd": 0.1164,
+    "wall_min": 1.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.22,
+    "accuracy": 0.9961,
+    "invention_rate": 0.0039,
+    "exact_run": 191,
+    "brier": 0.0006,
+    "ece": 0.0195,
+    "second_delta": 0.0,
+    "cost_usd": 0.1246,
+    "wall_min": 1.44
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.141,
+    "wall_min": 1.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0001,
+    "ece": 0.0062,
+    "second_delta": 0.0,
+    "cost_usd": 0.0927,
+    "wall_min": 0.84
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0,
+    "ece": 0.001,
+    "second_delta": 0.0,
+    "cost_usd": 0.0949,
+    "wall_min": 0.85
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0002,
+    "ece": 0.0067,
+    "second_delta": 0.0,
+    "cost_usd": 0.11,
+    "wall_min": 1.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0005,
+    "ece": 0.019,
+    "second_delta": 0.0,
+    "cost_usd": 0.0685,
+    "wall_min": 1.13
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.6,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0016,
+    "exact_run": 47,
+    "brier": 0.0001,
+    "ece": 0.0052,
+    "second_delta": 0.0,
+    "cost_usd": 0.2348,
+    "wall_min": 3.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0018,
+    "ece": 0.0089,
+    "second_delta": 0.0,
+    "cost_usd": 0.1383,
+    "wall_min": 1.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0002,
+    "ece": 0.0115,
+    "second_delta": -0.14,
+    "cost_usd": 0.1808,
+    "wall_min": 2.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0001,
+    "ece": 0.0056,
+    "second_delta": 0.0,
+    "cost_usd": 0.0702,
+    "wall_min": 1.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.42,
+    "accuracy": 0.9975,
+    "invention_rate": 0.0033,
+    "exact_run": 141,
+    "brier": 0.0003,
+    "ece": 0.0073,
+    "second_delta": 0.33,
+    "cost_usd": 0.2423,
+    "wall_min": 3.83
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0006,
+    "ece": 0.0104,
+    "second_delta": 0.0,
+    "cost_usd": 0.1608,
+    "wall_min": 2.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "cost_usd": 0.0765,
+    "wall_min": 0.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0006,
+    "ece": 0.0028,
+    "second_delta": 0.0,
+    "cost_usd": 0.0821,
+    "wall_min": 1.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.045,
+    "ece": 0.2,
+    "second_delta": 0.0,
+    "cost_usd": 0.2238,
+    "wall_min": 1.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0128,
+    "ece": 0.1,
+    "second_delta": -1.61,
+    "cost_usd": 0.1771,
+    "wall_min": 1.2
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 96.82,
+    "accuracy": 0.9808,
+    "invention_rate": 0.0129,
+    "exact_run": 21,
+    "brier": 0.0489,
+    "ece": 0.2083,
+    "second_delta": 0.0,
+    "cost_usd": 0.2017,
+    "wall_min": 1.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 89.33,
+    "accuracy": 0.9253,
+    "invention_rate": 0.0346,
+    "exact_run": 31,
+    "brier": 0.1571,
+    "ece": 0.237,
+    "second_delta": 6.21,
+    "cost_usd": 0.2047,
+    "wall_min": 1.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0329,
+    "ece": 0.1731,
+    "second_delta": -2.58,
+    "cost_usd": 0.2689,
+    "wall_min": 2.15
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0281,
+    "ece": 0.1462,
+    "second_delta": -3.17,
+    "cost_usd": 0.2006,
+    "wall_min": 1.85
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0169,
+    "ece": 0.127,
+    "second_delta": 0.0,
+    "cost_usd": 0.1432,
+    "wall_min": 1.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 96.58,
+    "accuracy": 0.9771,
+    "invention_rate": 0.0116,
+    "exact_run": 127,
+    "brier": 0.0058,
+    "ece": 0.0522,
+    "second_delta": 0.0,
+    "cost_usd": 0.1737,
+    "wall_min": 1.17
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.0,
+    "accuracy": 0.99,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0658,
+    "ece": 0.2278,
+    "second_delta": 0.5,
+    "cost_usd": 0.169,
+    "wall_min": 1.3
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 22.37,
+    "accuracy": 0.2237,
+    "invention_rate": 0.0,
+    "exact_run": 257,
+    "brier": 0.0123,
+    "ece": 0.097,
+    "second_delta": 10.35,
+    "cost_usd": 0.1948,
+    "wall_min": 1.84
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0088,
+    "ece": 0.0769,
+    "second_delta": 0.0,
+    "cost_usd": 0.2275,
+    "wall_min": 1.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 84.79,
+    "accuracy": 0.8479,
+    "invention_rate": 0.0,
+    "exact_run": 26,
+    "brier": 0.0459,
+    "ece": 0.1909,
+    "second_delta": -1.43,
+    "cost_usd": 0.1621,
+    "wall_min": 1.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 76.45,
+    "accuracy": 0.7771,
+    "invention_rate": 0.0161,
+    "exact_run": 223,
+    "brier": 0.0409,
+    "ece": 0.1657,
+    "second_delta": 0.62,
+    "cost_usd": 0.1267,
+    "wall_min": 0.77
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 1214,
+    "brier": 0.0243,
+    "ece": 0.14,
+    "second_delta": -0.16,
+    "cost_usd": 0.2658,
+    "wall_min": 2.06
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0257,
+    "ece": 0.15,
+    "second_delta": -1.81,
+    "cost_usd": 0.1501,
+    "wall_min": 0.86
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0025,
+    "ece": 0.05,
+    "second_delta": 0.0,
+    "cost_usd": 0.0935,
+    "wall_min": 0.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0142,
+    "ece": 0.1111,
+    "second_delta": 0.0,
+    "cost_usd": 0.2015,
+    "wall_min": 1.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0021,
+    "ece": 0.045,
+    "second_delta": 0.0,
+    "cost_usd": 0.0853,
+    "wall_min": 0.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0016,
+    "ece": 0.0394,
+    "second_delta": 0.0,
+    "cost_usd": 0.0984,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.09,
+    "accuracy": 0.9904,
+    "invention_rate": 0.0096,
+    "exact_run": 21,
+    "brier": 0.0158,
+    "ece": 0.1245,
+    "second_delta": 0.0,
+    "cost_usd": 0.0959,
+    "wall_min": 0.34
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.22,
+    "accuracy": 0.9922,
+    "invention_rate": 0.0,
+    "exact_run": 132,
+    "brier": 0.0055,
+    "ece": 0.071,
+    "second_delta": -5.17,
+    "cost_usd": 0.098,
+    "wall_min": 0.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0046,
+    "ece": 0.0665,
+    "second_delta": 0.0,
+    "cost_usd": 0.1356,
+    "wall_min": 0.48
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0007,
+    "ece": 0.0238,
+    "second_delta": 0.0,
+    "cost_usd": 0.0807,
+    "wall_min": 0.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0062,
+    "ece": 0.077,
+    "second_delta": 0.0,
+    "cost_usd": 0.079,
+    "wall_min": 0.24
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.33,
+    "accuracy": 0.9809,
+    "invention_rate": 0.0077,
+    "exact_run": 127,
+    "brier": 0.0019,
+    "ece": 0.0202,
+    "second_delta": -1.5,
+    "cost_usd": 0.0951,
+    "wall_min": 0.35
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0041,
+    "ece": 0.0622,
+    "second_delta": 0.0,
+    "cost_usd": 0.1025,
+    "wall_min": 0.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.92,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0,
+    "exact_run": 893,
+    "brier": 0.0033,
+    "ece": 0.0557,
+    "second_delta": -0.16,
+    "cost_usd": 0.2069,
+    "wall_min": 0.83
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0017,
+    "ece": 0.0047,
+    "second_delta": 0.0,
+    "cost_usd": 0.1244,
+    "wall_min": 0.45
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0026,
+    "ece": 0.0504,
+    "second_delta": 0.0,
+    "cost_usd": 0.1383,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0012,
+    "ece": 0.0325,
+    "second_delta": 0.0,
+    "cost_usd": 0.1032,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.75,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0016,
+    "exact_run": 659,
+    "brier": 0.0048,
+    "ece": 0.0663,
+    "second_delta": 0.0,
+    "cost_usd": 0.2141,
+    "wall_min": 0.9
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.71,
+    "accuracy": 0.9922,
+    "invention_rate": 0.0052,
+    "exact_run": 59,
+    "brier": 0.0018,
+    "ece": 0.0386,
+    "second_delta": 0.0,
+    "cost_usd": 0.1175,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0005,
+    "ece": 0.0217,
+    "second_delta": 0.0,
+    "cost_usd": 0.0649,
+    "wall_min": 0.15
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0009,
+    "ece": 0.0167,
+    "second_delta": 0.0,
+    "cost_usd": 0.1039,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0013,
+    "ece": 0.0312,
+    "second_delta": 0.0,
+    "cost_usd": 0.0468,
+    "wall_min": 0.59
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0004,
+    "ece": 0.0178,
+    "second_delta": 0.0,
+    "cost_usd": 0.0488,
+    "wall_min": 0.62
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 26.84,
+    "accuracy": 0.2684,
+    "invention_rate": 0.0,
+    "exact_run": 5,
+    "brier": 0.1862,
+    "ece": 0.4,
+    "second_delta": 43.14,
+    "cost_usd": 0.0151,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 96.79,
+    "accuracy": 1.0,
+    "invention_rate": 0.0321,
+    "exact_run": 241,
+    "brier": 0.0903,
+    "ece": 0.0618,
+    "second_delta": 0.0,
+    "cost_usd": 0.0374,
+    "wall_min": 0.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.6,
+    "accuracy": 0.998,
+    "invention_rate": 0.002,
+    "exact_run": 93,
+    "brier": 0.0004,
+    "ece": 0.0167,
+    "second_delta": 0.0,
+    "cost_usd": 0.0231,
+    "wall_min": 0.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0001,
+    "ece": 0.0092,
+    "second_delta": 0.0,
+    "cost_usd": 0.017,
+    "wall_min": 0.48
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0001,
+    "ece": 0.011,
+    "second_delta": 0.0,
+    "cost_usd": 0.0146,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.33,
+    "accuracy": 0.9809,
+    "invention_rate": 0.0077,
+    "exact_run": 127,
+    "brier": 0.0016,
+    "ece": 0.0087,
+    "second_delta": 0.0,
+    "cost_usd": 0.0383,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 201,
+    "brier": 0.0169,
+    "ece": 0.1167,
+    "second_delta": 0.0,
+    "cost_usd": 0.0365,
+    "wall_min": 0.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.76,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0016,
+    "exact_run": 391,
+    "brier": 0.0003,
+    "ece": 0.0142,
+    "second_delta": 0.0,
+    "cost_usd": 0.0568,
+    "wall_min": 1.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0017,
+    "ece": 0.0028,
+    "second_delta": 0.0,
+    "cost_usd": 0.0388,
+    "wall_min": 0.83
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0002,
+    "ece": 0.0119,
+    "second_delta": 0.0,
+    "cost_usd": 0.0366,
+    "wall_min": 0.83
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0003,
+    "ece": 0.0156,
+    "second_delta": 0.0,
+    "cost_usd": 0.0328,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 99.51,
+    "accuracy": 0.9975,
+    "invention_rate": 0.0025,
+    "exact_run": 141,
+    "brier": 0.0058,
+    "ece": 0.0608,
+    "second_delta": 0.0,
+    "cost_usd": 0.0734,
+    "wall_min": 1.51
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.71,
+    "accuracy": 0.9922,
+    "invention_rate": 0.0052,
+    "exact_run": 59,
+    "brier": 0.0003,
+    "ece": 0.0083,
+    "second_delta": 0.0,
+    "cost_usd": 0.0397,
+    "wall_min": 0.87
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "cost_usd": 0.0133,
+    "wall_min": 0.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "item_score": 98.87,
+    "accuracy": 0.9943,
+    "invention_rate": 0.0057,
+    "exact_run": 249,
+    "brier": 0.0006,
+    "ece": 0.0061,
+    "second_delta": 0.0,
+    "cost_usd": 0.0304,
+    "wall_min": 0.82
+   },
+   "flags": []
+  }
+ ],
+ "methodology": {
+  "scoring": [
+   "Closed book: the seat has no tools, no shell and no web search, and the transcript is checked afterwards; any tool call voids the item. A refusal is recorded as refused, not as a recall failure.",
+   "The seat writes the passage out with a 0-100 confidence per line (or bar) and marks gaps instead of guessing. Answers are aligned word by word (note by note for music) against the reference.",
+   "Item score = accuracy x (1 - invention rate), 0-100. Calibration (Brier score, expected calibration error) is reported alongside, not folded in."
+  ],
+  "caveats": [
+   "Seat = model + effort + harness. Claude seats run in Claude Code, GPT seats in the Codex CLI, so model and harness are confounded.",
+   "All runs used the fleet's subscription logins except the older API baselines (GPT-4o, o3), which ran pay-per-token on the OpenAI API with a per-run cost cap.",
+   "Cost is a list-price figure, not what was paid. Claude Code reports its own list-price cost; the Codex CLI reports only tokens, so GPT costs are estimates from token counts at published list prices (standard tier; one price was taken from third-party trackers).",
+   "Some speeches exist in several accepted versions; the seat is scored against the best-matching one.",
+   "Memorisation is the point here, so contamination is not a flaw. One private item is scored but never published."
+  ]
+ }
+}

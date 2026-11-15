@@ -22,6 +22,8 @@ if (!chromeBin) { console.log("mdbench browser test: no Chrome; skipping (set CH
 
 // The synthetic suite: one group, a brand-new headline metric, a bool, no cost or time metric.
 const realIndex = JSON.parse(await readFile(join(ROOT, "mdbench/data/index.json"), "utf8"));
+const realRecall = JSON.parse(await readFile(join(ROOT, "mdbench/data/recall.json"), "utf8"));
+const RECALL_ROWS = new Set(realRecall.results.map((x) => `${x.seat}/${x.task}`)).size;
 const zetaIndex = { ...realIndex, suites: [...realIndex.suites, { id: "zeta", title: "Zeta probe", file: "zeta.json", status: "results", description: "Synthetic suite for the render test." }] };
 const zeta = {
   schema: "mdbench-site/1", suite: "zeta", title: "Zeta probe", description: "Synthetic.", sample: true, sample_note: "Synthetic test data.",
@@ -84,11 +86,11 @@ const VIEWPORTS = [
 ];
 const PAGES = [
   { name: "overview", url: "/mdbench/", expect: `({ cards: document.querySelectorAll(".card").length, boards: document.querySelectorAll("table.leaderboard").length, sample: document.querySelectorAll(".badge.sample").length, seats: document.querySelectorAll("#seat-table tbody tr").length })`,
-    check: (r) => r.cards === 3 && r.boards === 1 && r.sample === 0 && r.seats === realIndex.seats.length },
+    check: (r) => r.cards === 3 && r.boards === realIndex.suites.filter((s) => s.status === "results").length && r.sample === 0 && r.seats === realIndex.seats.length },
   { name: "swe", url: "/mdbench/suite.html?s=swe", expect: `({ rows: document.querySelectorAll("table.leaderboard tbody tr").length, heat: document.querySelectorAll("table.heat td.heat:not(.empty)").length, pts: document.querySelectorAll("svg.chart circle.pt").length, groups: document.querySelectorAll("table.groups thead th").length, banner: !!document.querySelector(".banner"), seatRows: document.querySelectorAll("#seat-detail tbody tr").length, method: document.querySelectorAll("#methodology li").length, heatNote: document.querySelector("#heat .tasknotes")?.textContent || "", seatNote: document.querySelector("#seat-detail .tasknotes")?.textContent || "", noteMarks: document.querySelectorAll("#heat sup.nm").length, caveat: [...document.querySelectorAll("#methodology li")].some((l) => l.textContent.startsWith("FIX-01")) })`,
     check: (r) => r.rows === 6 && r.heat === 60 && r.pts === 12 && r.groups === 7 && !r.banner && r.seatRows === 10 && r.method >= 5 && /FIX-01.*every seat/.test(r.heatNote) && /FIX-01.*every seat/.test(r.seatNote) && r.noteMarks === 1 && r.caveat },
-  { name: "recall", url: "/mdbench/suite.html?s=recall", expect: `({ title: document.getElementById("title").textContent, shown: [...document.querySelectorAll("section")].filter((s) => !s.hidden).length, err: !!document.querySelector(".err") })`,
-    check: (r) => /Recall/.test(r.title) && /coming soon/.test(r.title) && r.shown === 0 && !r.err },
+  { name: "recall", url: "/mdbench/suite.html?s=recall", expect: `({ title: document.getElementById("title").textContent, rows: document.querySelectorAll("table.leaderboard tbody tr").length, heat: document.querySelectorAll("table.heat td.heat:not(.empty)").length, banner: !!document.querySelector(".banner"), err: !!document.querySelector(".err") })`,
+    check: (r) => r.title === "Recall" && r.rows === realIndex.seats.length && r.heat === RECALL_ROWS && !r.banner && !r.err },
   { name: "zeta", url: "/mdbench/suite.html?s=zeta", expect: `({ title: document.getElementById("title").textContent, cell: [...document.querySelectorAll("table.heat td.heat")].map((t) => t.textContent), head: [...document.querySelectorAll("table.leaderboard th")].map((t) => t.textContent), nocost: document.getElementById("sc-cost").textContent, banner: document.querySelector(".banner")?.textContent || "", note: document.querySelector("#heat .tasknotes")?.textContent || "" })`,
     check: (r) => r.title === "Zeta probe sample data" && /Synthetic test data/.test(r.banner) && /Z-2: Zeta note/.test(r.note) && r.cell.some((c) => c.startsWith("11.50 MIPS")) && r.head.includes("Emulated MIPS") && r.head.includes("Boots pass") && /no cost/.test(r.nocost) },
 ];

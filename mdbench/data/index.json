@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-15T21:31:03Z",
+ "generated": "2026-11-15T23:06:59Z",
  "families": [
   {
    "id": "claude",
@@ -26,9 +26,9 @@
   {
    "id": "recall",
    "title": "Recall",
-   "file": null,
-   "status": "planned",
-   "description": "Coming soon: closed-book memory of exact public-domain text, speeches and music, machine-scored for accuracy, invention and calibration."
+   "file": "recall.json",
+   "status": "results",
+   "description": "Closed-book memory of exact public-domain text, speeches and music: how much is right, how much is invented, and whether the model knows which."
   },
   {
    "id": "strange-machine",

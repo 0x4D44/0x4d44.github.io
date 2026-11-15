@@ -11,9 +11,9 @@ const DATA = join(dirname(fileURLToPath(import.meta.url)), "..", "data");
 const load = async (f) => JSON.parse(await readFile(join(DATA, f), "utf8"));
 const ix = await load("index.json");
 
-test("index is valid: swe has results, recall and strange-machine are planned", () => {
+test("index is valid: swe and recall have results, strange-machine is planned", () => {
   assert.deepEqual(validateIndex(ix), []);
-  assert.deepEqual(ix.suites.map((s) => [s.id, s.status]), [["swe", "results"], ["recall", "planned"], ["strange-machine", "planned"]]);
+  assert.deepEqual(ix.suites.map((s) => [s.id, s.status]), [["swe", "results"], ["recall", "results"], ["strange-machine", "planned"]]);
   for (const s of ix.suites.filter((x) => x.status === "planned")) {
     assert.equal(s.file, null);
     assert.match(s.description, /^Coming soon/);
