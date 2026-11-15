@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mdbench results</title>
+<meta name="description" content="mdbench: a private benchmark of coding models on real engineering problems, plus closed-book recall. Results by suite, seat and lane, with cost and time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="mdbench.css">
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <nav class="top" id="nav" aria-label="mdbench"></nav>
+  <div class="eyebrow">AI coding models · benchmark results</div>
+  <h1>mdbench</h1>
+  <p class="lede col">A private benchmark that asks <b>which model should hold which seat</b>: who designs, who codes, who writes tests, who reviews, who debugs. It is built from real problems in our own projects, rewound to the moment before they were solved, and it is organised in suites, each with its own scoring. Here are the results so far, with what each run cost and how long it took.</p>
+</header>
+
+<section id="suites">
+  <div class="stack col"><div class="eyebrow">01 · Suites</div><h2>What is measured</h2></div>
+  <div class="cards" id="suite-cards"></div>
+</section>
+
+<section id="leaders">
+  <div class="stack col"><div class="eyebrow">02 · Headlines</div><h2>Leaderboards</h2>
+  <p>Mean score per seat across a suite's tasks. Each suite measures something different, so the boards are never merged. A mean over a handful of tasks is a coarse signal: read the per-lane tables on each suite page before drawing conclusions.</p></div>
+  <div id="boards" class="stack"></div>
+</section>
+
+<section id="seats">
+  <div class="stack col"><div class="eyebrow">03 · Seats</div><h2>The seats</h2>
+  <p>A seat is one model at one effort setting in its usual harness: Claude models in Claude Code, OpenAI models in the Codex CLI. The same model at two efforts is two seats.</p></div>
+  <div class="panel"><div id="seat-table"></div>
+  <p class="cap">Cost basis: Claude Code reports a list-price cost for each run; the Codex CLI reports only tokens, so GPT costs are estimated from tokens at published list prices. Neither is what was paid: runs used subscriptions, except the API baselines.</p></div>
+</section>
+
+<section id="caveats">
+  <div class="stack col"><div class="eyebrow">04 · Read this first</div><h2>Caveats</h2>
+  <ul class="plain">
+    <li>Small samples. The software suite has ten exercises, two per lane, and one run per seat so far. Differences of a few points are within judge noise.</li>
+    <li>Judges are models: three Claude Opus 5.5 and three GPT-6 Astra. Judging is blind but not fully independent of the Opus and Astra seats.</li>
+    <li>Costs are list-price figures (reported for Claude, estimated from tokens for GPT). A few Claude runs were resumed after a usage limit, which inflates their cost.</li>
+    <li>Speed gates were timed on a machine that was doing other work, as five paired runs.</li>
+    <li>The exercises come from private repositories, so tasks are described here only in outline.</li>
+  </ul></div>
+</section>
+
+<footer>
+  <p>Data generated <span id="generated">–</span> from the benchmark's own records. Each suite page has its full methodology.</p>
+</footer>
+</div>
+<script type="module">
+import { loadIndex, loadSuite, leaderboard, seatHTML, sampleBadge, esc, showError } from "./ui.js";
+const main = document.querySelector(".wrap");
+try {
+  const ix = await loadIndex();
+  document.getElementById("generated").textContent = ix.generated.slice(0, 10);
+  document.getElementById("nav").innerHTML = `<a href="./" aria-current="page">Overview</a>` +
+    ix.suites.filter((s) => s.file).map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>`).join("");
+  const loaded = {};
+  for (const s of ix.suites.filter((s) => s.file)) loaded[s.id] = await loadSuite(ix, s.id);
+  document.getElementById("suite-cards").innerHTML = ix.suites.map((s) => {
+    const su = loaded[s.id];
+    const meta = su ? `${su.tasks.length} tasks · ${su.agg.seats.length} seats · ${su.results.length} runs` : "not yet run";
+    const badge = s.status === "sample" ? '<span class="badge sample">sample data</span>' : s.status === "planned" ? '<span class="badge planned">planned</span>' : "";
+    const title = su ? `<a href="suite.html?s=${encodeURIComponent(s.id)}">${esc(s.title)}</a>` : esc(s.title);
+    return `<div class="card"><h3>${title} ${badge}</h3><p>${esc(s.description)}</p><span class="meta">${esc(meta)}</span></div>`;
+  }).join("");
+  document.getElementById("boards").innerHTML = Object.values(loaded).map((su) => `<div class="panel">
+      <h3><a href="suite.html?s=${encodeURIComponent(su.suite)}">${esc(su.title)}</a>${sampleBadge(su)}</h3>
+      ${su.sample ? `<p class="cap"><b>${esc(su.sample_note)}</b></p>` : ""}
+      ${leaderboard(ix, su, { compact: true, seatLink: (id) => `suite.html?s=${encodeURIComponent(su.suite)}&seat=${encodeURIComponent(id)}#seat` })}
+      <p class="cap">${esc(su.agg.head.label)}: ${esc(su.agg.head.description || "")}</p></div>`).join("");
+  const rows = ix.seats.map((s) => {
+    const inSuites = Object.values(loaded).filter((su) => su.agg.cells[s.id]).map((su) => su.title + (su.sample ? " (sample)" : ""));
+    return `<tr><td class="seatcell">${seatHTML(ix, s.id)}</td><td>${esc(s.vendor)}</td><td><code>${esc(s.model)}</code></td><td>${esc(s.effort || "–")}</td><td>${s.billing === "api" ? "API" : "subscription"}</td><td>${s.cost_basis === "reported" ? "reported" : "estimate"}</td><td>${esc(s.released || "–")}</td><td>${inSuites.length ? esc(inSuites.join(", ")) : '<span class="note">not yet run</span>'}</td></tr>`;
+  }).join("");
+  document.getElementById("seat-table").innerHTML = `<div class="tw"><table><thead><tr><th>Seat</th><th>Vendor</th><th>Model</th><th>Effort</th><th>Billing</th><th>Cost</th><th>Released</th><th>Results in</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.body.dataset.ready = "1";
+} catch (e) { showError(main, e); document.body.dataset.ready = "error"; }
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

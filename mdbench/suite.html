@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>mdbench suite</title>
+<meta name="description" content="mdbench results for one suite: leaderboard, per-task heat table, cost and time against score, per-lane breakdown and per-seat detail.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="mdbench.css">
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <nav class="top" id="nav" aria-label="mdbench"></nav>
+  <div class="eyebrow">mdbench · suite</div>
+  <h1 id="title">Loading…</h1>
+  <p class="lede col" id="desc"></p>
+  <div id="banner"></div>
+</header>
+
+<section id="board">
+  <div class="stack col"><div class="eyebrow">01 · Leaderboard</div><h2>Mean score per seat</h2>
+  <p id="board-cap" class="note"></p></div>
+  <div class="panel"><div id="leaderboard"></div><div id="board-legend"></div></div>
+</section>
+
+<section id="tasks">
+  <div class="stack col"><div class="eyebrow">02 · Per task</div><h2>Every seat on every task</h2></div>
+  <div class="panel">
+    <div class="controls"><label>Metric <select id="heat-metric"></select></label></div>
+    <div id="heat"></div>
+    <p class="cap" id="heat-cap"></p>
+  </div>
+</section>
+
+<section id="value">
+  <div class="stack col"><div class="eyebrow">03 · Value</div><h2>Score against cost and time</h2>
+  <p>Each point is a seat: its mean score against its mean cost and mean wall time per task. Up and to the left is better. Points per dollar and per hour are in the leaderboard.</p></div>
+  <div class="charts"><div class="panel"><h3>Cost per task</h3><div id="sc-cost"></div></div><div class="panel"><h3>Time per task</h3><div id="sc-time"></div></div></div>
+  <div id="sc-legend"></div>
+</section>
+
+<section id="groups">
+  <div class="stack col"><div class="eyebrow">04 · Breakdown</div><h2 id="groups-title">By lane</h2>
+  <p class="note">Mean headline score per seat within each group. Shading is relative to this table's range.</p></div>
+  <div class="panel"><div id="group-table"></div></div>
+</section>
+
+<section id="seat">
+  <div class="stack col"><div class="eyebrow">05 · Seat detail</div><h2>One seat, task by task</h2></div>
+  <div class="panel">
+    <div class="controls"><label>Seat <select id="seat-pick"></select></label></div>
+    <div id="seat-detail" class="stack"></div>
+  </div>
+</section>
+
+<section id="method">
+  <div class="stack col"><div class="eyebrow">06 · Methodology</div><h2>How this suite works</h2></div>
+  <div id="methodology"></div>
+</section>
+
+<footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
+</div>
+<script type="module">
+import { loadIndex, loadSuite, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
+const q = new URLSearchParams(location.search);
+const main = document.querySelector(".wrap");
+try {
+  const ix = await loadIndex();
+  const live = ix.suites.filter((s) => s.file);
+  const id = q.get("s") || live[0].id;
+  document.getElementById("nav").innerHTML = `<a href="./">Overview</a>` +
+    live.map((s) => `<a href="suite.html?s=${encodeURIComponent(s.id)}"${s.id === id ? ' aria-current="page"' : ""}>${esc(s.title)}</a>`).join("");
+  const entry = ix.suites.find((s) => s.id === id);
+  if (entry && !entry.file) {
+    // A planned suite: say so, and show none of the result sections.
+    document.title = `mdbench: ${entry.title}`;
+    document.getElementById("title").innerHTML = `${esc(entry.title)} <span class="badge planned">coming soon</span>`;
+    document.getElementById("desc").textContent = entry.description;
+    document.getElementById("generated").textContent = ix.generated.slice(0, 10);
+    for (const sec of document.querySelectorAll("section")) sec.hidden = true;
+    document.body.dataset.ready = "1";
+  } else {
+  const su = await loadSuite(ix, id);
+  const A = su.agg;
+  document.title = `mdbench: ${su.title}`;
+  document.getElementById("generated").textContent = ix.generated.slice(0, 10);
+  document.getElementById("title").innerHTML = esc(su.title) + sampleBadge(su);
+  document.getElementById("desc").textContent = su.description;
+  document.getElementById("banner").innerHTML = sampleBanner(su);
+  document.getElementById("board-cap").textContent =
+    `Ranked by mean ${A.head.label.toLowerCase()} over the tasks each seat has run (${A.ntasks} tasks in the suite). ` +
+    (A.seats.some((s) => s.maxRuns > 1) ? "Run spread is the mean standard deviation across repeated runs of the same task. " : "") +
+    (A.cost ? "Cost is list price, reported or estimated per seat; see methodology." : "");
+  const seatLink = (sid) => `?s=${encodeURIComponent(id)}&seat=${encodeURIComponent(sid)}#seat`;
+  document.getElementById("leaderboard").innerHTML = leaderboard(ix, su, { seatLink });
+  document.getElementById("board-legend").innerHTML = familyLegend(ix);
+
+  const sel = document.getElementById("heat-metric");
+  sel.innerHTML = su.metrics.filter((m) => su.results.some((r) => r.metrics[m.id] != null))
+    .map((m) => `<option value="${esc(m.id)}"${m.role === "headline" ? " selected" : ""}>${esc(m.label)}</option>`).join("");
+  const drawHeat = () => {
+    const m = su.metricById[sel.value];
+    document.getElementById("heat").innerHTML = heatTable(ix, su, m.id);
+    document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a task id for its description.`;
+  };
+  sel.addEventListener("change", drawHeat);
+  drawHeat();
+
+  if (A.cost) scatter(document.getElementById("sc-cost"), ix, su, { xMetric: A.cost, xValue: (s) => s.per[A.cost.id], xLabel: `${A.cost.label} per task` });
+  else document.getElementById("sc-cost").innerHTML = '<p class="note">This suite records no cost.</p>';
+  if (A.time) scatter(document.getElementById("sc-time"), ix, su, { xMetric: A.time, xValue: (s) => s.per[A.time.id], xLabel: `${A.time.label} per task` });
+  else document.getElementById("sc-time").innerHTML = '<p class="note">This suite records no time.</p>';
+  document.getElementById("sc-legend").innerHTML = familyLegend(ix);
+
+  document.getElementById("groups-title").textContent = `By ${su.group.label.toLowerCase()}`;
+  document.getElementById("group-table").innerHTML = groupTable(ix, su);
+
+  const pick = document.getElementById("seat-pick");
+  pick.innerHTML = A.seats.map((s) => `<option value="${esc(s.seat)}">${esc(ix.seatById[s.seat]?.label || s.seat)}</option>`).join("");
+  if (q.get("seat") && A.cells[q.get("seat")]) pick.value = q.get("seat");
+  const drawSeat = () => { document.getElementById("seat-detail").innerHTML = seatDetail(ix, su, pick.value); };
+  pick.addEventListener("change", () => { drawSeat(); const u = new URL(location); u.searchParams.set("seat", pick.value); history.replaceState(null, "", u); });
+  drawSeat();
+
+  document.getElementById("methodology").innerHTML = methodology(su);
+  document.body.dataset.ready = "1";
+  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  }
+} catch (e) { showError(main, e); document.body.dataset.ready = "error"; }
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

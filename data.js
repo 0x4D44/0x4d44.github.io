@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "mdbench",
+    title: "mdbench: which model holds which seat",
+    tagline: "Results from a private benchmark of AI coding models on real engineering problems from our own emulator and kernel projects, rewound to before they were solved. Who should design, code, test, review and fix: a seat-by-lane table, leaderboards, and score against cost and time. More suites to come. Vanilla JS, no libraries.",
+    url: "https://0x4d44.github.io/mdbench/",
+    illustration: "ill-mdbench",
+    date: "2026-11-15T21:24:00",
+    year: 2026,
+    readingMin: 10,
+    words: 1800,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "kings-cross",
     title: "King's Cross in 3D",
     tagline: "The station at true scale: the twin train-shed arches, the Western Concourse dome, platforms 0 to 10 and the buffer stops, with LNER, Hull Trains and Lumo Azumas standing at the buffers, all built from OpenStreetMap. Orbit and zoom. Live running is not connected yet. TypeScript + Three.js on a tested core.",
@@ -2171,7 +2184,7 @@ window.COLLECTIONS = [
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
     slugs: ["model-zoo", "model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken", "cold-cache", "chasing-dosbox-x",
-      "codex-seat-trials", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
+      "codex-seat-trials", "mdbench", "claude-workflows", "the-ai-who-watched", "influence", "three-clocks"] },
   { id: "music", name: "Music & Instruments", icon: "ill-piano",
     blurb: "How instruments work, and what becomes of the sound afterwards — the physics of the string, the mechanism, and the codecs that carry the result.",
     slugs: ["instruments", "audio-compression"] },
