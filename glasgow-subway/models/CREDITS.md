@@ -26,7 +26,6 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | clothes/elvs_pencil_skirt | Elvaerwyn | CC-BY |
 | clothes/elvs_simple_60s_dress | Elvaerwyn | CC-BY |
 | clothes/elvs_zombie_killer_sneakers | Elvaerwyn | CC-BY |
-| clothes/fedora01 | makehuman_system | CC0 |
 | clothes/female_casualsuit01 | makehuman_system | CC0 |
 | clothes/female_casualsuit02 | makehuman_system | CC0 |
 | clothes/female_elegantsuit01 | makehuman_system | CC0 |

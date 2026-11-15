@@ -214,7 +214,7 @@ export class AnimCrowd {
     f.hair = fitHair(T, n);
     f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
-    f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
+    f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil|midi/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
     f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
@@ -422,6 +422,8 @@ export class AnimCrowd {
   _rollBag(ch) { const fit = this._bagFit(ch), bag = pickBag(this.brng, { kid: ch.kid, staff: ch.staff, kind: ch.kind, outfit: ch.outfit, id: ch.id, pet: ch.id === PET_OWNER, longHair: !fit || fit.longHair || !fit.ok }); return this.bags ? bag : null; }
   _bagOn(p) {
     p.bagRig = null; if (!p.bag || !p.obj) return;
+    // the bag was rolled when the person was first made, maybe on the simplified model, whose decimated hair can miss being long: a rucksack under long hair becomes a tote
+    if (p.bag.kind === 'ruck' && !p.char.kid) { const f = this._bagFit(p.char); if (f && f.longHair) p.bag = { kind: 'tote', colour: '#d8cfb8', hand: true }; }
     try { p.bagRig = wearBag(this.THREE, p.obj, p.bag, this._bagFit(p.char), p.char.metaH || 1.75); } catch (e) { p.bagRig = null; }
     if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
   }
@@ -687,6 +689,9 @@ export class AnimCrowd {
     return made;
   }
   _canSit(c, s) {   // every vertex of the seated body, in every sit clip, must stay under the ceiling profile and inside the side walls at this seat
+    // a knee-length winter coat (punkduck_winter_coat, MakeHuman's rig) balloons into a crumpled shell over the thighs in every sit clip: its wearers stand (review 4)
+    if (c.longCoat === undefined) { c.longCoat = false; const n = c.node || c.lodNode; if (n) n.traverse((o) => { if (o.isMesh && o.material && /^cloth_coat\./i.test(o.material.name || '')) c.longCoat = true; }); }
+    if (c.longCoat) return false;
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
@@ -735,7 +740,7 @@ export class AnimCrowd {
     if (this.enabled === false) return;
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~8k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
-    let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
+    let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if ((hiSet.size >= this.maxHi && d > 6) || d > 11) break; hiSet.add(q); } }   // (everyone within 6 m is on the full model whatever the budget: review 4 still saw up to 10 far models within 6 m beside a train)
     this._goNow = false; this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
@@ -862,7 +867,7 @@ export class AnimCrowd {
     const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
     const bg = p.bag && p.bag.hand ? p.bag.kind : '', ao = ((tab && tab.walk) || [8, 8]).slice(); if (bg === 'trolley') ao[0] += 7;   // (the left hand carries: bags.js)
     return { armOut: ao, hold: [bg === 'trolley' ? 1 : /case|holdall|shopper/.test(bg) ? 0.8 : bg ? 0.35 : 0, 0], trail: [bg === 'trolley' ? 22 : 0, 0], seed: (G.seedOf(id) + 7919 * n) >>> 0,
-      var: { arm: (0.8 + 0.4 * r()) * (p.char.elder ? 0.7 : p.char.kid ? 1.15 : 1), elbow: (0.7 + 0.6 * r()) * (p.char.elder ? 0.8 : p.char.kid ? 1.2 : 1), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: (0.95 + 0.1 * r()) * (/pencil/.test(p.char.outfit) ? 1.2 : 1) * (p.char.elder ? 1.04 : 1), wid: (0.75 + 0.55 * r()) * (p.char.elder ? 1.25 : 1), stoop: p.char.elder ? 4 + 4 * r() : 0 } };
+      var: { arm: (0.8 + 0.4 * r()) * (p.char.elder ? 0.7 : p.char.kid ? 1.15 : 1), elbow: (0.7 + 0.6 * r()) * (p.char.elder ? 0.8 : p.char.kid ? 1.2 : 1), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: (0.95 + 0.1 * r()) * (/pencil/.test(p.char.outfit) ? 1.1 : 1) * (p.char.elder ? 1.04 : 1), wid: (0.75 + 0.55 * r()) * (p.char.elder ? 1.25 : 1), stoop: p.char.elder ? 4 + 4 * r() : 0 } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step

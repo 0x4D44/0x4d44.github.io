@@ -120,7 +120,7 @@ export function attend(a, dt, rng, ctx) {
   // the smile (smile.js draws it): full while they laugh, a good half with a nod, a small one kept by most people while they look at you; it comes quickly and fades slowly
   // ... and now and then a small one to themselves, wherever you are (people review 1: over two minutes nobody on a platform smiled unless you walked up to them)
   a.ambT = (a.ambT === undefined ? between(rng, 2, 40) : a.ambT) - dt;
-  if (a.ambT <= 0) { if (a.amb > 0) { a.amb = 0; a.ambT = between(rng, 10, 45); } else { a.amb = between(rng, 0.3, 0.62); a.ambT = between(rng, 2, 5.5); } }
+  if (a.ambT <= 0) { if (a.amb > 0) { a.amb = 0; a.ambT = between(rng, 10, 45); } else { a.amb = between(rng, 0.45, 0.85); a.ambT = between(rng, 2, 5.5); } }
   const want = Math.max(a.amb || 0, ctx.busy ? 0 : a.laugh > 0 ? 1 : a.nod > 0 ? Math.max(0.55, a.warm) : a.near && a.greeted && a.tgt === 'you' ? a.warm : 0);
   a.sm += (want - a.sm) * (1 - Math.exp(-(want > a.sm ? 7 : 1.6) * dt)); if (a.sm < 0.002 && !want) a.sm = 0;
   return out;

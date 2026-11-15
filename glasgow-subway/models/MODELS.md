@@ -293,6 +293,16 @@ Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scor
   skirts slim the thighs from 3-4 cm above the hem and are drawn two-sided, waistbands are drawn in under tops, the platform crowd keeps up to 28 people on the
   full model and anyone within 5 m swaps to it at once.
 
+### Review 4 fixes (2026-11-15, `research/people-reviews/REVIEW_4.md`, scored 6.6)
+
+- **Fewer trousers**: 12 casual trouser-wearers (tees and tanks) now wear painted shorts (`shorts=`): 44 of 99 in trousers, was 56.
+- **ya_fedora**: the CC0 `fedora01` decimated into a grey shard through the hair; he wears our own `build_fedora` (low pinched crown, band, snapped brim).
+- **Far model**: the shoes' extra triangles no longer come out of the cloth pool (they left `adult_oxford_shirt`'s shirt one black triangle);
+  `lod_cloth=` gives a garment the collapse cannot take below a few hundred faces a floor (`adult_oxford_shirt`: 900).
+- `teen_ginger`'s hair is ginger (`hair_lift`).
+- In the game: anyone within 6 m is on the full model whatever the budget; wearers of the knee-length winter coat stand on the train (the coat balloons in
+  every sit clip); midi skirts get the pencil-skirt thigh fit; the pencil-skirt step is shortened less (cadence x1.1, not x1.2); occasional smiles stronger.
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.

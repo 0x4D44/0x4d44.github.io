@@ -99,38 +99,38 @@ PEOPLE = [
     #     toigo_tiered_mini_skirt (165 under a tee), punkduck_female_short_jeans and Lycra shorts under toigo_keyhole_tank_top (31 LOD),
     #     the tube top + pleated mini of teen_tube on an adult body (55: skin through the skirt's waistband), and
     #     toigo_flats with Lycra (rest-pose skin count ~3400 whatever the top, hair or body; 559 in ankle boots; skin showed through the tee and sleeves too).
-    dict(id='teen_skater', kind='teen', outfit='trousers', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
-         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
-    dict(id='teen_runner', kind='teen', outfit='trousers', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
-         clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'punkduck_running_shoes_01']),
+    dict(id='teen_skater', kind='teen', outfit='shorts', H=1.72, gender=1, age=0.29, weight=0.4, muscle=0.45, race=(0.05, 0.1, 0.85), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='afro01', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#4a6388', 0.78, 0.016)),
+    dict(id='teen_runner', kind='teen', outfit='shorts', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
+         clothes=['elvs_crude_t-shirt_male', 'punkduck_running_shoes_01'], shorts=('#2b2b2e', 0.70, 0.012)),
     dict(id='teen_tube', tris=9500, kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'mtknife_pleated_mini_skirt', 'toigo_flats']),
-    dict(id='teen_tee', kind='teen', outfit='trousers', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_blunt_bob', hair_col='#17120e', face=True,
-         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_tight_jeans', 'punkduck_tennis_shoes']),
+    dict(id='teen_tee', kind='teen', outfit='shorts', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_blunt_bob', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#5a7096', 0.82, 0.012)),
     dict(id='teen_hippy', kind='teen', outfit='leggings', H=1.63, gender=0, age=0.29, weight=0.4, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='elvs_island_princess_hair', hair_col='#c9a25e', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'elvs_disco_pants_skinny', 'punkduck_comfortable_sneakers']),
     dict(id='teen_hood', kind='teen', outfit='trousers', H=1.75, gender=1, age=0.34, weight=0.45, muscle=0.45, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short01', hair_col='#17120e', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'elvs_jeans_straight_leg', 'culturalibre_sneakers']),
-    dict(id='ya_tee_jeans', kind='man', outfit='trousers', H=1.79, gender=1, age=0.43, weight=0.45, muscle=0.55, race=(0.0, 0.15, 0.85), skin='young_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#17120e', face=True,
-         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01']),
+    dict(id='ya_tee_jeans', kind='man', outfit='shorts', H=1.79, gender=1, age=0.43, weight=0.45, muscle=0.55, race=(0.0, 0.15, 0.85), skin='young_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#17120e', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_running_shoes_01'], shorts=('#4a6388', 0.78, 0.016)),
     dict(id='ya_shorts', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.41, weight=0.45, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes03', hair='elvs_daisy_hair', hair_col='#7a2f1a', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_short_jeans', 'toigo_ballet_flats']),
     dict(id='ya_fedora', kind='man', outfit='trousers', H=1.77, gender=1, age=0.51, weight=0.75, muscle=0.5, race=(0.1, 0.85, 0.05), skin='young_caucasian_male2', eye='brown', brows='eyebrow004', lashes=None, hair='elvs_maxwell_hair', hair_col='#3a281c', face=True,
-         clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male', 'fedora01']),
+         clothes=['elvs_crude_t-shirt_male', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male'], hat=('fedora', '#5a5048')),
     dict(id='ya_tube_heels', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.48, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='toigo_blunt_bob', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'punkduck_female_tight_jeans', 'toigo_stiletto_booties']),
     dict(id='ya_knit', tris=9500, kind='woman', outfit='leggings', H=1.65, gender=0, age=0.52, weight=0.5, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes03', hair='toigo_curled_under_bob', hair_col='#241812', face=True,
          clothes=['mindfront_knitted_sweater_01', 'elvs_disco_pants_skinny', 'toigo_flats']),
-    dict(id='ya_bootcut', kind='woman', outfit='trousers', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='elvs_short_daisy_hair', hair_col='#4a3020', face=True,
-         clothes=['toigo_basic_tucked_t-shirt', 'elvs_jeans_bootcut', 'punkduck_tennis_shoes']),
-    dict(id='ya_spiky', kind='man', outfit='trousers', H=1.83, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow002', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
-         clothes=['elvs_crude_t-shirt_male', 'elvs_jeans_straight_leg', 'punkduck_tennis_shoes']),
+    dict(id='ya_bootcut', kind='woman', outfit='shorts', H=1.70, gender=0, age=0.46, weight=0.45, muscle=0.4, race=(0.2, 0.75, 0.05), skin='young_caucasian_female2', eye='brown', brows='eyebrow006', lashes='eyelashes01', hair='elvs_short_daisy_hair', hair_col='#4a3020', face=True,
+         clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#d9d2c0', 0.70, 0.012)),
+    dict(id='ya_spiky', kind='man', outfit='shorts', H=1.83, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow002', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
+         clothes=['elvs_crude_t-shirt_male', 'punkduck_tennis_shoes'], shorts=('#c9b48a', 0.62, 0.014)),
     dict(id='ya_winter', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
          clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
     # --- batch 2 (2026-11-07): adults, and the garments made here (add_garments): lycra=(leggings|shorts, colour) paints the body's own skin;
     #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat|beret, colour). rare=f: the crowd takes this person only f of the times they come up.
-    dict(id='adult_cap_baggy', kind='man', outfit='trousers', H=1.85, gender=1, age=0.52, weight=0.45, muscle=0.5, race=(0.05, 0.2, 0.75), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short01', hair_col='#17120e', face=True,
-         clothes=['elvs_male_logo_tshirt1', 'elvs_jeans_straight_leg', 'punkduck_running_shoes_01'], baggy=0.55, tuck=('jeans', 'tshirt'), hat=('cap', '#1d2a4a')),
+    dict(id='adult_cap_baggy', kind='man', outfit='shorts', H=1.85, gender=1, age=0.52, weight=0.45, muscle=0.5, race=(0.05, 0.2, 0.75), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short01', hair_col='#17120e', face=True,
+         clothes=['elvs_male_logo_tshirt1', 'punkduck_running_shoes_01'], shorts=('#6b6f4a', 0.62, 0.016), baggy=0.55, tuck=('jeans', 'tshirt'), hat=('cap', '#1d2a4a')),
     dict(id='adult_runner', kind='woman', outfit='leggings', H=1.67, gender=0, age=0.55, weight=0.4, muscle=0.45, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow009', lashes='eyelashes02', hair='ponytail01', hair_col='#b5854b', face=True,
          clothes=['punkduck_sleeveless_crop_top', 'punkduck_running_shoes_01'], lycra=('leggings', '#1a1a1e')),
     dict(id='adult_cyclist', kind='man', outfit='shorts', H=1.79, gender=1, age=0.60, weight=0.4, muscle=0.55, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#5a4a3a', face=True,
@@ -143,12 +143,12 @@ PEOPLE = [
          clothes=['mindfront_knitted_sweater_02', 'toigo_ankle_boots_female'], lycra=('leggings', '#3b2140')),
     dict(id='adult_cap_shorts', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.53, weight=0.45, muscle=0.4, race=(0.1, 0.85, 0.05), skin='young_caucasian_female2', eye='bluegreen', brows='eyebrow007', lashes='eyelashes01', hair='toigo_inverted_bob', hair_col='#b5854b', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_short_jeans', 'punkduck_tennis_shoes'], hat=('cap', '#2e5e3a')),
-    dict(id='adult_oxford_shirt', kind='elder', outfit='trousers', H=1.74, gender=1, age=0.86, weight=0.55, muscle=0.45, race=(0.9, 0.1, 0.0), skin='old_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short01', hair_col='#9a9a9a', hair_lift=True, face=True,
+    dict(id='adult_oxford_shirt', lod_cloth=900, kind='elder', outfit='trousers', H=1.74, gender=1, age=0.86, weight=0.55, muscle=0.45, race=(0.9, 0.1, 0.0), skin='old_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short01', hair_col='#9a9a9a', hair_lift=True, face=True,
          clothes=['elvs_male_shirt_untucked_bd1', 'toigo_wool_pants', 'mindfront_shoes_oxford_male']),
     dict(id='adult_vneck', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.58, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow006', lashes='eyelashes03', hair='elvs_50s_updo', hair_col='#c9a25e', face=True,
          clothes=['punkduck_v_neck_top', 'punkduck_female_tight_jeans', 'mindfront_shoes_oxford_female']),
-    dict(id='adult_camo_cap', kind='man', outfit='trousers', H=1.86, gender=1, age=0.50, weight=0.5, muscle=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short01', hair_col='#a87a43', face=True,
-         clothes=['drednicolson_short-tail_camo_tee', 'mindfront_male_trousers_2', 'culturalibre_sneakers'], hat=('cap', '#111111')),
+    dict(id='adult_camo_cap', kind='man', outfit='shorts', H=1.86, gender=1, age=0.50, weight=0.5, muscle=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short01', hair_col='#a87a43', face=True,
+         clothes=['drednicolson_short-tail_camo_tee', 'culturalibre_sneakers'], shorts=('#c9b48a', 0.62, 0.014), hat=('cap', '#111111')),
     dict(id='adult_harem', kind='woman', outfit='trousers', H=1.65, gender=0, age=0.56, weight=0.78, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes01', hair='elvs_island_princess_hair', hair_col='#17120e', face=True,
          clothes=['toigo_keyhole_tank_top', 'toigo_harem_pants', 'toigo_ballet_flats']),
     dict(id='adult_lusekofta', kind='elder', outfit='trousers', H=1.79, gender=1, age=0.86, weight=0.55, muscle=0.5, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#b0b0b0', hair_lift=True, face=True,
@@ -197,23 +197,23 @@ PEOPLE = [
          clothes=['toigo_male_suit_tie_and_jacket'], cut=('suit', 0.15), kilt=dict(kind='kilt', tart=1, sporran=True, belt=True, hose=('#ddd6bf', '#1d3a2a')), shoes='mindfront_shoes_oxford_male', hat=('beret', '#1a2a22', 'felt'), nolegs=True, pipes=True),
     dict(id='ya_ginger_long', kind='woman', outfit='trousers', H=1.67, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#b8541e',
          clothes=['punkduck_lace_up_blouse', 'punkduck_female_tight_jeans', 'toigo_ankle_boots_female', 'punkduck_handbag01']),
-    dict(id='ya_ginger_braid', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.33, weight=0.45, muscle=0.4, smile=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='lightblue', brows='eyebrow009', lashes='eyelashes01', hair='elvs_keylth_hair', hair_col='#c0602a', hair_lift=True,
-         clothes=['punkduck_retro_top', 'elvs_jeans_straight_leg', 'punkduck_comfortable_sneakers'], tattoos=[dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110)]),
+    dict(id='ya_ginger_braid', kind='woman', outfit='shorts', H=1.63, gender=0, age=0.33, weight=0.45, muscle=0.4, smile=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='lightblue', brows='eyebrow009', lashes='eyelashes01', hair='elvs_keylth_hair', hair_col='#c0602a', hair_lift=True,
+         clothes=['punkduck_retro_top', 'punkduck_comfortable_sneakers'], shorts=('#7a8fb0', 0.80, 0.012), tattoos=[dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110)]),
     dict(id='ya_ginger_lad', hue=-110, kind='man', outfit='trousers', H=1.77, gender=1, age=0.35, weight=0.45, muscle=0.6, smile=0.6, race=(0.0, 1.0, 0.0), skin='young_caucasian_male2', eye='blue', brows='eyebrow002', lashes=None, hair='elvs_grump_hair', hair_col='#b4501c',
          clothes=['male_casualsuit02', 'culturalibre_sneakers']),
-    dict(id='teen_ginger', kind='teen', outfit='trousers', H=1.70, gender=1, age=0.27, weight=0.4, muscle=0.45, smile=0.45, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='brown', brows='eyebrow002', lashes=None, hair='short01', hair_col='#c4662c', face=True,
-         clothes=['elvs_male_logo_tshirt1', 'mindfront_male_trousers_2', 'punkduck_tennis_shoes']),
+    dict(id='teen_ginger', kind='teen', outfit='shorts', H=1.70, gender=1, age=0.27, weight=0.4, muscle=0.45, smile=0.45, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='brown', brows='eyebrow002', lashes=None, hair='short01', hair_col='#c4662c', hair_lift=True, face=True,
+         clothes=['elvs_male_logo_tshirt1', 'punkduck_tennis_shoes'], shorts=('#3d4f6e', 0.70, 0.016)),
     dict(id='girl_ginger', hue=170, kind='girl', outfit='trousers', H=1.28, gender=0, age=0.12, weight=0.45, muscle=0.35, smile=0.7, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow009', lashes='eyelashes01', hair='elvs_daisy_hair', hair_col='#c8642a',
          clothes=['female_casualsuit01', 'culturalibre_sneakers']),
     dict(id='ya_smile_dress', kind='woman', outfit='dress', H=1.68, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.8, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes03', hair='afro01', hair_col='#17120e',
          clothes=['mindfront_f_dress_08', 'toigo_ballet_flats']),
     dict(id='ya_smile_polo', kind='man', outfit='trousers', H=1.76, gender=1, age=0.37, weight=0.45, muscle=0.6, smile=0.7, race=(0.85, 0.1, 0.05), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='elvs_maxwell_hair', hair_col='#17120e',
          clothes=['namuhekam_male_polo_shirt', 'mindfront_male_trousers_2', 'mindfront_shoes_oxford_male']),
-    dict(id='ya_tattoo_tank', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.38, weight=0.42, muscle=0.5, smile=0.5, race=(0.1, 0.8, 0.1), skin='young_caucasian_female', eye='brown', brows='eyebrow006', lashes='eyelashes02', hair='elvs_keylth_hair', hair_col='#17120e',
-         clothes=['mindfront_tank_top_01', 'punkduck_female_tight_jeans', 'punkduck_winter_boots'],
+    dict(id='ya_tattoo_tank', kind='woman', outfit='shorts', H=1.66, gender=0, age=0.38, weight=0.42, muscle=0.5, smile=0.5, race=(0.1, 0.8, 0.1), skin='young_caucasian_female', eye='brown', brows='eyebrow006', lashes='eyelashes02', hair='elvs_keylth_hair', hair_col='#17120e',
+         clothes=['mindfront_tank_top_01', 'punkduck_winter_boots'], shorts=('#5a7096', 0.82, 0.012),
          tattoos=[dict(bone='lowerarm_l', kind='flange', t0=0.12, t1=0.88, width=150), dict(bone='upperarm_r', kind='band', t0=0.35, t1=0.65, width=340), dict(bone='upperarm_l', kind='swallow', t0=0.3, t1=0.75, width=110)]),
-    dict(id='adult_tattoo_muscle', kind='man', outfit='trousers', H=1.77, gender=1, age=0.48, weight=0.6, muscle=0.85, smile=0.3, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='grey', brows='eyebrow005', lashes=None, hair='short01', hair_col='#3a281c', face=True,
-         clothes=['elvs_male_muscle_shirt1', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male'],
+    dict(id='adult_tattoo_muscle', kind='man', outfit='shorts', H=1.77, gender=1, age=0.48, weight=0.6, muscle=0.85, smile=0.3, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_male', eye='grey', brows='eyebrow005', lashes=None, hair='short01', hair_col='#3a281c', face=True,
+         clothes=['elvs_male_muscle_shirt1', 'toigo_ankle_boots_male'], shorts=('#4a6388', 0.70, 0.016),
          tattoos=[dict(bone='lowerarm_r', kind='flange', t0=0.12, t1=0.88, width=150), dict(bone='lowerarm_l', kind='glesga', t0=0.12, t1=0.88, width=150), dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110), dict(bone='upperarm_r', kind='band', t0=0.4, t1=0.7, width=340)]),
     dict(id='adult_smile_blouse', kind='woman', outfit='trousers', H=1.66, gender=0, age=0.50, weight=0.45, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow007', lashes='eyelashes03', hair='elvs_keylth_hair', hair_col='#d8b86c',
          clothes=['punkduck_off-shoulder_long-sleeve_top', 'mindfront_female_trousers_1', 'toigo_flats']),
@@ -1193,6 +1193,38 @@ def build_tophat(person, colr, fabric=None):
     _wall(bb, blo, bhi)
     new_part(person, 'tophat_band', bb, solid_material('cloth_tophat_band', hex_rgb('#4a1420'), 0.6), head_weights)
 
+def build_fedora(person, colr, fabric=None):
+    """a fedora, our own mesh (people review 4: the CC0 fedora01 decimated into a crumpled grey shard through the hair): a low crown narrowing to a
+    pinched top with a front dent, a band, and a brim snapped down at the front and back, up at the sides"""
+    import bmesh
+    zb, ztop, ring, k = head_fit(person)
+    cx, cy, rx, ry = ring((zb + ztop) / 2, (ztop - zb) / 2 + 0.004)
+    rx = rx * 1.03 + 0.008; ry = ry * 1.03 + 0.008
+    seg = 24; Hc = 0.122 * k; z0 = zb - 0.002
+    bm = bmesh.new()
+    lo = _ellipse(bm, cx, cy, rx, ry, z0, seg); hi = _ellipse(bm, cx, cy, rx * 0.94, ry * 0.96, z0 + Hc, seg)
+    for j, v in enumerate(hi):   # the crease along the top and the pinch at the front
+        th = 2 * math.pi * j / seg; c_, s_ = math.cos(th), math.sin(th)
+        v.co.z -= 0.008 * k * abs(c_) ** 4 + 0.008 * k * max(0.0, s_) ** 6
+    _wall(bm, lo, hi)
+    top = bm.verts.new((cx, cy, z0 + Hc - 0.010 * k))
+    for j in range(seg): bm.faces.new((hi[j], hi[(j + 1) % seg], top))
+    secs = []
+    for j in range(seg):
+        th = 2 * math.pi * j / seg; c_, s_ = math.cos(th), math.sin(th)
+        curl = 0.012 * k * c_ ** 2 - 0.010 * k * s_ ** 2   # up at the sides, snapped down at front and back
+        wx, wy = rx + 0.048 * k, ry + 0.056 * k
+        secs.append([bm.verts.new((cx + (rx - 0.002) * c_, cy + (ry - 0.002) * s_, z0 + 0.004)), bm.verts.new((cx + wx * c_, cy + wy * s_, z0 + curl + 0.002)),
+                     bm.verts.new((cx + wx * c_, cy + wy * s_, z0 + curl - 0.002)), bm.verts.new((cx + (rx - 0.002) * c_, cy + (ry - 0.002) * s_, z0 - 0.002))])
+    fs = _closed_strip(bm, secs)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    if fabric: wrap_uv(bm, cx, cy, 0.09)
+    new_part(person, 'fedora', bm, fabric_material('fedora', fabric, colr, 0.6) if fabric else solid_material('cloth_fedora_' + colr.lstrip('#'), hex_rgb(colr), 0.6), head_weights)
+    bb = bmesh.new()
+    blo = _ellipse(bb, cx, cy, rx * 1.004 + 0.0015, ry * 1.004 + 0.0015, z0 + 0.004, seg); bhi = _ellipse(bb, cx, cy, rx * 0.985 + 0.0015, ry * 0.99 + 0.0015, z0 + 0.026 * k, seg)
+    _wall(bb, blo, bhi)
+    new_part(person, 'fedora_band', bb, solid_material('cloth_fedora_band', hex_rgb('#1a1412'), 0.6), head_weights)
+
 # ------------------------------------------------------------------ batch 4 (2026-11-14): a string vest, tattoos, bagpipes. All our own drawings and meshes.
 GEN = os.path.join(SCRATCH, 'gen')
 
@@ -1391,7 +1423,7 @@ def add_garments(person):
     # the height the person is scaled to (fit_height) is to the top of the head or hair, not of a hat made here
     hat = spec.get('hat')
     if hat: person['crown'] = max(v.co.z for o in person_objects(person) for v in o.data.vertices)
-    if hat: {'cap': build_cap, 'tophat': build_tophat, 'beret': lambda p, c, fabric=None: build_cap(p, c, beret=True, fabric=fabric)}[hat[0]](person, hat[1], fabric=hat[2] if len(hat) > 2 else None)   # hat[2]: tools/fabrics/<name>.png
+    if hat: {'cap': build_cap, 'tophat': build_tophat, 'fedora': build_fedora, 'beret': lambda p, c, fabric=None: build_cap(p, c, beret=True, fabric=fabric)}[hat[0]](person, hat[1], fabric=hat[2] if len(hat) > 2 else None)   # hat[2]: tools/fabrics/<name>.png
 
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
@@ -1442,7 +1474,7 @@ def budget_and_join(person, total):
     cl = [o for o, r in parts if r in ('cloth', 'shoe')]
     pool = left * share['cloth']
     for o in [o for o in cl if _shoe(o)]:
-        tgt[id(o)] = min(cnt[id(o)], (420 if LOD else 640) / max(1, sum(1 for q in cl if _shoe(q)))); pool -= tgt[id(o)]
+        tgt[id(o)] = min(cnt[id(o)], (420 if LOD else 640) / max(1, sum(1 for q in cl if _shoe(q)))); pool -= min(tgt[id(o)], 260 / max(1, sum(1 for q in cl if _shoe(q)))) if LOD else tgt[id(o)]   # (LOD: the shoes' extra 160 is on top of the cloth pool - taken from it, it left adult_oxford_shirt's shirt one black triangle: review 4)
     todo = [o for o in cl if not _shoe(o)]
     wgt = {id(o): max(1e-6, _area(o)) for o in todo}
     while todo:
@@ -1452,6 +1484,9 @@ def budget_and_join(person, total):
             for o in todo: tgt[id(o)] = pool * wgt[id(o)] / ws
             break
         for o in full: tgt[id(o)] = cnt[id(o)]; pool -= cnt[id(o)]; todo.remove(o)
+    if LOD and person['spec'].get('lod_cloth'):   # a garment the collapse cannot take below a few hundred faces without folding it into one big triangle
+        for o in cl:
+            if not _shoe(o): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], person['spec']['lod_cloth']))
     if os.environ.get('BUDGET_LOG'): print('AREA', person['spec']['id'], [(o.name, round(_area(o), 3)) for o in cl])
     keep = []
     for o, r in parts:

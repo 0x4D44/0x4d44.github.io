@@ -184,7 +184,10 @@ class Sim {
         if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75))) continue;
         standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.55 ? 'pole' : 'stand', ceilAt });
       }
-      for (const q of sc.seat(car, seated.concat(standing))) if (q.seatRef) q.seatRef.p = q;
+      let got = sc.seat(car, seated.concat(standing)); for (const q of got) if (q.seatRef) q.seatRef.p = q;
+      // a car left empty (nobody fitted the seat or spot drawn for it: the ceiling and walls rule some people out of some seats) tries its other seats in turn
+      // (and a car reached once the crowd is at its cap - the head cars took boarders - still gets that one rider)
+      if (!got.length) { const m0 = sc.max; sc.max = Math.max(sc.max, sc.people.length + 1); for (let k = 0; !got.length && k < slots.length; k++) { got = sc.seat(car, [slots[k]]); for (const q of got) if (q.seatRef) q.seatRef.p = q; } sc.max = m0; }
     }
     this._saloonObs(tv);
     if (job.car >= tv.cars.length) { tv.saloonDone = true; tv.saloonJob = null; }
@@ -225,6 +228,7 @@ class Sim {
       const rows = riders.map((p) => { const ci = tv.cars.indexOf(p.parent), ds = ci < 0 ? [] : doorsOf(ci); let dz = null, bd = 1e9; for (const d of ds) if (Math.abs(d - p.z) < bd) { bd = Math.abs(d - p.z); dz = d; } return { p, ci, dz, k: bd + rnd() * 2.5 - (p.state === 'sit' ? 0 : 1.5) }; }).filter((r) => r.dz != null).sort((a, b) => a.k - b.k);
       for (const r of rows) {
         if (X.leavers.length >= want) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
+        if (riders.filter((q) => q.parent === r.p.parent && !q.leaving).length <= 1) continue;   // (the last rider of a car stays aboard: a car is never left empty at a stop)
         let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; }
         perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
       }
