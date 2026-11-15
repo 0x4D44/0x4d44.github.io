@@ -8,7 +8,7 @@ import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
 import { ST_LEONARDS, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit } from '../src/perth-st-leonards-bridge.ts';
-import { Batch } from '../src/materials.ts';
+import { Batch, rgb as rgbOf } from '../src/materials.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const scene = buildPerthScene({ lighting: false });
@@ -108,4 +108,97 @@ test('round 2: a coping caps each parapet, and a string course stands proud of e
     const o = hit ? Math.abs(stLeonardsFrame([hit.point.x, hit.point.z]).o) : 0;
     assert.ok(o >= ST_LEONARDS.half + .08, `s ${s} side ${sg}: the face at ${o.toFixed(3)} m out (spandrel at ${ST_LEONARDS.half})`);
   }
+});
+
+// Round 3 (the round-2 score): coursed ashlar, voussoirs, imposts, smooth soffits, a plate-girder parapet with a visible coping, a darker
+// north face, and a frozen camera at R-slb-a's standpoint.
+const meshNamed = (name: string) => { const m = scene.group.getObjectByName(name) as THREE.Mesh; m.updateMatrixWorld(true); return m; };
+const levelHit = (mesh: THREE.Object3D | THREE.Object3D[], s: number, sg: number, y: number): number => {
+  const ray = new THREE.Raycaster(), [ox, oz] = stLeonardsAt(s, sg * (ST_LEONARDS.half + 10)), [ix, iz] = stLeonardsAt(s, 0);
+  ray.set(new THREE.Vector3(ox, y, oz), new THREE.Vector3(ix - ox, 0, iz - oz).normalize());
+  const hit = ray.intersectObjects(Array.isArray(mesh) ? mesh : [mesh])[0];
+  return hit ? Math.abs(stLeonardsFrame([hit.point.x, hit.point.z]).o) : 0;
+};
+
+test('round 3: the spandrels, piers and abutments are coursed ashlar, in the textured coursed-stone batch with world-metre UVs', () => {
+  const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  assert.ok(ashlar.triangles > 200, `ashlar triangles ${ashlar.triangles}`);
+  // v is the height over the coursed tile, so the 0.3 m courses run level and line up from face to face
+  for (let i = 0; i < ashlar.count; i++) assert.ok(Math.abs(ashlar.uvs[2 * i + 1]! - ashlar.positions[3 * i + 1]! / 4) < 1e-6, `vertex ${i}: v ${ashlar.uvs[2 * i + 1]} at y ${ashlar.positions[3 * i + 1]}`);
+  // in the scene: a level ray at mid-spandrel over a pier meets the street walls' coursed stone, not the plain bridge mesh
+  const walls = meshNamed('perth-station-street-walls'), bridge = meshNamed('perth-st-leonards-bridge');
+  for (const c of ST_LEONARDS.piers) for (const sg of [-1, 1]) {
+    const ray = new THREE.Raycaster(), [ox, oz] = stLeonardsAt(c, sg * (ST_LEONARDS.half + 10)), [ix, iz] = stLeonardsAt(c, 0);
+    ray.set(new THREE.Vector3(ox, 1, oz), new THREE.Vector3(ix - ox, 0, iz - oz).normalize());
+    assert.equal(ray.intersectObjects([walls, bridge])[0]?.object.name, 'perth-station-street-walls', `pier at ${c}, side ${sg}`);
+  }
+});
+
+test('round 3: a voussoir ring stands proud of each arch face, impost bands at the springing, and the soffits are smooth-shaded', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge');
+  for (const sg of [-1, 1]) {
+    // the haunch of each pair of arches flanking a pier, just over the intrados: the ring
+    for (const c of ST_LEONARDS.piers) {
+      const s = c + ST_LEONARDS.pierWidth / 2 + .6, y = stLeonardsSoffit(s) + .15;
+      assert.ok(levelHit(bridge, s, sg, y) >= ST_LEONARDS.half + .02, `voussoir at s ${s.toFixed(2)}, y ${y.toFixed(2)}, side ${sg}`);
+      // the impost band just under the springing, proud of the pier's face
+      assert.ok(levelHit(bridge, c, sg, ST_LEONARDS.spring - .1) >= ST_LEONARDS.half + .05, `impost at pier ${c}, side ${sg}`);
+    }
+  }
+  // the soffit: its triangles' corners carry differing normals (one per station on the ellipse), not one flat normal a facet
+  const g = bridge.geometry, n = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
+  const sof = rgbOf(ST_LEONARDS_COLOURS.soffit);
+  let soffitTris = 0, smooth = 0;
+  for (let t = 0; t < idx.count; t += 3) {
+    const v = [idx.getX(t), idx.getX(t + 1), idx.getX(t + 2)];
+    if (!v.every(k => Math.abs(col.getX(k) - sof[0]!) < 1e-4 && Math.abs(col.getY(k) - sof[1]!) < 1e-4 && Math.abs(col.getZ(k) - sof[2]!) < 1e-4)) continue;
+    soffitTris++;
+    if (v.some(k => Math.abs(n.getX(k) - n.getX(v[0]!)) + Math.abs(n.getY(k) - n.getY(v[0]!)) + Math.abs(n.getZ(k) - n.getZ(v[0]!)) > 1e-3)) smooth++;
+  }
+  assert.ok(soffitTris > 100 && smooth / soffitTris > .9, `smooth soffit triangles ${smooth} of ${soffitTris}`);
+});
+
+test('round 3: the parapet is a plate girder (flanges and stiffeners proud of its web) under a coping that overhangs its face', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), y = ST_LEONARDS.road + .55;
+  for (const sg of [-1, 1]) {
+    // along 10 m of the north and south faces at mid-web: the web, and the stiffeners proud of it at the girder's pitch
+    let web = 0, stiff = 0;
+    for (let s = 40; s < 50; s += .05) { const o = levelHit(bridge, s, sg, y); if (Math.abs(o - ST_LEONARDS.half) < .01) web++; else if (o > ST_LEONARDS.half + .02) stiff++; }
+    assert.ok(web > 120 && stiff >= 6, `side ${sg}: web ${web}, stiffener samples ${stiff}`);
+    // the flanges, at the web's top and foot
+    assert.ok(levelHit(bridge, 45.9, sg, ST_LEONARDS.road + ST_LEONARDS.parapet - .05) > ST_LEONARDS.half + .02, `top flange, side ${sg}`);
+    // the coping overhangs the girder by at least 0.12 m, so it shows from below
+    assert.ok(levelHit(bridge, 45.9, sg, ST_LEONARDS.road + ST_LEONARDS.parapet + .08) >= ST_LEONARDS.half + .12, `coping, side ${sg}`);
+  }
+});
+
+test('round 3: the north face (toward the station, R-slb-a\'s backlit side) is shaded darker than the south, not near black', () => {
+  const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  const mean = (north: boolean) => { let s = 0, k = 0; for (let i = 0; i < ashlar.count; i++) { const nz = ashlar.normals[3 * i + 2]!; if (north ? nz < -.7 : nz > .7) { s += ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!; k++; } } return s / k; };
+  const ratio = mean(true) / mean(false);
+  assert.ok(ratio >= .6 && ratio <= .85, `north/south stone ${ratio.toFixed(3)}`);
+});
+
+test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridge\'s north elevation, unobstructed; it is a P2 view', () => {
+  const cams = JSON.parse(readFileSync(new URL('../../tools/tests/frozen-perth-cameras.json', import.meta.url), 'utf8'));
+  const k = cams['pt-st-leonards-bridge'];
+  assert.ok(k, 'the camera is frozen');
+  const plat = data.platforms.find(p => p.id === 'way/44200505')!.path as Pt[];
+  let inside = false; for (let i = 0, j = plat.length - 1; i < plat.length; j = i++) if ((plat[i]![1] > k.pos[2]) !== (plat[j]![1] > k.pos[2]) && k.pos[0] < (plat[j]![0] - plat[i]![0]) * (k.pos[2] - plat[i]![1]) / (plat[j]![1] - plat[i]![1]) + plat[i]![0]) inside = !inside;
+  assert.ok(inside, 'the eye stands on platform 4');
+  const cam = new THREE.PerspectiveCamera(k.fov, 1280 / 800, .1, 5000); cam.position.set(k.pos[0], k.pos[1], k.pos[2]); cam.lookAt(k.target[0], k.target[1], k.target[2]); cam.updateMatrixWorld(true);
+  const sg = Math.sign(-(stLeonardsAt(0, 1)[1] - stLeonardsAt(0, 0)[1])) || 1;
+  // the central arches' crowns and the parapet over them are in frame, and the first thing each line of sight meets is the bridge
+  const everything = scene.group.children.flatMap(o => { const all: THREE.Object3D[] = []; o.traverse(q => { if ((q as THREE.Mesh).isMesh && q.visible) all.push(q); }); return all; });
+  for (const s of [29, 39.6, 49.75]) for (const y of [stLeonardsSoffit(s) + .3, ST_LEONARDS.road + .5]) {
+    const [x, z] = stLeonardsAt(s, sg * ST_LEONARDS.half), v = new THREE.Vector3(x, y, z).project(cam);
+    assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `s ${s} y ${y.toFixed(2)} in frame (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
+    const eye = new THREE.Vector3(...(k.pos as [number, number, number])), dir = new THREE.Vector3(x, y, z).sub(eye), far = dir.length();
+    const hit = new THREE.Raycaster(eye, dir.normalize(), .1, far + 1).intersectObjects(everything)[0];
+    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-station-street-walls'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
+  }
+  const evidence = readFileSync(new URL('../../tools/evidence.mjs', import.meta.url), 'utf8');
+  assert.match(evidence, /'perth-frontage': \[[^\]]*'pt-st-leonards-bridge'/);
 });
