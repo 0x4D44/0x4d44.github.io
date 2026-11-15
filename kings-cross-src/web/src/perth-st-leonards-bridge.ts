@@ -46,8 +46,8 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
- soffitStone:.9,joint:.05,soffitBend:1,
- soffitFill:.25,soffitJoint:{width:.06,tone:.5,inset:.015},weather:{jitter:.07,cell:1.7,stain:.28,stainHeight:1.6}} as const;
+ soffitStone:.9,joint:.05,soffitBend:1.5,
+ soffitFill:{base:3,crown:1.75},soffitJoint:{width:.1,tone:.5,inset:.015},weather:{jitter:.07,cell:3,cellHeight:2.5,stain:.28,stainFull:.5,stainHeight:1.6}} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -94,6 +94,18 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * - weathering on the coursed ashlar (the faces, piers, abutments and approach walls; the shared coursed texture is untouched): each
  *   corner's colour jittered by up to `jitter` from a hash of its position on a `cell` m lattice (corners shared between faces agree),
  *   and the piers' and abutments' feet stained darker, by `stain` at the ground fading out `stainHeight` m up. */
+/* Round 6 (the round-5 pixels: crown 10-13 of 255 by day against a face of 55-90, 1-3 at dusk; the face's drift 0.99-1.02; the stain
+ * 11-15%; the soffit's joints about 1 px). The tests' lighting model had read the rig's sRGB colours as linear (atmosphere.ts sets the
+ * lights with SRGBColorSpace): its hemisphere's ground light, all a crown gets, was three times the renderer's. Corrected (and the coursed
+ * texture's mean put on the faces) it meets the calibration capture of 2d545dc9 within 15% everywhere sampled. By that model:
+ * - `soffitFill`: every soffit stone's colour times `base` plus `crown` times the square of its height up the arch (vertex colours may
+ *   pass 1: the light the barrel takes off the sunlit ground and the far haunch, which the hemisphere's ground term does not give it);
+ *   and `soffitBend` 1.5 (was 1: a low sun takes at most 0.57 of square on, for the dusk cap). Noon: springing 49, crown 46 of 255; dusk
+ *   32 and 16, every stone under the north face's 42;
+ * - the face's drift is a tone per patch, `cell` m in plan by `cellHeight` m up, so a corner carries its whole +-`jitter`;
+ * - the stained faces are cut at the ground, `stainFull` m up and `stainHeight` m up, so the stain is whole to `stainFull` and fades out by
+ *   `stainHeight` (one quad from under the ground to the springing had spread it thin);
+ * - the soffit's joints are `soffitJoint.width` 0.1 m: 2.4 px at pt-st-leonards-bridge's 82 m (they were 1.4 px). */
 export const SOFFIT_TONES=[1,.84,1.04,1.16,.8,.98,1.1,.9] as const;
 export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
@@ -148,24 +160,28 @@ function face(b:Batch,pts:V3[],us:number[],n:V3,c:Rgb,foot?:number):void{
  const T=PERTH_TEXTURE_TILE.coursed;
  b.poly(pts,b.textured?pts.map((p,i)=>[us[i]/T,p[1]/T]):undefined,{facing:n,color:shadeFor(c,n),...b.textured?{colors:pts.map(p=>shadeFor(weathered(c,p,foot),n))}:{}});
 }
-/** A lattice hash in [-1, 1] of a point (round 5's weathering): smooth over `cell` m, the same for every face meeting at a corner. */
-function lattice(p:V3):number{
- const W=ST_LEONARDS.weather.cell,g=(x:number,y:number,z:number)=>{const h=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return 2*(h-Math.floor(h))-1;};
- const fx=p[0]/W,fy=p[1]/W,fz=p[2]/W,ix=Math.floor(fx),iy=Math.floor(fy),iz=Math.floor(fz),tx=fx-ix,ty=fy-iy,tz=fz-iz;
- let v=0;for(const dx of [0,1])for(const dy of [0,1])for(const dz of [0,1])v+=g(ix+dx,iy+dy,iz+dz)*(dx?tx:1-tx)*(dy?ty:1-ty)*(dz?tz:1-tz);
- return v;
+/** The weathering patch a point lies in (round 6: `cell` m in plan by `cellHeight` m up), as a tone in [-1, 1]: one value for the whole
+ *  patch, so its corners carry the full drift (round 5 interpolated a lattice, and its corners averaged out to about +-2%), the same for
+ *  every face meeting at a corner. */
+function patch(p:V3):number{
+ const W=ST_LEONARDS.weather,h=Math.sin(Math.floor(p[0]/W.cell)*127.1+Math.floor(p[1]/W.cellHeight)*311.7+Math.floor(p[2]/W.cell)*74.7)*43758.5453;
+ return 2*(h-Math.floor(h))-1;
 }
 /** Coursed stone's colour at a corner: jittered by the lattice, and stained near `foot` (the ground's height) when given. */
 function weathered(c:Rgb,p:V3,foot?:number):Rgb{
- const W=ST_LEONARDS.weather,stain=foot===undefined?0:W.stain*Math.min(1,Math.max(0,1-(p[1]-foot)/W.stainHeight)),f=(1+W.jitter*lattice(p))*(1-stain);
+ const W=ST_LEONARDS.weather,stain=foot===undefined?0:W.stain*Math.min(1,Math.max(0,(foot+W.stainHeight-p[1])/(W.stainHeight-W.stainFull))),f=(1+W.jitter*patch(p))*(1-stain);
  return [c[0]*f,c[1]*f,c[2]*f];
 }
 /** A box whose long axis runs from plan a to p (y0..y1), `half` its half thickness across; each face shaded as `face`; no underside. */
 function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb,foot?:number):void{
  const dx=p[0]-a[0],dz=p[1]-a[1],l=Math.hypot(dx,dz);if(l<1e-6||y1<=y0)return;
  const ax:Pt=[dx/l,dz/l],nx:Pt=[-ax[1],ax[0]],at=(i:number,j:number):Pt=>[a[0]+ax[0]*l*i+nx[0]*half*j,a[1]+ax[1]*l*i+nx[1]*half*j];
- for(const j of [-1,1]){const q0=at(0,j),q1=at(1,j);face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,l,l,0],[nx[0]*j,0,nx[1]*j],c,foot);}
- for(const i of [0,1]){const q0=at(i,-1),q1=at(i,1),d=i?1:-1;face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,2*half,2*half,0],[ax[0]*d,0,ax[1]*d],c,foot);}
+ // (round 6) a stained foot: the sides cut at the ground and at the stain's top, so the stain runs exactly from full to none between
+ const cuts=[y0,...(foot===undefined?[]:[foot,foot+ST_LEONARDS.weather.stainFull,foot+ST_LEONARDS.weather.stainHeight].filter(y=>y>y0+.01&&y<y1-.01)),y1];
+ for(let k=0;k+1<cuts.length;k++){const ya=cuts[k],yb=cuts[k+1];
+  for(const j of [-1,1]){const q0=at(0,j),q1=at(1,j);face(b,[v3(q0,ya),v3(q1,ya),v3(q1,yb),v3(q0,yb)],[0,l,l,0],[nx[0]*j,0,nx[1]*j],c,foot);}
+  for(const i of [0,1]){const q0=at(i,-1),q1=at(i,1),d=i?1:-1;face(b,[v3(q0,ya),v3(q1,ya),v3(q1,yb),v3(q0,yb)],[0,2*half,2*half,0],[ax[0]*d,0,ax[1]*d],c,foot);}
+ }
  face(b,[v3(at(0,-1),y1),v3(at(1,-1),y1),v3(at(1,1),y1),v3(at(0,1),y1)],[0,l,l,0],[0,1,0],c);
 }
 
@@ -192,7 +208,7 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    const n0=bent(nrm[i]),n1=bent(nrm[i+1]);
    // the soffit's stones: across the barrel in stretcher bond, each its own tone; the corners keep the ellipse's normals
    // (round 5) lifted by the fill with height up the arch, and jointed: the cross joint at each stone's start, the bed joint at the facet's
-   const up=Math.min(1,Math.max(0,((ys[i]+ys[i+1])/2-a.spring)/(a.crown-a.spring))),lift=1+K.soffitFill*up*up,SJ=K.soffitJoint;
+   const up=Math.min(1,Math.max(0,((ys[i]+ys[i+1])/2-a.spring)/(a.crown-a.spring))),lift=K.soffitFill.base+K.soffitFill.crown*up*up,SJ=K.soffitJoint;
    const into=(k:number,o:number,along:number,dy:number):V3=>{const d=nrm[k];return v3(stLeonardsAt(ss[k]+along+d[0]*SJ.inset,o),ys[k]+dy+d[1]*SJ.inset);};
    for(let o=-K.half-(i%2)*K.soffitStone/2;o<K.half;o+=K.soffitStone){
     const oa=Math.max(-K.half,o),ob=Math.min(K.half,o+K.soffitStone);if(ob-oa<.01)continue;
