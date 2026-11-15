@@ -165,7 +165,9 @@ export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99); this.printRng = mulberry32(1149);   // prints draw from their own stream: the crowd's sequence is unchanged
     printAtlas(THREE);   // start loading the print atlas now, so the first T-shirts are not blank (null in Node)
-    this.rAnim = quality === 'low' ? 20 : 40; this.rVis = quality === 'low' ? 70 : 140;   // (rVis: beyond the far end of the longest platform from anywhere on it - at 60 m people at the far end blinked out as you walked away) this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
+    this.rAnim = quality === 'low' ? 20 : 40; this.rVis = quality === 'low' ? 70 : 140;   // (rVis: beyond the far end of the longest platform from anywhere on it - at 60 m people at the far end blinked out as you walked away)
+    // (2026-11-15, people review 3: these two sat inside the comment above, so every change of clip snapped in one frame and the platform crowd had no cap on full-detail people)
+    this.crossfade = 0.3; this.maxHi = quality === 'low' ? 6 : 28;
     this.chars = []; this.meas = new Map();
     const prim = gltf || lodGltf, scene = prim.scene, holder = scene.getObjectByName('people') || scene;
     const meta = prim.meta || (lodGltf && lodGltf.meta) || null;   // optional models/people_meta.json: { <id>: { height } }
@@ -212,7 +214,7 @@ export class AnimCrowd {
     f.hair = fitHair(T, n);
     f.scalp = fitScalp(T, n);   // hair-coloured roots under the hair, so a gap between strands is not a bare patch
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
-    f.legs = sk ? fitLegs(T, n, f.hose ? { radii: f.hose.radii } : {}) : null;   // skirts held off the thighs (shader patch + slimmed thigh skin)
+    f.legs = sk ? fitLegs(T, n, Object.assign(f.hose ? { radii: f.hose.radii } : {}, /pencil/.test(c.outfit) ? { slim: 0.05, margin: 0.012, slimRamp: 0.03, slimCap: 0.4 } : { slimRamp: 0.04 })) : null;   // (a pencil skirt fits close: the thighs came through its front mid-stride - review 3)   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
     f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underTop = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
@@ -789,14 +791,14 @@ export class AnimCrowd {
           }
         }
       }
-      if (!p.static && !p.hidden) this._attend(p, dt);
+      if (!p.hidden && p.obj.visible) this._attend(p, dt);   // (riders too, though they are static: review 3 counted no smile and no look round in 1512 rider samples)
       if (!p.static) this._turn(p, dt); else if (p.tween) this._tweenStep(p, dt);
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && hiSet && p.char.lodNode && p.char.node && swaps < 4 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
+      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 5)) && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
       if (upd && p.look) p.look.restore();
@@ -860,7 +862,7 @@ export class AnimCrowd {
     const id = p.char.id, n = this._gcount[id] = (this._gcount[id] || 0) + 1, r = mulberry32(G.seedOf(id) + 977 * n), tab = ARM_OUT[id];
     const bg = p.bag && p.bag.hand ? p.bag.kind : '', ao = ((tab && tab.walk) || [8, 8]).slice(); if (bg === 'trolley') ao[0] += 7;   // (the left hand carries: bags.js)
     return { armOut: ao, hold: [bg === 'trolley' ? 1 : /case|holdall|shopper/.test(bg) ? 0.8 : bg ? 0.35 : 0, 0], trail: [bg === 'trolley' ? 22 : 0, 0], seed: (G.seedOf(id) + 7919 * n) >>> 0,
-      var: { arm: (0.8 + 0.4 * r()) * (p.char.elder ? 0.7 : p.char.kid ? 1.15 : 1), elbow: (0.7 + 0.6 * r()) * (p.char.elder ? 0.8 : p.char.kid ? 1.2 : 1), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: (0.95 + 0.1 * r()) * (/pencil/.test(p.char.outfit) ? 1.12 : 1) * (p.char.elder ? 1.04 : 1), wid: (0.75 + 0.55 * r()) * (p.char.elder ? 1.25 : 1), stoop: p.char.elder ? 4 + 4 * r() : 0 } };
+      var: { arm: (0.8 + 0.4 * r()) * (p.char.elder ? 0.7 : p.char.kid ? 1.15 : 1), elbow: (0.7 + 0.6 * r()) * (p.char.elder ? 0.8 : p.char.kid ? 1.2 : 1), bob: 0.9 + 0.2 * r(), sway: 0.85 + 0.3 * r(), yawBias: (r() - 0.5) * 3, cad: (0.95 + 0.1 * r()) * (/pencil/.test(p.char.outfit) ? 1.2 : 1) * (p.char.elder ? 1.04 : 1), wid: (0.75 + 0.55 * r()) * (p.char.elder ? 1.25 : 1), stoop: p.char.elder ? 4 + 4 * r() : 0 } };
   }
   /** One frame of the gait, after the mixer: the gait is told where the person is (position, heading, the ground speed they actually covered) and writes over the clip's pose.
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step
@@ -951,7 +953,7 @@ export class AnimCrowd {
    *  no steering round things - the platform's floor map does not reach in there, and a veer would be through the door jamb. They wait behind anyone in the way ahead. */
   /** a person's own pace against the crowd's: older people walk at about 1.0-1.1 m/s against 1.3-1.4 for younger adults (Bohannon 1997, Bohannon & Andrews 2011);
    *  a tight skirt shortens the step (people review 2: elders walked like everyone else, a pencil skirt tore at a full stride) */
-  _paceK(p) { const c = p.char; if (!c) return 1; return c._pace || (c._pace = (c.elder ? 0.78 : 1) * (/pencil/.test(c.outfit) ? 0.9 : 1)); }
+  _paceK(p) { const c = p.char; if (!c) return 1; return c._pace || (c._pace = (c.elder ? 0.78 : 1) * (/pencil/.test(c.outfit) ? 0.85 : 1)); }
   _railStep(p, dt, sp) {
     sp *= this._paceK(p);
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
@@ -986,7 +988,7 @@ export class AnimCrowd {
       if (s.board) { const bz = s.board.zs ? s.board.zs.reduce((b, z) => (Math.abs(z - p.z) < Math.abs(b - p.z) ? z : b), s.board.zs[0]) : s.board.z, bd = Math.hypot(s.board.x - p.x, bz - p.z); if (bd > 1.5 && bd < 14) { const y = rel(s.board.x, bz); if (Math.abs(y) < 1.3) ctx.board = { yaw: y, pitch: Math.atan2(s.board.y - eye, bd) }; } }
     }
     const o = attend(a, dt, this.rng, ctx);
-    if (busy || p.mode === 'go') { p.homeYaw = null; return; }
+    if (busy || p.mode === 'go' || p.static) { p.homeYaw = null; return; }   // (a rider or anyone placed by hand keeps their place: the face and eyes only)
     if (o.turn != null) { if (p.homeYaw == null) p.homeYaw = p.yawT ?? p.yaw; p.yawT = p.yaw + o.turn; }
     else if (!a.near && p.homeYaw != null) { p.yawT = p.homeYaw; p.homeYaw = null; }
     if (o.yield && w && !p.revert && d > 1e-4) this._makeWay(p, -dx / d, -dz / d);

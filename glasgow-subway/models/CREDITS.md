@@ -121,7 +121,6 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/elvs_hazel_hair | Elvaerwyn | CC-BY |
 | hair/elvs_island_princess_hair | Elvaerwyn | CC-BY |
 | hair/elvs_keylth_hair | Elvaerwyn | CC-BY |
-| hair/elvs_lady_hippy_hair | Elvaerwyn | CC-BY |
 | hair/elvs_maxwell_hair | Elvaerwyn | CC-BY |
 | hair/elvs_short_daisy_hair | Elvaerwyn | CC-BY |
 | hair/long01 | makehuman_system | CC0 |

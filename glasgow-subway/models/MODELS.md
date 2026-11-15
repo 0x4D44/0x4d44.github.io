@@ -283,6 +283,16 @@ Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scor
   blowpipe stops at the collar (they went through his face).
 - `girl` and `woman_puffer` are tagged `shorts` (they always wore them).
 
+### Review 3 fixes (2026-11-15, `research/people-reviews/REVIEW_3.md`, scored 6.5)
+
+- **Hair that reads from the front**: `ponytail01` (a boy's crop seen face on) kept only by the runner and `sum_crop_denim`; `girl`, `girl_ginger`, `teen_girl`,
+  `woman_puffer`, `teen_crop_leggings`, `girl_school_kilt`, `teen_hippy`, `woman_student`, `teen_tee`, `woman_scarf`, `ya_ginger_long` re-haired.
+- **One outfit on six people**: the stock `*_casualsuit*` tops are recoloured per wearer (`hue=`, a hue-rotated copy of the texture: `hue_shift`).
+- **Far model**: footwear keeps 420 triangles (was 260; a flat black plate under some shoes).
+- In the game (people.js / bodyfit.js): clips cross-fade again (`this.crossfade` and `maxHi` had been commented out), seated riders smile and look about,
+  skirts slim the thighs from 3-4 cm above the hem and are drawn two-sided, waistbands are drawn in under tops, the platform crowd keeps up to 28 people on the
+  full model and anyone within 5 m swaps to it at once.
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.

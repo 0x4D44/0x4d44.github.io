@@ -267,6 +267,7 @@ export function fitLegs(THREE, root, o = {}) {
     if (low < n * 0.05) continue;   // a hat, a scarf: nothing of it hangs over the legs (a mini skirt only has ~15% of its vertices under the hip joint)
     const rig = legRig(THREE, m); if (!rig) continue;
     hang.push({ m, rig }); hem = Math.min(hem, lo);
+    m.material.side = THREE.DoubleSide;   // (where the legs push a big decimated face of the skirt over on itself it was culled: a hole with the thigh behind it. Now its inside shows - review 3, woman_coat)
   }
   if (hang.length && slim > 0) stats.slim = slimThighs(THREE, skin, srig, hem, slim, { cap: o.slimCap, ramp: o.slimRamp });   // the skin is slimmed AFTER its radii are taken: the cloth is still held off the real legs
   for (const { m, rig } of hang) {
