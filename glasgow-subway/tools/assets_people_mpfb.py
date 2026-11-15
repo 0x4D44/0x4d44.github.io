@@ -1428,7 +1428,7 @@ def budget_and_join(person, total):
     cl = [o for o, r in parts if r in ('cloth', 'shoe')]
     pool = left * share['cloth']
     for o in [o for o in cl if _shoe(o)]:
-        tgt[id(o)] = min(cnt[id(o)], (260 if LOD else 640) / max(1, sum(1 for q in cl if _shoe(q)))); pool -= tgt[id(o)]
+        tgt[id(o)] = min(cnt[id(o)], (420 if LOD else 640) / max(1, sum(1 for q in cl if _shoe(q)))); pool -= tgt[id(o)]
     todo = [o for o in cl if not _shoe(o)]
     wgt = {id(o): max(1e-6, _area(o)) for o in todo}
     while todo:

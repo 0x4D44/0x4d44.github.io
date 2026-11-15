@@ -472,6 +472,36 @@ export function trimUnderTrousers(THREE, root, o = {}) {
   return { dropped: g.userData.underTrousers, lo: +lo.toFixed(3), hi: +hi.toFixed(3) };
 }
 
+/** Draw in the part of a pair of trousers that lies inside a top worn over it (above the top's hem). The waistband of the low-poly trousers came
+ *  through a tank top or a sweater as dark shards across the small of the back, worst on the simplified model (people review 2: ya_tattoo_tank, woman_elder).
+ *  Returns { dropped (vertices moved), hem } or null. */
+export function trimUnderTop(THREE, root, o = {}) {
+  const inset = o.inset != null ? o.inset : 0.015, tops = [], legs = [];
+  root.traverse((m) => {
+    if (!m.isSkinnedMesh || !m.material || !m.geometry || !m.geometry.attributes.position) return;
+    const nm = m.material.name || '';
+    if (!/^cloth_/i.test(nm)) return;
+    if (/sweater|camisole|shirt|tank|top|hood|blouse|tee|polo/i.test(nm) && !/shoe|boot|sock|tucked|jacket|suit/i.test(nm)) tops.push(m);   // (not an open jacket, nor a shirt tucked in)
+    else if (!LEG_SKIP.test(nm)) legs.push(m);
+  });
+  if (!tops.length || !legs.length) return null;
+  let hem = 1e9;
+  for (const m of tops) { const P = m.geometry.attributes.position, n = P.count, ys = new Float32Array(n); for (let i = 0; i < n; i++) ys[i] = P.getY(i); ys.sort(); const lo = ys[Math.floor((n - 1) * 0.02)], hi = ys[n - 1]; if (hi - lo > 0.25) hem = Math.min(hem, lo); }
+  if (hem > 5) return null;
+  let dropped = 0;
+  for (const m of legs) {
+    const g = m.geometry, idx = g.index, P = g.attributes.position; if (!idx) continue;
+    if (g.userData.underTop != null) { dropped += g.userData.underTop; continue; }
+    let hi = -1e9; for (let i = 0; i < P.count; i++) hi = Math.max(hi, P.getY(i)); if (hi <= hem) { g.userData.underTop = 0; continue; }
+    // under the top the trousers are drawn in, along their own normals, by up to `inset` (eased in over the first 2 cm above the hem): solid still, but behind the
+    // top's cloth (the body there is dropped by trimUnderTrousers, so nothing is pushed into view). Dropping them instead opened holes when a sweater rode up.
+    const N = g.attributes.normal; let moved = 0;
+    if (N) for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y <= hem) continue; const k = inset * Math.min(1, (y - hem) / 0.02); P.setXYZ(i, P.getX(i) - N.getX(i) * k, y - N.getY(i) * k, P.getZ(i) - N.getZ(i) * k); moved++; }
+    P.needsUpdate = true; g.userData.underTop = moved; dropped += moved;
+  }
+  return { dropped, hem: +hem.toFixed(3) };
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Webbing between a hand and a leg.
 // The simplified body (level of detail 1, what everyone beyond the nearest few people is drawn with) of the three long-skirted women was decimated in the bind pose, with
