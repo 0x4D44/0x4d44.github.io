@@ -214,6 +214,7 @@ export class AnimCrowd {
     f.hose = fitHoseLegs(T, n);   // legs for the people in long socks (theirs were deleted with the skin a garment hid); the kilt is held off these
     f.legs = sk ? fitLegs(T, n, f.hose ? { radii: f.hose.radii } : {}) : null;   // skirts held off the thighs (shader patch + slimmed thigh skin)
     f.trim = sk ? trimUnderSkirt(T, n) : null;   // tops: nothing drawn under the skirt's waist edge
+    f.cuffs = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.under = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;   // no skin left under trousers to come through the seat
     f.web = trimWebbing(T, n);
     f.shoes = fitShoes(T, n);   // a stiff shoe that bends at the ball of the foot (the full-detail model only: the simplified one's few big faces gain nothing from it, and it is seen from beyond ~11 m)
@@ -229,6 +230,7 @@ export class AnimCrowd {
     const radii = (f.hoseLod && f.hoseLod.radii) || (f.legs && f.legs.radii) || LEG_RADII[c.id];
     f.legsLod = sk ? fitLegs(T, n, { radii, slim: 0.055, slimCap: 0.55, slimRamp: 0.2 }) : null;
     f.trimLod = sk ? trimUnderSkirt(T, n) : null;
+    f.cuffsLod = !sk && /trousers|trews|leggings/.test(c.outfit) ? this._extendCuffs(n) : 0;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
     f.webLod = trimWebbing(T, n);   // the simplified body has a few triangles joining a hand to a thigh
   }
@@ -251,6 +253,50 @@ export class AnimCrowd {
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
    *  band at the midriff. Find the top's centred lower hem loop and extrude it straight down (same skin weights) so it tucks inside the skirt. Patches the shared geometry once. */
+  /** add a band of faces under a boundary loop of a garment: copies of its vertices (same weights, UVs) `drop` lower (never below `floor`), stitched to it */
+  _extrudeLoop(g, best, edges, drop, floor) {
+    const THREE = this.THREE, P = g.attributes.position, idx = g.index;
+      const nv = new Map(), attrs = Object.keys(g.attributes), n0 = P.count; let add = 0;
+      for (const v of best) nv.set(v, n0 + add++);
+      for (const name of attrs) {   // glTF attributes can be interleaved (array is the shared buffer): read through stride/offset, write a plain packed copy
+        const A = g.attributes[name], it = A.itemSize, stride = A.isInterleavedBufferAttribute ? A.data.stride : it, off = A.isInterleavedBufferAttribute ? A.offset : 0, src = A.isInterleavedBufferAttribute ? A.data.array : A.array;
+        const arr = new src.constructor((n0 + add) * it); for (let i = 0; i < n0; i++) for (let c = 0; c < it; c++) arr[i * it + c] = src[i * stride + off + c];
+        for (const [v, w] of nv) { for (let c = 0; c < it; c++) arr[w * it + c] = src[v * stride + off + c]; if (name === 'position') arr[w * 3 + 1] = Math.max(floor, arr[w * 3 + 1] - drop); }
+        g.setAttribute(name, new THREE.BufferAttribute(arr, it, A.normalized));
+      }
+      const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
+      const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
+  }
+  /** Full-length trousers: each ankle cuff is carried a few cm down into the shoe. The decimated cuff is a ragged loop and the ankle skin showed between it
+   *  and the shoe as jagged skin-coloured teeth (people review 1: 'ragged hems'). Returns the number of cuffs extended. */
+  _extendCuffs(root, drop = 0.045) {
+    let n = 0, cuffLo = 1e9;
+    root.traverse((o) => {
+      if (!o.isSkinnedMesh || !o.material || !/^cloth_/i.test(o.material.name || '') || /shoe|boot|sock|hose|sweater|jacket|camisole|shirt|belt|sneaker|flats/i.test(o.material.name)) return;
+      const g = o.geometry; if (g.userData.cuffExt != null) { n += g.userData.cuffExt; return; } g.userData.cuffExt = 0;
+      const P = g.attributes.position, idx = g.index; if (!idx) return;
+      let lo = 1e9, hi = -1e9; for (let i = 0; i < P.count; i++) { const y = P.getY(i); lo = Math.min(lo, y); hi = Math.max(hi, y); }
+      if (lo > 0.2 || hi < 0.7) return;   // not trousers that reach the ankle
+      const key = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3);
+      const canon = new Map(), cid = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { const k = key(i); let c = canon.get(k); if (c == null) { c = i; canon.set(k, c); } cid[i] = c; }
+      const ec = new Map(), dir = new Map();
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = cid[idx.getX(t + e)], b = cid[idx.getX(t + (e + 1) % 3)]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b]); }
+      const adj = new Map(), edges = []; for (const [k, c] of ec) if (c === 1) { const [a, b] = dir.get(k); edges.push([a, b]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      const seen = new Set(); for (const v of adj.keys()) { if (seen.has(v)) continue; const comp = [], st = [v]; seen.add(v); while (st.length) { const u = st.pop(); comp.push(u); for (const w of adj.get(u)) if (!seen.has(w)) { seen.add(w); st.push(w); } }
+        let y = 0; for (const u of comp) y += P.getY(u); y /= comp.length;
+        if (comp.length >= 6 && y < lo + 0.06) { this._extrudeLoop(g, new Set(comp), edges, drop, 0.025); g.userData.cuffExt++; }
+      }
+      n += g.userData.cuffExt; cuffLo = Math.min(cuffLo, lo);
+    });
+    // ...and a shoe's collar, wholly inside a trouser leg that comes down over the shoe, is dropped: a decimated collar pokes through the cuff as ragged teeth
+    if (cuffLo < 0.09) root.traverse((o) => {
+      if (!o.isSkinnedMesh || !o.material || !/shoe|boot|sneaker|flats/i.test(o.material.name || '')) return;
+      const g = o.geometry, idx = g.index, P = g.attributes.position; if (!idx || g.userData.underCuff != null) return;
+      const lim = cuffLo + 0.045, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); const ya = P.getY(a), yb = P.getY(b), yc = P.getY(c); if ((ya + yb + yc) / 3 <= lim && Math.max(ya, yb, yc) <= lim + 0.04) keep.push(a, b, c); }   // (a sliver with one low corner reaching up the leg goes too)
+      g.userData.underCuff = (idx.count - keep.length) / 3; if (keep.length < idx.count) g.setIndex(new this.THREE.BufferAttribute(new Uint32Array(keep), 1));
+    });
+    return n;
+  }
   _extendHem(root, drop = 0.13) {
     const THREE = this.THREE;
     root.traverse((o) => {
@@ -267,16 +313,7 @@ export class AnimCrowd {
       let best = null, bestY = 1e9;
       for (const L of loops) { let x0 = 1e9, x1 = -1e9, y = 0; for (const v of L) { x0 = Math.min(x0, P.getX(v)); x1 = Math.max(x1, P.getX(v)); y += P.getY(v); } y /= L.length; if (x0 < -0.05 && x1 > 0.05 && L.length > 8 && y < bestY) { bestY = y; best = new Set(L); } }
       if (!best) return;
-      const nv = new Map(), attrs = Object.keys(g.attributes), n0 = P.count; let add = 0;
-      for (const v of best) nv.set(v, n0 + add++);
-      for (const name of attrs) {   // glTF attributes can be interleaved (array is the shared buffer): read through stride/offset, write a plain packed copy
-        const A = g.attributes[name], it = A.itemSize, stride = A.isInterleavedBufferAttribute ? A.data.stride : it, off = A.isInterleavedBufferAttribute ? A.offset : 0, src = A.isInterleavedBufferAttribute ? A.data.array : A.array;
-        const arr = new src.constructor((n0 + add) * it); for (let i = 0; i < n0; i++) for (let c = 0; c < it; c++) arr[i * it + c] = src[i * stride + off + c];
-        for (const [v, w] of nv) { for (let c = 0; c < it; c++) arr[w * it + c] = src[v * stride + off + c]; if (name === 'position') arr[w * 3 + 1] -= drop; }
-        g.setAttribute(name, new THREE.BufferAttribute(arr, it, A.normalized));
-      }
-      const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
-      const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
+      this._extrudeLoop(g, best, edges, drop, -1e9);
     });
   }
   /** strength of the skirt-off-the-legs push (1 = on, the default; 0 = off, for before / after comparisons) */
@@ -411,7 +448,7 @@ export class AnimCrowd {
     if (!clip) return; const n = this._action(p, clip), o = p.cur; if (o === n) { n.timeScale = speed; return; }
     n.timeScale = speed; n.enabled = true;
     if (o && fade > 0) { n.reset().setEffectiveWeight(1).play(); n.crossFadeFrom(o, fade, false); } else { if (o) o.setEffectiveWeight(0); n.setEffectiveWeight(1); }
-    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true;
+    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0;   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
   }
   /** state -> clip choice (idle variants rotate, phone/talk/pole/fidget when the asset has them) */
   _enter(p, state, fade = this.crossfade) {

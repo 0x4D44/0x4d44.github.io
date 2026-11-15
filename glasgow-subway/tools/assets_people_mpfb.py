@@ -37,7 +37,7 @@ PEOPLE = [
          clothes=['mindfront_knitted_sweater_01', 'mindfront_male_trousers_1', 'mindfront_shoes_oxford_male']),
     dict(id='man_puffer', kind='man', outfit='trousers', H=1.76, gender=1, age=0.42, weight=0.5, muscle=0.55, race=(0.05, 0.05, 0.9), skin='young_african_male', eye='brown', brows='eyebrow003', lashes=None, hair='short02', hair_col='#17120e',
          clothes=['male_casualsuit04', 'culturalibre_sneakers']),
-    dict(id='man_beard', kind='man', outfit='trousers', H=1.75, gender=1, age=0.52, weight=0.80, muscle=0.55, race=(0.1, 0.3, 0.6), skin='middleage_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short04', hair_col='#241812',
+    dict(id='man_beard', kind='man', outfit='trousers', H=1.75, gender=1, age=0.52, weight=0.80, muscle=0.55, race=(0.0, 1.0, 0.0), skin='jartur69_middleage_slavic_male_with_genitals_and_beard', eye='blue', brows='eyebrow005', lashes=None, hair='short04', hair_col='#4a3424', beard='#3b2a1e',
          clothes=['mindfront_knitted_sweater_02', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male']),
     dict(id='staff_hivis', kind='staff', outfit='trousers', H=1.78, gender=1, age=0.45, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short01', hair_col='#3a281c',
          clothes=['male_worksuit01', 'toigo_ankle_boots_male'], tint=(1.0, 0.95, 0.12)),
@@ -512,11 +512,36 @@ def replace_eyes(person):
     bpy.data.objects.remove(old)
     return ne
 
+def paint_beard(src, col):
+    """A full short beard and moustache painted on to a copy of a skin texture (MakeHuman's UV: the face lies on its side at the right of the map, chin to the
+    right). People review 1: 'man_beard has no beard'. The jartur69 beard skin is CC0 but its stubble washes out to nothing at game texture sizes, so the beard
+    area (below the nose, within the jaw, lips left alone) is blended toward the beard colour with a fine noise for texture. Returns the new file's path."""
+    import numpy as np
+    from PIL import Image
+    out = os.path.join(TEXDIR, 'beard_' + os.path.basename(src).rsplit('.', 1)[0] + col.strip('#') + '.png')
+    if os.path.exists(out): return out
+    im = Image.open(src).convert('RGB'); W, H = im.size; a = np.asarray(im).astype(np.float32) / 255.0
+    yy, xx = np.mgrid[0:H, 0:W]; u = xx / W; v = yy / H
+    ss = lambda e0, e1, x: np.clip((x - e0) / (e1 - e0), 0, 1) ** 2 * (3 - 2 * np.clip((x - e0) / (e1 - e0), 0, 1))
+    dy = np.abs(v - 0.515); rng = np.random.default_rng(7); n = rng.random((H, W)).astype(np.float32)
+    # the cheek line: just under the nose in the middle (the moustache), dipping down over the cheeks, rising again to the sideburns in front of the ears
+    u0 = 0.887 + 0.013 * np.exp(-((dy - 0.058) / 0.022) ** 2) - 0.022 * ss(0.088, 0.108, dy) + (n - 0.5) * 0.005
+    m = ss(u0 - 0.002, u0 + 0.010, u) * (1 - ss(0.112, 0.13, dy)) * (1 - ss(0.985, 0.998, u))
+    lip = np.clip(((a[..., 0] - a[..., 1]) - 0.17) * 8, 0, 1) * (np.abs(u - 0.906) < 0.02) * (dy < 0.045)
+    m = m * (1 - lip)
+    c = np.array([int(col[1:3], 16), int(col[3:5], 16), int(col[5:7], 16)], np.float32) / 255.0
+    beard = c[None, None, :] * (0.7 + 0.6 * n[..., None])
+    k = (m * 0.92)[..., None]
+    Image.fromarray((np.clip(a * (1 - k) + beard * k, 0, 1) * 255).astype(np.uint8)).save(out)
+    return out
+
 def assign_materials(person, maxpx=1024):
     spec = person['spec']; human = person['human']
     sk = spec['skin']; mh = parse_mhmat(P('skins', sk, sk + '.mhmat'))
     human.data.materials.clear()
-    human.data.materials.append(make_material('skin_' + sk, os.path.join(mh['_dir'], mh['diffuseTexture']), None, rough=0.55, spec=0.35, maxpx=maxpx * 2))
+    skin_tex = os.path.join(mh['_dir'], mh['diffuseTexture'])
+    if spec.get('beard'): skin_tex = paint_beard(skin_tex, spec['beard'])
+    human.data.materials.append(make_material('skin_' + sk + ('_beard' if spec.get('beard') else ''), skin_tex, None, rough=0.55, spec=0.35, maxpx=maxpx * 2))
     for o, role, mpath in person['parts']:
         mh = parse_mhmat(mpath); tex = mh.get('diffuseTexture'); nor = mh.get('normalmapTexture')
         o.data.materials.clear()

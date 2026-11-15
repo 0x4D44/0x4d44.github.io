@@ -305,7 +305,8 @@ class Sim {
       const sc = tv.saloon; if (!sc || !sc.people.length) continue;
       const list = [], perCar = tv.cars.map(() => 0), tag = tv === this.trainView ? '' : tv.line + ' train: ';
       for (const p of sc.people) {
-        if (!p.obj) continue; const b = sc.bodyOf(p); out.checked++; const sit = p.state === 'sit'; sit ? out.seated++ : out.standing++;
+        if (!p.obj) continue; if (p.fadeEnd && sc._clock < p.fadeEnd) { out.fading = (out.fading || 0) + 1; continue; }   // (half-way through sitting down or standing up: two clips blended, neither pose's contacts apply)
+        const b = sc.bodyOf(p); out.checked++; const sit = p.state === 'sit'; sit ? out.seated++ : out.standing++;
         const footErr = b.foot - PYf; out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
         if (footErr < -0.04) bad(`${tag}${b.id} ${p.state}: feet ${(-footErr * 100).toFixed(0)} cm below the floor`);
         if (footErr > (sit ? 0.07 : 0.04)) bad(`${tag}${b.id} ${p.state}: feet ${(footErr * 100).toFixed(0)} cm above the floor (levitating)`);

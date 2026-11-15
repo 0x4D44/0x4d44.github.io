@@ -23,6 +23,10 @@ for k, n in sorted(used):
         m = re.search(r'^#?\s*licen[sc]e:?\s+(.*)$', t, re.M | re.I)
         if m and not li: li = m.group(1).strip()
         if 'explicitly released as CC0' in t and not li: li = 'CC0'
+    if not li or not au:   # (no header in the asset: the pack's manifest, data/packs/*.json, names author and licence - e.g. the jartur69 skins)
+        for pj in glob.glob(D + 'packs/*.json'):
+            e = json.load(open(pj)).get(n)
+            if e: li = li or e.get('license', ''); au = au or e.get('author', ''); break
     li = re.sub(r'\s+', ' ', li); li = re.sub(r'^cc[ _-]?by', 'CC-BY', li, flags=re.I); li = re.sub(r'^cc[ _-]?0$', 'CC0', li, flags=re.I)
     li = li.replace('CC_by', 'CC-BY').replace('CC BY 4.0', 'CC-BY 4.0').replace('CC BY 3.0', 'CC-BY 3.0')
     li = re.sub(r'\s*\(https?://[^)]*\)', '', li)
