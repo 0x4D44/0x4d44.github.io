@@ -176,6 +176,8 @@ function lnerShapes(nose: number): Shape[] {
  * 1.2 m leaf (core/train.ts EMU_FIGURES.adelante.doorWidth). A plain number because train.ts imports this module; web/tests/train-livery.test.ts ties it to the plan.
  */
 export const GC_CAB_DOOR_FRONT = 4.2;
+/** where the Class 180's face stands, metres from the car's end: its coupler is uncovered, so train.ts faceSetback is END_GAP (0.35 m); web/tests/train-livery.test.ts ties the two */
+export const GC_TIP = 0.35;
 /** how far the dark door frame stands out round a leaf (train.ts's door builder: 0.05 m) */
 const GC_DOOR_FRAME = 0.05;
 
@@ -194,12 +196,21 @@ const GC_DOOR_FRAME = 0.05;
  * (GC_CAB_DOOR_FRONT), so the band runs level 1.37 to 1.67 m from the door forward and only then sweeps down. The knots nearer the tip are unchanged.
  * The cantrail line starts square over the door frame's front edge (it started 0.25 m further forward, on the nose's loft, where the wall's top is still under the
  * line's top and the line bent over the shoulder: the kink round 9's score saw at 3/4). That it does not run further forward over the nose is ASSUMED.
+ * CHANGED (round 11): round 10's score read the York photograph again: the top holds the band's height only ~0.7 m ahead of the leaf (round 10: 1.2 m), then dives on a
+ * convex curve, steepening toward the nose; the foot holds ~0.55 m, then falls slowly and meets the side's lower edge ~1.75 m ahead (round 10: ~1.2 m); the orange ends
+ * ~0.5 m short of the tip, the nose's lower corner black. The top's dive keeps York's profile (1.57 m 0.4 of the way along it, 1.23 m at 0.71, 0.93 m at 0.95) laid
+ * from its hold to the end; the foot reads 1.18 m 1.1 m ahead and the side's lower edge (0.96 m) at 1.75 m, then runs on under that edge, out of sight, to the end.
+ * GC180-01's and GC180-05's sweep "under the lamp pod" (the knots near the tip that every round kept) gives way to York, the one side-on photograph.
  */
 function grandCentralShapes(_nose: number): Shape[] {
   const [bandBottom, bandTop] = LIVERIES.grandcentral.stripeY ?? [1.37, 1.67];
   const dF = GC_CAB_DOOR_FRONT;
-  const top = smoothCurve([[0.1, 0.78], [0.7, 1.0], [1.5, 1.2], [dF - 1.6, bandTop - 0.1], [dF - 1.2, bandTop], [TEX_SPAN, bandTop]], 96);
-  const bottom = smoothCurve([[0.1, TEX_Y0], [0.7, 0.5], [1.5, 0.62], [dF - 1.9, 0.77], [dF - 1.3, 1.0], [dF - 0.85, 1.18], [dF - 0.4, bandBottom], [TEX_SPAN, bandBottom]], 96);
+  // the dive: from the top's hold (0.7 m ahead of the leaf) to the orange's end (0.5 m behind the tip, the face's foot standing GC_TIP from the car's end)
+  const hold = dF - 0.7;
+  const end = GC_TIP + 0.5;
+  const along = (u: number): number => hold - u * (hold - end);
+  const top = smoothCurve([[end, 0.64], [along(0.95), 0.93], [along(0.71), 1.23], [along(0.405), 1.565], [hold, bandTop], [TEX_SPAN, bandTop]], 160);
+  const bottom = smoothCurve([[end, 0.6], [1.6, 0.8], [dF - 1.75, 0.96], [dF - 1.1, 1.18], [dF - 0.55, bandBottom], [TEX_SPAN, bandBottom]], 160);
   return [
     { colour: GC_ORANGE, pts: between(top, bottom) },
     { colour: GC_ORANGE, pts: rect(dF - GC_DOOR_FRAME, TEX_SPAN, 3.37, 3.41) },
