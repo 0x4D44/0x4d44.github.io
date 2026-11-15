@@ -47,7 +47,7 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
  soffitStone:.9,joint:.05,soffitBend:1,
- soffitFill:.25} as const;
+ soffitFill:.25,soffitJoint:{width:.06,tone:.5,inset:.015}} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -83,13 +83,15 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * the shaded face's brightness by noon whatever the bend (0.27 unbent), so `soffit` is 0.85 of `stone`: 0.41 of the face by noon (the
  * lead's target, 0.4 to 0.5), and at dusk still under it. */
 /* Round 5 (the r4c score, LAND F5 8.3 F6 7.2, judged by eye): the soffits' top third still near black, where R-slb-a's whole underside
- * reads as stone; the soffit's bond does not read at the frozen cameras' range and the masonry looks evenly
- * tiled (round 5's next commits). So (ASSUMED amounts):
+ * reads as stone; the soffit's bond does not read at the frozen cameras' range; the masonry looks evenly tiled (round 5's next commit). So (ASSUMED amounts):
  * - `soffitFill`: the light thrown up off the ground and the far haunch, which the hemisphere's ground term under-gives a barrel's
  *   crown: each soffit stone's colour is lifted by `soffitFill` times the square of its height up the arch (0 at the springing, 1 at the
  *   crown), so the crown draws at 0.47 of the shaded face's brightness by noon (the tone-mapped model in the tests; it was 0.40) and
- *   the springing still at 1.1 times the crown. */
-export const SOFFIT_TONES=[1,.9,1,1.1,.86,1,1.06,.94] as const;
+ *   the springing still at 1.1 times the crown;
+ * - the soffit's stones in a wider spread of tones (SOFFIT_TONES, 0.8-1.16), with dark joints between them (`soffitJoint`: `width` m,
+ *   `tone` of the stone's colour, `inset` m into the opening along the arch's normal), bed joints across the barrel at every facet and
+ *   cross joints between the stones of each course. */
+export const SOFFIT_TONES=[1,.84,1.04,1.16,.8,.98,1.1,.9] as const;
 export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
@@ -133,7 +135,7 @@ function roadSection(b:Batch,a:Pt,na:Pt,ya:number,c:Pt,nc:Pt,yc:number):void{
 }
 
 /** What the bridge drew, for tests. */
-export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;imposts:number;stiffeners:number;triangles:number}
+export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;soffitJoints:number;imposts:number;stiffeners:number;triangles:number}
 
 /** The plan direction the north face looks (the side of the way whose outward normal points north, -z). */
 export const ST_LEONARDS_NORTH:1|-1=V[1]<0?1:-1;
@@ -162,7 +164,7 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
  const out=(sg:number):V3=>[sg*V[0],0,sg*V[1]];
  // the arches: each soffit a barrel across the deck's width, smooth-shaded; each face a coursed spandrel from the arch to the fascia's
  // foot, and a ring of voussoirs proud of it, clipped under the string course
- const spans=stLeonardsSpans(),archSegments:number[]=[];let voussoirs=0,joints=0;
+ const spans=stLeonardsSpans(),archSegments:number[]=[];let voussoirs=0,joints=0,soffitJoints=0;
  for(const a of spans){
   const n=stLeonardsArchSegments(a.s1-a.s0);archSegments.push(n);
   const ss=Array.from({length:n+1},(_,i)=>a.s0+(a.s1-a.s0)*i/n);
@@ -174,13 +176,18 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
   for(let i=0;i<n;i++){
    const n0=bent(nrm[i]),n1=bent(nrm[i+1]);
    // the soffit's stones: across the barrel in stretcher bond, each its own tone; the corners keep the ellipse's normals
-   // (round 5) lifted by the fill with height up the arch
-   const up=Math.min(1,Math.max(0,((ys[i]+ys[i+1])/2-a.spring)/(a.crown-a.spring))),lift=1+K.soffitFill*up*up;
+   // (round 5) lifted by the fill with height up the arch, and jointed: the cross joint at each stone's start, the bed joint at the facet's
+   const up=Math.min(1,Math.max(0,((ys[i]+ys[i+1])/2-a.spring)/(a.crown-a.spring))),lift=1+K.soffitFill*up*up,SJ=K.soffitJoint;
+   const into=(k:number,o:number,along:number,dy:number):V3=>{const d=nrm[k];return v3(stLeonardsAt(ss[k]+along+d[0]*SJ.inset,o),ys[k]+dy+d[1]*SJ.inset);};
    for(let o=-K.half-(i%2)*K.soffitStone/2;o<K.half;o+=K.soffitStone){
     const oa=Math.max(-K.half,o),ob=Math.min(K.half,o+K.soffitStone);if(ob-oa<.01)continue;
     const f=SOFFIT_TONES[(i*7+Math.round((o+K.half)/K.soffitStone)*3+spans.indexOf(a)*5)%SOFFIT_TONES.length]*lift,c:Rgb=[soffit[0]*f,soffit[1]*f,soffit[2]*f];
     b.poly([v3(stLeonardsAt(ss[i],oa),ys[i]),v3(stLeonardsAt(ss[i+1],oa),ys[i+1]),v3(stLeonardsAt(ss[i+1],ob),ys[i+1]),v3(stLeonardsAt(ss[i],ob),ys[i])],undefined,{normals:[n0,n1,n1,n0],color:c});
+    if(oa>-K.half){const jc:Rgb=[c[0]*SJ.tone,c[1]*SJ.tone,c[2]*SJ.tone],w=SJ.width/2;
+     b.poly([into(i,oa-w,0,0),into(i+1,oa-w,0,0),into(i+1,oa+w,0,0),into(i,oa+w,0,0)],undefined,{normals:[n0,n1,n1,n0],color:jc});soffitJoints++;}
    }
+   if(i>0){const t:[number,number]=[-nrm[i][1],nrm[i][0]],w=SJ.width/2,c=soffit.map(x=>x*lift*SJ.tone) as Rgb;
+    b.poly([into(i,-K.half,-t[0]*w,-t[1]*w),into(i,-K.half,t[0]*w,t[1]*w),into(i,K.half,t[0]*w,t[1]*w),into(i,K.half,-t[0]*w,-t[1]*w)],undefined,{normals:[n0,n0,n0,n0],color:c});soffitJoints++;}
    for(const sg of [-1,1]){
     const r0=stLeonardsAt(ss[i],sg*K.half),r1=stLeonardsAt(ss[i+1],sg*K.half);
     face(ashlar,[v3(r0,ys[i]),v3(r1,ys[i+1]),v3(r1,fasciaFoot),v3(r0,fasciaFoot)],[ss[i],ss[i+1],ss[i+1],ss[i]],out(sg),stone);
@@ -276,5 +283,5 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    d+=dl;approachSegments++;
   }
  }
- return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,imposts,stiffeners,triangles:b.triangles+(ashlar===b?0:ashlar.triangles)-before};
+ return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,soffitJoints,imposts,stiffeners,triangles:b.triangles+(ashlar===b?0:ashlar.triangles)-before};
 }

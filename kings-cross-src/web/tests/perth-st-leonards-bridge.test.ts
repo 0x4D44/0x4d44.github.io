@@ -376,3 +376,25 @@ test('round 5: by noon the soffits\' crowns draw at 0.45-0.55 of the shaded face
   assert.ok(k.brightest <= k.face, `dusk soffit up to ${k.brightest.toFixed(4)} against the north face ${k.face.toFixed(4)}`);
 });
 
+test('round 5: the soffit\'s bond reads: stones in a wide spread of tones, with dark joints between them across and along the barrel', () => {
+  assert.ok(Math.max(...SOFFIT_TONES) / Math.min(...SOFFIT_TONES) >= 1.4, `soffit tones ${SOFFIT_TONES}`);
+  assert.ok(ST_LEONARDS.soffitJoint.tone <= .6 && ST_LEONARDS.soffitJoint.width >= .05, JSON.stringify(ST_LEONARDS.soffitJoint));
+  const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
+  // a cross joint between each pair of stones in every course, and a bed joint at every facet of every arch: over a thousand
+  assert.ok(info.soffitJoints >= 1000, `soffit joints ${info.soffitJoints}`);
+  // in the scene: from under each arch's crown, looking up across the barrel, the line meets dark joints as well as stones
+  const bridge = meshNamed('perth-st-leonards-bridge'), col = bridge.geometry.getAttribute('color');
+  for (const a of stLeonardsSpans()) {
+    const s = (a.s0 + a.s1) / 2 + .2, ls: number[] = [];
+    for (let o = -ST_LEONARDS.half + .1; o < ST_LEONARDS.half - .1; o += .01) {
+      const [x, z] = stLeonardsAt(s, o), hit = new THREE.Raycaster(new THREE.Vector3(x, 1, z), new THREE.Vector3(0, 1, 0)).intersectObject(bridge)[0];
+      if (!hit || hit.point.y > a.crown + .05) continue;
+      const i = hit.face!.a; ls.push(col.getX(i) + col.getY(i) + col.getZ(i));
+    }
+    // a joint: under 0.7 of the line's median (the stones' tones are 0.8-1.16 of their course's)
+    const med = [...ls].sort((p, q) => p - q)[Math.floor(ls.length / 2)]!, dark = ls.filter(l => l < .7 * med).length;
+    let runs = 0; for (let j = 1; j < ls.length; j++) if (ls[j]! < .7 * med && ls[j - 1]! >= .7 * med) runs++;
+    assert.ok(ls.length > 1000 && runs >= 8 && dark < ls.length * .15, `arch at ${a.s0.toFixed(1)}: ${runs} joints crossed, ${dark} dark of ${ls.length} samples`);
+  }
+});
+
