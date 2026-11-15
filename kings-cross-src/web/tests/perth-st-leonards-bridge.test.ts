@@ -398,3 +398,25 @@ test('round 5: the soffit\'s bond reads: stones in a wide spread of tones, with 
   }
 });
 
+test('round 5: the coursed ashlar is weathered: its tone varies across each face, and the piers\' feet are stained darker', () => {
+  const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  // across the faces looking north and south (each side alone, so the north face's shade is not counted as variation)
+  for (const north of [true, false]) {
+    const ls: number[] = [];
+    for (let i = 0; i < ashlar.count; i++) { const nz = ashlar.normals[3 * i + 2]!; if (north ? nz < -.7 : nz > .7) ls.push(ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!); }
+    const m = ls.reduce((a, b) => a + b, 0) / ls.length, sd = Math.sqrt(ls.reduce((a, b) => a + (b - m) ** 2, 0) / ls.length);
+    assert.ok(sd / m >= .03 && sd / m <= .12, `${north ? 'north' : 'south'} face: tone spread ${(sd / m).toFixed(3)} of ${ls.length} corners`);
+  }
+  // each pier's faces: the corners at its foot against those at its springing
+  for (const c of ST_LEONARDS.piers) {
+    let foot = 0, nf = 0, top = 0, nt = 0;
+    for (let i = 0; i < ashlar.count; i++) {
+      const x = ashlar.positions[3 * i]!, y = ashlar.positions[3 * i + 1]!, z = ashlar.positions[3 * i + 2]!, f = stLeonardsFrame([x, z]);
+      if (Math.abs(f.s - c) > ST_LEONARDS.pierWidth / 2 + .01 || Math.abs(ashlar.normals[3 * i + 1]!) > .5) continue;
+      const l = ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!;
+      if (y < scene.terrain.heightAt(x, z)) { foot += l; nf++; } else if (Math.abs(y - ST_LEONARDS.spring) < .05) { top += l; nt++; }
+    }
+    assert.ok(nf && nt && foot / nf <= .8 * top / nt, `pier at ${c}: foot ${(foot / nf).toFixed(3)} against springing ${(top / nt).toFixed(3)}`);
+  }
+});

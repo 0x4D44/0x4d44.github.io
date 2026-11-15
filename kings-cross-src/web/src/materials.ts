@@ -1127,6 +1127,8 @@ export interface FaceOptions {
   facing?: V3;
   /** A vertex colour for every corner (white if left out); only a batch made `colored` keeps it. */
   color?: Rgb;
+  /** A vertex colour per corner, in the corners' order (over `color`); only a batch made `colored` keeps them. */
+  colors?: readonly Rgb[];
 }
 
 export interface BatchOptions {
@@ -1217,7 +1219,7 @@ export class Batch {
         const t = uv?.[k];
         this.uvs.push(t ? t[0] : 0, t ? t[1] : 0);
       }
-      if (this.colored) this.colors.push(color[0], color[1], color[2]);
+      if (this.colored) { const c = opts.colors?.[k] ?? color; this.colors.push(c[0], c[1], c[2]); }
     }
     for (let i = 1; i + 1 < n; i++) this.indices.push(base, base + i, base + i + 1);
   }

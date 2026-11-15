@@ -47,7 +47,7 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
  soffitStone:.9,joint:.05,soffitBend:1,
- soffitFill:.25,soffitJoint:{width:.06,tone:.5,inset:.015}} as const;
+ soffitFill:.25,soffitJoint:{width:.06,tone:.5,inset:.015},weather:{jitter:.07,cell:1.7,stain:.28,stainHeight:1.6}} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -83,14 +83,17 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * the shaded face's brightness by noon whatever the bend (0.27 unbent), so `soffit` is 0.85 of `stone`: 0.41 of the face by noon (the
  * lead's target, 0.4 to 0.5), and at dusk still under it. */
 /* Round 5 (the r4c score, LAND F5 8.3 F6 7.2, judged by eye): the soffits' top third still near black, where R-slb-a's whole underside
- * reads as stone; the soffit's bond does not read at the frozen cameras' range; the masonry looks evenly tiled (round 5's next commit). So (ASSUMED amounts):
+ * reads as stone; the soffit's bond does not read at the frozen cameras' range; the masonry looks evenly tiled. So (ASSUMED amounts):
  * - `soffitFill`: the light thrown up off the ground and the far haunch, which the hemisphere's ground term under-gives a barrel's
  *   crown: each soffit stone's colour is lifted by `soffitFill` times the square of its height up the arch (0 at the springing, 1 at the
  *   crown), so the crown draws at 0.47 of the shaded face's brightness by noon (the tone-mapped model in the tests; it was 0.40) and
  *   the springing still at 1.1 times the crown;
  * - the soffit's stones in a wider spread of tones (SOFFIT_TONES, 0.8-1.16), with dark joints between them (`soffitJoint`: `width` m,
  *   `tone` of the stone's colour, `inset` m into the opening along the arch's normal), bed joints across the barrel at every facet and
- *   cross joints between the stones of each course. */
+ *   cross joints between the stones of each course;
+ * - weathering on the coursed ashlar (the faces, piers, abutments and approach walls; the shared coursed texture is untouched): each
+ *   corner's colour jittered by up to `jitter` from a hash of its position on a `cell` m lattice (corners shared between faces agree),
+ *   and the piers' and abutments' feet stained darker, by `stain` at the ground fading out `stainHeight` m up. */
 export const SOFFIT_TONES=[1,.84,1.04,1.16,.8,.98,1.1,.9] as const;
 export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
@@ -141,16 +144,28 @@ export interface StLeonardsInfo {spans:number;piers:number;approachSegments:numb
 export const ST_LEONARDS_NORTH:1|-1=V[1]<0?1:-1;
 const shadeFor=(c:Rgb,n:V3):Rgb=>{const north=-n[2]/(Math.hypot(n[0],n[1],n[2])||1);return north>.5?[c[0]*ST_LEONARDS.northShade,c[1]*ST_LEONARDS.northShade,c[2]*ST_LEONARDS.northShade]:c;};
 /** A face into `b`, shaded if it looks north; world-metre UVs over the coursed tile (`u` along, y up) when `b` is textured. */
-function face(b:Batch,pts:V3[],us:number[],n:V3,c:Rgb):void{
+function face(b:Batch,pts:V3[],us:number[],n:V3,c:Rgb,foot?:number):void{
  const T=PERTH_TEXTURE_TILE.coursed;
- b.poly(pts,b.textured?pts.map((p,i)=>[us[i]/T,p[1]/T]):undefined,{facing:n,color:shadeFor(c,n)});
+ b.poly(pts,b.textured?pts.map((p,i)=>[us[i]/T,p[1]/T]):undefined,{facing:n,color:shadeFor(c,n),...b.textured?{colors:pts.map(p=>shadeFor(weathered(c,p,foot),n))}:{}});
+}
+/** A lattice hash in [-1, 1] of a point (round 5's weathering): smooth over `cell` m, the same for every face meeting at a corner. */
+function lattice(p:V3):number{
+ const W=ST_LEONARDS.weather.cell,g=(x:number,y:number,z:number)=>{const h=Math.sin(x*127.1+y*311.7+z*74.7)*43758.5453;return 2*(h-Math.floor(h))-1;};
+ const fx=p[0]/W,fy=p[1]/W,fz=p[2]/W,ix=Math.floor(fx),iy=Math.floor(fy),iz=Math.floor(fz),tx=fx-ix,ty=fy-iy,tz=fz-iz;
+ let v=0;for(const dx of [0,1])for(const dy of [0,1])for(const dz of [0,1])v+=g(ix+dx,iy+dy,iz+dz)*(dx?tx:1-tx)*(dy?ty:1-ty)*(dz?tz:1-tz);
+ return v;
+}
+/** Coursed stone's colour at a corner: jittered by the lattice, and stained near `foot` (the ground's height) when given. */
+function weathered(c:Rgb,p:V3,foot?:number):Rgb{
+ const W=ST_LEONARDS.weather,stain=foot===undefined?0:W.stain*Math.min(1,Math.max(0,1-(p[1]-foot)/W.stainHeight)),f=(1+W.jitter*lattice(p))*(1-stain);
+ return [c[0]*f,c[1]*f,c[2]*f];
 }
 /** A box whose long axis runs from plan a to p (y0..y1), `half` its half thickness across; each face shaded as `face`; no underside. */
-function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb):void{
+function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb,foot?:number):void{
  const dx=p[0]-a[0],dz=p[1]-a[1],l=Math.hypot(dx,dz);if(l<1e-6||y1<=y0)return;
  const ax:Pt=[dx/l,dz/l],nx:Pt=[-ax[1],ax[0]],at=(i:number,j:number):Pt=>[a[0]+ax[0]*l*i+nx[0]*half*j,a[1]+ax[1]*l*i+nx[1]*half*j];
- for(const j of [-1,1]){const q0=at(0,j),q1=at(1,j);face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,l,l,0],[nx[0]*j,0,nx[1]*j],c);}
- for(const i of [0,1]){const q0=at(i,-1),q1=at(i,1),d=i?1:-1;face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,2*half,2*half,0],[ax[0]*d,0,ax[1]*d],c);}
+ for(const j of [-1,1]){const q0=at(0,j),q1=at(1,j);face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,l,l,0],[nx[0]*j,0,nx[1]*j],c,foot);}
+ for(const i of [0,1]){const q0=at(i,-1),q1=at(i,1),d=i?1:-1;face(b,[v3(q0,y0),v3(q1,y0),v3(q1,y1),v3(q0,y1)],[0,2*half,2*half,0],[ax[0]*d,0,ax[1]*d],c,foot);}
  face(b,[v3(at(0,-1),y1),v3(at(1,-1),y1),v3(at(1,1),y1),v3(at(0,1),y1)],[0,l,l,0],[0,1,0],c);
 }
 
@@ -207,14 +222,14 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
  // band round each at the springing
  let imposts=0;
  for(let i=0;i<K.piers.length;i++){const c=K.piers[i],l=spans[i],r=spans[i+1],top=Math.max(l.spring,r.spring),w=K.pierWidth/2;
-  block(ashlar,stLeonardsAt(c,-K.half),stLeonardsAt(c,K.half),Math.min(low(c-w),low(c+w)),top+.01,w,stone);
+  block(ashlar,stLeonardsAt(c,-K.half),stLeonardsAt(c,K.half),Math.min(low(c-w),low(c+w)),top+.01,w,stone,Math.min(low(c-w),low(c+w))+K.wallDepth);
   for(const sg of [-1,1]){const r0=stLeonardsAt(c-w,sg*K.half),r1=stLeonardsAt(c+w,sg*K.half);
    face(ashlar,[v3(r0,top),v3(r1,top),v3(r1,fasciaFoot),v3(r0,fasciaFoot)],[c-w,c+w,c+w,c-w],out(sg),stone);}
   block(b,stLeonardsAt(c,-K.half-im.proud),stLeonardsAt(c,K.half+im.proud),top-im.height,top,w+im.proud,dressed);imposts++;
  }
  // the abutments' faces toward the arches, ground to the fascia's foot, with their impost bands
- block(ashlar,stLeonardsAt(e0-.6,-K.half),stLeonardsAt(e0-.6,K.half),low(e0),fasciaFoot,.6,stone);
- block(ashlar,stLeonardsAt(e1+.6,-K.half),stLeonardsAt(e1+.6,K.half),low(e1),fasciaFoot,.6,stone);
+ block(ashlar,stLeonardsAt(e0-.6,-K.half),stLeonardsAt(e0-.6,K.half),low(e0),fasciaFoot,.6,stone,low(e0)+K.wallDepth);
+ block(ashlar,stLeonardsAt(e1+.6,-K.half),stLeonardsAt(e1+.6,K.half),low(e1),fasciaFoot,.6,stone,low(e1)+K.wallDepth);
  block(b,stLeonardsAt(e0-.6,-K.half-im.proud),stLeonardsAt(e0-.6,K.half+im.proud),K.spring-im.height,K.spring,.6+im.proud,dressed);
  block(b,stLeonardsAt(e1+.6,-K.half-im.proud),stLeonardsAt(e1+.6,K.half+im.proud),K.spring-im.height,K.spring,.6+im.proud,dressed);imposts+=2;
  // the plate-girder parapets: the web, its flanges and stiffeners on the outer face; the coping over it; the string course under it
