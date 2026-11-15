@@ -7,11 +7,11 @@ import * as THREE from 'three';
 import { ALL_KINDS, TRAIN_SPECS, trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { LIGHT_GAIN, LIVERIES, TEX_H, TEX_SPAN, TEX_W, TEX_Y0, TEX_Y1, shellMaterial } from '../src/livery.ts';
-import { NOSE_RECESS, bodySpec, buildTrain, carSection, frontOf } from '../src/train.ts';
+import { NOSE_RECESS, bodySpec, buildTrain, carSection, faceSetback, frontOf } from '../src/train.ts';
 import { eggSection, halfAt, normalised, ringAt, ringStations } from '../src/train-nose.ts';
 import { col } from '../src/train-geom.ts';
 import { MASK_700, MASK_717 } from '../src/train-face.ts';
-import { GC_CAB_DOOR_FRONT, GC_ORANGE, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
+import { GC_CAB_DOOR_FRONT, GC_ORANGE, GC_TIP, GN387_GREEN, GN_PINSTRIPE, HULL_BAND, HULL_BAND_STEPS, HULL_BAND_STOPS, HULL_BEAK, HULL_BLUE, HULL_CYAN, HULL_DOOR, LNER_BAND, LNER_RED, curveY, hullBandColour, liveryFor, paintSide, shellMaterialFor, sideColourAt, sideShapes, smoothCurve } from '../src/train-livery.ts';
 import type { Paint2D, Scheme } from '../src/train-livery.ts';
 import { DONCASTER_2024, PARAGON_2025 } from './hull-band-readings.ts';
 
@@ -173,7 +173,9 @@ test('Grand Central 180: an orange waist band along the car, which swings down t
   }
   // the sweep: lower and wider at the nose than the band behind it (the band's edges are 1.37 and 1.67 m)
   assert.equal(at('gc180x5', GC_NOSE, 1.0, 0.8), GC_ORANGE, 'orange at 0.8 m, 1 m back from the tip');
-  assert.equal(at('gc180x5', GC_NOSE, 0.7, 0.62), GC_ORANGE, 'and lower still near the tip');
+  // CHANGED (round 11; this asked for orange at 0.62 m, 0.7 m from the car's end, GC180-01's sweep "under the lamp pod"): the York photograph, side on, ends the orange ~0.5 m short of the
+  // tip (round 10's score), the nose's lower corner black; see 'Grand Central 180 (round 11)'
+  assert.equal(at('gc180x5', GC_NOSE, 0.7, 0.62), LIVERIES.grandcentral.body, 'black at the nose\'s lower corner');
   assert.equal(at('gc180x5', GC_NOSE, 0.7, 1.4), LIVERIES.grandcentral.body, 'but not above the sweep');
   // no line over the nose itself
   assert.equal(at('gc180x5', GC_NOSE, 0.5, 3.39), LIVERIES.grandcentral.body);
@@ -195,16 +197,48 @@ test('Grand Central 180 (round 10): ahead of the cab-end door the band runs on l
     assert.equal(at('gc180x5', GC_NOSE, s, foot - 0.02), body, `${ahead} m ahead: black under the band, not the sweep down to the sill`);
     assert.equal(at('gc180x5', GC_NOSE, s, top + 0.02), body, `${ahead} m ahead: black over it`);
   }
-  for (const ahead of [0.6, 1.0, 1.15]) assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - ahead, top - 0.01), GC_ORANGE, `${ahead} m ahead: the top still level`);
-  // then the sweep: the foot falls (York: about 1.0 m at 1.3 m ahead, 0.77 m at 1.9 m), the top later
-  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 1.3, 1.05), GC_ORANGE, 'the foot down to ~1.0 m 1.3 m ahead');
-  assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 1.9, 0.82), GC_ORANGE, 'and to ~0.77 m 1.9 m ahead');
+  // CHANGED (round 11; the top held 1.2 m and the foot fell to ~1.0 m 1.3 m ahead and ~0.77 m 1.9 m ahead): round 10's score's reading of York, see 'Grand Central 180 (round 11)'
+  for (const ahead of [0.5, 0.65]) assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - ahead, top - 0.01), GC_ORANGE, `${ahead} m ahead: the top still level`);
   assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 2.4, top - 0.05), body, 'the top fallen away 2.4 m ahead');
   // the cantrail line: square at the door frame's front edge (0.05 m ahead of the leaf), none on the nose's loft ahead of it
   assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 0.04, 3.39), GC_ORANGE, 'the line over the frame\'s front edge');
   assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT - 0.07, 3.39), body, 'no line ahead of the frame');
   // the band on the leaf (livery.ts doorBand) takes its colour from the same place
   assert.equal(at('gc180x5', GC_NOSE, GC_CAB_DOOR_FRONT + 0.6, (foot + top) / 2), GC_ORANGE);
+});
+
+test('Grand Central 180 (round 11): York\'s swoop: the top holds 0.7 m ahead of the cab-end door then dives, steepening; the foot holds 0.55 m, meets the side\'s lower edge 1.75 m ahead; the orange ends 0.5 m short of the tip', () => {
+  // round 10's score, read off the York photograph (private, viewed only): "Hold the top level ~0.7 m ahead of the door, not 1.0 m. Let the foot fall more slowly, reaching the body foot at
+  // ~1.75 m, not 1.2 m. Make the falling top convex, steepening toward the nose. End the orange ~0.5 m short of the tip, with black below."
+  assert.equal(GC_TIP, faceSetback('adelante'), 'GC_TIP is where the Class 180\'s face stands');
+  const [foot, top] = LIVERIES.grandcentral.stripeY as [number, number];
+  const body = LIVERIES.grandcentral.body;
+  const shapes = sideShapes('grandcentral', GC_NOSE);
+  const sweep = (shapes[0] as { pts: [number, number][] }).pts;
+  const half = sweep.length / 2;
+  const topEdge = sweep.slice(0, half);
+  const footEdge = sweep.slice(half).reverse();
+  const topAt = (s: number): number => curveY(topEdge, s);
+  const footAt = (s: number): number => curveY(footEdge, s);
+  const dF = GC_CAB_DOOR_FRONT;
+  // the holds
+  near2(topAt(dF - 0.68), top, 0.005, 'the top level 0.68 m ahead');
+  assert.ok(topAt(dF - 0.9) < top - 0.002 && topAt(dF - 1.2) < top - 0.01, `the top falling 0.9 m ahead (${topAt(dF - 0.9).toFixed(3)}) and 1.2 m ahead (${topAt(dF - 1.2).toFixed(3)})`);
+  near2(footAt(dF - 0.53), foot, 0.005, 'the foot level 0.53 m ahead');
+  assert.ok(footAt(dF - 0.75) < foot - 0.01, 'the foot falling 0.75 m ahead');
+  // the foot falls slowly: still over 1.1 m 1.2 m ahead, and at the side's lower edge (0.96 m, train.ts ADELANTE_BODY's nose) about 1.75 m ahead
+  assert.ok(footAt(dF - 1.2) > 1.1, `the foot ${footAt(dF - 1.2).toFixed(3)} m 1.2 m ahead`);
+  near2(footAt(dF - 1.75), 0.96, 0.02, 'the foot at the lower edge 1.75 m ahead');
+  // the top's dive is convex: it falls faster the nearer the tip (slopes over three equal steps toward the tip)
+  const end = GC_TIP + 0.5;
+  const hold = dF - 0.7;
+  const slope = (a: number, b: number): number => (topAt(b) - topAt(a)) / (b - a);
+  const step = (hold - end) / 3;
+  const slopes = [slope(hold - step, hold), slope(hold - 2 * step, hold - step), slope(end + 0.02, hold - 2 * step)];
+  assert.ok(slopes[0] < slopes[1] && slopes[1] < slopes[2], `the dive steepens toward the tip: ${slopes.map((x) => x.toFixed(3)).join(', ')}`);
+  // the end: no orange within 0.45 m of the tip, at any height; orange just behind 0.6 m
+  for (let y = 0.5; y <= 1.7; y += 0.05) assert.equal(at('gc180x5', GC_NOSE, GC_TIP + 0.45, y), body, `black at the tip, ${y.toFixed(2)} m up`);
+  assert.equal(at('gc180x5', GC_NOSE, GC_TIP + 0.7, 0.75), GC_ORANGE, 'the swoop reaches the nose\'s lower edge 0.7 m behind the tip');
 });
 
 test('Great Northern 387: a white-cream body with a thin orange pinstripe at the cantrail behind the nose, the dark foot below the windows', () => {

@@ -525,6 +525,11 @@ interface BodySpec {
   doorGlass?: { half: number; y: [number, number]; radius: number; seal?: number };
   /** the dark frame round a passenger door: its top, metres above the rail head (absent: 0.04 m over the leaf's head) */
   doorFrameTop?: number;
+  /**
+   * a single-leaf passenger door set into its frame (the Class 180's, round 11): the leaf's face stands `depth` behind the frame's, a dark gap `seam` wide runs round the leaf
+   * between the two, and the frame is a raised ring round that gap (absent: the frame is one plate behind a leaf that stands proud of it)
+   */
+  doorRecess?: { depth: number; seam: number; seamColour: number };
   /** a step under each passenger door's leaf: its foot and top (metres above the rail head), how far it stands out past the body's side, and its colour (absent: none) */
   doorStep?: { y: [number, number]; out: number; colour: number };
   windowY: [number, number];
@@ -1036,6 +1041,10 @@ const ADELANTE_BODY = ((): BodySpec => {
     // round 10: the York photograph shows a grey step plate under the leaf, a little wider than the leaf, its top at the leaf's foot (about rows 397 to 412: 1.06 to 1.17 m). How far
     // it stands out is ASSUMED (8 mm past the body's half-width, 12 mm past the leaf, inside the car's published 2.73 m width; side on, the photograph cannot say); its colour ASSUMED a mid grey
     doorStep: { y: [1.0, 1.07], out: 0.008, colour: 0x6e7276 },
+    // round 11 (round 10's score: "add the door leaf's seams and recess, with frame relief, as at York"): the York photograph (private, viewed only) shows each leaf framed by a thin dark
+    // line down both edges and over the head, the frame standing round it; the leaf set 12 mm behind the frame's face and the seam 12 mm wide are ASSUMED (side on, the photograph shows
+    // the line, not its depth)
+    doorRecess: { depth: 0.012, seam: 0.012, seamColour: 0x08090b },
     // CHANGED (round 9; round 8's were 1.91 to 2.62 m, on round 8's short wall): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level
     // with the doors' glass, their corners well rounded (about a sixth of their height); laid on the measured band top and door head, 2.14 to 2.96 m, which puts their top level with
     // the door glass's (2.91 m) to within the gasket. ASSUMED, from that photograph
@@ -2081,7 +2090,26 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const x = (a: number): number => sx * a;
       const lo = (a: number, b: number): [number, number] => [Math.min(x(a), x(b)), Math.max(x(a), x(b))];
       const [fx0, fx1] = lo(W - 0.005, half - DOOR_RELIEF / 2);
-      detail.box(fx0, fx1, dy0 - 0.05, spec.doorFrameTop ?? dy1 + 0.04, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
+      const frameTop = spec.doorFrameTop ?? dy1 + 0.04;
+      const recess = crew ? undefined : spec.doorRecess;
+      // the leaf's outer face, and the faces that stand on it (the band, the glass's seal, the glass), each as far out from the car's middle
+      let leafFace = half - 0.004;
+      if (recess) {
+        // round 11: a raised frame ring, the dark seam inside it, the leaf set back in the opening
+        const frameFace = half - 0.002;
+        leafFace = frameFace - recess.depth;
+        const [rx0, rx1] = lo(W - 0.005, frameFace);
+        const zi0 = z - dw / 2 - recess.seam;
+        const zi1 = z + dw / 2 + recess.seam;
+        const yi0 = dy0 - recess.seam;
+        const yi1 = dy1 + recess.seam;
+        detail.box(rx0, rx1, dy0 - 0.05, frameTop, z - dw / 2 - 0.05, zi0, frameC);
+        detail.box(rx0, rx1, dy0 - 0.05, frameTop, zi1, z + dw / 2 + 0.05, frameC);
+        detail.box(rx0, rx1, yi1, frameTop, zi0, zi1, frameC);
+        detail.box(rx0, rx1, dy0 - 0.05, yi0, zi0, zi1, frameC);
+        const [gx0, gx1] = lo(W - 0.005, leafFace - 0.004);
+        detail.box(gx0, gx1, yi0, yi1, zi0, zi1, col(recess.seamColour));
+      } else detail.box(fx0, fx1, dy0 - 0.05, frameTop, z - dw / 2 - 0.05, z + dw / 2 + 0.05, frameC);
       // a step under the leaf, a hair wider than the frame (the Class 180's, round 10)
       if (spec.doorStep && !crew) {
         const [sx0, sx1] = lo(W - 0.005, half + spec.doorStep.out);
@@ -2096,15 +2124,16 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       } else if (spec.doorLeaves === 1 && spec.doorGlass) {
         // the family's own pane: rounded, in a seal (dark, unless the family says) standing between the leaf and the glass
         const { half: gh, y: [gy0, gy1], radius, seal } = spec.doorGlass;
-        detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
+        const [ex0, ex1] = lo(W - 0.005, leafFace);
+        detail.box(ex0, ex1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         // a livery's waist band carried across this leaf (Grand Central: the black cab-end door, round 9), in the side's own colour there, a hair proud of the leaf
         if (def.doorBand?.(carInfo, di)) {
           const [by0, by1] = def.stripeY ?? BAND_Y;
-          const [bx0, bx1] = lo(W - 0.005, half - 0.003);
+          const [bx0, bx1] = lo(W - 0.005, leafFace + 0.001);
           detail.box(bx0, bx1, by0, by1, z - dw / 2, z + dw / 2, col(sideColourAt(def, noseLen, s, (by0 + by1) / 2)));
         }
-        detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (half - 0.002), col(seal ?? 0x0d0e10));
-        detail.prismX(roundedRect(z - gh, z + gh, gy0, gy1, radius, 3), sx * (W - 0.005), sx * half, paneC, false);
+        detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (leafFace + 0.002), col(seal ?? 0x0d0e10));
+        detail.prismX(roundedRect(z - gh, z + gh, gy0, gy1, radius, 3), sx * (W - 0.005), sx * (leafFace + 0.004), paneC, false);
       } else if (spec.doorLeaves === 1) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.91, dy1 - 0.21, z - 0.27, z + 0.27, paneC);

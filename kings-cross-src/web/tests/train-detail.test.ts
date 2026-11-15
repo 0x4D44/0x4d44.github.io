@@ -3520,6 +3520,49 @@ test('Class 180 side (round 10): every door\'s dark frame stops under the cantra
   assert.equal(sideColourAt(gc, spec.nose.length, 4.8, 3.375), GC_ORANGE, 'the line\'s lower half over the cab door');
 });
 
+test('Class 180 side (round 11): every passenger leaf is set back in a raised frame ring, a dark seam round it, the frame open over the leaf, on both sides of every car', () => {
+  // round 10's score, T3: "add the door leaf's seams and recess, with frame relief, as at York"
+  const spec = bodySpec('adelante');
+  const gc = liveryFor('gc180x5');
+  const recess = spec.doorRecess ?? { depth: 0, seam: 0, seamColour: 0xffffff };
+  assert.ok(recess.depth >= 0.008 && recess.seam >= 0.008 && lumaOf(recess.seamColour) < 0.05, 'a recess, a seam and a near-black gap');
+  const [dy0, dy1] = spec.doorY;
+  const dw = spec.doorWidth;
+  const g = built('gc180x5');
+  for (const car of trainLayout('gc180x5').cars) {
+    const here = `${car.type} car ${car.index}`;
+    const plan = spec.plan(car, false);
+    const z = (s: number): number => (car.cab === 'rear' ? car.end - s : car.start + s);
+    const mesh = detailOf(g, car);
+    const info = { index: car.index, count: 5, type: car.type as string, cab: car.cab !== null, length: car.length, nose: car.cab ? spec.nose.length : 0, doors: plan.doors };
+    plan.doors.forEach((s, di) => {
+      const zc = z(s);
+      for (const side of [-1, 1]) {
+        const mine = (t: Tri): boolean => t.every((v) => Math.abs(v.z - zc) <= dw / 2 + 0.1 && Math.sign(v.x) === side && Math.abs(v.x) > spec.half - 0.05);
+        const outer = (ts: Tri[]): number => Math.max(...ts.flat().map((v) => Math.abs(v.x)));
+        const frame = trisOfColour(mesh, 0x24272b).filter(mine);
+        const leaf = trisOfColour(mesh, (gc.doorFor as NonNullable<typeof gc.doorFor>)(info, di)).filter((t) => mine(t) && t.every((v) => Math.abs(v.z - zc) <= dw / 2 + 1e-4 && v.y >= dy0 - 1e-4 && v.y <= dy1 + 1e-4));
+        const seam = trisOfColour(mesh, recess.seamColour).filter(mine);
+        assert.ok(frame.length > 0 && leaf.length > 0 && seam.length > 0, `${here} side ${side} door ${di}: frame ${frame.length}, leaf ${leaf.length}, seam ${seam.length} triangles`);
+        near(outer(frame) - outer(leaf), recess.depth, 1e-4, `${here} side ${side} door ${di}: the leaf set back behind the frame's face`);
+        assert.ok(outer(seam) < outer(leaf) - 0.002, `${here} side ${side} door ${di}: the seam is a gap, behind the leaf`);
+        const sb = boxOfTris(seam);
+        near(sb.max.z - sb.min.z, dw + 2 * recess.seam, 1e-4, `${here} side ${side} door ${di}: the seam runs down both edges of the leaf`);
+        near(sb.max.y, dy1 + recess.seam, 1e-4, `${here} side ${side} door ${di}: and over its head`);
+        // the frame is a ring: none of it stands over the leaf or the seam
+        const over = frame.filter((t) => {
+          const c = t.reduce((a, v) => a.add(v), new THREE.Vector3()).divideScalar(3);
+          return Math.abs(c.z - zc) < dw / 2 + recess.seam - 1e-4 && c.y > dy0 - recess.seam + 1e-4 && c.y < dy1 + recess.seam - 1e-4;
+        });
+        assert.equal(over.length, 0, `${here} side ${side} door ${di}: ${over.length} frame triangles over the opening`);
+        // and it still rounds the opening, 5 cm out at the sides
+        const fb = boxOfTris(frame);
+        near(fb.max.z - fb.min.z, dw + 0.1, 1e-4, `${here} side ${side} door ${di}: the frame's width`);
+      }
+    });
+  }
+});
+
 test('Class 180 cab: the windscreen runs up to where 180109 puts the roof, 3.0 m up and 1.66 m behind the face\'s foot, at both ends', () => {
   // (round 6: the glass's top edge is the roof line's point of 3.0 m at 1.66 m back that the nose is fitted to; the glass stands 2 cm over the roof, so its top corner is up to a centimetre higher and 2 cm nearer)
   const g = built('gc180x5');

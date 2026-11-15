@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import type { Pt } from '../../core/geo.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { buildPerthScene } from '../src/perth-scene.ts';
-import { ST_LEONARDS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, stLeonardsFrame, stLeonardsSoffit } from '../src/perth-st-leonards-bridge.ts';
+import { ST_LEONARDS, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit } from '../src/perth-st-leonards-bridge.ts';
+import { Batch } from '../src/materials.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const scene = buildPerthScene({ lighting: false });
@@ -77,4 +78,34 @@ test('the scene draws it: from above, the road at the LiDAR level over each trac
   // its cost: one draw, a few thousand triangles
   const tris = (mesh.geometry.index ? mesh.geometry.index.count : mesh.geometry.getAttribute('position').count) / 3;
   assert.ok(tris > 500 && tris < 20_000, `triangles ${tris}`);
+});
+
+// Round 2 (the round-1 score): a lighter sandstone, slimmer piers, smooth arches, a string course and a parapet coping.
+test('round 2: the stone is R-slb-a\'s buff sandstone in sun, not its shade; the piers slim; every arch drawn in 16-24 facets', () => {
+  const hex = ST_LEONARDS_COLOURS.stone, [r, g, b] = [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255], luma = .2126 * r + .7152 * g + .0722 * b;
+  // R-slb-a's sunlit sandstone samples (158,144,100), luma 143; its shaded spandrels (41,44,30), luma 42
+  assert.ok(luma >= 115 && luma <= 160 && r > g && g > b, `stone ${hex.toString(16)} luma ${luma.toFixed(0)}`);
+  assert.ok(ST_LEONARDS.pierWidth >= 1 && ST_LEONARDS.pierWidth <= 1.6, `pier width ${ST_LEONARDS.pierWidth}`);
+  const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
+  assert.equal(info.archSegments?.length, info.spans);
+  for (const n of info.archSegments) assert.ok(n >= 16 && n <= 24, `arch facets ${info.archSegments}`);
+});
+
+test('round 2: a coping caps each parapet, and a string course stands proud of each face at the fascia\'s foot, over the tracks', () => {
+  const mesh = scene.group.getObjectByName('perth-st-leonards-bridge') as THREE.Mesh;
+  mesh.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(), foot = ST_LEONARDS.road - ST_LEONARDS.fascia;
+  for (const s of [28.9, 39.6, 49.75]) for (const sg of [-1, 1]) {
+    // from above, onto the parapet's line: the coping's top, 0.1-0.2 m over the steel parapet's
+    const [x, z] = stLeonardsAt(s, sg * (ST_LEONARDS.half - .2));
+    ray.set(new THREE.Vector3(x, 60, z), new THREE.Vector3(0, -1, 0));
+    const top: THREE.Intersection | undefined = ray.intersectObject(mesh)[0], over = (top?.point.y ?? 0) - (ST_LEONARDS.road + ST_LEONARDS.parapet);
+    assert.ok(over >= .1 && over <= .2, `s ${s} side ${sg}: the parapet's top ${top?.point.y}, ${over.toFixed(3)} m over the steel`);
+    // from outside, level, toward the face just under the fascia's foot: the string course, proud of the spandrel's face
+    const [ox, oz] = stLeonardsAt(s, sg * (ST_LEONARDS.half + 10)), [ix, iz] = stLeonardsAt(s, 0), y = foot - .12;
+    ray.set(new THREE.Vector3(ox, y, oz), new THREE.Vector3(ix - ox, 0, iz - oz).normalize());
+    const hit: THREE.Intersection | undefined = ray.intersectObject(mesh)[0];
+    const o = hit ? Math.abs(stLeonardsFrame([hit.point.x, hit.point.z]).o) : 0;
+    assert.ok(o >= ST_LEONARDS.half + .08, `s ${s} side ${sg}: the face at ${o.toFixed(3)} m out (spandrel at ${ST_LEONARDS.half})`);
+  }
 });
