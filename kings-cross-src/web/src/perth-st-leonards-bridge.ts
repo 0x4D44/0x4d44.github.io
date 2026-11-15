@@ -46,7 +46,7 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
  voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
  northShade:.75,
- soffitStone:.9,joint:.05,soffitBend:5} as const;
+ soffitStone:.9,joint:.05,soffitBend:1} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -75,9 +75,14 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  * shadow). So the soffit's normals are bent down toward the arch's open underside, `soffitBend` times the ellipse's unit normal (still one
  * per station, so still smooth): the sky's share falls to 1% and a horizon sun to a fifth of a square-on wall's, and the barrel takes the
  * hemisphere's ground light, as a real one takes the light off the ground under it. The global rig is untouched. `soffit` is darkened to
- * two thirds of `stone` (a warm brown-grey), and the darker voussoir lifted to 0.88 of `dressed` (in luma): the ring read too strong. */
+ * two thirds of `stone` (a warm brown-grey), and the darker voussoir lifted to 0.88 of `dressed` (in luma): the ring read too strong.
+ * Round 4c (the lead's look at 4b): bent by 5 the soffits drew as black voids by day, with no gradient. `soffitBend` 1 puts the normal at
+ * the springing 45 degrees below the horizontal (the sky's share there 15%, a horizon sun 0.72 of square on), rising to straight down at
+ * the crown, so the soffit grades from springing to crown. Under the filmic tone map's toe two thirds of `stone` still drew at 0.23 of
+ * the shaded face's brightness by noon whatever the bend (0.27 unbent), so `soffit` is 0.85 of `stone`: 0.41 of the face by noon (the
+ * lead's target, 0.4 to 0.5), and at dusk still under it. */
 export const SOFFIT_TONES=[1,.9,1,1.1,.86,1,1.06,.94] as const;
-export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x645b4a,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
 

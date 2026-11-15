@@ -211,9 +211,9 @@ test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridg
 // overhang, and the approach parapets unbroken round their bends.
 const lumaHex = (hex: number) => .2126 * ((hex >> 16) & 255) + .7152 * ((hex >> 8) & 255) + .0722 * (hex & 255);
 
-// Round 4b (the lead's look at round 4): the soffits a warm brown-grey at two thirds of the face's stone (R-slb-a's are darker than its face),
-// still in stones of several tones.
-test('round 4: the soffits are a warm brown-grey stone two thirds of the face\'s, laid as stones of several tones, not one sheet', () => {
+// Round 4b (the lead's look at round 4): the soffits a warm brown-grey darker than the face's stone (R-slb-a's are darker than its face),
+// still in stones of several tones. Round 4c: two thirds drew black under the tone map's toe; 0.85 (see the round 4c lighting test).
+test('round 4: the soffits are a warm brown-grey stone 0.8-0.9 of the face\'s, laid as stones of several tones, not one sheet', () => {
   const bridge = meshNamed('perth-st-leonards-bridge'), g = bridge.geometry, pos = g.getAttribute('position'), nrm = g.getAttribute('normal'), col = g.getAttribute('color'), idx = g.index!;
   const tones = new Set<string>(); let sum = 0, k = 0; const mean = [0, 0, 0];
   for (let t = 0; t < idx.count; t += 3) {
@@ -229,7 +229,7 @@ test('round 4: the soffits are a warm brown-grey stone two thirds of the face\'s
   assert.ok(tones.size >= 4, `soffit tones ${tones.size}`);
   // the face's stone scaled in display colour (0.6 and 0.7 of each channel), compared as linear sums as the vertex colours are
   const face = ST_LEONARDS_COLOURS.stone, scaled = (f: number) => grey((Math.round(((face >> 16) & 255) * f) << 16) | (Math.round(((face >> 8) & 255) * f) << 8) | Math.round((face & 255) * f));
-  assert.ok(sum / k >= scaled(.6) && sum / k <= scaled(.7), `soffit mean ${(sum / k).toFixed(3)} against ${scaled(.6).toFixed(3)}-${scaled(.7).toFixed(3)} (0.6-0.7 of the face's stone)`);
+  assert.ok(sum / k >= scaled(.8) && sum / k <= scaled(.9), `soffit mean ${(sum / k).toFixed(3)} against ${scaled(.8).toFixed(3)}-${scaled(.9).toFixed(3)} (0.8-0.9 of the face's stone)`);
   // warm: red over green over blue, as the sandstone is
   assert.ok(mean[0]! > mean[1]! && mean[1]! > mean[2]!, `soffit mean colour ${mean.map(c => (c / k).toFixed(3))}`);
 });
@@ -296,37 +296,65 @@ test('round 4: the approach parapet and its coping run unbroken: no steps along 
 
 // Round 4b (the lead's look at round 4): at dusk the soffits glowed pink, brighter than the face. The cause was the lighting: their
 // smooth normals near the springing lie near horizontal, so the Lambert soffit took half the hemisphere's lavender sky and the low red
-// sun square on from the west, which the spandrels, piers and deck hide from a real barrel. Their normals are now bent down into the arch.
-test('round 4b: at dusk the soffits take no sky and little of the low sun, and no stone of them is brighter than the shaded face', () => {
+// sun square on from the west, which the spandrels, piers and deck hide from a real barrel. Round 4c (the lead's look at 4b): bent
+// straight down the soffits drew as black voids by day; bent to about 45 degrees at the springing they keep some sky and a gradient.
+// The model: the scene's lights (world.ts: a hemisphere, the key, the two fills; nothing casts a shadow) on a Lambert surface, as three
+// draws it (each term over pi), then the frame's exposure, three's ACES filmic tone map and sRGB: a display luma, 0 to 1.
+function soffitLight(iso: string) {
   const g = meshNamed('perth-st-leonards-bridge').geometry, nrm = g.getAttribute('normal'), col = g.getAttribute('color');
   const tones = SOFFIT_TONES.map(f => rgbOf(ST_LEONARDS_COLOURS.soffit).map(c => c * f));
-  // the round-4 dusk capture's time (capture-slb4.sh), at the bridge
-  const sun = solarPosition(Date.parse('2026-11-09T16:20:00Z'), 56.39, -3.438), rig = skyRig(sun.elevationDeg, sun.azimuthDeg, CLEAR, REFERENCE);
+  const sun = solarPosition(Date.parse(iso), 56.39, -3.438), rig = skyRig(sun.elevationDeg, sun.azimuthDeg, CLEAR, REFERENCE);
   const key = rig.moon.intensity > rig.sun.intensity ? rig.moon : rig.sun, toKey = new THREE.Vector3(...key.direction).normalize();
-  assert.ok(sun.elevationDeg < 0 && toKey.y < .05, `dusk: sun at ${sun.elevationDeg.toFixed(1)} degrees`);
   const lights = [{ to: toKey, colour: key.colour, k: key.intensity }, ...LIGHTS.fills.map((f, i) => ({ to: new THREE.Vector3(...f.position).normalize(), colour: rig.fills[i]!.colour, k: rig.fills[i]!.intensity }))];
-  // Lambert irradiance from the scene's lights (world.ts: a hemisphere, the key, the two fills; nothing casts a shadow), times an albedo
-  const lit = (n: THREE.Vector3, albedo: number[]) => [0, 1, 2].map(c => {
-    const w = .5 * n.y + .5;
-    let e = (rig.hemisphere.ground[c]! * (1 - w) + rig.hemisphere.sky[c]! * w) * rig.hemisphere.intensity;
-    for (const l of lights) e += Math.max(n.dot(l.to), 0) * l.colour[c]! * l.k;
-    return albedo[c]! * e;
-  });
-  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
-  let k = 0, brightest = 0, worstSky = 0, worstKey = 0;
+  const aces = (c: number[]) => {
+    const v = c.map(x => x * rig.exposure / .6), m = [.59719 * v[0]! + .35458 * v[1]! + .04823 * v[2]!, .076 * v[0]! + .90834 * v[1]! + .01566 * v[2]!, .0284 * v[0]! + .13383 * v[1]! + .83777 * v[2]!];
+    const f = m.map(x => (x * (x + .0245786) - .000090537) / (x * (.983729 * x + .432951) + .238081));
+    return [1.60475 * f[0]! - .53108 * f[1]! - .07367 * f[2]!, -.10208 * f[0]! + 1.10813 * f[1]! - .00605 * f[2]!, -.00327 * f[0]! - .07276 * f[1]! + 1.07602 * f[2]!]
+      .map(x => { x = Math.min(1, Math.max(0, x)); return x <= .0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - .055; });
+  };
+  const shown = (n: THREE.Vector3, albedo: number[]) => {
+    const w = .5 * n.y + .5, c = [0, 1, 2].map(j => {
+      let e = (rig.hemisphere.ground[j]! * (1 - w) + rig.hemisphere.sky[j]! * w) * rig.hemisphere.intensity;
+      for (const l of lights) e += Math.max(n.dot(l.to), 0) * l.colour[j]! * l.k;
+      return albedo[j]! * e / Math.PI;
+    });
+    const d = aces(c);
+    return .2126 * d[0]! + .7152 * d[1]! + .0722 * d[2]!;
+  };
+  let k = 0, sum = 0, brightest = 0, sky = [1, 0], keyMax = 0; const byHeight = new Map<number, number[]>();
+  const pos = g.getAttribute('position');
   for (let i = 0; i < col.count; i++) {
     const c = [col.getX(i), col.getY(i), col.getZ(i)];
     if (!tones.some(t => t.every((v, j) => Math.abs(v - c[j]!) < 1e-4))) continue;
-    const n = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).normalize();
-    worstSky = Math.max(worstSky, .5 * n.y + .5); worstKey = Math.max(worstKey, n.dot(toKey));
-    brightest = Math.max(brightest, luma(lit(n, c))); k++;
+    const n = new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)).normalize(), l = shown(n, c), share = .5 * n.y + .5;
+    sky = [Math.min(sky[0]!, share), Math.max(sky[1]!, share)]; keyMax = Math.max(keyMax, n.dot(toKey));
+    sum += l; brightest = Math.max(brightest, l); k++;
+    // by height over the springing, in thirds of the rise, to see the gradient (an unweighted mean of each band's corners)
+    const band = Math.min(2, Math.floor((pos.getY(i) - ST_LEONARDS.spring) / ((ST_LEONARDS.road - ST_LEONARDS.fascia - ST_LEONARDS.spring) / 3)));
+    const b = byHeight.get(band) ?? [0, 0]; byHeight.set(band, [b[0]! + l, b[1]! + 1]);
   }
-  assert.ok(k > 1000, `soffit corners ${k}`);
-  // the hemisphere's sky share at most 2% (it was a half at the springing), the low sun at most a quarter of what a wall square to it takes
-  assert.ok(worstSky <= .02, `soffit sky share up to ${worstSky.toFixed(3)}`);
-  assert.ok(worstKey <= .25, `soffit takes the low sun at up to ${worstKey.toFixed(3)} of square on`);
   // the face looking north (toward the station and the frozen camera): its stone, shaded by northShade
   const V = new THREE.Vector3(-(ST_LEONARDS_LINE[1]![1] - ST_LEONARDS_LINE[0]![1]), 0, ST_LEONARDS_LINE[1]![0] - ST_LEONARDS_LINE[0]![0]).normalize(), north = V.z < 0 ? V : V.negate();
-  const face = luma(lit(north, rgbOf(ST_LEONARDS_COLOURS.stone).map(c => c * ST_LEONARDS.northShade)));
-  assert.ok(brightest <= face, `dusk soffit up to ${brightest.toFixed(4)} against the north face ${face.toFixed(4)}`);
+  const face = shown(north, rgbOf(ST_LEONARDS_COLOURS.stone).map(c => c * ST_LEONARDS.northShade));
+  const bands = [0, 1, 2].map(b => { const v = byHeight.get(b)!; return v[0]! / v[1]!; });
+  return { sun, toKey, k, mean: sum / k, brightest, sky, keyMax, face, bands };
+}
+
+test('round 4b: at dusk the soffits take a little sky and little of the low sun, and no stone of them is brighter than the shaded face', () => {
+  // the round-4 dusk capture's time (capture-slb4.sh)
+  const d = soffitLight('2026-11-09T16:20:00Z');
+  assert.ok(d.sun.elevationDeg < 0 && d.toKey.y < .05, `dusk: sun at ${d.sun.elevationDeg.toFixed(1)} degrees`);
+  assert.ok(d.k > 1000, `soffit corners ${d.k}`);
+  // the hemisphere's sky: a little at the springing (round 4 took a half there, round 4b none), none at the crown
+  assert.ok(d.sky[1]! >= .08 && d.sky[1]! <= .2, `soffit sky share up to ${d.sky[1]!.toFixed(3)}`);
+  // the low sun: at most this much of what a wall square to it takes (round 4 took all of it)
+  assert.ok(d.keyMax <= .8, `soffit takes the low sun at up to ${d.keyMax.toFixed(3)} of square on`);
+  assert.ok(d.brightest <= d.face, `dusk soffit up to ${d.brightest.toFixed(4)} against the north face ${d.face.toFixed(4)}`);
+});
+
+test('round 4c: by noon the soffits are a visible brown-grey, not black: at least 0.35 of the shaded face, brighter toward the springing', () => {
+  // the round-4 day capture's time (capture-slb4.sh: 2026-06-21 12:00 BST)
+  const d = soffitLight('2026-06-21T11:00:00Z');
+  assert.ok(d.mean >= .35 * d.face, `day soffit mean ${d.mean.toFixed(4)} against the north face ${d.face.toFixed(4)} (${(d.mean / d.face).toFixed(3)})`);
+  assert.ok(d.bands[0]! > d.bands[2]! * 1.1, `soffit by height, springing to crown: ${d.bands.map(b => b.toFixed(4))}`);
 });
