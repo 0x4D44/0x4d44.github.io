@@ -130,12 +130,18 @@ export interface StreetLightOptions {
   poolSpread?: number;
   /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
   poolRadiusAt?: (spot: LampSpot, index: number) => number;
+  /** Small floor clearance for raised station slabs at grazing camera angles. */
+  poolLiftAt?: (spot: LampSpot, index: number) => number;
+  /** Evaluate the radial profile per fragment, without grazing-angle mip blur. */
+  analyticPool?: boolean;
   /** Clip raised platform light to the physical platforms instead of the tracks. */
   poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
   /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
   poolWeather?: boolean;
   /** Opt-in wet head reflections and a wider fog-scattering halo. */
   weatherEffects?: boolean;
+  /** Allocate reflection geometry only for this scene's nearby wet surfaces. */
+  reflectionAt?: (spot: LampSpot, index: number) => boolean;
   haloSize?: number;
   /** A small white-hot core in pixels, including at panorama distances. */
   coreSize?: number;
@@ -219,13 +225,13 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
   const bounded = options.poolCeiling !== undefined;
-  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
+  const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
   pools.raycast = (): void => {};
   if (options.fog) fadeLightInFog(poolMaterial, bounded);
-  if (options.poolFloor || options.poolWeather) {
+  if (options.poolFloor || options.poolWeather || options.analyticPool) {
     const before = poolMaterial.onBeforeCompile;
     poolMaterial.onBeforeCompile = (shader, renderer) => {
       before.call(poolMaterial, shader, renderer);
@@ -237,6 +243,16 @@ poolWorld = instanceMatrix * poolWorld;
 #endif
 vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
       let declarations = 'varying vec3 vPoolWorld;', body = '';
+      if (options.analyticPool) {
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
+          .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
+        declarations += '\nvarying vec2 vPoolUv;';
+        body += `
+// pool-profile-begin
+float poolR = length( 2.0 * vPoolUv - 1.0 );
+gl_FragColor.a *= pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
+// pool-profile-end`;
+      }
       if (options.poolFloor) {
         shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
           .replace('#include <project_vertex>','#include <project_vertex>\nvPoolFloorWeight = poolFloorWeight;');
@@ -259,7 +275,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}`;
   }
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
@@ -267,7 +283,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
     const r = 2 * (options.poolRadiusAt?.(spot, i) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
-    matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + POOL_LIFT, 0, 0, r, z, 0, 0, 0, 1);
+    matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,i) ?? POOL_LIFT), 0, 0, r, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
     const light = LAMP_LIGHT[spot.kind];
     pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
@@ -278,7 +294,8 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.frustumCulled = false;
   pools.renderOrder = 4;
   group.add(pools);
-  const weather = options.weatherEffects && n ? createLampWeather(pools, spots.flatMap(s=>headAt(s)), halos, options.poolFloor) : undefined;
+  const weather = options.weatherEffects && n ? createLampWeather(pools, spots.flatMap(s=>headAt(s)), halos, options.poolFloor,
+    spots.flatMap((s,i)=>options.reflectionAt?.(s,i) === false ? [] : [i])) : undefined;
   if (weather) group.add(weather.group);
 
   return {

@@ -28,7 +28,7 @@ type PerthSpot = LampSpot & { radius?: number };
 
 /** Ignore the paired lenses on one column. A pool reaches at most 0.6 of the
  * next fixture's spacing; an isolated fixture keeps a short, finite reach. */
-function radii(spots: readonly LampSpot[], max: number, headAt: (s: LampSpot) => readonly number[], rows?: readonly string[]): number[] {
+function radii(spots: readonly LampSpot[], max: number, headAt: (s: LampSpot) => readonly number[], rows?: readonly string[], reach = .6): number[] {
   const heads = spots.map(headAt);
   return heads.map((p,i) => {
     let spacing = Infinity;
@@ -37,7 +37,7 @@ function radii(spots: readonly LampSpot[], max: number, headAt: (s: LampSpot) =>
       const d = Math.hypot(p[0]! - q[0]!, p[2]! - q[2]!);
       if (d > 3) spacing = Math.min(spacing,d);
     });
-    return Math.min(max,.6*spacing);
+    return Math.min(max,reach*spacing);
   });
 }
 const fixtureHead = (s: LampSpot): [number,number,number] => [s.x,s.y+s.height,s.z];
@@ -99,10 +99,10 @@ export function perthLampGround(root: THREE.Object3D, fallback: Ground): Ground 
 export function perthStationLampSpots(plan: PerthStationPlan): PerthSpot[] {
   const deck = WAVERLEY_LEVELS.platform;
   const spots = plan.structure.lamps.map(l => fixture(toWorld([l.x,l.z]), deck, WAVERLEY_STRUCTURE.lampRim - .02));
-  const pendantRadii = radii(spots,8,fixtureHead,plan.structure.lamps.map(l=>l.ref));
+  const pendantRadii = radii(spots,8,fixtureHead,plan.structure.lamps.map(l=>l.ref),.58);
   const fitted: PerthSpot[] = spots.map((s,i)=>({...s,radius:pendantRadii[i]}));
   const canopy = plan.canopyColumns.map(p=>fixture(toWorld(p), deck, PERTH_STATION.canopy.top - .8 - deck));
-  const canopyRadii = radii(canopy,7,fixtureHead);
+  const canopyRadii = radii(canopy,7,fixtureHead,undefined,.58);
   fitted.push(...canopy.map((s,i)=>({...s,radius:canopyRadii[i]})));
   for (const { at, arm, double } of plan.furniture.lamps) {
     const L = PERTH_LAMP, H = L.lantern;
@@ -164,6 +164,7 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   // avoids round 2's many overlapping layers converging to a grey plateau.
   const townRadii = radii(town,8,headOf);
   const street = createStreetLights(town, { fog: true, poolCeiling: .20, haloSize: 1.3, coreSize: 2, poolWeather:true, weatherEffects:true,
+    reflectionAt:s=>inForecourt([s.x,s.z])||Math.hypot(s.x,s.z)<80,
     poolRadiusAt:(s,i)=>Math.min(inForecourt([s.x,s.z])?5.5:8,townRadii[i]!) });
   const floor = platformFloor(plan);
   const station = perthStationLampSpots(plan);
@@ -171,7 +172,8 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   // A per-instance floor flag lets the existing yard and station lenses share
   // a draw while clipping only the raised platform light to its footprint.
   const existing = createStreetLights([...station,...forecourt], {
-    posts:false,headAt:fixtureHead,fog:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,
+    posts:false,headAt:fixtureHead,fog:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,analyticPool:true,
+    poolLiftAt:(_s,i)=>i < station.length ? .004 : .07,
     poolFloor:floor?{...floor,appliesAt:(_s,i)=>i<station.length}:undefined,
     poolRadiusAt:(s,i)=>i<station.length?(s as PerthSpot).radius!:yardRadii[i-station.length]!,
   });

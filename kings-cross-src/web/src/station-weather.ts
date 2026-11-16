@@ -5,7 +5,7 @@ import type { LatLon } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
 import { describeSun } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
-import type { Atmosphere, AtmosphereFrame, AtmosphereOptions } from './atmosphere.ts';
+import type { Atmosphere, AtmosphereFrame, AtmosphereOptions, Haze } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
 import { FACADE_GLASS, floodLit, litWalls } from './materials.ts';
 import type { NightLayer } from './night.ts';
@@ -172,7 +172,7 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
  * grey band (round-8 score, C2). The fade stays Waverley's, so mist and rain keep their own range. ASSUMED, judged by eye against 155.
  */
 export const PERTH_CLEAR_AIR = 24_000;
-export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR, weatherFar: PERTH_CLEAR_AIR } as const;
+export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR, weatherFar: PERTH_CLEAR_AIR, fogNear:20 } as const;
 /** Perth's cloned city materials retain their facade maps but not the palette's
  * compile hooks. Use the existing lit-window grid on those exact textured bays. */
 export function lightPerthNight(scene: THREE.Object3D): () => void {
@@ -197,7 +197,7 @@ export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptio
 }
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
-function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number]; clear?: number; weatherFar?: number },
+function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: Haze,
   night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number]): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();

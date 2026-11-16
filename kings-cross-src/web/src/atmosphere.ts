@@ -212,6 +212,8 @@ export interface Haze {
   clear?: number;
   /** Optional weather-haze ceiling for broad geographic scenes; dense fog keeps its measured visibility. */
   weatherFar?: number;
+  /** Optional dense-fog start for a scene with close canopy depth cues. */
+  fogNear?: number;
 }
 
 /** The range with a scene's own clear air (`Haze.clear`): its far plane eased from the page's to the scene's as the visibility goes from
@@ -472,7 +474,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
       if (scene.fog instanceof THREE.Fog) {
         const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y, haze?.weatherFar, haze?.weatherFar === undefined ? undefined : haze.clear), state.weather.visibilityM, haze);
-        scene.fog.near = range.near;
+        scene.fog.near = range.near + ((haze?.fogNear ?? range.near) - range.near) * smoothstep(.6, .85, state.rig.fogAmount);
         scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
         rgb(scene.fog.color, state.rig.fog);
       }
