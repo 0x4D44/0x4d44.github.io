@@ -264,10 +264,10 @@ export function wearBag(T, obj, bag, fit, h = 1.75) {
     rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r;
   } else {
     const lg = lugObj(T, LUG_OF[bag.kind], bag.colour), kind = lg ? bag.kind : PLAIN_OF[bag.kind] || bag.kind;
-    if (lg) { const ud = LUG[LUG_OF[bag.kind]].ud, k = bag.kind === 'case' ? Math.max(0.85, s) : s; lg.scale.setScalar(k); rig.mesh = lg; rig.h = ud.h * k; rig.d = ud.w * k; rig.w = ud.d * k; rig.drop = ud.drop * k; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; }
+    if (lg) { const ud = LUG[LUG_OF[bag.kind]].ud, k = bag.kind === 'case' ? Math.max(0.85, s) : s; lg.scale.setScalar(k); rig.mesh = lg; rig.h = ud.h * k; rig.d = ud.w * k; rig.w = ud.d * k; rig.drop = ud.drop * k; rig.lug = bag.kind === 'holdall'; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; rig.tip = B.middle_02_l || null; rig.tipR = B.middle_02_r || null; }
     else {
     const g = handGeo(T, kind, bag.colour, kind === 'case' ? Math.max(0.85, s) : s); rig.mesh = new T.Mesh(g.geo, K.mat); rig.mesh.name = 'bag_' + bag.kind;
-    rig.h = g.h; rig.d = g.d; rig.w = g.w; rig.drop = g.drop; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; }
+    rig.h = g.h; rig.d = g.d; rig.w = g.w; rig.drop = g.drop; rig.grip = B.middle_01_l || B.hand_l; rig.gripR = B.middle_01_r || B.hand_r; rig.tip = B.middle_02_l || null; rig.tipR = B.middle_02_r || null; }
   }
   rig.obj = obj; rig.m = new T.Matrix4(); rig.v = new T.Vector3(); rig.u = new T.Vector3();
   return rig;
@@ -324,8 +324,11 @@ export function stepBag(rig, sit, pole, fresh, o) {
   let g = rig.grip, sd = fit.side;
   if (pole) { at(rig.grip, v); at(rig.gripR, u); if (u.y < v.y - 0.1) { g = rig.gripR; sd = -sd; } }
   rig.gh = g === rig.gripR ? 1 : 0;   // which hand holds the handle (0 left, 1 right): people.js closes that hand round it
-  at(g, v); const off = fit.hip + rig.d / 2 + BAGS.clear, x = v.x - fit.midx;
-  mesh.position.set(fit.midx + sd * Math.max(sd * x, off), Math.max(v.y - 0.012, rig.drop + rig.h + 0.012), v.z); mesh.rotation.set(0, 0, 0);
+  at(g, v); const tp = g === rig.gripR ? rig.tipR : rig.tip;
+  if (tp) { at(tp, u); v.lerp(u, 0.6); }   // review 6: the handle hangs in the crook of the curled fingers, not 2-12 cm beside them
+  const off = fit.hip + rig.d / 2 + BAGS.clear, x = v.x - fit.midx, L = rig.drop + rig.h * 0.6, def = off - sd * x;
+  // a bag too wide to hang straight beside the hip keeps its handle in the hand and swings its body out, rather than the whole bag sliding sideways off the fingers
+  mesh.position.set(v.x, Math.max(v.y + (rig.lug ? -0.004 : 0.014), rig.drop + rig.h + 0.012), v.z); mesh.rotation.set(0, 0, def > 0 ? sd * Math.asin(Math.min(0.42, def / L)) : 0);
 }
 
 /** take a bag off a clone (the clone is being thrown away; the geometries and the material are shared and stay) */
