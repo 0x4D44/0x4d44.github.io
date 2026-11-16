@@ -82,7 +82,7 @@ PEOPLE = [
          clothes=['mindfront_knitted_sweater_01'], cut=('sweater', 0.12), kilt=dict(kind='pleated', tart=2, hem=0.10, hose=('#d9d9d9', '#d9d9d9')), shoes='mindfront_shoes_monk_strap_female', nolegs=True),
     dict(id='boy_kilt', kind='boy', outfit='kilt', H=1.28, gender=1, age=0.12, weight=0.45, muscle=0.4, race=(0.1, 0.8, 0.1), skin='young_caucasian_male', eye='brown', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#6d4a2c', face=True,
          clothes=['mindfront_knitted_sweater_02'], cut=('sweater', 0.12), kilt=dict(kind='kilt', tart=0, sporran=True, belt=False, hose=('#e0e0e0', '#b5161e')), shoes='mindfront_shoes_oxford_male', nolegs=True),
-    dict(id='woman_mini', kind='woman', outfit='skirt_short', H=1.64, gender=0, age=0.40, weight=0.45, muscle=0.35, race=(0.0, 0.1, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes03', hair='long01', hair_col='#17120e', face=True,
+    dict(id='woman_mini', skirt_hue=130, kind='woman', outfit='skirt_short', H=1.64, gender=0, age=0.40, weight=0.45, muscle=0.35, race=(0.0, 0.1, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes03', hair='long01', hair_col='#17120e', face=True,
          clothes=['toigo_camisole_top', 'mtknife_pleated_mini_skirt', 'toigo_ankle_boots_female']),
     dict(id='woman_midi', kind='woman', outfit='skirt_midi', H=1.66, gender=0, age=0.48, weight=0.5, muscle=0.35, race=(0.5, 0.4, 0.1), skin='middleage_asian_female', eye='brown', brows='eyebrow011', lashes='eyelashes02', hair='toigo_inverted_bob_with_bangs', hair_col='#3a281c', face=True,
          clothes=['toigo_fisherman_sweater', 'elvs_pencil_skirt', 'toigo_ankle_boots_female']),
@@ -103,7 +103,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#4a6388', 0.78, 0.016)),
     dict(id='teen_runner', kind='teen', outfit='shorts', H=1.62, gender=1, age=0.25, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#8a3b1a', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_running_shoes_01'], shorts=('#2b2b2e', 0.70, 0.012)),
-    dict(id='teen_tube', tris=9500, kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
+    dict(id='teen_tube', skirt_hue=215, tris=9500, kind='teen', outfit='skirt_short', H=1.64, gender=0, age=0.32, weight=0.4, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow010', lashes='eyelashes01', hair='toigo_blunt_bob_with_bangs', hair_col='#17120e', face=True,
          clothes=['punkduck_tube_top', 'mtknife_pleated_mini_skirt', 'toigo_flats']),
     dict(id='teen_tee', kind='teen', outfit='shorts', H=1.57, gender=0, age=0.27, weight=0.4, muscle=0.35, race=(0.85, 0.1, 0.05), skin='young_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes01', hair='toigo_blunt_bob', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#5a7096', 0.82, 0.012)),
@@ -571,6 +571,8 @@ def assign_materials(person, maxpx=1024):
             tn = spec.get('tint') if 'suit' in o.name.lower() else None
             if spec.get('hue') and tex and 'casualsuit' in o.name.lower():   # (review 3: one blue logo tee on six people) the stock casual suits, each wearer a colour of their own
                 tex = hue_shift(os.path.join(mh['_dir'], tex), spec['hue']); mh = dict(mh, _dir=os.path.dirname(tex)); tex = os.path.basename(tex)
+            if spec.get('skirt_hue') and tex and 'skirt' in o.name.lower():   # (review 7: one red tartan mini on three people) the same pleated mini in another tartan
+                tex = hue_shift(os.path.join(mh['_dir'], tex), spec['skirt_hue']); mh = dict(mh, _dir=os.path.dirname(tex)); tex = os.path.basename(tex)
             if tn is None and any(w in o.name.lower() for w in ('boots_female', 'monk_strap_female')): tn = (0.22, 0.14, 0.11)
             o.data.materials.append(make_material('cloth_' + os.path.basename(tex or o.name) + ('_t' if tn else ''), os.path.join(mh['_dir'], tex) if tex else None,
                                                   os.path.join(mh['_dir'], nor) if nor else None, rough=0.78, spec=0.15, maxpx=maxpx if role != 'shoe' else 512, nmaxpx=512, tint=tuple(lin(c) for c in tn) if tn else None))
