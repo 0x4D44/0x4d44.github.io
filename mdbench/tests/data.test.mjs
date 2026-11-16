@@ -28,13 +28,13 @@ for (const s of ix.suites.filter((x) => x.file)) {
   });
 }
 
-test("swe: 10 exercises x 6 seats, judge means as exported", async () => {
+test("swe: 10 exercises, the six phase-1 seats on all of them, later seats on some", async () => {
   const su = await load("swe.json");
   assert.equal(su.sample, false);
   assert.equal(su.tasks.length, 10);
   const a = aggregate(su);
-  assert.equal(a.seats.length, 6);
-  assert.ok(a.seats.every((s) => s.n === 10));
+  assert.ok(a.seats.filter((s) => s.n === 10).length >= 6);
+  assert.ok(a.seats.every((s) => s.n >= 1 && s.n <= 10));
   assert.equal(a.cells["opus-5.5-medium"]["FIX-01"].score.mean, 100);
   assert.ok(a.seats.every((s) => s.perDollar > 0 && s.perHour > 0));
   // Leaderboard order is by mean headline, best first.
