@@ -1,6 +1,6 @@
 // Perth uses the shared instanced street heads/pools and the station's existing
-// fixture plan. Positions on OSM streets are inferred; colours, spacing and light
-// falloff are the shared night-lighting rules, not a surveyed lighting inventory.
+// fixture plan. Positions on OSM streets are inferred, not a surveyed inventory.
+// White LEDs serve the station/approach; older streets retain warm/sodium light.
 import * as THREE from 'three';
 import { hash01, SegmentGrid } from '../../core/city.ts';
 import type { RoadClass } from '../../core/city.ts';
@@ -22,7 +22,8 @@ import { cutRoadMask } from './perth-frontage-bridge.ts';
 
 export interface LampRoad { width: number; line: readonly Pt[] }
 type Ground = (x: number, z: number) => number;
-const fixture = (p: Pt, y: number, height: number): LampSpot => ({ x: p[0], y, z: p[1], height, yaw: 0, kind: LAMP_KIND.warm, slope: [0,0] });
+const fixture = (p: Pt, y: number, height: number): LampSpot => ({ x: p[0], y, z: p[1], height, yaw: 0, kind: LAMP_KIND.cool, slope: [0,0] });
+const inForecourt = ([x,z]: Pt): boolean => x >= FRONTAGE_WINDOW.x0 && x <= FRONTAGE_WINDOW.x1 && z >= FRONTAGE_WINDOW.z0 && z <= FRONTAGE_WINDOW.z1;
 
 /** Sample the surfaces actually drawn over the DTM, including raised cover and
  * bridge decks. A 32 m triangle index is built once; no raycast runs per frame. */
@@ -81,11 +82,14 @@ export function perthStationLampSpots(plan: PerthStationPlan): LampSpot[] {
 export function perthTownLampSpots(roads: readonly LampRoad[], ground: Ground, footprints: readonly (readonly Pt[])[],
   keep: (p: Pt) => boolean = () => true): LampSpot[] {
   const cls = (w: number): RoadClass => w >= 11 ? 'primary' : w >= 10 ? 'secondary' : w >= 8.5 ? 'tertiary' : w >= 6 ? 'minor' : w >= 5 ? 'pedestrian' : 'service';
-  const runs: LampRun[] = roads.map((r, id) => ({ id, cls: cls(r.width), half: r.width / 2, line: r.line, y: (x,z) => ground(x,z) }));
+  // ASSUMED 18 m approach spacing, rather than the sparse service-road rule:
+  // light the full paved loop and its links, while keeping the drawn road width.
+  const runs: LampRun[] = roads.map((r, id) => ({ id, cls: r.line.every(inForecourt) ? 'secondary' : cls(r.width), half: r.width / 2, line: r.line, y: (x,z) => ground(x,z) }));
   const walls = new Footprints(footprints), carriageways = new SegmentGrid();
   for (const r of roads) for (let i = 1; i < r.line.length; i++) carriageways.add({ a: r.line[i-1]!, b: r.line[i]!, reach: r.width / 2 });
-  return lampSpots(runs, { rand: hash01, modern: () => false,
-    blocked: p => !keep(p) || walls.clearance(p[0],p[1],1) < .3 || carriageways.nearest(p,6) < .3 });
+  return lampSpots(runs, { rand: hash01, modern: inForecourt,
+    blocked: p => !keep(p) || walls.clearance(p[0],p[1],1) < .3 || carriageways.nearest(p,6) < .3 })
+    .map(s => inForecourt([s.x,s.z]) ? {...s,kind:LAMP_KIND.cool,height:6} : s);
 }
 
 /** The existing forecourt lanterns, sharing their position rule with the builder. */
@@ -94,23 +98,31 @@ export function perthForecourtLampSpots(file: FrontageFile, ground: Ground, foot
   for (const r of file.roads.filter(r => r.service === 'parking_aisle')) {
     for (const { at, dir } of forecourtLampPosts(r.path as Pt[], (ROAD_WIDTHS.parking_aisle ?? 6) / 2)) {
       if (at[0] < W.x0 || at[0] > W.x1 || at[1] < W.z0 || at[1] > W.z1 || cut(at) || footprints.some(ring => pointInPolygon(at, ring as Pt[]))) continue;
-      for (const sign of [-1,1]) spots.push(fixture([at[0] + sign * dir[0] * 1.1, at[1] + sign * dir[1] * 1.1], ground(...at), 6.12));
+      for (const sign of [-1,1]) {
+        const p: Pt = [at[0] + sign * dir[0] * 1.1, at[1] + sign * dir[1] * 1.1];
+        const spot = fixture(p, ground(...p), 6.12);
+        spot.slope = [(ground(p[0]+1,p[1])-ground(p[0]-1,p[1]))/2,(ground(p[0],p[1]+1)-ground(p[0],p[1]-1))/2];
+        spots.push(spot);
+      }
     }
   }
   return spots;
 }
 
-/** Five instanced/points draws, plus one merged draw for the Dundee fittings. */
+/** Instanced heads/pools and one extra Points draw for distant town cores. */
 export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpot[], forecourt: readonly LampSpot[]): StreetLights {
   const group = new THREE.Group(); group.name = 'perth-night-lamps';
-  const street = createStreetLights(town, { fog: true });
+  // Display-linear .34 caps the white pool at L*62 (neutral white would be
+  // L*65), regardless of exposure or the number of overlapping pendants.
+  // A 2.2x spread fills adjacent bays without raising that ceiling.
+  const street = createStreetLights(town, { fog: true, poolCeiling: .22, haloSize: 1.3, coreSize: 2 });
   const existing = createStreetLights([...perthStationLampSpots(plan), ...forecourt], {
-    posts: false, headAt: s => [s.x,s.y+s.height,s.z], fog: true,
+    posts: false, headAt: s => [s.x,s.y+s.height,s.z], fog: true, poolCeiling: .34, poolSpread: 2.2,
   });
   existing.group.name = 'perth-station-lamps';
   group.add(street.group, existing.group);
   // The Dundee canopy has columns and soffits but no pendant geometry. Mount
-  // slim warm-white fittings below it; every other lamp uses its existing body.
+  // slim white fittings below it; every other lamp uses its existing body.
   const fittings = new Batch();
   for (const p of plan.canopyColumns) {
     const [x,z] = toWorld(p), y = PERTH_STATION.canopy.top - .8;

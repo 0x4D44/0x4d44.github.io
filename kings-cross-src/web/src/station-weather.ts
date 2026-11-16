@@ -193,12 +193,12 @@ export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptio
       setLevel: level => view.model?.night?.setLevel(level),
       dispose: () => { view.model?.night?.setLevel(0); undo(); },
     };
-  });
+  }, [0, 6]); // Perth's outdoor lamps stay off through rainy and snowy daylight.
 }
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
 function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number]; clear?: number; weatherFar?: number },
-  night: () => { setLevel(level: number): void; dispose(): void }): SceneWeather {
+  night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number]): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();
   scene.traverse(o => { if (o instanceof THREE.Light) { lights.set(o, o.visible); o.visible = false; } });
@@ -212,7 +212,7 @@ function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haz
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   // drawn ground beyond the terrain's extent (Perth's east patch) is carved out too
   world.carve(extent, (view.model as { terrainMore?: Extent[] } | undefined)?.terrainMore ?? []);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, lampSunGate, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
   const lamps = night();
   let disposed = false;

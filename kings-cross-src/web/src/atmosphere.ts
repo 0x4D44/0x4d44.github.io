@@ -181,6 +181,9 @@ function starPoints(): THREE.Points {
 export interface AtmosphereOptions {
   /** Geographic location only; omitted preserves the original London sun and lighting rig. */
   location?: LatLon;
+  /** Optional solar gate for artificial light: fade weather's daytime boost
+   * between these elevations, fully off above the second (degrees). */
+  lampSunGate?: readonly [number, number];
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -271,7 +274,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
@@ -460,6 +463,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
         const sunPos = solarPosition(f.timeMs, location?.lat, location?.lon);
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
+        if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
       }

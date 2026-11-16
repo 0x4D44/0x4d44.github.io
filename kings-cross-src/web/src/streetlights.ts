@@ -120,16 +120,24 @@ export interface StreetLightOptions {
   headAt?: (spot: LampSpot) => [number, number, number];
   /** Geographic scenes can fade their distant lamps with their own visibility. */
   fog?: boolean;
+  /** Opt-in display-linear pool ceiling. Normal alpha blending approaches this
+   * colour through overlaps, without the exposure or additive hot spots. */
+  poolCeiling?: number;
+  /** Broaden the falloff and reach together, keeping the peak unchanged. */
+  poolSpread?: number;
+  haloSize?: number;
+  /** A small white-hot core in pixels, including at panorama distances. */
+  coreSize?: number;
 }
 
-/** Additive light fades to zero in fog; mixing in the fog colour would light
- * every transparent pool square and give distant heads the fog's own colour. */
-function fadeLightInFog(material: THREE.Material): void {
+/** Fade additive RGB or a bounded pool's alpha. Mixing in the fog colour paints
+ * squares; fading bounded RGB instead of alpha paints dark squares. */
+function fadeLightInFog(material: THREE.Material, alpha = false): void {
   material.onBeforeCompile = shader => {
     shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
-      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', 'gl_FragColor.rgb *= 1.0 - fogFactor;'));
+      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;'));
   };
-  material.customProgramCacheKey = () => 'street-lamp-fog-fade';
+  material.customProgramCacheKey = () => alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade';
 }
 
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
@@ -180,7 +188,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const haloGeometry = new THREE.BufferGeometry();
   haloGeometry.setAttribute('position', new THREE.Float32BufferAttribute(heads, 3));
   haloGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  const haloMaterial = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
+  const haloMaterial = new THREE.PointsMaterial({ size: options.haloSize ?? 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
     blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false });
   const halos = new THREE.Points(haloGeometry, haloMaterial);
   // Light has no solid surface, even when hidden by day: sightlines pass through.
@@ -192,23 +200,39 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   halos.renderOrder = 5;
   group.add(halos);
 
+  let cores: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | undefined;
+  if (options.coreSize && heads.length) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', haloGeometry.getAttribute('position'));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours.map(c => .92 + .08 * c), 3));
+    const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
+    if (options.fog) fadeLightInFog(material);
+    cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
+    cores.raycast = (): void => {};
+    cores.frustumCulled = false; cores.renderOrder = 6; cores.visible = false;
+    group.add(cores);
+  }
+
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false,
+  const bounded = options.poolCeiling !== undefined;
+  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
+    toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
   pools.raycast = (): void => {};
-  if (options.fog) fadeLightInFog(poolMaterial);
+  if (options.fog) fadeLightInFog(poolMaterial, bounded);
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
     const [x, , z] = headAt(spot);
-    const r = poolRadius(spot.height) * 2;
+    const r = poolRadius(spot.height) * 2 * (options.poolSpread ?? 1);
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
     matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + POOL_LIFT, 0, 0, r, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
     const light = LAMP_LIGHT[spot.kind];
-    pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(light.strength));
+    pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
   });
   pools.instanceMatrix.needsUpdate = true;
   if (pools.instanceColor) pools.instanceColor.needsUpdate = true;
@@ -224,8 +248,9 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
       haloMaterial.opacity = l * 0.9;
       poolMaterial.opacity = l;
       halos.visible = pools.visible = l > 0.01;
+      if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n, draws: meshes.length + 2 }),
+    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n, draws: meshes.length + 2 + Number(!!cores) }),
     dispose() {
       for (const g of geometries) g.dispose();
       for (const m of meshes) m.dispose();
@@ -233,6 +258,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
       poolGeometry.dispose();
       material.dispose();
       haloMaterial.dispose();
+      cores?.geometry.dispose(); cores?.material.dispose();
       poolMaterial.dispose();
       pools.dispose();
     },

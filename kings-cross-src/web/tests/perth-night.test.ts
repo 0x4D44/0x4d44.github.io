@@ -4,11 +4,11 @@ import * as THREE from 'three';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import { fogRange } from '../../core/daylight.ts';
 import { clearAir, fogFar } from '../src/atmosphere.ts';
-import { createPerthLights, perthLampGround, perthStationLampSpots, perthTownLampSpots } from '../src/perth-lamps.ts';
+import { createPerthLights, perthForecourtLampSpots, perthLampGround, perthStationLampSpots, perthTownLampSpots } from '../src/perth-lamps.ts';
 import { toWorld } from '../src/perth-station-structure.ts';
 import type { PerthStationPlan } from '../src/perth-station-structure.ts';
 import { Glsl } from './glsl.ts';
-import { createPerthWeather, PERTH_HAZE, sceneWeatherOptions } from '../src/station-weather.ts';
+import { createPerthWeather, createWaverleyWeather, PERTH_HAZE, sceneWeatherOptions } from '../src/station-weather.ts';
 import { createStreetLights } from '../src/streetlights.ts';
 import type { WaverleyView } from '../src/waverley.ts';
 
@@ -90,7 +90,7 @@ test('Perth street lamps follow a synthetic road at its kerbs and clear building
   assert.ok(kept.every(s => !(s.x<120&&Math.abs(s.z)<10) && !(Math.abs(s.x-180)<5.5&&Math.abs(s.z)<3.5)));
 });
 
-test('Perth lights existing pendant and double lantern heads and Dundee fittings with at most six draws', () => {
+test('Perth lights existing pendant and double lantern heads and Dundee fittings without duplicate posts', () => {
   const plan = {structure:{lamps:[{x:10,z:20}]},canopyColumns:[[30,40]],
     furniture:{lamps:[{at:[60,70],arm:[1,0],double:true}]}} as PerthStationPlan;
   const spots = perthStationLampSpots(plan), p = toWorld([10,20]);
@@ -146,4 +146,34 @@ test('shared street lights can light an existing fixture without adding a second
     lights.setLevel(1); assert.ok(halos.visible && pools.visible);
     lights.setLevel(0); assert.ok(!halos.visible && !pools.visible);
   } finally { lights.dispose(); }
+});
+
+
+test('Perth switches lamps off above six degrees even in rain, snow and fog; Waverley keeps its existing weather ramp', () => {
+  for (const weather of ['rain', 'snow', 'fog']) {
+    const levels: number[] = [], climate = createPerthWeather(syntheticView(levels), sceneWeatherOptions(weather, null));
+    const waverley = createWaverleyWeather(syntheticView(), sceneWeatherOptions(weather, null));
+    try {
+      update(climate, '12:00:00'); update(waverley, '12:00:00');
+      assert.ok(climate.atmosphere.state()!.sun.elevationDeg > 6);
+      assert.equal(levels.at(-1), 0, `${weather}: no daytime pool or halo`);
+      assert.equal(climate.atmosphere.state()!.rig.lampLevel, 0, `${weather}: the applied rig agrees`);
+      assert.ok(waverley.atmosphere.state()!.rig.lampLevel > .2, `${weather}: shared behaviour is preserved`);
+      update(climate, '22:30:00', 2, 2000);
+      assert.equal(levels.at(-1), 1, `${weather}: night lights stay on`);
+    } finally { climate.dispose(); waverley.dispose(); }
+  }
+});
+
+test('Perth platforms and forecourt use white LEDs, with several approach lamps across the setts', () => {
+  const plan = {structure:{lamps:[{x:10,z:20}]},canopyColumns:[[30,40]],furniture:{lamps:[]}} as unknown as PerthStationPlan;
+  assert.ok(perthStationLampSpots(plan).every(s => s.kind === LAMP_KIND.cool));
+  const road = {width:5,line:[[40,-60],[-40,-60]] as [number,number][]};
+  const approach = perthTownLampSpots([road], () => .12, []);
+  assert.ok(approach.length >= 3, '18 m spacing fills the approach, instead of one service-road lamp');
+  assert.ok(approach.every(s => s.kind === LAMP_KIND.cool));
+  const file = {roads:[{id:'synthetic',highway:'service',service:'parking_aisle',path:[[40,-90],[-40,-90]]}],parking:[],bridge:{id:'synthetic',ring:[]}};
+  const forecourt = perthForecourtLampSpots(file, (x,z) => .12 + x * .001 + z * .002, []);
+  assert.equal(forecourt.length, 6);
+  assert.ok(forecourt.every(s => s.kind === LAMP_KIND.cool && Math.abs(s.y-(.12+s.x*.001+s.z*.002)) < 1e-8));
 });

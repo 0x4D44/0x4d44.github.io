@@ -158,7 +158,7 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
       .map(r => ({width: ROAD_WIDTHS[r.highway] ?? 5,line: r.path as [number,number][]}))];
   const E = ground.extent;
   const town = perthTownLampSpots(roads, lampGround, footprints, ([x,z]) => x >= E.x0 && x <= E.x1 && z >= E.z0 && z <= E.z1);
-  const forecourt = perthForecourtLampSpots(frontageFile, groundAt, footprints);
+  const forecourt = perthForecourtLampSpots(frontageFile, lampGround, footprints);
   const night = createPerthLights(perthStationPlan(data, stationOutline(data)?.outer, era), town, forecourt);
   group.add(night.group);
   stats.triangles += night.counts().triangles; stats.drawCalls += night.counts().draws;

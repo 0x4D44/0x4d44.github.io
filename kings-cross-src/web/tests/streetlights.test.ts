@@ -16,6 +16,7 @@ import type { NightLayer } from '../src/night.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, lampGeometry, mastGeometry, MAST_STRIP, poolTexture, POST_HEIGHT, stripPoints } from '../src/streetlights.ts';
 import type { StreetLightOptions } from '../src/streetlights.ts';
 import { GROUND_Y } from '../src/world.ts';
+import { Glsl } from './glsl.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const city: CityData = JSON.parse(readFileSync(new URL('../src/data/kx-city.json', import.meta.url), 'utf8'));
@@ -420,4 +421,48 @@ test('addCity on the real ground: the posts and the masts stand on the terrain a
     assert.ok(Math.abs(p.y - (terrain.heightAt(m.x, m.z) + 0.15)) < 1e-3, `mast ${i} stands on the plaza: ${p.y}`);
   });
   c.dispose();
+});
+
+
+test('opt-in bounded pools stay below L*65 through overlap and exposure, spread across bays, and have small bright head cores', () => {
+  const lights = createStreetLights([spot({kind:LAMP_KIND.cool})], {fog:true,poolCeiling:.34,poolSpread:2.2,coreSize:2,haloSize:1.3});
+  try {
+    const pools = named<THREE.InstancedMesh>(lights.group, 'street-lamp-pools');
+    const material = pools.material as THREE.MeshBasicMaterial;
+    assert.equal(material.blending, THREE.NormalBlending, 'overlap converges to a ceiling instead of adding without bound');
+    assert.equal(material.toneMapped, false, 'night exposure cannot blow out an emissive pool');
+    const matrix = new THREE.Matrix4(); pools.getMatrixAt(0,matrix);
+    close(matrix.elements[0]!,poolRadius(8)*2*2.2,1e-5,'wider pools reach between fixtures');
+    const color = new THREE.Color(); pools.getColorAt(0,color);
+    const Y = .2126*color.r+.7152*color.g+.0722*color.b;
+    const L = 116*Math.cbrt(Y)-16;
+    assert.ok(L > 60 && L < 65, `ceiling L* ${L}`);
+    // Normal alpha compositing is a convex combination at every overlap. A dark
+    // platform can approach the pool colour, but never exceed that ceiling.
+    let floor = .01;
+    for (let i=0;i<40;i++) { floor = floor*.15 + Y*.85; assert.ok(floor <= Y); }
+    const shader={uniforms:{},vertexShader:'',fragmentShader:'#include <fog_fragment>'};
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const linear=shader.fragmentShader.replace(/#ifdef FOG_EXP2[\s\S]*?#else/,'').replace(/^\s*#.*$/gm,'');
+    for (const distance of [0,150,300]) {
+      const env={vars:{fogNear:0,fogFar:300,vFogDepth:distance,fogColor:[.1,.1,.1],gl_FragColor:[.3,.3,.3,1]}};
+      new Glsl('').run(linear,env);
+      const out=env.vars.gl_FragColor;
+      assert.deepEqual(out.slice(0,3),[.3,.3,.3],'fog leaves the bounded colour alone');
+      close(out[3]!,distance===0?1:distance===150?.5:0,1e-8,'fog removes alpha, including the square at the far limit');
+    }
+    const halos = named<THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>>(lights.group,'street-lamp-halos');
+    close(halos.material.size,1.3,1e-8);
+    const cores = named<THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>>(lights.group,'street-lamp-cores');
+    assert.equal(cores.material.sizeAttenuation,false);
+    assert.equal(cores.material.size,2);
+    assert.equal(cores.material.toneMapped,false);
+    assert.ok(cores.geometry.getAttribute('color').getY(0) > .9);
+    assert.equal(cores.material.fog,true);
+    assert.equal(lights.counts().draws,4);
+    lights.setLevel(1); assert.ok(cores.visible);
+    lights.setLevel(0); assert.ok(!cores.visible && !pools.visible);
+    const ray = new THREE.Raycaster(new THREE.Vector3(11,20,-5),new THREE.Vector3(0,-1,0));
+    assert.equal(ray.intersectObject(cores).length,0);
+  } finally { lights.dispose(); }
 });
