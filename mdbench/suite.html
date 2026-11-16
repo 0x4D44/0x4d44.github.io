@@ -35,6 +35,15 @@
   </div>
 </section>
 
+<section id="listen" hidden>
+  <div class="stack col"><div class="eyebrow">Listen</div><h2>Hear the answers</h2>
+  <p>Each model's first answer, turned back into music and played on <a href="https://github.com/0x4D44/ferrosintesis">ferrosintesis</a>, our own synthesiser, using its built-in synthesised voices. Bars the model marked as gaps are silent, and a model that gave its own tempo plays at that tempo. Start with the reference, then compare.</p></div>
+  <div class="panel">
+    <div class="controls"><label>Piece <select id="listen-pick"></select></label></div>
+    <div id="listen-table"></div>
+  </div>
+</section>
+
 <section id="value">
   <div class="stack col"><div class="eyebrow">03 · Value</div><h2>Score against cost and time</h2>
   <p>Each point is a seat: its mean score against its mean cost and mean wall time per task. Up and to the left is better. Points per dollar and per hour are in the leaderboard.</p></div>
@@ -64,7 +73,7 @@
 <footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
 </div>
 <script type="module">
-import { loadIndex, loadSuite, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
+import { loadIndex, loadSuite, loadJSON, listenTable, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
 const q = new URLSearchParams(location.search);
 const main = document.querySelector(".wrap");
 try {
@@ -113,6 +122,21 @@ try {
     document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a column heading for its description.`;
   };
   sel.addEventListener("change", drawHeat);
+  if (su.audio) {
+    // Audio is optional suite data: a manifest of rendered answers per task.
+    const base = `audio/${su.suite}/`;
+    const man = await loadJSON(`${base}manifest.json`);
+    const pick = document.getElementById("listen-pick");
+    const tasks = su.tasks.filter((t) => man[t.id]);
+    pick.innerHTML = tasks.map((t) => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join("");
+    const drawListen = () => { document.getElementById("listen-table").innerHTML = listenTable(ix, su, man, pick.value, base); };
+    pick.addEventListener("change", drawListen);
+    // One answer plays at a time.
+    document.getElementById("listen-table").addEventListener("play", (ev) => {
+      for (const a of document.querySelectorAll("#listen-table audio")) if (a !== ev.target) a.pause();
+    }, true);
+    if (tasks.length) { drawListen(); document.getElementById("listen").hidden = false; }
+  }
   gsel.addEventListener("change", drawHeat);
   drawHeat();
 

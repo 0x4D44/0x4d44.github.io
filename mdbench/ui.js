@@ -100,6 +100,26 @@ export function heatTable(ix, su, metricId, groupId = null) {
   return h + "</tbody></table></div>" + taskNotes(su, shown);
 }
 
+/** Listen table for one task: the reference rendering, then every seat's answer in score order.
+ * man is the suite's audio manifest (paths relative to base). */
+export function listenTable(ix, su, man, taskId, base) {
+  const e = man[taskId];
+  if (!e) return "";
+  const head = su.agg.head;
+  const player = (v, label) => v && v.status === "ok" && v.opus
+    ? `<audio controls preload="none" src="${esc(base + v.opus)}" aria-label="${esc(label)}"></audio>`
+    : `<span class="note">no notes to play</span>`;
+  const mid = (v, name) => v && v.mid ? `<a href="${esc(base + v.mid)}" download="${esc(name)}">.mid</a>` : "";
+  const rows = [`<tr class="ref"><td class="seatcell"><b>Reference</b></td><td class="num">–</td><td>${player(e.reference, `Reference: ${taskId}`)}</td><td>${mid(e.reference, `${taskId}-reference.mid`)}</td></tr>`];
+  const seats = Object.keys(e.seats || {}).map((sid) => ({ sid, v: e.seats[sid], score: su.agg.cells[sid]?.[taskId]?.[head.id]?.mean }))
+    .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+  for (const { sid, v, score } of seats) {
+    const label = ix.seatById[sid]?.label || sid;
+    rows.push(`<tr><td class="seatcell">${seatHTML(ix, sid)}</td><td class="num">${score == null ? "–" : fmt(head, score)}</td><td>${player(v, `${label}: ${taskId}`)}</td><td>${mid(v, `${taskId}-${sid}.mid`)}</td></tr>`);
+  }
+  return `<div class="tw"><table class="listen"><thead><tr><th scope="col">Seat</th><th class="num" scope="col">${esc(head.label)}</th><th scope="col">Listen</th><th scope="col">MIDI</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>`;
+}
+
 /** One line per task that carries a note (task.note in the suite data). */
 export function taskNotes(su, tasks = su.tasks) {
   const noted = tasks.filter((t) => t.note);
