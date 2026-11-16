@@ -318,6 +318,10 @@ export class AnimCrowd {
       const g = o.geometry, idx = g.index, P = g.attributes.position; if (!idx || g.userData.inBoot != null) return;
       const lim = boot - 0.035, keep = []; for (let t = 0; t < idx.count; t += 3) { const a = idx.getX(t), b = idx.getX(t + 1), c = idx.getX(t + 2); if (!(P.getY(a) < lim && P.getY(b) < lim && P.getY(c) < lim)) keep.push(a, b, c); }
       g.userData.inBoot = (idx.count - keep.length) / 3; if (keep.length < idx.count) g.setIndex(new this.THREE.BufferAttribute(new Uint32Array(keep), 1));
+      // a kept triangle with a corner still down in the shaft is lifted on to the line, so the leg ends in a level hem inside the top of the boot (review 7: adult_lusekofta's
+      // flared hems hung over the boots in long jagged shards, the low corners swinging with the foot)
+      let lifted = 0; for (const i of new Set(keep)) if (P.getY(i) < lim) { P.setY(i, lim); lifted++; }
+      if (lifted) { P.needsUpdate = true; if (P.isInterleavedBufferAttribute) P.data.needsUpdate = true; }
     }); return n; }
     if (cuffLo < 0.09) for (const [o] of shoes) {
       const g = o.geometry, idx = g.index, P = g.attributes.position; if (!idx || g.userData.underCuff != null) continue;
