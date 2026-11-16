@@ -54,8 +54,9 @@ test("no sample data ships, and every data file is one the index lists", async (
 test("FIX-01 carries a task note about the all-gates column", async () => {
   const su = await load("swe.json");
   const t = su.tasks.find((x) => x.id === "FIX-01");
-  assert.match(t.note, /display-register test failed for every seat/);
-  assert.ok(su.results.filter((r) => r.task === "FIX-01").every((r) => r.metrics.gates_ok === false));
+  assert.match(t.note, /Most seats fail the hidden display-register test/);
+  const fix = su.results.filter((r) => r.task === "FIX-01");
+  assert.ok(fix.filter((r) => r.metrics.gates_ok === false).length > fix.length / 2);
   assert.ok(su.methodology.caveats.some((c) => c.startsWith("FIX-01")));
   const bad = structuredClone(su);
   bad.tasks[0].note = "";

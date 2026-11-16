@@ -279,7 +279,7 @@
    "title": "Missing score digits",
    "description": "A DOS game shows no score digits. From the symptom report, find the root cause and fix it with a regression test.",
    "tags": [],
-   "note": "The hidden display-register test failed for every seat, so All gates is fail across the board; the judge score reflects partial fixes."
+   "note": "Most seats fail the hidden display-register test, so All gates shows fail for them; the judge score reflects how much of the fix each seat got right."
   },
   {
    "id": "FIX-02",
@@ -1615,18 +1615,83 @@
    "flags": []
   },
   {
+   "seat": "gpt-4o-2024-08",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 17.2,
+    "rubric": 20.0,
+    "score_claude": 14.3,
+    "score_gpt": 20.0,
+    "judge_sd": 4.5,
+    "bonus": 0.0,
+    "mean_rank": 10.5,
+    "cost_usd": 2.103,
+    "wall_min": 1.5,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 96.8,
+    "rubric": 97.5,
+    "score_claude": 96.0,
+    "score_gpt": 97.5,
+    "judge_sd": 0.8,
+    "bonus": 0.0,
+    "mean_rank": 8.0,
+    "cost_usd": 0.486,
+    "wall_min": 95.0,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 17.6,
+    "rubric": 18.1,
+    "score_claude": 17.0,
+    "score_gpt": 18.1,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 10.5,
+    "cost_usd": 0.571,
+    "wall_min": 46.8,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
    "seat": "fable-5.2-high",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 99.3,
+    "score": 99.8,
     "rubric": 100.0,
-    "score_claude": 98.7,
+    "score_claude": 99.7,
     "score_gpt": 100.0,
-    "judge_sd": 0.9,
-    "bonus": 0.0,
-    "mean_rank": 1.8,
+    "judge_sd": 0.4,
+    "bonus": 0.2,
+    "mean_rank": 2.7,
     "cost_usd": 4.585,
     "wall_min": 22.0,
     "gates_ok": false,
@@ -1641,13 +1706,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 95.1,
+    "score": 96.4,
     "rubric": 97.5,
-    "score_claude": 92.7,
+    "score_claude": 95.3,
     "score_gpt": 97.5,
-    "judge_sd": 2.7,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 6.0,
+    "mean_rank": 9.0,
     "cost_usd": 0.313,
     "wall_min": 9.9,
     "gates_ok": false,
@@ -1657,23 +1722,64 @@
    "flags": []
   },
   {
-   "seat": "sonnet-5.5-high",
+   "seat": "o3-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 9.3,
+    "rubric": 11.2,
+    "score_claude": 7.3,
+    "score_gpt": 11.2,
+    "judge_sd": 2.0,
+    "bonus": 0.0,
+    "mean_rank": 12.0,
+    "cost_usd": 2.164,
+    "wall_min": 6.4,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 98.8,
-    "rubric": 100.0,
-    "score_claude": 97.7,
-    "score_gpt": 100.0,
-    "judge_sd": 1.2,
+    "score": 97.4,
+    "rubric": 97.5,
+    "score_claude": 97.3,
+    "score_gpt": 97.5,
+    "judge_sd": 0.3,
     "bonus": 0.0,
-    "mean_rank": 3.8,
-    "cost_usd": 0.699,
-    "wall_min": 8.0,
+    "mean_rank": 6.5,
+    "cost_usd": 1.191,
+    "wall_min": 15.6,
     "gates_ok": false,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 98.2,
+    "rubric": 98.1,
+    "score_claude": 98.3,
+    "score_gpt": 98.1,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 2.7,
+    "cost_usd": 3.076,
+    "wall_min": 56.3,
+    "gates_ok": true,
     "builds": true,
-    "hidden_pass": 0.5
+    "hidden_pass": 1.0
    },
    "flags": []
   },
@@ -1683,15 +1789,36 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 99.0,
+    "score": 99.5,
     "rubric": 100.0,
-    "score_claude": 98.0,
+    "score_claude": 99.0,
     "score_gpt": 100.0,
-    "judge_sd": 1.2,
+    "judge_sd": 0.8,
     "bonus": 0.0,
-    "mean_rank": 3.0,
+    "mean_rank": 5.3,
     "cost_usd": 1.774,
     "wall_min": 9.1,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 100.0,
+    "rubric": 100.0,
+    "score_claude": 100.0,
+    "score_gpt": 100.0,
+    "judge_sd": 0.0,
+    "bonus": 0.0,
+    "mean_rank": 2.0,
+    "cost_usd": 4.601,
+    "wall_min": 10.2,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.5
@@ -1709,8 +1836,8 @@
     "score_claude": 100.0,
     "score_gpt": 100.0,
     "judge_sd": 0.0,
-    "bonus": 0.0,
-    "mean_rank": 1.3,
+    "bonus": 0.2,
+    "mean_rank": 3.5,
     "cost_usd": 1.325,
     "wall_min": 15.9,
     "gates_ok": false,
@@ -1719,22 +1846,23 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-xhigh",
+   "seat": "sonnet-5.5-high",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 95.8,
-    "rubric": 97.5,
-    "score_claude": 94.0,
-    "score_gpt": 97.5,
-    "judge_sd": 2.1,
+    "score": 99.5,
+    "rubric": 100.0,
+    "score_claude": 99.0,
+    "score_gpt": 100.0,
+    "judge_sd": 0.8,
     "bonus": 0.0,
-    "mean_rank": 5.0,
-    "cost_usd": 1.191,
-    "wall_min": 15.6,
+    "mean_rank": 5.3,
+    "cost_usd": 0.699,
+    "wall_min": 8.0,
     "gates_ok": false,
-    "builds": true
+    "builds": true,
+    "hidden_pass": 0.5
    },
    "flags": []
   },
@@ -1892,7 +2020,7 @@
    "Performance exercises were timed as 5 base/seat pairs on a machine that was also doing other work; the gate checks the gain is separated from noise, but absolute times are not lab-grade.",
    "Some Claude runs hit a usage limit and were resumed in the same session (flagged resumed); their cost is the session's total, including the context re-read on resume.",
    "A run that stopped early (no tool calls, or under two minutes) without hitting a cap was told to continue, up to three times (flagged nudged); its time and cost include every part.",
-   "FIX-01: the hidden display-register test failed for every seat, so All gates shows fail for every seat; the judge score reflects how much of the fix each seat got right.",
+   "FIX-01: most seats fail the hidden display-register test (all six phase-1 seats did), so All gates shows fail for them; the judge score reflects how much of the fix each seat got right.",
    "One run per seat per exercise so far; the design calls for three runs on design exercises, which will show as spread when they land."
   ]
  }
