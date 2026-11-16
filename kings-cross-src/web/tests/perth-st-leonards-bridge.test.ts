@@ -553,10 +553,10 @@ test('round 8 second follow-up: the rust albedo is a muted brown, retaining gree
   assert.ok(cores > 1000, `muted brown core texels ${cores}`);
 });
 
-// Lead ruling 2026-11-16 21:10Z: the scorer rejected round 9's mushroom/T caps and full-height stalks. Its shape/size/occupancy
-// target is superseded by broad upper-middle blotches in >=70% of panels, off the stiffeners, with occasional short, soft tails.
-// Keep the colour, paint, filtering, feather, frame and rivet assertions; the separate minified checks also bound body size and tails.
-test('round 9b ruling: broad central blotches and short occasional runoff retain the filtered paint and frame', () => {
+// Lead ruling 2026-11-16 21:33Z: round 9b's centred, uniform polka dots were rejected. Replace its placement/count clauses
+// with irregular seeded blotches, including edge and low patches and varied counts. Keep colour, paint, filtering, feather,
+// frame, rivet, flange and coping assertions verbatim; the separate minified checks exercise the revised shape and runoff targets.
+test('round 9c ruling: irregular blotches retain the filtered paint and frame', () => {
   const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS;
   const painted = scene.group.getObjectByName('perth-st-leonards-paint') as THREE.Mesh | undefined;
   assert.ok(painted, 'a continuously filtered paint texture replaces the hard rust polygons');
@@ -592,9 +592,9 @@ test('round 9b ruling: broad central blotches and short occasional runoff retain
   // Count occupied panels; a merged scab may have a separate lower trail component at this threshold.
   const occupied = counts.filter(n => n > 0).length, blank = counts.filter(n => n === 0).length;
   const { bodies, ph, pw } = stLeonardsWeatherReadings(tex.image, panels, K.girder.flange / (K.parapet + K.fascia));
-  assert.ok(occupied >= Math.ceil(.7 * panels) && blank >= 1, `mostly occupied, with some clean panels: ${counts}`);
+  assert.ok(blank >= 3 && blank <= 8 && counts.some(n => n >= 2), `varied panel counts: ${counts}`);
   assert.ok(signatures.size >= .9 * occupied, `unique occupied patterns ${signatures.size}/${occupied}`);
-  assert.ok(bodies.every(p => p.left / pw >= .09 && p.right / pw <= .91 && (p.bottom + p.top) / 2 / ph >= .48 && (p.bottom + p.top) / 2 / ph <= .72), 'upper-middle blotches clear of stiffeners');
+  assert.ok(Math.max(...bodies.map(p => (p.left + p.right) / 2 / pw)) - Math.min(...bodies.map(p => (p.left + p.right) / 2 / pw)) >= .5, 'blotch centres vary across panels');
   assert.ok(bodies.every(p => p.tailReach <= ph * .4), `short tail reaches ${bodies.map(p => p.tailReach)}`);
   assert.ok(clean / pixels >= .75 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
   assert.ok(feather >= solid * .25 && maximumJump <= 30, `feather ${feather}, solid ${solid}, maximum adjacent blue jump ${maximumJump}`);

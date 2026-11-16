@@ -73,7 +73,7 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
 }
 
 /** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
- * capture ruling. Round 9b: broad upper-middle blotches clear of the stiffeners; occasional short, soft, spreading runoff below.
+ * capture ruling. Round 9c: independently seeded, merged ragged lobes, varied panel counts and positions, muted brown and soft runoff.
  * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
 export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
  const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
@@ -83,34 +83,40 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
  const noise=(x:number,y:number,seed:number)=>{const i=Math.floor(x),j=Math.floor(y),u=smooth(0,1,x-i),v=smooth(0,1,y-j);
   const a=hash(i+seed,j),b=hash(i+1+seed,j),c=hash(i+seed,j+1),d=hash(i+1+seed,j+1);return (a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v;};
  const grain=(x:number,y:number,seed:number)=>.6*noise(x,y,seed)+.28*noise(x*2,y*2,seed+77)+.12*noise(x*4,y*4,seed+139);
- const scab=(x:number,y:number)=>Math.pow(Math.abs(x)**2.8+Math.abs(y)**2.8,1/2.8);
  const clear=1-2*flangeFraction;
  for(let panel=0;panel<panels;panel++){
-  const key=panel*31+503;
-  // At most one clean panel in a row. The reference has broad rust through most bays, rather than long bare runs.
-  if(hash(key)<.2&&(panel===0||hash(key-31)>=.2))continue;
-   const cx=.43+hash(key+1)*.14,cy=.58+.08*hash(key+2),ry=.27+hash(key+4)*.045;
-   const rx=Math.min(.34,ry*.73*(1.05+hash(key+3)*.38)),merged=hash(key+5)>.62;
-   const hasRunoff=hash(key+6)>.55,runLength=.2+hash(key+7)*.13;
+  const key=panel*31+503,choice=hash(key);if(choice<.15)continue;
+  const count=choice>.88?2:1;
+  for(let patch=0;patch<count;patch++){
+   const seed=key+patch*409,scale=.5+1.1*hash(seed+4);
+   const cx=count===2?(patch===0?.12+.2*hash(seed+1):.72+.2*hash(seed+1)):.03+.94*hash(seed+1);
+   const cy=.41+.57*hash(seed+2),rx=.23*scale*(.8+.4*hash(seed+3)),ry=.23*scale*(.8+.4*hash(seed+5));
+   const angle=hash(seed+9)*Math.PI*2,ca=Math.cos(angle),sa=Math.sin(angle),lobes=hash(seed+10)>.35?3:2;
+   // The bleed starts at the lowest merged lobe, rather than disappearing inside a taller neighbouring lobe.
+   const tips=[[0,-1],[.72*ca-.3*sa,.72*sa+.3*ca-Math.hypot(.72*sa,.78*ca)]];
+   if(lobes===3)tips.push([-.6*ca+.48*sa,-.6*sa-.48*ca-Math.hypot(.7*sa,.62*ca)]);
+   const tip=tips.reduce((a,b)=>a[1]<b[1]?a:b),low=cy+ry*tip[1],runX=cx+rx*tip[0];
+   const hasRunoff=hash(seed+6)>.1&&low>.27,runLength=.22+.1*hash(seed+7);
    const x0=Math.floor(panel*width/panels),x1=Math.min(width,Math.ceil((panel+1)*width/panels));
-   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-(hasRunoff?runLength:0))*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
+   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.5-(hasRunoff?runLength:0))*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.5)*clear)*height));
    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-    const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry;
-    // Broad irregular erosion, with a partly merged lobe inside the body's envelope; no thin cap or repeated lozenge.
-    const body=scab(nx+.08*Math.sin(ny*3+key),ny),lobe=scab((nx+.25)/.85,(ny-.2)/.78);
-    const q=(merged?Math.min(body,lobe):body)+(n-.5)*.44+.055*Math.sin(nx*8+key)*Math.sin(ny*7-key);
-    const pores=.85+.15*smooth(.23,.58,grain(u*33,v*31,key+271));
-    const bloom=(1-smooth(.72,1.08,q))*pores;
-    // A minority of stains bleed into a short diffuse fan. It widens as it descends, and fades before reaching the foot flange.
-    const below=cy-ry*.72-v,spread=.035+.065*Math.max(0,below)/runLength,runX=cx+rx*(hash(key+8)-.5)*.5;
-    const runoff=hasRunoff&&below>0?.44*Math.exp(-(((u-runX)/spread)**2))*(1-smooth(0,runLength,below)):0;
+    const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,nx=(u-cx)/rx,ny=(v-cy)/ry;
+    const ax=nx*ca+ny*sa,ay=-nx*sa+ny*ca;
+    // Two or three offset lobes share one ragged boundary; the panel seed changes their orientation, scale and position.
+    let q=Math.min(Math.hypot(ax,ay),Math.hypot((ax-.72)/.72,(ay-.3)/.78));
+    if(lobes===3)q=Math.min(q,Math.hypot((ax+.6)/.7,(ay+.48)/.62));
+    q+=(grain(u*17,v*21,seed)-.5)*.65+.09*Math.sin(nx*7+seed)*Math.sin(ny*9-seed);
+    const bloom=1-smooth(.77,1.04,q);
+    // Roughly half the bodies have a soft 5-9 display-pixel bleed; low bodies still weather the platform camera's narrow strip.
+    const below=low+ry*.08-v,spread=.045+.025*Math.max(0,below)/runLength;
+    const runoff=hasRunoff&&below>0?.62*Math.exp(-(((u-runX)/spread)**2))*(1-smooth(runLength*.25,runLength,below)):0;
     const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
-    // Captured paint, not the sky rig alone, anchors this muted albedo family. It predicts a brown near (88,70,58) by day,
-    // (80,55,44) at dusk in the body; feathers are lighter and less saturated. These are predictions until the GPU pair.
-    const tone=2*grain(u*17,v*19,key+419)-1,hue=2*grain(u*27,v*23,key+777)-1;
-    const rust=[170+4*tone+2*hue,144+3*tone,122+3*tone-hue],i=(y*width+x)*4;
+    // More neutral than round 9b: darker brown core and paler edge. Actual day/dusk saturation awaits the GPU pair.
+    const tone=2*grain(u*17,v*19,seed+419)-1,hue=2*grain(u*27,v*23,seed+777)-1,edge=smooth(.25,1,q);
+    const rust=[164.2+4*tone+2*hue+3*edge,145+4*tone+4*edge,136+4*tone-hue+5*edge],i=(y*width+x)*4;
     for(let j=0;j<3;j++)data[i+j]=Math.round(data[i+j]*(1-alpha)+rust[j]*alpha);
    }
+  }
  }
  // A one-texel Gaussian feather also smooths the smallest noise features; filtering on the GPU then handles the camera distance.
  const horizontal=data.slice();
