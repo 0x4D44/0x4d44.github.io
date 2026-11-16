@@ -1350,17 +1350,22 @@ def build_vest(person, colr='#ff6a00'):
     kill = [f for f in bm.faces if not all(v.index in keepv for v in f.verts)]
     bmesh.ops.delete(bm, geom=kill, context='FACES')
     loose = [v for v in bm.verts if not v.link_faces]; bmesh.ops.delete(bm, geom=loose, context='VERTS')
-    W = {}
-    for v in bm.verts:
-        src = me.vertices[v.index] if v.index < len(me.vertices) else None
-        co = mw @ (v.co + v.normal * 0.012); v.co = co
-        W[(round(co.x, 4), round(co.y, 4), round(co.z, 4))] = [(suit.vertex_groups[g.group].name, g.weight) for g in src.groups] if src else []
+    # (review 6: the vest broke into shards walking and seated - after the deletes bmesh renumbers its vertices, so v.index no longer named the suit vertex it
+    #  came from and many took no weights. Each vest vertex now takes the weights of the nearest suit vertex.)
+    from mathutils import kdtree
+    kd = kdtree.KDTree(len(me.vertices))
+    for sv in me.vertices: kd.insert(mw @ sv.co, sv.index)
+    kd.balance()
+    for v in bm.verts: v.co = mw @ (v.co + v.normal * 0.012)
+    def vest_weights(co):
+        _, i, _ = kd.find(co)
+        return [(suit.vertex_groups[g.group].name, g.weight) for g in me.vertices[i].groups]
     # the bands: faces whose middle is near the chest line or the waist line take the second material
     zc = z_lo + 0.58 * (z_hi - z_lo); zw = z_lo + 0.14 * (z_hi - z_lo)
     for f in bm.faces:
         fz = sum(v.co.z for v in f.verts) / len(f.verts)
         f.material_index = 1 if (abs(fz - zc) < 0.022 or abs(fz - zw) < 0.022) else 0
-    ob = new_part(person, 'hivis_vest', bm, solid_material('cloth_hivis_' + colr.lstrip('#'), hex_rgb(colr), 0.55), lambda co: W.get((round(co.x, 4), round(co.y, 4), round(co.z, 4)), []), role='cloth')
+    ob = new_part(person, 'hivis_vest', bm, solid_material('cloth_hivis_' + colr.lstrip('#'), hex_rgb(colr), 0.55), vest_weights, role='cloth')
     ob.data.materials.append(solid_material('cloth_hivis_band', hex_rgb('#c8ccd0'), 0.3, 0.6))
 
 def build_pipes(person):

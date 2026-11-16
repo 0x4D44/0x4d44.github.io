@@ -311,6 +311,14 @@ Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scor
   walkers are held up only by others on the move, not by someone standing at the stair foot (whole flights had stood still for up to 98 s); a person
   already aboard does not board the same train again; pencil and midi skirts do not cross their legs.
 
+### Review 6 fixes (2026-11-16, `research/people-reviews/REVIEW_6.md`, scored 6.5)
+
+- **Hi-vis vest**: it broke into shards walking and seated - after the face deletes bmesh renumbers its vertices, so the vest took weights from the wrong suit
+  vertices or none; each vest vertex now copies the weights of the nearest suit vertex (KD tree).
+- In the game: a stair walker held up by someone standing in the way asks them to step aside, and once held up for 1.5 s walks on for a full second (one free
+  frame per 1.5 s had made a 5 cm/s creep, and ignoring standing people walked people through each other); a person handed over with their look (off or on a
+  train) who is already in that crowd comes as somebody else.
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.

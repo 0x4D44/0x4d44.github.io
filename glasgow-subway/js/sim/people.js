@@ -396,6 +396,9 @@ export class AnimCrowd {
   }
   add(p, parent, filter) {
     if (!this.hasAnim || (this.people.length >= this.max && !p.force)) return p;
+    // a person handed over with their look (getting off a train on to this platform, getting on) who is already here in this crowd comes as somebody else: review 6 saw
+    // the same people twice on one platform and in one car. Their bag and print go with the look, so they are dropped too.
+    if (p.char && this.people.some((q) => q.char === p.char && q.obj)) { p.char = null; p.bag = undefined; p.print = null; p.teeColour = undefined; }
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
     p.lod = !!ch.lodNode; const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
     this._dressTee(p, obj); this._lids(p, obj);
@@ -797,6 +800,7 @@ export class AnimCrowd {
           }
         }
       }
+      if (p.madeWayT > 0) p.madeWayT -= dt;
       if (!p.hidden && p.obj.visible) this._attend(p, dt);   // (riders too, though they are static: review 3 counted no smile and no look round in 1512 rider samples)
       if (!p.static) this._turn(p, dt); else if (p.tween) this._tweenStep(p, dt);
       // idle-variant rotation (phone / talk / look / fidget ...)
@@ -963,7 +967,12 @@ export class AnimCrowd {
   _railStep(p, dt, sp) {
     sp *= this._paceK(p);
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
-    if (!(p.blockT > 1.5)) for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static || (q.mode !== 'go' && q.mode !== 'walk')) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) { p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }   // (only someone else on the move holds a stair walker up: a waiter standing at the stair foot stopped whole flights for 20-98 s - review 5)
+    if (p.blockT > 1.5) p.passT = 1.0;   // (held up 1.5 s: walk on for a second before looking again - one free frame per 1.5 s made a 5 cm/s creep)
+    if (p.passT > 0) p.passT -= dt; else for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) {
+        // someone standing in the way (a waiter at the stair foot) steps aside, out of the line of the stairs, and the walker waits for them (review 5: they held whole flights
+        // up for 98 s; review 6: ignoring them walked people through each other)
+        if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
+        p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw; p.x += -Math.sin(p.yaw) * move; p.z += -Math.cos(p.yaw) * move; return true;
   }
