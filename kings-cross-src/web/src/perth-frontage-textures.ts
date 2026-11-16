@@ -48,10 +48,19 @@ export function rubbleTexture():THREE.CanvasTexture|null{
 }
 
 /** Coursed squared stone (R-pt2-a: the station's single-storey street walls): 0.3 m courses of 0.6-1.1 m blocks, fine light joints. */
-export function coursedTexture():THREE.CanvasTexture|null{
- return canvas(512,(g,s,rnd)=>{const k=s/PERTH_TEXTURE_TILE.coursed,h=.3*k;
+export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasTexture|null{
+ return canvas(512,(g,s,rnd)=>{const k=s/PERTH_TEXTURE_TILE.coursed;
   g.fillStyle=grey(170);g.fillRect(0,0,s,s);
-  for(let y=0;y<s;y+=h){let x=-rnd()*.6*k;while(x<s){const w=(.6+rnd()*.5)*k;g.fillStyle=grey(Math.round(215+rnd()*40));g.fillRect(x+1.5,y+1.5,w-3,h-3);
-   if(x+w>s)g.fillRect(x+1.5-s,y+1.5,w-3,h-3);x+=w;}}
+  // R-slb-a: irregular sandstone ashlar, rather than the street walls' uniform 0.3 m courses. Normalise the bridge's courses to a
+  // complete tile, so no thin closing course appears every four metres. Keep the same stone/mortar tones (~0.79 linear mean).
+  const rows:number[]=[];
+  if(bond==='bridge'){for(let y=0;y<s;){const h=(.24+rnd()*.18)*k;rows.push(h);y+=h;}const total=rows.reduce((a,b)=>a+b,0);for(let i=0;i<rows.length;i++)rows[i]*=s/total;}
+  else for(let y=0;y<s;y+=.3*k)rows.push(.3*k);
+  let y=0;
+  for(const h of rows){let x=-rnd()*.6*k;const length=bond==='bridge'?.48+rnd()*.35:.6;
+   while(x<s){const w=(length+rnd()*.5)*k;g.fillStyle=grey(Math.round(215+rnd()*40));g.fillRect(x+1.5,y+1.5,w-3,h-3);
+    if(x+w>s)g.fillRect(x+1.5-s,y+1.5,w-3,h-3);x+=w;}
+   y+=h;}
+  if(bond==='bridge')for(let i=0;i<900;i++){g.fillStyle=grey(175+Math.round(rnd()*55));g.fillRect(rnd()*s,rnd()*s,1+rnd(),1+rnd()*2);}
  });
 }

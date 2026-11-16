@@ -51,8 +51,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const cutWallCount=cutWalls(rubble,ground,track.ground,track.bridge,ring,bridgeBatch);
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
  // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material,
- // and its soffits another (round 7: lamp-lit after dark); its coursed ashlar shares the street walls' coursed-stone batch (no new draw or texture)
- const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonardsSoffits=new Batch({colored:true,uv:false}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,coursed,stLeonardsSoffits);
+ // and its soffits another (round 7: lamp-lit after dark). Round 8: its own irregular ashlar bond, using the same texture mechanism.
+ const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonardsSoffits=new Batch({colored:true,uv:false}),stLeonardsAshlar=new Batch({colored:true}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,stLeonardsAshlar,stLeonardsSoffits);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
@@ -76,6 +76,7 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  // its soffits: their own draw, lit after dark by the station's and the street's lamps (lighting.ts FLOOD, round 7)
  const SL=ST_LEONARDS.soffitLamp;add(group,stLeonardsSoffits,own(floodLit(new THREE.MeshLambertMaterial({vertexColors:true}),SL.strength,SL.reach,SL.floor)),'perth-st-leonards-soffit');
  const textured=(t:THREE.CanvasTexture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
+ add(group,stLeonardsAshlar,textured(coursedTexture('bridge')),'perth-st-leonards-masonry');
  add(group,setts,textured(settsTexture(),-3),'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
  add(group,rubble,textured(rubbleTexture()),'perth-kings-place-walls');
  return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},stLeonards,triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};

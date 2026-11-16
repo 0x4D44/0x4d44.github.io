@@ -11,8 +11,9 @@ import { CLEAR, skyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import { REFERENCE } from '../src/atmosphere.ts';
 import { LIGHTS } from '../src/world.ts';
-import { ST_LEONARDS, ST_LEONARDS_APPROACHES, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_SOURCE, SOFFIT_TONES, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit, stLeonardsSpans } from '../src/perth-st-leonards-bridge.ts';
+import { ST_LEONARDS, ST_LEONARDS_APPROACHES, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_NORTH, ST_LEONARDS_SOURCE, SOFFIT_TONES, stLeonardsArchSegments, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit, stLeonardsSpans } from '../src/perth-st-leonards-bridge.ts';
 import { Batch, rgb as rgbOf } from '../src/materials.ts';
+import { coursedTexture } from '../src/perth-frontage-textures.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const scene = buildPerthScene({ lighting: false });
@@ -138,11 +139,12 @@ test('round 3: the spandrels, piers and abutments are coursed ashlar, in the tex
   // v is the height over the coursed tile, so the 0.3 m courses run level and line up from face to face
   for (let i = 0; i < ashlar.count; i++) assert.ok(Math.abs(ashlar.uvs[2 * i + 1]! - ashlar.positions[3 * i + 1]! / 4) < 1e-6, `vertex ${i}: v ${ashlar.uvs[2 * i + 1]} at y ${ashlar.positions[3 * i + 1]}`);
   // in the scene: a level ray at mid-spandrel over a pier meets the street walls' coursed stone, not the plain bridge mesh
-  const walls = meshNamed('perth-station-street-walls'), bridge = meshNamed('perth-st-leonards-bridge');
+  // Round 8: the bridge's irregular bond has its own material; the station walls retain their original bond.
+  const walls = meshNamed('perth-st-leonards-masonry'), bridge = meshNamed('perth-st-leonards-bridge');
   for (const c of ST_LEONARDS.piers) for (const sg of [-1, 1]) {
     const ray = new THREE.Raycaster(), [ox, oz] = stLeonardsAt(c, sg * (ST_LEONARDS.half + 10)), [ix, iz] = stLeonardsAt(c, 0);
     ray.set(new THREE.Vector3(ox, 1, oz), new THREE.Vector3(ix - ox, 0, iz - oz).normalize());
-    assert.equal(ray.intersectObjects([walls, bridge])[0]?.object.name, 'perth-station-street-walls', `pier at ${c}, side ${sg}`);
+    assert.equal(ray.intersectObjects([walls, bridge])[0]?.object.name, 'perth-st-leonards-masonry', `pier at ${c}, side ${sg}`);
   }
 });
 
@@ -209,7 +211,7 @@ test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridg
     assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `s ${s} y ${y.toFixed(2)} in frame (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
     const eye = new THREE.Vector3(...(k.pos as [number, number, number])), dir = new THREE.Vector3(x, y, z).sub(eye), far = dir.length();
     const hit = new THREE.Raycaster(eye, dir.normalize(), .1, far + 1).intersectObjects(everything)[0];
-    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-st-leonards-soffit', 'perth-station-street-walls'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
+    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-st-leonards-soffit', 'perth-st-leonards-masonry'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
   }
   const evidence = readFileSync(new URL('../../tools/evidence.mjs', import.meta.url), 'utf8');
   assert.match(evidence, /'perth-frontage': \[[^\]]*'pt-st-leonards-bridge'/);
@@ -383,9 +385,11 @@ test('round 4c: by noon the soffits are a visible brown-grey, not black: at leas
 // Round 5 (the r4c score, judged by eye): the soffits' top third near black, the soffit's bond unread, the masonry evenly tiled.
 // (round 6: round 5's crown bound, 0.45-0.55 of the face, was set with the uncalibrated model, which put main's crown at 0.47 where the
 // pixels were about 0.2; round 6's calibrated floors replace it)
-test('round 5/6: the soffits\' crowns are stone, not black: at least 35 of 255 by noon and 15 at dusk, under the springing; at dusk under the face', () => {
+// Round 8: 35/255 was a floor against round 7's face (~53 captured). The requested darker face needs the same relative floor
+// (0.65 of the face), alongside the unchanged 0.8 ceiling, so a darker wall does not force its crown to become the brighter surface.
+test('round 5/6/8: the soffits\' crowns are stone, not black: at least 0.65 of the face by noon and 15 at dusk, under the springing; at dusk under the face', () => {
   const d = soffitLight('2026-06-21T11:00:00Z');
-  assert.ok(d.bands[2]! >= 35, `noon soffit by height, springing to crown (display, 0-255): ${d.bands.map(b => b.toFixed(1))}`);
+  assert.ok(d.bands[2]! >= .65 * d.face, `noon soffit by height, springing to crown (display, 0-255): ${d.bands.map(b => b.toFixed(1))}, face ${d.face.toFixed(1)}`);
   assert.ok(d.bands[0]! > d.bands[2]!, `the springing's band over the crown's: ${d.bands.map(b => b.toFixed(4))}`);
   const k = soffitLight('2026-11-09T16:20:00Z');
   assert.ok(k.bands[2]! >= 15 && k.bands[0]! > k.bands[2]!, `dusk soffit by height, springing to crown: ${k.bands.map(b => b.toFixed(1))}`);
@@ -414,13 +418,19 @@ test('round 5: the soffit\'s bond reads: stones in a wide spread of tones, with 
   }
 });
 
+/** Exposed stone below the upper soot and away from runoff: keep the original patch bounds separate from the new structural stains. */
+function exposedStone(x: number, y: number, z: number): boolean {
+  const K = ST_LEONARDS, g0 = K.abutments[0] - 1.2, g1 = K.abutments[1] + 1.2, pitch = (g1 - g0) / Math.floor((g1 - g0) / K.girder.pitch);
+  const { s } = stLeonardsFrame([x, z]), trail = Math.abs(s - (g0 + Math.round((s - g0) / pitch) * pitch));
+  return y >= K.spring && y <= 4 && trail >= .15;
+}
 test('round 5: the coursed ashlar is weathered: its tone varies across each face, and the piers\' feet are stained darker', () => {
   const plain = new Batch({ colored: true, uv: false }), ashlar = new Batch({ colored: true });
   stLeonardsBridge(plain, scene.terrain, ashlar);
   // across the faces looking north and south (each side alone, so the north face's shade is not counted as variation)
   for (const north of [true, false]) {
     const ls: number[] = [];
-    for (let i = 0; i < ashlar.count; i++) { const nz = ashlar.normals[3 * i + 2]!; if (north ? nz < -.7 : nz > .7) ls.push(ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!); }
+    for (let i = 0; i < ashlar.count; i++) { const nz = ashlar.normals[3 * i + 2]!; if ((north ? nz < -.7 : nz > .7) && exposedStone(ashlar.positions[3 * i]!, ashlar.positions[3 * i + 1]!, ashlar.positions[3 * i + 2]!)) ls.push(ashlar.colors[3 * i]! + ashlar.colors[3 * i + 1]! + ashlar.colors[3 * i + 2]!); }
     const m = ls.reduce((a, b) => a + b, 0) / ls.length, sd = Math.sqrt(ls.reduce((a, b) => a + (b - m) ** 2, 0) / ls.length);
     assert.ok(sd / m >= .03 && sd / m <= .12, `${north ? 'north' : 'south'} face: tone spread ${(sd / m).toFixed(3)} of ${ls.length} corners`);
   }
@@ -501,7 +511,7 @@ test('round 7: the face drifts in patches with edges: each piece of coursed face
   for (let t = 0; t < ashlar.indices.length; t += 3) {
     const v = [ashlar.indices[t]!, ashlar.indices[t + 1]!, ashlar.indices[t + 2]!];
     // above the piers' stain, on the north face
-    if (v.some(i => ashlar.normals[3 * i + 2]! > -.7 || ashlar.positions[3 * i + 1]! < ST_LEONARDS.spring)) continue;
+    if (v.some(i => ashlar.normals[3 * i + 2]! > -.7 || !exposedStone(ashlar.positions[3 * i]!, ashlar.positions[3 * i + 1]!, ashlar.positions[3 * i + 2]!))) continue;
     pieces++;
     const ls = v.map(lum);
     assert.ok(Math.max(...ls) - Math.min(...ls) < 1e-6, `triangle ${t / 3}: its corners' tones ${ls.map(l => l.toFixed(4))} (a gradient, not a patch)`);
@@ -510,4 +520,111 @@ test('round 7: the face drifts in patches with edges: each piece of coursed face
   }
   const ts = [...patches.values()], mean = ts.reduce((a, b) => a + b, 0) / ts.length, sd = Math.sqrt(ts.reduce((a, b) => a + (b - mean) ** 2, 0) / ts.length);
   assert.ok(pieces > 50 && ts.length >= 15 && sd / mean >= .05 && sd / mean <= .09, `north face: ${pieces} pieces, ${ts.length} patches, spread ${(sd / mean).toFixed(3)}`);
+});
+
+/** Interpolated surface colour at the hit, before lighting and its texture. */
+function faceColour(mesh: THREE.Mesh, s: number, y: number, sg: number = ST_LEONARDS_NORTH): number[] {
+  const [x, z] = stLeonardsAt(s, sg * (ST_LEONARDS.half + 2)), [tx, tz] = stLeonardsAt(s);
+  const hit = new THREE.Raycaster(new THREE.Vector3(x, y, z), new THREE.Vector3(tx - x, 0, tz - z).normalize()).intersectObject(mesh)[0];
+  assert.ok(hit?.face, `face at s ${s}, y ${y}, side ${sg}`);
+  const c = mesh.geometry.getAttribute('color'), p = mesh.geometry.getAttribute('position'), ids = [hit.face.a, hit.face.b, hit.face.c];
+  const corners = ids.map(i => new THREE.Vector3(p.getX(i), p.getY(i), p.getZ(i)));
+  const weights = THREE.Triangle.getBarycoord(mesh.worldToLocal(hit.point.clone()), corners[0]!, corners[1]!, corners[2]!, new THREE.Vector3())!.toArray();
+  return [0, 1, 2].map(channel => ids.reduce((sum, i, j) => sum + c.getComponent(i, channel) * weights[j]!, 0));
+}
+const colourLuma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+
+test('round 8: rust blotches occupy most girder panels, with paint left between them, rivets and a lighter top flange', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS, g0 = K.abutments[0] - 1.2, g1 = K.abutments[1] + 1.2;
+  const panels = Math.floor((g1 - g0) / K.girder.pitch), fractions: number[] = [];
+  for (let panel = 0; panel < panels; panel++) {
+    let rust = 0, paint = 0;
+    for (const dx of [.18, .35, .5, .65, .82]) for (const dy of [.3, .5, .7]) {
+      const c = faceColour(bridge, g0 + (panel + dx) * (g1 - g0) / panels, K.road - K.fascia + dy * (K.parapet + K.fascia));
+      if (c[0]! > c[1]! * 1.25 && c[1]! > c[2]! * 1.1) rust++;
+      if (c[1]! >= c[0]!) paint++;
+    }
+    fractions.push(rust / 15);
+    assert.ok(paint >= 2, `panel ${panel}: ${paint} paint samples, ${rust} rust`);
+  }
+  assert.ok(fractions.filter(f => f >= .2).length >= .8 * panels, `rust coverage by panel ${fractions.map(v => v.toFixed(2))}`);
+  assert.ok(Math.max(...fractions) - Math.min(...fractions) >= .15, 'rust differs between panels');
+  const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
+  assert.ok(info.rivets >= 300, `rivets ${info.rivets}`);
+  const top = faceColour(bridge, 45.9, K.road + K.parapet - .05), bottom = faceColour(bridge, 45.9, K.road - K.fascia + .05);
+  assert.ok(colourLuma(top) >= 1.4 * colourLuma(bottom), `flange top ${top}, bottom ${bottom}`);
+});
+
+test('round 8: soot-grey sandstone has 20-30% less linear albedo than round 7, low saturation and a barely lighter ring', () => {
+  const c = rgbOf(ST_LEONARDS_COLOURS.stone), old = rgbOf(0x968a70), ratio = colourLuma(c) / colourLuma(old);
+  assert.ok(ratio >= .7 && ratio <= .8, `stone linear albedo over round 7 ${ratio.toFixed(3)}`);
+  assert.ok(c[0] / c[2] <= 1.25 && c[0] > c[1] && c[1] > c[2], `grey-brown stone ${c}`);
+  const ring = [ST_LEONARDS_COLOURS.dressed, ST_LEONARDS_COLOURS.voussoir].map(h => colourLuma(rgbOf(h)));
+  // The face wears the coursed texture (mean ~0.79); the ring is untextured.
+  const relative = (ring[0]! + ring[1]!) / 2 / (colourLuma(c) * COURSED);
+  assert.ok(relative >= 1 && relative <= 1.35, `ring over textured face ${relative.toFixed(3)}`);
+});
+
+test('round 8: soot gathers below the string course, and a full wet band reaches a metre above each pier foot', () => {
+  const ashlar = new Batch({ colored: true }), plain = new Batch({ colored: true, uv: false });
+  stLeonardsBridge(plain, scene.terrain, ashlar);
+  const masonry = new THREE.Mesh(ashlar.build(), new THREE.MeshBasicMaterial({ vertexColors: true }));
+  try {
+    let sooted = 0;
+    for (const s of ST_LEONARDS.piers) {
+      const upper = colourLuma(faceColour(masonry, s, 5.25)), middle = colourLuma(faceColour(masonry, s, 3.4));
+      if (upper <= middle * .91) sooted++;
+      const [x, z] = stLeonardsAt(s, ST_LEONARDS_NORTH * ST_LEONARDS.half), ground = scene.terrain.heightAt(x, z);
+      const wet = colourLuma(faceColour(masonry, s, ground + 1)), dry = colourLuma(faceColour(masonry, s, ground + 1.7));
+      assert.ok(wet <= .74 * dry, `pier ${s}: metre-high wet band ${wet.toFixed(3)} / ${dry.toFixed(3)}`);
+    }
+    assert.ok(sooted >= 3, `soot darkens ${sooted} of four upper pier spandrels`);
+  } finally { masonry.geometry.dispose(); (masonry.material as THREE.Material).dispose(); }
+});
+
+test('round 8: the bridge ashlar varies course heights and block lengths; pier blocks are larger than spandrel blocks', () => {
+  // Exercise the canvas draw commands without a browser or a GPU. The street texture keeps its original regular bond.
+  const rectangles: number[][] = [], previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const context = { fillStyle: '', fillRect: (...v: number[]) => rectangles.push(v) };
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } });
+  try {
+    const texture = coursedTexture('bridge'); texture?.dispose();
+    const stones = rectangles.filter(r => r[2]! > 20 && r[3]! > 15 && r[2]! < 200 && r[3]! < 100);
+    const heights = new Set(stones.map(r => r[3]!.toFixed(1))), lengths = new Set(stones.map(r => r[2]!.toFixed(1)));
+    assert.ok(heights.size >= 6 && lengths.size >= 20, `stone heights ${heights.size}, lengths ${lengths.size}`);
+  } finally { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); }
+  const ashlar = new Batch({ colored: true }); stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain, ashlar);
+  const scales = (y: number) => {
+    const values: number[] = [];
+    for (let t = 0; t < ashlar.indices.length; t += 3) {
+      const a = ashlar.indices[t]!, b = ashlar.indices[t + 1]!;
+      if (Math.abs(ashlar.positions[3 * a + 1]! - y) > .01 || Math.abs(ashlar.positions[3 * b + 1]! - y) > .01 || ashlar.normals[3 * a + 2]! > -.7) continue;
+      const d = Math.hypot(ashlar.positions[3 * a]! - ashlar.positions[3 * b]!, ashlar.positions[3 * a + 2]! - ashlar.positions[3 * b + 2]!);
+      if (d > .1) values.push(Math.abs(ashlar.uvs[2 * a]! - ashlar.uvs[2 * b]!) * 4 / d);
+    }
+    return values;
+  };
+  const pier = scales(ST_LEONARDS.spring + .01), spandrel = scales(5);
+  assert.ok(pier.some(s => s >= .6 && s <= .75) && spandrel.some(s => Math.abs(s - 1) < .01), `UV scales pier ${pier.slice(0, 8)}, spandrel ${spandrel.slice(0, 8)}`);
+});
+
+test('round 8: voussoirs vary in relief as well as tone', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), depths: number[] = [];
+  for (const a of stLeonardsSpans()) {
+    const n = stLeonardsArchSegments(a.s1 - a.s0);
+    for (let i = 1; i < n - 1; i++) {
+      const s = a.s0 + (a.s1 - a.s0) * (i + .5) / n, y = stLeonardsSoffit(s) + .12;
+      if (y < 4.8) depths.push(levelHit(bridge, s, -1, y) - ST_LEONARDS.half);
+    }
+  }
+  assert.ok(depths.length > 20 && Math.max(...depths) - Math.min(...depths) >= .025, `voussoir relief range ${Math.min(...depths).toFixed(3)}-${Math.max(...depths).toFixed(3)}`);
+});
+
+test('round 8: the darker face keeps the daytime springing near 0.7 and crown below 0.8, with a lamplit dusk crown', () => {
+  const day = soffitLight('2026-06-21T11:00:00Z'), dusk = soffitLight('2026-11-09T16:20:00Z');
+  const spring = day.bands[0]! / day.face, crown = day.bands[2]! / day.face;
+  assert.ok(day.face <= 44 && spring >= .7 && spring <= .8 && crown >= .65 && crown <= .8,
+    `model only: noon face ${day.face.toFixed(1)}, springing ${spring.toFixed(3)}, crown ${crown.toFixed(3)}`);
+  assert.ok(dusk.bands[2]! >= 20 && dusk.brightest <= dusk.face,
+    `model only: dusk crown ${dusk.bands[2]!.toFixed(1)}, brightest ${dusk.brightest.toFixed(1)}, face ${dusk.face.toFixed(1)}`);
 });
