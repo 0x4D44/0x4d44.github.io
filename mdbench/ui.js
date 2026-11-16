@@ -66,16 +66,24 @@ export function leaderboard(ix, su, { compact = false, seatLink = null } = {}) {
   return `<div class="tw"><table class="leaderboard"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
-/** Seat x task heat table for one metric, tasks grouped under their lane/category. */
-export function heatTable(ix, su, metricId) {
+/** Seat x task heat table for one metric, tasks grouped under their lane/category; groupId
+ * limits it to one group (null shows every group). */
+export function heatTable(ix, su, metricId, groupId = null) {
   const m = su.metricById[metricId];
   const { cells, seats } = su.agg;
-  const groups = su.group.values.map((g) => ({ g, tasks: su.tasks.filter((t) => t.group === g.id) })).filter((x) => x.tasks.length);
-  const vals = seats.flatMap((s) => su.tasks.map((t) => cells[s.seat]?.[t.id]?.[m.id]?.mean)).filter((v) => v != null);
+  const groups = su.group.values.filter((g) => groupId == null || g.id === groupId)
+    .map((g) => ({ g, tasks: su.tasks.filter((t) => t.group === g.id) })).filter((x) => x.tasks.length);
+  const shown = groups.flatMap((x) => x.tasks);
+  const vals = seats.flatMap((s) => shown.map((t) => cells[s.seat]?.[t.id]?.[m.id]?.mean)).filter((v) => v != null);
   const lo = Math.min(...vals), hi = Math.max(...vals);
   let h = `<div class="tw"><table class="heat"><thead><tr><th rowspan="2" scope="col">Seat</th>`;
   h += groups.map(({ g, tasks }) => `<th class="grp" colspan="${tasks.length}" scope="colgroup">${esc(g.label)}</th>`).join("") + "</tr><tr>";
-  h += groups.flatMap(({ tasks }) => tasks.map((t) => `<th class="task" scope="col" title="${esc(t.description)}">${esc(t.id)}${t.note ? '<sup class="nm">note</sup>' : ""}<span>${esc(t.title)}</span></th>`)).join("") + "</tr></thead><tbody>";
+  h += groups.flatMap(({ tasks }) => tasks.map((t) => {
+    // A long id (recall's text-declaration) only repeats the title, so it moves to the tooltip.
+    const longId = t.title && t.title !== t.id && t.id.length > 8;
+    const tip = longId ? `${t.id}: ${t.description || t.title}` : t.description;
+    return `<th class="task" scope="col" title="${esc(tip)}">${longId ? "" : esc(t.id)}${t.note ? '<sup class="nm">note</sup>' : ""}<span>${esc(t.title)}</span></th>`;
+  })).join("") + "</tr></thead><tbody>";
   for (const s of seats) {
     h += `<tr><td class="seatcell">${seatHTML(ix, s.seat)}</td>`;
     for (const { tasks } of groups) for (const t of tasks) {
@@ -89,7 +97,7 @@ export function heatTable(ix, su, metricId) {
     }
     h += "</tr>";
   }
-  return h + "</tbody></table></div>" + taskNotes(su);
+  return h + "</tbody></table></div>" + taskNotes(su, shown);
 }
 
 /** One line per task that carries a note (task.note in the suite data). */

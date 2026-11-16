@@ -29,7 +29,7 @@
 <section id="tasks">
   <div class="stack col"><div class="eyebrow">02 · Per task</div><h2>Every seat on every task</h2></div>
   <div class="panel">
-    <div class="controls"><label>Metric <select id="heat-metric"></select></label></div>
+    <div class="controls"><label>Metric <select id="heat-metric"></select></label> <label id="heat-group-l">Category <select id="heat-group"></select></label></div>
     <div id="heat"></div>
     <p class="cap" id="heat-cap"></p>
   </div>
@@ -101,12 +101,19 @@ try {
   const sel = document.getElementById("heat-metric");
   sel.innerHTML = su.metrics.filter((m) => su.results.some((r) => r.metrics[m.id] != null))
     .map((m) => `<option value="${esc(m.id)}"${m.role === "headline" ? " selected" : ""}>${esc(m.label)}</option>`).join("");
+  // A suite with many tasks shows one group at a time, so the table stays readable.
+  const gsel = document.getElementById("heat-group");
+  const usedGroups = su.group.values.filter((g) => su.tasks.some((t) => t.group === g.id));
+  document.getElementById("heat-group-l").firstChild.textContent = `${su.group.label || "Group"} `;
+  gsel.innerHTML = usedGroups.map((g) => `<option value="${esc(g.id)}">${esc(g.label)}</option>`).join("") + '<option value="">All</option>';
+  gsel.value = su.tasks.length > 12 && usedGroups.length > 1 ? usedGroups[0].id : "";
   const drawHeat = () => {
     const m = su.metricById[sel.value];
-    document.getElementById("heat").innerHTML = heatTable(ix, su, m.id);
-    document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a task id for its description.`;
+    document.getElementById("heat").innerHTML = heatTable(ix, su, m.id, gsel.value || null);
+    document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a column heading for its description.`;
   };
   sel.addEventListener("change", drawHeat);
+  gsel.addEventListener("change", drawHeat);
   drawHeat();
 
   if (A.cost) scatter(document.getElementById("sc-cost"), ix, su, { xMetric: A.cost, xValue: (s) => s.per[A.cost.id], xLabel: `${A.cost.label} per task` });
