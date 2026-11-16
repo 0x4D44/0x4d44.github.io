@@ -914,6 +914,12 @@ export class AnimCrowd {
     if (p.v > 0.15 && p.hold && p.hold.target > 0) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away
     if ((p.state === 'walk' || p.state === 'go') && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
   }
+  /** a boxed-in passenger may squeeze past people (closer than the 0.45 m everyone else keeps) but not through them: no step ends inside 0.3 m of anyone, unless it moves
+   *  away from them (gp7: alighters in a crush passed 0.07 m apart, centre to centre) */
+  _core(p, nx, nz, R = 0.3) {
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 < R * R && dn2 < (q.x - p.x) ** 2 + (q.z - p.z) ** 2) return false; }
+    return true;
+  }
   /** may this person stand at (nx,nz)? On the slab (inset m), clear of furniture, the user and every other person - except that stepping AWAY from something already too close is always allowed */
   _freeStep(p, nx, nz, m = 0.22) {
     if (!this._onFloor(nx, nz, m)) return false;
@@ -936,7 +942,7 @@ export class AnimCrowd {
   _step(p, dt, sp, lvl = 0) {
     sp *= this._paceK(p); sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching handles the rest)
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true;
-    const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
+    const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) && this._core(p, x, z) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
     const h0 = Math.atan2(dz, dx), side = p.side || 1, near = Math.min(d, 0.4), far = Math.min(d, 0.85);
     if (p.sideT > 0) p.sideT -= dt;
     // pick a heading: straight on if it is clear well ahead, else the smallest veer that is (preferred side first, and once a side is chosen the person COMMITS to it for a
@@ -968,7 +974,12 @@ export class AnimCrowd {
     sp *= this._paceK(p);
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
     if (p.blockT > 1.5) p.passT = 1.0;   // (held up 1.5 s: walk on for a second before looking again - one free frame per 1.5 s made a 5 cm/s creep)
-    if (p.passT > 0) p.passT -= dt; else for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) {
+    const pass = p.passT > 0; if (pass) p.passT -= dt;
+    for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e > 0.5 || e < 1e-4) continue;
+      // someone going the same way, level with or ahead of this walker and too close, is followed, never walked through: the one behind gives way (gp7: two climbers abreast held
+      // 0.16-0.25 m apart for 11 s - the cone ahead missed a neighbour alongside).  A walk-past (pass) only ever goes by someone standing or coming the other way.
+      const qd = q.mode === 'go' ? Math.hypot(q.tx - q.x, q.tz - q.z) : 0, same = qd > 1e-3 && ((q.tx - q.x) * ux + (q.tz - q.z) * uz) / qd > 0.3, proj = ex * ux + ez * uz;
+      if ((same && e < 0.42 && proj >= 0) || (!pass && proj > 0.3 * e) || (same && proj > 0.3 * e)) {
         // someone standing in the way (a waiter at the stair foot) steps aside, out of the line of the stairs, and the walker waits for them (review 5: they held whole flights
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
