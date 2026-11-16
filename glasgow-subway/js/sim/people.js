@@ -719,6 +719,9 @@ export class AnimCrowd {
     // a knee-length winter coat (punkduck_winter_coat, MakeHuman's rig) balloons into a crumpled shell over the thighs in every sit clip: its wearers stand (review 4)
     if (c.longCoat === undefined) { c.longCoat = false; const n = c.node || c.lodNode; if (n) n.traverse((o) => { if (o.isMesh && o.material && /^cloth_coat\./i.test(o.material.name || '')) c.longCoat = true; }); }
     if (c.longCoat) return false;
+    // ... and three skirts that break on a seat in every sit clip (review 7, sit_idle): woman_coat's suit skirt splits over the thighs, woman_midi's flares into a shelf
+    // over the knees, teen_tube's mini balloons out from the hips. Their wearers stand too (the other skirts and dresses sit)
+    if (/^(woman_coat|woman_midi|teen_tube)$/.test(c.id)) return false;
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
