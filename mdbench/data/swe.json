@@ -2163,6 +2163,7 @@
   ],
   "caveats": [
    "Seat = model + effort + harness. Claude seats run in Claude Code, GPT seats in the Codex CLI, so model and harness are confounded.",
+   "Seats run with the fleet's own agent configuration (instructions, skills and hooks), not a vanilla install of Claude Code or the Codex CLI.",
    "All runs used the fleet's subscription logins except the older API baselines (GPT-4o, o3), which ran pay-per-token on the OpenAI API with a per-run cost cap.",
    "Cost is a list-price figure, not what was paid. Claude Code reports its own list-price cost; the Codex CLI reports only tokens, so GPT costs are estimates from token counts at published list prices (standard tier; one price was taken from third-party trackers).",
    "Judging is not fully independent of the seats: the panel is three Claude Opus 5.5 and three GPT-6 Astra judges, so Opus and Astra outputs were judged in part by their own model (blind, but not by another family only).",
