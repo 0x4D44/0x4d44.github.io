@@ -60,7 +60,11 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
   for(const h of rows){let x=-rnd()*.6*k;const length=bond==='bridge'?.48+rnd()*.35:.6;
    while(x<s){const w=(length+rnd()*.5)*k,v=Math.round(215+rnd()*40),hue=bond==='bridge'?Math.sin(x*1.87+y*3.91):0;
     // A small warm/cool drift within the dirty sandstone, approximately constant in luma. A separate hash preserves both bonds' layout.
-    g.fillStyle=bond==='bridge'?`rgb(${Math.min(255,Math.round(v+5*hue))},${Math.round(v-.7*hue)},${Math.min(255,Math.round(v-8*hue))})`:grey(v);
+    // Round-8 second follow-up: widen the block distribution at the same mean, with a few exposed warm sandstone blocks. The pivot
+    // compensates for the clipped highlights; course positions, mortar, soot and the bridge's underlying stone colour are unchanged.
+    const tone=Math.min(255,Math.round(241+(v-235)*1.9)),warm=v>=248;
+    const c=warm?[255+2*hue,243+hue,229+hue]:[tone+5*hue,tone-.7*hue,tone-8*hue];
+    g.fillStyle=bond==='bridge'?`rgb(${c.map(v=>Math.min(255,Math.round(v))).join(',')})`:grey(v);
     g.fillRect(x+1.5,y+1.5,w-3,h-3);
     if(x+w>s)g.fillRect(x+1.5-s,y+1.5,w-3,h-3);x+=w;}
    y+=h;}
@@ -69,7 +73,7 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
 }
 
 /** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
- * capture ruling. Each panel has 0-2 smaller noise-shaped blooms, soft paint/rust boundaries and faint runoff below the blooms.
+ * capture ruling. Selected panels have one vertically oblong patch with a soft irregular outline and visible runoff; others stay clean.
  * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
 export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
  const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
@@ -81,26 +85,27 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
  const grain=(x:number,y:number,seed:number)=>.6*noise(x,y,seed)+.28*noise(x*2,y*2,seed+77)+.12*noise(x*4,y*4,seed+139);
  const clear=1-2*flangeFraction;
  for(let panel=0;panel<panels;panel++){
-  const seed=panel*31+503,choice=hash(seed),count=choice<.15?0:choice<.7?1:2;
-  for(let patch=0;patch<count;patch++){
-   const key=seed+patch*197,cx=count===2?.27+patch*.46+(hash(key+1)-.5)*.045:.3+hash(key+1)*.4;
-   const cy=.27+hash(key+2)*.46,rx=count===2?.21+hash(key+3)*.025:.26+hash(key+3)*.09,ry=.21+hash(key+4)*.035;
+  const key=panel*31+503;if(hash(key)<.32)continue;
+   const cx=.25+hash(key+1)*.5,rx=.135+hash(key+3)*.025,ry=.31+hash(key+4)*.08;
+   const cy=.31+.42*hash(key+2),runLength=.34+hash(key+6)*.14;
    const x0=Math.floor(panel*width/panels),x1=Math.min(width,Math.ceil((panel+1)*width/panels));
-   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-.32)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
+   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-runLength)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
     const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry,angle=Math.atan2(ny,nx);
-    // Asymmetric lobes and turbulence break the silhouette; finer noise lets paint show through the bloom. These are mottled
-    // clusters of oxidation rather than solid spots. Keep the vertical envelope under half the clear web, including its feather.
-    const q=Math.hypot(nx,ny)+(n-.5)*.5+.17*Math.sin(angle*3+key)+.1*Math.cos(angle*5+key*.7);
-    const pores=.7+.3*smooth(.23,.58,grain(u*33,v*31,key+271));
-    const bloom=(1-smooth(.55,1.13,q))*(1-smooth(.82,1.03,Math.abs(ny)))*smooth(.025,.1,u)*(1-smooth(.9,.975,u))*pores;
-    const below=cy-ry*.5-v,runX=cx+rx*.16*Math.sin(v*12+key);
-    const runoff=below>0?.16*Math.exp(-(((u-runX)/(.012+below*.035))**2))*(1-smooth(.04,.32,below)):0;
+    // Gentle sideways drift and noise keep a single tall body, rather than a horizontal cluster of lobes. The irregular feather
+    // remains several texels wide. Runoff is wide enough to survive the frozen bridge camera's roughly 4 cm per display pixel.
+    const q=Math.hypot(nx+.12*Math.sin(ny*2+key),ny)+(n-.5)*.4+.055*Math.sin(angle*2+key);
+    const pores=.85+.15*smooth(.23,.58,grain(u*33,v*31,key+271));
+    const bloom=(1-smooth(.52,1.08,q))*(1-smooth(.82,1.03,Math.abs(ny)))*pores;
+    const below=cy-ry*.45-v,runX=cx+rx*.2*Math.sin(v*12+key),runWidth=.03+hash(key+7)*.018+below*.015;
+    const runoff=below>0?.58*Math.exp(-(((u-runX)/runWidth)**2))*(1-smooth(.12,runLength,below)):0;
     const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
-    const tone=grain(u*17,v*19,key+419),rust=[150+20*tone,80+15*tone,45+10*tone],i=(y*width+x)*4;
+    // Captured paint, not the sky rig alone, anchors this muted albedo family. It predicts a brown near (88,70,58) by day,
+    // (80,55,44) at dusk in the body; feathers are lighter and less saturated. These are predictions until the GPU pair.
+    const tone=2*grain(u*17,v*19,key+419)-1,hue=2*grain(u*27,v*23,key+777)-1;
+    const rust=[170+4*tone+2*hue,144+3*tone,122+3*tone-hue],i=(y*width+x)*4;
     for(let j=0;j<3;j++)data[i+j]=Math.round(data[i+j]*(1-alpha)+rust[j]*alpha);
    }
-  }
  }
  // A one-texel Gaussian feather also smooths the smallest noise features; filtering on the GPU then handles the camera distance.
  const horizontal=data.slice();

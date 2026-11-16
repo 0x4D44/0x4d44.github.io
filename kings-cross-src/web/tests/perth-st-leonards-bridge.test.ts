@@ -537,9 +537,24 @@ function faceColour(mesh: THREE.Mesh, s: number, y: number, sg: number = ST_LEON
 }
 const colourLuma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
 
-// Lead 2026-11-16 19:50Z, from the round-8 pixels: one large hard polygon per panel was a regression. Replace the old "rust in
-// 80% of panels" bound with the requested 0-2 smaller patches, feathered edges, one lighter rust family, and substantial clean paint.
-test('round 8 follow-up: girder rust is filtered, feathered and irregular, with zero to two smaller patches per panel', () => {
+// Lead 20:16Z: the captured orange family became red paint at dusk. A much less saturated albedo is needed for a muted shaded brown.
+test('round 8 second follow-up: the rust albedo is a muted brown, retaining green and blue rather than glowing red', () => {
+  const tex = (meshNamed('perth-st-leonards-paint').material as THREE.MeshLambertMaterial).map as THREE.DataTexture;
+  const data = tex.image.data;
+  assert.ok(data, 'the procedural paint texture has readable texels');
+  let cores = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const r: number = Number(data[i]), g: number = Number(data[i + 1]), b: number = Number(data[i + 2]);
+    if (r - g < 15 || b >= 140) continue;
+    cores++;
+    assert.ok(r / g <= 1.25 && g / b <= 1.25 && b >= 115, `muted rust albedo ${r},${g},${b}`);
+  }
+  assert.ok(cores > 1000, `muted brown core texels ${cores}`);
+});
+
+// The new ruling supersedes 0-2 small blooms with 0-1 taller patch and visible runoff. More clean panels make the old all-panel
+// uniqueness bound inappropriate: require unique occupied panels instead, and retain the feather, filtering, frame and rivet checks.
+test('round 8 second follow-up: fewer vertically oblong patches vary in placement, with soft edges and visible runoff', () => {
   const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS;
   const painted = scene.group.getObjectByName('perth-st-leonards-paint') as THREE.Mesh | undefined;
   assert.ok(painted, 'a continuously filtered paint texture replaces the hard rust polygons');
@@ -548,33 +563,49 @@ test('round 8 follow-up: girder rust is filtered, feathered and irregular, with 
   const { width, height, data } = tex.image, panels = Math.floor((K.abutments[1] - K.abutments[0] + 2.4) / K.girder.pitch);
   assert.ok(width >= 2048 && height >= 64, `paint texture ${width} x ${height}`);
   const bottom = Math.ceil(height * K.girder.flange / (K.parapet + K.fascia)), top = height - bottom;
-  let clean = 0, solid = 0, feather = 0, maximumJump = 0; const counts: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
+  let clean = 0, solid = 0, feather = 0, maximumJump = 0, streaked = 0;
+  const counts: number[] = [], centres: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
   for (let panel = 0; panel < panels; panel++) {
     const x0 = Math.ceil(panel * width / panels), x1 = Math.ceil((panel + 1) * width / panels), pw = x1 - x0;
-    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [];
+    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [], aspects: number[] = [];
+    let patchBottom = height, patchLeft = pw, patchRight = 0;
     for (let y = bottom; y < top; y++) for (let x = x0; x < x1; x++) {
       const i = (y * width + x) * 4, r = Number(data[i]), g = Number(data[i + 1]), b = Number(data[i + 2]);
       if (b >= 158) clean++;
-      if (b > 60 && b < 150) feather++;
-      if (b <= 55) { solid++; tones.add([r, g, b].join()); assert.ok(r >= 150 && r <= 170 && g >= 80 && g <= 95 && b >= 45, `rust ${r},${g},${b}`); }
+      if (b > 140 && b < 159) feather++;
+      if (r - g >= 15 && b < 140) { solid++; tones.add([r, g, b].join()); }
       if (x + 1 < x1) maximumJump = Math.max(maximumJump, Math.abs(b - Number(data[i + 6])));
-      if (b < 105 && r > g * 1.3) mask[y * pw + x - x0] = 1;
+      if (b < 150 && r - g > 12) mask[y * pw + x - x0] = 1;
     }
     for (let p = 0; p < mask.length; p++) {
       if (!mask[p] || seen[p]) continue;
-      const queue = [p]; seen[p] = 1; let minY = height, maxY = 0;
-      for (let q = 0; q < queue.length; q++) { const a = queue[q]!, x = a % pw, y = Math.floor(a / pw); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+      const queue = [p]; seen[p] = 1; let minY = height, maxY = 0, minX = pw, maxX = 0;
+      for (let q = 0; q < queue.length; q++) { const a = queue[q]!, x = a % pw, y = Math.floor(a / pw); minY = Math.min(minY, y); maxY = Math.max(maxY, y); minX = Math.min(minX, x); maxX = Math.max(maxX, x);
         for (const n of [x ? a - 1 : -1, x + 1 < pw ? a + 1 : -1, a - pw, a + pw]) if (n >= 0 && n < mask.length && mask[n] && !seen[n]) { seen[n] = 1; queue.push(n); }
       }
-      if (queue.length >= 8) sizes.push((maxY - minY + 1) / (top - bottom));
+      if (queue.length >= 8) {
+        sizes.push((maxY - minY + 1) / (top - bottom)); centres.push(((maxY + minY) / 2 - bottom) / (top - bottom));
+        const pitch = (K.abutments[1] - K.abutments[0] + 2.4) / panels;
+        aspects.push((maxY - minY + 1) / height * (K.parapet + K.fascia) / ((maxX - minX + 1) / pw * pitch));
+        patchBottom = Math.min(patchBottom, minY); patchLeft = Math.min(patchLeft, minX); patchRight = Math.max(patchRight, maxX);
+      }
     }
-    counts.push(sizes.length); signatures.add([...mask].join(''));
-    assert.ok(sizes.length <= 2 && sizes.every(h => h >= .28 && h <= .5), `panel ${panel}: patch height fractions ${sizes.map(h => h.toFixed(3))}`);
+    counts.push(sizes.length); if (sizes.length) signatures.add([...mask].join(''));
+    assert.ok(sizes.length <= 1 && sizes.every(h => h >= .4 && h <= .75) && aspects.every(a => a >= 1.15), `panel ${panel}: patch heights ${sizes.map(h => h.toFixed(3))}, height/width ${aspects.map(a => a.toFixed(3))}`);
+    let trails = 0;
+    const centre = (patchLeft + patchRight) / 2;
+    for (let y = Math.max(bottom, Math.floor(patchBottom - height * .2)); y < patchBottom - height * .04; y++) for (let x = Math.max(0, Math.floor(centre - 8)); x <= Math.min(pw - 1, centre + 8); x++) {
+      const i = (y * width + x0 + x) * 4;
+      if (Number(data[i + 2]) < 156 && Number(data[i]) > Number(data[i + 1]) - 10) trails++;
+    }
+    if (sizes.length && trails >= 4) streaked++;
   }
   const pixels = (top - bottom) * width;
-  assert.ok(counts.filter(n => n === 0).length >= 3 && counts.includes(1) && counts.filter(n => n === 2).length >= 3, `patch counts ${counts}`);
-  assert.ok(signatures.size >= .8 * panels, `unique panel patterns ${signatures.size}`);
-  assert.ok(clean / pixels >= .7 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
+  const occupied = counts.filter(n => n === 1).length, blank = counts.filter(n => n === 0).length;
+  assert.ok(blank >= 7 && blank <= 16 && occupied >= 18, `patch counts ${counts}`);
+  assert.ok(signatures.size >= .9 * occupied && Math.max(...centres) - Math.min(...centres) >= .2, `unique occupied patterns ${signatures.size}, centres ${centres}`);
+  assert.ok(clean / pixels >= .75 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
+  assert.ok(streaked >= .75 * occupied, `visible runoff below ${streaked}/${occupied} patches`);
   assert.ok(feather >= solid * .25 && maximumJump <= 30, `feather ${feather}, solid ${solid}, maximum adjacent blue jump ${maximumJump}`);
   const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
   assert.ok(info.rivets >= 300, `rivets ${info.rivets}`);
@@ -615,6 +646,26 @@ test('round 8 follow-up: individual ashlar blocks vary slightly in hue as well a
     const hues = colours.map(([r, , b]) => r! - b!);
     assert.ok(colours.length > 40 && Math.min(...hues) <= -5 && Math.max(...hues) >= 5, `block hue span ${Math.min(...hues)}-${Math.max(...hues)}`);
     assert.ok(colours.every(c => Math.abs(lumaHex((c[0]! << 16) | (c[1]! << 8) | c[2]!) - c.reduce((a, b) => a + b, 0) / 3) < 3), 'hue differences remain subtle');
+  } finally { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); }
+});
+
+test('round 8 second follow-up: exposed warm blocks restore masonry contrast while preserving the stone mean and palette', () => {
+  const blocks: { colour: number[]; area: number }[] = [], previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const context = { fillStyle: '', fillRect: (x: number, y: number, w: number, h: number) => {
+    if (w > 20 && w < 200 && h > 15 && h < 100) blocks.push({ colour: context.fillStyle.match(/\d+/g)!.map(Number), area: Math.max(0, Math.min(512, x + w) - Math.max(0, x)) * Math.max(0, Math.min(512, y + h) - Math.max(0, y)) });
+  } };
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } });
+  try {
+    coursedTexture('bridge')?.dispose();
+    const ls = blocks.map(b => colourLuma(b.colour.map(v => lin(v / 255)))), area = blocks.reduce((s, b) => s + b.area, 0);
+    const mean = blocks.reduce((s, b, i) => s + ls[i]! * b.area, 0) / area, sd = Math.sqrt(blocks.reduce((s, b, i) => s + (ls[i]! - mean) ** 2 * b.area, 0) / area);
+    const warm = blocks.filter(b => b.colour[0]! >= 250 && b.colour[0]! - b.colour[2]! >= 20 && b.colour[1]! - b.colour[2]! >= 10).length / blocks.length;
+    // The committed bridge blocks average 0.808 linear luma (area weighted), CV 0.110. Keep the mean, widen the distribution.
+    assert.ok(Math.abs(mean - .808) <= .02 && sd / mean >= .15 && sd / mean <= .22, `block mean ${mean.toFixed(3)}, CV ${(sd / mean).toFixed(3)}`);
+    assert.ok(warm >= .1 && warm <= .25, `exposed warm block fraction ${warm.toFixed(3)}`);
+    assert.equal(ST_LEONARDS_COLOURS.stone, 0x867b6d);
+    assert.equal(ST_LEONARDS_COLOURS.dressed, 0x8b8880);
+    assert.equal(ST_LEONARDS_COLOURS.voussoir, 0x7f7c74);
   } finally { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); }
 });
 
