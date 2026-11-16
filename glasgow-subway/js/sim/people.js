@@ -476,6 +476,7 @@ export class AnimCrowd {
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
+    if (clip && /cross/.test(clip.name) && /pencil|midi/.test(ch.outfit)) clip = this._clip(ch, 'sit') || clip;   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
     // Standing: the quiet stance is the rule. The other idle clip is a gesture of the whole right arm (the forearm swings through 109 degrees); looped for a whole bout, on a
     // platform of people, it read as arms waving about. It is now an occasional single gesture: one pass of the clip, then back to the quiet stance.
     let once = false;
@@ -962,7 +963,7 @@ export class AnimCrowd {
   _railStep(p, dt, sp) {
     sp *= this._paceK(p);
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true; const ux = dx / d, uz = dz / d;
-    if (!(p.blockT > 1.5)) for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) { p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
+    if (!(p.blockT > 1.5)) for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static || (q.mode !== 'go' && q.mode !== 'walk')) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.5 && e > 1e-4 && ex * ux + ez * uz > 0.3 * e) { p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }   // (only someone else on the move holds a stair walker up: a waiter standing at the stair foot stopped whole flights for 20-98 s - review 5)
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw; p.x += -Math.sin(p.yaw) * move; p.z += -Math.cos(p.yaw) * move; return true;
   }

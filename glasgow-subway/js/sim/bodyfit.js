@@ -489,6 +489,11 @@ export function trimUnderTop(THREE, root, o = {}) {
   let hem = 1e9;
   for (const m of tops) { const P = m.geometry.attributes.position, n = P.count, ys = new Float32Array(n); for (let i = 0; i < n; i++) ys[i] = P.getY(i); ys.sort(); const lo = ys[Math.floor((n - 1) * 0.02)], hi = ys[n - 1]; if (hi - lo > 0.25) hem = Math.min(hem, lo); }
   if (hem > 5) return null;
+  // a top tucked INTO the trousers is left alone: drawing the trousers in under it bared a band of skin all round the waist (review 5: man_commuter, man_trews -
+  // the shirts' material names do not say 'tucked')
+  let legTop = -1e9; for (const m of legs) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) legTop = Math.max(legTop, P.getY(i)); }
+  const hangs = tops.some((m) => /sweater|hood|knit|jumper|tank|camisole|lusekofta|blouse/i.test(m.material.name || ''));   // knitwear, hoodies and tanks hang over the waistband
+  if (!hangs && legTop - hem > 0.12) return { dropped: 0, hem: +hem.toFixed(3), tucked: true };   // a shirt or tee whose hem is that far down inside the waistband is tucked in
   let dropped = 0;
   for (const m of legs) {
     const g = m.geometry, idx = g.index, P = g.attributes.position; if (!idx) continue;
@@ -643,7 +648,7 @@ export function armClip(THREE, clip, axes, degL, degR) {
  *  inside that outline: the 95th percentile (m) of the vertices' distance inside the outermost body vertex found within about +-3 cm up and +-6 cm front-back.
  *  turn = { l: [axis, radians], r: [axis, radians] } turns the shoulders further, for the solver. Returns { l, r, nl, nr } (n = vertices deeper than 2 cm). */
 export function armProbe(THREE, obj) {
-  const meshes = []; obj.traverse((m) => { if (m.isSkinnedMesh && m.skeleton && m.geometry.attributes.skinIndex && m.geometry.attributes.skinWeight) meshes.push(m); });
+  const meshes = []; obj.traverse((m) => { if (m.isSkinnedMesh && m.skeleton && m.geometry.attributes.skinIndex && m.geometry.attributes.skinWeight && !/hivis/i.test((m.material && m.material.name) || '')) meshes.push(m); });   // (not the staff's hi-vis vest: a loose open shell over the suit, it widened the body the arms are measured against)
   const bones = armBones(obj), v = new THREE.Vector3(), q = new THREE.Quaternion(), mixer = new THREE.AnimationMixer(obj);
   const ARM = /^(hand|thumb|index|middle|ring|pinky|lowerarm)/i, UP = /^upperarm/i, NY = 128, NZ = 56, Y0 = -0.1, Z0 = -1.1, DY = 0.02, DZ = 0.04;
   const gmax = new Float32Array(NY * NZ), gmin = new Float32Array(NY * NZ);

@@ -269,6 +269,7 @@ class Sim {
   /** send a boarding passenger (platform crowd) in through door k to a free seat they fit, or to a place to stand, and hand them to the train's crowd when they get there */
   _routeBoarder(q, k, X) {
     const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2); if (ci < 0 || !q.char) return;
+    if (sc.people.some((r) => r.char === q.char)) return;   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
     const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
     let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
     let spot = null;

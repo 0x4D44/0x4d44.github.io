@@ -303,6 +303,14 @@ Answering `research/people-reviews/REVIEW_1.md` (an adversarial review that scor
 - In the game: anyone within 6 m is on the full model whatever the budget; wearers of the knee-length winter coat stand on the train (the coat balloons in
   every sit clip); midi skirts get the pencil-skirt thigh fit; the pencil-skirt step is shortened less (cadence x1.1, not x1.2); occasional smiles stronger.
 
+### Review 5 fixes (2026-11-16, `research/people-reviews/REVIEW_5.md`, scored 6.6)
+
+- **Faces**: the 39 people built before `face=True` existed (MakeHuman's one default face, which made six men look like brothers) now each get their own.
+- **Staff**: navy work suit (`tint`) under a fluorescent orange hi-vis vest with two reflective bands (`build_vest`: the suit's torso faces copied 12 mm out).
+- In the game: a tucked-in shirt or tee is left alone by `trimUnderTop` (it had bared a band of skin round man_commuter's and man_trews' waists); stair
+  walkers are held up only by others on the move, not by someone standing at the stair foot (whole flights had stood still for up to 98 s); a person
+  already aboard does not board the same train again; pencil and midi skirts do not cross their legs.
+
 **Building here.** The pipeline runs with `bpy` 5.2 from pip in a venv and MPFB 2.0.18 unpacked as an extension; Blender looks for user extensions in
 `extensions/user_default`, and the asset packs (`files.makehumancommunity.org/asset_packs/<pack>/<pack>_cc0.zip`, `_ccby` or `_cc-by` for packs 02 and
 03) and `functional/faceunits01.zip` go into the extension's `data/`. Full build ~7 min, `--lod` ~6 min, then skinfit, lodhair, credits, legradii, armfit.
