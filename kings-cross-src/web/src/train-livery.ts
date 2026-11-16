@@ -201,16 +201,26 @@ const GC_DOOR_FRAME = 0.05;
  * ~0.5 m short of the tip, the nose's lower corner black. The top's dive keeps York's profile (1.57 m 0.4 of the way along it, 1.23 m at 0.71, 0.93 m at 0.95) laid
  * from its hold to the end; the foot reads 1.18 m 1.1 m ahead and the side's lower edge (0.96 m) at 1.75 m, then runs on under that edge, out of sight, to the end.
  * GC180-01's and GC180-05's sweep "under the lamp pod" (the knots near the tip that every round kept) gives way to York, the one side-on photograph.
+ * Round 12 corrects the endpoint's datum: York ends the orange 2.6 m ahead of the leaf (s=1.6 m), not 0.5 m behind the face's foot (s=0.85 m).
+ * The foot meets the textured lower edge, ~1.03 m here, rather than the ring's underside (0.96 m): paint below the texture's edge is clipped off.
+ * The terminal top is ASSUMED 1.02 m to leave a short visible orange edge over the unchanged curved lower flank. Photo-derived dimensions and the far-side copy remain ASSUMED.
  */
 function grandCentralShapes(_nose: number): Shape[] {
   const [bandBottom, bandTop] = LIVERIES.grandcentral.stripeY ?? [1.37, 1.67];
   const dF = GC_CAB_DOOR_FRONT;
-  // the dive: from the top's hold (0.7 m ahead of the leaf) to the orange's end (0.5 m behind the tip, the face's foot standing GC_TIP from the car's end)
+  // the dive: both endpoints measured from the leaf, so the nose's assumed length cannot move the paint
   const hold = dF - 0.7;
-  const end = GC_TIP + 0.5;
-  const along = (u: number): number => hold - u * (hold - end);
-  const top = smoothCurve([[end, 0.64], [along(0.95), 0.93], [along(0.71), 1.23], [along(0.405), 1.565], [hold, bandTop], [TEX_SPAN, bandTop]], 160);
-  const bottom = smoothCurve([[end, 0.6], [1.6, 0.8], [dF - 1.75, 0.96], [dF - 1.1, 1.18], [dF - 0.55, bandBottom], [TEX_SPAN, bandBottom]], 160);
+  const end = dF - 2.6;
+  // A convex dive with a horizontal tangent at the hold. ASSUMED exponent, fitted to York's side profile (the top ~1.37 m at 1.75 m ahead and ~1.13 m at 2.2 m).
+  // Sample the short sweep itself, then append the level band: spreading samples over the whole texture wasted nearly all of them on the straight.
+  const top: [number, number][] = Array.from({ length: 161 }, (_, i) => {
+    const s = end + (hold - end) * i / 160;
+    const u = (hold - s) / (hold - end);
+    return [s, bandTop - (bandTop - 1.02) * u ** 1.7];
+  });
+  top.push([TEX_SPAN, bandTop]);
+  const bottom = smoothCurve([[end, 0.8], [dF - 1.75, 1.03], [dF - 1.1, 1.18], [dF - 0.55, bandBottom]], 160);
+  bottom.push([TEX_SPAN, bandBottom]);
   return [
     { colour: GC_ORANGE, pts: between(top, bottom) },
     { colour: GC_ORANGE, pts: rect(dF - GC_DOOR_FRAME, TEX_SPAN, 3.37, 3.41) },

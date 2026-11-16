@@ -276,6 +276,7 @@ const POD_180 = 0x3c4149;
  *   the pods    a wedge of smoked glass each side, 0.75 m tall at its inner edge, its top edge the brow's foot, its inner edge the body's side running on down, its lower edge rising outward in three
  *               steps to the face's edge (the glass is cut across its lower outer corner), the face's own rounded edge cutting the rest;
  *   the lamps   a round headlight, 0.2 m across, low in the pod and a little inboard of its middle, and a smaller lamp (0.11 m, the dotted one) above it and outboard.
+ *               Round 12: the headlight's pale circular surround, visible inside the smoked pod in GC180-03/05. ASSUMED 18 mm ring width and grey finish; lens/state unchanged.
  * The coupler stands in the open under the body (train.ts draws it), and the windscreen over it is a patch on the nose's roof, not a shape of the face. ASSUMED sizes, read off the
  * pictures against the published 3.77 m height (about 89 px to the metre in GC180-03) and scaled to the face here, which is the loft's flat cap (2.26 m across), narrower than the
  * photographed front (about 2.7 m): good to about 5 cm in height and a little more across.
@@ -291,6 +292,7 @@ export const ADELANTE_FACE: FaceSpec = {
     { name: 'warning-panel', outline: [[-0.7, 1.9], [0.7, 1.9], [0.64, 1.0], [-0.64, 1.0]], colour: YELLOW, lift: 0.0015 },
     { name: 'warning-brow', outline: [[0, 2.02], [0.92, 2.2], [0.92, 1.9], [0, 1.9]], colour: YELLOW, lift: 0.0015, mirror: true },
     { name: 'lamp-pod', outline: [[0.7, 1.9], [1.4, 1.9], [1.4, 1.62], [1.15, 1.4], [0.95, 1.26], [0.65, 1.15]], colour: POD_180, lift: 0.0045, mirror: true, inset: 0.02 },
+    { name: 'headlight-rim', outline: discOutline(0.85, 1.46, 0.118), colour: 0x8b9095, lift: 0.0165, mirror: true },
     { name: 'headlight', outline: discOutline(0.85, 1.46, 0.1), lens: 'head', lift: 0.019, mirror: true },
     { name: 'tail-lamp', outline: discOutline(1.03, 1.65, 0.055), lens: 'tail', lift: 0.019, mirror: true },
   ],

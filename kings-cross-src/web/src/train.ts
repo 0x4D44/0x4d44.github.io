@@ -527,9 +527,10 @@ interface BodySpec {
   doorFrameTop?: number;
   /**
    * a single-leaf passenger door set into its frame (the Class 180's, round 11): the leaf's face stands `depth` behind the frame's, a dark gap `seam` wide runs round the leaf
+   * (`sideSeam`, if given, sets the two vertical gaps independently of the head and foot)
    * between the two, and the frame is a raised ring round that gap (absent: the frame is one plate behind a leaf that stands proud of it)
    */
-  doorRecess?: { depth: number; seam: number; seamColour: number };
+  doorRecess?: { depth: number; seam: number; sideSeam?: number; seamColour: number };
   /** a step under each passenger door's leaf: its foot and top (metres above the rail head), how far it stands out past the body's side, and its colour (absent: none) */
   doorStep?: { y: [number, number]; out: number; colour: number };
   windowY: [number, number];
@@ -1044,7 +1045,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     // round 11 (round 10's score: "add the door leaf's seams and recess, with frame relief, as at York"): the York photograph (private, viewed only) shows each leaf framed by a thin dark
     // line down both edges and over the head, the frame standing round it; the leaf set 12 mm behind the frame's face and the seam 12 mm wide are ASSUMED (side on, the photograph shows
     // the line, not its depth)
-    doorRecess: { depth: 0.012, seam: 0.012, seamColour: 0x08090b },
+    // Round 12: York's edge shadow is ~4 px at 133 px/m: 30 mm on each side, rather than 12 mm. The head keeps its thin gap below the cantrail.
+    // The 12 mm setback is still ASSUMED; widening the visible side gaps leaves the leaf/glass and outer frame dimensions unchanged.
+    doorRecess: { depth: 0.012, seam: 0.012, sideSeam: 0.03, seamColour: 0x08090b },
     // CHANGED (round 9; round 8's were 1.91 to 2.62 m, on round 8's short wall): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level
     // with the doors' glass, their corners well rounded (about a sixth of their height); laid on the measured band top and door head, 2.14 to 2.96 m, which puts their top level with
     // the door glass's (2.91 m) to within the gasket. ASSUMED, from that photograph
@@ -2099,8 +2102,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const frameFace = half - 0.002;
         leafFace = frameFace - recess.depth;
         const [rx0, rx1] = lo(W - 0.005, frameFace);
-        const zi0 = z - dw / 2 - recess.seam;
-        const zi1 = z + dw / 2 + recess.seam;
+        const sideSeam = recess.sideSeam ?? recess.seam;
+        const zi0 = z - dw / 2 - sideSeam;
+        const zi1 = z + dw / 2 + sideSeam;
         const yi0 = dy0 - recess.seam;
         const yi1 = dy1 + recess.seam;
         detail.box(rx0, rx1, dy0 - 0.05, frameTop, z - dw / 2 - 0.05, zi0, frameC);
