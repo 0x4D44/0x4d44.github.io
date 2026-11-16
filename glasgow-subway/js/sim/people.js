@@ -507,11 +507,11 @@ export class AnimCrowd {
     const ch = p.char, r = this.rng; p.state = state;
     let cat = 'idle';
     if (state === 'walk' || state === 'go') cat = 'walk';
-    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
+    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)) && !(p.bag && !/ruck|shopper|carrier|trolley/.test(p.bag.kind)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
-    if (clip && /cross/.test(clip.name) && /pencil|midi/.test(ch.outfit)) clip = this._clip(ch, 'sit') || clip;   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
+    if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && /ruck|shopper|carrier/.test(p.bag.kind)))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
     // Standing: the quiet stance is the rule. The other idle clip is a gesture of the whole right arm (the forearm swings through 109 degrees); looped for a whole bout, on a
     // platform of people, it read as arms waving about. It is now an occasional single gesture: one pass of the clip, then back to the quiet stance.
     let once = false;
@@ -534,7 +534,7 @@ export class AnimCrowd {
    *  a call PHONE_CALL of those, otherwise typing / reading. Walking, riding a pole and children (their arms and eye-lines are not the adults') do not. null, or { kind, clip, dur }. */
   _phoneUse(p, state, cat) {
     const ch = p.char, pr = this.prng;
-    if (state === 'sit') return cat === 'sitphone' && !ch.kid && !ch.staff ? { kind: 'sit', clip: null, dur: 8 + pr() * 14 } : null;
+    if (state === 'sit') return cat === 'sitphone' && !ch.kid && !ch.staff && !(p.bag && !/ruck|shopper|carrier|trolley/.test(p.bag.kind)) ? { kind: 'sit', clip: null, dur: 8 + pr() * 14 } : null;   // (not with a bag on the lap: the hands and the phone went into it - review 8)
     if (state !== 'stand' || cat !== 'idle' || ch.kid || ch.staff || !ch.pools.phone || pr() >= PHONE_USE) return null;
     const call = pr() < PHONE_CALL, want = call ? /phone_call$/ : /phone_stand$/, find = (a) => a && a.find((c) => want.test(c.name));
     const clip = find(ch.pools.phone) || find(ch.pools0 && ch.pools0.phone); if (!clip) return null;
