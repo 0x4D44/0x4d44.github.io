@@ -752,7 +752,7 @@ export class AnimCrowd {
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', false, this._bagHow(p));
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
-      if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (c !== p.lids.c) p.lids.set(c); }
+      if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (p.face) c = Math.max(c, 0.2 * p.face.morphTargetInfluences[0]); if (c !== p.lids.c) p.lids.set(c); }   // a real smile narrows the eyes (the cheeks push the lower lids up): without it review 6 read the smiles as faint smirks
       p.stateT += dt; this._goNow = p.mode === 'go';
       if (!p.static) {
         if (p.mode === 'walk') {

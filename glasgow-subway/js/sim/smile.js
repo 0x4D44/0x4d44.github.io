@@ -9,8 +9,8 @@ export const SMILE = {
   mouthY: 1.17,    // the line of the mouth, below the line of the eyes, in eye-to-eye distances (used when the mouth cannot be found in the mesh)
   half: 0.40,      // half the width of the mouth
   sigma: 0.17,     // how far round a corner of the mouth the pull spreads
-  up: 0.105, out: 0.06, back: 0.05,   // a corner's travel at a full smile: about 7 mm up, 4 out, 3 back on an adult
-  cheekX: 0.62, cheekY: 0.55, cheekS: 0.26, cheekUp: 0.03, cheekOut: 0.025,   // the cheek that the corner pushes up
+  up: 0.135, out: 0.07, back: 0.05,   // a corner's travel at a full smile: about 9 mm up, 4.5 out, 3 back on an adult (review 6: 7 mm up read as no smile at all past a metre)
+  cheekX: 0.62, cheekY: 0.55, cheekS: 0.26, cheekUp: 0.05, cheekOut: 0.03,   // the cheek that the corner pushes up
 };
 
 /** How far a point of the face moves at a full smile. x: across from the middle of the face, y: up from the line of the mouth, both in eye-to-eye distances.
@@ -33,7 +33,7 @@ export function findMouth(pts) {
   const ys = lips.map((p) => p.y).sort((a, b) => a - b), y0 = ys[Math.floor(ys.length / 2)], L = lips.filter((p) => Math.abs(p.y - y0) < 0.2); if (L.length < 4) return null;
   let y = 0; for (const p of L) y += p.y; y /= L.length;
   const xs = L.map((p) => Math.abs(p.x)).sort((a, b) => a - b), half = xs[Math.floor(xs.length * 0.85)];   // (not the furthest: a flushed cheek is red too)
-  if (y > -0.95 || y < -1.5) return null;
+  if (y > -1.0 || y < -1.5) return null;   // (above -1.0 it is the nose or the top of a full upper lip: woman_dress smiled with her top lip - review 6)
   return { y, half: Math.min(0.48, Math.max(0.32, half)) };
 }
 
