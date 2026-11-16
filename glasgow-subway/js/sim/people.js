@@ -985,7 +985,13 @@ export class AnimCrowd {
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }
         p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt); p.yawT = Math.atan2(-dx, -dz); return false; } }
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
-    p.steered = true; p.yawT = p.yaw; p.x += -Math.sin(p.yaw) * move; p.z += -Math.cos(p.yaw) * move; return true;
+    p.steered = true; p.yawT = p.yaw; p.x += -Math.sin(p.yaw) * move; p.z += -Math.cos(p.yaw) * move;
+    if (pass) {   // walking past someone standing on the stairs: edge round them, sideways, rather than through them (gp8: 0.14-0.29 m for up to 12 s)
+      const sx = -uz, sz = ux; let lat = 0;
+      for (const q of this.people) { if (q === p || q.hidden || !q.obj || q.static) continue; const ex = q.x - p.x, ez = q.z - p.z, e = Math.hypot(ex, ez); if (e < 0.42 && e > 1e-4) { const l = ex * sx + ez * sz; lat -= (l >= 0 ? 1 : -1) * (0.42 - e); } }
+      if (lat) { const k = Math.max(-0.5 * dt, Math.min(0.5 * dt, lat)), nx = p.x + sx * k, nz = p.z + sz * k; if (this._onFloor(nx, nz, 0.12)) { p.x = nx; p.z = nz; } }
+    }
+    return true;
   }
   /** the watchdog of a person on the way somewhere: getting closer (by tol) resets it; turning to face the way (a few seconds at most) is neither progress nor being stuck */
   _progress(p, moved, dd, dt, tol) {
