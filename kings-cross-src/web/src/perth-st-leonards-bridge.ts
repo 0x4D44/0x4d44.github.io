@@ -125,8 +125,10 @@ export const SOFFIT_TONES=[1,.84,1.04,1.16,.8,.98,1.1,.9] as const;
  * near 21 at dusk without washing out the springing. Model only: noon face 42, springing 31.5, crown 30.6; dusk crown 21.4.
  * Brightness is a prediction until the frozen GPU pair: round 7's textured-stone predictions ran 3-15% above the captured pixels.
  */
-export const ST_LEONARDS_COLOURS={stone:0x7f7b75,soffit:0x706c65,joint:0x4f483d,shadow:0x3e3a33,dressed:0x85827b,voussoir:0x79766e,
- steel:0x9aaba2,steelDark:0x65776e,steelTop:0xb0bdb4,steelFoot:0x46564f,rust:0x77513b,rustDark:0x573e30,rustLight:0x926c4a,
+// Round-8 follow-up: captured face (45,42,41) was too neutral. Warm it at +1.9% linear luma, lift the dressed edges 10-11%, and retain
+// the soffit's palette/fill. Rust moves to the feathered paint texture; the liked mint paint and the steel frame keep their colours.
+export const ST_LEONARDS_COLOURS={stone:0x867b6d,soffit:0x706c65,joint:0x4f483d,shadow:0x3e3a33,dressed:0x8b8880,voussoir:0x7f7c74,
+ steel:0x9aaba2,steelDark:0x65776e,steelTop:0xb0bdb4,steelFoot:0x46564f,
  asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
@@ -170,7 +172,7 @@ function roadSection(b:Batch,a:Pt,na:Pt,ya:number,c:Pt,nc:Pt,yc:number):void{
 }
 
 /** What the bridge drew, for tests. */
-export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;soffitJoints:number;imposts:number;stiffeners:number;rivets:number;triangles:number}
+export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;soffitJoints:number;imposts:number;girderPanels:number;stiffeners:number;rivets:number;triangles:number}
 
 /** The plan direction the north face looks (the side of the way whose outward normal points north, -z). */
 export const ST_LEONARDS_NORTH:1|-1=V[1]<0?1:-1;
@@ -257,9 +259,10 @@ function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb,foot?:num
 /** St Leonard's Bridge into `b` (a vertex-coloured, untextured batch): arches, voussoirs, imposts, the plate-girder parapets, their copings,
  *  the string courses, the deck's road and footways; the coursed ashlar (spandrels, piers, abutments, the approaches' retaining walls and
  *  parapets) into `ashlar` (vertex-coloured, textured: the frontage's coursed-stone batch), or into `b` when none is given; the arches'
- *  soffits, stones and joints, into `soffitB` (round 7: their own mesh, lamp-lit after dark: ST_LEONARDS.soffitLamp), or into `b`. */
-export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:Batch=b,soffitB:Batch=b):StLeonardsInfo{
- const own=()=>b.triangles+(ashlar===b?0:ashlar.triangles)+(soffitB===b||soffitB===ashlar?0:soffitB.triangles),before=own(),K=ST_LEONARDS,C=ST_LEONARDS_COLOURS;
+ *  soffits, stones and joints, into `soffitB` (round 7: their own mesh, lamp-lit after dark: ST_LEONARDS.soffitLamp), or into `b`.
+ *  `girderB`, when supplied, carries the continuous paint/rust texture on the two outer webs, under the flanges and stiffeners. */
+export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:Batch=b,soffitB:Batch=b,girderB?:Batch):StLeonardsInfo{
+ const batches=new Set([b,ashlar,soffitB,...(girderB?[girderB]:[])]),own=()=>[...batches].reduce((sum,batch)=>sum+batch.triangles,0),before=own(),K=ST_LEONARDS,C=ST_LEONARDS_COLOURS;
  const stone=rgb(C.stone),soffit=rgb(C.soffit),joint=rgb(C.joint),shadow=rgb(C.shadow),steel=rgb(C.steel),steelDark=rgb(C.steelDark),dressed=rgb(C.dressed),vous=[rgb(C.dressed),rgb(C.voussoir)];
  const fasciaFoot=K.road-K.fascia,[e0,e1]=K.abutments,{string:sc,coping:cp,voussoir:vs,impost:im,girder:gd}=K,stringFoot=fasciaFoot-sc.height;
  const out=(sg:number):V3=>[sg*V[0],0,sg*V[1]];
@@ -323,21 +326,11 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
  const {g0,g1,count,pitch}=girderLayout(),topY=K.road+K.parapet;let copings=0,stiffeners=0,rivets=0;
  for(const sg of [-1,1]){
   block(b,stLeonardsAt(g0,sg*(K.half-.2)),stLeonardsAt(g1,sg*(K.half-.2)),fasciaFoot,topY,.2,steel);
-  // The painted plate is largely rusted in R-slb-a. Each panel has its own broad, irregular blotch (never a repeating rectangular
-  // decal) and narrow trails washed down from the stiffeners. These faces share the existing coloured batch and stay under the frame.
+  // One filtered strip across the whole run: no repeated per-panel decal, no polygon outlines or near-black rust cores. White vertex
+  // colour leaves albedo to the texture; the same north-face shading preserves the clean mint paint's captured brightness.
+  girderB?.poly([[g0,fasciaFoot],[g1,fasciaFoot],[g1,topY],[g0,topY]].map(([s,y])=>v3(stLeonardsAt(s,sg*(K.half+.004)),y)),
+   [[0,0],[1,0],[1,1],[0,1]],{facing:out(sg),color:shadeFor([1,1,1],out(sg))});
   const plate=(pts:[number,number][],c:Rgb,offset=.004)=>face(b,pts.map(([s,y])=>v3(stLeonardsAt(s,sg*(K.half+offset)),y)),pts.map(()=>0),out(sg),c);
-  for(let k=0;k<count;k++){
-   const seed=k+ (sg===1?113:0),x=g0+k*pitch,cx=x+pitch*(.43+hash(seed+3)*.16),w=pitch*(.52+hash(seed+17)*.2);
-   const yt=topY-gd.flange-.08-hash(seed+5)*.12,h=.84+hash(seed+9)*.42,yb=yt-h;
-   const rust=rgb([C.rust,C.rustDark,C.rustLight][k%3]);
-   plate([[cx-w*.46,yt-h*.17],[cx-w*.22,yt],[cx+w*.27,yt-.025],[cx+w*.5,yt-h*.24],
-    [cx+w*.37,yb+h*.12],[cx-w*.1,yb],[cx-w*.48,yb+h*.23]],rust);
-   // A softer oxidised border and a dark heart break up the broad patch; two tapering run-downs reach below it.
-   const core=rust.map(c=>c*.78) as Rgb;
-   plate([[cx-w*.2,yt-.13],[cx+w*.17,yt-.18],[cx+w*.24,yb+h*.33],[cx-w*.14,yb+h*.23]],core,.006);
-   for(const edge of [0,1]){const sx=x+(edge?pitch-.11:.11),sw=.035+hash(seed+edge+53)*.055,by=fasciaFoot+gd.flange+.08+hash(seed+edge+67)*.38;
-    plate([[sx-sw,topY-gd.flange-.02],[sx+sw,topY-gd.flange-.02],[sx+sw*.5,by+.22],[sx-sw*.2,by]],rgb(C.rustDark),.007);}
-  }
   const fo=sg*(K.half+gd.flangeProud/2-.01);
   block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),fasciaFoot,fasciaFoot+gd.flange,gd.flangeProud/2+.01,rgb(C.steelFoot));
   block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),topY-gd.flange,topY,gd.flangeProud/2+.01,rgb(C.steelTop));
@@ -406,5 +399,5 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    d+=dl;approachSegments++;
   }
  }
- return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,soffitJoints,imposts,stiffeners,rivets,triangles:own()-before};
+ return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,soffitJoints,imposts,girderPanels:count,stiffeners,rivets,triangles:own()-before};
 }

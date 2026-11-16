@@ -14,9 +14,9 @@ import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './pe
 import {forecourt,hotelShrubs,stationFront} from './perth-frontage-street.ts';
 import {cutRoadMask,cutRoadSurfaces,cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
 import {perthTrack} from './perth-station.ts';
-import {ST_LEONARDS,stLeonardsBridge} from './perth-st-leonards-bridge.ts';
+import {ST_LEONARDS,ST_LEONARDS_COLOURS,stLeonardsBridge} from './perth-st-leonards-bridge.ts';
 import type {StLeonardsInfo} from './perth-st-leonards-bridge.ts';
-import {coursedTexture,rubbleTexture,settsTexture} from './perth-frontage-textures.ts';
+import {coursedTexture,rubbleTexture,settsTexture,stLeonardsPaintTexture} from './perth-frontage-textures.ts';
 import type {FrontageFile} from './perth-frontage-street.ts';
 import frontageFile from './data/perth-frontage.json' with {type:'json'};
 
@@ -52,7 +52,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const cutRoad=cutRoadSurfaces(flat,paint,bridgeBatch,ground,ring,track.ground);
  // St Leonard's Bridge over the south throat (perth-st-leonards-bridge.ts): its own mesh, one draw, the King's Place bridge's material,
  // and its soffits another (round 7: lamp-lit after dark). Round 8: its own irregular ashlar bond, using the same texture mechanism.
- const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonardsSoffits=new Batch({colored:true,uv:false}),stLeonardsAshlar=new Batch({colored:true}),stLeonards=stLeonardsBridge(stLeonardsBatch,ground,stLeonardsAshlar,stLeonardsSoffits);
+ const stLeonardsBatch=new Batch({colored:true,uv:false}),stLeonardsSoffits=new Batch({colored:true,uv:false}),stLeonardsAshlar=new Batch({colored:true}),stLeonardsPaint=new Batch({colored:true});
+ const stLeonards=stLeonardsBridge(stLeonardsBatch,ground,stLeonardsAshlar,stLeonardsSoffits,stLeonardsPaint);
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
@@ -75,8 +76,9 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  add(group,stLeonardsBatch,coloured,'perth-st-leonards-bridge');
  // its soffits: their own draw, lit after dark by the station's and the street's lamps (lighting.ts FLOOD, round 7)
  const SL=ST_LEONARDS.soffitLamp;add(group,stLeonardsSoffits,own(floodLit(new THREE.MeshLambertMaterial({vertexColors:true}),SL.strength,SL.reach,SL.floor)),'perth-st-leonards-soffit');
- const textured=(t:THREE.CanvasTexture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
+ const textured=(t:THREE.Texture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
  add(group,stLeonardsAshlar,textured(coursedTexture('bridge')),'perth-st-leonards-masonry');
+ add(group,stLeonardsPaint,textured(stLeonardsPaintTexture(stLeonards.girderPanels,ST_LEONARDS_COLOURS.steel,ST_LEONARDS.girder.flange/(ST_LEONARDS.parapet+ST_LEONARDS.fascia))),'perth-st-leonards-paint');
  add(group,setts,textured(settsTexture(),-3),'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
  add(group,rubble,textured(rubbleTexture()),'perth-kings-place-walls');
  return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},stLeonards,triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};

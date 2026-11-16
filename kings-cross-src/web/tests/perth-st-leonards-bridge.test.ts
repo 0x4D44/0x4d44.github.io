@@ -211,7 +211,10 @@ test('round 3: pt-st-leonards-bridge stands on platform 4 and looks at the bridg
     assert.ok(Math.abs(v.x) < 1 && Math.abs(v.y) < 1 && v.z < 1, `s ${s} y ${y.toFixed(2)} in frame (${v.x.toFixed(2)}, ${v.y.toFixed(2)})`);
     const eye = new THREE.Vector3(...(k.pos as [number, number, number])), dir = new THREE.Vector3(x, y, z).sub(eye), far = dir.length();
     const hit = new THREE.Raycaster(eye, dir.normalize(), .1, far + 1).intersectObjects(everything)[0];
-    assert.ok(hit && ['perth-st-leonards-bridge', 'perth-st-leonards-soffit', 'perth-st-leonards-masonry'].includes(hit.object.name) && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name} at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
+    // The continuous paint layer now covers the outer web. Require the actual intended surface at each height, retaining the
+    // original distance/occlusion check and making the old three-mesh allowlist more specific.
+    const expected = y > ST_LEONARDS.road ? 'perth-st-leonards-paint' : 'perth-st-leonards-bridge';
+    assert.ok(hit && hit.object.name === expected && hit.distance > far - 1, `s ${s} y ${y.toFixed(2)}: first hit ${hit?.object.name}, expected ${expected}, at ${hit?.distance.toFixed(1)} of ${far.toFixed(1)}`);
   }
   const evidence = readFileSync(new URL('../../tools/evidence.mjs', import.meta.url), 'utf8');
   assert.match(evidence, /'perth-frontage': \[[^\]]*'pt-st-leonards-bridge'/);
@@ -534,35 +537,85 @@ function faceColour(mesh: THREE.Mesh, s: number, y: number, sg: number = ST_LEON
 }
 const colourLuma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
 
-test('round 8: rust blotches occupy most girder panels, with paint left between them, rivets and a lighter top flange', () => {
-  const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS, g0 = K.abutments[0] - 1.2, g1 = K.abutments[1] + 1.2;
-  const panels = Math.floor((g1 - g0) / K.girder.pitch), fractions: number[] = [];
+// Lead 2026-11-16 19:50Z, from the round-8 pixels: one large hard polygon per panel was a regression. Replace the old "rust in
+// 80% of panels" bound with the requested 0-2 smaller patches, feathered edges, one lighter rust family, and substantial clean paint.
+test('round 8 follow-up: girder rust is filtered, feathered and irregular, with zero to two smaller patches per panel', () => {
+  const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS;
+  const painted = scene.group.getObjectByName('perth-st-leonards-paint') as THREE.Mesh | undefined;
+  assert.ok(painted, 'a continuously filtered paint texture replaces the hard rust polygons');
+  const tex = (painted.material as THREE.MeshLambertMaterial).map as THREE.DataTexture;
+  assert.ok(tex?.image.data && tex.colorSpace === THREE.SRGBColorSpace && tex.magFilter === THREE.LinearFilter, 'sRGB paint texels filtered continuously');
+  const { width, height, data } = tex.image, panels = Math.floor((K.abutments[1] - K.abutments[0] + 2.4) / K.girder.pitch);
+  assert.ok(width >= 2048 && height >= 64, `paint texture ${width} x ${height}`);
+  const bottom = Math.ceil(height * K.girder.flange / (K.parapet + K.fascia)), top = height - bottom;
+  let clean = 0, solid = 0, feather = 0, maximumJump = 0; const counts: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
   for (let panel = 0; panel < panels; panel++) {
-    let rust = 0, paint = 0;
-    for (const dx of [.18, .35, .5, .65, .82]) for (const dy of [.3, .5, .7]) {
-      const c = faceColour(bridge, g0 + (panel + dx) * (g1 - g0) / panels, K.road - K.fascia + dy * (K.parapet + K.fascia));
-      if (c[0]! > c[1]! * 1.25 && c[1]! > c[2]! * 1.1) rust++;
-      if (c[1]! >= c[0]!) paint++;
+    const x0 = Math.ceil(panel * width / panels), x1 = Math.ceil((panel + 1) * width / panels), pw = x1 - x0;
+    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [];
+    for (let y = bottom; y < top; y++) for (let x = x0; x < x1; x++) {
+      const i = (y * width + x) * 4, r = Number(data[i]), g = Number(data[i + 1]), b = Number(data[i + 2]);
+      if (b >= 158) clean++;
+      if (b > 60 && b < 150) feather++;
+      if (b <= 55) { solid++; tones.add([r, g, b].join()); assert.ok(r >= 150 && r <= 170 && g >= 80 && g <= 95 && b >= 45, `rust ${r},${g},${b}`); }
+      if (x + 1 < x1) maximumJump = Math.max(maximumJump, Math.abs(b - Number(data[i + 6])));
+      if (b < 105 && r > g * 1.3) mask[y * pw + x - x0] = 1;
     }
-    fractions.push(rust / 15);
-    assert.ok(paint >= 2, `panel ${panel}: ${paint} paint samples, ${rust} rust`);
+    for (let p = 0; p < mask.length; p++) {
+      if (!mask[p] || seen[p]) continue;
+      const queue = [p]; seen[p] = 1; let minY = height, maxY = 0;
+      for (let q = 0; q < queue.length; q++) { const a = queue[q]!, x = a % pw, y = Math.floor(a / pw); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        for (const n of [x ? a - 1 : -1, x + 1 < pw ? a + 1 : -1, a - pw, a + pw]) if (n >= 0 && n < mask.length && mask[n] && !seen[n]) { seen[n] = 1; queue.push(n); }
+      }
+      if (queue.length >= 8) sizes.push((maxY - minY + 1) / (top - bottom));
+    }
+    counts.push(sizes.length); signatures.add([...mask].join(''));
+    assert.ok(sizes.length <= 2 && sizes.every(h => h >= .28 && h <= .5), `panel ${panel}: patch height fractions ${sizes.map(h => h.toFixed(3))}`);
   }
-  assert.ok(fractions.filter(f => f >= .2).length >= .8 * panels, `rust coverage by panel ${fractions.map(v => v.toFixed(2))}`);
-  assert.ok(Math.max(...fractions) - Math.min(...fractions) >= .15, 'rust differs between panels');
+  const pixels = (top - bottom) * width;
+  assert.ok(counts.filter(n => n === 0).length >= 3 && counts.includes(1) && counts.filter(n => n === 2).length >= 3, `patch counts ${counts}`);
+  assert.ok(signatures.size >= .8 * panels, `unique panel patterns ${signatures.size}`);
+  assert.ok(clean / pixels >= .7 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
+  assert.ok(feather >= solid * .25 && maximumJump <= 30, `feather ${feather}, solid ${solid}, maximum adjacent blue jump ${maximumJump}`);
   const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
   assert.ok(info.rivets >= 300, `rivets ${info.rivets}`);
-  const top = faceColour(bridge, 45.9, K.road + K.parapet - .05), bottom = faceColour(bridge, 45.9, K.road - K.fascia + .05);
-  assert.ok(colourLuma(top) >= 1.4 * colourLuma(bottom), `flange top ${top}, bottom ${bottom}`);
+  const topFlange = faceColour(bridge, 45.9, K.road + K.parapet - .05), bottomFlange = faceColour(bridge, 45.9, K.road - K.fascia + .05);
+  assert.ok(colourLuma(topFlange) >= 1.4 * colourLuma(bottomFlange), `flange top ${topFlange}, bottom ${bottomFlange}`);
 });
 
-test('round 8: soot-grey sandstone has 20-30% less linear albedo than round 7, low saturation and a barely lighter ring', () => {
+test('round 8 follow-up: dirty sandstone keeps its darker luma with the warmer bias requested from the captured pixels', () => {
   const c = rgbOf(ST_LEONARDS_COLOURS.stone), old = rgbOf(0x968a70), ratio = colourLuma(c) / colourLuma(old);
   assert.ok(ratio >= .7 && ratio <= .8, `stone linear albedo over round 7 ${ratio.toFixed(3)}`);
-  assert.ok(c[0] / c[2] <= 1.25 && c[0] > c[1] && c[1] > c[2], `grey-brown stone ${c}`);
+  // The captured neutral face (45,42,41) needs warmth at the same luma; the old <=1.25 R/B bound forbade that correction.
+  const round8 = colourLuma(rgbOf(0x7f7b75)), warm = c[0] / c[2];
+  assert.ok(Math.abs(colourLuma(c) / round8 - 1) <= .02 && warm >= 1.4 && warm <= 1.7 && c[0] > c[1] && c[1] > c[2], `warm sandstone ${c}, R/B ${warm.toFixed(3)}`);
   const ring = [ST_LEONARDS_COLOURS.dressed, ST_LEONARDS_COLOURS.voussoir].map(h => colourLuma(rgbOf(h)));
   // The face wears the coursed texture (mean ~0.79); the ring is untextured.
   const relative = (ring[0]! + ring[1]!) / 2 / (colourLuma(c) * COURSED);
-  assert.ok(relative >= 1 && relative <= 1.35, `ring over textured face ${relative.toFixed(3)}`);
+  // Lead: lift the dressed rings and string edges 8-12% in display luma; retain a bounded, slightly brighter dressed band.
+  assert.ok(relative >= 1.36 && relative <= 1.5, `ring over textured face ${relative.toFixed(3)}`);
+});
+
+test('round 8 follow-up: the dressed rings and string course gain a modest lift, while the soffit stays dark', () => {
+  for (const [name, before] of [['dressed', 0x85827b], ['voussoir', 0x79766e]] as const) {
+    const ratio = colourLuma(rgbOf(ST_LEONARDS_COLOURS[name])) / colourLuma(rgbOf(before));
+    assert.ok(ratio >= 1.1 && ratio <= 1.15, `${name} linear albedo lift ${ratio.toFixed(3)}`);
+  }
+  assert.equal(ST_LEONARDS_COLOURS.soffit, 0x706c65);
+  assert.deepEqual(ST_LEONARDS.soffitFill, { base: 2.2, crown: 1.5 });
+});
+
+test('round 8 follow-up: individual ashlar blocks vary slightly in hue as well as brightness', () => {
+  const colours: number[][] = [], previous = Object.getOwnPropertyDescriptor(globalThis, 'document');
+  const context = { fillStyle: '', fillRect: (_x: number, _y: number, w: number, h: number) => {
+    if (w > 20 && w < 200 && h > 15 && h < 100) colours.push(context.fillStyle.match(/\d+/g)!.map(Number));
+  } };
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => ({ width: 0, height: 0, getContext: () => context }) } });
+  try {
+    coursedTexture('bridge')?.dispose();
+    const hues = colours.map(([r, , b]) => r! - b!);
+    assert.ok(colours.length > 40 && Math.min(...hues) <= -5 && Math.max(...hues) >= 5, `block hue span ${Math.min(...hues)}-${Math.max(...hues)}`);
+    assert.ok(colours.every(c => Math.abs(lumaHex((c[0]! << 16) | (c[1]! << 8) | c[2]!) - c.reduce((a, b) => a + b, 0) / 3) < 3), 'hue differences remain subtle');
+  } finally { if (previous) Object.defineProperty(globalThis, 'document', previous); else Reflect.deleteProperty(globalThis, 'document'); }
 });
 
 test('round 8: soot gathers below the string course, and a full wet band reaches a metre above each pier foot', () => {

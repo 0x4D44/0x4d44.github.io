@@ -58,9 +58,58 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
   else for(let y=0;y<s;y+=.3*k)rows.push(.3*k);
   let y=0;
   for(const h of rows){let x=-rnd()*.6*k;const length=bond==='bridge'?.48+rnd()*.35:.6;
-   while(x<s){const w=(length+rnd()*.5)*k;g.fillStyle=grey(Math.round(215+rnd()*40));g.fillRect(x+1.5,y+1.5,w-3,h-3);
+   while(x<s){const w=(length+rnd()*.5)*k,v=Math.round(215+rnd()*40),hue=bond==='bridge'?Math.sin(x*1.87+y*3.91):0;
+    // A small warm/cool drift within the dirty sandstone, approximately constant in luma. A separate hash preserves both bonds' layout.
+    g.fillStyle=bond==='bridge'?`rgb(${Math.min(255,Math.round(v+5*hue))},${Math.round(v-.7*hue)},${Math.min(255,Math.round(v-8*hue))})`:grey(v);
+    g.fillRect(x+1.5,y+1.5,w-3,h-3);
     if(x+w>s)g.fillRect(x+1.5-s,y+1.5,w-3,h-3);x+=w;}
    y+=h;}
   if(bond==='bridge')for(let i=0;i<900;i++){g.fillStyle=grey(175+Math.round(rnd()*55));g.fillRect(rnd()*s,rnd()*s,1+rnd(),1+rnd()*2);}
  });
+}
+
+/** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
+ * capture ruling. Each panel has 0-2 smaller noise-shaped blooms, soft paint/rust boundaries and faint runoff below the blooms.
+ * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
+export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
+ const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
+ for(let i=0;i<data.length;i+=4){data[i]=base[0];data[i+1]=base[1];data[i+2]=base[2];data[i+3]=255;}
+ const hash=(x:number,y=0)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967295;};
+ const smooth=(a:number,b:number,x:number)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+ const noise=(x:number,y:number,seed:number)=>{const i=Math.floor(x),j=Math.floor(y),u=smooth(0,1,x-i),v=smooth(0,1,y-j);
+  const a=hash(i+seed,j),b=hash(i+1+seed,j),c=hash(i+seed,j+1),d=hash(i+1+seed,j+1);return (a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v;};
+ const grain=(x:number,y:number,seed:number)=>.6*noise(x,y,seed)+.28*noise(x*2,y*2,seed+77)+.12*noise(x*4,y*4,seed+139);
+ const clear=1-2*flangeFraction;
+ for(let panel=0;panel<panels;panel++){
+  const seed=panel*31+503,choice=hash(seed),count=choice<.15?0:choice<.7?1:2;
+  for(let patch=0;patch<count;patch++){
+   const key=seed+patch*197,cx=count===2?.27+patch*.46+(hash(key+1)-.5)*.045:.3+hash(key+1)*.4;
+   const cy=.27+hash(key+2)*.46,rx=count===2?.21+hash(key+3)*.025:.26+hash(key+3)*.09,ry=.21+hash(key+4)*.035;
+   const x0=Math.floor(panel*width/panels),x1=Math.min(width,Math.ceil((panel+1)*width/panels));
+   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-.32)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
+   for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+    const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry,angle=Math.atan2(ny,nx);
+    // Asymmetric lobes and turbulence break the silhouette; finer noise lets paint show through the bloom. These are mottled
+    // clusters of oxidation rather than solid spots. Keep the vertical envelope under half the clear web, including its feather.
+    const q=Math.hypot(nx,ny)+(n-.5)*.5+.17*Math.sin(angle*3+key)+.1*Math.cos(angle*5+key*.7);
+    const pores=.7+.3*smooth(.23,.58,grain(u*33,v*31,key+271));
+    const bloom=(1-smooth(.55,1.13,q))*(1-smooth(.82,1.03,Math.abs(ny)))*smooth(.025,.1,u)*(1-smooth(.9,.975,u))*pores;
+    const below=cy-ry*.5-v,runX=cx+rx*.16*Math.sin(v*12+key);
+    const runoff=below>0?.16*Math.exp(-(((u-runX)/(.012+below*.035))**2))*(1-smooth(.04,.32,below)):0;
+    const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
+    const tone=grain(u*17,v*19,key+419),rust=[150+20*tone,80+15*tone,45+10*tone],i=(y*width+x)*4;
+    for(let j=0;j<3;j++)data[i+j]=Math.round(data[i+j]*(1-alpha)+rust[j]*alpha);
+   }
+  }
+ }
+ // A one-texel Gaussian feather also smooths the smallest noise features; filtering on the GPU then handles the camera distance.
+ const horizontal=data.slice();
+ for(let y=0;y<height;y++)for(let x=1;x<width-1;x++)for(let c=0;c<3;c++){
+  const i=(y*width+x)*4+c;horizontal[i]=Math.round((data[i-4]+2*data[i]+data[i+4])/4);
+ }
+ for(let y=1;y<height-1;y++)for(let x=0;x<width;x++)for(let c=0;c<3;c++){
+  const i=(y*width+x)*4+c;data[i]=Math.round((horizontal[i-width*4]+2*horizontal[i]+horizontal[i+width*4])/4);
+ }
+ const t=new THREE.DataTexture(data,width,height,THREE.RGBAFormat);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;
+ t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;
 }
