@@ -552,9 +552,10 @@ test('round 8 second follow-up: the rust albedo is a muted brown, retaining gree
   assert.ok(cores > 1000, `muted brown core texels ${cores}`);
 });
 
-// The new ruling supersedes 0-2 small blooms with 0-1 taller patch and visible runoff. More clean panels make the old all-panel
-// uniqueness bound inappropriate: require unique occupied panels instead, and retain the feather, filtering, frame and rivet checks.
-test('round 8 second follow-up: fewer vertically oblong patches vary in placement, with soft edges and visible runoff', () => {
+// Lead ruling 2026-11-16 21:01Z: round 8c's tall/narrow target is superseded. The round-8 scorer rejected its "repeated motif of
+// upright lozenges". Round 9 requires a roughly 0.5-2x width spread, some broad bodies, more clean panels and downward-only tails.
+// Preserve the colour, paint, filtering, feather, occupied-pattern, runoff, frame and rivet checks; replace only shape/size clauses.
+test('round 9 ruling: varied broad rust bodies and downward-only tails retain the filtered paint, clean panels and frame', () => {
   const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS;
   const painted = scene.group.getObjectByName('perth-st-leonards-paint') as THREE.Mesh | undefined;
   assert.ok(painted, 'a continuously filtered paint texture replaces the hard rust polygons');
@@ -565,10 +566,12 @@ test('round 8 second follow-up: fewer vertically oblong patches vary in placemen
   const bottom = Math.ceil(height * K.girder.flange / (K.parapet + K.fascia)), top = height - bottom;
   let clean = 0, solid = 0, feather = 0, maximumJump = 0, streaked = 0;
   const counts: number[] = [], centres: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
+  const bodyWidths: number[] = [], bodyHeights: number[] = []; let longDownward = 0;
   for (let panel = 0; panel < panels; panel++) {
     const x0 = Math.ceil(panel * width / panels), x1 = Math.ceil((panel + 1) * width / panels), pw = x1 - x0;
-    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [], aspects: number[] = [];
+    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [];
     let patchBottom = height, patchLeft = pw, patchRight = 0;
+    let bodyBottom = height, bodyTop = -1, bodyLeft = pw, bodyRight = -1, cores = 0;
     for (let y = bottom; y < top; y++) for (let x = x0; x < x1; x++) {
       const i = (y * width + x) * 4, r = Number(data[i]), g = Number(data[i + 1]), b = Number(data[i + 2]);
       if (b >= 158) clean++;
@@ -576,6 +579,10 @@ test('round 8 second follow-up: fewer vertically oblong patches vary in placemen
       if (r - g >= 15 && b < 140) { solid++; tones.add([r, g, b].join()); }
       if (x + 1 < x1) maximumJump = Math.max(maximumJump, Math.abs(b - Number(data[i + 6])));
       if (b < 150 && r - g > 12) mask[y * pw + x - x0] = 1;
+      // The >85% rust core measures the body without mistaking its stronger, narrower trails for body height.
+      if (r - g >= 20 && b < 135) {
+        cores++; bodyBottom = Math.min(bodyBottom, y); bodyTop = Math.max(bodyTop, y); bodyLeft = Math.min(bodyLeft, x - x0); bodyRight = Math.max(bodyRight, x - x0);
+      }
     }
     for (let p = 0; p < mask.length; p++) {
       if (!mask[p] || seen[p]) continue;
@@ -585,13 +592,30 @@ test('round 8 second follow-up: fewer vertically oblong patches vary in placemen
       }
       if (queue.length >= 8) {
         sizes.push((maxY - minY + 1) / (top - bottom)); centres.push(((maxY + minY) / 2 - bottom) / (top - bottom));
-        const pitch = (K.abutments[1] - K.abutments[0] + 2.4) / panels;
-        aspects.push((maxY - minY + 1) / height * (K.parapet + K.fascia) / ((maxX - minX + 1) / pw * pitch));
         patchBottom = Math.min(patchBottom, minY); patchLeft = Math.min(patchLeft, minX); patchRight = Math.max(patchRight, maxX);
       }
     }
     counts.push(sizes.length); if (sizes.length) signatures.add([...mask].join(''));
-    assert.ok(sizes.length <= 1 && sizes.every(h => h >= .4 && h <= .75) && aspects.every(a => a >= 1.15), `panel ${panel}: patch heights ${sizes.map(h => h.toFixed(3))}, height/width ${aspects.map(a => a.toFixed(3))}`);
+    if (cores >= 8) {
+      const pitch = (K.abutments[1] - K.abutments[0] + 2.4) / panels, bodyHeight = bodyTop - bodyBottom + 1;
+      bodyWidths.push((bodyRight - bodyLeft + 1) / pw * pitch); bodyHeights.push(bodyHeight / height * (K.parapet + K.fascia));
+      assert.ok(bodyWidths.at(-1)! <= .7 * pitch && bodyHeights.at(-1)! <= .6 * (K.parapet + K.fascia), `panel ${panel}: bounded blotch body ${bodyWidths.at(-1)} x ${bodyHeights.at(-1)}`);
+      let below = 0, above = 0, reach = 0;
+      for (let d = 1; d <= bodyHeight; d++) {
+        let row = 0;
+        for (let x = bodyLeft; x <= bodyRight; x++) {
+          if (bodyBottom - d >= bottom) {
+            const loss = Math.max(0, 162 - Number(data[((bodyBottom - d) * width + x0 + x) * 4 + 2]));
+            below += loss; row = Math.max(row, loss);
+          }
+          if (bodyTop + d < top) above += Math.max(0, 162 - Number(data[((bodyTop + d) * width + x0 + x) * 4 + 2]));
+        }
+        if (row >= 8) reach = d;
+      }
+      if (reach >= .9 * bodyHeight && below >= bodyHeight * 12 && below > 2 * above) longDownward++;
+      // The stronger round-9 tails cross the old mask threshold. Sample runoff below the body, not below the tail's own end.
+      patchBottom = bodyBottom; patchLeft = bodyLeft; patchRight = bodyRight;
+    }
     let trails = 0;
     const centre = (patchLeft + patchRight) / 2;
     for (let y = Math.max(bottom, Math.floor(patchBottom - height * .2)); y < patchBottom - height * .04; y++) for (let x = Math.max(0, Math.floor(centre - 8)); x <= Math.min(pw - 1, centre + 8); x++) {
@@ -601,7 +625,12 @@ test('round 8 second follow-up: fewer vertically oblong patches vary in placemen
     if (sizes.length && trails >= 4) streaked++;
   }
   const pixels = (top - bottom) * width;
-  const occupied = counts.filter(n => n === 1).length, blank = counts.filter(n => n === 0).length;
+  // Count occupied panels; a merged scab may have a separate lower trail component at this threshold.
+  const occupied = counts.filter(n => n > 0).length, blank = counts.filter(n => n === 0).length;
+  assert.ok(bodyWidths.length >= 10 && Math.max(...bodyWidths) / Math.min(...bodyWidths) >= 4, `roughly 0.5-2x body-width range: ${bodyWidths.map(w => w.toFixed(3))}`);
+  assert.ok(bodyWidths.filter((w, i) => w > bodyHeights[i]!).length >= .35 * bodyWidths.length, `some bodies wider than tall: widths ${bodyWidths}, heights ${bodyHeights}`);
+  assert.ok(blank >= 12, `more clean panels than round 8c's eight: ${blank}/${panels}`);
+  assert.ok(longDownward >= .65 * bodyWidths.length, `body-height trails below only: ${longDownward}/${bodyWidths.length}`);
   assert.ok(blank >= 7 && blank <= 16 && occupied >= 18, `patch counts ${counts}`);
   assert.ok(signatures.size >= .9 * occupied && Math.max(...centres) - Math.min(...centres) >= .2, `unique occupied patterns ${signatures.size}, centres ${centres}`);
   assert.ok(clean / pixels >= .75 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
