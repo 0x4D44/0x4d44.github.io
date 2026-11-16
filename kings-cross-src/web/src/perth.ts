@@ -2,12 +2,14 @@
 // The Perth station view: the lazy Perth model and its geometry, loaded as Waverley's are (waverley.ts), into the same view shape the
 // station switcher hops to. No live trains yet: the Perth train-describer area is not in the relay (see station-config.ts).
 import * as THREE from 'three';
+import type { NightLayer } from './night.ts';
 import { decodeWaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import { createWaverleyPlaceholderScene, waverleyView } from './waverley.ts';
 import type { WaverleyView } from './waverley.ts';
 
 export interface PerthModelModule {
   buildPerthScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group>;
+    night?: NightLayer;
     /** The drawn ground's height wherever it is drawn (beyond `terrain` too), for the camera clamp (camera-ground.ts). */
     groundAt?(x: number, z: number): number };
 }

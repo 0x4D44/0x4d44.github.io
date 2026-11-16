@@ -207,6 +207,8 @@ export interface Haze {
    * its hill views look 2 to 4 km across the town. Omitted, the page's own clear air; thicker weather always keeps its own range.
    */
   clear?: number;
+  /** Optional weather-haze ceiling for broad geographic scenes; dense fog keeps its measured visibility. */
+  weatherFar?: number;
 }
 
 /** The range with a scene's own clear air (`Haze.clear`): its far plane eased from the page's to the scene's as the visibility goes from
@@ -464,7 +466,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
       if (!state) return;
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
       if (scene.fog instanceof THREE.Fog) {
-        const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y), state.weather.visibilityM, haze);
+        const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y, haze?.weatherFar, haze?.weatherFar === undefined ? undefined : haze.clear), state.weather.visibilityM, haze);
         scene.fog.near = range.near;
         scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
         rgb(scene.fog.color, state.rig.fog);

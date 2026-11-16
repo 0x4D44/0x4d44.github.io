@@ -114,8 +114,27 @@ export interface StreetLights extends NightLayer {
   dispose(): void;
 }
 
-export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
+export interface StreetLightOptions {
+  /** Existing station fixtures need only the shared heads and pools. */
+  posts?: boolean;
+  headAt?: (spot: LampSpot) => [number, number, number];
+  /** Geographic scenes can fade their distant lamps with their own visibility. */
+  fog?: boolean;
+}
+
+/** Additive light fades to zero in fog; mixing in the fog colour would light
+ * every transparent pool square and give distant heads the fog's own colour. */
+function fadeLightInFog(material: THREE.Material): void {
+  material.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
+      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', 'gl_FragColor.rgb *= 1.0 - fogFactor;'));
+  };
+  material.customProgramCacheKey = () => 'street-lamp-fog-fade';
+}
+
+export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
+  const headAt = options.headAt ?? headOf;
   const group = new THREE.Group();
   group.name = 'street-lamps';
 
@@ -129,6 +148,7 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   const geometries: THREE.BufferGeometry[] = [];
   const meshes: THREE.InstancedMesh[] = [];
   for (const mast of [false, true]) {
+    if (options.posts === false) continue;
     const some = spots.filter((spot) => !!spot.mast === mast);
     if (!some.length) continue;
     const geometry = mast ? mastGeometry() : lampGeometry();
@@ -152,7 +172,7 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   const tint = new THREE.Color();
   for (const spot of spots) {
     tint.setHex(LAMP_LIGHT[spot.kind].halo);
-    for (const point of spot.mast ? stripPoints(spot) : [headOf(spot)]) {
+    for (const point of spot.mast ? stripPoints(spot) : [headAt(spot)]) {
       heads.push(...point);
       colours.push(tint.r, tint.g, tint.b);
     }
@@ -161,8 +181,9 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   haloGeometry.setAttribute('position', new THREE.Float32BufferAttribute(heads, 3));
   haloGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
   const haloMaterial = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false });
   const halos = new THREE.Points(haloGeometry, haloMaterial);
+  if (options.fog) fadeLightInFog(haloMaterial);
   halos.name = 'street-lamp-halos';
   halos.visible = false;
   halos.frustumCulled = false;
@@ -171,12 +192,13 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
 
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
+  if (options.fog) fadeLightInFog(poolMaterial);
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
-    const [x, , z] = headOf(spot);
+    const [x, , z] = headAt(spot);
     const r = poolRadius(spot.height) * 2;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill

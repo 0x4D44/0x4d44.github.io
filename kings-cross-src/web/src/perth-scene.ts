@@ -24,6 +24,12 @@ import type {PerthEra} from './perth-station-structure.ts';
 import {PERTH_FRONTAGE_OMIT_IDS, addPerthFrontage} from './perth-frontage.ts';
 import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
+import {PERTH_LANDUSE} from './perth-city-features.ts';
+import {createPerthLights, perthForecourtLampSpots, perthLampGround, perthTownLampSpots} from './perth-lamps.ts';
+import type {StreetLights} from './streetlights.ts';
+import {perthStationPlan} from './perth-station-structure.ts';
+import {FRONTAGE_WINDOW, ROAD_WIDTHS} from './perth-frontage-street.ts';
+import frontageFile from './data/perth-frontage.json' with {type: 'json'};
 import {PERTH_EAST, PERTH_EAST_FILE} from './perth-east-ground.ts';
 import type {addPerthWest, PerthWestPart} from './perth-west-scene.ts';
 export {PERTH_LEVELS, PERTH_STATION_ROOF_HEIGHT, onBridge, perthTrack, stationOutline} from './perth-station.ts';
@@ -93,6 +99,7 @@ export interface PerthScene {
   buildingIds: string[];
   /** How many drawn blocks stand at an OSM, a LiDAR (perth-city-heights.ts) or an ASSUMED height. */
   heightBasis: {OSM: number; LiDAR: number; ASSUMED: number};
+  night: StreetLights;
   dispose(): void;
 }
 
@@ -141,6 +148,21 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   // the west extension (perth-west-scene.ts), its own group beside the parts, never a block the context city draws
   const west = drawWest ? westModule.addPerthWest(build, ground, options.westData ?? westData, group, {omitBuildingIds: data.buildings.map(b => b.id)}) : null;
 
+  const groundAt = perthGroundAt(ground, PERTH_EAST, west?.ground);
+  const footprints = [...data.buildings.map(b => b.outer), ...data.roofs.map(b => b.outer), ...data.platforms.map(p => p.path)];
+  const W = FRONTAGE_WINDOW, inFront = ([x,z]: readonly number[]) => x >= W.x0 && x <= W.x1 && z >= W.z0 && z <= W.z1;
+  // The frontage, raised land-use cover and bridge decks own the walking surface.
+  const lampGround = perthLampGround(group, groundAt);
+  const roads = [...PERTH_LANDUSE.roads.filter(r => !r.line.every(inFront)),
+    ...frontageFile.roads.filter(r => !['footway','path','steps','cycleway'].includes(r.highway) && r.service !== 'parking_aisle')
+      .map(r => ({width: ROAD_WIDTHS[r.highway] ?? 5,line: r.path as [number,number][]}))];
+  const E = ground.extent;
+  const town = perthTownLampSpots(roads, lampGround, footprints, ([x,z]) => x >= E.x0 && x <= E.x1 && z >= E.z0 && z <= E.z1);
+  const forecourt = perthForecourtLampSpots(frontageFile, groundAt, footprints);
+  const night = createPerthLights(perthStationPlan(data, stationOutline(data)?.outer, era), town, forecourt);
+  group.add(night.group);
+  stats.triangles += night.counts().triangles; stats.drawCalls += night.counts().draws;
+
   parts.roof.visible = options.roofVisible !== false; parts.buildings.visible = options.cityVisible !== false;
   if (west) west.group.visible = parts.buildings.visible;
   if (options.lighting !== false) addWaverleyLights(group);
@@ -150,6 +172,6 @@ export function buildPerthScene(options: PerthOptions = {}): PerthScene {
   const credits = [data.attribution, terrainFile.attribution], creditOf = (c: string) => c.split('. ')[0]!.trim();
   for (const c of west?.attribution ?? []) if (!credits.some(k => creditOf(k) === creditOf(c))) credits.push(c);
   return {group, parts, origin: {...data.origin}, attribution: credits.join('; '), groundAttribution: terrainFile.attribution,
-    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}, ...west ? [{...west.ground.extent}] : []], groundAt: perthGroundAt(ground, PERTH_EAST, west?.ground), west, stats, buildingIds, heightBasis,
-    dispose() { if (disposed) return; disposed = true; group.removeFromParent(); for (const g of geometries) g.dispose(); for (const m of ownedMaterials) m.dispose(); group.clear(); }};
+    terrain: ground, terrainMore: [{...PERTH_EAST_FILE.extent}, ...west ? [{...west.ground.extent}] : []], groundAt, west, stats, buildingIds, heightBasis, night,
+    dispose() { if (disposed) return; disposed = true; night.dispose(); group.removeFromParent(); for (const g of geometries) g.dispose(); for (const m of ownedMaterials) m.dispose(); group.clear(); }};
 }

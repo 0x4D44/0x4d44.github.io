@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {WaverleyArea, WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
-import {Batch, material} from './materials.ts';
+import {Batch, floodLit, material} from './materials.ts';
 import type {V2, V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
@@ -296,7 +296,9 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
   // Round 4: smooth grey concrete with fine joints under the roof (R-pt1-d north), not the blotched flags.
-  const paving = own(new THREE.MeshLambertMaterial({color: PERTH_CONCRETE, map: perthSurfaceTexture('concrete')}));
+  // Low reflected fill between the pendants, with the shared pools supplying
+  // their brighter centres. It follows windowNight and adds nothing by day.
+  const paving = own(floodLit(new THREE.MeshLambertMaterial({color: PERTH_CONCRETE, map: perthSurfaceTexture('concrete')}), .12, 8, 1));
   const surfacing = own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_ASPHALT, map: perthSurfaceTexture('asphalt')}));
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');

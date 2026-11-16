@@ -8,7 +8,7 @@ import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
-import {Batch,floodLit} from './materials.ts';
+import {Batch,floodLit,litWalls} from './materials.ts';
 import type {PerthBuild} from './perth-scene.ts';
 import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './perth-frontage-hotel.ts';
 import {forecourt,hotelShrubs,stationFront} from './perth-frontage-street.ts';
@@ -56,6 +56,13 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  // materials: the hotel's facade texture (ashlar flat colour when no canvas, as in tests), vertex-coloured stone, slate and paint
  const tex=hotelFacadeTexture();
  const facadeMat=own(new THREE.MeshLambertMaterial({map:tex,color:tex?0xffffff:HOTEL_COLOURS.ashlar}));if(tex)facadeMat.addEventListener('dispose',()=>tex.dispose());
+ // Four storeys in the existing bay texture, with a few warm rooms. The blue
+ // glass mask keeps the stone, white sashes and red mullions dark between them.
+ litWalls(facadeMat,[4.5,18],{cell:[4.5,3.65],shift:[0,-3.25/3.65],rows:[0,4],rect:[.28,.72,.08,.66],mode:[.28,0,.12,.06]});
+ const windows=facadeMat.onBeforeCompile,windowKey=facadeMat.customProgramCacheKey();
+ facadeMat.onBeforeCompile=(shader,renderer)=>{windows.call(facadeMat,shader,renderer);shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_begin>',
+  'totalEmissiveRadiance *= smoothstep(0.005, 0.035, diffuseColor.b - diffuseColor.r);\n#include <lights_fragment_begin>');};
+ facadeMat.customProgramCacheKey=()=>`${windowKey}+perth-hotel-glass`;
  const coloured=own(new THREE.MeshLambertMaterial({vertexColors:true}));
  // glass: dark, with a small tight highlight (round 2's broad specular lobe read as pale grey panes)
  const glassMat=own(new THREE.MeshPhongMaterial({vertexColors:true,shininess:90,specular:0x1c2024,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));

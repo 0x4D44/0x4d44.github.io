@@ -5,6 +5,7 @@ import { releaseSceneGpu } from './station-resources.ts';
 import type { StationView } from './station-transition.ts';
 import type { WaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import type { SceneWeather } from './station-weather.ts';
+import type { NightLayer } from './night.ts';
 import { decodeWaverleyAnchorScene } from '../../core/waverley-anchors.ts';
 import type { SignalOverlay } from './signals.ts';
 
@@ -19,6 +20,7 @@ export function createWaverleyPlaceholderScene(): { scene: THREE.Scene; dispose:
 
 export interface WaverleyModelModule {
   buildWaverleyScene(): { group: THREE.Group; dispose(): void; groundAttribution?: string; terrain?: unknown; parts?: Record<string, THREE.Group>;
+    night?: NightLayer;
     /** The drawn ground's height wherever it is drawn (beyond `terrain` too), for the camera clamp (camera-ground.ts). */
     groundAt?(x: number, z: number): number };
 }

@@ -7,7 +7,7 @@ import { describeSun } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
-import { floodLit, litWalls } from './materials.ts';
+import { FACADE_GLASS, floodLit, litWalls } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import type { StreetLights } from './streetlights.ts';
 import { CLEAR_STATE, createWeatherFeed, weatherState } from './weather.ts';
@@ -172,15 +172,32 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
  * grey band (round-8 score, C2). The fade stays Waverley's, so mist and rain keep their own range. ASSUMED, judged by eye against 155.
  */
 export const PERTH_CLEAR_AIR = 24_000;
-export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR } as const;
-/** Perth's sky and weather at its own origin: the same rig as Waverley's, with no night windows or street lamps yet (the lighting element's). */
+export const PERTH_HAZE = { ...WAVERLEY_HAZE, clear: PERTH_CLEAR_AIR, weatherFar: PERTH_CLEAR_AIR } as const;
+/** Perth's cloned city materials retain their facade maps but not the palette's
+ * compile hooks. Use the existing lit-window grid on those exact textured bays. */
+export function lightPerthNight(scene: THREE.Object3D): () => void {
+  const undo: (() => void)[] = [];
+  for (const name of ['perth-city-walls','perth-west-walls']) {
+    const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
+    const material = mesh?.material as THREE.MeshLambertMaterial | undefined;
+    if (material?.isMeshLambertMaterial) undo.push(litWalls(material,[3,3.6],{cell:[3,3.6],rect:FACADE_GLASS.stone}));
+  }
+  return () => undo.reverse().forEach(f => f());
+}
+/** Perth's sky and weather at its own origin, including its model-owned lamps. */
 export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Perth weather requires a built geographic scene');
-  return remoteSceneWeather(view, weather, PERTH_HAZE, () => ({ setLevel: () => {}, dispose: () => {} }));
+  return remoteSceneWeather(view, weather, PERTH_HAZE, () => {
+    const undo = lightPerthNight(view.scene);
+    return {
+      setLevel: level => view.model?.night?.setLevel(level),
+      dispose: () => { view.model?.night?.setLevel(0); undo(); },
+    };
+  });
 }
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
-function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number]; clear?: number },
+function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: { far: number; fade: readonly [number, number]; clear?: number; weatherFar?: number },
   night: () => { setLevel(level: number): void; dispose(): void }): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();
