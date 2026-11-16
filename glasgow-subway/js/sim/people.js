@@ -415,7 +415,13 @@ export class AnimCrowd {
     const own = new Map(); for (const q of this.people) if (q.char) own.set(q.char.id, (own.get(q.char.id) || 0) + 1);
     // nobody who was on the last platform you saw (people review 2: five people stood on all three platforms visited), while the roster allows
     const rec = this._recent, f2 = rec && rec.size ? (c) => !rec.has(c.id) && (!filter || filter(c)) : filter;
-    const pool = this._rollPool(), c = (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
+    // the mix of what people wear holds in each crowd, not only on average: a category already worn by 45 % of this crowd is rolled again (review 8: within 15 m, shorts
+    // were 73 % of one platform and trousers 62-80 % of three others; the rubric allows no garment on more than half)
+    const grp = (c) => (c.kid ? 'kid' : /skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
+    const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
+    let pool = this._rollPool();
+    for (let k = 0; k < 4 && nOwn >= 6 && pool.length; k++) { const g = grp(pool[0]); if (pool.some((c) => grp(c) !== g) || (tally.get(g) || 0) < 0.45 * nOwn) break; pool = this._rollPool(); }
+    const c = (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
     // unique (the game's crowds): nobody is drawn twice while they are anywhere in the page - an empty seat or a thinner platform rather than a twin (review 7: a full train
     // of 75 with 26 on the platform and 12 in the other train is 113 people from a roster of 99, and twins sat in one car)
     return c && this.unique && IN_USE.get(c.id) ? null : c;
