@@ -6,7 +6,8 @@
    "secs": 117.0,
    "status": "ok",
    "bpm": 71.8,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -15,7 +16,8 @@
     "secs": 146.7,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-bach-prelude-c-bwv846/astra-6-xhigh.mid",
@@ -23,7 +25,8 @@
     "secs": 202.5,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-bach-prelude-c-bwv846/fable-5.2-high.mid",
@@ -31,7 +34,8 @@
     "secs": 230.0,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -46,7 +50,8 @@
     "secs": 26.7,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "luna-6-max": {
     "mid": null,
@@ -61,7 +66,8 @@
     "secs": 16.0,
     "status": "ok",
     "bpm": 60.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "o3-high": {
     "mid": null,
@@ -76,7 +82,8 @@
     "secs": 127.3,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-bach-prelude-c-bwv846/opus-5.5-medium.mid",
@@ -84,7 +91,8 @@
     "secs": 116.7,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-bach-prelude-c-bwv846/sol-6.1-xhigh.mid",
@@ -92,7 +100,8 @@
     "secs": 205.8,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": null,
@@ -107,7 +116,8 @@
     "secs": 127.3,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -125,7 +135,8 @@
    "secs": 108.0,
    "status": "ok",
    "bpm": 160.0,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -134,7 +145,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-beethoven-9-ode-to-joy/astra-6-xhigh.mid",
@@ -142,7 +154,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-beethoven-9-ode-to-joy/fable-5.2-high.mid",
@@ -150,7 +163,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -165,7 +179,8 @@
     "secs": 6.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "luna-6-max": {
     "mid": null,
@@ -187,7 +202,8 @@
     "secs": 167.0,
     "status": "ok",
     "bpm": 92.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-4.5-high": {
     "mid": "music-beethoven-9-ode-to-joy/opus-4.5-high.mid",
@@ -195,7 +211,8 @@
     "secs": 216.0,
     "status": "ok",
     "bpm": 80.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-beethoven-9-ode-to-joy/opus-5.5-medium.mid",
@@ -203,7 +220,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-beethoven-9-ode-to-joy/sol-6.1-xhigh.mid",
@@ -211,7 +229,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": "music-beethoven-9-ode-to-joy/sonnet-4.5.mid",
@@ -219,7 +238,8 @@
     "secs": 168.0,
     "status": "ok",
     "bpm": 80.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-5.5-high": {
     "mid": "music-beethoven-9-ode-to-joy/sonnet-5.5-high.mid",
@@ -227,7 +247,8 @@
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -245,7 +266,8 @@
    "secs": 111.0,
    "status": "ok",
    "bpm": 63.2,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -268,7 +290,8 @@
     "secs": 85.7,
     "status": "ok",
     "bpm": 63.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -311,7 +334,8 @@
     "secs": 57.3,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-debussy-clair-de-lune/opus-5.5-medium.mid",
@@ -319,7 +343,8 @@
     "secs": 17.1,
     "status": "ok",
     "bpm": 63.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": null,
@@ -341,7 +366,8 @@
     "secs": 13.0,
     "status": "ok",
     "bpm": 69.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -359,7 +385,8 @@
    "secs": 74.0,
    "status": "ok",
    "bpm": 72.2,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -368,7 +395,8 @@
     "secs": 16.1,
     "status": "ok",
     "bpm": 108.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-fur-elise/astra-6-xhigh.mid",
@@ -376,7 +404,8 @@
     "secs": 52.0,
     "status": "ok",
     "bpm": 75.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-fur-elise/fable-5.2-high.mid",
@@ -384,7 +413,8 @@
     "secs": 76.3,
     "status": "ok",
     "bpm": 70.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -399,7 +429,8 @@
     "secs": 2.5,
     "status": "ok",
     "bpm": 120.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "luna-6-max": {
     "mid": null,
@@ -421,7 +452,8 @@
     "secs": 3.8,
     "status": "ok",
     "bpm": 48.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-4.5-high": {
     "mid": "music-fur-elise/opus-4.5-high.mid",
@@ -429,7 +461,8 @@
     "secs": 90.5,
     "status": "ok",
     "bpm": 58.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-fur-elise/opus-5.5-medium.mid",
@@ -437,7 +470,8 @@
     "secs": 75.4,
     "status": "ok",
     "bpm": 72.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-fur-elise/sol-6.1-xhigh.mid",
@@ -445,7 +479,8 @@
     "secs": 52.0,
     "status": "ok",
     "bpm": 75.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": "music-fur-elise/sonnet-4.5.mid",
@@ -453,7 +488,8 @@
     "secs": 31.1,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-5.5-high": {
     "mid": "music-fur-elise/sonnet-5.5-high.mid",
@@ -461,7 +497,8 @@
     "secs": 42.9,
     "status": "ok",
     "bpm": 50.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": "music-fur-elise/terra-6.1-medium.mid",
@@ -469,7 +506,8 @@
     "secs": 1.0,
     "status": "ok",
     "bpm": 120.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    }
   }
  },
@@ -480,7 +518,8 @@
    "secs": 103.0,
    "status": "ok",
    "bpm": 69.9,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -503,7 +542,8 @@
     "secs": 102.9,
     "status": "ok",
     "bpm": 70.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -546,7 +586,8 @@
     "secs": 92.7,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-holst-jupiter/opus-5.5-medium.mid",
@@ -554,7 +595,8 @@
     "secs": 99.0,
     "status": "ok",
     "bpm": 60.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": null,
@@ -576,7 +618,8 @@
     "secs": 21.8,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -594,7 +637,8 @@
    "secs": 82.0,
    "status": "ok",
    "bpm": 76.1,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -617,7 +661,8 @@
     "secs": 82.1,
     "status": "ok",
     "bpm": 76.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -660,7 +705,8 @@
     "secs": 81.3,
     "status": "ok",
     "bpm": 76.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-joplin-entertainer/opus-5.5-medium.mid",
@@ -668,7 +714,8 @@
     "secs": 56.4,
     "status": "ok",
     "bpm": 76.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": null,
@@ -690,7 +737,8 @@
     "secs": 1.6,
     "status": "ok",
     "bpm": 76.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -708,7 +756,8 @@
    "secs": 96.0,
    "status": "ok",
    "bpm": 80.3,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -731,7 +780,8 @@
     "secs": 43.5,
     "status": "ok",
     "bpm": 80.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -774,7 +824,8 @@
     "secs": 77.4,
     "status": "ok",
     "bpm": 100.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-joplin-maple-leaf-rag/opus-5.5-medium.mid",
@@ -782,7 +833,8 @@
     "secs": 96.0,
     "status": "ok",
     "bpm": 80.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": null,
@@ -821,7 +873,8 @@
    "secs": 106.0,
    "status": "ok",
    "bpm": 52.1,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -830,7 +883,8 @@
     "secs": 18.5,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-moonlight-sonata-1/astra-6-xhigh.mid",
@@ -838,7 +892,8 @@
     "secs": 36.9,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-moonlight-sonata-1/fable-5.2-high.mid",
@@ -846,7 +901,8 @@
     "secs": 106.2,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -861,7 +917,8 @@
     "secs": 18.5,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "luna-6-max": {
     "mid": null,
@@ -890,7 +947,8 @@
     "secs": 106.7,
     "status": "ok",
     "bpm": 54.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-moonlight-sonata-1/opus-5.5-medium.mid",
@@ -898,7 +956,8 @@
     "secs": 64.6,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-moonlight-sonata-1/sol-6.1-xhigh.mid",
@@ -906,7 +965,8 @@
     "secs": 27.7,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": null,
@@ -921,7 +981,8 @@
     "secs": 18.5,
     "status": "ok",
     "bpm": 52.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -939,7 +1000,8 @@
    "secs": 101.5,
    "status": "ok",
    "bpm": 131.8,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -948,7 +1010,8 @@
     "secs": 52.7,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-mozart-k545-1/astra-6-xhigh.mid",
@@ -956,7 +1019,8 @@
     "secs": 56.4,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-mozart-k545-1/fable-5.2-high.mid",
@@ -964,7 +1028,8 @@
     "secs": 81.8,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -1000,7 +1065,8 @@
     "secs": 68.2,
     "status": "ok",
     "bpm": 120.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-4.5-high": {
     "mid": "music-mozart-k545-1/opus-4.5-high.mid",
@@ -1008,7 +1074,8 @@
     "secs": 129.8,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-mozart-k545-1/opus-5.5-medium.mid",
@@ -1016,7 +1083,8 @@
     "secs": 65.5,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-mozart-k545-1/sol-6.1-xhigh.mid",
@@ -1024,7 +1092,8 @@
     "secs": 54.5,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": null,
@@ -1039,7 +1108,8 @@
     "secs": 54.5,
     "status": "ok",
     "bpm": 132.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
@@ -1057,7 +1127,8 @@
    "secs": 106.0,
    "status": "ok",
    "bpm": 66.2,
-   "tempo": "usual"
+   "tempo": "usual",
+   "voices": "samples"
   },
   "seats": {
    "astra-6-medium": {
@@ -1066,7 +1137,8 @@
     "secs": 10.9,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "astra-6-xhigh": {
     "mid": "music-satie-gymnopedie-1/astra-6-xhigh.mid",
@@ -1074,7 +1146,8 @@
     "secs": 43.6,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-satie-gymnopedie-1/fable-5.2-high.mid",
@@ -1082,7 +1155,8 @@
     "secs": 207.3,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "gpt-4o-2024-08": {
     "mid": null,
@@ -1097,7 +1171,8 @@
     "secs": 4.5,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "luna-6-max": {
     "mid": null,
@@ -1126,7 +1201,8 @@
     "secs": 106.4,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "opus-5.5-medium": {
     "mid": "music-satie-gymnopedie-1/opus-5.5-medium.mid",
@@ -1134,7 +1210,8 @@
     "secs": 109.1,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sol-6.1-xhigh": {
     "mid": "music-satie-gymnopedie-1/sol-6.1-xhigh.mid",
@@ -1142,7 +1219,8 @@
     "secs": 51.8,
     "status": "ok",
     "bpm": 66.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "sonnet-4.5": {
     "mid": null,
@@ -1157,7 +1235,8 @@
     "secs": 30.9,
     "status": "ok",
     "bpm": 70.0,
-    "tempo": "answer"
+    "tempo": "answer",
+    "voices": "samples"
    },
    "terra-6.1-medium": {
     "mid": null,
