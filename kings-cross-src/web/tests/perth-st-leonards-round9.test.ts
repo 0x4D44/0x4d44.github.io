@@ -3,58 +3,33 @@ import assert from 'node:assert/strict';
 import {stLeonardsPaintTexture} from '../src/perth-frontage-textures.ts';
 import {ST_LEONARDS as K,ST_LEONARDS_COLOURS as C,stLeonardsBridge,stLeonardsFrame} from '../src/perth-st-leonards-bridge.ts';
 import {Batch} from '../src/materials.ts';
+import {stLeonardsWeatherReadings} from './st-leonards-weather-readings.ts';
 
 const panels=Math.floor((K.abutments[1]-K.abutments[0]+2.4)/K.girder.pitch),pitch=(K.abutments[1]-K.abutments[0]+2.4)/panels;
 const texture=stLeonardsPaintTexture(panels,C.steel,K.girder.flange/(K.parapet+K.fascia));
 test.after(()=>texture.dispose());
-// Area-average to the scored telephoto view's approximate 4 cm footprint. Inspect what survives minification, not tiny texel noise.
-const pw=42,ph=38,base=[C.steel>>16&255,C.steel>>8&255,C.steel&255];
-function colour(panel:number,x:number,y:number):number[]{
- const {width,height,data}=texture.image,sum=[0,0,0];let n=0;
- for(let yy=Math.floor(y*height/ph);yy<Math.ceil((y+1)*height/ph);yy++)for(let xx=Math.floor((panel+x/pw)*width/panels);xx<Math.ceil((panel+(x+1)/pw)*width/panels);xx++){
-  const i=(yy*width+xx)*4;for(let c=0;c<3;c++)sum[c]!+=Number(data![i+c]);n++;
- }
- return sum.map(v=>v/n);
-}
-function patches(){
- const out:{panel:number;left:number;right:number;bottom:number;top:number}[]=[];
- for(let p=0;p<panels;p++){
-  let left=pw,right=-1,bottom=ph,top=-1,cores=0;
-  for(let y=2;y<ph-2;y++)for(let x=0;x<pw;x++){
-   const [r,g,b]=colour(p,x,y);if(r!-g!<20||b!>=135)continue;
-   cores++;left=Math.min(left,x);right=Math.max(right,x);bottom=Math.min(bottom,y);top=Math.max(top,y);
-  }
-  if(cores>=4)out.push({panel:p,left,right,bottom,top});
- }
- return out;
-}
+const readings=stLeonardsWeatherReadings(texture.image,panels,K.girder.flange/(K.parapet+K.fascia));
+const {pw,ph,bodies}=readings,clearHeight=K.parapet+K.fascia-2*K.girder.flange;
 
-test('round 9: minified rust includes broad blotches, varied sizes, high and edge patches, and more clean panels',()=>{
- const ps=patches(),widths=ps.map(p=>(p.right-p.left+1)/pw*pitch),heights=ps.map(p=>(p.top-p.bottom+1)/ph*(K.parapet+K.fascia));
- assert.ok(ps.length>=10&&ps.length<=20,`occupied ${ps.length}/${panels}`);
- assert.ok(widths.filter((w,i)=>w>heights[i]!).length>=ps.length*.35,`broad ${widths.filter((w,i)=>w>heights[i]!).length}/${ps.length}`);
- assert.ok(Math.max(...widths)/Math.min(...widths)>=2.5,`width span ${widths}`);
- const centres=ps.map(p=>(p.top+p.bottom)/2/ph);
- assert.ok(Math.max(...centres)-Math.min(...centres)>=.28&&ps.filter(p=>p.top/ph>.8).length>=3,`vertical placement ${centres}`);
- assert.ok(ps.filter(p=>p.left/pw<.15||p.right/pw>.85).length>=3,`edge patches ${JSON.stringify(ps)}`);
+// Lead ruling 2026-11-16 21:10Z: the scorer rejected round 9's mushroom/T caps and full-height stalks.
+// Replace only weather shape/size/occupancy targets; the girder relief and material assertions remain intact.
+test('round 9b: rust occupies at least 70% of panels and 15-22% of the minified face',()=>{
+ assert.ok(bodies.length>=Math.ceil(panels*.7),`occupied ${bodies.length}/${panels}`);
+ assert.ok(readings.coverage>=.15&&readings.coverage<=.22,`minified rust coverage ${readings.coverage}`);
 });
 
-test('round 9: rust runoff survives the scored footprint for a body-height below the body, with no matching upward trail',()=>{
- const ps=patches();let streaked=0;const evidence:unknown[]=[];
- for(const p of ps){
-  const h=p.top-p.bottom+1;let below=0,above=0,reach=0;
-  for(let d=1;d<=h;d++){
-   let row=0;
-   for(let x=p.left;x<=p.right;x++){
-    if(p.bottom-d>=2){const c=colour(p.panel,x,p.bottom-d);row=Math.max(row,base[2]!-c[2]!);below+=Math.max(0,base[2]!-c[2]!);}
-    if(p.top+d<ph-2)above+=Math.max(0,base[2]!-colour(p.panel,x,p.top+d)[2]!);
-   }
-   if(row>=8)reach=d;
-  }
-  if(reach>=h*.9&&below>above*2&&below>=h*12)streaked++;
-  evidence.push({panel:p.panel,h,reach,below,above});
- }
- assert.ok(streaked>=ps.length*.65,`long asymmetric runoff ${streaked}/${ps.length}: ${JSON.stringify(evidence)}`);
+test('round 9b: upper-middle bodies are 12-16 px high, square to wide, and clear of stiffeners',()=>{
+ const sizes=bodies.map(p=>({panel:p.panel,h:p.top-p.bottom+1,w:(p.right-p.left+1)/pw*pitch/clearHeight*ph}));
+ assert.ok(sizes.filter(p=>p.h>=11&&p.h<=17).length>=bodies.length*.8,`body pixel sizes ${JSON.stringify(sizes)}`);
+ assert.ok(sizes.filter(p=>p.w/p.h>=.9&&p.w/p.h<=1.9).length>=bodies.length*.8,`square-to-wide bodies ${JSON.stringify(sizes)}`);
+ assert.ok(bodies.every(p=>p.left/pw>=.09&&p.right/pw<=.91&&(p.left+p.right)/2/pw>=.35&&(p.left+p.right)/2/pw<=.65),`clear of stiffeners ${JSON.stringify(bodies)}`);
+ assert.ok(bodies.every(p=>(p.bottom+p.top)/2/ph>=.48&&(p.bottom+p.top)/2/ph<=.72),`upper-middle placement ${JSON.stringify(bodies)}`);
+});
+
+test('round 9b: only some patches have soft downward trails, all fading within 40% of the face height',()=>{
+ const tailed=bodies.filter(p=>p.tailReach>=p.aboveReach+2&&p.tailReach>=3);
+ assert.ok(bodies.every(p=>p.tailReach<=ph*.4),`bounded tail reach ${JSON.stringify(bodies)}`);
+ assert.ok(tailed.length>=bodies.length*.15&&tailed.length<=bodies.length*.65,`some tailed patches ${tailed.length}/${bodies.length}`);
 });
 
 test('round 9: top flange, coping and stiffeners have visible relief and a dark under-flange line on both faces',()=>{

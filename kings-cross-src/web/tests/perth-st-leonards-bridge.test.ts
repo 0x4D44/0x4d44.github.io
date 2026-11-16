@@ -14,6 +14,7 @@ import { LIGHTS } from '../src/world.ts';
 import { ST_LEONARDS, ST_LEONARDS_APPROACHES, ST_LEONARDS_COLOURS, ST_LEONARDS_LENGTH, ST_LEONARDS_LINE, ST_LEONARDS_NORTH, ST_LEONARDS_SOURCE, SOFFIT_TONES, stLeonardsArchSegments, stLeonardsAt, stLeonardsBridge, stLeonardsFrame, stLeonardsSoffit, stLeonardsSpans } from '../src/perth-st-leonards-bridge.ts';
 import { Batch, rgb as rgbOf } from '../src/materials.ts';
 import { coursedTexture } from '../src/perth-frontage-textures.ts';
+import { stLeonardsWeatherReadings } from './st-leonards-weather-readings.ts';
 
 const data = unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json', import.meta.url), 'utf8')));
 const scene = buildPerthScene({ lighting: false });
@@ -552,10 +553,10 @@ test('round 8 second follow-up: the rust albedo is a muted brown, retaining gree
   assert.ok(cores > 1000, `muted brown core texels ${cores}`);
 });
 
-// Lead ruling 2026-11-16 21:01Z: round 8c's tall/narrow target is superseded. The round-8 scorer rejected its "repeated motif of
-// upright lozenges". Round 9 requires a roughly 0.5-2x width spread, some broad bodies, more clean panels and downward-only tails.
-// Preserve the colour, paint, filtering, feather, occupied-pattern, runoff, frame and rivet checks; replace only shape/size clauses.
-test('round 9 ruling: varied broad rust bodies and downward-only tails retain the filtered paint, clean panels and frame', () => {
+// Lead ruling 2026-11-16 21:10Z: the scorer rejected round 9's mushroom/T caps and full-height stalks. Its shape/size/occupancy
+// target is superseded by broad upper-middle blotches in >=70% of panels, off the stiffeners, with occasional short, soft tails.
+// Keep the colour, paint, filtering, feather, frame and rivet assertions; the separate minified checks also bound body size and tails.
+test('round 9b ruling: broad central blotches and short occasional runoff retain the filtered paint and frame', () => {
   const bridge = meshNamed('perth-st-leonards-bridge'), K = ST_LEONARDS;
   const painted = scene.group.getObjectByName('perth-st-leonards-paint') as THREE.Mesh | undefined;
   assert.ok(painted, 'a continuously filtered paint texture replaces the hard rust polygons');
@@ -564,14 +565,11 @@ test('round 9 ruling: varied broad rust bodies and downward-only tails retain th
   const { width, height, data } = tex.image, panels = Math.floor((K.abutments[1] - K.abutments[0] + 2.4) / K.girder.pitch);
   assert.ok(width >= 2048 && height >= 64, `paint texture ${width} x ${height}`);
   const bottom = Math.ceil(height * K.girder.flange / (K.parapet + K.fascia)), top = height - bottom;
-  let clean = 0, solid = 0, feather = 0, maximumJump = 0, streaked = 0;
-  const counts: number[] = [], centres: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
-  const bodyWidths: number[] = [], bodyHeights: number[] = []; let longDownward = 0;
+  let clean = 0, solid = 0, feather = 0, maximumJump = 0;
+  const counts: number[] = [], signatures = new Set<string>(), tones = new Set<string>();
   for (let panel = 0; panel < panels; panel++) {
     const x0 = Math.ceil(panel * width / panels), x1 = Math.ceil((panel + 1) * width / panels), pw = x1 - x0;
-    const mask = new Uint8Array(pw * height), seen = mask.slice(), sizes: number[] = [];
-    let patchBottom = height, patchLeft = pw, patchRight = 0;
-    let bodyBottom = height, bodyTop = -1, bodyLeft = pw, bodyRight = -1, cores = 0;
+    const mask = new Uint8Array(pw * height), seen = mask.slice(); let components = 0;
     for (let y = bottom; y < top; y++) for (let x = x0; x < x1; x++) {
       const i = (y * width + x) * 4, r = Number(data[i]), g = Number(data[i + 1]), b = Number(data[i + 2]);
       if (b >= 158) clean++;
@@ -579,62 +577,26 @@ test('round 9 ruling: varied broad rust bodies and downward-only tails retain th
       if (r - g >= 15 && b < 140) { solid++; tones.add([r, g, b].join()); }
       if (x + 1 < x1) maximumJump = Math.max(maximumJump, Math.abs(b - Number(data[i + 6])));
       if (b < 150 && r - g > 12) mask[y * pw + x - x0] = 1;
-      // The >85% rust core measures the body without mistaking its stronger, narrower trails for body height.
-      if (r - g >= 20 && b < 135) {
-        cores++; bodyBottom = Math.min(bodyBottom, y); bodyTop = Math.max(bodyTop, y); bodyLeft = Math.min(bodyLeft, x - x0); bodyRight = Math.max(bodyRight, x - x0);
-      }
     }
     for (let p = 0; p < mask.length; p++) {
       if (!mask[p] || seen[p]) continue;
-      const queue = [p]; seen[p] = 1; let minY = height, maxY = 0, minX = pw, maxX = 0;
-      for (let q = 0; q < queue.length; q++) { const a = queue[q]!, x = a % pw, y = Math.floor(a / pw); minY = Math.min(minY, y); maxY = Math.max(maxY, y); minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+      const queue = [p]; seen[p] = 1;
+      for (let q = 0; q < queue.length; q++) { const a = queue[q]!, x = a % pw, y = Math.floor(a / pw);
         for (const n of [x ? a - 1 : -1, x + 1 < pw ? a + 1 : -1, a - pw, a + pw]) if (n >= 0 && n < mask.length && mask[n] && !seen[n]) { seen[n] = 1; queue.push(n); }
       }
-      if (queue.length >= 8) {
-        sizes.push((maxY - minY + 1) / (top - bottom)); centres.push(((maxY + minY) / 2 - bottom) / (top - bottom));
-        patchBottom = Math.min(patchBottom, minY); patchLeft = Math.min(patchLeft, minX); patchRight = Math.max(patchRight, maxX);
-      }
+      if (queue.length >= 8) components++;
     }
-    counts.push(sizes.length); if (sizes.length) signatures.add([...mask].join(''));
-    if (cores >= 8) {
-      const pitch = (K.abutments[1] - K.abutments[0] + 2.4) / panels, bodyHeight = bodyTop - bodyBottom + 1;
-      bodyWidths.push((bodyRight - bodyLeft + 1) / pw * pitch); bodyHeights.push(bodyHeight / height * (K.parapet + K.fascia));
-      assert.ok(bodyWidths.at(-1)! <= .7 * pitch && bodyHeights.at(-1)! <= .6 * (K.parapet + K.fascia), `panel ${panel}: bounded blotch body ${bodyWidths.at(-1)} x ${bodyHeights.at(-1)}`);
-      let below = 0, above = 0, reach = 0;
-      for (let d = 1; d <= bodyHeight; d++) {
-        let row = 0;
-        for (let x = bodyLeft; x <= bodyRight; x++) {
-          if (bodyBottom - d >= bottom) {
-            const loss = Math.max(0, 162 - Number(data[((bodyBottom - d) * width + x0 + x) * 4 + 2]));
-            below += loss; row = Math.max(row, loss);
-          }
-          if (bodyTop + d < top) above += Math.max(0, 162 - Number(data[((bodyTop + d) * width + x0 + x) * 4 + 2]));
-        }
-        if (row >= 8) reach = d;
-      }
-      if (reach >= .9 * bodyHeight && below >= bodyHeight * 12 && below > 2 * above) longDownward++;
-      // The stronger round-9 tails cross the old mask threshold. Sample runoff below the body, not below the tail's own end.
-      patchBottom = bodyBottom; patchLeft = bodyLeft; patchRight = bodyRight;
-    }
-    let trails = 0;
-    const centre = (patchLeft + patchRight) / 2;
-    for (let y = Math.max(bottom, Math.floor(patchBottom - height * .2)); y < patchBottom - height * .04; y++) for (let x = Math.max(0, Math.floor(centre - 8)); x <= Math.min(pw - 1, centre + 8); x++) {
-      const i = (y * width + x0 + x) * 4;
-      if (Number(data[i + 2]) < 156 && Number(data[i]) > Number(data[i + 1]) - 10) trails++;
-    }
-    if (sizes.length && trails >= 4) streaked++;
+    counts.push(components); if (components) signatures.add([...mask].join(''));
   }
   const pixels = (top - bottom) * width;
   // Count occupied panels; a merged scab may have a separate lower trail component at this threshold.
   const occupied = counts.filter(n => n > 0).length, blank = counts.filter(n => n === 0).length;
-  assert.ok(bodyWidths.length >= 10 && Math.max(...bodyWidths) / Math.min(...bodyWidths) >= 4, `roughly 0.5-2x body-width range: ${bodyWidths.map(w => w.toFixed(3))}`);
-  assert.ok(bodyWidths.filter((w, i) => w > bodyHeights[i]!).length >= .35 * bodyWidths.length, `some bodies wider than tall: widths ${bodyWidths}, heights ${bodyHeights}`);
-  assert.ok(blank >= 12, `more clean panels than round 8c's eight: ${blank}/${panels}`);
-  assert.ok(longDownward >= .65 * bodyWidths.length, `body-height trails below only: ${longDownward}/${bodyWidths.length}`);
-  assert.ok(blank >= 7 && blank <= 16 && occupied >= 18, `patch counts ${counts}`);
-  assert.ok(signatures.size >= .9 * occupied && Math.max(...centres) - Math.min(...centres) >= .2, `unique occupied patterns ${signatures.size}, centres ${centres}`);
+  const { bodies, ph, pw } = stLeonardsWeatherReadings(tex.image, panels, K.girder.flange / (K.parapet + K.fascia));
+  assert.ok(occupied >= Math.ceil(.7 * panels) && blank >= 1, `mostly occupied, with some clean panels: ${counts}`);
+  assert.ok(signatures.size >= .9 * occupied, `unique occupied patterns ${signatures.size}/${occupied}`);
+  assert.ok(bodies.every(p => p.left / pw >= .09 && p.right / pw <= .91 && (p.bottom + p.top) / 2 / ph >= .48 && (p.bottom + p.top) / 2 / ph <= .72), 'upper-middle blotches clear of stiffeners');
+  assert.ok(bodies.every(p => p.tailReach <= ph * .4), `short tail reaches ${bodies.map(p => p.tailReach)}`);
   assert.ok(clean / pixels >= .75 && clean / pixels <= .94 && solid > 1000 && tones.size > 50, `clean ${(clean / pixels).toFixed(3)}, solid ${solid}, tones ${tones.size}`);
-  assert.ok(streaked >= .75 * occupied, `visible runoff below ${streaked}/${occupied} patches`);
   assert.ok(feather >= solid * .25 && maximumJump <= 30, `feather ${feather}, solid ${solid}, maximum adjacent blue jump ${maximumJump}`);
   const info = stLeonardsBridge(new Batch({ colored: true, uv: false }), scene.terrain);
   assert.ok(info.rivets >= 300, `rivets ${info.rivets}`);

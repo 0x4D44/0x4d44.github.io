@@ -73,7 +73,7 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
 }
 
 /** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
- * capture ruling. Round 9: sparse, variably broad scabs, some merged from adjacent lobes, with long trails only below them.
+ * capture ruling. Round 9b: broad upper-middle blotches clear of the stiffeners; occasional short, soft, spreading runoff below.
  * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
 export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
  const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
@@ -83,25 +83,27 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
  const noise=(x:number,y:number,seed:number)=>{const i=Math.floor(x),j=Math.floor(y),u=smooth(0,1,x-i),v=smooth(0,1,y-j);
   const a=hash(i+seed,j),b=hash(i+1+seed,j),c=hash(i+seed,j+1),d=hash(i+1+seed,j+1);return (a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v;};
  const grain=(x:number,y:number,seed:number)=>.6*noise(x,y,seed)+.28*noise(x*2,y*2,seed+77)+.12*noise(x*4,y*4,seed+139);
+ const scab=(x:number,y:number)=>Math.pow(Math.abs(x)**2.8+Math.abs(y)**2.8,1/2.8);
  const clear=1-2*flangeFraction;
  for(let panel=0;panel<panels;panel++){
-  const key=panel*31+503;if(hash(key)<.55)continue;
-   const cx=.09+hash(key+1)*.82,cy=.4+.5*hash(key+2),rx=.075+hash(key+3)*.23,ry=Math.min(.08+hash(key+4)*.14,cy/3.5);
-   const merged=hash(key+5)>.62,runLength=ry*(3.3+hash(key+6)*1.4),runWidth=.022+hash(key+7)*.025;
+  const key=panel*31+503;
+  // At most one clean panel in a row. The reference has broad rust through most bays, rather than long bare runs.
+  if(hash(key)<.2&&(panel===0||hash(key-31)>=.2))continue;
+   const cx=.43+hash(key+1)*.14,cy=.58+.08*hash(key+2),ry=.27+hash(key+4)*.045;
+   const rx=Math.min(.34,ry*.73*(1.05+hash(key+3)*.38)),merged=hash(key+5)>.62;
+   const hasRunoff=hash(key+6)>.55,runLength=.2+hash(key+7)*.13;
    const x0=Math.floor(panel*width/panels),x1=Math.min(width,Math.ceil((panel+1)*width/panels));
-   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-runLength)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.35)*clear)*height));
+   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-(hasRunoff?runLength:0))*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
     const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry;
-    // A softened, eroded square rather than an ellipse. A minority join a second offset scab; their silhouette stays one blotch.
-    const scab=(x:number,y:number)=>Math.pow(Math.abs(x)**2.8+Math.abs(y)**2.8,1/2.8);
-    const body=scab(nx+.1*Math.sin(ny*3+key),ny),lobe=scab((nx-.62)/.7,(ny-.18)/.78);
-    const q=(merged?Math.min(body,lobe):body)+(n-.5)*.48;
+    // Broad irregular erosion, with a partly merged lobe inside the body's envelope; no thin cap or repeated lozenge.
+    const body=scab(nx+.08*Math.sin(ny*3+key),ny),lobe=scab((nx+.25)/.85,(ny-.2)/.78);
+    const q=(merged?Math.min(body,lobe):body)+(n-.5)*.44+.055*Math.sin(nx*8+key)*Math.sin(ny*7-key);
     const pores=.85+.15*smooth(.23,.58,grain(u*33,v*31,key+271));
-    const bloom=(1-smooth(.57,1.1,q))*pores;
-    // Broad enough to survive minification (about 4 cm/display pixel), stronger than round 8, and tapering below the scab only.
-    const below=cy-ry*.45-v,runX=cx+rx*.15+.012*Math.sin(v*8+key),taper=1-smooth(runLength*.6,runLength,below);
-    const trail=(at:number,w:number)=>Math.exp(-(((u-at)/w)**4));
-    const runoff=below>0?.76*Math.max(trail(runX,runWidth),.85*trail(cx-rx*.45,runWidth*.7))*taper:0;
+    const bloom=(1-smooth(.72,1.08,q))*pores;
+    // A minority of stains bleed into a short diffuse fan. It widens as it descends, and fades before reaching the foot flange.
+    const below=cy-ry*.72-v,spread=.035+.065*Math.max(0,below)/runLength,runX=cx+rx*(hash(key+8)-.5)*.5;
+    const runoff=hasRunoff&&below>0?.44*Math.exp(-(((u-runX)/spread)**2))*(1-smooth(0,runLength,below)):0;
     const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
     // Captured paint, not the sky rig alone, anchors this muted albedo family. It predicts a brown near (88,70,58) by day,
     // (80,55,44) at dusk in the body; feathers are lighter and less saturated. These are predictions until the GPU pair.
