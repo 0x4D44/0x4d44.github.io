@@ -16,7 +16,7 @@ import type { NightLayer } from '../src/night.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, lampGeometry, mastGeometry, MAST_STRIP, poolTexture, POST_HEIGHT, stripPoints } from '../src/streetlights.ts';
 import type { StreetLightOptions } from '../src/streetlights.ts';
 import { GROUND_Y } from '../src/world.ts';
-import { Glsl } from './glsl.ts';
+import { Glsl, Sampler } from './glsl.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const city: CityData = JSON.parse(readFileSync(new URL('../src/data/kx-city.json', import.meta.url), 'utf8'));
@@ -71,6 +71,25 @@ test('poolTexture: a 128 px canvas with a radial gradient, white under the lamp,
     if (i > 0) assert.ok((alpha[i] as number) < (alpha[i - 1] as number), 'falling all the way out');
   }
   assert.ok(poolTexture() === texture, 'made once');
+});
+
+test('a shared station/yard pool batch clips only the raised platform instances',()=>{
+  const spots=[0,1].map(x=>({x,y:0,z:0,height:4,yaw:0,kind:LAMP_KIND.cool,slope:[0,0] as [number,number]}));
+  const map=new THREE.DataTexture(new Uint8Array([0]),1,1,THREE.RedFormat);
+  const lights=createStreetLights(spots,{poolCeiling:.2,poolFloor:{map,rect:new THREE.Vector4(0,0,1,1),appliesAt:(_s,i)=>i===0}});
+  try {
+    const pools=lights.group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
+    const shader={uniforms:{},vertexShader:'#include <common>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <opaque_fragment>'};
+    (pools.material as THREE.Material).onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const line=shader.fragmentShader.split('\n').find(l=>l.includes('gl_FragColor.a')&&l.includes('uPoolFloorMap'))!;
+    for(const [i,expected] of [[0,0],[1,1]]) {
+      const flags=pools.geometry.getAttribute('poolFloorWeight');
+      const weight=flags?flags.getX(i!):1;
+      const env={vars:{gl_FragColor:[1,1,1,1],uPoolFloorMap:new Sampler(null),uPoolFloorRect:[0,0,1,1],vPoolWorld:[0,0,0],vPoolFloorWeight:weight},fns:{texture2D:()=>[0,0,0,1]}};
+      new Glsl('').run(line,env);
+      assert.equal(env.vars.gl_FragColor[3],expected,i===0?'a platform pool stops at the platform edge':'the yard remains lit outside the platform mask');
+    }
+  } finally {lights.dispose();map.dispose();}
 });
 
 test('lampGeometry and mastGeometry: 36 and 24 triangles of flat vertex colour and no UVs; the lamp POST_HEIGHT tall with its arm along +x, the mast MAST_HEIGHT tall with its strip of LEDs near the top', () => {

@@ -13,6 +13,7 @@ import { haloTexture } from './night.ts';
 import type { NightLayer } from './night.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
+import { createLampWeather, fadeLightInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
 export const POST_HEIGHT = 8;
@@ -130,22 +131,14 @@ export interface StreetLightOptions {
   /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
   poolRadiusAt?: (spot: LampSpot, index: number) => number;
   /** Clip raised platform light to the physical platforms instead of the tracks. */
-  poolFloor?: { map: THREE.Texture; rect: THREE.Vector4 };
+  poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
   /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
   poolWeather?: boolean;
+  /** Opt-in wet head reflections and a wider fog-scattering halo. */
+  weatherEffects?: boolean;
   haloSize?: number;
   /** A small white-hot core in pixels, including at panorama distances. */
   coreSize?: number;
-}
-
-/** Fade additive RGB or a bounded pool's alpha. Mixing in the fog colour paints
- * squares; fading bounded RGB instead of alpha paints dark squares. */
-function fadeLightInFog(material: THREE.Material, alpha = false): void {
-  material.onBeforeCompile = shader => {
-    shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
-      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;'));
-  };
-  material.customProgramCacheKey = () => alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade';
 }
 
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
@@ -224,6 +217,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
 
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -244,10 +238,12 @@ poolWorld = instanceMatrix * poolWorld;
 vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
       let declarations = 'varying vec3 vPoolWorld;', body = '';
       if (options.poolFloor) {
+        shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
+          .replace('#include <project_vertex>','#include <project_vertex>\nvPoolFloorWeight = poolFloorWeight;');
         shader.uniforms.uPoolFloorMap = { value: options.poolFloor.map };
         shader.uniforms.uPoolFloorRect = { value: options.poolFloor.rect };
-        declarations += '\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
-        body += '\ngl_FragColor.a *= texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r;';
+        declarations += '\nvarying float vPoolFloorWeight;\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
+        body += '\ngl_FragColor.a *= mix( 1.0, texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r, vPoolFloorWeight );';
       }
       if (options.poolWeather) {
         shader.uniforms.uPoolWet = surfaceUniforms.wet;
@@ -282,6 +278,8 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.frustumCulled = false;
   pools.renderOrder = 4;
   group.add(pools);
+  const weather = options.weatherEffects && n ? createLampWeather(pools, spots.flatMap(s=>headAt(s)), halos, options.poolFloor) : undefined;
+  if (weather) group.add(weather.group);
 
   return {
     group,
@@ -291,9 +289,11 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       poolMaterial.opacity = l;
       halos.visible = pools.visible = l > 0.01;
       if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
+      weather?.setLevel(l);
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n, draws: meshes.length + 2 + Number(!!cores) }),
+    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
     dispose() {
+      weather?.dispose();
       for (const g of geometries) g.dispose();
       for (const m of meshes) m.dispose();
       haloGeometry.dispose();

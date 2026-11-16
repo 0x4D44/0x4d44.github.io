@@ -163,17 +163,19 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   // A single LED pool peaks at L*48. Keep the falloff: tightly limited reach
   // avoids round 2's many overlapping layers converging to a grey plateau.
   const townRadii = radii(town,8,headOf);
-  const street = createStreetLights(town, { fog: true, poolCeiling: .20, haloSize: 1.3, coreSize: 2, poolWeather:true,
+  const street = createStreetLights(town, { fog: true, poolCeiling: .20, haloSize: 1.3, coreSize: 2, poolWeather:true, weatherEffects:true,
     poolRadiusAt:(s,i)=>Math.min(inForecourt([s.x,s.z])?5.5:8,townRadii[i]!) });
   const floor = platformFloor(plan);
-  const existing = createStreetLights(perthStationLampSpots(plan), {
-    posts: false, headAt: fixtureHead, fog: true, poolCeiling: .20, poolWeather:true, poolFloor:floor,
-    poolRadiusAt:s=>(s as PerthSpot).radius!,
-  });
+  const station = perthStationLampSpots(plan);
   const yardRadii = radii(forecourt,5.5,fixtureHead);
-  const yard = forecourt.length ? createStreetLights(forecourt,{posts:false,headAt:fixtureHead,fog:true,poolCeiling:.20,poolWeather:true,poolRadiusAt:(_s,i)=>yardRadii[i]!}) : undefined;
+  // A per-instance floor flag lets the existing yard and station lenses share
+  // a draw while clipping only the raised platform light to its footprint.
+  const existing = createStreetLights([...station,...forecourt], {
+    posts:false,headAt:fixtureHead,fog:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,
+    poolFloor:floor?{...floor,appliesAt:(_s,i)=>i<station.length}:undefined,
+    poolRadiusAt:(s,i)=>i<station.length?(s as PerthSpot).radius!:yardRadii[i-station.length]!,
+  });
   existing.group.name = 'perth-station-lamps';
-  if (yard) {yard.group.name='perth-forecourt-lamps';group.add(yard.group);}
   group.add(street.group, existing.group);
   // The Dundee canopy has columns and soffits but no pendant geometry. Mount
   // slim white fittings below it; every other lamp uses its existing body.
@@ -186,11 +188,11 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   const mesh = new THREE.Mesh(geometry,material); mesh.name = 'perth-canopy-light-fittings';
   if (plan.canopyColumns.length) group.add(mesh);
   return { group,
-    setLevel(level) { street.setLevel(level); existing.setLevel(level); yard?.setLevel(level); },
+    setLevel(level) { street.setLevel(level); existing.setLevel(level); },
     counts() {
-      const a = street.counts(), b = existing.counts(), c = yard?.counts();
-      return { lamps: a.lamps + b.lamps + (c?.lamps ?? 0), triangles: a.triangles + b.triangles + (c?.triangles ?? 0) + fittings.triangles, draws: a.draws + b.draws + (c?.draws ?? 0) + Number(plan.canopyColumns.length > 0) };
+      const a = street.counts(), b = existing.counts();
+      return { lamps:a.lamps+b.lamps,triangles:a.triangles+b.triangles+fittings.triangles,draws:a.draws+b.draws+Number(plan.canopyColumns.length>0) };
     },
-    dispose() { street.dispose(); existing.dispose(); yard?.dispose(); floor?.map.dispose(); geometry.dispose(); material.dispose(); group.removeFromParent(); },
+    dispose() { street.dispose(); existing.dispose(); floor?.map.dispose(); geometry.dispose(); material.dispose(); group.removeFromParent(); },
   };
 }

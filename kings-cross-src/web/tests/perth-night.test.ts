@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import { skyRig, fogRange } from '../../core/daylight.ts';
 import { REFERENCE, clearAir, fogFar } from '../src/atmosphere.ts';
 import { createPerthLights, perthForecourtLampSpots, perthLampGround, perthStationLampSpots, perthTownLampSpots } from '../src/perth-lamps.ts';
-import { toWorld } from '../src/perth-station-structure.ts';
+import { perthStationPlan, toWorld } from '../src/perth-station-structure.ts';
+import { addPerthPlatforms, stationOutline } from '../src/perth-station.ts';
+import { unpackWaverleyScene } from '../../core/waverley-data.ts';
+import type { PerthBuild } from '../src/perth-scene.ts';
 import type { PerthStationPlan } from '../src/perth-station-structure.ts';
 import { Glsl } from './glsl.ts';
 import { createPerthWeather, createWaverleyWeather, PERTH_HAZE, sceneWeatherOptions } from '../src/station-weather.ts';
@@ -100,7 +104,8 @@ test('Perth lights existing pendant and double lantern heads and Dundee fittings
   assert.ok(Math.abs(spots[2]!.height-spots[3]!.height-.3)<1e-6);
   const lights = createPerthLights(plan,[],[]);
   try {
-    assert.deepEqual(lights.counts(),{lamps:4,triangles:20,draws:5});
+    // Four reflection quads and one weather draw accompany the same fixtures.
+    assert.deepEqual(lights.counts(),{lamps:4,triangles:28,draws:6});
     lights.setLevel(1);
     let lit=0; lights.group.traverse(o=>{if(o.name==='street-lamp-halos'&&o.visible)lit++;});
     assert.equal(lit,2);
@@ -254,4 +259,101 @@ test('Perth keeps the reference nighttime hemisphere and fills with no ambient r
       assert.equal(hemis[0]!.intensity,expected.hemisphere.intensity);
     } finally {climate.dispose();}
   }
+});
+
+function platformMaterials(): Map<string,THREE.Material> {
+  const materials=new Map<string,THREE.Material>();
+  const build={own:(m:THREE.Material)=>m,add:(_g:THREE.Group,_b:unknown,m:THREE.Material,name:string)=>materials.set(name,m)} as unknown as PerthBuild;
+  addPerthPlatforms(build,{platforms:[{id:'synthetic',ref:'4',tags:{},path:[[0,0],[8,0],[8,100],[0,100]]}],rails:[],buildings:[]},new THREE.Group());
+  return materials;
+}
+
+test('Perth covered paving leaves a low night fill between pendant pools instead of the flat flood',()=>{
+  const materials=platformMaterials();
+  try {
+    const m=materials.get('perth-platform-surfaces')!;
+    const flood=String(m.defines?.FLOOD).match(/vec4\(\s*([\d.]+)/);
+    assert.ok(flood,'covered paving keeps a small reflected fill');
+    const strength=Number(flood[1]);
+    assert.ok(strength>=.015&&strength<=.03,`covered fill ${strength}, not the old .12 wash`);
+  } finally {for(const m of materials.values())m.dispose();}
+});
+
+test('Perth exposed red and grey paving retain a small solar-gated night fill in wet weather',()=>{
+  const materials=platformMaterials();
+  try {
+    for(const name of ['perth-platform-surfaces-open','perth-platform-surfaces-open-grey']) {
+      const m=materials.get(name)!;
+      const flood=String(m.defines?.FLOOD).match(/vec4\(\s*([\d.]+)/);
+      assert.ok(flood,`${name}: foreground has reflected night light even away from a direct pool`);
+      const strength=Number(flood[1]);assert.ok(strength>=.04&&strength<=.05);
+    }
+  } finally {for(const m of materials.values())m.dispose();}
+});
+
+test('Perth open paving participates in the shared wet-surface shader instead of staying matte',()=>{
+  const materials=platformMaterials(),view=syntheticView();
+  for(const name of ['perth-platform-surfaces-open','perth-platform-surfaces-open-grey'])view.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),materials.get(name)));
+  const climate=createPerthWeather(view,sceneWeatherOptions('rain',null));
+  try {
+    for(const name of ['perth-platform-surfaces-open','perth-platform-surfaces-open-grey']){
+      const m=materials.get(name)!;
+      const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:THREE.ShaderLib.lambert.vertexShader,fragmentShader:THREE.ShaderLib.lambert.fragmentShader};
+      m.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+      assert.ok('uWet' in shader.uniforms,`${name}: receives weather wetness`);
+      assert.ok('uSheen' in shader.uniforms,`${name}: receives the reflected sky`);
+      const line=shader.fragmentShader.split('\n').find(l=>l.includes('diffuseColor.rgb *= 1.0 - uDark'))!;
+      for(const wetHere of [0,1]){const e={vars:{diffuseColor:[.5,.5,.5,1],uDark:shader.uniforms.uDark!.value as number,wetHere}};new Glsl('').run(line,e);assert.ok(Math.abs(e.vars.diffuseColor[0]!-.5*(wetHere?.58:1))<1e-6);}
+    }
+  } finally {climate.dispose();for(const o of view.scene.children){const m=o as THREE.Mesh;if(m.isMesh)m.geometry.dispose();}for(const m of materials.values())m.dispose();}
+});
+
+test('Perth wet reflections mirror each head onto its paving plane and stay absent on dry or sheltered ground',()=>{
+  const lights=createPerthLights({structure:{lamps:[]},canopyColumns:[],furniture:{lamps:[]}} as unknown as PerthStationPlan,
+    [{x:0,y:0,z:0,height:4,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]}],[]);
+  try {
+    const reflection=lights.group.getObjectByName('street-lamp-reflections') as THREE.InstancedMesh;
+    assert.ok(reflection,'wet specular streaks are rendered separately from the diffuse pool');
+    const shader={uniforms:{},vertexShader:'#include <common>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <opaque_fragment>\n#include <fog_fragment>'};
+    (reflection.material as THREE.Material).onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const block=shader.vertexShader.split('// reflection-project-begin')[1]!.split('// reflection-project-end')[0]!;
+    const env={vars:{lampBase:[0,0,0],lampHead:[0,4,0],lampNormal:[0,1,0],cameraPosition:[0,2,12],reflectionCentre:[0,0,0]}};
+    new Glsl('').run(block,env);
+    assert.ok(Math.abs(env.vars.reflectionCentre[2]!-8)<1e-6,'mirror of the 4 m head meets the plane at z=8 for this eye');
+    const alpha=shader.fragmentShader.split('// reflection-alpha-begin')[1]!.split('// reflection-alpha-end')[0]!;
+    const run=(wet:number,open:number,uv:number[])=>{const e={vars:{uLampWet:wet,reflectionOpen:open,vReflectionUv:uv,vReflectionWorld:[0,0,0],gl_FragColor:[.5,.5,.5,1]}};new Glsl('').run(alpha,e);return e.vars.gl_FragColor[3]!;};
+    assert.equal(run(0,1,[0,0]),0);assert.equal(run(1,0,[0,0]),0);
+    assert.ok(run(1,1,[0,0])>run(1,1,[.8,0])*10,'narrow across the streak');
+    assert.ok(run(1,1,[0,.8])>run(1,1,[.8,0]),'stretched along the reflection');
+    assert.equal(reflection.raycast(new THREE.Raycaster(),[]),undefined,'reflections do not intercept sightlines');
+    lights.setLevel(0);assert.equal(reflection.visible,false);
+  } finally {lights.dispose();}
+});
+
+test('Perth adds a wider soft halo only in fog, retaining the original head and town core',()=>{
+  const lights=createPerthLights({structure:{lamps:[]},canopyColumns:[],furniture:{lamps:[]}} as unknown as PerthStationPlan,
+    [{x:0,y:0,z:0,height:4,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]}],[]);
+  try {
+    const head=lights.group.getObjectByName('street-lamp-halos') as THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>;
+    const flags=head.geometry.getAttribute('lampFogHalo');assert.ok(flags,'fog has its own scattering sprites in the head batch');
+    assert.equal(flags.count,2);assert.equal(flags.getX(0),0);assert.equal(flags.getX(1),1);
+    const p=head.geometry.getAttribute('position');assert.deepEqual([p.getX(0),p.getY(0),p.getZ(0)],[p.getX(1),p.getY(1),p.getZ(1)]);
+    const shader={uniforms:{},vertexShader:'#include <common>\ngl_PointSize = size;',fragmentShader:'#include <common>\n#include <opaque_fragment>\n#include <fog_fragment>'};
+    head.material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const sizeBlock=shader.vertexShader.split('// lamp-fog-size-begin')[1]!.split('// lamp-fog-size-end')[0]!;
+    const sizeEnv={vars:{size:2,lampFogHalo:1,gl_PointSize:0}};new Glsl('').run(sizeBlock,sizeEnv);assert.ok(sizeEnv.vars.gl_PointSize>=5,'fog halo is wider than 2.5 times the original');
+    const block=shader.fragmentShader.split('// lamp-fog-begin')[1]!.split('// lamp-fog-end')[0]!;
+    for(const amount of [0,.5,1]){const e={vars:{uLampFog:amount,vLampFogHalo:1,gl_FragColor:[1,1,1,1]}};new Glsl('').run(block,e);assert.equal(e.vars.gl_FragColor[3],.22*amount);}
+    const original={vars:{uLampFog:1,vLampFogHalo:0,gl_FragColor:[1,1,1,1]}};new Glsl('').run(block,original);assert.equal(original.vars.gl_FragColor[3],1,'the original head retains its strength');
+    lights.setLevel(0);assert.equal(head.visible,false);
+  } finally {lights.dispose();}
+});
+
+test('Perth moves the complete foreground lantern north so the platform pool has its head in the frozen view',()=>{
+  const data=unpackWaverleyScene(JSON.parse(readFileSync(new URL('../src/data/perth-scene.json',import.meta.url),'utf8')));
+  const spots=perthStationLampSpots(perthStationPlan(data,stationOutline(data)!.outer));
+  const near=spots.filter(s=>s.x>-40&&s.x<-30&&s.z>47&&s.z<58);
+  assert.ok(near.length>0);
+  const camera=new THREE.PerspectiveCamera(60,1.6,.1,20000);camera.position.set(-21.94,2.515,60);camera.lookAt(-61.13,4,-60);camera.updateMatrixWorld(true);
+  for(const s of near){const p=new THREE.Vector3(s.x,s.y+s.height,s.z).project(camera);assert.ok(p.x>-.96&&p.x<1&&Math.abs(p.y)<1&&p.z<1,`foreground head projects to ${p.toArray()}`);}
 });

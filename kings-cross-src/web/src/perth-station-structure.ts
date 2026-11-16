@@ -549,7 +549,10 @@ export function perthStationPlan(data: Pick<PerthData, 'platforms' | 'rails' | '
   // ASSUMED spacing and set-back (Abbott shows four in about 50 m of platform).
   for (const f of s.frames) {
     const ns = f.pts.map(p => p[0] * f.n[0] + p[1] * f.n[1]), lo = Math.min(...ns), hi = Math.max(...ns);
-    for (let t = f.tLo + F.openEvery / 2; t < f.tHi - 3; t += PERTH_LAMP.every) {
+    // ASSUMED phase: three metres north of the bench half-bay. The complete
+    // lantern stays clear of furniture and its lit head accompanies its pool
+    // in the platform view, rather than falling just outside the left edge.
+    for (let t = f.tLo + F.openEvery / 2 - 3; t < f.tHi - 3; t += PERTH_LAMP.every) {
       // The across offsets PERTH_LAMP.back (to .3 m more) from the nearest track's centreline, scanning in from each side of the platform
       // (one lamp on each track side; an island half mapped on its own has one).
       const at = (o: number): Pt => [f.axis[0] * t + f.n[0] * o, f.axis[1] * t + f.n[1] * o];
