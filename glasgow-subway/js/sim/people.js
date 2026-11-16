@@ -725,6 +725,9 @@ export class AnimCrowd {
     // ... and three skirts that break on a seat in every sit clip (review 7, sit_idle): woman_coat's suit skirt splits over the thighs, woman_midi's flares into a shelf
     // over the knees, teen_tube's mini balloons out from the hips. Their wearers stand too (the other skirts and dresses sit)
     if (/^(woman_coat|woman_midi|teen_tube)$/.test(c.id)) return false;
+    // ... and the kilts: seated, a kilt hangs straight down behind the legs and the bare thighs come out through its front, in every sit clip (review 8, all five
+    // wearers, seen in a train in the game). Draping it over the thighs is more than the runtime fit can do, so kilt wearers stand on the train (not the trews, nor woman_sash's dress)
+    if (/kilt|^highland$/.test(c.outfit)) return false;
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
