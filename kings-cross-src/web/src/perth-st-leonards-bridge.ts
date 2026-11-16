@@ -43,8 +43,8 @@ export const ST_LEONARDS_APPROACHES:readonly(readonly Pt[])[]=[
  *  The fascia's foot rises to 0.5 m under the road (was 0.9, which put it under the crown) so the string course runs just over the crowns. */
 export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.5,parapet:1.15,footway:2,kerb:.12,
  piers:[22.3,35.46,43.76,55.74],pierWidth:1.5,spring:2,grade:.08,wallDepth:.5,step:3,
- archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
- voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
+ archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.34},
+ voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.16,pitch:1.8,stiffener:.16,stiffenerProud:.09},
  northShade:.75,
  soffitStone:.9,joint:.05,soffitBend:1.5,
  soffitFill:{base:2.2,crown:1.5},soffitLamp:{strength:.018,reach:4,floor:2},soffitJoint:{width:.1,tone:.5,inset:.015},
@@ -332,16 +332,20 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    [[0,0],[1,0],[1,1],[0,1]],{facing:out(sg),color:shadeFor([1,1,1],out(sg))});
   const plate=(pts:[number,number][],c:Rgb,offset=.004)=>face(b,pts.map(([s,y])=>v3(stLeonardsAt(s,sg*(K.half+offset)),y)),pts.map(()=>0),out(sg),c);
   const fo=sg*(K.half+gd.flangeProud/2-.01);
-  block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),fasciaFoot,fasciaFoot+gd.flange,gd.flangeProud/2+.01,rgb(C.steelFoot));
+  // Round 9 (R-slb-a, ASSUMED relief): the top angle projects 16 cm, the foot keeps its slimmer 5 cm lip. Baked occlusion on the
+  // web immediately beneath the overhang survives the telephoto view; this batched scene has no dynamic cast shadows.
+  block(b,stLeonardsAt(g0,sg*(K.half+.015)),stLeonardsAt(g1,sg*(K.half+.015)),fasciaFoot,fasciaFoot+gd.flange,.035,rgb(C.steelFoot));
   block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),topY-gd.flange,topY,gd.flangeProud/2+.01,rgb(C.steelTop));
+  plate([[g0,topY-gd.flange-.07],[g1,topY-gd.flange-.07],[g1,topY-gd.flange],[g0,topY-gd.flange]],rgb(C.steelFoot).map(c=>c*.48) as Rgb,.008);
+  face(b,[v3(stLeonardsAt(g0,sg*K.half),topY-gd.flange),v3(stLeonardsAt(g1,sg*K.half),topY-gd.flange),v3(stLeonardsAt(g1,sg*(K.half+gd.flangeProud)),topY-gd.flange),v3(stLeonardsAt(g0,sg*(K.half+gd.flangeProud)),topY-gd.flange)],[0,0,0,0],[0,-1,0],shadow);
   plate([[g0,fasciaFoot+.005],[g1,fasciaFoot+.005],[g1,fasciaFoot+.035],[g0,fasciaFoot+.035]],rgb(C.steelFoot).map(c=>c*.65) as Rgb,.052);
   const so=sg*(K.half+gd.stiffenerProud/2-.01);
   // Small round heads, raised off the flange/stiffener, read as a line of glints rather than square studs at the frozen range.
   const rivet=(s:number,y:number,o:number)=>{const points:V3[]=[];for(let j=0;j<6;j++){const th=j*Math.PI/3;points.push(v3(stLeonardsAt(s+.025*Math.cos(th),sg*(K.half+o)),y+.025*Math.sin(th)));}
    b.poly(points,undefined,{facing:out(sg),color:shadeFor(rgb(C.steelTop).map(c=>c*.78) as Rgb,out(sg))});rivets++;};
-  for(let k=1;k<count;k++){const s=g0+k*pitch;block(b,stLeonardsAt(s,so-sg*gd.stiffener/2),stLeonardsAt(s,so+sg*gd.stiffener/2),fasciaFoot+gd.flange,topY-gd.flange,gd.stiffener/2,steelDark);stiffeners++;
-   for(let j=0;j<4;j++)rivet(s,fasciaFoot+gd.flange+.16+j*.35,.077);}
-  for(let k=0;k<count;k++)for(const dx of [.2,.5,.8])for(const y of [fasciaFoot+gd.flange/2,topY-gd.flange/2])rivet(g0+(k+dx)*pitch,y,.067);
+  for(let k=1;k<count;k++){const s=g0+k*pitch;block(b,stLeonardsAt(s-gd.stiffener/2,so),stLeonardsAt(s+gd.stiffener/2,so),fasciaFoot+gd.flange,topY-gd.flange,gd.stiffenerProud/2+.01,steelDark);stiffeners++;
+   for(let j=0;j<4;j++)rivet(s,fasciaFoot+gd.flange+.16+j*.35,gd.stiffenerProud+.015);}
+  for(let k=0;k<count;k++)for(const dx of [.2,.5,.8])for(const y of [fasciaFoot+gd.flange/2,topY-gd.flange/2])rivet(g0+(k+dx)*pitch,y,y>topY-gd.flange?gd.flangeProud+.017:.067);
   const o=sg*(K.half+sc.projection/2-.05);
   block(b,stLeonardsAt(g0,o),stLeonardsAt(g1,o),stringFoot,fasciaFoot,(sc.projection+.1)/2,dressed);
   // the coping: from 0.2 m inside the web to `overhang` past its outer face

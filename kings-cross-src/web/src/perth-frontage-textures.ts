@@ -73,7 +73,7 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
 }
 
 /** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
- * capture ruling. Selected panels have one vertically oblong patch with a soft irregular outline and visible runoff; others stay clean.
+ * capture ruling. Round 9: sparse, variably broad scabs, some merged from adjacent lobes, with long trails only below them.
  * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
 export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
  const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
@@ -85,20 +85,23 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
  const grain=(x:number,y:number,seed:number)=>.6*noise(x,y,seed)+.28*noise(x*2,y*2,seed+77)+.12*noise(x*4,y*4,seed+139);
  const clear=1-2*flangeFraction;
  for(let panel=0;panel<panels;panel++){
-  const key=panel*31+503;if(hash(key)<.32)continue;
-   const cx=.25+hash(key+1)*.5,rx=.135+hash(key+3)*.025,ry=.31+hash(key+4)*.08;
-   const cy=.31+.42*hash(key+2),runLength=.34+hash(key+6)*.14;
+  const key=panel*31+503;if(hash(key)<.55)continue;
+   const cx=.09+hash(key+1)*.82,cy=.4+.5*hash(key+2),rx=.075+hash(key+3)*.23,ry=Math.min(.08+hash(key+4)*.14,cy/3.5);
+   const merged=hash(key+5)>.62,runLength=ry*(3.3+hash(key+6)*1.4),runWidth=.022+hash(key+7)*.025;
    const x0=Math.floor(panel*width/panels),x1=Math.min(width,Math.ceil((panel+1)*width/panels));
-   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-runLength)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.2)*clear)*height));
+   const y0=Math.max(0,Math.floor((flangeFraction+(cy-ry*1.2-runLength)*clear)*height)),y1=Math.min(height,Math.ceil((flangeFraction+(cy+ry*1.35)*clear)*height));
    for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
-    const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry,angle=Math.atan2(ny,nx);
-    // Gentle sideways drift and noise keep a single tall body, rather than a horizontal cluster of lobes. The irregular feather
-    // remains several texels wide. Runoff is wide enough to survive the frozen bridge camera's roughly 4 cm per display pixel.
-    const q=Math.hypot(nx+.12*Math.sin(ny*2+key),ny)+(n-.5)*.4+.055*Math.sin(angle*2+key);
+    const u=(x+.5)*panels/width-panel,v=((y+.5)/height-flangeFraction)/clear,n=grain(u*9,v*9,key),nx=(u-cx)/rx,ny=(v-cy)/ry;
+    // A softened, eroded square rather than an ellipse. A minority join a second offset scab; their silhouette stays one blotch.
+    const scab=(x:number,y:number)=>Math.pow(Math.abs(x)**2.8+Math.abs(y)**2.8,1/2.8);
+    const body=scab(nx+.1*Math.sin(ny*3+key),ny),lobe=scab((nx-.62)/.7,(ny-.18)/.78);
+    const q=(merged?Math.min(body,lobe):body)+(n-.5)*.48;
     const pores=.85+.15*smooth(.23,.58,grain(u*33,v*31,key+271));
-    const bloom=(1-smooth(.52,1.08,q))*(1-smooth(.82,1.03,Math.abs(ny)))*pores;
-    const below=cy-ry*.45-v,runX=cx+rx*.2*Math.sin(v*12+key),runWidth=.03+hash(key+7)*.018+below*.015;
-    const runoff=below>0?.58*Math.exp(-(((u-runX)/runWidth)**2))*(1-smooth(.12,runLength,below)):0;
+    const bloom=(1-smooth(.57,1.1,q))*pores;
+    // Broad enough to survive minification (about 4 cm/display pixel), stronger than round 8, and tapering below the scab only.
+    const below=cy-ry*.45-v,runX=cx+rx*.15+.012*Math.sin(v*8+key),taper=1-smooth(runLength*.6,runLength,below);
+    const trail=(at:number,w:number)=>Math.exp(-(((u-at)/w)**4));
+    const runoff=below>0?.76*Math.max(trail(runX,runWidth),.85*trail(cx-rx*.45,runWidth*.7))*taper:0;
     const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
     // Captured paint, not the sky rig alone, anchors this muted albedo family. It predicts a brown near (88,70,58) by day,
     // (80,55,44) at dusk in the body; feathers are lighter and less saturated. These are predictions until the GPU pair.
