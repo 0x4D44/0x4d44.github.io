@@ -482,7 +482,7 @@ export function trimUnderTop(THREE, root, o = {}) {
     if (!m.isSkinnedMesh || !m.material || !m.geometry || !m.geometry.attributes.position) return;
     const nm = m.material.name || '';
     if (!/^cloth_/i.test(nm)) return;
-    if (/sweater|camisole|shirt|tank|top|hood|blouse|tee|polo/i.test(nm) && !/shoe|boot|sock|tucked|jacket|suit/i.test(nm)) tops.push(m);   // (not an open jacket, nor a shirt tucked in)
+    if (/sweater|camisole|shirt|tank|top|hood|blouse|tee|polo|cloth_coat\./i.test(nm) && !/shoe|boot|sock|tucked|jacket|suit/i.test(nm)) tops.push(m);   // (not an open jacket, nor a shirt tucked in)
     else if (!LEG_SKIP.test(nm)) legs.push(m);
   });
   if (!tops.length || !legs.length) return null;
@@ -492,8 +492,10 @@ export function trimUnderTop(THREE, root, o = {}) {
   // a top tucked INTO the trousers is left alone: drawing the trousers in under it bared a band of skin all round the waist (review 5: man_commuter, man_trews -
   // the shirts' material names do not say 'tucked')
   let legTop = -1e9; for (const m of legs) { const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) legTop = Math.max(legTop, P.getY(i)); }
-  const hangs = tops.some((m) => /sweater|hood|knit|jumper|tank|camisole|lusekofta|blouse/i.test(m.material.name || ''));   // knitwear, hoodies and tanks hang over the waistband
+  const hangs = tops.some((m) => /sweater|hood|knit|jumper|tank|camisole|lusekofta|blouse|cloth_coat\./i.test(m.material.name || ''));   // knitwear, hoodies and tanks hang over the waistband
   if (!hangs && legTop - hem > 0.12) return { dropped: 0, hem: +hem.toFixed(3), tucked: true };   // a shirt or tee whose hem is that far down inside the waistband is tucked in
+  // a long coat swings further off the leg than a sweater: the trousers under it go in by 2.5 cm (review 7: ya_winter's and elder_woman_coat's jeans came through a hole at the thigh walking)
+  const deep = tops.some((m) => /cloth_coat\./i.test(m.material.name || '')) ? Math.max(inset, 0.025) : inset;
   let dropped = 0;
   for (const m of legs) {
     const g = m.geometry, idx = g.index, P = g.attributes.position; if (!idx) continue;
@@ -502,7 +504,7 @@ export function trimUnderTop(THREE, root, o = {}) {
     // under the top the trousers are drawn in, along their own normals, by up to `inset` (eased in over the first 2 cm above the hem): solid still, but behind the
     // top's cloth (the body there is dropped by trimUnderTrousers, so nothing is pushed into view). Dropping them instead opened holes when a sweater rode up.
     const N = g.attributes.normal; let moved = 0;
-    if (N) for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y <= hem) continue; const k = inset * Math.min(1, (y - hem) / 0.02); P.setXYZ(i, P.getX(i) - N.getX(i) * k, y - N.getY(i) * k, P.getZ(i) - N.getZ(i) * k); moved++; }
+    if (N) for (let i = 0; i < P.count; i++) { const y = P.getY(i); if (y <= hem) continue; const k = deep * Math.min(1, (y - hem) / 0.02); P.setXYZ(i, P.getX(i) - N.getX(i) * k, y - N.getY(i) * k, P.getZ(i) - N.getZ(i) * k); moved++; }
     P.needsUpdate = true; g.userData.underTop = moved; dropped += moved;
   }
   return { dropped, hem: +hem.toFixed(3) };
