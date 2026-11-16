@@ -14,6 +14,7 @@ import { createTerrain } from '../../core/terrain.ts';
 import { addCity } from '../src/city.ts';
 import type { NightLayer } from '../src/night.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, lampGeometry, mastGeometry, MAST_STRIP, poolTexture, POST_HEIGHT, stripPoints } from '../src/streetlights.ts';
+import type { StreetLightOptions } from '../src/streetlights.ts';
 import { GROUND_Y } from '../src/world.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
@@ -259,6 +260,48 @@ test('createStreetLights: posts there by day, a glow at each head and a pool und
   assert.equal(freed.length, geometries.length + materials.length + instanced.length, `freed ${freed}`);
   for (const m of instanced) assert.ok(freed.includes(m.name), `${m.name} (its matrices and colours) is freed`);
 });
+
+for (const effect of ['pools', 'halos'] as const) {
+  test(`street lamp ${effect} never intercept rays to solid surfaces, at any lamp level`, () => {
+    const fixtures: [string, StreetLightOptions][] = [
+      ['shared city lamps (King\'s Cross and Waverley)', {}],
+      ['existing Perth fixtures', { posts: false, headAt: s => [s.x, s.y + s.height, s.z], fog: true }],
+    ];
+    for (const [name, options] of fixtures) {
+      const s = spot({ x: 0, y: 0, z: 0 });
+      const lights = createStreetLights([s], options);
+      const [hx, hy, hz] = options.headAt?.(s) ?? headOf(s);
+      const target = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial());
+      target.name = 'solid-ray-target';
+      const root = new THREE.Group(); root.add(lights.group, target);
+      const origin = new THREE.Vector3(), direction = new THREE.Vector3();
+      if (effect === 'pools') {
+        target.rotation.x = -Math.PI / 2; target.position.set(hx, s.y, hz);
+        origin.set(hx, s.y + 1, hz); direction.set(0, -1, 0);
+      } else {
+        // Within the point's default 1 m hit threshold, above the solid head.
+        target.position.set(hx, hy + .5, hz - 2);
+        origin.set(hx, hy + .5, hz + 2); direction.set(0, 0, -1);
+      }
+      root.updateMatrixWorld(true);
+      try {
+        for (const level of [0, .78, 1]) {
+          lights.setLevel(level);
+          const hits = new THREE.Raycaster(origin, direction, 0, 5).intersectObject(root, true);
+          assert.ok(hits[0]?.object === target && hits.every(h => h.object.name !== `street-lamp-${effect}`),
+            `${name}, level ${level}: the solid target is reached through light; hits ${hits.map(h => h.object.name).join(', ')}`);
+        }
+        const posts = lights.group.getObjectByName('street-lamp-posts');
+        if (posts) {
+          const hits = new THREE.Raycaster(new THREE.Vector3(s.x, s.y + 2, s.z + 2), new THREE.Vector3(0, 0, -1), 0, 4).intersectObject(posts);
+          assert.ok(hits.length > 0 && hits.every(h => h.object === posts), 'solid lamp posts still intercept rays');
+        }
+      } finally {
+        lights.dispose(); target.geometry.dispose(); target.material.dispose();
+      }
+    }
+  });
+}
 
 test('createStreetLights: with no lamps it draws nothing and still comes on and goes out; with only masts, only the mast post is drawn', () => {
   const none = createStreetLights([]);

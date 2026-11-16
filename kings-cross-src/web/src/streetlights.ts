@@ -183,6 +183,8 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const haloMaterial = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
     blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false });
   const halos = new THREE.Points(haloGeometry, haloMaterial);
+  // Light has no solid surface, even when hidden by day: sightlines pass through.
+  halos.raycast = (): void => {};
   if (options.fog) fadeLightInFog(haloMaterial);
   halos.name = 'street-lamp-halos';
   halos.visible = false;
@@ -195,6 +197,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
+  pools.raycast = (): void => {};
   if (options.fog) fadeLightInFog(poolMaterial);
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
