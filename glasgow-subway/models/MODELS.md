@@ -346,5 +346,17 @@ repeat, in the body's `UVMap` layer - any other name joins as a second map and `
 tinted to the colour) on the top hat and the beret, tweed (its own browns) on `elder_man_cap`'s flat cap. Holes unchanged for all three.
 Of the five swatches made, the cable knit, denim and gingham found no made garment to go on and are not in the repo.
 
+## Review 7 fixes (2026-11-16)
+- Staff vest: cut on clean lines (straight across below the armpit, two shoulder straps running over the shoulder) instead of on arm weights,
+  which left a saw of torn notches. On the far model the vest is moved 3 cm out along its normals at load (`AnimCrowd._puffOuter`).
+- Far model: the long coats, the staff suits, `adult_lusekofta` and `man_longcoat` keep a 1000-face floor and their UV seams when simplified
+  (`lod_cloth=1000, lod_uv=True`): collapsed across the seams, the coats drew white wedges of the wrong part of their picture. The coats also go
+  1 cm out at load.
+- `skirt_hue=`: the pleated mini in other tartans (`woman_mini` +130, darkened at load to a forest green by `GARMENT_TINT` in people.js;
+  `teen_tube` +215, blue). `teen_skirt` keeps the red.
+- Hair `short02` / `short03` / `short04` (MakeHuman, CC0) on `adult_tattoo_muscle`, `ya_tee_jeans`, `adult_cyclist`, `teen_hood`; pale grey and
+  blue-green irises on `adult_tattoo_muscle`, `adult_cyclist`, `adult_piper` made brown or blue.
+Armfit, legradii and the skin budgets re-derived from the rebuilt files.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

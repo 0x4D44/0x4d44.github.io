@@ -125,6 +125,9 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/long01 | makehuman_system | CC0 |
 | hair/ponytail01 | makehuman_system | CC0 |
 | hair/short01 | makehuman_system | CC0 |
+| hair/short02 | makehuman_system | CC0 |
+| hair/short03 | makehuman_system | CC0 |
+| hair/short04 | makehuman_system | CC0 |
 | hair/toigo_blunt_bob | MRT | CC0 |
 | hair/toigo_blunt_bob_with_bangs | MRT | CC0 |
 | hair/toigo_curled_under_bob | MRT | CC0 |

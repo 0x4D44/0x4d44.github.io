@@ -158,6 +158,7 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
   const least = (list, key, rare) => { const by = new Map(); for (const c of list) { const k = key(c); (by.get(k) || by.set(k, []).get(k)).push(c); } for (const k of [...by.keys()].sort((x, y) => x - y)) { const c = draw(by.get(k), rare); if (c) return c; } return null; };
   return draw(pool.filter((c) => !g(c))) || draw(chars.filter((c) => !g(c))) || least(chars.filter((c) => !l(c)), g) || least(chars, (c) => l(c) * 1e6 + g(c), false);
 }
+const GARMENT_TINT = { woman_mini: [/skirt/i, 0.15, 0.22, 0.15] };   // id -> [material name, r, g, b multiplier (linear: 0.15 shows as ~0.42)]
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
@@ -183,6 +184,8 @@ export class AnimCrowd {
     }
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
     for (const c of this.chars) { this.fit[c.id] = { hair: null, hairLod: null, legs: null, legsLod: null, trim: null, trimLod: null, web: null, webLod: null, shoes: null }; if (c.node) this._fitFull(c); if (c.lodNode) this._fitLod(c); }
+    // a few garments darkened where the build's hue turn left them too loud: woman_mini's tartan turned green came out neon (review 7 asked for another tartan; a dark Black Watch green reads as one)
+    for (const c of this.chars) { const t = GARMENT_TINT[c.id]; if (t) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isMesh && m.material && t[0].test(m.material.name || '') && !m.material.userData.tinted) { m.material.color.setRGB(t[1], t[2], t[3]); m.material.userData.tinted = true; } }); }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
