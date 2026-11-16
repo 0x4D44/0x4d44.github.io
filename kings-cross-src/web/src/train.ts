@@ -538,8 +538,8 @@ interface BodySpec {
   windowCorner?: number;
   nose: NoseSpec;
   glass: GlassSpec;
-  /** the two seams of the gangway bellows */
-  gangway: { width: number; height: number; bottom: number };
+  /** The bellows envelope; an optional floor plate fixes its hem at bottom, with square lower corners. */
+  gangway: { width: number; height: number; bottom: number; footplate?: { bottom: number; colour: number }; coupler?: 'bar' };
   /** distance from the rail head of the folded pantograph's top */
   pantographTop: number;
   /** half-width of the underframe slab */
@@ -1022,9 +1022,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     coverHeight: cover,
     coverBw: 0.9,
     coverTw: 0.7,
-    // the fairings are the cooler's hatches, dark and louvred (GC180-01 and GC180-05: black panels with fine louvres on the roof, not the Azuma's pale grey fairings); ASSUMED
-    // ridge sizes: 4 cm across on a 12 cm pitch, standing 4 mm proud of the hatch's top
-    coverStyle: { colour: 0x1b1d21, ridges: { pitch: 0.12, width: 0.04, colour: 0x3a3e45, lift: 0.004, margin: 0.2 } },
+    // Round 13, GC180-02/04: low dark humps without bright grille strips. Preserve the existing unsourced runs and
+    // 4 mm relief; its near-charcoal shade is ASSUMED. No per-car equipment arrangement is inferred from these obliques.
+    coverStyle: { colour: 0x1b1d21, ridges: { pitch: 0.12, width: 0.04, colour: 0x202226, lift: 0.004, margin: 0.2 } },
     skirtBottom: 0.9,
     cutout: 2.0,
     doorWidth: fig.doorWidth.value,
@@ -1092,7 +1092,10 @@ const ADELANTE_BODY = ((): BodySpec => {
       // window of the cab door in 180104), not a long wedge: no photograph shows the nose's side holding anything bigger
       side: { sBack: 3.19, sFront0: 2.86, sFront1: 2.86, v0: 0.52, v1: 0.72 },
     },
-    gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
+    // Envelope remains ASSUMED. Round 13 closes the visible floor-level crack: the plate rises from the existing
+    // ASSUMED 1.10 m floor to the 1.15 m bellows hem; thickness, charcoal finish and plain drawbar section are ASSUMED.
+    // No close photo establishes head/pipe details, so the ordinary join has a connecting bar without those invented fittings.
+    gangway: { width: 1.9, height: 2.1, bottom: 1.15, footplate: { bottom: fig.floorHeight.value, colour: 0x24262a }, coupler: 'bar' },
     // no pantograph: this value is never used
     pantographTop: 0.14,
     underframe: 0.95,
@@ -1955,7 +1958,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const zWall = Z(e.s);
     const zOut = Z(e.s + e.sign * END_GAP);
     const g = spec.gangway;
-    const outline = (k: number): [number, number][] => roundedRect(-g.width / 2 * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
+    const outline = (k: number): [number, number][] => {
+      if (!g.footplate) return roundedRect(-g.width / 2 * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
+      // Fold the sides and top, while the full-width lower hem stays level on the plate (no sawtooth floor opening).
+      const half = g.width / 2 * k;
+      const top = roundedRect(-half, half, g.bottom, g.bottom + g.height - g.height * (1 - k) / 2, 0.3, 3).slice(0, 8);
+      return [...top, [-half, g.bottom], [half, g.bottom]];
+    };
     const rs = bellowsRings(outline, 0, END_GAP, 1, 0.05);
     // the bellows are seated a hair outside the end wall, so no vertex of theirs lies in the wall's plane (the section of the body is that plane's)
     const zSeat = zWall + Math.sign(zOut - zWall) * BELLOWS_SEAT;
@@ -1979,8 +1988,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     marker.position.set(0, g.bottom + g.height / 2, (zWall + zOut) / 2);
     marker.userData = { end: e.sign > 0 ? (car.cab === 'rear' ? 'front' : 'rear') : 'front', width: g.width, height: g.height, depth: END_GAP };
     group.add(marker);
+    if (g.footplate) detail.box(-g.width / 2, g.width / 2, g.footplate.bottom, g.bottom, Math.min(zWall, zOut), Math.max(zWall, zOut), col(g.footplate.colour));
     // the coupler: a barrel and head from the end wall, meeting its neighbour's in the middle of the gap
-    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, END_GAP, ASSUMED.couplerHeight);
+    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, END_GAP, ASSUMED.couplerHeight, g.coupler);
     const cm = new THREE.Object3D();
     cm.name = 'coupler';
     cm.position.set(0, ASSUMED.couplerHeight, (zWall + zOut) / 2);

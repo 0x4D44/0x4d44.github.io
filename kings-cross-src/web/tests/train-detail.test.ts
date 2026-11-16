@@ -4733,11 +4733,11 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
   }
 });
 
-test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the top for every 12 cm; every other family\'s are the pale grey fairings, plain', () => {
-  // (GC180-01 and GC180-05: black panels with fine louvres on the roof of the diesel unit, not an electric unit's pale grey fairings)
+test('roof covers: the Class 180 has low dark relief on dark humps, every 12 cm; other families retain their plain fairings', () => {
+  // Round 13 replaces the bright-strip assumption after the GC180-02/04 comparison; relief and layout remain unchanged.
   const PALE = 0xb4b8be;
   const HATCH = 0x1b1d21;
-  const RIDGE = 0x3a3e45;
+  const RIDGE = 0x202226;
   for (const kind of ALL_KINDS) {
     const spec = bodySpec(familyOf(kind));
     const g = built(kind);
@@ -4791,8 +4791,10 @@ test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the
     if (hatched) assert.equal(covers, 1, `${kind}: the pantograph car's casing is the one cover on the first three cars`);
     if (smooth) assert.equal(covers, 0, `${kind}: no raised cover on a Desiro City's roof`);
   }
-  // darker than the roof they stand on: black panels on the lighter roof (GC180-01)
-  assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof) - 0.1, `hatches (${lumaOf(HATCH).toFixed(2)}) darker than the roof (${lumaOf(liveryFor('gc180x5').roof).toFixed(2)})`);
+  // GC180-02/04: the roof skin and low humps are near the body's charcoal, without a bright grille pattern.
+  assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof), 'humps a shade darker than the roof skin');
+  assert.ok(lumaOf(RIDGE) - lumaOf(HATCH) < .025, 'fine relief stays close to the hump tone');
+  assert.ok(Math.abs(lumaOf(liveryFor('gc180x5').roof)-lumaOf(liveryFor('gc180x5').body)) < .05, 'roof close to body charcoal');
 });
 
 test('pantograph: the head carries two dark carbon strips along its top, inside the bow, no higher than the folded pantograph', () => {

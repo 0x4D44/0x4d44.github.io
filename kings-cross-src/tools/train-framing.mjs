@@ -13,6 +13,7 @@ const rayChunks=new WeakMap();
 export function intersectCaptureRay(T,ray,meshes) {
   const hits=[];
   for(const mesh of meshes) {
+    if(mesh.isSprite){mesh.raycast(ray,hits);continue;}
     const geometry=mesh.geometry,positions=geometry.attributes.position,index=geometry.index;
     if(mesh.isInstancedMesh||Array.isArray(mesh.material)||geometry.drawRange.start!==0||geometry.drawRange.count<(index?.count??positions.count)||(index?.count??positions.count)<9000){
       if(!geometry.boundingBox)geometry.computeBoundingBox();mesh.raycast(ray,hits);continue;
@@ -533,15 +534,16 @@ export function planCatalogueViews(f) {
     for (const [side, sx] of [['left', -1], ['right', 1]]) push('V05', `whole-side-${side}`, { eye: [sx * (half + d), 1.9, z], target: [0, 1.9, z], fov: 25,
       region: box(-half - .3, half + .3, 0, H + .3, -.05, L + .05), extents: { scope: 'train', z0: 0, z1: q6(L) }, notes: { lengthM: L, sideDistanceM: d, fitFraction: CATALOGUE.fitFraction } });
   }
-  // V06: roof. zP is the first (front) or last (rear) pantograph's centre, else the middle car's centre.
+  // V06 replacement, round 13: no-pantograph views inspect the two cab-car roofs, not the same middle car twice.
+  // The rear eye stays on +x and looks forward, avoiding the old 180-degree symmetric composition.
   {
-    const panto = cars.filter(c => c.pantograph), mid = cars[Math.floor(n / 2)];
-    const zOf = c => c ? (c.pantograph[0] + c.pantograph[1]) / 2 : centre(mid);
-    const source = panto.length ? 'pantograph centre from trainLayout' : 'no pantograph on this train: centre of the middle car';
-    const zFront = q6(zOf(panto[0])), zRear = q6(zOf(panto.at(-1))), zPr = q6(L - zRear);
+    const panto = cars.filter(c => c.pantograph);
+    const zOf = (c, fallback) => c ? (c.pantograph[0] + c.pantograph[1]) / 2 : centre(fallback);
+    const source = panto.length ? 'pantograph centre from trainLayout' : 'no pantograph on this train: front and rear cab-car centres';
+    const zFront = q6(zOf(panto[0],cars[0])), zRear = q6(zOf(panto.at(-1),cars.at(-1))), zPr = q6(L - zRear);
     push('V06', 'roof-front', { eye: [5.5, 8, zFront - 2], target: [0, H, zFront], fov: 50, region: box(-1.8, 1.8, H - .9, H + .15, zFront - 2.2, zFront + 2.2), notes: { zP: zFront, source } });
-    push('V06', 'roof-rear', { rear: true, eye: [5.5, 8, zPr - 2], target: [0, H, zPr], fov: 50, region: box(-1.8, 1.8, H - .9, H + .15, zPr - 2.2, zPr + 2.2),
-      notes: { zP: zRear, zPReversed: zPr, source, end: 'rear, train frame reversed' } });
+    push('V06', 'roof-rear', { rear: true, eye: [-5.5, 8, zPr - 2], target: [0, H, zPr], fov: 50, region: box(-1.8, 1.8, H - .9, H + .15, zPr - 2.2, zPr + 2.2),
+      notes: { zP: zRear, zPReversed: zPr, source, end: 'rear roof, looking toward the front from the same +x side', replacement: 'round-13-roof-direction-v2' } });
     const h = q6(H + ceil3(fitDistance(L, 50)));
     push('V06', 'roof-plan', { eye: [0, h, L / 2], target: [0, H, L / 2], up: [1, 0, 0], fov: 50, region: box(-half - .3, half + .3, H - .9, H + .3, -.05, L + .05),
       extents: { scope: 'train', z0: 0, z1: q6(L) }, notes: { heightM: h, lengthM: L, fitFraction: CATALOGUE.fitFraction, imageAxis: 'image x runs along the train, nose at the left' } });
@@ -1180,6 +1182,10 @@ export function projectedExtents(T, object, camera) {
  */
 export function inspectCatalogueView(T, scene, camera, group, ground, view, { count = 64, margin = .91, minScreenSpan = .05, minVisibleFraction = .2, extentFraction = CATALOGUE.fitFraction } = {}) {
   scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+  if(view.id==='V10'&&view.focus?.name==='cab'){
+    const eye=group.worldToLocal(camera.position.clone());
+    if(eye.z>view.focus.local[2]+1e-6)return {clear:false,reason:'leading cab must be viewed from its nose side; rear cab would be nearer',eyeLocal:eye.toArray()};
+  }
   // the level of detail the renderer would draw from this camera, so the samples are the surfaces the picture shows
   group.traverse(o => { if (o.isLOD) o.update(camera); });
   const groundY = ground?.heightAt(camera.position.x, camera.position.z);
@@ -1201,11 +1207,15 @@ export function inspectCatalogueView(T, scene, camera, group, ground, view, { co
     if (Math.max(Math.abs(extents.minX), Math.abs(extents.maxX)) > extentFraction + 1e-6) return { clear: false, reason: `subject exceeds ${Math.round(extentFraction * 100)}% of the frame width`, extents, groundY };
     if (extents.widthFraction < .7 * extentFraction) return { clear: false, reason: 'subject too small in frame', extents, groundY };
   }
+  // Platform number boards are camera-facing sprites, not meshes. Their full drawn quad is conservatively an occluder.
+  const sprites=[];
+  scene.traverseVisible(o=>{if(o.isSprite&&camera.layers.test(o.layers)&&drawn(o.material))sprites.push(o);});
   const ray = new T.Raycaster(), blockers = new Map(), sampleNdc = []; let seen = 0;
+  ray.camera=camera;
   for (const [i, point] of points.entries()) {
     const direction = point.clone().sub(camera.position), distance = direction.length();
     ray.set(camera.position, direction.normalize()); ray.near = .01; ray.far = distance + .03;
-    const hits = intersectCaptureRay(T, ray, meshes), own = hits.find(h => belongs(h.object, group));
+    const hits = intersectCaptureRay(T, ray, [...meshes,...sprites]), own = hits.find(h => belongs(h.object, group));
     const hit = hits.find(h => !belongs(h.object, group) && h.distance < Math.min(distance, own?.distance ?? distance) - .002);
     if (hit) return { clear: false, ...obstruction(hit, point, camera), groundY };
     if (!own) return { clear: false, reason: 'sample has no visible train surface', point: point.toArray(), groundY };
@@ -1236,9 +1246,10 @@ export function searchStation(T, { scene, camera, controls, group, ground }, pla
     for (const view of placement.views) {
       const tried = [];
       let accepted = null;
+      const checkedView={...view,id:'V10',focus:{name:view.suffix.endsWith('-coach')?'coach':'cab',local:group.worldToLocal(new T.Vector3(...view.focusWorld)).toArray()}};
       for (const [index, c] of view.candidates.entries()) {
         setWorldView(T, camera, controls, { eye: c.eye, target: view.focusWorld, fov: 50, up: [0, 1, 0], near: c.near });
-        const r = inspectCatalogueView(T, scene, camera, group, ground, { region: view.region }, stationCheckOptions());
+        const r = inspectCatalogueView(T, scene, camera, group, ground, checkedView, stationCheckOptions());
         tried.push({ azimuthDeg: c.azimuthDeg, platform: c.platform, pass: c.pass ?? null, clear: r.clear, reason: r.clear ? null : r.reason, blocker: r.blocker ?? null });
         if (r.clear) { accepted = { index, azimuthDeg: c.azimuthDeg }; break; }
       }
