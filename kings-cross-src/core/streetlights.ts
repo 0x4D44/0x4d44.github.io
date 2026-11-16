@@ -63,6 +63,8 @@ const SLOPE_STEP = 2;
 
 /** One run of road the city drew (a street cut where it crosses the railway or leaves the drawn ground), and what the lamps on it stand on. */
 export interface LampRun {
+  /** A local fixture plan may use a closer pitch than its road class. */
+  rule?: LampRule;
   /** the road's own number (its repeatable luck) */
   id: number;
   cls: RoadClass;
@@ -101,7 +103,7 @@ export function lampKind(run: Pick<LampRun, 'id' | 'cls'>, ctx: Pick<LampContext
 export function lampSpots(runs: readonly LampRun[], ctx: LampContext): LampSpot[] {
   const out: LampSpot[] = [];
   for (const run of runs) {
-    const rule = LAMP_RULES[run.cls];
+    const rule = run.rule ?? LAMP_RULES[run.cls];
     const line = run.line;
     if (!rule || line.length < 2) continue;
     // metres along at each vertex

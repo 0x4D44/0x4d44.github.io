@@ -83,7 +83,7 @@ const CLOUD_DARK = 0.55;
 export const SOFFIT_LEVEL = 0.35;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
-const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
+export const surfaceUniforms = { wet: { value: 0 }, fog: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
 
 /**
  * The surfaces that have their wet-and-snow shader, whichever atmosphere gave it. The station's materials are shared between scenes (King's Cross
@@ -447,6 +447,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     // wet and snowy ground
     rgb(surfaceUniforms.sheen.value, rig.dome.horizon).multiplyScalar(0.55);
     surfaceUniforms.wet.value = weather.wet;
+    surfaceUniforms.fog.value = rig.fogAmount;
     surfaceUniforms.snowCover.value = weather.snowCover;
   };
 

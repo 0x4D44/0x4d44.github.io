@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { LAMP_KIND } from '../../core/streetlights.ts';
-import { fogRange } from '../../core/daylight.ts';
-import { clearAir, fogFar } from '../src/atmosphere.ts';
+import { skyRig, fogRange } from '../../core/daylight.ts';
+import { REFERENCE, clearAir, fogFar } from '../src/atmosphere.ts';
 import { createPerthLights, perthForecourtLampSpots, perthLampGround, perthStationLampSpots, perthTownLampSpots } from '../src/perth-lamps.ts';
 import { toWorld } from '../src/perth-station-structure.ts';
 import type { PerthStationPlan } from '../src/perth-station-structure.ts';
@@ -170,10 +170,88 @@ test('Perth platforms and forecourt use white LEDs, with several approach lamps 
   assert.ok(perthStationLampSpots(plan).every(s => s.kind === LAMP_KIND.cool));
   const road = {width:5,line:[[40,-60],[-40,-60]] as [number,number][]};
   const approach = perthTownLampSpots([road], () => .12, []);
-  assert.ok(approach.length >= 3, '18 m spacing fills the approach, instead of one service-road lamp');
+  assert.ok(approach.length >= 5, '12 m courtyard pitch creates separate visible fixtures');
+  assert.ok(approach.every(s=>s.height===4),'pedestrian-scale posts keep their heads in view');
   assert.ok(approach.every(s => s.kind === LAMP_KIND.cool));
   const file = {roads:[{id:'synthetic',highway:'service',service:'parking_aisle',path:[[40,-90],[-40,-90]]}],parking:[],bridge:{id:'synthetic',ring:[]}};
   const forecourt = perthForecourtLampSpots(file, (x,z) => .12 + x * .001 + z * .002, []);
   assert.equal(forecourt.length, 6);
   assert.ok(forecourt.every(s => s.kind === LAMP_KIND.cool && Math.abs(s.y-(.12+s.x*.001+s.z*.002)) < 1e-8));
+});
+
+
+test('Perth pendant pools cap each peak at L*40-50 and stop within 0.6 of their row spacing', () => {
+  const plan={structure:{lamps:[0,12,24].map(x=>({x,z:0,ref:'synthetic'}))},canopyColumns:[],furniture:{lamps:[]},
+    local:{platforms:[{ref:'synthetic',pts:[[-10,-3],[35,-3],[35,3],[-10,3]]}]}} as unknown as PerthStationPlan;
+  const lights=createPerthLights(plan,[],[]);
+  try {
+    const pool=lights.group.getObjectByName('perth-station-lamps')!.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
+    const color=new THREE.Color();pool.getColorAt(0,color);
+    const L=116*Math.cbrt(.2126*color.r+.7152*color.g+.0722*color.b)-16;
+    assert.ok(L>=40&&L<=50,`own peak L* ${L}`);
+    const m=new THREE.Matrix4();pool.getMatrixAt(1,m);
+    const radius=m.elements[0]!/2;
+    assert.ok(radius<=12*.6+1e-5,`radius ${radius}, spacing 12`);
+    assert.ok(radius>=12*.55,'enough reach for a modest midpoint, without merging the peaks');
+    const srgb=(v:number)=>v<=.0031308?12.92*v:1.055*v**(1/2.4)-.055;
+    const linear=(v:number)=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4;
+    const at=(x:number)=>{
+      let rgb=[.08,.08,.08];
+      for(const centre of [0,12,24]) {
+        const r=Math.abs(x-centre)/radius;
+        const stops=[0,.1,.2,.3,.45,.6,.8,1];
+        const j=stops.findIndex(s=>s>=r);if(j<0)continue;
+        const a=stops[Math.max(0,j-1)]!,b=stops[j]!;
+        const alpha=(s:number)=>s===1?0:(1+4*s*s)**-1.5;
+        const t=(r-a)/(b-a||1),f=alpha(a)*(1-t)+alpha(b)*t;
+        rgb=rgb.map((v,i)=>v*(1-f)+srgb([color.r,color.g,color.b][i]!)*f);
+      }
+      const y=.2126*linear(rgb[0]!)+.7152*linear(rgb[1]!)+.0722*linear(rgb[2]!);
+      return y>216/24389?116*Math.cbrt(y)-16:y*24389/27;
+    };
+    assert.ok(at(12)-at(6)>=20,`peak ${at(12)}, gap ${at(6)}`);
+    assert.ok(at(6)>=15&&at(6)<=25,`midway ${at(6)}`);
+    assert.ok(at(40)>=6&&at(40)<=14,`away from any head ${at(40)}`);
+    const material=pool.material as THREE.MeshBasicMaterial;
+    const shader={uniforms:{},vertexShader:'#include <common>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <opaque_fragment>'};
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    assert.ok('uPoolFloorMap' in shader.uniforms,'platform light is clipped to its physical floor, not the track bed');
+  } finally {lights.dispose();}
+});
+
+test('Perth pool weather attenuates wet open paving and dense fog without dimming the heads', () => {
+  const plan={structure:{lamps:[]},canopyColumns:[],furniture:{lamps:[]}} as unknown as PerthStationPlan;
+  const lights=createPerthLights(plan,[{x:0,y:0,z:0,height:4,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]}],[]);
+  try {
+    const pool=lights.group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
+    const shader={uniforms:{} as Record<string,{value:unknown}>,vertexShader:'#include <common>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <opaque_fragment>'};
+    (pool.material as THREE.Material).onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    assert.ok('uPoolWet' in shader.uniforms,'pool follows the active scene wetness');
+    assert.ok('uPoolFog' in shader.uniforms,'dense fog lowers the ground pool, not its white head');
+    const body=shader.fragmentShader.split('// pool-weather-begin')[1]!.split('// pool-weather-end')[0]!;
+    for (const [wet,fog,expected] of [[0,0,1],[1,0,.62],[0,1,.45]]) {
+      const env={vars:{uPoolWet:wet,uPoolFog:fog,poolOpen:1,gl_FragColor:[.3,.3,.3,1]}};
+      new Glsl('').run(body,env);
+      assert.ok(Math.abs(env.vars.gl_FragColor[3]!-expected!)<1e-6);
+    }
+    lights.setLevel(1);
+    const head=lights.group.getObjectByName('street-lamp-cores') as THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>;
+    assert.equal(head.material.opacity,1);
+  } finally {lights.dispose();}
+});
+
+test('Perth keeps the reference nighttime hemisphere and fills with no ambient raise', () => {
+  for(const weather of ['clear','rain','fog']) {
+    const view=syntheticView(),climate=createPerthWeather(view,sceneWeatherOptions(weather,null));
+    try {
+      update(climate,'22:30:00');const st=climate.atmosphere.state()!;
+      const w=st.weather, expected=skyRig(st.sun.elevationDeg,st.sun.azimuthDeg,{cloud:w.cloud,rain:w.rain,snow:w.snow,visibilityM:w.visibilityM},REFERENCE);
+      assert.deepEqual(st.rig.hemisphere,expected.hemisphere);
+      assert.deepEqual(st.rig.fills,expected.fills);
+      const hemis:THREE.HemisphereLight[]=[];
+      view.scene.traverse(o=>{if(o instanceof THREE.HemisphereLight&&o.visible)hemis.push(o);});
+      assert.equal(hemis.length,1);
+      assert.equal(hemis[0]!.intensity,expected.hemisphere.intensity);
+    } finally {climate.dispose();}
+  }
 });

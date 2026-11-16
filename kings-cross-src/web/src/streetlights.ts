@@ -11,6 +11,8 @@ import { Batch, rgb } from './materials.ts';
 import type { Rgb } from './materials.ts';
 import { haloTexture } from './night.ts';
 import type { NightLayer } from './night.ts';
+import { surfaceUniforms } from './atmosphere.ts';
+import { COVER_GLSL, coverUniforms } from './cover.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
 export const POST_HEIGHT = 8;
@@ -125,6 +127,12 @@ export interface StreetLightOptions {
   poolCeiling?: number;
   /** Broaden the falloff and reach together, keeping the peak unchanged. */
   poolSpread?: number;
+  /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
+  poolRadiusAt?: (spot: LampSpot, index: number) => number;
+  /** Clip raised platform light to the physical platforms instead of the tracks. */
+  poolFloor?: { map: THREE.Texture; rect: THREE.Vector4 };
+  /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
+  poolWeather?: boolean;
   haloSize?: number;
   /** A small white-hot core in pixels, including at panorama distances. */
   coreSize?: number;
@@ -223,10 +231,44 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
   pools.raycast = (): void => {};
   if (options.fog) fadeLightInFog(poolMaterial, bounded);
+  if (options.poolFloor || options.poolWeather) {
+    const before = poolMaterial.onBeforeCompile;
+    poolMaterial.onBeforeCompile = (shader, renderer) => {
+      before.call(poolMaterial, shader, renderer);
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vPoolWorld;')
+        .replace('#include <project_vertex>', `#include <project_vertex>
+vec4 poolWorld = vec4( transformed, 1.0 );
+#ifdef USE_INSTANCING
+poolWorld = instanceMatrix * poolWorld;
+#endif
+vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
+      let declarations = 'varying vec3 vPoolWorld;', body = '';
+      if (options.poolFloor) {
+        shader.uniforms.uPoolFloorMap = { value: options.poolFloor.map };
+        shader.uniforms.uPoolFloorRect = { value: options.poolFloor.rect };
+        declarations += '\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
+        body += '\ngl_FragColor.a *= texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r;';
+      }
+      if (options.poolWeather) {
+        shader.uniforms.uPoolWet = surfaceUniforms.wet;
+        shader.uniforms.uPoolFog = surfaceUniforms.fog;
+        Object.assign(shader.uniforms, coverUniforms);
+        declarations += `\nuniform float uPoolWet;\nuniform float uPoolFog;\n${COVER_GLSL}`;
+        body += `
+float poolOpen = 1.0 - coverGroundAt( vPoolWorld );
+// pool-weather-begin
+gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog );
+// pool-weather-end`;
+      }
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
+        .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
+    };
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}`;
+  }
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
     const [x, , z] = headAt(spot);
-    const r = poolRadius(spot.height) * 2 * (options.poolSpread ?? 1);
+    const r = 2 * (options.poolRadiusAt?.(spot, i) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
     matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + POOL_LIFT, 0, 0, r, z, 0, 0, 0, 1);
