@@ -392,7 +392,10 @@ export class AnimCrowd {
     const own = new Map(); for (const q of this.people) if (q.char) own.set(q.char.id, (own.get(q.char.id) || 0) + 1);
     // nobody who was on the last platform you saw (people review 2: five people stood on all three platforms visited), while the roster allows
     const rec = this._recent, f2 = rec && rec.size ? (c) => !rec.has(c.id) && (!filter || filter(c)) : filter;
-    const pool = this._rollPool(); return (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
+    const pool = this._rollPool(), c = (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
+    // unique (the game's crowds): nobody is drawn twice while they are anywhere in the page - an empty seat or a thinner platform rather than a twin (review 7: a full train
+    // of 75 with 26 on the platform and 12 in the other train is 113 people from a roster of 99, and twins sat in one car)
+    return c && this.unique && IN_USE.get(c.id) ? null : c;
   }
   add(p, parent, filter) {
     if (!this.hasAnim || (this.people.length >= this.max && !p.force)) return p;
@@ -979,7 +982,8 @@ export class AnimCrowd {
       // someone going the same way, level with or ahead of this walker and too close, is followed, never walked through: the one behind gives way (gp7: two climbers abreast held
       // 0.16-0.25 m apart for 11 s - the cone ahead missed a neighbour alongside).  A walk-past (pass) only ever goes by someone standing or coming the other way.
       const qd = q.mode === 'go' ? Math.hypot(q.tx - q.x, q.tz - q.z) : 0, same = qd > 1e-3 && ((q.tx - q.x) * ux + (q.tz - q.z) * uz) / qd > 0.3, proj = ex * ux + ez * uz;
-      if ((same && e < 0.42 && proj >= 0) || (!pass && proj > 0.3 * e) || (same && proj > 0.3 * e)) {
+      const follow = same && (!pass || (q.v || 0) > 0.15);   // (a walker who has waited 1.5 s may pass one who has stopped too: two on different legs of the stairs each saw the other ahead and stood for 42 s)
+      if ((follow && e < 0.42 && proj >= 0) || (!pass && proj > 0.3 * e) || (follow && proj > 0.3 * e)) {
         // someone standing in the way (a waiter at the stair foot) steps aside, out of the line of the stairs, and the walker waits for them (review 5: they held whole flights
         // up for 98 s; review 6: ignoring them walked people through each other)
         if (q.mode !== 'go' && q.mode !== 'walk' && !(q.madeWayT > 0)) { q.madeWayT = 4; const sx = -uz, sz = ux, k = ex * sx + ez * sz >= 0 ? 1 : -1; this._makeWay(q, sx * k, sz * k); }

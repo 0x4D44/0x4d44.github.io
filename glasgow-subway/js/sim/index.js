@@ -105,7 +105,7 @@ class Sim {
     this.saloonLights = [-5, 5].map(() => { const l = new THREE.PointLight(0xfff4e0, 0, 8, 1.4); this.scene.add(l); return l; });
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
     { const lowQ = this.quality === 'low', ok = this._peopleOk();
-      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null);
+      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null); if (ok) this.crowd.unique = true;
       this.trainView.saloon = this._makeSaloon(); this.trainView.saloonDone = false;   // (each circle's train carries its own riders: see _populateSaloon)
       this.scene.add(this.crowd.group); }
     this.rats = new Rats(THREE); this.rats.onEvent = (kind, r) => this._ratEvent(kind, r);
@@ -398,7 +398,7 @@ class Sim {
   _makeSaloon() {
     if (!this._peopleOk()) return null;
     const low = this.quality === 'low', sc = new AnimCrowd(this.THREE, this.SU, this.peopleGltf, low ? 10 : 96, this.quality, this.peopleLod);   // (96: a full train, every seat taken and people standing)
-    if (this._saloonMeas) sc.meas = this._saloonMeas; else this._saloonMeas = sc.meas;
+    if (this._saloonMeas) sc.meas = this._saloonMeas; else this._saloonMeas = sc.meas; sc.unique = true;   // (never a twin: see AnimCrowd._pick)
     if (low) sc.rVis = 22;   // a low-quality train hides the interior of cars beyond ~22 m (TrainView.cull): their riders must not be left floating
     return sc;
   }
