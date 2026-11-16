@@ -237,6 +237,22 @@ export class AnimCrowd {
     f.underTopLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTop(T, n) : null;
     f.underLod = !sk && /trousers|shorts|trews|leggings/.test(c.outfit) ? trimUnderTrousers(T, n) : null;
     f.webLod = trimWebbing(T, n);   // the simplified body has a few triangles joining a hand to a thigh
+    f.puffLod = this._puffOuter(n);
+  }
+  /** On the simplified model the layers under an outer garment were simplified harder than it (the staff work suit is 137 vertices under a 1714-vertex vest), so their
+   *  flat faces come through it: the vest became a patchwork of orange on navy and the long coats showed jeans through holes (review 7, on the true far model). The outer
+   *  garment is moved out along its own normals, once (the geometry is shared by every clone): 3 cm for the vest, 1 for a coat (its own simplification now keeps its seams and enough faces: tools/assets_people_mpfb.py lod_uv) - nothing at 6 m and more. */
+  _puffOuter(n) {
+    let k = 0; n.traverse((m) => {
+      if (!m.isMesh || !m.material || m.geometry.userData.puffed) return; const nm = m.material.name || '', d = /^cloth_hivis/.test(nm) ? 0.03 : /^cloth_coat\./.test(nm) ? 0.01 : 0; if (!d) return;
+      const g = m.geometry, P = g.attributes.position, N = g.attributes.normal; if (!N) return;
+      // one direction per point in space: vertices split along a seam (different normals at one place) move together, so no crack opens along the seam
+      const key = (i) => Math.round(P.getX(i) * 2000) + ',' + Math.round(P.getY(i) * 2000) + ',' + Math.round(P.getZ(i) * 2000), acc = new Map(), ks = [];
+      for (let i = 0; i < P.count; i++) { const kk = key(i); ks.push(kk); const a = acc.get(kk) || [0, 0, 0]; a[0] += N.getX(i); a[1] += N.getY(i); a[2] += N.getZ(i); acc.set(kk, a); }
+      for (let i = 0; i < P.count; i++) { const a = acc.get(ks[i]), l = Math.hypot(a[0], a[1], a[2]) || 1; P.setXYZ(i, P.getX(i) + a[0] / l * d, P.getY(i) + a[1] / l * d, P.getZ(i) + a[2] / l * d); N.setXYZ(i, a[0] / l, a[1] / l, a[2] / l); }   // (and shaded smooth with them: the coats' split normals lit them as white shards)
+      for (const A of [P, N]) { A.needsUpdate = true; if (A.isInterleavedBufferAttribute) A.data.needsUpdate = true; } g.userData.puffed = true; g.computeBoundingSphere(); k++;
+    });
+    return k;
   }
   /** people.glb has arrived (after a crowd was built from people_lod.glb alone): fit it and let the nearest people swap up to it, a couple a frame, in update().
    *  Measurements so far came from the simplified model; they are dropped so that from now on they come from the full one, as they would have. */

@@ -31,7 +31,7 @@ PEOPLE = [
          clothes=['elvs_male_shirt_tie_tucked1', 'elvs_male_trouser', 'mindfront_shoes_oxford_male']),
     dict(id='man_hoodie', kind='man', outfit='trousers', H=1.74, gender=1, age=0.40, weight=0.45, muscle=0.45, race=(0.1, 0.5, 0.4), skin='young_caucasian_male2', eye='brown', brows='eyebrow002', lashes=None, hair='culturalibre_hair_05', hair_col='#3a281c', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_male_classic_jeans', 'culturalibre_sneakers']),
-    dict(id='man_longcoat', kind='elder', outfit='trousers', H=1.80, gender=1, age=0.88, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#8c8c8c', hair_lift=True, face=True,
+    dict(id='man_longcoat', lod_cloth=1000, lod_uv=True, kind='elder', outfit='trousers', H=1.80, gender=1, age=0.88, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='bluegreen', brows='eyebrow006', lashes=None, hair='short01', hair_col='#8c8c8c', hair_lift=True, face=True,
          clothes=['male_elegantsuit01', 'mindfront_shoes_monk_strap_male']),
     dict(id='man_elder', kind='elder', outfit='trousers', H=1.68, gender=1, age=0.88, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short01', hair_col='#d0d0d0', hair_lift=True, face=True,
          clothes=['mindfront_knitted_sweater_01', 'mindfront_male_trousers_1', 'mindfront_shoes_oxford_male']),
@@ -39,7 +39,7 @@ PEOPLE = [
          clothes=['male_casualsuit04', 'culturalibre_sneakers']),
     dict(id='man_beard', kind='man', outfit='trousers', H=1.75, gender=1, age=0.52, weight=0.80, muscle=0.55, race=(0.0, 1.0, 0.0), skin='jartur69_middleage_slavic_male_with_genitals_and_beard', eye='blue', brows='eyebrow005', lashes=None, hair='elvs_grump_hair', hair_col='#4a3424', face=True, beard='#3b2a1e',
          clothes=['mindfront_knitted_sweater_02', 'punkduck_male_classic_jeans', 'toigo_ankle_boots_male']),
-    dict(id='staff_hivis', kind='staff', outfit='trousers', H=1.78, gender=1, age=0.45, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short01', hair_col='#3a281c', face=True,
+    dict(id='staff_hivis', lod_cloth=1000, lod_uv=True, kind='staff', outfit='trousers', H=1.78, gender=1, age=0.45, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow002', lashes=None, hair='short01', hair_col='#3a281c', face=True,
          clothes=['male_worksuit01', 'toigo_ankle_boots_male'], tint=(0.16, 0.2, 0.32), vest='#ff6a00'),
     dict(id='man_student', kind='man', outfit='trousers', H=1.84, gender=1, age=0.34, weight=0.4, muscle=0.4, race=(0.6, 0.3, 0.1), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='culturalibre_hair_05', hair_col='#241812', face=True,
          clothes=['elvs_male_boho_top1', 'punkduck_male_classic_jeans', 'elvs_zombie_killer_sneakers']),
@@ -125,7 +125,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#d9d2c0', 0.70, 0.012)),
     dict(id='ya_spiky', kind='man', outfit='shorts', H=1.83, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow002', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_tennis_shoes'], shorts=('#c9b48a', 0.62, 0.014)),
-    dict(id='ya_winter', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
+    dict(id='ya_winter', lod_cloth=1000, lod_uv=True, kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='lightblue', brows='eyebrow009', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#a8452a', face=True,
          clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
     # --- batch 2 (2026-11-07): adults, and the garments made here (add_garments): lycra=(leggings|shorts, colour) paints the body's own skin;
     #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat|beret, colour). rare=f: the crowd takes this person only f of the times they come up.
@@ -151,7 +151,7 @@ PEOPLE = [
          clothes=['drednicolson_short-tail_camo_tee', 'culturalibre_sneakers'], shorts=('#c9b48a', 0.62, 0.014), hat=('cap', '#111111')),
     dict(id='adult_harem', kind='woman', outfit='trousers', H=1.65, gender=0, age=0.56, weight=0.78, muscle=0.35, race=(0.05, 0.05, 0.9), skin='young_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes01', hair='elvs_island_princess_hair', hair_col='#17120e', face=True,
          clothes=['toigo_keyhole_tank_top', 'toigo_harem_pants', 'toigo_ballet_flats']),
-    dict(id='adult_lusekofta', kind='elder', outfit='trousers', H=1.79, gender=1, age=0.86, weight=0.55, muscle=0.5, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#b0b0b0', hair_lift=True, face=True,
+    dict(id='adult_lusekofta', lod_cloth=1000, lod_uv=True, kind='elder', outfit='trousers', H=1.79, gender=1, age=0.86, weight=0.55, muscle=0.5, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#b0b0b0', hair_lift=True, face=True,
          clothes=['mindfront_lusekofta', 'elvs_jeans_straight_leg', 'punkduck_winter_boots'], baggy=0.4, tuck=('jeans', 'lusekofta')),
     dict(id='adult_tie_suit', kind='elder', outfit='trousers', H=1.72, gender=1, age=0.86, weight=0.6, muscle=0.4, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='elvs_maxwell_hair', hair_col='#b8b8b8', hair_lift=True, face=True,
          clothes=['toigo_male_suit_tie_and_jacket', 'mindfront_shoes_monk_strap_male']),
@@ -165,13 +165,13 @@ PEOPLE = [
          clothes=['mindfront_knitted_sweater_01', 'toigo_ballet_flats'], lycra=('leggings', '#2b4a8a')),
     dict(id='elder_man_cap', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.05, 0.1, 0.85), skin='old_african_male', eye='brown', brows='eyebrow005', lashes=None, hair='short01', hair_col='#bfbfbf', face=True, hair_lift=True,
          clothes=['male_casualsuit06', 'mindfront_shoes_oxford_male'], hat=('cap', '#5a4a3a', 'tweed')),
-    dict(id='elder_woman_coat', kind='elder', outfit='trousers', H=1.55, gender=0, age=0.88, weight=0.5, muscle=0.3, race=(0.9, 0.1, 0.0), skin='old_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes04', hair='elvs_50s_updo', hair_col='#cfcfcf', face=True,
+    dict(id='elder_woman_coat', lod_cloth=1000, lod_uv=True, kind='elder', outfit='trousers', H=1.55, gender=0, age=0.88, weight=0.5, muscle=0.3, race=(0.9, 0.1, 0.0), skin='old_asian_female', eye='brown', brows='eyebrow001', lashes='eyelashes04', hair='elvs_50s_updo', hair_col='#cfcfcf', face=True,
          clothes=['punkduck_winter_coat', 'mindfront_female_trousers_1', 'toigo_ankle_boots_female']),
     dict(id='elder_man_suit', kind='elder', outfit='trousers', H=1.70, gender=1, age=0.92, weight=0.5, muscle=0.3, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='blue', brows='eyebrow008', lashes=None, hair='short01', hair_col='#e0e0e0', face=True, hair_lift=True,
          clothes=['toigo_male_suit_3', 'mindfront_shoes_monk_strap_male']),
     dict(id='elder_woman_dress', kind='elder', outfit='dress', H=1.58, gender=0, age=0.86, weight=0.6, muscle=0.3, race=(0.0, 0.1, 0.9), skin='old_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes04', hair='toigo_curled_under_bob_with_bangs', hair_col='#cfcfcf', face=True,
          clothes=['elvs_simple_60s_dress', 'mindfront_shoes_monk_strap_female']),
-    dict(id='staff_woman', kind='staff', outfit='trousers', H=1.66, gender=0, age=0.48, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow007', lashes='eyelashes02', hair='ponytail01', hair_col='#6d4a2c', face=True,
+    dict(id='staff_woman', lod_cloth=1000, lod_uv=True, kind='staff', outfit='trousers', H=1.66, gender=0, age=0.48, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='blue', brows='eyebrow007', lashes='eyelashes02', hair='ponytail01', hair_col='#6d4a2c', face=True,
          clothes=['male_worksuit01', 'toigo_ankle_boots_female'], tint=(0.16, 0.2, 0.32), vest='#ff6a00'),
     dict(id='adult_heel_boots', kind='woman', outfit='trousers', H=1.76, gender=0, age=0.54, weight=0.4, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow009', lashes='eyelashes03', hair='elvs_ashley_may_hair', hair_col='#d8b86c', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_female_tight_jeans', 'elvs_knee_high_heel_boots1']),
@@ -1341,13 +1341,20 @@ def build_vest(person, colr='#ff6a00'):
     import bmesh
     suit = next((o for o, r, _ in person['parts'] if r == 'cloth' and 'worksuit' in o.name.lower()), None)
     if suit is None: return
-    bn = person['rig'].data.bones; z_lo = bn['pelvis'].head_local.z + 0.08; z_hi = bn['upperarm_l'].head_local.z + 0.10
-    arm = [g.index for g in suit.vertex_groups if any(k in g.name for k in ('upperarm', 'lowerarm', 'forearm', 'hand', 'clavicle', 'shoulder'))]
+    bn = person['rig'].data.bones; z_lo = bn['pelvis'].head_local.z + 0.08; z_hi = bn['upperarm_l'].head_local.z + 0.22   # (high enough that the straps run on over the top of the shoulder: capped at +0.10 they ended in torn points on it - review 7)
+    arm = [g.index for g in suit.vertex_groups if any(k in g.name for k in ('upperarm', 'lowerarm', 'forearm', 'hand'))]   # (not the clavicle: the straps lie on it; the cut below shapes the shoulders)
     me = suit.data; mw = suit.matrix_world
     def armw(v): return sum(g.weight for g in v.groups if g.group in arm)
     keepv = {v.index for v in me.vertices if z_lo <= (mw @ v.co).z <= z_hi and armw(v) < 0.25}
     bm = bmesh.new(); bm.from_mesh(me); bm.normal_update(); bm.verts.ensure_lookup_table()
-    kill = [f for f in bm.faces if not all(v.index in keepv for v in f.verts)]
+    # review 7: cut by the arm weights alone, the top edge was a saw of torn notches round the arms and neck. A vest is cut on clean lines: straight across a little
+    # below the armpit, and above that only two shoulder straps, a set width either side of the middle line (front and back)
+    k = person['spec']['H'] / 1.75; cx = bn['pelvis'].head_local.x; z_pit = bn['upperarm_l'].head_local.z - 0.07 * k; s_in, s_out = 0.075 * k, 0.15 * k
+    def keepf(f):
+        if not all(v.index in keepv for v in f.verts): return False
+        c = mw @ f.calc_center_median(); ax = abs(c.x - cx)
+        return c.z <= z_pit or s_in <= ax <= s_out
+    kill = [f for f in bm.faces if not keepf(f)]
     bmesh.ops.delete(bm, geom=kill, context='FACES')
     loose = [v for v in bm.verts if not v.link_faces]; bmesh.ops.delete(bm, geom=loose, context='VERTS')
     # (review 6: the vest broke into shards walking and seated - after the deletes bmesh renumbers its vertices, so v.index no longer named the suit vertex it
@@ -1462,7 +1469,7 @@ def add_garments(person):
 # ------------------------------------------------------------------ decimation budget + join
 def tri_count(o): return sum(max(1, len(p.vertices) - 2) for p in o.data.polygons)
 
-def decimate(o, ratio, weight_group=None):
+def decimate(o, ratio, weight_group=None, uv=False):
     if ratio >= 0.97: return
     select_only([o])
     am = [m for m in o.modifiers if m.type == 'ARMATURE']; rig = am[0].object if am else None
@@ -1473,7 +1480,7 @@ def decimate(o, ratio, weight_group=None):
         bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0006)
         bmesh.ops.triangulate(bm, faces=bm.faces[:])
         bm.to_mesh(o.data); bm.free()
-    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = True; dm.delimit = set() if LOD else {'UV'}
+    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = True; dm.delimit = set() if LOD and not uv else {'UV'}   # (uv: review 7 - a long coat collapsed across its UV seams drew white wedges of the wrong part of its picture)
     if weight_group: dm.vertex_group = weight_group; dm.vertex_group_factor = float(os.environ.get('DECF', '2.0')); dm.invert_vertex_group = False
     bpy.ops.object.modifier_apply(modifier='dec')
     if LOD and o.type == 'MESH' and not o.get('_body') and 'eyes_new' not in o.name:
@@ -1528,7 +1535,7 @@ def budget_and_join(person, total):
             bpy.data.objects.remove(o); continue
         wg = 'keepW' if 'keepW' in o.vertex_groups else None   # paint_lycra: a hem the decimation must keep straight
         if os.environ.get('BUDGET_LOG'): print('BUDGET', person['spec']['id'] if 'spec' in person else '?', r, o.name, cnt[id(o)], '->', int(tgt[id(o)]))
-        decimate(o, tgt[id(o)] / max(1, cnt[id(o)]), wg)
+        decimate(o, tgt[id(o)] / max(1, cnt[id(o)]), wg, uv=bool(LOD and r in ('cloth', 'shoe') and person['spec'].get('lod_uv')))
         if wg:
             o.vertex_groups.remove(o.vertex_groups[wg])
         keep.append(o)
