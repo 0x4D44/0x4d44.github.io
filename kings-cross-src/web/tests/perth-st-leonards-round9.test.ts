@@ -11,8 +11,8 @@ test.after(()=>texture.dispose());
 const readings=stLeonardsWeatherReadings(texture.image,panels,K.girder.flange/(K.parapet+K.fascia));
 const {pw,ph,bodies}=readings;
 
-// Lead ruling 2026-11-16 21:33Z: the scorer rejected round 9b's same-sized, centred orange polka dots.
-// Replace its weather placement/size/runoff clauses with irregular seeded blotches; preserve material and girder relief assertions.
+// Lead ruling 2026-11-16 22:02Z: round 9c solved repetition but its low saturation made salmon primer. Restore brown hue,
+// flange-hung half-height bodies and visible runoff. Keep every 9c irregularity clause and all protected material/relief assertions.
 test('round 9c: rust retains 15-22% face coverage and reaches the platform-end strip',()=>{
  assert.ok(readings.coverage>=.15&&readings.coverage<=.22,`minified rust coverage ${readings.coverage}`);
  assert.ok(readings.stripCoverage>=.02&&readings.stripCoverage<=.12,`platform-visible lower third coverage ${readings.stripCoverage}`);
@@ -41,10 +41,21 @@ test('round 9c: about half of blotches carry soft downward runoff reaching 5-9 p
  assert.ok(bodies.every(p=>p.tailReach<=10),`no full-height stalks ${bodies.map(p=>p.tailReach)}`);
 });
 
-test('round 9c: calibrated colour predicts muted day rust and retains the ruling saturation ceiling at dusk',()=>{
- // Calibration is from existing PNGs, not a fresh render; the next GPU report must verify these predictions.
- assert.ok(readings.daySaturation>=.22&&readings.daySaturation<=.28,`predicted day saturation ${readings.daySaturation}; ruling target .22-.28`);
- assert.ok(readings.duskSaturation<=.338,`predicted dusk saturation ${readings.duskSaturation}; ruling ceiling .338`);
+test('round 9d: corrected-core colour is orange-brown, with saturation in MAINs family',()=>{
+ // Source-core masks match the corrected PNG sampler. These calibrated colours remain predictions until GPU capture.
+ assert.ok(readings.dayHue>=22&&readings.dayHue<=28,`predicted day hue ${readings.dayHue}, RGB ${readings.dayRgb}`);
+ assert.ok(readings.daySaturation>=.3&&readings.daySaturation<=.4,`predicted day saturation ${readings.daySaturation}`);
+ assert.ok(readings.duskSaturation<=.46,`predicted dusk saturation ${readings.duskSaturation}`);
+ assert.ok(readings.orangeFraction>=.01,`pixels with red > green + 18: ${readings.orangeFraction}`);
+});
+
+test('round 9d: most bodies hang below the flange shadow and typical strong bodies occupy half the clear face',()=>{
+ // The approved 7 cm contact line hides about two footprint rows; allow one filtered edge row beneath it.
+ const shadowRows=Math.ceil(.07/(K.parapet+K.fascia-2*K.girder.flange)*ph);
+ const hung=bodies.filter(p=>p.top>=ph-shadowRows-1),heights=bodies.map(p=>p.coreHeight).sort((a,b)=>a-b),typical=heights[Math.floor(heights.length/2)]!;
+ assert.ok(hung.length>=bodies.length*.65,`flange-hung bodies ${hung.length}/${bodies.length}`);
+ assert.ok(typical>=15&&typical<=19,`typical strong body height ${typical} px: ${heights}`);
+ assert.ok(readings.looseCoverage>=.18&&readings.looseCoverage<=.22,`loose red-brown coverage ${readings.looseCoverage}`);
 });
 
 test('round 9: top flange, coping and stiffeners have visible relief and a dark under-flange line on both faces',()=>{

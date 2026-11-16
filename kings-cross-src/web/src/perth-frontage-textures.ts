@@ -73,7 +73,7 @@ export function coursedTexture(bond:'street'|'bridge'='street'):THREE.CanvasText
 }
 
 /** R-slb-a: one painted girder strip, not a repeating panel decal. Dimensions and rust colours ASSUMED by eye, following the round-8
- * capture ruling. Round 9c: independently seeded, merged ragged lobes, varied panel counts and positions, muted brown and soft runoff.
+ * capture ruling. Round 9d retains 9c's independently seeded lobes and layout, restoring brown hue and flange-hung vertical extent.
  * DataTexture keeps the same deterministic result without a canvas (also available to CPU inspection). All bytes are sRGB albedo. */
 export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction:number):THREE.DataTexture{
  const width=4096,height=128,data=new Uint8Array(width*height*4),base=[paint>>16&255,paint>>8&255,paint&255];
@@ -90,7 +90,8 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
   for(let patch=0;patch<count;patch++){
    const seed=key+patch*409,scale=.5+1.1*hash(seed+4);
    const cx=count===2?(patch===0?.12+.2*hash(seed+1):.72+.2*hash(seed+1)):.03+.94*hash(seed+1);
-   const cy=.41+.57*hash(seed+2),rx=.23*scale*(.8+.4*hash(seed+3)),ry=.23*scale*(.8+.4*hash(seed+5));
+   const seededY=.41+.57*hash(seed+2),cy=seededY+.14*smooth(.5,.75,seededY);
+   const rx=.23*scale*(.8+.4*hash(seed+3)),ry=.23*scale*(.8+.4*hash(seed+5))*(1+.8*smooth(.5,.8,seededY));
    const angle=hash(seed+9)*Math.PI*2,ca=Math.cos(angle),sa=Math.sin(angle),lobes=hash(seed+10)>.35?3:2;
    // The bleed starts at the lowest merged lobe, rather than disappearing inside a taller neighbouring lobe.
    const tips=[[0,-1],[.72*ca-.3*sa,.72*sa+.3*ca-Math.hypot(.72*sa,.78*ca)]];
@@ -109,11 +110,12 @@ export function stLeonardsPaintTexture(panels:number,paint:number,flangeFraction
     const bloom=1-smooth(.77,1.04,q);
     // Roughly half the bodies have a soft 5-9 display-pixel bleed; low bodies still weather the platform camera's narrow strip.
     const below=low+ry*.08-v,spread=.045+.025*Math.max(0,below)/runLength;
-    const runoff=hasRunoff&&below>0?.62*Math.exp(-(((u-runX)/spread)**2))*(1-smooth(runLength*.25,runLength,below)):0;
+    const runoff=hasRunoff&&below>0?.68*Math.exp(-(((u-runX)/spread)**2))*(1-smooth(runLength*.25,runLength,below)):0;
     const alpha=Math.max(bloom,runoff);if(alpha<=0)continue;
-    // More neutral than round 9b: darker brown core and paler edge. Actual day/dusk saturation awaits the GPU pair.
+    // Orange-brown through the body, a small darker core and a paler eroded edge; runoff retains some of the core's brown.
     const tone=2*grain(u*17,v*19,seed+419)-1,hue=2*grain(u*27,v*23,seed+777)-1,edge=smooth(.25,1,q);
-    const rust=[164.2+4*tone+2*hue+3*edge,145+4*tone+4*edge,136+4*tone-hue+5*edge],i=(y*width+x)*4;
+    const core=Math.max(1-smooth(.1,.3,q),runoff>bloom?.25:0);
+    const rust=[170+2*tone+hue+4*core+3*edge,145+2*tone-2*core+4*edge,Math.max(118,124+2*tone-hue-6*core+3*edge)],i=(y*width+x)*4;
     for(let j=0;j<3;j++)data[i+j]=Math.round(data[i+j]*(1-alpha)+rust[j]*alpha);
    }
   }
