@@ -194,7 +194,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   // joins; corner-only planes cut the sodium pool into a hard rectangle.
   // Preserve the proven radial footprint and add a larger road-aligned optic.
   // Intermediate receiver samples keep the enlarged beam on folded paving.
-  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,poolRoadShape:false,luminairePools:true,roughReflections:true} : {}) : null;
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true} : {}) : null;
   if (lights && wetSurface && stationBuilding(data)) {
     const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface), windows=createKxWindowReflections(scene,wetSurface);
     lampsLayer.group.add(front.group,amber.group,windows.group);

@@ -172,7 +172,7 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
     platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
     return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
       dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };
-  }, undefined, [0,6], detailed ? [.108,.087,.068] : undefined);
+  }, undefined, [0,6], detailed ? [.215,.185,.16] : undefined);
 }
 
 /**
@@ -225,7 +225,7 @@ function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haz
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   // drawn ground beyond the terrain's extent (Perth's east patch) is carved out too
   world.carve(extent, (view.model as { terrainMore?: Extent[] } | undefined)?.terrainMore ?? []);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, lampSunGate, cityFogTint, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, lampSunGate, cityFogTint, litFogCloud:!!cityFogTint, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
   const lamps = night();
   let disposed = false;

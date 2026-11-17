@@ -311,6 +311,8 @@ export interface AtmosphereOptions {
   /** Scene-selected sRGB colour of city-lit dense night air. No ambient raise;
    * omitted retains the existing climate, including legacy KX adapters. */
   cityFogTint?: Rgb;
+  /** City-lit low cloud in dense night fog; does not raise ground lighting. */
+  litFogCloud?: boolean;
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -403,7 +405,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
@@ -621,7 +623,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
           const tint = (c: Rgb, weight: number): Rgb => [c[0]+(warm[0]-c[0])*weight,c[1]+(warm[1]-c[1])*weight,c[2]+(warm[2]-c[2])*weight];
           rig.fog = tint(rig.fog,cityFog);
           rig.dome.horizon = tint(rig.dome.horizon,cityFog);
-          rig.dome.zenith = tint(rig.dome.zenith,.45*cityFog);
+          rig.dome.zenith = tint(rig.dome.zenith,(litFogCloud ? .95 : .45)*cityFog);
         }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
         kxFogMaterials?.setLevel(cityFog);
