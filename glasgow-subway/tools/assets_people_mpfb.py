@@ -243,7 +243,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_running_shoes_01'], shorts=('#8b7d5e', 0.82, 0.016)),
     dict(id='sum_shorts_asian_m', kind='man', outfit='shorts', H=1.72, gender=1, age=0.50, weight=0.45, muscle=0.5, race=(0.9, 0.1, 0.0), skin='middleage_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='short01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#2c3a2a', 0.74, 0.016)),
-    dict(id='elder_shorts', kind='elder', outfit='shorts', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='elvs_maxwell_hair', hair_col='#d0d0d0', hair_lift=True, face=True,
+    dict(id='elder_shorts', kind='elder', outfit='shorts', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short03', hair_col='#8a8a8a', hair_lift=True, face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'culturalibre_sneakers'], shorts=('#a89a78', 0.88, 0.016)),
     dict(id='boy_shorts', kind='boy', outfit='shorts', H=1.34, gender=1, age=0.13, weight=0.45, muscle=0.4, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='elvs_grump_hair', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'culturalibre_sneakers'], shorts=('#2a3f6a', 0.75, 0.012)),
@@ -450,11 +450,6 @@ def build_person(spec):
     arm_mod = human.modifiers.get('Armature'); arm_obj = arm_mod.object if arm_mod else rig
     if arm_mod: human.modifiers.remove(arm_mod)
     if human.data.shape_keys: bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
-    stash = None
-    if spec.get('vest'):   # the vest is cut from the whole torso (build_vest): keep a copy of the body before the clothes' masks delete the skin under them. It is
-        stash = human.copy(); stash.data = human.data.copy(); stash.name = 'vest_src'   # one of the person's objects until then, so it is turned and posed with them
-        for c in human.users_collection: c.objects.link(stash)
-        for m in list(stash.modifiers): stash.modifiers.remove(m)
     for m in list(human.modifiers):
         if m.type == 'MASK':
             if any(w in m.name.lower() for w in ('dress', 'skirt', 'kimono', 'tunic', 'sash', 'halter')): human.modifiers.remove(m); continue
@@ -467,8 +462,6 @@ def build_person(spec):
             if vg.name not in bones: o.vertex_groups.remove(vg)
     human['_body'] = 1
     person = dict(spec=spec, human=human, rig=rig, parts=parts, scale=k)
-    if stash is not None:
-        am2 = stash.modifiers.new('Armature', 'ARMATURE'); am2.object = arm_obj; person['extra'] = [stash]; person['vest_src'] = stash
     replace_eyes(person)
     return person
 
@@ -1345,75 +1338,36 @@ def _tube(bm, a, b_, r0, r1=None, seg=10):
     bmesh.ops.create_cone(bm, cap_ends=True, segments=seg, radius1=r0, radius2=r0 if r1 is None else r1, depth=L, matrix=M)
 
 def build_vest(person, colr='#ff6a00'):
-    """A hi-vis vest over a staff uniform (people review 5: 'staff with no hi-vis'): fluorescent orange, a silver reflective band round the chest and one round
-    the waist, cut from the body's own torso (the whole body, kept before the clothes' masks deleted the skin under them: build_person) 2 cm out along its normals.
-    Review 7: cut on the arm weights alone, the top edge was a saw of notches. Review 8: copied from the work suit (dungarees), it took the suit's straps and buckles
-    and its big faces tore the edges. Now every edge is a straight cut across the body's fine mesh: below the armpit, the two shoulder straps, the bands."""
+    """A hi-vis vest on a staff uniform (people review 5: 'staff with no hi-vis'), painted on to the work suit itself: the suit's mesh is cut along straight
+    planes (across a little below the armpit, the two shoulder straps, the edges of a chest band and a waist band) and the faces inside the vest's shape take
+    fluorescent orange or the silver band. Reviews 6-9: as a separate layer the vest tore, flapped off the shoulder and let the dungarees' straps and buckles
+    through, however it was copied, cut or pushed out. Painted on, nothing is under it and nothing moves apart from the cloth."""
     import bmesh
     suit = next((o for o, r, _ in person['parts'] if r == 'cloth' and 'worksuit' in o.name.lower()), None)
     if suit is None: return
-    src = person.pop('vest_src', None)
-    if src is not None: person['extra'].remove(src)
-    else: src = suit
-    me = src.data; gnames = [g.name for g in src.vertex_groups]; mw = src.matrix_world.copy(); OUT = 0.02 if src is not suit else 0.012
     bn = person['rig'].data.bones; k = person['spec']['H'] / 1.75
     z_lo = bn['pelvis'].head_local.z + 0.11; z_hi = bn['upperarm_l'].head_local.z + 0.22; z_pit = bn['upperarm_l'].head_local.z - 0.07 * k
     cx = bn['pelvis'].head_local.x; s_in, s_out = 0.075 * k, 0.15 * k
-    skip = [i for i, g in enumerate(gnames) if any(w in g for w in ('upperarm', 'lowerarm', 'forearm', 'hand', 'head', 'neck', 'jaw', 'eye'))]   # (not the clavicle: the straps lie on it)
-    def skipw(v): return sum(g.weight for g in v.groups if g.group in skip)
-    bodyg = gnames.index('body') if 'body' in gnames else None   # (the whole MakeHuman mesh also carries helper shells - tights, skirt, joint cubes - that are not skin)
-    def onbody(v): return bodyg is None or any(g.group == bodyg and g.weight > 0.5 for g in v.groups)
-    keepv = {v.index for v in me.vertices if z_lo - 0.03 <= (mw @ v.co).z <= z_hi and skipw(v) < 0.25 and onbody(v)}
-    bm = bmesh.new(); bm.from_mesh(me); bm.verts.ensure_lookup_table()
-    bmesh.ops.delete(bm, geom=[f for f in bm.faces if not all(v.index in keepv for v in f.verts)], context='FACES')
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
-    bmesh.ops.transform(bm, matrix=mw, verts=bm.verts[:])   # world space from here on
     zc = z_lo + 0.66 * (z_pit - z_lo); zw = z_lo + 0.18 * (z_pit - z_lo); hb = 0.022
+    mw = suit.matrix_world.copy(); inv = mw.inverted()
+    sm = bmesh.new(); sm.from_mesh(suit.data); dl = sm.verts.layers.deform.verify()
+    arm = {g.index for g in suit.vertex_groups if any(w in g.name for w in ('upperarm', 'lowerarm', 'forearm', 'hand', 'neck', 'head'))}
+    bmesh.ops.transform(sm, matrix=mw, verts=sm.verts[:])
     cuts = [((0, 0, z), (0, 0, 1)) for z in (z_lo, z_pit, zc - hb, zc + hb, zw - hb, zw + hb)] + [((cx + sg * w, 0, 0), (1, 0, 0)) for sg in (-1, 1) for w in (s_in, s_out)]
     for co, no in cuts:
-        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5, plane_co=co, plane_no=no)
-    def keepf(f):
+        bmesh.ops.bisect_plane(sm, geom=sm.verts[:] + sm.edges[:] + sm.faces[:], dist=1e-5, plane_co=co, plane_no=no)
+    base = len(suit.data.materials)
+    n = 0
+    for f in sm.faces:
         c = f.calc_center_median(); ax = abs(c.x - cx)
-        return z_lo <= c.z and (c.z <= z_pit or s_in <= ax <= s_out)
-    bmesh.ops.delete(bm, geom=[f for f in bm.faces if not keepf(f)], context='FACES')
-    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
-    bm.normal_update()
-    from mathutils import kdtree
-    kd = kdtree.KDTree(len(me.vertices))
-    for sv in me.vertices: kd.insert(mw @ sv.co, sv.index)
-    kd.balance()
-    # out along the normal by OUT, or 8 mm past the suit where the suit stands further out than that (its bib, its seams): never under it
-    from mathutils.bvhtree import BVHTree
-    sdeps = bpy.context.evaluated_depsgraph_get(); sbvh = None
-    if src is not suit:
-        sb = bmesh.new(); sb.from_mesh(suit.data); bmesh.ops.transform(sb, matrix=suit.matrix_world.copy(), verts=sb.verts[:]); sbvh = BVHTree.FromBMesh(sb); sb.free()
-    for v in bm.verts:
-        d = OUT
-        if sbvh is not None:
-            hit = sbvh.ray_cast(v.co + v.normal * 0.002, v.normal, 0.08)
-            if hit[0] is not None: d = max(d, hit[3] + 0.002 + 0.008)
-        v.co = v.co + v.normal * d
-    bones = person['rig'].data.bones
-    def vest_weights(co):
-        _, i, _ = kd.find(co)
-        return [(gnames[g.group], g.weight) for g in me.vertices[i].groups if gnames[g.group] in bones and g.weight > 0]
-    for f in bm.faces:
-        fz = f.calc_center_median().z
-        f.material_index = 1 if (abs(fz - zc) < hb or abs(fz - zw) < hb) else 0
-    ob = new_part(person, 'hivis_vest', bm, solid_material('cloth_hivis_' + colr.lstrip('#'), hex_rgb(colr), 0.55), vest_weights, role='cloth')
-    ob.data.materials.append(solid_material('cloth_hivis_band', hex_rgb('#c8ccd0'), 0.3, 0.6))
-    if src is not suit:
-        bpy.data.objects.remove(src)
-        # the suit's own torso under the body of the vest goes: its bib and back stood further out than any vest could, and came through it walking and seated
-        # (the shirt's sleeves and shoulders stay; the vest covers what is cut, since it is cut from the same band of the body)
-        sg = [g.index for g in suit.vertex_groups if any(w in g.name for w in ('upperarm', 'lowerarm', 'forearm', 'hand', 'clavicle'))]
-        sm = bmesh.new(); sm.from_mesh(suit.data); dl = sm.verts.layers.deform.verify(); smw = suit.matrix_world
-        def under(f):
-            c = smw @ f.calc_center_median()
-            return z_lo + 0.02 < c.z < z_pit - 0.02 and all(sum(w for g, w in v[dl].items() if g in sg) < 0.1 for v in f.verts)
-        gone = [f for f in sm.faces if under(f)]; bmesh.ops.delete(sm, geom=gone, context='FACES')
-        bmesh.ops.delete(sm, geom=[v for v in sm.verts if not v.link_faces], context='VERTS'); sm.to_mesh(suit.data); sm.free(); suit.data.update()
-        print('vest: %d suit faces under the vest removed' % len(gone))
+        if not (z_lo <= c.z <= z_hi and (c.z <= z_pit or s_in <= ax <= s_out)): continue
+        if max(sum(w for g, w in v[dl].items() if g in arm) for v in f.verts) > 0.35: continue   # (the sleeves stay the shirt's)
+        f.material_index = base + (1 if (abs(c.z - zc) < hb or abs(c.z - zw) < hb) else 0); n += 1
+    bmesh.ops.transform(sm, matrix=inv, verts=sm.verts[:])
+    sm.to_mesh(suit.data); sm.free(); suit.data.update()
+    suit.data.materials.append(solid_material('cloth_hivis_' + colr.lstrip('#'), hex_rgb(colr), 0.55))
+    suit.data.materials.append(solid_material('cloth_hivis_band', hex_rgb('#c8ccd0'), 0.3, 0.6))
+    print('vest: %d suit faces painted' % n)
 
 def build_pipes(person):
     """Great Highland bagpipes, carried as a piper walks with them when not playing: the bag under the left arm, three drones over the left shoulder, the
@@ -1520,7 +1474,7 @@ def decimate(o, ratio, weight_group=None, uv=False):
         bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0006)
         bmesh.ops.triangulate(bm, faces=bm.faces[:])
         bm.to_mesh(o.data); bm.free()
-    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = True; dm.delimit = set() if LOD and not uv else {'UV'}   # (uv: review 7 - a long coat collapsed across its UV seams drew white wedges of the wrong part of its picture)
+    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = True; dm.delimit = ({'MATERIAL'} if 'worksuit' in o.name.lower() else set()) if LOD and not uv else ({'UV', 'MATERIAL'} if 'worksuit' in o.name.lower() else {'UV'})   # (the vest: its bands are a second material, cut on straight lines - review 9 saw them castellated)   # (uv: review 7 - a long coat collapsed across its UV seams drew white wedges of the wrong part of its picture)
     if weight_group: dm.vertex_group = weight_group; dm.vertex_group_factor = float(os.environ.get('DECF', '2.0')); dm.invert_vertex_group = False
     bpy.ops.object.modifier_apply(modifier='dec')
     if LOD and o.type == 'MESH' and not o.get('_body') and 'eyes_new' not in o.name:
@@ -1568,6 +1522,8 @@ def budget_and_join(person, total):
     if LOD and person['spec'].get('lod_cloth'):   # a garment the collapse cannot take below a few hundred faces without folding it into one big triangle
         for o in cl:
             if not _shoe(o): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], person['spec']['lod_cloth']))
+    for o in cl:   # the hi-vis vest's straight cuts need faces to stay straight (review 9: torn edges and holes after the collapse)
+        if 'worksuit' in o.name.lower() and person['spec'].get('vest'): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], 1600)) if LOD else cnt[id(o)]   # (the full model keeps the staff suit whole: collapsed, the painted vest's straight edges turned to saw-teeth and the sleeves to shards - review 9; ~9.3k triangles on two people)
     if os.environ.get('BUDGET_LOG'): print('AREA', person['spec']['id'], [(o.name, round(_area(o), 3)) for o in cl])
     keep = []
     for o, r in parts:

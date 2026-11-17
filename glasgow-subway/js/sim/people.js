@@ -247,10 +247,10 @@ export class AnimCrowd {
   }
   /** On the simplified model the layers under an outer garment were simplified harder than it (the staff work suit is 137 vertices under a 1714-vertex vest), so their
    *  flat faces come through it: the vest became a patchwork of orange on navy and the long coats showed jeans through holes (review 7, on the true far model). The outer
-   *  garment is moved out along its own normals, once (the geometry is shared by every clone): 1 cm for the vest (the suit under it is cut away at build since review 8), 1 for a coat (its own simplification now keeps its seams and enough faces: tools/assets_people_mpfb.py lod_uv) - nothing at 6 m and more. */
+   *  garment is moved out along its own normals, once (the geometry is shared by every clone): none for the vest (since review 9 it is painted on to the suit itself), 1 cm for a coat (its own simplification now keeps its seams and enough faces: tools/assets_people_mpfb.py lod_uv) - nothing at 6 m and more. */
   _puffOuter(n) {
     let k = 0; n.traverse((m) => {
-      if (!m.isMesh || !m.material || m.geometry.userData.puffed) return; const nm = m.material.name || '', d = /^cloth_hivis/.test(nm) ? 0.01 : /^cloth_coat\./.test(nm) ? 0.01 : 0; if (!d) return;
+      if (!m.isMesh || !m.material || m.geometry.userData.puffed) return; const nm = m.material.name || '', d = /^cloth_hivis/.test(nm) ? 0 : /^cloth_coat\./.test(nm) ? 0.01 : 0; if (!d) return;
       const g = m.geometry, P = g.attributes.position, N = g.attributes.normal; if (!N) return;
       // one direction per point in space: vertices split along a seam (different normals at one place) move together, so no crack opens along the seam
       const key = (i) => Math.round(P.getX(i) * 2000) + ',' + Math.round(P.getY(i) * 2000) + ',' + Math.round(P.getZ(i) * 2000), acc = new Map(), ks = [];
