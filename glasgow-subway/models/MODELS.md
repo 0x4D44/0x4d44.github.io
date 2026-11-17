@@ -364,5 +364,12 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
   2 cm out, or 8 mm past the suit (ray cast); the suit's faces under the body of the vest are deleted. The far vest moves 1 cm out at load (was 3).
 Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 
+## Review 9 fixes (2026-11-17)
+- The hi-vis vest is painted on to the work suit: the suit's mesh is cut along straight planes (below the armpit, the shoulder straps, the band edges)
+  and the faces inside take orange or the silver band; the sleeves stay the shirt's. The full model keeps the staff suit whole (~9.3k triangles; the
+  collapse made the cuts saw-teeth); the far model keeps 1600 faces with material boundaries kept. (The review-8 vest cut from the body is gone.)
+- `elder_shorts`: `short03` in a darker grey (he and `adult_tie_suit` had the same grey spiky hair).
+Armfit, legradii and the skin budgets re-derived from the rebuilt files.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
