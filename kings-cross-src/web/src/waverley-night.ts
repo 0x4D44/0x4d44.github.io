@@ -69,9 +69,16 @@ totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.57,0.20)*
 // balmoral-trim-begin
 float trimHeight = ${height};
 float trimZone = (${within})*smoothstep(8.0,8.5,trimHeight)*(1.0-smoothstep(50.8,51.6,trimHeight));
-// The shoulder and upper bell are lit separately, with shadow between.
-float trimBeam = 0.10+0.65*smoothstep(23.5,24.7,trimHeight)*exp(-max(0.0,trimHeight-25.5)/8.0);
-trimBeam += 0.50*exp(-8.0*(trimHeight-27.8)*(trimHeight-27.8))+0.40*exp(-8.0*(trimHeight-30.8)*(trimHeight-30.8));
+// Lamps at the cornice, lower cap shoulder and upper bell make separate
+// upward washes. Their short falloffs reveal the whole curved cap without
+// carrying a uniform orange floor over its height. Heights follow the built
+// corner turret: shaft to 27.5 m, ogee cap to 30.9 m above the street.
+float trimBeam = 0.025+0.65*smoothstep(23.5,24.7,trimHeight)*exp(-max(0.0,trimHeight-24.7)/1.4);
+trimBeam += 0.95*smoothstep(27.3,27.55,trimHeight)*exp(-max(0.0,trimHeight-27.55)/0.85);
+trimBeam += 0.42*smoothstep(30.2,30.35,trimHeight)*exp(-max(0.0,trimHeight-30.35)/0.55);
+// A separate wash on the high gables and chimney copes keeps their stone
+// gold under the neutral sky fill, without lifting the corner-cap shadows.
+trimBeam += 0.30*smoothstep(34.5,35.5,trimHeight)*exp(-max(0.0,trimHeight-35.5)/5.0);
 float trimFacing = 0.50+0.50*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.8,0.6,0.2))));
 totalEmissiveRadiance += uStationLampLevel*vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*trimZone*trimBeam*trimFacing;
 // balmoral-trim-end

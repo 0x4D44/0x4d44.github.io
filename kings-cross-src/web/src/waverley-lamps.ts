@@ -195,8 +195,12 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // Retain all distant head cores/posts; spend the ground geometry on nearby
   // conforming pools/strips rather than almost invisible panorama road pools.
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
-  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
-  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),fogHaloSpread:12,
+    // Princes Street's narrow footway lies almost at eye level in the frozen
+    // Balmoral view. A 16 m pool covered the whole road as one horizontal band.
+    // Keep a local soft pool under each head, independently of its wet streak.
+    poolRadiusAt:s=>s.x>20&&s.x<80&&s.z>-180&&s.z<-140?3.2:8,poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),fogHaloSpread:14,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},

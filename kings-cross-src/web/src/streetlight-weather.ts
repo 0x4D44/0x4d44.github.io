@@ -7,16 +7,28 @@ import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 
 /** Fade light away rather than blending in a fog-coloured rectangle. */
-export function fadeLightInFog(material: THREE.Material, alpha = false): void {
+export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false): void {
   material.onBeforeCompile = shader => {
+    if(depth){
+      shader.uniforms.uUrbanLampFog=surfaceUniforms.fog;
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying float vUrbanLampDistance;')
+        .replace('#include <project_vertex>','#include <project_vertex>\nvUrbanLampDistance=length(cameraPosition-(modelMatrix*vec4(transformed,1.0)).xyz);');
+      shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uUrbanLampFog;\nvarying float vUrbanLampDistance;');
+    }
     shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
-      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;'));
+      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;')+(depth?`
+// lamp-depth-begin
+gl_FragColor.rgb *= exp(-0.0045*max(0.0,vUrbanLampDistance-30.0)*uUrbanLampFog);
+// lamp-depth-end`:''));
   };
-  material.customProgramCacheKey = () => alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade';
+  material.customProgramCacheKey = () => (alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade')+(depth?'-depth':'');
 }
 
 export interface LampWeatherOptions {
   enhancedFog?: boolean;
+  fogHaloSpread?: number;
+  suppressSnow?: boolean;
+  reflectionWidthAt?: (sourceIndex:number)=>number;
   /** A window is recessed inside the wall; its receiver is outside on paving. */
   receiverAnchor?: 'head' | 'base';
 }
@@ -34,6 +46,7 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
   // Perth/platform strips retain their original geometry and shader path.
   const geometry=surface?new THREE.PlaneGeometry(1,1,1,8).rotateX(-Math.PI/2):pools.geometry.clone();
   geometry.setAttribute('reflectionHead',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>heads.slice(i*3,i*3+3))),3));
+  if(optics.reflectionWidthAt)geometry.setAttribute('reflectionWidth',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionWidthAt!(i))),1));
   const floorWeights=pools.geometry.getAttribute('poolFloorWeight');
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>floorWeights.getX(i))),1));
   const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,toneMapped:false,fog:true,
@@ -48,10 +61,12 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
   material.onBeforeCompile=(shader,renderer)=>{
     before.call(material,shader,renderer);
     Object.assign(shader.uniforms,coverUniforms,{uLampWet:surfaceUniforms.wet});
+    if(optics.suppressSnow)shader.uniforms.uLampSnow=surfaceUniforms.snowCover;
     if(floor)Object.assign(shader.uniforms,{uReflectionFloor:{value:floor.map},uReflectionRect:{value:floor.rect}});
     if(reach!==undefined)shader.uniforms.uReflectionReach={value:reach};
     if(surface)Object.assign(shader.uniforms,{uLampSurface:{value:surface.map},uLampSurfaceRect:{value:surface.rect}});
     shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}
+${optics.reflectionWidthAt?'attribute float reflectionWidth;':''}
 attribute vec3 reflectionHead;
 attribute float poolFloorWeight;
 varying vec2 vReflectionUv;
@@ -102,7 +117,10 @@ ${broken?`float roughWidth = streakWidth;
 // A rough wet receiver spreads a distant light across more paving. Retain
 // the narrow source kernel, adding a blurred lobe around it in world metres.
 roughWidth = max(streakWidth,0.9+0.012*min(length(cameraPosition-reflectionCentre),200.0));
-// reflection-rough-width-end
+// reflection-rough-width-end${optics.reflectionWidthAt?`
+// reflection-source-width-begin
+roughWidth *= reflectionWidth;
+// reflection-source-width-end`:''}
 // Keep a rough lobe from swelling at the end closest to the eye. The source
 // still broadens with distance, but its angular width stays bounded along it.
 float streakDepth = max(1.0,-(viewMatrix*vec4(reflectionCentre,1.0)).z);
@@ -134,6 +152,7 @@ varying vec3 vReflectionWorld;
 varying float vReflectionFloor;
 varying float vReflectionValid;
 uniform float uLampWet;
+${optics.suppressSnow?'uniform float uLampSnow;':''}
 ${COVER_GLSL}
 ${floor?'uniform sampler2D uReflectionFloor;\nuniform vec4 uReflectionRect;':''}`)
       .replace('#include <opaque_fragment>',`#include <opaque_fragment>
@@ -156,7 +175,10 @@ float blurY1 = vReflectionUv.y + 0.12;
 float streakY = 0.5 * exp( -${broken?'0.8':'2.5'} * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY0 * blurY0 ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY1 * blurY1 );
 float streak = exp( -${broken?'3.2':'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
 gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
-// reflection-alpha-end${reach!==undefined?`
+// reflection-alpha-end${optics.suppressSnow?`
+// reflection-snow-begin
+gl_FragColor.a *= 1.0-smoothstep(0.02,0.20,uLampSnow);
+// reflection-snow-end`:''}${reach!==undefined?`
 // reflection-edge-begin
 gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothstep(0.65,1.0,abs(vReflectionUv.y)));
 // reflection-edge-end`:''}${broken?`
@@ -166,7 +188,7 @@ float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
 // reflection-breakup-end`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
   indices.forEach((source,i)=>{pools.getMatrixAt(source,matrix);reflections.setMatrixAt(i,matrix);if(pools.instanceColor){pools.getColorAt(source,colour);reflections.setColorAt(i,colour.multiplyScalar(2.5));}});
@@ -184,17 +206,17 @@ gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
   const fogBefore=halos.material.onBeforeCompile;
   halos.material.onBeforeCompile=(shader,renderer)=>{
     fogBefore.call(halos.material,shader,renderer);shader.uniforms.uLampFog=surfaceUniforms.fog;
-    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;':''}`)
+    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`)
       .replace('gl_PointSize = size;',`vLampFogHalo = lampFogHalo;
 // lamp-fog-size-begin
-gl_PointSize = size * mix( 1.0, ${enhancedFog?'9.0':'4.2'}, lampFogHalo );
+gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(1):'4.2'}, lampFogHalo );
 // lamp-fog-size-end`)
       .replace('#include <logdepthbuf_vertex>',`// lamp-fog-screen-begin
-${enhancedFog?'vLampFogDistance = length(cameraPosition-(modelMatrix*vec4(position,1.0)).xyz);':''}
+${enhancedFog?`vLampFogDistance = length(cameraPosition-(modelMatrix*vec4(position,1.0)).xyz);\nvLampFogMast = ${scale?'step(1.5,lampHaloScale)':'0.0'};`:''}
 gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;':''}`);
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uLampFog;')
       .replace('#include <opaque_fragment>',`#include <opaque_fragment>
 // lamp-fog-begin
@@ -205,12 +227,18 @@ gl_FragColor.a *= mix( 1.0, 0.22 * uLampFog, vLampFogHalo );
 // the sodium colour. Dense air removes distant sources rather than painting
 // fog-coloured sprite rectangles in front of the city.
 float scatter = vLampFogHalo*uLampFog;
-gl_FragColor.rgb = mix(gl_FragColor.rgb,gl_FragColor.rgb*0.55+vec3(0.18,0.14,0.10),0.35*scatter);
+gl_FragColor.rgb = mix(gl_FragColor.rgb,gl_FragColor.rgb*vec3(1.2,0.85,0.45)+vec3(0.15,0.12,0.08),0.85*scatter);
 gl_FragColor.a *= exp(-0.0035*max(0.0,vLampFogDistance-35.0)*uLampFog);
-// lamp-fog-scatter-end`:''}`);
+// lamp-fog-scatter-end
+// lamp-fog-mast-begin
+// Multiple points describe one LED strip. Suppress their overlapping bright
+// centres, retaining the warm outer skirt instead of shrinking its diameter.
+float mastSkirt = smoothstep(0.15,0.55,2.0*length(gl_PointCoord-vec2(0.5)));
+gl_FragColor.a *= mix(1.0,mix(0.10,1.0,mastSkirt),vLampFogMast*vLampFogHalo*uLampFog);
+// lamp-fog-mast-end`:''}`);
   };
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?'-wide':'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
-    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45;},
+    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
 }

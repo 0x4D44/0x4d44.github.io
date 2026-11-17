@@ -166,6 +166,12 @@ export interface StreetLightOptions {
   reflectionBroken?: boolean;
   /** Station/city optics only; the Perth path remains unchanged. */
   enhancedFog?: boolean;
+  /** Wider scattering on Scottish city lights, independent of the clear head. */
+  fogHaloSpread?: number;
+  /** Snow receives diffuse pools, never mirror streaks. */
+  suppressSnow?: boolean;
+  /** Low-pressure sodium on the station approaches; Perth keeps its palette. */
+  lowPressureSodium?: boolean;
   /** Preserve a sodium core's orange hue at panorama scale. */
   coreTint?: boolean;
   haloSize?: number;
@@ -177,6 +183,8 @@ export interface StreetLightOptions {
 
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
+  const lightOf = (spot:LampSpot) => options.lowPressureSodium && spot.kind===LAMP_KIND.sodium
+    ? {halo:0xff8704,pool:0xff760c,strength:.13} : LAMP_LIGHT[spot.kind];
   const headAt = options.headAt ?? headOf;
   const group = new THREE.Group();
   group.name = 'street-lamps';
@@ -215,7 +223,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const haloScales: number[] = [];
   const tint = new THREE.Color();
   for (const spot of spots) {
-    tint.setHex(LAMP_LIGHT[spot.kind].halo);
+    tint.setHex(lightOf(spot).halo);
     for (const point of spot.mast ? stripPoints(spot) : [headAt(spot)]) {
       heads.push(...point);
       haloScales.push(options.haloScaleAt?.(spot) ?? 1);
@@ -254,7 +262,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(options.coreTint ? colours : colours.map(c => .92 + .08 * c), 3));
     const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
-    if (options.fog) fadeLightInFog(material);
+    if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog);
     cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
     cores.raycast = (): void => {};
     cores.frustumCulled = false; cores.renderOrder = 6; cores.visible = false;
@@ -352,7 +360,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
     matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,index) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
-    const light = LAMP_LIGHT[spot.kind];
+    const light = lightOf(spot);
     pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
   });
   pools.instanceMatrix.needsUpdate = true;
@@ -362,7 +370,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {
