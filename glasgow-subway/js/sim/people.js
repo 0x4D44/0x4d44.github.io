@@ -160,9 +160,10 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 }
 // id -> [[material name, r, g, b multiplier (linear: 0.15 shows as ~0.42)], ...]. Review 8: the two long-coat women wore one pale striped coat that read as a bathrobe (now
 // camel and dark navy); adult_casual2 and ya_ginger_lad one sweatshirt; teen_skirt and woman_mini one top (woman_mini's goes blue; her tartan was turned green at build)
-const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.15, 0.22, 0.15], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.42, 0.27, 0.14]],
-  ya_winter: [[/^cloth_coat\./i, 0.1, 0.13, 0.21]], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
-  man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]] };   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.15, 0.22, 0.15], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
+  ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
+  man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
+  adult_lusekofta: [[/winterboots/i, 0.12, 0.06, 0.025, 'flat']], adult_beret: [[/riding_boots/i, 0.05, 0.05, 0.05]] };   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
@@ -189,7 +190,7 @@ export class AnimCrowd {
     this.fit = {};   // body-fitting stats per character (bodyfit.js), for the tests
     for (const c of this.chars) { this.fit[c.id] = { hair: null, hairLod: null, legs: null, legsLod: null, trim: null, trimLod: null, web: null, webLod: null, shoes: null }; if (c.node) this._fitFull(c); if (c.lodNode) this._fitLod(c); }
     // a few garments darkened where the build's hue turn left them too loud: woman_mini's tartan turned green came out neon (review 7 asked for another tartan; a dark Black Watch green reads as one)
-    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); m.material.userData.tintOf = c.id; }); }   // (a clone: one material can be shared by several characters in the file)
+    for (const c of this.chars) { const T = GARMENT_TINT[c.id]; if (T) for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (!m.isMesh || !m.material || m.material.userData.tintOf === c.id) return; const t = T.find((x) => x[0].test(m.material.name || '')); if (!t) return; m.material = m.material.clone(); m.material.color.setRGB(t[1], t[2], t[3]); if (t[4] === 'flat') { m.material.map = null; m.material.needsUpdate = true; } m.material.userData.tintOf = c.id; }); }   // ('flat': the picture goes and the colour stands alone - a texture whose light parts stretch into wedges)   // (a clone: one material can be shared by several characters in the file)
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) (f.node || f.lodNode).traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
