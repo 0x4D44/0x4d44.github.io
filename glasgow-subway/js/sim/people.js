@@ -492,12 +492,17 @@ export class AnimCrowd {
     if (!(hipY - kneeY > 0.1)) return null;
     const g = g0.clone(), P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if (!SI || !SW) return null;
     const si = new Float32Array(SI.count * 4), sw = new Float32Array(SW.count * 4);
+    // the hand-over is complete at this garment's own hem (a mini ends mid-thigh: ramped to the knee it was half the hips' still, and stood out as a hoop - review 11)
+    let hemY = Infinity; for (let i = 0; i < P.count; i++) hemY = Math.min(hemY, P.getY(i)); const endY = Math.max(kneeY, hemY + 0.03);
+    const give = (idx, w, b, amt) => { let at = idx.indexOf(b); if (at < 0) { at = w.indexOf(Math.min(...w)); idx[at] = b; w[at] = 0; } w[at] += amt; };
     for (let i = 0; i < P.count; i++) {
-      const y = P.getY(i), x = P.getX(i), u = (hipY - 0.02 - y) / (hipY - kneeY), t = u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+      const y = P.getY(i), x = P.getX(i), u = (hipY - 0.02 - y) / Math.max(0.05, hipY - 0.02 - endY), t = u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
       const idx = [SI.getX(i), SI.getY(i), SI.getZ(i), SI.getW(i)], w = [SW.getX(i), SW.getY(i), SW.getZ(i), SW.getW(i)];
       if (t > 0) {
-        const th = (x - midX) * sl >= 0 ? tl : tr; for (let k = 0; k < 4; k++) w[k] *= 1 - t;
-        let at = idx.indexOf(th); if (at < 0) { at = w.indexOf(Math.min(...w)); idx[at] = th; w[at] = 0; } w[at] += t;
+        // near the middle the cloth spans both thighs, shared by how far it lies to each side: split at the middle line it opened between the legs (review 11)
+        const bl = Math.min(1, Math.max(0, 0.5 + (x - midX) * sl / 0.09));
+        for (let k = 0; k < 4; k++) w[k] *= 1 - t;
+        if (bl > 0) give(idx, w, tl, t * bl); if (bl < 1) give(idx, w, tr, t * (1 - bl));
         const sum = w[0] + w[1] + w[2] + w[3]; for (let k = 0; k < 4; k++) w[k] /= sum || 1;
       }
       for (let k = 0; k < 4; k++) { si[i * 4 + k] = idx[k]; sw[i * 4 + k] = w[k]; }
@@ -774,7 +779,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt)$/.test(c.id)) return false;
+    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt)$/.test(c.id)) return false;   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
