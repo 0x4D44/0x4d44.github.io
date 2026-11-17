@@ -20,7 +20,9 @@ export const SCEN = {
   // variability items (TIM.cvT, TIM.cvL) estimate a spread of about 2 % from the strides in the window, and from the 7 s (5-8 strides) this scenario had until revision 10 that estimate is itself
   // 25-30 % uncertain - a perfectly good walk would have fallen under the band's floor on one recording in ten for nothing but sampling error.
   steady: (v) => (v < 0.6 ? { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 13, v, state: 'walk' }], win: [3.5, 14] } : { plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 23, v, state: 'walk' }], win: [7, 24] }),
-  startstop: () => ({ plan: [{ dur: 1.2, v: 0, state: 'stand' }, { dur: 7.0, v: 1.2, state: 'walk', to: 6.5 }, { dur: 2.5, v: 0 }], win: [0, 10.7] }),
+  // (9.5 s to cover the 6.5 m: the elders walk at 0.78 of the pace asked for, and in the 7 s it had until review 12 they never reached the mark - twelve stops,
+  //  one in eight of the roster, scored 0 as 'never arrived' for want of time, not for the way they stopped)
+  startstop: () => ({ plan: [{ dur: 1.2, v: 0, state: 'stand' }, { dur: 9.5, v: 1.2, state: 'walk', to: 6.5 }, { dur: 2.5, v: 0 }], win: [0, 13.2] }),
   turn: (deg) => ({ plan: [{ dur: 1.0, v: 0, state: 'stand' }, { dur: 5.0, v: 1.2, state: 'walk' }, { dur: 4.0, v: 1.2, turn: deg }], win: [6, 10] }),
   spin: (deg) => ({ plan: [{ dur: 1.5, v: 0, state: 'stand' }, { dur: 3.5, v: 0, turn: deg }], win: [1.5, 5] }),
 };
