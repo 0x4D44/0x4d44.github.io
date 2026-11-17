@@ -320,8 +320,9 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  // Urban carriageways down to 5.5 m are traffic-cleared. Worn park paths keep
  // a readable compacted line; the narrow lanes keep their default retention.
  const snowMask=snowLanduseMask({...LANDUSE,water:LANDUSE.areas.water,
-  roads:LANDUSE.roads.map(r=>({...r,snow:r.width>=5.5?.08:undefined})),
+  roads:LANDUSE.roads.map(r=>({...r,snow:r.width>=5.5?.08:undefined,slush:LANDUSE===WAVERLEY_LANDUSE&&r.width>=5.5})),
   paths:LANDUSE.paths.map(p=>({...p,snow:.32}))});
+ if(LANDUSE===WAVERLEY_LANDUSE)cover.userData.snowSlush=true;
  if(snowMask){cover.userData.snowMask=snowMask;cover.addEventListener('dispose',()=>snowMask.texture.dispose());}
  // open land (OpenGround): cut out where the canvas is clear. The cleared texels are transparent black, so a filtered texel at the cut is
  // the painted colour times its alpha: dividing by the alpha takes it back to the paint (no dark rim along the cut)

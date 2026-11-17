@@ -14,7 +14,7 @@ import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
 import type { LatLon } from '../../core/geo.ts';
-import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
+import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, coverAt, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
 import { windowNight } from './materials.ts';
@@ -118,6 +118,8 @@ const snowDepthBuilt = new WeakMap<THREE.Material, boolean>();
 function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial, spec: SurfaceWeather): void {
   const mask = material.userData.snowMask as SnowMask | undefined;
   const roofDetail = material.userData.snowRoof === true;
+  const roadDetail = material.userData.snowRoad === true;
+  const mappedSlush = material.userData.snowSlush === true;
   const ridges = material.userData.snowRidges as THREE.Vector2 | undefined;
   // Natural ground has prior field/texture colour hooks. Snow replaces their
   // pigment after those hooks, before lighting; otherwise snowy fields stay green.
@@ -134,8 +136,8 @@ function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMater
     Object.assign(shader.uniforms, coverUniforms, own);
     if (mask) Object.assign(shader.uniforms, { uSnowMask: { value: mask.texture }, uSnowMaskRect: { value: mask.rect } });
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\nvarying vec3 vSnowNormal;${roofDetail ? '\nattribute vec2 snowRoof;\nvarying vec2 vSnowRoof;' : ''}`)
-      .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );${roofDetail ? '\nvSnowRoof = snowRoof;' : ''}`);
+      .replace('#include <common>', `#include <common>\nvarying vec3 vSnowNormal;${roofDetail ? '\nattribute vec2 snowRoof;\nvarying vec2 vSnowRoof;' : ''}${roadDetail ? '\nattribute vec3 snowRoad;\nvarying vec3 vSnowRoad;' : ''}`)
+      .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );${roofDetail ? '\nvSnowRoof = snowRoof;' : ''}${roadDetail ? '\nvSnowRoad = snowRoad;' : ''}`);
     // A late landmark may reuse a material the first scan already shaded.
     const cover = shader.fragmentShader.includes('float coverGroundAt') ? '' : COVER_GLSL;
     const surfaceCode = `
@@ -154,16 +156,22 @@ ${spec.roof ? `if ( uSnowCover > 0.001 && snowUp > 0.0 && uCoverRect.z > 0.0 ) {
 }` : ''}
 float snowRetention = 1.0;
 float snowTraffic = uSnowTraffic;
+${mappedSlush ? 'float snowTrodden = 0.0;' : ''}
 vec3 snowAlbedo = uSnowColour;
 ${spec.detail ? `if ( uSnowCover > 0.001 ) {
   vec3 snowPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
   float drift = smoothstep(0.15, 0.85, snowNoise(snowPlace.xz * 0.025));
+  ${spec.detail === 'ground' ? `// Distant farmland keeps field variation without strong horizon bands.
+  drift = mix(0.5, drift, 0.4 + 0.6 * (1.0 - smoothstep(150.0, 1000.0, length(vViewPosition))));` : ''}
   float grain = sin( snowPlace.x * 3.1 + snowPlace.z * 1.7 ) * ( 1.0 - smoothstep( 40.0, 220.0, length( vViewPosition ) ) );
   snowAlbedo *= 0.90 + 0.10 * drift + 0.035 * grain;
   ${spec.detail === 'ground' ? `snowRetention *= ( 0.68 + 0.32 * drift ) * mix( 0.2, 1.0, smoothstep( 0.55, 0.95, normalize( vSnowNormal ).y ) );` :
     spec.detail === 'foliage' ? 'snowRetention *= 0.03 + 0.24 * smoothstep(0.35, 0.8, snowNoise(snowPlace.xz * 0.8));' :
     'snowRetention *= ( 0.9 + 0.1 * drift ) * mix( 0.55, 1.0, smoothstep( 0.55, 0.98, normalize( vSnowNormal ).y ) );'}
-  ${spec.heather ? 'snowRetention *= mix(0.4, 1.0, smoothstep(0.035, 0.14, max(diffuseColor.r, diffuseColor.g)));' : ''}
+  ${spec.heather ? `snowRetention *= mix(0.4, 1.0, smoothstep(0.035, 0.14, max(diffuseColor.r, diffuseColor.g)));
+  // Metre-scale scour exposes the existing painted grass/heather, rather than
+  // tinting the snow or adding a repeated field pattern.
+  snowRetention *= mix(1.0, 0.22, smoothstep(0.35, 0.7, snowNoise(snowPlace.xz * 0.65)));` : ''}
 }` : ''}
 ${roofDetail ? 'snowRetention *= vSnowRoof.y * mix( 0.55, 1.0, smoothstep( 0.1, 0.55, vSnowRoof.x ) );' : ''}
 ${ridges ? `if ( uSnowCover > 0.001 ) {
@@ -177,6 +185,9 @@ ${mask ? `if ( uSnowCover > 0.001 ) {
   float mappedSnow = texture2D( uSnowMask, vec2( snowUv.x, 1.0 - snowUv.y ) ).r;
   snowRetention *= mappedSnow;
   snowTraffic = ( 1.0 - mappedSnow ) * step( 0.001, mappedSnow );
+  ${mappedSlush ? `// The .32 mapped park path is trodden grey slush; leave untouched snow white.
+  snowTrodden = smoothstep(0.22, 0.30, mappedSnow) * (1.0 - smoothstep(0.4, 0.65, mappedSnow));
+  snowRetention *= 1.0 - 0.92 * snowTrodden;` : ''}
 }` : ''}
 // Strong traffic keeps irregular slush patches, rather than a continuous white
 // film. Compacted lanes and paths retain their separate mapped snow shares.
@@ -184,11 +195,23 @@ if ( uSnowCover > 0.001 && snowTraffic > 0.8 ) {
   vec3 slushPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
   snowRetention *= 0.1 + 0.4 * snowNoise(slushPlace.xz * 0.6);
 }
+${roadDetail ? `if (uSnowCover > 0.001) {
+  // UV metres follow the actual bent strip; width is constant on each strip.
+  float across = abs(vSnowRoad.y - vSnowRoad.z * 0.5);
+  float kerb = 1.0 - smoothstep(0.2, 1.8, vSnowRoad.z * 0.5 - across);
+  float tyre = 1.0 - smoothstep(0.22, 0.55, abs(abs(across - vSnowRoad.z * 0.25) - 0.7));
+  snowRetention = (0.025 + 0.28 * kerb) * (1.0 - 0.84 * tyre) / uSnowK;
+}` : ''}
 float wetHere = uWet * coverOpen;
 ${spec.snowOnly ? 'wetHere *= step( 0.001, uSnowCover );' : ''}
 wetHere = max( wetHere, 0.85 * uSnowCover * coverOpen * snowTraffic * snowUp );
 diffuseColor.rgb *= 1.0 - uDark * wetHere;
 diffuseColor.rgb *= 1.0 - 0.5 * uSnowCover * snowTraffic * step( 0.8, snowTraffic ) * coverOpen * snowUp;
+${mappedSlush ? `diffuseColor.rgb *= 1.0 - 0.35 * uSnowCover * snowTrodden * coverOpen * snowUp;
+// Princes Street's painted #3b3d3f is already dark. A cool slush floor
+// replaces round 3's near-black result; it remains diffuse and receives lamps.
+float slushRoad = uSnowCover * step(0.8, snowTraffic) * coverOpen * snowUp;
+diffuseColor.rgb = mix(diffuseColor.rgb, max(diffuseColor.rgb, vec3(0.10, 0.112, 0.125)), slushRoad);` : ''}
 float snowHere = min( 1.0, 0.85 * uSnowCover * snowOpen * uSnowK * snowUp * snowRetention );
 diffuseColor.rgb = mix( diffuseColor.rgb, ${spec.detail ? 'snowAlbedo' : 'uSnowColour'}, snowHere );
 diffuseColor.a = mix( diffuseColor.a, 1.0, min( 1.0, snowHere * 1.25 ) );
@@ -205,6 +228,7 @@ uniform float uSnowK;
 uniform float uSnowTraffic;
 varying vec3 vSnowNormal;
 ${roofDetail ? 'varying vec2 vSnowRoof;' : ''}
+${roadDetail ? 'varying vec3 vSnowRoad;' : ''}
 ${mask ? 'uniform sampler2D uSnowMask;\nuniform vec4 uSnowMaskRect;' : ''}
 ${spec.transmit ? 'uniform vec3 uSnowGlow;' : ''}
 ${ridges ? 'uniform vec2 uSnowRidges;' : ''}
@@ -214,12 +238,12 @@ ${SNOW_NOISE}`)
       .replace('#include <emissivemap_fragment>', (spec.detail ? surfaceCode : '') + '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;' + (spec.transmit ? '\ntotalEmissiveRadiance += uSnowGlow * snowHere;' : ''))
       .replace('#include <opaque_fragment>', `{
   float wetFresnel = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 3.0 );
-  float slushSheen = 1.0 - 0.85 * uSnowCover * step(0.8, snowTraffic);
-  outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel ) * slushSheen;
+  float slushSheen = 1.0 - ${mappedSlush ? '0.5' : '0.85'} * uSnowCover * step(0.8, snowTraffic);
+  outgoingLight += uSheen * ${mappedSlush ? '(uSheenK + 0.25 * uSnowCover * snowTraffic)' : 'uSheenK'} * wetHere * ( 0.05 + 0.6 * wetFresnel ) * slushSheen;
 }
 #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}${ridges ? '-ridges' : ''}${spec.transmit ? '-transmit' : ''}${spec.heather ? '-heather' : ''}`;
+  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}${roadDetail ? '-road' : ''}${mappedSlush ? '-slush' : ''}${ridges ? '-ridges' : ''}${spec.transmit ? '-transmit' : ''}${spec.heather ? '-heather' : ''}`;
   material.needsUpdate = true;
 }
 
@@ -573,6 +597,14 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         apply(rig, sunPos, w);
       }
       if (!state) return;
+      // Large concourse halo billboards straddle the sloping dome (one centre is
+      // even above its rim). Opaque snow hides those halos from an outside eye;
+      // under the roof the original lamps remain, and other weather is unchanged.
+      const concourseHalos = nightLights?.group.getObjectByName('lights-concourse');
+      if (concourseHalos) {
+        concourseHalos.visible = state.rig.lampLevel > 0.01 && (state.weather.snowCover <= 0.001 || coverAt(coverMap, f.camera.position.x, f.camera.position.y, f.camera.position.z) > 0.5);
+      }
+
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
       if (scene.fog instanceof THREE.Fog) {
         const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y, haze?.weatherFar, haze?.weatherFar === undefined ? undefined : haze.clear), state.weather.visibilityM, haze);

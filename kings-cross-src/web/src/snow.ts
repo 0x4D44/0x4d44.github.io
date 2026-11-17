@@ -26,7 +26,7 @@ const roads = new Set(['waverley-bridge-decks', 'perth-bridge-roads']);
  * also Waverley's outdoor platform). The shader still tests normal and cover. */
 export function snowSurface(mesh: string, material: string): SurfaceWeather | undefined {
   if (material === 'city-asphalt' || roads.has(mesh)) return road;
-  if (mesh === 'shed-roof-glass' || mesh === 'landmarks-roofGlass') return {...roof, transmit: true};
+  if (mesh === 'shed-roof-glass' || mesh === 'landmarks-roofGlass' || mesh === 'waverley-mapped-roofs') return {...roof, transmit: true};
   if (landscape.has(mesh)) return {...open, detail: 'ground', heather: mesh === 'perth-summit-ground'};
   if (mesh === 'perth-ground') return {dark: .35, sheen: .1, snow: 1, detail: 'ground'};
   if (foliage.has(mesh)) return {...open, detail: 'foliage'};
@@ -40,7 +40,7 @@ export function snowSurface(mesh: string, material: string): SurfaceWeather | un
 
 export interface SnowLanduse {
   extent: Extent;
-  roads: readonly {width: number; line: readonly Pt[]; snow?: number}[];
+  roads: readonly {width: number; line: readonly Pt[]; snow?: number; slush?: boolean}[];
   paths?: readonly {width: number; line: readonly Pt[]; snow?: number}[];
   water?: readonly (readonly (readonly Pt[])[])[];
 }
@@ -94,7 +94,9 @@ export function snowLanduseMask(land: SnowLanduse, texelM = SNOW_MASK_TEXEL_M): 
   // Sixteen coverage bits per texel, reused between strokes. Union segments
   // before blending, so a bend or repeated node never darkens its own edge.
   const bits = new Uint16Array(data.length), touched: number[] = [];
-  const stroke = (line: readonly Pt[], metres: number, retention: number): void => {
+  // Temporary sums only for an opted-in road profile. The retained mask stays R8.
+  const tones = land.roads.some(r => r.slush) ? new Float32Array(data.length) : null;
+  const stroke = (line: readonly Pt[], metres: number, retention: number, slush = false): void => {
     const radius = metres / 2, radius2 = radius * radius;
     for (let a = 0; a + 1 < line.length; a++) {
       const p = line[a]!, q = line[a+1]!, vx = q[0] - p[0], vz = q[1] - p[1], length2 = vx*vx + vz*vz;
@@ -106,7 +108,17 @@ export function snowLanduseMask(land: SnowLanduse, texelM = SNOW_MASK_TEXEL_M): 
           const flag = 1 << (sj * MASK_SAMPLES + si); if (hit & flag) continue;
           const x = x0 + (i + (si+.5)/MASK_SAMPLES)*dx - p[0], z = z0 + (j + (sj+.5)/MASK_SAMPLES)*dz - p[1];
           const t = length2 > 0 ? Math.max(0, Math.min(1, (x*vx + z*vz)/length2)) : 0;
-          if ((x-t*vx)**2 + (z-t*vz)**2 <= radius2) hit |= flag;
+          const distance2 = (x-t*vx)**2 + (z-t*vz)**2;
+          if (distance2 <= radius2) {
+            hit |= flag;
+            if (slush) {
+              // Longitudinal cleared wheel tracks and retained kerb slush, in
+              // the same road coordinates as the KX strips (not world stripes).
+              const across = Math.sqrt(distance2), edge = Math.max(0, 1 - (radius - across) / 1.5);
+              const tyre = Math.max(0, 1 - Math.abs(Math.abs(across - metres*.25) - .7) / .6);
+              tones![k]! += (retention + .10 * edge) * (1 - .84 * tyre);
+            }
+          }
         }
         if (hit && !bits[k]) touched.push(k);
         bits[k] = hit;
@@ -115,13 +127,14 @@ export function snowLanduseMask(land: SnowLanduse, texelM = SNOW_MASK_TEXEL_M): 
     const tone = Math.round(retention * 255);
     for (const k of touched) {
       let b = bits[k]!, count = 0; while (b) {b &= b-1; count++;}
-      data[k] = Math.round(data[k]! + (tone - data[k]!) * count / (MASK_SAMPLES * MASK_SAMPLES));
+      data[k] = Math.round(data[k]! + ((slush ? tones![k]! * 255 : tone * count) - data[k]! * count) / (MASK_SAMPLES * MASK_SAMPLES));
+      if (slush) tones![k] = 0;
       bits[k] = 0;
     }
     touched.length = 0;
   };
   for (const p of land.paths ?? []) stroke(p.line, p.width, p.snow ?? .95);
-  for (const r of [...land.roads].sort((a,b) => a.width - b.width)) stroke(r.line, r.width, r.snow ?? roadSnow(r.width));
+  for (const r of [...land.roads].sort((a,b) => a.width - b.width)) stroke(r.line, r.width, r.snow ?? roadSnow(r.width), r.slush);
   const texture = new THREE.DataTexture(data, width, height, THREE.RedFormat, THREE.UnsignedByteType);
   texture.unpackAlignment = 1; texture.generateMipmaps = false;
   texture.minFilter = texture.magFilter = THREE.LinearFilter; texture.needsUpdate = true;

@@ -144,3 +144,13 @@ test('the city stays one batch per material: walls, plain ashlar, roofs; trees a
  for(const n of ['waverley-building-walls','waverley-building-ashlar','waverley-building-tops','waverley-ground-cover','waverley-tree-crowns','waverley-wood-crowns','waverley-tree-trunks'])assert.equal(names.filter(x=>x===n).length,1,n);
  assert.ok(scene.parts.buildings.getObjectByName('waverley-tree-crowns') instanceof THREE.InstancedMesh);
 });
+
+
+test('round 4: Waverley enables mapped slush and the visible Calton path reaches the real ground mask',()=>{
+ const m=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.Material;
+ assert.equal(m.userData.snowSlush,true,'Waverley alone opts into the road-paint correction');
+ const {texture,rect}=m.userData.snowMask,{width,height,data}=texture.image;
+ const at=(x:number,z:number)=>data[Math.floor((1-(z-rect.y)*rect.w)*height)*width+Math.floor((x-rect.x)*rect.z*width)]/255;
+ assert.ok(at(337,-285)<.4,'mapped 3 m path 32 m in front of the Calton eye has a trodden core');
+ assert.ok(at(345,-285)>.95,'snow stays on the grass beside that visible path');
+});

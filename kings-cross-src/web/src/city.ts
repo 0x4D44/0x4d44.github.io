@@ -153,6 +153,17 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     const acc = built.meshes[key];
     if (acc.triangleCount === 0) continue;
     const geometry = geometryOf(acc);
+    if (key === 'asphalt') {
+      // Core strips carry chainage/across UV metres. Each unshared triangle has
+      // vertices on both strip edges, so its largest v is the carriageway width.
+      const road = new Float32Array(acc.vertexCount * 3);
+      for (let i = 0; i < acc.vertexCount; i += 3) {
+        const width = Math.max(acc.uvs[i*2+1]!, acc.uvs[(i+1)*2+1]!, acc.uvs[(i+2)*2+1]!);
+        for (let j = i; j < i+3; j++) road.set([acc.uvs[j*2]!, acc.uvs[j*2+1]!, width], j*3);
+      }
+      geometry.setAttribute('snowRoad', new THREE.BufferAttribute(road, 3));
+      cityMaterial(key).userData.snowRoad = true;
+    }
     geometries.push(geometry);
     const mesh = new THREE.Mesh(geometry, cityMaterial(key));
     mesh.name = `city-${key}`;

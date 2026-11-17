@@ -23,18 +23,18 @@ function setup(meshName: string, materialName = '', m = new THREE.MeshLambertMat
   atmosphere.update({timeMs: Date.parse('2026-12-10T12:00:00Z'), weather: weatherState(forcedObservation('snow')), camera, target: new THREE.Vector3(), wallMs: 1000});
   return { m, mesh, scene, atmosphere, camera };
 }
-function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0], roofDetail = [2, 1], base = .2) {
+function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0], roofDetail = [2, 1], base = .2, eye = [0,0,0], roadDetail = [0,0,0]) {
   const s = compile(m), f = s.fragmentShader;
   assert.ok(f.includes('uniform float uSnowCover;'), `${m.name || 'custom surface'} receives snow`);
   // Prior roof shading can put unrelated headlamp arrays between the uniforms
   // and cover functions. Run the surface's actual uniforms and shared cover GLSL.
   const declarations = [...f.matchAll(/uniform (?:float|vec[234]|sampler2D) (?!uCover)\w+;/g)].map(m => m[0]).join('\n') + '\n' + COVER_GLSL + '\n' + (f.match(/float snowNoise\([\s\S]*?\n}/)?.[0] ?? '');
-  const code = f.slice(f.indexOf('float coverOpen'), f.indexOf(');', f.indexOf('diffuseColor.rgb = mix(')) + 2);
+  const code = f.slice(f.indexOf('float coverOpen'), f.indexOf('diffuseColor.a = mix('));
   const uniforms = Object.fromEntries(Object.entries(s.uniforms).map(([k, v]) => [k, toValue(v.value)]));
   uniforms.uSnowCover = snow; uniforms.uWet = wet;
   if (!covered) uniforms.uCoverRect = [0, 0, 0, 0];
-  const vars: Record<string, Value> = { ...uniforms, cameraPosition: [0, 0, 0], vViewPosition: point.map(n => -n), viewMatrix: toValue(new THREE.Matrix4()),
-    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], vSnowRoof: roofDetail, diffuseColor: [base, base, base, 1] };
+  const vars: Record<string, Value> = { ...uniforms, cameraPosition: eye, vViewPosition: point.map((n,i) => eye[i]! - n), viewMatrix: toValue(new THREE.Matrix4()),
+    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], vSnowRoof: roofDetail, vSnowRoad: roadDetail, diffuseColor: [base, base, base, 1] };
   const glsl = new Glsl(declarations);
   glsl.snippet(code)({vars, fns: {texture2D: (sampler, _uv) => {
     const texture = (sampler as Sampler).data;
@@ -360,4 +360,109 @@ test('land-use mask uses mapped road widths and water holes, with traffic roads 
     assert.ok(cap>242&&cap<255,'antialiased round cap reaches behind its endpoint');
     rounded.texture.dispose();retraced.texture.dispose();
   } finally {if(old)Object.defineProperty(globalThis,'document',old);else Reflect.deleteProperty(globalThis,'document');}
+});
+
+
+test('round 4: Princes Street uses wet grey slush on the actual dark road paint, preserving North Bridge', () => {
+  const m=new THREE.MeshLambertMaterial();m.userData.snowSlush=true;
+  m.userData.snowMask={texture:new THREE.DataTexture(new Uint8Array([20]),1,1,THREE.RedFormat),rect:new THREE.Vector4(-100,-200,.01,.01)};
+  const {atmosphere}=setup('waverley-ground-cover','',m);
+  const bridge=setup('waverley-bridge-decks','asphalt');
+  try {
+    const base=new THREE.Color('#3b3d3f').r;
+    const road=shade(m,1,.94,0,.08,true,false,[61.48,16.22,-150.93],[2,1],base);
+    assert.ok(road[0]!>.085&&road[0]!<.16,`slush reflects daylight without being black or pavement white: ${road}`);
+    assert.ok(road[2]!>road[0]!,'wet slush has a cool sky tint before receiving the scene lights');
+    assert.ok(shade(bridge.m,1)[0]!<.1,'North Bridge retains its accepted response');
+    for(const wet of [0,.3,1]) assert.equal(shade(m,1,0,wet,.08,true,false,[61.48,16,-151],[2,1],base)[0],base);
+    assert.equal(shade(m,0,.94,0,.08,true,false,[61.48,16,-151],[2,1],base)[0],base,'vertical faces do not gain slush');
+  } finally {atmosphere.dispose();bridge.atmosphere.dispose();}
+});
+
+test('round 4: the visible Calton path has a grey trodden core instead of white compacted snow', () => {
+  const m=new THREE.MeshLambertMaterial();m.userData.snowSlush=true;
+  m.userData.snowMask={texture:new THREE.DataTexture(new Uint8Array([82]),1,1,THREE.RedFormat),rect:new THREE.Vector4(300,-320,.01,.01)};
+  const {atmosphere}=setup('waverley-ground-cover','',m);
+  try {
+    const base=new THREE.Color('#5f5c56').r;
+    const at=(mask:number)=>shade(m,1,.94,0,mask,true,false,[337,-0,-285],[2,1],base)[0]!;
+    assert.ok(at(.32)<.14,`trodden earth/slush remains grey: ${at(.32)}`);
+    assert.ok(at(1)-at(.32)>.5,`the mapped line is clearly distinct from surrounding snow: ${at(1)}, ${at(.32)}`);
+  } finally {atmosphere.dispose();}
+});
+
+test('round 4: KX roads have aligned kerb slush and paired tyre tracks only in snow', () => {
+  const m=new THREE.MeshLambertMaterial();m.userData.snowRoad=true;
+  const {atmosphere}=setup('city-asphalt','city-asphalt',m);
+  try {
+    const at=(across:number,snow=.94)=>shade(m,1,snow,0,1,true,false,[-69.46,1.32,138.79],[2,1],.2,[0,0,0],[40,across,14])[0]!;
+    assert.ok(at(.25)-at(3.5-.7)>.08,'kerb slush is lighter than the wheel track');
+    assert.ok(at(3.5)-at(3.5-.7)>.01,'two wheel tracks flank each lane centre');
+    assert.equal(at(.25,0),.2);assert.equal(at(3.5-.7,0),.2);
+  } finally {atmosphere.dispose();}
+});
+
+test('round 4: metre-scale summit scour exposes grass and heather near the eye', () => {
+  const {m,atmosphere}=setup('perth-summit-ground');
+  try {
+    const values=Array.from({length:50},(_,i)=>shade(m,1,.94,0,1,true,false,[2350+i*.31,210,207+i%4],[2,1],.09,[2368,212.7,208])[0]!);
+    assert.ok(Math.max(...values)-Math.min(...values)>.22,'wind-scoured turf breaks up the flat foreground snowfield');
+    assert.ok(Math.min(...values)<.25,'some original vegetation shows through');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 4: distant farmland drift contrast fades instead of waving across the horizon', () => {
+  const {m,atmosphere}=setup('perth-main-apron');
+  try {
+    const range=(eye:number[])=>{const a=Array.from({length:30},(_,i)=>shade(m,1,.94,0,1,true,false,[2000+i*4,5,1000],[2,1],.2,eye)[0]!);return Math.max(...a)-Math.min(...a);};
+    assert.ok(range([0,100,0])<range([2050,20,1000])*.55,'far-field drifts have less than half the close contrast');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 4: opaque snow hides exterior concourse halos but keeps interior lamps and clear-weather halos', () => {
+  const scene=new THREE.Scene(),roof=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshLambertMaterial());
+  roof.rotation.x=-Math.PI/2;roof.position.y=12;roof.name='concourse-panels';scene.add(roof);
+  const atmosphere=createAtmosphere({scene,world:addWorld(scene,{grid:false}),sites:{platform:[],shed:[],concourse:[0,11.9,0]}});
+  const camera=new THREE.PerspectiveCamera();
+  const conditions=Object.fromEntries((['snow','clear','rain','fog'] as const).map(w=>[w,weatherState(forcedObservation(w))]));
+  const update=(weather:'snow'|'clear'|'rain'|'fog',y:number)=>{camera.position.set(0,y,0);camera.updateMatrixWorld(true);atmosphere.update({timeMs:Date.parse('2026-12-10T22:30:00Z'),weather:conditions[weather]!,camera,target:new THREE.Vector3(),wallMs:2000});return atmosphere.nightLights!.group.getObjectByName('lights-concourse')!.visible;};
+  try {
+    assert.equal(update('snow',25),false,'billboard halos cannot leak through the snowy dome to an exterior eye');
+    assert.equal(update('snow',3),true,'lamps still show from under the dome');
+    for(const weather of ['clear','rain','fog'] as const)assert.equal(update(weather,25),true,`${weather} keeps its original halo`);
+  } finally {atmosphere.dispose();roof.geometry.dispose();(roof.material as THREE.Material).dispose();}
+});
+
+
+test('round 4: canvas-free mapped roads keep longitudinal kerb slush and wheel tracks',async()=>{
+ const {snowLanduseMask}=await import('../src/snow.ts');
+ const road={width:14,line:[[0,10],[40,10]] as [number,number][],snow:.08,slush:true};
+ const mask=snowLanduseMask({extent:{x0:0,x1:40,z0:0,z1:20},roads:[road]},.5);
+ try {
+  const {data,width,height}=(mask.texture as THREE.DataTexture).image;
+  assert.ok(data instanceof Uint8Array,'the road profile retains one byte per texel');
+  const at=(x:number,z:number)=>data[(height-1-Math.floor(z/.5))*width+Math.floor(x/.5)]!/255;
+  assert.ok(at(20,3.25)>at(20,7.25)+.08,'kerb slush is retained beside the cleared wheel track');
+  assert.ok(at(20,6.75)>at(20,7.25)+.015,'wheel tracks follow the lane rather than isotropic noise');
+  assert.equal(at(10,7.25),at(30,7.25),'track alignment persists along the road');
+ } finally {mask.texture.dispose();}
+});
+
+
+test('round 4: Waverley roof snow scatters a bounded warm glow at night and none by day',()=>{
+ const {m,atmosphere,camera}=setup('waverley-mapped-roofs');
+ try {
+  const s=compile(m),f=s.fragmentShader;
+  assert.ok(s.uniforms.uSnowGlow,'the Waverley roof opts into diffuse interior transmission');
+  const start=f.indexOf('totalEmissiveRadiance *= 1.0 - snowHere'),end=f.indexOf(';',f.indexOf('totalEmissiveRadiance +=',start))+1;
+  const at=(time:string,snowHere:number)=>{
+   atmosphere.update({timeMs:Date.parse(time),weather:weatherState(forcedObservation('snow')),camera,target:new THREE.Vector3(),wallMs:2000});
+   const vars={totalEmissiveRadiance:[0,0,0],snowHere,uSnowGlow:toValue(s.uniforms.uSnowGlow!.value)};
+   new Glsl('').snippet(f.slice(start,end))({vars});return vars.totalEmissiveRadiance;
+  };
+  assert.deepEqual(at('2026-12-10T12:00:00Z',.8),[0,0,0]);
+  const night=at('2026-12-10T22:30:00Z',.8);
+  assert.ok(night[0]!>.005&&night[0]!<.02&&night[0]!>night[2]!, 'soft warm transmission, rather than white lamp dots');
+  assert.deepEqual(at('2026-12-10T22:30:00Z',0),[0,0,0]);
+ } finally {atmosphere.dispose();}
 });
