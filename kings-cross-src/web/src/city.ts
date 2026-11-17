@@ -192,7 +192,9 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
   // Two-metre receiver samples follow Euston Road's folded terrain and paving
   // joins; corner-only planes cut the sodium pool into a hard rectangle.
-  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8,poolFocus:.8,kxOptics:true} : {}) : null;
+  // Round-eight review: the road-aligned mask reduced the visible pool area
+  // without resolving road shape from overview. Restore the proven footprint.
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8,poolFocus:.8,kxOptics:true,poolRoadShape:false} : {}) : null;
   if (lights && wetSurface && stationBuilding(data)) {
     const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface);
     lampsLayer.group.add(front.group,amber.group);

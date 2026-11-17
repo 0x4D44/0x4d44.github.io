@@ -84,9 +84,19 @@ reflectedLight.indirectDiffuse *= midlandFill;
 reflectedLight.directDiffuse *= midlandFill;
 ${key === 'brickRed' ? 'totalEmissiveRadiance *= mix( 1.0, 0.05, midlandLevel * midlandUpper );' : ''}
 totalEmissiveRadiance += vec3( 0.38, 0.24, 0.085 ) * midlandLevel * vMidlandNight.y;
-// midland-night-end`);
+// midland-night-end${key==='brickRed'?`
+// midland-brick-floor-begin
+// Keep the texture's brick colour in the upper piers and tower. The strong
+// arcade falloff stays; the high brick needs a weak independent uplight floor
+// after its diffuse and FLOOD terms have been dimmed. Lower bays receive a
+// warmer wash than the tower, with a smooth transition above the top storey.
+float midlandTower = smoothstep(21.0,26.0,vMidlandHeight);
+float midlandBrickBeam = FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vMidlandHeight,0.0)/FLOOD.y))*mix(0.95+0.25*smoothstep(16.0,19.0,vMidlandHeight),0.60,midlandTower);
+vec3 midlandBrickTint = mix(vec3(1.0,2.0,0.85),vec3(1.0,1.20,0.40),midlandTower);
+totalEmissiveRadiance = max(totalEmissiveRadiance,diffuseColor.rgb*midlandBrickTint*midlandBrickBeam*midlandLevel*midlandUpper);
+// midland-brick-floor-end`:''}`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v2-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v3-${key}-${base.toFixed(6)}`;
   }
 }
 

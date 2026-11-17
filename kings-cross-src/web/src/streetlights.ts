@@ -174,6 +174,8 @@ export interface StreetLightOptions {
   mastHaze?: boolean;
   /** KX-only broad mast air glow, directional pool core and rough wet streaks. */
   kxOptics?: boolean;
+  /** A caller can retain the original full radial footprint after review. */
+  poolRoadShape?: boolean;
   /** Tapered, irregular wet streaks without changing the pool or clear head. */
   roughReflections?: boolean;
   /** KX window/lamp emission has a longer fog tail than opaque surfaces. */
@@ -288,7 +290,8 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const poolGeometry = new THREE.PlaneGeometry(1, 1, poolSegments, poolSegments).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
   if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
-  if (options.kxOptics) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
+  const roadPoolShape=!!options.kxOptics&&options.poolRoadShape!==false;
+  if (roadPoolShape) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -323,7 +326,7 @@ gl_Position = projectionMatrix*mvPosition;
         body+='\n// pool-receiver-mask-begin\ngl_FragColor.a *= lampReceiver(vPoolWorld.xz).y;\n// pool-receiver-mask-end';
       }
       if (options.analyticPool) {
-        const roadShape = options.kxOptics ? `
+        const roadShape = roadPoolShape ? `
 // pool-road-shape-begin
 // Lamp arms point across the road. Shape the existing analytic profile
 // along the road tangent, retaining its bounded head peak and soft edge.
@@ -334,7 +337,7 @@ float roadAcross=dot(roadPoolUv,vec2(-poolRoadDirection.y,poolRoadDirection.x));
 vPoolUv=0.5+0.5*vec2(roadAlong,1.8*roadAcross);
 ${options.poolLineAt?'}':''}
 // pool-road-shape-end` : '';
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${options.kxOptics ? '\nattribute vec2 poolRoadDirection;' : ''}\nvarying vec2 vPoolUv;`)
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${roadPoolShape ? '\nattribute vec2 poolRoadDirection;' : ''}\nvarying vec2 vPoolUv;`)
           .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}`);
         declarations += '\nvarying vec2 vPoolUv;';
         if (options.poolLineAt) {
@@ -372,7 +375,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}`;
   }
   pools.name = 'street-lamp-pools';
   poolEntries.forEach(({spot,index}, i) => {
