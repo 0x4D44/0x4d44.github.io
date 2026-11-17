@@ -14,6 +14,7 @@ import type { NightLayer } from './night.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
+import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { createLampWeather, fadeLightInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
@@ -139,6 +140,12 @@ export interface StreetLightOptions {
   poolLiftAt?: (spot: LampSpot, index: number) => number;
   /** Evaluate the radial profile per fragment, without grazing-angle mip blur. */
   analyticPool?: boolean;
+  /** Broaden a pool's lit centre independently of its bounded peak/reach. */
+  poolFocus?: number;
+  /** Keep distant head cores without allocating unseen pools on distant roads. */
+  poolAt?: (spot:LampSpot,index:number)=>boolean;
+  /** Drape urban pools onto the same physical paving as their reflections. */
+  poolSurface?: LampWetSurface;
   /** Clip raised platform light to the physical platforms instead of the tracks. */
   poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
   /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
@@ -151,6 +158,8 @@ export interface StreetLightOptions {
   reflectionReach?: number;
   /** Actual urban road/paving receiver heights and wet footprint. */
   reflectionSurface?: LampWetSurface;
+  /** Urban puddles form long, narrow streaks with irregular soft breaks. */
+  reflectionBroken?: boolean;
   haloSize?: number;
   /** Relative head diameter, e.g. the forecourt's blazing LED strips. */
   haloScaleAt?: (spot:LampSpot)=>number;
@@ -245,14 +254,15 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   }
 
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
+  const poolEntries=spots.flatMap((spot,index)=>options.poolAt?.(spot,index)===false?[]:[{spot,index}]);
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
-  if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolLineAt!(s,i)))),1));
+  if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
+  if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
-  const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
+  const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, poolEntries.length);
   pools.raycast = (): void => {};
   if (options.fog) fadeLightInFog(poolMaterial, bounded);
   if (options.poolFloor || options.poolWeather || options.analyticPool) {
@@ -267,6 +277,19 @@ poolWorld = instanceMatrix * poolWorld;
 #endif
 vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
       let declarations = 'varying vec3 vPoolWorld;', body = '';
+      if(options.poolSurface){
+        Object.assign(shader.uniforms,{uLampSurface:{value:options.poolSurface.map},uLampSurfaceRect:{value:options.poolSurface.rect}});
+        shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\n${LAMP_RECEIVER_GLSL}`)
+          .replace('#include <logdepthbuf_vertex>',`// pool-receiver-begin
+vec2 poolReceiver = lampReceiver(vPoolWorld.xz);
+if (poolReceiver.y > 0.001) vPoolWorld.y = poolReceiver.x+0.025;
+// pool-receiver-end
+mvPosition = viewMatrix*vec4(vPoolWorld,1.0);
+gl_Position = projectionMatrix*mvPosition;
+#include <logdepthbuf_vertex>`);
+        declarations+=`\n${LAMP_RECEIVER_GLSL}`;
+        body+='\n// pool-receiver-mask-begin\ngl_FragColor.a *= lampReceiver(vPoolWorld.xz).y;\n// pool-receiver-mask-end';
+      }
       if (options.analyticPool) {
         shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
           .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
@@ -279,9 +302,9 @@ vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
         body += `
 // pool-profile-begin
 float poolR = length( 2.0 * vPoolUv - 1.0 );
-${options.poolLineAt ? `float poolProfile = pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
+${options.poolLineAt ? `float poolProfile = pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
 poolProfile = mix( poolProfile, exp(-1.8*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-2.5*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(.65,1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(.55,1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
-gl_FragColor.a *= poolProfile;` : 'gl_FragColor.a *= pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );'}
+gl_FragColor.a *= poolProfile;` : `gl_FragColor.a *= pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );`}
 // pool-profile-end`;
       }
       if (options.poolFloor) {
@@ -306,16 +329,16 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}`;
   }
   pools.name = 'street-lamp-pools';
-  spots.forEach((spot, i) => {
+  poolEntries.forEach(({spot,index}, i) => {
     const [x, , z] = headAt(spot);
-    const r = 2 * (options.poolRadiusAt?.(spot, i) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
-    const size = options.poolSizeAt?.(spot,i), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
+    const r = 2 * (options.poolRadiusAt?.(spot, index) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
+    const size = options.poolSizeAt?.(spot,index), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
-    matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,i) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
+    matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,index) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
     const light = LAMP_LIGHT[spot.kind];
     pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
@@ -326,8 +349,8 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.frustumCulled = false;
   pools.renderOrder = 4;
   group.add(pools);
-  const weather = options.weatherEffects && n ? createLampWeather(pools, spots.flatMap(s=>headAt(s)), halos, options.poolFloor,
-    spots.flatMap((s,i)=>options.reflectionAt?.(s,i) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface) : undefined;
+  const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken) : undefined;
   if (weather) group.add(weather.group);
 
   return {
@@ -340,7 +363,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
       weather?.setLevel(l);
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
+    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
     dispose() {
       weather?.dispose();
       for (const g of geometries) g.dispose();

@@ -10,6 +10,30 @@ export interface LampWetSurface {
   dispose():void;
 }
 
+export const LAMP_RECEIVER_GLSL=`uniform sampler2D uLampSurface;
+uniform vec4 uLampSurfaceRect;
+vec2 lampReceiver(vec2 p) {
+  vec2 uv = (p-uLampSurfaceRect.xy)*uLampSurfaceRect.zw;
+  vec4 texel = texture2D(uLampSurface,uv);
+  float inside = step(0.0,uv.x)*step(uv.x,1.0)*step(0.0,uv.y)*step(uv.y,1.0);
+  return vec2((texel.r*65280.0+texel.g*255.0)/128.0-128.0,texel.b*inside);
+}`;
+
+/** The same bilinear read used by the GPU, for a few station fixture anchors. */
+export function lampSurfaceAt(surface:LampWetSurface,x:number,z:number):readonly [number,number] {
+  const {map,rect}=surface,{width,height,data}=map.image;
+  if(!data)return [0,0];
+  const u=(x-rect.x)*rect.z,v=(z-rect.y)*rect.w;
+  if(u<0||u>1||v<0||v>1)return [0,0];
+  const px=u*width-.5,pz=v*height-.5,ix=Math.floor(px),iz=Math.floor(pz),fx=px-ix,fz=pz-iz;
+  let y=0,weight=0;
+  for(const [dx,wx]of [[0,1-fx],[1,fx]])for(const [dz,wz]of [[0,1-fz],[1,fz]]){
+    const k=(Math.max(0,Math.min(height-1,iz+dz!))*width+Math.max(0,Math.min(width-1,ix+dx!)))*4,w=wx!*wz!;
+    y+=((Number(data[k])*256+Number(data[k+1]))/128-128)*w;weight+=Number(data[k+2])/255*w;
+  }
+  return [y,weight];
+}
+
 /** RG stores height at 1/128 m, biased by 128 m; B is the wet receiver mask.
  * The ordinary byte texture is linearly filterable on every supported GPU. */
 export function createLampWetSurface(root:THREE.Object3D,names:ReadonlySet<string>,spots:readonly LampSpot[],

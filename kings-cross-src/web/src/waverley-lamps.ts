@@ -9,14 +9,15 @@ import type { Height, RoadClass } from '../../core/city.ts';
 import { hash01, SegmentGrid } from '../../core/city.ts';
 import type { Pt } from '../../core/geo.ts';
 import { pointInPolygon } from '../../core/station.ts';
-import { decodeLampRoads, lampSpots } from '../../core/streetlights.ts';
+import { decodeLampRoads, lampSpots, LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampRoad, LampRoadsFile, LampRun, LampSpot } from '../../core/streetlights.ts';
 import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import type { WaverleyScene } from '../../core/waverley-data.ts';
 import type * as THREE from 'three';
-import { createLampWetSurface } from './lamp-wet-surface.ts';
+import { createLampWetSurface, lampSurfaceAt } from './lamp-wet-surface.ts';
+import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
@@ -131,6 +132,32 @@ export function waverleyLampSpots(file: LampRoadsFile, ground: (x: number, z: nu
   });
 }
 
+/** Night-only fittings on the drawn North Bridge kerbs and the station's
+ * Market Street approach. OSM plan; pitch/height are assumed from R-nw-f. */
+async function approachSpots(root:THREE.Object3D,surface:LampWetSurface,existing:readonly LampSpot[]):Promise<LampSpot[]> {
+  const out:LampSpot[]=[];
+  const add=(x:number,z:number,yaw:number)=>{
+    if(existing.some(s=>Math.hypot(s.x-x,s.z-z)<7))return;
+    const [y,mask]=lampSurfaceAt(surface,x,z);if(mask<.9)return;
+    const dx=lampSurfaceAt(surface,x+1,z)[0]-lampSurfaceAt(surface,x-1,z)[0];
+    const dz=lampSurfaceAt(surface,x,z+1)[0]-lampSurfaceAt(surface,x,z-1)[0];
+    out.push({x,z,y:y+.025,yaw,height:8,kind:LAMP_KIND.sodium,slope:[dx/2,dz/2]});
+  };
+  const frame=root.getObjectByName('waverley-frontage')?.userData.frontage?.northBridge.frame as {length:number;at:(s:number,t:number)=>Pt}|undefined;
+  if(!frame)return out;
+  for(let s=18;s<frame.length-12;s+=30)for(const side of [.07,.93]){
+    const p=frame.at(s,side),q=frame.at(s,.5);add(...p,Math.atan2(-(q[1]-p[1]),q[0]-p[0]));
+  }
+  const roads=await import('./data/waverley-roads.json',{with:{type:'json'}});
+  for(const road of roads.default.roads){
+    if(road.name!=='Market Street'||road.path.every(p=>p[0]!<-110))continue;
+    const line=road.path.map(p=>[p[0]!,p[1]!] as Pt);
+    const run: LampRun={id:0,cls:'tertiary',line,half:4.25,y:(x,z)=>lampSurfaceAt(surface,x,z)[0],rule:{height:8,spacing:28,sides:'alternate'}};
+    for(const spot of lampSpots([run],{rand:hash01,modern:()=>false,blocked:()=>false}))add(spot.x,spot.z,spot.yaw);
+  }
+  return out;
+}
+
 /**
  * Load the Scottish street lamps: the roads, the building outlines (the scene's own OSM data, already loaded by the model) and the context DTM, each a lazy chunk, and the lamps they make. `drawn` is
  * the ground as the scene draws it. Resolves to the lamps' layer (a post to each, a glow at its head and a pool under it: web/src/streetlights.ts), not yet in any scene.
@@ -149,6 +176,12 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   for(const road of decodeLampRoads(file)) for(let i=1;i<road.line.length;i++)roadMask.add({a:road.line[i-1]!,b:road.line[i]!,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+1.5});
   const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground-cover','waverley-bridge-decks']),spots,
     (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
-  const layer=createStreetLights(spots,nightEffects?urbanLampOptions(surface):{});
-  return {...layer,dispose(){layer.dispose();surface?.dispose();}};
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<650,reflectionAt:s=>Math.hypot(s.x,s.z)<600}:{});
+  const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
+  const rows=rowSpots.length?createStreetLights(rowSpots,urbanLampOptions(surface)):undefined;
+  if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
+  return {...layer,
+    setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},
+    counts(){const a=layer.counts(),b=rows?.counts();return b?{lamps:a.lamps+b.lamps,triangles:a.triangles+b.triangles,draws:a.draws+b.draws}:a;},
+    dispose(){rows?.group.removeFromParent();rows?.dispose();layer.dispose();surface?.dispose();}};
 }

@@ -2,6 +2,7 @@
 // finite wet-surface footprint; Perth retains its existing rendering path.
 import * as THREE from 'three';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
+import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 
@@ -20,7 +21,7 @@ export function fadeLightInFog(material: THREE.Material, alpha = false): void {
  * The narrow cross-section and soft length suggest rough wet paving rather
  * than a second diffuse light pool. No real lights or frame-time raycasts. */
 export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly number[], halos: THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>,
-  floor: {map:THREE.Texture;rect:THREE.Vector4}|undefined, indices: readonly number[], reach?:number, surface?:LampWetSurface) {
+  floor: {map:THREE.Texture;rect:THREE.Vector4}|undefined, indices: readonly number[], reach?:number, surface?:LampWetSurface, broken=false) {
   const group=new THREE.Group();group.name='street-lamp-weather';
   const geometry=pools.geometry.clone();
   geometry.setAttribute('reflectionHead',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>heads.slice(i*3,i*3+3))),3));
@@ -30,14 +31,7 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
     polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
   fadeLightInFog(material,true);
   const before=material.onBeforeCompile;
-  const surfaceGLSL=surface?`uniform sampler2D uLampSurface;
-uniform vec4 uLampSurfaceRect;
-vec2 lampReceiver(vec2 p) {
-  vec2 uv = (p-uLampSurfaceRect.xy)*uLampSurfaceRect.zw;
-  vec4 texel = texture2D(uLampSurface,uv);
-  float inside = step(0.0,uv.x)*step(uv.x,1.0)*step(0.0,uv.y)*step(uv.y,1.0);
-  return vec2((texel.r*65280.0+texel.g*255.0)/128.0-128.0,texel.b*inside);
-}`:'';
+  const surfaceGLSL=surface?LAMP_RECEIVER_GLSL:'';
   // Assemble the optional urban optics with the original hook. Only match
   // three's include lines, so production GLSL squeezing cannot lose a patch.
   const receiverCommon=surface?`\n${surfaceGLSL}`:'';
@@ -80,10 +74,15 @@ along -= lampNormal * dot( along, lampNormal );
 along = normalize( along + vec3( 0.00001, 0.0, 0.00001 ) );
 vec3 across = normalize( vec3( lampNormal.y * along.z - lampNormal.z * along.y, lampNormal.z * along.x - lampNormal.x * along.z, lampNormal.x * along.y - lampNormal.y * along.x ) );
 float lampHeight = max( 1.0, dot( lampHead - lampBase, lampNormal ) );
-float streakLength = min( 12.0, 1.5 + 0.8 * lampHeight + 0.08 * length( cameraPosition - reflectionCentre ) );
+float streakLength = min( 12.0, 1.5 + 0.8 * lampHeight + 0.08 * length( cameraPosition - reflectionCentre ) );${broken?`
+float streakWidth = 0.45;
+// reflection-urban-shape-begin
+streakLength = min(32.0,12.0+lampHeight+0.08*length(cameraPosition-reflectionCentre));
+streakWidth = 0.30+0.02*min(lampHeight,12.0);
+// reflection-urban-shape-end`:''}
 vReflectionUv = position.xz * 2.0;
 vReflectionFloor = poolFloorWeight;
-vReflectionWorld = reflectionCentre + across * position.x * ( 0.45 + 0.05 * lampHeight ) + along * position.z * streakLength;
+vReflectionWorld = reflectionCentre + across * position.x * ${broken?'streakWidth':'( 0.45 + 0.05 * lampHeight )'} + along * position.z * streakLength;
 ${surface?`// reflection-receiver-vertex-begin
 vec2 vertexReceiver = lampReceiver(vReflectionWorld.xz);
 if (vertexReceiver.y > 0.001) vReflectionWorld.y = vertexReceiver.x + 0.012;
@@ -121,9 +120,14 @@ gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * st
 // reflection-alpha-end${reach!==undefined?`
 // reflection-edge-begin
 gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothstep(0.65,1.0,abs(vReflectionUv.y)));
-// reflection-edge-end`:''}`);
+// reflection-edge-end`:''}${broken?`
+// reflection-breakup-begin
+float seed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
+float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
+gl_FragColor.a *= 0.08+0.92*smoothstep(0.15,0.8,puddles);
+// reflection-breakup-end`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
   indices.forEach((source,i)=>{pools.getMatrixAt(source,matrix);reflections.setMatrixAt(i,matrix);if(pools.instanceColor){pools.getColorAt(source,colour);reflections.setColorAt(i,colour.multiplyScalar(2.5));}});

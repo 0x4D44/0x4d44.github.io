@@ -26,18 +26,18 @@ function floorMask(rings: readonly (readonly Pt[])[]): {map: THREE.DataTexture; 
 }
 
 /** Heads are the same positions used by the visible fittings/pendants, metres. */
-export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number): StreetLights {
+export function createPlatformLamps(heads: readonly number[], rings: readonly (readonly Pt[])[], floorY: number, station:'kx'|'wv'='kx'): StreetLights {
   const spots: LampSpot[] = [];
   for (let i=0;i<heads.length;i+=3) spots.push({x:heads[i]!,y:floorY,z:heads[i+2]!,height:heads[i+1]!-floorY,yaw:0,kind:LAMP_KIND.cool,slope:[0,0]});
   const radii = spots.map((s,i) => {
     let spacing = Infinity;
     spots.forEach((q,j) => { const d=Math.hypot(s.x-q.x,s.z-q.z); if(i!==j && d>3) spacing=Math.min(spacing,d); });
-    return Math.min(8,.58*spacing);
+    return station==='kx'?Math.min(10,.6*spacing):Math.min(8,.58*spacing);
   });
   const floor = floorMask(rings);
   const layer = createStreetLights(spots, {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     analyticPool:true,poolCeiling:.20,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
-    poolWeather:true,weatherEffects:true,haloSize:3.2,coreSize:1.5,reflectionReach:8});
+    poolWeather:true,weatherEffects:true,haloSize:3.2,coreSize:1.5,reflectionReach:8,poolFocus:station==='kx'?1.4:undefined});
   layer.group.name='station-platform-lamps';
   return {...layer,dispose(){layer.dispose();floor?.map.dispose();layer.group.removeFromParent();}};
 }
@@ -45,7 +45,7 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
 /** Nearby urban heads only: no reflective quads over the wider countryside.
  * Existing inferred street positions and sodium/LED kinds are retained. */
 export function urbanLampOptions(surface?:LampWetSurface): StreetLightOptions {
-  return {fog:true,analyticPool:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:2.6,haloScaleAt:s=>s.mast?2:1,reflectionReach:8,reflectionSurface:surface,
+  return {fog:true,analyticPool:true,poolCeiling:.20,poolFocus:1.4,poolSurface:surface,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:2.6,haloScaleAt:s=>s.mast?2:1,reflectionReach:96,reflectionSurface:surface,reflectionBroken:true,
     headAt:s=>s.mast?[s.x,s.y+(MAST_STRIP[0]+MAST_STRIP[1])/2,s.z]:headOf(s),
     poolRadiusAt:()=>8,
     poolSizeAt:s=>s.mast?[12,2.8]:undefined,
