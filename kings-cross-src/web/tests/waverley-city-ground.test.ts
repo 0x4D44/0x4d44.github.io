@@ -17,6 +17,32 @@ const scene=buildWaverleyScene({lighting:false});
 const pip=(x:number,z:number,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 test.after(()=>scene.dispose());
 
+test('the drawn snow mask separates Princes Street pavement and carriageway and keeps the Calton Hill path readable',()=>{
+ const mask=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+ const {texture,rect}=mask.userData.snowMask,{width,height,data}=texture.image;
+ assert.ok(texture instanceof THREE.DataTexture&&data instanceof Uint8Array);
+ const at=(x:number,z:number):number=>{
+  const px=(x-rect.x)*rect.z*width-.5,py=(1-(z-rect.y)*rect.w)*height-.5,i=Math.floor(px),j=Math.floor(py),fx=px-i,fy=py-j;
+  const p=(a:number,b:number)=>data[Math.max(0,Math.min(height-1,b))*width+Math.max(0,Math.min(width-1,a))]/255;
+  return (p(i,j)*(1-fx)+p(i+1,j)*fx)*(1-fy)+(p(i,j+1)*(1-fx)+p(i+1,j+1)*fx)*fy;
+ };
+ assert.ok(at(-565,43)<.1,'Princes Street carriageway is cleared');
+ assert.ok(at(-600,30)>.95,'paving beside Princes Street keeps snow');
+ assert.ok(at(376,-303)>.35&&at(376,-303)<.7,'Calton Hill path is compacted snow, distinct from the untouched hillside');
+});
+
+test('snow roof metadata follows the real city roofs: eave height, block variation and no extra geometry',()=>{
+ const roof=scene.group.getObjectByName('waverley-building-tops') as THREE.Mesh;
+ const detail=roof.geometry.getAttribute('snowRoof'),P=roof.geometry.getAttribute('position');
+ assert.ok(detail,'the actual roof batch carries snow height above its own eave and per-block retention');
+ assert.equal(detail.count,P.count);assert.equal(detail.itemSize,2);
+ assert.equal((roof.material as THREE.Material).userData.snowRoof,true);
+ let eaves=0,upper=0,min=1,max=0;
+ for(let i=0;i<detail.count;i++){if(Math.abs(detail.getX(i))<.01)eaves++;if(detail.getX(i)>1)upper++;min=Math.min(min,detail.getY(i));max=Math.max(max,detail.getY(i));}
+ assert.ok(eaves>100&&upper>100,'the roof batch has both real eave edges and upper faces');
+ assert.ok(max-min>.15,'snow retention varies between neighbouring blocks');
+});
+
 test('the gardens are OSM land use: both Princes Street Gardens and Calton Hill are mapped green, with paths and trees',()=>{
  const green=[...LANDUSE.areas.park,...LANDUSE.areas.grass,...LANDUSE.areas.garden];
  const inGreen=(x:number,z:number)=>green.some(([o,...h])=>pip(x,z,o)&&!h.some(r=>pip(x,z,r)));

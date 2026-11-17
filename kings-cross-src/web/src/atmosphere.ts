@@ -93,6 +93,7 @@ export const surfaceUniforms = { wet: { value: 0 }, fog: { value: 0 }, snowCover
  * the first's `onBeforeCompile`, and with it the roof shade that lighting.ts layers on top, while the material's cache key still claimed it.
  */
 const wetPatched = new WeakSet<THREE.Material>();
+const snowDepthBuilt = new WeakMap<THREE.Material, boolean>();
 
 /**
  * Add wetness and snow to a Lambert surface in its own shader: after the texture and colours are applied the surface darkens
@@ -104,6 +105,9 @@ const wetPatched = new WeakSet<THREE.Material>();
  */
 function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial, spec: SurfaceWeather): void {
   const mask = material.userData.snowMask as SnowMask | undefined;
+  const roofDetail = material.userData.snowRoof === true;
+  // Natural ground has prior field/texture colour hooks. Snow replaces their
+  // pigment after those hooks, before lighting; otherwise snowy fields stay green.
   const own = { uDark: { value: spec.dark }, uSheenK: { value: spec.sheen }, uSnowK: { value: spec.snow }, uSnowTraffic: { value: spec.traffic ?? 0 } };
   const before = material.onBeforeCompile, key = material.customProgramCacheKey();
   material.onBeforeCompile = (shader, renderer) => {
@@ -115,24 +119,11 @@ function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMater
     Object.assign(shader.uniforms, coverUniforms, own);
     if (mask) Object.assign(shader.uniforms, { uSnowMask: { value: mask.texture }, uSnowMaskRect: { value: mask.rect } });
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vSnowNormal;')
-      .replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );');
+      .replace('#include <common>', `#include <common>\nvarying vec3 vSnowNormal;${roofDetail ? '\nattribute vec2 snowRoof;\nvarying vec2 vSnowRoof;' : ''}`)
+      .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );${roofDetail ? '\nvSnowRoof = snowRoof;' : ''}`);
     // A late landmark may reuse a material the first scan already shaded.
     const cover = shader.fragmentShader.includes('float coverGroundAt') ? '' : COVER_GLSL;
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
-uniform float uWet;
-uniform float uSnowCover;
-uniform vec3 uSheen;
-uniform vec3 uSnowColour;
-uniform float uDark;
-uniform float uSheenK;
-uniform float uSnowK;
-uniform float uSnowTraffic;
-varying vec3 vSnowNormal;
-${mask ? 'uniform sampler2D uSnowMask;\nuniform vec4 uSnowMaskRect;' : ''}
-${cover}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+    const surfaceCode = `
 float coverOpen = 1.0;
 if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );
 float snowUp = smoothstep( 0.35, 0.8, normalize( vSnowNormal ).y );
@@ -148,27 +139,56 @@ ${spec.roof ? `if ( uSnowCover > 0.001 && snowUp > 0.0 && uCoverRect.z > 0.0 ) {
 }` : ''}
 float snowRetention = 1.0;
 float snowTraffic = uSnowTraffic;
+vec3 snowAlbedo = uSnowColour;
+${spec.detail ? `if ( uSnowCover > 0.001 ) {
+  vec3 snowPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  float drift = 0.5 + 0.5 * sin( snowPlace.x * 0.071 + sin( snowPlace.z * 0.043 ) * 2.0 );
+  float grain = sin( snowPlace.x * 3.1 + snowPlace.z * 1.7 ) * ( 1.0 - smoothstep( 40.0, 220.0, length( vViewPosition ) ) );
+  snowAlbedo *= 0.90 + 0.10 * drift + 0.035 * grain;
+  ${spec.detail === 'ground' ? `snowRetention *= ( 0.68 + 0.32 * drift ) * mix( 0.2, 1.0, smoothstep( 0.55, 0.95, normalize( vSnowNormal ).y ) );` :
+    spec.detail === 'foliage' ? 'snowRetention *= 0.3 + 0.25 * drift;' :
+    'snowRetention *= ( 0.9 + 0.1 * drift ) * mix( 0.55, 1.0, smoothstep( 0.55, 0.98, normalize( vSnowNormal ).y ) );'}
+}` : ''}
+${roofDetail ? 'snowRetention *= vSnowRoof.y * mix( 0.55, 1.0, smoothstep( 0.1, 0.55, vSnowRoof.x ) );' : ''}
 ${mask ? `if ( uSnowCover > 0.001 ) {
   vec3 snowWorld = cameraPosition - vViewPosition * mat3( viewMatrix );
   vec2 snowUv = ( snowWorld.xz - uSnowMaskRect.xy ) * uSnowMaskRect.zw;
-  snowRetention = texture2D( uSnowMask, vec2( snowUv.x, 1.0 - snowUv.y ) ).r;
-  snowTraffic = ( 1.0 - snowRetention ) * step( 0.001, snowRetention );
+  float mappedSnow = texture2D( uSnowMask, vec2( snowUv.x, 1.0 - snowUv.y ) ).r;
+  snowRetention *= mappedSnow;
+  snowTraffic = ( 1.0 - mappedSnow ) * step( 0.001, mappedSnow );
 }` : ''}
 float wetHere = uWet * coverOpen;
 ${spec.snowOnly ? 'wetHere *= step( 0.001, uSnowCover );' : ''}
 wetHere = max( wetHere, 0.85 * uSnowCover * coverOpen * snowTraffic * snowUp );
 diffuseColor.rgb *= 1.0 - uDark * wetHere;
+diffuseColor.rgb *= 1.0 - 0.3 * uSnowCover * snowTraffic * step( 0.8, snowTraffic ) * coverOpen * snowUp;
 float snowHere = min( 1.0, 0.85 * uSnowCover * snowOpen * uSnowK * snowUp * snowRetention );
-diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour, snowHere );
-diffuseColor.a = mix( diffuseColor.a, 1.0, min( 1.0, snowHere * 1.25 ) );`)
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;')
+diffuseColor.rgb = mix( diffuseColor.rgb, ${spec.detail ? 'snowAlbedo' : 'uSnowColour'}, snowHere );
+diffuseColor.a = mix( diffuseColor.a, 1.0, min( 1.0, snowHere * 1.25 ) );
+`;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform float uWet;
+uniform float uSnowCover;
+uniform vec3 uSheen;
+uniform vec3 uSnowColour;
+uniform float uDark;
+uniform float uSheenK;
+uniform float uSnowK;
+uniform float uSnowTraffic;
+varying vec3 vSnowNormal;
+${roofDetail ? 'varying vec2 vSnowRoof;' : ''}
+${mask ? 'uniform sampler2D uSnowMask;\nuniform vec4 uSnowMaskRect;' : ''}
+${cover}`)
+      .replace('#include <color_fragment>', '#include <color_fragment>' + (spec.detail ? '' : surfaceCode))
+      .replace('#include <emissivemap_fragment>', (spec.detail ? surfaceCode : '') + '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;')
       .replace('#include <opaque_fragment>', `{
   float wetFresnel = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 3.0 );
   outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel );
 }
 #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}`;
+  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}`;
   material.needsUpdate = true;
 }
 
@@ -335,6 +355,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   world.sky.add(sunSprite, stars);
 
   // ---- surfaces that get wet, and stand-ins for daylight --------------------------------------------------
+  const snowDepth = new Map<THREE.Material, boolean>();
   const standIns = new Map<Emissive, THREE.Color>();
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
   // the concourse's soffit is unlit (a lit underside would be black under the sun), so no light dims it: it follows the camera's exposure instead, the one thing that moves its pixels
@@ -366,6 +387,10 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         const lambert = m as THREE.MeshLambertMaterial;
         const extra = snowSurface(mesh.name, m.name);
         const spec = extra ?? SURFACES.get(m.name);
+        if (extra?.roof && m.transparent && (lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && !snowDepth.has(m)) {
+          if (!snowDepthBuilt.has(m)) snowDepthBuilt.set(m, m.depthWrite);
+          snowDepth.set(m, snowDepthBuilt.get(m)!);
+        }
         if (spec && (lambert.isMeshLambertMaterial || (extra && (m as THREE.MeshPhongMaterial).isMeshPhongMaterial)) && !wetPatched.has(m)) {
           wetPatched.add(m);
           patchSurface(lambert, spec);
@@ -491,6 +516,9 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     surfaceUniforms.wet.value = weather.wet;
     surfaceUniforms.fog.value = rig.fogAmount;
     surfaceUniforms.snowCover.value = weather.snowCover;
+    // Snow is opaque even when the glazing beneath it is transparent. Its depth
+    // must stop the additive shed lamps drawn later; clear/rain keep the original.
+    for (const [m, original] of snowDepth) m.depthWrite = original || weather.snowCover > .5;
   };
 
   return {
@@ -523,6 +551,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         snow: state.weather.snow, windMs: state.weather.windMs, daylight: state.rig.daylight });
     },
     dispose() {
+      for (const [m, original] of snowDepth) m.depthWrite = original;
       applyCover(null);
       precip.dispose();
       dialLights?.dispose();

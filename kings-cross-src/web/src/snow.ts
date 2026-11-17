@@ -6,16 +6,18 @@ import { ROOF_MESHES } from './cover.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
 
-export interface SurfaceWeather { dark: number; sheen: number; snow: number; traffic?: number; roof?: boolean; snowOnly?: boolean }
+export interface SurfaceWeather { dark: number; sheen: number; snow: number; traffic?: number; roof?: boolean; snowOnly?: boolean; detail?: 'ground' | 'foliage' | 'roof' }
 export interface SnowMask { texture: THREE.Texture; rect: THREE.Vector4 }
 const open: SurfaceWeather = {dark: .35, sheen: .1, snow: 1, snowOnly: true};
 const roof: SurfaceWeather = {dark: 0, sheen: 0, snow: 1.15, roof: true};
 const road: SurfaceWeather = {dark: .42, sheen: 1, snow: .08, traffic: 1};
-const roofs = new Set([...ROOF_MESHES, 'city-roof', 'perth-west-roofs', 'waverley-central-block-top',
-  'perth-island-building-top', 'waverley-roof-strips', 'perth-roof-strips', 'waverley-steps-canopy']);
+const roofs = new Set([...ROOF_MESHES, 'city-roof', 'waverley-central-block-top',
+  'perth-island-building-top', 'waverley-roof-strips', 'perth-roof-strips', 'waverley-steps-canopy',
+  'landmarks-shedSlate', 'concourse-cladding', 'concourse-glass-top']);
+const landscape = new Set(['perth-east-ground', 'perth-main-apron', 'perth-west-ground', 'perth-summit-ground', 'perth-kinnoull-crag', 'perth-west-ground-cover']);
+const foliage = new Set(['perth-summit-gorse', 'perth-kinnoull-canopy', 'perth-east-bank-trees']);
 const paving = new Set(['waverley-platform-surfaces', 'perth-platform-ramps', 'perth-forecourt',
-  'perth-forecourt-setts', 'perth-forecourt-markings', 'waverley-ground-cover', 'perth-west-ground-cover', 'perth-west-ground', 'perth-summit-ground',
-  'perth-kinnoull-crag', 'perth-kinnoull-canopy', 'perth-summit-gorse', 'city-trees', 'kxcentral-trees',
+  'perth-forecourt-setts', 'perth-forecourt-markings', 'waverley-ground-cover', 'city-trees', 'kxcentral-trees',
   'waverley-tree-crowns', 'waverley-wood-crowns', 'perth-west-wood-crowns']);
 const mixedRoofs = new Set(['perth-hotel-roofs-and-stone', 'perth-station-front', 'waverley-frontage-structure']);
 const roads = new Set(['waverley-bridge-decks', 'perth-bridge-roads']);
@@ -24,6 +26,10 @@ const roads = new Set(['waverley-bridge-decks', 'perth-bridge-roads']);
  * also Waverley's outdoor platform). The shader still tests normal and cover. */
 export function snowSurface(mesh: string, material: string): SurfaceWeather | undefined {
   if (material === 'city-asphalt' || roads.has(mesh)) return road;
+  if (landscape.has(mesh)) return {...open, detail: 'ground'};
+  if (mesh === 'perth-ground') return {dark: .35, sheen: .1, snow: 1, detail: 'ground'};
+  if (foliage.has(mesh)) return {...open, detail: 'foliage'};
+  if (mesh === 'waverley-building-tops' || mesh === 'perth-city-roofs' || mesh === 'perth-west-roofs') return {...roof, detail: 'roof'};
   if (roofs.has(mesh) || mixedRoofs.has(mesh) || material === 'city-roof' || (mesh.startsWith('kxcentral-') && mesh !== 'kxcentral-trees')) return roof;
   if (material === 'train-body') return {dark: 0, sheen: 0, snow: .75};
   if (mesh === 'waverley-platform-surfaces') return {dark: .22, sheen: .7, snow: 1};
@@ -33,8 +39,8 @@ export function snowSurface(mesh: string, material: string): SurfaceWeather | un
 
 export interface SnowLanduse {
   extent: Extent;
-  roads: readonly {width: number; line: readonly Pt[]}[];
-  paths?: readonly {width: number; line: readonly Pt[]}[];
+  roads: readonly {width: number; line: readonly Pt[]; snow?: number}[];
+  paths?: readonly {width: number; line: readonly Pt[]; snow?: number}[];
   water?: readonly (readonly (readonly Pt[])[])[];
 }
 /** Retention matches the land-use widths: pedestrian streets (<=4 m) keep snow,
@@ -113,8 +119,8 @@ export function snowLanduseMask(land: SnowLanduse, texelM = SNOW_MASK_TEXEL_M): 
     }
     touched.length = 0;
   };
-  for (const p of land.paths ?? []) stroke(p.line, p.width, .95);
-  for (const r of [...land.roads].sort((a,b) => a.width - b.width)) stroke(r.line, r.width, roadSnow(r.width));
+  for (const p of land.paths ?? []) stroke(p.line, p.width, p.snow ?? .95);
+  for (const r of [...land.roads].sort((a,b) => a.width - b.width)) stroke(r.line, r.width, r.snow ?? roadSnow(r.width));
   const texture = new THREE.DataTexture(data, width, height, THREE.RedFormat, THREE.UnsignedByteType);
   texture.unpackAlignment = 1; texture.generateMipmaps = false;
   texture.minFilter = texture.magFilter = THREE.LinearFilter; texture.needsUpdate = true;

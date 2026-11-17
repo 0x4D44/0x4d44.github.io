@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { createAtmosphere, surfaceUniforms } from '../src/atmosphere.ts';
 import { applyCover, COVER_GLSL, coverUniforms } from '../src/cover.ts';
 import { plain } from '../src/train-geom.ts';
+import { hazeLand } from '../src/perth-east-ground.ts';
 import { forcedObservation, weatherState } from '../src/weather.ts';
 import { addWorld } from '../src/world.ts';
 import { Glsl, toValue } from './glsl.ts';
@@ -22,7 +23,7 @@ function setup(meshName: string, materialName = '', m = new THREE.MeshLambertMat
   atmosphere.update({timeMs: Date.parse('2026-12-10T12:00:00Z'), weather: weatherState(forcedObservation('snow')), camera, target: new THREE.Vector3(), wallMs: 1000});
   return { m, mesh, scene, atmosphere, camera };
 }
-function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0]) {
+function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0], roofDetail = [2, 1]) {
   const s = compile(m), f = s.fragmentShader;
   assert.ok(f.includes('uniform float uSnowCover;'), `${m.name || 'custom surface'} receives snow`);
   // Prior roof shading can put unrelated headlamp arrays between the uniforms
@@ -33,7 +34,7 @@ function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, fro
   uniforms.uSnowCover = snow; uniforms.uWet = wet;
   if (!covered) uniforms.uCoverRect = [0, 0, 0, 0];
   const vars: Record<string, Value> = { ...uniforms, cameraPosition: [0, 0, 0], vViewPosition: point.map(n => -n), viewMatrix: toValue(new THREE.Matrix4()),
-    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], diffuseColor: [.2, .2, .2, 1] };
+    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], vSnowRoof: roofDetail, diffuseColor: [.2, .2, .2, 1] };
   const glsl = new Glsl(declarations);
   glsl.snippet(code)({vars, fns: {texture2D: (sampler, _uv) => {
     const texture = (sampler as Sampler).data;
@@ -74,6 +75,81 @@ test('through roads remain darker and wetter than pavements in snow, and unchang
     assert.ok(shade(road.m, 1)[0]! < .2, 'meltwater darkens the carriageway even without rain');
     assert.deepEqual(shade(road.m, 1, 0), shade(pavement.m, 1, 0));
   } finally { road.atmosphere.dispose(); pavement.atmosphere.dispose(); }
+});
+
+test('round 2: Perth ground tiles and the outer KX roof skins receive lying snow', () => {
+  for (const name of ['perth-east-ground', 'perth-main-apron', 'concourse-cladding', 'concourse-glass-top', 'landmarks-shedSlate']) {
+    const {m, atmosphere} = setup(name);
+    try {assert.ok(shade(m, 1)[0]! > .4, `${name} receives snow`);assert.equal(shade(m, 0)[0], .2, `${name} has bare vertical faces`);assert.deepEqual(shade(m,1,0),[.2,.2,.2,1]);}
+    finally {atmosphere.dispose();}
+  }
+});
+
+test('round 2: hillside drifts vary in world space, steep rock and gorse retain less, only in snow', () => {
+  const ground = setup('perth-summit-ground'), gorse = setup('perth-summit-gorse');
+  try {
+    const samples = [[2368,210,208],[2374,210,215],[2390,210,200],[2345,210,230]];
+    const values = samples.map(p=>shade(ground.m,1,.94,0,1,true,false,p)[0]!);
+    assert.ok(Math.max(...values)-Math.min(...values) > .04, 'drifts and surface grain survive the snow blend');
+    assert.ok(shade(ground.m,.65)[0]! < shade(ground.m,1)[0]! - .15, 'wind-scoured steep ground exposes its base');
+    assert.ok(shade(gorse.m,1)[0]! < shade(ground.m,1)[0]! - .12, 'gorse has dark foliage between snowy tips');
+    for (const wet of [0,.3,1]) for (const p of samples) assert.deepEqual(shade(ground.m,1,0,wet,1,true,false,p),[.2,.2,.2,1], 'dry, rain and fog keep the original ground');
+  } finally {ground.atmosphere.dispose();gorse.atmosphere.dispose();}
+});
+
+test('round 2: a snow-loaded glazed roof writes depth to hide shed lights, restoring its clear and rainy state', () => {
+  const m = new THREE.MeshLambertMaterial({transparent:true,opacity:.35,depthWrite:false});
+  const {atmosphere,camera} = setup('shed-roof-glass','',m);
+  try {
+    assert.equal(m.depthWrite,true,'opaque snow stops late additive lamps shining through the roof');
+    for (const weather of ['clear','rain','fog'] as const) {
+      atmosphere.update({timeMs:Date.parse('2026-12-10T12:00:00Z'),weather:weatherState(forcedObservation(weather)),camera,target:new THREE.Vector3(),wallMs:2000});
+      assert.equal(m.depthWrite,false,`${weather}: restore the original transparent depth state`);
+    }
+  } finally {atmosphere.dispose();}
+});
+
+test('round 2: mapped footpaths may retain compacted snow, independently of roads and surrounding pavement', async () => {
+  const {snowLanduseMask} = await import('../src/snow.ts');
+  const mask = snowLanduseMask({extent:{x0:0,z0:0,x1:20,z1:20},roads:[],paths:[{width:2,line:[[0,10],[20,10]],snow:.45}]},.5);
+  try {
+    const {width,height,data}=(mask.texture as THREE.DataTexture).image;
+    assert.ok(data instanceof Uint8Array);
+    const at=(x:number,z:number)=>data[(height-1-Math.floor(z/.5))*width+Math.floor(x/.5)]!;
+    assert.equal(at(10,10),115,'compacted hill path');assert.equal(at(10,5),255,'surrounding untouched snow');
+  } finally {mask.texture.dispose();}
+});
+
+test('round 2: Euston Road and North Bridge have strong snow-only traffic contrast', () => {
+  for (const name of ['city-asphalt', 'waverley-bridge-decks']) {
+    const {m,atmosphere}=setup(name, name==='city-asphalt'?'city-asphalt':'asphalt');
+    try {
+      assert.ok(shade(m,1)[0]! < .15, `${name}: cleared, wet tarmac remains dark in snow`);
+      assert.deepEqual(shade(m,1,0),[.2,.2,.2,1],'clear weather keeps the original albedo');
+    } finally {atmosphere.dispose();}
+  }
+});
+
+test('round 2: city roofs keep pitch, eave lines and block variation instead of a white sheet', () => {
+  const m=new THREE.MeshLambertMaterial();m.userData.snowRoof=true;
+  const {atmosphere}=setup('waverley-building-tops','',m);
+  try {
+    const roof=(height:number,retention=1,up=1)=>shade(m,up,.94,0,1,true,false,[20,30,40],[height,retention])[0]!;
+    assert.ok(roof(2)-roof(.05)>.1,'a narrow exposed eave line remains darker than the roof face');
+    assert.ok(roof(2)-roof(2,.8)>.05,'neighbouring blocks retain different snow depths');
+    assert.ok(roof(2)-roof(2,1,.7)>.12,'steep pitches expose more slate');
+    assert.deepEqual(shade(m,1,0,0,1,true,false,[20,30,40],[.05,.8]),[.2,.2,.2,1]);
+  } finally {atmosphere.dispose();}
+});
+
+test('round 2: Perth field pigments precede lying snow, so farmland cannot tint the snow green', () => {
+  const m=new THREE.MeshLambertMaterial();hazeLand(m,{inside:null});
+  const {atmosphere}=setup('perth-west-ground','',m);
+  try {
+    const f=compile(m).fragmentShader;
+    assert.ok(f.indexOf('diffuseColor.rgb *= k;') < f.indexOf('float coverOpen'), 'the actual field-colour hook runs before snow replaces the albedo');
+    assert.ok(f.indexOf('float coverOpen') < f.indexOf('#include <lights_lambert_fragment>'), 'snow still receives the scene lighting');
+  } finally {atmosphere.dispose();}
 });
 
 test('mapped streets retain their traffic classification within a shared ground draw', () => {

@@ -317,7 +317,11 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
  const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens,options.canvasWidth,options.open);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
- const snowMask=snowLanduseMask({...LANDUSE,water:LANDUSE.areas.water});
+ // Urban carriageways down to 5.5 m are traffic-cleared. Worn park paths keep
+ // a readable compacted line; the narrow lanes keep their default retention.
+ const snowMask=snowLanduseMask({...LANDUSE,water:LANDUSE.areas.water,
+  roads:LANDUSE.roads.map(r=>({...r,snow:r.width>=5.5?.08:undefined})),
+  paths:LANDUSE.paths.map(p=>({...p,snow:.45}))});
  if(snowMask){cover.userData.snowMask=snowMask;cover.addEventListener('dispose',()=>snowMask.texture.dispose());}
  // open land (OpenGround): cut out where the canvas is clear. The cleared texels are transparent black, so a filtered texel at the cut is
  // the painted colour times its alpha: dividing by the alpha takes it back to the paint (no dark rim along the cut)
