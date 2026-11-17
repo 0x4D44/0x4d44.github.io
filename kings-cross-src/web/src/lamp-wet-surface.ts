@@ -37,7 +37,7 @@ export function lampSurfaceAt(surface:LampWetSurface,x:number,z:number):readonly
 /** RG stores height at 1/128 m, biased by 128 m; B is the wet receiver mask.
  * The ordinary byte texture is linearly filterable on every supported GPU. */
 export function createLampWetSurface(root:THREE.Object3D,names:ReadonlySet<string>,spots:readonly LampSpot[],
-  accept?:(name:string,x:number,z:number)=>boolean):LampWetSurface|undefined {
+  accept?:(name:string,x:number,z:number)=>boolean,storeGroundHeights=false):LampWetSurface|undefined {
   const near=spots.filter(s=>Math.hypot(s.x,s.z)<650);
   if(!near.length)return;
   const x0=Math.floor(Math.min(...near.map(s=>s.x)))-16,z0=Math.floor(Math.min(...near.map(s=>s.z)))-16;
@@ -45,6 +45,10 @@ export function createLampWetSurface(root:THREE.Object3D,names:ReadonlySet<strin
   let cell=.5;
   while(Math.ceil((x1-x0)/cell)*Math.ceil((z1-z0)/cell)>2_000_000)cell+=.25;
   const nx=Math.ceil((x1-x0)/cell),nz=Math.ceil((z1-z0)/cell),heights=new Float32Array(nx*nz).fill(-Infinity);
+  // A strip crossing the wet-mask edge still needs the true ground heights
+  // at its vertices. Store these independently; the B channel still clips
+  // every fragment to the accepted wet surface. Legacy receipts are unchanged.
+  const weights=storeGroundHeights?new Uint8Array(nx*nz):undefined;
   const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
   root.updateMatrixWorld(true);
   root.traverse(object=>{
@@ -70,8 +74,10 @@ export function createLampWetSurface(root:THREE.Object3D,names:ReadonlySet<strin
         const ix0=Math.max(0,Math.ceil((lo-x0)/cell-.5-1e-9)),ix1=Math.min(nx-1,Math.floor((hi-x0)/cell-.5+1e-9));
         for(let ix=ix0;ix<=ix1;ix++){
           const x=x0+(ix+.5)*cell;
-          if(accept&&!accept(mesh.name,x,z))continue;
+          const accepted=!accept||accept(mesh.name,x,z);
+          if(!accepted&&!storeGroundHeights)continue;
           const y=a.y+dx*(x-a.x)+dz*(z-a.z),k=iz*nx+ix;
+          if(weights&&y>heights[k]!)weights[k]=accepted?255:0;
           heights[k]=Math.max(heights[k]!,y);
         }
       }
@@ -79,7 +85,7 @@ export function createLampWetSurface(root:THREE.Object3D,names:ReadonlySet<strin
   });
   const bytes=new Uint8Array(nx*nz*4);
   const encode=(k:number,y:number)=>{const n=Math.max(0,Math.min(65535,Math.round((y+128)*128)));bytes[k*4]=n>>8;bytes[k*4+1]=n&255;bytes[k*4+3]=255;};
-  for(let k=0;k<heights.length;k++)if(Number.isFinite(heights[k])){encode(k,heights[k]!);bytes[k*4+2]=255;}
+  for(let k=0;k<heights.length;k++)if(Number.isFinite(heights[k])){encode(k,heights[k]!);bytes[k*4+2]=weights?.[k]??255;}
   // Carry edge heights one texel outward, retaining zero receiver weight. This
   // keeps bilinear height reads on the deck plane while its mask fades out.
   for(let z=0;z<nz;z++)for(let x=0;x<nx;x++){

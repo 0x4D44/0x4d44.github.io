@@ -128,7 +128,7 @@ test('three visible western approach lamps retain resolved wet runs through the 
     const t=base.clone().sub(camera.position).dot(n)/Math.min(-.001,ray.dot(n)),centre=camera.position.clone().addScaledVector(ray,t);
     if(!clear(head)||camera.position.clone().sub(base).dot(n)<=0||t<=0||t>=1||Math.hypot(centre.x-base.x,centre.z-base.z)>s.uniforms.uReflectionReach!.value+6.5)continue;
     const along=camera.position.clone().sub(centre);along.addScaledVector(n,-along.dot(n)).normalize();
-    const env={vars:{lampBase:base.toArray(),lampHead:head.toArray(),lampNormal:n.toArray(),reflectionCentre:centre.toArray(),cameraPosition:camera.position.toArray(),along:along.toArray(),streakLength:32,streakWidth:.5}};
+    const env={vars:{lampBase:base.toArray(),lampHead:head.toArray(),lampNormal:n.toArray(),reflectionCentre:centre.toArray(),cameraPosition:camera.position.toArray(),along:along.toArray(),streakLength:32,streakWidth:.5,reflectionTail:mesh.geometry.getAttribute('reflectionTail')?.getX(i)??0,vReflectionTail:0}};
     new Glsl('').run(block(s.vertexShader,'reflection-urban-frame'),env);
     const c=new THREE.Vector3().fromArray(env.vars.reflectionCentre),length=Number(env.vars.streakLength);
     const a=c.clone().addScaledVector(along,-length/2).project(camera),b=c.clone().addScaledVector(along,length/2).project(camera),resolved={vars:{reflectionValid:1,reflectionEndA:[a.x,a.y,a.z,1],reflectionEndB:[b.x,b.y,b.z,1]}};

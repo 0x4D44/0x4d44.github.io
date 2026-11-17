@@ -40,14 +40,20 @@ const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as cons
 // Vertex ranges of the existing stone rakes. Keep the selection with the builder:
 // window surrounds and roof ridges must not become a continuous luminous roof.
 const midlandGableRakes = new WeakMap<Batch, [number, number][]>();
+// The main body's brick ends before the tower builder appends its faces.
+// Keep this boundary with the geometry, not a camera or world-height guess.
+const midlandBrickBodyEnd = new WeakMap<Batch, number>();
 
 /** Night-only treatment on the existing merged meshes, with a zero mask on the
  * hotel and Barlow. World height is relative to the Midland's terrain seat; UVs
- * restart on dressings and cannot describe the arcade-to-upper-wall falloff. */
+ * restart on dressings and cannot describe the arcade-to-upper-wall falloff.
+ * Round eight dims both upper-brick terms: diffuse moon/sky fill, and the
+ * separate FLOOD emission added earlier by lighting.ts. */
 function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: number): void {
   for (const key of ['brickRed', 'stone'] as const) {
     const mesh = group.getObjectByName(`landmarks-${key}`) as THREE.Mesh;
     const mask = new Float32Array(mesh.geometry.getAttribute('position').count * 2);
+    const bodyMask = key==='brickRed' ? new Float32Array(mask.length/2) : undefined;
     let offset = 0;
     sets.forEach((set, building) => {
       const batch = set[key];
@@ -55,6 +61,7 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       const count = batch.positions.length / 3;
       if (building === 1) {
         for (let i = 0; i < count; i++) mask[(offset + i) * 2] = 1;
+        if(bodyMask)bodyMask.fill(1,offset,offset+(midlandBrickBodyEnd.get(batch)??0));
         for (const [start, end] of midlandGableRakes.get(batch) ?? []) {
           for (let i = start; i < end; i++) mask[(offset + i) * 2 + 1] = 1;
         }
@@ -62,6 +69,7 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       offset += count;
     });
     mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(mask, 2));
+    if(bodyMask)mesh.geometry.setAttribute('midlandBrickBody',new THREE.BufferAttribute(bodyMask,1));
     const m = mesh.material as THREE.Material;
     const prior = m.onBeforeCompile;
     const priorKey = m.customProgramCacheKey();
@@ -69,21 +77,69 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       prior.call(m, shader, renderer);
       shader.uniforms.uMidlandNight = windowNight;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;')
-        .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};`);
+        .replace('#include <common>', `#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;${bodyMask?'\nattribute float midlandBrickBody;\nvarying float vMidlandBrickBody;':''}`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};${bodyMask?'\nvMidlandBrickBody = midlandBrickBody;':''}`);
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;')
+        .replace('#include <common>', `#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;${bodyMask?'\nvarying float vMidlandBrickBody;':''}`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 // midland-night-begin
 float midlandLevel = uMidlandNight * vMidlandNight.x;
 float midlandUpper = smoothstep( 6.0, 18.0, vMidlandHeight );
-float midlandFill = 1.0 - ${key === 'brickRed' ? '0.70' : '0.0'} * midlandLevel * midlandUpper;
+float midlandFill = 1.0 - ${key === 'brickRed' ? '0.82' : '0.0'} * midlandLevel * midlandUpper;
 reflectedLight.indirectDiffuse *= midlandFill;
 reflectedLight.directDiffuse *= midlandFill;
+${key === 'brickRed' ? 'totalEmissiveRadiance *= mix( 1.0, 0.05, midlandLevel * midlandUpper );' : ''}
 totalEmissiveRadiance += vec3( 0.38, 0.24, 0.085 ) * midlandLevel * vMidlandNight.y;
-// midland-night-end`);
+// midland-night-end${key==='brickRed'?`
+// midland-brick-floor-begin
+// Keep the texture's brick colour in the upper piers and tower. The strong
+// arcade falloff stays; the high brick needs a weak independent uplight floor
+// after its diffuse and FLOOD terms have been dimmed. Lower bays receive a
+// warmer wash than the tower, with a smooth transition above the top storey.
+vec3 midlandBrickDimmed = totalEmissiveRadiance;
+float midlandTower = smoothstep(21.0,26.0,vMidlandHeight);
+float midlandBrickBeam = FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vMidlandHeight,0.0)/FLOOD.y))*mix(0.95+0.25*smoothstep(16.0,19.0,vMidlandHeight),0.60,midlandTower);
+vec3 midlandBrickTint = mix(vec3(1.0,2.0,0.85),vec3(1.0,1.20,0.40),midlandTower);
+totalEmissiveRadiance = max(totalEmissiveRadiance,diffuseColor.rgb*midlandBrickTint*midlandBrickBeam*midlandLevel*midlandUpper);
+// midland-brick-floor-end
+// midland-body-grade-begin
+// The towers retain the accepted floor above. On the body, recover main's
+// diffuse/FLOOD height response and tint it red-brown, instead of clamping
+// it to one yellow minimum across several storeys. Fade in above the arcade.
+if (vMidlandBrickBody > 0.5 && midlandLevel > 0.003) {
+  float bodyLoss = midlandLevel*midlandUpper;
+  float bodyHeight = smoothstep(8.0,20.0,vMidlandHeight);
+  float bodyNight = midlandLevel*smoothstep(4.5,7.5,vMidlandHeight);
+  vec3 bodyTint = mix(vec3(1.0,1.04,1.0),vec3(1.0,1.25,1.25),bodyHeight);
+  vec3 bodyGrade = mix(vec3(1.0),bodyTint*mix(0.42,1.15,bodyHeight),bodyNight);
+  float bodyBaseFill = (1.0-0.70*bodyLoss)/(1.0-0.82*bodyLoss);
+  reflectedLight.directDiffuse *= bodyBaseFill*bodyGrade;
+  reflectedLight.indirectDiffuse *= bodyBaseFill*bodyGrade;
+  totalEmissiveRadiance = midlandBrickDimmed/mix(1.0,0.05,bodyLoss)*bodyGrade;
+}
+// midland-body-grade-end
+// midland-end-grade-begin
+// The appended end towers include the west pavilion. Give their lower
+// stages the same grade as the range, fading back to the accepted top
+// response over the upper stage; above 25m the old response is exact.
+if (vMidlandBrickBody < 0.5 && midlandLevel > 0.003 && vMidlandHeight < 25.0) {
+  float endBlend = midlandLevel*(1.0-smoothstep(24.0,25.0,vMidlandHeight));
+  float endLoss = midlandLevel*midlandUpper;
+  float endGrade = mix(1.0,mix(0.42,1.15,smoothstep(8.0,20.0,vMidlandHeight)),midlandLevel*smoothstep(4.5,7.5,vMidlandHeight));
+  float endBaseFill = (1.0-0.70*endLoss)/(1.0-0.82*endLoss);
+  // Preserve the range's recovered height/brick-texture intensity. The end
+  // towers use a red-brown brick tint, rather than the former yellow floor.
+  vec3 endTint = vec3(1.0,0.43,0.265);
+  vec3 endDirect = endTint*(reflectedLight.directDiffuse*endBaseFill*endGrade).r;
+  vec3 endIndirect = endTint*(reflectedLight.indirectDiffuse*endBaseFill*endGrade).r;
+  reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse,endDirect,endBlend);
+  reflectedLight.indirectDiffuse = mix(reflectedLight.indirectDiffuse,endIndirect,endBlend);
+  vec3 endEmission = endTint*(midlandBrickDimmed/mix(1.0,0.05,endLoss)*endGrade).r;
+  totalEmissiveRadiance = mix(totalEmissiveRadiance,endEmission,endBlend);
+}
+// midland-end-grade-end`:''}`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v1-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v5-${key}-${base.toFixed(6)}`;
   }
 }
 
@@ -159,8 +215,9 @@ export function createMaterials(): MaterialSet {
   // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
   // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
   const midlandBrick: [number, number, number] = [0.88, 0.92, 0.885];
-  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
-  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD).
+  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly floodlit (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
+  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD). Round eight also reduces the upper brick's separate sky/moon fill and
+  // the FLOOD emission: the latter is added after direct/indirect diffuse, so it survives a diffuse-only darkening (the round-seven shader's 0.30 diffuse remainder plus a 0.0139-albedo flood term at 23 m).
   const brickRed = floodLit(footShaded(tint('brickRed', midlandBrick)), ...MIDLAND_FLOOD.brick);
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a
@@ -1249,6 +1306,8 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
     pane.box([(a[0] + b[0]) / 2, plan.ridge + 0.06, (a[1] + b[1]) / 2], [l, 0.12, 0.1], { rotY: Math.atan2(a[1] - b[1], b[0] - a[0]), skip: ['-y'] });
     for (let s = 0.45; s < l - 0.3; s += 0.9) for (const f of [-1, 1]) pane.tri(at(s - 0.275, 0.12), at(s + 0.275, 0.12), at(s, 1), undefined, [(-(b[1] - a[1]) * f) / l, 0, ((b[0] - a[0]) * f) / l]);
   }
+  const bodyBrick=part(parts,'brickRed');
+  midlandBrickBodyEnd.set(bodyBrick,bodyBrick.positions.length/3);
   for (const t of plan.towers) addTower(parts, t, plan);
   return parts;
 }

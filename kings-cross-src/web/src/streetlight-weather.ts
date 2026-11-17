@@ -33,6 +33,7 @@ export interface LampWeatherOptions {
   kxOptics?: boolean;
   /** Rough wet paving optics independent of KX's pool and mast treatment. */
   roughReflections?: boolean;
+  reflectionTailAt?: (sourceIndex:number)=>number;
   lightFog?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
@@ -55,6 +56,7 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
   const geometry=surface?new THREE.PlaneGeometry(1,1,1,8).rotateX(-Math.PI/2):pools.geometry.clone();
   geometry.setAttribute('reflectionHead',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>heads.slice(i*3,i*3+3))),3));
   if(optics.reflectionWidthAt)geometry.setAttribute('reflectionWidth',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionWidthAt!(i))),1));
+  if(optics.reflectionTailAt)geometry.setAttribute('reflectionTail',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionTailAt!(i))),1));
   const floorWeights=pools.geometry.getAttribute('poolFloorWeight');
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>floorWeights.getX(i))),1));
   const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,toneMapped:false,fog:true,
@@ -74,7 +76,7 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
     if(reach!==undefined)shader.uniforms.uReflectionReach={value:reach};
     if(surface)Object.assign(shader.uniforms,{uLampSurface:{value:surface.map},uLampSurfaceRect:{value:surface.rect}});
     shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}
-${optics.reflectionWidthAt?'attribute float reflectionWidth;':''}
+${optics.reflectionWidthAt?'attribute float reflectionWidth;':''}${optics.reflectionTailAt?'\nattribute float reflectionTail;\nvarying float vReflectionTail;':''}
 attribute vec3 reflectionHead;
 attribute float poolFloorWeight;
 varying vec2 vReflectionUv;
@@ -118,7 +120,14 @@ streakWidth = 0.30+0.02*min(lampHeight,12.0);
 vec3 sourceFoot = lampHead-lampNormal*dot(lampHead-lampBase,lampNormal);
 float sourceRun = max(0.0,dot(reflectionCentre-sourceFoot,along));
 reflectionCentre -= along*sourceRun*0.5;
-streakLength = min(80.0,max(streakLength,sourceRun+16.0));
+streakLength = min(${optics.reflectionTailAt?'mix(80.0,140.0,step(0.001,reflectionTail))':optics.roughReflections?'140.0':'80.0'},max(streakLength,sourceRun+16.0));${optics.reflectionTailAt?`
+// reflection-road-tail-begin
+// Extend only the eye-facing rough tail, retaining the source-foot end.
+// Receiver/snow/finite-distance clipping still applies to every fragment.
+reflectionCentre += along*reflectionTail*0.5;
+streakLength += reflectionTail;
+vReflectionTail = step(0.001,reflectionTail);
+// reflection-road-tail-end`:''}
 // reflection-urban-frame-end`:''}
 ${broken?`float roughWidth = streakWidth;
 // reflection-rough-width-begin
@@ -150,11 +159,11 @@ vReflectionFloor = poolFloorWeight;
 vReflectionWorld = reflectionCentre + across * position.x * ${broken?'roughWidth':'( 0.45 + 0.05 * lampHeight )'} + along * position.z * streakLength;
 ${surface?`// reflection-receiver-vertex-begin
 vec2 vertexReceiver = lampReceiver(vReflectionWorld.xz);
-if (vertexReceiver.y > 0.001) vReflectionWorld.y = vertexReceiver.x + 0.012;
+${optics.roughReflections?'':'if (vertexReceiver.y > 0.001) '}vReflectionWorld.y = vertexReceiver.x + ${optics.reflectionTailAt?'mix(0.012,0.07,vReflectionTail)':'0.012'};
 // reflection-receiver-vertex-end
 `:''}vec4 mvPosition = viewMatrix * vec4( vReflectionWorld, 1.0 );
 gl_Position = projectionMatrix * mvPosition;${reach!==undefined?'\nif (vReflectionValid < 0.001) gl_Position = vec4(2.0,2.0,2.0,1.0);':''}`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}${optics.reflectionTailAt?'\nvarying float vReflectionTail;':''}
 varying vec2 vReflectionUv;
 varying vec3 vReflectionWorld;
 varying float vReflectionFloor;
@@ -182,7 +191,7 @@ float blurY0 = vReflectionUv.y - 0.12;
 float blurY1 = vReflectionUv.y + 0.12;
 float streakY = 0.5 * exp( -${broken?'0.8':'2.5'} * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY0 * blurY0 ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY1 * blurY1 );
 float streak = exp( -${broken?(roughReflections?'1.2':'3.2'):'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
-gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
+gl_FragColor.a *= ${optics.reflectionTailAt?'mix(0.8,1.0,vReflectionTail)':'0.8'} * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
 // reflection-alpha-end${optics.suppressSnow?`
 // reflection-snow-begin
 gl_FragColor.a *= 1.0-smoothstep(0.02,0.20,uLampSnow);
@@ -201,12 +210,12 @@ float wetTaper = ${optics.roughReflections?'0.12+0.88*pow(max(0.0,0.5-0.5*wetY),
 float wetWander = ${optics.roughReflections?'0.035':'0.10'}*sin(9.0*wetY+wetSeed);
 float wetAcross = (vReflectionUv.x-wetWander)/wetTaper;
 float wetSegments = 0.5+0.5*sin(${optics.roughReflections?'7.0':'13.0'}*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
-gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(${optics.roughReflections?'0.12+0.88*smoothstep(0.18,0.82,wetSegments)':'0.035+0.965*smoothstep(0.28,0.75,wetSegments)'});
+gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(${optics.roughReflections?(optics.reflectionTailAt?'mix(0.12,0.24,vReflectionTail)+mix(0.88,0.76,vReflectionTail)*smoothstep(0.18,0.82,wetSegments)':'0.12+0.88*smoothstep(0.18,0.82,wetSegments)'):'0.035+0.965*smoothstep(0.28,0.75,wetSegments)'});
 // ${optics.kxOptics?'reflection-kx-roughness':'reflection-roughness'}-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
 // reflection-breakup-end`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}${optics.roughReflections?'-rough':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}${optics.roughReflections?'-rough':''}${optics.reflectionTailAt?'-road-tail':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
   // Deep breaks remove the diffuse wet wash. Recover that energy in the lit
