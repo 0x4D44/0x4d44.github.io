@@ -11,7 +11,8 @@ import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
 import {Batch,floodLit,litWalls} from './materials.ts';
 import type {PerthBuild} from './perth-scene.ts';
 import {HOTEL_COLOURS,PERTH_HOTEL_ID,hotelFacadeTexture,stationHotel} from './perth-frontage-hotel.ts';
-import {forecourt,hotelShrubs,stationFront} from './perth-frontage-street.ts';
+import {forecourt,hotelShrubs,stationFront,FRONTAGE_WINDOW,ROAD_WIDTHS} from './perth-frontage-street.ts';
+import {snowLanduseMask} from './snow.ts';
 import {cutRoadMask,cutRoadSurfaces,cutWalls,kingsPlaceBridge} from './perth-frontage-bridge.ts';
 import {perthTrack} from './perth-station.ts';
 import {ST_LEONARDS,ST_LEONARDS_COLOURS,stLeonardsBridge} from './perth-st-leonards-bridge.ts';
@@ -70,6 +71,11 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  // flat layers over the ground, lowest first, each pulled forward a step so none z-fights (as materials.ts CITY_LAYER_OFFSET)
  const flatMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
  const paintMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-6}));
+ const foot=(r:FrontageFile['roads'][number])=>['footway','pedestrian','path','cycleway','steps'].includes(r.highway);
+ const snowMask=snowLanduseMask({extent:FRONTAGE_WINDOW,
+  roads:file.roads.filter(r=>!foot(r)).map(r=>({line:r.path as Pt[],width:ROAD_WIDTHS[r.service==='parking_aisle'?'parking_aisle':r.highway]??4})),
+  paths:file.roads.filter(foot).map(r=>({line:r.path as Pt[],width:ROAD_WIDTHS[r.highway]??2}))});
+ if(snowMask){flatMat.userData.snowMask=snowMask;paintMat.userData.snowMask=snowMask;flatMat.addEventListener('dispose',()=>snowMask.texture.dispose());}
  add(group,facade,facadeMat,'perth-hotel-facade');add(group,detail,coloured,'perth-hotel-roofs-and-stone');
  add(group,front,coloured,'perth-station-front');add(group,glass,glassMat,'perth-frontage-glazing');
  add(group,flat,flatMat,'perth-forecourt');add(group,paint,paintMat,'perth-forecourt-markings');add(group,bridgeBatch,coloured,'perth-kings-place-bridge');
@@ -79,7 +85,8 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const textured=(t:THREE.Texture|null,offset=0)=>{const m=own(new THREE.MeshLambertMaterial({map:t,vertexColors:true,...offset?{polygonOffset:true,polygonOffsetFactor:offset,polygonOffsetUnits:offset}:{}}));if(t)m.addEventListener('dispose',()=>t.dispose());return m;};
  add(group,stLeonardsAshlar,textured(coursedTexture('bridge')),'perth-st-leonards-masonry');
  add(group,stLeonardsPaint,textured(stLeonardsPaintTexture(stLeonards.girderPanels,ST_LEONARDS_COLOURS.steel,ST_LEONARDS.girder.flange/(ST_LEONARDS.parapet+ST_LEONARDS.fascia))),'perth-st-leonards-paint');
- add(group,setts,textured(settsTexture(),-3),'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
+ const settMaterial=textured(settsTexture(),-3);if(snowMask)settMaterial.userData.snowMask=snowMask;
+ add(group,setts,settMaterial,'perth-forecourt-setts');add(group,coursed,textured(coursedTexture()),'perth-station-street-walls');
  add(group,rubble,textured(rubbleTexture()),'perth-kings-place-walls');
  return {hotel:{P:hotel.P,foot:hotel.foot},front:{P:frontInfo.P,edges:frontInfo.chain.length-1},bridge:{...bridge,walls:cutWallCount,roadSegments:cutRoad.segments},stLeonards,triangles:stats.triangles-before.t,drawCalls:stats.drawCalls-before.d};
 }

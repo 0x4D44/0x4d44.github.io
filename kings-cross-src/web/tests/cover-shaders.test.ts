@@ -421,7 +421,7 @@ function wetGround(m: THREE.Material): { uniforms: Record<string, THREE.IUniform
       const v = new THREE.Vector3(...(world as [number, number, number])).applyMatrix4(cam.matrixWorldInverse).negate();
       const vars: Record<string, Value> = {
         ...uniformValues(s.uniforms), viewMatrix: toValue(cam.matrixWorldInverse), cameraPosition: toValue(cam.position), vViewPosition: [v.x, v.y, v.z],
-        normal: [0, 1, 0], diffuseColor: [0.5, 0.45, 0.4, 1], outgoingLight: [0.2, 0.25, 0.3],
+        gl_FrontFacing: true, vSnowNormal: [0, 1, 0], normal: [0, 1, 0], diffuseColor: [0.5, 0.45, 0.4, 1], outgoingLight: [0.2, 0.25, 0.3],
       };
       const fetch = (sampler: Value, uv: Value): Value => { if (reads) reads.n++; return texture2D(sampler, uv); };
       const locals = lines({ vars, fns: { texture2D: fetch } });
