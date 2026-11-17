@@ -161,7 +161,8 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 // id -> [[material name, r, g, b multiplier (linear: 0.15 shows as ~0.42)], ...]. Review 8: the two long-coat women wore one pale striped coat that read as a bathrobe (now
 // camel and dark navy); adult_casual2 and ya_ginger_lad one sweatshirt; teen_skirt and woman_mini one top (woman_mini's goes blue; her tartan was turned green at build)
 const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.15, 0.22, 0.15], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.42, 0.27, 0.14]],
-  ya_winter: [[/^cloth_coat\./i, 0.1, 0.13, 0.21]], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]] };
+  ya_winter: [[/^cloth_coat\./i, 0.1, 0.13, 0.21]], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
+  man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]] };   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
