@@ -168,7 +168,7 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
     const night = lightWaverleyNight(view.scene,detailed ? .60 : undefined), lamps = waverleyLamps(view), glow = createWaverleyGlow(view.scene);
     const data = view.geometry!;
     const heads = view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
-    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv');
+    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv',true);
     platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
     return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
       dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };

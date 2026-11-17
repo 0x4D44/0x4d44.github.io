@@ -204,8 +204,10 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // The western Market Street receivers project 119–132 m from their heads
   // in the North Bridge camera. Keep these urban runs finite and road-clipped,
   // without discarding their visible wet paving at the generic 96 m limit.
-  // The uphill road-axis correction starts west of Waverley Bridge. At the
-  // junction the eye/source mirror keeps the streak aligned with its lamp.
+  // The uphill road correction belongs west of Waverley Bridge (x=-60).
+  // Applying its 140m road-axis run at the near junction sent a diagonal
+  // reflection to the frozen view's left edge, away from its visible head.
+  // The junction keeps the ordinary eye/source mirror optics instead.
   const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,reflectionRoad:s=>s.x<-60&&s.z>100&&(s.x>-210||Math.sin(s.yaw)>0),reflectionReach:160,reflectionTail:s=>s.x<0&&s.z>100?64:0,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,

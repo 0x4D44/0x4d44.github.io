@@ -308,7 +308,14 @@ gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(
 // lamp-fog-size-end`)
       .replace('#include <logdepthbuf_vertex>',`// lamp-fog-screen-begin
 ${enhancedFog?`vLampFogDistance = length(cameraPosition-(modelMatrix*vec4(position,1.0)).xyz);\nvLampFogMast = ${scale?'step(1.5,lampHaloScale)':'0.0'};`:''}
-gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );${softFog?'\ngl_PointSize *= 1.0+0.45*lampFogHalo*smoothstep(0.65,0.9,uLampFog)*(1.0-vLampFogMast);':''}
+gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );${softFog?`
+gl_PointSize *= 1.0+0.45*lampFogHalo*smoothstep(0.65,0.9,uLampFog)*(1.0-vLampFogMast);
+// lamp-city-air-size-begin
+// A 52px sprite has no samples at 30px from its head. Give city mist a
+// resolved angular footprint; keep clear heads and the mast core unchanged.
+float cityAir = smoothstep(0.65,0.9,uLampFog)*lampFogHalo;
+gl_PointSize = mix(gl_PointSize,max(gl_PointSize,96.0),cityAir*(1.0-vLampFogMast));${haze.length?'\ngl_PointSize *= 1.0+0.12*cityAir*vLampFogHaze;':''}
+// lamp-city-air-size-end`:''}
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
@@ -374,14 +381,22 @@ gl_FragColor.a = mix(gl_FragColor.a,0.16*mastScatterAlpha*coreFog*coreProfile,vL
       shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>',`// lamp-air-profile-begin
 float airRadius = 2.0*length(gl_PointCoord-vec2(0.5));
 float airFog = smoothstep(0.65,0.9,uLampFog)*vLampFogHalo*(1.0-vLampFogMast);
-float airProfile = 0.17*exp(-4.5*airRadius*airRadius)*(1.0-smoothstep(0.80,1.0,airRadius));
+float airProfile = 0.32*exp(-3.2*airRadius*airRadius)*(1.0-smoothstep(0.80,1.0,airRadius));
 float airDepth = exp(-0.0065*max(0.0,vLampFogDistance-50.0));
 gl_FragColor.a = mix(gl_FragColor.a,lampAirAlpha*airProfile*airDepth,airFog);
-// lamp-air-profile-end
+// lamp-air-profile-end${haze.length?`
+// lamp-city-mast-air-begin
+// One broad volume and one inner lobe per strip, not seven overlapping
+// strip samples. Add light to the accepted profiles, with no hollow centre.
+float cityMastRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+float cityMastAir = (0.025*vLampFogHaze*exp(-3.0*cityMastRadius*cityMastRadius)${cores.length?'+0.065*vLampFogCore*exp(-6.0*cityMastRadius*cityMastRadius)':''})*(1.0-smoothstep(0.80,1.0,cityMastRadius));
+gl_FragColor.a += lampAirAlpha*cityMastAir*smoothstep(0.65,0.9,uLampFog)*exp(-0.007*max(0.0,vLampFogDistance-50.0));
+gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0'})*smoothstep(0.65,0.9,uLampFog)*exp(-6.0*cityMastRadius*cityMastRadius);
+// lamp-city-mast-air-end`:''}
 #include <tonemapping_fragment>`);
     };
   }
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air':'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air-2':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
