@@ -176,6 +176,9 @@ export interface StreetLightOptions {
   kxOptics?: boolean;
   /** A caller can retain the original full radial footprint after review. */
   poolRoadShape?: boolean;
+  /** KX road optics: extend the accepted footprint, with LED cutoffs and a
+   * softer sodium skirt. Other scenes retain their original pool program. */
+  luminairePools?: boolean;
   /** Tapered, irregular wet streaks without changing the pool or clear head. */
   roughReflections?: boolean;
   /** KX window/lamp emission has a longer fog tail than opaque surfaces. */
@@ -292,6 +295,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
   const roadPoolShape=!!options.kxOptics&&options.poolRoadShape!==false;
   if (roadPoolShape) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
+  if (options.luminairePools) poolGeometry.setAttribute('poolBeam',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw),spot.kind,Number(!!spot.mast)])),4));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -337,21 +341,49 @@ float roadAcross=dot(roadPoolUv,vec2(-poolRoadDirection.y,poolRoadDirection.x));
 vPoolUv=0.5+0.5*vec2(roadAlong,1.8*roadAcross);
 ${options.poolLineAt?'}':''}
 // pool-road-shape-end` : '';
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${roadPoolShape ? '\nattribute vec2 poolRoadDirection;' : ''}\nvarying vec2 vPoolUv;`)
-          .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}`);
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${roadPoolShape ? '\nattribute vec2 poolRoadDirection;' : ''}${options.luminairePools?'\nattribute vec4 poolBeam;\nvarying vec4 vPoolBeam;':''}\nvarying vec2 vPoolUv;`)
+          .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}${options.luminairePools?'\nvPoolBeam = poolBeam;\nvPoolUv = 0.5+(uv-0.5)*mix(1.8,1.0,poolBeam.w);':''}`);
         declarations += '\nvarying vec2 vPoolUv;';
+        if(options.luminairePools)declarations+='\nvarying vec4 vPoolBeam;';
         if (options.poolLineAt) {
           shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
             .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
           declarations += '\nvarying float vPoolLine;';
         }
-        body += `
+        body += `${options.luminairePools?`
+// pool-luminaire-input-begin
+float poolInputAlpha = gl_FragColor.a;
+// pool-luminaire-input-end`:''}
 // pool-profile-begin
 float poolR = length( 2.0 * vPoolUv - 1.0 );
 ${options.poolLineAt ? `float poolProfile = pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
 poolProfile = mix( poolProfile, exp(-${options.kxOptics?'1.15':'1.8'}*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-${options.kxOptics?'2.0':'2.5'}*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(${options.kxOptics?'.78':'.65'},1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(${options.kxOptics?'.72':'.55'},1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
 gl_FragColor.a *= poolProfile;` : `gl_FragColor.a *= pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );`}
-// pool-profile-end`;
+// pool-profile-end${options.luminairePools?`
+// pool-luminaire-begin
+vec2 beamPosition = 2.0*vPoolUv-1.0;
+vec2 beamLocal = vec2(dot(beamPosition,vPoolBeam.xy)/1.8,dot(beamPosition,vec2(-vPoolBeam.y,vPoolBeam.x)));
+beamLocal = mix(beamLocal,beamPosition,vPoolBeam.w);
+float sodiumRadius = length(beamLocal);
+float sodiumBeam = pow(1.0+0.8*sodiumRadius*sodiumRadius,-1.5)*(1.0-smoothstep(0.72,1.0,sodiumRadius));
+float ledRadius = pow(pow(abs(beamLocal.x),4.0)+pow(abs(beamLocal.y),4.0),0.25);
+float ledBeam = (0.35+0.65*exp(-1.5*dot(beamLocal,beamLocal)))*(1.0-smoothstep(0.90,1.0,ledRadius));
+float luminaireBeam = mix(sodiumBeam,ledBeam,step(0.5,vPoolBeam.z));
+// Retain every accepted diffuse-pool sample. Only extend/intensify the road
+// beam; the original receiver mask, weather scale and peak ceiling remain.
+gl_FragColor.a = max(gl_FragColor.a,poolInputAlpha*luminaireBeam);
+// pool-luminaire-end
+// pool-source-colour-begin
+// Diffuse asphalt desaturates the broad skirt. Keep the lamp's actual colour
+// on its head/halo/reflection; LEDs light this receiver neutral white. A
+// separate tight lobe identifies each source without reducing road coverage.
+float poolEnergy = max(gl_FragColor.r,max(gl_FragColor.g,gl_FragColor.b));
+float poolWhite = step(0.5,vPoolBeam.z);
+vec3 poolSkirt = mix(vec3(1.0,0.8,0.55),vec3(1.0),poolWhite);
+gl_FragColor.rgb = max(gl_FragColor.rgb,poolEnergy*poolSkirt);
+float poolHead = exp(-7.0*dot(beamPosition,beamPosition));
+gl_FragColor.rgb += poolEnergy*poolHead*mix(vec3(0.9,0.35,0.0),vec3(0.8),poolWhite);
+// pool-source-colour-end`:''}`;
       }
       if (options.poolFloor) {
         shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
@@ -375,12 +407,12 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}${options.luminairePools?'-luminaire':''}`;
   }
   pools.name = 'street-lamp-pools';
   poolEntries.forEach(({spot,index}, i) => {
     const [x, , z] = headAt(spot);
-    const r = 2 * (options.poolRadiusAt?.(spot, index) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
+    const r = 2 * (options.poolRadiusAt?.(spot, index) ?? poolRadius(spot.height) * (options.poolSpread ?? 1)) * (options.luminairePools&&!spot.mast?1.8:1);
     const size = options.poolSizeAt?.(spot,index), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill

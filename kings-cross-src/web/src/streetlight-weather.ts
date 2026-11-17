@@ -59,7 +59,10 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
   if(optics.reflectionTailAt)geometry.setAttribute('reflectionTail',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionTailAt!(i))),1));
   const floorWeights=pools.geometry.getAttribute('poolFloorWeight');
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>floorWeights.getX(i))),1));
-  const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,toneMapped:false,fog:true,
+  // Reflected light adds energy. In particular a black, unlit KX pane must
+  // contribute zero instead of covering the brighter diffuse road below it.
+  // Keep the accepted Scottish/Perth compositing path unchanged.
+  const material=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,toneMapped:false,fog:true,blending:optics.kxOptics?THREE.AdditiveBlending:THREE.NormalBlending,
     polygonOffset:true,polygonOffsetFactor:-7,polygonOffsetUnits:-7});
   fadeLightInFog(material,true);
   const before=material.onBeforeCompile;
