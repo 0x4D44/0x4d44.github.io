@@ -118,7 +118,7 @@ function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMater
       .replace('#include <common>', '#include <common>\nvarying vec3 vSnowNormal;')
       .replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );');
     // A late landmark may reuse a material the first scan already shaded.
-    const cover = shader.fragmentShader.includes('float coverGroundAt(') ? '' : COVER_GLSL;
+    const cover = shader.fragmentShader.includes('float coverGroundAt') ? '' : COVER_GLSL;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform float uWet;

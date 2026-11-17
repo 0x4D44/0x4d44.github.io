@@ -166,22 +166,40 @@ test('new custom ground keeps its original dry and rainy colour whenever snow is
 test('land-use mask uses mapped road widths and water holes, with traffic roads painted over footpaths', async () => {
   const module = await import('../src/snow.ts').catch(() => null);
   assert.ok(module?.snowLanduseMask, 'the shared land-use snow mask exists');
-  const strokes: {width: number; colour: string}[] = [], fills: string[] = [];
-  const g = {fillStyle:'', strokeStyle:'', lineWidth:0, lineCap:'', lineJoin:'',
-    fillRect() {}, beginPath() {}, lineTo() {}, moveTo() {}, closePath() {},
-    fill(rule: string) {fills.push(rule);}, stroke() {strokes.push({width:this.lineWidth, colour:this.strokeStyle});}};
   const old = Object.getOwnPropertyDescriptor(globalThis, 'document');
-  Object.defineProperty(globalThis, 'document', {configurable:true, value:{createElement: () => ({width:0,height:0,getContext:()=>g})}});
+  Object.defineProperty(globalThis, 'document', {configurable:true, value:{createElement: () => {throw Error('snow mask must not allocate a canvas');}}});
   try {
     const land = {extent:{x0:0,x1:100,z0:0,z1:50}, water:[[[[10,10],[30,10],[30,30],[10,30]],[[15,15],[20,15],[20,20],[15,20]]]] as [number,number][][][],
       roads:[{width:9,line:[[0,25],[100,25]] as [number,number][]},{width:5,line:[[25,0],[25,50]] as [number,number][]},{width:4,line:[[0,0],[10,0]] as [number,number][]}],
       paths:[{width:2,line:[[0,0],[0,50]] as [number,number][]}]};
-    const mask = module.snowLanduseMask(land, 100)!;
+    const mask = module.snowLanduseMask(land)!;
+    assert.ok(mask.texture instanceof THREE.DataTexture, 'one-channel bytes, no canvas backing');
+    const texture = mask.texture as THREE.DataTexture, {width,height,data} = texture.image;
+    assert.ok(data instanceof Uint8Array); assert.equal(data.byteLength,width*height);
+    assert.deepEqual([width,height],[50,25], '2 metres per texel resolves the 2 m footpath');
+    assert.equal(texture.format,THREE.RedFormat);assert.equal(texture.type,THREE.UnsignedByteType);
+    assert.equal(texture.unpackAlignment,1);assert.equal(texture.flipY,false);
+    assert.equal(texture.minFilter,THREE.LinearFilter);assert.equal(texture.magFilter,THREE.LinearFilter);
+    // Read with the page's unchanged (u, 1-v) lookup. DataTexture's first row is
+    // the south edge: no DOM image upload exists to flip the canvas for us.
+    const at=(x:number,z:number)=>data[(height-1-Math.floor(z/2))*width+Math.floor(x/2)];
     assert.deepEqual(mask.rect.toArray(),[0,0,.01,.02]);
-    assert.deepEqual(strokes.map(s=>s.width),[2,4,5,9]);
-    assert.deepEqual(strokes.map(s=>s.colour),['rgb(242,0,0)','rgb(242,0,0)','rgb(89,0,0)','rgb(20,0,0)']);
-    assert.deepEqual(fills,['evenodd'], 'river islands remain snowy ground');
+    assert.equal(at(75,45),255,'untouched pavement');
+    assert.equal(at(5,1),242,'4 m pedestrian street');
+    assert.equal(at(1,45),249,'half a texel of the 2 m footpath, antialiased against the pavement');
+    assert.equal(at(25,45),89,'5 m lane');assert.equal(at(75,25),20,'9 m main road');
+    assert.equal(at(25,25),20,'the main road paints over the lane at their crossing');
+    assert.equal(at(11,15),0,'water takes no snow');assert.equal(at(17,17),255,'even-odd river island remains snowy');
+    assert.equal(at(19,19),255,'the island edge remains land');
     assert.equal(mask.texture.colorSpace, THREE.NoColorSpace, 'retention is linear data');
     assert.equal(mask.texture.generateMipmaps,false); mask.texture.dispose();
+    const bend = [[20,20],[40,20],[40,40]] as [number,number][];
+    const rounded = module.snowLanduseMask({extent:land.extent,roads:[{width:4,line:bend}]});
+    const retraced = module.snowLanduseMask({extent:land.extent,roads:[{width:4,line:[...bend,[40,20],[40,20],[20,20]]}]});
+    const pixels = (m: typeof rounded) => (m.texture as THREE.DataTexture).image.data as Uint8Array;
+    assert.ok(Buffer.compare(pixels(rounded),pixels(retraced))===0,'round joins and repeated segments blend once, without dark seams');
+    const cap = pixels(rounded)[(height-1-9)*width+9]!;
+    assert.ok(cap>242&&cap<255,'antialiased round cap reaches behind its endpoint');
+    rounded.texture.dispose();retraced.texture.dispose();
   } finally {if(old)Object.defineProperty(globalThis,'document',old);else Reflect.deleteProperty(globalThis,'document');}
 });
