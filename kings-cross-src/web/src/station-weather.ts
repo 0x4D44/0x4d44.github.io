@@ -141,7 +141,7 @@ function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
   let gone = false;
   if (typeof terrain?.heightAt === 'function') {
     const heightAt = terrain.heightAt.bind(terrain);
-    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt,enhanced)).then((made) => {
+    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt,enhanced,view.scene)).then((made) => {
       if (gone) { made.dispose(); return; }
       layer = made;
       view.scene.add(made.group);

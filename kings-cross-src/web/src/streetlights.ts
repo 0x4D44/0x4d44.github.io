@@ -13,6 +13,7 @@ import { haloTexture } from './night.ts';
 import type { NightLayer } from './night.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
+import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { createLampWeather, fadeLightInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
@@ -146,7 +147,13 @@ export interface StreetLightOptions {
   weatherEffects?: boolean;
   /** Allocate reflection geometry only for this scene's nearby wet surfaces. */
   reflectionAt?: (spot: LampSpot, index: number) => boolean;
+  /** Finite reflected patch around its head, rather than an infinite tangent plane. */
+  reflectionReach?: number;
+  /** Actual urban road/paving receiver heights and wet footprint. */
+  reflectionSurface?: LampWetSurface;
   haloSize?: number;
+  /** Relative head diameter, e.g. the forecourt's blazing LED strips. */
+  haloScaleAt?: (spot:LampSpot)=>number;
   /** A small white-hot core in pixels, including at panorama distances. */
   coreSize?: number;
 }
@@ -188,11 +195,13 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   // the glow at each head (a mast's, along its strip): additive sprites, a colour to each, hidden by day
   const heads: number[] = [];
   const colours: number[] = [];
+  const haloScales: number[] = [];
   const tint = new THREE.Color();
   for (const spot of spots) {
     tint.setHex(LAMP_LIGHT[spot.kind].halo);
     for (const point of spot.mast ? stripPoints(spot) : [headAt(spot)]) {
       heads.push(...point);
+      haloScales.push(options.haloScaleAt?.(spot) ?? 1);
       colours.push(tint.r, tint.g, tint.b);
     }
   }
@@ -205,6 +214,16 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   // Light has no solid surface, even when hidden by day: sightlines pass through.
   halos.raycast = (): void => {};
   if (options.fog) fadeLightInFog(haloMaterial);
+  if (options.haloScaleAt) {
+    haloGeometry.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(haloScales,1));
+    const before=haloMaterial.onBeforeCompile;
+    haloMaterial.onBeforeCompile=(shader,renderer)=>{
+      before.call(haloMaterial,shader,renderer);
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float lampHaloScale;')
+        .replace('gl_PointSize = size;','gl_PointSize = size;\ngl_PointSize *= lampHaloScale;');
+    };
+    haloMaterial.customProgramCacheKey=()=> 'street-head-strip-glow';
+  }
   halos.name = 'street-lamp-halos';
   halos.visible = false;
   halos.frustumCulled = false;
@@ -261,7 +280,7 @@ vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
 // pool-profile-begin
 float poolR = length( 2.0 * vPoolUv - 1.0 );
 ${options.poolLineAt ? `float poolProfile = pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
-poolProfile = mix( poolProfile, (1.0 - smoothstep(.82,1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(.72,1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
+poolProfile = mix( poolProfile, exp(-1.8*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-2.5*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(.65,1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(.55,1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
 gl_FragColor.a *= poolProfile;` : 'gl_FragColor.a *= pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );'}
 // pool-profile-end`;
       }
@@ -308,7 +327,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && n ? createLampWeather(pools, spots.flatMap(s=>headAt(s)), halos, options.poolFloor,
-    spots.flatMap((s,i)=>options.reflectionAt?.(s,i) === false ? [] : [i])) : undefined;
+    spots.flatMap((s,i)=>options.reflectionAt?.(s,i) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface) : undefined;
   if (weather) group.add(weather.group);
 
   return {

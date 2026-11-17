@@ -6,6 +6,7 @@ import { pointInPolygon } from '../../core/station.ts';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import { createStreetLights, headOf, MAST_STRIP } from './streetlights.ts';
+import type { LampWetSurface } from './lamp-wet-surface.ts';
 import type { StreetLights, StreetLightOptions } from './streetlights.ts';
 
 /** Rasterised once at half-metre resolution; light stops at platform edges. */
@@ -36,15 +37,15 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
   const floor = floorMask(rings);
   const layer = createStreetLights(spots, {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     analyticPool:true,poolCeiling:.20,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
-    poolWeather:true,weatherEffects:true,haloSize:1.5,coreSize:1.5});
+    poolWeather:true,weatherEffects:true,haloSize:3.2,coreSize:1.5,reflectionReach:8});
   layer.group.name='station-platform-lamps';
   return {...layer,dispose(){layer.dispose();floor?.map.dispose();layer.group.removeFromParent();}};
 }
 
 /** Nearby urban heads only: no reflective quads over the wider countryside.
  * Existing inferred street positions and sodium/LED kinds are retained. */
-export function urbanLampOptions(): StreetLightOptions {
-  return {fog:true,analyticPool:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:1.5,
+export function urbanLampOptions(surface?:LampWetSurface): StreetLightOptions {
+  return {fog:true,analyticPool:true,poolCeiling:.20,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:2.6,haloScaleAt:s=>s.mast?2:1,reflectionReach:8,reflectionSurface:surface,
     headAt:s=>s.mast?[s.x,s.y+(MAST_STRIP[0]+MAST_STRIP[1])/2,s.z]:headOf(s),
     poolRadiusAt:()=>8,
     poolSizeAt:s=>s.mast?[12,2.8]:undefined,

@@ -22,6 +22,7 @@ import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts } from '../../core/streetlights.ts';
+import { createLampWetSurface } from './lamp-wet-surface.ts';
 import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
@@ -186,7 +187,8 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   scene.add(group);
   // the street lamps, and the masts of the forecourt (the same glow and pools, a mast of their own)
   const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
-  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? urbanLampOptions() : {}) : null;
+  const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
+  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? urbanLampOptions(wetSurface) : {}) : null;
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
   if (lights) {
@@ -198,6 +200,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     lights,
     stats,
     dispose() {
+      wetSurface?.dispose();
       scene.remove(group);
       for (const g of geometries) g.dispose();
       if (lights) {

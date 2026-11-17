@@ -15,6 +15,8 @@ import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import type { WaverleyScene } from '../../core/waverley-data.ts';
+import type * as THREE from 'three';
+import { createLampWetSurface } from './lamp-wet-surface.ts';
 import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
@@ -133,7 +135,7 @@ export function waverleyLampSpots(file: LampRoadsFile, ground: (x: number, z: nu
  * Load the Scottish street lamps: the roads, the building outlines (the scene's own OSM data, already loaded by the model) and the context DTM, each a lazy chunk, and the lamps they make. `drawn` is
  * the ground as the scene draws it. Resolves to the lamps' layer (a post to each, a glow at its head and a pool under it: web/src/streetlights.ts), not yet in any scene.
  */
-export async function loadWaverleyLamps(drawn: (x: number, z: number) => number, nightEffects = false): Promise<StreetLights> {
+export async function loadWaverleyLamps(drawn: (x: number, z: number) => number, nightEffects = false, surfaceRoot?:THREE.Object3D): Promise<StreetLights> {
   const [roads, scene, terrain] = await Promise.all([
     import('./data/waverley-lamp-roads.json', { with: { type: 'json' } }),
     import('./data/waverley-scene.json', { with: { type: 'json' } }),
@@ -141,5 +143,12 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   ]);
   const context = createTerrain(terrain.default as unknown as TerrainFile);
   const data = unpackWaverleyScene(scene.default);
-  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data)), nightEffects ? urbanLampOptions() : {});
+  const file=roads.default as unknown as LampRoadsFile;
+  const spots=waverleyLampSpots(file, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data));
+  const roadMask=new SegmentGrid();
+  for(const road of decodeLampRoads(file)) for(let i=1;i<road.line.length;i++)roadMask.add({a:road.line[i-1]!,b:road.line[i]!,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+1.5});
+  const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground-cover','waverley-bridge-decks']),spots,
+    (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
+  const layer=createStreetLights(spots,nightEffects?urbanLampOptions(surface):{});
+  return {...layer,dispose(){layer.dispose();surface?.dispose();}};
 }
