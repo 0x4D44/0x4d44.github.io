@@ -61,7 +61,7 @@ reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
 // balmoral-bands-begin
 float hotelHeight = ${height};
 float balconyBeam = 0.36*smoothstep(8.3,8.7,hotelHeight)*exp(-max(0.0,hotelHeight-8.7)/1.3);
-float corniceBeam = 0.45*smoothstep(24.1,24.7,hotelHeight)*exp(-max(0.0,hotelHeight-24.7)/2.5);
+float corniceBeam = 0.45*smoothstep(23.2,23.6,hotelHeight)*exp(-max(0.0,hotelHeight-24.7)/2.5);
 totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.57,0.20)*(balconyBeam+corniceBeam);
 // balmoral-bands-end`);
     // Cornices and lead domes share a material with bridge ribs and the hands.
@@ -88,7 +88,16 @@ trimBeam += 0.30*smoothstep(34.5,35.5,trimHeight)*exp(-max(0.0,trimHeight-35.5)/
 float roofBeam = 0.025+0.90*smoothstep(24.7,25.5,trimHeight)*exp(-max(0.0,trimHeight-25.5)/10.0);
 trimBeam = mix(trimBeam,roofBeam,(${roofZone})*(1.0-smoothstep(39.5,40.0,trimHeight)));
 float trimFacing = 0.50+0.50*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.8,0.6,0.2))));
-totalEmissiveRadiance += uStationLampLevel*vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*trimZone*trimBeam*trimFacing;
+vec3 trimRadiance = vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*trimZone*trimBeam*trimFacing;
+// Camera probes hit the vertical cornice, the turret shaft and sloped bell,
+// not just the upward-facing roof samples. Keep the proven BASE envelope
+// on these faces when a short beam or the dome mask would leave a dark band.
+float baseCapBeam = 0.10+0.65*smoothstep(23.5,24.7,trimHeight)*exp(-max(0.0,trimHeight-25.5)/8.0);
+baseCapBeam += 0.50*exp(-8.0*(trimHeight-27.8)*(trimHeight-27.8))+0.40*exp(-8.0*(trimHeight-30.8)*(trimHeight-30.8));
+vec3 baseCapRadiance = vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*trimZone*baseCapBeam*trimFacing;
+float capFaces = (1.0-smoothstep(0.65,0.95,normalize(vStationLampNormal).y))*smoothstep(19.0,20.0,trimHeight)*(1.0-smoothstep(39.5,40.0,trimHeight));
+trimRadiance = mix(trimRadiance,max(trimRadiance,max(baseCapRadiance,vec3(0.105,0.0431,0.0094)*trimZone)),capFaces);
+totalEmissiveRadiance += uStationLampLevel*trimRadiance;
 // balmoral-trim-end
 // balmoral-crown-begin
 float crown = (${within})*smoothstep(${(base+49.2).toFixed(3)},${(base+51.0).toFixed(3)},vStationLampWorld.y);

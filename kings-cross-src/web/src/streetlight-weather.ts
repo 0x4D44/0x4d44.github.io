@@ -27,6 +27,7 @@ gl_FragColor.rgb *= exp(-0.0045*max(0.0,vUrbanLampDistance-30.0)*uUrbanLampFog);
 export interface LampWeatherOptions {
   enhancedFog?: boolean;
   fogHaloSpread?: number;
+  mastHaze?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
   /** A window is recessed inside the wall; its receiver is outside on paving. */
@@ -197,17 +198,31 @@ gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
 
   // The original head and its larger scattering sprite share one Points draw.
   // Core sprites retain their original position attribute and white intensity.
-  const hg=halos.geometry,p=hg.getAttribute('position'),c=hg.getAttribute('color'),fogFlags=new Float32Array(p.count*2);
-  const positions=new Float32Array(p.count*6),colors=new Float32Array(p.count*6);
+  const hg=halos.geometry,p=hg.getAttribute('position'),c=hg.getAttribute('color'),scale=hg.getAttribute('lampHaloScale');
+  // A strip's seven near-head samples are one source of light in the air.
+  // Add one bounded volume at their centroid, retaining the accepted head
+  // profile and the existing Points draw instead of amplifying every sample.
+  const strips=new Map<string,{point:THREE.Vector3;colour:THREE.Vector3;scale:number;count:number}>();
+  if(enhancedFog&&optics.mastHaze&&scale)for(let i=0;i<p.count;i++){
+    if(scale.getX(i)<1.5)continue;
+    const key=`${p.getX(i)},${p.getZ(i)}`,entry=strips.get(key);
+    if(entry){entry.point.y+=p.getY(i);entry.count++;}
+    else strips.set(key,{point:new THREE.Vector3().fromBufferAttribute(p,i),colour:new THREE.Vector3().fromBufferAttribute(c,i),scale:scale.getX(i),count:1});
+  }
+  const haze=[...strips.values()];haze.forEach(s=>s.point.y/=s.count);
+  const fogFlags=new Float32Array(p.count*2+haze.length);
+  const positions=new Float32Array(p.count*6+haze.length*3),colors=new Float32Array(p.count*6+haze.length*3);
   positions.set(p.array);positions.set(p.array,p.count*3);colors.set(c.array);colors.set(c.array,p.count*3);fogFlags.fill(1,p.count);
+  haze.forEach((s,i)=>{positions.set(s.point.toArray(),p.count*6+i*3);colors.set(s.colour.toArray(),p.count*6+i*3);});
   hg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));hg.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));hg.setAttribute('lampFogHalo',new THREE.Float32BufferAttribute(fogFlags,1));
-  const scale=hg.getAttribute('lampHaloScale');
-  if(scale){const sizes=new Float32Array(scale.count*2);sizes.set(scale.array);sizes.set(scale.array,scale.count);hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
+  if(scale){const sizes=new Float32Array(scale.count*2+haze.length);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*1.15;});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
+  if(haze.length){const flags=new Float32Array(p.count*2+haze.length);flags.fill(1,p.count*2);hg.setAttribute('lampFogHaze',new THREE.Float32BufferAttribute(flags,1));}
   const fogBefore=halos.material.onBeforeCompile;
   halos.material.onBeforeCompile=(shader,renderer)=>{
     fogBefore.call(halos.material,shader,renderer);shader.uniforms.uLampFog=surfaceUniforms.fog;
-    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`)
+    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}${haze.length?'\nattribute float lampFogHaze;\nvarying float vLampFogHaze;':''}`)
       .replace('gl_PointSize = size;',`vLampFogHalo = lampFogHalo;
+${haze.length?'vLampFogHaze = lampFogHaze;':''}
 // lamp-fog-size-begin
 gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(1):'4.2'}, lampFogHalo );
 // lamp-fog-size-end`)
@@ -217,6 +232,12 @@ gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' *
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
+    if(haze.length)shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vLampFogHaze;')
+      .replace('#include <map_particle_fragment>',`float hazeSourceAlpha = diffuseColor.a;
+#include <map_particle_fragment>
+// The volume has its own analytic soft edge; the bright-head texture remains
+// on the original and ordinary fog samples.
+diffuseColor.a = mix(diffuseColor.a,hazeSourceAlpha,vLampFogHaze);`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uLampFog;')
       .replace('#include <opaque_fragment>',`#include <opaque_fragment>
 // lamp-fog-begin
@@ -244,9 +265,14 @@ gl_FragColor.a *= mix(1.0,mix(0.10,1.0,mastSkirt),vLampFogMast*vLampFogHalo*uLam
 float mastFog = vLampFogMast*vLampFogHalo*uLampFog;
 gl_FragColor.a = mix(gl_FragColor.a,0.35*(gl_FragColor.a+0.55*mastScatterAlpha*(1.0-mastSkirt)),mastFog);
 gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.1,1.0,0.8),mastFog);
-// lamp-fog-mast-profile-end`:''}`);
+// lamp-fog-mast-profile-end${haze.length?`
+// lamp-mast-haze-begin
+float hazeRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+float hazeProfile = (1.30*exp(-12.0*hazeRadius*hazeRadius)+0.12*exp(-1.45*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
+gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*hazeProfile,vLampFogHaze);
+// lamp-mast-haze-end`:''}`:''}`);
   };
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};

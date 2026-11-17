@@ -168,6 +168,8 @@ export interface StreetLightOptions {
   enhancedFog?: boolean;
   /** Wider scattering on Scottish city lights, independent of the clear head. */
   fogHaloSpread?: number;
+  /** One low-opacity volume per LED strip, separate from its bright samples. */
+  mastHaze?: boolean;
   /** Snow receives diffuse pools, never mirror streaks. */
   suppressSnow?: boolean;
   /** Low-pressure sodium on selected approaches, including fittings reused in
@@ -371,7 +373,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {
