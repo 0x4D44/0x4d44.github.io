@@ -162,8 +162,9 @@ export function poseCars(route, cars, noseS) {
  * The page script that puts the plan's trains into the Waverley scene on show (window.__kx.stations.edinburgh().scene), built by the page's own
  * evidenceBuildEdinburgh, and moves the moving ones every animation frame. Returns the summary; run twice it adds nothing. window.__kx.synthetic.summary()
  * counts the trains and cars, the moving trains and how far they have run, and the trains with a car whose middle is inside the camera's view.
+ * Comparison screenshots use animate:false: shader compilation and frame timing must not move the fixture between BASE and HEAD.
  */
-export function syntheticScript(plan) {
+export function syntheticScript(plan, { animate = true } = {}) {
   return `(() => {
   const k = window.__kx, view = k.stations?.edinburgh?.();
   if (!view?.scene || !view.geometry) throw new Error('synthetic Waverley: the Waverley scene is not loaded');
@@ -207,7 +208,7 @@ export function syntheticScript(plan) {
     }
     requestAnimationFrame(tick);
   };
-  requestAnimationFrame(tick);
+  if (${animate}) requestAnimationFrame(tick);
   const inView = (t) => t.group.visible && t.middles.some((m) => {
     const p = view.scene.localToWorld(new V(m[0], m[1], m[2])).project(k.camera);
     return Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z >= -1 && p.z <= 1;
@@ -215,7 +216,7 @@ export function syntheticScript(plan) {
   k.synthetic = { trains, summary: () => {
     k.camera.updateMatrixWorld(); view.scene.updateMatrixWorld();
     const moving = trains.filter((t) => t.loop);
-    return { trains: trains.length, standing: trains.length - moving.length, moving: moving.length, cars: trains.reduce((n, t) => n + t.middles.length, 0),
+    return { trains: trains.length, standing: trains.length - moving.length, moving: moving.length, animated: ${animate}, cars: trains.reduce((n, t) => n + t.middles.length, 0),
       kinds: [...new Set(trains.map((t) => t.kind))], inView: trains.filter(inView).length, inViewIds: trains.filter(inView).map((t) => t.id),
       travelledM: Math.round(moving.reduce((n, t) => n + t.travelledM, 0) * 10) / 10 };
   } };
