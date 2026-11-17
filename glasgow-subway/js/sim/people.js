@@ -513,7 +513,13 @@ export class AnimCrowd {
   }
   /** is (x, z) in this car (its frame) within r of the bag at a seated rider's feet? (it stands in front of their toes, about half a metre in from the hips) */
   _bagNear(car, x, z, r = 0.5) {
-    for (const q of this.people) { if (q.parent !== car || q.state !== 'sit' || !q.bag || !q.obj) continue; const bx = q.x - Math.sign(q.x || 1) * (q.bag.kind === 'trolley' ? 0.62 : 0.5); if (Math.hypot(bx - x, q.z - z) < r + (q.bag.kind === 'trolley' ? 0.08 : 0)) return true; }
+    // where the bag really is (stepBag draws it in front of the toes), in the car's frame; the estimate from the hips missed it (review 13: an ankle in a tote for 15 s)
+    const v = this._bv || (this._bv = new this.THREE.Vector3());
+    for (const q of this.people) {
+      if (q.parent !== car || q.state !== 'sit' || !q.bag || !q.obj) continue; let bx, bz;
+      const m = q.bagRig && q.bagRig.mesh; if (m && m.parent) { m.updateWorldMatrix(true, false); m.getWorldPosition(v); car.worldToLocal(v); bx = v.x; bz = v.z; } else { bx = q.x - Math.sign(q.x || 1) * 0.5; bz = q.z; }
+      if (Math.hypot(bx - x, bz - z) < r + (q.bag.kind === 'trolley' ? 0.08 : 0)) return true;
+    }
     return false;
   }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
