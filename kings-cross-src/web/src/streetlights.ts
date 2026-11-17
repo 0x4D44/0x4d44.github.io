@@ -170,6 +170,8 @@ export interface StreetLightOptions {
   fogHaloSpread?: number;
   /** One low-opacity volume per LED strip, separate from its bright samples. */
   mastHaze?: boolean;
+  /** KX-only broad mast air glow, directional pool core and rough wet streaks. */
+  kxOptics?: boolean;
   /** Snow receives diffuse pools, never mirror streaks. */
   suppressSnow?: boolean;
   /** Low-pressure sodium on selected approaches, including fittings reused in
@@ -326,7 +328,7 @@ gl_Position = projectionMatrix*mvPosition;
 // pool-profile-begin
 float poolR = length( 2.0 * vPoolUv - 1.0 );
 ${options.poolLineAt ? `float poolProfile = pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
-poolProfile = mix( poolProfile, exp(-1.8*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-2.5*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(.65,1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(.55,1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
+poolProfile = mix( poolProfile, exp(-${options.kxOptics?'1.15':'1.8'}*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-${options.kxOptics?'2.0':'2.5'}*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(${options.kxOptics?'.78':'.65'},1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(${options.kxOptics?'.72':'.55'},1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
 gl_FragColor.a *= poolProfile;` : `gl_FragColor.a *= pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );`}
 // pool-profile-end`;
       }
@@ -352,7 +354,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}`;
   }
   pools.name = 'street-lamp-pools';
   poolEntries.forEach(({spot,index}, i) => {
@@ -373,7 +375,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {

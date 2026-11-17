@@ -1,4 +1,4 @@
-// Reflected light transmitted through the two existing south lunette windows.
+// Reflected light from the south lunette windows and amber-lit facade.
 // This adds no luminaires or diffuse pools. Sample points lie on the built
 // glazing (shed.ts, FRONT_THICK / 2 + 0.1), transformed by the shed frame.
 import * as THREE from 'three';
@@ -12,7 +12,7 @@ import { lunetteBars } from './shed.ts';
 export interface KxFrontSource {
   head: readonly [number,number,number];
   base: readonly [number,number,number];
-  /** Clear pane width relative to a full mullion bay. */
+  /** Source width relative to a full mullion bay. */
   widthScale: number;
 }
 
@@ -76,17 +76,43 @@ export function kxFrontSources(layout:ShedLayout,surface:LampWetSurface):KxFront
 /** Same clipped wet optics as the urban lamps; the temporary inputs only
  * provide per-instance colour/anchors. Neither is attached to the scene. */
 export function createKxFrontReflections(layout:ShedLayout,surface:LampWetSurface) {
-  const sources=kxFrontSources(layout,surface),geometry=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);
+  return reflectedSources(kxFrontSources(layout,surface),surface,'kx-front-glazing-reflections',[.15,.18,.205]);
+}
+
+/** The three built piers and four stone arch shoulders receive the facade's
+ * amber uplight. Mirror those surfaces, with no invented points in the glass. */
+export function kxFacadeSources(layout:ShedLayout,surface:LampWetSurface):KxFrontSource[] {
+  const sites = [.5,layout.width/2,layout.width-.5].map(u=>({u,y:layout.springing*.6,widthScale:.9}));
+  const r=SHED_SPAN_WIDTH/2+.5;
+  for(const centre of [layout.aisle+SHED_SPAN_WIDTH/2,layout.aisle+3*SHED_SPAN_WIDTH/2]) {
+    for(const side of [-1,1])sites.push({u:centre+side*r*Math.cos(Math.PI/6),y:layout.springing+r*.5,widthScale:.65});
+  }
+  return sites.flatMap(s=>{
+    const [x,z]=shedToWorld(layout,s.u,-.05);
+    for(const out of [1,2,3,4,6,8,12]) {
+      const [bx,bz]=shedToWorld(layout,s.u,-out),[y,weight]=lampSurfaceAt(surface,bx,bz);
+      if(weight>.95)return [{head:[x,s.y,z] as const,base:[bx,y+.012,bz] as const,widthScale:s.widthScale}];
+    }
+    return [];
+  });
+}
+
+export function createKxFacadeReflections(layout:ShedLayout,surface:LampWetSurface) {
+  return reflectedSources(kxFacadeSources(layout,surface),surface,'kx-front-amber-reflections',[.14,.078,.028]);
+}
+
+function reflectedSources(sources:KxFrontSource[],surface:LampWetSurface,name:string,tint:readonly [number,number,number]) {
+  const geometry=new THREE.PlaneGeometry(1,1).rotateX(-Math.PI/2);
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(sources.length),1));
   const material=new THREE.MeshBasicMaterial(),pools=new THREE.InstancedMesh(geometry,material,sources.length);
-  const matrix=new THREE.Matrix4(),colour=new THREE.Color().setRGB(.15,.18,.205);
+  const matrix=new THREE.Matrix4(),colour=new THREE.Color().setRGB(...tint);
   sources.forEach((s,i)=>{pools.setMatrixAt(i,matrix.makeTranslation(...s.base));pools.setColorAt(i,colour);});
   const haloGeometry=new THREE.BufferGeometry();
   for(const attr of ['position','color'])haloGeometry.setAttribute(attr,new THREE.Float32BufferAttribute([],3));
   const haloMaterial=new THREE.PointsMaterial(),halos=new THREE.Points(haloGeometry,haloMaterial);
-  const weather=createLampWeather(pools,sources.flatMap(s=>[...s.head]),halos,undefined,sources.map((_,i)=>i),44,surface,true,{receiverAnchor:'base',suppressSnow:true,reflectionWidthAt:i=>sources[i]!.widthScale});
+  const weather=createLampWeather(pools,sources.flatMap(s=>[...s.head]),halos,undefined,sources.map((_,i)=>i),44,surface,true,{receiverAnchor:'base',suppressSnow:true,kxOptics:true,reflectionWidthAt:i=>sources[i]!.widthScale});
   const reflection=weather.group.getObjectByName('street-lamp-reflections');
-  if(reflection)reflection.name='kx-front-glazing-reflections';
+  if(reflection)reflection.name=name;
   weather.group.name='kx-front-reflections';
   pools.dispose();geometry.dispose();material.dispose();haloGeometry.dispose();haloMaterial.dispose();
   return {...weather,sources};

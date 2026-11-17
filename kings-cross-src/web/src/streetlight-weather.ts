@@ -28,6 +28,7 @@ export interface LampWeatherOptions {
   enhancedFog?: boolean;
   fogHaloSpread?: number;
   mastHaze?: boolean;
+  kxOptics?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
   /** A window is recessed inside the wall; its receiver is outside on paving. */
@@ -174,7 +175,7 @@ reflectionOpen *= receiver.y*onSurface;
 float blurY0 = vReflectionUv.y - 0.12;
 float blurY1 = vReflectionUv.y + 0.12;
 float streakY = 0.5 * exp( -${broken?'0.8':'2.5'} * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY0 * blurY0 ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY1 * blurY1 );
-float streak = exp( -${broken?'3.2':'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
+float streak = exp( -${broken?(optics.kxOptics?'1.2':'3.2'):'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
 gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
 // reflection-alpha-end${optics.suppressSnow?`
 // reflection-snow-begin
@@ -185,11 +186,22 @@ gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothste
 // reflection-edge-end`:''}${broken?`
 // reflection-breakup-begin
 float seed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
+${optics.kxOptics?`// reflection-kx-roughness-begin
+// Unequal wet segments, tapered tips and wandering soft sides replace the
+// former shallow horizontal bars inside a parallel-sided post silhouette.
+float wetSeed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
+float wetY = vReflectionUv.y;
+float wetTaper = 0.10+0.90*pow(max(0.0,1.0-wetY*wetY),1.75);
+float wetWander = 0.10*sin(9.0*wetY+wetSeed);
+float wetAcross = (vReflectionUv.x-wetWander)/wetTaper;
+float wetSegments = 0.5+0.5*sin(13.0*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
+gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(0.035+0.965*smoothstep(0.28,0.75,wetSegments));
+// reflection-kx-roughness-end`:`
 float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
-gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
+gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
 // reflection-breakup-end`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
   indices.forEach((source,i)=>{pools.getMatrixAt(source,matrix);reflections.setMatrixAt(i,matrix);if(pools.instanceColor){pools.getColorAt(source,colour);reflections.setColorAt(i,colour.multiplyScalar(2.5));}});
@@ -215,7 +227,7 @@ gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
   positions.set(p.array);positions.set(p.array,p.count*3);colors.set(c.array);colors.set(c.array,p.count*3);fogFlags.fill(1,p.count);
   haze.forEach((s,i)=>{positions.set(s.point.toArray(),p.count*6+i*3);colors.set(s.colour.toArray(),p.count*6+i*3);});
   hg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));hg.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));hg.setAttribute('lampFogHalo',new THREE.Float32BufferAttribute(fogFlags,1));
-  if(scale){const sizes=new Float32Array(scale.count*2+haze.length);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*1.15;});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
+  if(scale){const sizes=new Float32Array(scale.count*2+haze.length);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*(optics.kxOptics?1.65:1.15);});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
   if(haze.length){const flags=new Float32Array(p.count*2+haze.length);flags.fill(1,p.count*2);hg.setAttribute('lampFogHaze',new THREE.Float32BufferAttribute(flags,1));}
   const fogBefore=halos.material.onBeforeCompile;
   halos.material.onBeforeCompile=(shader,renderer)=>{
@@ -270,9 +282,14 @@ gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.1,1.0,0.8),mastFog);
 float hazeRadius = 2.0*length(gl_PointCoord-vec2(0.5));
 float hazeProfile = (1.30*exp(-12.0*hazeRadius*hazeRadius)+0.12*exp(-1.45*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
 gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*hazeProfile,vLampFogHaze);
-// lamp-mast-haze-end`:''}`:''}`);
+// lamp-mast-haze-end${optics.kxOptics?`
+// lamp-kx-haze-begin
+float kxHazeProfile = (0.82*exp(-12.0*hazeRadius*hazeRadius)+0.08*exp(-1.45*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
+gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*kxHazeProfile,vLampFogHaze);
+gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.0,0.9,0.45),vLampFogHaze);
+// lamp-kx-haze-end`:''}`:''}`:''}`);
   };
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};

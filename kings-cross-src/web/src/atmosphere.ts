@@ -305,6 +305,8 @@ export interface AtmosphereOptions {
   lampLayerSunGate?: readonly [number, number];
   /** KX's drawn platform polygons; omitted retains the legacy halo-only layer. */
   platformLampFloor?: readonly (readonly Pt[])[];
+  /** KX's city-lit dense night fog; other stations and daylight keep their range. */
+  kingsCrossNightFog?: boolean;
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -397,7 +399,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
@@ -605,6 +607,16 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         const sunPos = solarPosition(f.timeMs, location?.lat, location?.lon);
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
+        // City lights colour the air, not the hemisphere or surface fill.
+        // Both gates leave daytime, rain and all other scenes unchanged.
+        const cityFog = kingsCrossNightFog ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
+        if (cityFog > 0) {
+          const warm: Rgb = [.28,.22,.145];
+          const tint = (c: Rgb, weight: number): Rgb => [c[0]+(warm[0]-c[0])*weight,c[1]+(warm[1]-c[1])*weight,c[2]+(warm[2]-c[2])*weight];
+          rig.fog = tint(rig.fog,cityFog);
+          rig.dome.horizon = tint(rig.dome.horizon,cityFog);
+          rig.dome.zenith = tint(rig.dome.zenith,.45*cityFog);
+        }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
@@ -623,6 +635,15 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y, haze?.weatherFar, haze?.weatherFar === undefined ? undefined : haze.clear), state.weather.visibilityM, haze);
         scene.fog.near = range.near + ((haze?.fogNear ?? range.near) - range.near) * smoothstep(.6, .85, state.rig.fogAmount);
         scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
+        if (kingsCrossNightFog) {
+          const cityFog = lampLevelFor(state.sun.elevationDeg) * smoothstep(.65,.9,state.rig.fogAmount);
+          // The old 0.2*far near plane left the entire station frontage clear.
+          // Consume the visibility range even from the elevated overview.
+          if (cityFog > 0) {
+            scene.fog.near += (4-scene.fog.near)*cityFog;
+            scene.fog.far += (Math.max(60,state.weather.visibilityM*.8)-scene.fog.far)*cityFog;
+          }
+        }
         rgb(scene.fog.color, state.rig.fog);
       }
       if (scene.background instanceof THREE.Color) rgb(scene.background, state.rig.dome.horizon);
