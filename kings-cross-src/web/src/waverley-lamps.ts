@@ -138,7 +138,12 @@ async function approachSpots(root:THREE.Object3D,surface:LampWetSurface,existing
   const out:LampSpot[]=[];
   const add=(x:number,z:number,yaw:number)=>{
     const nearby=existing.find(s=>Math.hypot(s.x-x,s.z-z)<7);
-    if(nearby){if(!out.includes(nearby))out.push(nearby);return;}
+    if(nearby){
+      // A promoted kerb fitting must use sodium in both overlapping batches;
+      // leaving its original warm-white core underneath washed the row white.
+      nearby.kind=LAMP_KIND.sodium;
+      if(!out.includes(nearby))out.push(nearby);return;
+    }
     const [y,mask]=lampSurfaceAt(surface,x,z);if(mask<.9)return;
     const dx=lampSurfaceAt(surface,x+1,z)[0]-lampSurfaceAt(surface,x-1,z)[0];
     const dz=lampSurfaceAt(surface,x,z+1)[0]-lampSurfaceAt(surface,x,z-1)[0];
@@ -189,9 +194,9 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
     (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
   // Retain all distant head cores/posts; spend the ground geometry on nearby
   // conforming pools/strips rather than almost invisible panorama road pools.
-  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
-  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:4.5,poolCeiling:.26}):undefined;
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},

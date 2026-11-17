@@ -23,6 +23,8 @@ import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
+import { createKxFrontReflections } from './kx-front-reflections.ts';
+import { shedLayout, stationBuilding } from '../../core/station.ts';
 import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
@@ -190,7 +192,16 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
   // Two-metre receiver samples follow Euston Road's folded terrain and paving
   // joins; corner-only planes cut the sodium pool into a hard rectangle.
-  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8} : {}) : null;
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8} : {}) : null;
+  if (lights && wetSurface && stationBuilding(data)) {
+    const lampsLayer = lights, front = createKxFrontReflections(shedLayout(data),wetSurface);
+    lampsLayer.group.add(front.group);
+    lights = {...lampsLayer,
+      setLevel(level) { lampsLayer.setLevel(level); front.setLevel(level); },
+      counts() { const c=lampsLayer.counts(); return {...c,triangles:c.triangles+front.triangles,draws:c.draws+front.draws}; },
+      dispose() { front.dispose(); lampsLayer.dispose(); },
+    };
+  }
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
   if (lights) {

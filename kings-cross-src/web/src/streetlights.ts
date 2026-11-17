@@ -164,6 +164,10 @@ export interface StreetLightOptions {
   reflectionSurface?: LampWetSurface;
   /** Urban puddles form long, narrow streaks with irregular soft breaks. */
   reflectionBroken?: boolean;
+  /** Station/city optics only; the Perth path remains unchanged. */
+  enhancedFog?: boolean;
+  /** Preserve a sodium core's orange hue at panorama scale. */
+  coreTint?: boolean;
   haloSize?: number;
   /** Relative head diameter, e.g. the forecourt's blazing LED strips. */
   haloScaleAt?: (spot:LampSpot)=>number;
@@ -247,7 +251,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   if (options.coreSize && heads.length) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', haloGeometry.getAttribute('position'));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colours.map(c => .92 + .08 * c), 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(options.coreTint ? colours : colours.map(c => .92 + .08 * c), 3));
     const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
     if (options.fog) fadeLightInFog(material);
@@ -358,7 +362,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog}) : undefined;
   if (weather) group.add(weather.group);
 
   return {

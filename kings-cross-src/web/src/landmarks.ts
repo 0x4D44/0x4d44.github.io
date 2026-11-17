@@ -7,7 +7,7 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES } from './materials.ts';
+import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES, windowNight } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 import type { ClockDial } from './clocks.ts';
 
@@ -36,6 +36,56 @@ export interface MaterialSet {
  * which is the lighter and takes a light the more, has the less of it. The hotel's stucco strips are the same material and take the same wash (ASSUMED: no night photograph of it).
  */
 const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as const;
+
+// Vertex ranges of the existing stone rakes. Keep the selection with the builder:
+// window surrounds and roof ridges must not become a continuous luminous roof.
+const midlandGableRakes = new WeakMap<Batch, [number, number][]>();
+
+/** Night-only treatment on the existing merged meshes, with a zero mask on the
+ * hotel and Barlow. World height is relative to the Midland's terrain seat; UVs
+ * restart on dressings and cannot describe the arcade-to-upper-wall falloff. */
+function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: number): void {
+  for (const key of ['brickRed', 'stone'] as const) {
+    const mesh = group.getObjectByName(`landmarks-${key}`) as THREE.Mesh;
+    const mask = new Float32Array(mesh.geometry.getAttribute('position').count * 2);
+    let offset = 0;
+    sets.forEach((set, building) => {
+      const batch = set[key];
+      if (!batch) return;
+      const count = batch.positions.length / 3;
+      if (building === 1) {
+        for (let i = 0; i < count; i++) mask[(offset + i) * 2] = 1;
+        for (const [start, end] of midlandGableRakes.get(batch) ?? []) {
+          for (let i = start; i < end; i++) mask[(offset + i) * 2 + 1] = 1;
+        }
+      }
+      offset += count;
+    });
+    mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(mask, 2));
+    const m = mesh.material as THREE.Material;
+    const prior = m.onBeforeCompile;
+    const priorKey = m.customProgramCacheKey();
+    m.onBeforeCompile = (shader, renderer) => {
+      prior.call(m, shader, renderer);
+      shader.uniforms.uMidlandNight = windowNight;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;')
+        .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;')
+        .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+// midland-night-begin
+float midlandLevel = uMidlandNight * vMidlandNight.x;
+float midlandUpper = smoothstep( 6.0, 18.0, vMidlandHeight );
+float midlandFill = 1.0 - ${key === 'brickRed' ? '0.70' : '0.0'} * midlandLevel * midlandUpper;
+reflectedLight.indirectDiffuse *= midlandFill;
+reflectedLight.directDiffuse *= midlandFill;
+totalEmissiveRadiance += vec3( 0.38, 0.24, 0.085 ) * midlandLevel * vMidlandNight.y;
+// midland-night-end`);
+    };
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v1-${key}-${base.toFixed(6)}`;
+  }
+}
 
 export function createMaterials(): MaterialSet {
   const owned: (THREE.Material | THREE.Texture)[] = [];
@@ -751,7 +801,13 @@ function addGable(parts: PartMap<Key>, base: V3, dir: Pt, normal: Pt, slope: num
   for (let k = 1; k < shape.length; k++) {
     const k1 = (k + 1) % shape.length;
     const corners = [border[k], border[k1], shape[k1], shape[k]] as [V2, V2, V2, V2];
+    const start = stone.positions.length / 3;
     stone.quadUV(...(corners.map(([u, v]) => q(u, 0, v)) as [V3, V3, V3, V3]), corners, out);
+    if (face === 'brickRed' && hs === 0) {
+      const ranges = midlandGableRakes.get(stone) ?? [];
+      ranges.push([start, stone.positions.length / 3]);
+      midlandGableRakes.set(stone, ranges);
+    }
   }
   for (const sign of [-1, 1]) {
     const span = Math.hypot(w, h - hs);
@@ -1460,7 +1516,9 @@ export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOpt
   const set = createMaterials();
   const plans = landmarkPlans(data);
   const seats = opts.terrain ? landmarkSeats(plans, opts.terrain) : undefined;
-  const { group, triangles } = mergeParts<Key>(landmarkGeometry(plans, seats), set.table, 'landmarks', { roofGlass: 2 });
+  const parts = landmarkGeometry(plans, seats);
+  const { group, triangles } = mergeParts<Key>(parts, set.table, 'landmarks', { roofGlass: 2 });
+  midlandNightFacade(group, parts, seats?.midland.y ?? 0);
   group.userData.clockDials = midlandClockDials(plans.midland, seats?.midland.y ?? 0); // clocks.ts
   scene.add(group);
   const geometries: THREE.BufferGeometry[] = [];
