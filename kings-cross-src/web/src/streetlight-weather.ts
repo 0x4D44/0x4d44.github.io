@@ -196,8 +196,7 @@ float wetWander = 0.10*sin(9.0*wetY+wetSeed);
 float wetAcross = (vReflectionUv.x-wetWander)/wetTaper;
 float wetSegments = 0.5+0.5*sin(13.0*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
 gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(0.035+0.965*smoothstep(0.28,0.75,wetSegments));
-// reflection-kx-roughness-end`:`
-float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
+// reflection-kx-roughness-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
 // reflection-breakup-end`:''}`);
   };
