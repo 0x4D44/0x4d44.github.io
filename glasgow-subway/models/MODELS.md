@@ -358,5 +358,11 @@ Of the five swatches made, the cable knit, denim and gingham found no made garme
   blue-green irises on `adult_tattoo_muscle`, `adult_cyclist`, `adult_piper` made brown or blue.
 Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 
+## Review 8 fixes (2026-11-17)
+- Staff vest cut from the body's own torso (the whole body is kept as an object before the clothes' masks, turned and posed with the person; only the
+  `body` group, not MakeHuman's helper shells), every edge a plane cut (`bisect_plane`): below the armpit, the shoulder straps, the two bands. Each vertex
+  2 cm out, or 8 mm past the suit (ray cast); the suit's faces under the body of the vest are deleted. The far vest moves 1 cm out at load (was 3).
+Armfit, legradii and the skin budgets re-derived from the rebuilt files.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
