@@ -37,6 +37,13 @@ export const STREET_COLOURS={felt:0x56585b,sandstone:0x9b8b7c,slate:0x4b5059,buf
 
 export interface FrontageFile {parking:{id:string;ring:number[][]}[];roads:{id:string;highway:string;service?:string;surface?:string;path:number[][]}[];bridge:{id:string;ring:number[][]}}
 type Ground=Pick<Terrain,'heightAt'|'rangeUnder'>;
+/** Shared by the forecourt geometry and its night layer: three double lantern posts per parking aisle. */
+export function forecourtLampPosts(path: readonly Pt[], half: number): {at: Pt; dir: Pt}[] {
+ const a=path[0],c=path.at(-1);if(!a||!c)return [];
+ const length=Math.hypot(c[0]-a[0],c[1]-a[1]);if(length<1e-6)return [];
+ const dir:Pt=[(c[0]-a[0])/length,(c[1]-a[1])/length],n:Pt=[-dir[1],dir[0]];
+ return [.2,.5,.8].map(f=>({at:[a[0]+(c[0]-a[0])*f+n[0]*(half+5.2),a[1]+(c[1]-a[1])*f+n[1]*(half+5.2)] as Pt,dir}));
+}
 const inRing=([x,z]:Pt,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 const ringOf=(r:number[][]):Pt[]=>r.map(p=>[p[0],p[1]]);
 
@@ -103,7 +110,7 @@ export function forecourt(b:StreetBatches,file:FrontageFile,ground:Ground,keepOu
   strip(sett?b.setts:b.flat,ringOf(r.path),half,ground,foot?.11:kind==='parking_aisle'?.07:.08,color,foot?(p=>out(p)||onCarriage(p)):out,sett?ST:0);
   if(kind==='parking_aisle'){// three lamp columns along the aisle's edge (R-pt2-b): black, with a lantern hung from an arm either side; 7 m, ASSUMED
    const [a0,c0]=[r.path[0],r.path.at(-1)!],la=Math.hypot(c0[0]-a0[0],c0[1]-a0[1]),tt:Pt=[(c0[0]-a0[0])/la,(c0[1]-a0[1])/la];
-   for(const f of [.2,.5,.8]){const q:Pt=[a0[0]+(c0[0]-a0[0])*f,a0[1]+(c0[1]-a0[1])*f],nn:Pt=[-(c0[1]-a0[1])/la,(c0[0]-a0[0])/la],lp:Pt=[q[0]+nn[0]*(half+5.2),q[1]+nn[1]*(half+5.2)];
+   for(const {at:lp} of forecourtLampPosts(r.path as Pt[],half)){
     if(out(lp))continue;const y=ground.heightAt(...lp),k=rgb(C.lampBlack);
     prism(b.front,lp[0],lp[1],.16,y,y+.6,8,k);prism(b.front,lp[0],lp[1],.08,y+.6,y+7,8,k);prism(b.front,lp[0],lp[1],.12,y+6.9,y+7.15,8,k);
     for(const sg of [1,-1]){const arm:Pt=[lp[0]+tt[0]*sg*1.1,lp[1]+tt[1]*sg*1.1];wallBox(b.front,lp,arm,y+6.75,y+6.85,.035,k);

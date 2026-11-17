@@ -9,12 +9,16 @@
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
+import { createPlatformLamps } from './station-lamps.ts';
+import { createKxFogMaterials } from './kx-night-fog.ts';
+import type { Pt } from '../../core/geo.ts';
+import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { cloudDeck, DAY_EXPOSURE, fogRange, lampLevelFor, skyRig, smoothstep } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import type { SolarPosition } from '../../core/solar.ts';
 import type { LatLon } from '../../core/geo.ts';
-import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, findRoofs } from './cover.ts';
+import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, coverAt, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
 import { windowNight } from './materials.ts';
@@ -22,6 +26,8 @@ import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
+import { snowSurface } from './snow.ts';
+import type { SnowMask, SurfaceWeather } from './snow.ts';
 import { trainNight } from './train-geom.ts';
 import { headlampNight } from './train-headlamp-light.ts';
 import { DAYLIGHT } from './world.ts';
@@ -83,7 +89,19 @@ const CLOUD_DARK = 0.55;
 export const SOFFIT_LEVEL = 0.35;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
-const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
+export const surfaceUniforms = { wet: { value: 0 }, fog: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW }, snowGlow: { value: new THREE.Color(0, 0, 0) } };
+
+/** Smooth, non-repeating drifts. Hash cells rather than a continuous sine: the
+ * round-2 88.5 m wave made regular ripples across Perth's distant farmland. */
+const SNOW_NOISE = `
+float snowNoise(vec2 p) {
+  vec2 cell = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  vec4 h = fract(sin(vec4(dot(cell, vec2(127.1, 311.7)), dot(cell + vec2(1.0, 0.0), vec2(127.1, 311.7)), dot(cell + vec2(0.0, 1.0), vec2(127.1, 311.7)), dot(cell + vec2(1.0, 1.0), vec2(127.1, 311.7)))) * 43758.5453);
+  return mix(mix(h.x, h.y, f.x), mix(h.z, h.w, f.x), f.y);
+}
+`;
 
 /**
  * The surfaces that have their wet-and-snow shader, whichever atmosphere gave it. The station's materials are shared between scenes (King's Cross
@@ -91,6 +109,7 @@ const surfaceUniforms = { wet: { value: 0 }, snowCover: { value: 0 }, sheen: { v
  * the first's `onBeforeCompile`, and with it the roof shade that lighting.ts layers on top, while the material's cache key still claimed it.
  */
 const wetPatched = new WeakSet<THREE.Material>();
+const snowDepthBuilt = new WeakMap<THREE.Material, boolean>();
 
 /**
  * Add wetness and snow to a Lambert surface in its own shader: after the texture and colours are applied the surface darkens
@@ -100,14 +119,107 @@ const wetPatched = new WeakSet<THREE.Material>();
  * (`coverOpen`: 1 in the open, 0 under a roof, a soft line between at the roof's edge) multiplies the wet and the snow. In dry weather the
  * cover is not read at all.
  */
-function patchSurface(material: THREE.MeshLambertMaterial, spec: { dark: number; sheen: number; snow: number }): void {
-  const own = { uDark: { value: spec.dark }, uSheenK: { value: spec.sheen }, uSnowK: { value: spec.snow } };
-  material.onBeforeCompile = (shader) => {
+function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial, spec: SurfaceWeather): void {
+  const mask = material.userData.snowMask as SnowMask | undefined;
+  const roofDetail = material.userData.snowRoof === true;
+  const roadDetail = material.userData.snowRoad === true;
+  const mappedSlush = material.userData.snowSlush === true;
+  const ridges = material.userData.snowRidges as THREE.Vector2 | undefined;
+  // Natural ground has prior field/texture colour hooks. Snow replaces their
+  // pigment after those hooks, before lighting; otherwise snowy fields stay green.
+  const own = { uDark: { value: spec.dark }, uSheenK: { value: spec.sheen }, uSnowK: { value: spec.snow }, uSnowTraffic: { value: spec.traffic ?? 0 } };
+  const before = material.onBeforeCompile, key = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
     shader.uniforms.uWet = surfaceUniforms.wet;
     shader.uniforms.uSnowCover = surfaceUniforms.snowCover;
     shader.uniforms.uSheen = surfaceUniforms.sheen;
     shader.uniforms.uSnowColour = surfaceUniforms.snowColour;
+    if (spec.transmit) shader.uniforms.uSnowGlow = surfaceUniforms.snowGlow;
+    if (ridges) shader.uniforms.uSnowRidges = {value: ridges};
     Object.assign(shader.uniforms, coverUniforms, own);
+    if (mask) Object.assign(shader.uniforms, { uSnowMask: { value: mask.texture }, uSnowMaskRect: { value: mask.rect } });
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\nvarying vec3 vSnowNormal;${roofDetail ? '\nattribute vec2 snowRoof;\nvarying vec2 vSnowRoof;' : ''}${roadDetail ? '\nattribute vec3 snowRoad;\nvarying vec3 vSnowRoad;' : ''}`)
+      .replace('#include <defaultnormal_vertex>', `#include <defaultnormal_vertex>\nvSnowNormal = transformedNormal * mat3( viewMatrix );${roofDetail ? '\nvSnowRoof = snowRoof;' : ''}${roadDetail ? '\nvSnowRoad = snowRoad;' : ''}`);
+    // A late landmark may reuse a material the first scan already shaded.
+    const cover = shader.fragmentShader.includes('float coverGroundAt') ? '' : COVER_GLSL;
+    const surfaceCode = `
+float coverOpen = 1.0;
+if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );
+float snowUp = smoothstep( 0.35, 0.8, normalize( vSnowNormal ).y );
+if ( !gl_FrontFacing ) snowUp = 0.0;
+float snowOpen = coverOpen;
+${spec.roof ? `if ( uSnowCover > 0.001 && snowUp > 0.0 && uCoverRect.z > 0.0 ) {
+  // Compare the roof plane at the height map's cell centre, avoiding self shelter on a slope.
+  vec3 snowPoint = cameraPosition - vViewPosition * mat3( viewMatrix );
+  vec2 snowCellCentre = uCoverRect.xy + ( floor( ( snowPoint.xz - uCoverRect.xy ) / uCoverCell ) + 0.5 ) * uCoverCell;
+  vec3 snowNormal = normalize( vSnowNormal );
+  snowPoint.y += dot( snowPoint.xz - snowCellCentre, snowNormal.xz ) / max( 0.35, snowNormal.y ) + 0.15;
+  snowOpen = 1.0 - coverGroundAt( snowPoint );
+}` : ''}
+float snowRetention = 1.0;
+float snowTraffic = uSnowTraffic;
+${mappedSlush ? 'float snowTrodden = 0.0;' : ''}
+vec3 snowAlbedo = uSnowColour;
+${spec.detail ? `if ( uSnowCover > 0.001 ) {
+  vec3 snowPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  float drift = smoothstep(0.15, 0.85, snowNoise(snowPlace.xz * 0.025));
+  ${spec.detail === 'ground' ? `// Distant farmland keeps field variation without strong horizon bands.
+  drift = mix(0.5, drift, 0.4 + 0.6 * (1.0 - smoothstep(150.0, 1000.0, length(vViewPosition))));` : ''}
+  float grain = sin( snowPlace.x * 3.1 + snowPlace.z * 1.7 ) * ( 1.0 - smoothstep( 40.0, 220.0, length( vViewPosition ) ) );
+  snowAlbedo *= 0.90 + 0.10 * drift + 0.035 * grain;
+  ${spec.detail === 'ground' ? `snowRetention *= ( 0.68 + 0.32 * drift ) * mix( 0.2, 1.0, smoothstep( 0.55, 0.95, normalize( vSnowNormal ).y ) );` :
+    spec.detail === 'foliage' ? 'snowRetention *= 0.03 + 0.24 * smoothstep(0.35, 0.8, snowNoise(snowPlace.xz * 0.8));' :
+    'snowRetention *= ( 0.9 + 0.1 * drift ) * mix( 0.55, 1.0, smoothstep( 0.55, 0.98, normalize( vSnowNormal ).y ) );'}
+  ${spec.heather ? `snowRetention *= mix(0.4, 1.0, smoothstep(0.035, 0.14, max(diffuseColor.r, diffuseColor.g)));
+  // Metre-scale scour exposes the existing painted grass/heather, rather than
+  // tinting the snow or adding a repeated field pattern.
+  snowRetention *= mix(1.0, 0.22, smoothstep(0.35, 0.7, snowNoise(snowPlace.xz * 0.65)));` : ''}
+}` : ''}
+${roofDetail ? 'snowRetention *= vSnowRoof.y * mix( 0.55, 1.0, smoothstep( 0.1, 0.55, vSnowRoof.x ) );' : ''}
+${ridges ? `if ( uSnowCover > 0.001 ) {
+  vec3 snowRidgePlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  float ridge = 1.0 - abs(fract((snowRidgePlace.x - uSnowRidges.y) / uSnowRidges.x) * 2.0 - 1.0);
+  snowRetention *= mix(0.12, 1.0, smoothstep(0.2, 0.85, ridge));
+}` : ''}
+${mask ? `if ( uSnowCover > 0.001 ) {
+  vec3 snowWorld = cameraPosition - vViewPosition * mat3( viewMatrix );
+  vec2 snowUv = ( snowWorld.xz - uSnowMaskRect.xy ) * uSnowMaskRect.zw;
+  float mappedSnow = texture2D( uSnowMask, vec2( snowUv.x, 1.0 - snowUv.y ) ).r;
+  snowRetention *= mappedSnow;
+  snowTraffic = ( 1.0 - mappedSnow ) * step( 0.001, mappedSnow );
+  ${mappedSlush ? `// The .32 mapped park path is trodden grey slush; leave untouched snow white.
+  snowTrodden = smoothstep(0.22, 0.30, mappedSnow) * (1.0 - smoothstep(0.4, 0.65, mappedSnow));
+  snowRetention *= 1.0 - 0.92 * snowTrodden;` : ''}
+}` : ''}
+// Strong traffic keeps irregular slush patches, rather than a continuous white
+// film. Compacted lanes and paths retain their separate mapped snow shares.
+if ( uSnowCover > 0.001 && snowTraffic > 0.8 ) {
+  vec3 slushPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  snowRetention *= 0.1 + 0.4 * snowNoise(slushPlace.xz * 0.6);
+}
+${roadDetail ? `if (uSnowCover > 0.001) {
+  // UV metres follow the actual bent strip; width is constant on each strip.
+  float across = abs(vSnowRoad.y - vSnowRoad.z * 0.5);
+  float kerb = 1.0 - smoothstep(0.2, 1.8, vSnowRoad.z * 0.5 - across);
+  float tyre = 1.0 - smoothstep(0.22, 0.55, abs(abs(across - vSnowRoad.z * 0.25) - 0.7));
+  snowRetention = (0.025 + 0.28 * kerb) * (1.0 - 0.84 * tyre) / uSnowK;
+}` : ''}
+float wetHere = uWet * coverOpen;
+${spec.snowOnly ? 'wetHere *= step( 0.001, uSnowCover );' : ''}
+wetHere = max( wetHere, 0.85 * uSnowCover * coverOpen * snowTraffic * snowUp );
+diffuseColor.rgb *= 1.0 - uDark * wetHere;
+diffuseColor.rgb *= 1.0 - 0.5 * uSnowCover * snowTraffic * step( 0.8, snowTraffic ) * coverOpen * snowUp;
+${mappedSlush ? `diffuseColor.rgb *= 1.0 - 0.35 * uSnowCover * snowTrodden * coverOpen * snowUp;
+// Princes Street's painted #3b3d3f is already dark. A cool slush floor
+// replaces round 3's near-black result; it remains diffuse and receives lamps.
+float slushRoad = uSnowCover * step(0.8, snowTraffic) * coverOpen * snowUp;
+diffuseColor.rgb = mix(diffuseColor.rgb, max(diffuseColor.rgb, vec3(0.10, 0.112, 0.125)), slushRoad);` : ''}
+float snowHere = min( 1.0, 0.85 * uSnowCover * snowOpen * uSnowK * snowUp * snowRetention );
+diffuseColor.rgb = mix( diffuseColor.rgb, ${spec.detail ? 'snowAlbedo' : 'uSnowColour'}, snowHere );
+diffuseColor.a = mix( diffuseColor.a, 1.0, min( 1.0, snowHere * 1.25 ) );
+`;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
 uniform float uWet;
@@ -117,19 +229,25 @@ uniform vec3 uSnowColour;
 uniform float uDark;
 uniform float uSheenK;
 uniform float uSnowK;
-${COVER_GLSL}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
-float coverOpen = 1.0;
-if ( uWet + uSnowCover > 0.001 ) coverOpen = 1.0 - coverGroundAt( cameraPosition - vViewPosition * mat3( viewMatrix ) );
-float wetHere = uWet * coverOpen;
-diffuseColor.rgb *= 1.0 - uDark * wetHere;
-diffuseColor.rgb = mix( diffuseColor.rgb, uSnowColour, 0.85 * uSnowCover * coverOpen * uSnowK );`)
+uniform float uSnowTraffic;
+varying vec3 vSnowNormal;
+${roofDetail ? 'varying vec2 vSnowRoof;' : ''}
+${roadDetail ? 'varying vec3 vSnowRoad;' : ''}
+${mask ? 'uniform sampler2D uSnowMask;\nuniform vec4 uSnowMaskRect;' : ''}
+${spec.transmit ? 'uniform vec3 uSnowGlow;' : ''}
+${ridges ? 'uniform vec2 uSnowRidges;' : ''}
+${cover}
+${SNOW_NOISE}`)
+      .replace('#include <color_fragment>', '#include <color_fragment>' + (spec.detail ? '' : surfaceCode))
+      .replace('#include <emissivemap_fragment>', (spec.detail ? surfaceCode : '') + '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;' + (spec.transmit ? '\ntotalEmissiveRadiance += uSnowGlow * snowHere;' : ''))
       .replace('#include <opaque_fragment>', `{
   float wetFresnel = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 3.0 );
-  outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel );
+  float slushSheen = 1.0 - ${mappedSlush ? '0.5' : '0.85'} * uSnowCover * step(0.8, snowTraffic);
+  outgoingLight += uSheen * ${mappedSlush ? '(uSheenK + 0.25 * uSnowCover * snowTraffic)' : 'uSheenK'} * wetHere * ( 0.05 + 0.6 * wetFresnel ) * slushSheen;
 }
 #include <opaque_fragment>`);
   };
+  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}${roadDetail ? '-road' : ''}${mappedSlush ? '-slush' : ''}${ridges ? '-ridges' : ''}${spec.transmit ? '-transmit' : ''}${spec.heather ? '-heather' : ''}`;
   material.needsUpdate = true;
 }
 
@@ -181,6 +299,18 @@ function starPoints(): THREE.Points {
 export interface AtmosphereOptions {
   /** Geographic location only; omitted preserves the original London sun and lighting rig. */
   location?: LatLon;
+  /** Optional solar gate for artificial light: fade weather's daytime boost
+   * between these elevations, fully off above the second (degrees). */
+  lampSunGate?: readonly [number, number];
+  /** Gate outdoor fixtures without changing windows/trains or the shared rig. */
+  lampLayerSunGate?: readonly [number, number];
+  /** KX's drawn platform polygons; omitted retains the legacy halo-only layer. */
+  platformLampFloor?: readonly (readonly Pt[])[];
+  /** KX's city-lit dense night fog; other stations and daylight keep their range. */
+  kingsCrossNightFog?: boolean;
+  /** Scene-selected sRGB colour of city-lit dense night air. No ambient raise;
+   * omitted retains the existing climate, including legacy KX adapters. */
+  cityFogTint?: Rgb;
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -207,6 +337,10 @@ export interface Haze {
    * its hill views look 2 to 4 km across the town. Omitted, the page's own clear air; thicker weather always keeps its own range.
    */
   clear?: number;
+  /** Optional weather-haze ceiling for broad geographic scenes; dense fog keeps its measured visibility. */
+  weatherFar?: number;
+  /** Optional dense-fog start for a scene with close canopy depth cues. */
+  fogNear?: number;
 }
 
 /** The range with a scene's own clear air (`Haze.clear`): its far plane eased from the page's to the scene's as the visibility goes from
@@ -269,12 +403,19 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
+  const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
+  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT) : null;
+  if (platformLamps) {
+    scene.add(platformLamps.group); nightLights?.attach(platformLamps);
+    // Shared heads replace the old oversized halos on this opt-in path only.
+    for (const name of ['lights-platform','lights-shed']) nightLights?.group.getObjectByName(name)?.removeFromParent();
+  }
   // the clock dials of the scene's buildings glow with the lamps (night.ts `createDialLights`); `rescan` finds them, as the landmarks arrive after the first frame
   const dialLights = nightLights ? createDialLights() : null;
   if (dialLights) nightLights?.attach(dialLights);
@@ -289,6 +430,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
   world.sky.add(sunSprite, stars);
 
   // ---- surfaces that get wet, and stand-ins for daylight --------------------------------------------------
+  const snowDepth = new Map<THREE.Material, boolean>();
   const standIns = new Map<Emissive, THREE.Color>();
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
   // the concourse's soffit is unlit (a lit underside would be black under the sun), so no light dims it: it follows the camera's exposure instead, the one thing that moves its pixels
@@ -318,14 +460,19 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
       if (!mesh.isMesh) return;
       for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
         const lambert = m as THREE.MeshLambertMaterial;
-        const spec = SURFACES.get(m.name);
-        if (spec && lambert.isMeshLambertMaterial && !wetPatched.has(m)) {
+        const extra = snowSurface(mesh.name, m.name);
+        const spec = extra ?? SURFACES.get(m.name);
+        if (extra?.roof && m.transparent && (lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && !snowDepth.has(m)) {
+          if (!snowDepthBuilt.has(m)) snowDepthBuilt.set(m, m.depthWrite);
+          snowDepth.set(m, snowDepthBuilt.get(m)!);
+        }
+        if (spec && (lambert.isMeshLambertMaterial || (extra && (m as THREE.MeshPhongMaterial).isMeshPhongMaterial)) && !wetPatched.has(m)) {
           wetPatched.add(m);
           patchSurface(lambert, spec);
         }
         // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
         // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
-        if (lambert.isMeshLambertMaterial) addRoofShade(lambert);
+        if (lambert.isMeshLambertMaterial && !kxFogMaterials?.owns(m)) addRoofShade(lambert);
         if (m.name === 'concourse-soffit') soffit = m as THREE.MeshBasicMaterial;
         const emissive = m as Emissive;
         if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && (emissiveBuilt.has(emissive) || emissive.emissive.getHex() !== 0) && !standIns.has(emissive)) {
@@ -336,6 +483,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
       }
     });
     dialLights?.scan(scene);
+    kxFogMaterials?.scan(scene);
   };
   rescan();
 
@@ -422,7 +570,7 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
     (stars.material as THREE.PointsMaterial).opacity = rig.stars * 0.9;
 
     // lamps: halos, and the trains' windows and lenses, and the windows of the city's buildings
-    nightLights?.setLevel(rig.lampLevel);
+    nightLights?.setLevel(rig.lampLevel * (lampLayerSunGate ? 1 - smoothstep(...lampLayerSunGate, sunPos.elevationDeg) : 1));
     trainNight.value = rig.lampLevel;
     // the headlamps' light on the walls follows the sun alone: a gloomy day lights the lamps (lampLevel) but not the walls by them (train-headlamp-light.ts, "day floor zero")
     headlampNight.value = lampLevelFor(sunPos.elevationDeg);
@@ -442,7 +590,14 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
     // wet and snowy ground
     rgb(surfaceUniforms.sheen.value, rig.dome.horizon).multiplyScalar(0.55);
     surfaceUniforms.wet.value = weather.wet;
+    surfaceUniforms.fog.value = rig.fogAmount;
     surfaceUniforms.snowCover.value = weather.snowCover;
+    // Opaque snow still scatters a little of the shed's interior lamp light.
+    // The solar gate keeps the day dots gone, even under a snowy overcast sky.
+    surfaceUniforms.snowGlow.value.setRGB(.018, .012, .006).multiplyScalar(lampLevelFor(sunPos.elevationDeg));
+    // Snow is opaque even when the glazing beneath it is transparent. Its depth
+    // must stop the additive shed lamps drawn later; clear/rain keep the original.
+    for (const [m, original] of snowDepth) m.depthWrite = original || weather.snowCover > .5;
   };
 
   return {
@@ -458,15 +613,46 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
         const sunPos = solarPosition(f.timeMs, location?.lat, location?.lon);
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
+        // City lights colour the air, not the hemisphere or surface fill.
+        // Gates leave daytime/rain unchanged; the tint belongs to this scene.
+        const cityFog = kingsCrossNightFog || cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
+        if (cityFog > 0) {
+          const warm: Rgb = cityFogTint ?? [.255,.238,.168];
+          const tint = (c: Rgb, weight: number): Rgb => [c[0]+(warm[0]-c[0])*weight,c[1]+(warm[1]-c[1])*weight,c[2]+(warm[2]-c[2])*weight];
+          rig.fog = tint(rig.fog,cityFog);
+          rig.dome.horizon = tint(rig.dome.horizon,cityFog);
+          rig.dome.zenith = tint(rig.dome.zenith,.45*cityFog);
+        }
+        if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
+        kxFogMaterials?.setLevel(cityFog);
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
       }
       if (!state) return;
+      // Large concourse halo billboards straddle the sloping dome (one centre is
+      // even above its rim). Opaque snow hides those halos from an outside eye;
+      // under the roof the original lamps remain, and other weather is unchanged.
+      const concourseHalos = nightLights?.group.getObjectByName('lights-concourse');
+      if (concourseHalos) {
+        concourseHalos.visible = state.rig.lampLevel * (lampLayerSunGate ? 1 - smoothstep(...lampLayerSunGate,state.sun.elevationDeg) : 1) > 0.01 && (state.weather.snowCover <= 0.001 || coverAt(coverMap, f.camera.position.x, f.camera.position.y, f.camera.position.z) > 0.5);
+      }
+
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
       if (scene.fog instanceof THREE.Fog) {
-        const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y), state.weather.visibilityM, haze);
-        scene.fog.near = range.near;
+        const range = clearAir(fogRange(state.weather.visibilityM, f.camera.position.y, haze?.weatherFar, haze?.weatherFar === undefined ? undefined : haze.clear), state.weather.visibilityM, haze);
+        scene.fog.near = range.near + ((haze?.fogNear ?? range.near) - range.near) * smoothstep(.6, .85, state.rig.fogAmount);
         scene.fog.far = fogFar(range.far, f.camera.position.y, haze);
+        if (kingsCrossNightFog) {
+          const cityFog = lampLevelFor(state.sun.elevationDeg) * smoothstep(.65,.9,state.rig.fogAmount);
+          // The old 0.2*far near plane left the entire station frontage clear.
+          // Above the low fog layer, only part of the slant path crosses dense
+          // air. A fixed 240m far plane erased every roof in the 220m overview.
+          if (cityFog > 0) {
+            const above = Math.max(0,f.camera.position.y-40);
+            scene.fog.near += (4+.35*above-scene.fog.near)*cityFog;
+            scene.fog.far += (Math.max(60,state.weather.visibilityM*.8)+2.4*above-scene.fog.far)*cityFog;
+          }
+        }
         rgb(scene.fog.color, state.rig.fog);
       }
       if (scene.background instanceof THREE.Color) rgb(scene.background, state.rig.dome.horizon);
@@ -474,9 +660,12 @@ export function createAtmosphere({ scene, world, sites, location, haze }: Atmosp
         snow: state.weather.snow, windMs: state.weather.windMs, daylight: state.rig.daylight });
     },
     dispose() {
+      for (const [m, original] of snowDepth) m.depthWrite = original;
       applyCover(null);
       precip.dispose();
       dialLights?.dispose();
+      kxFogMaterials?.dispose();
+      platformLamps?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
       sunSprite.material.dispose();

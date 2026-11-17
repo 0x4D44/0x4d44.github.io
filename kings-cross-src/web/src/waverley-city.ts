@@ -69,6 +69,8 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  const style=options.style;
  const sandstone=cityMaterial('stone').clone() as THREE.MeshLambertMaterial;sandstone.color.setHex(style?.stone??WAVERLEY_CITY_STONE);sandstone.vertexColors=true;
  const slate=material('slate').clone() as THREE.MeshLambertMaterial;slate.color.multiply(new THREE.Color(0xada99f));slate.vertexColors=true;
+ slate.userData.snowRoof=true;
+ const snowRoof:number[]=[];
  const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=options.style?.streets??new Streets();
  const foot=ground.heightAt?(p:Pt)=>ground.heightAt!(p[0],p[1]):undefined;
  const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(style?.ashlar??WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
@@ -92,10 +94,16 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   for(let i=roofFrom;i<buildingTops.colors.length;i+=3){buildingTops.colors[i]*=roofColor[0];buildingTops.colors[i+1]*=roofColor[1];buildingTops.colors[i+2]*=roofColor[2];}
   for(const c of plan.chimneys)chimney(plainWalls,c,plan.u,plan.eave,color); // stacks are plain ashlar, not windowed fabric
   if(style?.dormers!==false)for(const d of plan.dormers??[])dormer(plainWalls,buildingTops,d,plan.at,color);
+  // Per-block snow depth follows the existing deterministic slate palette.
+  // Height above the eave lets the fragment shader keep a narrow exposed edge;
+  // flat roofs have no pitched eave band. No vertices or draws are added.
+  for(let i=roofFrom;i<buildingTops.positions.length;i+=3)snowRoof.push(plan.shape==='flat'?10:Math.max(0,buildingTops.positions[i+1]-plan.eave),.8+.2*(roofColor[0]-.82)/.24);
   if(!plain&&!b.minHeight)shopBand(shops,b.outer,base,plan.eave,streets,foot);
  }
  // Every top is a roof: the cover map (cover.ts ROOF_MESHES) knows this mesh by name.
  add(group,buildings,sandstone,style?.names.walls??'waverley-building-walls');add(group,plainWalls,ashlar,style?.names.ashlar??'waverley-building-ashlar');add(group,buildingTops,slate,style?.names.tops??'waverley-building-tops');
+ const tops=group.getObjectByName(style?.names.tops??'waverley-building-tops') as THREE.Mesh|undefined;
+ tops?.geometry.setAttribute('snowRoof',new THREE.Float32BufferAttribute(snowRoof,2));
  const shopMap=shopTexture(),shopfront=new THREE.MeshLambertMaterial({map:shopMap,color:shopMap?0xffffff:0x5a5650});add(group,shops,shopfront,style?.names.shops??'waverley-building-shops');
  let disposed=false;
  return {group,stats,omitBuildingIds:[],buildingIds,heightBasis,dispose(){if(disposed)return;disposed=true;group.removeFromParent();for(const g of geometries)g.dispose();sandstone.dispose();ashlar.dispose();slate.dispose();shopfront.dispose();shopMap?.dispose();group.clear();}};

@@ -527,9 +527,10 @@ interface BodySpec {
   doorFrameTop?: number;
   /**
    * a single-leaf passenger door set into its frame (the Class 180's, round 11): the leaf's face stands `depth` behind the frame's, a dark gap `seam` wide runs round the leaf
+   * (`sideSeam`, if given, sets the two vertical gaps independently of the head and foot)
    * between the two, and the frame is a raised ring round that gap (absent: the frame is one plate behind a leaf that stands proud of it)
    */
-  doorRecess?: { depth: number; seam: number; seamColour: number };
+  doorRecess?: { depth: number; seam: number; sideSeam?: number; seamColour: number };
   /** a step under each passenger door's leaf: its foot and top (metres above the rail head), how far it stands out past the body's side, and its colour (absent: none) */
   doorStep?: { y: [number, number]; out: number; colour: number };
   windowY: [number, number];
@@ -537,8 +538,8 @@ interface BodySpec {
   windowCorner?: number;
   nose: NoseSpec;
   glass: GlassSpec;
-  /** the two seams of the gangway bellows */
-  gangway: { width: number; height: number; bottom: number };
+  /** The bellows envelope; an optional floor plate fixes its hem at bottom, with square lower corners. */
+  gangway: { width: number; height: number; bottom: number; footplate?: { bottom: number; colour: number }; coupler?: 'bar' };
   /** distance from the rail head of the folded pantograph's top */
   pantographTop: number;
   /** half-width of the underframe slab */
@@ -1021,9 +1022,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     coverHeight: cover,
     coverBw: 0.9,
     coverTw: 0.7,
-    // the fairings are the cooler's hatches, dark and louvred (GC180-01 and GC180-05: black panels with fine louvres on the roof, not the Azuma's pale grey fairings); ASSUMED
-    // ridge sizes: 4 cm across on a 12 cm pitch, standing 4 mm proud of the hatch's top
-    coverStyle: { colour: 0x1b1d21, ridges: { pitch: 0.12, width: 0.04, colour: 0x3a3e45, lift: 0.004, margin: 0.2 } },
+    // Round 13, GC180-02/04: low dark humps without bright grille strips. Preserve the existing unsourced runs and
+    // 4 mm relief; its near-charcoal shade is ASSUMED. No per-car equipment arrangement is inferred from these obliques.
+    coverStyle: { colour: 0x1b1d21, ridges: { pitch: 0.12, width: 0.04, colour: 0x202226, lift: 0.004, margin: 0.2 } },
     skirtBottom: 0.9,
     cutout: 2.0,
     doorWidth: fig.doorWidth.value,
@@ -1044,7 +1045,9 @@ const ADELANTE_BODY = ((): BodySpec => {
     // round 11 (round 10's score: "add the door leaf's seams and recess, with frame relief, as at York"): the York photograph (private, viewed only) shows each leaf framed by a thin dark
     // line down both edges and over the head, the frame standing round it; the leaf set 12 mm behind the frame's face and the seam 12 mm wide are ASSUMED (side on, the photograph shows
     // the line, not its depth)
-    doorRecess: { depth: 0.012, seam: 0.012, seamColour: 0x08090b },
+    // Round 12: York's edge shadow is ~4 px at 133 px/m: 30 mm on each side, rather than 12 mm. The head keeps its thin gap below the cantrail.
+    // The 12 mm setback is still ASSUMED; widening the visible side gaps leaves the leaf/glass and outer frame dimensions unchanged.
+    doorRecess: { depth: 0.012, seam: 0.012, sideSeam: 0.03, seamColour: 0x08090b },
     // CHANGED (round 9; round 8's were 1.91 to 2.62 m, on round 8's short wall): GC180-02's windows stand 0.28 to 0.77 of the way from the band's top to the doors' heads, about level
     // with the doors' glass, their corners well rounded (about a sixth of their height); laid on the measured band top and door head, 2.14 to 2.96 m, which puts their top level with
     // the door glass's (2.91 m) to within the gasket. ASSUMED, from that photograph
@@ -1089,7 +1092,10 @@ const ADELANTE_BODY = ((): BodySpec => {
       // window of the cab door in 180104), not a long wedge: no photograph shows the nose's side holding anything bigger
       side: { sBack: 3.19, sFront0: 2.86, sFront1: 2.86, v0: 0.52, v1: 0.72 },
     },
-    gangway: { width: 1.9, height: 2.1, bottom: 1.15 },
+    // Envelope remains ASSUMED. Round 13 closes the visible floor-level crack: the plate rises from the existing
+    // ASSUMED 1.10 m floor to the 1.15 m bellows hem; thickness, charcoal finish and plain drawbar section are ASSUMED.
+    // No close photo establishes head/pipe details, so the ordinary join has a connecting bar without those invented fittings.
+    gangway: { width: 1.9, height: 2.1, bottom: 1.15, footplate: { bottom: fig.floorHeight.value, colour: 0x24262a }, coupler: 'bar' },
     // no pantograph: this value is never used
     pantographTop: 0.14,
     underframe: 0.95,
@@ -1952,7 +1958,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const zWall = Z(e.s);
     const zOut = Z(e.s + e.sign * END_GAP);
     const g = spec.gangway;
-    const outline = (k: number): [number, number][] => roundedRect(-g.width / 2 * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
+    const outline = (k: number): [number, number][] => {
+      if (!g.footplate) return roundedRect(-g.width / 2 * k, (g.width / 2) * k, g.bottom + (g.height * (1 - k)) / 2, g.bottom + g.height - (g.height * (1 - k)) / 2, 0.3, 3);
+      // Fold the sides and top, while the full-width lower hem stays level on the plate (no sawtooth floor opening).
+      const half = g.width / 2 * k;
+      const top = roundedRect(-half, half, g.bottom, g.bottom + g.height - g.height * (1 - k) / 2, 0.3, 3).slice(0, 8);
+      return [...top, [-half, g.bottom], [half, g.bottom]];
+    };
     const rs = bellowsRings(outline, 0, END_GAP, 1, 0.05);
     // the bellows are seated a hair outside the end wall, so no vertex of theirs lies in the wall's plane (the section of the body is that plane's)
     const zSeat = zWall + Math.sign(zOut - zWall) * BELLOWS_SEAT;
@@ -1976,8 +1988,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     marker.position.set(0, g.bottom + g.height / 2, (zWall + zOut) / 2);
     marker.userData = { end: e.sign > 0 ? (car.cab === 'rear' ? 'front' : 'rear') : 'front', width: g.width, height: g.height, depth: END_GAP };
     group.add(marker);
+    if (g.footplate) detail.box(-g.width / 2, g.width / 2, g.footplate.bottom, g.bottom, Math.min(zWall, zOut), Math.max(zWall, zOut), col(g.footplate.colour));
     // the coupler: a barrel and head from the end wall, meeting its neighbour's in the middle of the gap
-    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, END_GAP, ASSUMED.couplerHeight);
+    couplerHalf(detail, zWall, (Math.sign(zOut - zWall) || 1) as 1 | -1, END_GAP, ASSUMED.couplerHeight, g.coupler);
     const cm = new THREE.Object3D();
     cm.name = 'coupler';
     cm.position.set(0, ASSUMED.couplerHeight, (zWall + zOut) / 2);
@@ -2099,8 +2112,9 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const frameFace = half - 0.002;
         leafFace = frameFace - recess.depth;
         const [rx0, rx1] = lo(W - 0.005, frameFace);
-        const zi0 = z - dw / 2 - recess.seam;
-        const zi1 = z + dw / 2 + recess.seam;
+        const sideSeam = recess.sideSeam ?? recess.seam;
+        const zi0 = z - dw / 2 - sideSeam;
+        const zi1 = z + dw / 2 + sideSeam;
         const yi0 = dy0 - recess.seam;
         const yi1 = dy1 + recess.seam;
         detail.box(rx0, rx1, dy0 - 0.05, frameTop, z - dw / 2 - 0.05, zi0, frameC);

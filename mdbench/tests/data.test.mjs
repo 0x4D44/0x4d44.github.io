@@ -28,14 +28,16 @@ for (const s of ix.suites.filter((x) => x.file)) {
   });
 }
 
-test("swe: 10 exercises x 6 seats, judge means as exported", async () => {
+test("swe: 10 exercises, the six phase-1 seats on all of them, later seats on some", async () => {
   const su = await load("swe.json");
   assert.equal(su.sample, false);
   assert.equal(su.tasks.length, 10);
   const a = aggregate(su);
-  assert.equal(a.seats.length, 6);
-  assert.ok(a.seats.every((s) => s.n === 10));
-  assert.equal(a.cells["opus-5.5-medium"]["FIX-01"].score.mean, 100);
+  assert.ok(a.seats.filter((s) => s.n === 10).length >= 6);
+  assert.ok(a.seats.every((s) => s.n >= 1 && s.n <= 10));
+  // A single-run cell aggregates to that run's score.
+  const row = su.results.find((r) => r.seat === "opus-5.5-medium" && r.task === "FIX-01");
+  assert.equal(a.cells["opus-5.5-medium"]["FIX-01"].score.mean, row.metrics.score);
   assert.ok(a.seats.every((s) => s.perDollar > 0 && s.perHour > 0));
   // Leaderboard order is by mean headline, best first.
   const m = a.seats.map((s) => s.per.score);
@@ -54,8 +56,9 @@ test("no sample data ships, and every data file is one the index lists", async (
 test("FIX-01 carries a task note about the all-gates column", async () => {
   const su = await load("swe.json");
   const t = su.tasks.find((x) => x.id === "FIX-01");
-  assert.match(t.note, /display-register test failed for every seat/);
-  assert.ok(su.results.filter((r) => r.task === "FIX-01").every((r) => r.metrics.gates_ok === false));
+  assert.match(t.note, /Most seats fail the hidden display-register test/);
+  const fix = su.results.filter((r) => r.task === "FIX-01");
+  assert.ok(fix.filter((r) => r.metrics.gates_ok === false).length > fix.length / 2);
   assert.ok(su.methodology.caveats.some((c) => c.startsWith("FIX-01")));
   const bad = structuredClone(su);
   bad.tasks[0].note = "";

@@ -489,7 +489,7 @@ export function addRoofShade(material: THREE.MeshLambertMaterial): void {
   totalEmissiveRadiance *= 1.0 + ${GLOW_BELOW_GAIN.toFixed(1)} * looksDown;
 #endif
 #ifdef ${FLOOD}
-  totalEmissiveRadiance += diffuseColor.rgb * vec3( 1.0, 0.82, 0.5 ) * uWinNight * ${FLOOD}.x * mix( ${FLOOD}.z, 1.0, exp( -max( ( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y - ${FLOOD}.w, 0.0 ) / ${FLOOD}.y ) );
+  totalEmissiveRadiance += diffuseColor.rgb * ${material.defines?.FLOOD_COLOUR ?? 'vec3( 1.0, 0.82, 0.5 )'} * uWinNight * ${FLOOD}.x * mix( ${FLOOD}.z, 1.0, exp( -max( ( cameraPosition - vViewPosition * mat3( viewMatrix ) ).y - ${FLOOD}.w, 0.0 ) / ${FLOOD}.y ) );
 #endif
 }
 ${HEADLAMP_LAMBERT}`);

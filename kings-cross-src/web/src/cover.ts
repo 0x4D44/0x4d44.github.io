@@ -239,6 +239,7 @@ uniform sampler2D uCoverSoft;
 uniform sampler2D uCoverRooms;
 uniform vec4 uCoverRect;
 uniform float uCoverScale;
+uniform float uCoverCell;
 float coverAt(vec3 p) {
   if (uCoverRect.z <= 0.0) return 0.0;
   vec2 uv = (p.xz - uCoverRect.xy) * uCoverRect.zw;
@@ -281,6 +282,7 @@ export const coverUniforms = {
   uCoverRooms: { value: emptyRooms as THREE.Texture },
   uCoverRect: { value: new THREE.Vector4(0, 0, 0, 0) },
   uCoverScale: { value: COVER_STEP },
+  uCoverCell: { value: COVER_CELL },
 };
 
 /** Show the shaders this map (or none): the roofs they stop the weather at. */
@@ -292,12 +294,14 @@ export function applyCover(map: CoverMap | null): void {
     coverUniforms.uCoverRooms.value = byteTexture(map.rooms, map.nx, map.nz, THREE.NearestFilter); // so are the rooms
     coverUniforms.uCoverRect.value.set(map.x0, map.z0, 1 / (map.nx * map.cell), 1 / (map.nz * map.cell));
     coverUniforms.uCoverScale.value = map.step;
+    coverUniforms.uCoverCell.value = map.cell;
   } else {
     coverUniforms.uCoverMap.value = emptyHeights;
     coverUniforms.uCoverSoft.value = emptySoft;
     coverUniforms.uCoverRooms.value = emptyRooms;
     coverUniforms.uCoverRect.value.set(0, 0, 0, 0);
     coverUniforms.uCoverScale.value = COVER_STEP;
+    coverUniforms.uCoverCell.value = COVER_CELL;
   }
   for (const texture of before) if (texture !== emptyHeights && texture !== emptySoft && texture !== emptyRooms) texture.dispose();
 }

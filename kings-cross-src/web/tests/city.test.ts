@@ -621,3 +621,20 @@ test('on the ground the page draws, the city\'s flat layers are almost never und
   for (const c of [page, plain]) c.dispose();
   drawn.dispose();
 });
+
+
+test('round 4: actual city asphalt carries road width and lateral position for aligned snowy kerbs and tyres', () => {
+  const c=addCity(new THREE.Scene(),data,city,{hidden,lamps:false});
+  try {
+    const road=c.group.getObjectByName('city-asphalt') as THREE.Mesh;
+    const detail=road.geometry.getAttribute('snowRoad'),uv=road.geometry.getAttribute('uv');
+    assert.ok(detail,'snow road coordinates are present on the actual asphalt draw');
+    assert.equal(detail.count,uv.count);assert.equal(detail.itemSize,3);
+    assert.equal((road.material as THREE.Material).userData.snowRoad,true);
+    for(let i=0;i<detail.count;i++){
+      assert.equal(detail.getX(i),uv.getX(i),'chainage follows each road');
+      assert.equal(detail.getY(i),uv.getY(i),'lateral coordinate follows bends');
+      assert.ok(detail.getZ(i)>0&&detail.getY(i)<=detail.getZ(i),'the strip retains its own width');
+    }
+  } finally {c.dispose();}
+});

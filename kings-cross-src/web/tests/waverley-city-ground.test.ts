@@ -17,6 +17,47 @@ const scene=buildWaverleyScene({lighting:false});
 const pip=(x:number,z:number,p:readonly Pt[])=>{let yes=false;for(let i=0,j=p.length-1;i<p.length;j=i++)if((p[i][1]>z)!==(p[j][1]>z)&&x<(p[j][0]-p[i][0])*(z-p[i][1])/(p[j][1]-p[i][1])+p[i][0])yes=!yes;return yes;};
 test.after(()=>scene.dispose());
 
+test('the drawn snow mask separates Princes Street pavement and carriageway and keeps the Calton Hill path readable',()=>{
+ const mask=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.MeshLambertMaterial;
+ const {texture,rect}=mask.userData.snowMask,{width,height,data}=texture.image;
+ assert.ok(texture instanceof THREE.DataTexture&&data instanceof Uint8Array);
+ const at=(x:number,z:number):number=>{
+  const px=(x-rect.x)*rect.z*width-.5,py=(1-(z-rect.y)*rect.w)*height-.5,i=Math.floor(px),j=Math.floor(py),fx=px-i,fy=py-j;
+  const p=(a:number,b:number)=>data[Math.max(0,Math.min(height-1,b))*width+Math.max(0,Math.min(width-1,a))]/255;
+  return (p(i,j)*(1-fx)+p(i+1,j)*fx)*(1-fy)+(p(i,j+1)*(1-fx)+p(i+1,j+1)*fx)*fy;
+ };
+ assert.ok(at(-565,43)<.1,'Princes Street carriageway is cleared');
+ assert.ok(at(-600,30)>.95,'paving beside Princes Street keeps snow');
+ assert.ok(at(376,-303)>.35&&at(376,-303)<.7,'Calton Hill path is compacted snow, distinct from the untouched hillside');
+});
+
+test('snow roof metadata follows the real city roofs: eave height, block variation and no extra geometry',()=>{
+ const roof=scene.group.getObjectByName('waverley-building-tops') as THREE.Mesh;
+ const detail=roof.geometry.getAttribute('snowRoof'),P=roof.geometry.getAttribute('position');
+ assert.ok(detail,'the actual roof batch carries snow height above its own eave and per-block retention');
+ assert.equal(detail.count,P.count);assert.equal(detail.itemSize,2);
+ assert.equal((roof.material as THREE.Material).userData.snowRoof,true);
+ let eaves=0,upper=0,min=1,max=0;
+ for(let i=0;i<detail.count;i++){if(Math.abs(detail.getX(i))<.01)eaves++;if(detail.getX(i)>1)upper++;min=Math.min(min,detail.getY(i));max=Math.max(max,detail.getY(i));}
+ assert.ok(eaves>100&&upper>100,'the roof batch has both real eave edges and upper faces');
+ assert.ok(max-min>.15,'snow retention varies between neighbouring blocks');
+});
+
+test('round 3: the actual glazed roof carries its ridge profile',()=>{
+ const roof=scene.group.getObjectByName('waverley-mapped-roofs') as THREE.Mesh;
+ const ridge=(roof.material as THREE.Material).userData.snowRidges as THREE.Vector2|undefined;
+ assert.ok(ridge&&ridge.x===12&&ridge.y===0,'the drawn cassettes expose the geometry profile to the snow shader');
+});
+
+test('round 3: the actual Calton path retains a trodden core beside snowy paving and cleared streets',()=>{
+ const m=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.Material;
+ const {texture,rect}=m.userData.snowMask,{width,height,data}=texture.image;
+ const at=(x:number,z:number)=>data[Math.floor((1-(z-rect.y)*rect.w)*height)*width+Math.floor((x-rect.x)*rect.z*width)]/255;
+ assert.ok(at(376,-303)<.4,'the compacted path core is distinct from untouched snow');
+ assert.ok(at(66.78,-172.12)>.95,'Register House pavement keeps its snow');
+ assert.ok(at(61.48,-150.93)<.1,'the visible Princes Street carriageway keeps its cleared classification');
+});
+
 test('the gardens are OSM land use: both Princes Street Gardens and Calton Hill are mapped green, with paths and trees',()=>{
  const green=[...LANDUSE.areas.park,...LANDUSE.areas.grass,...LANDUSE.areas.garden];
  const inGreen=(x:number,z:number)=>green.some(([o,...h])=>pip(x,z,o)&&!h.some(r=>pip(x,z,r)));
@@ -102,4 +143,14 @@ test('the city stays one batch per material: walls, plain ashlar, roofs; trees a
  const names:string[]=[];scene.parts.buildings.traverse(o=>{if(o instanceof THREE.Mesh)names.push(o.name);});
  for(const n of ['waverley-building-walls','waverley-building-ashlar','waverley-building-tops','waverley-ground-cover','waverley-tree-crowns','waverley-wood-crowns','waverley-tree-trunks'])assert.equal(names.filter(x=>x===n).length,1,n);
  assert.ok(scene.parts.buildings.getObjectByName('waverley-tree-crowns') instanceof THREE.InstancedMesh);
+});
+
+
+test('round 4: Waverley enables mapped slush and the visible Calton path reaches the real ground mask',()=>{
+ const m=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.Material;
+ assert.equal(m.userData.snowSlush,true,'Waverley alone opts into the road-paint correction');
+ const {texture,rect}=m.userData.snowMask,{width,height,data}=texture.image;
+ const at=(x:number,z:number)=>data[Math.floor((1-(z-rect.y)*rect.w)*height)*width+Math.floor((x-rect.x)*rect.z*width)]/255;
+ assert.ok(at(337,-285)<.4,'mapped 3 m path 32 m in front of the Calton eye has a trodden core');
+ assert.ok(at(345,-285)>.95,'snow stays on the grass beside that visible path');
 });

@@ -22,11 +22,17 @@ import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts } from '../../core/streetlights.ts';
+import { createLampWetSurface } from './lamp-wet-surface.ts';
+import { createKxFrontReflections, createKxFacadeReflections } from './kx-front-reflections.ts';
+import { shedLayout, stationBuilding } from '../../core/station.ts';
+import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 import { GROUND_Y } from './world.ts';
 
 export interface CityOptions {
+  /** Bounded pools, mast optics and station-local weather effects. */
+  nightEffects?: boolean;
   /** OSM building ids drawn some other way (the station, the landmarks, whatever is under the shed) */
   hidden?: ReadonlySet<number>;
   /** extra polygons in which no street, square or tree is drawn; the outlines of the hidden buildings are always used */
@@ -153,6 +159,17 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     const acc = built.meshes[key];
     if (acc.triangleCount === 0) continue;
     const geometry = geometryOf(acc);
+    if (key === 'asphalt') {
+      // Core strips carry chainage/across UV metres. Each unshared triangle has
+      // vertices on both strip edges, so its largest v is the carriageway width.
+      const road = new Float32Array(acc.vertexCount * 3);
+      for (let i = 0; i < acc.vertexCount; i += 3) {
+        const width = Math.max(acc.uvs[i*2+1]!, acc.uvs[(i+1)*2+1]!, acc.uvs[(i+2)*2+1]!);
+        for (let j = i; j < i+3; j++) road.set([acc.uvs[j*2]!, acc.uvs[j*2+1]!, width], j*3);
+      }
+      geometry.setAttribute('snowRoad', new THREE.BufferAttribute(road, 3));
+      cityMaterial(key).userData.snowRoad = true;
+    }
     geometries.push(geometry);
     const mesh = new THREE.Mesh(geometry, cityMaterial(key));
     mesh.name = `city-${key}`;
@@ -172,7 +189,19 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   scene.add(group);
   // the street lamps, and the masts of the forecourt (the same glow and pools, a mast of their own)
   const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
-  const lights = lamps.length > 0 ? createStreetLights(lamps) : null;
+  const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
+  // Two-metre receiver samples follow Euston Road's folded terrain and paving
+  // joins; corner-only planes cut the sodium pool into a hard rectangle.
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8,poolFocus:.8,kxOptics:true} : {}) : null;
+  if (lights && wetSurface && stationBuilding(data)) {
+    const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface);
+    lampsLayer.group.add(front.group,amber.group);
+    lights = {...lampsLayer,
+      setLevel(level) { lampsLayer.setLevel(level); front.setLevel(level); amber.setLevel(level); },
+      counts() { const c=lampsLayer.counts(); return {...c,triangles:c.triangles+front.triangles+amber.triangles,draws:c.draws+front.draws+amber.draws}; },
+      dispose() { front.dispose(); amber.dispose(); lampsLayer.dispose(); },
+    };
+  }
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
   if (lights) {
@@ -184,6 +213,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     lights,
     stats,
     dispose() {
+      wetSurface?.dispose();
       scene.remove(group);
       for (const g of geometries) g.dispose();
       if (lights) {

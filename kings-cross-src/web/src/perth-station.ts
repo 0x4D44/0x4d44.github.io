@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import type {Pt} from '../../core/geo.ts';
 import type {WaverleyArea, WaverleyScene as PerthData} from '../../core/waverley-data.ts';
 import {PERTH_STATION_BUILDING_ID} from '../../core/perth-data.ts';
-import {Batch, material} from './materials.ts';
+import {Batch, floodLit, material} from './materials.ts';
 import type {V2, V3} from './materials.ts';
 import {WAVERLEY_LEVELS, fillSurface, walls} from './waverley-mesh.ts';
 import {stationTexture} from './waverley-station-textures.ts';
@@ -296,12 +296,21 @@ export function addPerthPlatforms(build: PerthBuild, data: Pick<PerthData, 'plat
   // Red brick faces (Abbott 6573357, R-pt1-b), under the buff coper (perth-station-structure.ts).
   const faceStone = own(material('brickRed').clone() as THREE.MeshLambertMaterial); faceStone.color.multiply(new THREE.Color(0xb8aca4));
   // Round 4: smooth grey concrete with fine joints under the roof (R-pt1-d north), not the blotched flags.
-  const paving = own(new THREE.MeshLambertMaterial({color: PERTH_CONCRETE, map: perthSurfaceTexture('concrete')}));
-  const surfacing = own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_ASPHALT, map: perthSurfaceTexture('asphalt')}));
+  // Low reflected fill between the pendants, with the shared pools supplying
+  // their brighter centres. It follows windowNight and adds nothing by day.
+  const nightPaving = (m: THREE.MeshLambertMaterial, strength: number) => {
+    floodLit(m, strength, 8, 1);
+    m.defines = {...m.defines, FLOOD_COLOUR:'vec3( 0.82, 0.92, 1.0 )'};
+    return m;
+  };
+  const paving = own(nightPaving(new THREE.MeshLambertMaterial({name:'city-pavement', color: PERTH_CONCRETE, map: perthSurfaceTexture('concrete')}), .015));
+  // A small reflected night term keeps the open foreground readable when the
+  // wet asphalt absorbs the sky. The shared solar gate makes it zero by day.
+  const surfacing = own(nightPaving(new THREE.MeshLambertMaterial({name:'asphalt', color: PERTH_OPEN_ASPHALT, map: perthSurfaceTexture('asphalt')}), .045));
   const blister = own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial), blisterMap = stationTexture('blister'); blister.map = blisterMap; blister.color.setHex(blisterMap ? 0xffffff : 0xcfae3a);
   add(group, tops, paving, 'perth-platform-surfaces');
   add(group, open, surfacing, 'perth-platform-surfaces-open');
-  add(group, grey, own(new THREE.MeshLambertMaterial({color: PERTH_OPEN_GREY, map: perthSurfaceTexture('asphalt')})), 'perth-platform-surfaces-open-grey');
+  add(group, grey, own(nightPaving(new THREE.MeshLambertMaterial({name:'asphalt', color: PERTH_OPEN_GREY, map: perthSurfaceTexture('asphalt')}), .045)), 'perth-platform-surfaces-open-grey');
   add(group, ramps, own(new THREE.MeshLambertMaterial({color: PERTH_RAMP_FINISH.color, map: perthRampTexture(), vertexColors: true})), 'perth-platform-ramps');
   add(group, s.platform.faces, faceStone, 'perth-platform-faces');
   const edges = new Batch({colored: true, uv: false}); edges.append(s.platform.edges); edges.append(s.platform.lip);

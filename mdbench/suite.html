@@ -29,9 +29,19 @@
 <section id="tasks">
   <div class="stack col"><div class="eyebrow">02 · Per task</div><h2>Every seat on every task</h2></div>
   <div class="panel">
-    <div class="controls"><label>Metric <select id="heat-metric"></select></label></div>
+    <div class="controls"><label>Metric <select id="heat-metric"></select></label> <label id="heat-group-l">Category <select id="heat-group"></select></label></div>
     <div id="heat"></div>
     <p class="cap" id="heat-cap"></p>
+  </div>
+</section>
+
+<section id="listen" hidden>
+  <div class="stack col"><div class="eyebrow">Listen</div><h2>Hear the answers</h2>
+  <p>Each model's first answer, turned back into music and played on <a href="https://github.com/0x4D44/ferrosintesis">ferrosintesis</a>, our own synthesiser, with its recorded instruments. Bars the model marked as gaps are silent, and a model that gave its own tempo plays at that tempo. Start with the reference, then compare.</p>
+  <p class="note">Instrument samples, all CC0: a Yamaha B1 upright piano recorded for ferrosintesis; VSCO-2 Community Edition and the Versilian Community Sample Library (Versilian Studios); Karoryfer Bigcat Cello.</p></div>
+  <div class="panel">
+    <div class="controls"><label>Piece <select id="listen-pick"></select></label></div>
+    <div id="listen-table"></div>
   </div>
 </section>
 
@@ -64,7 +74,7 @@
 <footer><p>Data generated <span id="generated">–</span>. <a href="./">Back to the mdbench overview</a>.</p></footer>
 </div>
 <script type="module">
-import { loadIndex, loadSuite, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
+import { loadIndex, loadSuite, loadJSON, listenTable, leaderboard, heatTable, groupTable, scatter, seatDetail, methodology, familyLegend, sampleBanner, sampleBadge, esc, showError } from "./ui.js";
 const q = new URLSearchParams(location.search);
 const main = document.querySelector(".wrap");
 try {
@@ -101,12 +111,34 @@ try {
   const sel = document.getElementById("heat-metric");
   sel.innerHTML = su.metrics.filter((m) => su.results.some((r) => r.metrics[m.id] != null))
     .map((m) => `<option value="${esc(m.id)}"${m.role === "headline" ? " selected" : ""}>${esc(m.label)}</option>`).join("");
+  // A suite with many tasks shows one group at a time, so the table stays readable.
+  const gsel = document.getElementById("heat-group");
+  const usedGroups = su.group.values.filter((g) => su.tasks.some((t) => t.group === g.id));
+  document.getElementById("heat-group-l").firstChild.textContent = `${su.group.label || "Group"} `;
+  gsel.innerHTML = usedGroups.map((g) => `<option value="${esc(g.id)}">${esc(g.label)}</option>`).join("") + '<option value="">All</option>';
+  gsel.value = su.tasks.length > 12 && usedGroups.length > 1 ? usedGroups[0].id : "";
   const drawHeat = () => {
     const m = su.metricById[sel.value];
-    document.getElementById("heat").innerHTML = heatTable(ix, su, m.id);
-    document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a task id for its description.`;
+    document.getElementById("heat").innerHTML = heatTable(ix, su, m.id, gsel.value || null);
+    document.getElementById("heat-cap").textContent = `${m.label}: ${m.description || ""} Stronger shading is better (${m.higher_is_better ? "higher" : "lower"} values), relative to the range in this table. * marks a run with a note (for example resumed or capped); see seat detail. Hover a column heading for its description.`;
   };
   sel.addEventListener("change", drawHeat);
+  if (su.audio) {
+    // Audio is optional suite data: a manifest of rendered answers per task.
+    const base = `audio/${su.suite}/`;
+    const man = await loadJSON(`${base}manifest.json`);
+    const pick = document.getElementById("listen-pick");
+    const tasks = su.tasks.filter((t) => man[t.id]);
+    pick.innerHTML = tasks.map((t) => `<option value="${esc(t.id)}">${esc(t.title)}</option>`).join("");
+    const drawListen = () => { document.getElementById("listen-table").innerHTML = listenTable(ix, su, man, pick.value, base); };
+    pick.addEventListener("change", drawListen);
+    // One answer plays at a time.
+    document.getElementById("listen-table").addEventListener("play", (ev) => {
+      for (const a of document.querySelectorAll("#listen-table audio")) if (a !== ev.target) a.pause();
+    }, true);
+    if (tasks.length) { drawListen(); document.getElementById("listen").hidden = false; }
+  }
+  gsel.addEventListener("change", drawHeat);
   drawHeat();
 
   if (A.cost) scatter(document.getElementById("sc-cost"), ix, su, { xMetric: A.cost, xValue: (s) => s.per[A.cost.id], xLabel: `${A.cost.label} per task` });

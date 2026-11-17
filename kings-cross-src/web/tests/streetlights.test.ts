@@ -14,7 +14,9 @@ import { createTerrain } from '../../core/terrain.ts';
 import { addCity } from '../src/city.ts';
 import type { NightLayer } from '../src/night.ts';
 import { createStreetLights, headOf, LAMP_LIGHT, lampGeometry, mastGeometry, MAST_STRIP, poolTexture, POST_HEIGHT, stripPoints } from '../src/streetlights.ts';
+import type { StreetLightOptions } from '../src/streetlights.ts';
 import { GROUND_Y } from '../src/world.ts';
+import { Glsl, Sampler } from './glsl.ts';
 
 const data: KxData = JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8'));
 const city: CityData = JSON.parse(readFileSync(new URL('../src/data/kx-city.json', import.meta.url), 'utf8'));
@@ -69,6 +71,25 @@ test('poolTexture: a 128 px canvas with a radial gradient, white under the lamp,
     if (i > 0) assert.ok((alpha[i] as number) < (alpha[i - 1] as number), 'falling all the way out');
   }
   assert.ok(poolTexture() === texture, 'made once');
+});
+
+test('a shared station/yard pool batch clips only the raised platform instances',()=>{
+  const spots=[0,1].map(x=>({x,y:0,z:0,height:4,yaw:0,kind:LAMP_KIND.cool,slope:[0,0] as [number,number]}));
+  const map=new THREE.DataTexture(new Uint8Array([0]),1,1,THREE.RedFormat);
+  const lights=createStreetLights(spots,{poolCeiling:.2,poolFloor:{map,rect:new THREE.Vector4(0,0,1,1),appliesAt:(_s,i)=>i===0}});
+  try {
+    const pools=lights.group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
+    const shader={uniforms:{},vertexShader:'#include <common>\n#include <project_vertex>',fragmentShader:'#include <common>\n#include <opaque_fragment>'};
+    (pools.material as THREE.Material).onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const line=shader.fragmentShader.split('\n').find(l=>l.includes('gl_FragColor.a')&&l.includes('uPoolFloorMap'))!;
+    for(const [i,expected] of [[0,0],[1,1]]) {
+      const flags=pools.geometry.getAttribute('poolFloorWeight');
+      const weight=flags?flags.getX(i!):1;
+      const env={vars:{gl_FragColor:[1,1,1,1],uPoolFloorMap:new Sampler(null),uPoolFloorRect:[0,0,1,1],vPoolWorld:[0,0,0],vPoolFloorWeight:weight},fns:{texture2D:()=>[0,0,0,1]}};
+      new Glsl('').run(line,env);
+      assert.equal(env.vars.gl_FragColor[3],expected,i===0?'a platform pool stops at the platform edge':'the yard remains lit outside the platform mask');
+    }
+  } finally {lights.dispose();map.dispose();}
 });
 
 test('lampGeometry and mastGeometry: 36 and 24 triangles of flat vertex colour and no UVs; the lamp POST_HEIGHT tall with its arm along +x, the mast MAST_HEIGHT tall with its strip of LEDs near the top', () => {
@@ -260,6 +281,48 @@ test('createStreetLights: posts there by day, a glow at each head and a pool und
   for (const m of instanced) assert.ok(freed.includes(m.name), `${m.name} (its matrices and colours) is freed`);
 });
 
+for (const effect of ['pools', 'halos'] as const) {
+  test(`street lamp ${effect} never intercept rays to solid surfaces, at any lamp level`, () => {
+    const fixtures: [string, StreetLightOptions][] = [
+      ['shared city lamps (King\'s Cross and Waverley)', {}],
+      ['existing Perth fixtures', { posts: false, headAt: s => [s.x, s.y + s.height, s.z], fog: true }],
+    ];
+    for (const [name, options] of fixtures) {
+      const s = spot({ x: 0, y: 0, z: 0 });
+      const lights = createStreetLights([s], options);
+      const [hx, hy, hz] = options.headAt?.(s) ?? headOf(s);
+      const target = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), new THREE.MeshBasicMaterial());
+      target.name = 'solid-ray-target';
+      const root = new THREE.Group(); root.add(lights.group, target);
+      const origin = new THREE.Vector3(), direction = new THREE.Vector3();
+      if (effect === 'pools') {
+        target.rotation.x = -Math.PI / 2; target.position.set(hx, s.y, hz);
+        origin.set(hx, s.y + 1, hz); direction.set(0, -1, 0);
+      } else {
+        // Within the point's default 1 m hit threshold, above the solid head.
+        target.position.set(hx, hy + .5, hz - 2);
+        origin.set(hx, hy + .5, hz + 2); direction.set(0, 0, -1);
+      }
+      root.updateMatrixWorld(true);
+      try {
+        for (const level of [0, .78, 1]) {
+          lights.setLevel(level);
+          const hits = new THREE.Raycaster(origin, direction, 0, 5).intersectObject(root, true);
+          assert.ok(hits[0]?.object === target && hits.every(h => h.object.name !== `street-lamp-${effect}`),
+            `${name}, level ${level}: the solid target is reached through light; hits ${hits.map(h => h.object.name).join(', ')}`);
+        }
+        const posts = lights.group.getObjectByName('street-lamp-posts');
+        if (posts) {
+          const hits = new THREE.Raycaster(new THREE.Vector3(s.x, s.y + 2, s.z + 2), new THREE.Vector3(0, 0, -1), 0, 4).intersectObject(posts);
+          assert.ok(hits.length > 0 && hits.every(h => h.object === posts), 'solid lamp posts still intercept rays');
+        }
+      } finally {
+        lights.dispose(); target.geometry.dispose(); target.material.dispose();
+      }
+    }
+  });
+}
+
 test('createStreetLights: with no lamps it draws nothing and still comes on and goes out; with only masts, only the mast post is drawn', () => {
   const none = createStreetLights([]);
   assert.deepEqual(none.counts(), { lamps: 0, triangles: 0, draws: 2 });
@@ -377,4 +440,48 @@ test('addCity on the real ground: the posts and the masts stand on the terrain a
     assert.ok(Math.abs(p.y - (terrain.heightAt(m.x, m.z) + 0.15)) < 1e-3, `mast ${i} stands on the plaza: ${p.y}`);
   });
   c.dispose();
+});
+
+
+test('opt-in bounded pools stay below L*65 through overlap and exposure, spread across bays, and have small bright head cores', () => {
+  const lights = createStreetLights([spot({kind:LAMP_KIND.cool})], {fog:true,poolCeiling:.34,poolSpread:2.2,coreSize:2,haloSize:1.3});
+  try {
+    const pools = named<THREE.InstancedMesh>(lights.group, 'street-lamp-pools');
+    const material = pools.material as THREE.MeshBasicMaterial;
+    assert.equal(material.blending, THREE.NormalBlending, 'overlap converges to a ceiling instead of adding without bound');
+    assert.equal(material.toneMapped, false, 'night exposure cannot blow out an emissive pool');
+    const matrix = new THREE.Matrix4(); pools.getMatrixAt(0,matrix);
+    close(matrix.elements[0]!,poolRadius(8)*2*2.2,1e-5,'wider pools reach between fixtures');
+    const color = new THREE.Color(); pools.getColorAt(0,color);
+    const Y = .2126*color.r+.7152*color.g+.0722*color.b;
+    const L = 116*Math.cbrt(Y)-16;
+    assert.ok(L > 60 && L < 65, `ceiling L* ${L}`);
+    // Normal alpha compositing is a convex combination at every overlap. A dark
+    // platform can approach the pool colour, but never exceed that ceiling.
+    let floor = .01;
+    for (let i=0;i<40;i++) { floor = floor*.15 + Y*.85; assert.ok(floor <= Y); }
+    const shader={uniforms:{},vertexShader:'',fragmentShader:'#include <fog_fragment>'};
+    material.onBeforeCompile(shader as THREE.WebGLProgramParametersWithUniforms,undefined as never);
+    const linear=shader.fragmentShader.replace(/#ifdef FOG_EXP2[\s\S]*?#else/,'').replace(/^\s*#.*$/gm,'');
+    for (const distance of [0,150,300]) {
+      const env={vars:{fogNear:0,fogFar:300,vFogDepth:distance,fogColor:[.1,.1,.1],gl_FragColor:[.3,.3,.3,1]}};
+      new Glsl('').run(linear,env);
+      const out=env.vars.gl_FragColor;
+      assert.deepEqual(out.slice(0,3),[.3,.3,.3],'fog leaves the bounded colour alone');
+      close(out[3]!,distance===0?1:distance===150?.5:0,1e-8,'fog removes alpha, including the square at the far limit');
+    }
+    const halos = named<THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>>(lights.group,'street-lamp-halos');
+    close(halos.material.size,1.3,1e-8);
+    const cores = named<THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>>(lights.group,'street-lamp-cores');
+    assert.equal(cores.material.sizeAttenuation,false);
+    assert.equal(cores.material.size,2);
+    assert.equal(cores.material.toneMapped,false);
+    assert.ok(cores.geometry.getAttribute('color').getY(0) > .9);
+    assert.equal(cores.material.fog,true);
+    assert.equal(lights.counts().draws,4);
+    lights.setLevel(1); assert.ok(cores.visible);
+    lights.setLevel(0); assert.ok(!cores.visible && !pools.visible);
+    const ray = new THREE.Raycaster(new THREE.Vector3(11,20,-5),new THREE.Vector3(0,-1,0));
+    assert.equal(ray.intersectObject(cores).length,0);
+  } finally { lights.dispose(); }
 });

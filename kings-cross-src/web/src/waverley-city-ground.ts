@@ -16,6 +16,7 @@ import type {Pt} from '../../core/geo.ts';
 import {buildTerrainMesh} from '../../core/terrain.ts';
 import type {Terrain} from '../../core/terrain.ts';
 import {WAVERLEY_LEVELS} from './waverley-mesh.ts';
+import {snowLanduseMask} from './snow.ts';
 import data from './data/waverley-city-landuse.json' with {type:'json'};
 
 /** The drape is a coarser mesh than the terrain (DRAPE_TOLERANCE, m of sag allowed between its vertices), so it is lifted as much: a facet
@@ -316,6 +317,13 @@ export function buildWaverleyCityGround(ground:Terrain,footprints:Footprints,LAN
  const slopeAt=(x:number,z:number)=>{const n=ground.normalAt(x,z,4);return Math.acos(Math.min(1,n[1]))*180/Math.PI;};
  const map=paintGround(ground,slopeAt,LANDUSE,options.rockTones,options.waterPaint,options.gardens,options.canvasWidth,options.open);
  const cover=new THREE.MeshLambertMaterial({map,color:map?0xffffff:GROUND_COLOURS.paving});
+ // Urban carriageways down to 5.5 m are traffic-cleared. Worn park paths keep
+ // a readable compacted line; the narrow lanes keep their default retention.
+ const snowMask=snowLanduseMask({...LANDUSE,water:LANDUSE.areas.water,
+  roads:LANDUSE.roads.map(r=>({...r,snow:r.width>=5.5?.08:undefined,slush:LANDUSE===WAVERLEY_LANDUSE&&r.width>=5.5})),
+  paths:LANDUSE.paths.map(p=>({...p,snow:.32}))});
+ if(LANDUSE===WAVERLEY_LANDUSE)cover.userData.snowSlush=true;
+ if(snowMask){cover.userData.snowMask=snowMask;cover.addEventListener('dispose',()=>snowMask.texture.dispose());}
  // open land (OpenGround): cut out where the canvas is clear. The cleared texels are transparent black, so a filtered texel at the cut is
  // the painted colour times its alpha: dividing by the alpha takes it back to the paint (no dark rim along the cut)
  if(options.open){cover.alphaTest=.5;cover.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n#ifdef USE_MAP\n diffuseColor.rgb /= max( sampledDiffuseColor.a, 0.004 );\n#endif');};cover.customProgramCacheKey=()=>'ground-cover-open';}

@@ -1,0 +1,1250 @@
+{
+ "music-bach-prelude-c-bwv846": {
+  "reference": {
+   "mid": "music-bach-prelude-c-bwv846/reference.mid",
+   "opus": "music-bach-prelude-c-bwv846/reference.opus",
+   "secs": 117.0,
+   "status": "ok",
+   "bpm": 71.8,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-bach-prelude-c-bwv846/astra-6-medium.mid",
+    "opus": "music-bach-prelude-c-bwv846/astra-6-medium.opus",
+    "secs": 146.7,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-bach-prelude-c-bwv846/astra-6-xhigh.mid",
+    "opus": "music-bach-prelude-c-bwv846/astra-6-xhigh.opus",
+    "secs": 202.5,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-bach-prelude-c-bwv846/fable-5.2-high.mid",
+    "opus": "music-bach-prelude-c-bwv846/fable-5.2-high.opus",
+    "secs": 230.0,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": "music-bach-prelude-c-bwv846/haiku-5.5-high.mid",
+    "opus": "music-bach-prelude-c-bwv846/haiku-5.5-high.opus",
+    "secs": 26.7,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": "music-bach-prelude-c-bwv846/luna-6-none.mid",
+    "opus": "music-bach-prelude-c-bwv846/luna-6-none.opus",
+    "secs": 16.0,
+    "status": "ok",
+    "bpm": 60.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "opus-4.5-high": {
+    "mid": "music-bach-prelude-c-bwv846/opus-4.5-high.mid",
+    "opus": "music-bach-prelude-c-bwv846/opus-4.5-high.opus",
+    "secs": 127.3,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-bach-prelude-c-bwv846/opus-5.5-medium.mid",
+    "opus": "music-bach-prelude-c-bwv846/opus-5.5-medium.opus",
+    "secs": 116.7,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-bach-prelude-c-bwv846/sol-6.1-xhigh.mid",
+    "opus": "music-bach-prelude-c-bwv846/sol-6.1-xhigh.opus",
+    "secs": 205.8,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-bach-prelude-c-bwv846/sonnet-5.5-high.mid",
+    "opus": "music-bach-prelude-c-bwv846/sonnet-5.5-high.opus",
+    "secs": 127.3,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-beethoven-9-ode-to-joy": {
+  "reference": {
+   "mid": "music-beethoven-9-ode-to-joy/reference.mid",
+   "opus": "music-beethoven-9-ode-to-joy/reference.opus",
+   "secs": 108.0,
+   "status": "ok",
+   "bpm": 160.0,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-beethoven-9-ode-to-joy/astra-6-medium.mid",
+    "opus": "music-beethoven-9-ode-to-joy/astra-6-medium.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-beethoven-9-ode-to-joy/astra-6-xhigh.mid",
+    "opus": "music-beethoven-9-ode-to-joy/astra-6-xhigh.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-beethoven-9-ode-to-joy/fable-5.2-high.mid",
+    "opus": "music-beethoven-9-ode-to-joy/fable-5.2-high.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": "music-beethoven-9-ode-to-joy/haiku-5.5-high.mid",
+    "opus": "music-beethoven-9-ode-to-joy/haiku-5.5-high.opus",
+    "secs": 6.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": "music-beethoven-9-ode-to-joy/o3-high.mid",
+    "opus": "music-beethoven-9-ode-to-joy/o3-high.opus",
+    "secs": 167.0,
+    "status": "ok",
+    "bpm": 92.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-4.5-high": {
+    "mid": "music-beethoven-9-ode-to-joy/opus-4.5-high.mid",
+    "opus": "music-beethoven-9-ode-to-joy/opus-4.5-high.opus",
+    "secs": 216.0,
+    "status": "ok",
+    "bpm": 80.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-beethoven-9-ode-to-joy/opus-5.5-medium.mid",
+    "opus": "music-beethoven-9-ode-to-joy/opus-5.5-medium.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-beethoven-9-ode-to-joy/sol-6.1-xhigh.mid",
+    "opus": "music-beethoven-9-ode-to-joy/sol-6.1-xhigh.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": "music-beethoven-9-ode-to-joy/sonnet-4.5.mid",
+    "opus": "music-beethoven-9-ode-to-joy/sonnet-4.5.opus",
+    "secs": 168.0,
+    "status": "ok",
+    "bpm": 80.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-beethoven-9-ode-to-joy/sonnet-5.5-high.mid",
+    "opus": "music-beethoven-9-ode-to-joy/sonnet-5.5-high.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-debussy-clair-de-lune": {
+  "reference": {
+   "mid": "music-debussy-clair-de-lune/reference.mid",
+   "opus": "music-debussy-clair-de-lune/reference.opus",
+   "secs": 111.0,
+   "status": "ok",
+   "bpm": 63.2,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "fable-5.2-high": {
+    "mid": "music-debussy-clair-de-lune/fable-5.2-high.mid",
+    "opus": "music-debussy-clair-de-lune/fable-5.2-high.opus",
+    "secs": 85.7,
+    "status": "ok",
+    "bpm": 63.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "opus-4.5-high": {
+    "mid": "music-debussy-clair-de-lune/opus-4.5-high.mid",
+    "opus": "music-debussy-clair-de-lune/opus-4.5-high.opus",
+    "secs": 57.3,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-debussy-clair-de-lune/opus-5.5-medium.mid",
+    "opus": "music-debussy-clair-de-lune/opus-5.5-medium.opus",
+    "secs": 17.1,
+    "status": "ok",
+    "bpm": 63.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-debussy-clair-de-lune/sonnet-5.5-high.mid",
+    "opus": "music-debussy-clair-de-lune/sonnet-5.5-high.opus",
+    "secs": 13.0,
+    "status": "ok",
+    "bpm": 69.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-fur-elise": {
+  "reference": {
+   "mid": "music-fur-elise/reference.mid",
+   "opus": "music-fur-elise/reference.opus",
+   "secs": 74.0,
+   "status": "ok",
+   "bpm": 72.2,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-fur-elise/astra-6-medium.mid",
+    "opus": "music-fur-elise/astra-6-medium.opus",
+    "secs": 16.1,
+    "status": "ok",
+    "bpm": 108.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-fur-elise/astra-6-xhigh.mid",
+    "opus": "music-fur-elise/astra-6-xhigh.opus",
+    "secs": 52.0,
+    "status": "ok",
+    "bpm": 75.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-fur-elise/fable-5.2-high.mid",
+    "opus": "music-fur-elise/fable-5.2-high.opus",
+    "secs": 76.3,
+    "status": "ok",
+    "bpm": 70.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": "music-fur-elise/haiku-5.5-high.mid",
+    "opus": "music-fur-elise/haiku-5.5-high.opus",
+    "secs": 2.5,
+    "status": "ok",
+    "bpm": 120.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "o3-high": {
+    "mid": "music-fur-elise/o3-high.mid",
+    "opus": "music-fur-elise/o3-high.opus",
+    "secs": 3.8,
+    "status": "ok",
+    "bpm": 48.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-4.5-high": {
+    "mid": "music-fur-elise/opus-4.5-high.mid",
+    "opus": "music-fur-elise/opus-4.5-high.opus",
+    "secs": 90.5,
+    "status": "ok",
+    "bpm": 58.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-fur-elise/opus-5.5-medium.mid",
+    "opus": "music-fur-elise/opus-5.5-medium.opus",
+    "secs": 75.4,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-fur-elise/sol-6.1-xhigh.mid",
+    "opus": "music-fur-elise/sol-6.1-xhigh.opus",
+    "secs": 52.0,
+    "status": "ok",
+    "bpm": 75.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": "music-fur-elise/sonnet-4.5.mid",
+    "opus": "music-fur-elise/sonnet-4.5.opus",
+    "secs": 31.1,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-fur-elise/sonnet-5.5-high.mid",
+    "opus": "music-fur-elise/sonnet-5.5-high.opus",
+    "secs": 42.9,
+    "status": "ok",
+    "bpm": 50.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": "music-fur-elise/terra-6.1-medium.mid",
+    "opus": "music-fur-elise/terra-6.1-medium.opus",
+    "secs": 1.0,
+    "status": "ok",
+    "bpm": 120.0,
+    "tempo": "answer",
+    "voices": "samples"
+   }
+  }
+ },
+ "music-holst-jupiter": {
+  "reference": {
+   "mid": "music-holst-jupiter/reference.mid",
+   "opus": "music-holst-jupiter/reference.opus",
+   "secs": 103.0,
+   "status": "ok",
+   "bpm": 69.9,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "fable-5.2-high": {
+    "mid": "music-holst-jupiter/fable-5.2-high.mid",
+    "opus": "music-holst-jupiter/fable-5.2-high.opus",
+    "secs": 102.9,
+    "status": "ok",
+    "bpm": 70.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "opus-4.5-high": {
+    "mid": "music-holst-jupiter/opus-4.5-high.mid",
+    "opus": "music-holst-jupiter/opus-4.5-high.opus",
+    "secs": 92.7,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-holst-jupiter/opus-5.5-medium.mid",
+    "opus": "music-holst-jupiter/opus-5.5-medium.opus",
+    "secs": 99.0,
+    "status": "ok",
+    "bpm": 60.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-holst-jupiter/sonnet-5.5-high.mid",
+    "opus": "music-holst-jupiter/sonnet-5.5-high.opus",
+    "secs": 21.8,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-joplin-entertainer": {
+  "reference": {
+   "mid": "music-joplin-entertainer/reference.mid",
+   "opus": "music-joplin-entertainer/reference.opus",
+   "secs": 82.0,
+   "status": "ok",
+   "bpm": 76.1,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "fable-5.2-high": {
+    "mid": "music-joplin-entertainer/fable-5.2-high.mid",
+    "opus": "music-joplin-entertainer/fable-5.2-high.opus",
+    "secs": 82.1,
+    "status": "ok",
+    "bpm": 76.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "opus-4.5-high": {
+    "mid": "music-joplin-entertainer/opus-4.5-high.mid",
+    "opus": "music-joplin-entertainer/opus-4.5-high.opus",
+    "secs": 81.3,
+    "status": "ok",
+    "bpm": 76.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-joplin-entertainer/opus-5.5-medium.mid",
+    "opus": "music-joplin-entertainer/opus-5.5-medium.opus",
+    "secs": 56.4,
+    "status": "ok",
+    "bpm": 76.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-joplin-entertainer/sonnet-5.5-high.mid",
+    "opus": "music-joplin-entertainer/sonnet-5.5-high.opus",
+    "secs": 1.6,
+    "status": "ok",
+    "bpm": 76.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-joplin-maple-leaf-rag": {
+  "reference": {
+   "mid": "music-joplin-maple-leaf-rag/reference.mid",
+   "opus": "music-joplin-maple-leaf-rag/reference.opus",
+   "secs": 96.0,
+   "status": "ok",
+   "bpm": 80.3,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "fable-5.2-high": {
+    "mid": "music-joplin-maple-leaf-rag/fable-5.2-high.mid",
+    "opus": "music-joplin-maple-leaf-rag/fable-5.2-high.opus",
+    "secs": 43.5,
+    "status": "ok",
+    "bpm": 80.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "opus-4.5-high": {
+    "mid": "music-joplin-maple-leaf-rag/opus-4.5-high.mid",
+    "opus": "music-joplin-maple-leaf-rag/opus-4.5-high.opus",
+    "secs": 77.4,
+    "status": "ok",
+    "bpm": 100.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-joplin-maple-leaf-rag/opus-5.5-medium.mid",
+    "opus": "music-joplin-maple-leaf-rag/opus-5.5-medium.opus",
+    "secs": 96.0,
+    "status": "ok",
+    "bpm": 80.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-moonlight-sonata-1": {
+  "reference": {
+   "mid": "music-moonlight-sonata-1/reference.mid",
+   "opus": "music-moonlight-sonata-1/reference.opus",
+   "secs": 106.0,
+   "status": "ok",
+   "bpm": 52.1,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-moonlight-sonata-1/astra-6-medium.mid",
+    "opus": "music-moonlight-sonata-1/astra-6-medium.opus",
+    "secs": 18.5,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-moonlight-sonata-1/astra-6-xhigh.mid",
+    "opus": "music-moonlight-sonata-1/astra-6-xhigh.opus",
+    "secs": 36.9,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-moonlight-sonata-1/fable-5.2-high.mid",
+    "opus": "music-moonlight-sonata-1/fable-5.2-high.opus",
+    "secs": 106.2,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": "music-moonlight-sonata-1/haiku-5.5-high.mid",
+    "opus": "music-moonlight-sonata-1/haiku-5.5-high.opus",
+    "secs": 18.5,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "opus-4.5-high": {
+    "mid": "music-moonlight-sonata-1/opus-4.5-high.mid",
+    "opus": "music-moonlight-sonata-1/opus-4.5-high.opus",
+    "secs": 106.7,
+    "status": "ok",
+    "bpm": 54.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-moonlight-sonata-1/opus-5.5-medium.mid",
+    "opus": "music-moonlight-sonata-1/opus-5.5-medium.opus",
+    "secs": 64.6,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-moonlight-sonata-1/sol-6.1-xhigh.mid",
+    "opus": "music-moonlight-sonata-1/sol-6.1-xhigh.opus",
+    "secs": 27.7,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-moonlight-sonata-1/sonnet-5.5-high.mid",
+    "opus": "music-moonlight-sonata-1/sonnet-5.5-high.opus",
+    "secs": 18.5,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-mozart-k545-1": {
+  "reference": {
+   "mid": "music-mozart-k545-1/reference.mid",
+   "opus": "music-mozart-k545-1/reference.opus",
+   "secs": 101.5,
+   "status": "ok",
+   "bpm": 131.8,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-mozart-k545-1/astra-6-medium.mid",
+    "opus": "music-mozart-k545-1/astra-6-medium.opus",
+    "secs": 52.7,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-mozart-k545-1/astra-6-xhigh.mid",
+    "opus": "music-mozart-k545-1/astra-6-xhigh.opus",
+    "secs": 56.4,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-mozart-k545-1/fable-5.2-high.mid",
+    "opus": "music-mozart-k545-1/fable-5.2-high.opus",
+    "secs": 81.8,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": "music-mozart-k545-1/o3-high.mid",
+    "opus": "music-mozart-k545-1/o3-high.opus",
+    "secs": 68.2,
+    "status": "ok",
+    "bpm": 120.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-4.5-high": {
+    "mid": "music-mozart-k545-1/opus-4.5-high.mid",
+    "opus": "music-mozart-k545-1/opus-4.5-high.opus",
+    "secs": 129.8,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-mozart-k545-1/opus-5.5-medium.mid",
+    "opus": "music-mozart-k545-1/opus-5.5-medium.opus",
+    "secs": 65.5,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-mozart-k545-1/sol-6.1-xhigh.mid",
+    "opus": "music-mozart-k545-1/sol-6.1-xhigh.opus",
+    "secs": 54.5,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-mozart-k545-1/sonnet-5.5-high.mid",
+    "opus": "music-mozart-k545-1/sonnet-5.5-high.opus",
+    "secs": 54.5,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ },
+ "music-satie-gymnopedie-1": {
+  "reference": {
+   "mid": "music-satie-gymnopedie-1/reference.mid",
+   "opus": "music-satie-gymnopedie-1/reference.opus",
+   "secs": 106.0,
+   "status": "ok",
+   "bpm": 66.2,
+   "tempo": "usual",
+   "voices": "samples"
+  },
+  "seats": {
+   "astra-6-medium": {
+    "mid": "music-satie-gymnopedie-1/astra-6-medium.mid",
+    "opus": "music-satie-gymnopedie-1/astra-6-medium.opus",
+    "secs": 10.9,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6-xhigh": {
+    "mid": "music-satie-gymnopedie-1/astra-6-xhigh.mid",
+    "opus": "music-satie-gymnopedie-1/astra-6-xhigh.opus",
+    "secs": 43.6,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "fable-5.2-high": {
+    "mid": "music-satie-gymnopedie-1/fable-5.2-high.mid",
+    "opus": "music-satie-gymnopedie-1/fable-5.2-high.opus",
+    "secs": 207.3,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "gpt-4o-2024-08": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "haiku-5.5-high": {
+    "mid": "music-satie-gymnopedie-1/haiku-5.5-high.mid",
+    "opus": "music-satie-gymnopedie-1/haiku-5.5-high.opus",
+    "secs": 4.5,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "luna-6-max": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "luna-6-none": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "blank answer"
+   },
+   "o3-high": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "opus-4.5-high": {
+    "mid": "music-satie-gymnopedie-1/opus-4.5-high.mid",
+    "opus": "music-satie-gymnopedie-1/opus-4.5-high.opus",
+    "secs": 106.4,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "opus-5.5-medium": {
+    "mid": "music-satie-gymnopedie-1/opus-5.5-medium.mid",
+    "opus": "music-satie-gymnopedie-1/opus-5.5-medium.opus",
+    "secs": 109.1,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.1-xhigh": {
+    "mid": "music-satie-gymnopedie-1/sol-6.1-xhigh.mid",
+    "opus": "music-satie-gymnopedie-1/sol-6.1-xhigh.opus",
+    "secs": 51.8,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sonnet-4.5": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "sonnet-5.5-high": {
+    "mid": "music-satie-gymnopedie-1/sonnet-5.5-high.mid",
+    "opus": "music-satie-gymnopedie-1/sonnet-5.5-high.opus",
+    "secs": 30.9,
+    "status": "ok",
+    "bpm": 70.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "terra-6.1-medium": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   }
+  }
+ }
+}

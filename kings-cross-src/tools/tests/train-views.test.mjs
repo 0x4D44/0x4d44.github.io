@@ -111,13 +111,13 @@ test('V05 whole-train side views look at mid-train from the distance that gives 
  }
 });
 
-test('V06 roof views aim at the first and last pantograph, or the middle car where the train has none, and the plan fits the train with 8% margins',()=>{
+test('V06 roof views aim at the first and last pantograph, or each cab car where there is none, and the plan fits the train with 8% margins',()=>{
  for(const kind of ALL_KINDS) {
-  const f=formations.get(kind),L=f.length,H=f.roofTop,panto=f.cars.filter(c=>c.pantograph),mid=f.cars[Math.floor(f.cars.length/2)];
-  const first=panto.length?(panto[0].pantograph[0]+panto[0].pantograph[1])/2:(mid.start+mid.end)/2,last=panto.length?(panto.at(-1).pantograph[0]+panto.at(-1).pantograph[1])/2:(mid.start+mid.end)/2;
+  const f=formations.get(kind),L=f.length,H=f.roofTop,panto=f.cars.filter(c=>c.pantograph),cab0=f.cars[0],cabN=f.cars.at(-1);
+  const first=panto.length?(panto[0].pantograph[0]+panto[0].pantograph[1])/2:(cab0.start+cab0.end)/2,last=panto.length?(panto.at(-1).pantograph[0]+panto.at(-1).pantograph[1])/2:(cabN.start+cabN.end)/2;
   const front=view(kind,'roof-front'),rear=view(kind,'roof-rear'),plan=view(kind,'roof-plan');
   vec(front.eye,[5.5,8,first-2],1e-6,kind);vec(front.target,[0,H,first],1e-6);assert.equal(front.fov,50);
-  vec(rear.eye,mirror([5.5,8,L-last-2],L),1e-6,kind);vec(rear.target,mirror([0,H,L-last],L),1e-6);assert.equal(rear.fov,50);
+  vec(rear.eye,mirror([-5.5,8,L-last-2],L),1e-6,kind);vec(rear.target,mirror([0,H,L-last],L),1e-6);assert.equal(rear.fov,50);
   assert.equal(panto.length===0,kind==='gc180x5','only the Class 180 has no pantograph');
   vec(plan.up,[1,0,0]);assert.equal(plan.fov,50);vec(plan.target,[0,H,L/2],1e-6);near(plan.eye[0],0,1e-9);near(plan.eye[2],L/2,1e-6);near(plan.eye[1]-H,F.fitDistance(L,50),1e-3,'height for 8% margins');
  }

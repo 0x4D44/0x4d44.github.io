@@ -121,6 +121,34 @@
    "description": "Change in item score after one unprompted self-review."
   },
   {
+   "id": "best_guess_score",
+   "label": "Best guess",
+   "type": "number",
+   "unit": "points",
+   "higher_is_better": true,
+   "min": 0,
+   "max": 100,
+   "format": {
+    "decimals": 1
+   },
+   "description": "Item score when the model was asked to fill its gaps with its best guess (music only; the headline stays the honest first answer)."
+  },
+  {
+   "id": "confident_wrong",
+   "label": "Confident-wrong",
+   "type": "number",
+   "unit": "fraction",
+   "higher_is_better": false,
+   "min": 0,
+   "max": 1,
+   "format": {
+    "decimals": 1,
+    "scale": 100,
+    "suffix": "%"
+   },
+   "description": "In the best-guess answer, the share of bars the model gave 70+ confidence that were wrong."
+  },
+  {
    "id": "cost_usd",
    "label": "Cost",
    "role": "cost",
@@ -148,6 +176,76 @@
   }
  ],
  "tasks": [
+  {
+   "id": "music-bach-prelude-c-bwv846",
+   "group": "music",
+   "title": "Prelude in C major, BWV 846",
+   "description": "the whole prelude (35 bars, without the spurious extra bar some 19th-century editions insert)",
+   "tags": []
+  },
+  {
+   "id": "music-beethoven-9-ode-to-joy",
+   "group": "music",
+   "title": "Beethoven, Symphony No. 9: 'Ode to Joy' theme",
+   "description": "the instrumental 'Ode to Joy' theme and its first two variations: from the Allegro assai where cellos and basses first play the theme alone, through the variation for violas and cellos with bassoon counter-melody, and the variation led by the first violins, ending just before the full orchestra takes up the theme (24 + 24 + 24 bars; no repeats)",
+   "tags": []
+  },
+  {
+   "id": "music-debussy-clair-de-lune",
+   "group": "music",
+   "title": "Clair de lune",
+   "description": "from the beginning through the end of the 'Tempo rubato' section, including its climax and the 'dim. molto' bars that follow, stopping just before 'Un poco mosso'",
+   "tags": []
+  },
+  {
+   "id": "music-fur-elise",
+   "group": "music",
+   "title": "Für Elise",
+   "description": "from the opening upbeat through the end of the first episode: the opening section with both of its written repeats (the opening phrase twice, then the middle phrase and the return twice), then the F major episode and its transition over a repeated E, stopping just before the main theme returns",
+   "tags": []
+  },
+  {
+   "id": "music-holst-jupiter",
+   "group": "music",
+   "title": "Holst, Jupiter: the big tune (Andante maestoso)",
+   "description": "the whole Andante maestoso section in E-flat major, 3/4 (the big tune later sung as 'Thaxted' / 'I Vow to Thee, My Country'): from its start, after the quiet lead-in, through both statements of the tune, ending just before the music returns to 2/4",
+   "tags": []
+  },
+  {
+   "id": "music-joplin-entertainer",
+   "group": "music",
+   "title": "The Entertainer",
+   "description": "the four-bar introduction, the first strain played twice (with its written repeat), then the second strain once, without its repeat (ending with its first-time bar)",
+   "tags": []
+  },
+  {
+   "id": "music-joplin-maple-leaf-rag",
+   "group": "music",
+   "title": "Maple Leaf Rag",
+   "description": "from the beginning (including the upbeat) through the first two strains, each played twice as written with its first and second endings, stopping before the first strain returns",
+   "tags": []
+  },
+  {
+   "id": "music-moonlight-sonata-1",
+   "group": "music",
+   "title": "Moonlight Sonata, first movement",
+   "description": "from the beginning through the first 23 bars (alla breve): the four-bar introduction, the opening melody and its continuation through B minor, ending with the bar where the bass arrives on a low F-sharp octave under F-sharp minor harmony",
+   "tags": []
+  },
+  {
+   "id": "music-mozart-k545-1",
+   "group": "music",
+   "title": "Piano Sonata in C major, K. 545, first movement",
+   "description": "the exposition of the first movement played twice, with its written repeat, stopping before the development",
+   "tags": []
+  },
+  {
+   "id": "music-satie-gymnopedie-1",
+   "group": "music",
+   "title": "Gymnopédie No. 1",
+   "description": "from the beginning through the end of the first statement: the first half of the piece, ending on the sustained D major chord just before the opening accompaniment returns",
+   "tags": []
+  },
   {
    "id": "text-declaration",
    "group": "literature",
@@ -584,12 +682,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0006,
-    "ece": 0.0036,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0,
+    "ece": 0.0019,
     "second_delta": 0.0,
     "cost_usd": 0.5046,
     "wall_min": 0.94
@@ -944,12 +1042,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0006,
-    "ece": 0.0031,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0,
+    "ece": 0.0025,
     "second_delta": 0.0,
     "cost_usd": 0.3699,
     "wall_min": 1.36
@@ -1304,12 +1402,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0008,
-    "ece": 0.0203,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0007,
+    "ece": 0.0258,
     "second_delta": 0.0,
     "cost_usd": 0.5204,
     "wall_min": 0.57
@@ -2020,12 +2118,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0067,
-    "ece": 0.0758,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0071,
+    "ece": 0.0814,
     "second_delta": 0.0,
     "cost_usd": 0.0094,
     "wall_min": 0.51
@@ -2380,12 +2478,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0006,
-    "ece": 0.0072,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0002,
+    "ece": 0.0128,
     "second_delta": 0.0,
     "cost_usd": 0.0082,
     "wall_min": 2.14
@@ -2732,12 +2830,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.002,
-    "ece": 0.0228,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0016,
+    "ece": 0.0283,
     "second_delta": 0.0,
     "cost_usd": 0.0039,
     "wall_min": 0.66
@@ -3092,12 +3190,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0164,
-    "ece": 0.1167,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0175,
+    "ece": 0.1222,
     "second_delta": 0.0,
     "cost_usd": 0.1284,
     "wall_min": 0.58
@@ -3452,12 +3550,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0151,
-    "ece": 0.1119,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0163,
+    "ece": 0.1175,
     "second_delta": 0.0,
     "cost_usd": 0.4211,
     "wall_min": 0.87
@@ -3812,12 +3910,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
     "brier": 0.0026,
-    "ece": 0.0439,
+    "ece": 0.0494,
     "second_delta": 0.0,
     "cost_usd": 0.1956,
     "wall_min": 0.45
@@ -4172,11 +4270,11 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0006,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0,
     "ece": 0.0028,
     "second_delta": 0.0,
     "cost_usd": 0.0821,
@@ -4532,12 +4630,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0142,
-    "ece": 0.1111,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0153,
+    "ece": 0.1167,
     "second_delta": 0.0,
     "cost_usd": 0.2015,
     "wall_min": 1.26
@@ -4892,12 +4990,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0009,
-    "ece": 0.0167,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0005,
+    "ece": 0.0222,
     "second_delta": 0.0,
     "cost_usd": 0.1039,
     "wall_min": 0.41
@@ -5252,12 +5350,12 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "item_score": 98.87,
-    "accuracy": 0.9943,
-    "invention_rate": 0.0057,
-    "exact_run": 249,
-    "brier": 0.0006,
-    "ece": 0.0061,
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0002,
+    "ece": 0.0117,
     "second_delta": 0.0,
     "cost_usd": 0.0304,
     "wall_min": 0.82
@@ -5317,6 +5415,2582 @@
     "wall_min": 0.6
    },
    "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 42.67,
+    "accuracy": 0.5482,
+    "invention_rate": 0.2216,
+    "exact_run": 0,
+    "brier": 0.0226,
+    "ece": 0.1371,
+    "second_delta": 0.0,
+    "best_guess_score": 50.33,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6718,
+    "wall_min": 2.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 8.98,
+    "accuracy": 0.2009,
+    "invention_rate": 0.5532,
+    "exact_run": 0,
+    "brier": 0.3365,
+    "ece": 0.5792,
+    "second_delta": 1.36,
+    "best_guess_score": 7.3,
+    "cost_usd": 0.7323,
+    "wall_min": 2.74
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.56,
+    "cost_usd": 0.1926,
+    "wall_min": 0.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 25.39,
+    "accuracy": 0.287,
+    "invention_rate": 0.1154,
+    "exact_run": 2,
+    "brier": 0.0648,
+    "ece": 0.2121,
+    "second_delta": 7.22,
+    "best_guess_score": 41.99,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.688,
+    "wall_min": 3.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.43,
+    "cost_usd": 0.4163,
+    "wall_min": 1.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 9.82,
+    "cost_usd": 0.555,
+    "wall_min": 1.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 5.87,
+    "cost_usd": 0.5094,
+    "wall_min": 1.37
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 16.19,
+    "accuracy": 0.1806,
+    "invention_rate": 0.1034,
+    "exact_run": 2,
+    "brier": 0.0239,
+    "ece": 0.098,
+    "second_delta": 0.0,
+    "best_guess_score": 13.13,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4705,
+    "wall_min": 1.65
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.22,
+    "accuracy": 0.0192,
+    "invention_rate": 0.3636,
+    "exact_run": 0,
+    "brier": 0.5951,
+    "ece": 0.7714,
+    "second_delta": 0.0,
+    "best_guess_score": 3.85,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.5216,
+    "wall_min": 1.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 9.23,
+    "accuracy": 0.0923,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "brier": 0.09,
+    "ece": 0.3,
+    "second_delta": 6.87,
+    "best_guess_score": 18.14,
+    "confident_wrong": 0.5,
+    "cost_usd": 0.4546,
+    "wall_min": 1.53
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 47.79,
+    "accuracy": 0.6517,
+    "invention_rate": 0.2667,
+    "exact_run": 0,
+    "brier": 0.0711,
+    "ece": 0.2092,
+    "second_delta": 0.0,
+    "best_guess_score": 44.13,
+    "confident_wrong": 0.0667,
+    "cost_usd": 1.9677,
+    "wall_min": 10.97
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 15.86,
+    "accuracy": 0.2923,
+    "invention_rate": 0.4574,
+    "exact_run": 11,
+    "brier": 0.0203,
+    "ece": 0.0646,
+    "second_delta": 0.0,
+    "best_guess_score": 9.58,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.4471,
+    "wall_min": 9.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.88,
+    "cost_usd": 0.6156,
+    "wall_min": 2.84
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 59.58,
+    "accuracy": 0.5958,
+    "invention_rate": 0.0,
+    "exact_run": 21,
+    "brier": 0.0066,
+    "ece": 0.0711,
+    "second_delta": 0.0,
+    "best_guess_score": 43.62,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.6265,
+    "wall_min": 9.53
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.8,
+    "cost_usd": 0.8227,
+    "wall_min": 5.02
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 22.09,
+    "cost_usd": 0.655,
+    "wall_min": 3.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 11.71,
+    "cost_usd": 0.6567,
+    "wall_min": 3.24
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 22.86,
+    "accuracy": 0.26,
+    "invention_rate": 0.1209,
+    "exact_run": 2,
+    "brier": 0.1399,
+    "ece": 0.226,
+    "second_delta": -1.24,
+    "best_guess_score": 12.98,
+    "confident_wrong": 0.2857,
+    "cost_usd": 1.4797,
+    "wall_min": 11.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.21,
+    "accuracy": 0.028,
+    "invention_rate": 0.2121,
+    "exact_run": 0,
+    "brier": 0.3053,
+    "ece": 0.5312,
+    "second_delta": 0.0,
+    "best_guess_score": 5.45,
+    "confident_wrong": 0.6667,
+    "cost_usd": 1.1056,
+    "wall_min": 6.16
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 22.26,
+    "accuracy": 0.3005,
+    "invention_rate": 0.2593,
+    "exact_run": 0,
+    "brier": 0.212,
+    "ece": 0.4328,
+    "second_delta": 2.51,
+    "best_guess_score": 17.47,
+    "confident_wrong": 0.5625,
+    "cost_usd": 1.3838,
+    "wall_min": 9.45
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 59.09,
+    "accuracy": 0.7668,
+    "invention_rate": 0.2295,
+    "exact_run": 0,
+    "brier": 0.0689,
+    "ece": 0.2519,
+    "second_delta": 0.0,
+    "best_guess_score": 59.09,
+    "confident_wrong": 0.0286,
+    "cost_usd": 0.9423,
+    "wall_min": 1.3
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 45.31,
+    "accuracy": 0.4952,
+    "invention_rate": 0.0851,
+    "exact_run": 23,
+    "brier": 0.0876,
+    "ece": 0.2197,
+    "second_delta": 0.0,
+    "best_guess_score": 45.31,
+    "confident_wrong": 0.0,
+    "cost_usd": 2.0548,
+    "wall_min": 3.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 4.99,
+    "accuracy": 0.1666,
+    "invention_rate": 0.7003,
+    "exact_run": 0,
+    "brier": 0.0218,
+    "ece": 0.0607,
+    "second_delta": 0.09,
+    "best_guess_score": 6.38,
+    "confident_wrong": 0.5,
+    "cost_usd": 2.5254,
+    "wall_min": 11.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 86.02,
+    "accuracy": 0.9196,
+    "invention_rate": 0.0646,
+    "exact_run": 21,
+    "brier": 0.0343,
+    "ece": 0.1397,
+    "second_delta": 0.0,
+    "best_guess_score": 86.02,
+    "confident_wrong": 0.0,
+    "cost_usd": 2.4333,
+    "wall_min": 4.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 31.78,
+    "accuracy": 0.321,
+    "invention_rate": 0.0099,
+    "exact_run": 0,
+    "brier": 0.024,
+    "ece": 0.1152,
+    "second_delta": -0.37,
+    "best_guess_score": 31.41,
+    "cost_usd": 3.533,
+    "wall_min": 6.9
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 54.16,
+    "accuracy": 0.6596,
+    "invention_rate": 0.1789,
+    "exact_run": 1,
+    "brier": 0.1308,
+    "ece": 0.3045,
+    "second_delta": 0.0,
+    "best_guess_score": 54.16,
+    "cost_usd": 3.1281,
+    "wall_min": 7.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 11.63,
+    "accuracy": 0.1852,
+    "invention_rate": 0.3723,
+    "exact_run": 0,
+    "brier": 0.0264,
+    "ece": 0.1037,
+    "second_delta": -1.01,
+    "best_guess_score": 12.14,
+    "cost_usd": 3.6738,
+    "wall_min": 8.13
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 67.82,
+    "accuracy": 0.7777,
+    "invention_rate": 0.128,
+    "exact_run": 4,
+    "brier": 0.0725,
+    "ece": 0.1727,
+    "second_delta": 0.0,
+    "best_guess_score": 67.82,
+    "confident_wrong": 0.0,
+    "cost_usd": 3.9635,
+    "wall_min": 7.88
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 46.07,
+    "accuracy": 0.5276,
+    "invention_rate": 0.1269,
+    "exact_run": 4,
+    "brier": 0.151,
+    "ece": 0.3261,
+    "second_delta": -0.82,
+    "best_guess_score": 38.55,
+    "confident_wrong": 0.0,
+    "cost_usd": 3.7722,
+    "wall_min": 8.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 16.9,
+    "accuracy": 0.3789,
+    "invention_rate": 0.554,
+    "exact_run": 0,
+    "brier": 0.248,
+    "ece": 0.3487,
+    "second_delta": -0.2,
+    "best_guess_score": 16.7,
+    "confident_wrong": 0.875,
+    "cost_usd": 2.4889,
+    "wall_min": 5.28
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0235,
+    "wall_min": 0.04
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0238,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0176,
+    "wall_min": 0.03
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0236,
+    "wall_min": 0.05
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0238,
+    "wall_min": 0.05
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0234,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0236,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0235,
+    "wall_min": 0.08
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0236,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0235,
+    "wall_min": 0.1
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.7,
+    "accuracy": 0.0474,
+    "invention_rate": 0.8529,
+    "exact_run": 0,
+    "brier": 0.0101,
+    "ece": 0.0773,
+    "second_delta": -0.7,
+    "best_guess_score": 0.34,
+    "cost_usd": 0.0159,
+    "wall_min": 0.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.49,
+    "accuracy": 0.0174,
+    "invention_rate": 0.1429,
+    "exact_run": 0,
+    "brier": 0.0185,
+    "ece": 0.1226,
+    "second_delta": -0.1,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0128,
+    "wall_min": 0.88
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.45,
+    "cost_usd": 0.0091,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.37,
+    "accuracy": 0.0325,
+    "invention_rate": 0.5769,
+    "exact_run": 2,
+    "brier": 0.0982,
+    "ece": 0.2965,
+    "second_delta": 1.05,
+    "best_guess_score": 2.9,
+    "cost_usd": 0.0199,
+    "wall_min": 1.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0056,
+    "wall_min": 0.43
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.81,
+    "cost_usd": 0.0129,
+    "wall_min": 1.02
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.18,
+    "cost_usd": 0.0111,
+    "wall_min": 0.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.45,
+    "accuracy": 0.0136,
+    "invention_rate": 0.6667,
+    "exact_run": 0,
+    "brier": 0.0263,
+    "ece": 0.1605,
+    "second_delta": -0.45,
+    "best_guess_score": 1.13,
+    "cost_usd": 0.0115,
+    "wall_min": 0.73
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.76,
+    "cost_usd": 0.0096,
+    "wall_min": 0.59
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.52,
+    "accuracy": 0.013,
+    "invention_rate": 0.6,
+    "exact_run": 0,
+    "brier": 0.0035,
+    "ece": 0.0416,
+    "second_delta": -0.52,
+    "best_guess_score": 2.54,
+    "cost_usd": 0.0111,
+    "wall_min": 0.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.33,
+    "cost_usd": 0.0123,
+    "wall_min": 4.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.58,
+    "cost_usd": 0.0165,
+    "wall_min": 4.93
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0098,
+    "wall_min": 1.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 4.69,
+    "cost_usd": 0.0134,
+    "wall_min": 3.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0052,
+    "wall_min": 0.81
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 4.91,
+    "cost_usd": 0.0097,
+    "wall_min": 1.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.87,
+    "cost_usd": 0.011,
+    "wall_min": 3.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 5.53,
+    "cost_usd": 0.0079,
+    "wall_min": 1.65
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.17,
+    "cost_usd": 0.0058,
+    "wall_min": 1.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.67,
+    "cost_usd": 0.0097,
+    "wall_min": 2.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.93,
+    "accuracy": 0.035,
+    "invention_rate": 0.7344,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.93,
+    "cost_usd": 0.004,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0036,
+    "wall_min": 0.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0746,
+    "wall_min": 29.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0026,
+    "wall_min": 0.19
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.08
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.07
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0012,
+    "wall_min": 0.25
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 2.17,
+    "best_guess_score": 4.28,
+    "cost_usd": 0.1513,
+    "wall_min": 0.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 4.87,
+    "accuracy": 0.1043,
+    "invention_rate": 0.5333,
+    "exact_run": 0,
+    "brier": 0.1394,
+    "ece": 0.3369,
+    "second_delta": 0.13,
+    "best_guess_score": 5.0,
+    "cost_usd": 0.2376,
+    "wall_min": 1.34
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0569,
+    "wall_min": 0.21
+   },
+   "flags": [
+    "refused"
+   ]
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.56,
+    "accuracy": 0.0182,
+    "invention_rate": 0.1429,
+    "exact_run": 0,
+    "brier": 0.3613,
+    "ece": 0.575,
+    "second_delta": 0.95,
+    "best_guess_score": 5.32,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1711,
+    "wall_min": 1.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.56,
+    "cost_usd": 0.1268,
+    "wall_min": 0.92
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.19,
+    "cost_usd": 0.1155,
+    "wall_min": 0.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.1105,
+    "wall_min": 0.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 5.27,
+    "cost_usd": 0.1081,
+    "wall_min": 0.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.53,
+    "accuracy": 0.0313,
+    "invention_rate": 0.8293,
+    "exact_run": 0,
+    "brier": 0.1884,
+    "ece": 0.4271,
+    "second_delta": -0.16,
+    "best_guess_score": 0.25,
+    "cost_usd": 0.2322,
+    "wall_min": 1.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 6.35,
+    "cost_usd": 0.106,
+    "wall_min": 0.61
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 7.48,
+    "accuracy": 0.2309,
+    "invention_rate": 0.6761,
+    "exact_run": 0,
+    "brier": 0.2098,
+    "ece": 0.3955,
+    "second_delta": 1.09,
+    "best_guess_score": 7.62,
+    "confident_wrong": 0.8,
+    "cost_usd": 2.0417,
+    "wall_min": 11.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 15.1,
+    "accuracy": 0.3374,
+    "invention_rate": 0.5526,
+    "exact_run": 3,
+    "brier": 0.1588,
+    "ece": 0.2837,
+    "second_delta": -0.89,
+    "best_guess_score": 10.3,
+    "confident_wrong": 0.6341,
+    "cost_usd": 2.29,
+    "wall_min": 8.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.08,
+    "accuracy": 0.0717,
+    "invention_rate": 0.7094,
+    "exact_run": 0,
+    "brier": 0.0225,
+    "ece": 0.1328,
+    "second_delta": -2.08,
+    "best_guess_score": 2.62,
+    "cost_usd": 0.7374,
+    "wall_min": 4.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.44,
+    "accuracy": 0.1146,
+    "invention_rate": 0.7874,
+    "exact_run": 0,
+    "brier": 0.336,
+    "ece": 0.5269,
+    "second_delta": 5.67,
+    "best_guess_score": 6.84,
+    "confident_wrong": 0.8235,
+    "cost_usd": 0.9835,
+    "wall_min": 4.37
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 5.01,
+    "accuracy": 0.1255,
+    "invention_rate": 0.6008,
+    "exact_run": 0,
+    "brier": 0.0978,
+    "ece": 0.3017,
+    "second_delta": -3.01,
+    "best_guess_score": 4.5,
+    "cost_usd": 1.3497,
+    "wall_min": 4.89
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 8.53,
+    "accuracy": 0.2029,
+    "invention_rate": 0.5797,
+    "exact_run": 0,
+    "brier": 0.0215,
+    "ece": 0.098,
+    "second_delta": -0.28,
+    "best_guess_score": 8.86,
+    "cost_usd": 1.3745,
+    "wall_min": 5.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 6.28,
+    "accuracy": 0.1842,
+    "invention_rate": 0.6593,
+    "exact_run": 0,
+    "second_delta": -6.28,
+    "best_guess_score": 6.19,
+    "cost_usd": 0.5322,
+    "wall_min": 1.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 12.4,
+    "accuracy": 0.229,
+    "invention_rate": 0.4583,
+    "exact_run": 1,
+    "brier": 0.1803,
+    "ece": 0.3762,
+    "second_delta": -0.74,
+    "best_guess_score": 9.75,
+    "confident_wrong": 0.6667,
+    "cost_usd": 1.7439,
+    "wall_min": 8.29
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.2,
+    "accuracy": 0.0382,
+    "invention_rate": 0.9469,
+    "exact_run": 0,
+    "second_delta": -0.2,
+    "best_guess_score": 0.84,
+    "cost_usd": 0.9253,
+    "wall_min": 3.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.62,
+    "accuracy": 0.1207,
+    "invention_rate": 0.7832,
+    "exact_run": 0,
+    "brier": 0.0665,
+    "ece": 0.2045,
+    "second_delta": -1.49,
+    "best_guess_score": 4.04,
+    "cost_usd": 1.5249,
+    "wall_min": 8.03
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 87.32,
+    "accuracy": 0.9344,
+    "invention_rate": 0.0656,
+    "exact_run": 5,
+    "brier": 0.0463,
+    "ece": 0.1238,
+    "second_delta": 0.0,
+    "best_guess_score": 87.32,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4662,
+    "wall_min": 1.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 45.31,
+    "accuracy": 0.4952,
+    "invention_rate": 0.0851,
+    "exact_run": 23,
+    "brier": 0.1105,
+    "ece": 0.2844,
+    "second_delta": 0.0,
+    "best_guess_score": 45.31,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6876,
+    "wall_min": 2.23
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.93,
+    "accuracy": 0.027,
+    "invention_rate": 0.6562,
+    "exact_run": 0,
+    "brier": 0.0059,
+    "ece": 0.045,
+    "second_delta": -0.39,
+    "best_guess_score": 2.13,
+    "cost_usd": 0.3303,
+    "wall_min": 1.01
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 71.15,
+    "accuracy": 0.7957,
+    "invention_rate": 0.1059,
+    "exact_run": 21,
+    "brier": 0.0433,
+    "ece": 0.131,
+    "second_delta": -0.51,
+    "best_guess_score": 70.89,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.1473,
+    "wall_min": 4.09
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.55,
+    "accuracy": 0.0394,
+    "invention_rate": 0.6074,
+    "exact_run": 0,
+    "brier": 0.0013,
+    "ece": 0.0174,
+    "second_delta": -1.29,
+    "best_guess_score": 1.55,
+    "cost_usd": 0.3993,
+    "wall_min": 1.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 16.08,
+    "accuracy": 0.28,
+    "invention_rate": 0.4257,
+    "exact_run": 0,
+    "brier": 0.0222,
+    "ece": 0.0808,
+    "second_delta": 0.0,
+    "best_guess_score": 19.99,
+    "cost_usd": 0.6581,
+    "wall_min": 2.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 8.49,
+    "accuracy": 0.2397,
+    "invention_rate": 0.6456,
+    "exact_run": 0,
+    "brier": 0.0108,
+    "ece": 0.0673,
+    "second_delta": -8.49,
+    "best_guess_score": 8.49,
+    "cost_usd": 0.5569,
+    "wall_min": 1.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 21.01,
+    "accuracy": 0.2993,
+    "invention_rate": 0.2979,
+    "exact_run": 2,
+    "brier": 0.0384,
+    "ece": 0.1537,
+    "second_delta": 0.0,
+    "best_guess_score": 18.58,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4635,
+    "wall_min": 1.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 16.3,
+    "accuracy": 0.1837,
+    "invention_rate": 0.113,
+    "exact_run": 0,
+    "brier": 0.0322,
+    "ece": 0.159,
+    "second_delta": -10.3,
+    "best_guess_score": 11.15,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4654,
+    "wall_min": 1.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 13.62,
+    "accuracy": 0.2437,
+    "invention_rate": 0.4412,
+    "exact_run": 0,
+    "brier": 0.1855,
+    "ece": 0.3679,
+    "second_delta": 0.0,
+    "best_guess_score": 6.95,
+    "confident_wrong": 0.8571,
+    "cost_usd": 0.3661,
+    "wall_min": 1.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 37.86,
+    "accuracy": 0.5832,
+    "invention_rate": 0.3508,
+    "exact_run": 0,
+    "brier": 0.1779,
+    "ece": 0.3647,
+    "second_delta": 0.0,
+    "best_guess_score": 39.18,
+    "confident_wrong": 0.2903,
+    "cost_usd": 0.4872,
+    "wall_min": 15.65
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 24.92,
+    "accuracy": 0.3414,
+    "invention_rate": 0.2702,
+    "exact_run": 11,
+    "brier": 0.0576,
+    "ece": 0.1979,
+    "second_delta": 3.18,
+    "best_guess_score": 9.96,
+    "cost_usd": 0.3245,
+    "wall_min": 9.86
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.1,
+    "cost_usd": 0.1428,
+    "wall_min": 5.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 63.47,
+    "accuracy": 0.6436,
+    "invention_rate": 0.0139,
+    "exact_run": 21,
+    "brier": 0.0351,
+    "ece": 0.0908,
+    "second_delta": -2.03,
+    "best_guess_score": 48.85,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3354,
+    "wall_min": 12.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.43,
+    "cost_usd": 0.263,
+    "wall_min": 7.9
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 19.52,
+    "cost_usd": 0.1356,
+    "wall_min": 2.91
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 5.81,
+    "cost_usd": 0.1029,
+    "wall_min": 3.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 19.33,
+    "accuracy": 0.2197,
+    "invention_rate": 0.12,
+    "exact_run": 2,
+    "brier": 0.1493,
+    "ece": 0.2514,
+    "second_delta": 1.91,
+    "best_guess_score": 10.01,
+    "confident_wrong": 0.3333,
+    "cost_usd": 0.2083,
+    "wall_min": 5.82
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.55,
+    "accuracy": 0.0297,
+    "invention_rate": 0.4783,
+    "exact_run": 0,
+    "brier": 0.7401,
+    "ece": 0.8527,
+    "second_delta": 0.44,
+    "best_guess_score": 1.71,
+    "confident_wrong": 1.0,
+    "cost_usd": 0.2713,
+    "wall_min": 7.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 24.02,
+    "accuracy": 0.3383,
+    "invention_rate": 0.29,
+    "exact_run": 0,
+    "brier": 0.2547,
+    "ece": 0.4903,
+    "second_delta": 0.0,
+    "best_guess_score": 16.58,
+    "confident_wrong": 0.6842,
+    "cost_usd": 0.2361,
+    "wall_min": 8.62
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.43,
+    "cost_usd": 0.2188,
+    "wall_min": 1.36
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.76,
+    "accuracy": 0.0787,
+    "invention_rate": 0.6496,
+    "exact_run": 0,
+    "brier": 0.3466,
+    "ece": 0.5794,
+    "second_delta": -2.76,
+    "best_guess_score": 7.63,
+    "cost_usd": 0.2813,
+    "wall_min": 1.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.55,
+    "cost_usd": 0.1777,
+    "wall_min": 0.9
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 1.43,
+    "accuracy": 0.0504,
+    "invention_rate": 0.716,
+    "exact_run": 0,
+    "brier": 0.2704,
+    "ece": 0.5138,
+    "second_delta": -0.12,
+    "best_guess_score": 4.43,
+    "cost_usd": 0.1841,
+    "wall_min": 1.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.71,
+    "cost_usd": 0.1102,
+    "wall_min": 0.65
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.11,
+    "cost_usd": 0.1921,
+    "wall_min": 1.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 7.54,
+    "cost_usd": 0.19,
+    "wall_min": 1.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.19,
+    "cost_usd": 0.2595,
+    "wall_min": 2.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.28,
+    "cost_usd": 0.2138,
+    "wall_min": 1.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-4.5",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.35,
+    "cost_usd": 0.1633,
+    "wall_min": 1.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 5.4,
+    "accuracy": 0.1727,
+    "invention_rate": 0.6871,
+    "exact_run": 0,
+    "brier": 0.0866,
+    "ece": 0.1837,
+    "second_delta": 16.43,
+    "best_guess_score": 9.81,
+    "cost_usd": 0.3985,
+    "wall_min": 3.06
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 16.06,
+    "accuracy": 0.2936,
+    "invention_rate": 0.4532,
+    "exact_run": 11,
+    "brier": 0.0349,
+    "ece": 0.1007,
+    "second_delta": 0.0,
+    "best_guess_score": 16.06,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6676,
+    "wall_min": 4.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.59,
+    "accuracy": 0.0168,
+    "invention_rate": 0.65,
+    "exact_run": 0,
+    "brier": 0.0068,
+    "ece": 0.0136,
+    "second_delta": -0.59,
+    "best_guess_score": 1.48,
+    "cost_usd": 0.1589,
+    "wall_min": 0.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 25.59,
+    "accuracy": 0.2586,
+    "invention_rate": 0.0104,
+    "exact_run": 4,
+    "brier": 0.2269,
+    "ece": 0.3428,
+    "second_delta": 0.0,
+    "best_guess_score": 19.16,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6376,
+    "wall_min": 4.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.16,
+    "accuracy": 0.0024,
+    "invention_rate": 0.3333,
+    "exact_run": 0,
+    "brier": 0.0016,
+    "ece": 0.0389,
+    "second_delta": -0.16,
+    "best_guess_score": 3.48,
+    "cost_usd": 0.1611,
+    "wall_min": 0.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.28,
+    "accuracy": 0.0046,
+    "invention_rate": 0.4,
+    "exact_run": 0,
+    "brier": 0.0025,
+    "ece": 0.05,
+    "second_delta": -0.28,
+    "best_guess_score": 6.53,
+    "cost_usd": 0.1801,
+    "wall_min": 1.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 5.24,
+    "cost_usd": 0.2227,
+    "wall_min": 1.14
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 14.03,
+    "accuracy": 0.1637,
+    "invention_rate": 0.1429,
+    "exact_run": 2,
+    "brier": 0.0879,
+    "ece": 0.2321,
+    "second_delta": 0.0,
+    "best_guess_score": 11.77,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3535,
+    "wall_min": 1.9
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.83,
+    "accuracy": 0.0239,
+    "invention_rate": 0.6522,
+    "exact_run": 0,
+    "brier": 0.0145,
+    "ece": 0.1116,
+    "second_delta": 0.52,
+    "best_guess_score": 4.3,
+    "cost_usd": 0.2767,
+    "wall_min": 1.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 18.32,
+    "accuracy": 0.2442,
+    "invention_rate": 0.25,
+    "exact_run": 0,
+    "brier": 0.0429,
+    "ece": 0.169,
+    "second_delta": -4.5,
+    "best_guess_score": 15.31,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1812,
+    "wall_min": 0.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 14.49,
+    "cost_usd": 0.0443,
+    "wall_min": 0.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 16.85,
+    "cost_usd": 0.0232,
+    "wall_min": 0.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.0,
+    "cost_usd": 0.0381,
+    "wall_min": 0.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 2.42,
+    "accuracy": 0.0242,
+    "invention_rate": 0.0,
+    "exact_run": 2,
+    "brier": 0.01,
+    "ece": 0.1,
+    "second_delta": 0.0,
+    "best_guess_score": 2.42,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.034,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.21,
+    "cost_usd": 0.0299,
+    "wall_min": 0.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 11.47,
+    "cost_usd": 0.0449,
+    "wall_min": 0.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 6.99,
+    "cost_usd": 0.0464,
+    "wall_min": 0.56
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 7.82,
+    "confident_wrong": 1.0,
+    "cost_usd": 0.0173,
+    "wall_min": 0.46
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 3.52,
+    "cost_usd": 0.033,
+    "wall_min": 0.67
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-16",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.63,
+    "cost_usd": 0.0312,
+    "wall_min": 0.36
+   },
+   "flags": []
   }
  ],
  "methodology": {
@@ -5327,10 +8001,12 @@
   ],
   "caveats": [
    "Seat = model + effort + harness. Claude seats run in Claude Code, GPT seats in the Codex CLI, so model and harness are confounded.",
+   "Seats run with the fleet's own agent configuration (instructions, skills and hooks), not a vanilla install of Claude Code or the Codex CLI.",
    "All runs used the fleet's subscription logins except the older API baselines (GPT-4o, o3), which ran pay-per-token on the OpenAI API with a per-run cost cap.",
    "Cost is a list-price figure, not what was paid. Claude Code reports its own list-price cost; the Codex CLI reports only tokens, so GPT costs are estimates from token counts at published list prices (standard tier; one price was taken from third-party trackers).",
    "Some speeches exist in several accepted versions; the seat is scored against the best-matching one.",
    "Memorisation is the point here, so contamination is not a flaw. One private item is scored but never published."
   ]
- }
+ },
+ "audio": true
 }

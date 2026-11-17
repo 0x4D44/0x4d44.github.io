@@ -11,6 +11,11 @@ import { Batch, rgb } from './materials.ts';
 import type { Rgb } from './materials.ts';
 import { haloTexture } from './night.ts';
 import type { NightLayer } from './night.ts';
+import { surfaceUniforms } from './atmosphere.ts';
+import { COVER_GLSL, coverUniforms } from './cover.ts';
+import type { LampWetSurface } from './lamp-wet-surface.ts';
+import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
+import { createLampWeather, fadeLightInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
 export const POST_HEIGHT = 8;
@@ -114,8 +119,82 @@ export interface StreetLights extends NightLayer {
   dispose(): void;
 }
 
-export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
+export interface StreetLightOptions {
+  /** Existing station fixtures need only the shared heads and pools. */
+  posts?: boolean;
+  /** A promoted existing street head reuses its daylight post. */
+  postAt?: (spot:LampSpot)=>boolean;
+  headAt?: (spot: LampSpot) => [number, number, number];
+  /** Geographic scenes can fade their distant lamps with their own visibility. */
+  fog?: boolean;
+  /** Opt-in display-linear pool ceiling. Normal alpha blending approaches this
+   * colour through overlaps, without the exposure or additive hot spots. */
+  poolCeiling?: number;
+  /** Broaden the falloff and reach together, keeping the peak unchanged. */
+  poolSpread?: number;
+  /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
+  poolRadiusAt?: (spot: LampSpot, index: number) => number;
+  /** Optional full width/depth of a directional pool, metres. */
+  poolSizeAt?: (spot: LampSpot, index: number) => readonly [number, number] | undefined;
+  /** A mast's narrow rectangular optic, with a short soft edge. */
+  poolLineAt?: (spot: LampSpot, index: number) => boolean;
+  /** Small floor clearance for raised station slabs at grazing camera angles. */
+  poolLiftAt?: (spot: LampSpot, index: number) => number;
+  /** Evaluate the radial profile per fragment, without grazing-angle mip blur. */
+  analyticPool?: boolean;
+  /** Broaden a pool's lit centre independently of its bounded peak/reach. */
+  poolFocus?: number;
+  /** Keep distant head cores without allocating unseen pools on distant roads. */
+  poolAt?: (spot:LampSpot,index:number)=>boolean;
+  /** Drape urban pools onto the same physical paving as their reflections. */
+  poolSurface?: LampWetSurface;
+  /** Receiver samples across a pool on tightly folded urban terrain. */
+  poolSegments?: number;
+  /** Clip raised platform light to the physical platforms instead of the tracks. */
+  poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
+  /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
+  poolWeather?: boolean;
+  /** Opt-in wet head reflections and a wider fog-scattering halo. */
+  weatherEffects?: boolean;
+  /** Allocate reflection geometry only for this scene's nearby wet surfaces. */
+  reflectionAt?: (spot: LampSpot, index: number) => boolean;
+  /** Finite reflected patch around its head, rather than an infinite tangent plane. */
+  reflectionReach?: number;
+  /** Actual urban road/paving receiver heights and wet footprint. */
+  reflectionSurface?: LampWetSurface;
+  /** Urban puddles form long, narrow streaks with irregular soft breaks. */
+  reflectionBroken?: boolean;
+  /** Station/city optics only; the Perth path remains unchanged. */
+  enhancedFog?: boolean;
+  /** Wider scattering on Scottish city lights, independent of the clear head. */
+  fogHaloSpread?: number;
+  /** One low-opacity volume per LED strip, separate from its bright samples. */
+  mastHaze?: boolean;
+  /** KX-only broad mast air glow, directional pool core and rough wet streaks. */
+  kxOptics?: boolean;
+  /** Tapered, irregular wet streaks without changing the pool or clear head. */
+  roughReflections?: boolean;
+  /** KX window/lamp emission has a longer fog tail than opaque surfaces. */
+  lightFog?: boolean;
+  /** Snow receives diffuse pools, never mirror streaks. */
+  suppressSnow?: boolean;
+  /** Low-pressure sodium on selected approaches, including fittings reused in
+   * the city batch. Other streets and Perth retain their reference palette. */
+  lowPressureSodium?: boolean | ((spot:LampSpot)=>boolean);
+  /** Preserve a sodium core's orange hue at panorama scale. */
+  coreTint?: boolean;
+  haloSize?: number;
+  /** Relative head diameter, e.g. the forecourt's blazing LED strips. */
+  haloScaleAt?: (spot:LampSpot)=>number;
+  /** A small white-hot core in pixels, including at panorama distances. */
+  coreSize?: number;
+}
+
+export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
+  const lightOf = (spot:LampSpot) => spot.kind===LAMP_KIND.sodium && (typeof options.lowPressureSodium==='function'?options.lowPressureSodium(spot):options.lowPressureSodium)
+    ? {halo:0xff993c,pool:0xff9136,strength:.13} : LAMP_LIGHT[spot.kind];
+  const headAt = options.headAt ?? headOf;
   const group = new THREE.Group();
   group.name = 'street-lamps';
 
@@ -129,7 +208,8 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   const geometries: THREE.BufferGeometry[] = [];
   const meshes: THREE.InstancedMesh[] = [];
   for (const mast of [false, true]) {
-    const some = spots.filter((spot) => !!spot.mast === mast);
+    if (options.posts === false) continue;
+    const some = spots.filter((spot) => !!spot.mast === mast && options.postAt?.(spot)!==false);
     if (!some.length) continue;
     const geometry = mast ? mastGeometry() : lampGeometry();
     const posts = new THREE.InstancedMesh(geometry, material, some.length);
@@ -149,41 +229,148 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   // the glow at each head (a mast's, along its strip): additive sprites, a colour to each, hidden by day
   const heads: number[] = [];
   const colours: number[] = [];
+  const haloScales: number[] = [];
   const tint = new THREE.Color();
   for (const spot of spots) {
-    tint.setHex(LAMP_LIGHT[spot.kind].halo);
-    for (const point of spot.mast ? stripPoints(spot) : [headOf(spot)]) {
+    tint.setHex(lightOf(spot).halo);
+    for (const point of spot.mast ? stripPoints(spot) : [headAt(spot)]) {
       heads.push(...point);
+      haloScales.push(options.haloScaleAt?.(spot) ?? 1);
       colours.push(tint.r, tint.g, tint.b);
     }
   }
   const haloGeometry = new THREE.BufferGeometry();
   haloGeometry.setAttribute('position', new THREE.Float32BufferAttribute(heads, 3));
   haloGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colours, 3));
-  const haloMaterial = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
-    blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  const haloMaterial = new THREE.PointsMaterial({ size: options.haloSize ?? 2.6, sizeAttenuation: true, map: haloTexture(), vertexColors: true, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false });
   const halos = new THREE.Points(haloGeometry, haloMaterial);
+  // Light has no solid surface, even when hidden by day: sightlines pass through.
+  halos.raycast = (): void => {};
+  if (options.fog) fadeLightInFog(haloMaterial,false,false,!!(options.kxOptics || options.lightFog));
+  if (options.haloScaleAt) {
+    haloGeometry.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(haloScales,1));
+    const before=haloMaterial.onBeforeCompile;
+    haloMaterial.onBeforeCompile=(shader,renderer)=>{
+      before.call(haloMaterial,shader,renderer);
+      shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float lampHaloScale;')
+        .replace('gl_PointSize = size;','gl_PointSize = size;\ngl_PointSize *= lampHaloScale;');
+    };
+    haloMaterial.customProgramCacheKey=()=> 'street-head-strip-glow';
+  }
   halos.name = 'street-lamp-halos';
   halos.visible = false;
   halos.frustumCulled = false;
   halos.renderOrder = 5;
   group.add(halos);
 
+  let cores: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | undefined;
+  if (options.coreSize && heads.length) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', haloGeometry.getAttribute('position'));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(options.coreTint ? colours : colours.map(c => .92 + .08 * c), 3));
+    const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
+      transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
+    if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog,!!(options.kxOptics || options.lightFog));
+    cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
+    cores.raycast = (): void => {};
+    cores.frustumCulled = false; cores.renderOrder = 6; cores.visible = false;
+    group.add(cores);
+  }
+
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
-  const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const poolMaterial = new THREE.MeshBasicMaterial({ map: poolTexture(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+  const poolEntries=spots.flatMap((spot,index)=>options.poolAt?.(spot,index)===false?[]:[{spot,index}]);
+  // A road can curve through the centre of a footprint. Sampling only its four
+  // corners tilted the Euston pool through the asphalt, exposing a hard edge.
+  const poolSegments = options.poolSegments ?? (options.poolSurface ? 2 : 1);
+  const poolGeometry = new THREE.PlaneGeometry(1, 1, poolSegments, poolSegments).rotateX(-Math.PI / 2);
+  if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
+  if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
+  const bounded = options.poolCeiling !== undefined;
+  const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
+    toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
     polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
-  const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, n);
+  const pools = new THREE.InstancedMesh(poolGeometry, poolMaterial, poolEntries.length);
+  pools.raycast = (): void => {};
+  if (options.fog) fadeLightInFog(poolMaterial, bounded);
+  if (options.poolFloor || options.poolWeather || options.analyticPool) {
+    const before = poolMaterial.onBeforeCompile;
+    poolMaterial.onBeforeCompile = (shader, renderer) => {
+      before.call(poolMaterial, shader, renderer);
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vPoolWorld;')
+        .replace('#include <project_vertex>', `#include <project_vertex>
+vec4 poolWorld = vec4( transformed, 1.0 );
+#ifdef USE_INSTANCING
+poolWorld = instanceMatrix * poolWorld;
+#endif
+vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
+      let declarations = 'varying vec3 vPoolWorld;', body = '';
+      if(options.poolSurface){
+        Object.assign(shader.uniforms,{uLampSurface:{value:options.poolSurface.map},uLampSurfaceRect:{value:options.poolSurface.rect}});
+        shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\n${LAMP_RECEIVER_GLSL}`)
+          .replace('#include <logdepthbuf_vertex>',`vec2 poolAnchorReceiver = lampReceiver((modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xz);
+// pool-receiver-begin
+vec2 poolReceiver = lampReceiver(vPoolWorld.xz);
+vPoolWorld.y = (poolReceiver.y > 0.001 ? poolReceiver.x : poolAnchorReceiver.x)+0.07;
+// pool-receiver-end
+mvPosition = viewMatrix*vec4(vPoolWorld,1.0);
+gl_Position = projectionMatrix*mvPosition;
+#include <logdepthbuf_vertex>`);
+        declarations+=`\n${LAMP_RECEIVER_GLSL}`;
+        body+='\n// pool-receiver-mask-begin\ngl_FragColor.a *= lampReceiver(vPoolWorld.xz).y;\n// pool-receiver-mask-end';
+      }
+      if (options.analyticPool) {
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
+          .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
+        declarations += '\nvarying vec2 vPoolUv;';
+        if (options.poolLineAt) {
+          shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
+            .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
+          declarations += '\nvarying float vPoolLine;';
+        }
+        body += `
+// pool-profile-begin
+float poolR = length( 2.0 * vPoolUv - 1.0 );
+${options.poolLineAt ? `float poolProfile = pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
+poolProfile = mix( poolProfile, exp(-${options.kxOptics?'1.15':'1.8'}*(2.0*vPoolUv.x-1.0)*(2.0*vPoolUv.x-1.0)-${options.kxOptics?'2.0':'2.5'}*(2.0*vPoolUv.y-1.0)*(2.0*vPoolUv.y-1.0)) * (1.0 - smoothstep(${options.kxOptics?'.78':'.65'},1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(${options.kxOptics?'.72':'.55'},1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
+gl_FragColor.a *= poolProfile;` : `gl_FragColor.a *= pow( 1.0 + ${options.poolFocus?.toFixed(1)??'4.0'} * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );`}
+// pool-profile-end`;
+      }
+      if (options.poolFloor) {
+        shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
+          .replace('#include <project_vertex>','#include <project_vertex>\nvPoolFloorWeight = poolFloorWeight;');
+        shader.uniforms.uPoolFloorMap = { value: options.poolFloor.map };
+        shader.uniforms.uPoolFloorRect = { value: options.poolFloor.rect };
+        declarations += '\nvarying float vPoolFloorWeight;\nuniform sampler2D uPoolFloorMap;\nuniform vec4 uPoolFloorRect;';
+        body += '\ngl_FragColor.a *= mix( 1.0, texture2D( uPoolFloorMap, ( vPoolWorld.xz - uPoolFloorRect.xy ) * uPoolFloorRect.zw ).r, vPoolFloorWeight );';
+      }
+      if (options.poolWeather) {
+        shader.uniforms.uPoolWet = surfaceUniforms.wet;
+        shader.uniforms.uPoolFog = surfaceUniforms.fog;
+        Object.assign(shader.uniforms, coverUniforms);
+        declarations += `\nuniform float uPoolWet;\nuniform float uPoolFog;\n${COVER_GLSL}`;
+        body += `
+float poolOpen = 1.0 - coverGroundAt( vPoolWorld );
+// pool-weather-begin
+gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog );
+// pool-weather-end`;
+      }
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
+        .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
+    };
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}`;
+  }
   pools.name = 'street-lamp-pools';
-  spots.forEach((spot, i) => {
-    const [x, , z] = headOf(spot);
-    const r = poolRadius(spot.height) * 2;
+  poolEntries.forEach(({spot,index}, i) => {
+    const [x, , z] = headAt(spot);
+    const r = 2 * (options.poolRadiusAt?.(spot, index) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
+    const size = options.poolSizeAt?.(spot,index), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
-    matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + POOL_LIFT, 0, 0, r, z, 0, 0, 0, 1);
+    matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,index) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
-    const light = LAMP_LIGHT[spot.kind];
-    pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(light.strength));
+    const light = lightOf(spot);
+    pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));
   });
   pools.instanceMatrix.needsUpdate = true;
   if (pools.instanceColor) pools.instanceColor.needsUpdate = true;
@@ -191,6 +378,9 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
   pools.frustumCulled = false;
   pools.renderOrder = 4;
   group.add(pools);
+  const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
+  if (weather) group.add(weather.group);
 
   return {
     group,
@@ -199,15 +389,19 @@ export function createStreetLights(spots: readonly LampSpot[]): StreetLights {
       haloMaterial.opacity = l * 0.9;
       poolMaterial.opacity = l;
       halos.visible = pools.visible = l > 0.01;
+      if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
+      weather?.setLevel(l);
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * n, draws: meshes.length + 2 }),
+    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + poolGeometry.index!.count / 3 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
     dispose() {
+      weather?.dispose();
       for (const g of geometries) g.dispose();
       for (const m of meshes) m.dispose();
       haloGeometry.dispose();
       poolGeometry.dispose();
       material.dispose();
       haloMaterial.dispose();
+      cores?.geometry.dispose(); cores?.material.dispose();
       poolMaterial.dispose();
       pools.dispose();
     },

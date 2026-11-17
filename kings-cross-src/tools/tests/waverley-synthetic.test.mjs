@@ -95,3 +95,29 @@ test('--synthetic-trains goes with --scene waverley only', () => {
   assert.equal(syntheticTrainsFrom([], 'kings-cross'), false);
   assert.throws(() => syntheticTrainsFrom(['--synthetic-trains'], 'kings-cross'), /--synthetic-trains is for --scene waverley/);
 });
+
+test('frozen comparison captures keep synthetic trains at their planned positions without scheduling motion', async () => {
+  const { evidenceBuildEdinburgh, disposeEdinburghTrain } = await import('../../web/src/edinburgh-fleet.ts');
+  const waverley = new THREE.Scene(), camera = new THREE.PerspectiveCamera(50, 16 / 9, 1, 5000), frames = [];
+  const sample = { ...plan, trains: plan.trains.filter((t) => t.id === 'SYN-01' || t.id === 'SYN-21') };
+  camera.position.set(365, 45.4, -301); camera.lookAt(-300, 45, 250); camera.updateMatrixWorld();
+  globalThis.window = { __kx: { camera, evidenceBuildEdinburgh, stations: { edinburgh: () => ({ scene: waverley, geometry: {} }) } } };
+  globalThis.requestAnimationFrame = (f) => frames.push(f);
+  try {
+    const first = eval(syntheticScript(sample, { animate: false }));
+    assert.equal(frames.length, 0, 'BASE and HEAD must not advance trains while shader compilation and screenshot timing differ');
+    assert.equal(first.animated, false);
+    assert.equal(first.travelledM, 0);
+    for (const t of window.__kx.synthetic.trains) {
+      for (const pose of poseCars(t.route, t.cars, t.noseS)) {
+        const car = t.group.getObjectByName('car-' + pose.car.index);
+        assert.deepEqual(car.position.toArray(), [pose.position[0], 0, pose.position[1]], `${t.id}: fixed plan pose`);
+      }
+    }
+    assert.deepEqual(eval(syntheticScript(sample, { animate: false })), first, 'repeated staging keeps the identical fixture');
+    assert.equal(frames.length, 0);
+  } finally {
+    for (const train of waverley.children) disposeEdinburghTrain(train);
+    delete globalThis.window; delete globalThis.requestAnimationFrame;
+  }
+});

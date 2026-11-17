@@ -9,12 +9,16 @@ import type { Height, RoadClass } from '../../core/city.ts';
 import { hash01, SegmentGrid } from '../../core/city.ts';
 import type { Pt } from '../../core/geo.ts';
 import { pointInPolygon } from '../../core/station.ts';
-import { decodeLampRoads, lampSpots } from '../../core/streetlights.ts';
+import { decodeLampRoads, lampSpots, LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampRoad, LampRoadsFile, LampRun, LampSpot } from '../../core/streetlights.ts';
 import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import type { WaverleyScene } from '../../core/waverley-data.ts';
+import type * as THREE from 'three';
+import { createLampWetSurface, lampSurfaceAt } from './lamp-wet-surface.ts';
+import type { LampWetSurface } from './lamp-wet-surface.ts';
+import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 
@@ -128,11 +132,45 @@ export function waverleyLampSpots(file: LampRoadsFile, ground: (x: number, z: nu
   });
 }
 
+/** Night-only fittings on the drawn North Bridge kerbs and the station's
+ * Market Street approach. OSM plan; pitch/height are assumed from R-nw-f. */
+async function approachSpots(root:THREE.Object3D,surface:LampWetSurface,existing:readonly LampSpot[]):Promise<LampSpot[]> {
+  const out:LampSpot[]=[];
+  const add=(x:number,z:number,yaw:number)=>{
+    const nearby=existing.find(s=>Math.hypot(s.x-x,s.z-z)<7);
+    if(nearby){
+      // A promoted kerb fitting must use sodium in both overlapping batches;
+      // leaving its original warm-white core underneath washed the row white.
+      nearby.kind=LAMP_KIND.sodium;
+      if(!out.includes(nearby))out.push(nearby);return;
+    }
+    const [y,mask]=lampSurfaceAt(surface,x,z);if(mask<.9)return;
+    const dx=lampSurfaceAt(surface,x+1,z)[0]-lampSurfaceAt(surface,x-1,z)[0];
+    const dz=lampSurfaceAt(surface,x,z+1)[0]-lampSurfaceAt(surface,x,z-1)[0];
+    out.push({x,z,y:y+.025,yaw,height:8,kind:LAMP_KIND.sodium,slope:[dx/2,dz/2]});
+  };
+  const frame=root.getObjectByName('waverley-frontage')?.userData.frontage?.northBridge.frame as {length:number;at:(s:number,t:number)=>Pt}|undefined;
+  if(!frame)return out;
+  for(let s=18;s<frame.length-12;s+=30)for(const side of [.07,.93]){
+    const p=frame.at(s,side),q=frame.at(s,.5);add(...p,Math.atan2(-(q[1]-p[1]),q[0]-p[0]));
+  }
+  const roads=await import('./data/waverley-roads.json',{with:{type:'json'}});
+  for(const road of roads.default.roads){
+    // The west run is the part visible from the frozen North Bridge view.
+    // Previously only the east approach was added, behind/off that camera.
+    if(road.name!=='Market Street')continue;
+    const line=road.path.map(p=>[p[0]!,p[1]!] as Pt);
+    const run: LampRun={id:0,cls:'tertiary',line,half:4.25,y:(x,z)=>lampSurfaceAt(surface,x,z)[0],rule:{height:8,spacing:28,sides:'alternate'}};
+    for(const spot of lampSpots([run],{rand:hash01,modern:()=>false,blocked:()=>false}))add(spot.x,spot.z,spot.yaw);
+  }
+  return out;
+}
+
 /**
  * Load the Scottish street lamps: the roads, the building outlines (the scene's own OSM data, already loaded by the model) and the context DTM, each a lazy chunk, and the lamps they make. `drawn` is
  * the ground as the scene draws it. Resolves to the lamps' layer (a post to each, a glow at its head and a pool under it: web/src/streetlights.ts), not yet in any scene.
  */
-export async function loadWaverleyLamps(drawn: (x: number, z: number) => number): Promise<StreetLights> {
+export async function loadWaverleyLamps(drawn: (x: number, z: number) => number, nightEffects = false, surfaceRoot?:THREE.Object3D): Promise<StreetLights> {
   const [roads, scene, terrain] = await Promise.all([
     import('./data/waverley-lamp-roads.json', { with: { type: 'json' } }),
     import('./data/waverley-scene.json', { with: { type: 'json' } }),
@@ -140,5 +178,36 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number)
   ]);
   const context = createTerrain(terrain.default as unknown as TerrainFile);
   const data = unpackWaverleyScene(scene.default);
-  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data)));
+  const file=roads.default as unknown as LampRoadsFile;
+  const spots=waverleyLampSpots(file, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data));
+  const roadMask=new SegmentGrid();
+  // Include the wet footways beside the carriageway. Clipping them out left
+  // only a horizontal road-edge sliver of each Princes Street reflection.
+  for(const road of decodeLampRoads(file)) for(let i=1;i<road.line.length;i++){
+    const a=road.line[i-1]!,b=road.line[i]!;
+    // ASSUMED: the broad Princes Street paving/junction north of the hotel
+    // extends beyond the lean road centreline's default carriageway width.
+    const princes=a[0]>-30&&a[0]<125&&a[1]<-110&&b[1]<-110;
+    roadMask.add({a,b,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+(princes?14:6)});
+  }
+  const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground','waverley-ground-cover','waverley-bridge-decks']),spots,
+    (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
+  // Retain all distant head cores/posts; spend the ground geometry on nearby
+  // conforming pools/strips rather than almost invisible panorama road pools.
+  const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
+  const approachSet=new Set(rowSpots);
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,lowPressureSodium:s=>approachSet.has(s),fogHaloSpread:18,
+    // Princes Street's narrow footway lies almost at eye level in the frozen
+    // Balmoral view. A 16 m pool covered the whole road as one horizontal band.
+    // Keep a local soft pool under each head, independently of its wet streak.
+    poolRadiusAt:s=>s.x>20&&s.x<80&&s.z>-180&&s.z<-140?3.2:8,poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
+  // The western Market Street receivers project 119–132 m from their heads
+  // in the North Bridge camera. Keep these urban runs finite and road-clipped,
+  // without discarding their visible wet paving at the generic 96 m limit.
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,reflectionReach:160,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
+  if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
+  return {...layer,
+    setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},
+    counts(){const a=layer.counts(),b=rows?.counts();return b?{lamps:a.lamps+b.lamps,triangles:a.triangles+b.triangles,draws:a.draws+b.draws}:a;},
+    dispose(){rows?.group.removeFromParent();rows?.dispose();layer.dispose();surface?.dispose();}};
 }

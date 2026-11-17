@@ -291,7 +291,7 @@ let plainMaterial: THREE.MeshLambertMaterial | null = null;
 /** The one material for everything that carries its colour in the vertices; shared by every train. */
 export const plain = (): THREE.MeshLambertMaterial => {
   if (!plainMaterial) {
-    plainMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
+    plainMaterial = new THREE.MeshLambertMaterial({ name: 'train-body', vertexColors: true });
     // Add the lamp glow after lighting. Vertices with no `aGlow` attribute read 0 and draw as before. A window (tag 1) glows only after dark; a lit lens (tag 2) glows in its own
     // colour by `mix( day, night, uNight )`, so by day it keeps the floor and an unlit one (tag 0) is the paint it always was.
     plainMaterial.onBeforeCompile = (shader) => {

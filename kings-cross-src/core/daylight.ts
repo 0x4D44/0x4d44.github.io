@@ -170,13 +170,17 @@ const HAZE_CAP = { near: 450, far: 2800 } as const;
  * never steps. Below 10 km the far plane comes in with the visibility: a camera low in the fog sees only about the visibility; a camera
  * high above it looks down through a fog layer that is shallow (a few hundred metres), so its effective visibility grows with its height.
  */
-export function fogRange(visibilityM: number, cameraHeightM = 0): { near: number; far: number } {
+export function fogRange(visibilityM: number, cameraHeightM = 0, weatherFar: number = HAZE_CAP.far, clearFar: number = CLEAR_FOG.far): { near: number; far: number } {
+  // Wide geographic scenes must not lose a town 3 km away in 7 km rain. Keep the
+  // legacy cap by default; an explicit cap also meets the 10 km band continuously.
+  const heightGain = 1 + Math.max(0, cameraHeightM) / 250;
+  const capFar = Math.min(weatherFar, 1.25 * 10_000 * heightGain);
   if (!(visibilityM < 10_000)) {
     const t = Number.isNaN(visibilityM) ? 1 : smoothstep(10_000, 20_000, visibilityM);
-    return { near: lerp(HAZE_CAP.near, CLEAR_FOG.near, t), far: lerp(HAZE_CAP.far, CLEAR_FOG.far, t) };
+    return { near: lerp(HAZE_CAP.near, CLEAR_FOG.near, t), far: lerp(capFar, clearFar, t) };
   }
-  const effective = visibilityM * (1 + Math.max(0, cameraHeightM) / 250);
-  const far = Math.min(HAZE_CAP.far, Math.max(60, 1.25 * effective));
+  const effective = visibilityM * heightGain;
+  const far = Math.min(capFar, Math.max(60, 1.25 * effective));
   return { near: Math.min(HAZE_CAP.near, 0.2 * far), far };
 }
 

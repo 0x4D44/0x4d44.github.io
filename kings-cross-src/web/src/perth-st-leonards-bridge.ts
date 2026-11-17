@@ -43,11 +43,12 @@ export const ST_LEONARDS_APPROACHES:readonly(readonly Pt[])[]=[
  *  The fascia's foot rises to 0.5 m under the road (was 0.9, which put it under the crown) so the string course runs just over the crowns. */
 export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.5,parapet:1.15,footway:2,kerb:.12,
  piers:[22.3,35.46,43.76,55.74],pierWidth:1.5,spring:2,grade:.08,wallDepth:.5,step:3,
- archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.15},
- voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.05,pitch:1.8,stiffener:.1,stiffenerProud:.04},
+ archSegments:[16,24],string:{height:.25,projection:.12},coping:{height:.18,overhang:.34},
+ voussoir:{depth:.45,proud:.04},impost:{height:.22,proud:.08},girder:{flange:.12,flangeProud:.16,pitch:1.8,stiffener:.16,stiffenerProud:.09},
  northShade:.75,
  soffitStone:.9,joint:.05,soffitBend:1.5,
- soffitFill:{base:2.6,crown:1.3},soffitLamp:{strength:.018,reach:4,floor:1},soffitJoint:{width:.1,tone:.5,inset:.015},weather:{jitter:.085,cell:3,cellHeight:2.5,stain:.35,stainFull:.5,stainHeight:1.6}} as const;
+ soffitFill:{base:2.2,crown:1.5},soffitLamp:{strength:.018,reach:4,floor:2},soffitJoint:{width:.1,tone:.5,inset:.015},
+ pierBlockScale:.68,weather:{jitter:.085,cell:3,cellHeight:2.5,stain:.4,stainFull:1.1,stainHeight:1.55,soot:.17,crownSoot:.08,runoff:.12}} as const;
 /* Round 3 (the round-2 score, LAND F5 7.0 F6 6.0): the stone reads as one flat tone, the arches' insides band, the parapet is a slab whose
  * coping never shows, the shaded face is too bright. So, from R-slb-a (ASSUMED sizes, by eye):
  * - the spandrels, piers, abutments and approach walls are coursed ashlar: the station walls' coursed-stone texture (perth-frontage-
@@ -117,7 +118,18 @@ export const ST_LEONARDS={road:5.9,abutments:[14,74],half:5.5,crown:.75,fascia:.
  *   spread about 6% (sd) at the frozen cameras;
  * - `stain` 0.35 (was 0.28), so a pier's foot stays under 0.8 of its springing when the foot's patch is light and the springing's dark. */
 export const SOFFIT_TONES=[1,.84,1.04,1.16,.8,.98,1.1,.9] as const;
-export const ST_LEONARDS_COLOURS={stone:0x968a70,soffit:0x80755f,joint:0x4f483d,shadow:0x3e3a33,dressed:0xb2a68e,voussoir:0x9d927d,steel:0x9aaba2,steelDark:0x76877e,asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
+/* Round 8 (R-slb-a; round-7 score F5 8.6/F6 8.3): grey-brown soot-stained sandstone, 23% less linear albedo than round 7. The ring
+ * is only a little lighter than the textured face. Irregular coursing uses the existing canvas mechanism, its own bridge batch;
+ * the pier blocks are longer than the spandrel blocks. Rust and runoff dimensions/tones are ASSUMED from the photograph by eye.
+ * Soffit base follows the greyer stone. The existing FLOOD profile rises toward its upward-lit crown (floor 2), keeping the crown
+ * near 21 at dusk without washing out the springing. Model only: noon face 42, springing 31.5, crown 30.6; dusk crown 21.4.
+ * Brightness is a prediction until the frozen GPU pair: round 7's textured-stone predictions ran 3-15% above the captured pixels.
+ */
+// Round-8 follow-up: captured face (45,42,41) was too neutral. Warm it at +1.9% linear luma, lift the dressed edges 10-11%, and retain
+// the soffit's palette/fill. Rust moves to the feathered paint texture; the liked mint paint and the steel frame keep their colours.
+export const ST_LEONARDS_COLOURS={stone:0x867b6d,soffit:0x706c65,joint:0x4f483d,shadow:0x3e3a33,dressed:0x8b8880,voussoir:0x7f7c74,
+ steel:0x9aaba2,steelDark:0x65776e,steelTop:0xb0bdb4,steelFoot:0x46564f,
+ asphalt:0x45474a,footway:0x8c8780,kerb:0xb3ada3} as const;
 /** The facets each arch is drawn in: about one per 0.7 m of span, within ST_LEONARDS.archSegments. */
 export const stLeonardsArchSegments=(span:number):number=>Math.min(ST_LEONARDS.archSegments[1],Math.max(ST_LEONARDS.archSegments[0],Math.round(span/.7)));
 
@@ -160,20 +172,34 @@ function roadSection(b:Batch,a:Pt,na:Pt,ya:number,c:Pt,nc:Pt,yc:number):void{
 }
 
 /** What the bridge drew, for tests. */
-export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;soffitJoints:number;imposts:number;stiffeners:number;triangles:number}
+export interface StLeonardsInfo {spans:number;piers:number;approachSegments:number;archSegments:number[];copings:number;voussoirs:number;joints:number;soffitJoints:number;imposts:number;girderPanels:number;stiffeners:number;rivets:number;triangles:number}
 
 /** The plan direction the north face looks (the side of the way whose outward normal points north, -z). */
 export const ST_LEONARDS_NORTH:1|-1=V[1]<0?1:-1;
 const shadeFor=(c:Rgb,n:V3):Rgb=>{const north=-n[2]/(Math.hypot(n[0],n[1],n[2])||1);return north>.5?[c[0]*ST_LEONARDS.northShade,c[1]*ST_LEONARDS.northShade,c[2]*ST_LEONARDS.northShade]:c;};
+/** One layout for the plate panels, their stiffeners and the masonry's runoff directly below them. */
+function girderLayout():{g0:number;g1:number;count:number;pitch:number}{
+ const K=ST_LEONARDS,g0=K.abutments[0]-1.2,g1=K.abutments[1]+1.2,count=Math.floor((g1-g0)/K.girder.pitch);
+ return {g0,g1,count,pitch:(g1-g0)/count};
+}
 /** A face into `b`, shaded if it looks north; world-metre UVs over the coursed tile (`u` along, y up) when `b` is textured. A textured
  *  (coursed) face is weathered: cut into pieces at every `weather.cell` m along and `weather.cellHeight` m up (round 7), each piece one
  *  patch's tone (`patch` at its middle), so the drift reads as patches with edges rather than a gradient between distant corners. */
 function face(b:Batch,pts:V3[],us:number[],n:V3,c:Rgb,foot?:number):void{
  if(!b.textured){b.poly(pts,undefined,{facing:n,color:shadeFor(c,n)});return;}
- const T=PERTH_TEXTURE_TILE.coursed,W=ST_LEONARDS.weather;
- for(const piece of cells(cells([pts.map((p,i)=>({p,u:us[i]}))],v=>v.u,W.cell),v=>v.p[1],W.cellHeight)){
-  const m=piece.reduce((a,v)=>[a[0]+v.p[0]/piece.length,a[1]+v.p[1]/piece.length,a[2]+v.p[2]/piece.length],[0,0,0]),d=patch(m as V3);
-  b.poly(piece.map(v=>v.p),piece.map(v=>[v.u/T,v.p[1]/T]),{facing:n,color:shadeFor(c,n),colors:piece.map(v=>shadeFor(weathered(c,v.p,d,foot),n))});
+ const T=PERTH_TEXTURE_TILE.coursed,W=ST_LEONARDS.weather,scale=foot===undefined?1:ST_LEONARDS.pierBlockScale;
+ let pieces=cells(cells([pts.map((p,i)=>({p,u:us[i]}))],v=>v.u,W.cell),v=>v.p[1],W.cellHeight);
+ // Additional narrow cuts keep soot and the stiffeners' runoff local; every piece still has one patch tone, rather than a gradient
+ // that averages away at the frozen cameras. Only the main elevation receives girder runoff.
+ const {g0,g1,pitch}=girderLayout();
+ const onElevation=Math.abs(n[1])<.1&&pts.every(p=>{const f=stLeonardsFrame([p[0],p[2]]);return Math.abs(Math.abs(f.o)-ST_LEONARDS.half)<.01&&f.s>=g0-.01&&f.s<=g1+.01;});
+ if(onElevation){
+  pieces=cells(pieces,v=>v.p[1],.5);
+  for(const offset of [-.14,.14])pieces=cells(pieces,v=>stLeonardsFrame([v.p[0],v.p[2]]).s-g0-offset,pitch);
+ }
+ for(const piece of pieces){
+  const m=piece.reduce((a,v)=>[a[0]+v.p[0]/piece.length,a[1]+v.p[1]/piece.length,a[2]+v.p[2]/piece.length],[0,0,0]) as V3,d=patch(m),grime=onElevation?soot(m):1;
+  b.poly(piece.map(v=>v.p),piece.map(v=>[v.u*scale/T,v.p[1]/T]),{facing:n,color:shadeFor(c,n),colors:piece.map(v=>shadeFor(weathered(c,v.p,d,foot).map(x=>x*grime) as Rgb,n))});
  }
 }
 /** A face's corner: its position and its distance along (the coursed tile's u, metres). */
@@ -206,6 +232,17 @@ function weathered(c:Rgb,p:V3,drift:number,foot?:number):Rgb{
  const W=ST_LEONARDS.weather,stain=foot===undefined?0:W.stain*Math.min(1,Math.max(0,(foot+W.stainHeight-p[1])/(W.stainHeight-W.stainFull))),f=(1+W.jitter*drift)*(1-stain);
  return [c[0]*f,c[1]*f,c[2]*f];
 }
+/** Smoke accumulates above crowns and under the string course; narrow rain trails start at the girder's stiffeners. */
+function soot(p:V3):number{
+ const K=ST_LEONARDS,W=K.weather,{s}=stLeonardsFrame([p[0],p[2]]),stringFoot=K.road-K.fascia-K.string.height;
+ const upper=Math.max(0,Math.min(1,(p[1]-(stringFoot-1.1))/1.1)),intrados=stLeonardsSoffit(s);
+ const crown=Number.isFinite(intrados)?Math.max(0,(intrados-K.spring)/(K.road-K.crown-K.spring))**4:0;
+ const {g0,pitch}=girderLayout(),panel=Math.round((s-g0)/pitch);
+ const fromStiffener=Math.abs(s-(g0+panel*pitch)),length=1.1+hash(panel+41)*1.5;
+ const trail=fromStiffener<.14?Math.max(0,Math.min(1,(p[1]-(stringFoot-length))/length)):0;
+ return (1-W.soot*upper)*(1-W.crownSoot*crown)*(1-W.runoff*trail);
+}
+const hash=(n:number):number=>{const h=Math.sin(n*127.1+19.7)*43758.5453;return h-Math.floor(h);};
 /** A box whose long axis runs from plan a to p (y0..y1), `half` its half thickness across; each face shaded as `face`; no underside. */
 function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb,foot?:number):void{
  const dx=p[0]-a[0],dz=p[1]-a[1],l=Math.hypot(dx,dz);if(l<1e-6||y1<=y0)return;
@@ -222,9 +259,10 @@ function block(b:Batch,a:Pt,p:Pt,y0:number,y1:number,half:number,c:Rgb,foot?:num
 /** St Leonard's Bridge into `b` (a vertex-coloured, untextured batch): arches, voussoirs, imposts, the plate-girder parapets, their copings,
  *  the string courses, the deck's road and footways; the coursed ashlar (spandrels, piers, abutments, the approaches' retaining walls and
  *  parapets) into `ashlar` (vertex-coloured, textured: the frontage's coursed-stone batch), or into `b` when none is given; the arches'
- *  soffits, stones and joints, into `soffitB` (round 7: their own mesh, lamp-lit after dark: ST_LEONARDS.soffitLamp), or into `b`. */
-export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:Batch=b,soffitB:Batch=b):StLeonardsInfo{
- const own=()=>b.triangles+(ashlar===b?0:ashlar.triangles)+(soffitB===b||soffitB===ashlar?0:soffitB.triangles),before=own(),K=ST_LEONARDS,C=ST_LEONARDS_COLOURS;
+ *  soffits, stones and joints, into `soffitB` (round 7: their own mesh, lamp-lit after dark: ST_LEONARDS.soffitLamp), or into `b`.
+ *  `girderB`, when supplied, carries the continuous paint/rust texture on the two outer webs, under the flanges and stiffeners. */
+export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:Batch=b,soffitB:Batch=b,girderB?:Batch):StLeonardsInfo{
+ const batches=new Set([b,ashlar,soffitB,...(girderB?[girderB]:[])]),own=()=>[...batches].reduce((sum,batch)=>sum+batch.triangles,0),before=own(),K=ST_LEONARDS,C=ST_LEONARDS_COLOURS;
  const stone=rgb(C.stone),soffit=rgb(C.soffit),joint=rgb(C.joint),shadow=rgb(C.shadow),steel=rgb(C.steel),steelDark=rgb(C.steelDark),dressed=rgb(C.dressed),vous=[rgb(C.dressed),rgb(C.voussoir)];
  const fasciaFoot=K.road-K.fascia,[e0,e1]=K.abutments,{string:sc,coping:cp,voussoir:vs,impost:im,girder:gd}=K,stringFoot=fasciaFoot-sc.height;
  const out=(sg:number):V3=>[sg*V[0],0,sg*V[1]];
@@ -258,12 +296,13 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
     const r0=stLeonardsAt(ss[i],sg*K.half),r1=stLeonardsAt(ss[i+1],sg*K.half);
     face(ashlar,[v3(r0,ys[i]),v3(r1,ys[i+1]),v3(r1,fasciaFoot),v3(r0,fasciaFoot)],[ss[i],ss[i+1],ss[i+1],ss[i]],out(sg),stone);
     // the voussoir: from the intrados out along the ellipse's normal, its outer edge kept under the string course
-    const o=sg*(K.half+vs.proud),ring=(k:number):[V3,V3]=>{const s=ss[k],y=ys[k],d=nrm[k],so=s-d[0]*vs.depth,yo=Math.min(stringFoot,y-d[1]*vs.depth);return [v3(stLeonardsAt(s,o),y),v3(stLeonardsAt(so,o),Math.max(y,yo))];};
+    const seed=i+spans.indexOf(a)*31,proud=vs.proud*(.7+hash(seed+7)*.9),depth=vs.depth*(.88+hash(seed+13)*.24);
+    const o=sg*(K.half+proud),ring=(k:number):[V3,V3]=>{const s=ss[k],y=ys[k],d=nrm[k],so=s-d[0]*depth,yo=Math.min(stringFoot,y-d[1]*depth);return [v3(stLeonardsAt(s,o),y),v3(stLeonardsAt(so,o),Math.max(y,yo))];};
     const [i0,o0]=ring(i),[i1,o1]=ring(i+1);
-    if(o0[1]-i0[1]>.02||o1[1]-i1[1]>.02){face(b,[i0,i1,o1,o0],[0,0,0,0],out(sg),vous[i%2]);voussoirs++;
+    if(o0[1]-i0[1]>.02||o1[1]-i1[1]>.02){face(b,[i0,i1,o1,o0],[0,0,0,0],out(sg),vous[i%2].map(c=>c*(.96+hash(seed+29)*.08)) as Rgb);voussoirs++;
      // the joint at this voussoir's leading edge: a dark strip from the intrados out, a hair proud of the stones
-     if(i>0&&o0[1]-i0[1]>.02){const d=nrm[i],t:[number,number]=[-d[1],d[0]],w=K.joint/2,oj=o+sg*.005,at=(sa:number,ya:number):V3=>v3(stLeonardsAt(sa,oj),ya);
-      const si=ss[i],yi=ys[i],so=si-d[0]*vs.depth,yo=Math.max(yi,Math.min(stringFoot,yi-d[1]*vs.depth));
+     if(i>0&&o0[1]-i0[1]>.02){const d=nrm[i],t:[number,number]=[-d[1],d[0]],w=K.joint/2,oj=sg*(K.half+vs.proud*1.6+.005),at=(sa:number,ya:number):V3=>v3(stLeonardsAt(sa,oj),ya);
+      const si=ss[i],yi=ys[i],so=si-d[0]*depth,yo=Math.max(yi,Math.min(stringFoot,yi-d[1]*depth));
       face(b,[at(si-t[0]*w,yi-t[1]*w),at(si+t[0]*w,yi+t[1]*w),at(so+t[0]*w,yo+t[1]*w),at(so-t[0]*w,yo-t[1]*w)],[0,0,0,0],out(sg),joint);joints++;}}
    }
   }
@@ -284,14 +323,29 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
  block(b,stLeonardsAt(e0-.6,-K.half-im.proud),stLeonardsAt(e0-.6,K.half+im.proud),K.spring-im.height,K.spring,.6+im.proud,dressed);
  block(b,stLeonardsAt(e1+.6,-K.half-im.proud),stLeonardsAt(e1+.6,K.half+im.proud),K.spring-im.height,K.spring,.6+im.proud,dressed);imposts+=2;
  // the plate-girder parapets: the web, its flanges and stiffeners on the outer face; the coping over it; the string course under it
- const g0=e0-1.2,g1=e1+1.2,topY=K.road+K.parapet;let copings=0,stiffeners=0;
+ const {g0,g1,count,pitch}=girderLayout(),topY=K.road+K.parapet;let copings=0,stiffeners=0,rivets=0;
  for(const sg of [-1,1]){
   block(b,stLeonardsAt(g0,sg*(K.half-.2)),stLeonardsAt(g1,sg*(K.half-.2)),fasciaFoot,topY,.2,steel);
+  // One filtered strip across the whole run: no repeated per-panel decal, no polygon outlines or near-black rust cores. White vertex
+  // colour leaves albedo to the texture; the same north-face shading preserves the clean mint paint's captured brightness.
+  girderB?.poly([[g0,fasciaFoot],[g1,fasciaFoot],[g1,topY],[g0,topY]].map(([s,y])=>v3(stLeonardsAt(s,sg*(K.half+.004)),y)),
+   [[0,0],[1,0],[1,1],[0,1]],{facing:out(sg),color:shadeFor([1,1,1],out(sg))});
+  const plate=(pts:[number,number][],c:Rgb,offset=.004)=>face(b,pts.map(([s,y])=>v3(stLeonardsAt(s,sg*(K.half+offset)),y)),pts.map(()=>0),out(sg),c);
   const fo=sg*(K.half+gd.flangeProud/2-.01);
-  block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),fasciaFoot,fasciaFoot+gd.flange,gd.flangeProud/2+.01,steelDark);
-  block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),topY-gd.flange,topY,gd.flangeProud/2+.01,steelDark);
-  const so=sg*(K.half+gd.stiffenerProud/2-.01),count=Math.floor((g1-g0)/gd.pitch);
-  for(let k=1;k<count;k++){const s=g0+(g1-g0)*k/count;block(b,stLeonardsAt(s,so-sg*gd.stiffener/2),stLeonardsAt(s,so+sg*gd.stiffener/2),fasciaFoot+gd.flange,topY-gd.flange,gd.stiffener/2,steelDark);stiffeners++;}
+  // Round 9 (R-slb-a, ASSUMED relief): the top angle projects 16 cm, the foot keeps its slimmer 5 cm lip. Baked occlusion on the
+  // web immediately beneath the overhang survives the telephoto view; this batched scene has no dynamic cast shadows.
+  block(b,stLeonardsAt(g0,sg*(K.half+.015)),stLeonardsAt(g1,sg*(K.half+.015)),fasciaFoot,fasciaFoot+gd.flange,.035,rgb(C.steelFoot));
+  block(b,stLeonardsAt(g0,fo),stLeonardsAt(g1,fo),topY-gd.flange,topY,gd.flangeProud/2+.01,rgb(C.steelTop));
+  plate([[g0,topY-gd.flange-.07],[g1,topY-gd.flange-.07],[g1,topY-gd.flange],[g0,topY-gd.flange]],rgb(C.steelFoot).map(c=>c*.48) as Rgb,.008);
+  face(b,[v3(stLeonardsAt(g0,sg*K.half),topY-gd.flange),v3(stLeonardsAt(g1,sg*K.half),topY-gd.flange),v3(stLeonardsAt(g1,sg*(K.half+gd.flangeProud)),topY-gd.flange),v3(stLeonardsAt(g0,sg*(K.half+gd.flangeProud)),topY-gd.flange)],[0,0,0,0],[0,-1,0],shadow);
+  plate([[g0,fasciaFoot+.005],[g1,fasciaFoot+.005],[g1,fasciaFoot+.035],[g0,fasciaFoot+.035]],rgb(C.steelFoot).map(c=>c*.65) as Rgb,.052);
+  const so=sg*(K.half+gd.stiffenerProud/2-.01);
+  // Small round heads, raised off the flange/stiffener, read as a line of glints rather than square studs at the frozen range.
+  const rivet=(s:number,y:number,o:number)=>{const points:V3[]=[];for(let j=0;j<6;j++){const th=j*Math.PI/3;points.push(v3(stLeonardsAt(s+.025*Math.cos(th),sg*(K.half+o)),y+.025*Math.sin(th)));}
+   b.poly(points,undefined,{facing:out(sg),color:shadeFor(rgb(C.steelTop).map(c=>c*.78) as Rgb,out(sg))});rivets++;};
+  for(let k=1;k<count;k++){const s=g0+k*pitch;block(b,stLeonardsAt(s-gd.stiffener/2,so),stLeonardsAt(s+gd.stiffener/2,so),fasciaFoot+gd.flange,topY-gd.flange,gd.stiffenerProud/2+.01,steelDark);stiffeners++;
+   for(let j=0;j<4;j++)rivet(s,fasciaFoot+gd.flange+.16+j*.35,gd.stiffenerProud+.015);}
+  for(let k=0;k<count;k++)for(const dx of [.2,.5,.8])for(const y of [fasciaFoot+gd.flange/2,topY-gd.flange/2])rivet(g0+(k+dx)*pitch,y,y>topY-gd.flange?gd.flangeProud+.017:.067);
   const o=sg*(K.half+sc.projection/2-.05);
   block(b,stLeonardsAt(g0,o),stLeonardsAt(g1,o),stringFoot,fasciaFoot,(sc.projection+.1)/2,dressed);
   // the coping: from 0.2 m inside the web to `overhang` past its outer face
@@ -349,5 +403,5 @@ export function stLeonardsBridge(b:Batch,ground:Pick<Terrain,'heightAt'>,ashlar:
    d+=dl;approachSegments++;
   }
  }
- return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,soffitJoints,imposts,stiffeners,triangles:own()-before};
+ return {spans:spans.length,piers:K.piers.length,approachSegments,archSegments,copings,voussoirs,joints,soffitJoints,imposts,girderPanels:count,stiffeners,rivets,triangles:own()-before};
 }

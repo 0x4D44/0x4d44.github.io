@@ -1668,7 +1668,7 @@ export function roofEnd(soup: Soup, o: { style: RoofEndStyle; zEnd: number; inwa
 }
 
 /** The coupler heads the model draws: a plain barrel and head (between cars), a Dellner 12 (Electrostar, Desiro City), a Scharfenberg (Class 180) and a BSI (the Sprinters' and Turbostars'). */
-export type CouplerStyle = 'plain' | 'dellner' | 'scharfenberg' | 'bsi';
+export type CouplerStyle = 'plain' | 'bar' | 'dellner' | 'scharfenberg' | 'bsi';
 
 /**
  * A coupler half: a barrel from the car's end wall (or the nose face) toward the middle of the gap, ending in a head.
@@ -1683,11 +1683,13 @@ export function couplerHalf(soup: Soup, z0: number, dir: 1 | -1, reach: number, 
   const steel = col(0x4d5157);
   const dark = col(0x26292d);
   const hose = col(0x1a1b1e);
-  if (style === 'plain') {
+  if (style === 'plain' || style === 'bar') {
     const lo = Math.min(z0, z0 + dir * reach);
     const hi = Math.max(z0, z0 + dir * reach);
     // the barrel
     soup.box(-0.07, 0.07, y - 0.07, y + 0.07, lo, hi, steel);
+    // The Class 180 ordinary joint: only a connecting bar is supported; no close reference for a head or hoses.
+    if (style === 'bar') return;
     // the head, a little wider, at the far end
     const hz0 = dir > 0 ? hi - 0.1 : lo;
     soup.box(-0.13, 0.13, y - 0.11, y + 0.11, hz0, hz0 + 0.1, dark);

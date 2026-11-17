@@ -3160,7 +3160,7 @@ test('flat faces: a bar is a rectangle of its width along its line, each wiper i
 test('Class 180 face: an angular yellow panel, a trapezoid between the pods under a brow whose upper edge dips to a point at the middle, a smoked-glass wedge each side with a round headlight low in it and a smaller lamp above and outboard, the recess under the panel, and no glass on the face', () => {
   const S = shapesOf(ADELANTE_FACE);
   const box = (name: string): ReturnType<typeof boxOfOutline> => boxOfOutline((S[name] as FaceShape).outline);
-  assert.deepEqual(ADELANTE_FACE.shapes.map((sh) => sh.name), ['warning-panel', 'warning-brow', 'lamp-pod', 'headlight', 'tail-lamp']);
+  assert.deepEqual(ADELANTE_FACE.shapes.map((sh) => sh.name), ['warning-panel', 'warning-brow', 'lamp-pod', 'headlight-rim', 'headlight', 'tail-lamp']);
   assert.deepEqual(ADELANTE_FACE.shapes.filter((sh) => sh.glass), [], 'the glass is on the nose, not on the face');
   assert.ok(bodySpec('adelante').glass.screen, 'a windscreen on the nose');
   // CHANGED (round 6: the panel was one rounded bowl, a curve of 17 points narrowing to a lower edge that bowed down to 1.32 m, and a pod that leaned away from it; the round-5 scorer on gc180x5:
@@ -3524,7 +3524,8 @@ test('Class 180 side (round 11): every passenger leaf is set back in a raised fr
   // round 10's score, T3: "add the door leaf's seams and recess, with frame relief, as at York"
   const spec = bodySpec('adelante');
   const gc = liveryFor('gc180x5');
-  const recess = spec.doorRecess ?? { depth: 0, seam: 0, seamColour: 0xffffff };
+  const recess = spec.doorRecess ?? { depth: 0, seam: 0, sideSeam: 0, seamColour: 0xffffff };
+  const sideSeam = recess.sideSeam ?? recess.seam;
   assert.ok(recess.depth >= 0.008 && recess.seam >= 0.008 && lumaOf(recess.seamColour) < 0.05, 'a recess, a seam and a near-black gap');
   const [dy0, dy1] = spec.doorY;
   const dw = spec.doorWidth;
@@ -3547,12 +3548,12 @@ test('Class 180 side (round 11): every passenger leaf is set back in a raised fr
         near(outer(frame) - outer(leaf), recess.depth, 1e-4, `${here} side ${side} door ${di}: the leaf set back behind the frame's face`);
         assert.ok(outer(seam) < outer(leaf) - 0.002, `${here} side ${side} door ${di}: the seam is a gap, behind the leaf`);
         const sb = boxOfTris(seam);
-        near(sb.max.z - sb.min.z, dw + 2 * recess.seam, 1e-4, `${here} side ${side} door ${di}: the seam runs down both edges of the leaf`);
+        near(sb.max.z - sb.min.z, dw + 2 * sideSeam, 1e-4, `${here} side ${side} door ${di}: the seam runs down both edges of the leaf`);
         near(sb.max.y, dy1 + recess.seam, 1e-4, `${here} side ${side} door ${di}: and over its head`);
         // the frame is a ring: none of it stands over the leaf or the seam
         const over = frame.filter((t) => {
           const c = t.reduce((a, v) => a.add(v), new THREE.Vector3()).divideScalar(3);
-          return Math.abs(c.z - zc) < dw / 2 + recess.seam - 1e-4 && c.y > dy0 - recess.seam + 1e-4 && c.y < dy1 + recess.seam - 1e-4;
+          return Math.abs(c.z - zc) < dw / 2 + sideSeam - 1e-4 && c.y > dy0 - recess.seam + 1e-4 && c.y < dy1 + recess.seam - 1e-4;
         });
         assert.equal(over.length, 0, `${here} side ${side} door ${di}: ${over.length} frame triangles over the opening`);
         // and it still rounds the opening, 5 cm out at the sides
@@ -4732,11 +4733,11 @@ test('roof kit: a pantograph car carries ribbed insulators on plates with cables
   }
 });
 
-test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the top for every 12 cm; every other family\'s are the pale grey fairings, plain', () => {
-  // (GC180-01 and GC180-05: black panels with fine louvres on the roof of the diesel unit, not an electric unit's pale grey fairings)
+test('roof covers: the Class 180 has low dark relief on dark humps, every 12 cm; other families retain their plain fairings', () => {
+  // Round 13 replaces the bright-strip assumption after the GC180-02/04 comparison; relief and layout remain unchanged.
   const PALE = 0xb4b8be;
   const HATCH = 0x1b1d21;
-  const RIDGE = 0x3a3e45;
+  const RIDGE = 0x202226;
   for (const kind of ALL_KINDS) {
     const spec = bodySpec(familyOf(kind));
     const g = built(kind);
@@ -4790,8 +4791,10 @@ test('roof covers: the Class 180\'s are dark louvred hatches, a ridge across the
     if (hatched) assert.equal(covers, 1, `${kind}: the pantograph car's casing is the one cover on the first three cars`);
     if (smooth) assert.equal(covers, 0, `${kind}: no raised cover on a Desiro City's roof`);
   }
-  // darker than the roof they stand on: black panels on the lighter roof (GC180-01)
-  assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof) - 0.1, `hatches (${lumaOf(HATCH).toFixed(2)}) darker than the roof (${lumaOf(liveryFor('gc180x5').roof).toFixed(2)})`);
+  // GC180-02/04: the roof skin and low humps are near the body's charcoal, without a bright grille pattern.
+  assert.ok(lumaOf(HATCH) < lumaOf(liveryFor('gc180x5').roof), 'humps a shade darker than the roof skin');
+  assert.ok(lumaOf(RIDGE) - lumaOf(HATCH) < .025, 'fine relief stays close to the hump tone');
+  assert.ok(Math.abs(lumaOf(liveryFor('gc180x5').roof)-lumaOf(liveryFor('gc180x5').body)) < .05, 'roof close to body charcoal');
 });
 
 test('pantograph: the head carries two dark carbon strips along its top, inside the bow, no higher than the folded pantograph', () => {
