@@ -323,12 +323,7 @@ gl_Position = projectionMatrix*mvPosition;
         body+='\n// pool-receiver-mask-begin\ngl_FragColor.a *= lampReceiver(vPoolWorld.xz).y;\n// pool-receiver-mask-end';
       }
       if (options.analyticPool) {
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
-          .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
-        declarations += '\nvarying vec2 vPoolUv;';
-        if(options.kxOptics){
-          shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 poolRoadDirection;')
-            .replace('vPoolUv = uv;',`vPoolUv = uv;
+        const roadShape = options.kxOptics ? `
 // pool-road-shape-begin
 // Lamp arms point across the road. Shape the existing analytic profile
 // along the road tangent, retaining its bounded head peak and soft edge.
@@ -338,8 +333,10 @@ float roadAlong=dot(roadPoolUv,poolRoadDirection);
 float roadAcross=dot(roadPoolUv,vec2(-poolRoadDirection.y,poolRoadDirection.x));
 vPoolUv=0.5+0.5*vec2(roadAlong,1.8*roadAcross);
 ${options.poolLineAt?'}':''}
-// pool-road-shape-end`);
-        }
+// pool-road-shape-end` : '';
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${options.kxOptics ? '\nattribute vec2 poolRoadDirection;' : ''}\nvarying vec2 vPoolUv;`)
+          .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}`);
+        declarations += '\nvarying vec2 vPoolUv;';
         if (options.poolLineAt) {
           shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
             .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
