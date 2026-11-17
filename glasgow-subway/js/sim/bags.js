@@ -316,7 +316,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
     // on the thighs, against the body: between the hips and the knees, as high as the top of the thighs
     at(B.thigh_l, v); at(B.thigh_r, u); const hx = (v.x + u.x) / 2, hy = (v.y + u.y) / 2, hf = (v.z + u.z) / 2;
     at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, ky = (v.y + u.y) / 2, kf = (v.z + u.z) / 2, top = Math.max(hy, ky) + 0.075 * rig.s;
-    if (/ruck|shopper|carrier/.test(rig.kind)) {   // (a tall shopper or carrier bag stood on the lap reached the chin - review 8: it goes on the floor too)   // on the floor between the feet, leaning back against the shins (review 7: upright on the lap, it stood there with the hands on the thighs beside it, held by nothing)
+    if (true) {   // every bag goes on the floor at the feet (review 8: a tall shopper on the lap reached the chin; review 9: forearms and hands went through lap holdalls and totes)   // on the floor between the feet, leaning back against the shins (review 7: upright on the lap, it stood there with the hands on the thighs beside it, held by nothing)
       at(B.foot_l, v); at(B.foot_r, u); const ax = (v.x + u.x) / 2, af = (v.z + u.z) / 2;
       const base = Math.min(v.y, u.y) - 0.075 * rig.s, ruck = rig.kind === 'ruck';   // (a rucksack's origin is its base; a bag carried by its handles has the top of the handles at its origin)
       mesh.position.set(ax, ruck ? base : base + rig.h + rig.drop, af + fz * (rig.d * 0.5 + 0.05)); mesh.rotation.set(-fz * 0.14, ruck ? (fz > 0 ? 0 : Math.PI) : Math.PI / 2, 0); }   // (its base on the level of the soles: the ankle joints are ~7.5 cm up)

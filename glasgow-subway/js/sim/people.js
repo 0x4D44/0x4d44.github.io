@@ -421,7 +421,8 @@ export class AnimCrowd {
     // the mix of what people wear holds in each crowd, not only on average: a category already worn by 45 % of this crowd is rolled again (review 8: within 15 m, shorts
     // were 73 % of one platform and trousers 62-80 % of three others; the rubric allows no garment on more than half)
     const grp = (c) => (c.kid ? 'kid' : /skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
-    const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
+    const at = this._pickAt, near = (q) => !at || at.x == null || Math.hypot(q.x - at.x, q.z - at.z) < 15;   // (review 9: counted over the whole crowd, one garment was still 54-62 % of the people within 15 m of the player: the people round where this one appears are counted)
+    const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj && near(q)) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
     let pool = this._rollPool();
     for (let k = 0; k < 4 && nOwn >= 6 && pool.length; k++) { const g = grp(pool[0]); if (pool.some((c) => grp(c) !== g) || (tally.get(g) || 0) < 0.45 * nOwn) break; pool = this._rollPool(); }
     const c = (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
@@ -434,7 +435,7 @@ export class AnimCrowd {
     // a person handed over with their look (getting off a train on to this platform, getting on) who is already here in this crowd comes as somebody else: review 6 saw
     // the same people twice on one platform and in one car. Their bag and print go with the look, so they are dropped too.
     if (p.char && this.people.some((q) => q.char === p.char && q.obj)) { p.char = null; p.bag = undefined; p.print = null; p.teeColour = undefined; }
-    const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
+    this._pickAt = p; const ch = p.char || this._pick(filter); this._pickAt = null; if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
     p.lod = !!ch.lodNode; const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
     this._dressTee(p, obj); this._lids(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
@@ -510,11 +511,11 @@ export class AnimCrowd {
     const ch = p.char, r = this.rng; p.state = state;
     let cat = 'idle';
     if (state === 'walk' || state === 'go') cat = 'walk';
-    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)) && !(p.bag && !/ruck|shopper|carrier|trolley/.test(p.bag.kind)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
+    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
-    if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && /ruck|shopper|carrier/.test(p.bag.kind)))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
+    if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && p.bag.kind))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
     // Standing: the quiet stance is the rule. The other idle clip is a gesture of the whole right arm (the forearm swings through 109 degrees); looped for a whole bout, on a
     // platform of people, it read as arms waving about. It is now an occasional single gesture: one pass of the clip, then back to the quiet stance.
     let once = false;
@@ -537,7 +538,7 @@ export class AnimCrowd {
    *  a call PHONE_CALL of those, otherwise typing / reading. Walking, riding a pole and children (their arms and eye-lines are not the adults') do not. null, or { kind, clip, dur }. */
   _phoneUse(p, state, cat) {
     const ch = p.char, pr = this.prng;
-    if (state === 'sit') return cat === 'sitphone' && !ch.kid && !ch.staff && !(p.bag && !/ruck|shopper|carrier|trolley/.test(p.bag.kind)) ? { kind: 'sit', clip: null, dur: 8 + pr() * 14 } : null;   // (not with a bag on the lap: the hands and the phone went into it - review 8)
+    if (state === 'sit') return cat === 'sitphone' && !ch.kid && !ch.staff ? { kind: 'sit', clip: null, dur: 8 + pr() * 14 } : null;   // (not with a bag on the lap: the hands and the phone went into it - review 8)
     if (state !== 'stand' || cat !== 'idle' || ch.kid || ch.staff || !ch.pools.phone || pr() >= PHONE_USE) return null;
     const call = pr() < PHONE_CALL, want = call ? /phone_call$/ : /phone_stand$/, find = (a) => a && a.find((c) => want.test(c.name));
     const clip = find(ch.pools.phone) || find(ch.pools0 && ch.pools0.phone); if (!clip) return null;
