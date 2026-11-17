@@ -90,10 +90,7 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | clothes/toigo_turtleneck_halter_top | MRT | CC0 |
 | clothes/toigo_wool_pants | MRT | CC0 |
 | eyebrows/eyebrow001 | makehuman_system | CC0 |
-| eyebrows/eyebrow002 | makehuman_system | CC0 |
 | eyebrows/eyebrow003 | makehuman_system | CC0 |
-| eyebrows/eyebrow004 | makehuman_system | CC0 |
-| eyebrows/eyebrow005 | makehuman_system | CC0 |
 | eyebrows/eyebrow006 | makehuman_system | CC0 |
 | eyebrows/eyebrow007 | makehuman_system | CC0 |
 | eyebrows/eyebrow008 | makehuman_system | CC0 |

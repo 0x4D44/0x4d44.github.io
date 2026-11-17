@@ -371,5 +371,11 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - `elder_shorts`: `short03` in a darker grey (he and `adult_tie_suit` had the same grey spiky hair).
 Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 
+## Review 11 fixes (2026-11-18)
+- 27 men on MakeHuman's thin, slanted eyebrows (002/004/005/006) now wear the thick natural `eyebrow009` / `eyebrow012`, alternately: the thin
+  ones read as a glare (man_trews, ya_fedora, staff_hivis named in reviews 7-11).
+- The far model keeps 3200 faces of the staff suit (was 1600), so the painted vest's bands hold their cuts at a distance.
+Armfit, legradii and the skin budgets re-derived from the rebuilt files.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
