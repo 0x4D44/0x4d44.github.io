@@ -85,7 +85,19 @@ const CLOUD_DARK = 0.55;
 export const SOFFIT_LEVEL = 0.35;
 
 /** Shared by every wet surface: the weather's wetness and snow cover, and the sky colour the wet ground mirrors. */
-export const surfaceUniforms = { wet: { value: 0 }, fog: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW } };
+export const surfaceUniforms = { wet: { value: 0 }, fog: { value: 0 }, snowCover: { value: 0 }, sheen: { value: new THREE.Color(0, 0, 0) }, snowColour: { value: SNOW }, snowGlow: { value: new THREE.Color(0, 0, 0) } };
+
+/** Smooth, non-repeating drifts. Hash cells rather than a continuous sine: the
+ * round-2 88.5 m wave made regular ripples across Perth's distant farmland. */
+const SNOW_NOISE = `
+float snowNoise(vec2 p) {
+  vec2 cell = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  vec4 h = fract(sin(vec4(dot(cell, vec2(127.1, 311.7)), dot(cell + vec2(1.0, 0.0), vec2(127.1, 311.7)), dot(cell + vec2(0.0, 1.0), vec2(127.1, 311.7)), dot(cell + vec2(1.0, 1.0), vec2(127.1, 311.7)))) * 43758.5453);
+  return mix(mix(h.x, h.y, f.x), mix(h.z, h.w, f.x), f.y);
+}
+`;
 
 /**
  * The surfaces that have their wet-and-snow shader, whichever atmosphere gave it. The station's materials are shared between scenes (King's Cross
@@ -106,6 +118,7 @@ const snowDepthBuilt = new WeakMap<THREE.Material, boolean>();
 function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial, spec: SurfaceWeather): void {
   const mask = material.userData.snowMask as SnowMask | undefined;
   const roofDetail = material.userData.snowRoof === true;
+  const ridges = material.userData.snowRidges as THREE.Vector2 | undefined;
   // Natural ground has prior field/texture colour hooks. Snow replaces their
   // pigment after those hooks, before lighting; otherwise snowy fields stay green.
   const own = { uDark: { value: spec.dark }, uSheenK: { value: spec.sheen }, uSnowK: { value: spec.snow }, uSnowTraffic: { value: spec.traffic ?? 0 } };
@@ -116,6 +129,8 @@ function patchSurface(material: THREE.MeshLambertMaterial | THREE.MeshPhongMater
     shader.uniforms.uSnowCover = surfaceUniforms.snowCover;
     shader.uniforms.uSheen = surfaceUniforms.sheen;
     shader.uniforms.uSnowColour = surfaceUniforms.snowColour;
+    if (spec.transmit) shader.uniforms.uSnowGlow = surfaceUniforms.snowGlow;
+    if (ridges) shader.uniforms.uSnowRidges = {value: ridges};
     Object.assign(shader.uniforms, coverUniforms, own);
     if (mask) Object.assign(shader.uniforms, { uSnowMask: { value: mask.texture }, uSnowMaskRect: { value: mask.rect } });
     shader.vertexShader = shader.vertexShader
@@ -142,14 +157,20 @@ float snowTraffic = uSnowTraffic;
 vec3 snowAlbedo = uSnowColour;
 ${spec.detail ? `if ( uSnowCover > 0.001 ) {
   vec3 snowPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
-  float drift = 0.5 + 0.5 * sin( snowPlace.x * 0.071 + sin( snowPlace.z * 0.043 ) * 2.0 );
+  float drift = smoothstep(0.15, 0.85, snowNoise(snowPlace.xz * 0.025));
   float grain = sin( snowPlace.x * 3.1 + snowPlace.z * 1.7 ) * ( 1.0 - smoothstep( 40.0, 220.0, length( vViewPosition ) ) );
   snowAlbedo *= 0.90 + 0.10 * drift + 0.035 * grain;
   ${spec.detail === 'ground' ? `snowRetention *= ( 0.68 + 0.32 * drift ) * mix( 0.2, 1.0, smoothstep( 0.55, 0.95, normalize( vSnowNormal ).y ) );` :
-    spec.detail === 'foliage' ? 'snowRetention *= 0.3 + 0.25 * drift;' :
+    spec.detail === 'foliage' ? 'snowRetention *= 0.03 + 0.24 * smoothstep(0.35, 0.8, snowNoise(snowPlace.xz * 0.8));' :
     'snowRetention *= ( 0.9 + 0.1 * drift ) * mix( 0.55, 1.0, smoothstep( 0.55, 0.98, normalize( vSnowNormal ).y ) );'}
+  ${spec.heather ? 'snowRetention *= mix(0.4, 1.0, smoothstep(0.035, 0.14, max(diffuseColor.r, diffuseColor.g)));' : ''}
 }` : ''}
 ${roofDetail ? 'snowRetention *= vSnowRoof.y * mix( 0.55, 1.0, smoothstep( 0.1, 0.55, vSnowRoof.x ) );' : ''}
+${ridges ? `if ( uSnowCover > 0.001 ) {
+  vec3 snowRidgePlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  float ridge = 1.0 - abs(fract((snowRidgePlace.x - uSnowRidges.y) / uSnowRidges.x) * 2.0 - 1.0);
+  snowRetention *= mix(0.12, 1.0, smoothstep(0.2, 0.85, ridge));
+}` : ''}
 ${mask ? `if ( uSnowCover > 0.001 ) {
   vec3 snowWorld = cameraPosition - vViewPosition * mat3( viewMatrix );
   vec2 snowUv = ( snowWorld.xz - uSnowMaskRect.xy ) * uSnowMaskRect.zw;
@@ -157,11 +178,17 @@ ${mask ? `if ( uSnowCover > 0.001 ) {
   snowRetention *= mappedSnow;
   snowTraffic = ( 1.0 - mappedSnow ) * step( 0.001, mappedSnow );
 }` : ''}
+// Strong traffic keeps irregular slush patches, rather than a continuous white
+// film. Compacted lanes and paths retain their separate mapped snow shares.
+if ( uSnowCover > 0.001 && snowTraffic > 0.8 ) {
+  vec3 slushPlace = cameraPosition - vViewPosition * mat3( viewMatrix );
+  snowRetention *= 0.1 + 0.4 * snowNoise(slushPlace.xz * 0.6);
+}
 float wetHere = uWet * coverOpen;
 ${spec.snowOnly ? 'wetHere *= step( 0.001, uSnowCover );' : ''}
 wetHere = max( wetHere, 0.85 * uSnowCover * coverOpen * snowTraffic * snowUp );
 diffuseColor.rgb *= 1.0 - uDark * wetHere;
-diffuseColor.rgb *= 1.0 - 0.3 * uSnowCover * snowTraffic * step( 0.8, snowTraffic ) * coverOpen * snowUp;
+diffuseColor.rgb *= 1.0 - 0.5 * uSnowCover * snowTraffic * step( 0.8, snowTraffic ) * coverOpen * snowUp;
 float snowHere = min( 1.0, 0.85 * uSnowCover * snowOpen * uSnowK * snowUp * snowRetention );
 diffuseColor.rgb = mix( diffuseColor.rgb, ${spec.detail ? 'snowAlbedo' : 'uSnowColour'}, snowHere );
 diffuseColor.a = mix( diffuseColor.a, 1.0, min( 1.0, snowHere * 1.25 ) );
@@ -179,16 +206,20 @@ uniform float uSnowTraffic;
 varying vec3 vSnowNormal;
 ${roofDetail ? 'varying vec2 vSnowRoof;' : ''}
 ${mask ? 'uniform sampler2D uSnowMask;\nuniform vec4 uSnowMaskRect;' : ''}
-${cover}`)
+${spec.transmit ? 'uniform vec3 uSnowGlow;' : ''}
+${ridges ? 'uniform vec2 uSnowRidges;' : ''}
+${cover}
+${SNOW_NOISE}`)
       .replace('#include <color_fragment>', '#include <color_fragment>' + (spec.detail ? '' : surfaceCode))
-      .replace('#include <emissivemap_fragment>', (spec.detail ? surfaceCode : '') + '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;')
+      .replace('#include <emissivemap_fragment>', (spec.detail ? surfaceCode : '') + '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - snowHere;' + (spec.transmit ? '\ntotalEmissiveRadiance += uSnowGlow * snowHere;' : ''))
       .replace('#include <opaque_fragment>', `{
   float wetFresnel = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 3.0 );
-  outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel );
+  float slushSheen = 1.0 - 0.85 * uSnowCover * step(0.8, snowTraffic);
+  outgoingLight += uSheen * uSheenK * wetHere * ( 0.05 + 0.6 * wetFresnel ) * slushSheen;
 }
 #include <opaque_fragment>`);
   };
-  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}`;
+  material.customProgramCacheKey = () => `${key}+surface-snow${mask ? '-mask' : ''}${spec.roof ? '-roof' : ''}${spec.snowOnly ? '-only' : ''}-${spec.detail ?? 'plain'}${roofDetail ? '-eaves' : ''}${ridges ? '-ridges' : ''}${spec.transmit ? '-transmit' : ''}${spec.heather ? '-heather' : ''}`;
   material.needsUpdate = true;
 }
 
@@ -516,6 +547,9 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     surfaceUniforms.wet.value = weather.wet;
     surfaceUniforms.fog.value = rig.fogAmount;
     surfaceUniforms.snowCover.value = weather.snowCover;
+    // Opaque snow still scatters a little of the shed's interior lamp light.
+    // The solar gate keeps the day dots gone, even under a snowy overcast sky.
+    surfaceUniforms.snowGlow.value.setRGB(.018, .012, .006).multiplyScalar(lampLevelFor(sunPos.elevationDeg));
     // Snow is opaque even when the glazing beneath it is transparent. Its depth
     // must stop the additive shed lamps drawn later; clear/rain keep the original.
     for (const [m, original] of snowDepth) m.depthWrite = original || weather.snowCover > .5;

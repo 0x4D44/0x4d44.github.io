@@ -43,6 +43,21 @@ test('snow roof metadata follows the real city roofs: eave height, block variati
  assert.ok(max-min>.15,'snow retention varies between neighbouring blocks');
 });
 
+test('round 3: the actual glazed roof carries its ridge profile',()=>{
+ const roof=scene.group.getObjectByName('waverley-mapped-roofs') as THREE.Mesh;
+ const ridge=(roof.material as THREE.Material).userData.snowRidges as THREE.Vector2|undefined;
+ assert.ok(ridge&&ridge.x===12&&ridge.y===0,'the drawn cassettes expose the geometry profile to the snow shader');
+});
+
+test('round 3: the actual Calton path retains a trodden core beside snowy paving and cleared streets',()=>{
+ const m=(scene.group.getObjectByName('waverley-ground-cover') as THREE.Mesh).material as THREE.Material;
+ const {texture,rect}=m.userData.snowMask,{width,height,data}=texture.image;
+ const at=(x:number,z:number)=>data[Math.floor((1-(z-rect.y)*rect.w)*height)*width+Math.floor((x-rect.x)*rect.z*width)]/255;
+ assert.ok(at(376,-303)<.4,'the compacted path core is distinct from untouched snow');
+ assert.ok(at(66.78,-172.12)>.95,'Register House pavement keeps its snow');
+ assert.ok(at(61.48,-150.93)<.1,'the visible Princes Street carriageway keeps its cleared classification');
+});
+
 test('the gardens are OSM land use: both Princes Street Gardens and Calton Hill are mapped green, with paths and trees',()=>{
  const green=[...LANDUSE.areas.park,...LANDUSE.areas.grass,...LANDUSE.areas.garden];
  const inGreen=(x:number,z:number)=>green.some(([o,...h])=>pip(x,z,o)&&!h.some(r=>pip(x,z,r)));

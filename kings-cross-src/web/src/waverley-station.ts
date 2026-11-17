@@ -8,7 +8,7 @@ import type {Terrain} from '../../core/terrain.ts';
 import {Batch,material} from './materials.ts';
 import type {WaverleyArea} from '../../core/waverley-data.ts';
 import {stationTexture} from './waverley-station-textures.ts';
-import {convexHull,ridgeRoofBatches} from './waverley-roof.ts';
+import {convexHull,ridgeRoofBatches,WAVERLEY_ROOF_PROFILE} from './waverley-roof.ts';
 import frontage from './data/waverley-frontage.json' with {type:'json'};
 import {WAVERLEY_LEVELS,fillSurface,meshAdder} from './waverley-mesh.ts';
 import {paintMaterial,waverleyStationPlan,waverleyStructureBatches} from './waverley-station-structure.ts';
@@ -67,6 +67,9 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  const cassettes=own(material('shedGlass').clone() as THREE.MeshLambertMaterial),cassetteMap=stationTexture('cassettes');cassettes.vertexColors=false;cassettes.side=THREE.FrontSide;
  // The pinned noon light is strong (sun 3.24, sky 1.02, exposure 1.25): the panes are toned down so a lit slope reads mid-grey, as in R-wv1-a.
  cassettes.color.setHex(cassetteMap?0x959595:0x75797d);cassettes.map=cassetteMap;cassettes.emissive.setHex(0x101214);cassettes.emissiveMap=cassetteMap;cassettes.opacity=.97;cassettes.forceSinglePass=true;
+ // Snow collects in longitudinal bands; the lower panes remain visible between
+ // them. Use the drawn roof's pitch and phase rather than a second profile.
+ cassettes.userData.snowRidges=new THREE.Vector2(WAVERLEY_ROOF_PROFILE.pitch,WAVERLEY_ROOF_PROFILE.phase);
  const stationRoof=waverleyStationRoof(data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)),plan=waverleyStationPlan(data,stationRoof,WAVERLEY_ROOF_CUTOUTS),structure=waverleyStructureBatches(plan);
  // Platforms: pale slab paving (R-wv1-b, R-wv1-b2: light grey flags, not asphalt), the KX coper/tactile/white-line strip on every track edge,
  // and darker faces (R-wv1-b: the platform wall under the coper is dark, weathered stone). Faces skip the seam between two polygons of one island.

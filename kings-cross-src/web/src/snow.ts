@@ -6,7 +6,7 @@ import { ROOF_MESHES } from './cover.ts';
 import type { Pt } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
 
-export interface SurfaceWeather { dark: number; sheen: number; snow: number; traffic?: number; roof?: boolean; snowOnly?: boolean; detail?: 'ground' | 'foliage' | 'roof' }
+export interface SurfaceWeather { dark: number; sheen: number; snow: number; traffic?: number; roof?: boolean; snowOnly?: boolean; detail?: 'ground' | 'foliage' | 'roof'; transmit?: boolean; heather?: boolean }
 export interface SnowMask { texture: THREE.Texture; rect: THREE.Vector4 }
 const open: SurfaceWeather = {dark: .35, sheen: .1, snow: 1, snowOnly: true};
 const roof: SurfaceWeather = {dark: 0, sheen: 0, snow: 1.15, roof: true};
@@ -26,7 +26,8 @@ const roads = new Set(['waverley-bridge-decks', 'perth-bridge-roads']);
  * also Waverley's outdoor platform). The shader still tests normal and cover. */
 export function snowSurface(mesh: string, material: string): SurfaceWeather | undefined {
   if (material === 'city-asphalt' || roads.has(mesh)) return road;
-  if (landscape.has(mesh)) return {...open, detail: 'ground'};
+  if (mesh === 'shed-roof-glass' || mesh === 'landmarks-roofGlass') return {...roof, transmit: true};
+  if (landscape.has(mesh)) return {...open, detail: 'ground', heather: mesh === 'perth-summit-ground'};
   if (mesh === 'perth-ground') return {dark: .35, sheen: .1, snow: 1, detail: 'ground'};
   if (foliage.has(mesh)) return {...open, detail: 'foliage'};
   if (mesh === 'waverley-building-tops' || mesh === 'perth-city-roofs' || mesh === 'perth-west-roofs') return {...roof, detail: 'roof'};

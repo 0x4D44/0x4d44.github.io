@@ -23,18 +23,18 @@ function setup(meshName: string, materialName = '', m = new THREE.MeshLambertMat
   atmosphere.update({timeMs: Date.parse('2026-12-10T12:00:00Z'), weather: weatherState(forcedObservation('snow')), camera, target: new THREE.Vector3(), wallMs: 1000});
   return { m, mesh, scene, atmosphere, camera };
 }
-function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0], roofDetail = [2, 1]) {
+function shade(m: THREE.Material, up: number, snow = .94, wet = 0, mask = 1, front = true, covered = false, point = [0, 0, 0], roofDetail = [2, 1], base = .2) {
   const s = compile(m), f = s.fragmentShader;
   assert.ok(f.includes('uniform float uSnowCover;'), `${m.name || 'custom surface'} receives snow`);
   // Prior roof shading can put unrelated headlamp arrays between the uniforms
   // and cover functions. Run the surface's actual uniforms and shared cover GLSL.
-  const declarations = [...f.matchAll(/uniform (?:float|vec[234]|sampler2D) (?!uCover)\w+;/g)].map(m => m[0]).join('\n') + '\n' + COVER_GLSL;
+  const declarations = [...f.matchAll(/uniform (?:float|vec[234]|sampler2D) (?!uCover)\w+;/g)].map(m => m[0]).join('\n') + '\n' + COVER_GLSL + '\n' + (f.match(/float snowNoise\([\s\S]*?\n}/)?.[0] ?? '');
   const code = f.slice(f.indexOf('float coverOpen'), f.indexOf(');', f.indexOf('diffuseColor.rgb = mix(')) + 2);
   const uniforms = Object.fromEntries(Object.entries(s.uniforms).map(([k, v]) => [k, toValue(v.value)]));
   uniforms.uSnowCover = snow; uniforms.uWet = wet;
   if (!covered) uniforms.uCoverRect = [0, 0, 0, 0];
   const vars: Record<string, Value> = { ...uniforms, cameraPosition: [0, 0, 0], vViewPosition: point.map(n => -n), viewMatrix: toValue(new THREE.Matrix4()),
-    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], vSnowRoof: roofDetail, diffuseColor: [.2, .2, .2, 1] };
+    gl_FrontFacing: front, vSnowNormal: [Math.sqrt(1 - up * up), up, 0], vSnowRoof: roofDetail, diffuseColor: [base, base, base, 1] };
   const glsl = new Glsl(declarations);
   glsl.snippet(code)({vars, fns: {texture2D: (sampler, _uv) => {
     const texture = (sampler as Sampler).data;
@@ -149,6 +149,88 @@ test('round 2: Perth field pigments precede lying snow, so farmland cannot tint 
     const f=compile(m).fragmentShader;
     assert.ok(f.indexOf('diffuseColor.rgb *= k;') < f.indexOf('float coverOpen'), 'the actual field-colour hook runs before snow replaces the albedo');
     assert.ok(f.indexOf('float coverOpen') < f.indexOf('#include <lights_lambert_fragment>'), 'snow still receives the scene lighting');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: cleared KX and bridge carriageways retain slush patches rather than a pale snow film', () => {
+  for (const name of ['city-asphalt','waverley-bridge-decks']) {
+    const {m,atmosphere}=setup(name,name==='city-asphalt'?name:'asphalt');
+    try {
+      const tones=Array.from({length:12},(_,i)=>shade(m,1,.94,0,1,true,false,[i*1.7,0,35])[0]!);
+      assert.ok(Math.max(...tones)<.1,`${name}: residual white snow no longer dominates the cleared tarmac`);
+      assert.ok(Math.max(...tones)-Math.min(...tones)>.007,'slush has irregular patches');
+      assert.deepEqual(shade(m,1,0,0),[.2,.2,.2,1]);
+    } finally {atmosphere.dispose();}
+  }
+});
+
+test('round 3: slush suppresses the grazing sky sheen on cleared roads, with the rainy sheen unchanged', () => {
+  const {m,atmosphere}=setup('waverley-bridge-decks','asphalt');
+  try {
+    const f=compile(m).fragmentShader,start=f.indexOf('float wetFresnel'),code=f.slice(start,f.indexOf('#include <opaque_fragment>',start));
+    const run=(snow:number)=>{
+      const vars={normal:[0,1,0],vViewPosition:[0,.05,1],outgoingLight:[0,0,0],uSheen:[1,1,1],uSheenK:1,wetHere:.8,uSnowCover:snow,snowTraffic:1,snowHere:.06};
+      new Glsl('').snippet(code.replace(/}\s*$/,''))({vars});return vars.outgoingLight[0]!;
+    };
+    assert.ok(run(.94)<run(0)*.3,'wet slush is rough enough to keep the bridge dark against its snowy edges');
+    assert.ok(Math.abs(run(0)-.8*(.05+.6*(1-.05/Math.sqrt(1.0025))**3))<1e-9,'no change to the clear/rain reflection');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: Waverley snow follows ridges and leaves dark glazed furrows', () => {
+  const m=new THREE.MeshLambertMaterial();m.userData.snowRidges=new THREE.Vector2(12,0);
+  const {atmosphere}=setup('waverley-mapped-roofs','',m);
+  try {
+    const ridge=shade(m,1,.94,0,1,true,false,[6,10.4,20])[0]!,furrow=shade(m,1,.94,0,1,true,false,[1,8.4,20])[0]!;
+    assert.ok(ridge-furrow>.25,'the actual 12 m ridge profile controls retained snow');
+    assert.deepEqual(shade(m,1,0,0,1,true,false,[1,8.4,20]),[.2,.2,.2,1]);
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: distant farmland snow has no repeating 88.5 m sine wave', () => {
+  const {m,atmosphere}=setup('perth-main-apron');
+  try {
+    const period=2*Math.PI/.071,deltas=Array.from({length:20},(_,i)=>{
+      const x=2000+i*17.3;return Math.abs(shade(m,1,.94,0,1,true,false,[x,5,1000])[0]!-shade(m,1,.94,0,1,true,false,[x+period,5,1000])[0]!);
+    });
+    assert.ok(deltas.reduce((a,b)=>a+b,0)/deltas.length>.015,'neighbouring fields do not repeat the round-2 horizon ripple');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: gorse retains dark foliage and scattered snowy tips', () => {
+  const {m,atmosphere}=setup('perth-summit-gorse');
+  try {
+    const values=Array.from({length:12},(_,i)=>shade(m,1,.94,0,1,true,false,[2360+i*.7,210,208])[0]!);
+    assert.ok(Math.max(...values)<.34&&Math.min(...values)<.26,'gorse colour shows through the snow on upward lobes');
+    assert.ok(Math.max(...values)-Math.min(...values)>.025,'snowy tips vary between the foliage gaps');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: the summit keeps dark heather flecks visible through its snow cover', () => {
+  const {m,atmosphere}=setup('perth-summit-ground');
+  try {
+    const at=(base:number,snow=.94)=>shade(m,1,snow,0,1,true,false,[2368,210,208],[2,1],base)[0]!;
+    assert.ok(at(.025)<at(.2)*.6,'dark heather and grass tufts retain less snow than the surrounding ground');
+    assert.equal(at(.025,0),.025,'the original heather is unchanged with no snow');
+  } finally {atmosphere.dispose();}
+});
+
+test('round 3: the snowy KX shed scatters a soft warm night glow while depth still hides lamp dots', () => {
+  const {m,atmosphere,camera}=setup('shed-roof-glass','',new THREE.MeshLambertMaterial({transparent:true,depthWrite:false}));
+  try {
+    const s=compile(m),f=s.fragmentShader;
+    assert.ok(s.uniforms.uSnowGlow,'snowy glazing has a diffuse transmitted-lamp uniform');
+    const glow=(time:string,snowHere:number)=>{
+      atmosphere.update({timeMs:Date.parse(time),weather:weatherState(forcedObservation('snow')),camera,target:new THREE.Vector3(),wallMs:2000});
+      const start=f.indexOf('totalEmissiveRadiance *= 1.0 - snowHere'),end=f.indexOf(';',f.indexOf('totalEmissiveRadiance +=',start))+1;
+      const vars={totalEmissiveRadiance:[0,0,0],snowHere,uSnowGlow:toValue(s.uniforms.uSnowGlow!.value)};
+      new Glsl('').snippet(f.slice(start,end))({vars});return vars.totalEmissiveRadiance;
+    };
+    assert.deepEqual(glow('2026-12-10T12:00:00Z',.9),[0,0,0],'no daytime scatter or lamp dots');
+    const night=glow('2026-12-10T22:30:00Z',.9);
+    assert.ok(night[0]!>.005&&night[0]!<.03&&night[0]!>night[1]!&&night[1]!>night[2]!,'night snow transmits a bounded warm glow');
+    assert.deepEqual(glow('2026-12-10T22:30:00Z',0),[0,0,0],'clear glazing gets no added snow glow');
+    assert.equal(m.depthWrite,true,'the point-lamp occlusion is retained at night');
   } finally {atmosphere.dispose();}
 });
 
