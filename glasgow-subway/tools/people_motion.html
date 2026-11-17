@@ -46,7 +46,7 @@ const EXTRA = ['heel_l', 'heel_r', 'toe_l', 'toe_r', 'bs_l', 'bs_r', 'nose'];
       crowd.clear(); const ch = crowd.chars.find((c) => c.id === id); if (!ch) throw new Error('no such person ' + id);
       delete ch.pools.fidget;   // a child's fidget clips are movement while standing by design: keep them out of a measurement of stopping
       crowd.rng = seeded(id + ':' + (seed || 1));
-      const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: 0, mode: 'script', static: false, speed: 1, wait: 0, rect: BIG }, crowd.group);
+      const p = crowd.add({ char: ch, x: 0, z: 0, y: 0, yaw: 0, mode: 'script', static: false, speed: 1, wait: 0, rect: BIG, bag: null }, crowd.group);   // (empty-handed: crowd.add rolls a bag for anyone given none, and an arm holding a handle swings less by design - reviews 10-12 read those walkers' left/right arm difference of 50-68 % as a fault of the empty-handed gait the arm bands are for. Bag carriers are judged in the stills.)
       p.nextT = 1e9;   // and no idle-variant rotation (a new idle pose has its own feet)
       if (q.get('detail') !== '1' && p.lod) crowd._swapLod(p, false);   // the person the player looks at is the full-detail model (the nearest few within ~11 m); ?detail=1 records the simplified one the rest of the crowd wears
       p.obj.updateMatrixWorld(true); return p;
