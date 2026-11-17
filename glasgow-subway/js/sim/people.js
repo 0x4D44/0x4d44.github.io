@@ -906,7 +906,7 @@ export class AnimCrowd {
       this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 5)) && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
+      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 6.5)) && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 6.5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
       if (upd && p.look) p.look.restore();
