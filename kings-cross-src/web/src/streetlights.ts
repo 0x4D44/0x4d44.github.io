@@ -122,6 +122,8 @@ export interface StreetLights extends NightLayer {
 export interface StreetLightOptions {
   /** Existing station fixtures need only the shared heads and pools. */
   posts?: boolean;
+  /** A promoted existing street head reuses its daylight post. */
+  postAt?: (spot:LampSpot)=>boolean;
   headAt?: (spot: LampSpot) => [number, number, number];
   /** Geographic scenes can fade their distant lamps with their own visibility. */
   fog?: boolean;
@@ -146,6 +148,8 @@ export interface StreetLightOptions {
   poolAt?: (spot:LampSpot,index:number)=>boolean;
   /** Drape urban pools onto the same physical paving as their reflections. */
   poolSurface?: LampWetSurface;
+  /** Receiver samples across a pool on tightly folded urban terrain. */
+  poolSegments?: number;
   /** Clip raised platform light to the physical platforms instead of the tracks. */
   poolFloor?: { map: THREE.Texture; rect: THREE.Vector4; appliesAt?: (spot: LampSpot, index: number) => boolean };
   /** Wet open ground absorbs more light; dense fog reduces the ground pool. */
@@ -184,7 +188,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const meshes: THREE.InstancedMesh[] = [];
   for (const mast of [false, true]) {
     if (options.posts === false) continue;
-    const some = spots.filter((spot) => !!spot.mast === mast);
+    const some = spots.filter((spot) => !!spot.mast === mast && options.postAt?.(spot)!==false);
     if (!some.length) continue;
     const geometry = mast ? mastGeometry() : lampGeometry();
     const posts = new THREE.InstancedMesh(geometry, material, some.length);
@@ -255,7 +259,10 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
 
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
   const poolEntries=spots.flatMap((spot,index)=>options.poolAt?.(spot,index)===false?[]:[{spot,index}]);
-  const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  // A road can curve through the centre of a footprint. Sampling only its four
+  // corners tilted the Euston pool through the asphalt, exposing a hard edge.
+  const poolSegments = options.poolSegments ?? (options.poolSurface ? 2 : 1);
+  const poolGeometry = new THREE.PlaneGeometry(1, 1, poolSegments, poolSegments).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
   if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
   const bounded = options.poolCeiling !== undefined;
@@ -280,9 +287,10 @@ vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
       if(options.poolSurface){
         Object.assign(shader.uniforms,{uLampSurface:{value:options.poolSurface.map},uLampSurfaceRect:{value:options.poolSurface.rect}});
         shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\n${LAMP_RECEIVER_GLSL}`)
-          .replace('#include <logdepthbuf_vertex>',`// pool-receiver-begin
+          .replace('#include <logdepthbuf_vertex>',`vec2 poolAnchorReceiver = lampReceiver((modelMatrix*instanceMatrix*vec4(0.0,0.0,0.0,1.0)).xz);
+// pool-receiver-begin
 vec2 poolReceiver = lampReceiver(vPoolWorld.xz);
-if (poolReceiver.y > 0.001) vPoolWorld.y = poolReceiver.x+0.025;
+vPoolWorld.y = (poolReceiver.y > 0.001 ? poolReceiver.x : poolAnchorReceiver.x)+0.07;
 // pool-receiver-end
 mvPosition = viewMatrix*vec4(vPoolWorld,1.0);
 gl_Position = projectionMatrix*mvPosition;
@@ -363,7 +371,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
       weather?.setLevel(l);
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + 2 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
+    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + poolGeometry.index!.count / 3 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
     dispose() {
       weather?.dispose();
       for (const g of geometries) g.dispose();

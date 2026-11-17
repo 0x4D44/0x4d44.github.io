@@ -23,7 +23,9 @@ export function fadeLightInFog(material: THREE.Material, alpha = false): void {
 export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly number[], halos: THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>,
   floor: {map:THREE.Texture;rect:THREE.Vector4}|undefined, indices: readonly number[], reach?:number, surface?:LampWetSurface, broken=false) {
   const group=new THREE.Group();group.name='street-lamp-weather';
-  const geometry=pools.geometry.clone();
+  // Urban roads need intermediate receiver samples along a long streak.
+  // Perth/platform strips retain their original geometry and shader path.
+  const geometry=surface?new THREE.PlaneGeometry(1,1,1,8).rotateX(-Math.PI/2):pools.geometry.clone();
   geometry.setAttribute('reflectionHead',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>heads.slice(i*3,i*3+3))),3));
   const floorWeights=pools.geometry.getAttribute('poolFloorWeight');
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>floorWeights.getX(i))),1));
@@ -79,7 +81,15 @@ float streakWidth = 0.45;
 // reflection-urban-shape-begin
 streakLength = min(32.0,12.0+lampHeight+0.08*length(cameraPosition-reflectionCentre));
 streakWidth = 0.30+0.02*min(lampHeight,12.0);
-// reflection-urban-shape-end`:''}
+// reflection-urban-shape-end
+// reflection-urban-frame-begin
+// A rough wet surface reflects over the run from the source foot to its
+// mirror lobe. At a low eye height that lobe alone is below the frame.
+vec3 sourceFoot = lampHead-lampNormal*dot(lampHead-lampBase,lampNormal);
+float sourceRun = max(0.0,dot(reflectionCentre-sourceFoot,along));
+reflectionCentre -= along*sourceRun*0.5;
+streakLength = min(80.0,max(streakLength,sourceRun+16.0));
+// reflection-urban-frame-end`:''}
 vReflectionUv = position.xz * 2.0;
 vReflectionFloor = poolFloorWeight;
 vReflectionWorld = reflectionCentre + across * position.x * ${broken?'streakWidth':'( 0.45 + 0.05 * lampHeight )'} + along * position.z * streakLength;
@@ -114,7 +124,7 @@ reflectionOpen *= receiver.y*onSurface;
 // Three longitudinal Gaussian taps give a continuous, slightly blurred streak.
 float blurY0 = vReflectionUv.y - 0.12;
 float blurY1 = vReflectionUv.y + 0.12;
-float streakY = 0.5 * exp( -2.5 * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -2.5 * blurY0 * blurY0 ) + 0.25 * exp( -2.5 * blurY1 * blurY1 );
+float streakY = 0.5 * exp( -${broken?'0.8':'2.5'} * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY0 * blurY0 ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY1 * blurY1 );
 float streak = exp( -10.0 * vReflectionUv.x * vReflectionUv.x ) * streakY;
 gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
 // reflection-alpha-end${reach!==undefined?`
@@ -124,7 +134,7 @@ gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothste
 // reflection-breakup-begin
 float seed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
 float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
-gl_FragColor.a *= 0.08+0.92*smoothstep(0.15,0.8,puddles);
+gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);
 // reflection-breakup-end`:''}`);
   };
   material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}`;
@@ -162,7 +172,7 @@ gl_FragColor.a *= mix( 1.0, 0.22 * uLampFog, vLampFogHalo );
 // lamp-fog-end`);
   };
   halos.material.customProgramCacheKey=()=> scale?'lamp-fog-scattering-strip':'lamp-fog-scattering';
-  return {group,triangles:indices.length*2,draws:Number(indices.length>0),
+  return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45;},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
 }

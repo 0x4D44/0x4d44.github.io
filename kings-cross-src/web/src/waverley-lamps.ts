@@ -137,7 +137,8 @@ export function waverleyLampSpots(file: LampRoadsFile, ground: (x: number, z: nu
 async function approachSpots(root:THREE.Object3D,surface:LampWetSurface,existing:readonly LampSpot[]):Promise<LampSpot[]> {
   const out:LampSpot[]=[];
   const add=(x:number,z:number,yaw:number)=>{
-    if(existing.some(s=>Math.hypot(s.x-x,s.z-z)<7))return;
+    const nearby=existing.find(s=>Math.hypot(s.x-x,s.z-z)<7);
+    if(nearby){if(!out.includes(nearby))out.push(nearby);return;}
     const [y,mask]=lampSurfaceAt(surface,x,z);if(mask<.9)return;
     const dx=lampSurfaceAt(surface,x+1,z)[0]-lampSurfaceAt(surface,x-1,z)[0];
     const dz=lampSurfaceAt(surface,x,z+1)[0]-lampSurfaceAt(surface,x,z-1)[0];
@@ -150,7 +151,9 @@ async function approachSpots(root:THREE.Object3D,surface:LampWetSurface,existing
   }
   const roads=await import('./data/waverley-roads.json',{with:{type:'json'}});
   for(const road of roads.default.roads){
-    if(road.name!=='Market Street'||road.path.every(p=>p[0]!<-110))continue;
+    // The west run is the part visible from the frozen North Bridge view.
+    // Previously only the east approach was added, behind/off that camera.
+    if(road.name!=='Market Street')continue;
     const line=road.path.map(p=>[p[0]!,p[1]!] as Pt);
     const run: LampRun={id:0,cls:'tertiary',line,half:4.25,y:(x,z)=>lampSurfaceAt(surface,x,z)[0],rule:{height:8,spacing:28,sides:'alternate'}};
     for(const spot of lampSpots([run],{rand:hash01,modern:()=>false,blocked:()=>false}))add(spot.x,spot.z,spot.yaw);
@@ -173,12 +176,22 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   const file=roads.default as unknown as LampRoadsFile;
   const spots=waverleyLampSpots(file, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data));
   const roadMask=new SegmentGrid();
-  for(const road of decodeLampRoads(file)) for(let i=1;i<road.line.length;i++)roadMask.add({a:road.line[i-1]!,b:road.line[i]!,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+1.5});
-  const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground-cover','waverley-bridge-decks']),spots,
+  // Include the wet footways beside the carriageway. Clipping them out left
+  // only a horizontal road-edge sliver of each Princes Street reflection.
+  for(const road of decodeLampRoads(file)) for(let i=1;i<road.line.length;i++){
+    const a=road.line[i-1]!,b=road.line[i]!;
+    // ASSUMED: the broad Princes Street paving/junction north of the hotel
+    // extends beyond the lean road centreline's default carriageway width.
+    const princes=a[0]>-30&&a[0]<125&&a[1]<-110&&b[1]<-110;
+    roadMask.add({a,b,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+(princes?14:6)});
+  }
+  const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground','waverley-ground-cover','waverley-bridge-decks']),spots,
     (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
-  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<650,reflectionAt:s=>Math.hypot(s.x,s.z)<600}:{});
+  // Retain all distant head cores/posts; spend the ground geometry on nearby
+  // conforming pools/strips rather than almost invisible panorama road pools.
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),poolAt:s=>Math.hypot(s.x,s.z)<250,reflectionAt:s=>Math.hypot(s.x,s.z)<200}:{});
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
-  const rows=rowSpots.length?createStreetLights(rowSpots,urbanLampOptions(surface)):undefined;
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:4.5,poolCeiling:.26}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},

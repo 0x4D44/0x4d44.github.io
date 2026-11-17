@@ -68,7 +68,7 @@ function glowing(){const built=buildWaverleyScene({lighting:false}),glow=createW
 test('Waverley platform night ambient falls between pendant pools while daytime lighting stays exact',()=>{
  const r=glowing();try {const m=named<THREE.Mesh>(r.built.group,'waverley-platform-surfaces').material as THREE.Material,s=shader(m,'lambert'),b=block(s.fragmentShader,'station-platform-ambient');
   assert.ok(b.includes('reflectedLight.indirectDiffuse'));
-  for(const level of [0,1]){const e={vars:{uStationLampLevel:level,ambient:[1,1,1]}};new Glsl('').run(b.replaceAll('reflectedLight.indirectDiffuse','ambient'),e);const value=e.vars.ambient[0]!;if(level===0)assert.equal(value,1);else assert.ok(value<=.3);}
+  for(const level of [0,1]){const e={vars:{uStationLampLevel:level,ambient:[1,1,1],direct:[1,1,1]}};new Glsl('').run(b.replaceAll('reflectedLight.indirectDiffuse','ambient').replaceAll('reflectedLight.directDiffuse','direct'),e);const value=e.vars.ambient[0]!;if(level===0)assert.equal(value,1);else assert.ok(value<=.3);}
  }finally{r.dispose();}
 });
 
@@ -89,7 +89,7 @@ test('Balmoral clock crown glows magenta while the adjacent bridge remains unlit
 
 test('Balmoral turret floodlight has a minimum stone response instead of a dark gradient on its lead cap',()=>{
  const r=glowing();try {const s=shader(named<THREE.Mesh>(r.built.group,'waverley-frontage-structure').material as THREE.Material,'lambert'),base=r.built.group.getObjectByName('waverley-frontage')!.userData.frontage.P;
-  const e={vars:{vStationLampWorld:[74,base+28.5,-136],diffuseColor:[.01,.02,.03,1],uStationLampLevel:1,totalEmissiveRadiance:[0,0,0]}};
+  const e={vars:{vStationLampWorld:[74,base+28.5,-136],vStationLampNormal:[0,1,0],diffuseColor:[.01,.02,.03,1],uStationLampLevel:1,totalEmissiveRadiance:[0,0,0]}};
   new Glsl('').run(block(s.fragmentShader,'balmoral-trim'),e);assert.ok((e.vars.totalEmissiveRadiance as number[])[0]!>.05);
  }finally{r.dispose();}
 });

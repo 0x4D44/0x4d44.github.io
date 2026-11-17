@@ -9,6 +9,10 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
   const level = {value:0}, undo: (()=>void)[] = [];
   const hotel = scene.getObjectByName('waverley-balmoral-facade');
   const box = hotel ? new THREE.Box3().setFromObject(hotel) : new THREE.Box3();
+  // The tower and the protruding corner domes extend beyond the body facade.
+  // A body-only selector lit pinnacle tips but rejected the built ogee bell.
+  const tower = scene.getObjectByName('waverley-balmoral-tower');
+  if(tower)box.union(new THREE.Box3().setFromObject(tower));
   const patch = (name:string, colour: readonly number[], select = '1.0', snow = false, extra='', ambient=false):void => {
     const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
     const m = mesh?.material as THREE.MeshLambertMaterial | undefined;
@@ -18,9 +22,9 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
       before.call(m,shader,renderer);
       shader.uniforms.uStationLampLevel = level;
       shader.uniforms.uStationLampSnow = surfaceUniforms.snowCover;
-      shader.vertexShader = shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStationLampWorld;')
-        .replace('#include <project_vertex>','#include <project_vertex>\nvStationLampWorld = (modelMatrix * vec4(transformed,1.0)).xyz;');
-      shader.fragmentShader = shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uStationLampLevel;\nuniform float uStationLampSnow;\nvarying vec3 vStationLampWorld;')
+      shader.vertexShader = shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStationLampWorld;\nvarying vec3 vStationLampNormal;')
+        .replace('#include <project_vertex>','#include <project_vertex>\nvStationLampWorld = (modelMatrix * vec4(transformed,1.0)).xyz;\nvStationLampNormal = normalize(mat3(modelMatrix)*objectNormal);');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uStationLampLevel;\nuniform float uStationLampSnow;\nvarying vec3 vStationLampWorld;\nvarying vec3 vStationLampNormal;')
         .replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
 // station-light-begin: glowing glazing follows its cassette bars, never the opaque snow.
 totalEmissiveRadiance += uStationLampLevel * vec3(${colour.join(',')}) * diffuseColor.rgb * (${select})${snow ? ' * (1.0 - uStationLampSnow)' : ''};
@@ -28,7 +32,8 @@ totalEmissiveRadiance += uStationLampLevel * vec3(${colour.join(',')}) * diffuse
 ${extra}`);
       if(ambient)shader.fragmentShader=shader.fragmentShader.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
 // station-platform-ambient-begin
-reflectedLight.indirectDiffuse *= mix(1.0,0.25,uStationLampLevel);
+reflectedLight.indirectDiffuse *= mix(1.0,0.15,uStationLampLevel);
+reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
 // station-platform-ambient-end`);
     };
     m.customProgramCacheKey = () => key.call(m) + '-station-night-' + name;
@@ -47,7 +52,7 @@ reflectedLight.indirectDiffuse *= mix(1.0,0.25,uStationLampLevel);
     // The hotel cornices share a batch with bridges. Restrict by the hotel's
     // own bounds and upper storeys so no bridge rib receives invented light.
     const p = 'vStationLampWorld';
-    const within = `step(${(box.min.x-2).toFixed(3)},${p}.x)*step(${p}.x,${(box.max.x+2).toFixed(3)})*step(${(box.min.z-2).toFixed(3)},${p}.z)*step(${p}.z,${(box.max.z+2).toFixed(3)})`;
+    const within = `step(${(box.min.x-5).toFixed(3)},${p}.x)*step(${p}.x,${(box.max.x+5).toFixed(3)})*step(${(box.min.z-5).toFixed(3)},${p}.z)*step(${p}.z,${(box.max.z+5).toFixed(3)})`;
     const base=scene.getObjectByName('waverley-frontage')?.userData.frontage?.P??box.max.y-BALMORAL_LEVELS.cornice;
     const height=`(${p}.y-${base.toFixed(3)})`;
     patch('waverley-balmoral-facade',[0,0,0],'1.0',false,`
@@ -64,11 +69,12 @@ totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.57,0.20)*
 // balmoral-trim-begin
 float trimHeight = ${height};
 float trimZone = (${within})*smoothstep(8.0,8.5,trimHeight)*(1.0-smoothstep(50.8,51.6,trimHeight));
-float trimBeam = 0.12+0.50*smoothstep(23.5,24.7,trimHeight)*exp(-max(0.0,trimHeight-25.5)/8.0);
-totalEmissiveRadiance += uStationLampLevel*vec3(0.65,0.31,0.1)*max(diffuseColor.rgb,vec3(0.4))*trimZone*trimBeam;
+float trimBeam = 0.12+0.90*smoothstep(23.5,24.7,trimHeight)*exp(-max(0.0,trimHeight-25.5)/8.0);
+float trimFacing = 0.50+0.50*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.8,0.6,0.2))));
+totalEmissiveRadiance += uStationLampLevel*vec3(0.95,0.60,0.28)*max(diffuseColor.rgb,vec3(0.5))*trimZone*trimBeam*trimFacing;
 // balmoral-trim-end
 // balmoral-crown-begin
-float crown = (${within})*smoothstep(${(base+51.6).toFixed(3)},${(base+52.2).toFixed(3)},vStationLampWorld.y);
+float crown = (${within})*smoothstep(${(base+49.2).toFixed(3)},${(base+51.0).toFixed(3)},vStationLampWorld.y);
 totalEmissiveRadiance += uStationLampLevel*vec3(0.62,0.07,0.38)*crown;
 // balmoral-crown-end`);
   }

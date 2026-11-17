@@ -188,7 +188,9 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   // the street lamps, and the masts of the forecourt (the same glow and pools, a mast of their own)
   const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
   const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
-  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? urbanLampOptions(wetSurface) : {}) : null;
+  // Two-metre receiver samples follow Euston Road's folded terrain and paving
+  // joins; corner-only planes cut the sodium pool into a hard rectangle.
+  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8} : {}) : null;
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
   if (lights) {
