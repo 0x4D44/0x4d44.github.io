@@ -35,7 +35,9 @@ test("swe: 10 exercises, the six phase-1 seats on all of them, later seats on so
   const a = aggregate(su);
   assert.ok(a.seats.filter((s) => s.n === 10).length >= 6);
   assert.ok(a.seats.every((s) => s.n >= 1 && s.n <= 10));
-  assert.equal(a.cells["opus-5.5-medium"]["FIX-01"].score.mean, 100);
+  // A single-run cell aggregates to that run's score.
+  const row = su.results.find((r) => r.seat === "opus-5.5-medium" && r.task === "FIX-01");
+  assert.equal(a.cells["opus-5.5-medium"]["FIX-01"].score.mean, row.metrics.score);
   assert.ok(a.seats.every((s) => s.perDollar > 0 && s.perHour > 0));
   // Leaderboard order is by mean headline, best first.
   const m = a.seats.map((s) => s.per.score);
