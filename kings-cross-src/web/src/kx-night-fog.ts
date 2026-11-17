@@ -17,6 +17,9 @@ export function createKxFogMaterials() {
     let copy = windows.get(source);
     if (copy) return copy;
     copy = source.clone();
+    // MeshLambertMaterial.copy omits application-defined preprocessor symbols.
+    // Its inherited shader hook still reads them (WIN_GAIN/WIN_RECT/WIN_MODE).
+    (copy as THREE.MeshLambertMaterial).defines = { ...lit.defines };
     const before = source.onBeforeCompile, key = source.customProgramCacheKey();
     copy.onBeforeCompile = (shader, renderer) => {
       before.call(source, shader, renderer);
