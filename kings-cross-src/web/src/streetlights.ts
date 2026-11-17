@@ -172,6 +172,8 @@ export interface StreetLightOptions {
   enhancedFog?: boolean;
   /** Scene-selected soft urban scattering; legacy/default/Perth stay exact. */
   softFog?: boolean;
+  /** Under roofs, overlapping fog light has a bounded display ceiling. */
+  boundedFog?: boolean;
   /** Wider scattering on Scottish city lights, independent of the clear head. */
   fogHaloSpread?: number;
   /** One low-opacity volume per LED strip, separate from its bright samples. */
@@ -440,7 +442,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,softFog:options.softFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionRoadAt:options.reflectionRoad&&options.reflectionSurface?source=>{const e=poolEntries[source]!;return options.reflectionRoad!(e.spot,e.index)?[Math.sin(e.spot.yaw),Math.cos(e.spot.yaw)]:[0,0];}:undefined,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,softFog:options.softFog,boundedFog:options.boundedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionRoadAt:options.reflectionRoad&&options.reflectionSurface?source=>{const e=poolEntries[source]!;return options.reflectionRoad!(e.spot,e.index)?[Math.sin(e.spot.yaw),Math.cos(e.spot.yaw)]:[0,0];}:undefined,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {

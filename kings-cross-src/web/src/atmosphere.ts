@@ -492,7 +492,8 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
 
   let state: AtmosphereState | null = null;
   let lastCompute = -Infinity;
-  const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '', cloud: -1, fogCloud: -1 };
+  const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '', cloud: -1, fogCloud: -1, fogEye: '' };
+  const cloudEye = new THREE.Vector3();
   const sunDirection = new THREE.Vector3();
   const keyDir: [number, number, number] = [0, 1, 0];
   let keyKnown = false;
@@ -514,6 +515,11 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     // Dense city fog hides the cloud deck behind a continuous luminous veil.
     // Rain retains its softer cloud structure; the unselected/Perth path is exact.
     const billow = CLOUD_BILLOW * smoothstep(0.15, 0.85, cloud) * (1-fogCloud);
+    // Smooth light over the square / Princes Street, aimed from the current
+    // eye towards the real lamp group. It remains below 19 degrees: no cloud
+    // noise or bright circular patch high on the dome.
+    const groupX=(kingsCrossNightFog?45:40)-cloudEye.x,groupZ=(kingsCrossNightFog?15:-150)-cloudEye.z;
+    const groupLength=Math.max(1,Math.hypot(groupX,groupZ));
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const r = Math.hypot(x, y, z);
@@ -523,10 +529,12 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
       const d = cloudDeck(x / r, y / r, z / r) - 0.52;
       const deck = 1 + billow * smoothstep(0.02, 0.3, t) * Math.max(d, CLOUD_DARK * d);
+      const towards=(x*groupX+z*groupZ)/(Math.max(1,Math.hypot(x,z))*groupLength);
+      const cityGlow=fogCloud*.018*Math.exp(-5*(1-towards))*(1-smoothstep(0,.32,t));
       colour.setRGB(
-        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow,
-        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow,
-        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow, THREE.SRGBColorSpace);
+        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow,
+        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91,
+        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8, THREE.SRGBColorSpace);
       attr.setXYZ(i, colour.r, colour.g, colour.b);
     }
     attr.needsUpdate = true;
@@ -553,10 +561,11 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
 
     // The dome only when its colours, the cloud's structure or the sun's place have moved enough to see.
     const fogCloud = litFogCloud && cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.85,rig.fogAmount) : 0;
+    const fogEye = fogCloud>0?`${Math.round(cloudEye.x/5)}/${Math.round(cloudEye.z/5)}`:'';
     let moved = Math.abs(rig.glow.strength - paint.glow);
     for (let i = 0; i < 3; i++) moved = Math.max(moved, Math.abs((rig.dome.zenith[i] as number) - (paint.zenith[i] as number)), Math.abs((rig.dome.horizon[i] as number) - (paint.horizon[i] as number)));
     const sunKey = `${Math.round(sunPos.elevationDeg * 4)}/${Math.round(sunPos.azimuthDeg * 2)}`;
-    if (moved > 0.004 || sunKey !== paint.sunKey || Math.abs(weather.cloud - paint.cloud) > 0.03 || Math.abs(fogCloud-paint.fogCloud) > .004) {
+    if (moved > 0.004 || sunKey !== paint.sunKey || Math.abs(weather.cloud - paint.cloud) > 0.03 || Math.abs(fogCloud-paint.fogCloud) > .004 || fogEye!==paint.fogEye) {
       paintDome(rig, weather.cloud, fogCloud);
       paint.zenith = [...rig.dome.zenith];
       paint.horizon = [...rig.dome.horizon];
@@ -564,6 +573,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       paint.sunKey = sunKey;
       paint.cloud = weather.cloud;
       paint.fogCloud = fogCloud;
+      paint.fogEye = fogEye;
     }
     // the sun's disc: visible from just under the horizon, dimmed by cloud and fog
     sunDirection.set(...rig.sun.direction);
@@ -614,6 +624,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     keyDirection: () => (keyKnown ? keyDir : null),
     cover: () => coverMap,
     update(f) {
+      cloudEye.copy(f.camera.position);
       // The sky maths run four times a second; a new weather (a new object, which happens when a reading arrives) runs them at once.
       if (state === null || f.weather !== state.weather || f.wallMs - lastCompute >= 250) {
         lastCompute = f.wallMs;
@@ -637,7 +648,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
           const night = lampLevelFor(sunPos.elevationDeg);
           const rainCloud = night * smoothstep(.1,.5,w.rain) * w.cloud * (1-cityFog);
           for (const c of [rig.dome.horizon,rig.dome.zenith]) for (let i=0;i<3;i++) {
-            const fogLight = cityFogTint[i]! * 1.10;
+            const fogLight = cityFogTint[i]! * 1.10 * (c === rig.dome.zenith ? .94 : 1);
             const rainLight = cityFogTint[i]! * .55;
             c[i] = c[i]! + (fogLight-c[i]!) * cityFog + (rainLight-c[i]!) * rainCloud;
           }

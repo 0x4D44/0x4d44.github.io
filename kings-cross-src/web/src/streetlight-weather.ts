@@ -33,6 +33,7 @@ gl_FragColor.rgb *= exp(-0.0055*max(0.0,vUrbanLampDistance-160.0)*sourceFog);
 export interface LampWeatherOptions {
   enhancedFog?: boolean;
   softFog?: boolean;
+  boundedFog?: boolean;
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
@@ -397,7 +398,38 @@ gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0
     };
   }
   halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air-2':'');
+  // The original material/program renders every other state byte-for-byte.
+  // Only dense fog selects the roof ceiling or the LED strip's air capsule.
+  const clearHaloMaterial=halos.material;
+  const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length)?clearHaloMaterial.clone():null;
+  if(fogHaloMaterial){
+    const original=clearHaloMaterial.onBeforeCompile;
+    fogHaloMaterial.onBeforeCompile=(shader,renderer)=>{
+      original.call(clearHaloMaterial,shader,renderer);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <premultiplied_alpha_fragment>',`${optics.boundedFog?`
+// lamp-roof-cap-begin
+// Normal blending makes every overlap a convex mix, rather than another
+// unbounded addition. Small separate head cores retain their bright peaks.
+gl_FragColor.rgb = min(gl_FragColor.rgb,vec3(0.65,0.62,0.57));
+// lamp-roof-cap-end`:''}${cores.length?`
+// lamp-mast-capsule-begin
+// Scatter along the physical LED strip, including its upper end. The old
+// round core was centred halfway down it; gain there clipped rather than
+// lighting the head's 10–30px shoulders. Keep its existing central peak.
+vec2 capsulePoint = 2.0*(gl_PointCoord-vec2(0.5));
+capsulePoint.y = max(0.0,abs(capsulePoint.y)-0.48);
+float capsuleRadius = length(capsulePoint);
+float capsuleAir = 0.19*lampAirAlpha*smoothstep(0.65,0.9,uLampFog)*exp(-6.0*capsuleRadius*capsuleRadius)*(1.0-smoothstep(0.80,1.0,2.0*length(gl_PointCoord-vec2(0.5))));
+capsuleAir *= exp(-0.007*max(0.0,vLampFogDistance-50.0));
+gl_FragColor.a = mix(gl_FragColor.a,max(gl_FragColor.a,capsuleAir),vLampFogCore);
+// lamp-mast-capsule-end`:''}
+#include <premultiplied_alpha_fragment>`);
+    };
+    if(optics.boundedFog)fogHaloMaterial.blending=THREE.NormalBlending;
+    fogHaloMaterial.customProgramCacheKey=()=>clearHaloMaterial.customProgramCacheKey()+(optics.boundedFog?'-roof-cap':'')+(cores.length?'-strip-capsule':'');
+  }
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
-    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
-    dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
+    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);
+      if(fogHaloMaterial){fogHaloMaterial.opacity=clearHaloMaterial.opacity;halos.material=level>.01&&surfaceUniforms.fog.value>.65?fogHaloMaterial:clearHaloMaterial;}},
+    dispose(){halos.material=clearHaloMaterial;fogHaloMaterial?.dispose();reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
 }
