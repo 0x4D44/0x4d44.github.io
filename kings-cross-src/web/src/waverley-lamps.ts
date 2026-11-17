@@ -15,6 +15,7 @@ import { createTerrain } from '../../core/terrain.ts';
 import type { TerrainFile } from '../../core/terrain.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import type { WaverleyScene } from '../../core/waverley-data.ts';
+import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 
@@ -132,7 +133,7 @@ export function waverleyLampSpots(file: LampRoadsFile, ground: (x: number, z: nu
  * Load the Scottish street lamps: the roads, the building outlines (the scene's own OSM data, already loaded by the model) and the context DTM, each a lazy chunk, and the lamps they make. `drawn` is
  * the ground as the scene draws it. Resolves to the lamps' layer (a post to each, a glow at its head and a pool under it: web/src/streetlights.ts), not yet in any scene.
  */
-export async function loadWaverleyLamps(drawn: (x: number, z: number) => number): Promise<StreetLights> {
+export async function loadWaverleyLamps(drawn: (x: number, z: number) => number, nightEffects = false): Promise<StreetLights> {
   const [roads, scene, terrain] = await Promise.all([
     import('./data/waverley-lamp-roads.json', { with: { type: 'json' } }),
     import('./data/waverley-scene.json', { with: { type: 'json' } }),
@@ -140,5 +141,5 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number)
   ]);
   const context = createTerrain(terrain.default as unknown as TerrainFile);
   const data = unpackWaverleyScene(scene.default);
-  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data)));
+  return createStreetLights(waverleyLampSpots(roads.default as unknown as LampRoadsFile, drawn, (x, z) => context.heightAt(x, z), sceneFootprints(data)), nightEffects ? urbanLampOptions() : {});
 }

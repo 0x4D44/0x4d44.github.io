@@ -130,6 +130,10 @@ export interface StreetLightOptions {
   poolSpread?: number;
   /** Metres to the edge of this head's own pool, e.g. from fixture spacing. */
   poolRadiusAt?: (spot: LampSpot, index: number) => number;
+  /** Optional full width/depth of a directional pool, metres. */
+  poolSizeAt?: (spot: LampSpot, index: number) => readonly [number, number] | undefined;
+  /** A mast's narrow rectangular optic, with a short soft edge. */
+  poolLineAt?: (spot: LampSpot, index: number) => boolean;
   /** Small floor clearance for raised station slabs at grazing camera angles. */
   poolLiftAt?: (spot: LampSpot, index: number) => number;
   /** Evaluate the radial profile per fragment, without grazing-angle mip blur. */
@@ -224,6 +228,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   // the pool under each head: a flat quad with the halo's gradient, scaled to the lamp's reach, an instance colour for its light
   const poolGeometry = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
+  if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(spots.map((s,i)=>Number(options.poolLineAt!(s,i)))),1));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -247,10 +252,17 @@ vPoolWorld = ( modelMatrix * poolWorld ).xyz;`);
         shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
           .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
         declarations += '\nvarying vec2 vPoolUv;';
+        if (options.poolLineAt) {
+          shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
+            .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
+          declarations += '\nvarying float vPoolLine;';
+        }
         body += `
 // pool-profile-begin
 float poolR = length( 2.0 * vPoolUv - 1.0 );
-gl_FragColor.a *= pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
+${options.poolLineAt ? `float poolProfile = pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );
+poolProfile = mix( poolProfile, (1.0 - smoothstep(.82,1.0,abs(2.0*vPoolUv.x-1.0))) * (1.0 - smoothstep(.72,1.0,abs(2.0*vPoolUv.y-1.0))), vPoolLine );
+gl_FragColor.a *= poolProfile;` : 'gl_FragColor.a *= pow( 1.0 + 4.0 * poolR * poolR, -1.5 ) * ( 1.0 - smoothstep( 0.55, 1.0, poolR ) );'}
 // pool-profile-end`;
       }
       if (options.poolFloor) {
@@ -275,15 +287,16 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}`;
   }
   pools.name = 'street-lamp-pools';
   spots.forEach((spot, i) => {
     const [x, , z] = headAt(spot);
     const r = 2 * (options.poolRadiusAt?.(spot, i) ?? poolRadius(spot.height) * (options.poolSpread ?? 1));
+    const size = options.poolSizeAt?.(spot,i), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
-    matrix.set(r, 0, 0, x, gx * r, 1, gz * r, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,i) ?? POOL_LIFT), 0, 0, r, z, 0, 0, 0, 1);
+    matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,i) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);
     pools.setMatrixAt(i, matrix);
     const light = LAMP_LIGHT[spot.kind];
     pools.setColorAt(i, tint.setHex(light.pool).multiplyScalar(options.poolCeiling ?? light.strength));

@@ -9,6 +9,9 @@
 // All of it is cheap. The sky maths run four times a second, not every frame; the dome is repainted only when its colours move.
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
+import { createPlatformLamps } from './station-lamps.ts';
+import type { Pt } from '../../core/geo.ts';
+import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { cloudDeck, DAY_EXPOSURE, fogRange, lampLevelFor, skyRig, smoothstep } from '../../core/daylight.ts';
 import type { ReferenceRig, Rgb, SkyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
@@ -298,6 +301,10 @@ export interface AtmosphereOptions {
   /** Optional solar gate for artificial light: fade weather's daytime boost
    * between these elevations, fully off above the second (degrees). */
   lampSunGate?: readonly [number, number];
+  /** Gate outdoor fixtures without changing windows/trains or the shared rig. */
+  lampLayerSunGate?: readonly [number, number];
+  /** KX's drawn platform polygons; omitted retains the legacy halo-only layer. */
+  platformLampFloor?: readonly (readonly Pt[])[];
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -390,12 +397,18 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const precip = createPrecip();
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
   if (nightLights) scene.add(nightLights.group);
+  const platformLamps = sites && platformLampFloor ? createPlatformLamps([...sites.platform,...sites.shed],platformLampFloor,PLATFORM_HEIGHT) : null;
+  if (platformLamps) {
+    scene.add(platformLamps.group); nightLights?.attach(platformLamps);
+    // Shared heads replace the old oversized halos on this opt-in path only.
+    for (const name of ['lights-platform','lights-shed']) nightLights?.group.getObjectByName(name)?.removeFromParent();
+  }
   // the clock dials of the scene's buildings glow with the lamps (night.ts `createDialLights`); `rescan` finds them, as the landmarks arrive after the first frame
   const dialLights = nightLights ? createDialLights() : null;
   if (dialLights) nightLights?.attach(dialLights);
@@ -549,7 +562,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     (stars.material as THREE.PointsMaterial).opacity = rig.stars * 0.9;
 
     // lamps: halos, and the trains' windows and lenses, and the windows of the city's buildings
-    nightLights?.setLevel(rig.lampLevel);
+    nightLights?.setLevel(rig.lampLevel * (lampLayerSunGate ? 1 - smoothstep(...lampLayerSunGate, sunPos.elevationDeg) : 1));
     trainNight.value = rig.lampLevel;
     // the headlamps' light on the walls follows the sun alone: a gloomy day lights the lamps (lampLevel) but not the walls by them (train-headlamp-light.ts, "day floor zero")
     headlampNight.value = lampLevelFor(sunPos.elevationDeg);
@@ -602,7 +615,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       // under the roof the original lamps remain, and other weather is unchanged.
       const concourseHalos = nightLights?.group.getObjectByName('lights-concourse');
       if (concourseHalos) {
-        concourseHalos.visible = state.rig.lampLevel > 0.01 && (state.weather.snowCover <= 0.001 || coverAt(coverMap, f.camera.position.x, f.camera.position.y, f.camera.position.z) > 0.5);
+        concourseHalos.visible = state.rig.lampLevel * (lampLayerSunGate ? 1 - smoothstep(...lampLayerSunGate,state.sun.elevationDeg) : 1) > 0.01 && (state.weather.snowCover <= 0.001 || coverAt(coverMap, f.camera.position.x, f.camera.position.y, f.camera.position.z) > 0.5);
       }
 
       // every frame: the fog follows the camera's height, and the rain follows what is looked at
@@ -621,6 +634,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       applyCover(null);
       precip.dispose();
       dialLights?.dispose();
+      platformLamps?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
       sunSprite.material.dispose();

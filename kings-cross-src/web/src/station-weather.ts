@@ -3,7 +3,10 @@
 import * as THREE from 'three';
 import type { LatLon } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
-import { describeSun } from '../../core/daylight.ts';
+import { createPlatformLamps } from './station-lamps.ts';
+import { createWaverleyGlow } from './waverley-night.ts';
+import { WAVERLEY_LEVELS } from './waverley-mesh.ts';
+import { describeSun, smoothstep } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions, Haze } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
@@ -130,12 +133,15 @@ export const WAVERLEY_HAZE = { far: 2200, fade: [100, 300] } as const;
  */
 function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
   const terrain = view.model?.terrain as { heightAt?: (x: number, z: number) => number } | undefined;
+  // A detailed station owns physical head positions. Lightweight model adapters
+  // without fixtures retain the original street layer and its resource contract.
+  const enhanced = !!view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads?.length;
   let layer: StreetLights | null = null;
   let level = 0;
   let gone = false;
   if (typeof terrain?.heightAt === 'function') {
     const heightAt = terrain.heightAt.bind(terrain);
-    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt)).then((made) => {
+    import('./waverley-lamps.ts').then((m) => m.loadWaverleyLamps(heightAt,enhanced)).then((made) => {
       if (gone) { made.dispose(); return; }
       layer = made;
       view.scene.add(made.group);
@@ -157,9 +163,14 @@ function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
   return remoteSceneWeather(view, weather, WAVERLEY_HAZE, () => {
-    const night = lightWaverleyNight(view.scene), lamps = waverleyLamps(view);
-    return { setLevel: (level: number) => lamps.setLevel(level), dispose: () => { night(); lamps.dispose(); } };
-  });
+    const night = lightWaverleyNight(view.scene), lamps = waverleyLamps(view), glow = createWaverleyGlow(view.scene);
+    const data = view.geometry!;
+    const heads = view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
+    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform);
+    platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
+    return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
+      dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };
+  }, undefined, [0,6]);
 }
 
 /**
@@ -198,7 +209,7 @@ export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptio
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
 function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: Haze,
-  night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number]): SceneWeather {
+  night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number], layerSunGate?: readonly [number, number]): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();
   scene.traverse(o => { if (o instanceof THREE.Light) { lights.set(o, o.visible); o.visible = false; } });
@@ -220,7 +231,7 @@ function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haz
     update(frame: Parameters<SceneWeather['update']>[0]): void {
       climate.update(frame);
       const sky = climate.atmosphere.state(); // none until the climate has run once (a climate that has ended before it ran never will)
-      if (sky) lamps.setLevel(sky.rig.lampLevel);
+      if (sky) lamps.setLevel(sky.rig.lampLevel * (layerSunGate ? 1-smoothstep(...layerSunGate,sky.sun.elevationDeg) : 1));
     },
     dispose(): void {
       if (disposed) return; disposed = true;

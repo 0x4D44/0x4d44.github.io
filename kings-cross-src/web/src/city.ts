@@ -22,11 +22,14 @@ import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts } from '../../core/streetlights.ts';
+import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 import { GROUND_Y } from './world.ts';
 
 export interface CityOptions {
+  /** Bounded pools, mast optics and station-local weather effects. */
+  nightEffects?: boolean;
   /** OSM building ids drawn some other way (the station, the landmarks, whatever is under the shed) */
   hidden?: ReadonlySet<number>;
   /** extra polygons in which no street, square or tree is drawn; the outlines of the hidden buildings are always used */
@@ -183,7 +186,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   scene.add(group);
   // the street lamps, and the masts of the forecourt (the same glow and pools, a mast of their own)
   const lamps = opts.lamps === false ? [] : [...built.lamps, ...forecourtMasts(data, (x, z) => opts.terrain?.heightAt(x, z) ?? GROUND_Y)];
-  const lights = lamps.length > 0 ? createStreetLights(lamps) : null;
+  const lights = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? urbanLampOptions() : {}) : null;
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
   if (lights) {

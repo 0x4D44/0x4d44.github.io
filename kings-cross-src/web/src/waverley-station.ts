@@ -11,7 +11,7 @@ import {stationTexture} from './waverley-station-textures.ts';
 import {convexHull,ridgeRoofBatches,WAVERLEY_ROOF_PROFILE} from './waverley-roof.ts';
 import frontage from './data/waverley-frontage.json' with {type:'json'};
 import {WAVERLEY_LEVELS,fillSurface,meshAdder} from './waverley-mesh.ts';
-import {paintMaterial,waverleyStationPlan,waverleyStructureBatches} from './waverley-station-structure.ts';
+import {paintMaterial,waverleyStationPlan,waverleyStructureBatches,WAVERLEY_STRUCTURE} from './waverley-station-structure.ts';
 import {centralBlockBatches,WAVERLEY_CENTRAL_BLOCK_ID} from './waverley-station-block.ts';
 
 /** The mapped Waverley station roof (OSM relation/240040): drawn as the ridge-and-furrow shed, and flattened under by waverley-scene.ts. */
@@ -71,6 +71,7 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  // them. Use the drawn roof's pitch and phase rather than a second profile.
  cassettes.userData.snowRidges=new THREE.Vector2(WAVERLEY_ROOF_PROFILE.pitch,WAVERLEY_ROOF_PROFILE.phase);
  const stationRoof=waverleyStationRoof(data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)),plan=waverleyStationPlan(data,stationRoof,WAVERLEY_ROOF_CUTOUTS),structure=waverleyStructureBatches(plan);
+ roofGroup.userData.platformLampHeads=plan.lamps.flatMap(p=>[p.x,WAVERLEY_LEVELS.platform+WAVERLEY_STRUCTURE.lampRim-.02,p.z]);
  // Platforms: pale slab paving (R-wv1-b, R-wv1-b2: light grey flags, not asphalt), the KX coper/tactile/white-line strip on every track edge,
  // and darker faces (R-wv1-b: the platform wall under the coper is dark, weathered stone). Faces skip the seam between two polygons of one island.
  const platformTops=new Batch();

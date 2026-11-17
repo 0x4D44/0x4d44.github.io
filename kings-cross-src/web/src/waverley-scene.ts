@@ -105,8 +105,11 @@ export function buildWaverleyScene(options:WaverleyOptions={}):WaverleyScene {
  add(track,ballast,material('ballast'),'waverley-ballast');add(track,rails,material('steel'),'waverley-rail-heads');
  if(lines.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(lines,3));geometries.add(g);const lineMaterial=new THREE.LineBasicMaterial({color:0xc3c8cc});ownedMaterials.add(lineMaterial);const m=new THREE.LineSegments(g,lineMaterial);m.name='waverley-distant-rails';track.add(m);stats.drawCalls++;}
  if(sleepers.length){
-  const g=new THREE.BoxGeometry(2.6,.05,.25),m=new THREE.InstancedMesh(g,material('concrete'),sleepers.length),matrix=new THREE.Matrix4(),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
-  sleepers.forEach(([x,yaw,z],i)=>{q.setFromAxisAngle(up,yaw);matrix.compose(new THREE.Vector3(x,-.125,z),q,new THREE.Vector3(1,1,1));m.setMatrixAt(i,matrix);});m.instanceMatrix.needsUpdate=true;m.name='waverley-sleepers';track.add(m);geometries.add(g);stats.triangles+=sleepers.length*12;stats.drawCalls++;stats.sleepers=sleepers.length;
+  const g=new THREE.BoxGeometry(2.6,.05,.25);
+  // The downward face is buried below the ballast; retain top and four sides.
+  g.setIndex(Array.from(g.index!.array).filter((_n,i)=>i<18||i>=24));g.clearGroups();
+  const m=new THREE.InstancedMesh(g,material('concrete'),sleepers.length),matrix=new THREE.Matrix4(),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0);
+  sleepers.forEach(([x,yaw,z],i)=>{q.setFromAxisAngle(up,yaw);matrix.compose(new THREE.Vector3(x,-.125,z),q,new THREE.Vector3(1,1,1));m.setMatrixAt(i,matrix);});m.instanceMatrix.needsUpdate=true;m.name='waverley-sleepers';track.add(m);geometries.add(g);stats.triangles+=sleepers.length*g.index!.count/3;stats.drawCalls++;stats.sleepers=sleepers.length;
  }
  const station=buildWaverleyStation(data,ground);
  const parts={terrain,track,platforms:station.platforms,roof:station.roof,buildings};
