@@ -2,12 +2,12 @@
 // finite wet-surface footprint; Perth retains its existing rendering path.
 import * as THREE from 'three';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
-import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
+import { lampSurfaceAt, LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 
 /** Fade light away rather than blending in a fog-coloured rectangle. */
-export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false, source = false): void {
+export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false, source = false, extinction = false): void {
   material.onBeforeCompile = shader => {
     if(depth){
       shader.uniforms.uUrbanLampFog=surfaceUniforms.fog;
@@ -21,13 +21,18 @@ export function fadeLightInFog(material: THREE.Material, alpha = false, depth = 
         : alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;')+(depth?`
 // lamp-depth-begin
 gl_FragColor.rgb *= exp(-0.0045*max(0.0,vUrbanLampDistance-30.0)*uUrbanLampFog);
-// lamp-depth-end`:''));
+// lamp-depth-end${extinction?`
+// lamp-source-extinction-begin
+float sourceFog = smoothstep(0.65,0.9,uUrbanLampFog);
+gl_FragColor.rgb *= exp(-0.0055*max(0.0,vUrbanLampDistance-160.0)*sourceFog);
+// lamp-source-extinction-end`:''}`:''));
   };
-  material.customProgramCacheKey = () => (alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade')+(depth?'-depth':'')+(source?'-source':'');
+  material.customProgramCacheKey = () => (alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade')+(depth?'-depth':'')+(source?'-source':'')+(extinction?'-extinction':'');
 }
 
 export interface LampWeatherOptions {
   enhancedFog?: boolean;
+  softFog?: boolean;
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
@@ -37,6 +42,7 @@ export interface LampWeatherOptions {
   lightFog?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
+  reflectionRoadAt?: (sourceIndex:number)=>readonly [number,number];
   /** A window is recessed inside the wall; its receiver is outside on paving. */
   receiverAnchor?: 'head' | 'base';
 }
@@ -49,6 +55,7 @@ export interface LampWeatherOptions {
 export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly number[], halos: THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>,
   floor: {map:THREE.Texture;rect:THREE.Vector4}|undefined, indices: readonly number[], reach?:number, surface?:LampWetSurface, broken=false, optics:LampWeatherOptions={}) {
   const enhancedFog=!!optics.enhancedFog;
+  const softFog=enhancedFog&&!!optics.softFog;
   const roughReflections=!!(optics.kxOptics||optics.roughReflections);
   const group=new THREE.Group();group.name='street-lamp-weather';
   // Urban roads need intermediate receiver samples along a long streak.
@@ -57,6 +64,18 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
   geometry.setAttribute('reflectionHead',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>heads.slice(i*3,i*3+3))),3));
   if(optics.reflectionWidthAt)geometry.setAttribute('reflectionWidth',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionWidthAt!(i))),1));
   if(optics.reflectionTailAt)geometry.setAttribute('reflectionTail',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>optics.reflectionTailAt!(i))),1));
+  if(optics.reflectionRoadAt)geometry.setAttribute('reflectionRoad',new THREE.InstancedBufferAttribute(new Float32Array(indices.flatMap(i=>[...optics.reflectionRoadAt!(i)])),2));
+  if(optics.reflectionRoadAt&&surface){
+    // Keep the existing eight spans, placing their ends at the largest grade
+    // changes rather than draping 17.5m straight chords through the hillside.
+    const samples=indices.map(i=>{
+      const dir=[...optics.reflectionRoadAt!(i)],kerb=[4*dir[1]!,-4*dir[0]!];if(dir[0]!<0){dir[0]=-dir[0]!;dir[1]=-dir[1]!;}
+      const heights=Array.from({length:129},(_,k)=>{const d=-28+140*k/128;return lampSurfaceAt(surface,heads[i*3]!+kerb[0]!+dir[0]!*d,heads[i*3+2]!+kerb[1]!+dir[1]!*d)[0];});
+      const knots=[0,128];while(knots.length<9){let error=-1,best=-1;for(let j=1;j<knots.length;j++){const a=knots[j-1]!,b=knots[j]!;for(let k=a+1;k<b;k++){const e=Math.abs(heights[k]!-(heights[a]!+(heights[b]!-heights[a]!)*(k-a)/(b-a)));if(e>error){error=e;best=k;}}}knots.push(best);knots.sort((a,b)=>a-b);}
+      return knots.map(k=>k/128);
+    });
+    for(let j=0;j<3;j++)geometry.setAttribute('reflectionRoad'+j,new THREE.InstancedBufferAttribute(new Float32Array(samples.flatMap(s=>s.slice(j*3,j*3+3))),3));
+  }
   const floorWeights=pools.geometry.getAttribute('poolFloorWeight');
   geometry.setAttribute('poolFloorWeight',new THREE.InstancedBufferAttribute(new Float32Array(indices.map(i=>floorWeights.getX(i))),1));
   // Reflected light adds energy. In particular a black, unlit KX pane must
@@ -79,7 +98,7 @@ export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly nu
     if(reach!==undefined)shader.uniforms.uReflectionReach={value:reach};
     if(surface)Object.assign(shader.uniforms,{uLampSurface:{value:surface.map},uLampSurfaceRect:{value:surface.rect}});
     shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}
-${optics.reflectionWidthAt?'attribute float reflectionWidth;':''}${optics.reflectionTailAt?'\nattribute float reflectionTail;\nvarying float vReflectionTail;':''}
+${optics.reflectionRoadAt?'attribute vec2 reflectionRoad;\nattribute vec3 reflectionRoad0;\nattribute vec3 reflectionRoad1;\nattribute vec3 reflectionRoad2;\nvarying float vReflectionRoad;':''}${optics.reflectionWidthAt?'attribute float reflectionWidth;':''}${optics.reflectionTailAt?'\nattribute float reflectionTail;\nvarying float vReflectionTail;':''}
 attribute vec3 reflectionHead;
 attribute float poolFloorWeight;
 varying vec2 vReflectionUv;
@@ -131,13 +150,26 @@ reflectionCentre += along*reflectionTail*0.5;
 streakLength += reflectionTail;
 vReflectionTail = step(0.001,reflectionTail);
 // reflection-road-tail-end`:''}
-// reflection-urban-frame-end`:''}
+// reflection-urban-frame-end${optics.reflectionRoadAt?`
+// reflection-road-frame-begin
+if (length(reflectionRoad)>0.5) {
+  // Uphill roads can be visible above the eye. The local wet height/mask and
+  // ordinary depth test decide visibility, not an infinite tangent plane.
+  along = normalize(vec3(reflectionRoad.x,0.0,reflectionRoad.y));
+  along *= mix(-1.0,1.0,step(0.0,dot(along,cameraPosition-sourceFoot)));
+  across = vec3(along.z,0.0,-along.x);
+  reflectionCentre = vec3(lampHead.x,headReceiver.x,lampHead.z)+4.0*vec3(reflectionRoad.y,0.0,-reflectionRoad.x)+along*42.0;
+  streakLength = 140.0;
+  reflectionValid = 1.0;
+  vReflectionValid = smoothstep(0.0,0.5,headReceiver.y);
+}
+// reflection-road-frame-end`:''}`:''}
 ${broken?`float roughWidth = streakWidth;
 // reflection-rough-width-begin
 // A rough wet receiver spreads a distant light across more paving. Retain
 // the narrow source kernel, adding a blurred lobe around it in world metres.
 roughWidth = max(streakWidth,${optics.roughReflections?'0.55+0.014*min(length(cameraPosition-reflectionCentre),400.0)':'0.9+0.012*min(length(cameraPosition-reflectionCentre),200.0)'});
-// reflection-rough-width-end${optics.reflectionWidthAt?`
+// reflection-rough-width-end${optics.reflectionRoadAt?'\nif(length(reflectionRoad)>0.5)roughWidth *= 2.4;':''}${optics.reflectionWidthAt?`
 // reflection-source-width-begin
 roughWidth *= reflectionWidth;
 // reflection-source-width-end`:''}
@@ -148,8 +180,12 @@ float vertexDepth = max(1.0,-(viewMatrix*vec4(reflectionCentre+along*position.z*
 // reflection-rough-perspective-begin
 roughWidth *= clamp(vertexDepth/streakDepth,0.15,1.0);
 // reflection-rough-perspective-end
-vec4 reflectionEndA = projectionMatrix*viewMatrix*vec4(reflectionCentre-along*streakLength*0.5,1.0);
-vec4 reflectionEndB = projectionMatrix*viewMatrix*vec4(reflectionCentre+along*streakLength*0.5,1.0);
+${optics.reflectionRoadAt?`vec3 reflectionPointA = reflectionCentre-along*streakLength*0.5;
+vec3 reflectionPointB = reflectionCentre+along*streakLength*0.5;
+if(length(reflectionRoad)>0.5){reflectionPointA.y=lampReceiver(reflectionPointA.xz).x+0.07;reflectionPointB.y=lampReceiver(reflectionPointB.xz).x+0.07;}
+vec4 reflectionEndA = projectionMatrix*viewMatrix*vec4(reflectionPointA,1.0);
+vec4 reflectionEndB = projectionMatrix*viewMatrix*vec4(reflectionPointB,1.0);`:`vec4 reflectionEndA = projectionMatrix*viewMatrix*vec4(reflectionCentre-along*streakLength*0.5,1.0);
+vec4 reflectionEndB = projectionMatrix*viewMatrix*vec4(reflectionCentre+along*streakLength*0.5,1.0);`}
 // reflection-resolve-begin
 // Subpixel runs at the horizon read as a horizontal band, not a reflection.
 float verticalSpan = abs(reflectionEndA.y/reflectionEndA.w-reflectionEndB.y/reflectionEndB.w);
@@ -157,16 +193,24 @@ reflectionValid *= smoothstep(${optics.roughReflections?'0.008,0.024':'0.012,0.0
 // reflection-resolve-end
 vReflectionValid *= reflectionValid;
 `:''}
-vReflectionUv = position.xz * 2.0;
+${optics.reflectionRoadAt?'vReflectionRoad = step(0.5,length(reflectionRoad));\n':''}vReflectionUv = position.xz * 2.0;
 vReflectionFloor = poolFloorWeight;
 vReflectionWorld = reflectionCentre + across * position.x * ${broken?'roughWidth':'( 0.45 + 0.05 * lampHeight )'} + along * position.z * streakLength;
-${surface?`// reflection-receiver-vertex-begin
+${optics.reflectionRoadAt?`
+// reflection-road-drape-begin
+if(length(reflectionRoad)>0.5){
+  float roadU = reflectionRoad0.x;
+  ${Array.from({length:8},(_,j)=>`if(position.z>${(-.5+(j+.5)/8).toFixed(5)})roadU=reflectionRoad${Math.floor((j+1)/3)}.${'xyz'[(j+1)%3]};`).join('\n  ')}
+  vReflectionWorld = reflectionCentre+across*position.x*roughWidth+along*(roadU-0.5)*streakLength;
+  vReflectionUv.y = 2.0*roadU-1.0;
+}
+// reflection-road-drape-end`:''}${surface?`// reflection-receiver-vertex-begin
 vec2 vertexReceiver = lampReceiver(vReflectionWorld.xz);
 ${optics.roughReflections?'':'if (vertexReceiver.y > 0.001) '}vReflectionWorld.y = vertexReceiver.x + ${optics.reflectionTailAt?'mix(0.012,0.07,vReflectionTail)':'0.012'};
 // reflection-receiver-vertex-end
 `:''}vec4 mvPosition = viewMatrix * vec4( vReflectionWorld, 1.0 );
 gl_Position = projectionMatrix * mvPosition;${reach!==undefined?'\nif (vReflectionValid < 0.001) gl_Position = vec4(2.0,2.0,2.0,1.0);':''}`);
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}${optics.reflectionTailAt?'\nvarying float vReflectionTail;':''}
+    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>${receiverCommon}${reachCommon}${optics.reflectionRoadAt?'\nvarying float vReflectionRoad;':''}${optics.reflectionTailAt?'\nvarying float vReflectionTail;':''}
 varying vec2 vReflectionUv;
 varying vec3 vReflectionWorld;
 varying float vReflectionFloor;
@@ -186,7 +230,7 @@ reflectionOpen *= 1.0-smoothstep(0.65*uReflectionReach,uReflectionReach,sourceDi
 `:''}${surface?`// reflection-receiver-clip-begin
 vec2 receiver = lampReceiver(vReflectionWorld.xz);
 float onSurface = 1.0-smoothstep(0.04,0.16,abs(vReflectionWorld.y-receiver.x-0.012));
-reflectionOpen *= receiver.y*onSurface;
+reflectionOpen *= receiver.y*onSurface;${optics.reflectionRoadAt?'\nreflectionOpen *= mix(1.0,1.0-smoothstep(0.04,0.15,abs(vReflectionWorld.y-receiver.x)),vReflectionRoad);':''}
 // reflection-receiver-clip-end
 `:''}// reflection-alpha-begin
 // Three longitudinal Gaussian taps give a continuous, slightly blurred streak.
@@ -216,9 +260,9 @@ float wetSegments = 0.5+0.5*sin(${optics.roughReflections?'7.0':'13.0'}*wetY+wet
 gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(${optics.roughReflections?(optics.reflectionTailAt?'mix(0.12,0.24,vReflectionTail)+mix(0.88,0.76,vReflectionTail)*smoothstep(0.18,0.82,wetSegments)':'0.12+0.88*smoothstep(0.18,0.82,wetSegments)'):'0.035+0.965*smoothstep(0.28,0.75,wetSegments)'});
 // ${optics.kxOptics?'reflection-kx-roughness':'reflection-roughness'}-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
-// reflection-breakup-end`:''}`);
+// reflection-breakup-end${optics.reflectionRoadAt?'\ngl_FragColor.a = mix(gl_FragColor.a,min(0.65,8.0*gl_FragColor.a),vReflectionRoad);':''}`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}${optics.roughReflections?'-rough':''}${optics.reflectionTailAt?'-road-tail':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}${optics.roughReflections?'-rough':''}${optics.reflectionTailAt?'-road-tail':''}${optics.reflectionRoadAt?'-road-frame':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
   // Deep breaks remove the diffuse wet wash. Recover that energy in the lit
@@ -264,10 +308,11 @@ gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(
 // lamp-fog-size-end`)
       .replace('#include <logdepthbuf_vertex>',`// lamp-fog-screen-begin
 ${enhancedFog?`vLampFogDistance = length(cameraPosition-(modelMatrix*vec4(position,1.0)).xyz);\nvLampFogMast = ${scale?'step(1.5,lampHaloScale)':'0.0'};`:''}
-gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );
+gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );${softFog?'\ngl_PointSize *= 1.0+0.45*lampFogHalo*smoothstep(0.65,0.9,uLampFog)*(1.0-vLampFogMast);':''}
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
+    if(softFog)shader.fragmentShader=shader.fragmentShader.replace('#include <map_particle_fragment>','float lampAirAlpha = diffuseColor.a;\n#include <map_particle_fragment>');
     if(haze.length)shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHaze;${cores.length?'\nvarying float vLampFogCore;':''}`)
       .replace('#include <map_particle_fragment>',`float hazeSourceAlpha = diffuseColor.a;
 #include <map_particle_fragment>
@@ -322,7 +367,21 @@ float coreFog = smoothstep(0.65,0.9,uLampFog);
 gl_FragColor.a = mix(gl_FragColor.a,0.16*mastScatterAlpha*coreFog*coreProfile,vLampFogCore);
 // lamp-kx-core-end`:''}`:''}`:''}`:''}`);
   };
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'');
+  if(softFog){
+    const scatterBefore=halos.material.onBeforeCompile;
+    halos.material.onBeforeCompile=(shader,renderer)=>{
+      scatterBefore.call(halos.material,shader,renderer);
+      shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>',`// lamp-air-profile-begin
+float airRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+float airFog = smoothstep(0.65,0.9,uLampFog)*vLampFogHalo*(1.0-vLampFogMast);
+float airProfile = 0.17*exp(-4.5*airRadius*airRadius)*(1.0-smoothstep(0.80,1.0,airRadius));
+float airDepth = exp(-0.0065*max(0.0,vLampFogDistance-50.0));
+gl_FragColor.a = mix(gl_FragColor.a,lampAirAlpha*airProfile*airDepth,airFog);
+// lamp-air-profile-end
+#include <tonemapping_fragment>`);
+    };
+  }
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};

@@ -196,7 +196,7 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // conforming pools/strips rather than almost invisible panorama road pools.
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
   const approachSet=new Set(rowSpots);
-  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,lowPressureSodium:s=>approachSet.has(s),fogHaloSpread:18,
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,lowPressureSodium:s=>approachSet.has(s),fogHaloSpread:18,
     // Princes Street's narrow footway lies almost at eye level in the frozen
     // Balmoral view. A 16 m pool covered the whole road as one horizontal band.
     // Keep a local soft pool under each head, independently of its wet streak.
@@ -204,7 +204,7 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // The western Market Street receivers project 119–132 m from their heads
   // in the North Bridge camera. Keep these urban runs finite and road-clipped,
   // without discarding their visible wet paving at the generic 96 m limit.
-  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,reflectionReach:160,reflectionTail:s=>s.x<0&&s.z>100?64:0,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,reflectionRoad:s=>s.x<0&&s.z>100&&(s.x>-210||Math.sin(s.yaw)>0),reflectionReach:160,reflectionTail:s=>s.x<0&&s.z>100?64:0,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},
