@@ -418,14 +418,18 @@ export class AnimCrowd {
     const own = new Map(); for (const q of this.people) if (q.char) own.set(q.char.id, (own.get(q.char.id) || 0) + 1);
     // nobody who was on the last platform you saw (people review 2: five people stood on all three platforms visited), while the roster allows
     const rec = this._recent, f2 = rec && rec.size ? (c) => !rec.has(c.id) && (!filter || filter(c)) : filter;
-    // the mix of what people wear holds in each crowd, not only on average: a category already worn by 45 % of this crowd is rolled again (review 8: within 15 m, shorts
-    // were 73 % of one platform and trousers 62-80 % of three others; the rubric allows no garment on more than half)
-    const grp = (c) => (c.kid ? 'kid' : /skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
-    const at = this._pickAt, near = (q) => !at || at.x == null || Math.hypot(q.x - at.x, q.z - at.z) < 15;   // (review 9: counted over the whole crowd, one garment was still 54-62 % of the people within 15 m of the player: the people round where this one appears are counted)
+    // the mix of what people wear holds round each newcomer, not only on average (review 8: within 15 m shorts were 73 % of one platform, trousers 62-80 % of three
+    // others; the rubric allows no garment on more than half)
+    // review 10: re-rolling the category still left one garment over half the people near the player in every run (it gave up after four rolls, and counted children
+    // apart). Now a group already worn by 45 % of the people within 15 m is left out of the draw while anyone else fits; children count by what they wear.
+    const grp = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
+    const at = this._pickAt, near = (q) => !at || at.x == null || Math.hypot(q.x - at.x, q.z - at.z) < 15;
     const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj && near(q)) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
-    let pool = this._rollPool();
-    for (let k = 0; k < 4 && nOwn >= 6 && pool.length; k++) { const g = grp(pool[0]); if (pool.some((c) => grp(c) !== g) || (tally.get(g) || 0) < 0.45 * nOwn) break; pool = this._rollPool(); }
-    const c = (f2 !== filter && pickChar(this.chars, pool, f2, this.rng, own)) || pickChar(this.chars, pool, filter, this.rng, own);
+    const full = new Set(); if (nOwn >= 5) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
+    const okMix = (c) => !full.has(grp(c)), and = (f) => (f ? (c) => okMix(c) && f(c) : okMix);
+    let pool = this._rollPool(); for (let k = 0; k < 6 && pool.length && pool.every((c) => full.has(grp(c))); k++) pool = this._rollPool();
+    const free = (x) => (x && !(this.unique && IN_USE.get(x.id)) ? x : null), tryF = (f) => free(pickChar(this.chars, pool, f, this.rng, own));   // (an in-use pick is no pick in a unique crowd: try the next)
+    const c = (full.size && ((f2 !== filter && tryF(and(f2))) || tryF(and(filter)))) || (f2 !== filter && tryF(f2)) || pickChar(this.chars, pool, filter, this.rng, own);
     // unique (the game's crowds): nobody is drawn twice while they are anywhere in the page - an empty seat or a thinner platform rather than a twin (review 7: a full train
     // of 75 with 26 on the platform and 12 in the other train is 113 people from a roster of 99, and twins sat in one car)
     return c && this.unique && IN_USE.get(c.id) ? null : c;
@@ -1064,8 +1068,8 @@ export class AnimCrowd {
     const move = steerStep(p, dt, { hT: Math.atan2(-ux, -uz), want: Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3), d, stop: !!p.stopHere });
     p.steered = true; p.yawT = p.yaw;
     // even walking past, a step never ends inside another body (0.32 m, centre to centre) unless it moves away from them: the walker edges sideways round them instead
-    // (review 8: alighters on door routes passed 0.04-0.25 m apart for up to 1.8 s). Held up 4.5 s, they may squeeze through, so nobody is stuck for good
-    const fx = p.x - Math.sin(p.yaw) * move, fz = p.z - Math.cos(p.yaw) * move, held = pass && (p.blockT || 0) < 4.5 && !this._core(p, fx, fz, 0.32);
+    // (review 8: alighters on door routes passed 0.04-0.25 m apart for up to 1.8 s). Held up 3 s, they may squeeze through (4.5 s let a stair walker stand 8 s - review 10 run), so nobody is stuck for good
+    const fx = p.x - Math.sin(p.yaw) * move, fz = p.z - Math.cos(p.yaw) * move, held = pass && (p.blockT || 0) < 3 && !this._core(p, fx, fz, 0.3);
     if (!held) { p.x = fx; p.z = fz; } else p.sp = Math.max(0, (p.sp || 0) - 2 * STEER.BMAX * dt);
     if (pass) {   // walking past someone standing on the stairs: edge round them, sideways, rather than through them (gp8: 0.14-0.29 m for up to 12 s)
       const sx = -uz, sz = ux; let lat = 0;
