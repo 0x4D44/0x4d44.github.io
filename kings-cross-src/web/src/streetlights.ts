@@ -372,7 +372,18 @@ float luminaireBeam = mix(sodiumBeam,ledBeam,step(0.5,vPoolBeam.z));
 // Retain every accepted diffuse-pool sample. Only extend/intensify the road
 // beam; the original receiver mask, weather scale and peak ceiling remain.
 gl_FragColor.a = max(gl_FragColor.a,poolInputAlpha*luminaireBeam);
-// pool-luminaire-end`:''}`;
+// pool-luminaire-end
+// pool-source-colour-begin
+// Diffuse asphalt desaturates the broad skirt. Keep the lamp's actual colour
+// on its head/halo/reflection; LEDs light this receiver neutral white. A
+// separate tight lobe identifies each source without reducing road coverage.
+float poolEnergy = max(gl_FragColor.r,max(gl_FragColor.g,gl_FragColor.b));
+float poolWhite = step(0.5,vPoolBeam.z);
+vec3 poolSkirt = mix(vec3(1.0,0.8,0.55),vec3(1.0),poolWhite);
+gl_FragColor.rgb = max(gl_FragColor.rgb,poolEnergy*poolSkirt);
+float poolHead = exp(-7.0*dot(beamPosition,beamPosition));
+gl_FragColor.rgb += poolEnergy*poolHead*mix(vec3(0.9,0.35,0.0),vec3(0.8),poolWhite);
+// pool-source-colour-end`:''}`;
       }
       if (options.poolFloor) {
         shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
