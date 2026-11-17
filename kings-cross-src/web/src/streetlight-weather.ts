@@ -230,12 +230,21 @@ float scatter = vLampFogHalo*uLampFog;
 gl_FragColor.rgb = mix(gl_FragColor.rgb,gl_FragColor.rgb*vec3(1.2,0.85,0.45)+vec3(0.15,0.12,0.08),0.85*scatter);
 gl_FragColor.a *= exp(-0.0035*max(0.0,vLampFogDistance-35.0)*uLampFog);
 // lamp-fog-scatter-end
+// lamp-fog-mast-profile-begin
+float mastScatterAlpha = gl_FragColor.a;
 // lamp-fog-mast-begin
 // Multiple points describe one LED strip. Suppress their overlapping bright
 // centres, retaining the warm outer skirt instead of shrinking its diameter.
 float mastSkirt = smoothstep(0.15,0.55,2.0*length(gl_PointCoord-vec2(0.5)));
 gl_FragColor.a *= mix(1.0,mix(0.10,1.0,mastSkirt),vLampFogMast*vLampFogHalo*uLampFog);
-// lamp-fog-mast-end`:''}`);
+// lamp-fog-mast-end
+// A broad skirt needs a filled core: their combined radial response must
+// fall from the head, rather than exposing the skirt as a hollow ring.
+// Lower both lobes together to bound the overlapping LED-strip peak.
+float mastFog = vLampFogMast*vLampFogHalo*uLampFog;
+gl_FragColor.a = mix(gl_FragColor.a,0.35*(gl_FragColor.a+0.55*mastScatterAlpha*(1.0-mastSkirt)),mastFog);
+gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.1,1.0,0.8),mastFog);
+// lamp-fog-mast-profile-end`:''}`);
   };
   halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),

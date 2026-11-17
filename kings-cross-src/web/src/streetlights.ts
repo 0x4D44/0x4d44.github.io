@@ -170,8 +170,9 @@ export interface StreetLightOptions {
   fogHaloSpread?: number;
   /** Snow receives diffuse pools, never mirror streaks. */
   suppressSnow?: boolean;
-  /** Low-pressure sodium on the station approaches; Perth keeps its palette. */
-  lowPressureSodium?: boolean;
+  /** Low-pressure sodium on selected approaches, including fittings reused in
+   * the city batch. Other streets and Perth retain their reference palette. */
+  lowPressureSodium?: boolean | ((spot:LampSpot)=>boolean);
   /** Preserve a sodium core's orange hue at panorama scale. */
   coreTint?: boolean;
   haloSize?: number;
@@ -183,8 +184,8 @@ export interface StreetLightOptions {
 
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
-  const lightOf = (spot:LampSpot) => options.lowPressureSodium && spot.kind===LAMP_KIND.sodium
-    ? {halo:0xff8704,pool:0xff760c,strength:.13} : LAMP_LIGHT[spot.kind];
+  const lightOf = (spot:LampSpot) => spot.kind===LAMP_KIND.sodium && (typeof options.lowPressureSodium==='function'?options.lowPressureSodium(spot):options.lowPressureSodium)
+    ? {halo:0xff993c,pool:0xff9136,strength:.13} : LAMP_LIGHT[spot.kind];
   const headAt = options.headAt ?? headOf;
   const group = new THREE.Group();
   group.name = 'street-lamps';

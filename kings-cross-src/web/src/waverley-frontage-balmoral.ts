@@ -243,5 +243,5 @@ export function balmoralBody(b:BalmoralBatches,input:BalmoralInput,tower:{centre
  const ne=insetRing(roof,1.0)[corner(75.3,-138.5)];
  prism(b.paint,ne[0],ne[1],1.9,P+19,P+L.cornice+2,12,stone,0,false);
  revolve(b.paint,ne[0],ne[1],[[2.0,P+L.cornice+2],[2.0,P+L.cornice+2.3],[1.7,P+L.cornice+3.1],[.9,P+L.cornice+4],[.2,P+L.cornice+4.8],[0,P+L.cornice+5.4]],12,lead);
- return {features};
+ return {features,corners:{west,ne}};
 }

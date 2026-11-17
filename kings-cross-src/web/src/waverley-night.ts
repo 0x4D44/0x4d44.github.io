@@ -55,6 +55,8 @@ reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
     const within = `step(${(box.min.x-5).toFixed(3)},${p}.x)*step(${p}.x,${(box.max.x+5).toFixed(3)})*step(${(box.min.z-5).toFixed(3)},${p}.z)*step(${p}.z,${(box.max.z+5).toFixed(3)})`;
     const base=scene.getObjectByName('waverley-frontage')?.userData.frontage?.P??box.max.y-BALMORAL_LEVELS.cornice;
     const height=`(${p}.y-${base.toFixed(3)})`;
+    const corners=scene.getObjectByName('waverley-frontage')?.userData.frontage?.hotel?.corners as {west:readonly number[];ne:readonly number[]}|undefined;
+    const roofZone=corners?`smoothstep(3.0,4.0,length(${p}.xz-vec2(${corners.ne.join(',')})))*smoothstep(4.0,5.0,length(${p}.xz-vec2(${corners.west.join(',')})))`:'0.0';
     patch('waverley-balmoral-facade',[0,0,0],'1.0',false,`
 // balmoral-bands-begin
 float hotelHeight = ${height};
@@ -79,6 +81,12 @@ trimBeam += 0.42*smoothstep(30.2,30.35,trimHeight)*exp(-max(0.0,trimHeight-30.35
 // A separate wash on the high gables and chimney copes keeps their stone
 // gold under the neutral sky fill, without lifting the corner-cap shadows.
 trimBeam += 0.30*smoothstep(34.5,35.5,trimHeight)*exp(-max(0.0,trimHeight-35.5)/5.0);
+// The dormers, gables and stacks have one continuous cornice uplight.
+// Their built bases start below the old 35 m wash; lighting only above it
+// put a dark waist below bright chimney copes. Corner domes retain their
+// own shoulder/bell optics, using the same centres as their built geometry.
+float roofBeam = 0.025+0.90*smoothstep(24.7,25.5,trimHeight)*exp(-max(0.0,trimHeight-25.5)/10.0);
+trimBeam = mix(trimBeam,roofBeam,(${roofZone})*(1.0-smoothstep(39.5,40.0,trimHeight)));
 float trimFacing = 0.50+0.50*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.8,0.6,0.2))));
 totalEmissiveRadiance += uStationLampLevel*vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*trimZone*trimBeam*trimFacing;
 // balmoral-trim-end

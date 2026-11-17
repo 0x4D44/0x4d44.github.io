@@ -45,7 +45,7 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
 /** Nearby urban heads only: no reflective quads over the wider countryside.
  * Existing inferred street positions and sodium/LED kinds are retained. */
 export function urbanLampOptions(surface?:LampWetSurface): StreetLightOptions {
-  return {fog:true,enhancedFog:true,suppressSnow:true,lowPressureSodium:true,coreTint:true,analyticPool:true,poolCeiling:.20,poolFocus:1.4,poolSurface:surface,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:2.6,haloScaleAt:s=>s.mast?2:1,reflectionReach:96,reflectionSurface:surface,reflectionBroken:true,
+  return {fog:true,enhancedFog:true,suppressSnow:true,coreTint:true,analyticPool:true,poolCeiling:.20,poolFocus:1.4,poolSurface:surface,poolWeather:true,weatherEffects:true,coreSize:1.5,haloSize:2.6,haloScaleAt:s=>s.mast?2:1,reflectionReach:96,reflectionSurface:surface,reflectionBroken:true,
     headAt:s=>s.mast?[s.x,s.y+(MAST_STRIP[0]+MAST_STRIP[1])/2,s.z]:headOf(s),
     poolRadiusAt:()=>8,
     poolSizeAt:s=>s.mast?[12,2.8]:undefined,
