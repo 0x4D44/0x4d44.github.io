@@ -511,6 +511,11 @@ export class AnimCrowd {
     g.setAttribute('skinIndex', new T.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new T.BufferAttribute(sw, 4));
     return g;
   }
+  /** is (x, z) in this car (its frame) within r of the bag at a seated rider's feet? (it stands in front of their toes, about half a metre in from the hips) */
+  _bagNear(car, x, z, r = 0.5) {
+    for (const q of this.people) { if (q.parent !== car || q.state !== 'sit' || !q.bag || !q.obj) continue; const bx = q.x - Math.sign(q.x || 1) * (q.bag.kind === 'trolley' ? 0.62 : 0.5); if (Math.hypot(bx - x, q.z - z) < r + (q.bag.kind === 'trolley' ? 0.08 : 0)) return true; }
+    return false;
+  }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
@@ -780,7 +785,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt)$/.test(c.id)) return false;   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car)
+    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress)$/.test(c.id)) return false;   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }

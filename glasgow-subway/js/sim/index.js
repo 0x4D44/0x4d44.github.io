@@ -179,12 +179,16 @@ class Sim {
       const nStand = low ? 1 : load > 0.9 ? 3 + Math.round((load - 0.9) * 14) : load > 0.4 ? 2 : 1, gapS = load > 0.9 ? 0.62 : 0.9, standing = [], share = Math.round(sc.max * (ci + 1) / tv.cars.length) - Math.round(sc.max * ci / tv.cars.length);
       for (let i = slots.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)), t = slots[i]; slots[i] = slots[j]; slots[j] = t; }
       const seated = slots.slice(0, Math.max(1, Math.min(share - nStand, Math.round(Math.min(1, load) * slots.length))));
+      // the seated first: then the standing keep clear of the bags at their feet (review 12: standing riders' shins stood in seated riders' floor bags for 30-120 s)
+      let got = sc.seat(car, seated); for (const q of got) if (q.seatRef) q.seatRef.p = q;
+      // two bags at the feet of next-door seats stood inside each other (review 12): of two neighbours on one side, the second comes with no bag
+      for (const q of got) if (q.bag && got.some((o) => o !== q && o.bag && o.bagRig && Math.abs(o.z - q.z) < (Math.sign(o.x) === Math.sign(q.x) ? 0.7 : 0.6) && got.indexOf(o) < got.indexOf(q))) sc._bagSet(q, null);   // (or straight across the aisle: a wheeled case at the knees reaches the middle of the car)
       for (let k = 0; k < nStand * 8 && standing.length < nStand; k++) {
         const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.04 + rng() * 0.1 : 0.14 + rng() * 0.16);
-        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75))) continue;
+        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) || sc._bagNear(car, x, z)) continue;
         standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.55 ? 'pole' : 'stand', ceilAt });
       }
-      let got = sc.seat(car, seated.concat(standing)); for (const q of got) if (q.seatRef) q.seatRef.p = q;
+      got = got.concat(sc.seat(car, standing));
       // a car left empty (nobody fitted the seat or spot drawn for it: the ceiling and walls rule some people out of some seats) tries its other seats in turn
       // (and a car reached once the crowd is at its cap - the head cars took boarders - still gets that one rider)
       if (!got.length) { const m0 = sc.max; sc.max = Math.max(sc.max, sc.people.length + 1); for (let k = 0; !got.length && k < slots.length; k++) { got = sc.seat(car, [slots[k]]); for (const q of got) if (q.seatRef) q.seatRef.p = q; } sc.max = m0; }
@@ -271,11 +275,12 @@ class Sim {
     const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2); if (ci < 0 || !q.char) return;
     if (sc.people.some((r) => r.char === q.char)) return;   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
     const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
-    let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
+    let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
     let spot = null;
     if (seat) { seat.p = q; spot = { x: Math.sign(seat.x) * 0.2, z: seat.z }; }
     else for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
-      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
+      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc._bagNear(car, c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
     const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }
     q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
     const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;
