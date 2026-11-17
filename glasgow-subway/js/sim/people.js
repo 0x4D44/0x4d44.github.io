@@ -466,6 +466,41 @@ export class AnimCrowd {
     try { p.bagRig = wearBag(this.THREE, p.obj, p.bag, this._bagFit(p.char), p.char.metaH || 1.75); } catch (e) { p.bagRig = null; }
     if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
   }
+  /** Seated, a skirt or dress hung straight down from the hips as a ring round the knees, the bare thighs inside it (review 9: ya_smile_dress, elder_woman_dress,
+   *  teen_skirt). A seated wearer's garment meshes take a second set of skin weights, made once per character and model: below the hips each vertex is
+   *  handed over to the thigh on its own side, from nothing at the hip to all of it at the knee, so the cloth lies along the thighs and falls from the knees. */
+  _skirtSit(p, on) {
+    p.skirtSit = on; if (!p.obj) return;
+    p.obj.traverse((m) => {
+      if (!m.isSkinnedMesh || !m.material || !/^cloth_/i.test(m.material.name || '') || /shoe|boot|flats|sock|hose|camisole|top|blouse|shirt|sweater|jacket/i.test(m.material.name)) return;
+      const g0 = m.userData.standGeo || m.geometry; m.userData.standGeo = g0;
+      if (!on) { m.geometry = g0; return; }
+      let gs = g0.userData.sitGeo;
+      if (gs === undefined) { gs = g0.userData.sitGeo = this._sitWeights(m, g0) || null; }
+      if (gs) m.geometry = gs;
+    });
+  }
+  _sitWeights(m, g0) {
+    const T = this.THREE, sk = m.skeleton, names = sk.bones.map((b) => this.canon(b.name)), ix = (n) => names.indexOf(n);
+    const tl = ix('thigh_l'), tr = ix('thigh_r'), cl = ix('calf_l'), cr = ix('calf_r'); if (tl < 0 || tr < 0 || cl < 0 || cr < 0) return null;
+    const bindPos = (i) => new T.Vector3().setFromMatrixPosition(sk.boneInverses[i].clone().invert());   // the joint in the mesh's bind space
+    const hl = bindPos(tl), hr = bindPos(tr), kl = bindPos(cl), kr = bindPos(cr), hipY = (hl.y + hr.y) / 2, kneeY = (kl.y + kr.y) / 2, midX = (hl.x + hr.x) / 2, sl = Math.sign(hl.x - midX) || 1;
+    if (!(hipY - kneeY > 0.1)) return null;
+    const g = g0.clone(), P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if (!SI || !SW) return null;
+    const si = new Float32Array(SI.count * 4), sw = new Float32Array(SW.count * 4);
+    for (let i = 0; i < P.count; i++) {
+      const y = P.getY(i), x = P.getX(i), u = (hipY - 0.02 - y) / (hipY - kneeY), t = u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+      const idx = [SI.getX(i), SI.getY(i), SI.getZ(i), SI.getW(i)], w = [SW.getX(i), SW.getY(i), SW.getZ(i), SW.getW(i)];
+      if (t > 0) {
+        const th = (x - midX) * sl >= 0 ? tl : tr; for (let k = 0; k < 4; k++) w[k] *= 1 - t;
+        let at = idx.indexOf(th); if (at < 0) { at = w.indexOf(Math.min(...w)); idx[at] = th; w[at] = 0; } w[at] += t;
+        const sum = w[0] + w[1] + w[2] + w[3]; for (let k = 0; k < 4; k++) w[k] /= sum || 1;
+      }
+      for (let k = 0; k < 4; k++) { si[i * 4 + k] = idx[k]; sw[i * 4 + k] = w[k]; }
+    }
+    g.setAttribute('skinIndex', new T.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new T.BufferAttribute(sw, 4));
+    return g;
+  }
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
@@ -732,12 +767,10 @@ export class AnimCrowd {
     // a knee-length winter coat (punkduck_winter_coat, MakeHuman's rig) balloons into a crumpled shell over the thighs in every sit clip: its wearers stand (review 4)
     if (c.longCoat === undefined) { c.longCoat = false; const n = c.node || c.lodNode; if (n) n.traverse((o) => { if (o.isMesh && o.material && /^cloth_coat\./i.test(o.material.name || '')) c.longCoat = true; }); }
     if (c.longCoat) return false;
-    // ... and three skirts that break on a seat in every sit clip (review 7, sit_idle): woman_coat's suit skirt splits over the thighs, woman_midi's flares into a shelf
-    // over the knees, teen_tube's mini balloons out from the hips. Their wearers stand too (the other skirts and dresses sit)
-    if (/^(woman_coat|woman_midi|teen_tube|woman_mini|adult_beret)$/.test(c.id)) return false;   // (review 8 added woman_mini, whose mini balloons, and adult_beret, whose skirt tears at the knees)
-    // ... and the kilts: seated, a kilt hangs straight down behind the legs and the bare thighs come out through its front, in every sit clip (review 8, all five
-    // wearers, seen in a train in the game). Draping it over the thighs is more than the runtime fit can do, so kilt wearers stand on the train (not the trews, nor woman_sash's dress)
-    if (/kilt|^highland$/.test(c.outfit)) return false;
+    // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
+    // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
+    // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
+    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt)$/.test(c.id)) return false;
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
@@ -791,6 +824,7 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
+      if ((p.state === 'sit') !== !!p.skirtSit && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p));   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update)
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
