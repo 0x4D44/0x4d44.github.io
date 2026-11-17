@@ -117,9 +117,29 @@ if (vMidlandBrickBody > 0.5 && midlandLevel > 0.003) {
   reflectedLight.indirectDiffuse *= bodyBaseFill*bodyGrade;
   totalEmissiveRadiance = midlandBrickDimmed/mix(1.0,0.05,bodyLoss)*bodyGrade;
 }
-// midland-body-grade-end`:''}`);
+// midland-body-grade-end
+// midland-end-grade-begin
+// The appended end towers include the west pavilion. Give their lower
+// stages the same grade as the range, fading back to the accepted top
+// response over the upper stage; above 25m the old response is exact.
+if (vMidlandBrickBody < 0.5 && midlandLevel > 0.003 && vMidlandHeight < 25.0) {
+  float endBlend = midlandLevel*(1.0-smoothstep(24.0,25.0,vMidlandHeight));
+  float endLoss = midlandLevel*midlandUpper;
+  float endGrade = mix(1.0,mix(0.42,1.15,smoothstep(8.0,20.0,vMidlandHeight)),midlandLevel*smoothstep(4.5,7.5,vMidlandHeight));
+  float endBaseFill = (1.0-0.70*endLoss)/(1.0-0.82*endLoss);
+  // Preserve the range's recovered height/brick-texture intensity. The end
+  // towers use a red-brown brick tint, rather than the former yellow floor.
+  vec3 endTint = vec3(1.0,0.43,0.265);
+  vec3 endDirect = endTint*(reflectedLight.directDiffuse*endBaseFill*endGrade).r;
+  vec3 endIndirect = endTint*(reflectedLight.indirectDiffuse*endBaseFill*endGrade).r;
+  reflectedLight.directDiffuse = mix(reflectedLight.directDiffuse,endDirect,endBlend);
+  reflectedLight.indirectDiffuse = mix(reflectedLight.indirectDiffuse,endIndirect,endBlend);
+  vec3 endEmission = endTint*(midlandBrickDimmed/mix(1.0,0.05,endLoss)*endGrade).r;
+  totalEmissiveRadiance = mix(totalEmissiveRadiance,endEmission,endBlend);
+}
+// midland-end-grade-end`:''}`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v4-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v5-${key}-${base.toFixed(6)}`;
   }
 }
 

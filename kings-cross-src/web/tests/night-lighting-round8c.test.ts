@@ -72,3 +72,48 @@ test('frozen Midland brick rows stay red-brown with a smooth hue gradient, an un
   for(const [x,y,expected] of [[680,365,1],[1150,300,0],[1150,460,0]]){const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(x!/640-1,1-y!/400),camera);const hit=ray.intersectObject(built.group,true)[0]!;assert.equal(hit.object.name,'landmarks-brickRed');assert.equal(mask.getX(hit.face!.a),expected,'the tower remains outside the body correction');}
  }finally{built.dispose();}
 });
+
+const ends=JSON.parse(readFileSync(new URL('./fixtures/midland-night-ends.json',import.meta.url),'utf8')) as {regions:Record<string,{startY:number;endY:number;emptyBrickRows:number[];samples:[number,number,number,number[],number[],number,number[],number][]}>};
+for(const region of ['tower','pavilion'])test(`Midland ${region} brick rows join the red-brown range without a hue band`,()=>{
+ const built=addLandmarks(new THREE.Scene(),data);
+ try{
+  const material=(built.group.getObjectByName('landmarks-brickRed') as THREE.Mesh).material as THREE.MeshLambertMaterial;addRoofShade(material);
+  const lib=THREE.ShaderLib.lambert!,shader={uniforms:{},vertexShader:lib.vertexShader,fragmentShader:lib.fragmentShader};material.onBeforeCompile(shader as never,undefined as never);
+  const before=['midland-night','midland-brick-floor','midland-body-grade'].map(name=>block(shader.fragmentShader,name)).join('\n');
+  const endGrade=block(shader.fragmentShader,'midland-end-grade');
+  const translate=(source:string)=>source.replaceAll('reflectedLight.directDiffuse','direct').replaceAll('reflectedLight.indirectDiffuse','indirect').replace(/\bFLOOD\b/g,String(material.defines!.FLOOD));
+  const run=(code:string,height:number,bodyMask:number,diffuse:readonly number[],emission:readonly number[],albedo:readonly number[],night=1,scope=1)=>{
+   const vars={vMidlandNight:[scope,0],vMidlandHeight:height,vMidlandBrickBody:bodyMask,uMidlandNight:night,diffuseColor:[...albedo,1],direct:[...diffuse],indirect:[0,0,0],totalEmissiveRadiance:[...emission]};new Glsl('').run(translate(code),{vars});return vars;
+  };
+  const rows=new Map<number,number[][]>(),f=ends.regions[region]!;
+  for(const [,,h,mainRGB,darkRGB,bodyMask,acceptedRGB,row] of f.samples){
+   const base=inverse(mainRGB),dark=inverse(darkRGB),u=THREE.MathUtils.smoothstep(h,6,18),baseFill=1-.7*u,dimFill=1-.82*u,emScale=1-.95*u;
+   const emission=base.map((b,i)=>(b-dark[i]!*baseFill/dimFill)/(1-emScale*baseFill/dimFill));
+   const incident=dark.map((b,i)=>(b-emission[i]!*emScale)/dimFill);
+   const beam=.28*(.04+.96*Math.exp(-h/5)),albedo=emission.map((e,i)=>e/(beam*[1,.82,.5][i]!));
+   const old=run(before,h,bodyMask,incident,emission,albedo);
+   const lit=(v:typeof old)=>v.direct.map((n,i)=>n+v.indirect[i]!+v.totalEmissiveRadiance[i]!);
+   const accepted=inverse(acceptedRGB),prior=lit(old);
+   // Calibrate the incident fill to the actual accepted 8c pixels before
+   // executing the new chroma grade; it removes inverse-ACES quantisation
+   // error without imposing a hue or smoothing the resulting rows.
+   const calibrated=bodyMask<.5?incident.map((n,i)=>n+(accepted[i]!-prior[i]!)/dimFill):incident;
+   const r=run(before+endGrade,h,bodyMask,calibrated,emission,albedo);
+   const rgb=bodyMask<.5?render(lit(r)):acceptedRGB;
+   if(!rows.has(row))rows.set(row,[]);rows.get(row)!.push(rgb);
+  }
+  let previous:number|undefined;
+  for(let y=f.startY;y<f.endY;y+=8){
+   const samples=rows.get(y);if(!samples){assert.ok(f.emptyBrickRows.includes(y),`${region}: no projected brick samples at y${y}`);continue;}
+   const rgb=[0,1,2].map(i=>median(samples.map(c=>c[i]!))),h=hue(rgb);
+   assert.ok(h>=8&&h<=25,`${region} row y${y}: RGB ${rgb}, hue ${h.toFixed(2)} must stay 8–25deg`);
+   if(previous!==undefined)assert.ok(Math.abs(h-previous)<=5,`${region} adjacent brick rows jump ${Math.abs(h-previous).toFixed(2)}deg at y${y}`);previous=h;
+  }
+  assert.ok(endGrade,'lower tower and pavilion share the range grade');
+  for(const [h,bodyMask,night,scope] of [[25.61,0,1,1],[30,0,1,1],[19,1,1,1],[15,0,0,1],[15,0,1,0]]){
+   const args=[h!,bodyMask!,[.04,.01,.003],[.006,.002,.001],[.4,.12,.05],night!,scope!] as const;
+   const current=run(before+endGrade,...args),prior=run(before,...args);
+   assert.deepEqual(current,prior,'the tower top, range, day and other landmarks stay exact');
+  }
+ }finally{built.dispose();}
+});
