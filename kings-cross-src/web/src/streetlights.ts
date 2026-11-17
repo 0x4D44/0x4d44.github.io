@@ -172,6 +172,8 @@ export interface StreetLightOptions {
   mastHaze?: boolean;
   /** KX-only broad mast air glow, directional pool core and rough wet streaks. */
   kxOptics?: boolean;
+  /** KX window/lamp emission has a longer fog tail than opaque surfaces. */
+  lightFog?: boolean;
   /** Snow receives diffuse pools, never mirror streaks. */
   suppressSnow?: boolean;
   /** Low-pressure sodium on selected approaches, including fittings reused in
@@ -243,7 +245,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const halos = new THREE.Points(haloGeometry, haloMaterial);
   // Light has no solid surface, even when hidden by day: sightlines pass through.
   halos.raycast = (): void => {};
-  if (options.fog) fadeLightInFog(haloMaterial);
+  if (options.fog) fadeLightInFog(haloMaterial,false,false,!!(options.kxOptics || options.lightFog));
   if (options.haloScaleAt) {
     haloGeometry.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(haloScales,1));
     const before=haloMaterial.onBeforeCompile;
@@ -267,7 +269,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(options.coreTint ? colours : colours.map(c => .92 + .08 * c), 3));
     const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
-    if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog);
+    if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog,!!(options.kxOptics || options.lightFog));
     cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
     cores.raycast = (): void => {};
     cores.frustumCulled = false; cores.renderOrder = 6; cores.visible = false;
@@ -375,7 +377,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {

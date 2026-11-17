@@ -7,7 +7,7 @@ import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 
 /** Fade light away rather than blending in a fog-coloured rectangle. */
-export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false): void {
+export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false, source = false): void {
   material.onBeforeCompile = shader => {
     if(depth){
       shader.uniforms.uUrbanLampFog=surfaceUniforms.fog;
@@ -16,12 +16,14 @@ export function fadeLightInFog(material: THREE.Material, alpha = false, depth = 
       shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uUrbanLampFog;\nvarying float vUrbanLampDistance;');
     }
     shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
-      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;')+(depth?`
+      'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', source
+        ? `gl_FragColor.${alpha?'a':'rgb'} *= max(1.0-fogFactor,exp(-1.8*max(0.0,vFogDepth-fogNear)/max(1.0,fogFar-fogNear)));`
+        : alpha ? 'gl_FragColor.a *= 1.0 - fogFactor;' : 'gl_FragColor.rgb *= 1.0 - fogFactor;')+(depth?`
 // lamp-depth-begin
 gl_FragColor.rgb *= exp(-0.0045*max(0.0,vUrbanLampDistance-30.0)*uUrbanLampFog);
 // lamp-depth-end`:''));
   };
-  material.customProgramCacheKey = () => (alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade')+(depth?'-depth':'');
+  material.customProgramCacheKey = () => (alpha ? 'street-lamp-fog-alpha' : 'street-lamp-fog-fade')+(depth?'-depth':'')+(source?'-source':'');
 }
 
 export interface LampWeatherOptions {
@@ -29,6 +31,7 @@ export interface LampWeatherOptions {
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
+  lightFog?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
   /** A window is recessed inside the wall; its receiver is outside on paving. */
@@ -283,12 +286,12 @@ float hazeProfile = (1.30*exp(-12.0*hazeRadius*hazeRadius)+0.12*exp(-1.45*hazeRa
 gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*hazeProfile,vLampFogHaze);
 // lamp-mast-haze-end${optics.kxOptics?`
 // lamp-kx-haze-begin
-float kxHazeProfile = (0.82*exp(-12.0*hazeRadius*hazeRadius)+0.08*exp(-1.45*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
+float kxHazeProfile = (0.88*exp(-4.7*hazeRadius*hazeRadius)+0.12*exp(-1.1*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
 gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*kxHazeProfile,vLampFogHaze);
-gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.0,0.9,0.45),vLampFogHaze);
+gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.3,1.25,0.85),vLampFogHaze);
 // lamp-kx-haze-end`:''}`:''}`:''}`);
   };
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
     dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};

@@ -10,6 +10,7 @@
 // Nothing here fetches anything: the weather arrives as a `WeatherState` (weather.ts).
 import * as THREE from 'three';
 import { createPlatformLamps } from './station-lamps.ts';
+import { createKxFogMaterials } from './kx-night-fog.ts';
 import type { Pt } from '../../core/geo.ts';
 import { PLATFORM_HEIGHT } from '../../core/scene.ts';
 import { cloudDeck, DAY_EXPOSURE, fogRange, lampLevelFor, skyRig, smoothstep } from '../../core/daylight.ts';
@@ -401,6 +402,7 @@ export const RAIL_NIGHT = 0.3;
 
 export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
+  const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
   scene.add(precip.group);
   const nightLights = sites ? createNightLights(sites) : null;
@@ -467,7 +469,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         }
         // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
         // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
-        if (lambert.isMeshLambertMaterial) addRoofShade(lambert);
+        if (lambert.isMeshLambertMaterial && !kxFogMaterials?.owns(m)) addRoofShade(lambert);
         if (m.name === 'concourse-soffit') soffit = m as THREE.MeshBasicMaterial;
         const emissive = m as Emissive;
         if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && (emissiveBuilt.has(emissive) || emissive.emissive.getHex() !== 0) && !standIns.has(emissive)) {
@@ -478,6 +480,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       }
     });
     dialLights?.scan(scene);
+    kxFogMaterials?.scan(scene);
   };
   rescan();
 
@@ -611,13 +614,14 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         // Both gates leave daytime, rain and all other scenes unchanged.
         const cityFog = kingsCrossNightFog ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
         if (cityFog > 0) {
-          const warm: Rgb = [.28,.22,.145];
+          const warm: Rgb = [.255,.238,.168];
           const tint = (c: Rgb, weight: number): Rgb => [c[0]+(warm[0]-c[0])*weight,c[1]+(warm[1]-c[1])*weight,c[2]+(warm[2]-c[2])*weight];
           rig.fog = tint(rig.fog,cityFog);
           rig.dome.horizon = tint(rig.dome.horizon,cityFog);
           rig.dome.zenith = tint(rig.dome.zenith,.45*cityFog);
         }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
+        kxFogMaterials?.setLevel(cityFog);
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
       }
@@ -638,10 +642,12 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         if (kingsCrossNightFog) {
           const cityFog = lampLevelFor(state.sun.elevationDeg) * smoothstep(.65,.9,state.rig.fogAmount);
           // The old 0.2*far near plane left the entire station frontage clear.
-          // Consume the visibility range even from the elevated overview.
+          // Above the low fog layer, only part of the slant path crosses dense
+          // air. A fixed 240m far plane erased every roof in the 220m overview.
           if (cityFog > 0) {
-            scene.fog.near += (4-scene.fog.near)*cityFog;
-            scene.fog.far += (Math.max(60,state.weather.visibilityM*.8)-scene.fog.far)*cityFog;
+            const above = Math.max(0,f.camera.position.y-40);
+            scene.fog.near += (4+.35*above-scene.fog.near)*cityFog;
+            scene.fog.far += (Math.max(60,state.weather.visibilityM*.8)+2.4*above-scene.fog.far)*cityFog;
           }
         }
         rgb(scene.fog.color, state.rig.fog);
@@ -655,6 +661,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       applyCover(null);
       precip.dispose();
       dialLights?.dispose();
+      kxFogMaterials?.dispose();
       platformLamps?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
