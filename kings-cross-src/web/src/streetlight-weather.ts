@@ -124,7 +124,7 @@ ${broken?`float roughWidth = streakWidth;
 // reflection-rough-width-begin
 // A rough wet receiver spreads a distant light across more paving. Retain
 // the narrow source kernel, adding a blurred lobe around it in world metres.
-roughWidth = max(streakWidth,0.9+0.012*min(length(cameraPosition-reflectionCentre),200.0));
+roughWidth = max(streakWidth,${optics.roughReflections?'0.55+0.014*min(length(cameraPosition-reflectionCentre),400.0)':'0.9+0.012*min(length(cameraPosition-reflectionCentre),200.0)'});
 // reflection-rough-width-end${optics.reflectionWidthAt?`
 // reflection-source-width-begin
 roughWidth *= reflectionWidth;
@@ -188,7 +188,7 @@ gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * st
 gl_FragColor.a *= 1.0-smoothstep(0.02,0.20,uLampSnow);
 // reflection-snow-end`:''}${reach!==undefined?`
 // reflection-edge-begin
-gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothstep(0.65,1.0,abs(vReflectionUv.y)));
+gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothstep(${optics.roughReflections?'0.85':'0.65'},1.0,abs(vReflectionUv.y)));
 // reflection-edge-end`:''}${broken?`
 // reflection-breakup-begin
 float seed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
@@ -197,11 +197,11 @@ ${roughReflections?`// ${optics.kxOptics?'reflection-kx-roughness':'reflection-r
 // former shallow horizontal bars inside a parallel-sided post silhouette.
 float wetSeed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
 float wetY = vReflectionUv.y;
-float wetTaper = 0.10+0.90*pow(max(0.0,1.0-wetY*wetY),1.75);
-float wetWander = 0.10*sin(9.0*wetY+wetSeed);
+float wetTaper = ${optics.roughReflections?'0.12+0.88*pow(max(0.0,0.5-0.5*wetY),0.60)':'0.10+0.90*pow(max(0.0,1.0-wetY*wetY),1.75)'};
+float wetWander = ${optics.roughReflections?'0.035':'0.10'}*sin(9.0*wetY+wetSeed);
 float wetAcross = (vReflectionUv.x-wetWander)/wetTaper;
-float wetSegments = 0.5+0.5*sin(13.0*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
-gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(0.035+0.965*smoothstep(0.28,0.75,wetSegments));
+float wetSegments = 0.5+0.5*sin(${optics.roughReflections?'7.0':'13.0'}*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
+gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(${optics.roughReflections?'0.12+0.88*smoothstep(0.18,0.82,wetSegments)':'0.035+0.965*smoothstep(0.28,0.75,wetSegments)'});
 // ${optics.kxOptics?'reflection-kx-roughness':'reflection-roughness'}-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
 // reflection-breakup-end`:''}`);
@@ -229,19 +229,24 @@ gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
     else strips.set(key,{point:new THREE.Vector3().fromBufferAttribute(p,i),colour:new THREE.Vector3().fromBufferAttribute(c,i),scale:scale.getX(i),count:1});
   }
   const haze=[...strips.values()];haze.forEach(s=>s.point.y/=s.count);
-  const fogFlags=new Float32Array(p.count*2+haze.length);
-  const positions=new Float32Array(p.count*6+haze.length*3),colors=new Float32Array(p.count*6+haze.length*3);
-  positions.set(p.array);positions.set(p.array,p.count*3);colors.set(c.array);colors.set(c.array,p.count*3);fogFlags.fill(1,p.count);
+  // One independent inner lobe per KX strip, in the same Points draw. Scaling
+  // the much wider air lobe barely changed the observed 10–30px shoulders.
+  const cores=optics.kxOptics?haze:[],sourceCount=p.count*2+haze.length+cores.length;
+  const fogFlags=new Float32Array(sourceCount);
+  const positions=new Float32Array(sourceCount*3),colors=new Float32Array(sourceCount*3);
+  positions.set(p.array);positions.set(p.array,p.count*3);colors.set(c.array);colors.set(c.array,p.count*3);fogFlags.fill(1,p.count,p.count*2+haze.length);
   haze.forEach((s,i)=>{positions.set(s.point.toArray(),p.count*6+i*3);colors.set(s.colour.toArray(),p.count*6+i*3);});
+  cores.forEach((s,i)=>{const offset=(p.count*2+haze.length+i)*3;positions.set(s.point.toArray(),offset);colors.set(s.colour.toArray(),offset);});
   hg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));hg.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));hg.setAttribute('lampFogHalo',new THREE.Float32BufferAttribute(fogFlags,1));
-  if(scale){const sizes=new Float32Array(scale.count*2+haze.length);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*(optics.kxOptics?1.65:1.15);});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
-  if(haze.length){const flags=new Float32Array(p.count*2+haze.length);flags.fill(1,p.count*2);hg.setAttribute('lampFogHaze',new THREE.Float32BufferAttribute(flags,1));}
+  if(scale){const sizes=new Float32Array(sourceCount);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*(optics.kxOptics?1.65:1.15);});cores.forEach((s,i)=>{sizes[scale.count*2+haze.length+i]=s.scale*4.32;});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
+  if(haze.length){const flags=new Float32Array(sourceCount);flags.fill(1,p.count*2,p.count*2+haze.length);hg.setAttribute('lampFogHaze',new THREE.Float32BufferAttribute(flags,1));}
+  if(cores.length){const flags=new Float32Array(sourceCount);flags.fill(1,p.count*2+haze.length);hg.setAttribute('lampFogCore',new THREE.Float32BufferAttribute(flags,1));}
   const fogBefore=halos.material.onBeforeCompile;
   halos.material.onBeforeCompile=(shader,renderer)=>{
     fogBefore.call(halos.material,shader,renderer);shader.uniforms.uLampFog=surfaceUniforms.fog;
-    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}${haze.length?'\nattribute float lampFogHaze;\nvarying float vLampFogHaze;':''}`)
+    shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nattribute float lampFogHalo;\nvarying float vLampFogHalo;\nuniform float uLampFog;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}${haze.length?'\nattribute float lampFogHaze;\nvarying float vLampFogHaze;':''}${cores.length?'\nattribute float lampFogCore;\nvarying float vLampFogCore;':''}`)
       .replace('gl_PointSize = size;',`vLampFogHalo = lampFogHalo;
-${haze.length?'vLampFogHaze = lampFogHaze;':''}
+${haze.length?'vLampFogHaze = lampFogHaze;':''}${cores.length?'\nvLampFogCore = lampFogCore;':''}
 // lamp-fog-size-begin
 gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(1):'4.2'}, lampFogHalo );
 // lamp-fog-size-end`)
@@ -251,12 +256,12 @@ gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' *
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
-    if(haze.length)shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vLampFogHaze;')
+    if(haze.length)shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHaze;${cores.length?'\nvarying float vLampFogCore;':''}`)
       .replace('#include <map_particle_fragment>',`float hazeSourceAlpha = diffuseColor.a;
 #include <map_particle_fragment>
 // The volume has its own analytic soft edge; the bright-head texture remains
 // on the original and ordinary fog samples.
-diffuseColor.a = mix(diffuseColor.a,hazeSourceAlpha,vLampFogHaze);`);
+diffuseColor.a = mix(diffuseColor.a,hazeSourceAlpha,${cores.length?'max(vLampFogHaze,vLampFogCore)':'vLampFogHaze'});`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uLampFog;')
       .replace('#include <opaque_fragment>',`#include <opaque_fragment>
 // lamp-fog-begin
@@ -297,7 +302,13 @@ gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.3,1.25,0.85),vLampFogHaze);
 // Restore only the inner 10–30px energy. The established 60–120px air tail
 // and overlapping strip alpha stay bounded; there is no cut-out at the head.
 gl_FragColor.rgb *= 1.0+vLampFogHaze*0.22*exp(-90.0*hazeRadius*hazeRadius);
-// lamp-kx-haze-end`:''}`:''}`:''}`);
+// lamp-kx-haze-end${cores.length?`
+// lamp-kx-core-begin
+float coreRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+float coreProfile = exp(-6.0*coreRadius*coreRadius)*(1.0-smoothstep(0.85,1.0,coreRadius));
+float coreFog = smoothstep(0.65,0.9,uLampFog);
+gl_FragColor.a = mix(gl_FragColor.a,0.16*mastScatterAlpha*coreFog*coreProfile,vLampFogCore);
+// lamp-kx-core-end`:''}`:''}`:''}`:''}`);
   };
   halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'');
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),

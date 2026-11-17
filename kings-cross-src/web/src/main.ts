@@ -216,7 +216,7 @@ function start(): void {
   const weatherOptions = sceneWeatherOptions(forcedWeather, settings.mode === 'replay' ? replayDay : null);
   const lampPlan = furniture.userData.plan as FurniturePlan;
   const londonClimate = fixedSky ? null : createSceneWeather({ scene, world,
-    sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), platformLampFloor: data.platforms.filter(p=>!p.tunnel).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.278,.218,.170], weather: weatherOptions });
+    sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), platformLampFloor: data.platforms.filter(p=>!p.tunnel).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.320,.266,.237], weather: weatherOptions });
   const atmosphere = londonClimate?.atmosphere ?? null, weatherFeed = londonClimate?.feed ?? null;
   // The sun's shadow (lighting.ts) is London's; ?shadows=0 leaves it out. Every scene with a climate is drawn through the filmic grade (see the frame loop).
   const sunShadow = atmosphere && params.get('shadows') !== '0' ? createSunShadow(scene, world.lights.sun) : null;
