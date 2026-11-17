@@ -31,6 +31,8 @@ export interface LampWeatherOptions {
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
+  /** Rough wet paving optics independent of KX's pool and mast treatment. */
+  roughReflections?: boolean;
   lightFog?: boolean;
   suppressSnow?: boolean;
   reflectionWidthAt?: (sourceIndex:number)=>number;
@@ -46,6 +48,7 @@ export interface LampWeatherOptions {
 export function createLampWeather(pools: THREE.InstancedMesh, heads: readonly number[], halos: THREE.Points<THREE.BufferGeometry,THREE.PointsMaterial>,
   floor: {map:THREE.Texture;rect:THREE.Vector4}|undefined, indices: readonly number[], reach?:number, surface?:LampWetSurface, broken=false, optics:LampWeatherOptions={}) {
   const enhancedFog=!!optics.enhancedFog;
+  const roughReflections=!!(optics.kxOptics||optics.roughReflections);
   const group=new THREE.Group();group.name='street-lamp-weather';
   // Urban roads need intermediate receiver samples along a long streak.
   // Perth/platform strips retain their original geometry and shader path.
@@ -138,7 +141,7 @@ vec4 reflectionEndB = projectionMatrix*viewMatrix*vec4(reflectionCentre+along*st
 // reflection-resolve-begin
 // Subpixel runs at the horizon read as a horizontal band, not a reflection.
 float verticalSpan = abs(reflectionEndA.y/reflectionEndA.w-reflectionEndB.y/reflectionEndB.w);
-reflectionValid *= smoothstep(0.012,0.035,verticalSpan);
+reflectionValid *= smoothstep(${optics.roughReflections?'0.008,0.024':'0.012,0.035'},verticalSpan);
 // reflection-resolve-end
 vReflectionValid *= reflectionValid;
 `:''}
@@ -178,7 +181,7 @@ reflectionOpen *= receiver.y*onSurface;
 float blurY0 = vReflectionUv.y - 0.12;
 float blurY1 = vReflectionUv.y + 0.12;
 float streakY = 0.5 * exp( -${broken?'0.8':'2.5'} * vReflectionUv.y * vReflectionUv.y ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY0 * blurY0 ) + 0.25 * exp( -${broken?'0.8':'2.5'} * blurY1 * blurY1 );
-float streak = exp( -${broken?(optics.kxOptics?'1.2':'3.2'):'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
+float streak = exp( -${broken?(roughReflections?'1.2':'3.2'):'10.0'} * vReflectionUv.x * vReflectionUv.x ) * streakY;
 gl_FragColor.a *= 0.8 * smoothstep( 0.45, 0.85, uLampWet ) * reflectionOpen * streak;
 // reflection-alpha-end${optics.suppressSnow?`
 // reflection-snow-begin
@@ -189,7 +192,7 @@ gl_FragColor.a *= (1.0-smoothstep(0.65,1.0,abs(vReflectionUv.x)))*(1.0-smoothste
 // reflection-edge-end`:''}${broken?`
 // reflection-breakup-begin
 float seed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
-${optics.kxOptics?`// reflection-kx-roughness-begin
+${roughReflections?`// ${optics.kxOptics?'reflection-kx-roughness':'reflection-roughness'}-begin
 // Unequal wet segments, tapered tips and wandering soft sides replace the
 // former shallow horizontal bars inside a parallel-sided post silhouette.
 float wetSeed = dot(vReflectionAnchor.xz,vec2(0.37,0.73));
@@ -199,14 +202,16 @@ float wetWander = 0.10*sin(9.0*wetY+wetSeed);
 float wetAcross = (vReflectionUv.x-wetWander)/wetTaper;
 float wetSegments = 0.5+0.5*sin(13.0*wetY+wetSeed+2.0*sin(4.3*wetY-wetSeed))*sin(5.7*wetY-wetSeed);
 gl_FragColor.a *= exp(-1.4*wetAcross*wetAcross)*(0.035+0.965*smoothstep(0.28,0.75,wetSegments));
-// reflection-kx-roughness-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
+// ${optics.kxOptics?'reflection-kx-roughness':'reflection-roughness'}-end`:`float puddles = 0.5+0.5*sin(19.0*vReflectionUv.y+seed+3.0*vReflectionUv.x)*sin(7.0*vReflectionUv.y-seed);
 gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
 // reflection-breakup-end`:''}`);
   };
-  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}`;
+  material.customProgramCacheKey=()=>`lamp-wet-reflection-${!!floor}${reach!==undefined?'-finite':''}${surface?'-receiver':''}${broken?'-broken':''}${enhancedFog?'-scatter':''}${optics.receiverAnchor==='base'?'-base-anchor':''}${optics.suppressSnow?'-snow-free':''}${optics.reflectionWidthAt?'-source-width':''}${optics.kxOptics?'-kx':''}${optics.roughReflections?'-rough':''}`;
   const reflections=new THREE.InstancedMesh(geometry,material,indices.length);
   const matrix=new THREE.Matrix4(),colour=new THREE.Color();
-  indices.forEach((source,i)=>{pools.getMatrixAt(source,matrix);reflections.setMatrixAt(i,matrix);if(pools.instanceColor){pools.getColorAt(source,colour);reflections.setColorAt(i,colour.multiplyScalar(2.5));}});
+  // Deep breaks remove the diffuse wet wash. Recover that energy in the lit
+  // fragments, preserving source colour and the original pool brightness.
+  indices.forEach((source,i)=>{pools.getMatrixAt(source,matrix);reflections.setMatrixAt(i,matrix);if(pools.instanceColor){pools.getColorAt(source,colour);reflections.setColorAt(i,colour.multiplyScalar(optics.roughReflections?3.625:2.5));}});
   reflections.name='street-lamp-reflections';reflections.raycast=()=>{};reflections.frustumCulled=false;reflections.renderOrder=4.1;reflections.visible=false;
   if(indices.length)group.add(reflections);
 
@@ -289,6 +294,9 @@ gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*hazeProfile,vLampFogHaze);
 float kxHazeProfile = (0.88*exp(-4.7*hazeRadius*hazeRadius)+0.12*exp(-1.1*hazeRadius*hazeRadius))*(1.0-smoothstep(0.85,1.0,hazeRadius));
 gl_FragColor.a = mix(gl_FragColor.a,mastScatterAlpha*kxHazeProfile,vLampFogHaze);
 gl_FragColor.rgb *= mix(vec3(1.0),vec3(1.3,1.25,0.85),vLampFogHaze);
+// Restore only the inner 10–30px energy. The established 60–120px air tail
+// and overlapping strip alpha stay bounded; there is no cut-out at the head.
+gl_FragColor.rgb *= 1.0+vLampFogHaze*0.22*exp(-90.0*hazeRadius*hazeRadius);
 // lamp-kx-haze-end`:''}`:''}`:''}`);
   };
   halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'');

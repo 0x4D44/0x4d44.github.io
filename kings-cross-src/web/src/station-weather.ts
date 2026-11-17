@@ -7,6 +7,7 @@ import { createPlatformLamps } from './station-lamps.ts';
 import { createWaverleyGlow } from './waverley-night.ts';
 import { WAVERLEY_LEVELS } from './waverley-mesh.ts';
 import { describeSun, smoothstep } from '../../core/daylight.ts';
+import type { Rgb } from '../../core/daylight.ts';
 import { createAtmosphere } from './atmosphere.ts';
 import type { Atmosphere, AtmosphereFrame, AtmosphereOptions, Haze } from './atmosphere.ts';
 import { applyCover, coverUniforms } from './cover.ts';
@@ -162,6 +163,7 @@ function waverleyLamps(view: WaverleyView): NightLayer & { dispose(): void } {
 /** Attach the same world/atmosphere builder to the lazy Scottish scene, with its own origin. */
 export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOptions): SceneWeather {
   if (view.placeholder || !view.geometry) throw new Error('Waverley weather requires a built geographic scene');
+  const detailed = !!view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads?.length;
   return remoteSceneWeather(view, weather, WAVERLEY_HAZE, () => {
     const night = lightWaverleyNight(view.scene), lamps = waverleyLamps(view), glow = createWaverleyGlow(view.scene);
     const data = view.geometry!;
@@ -170,7 +172,7 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
     platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
     return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
       dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };
-  }, undefined, [0,6]);
+  }, undefined, [0,6], detailed ? [.108,.087,.068] : undefined);
 }
 
 /**
@@ -209,7 +211,7 @@ export function createPerthWeather(view: WaverleyView, weather: WeatherFeedOptio
 
 /** The daylight rig and the weather on a remote station scene, at its own origin; `night` adds the scene's own lamps once the climate exists. */
 function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haze: Haze,
-  night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number], layerSunGate?: readonly [number, number]): SceneWeather {
+  night: () => { setLevel(level: number): void; dispose(): void }, lampSunGate?: readonly [number, number], layerSunGate?: readonly [number, number], cityFogTint?: Rgb): SceneWeather {
   if (!view.geometry) throw new Error('remote weather requires a built geographic scene');
   const scene = view.scene, original = new Set(scene.children), lights = new Map<THREE.Light, boolean>();
   scene.traverse(o => { if (o instanceof THREE.Light) { lights.set(o, o.visible); o.visible = false; } });
@@ -223,7 +225,7 @@ function remoteSceneWeather(view: WaverleyView, weather: WeatherFeedOptions, haz
     z0: Math.min(...points.map(p => p[1])) - 100, z1: Math.max(...points.map(p => p[1])) + 100 };
   // drawn ground beyond the terrain's extent (Perth's east patch) is carved out too
   world.carve(extent, (view.model as { terrainMore?: Extent[] } | undefined)?.terrainMore ?? []);
-  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, lampSunGate, weather: { ...weather, location: view.geometry.origin } });
+  const climate = createSceneWeather({ scene, world, sites: null, location: view.geometry.origin, haze, lampSunGate, cityFogTint, weather: { ...weather, location: view.geometry.origin } });
   const owned = scene.children.filter(o => !original.has(o));
   const lamps = night();
   let disposed = false;

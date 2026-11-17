@@ -308,6 +308,9 @@ export interface AtmosphereOptions {
   platformLampFloor?: readonly (readonly Pt[])[];
   /** KX's city-lit dense night fog; other stations and daylight keep their range. */
   kingsCrossNightFog?: boolean;
+  /** Scene-selected sRGB colour of city-lit dense night air. No ambient raise;
+   * omitted retains the existing climate, including legacy KX adapters. */
+  cityFogTint?: Rgb;
   scene: THREE.Scene;
   world: World;
   /** where the night lights go (night.ts `nightLightSites`); null leaves them out */
@@ -400,7 +403,7 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
@@ -611,10 +614,10 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
         // City lights colour the air, not the hemisphere or surface fill.
-        // Both gates leave daytime, rain and all other scenes unchanged.
-        const cityFog = kingsCrossNightFog ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
+        // Gates leave daytime/rain unchanged; the tint belongs to this scene.
+        const cityFog = kingsCrossNightFog || cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
         if (cityFog > 0) {
-          const warm: Rgb = [.255,.238,.168];
+          const warm: Rgb = cityFogTint ?? [.255,.238,.168];
           const tint = (c: Rgb, weight: number): Rgb => [c[0]+(warm[0]-c[0])*weight,c[1]+(warm[1]-c[1])*weight,c[2]+(warm[2]-c[2])*weight];
           rig.fog = tint(rig.fog,cityFog);
           rig.dome.horizon = tint(rig.dome.horizon,cityFog);
