@@ -188,10 +188,10 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
     // ASSUMED: the broad Princes Street paving/junction north of the hotel
     // extends beyond the lean road centreline's default carriageway width.
     const princes=a[0]>-30&&a[0]<125&&a[1]<-110&&b[1]<-110;
-    roadMask.add({a,b,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+(princes?14:6)});
+    roadMask.add({a,b,reach:WAVERLEY_ROAD_WIDTH[road.cls]/2+(princes?18:6)});
   }
   const surface=nightEffects&&surfaceRoot?createLampWetSurface(surfaceRoot,new Set(['waverley-ground','waverley-ground-cover','waverley-bridge-decks']),spots,
-    (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0):undefined;
+    (name,x,z)=>name==='waverley-bridge-decks'||roadMask.nearest([x,z],2)<0,true):undefined;
   // Retain all distant head cores/posts; spend the ground geometry on nearby
   // conforming pools/strips rather than almost invisible panorama road pools.
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
@@ -204,7 +204,7 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // The western Market Street receivers project 119–132 m from their heads
   // in the North Bridge camera. Keep these urban runs finite and road-clipped,
   // without discarding their visible wet paving at the generic 96 m limit.
-  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,reflectionReach:160,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
+  const rows=rowSpots.length?createStreetLights(rowSpots,{...urbanLampOptions(surface),roughReflections:true,lightFog:true,reflectionReach:160,reflectionTail:s=>s.x<0&&s.z>100?64:0,lowPressureSodium:true,fogHaloSpread:20,postAt:s=>!spots.includes(s),coreSize:3.2,haloSize:5.5,poolCeiling:.32}):undefined;
   if(rows){rows.group.name='waverley-approach-lamps';rows.group.visible=false;layer.group.add(rows.group);}
   return {...layer,
     setLevel(level){layer.setLevel(level);if(rows){rows.setLevel(level);rows.group.visible=level>.01;}},

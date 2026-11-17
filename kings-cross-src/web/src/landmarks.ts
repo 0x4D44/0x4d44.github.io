@@ -43,7 +43,9 @@ const midlandGableRakes = new WeakMap<Batch, [number, number][]>();
 
 /** Night-only treatment on the existing merged meshes, with a zero mask on the
  * hotel and Barlow. World height is relative to the Midland's terrain seat; UVs
- * restart on dressings and cannot describe the arcade-to-upper-wall falloff. */
+ * restart on dressings and cannot describe the arcade-to-upper-wall falloff.
+ * Round eight dims both upper-brick terms: diffuse moon/sky fill, and the
+ * separate FLOOD emission added earlier by lighting.ts. */
 function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: number): void {
   for (const key of ['brickRed', 'stone'] as const) {
     const mesh = group.getObjectByName(`landmarks-${key}`) as THREE.Mesh;
@@ -77,13 +79,14 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
 // midland-night-begin
 float midlandLevel = uMidlandNight * vMidlandNight.x;
 float midlandUpper = smoothstep( 6.0, 18.0, vMidlandHeight );
-float midlandFill = 1.0 - ${key === 'brickRed' ? '0.70' : '0.0'} * midlandLevel * midlandUpper;
+float midlandFill = 1.0 - ${key === 'brickRed' ? '0.82' : '0.0'} * midlandLevel * midlandUpper;
 reflectedLight.indirectDiffuse *= midlandFill;
 reflectedLight.directDiffuse *= midlandFill;
+${key === 'brickRed' ? 'totalEmissiveRadiance *= mix( 1.0, 0.05, midlandLevel * midlandUpper );' : ''}
 totalEmissiveRadiance += vec3( 0.38, 0.24, 0.085 ) * midlandLevel * vMidlandNight.y;
 // midland-night-end`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v1-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v2-${key}-${base.toFixed(6)}`;
   }
 }
 
@@ -159,8 +162,9 @@ export function createMaterials(): MaterialSet {
   // read (175, 106, 74) and (165, 101, 73), dE2000 4.8 and 2.4 from my masked R-c and 5.6 and 5.7 from hist-b (round five's 1.3, 3.5, 5.8, 8.2): between the two scorers' readings of the same photograph, which
   // are 7 dE2000 apart. The historic D6 scorer's camera was not captured: its aim for this brick's red was 150 to 170, and the tower here reads a few over it.
   const midlandBrick: [number, number, number] = [0.88, 0.92, 0.885];
-  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly graded (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
-  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD).
+  // Round seven (night lighting): the Midland's arcade and porch are warm-lit from below and the brick above is only lightly floodlit (night-c-st-pancras-hotel-2011-johndoes.jpg, night-c-st-pancras-hotel-clock-2013-bourez.jpg;
+  // lighting.ts `FLOOD`): the light carries about 5 m up the wall and leaves a twenty-fifth of itself above that (MIDLAND_FLOOD). Round eight also reduces the upper brick's separate sky/moon fill and
+  // the FLOOD emission: the latter is added after direct/indirect diffuse, so it survives a diffuse-only darkening (the round-seven shader's 0.30 diffuse remainder plus a 0.0139-albedo flood term at 23 m).
   const brickRed = floodLit(footShaded(tint('brickRed', midlandBrick)), ...MIDLAND_FLOOD.brick);
   // hist-e (the aerial of the Barlow shed): its flank wall is a dark red-brown, (63, 40, 36) in shade and (91, 52, 38) where the sun reaches it, L 19 and 26 (the historic D6 scorer: the
   // flank "now salmon vs R-e's dark red-brown"). The shed's side and end walls are the Midland's brick at 0.55 of the light and in its hue (a clone of its own): the wall was L 46 and a

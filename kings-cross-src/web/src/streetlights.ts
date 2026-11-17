@@ -160,6 +160,8 @@ export interface StreetLightOptions {
   reflectionAt?: (spot: LampSpot, index: number) => boolean;
   /** Finite reflected patch around its head, rather than an infinite tangent plane. */
   reflectionReach?: number;
+  /** Extra rough-paving tail towards the eye; the wet footprint still clips it. */
+  reflectionTail?: (spot:LampSpot,index:number)=>number;
   /** Actual urban road/paving receiver heights and wet footprint. */
   reflectionSurface?: LampWetSurface;
   /** Urban puddles form long, narrow streaks with irregular soft breaks. */
@@ -286,6 +288,7 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const poolGeometry = new THREE.PlaneGeometry(1, 1, poolSegments, poolSegments).rotateX(-Math.PI / 2);
   if (options.poolFloor || options.weatherEffects) poolGeometry.setAttribute('poolFloorWeight', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolFloor ? options.poolFloor.appliesAt?.(s,i) ?? true : false))),1));
   if (options.poolLineAt) poolGeometry.setAttribute('poolLine', new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.map(({spot:s,index:i})=>Number(options.poolLineAt!(s,i)))),1));
+  if (options.kxOptics) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -323,6 +326,20 @@ gl_Position = projectionMatrix*mvPosition;
         shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vPoolUv;')
           .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolUv = uv;');
         declarations += '\nvarying vec2 vPoolUv;';
+        if(options.kxOptics){
+          shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute vec2 poolRoadDirection;')
+            .replace('vPoolUv = uv;',`vPoolUv = uv;
+// pool-road-shape-begin
+// Lamp arms point across the road. Shape the existing analytic profile
+// along the road tangent, retaining its bounded head peak and soft edge.
+${options.poolLineAt?'if(poolLine < 0.5) {':''}
+vec2 roadPoolUv=2.0*uv-1.0;
+float roadAlong=dot(roadPoolUv,poolRoadDirection);
+float roadAcross=dot(roadPoolUv,vec2(-poolRoadDirection.y,poolRoadDirection.x));
+vPoolUv=0.5+0.5*vec2(roadAlong,1.8*roadAcross);
+${options.poolLineAt?'}':''}
+// pool-road-shape-end`);
+        }
         if (options.poolLineAt) {
           shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
             .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
@@ -379,7 +396,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {

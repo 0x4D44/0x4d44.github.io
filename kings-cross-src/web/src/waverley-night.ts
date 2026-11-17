@@ -58,6 +58,14 @@ reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
     const corners=scene.getObjectByName('waverley-frontage')?.userData.frontage?.hotel?.corners as {west:readonly number[];ne:readonly number[]}|undefined;
     const roofZone=corners?`smoothstep(3.0,4.0,length(${p}.xz-vec2(${corners.ne.join(',')})))*smoothstep(4.0,5.0,length(${p}.xz-vec2(${corners.west.join(',')})))`:'0.0';
     patch('waverley-balmoral-facade',[0,0,0],'1.0',false,`
+// balmoral-facade-wash-begin
+float facadeWashHeight = max(0.0,${height});
+float facadeBay = floor((vStationLampWorld.x+vStationLampWorld.z)/4.2);
+float facadeBayNoise = fract(sin(facadeBay*12.9898+78.233)*43758.5453);
+float facadeBayGain = 0.74+0.26*facadeBayNoise;
+float facadeWash = 0.07*(0.12+0.88*exp(-facadeWashHeight/14.0))*facadeBayGain;
+totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.62,0.32)*facadeWash;
+// balmoral-facade-wash-end
 // balmoral-bands-begin
 float hotelHeight = ${height};
 float balconyBeam = 0.36*smoothstep(8.3,8.7,hotelHeight)*exp(-max(0.0,hotelHeight-8.7)/1.3);
