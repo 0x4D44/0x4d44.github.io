@@ -233,7 +233,7 @@
    "tags": [
     "perf"
    ],
-   "note": "Speed was timed on two different days on a shared machine; the speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable."
+   "note": "Speed was timed on three different days on a shared machine; the speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable."
   },
   {
    "id": "COD-02",
@@ -703,18 +703,92 @@
    ]
   },
   {
+   "seat": "astra-6-xhigh",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 96.1,
+    "rubric": 96.2,
+    "score_claude": 96.0,
+    "score_gpt": 96.2,
+    "judge_sd": 0.1,
+    "bonus": 0.0,
+    "mean_rank": 4.0,
+    "cost_usd": 12.731,
+    "wall_min": 27.0,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.022
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 94.0,
+    "rubric": 93.0,
+    "score_claude": 92.7,
+    "score_gpt": 95.3,
+    "judge_sd": 1.4,
+    "bonus": 0.0,
+    "mean_rank": 7.7,
+    "cost_usd": 2.109,
+    "wall_min": 31.2,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 0.865
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 85.5,
+    "rubric": 85.2,
+    "score_claude": 84.0,
+    "score_gpt": 87.1,
+    "judge_sd": 1.5,
+    "bonus": 0.0,
+    "mean_rank": 10.0,
+    "cost_usd": 2.643,
+    "wall_min": 35.4,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 0.959
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
    "seat": "gpt-4o-2024-08",
    "task": "COD-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 1.9,
+    "score": 2.3,
     "rubric": 3.3,
-    "score_claude": 1.7,
-    "score_gpt": 2.2,
+    "score_claude": 1.3,
+    "score_gpt": 3.3,
     "judge_sd": 1.2,
     "bonus": 0.0,
-    "mean_rank": 12.0,
+    "mean_rank": 14.0,
     "cost_usd": 5.522,
     "wall_min": 4.6,
     "gates_ok": false,
@@ -734,11 +808,11 @@
    "metrics": {
     "score": 95.1,
     "rubric": 95.6,
-    "score_claude": 95.0,
-    "score_gpt": 95.2,
-    "judge_sd": 0.4,
+    "score_claude": 94.7,
+    "score_gpt": 95.6,
+    "judge_sd": 0.6,
     "bonus": 0.0,
-    "mean_rank": 5.2,
+    "mean_rank": 6.2,
     "cost_usd": 0.545,
     "wall_min": 73.3,
     "gates_ok": true,
@@ -756,13 +830,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 30.0,
+    "score": 29.6,
     "rubric": 32.6,
-    "score_claude": 29.3,
-    "score_gpt": 30.8,
-    "judge_sd": 1.4,
+    "score_claude": 27.7,
+    "score_gpt": 31.6,
+    "judge_sd": 2.6,
     "bonus": 0.0,
-    "mean_rank": 10.0,
+    "mean_rank": 12.0,
     "wall_min": 120.0,
     "gates_ok": false,
     "builds": true,
@@ -773,6 +847,30 @@
    "flags": [
     "capped"
    ]
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 80.9,
+    "rubric": 81.7,
+    "score_claude": 80.0,
+    "score_gpt": 81.7,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 11.0,
+    "cost_usd": 0.513,
+    "wall_min": 9.3,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 0.79
+   },
+   "flags": []
   },
   {
    "seat": "fable-5.2-high",
@@ -799,42 +897,18 @@
    "flags": []
   },
   {
-   "seat": "terra-6.1-medium",
-   "task": "COD-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 80.9,
-    "rubric": 81.7,
-    "score_claude": 80.0,
-    "score_gpt": 81.8,
-    "judge_sd": 0.9,
-    "bonus": 0.0,
-    "mean_rank": 9.0,
-    "cost_usd": 0.513,
-    "wall_min": 9.3,
-    "gates_ok": true,
-    "builds": true,
-    "hidden_pass": 1.0,
-    "parity_ok": true,
-    "speed_ok": true,
-    "speed_of_ref": 0.79
-   },
-   "flags": []
-  },
-  {
    "seat": "o3-high",
    "task": "COD-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 19.4,
+    "score": 19.0,
     "rubric": 21.3,
-    "score_claude": 17.7,
-    "score_gpt": 21.2,
-    "judge_sd": 2.3,
+    "score_claude": 16.7,
+    "score_gpt": 21.3,
+    "judge_sd": 3.3,
     "bonus": 0.0,
-    "mean_rank": 11.0,
+    "mean_rank": 13.0,
     "cost_usd": 6.431,
     "wall_min": 7.2,
     "gates_ok": false,
@@ -849,54 +923,28 @@
    ]
   },
   {
-   "seat": "sol-6.1-xhigh",
-   "task": "COD-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 93.8,
-    "rubric": 93.0,
-    "score_claude": 92.7,
-    "score_gpt": 94.9,
-    "judge_sd": 1.2,
-    "bonus": 0.0,
-    "mean_rank": 6.2,
-    "cost_usd": 2.109,
-    "wall_min": 31.2,
-    "gates_ok": true,
-    "builds": true,
-    "hidden_pass": 1.0,
-    "parity_ok": true,
-    "speed_ok": true,
-    "speed_of_ref": 0.865
-   },
-   "flags": []
-  },
-  {
-   "seat": "haiku-5.5-high",
+   "seat": "sol-6.1-medium",
    "task": "COD-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 86.4,
-    "rubric": 85.2,
-    "score_claude": 84.7,
-    "score_gpt": 88.1,
-    "judge_sd": 2.0,
+    "score": 94.2,
+    "rubric": 94.4,
+    "score_claude": 94.0,
+    "score_gpt": 94.4,
+    "judge_sd": 0.2,
     "bonus": 0.0,
-    "mean_rank": 8.0,
-    "cost_usd": 2.643,
-    "wall_min": 35.4,
+    "mean_rank": 7.5,
+    "cost_usd": 1.619,
+    "wall_min": 19.2,
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0,
     "parity_ok": true,
     "speed_ok": true,
-    "speed_of_ref": 0.959
+    "speed_of_ref": 1.015
    },
-   "flags": [
-    "nudged"
-   ]
+   "flags": []
   },
   {
    "seat": "astra-6-medium",
@@ -904,13 +952,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 93.3,
+    "score": 93.4,
     "rubric": 93.7,
     "score_claude": 93.0,
-    "score_gpt": 93.6,
-    "judge_sd": 0.3,
+    "score_gpt": 93.7,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 6.5,
+    "mean_rank": 8.5,
     "cost_usd": 7.962,
     "wall_min": 15.5,
     "gates_ok": true,
@@ -923,7 +971,7 @@
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "sol-6.1-max",
    "task": "COD-01",
    "run": 1,
    "date": "2026-11-15",
@@ -931,18 +979,18 @@
     "score": 96.5,
     "rubric": 96.2,
     "score_claude": 96.0,
-    "score_gpt": 96.9,
-    "judge_sd": 0.6,
+    "score_gpt": 97.1,
+    "judge_sd": 0.7,
     "bonus": 0.0,
-    "mean_rank": 2.8,
-    "cost_usd": 12.731,
-    "wall_min": 27.0,
+    "mean_rank": 2.7,
+    "cost_usd": 3.015,
+    "wall_min": 57.6,
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0,
     "parity_ok": true,
     "speed_ok": true,
-    "speed_of_ref": 1.022
+    "speed_of_ref": 1.092
    },
    "flags": []
   },
@@ -952,13 +1000,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 96.5,
+    "score": 96.2,
     "rubric": 96.5,
     "score_claude": 96.0,
-    "score_gpt": 97.0,
-    "judge_sd": 0.7,
+    "score_gpt": 96.5,
+    "judge_sd": 0.2,
     "bonus": 0.2,
-    "mean_rank": 2.2,
+    "mean_rank": 2.3,
     "cost_usd": 9.523,
     "wall_min": 34.6,
     "gates_ok": true,
@@ -976,13 +1024,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 95.3,
+    "score": 95.5,
     "rubric": 95.9,
     "score_claude": 95.0,
-    "score_gpt": 95.5,
+    "score_gpt": 95.9,
     "judge_sd": 0.5,
-    "bonus": 0.0,
-    "mean_rank": 4.2,
+    "bonus": 0.2,
+    "mean_rank": 5.2,
     "cost_usd": 4.915,
     "wall_min": 36.3,
     "gates_ok": true,
@@ -2567,7 +2615,7 @@
    "Some Claude runs hit a usage limit and were resumed in the same session (flagged resumed); their cost is the session's total, including the context re-read on resume.",
    "A run that stopped early (no tool calls, or under two minutes) without hitting a cap was told to continue, up to three times (flagged nudged); its time and cost include every part.",
    "FIX-01: most seats fail the hidden display-register test (all six phase-1 seats did), so All gates shows fail for them; the judge score reflects how much of the fix each seat got right.",
-   "COD-01: the first six seats and the later six were timed on different days on a shared machine; the speed gate holds for each, but speed-of-reference fractions across the two groups are not strictly comparable.",
+   "COD-01: the seats were timed in three groups (six, six, then the two Sol medium/max seats) on different days on a shared machine; the speed gate holds for each, but speed-of-reference fractions across groups are not strictly comparable. Sol max was re-timed once because its first timing ran under about three times the load the others had; the first attempt is kept in its record.",
    "One run per seat per exercise so far; the design calls for three runs on design exercises, which will show as spread when they land."
   ]
  }
