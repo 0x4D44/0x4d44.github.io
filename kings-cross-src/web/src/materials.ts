@@ -650,7 +650,7 @@ export const windowNight = { value: 0 };
  * the dusk of its own (a ramp of `night` from 0.04 + 0.6 h to 0.26 + 0.6 h, so the windows come on one by one as the light goes and all are on at full night). From a distance, where a pixel
  * spans more than a quarter of a tile, it takes `winMean` and the rectangle of the pane, so a far block is a steady dim glow and not a shimmer.
  */
-const WIN_NIGHT_GLSL = /* glsl */`
+export const WIN_NIGHT_GLSL = /* glsl */`
 float winHash( vec2 c, float seed, float salt ) {
   return fract( sin( dot( c, vec2( 12.9898, 78.233 ) ) + seed * 2.713 + salt * 19.19 ) * 43758.5453 );
 }

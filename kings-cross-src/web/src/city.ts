@@ -23,7 +23,7 @@ import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
-import { createKxFrontReflections, createKxFacadeReflections } from './kx-front-reflections.ts';
+import { createKxFrontReflections, createKxFacadeReflections, createKxWindowReflections } from './kx-front-reflections.ts';
 import { shedLayout, stationBuilding } from '../../core/station.ts';
 import { urbanLampOptions } from './station-lamps.ts';
 import { createStreetLights } from './streetlights.ts';
@@ -192,16 +192,16 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   const wetSurface = opts.nightEffects ? createLampWetSurface(group,new Set(['city-asphalt','city-pavement','city-plaza']),lamps) : undefined;
   // Two-metre receiver samples follow Euston Road's folded terrain and paving
   // joins; corner-only planes cut the sodium pool into a hard rectangle.
-  // Round-eight review: the road-aligned mask reduced the visible pool area
-  // without resolving road shape from overview. Restore the proven footprint.
-  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:8,poolFocus:.8,kxOptics:true,poolRoadShape:false} : {}) : null;
+  // Preserve the proven radial footprint and add a larger road-aligned optic.
+  // Intermediate receiver samples keep the enlarged beam on folded paving.
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,poolRoadShape:false,luminairePools:true,roughReflections:true} : {}) : null;
   if (lights && wetSurface && stationBuilding(data)) {
-    const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface);
-    lampsLayer.group.add(front.group,amber.group);
+    const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface), windows=createKxWindowReflections(scene,wetSurface);
+    lampsLayer.group.add(front.group,amber.group,windows.group);
     lights = {...lampsLayer,
-      setLevel(level) { lampsLayer.setLevel(level); front.setLevel(level); amber.setLevel(level); },
-      counts() { const c=lampsLayer.counts(); return {...c,triangles:c.triangles+front.triangles+amber.triangles,draws:c.draws+front.draws+amber.draws}; },
-      dispose() { front.dispose(); amber.dispose(); lampsLayer.dispose(); },
+      setLevel(level) { lampsLayer.setLevel(level); front.setLevel(level); amber.setLevel(level); windows.setLevel(level); },
+      counts() { const c=lampsLayer.counts(); return {...c,triangles:c.triangles+front.triangles+amber.triangles+windows.triangles,draws:c.draws+front.draws+amber.draws+windows.draws}; },
+      dispose() { front.dispose(); amber.dispose(); windows.dispose(); lampsLayer.dispose(); },
     };
   }
   stats.lamps = lamps.length;
