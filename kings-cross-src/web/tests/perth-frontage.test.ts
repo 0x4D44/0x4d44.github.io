@@ -70,6 +70,35 @@ test('the frozen frontage cameras stand in the car park and look at their subjec
   assert.ok(ringDist([hotel.target[0], hotel.target[2]], area(PERTH_HOTEL_ID).outer) < 5, 'pt-station-hotel looks at the hotel front');
 });
 
+test('frontage snow keeps the near and station-side pavement bands snowy beside a cleared carriageway', () => {
+  const mask = (mesh('perth-forecourt-setts').material as THREE.Material).userData.snowMask;
+  assert.ok(mask?.texture instanceof THREE.DataTexture, 'the rendered setts use a canvas-free retention mask');
+  for (const name of ['perth-forecourt', 'perth-forecourt-markings']) {
+    assert.ok((mesh(name).material as THREE.Material).userData.snowMask === mask, `${name} shares the same road/pavement boundary`);
+  }
+  const {width, height, data} = (mask.texture as THREE.DataTexture).image;
+  assert.ok(data instanceof Uint8Array, 'retention uses a single byte per texel');
+  assert.ok(data.byteLength < 1_000_000, 'the close-view mask stays below 1 MB per CPU/GPU copy');
+  // Sample at world positions in the frozen frontage view, with the shader's
+  // (u, 1-v), texel centres and bilinear filtering. Reading a nearest texel hid
+  // the 2 m mask's snow spill across both sides of the narrow pavement bands.
+  const retention = (x: number, z: number): number => {
+    const px = (x - mask.rect.x) * mask.rect.z * width - .5;
+    const py = (1 - (z - mask.rect.y) * mask.rect.w) * height - .5;
+    const i = Math.floor(px), j = Math.floor(py), fx = px - i, fy = py - j;
+    const at = (a: number, b: number): number => data[Math.max(0, Math.min(height - 1, b)) * width + Math.max(0, Math.min(width - 1, a))]! / 255;
+    return (at(i,j) * (1-fx) + at(i+1,j) * fx) * (1-fy) + (at(i,j+1) * (1-fx) + at(i+1,j+1) * fx) * fy;
+  };
+  for (const {name, point, min} of [
+    {name: 'near pavement band', point: [-5.4, -53.1], min: .98},
+    {name: 'station-side pavement band', point: [-4.2, -47.4], min: .93},
+  ]) assert.ok(retention(...point as Pt) >= min, `${name} retains snow at ${point}: ${retention(...point as Pt)}`);
+  for (const {name, point} of [
+    {name: 'near carriageway', point: [-5.3, -52.3]},
+    {name: 'carriageway beside the frontage', point: [-10.4, -47.7]},
+  ]) assert.ok(Math.abs(retention(...point as Pt) - .35) < .015, `${name} keeps cleared/slushy lane retention at ${point}: ${retention(...point as Pt)}`);
+});
+
 test('clearance: nothing the frontage draws stands on a platform or in the train envelope, bar the bridge girders beside the rails', () => {
   const platforms = data.platforms.map(p => p.path), rails = data.rails.map(r => r.path);
   const railDist = (p: Pt) => Math.min(...rails.map(r => Math.min(...r.slice(1).map((q, i) => segDist(p, r[i], q)))));

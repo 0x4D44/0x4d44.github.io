@@ -72,9 +72,12 @@ export function addPerthFrontage(build:PerthBuild,data:PerthData,ground:Terrain,
  const flatMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
  const paintMat=own(new THREE.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-6,polygonOffsetUnits:-6}));
  const foot=(r:FrontageFile['roads'][number])=>['footway','pedestrian','path','cycleway','steps'].includes(r.highway);
+ // The eye-level frontage needs finer edges than a city panorama: 2 m texels
+ // blend snow across the narrow pavement bands beside the loop road. Quarter-
+ // metre texels retain those bands and the cleared carriageway (R8, 508,400 B).
  const snowMask=snowLanduseMask({extent:FRONTAGE_WINDOW,
   roads:file.roads.filter(r=>!foot(r)).map(r=>({line:r.path as Pt[],width:ROAD_WIDTHS[r.service==='parking_aisle'?'parking_aisle':r.highway]??4})),
-  paths:file.roads.filter(foot).map(r=>({line:r.path as Pt[],width:ROAD_WIDTHS[r.highway]??2}))});
+  paths:file.roads.filter(foot).map(r=>({line:r.path as Pt[],width:ROAD_WIDTHS[r.highway]??2}))},.25);
  if(snowMask){flatMat.userData.snowMask=snowMask;paintMat.userData.snowMask=snowMask;flatMat.addEventListener('dispose',()=>snowMask.texture.dispose());}
  add(group,facade,facadeMat,'perth-hotel-facade');add(group,detail,coloured,'perth-hotel-roofs-and-stone');
  add(group,front,coloured,'perth-station-front');add(group,glass,glassMat,'perth-frontage-glazing');
