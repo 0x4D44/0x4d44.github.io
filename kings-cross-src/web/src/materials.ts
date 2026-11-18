@@ -884,6 +884,8 @@ export interface WallGrid {
   rows?: readonly [number, number];
   rect?: readonly number[];
   mode?: readonly number[];
+  /** A custom room light with per-wall vec2 data from the wallWindowData attribute. */
+  profile?: { key: string; fragment: string; light: string };
 }
 
 /**
@@ -891,7 +893,7 @@ export interface WallGrid {
  * over the cell; `WALL_SHIFT` moves the grid, `WALL_ROWS` keeps the windows to some rows of it), through `winTile`, only where the face looks sideways (a wall; the roofs and the plinths of the same mesh
  * have none), the building's number from its vertex colour (a tone to each: 17 of them in the Scottish scene, so the seed is the tone's own and a building keeps its lights whatever else is built).
  */
-const LIT_WALL_GLSL = /* glsl */`
+const litWallGlsl = (light: string): string => /* glsl */`
 #if defined( WALL_WIN ) && defined( USE_MAP )
 if ( uWinNight > 0.003 ) {
   vec2 wv = vMapUv * WALL_TILE;
@@ -908,7 +910,7 @@ if ( uWinNight > 0.003 ) {
 #else
   float wseed = 0.5;
 #endif
-  totalEmissiveRadiance += ( WIN_GAIN * wrow * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 );
+  totalEmissiveRadiance += ( WIN_GAIN * wrow * ( 1.0 - smoothstep( 0.2, 0.4, abs( dot( normal, viewMatrix[ 1 ].xyz ) ) ) ) ) * ${light};
 }
 #endif
 `;
@@ -922,7 +924,9 @@ if ( uWinNight > 0.003 ) {
  */
 export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, number], grid: WallGrid = {}): () => void {
   const [defines, onBeforeCompile, key] = [m.defines, m.onBeforeCompile, m.customProgramCacheKey()];
-  const { cell = WALL_CELL, shift, rows, rect = WALL_RECT, mode = NIGHT_MODE.house } = grid;
+  const { cell = WALL_CELL, shift, rows, rect = WALL_RECT, mode = NIGHT_MODE.house, profile } = grid;
+  const varying = profile ? '\nvarying vec2 vWallWindowData;\n' : '';
+  const light = litWallGlsl(profile?.light ?? 'winTile( wv, ww, wseed, uWinNight, WIN_RECT, WIN_MODE, 1.0 )');
   const vec2 = (v: readonly number[]): string => `vec2( ${v.map(glslFloat).join(', ')} )`;
   m.defines = { ...defines, WALL_WIN: '', WALL_TILE: vec2([tile[0] / cell[0], tile[1] / cell[1]]), ...(shift ? { WALL_SHIFT: vec2(shift) } : {}), ...(rows ? { WALL_ROWS: vec2(rows) } : {}), WIN_RECT: glslVec4(rect), WIN_GAIN: glslFloat(NIGHT_GAIN.house), WIN_MODE: glslVec4(mode) };
   m.onBeforeCompile = (shader, renderer) => {
@@ -930,11 +934,16 @@ export function litWalls(m: THREE.MeshLambertMaterial, tile: readonly [number, n
     // a patch before this one (the roof shade's flood, lighting.ts) may have declared the night's level already, and says so by having put it in the uniforms: it is declared once
     const declared = shader.uniforms.uWinNight !== undefined;
     shader.uniforms.uWinNight = windowNight;
+    if (profile) {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', `#include <common>${varying}attribute vec2 wallWindowData;`)
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWallWindowData = wallWindowData;');
+    }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>${declared ? '' : '\nuniform float uWinNight;'}${WIN_NIGHT_GLSL}`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${LIT_WALL_GLSL}`);
+      .replace('#include <common>', `#include <common>${declared ? '' : '\nuniform float uWinNight;'}${WIN_NIGHT_GLSL}${varying}${profile?.fragment ?? ''}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${light}`);
   };
-  m.customProgramCacheKey = () => `${key}+litWalls`;
+  m.customProgramCacheKey = () => `${key}+litWalls${profile ? '-' + profile.key : ''}`;
   m.needsUpdate = true;
   return () => {
     m.defines = defines;

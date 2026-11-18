@@ -29,6 +29,9 @@ export const WAVERLEY_CITY_ASHLAR=0xb2c5ee;
  *  spire's drum) and anything under PLAIN_AREA m2 in plan. They wear plain ashlar (materials.ts stone, 0.6 x 0.3 m blocks). */
 export const PLAIN_KINDS=new Set(['church','chapel','cathedral','ruins','bridge','column','tower','monument','castle','wall','gatehouse','kiosk','toilets']);
 export const PLAIN_AREA=40;
+// Offices overlooking the station at the east and west ends of Princes Street.
+// The eastern block is the long row of cool panes in R-nw-f Curtis.
+const STATION_OFFICES = new Set(['way/62065007', 'way/81357301']);
 export const WAVERLEY_CITY_HEIGHTS={scott:61.11} as const;
 export const WAVERLEY_CITY_SOURCES={
  scott:{url:'https://www.openstreetmap.org/way/39044819',height:61.11,basis:'OSM height; explicit mapped part heights and min_height'},
@@ -46,10 +49,14 @@ export const TINY_CLIFF_IDS=['way/258095237','way/258095246'] as const;
 export const onCliff=(b:Parameters<typeof tinyBlock>[0],ground:Pick<Terrain,'heightAt'>):boolean=>tinyBlock(b)&&slopeOf(ground,...centre([...b.outer]))>TINY_CLIFF_DEG;
 export const WAVERLEY_CITY_OMIT_IDS=[data.scott.id,...data.scott.parts.map(p=>p.id),...MONUMENT_OMIT_IDS,...TINY_CLIFF_IDS];
 const ringOf=(p:number[][]):Pt[]=>p.map(q=>[q[0],q[1]]);
+function cityBlockHash(id:string):number{
+ let hash=0;for(const c of id)hash=(hash*31+c.charCodeAt(0))>>>0;
+ return hash;
+}
 /** A block's own tint (walls) and slate shift (roof), from a hash of its id: the walls 0.8-1.02 of the city stone, a little warmer or cooler; the
  *  roof 0.82-1.06 of the shared slate (ASSUMED, R-wv3-c: weathered grey slate, some darker, some bluer). Shared with the Perth west blocks (perth-west-buildings.ts). */
 export function cityBlockColours(id:string):{color:Rgb;roofColor:Rgb}{
- let hash=0;for(const c of id)hash=(hash*31+c.charCodeAt(0))>>>0;
+ const hash=cityBlockHash(id);
  const tone=.8+(hash%23)*.01,warm=((hash>>>5)%7)*.008,roofTone=.82+((hash>>>9)%13)*.02;
  return {color:[tone*(1+warm),tone,tone*(.97-warm)],roofColor:[roofTone,roofTone,roofTone*1.02]};
 }
@@ -71,6 +78,7 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  const slate=material('slate').clone() as THREE.MeshLambertMaterial;slate.color.multiply(new THREE.Color(0xada99f));slate.vertexColors=true;
  slate.userData.snowRoof=true;
  const snowRoof:number[]=[];
+ const wallWindowData:number[]=[];
  const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=options.style?.streets??new Streets();
  const foot=ground.heightAt?(p:Pt)=>ground.heightAt!(p[0],p[1]):undefined;
  const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(style?.ashlar??WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
@@ -86,7 +94,13 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   const planes=plan.shape==='planes',outer=planes?withCreases(b.outer,plan.creases):b.outer,holes=planes?b.holes.map(h=>withCreases(h,plan.creases)):b.holes;
   let area=0;{const r=b.outer;for(let i=0;i<r.length;i++){const p=r[i],q=r[(i+1)%r.length];area+=p[0]*q[1]-q[0]*p[1];}area=Math.abs(area)/2;}
   const plain=b.minHeight>0||area<PLAIN_AREA||PLAIN_KINDS.has(b.tags.building??b.tags['building:part']??'');
+  const wallFrom=buildings.positions.length;
   walls(plain?plainWalls:buildings,outer,holes,()=>b.minHeight?base+b.minHeight:base-.15,planes?plan.at:()=>plan.eave,color);
+  if(!style&&!plain){
+   const phase=cityBlockHash(b.id)*0.61803398875, seed=phase-Math.floor(phase);
+   const office=Number(STATION_OFFICES.has(b.id));
+   for(let i=wallFrom;i<buildings.positions.length;i+=3)wallWindowData.push(seed,office);
+  }
   const roofFrom=buildingTops.colors.length;
   if(planes)roofSurface(buildingTops,b.outer,b.holes,plan);
   else{fillSurface(buildingTops,b.outer,b.holes,()=>plan.eave);if(plan.shape!=='flat')roofPeak(buildingTops,b.outer,plan);}
@@ -102,6 +116,10 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  }
  // Every top is a roof: the cover map (cover.ts ROOF_MESHES) knows this mesh by name.
  add(group,buildings,sandstone,style?.names.walls??'waverley-building-walls');add(group,plainWalls,ashlar,style?.names.ashlar??'waverley-building-ashlar');add(group,buildingTops,slate,style?.names.tops??'waverley-building-tops');
+ if(!style){
+  const walls=group.getObjectByName('waverley-building-walls') as THREE.Mesh|undefined;
+  walls?.geometry.setAttribute('wallWindowData',new THREE.Float32BufferAttribute(wallWindowData,2));
+ }
  const tops=group.getObjectByName(style?.names.tops??'waverley-building-tops') as THREE.Mesh|undefined;
  tops?.geometry.setAttribute('snowRoof',new THREE.Float32BufferAttribute(snowRoof,2));
  const shopMap=shopTexture(),shopfront=new THREE.MeshLambertMaterial({map:shopMap,color:shopMap?0xffffff:0x5a5650});add(group,shops,shopfront,style?.names.shops??'waverley-building-shops');

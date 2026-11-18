@@ -153,7 +153,7 @@ test('Waverley Scott Monument and Balmoral cornices get warm floodlight without 
   const {view}=await edinburgh();
   try {
     const scott=named<THREE.Mesh>(view.scene,'waverley-scott-monument');
-    assert.match(shader(scott.material as THREE.Material,'lambert').fragmentShader,/vec3\(0.38,0.23,0.1\)/);
+    assert.match(shader(scott.material as THREE.Material,'lambert').fragmentShader,/vec3\(1\.0,0\.68,0\.34\)/);
     const structure=named<THREE.Mesh>(view.scene,'waverley-frontage-structure');
     const s=shader(structure.material as THREE.Material,'lambert');
     const code=s.fragmentShader.split('// station-light-begin')[1]!;
