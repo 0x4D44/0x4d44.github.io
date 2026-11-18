@@ -722,7 +722,11 @@ export class AnimCrowd {
    *  Without them boarders stopped and vanished on the platform edge and alighters appeared there. When the doors close, anyone still in a doorway is aboard and is removed. */
   setBays(bays) {
     const had = this.bays && this.bays.length; this.bays = bays || [];
-    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj || q.stair) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) { if (q.onArrive) q.onArrive(q, false); this._drop(q); this.people.splice(i, 1); } }
+    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj || q.stair) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) {
+      // a boarder is aboard (their onArrive puts them in the car); anyone else - someone getting off - steps back on to the platform edge and goes on from there,
+      // rather than vanish in the doorway as it shuts (review 22: 4 a run removed in view)
+      if (!q.onArrive && q.obj.visible && !q.hidden) { let bx = q.x, bz = q.z, bd = 1e9; for (const f of this.floor) { const x = Math.min(f.x1 - 0.3, Math.max(f.x0 + 0.3, q.x)), z = Math.min(f.z1 - 0.3, Math.max(f.z0 + 0.3, q.z)), d = (x - q.x) ** 2 + (z - q.z) ** 2; if (d < bd) { bd = d; bx = x; bz = z; } } q.x = bx; q.z = bz; continue; }
+      if (q.onArrive) q.onArrive(q, false); this._drop(q); this.people.splice(i, 1); } }
   }
   _floors() { return this._goNow && this.bays && this.bays.length ? this.floor.concat(this.bays) : this.floor; }
   _onFloor(x, z, m = 0.22) {
@@ -939,7 +943,7 @@ export class AnimCrowd {
             const dd = Math.hypot(p.tx - p.x, p.tz - p.z);   // progress-based watchdog: sliding along a wall without getting closer is being stuck too
             this._progress(p, moved, dd, dt, 0.03); if (p.stair) p.stuckT = 0;   // (on the stairs there is nowhere else to go: wait for the person in front)
             if (dd < (p.legR || 0.35) && p.path && p.path.length) { const n = p.path.shift(); p.tx = n.x; p.tz = n.z; p.rail = !!n.rail; p.stair = !!n.stair; p.legR = n.r || 0; if (n.speed) p.speed = n.speed; p.bestD = 1e9; p.stuckT = 0; p.turnT = 0; p.stopHere = !p.path.length && !!p.onArrive; }   // the next leg of a route (door, aisle, seat)
-            else if (dd < (p.onArrive ? 0.12 : 0.35) || p.stuckT > (p.routed ? 6 : 2.5)) { if (p.onArrive && p.onArrive(p, dd < 0.6) === 'keep') { this.release(p); continue; } this._drop(p); this.people.splice(i, 1); continue; }
+            else if (dd < (p.onArrive ? 0.12 : 0.35) || p.stuckT > (p.routed ? 6 : 2.5)) { if (p.onArrive && p.onArrive(p, dd < 0.6) === 'keep') { this.release(p); continue; } if (!p.onArrive && dd >= 0.35 && p.obj.visible && !p.hidden && this._onFloor(p.x, p.z, 0)) { this.release(p); continue; } this._drop(p); this.people.splice(i, 1); continue; }   // (stuck in plain view on the platform - someone getting off, held up on the way to the stairs - they stand there, one of the people waiting, rather than vanish: review 22, 27 in 10 runs)
           }
         }
       }
