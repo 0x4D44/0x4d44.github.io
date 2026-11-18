@@ -35,7 +35,7 @@ export interface WaverleyView {
   groundAttribution?: string;
   climate?: SceneWeather;
   model?: ReturnType<WaverleyModelModule['buildWaverleyScene']>;
-  live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown; lampTrains?(): readonly LampTrain[] };
+  live?: { group: THREE.Group; frame(dt: number, selected: boolean, utcMs?: number): void; dispose(): void; status(): string; timeMs(): number; load(): Promise<void>; state(): unknown; lampTrains?(): readonly LampTrain[]; setSignalNightLevel?(level: number): void };
   view(aspect: number): StationView;
   dispose(): void;
 }

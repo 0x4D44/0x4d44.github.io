@@ -2,6 +2,7 @@
 // Scottish scenes; only window materials used by this scene are cloned.
 import * as THREE from 'three';
 import { PLATFORM_LANTERN_GLASS } from './furniture.ts';
+import { buildingNightMaterialsOf } from './materials.ts';
 
 export function createKxFogMaterials() {
   const active = { value: 0 };
@@ -81,7 +82,8 @@ if (uKxNightFog > 0.0) {
       root.traverse(o => {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh) {
-          const original = mesh.material;
+          const variants = buildingNightMaterialsOf(mesh);
+          const original = variants?.night ?? mesh.material;
           const patch = mesh.name === 'lamps' && mesh.parent?.name === 'furniture' ? lantern : window;
           const next = Array.isArray(original) ? original.map(patch) : patch(original);
           const changed = Array.isArray(original) ? (next as THREE.Material[]).some((m, i) => m !== original[i]) : next !== original;
@@ -110,18 +112,21 @@ if (uKxNightFog > 0.0) {
         material.needsUpdate = true;
       });
     },
-    setLevel(level: number) {
+    setLevel(level: number, night = false) {
       active.value = level;
       // Render the original materials whenever this effect is inactive: this
       // preserves day/clear shader programs and transparent-material ordering.
-      for (const [mesh, original] of originals) mesh.material = level > 0 ? fogged.get(mesh)! : original;
+      for (const [mesh, original] of originals) {
+        const variants = buildingNightMaterialsOf(mesh);
+        mesh.material = level > 0 ? fogged.get(mesh)! : variants ? (night ? variants.night : variants.day) : original;
+      }
       for (const [material, original] of overlays) {
         const fog = level > 0 || original;
         if (material.fog !== fog) { material.fog = fog; material.needsUpdate = true; }
       }
     },
     dispose() {
-      for (const [mesh, original] of originals) mesh.material = original;
+      for (const [mesh, original] of originals) mesh.material = buildingNightMaterialsOf(mesh)?.day ?? original;
       for (const material of owned) material.dispose();
       for (const [material, fog] of overlays) material.fog = fog;
     },

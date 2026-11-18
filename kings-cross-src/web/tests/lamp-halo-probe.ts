@@ -32,15 +32,23 @@ export function lampHaloProbe(points:THREE.Points,camera:THREE.PerspectiveCamera
   return{material,...shader,source:shader.fragmentShader.includes('exp(-1.8*max(0.0,vFogDepth-fogNear)')};
  };
  const core=corePoints&&compile(corePoints);
+ const profileCode=core?.fragmentShader.split('float lampCoreProfile(')[1]?.split('#include')[0];
+ const profile=profileCode ? new Glsl('float lampCoreProfile('+profileCode) : undefined;
+ const diameterCode=core?.vertexShader.split('float lampCoreDiameter(')[1]?.split('#include')[0];
+ const diameter=diameterCode ? new Glsl('float lampCoreDiameter('+diameterCode) : undefined;
  const depthCode=glsl.snippet(core?['lamp-depth','lamp-source-extinction','lamp-roof-core'].map(name=>marked(core.fragmentShader,name)).join('\n'):'');
  const coreSize=glsl.snippet(core?marked(core.vertexShader,'lamp-roof-core-size'):'');
  const projectedCores=corePoints&&core?Array.from({length:corePoints.geometry.getAttribute('position').count},(_,i)=>{
   const p=new THREE.Vector3().fromBufferAttribute(corePoints.geometry.getAttribute('position'),i).applyMatrix4(corePoints.matrixWorld);
   const depth=-p.clone().applyMatrix4(camera.matrixWorldInverse).z, q=p.clone().project(camera);
   const colour=new THREE.Vector3().fromBufferAttribute(corePoints.geometry.getAttribute('color'),i).toArray();
-  const env={vars:{gl_PointSize:core.material.size,uUrbanLampFog:fog.amount}};
+  const shape=corePoints.geometry.getAttribute('lampCoreShape');
+  const farSize=core.uniforms.uLampCoreFarSize?.value;
+  const size=diameter&&farSize!==undefined ? Number(diameter.call('lampCoreDiameter',[core.material.size,farSize,depth],{vars:{}})) : core.material.size;
+  const env={vars:{gl_PointSize:size,uUrbanLampFog:fog.amount}};
   coreSize(env);
-  return{x:640*(q.x+1),y:400*(1-q.y),depth,colour,distance:p.distanceTo(camera.position),size:env.vars.gl_PointSize};
+  return{x:640*(q.x+1),y:400*(1-q.y),depth,colour,distance:p.distanceTo(camera.position),size:env.vars.gl_PointSize,
+   shape:shape?[shape.getX(i),shape.getY(i)]:undefined};
  }):[];
 
  const s=compile(points),m=s.material,uPlatformLampNight=s.uniforms.uPlatformLampNight?.value??0;
@@ -88,8 +96,10 @@ export function lampHaloProbe(points:THREE.Points,camera:THREE.PerspectiveCamera
    if(p.depth<=0||p.depth>receiver.depth||p.x<0||p.x>=1280||p.y<0||p.y>=800)continue;
    const size=Math.min(p.size,receiver.maxPointSize??Infinity),u=(x-p.x)/size,v=(y-p.y)/size;
    if(Math.abs(u)>=.5||Math.abs(v)>=.5)continue;
-   const e={vars:{gl_FragColor:[...p.colour.map(c=>display(c)*fade(p.depth,core.source)),core.material.opacity],
-    gl_PointCoord:[u+.5,v+.5],uUrbanLampFog:fog.amount,vUrbanLampDistance:p.distance}};
+   const uv=[u+.5,v+.5];
+   const alpha=p.shape&&profile?Number(profile.call('lampCoreProfile',[uv,p.shape],{vars:{}})):1;
+   const e={vars:{gl_FragColor:[...p.colour.map(c=>display(c)*fade(p.depth,core.source)),core.material.opacity*alpha],
+    gl_PointCoord:uv,uUrbanLampFog:fog.amount,vUrbanLampDistance:p.distance}};
    depthCode(e);
    const rgba=e.vars.gl_FragColor;
    for(let i=0;i<3;i++)rgb[i]=rgb[i]!+THREE.MathUtils.clamp(rgba[i]!,0,1)*rgba[3]!;

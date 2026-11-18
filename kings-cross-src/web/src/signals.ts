@@ -181,6 +181,70 @@ export function validatedSignalHypotheses(value: unknown, area = 'Y9'): SignalHy
 const aspectBearing = (signal: OverlaySignal): boolean => signal.kinds.includes('main') || signal.kinds.includes('combined');
 /** Lamp colours: unknown is the dark grey lamp. */
 const LAMP: Readonly<Record<Aspect, number>> = { proceed: 0x35ff69, preliminary: 0xffc21a, caution: 0xffc21a, danger: 0xff2929, unknown: 0x666666 };
+const LENS_RADIUS = .19;
+
+/** A facing aspect uses its existing lens mesh for the disc of optical glare.
+ * The directional falloff and ordinary depth test keep housings and trains opaque. */
+function signalLensAtNight(day: THREE.MeshBasicMaterial, level: THREE.IUniform<number>, origin: THREE.Vector3): THREE.MeshBasicMaterial {
+  const material = day.clone();
+  material.transparent = true;
+  material.depthWrite = false;
+  material.onBeforeCompile = shader => {
+    shader.uniforms.uSignalNight = level;
+    shader.uniforms.uSignalLens = { value: origin };
+    shader.uniforms.uSignalColour = { value: day.color };
+    const varyings = 'uniform float uSignalNight;\nvarying vec2 vSignalDisc;\nvarying float vSignalFacing;';
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${varyings}\nuniform vec3 uSignalLens, uSignalColour;`)
+      .replace('#include <project_vertex>', `#include <project_vertex>
+vec3 signalColour = uSignalColour;
+vec4 signalCentre = vec4( uSignalLens, 1.0 );
+vec4 signalAxis = vec4( 0.0, 0.0, 1.0, 0.0 );
+#ifdef USE_INSTANCING
+  signalCentre = instanceMatrix * signalCentre;
+  signalAxis = instanceMatrix * signalAxis;
+#endif
+#ifdef USE_INSTANCING_COLOR
+  signalColour *= instanceColor;
+#endif
+signalCentre = modelViewMatrix * signalCentre;
+signalAxis = modelViewMatrix * signalAxis;
+float signalChroma = max( max( signalColour.r, signalColour.g ), signalColour.b )
+                  - min( min( signalColour.r, signalColour.g ), signalColour.b );
+vSignalFacing = smoothstep( 0.16, 0.58, dot( normalize( signalAxis.xyz ), normalize( -signalCentre.xyz ) ) )
+              * step( 0.15, signalChroma );
+vSignalDisc = ( mvPosition.xy - signalCentre.xy ) / ${LENS_RADIUS};
+if ( vSignalFacing > 0.0 ) {
+  float signalGlareRadius = max( 0.34, -0.008 * signalCentre.z );
+  mvPosition.xy = signalCentre.xy + vSignalDisc * mix( ${LENS_RADIUS}, signalGlareRadius, vSignalFacing * uSignalNight );
+  gl_Position = projectionMatrix * mvPosition;
+}`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+${varyings}
+float signalGlare( float r ) {
+  return 0.82 * ( 1.0 - smoothstep( 0.20, 0.46, r ) )
+       + 0.18 * ( 1.0 - smoothstep( 0.36, 1.0, r ) );
+}
+vec3 signalGlareLight( vec3 colour, float r ) {
+  return mix( 1.4 * colour, vec3( 1.0 ), 0.32 * ( 1.0 - smoothstep( 0.0, 0.37, r ) ) );
+}`)
+      .replace('#include <opaque_fragment>', `
+if ( vSignalFacing > 0.0 ) {
+  float radius = length( vSignalDisc );
+  float glare = vSignalFacing * uSignalNight;
+  diffuseColor.a *= mix( 1.0, signalGlare( radius ), glare );
+  outgoingLight = mix( outgoingLight, signalGlareLight( outgoingLight, radius ), glare );
+}
+#include <opaque_fragment>`)
+      .replace('#include <tonemapping_fragment>', `
+if ( vSignalFacing <= 0.0 ) {
+  #include <tonemapping_fragment>
+}`);
+  };
+  material.customProgramCacheKey = () => 'signal-aspect-glare';
+  return material;
+}
 
 const colour = new THREE.Color();
 /** What an overlay head's label says of where it stands. */
@@ -215,6 +279,10 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   const records: DrawnSignal[] = [];
   const resources = new Set<THREE.BufferGeometry | THREE.Material>();
   const lamps = new Map<DrawnSignal, THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>>();
+  const lampDays = new Map<DrawnSignal, THREE.MeshBasicMaterial>();
+  const lampNights = new Map<THREE.MeshBasicMaterial, THREE.MeshBasicMaterial>();
+  const nightLevel = { value: 0 };
+  const lowerLens = new THREE.Vector3(0,0,.18), upperLens = new THREE.Vector3(0,4.18,.18), localLens = new THREE.Vector3();
   const questions = new Map<DrawnSignal, THREE.Group>();
   let bytes: ByteState = {}, table: SignalHypothesis[] = [], disposed = false, generation = 0;
   let tableValue: unknown, privateAnchors: AnchorMap | undefined, anchorGraph: SignalGraph | undefined;
@@ -294,7 +362,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const head = mesh(new THREE.BoxGeometry(0.65, 1.15, 0.28), 0x15191c, !inferred); head.position.y = 3.8; group.add(head);
     // the post and the box take a passing train's headlamps (train-headlamp-light.ts); the lamp and the question mark are their own light
     for (const lit of [post, head]) if (lit) addHeadlampBasic(lit.material as THREE.MeshBasicMaterial);
-    const lamp = mesh(new THREE.SphereGeometry(0.19, 8, 6), 0x666666, !inferred) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+    const lamp = mesh(new THREE.SphereGeometry(LENS_RADIUS, 8, 6), 0x666666, !inferred) as THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
     lamp.name = 'aspect'; lamp.position.set(0, 3.95, 0.18); group.add(lamp);
     const question = new THREE.Group(); question.name = 'unknown';
     // White vector question mark, facing local +z. No canvas, textures or DOM.
@@ -310,7 +378,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     group.userData.label = label; group.userData.inferredPosition = inferred;
     group.userData.positionReview = drawnSignal.positionReview?.status ?? 'uncertain';
     const record: DrawnSignal = { signal: drawnSignal, group, state: 'unknown', inferredPosition: inferred, label };
-    records.push(record); lamps.set(record, lamp); questions.set(record, question); parent.add(group);
+    records.push(record); lamps.set(record, lamp); lampDays.set(record,lamp.material); questions.set(record, question); parent.add(group);
     return record;
   }
   /** The overlay heads that bound sections and show an aspect, on the track they stand by. */
@@ -345,7 +413,7 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       const instanced = new THREE.InstancedMesh(geometry, material, owners.length); instanced.name = name;
       owners.forEach((r, i) => { r.group.updateMatrix(); instanced.setMatrixAt(i, r.group.matrix); });
       instanced.instanceMatrix.needsUpdate = true; instanced.computeBoundingSphere(); group.add(instanced);
-      return { mesh: instanced, index: new Map(owners.map((r, i) => [r, i])) };
+      return { mesh: instanced, day: material, index: new Map(owners.map((r, i) => [r, i])) };
     };
     const fourAspect = heads.filter(r => r.signal.aspects === 4);
     // A four-aspect head's aspect lamp sits low in the box and its second lamp high, lit only for double yellow.
@@ -353,8 +421,8 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
     const parts = {
       post: part('signal-posts', new THREE.CylinderGeometry(0.09, 0.12, 3.7, 6).translate(0, 1.85, 0), 0x999999, heads.filter(r => r.signal.side !== 'over-track'), true),
       box: part('signal-boxes', new THREE.BoxGeometry(0.65, 1.15, 0.28).translate(0, 3.8, 0), 0x15191c, heads, true),
-      lamp: part('signal-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 0, 0.18), 0xffffff, heads),
-      upper: part('signal-upper-lamps', new THREE.SphereGeometry(0.19, 8, 6).translate(0, 4.18, 0.18), 0xffffff, fourAspect),
+      lamp: part('signal-lamps', new THREE.SphereGeometry(LENS_RADIUS, 8, 6).translate(0, 0, 0.18), 0xffffff, heads),
+      upper: part('signal-upper-lamps', new THREE.SphereGeometry(LENS_RADIUS, 8, 6).translate(0, 4.18, 0.18), 0xffffff, fourAspect),
     };
     // the lamp's height differs by head: its instance matrix carries it
     const lift = new THREE.Matrix4();
@@ -369,6 +437,12 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
   }
   function removeInferred(berth: string, record: DrawnSignal): void {
     record.group.removeFromParent();
+    const day = lampDays.get(record)!;
+    lampDays.delete(record);
+    const night = lampNights.get(day);
+    if (night) { night.dispose(); resources.delete(night); lampNights.delete(day); }
+    // Dispose the inferred head's own day material even if it was lit.
+    lamps.get(record)!.material = day;
     record.group.traverse(object => {
       if (object instanceof THREE.Mesh || object instanceof THREE.Line) {
         for (const resource of [object.geometry, ...(Array.isArray(object.material) ? object.material : [object.material])]) {
@@ -377,6 +451,22 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
       }
     });
     records.splice(records.indexOf(record), 1); lamps.delete(record); questions.delete(record); inferredHeads.delete(berth);
+  }
+  function lensMaterial(day: THREE.MeshBasicMaterial, lit: boolean, origin: THREE.Vector3): THREE.MeshBasicMaterial {
+    if (!lit || nightLevel.value <= .003) return day;
+    let night = lampNights.get(day);
+    if (!night) {
+      lampNights.set(day, night = signalLensAtNight(day, nightLevel, origin));
+      resources.add(night);
+    }
+    night.color.copy(day.color);
+    return night;
+  }
+  function paintLensMaterials(): void {
+    for (const [record,lamp] of lamps) lamp.material = lensMaterial(lampDays.get(record)!,record.state !== 'unknown',localLens);
+    const lower = instances?.lamp, upper = instances?.upper;
+    if (lower) lower.mesh.material = lensMaterial(lower.day,records.some(r=>!r.inferredPosition && r.state !== 'unknown'),lowerLens);
+    if (upper) upper.mesh.material = lensMaterial(upper.day,records.some(r=>!r.inferredPosition && r.signal.aspects === 4 && r.state === 'preliminary'),upperLens);
   }
   function bind(record: DrawnSignal, anchor: BerthAnchor, source: DrawnSignal['mappingSource']): void {
     runtimeBerths.set(record, anchor.berth); record.mappingSource = source;
@@ -484,14 +574,20 @@ export function createSignals(overlay: SignalOverlay, parent: THREE.Object3D,
         if (upper !== undefined) instances!.upper!.mesh.setColorAt(upper, colour.setHex(record.state === 'preliminary' ? LAMP.preliminary : LAMP.unknown));
         continue;
       }
-      const lamp = lamps.get(record)!;
-      if (record.inferredPosition) lamp.material.color.setHex(lampColour); // its own material
-      else lamp.material = sharedMaterial(lampColour); // the shared one of that colour
+      if (record.inferredPosition) lampDays.get(record)!.color.setHex(lampColour); // its own material
+      else lampDays.set(record,sharedMaterial(lampColour)); // the shared one of that colour
       questions.get(record)!.visible = record.state === 'unknown';
     }
     for (const part of [instances?.lamp, instances?.upper]) if (part?.mesh.instanceColor) part.mesh.instanceColor.needsUpdate = true;
+    paintLensMaterials();
   }
   return {
+    setNightLevel(level: number): void {
+      if (disposed) return;
+      const wasLit = nightLevel.value > .003;
+      nightLevel.value = level;
+      if (wasLit !== (level > .003)) paintLensMaterials();
+    },
     apply(row: SignalEvent): void {
       if (disposed) return;
       if (row.e.kind === 'snapshot') {

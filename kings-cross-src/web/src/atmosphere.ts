@@ -732,12 +732,10 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
           }
         }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
-        if (kxFogMaterials) {
-          kxFogMaterials.setLevel(cityFog);
-          officeNightFog.value = cityFog;
-        }
+        if (kxFogMaterials) officeNightFog.value = cityFog;
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
+        kxFogMaterials?.setLevel(cityFog, buildingsLit);
       }
       if (!state) return;
       // Large concourse halo billboards straddle the sloping dome (one centre is

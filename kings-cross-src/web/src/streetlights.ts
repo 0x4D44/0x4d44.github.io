@@ -202,12 +202,30 @@ export interface StreetLightOptions {
   lowPressureSodium?: boolean | ((spot:LampSpot)=>boolean);
   /** Preserve a sodium core's orange hue at panorama scale. */
   coreTint?: boolean;
+  /** Clear-air lens profiles drawn by the existing fixed-pixel core layer. */
+  sourceCores?: 'street' | 'kx-platform' | 'wv-platform';
+  /** A promoted lens is drawn only by its approach batch in clear air. */
+  sourceCoreAt?: (spot: LampSpot) => boolean;
   haloSize?: number;
   /** Relative head diameter, e.g. the forecourt's blazing LED strips. */
   haloScaleAt?: (spot:LampSpot)=>number;
   /** A small white-hot core in pixels, including at panorama distances. */
   coreSize?: number;
 }
+
+const CORE_SIZE = 5;
+const CORE_SIZE_GLSL = `
+float lampCoreDiameter( float nearSize, float farSize, float depth ) {
+  return mix( nearSize, farSize, smoothstep( 75.0, 260.0, depth ) );
+}
+`;
+const CORE_GLSL = `
+float lampCoreProfile( vec2 uv, vec2 shape ) {
+  float radius = length( ( uv - 0.5 ) * 2.0 / shape );
+  return 0.78 * ( 1.0 - smoothstep( 0.24, 0.61, radius ) )
+       + 0.22 * ( 1.0 - smoothstep( 0.36, 1.0, radius ) );
+}
+`;
 
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
@@ -286,6 +304,8 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   let cores: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | undefined;
   let clearCoreMaterial: THREE.PointsMaterial | undefined;
   let fogCoreMaterial: THREE.PointsMaterial | undefined;
+  let sourceCore: { geometry: THREE.BufferGeometry; material: THREE.PointsMaterial } | undefined;
+  let legacyCoreGeometry: THREE.BufferGeometry | undefined;
   if (options.coreSize && heads.length) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', haloGeometry.getAttribute('position'));
@@ -294,11 +314,50 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
       transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
     if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog,!!(options.kxOptics || options.lightFog),!!options.softFog);
     clearCoreMaterial=material;
+    legacyCoreGeometry = geometry;
     if (options.boundedFog && options.fog && options.enhancedFog) {
       fogCoreMaterial=material.clone();
       fogCoreMaterial.onBeforeCompile=material.onBeforeCompile;
       fogCoreMaterial.customProgramCacheKey=material.customProgramCacheKey;
       sharpenPlatformCoreInFog(fogCoreMaterial);
+    }
+    if (options.sourceCores) {
+      const positions: number[] = [], lensColours: number[] = [], shapes: number[] = [];
+      for (const spot of spots) {
+        const street = options.sourceCores === 'street';
+        const sodium = spot.kind === LAMP_KIND.sodium;
+        const lowPressure = lightOf(spot).halo === 0xff993c;
+        const hex = spot.mast ? 0xddeeff
+          : sodium ? lowPressure ? 0xffb85a : 0xffcb83
+          : spot.kind === LAMP_KIND.warm ? 0xffe5be
+          : street ? 0xe2f0ff : options.sourceCores === 'kx-platform' ? 0xffe0b0 : 0xffeed8;
+        tint.setHex(options.sourceCoreAt?.(spot) === false ? 0 : hex);
+        for (const [x,y,z] of spot.mast ? stripPoints(spot) : [headAt(spot)]) {
+          // Clear the rim of the fitting when looking up at the glass.
+          positions.push(x, y - (spot.mast ? 0 : street ? .14 * spot.height / POST_HEIGHT : .045), z);
+          lensColours.push(tint.r,tint.g,tint.b);
+          shapes.push(...(spot.mast ? [.69,1] : [1,street ? .65 : .58]));
+        }
+      }
+      const lens = new THREE.BufferGeometry();
+      lens.setAttribute('position', new THREE.Float32BufferAttribute(positions,3));
+      lens.setAttribute('color', new THREE.Float32BufferAttribute(lensColours,3));
+      lens.setAttribute('lampCoreShape', new THREE.Float32BufferAttribute(shapes,2));
+      const optic = material.clone();
+      optic.size = CORE_SIZE;
+      const farSize = { value: options.coreSize };
+      optic.onBeforeCompile = (shader, renderer) => {
+        material.onBeforeCompile(shader,renderer);
+        shader.uniforms.uLampCoreFarSize = farSize;
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', `#include <common>\nattribute vec2 lampCoreShape;\nvarying vec2 vLampCoreShape;\nuniform float uLampCoreFarSize;${CORE_SIZE_GLSL}`)
+          .replace('gl_PointSize = size;', 'gl_PointSize = lampCoreDiameter( size, uLampCoreFarSize, -mvPosition.z );\nvLampCoreShape = lampCoreShape;');
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', `#include <common>\nvarying vec2 vLampCoreShape;${CORE_GLSL}`)
+          .replace('#include <alphatest_fragment>', '#include <alphatest_fragment>\ndiffuseColor.a *= lampCoreProfile( gl_PointCoord, vLampCoreShape );');
+      };
+      optic.customProgramCacheKey = () => material.customProgramCacheKey() + '-lens-core';
+      sourceCore = { geometry:lens, material:optic };
     }
     cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
     cores.raycast = (): void => {};
@@ -489,7 +548,10 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       poolMaterial.opacity = l;
       halos.visible = pools.visible = l > 0.01;
       if (cores && clearCoreMaterial) {
-        cores.material = fogCoreMaterial && surfaceUniforms.fog.value > .65 ? fogCoreMaterial : clearCoreMaterial;
+        const denseFog = surfaceUniforms.fog.value > .65;
+        const lens = l > .01 && !denseFog ? sourceCore : undefined;
+        cores.geometry = lens?.geometry ?? legacyCoreGeometry!;
+        cores.material = lens?.material ?? (denseFog && fogCoreMaterial ? fogCoreMaterial : clearCoreMaterial);
         cores.material.opacity = l;
         cores.visible = l > 0.01;
       }
@@ -504,7 +566,9 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       poolGeometry.dispose();
       material.dispose();
       haloMaterial.dispose();
-      cores?.geometry.dispose();
+      legacyCoreGeometry?.dispose();
+      sourceCore?.geometry.dispose();
+      sourceCore?.material.dispose();
       clearCoreMaterial?.dispose();
       fogCoreMaterial?.dispose();
       poolMaterial.dispose();

@@ -19,7 +19,7 @@ import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { cityMaterial } from './materials.ts';
+import { cityMaterial, cityOfficeAtNight, withBuildingNightMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { forecourtMasts, LAMP_KIND } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
@@ -155,6 +155,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   group.name = 'city';
   const stats: CityStats = { drawCalls: 0, triangles: 0, trees: 0, lamps: built.lamps.length, byKey: {}, buildings: built.stats };
   const geometries: THREE.BufferGeometry[] = [];
+  let officeAtNight: THREE.MeshPhongMaterial | undefined;
   for (const key of CITY_KEYS) {
     const acc = built.meshes[key];
     if (acc.triangleCount === 0) continue;
@@ -172,6 +173,10 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     }
     geometries.push(geometry);
     const mesh = new THREE.Mesh(geometry, cityMaterial(key));
+    if (key === 'glass' && opts.nightEffects && mesh.material instanceof THREE.MeshPhongMaterial) {
+      officeAtNight = cityOfficeAtNight(mesh.material);
+      withBuildingNightMaterial(mesh, officeAtNight);
+    }
     mesh.name = `city-${key}`;
     group.add(mesh);
     stats.drawCalls++;
@@ -231,6 +236,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
       wetSurface?.dispose();
       scene.remove(group);
       for (const g of geometries) g.dispose();
+      officeAtNight?.dispose();
       if (lights) {
         detach?.();
         scene.remove(lights.group);
