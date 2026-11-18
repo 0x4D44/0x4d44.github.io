@@ -406,6 +406,10 @@ export const LAMP_SHARE = 0.22;
 /** After dark the unlit far-rail lines keep this share of their brightness. */
 export const RAIL_NIGHT = 0.3;
 
+// Waverley-owned materials tracing the distant ridge and Castle Rock.
+const WAVERLEY_SKYLINE_MESHES = new Set(['waverley-building-walls', 'waverley-building-ashlar',
+  'waverley-building-tops', 'waverley-city-monuments', 'waverley-ground', 'waverley-ground-cover']);
+
 export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
@@ -438,6 +442,12 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   const railLines = new Map<THREE.LineBasicMaterial, THREE.Color>();
   // the concourse's soffit is unlit (a lit underside would be black under the sun), so no light dims it: it follows the camera's exposure instead, the one thing that moves its pixels
   let soffit: THREE.MeshBasicMaterial | null = null;
+  const cloudEye = new THREE.Vector3();
+  const highWaverleyEye = () => smoothstep(28,44,cloudEye.y);
+  // The hillside is above the station veil and below the aerial views.
+  const hillsideEye = (high: number) => high * (1-smoothstep(55,90,cloudEye.y));
+  const skylineFog = { value: 0 };
+  const skylineHooks = new Map<THREE.Material, () => void>();
   // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
   let roofKey: string | null = null;
   let coverMap: CoverMap | null = null;
@@ -476,6 +486,32 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         // under a roof (the shed, the concourse, a canopy) the sky is hidden: every Lambert surface keeps less of its hemisphere light there.
         // lighting.ts does it once per material, however many scenes and scans reach it (the station's materials are shared between scenes)
         if (lambert.isMeshLambertMaterial && !kxFogMaterials?.owns(m)) addRoofShade(lambert);
+        if (litFogCloud && cityFogTint && !kingsCrossNightFog && WAVERLEY_SKYLINE_MESHES.has(mesh.name) && !skylineHooks.has(m)) {
+          const before = m.onBeforeCompile, cacheKey = m.customProgramCacheKey;
+          const key = cacheKey.call(m);
+          m.onBeforeCompile = (shader, renderer) => {
+            before.call(m, shader, renderer);
+            shader.uniforms.uWaverleySkylineFog = skylineFog;
+            shader.fragmentShader = shader.fragmentShader
+              .replace('#include <common>', '#include <common>\nuniform float uWaverleySkylineFog;')
+              .replace('#include <fog_fragment>', THREE.ShaderChunk.fog_fragment.replace(
+                'gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );', `
+if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
+  float ridge = uWaverleySkylineFog*smoothstep(550.0,950.0,vFogDepth);
+  fogFactor *= 1.0-0.12*ridge;
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor*(1.0-0.055*ridge), fogFactor );
+} else {
+  gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+}`));
+          };
+          m.customProgramCacheKey = () => key + '+waverley-skyline';
+          m.needsUpdate = true;
+          skylineHooks.set(m, () => {
+            m.onBeforeCompile = before;
+            m.customProgramCacheKey = cacheKey;
+            m.needsUpdate = true;
+          });
+        }
         if (m.name === 'concourse-soffit') soffit = m as THREE.MeshBasicMaterial;
         const emissive = m as Emissive;
         if ((lambert.isMeshLambertMaterial || (m as THREE.MeshPhongMaterial).isMeshPhongMaterial) && (emissiveBuilt.has(emissive) || emissive.emissive.getHex() !== 0) && !standIns.has(emissive)) {
@@ -493,7 +529,6 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   let state: AtmosphereState | null = null;
   let lastCompute = -Infinity;
   const paint = { zenith: [-1, -1, -1] as Rgb, horizon: [-1, -1, -1] as Rgb, glow: -1, sunKey: '', cloud: -1, fogCloud: -1, fogEye: '' };
-  const cloudEye = new THREE.Vector3();
   const sunDirection = new THREE.Vector3();
   const keyDir: [number, number, number] = [0, 1, 0];
   let keyKnown = false;
@@ -504,7 +539,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
    * billows, fading out toward the horizon so the sky still meets the fog in one colour). The colours are worked in sRGB, then stored
    * as linear.
    */
-  const paintDome = (rig: SkyRig, cloud: number, fogCloud: number, highWaverley: number): void => {
+  const paintDome = (rig: SkyRig, cloud: number, fogCloud: number, highWaverley: number, hillside: number): void => {
     const geometry = world.sky.geometry;
     const pos = geometry.getAttribute('position');
     const attr = geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -545,10 +580,14 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       const fogRise = fogCloud * (kingsCrossNightFog
         ? .062*smoothstep(.46,.64,t)*(1-smoothstep(.65,.734,t))
         : .035*smoothstep(.45,.54,t)*(1-smoothstep(.55,.67,t)));
+      // A latitude-only grade restores the hillside view's sky rise.
+      // Fade it away near the skyline so the low veil still meets the dome.
+      const hillsideRise = fogCloud * hillside * .033 * (.5-smoothstep(.319,.429,t))
+        * smoothstep(.15,.28,t) * (1-smoothstep(.44,.52,t));
       colour.setRGB(
-        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow - fogFalloff + fogRise,
-        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91 - fogFalloff + fogRise,
-        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8 - fogFalloff + fogRise, THREE.SRGBColorSpace);
+        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow - fogFalloff + fogRise + hillsideRise,
+        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91 - fogFalloff + fogRise + hillsideRise,
+        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8 - fogFalloff + fogRise + hillsideRise, THREE.SRGBColorSpace);
       attr.setXYZ(i, colour.r, colour.g, colour.b);
     }
     attr.needsUpdate = true;
@@ -576,13 +615,14 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     // The dome only when its colours, the cloud's structure or the sun's place have moved enough to see.
     const fogCloud = litFogCloud && cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.85,rig.fogAmount) : 0;
     // From the hillside, street lighting below the eye reads as a diffuse veil.
-    const highWaverley = fogCloud>0 && !kingsCrossNightFog ? smoothstep(28,44,cloudEye.y) : 0;
-    const fogEye = fogCloud>0?`${Math.round(cloudEye.x/5)}/${Math.round(cloudEye.z/5)}/${Math.round(100*highWaverley)}`:'';
+    const highWaverley = fogCloud>0 && !kingsCrossNightFog ? highWaverleyEye() : 0;
+    const hillside = hillsideEye(highWaverley);
+    const fogEye = fogCloud>0?`${Math.round(cloudEye.x/5)}/${Math.round(cloudEye.z/5)}/${Math.round(100*highWaverley)}/${Math.round(100*hillside)}`:'';
     let moved = Math.abs(rig.glow.strength - paint.glow);
     for (let i = 0; i < 3; i++) moved = Math.max(moved, Math.abs((rig.dome.zenith[i] as number) - (paint.zenith[i] as number)), Math.abs((rig.dome.horizon[i] as number) - (paint.horizon[i] as number)));
     const sunKey = `${Math.round(sunPos.elevationDeg * 4)}/${Math.round(sunPos.azimuthDeg * 2)}`;
     if (moved > 0.004 || sunKey !== paint.sunKey || Math.abs(weather.cloud - paint.cloud) > 0.03 || Math.abs(fogCloud-paint.fogCloud) > .004 || fogEye!==paint.fogEye) {
-      paintDome(rig, weather.cloud, fogCloud, highWaverley);
+      paintDome(rig, weather.cloud, fogCloud, highWaverley, hillside);
       paint.zenith = [...rig.dome.zenith];
       paint.horizon = [...rig.dome.horizon];
       paint.glow = rig.glow.strength;
@@ -713,6 +753,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         rgb(scene.fog.color, state.rig.fog);
         if (litFogCloud && cityFogTint) {
           const cityFog = lampLevelFor(state.sun.elevationDeg) * smoothstep(.65,.85,state.rig.fogAmount);
+          skylineFog.value = kingsCrossNightFog ? 0 : cityFog * hillsideEye(highWaverleyEye());
           // At full extinction the far city is the lit low cloud itself.
           colour.setRGB(...state.rig.dome.horizon,THREE.SRGBColorSpace);
           scene.fog.color.lerp(colour,cityFog);
@@ -728,6 +769,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       precip.dispose();
       dialLights?.dispose();
       kxFogMaterials?.dispose();
+      for (const undo of skylineHooks.values()) undo();
       platformLamps?.dispose();
       nightLights?.dispose();
       world.sky.remove(sunSprite, stars);
