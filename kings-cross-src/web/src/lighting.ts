@@ -21,7 +21,7 @@
 // the platforms under the Barlow shed are a fifth as bright as the forecourt, and the tarmac is near black.)
 import * as THREE from 'three';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
-import { windowNight } from './materials.ts';
+import { buildingNightMaterialsOf, windowNight } from './materials.ts';
 import { HEADLAMP_FRAGMENT, headlampUniforms } from './train-headlamp-light.ts';
 
 const materialsOf = (o: THREE.Object3D): THREE.Material[] => {
@@ -280,7 +280,8 @@ export function createSunShadow(scene: THREE.Scene, sun: THREE.DirectionalLight)
       if (SHADOW_CASTERS.has(mesh.name)) {
         mesh.castShadow = true;
         // a roof or a wall is one sheet: both of its faces are drawn into the map, or the sheet that faces the sun would not shade what is behind it
-        for (const m of mats) m.shadowSide = THREE.DoubleSide;
+        const variants = buildingNightMaterialsOf(mesh);
+        for (const m of variants ? [variants.day, variants.night] : mats) m.shadowSide = THREE.DoubleSide;
         casters.push(mesh);
         const room = rooms[ROOM_OF.get(mesh.name) ?? -1];
         if (room) { mesh.updateWorldMatrix(true, false); room.box.expandByObject(mesh); room.meshes.push(mesh); } else if (mesh.name === 'city-trees') trees.push(mesh);

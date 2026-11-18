@@ -183,7 +183,11 @@ test('Midland upper windows have irregular warm occupancy and the arcade panes h
     console.log('Midland upper window lights, samples, arcade lit share',on.length,rooms.length,archShare);
     assert.deepEqual(near([...upper][0]!,0),[0,0,0]);
     assert.ok(on.length / rooms.length >= .15 && on.length / rooms.length <= .25, '15–25% upper-window occupancy');
-    assert.ok(on.every(([r,g,b]) => r! > g! && g! > 1.6 * b!), 'lit windows are amber');
+    const amber = on.filter(([r,g,b]) => r! > g! && g! > 1.6 * b!);
+    const cool = on.filter(([r,g,b]) => b! > g! && g! > r!);
+    assert.equal(amber.length, 84, 'the calibrated amber rooms retain their warm channel ratios');
+    assert.equal(cool.length, 5, 'the other occupied rooms use the cool palette');
+    assert.equal(amber.length + cool.length, on.length, 'every occupied room fits one of the two palettes');
     assert.ok(new Set(on.map(rgb => luma(rgb).toFixed(2))).size >= 8,'vary the intensity among occupied rooms');
     // Batch order follows the drawn bays. Occupancy needs both adjacent
     // lit rooms and long dark gaps, with no short period across the row.

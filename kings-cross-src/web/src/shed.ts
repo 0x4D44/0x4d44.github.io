@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { Batch, material } from './materials.ts';
+import { Batch, material, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -423,10 +423,66 @@ function archRing(uc: number, springing: number, r0: number, r1: number): THREE.
   return s;
 }
 
-function mesh(g: THREE.BufferGeometry, m: THREE.Material, name: string): THREE.Mesh {
+function mesh<M extends THREE.Material>(g: THREE.BufferGeometry, m: M, name: string): THREE.Mesh<THREE.BufferGeometry, M> {
   const o = new THREE.Mesh(g, m);
   o.name = name;
   return o;
+}
+
+const frontWashMaterials = new Map<string, THREE.MeshLambertMaterial>();
+
+/** Rake the south piers with amber light and pick out the clock stage and
+ * its projecting cornice. The existing broad flood remains the fill. */
+function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', width: number): THREE.MeshLambertMaterial {
+  const key = `kx-front-wash-${source}-${kind}-${width}`;
+  const cached = frontWashMaterials.get(key);
+  if (cached) return cached;
+  const original = material(source) as THREE.MeshLambertMaterial;
+  const m = original.clone();
+  m.defines = { ...original.defines };
+  const light = kind === 'front' ? /* glsl */`
+  float x = vKxWashPos.x;
+  float endPier = min(abs(x-0.5),abs(x-${(width-0.5).toFixed(4)}));
+  float spine = abs(x-${(width/2).toFixed(4)});
+  float spread = 1.25 + 0.18*y;
+  float edge = exp(-pow(endPier/spread,2.0)) + exp(-pow(spine/spread,2.0));
+  float shoulder = abs(abs(spine-${R.toFixed(4)})-${(R*0.88).toFixed(4)});
+  float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(1.0,6.0,y);
+  float wash = (0.84*edge*exp(-y/7.8) + 0.17*arch*exp(-y/11.0)) * max(vKxWashNormal.z,0.0);
+` : /* glsl */`
+  float faceU = dot(abs(vKxWashPos.xz),abs(vKxWashNormal.zx));
+  float rail = exp(-pow(abs(faceU-2.6)/(0.61+0.078*y),2.0));
+  float shaft = (0.045+0.76*rail)*exp(-y/8.5);
+  float stage = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-5.8).toFixed(4)})/1.95,2.0));
+  float stageEdge = 0.62 + 0.38*smoothstep(0.8,2.3,faceU);
+  float eaves = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-3.0).toFixed(4)})/0.65,2.0));
+  float wash = (shaft + 0.33*stage*stageEdge + 0.36*eaves) * (1.0-max(vKxWashNormal.y,0.0));
+`;
+  m.onBeforeCompile = (shader, renderer) => {
+    shader.uniforms.uWinNight = windowNight;
+    const varying = '\nvarying vec3 vKxWashPos;\nvarying vec3 vKxWashNormal;';
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>${varying}`)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvKxWashPos = position; vKxWashNormal = normal;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>${varying}\nuniform float uWinNight;`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+if ( uWinNight > 0.003 ) {
+  float y = max(vKxWashPos.y,0.0);
+  ${light}
+  // The texture colours both the light and how strongly each course picks it up.
+  float texel = dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722));
+  float detail = mix(0.68,1.13,smoothstep(0.16,0.43,texel));
+  totalEmissiveRadiance += vec3(1.0,0.66,0.25) * diffuseColor.rgb * (wash*detail*uWinNight);
+}
+`);
+    // The shared roof-shade pass sees the night uniform and adds the usual
+    // contact shade and architectural flood after the wash.
+    original.onBeforeCompile(shader, renderer);
+  };
+  m.customProgramCacheKey = () => `${original.customProgramCacheKey()}+${key}`;
+  frontWashMaterials.set(key, m);
+  return m;
 }
 
 function addBars(batch: Batch, bars: BarSpec[], dz: number, z0 = 0): void {
@@ -586,7 +642,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
   frontGeo.translate(0, 0, -FRONT_THICK);
-  group.add(mesh(frontGeo, material('brickFoot'), 'shed-front'));
+  group.add(withBuildingNightMaterial(mesh(frontGeo, material('brickFoot'), 'shed-front'), frontWash('brickFoot', 'front', W)));
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
   let plinthStart = -0.4;
@@ -716,7 +772,9 @@ export function buildTower(x: number): THREE.Group {
   vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
   const arrow: V3[] = [[0.8, vaneY - 0.18, 0], [1.35, vaneY, 0], [0.8, vaneY + 0.18, 0]];
   vane.poly(arrow); vane.poly([...arrow].reverse());
-  tower.add(mesh(tb.build(), material('brickFoot'), 'tower-brick'), mesh(ts.build(), material('stoneFoot'), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
+  const brick = withBuildingNightMaterial(mesh(tb.build(), material('brickFoot'), 'tower-brick'), frontWash('brickFoot', 'tower', tw));
+  const stone = withBuildingNightMaterial(mesh(ts.build(), material('stoneFoot'), 'tower-stone'), frontWash('stoneFoot', 'tower', tw));
+  tower.add(brick, stone, mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
   tower.position.set(x, 0, tw / 2 + 0.15);
   return tower;
 }

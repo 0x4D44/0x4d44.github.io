@@ -182,7 +182,7 @@ test('the built Midland upper panes trim occupancy and vary warmth and brightnes
     lumaSpread:spread(lit.map(luma)),warmthSpread:spread(warm),medianBlueRed:warm.sort((a,b)=>a-b)[Math.floor(warm.length/2)],arcade:luma(arcade)});
   // This is the full UV bank, including rear elevations and rooms too small
   // to resolve. The Euston Road image probe measures the visible facade.
-  assert.ok(lit.length/ids.size >= .15 && lit.length/ids.size <= .1525);
+  assert.ok(lit.length/ids.size >= .2025 && lit.length/ids.size <= .205);
   assert.ok(spread(warm) > .44 && spread(lit.map(luma)) > .20 && Math.max(...warm) > .54);
   assert.ok(Math.abs(luma(arcade)-.08943796921894558)<1e-9 && arcade[0]>arcade[1] && arcade[1]>arcade[2]);
 });

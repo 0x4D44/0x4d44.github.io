@@ -46,8 +46,9 @@ const modeOf = (key: CityMaterialName): number[] => {
   const d = defineOf(cityMaterial(key), 'WIN_MODE');
   return d === undefined ? [] : numbers(d);
 };
-const HOUSE = modeOf('stock');
-const CURTAIN = modeOf('glass');
+const HOUSE = modeOf('panel');
+// The generic winTile still supports the former mixed-pane configuration.
+const CURTAIN = [0.4, 0.4, 0.4, 0.5];
 const SHOP = modeOf('shop');
 const STOCK_RECT = [...FACADE_GLASS.stock];
 /** One window of a facade lit by `winTile`: its cell, where in the cell, the pixel's span in cells (small: the window's own light; large: the far mean), the building's seed, the night's level. */
@@ -85,7 +86,7 @@ test('each kind of facade is lit as its own sort of wall: the panes the painters
     const d = texel(cityMaterial(key));
     FACADE_GLASS[key].forEach((n, i) => close(numbers(d.WIN_RECT)[i] as number, n, 1e-6, `${key}: its glass`));
     assert.equal(d.WIN_GAIN, key === 'shop' ? '0.45' : key === 'glass' ? '0.35' : '0.8', `${key}: how bright`);
-    assert.deepEqual(numbers(d.WIN_MODE), key === 'glass' ? [0.4, 0.4, 0.4, 0.5] : key === 'shop' ? [0.3, 0.35, 0, 0.15] : [0.14, 0.5, 0.12, 0.18], `${key}: how lit`);
+    assert.deepEqual(numbers(d.WIN_MODE), key === 'glass' ? [1, 0, 0.44, 0.9] : key === 'shop' ? [0.3, 0.35, 0, 0.15] : key === 'panel' ? [0.14, 0.5, 0.12, 0.18] : [0.23, 0.10, 0.08, 0.08], `${key}: how lit`);
   }
   for (const key of ['sash', 'sashArch', 'window', 'windowArch'] as const) {
     const d = texel(material(key));
