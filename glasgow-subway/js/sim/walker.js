@@ -46,8 +46,12 @@ export class Walker {
     let s = this.glideObs === o ? this.glideSide : (lean < -0.02 ? -1 : 1);   // keep to the side chosen a moment ago (no dithering), else the side we are already leaning to
     if (!room(s)) s = -s;
     if (!room(s)) return false;                                               // shoulder to shoulder with the wall: no way past
-    this.glideObs = o; this.glideSide = s;
-    return tryMove(this.x + px * s * k + mx * 0.5, this.z + pz * s * k + mz * 0.5) || tryMove(this.x + px * s * k, this.z + pz * s * k);
+    const go = (s) => tryMove(this.x + px * s * k + mx * 0.5, this.z + pz * s * k + mz * 0.5) || tryMove(this.x + px * s * k, this.z + pz * s * k);
+    if (go(s)) { this.glideObs = o; this.glideSide = s; return true; }
+    // the side with room beside the person may still be shut on the way to it (a bench front, someone seated): try the other side before giving up - the e2e walk
+    // through a full train stuck for good against a rider 8 cm off the middle, having picked the bench side
+    if (room(-s) && go(-s)) { this.glideObs = o; this.glideSide = -s; return true; }
+    return false;
   }
   /** forward/strafe in [-1,1]; yaw 0 faces local -z. */
   update(dt, fwd, strafe) {

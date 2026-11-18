@@ -436,7 +436,7 @@
    "legLengthM": 0.826,
    "walkSpeedMps": 1.29,
    "walkFastSpeedMps": 2.07,
-   "tris": 7999,
+   "tris": 7998,
    "clips": [
     "idle_a",
     "idle_b",
@@ -876,7 +876,7 @@
    "legLengthM": 0.537,
    "walkSpeedMps": 0.84,
    "walkFastSpeedMps": 1.35,
-   "tris": 7996,
+   "tris": 7997,
    "clips": [
     "idle_a",
     "idle_b",
@@ -2597,7 +2597,7 @@
    "legLengthM": 0.811,
    "walkSpeedMps": 1.26,
    "walkFastSpeedMps": 2.04,
-   "tris": 7996,
+   "tris": 7997,
    "clips": [
     "idle_a",
     "idle_b",

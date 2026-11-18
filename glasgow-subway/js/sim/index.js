@@ -185,7 +185,7 @@ class Sim {
       for (const q of got) if (q.bag && got.some((o) => o !== q && o.bag && o.bagRig && Math.abs(o.z - q.z) < (Math.sign(o.x) === Math.sign(q.x) ? 0.7 : 0.6) && got.indexOf(o) < got.indexOf(q))) sc._bagSet(q, null);   // (or straight across the aisle: a wheeled case at the knees reaches the middle of the car)
       const nPole = low ? 0 : Math.round(nStand * (0.35 + rng() * 0.4));   // (the rest stand without holding on)
       for (let k = 0; k < nStand * 8 && standing.length < nStand - nPole; k++) {
-        const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.04 + rng() * 0.1 : 0.14 + rng() * 0.16);
+        const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.14 + rng() * 0.08 : 0.14 + rng() * 0.16);   // (never nearer the middle than 0.14 m: 0.04 left a walker no way past on either side - e2e)
         if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) || sc._bagNear(car, x, z)) continue;
         standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: 'stand', ceilAt });
       }
@@ -220,9 +220,9 @@ class Sim {
     const doors = this.trainView.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1), wc = this.walkable && this.walkable.cars && this.walkable.cars[ci], end = wc ? wc.length / 2 : info.len / 2, mid = wc ? wc.centreZ - info.zc : 0;
     return (x, z) => {
       if (Math.abs(z - mid) > end - 0.5 || doors.some((d) => Math.abs(z - d) < 0.4)) return false;
-      const bay = doors.some((d) => Math.abs(z - d) < 0.65); if (Math.abs(x) > (bay ? 0.55 : 0.3) || (!bay && Math.abs(x) < 0.12)) return false;   // (between the benches, off the middle line: someone walking through the car goes round, not into them)
+      const bay = doors.some((d) => Math.abs(z - d) < 0.65); if (Math.abs(x) > (bay ? 0.55 : 0.3) || Math.abs(x) < 0.2) return false;   // (off the middle line, in a door bay too: someone walking through the car goes round them, with 0.65 m to pass in - the e2e walk stuck 1.2 and 3.3 m in)
       if (poles.some((q) => Math.hypot(q.x - x, q.z - z) < 0.22)) return false;
-      for (const o of sc.people) { if (o.parent !== car || !o.obj) continue; if (o.state === 'sit') { if (Math.abs(o.z - z) < 0.55 && x * Math.sign(o.x) > 0.12) return false; } else if (Math.hypot(o.x - x, o.z - z) < 0.55) return false; }
+      for (const o of sc.people) { if (o.parent !== car || !o.obj) continue; if (o.state === 'sit') { if (Math.abs(o.z - z) < 0.55 && x * Math.sign(o.x) > 0.12) return false; } else if (Math.hypot(o.x - x, o.z - z) < 0.55 || (Math.abs(o.z - z) < 0.6 && Math.sign(o.x) !== Math.sign(x))) return false; }   // (and not across the aisle from another: two people abreast left the walker no way between - e2e)
       return !sc._bagNear(car, x, z) && (!extra || extra(x, z));
     };
   }
@@ -327,7 +327,7 @@ class Sim {
       for (const pl of poles.filter((pl) => !pl.gang && !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
     }
     if (!seat && !spot) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
-      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
+      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && (Math.hypot(o.x - c.x, o.z - c.z) < 0.5 || (Math.abs(o.z - c.z) < 0.6 && Math.sign(o.x) !== Math.sign(c.x)))) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
     const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }
     q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
     const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;

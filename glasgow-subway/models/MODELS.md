@@ -382,5 +382,10 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **adult_oxford_shirt** and **sum_shorts_asian_m**: the race mix went from 0.9 / 0.1 to 0.7 / 0.3 (asian / caucasian). At 0.9 the MakeHuman eyelid shape closed their eyes to slits. They also get fuller brows (eyebrow009) and lashes (eyelashes02). adult_oxford_shirt now wears onlytheghosts_old_eurasian_male's skin in place of old_asian_male's, which read as a flat orange mask.
 - Rebuilt both files. The post-build chain ran as usual: skinfit, lodhair, credits, legradii, armfit, then the skin budgets were re-derived.
 
+## Review 15 fixes
+
+- **Faces kept on the middle line.** `face_targets` drew `mouth-trans-in/out` and `nose-trans-in/out` along with forward and backward. Those targets have no left/right pair: they slide the whole mouth or nose sideways, which gave review 15's off-centre mouths and lopsided smiles. They are now skipped, and the draw is kept, so every other face is as it was.
+- Rebuilt both files. The post-build chain ran as usual, then the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
