@@ -19,7 +19,10 @@ export function smileDelta(x, y, half = SMILE.half) {
   const S = SMILE, sx = x < 0 ? -1 : 1, ax = Math.abs(x);
   const g = (cx, cy, s) => Math.exp(-((ax - cx) ** 2 + (y - cy) ** 2) / (2 * s * s));
   const c = g(half, 0, S.sigma), k = g(S.cheekX, S.cheekY, S.cheekS);
-  return [sx * S.out * c, S.up * c + S.cheekUp * k, -S.back * c + S.cheekOut * k];
+  // the lift runs along the whole line of the lips, a U from the middle to the corners (x^2), and only then falls away past them: a lift only at the corners bent
+  // the lower lip into a V (review 16)
+  const along = ax <= half ? (ax / half) ** 2 : Math.exp(-((ax - half) ** 2) / (2 * S.sigma * S.sigma)), u = along * Math.exp(-(y * y) / (2 * S.sigma * S.sigma));
+  return [sx * S.out * c, S.up * u + S.cheekUp * k, -S.back * c + S.cheekOut * k];
 }
 
 /** Where the mouth is, from the colour of the skin's picture at points of the lower face: pts = [{ x, y, r, g, b }] (x, y as smileDelta's x and y but with y measured
