@@ -141,9 +141,9 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/old_african_female | makehuman_system | CC0 |
 | skins/old_african_male | makehuman_system | CC0 |
 | skins/old_asian_female | makehuman_system | CC0 |
-| skins/old_asian_male | makehuman_system | CC0 |
 | skins/old_caucasian_female | makehuman_system | CC0 |
 | skins/old_caucasian_male | makehuman_system | CC0 |
+| skins/onlytheghosts_old_eurasian_male | OnlyTheGhosts | CC0 |
 | skins/young_african_female | makehuman_system | CC0 |
 | skins/young_african_male | makehuman_system | CC0 |
 | skins/young_asian_female | makehuman_system | CC0 |

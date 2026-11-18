@@ -377,5 +377,10 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - The far model keeps 3200 faces of the staff suit (was 1600), so the painted vest's bands hold their cuts at a distance.
 Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 
+## Review 14 fixes
+
+- **adult_oxford_shirt** and **sum_shorts_asian_m**: the race mix went from 0.9 / 0.1 to 0.7 / 0.3 (asian / caucasian). At 0.9 the MakeHuman eyelid shape closed their eyes to slits. They also get fuller brows (eyebrow009) and lashes (eyelashes02). adult_oxford_shirt now wears onlytheghosts_old_eurasian_male's skin in place of old_asian_male's, which read as a flat orange mask.
+- Rebuilt both files. The post-build chain ran as usual: skinfit, lodhair, credits, legradii, armfit, then the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

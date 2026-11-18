@@ -798,12 +798,6 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
-  "name": "skins/old_asian_male",
-  "author": "makehuman_system",
-  "licence": "CC0",
-  "url": "https://static.makehumancommunity.org/assets.html"
- },
- {
   "name": "skins/old_caucasian_female",
   "author": "makehuman_system",
   "licence": "CC0",
@@ -812,6 +806,12 @@
  {
   "name": "skins/old_caucasian_male",
   "author": "makehuman_system",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/onlytheghosts_old_eurasian_male",
+  "author": "OnlyTheGhosts",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
  },
