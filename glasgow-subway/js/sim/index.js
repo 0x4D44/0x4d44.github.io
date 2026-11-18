@@ -182,7 +182,7 @@ class Sim {
       // the seated first: then the standing keep clear of the bags at their feet (review 12: standing riders' shins stood in seated riders' floor bags for 30-120 s)
       let got = sc.seat(car, seated); for (const q of got) if (q.seatRef) q.seatRef.p = q;
       // two bags at the feet of next-door seats stood inside each other (review 12): of two neighbours on one side, the second comes with no bag
-      for (const q of got) if (q.bag && q.bag.kind === 'trolley') sc._bagSet(q, null);   // (a wheeled case stood in front of a seated rider reached the middle of the car - review 17: people with one stand by the doors)
+      for (const q of got) if (q.bag && /^(trolley|holdall)$/.test(q.bag.kind)) sc._bagSet(q, null);   // (a wheeled case stood in front of a seated rider reached the middle of the car - review 17: people with one stand by the doors)
       for (const q of got) if (q.bag && got.some((o) => o !== q && o.bag && o.bagRig && Math.abs(o.z - q.z) < (Math.sign(o.x) === Math.sign(q.x) ? 0.7 : 0.6) && got.indexOf(o) < got.indexOf(q))) sc._bagSet(q, null);   // (or straight across the aisle: a wheeled case at the knees reaches the middle of the car)
       const nPole = low ? 0 : Math.round(nStand * (0.35 + rng() * 0.4));   // (the rest stand without holding on)
       for (let k = 0; k < nStand * 8 && standing.length < nStand - nPole; k++) {
@@ -289,7 +289,9 @@ class Sim {
       const boarded = this.crowd.board((q) => ({ x: inf.xe + S * 0.7, z: zc + door[nearestDoor(q.z)] }));
       for (const q of queued) this._routeBoarder(q, nearestDoor(q.z), X);
       const nBo = Math.max(0, Math.min(low ? 3 : 7, Math.round(v.crowdN * 0.3)) - boarded);
-      for (let i = 0; i < nBo; i++) { const ex = exits[i % exits.length], ds = door.map((d, k) => k).sort((a, b) => Math.abs(zc + door[a] - ex.z) - Math.abs(zc + door[b] - ex.z)), k = ds[i % 2];
+      // (only from a stair foot near enough to make the doors before they shut: from further, review 19 counted 24 of 34 boarders left on the platform when the doors closed)
+      const reach = (ex) => door.some((dz) => Math.hypot(ex.x - (inf.xe + S * 0.7), ex.z - (zc + dz)) < 12), near = exits.filter(reach);
+      for (let i = 0; i < (near.length ? nBo : 0); i++) { const ex = near[i % near.length], ds = door.map((d, k) => k).sort((a, b) => Math.abs(zc + door[a] - ex.z) - Math.abs(zc + door[b] - ex.z)), k = ds[i % 2];
         this.crowd.stream(ex, { x: inf.xe + S * 0.7, z: zc + door[k] }, 1, inf.PY, inf.PY, 0.4, 0.6 + i * 0.6 + Math.random() * 0.4);
         for (const q of this.crowd.people) if (!before.has(q)) { before.add(q); this._routeBoarder(q, k, X); } }
     }
@@ -320,7 +322,7 @@ class Sim {
     const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
     // and not a seat whose floor (where the bag will stand, in front of the toes) has someone standing on it already, or on their way to it (review 14: a standing rider's foot in a boarder's tote for 16 s)
     const footOn = (s) => { const bx = Math.sign(s.x) * 0.24; return sc.people.some((o) => o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - bx, o.z - s.z) < 0.6) || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - bx, o.z - s.z) < 0.6); };
-    let seat = null; if (!(q.bag && q.bag.kind === 'trolley')) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !(q.bag && footOn(s))).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    let seat = null; if (!(q.bag && /^(trolley|holdall)$/.test(q.bag.kind))) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !(q.bag && footOn(s))).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
     // a boarder who stands keeps off the floor in front of a seat another boarder with a bag is walking to (their bag is not on the floor yet, so _bagNear cannot see it)
     const bagComing = (x, z) => tv.seatMap.some((s) => s.ci === ci && s.p && s.p !== q && s.p.bag && !(s.p.parent === car && s.p.state === 'sit') && Math.hypot(Math.sign(s.x) * 0.24 - x, s.z - z) < 0.55);
     let spot = null;

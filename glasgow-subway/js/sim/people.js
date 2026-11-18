@@ -1019,7 +1019,7 @@ export class AnimCrowd {
    *  (the arms settle), then goes back to the clip; the legs (wL) are the gait's from the first step for good, solved against whatever pelvis the person has, so the feet that were
    *  planted stay planted whatever the idle clips do, and a person who turns on the spot re-plants them with steps. Hands stay with the clip. */
   _gaitStep(p, dt) {
-    const walking = p.state === 'walk' || p.state === 'go', standing = p.state === 'stand'; let gs = p.gait;
+    const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = p.state === 'stand' || !!p.paused; let gs = p.gait;
     if (!gs) {
       if (!walking && !(standing && p.yawT != null && Math.abs(angDiff(p.yaw, p.yawT)) > 0.35)) return;   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
@@ -1052,7 +1052,14 @@ export class AnimCrowd {
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
     p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
     if (p.v > 0.15 && p.hold && p.hold.target > 0) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away
-    if ((p.state === 'walk' || p.state === 'go') && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
+    if ((p.state === 'walk' || p.state === 'go') && p.cur) {
+      // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk
+      // with no speed, the stride froze half taken with the arms mid-swing for seconds at a time (review 19: 1.4 - 5.1 s, a bent-knee half stride in a crowd)
+      if (p.v < 0.08) p.stillT = (p.stillT || 0) + dt; else if (p.v > 0.15) p.stillT = 0;
+      const still = p.stillT > 0.5 && !p.static;
+      if (still !== !!p.paused) { p.paused = still; const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
+      if (!p.paused && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
+    } else if (p.paused) p.paused = false;
   }
   /** a boxed-in passenger may squeeze past people (closer than the 0.45 m everyone else keeps) but not through them: no step ends inside 0.3 m of anyone, unless it moves
    *  away from them (gp7: alighters in a crush passed 0.07 m apart, centre to centre) */
