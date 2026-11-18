@@ -405,5 +405,11 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - `hair_shows` reads the hair PNGs with bad optional-chunk checksums the way `load_image` does. Before, `elvs_50s_updo` and `elvs_keylth_hair` fell back to the bare tint.
 - Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
 
+## Review 23 fixes
+
+- **Blonde hair renders blonde.** `hair_lifted()` sends light, non-red hair colours (luma over 0.45, G over 0.7 x R) through the grey-hair lift. Before, the blonde tint multiplied the near-black strands and came out auburn, ginger or black.
+- **Flat-black brow textures.** eyebrow007 is flat black. The lift now turns it into an even light grey, so it takes the hair tint; before, it stayed black.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
