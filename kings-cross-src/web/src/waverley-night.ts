@@ -98,76 +98,6 @@ if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
 // balmoral-amber-rooms-end
 #endif`;
 
-const CALTON_LIGHT_THROUGH_FOG = /* glsl */`
-float caltonAir = 1.0;
-#if defined( USE_FOG ) && !defined( FOG_EXP2 )
-caltonAir -= smoothstep(0.60,0.85,uStationLampFog)*smoothstep(fogNear,fogFar,vFogDepth);
-#endif`;
-
-const CALTON_LANDMARK_WASH = /* glsl */`
-// calton-landmark-wash-begin
-if (vWaverleyLandmarkWash > 0.0) {
-  ${CALTON_LIGHT_THROUGH_FOG}
-  vec3 faceNormal = normalize(vStationLampNormal);
-  float towardLight = max(0.0,dot(faceNormal,normalize(vec3(0.52,-0.12,-0.85))));
-  float faceWash = (0.29+0.71*towardLight)*(1.0-0.86*abs(faceNormal.y));
-  float along = dot(vStationLampWorld.xz,vec2(0.84,0.55));
-  float beam = 0.73+0.27*smoothstep(-0.8,0.9,sin(0.107*along)+0.42*cos(0.063*along+0.23*vStationLampWorld.y));
-  float peak = max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b));
-  float headroom = 1.0-smoothstep(0.12,0.41,peak);
-  float profile = vWaverleyLandmarkProfile.x;
-  vec3 wash = faceWash*beam*1.65*vec3(1.0,0.71,0.33)*diffuseColor.rgb;
-  if (profile > 0.75) {
-    // The lit east elevations face Calton. The north returns and the
-    // Scotsman's far corner stay dark toward the Balmoral.
-    float eastFace = smoothstep(0.70,0.94,faceNormal.x);
-    float endShadow = profile < 0.90 ? 1.0-smoothstep(126.0,132.0,vStationLampWorld.x) : 1.0;
-    float height = clamp(vWaverleyLandmarkProfile.y,0.0,1.0);
-    float uplight = 0.055+0.945*pow(1.0-height,1.45);
-    float cornice = (height-0.945)/0.023;
-    float run = vStationLampWorld.z+0.24*vStationLampWorld.x;
-    float pools = mix(0.23,1.0,smoothstep(-0.52,0.72,cos((run-118.0)*0.135)+0.52*cos((run-61.0)*0.071)));
-    vec3 hotelStone = 3.1*vec3(1.0,0.51,0.17)*diffuseColor.rgb;
-    hotelStone *= min(1.0,0.22/max(0.01,hotelStone.r));
-    wash = eastFace*endShadow*pools*(uplight+0.105*exp(-cornice*cornice))*hotelStone;
-  } else if (profile > 0.25) {
-    // White-gold stone and dome, with headroom for its occupied rooms.
-    float bankFace = (0.64+0.36*towardLight)*(1.0-0.52*abs(faceNormal.y));
-    wash = bankFace*3.85*vec3(1.0,0.85,0.53)*diffuseColor.rgb;
-    wash *= min(1.0,0.72/max(0.01,max(wash.r,max(wash.g,wash.b))));
-  }
-  totalEmissiveRadiance += uStationLampLevel*caltonAir*vWaverleyLandmarkWash*headroom*wash;
-}
-// calton-landmark-wash-end`;
-
-const caltonRidgeWindows = (hasLandmarkWash: boolean) => /* glsl */`
-#if defined( WALL_WIN ) && defined( USE_MAP )
-// calton-ridge-windows-begin
-vec2 ridgeUv = vMapUv*WALL_TILE;
-vec2 ridgeSpan = fwidth(ridgeUv);
-vec3 ridgePoint = vStationLampWorld;
-// Narrow band of Old Town tenements, from the North Bridge end toward
-// Castlehill. The existing office profiles and the New Town stay as built.
-float ridgeZ = 190.0-0.29*ridgePoint.x;
-float ridge = smoothstep(-430.0,-395.0,ridgePoint.x)*(1.0-smoothstep(105.0,145.0,ridgePoint.x))
-  *(1.0-smoothstep(45.0,75.0,abs(ridgePoint.z-ridgeZ)))*smoothstep(22.0,37.0,ridgePoint.y)${hasLandmarkWash ? '*(1.0-step(0.75,vWaverleyLandmarkProfile.x))' : ''};
-if (ridge > 0.0 && vWallWindowData.y < 0.5 && uWinNight > 0.003) {
-  ${CALTON_LIGHT_THROUGH_FOG}
-  vec2 cell = floor(ridgeUv);
-  float seed = vWallWindowData.x;
-  float homeShare = 0.21+0.10*fract(seed*3.71+0.29);
-  float vacant = 1.0-step(winHash(cell,seed,1.0),homeShare);
-  float cluster = step(0.60,winHash(vec2(floor(cell.x/4.0),cell.y),seed,6.0));
-  float occupied = step(winHash(cell,seed,8.0),0.76);
-  vec4 rect = vec4(0.35,0.65,0.34,0.78);
-  float resolved = 1.0-smoothstep(0.60,1.15,max(ridgeSpan.x,ridgeSpan.y));
-  float pane = winPane(fract(ridgeUv),rect,ridgeSpan*0.55)*winRoom(fract(ridgeUv.y),rect);
-  float gain = (0.19+0.12*winHash(cell,seed,9.0))*smoothstep(0.25,0.80,uWinNight);
-  totalEmissiveRadiance += caltonAir*ridge*resolved*vacant*cluster*occupied*pane*gain*vec3(1.0,0.69,0.29);
-}
-// calton-ridge-windows-end
-#endif`;
-
 // Cassette tile indices on the shed slopes seen from North Bridge. The
 // roof mesh maps its world x/z in metres directly to these glazing bars.
 const NORTH_BRIDGE_PANES = [
@@ -255,8 +185,6 @@ const ROOF_AIR_RECEIVERS = [
   'waverley-roof-strips', 'waverley-central-block', 'waverley-central-block-top',
 ] as const;
 
-interface NightVertexInput {declaration: string; varying: string; assignment: string}
-
 export function createWaverleyGlow(scene: THREE.Object3D, sky?: THREE.Mesh): NightLayer & {dispose():void} {
   const level = {value:0}, undo: (()=>void)[] = [];
   const nightPrograms: THREE.Material[] = [];
@@ -269,8 +197,8 @@ export function createWaverleyGlow(scene: THREE.Object3D, sky?: THREE.Mesh): Nig
   const towerBox = new THREE.Box3();
   if(tower)box.union(towerBox.setFromObject(tower));
   const patch = (name:string, colour: readonly number[], select = '1.0', snow = false, extra: string | ((night: boolean) => string) = '', ambient=false,
-    vertexInput?: NightVertexInput,
-    night?: { code?: string; declarations?: string; uniforms?: Record<string, THREE.IUniform>; afterEmission?: string; diffuse?: string; fog?: string; vertexInput?: NightVertexInput }):void => {
+    vertexInput?: { declaration: string; varying: string; assignment: string },
+    night?: { code?: string; declarations?: string; uniforms?: Record<string, THREE.IUniform>; afterEmission?: string; diffuse?: string; fog?: string }):void => {
     const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
     const m = mesh?.material as THREE.MeshLambertMaterial | undefined;
     if (!m?.isMeshLambertMaterial) return;
@@ -302,9 +230,8 @@ ${typeof extra === 'function' ? extra(lit) : extra}${effect?.code ? '\n'+effect.
       // still present and the colour it receives has already passed through fog.
       if (effect?.fog) shader.fragmentShader = shader.fragmentShader
         .replace('#include <premultiplied_alpha_fragment>', `#if defined( USE_FOG ) && !defined( FOG_EXP2 )\n${effect.fog}\n#endif\n#include <premultiplied_alpha_fragment>`);
-      const input = effect?.vertexInput ?? vertexInput;
-      if (input) {
-        const {declaration,varying,assignment} = input;
+      if (vertexInput) {
+        const {declaration,varying,assignment} = vertexInput;
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', `#include <common>\n${declaration}\n${varying}`)
           .replace('#include <begin_vertex>', `#include <begin_vertex>\n${assignment}`);
@@ -398,8 +325,6 @@ totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*
   // The mapped Castle walls span x -756..-524 and z 274..444 m. Light the
   // summit from the north-east with a softer fill on returns.
   for (const name of ['waverley-city-monuments', 'waverley-building-walls', 'waverley-building-ashlar', 'waverley-building-tops']) {
-    const receiver = scene.getObjectByName(name);
-    const wash = receiver instanceof THREE.Mesh && receiver.geometry.hasAttribute('waverleyLandmarkWash');
     patch(name,[0,0,0],'1.0',false,lit=>`
 // castle-wash-begin
 float castleX = smoothstep(-760.0,-752.0,vStationLampWorld.x)*(1.0-smoothstep(-532.0,-520.0,vStationLampWorld.x));
@@ -416,32 +341,9 @@ if (castleZone > 0.0 && uStationLampLevel > 0.0) {
   float castleFog = smoothstep(fogNear,fogFar,vFogDepth);
   castleAir -= smoothstep(0.60,0.85,uStationLampFog)*castleFog;
 #endif
-  ${lit ? `float castleDistance = 0.0;
-#ifdef USE_FOG
-  castleDistance = smoothstep(440.0,950.0,vFogDepth);
-#endif
-  vec3 castleTint = mix(vec3(1.0,0.96,0.98),vec3(0.91,0.99,1.08),castleDistance);
-  totalEmissiveRadiance += uStationLampLevel*castleTint*diffuseColor.rgb*(mix(2.25,3.55,castleDistance)*castleZone*castleFace*castleAir);`
-    : 'totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.37)*diffuseColor.rgb*(0.98*castleZone*castleFace*castleAir);'}
+  totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(1.0,0.96,0.98)' : 'vec3(1.0,0.68,0.37)'}*diffuseColor.rgb*(${lit ? '2.25' : '0.98'}*castleZone*castleFace*castleAir);
 }
-// castle-wash-end`,false,undefined,{
-      afterEmission:(name === 'waverley-building-walls' ? caltonRidgeWindows(wash) : '')+(wash ? CALTON_LANDMARK_WASH : ''),
-      vertexInput:wash ? {
-        declaration:'attribute vec3 waverleyLandmarkWash;',
-        varying:'varying float vWaverleyLandmarkWash;\nvarying vec2 vWaverleyLandmarkProfile;',
-        assignment:'vWaverleyLandmarkWash = waverleyLandmarkWash.x;\nvWaverleyLandmarkProfile = waverleyLandmarkWash.yz;',
-      } : undefined,
-      fog:`
-// castle-clear-contrast-begin
-// Recover some contrast on lit upright stone through clear-air haze. Dense
-// fog still takes the whole wash and the masonry to the fog colour below.
-float castleHaze = smoothstep(fogNear,fogFar,vFogDepth);
-float castleMasonry = 1.0-0.90*abs(normalize(vStationLampNormal).y);
-float castleClear = 1.0-smoothstep(0.12,0.55,uStationLampFog);
-float castleContrast = min(0.38,0.32*castleHaze/max(0.40,1.0-castleHaze));
-gl_FragColor.rgb += (gl_FragColor.rgb-fogColor)*uStationLampLevel
-  *castleContrast*castleZone*castleMasonry*castleClear;
-// castle-clear-contrast-end
+// castle-wash-end`,false,undefined,{fog:`
 // castle-fog-colour-begin
 // At the dense-fog limit the lit masonry meets the fog colour. The rest of
 // the ridge can keep its silhouette from the skyline fog hook.

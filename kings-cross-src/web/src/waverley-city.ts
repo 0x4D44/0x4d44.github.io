@@ -33,27 +33,6 @@ export const PLAIN_AREA=40;
 // The eastern block is the long row of cool panes in R-nw-f Curtis.
 const EAST_STATION_OFFICE = 'way/62065007';
 const WEST_STATION_OFFICE = 'way/81357301';
-// Floodlit in the Calton Hill night references. Tag the existing OSM shells
-// and built roof parts so the wash cannot spill onto neighbouring buildings.
-const BANK_WASH=127, SCOTSMAN_WASH=204, CARLTON_WASH=255;
-const CALTON_LANDMARK_WASH = new Map<string,readonly [number,number]>([
- ['way/827355660',[255,BANK_WASH]], ['way/827355661',[235,BANK_WASH]], // Bank of Scotland, The Mound
- ['way/289728726',[195,SCOTSMAN_WASH]], ['way/289728725',[170,SCOTSMAN_WASH]], // Scotsman Hotel, North Bridge
- ['way/294344731',[205,CARLTON_WASH]], // Carlton Hotel, North Bridge
-]);
-type WashRange = {from:number;to:number;gain:number;profile?:number;base?:number;height?:number};
-function landmarkWash(group:THREE.Group,name:string,ranges:readonly WashRange[]):void {
- const mesh=group.getObjectByName(name) as THREE.Mesh|undefined;
- if(!mesh||!ranges.length)return;
- const position=mesh.geometry.getAttribute('position');
- const values=new Uint8Array(position.count*3);
- for(const {from,to,gain,profile=0,base=0,height=1} of ranges)for(let i=from/3;i<to/3;i++){
-  values[3*i]=gain;
-  values[3*i+1]=profile;
-  values[3*i+2]=Math.round(255*THREE.MathUtils.clamp((position.getY(i)-base)/height,0,1));
- }
- mesh.geometry.setAttribute('waverleyLandmarkWash',new THREE.Uint8BufferAttribute(values,3,true));
-}
 export const WAVERLEY_CITY_HEIGHTS={scott:61.11} as const;
 export const WAVERLEY_CITY_SOURCES={
  scott:{url:'https://www.openstreetmap.org/way/39044819',height:61.11,basis:'OSM height; explicit mapped part heights and min_height'},
@@ -102,8 +81,6 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  const snowRoof:number[]=[];
  const wallWindowData:number[]=[];
  const buildings=new Batch({colored:true}),plainWalls=new Batch({colored:true}),buildingTops=new Batch({colored:true}),shops=new Batch(),streets=options.style?.streets??new Streets();
- const washBatches=[buildings,plainWalls,buildingTops];
- const washes=washBatches.map(()=>[] as WashRange[]);
  const foot=ground.heightAt?(p:Pt)=>ground.heightAt!(p[0],p[1]):undefined;
  const ashlar=material('stone').clone() as THREE.MeshLambertMaterial;ashlar.color.setHex(style?.ashlar??WAVERLEY_CITY_ASHLAR);ashlar.vertexColors=true;
  const omitted=new Set(options.omitBuildingIds??[]),buildingIds:string[]=[],heightBasis={OSM:0,LiDAR:0,ASSUMED:0};
@@ -119,8 +96,6 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   let area=0;{const r=b.outer;for(let i=0;i<r.length;i++){const p=r[i],q=r[(i+1)%r.length];area+=p[0]*q[1]-q[0]*p[1];}area=Math.abs(area)/2;}
   const plain=b.minHeight>0||area<PLAIN_AREA||PLAIN_KINDS.has(b.tags.building??b.tags['building:part']??'');
   const wallFrom=buildings.positions.length;
-  const wash=style?undefined:CALTON_LANDMARK_WASH.get(b.id);
-  const washFrom=wash&&washBatches.map(batch=>batch.positions.length);
   walls(plain?plainWalls:buildings,outer,holes,()=>b.minHeight?base+b.minHeight:base-.15,planes?plan.at:()=>plan.eave,color);
   if(!style&&!plain){
    const phase=cityBlockHash(b.id)*0.61803398875, seed=phase-Math.floor(phase);
@@ -134,11 +109,6 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   for(let i=roofFrom;i<buildingTops.colors.length;i+=3){buildingTops.colors[i]*=roofColor[0];buildingTops.colors[i+1]*=roofColor[1];buildingTops.colors[i+2]*=roofColor[2];}
   for(const c of plan.chimneys)chimney(plainWalls,c,plan.u,plan.eave,color); // stacks are plain ashlar, not windowed fabric
   if(style?.dormers!==false)for(const d of plan.dormers??[])dormer(plainWalls,buildingTops,d,plan.at,color);
-  if(wash&&washFrom)washBatches.forEach((batch,i)=>{
-   if(batch.positions.length>washFrom[i]!)washes[i]!.push({
-    from:washFrom[i]!,to:batch.positions.length,gain:wash[0],profile:wash[1],base,height:Math.max(1,plan.eave-base),
-   });
-  });
   // Per-block snow depth follows the existing deterministic slate palette.
   // Height above the eave lets the fragment shader keep a narrow exposed edge;
   // flat roofs have no pitched eave band. No vertices or draws are added.
@@ -150,7 +120,6 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
  if(!style){
   const walls=group.getObjectByName('waverley-building-walls') as THREE.Mesh|undefined;
   walls?.geometry.setAttribute('wallWindowData',new THREE.Float32BufferAttribute(wallWindowData,2));
-  ['waverley-building-walls','waverley-building-ashlar','waverley-building-tops'].forEach((name,i)=>landmarkWash(group,name,washes[i]!));
  }
  const tops=group.getObjectByName(style?.names.tops??'waverley-building-tops') as THREE.Mesh|undefined;
  tops?.geometry.setAttribute('snowRoof',new THREE.Float32BufferAttribute(snowRoof,2));
@@ -236,15 +205,11 @@ export function buildWaverleyCityLandmarks(ground:Pick<Terrain,'rangeUnder'|'hei
  const stone=material('stone').clone() as THREE.MeshLambertMaterial;stone.color.setHex(SCOTT_STONE);stone.vertexColors=true;
  add(group,scott,stone,'waverley-scott-monument');
  const parts=new Map(scene().buildings.filter(b=>MONUMENT_OMIT_IDS.includes(b.id)).map(b=>[b.id,b]));
- const monuments=new Batch({colored:true});nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);obelisk(monuments,parts,ground);
- const crownFrom=monuments.positions.length;
- stGilesCrown(monuments,parts,ground);
- const crownTo=monuments.positions.length;
+ const monuments=new Batch({colored:true});nelsonMonument(monuments,parts,ground);nationalColumns(monuments,parts,ground);obelisk(monuments,parts,ground);stGilesCrown(monuments,parts,ground);
  castleWalls(monuments,LANDUSE.castleWalls,ground);
  const house=scene().buildings.find(b=>b.id===GOVERNORS_HOUSE.id);governorsHouse(monuments,house,house?cityHeight(house).height:0,ground);
  const pale=material('stone').clone() as THREE.MeshLambertMaterial;pale.color.setHex(MONUMENT_STONE);pale.vertexColors=true;
  add(group,monuments,pale,'waverley-city-monuments');
- if(crownTo>crownFrom)landmarkWash(group,'waverley-city-monuments',[{from:crownFrom,to:crownTo,gain:218}]);
  // The ground's land use and the trees, over the drawn terrain (a full terrain only: the real scene, not a test stub). Trees keep
  // clear of every mapped building and roof outline, whichever element draws it.
  let cover:ReturnType<typeof buildWaverleyCityGround>|undefined;
