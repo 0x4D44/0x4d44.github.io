@@ -387,5 +387,12 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **Faces kept on the middle line.** `face_targets` drew `mouth-trans-in/out` and `nose-trans-in/out` along with forward and backward. Those targets have no left/right pair: they slide the whole mouth or nose sideways, which gave review 15's off-centre mouths and lopsided smiles. They are now skipped, and the draw is kept, so every other face is as it was.
 - Rebuilt both files. The post-build chain ran as usual, then the skin budgets were re-derived.
 
+## Review 20 fixes
+
+- **Brows the colour of light hair.** The brow texture is near black and was never tinted, so every ginger, fair or grey-haired person had heavy black brows. Where the hair colour's luma is over 0.3, the brows now take the hair colour at 0.75, through the grey-hair lift.
+- **adult_vneck:** eyebrow010, because eyebrow006 read as no brows at all.
+- **elder_shorts:** short02, because the short03 fringe hung over one eye.
+- Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
