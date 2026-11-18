@@ -323,7 +323,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
       const base = Math.min(v.y, u.y) - 0.075 * rig.s, ruck = rig.kind === 'ruck';   // (a rucksack's origin is its base; a bag carried by its handles has the top of the handles at its origin)
       // a tote, a carrier bag, a shopper or a handbag is set down facing its owner, its broad side to the shins (review 15: stood edge on, from the aisle they read as slivers);
       // a holdall and a case keep their length across the feet - turned, they reach a neighbour's feet
-      const turn = /^(tote|carrier|shopper|handbag)$/.test(rig.kind), ext = turn ? rig.w : rig.d;
+      const turn = /^(tote|carrier|shopper|handbag)$/.test(rig.kind), ext = turn ? Math.min(rig.w, rig.d) : rig.d;   // (turned, its thin side is what reaches into the aisle - review 16 found the edge at the car's middle)
       mesh.position.set(ax, ruck ? base : base + rig.h + rig.drop, af + fz * (ext * 0.5 + 0.02)); mesh.rotation.set(turn ? 0 : -fz * 0.14, ruck ? (fz > 0 ? 0 : Math.PI) : turn ? Math.PI / 2 : 0, turn ? fz * 0.14 : 0); }   // (end on to the seat row: broadside, a neighbour's bag stood inside it - review 12)   // (its base on the level of the soles: the ankle joints are ~7.5 cm up)
     else if (/case|tote/.test(rig.kind)) { mesh.position.set(hx + (kx - hx) * 0.1, top + rig.d * 0.5, hf + fz * (0.07 - rig.drop)); mesh.rotation.set(-fz * Math.PI / 2, 0, 0); }   // lying flat on the thighs, handles to the belly (review 1: every lap bag stood bolt upright)
     else { mesh.position.set(hx + (kx - hx) * 0.45, top + rig.h + rig.drop * 0.55, hf + (kf - hf) * 0.45); mesh.rotation.set(0, Math.PI / 2, 0); }   // standing on the lap, broadside on

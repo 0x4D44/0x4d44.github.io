@@ -827,7 +827,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress)$/.test(c.id)) return false;   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
+    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret)$/.test(c.id)) return false;   // (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
