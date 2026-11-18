@@ -735,12 +735,14 @@ const NIGHT_MODE = {
 
 // Evening tenancy along Platform 37, measured from the south end of the
 // stepped envelope. These are nominal sections, with staggered ends for each storey.
+// Across the join at 72 m, storeys 2 and 3 are vacant and the three above
+// carry through on both sides of the shed-facing wall.
 const PLATFORM37_OFFICES = [
   [36, [0, 1, 5, 6]],
-  [72, [0, 1, 2, 6]],
-  [108, [0, 3, 4, 5]],
+  [72, [0, 1, 4, 5, 6]],
+  [108, [0, 4, 5, 6]],
   [147, [2, 3, 4, 7, 8]],
-  [186, [0, 3, 4, 5, 8]],
+  [186, [0, 3, 4, 5, 7, 8]],
   [225, [0, 1, 4, 5, 7, 9]],
   [258, [1, 2, 5, 6, 9, 10]],
   [Infinity, [0, 1, 4, 5, 6, 10]],
@@ -788,7 +790,7 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
     scheduled = wholeOfficeFloor;
   }
   if (abs(seed - ${officeBuildingSeed(375735261)}) < 0.01 && cell.y >= 2.0 && cell.y <= 7.0) {
-    wholeOfficeFloor = (cell.y == 4.0 || cell.y == 5.0 || cell.y == 7.0) ? 1.0 : 0.0;
+    wholeOfficeFloor = step( 4.0, cell.y );
     scheduled = wholeOfficeFloor;
   }
   if (abs(seed - ${officeBuildingSeed(260722156)}) < 0.01 && cell.y >= 1.0 && cell.y <= 5.0) {
@@ -997,9 +999,11 @@ export function officeFacade(
         float officeAlong = dot(vPlatform37Position,vec2(0.148665,-0.988888))-154.69;
         // End each tenancy on a different bay. Floors carry across the
         // nominal join, with changes spread over up to 24 m of the facade.
-        float officePhase = officeHash(vec2(0.0,floor(officeUv.y)),${glslFloat(seed)},14.0);
+        // Keep the lower dark row together just beyond the next seam.
+        float officeFloor = floor(officeUv.y);
+        float officePhase = officeHash(vec2(0.0,officeFloor),${glslFloat(seed)},14.0);
         float officeSection = ${PLATFORM37_OFFICES.slice(0,-1).map(([end], i) =>
-          `step(${end}.0+24.0*(fract(officePhase+${(i*.37).toFixed(2)})-0.5),officeAlong)`).join('+')};
+          `step(${end}.0+24.0*(fract(officePhase+${(i*.37).toFixed(2)})-0.5)${end === 108 ? '+(officeFloor == 2.0 ? 5.0 : 0.0)' : ''},officeAlong)`).join('+')};
         officeUv.x += ${PLATFORM37_OFFICE_STRIDE}.0 * officeSection;` : '';
   const screen = kind === 'timber' ? `
         float finGap = 1.0 - smoothstep( 0.09, 0.15, abs( fract( vMapUv.x * 10.0 + 0.5 ) - 0.5 ) );

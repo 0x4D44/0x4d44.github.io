@@ -114,7 +114,7 @@ test('upper curtain walls recover lit coverage on distinct whole-floor schedules
   const whole = shares.flat().filter(v=>v>=.75).length;
   const brightestFloorMeans = rows.flat().map(mean).filter(v=>v>.30);
   console.log('Curtain-wall schedules, pane shares and occupied-floor mean luma', schedules,shares,mean(brightestFloorMeans));
-  assert.equal(whole,13);
+  assert.equal(whole,14);
   assert.ok(new Set(schedules).size === 4 && shares.flat().every(v=>v===0 || v>=.75));
   assert.ok(mean(brightestFloorMeans) >= .85);
 });

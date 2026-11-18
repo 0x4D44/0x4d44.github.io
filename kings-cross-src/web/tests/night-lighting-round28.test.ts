@@ -69,9 +69,9 @@ test('Platform 37 distributes bright and closed floors across the eight sections
   });
   console.log('Platform 37 fractions, lower to upper floors', rows);
   assert.deepEqual(groups.map(floors => floors.map(v => v === 0 ? 'off' : v >= .75 ? 'whole' : 'partial').join(',')),
-    ['whole,whole,off,off,off,whole,whole', 'whole,whole,whole,off,off,off,whole',
-      'whole,off,off,whole,whole,whole,off', 'off,off,whole,whole,whole,off,off,whole,whole',
-      'whole,off,off,whole,whole,whole,off,off,whole', 'whole,whole,off,off,whole,whole,off,whole,off',
+    ['whole,whole,off,off,off,whole,whole', 'whole,whole,off,off,whole,whole,whole',
+      'whole,off,off,off,whole,whole,whole', 'off,off,whole,whole,whole,off,off,whole,whole',
+      'whole,off,off,whole,whole,whole,off,whole,whole', 'whole,whole,off,off,whole,whole,off,whole,off',
       'off,whole,whole,off,off,whole,whole,off,off,whole,whole', 'whole,whole,off,off,whole,whole,whole,off,off,off,whole']);
   assert.ok([2,3].every(i => rows[i]! >= .20 && rows[i]! <= .50));
 });
@@ -95,7 +95,7 @@ test('the four visible London curtain walls use distinct whole-floor schedules',
     assert.ok(fractions.every(f => f === 0 || f >= .75));
     return fractions.map(f => +!!f);
   });
-  assert.deepEqual(states, [[0,1,0,1,1,1], [0,0,1,1,0,1], [1,0,1,1,0], [1,1,0,0,1]]);
+  assert.deepEqual(states, [[0,1,0,1,1,1], [0,0,1,1,1,1], [1,0,1,1,0], [1,1,0,0,1]]);
 });
 
 test('Balmoral crown and stage share a blue-violet hue through the lower-right clock stage', () => {
