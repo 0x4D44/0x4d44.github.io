@@ -269,7 +269,8 @@ class Sim {
       for (const r of rows) {
         if (X.leavers.length >= want) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
         if (riders.filter((q) => q.parent === r.p.parent && !q.leaving).length <= 1) continue;   // (the last rider of a car stays aboard: a car is never left empty at a stop)
-        if (sc.mixLeaves(r.p)) continue;   // (nor does a rider whose going would leave one garment over half of the car)
+        if (sc.mixLeaves(r.p)) continue;
+        { const dp = this._carToCrowd(tv.cars[r.ci], 0, r.dz); if (this.crowd && this.crowd.mixNear && this.crowd.mixNear(r.p.char, dp.x, dp.z)) continue; }   // (nor one who would make one garment over half of the platform where they get off)   // (nor does a rider whose going would leave one garment over half of the car)
         let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; }
         perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
       }

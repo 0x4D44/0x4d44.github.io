@@ -448,7 +448,7 @@ export class AnimCrowd {
     const grp = garmentGroup;
     const at = this._pickAt, par = this._pickPar, near = (q) => !at || at.x == null || ((!par || q.parent === par) && Math.hypot(q.x - at.x, q.z - at.z) < 15);   // (in a train: the same car - its riders' x, z are in the car's own frame, and every car's are near (0, 0) - review 14 still counted 55-57 % in one garment in a car)
     const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj && near(q)) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
-    const full = new Set(); if (nOwn >= 4) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
+    const full = new Set(); if (nOwn >= 2) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
     const okMix = (c) => !full.has(grp(c)), and = (f) => (f ? (c) => okMix(c) && f(c) : okMix);
     let pool = this._rollPool(); for (let k = 0; k < 6 && pool.length && pool.every((c) => full.has(grp(c))); k++) pool = this._rollPool();
     const free = (x) => (x && !(this.unique && IN_USE.get(x.id)) ? x : null), tryF = (f) => free(pickChar(this.chars, pool, f, this.rng, own));   // (an in-use pick is no pick in a unique crowd: try the next)
@@ -539,6 +539,12 @@ export class AnimCrowd {
   /** would one more person in ch's garment group make it over half of the people on parent (a car)? (boarders bring their own look: the pick rule never saw them - review 15) */
   mixOver(parent, ch) {
     let n = 0, same = 0; const g = garmentGroup(ch); for (const q of this.people) if (q.parent === parent && q.char && q.obj) { n++; if (garmentGroup(q.char) === g) same++; }
+    return n >= 4 && same + 1 > 0.5 * (n + 1);
+  }
+  /** would one more person in ch's garment group make it over half of the people of this crowd within r of (x, z)? (riders getting off on to a platform: review 16 counted
+   *  a platform near the player over half one garment in 13 of 65 samples) */
+  mixNear(ch, x, z, r = 15) {
+    let n = 0, same = 0; const g = garmentGroup(ch); for (const q of this.people) if (q.char && q.obj && Math.hypot(q.x - x, q.z - z) < r) { n++; if (garmentGroup(q.char) === g) same++; }
     return n >= 4 && same + 1 > 0.5 * (n + 1);
   }
   /** would the car be left with one garment over half its people if q (and those already leaving) got off? (riders getting off thinned a car to 7 of 12 in trousers - review 15) */
