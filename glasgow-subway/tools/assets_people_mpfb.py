@@ -301,8 +301,10 @@ def load_image(path, maxpx, alpha=False, quality=80, srgb=True, lift=False):
         import numpy as _np
         rgba = _np.asarray(im.convert('RGBA')).astype(_np.float32); msk = rgba[..., 3] > 128
         lum = rgba[..., :3] @ _np.array([0.299, 0.587, 0.114], _np.float32)
-        mean = max(1.0, float(lum[msk].mean()) if msk.any() else 128.0)
-        g = _np.clip(lum / mean * 0.8 * 255, 0, 255)
+        m0 = float(lum[msk].mean()) if msk.any() else 128.0
+        # (a texture that is flat black - eyebrow007 - has no strand shading to keep: an even light grey, so the tint shows. Scaled, it stayed black and two
+        # blondes kept black brows - review 23)
+        g = _np.clip(lum / m0 * 0.8 * 255, 0, 255) if m0 >= 2.0 else _np.full_like(lum, 0.8 * 255)
         rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = g
         im = Image.fromarray(rgba.astype(_np.uint8), 'RGBA')
     if alpha:
@@ -550,6 +552,13 @@ def hue_shift(src, deg, sat=1.0):
     if a: rgb.putalpha(a)
     rgb.save(out); return out
 
+def hair_lifted(spec):
+    """is the hair texture lifted to a light grey before the tint (rather than the tint multiplying the near-black texture)? Grey hair (hair_lift), and fair hair:
+    a light colour that is not red. Multiplied, a blonde tint on the dark strands came out auburn, ginger or black - review 23 found almost no blondes."""
+    if spec.get('hair_lift'): return True
+    if not spec.get('hair_col'): return False
+    r, g, b = hex_rgb(spec['hair_col']); return 0.299 * r + 0.587 * g + 0.114 * b > 0.45 and g > 0.7 * r
+
 def hair_shows(person):
     """the colour (sRGB 0..1) a person's hair is drawn in: the mean of its texture where it is opaque, times the tint (on the lifted texture for grey hair), or None"""
     spec = person['spec']
@@ -571,7 +580,7 @@ def hair_shows(person):
     a = _np.asarray(im).astype(_np.float32) / 255.0; msk = a[..., 3] > 0.5
     if not msk.any(): return None
     tl = lambda c: _np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-    if spec.get('hair_lift'): base = [lin(0.8)] * 3
+    if hair_lifted(spec): base = [lin(0.8)] * 3
     else: base = [float(tl(a[..., k][msk]).mean()) for k in range(3)]
     t = [lin(c) for c in hex_rgb(spec['hair_col'])]
     out = [base[k] * t[k] for k in range(3)]
@@ -599,8 +608,8 @@ def assign_materials(person, maxpx=1024):
             bt = tuple(min(1.0, lin(c * 1.0) / lin(0.8)) for c in hc) if light else None   # (at the hair colour itself: a shade darker, the thin strips in the shade of the brow ridge read black - review 22)
             o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex) + (spec['hair_col'] if light else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=bt, lift=light))
         elif role == 'hair':
-            o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
-                                                  tint=tuple(lin(c) for c in hex_rgb(spec['hair_col'])), lift=bool(spec.get('hair_lift'))))
+            o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if hair_lifted(spec) else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
+                                                  tint=tuple(lin(c) for c in hex_rgb(spec['hair_col'])), lift=hair_lifted(spec)))
         else:
             if spec.get('net') and spec['net'] in o.name.lower():   # a string vest: the garment's own shape, our net for its texture (alpha-tested)
                 o.data.materials.append(make_material('alpha_stringvest', net_texture(), None, alpha=True, rough=0.85, spec=0.05, maxpx=1024)); continue
