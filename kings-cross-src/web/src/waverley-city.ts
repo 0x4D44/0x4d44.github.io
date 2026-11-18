@@ -31,7 +31,8 @@ export const PLAIN_KINDS=new Set(['church','chapel','cathedral','ruins','bridge'
 export const PLAIN_AREA=40;
 // Offices overlooking the station at the east and west ends of Princes Street.
 // The eastern block is the long row of cool panes in R-nw-f Curtis.
-const STATION_OFFICES = new Set(['way/62065007', 'way/81357301']);
+const EAST_STATION_OFFICE = 'way/62065007';
+const WEST_STATION_OFFICE = 'way/81357301';
 export const WAVERLEY_CITY_HEIGHTS={scott:61.11} as const;
 export const WAVERLEY_CITY_SOURCES={
  scott:{url:'https://www.openstreetmap.org/way/39044819',height:61.11,basis:'OSM height; explicit mapped part heights and min_height'},
@@ -98,8 +99,8 @@ export function buildWaverleyCity(city:Pick<WaverleyData,'buildings'>,ground:Pic
   walls(plain?plainWalls:buildings,outer,holes,()=>b.minHeight?base+b.minHeight:base-.15,planes?plan.at:()=>plan.eave,color);
   if(!style&&!plain){
    const phase=cityBlockHash(b.id)*0.61803398875, seed=phase-Math.floor(phase);
-   const office=Number(STATION_OFFICES.has(b.id));
-   for(let i=wallFrom;i<buildings.positions.length;i+=3)wallWindowData.push(seed,office);
+   const windowProfile=b.id===EAST_STATION_OFFICE?2:Number(b.id===WEST_STATION_OFFICE);
+   for(let i=wallFrom;i<buildings.positions.length;i+=3)wallWindowData.push(seed,windowProfile);
   }
   const roofFrom=buildingTops.colors.length;
   if(planes)roofSurface(buildingTops,b.outer,b.holes,plan);

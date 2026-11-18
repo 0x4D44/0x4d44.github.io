@@ -159,8 +159,9 @@ export function northBridge(b:Batch,input:NorthBridgeInput){
   }
  }
  fascia(b,f,deck,BRIDGE_COLOURS.spandrel,2.65);
+ const archEnd=b.count;
  parapets(b,f,deck,'north',N.piers.map(([a,c])=>[a-.2,c+.2] as [number,number]));
- return {frame:f,piers:pierParts,ribs};
+ return {frame:f,piers:pierParts,ribs,archEnd};
 }
 
 export interface WaverleyBridgeInput {ring:Pt[];deck:Deck;columns:{s:number;cols:number[][]}[];ground?:(x:number,z:number)=>number}
