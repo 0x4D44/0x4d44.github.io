@@ -765,6 +765,9 @@ export class AnimCrowd {
   _waitSpot(rect, opts = {}) {
     const s = this.site, cands = [], self = opts.self || null;
     for (let k = 0; k < 60 && cands.length < 24; k++) { const x = rect.x0 + this.rng() * (rect.x1 - rect.x0), z = rect.z0 + this.rng() * (rect.z1 - rect.z0); if (this._free(x, z, 0.3, self) && !(opts.clearOfUser && this._nearWalker(x, z, 2.5, 3.6))) cands.push({ x, z }); }
+    // nobody waits at the foot of a stair: they walk on, clear of the way down for those behind (review 20: 16 of 81 newcomers stopped within 1 m of the last step)
+    const feet = ((s && s.entrances) || []).concat(opts.from ? [opts.from] : []), clear = cands.filter((c) => feet.every((f) => Math.hypot(c.x - f.x, c.z - f.z) > 2.2));
+    if (clear.length) cands.splice(0, cands.length, ...clear);
     const others = []; for (const q of this.people) if (q !== self && q.obj && !q.static && !q.hidden) { const e = q.arriving && q.path && q.path.length ? q.path[q.path.length - 1] : q.arriving || (q.mode === 'walk' && q.tx != null) ? { x: q.tx, z: q.tz } : q; others.push({ x: e.x, z: e.z }); }   // (someone on the way to a place has taken it)
     const ctx = { others, late: opts.late || 0, wallLover: this.rng(), entrance: opts.from || null };
     if (s) { ctx.edgeDist = (x) => Math.abs(x - s.edgeX); if (s.backX != null) ctx.backDist = (x) => Math.abs(s.backX - x); ctx.doors = s.doors; if (!ctx.entrance && s.entrances && s.entrances.length) ctx.entrance = s.entrances[Math.floor(this.rng() * s.entrances.length)]; }
