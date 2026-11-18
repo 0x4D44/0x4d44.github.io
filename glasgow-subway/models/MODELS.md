@@ -394,5 +394,10 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **elder_shorts:** short02, because the short03 fringe hung over one eye.
 - Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
 
+## Review 21 fixes
+
+- **Brows the colour the hair renders.** The spec's `hair_col` is a tint on the hair's own texture, so review 20's brows came out olive under auburn hair and blue-grey under grey. `hair_shows()` now takes the mean of the hair texture (or the lifted grey) times the tint; where PIL cannot read the texture, it falls back to the tint alone. Every person's brows take that colour a shade darker (0.75).
+- Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
