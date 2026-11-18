@@ -164,6 +164,8 @@ const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0
   ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
   adult_lusekofta: [[/winterboots/i, 0.12, 0.06, 0.025, 'flat']], adult_beret: [[/riding_boots/i, 0.05, 0.05, 0.05]] };   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
+/** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
+const garmentGroup = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
@@ -414,8 +416,9 @@ export class AnimCrowd {
     for (const clip of ch.pools.pole || []) {
       const m = this.measure(ch, clip), g = m.grip; if (!g) continue; const h = g.l[1] > g.r[1] ? g.l : g.r, hy = h[1] - m.minY; if (hy < 0.75 || hy > 1.85) continue;   // (the pole runs from the floor to 1.95 m)
       for (let k = 0; k < 24; k++) {
-        const yaw = k * Math.PI / 12, c = Math.cos(yaw), sn = Math.sin(yaw), x = pole.x - (c * h[0] + sn * h[2]), z = pole.z - (-sn * h[0] + c * h[2]);
-        if (ok(x, z, yaw)) out.push({ x, z, yaw, clip, pole });
+        const px = pole.x + (pole.slant ? pole.slant(hy) : 0);   // (where the pole is at the height of the hand: a door pole leans in above 1.26 m - review 15: the raised hand of the pole clip held air 4-14 cm off it)
+        const yaw = k * Math.PI / 12, c = Math.cos(yaw), sn = Math.sin(yaw), x = px - (c * h[0] + sn * h[2]), z = pole.z - (-sn * h[0] + c * h[2]);
+        if (ok(x, z, yaw)) out.push({ x, z, yaw, clip, pole, hand: h === g.l ? 0 : 1 });
       }
     }
     while (out.length) { const f = out.splice(Math.floor(rng() * out.length), 1)[0]; if (this._fitsStandAt(ch, { x: f.x, y: s.y, z: f.z, yaw: f.yaw, mode: 'pole', ceilAt: s.ceilAt })) return f; }   // (the ceiling test is the slow one: only on the place drawn)
@@ -442,7 +445,7 @@ export class AnimCrowd {
     // others; the rubric allows no garment on more than half)
     // review 10: re-rolling the category still left one garment over half the people near the player in every run (it gave up after four rolls, and counted children
     // apart). Now a group already worn by 45 % of the people within 15 m is left out of the draw while anyone else fits; children count by what they wear.
-    const grp = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
+    const grp = garmentGroup;
     const at = this._pickAt, par = this._pickPar, near = (q) => !at || at.x == null || ((!par || q.parent === par) && Math.hypot(q.x - at.x, q.z - at.z) < 15);   // (in a train: the same car - its riders' x, z are in the car's own frame, and every car's are near (0, 0) - review 14 still counted 55-57 % in one garment in a car)
     const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj && near(q)) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
     const full = new Set(); if (nOwn >= 4) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
@@ -452,6 +455,9 @@ export class AnimCrowd {
     const c = (full.size && ((f2 !== filter && tryF(and(f2))) || tryF(and(filter)))) || (f2 !== filter && tryF(f2)) || pickChar(this.chars, pool, filter, this.rng, own);
     // unique (the game's crowds): nobody is drawn twice while they are anywhere in the page - an empty seat or a thinner platform rather than a twin (review 7: a full train
     // of 75 with 26 on the platform and 12 in the other train is 113 people from a roster of 99, and twins sat in one car)
+    // and when nobody left fits but a garment already worn by half of them, the seat or the spot stays empty: the roster has 58 of 99 in trousers, and with everyone in use
+    // once (unique) the draw fell back to trousers - review 15 counted 41 of 180 car samples over half one garment, 73 % at worst
+    if (c && this.unique && nOwn >= 4 && full.has(grp(c)) && (tally.get(grp(c)) || 0) + 1 > 0.5 * (nOwn + 1)) return null;
     return c && this.unique && IN_USE.get(c.id) ? null : c;
   }
   add(p, parent, filter) {
@@ -529,6 +535,16 @@ export class AnimCrowd {
     }
     g.setAttribute('skinIndex', new T.BufferAttribute(si, 4)); g.setAttribute('skinWeight', new T.BufferAttribute(sw, 4));
     return g;
+  }
+  /** would one more person in ch's garment group make it over half of the people on parent (a car)? (boarders bring their own look: the pick rule never saw them - review 15) */
+  mixOver(parent, ch) {
+    let n = 0, same = 0; const g = garmentGroup(ch); for (const q of this.people) if (q.parent === parent && q.char && q.obj) { n++; if (garmentGroup(q.char) === g) same++; }
+    return n >= 4 && same + 1 > 0.5 * (n + 1);
+  }
+  /** would the car be left with one garment over half its people if q (and those already leaving) got off? (riders getting off thinned a car to 7 of 12 in trousers - review 15) */
+  mixLeaves(q) {
+    const t = new Map(); let n = 0; for (const o of this.people) if (o.parent === q.parent && o.char && o.obj && o !== q && !o.leaving) { n++; const g = garmentGroup(o.char); t.set(g, (t.get(g) || 0) + 1); }
+    if (n < 4) return false; for (const v of t.values()) if (v > 0.5 * n) return true; return false;
   }
   /** is (x, z) in this car (its frame) within r of the bag at a seated rider's feet? (it stands in front of their toes, about half a metre in from the hips) */
   _bagNear(car, x, z, r = 0.5) {
@@ -965,12 +981,12 @@ export class AnimCrowd {
    *  rest hangs half closed, and a hand on a handle is closed round it. This goes on after the mixer (which writes the fingers afresh at every update): relaxed
    *  for both hands, a grip for the hand with a bag or a case handle in it. A hand on a phone, a pole or a rail, waving or pointing keeps the clip's own fingers. */
   _fingers(p, dt, snap) {
-    const clip = p.cur ? p.cur.getClip().name : ''; if (/phone|pole|rail|wave|point/.test(clip)) return;
+    const clip = p.cur ? p.cur.getClip().name : '', onPole = p.poleAt && p.poleHand != null && /pole|rail/.test(clip); if (/phone|wave|point/.test(clip) || (/pole|rail/.test(clip) && !onPole)) return;   // (a hand on a pole is closed round it: review 15 saw an open claw)
     let f = p.fing; if (!f || f.obj !== p.obj) f = p.fing = this._fingerRig(p.obj, f); if (!f.ok) return;
     const rg = p.bagRig, gh = rg && p.obj.visible ? rg.gh : -1, held = p.hold && p.hold.w > 0;
     for (let s = 0; s < 2; s++) {
       if (held) continue;
-      const want = gh === s ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
+      const want = gh === s || (onPole && p.poleHand === s) ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
       for (const b of f.side[s]) { const a = b.rel + (b.grip - b.rel) * c; b.bone.quaternion.copy(b.rest).multiply(q.setFromAxisAngle(X, a)); }
     }
   }

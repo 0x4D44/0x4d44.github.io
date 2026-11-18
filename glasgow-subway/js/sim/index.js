@@ -206,7 +206,9 @@ class Sim {
   _carPoles(ci, info) {
     const wc = this.walkable && this.walkable.cars && this.walkable.cars[ci]; if (!wc) return [];
     const P = [], dz = wc.centreZ - info.zc, half = wc.length / 2;
-    for (const d of wc.doorZ) for (const e of [-1, 1]) for (const sx of [-1, 1]) P.push({ x: sx * 0.58, z: d - info.zc + e * ((wc.doorWidth || 1.3) / 2 + 0.1) });
+    // (a door pole is upright to 1.255 m over the floor, then leans in to x = +-0.45 at 1.675 m, where it meets the rail: slant(h) is its x offset at height h)
+    const slant = (sx) => (h) => -sx * 0.13 * Math.min(1, Math.max(0, (h - 1.255) / 0.42));
+    for (const d of wc.doorZ) for (const e of [-1, 1]) for (const sx of [-1, 1]) P.push({ x: sx * 0.58, z: d - info.zc + e * ((wc.doorWidth || 1.3) / 2 + 0.1), slant: slant(sx) });
     // (and either side of each gangway, x = +-0.70 - but a rider holding one stands in the gangway's mouth, where everyone walking through the train must pass: those are
     // only obstacles here, so that nobody stands on them)
     for (const e of [-1, 1]) { if (wc.hasCab && Math.sign(wc.centreZ) === e) continue; for (const sx of [-1, 1]) P.push({ x: sx * 0.70, z: dz + e * (half - 0.12), gang: true }); }
@@ -228,7 +230,7 @@ class Sim {
   _poleSlot(sc, pole, y, ceilAt, ok, rng) {
     const fits = new Map(), spot = (c) => { if (!fits.has(c.id)) fits.set(c.id, sc.poleSpot(c, pole, { y, ceilAt }, ok, rng)); return fits.get(c.id); };
     return { x: Math.sign(pole.x) * 0.15, y, z: pole.z, yaw: 0, mode: 'pole', ceilAt, fit: (c) => !!spot(c),
-      onPick: (p, c) => { const f = spot(c); if (f) { p.x = f.x; p.z = f.z; p.yaw = p.yawT = f.yaw; p.poleClip = f.clip; p.poleAt = pole; } else p.mode = p.state = 'stand'; } };
+      onPick: (p, c) => { const f = spot(c); if (f) { p.x = f.x; p.z = f.z; p.yaw = p.yawT = f.yaw; p.poleClip = f.clip; p.poleAt = pole; p.poleHand = f.hand; } else p.mode = p.state = 'stand'; } };
   }
   /** the standing riders of a train are things the walker goes round (soft: it slides round a rider rather than sticking); rebuilt whenever someone gets up, sits down, gets on or off */
   _saloonObs(tv) {
@@ -267,6 +269,7 @@ class Sim {
       for (const r of rows) {
         if (X.leavers.length >= want) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
         if (riders.filter((q) => q.parent === r.p.parent && !q.leaving).length <= 1) continue;   // (the last rider of a car stays aboard: a car is never left empty at a stop)
+        if (sc.mixLeaves(r.p)) continue;   // (nor does a rider whose going would leave one garment over half of the car)
         let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; }
         perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
       }
@@ -307,7 +310,8 @@ class Sim {
   /** send a boarding passenger (platform crowd) in through door k to a free seat they fit, or to a place to stand, and hand them to the train's crowd when they get there */
   _routeBoarder(q, k, X) {
     const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2); if (ci < 0 || !q.char) return;
-    if (sc.people.some((r) => r.char === q.char)) return;   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
+    if (sc.people.some((r) => r.char === q.char)) return;
+    if (sc.mixOver(tv.cars[ci], q.char)) return;   // (nor would they make one garment over half of that car: they wait for the next train - review 15)   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
     const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
     const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
     // and not a seat whose floor (where the bag will stand, in front of the toes) has someone standing on it already, or on their way to it (review 14: a standing rider's foot in a boarder's tote for 16 s)
@@ -334,7 +338,7 @@ class Sim {
       const at = reached && !seat && spot.yaw != null, here = { x: at ? spot.x : Math.max(-0.25, Math.min(0.25, c.x)), y: PY, z: at ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, force: true };
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
-      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; } sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, 0.6); }   // (a pole only where there is one under the hand)
+      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; np.poleHand = spot.hand; } sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, 0.6); }   // (a pole only where there is one under the hand)
       this._saloonObs(tv);
     };
   }
