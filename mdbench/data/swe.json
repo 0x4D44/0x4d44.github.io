@@ -2705,18 +2705,94 @@
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "sol-6.1-ultra",
    "task": "REV-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
     "score": 92.3,
-    "rubric": 91.8,
+    "rubric": 93.0,
     "score_claude": 91.7,
     "score_gpt": 93.0,
-    "judge_sd": 0.7,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 4.0,
+    "mean_rank": 6.0,
+    "cost_usd": 1.384,
+    "wall_min": 12.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 16.6,
+    "rubric": 17.5,
+    "score_claude": 14.7,
+    "score_gpt": 18.5,
+    "judge_sd": 2.5,
+    "bonus": 0.0,
+    "mean_rank": 15.5,
+    "cost_usd": 1.19,
+    "wall_min": 2.9,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 85.1,
+    "rubric": 86.8,
+    "score_claude": 83.3,
+    "score_gpt": 86.9,
+    "judge_sd": 2.5,
+    "bonus": 0.0,
+    "mean_rank": 11.5,
+    "cost_usd": 0.365,
+    "wall_min": 45.3,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 15.7,
+    "rubric": 15.0,
+    "score_claude": 14.7,
+    "score_gpt": 16.7,
+    "judge_sd": 2.0,
+    "bonus": 0.0,
+    "mean_rank": 15.8,
+    "cost_usd": 12.629,
+    "wall_min": 16.4,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 92.5,
+    "rubric": 91.8,
+    "score_claude": 92.0,
+    "score_gpt": 93.0,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "mean_rank": 4.3,
     "cost_usd": 10.54,
     "wall_min": 12.4,
     "gates_ok": true
@@ -2729,188 +2805,15 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 91.5,
+    "score": 91.8,
     "rubric": 93.0,
-    "score_claude": 90.0,
-    "score_gpt": 93.0,
-    "judge_sd": 1.6,
-    "bonus": 0.0,
-    "mean_rank": 6.7,
-    "cost_usd": 1.487,
-    "wall_min": 13.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "haiku-5.5-high",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 33.1,
-    "rubric": 34.4,
-    "score_claude": 32.0,
-    "score_gpt": 34.1,
+    "score_claude": 91.0,
+    "score_gpt": 92.7,
     "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 11.0,
-    "cost_usd": 1.891,
-    "wall_min": 14.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "gpt-4o-2024-08",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 4.2,
-    "rubric": 6.9,
-    "score_claude": 3.7,
-    "score_gpt": 4.7,
-    "judge_sd": 0.9,
-    "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 1.364,
-    "wall_min": 1.2,
-    "gates_ok": true
-   },
-   "flags": [
-    "nudged"
-   ]
-  },
-  {
-   "seat": "luna-6-max",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 85.5,
-    "rubric": 86.8,
-    "score_claude": 84.0,
-    "score_gpt": 86.9,
-    "judge_sd": 1.8,
-    "bonus": 0.0,
-    "mean_rank": 10.0,
-    "cost_usd": 0.365,
-    "wall_min": 45.3,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "luna-6-none",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 13.5,
-    "rubric": 15.0,
-    "score_claude": 12.0,
-    "score_gpt": 15.0,
-    "judge_sd": 1.9,
-    "bonus": 0.0,
-    "mean_rank": 13.0,
-    "cost_usd": 0.316,
-    "wall_min": 15.8,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "terra-6.1-medium",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 89.5,
-    "rubric": 93.0,
-    "score_claude": 86.3,
-    "score_gpt": 92.7,
-    "judge_sd": 3.2,
-    "bonus": 0.0,
-    "mean_rank": 8.3,
-    "cost_usd": 0.306,
-    "wall_min": 3.5,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 93.5,
-    "rubric": 94.8,
-    "score_claude": 92.7,
-    "score_gpt": 94.3,
-    "judge_sd": 1.7,
-    "bonus": 0.0,
-    "mean_rank": 2.7,
-    "cost_usd": 15.972,
-    "wall_min": 17.4,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "o3-high",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 16.4,
-    "rubric": 17.5,
-    "score_claude": 15.0,
-    "score_gpt": 17.8,
-    "judge_sd": 1.4,
-    "bonus": 0.0,
-    "mean_rank": 12.0,
-    "cost_usd": 1.19,
-    "wall_min": 2.9,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-medium",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 87.8,
-    "rubric": 88.2,
-    "score_claude": 86.7,
-    "score_gpt": 88.8,
-    "judge_sd": 1.5,
-    "bonus": 0.0,
-    "mean_rank": 8.7,
-    "cost_usd": 0.789,
-    "wall_min": 5.9,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-medium",
-   "task": "REV-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 92.5,
-    "rubric": 93.0,
-    "score_claude": 92.0,
-    "score_gpt": 93.0,
-    "judge_sd": 0.8,
-    "bonus": 0.0,
-    "mean_rank": 4.7,
-    "cost_usd": 7.096,
-    "wall_min": 8.1,
+    "mean_rank": 7.3,
+    "cost_usd": 1.487,
+    "wall_min": 13.1,
     "gates_ok": true
    },
    "flags": []
@@ -2927,9 +2830,28 @@
     "score_gpt": 93.0,
     "judge_sd": 1.9,
     "bonus": 0.0,
-    "mean_rank": 6.3,
+    "mean_rank": 7.3,
     "cost_usd": 1.855,
     "wall_min": 23.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-medium",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 87.5,
+    "rubric": 88.2,
+    "score_claude": 86.7,
+    "score_gpt": 88.3,
+    "judge_sd": 1.0,
+    "bonus": 0.0,
+    "mean_rank": 10.0,
+    "cost_usd": 0.789,
+    "wall_min": 5.9,
     "gates_ok": true
    },
    "flags": []
@@ -2940,15 +2862,131 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 98.8,
+    "score": 98.3,
     "rubric": 100.0,
-    "score_claude": 99.0,
-    "score_gpt": 98.7,
-    "judge_sd": 1.1,
-    "bonus": 0.0,
+    "score_claude": 98.7,
+    "score_gpt": 98.0,
+    "judge_sd": 0.7,
+    "bonus": 0.3,
     "mean_rank": 1.0,
     "cost_usd": 5.421,
     "wall_min": 10.2,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 32.1,
+    "rubric": 34.4,
+    "score_claude": 30.0,
+    "score_gpt": 34.1,
+    "judge_sd": 2.1,
+    "bonus": 0.2,
+    "mean_rank": 14.0,
+    "cost_usd": 1.891,
+    "wall_min": 14.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 93.9,
+    "rubric": 94.8,
+    "score_claude": 94.7,
+    "score_gpt": 93.2,
+    "judge_sd": 1.4,
+    "bonus": 0.3,
+    "mean_rank": 3.3,
+    "cost_usd": 15.972,
+    "wall_min": 17.4,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 4.3,
+    "rubric": 6.9,
+    "score_claude": 3.7,
+    "score_gpt": 5.0,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 18.0,
+    "cost_usd": 1.364,
+    "wall_min": 1.2,
+    "gates_ok": true
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 82.0,
+    "rubric": 79.9,
+    "score_claude": 84.0,
+    "score_gpt": 80.0,
+    "judge_sd": 3.1,
+    "bonus": 0.8,
+    "mean_rank": 12.0,
+    "cost_usd": 4.618,
+    "wall_min": 12.3,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 15.0,
+    "rubric": 15.0,
+    "score_claude": 13.7,
+    "score_gpt": 16.3,
+    "judge_sd": 2.4,
+    "bonus": 0.0,
+    "mean_rank": 16.7,
+    "cost_usd": 0.316,
+    "wall_min": 15.8,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 81.8,
+    "rubric": 81.1,
+    "score_claude": 82.7,
+    "score_gpt": 81.0,
+    "judge_sd": 1.2,
+    "bonus": 1.2,
+    "mean_rank": 12.0,
+    "cost_usd": 1.825,
+    "wall_min": 18.0,
     "gates_ok": true
    },
    "flags": []
@@ -2959,15 +2997,53 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 93.5,
+    "score": 93.7,
     "rubric": 94.0,
-    "score_claude": 93.0,
+    "score_claude": 93.3,
     "score_gpt": 94.0,
-    "judge_sd": 0.8,
+    "judge_sd": 0.5,
     "bonus": 0.0,
     "mean_rank": 2.7,
     "cost_usd": 2.927,
     "wall_min": 7.8,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 92.7,
+    "rubric": 93.0,
+    "score_claude": 92.3,
+    "score_gpt": 93.0,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 4.3,
+    "cost_usd": 7.096,
+    "wall_min": 8.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 89.2,
+    "rubric": 93.0,
+    "score_claude": 85.7,
+    "score_gpt": 92.7,
+    "judge_sd": 4.5,
+    "bonus": 0.0,
+    "mean_rank": 9.2,
+    "cost_usd": 0.306,
+    "wall_min": 3.5,
     "gates_ok": true
    },
    "flags": []
