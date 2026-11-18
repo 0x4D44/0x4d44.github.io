@@ -280,6 +280,7 @@ export function createEdinburghLive(options: {
     group, load, timeMs: () => replay?.timeMs() ?? 0,
     /** the trains drawn at the last frame, as the lamps see them (main.ts gives them to the headlamps' light, train-headlamp-light.ts) */
     lampTrains: (): readonly LampTrain[] => lampTrains,
+    setSignalNightLevel: (level: number) => signals?.setNightLevel(level),
     state: () => ({ area: 'EB', ready: !!session, connection, error, anchors: session?.anchors, trains: session?.motion.trains() ?? [], signals }),
     status: (): string => {
       const heads = signals?.counts();

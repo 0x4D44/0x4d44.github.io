@@ -7,9 +7,10 @@ import { barlowSection, FIGURES, landmarkPlans, landmarkSeats, pointInPolygon, p
 import type { BarlowPlan, BayPosition, Edge, HotelFaceKind, HotelPlan, LandmarkName, LandmarkPlans, MidlandPlan, Seat, TowerPlan } from '../../core/landmarks.ts';
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
-import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES, windowNight } from './materials.ts';
+import { floodLit, footShaded, litPane, mergeParts, material, paneUv, PANE_UV, part, TEXTURES, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { Batch, PartMap, V2, V3 } from './materials.ts';
 import type { ClockDial } from './clocks.ts';
+import { addRoofShade } from './lighting.ts';
 
 export { towerSquare };
 
@@ -273,7 +274,7 @@ export function createMaterials(): MaterialSet {
   // outside and dark from below, where the sun does not reach it. It now glows from below (lighting.ts `GLOW_BELOW`): the face that looks down at the camera has its emissive multiplied
   // up, so the crown is the brightest band from inside (the noon view's crown band L 53 before, 77 now, over the boarding's 61 to 63: see the lining below) and unchanged from the air.
   const roofGlass = tint('shedGlass', [0.42, 0.32, 0.28], 0x3b3531);
-  roofGlass.defines = { GLOW_BELOW: '' }; // the name lighting.ts `GLOW_BELOW` is (not imported: lighting.ts is the page's, and landmarks.ts its own chunk; a test holds the two to one name)
+  roofGlass.defines = { GLOW_BELOW: '' }; // lighting.ts consumes the same define.
   const rib = tint('ribPaint', [0.62, 0.68, 0.76], 0x2c333b);
   // Round five (the historic D6 scorer: the slate "reads pale silver", should be mid grey): the photographs' sunlit slate is a warm-neutral grey, hist-b's roof (150, 147, 147) and
   // (161, 159, 152) in its lit patches and hist-a's (136, 134, 136), and this was a cool lilac one, (154, 152, 156), b* -2 and L 63 on the Midland's range in the noon view. (2.1, 1.7,
@@ -1606,6 +1607,14 @@ export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOpt
   const seats = opts.terrain ? landmarkSeats(plans, opts.terrain) : undefined;
   const parts = landmarkGeometry(plans, seats);
   const { group, triangles } = mergeParts<Key>(parts, set.table, 'landmarks', { roofGlass: 2 });
+  const panes = group.getObjectByName('landmarks-pane');
+  if (panes instanceof THREE.Mesh && panes.material instanceof THREE.MeshLambertMaterial) {
+    const day = panes.material;
+    const night = litPane(day.clone(), 'amber');
+    addRoofShade(night);
+    set.owned.push(night);
+    withBuildingNightMaterial(panes, night);
+  }
   midlandNightFacade(group, parts, seats?.midland.y ?? 0);
   group.userData.clockDials = midlandClockDials(plans.midland, seats?.midland.y ?? 0); // clocks.ts
   scene.add(group);

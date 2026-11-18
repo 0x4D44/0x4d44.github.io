@@ -736,32 +736,53 @@ const NIGHT_MODE = {
 /** A storey shares an evening schedule, with a few unoccupied bays and
  * shadows behind its mullions. Fade unresolved glazing rather than filling
  * in the gaps or lighting dark storeys with an average. */
-const OFFICE_WINDOWS_GLSL = /* glsl */`
+const officeWindowsGlsl = (suites = false): string => {
+  const hash = suites ? 'officeHash' : 'winHash';
+  return /* glsl */`
 uniform float uOfficeFog;
-
+${suites ? `
+// Quantise the building tint and avoid a transcendental hash. Small GPU
+// rounding differences in the seed should not switch the whole floor.
+float officeHash( vec2 cell, float seed, float salt ) {
+  float building = floor( seed * 16.0 + 0.5 );
+  float h = fract( ( cell.x * 3.17 + cell.y * 0.87 + building * 1.27 + salt * 5.31 ) * 0.1031 );
+  return fract( h * ( h + 33.33 ) * ( h + 11.73 ) );
+}
+` : ''}
 vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare, float depth ) {
   vec2 cell = floor( v );
   vec2 row = vec2( 0.0, cell.y );
-  float start = 0.08 + 0.53 * winHash( row, seed, 3.0 );
-  float cutoff = off + 0.46 * ( winHash( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
-  float occupied = step( cutoff, winHash( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
+  float start = 0.08 + 0.53 * ${hash}( row, seed, 3.0 );
+  float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 )${suites ? ' + 0.025' : ''};
+  float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
   vec3 white = vec3( 1.0, 0.86, 0.71 );
   vec3 warm = vec3( 1.0, 0.72, 0.47 );
-  vec3 colour = mix( warm, white, step( 1.0-coolShare, winHash( row, seed, 4.0 ) ) );
+  vec3 colour = mix( warm, white, step( 1.0-coolShare, ${hash}( ${suites ? 'cell' : 'row'}, seed, 4.0 ) ) );
   vec2 f = fract( v );
   // Include the dark reveal around the existing mullion so it survives
   // the screen footprint of a 1.5 m bay. Never widen it into its neighbour.
-  float jamb = 0.15 + 0.08 * winHash( cell, seed, 6.0 );
+  float jamb = 0.15 + 0.08 * ${hash}( cell, seed, 6.0 );
   vec4 aperture = vec4( max( rect.x, jamb ), min( rect.y, 1.0-jamb ), rect.z+0.035, rect.w-0.035 );
   vec2 edge = clamp( w * 0.40, vec2( 0.003 ), vec2( 0.10 ) );
   float pane = winPane( f, aperture, edge );
-  float blinds = winHash( cell, seed, 7.0 );
-  float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );
+  float blinds = ${hash}( cell, seed, 7.0 );
+  ${suites ? `// Offices occupy connected runs of bays separated by dark suites.
+  float pitch = 13.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
+  float lengthLit = floor( mix( 0.38, 0.93, officeHash( row, seed, 11.0 ) ) * pitch );
+  float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
+  float suite = step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit );
+  float floorLight = mix( 0.55, 1.0, officeHash( row, seed, 13.0 ) );
+  float bay = ( 0.26 + 0.76 * officeHash( cell, seed, 5.0 ) ) * floorLight
+    * mix( 0.15, 1.0, step( 0.09, blinds ) ) * suite;`
+    : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
   return colour * ( occupied * pane * bay * detail * fog * winRoom( f.y, rect ) );
 }
 `;
+};
+const OFFICE_WINDOWS_GLSL = officeWindowsGlsl();
+const KX_OFFICE_WINDOWS_GLSL = officeWindowsGlsl(true);
 
 /** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
 const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
@@ -855,7 +876,7 @@ const NIGHT_GAIN = { house: 0.8, shop: 0.45, curtain: 0.35, decal: 0.8 } as cons
  * Give a window material the variation above: per quad for a decal drawn once over a quad, per tile for a repeating facade. The material
  * must carry a map (the windows are in the texture). Its program key says which, so the two never share a compile.
  */
-export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain', glass: readonly number[] = DECAL_GLASS, mode: readonly number[] = NIGHT_MODE.house, gain: number = NIGHT_GAIN.decal): T {
+export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(m: T, by: 'quad' | 'tile' | 'curtain', glass: readonly number[] = DECAL_GLASS, mode: readonly number[] = NIGHT_MODE.house, gain: number = NIGHT_GAIN.decal, officeSuites = false): T {
   // after dark (`windowNight`): the pane of the window's glass in its tile or quad, and for a facade how its windows are lit. Defines, so each kind of facade is a program of its own.
   m.defines = { ...m.defines, WIN_RECT: glslVec4(glass), WIN_GAIN: glslFloat(gain), ...(by === 'quad' ? {} : { WIN_MODE: glslVec4(mode) }) };
   m.onBeforeCompile = (shader) => {
@@ -867,11 +888,16 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
     }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}${by === 'curtain' ? OFFICE_WINDOWS_GLSL : ''}`)
+      .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}${by === 'curtain' ? (officeSuites ? KX_OFFICE_WINDOWS_GLSL : OFFICE_WINDOWS_GLSL) : ''}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
   };
-  m.customProgramCacheKey = () => `glassVaries-${by}`;
+  m.customProgramCacheKey = () => `glassVaries-${by}${officeSuites ? '-suites' : ''}`;
   return m;
+}
+
+/** The merged London curtain-wall batch keeps its original daytime material. */
+export function cityOfficeAtNight(day: THREE.MeshPhongMaterial): THREE.MeshPhongMaterial {
+  return glassVaries(day.clone(), 'curtain', FACADE_GLASS.glass, NIGHT_MODE.curtain, NIGHT_GAIN.curtain, true);
 }
 
 /** The two modelled King's Cross Central envelopes use the same floor
@@ -937,18 +963,19 @@ vec3 midlandPaneLight( vec2 uv, vec2 span, float night ) {
 
 /** Three-colour lamps in the upper rooms. A pane is an isolated polygon:
  * even at distance its neighbours cannot contribute to its light. */
-const MIDLAND_VISIBLE_PANE_GLSL = /* glsl */`
+const midlandVisiblePaneGlsl = (amberRooms: boolean): string => /* glsl */`
 vec3 midlandVisiblePaneLight( vec2 uv, vec2 span, float night ) {
   float id = floor(uv.x);
   if ( id >= ${glslFloat(PANE_UV.numbers)} ) return midlandPaneLight(uv,span,night);
   float occupied = step(fract(id*0.75487767+0.19),0.20);
   float start = 0.07 + 0.56 * fract(id*0.618034+0.31);
   float lamp = fract(id*0.56984029+0.27);
-  vec3 amber = mix(vec3(0.40,0.172,0.048),vec3(0.70,0.39,0.15),smoothstep(0.055,0.82,lamp));
+  ${amberRooms ? `vec3 tint = mix(vec3(0.49,0.213,0.047),vec3(0.79,0.494,0.148),lamp);
+  float brightness = mix(0.19,1.34,pow(fract(id*0.41421356+0.34),1.18));` : `vec3 amber = mix(vec3(0.40,0.172,0.048),vec3(0.70,0.39,0.15),smoothstep(0.055,0.82,lamp));
   vec3 ivory = vec3(0.80,0.60,0.345);
   vec3 cool = vec3(0.43,0.57,0.66);
   vec3 tint = mix(mix(amber,ivory,smoothstep(0.79,1.0,lamp)),cool,1.0-step(0.055,lamp));
-  float brightness = 0.65 + 0.35 * fract(id*0.41421356+0.34);
+  float brightness = 0.65 + 0.35 * fract(id*0.41421356+0.34);`}
   float room = winRoom(-1.0-uv.y,vec4(0.0,1.0,0.0,1.0));
   return tint * (occupied * smoothstep(start,start+0.24,night) * brightness * room);
 }
@@ -964,7 +991,7 @@ export function paneUv(id: number, across: number, up: number): [number, number]
  * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
  * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
  */
-export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland = false): T {
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland: boolean | 'amber' = false): T {
   const light = midland
     ? 'midlandVisiblePaneLight( vWinUv, wSpan, uWinNight )'
     : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} )`;
@@ -975,10 +1002,10 @@ export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland = fal
       .replace('#include <common>', '#include <common>\nvarying vec2 vWinUv;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinUv = uv;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}${midland ? MIDLAND_PANE_GLSL + MIDLAND_VISIBLE_PANE_GLSL : ''}`)
+      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}${midland ? MIDLAND_PANE_GLSL + midlandVisiblePaneGlsl(midland === 'amber') : ''}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${light};`);
   };
-  m.customProgramCacheKey = () => midland ? 'midlandLitPane' : 'litPane';
+  m.customProgramCacheKey = () => midland === 'amber' ? 'midlandLitPane-amber' : midland ? 'midlandLitPane' : 'litPane';
   return m;
 }
 

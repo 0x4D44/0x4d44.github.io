@@ -334,6 +334,9 @@ function start(): void {
     const shown = stations.activeScene();
     clocks.frame(shown, sceneClock()); // the station clocks show the scene's time (clocks.ts), as the sun and the board do
     const sky = climate?.atmosphere.state() ?? null;
+    const lampLevel = sky?.rig.lampLevel ?? 0;
+    if (shown === scene) signalLayer?.setNightLevel(lampLevel);
+    else if (stations.state().selected === 'edinburgh-waverley') stations.edinburgh()?.live?.setSignalNightLevel?.(lampLevel);
     if (climate && sky) {
       const added = additions(shown); // the scans visit every object of the scene: only on the frame after something was added to it
       if (added) ungraded(shown);

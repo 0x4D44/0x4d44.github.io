@@ -196,7 +196,7 @@ export async function loadWaverleyLamps(drawn: (x: number, z: number) => number,
   // conforming pools/strips rather than almost invisible panorama road pools.
   const rowSpots=surface&&surfaceRoot?await approachSpots(surfaceRoot,surface,spots):[];
   const approachSet=new Set(rowSpots);
-  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,waverleyStreetFog:true,lowPressureSodium:s=>approachSet.has(s),fogHaloSpread:18,
+  const layer=createStreetLights(spots,nightEffects?{...urbanLampOptions(surface),roughReflections:true,lightFog:true,softFog:true,waverleyStreetFog:true,lowPressureSodium:s=>approachSet.has(s),sourceCoreAt:s=>!approachSet.has(s),fogHaloSpread:18,
     // Princes Street's narrow footway lies almost at eye level in the frozen
     // Balmoral view. A 16 m pool covered the whole road as one horizontal band.
     // Keep a local soft pool under each head, independently of its wet streak.
