@@ -737,7 +737,7 @@ const NIGHT_MODE = {
  * shadows behind its mullions. Fade unresolved glazing rather than filling
  * in the gaps or lighting dark storeys with an average. */
 const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled' | 'kx-crick'): string => {
-  const wholeFloors = kind === 'kx-city' || kind === 'kx-crick';
+  const wholeFloors = kind !== 'ordinary';
   const hash = wholeFloors ? 'officeHash' : 'winHash';
   const eastOfficeSeed = (id: number) => `dot(vec3(${facadeTint(id).join(', ')}), vec3(37.1, 91.7, 53.3))`;
   return /* glsl */`
@@ -772,12 +772,12 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
     eastOfficeFloor = step(3.0,cell.y)*(1.0-step(5.0,cell.y));
     scheduled = eastOfficeFloor;
   }
-  scheduled = max(scheduled,eastOfficeFloor);` : `// The Crick's lower offices form two runs, followed by two
+  scheduled = max(scheduled,eastOfficeFloor);` : kind === 'kx-crick' ? `// The Crick's lower offices form two runs, followed by two
   // closed floors and occupied suites under the barrel vaults.
   if (cell.y >= 0.0 && cell.y <= 10.0) {
     scheduled = ((cell.y >= 1.0 && cell.y <= 2.0)
       || (cell.y >= 4.0 && cell.y <= 5.0) || cell.y == 8.0 || cell.y == 10.0) ? 1.0 : 0.0;
-  }`}
+  }` : ''}
   float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
@@ -800,16 +800,16 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float suite = max(eastOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
   float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, eastOfficeFloor );
   float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
-  float suite = 1.0;
-  if (cell.y == 5.0 || cell.y == 10.0) {
-    // Only one side of each service corridor is occupied on these floors.
-    // Stagger the long runs between floors along the continuous facade UV.
-    float suiteBay = 32.0*fract((cell.x + 9.0*cell.y)/32.0);
-    suite = mix(0.035,1.0,step(suiteBay,cell.y == 5.0 ? 18.0 : 13.0));
-  }
+    * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : kind === 'kx-crick' ? `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
+  // A closed suite spans several adjacent bays. Stagger the gaps from
+  // floor to floor along the continuous facade UV.
+  float suiteBay = 32.0*fract((cell.x + 11.0*cell.y + 17.0)/32.0);
+  float suiteLength = cell.y == 5.0 ? 18.0 : cell.y == 10.0 ? 13.0 : 27.0;
+  float suite = mix(0.035,1.0,step(suiteBay+0.5,suiteLength));
   float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( 0.10, blinds ) ) * suite;`}`
+    * mix( 0.035, 1.0, step( 0.012, blinds ) ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
+  float bay = mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) )
+    * mix( 0.035, 1.0, step( 0.10, blinds ) );`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
