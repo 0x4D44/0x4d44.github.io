@@ -150,9 +150,21 @@ if (midlandLevel > 0.003 && ${bodyVarying} > 0.5) {
   totalEmissiveRadiance *= mix(facadeFill,1.0,vMidlandNight.y);
   totalEmissiveRadiance += diffuseColor.rgb * vec3(0.15,0.080,0.029) * midlandLevel * arcade;
 }
-// midland-arcade-grade-end`);
+// midland-arcade-grade-end
+// midland-lamp-wash-begin
+if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
+  vec3 facadeWorld = cameraPosition - vViewPosition * mat3(viewMatrix);
+  float washHeight = smoothstep(4.0,7.5,vMidlandHeight)*(1.0-smoothstep(11.0,19.0,vMidlandHeight));
+  float washBay = sin(dot(facadeWorld.xz,vec2(0.14,0.08)));
+  float lampWash = washHeight*(0.45+0.55*washBay*washBay);
+  ${key === 'brickRed' ? `float rangeFill = 1.0-smoothstep(22.0,33.0,vMidlandHeight);
+  float towerFill = 0.60*(1.0-smoothstep(33.0,47.0,vMidlandHeight));
+  float brickFill = smoothstep(7.0,14.0,vMidlandHeight)*mix(towerFill,rangeFill,vMidlandBrickBody);
+  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
+}
+// midland-lamp-wash-end`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v6-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v7-${key}-${base.toFixed(6)}`;
   }
 }
 

@@ -19,6 +19,14 @@ vec2 lampReceiver(vec2 p) {
   return vec2((texel.r*65280.0+texel.g*255.0)/128.0-128.0,texel.b*inside);
 }`;
 
+/** Intersect the eye's ray to the mirrored head with its receiver plane. */
+export const LAMP_MIRROR_PROJECT_GLSL = `
+vec3 mirrorHead = lampHead - 2.0 * dot( lampHead - lampBase, lampNormal ) * lampNormal;
+vec3 mirrorRay = mirrorHead - cameraPosition;
+float mirrorT = dot( lampBase - cameraPosition, lampNormal ) / min( -0.001, dot( mirrorRay, lampNormal ) );
+reflectionCentre = cameraPosition + clamp( mirrorT, 0.0, 1.0 ) * mirrorRay;
+float reflectionValid = ( dot( cameraPosition - lampBase, lampNormal ) > 0.0 && mirrorT > 0.0 && mirrorT < 1.0 ) ? 1.0 : 0.0;`;
+
 /** The same bilinear read used by the GPU, for a few station fixture anchors. */
 export function lampSurfaceAt(surface:LampWetSurface,x:number,z:number):readonly [number,number] {
   const {map,rect}=surface,{width,height,data}=map.image;

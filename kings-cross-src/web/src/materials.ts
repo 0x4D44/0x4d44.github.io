@@ -828,7 +828,12 @@ export const PANE_UV = { numbers: 2048, margin: 0.1, share: 0.3 } as const;
 export const MIDLAND_PANE_GLSL = `
 vec3 midlandPaneLight( vec2 uv, vec2 span, float night ) {
   if ( floor(uv.x) < ${glslFloat(PANE_UV.numbers)} ) {
-    return vec3(0.56,0.40,0.18) * winPaneLit(uv,span,night,0.2);
+    // Keep four fifths of the previously lit rooms. The separate gate
+    // preserves each retained room's dusk timing, colour and intensity.
+    float keepShare = 0.80;
+    float room = step(fract(floor(uv.x)*0.618034+0.75),keepShare);
+    float far = smoothstep(0.25,0.6,max(span.x,span.y));
+    return vec3(0.56,0.40,0.18) * winPaneLit(uv,span,night,0.2) * mix(room,keepShare,far);
   }
   float room = 0.65 + 0.35 * winHash(vec2(floor(uv.x),0.0),0.0,3.0);
   float height = winRoom(-1.0-uv.y,vec4(0.0,1.0,0.0,1.0));

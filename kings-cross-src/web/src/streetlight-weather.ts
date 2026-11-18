@@ -2,7 +2,7 @@
 // finite wet-surface footprint; Perth retains its existing rendering path.
 import * as THREE from 'three';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
-import { lampSurfaceAt, LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
+import { lampSurfaceAt, LAMP_MIRROR_PROJECT_GLSL, LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import { headlampNight } from './train-headlamp-light.ts';
@@ -140,12 +140,7 @@ vec2 headReceiver = lampReceiver(${optics.receiverAnchor==='base'?'lampBase':'la
 lampBase.y = headReceiver.x + 0.012;
 // reflection-receiver-anchor-end
 `:''}vec3 reflectionCentre;
-// reflection-project-begin
-vec3 mirrorHead = lampHead - 2.0 * dot( lampHead - lampBase, lampNormal ) * lampNormal;
-vec3 mirrorRay = mirrorHead - cameraPosition;
-float mirrorT = dot( lampBase - cameraPosition, lampNormal ) / min( -0.001, dot( mirrorRay, lampNormal ) );
-reflectionCentre = cameraPosition + clamp( mirrorT, 0.0, 1.0 ) * mirrorRay;
-float reflectionValid = ( dot( cameraPosition - lampBase, lampNormal ) > 0.0 && mirrorT > 0.0 && mirrorT < 1.0 ) ? 1.0 : 0.0;
+// reflection-project-begin${LAMP_MIRROR_PROJECT_GLSL}
 // reflection-project-end
 ${reach!==undefined?`// reflection-local-begin
 reflectionValid *= 1.0-step(uReflectionReach+6.5,length(reflectionCentre.xz-lampBase.xz));
