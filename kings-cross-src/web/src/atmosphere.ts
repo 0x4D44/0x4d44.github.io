@@ -531,6 +531,13 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
         }
       }
     });
+    for (const [mesh, variants] of buildingMaterials) {
+      let ancestor = mesh.parent;
+      while (ancestor && ancestor !== scene) ancestor = ancestor.parent;
+      if (ancestor === scene) continue;
+      mesh.material = variants.day;
+      buildingMaterials.delete(mesh);
+    }
     dialLights?.scan(scene);
     kxFogMaterials?.scan(scene);
   };

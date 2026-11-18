@@ -10,7 +10,7 @@ import { createAtmosphere } from '../src/atmosphere.ts';
 import { addKxCentral, createMaterials } from '../src/kxcentral.ts';
 import { midlandGeometry, ROWS } from '../src/landmarks.ts';
 import { addRoofShade, createSunShadow } from '../src/lighting.ts';
-import { buildingNightMaterialsOf, cityMaterial, litPane, material, MIDLAND_PANE_GLSL, PANE_UV, windowNight } from '../src/materials.ts';
+import { buildingNightMaterialsOf, cityMaterial, litPane, material, MIDLAND_PANE_GLSL, officeFacade, PANE_UV, windowNight } from '../src/materials.ts';
 import { lightPerthNight } from '../src/station-weather.ts';
 import { buildShed } from '../src/shed.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
@@ -148,10 +148,54 @@ function frontWash(material: THREE.Material) {
   };
 }
 
-const meshMaterial = (group: THREE.Object3D, name: string) => (group.getObjectByName(name) as THREE.Mesh<THREE.BufferGeometry,THREE.MeshLambertMaterial>).material;
-const front = buildShed(layout);
+function buildTexturedFront() {
+  // Seed the source materials before buildShed first caches the night washes.
+  for (const key of ['brickFoot', 'stoneFoot'] as const) {
+    const day = material(key) as THREE.MeshLambertMaterial;
+    const { map, aoMap } = day;
+    const colour = new THREE.Texture(), occlusion = new THREE.Texture();
+    day.map = colour;
+    day.aoMap = occlusion;
+    test.after(() => {
+      day.map = map;
+      day.aoMap = aoMap;
+      colour.dispose();
+      occlusion.dispose();
+    });
+  }
+  return buildShed(layout);
+}
+
+const front = buildTexturedFront();
 const nightWash = (name: string) =>
   frontWash(buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!.night);
+
+test('front washes and office variants share every texture with their day material', () => {
+  const assertTextures = (label: string, day: THREE.Material, night: THREE.Material) => {
+    const slots: Record<string, unknown> = Object.fromEntries(Object.entries(night));
+    for (const [slot, texture] of Object.entries(day)) {
+      if (texture instanceof THREE.Texture) assert.ok(slots[slot] === texture, `${label} uses the original ${slot}`);
+    }
+  };
+  for (const name of ['shed-front', 'tower-brick', 'tower-stone']) {
+    const { day, night } = buildingNightMaterialsOf(front.getObjectByName(name) as THREE.Mesh)!;
+    assert.ok((day as THREE.MeshLambertMaterial).map instanceof THREE.Texture, `${name} has a real map to compare`);
+    assertTextures(name, day, night);
+  }
+  const map = new THREE.Texture(), aoMap = new THREE.Texture();
+  const curtain = new THREE.MeshPhongMaterial({ map, aoMap });
+  const timber = new THREE.MeshLambertMaterial({ map, aoMap });
+  try {
+    for (const [kind, day] of [['curtain', curtain], ['timber', timber]] as const) {
+      const night = officeFacade(day, kind, [.1, .9, .2, .8], 1, .3);
+      try {
+        assertTextures(kind, day, night);
+      } finally { night.dispose(); }
+    }
+  } finally {
+    curtain.dispose(); timber.dispose(); map.dispose(); aoMap.dispose();
+  }
+});
 
 test('an amber architectural wash lights the south piers and the clock stage', () => {
   const wall = nightWash('shed-front'), tower = nightWash('tower-brick');
@@ -217,11 +261,14 @@ test('daylight uses the original KX facade materials and programs, including aft
   camera.position.set(260, 220, 90);
   const at = (time: string, wallMs: number, weather = CLEAR_STATE) =>
     atmosphere.update({ camera, target, timeMs: Date.parse(time), wallMs, weather });
-  const noon = '2026-11-20T12:00:00Z';
+  const noon = '2026-11-20T12:00:00Z', dusk = '2026-11-20T22:30:00Z';
+  const fog = weatherState(forcedObservation('fog'));
+  let lateCentral: ReturnType<typeof addKxCentral> | undefined;
   const mast = ['shed-front', 'tower-brick', 'tower-stone'];
   const centralNames = ['kxcentral-curtain', 'kxcentral-timber'];
   const brick = material('brickFoot'), stone = material('stoneFoot');
-  const day = () => [...mast.map(name => meshMaterial(shed, name)), ...centralNames.map(name => meshMaterial(central.group, name))];
+  const facades = [...mast.map(name => shed.getObjectByName(name)), ...centralNames.map(name => central.group.getObjectByName(name))] as THREE.Mesh[];
+  const activeMaterials = () => facades.map(mesh => mesh.material as THREE.Material);
   // Compiled hook source and defines from e4881457 with its atmosphere active.
   const dayPrograms = [
     'b3da21edd89c15cbbab49f6b0a048c18bf89231a5cf2809dc735303805a06b81',
@@ -246,7 +293,7 @@ test('daylight uses the original KX facade materials and programs, including aft
         : '3b249371402aca6616330222b0b660c64ebae38c9dd0fdc2e8e2550ae7cb910c', key);
     }
     assert.equal(atmosphere.state()?.rig.lampLevel, 0);
-    const original = day();
+    const original = activeMaterials();
     const tower = shed.getObjectByName('clock-tower')!;
     const dial = tower.children.find(o => o.type === 'Group')!.children.find(o =>
       (o as THREE.Mesh).geometry?.type === 'CircleGeometry') as THREE.Mesh;
@@ -256,10 +303,12 @@ test('daylight uses the original KX facade materials and programs, including aft
       'the front and tower still share the original brick/stone materials');
     assert.deepEqual(original.map(signature), dayPrograms,
       'daylight vertex and fragment source matches the ordinary materials including roof shade');
-    at('2026-11-20T22:30:00Z', 1000, weatherState(forcedObservation('fog')));
+    at(dusk, 1000, fog);
+    const nightMaterials = activeMaterials();
+    assert.ok(facades.every(mesh => mesh.material === buildingNightMaterialsOf(mesh)?.night),
+      'the dusk update installs night variants before any rescan');
     shadows.tag();
-    atmosphere.rescan();
-    for (const [i, night] of day().entries()) {
+    for (const [i, night] of nightMaterials.entries()) {
       const program = shader(night);
       assert.ok(night !== original[i] && program.uniforms.uWinNight === windowNight);
       assert.equal(program.fragmentShader.split('uniform float uWinNight;').length, 2);
@@ -268,12 +317,24 @@ test('daylight uses the original KX facade materials and programs, including aft
       if (i >= 3) assert.ok(program.uniforms.uSnowCover, 'office variants carry the original snow hook');
       assert.equal(night.shadowSide, THREE.DoubleSide);
     }
+    lateCentral = addKxCentral(scene, data);
+    const lateOffice = lateCentral.group.getObjectByName('kxcentral-curtain') as THREE.Mesh;
+    const late = buildingNightMaterialsOf(lateOffice)!;
+    atmosphere.rescan();
+    assert.ok(lateOffice.material === late.night, 'the first rescan at night lights a newly attached office');
+
+    lateCentral.group.removeFromParent();
+    atmosphere.rescan();
+    assert.ok(lateOffice.material === late.day, 'rescanning after removal restores the detached office day material');
+
     at(noon, 2000);
-    assert.ok(day().every((m,i) => m === original[i]), 'restore the exact objects, keeping their material sort keys');
-    assert.deepEqual(day().map(signature), dayPrograms);
-    assert.ok(day().every(m => m.shadowSide === THREE.DoubleSide), 'either variant may be active at the first shadow scan');
+    assert.ok(activeMaterials().every((m,i) => m === original[i]), 'restore the exact objects, keeping their material sort keys');
+    assert.deepEqual(activeMaterials().map(signature), dayPrograms);
+    assert.ok(activeMaterials().every(m => m.shadowSide === THREE.DoubleSide), 'either variant may be active at the first shadow scan');
+    at(dusk, 3000, fog);
+    assert.ok(lateOffice.material === late.day, 'subsequent dusk updates leave the detached office alone');
   } finally {
-    shadows.dispose(); atmosphere.dispose(); central.dispose();
+    shadows.dispose(); atmosphere.dispose(); central.dispose(); lateCentral?.dispose();
     windowNight.value = 0;
   }
 });
