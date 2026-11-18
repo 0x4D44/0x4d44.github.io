@@ -1061,7 +1061,7 @@ export class AnimCrowd {
       if (p.v < 0.08) p.stillT = (p.stillT || 0) + dt; else if (p.v > 0.15) p.stillT = 0;
       p.pauseT = p.paused ? (p.pauseT || 0) + dt : 0;
       // (in sooner, out only on a clear move after a moment: review 20 saw a crawling jam flick between the two up to 39 times a minute)
-      const still = !p.static && (p.paused ? !(p.v > 0.25 && p.pauseT > 0.8) : p.stillT > 0.3);
+      const still = !p.static && (p.paused ? !((p.v > 0.25 && p.pauseT > 0.8) || p.v > 0.5) : p.stillT > 0.3);   // (but moved along briskly, they walk at once: review 21 saw a pushed walker glide 0.42 m in the standing pose)
       if (still !== !!p.paused) { p.paused = still; const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
       if (!p.paused && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
     } else if (p.paused) p.paused = false;

@@ -550,6 +550,26 @@ def hue_shift(src, deg, sat=1.0):
     if a: rgb.putalpha(a)
     rgb.save(out); return out
 
+def hair_shows(person):
+    """the colour (sRGB 0..1) a person's hair is drawn in: the mean of its texture where it is opaque, times the tint (on the lifted texture for grey hair), or None"""
+    spec = person['spec']
+    if not spec.get('hair_col'): return None
+    hp = [m for o, r, m in person['parts'] if r == 'hair']
+    if not hp: return None
+    mh = parse_mhmat(hp[0]); tex = mh.get('diffuseTexture')
+    if not tex: return None
+    import numpy as _np
+    from PIL import Image
+    im = Image.open(os.path.join(mh['_dir'], tex)).convert('RGBA'); im.thumbnail((256, 256))
+    a = _np.asarray(im).astype(_np.float32) / 255.0; msk = a[..., 3] > 0.5
+    if not msk.any(): return None
+    tl = lambda c: _np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    if spec.get('hair_lift'): base = [lin(0.8)] * 3
+    else: base = [float(tl(a[..., k][msk]).mean()) for k in range(3)]
+    t = [lin(c) for c in hex_rgb(spec['hair_col'])]
+    out = [base[k] * t[k] for k in range(3)]
+    return tuple((v * 12.92 if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055) for v in out)
+
 def assign_materials(person, maxpx=1024):
     spec = person['spec']; human = person['human']
     sk = spec['skin']; mh = parse_mhmat(P('skins', sk, sk + '.mhmat'))
@@ -565,9 +585,11 @@ def assign_materials(person, maxpx=1024):
         elif role in ('brows', 'lashes'):
             # brows the colour of the hair, a shade darker, where the hair is light (ginger, fair, grey): the near-black texture gave every redhead heavy black
             # brows (review 20). Lashes stay dark.
-            hc = hex_rgb(spec['hair_col']) if spec.get('hair_col') else None
-            light = role == 'brows' and hc is not None and (0.299 * hc[0] + 0.587 * hc[1] + 0.114 * hc[2]) > 0.3
-            bt = tuple(lin(c * 0.75) for c in hc) if light else None
+            # (review 21: the colour written in the spec is a TINT on the hair's own texture, not the colour the hair shows - olive-green brows under auburn hair,
+            # blue-grey under grey: take the colour the hair renders, the mean of its texture times the tint, as the grey-hair lift draws it)
+            hc = hair_shows(person) if role == 'brows' else None
+            light = hc is not None   # (any hair: dark hair gives dark brows of its own hue, not the texture's flat black - review 21's auburn girl had black brows)
+            bt = tuple(lin(c * 0.75) / lin(0.8) for c in hc) if light else None
             o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex) + (spec['hair_col'] if light else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=bt, lift=light))
         elif role == 'hair':
             o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
