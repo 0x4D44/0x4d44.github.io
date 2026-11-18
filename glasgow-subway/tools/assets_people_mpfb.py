@@ -560,8 +560,14 @@ def hair_shows(person):
     if not tex: return None
     import numpy as _np
     from PIL import Image
-    try: im = Image.open(os.path.join(mh['_dir'], tex)).convert('RGBA'); im.thumbnail((256, 256))
-    except Exception: return hex_rgb(spec['hair_col'])   # (a texture PIL cannot read - elvs_50s_updo's: the tint alone)
+    from PIL import ImageFile
+    try: im = Image.open(os.path.join(mh['_dir'], tex)); im.load()
+    except Exception:   # (elvs_50s_updo's and others' PNGs carry bad optional-chunk checksums: read them as load_image does)
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
+        try: im = Image.open(os.path.join(mh['_dir'], tex)); im.load()
+        except Exception: return hex_rgb(spec['hair_col'])
+        finally: ImageFile.LOAD_TRUNCATED_IMAGES = False
+    im = im.convert('RGBA'); im.thumbnail((256, 256))
     a = _np.asarray(im).astype(_np.float32) / 255.0; msk = a[..., 3] > 0.5
     if not msk.any(): return None
     tl = lambda c: _np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
@@ -590,7 +596,7 @@ def assign_materials(person, maxpx=1024):
             # blue-grey under grey: take the colour the hair renders, the mean of its texture times the tint, as the grey-hair lift draws it)
             hc = hair_shows(person) if role == 'brows' else None
             light = hc is not None   # (any hair: dark hair gives dark brows of its own hue, not the texture's flat black - review 21's auburn girl had black brows)
-            bt = tuple(lin(c * 0.75) / lin(0.8) for c in hc) if light else None
+            bt = tuple(min(1.0, lin(c * 1.0) / lin(0.8)) for c in hc) if light else None   # (at the hair colour itself: a shade darker, the thin strips in the shade of the brow ridge read black - review 22)
             o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex) + (spec['hair_col'] if light else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=bt, lift=light))
         elif role == 'hair':
             o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
