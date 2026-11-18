@@ -87,13 +87,25 @@ if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
   }
   vec2 room = vec2(floor(vMapUv.x),roomRow);
   float roomOn = step(balmoralRoomHash(room,13.0),share);
+  // Princes Street bay IDs follow the facade UV around the building.
+  // Move one room up to the top storey and one across to break a lit stack.
+  if (room.x == 54.0 && room.y == 0.0) roomOn = 0.0;
+  if (room.x == 54.0 && room.y == 3.0) roomOn = 1.0;
+  if (room.x == 48.0 && room.y == 1.0) roomOn = 0.0;
+  if (room.x == 49.0 && room.y == 2.0) roomOn = 1.0;
   float turnOn = 0.15+0.52*balmoralRoomHash(room,7.0);
-  float gain = (0.19+0.17*balmoralRoomHash(room,4.0))*smoothstep(turnOn,turnOn+0.18,uWinNight);
+  float gain = (0.25+0.07*balmoralRoomHash(room,4.0))*smoothstep(turnOn,turnOn+0.18,uWinNight);
+  // The storey above the balcony shares the forecourt lamps' fog halo.
+  if (roomRow == 0.0) gain *= 0.88;
   vec4 aperture = vec4(0.5-halfWidth,0.5+halfWidth,sill,head);
   float paneMask = winPane(vec2(fract(vMapUv.x),hotelHeight),aperture,hotelCellSpan*0.5);
   float mullion = 1.0-0.54*smoothstep(0.06,0.24,dot(sampledDiffuseColor.rgb,vec3(0.2126,0.7152,0.0722)));
-  vec3 amber = mix(vec3(1.0,0.63,0.25),vec3(1.0,0.76,0.34),balmoralRoomHash(room,3.0));
-  totalEmissiveRadiance += roomOn*gain*paneMask*mullion*winRoom(hotelHeight,aperture)*amber;
+  // Swap the hash axes for the colour so it varies independently of occupancy.
+  float tone = balmoralRoomHash(room.yx,275.0);
+  vec3 lamp = vec3(1.28,0.84,0.40);
+  if (tone < 0.25) lamp = vec3(1.71,0.61,0.134);
+  else if (tone < 0.35) lamp = vec3(0.823,0.857,0.822);
+  totalEmissiveRadiance += roomOn*gain*paneMask*mullion*winRoom(hotelHeight,aperture)*lamp;
 }
 // balmoral-amber-rooms-end
 #endif`;
@@ -465,10 +477,15 @@ balmoralBuiltFlood = diffuseColor.rgb*vec3(1.0,0.82,0.5)*uWinNight
   *FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vStationLampWorld.y-FLOOD.w,0.0)/FLOOD.y));
 #endif
 // balmoral-stone-grade-begin
-float firstFloorBand = smoothstep(7.2,8.3,hotelHeight)*(1.0-smoothstep(9.2,10.7,hotelHeight));
+float balconyRise = smoothstep(7.2,8.3,hotelHeight);
+float firstFloorBand = balconyRise*(1.0-smoothstep(9.2,10.7,hotelHeight));
 float topStoreyBand = smoothstep(22.1,23.9,hotelHeight);
 float bandFill = max(firstFloorBand,topStoreyBand);
-vec3 balmoralStoneGrade = mix(vec3(1.0),mix(vec3(0.36,0.27,0.26),vec3(1.0),bandFill),uStationLampLevel);
+// Keep the existing falloff on the balcony storey. Recede into shadow above it.
+float balconyStorey = balconyRise*(1.0-smoothstep(10.7,12.2,hotelHeight));
+float stoneShadowMix = smoothstep(0.0,1.5,hotelHeight)*(1.0-balconyStorey);
+vec3 stoneShadow = mix(vec3(0.36,0.27,0.26),vec3(0.085,0.119,0.17),stoneShadowMix);
+vec3 balmoralStoneGrade = mix(vec3(1.0),mix(stoneShadow,vec3(1.0),bandFill),uStationLampLevel);
 // Grade the stone washes and the fill, leaving room emission and late lamp
 // contributions intact. The full albedo range remains in the dark masonry.
 totalEmissiveRadiance -= (balmoralStoneEmission+balmoralBuiltFlood)*(1.0-balmoralStoneGrade);
