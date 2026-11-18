@@ -21,7 +21,7 @@ import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, coverAt, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
-import { buildingNightMaterialsOf, windowNight } from './materials.ts';
+import { buildingNightMaterialsOf, officeNightFog, windowNight } from './materials.ts';
 import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
@@ -732,7 +732,10 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
           }
         }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
-        kxFogMaterials?.setLevel(cityFog);
+        if (kxFogMaterials) {
+          kxFogMaterials.setLevel(cityFog);
+          officeNightFog.value = cityFog;
+        }
         state = { timeMs: f.timeMs, sun: sunPos, weather: w, rig };
         apply(rig, sunPos, w);
       }
@@ -792,7 +795,10 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
       applyCover(null);
       precip.dispose();
       dialLights?.dispose();
-      kxFogMaterials?.dispose();
+      if (kxFogMaterials) {
+        kxFogMaterials.dispose();
+        officeNightFog.value = 0;
+      }
       for (const undo of skylineHooks.values()) undo();
       platformLamps?.dispose();
       nightLights?.dispose();

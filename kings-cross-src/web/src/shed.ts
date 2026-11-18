@@ -444,18 +444,19 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float x = vKxWashPos.x;
   float endPier = min(abs(x-0.5),abs(x-${(width-0.5).toFixed(4)}));
   float spine = abs(x-${(width/2).toFixed(4)});
-  float spread = 2.3 + 0.12*y;
+  float spread = 1.25 + 0.18*y;
   float edge = exp(-pow(endPier/spread,2.0)) + exp(-pow(spine/spread,2.0));
   float shoulder = abs(abs(spine-${R.toFixed(4)})-${(R*0.88).toFixed(4)});
   float arch = exp(-pow(shoulder/(1.7+0.085*y),2.0)) * smoothstep(1.0,6.0,y);
-  float wash = (0.48*edge*exp(-y/12.0) + 0.22*arch*exp(-y/15.0)) * max(vKxWashNormal.z,0.0);
+  float wash = (0.84*edge*exp(-y/7.8) + 0.17*arch*exp(-y/11.0)) * max(vKxWashNormal.z,0.0);
 ` : /* glsl */`
   float faceU = dot(abs(vKxWashPos.xz),abs(vKxWashNormal.zx));
-  float rail = exp(-pow(abs(faceU-2.6)/(0.78+0.044*y),2.0));
-  float shaft = (0.11+0.33*rail)*exp(-y/12.5);
-  float stage = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-5.0).toFixed(4)})/2.1,2.0));
+  float rail = exp(-pow(abs(faceU-2.6)/(0.61+0.078*y),2.0));
+  float shaft = (0.045+0.76*rail)*exp(-y/8.5);
+  float stage = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-5.8).toFixed(4)})/1.95,2.0));
+  float stageEdge = 0.62 + 0.38*smoothstep(0.8,2.3,faceU);
   float eaves = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-3.0).toFixed(4)})/0.65,2.0));
-  float wash = (shaft + 0.19*stage + 0.20*eaves) * (1.0-max(vKxWashNormal.y,0.0));
+  float wash = (shaft + 0.33*stage*stageEdge + 0.36*eaves) * (1.0-max(vKxWashNormal.y,0.0));
 `;
   m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
@@ -469,7 +470,10 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
 if ( uWinNight > 0.003 ) {
   float y = max(vKxWashPos.y,0.0);
   ${light}
-  totalEmissiveRadiance += vec3(1.0,0.69,0.29) * diffuseColor.rgb * (wash*uWinNight);
+  // The texture colours both the light and how strongly each course picks it up.
+  float texel = dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722));
+  float detail = mix(0.68,1.13,smoothstep(0.16,0.43,texel));
+  totalEmissiveRadiance += vec3(1.0,0.66,0.25) * diffuseColor.rgb * (wash*detail*uWinNight);
 }
 `);
     // The shared roof-shade pass sees the night uniform and adds the usual

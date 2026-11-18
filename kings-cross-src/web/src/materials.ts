@@ -632,6 +632,8 @@ diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.70, 0.62, 0.46 ) * ( 1.0 - 0.2
  * come on through the dusk and stay on all night. By day (under a few thousandths) the shaders below do nothing at all.
  */
 export const windowNight = { value: 0 };
+/** Dense London night fog attenuates office interiors before tone mapping. */
+export const officeNightFog = { value: 0 };
 
 // A zero emission uniform cannot restore the original opaque sort key or
 // vertex program. Keep the daytime material installed until a night effect
@@ -731,28 +733,33 @@ const NIGHT_MODE = {
   londonFrontage: [0.23, 0.10, 0.08, 0.08],
 } as const;
 
-/** Floor occupancy and colour are shared across the building. Near the
- * camera the mullions and spandrels break the lit band into panes. At a
- * grazing angle only the horizontal coverage is averaged, so dark floors
- * survive until the vertical pixel footprint starts to span storeys. */
+/** A storey shares an evening schedule, with a few unoccupied bays and
+ * shadows behind its mullions. Fade unresolved glazing rather than filling
+ * in the gaps or lighting dark storeys with an average. */
 const OFFICE_WINDOWS_GLSL = /* glsl */`
-vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare ) {
-  vec2 row = vec2( 0.0, floor( v.y ) );
+uniform float uOfficeFog;
+
+vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare, float depth ) {
+  vec2 cell = floor( v );
+  vec2 row = vec2( 0.0, cell.y );
   float start = 0.08 + 0.53 * winHash( row, seed, 3.0 );
-  float occupied = step( off, winHash( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
-  vec3 cool = vec3( 0.78, 0.90, 1.0 );
-  vec3 warm = vec3( 1.0, 0.86, 0.68 );
-  vec3 colour = mix( warm, cool, step( 1.0-coolShare, winHash( row, seed, 4.0 ) ) );
+  float cutoff = off + 0.46 * ( winHash( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
+  float occupied = step( cutoff, winHash( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
+  vec3 white = vec3( 1.0, 0.86, 0.71 );
+  vec3 warm = vec3( 1.0, 0.72, 0.47 );
+  vec3 colour = mix( warm, white, step( 1.0-coolShare, winHash( row, seed, 4.0 ) ) );
   vec2 f = fract( v );
-  float across = smoothstep( 0.20, 0.63, w.x );
-  vec2 edge = max( w, vec2( 0.002 ) );
-  float paneX = smoothstep( rect.x-edge.x, rect.x+edge.x, f.x ) * smoothstep( -rect.y-edge.x, -rect.y+edge.x, -f.x );
-  float paneY = smoothstep( rect.z-edge.y, rect.z+edge.y, f.y ) * smoothstep( -rect.w-edge.y, -rect.w+edge.y, -f.y );
-  float width = rect.y - rect.x;
-  float bay = 0.82 + 0.18 * winHash( floor( v ), seed, 5.0 );
-  vec3 local = colour * occupied * mix( paneX * bay, width * 0.91, across ) * paneY * winRoom( f.y, rect );
-  vec3 distant = mix( warm, cool, coolShare ) * (1.0-off) * clamp( (night-0.15)/0.60, 0.0, 1.0 );
-  return mix( local, distant * ( width * (rect.w-rect.z) * 0.78 ), smoothstep( 0.25, 0.60, w.y ) );
+  // Include the dark reveal around the existing mullion so it survives
+  // the screen footprint of a 1.5 m bay. Never widen it into its neighbour.
+  float jamb = 0.15 + 0.08 * winHash( cell, seed, 6.0 );
+  vec4 aperture = vec4( max( rect.x, jamb ), min( rect.y, 1.0-jamb ), rect.z+0.035, rect.w-0.035 );
+  vec2 edge = clamp( w * 0.40, vec2( 0.003 ), vec2( 0.10 ) );
+  float pane = winPane( f, aperture, edge );
+  float blinds = winHash( cell, seed, 7.0 );
+  float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );
+  float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
+  float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
+  return colour * ( occupied * pane * bay * detail * fog * winRoom( f.y, rect ) );
 }
 `;
 
@@ -784,9 +791,17 @@ float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed )
 ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
-if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${curtain
-  ? 'winOffice( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE.z, WIN_MODE.w )'
-  : 'winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare )'};
+if ( uWinNight > 0.003 ) {
+${curtain ? `  totalEmissiveRadiance += WIN_GAIN * winOffice( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE.z, WIN_MODE.w, vViewPosition.z );` : `  vec4 tileMode = WIN_MODE;
+#ifdef USE_COLOR
+  // The round forecourt retail pavilion is occupied as in the original
+  // schedule. Its baked building tint keeps this within the shared batch.
+  if ( WIN_MODE.x == ${NIGHT_MODE.londonFrontage[0]} && length( vColor.rgb - vec3( ${facadeTint(234296717).join(', ')} ) ) < 0.000025 ) {
+    tileMode = ${glslVec4(NIGHT_MODE.house)};
+  }
+#endif
+  totalEmissiveRadiance += WIN_GAIN * winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, tileMode, gShare );`}
+}
 `;
 
 /**
@@ -845,6 +860,7 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
   m.defines = { ...m.defines, WIN_RECT: glslVec4(glass), WIN_GAIN: glslFloat(gain), ...(by === 'quad' ? {} : { WIN_MODE: glslVec4(mode) }) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
+    if (by === 'curtain') shader.uniforms.uOfficeFog = officeNightFog;
     if (by === 'quad') {
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vWinPos;')
@@ -865,17 +881,25 @@ export function officeFacade(
 ): THREE.Material {
   const m = day.clone();
   m.defines = { ...day.defines };
-  const uv = kind === 'timber' ? 'vMapUv * vec2( 10.0, 1.0 ) + vec2( 0.5, 0.0 )' : 'vMapUv';
+  // The ten timber fins per tile are too fine to stand in for separate
+  // rooms. Use 3 m bays behind them and resolve the fins when close.
+  const uv = kind === 'timber' ? 'vMapUv * vec2( 0.5, 1.0 )' : 'vMapUv';
+  const screen = kind === 'timber' ? `
+        float finGap = 1.0 - smoothstep( 0.09, 0.15, abs( fract( vMapUv.x * 10.0 + 0.5 ) - 0.5 ) );
+        officeLight *= mix( 1.0, 0.12 + 0.88 * finGap, 1.0 - smoothstep( 0.003, 0.015, officeSpan.x ) );` : '';
   m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
+    shader.uniforms.uOfficeFog = officeNightFog;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${OFFICE_WINDOWS_GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
 #ifdef USE_MAP
       if ( uWinNight > 0.003 ) {
         vec2 officeUv = ${uv};
-        totalEmissiveRadiance += ${glslFloat(gain)} * winOffice( officeUv, fwidth( officeUv ), ${glslFloat(seed)}, uWinNight, ${glslVec4(glass)},
-          ${glslFloat(NIGHT_MODE.curtain[2])}, ${glslFloat(NIGHT_MODE.curtain[3])} );
+        vec2 officeSpan = fwidth( officeUv );
+        vec3 officeLight = winOffice( officeUv, officeSpan, ${glslFloat(seed)}, uWinNight, ${glslVec4(glass)},
+          ${glslFloat(NIGHT_MODE.curtain[2])}, ${glslFloat(NIGHT_MODE.curtain[3])}, vViewPosition.z );${screen}
+        totalEmissiveRadiance += ${glslFloat(gain)} * officeLight;
       }
 #endif`);
     // Keep the surface-weather and roof-shade passes later in the chain,
@@ -920,10 +944,10 @@ vec3 midlandVisiblePaneLight( vec2 uv, vec2 span, float night ) {
   float occupied = step(fract(id*0.75487767+0.19),0.20);
   float start = 0.07 + 0.56 * fract(id*0.618034+0.31);
   float lamp = fract(id*0.56984029+0.27);
-  vec3 amber = vec3(0.34,0.14,0.043);
-  vec3 ivory = vec3(0.76,0.57,0.34);
-  vec3 cool = vec3(0.40,0.58,0.72);
-  vec3 tint = mix(mix(amber,ivory,smoothstep(0.19,1.0,lamp)),cool,1.0-step(0.19,lamp));
+  vec3 amber = mix(vec3(0.40,0.172,0.048),vec3(0.70,0.39,0.15),smoothstep(0.055,0.82,lamp));
+  vec3 ivory = vec3(0.80,0.60,0.345);
+  vec3 cool = vec3(0.43,0.57,0.66);
+  vec3 tint = mix(mix(amber,ivory,smoothstep(0.79,1.0,lamp)),cool,1.0-step(0.055,lamp));
   float brightness = 0.65 + 0.35 * fract(id*0.41421356+0.34);
   float room = winRoom(-1.0-uv.y,vec4(0.0,1.0,0.0,1.0));
   return tint * (occupied * smoothstep(start,start+0.24,night) * brightness * room);
@@ -1484,7 +1508,7 @@ export function wallQuad(b: Batch, x0: number, z0: number, x1: number, z1: numbe
 // grass and water, and the city's materials. It only adds to this file; nothing above is changed. The tile
 // sizes come from core/city.ts (FACADE), so the rules that fit windows to walls and the textures that draw
 // them cannot drift apart; web/tests/city.test.ts holds every texture to its texel density.
-import { FACADE, FACADE_TEXELS_PER_M } from '../../core/city.ts';
+import { FACADE, FACADE_TEXELS_PER_M, facadeTint } from '../../core/city.ts';
 import type { FacadeKey } from '../../core/city.ts';
 
 export type CityTextureName = FacadeKey | 'grass' | 'water';

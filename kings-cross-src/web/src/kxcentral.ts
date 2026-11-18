@@ -272,12 +272,10 @@ export function createMaterials(): MaterialSet {
       drum: own(new THREE.MeshLambertMaterial(mapped('drum'))),
       // glass and louvres catch the sun: a Phong sheen on top of the drawn pattern
       curtain: office(new THREE.MeshPhongMaterial({ ...mapped('curtain'), specular: 0x6f8190, shininess: 45 }),
-        'curtain', [3/96, 93/96, 0.95/4, 0.975], 2.82, 0.27),
+        'curtain', [3/96, 93/96, 0.95/4, 0.975], 2.98, 0.27),
       alu: own(new THREE.MeshPhongMaterial({ ...mapped('alu'), specular: 0x4a525a, shininess: 18, side: THREE.DoubleSide })),
-      // Each fin covers 12–88% of its 0.15 m pitch. Shift the glazing
-      // cycle half a pitch in the shader so its rectangle spans the gap.
       timber: office(new THREE.MeshLambertMaterial(mapped('timber')),
-        'timber', [0.38, 0.62, 1/4.2, 0.98], 6.25, 0.58),
+        'timber', [0.14, 0.86, 1/4.2, 0.98], 6.99, 0.27),
       green: own(new THREE.MeshLambertMaterial(mapped('green'))),
     },
     owned, officesAtNight,
