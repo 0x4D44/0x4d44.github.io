@@ -516,25 +516,28 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     // Rain retains its softer cloud structure; the unselected/Perth path is exact.
     const billow = CLOUD_BILLOW * smoothstep(0.15, 0.85, cloud) * (1-fogCloud);
     // Smooth light over the square / Princes Street, aimed from the current
-    // eye towards the real lamp group. It remains below 19 degrees: no cloud
-    // noise or bright circular patch high on the dome.
+    // eye towards the real lamp group. It fades into the even fog overhead.
     const groupX=(kingsCrossNightFog?45:40)-cloudEye.x,groupZ=(kingsCrossNightFog?15:-150)-cloudEye.z;
     const groupLength=Math.max(1,Math.hypot(groupX,groupZ));
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
       const r = Math.hypot(x, y, z);
       const t = clamp01(y / r);
-      const k = Math.pow(t, 0.45 + 0.1 * cloud); // a clear sky deepens to its blue sooner (R-lighting-materials-a2: deep blue by 30 degrees up), a cloud deck keeps its old, slower ease
+      const skyEase = Math.pow(t, 0.45 + 0.1 * cloud); // a clear sky deepens to its blue sooner (R-lighting-materials-a2: deep blue by 30 degrees up), a cloud deck keeps its old, slower ease
+      // Low-angle paths cross more lamp-lit air than paths above the city.
+      const fogEase = clamp01(t+.22*smoothstep(.14,.30,t)+.10*smoothstep(.28,.45,t));
+      const k = skyEase+(fogEase-skyEase)*fogCloud;
+      const fogFalloff = .13*fogEase*fogCloud;
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
       const d = cloudDeck(x / r, y / r, z / r) - 0.52;
       const deck = 1 + billow * smoothstep(0.02, 0.3, t) * Math.max(d, CLOUD_DARK * d);
       const towards=(x*groupX+z*groupZ)/(Math.max(1,Math.hypot(x,z))*groupLength);
-      const cityGlow=fogCloud*.018*Math.exp(-5*(1-towards))*(1-smoothstep(0,.32,t));
+      const cityGlow=fogCloud*.052*Math.exp(-23*(1-towards))*(1-smoothstep(.31,.38,t));
       colour.setRGB(
-        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow,
-        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91,
-        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8, THREE.SRGBColorSpace);
+        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow - fogFalloff,
+        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91 - fogFalloff,
+        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8 - fogFalloff, THREE.SRGBColorSpace);
       attr.setXYZ(i, colour.r, colour.g, colour.b);
     }
     attr.needsUpdate = true;

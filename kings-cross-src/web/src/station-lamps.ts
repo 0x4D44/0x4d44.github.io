@@ -37,7 +37,7 @@ export function createPlatformLamps(heads: readonly number[], rings: readonly (r
   const floor = floorMask(rings);
   const layer = createStreetLights(spots, {posts:false,headAt:s=>[s.x,s.y+s.height,s.z],fog:true,
     analyticPool:true,poolCeiling:.20,poolFloor:floor,poolLiftAt:()=>.004,poolRadiusAt:(_s,i)=>radii[i]!,
-    poolWeather:true,weatherEffects:true,enhancedFog:true,softFog:fogAir,boundedFog:fogAir,lightFog:station==='kx',suppressSnow:true,fogHaloSpread:station==='wv'?9:undefined,haloSize:3.2,coreSize:1.5,reflectionReach:8,poolFocus:station==='kx'?1.4:undefined});
+    poolWeather:true,weatherEffects:true,enhancedFog:true,softFog:fogAir,boundedFog:fogAir?station:undefined,lightFog:station==='kx',suppressSnow:true,fogHaloSpread:station==='wv'?9:undefined,haloSize:3.2,coreSize:1.5,reflectionReach:8,poolFocus:station==='kx'?1.4:undefined});
   layer.group.name='station-platform-lamps';
   return {...layer,dispose(){layer.dispose();floor?.map.dispose();layer.group.removeFromParent();}};
 }

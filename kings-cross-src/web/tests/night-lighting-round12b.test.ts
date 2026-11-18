@@ -17,7 +17,10 @@ test('dense roof fog uses bounded halo compositing, preserving isolated bright c
   try{
    layer.setLevel(1);layer.group.updateMatrixWorld(true);const points=layer.group.getObjectByName('street-lamp-halos') as THREE.Points,clear=points.material as THREE.PointsMaterial,budget=layer.counts();
    surfaceUniforms.fog.value=amount;layer.setLevel(1);const material=points.material as THREE.PointsMaterial;
-   assert.equal(material.blending,THREE.NormalBlending,'overlapping fog cannot remain additive');assert.equal(material.depthTest,true);
+   assert.equal(material.blending,THREE.CustomBlending,'overlapping fog uses a bounded additive blend');
+   assert.equal(material.blendSrc,THREE.OneFactor);
+   assert.equal(material.blendDst,THREE.OneMinusSrcColorFactor);
+   assert.equal(material.depthTest,true);
    assert.equal(((layer.group.getObjectByName('street-lamp-cores') as THREE.Points).material as THREE.Material).blending,THREE.AdditiveBlending);
    const p=lampHaloProbe(points,camera(),fog),source=p.entries.find(p=>p.halo)!;
    for(const x of [3,10,20,30]){const out=p.composeAt(source.x+x,source.y,receiver);assert.ok(Math.max(...out.rgb)<.69,'even 64 coincident lights stay below lamp peaks');assert.ok(out.rgb[0]!>out.rgb[2]!*1.04,'warm grey, not a neutral white void');const rib=p.composeAt(source.x+x,source.y,{...receiver,depth:20,background:[.04,.04,.04]});assert.ok(out.rgb[0]!-rib.rgb[0]!>.10,'near arch ribs occlude distant glow and retain contrast');}
