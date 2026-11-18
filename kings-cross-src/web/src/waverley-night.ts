@@ -217,13 +217,16 @@ if (abs(vStationLampNormal.x) > 0.10 && uStationLampSnow < 1.0) {
   float interiorLight = texture2D(uWaverleyRoofLight,roofLightUv).r;
   float pendantGlint = 0.20*smoothstep(0.57,0.92,interiorLight);
   vec3 paneLight = vec3(0.93,0.99,1.0)*(0.022+0.32*interiorLight+pendantGlint);
-  // From above the nearby cassettes transmit more of the warm interior.
-  // Concentrate the bright glints over occupied platforms and preserve
-  // the cool glazing between them and on more glancing views.
-  float roofSight = normalize(cameraPosition-vStationLampWorld).y;
-  float clearGlint = smoothstep(0.45,0.94,interiorLight)*smoothstep(0.12,0.20,roofSight)
+  // Warm the slopes over the pendant rows. Midtones have more headroom
+  // than the already bright centres. Distant and intervening panes stay cool.
+  vec3 roofEye = cameraPosition-vStationLampWorld;
+  float roofSight = normalize(roofEye).y;
+  float clearGlint = smoothstep(0.29,0.84,interiorLight)*smoothstep(0.08,0.18,roofSight)
+    *(1.0-smoothstep(85.0,165.0,length(roofEye)))
     *(1.0-smoothstep(0.10,0.55,uStationLampFog))*(1.0-smoothstep(0.05,0.30,uWaverleyRoofWet));
-  paneLight = mix(paneLight,paneLight*vec3(1.43,1.16,0.94)+vec3(0.04,0.033,0.022),clearGlint);
+  float glintHeadroom = 1.0-0.67*smoothstep(0.58,0.96,interiorLight);
+  float coolCut = mix(0.08,0.23,smoothstep(0.67,0.94,interiorLight));
+  paneLight += clearGlint*vec3(0.62*glintHeadroom,0.55*glintHeadroom,-coolCut);
   totalEmissiveRadiance += uStationLampLevel*paneLight*cassetteTransmission*(1.0-uStationLampSnow);
 }
 // waverley-roof-transmission-end`,
@@ -313,11 +316,18 @@ totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*
     // cornice. The dial faces have a separate material and wash.
     const towerGrade = (h: string, zone = '1.0') => `
 float towerCourse = max(1.0-smoothstep(0.23,1.05,abs(${h}-26.25)),
-  1.0-smoothstep(0.23,0.85,abs(${h}-32.38)));
-float corbelLight = smoothstep(39.45,40.10,${h})*(1.0-smoothstep(41.05,42.4,${h}));
+  smoothstep(32.04,32.19,${h})*(1.0-smoothstep(32.58,32.74,${h})));
+float corbelLight = smoothstep(39.94,40.11,${h})*(1.0-smoothstep(41.03,41.23,${h}));
 float stageCornice = 1.0-smoothstep(0.25,0.95,abs(${h}-48.98));
 float towerBand = max(max(towerCourse,corbelLight),stageCornice);
 vec3 towerStoneGrade = mix(vec3(1.0),vec3(0.31,0.22,0.21),(1.0-towerBand)*(${zone})*uStationLampLevel);`;
+    // The floods at the foot of the clock stage illuminate the facing stone
+    // and its mouldings. The warm corbel table sits below their beam.
+    const stageViolet = (h: string, zone = '1.0') => `
+float towerVioletWash = smoothstep(41.19,42.35,${h})*(1.0-smoothstep(48.2,49.1,${h}));
+float towerVioletFacing = 0.65+0.35*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.55,0.25,-0.8))));
+totalEmissiveRadiance += uStationLampLevel*(${zone})*towerVioletWash*towerVioletFacing
+  *diffuseColor.rgb*vec3(0.012,0.028,0.82);`;
     const towerDiffuse = `
 // balmoral-tower-diffuse-begin
 reflectedLight.directDiffuse *= towerStoneGrade;
@@ -337,6 +347,7 @@ towerBuiltFlood = diffuseColor.rgb*vec3(1.0,0.82,0.5)*uWinNight
 // balmoral-tower-grade-begin
 ${towerGrade('towerHeight')}
 totalEmissiveRadiance -= (totalEmissiveRadiance+towerBuiltFlood)*(1.0-towerStoneGrade);
+${stageViolet('towerHeight')}
 // balmoral-tower-grade-end`, diffuse:towerDiffuse, fog:towerFog('1.0')});
     patch('waverley-balmoral-facade',[0,0,0],'1.0',false,`
 // balmoral-facade-wash-begin
@@ -441,10 +452,11 @@ if ((${bounds(towerBox,2)}) > 0.0 && trimHeight >= 39.4) {
 ${towerWash('float towerQuoin = 0.0;')}
 }`}${lit && towerPaint ? `
 ${towerGrade('trimHeight',towerPaint)}
-totalEmissiveRadiance = mix(towerPaintStart,totalEmissiveRadiance,towerStoneGrade);` : ''}
+totalEmissiveRadiance = mix(towerPaintStart,totalEmissiveRadiance,towerStoneGrade);
+${stageViolet('trimHeight',bounds(towerBox,2))}` : ''}
 // balmoral-crown-begin
 float crown = (${within})*smoothstep(${(base+49.2).toFixed(3)},${(base+51.0).toFixed(3)},vStationLampWorld.y);
-totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.205,0.027,1.36)' : 'vec3(0.62,0.07,0.38)'}*crown;
+totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.060,0.004,1.90)' : 'vec3(0.62,0.07,0.38)'}*crown;
 // balmoral-crown-end
 // north-bridge-wash-begin
 if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
