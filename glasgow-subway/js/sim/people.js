@@ -1213,7 +1213,7 @@ export class AnimCrowd {
   }
   /** back from stepping aside: queue people return to their place in the line, everyone else just stands where they are */
   _settle(p) {
-    const m = p.revert; p.revert = null; p.sp = 0; p.stopHere = false;
+    const m = p.revert; p.revert = null; p.sp = 0; p.stopHere = false; p.standingBack = false;   // (review 28: left set, it carried into later walks)
     if (m === 'queue' && p.slot) { p.mode = 'queue'; p.tx = p.slot.x; p.tz = p.slot.z; p.qyaw = p.slot.yaw; p.blockT = 0; p.bestD = 1e9; p.stuckT = 0; return; }
     p.mode = m || 'stand'; p.tx = null; this._enter(p, 'stand');
   }
