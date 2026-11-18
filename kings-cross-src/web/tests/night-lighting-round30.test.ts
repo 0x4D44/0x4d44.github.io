@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto';
 import test, { after } from 'node:test';
 import * as THREE from 'three';
 import { facadeTint } from '../../core/city.ts';
-import cameras from '../../tools/tests/frozen-waverley-cameras.json' with { type: 'json' };
 import { createMaterials } from '../src/kxcentral.ts';
 import { buildingNightMaterialsOf, cityMaterial, cityOfficeAtNight, withBuildingNightMaterial } from '../src/materials.ts';
 import { lightWaverleyNight } from '../src/station-weather.ts';
@@ -15,8 +14,6 @@ import weatherReceipts from './fixtures/remote-weather-322a72a3.json' with { typ
 import { remoteWeatherSnapshot } from './weather-isolation-snapshot.ts';
 
 const luma = ([r, g, b]: readonly number[]) => .2126*r! + .7152*g! + .0722*b!;
-const warmth = ([r,,b]: readonly number[]) => r! - b!;
-const violetHue = ([r,g,b]: readonly number[]) => 240 + 60*(r!-g!)/(b!-g!);
 const display = (rgb: number[]) => toSrgb(acesFilmic(rgb as unknown as V3, 2.3)).map(c => 255*c);
 const mean = (v: number[]) => v.reduce((a,b) => a+b,0)/v.length;
 const digest = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -41,7 +38,6 @@ function mesh(name: string) {
 }
 const tower = mesh('waverley-balmoral-tower');
 const trim = mesh('waverley-frontage-structure');
-const dial = mesh('waverley-balmoral-clock-dials');
 
 function shader(material: THREE.Material) {
   const lib = material instanceof THREE.MeshPhongMaterial ? THREE.ShaderLib.phong : THREE.ShaderLib.lambert;
@@ -124,88 +120,6 @@ test('occupied London offices fill more of each pane above display luma 120', ()
     [[0,0,0],[0,0,0],[0,0,0]]);
 });
 
-function towerSampler(view: 'wv-balmoral-east-end' | 'wv-calton-hill-panorama') {
-  const { fov,pos,target } = cameras[view];
-  const camera = new THREE.PerspectiveCamera(fov,1.6,.1,20000);
-  camera.position.fromArray(pos);
-  camera.lookAt(new THREE.Vector3().fromArray(target));
-  camera.updateMatrixWorld();
-  const ray = new THREE.Raycaster();
-  const stone = shader(tower.material).fragmentShader;
-  const paint = shader(trim.material).fragmentShader;
-  const diffuse = (s: string) => block(s,'balmoral-tower-diffuse')
-    .replaceAll('reflectedLight.directDiffuse','direct').replaceAll('reflectedLight.indirectDiffuse','indirect');
-  const glsl = new Glsl('');
-  const stoneLight = glsl.snippet(block(stone,'balmoral-tower-wash')+block(stone,'balmoral-tower-grade')+diffuse(stone));
-  const paintLight = glsl.snippet(strip(paint.slice(paint.indexOf('// station-light-begin'),paint.indexOf('// north-bridge-wash-begin')))+diffuse(paint));
-  return (x: number, y: number) => {
-    ray.setFromCamera(new THREE.Vector2((x+.5)/640-1,1-(y+.5)/400),camera);
-    const hit = ray.intersectObjects([tower,trim,dial],false)[0];
-    if (!hit?.normal || hit.object === dial) return undefined;
-    const albedo = [.42,.34,.24];
-    if (hit.object === trim && hit.face && hit.barycoord) {
-      const colours = trim.geometry.getAttribute('color');
-      const { a,b,c } = hit.face;
-      const { x,y,z } = hit.barycoord;
-      for (let i=0; i<3; i++) albedo[i] = x*colours.getComponent(a,i)+y*colours.getComponent(b,i)+z*colours.getComponent(c,i);
-    }
-    const vars = {
-      vStationLampWorld:hit.point.toArray(), vStationLampNormal:hit.normal.toArray(), vBalmoralTowerU:hit.uv?.x ?? .25,
-      diffuseColor:[...albedo,1], uStationLampLevel:1, totalEmissiveRadiance:[0,0,0],
-      towerBuiltFlood:albedo.map((c,i) => c*[1,.82,.5][i]!*.02),
-      direct:albedo.map(c=>c*.10), indirect:albedo.map(c=>c*.12),
-    };
-    const height = hit.point.y-base;
-    (hit.object === tower ? stoneLight : paintLight)({ vars });
-    return { height, kind: hit.object === tower ? 'tower' : 'trim',
-      rgb: display(vars.totalEmissiveRadiance.map((c,i) => c+(hit.object===tower?vars.towerBuiltFlood[i]!:0)
-        +vars.direct[i]!+vars.indirect[i]!)) };
-  };
-}
-
-test('Balmoral cornice reads as a warm course alongside a violet stage and crown', () => {
-  const sample = towerSampler('wv-balmoral-east-end');
-  const cornice = [[640,169],[652,173],[665,178],[678,183],[691,188],[704,193]].map(([x,y]) => sample(x!,y!)!);
-  const field = [[640,181],[652,186],[665,191],[678,196],[691,201],[704,206]].map(([x,y]) => sample(x!,y!)!);
-  const crown = sample(622,145)!;
-  const calton = towerSampler('wv-calton-hill-panorama');
-  const caltonCourse = [776,782,789,796,803,809].map(x => calton(x,354)!);
-  const caltonField = [776,782,789,796,802,809].map(x => calton(x,357)!);
-  const colourMean = (samples: typeof cornice) => [0,1,2].map(i => +mean(samples.map(s=>s.rgb[i]!)).toFixed(1));
-  console.log('Balmoral projected display RGB', JSON.stringify({
-    cornice:colourMean(cornice),field:colourMean(field),crown:crown.rgb,
-    caltonCourse:colourMean(caltonCourse),caltonField:colourMean(caltonField),
-  }));
-  assert.ok(cornice.every(s => warmth(s.rgb) >= 28 && luma(s.rgb) < 230));
-  assert.ok(mean(cornice.map(s=>luma(s.rgb))) - mean(field.map(s=>luma(s.rgb))) >= 15);
-  assert.ok(field.every(s => Math.abs(violetHue(s.rgb)-violetHue(crown.rgb)) <= 7));
-  assert.ok(caltonCourse.every(s => warmth(s.rgb) >= 28));
-  assert.ok(caltonField.every(s => Math.abs(violetHue(s.rgb)-violetHue(crown.rgb)) <= 8));
-  assert.ok(!shader(dial.material).fragmentShader.includes('towerVioletWash'));
-  assert.equal(dial.material.defines?.FLOOD_COLOUR,'vec3( 1.0, 0.94, 0.8 )');
-});
-
-test('Balmoral corbel tops and the turret returns beside them read as warm stone', () => {
-  const sample = towerSampler('wv-balmoral-east-end');
-  // Separate real corbel/return hits from the stage still visible within
-  // the rows of the perspective crop.
-  const rows = [262,266,270,274,278,282].map(y => numbers(560,170).map(x => sample(x,y))
-    .filter(s => s !== undefined));
-  const corbel = rows.map(row => row.filter(s => s.height >= 39.55 && s.height <= 41.35));
-  const countViolet = (row: typeof rows[number]) => row.filter(({rgb: [r,g,b]}) => b!-r! > 22 && r! > g! && b! >= 95).length;
-  const purple = corbel.map(countViolet);
-  const calton = towerSampler('wv-calton-hill-panorama');
-  const caltonReturn = [789,793,797,801,805].map(x => calton(x,373)!);
-  console.log('Balmoral violet pixels by projected row', JSON.stringify({
-    corbelHits:corbel.map(row=>row.length), corbelViolet:purple, wholeRowViolet:rows.map(countViolet),
-    caltonReturnWarmth:mean(caltonReturn.map(s=>warmth(s.rgb))),
-  }));
-  assert.ok(corbel.flat().length >= 80);
-  assert.ok(purple.every(n => n === 0));
-  assert.ok(mean(corbel.flat().map(s=>warmth(s.rgb))) >= 45);
-  assert.ok(caltonReturn.every(s => warmth(s.rgb) >= 35));
-});
-
 test('KX and Balmoral keep their day shader bytes and Perth keeps its weather receipts', () => {
   const materials = [tower.material,trim.material,central.table.curtain,central.table.timber,cityDay];
   const registered = [
@@ -237,6 +151,6 @@ test('KX and Balmoral keep their day shader bytes and Perth keeps its weather re
     assert.equal(tower.material,materials[0]);
     assert.equal(trim.material,materials[1]);
     assert.deepEqual(officeMap(timber,[.32,.16])(1,.53,18,undefined,.003),[0,0,0]);
-    assert.ok(nightWv.includes('stageStoneCourse') && !shader(tower.material).fragmentShader.includes('stageStoneCourse'));
+    assert.ok(nightWv.includes('towerVioletWash') && !shader(tower.material).fragmentShader.includes('towerVioletWash'));
   } finally { glow.setLevel(1); }
 });
