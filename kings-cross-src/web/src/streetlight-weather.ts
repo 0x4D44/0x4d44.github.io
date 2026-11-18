@@ -5,6 +5,7 @@ import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { lampSurfaceAt, LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
 import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
+import { headlampNight } from './train-headlamp-light.ts';
 
 /** Fade light away rather than blending in a fog-coloured rectangle. */
 export function fadeLightInFog(material: THREE.Material, alpha = false, depth = false, source = false, extinction = false): void {
@@ -439,18 +440,27 @@ gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0
   const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length||optics.waverleyStreetFog)?clearHaloMaterial.clone():null;
   if(fogHaloMaterial){
     const original=clearHaloMaterial.onBeforeCompile;
+    const roofLampNear = optics.boundedFog==='wv'
+      ? '(1.0-smoothstep(18.0,46.0,vLampFogDistance))*(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight))'
+      : '(1.0-smoothstep(25.0,52.0,vLampFogDistance))*(1.0-smoothstep(-2.5,-0.9,vLampFogViewHeight))';
     fogHaloMaterial.onBeforeCompile=(shader,renderer)=>{
       original.call(clearHaloMaterial,shader,renderer);
       if(optics.boundedFog){
+        shader.uniforms.uPlatformLampNight=headlampNight;
         shader.vertexShader=shader.vertexShader
           .replace('#include <common>',`#include <common>
 attribute float lampFogWeight;
+uniform float uPlatformLampNight;
 varying float vLampFogWeight;
 varying float vLampFogViewHeight;`)
-          .replace('#include <fog_vertex>',`#include <fog_vertex>
-vLampFogWeight = lampFogWeight;
-vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;`);
+          .replace('#include <fog_vertex>','#include <fog_vertex>\nvLampFogWeight = lampFogWeight;')
+          .replace('// lamp-fog-screen-end',`
+vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;
+float roofLampSpread = ${roofLampNear}*smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight;
+gl_PointSize *= 1.0+${optics.boundedFog==='wv'?'0.24':'0.32'}*roofLampSpread*(1.0-lampFogHalo);
+// lamp-fog-screen-end`);
         shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
+uniform float uPlatformLampNight;
 varying float vLampFogWeight;
 varying float vLampFogViewHeight;`);
       }
@@ -474,12 +484,16 @@ vLampFrontageFog = smoothstep(72.0,83.0,frontageLamp.x)*(1.0-smoothstep(124.0,15
 // headroom. Overlapping samples compose to 1-exp(-sum(optical depth)).
 // The tighter head aureole stays distinct from the wide fog scatter.
 float roofGain = ${optics.boundedFog==='wv'?'mix(0.85,1.90,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
+float roofLampNear = ${roofLampNear};
 float headGain = 0.58;${optics.boundedFog==='wv'?`
 // Resolve the close downlight under a pendant without increasing the broad
 // roof scatter or the distant pendant cluster at the end of the platform.
 vec2 pendantOffset = 2.0*(gl_PointCoord-vec2(0.5));
-float pendantNear = (1.0-smoothstep(18.0,46.0,vLampFogDistance))*(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight));
-headGain += 2.85*pendantNear*exp(-9.0*dot(pendantOffset,pendantOffset));`:''}
+headGain += 2.85*roofLampNear*exp(-9.0*dot(pendantOffset,pendantOffset));`:''}
+// A wider aureole uses less optical depth at its centre, leaving headroom
+// for the physical emitter and the screen-blended shoulders of its neighbours.
+float peakLoss = ${optics.boundedFog==='wv'?'0.025+0.045*smoothstep(12.0,18.0,vLampFogDistance)':'0.07'};
+headGain *= 1.0-peakLoss*roofLampNear*smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight;
 float roofScatter = vLampFogWeight * gl_FragColor.a * mix(headGain,roofGain,vLampFogHalo);
 gl_FragColor.rgb = vec3(1.0)-exp(-roofScatter*gl_FragColor.rgb);
 // lamp-roof-scatter-end`:''}${optics.waverleyStreetFog?`

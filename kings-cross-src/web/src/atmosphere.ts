@@ -504,7 +504,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
    * billows, fading out toward the horizon so the sky still meets the fog in one colour). The colours are worked in sRGB, then stored
    * as linear.
    */
-  const paintDome = (rig: SkyRig, cloud: number, fogCloud: number): void => {
+  const paintDome = (rig: SkyRig, cloud: number, fogCloud: number, highWaverley: number): void => {
     const geometry = world.sky.geometry;
     const pos = geometry.getAttribute('position');
     const attr = geometry.getAttribute('color') as THREE.BufferAttribute;
@@ -537,11 +537,18 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       const d = cloudDeck(x / r, y / r, z / r) - 0.52;
       const deck = 1 + billow * smoothstep(0.02, 0.3, t) * Math.max(d, CLOUD_DARK * d);
       const towards=(x*groupX+z*groupZ)/(Math.max(1,Math.hypot(x,z))*groupLength);
-      const cityGlow=fogCloud*.052*Math.exp(-23*(1-towards))*(1-smoothstep(.31,.38,t));
+      const localGlow=fogCloud*.052*Math.exp(-23*(1-towards))*(1-smoothstep(.31,.38,t));
+      const diffuseGlow=fogCloud*.009*(1-smoothstep(.414,.441,t));
+      const cityGlow=localGlow+(diffuseGlow-localGlow)*highWaverley;
+      // Light from the city grazes the upper fog bank. Fade the lift into the
+      // zenith and into the low cloud where the dome meets the ground veil.
+      const fogRise = fogCloud * (kingsCrossNightFog
+        ? .062*smoothstep(.46,.64,t)*(1-smoothstep(.65,.734,t))
+        : .035*smoothstep(.45,.54,t)*(1-smoothstep(.55,.67,t)));
       colour.setRGB(
-        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow - fogFalloff,
-        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91 - fogFalloff,
-        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8 - fogFalloff, THREE.SRGBColorSpace);
+        (horizon[0] + (zenith[0] - horizon[0]) * k) * deck + gc[0] * glow + cityGlow - fogFalloff + fogRise,
+        (horizon[1] + (zenith[1] - horizon[1]) * k) * deck + gc[1] * glow + cityGlow*.91 - fogFalloff + fogRise,
+        (horizon[2] + (zenith[2] - horizon[2]) * k) * deck + gc[2] * glow + cityGlow*.8 - fogFalloff + fogRise, THREE.SRGBColorSpace);
       attr.setXYZ(i, colour.r, colour.g, colour.b);
     }
     attr.needsUpdate = true;
@@ -568,12 +575,14 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
 
     // The dome only when its colours, the cloud's structure or the sun's place have moved enough to see.
     const fogCloud = litFogCloud && cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.85,rig.fogAmount) : 0;
-    const fogEye = fogCloud>0?`${Math.round(cloudEye.x/5)}/${Math.round(cloudEye.z/5)}`:'';
+    // From the hillside, street lighting below the eye reads as a diffuse veil.
+    const highWaverley = fogCloud>0 && !kingsCrossNightFog ? smoothstep(28,44,cloudEye.y) : 0;
+    const fogEye = fogCloud>0?`${Math.round(cloudEye.x/5)}/${Math.round(cloudEye.z/5)}/${Math.round(100*highWaverley)}`:'';
     let moved = Math.abs(rig.glow.strength - paint.glow);
     for (let i = 0; i < 3; i++) moved = Math.max(moved, Math.abs((rig.dome.zenith[i] as number) - (paint.zenith[i] as number)), Math.abs((rig.dome.horizon[i] as number) - (paint.horizon[i] as number)));
     const sunKey = `${Math.round(sunPos.elevationDeg * 4)}/${Math.round(sunPos.azimuthDeg * 2)}`;
     if (moved > 0.004 || sunKey !== paint.sunKey || Math.abs(weather.cloud - paint.cloud) > 0.03 || Math.abs(fogCloud-paint.fogCloud) > .004 || fogEye!==paint.fogEye) {
-      paintDome(rig, weather.cloud, fogCloud);
+      paintDome(rig, weather.cloud, fogCloud, highWaverley);
       paint.zenith = [...rig.dome.zenith];
       paint.horizon = [...rig.dome.horizon];
       paint.glow = rig.glow.strength;
