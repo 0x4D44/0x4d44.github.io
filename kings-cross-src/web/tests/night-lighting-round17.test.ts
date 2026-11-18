@@ -65,6 +65,7 @@ function flood(mesh: Surface, xyz: RGB, level: number, tag?: string, albedo: RGB
   const term = /totalEmissiveRadiance \+= ([^;]+);/.exec(originalFlood)?.[1];
   const env = { vars: {
     vStationLampWorld: xyz, vStationLampNormal: normal, uStationLampLevel: level,
+    vBalmoralTowerU: .5, uStationLampFog: 0, fogNear: 0, fogFar: 2200, vFogDepth: 0,
     totalEmissiveRadiance: [...zero], diffuseColor: [...albedo, 1],
   } };
   const glsl = new Glsl('');
@@ -75,7 +76,7 @@ function flood(mesh: Surface, xyz: RGB, level: number, tag?: string, albedo: RGB
       .replaceAll('FLOOD', define), env, {height: xyz[1], uWinNight: level}) as RGB;
   }
   const authored = tag && shader.split(`// ${tag}-begin`)[1]?.split(`// ${tag}-end`)[0];
-  if (authored) glsl.run(authored, env);
+  if (authored) glsl.run(authored.replace(/^\s*#.*$/gm, ''), env);
   if (mesh.name === names.scott && !authored) {
     return albedo.map((c, i) => c*level*[.38,.23,.10][i]!) as RGB;
   }
