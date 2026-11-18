@@ -95,7 +95,7 @@ test('the four visible London curtain walls use distinct whole-floor schedules',
     assert.ok(fractions.every(f => f === 0 || f >= .75));
     return fractions.map(f => +!!f);
   });
-  assert.deepEqual(states, [[0,1,0,1,1,1], [0,0,1,1,1,1], [1,0,1,1,0], [1,1,0,0,1]]);
+  assert.deepEqual(states, [[0,1,0,1,1,1], [0,1,1,1,0,1], [1,0,1,1,0], [1,1,0,0,1]]);
 });
 
 test('Balmoral crown and stage share a blue-violet hue through the lower-right clock stage', () => {

@@ -92,7 +92,7 @@ test('Platform 37 carries a dark pair and the three lit rows above it across the
   assert.ok(joinRows.slice(2).flat().every(lit => lit >= 9));
 });
 
-test('the east curtain wall lights another full-width floor above its dark pair with the existing night material', () => {
+test('the east curtain wall carries four full-width lit floors and an upper dark floor with the existing night material', () => {
   const scene = new THREE.Scene();
   const world = addWorld(scene, { grid: false });
   const atmosphere = createAtmosphere({ scene, world, sites: null, kingsCrossNightFog: true });
@@ -140,8 +140,8 @@ test('the east curtain wall lights another full-width floor above its dark pair 
     }
     console.log('East office and 6 Pancras Square pane counts, peak luma', rows.map(row => row.lit),
       pancras.map(row => row.lit), Math.max(...rows.map(row => row.peak)));
-    assert.deepEqual(rows.map(row => row.lit >= 17), [false, false, true, true, true, true]);
-    assert.ok(rows.slice(0, 2).every(row => row.lit === 0));
+    assert.deepEqual(rows.map(row => row.lit >= 17), [false, true, true, true, false, true]);
+    assert.ok(rows.filter((_, i) => i === 0 || i === 4).every(row => row.lit === 0));
     assert.deepEqual(pancras.map(row => row.lit >= 17), [false, true, false, true, true, true]);
     assert.ok([...rows, ...pancras].every(row => row.peak < 245 && row.mullion < 70));
   } finally {
