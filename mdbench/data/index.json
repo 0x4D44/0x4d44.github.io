@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-17T20:00:23Z",
+ "generated": "2026-11-18T04:58:49Z",
  "families": [
   {
    "id": "claude",
@@ -121,6 +121,36 @@
    "family": "gpt",
    "vendor": "OpenAI",
    "model": "gpt-6-astra",
+   "effort": "medium",
+   "harness": "Codex CLI",
+   "billing": "subscription",
+   "cost_basis": "estimate",
+   "cost_note": "estimated from token counts at list price",
+   "released": null,
+   "baseline": false
+  },
+  {
+   "id": "sol-6.2-xhigh",
+   "name": "GPT-6.2 Sol",
+   "label": "GPT-6.2 Sol · xhigh",
+   "family": "gpt",
+   "vendor": "OpenAI",
+   "model": "gpt-6.2-sol",
+   "effort": "xhigh",
+   "harness": "Codex CLI",
+   "billing": "subscription",
+   "cost_basis": "estimate",
+   "cost_note": "estimated from token counts at list price",
+   "released": null,
+   "baseline": false
+  },
+  {
+   "id": "astra-6.2-medium",
+   "name": "GPT-6.2 Astra",
+   "label": "GPT-6.2 Astra · medium",
+   "family": "gpt",
+   "vendor": "OpenAI",
+   "model": "gpt-6.2-astra",
    "effort": "medium",
    "harness": "Codex CLI",
    "billing": "subscription",
