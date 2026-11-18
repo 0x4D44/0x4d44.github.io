@@ -216,14 +216,16 @@
    "description": "Diagnose why an early dynamic recompiler in a PC emulator ran slower than the interpreter it replaced, and design the way out.",
    "tags": [
     "perf"
-   ]
+   ],
+   "note": "The top two seats score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "DES-02",
    "group": "DES",
    "title": "Kernel demand paging",
    "description": "Design paged and non-paged memory for a hobby operating-system kernel, starting from what the code can support today.",
-   "tags": []
+   "tags": [],
+   "note": "The top four seats score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "COD-01",
@@ -240,14 +242,16 @@
    "group": "COD",
    "title": "Kernel swap file",
    "description": "Implement a kernel's swap-file component from its approved design. Graded by hidden tests.",
-   "tags": []
+   "tags": [],
+   "note": "The top two seats score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "TST-01",
    "group": "TST",
    "title": "Keyboard and interrupts",
    "description": "Write tests for an emulated keyboard controller and its interrupt path. Graded by how many planted bugs the tests catch.",
-   "tags": []
+   "tags": [],
+   "note": "Opus 4.5 wrote its 61 tests into an existing test file rather than a new one. The brief says only new test files there are run, so none of its tests ran and it caught none of the planted bugs."
   },
   {
    "id": "TST-02",
@@ -280,7 +284,7 @@
    "title": "Missing score digits",
    "description": "A DOS game shows no score digits. From the symptom report, find the root cause and fix it with a regression test.",
    "tags": [],
-   "note": "Most seats fail the hidden display-register test, so All gates shows fail for them; the judge score reflects how much of the fix each seat got right."
+   "note": "Most seats fail the hidden display-register test, so All gates shows fail for them; the judge score reflects how much of the fix each seat got right. The top ten seats score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "FIX-02",
@@ -294,77 +298,39 @@
  ],
  "results": [
   {
-   "seat": "sol-6.1-medium",
+   "seat": "sol-6.1-ultra",
    "task": "DES-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 75.7,
-    "rubric": 76.0,
-    "score_claude": 75.0,
-    "score_gpt": 76.3,
-    "judge_sd": 1.2,
-    "bonus": 0.8,
-    "mean_rank": 8.0,
-    "cost_usd": 1.782,
-    "wall_min": 22.0,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-xhigh",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 84.0,
+    "score": 85.8,
     "rubric": 86.1,
-    "score_claude": 83.3,
-    "score_gpt": 84.7,
-    "judge_sd": 0.8,
+    "score_claude": 85.0,
+    "score_gpt": 86.7,
+    "judge_sd": 1.1,
     "bonus": 0.8,
-    "mean_rank": 5.8,
-    "cost_usd": 2.688,
-    "wall_min": 44.0,
+    "mean_rank": 5.2,
+    "cost_usd": 3.625,
+    "wall_min": 49.4,
     "gates_ok": true
    },
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "o3-high",
    "task": "DES-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 87.5,
-    "rubric": 88.6,
-    "score_claude": 86.3,
-    "score_gpt": 88.7,
-    "judge_sd": 1.3,
-    "bonus": 0.8,
-    "mean_rank": 3.2,
-    "cost_usd": 19.015,
-    "wall_min": 48.0,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "gpt-4o-2024-08",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 9.7,
-    "rubric": 16.9,
-    "score_claude": 8.7,
-    "score_gpt": 10.7,
-    "judge_sd": 2.4,
+    "score": 22.0,
+    "rubric": 34.2,
+    "score_claude": 19.3,
+    "score_gpt": 24.7,
+    "judge_sd": 4.0,
     "bonus": 0.0,
-    "mean_rank": 15.0,
-    "cost_usd": 1.591,
-    "wall_min": 1.6,
+    "mean_rank": 16.5,
+    "cost_usd": 1.622,
+    "wall_min": 5.0,
     "gates_ok": true
    },
    "flags": [
@@ -377,13 +343,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 62.0,
+    "score": 63.0,
     "rubric": 63.4,
-    "score_claude": 61.3,
-    "score_gpt": 62.7,
-    "judge_sd": 1.9,
-    "bonus": 0.2,
-    "mean_rank": 10.2,
+    "score_claude": 63.0,
+    "score_gpt": 63.0,
+    "judge_sd": 0.0,
+    "bonus": 0.0,
+    "mean_rank": 12.0,
     "cost_usd": 0.185,
     "wall_min": 41.0,
     "gates_ok": true
@@ -391,82 +357,61 @@
    "flags": []
   },
   {
-   "seat": "luna-6-none",
+   "seat": "opus-4.5-high",
    "task": "DES-01",
    "run": 1,
-   "date": "2026-11-15",
+   "date": "2026-11-17",
    "metrics": {
-    "score": 45.8,
-    "rubric": 50.4,
-    "score_claude": 43.3,
-    "score_gpt": 48.3,
+    "score": 23.5,
+    "rubric": 31.8,
+    "score_claude": 25.7,
+    "score_gpt": 21.3,
     "judge_sd": 3.1,
     "bonus": 0.0,
-    "mean_rank": 13.0,
-    "cost_usd": 0.143,
-    "wall_min": 14.1,
+    "mean_rank": 16.5,
+    "cost_usd": 3.148,
+    "wall_min": 23.7,
     "gates_ok": true
    },
    "flags": []
   },
   {
-   "seat": "terra-6.1-medium",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 59.3,
-    "rubric": 61.0,
-    "score_claude": 57.7,
-    "score_gpt": 61.0,
-    "judge_sd": 2.1,
-    "bonus": 0.5,
-    "mean_rank": 11.2,
-    "cost_usd": 0.34,
-    "wall_min": 6.8,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 89.5,
-    "rubric": 86.1,
-    "score_claude": 92.3,
-    "score_gpt": 86.7,
-    "judge_sd": 2.9,
-    "bonus": 3.2,
-    "mean_rank": 2.2,
-    "cost_usd": 23.564,
-    "wall_min": 71.6,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "o3-high",
+   "seat": "astra-6-xhigh",
    "task": "DES-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 20.8,
-    "rubric": 34.2,
-    "score_claude": 19.0,
-    "score_gpt": 22.7,
-    "judge_sd": 3.8,
-    "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 1.622,
-    "wall_min": 5.0,
+    "score": 87.3,
+    "rubric": 88.6,
+    "score_claude": 86.0,
+    "score_gpt": 88.7,
+    "judge_sd": 1.5,
+    "bonus": 0.8,
+    "mean_rank": 3.7,
+    "cost_usd": 19.015,
+    "wall_min": 48.0,
     "gates_ok": true
    },
-   "flags": [
-    "nudged"
-   ]
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 85.2,
+    "rubric": 86.1,
+    "score_claude": 84.7,
+    "score_gpt": 85.7,
+    "judge_sd": 1.1,
+    "bonus": 0.7,
+    "mean_rank": 5.8,
+    "cost_usd": 2.688,
+    "wall_min": 44.0,
+    "gates_ok": true
+   },
+   "flags": []
   },
   {
    "seat": "sol-6.1-max",
@@ -476,11 +421,11 @@
    "metrics": {
     "score": 89.8,
     "rubric": 89.5,
-    "score_claude": 90.0,
-    "score_gpt": 89.7,
-    "judge_sd": 0.7,
+    "score_claude": 89.7,
+    "score_gpt": 90.0,
+    "judge_sd": 0.4,
     "bonus": 2.2,
-    "mean_rank": 1.7,
+    "mean_rank": 2.2,
     "cost_usd": 4.69,
     "wall_min": 95.7,
     "gates_ok": true
@@ -488,58 +433,20 @@
    "flags": []
   },
   {
-   "seat": "haiku-5.5-high",
+   "seat": "sol-6.1-medium",
    "task": "DES-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 55.8,
-    "rubric": 54.2,
-    "score_claude": 57.7,
-    "score_gpt": 54.0,
-    "judge_sd": 3.0,
+    "score": 76.3,
+    "rubric": 76.0,
+    "score_claude": 76.7,
+    "score_gpt": 76.0,
+    "judge_sd": 0.5,
     "bonus": 0.5,
-    "mean_rank": 11.7,
-    "cost_usd": 2.413,
-    "wall_min": 62.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-medium",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 76.0,
-    "rubric": 75.5,
-    "score_claude": 75.7,
-    "score_gpt": 76.3,
-    "judge_sd": 0.6,
-    "bonus": 0.8,
-    "mean_rank": 8.0,
-    "cost_usd": 14.973,
-    "wall_min": 32.0,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-ultra",
-   "task": "DES-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 85.3,
-    "rubric": 86.1,
-    "score_claude": 84.7,
-    "score_gpt": 86.0,
-    "judge_sd": 0.9,
-    "bonus": 0.8,
-    "mean_rank": 4.7,
-    "cost_usd": 3.625,
-    "wall_min": 49.4,
+    "mean_rank": 10.2,
+    "cost_usd": 1.782,
+    "wall_min": 22.0,
     "gates_ok": true
    },
    "flags": []
@@ -550,12 +457,12 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 85.3,
+    "score": 86.5,
     "rubric": 85.4,
-    "score_claude": 89.0,
-    "score_gpt": 81.7,
-    "judge_sd": 3.8,
-    "bonus": 2.2,
+    "score_claude": 90.7,
+    "score_gpt": 82.3,
+    "judge_sd": 4.2,
+    "bonus": 2.3,
     "mean_rank": 4.3,
     "cost_usd": 7.385,
     "wall_min": 51.9,
@@ -566,18 +473,134 @@
    ]
   },
   {
+   "seat": "haiku-5.5-high",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 56.7,
+    "rubric": 54.2,
+    "score_claude": 58.7,
+    "score_gpt": 54.7,
+    "judge_sd": 2.1,
+    "bonus": 0.3,
+    "mean_rank": 13.5,
+    "cost_usd": 2.413,
+    "wall_min": 62.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 90.7,
+    "rubric": 86.1,
+    "score_claude": 92.7,
+    "score_gpt": 88.7,
+    "judge_sd": 2.4,
+    "bonus": 4.7,
+    "mean_rank": 1.7,
+    "cost_usd": 23.564,
+    "wall_min": 71.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 9.2,
+    "rubric": 16.9,
+    "score_claude": 8.7,
+    "score_gpt": 9.7,
+    "judge_sd": 1.5,
+    "bonus": 0.0,
+    "mean_rank": 18.0,
+    "cost_usd": 1.591,
+    "wall_min": 1.6,
+    "gates_ok": true
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 81.2,
+    "rubric": 80.1,
+    "score_claude": 82.3,
+    "score_gpt": 80.0,
+    "judge_sd": 1.9,
+    "bonus": 1.5,
+    "mean_rank": 8.2,
+    "cost_usd": 6.614,
+    "wall_min": 35.0,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 46.5,
+    "rubric": 50.4,
+    "score_claude": 44.0,
+    "score_gpt": 49.0,
+    "judge_sd": 2.6,
+    "bonus": 0.0,
+    "mean_rank": 15.0,
+    "cost_usd": 0.143,
+    "wall_min": 14.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 83.2,
+    "rubric": 85.9,
+    "score_claude": 83.0,
+    "score_gpt": 83.3,
+    "judge_sd": 0.9,
+    "bonus": 0.5,
+    "mean_rank": 7.5,
+    "cost_usd": 1.689,
+    "wall_min": 18.4,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
    "seat": "sonnet-5.5-high",
    "task": "DES-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 77.8,
+    "score": 79.7,
     "rubric": 75.4,
-    "score_claude": 83.3,
-    "score_gpt": 72.3,
-    "judge_sd": 5.8,
-    "bonus": 2.3,
-    "mean_rank": 7.2,
+    "score_claude": 86.3,
+    "score_gpt": 73.0,
+    "judge_sd": 6.7,
+    "bonus": 2.2,
+    "mean_rank": 7.5,
     "cost_usd": 6.592,
     "wall_min": 66.8,
     "gates_ok": true
@@ -587,77 +610,77 @@
    ]
   },
   {
-   "seat": "sol-6.1-medium",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 71.3,
-    "rubric": 72.2,
-    "score_claude": 71.7,
-    "score_gpt": 71.0,
-    "judge_sd": 0.7,
-    "bonus": 0.0,
-    "mean_rank": 5.2,
-    "cost_usd": 0.477,
-    "wall_min": 6.6,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-xhigh",
-   "task": "DES-02",
+   "seat": "astra-6-medium",
+   "task": "DES-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 67.8,
-    "rubric": 68.1,
-    "score_claude": 67.7,
-    "score_gpt": 68.0,
+    "score": 77.0,
+    "rubric": 75.5,
+    "score_claude": 77.0,
+    "score_gpt": 77.0,
+    "judge_sd": 1.2,
+    "bonus": 0.5,
+    "mean_rank": 9.8,
+    "cost_usd": 14.973,
+    "wall_min": 32.0,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "DES-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 59.5,
+    "rubric": 61.0,
+    "score_claude": 58.0,
+    "score_gpt": 61.0,
+    "judge_sd": 1.5,
+    "bonus": 0.0,
+    "mean_rank": 13.5,
+    "cost_usd": 0.34,
+    "wall_min": 6.8,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-ultra",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 75.2,
+    "rubric": 75.5,
+    "score_claude": 75.3,
+    "score_gpt": 75.0,
     "judge_sd": 0.7,
     "bonus": 0.0,
-    "mean_rank": 6.7,
-    "cost_usd": 0.902,
-    "wall_min": 14.9,
+    "mean_rank": 2.3,
+    "cost_usd": 0.828,
+    "wall_min": 14.2,
     "gates_ok": true
    },
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "o3-high",
    "task": "DES-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 75.7,
-    "rubric": 76.2,
-    "score_claude": 76.0,
-    "score_gpt": 75.3,
-    "judge_sd": 0.5,
+    "score": 22.8,
+    "rubric": 25.0,
+    "score_claude": 23.3,
+    "score_gpt": 22.3,
+    "judge_sd": 1.8,
     "bonus": 0.0,
-    "mean_rank": 1.3,
-    "cost_usd": 4.393,
-    "wall_min": 12.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "gpt-4o-2024-08",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 13.5,
-    "rubric": 14.9,
-    "score_claude": 13.3,
-    "score_gpt": 13.7,
-    "judge_sd": 1.0,
-    "bonus": 0.0,
-    "mean_rank": 15.0,
-    "cost_usd": 0.874,
-    "wall_min": 0.4,
+    "mean_rank": 16.7,
+    "cost_usd": 4.492,
+    "wall_min": 1.6,
     "gates_ok": true
    },
    "flags": [
@@ -672,11 +695,11 @@
    "metrics": {
     "score": 57.0,
     "rubric": 60.0,
-    "score_claude": 59.3,
-    "score_gpt": 54.7,
-    "judge_sd": 3.2,
-    "bonus": 0.2,
-    "mean_rank": 11.0,
+    "score_claude": 58.7,
+    "score_gpt": 55.3,
+    "judge_sd": 2.0,
+    "bonus": 0.0,
+    "mean_rank": 13.0,
     "cost_usd": 0.068,
     "wall_min": 18.7,
     "gates_ok": true
@@ -684,84 +707,61 @@
    "flags": []
   },
   {
-   "seat": "luna-6-none",
+   "seat": "opus-4.5-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 24.2,
+    "rubric": 24.6,
+    "score_claude": 24.0,
+    "score_gpt": 24.3,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 16.3,
+    "cost_usd": 2.811,
+    "wall_min": 7.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
    "task": "DES-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 43.5,
-    "rubric": 54.0,
-    "score_claude": 42.3,
-    "score_gpt": 44.7,
-    "judge_sd": 3.1,
+    "score": 76.7,
+    "rubric": 76.2,
+    "score_claude": 77.0,
+    "score_gpt": 76.3,
+    "judge_sd": 0.5,
     "bonus": 0.0,
-    "mean_rank": 12.2,
-    "cost_usd": 0.043,
-    "wall_min": 5.9,
+    "mean_rank": 1.0,
+    "cost_usd": 4.393,
+    "wall_min": 12.1,
     "gates_ok": true
    },
    "flags": []
   },
   {
-   "seat": "terra-6.1-medium",
+   "seat": "sol-6.1-xhigh",
    "task": "DES-02",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 59.7,
-    "rubric": 61.6,
-    "score_claude": 60.3,
-    "score_gpt": 59.0,
-    "judge_sd": 0.9,
-    "bonus": 0.0,
-    "mean_rank": 10.0,
-    "cost_usd": 0.09,
-    "wall_min": 2.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 68.3,
+    "score": 68.5,
     "rubric": 68.1,
-    "score_claude": 72.7,
-    "score_gpt": 64.0,
-    "judge_sd": 4.7,
-    "bonus": 0.8,
-    "mean_rank": 5.5,
-    "cost_usd": 14.559,
-    "wall_min": 22.6,
-    "gates_ok": true
-   },
-   "flags": [
-    "resumed"
-   ]
-  },
-  {
-   "seat": "o3-high",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 22.5,
-    "rubric": 25.0,
-    "score_claude": 23.0,
-    "score_gpt": 22.0,
-    "judge_sd": 1.3,
+    "score_claude": 68.0,
+    "score_gpt": 69.0,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 4.492,
-    "wall_min": 1.6,
+    "mean_rank": 8.2,
+    "cost_usd": 0.902,
+    "wall_min": 14.9,
     "gates_ok": true
    },
-   "flags": [
-    "nudged"
-   ]
+   "flags": []
   },
   {
    "seat": "sol-6.1-max",
@@ -771,11 +771,11 @@
    "metrics": {
     "score": 74.2,
     "rubric": 73.9,
-    "score_claude": 73.7,
-    "score_gpt": 74.7,
-    "judge_sd": 1.1,
+    "score_claude": 74.0,
+    "score_gpt": 74.3,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 2.8,
+    "mean_rank": 3.5,
     "cost_usd": 1.11,
     "wall_min": 22.9,
     "gates_ok": true
@@ -783,58 +783,20 @@
    "flags": []
   },
   {
-   "seat": "haiku-5.5-high",
+   "seat": "sol-6.1-medium",
    "task": "DES-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 40.0,
-    "rubric": 42.8,
-    "score_claude": 42.7,
-    "score_gpt": 37.3,
-    "judge_sd": 2.9,
-    "bonus": 0.2,
-    "mean_rank": 12.8,
-    "cost_usd": 0.453,
-    "wall_min": 8.1,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-medium",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 73.0,
-    "rubric": 75.2,
-    "score_claude": 74.3,
+    "score": 71.3,
+    "rubric": 72.2,
+    "score_claude": 71.0,
     "score_gpt": 71.7,
-    "judge_sd": 1.9,
+    "judge_sd": 0.7,
     "bonus": 0.0,
-    "mean_rank": 4.0,
-    "cost_usd": 1.791,
-    "wall_min": 5.5,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-ultra",
-   "task": "DES-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 74.2,
-    "rubric": 75.5,
-    "score_claude": 75.0,
-    "score_gpt": 73.3,
-    "judge_sd": 1.1,
-    "bonus": 0.0,
-    "mean_rank": 2.7,
-    "cost_usd": 0.828,
-    "wall_min": 14.2,
+    "mean_rank": 6.0,
+    "cost_usd": 0.477,
+    "wall_min": 6.6,
     "gates_ok": true
    },
    "flags": []
@@ -845,15 +807,133 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 62.5,
+    "score": 61.8,
     "rubric": 64.2,
-    "score_claude": 64.3,
-    "score_gpt": 60.7,
-    "judge_sd": 2.1,
-    "bonus": 0.3,
-    "mean_rank": 9.0,
+    "score_claude": 64.0,
+    "score_gpt": 59.7,
+    "judge_sd": 2.3,
+    "bonus": 0.7,
+    "mean_rank": 11.3,
     "cost_usd": 4.466,
     "wall_min": 13.8,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 40.2,
+    "rubric": 42.8,
+    "score_claude": 42.3,
+    "score_gpt": 38.0,
+    "judge_sd": 2.5,
+    "bonus": 0.8,
+    "mean_rank": 14.5,
+    "cost_usd": 0.453,
+    "wall_min": 8.1,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 66.0,
+    "rubric": 68.1,
+    "score_claude": 68.3,
+    "score_gpt": 63.7,
+    "judge_sd": 2.4,
+    "bonus": 1.0,
+    "mean_rank": 8.7,
+    "cost_usd": 14.559,
+    "wall_min": 22.6,
+    "gates_ok": true
+   },
+   "flags": [
+    "resumed"
+   ]
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 13.7,
+    "rubric": 14.9,
+    "score_claude": 14.0,
+    "score_gpt": 13.3,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 18.0,
+    "cost_usd": 0.874,
+    "wall_min": 0.4,
+    "gates_ok": true
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 70.3,
+    "rubric": 71.0,
+    "score_claude": 71.0,
+    "score_gpt": 69.7,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 6.8,
+    "cost_usd": 1.207,
+    "wall_min": 7.3,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 41.7,
+    "rubric": 54.0,
+    "score_claude": 40.0,
+    "score_gpt": 43.3,
+    "judge_sd": 2.9,
+    "bonus": 0.0,
+    "mean_rank": 14.5,
+    "cost_usd": 0.043,
+    "wall_min": 5.9,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 71.8,
+    "rubric": 72.2,
+    "score_claude": 72.0,
+    "score_gpt": 71.7,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 5.5,
+    "cost_usd": 0.697,
+    "wall_min": 11.6,
     "gates_ok": true
    },
    "flags": []
@@ -866,13 +946,51 @@
    "metrics": {
     "score": 64.3,
     "rubric": 64.5,
-    "score_claude": 67.0,
-    "score_gpt": 61.7,
-    "judge_sd": 2.9,
-    "bonus": 0.7,
-    "mean_rank": 7.8,
+    "score_claude": 66.7,
+    "score_gpt": 62.0,
+    "judge_sd": 2.5,
+    "bonus": 1.3,
+    "mean_rank": 9.8,
     "cost_usd": 3.036,
     "wall_min": 20.9,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 74.5,
+    "rubric": 75.2,
+    "score_claude": 75.3,
+    "score_gpt": 73.7,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 3.2,
+    "cost_usd": 1.791,
+    "wall_min": 5.5,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 61.2,
+    "rubric": 61.6,
+    "score_claude": 62.0,
+    "score_gpt": 60.3,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "mean_rank": 11.7,
+    "cost_usd": 0.09,
+    "wall_min": 2.1,
     "gates_ok": true
    },
    "flags": []
@@ -1218,20 +1336,20 @@
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "sol-6.1-ultra",
    "task": "COD-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 93.2,
-    "rubric": 93.1,
-    "score_claude": 93.0,
-    "score_gpt": 93.3,
-    "judge_sd": 0.4,
+    "score": 89.8,
+    "rubric": 90.6,
+    "score_claude": 89.7,
+    "score_gpt": 90.0,
+    "judge_sd": 0.7,
     "bonus": 0.0,
-    "mean_rank": 1.5,
-    "cost_usd": 7.746,
-    "wall_min": 30.0,
+    "mean_rank": 5.2,
+    "cost_usd": 1.062,
+    "wall_min": 27.0,
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0
@@ -1239,62 +1357,20 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-xhigh",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 74.0,
-    "rubric": 74.4,
-    "score_claude": 74.0,
-    "score_gpt": 74.0,
-    "judge_sd": 0.0,
-    "bonus": 0.0,
-    "mean_rank": 7.8,
-    "cost_usd": 1.203,
-    "wall_min": 24.8,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.75
-   },
-   "flags": []
-  },
-  {
-   "seat": "haiku-5.5-high",
+   "seat": "o3-high",
    "task": "COD-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 79.7,
-    "rubric": 83.8,
-    "score_claude": 79.7,
-    "score_gpt": 79.7,
-    "judge_sd": 0.5,
+    "score": 11.3,
+    "rubric": 13.1,
+    "score_claude": 10.3,
+    "score_gpt": 12.3,
+    "judge_sd": 1.8,
     "bonus": 0.0,
-    "mean_rank": 6.0,
-    "cost_usd": 1.56,
-    "wall_min": 29.4,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 1.0
-   },
-   "flags": []
-  },
-  {
-   "seat": "gpt-4o-2024-08",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 3.5,
-    "rubric": 4.0,
-    "score_claude": 3.0,
-    "score_gpt": 4.0,
-    "judge_sd": 0.5,
-    "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 6.164,
-    "wall_min": 4.7,
+    "mean_rank": 17.0,
+    "cost_usd": 2.355,
+    "wall_min": 5.3,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.0
@@ -1309,13 +1385,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 61.0,
+    "score": 60.8,
     "rubric": 65.8,
-    "score_claude": 61.7,
-    "score_gpt": 60.3,
-    "judge_sd": 1.2,
+    "score_claude": 60.3,
+    "score_gpt": 61.3,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 11.0,
+    "mean_rank": 13.8,
     "cost_usd": 0.456,
     "wall_min": 71.9,
     "gates_ok": false,
@@ -1325,62 +1401,41 @@
    "flags": []
   },
   {
-   "seat": "luna-6-none",
+   "seat": "opus-4.5-high",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 41.5,
+    "rubric": 42.9,
+    "score_claude": 41.7,
+    "score_gpt": 41.3,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "mean_rank": 15.0,
+    "cost_usd": 7.683,
+    "wall_min": 17.2,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.556
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
    "task": "COD-02",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 65.8,
-    "rubric": 67.7,
-    "score_claude": 67.0,
-    "score_gpt": 64.7,
-    "judge_sd": 1.6,
-    "bonus": 0.0,
-    "mean_rank": 10.0,
-    "cost_usd": 0.247,
-    "wall_min": 21.5,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.861
-   },
-   "flags": []
-  },
-  {
-   "seat": "terra-6.1-medium",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 23.0,
-    "rubric": 24.4,
-    "score_claude": 22.0,
-    "score_gpt": 24.0,
-    "judge_sd": 2.2,
-    "bonus": 0.0,
-    "mean_rank": 12.0,
-    "cost_usd": 0.101,
-    "wall_min": 1.5,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.0
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 91.2,
+    "score": 92.2,
     "rubric": 93.1,
-    "score_claude": 93.3,
-    "score_gpt": 89.0,
-    "judge_sd": 2.3,
+    "score_claude": 92.3,
+    "score_gpt": 92.1,
+    "judge_sd": 1.4,
     "bonus": 0.0,
-    "mean_rank": 2.0,
-    "cost_usd": 15.252,
-    "wall_min": 34.1,
+    "mean_rank": 3.2,
+    "cost_usd": 7.746,
+    "wall_min": 30.0,
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0
@@ -1388,64 +1443,20 @@
    "flags": []
   },
   {
-   "seat": "o3-high",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 11.7,
-    "rubric": 13.1,
-    "score_claude": 10.3,
-    "score_gpt": 13.0,
-    "judge_sd": 1.6,
-    "bonus": 0.0,
-    "mean_rank": 13.0,
-    "cost_usd": 2.355,
-    "wall_min": 5.3,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.0
-   },
-   "flags": [
-    "nudged"
-   ]
-  },
-  {
-   "seat": "sol-6.1-medium",
-   "task": "COD-02",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 90.7,
-    "rubric": 91.2,
-    "score_claude": 91.0,
-    "score_gpt": 90.3,
-    "judge_sd": 0.7,
-    "bonus": 0.0,
-    "mean_rank": 2.5,
-    "cost_usd": 0.787,
-    "wall_min": 19.7,
-    "gates_ok": true,
-    "builds": true,
-    "hidden_pass": 1.0
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-medium",
+   "seat": "sol-6.1-xhigh",
    "task": "COD-02",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 71.8,
-    "rubric": 72.5,
-    "score_claude": 72.0,
-    "score_gpt": 71.7,
+    "score": 73.8,
+    "rubric": 74.4,
+    "score_claude": 73.7,
+    "score_gpt": 74.0,
     "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 8.8,
-    "cost_usd": 5.497,
-    "wall_min": 16.8,
+    "mean_rank": 11.0,
+    "cost_usd": 1.203,
+    "wall_min": 24.8,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.75
@@ -1458,16 +1469,37 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 86.5,
+    "score": 86.2,
     "rubric": 91.2,
-    "score_claude": 86.7,
-    "score_gpt": 86.3,
-    "judge_sd": 0.5,
+    "score_claude": 85.0,
+    "score_gpt": 87.4,
+    "judge_sd": 1.6,
     "bonus": 0.0,
-    "mean_rank": 4.5,
+    "mean_rank": 6.8,
     "cost_usd": 1.899,
     "wall_min": 58.4,
     "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-medium",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 89.4,
+    "rubric": 91.2,
+    "score_claude": 90.3,
+    "score_gpt": 88.5,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 5.3,
+    "cost_usd": 0.787,
+    "wall_min": 19.7,
+    "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0
    },
@@ -1479,15 +1511,143 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 86.2,
+    "score": 85.6,
     "rubric": 89.4,
-    "score_claude": 89.3,
-    "score_gpt": 83.0,
-    "judge_sd": 3.2,
+    "score_claude": 89.0,
+    "score_gpt": 82.3,
+    "judge_sd": 3.5,
     "bonus": 0.0,
-    "mean_rank": 4.5,
+    "mean_rank": 7.5,
     "cost_usd": 4.872,
     "wall_min": 18.1,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 78.2,
+    "rubric": 83.8,
+    "score_claude": 77.7,
+    "score_gpt": 78.7,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "mean_rank": 9.5,
+    "cost_usd": 1.56,
+    "wall_min": 29.4,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 90.1,
+    "rubric": 93.1,
+    "score_claude": 93.0,
+    "score_gpt": 87.3,
+    "judge_sd": 3.0,
+    "bonus": 0.0,
+    "mean_rank": 4.7,
+    "cost_usd": 15.252,
+    "wall_min": 34.1,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 3.0,
+    "rubric": 4.0,
+    "score_claude": 2.7,
+    "score_gpt": 3.3,
+    "judge_sd": 0.8,
+    "bonus": 0.0,
+    "mean_rank": 18.0,
+    "cost_usd": 6.164,
+    "wall_min": 4.7,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 95.0,
+    "rubric": 97.5,
+    "score_claude": 96.7,
+    "score_gpt": 93.2,
+    "judge_sd": 1.9,
+    "bonus": 0.0,
+    "mean_rank": 2.3,
+    "cost_usd": 3.743,
+    "wall_min": 32.9,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 65.7,
+    "rubric": 67.7,
+    "score_claude": 67.7,
+    "score_gpt": 63.7,
+    "judge_sd": 2.9,
+    "bonus": 0.0,
+    "mean_rank": 13.2,
+    "cost_usd": 0.247,
+    "wall_min": 21.5,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.861
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 96.8,
+    "rubric": 97.5,
+    "score_claude": 97.0,
+    "score_gpt": 96.7,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 1.0,
+    "cost_usd": 1.166,
+    "wall_min": 22.2,
     "gates_ok": true,
     "builds": true,
     "hidden_pass": 1.0
@@ -1500,13 +1660,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 75.7,
+    "score": 77.6,
     "rubric": 78.5,
-    "score_claude": 77.3,
-    "score_gpt": 74.0,
-    "judge_sd": 2.4,
-    "bonus": 0.0,
-    "mean_rank": 7.3,
+    "score_claude": 78.0,
+    "score_gpt": 77.2,
+    "judge_sd": 0.5,
+    "bonus": 0.2,
+    "mean_rank": 9.5,
     "cost_usd": 4.838,
     "wall_min": 39.1,
     "gates_ok": false,
@@ -1516,20 +1676,142 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-medium",
+   "seat": "astra-6-medium",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 72.0,
+    "rubric": 72.5,
+    "score_claude": 72.0,
+    "score_gpt": 72.0,
+    "judge_sd": 0.0,
+    "bonus": 0.0,
+    "mean_rank": 12.0,
+    "cost_usd": 5.497,
+    "wall_min": 16.8,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "COD-02",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 22.6,
+    "rubric": 24.4,
+    "score_claude": 19.3,
+    "score_gpt": 25.9,
+    "judge_sd": 4.2,
+    "bonus": 0.0,
+    "mean_rank": 16.0,
+    "cost_usd": 0.101,
+    "wall_min": 1.5,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-ultra",
    "task": "TST-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 99.2,
-    "rubric": 100.0,
-    "score_claude": 99.7,
-    "score_gpt": 98.7,
-    "judge_sd": 1.5,
+    "score": 84.3,
+    "rubric": 83.8,
+    "score_claude": 86.0,
+    "score_gpt": 82.7,
+    "judge_sd": 2.9,
+    "bonus": 0.2,
+    "mean_rank": 4.7,
+    "cost_usd": 1.167,
+    "wall_min": 20.7,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "o3-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 7.7,
+    "rubric": 11.3,
+    "score_claude": 4.3,
+    "score_gpt": 11.1,
+    "judge_sd": 3.4,
     "bonus": 0.0,
-    "mean_rank": 1.0,
-    "cost_usd": 0.654,
-    "wall_min": 10.3,
+    "mean_rank": 17.0,
+    "cost_usd": 3.973,
+    "wall_min": 7.5,
+    "gates_ok": false,
+    "builds": false
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 55.9,
+    "rubric": 55.6,
+    "score_claude": 56.3,
+    "score_gpt": 55.5,
+    "judge_sd": 1.9,
+    "bonus": 0.0,
+    "mean_rank": 14.0,
+    "cost_usd": 0.19,
+    "wall_min": 34.3,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 23.6,
+    "rubric": 33.8,
+    "score_claude": 28.3,
+    "score_gpt": 18.9,
+    "judge_sd": 8.7,
+    "bonus": 0.0,
+    "mean_rank": 16.0,
+    "cost_usd": 6.373,
+    "wall_min": 15.3,
+    "gates_ok": false,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 84.8,
+    "rubric": 83.8,
+    "score_claude": 85.7,
+    "score_gpt": 83.9,
+    "judge_sd": 2.4,
+    "bonus": 0.3,
+    "mean_rank": 5.2,
+    "cost_usd": 7.876,
+    "wall_min": 24.7,
     "gates_ok": true,
     "builds": true
    },
@@ -1541,11 +1823,11 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 88.0,
+    "score": 84.5,
     "rubric": 83.8,
     "score_claude": 85.0,
-    "score_gpt": 90.9,
-    "judge_sd": 5.1,
+    "score_gpt": 83.9,
+    "judge_sd": 2.6,
     "bonus": 0.0,
     "mean_rank": 5.7,
     "cost_usd": 1.527,
@@ -1556,20 +1838,100 @@
    "flags": []
   },
   {
-   "seat": "astra-6-xhigh",
+   "seat": "sol-6.1-max",
    "task": "TST-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 88.4,
+    "score": 84.6,
     "rubric": 83.8,
-    "score_claude": 85.7,
-    "score_gpt": 91.1,
-    "judge_sd": 4.7,
-    "bonus": 0.5,
+    "score_claude": 85.3,
+    "score_gpt": 83.9,
+    "judge_sd": 2.0,
+    "bonus": 0.0,
     "mean_rank": 4.5,
-    "cost_usd": 7.876,
-    "wall_min": 24.7,
+    "cost_usd": 2.183,
+    "wall_min": 42.3,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-medium",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 99.4,
+    "rubric": 100.0,
+    "score_claude": 100.0,
+    "score_gpt": 98.8,
+    "judge_sd": 1.4,
+    "bonus": 0.0,
+    "mean_rank": 1.0,
+    "cost_usd": 0.654,
+    "wall_min": 10.3,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 91.4,
+    "rubric": 91.3,
+    "score_claude": 91.7,
+    "score_gpt": 91.1,
+    "judge_sd": 0.4,
+    "bonus": 1.0,
+    "mean_rank": 2.0,
+    "cost_usd": 5.556,
+    "wall_min": 25.6,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "haiku-5.5-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 73.5,
+    "rubric": 73.7,
+    "score_claude": 73.3,
+    "score_gpt": 73.6,
+    "judge_sd": 0.5,
+    "bonus": 0.2,
+    "mean_rank": 10.3,
+    "cost_usd": 1.573,
+    "wall_min": 20.6,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 84.2,
+    "rubric": 83.8,
+    "score_claude": 86.0,
+    "score_gpt": 82.5,
+    "judge_sd": 2.0,
+    "bonus": 0.8,
+    "mean_rank": 5.8,
+    "cost_usd": 20.581,
+    "wall_min": 54.4,
     "gates_ok": true,
     "builds": true
    },
@@ -1587,7 +1949,7 @@
     "score_gpt": 0.0,
     "judge_sd": 0.0,
     "bonus": 0.0,
-    "mean_rank": 15.0,
+    "mean_rank": 18.0,
     "cost_usd": 2.88,
     "wall_min": 2.1,
     "gates_ok": false
@@ -1597,20 +1959,20 @@
    ]
   },
   {
-   "seat": "luna-6-max",
+   "seat": "astra-6.2-medium",
    "task": "TST-01",
    "run": 1,
-   "date": "2026-11-15",
+   "date": "2026-11-18",
    "metrics": {
-    "score": 59.7,
-    "rubric": 55.6,
-    "score_claude": 55.0,
-    "score_gpt": 64.3,
-    "judge_sd": 6.6,
-    "bonus": 0.0,
-    "mean_rank": 11.7,
-    "cost_usd": 0.19,
-    "wall_min": 34.3,
+    "score": 72.5,
+    "rubric": 71.2,
+    "score_claude": 73.3,
+    "score_gpt": 71.7,
+    "judge_sd": 3.5,
+    "bonus": 0.2,
+    "mean_rank": 10.8,
+    "cost_usd": 2.568,
+    "wall_min": 13.2,
     "gates_ok": true,
     "builds": true
    },
@@ -1622,13 +1984,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 44.7,
+    "score": 41.9,
     "rubric": 47.4,
-    "score_claude": 41.3,
-    "score_gpt": 48.1,
-    "judge_sd": 4.3,
+    "score_claude": 39.7,
+    "score_gpt": 44.0,
+    "judge_sd": 3.6,
     "bonus": 0.0,
-    "mean_rank": 13.0,
+    "mean_rank": 15.0,
     "cost_usd": 0.192,
     "wall_min": 15.7,
     "gates_ok": true,
@@ -1637,160 +1999,20 @@
    "flags": []
   },
   {
-   "seat": "terra-6.1-medium",
+   "seat": "sol-6.2-xhigh",
    "task": "TST-01",
    "run": 1,
-   "date": "2026-11-14",
+   "date": "2026-11-18",
    "metrics": {
-    "score": 62.3,
-    "rubric": 62.5,
-    "score_claude": 62.0,
-    "score_gpt": 62.7,
-    "judge_sd": 0.4,
-    "bonus": 0.0,
-    "mean_rank": 11.3,
-    "cost_usd": 0.242,
-    "wall_min": 5.5,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 87.7,
-    "rubric": 83.8,
-    "score_claude": 86.7,
-    "score_gpt": 88.8,
+    "score": 70.0,
+    "rubric": 68.7,
+    "score_claude": 71.0,
+    "score_gpt": 68.9,
     "judge_sd": 3.7,
-    "bonus": 1.0,
-    "mean_rank": 5.2,
-    "cost_usd": 20.581,
-    "wall_min": 54.4,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "o3-high",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 8.9,
-    "rubric": 11.3,
-    "score_claude": 7.0,
-    "score_gpt": 10.8,
-    "judge_sd": 2.2,
     "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 3.973,
-    "wall_min": 7.5,
-    "gates_ok": false,
-    "builds": false
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-max",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 88.7,
-    "rubric": 83.8,
-    "score_claude": 85.7,
-    "score_gpt": 91.8,
-    "judge_sd": 4.9,
-    "bonus": 0.0,
-    "mean_rank": 4.2,
-    "cost_usd": 2.183,
-    "wall_min": 42.3,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "haiku-5.5-high",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 74.0,
-    "rubric": 73.7,
-    "score_claude": 74.0,
-    "score_gpt": 73.9,
-    "judge_sd": 0.1,
-    "bonus": 0.2,
-    "mean_rank": 10.0,
-    "cost_usd": 1.573,
-    "wall_min": 20.6,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-medium",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 87.0,
-    "rubric": 83.8,
-    "score_claude": 83.7,
-    "score_gpt": 90.4,
-    "judge_sd": 5.1,
-    "bonus": 0.2,
-    "mean_rank": 7.0,
-    "cost_usd": 4.303,
-    "wall_min": 10.4,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-ultra",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 87.9,
-    "rubric": 83.8,
-    "score_claude": 86.0,
-    "score_gpt": 89.8,
-    "judge_sd": 5.6,
-    "bonus": 0.2,
-    "mean_rank": 5.0,
-    "cost_usd": 1.167,
-    "wall_min": 20.7,
-    "gates_ok": true,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "opus-5.5-medium",
-   "task": "TST-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 91.6,
-    "rubric": 91.3,
-    "score_claude": 92.0,
-    "score_gpt": 91.2,
-    "judge_sd": 0.7,
-    "bonus": 1.0,
-    "mean_rank": 3.5,
-    "cost_usd": 5.556,
-    "wall_min": 25.6,
+    "mean_rank": 11.8,
+    "cost_usd": 1.417,
+    "wall_min": 16.5,
     "gates_ok": true,
     "builds": true
    },
@@ -1802,15 +2024,55 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 82.4,
+    "score": 79.1,
     "rubric": 78.8,
-    "score_claude": 80.3,
-    "score_gpt": 84.4,
-    "judge_sd": 4.8,
+    "score_claude": 80.0,
+    "score_gpt": 78.3,
+    "judge_sd": 3.7,
     "bonus": 0.0,
     "mean_rank": 9.0,
     "cost_usd": 5.091,
     "wall_min": 32.1,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6-medium",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 84.0,
+    "rubric": 83.8,
+    "score_claude": 84.3,
+    "score_gpt": 83.6,
+    "judge_sd": 2.1,
+    "bonus": 0.2,
+    "mean_rank": 7.2,
+    "cost_usd": 4.303,
+    "wall_min": 10.4,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "terra-6.1-medium",
+   "task": "TST-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 62.2,
+    "rubric": 62.5,
+    "score_claude": 61.7,
+    "score_gpt": 62.8,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 13.0,
+    "cost_usd": 0.242,
+    "wall_min": 5.5,
     "gates_ok": true,
     "builds": true
    },
@@ -2099,39 +2361,77 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-medium",
+   "seat": "sol-6.1-ultra",
    "task": "REV-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 93.3,
+    "score": 93.8,
     "rubric": 93.8,
-    "score_claude": 92.7,
+    "score_claude": 93.7,
     "score_gpt": 93.9,
-    "judge_sd": 0.7,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 5.5,
-    "cost_usd": 0.417,
-    "wall_min": 4.9,
+    "mean_rank": 5.2,
+    "cost_usd": 0.62,
+    "wall_min": 8.5,
     "gates_ok": true
    },
    "flags": []
   },
   {
-   "seat": "sol-6.1-xhigh",
+   "seat": "o3-high",
    "task": "REV-01",
    "run": 1,
-   "date": "2026-11-14",
+   "date": "2026-11-15",
    "metrics": {
-    "score": 86.9,
-    "rubric": 87.5,
-    "score_claude": 86.0,
-    "score_gpt": 87.8,
-    "judge_sd": 1.1,
+    "score": 62.0,
+    "rubric": 62.6,
+    "score_claude": 61.3,
+    "score_gpt": 62.7,
+    "judge_sd": 1.0,
     "bonus": 0.0,
-    "mean_rank": 10.0,
-    "cost_usd": 0.76,
-    "wall_min": 10.3,
+    "mean_rank": 16.0,
+    "cost_usd": 1.393,
+    "wall_min": 2.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-max",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 68.0,
+    "rubric": 68.4,
+    "score_claude": 67.3,
+    "score_gpt": 68.6,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 15.0,
+    "cost_usd": 0.042,
+    "wall_min": 7.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 73.2,
+    "rubric": 73.5,
+    "score_claude": 72.7,
+    "score_gpt": 73.7,
+    "judge_sd": 0.6,
+    "bonus": 0.0,
+    "mean_rank": 14.0,
+    "cost_usd": 3.989,
+    "wall_min": 9.1,
     "gates_ok": true
    },
    "flags": []
@@ -2148,7 +2448,7 @@
     "score_gpt": 93.9,
     "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 4.0,
+    "mean_rank": 5.0,
     "cost_usd": 3.072,
     "wall_min": 8.3,
     "gates_ok": true
@@ -2156,117 +2456,20 @@
    "flags": []
   },
   {
-   "seat": "gpt-4o-2024-08",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 12.8,
-    "rubric": 14.8,
-    "score_claude": 10.7,
-    "score_gpt": 15.0,
-    "judge_sd": 2.3,
-    "bonus": 0.0,
-    "mean_rank": 15.0,
-    "cost_usd": 1.945,
-    "wall_min": 1.5,
-    "gates_ok": true
-   },
-   "flags": [
-    "nudged"
-   ]
-  },
-  {
-   "seat": "luna-6-max",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 64.8,
-    "rubric": 68.4,
-    "score_claude": 60.3,
-    "score_gpt": 69.3,
-    "judge_sd": 5.6,
-    "bonus": 0.0,
-    "mean_rank": 12.2,
-    "cost_usd": 0.042,
-    "wall_min": 7.6,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "luna-6-none",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 30.2,
-    "rubric": 30.8,
-    "score_claude": 28.7,
-    "score_gpt": 31.7,
-    "judge_sd": 1.7,
-    "bonus": 0.0,
-    "mean_rank": 14.0,
-    "cost_usd": 0.055,
-    "wall_min": 3.6,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "terra-6.1-medium",
+   "seat": "sol-6.1-xhigh",
    "task": "REV-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 93.5,
-    "rubric": 95.0,
-    "score_claude": 92.0,
-    "score_gpt": 95.0,
-    "judge_sd": 1.6,
+    "score": 87.5,
+    "rubric": 87.5,
+    "score_claude": 87.3,
+    "score_gpt": 87.7,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 4.5,
-    "cost_usd": 0.215,
-    "wall_min": 3.5,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 98.5,
-    "rubric": 98.8,
-    "score_claude": 98.0,
-    "score_gpt": 98.9,
-    "judge_sd": 0.5,
-    "bonus": 0.0,
-    "mean_rank": 1.0,
-    "cost_usd": 7.553,
-    "wall_min": 9.7,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "o3-high",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 60.3,
-    "rubric": 62.6,
-    "score_claude": 57.7,
-    "score_gpt": 63.0,
-    "judge_sd": 3.1,
-    "bonus": 0.0,
-    "mean_rank": 12.8,
-    "cost_usd": 1.393,
-    "wall_min": 2.6,
+    "mean_rank": 12.0,
+    "cost_usd": 0.76,
+    "wall_min": 10.3,
     "gates_ok": true
    },
    "flags": []
@@ -2277,15 +2480,53 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 90.0,
+    "score": 90.6,
     "rubric": 91.2,
-    "score_claude": 89.0,
+    "score_claude": 90.0,
     "score_gpt": 91.1,
-    "judge_sd": 1.2,
+    "judge_sd": 0.8,
     "bonus": 0.0,
-    "mean_rank": 9.0,
+    "mean_rank": 11.0,
     "cost_usd": 0.692,
     "wall_min": 10.9,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-medium",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 93.6,
+    "rubric": 93.8,
+    "score_claude": 93.3,
+    "score_gpt": 93.9,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 6.5,
+    "cost_usd": 0.417,
+    "wall_min": 4.9,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-5.5-medium",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 93.5,
+    "rubric": 92.5,
+    "score_claude": 94.3,
+    "score_gpt": 92.7,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 4.5,
+    "cost_usd": 1.798,
+    "wall_min": 6.3,
     "gates_ok": true
    },
    "flags": []
@@ -2296,15 +2537,131 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 82.5,
+    "score": 81.5,
     "rubric": 81.1,
-    "score_claude": 80.3,
-    "score_gpt": 84.7,
-    "judge_sd": 2.3,
+    "score_claude": 81.0,
+    "score_gpt": 82.1,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 11.0,
+    "mean_rank": 13.0,
     "cost_usd": 0.352,
     "wall_min": 5.0,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 98.8,
+    "rubric": 98.8,
+    "score_claude": 98.7,
+    "score_gpt": 98.9,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 1.0,
+    "cost_usd": 7.553,
+    "wall_min": 9.7,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-4o-2024-08",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 14.3,
+    "rubric": 14.8,
+    "score_claude": 13.7,
+    "score_gpt": 14.9,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 18.0,
+    "cost_usd": 1.945,
+    "wall_min": 1.5,
+    "gates_ok": true
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 95.2,
+    "rubric": 95.0,
+    "score_claude": 95.0,
+    "score_gpt": 95.3,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 2.7,
+    "cost_usd": 1.345,
+    "wall_min": 7.8,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 30.4,
+    "rubric": 30.8,
+    "score_claude": 29.7,
+    "score_gpt": 31.2,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "mean_rank": 17.0,
+    "cost_usd": 0.055,
+    "wall_min": 3.6,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 91.2,
+    "rubric": 91.2,
+    "score_claude": 91.0,
+    "score_gpt": 91.5,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 9.8,
+    "cost_usd": 0.622,
+    "wall_min": 7.0,
+    "gates_ok": true
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 92.2,
+    "rubric": 92.5,
+    "score_claude": 92.0,
+    "score_gpt": 92.3,
+    "judge_sd": 0.6,
+    "bonus": 0.0,
+    "mean_rank": 7.5,
+    "cost_usd": 0.983,
+    "wall_min": 3.3,
     "gates_ok": true
    },
    "flags": []
@@ -2317,11 +2674,11 @@
    "metrics": {
     "score": 92.3,
     "rubric": 92.5,
-    "score_claude": 92.0,
-    "score_gpt": 92.7,
+    "score_claude": 92.3,
+    "score_gpt": 92.3,
     "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 7.5,
+    "mean_rank": 8.3,
     "cost_usd": 1.754,
     "wall_min": 4.1,
     "gates_ok": true
@@ -2329,58 +2686,20 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-ultra",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 93.8,
-    "rubric": 93.8,
-    "score_claude": 93.7,
-    "score_gpt": 93.9,
-    "judge_sd": 0.4,
-    "bonus": 0.0,
-    "mean_rank": 3.8,
-    "cost_usd": 0.62,
-    "wall_min": 8.5,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "opus-5.5-medium",
+   "seat": "terra-6.1-medium",
    "task": "REV-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 93.6,
-    "rubric": 92.5,
-    "score_claude": 94.3,
-    "score_gpt": 92.8,
-    "judge_sd": 1.0,
+    "score": 94.2,
+    "rubric": 95.0,
+    "score_claude": 93.3,
+    "score_gpt": 95.0,
+    "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 4.0,
-    "cost_usd": 1.798,
-    "wall_min": 6.3,
-    "gates_ok": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "sonnet-5.5-high",
-   "task": "REV-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 92.4,
-    "rubric": 92.5,
-    "score_claude": 92.3,
-    "score_gpt": 92.5,
-    "judge_sd": 0.9,
-    "bonus": 0.0,
-    "mean_rank": 5.7,
-    "cost_usd": 0.983,
-    "wall_min": 3.3,
+    "mean_rank": 4.5,
+    "cost_usd": 0.215,
+    "wall_min": 3.5,
     "gates_ok": true
    },
    "flags": []
@@ -2654,168 +2973,20 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-medium",
+   "seat": "sol-6.1-ultra",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 97.6,
-    "rubric": 98.8,
-    "score_claude": 96.3,
-    "score_gpt": 98.8,
-    "judge_sd": 1.4,
-    "bonus": 0.0,
-    "mean_rank": 8.7,
-    "cost_usd": 0.344,
-    "wall_min": 6.1,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.5
-   },
-   "flags": []
-  },
-  {
-   "seat": "sol-6.1-xhigh",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 95.9,
-    "rubric": 97.5,
-    "score_claude": 94.3,
-    "score_gpt": 97.5,
-    "judge_sd": 2.0,
-    "bonus": 0.0,
-    "mean_rank": 9.8,
-    "cost_usd": 1.191,
-    "wall_min": 15.6,
-    "gates_ok": false,
-    "builds": true
-   },
-   "flags": []
-  },
-  {
-   "seat": "astra-6-xhigh",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 99.5,
+    "score": 100.0,
     "rubric": 100.0,
-    "score_claude": 99.0,
+    "score_claude": 100.0,
     "score_gpt": 100.0,
-    "judge_sd": 1.1,
+    "judge_sd": 0.0,
     "bonus": 0.0,
-    "mean_rank": 3.2,
-    "cost_usd": 4.601,
-    "wall_min": 10.2,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.5
-   },
-   "flags": []
-  },
-  {
-   "seat": "gpt-4o-2024-08",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 14.4,
-    "rubric": 18.8,
-    "score_claude": 10.0,
-    "score_gpt": 18.8,
-    "judge_sd": 5.1,
-    "bonus": 0.0,
-    "mean_rank": 13.3,
-    "cost_usd": 2.103,
-    "wall_min": 1.5,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.0
-   },
-   "flags": [
-    "nudged"
-   ]
-  },
-  {
-   "seat": "luna-6-max",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 95.4,
-    "rubric": 97.5,
-    "score_claude": 93.3,
-    "score_gpt": 97.5,
-    "judge_sd": 2.4,
-    "bonus": 0.0,
-    "mean_rank": 11.0,
-    "cost_usd": 0.486,
-    "wall_min": 95.0,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.5
-   },
-   "flags": []
-  },
-  {
-   "seat": "luna-6-none",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-15",
-   "metrics": {
-    "score": 11.5,
-    "rubric": 18.1,
-    "score_claude": 10.0,
-    "score_gpt": 13.1,
-    "judge_sd": 3.2,
-    "bonus": 0.0,
-    "mean_rank": 13.7,
-    "cost_usd": 0.571,
-    "wall_min": 46.8,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.5
-   },
-   "flags": []
-  },
-  {
-   "seat": "terra-6.1-medium",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 95.6,
-    "rubric": 97.5,
-    "score_claude": 93.7,
-    "score_gpt": 97.5,
-    "judge_sd": 2.3,
-    "bonus": 0.0,
-    "mean_rank": 12.0,
-    "cost_usd": 0.313,
-    "wall_min": 9.9,
-    "gates_ok": false,
-    "builds": true,
-    "hidden_pass": 0.5
-   },
-   "flags": []
-  },
-  {
-   "seat": "fable-5.2-high",
-   "task": "FIX-01",
-   "run": 1,
-   "date": "2026-11-14",
-   "metrics": {
-    "score": 99.8,
-    "rubric": 100.0,
-    "score_claude": 99.7,
-    "score_gpt": 100.0,
-    "judge_sd": 0.4,
-    "bonus": 0.3,
-    "mean_rank": 2.7,
-    "cost_usd": 4.585,
-    "wall_min": 22.0,
+    "mean_rank": 1.8,
+    "cost_usd": 1.057,
+    "wall_min": 11.9,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.5
@@ -2828,13 +2999,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 6.9,
+    "score": 7.5,
     "rubric": 11.2,
     "score_claude": 4.7,
-    "score_gpt": 9.1,
-    "judge_sd": 2.8,
+    "score_gpt": 10.4,
+    "judge_sd": 3.3,
     "bonus": 0.0,
-    "mean_rank": 15.0,
+    "mean_rank": 17.8,
     "cost_usd": 2.164,
     "wall_min": 6.4,
     "gates_ok": false,
@@ -2844,20 +3015,147 @@
    "flags": []
   },
   {
+   "seat": "luna-6-max",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 96.6,
+    "rubric": 97.5,
+    "score_claude": 95.7,
+    "score_gpt": 97.5,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "mean_rank": 12.7,
+    "cost_usd": 0.486,
+    "wall_min": 95.0,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "opus-4.5-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-17",
+   "metrics": {
+    "score": 15.1,
+    "rubric": 17.1,
+    "score_claude": 12.3,
+    "score_gpt": 17.9,
+    "judge_sd": 3.6,
+    "bonus": 0.0,
+    "mean_rank": 15.5,
+    "cost_usd": 30.207,
+    "wall_min": 120.0,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": [
+    "capped"
+   ]
+  },
+  {
+   "seat": "astra-6-xhigh",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 99.8,
+    "rubric": 100.0,
+    "score_claude": 99.7,
+    "score_gpt": 100.0,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "mean_rank": 2.8,
+    "cost_usd": 4.601,
+    "wall_min": 10.2,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-xhigh",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 96.8,
+    "rubric": 97.5,
+    "score_claude": 96.0,
+    "score_gpt": 97.5,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "mean_rank": 11.3,
+    "cost_usd": 1.191,
+    "wall_min": 15.6,
+    "gates_ok": false,
+    "builds": true
+   },
+   "flags": []
+  },
+  {
    "seat": "sol-6.1-max",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 99.3,
+    "score": 99.8,
     "rubric": 100.0,
-    "score_claude": 98.7,
+    "score_claude": 99.7,
     "score_gpt": 100.0,
-    "judge_sd": 1.1,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 5.5,
+    "mean_rank": 5.3,
     "cost_usd": 0.716,
     "wall_min": 10.6,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.1-medium",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 98.3,
+    "rubric": 98.8,
+    "score_claude": 97.7,
+    "score_gpt": 98.9,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 9.8,
+    "cost_usd": 0.344,
+    "wall_min": 6.1,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "fable-5.2-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 99.5,
+    "rubric": 100.0,
+    "score_claude": 99.0,
+    "score_gpt": 100.0,
+    "judge_sd": 0.8,
+    "bonus": 0.3,
+    "mean_rank": 4.0,
+    "cost_usd": 4.585,
+    "wall_min": 22.0,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.5
@@ -2870,13 +3168,13 @@
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 97.5,
+    "score": 97.8,
     "rubric": 98.1,
-    "score_claude": 97.0,
-    "score_gpt": 98.1,
-    "judge_sd": 0.8,
+    "score_claude": 97.7,
+    "score_gpt": 97.9,
+    "judge_sd": 0.4,
     "bonus": 0.0,
-    "mean_rank": 5.0,
+    "mean_rank": 5.7,
     "cost_usd": 3.076,
     "wall_min": 56.3,
     "gates_ok": true,
@@ -2891,13 +3189,13 @@
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 99.0,
+    "score": 99.7,
     "rubric": 100.0,
-    "score_claude": 98.0,
+    "score_claude": 99.3,
     "score_gpt": 100.0,
-    "judge_sd": 1.4,
+    "judge_sd": 0.7,
     "bonus": 0.0,
-    "mean_rank": 6.5,
+    "mean_rank": 6.3,
     "cost_usd": 1.774,
     "wall_min": 9.1,
     "gates_ok": false,
@@ -2907,20 +3205,106 @@
    "flags": []
   },
   {
-   "seat": "sol-6.1-ultra",
+   "seat": "gpt-4o-2024-08",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-15",
    "metrics": {
-    "score": 99.5,
+    "score": 13.6,
+    "rubric": 18.8,
+    "score_claude": 8.3,
+    "score_gpt": 18.8,
+    "judge_sd": 5.6,
+    "bonus": 0.0,
+    "mean_rank": 15.8,
+    "cost_usd": 2.103,
+    "wall_min": 1.5,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.0
+   },
+   "flags": [
+    "nudged"
+   ]
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 99.7,
     "rubric": 100.0,
-    "score_claude": 99.0,
+    "score_claude": 99.3,
     "score_gpt": 100.0,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 7.8,
+    "cost_usd": 1.118,
+    "wall_min": 3.7,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "luna-6-none",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-15",
+   "metrics": {
+    "score": 11.1,
+    "rubric": 18.1,
+    "score_claude": 9.7,
+    "score_gpt": 12.5,
+    "judge_sd": 4.3,
+    "bonus": 0.0,
+    "mean_rank": 16.8,
+    "cost_usd": 0.571,
+    "wall_min": 46.8,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-xhigh",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "score": 96.4,
+    "rubric": 96.2,
+    "score_claude": 95.3,
+    "score_gpt": 97.5,
     "judge_sd": 1.1,
     "bonus": 0.0,
-    "mean_rank": 2.0,
-    "cost_usd": 1.057,
-    "wall_min": 11.9,
+    "mean_rank": 12.7,
+    "cost_usd": 0.76,
+    "wall_min": 7.4,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.5
+   },
+   "flags": []
+  },
+  {
+   "seat": "sonnet-5.5-high",
+   "task": "FIX-01",
+   "run": 1,
+   "date": "2026-11-14",
+   "metrics": {
+    "score": 99.7,
+    "rubric": 100.0,
+    "score_claude": 99.3,
+    "score_gpt": 100.0,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "mean_rank": 7.8,
+    "cost_usd": 0.699,
+    "wall_min": 8.0,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.5
@@ -2933,13 +3317,13 @@
    "run": 1,
    "date": "2026-11-13",
    "metrics": {
-    "score": 99.7,
+    "score": 99.8,
     "rubric": 100.0,
-    "score_claude": 99.3,
+    "score_claude": 99.7,
     "score_gpt": 100.0,
-    "judge_sd": 0.7,
+    "judge_sd": 0.4,
     "bonus": 0.3,
-    "mean_rank": 4.5,
+    "mean_rank": 4.0,
     "cost_usd": 1.325,
     "wall_min": 15.9,
     "gates_ok": false,
@@ -2948,20 +3332,20 @@
    "flags": []
   },
   {
-   "seat": "sonnet-5.5-high",
+   "seat": "terra-6.1-medium",
    "task": "FIX-01",
    "run": 1,
    "date": "2026-11-14",
    "metrics": {
-    "score": 99.0,
-    "rubric": 100.0,
-    "score_claude": 98.0,
-    "score_gpt": 100.0,
-    "judge_sd": 1.4,
+    "score": 96.6,
+    "rubric": 97.5,
+    "score_claude": 95.3,
+    "score_gpt": 97.9,
+    "judge_sd": 1.5,
     "bonus": 0.0,
-    "mean_rank": 7.2,
-    "cost_usd": 0.699,
-    "wall_min": 8.0,
+    "mean_rank": 12.8,
+    "cost_usd": 0.313,
+    "wall_min": 9.9,
     "gates_ok": false,
     "builds": true,
     "hidden_pass": 0.5
