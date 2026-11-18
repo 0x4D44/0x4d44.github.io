@@ -13,7 +13,7 @@
 //   ... and `parts: { shed, buildings: city?.group ?? null }` in the __kx handle.
 // With a `terrain` (core/terrain.ts) the city stands on that ground; without one it stands on the flat plane at GROUND_Y.
 import * as THREE from 'three';
-import { buildCity, CITY_KEYS, PAGE_DRAPE } from '../../core/city.ts';
+import { buildCity, CITY_KEYS, hash01, PAGE_DRAPE, roadWidth, SegmentGrid } from '../../core/city.ts';
 import { railShapes } from '../../core/curves.ts';
 import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
@@ -21,7 +21,7 @@ import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
-import { forecourtMasts } from '../../core/streetlights.ts';
+import { forecourtMasts, LAMP_KIND } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
 import { createKxFrontReflections, createKxFacadeReflections, createKxWindowReflections } from './kx-front-reflections.ts';
 import { shedLayout, stationBuilding } from '../../core/station.ts';
@@ -194,7 +194,20 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   // joins; corner-only planes cut the sodium pool into a hard rectangle.
   // Preserve the proven radial footprint and add a larger road-aligned optic.
   // Intermediate receiver samples keep the enlarged beam on folded paving.
-  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true} : {}) : null;
+  const euston = new SegmentGrid();
+  if (opts.nightEffects) for (const road of city.roads) {
+    if (road.name !== 'Euston Road') continue;
+    const reach = roadWidth(road).width / 2;
+    for (let i = 1; i < road.pts.length; i++) euston.add({ a: road.pts[i-1]!, b: road.pts[i]!, reach });
+  }
+  let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true,
+    localSodiumScaleAt: spot => {
+      if (spot.mast || spot.kind !== LAMP_KIND.sodium) return 0;
+      const edge = euston.nearest([spot.x,spot.z],16);
+      // The inferred fixtures stand 0.6 m outside their carriageway. A
+      // parallel carriageway can be closer, so also admit the shared median.
+      return edge > -3 && edge < 1 ? .88 + .28 * hash01(Math.round(spot.x),Math.round(spot.z)) : 0;
+    }} : {}) : null;
   if (lights && wetSurface && stationBuilding(data)) {
     const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface), windows=createKxWindowReflections(scene,wetSurface);
     lampsLayer.group.add(front.group,amber.group,windows.group);

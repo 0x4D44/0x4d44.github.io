@@ -117,7 +117,7 @@ test('round eight leaves the Midland stone gable-rake gilding emissive', () => {
   const brick = setup('brickRed');
   try {
     const lit = runMidland(shader.fragmentShader, 23, 1, 1, 1, [1, 1, 1], [1, 1, 1], [0, 0, 0]);
-    assert.deepEqual(lit.totalEmissiveRadiance, [0.38, 0.24, 0.085]);
+    assert.deepEqual(lit.totalEmissiveRadiance, [0.30, 0.131, 0.0225]);
     const upper = runMidland(brick.shader.fragmentShader,23,1,1,0,[1,1,1],[1,1,1],[0.38,0.24,0.085]);
     assert.ok(lit.totalEmissiveRadiance[0]! > upper.totalEmissiveRadiance[0]! * 10,'the gilded rake must stand out against the newly dimmed upper-wall emission');
   } finally {

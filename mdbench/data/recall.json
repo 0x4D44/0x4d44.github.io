@@ -8007,6 +8007,7 @@
     "second_delta": 0.21,
     "best_guess_score": 84.42,
     "confident_wrong": 0.0,
+    "cost_usd": 0.8607,
     "wall_min": 2.32
    },
    "flags": []
@@ -8026,6 +8027,7 @@
     "second_delta": 0.0,
     "best_guess_score": 13.47,
     "confident_wrong": 0.0,
+    "cost_usd": 1.2948,
     "wall_min": 2.4
    },
    "flags": []
@@ -8042,6 +8044,7 @@
     "exact_run": 0,
     "second_delta": 0.0,
     "best_guess_score": 2.52,
+    "cost_usd": 0.5138,
     "wall_min": 0.54
    },
    "flags": []
@@ -8061,6 +8064,7 @@
     "second_delta": 1.86,
     "best_guess_score": 43.73,
     "confident_wrong": 0.0,
+    "cost_usd": 1.0347,
     "wall_min": 2.2
    },
    "flags": []
@@ -8079,6 +8083,7 @@
     "ece": 0.2897,
     "second_delta": -0.13,
     "best_guess_score": 3.3,
+    "cost_usd": 0.6918,
     "wall_min": 1.57
    },
    "flags": []
@@ -8095,6 +8100,7 @@
     "exact_run": 0,
     "second_delta": 0.0,
     "best_guess_score": 18.9,
+    "cost_usd": 0.5025,
     "wall_min": 1.19
    },
    "flags": []
@@ -8111,6 +8117,7 @@
     "exact_run": 0,
     "second_delta": 0.0,
     "best_guess_score": 8.16,
+    "cost_usd": 0.4378,
     "wall_min": 0.93
    },
    "flags": []
@@ -8130,6 +8137,7 @@
     "second_delta": 0.0,
     "best_guess_score": 12.54,
     "confident_wrong": 0.0,
+    "cost_usd": 1.0274,
     "wall_min": 1.78
    },
    "flags": []
@@ -8149,6 +8157,7 @@
     "second_delta": 0.6,
     "best_guess_score": 12.57,
     "confident_wrong": 0.0,
+    "cost_usd": 0.8355,
     "wall_min": 1.62
    },
    "flags": []
@@ -8168,6 +8177,7 @@
     "second_delta": -5.04,
     "best_guess_score": 15.38,
     "confident_wrong": 0.4286,
+    "cost_usd": 0.5495,
     "wall_min": 1.85
    },
    "flags": []
@@ -8187,6 +8197,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3615,
     "wall_min": 0.64
    },
    "flags": []
@@ -8206,6 +8217,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.04,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3867,
     "wall_min": 0.75
    },
    "flags": []
@@ -8225,6 +8237,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.04,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3395,
     "wall_min": 8.98
    },
    "flags": []
@@ -8244,6 +8257,7 @@
     "second_delta": 0.0,
     "best_guess_score": 95.26,
     "confident_wrong": 0.0909,
+    "cost_usd": 0.3339,
     "wall_min": 1.01
    },
    "flags": []
@@ -8263,6 +8277,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.4139,
     "wall_min": 0.96
    },
    "flags": []
@@ -8282,6 +8297,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3278,
     "wall_min": 8.12
    },
    "flags": []
@@ -8301,6 +8317,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.2808,
     "wall_min": 0.58
    },
    "flags": []
@@ -8320,6 +8337,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.62,
     "confident_wrong": 0.0,
+    "cost_usd": 0.356,
     "wall_min": 9.27
    },
    "flags": []
@@ -8339,6 +8357,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.5,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3206,
     "wall_min": 0.82
    },
    "flags": []
@@ -8358,6 +8377,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.76,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3278,
     "wall_min": 2.17
    },
    "flags": []
@@ -8377,6 +8397,7 @@
     "second_delta": 0.0,
     "best_guess_score": 98.29,
     "confident_wrong": 0.0,
+    "cost_usd": 0.4354,
     "wall_min": 1.28
    },
    "flags": []
@@ -8396,6 +8417,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.71,
     "confident_wrong": 0.0,
+    "cost_usd": 0.4108,
     "wall_min": 2.64
    },
    "flags": []
@@ -8415,6 +8437,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.337,
     "wall_min": 0.81
    },
    "flags": []
@@ -8434,6 +8457,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.51,
     "confident_wrong": 0.0,
+    "cost_usd": 0.5951,
     "wall_min": 3.92
    },
    "flags": []
@@ -8453,6 +8477,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.48,
     "confident_wrong": 0.0,
+    "cost_usd": 0.4097,
     "wall_min": 0.96
    },
    "flags": []
@@ -8472,6 +8497,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.255,
     "wall_min": 0.32
    },
    "flags": []
@@ -8491,6 +8517,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1892,
     "wall_min": 3.44
    },
    "flags": []
@@ -8510,6 +8537,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.3057,
     "wall_min": 0.37
    },
    "flags": []
@@ -8529,6 +8557,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.275,
     "wall_min": 4.28
    },
    "flags": []
@@ -8548,6 +8577,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.193,
     "wall_min": 0.83
    },
    "flags": []
@@ -8567,6 +8597,7 @@
     "second_delta": 8.3,
     "best_guess_score": 91.01,
     "confident_wrong": 0.0,
+    "cost_usd": 0.6432,
     "wall_min": 6.63
    },
    "flags": []
@@ -8586,6 +8617,7 @@
     "second_delta": 3.93,
     "best_guess_score": 15.28,
     "confident_wrong": 0.0,
+    "cost_usd": 0.7222,
     "wall_min": 13.25
    },
    "flags": []
@@ -8604,6 +8636,7 @@
     "ece": 0.1916,
     "second_delta": 0.3,
     "best_guess_score": 2.25,
+    "cost_usd": 0.5695,
     "wall_min": 7.62
    },
    "flags": []
@@ -8623,6 +8656,7 @@
     "second_delta": 0.58,
     "best_guess_score": 41.7,
     "confident_wrong": 0.0,
+    "cost_usd": 0.8414,
     "wall_min": 11.08
    },
    "flags": []
@@ -8639,6 +8673,7 @@
     "exact_run": 0,
     "second_delta": -0.04,
     "best_guess_score": 2.61,
+    "cost_usd": 0.6933,
     "wall_min": 8.8
    },
    "flags": []
@@ -8655,6 +8690,7 @@
     "exact_run": 0,
     "second_delta": 0.0,
     "best_guess_score": 12.55,
+    "cost_usd": 0.441,
     "wall_min": 5.46
    },
    "flags": []
@@ -8671,6 +8707,7 @@
     "exact_run": 0,
     "second_delta": 0.0,
     "best_guess_score": 9.77,
+    "cost_usd": 0.3456,
     "wall_min": 2.72
    },
    "flags": []
@@ -8690,6 +8727,7 @@
     "second_delta": 0.88,
     "best_guess_score": 12.69,
     "confident_wrong": 0.1667,
+    "cost_usd": 0.6914,
     "wall_min": 7.17
    },
    "flags": []
@@ -8709,6 +8747,7 @@
     "second_delta": 0.0,
     "best_guess_score": 7.81,
     "confident_wrong": 0.0,
+    "cost_usd": 0.6094,
     "wall_min": 4.18
    },
    "flags": []
@@ -8728,6 +8767,7 @@
     "second_delta": 2.26,
     "best_guess_score": 9.97,
     "confident_wrong": 1.0,
+    "cost_usd": 0.6818,
     "wall_min": 7.0
    },
    "flags": []
@@ -8747,6 +8787,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1172,
     "wall_min": 1.08
    },
    "flags": []
@@ -8766,6 +8807,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.68,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1301,
     "wall_min": 1.61
    },
    "flags": []
@@ -8785,6 +8827,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.04,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1707,
     "wall_min": 6.92
    },
    "flags": []
@@ -8804,6 +8847,7 @@
     "second_delta": 0.37,
     "best_guess_score": 94.88,
     "confident_wrong": 0.0909,
+    "cost_usd": 0.1459,
     "wall_min": 7.28
    },
    "flags": []
@@ -8823,6 +8867,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1583,
     "wall_min": 1.93
    },
    "flags": []
@@ -8842,6 +8887,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0953,
     "wall_min": 0.67
    },
    "flags": []
@@ -8861,6 +8907,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0575,
     "wall_min": 0.95
    },
    "flags": []
@@ -8880,6 +8927,7 @@
     "second_delta": 0.0,
     "best_guess_score": 96.96,
     "confident_wrong": 0.0,
+    "cost_usd": 0.146,
     "wall_min": 2.6
    },
    "flags": []
@@ -8899,6 +8947,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.5,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1422,
     "wall_min": 2.13
    },
    "flags": []
@@ -8918,6 +8967,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.76,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1896,
     "wall_min": 4.14
    },
    "flags": []
@@ -8937,6 +8987,7 @@
     "second_delta": 0.0,
     "best_guess_score": 97.72,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1687,
     "wall_min": 2.6
    },
    "flags": []
@@ -8956,6 +9007,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.71,
     "confident_wrong": 0.0,
+    "cost_usd": 0.154,
     "wall_min": 3.29
    },
    "flags": []
@@ -8975,6 +9027,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0689,
     "wall_min": 1.01
    },
    "flags": []
@@ -8994,6 +9047,7 @@
     "second_delta": 0.0,
     "best_guess_score": 98.93,
     "confident_wrong": 0.0,
+    "cost_usd": 0.2726,
     "wall_min": 5.51
    },
    "flags": []
@@ -9013,6 +9067,7 @@
     "second_delta": 0.0,
     "best_guess_score": 99.23,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1487,
     "wall_min": 2.12
    },
    "flags": []
@@ -9032,6 +9087,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0821,
     "wall_min": 0.38
    },
    "flags": []
@@ -9051,6 +9107,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.1224,
     "wall_min": 1.4
    },
    "flags": []
@@ -9070,6 +9127,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0456,
     "wall_min": 0.78
    },
    "flags": []
@@ -9089,6 +9147,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.0422,
     "wall_min": 0.55
    },
    "flags": []
@@ -9108,6 +9167,7 @@
     "second_delta": 0.0,
     "best_guess_score": 100.0,
     "confident_wrong": 0.0,
+    "cost_usd": 0.096,
     "wall_min": 1.95
    },
    "flags": []

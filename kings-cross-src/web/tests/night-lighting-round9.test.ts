@@ -73,7 +73,7 @@ test('Midland wet reflections come from real lit window panes and keep the exact
   const id=mesh.geometry.getAttribute('reflectionWindowId'),head=mesh.geometry.getAttribute('reflectionHead');
   assert.ok(mesh.count>=20&&mesh.count<350,'only low facade panes with a real paving receiver are reflected');
   const s=shader(mesh.material as THREE.Material),paneShader=shader((landmarks.group.getObjectByName('landmarks-pane') as THREE.Mesh).material as THREE.Material);
-  const definitions=(source:string)=>{const end=source.indexOf('\n}',source.indexOf('vec3 winPaneLit('))+2;return source.slice(source.indexOf('float winHash('),end);};
+  const definitions=(source:string)=>{const end=source.indexOf('\n}',source.indexOf('vec3 midlandPaneLight('))+2;return source.slice(source.indexOf('float winHash('),end);};
   const own=new Glsl(definitions(paneShader.fragmentShader)),reflected=new Glsl(definitions(s.fragmentShader));
   const pane=(landmarks.group.getObjectByName('landmarks-pane') as THREE.Mesh).geometry,positions=pane.getAttribute('position'),uv=pane.getAttribute('uv'),index=pane.index!;
   const triangles=new Map<number,THREE.Triangle[]>();
@@ -85,7 +85,7 @@ test('Midland wet reflections come from real lit window panes and keep the exact
    for(let j=0;j<i;j++)if(id.getX(i)===id.getX(j))assert.ok(point.distanceTo(new THREE.Vector3().fromBufferAttribute(head,j))>=.05,'a pane fan must create one reflected light, not duplicate overlapping streaks');
    assert.ok(triangles.get(id.getX(i))!.some(t=>t.closestPointToPoint(point,new THREE.Vector3()).distanceTo(point)<.001),'every reflected source lies on its actual glass triangle');
    for(const night of [0,.3,1]){
-    const expected=own.call('winPaneLit',[[id.getX(i)+.5,-1.5],[.02,.02],night,.3],{vars:{}});
+    const expected=own.call('midlandPaneLight',[[id.getX(i)+.5,-1.5],[.02,.02],night],{vars:{}});
     const e={vars:{vReflectionWindowId:id.getX(i),uWinNight:night,gl_FragColor:[1,1,1,1]}};reflected.run(code,e);
     assert.deepEqual(e.vars.gl_FragColor.slice(0,3),expected,'a dark pane must not reflect; lit colour and dusk phase follow the actual glass');
     if(night===1){if((expected as number[])[0]!>0)lit++;else dark++;}

@@ -4,7 +4,8 @@ import * as THREE from 'three';
 import type { LatLon } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
 import { createPlatformLamps } from './station-lamps.ts';
-import { createWaverleyGlow } from './waverley-night.ts';
+import type { OpenPlatformLamp } from './station-lamps.ts';
+import { createWaverleyGlow, WAVERLEY_WALL_TILE, WAVERLEY_WALL_WINDOWS } from './waverley-night.ts';
 import { WAVERLEY_LEVELS } from './waverley-mesh.ts';
 import { describeSun, smoothstep } from '../../core/daylight.ts';
 import type { Rgb } from '../../core/daylight.ts';
@@ -85,8 +86,8 @@ export const BALMORAL_WINDOWS = {
 /**
  * Round seven (night lighting): what the Scottish scene lights after dark, done here, by mesh name, and not in waverley-city.ts and waverley-frontage.ts, which own the meshes. The city blocks' windows
  * (materials.ts `litWalls`: the walls' UVs are metres and their vertex colour a number to each building), the Balmoral's windows (`BALMORAL_WINDOWS`), its body and tower floodlit from their feet and its
- * clock dials glowing (lighting.ts `FLOOD`; night-f-waverley-balmoral-2023-crowsus.jpg: the hotel's gables and cornice are lit orange, its clock face white, about a third of its windows warm, the tower's
- * shaft dark). By day nothing changes. The function returned puts every material back as it was, the last patch first.
+ * clock dials glowing (lighting.ts `FLOOD`). Waverley-night.ts adds the tower's cornice and clock-stage washes. By day nothing changes.
+ * The function returned puts every material back as it was, the last patch first.
  */
 export function lightWaverleyNight(scene: THREE.Object3D,hotelWindowShare:number=BALMORAL_WINDOWS.grid.mode[0]): () => void {
   const undo: (() => void)[] = [];
@@ -103,7 +104,7 @@ export function lightWaverleyNight(scene: THREE.Object3D,hotelWindowShare:number
     undo.push(() => { m.defines = before; m.needsUpdate = true; });
   };
   const walls = material('waverley-building-walls');
-  if (walls) undo.push(litWalls(walls, [1.2, 0.6])); // the sandstone's tile (materials.ts TEXTURES.stone)
+  if (walls) undo.push(litWalls(walls, WAVERLEY_WALL_TILE, WAVERLEY_WALL_WINDOWS));
   const hotel = material('waverley-balmoral-facade');
   if (hotel) undo.push(litWalls(hotel, BALMORAL_WINDOWS.tile, {...BALMORAL_WINDOWS.grid,mode:[hotelWindowShare,0,0.12,0.1]}));
   // the hotel's stone, the body and the tower (waverley-frontage.ts names), each lit from the lowest point of its mesh (ASSUMED: the lamps stand where the ground is under it), and dim: the photograph's
@@ -115,6 +116,8 @@ export function lightWaverleyNight(scene: THREE.Object3D,hotelWindowShare:number
     if (mesh) flood(name, strength, 30, 0.5, new THREE.Box3().setFromObject(mesh).min.y);
   }
   flood('waverley-balmoral-clock-dials', 1.5, 1, 1); // a dial is lit all over: no fall-off
+  const dial = material('waverley-balmoral-clock-dials');
+  if (dial?.defines) dial.defines.FLOOD_COLOUR = 'vec3( 1.0, 0.94, 0.8 )';
   return () => [...undo].reverse().forEach((u) => u());
 }
 
@@ -167,8 +170,10 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   return remoteSceneWeather(view, weather, WAVERLEY_HAZE, () => {
     const night = lightWaverleyNight(view.scene,detailed ? .60 : undefined), lamps = waverleyLamps(view), glow = createWaverleyGlow(view.scene);
     const data = view.geometry!;
-    const heads = view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
-    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv',true);
+    const fittings = view.scene.getObjectByName('waverley-roof')?.userData;
+    const heads = fittings?.platformLampHeads as number[] | undefined;
+    const open = fittings?.openPlatformLamps as OpenPlatformLamp[] | undefined;
+    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv',true,open);
     platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
     return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
       dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };

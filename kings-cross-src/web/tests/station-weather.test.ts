@@ -6,7 +6,7 @@ import { CLEAR_FOG, describeSun, fogRange, lampLevelFor } from '../../core/dayli
 import { solarPosition } from '../../core/solar.ts';
 import { terrainFromFunction } from '../../core/terrain.ts';
 import type { WaverleyScene as SceneData } from '../../core/waverley-data.ts';
-import { TEXTURES, WALL_CELL } from '../src/materials.ts';
+import { CITY_TEXTURES } from '../src/materials.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import type { WaverleyView } from '../src/waverley.ts';
@@ -420,10 +420,11 @@ test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone
   const w = lambertOf(walls), f = lambertOf(facade), t = lambertOf(tower), d = lambertOf(dials);
   assert.ok(w.defines && 'WALL_WIN' in w.defines && 'WIN_MODE' in w.defines, 'the walls\' windows');
   assert.ok(!('FLOOD' in (w.defines ?? {})), 'the walls are no floodlit tower');
-  // the walls' windows are in cells over the sandstone's own tile (materials.ts TEXTURES.stone, which their map repeats): the map's unit is a tile, so the grid is the tile over the cell, along the wall and up it
+  // Each glowing city window must line up with the window drawn in the repeating facade map.
   const wallTile = String(w.defines?.WALL_TILE).replace('vec2', '').match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g)?.map(Number) ?? [];
-  assert.ok(wallTile.length === 2 && Math.abs(wallTile[0]! - TEXTURES.stone.tile[0] / WALL_CELL[0]) < 1e-9 && Math.abs(wallTile[1]! - TEXTURES.stone.tile[1] / WALL_CELL[1]) < 1e-9,
-    `the walls' grid is the stone's tile ${TEXTURES.stone.tile} over the cell ${WALL_CELL}: ${w.defines?.WALL_TILE}`);
+  const [bay, floor] = CITY_TEXTURES.stone.tile;
+  assert.ok(wallTile.length === 2 && Math.abs(wallTile[0]! - bay / 3) < 1e-9 && Math.abs(wallTile[1]! - floor / 3.6) < 1e-9,
+    `the walls' grid is the facade tile ${bay} by ${floor} m over a 3 by 3.6 m cell: ${w.defines?.WALL_TILE}`);
   // each patched or flooded material is built again (three compiles a program again only for a new version): the tower's and the dials' by the flood alone
   const patched = [walls, facade, tower, dials].map((mesh, i) => {
     assert.ok(lambertOf(mesh).version > before[i]!.version, `${mesh.name} is recompiled with the night's patch`);
@@ -442,7 +443,7 @@ test('lightWaverleyNight: the city blocks get lit windows, the Balmoral\'s stone
   assert.ok(!('WALL_SHIFT' in (w.defines ?? {})) && !('WALL_ROWS' in (w.defines ?? {})), 'the city\'s walls are in their own grid, all rows of it');
   // a clock dial is lit all over: no fall-off (a reach of a metre, a floor of one), and over strength 1 so it reads as lit from within
   assert.equal(d.defines?.FLOOD, 'vec4( 1.5, 1.0, 1.0, 0.0 )');
-  assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls'), 'the walls are a program of their own');
+  assert.ok(String(w.customProgramCacheKey()).endsWith('+litWalls-waverley'), 'the walls are a program of their own');
   assert.equal(t.customProgramCacheKey(), before[2]!.key, 'the flood is a define: the program key is the same, the define makes the program');
   assert.equal(f.customProgramCacheKey(), `${before[1]!.key}+litWalls`, 'the body\'s windows are a program of their own, over the flood\'s');
   assert.ok(compileOf(w).includes('float winHash('), 'the walls compile with the night functions');

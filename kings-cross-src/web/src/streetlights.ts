@@ -189,6 +189,8 @@ export interface StreetLightOptions {
   luminairePools?: boolean;
   /** Production KX road exposure and warm LED receiver balance. */
   roadPoolBalance?: boolean;
+  /** Relative optical reach for selected sodium lamps, zero for the regular beam. */
+  localSodiumScaleAt?: (spot: LampSpot) => number;
   /** Tapered, irregular wet streaks without changing the pool or clear head. */
   roughReflections?: boolean;
   /** KX window/lamp emission has a longer fog tail than opaque surfaces. */
@@ -315,6 +317,11 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   const roadPoolShape=!!options.kxOptics&&options.poolRoadShape!==false;
   if (roadPoolShape) poolGeometry.setAttribute('poolRoadDirection',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw)])),2));
   if (options.luminairePools) poolGeometry.setAttribute('poolBeam',new THREE.InstancedBufferAttribute(new Float32Array(poolEntries.flatMap(({spot})=>[Math.sin(spot.yaw),-Math.cos(spot.yaw),spot.kind,Number(!!spot.mast)])),4));
+  const localScales = options.luminairePools && options.localSodiumScaleAt
+    ? Float32Array.from(poolEntries, ({spot}) => options.localSodiumScaleAt!(spot)) : undefined;
+  const localSodium = localScales !== undefined;
+  const localExtent = 1.6;
+  if (localScales) poolGeometry.setAttribute('poolLocalScale',new THREE.InstancedBufferAttribute(localScales,1));
   const bounded = options.poolCeiling !== undefined;
   const poolMaterial = new THREE.MeshBasicMaterial({ map: options.analyticPool ? null : poolTexture(), transparent: true, opacity: 0, blending: bounded ? THREE.NormalBlending : THREE.AdditiveBlending,
     toneMapped: !bounded, depthWrite: false, fog: options.fog ?? false,
@@ -360,10 +367,11 @@ float roadAcross=dot(roadPoolUv,vec2(-poolRoadDirection.y,poolRoadDirection.x));
 vPoolUv=0.5+0.5*vec2(roadAlong,1.8*roadAcross);
 ${options.poolLineAt?'}':''}
 // pool-road-shape-end` : '';
-        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${roadPoolShape ? '\nattribute vec2 poolRoadDirection;' : ''}${options.luminairePools?'\nattribute vec4 poolBeam;\nvarying vec4 vPoolBeam;':''}\nvarying vec2 vPoolUv;`)
-          .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}${options.luminairePools?'\nvPoolBeam = poolBeam;\nvPoolUv = 0.5+(uv-0.5)*mix(1.8,1.0,poolBeam.w);':''}`);
+        shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>${roadPoolShape ? '\nattribute vec2 poolRoadDirection;' : ''}${options.luminairePools?'\nattribute vec4 poolBeam;\nvarying vec4 vPoolBeam;':''}${localSodium?'\nattribute float poolLocalScale;\nvarying float vPoolLocalScale;':''}\nvarying vec2 vPoolUv;`)
+          .replace('#include <project_vertex>', `#include <project_vertex>\nvPoolUv = uv;${roadShape}${options.luminairePools?'\nvPoolBeam = poolBeam;\nvPoolUv = 0.5+(uv-0.5)*mix(1.8,1.0,poolBeam.w);':''}${localSodium?`\nvPoolLocalScale = poolLocalScale;\nif (poolLocalScale > 0.0) vPoolUv = 0.5+(vPoolUv-0.5)*${localExtent};`:''}`);
         declarations += '\nvarying vec2 vPoolUv;';
         if(options.luminairePools)declarations+='\nvarying vec4 vPoolBeam;';
+        if(localSodium)declarations+='\nvarying float vPoolLocalScale;';
         if (options.poolLineAt) {
           shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nattribute float poolLine;\nvarying float vPoolLine;')
             .replace('#include <project_vertex>', '#include <project_vertex>\nvPoolLine = poolLine;');
@@ -408,7 +416,23 @@ float roadBalance = (1.0-step(1.5,vPoolBeam.z))*(1.0-vPoolBeam.w);
 float roadGap = mix(0.66,1.0,poolHead);
 float warmLed = step(0.5,vPoolBeam.z)*(1.0-step(1.5,vPoolBeam.z));
 gl_FragColor.rgb *= mix(vec3(1.0),roadGap*mix(vec3(1.0),vec3(1.0,0.83,0.65),warmLed),roadBalance);
-// pool-road-balance-end`:''}`:''}`;
+// pool-road-balance-end`:''}${localSodium?`
+// pool-local-sodium-begin
+if (vPoolLocalScale > 0.0) {
+  vec2 acrossRoad = vec2(-vPoolBeam.y,-vPoolBeam.x);
+  vec2 alongRoad = vec2(-acrossRoad.y,acrossRoad.x);
+  vec2 localBeam = vec2(dot(beamPosition,alongRoad),dot(beamPosition,acrossRoad)-0.22);
+  float localRadius = length(localBeam / (vec2(1.08,0.68)*vPoolLocalScale));
+  float localLight = pow(1.0 + 1.5*localRadius*localRadius,-1.5) * (1.0-smoothstep(0.48,1.0,localRadius));
+  // A weak, road-aligned skirt overlaps the neighbouring lamp while leaving
+  // the brighter optical core and the peak ceiling of this fixture intact.
+  float skirtRadius = length(localBeam / (vec2(2.55,1.50)*vPoolLocalScale));
+  float skirt = 0.18 * pow(1.0+2.0*skirtRadius*skirtRadius,-1.2) * (1.0-smoothstep(0.46,1.0,skirtRadius));
+  localLight += (1.0-localLight)*skirt;
+  gl_FragColor.a = poolInputAlpha * localLight;
+  gl_FragColor.rgb = vec3(0.285,0.145,0.063);
+}
+// pool-local-sodium-end`:''}`:''}`;
       }
       if (options.poolFloor) {
         shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float poolFloorWeight;\nvarying float vPoolFloorWeight;')
@@ -432,13 +456,14 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>\n${declarations}`)
         .replace('#include <opaque_fragment>', `#include <opaque_fragment>\n${body}`);
     };
-    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}${options.luminairePools?'-luminaire':''}${options.roadPoolBalance?'-balanced':''}`;
+    poolMaterial.customProgramCacheKey = () => `street-pool-${bounded}-${!!options.fog}-${!!options.poolFloor}-${!!options.poolWeather}-${!!options.analyticPool}${options.poolLineAt ? '-line' : ''}${options.poolSurface?'-receiver':''}${options.poolFocus===undefined?'':`-focus${options.poolFocus}`}${options.kxOptics?'-kx':''}${roadPoolShape?'-road':''}${options.luminairePools?'-luminaire':''}${options.roadPoolBalance?'-balanced':''}${localSodium?'-local-sodium':''}`;
   }
   pools.name = 'street-lamp-pools';
   poolEntries.forEach(({spot,index}, i) => {
     const [x, , z] = headAt(spot);
     const r = 2 * (options.poolRadiusAt?.(spot, index) ?? poolRadius(spot.height) * (options.poolSpread ?? 1)) * (options.luminairePools&&!spot.mast?1.8:1);
-    const size = options.poolSizeAt?.(spot,index), rx = size?.[0] ?? r, rz = size?.[1] ?? r;
+    const size = options.poolSizeAt?.(spot,index), extent = (localScales?.[i] ?? 0) > 0 ? localExtent : 1;
+    const rx = (size?.[0] ?? r) * extent, rz = (size?.[1] ?? r) * extent;
     const [gx, gz] = spot.slope;
     // the quad lies in the ground's own plane (a shear: height follows x by gx and z by gz), so on a slope it neither sinks into the ground on the uphill side nor hangs over it downhill
     matrix.set(rx, 0, 0, x, gx * rx, 1, gz * rz, spot.y + gx * (x - spot.x) + gz * (z - spot.z) + (options.poolLiftAt?.(spot,index) ?? POOL_LIFT), 0, 0, rz, z, 0, 0, 0, 1);

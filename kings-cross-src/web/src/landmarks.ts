@@ -40,9 +40,9 @@ const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as cons
 // Vertex ranges of the existing stone rakes. Keep the selection with the builder:
 // window surrounds and roof ridges must not become a continuous luminous roof.
 const midlandGableRakes = new WeakMap<Batch, [number, number][]>();
-// The main body's brick ends before the tower builder appends its faces.
+// The main body's brick and stone end before the tower builder appends its faces.
 // Keep this boundary with the geometry, not a camera or world-height guess.
-const midlandBrickBodyEnd = new WeakMap<Batch, number>();
+const midlandBodyEnd = new WeakMap<Batch, number>();
 
 /** Night-only treatment on the existing merged meshes, with a zero mask on the
  * hotel and Barlow. World height is relative to the Midland's terrain seat; UVs
@@ -53,7 +53,9 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
   for (const key of ['brickRed', 'stone'] as const) {
     const mesh = group.getObjectByName(`landmarks-${key}`) as THREE.Mesh;
     const mask = new Float32Array(mesh.geometry.getAttribute('position').count * 2);
-    const bodyMask = key==='brickRed' ? new Float32Array(mask.length/2) : undefined;
+    const bodyMask = new Float32Array(mask.length/2);
+    const bodyAttribute = key === 'brickRed' ? 'midlandBrickBody' : 'midlandStoneBody';
+    const bodyVarying = key === 'brickRed' ? 'vMidlandBrickBody' : 'vMidlandStoneBody';
     let offset = 0;
     sets.forEach((set, building) => {
       const batch = set[key];
@@ -61,7 +63,7 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       const count = batch.positions.length / 3;
       if (building === 1) {
         for (let i = 0; i < count; i++) mask[(offset + i) * 2] = 1;
-        if(bodyMask)bodyMask.fill(1,offset,offset+(midlandBrickBodyEnd.get(batch)??0));
+        bodyMask.fill(1,offset,offset+(midlandBodyEnd.get(batch)??0));
         for (const [start, end] of midlandGableRakes.get(batch) ?? []) {
           for (let i = start; i < end; i++) mask[(offset + i) * 2 + 1] = 1;
         }
@@ -69,7 +71,7 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       offset += count;
     });
     mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(mask, 2));
-    if(bodyMask)mesh.geometry.setAttribute('midlandBrickBody',new THREE.BufferAttribute(bodyMask,1));
+    mesh.geometry.setAttribute(bodyAttribute,new THREE.BufferAttribute(bodyMask,1));
     const m = mesh.material as THREE.Material;
     const prior = m.onBeforeCompile;
     const priorKey = m.customProgramCacheKey();
@@ -77,10 +79,10 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
       prior.call(m, shader, renderer);
       shader.uniforms.uMidlandNight = windowNight;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', `#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;${bodyMask?'\nattribute float midlandBrickBody;\nvarying float vMidlandBrickBody;':''}`)
-        .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};${bodyMask?'\nvMidlandBrickBody = midlandBrickBody;':''}`);
+        .replace('#include <common>', `#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;\nattribute float ${bodyAttribute};\nvarying float ${bodyVarying};`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};\n${bodyVarying} = ${bodyAttribute};`);
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;${bodyMask?'\nvarying float vMidlandBrickBody;':''}`)
+        .replace('#include <common>', `#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;\nvarying float ${bodyVarying};`)
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
 // midland-night-begin
 float midlandLevel = uMidlandNight * vMidlandNight.x;
@@ -89,7 +91,7 @@ float midlandFill = 1.0 - ${key === 'brickRed' ? '0.82' : '0.0'} * midlandLevel 
 reflectedLight.indirectDiffuse *= midlandFill;
 reflectedLight.directDiffuse *= midlandFill;
 ${key === 'brickRed' ? 'totalEmissiveRadiance *= mix( 1.0, 0.05, midlandLevel * midlandUpper );' : ''}
-totalEmissiveRadiance += vec3( 0.38, 0.24, 0.085 ) * midlandLevel * vMidlandNight.y;
+totalEmissiveRadiance += vec3( 0.30, 0.131, 0.0225 ) * midlandLevel * vMidlandNight.y;
 // midland-night-end${key==='brickRed'?`
 // midland-brick-floor-begin
 // Keep the texture's brick colour in the upper piers and tower. The strong
@@ -137,9 +139,32 @@ if (vMidlandBrickBody < 0.5 && midlandLevel > 0.003 && vMidlandHeight < 25.0) {
   vec3 endEmission = endTint*(midlandBrickDimmed/mix(1.0,0.05,endLoss)*endGrade).r;
   totalEmissiveRadiance = mix(totalEmissiveRadiance,endEmission,endBlend);
 }
-// midland-end-grade-end`:''}`);
+// midland-end-grade-end`:''}
+// midland-arcade-grade-begin
+if (midlandLevel > 0.003 && ${bodyVarying} > 0.5) {
+  float arcade = 1.0-smoothstep(2.0,6.0,vMidlandHeight);
+  float upperStoreys = smoothstep(5.0,10.0,vMidlandHeight);
+  float facadeFill = 1.0 - ${key === 'brickRed' ? '0.17' : '0.62'} * midlandLevel * upperStoreys;
+  reflectedLight.directDiffuse *= facadeFill;
+  reflectedLight.indirectDiffuse *= facadeFill;
+  totalEmissiveRadiance *= mix(facadeFill,1.0,vMidlandNight.y);
+  totalEmissiveRadiance += diffuseColor.rgb * vec3(0.15,0.080,0.029) * midlandLevel * arcade;
+}
+// midland-arcade-grade-end
+// midland-lamp-wash-begin
+if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
+  vec3 facadeWorld = cameraPosition - vViewPosition * mat3(viewMatrix);
+  float washHeight = smoothstep(4.0,7.5,vMidlandHeight)*(1.0-smoothstep(11.0,19.0,vMidlandHeight));
+  float washBay = sin(dot(facadeWorld.xz,vec2(0.14,0.08)));
+  float lampWash = washHeight*(0.45+0.55*washBay*washBay);
+  ${key === 'brickRed' ? `float rangeFill = 1.0-smoothstep(22.0,33.0,vMidlandHeight);
+  float towerFill = 0.60*(1.0-smoothstep(33.0,47.0,vMidlandHeight));
+  float brickFill = smoothstep(7.0,14.0,vMidlandHeight)*mix(towerFill,rangeFill,vMidlandBrickBody);
+  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
+}
+// midland-lamp-wash-end`);
     };
-    m.customProgramCacheKey = () => `${priorKey}|midland-night-v5-${key}-${base.toFixed(6)}`;
+    m.customProgramCacheKey = () => `${priorKey}|midland-night-v7-${key}-${base.toFixed(6)}`;
   }
 }
 
@@ -259,7 +284,7 @@ export function createMaterials(): MaterialSet {
   // Midland's ground-floor arches; hist-b's windows are mixed, some white with the sky and the dark ones about L 12 to 20. This is a dark blue-grey glass, L 24 (not a black hole), flat:
   // a patchy reflection would need the window shader the sash decals have (and a map, which a framed pane lacks), over the size cap.
   // Round seven (night lighting): the windows of this pane are lit after dark (materials.ts `litPane`: the glass `addGlass` builds, the bands and the balcony of the pane stay dark).
-  const pane = litPane(tint('pane', [0.05, 0.08, 0.125]));
+  const pane = litPane(tint('pane', [0.05, 0.08, 0.125]), true);
   // Round five (the historic D5 scorer: the crown must be the brightest band of the vault from inside, as in hist-d and hist-d2, where the boarding is L 39 to 49 and the glazing L 56 to 63): the
   // library's pale boarding (a light grey, R-lighting-materials-b's) drew the flank panels at L 71, over the crown's L 53 and 15 under the crown's new glow. At 0.55 of its light, colour and
   // glow both, the flank is L 61 to 63 and the crown, at L 77, the brightest thing in the vault; the other users of the library's lining keep its pale grey.
@@ -508,21 +533,24 @@ export function addWindow(m: Batch, p: Placed, y: number, w: number, h: number, 
  */
 export function windowId(p: Placed, y: number): number {
   const [x, h, z] = [Math.round(p.at[0] * 10), Math.round(y * 10), Math.round(p.at[1] * 10)];
-  return ((Math.imul(x, 73856093) ^ Math.imul(h, 19349663) ^ Math.imul(z, 83492791)) >>> 0) % PANE_UV.numbers;
+  const position = Math.imul(x, 73856093) ^ Math.imul(h, 19349663) ^ Math.imul(z, 83492791);
+  // Fold the high coordinate bits back in before reducing to the UV bank.
+  const mixed = Math.imul(position ^ (position >>> 16), 0x7feb352d);
+  return ((mixed ^ (mixed >>> 15)) >>> 0) % PANE_UV.numbers;
 }
 
 /** A window's glass: the flat shape of `addWindow` (`lift` off the wall), wearing the UVs of a lit pane (materials.ts `paneUv`) so that it can glow after dark. */
-export function addGlass(m: Batch, p: Placed, y: number, w: number, h: number, head: Head, lift: number): void {
-  const id = windowId(p, y);
+export function addGlass(m: Batch, p: Placed, y: number, w: number, h: number, head: Head, lift: number, arcade = false): void {
+  const id = windowId(p, y) + (arcade ? PANE_UV.numbers : 0);
   const pts = windowOutline(w, h, head).map(([x, yy]) => onWall(p, x, y + yy, lift));
   const along = (q: V3): number => (q[0] - p.at[0]) * p.dir[0] + (q[2] - p.at[1]) * p.dir[1];
   m.fan(pts, [p.normal[0], 0, p.normal[1]], (q) => paneUv(id, 0.5 + along(q) / w, (q[1] - y) / h));
 }
 
 /** One window with its stone surround: the surround is `margin` bigger all round and a hair behind the glass. */
-export function addFramedWindow(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number, head: Head, margin: number): void {
+export function addFramedWindow(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number, head: Head, margin: number, arcade = false): void {
   addWindow(part(parts, 'stone'), p, y - margin, w + 2 * margin, h + margin * (head === 'flat' ? 1.6 : 1.3), head, 0.05, true);
-  addGlass(part(parts, 'pane'), p, y, w, h, head, 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, head, 0.1, arcade);
 }
 
 /** A sash window from the shared texture (surround, glass and bars drawn in it): a w x h quad, UVs spanning the whole texture. */
@@ -815,7 +843,7 @@ function addJambs(parts: PartMap<Key>, p: Placed, y: number, W: number, spring: 
 
 /** A round-headed opening in a ring of red and stone voussoirs, on jambs of red and stone courses (hist-b: the ground storey's arcade); sizes ASSUMED. */
 export function addArch(parts: PartMap<Key>, p: Placed, y: number, w: number, h: number): void {
-  addGlass(part(parts, 'pane'), p, y, w, h, 'round', 0.1);
+  addGlass(part(parts, 'pane'), p, y, w, h, 'round', 0.1, true);
   // hist-b: the glazed arch is not a black hole: a stone mullion 0.18 m wide up to the springing and a transom 0.16 m tall at 0.55 of it, standing 0.05 m in front of the glass (ASSUMED)
   addWindow(part(parts, 'stone'), p, y, 0.18, h - w / 2, 'flat', 0.15, true);
   addWindow(part(parts, 'stone'), p, y + (h - w / 2) * 0.55, w, 0.16, 'flat', 0.15, true);
@@ -1107,7 +1135,7 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     for (const y of [22, 29.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
-  addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3);
+  addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3, true);
   // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones); hist-c: two tall groups from the balcony to the corbels,
   // their lancets about 5 m, and stone shafts with capitals standing free of the wall in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
   // (round 7, the scorer: "belfry lights lack the tall detached shafts of R-c": round 6's 0.28 m shafts, 0.12 m out, were two pixels wide and one with the wall; now 0.5 m, with a 0.15 m gap behind)
@@ -1307,7 +1335,8 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
     for (let s = 0.45; s < l - 0.3; s += 0.9) for (const f of [-1, 1]) pane.tri(at(s - 0.275, 0.12), at(s + 0.275, 0.12), at(s, 1), undefined, [(-(b[1] - a[1]) * f) / l, 0, ((b[0] - a[0]) * f) / l]);
   }
   const bodyBrick=part(parts,'brickRed');
-  midlandBrickBodyEnd.set(bodyBrick,bodyBrick.positions.length/3);
+  midlandBodyEnd.set(bodyBrick,bodyBrick.positions.length/3);
+  midlandBodyEnd.set(stone,stone.positions.length/3);
   for (const t of plan.towers) addTower(parts, t, plan);
   return parts;
 }

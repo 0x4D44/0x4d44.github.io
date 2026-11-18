@@ -44,3 +44,5 @@ Evidence fingerprint: `manual:v1:kx-day-clear-capture-frames-settle-into-one-of-
 <unfixed — raised only>
 
 ## Notes
+
+- 2026-11-18T07:46Z (claude-opus-5-5): not King's Cross only. The round 15 night-lighting pack (`night-lighting-r15-20261118T061925Z`) showed Perth night-snow `pt-platform-4-north` differing by 70 px (max 1) between BASE and HEAD, where neither side changed Perth code. Round 15 HEAD was byte-identical to both round 14 frames (BASE and HEAD), so the round 15 BASE render was the odd one out: the same two-state pattern, in a second scene and a night state. The cause is therefore probably shared scene-load code, not anything King's Cross specific.

@@ -8,7 +8,7 @@ import { lampSurfaceAt } from './lamp-wet-surface.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { createLampWeather } from './streetlight-weather.ts';
 import { lunetteBars } from './shed.ts';
-import { PANE_UV, windowNight, WIN_NIGHT_GLSL } from './materials.ts';
+import { MIDLAND_PANE_GLSL, windowNight, WIN_NIGHT_GLSL } from './materials.ts';
 
 export interface KxFrontSource {
   head: readonly [number,number,number];
@@ -165,8 +165,8 @@ function reflectedSources(sources:KxFrontSource[],surface:LampWetSurface,name:st
         before.call(m,shader,renderer);shader.uniforms.uWinNight=windowNight;
         shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nattribute float reflectionWindowId;\nvarying float vReflectionWindowId;')
           .replace('#include <begin_vertex>','#include <begin_vertex>\nvReflectionWindowId=reflectionWindowId;');
-        shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nuniform float uWinNight;\nvarying float vReflectionWindowId;\n${WIN_NIGHT_GLSL}`)
-          .replace('#include <opaque_fragment>',`#include <opaque_fragment>\n// reflection-window-begin\ngl_FragColor.rgb *= winPaneLit(vec2(vReflectionWindowId+0.5,-1.5),vec2(0.02),uWinNight,${PANE_UV.share});\n// reflection-window-end`);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nuniform float uWinNight;\nvarying float vReflectionWindowId;\n${WIN_NIGHT_GLSL}${MIDLAND_PANE_GLSL}`)
+          .replace('#include <opaque_fragment>',`#include <opaque_fragment>\n// reflection-window-begin\ngl_FragColor.rgb *= midlandPaneLight(vec2(vReflectionWindowId+0.5,-1.5),vec2(0.02),uWinNight);\n// reflection-window-end`);
       };
       m.customProgramCacheKey=()=>key+'-pane-light';
     }
