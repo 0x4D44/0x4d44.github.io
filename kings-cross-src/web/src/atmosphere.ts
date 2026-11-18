@@ -311,7 +311,7 @@ export interface AtmosphereOptions {
   /** Scene-selected sRGB colour of city-lit dense night air. No ambient raise;
    * omitted retains the existing climate, including legacy KX adapters. */
   cityFogTint?: Rgb;
-  /** City-lit low cloud in dense night fog; does not raise ground lighting. */
+  /** City-tinted low cloud in night fog and rain. */
   litFogCloud?: boolean;
   scene: THREE.Scene;
   world: World;
@@ -616,7 +616,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
         const w = f.weather;
         const rig = skyRig(sunPos.elevationDeg, sunPos.azimuthDeg, { cloud: w.cloud, rain: w.rain, snow: w.snow, visibilityM: w.visibilityM }, REFERENCE);
         // City lights colour the air, not the hemisphere or surface fill.
-        // Gates leave daytime/rain unchanged; the tint belongs to this scene.
+        // The tint belongs to this scene.
         const cityFog = kingsCrossNightFog || cityFogTint ? lampLevelFor(sunPos.elevationDeg) * smoothstep(.65,.9,rig.fogAmount) : 0;
         if (cityFog > 0) {
           const warm: Rgb = cityFogTint ?? [.255,.238,.168];
@@ -624,6 +624,18 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
           rig.fog = tint(rig.fog,cityFog);
           rig.dome.horizon = tint(rig.dome.horizon,cityFog);
           rig.dome.zenith = tint(rig.dome.zenith,(litFogCloud ? .95 : .45)*cityFog);
+        }
+        if (litFogCloud && cityFogTint) {
+          const rainCloud = lampLevelFor(sunPos.elevationDeg) * smoothstep(.1, .5, w.rain) * w.cloud * (1 - cityFog);
+          if (rainCloud > 0) {
+            // Light the horizon too, so elevated views looking down see the same cloud deck.
+            for (const domeColour of [rig.dome.horizon, rig.dome.zenith]) {
+              for (let i = 0; i < domeColour.length; i++) {
+                const base = domeColour[i]!;
+                domeColour[i] = base + (.55 * cityFogTint[i]! - base) * rainCloud;
+              }
+            }
+          }
         }
         if (lampSunGate) rig.lampLevel *= 1 - smoothstep(...lampSunGate, sunPos.elevationDeg);
         kxFogMaterials?.setLevel(cityFog);
