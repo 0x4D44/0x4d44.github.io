@@ -49,8 +49,36 @@ vec3 waverleyWindowLight( vec2 uv, vec2 span, vec2 building, float distanceM, fl
   },
 } as const satisfies WallGrid;
 
+/** Diffuse transmission seen from above the existing enclosed pendant rows. */
+function roofLightMap(heads: readonly number[]) {
+  const reach = 17;
+  const lamps: THREE.Vector2[] = [];
+  for (let i = 0; i < heads.length; i += 3) lamps.push(new THREE.Vector2(heads[i],heads[i+2]));
+  const bounds = new THREE.Box2().setFromPoints(lamps).expandByScalar(reach+1);
+  const x0 = Math.floor(bounds.min.x), z0 = Math.floor(bounds.min.y);
+  const width = Math.ceil(bounds.max.x)-x0, depth = Math.ceil(bounds.max.y)-z0;
+  const cells = new Uint8Array(width*depth);
+  for (const lamp of lamps) {
+    for (let z = Math.floor(lamp.y-reach); z < Math.ceil(lamp.y+reach); z++) {
+      for (let x = Math.floor(lamp.x-reach); x < Math.ceil(lamp.x+reach); x++) {
+        const distance = Math.hypot(x+.5-lamp.x,z+.5-lamp.y)/reach;
+        const falloff = Math.max(0,1-distance*distance);
+        const gain = falloff*falloff*(.55+.45*falloff*falloff);
+        const i = (z-z0)*width+x-x0;
+        cells[i] = Math.max(cells[i]!,Math.round(255*gain));
+      }
+    }
+  }
+  const map = new THREE.DataTexture(cells,width,depth,THREE.RedFormat);
+  map.minFilter = map.magFilter = THREE.LinearFilter;
+  map.needsUpdate = true;
+  return { map, rect: new THREE.Vector4(x0,z0,1/width,1/depth) };
+}
+
 export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose():void} {
   const level = {value:0}, undo: (()=>void)[] = [];
+  const nightPrograms: THREE.Material[] = [];
+  const hasNight = () => level.value > .003;
   const hotel = scene.getObjectByName('waverley-balmoral-facade');
   const box = hotel ? new THREE.Box3().setFromObject(hotel) : new THREE.Box3();
   // The tower and the protruding corner domes extend beyond the body facade.
@@ -59,7 +87,8 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
   const towerBox = new THREE.Box3();
   if(tower)box.union(towerBox.setFromObject(tower));
   const patch = (name:string, colour: readonly number[], select = '1.0', snow = false, extra='', ambient=false,
-    vertexInput?: { declaration: string; varying: string; assignment: string }):void => {
+    vertexInput?: { declaration: string; varying: string; assignment: string },
+    night?: { code: string; declarations?: string; uniforms?: Record<string, THREE.IUniform> }):void => {
     const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
     const m = mesh?.material as THREE.MeshLambertMaterial | undefined;
     if (!m?.isMeshLambertMaterial) return;
@@ -69,6 +98,8 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
       shader.uniforms.uStationLampLevel = level;
       shader.uniforms.uStationLampSnow = surfaceUniforms.snowCover;
       shader.uniforms.uStationLampFog = surfaceUniforms.fog;
+      const effect = hasNight() ? night : undefined;
+      if (effect?.uniforms) Object.assign(shader.uniforms,effect.uniforms);
       shader.vertexShader = shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vStationLampWorld;\nvarying vec3 vStationLampNormal;')
         .replace('#include <project_vertex>','#include <project_vertex>\nvStationLampWorld = (modelMatrix * vec4(transformed,1.0)).xyz;\nvStationLampNormal = normalize(mat3(modelMatrix)*objectNormal);');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uStationLampLevel;\nuniform float uStationLampSnow;\nuniform float uStationLampFog;\nvarying vec3 vStationLampWorld;\nvarying vec3 vStationLampNormal;')
@@ -76,7 +107,9 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
 // station-light-begin: glowing glazing follows its cassette bars, never the opaque snow.
 totalEmissiveRadiance += uStationLampLevel * vec3(${colour.join(',')}) * diffuseColor.rgb * (${select})${snow ? ' * (1.0 - uStationLampSnow)' : ''};
 // station-light-end
-${extra}`);
+${extra}${effect ? '\n'+effect.code : ''}`);
+      if (effect?.declarations) shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>',`#include <common>\n${effect.declarations}`);
       if (vertexInput) {
         const {declaration,varying,assignment} = vertexInput;
         shader.vertexShader = shader.vertexShader
@@ -90,13 +123,35 @@ reflectedLight.indirectDiffuse *= mix(1.0,0.15,uStationLampLevel);
 reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
 // station-platform-ambient-end`);
     };
-    m.customProgramCacheKey = () => key.call(m) + '-station-night-' + name;
+    m.customProgramCacheKey = () => key.call(m) + '-station-night-' + name + (night && hasNight() ? '-uplight' : '');
+    if (night) nightPrograms.push(m);
     m.needsUpdate=true;
     undo.push(()=>{m.onBeforeCompile=before;m.customProgramCacheKey=key;m.needsUpdate=true;});
   };
-  // ASSUMED intensity, fitted offline for a dim cool luminous roof; opaque
-  // cassette bars retain their own pattern. Snow's existing opaque lid wins.
-  patch('waverley-mapped-roofs',[.11,.17,.24],'1.0',true);
+  const heads = scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
+  const roofLight = heads?.length ? roofLightMap(heads) : undefined;
+  if (roofLight) undo.push(() => roofLight.map.dispose());
+  // The top cassettes use the same geometry and map in both programs. Only
+  // the glazed slopes above the interior acquire the transmitted light.
+  patch('waverley-mapped-roofs',[.11,.17,.24],'1.0',true,'',false,undefined,roofLight && {
+    uniforms: {uWaverleyRoofLight:{value:roofLight.map}, uWaverleyRoofRect:{value:roofLight.rect}},
+    declarations: 'uniform sampler2D uWaverleyRoofLight;\nuniform vec4 uWaverleyRoofRect;',
+    code: `
+// waverley-roof-transmission-begin
+vec2 roofLightUv = (vStationLampWorld.xz-uWaverleyRoofRect.xy)*uWaverleyRoofRect.zw;
+if (abs(vStationLampNormal.x) > 0.10 && uStationLampSnow < 1.0) {
+  float cassetteTransmission = 1.0;
+#ifdef USE_MAP
+  // The cassette texture paints pale aluminium bars over mid-grey glass.
+  float cassetteLuma = dot(sampledDiffuseColor.rgb,vec3(0.2126,0.7152,0.0722));
+  cassetteTransmission = 1.0-smoothstep(0.28,0.50,cassetteLuma);
+#endif
+  float interiorLight = texture2D(uWaverleyRoofLight,roofLightUv).r;
+  totalEmissiveRadiance += uStationLampLevel*vec3(0.93,0.99,1.0)
+    *(0.022+0.34*interiorLight)*cassetteTransmission*(1.0-uStationLampSnow);
+}
+// waverley-roof-transmission-end`,
+  });
   patch('waverley-roof-underside',[.08,.12,.18]);
   const scott = scene.getObjectByName('waverley-scott-monument');
   if (scott) {
@@ -177,7 +232,16 @@ float hotelHeight = ${height};
 float balconyBeam = 0.36*smoothstep(8.3,8.7,hotelHeight)*exp(-max(0.0,hotelHeight-8.7)/1.3);
 float corniceBeam = 0.45*smoothstep(23.2,23.6,hotelHeight)*exp(-max(0.0,hotelHeight-24.7)/2.5);
 totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.57,0.20)*(balconyBeam+corniceBeam);
-// balmoral-bands-end`);
+// balmoral-bands-end`,false,undefined,{code:`
+// balmoral-body-uplight-begin
+// Spread the warm street-level wash up the stone and lift the first-floor
+// pilasters from the balcony. Preserve the darker bays under the cornice.
+float bodySpread = 0.038+0.19*exp(-max(0.0,hotelHeight)/19.0);
+float bodyBalcony = 0.20*smoothstep(8.5,9.1,hotelHeight)*exp(-max(0.0,hotelHeight-9.1)/3.2);
+float bodyZone = smoothstep(-2.0,0.75,hotelHeight)*(1.0-smoothstep(22.5,25.5,hotelHeight));
+totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.49,0.12)
+  *(bodySpread+bodyBalcony)*bodyZone*facadeBayGain;
+// balmoral-body-uplight-end`});
     // Cornices and lead domes share a material with bridge ribs and the hands.
     // Select by hotel bounds/height. The minimum lit response stops the dark
     // lead vertex tint becoming a smudge through the turret's floodlight.
@@ -236,5 +300,14 @@ if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
       declaration:'attribute float northBridgeDeck;',varying:'varying float vNorthBridgeDeck;',assignment:'vNorthBridgeDeck = northBridgeDeck;',
     });
   }
-  return {setLevel(next){level.value=Math.max(0,Math.min(1,next));},dispose(){undo.reverse().forEach(fn=>fn());}};
+  return {
+    setLevel(next) {
+      const wasNight = hasNight();
+      level.value = Math.max(0,Math.min(1,next));
+      // These Waverley-owned materials keep their day programs and sort IDs.
+      // Select the alternate program only when this layer is lit.
+      if (hasNight() !== wasNight) for (const material of nightPrograms) material.needsUpdate = true;
+    },
+    dispose(){undo.reverse().forEach(fn=>fn());},
+  };
 }
