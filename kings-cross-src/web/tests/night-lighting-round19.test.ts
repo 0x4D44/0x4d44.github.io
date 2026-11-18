@@ -113,7 +113,9 @@ test('office occupancy varies by building and occupied floors contain both brigh
       const occupancy = groups.map(rows => mean(rows.map(row => Number(row.some(c=>luma(c)>.015)))));
       const active = groups.flat().filter(row => row.some(c => luma(c) > .015));
       const panes = active.flat().filter(c=>luma(c)>.015);
-      const neutral = panes.filter(([r,g,b])=>b! >= .69*r! && r! > g! && g! > b!);
+      const neutral = panes.filter(([r,g,b])=>hasColor
+        ? b! >= .69*r! && r! > g! && g! > b!
+        : r! >= .69*b! && b! > g! && g! > r!);
       const distinct = new Set(groups.map(rows=>rows.slice(0,12).map(row=>Number(row.some(c=>luma(c)>.015))).join('')));
       const filled = panes.length/(12*active.length);
       console.log(key, {litFloors:active.length, total:groups.flat().length, occupancy, filled, neutralShare:neutral.length/panes.length,

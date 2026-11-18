@@ -736,7 +736,8 @@ const NIGHT_MODE = {
 /** A storey shares an evening schedule, with a few unoccupied bays and
  * shadows behind its mullions. Fade unresolved glazing rather than filling
  * in the gaps or lighting dark storeys with an average. */
-const officeWindowsGlsl = (suites = false): string => {
+const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled'): string => {
+  const suites = kind === 'kx-city';
   const hash = suites ? 'officeHash' : 'winHash';
   return /* glsl */`
 uniform float uOfficeFog;
@@ -755,7 +756,7 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float start = 0.08 + 0.53 * ${hash}( row, seed, 3.0 );
   float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 )${suites ? ' + 0.025' : ''};
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
-  vec3 white = vec3( 1.0, 0.86, 0.71 );
+  vec3 white = ${kind === 'ordinary' ? 'vec3( 1.0, 0.86, 0.71 )' : 'vec3( 0.79, 0.92, 1.0 )'};
   vec3 warm = vec3( 1.0, 0.72, 0.47 );
   vec3 colour = mix( warm, white, step( 1.0-coolShare, ${hash}( ${suites ? 'cell' : 'row'}, seed, 4.0 ) ) );
   vec2 f = fract( v );
@@ -768,7 +769,7 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float blinds = ${hash}( cell, seed, 7.0 );
   ${suites ? `// Offices occupy connected runs of bays separated by dark suites.
   float pitch = 13.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
-  float lengthLit = floor( mix( 0.38, 0.93, officeHash( row, seed, 11.0 ) ) * pitch );
+  float lengthLit = floor( mix( 0.50, 0.93, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
   float suite = step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit );
   float floorLight = mix( 0.55, 1.0, officeHash( row, seed, 13.0 ) );
@@ -781,8 +782,9 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
 }
 `;
 };
-const OFFICE_WINDOWS_GLSL = officeWindowsGlsl();
-const KX_OFFICE_WINDOWS_GLSL = officeWindowsGlsl(true);
+const OFFICE_WINDOWS_GLSL = officeWindowsGlsl('ordinary');
+const KX_OFFICE_WINDOWS_GLSL = officeWindowsGlsl('kx-city');
+const KX_MODELLED_OFFICE_WINDOWS_GLSL = officeWindowsGlsl('kx-modelled');
 
 /** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
 const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
@@ -917,7 +919,7 @@ export function officeFacade(
     shader.uniforms.uWinNight = windowNight;
     shader.uniforms.uOfficeFog = officeNightFog;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${OFFICE_WINDOWS_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${KX_MODELLED_OFFICE_WINDOWS_GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
 #ifdef USE_MAP
       if ( uWinNight > 0.003 ) {
