@@ -85,11 +85,13 @@ test('the lit rain dome keeps the longitudinal cloud billows visible', () => {
   }
 });
 
-test('King’s Cross and Waverley retain the base fog tint, cloud contrast and height-dependent extinction', () => {
-  // CPU readings from 470a559b at the station origins, including the existing fog billows.
+test('King’s Cross and Waverley keep the round 12d fog tint, flat lit fog cloud and height-dependent extinction', () => {
+  // CPU readings from night lighting round 12d at the station origins. Round 12
+  // replaced the base fog on purpose (near veil, lit low cloud with no billows);
+  // a rain-only change must still leave every one of these values exact.
   const base = {
-    kx: { range: [[4.049788801, 240.109939738], [67.046755981, 672.020850640]], air: [.083454233, .057468868, .045791362], ring: [.030252215, .187321395] },
-    wv: { range: [[82.8, 414], [141, 705]], air: [.037943633, .028603804, .021970248], ring: [.015020793, .081816979] },
+    kx: { range: [[-17.986068114926386, 210.0190245912916], [9.036676121504833, 516.0985798358358]], air: [.10166434161423739, .0696201449411448, .055259055945225316], ring: [.08070173859596252, .08070173859596252] },
+    wv: { range: [[-17.936310772492988, 210.12889486519276], [9.083402559830631, 516.1194173015756]], air: [.045632879100647956, .03420204820108369, .0261106154927051], ring: [.037280675023794174, .037280675023794174] },
   };
   for (const city of ['kx', 'wv'] as const) {
     const weather = climate(city);
