@@ -46,6 +46,7 @@ export function lampHaloProbe(points:THREE.Points,camera:THREE.PerspectiveCamera
  const s=compile(points),m=s.material,uPlatformLampNight=s.uniforms.uPlatformLampNight?.value??0;
  const sizeCode=glsl.snippet(marked(s.vertexShader,'lamp-fog-size'));
  const screenCode=glsl.snippet(marked(s.vertexShader,'lamp-fog-screen'));
+ const roofSpreadCode=glsl.snippet(marked(s.vertexShader,'lamp-roof-spread'));
  const fragment=glsl.snippet(s.fragmentShader.slice(s.fragmentShader.indexOf('// lamp-fog-begin'),s.fragmentShader.indexOf('#include <tonemapping_fragment>')));
  const frontage=glsl.snippet(marked(s.vertexShader,'lamp-edinburgh-frontage-vertex'));
  const late=glsl.snippet(['lamp-roof-cap','lamp-roof-scatter','lamp-edinburgh-frontage-fog','lamp-mast-capsule'].map(name=>marked(s.fragmentShader,name)).join('\n'));
@@ -57,7 +58,7 @@ export function lampHaloProbe(points:THREE.Points,camera:THREE.PerspectiveCamera
   const halo=g.getAttribute('lampFogHalo').getX(i),haze=g.getAttribute('lampFogHaze')?.getX(i)??0,core=g.getAttribute('lampFogCore')?.getX(i)??0;
   const v=new THREE.Vector3().fromBufferAttribute(p,i),world=v.clone().applyMatrix4(points.matrixWorld),depth=-world.clone().applyMatrix4(camera.matrixWorldInverse).z;if(depth<=0)continue;
   const scale=g.getAttribute('lampHaloScale')?.getX(i)??1,e={vars:{size:m.size,gl_PointSize:0,lampFogHalo:halo,lampHaloScale:scale,vLampFogViewHeight:0,uPlatformLampNight,vLampFogMast:0,vLampFogDistance:0,vLampFogHaze:haze,vLampFogCore:core,uLampFog:fog.amount,vLampFrontageFog:0,cameraPosition:camera.position.toArray(),modelMatrix:new Mat(4,points.matrixWorld.toArray()),position:v.toArray()}};
-  sizeCode(e);e.vars.gl_PointSize=Number(e.vars.gl_PointSize)*scale*400/depth;screenCode(e);frontage(e);
+  sizeCode(e);e.vars.gl_PointSize=Number(e.vars.gl_PointSize)*scale*400/depth;screenCode(e);roofSpreadCode(e);frontage(e);
   const q=world.clone().project(camera);entries.push({x:640*(q.x+1),y:400*(1-q.y),size:Number(e.vars.gl_PointSize),distance:Number(e.vars.vLampFogDistance),depth,halo,haze,core,mast:Number(e.vars.vLampFogMast),weight:g.getAttribute('lampFogWeight')?.getX(i)??1,height:camera.position.y-world.y,frontage:Number(e.vars.vLampFrontageFog),colour:[c.getX(i),c.getY(i),c.getZ(i)]});
  }
  const fragments=(x:number,y:number,maxSize=Infinity,depth=Infinity,clipPointCenters=false)=>entries.flatMap(p=>{if(p.depth>depth||clipPointCenters&&(p.x<0||p.x>=1280||p.y<0||p.y>=800))return[];const size=Math.max(1,Math.min(p.size,maxSize));if(Math.abs(x-p.x)>size/2||Math.abs(y-p.y)>size/2)return[];const uv=[.5+(x-p.x)/size,.5+(y-p.y)/size],r=2*Math.hypot(uv[0]!-.5,uv[1]!-.5);if(uv.some(v=>v<0||v>1))return[];

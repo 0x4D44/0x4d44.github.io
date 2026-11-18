@@ -454,11 +454,13 @@ uniform float uPlatformLampNight;
 varying float vLampFogWeight;
 varying float vLampFogViewHeight;`)
           .replace('#include <fog_vertex>','#include <fog_vertex>\nvLampFogWeight = lampFogWeight;')
-          .replace('// lamp-fog-screen-end',`
+          .replace('#include <logdepthbuf_vertex>',`// lamp-roof-spread-begin
+// Runs after the shared screen sizing above, before the depth include.
 vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;
 float roofLampSpread = ${roofLampNear}*smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight;
 gl_PointSize *= 1.0+${optics.boundedFog==='wv'?'0.24':'0.32'}*roofLampSpread*(1.0-lampFogHalo);
-// lamp-fog-screen-end`);
+// lamp-roof-spread-end
+#include <logdepthbuf_vertex>`);
         shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
 uniform float uPlatformLampNight;
 varying float vLampFogWeight;
