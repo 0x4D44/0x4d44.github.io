@@ -51,13 +51,18 @@ RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer',   # the 
                # the bob and loose styles whose decimated hair is a few big wedges with bare scalp between them, or over the face
                'ya_tube_heels', 'ya_smile_halter', 'adult_suit_bun', 'woman_midi', 'woman_bob', 'woman_dress', 'girl_small', 'ya_ginger_long', 'adult_heel_boots', 'woman_scarf', 'teen_hippy')   # (review 18: elvs_island_princess_hair decimated to a skull cap and splinters) people added later with the same trouble (ponytail, braid): the scalp measure in research/people-hair.md
 # part name -> (material name prefix, who: a tuple of person ids or None for everybody who has the part, default lift in metres)
-HATTED = ('adult_camo_cap', 'adult_cap_shorts', 'elder_man_cap', 'adult_tophat')   # review 24: their decimated hair came through their decimated hats on the far model
+HATTED = ('adult_camo_cap', 'adult_cap_shorts', 'elder_man_cap', 'adult_tophat',
+          'adult_sport_cap', 'boy_cap', 'adult_cap_baggy', 'ya_fedora', 'adult_beret', 'adult_piper')   # (review 25: the other six hat wearers too)   # review 24: their decimated hair came through their decimated hats on the far model
 PARTS = {
     'hair': ('alpha_hair', RECIPE_HAIR + HATTED, 0.006),
     'brows': ('alpha_brows', None, 0.001),
     # the full-detail hat over the full-detail hair, as on the near model (a little lift: the far head is a little proud of the full one, as for the hair)
     'cap': ('cloth_cap', HATTED, 0.008),
     'tophat': ('cloth_tophat_felt', HATTED, 0.008),
+    'tophatband': ('cloth_tophat_band', HATTED, 0.008),   # (review 25: the far top hat lost its band at the swap)
+    'beret': ('cloth_beret', HATTED, 0.008),
+    'fedora': ('cloth_fedora_5', HATTED, 0.008),
+    'fedoraband': ('cloth_fedora_band', HATTED, 0.008),
 }
 MARK = 'lodparts'
 ATTRS = ('POSITION', 'NORMAL', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0')
