@@ -1056,6 +1056,10 @@ export class AnimCrowd {
    *  body-avoidance shove and wall slides all included), so planted feet stay planted instead of skating. */
   _pace(p, dt) {
     if (p.px == null || !(dt > 0)) { p.px = p.x; p.pz = p.z; p.v = 0; return; }
+    // standing (held up): the crowd's little nudges are not taken - feet planted in the standing pose do not slide (review 24: 16 of 30 pauses slid over 10 cm,
+    // up to 0.41 m). How far the crowd asked them to move decides when they walk on.
+    p.intent = Math.hypot(p.x - p.px, p.z - p.pz) / dt;
+    if (p.paused && !p.static && p.intent < 0.5) { p.x = p.px; p.z = p.pz; }
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
     p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
     if (p.v > 0.15 && p.hold && p.hold.target > 0) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away
@@ -1065,7 +1069,7 @@ export class AnimCrowd {
       if (p.v < 0.08) p.stillT = (p.stillT || 0) + dt; else if (p.v > 0.15) p.stillT = 0;
       p.pauseT = p.paused ? (p.pauseT || 0) + dt : 0;
       // (in sooner, out only on a clear move after a moment: review 20 saw a crawling jam flick between the two up to 39 times a minute)
-      const still = !p.static && (p.paused ? !((p.v > 0.25 && p.pauseT > 0.8) || p.v > 0.5) : p.stillT > 0.3);   // (but moved along briskly, they walk at once: review 21 saw a pushed walker glide 0.42 m in the standing pose)
+      const still = !p.static && (p.paused ? !((p.intent > 0.25 && p.pauseT > 0.8) || p.intent > 0.5) : p.stillT > 0.3);   // (but moved along briskly, they walk at once: review 21 saw a pushed walker glide 0.42 m in the standing pose)
       if (still !== !!p.paused) { p.paused = still; const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
       if (!p.paused && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
     } else if (p.paused) p.paused = false;
@@ -1185,6 +1189,13 @@ export class AnimCrowd {
     if (o.turn != null) { if (p.homeYaw == null) p.homeYaw = p.yawT ?? p.yaw; p.yawT = p.yaw + o.turn; }
     else if (!a.near && p.homeYaw != null) { p.yawT = p.homeYaw; p.homeYaw = null; }
     if (o.yield && w && !p.revert && d > 1e-4) this._makeWay(p, -dx / d, -dz / d);
+  }
+  /** someone who is not boarding after all (the train is full, or would be all one garment) walks back from the doors to a place to wait, standing there as
+   *  the others do, rather than stand at the doorway for the next train or two (review 24: 0.3 - 0.9 m from the edge for 250 s) */
+  standBack(q) {
+    if (!this.people.includes(q)) return; this.release(q); if (!this.people.includes(q) || !q.rect) return;
+    const c = this._waitSpot(q.rect, { self: q }); if (!c || Math.hypot(c.x - q.x, c.z - q.z) < 1) return;
+    q.revert = 'stand'; q.mode = 'walk'; q.tx = c.x; q.tz = c.z; q.wait = 0; q.sp = 0; q.stopHere = true; q.bestD = 1e9; q.stuckT = 0; q.turnT = 0; this._enter(q, 'walk');
   }
   /** someone the user keeps pressing into: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
   _makeWay(p, ux, uz) {

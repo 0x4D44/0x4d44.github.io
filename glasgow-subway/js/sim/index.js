@@ -316,7 +316,7 @@ class Sim {
     const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2);
     // one who is not to board after all stays on the platform as one of the people waiting there: already walking for the door, left so, they reached the end
     // of that walk and were removed in front of everyone (review 21: 27 of 30 turned-away boarders vanished on the platform)
-    const away = () => { if (this.crowd.people.includes(q)) this.crowd.release(q); };
+    const away = () => { if (this.crowd.people.includes(q)) this.crowd.standBack(q); };
     if (ci < 0 || !q.char) return away();
     if (sc.people.some((r) => r.char === q.char)) return away();
     const pend = (X.pend || (X.pend = {}))[ci] || (X.pend[ci] = []);   // (the others already walking to this car count too: several boarders checked at once each passed - review 17, 3 of 7 trousers became 5 of 9)
