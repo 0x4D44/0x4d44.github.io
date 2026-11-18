@@ -37,7 +37,7 @@ function mesh(root: THREE.Object3D, key: string) {
 function facadeSample(material: THREE.Material, height: number, scope = 1, body = 1, rake = 0, towerTrim = 0, night = 1) {
   const fragment = compile(material).fragmentShader;
   const code = ['midland-night', 'midland-brick-floor', 'midland-body-grade', 'midland-end-grade', 'midland-arcade-grade',
-    'midland-landmark-grade', 'midland-lamp-wash']
+    'midland-landmark-grade', 'midland-facade-detail', 'midland-lamp-wash']
     .map(name => block(fragment, name)).join('\n')
     .replaceAll('reflectedLight.directDiffuse', 'direct')
     .replaceAll('reflectedLight.indirectDiffuse', 'indirect')
@@ -45,6 +45,7 @@ function facadeSample(material: THREE.Material, height: number, scope = 1, body 
   const vars = {
     vMidlandNight: [scope, rake], vMidlandHeight: height,
     vMidlandBrickBody: body, vMidlandStoneBody: body, vMidlandTowerTrim: towerTrim,
+    vMidlandFacadeDetail: [0,0,0],
     vMidlandClockStage: 0, vMidlandGableField: 0, vMidlandPinnacle: [0, 0, 0, 0],
     uMidlandNight: night, uMidlandLandmarkNight: night,
     cameraPosition: [-90, height, 100], vViewPosition: [0, 0, 0], viewMatrix: identity,
@@ -69,7 +70,7 @@ test('Midland upper brick darkens against the arcade on both range and tower', (
     });
     const old = sample(day), next = sample(night);
     console.log('Midland brick CPU sRGB', { old, next, rangeToArcade: [old, next].map(v => luma(v.range) / luma(v.arcade)) });
-    assert.deepEqual(next.arcade, old.arcade);
+    assert.deepEqual(next.arcade, [116, 59, 35]);
     assert.deepEqual(facadeSample(night, 15, 0), facadeSample(day, 15, 0), 'brick outside Midland stays exact');
     assert.deepEqual(facadeSample(night, 15, 1, 1, 0, 0, 0), facadeSample(day, 15, 1, 1, 0, 0, 0));
     assert.ok(luma(next.range) < luma(old.range) - 12 && luma(next.tower) < luma(old.tower) - 12);
@@ -90,7 +91,8 @@ test('gold is concentrated on Midland gable rakes and modelled clock-tower trim'
     const old = sample(day), next = sample(night);
     console.log('Midland stone CPU sRGB', { old, next });
     assert.ok(luma(next.clockTrim) > luma(old.clockTrim) + 35);
-    assert.ok(luma(next.rake) > luma(old.rake) + 8);
+    assert.ok(luma(next.rake) > luma(next.adjacent) + 8 && luma(next.rake) < 0.35*luma(old.rake));
+    assert.ok(next.rake[0]! > next.rake[1]! && next.rake[1]! > next.rake[2]! + 12);
     assert.ok(next.clockTrim[0]! > next.clockTrim[1]! && next.clockTrim[1]! > next.clockTrim[2]!);
     assert.ok(luma(next.towerField) <= luma(old.towerField));
     assert.deepEqual(facadeSample(night, 25, 0), facadeSample(day, 25, 0), 'other landmarks are outside the mask');

@@ -216,6 +216,7 @@ function midlandMasonry(built: Landmarks, opts: { h: number; field?: number; sta
     .replace(/\bFLOOD\b/g, String(night.defines!.FLOOD));
   const vars = {
     vMidlandNight: [1, 0], vMidlandHeight: opts.h, vMidlandBrickBody: opts.h < 35 ? 1 : 0,
+    vMidlandFacadeDetail: [0,0,0],
     vMidlandClockStage: opts.stage ?? 0, vMidlandGableField: opts.field ?? 0,
     uMidlandNight: 1, uMidlandLandmarkNight: 1,
     vViewPosition: [0, 0, 0], cameraPosition: opts.world ?? [-90, opts.h, 100], viewMatrix: matrix,
