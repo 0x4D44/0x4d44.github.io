@@ -560,7 +560,8 @@ def hair_shows(person):
     if not tex: return None
     import numpy as _np
     from PIL import Image
-    im = Image.open(os.path.join(mh['_dir'], tex)).convert('RGBA'); im.thumbnail((256, 256))
+    try: im = Image.open(os.path.join(mh['_dir'], tex)).convert('RGBA'); im.thumbnail((256, 256))
+    except Exception: return hex_rgb(spec['hair_col'])   # (a texture PIL cannot read - elvs_50s_updo's: the tint alone)
     a = _np.asarray(im).astype(_np.float32) / 255.0; msk = a[..., 3] > 0.5
     if not msk.any(): return None
     tl = lambda c: _np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
