@@ -13,7 +13,7 @@ import type { CityOptions } from '../src/city.ts';
 import { buildWaverleyScene } from '../src/waverley-scene.ts';
 import { loadWaverleyScene } from '../src/waverley.ts';
 import { createWaverleyWeather, sceneWeatherOptions } from '../src/station-weather.ts';
-import { waverleyStationPlan, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
+import { waverleyOpenPlatformLamps, waverleyStationPlan, WAVERLEY_STRUCTURE } from '../src/waverley-station-structure.ts';
 import { waverleyStationRoof, WAVERLEY_STATION_ROOF_ID, WAVERLEY_ROOF_CUTOUTS } from '../src/waverley-station.ts';
 import { unpackWaverleyScene } from '../../core/waverley-data.ts';
 import { loadWaverleyLamps } from '../src/waverley-lamps.ts';
@@ -112,11 +112,13 @@ test('Waverley lights every physical canopy pendant at its own head and clips th
     const plan=waverleyStationPlan(data,waverleyStationRoof(data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)),WAVERLEY_ROOF_CUTOUTS);
     const layer=named<THREE.Group>(view.scene,'waverley-platform-lamps');
     const heads=named<THREE.Points>(layer,'street-lamp-halos').geometry.getAttribute('position');
-    assert.equal(heads.count,plan.lamps.length*2,'source and fog-scatter point per real pendant');
-    plan.lamps.forEach((p,i)=>{
-      assert.ok(Math.abs(heads.getX(i)-p.x)<.001&&Math.abs(heads.getZ(i)-p.z)<.001);
-      assert.ok(Math.abs(heads.getY(i)-(.915+WAVERLEY_STRUCTURE.lampRim-.02))<.001);
-    });
+    const covered=plan.lamps.map(p=>[p.x,.915+WAVERLEY_STRUCTURE.lampRim-.02,p.z]);
+    const uncovered=waverleyOpenPlatformLamps(plan).map(p=>[p.x,p.y+p.height,p.z]);
+    const sources=[...covered,...uncovered];
+    assert.equal(heads.count,sources.length*2,'source and fog-scatter point per covered or uncovered head');
+    for (const [i,p] of [...sources,...sources].entries()) {
+      assert.ok(new THREE.Vector3().fromBufferAttribute(heads,i).distanceTo(new THREE.Vector3().fromArray(p))<.001);
+    }
     const pools=named<THREE.InstancedMesh>(layer,'street-lamp-pools');
     assert.ok(shader(pools.material as THREE.Material).uniforms.uPoolFloorMap);
     assert.equal(named<THREE.InstancedMesh>(layer,'street-lamp-reflections').count,plan.lamps.length);

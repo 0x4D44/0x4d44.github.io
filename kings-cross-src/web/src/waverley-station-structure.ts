@@ -15,6 +15,8 @@
 // line (furniture.ts FIGURES) from both track edges. Girders: one under every furrow line, across the whole roof (the gutter girders), and
 // one along each platform from column to column (the platform girders). Everything over a track is above the gutter girders' underside.
 import * as THREE from 'three';
+import {LAMP_KIND} from '../../core/streetlights.ts';
+import type {OpenPlatformLamp} from './station-lamps.ts';
 import type {Pt} from '../../core/geo.ts';
 import type {WaverleyScene as WaverleyData,WaverleyArea} from '../../core/waverley-data.ts';
 import {Batch,rgb} from './materials.ts';
@@ -252,6 +254,28 @@ export function waverleyStationPlan(data:Pick<WaverleyData,'platforms'|'rails'>,
   for(let k=0;k<n;k++){const p0=at(len*k/n),p1=at(len*(k+1)/n);if([p0,p1].every(q=>underRoof(roof,q,S.edgeInset-.05,cutouts)))plan.edgeGirders.push([p0,p1]);}
  }
  return plan;
+}
+
+/** R-nw-f: freestanding lights along the exposed western island. Heights,
+ * alternating optics and pitches are inferred from the elevated photograph.
+ * Use the platform's safe furniture band and keep the bridge decks clear. */
+export function waverleyOpenPlatformLamps(plan: WaverleyStationPlan): OpenPlatformLamp[] {
+ const frame = plan.frames.find(f => f.ref === '8w');
+ if (!frame || !plan.outline.length) return [];
+ const roof = { outer: plan.outline, holes: plan.holes };
+ const pitches = [19, 23, 17, 21];
+ const lamps: OpenPlatformLamp[] = [];
+ for (let t = frame.tLo + 8, i = 0; t < frame.tHi - 5; t += pitches[i++ % pitches.length]!) {
+  const band = bandAt(frame, t, .22);
+  if (!band) continue;
+  const [x,z] = worldPoint(frame, t, band.mid);
+  if (underRoof(roof, [x,z], 0) || plan.cutouts.some(r => inRing([x,z],r))) continue;
+  const kind = i % 3 === 1 ? LAMP_KIND.sodium : LAMP_KIND.warm;
+  lamps.push({ x, y: WAVERLEY_LEVELS.platform, z, height: 4.6 + .25 * (i % 3),
+   yaw: Math.atan2(-frame.axis[1],frame.axis[0]), kind, slope: [0,0],
+   reach: 8.3 + .65 * (i % 4), width: kind === LAMP_KIND.sodium ? 5.2 : 4.2 + .3 * (i % 3) });
+ }
+ return lamps;
 }
 
 // --- shapes (one coloured Batch per draw)

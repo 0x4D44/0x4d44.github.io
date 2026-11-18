@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import type { LatLon } from '../../core/geo.ts';
 import type { Extent } from '../../core/terrain.ts';
 import { createPlatformLamps } from './station-lamps.ts';
+import type { OpenPlatformLamp } from './station-lamps.ts';
 import { createWaverleyGlow } from './waverley-night.ts';
 import { WAVERLEY_LEVELS } from './waverley-mesh.ts';
 import { describeSun, smoothstep } from '../../core/daylight.ts';
@@ -167,8 +168,10 @@ export function createWaverleyWeather(view: WaverleyView, weather: WeatherFeedOp
   return remoteSceneWeather(view, weather, WAVERLEY_HAZE, () => {
     const night = lightWaverleyNight(view.scene,detailed ? .60 : undefined), lamps = waverleyLamps(view), glow = createWaverleyGlow(view.scene);
     const data = view.geometry!;
-    const heads = view.scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
-    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv',true);
+    const fittings = view.scene.getObjectByName('waverley-roof')?.userData;
+    const heads = fittings?.platformLampHeads as number[] | undefined;
+    const open = fittings?.openPlatformLamps as OpenPlatformLamp[] | undefined;
+    const platforms = createPlatformLamps(heads ?? [],data.platforms.map(p=>p.path),WAVERLEY_LEVELS.platform,'wv',true,open);
     platforms.group.name='waverley-platform-lamps'; view.scene.add(platforms.group);
     return { setLevel: (level: number) => {lamps.setLevel(level);platforms.setLevel(level);glow.setLevel(level);},
       dispose: () => { glow.dispose(); night(); lamps.dispose(); platforms.dispose(); } };

@@ -2940,7 +2940,11 @@ test('Midland Grand: the lit pane\'s windows have a negative v and nothing else 
     windows++;
     const numbers = t.uv.map((q) => Math.floor(q[0]));
     assert.ok(numbers.every((n) => n === numbers[0]), `one window to a triangle: ${numbers}`);
-    assert.ok((numbers[0] as number) >= 0 && (numbers[0] as number) < PANE_UV.numbers);
+    // Ground-floor arches and portals have their own bank. Test the bank
+    // independently of the encoded ID using the height of the drawn pane.
+    const bank = t.p.every(v => v[1] < 6) ? PANE_UV.numbers : 0;
+    const room = numbers[0]! - bank;
+    assert.ok(room >= 0 && room < PANE_UV.numbers, `pane ${numbers[0]} belongs to the bank at ${bank}`);
     ids.add(numbers[0] as number);
     for (const [u, v] of t.uv) {
       assert.ok(v >= -2 - 1e-9 && v <= -1 + 1e-9, `v from the sill to the head: ${v}`);
@@ -2953,7 +2957,7 @@ test('Midland Grand: the lit pane\'s windows have a negative v and nothing else 
   assert.ok(ids.size > 250, `${ids.size} different window numbers`);
   // the pane material lights them: the windows only (materials.ts litPane)
   const m = createMaterials().table.pane as THREE.MeshLambertMaterial;
-  assert.equal(m.customProgramCacheKey(), 'litPane');
+  assert.equal(m.customProgramCacheKey(), 'midlandLitPane');
   assert.equal(m.defines?.WIN_GAIN, '0.8');
 });
 
@@ -2998,7 +3002,7 @@ test('the Midland\'s kinds of window each put lit glass on the pane: a framed wi
   const arch: PartMap<Key> = {};
   addArch(arch, p, 6, 1.5, 3.2);
   const pane = litWindows(arch.pane);
-  assert.deepEqual(pane.ids, [windowId(p, 6)], 'an arch: one lit window, numbered where it stands');
+  assert.deepEqual(pane.ids, [PANE_UV.numbers + windowId(p, 6)], 'an arch: one pane in the arcade ID bank, numbered where it stands');
   assert.ok(pane.lit >= 4 && pane.dark === 0, `an arch: all of its pane is glass: ${pane.lit} lit triangles and ${pane.dark} dark`);
   assert.equal(litWindows(arch.stone).lit + litWindows(arch.brickRed).lit, 0, 'an arch: the mullion, the transom, the voussoirs and the jambs are not lit');
 });

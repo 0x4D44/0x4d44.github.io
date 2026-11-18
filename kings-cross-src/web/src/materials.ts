@@ -823,6 +823,19 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
  */
 export const PANE_UV = { numbers: 2048, margin: 0.1, share: 0.3 } as const;
 
+/** The upper rooms and the illuminated arcade use the same UVs, with an ID
+ * in the second bank for the arcade. Reflections sample this same source. */
+export const MIDLAND_PANE_GLSL = `
+vec3 midlandPaneLight( vec2 uv, vec2 span, float night ) {
+  if ( floor(uv.x) < ${glslFloat(PANE_UV.numbers)} ) {
+    return vec3(0.56,0.40,0.18) * winPaneLit(uv,span,night,0.2);
+  }
+  float room = 0.65 + 0.35 * winHash(vec2(floor(uv.x),0.0),0.0,3.0);
+  float height = winRoom(-1.0-uv.y,vec4(0.0,1.0,0.0,1.0));
+  return vec3(0.20,0.103,0.033) * room * height * smoothstep(0.12,0.8,night);
+}
+`;
+
 /** The UV of a point `across` (0 to 1 from the left) and `up` (0 to 1 from the sill) of the window numbered `id` (a whole number, 0 to `PANE_UV.numbers` - 1). */
 export function paneUv(id: number, across: number, up: number): [number, number] {
   return [id + PANE_UV.margin + (1 - 2 * PANE_UV.margin) * across, -1 - up];
@@ -833,7 +846,10 @@ export function paneUv(id: number, across: number, up: number): [number, number]
  * (`PANE_UV`: v under zero), it takes its night light as the decal windows do (`winDecal`: warm or a little cool, its own hour of the dusk, some of a building's windows dark), a window's number the
  * only thing its light is read from. Where the pane's UV is a band's, a wall's or a balcony's, nothing changes. `m` is the material and is returned.
  */
-export function litPane<T extends THREE.MeshLambertMaterial>(m: T): T {
+export function litPane<T extends THREE.MeshLambertMaterial>(m: T, midland = false): T {
+  const light = midland
+    ? 'midlandPaneLight( vWinUv, wSpan, uWinNight )'
+    : `winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} )`;
   m.defines = { ...m.defines, WIN_GAIN: glslFloat(NIGHT_GAIN.decal) };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uWinNight = windowNight;
@@ -841,10 +857,10 @@ export function litPane<T extends THREE.MeshLambertMaterial>(m: T): T {
       .replace('#include <common>', '#include <common>\nvarying vec2 vWinUv;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinUv = uv;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}`)
-      .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winPaneLit( vWinUv, wSpan, uWinNight, ${glslFloat(PANE_UV.share)} );`);
+      .replace('#include <common>', `#include <common>\nvarying vec2 vWinUv;\nuniform float uWinNight;${WIN_NIGHT_GLSL}${midland ? MIDLAND_PANE_GLSL : ''}`)
+      .replace('#include <map_fragment>', `#include <map_fragment>\nvec2 wSpan = fwidth( vec2( vWinUv.x / ${glslFloat(1 - 2 * PANE_UV.margin)}, vWinUv.y ) );\nif ( vWinUv.y < -0.5 && uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${light};`);
   };
-  m.customProgramCacheKey = () => 'litPane';
+  m.customProgramCacheKey = () => midland ? 'midlandLitPane' : 'litPane';
   return m;
 }
 

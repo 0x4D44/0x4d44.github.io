@@ -11,7 +11,8 @@ import {stationTexture} from './waverley-station-textures.ts';
 import {convexHull,ridgeRoofBatches,WAVERLEY_ROOF_PROFILE} from './waverley-roof.ts';
 import frontage from './data/waverley-frontage.json' with {type:'json'};
 import {WAVERLEY_LEVELS,fillSurface,meshAdder} from './waverley-mesh.ts';
-import {paintMaterial,waverleyStationPlan,waverleyStructureBatches,WAVERLEY_STRUCTURE} from './waverley-station-structure.ts';
+import {paintMaterial,waverleyOpenPlatformLamps,waverleyStationPlan,waverleyStructureBatches,WAVERLEY_STRUCTURE} from './waverley-station-structure.ts';
+import {lightOpenPlatformPaving} from './station-lamps.ts';
 import {centralBlockBatches,WAVERLEY_CENTRAL_BLOCK_ID} from './waverley-station-block.ts';
 
 /** The mapped Waverley station roof (OSM relation/240040): drawn as the ridge-and-furrow shed, and flattened under by waverley-scene.ts. */
@@ -72,6 +73,8 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  cassettes.userData.snowRidges=new THREE.Vector2(WAVERLEY_ROOF_PROFILE.pitch,WAVERLEY_ROOF_PROFILE.phase);
  const stationRoof=waverleyStationRoof(data.roofs.find(r=>r.id===WAVERLEY_STATION_ROOF_ID)),plan=waverleyStationPlan(data,stationRoof,WAVERLEY_ROOF_CUTOUTS),structure=waverleyStructureBatches(plan);
  roofGroup.userData.platformLampHeads=plan.lamps.flatMap(p=>[p.x,WAVERLEY_LEVELS.platform+WAVERLEY_STRUCTURE.lampRim-.02,p.z]);
+ const openPlatformLamps=waverleyOpenPlatformLamps(plan);
+ roofGroup.userData.openPlatformLamps=openPlatformLamps;
  // Platforms: pale slab paving (R-wv1-b, R-wv1-b2: light grey flags, not asphalt), the KX coper/tactile/white-line strip on every track edge,
  // and darker faces (R-wv1-b: the platform wall under the coper is dark, weathered stone). Faces skip the seam between two polygons of one island.
  const platformTops=new Batch();
@@ -79,6 +82,7 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  const faceStone=own(material('stone').clone() as THREE.MeshLambertMaterial);faceStone.color.multiply(new THREE.Color(0x7a6e60));
  // Paving: 0.6 m flags (waverley-station-textures.ts `flags`) where there is a document; the KX slab texture otherwise.
  const flagMap=stationTexture('flags'),paving=own(material('concourseFloor').clone() as THREE.MeshLambertMaterial);if(flagMap){paving.map=flagMap;paving.color.setHex(0xffffff);}
+ const openPoolMap=lightOpenPlatformPaving(paving,openPlatformLamps);
  const blister=own(material('platformEdgeStrip').clone() as THREE.MeshLambertMaterial),blisterMap=stationTexture('blister');blister.map=blisterMap;blister.color.setHex(blisterMap?0xffffff:0xcfae3a);
  add(platforms,platformTops,paving,'waverley-platform-surfaces');add(platforms,structure.faces,faceStone,'waverley-platform-faces');
  structure.edges.append(structure.lip);add(platforms,structure.edges,own(paintMaterial(material('platformEdgeStrip'))),'waverley-platform-edges');
@@ -110,5 +114,5 @@ export function buildWaverleyStation(data:Pick<WaverleyData,'platforms'|'roofs'|
  add(roofGroup,roofStrips,strips,'waverley-roof-strips');
  add(roofGroup,structure.ironwork,own(paintMaterial(material('whiteSteel'))),'waverley-roof-ironwork');
  let disposed=false;
- return {platforms,roof:roofGroup,stats,omitBuildingIds:[...WAVERLEY_STATION_OMIT_IDS],dispose(){if(disposed)return;disposed=true;for(const g of [platforms,roofGroup]){g.removeFromParent();g.clear();}for(const g of geometries)g.dispose();for(const m of owned)m.dispose();}};
+ return {platforms,roof:roofGroup,stats,omitBuildingIds:[...WAVERLEY_STATION_OMIT_IDS],dispose(){if(disposed)return;disposed=true;openPoolMap?.dispose();for(const g of [platforms,roofGroup]){g.removeFromParent();g.clear();}for(const g of geometries)g.dispose();for(const m of owned)m.dispose();}};
 }
