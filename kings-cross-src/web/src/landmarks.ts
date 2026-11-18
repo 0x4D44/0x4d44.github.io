@@ -42,11 +42,13 @@ const MIDLAND_FLOOD = { brick: [0.28, 5, 0.04], stone: [0.12, 5, 0.04] } as cons
 // window surrounds and roof ridges must not become a continuous luminous roof.
 const midlandGableRakes = new WeakMap<Batch, [number, number][]>();
 const midlandTowerTrim = new WeakMap<Batch, [number, number][]>();
+const midlandClockStage = new WeakMap<Batch, [number, number][]>();
+const midlandPinnacleBoxes = new WeakMap<Batch, [start: number, end: number, width: number, height: number][]>();
 
-function markStoneTrim(ranges: WeakMap<Batch, [number, number][]>, stone: Batch, start: number): void {
-  const marked = ranges.get(stone) ?? [];
-  marked.push([start, stone.positions.length / 3]);
-  ranges.set(stone, marked);
+function markNightRange(ranges: WeakMap<Batch, [number, number][]>, batch: Batch, start: number): void {
+  const marked = ranges.get(batch) ?? [];
+  marked.push([start, batch.positions.length / 3]);
+  ranges.set(batch, marked);
 }
 // The main body's brick and stone end before the tower builder appends its faces.
 // Keep this boundary with the geometry, not a camera or world-height guess.
@@ -63,6 +65,8 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
     const mask = new Float32Array(mesh.geometry.getAttribute('position').count * 2);
     const bodyMask = new Float32Array(mask.length/2);
     const towerTrim = key === 'stone' ? new Float32Array(bodyMask.length) : undefined;
+    const clockStage = key === 'brickRed' ? new Float32Array(bodyMask.length) : undefined;
+    const pinnacleBoxes = key === 'stone' ? new Float32Array(mask.length) : undefined;
     const bodyAttribute = key === 'brickRed' ? 'midlandBrickBody' : 'midlandStoneBody';
     const bodyVarying = key === 'brickRed' ? 'vMidlandBrickBody' : 'vMidlandStoneBody';
     let offset = 0;
@@ -77,12 +81,21 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
           for (let i = start; i < end; i++) mask[(offset + i) * 2 + 1] = 1;
         }
         for (const [start, end] of midlandTowerTrim.get(batch) ?? []) towerTrim?.fill(1, offset + start, offset + end);
+        for (const [start, end] of midlandClockStage.get(batch) ?? []) clockStage?.fill(1, offset + start, offset + end);
+        if (pinnacleBoxes) for (const [start, end, width, height] of midlandPinnacleBoxes.get(batch) ?? []) {
+          for (let i = offset + start; i < offset + end; i++) {
+            pinnacleBoxes[i * 2] = width;
+            pinnacleBoxes[i * 2 + 1] = height;
+          }
+        }
       }
       offset += count;
     });
     mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(mask, 2));
     mesh.geometry.setAttribute(bodyAttribute,new THREE.BufferAttribute(bodyMask,1));
     if (towerTrim) mesh.geometry.setAttribute('midlandTowerTrim', new THREE.BufferAttribute(towerTrim, 1));
+    if (clockStage) mesh.geometry.setAttribute('midlandClockStage', new THREE.BufferAttribute(clockStage, 1));
+    if (pinnacleBoxes) mesh.geometry.setAttribute('midlandPinnacleBox', new THREE.BufferAttribute(pinnacleBoxes, 2));
     const m = mesh.material;
     const prior = m.onBeforeCompile;
     const priorKey = m.customProgramCacheKey();
@@ -96,8 +109,18 @@ function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: numb
         .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};\n${bodyVarying} = ${bodyAttribute};`);
       if (towerGrade) {
         shader.vertexShader = shader.vertexShader
-          .replace('#include <common>', '#include <common>\nattribute float midlandTowerTrim;\nvarying float vMidlandTowerTrim;')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMidlandTowerTrim = midlandTowerTrim;');
+          .replace('#include <common>', `#include <common>
+attribute float midlandTowerTrim;
+attribute vec2 midlandPinnacleBox;
+varying float vMidlandTowerTrim;
+varying vec4 vMidlandPinnacle;`)
+          .replace('#include <begin_vertex>', `#include <begin_vertex>
+vMidlandTowerTrim = midlandTowerTrim;
+vMidlandPinnacle = vec4( uv, midlandPinnacleBox.x, mix(midlandPinnacleBox.y, midlandPinnacleBox.x, abs(normal.y)) );`);
+      } else if (landmarkGrade) {
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nattribute float midlandClockStage;\nvarying float vMidlandClockStage;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMidlandClockStage = midlandClockStage;');
       }
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', `#include <common>\nuniform float uMidlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;\nvarying float ${bodyVarying};`)
@@ -174,10 +197,19 @@ if (midlandLevel > 0.003 && ${bodyVarying} > 0.5) {
 // fill before the existing wall wash is added.
 float landmarkNight = uMidlandLandmarkNight * vMidlandNight.x;
 float upperMasonry = landmarkNight * smoothstep(6.0, 12.0, vMidlandHeight);
-${key === 'brickRed' ? `vec3 brickShadow = mix(vec3(1.0), vec3(0.24, 0.24, 0.35), upperMasonry);
+${key === 'brickRed' ? `// The second and third storeys carry little of the architectural flood.
+float midStoreys = landmarkNight * smoothstep(10.9, 13.4, vMidlandHeight)
+  * (1.0 - smoothstep(20.6, 23.0, vMidlandHeight));
+vec3 midBrickShadow = mix(vec3(1.0), vec3(0.38, 0.53, 0.59), midStoreys);
+vec3 brickShadow = mix(vec3(1.0), vec3(0.24, 0.24, 0.35), upperMasonry) * midBrickShadow;
 reflectedLight.directDiffuse *= brickShadow;
 reflectedLight.indirectDiffuse *= brickShadow;
-totalEmissiveRadiance *= brickShadow;` : `float edgeTrim = max(vMidlandNight.y, vMidlandTowerTrim);
+totalEmissiveRadiance *= brickShadow;
+totalEmissiveRadiance += diffuseColor.rgb * vec3(0.064, 0.053, 0.032) * landmarkNight * vMidlandClockStage;` : `// Box UVs are in metres. The clock-ring geometry has no box dimensions.
+vec2 nearestEdge = min(vMidlandPinnacle.xy, vMidlandPinnacle.zw - vMidlandPinnacle.xy);
+float pinnacleEdge = 1.0 - smoothstep(0.032, 0.105, min(nearestEdge.x, nearestEdge.y));
+float towerGilt = mix(vMidlandTowerTrim, pinnacleEdge, step(0.1, vMidlandPinnacle.z));
+float edgeTrim = max(vMidlandNight.y, towerGilt);
 float stoneShadow = 1.0 - 0.29 * upperMasonry * (1.0 - edgeTrim);
 reflectedLight.directDiffuse *= stoneShadow;
 reflectedLight.indirectDiffuse *= stoneShadow;
@@ -185,7 +217,7 @@ totalEmissiveRadiance *= stoneShadow;
 float stoneTone = clamp(0.60 + 0.65 * diffuseColor.r, 0.60, 1.12);
 totalEmissiveRadiance += stoneTone * landmarkNight * (
   vec3(0.16, 0.079, 0.021) * vMidlandNight.y +
-  vec3(0.19, 0.092, 0.019) * vMidlandTowerTrim);
+  vec3(0.19, 0.092, 0.019) * towerGilt);
 `}
 // midland-landmark-grade-end` : ''}
 // midland-lamp-wash-begin
@@ -197,12 +229,12 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
   ${key === 'brickRed' ? `float rangeFill = 1.0-smoothstep(22.0,33.0,vMidlandHeight);
   float towerFill = 0.60*(1.0-smoothstep(33.0,47.0,vMidlandHeight));
   float brickFill = smoothstep(7.0,14.0,vMidlandHeight)*mix(towerFill,rangeFill,vMidlandBrickBody);
-  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
+  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill${landmarkGrade ? '*midBrickShadow' : ''} + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
 }
 // midland-lamp-wash-end`);
       if (landmarkGrade) {
         shader.fragmentShader = shader.fragmentShader.replace('#include <common>',
-          `#include <common>\nuniform float uMidlandLandmarkNight;${towerGrade ? '\nvarying float vMidlandTowerTrim;' : ''}`);
+          `#include <common>\nuniform float uMidlandLandmarkNight;${towerGrade ? '\nvarying float vMidlandTowerTrim;\nvarying vec4 vMidlandPinnacle;' : '\nvarying float vMidlandClockStage;'}`);
       }
     };
     m.customProgramCacheKey = () => `${priorKey}|midland-night-v7-${key}-${base.toFixed(6)}`;
@@ -213,7 +245,7 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
       shader.uniforms.uMidlandLandmarkNight = windowNight;
       m.onBeforeCompile(shader, renderer);
     };
-    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade`;
+    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade-r24`;
     owned.push(night);
     withBuildingNightMaterial(mesh, night);
   }
@@ -939,7 +971,7 @@ function addGable(parts: PartMap<Key>, base: V3, dir: Pt, normal: Pt, slope: num
     const corners = [border[k], border[k1], shape[k1], shape[k]] as [V2, V2, V2, V2];
     const start = stone.positions.length / 3;
     stone.quadUV(...(corners.map(([u, v]) => q(u, 0, v)) as [V3, V3, V3, V3]), corners, out);
-    if (face === 'brickRed' && hs === 0) markStoneTrim(midlandGableRakes, stone, start);
+    if (face === 'brickRed' && hs === 0) markNightRange(midlandGableRakes, stone, start);
   }
   for (const sign of [-1, 1]) {
     const span = Math.hypot(w, h - hs);
@@ -1096,14 +1128,25 @@ function addPinnacle(parts: PartMap<Key>, c: Pt, along: Pt, out: Pt, y0: number,
   const stone = part(parts, 'stone');
   const start = stone.positions.length / 3;
   const rotY = yaw(along);
-  const slab = (y: number, h: number, skip: ('-y' | '+y')[]): void => stone.box([c[0], y + h / 2, c[1]], [2 * half + 0.2, h, 2 * half + 0.2], { rotY, skip });
+  const boxes = midlandPinnacleBoxes.get(stone) ?? [];
+  const box = (center: V3, width: number, height: number, skip: ('-y' | '+y')[]): void => {
+    const first = stone.positions.length / 3;
+    stone.box(center, [width, height, width], { rotY, skip });
+    boxes.push([first, stone.positions.length / 3, width, height]);
+  };
+  const slab = (y: number, h: number, skip: ('-y' | '+y')[]): void =>
+    box([c[0], y + h / 2, c[1]], 2 * half + 0.2, h, skip);
   const [y1, y2] = [y0 + 0.5, y0 + 2.2];
   slab(y0, 0.5, ['-y']);
   addWalls(part(parts, 'pane'), squareAbout(c, along, out, half - 0.35), y1, y2);
-  for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) stone.box([c[0] + (along[0] * a + out[0] * b) * (half - 0.15), (y1 + y2) / 2, c[1] + (along[1] * a + out[1] * b) * (half - 0.15)], [0.3, y2 - y1, 0.3], { rotY, skip: ['-y', '+y'] });
+  for (const a of [-1, 0, 1]) for (const b of [-1, 0, 1]) if (a || b) {
+    box([c[0] + (along[0] * a + out[0] * b) * (half - 0.15), (y1 + y2) / 2,
+      c[1] + (along[1] * a + out[1] * b) * (half - 0.15)], 0.3, y2 - y1, ['-y', '+y']);
+  }
   slab(y2, 0.25, []);
+  midlandPinnacleBoxes.set(stone, boxes);
   // These profiles catch the uplight. The spire above stays in shadow.
-  markStoneTrim(midlandTowerTrim, stone, start);
+  markNightRange(midlandTowerTrim, stone, start);
   addSpirelet(parts, c, along, out, y2 + 0.25, 0.65, n > 1 ? 4.7 : 9, n);
 }
 
@@ -1213,7 +1256,9 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   for (const c of sq(h + 0.25)) stone.box([c[0], bT - 0.9, c[1]], [0.5, 1.8, 0.5], { rotY: yaw(t.along), skip: ['+y'] });
   // the clock stage
   const grow = DIAL.grow;
+  const stageStart = brick.positions.length / 3;
   addWalls(brick, sq(h + grow), tT, wH);
+  if (clockTower) markNightRange(midlandClockStage, brick, stageStart);
   const stage = facesAt(h + grow);
   // hist-c, hist-b: a hip over the clock stage down to the gables, then a steep slate pyramid (about 73 deg) between the turrets, a lantern, a needle; sizes ASSUMED
   const P = h + grow;
@@ -1229,13 +1274,15 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
       const half = DIAL.half;
       const start = stone.positions.length / 3;
       addDisc(stone, f, 0, cy, 2.5, 0.1, 24); // the stone ring round the dial
-      markStoneTrim(midlandTowerTrim, stone, start);
+      markNightRange(midlandTowerTrim, stone, start);
       // u runs left to right as a viewer outside sees it; dir points to the viewer's left on the front and back faces and to the right on the sides
       const left = f.dir[0] * f.normal[1] - f.dir[1] * f.normal[0] < 0 ? half : -half;
       part(parts, 'clock').quadUV(q(left, cy - half), q(-left, cy - half), q(-left, cy + half), q(left, cy + half), [[0, 0], [1, 0], [1, 1], [0, 1]], face);
     }
     // the gable over the dial (the west tower has a gable too, over no dial: not a plain pyramid), brick with a stone border and a rosette in it, its sides running back into the roof
+    const gableStart = brick.positions.length / 3;
     addGable(parts, [f.at[0], wH, f.at[1]], f.dir, f.normal, roofSlope, h - 1.0, g, 0, 'brickRed');
+    if (clockTower) markNightRange(midlandClockStage, brick, gableStart);
     addDisc(stone, f, 0, wH + 1.9, 0.45, 0.12);
   }
   // the pinnacles stand on the corners of the clock stage, flush with its walls; hist-b (the scorer, round 6: the west tower's turrets show "tall slender stone spires"): the west tower's four rise
