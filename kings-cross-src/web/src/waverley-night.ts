@@ -50,6 +50,54 @@ vec3 waverleyWindowLight( vec2 uv, vec2 span, vec2 building, float distanceM, fl
   },
 } as const satisfies WallGrid;
 
+// The sandstone map has six storeys above the street. Clip emission to its
+// glass apertures, including the curved head of the ground-floor arches.
+const BALMORAL_ROOM_HASH = /* glsl */`
+#ifdef WALL_WIN
+#define BALMORAL_ROOM_GRID
+#undef WALL_WIN
+#endif
+float balmoralRoomHash(vec2 room,float salt) {
+  float h = fract((room.x*3.17+room.y*0.87+salt*5.31)*0.1031);
+  return fract(h*(h+33.33)*(h+11.73));
+}`;
+const BALMORAL_AMBER_ROOMS = /* glsl */`
+#if defined( BALMORAL_ROOM_GRID ) && defined( USE_MAP )
+// balmoral-amber-rooms-begin
+vec2 hotelCellSpan = fwidth(vec2(vMapUv.x,hotelHeight));
+if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
+  float roomRow = floor((hotelHeight-8.65)/3.65);
+  float sill = 9.22+3.70*roomRow;
+  float head = sill+2.56-0.20*roomRow;
+  float halfWidth = 0.174-0.006*roomRow;
+  float share = roomRow >= 3.0 ? 0.61 : 0.49;
+  float bayOffset = abs(fract(vMapUv.x)-0.5);
+  if (hotelHeight < 8.65) {
+    roomRow = -1.0;
+    sill = 5.34;
+    head = 7.16;
+    halfWidth = 0.170;
+    if (hotelHeight < 4.9) {
+      roomRow = -2.0;
+      share = 0.42;
+      sill = 0.66;
+      halfWidth = 0.274;
+      head = 3.10+1.15*sqrt(max(0.0,1.0-pow(bayOffset/halfWidth,2.0)));
+    }
+  }
+  vec2 room = vec2(floor(vMapUv.x),roomRow);
+  float roomOn = step(balmoralRoomHash(room,13.0),share);
+  float turnOn = 0.15+0.52*balmoralRoomHash(room,7.0);
+  float gain = (0.19+0.17*balmoralRoomHash(room,4.0))*smoothstep(turnOn,turnOn+0.18,uWinNight);
+  vec4 aperture = vec4(0.5-halfWidth,0.5+halfWidth,sill,head);
+  float paneMask = winPane(vec2(fract(vMapUv.x),hotelHeight),aperture,hotelCellSpan*0.5);
+  float mullion = 1.0-0.54*smoothstep(0.06,0.24,dot(sampledDiffuseColor.rgb,vec3(0.2126,0.7152,0.0722)));
+  vec3 amber = mix(vec3(1.0,0.63,0.25),vec3(1.0,0.76,0.34),balmoralRoomHash(room,3.0));
+  totalEmissiveRadiance += roomOn*gain*paneMask*mullion*winRoom(hotelHeight,aperture)*amber;
+}
+// balmoral-amber-rooms-end
+#endif`;
+
 // Cassette tile indices on the shed slopes seen from North Bridge. The
 // roof mesh maps its world x/z in metres directly to these glazing bars.
 const NORTH_BRIDGE_PANES = [
@@ -389,7 +437,7 @@ float hotelHeight = ${height};
 float balconyBeam = 0.36*smoothstep(8.3,8.7,hotelHeight)*exp(-max(0.0,hotelHeight-8.7)/1.3);
 float corniceBeam = 0.45*smoothstep(23.2,23.6,hotelHeight)*exp(-max(0.0,hotelHeight-24.7)/2.5);
 totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.0,0.57,0.20)*(balconyBeam+corniceBeam);
-// balmoral-bands-end`,false,undefined,{code:`
+// balmoral-bands-end`,false,undefined,{declarations:BALMORAL_ROOM_HASH,code:`
 // balmoral-body-uplight-begin
 // Keep the street-level wash, with darker stone between the window sills.
 float bodySpread = (0.038+0.19*exp(-max(0.0,hotelHeight)/19.0))*mix(1.08,0.73,smoothstep(5.5,13.0,hotelHeight));
@@ -404,7 +452,7 @@ totalEmissiveRadiance += uStationLampLevel*diffuseColor.rgb*vec3(1.18,0.34,0.065
   *((bodySpread+bodyBalcony+stringCourses)*bodyZone*facadeBayGain+friezeBeam);
 // balmoral-body-uplight-end
 vec3 balmoralStoneEmission = totalEmissiveRadiance;`,
-      afterEmission:`
+      afterEmission:`${BALMORAL_AMBER_ROOMS}
 // balmoral-room-contrast-begin
 vec3 roomEmission = totalEmissiveRadiance-balmoralStoneEmission;
 float brightestRoomChannel = max(roomEmission.r,max(roomEmission.g,roomEmission.b));
