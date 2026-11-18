@@ -76,8 +76,8 @@ test('upper Waverley glazing is cool-white above mapped pendant rows and dim ove
     const rect = s.uniforms.uWaverleyRoofRect?.value as THREE.Vector4 | undefined;
     const code = block(s.fragmentShader,'station-light') + block(s.fragmentShader,'waverley-roof-transmission').replace(/^\s*#.*$/gm,'');
     function sample(x: number, z: number, pane = .20, slope = .37, snow = 0): RGB {
-      const vars = {vStationLampWorld:[x,9,z], vStationLampNormal:[slope,1,0], diffuseColor:[.062,.062,.062,1],
-        uStationLampLevel:1, uStationLampSnow:snow, sampledDiffuseColor:[pane,pane,pane,1],
+      const vars = {vStationLampWorld:[x,9,z], vStationLampNormal:[slope,1,0], cameraPosition:[365,45.4,-301], diffuseColor:[.062,.062,.062,1],
+        uStationLampLevel:1, uStationLampSnow:snow, uStationLampFog:0, uWaverleyRoofWet:0, sampledDiffuseColor:[pane,pane,pane,1],
         uWaverleyRoofRect:rect?.toArray() ?? [0,0,1,1], uWaverleyRoofLight:new Sampler(null),totalEmissiveRadiance:[0,0,0]};
       new Glsl('').run(code,{vars,fns:{texture2D:(_sampler,uv)=>{
         assert.ok(map);
