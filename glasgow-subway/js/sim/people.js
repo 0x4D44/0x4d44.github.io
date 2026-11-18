@@ -912,7 +912,7 @@ export class AnimCrowd {
             if (p.mode === 'walk' && !(p.wait > 0)) {
               const moved = this._step(p, dt, p.speed * 0.85), dd = Math.hypot(p.tx - p.x, p.tz - p.z);
               this._progress(p, moved, dd, dt, 0.05);
-              if (!moved || p.stuckT > 1.6) { p.tx = null; p.stopHere = false; p.sp = 0; p.stuckT = 0; if (p.revert) this._settle(p); else { p.mode = 'stand'; p.yawT = this._faceTrack(); p.restT = 40 + this.rng() * 160; this._enter(p, 'stand'); } }   // boxed in / going nowhere: wait here instead, never shuffle on the spot
+              if ((!moved && !p.standingBack) || p.stuckT > 1.6) { p.standingBack = false; p.tx = null;   /* (one walking back from the doors keeps trying for a moment: one blocked frame ended the walk at the edge - review 27, 8 of 37) */ p.stopHere = false; p.sp = 0; p.stuckT = 0; if (p.revert) this._settle(p); else { p.mode = 'stand'; p.yawT = this._faceTrack(); p.restT = 40 + this.rng() * 160; this._enter(p, 'stand'); } }   // boxed in / going nowhere: wait here instead, never shuffle on the spot
             }
           }
         } else if (p.mode === 'stand') {
@@ -1198,7 +1198,7 @@ export class AnimCrowd {
     const s = this.site, back = (c) => !s || s.edgeX == null || Math.abs(c.x - s.edgeX) > 1.5; let c = null;
     for (let k = 0; k < 8 && !(c && back(c)); k++) c = this._waitSpot(q.rect, { self: q });
     if (!c || !back(c) || Math.hypot(c.x - q.x, c.z - q.z) < 0.5) return;
-    q.revert = 'stand'; q.mode = 'walk'; q.tx = c.x; q.tz = c.z; q.wait = 0; q.sp = 0; q.stopHere = true; q.bestD = 1e9; q.stuckT = 0; q.turnT = 0; this._enter(q, 'walk');
+    q.standingBack = true; q.revert = 'stand'; q.mode = 'walk'; q.tx = c.x; q.tz = c.z; q.wait = 0; q.sp = 0; q.stopHere = true; q.bestD = 1e9; q.stuckT = 0; q.turnT = 0; this._enter(q, 'walk');
   }
   /** someone the user keeps pressing into: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
   _makeWay(p, ux, uz) {

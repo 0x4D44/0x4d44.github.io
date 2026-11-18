@@ -55,7 +55,7 @@ RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer',   # the 
 HATTED = ('adult_camo_cap', 'adult_cap_shorts', 'elder_man_cap', 'adult_tophat',
           'adult_sport_cap', 'boy_cap', 'adult_cap_baggy', 'ya_fedora', 'adult_beret', 'adult_piper')   # (review 25: the other six hat wearers too)   # review 24: their decimated hair came through their decimated hats on the far model
 PARTS = {
-    'hair': ('alpha_hair', RECIPE_HAIR + HATTED, 0.006),
+    'hair': ('alpha_hair', None, 0.006),   # (everybody since review 27: decimated hair kept turning up as shards with skin between them on one more head after another; RECIPE_HAIR + HATTED were the first)
     'brows': ('alpha_brows', None, 0.001),
     # the full-detail hat over the full-detail hair, as on the near model (a little lift: the far head is a little proud of the full one, as for the hair)
     'cap': ('cloth_cap', HATTED, 0.008),
