@@ -1,6 +1,7 @@
 // KX-only fog treatment. Library materials remain shared and unmodified in the
 // Scottish scenes; only window materials used by this scene are cloned.
 import * as THREE from 'three';
+import { PLATFORM_LANTERN_GLASS } from './furniture.ts';
 
 export function createKxFogMaterials() {
   const active = { value: 0 };
@@ -9,6 +10,35 @@ export function createKxFogMaterials() {
   const originals = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   const fogged = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   const overlays = new Map<THREE.Material & { fog: boolean }, boolean>();
+  const lanterns = new Map<THREE.Material, THREE.Material>();
+
+  const lantern = (source: THREE.Material): THREE.Material => {
+    if (owned.has(source)) return source;
+    let copy = lanterns.get(source);
+    if (copy) return copy;
+    copy = source.clone();
+    const before = source.onBeforeCompile, key = source.customProgramCacheKey();
+    copy.onBeforeCompile = (shader, renderer) => {
+      before.call(source, shader, renderer);
+      shader.uniforms.uKxNightFog = active;
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uKxNightFog;')
+        .replace('#include <fog_fragment>', `#include <fog_fragment>
+#if defined(USE_FOG) && defined(USE_COLOR)
+// kx-lantern-emitter-begin
+// The lantern is on the end of the arm. Its glass has its own vertex colour
+// and keeps normal depth occlusion from the pole, the rim and the shed ribs.
+float lanternGlass = 1.0-step(0.002,length(vColor.rgb-vec3(${PLATFORM_LANTERN_GLASS.join(',')})));
+float lanternReach = 1.0-smoothstep(55.0,165.0,vFogDepth);
+gl_FragColor.rgb += vec3(0.98,0.96,0.92)*lanternGlass*lanternReach*uKxNightFog;
+// kx-lantern-emitter-end
+#endif`);
+    };
+    copy.customProgramCacheKey = () => `${key}+kx-lantern-fog`;
+    lanterns.set(source, copy);
+    owned.add(copy);
+    return copy;
+  };
 
   const window = (source: THREE.Material): THREE.Material => {
     if (owned.has(source)) return source;
@@ -52,7 +82,8 @@ if (uKxNightFog > 0.0) {
         const mesh = o as THREE.Mesh;
         if (mesh.isMesh) {
           const original = mesh.material;
-          const next = Array.isArray(original) ? original.map(window) : window(original);
+          const patch = mesh.name === 'lamps' && mesh.parent?.name === 'furniture' ? lantern : window;
+          const next = Array.isArray(original) ? original.map(patch) : patch(original);
           const changed = Array.isArray(original) ? (next as THREE.Material[]).some((m, i) => m !== original[i]) : next !== original;
           if (changed) {
             if (!originals.has(mesh)) originals.set(mesh, original);

@@ -527,7 +527,11 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
       // Low-angle paths cross more lamp-lit air than paths above the city.
       const fogEase = clamp01(t+.22*smoothstep(.14,.30,t)+.10*smoothstep(.28,.45,t));
       const k = skyEase+(fogEase-skyEase)*fogCloud;
-      const fogFalloff = .13*fogEase*fogCloud;
+      // Retain the measured low sky over the square and keep the upper dome
+      // close to the luminous fog colour. Lamp azimuth only adds light.
+      const fogFalloff = fogCloud * (kingsCrossNightFog
+        ? .13*fogEase*(1-smoothstep(.26,.52,t))
+        : .024*smoothstep(.01,.20,t)*(1-.65*smoothstep(.24,.55,t)));
       const toSun = Math.max(0, (x * sx + y * sy + z * sz) / r);
       const glow = gs * (0.55 * Math.pow(toSun, 24) + 0.45 * Math.pow(toSun, 3) * Math.pow(1 - t, 4));
       const d = cloudDeck(x / r, y / r, z / r) - 0.52;

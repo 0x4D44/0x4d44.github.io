@@ -891,7 +891,7 @@ export function furniturePlan(data: FurnitureData, layout: FurnitureLayout): Fur
 
 const TIMBER = rgb(0x8a5d33);
 const IRON = rgb(0x2a3036);
-const LAMP_GLASS = rgb(0xf4e6b4);
+export const PLATFORM_LANTERN_GLASS = rgb(0xf4e6b4);
 const HELP_YELLOW = rgb(0xe9b52a);
 const HELP_PANEL = rgb(0x1b2229);
 const HELP_BUTTON = rgb(0xd13a30);
@@ -903,7 +903,7 @@ function lampGeometry(): THREE.BufferGeometry {
   addPrism(b, 0, 0, 0.13, 0, 0.4, 8, IRON);
   addPrism(b, 0, 0, 0.055, 0.4, h, 6, IRON);
   b.aabb(-0.03, h - 0.1, 0, 0.03, h - 0.04, 0.5, IRON);
-  b.aabb(-0.15, h - 0.2, 0.3, 0.15, h - 0.08, 0.68, LAMP_GLASS, true);
+  b.aabb(-0.15, h - 0.2, 0.3, 0.15, h - 0.08, 0.68, PLATFORM_LANTERN_GLASS, true);
   b.aabb(-0.17, h - 0.08, 0.28, 0.17, h - 0.04, 0.7, IRON, true);
   return b.build();
 }

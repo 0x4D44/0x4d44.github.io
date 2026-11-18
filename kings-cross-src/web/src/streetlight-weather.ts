@@ -34,6 +34,7 @@ export interface LampWeatherOptions {
   enhancedFog?: boolean;
   softFog?: boolean;
   boundedFog?: 'kx' | 'wv';
+  waverleyStreetFog?: boolean;
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
@@ -435,7 +436,7 @@ gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0
   // The original material/program renders every other state byte-for-byte.
   // Only dense fog selects the roof scatter or the LED strip's air capsule.
   const clearHaloMaterial=halos.material;
-  const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length)?clearHaloMaterial.clone():null;
+  const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length||optics.waverleyStreetFog)?clearHaloMaterial.clone():null;
   if(fogHaloMaterial){
     const original=clearHaloMaterial.onBeforeCompile;
     fogHaloMaterial.onBeforeCompile=(shader,renderer)=>{
@@ -453,15 +454,38 @@ vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;`);
 varying float vLampFogWeight;
 varying float vLampFogViewHeight;`);
       }
+      if(optics.waverleyStreetFog){
+        shader.vertexShader=shader.vertexShader
+          .replace('#include <common>','#include <common>\nvarying float vLampFrontageFog;')
+          .replace('#include <fog_vertex>',`#include <fog_vertex>
+// lamp-edinburgh-frontage-vertex-begin
+vec3 frontageLamp = (modelMatrix*vec4(position,1.0)).xyz;
+// Princes Street east end and the northern North Bridge approach overlap
+// in this view. The same fittings may contribute to both street batches.
+vLampFrontageFog = smoothstep(72.0,83.0,frontageLamp.x)*(1.0-smoothstep(124.0,150.0,frontageLamp.x))
+  * smoothstep(-175.0,-150.0,frontageLamp.z)*(1.0-smoothstep(-30.0,-14.0,frontageLamp.z))
+  * smoothstep(12.0,32.0,frontageLamp.z-cameraPosition.z);
+// lamp-edinburgh-frontage-vertex-end`);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vLampFrontageFog;');
+      }
       shader.fragmentShader=shader.fragmentShader.replace('#include <premultiplied_alpha_fragment>',`${optics.boundedFog?`
 // lamp-roof-scatter-begin
 // Screen blending adds the scattered light into the remaining display
 // headroom. Overlapping samples compose to 1-exp(-sum(optical depth)).
 // The tighter head aureole stays distinct from the wide fog scatter.
-float roofGain = ${optics.boundedFog==='wv'?'mix(0.85,1.85,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
-float roofScatter = vLampFogWeight * gl_FragColor.a * mix(0.58,roofGain,vLampFogHalo);
+float roofGain = ${optics.boundedFog==='wv'?'mix(0.85,1.90,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
+float headGain = 0.58;${optics.boundedFog==='wv'?`
+// Resolve the close downlight under a pendant without increasing the broad
+// roof scatter or the distant pendant cluster at the end of the platform.
+vec2 pendantOffset = 2.0*(gl_PointCoord-vec2(0.5));
+float pendantNear = (1.0-smoothstep(18.0,46.0,vLampFogDistance))*(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight));
+headGain += 2.85*pendantNear*exp(-9.0*dot(pendantOffset,pendantOffset));`:''}
+float roofScatter = vLampFogWeight * gl_FragColor.a * mix(headGain,roofGain,vLampFogHalo);
 gl_FragColor.rgb = vec3(1.0)-exp(-roofScatter*gl_FragColor.rgb);
-// lamp-roof-scatter-end`:''}${cores.length?`
+// lamp-roof-scatter-end`:''}${optics.waverleyStreetFog?`
+// lamp-edinburgh-frontage-fog-begin
+gl_FragColor.a *= 1.0-0.58*vLampFrontageFog*vLampFogHalo;
+// lamp-edinburgh-frontage-fog-end`:''}${cores.length?`
 // lamp-mast-capsule-begin
 // Scatter along the physical LED strip, including its upper end. The old
 // round core was centred halfway down it; gain there clipped rather than
@@ -472,10 +496,12 @@ capsulePoint.y = max(0.0,abs(capsulePoint.y)-0.48);
 float capsuleRadius = length(capsulePoint);
 // Keep the strip profile at the head. Add a compact lobe in its centre
 // and let both increments fall away before the surrounding veil.
-float capsuleProfile = 0.19*exp(-6.0*capsuleRadius*capsuleRadius)+0.32*exp(-10.5*capsuleCentre*capsuleCentre);
+float capsuleProfile = 0.19*exp(-6.0*capsuleRadius*capsuleRadius)+0.32*exp(-10.5*capsuleCentre*capsuleCentre)
+  +0.18*exp(-42.0*capsuleCentre*capsuleCentre);
 float capsuleAir = capsuleProfile*lampAirAlpha*smoothstep(0.65,0.9,uLampFog)*(1.0-smoothstep(0.44,0.65,capsuleCentre));
 capsuleAir *= exp(-0.007*max(0.0,vLampFogDistance-50.0));
 gl_FragColor.a = mix(gl_FragColor.a,max(gl_FragColor.a,capsuleAir),vLampFogCore);
+gl_FragColor.a *= 1.0-0.42*vLampFogHaze*smoothstep(0.12,0.30,capsuleCentre);
 // lamp-mast-capsule-end`:''}
 #include <premultiplied_alpha_fragment>`);
     };
@@ -486,7 +512,7 @@ gl_FragColor.a = mix(gl_FragColor.a,max(gl_FragColor.a,capsuleAir),vLampFogCore)
       fogHaloMaterial.blendSrcAlpha=THREE.ZeroFactor;
       fogHaloMaterial.blendDstAlpha=THREE.OneFactor;
     }
-    fogHaloMaterial.customProgramCacheKey=()=>clearHaloMaterial.customProgramCacheKey()+(optics.boundedFog?`-roof-scatter-${optics.boundedFog}`:'')+(cores.length?'-strip-capsule':'');
+    fogHaloMaterial.customProgramCacheKey=()=>clearHaloMaterial.customProgramCacheKey()+(optics.boundedFog?`-roof-scatter-${optics.boundedFog}`:'')+(optics.waverleyStreetFog?'-edinburgh-frontage-fog':'')+(cores.length?'-strip-capsule':'');
   }
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
     setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);
