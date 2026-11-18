@@ -7993,6 +7993,566 @@
    "flags": []
   },
   {
+   "seat": "astra-6.2-medium",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 85.66,
+    "accuracy": 0.9055,
+    "invention_rate": 0.0541,
+    "exact_run": 5,
+    "brier": 0.0177,
+    "ece": 0.0217,
+    "second_delta": 0.21,
+    "best_guess_score": 84.42,
+    "confident_wrong": 0.0,
+    "wall_min": 2.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 24.92,
+    "accuracy": 0.3414,
+    "invention_rate": 0.2702,
+    "exact_run": 11,
+    "brier": 0.0214,
+    "ece": 0.0625,
+    "second_delta": 0.0,
+    "best_guess_score": 13.47,
+    "confident_wrong": 0.0,
+    "wall_min": 2.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.52,
+    "wall_min": 0.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 59.58,
+    "accuracy": 0.5958,
+    "invention_rate": 0.0,
+    "exact_run": 21,
+    "brier": 0.0317,
+    "ece": 0.0805,
+    "second_delta": 1.86,
+    "best_guess_score": 43.73,
+    "confident_wrong": 0.0,
+    "wall_min": 2.2
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 0.21,
+    "accuracy": 0.0024,
+    "invention_rate": 0.125,
+    "exact_run": 0,
+    "brier": 0.0908,
+    "ece": 0.2897,
+    "second_delta": -0.13,
+    "best_guess_score": 3.3,
+    "wall_min": 1.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 18.9,
+    "wall_min": 1.19
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 8.16,
+    "wall_min": 0.93
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 18.84,
+    "accuracy": 0.1949,
+    "invention_rate": 0.0333,
+    "exact_run": 2,
+    "brier": 0.0273,
+    "ece": 0.088,
+    "second_delta": 0.0,
+    "best_guess_score": 12.54,
+    "confident_wrong": 0.0,
+    "wall_min": 1.78
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 9.44,
+    "accuracy": 0.1114,
+    "invention_rate": 0.1522,
+    "exact_run": 1,
+    "brier": 0.0331,
+    "ece": 0.1639,
+    "second_delta": 0.6,
+    "best_guess_score": 12.57,
+    "confident_wrong": 0.0,
+    "wall_min": 1.62
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 22.42,
+    "accuracy": 0.2952,
+    "invention_rate": 0.2405,
+    "exact_run": 0,
+    "brier": 0.1356,
+    "ece": 0.3054,
+    "second_delta": -5.04,
+    "best_guess_score": 15.38,
+    "confident_wrong": 0.4286,
+    "wall_min": 1.85
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0002,
+    "ece": 0.0125,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 179,
+    "brier": 0.0003,
+    "ece": 0.0121,
+    "second_delta": 0.0,
+    "best_guess_score": 99.04,
+    "confident_wrong": 0.0,
+    "wall_min": 0.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.0065,
+    "ece": 0.0714,
+    "second_delta": 0.0,
+    "best_guess_score": 99.04,
+    "confident_wrong": 0.0,
+    "wall_min": 8.98
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 95.26,
+    "accuracy": 1.0,
+    "invention_rate": 0.0474,
+    "exact_run": 4,
+    "brier": 0.0895,
+    "ece": 0.0861,
+    "second_delta": 0.0,
+    "best_guess_score": 95.26,
+    "confident_wrong": 0.0909,
+    "wall_min": 1.01
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0001,
+    "ece": 0.0073,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0001,
+    "ece": 0.0062,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 8.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0,
+    "ece": 0.002,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.58
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0,
+    "ece": 0.0024,
+    "second_delta": 0.0,
+    "best_guess_score": 99.62,
+    "confident_wrong": 0.0,
+    "wall_min": 9.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.5,
+    "accuracy": 0.995,
+    "invention_rate": 0.0,
+    "exact_run": 170,
+    "brier": 0.0003,
+    "ece": 0.0122,
+    "second_delta": 0.0,
+    "best_guess_score": 99.5,
+    "confident_wrong": 0.0,
+    "wall_min": 0.82
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.76,
+    "accuracy": 0.9992,
+    "invention_rate": 0.0016,
+    "exact_run": 391,
+    "brier": 0.0001,
+    "ece": 0.0064,
+    "second_delta": 0.0,
+    "best_guess_score": 99.76,
+    "confident_wrong": 0.0,
+    "wall_min": 2.17
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0017,
+    "ece": 0.003,
+    "second_delta": 0.0,
+    "best_guess_score": 98.29,
+    "confident_wrong": 0.0,
+    "wall_min": 1.28
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.71,
+    "accuracy": 0.9986,
+    "invention_rate": 0.0014,
+    "exact_run": 569,
+    "brier": 0.0001,
+    "ece": 0.0087,
+    "second_delta": 0.0,
+    "best_guess_score": 99.71,
+    "confident_wrong": 0.0,
+    "wall_min": 2.64
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0002,
+    "ece": 0.0094,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.81
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.51,
+    "accuracy": 0.9975,
+    "invention_rate": 0.0025,
+    "exact_run": 141,
+    "brier": 0.0003,
+    "ece": 0.0133,
+    "second_delta": 0.0,
+    "best_guess_score": 99.51,
+    "confident_wrong": 0.0,
+    "wall_min": 3.92
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 99.48,
+    "accuracy": 0.9974,
+    "invention_rate": 0.0026,
+    "exact_run": 379,
+    "brier": 0.0001,
+    "ece": 0.0065,
+    "second_delta": 0.0,
+    "best_guess_score": 99.48,
+    "confident_wrong": 0.0,
+    "wall_min": 0.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.32
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0,
+    "ece": 0.0025,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 3.44
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-sonnet-18",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 114,
+    "brier": 0.0001,
+    "ece": 0.005,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.37
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-two-cities",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 119,
+    "brier": 0.0001,
+    "ece": 0.0036,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 4.28
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-medium",
+   "task": "text-washington-farewell",
+   "run": 1,
+   "date": "2026-11-18",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 377,
+    "brier": 0.0009,
+    "ece": 0.0283,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "wall_min": 0.83
+   },
+   "flags": []
+  },
+  {
    "seat": "sol-6.2-xhigh",
    "task": "music-bach-prelude-c-bwv846",
    "run": 1,
