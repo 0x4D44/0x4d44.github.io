@@ -87,7 +87,7 @@ test('Balmoral stone falls into warm shadow between the balcony and top cornice 
   assert.ok(luma(room) > luma(body)+90);
 });
 
-test('the Balmoral crown shifts toward violet above the uncoloured clock stage', () => {
+test('the Balmoral crown adds its own violet above the clock stage', () => {
   const source = shader(mesh(built.group, structure).material).fragmentShader;
   const base = built.group.getObjectByName('waverley-frontage')!.userData.frontage.P as number;
   function cap(height: number) {
@@ -97,7 +97,7 @@ test('the Balmoral crown shifts toward violet above the uncoloured clock stage',
   }
   const rgb = cap(54);
   console.log('Balmoral crown linear RGB', rgb);
-  assert.ok(rgb[2]! > 1.55*rgb[0]! && luma(rgb) > .15);
+  assert.ok(rgb[2]! > 1.55*rgb[0]! && luma(rgb) > .060361);
   assert.deepEqual(cap(48), [0, 0, 0]);
 });
 

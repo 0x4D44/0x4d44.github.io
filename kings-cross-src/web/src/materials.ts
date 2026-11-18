@@ -739,7 +739,7 @@ const NIGHT_MODE = {
 const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled' | 'kx-crick'): string => {
   const wholeFloors = kind !== 'ordinary';
   const hash = wholeFloors ? 'officeHash' : 'winHash';
-  const eastOfficeSeed = (id: number) => `dot(vec3(${facadeTint(id).join(', ')}), vec3(37.1, 91.7, 53.3))`;
+  const officeBuildingSeed = (id: number) => `dot(vec3(${facadeTint(id).join(', ')}), vec3(37.1, 91.7, 53.3))`;
   return /* glsl */`
 uniform float uOfficeFog;
 ${wholeFloors ? `
@@ -762,22 +762,34 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float floorSlot = cell.y + phase;
   float darkSlots = 2.0${kind === 'kx-city' ? ' + step( officeHash( vec2( 0.0, group ), seed, 9.0 ), 0.22 )' : ''};
   float scheduled = step( darkSlots, floorSlot - 5.0 * floor( floorSlot / 5.0 ) );
-  ${kind === 'kx-city' ? `// Two east-side curtain walls have long, occupied office floors.
-  // Identify the buildings by the baked tint already used to seed this batch.
-  float eastOfficeFloor = 0.0;
-  if (abs(seed - ${eastOfficeSeed(375735261)}) < 0.01 && cell.y >= 4.0 && cell.y <= 5.0) eastOfficeFloor = 1.0;
-  // East of the tracks, group the lit floors into a bank with a dark
-  // floor below and above. This is the same building as the east return.
-  if (abs(seed - ${eastOfficeSeed(260722156)}) < 0.01 && cell.y >= 2.0 && cell.y <= 5.0) {
-    eastOfficeFloor = step(3.0,cell.y)*(1.0-step(5.0,cell.y));
-    scheduled = eastOfficeFloor;
+  ${kind === 'kx-city' ? `// The south-front offices share their schedule around each
+  // corner. Match the baked tint within the merged curtain-wall batch.
+  float wholeOfficeFloor = 0.0;
+  if (abs(seed - ${officeBuildingSeed(265720685)}) < 0.01 && cell.y >= 5.0 && cell.y <= 10.0) {
+    wholeOfficeFloor = (cell.y == 6.0 || cell.y == 8.0 || cell.y == 9.0) ? 1.0 : 0.0;
+    scheduled = wholeOfficeFloor;
   }
-  scheduled = max(scheduled,eastOfficeFloor);` : kind === 'kx-crick' ? `// The Crick's lower offices form two runs, followed by two
+  if (abs(seed - ${officeBuildingSeed(375735261)}) < 0.01 && cell.y >= 2.0 && cell.y <= 7.0) {
+    wholeOfficeFloor = (cell.y == 4.0 || cell.y == 5.0 || cell.y == 7.0) ? 1.0 : 0.0;
+    scheduled = wholeOfficeFloor;
+  }
+  if (abs(seed - ${officeBuildingSeed(260722156)}) < 0.01 && cell.y >= 1.0 && cell.y <= 5.0) {
+    wholeOfficeFloor = (cell.y == 1.0 || cell.y == 3.0 || cell.y == 4.0) ? 1.0 : 0.0;
+    scheduled = wholeOfficeFloor;
+  }
+  if (abs(seed - ${officeBuildingSeed(137827419)}) < 0.01 && cell.y >= 1.0 && cell.y <= 5.0) {
+    wholeOfficeFloor = (cell.y == 1.0 || cell.y == 2.0 || cell.y == 5.0) ? 1.0 : 0.0;
+    scheduled = wholeOfficeFloor;
+  }` : kind === 'kx-crick' ? `// The Crick's lower offices form two runs, followed by two
   // closed floors and occupied suites under the barrel vaults.
   if (cell.y >= 0.0 && cell.y <= 10.0) {
     scheduled = ((cell.y >= 1.0 && cell.y <= 2.0)
       || (cell.y >= 4.0 && cell.y <= 5.0) || cell.y == 8.0 || cell.y == 10.0) ? 1.0 : 0.0;
-  }` : ''}
+  }` : `// Platform 37's tiered envelope uses absolute storey UVs, including
+  // its setbacks. Distribute closed floors across the three terraces.
+  if (cell.y >= 0.0 && cell.y <= 10.0) {
+    scheduled = (cell.y == 1.0 || cell.y == 3.0 || cell.y == 6.0) ? 0.0 : 1.0;
+  }`}
   float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
@@ -797,19 +809,24 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   ${kind === 'kx-city' ? `float pitch = 16.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
   float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
-  float suite = max(eastOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
-  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, eastOfficeFloor );
+  float suite = max(wholeOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
+  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, wholeOfficeFloor );
   float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
     * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : kind === 'kx-crick' ? `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
-  // A closed suite spans several adjacent bays. Stagger the gaps from
-  // floor to floor along the continuous facade UV.
-  float suiteBay = 32.0*fract((cell.x + 11.0*cell.y + 17.0)/32.0);
-  float suiteLength = cell.y == 5.0 ? 18.0 : cell.y == 10.0 ? 13.0 : 27.0;
+  // At overview scale each bay spans roughly two pixels. Give vacant
+  // suites 15 to 16 consecutive bays and stagger them around both vaults.
+  float suiteLength = cell.y <= 2.0 ? 57.0 : cell.y == 5.0 ? 37.0 : cell.y == 10.0 ? 30.0 : 56.0;
+  float suiteOffset = cell.y == 1.0 ? 38.0 : cell.y == 2.0 ? 29.0 : cell.y == 4.0 ? 23.0 : 17.0+9.0*cell.y;
+  float suiteBay = 72.0*fract((cell.x + suiteOffset)/72.0);
   float suite = mix(0.035,1.0,step(suiteBay+0.5,suiteLength));
   float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
     * mix( 0.035, 1.0, step( 0.012, blinds ) ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
   float bay = mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) )
-    * mix( 0.035, 1.0, step( 0.10, blinds ) );`}`
+    * mix( 0.035, 1.0, step( 0.10, blinds ) );
+  if (cell.y == 7.0 || cell.y == 10.0) {
+    float room = 44.0*fract((cell.x+(cell.y == 7.0 ? 9.0 : 30.0))/44.0);
+    bay *= step(room+0.5,16.0);
+  }`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );

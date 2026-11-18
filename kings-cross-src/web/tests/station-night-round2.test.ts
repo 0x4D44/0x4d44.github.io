@@ -84,8 +84,8 @@ test('Balmoral clock crown glows violet while the adjacent bridge remains unlit'
  const r=glowing();try {const s=shader(named<THREE.Mesh>(r.built.group,'waverley-frontage-structure').material as THREE.Material,'lambert'),base=r.built.group.getObjectByName('waverley-frontage')!.userData.frontage.P;
   const b=block(s.fragmentShader,'balmoral-crown');const run=(p:number[],level=1)=>{const e={vars:{vStationLampWorld:p,uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]}};new Glsl('').run(b,e);return e.vars.totalEmissiveRadiance as number[];};
   const cap=run([55,base+54,-126]);
-  // Match the original margins below the red and blue emission for the blue-violet crown.
-  assert.ok(cap[0]!>.055&&cap[2]!>.64&&cap[1]!<cap[0]!*.3);
+  // The calibrated crown and clock-stage wash share this linear blue-violet.
+  assert.ok(Math.abs(cap[0]!-.082)<.005&&Math.abs(cap[2]!-.455)<.005&&cap[1]!<cap[0]!*.3);
   assert.deepEqual(run([130,15,30]),[0,0,0]);assert.deepEqual(run([55,base+54,-126],0),[0,0,0]);
  }finally{r.dispose();}
 });

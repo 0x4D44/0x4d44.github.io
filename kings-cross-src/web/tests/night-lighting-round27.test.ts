@@ -193,7 +193,7 @@ test('the Crick breaks each visible occupied floor into lit and dark suites', ()
     const rows = [1,2,3,4,5,6,7].map(floor => row(bays(code, floor, 80, 2.98, [.03125,.96875,.2375,.975])));
     console.log('Crick bay masks on floors 1–7', rows);
     for (const index of [0,1,3]) {
-      assert.ok(longestDark(rows[index]!) >= 4 && longestDark(rows[index]!) <= 9);
+      assert.ok(longestDark(rows[index]!) >= 14 && longestDark(rows[index]!) <= 19);
       assert.ok(rows[index]!.replaceAll('.', '').length >= 64);
     }
     assert.notEqual(rows[0], rows[1]);
@@ -210,7 +210,8 @@ test('Platform 37 timber offices have adjacent occupied floors and a 50–60% oc
     console.log('Platform 37 bay masks', rows);
     assert.equal(occupied.filter(Boolean).length, 6);
     assert.ok(occupied.some((lit, index) => lit && occupied[index+1] && !occupied[index+2]));
-    assert.ok(rows.filter(pattern => pattern === '.'.repeat(18)).length >= 4);
+    assert.equal(rows.filter(pattern => pattern === '.'.repeat(18)).length, 3);
+    assert.ok(rows[7]!.replaceAll('.', '').length > 0 && rows[7]!.replaceAll('.', '').length < 14);
   } finally { central.owned.forEach(m => m.dispose()); }
 });
 
