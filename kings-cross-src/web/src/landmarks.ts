@@ -91,7 +91,7 @@ float midlandFill = 1.0 - ${key === 'brickRed' ? '0.82' : '0.0'} * midlandLevel 
 reflectedLight.indirectDiffuse *= midlandFill;
 reflectedLight.directDiffuse *= midlandFill;
 ${key === 'brickRed' ? 'totalEmissiveRadiance *= mix( 1.0, 0.05, midlandLevel * midlandUpper );' : ''}
-totalEmissiveRadiance += vec3( 0.24, 0.105, 0.018 ) * midlandLevel * vMidlandNight.y;
+totalEmissiveRadiance += vec3( 0.30, 0.131, 0.0225 ) * midlandLevel * vMidlandNight.y;
 // midland-night-end${key==='brickRed'?`
 // midland-brick-floor-begin
 // Keep the texture's brick colour in the upper piers and tower. The strong
