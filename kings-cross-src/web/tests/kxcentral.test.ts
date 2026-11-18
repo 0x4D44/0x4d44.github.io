@@ -161,7 +161,7 @@ test('the painted details are the sizes the specs say: drum shutters and ring be
 // =============================================================================================
 // 2. the materials
 
-test('createMaterials: the eight shared ones from materials.ts and six of this module\'s own, each owned one disposable, none sharing a texture across calls', () => {
+test('createMaterials: the eight shared ones from materials.ts and its local materials, each owned once, none sharing a texture across calls', () => {
   const a = createMaterials();
   const b = createMaterials();
   const keys = Object.keys(a.table) as Key[];
@@ -177,7 +177,12 @@ test('createMaterials: the eight shared ones from materials.ts and six of this m
     assert.ok(a.owned.includes(a.table[key]), `${key} is ours`);
     assert.notEqual(a.table[key], b.table[key], `${key} is made afresh each call`);
   }
-  assert.equal(a.owned.length, 6, 'six materials (and no textures: Node has no canvas)');
+  for (const key of ['curtain', 'timber'] as const) {
+    const night = a.officesAtNight.get(key);
+    assert.ok(night && a.owned.includes(night), `${key} night material is owned`);
+    assert.ok(night !== a.table[key] && night !== b.officesAtNight.get(key), `${key} night material is local`);
+  }
+  assert.equal(a.owned.length, 8, 'six base materials and two night variants (Node has no canvas textures)');
   // no canvas here, so the average colour stands in for the texture
   for (const name of names) assert.equal((a.table[name] as THREE.MeshLambertMaterial).color.getHex(), KX_TEXTURES[name].average, `${name}: the average colour`);
   assert.equal((a.table.alu as THREE.MeshPhongMaterial).side, THREE.DoubleSide, 'louvres are seen from both sides');

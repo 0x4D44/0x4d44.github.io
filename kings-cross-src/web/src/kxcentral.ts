@@ -41,7 +41,7 @@ import type { CoalDropsPlan, CrickPlan, Edge, Facet, Gasholder, GasholderPlan, G
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { addBand, addFramedWindow, addSash, liftParts, partMarks, segmentsOutside } from './landmarks.ts';
-import { Batch, material, mergeParts, officeFacade, part, rng } from './materials.ts';
+import { Batch, material, mergeParts, officeFacade, part, rng, withBuildingNightMaterial } from './materials.ts';
 import type { PartMap, TextureSpec, V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -235,6 +235,7 @@ export type Key = 'brick' | 'brickRed' | 'stone' | 'slate' | 'sash' | 'sashArch'
 
 export interface MaterialSet {
   table: Record<Key, THREE.Material>;
+  officesAtNight: ReadonlyMap<'curtain' | 'timber', THREE.Material>;
   /** the materials (and textures) this set made itself, to dispose; the shared ones from materials.ts are not ours */
   owned: (THREE.Material | THREE.Texture)[];
 }
@@ -250,6 +251,12 @@ export function createMaterials(): MaterialSet {
     if (t) own(t);
     return { map: t, color: t ? 0xffffff : KX_TEXTURES[name].average };
   };
+  const officesAtNight = new Map<'curtain' | 'timber', THREE.Material>();
+  const office = (day: Parameters<typeof officeFacade>[0], kind: 'curtain' | 'timber', glass: readonly number[], seed: number, gain: number) => {
+    own(day);
+    officesAtNight.set(kind, own(officeFacade(day, kind, glass, seed, gain)));
+    return day;
+  };
   return {
     table: {
       brick: material('brick'),
@@ -264,16 +271,16 @@ export function createMaterials(): MaterialSet {
       iron: own(new THREE.MeshLambertMaterial({ color: 0x737b82 })),
       drum: own(new THREE.MeshLambertMaterial(mapped('drum'))),
       // glass and louvres catch the sun: a Phong sheen on top of the drawn pattern
-      curtain: own(officeFacade(new THREE.MeshPhongMaterial({ ...mapped('curtain'), specular: 0x6f8190, shininess: 45 }),
-        'curtain', [3/96, 93/96, 0.95/4, 0.975], 2.82, 0.27)),
+      curtain: office(new THREE.MeshPhongMaterial({ ...mapped('curtain'), specular: 0x6f8190, shininess: 45 }),
+        'curtain', [3/96, 93/96, 0.95/4, 0.975], 2.82, 0.27),
       alu: own(new THREE.MeshPhongMaterial({ ...mapped('alu'), specular: 0x4a525a, shininess: 18, side: THREE.DoubleSide })),
       // Each fin covers 12–88% of its 0.15 m pitch. Shift the glazing
       // cycle half a pitch in the shader so its rectangle spans the gap.
-      timber: own(officeFacade(new THREE.MeshLambertMaterial(mapped('timber')),
-        'timber', [0.38, 0.62, 1/4.2, 0.98], 6.25, 0.58)),
+      timber: office(new THREE.MeshLambertMaterial(mapped('timber')),
+        'timber', [0.38, 0.62, 1/4.2, 0.98], 6.25, 0.58),
       green: own(new THREE.MeshLambertMaterial(mapped('green'))),
     },
-    owned,
+    owned, officesAtNight,
   };
 }
 
@@ -908,6 +915,10 @@ export function addKxCentral(scene: THREE.Scene, data: KxData, opts: KxCentralOp
   const byLandmark: Record<string, number> = {};
   for (const [name, sets] of Object.entries(geometry)) byLandmark[name] = triangleCount(sets);
   const { group, triangles } = mergeParts<Key>(Object.values(geometry).flat(), set.table, 'kxcentral', { roofGlass: 2 });
+  for (const [key, night] of set.officesAtNight) {
+    const envelope = group.getObjectByName(`kxcentral-${key}`);
+    if (envelope instanceof THREE.Mesh) withBuildingNightMaterial(envelope, night);
+  }
   const terrace = seatRise(seats, 'landscraper');
   const trees = treeMesh(terrace === 0 ? plans.landscraper.trees : plans.landscraper.trees.map((t) => ({ ...t, y: t.y + terrace })));
   group.add(trees);

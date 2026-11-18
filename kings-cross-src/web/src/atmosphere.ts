@@ -21,7 +21,7 @@ import type { LatLon } from '../../core/geo.ts';
 import { applyCover, buildCoverMap, COVER_GLSL, coverUniforms, coverAt, findRoofs } from './cover.ts';
 import type { CoverMap } from './cover.ts';
 import { addRoofShade } from './lighting.ts';
-import { windowNight } from './materials.ts';
+import { buildingNightMaterialsOf, windowNight } from './materials.ts';
 import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
 import { createPrecip } from './precip.ts';
@@ -448,6 +448,8 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   const hillsideEye = (high: number) => high * (1-smoothstep(55,90,cloudEye.y));
   const skylineFog = { value: 0 };
   const skylineHooks = new Map<THREE.Material, () => void>();
+  const buildingMaterials = new Map<THREE.Mesh, NonNullable<ReturnType<typeof buildingNightMaterialsOf>>>();
+  let buildingsLit = false;
   // the roofs: the cover map is drawn again only when the set of roof meshes changes (the landmarks arrive after the first frame)
   let roofKey: string | null = null;
   let coverMap: CoverMap | null = null;
@@ -471,7 +473,15 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
     scene.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
-      for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const variants = buildingNightMaterialsOf(mesh);
+      if (variants) {
+        buildingMaterials.set(mesh, variants);
+        mesh.material = buildingsLit ? variants.night : variants.day;
+      }
+      // The night program calls the daytime hooks, so scan the original
+      // even when a night material is installed on the mesh.
+      const surface = variants?.day ?? mesh.material;
+      for (const m of Array.isArray(surface) ? surface : [surface]) {
         const lambert = m as THREE.MeshLambertMaterial;
         const extra = snowSurface(mesh.name, m.name);
         const spec = extra ?? SURFACES.get(m.name);
@@ -648,6 +658,11 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
     // the headlamps' light on the walls follows the sun alone: a gloomy day lights the lamps (lampLevel) but not the walls by them (train-headlamp-light.ts, "day floor zero")
     headlampNight.value = lampLevelFor(sunPos.elevationDeg);
     windowNight.value = rig.lampLevel;
+    const lightBuildings = rig.lampLevel > 0.003;
+    if (lightBuildings !== buildingsLit) {
+      buildingsLit = lightBuildings;
+      for (const [mesh, variants] of buildingMaterials) mesh.material = buildingsLit ? variants.night : variants.day;
+    }
     // what glowed like sky-lit day dims after dark, with a warm share from the lamps
     for (const [m, base] of standIns) {
       const day = rig.daylight;
@@ -764,6 +779,8 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
         snow: state.weather.snow, windMs: state.weather.windMs, daylight: state.rig.daylight });
     },
     dispose() {
+      for (const [mesh, variants] of buildingMaterials) mesh.material = variants.day;
+      buildingMaterials.clear();
       for (const [m, original] of snowDepth) m.depthWrite = original;
       applyCover(null);
       precip.dispose();

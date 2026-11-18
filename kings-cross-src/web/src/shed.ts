@@ -16,7 +16,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CLOCK_TOWER_HEIGHT, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ClockDial } from './clocks.ts';
 import type { ShedLayout } from '../../core/station.ts';
-import { Batch, material, windowNight } from './materials.ts';
+import { Batch, material, windowNight, withBuildingNightMaterial } from './materials.ts';
 import type { V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -423,7 +423,7 @@ function archRing(uc: number, springing: number, r0: number, r1: number): THREE.
   return s;
 }
 
-function mesh(g: THREE.BufferGeometry, m: THREE.Material, name: string): THREE.Mesh {
+function mesh<M extends THREE.Material>(g: THREE.BufferGeometry, m: M, name: string): THREE.Mesh<THREE.BufferGeometry, M> {
   const o = new THREE.Mesh(g, m);
   o.name = name;
   return o;
@@ -457,7 +457,7 @@ function frontWash(source: 'brickFoot' | 'stoneFoot', kind: 'front' | 'tower', w
   float eaves = exp(-pow(abs(y-${(CLOCK_TOWER_HEIGHT-3.0).toFixed(4)})/0.65,2.0));
   float wash = (shaft + 0.19*stage + 0.20*eaves) * (1.0-max(vKxWashNormal.y,0.0));
 `;
-  m.onBeforeCompile = (shader) => {
+  m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
     const varying = '\nvarying vec3 vKxWashPos;\nvarying vec3 vKxWashNormal;';
     shader.vertexShader = shader.vertexShader
@@ -472,8 +472,11 @@ if ( uWinNight > 0.003 ) {
   totalEmissiveRadiance += vec3(1.0,0.69,0.29) * diffuseColor.rgb * (wash*uWinNight);
 }
 `);
+    // The shared roof-shade pass sees the night uniform and adds the usual
+    // contact shade and architectural flood after the wash.
+    original.onBeforeCompile(shader, renderer);
   };
-  m.customProgramCacheKey = () => key;
+  m.customProgramCacheKey = () => `${original.customProgramCacheKey()}+${key}`;
   frontWashMaterials.set(key, m);
   return m;
 }
@@ -635,7 +638,7 @@ export function buildShed(layout: ShedLayout, opts: ShedOptions = {}): THREE.Gro
   for (const x of entryCentres) outline.holes.push(segmentalArchOpening(x, entryFoot, entryR, SOUTH_FRONT_ARCADES.jambHeight, SOUTH_FRONT_ARCADES.archRise));
   const frontGeo = new THREE.ExtrudeGeometry(outline, { depth: FRONT_THICK, bevelEnabled: false, curveSegments: 40 });
   frontGeo.translate(0, 0, -FRONT_THICK);
-  group.add(mesh(frontGeo, frontWash('brickFoot', 'front', W), 'shed-front'));
+  group.add(withBuildingNightMaterial(mesh(frontGeo, material('brickFoot'), 'shed-front'), frontWash('brickFoot', 'front', W)));
   // stone dressings that stand proud of the front plane (z = 0) by `out` metres
   const proud = (cx: number, cy: number, sx: number, sy: number, out: number): void => stone.box([cx, cy, (out - FRONT_THICK) / 2], [sx, sy, FRONT_THICK + out]);
   let plinthStart = -0.4;
@@ -765,7 +768,9 @@ export function buildTower(x: number): THREE.Group {
   vane.box([0, vaneY, 0], [0.04, 0.04, 1.8]);
   const arrow: V3[] = [[0.8, vaneY - 0.18, 0], [1.35, vaneY, 0], [0.8, vaneY + 0.18, 0]];
   vane.poly(arrow); vane.poly([...arrow].reverse());
-  tower.add(mesh(tb.build(), frontWash('brickFoot', 'tower', tw), 'tower-brick'), mesh(ts.build(), frontWash('stoneFoot', 'tower', tw), 'tower-stone'), mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
+  const brick = withBuildingNightMaterial(mesh(tb.build(), material('brickFoot'), 'tower-brick'), frontWash('brickFoot', 'tower', tw));
+  const stone = withBuildingNightMaterial(mesh(ts.build(), material('stoneFoot'), 'tower-stone'), frontWash('stoneFoot', 'tower', tw));
+  tower.add(brick, stone, mesh(tslate.build(), material('slate'), 'tower-cap'), faces, mesh(vane.build(), material('steel'), 'tower-vane'));
   tower.position.set(x, 0, tw / 2 + 0.15);
   return tower;
 }

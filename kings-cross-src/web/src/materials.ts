@@ -633,6 +633,20 @@ diffuseColor.rgb = mix( diffuseColor.rgb, vec3( 0.70, 0.62, 0.46 ) * ( 1.0 - 0.2
  */
 export const windowNight = { value: 0 };
 
+// A zero emission uniform cannot restore the original opaque sort key or
+// vertex program. Keep the daytime material installed until a night effect
+// is needed, and retain both materials across lighting and weather rescans.
+const buildingNightMaterials = new WeakMap<THREE.Mesh, { day: THREE.Material; night: THREE.Material }>();
+
+export function withBuildingNightMaterial<M extends THREE.Material>(mesh: THREE.Mesh<THREE.BufferGeometry, M>, night: M): typeof mesh {
+  buildingNightMaterials.set(mesh, { day: mesh.material, night });
+  return mesh;
+}
+
+export function buildingNightMaterialsOf(mesh: THREE.Mesh) {
+  return buildingNightMaterials.get(mesh);
+}
+
 /**
  * Lit windows after dark (round seven: "the nighttime view is missing lighting in the buildings and streets around the stations"). Each window of a facade is lit or dark for good, by
  * a number of its own, so a street of houses is a patchwork, none changes from one frame to the next, and nothing flickers. The light is the window's own (an emissive term, no lamp in
@@ -846,11 +860,13 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
 
 /** The two modelled King's Cross Central envelopes use the same floor
  * lighting as the city's offices. Their maps already encode storey height. */
-export function officeFacade<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(
-  m: T, kind: 'curtain' | 'timber', glass: readonly number[], seed: number, gain: number,
-): T {
+export function officeFacade(
+  day: THREE.MeshLambertMaterial | THREE.MeshPhongMaterial, kind: 'curtain' | 'timber', glass: readonly number[], seed: number, gain: number,
+): THREE.Material {
+  const m = day.clone();
+  m.defines = { ...day.defines };
   const uv = kind === 'timber' ? 'vMapUv * vec2( 10.0, 1.0 ) + vec2( 0.5, 0.0 )' : 'vMapUv';
-  m.onBeforeCompile = (shader) => {
+  m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${OFFICE_WINDOWS_GLSL}`)
@@ -862,8 +878,11 @@ export function officeFacade<T extends THREE.MeshLambertMaterial | THREE.MeshPho
           ${glslFloat(NIGHT_MODE.curtain[2])}, ${glslFloat(NIGHT_MODE.curtain[3])} );
       }
 #endif`);
+    // Keep the surface-weather and roof-shade passes later in the chain,
+    // as when the office-light hook was installed on the original material.
+    day.onBeforeCompile(shader, renderer);
   };
-  m.customProgramCacheKey = () => `kx-office-${kind}`;
+  m.customProgramCacheKey = () => `${day.customProgramCacheKey()}+kx-office-${kind}`;
   return m;
 }
 
