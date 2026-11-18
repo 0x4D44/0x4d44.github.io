@@ -374,7 +374,7 @@ FACE_REGIONS = dict(nose=0.5, mouth=0.45, chin=0.5, cheek=0.5, eyebrows=0.4, for
 
 def face_targets(human, seed):
     """A face of its own: MakeHuman's face targets, a third of each region's paired controls pushed one way by up to the region's limit, seeded
-    by the person's id (the same build gives the same face). Left and right get the same value: faces stay symmetric. Only people whose spec
+    by the person's id (the same build gives the same face). Left and right get the same value, and nothing slides off the middle line: faces stay symmetric. Only people whose spec
     sets face=True get them, so the people built before this keep their faces exactly."""
     import random, zlib
     _, TargetService = _services()
@@ -391,6 +391,9 @@ def face_targets(human, seed):
         for key in sorted(groups):
             if rng.random() >= 0.33: continue
             ways = sorted(groups[key]); way = ways[rng.randrange(len(ways))]; w = round(rng.uniform(0.1, lim), 3)
+            # (mouth-trans-in/out and nose-trans-in/out have no l-/r- pair: they slide the whole mouth or nose sideways, off the middle of the face - review 15's lopsided
+            # mouths and smirks. The draw is kept, so every other face is as it was.)
+            if way in ('in', 'out') and key.endswith('-trans'): continue
             for path in groups[key][way]: TargetService.load_target(human, path, weight=w); n += 1
     print('face: %s %d targets' % (seed, n))
 
