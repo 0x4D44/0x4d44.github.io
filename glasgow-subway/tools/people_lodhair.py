@@ -49,7 +49,8 @@ MODELS = os.path.join(HERE, '..', 'models')
 RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer',   # the ponytail people; see the docstring
                'girl_ginger', 'staff_woman', 'adult_runner', 'adult_harem', 'adult_fisherman_leggings', 'ya_ginger_braid',
                # the bob and loose styles whose decimated hair is a few big wedges with bare scalp between them, or over the face
-               'ya_tube_heels', 'ya_smile_halter', 'adult_suit_bun', 'woman_midi', 'woman_bob', 'woman_dress', 'girl_small', 'ya_ginger_long', 'adult_heel_boots', 'woman_scarf', 'teen_hippy')   # (review 18: elvs_island_princess_hair decimated to a skull cap and splinters) people added later with the same trouble (ponytail, braid): the scalp measure in research/people-hair.md
+               'ya_tube_heels', 'ya_smile_halter', 'adult_suit_bun', 'woman_midi', 'woman_bob', 'woman_dress', 'girl_small', 'ya_ginger_long', 'adult_heel_boots', 'woman_scarf', 'teen_hippy',
+               'man_commuter', 'ya_ginger_lad', 'man_beard', 'sum_tube_denim')   # (review 26: shard hair, skin between the shards)   # (review 18: elvs_island_princess_hair decimated to a skull cap and splinters) people added later with the same trouble (ponytail, braid): the scalp measure in research/people-hair.md
 # part name -> (material name prefix, who: a tuple of person ids or None for everybody who has the part, default lift in metres)
 HATTED = ('adult_camo_cap', 'adult_cap_shorts', 'elder_man_cap', 'adult_tophat',
           'adult_sport_cap', 'boy_cap', 'adult_cap_baggy', 'ya_fedora', 'adult_beret', 'adult_piper')   # (review 25: the other six hat wearers too)   # review 24: their decimated hair came through their decimated hats on the far model

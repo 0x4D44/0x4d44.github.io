@@ -841,7 +841,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress)$/.test(c.id)) return false;   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
+    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }
@@ -1194,7 +1194,10 @@ export class AnimCrowd {
    *  the others do, rather than stand at the doorway for the next train or two (review 24: 0.3 - 0.9 m from the edge for 250 s) */
   standBack(q) {
     if (!this.people.includes(q)) return; this.release(q); if (!this.people.includes(q) || !q.rect) return;
-    const c = this._waitSpot(q.rect, { self: q }); if (!c || Math.hypot(c.x - q.x, c.z - q.z) < 1) return;
+    // (well back from the edge: review 26 still found 7 of 9 within a metre of it - the first spot drawn may be at the edge itself)
+    const s = this.site, back = (c) => !s || s.edgeX == null || Math.abs(c.x - s.edgeX) > 1.5; let c = null;
+    for (let k = 0; k < 8 && !(c && back(c)); k++) c = this._waitSpot(q.rect, { self: q });
+    if (!c || !back(c) || Math.hypot(c.x - q.x, c.z - q.z) < 0.5) return;
     q.revert = 'stand'; q.mode = 'walk'; q.tx = c.x; q.tz = c.z; q.wait = 0; q.sp = 0; q.stopHere = true; q.bestD = 1e9; q.stuckT = 0; q.turnT = 0; this._enter(q, 'walk');
   }
   /** someone the user keeps pressing into: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
