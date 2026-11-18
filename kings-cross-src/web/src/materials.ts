@@ -734,7 +734,7 @@ const NIGHT_MODE = {
 } as const;
 
 // Evening tenancy along Platform 37, measured from the south end of the
-// stepped envelope. Each section has a different run of vacant storeys.
+// stepped envelope. These are nominal sections, with staggered ends for each storey.
 const PLATFORM37_OFFICES = [
   [36, [0, 1, 5, 6]],
   [72, [0, 1, 2, 6]],
@@ -818,8 +818,8 @@ ${PLATFORM37_OFFICES.map(([, floors], section) =>
   vec2 f = fract( v );
   // Include the dark reveal around the existing mullion so it survives
   // the screen footprint of a 1.5 m bay. Never widen it into its neighbour.
-  float jamb = 0.15 + 0.08 * ${hash}( cell, seed, 6.0 );
-  vec4 aperture = vec4( max( rect.x, jamb ), min( rect.y, 1.0-jamb ), rect.z+0.035, rect.w-0.035 );
+  float jamb = ${wholeFloors ? '0.105 + 0.065' : '0.15 + 0.08'} * ${hash}( cell, seed, 6.0 );
+  vec4 aperture = vec4( max( rect.x, jamb ), min( rect.y, 1.0-jamb ), rect.z+${wholeFloors ? '0.015' : '0.035'}, rect.w-${wholeFloors ? '0.015' : '0.035'} );
   vec2 edge = clamp( w * 0.40, vec2( 0.003 ), vec2( 0.10 ) );
   float pane = winPane( f, aperture, edge );
   float blinds = ${hash}( cell, seed, 7.0 );
@@ -829,20 +829,23 @@ ${PLATFORM37_OFFICES.map(([, floors], section) =>
   float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
   float suite = max(wholeOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
-  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.22, wholeOfficeFloor );
-  float blindShare = mix(0.055,0.032,wholeOfficeFloor);
-  float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( blindShare, blinds ) ) * suite;` : kind === 'kx-crick' ? `float floorLight = mix( 0.88, 1.06, officeHash( row, seed, 13.0 ) );
+  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.38, wholeOfficeFloor );
+  float blindShare = mix(0.055,0.022,wholeOfficeFloor);
+  float bay = mix( mix(0.66,0.78,wholeOfficeFloor), 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
+    * mix( 0.035, 1.0, step( blindShare, blinds ) ) * suite;` : kind === 'kx-crick' ? `// Lift the rooms when a pixel covers a material part of a pane.
+  float distantRoom = smoothstep( 0.08, 0.30, max( w.x, w.y ) );
+  float floorLight = mix( 0.88, 1.06, officeHash( row, seed, 13.0 ) ) + 0.13 * distantRoom;
   // At overview scale each bay spans roughly two pixels. Give vacant
   // suites 15 to 16 consecutive bays and stagger them around both vaults.
   float suiteLength = cell.y <= 2.0 ? 57.0 : 56.0;
   float suiteOffset = cell.y == 1.0 ? 38.0 : cell.y == 2.0 ? 29.0 : cell.y == 4.0 ? 23.0 : cell.y == 5.0 ? 56.0 : cell.y == 6.0 ? 22.0 : 17.0+9.0*cell.y;
   float suiteBay = 72.0*fract((cell.x + suiteOffset)/72.0);
   float suite = mix(0.035,1.0,step(suiteBay+0.5,suiteLength));
-  float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
+  float bay = ( mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) + 0.04 * distantRoom ) * floorLight
     * mix( 0.035, 1.0, step( 0.012, blinds ) ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
-  float bay = mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) )
-    * mix( 0.035, 1.0, step( 0.075, blinds ) );`}`
+  float distantRoom = smoothstep( 0.08, 0.30, max( w.x, w.y ) );
+  float bay = ( mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) ) + 0.13 * distantRoom )
+    * mix( 0.035, 1.0, step( mix( 0.075, 0.025, distantRoom ), blinds ) );`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
@@ -992,7 +995,11 @@ export function officeFacade(
         // Project along the envelope: the local UV restarts at corners
         // and setbacks. The axis and south end follow landscraperPlan.
         float officeAlong = dot(vPlatform37Position,vec2(0.148665,-0.988888))-154.69;
-        float officeSection = ${PLATFORM37_OFFICES.slice(0,-1).map(([end]) => `step(${end}.0,officeAlong)`).join('+')};
+        // End each tenancy on a different bay. Floors carry across the
+        // nominal join, with changes spread over up to 24 m of the facade.
+        float officePhase = officeHash(vec2(0.0,floor(officeUv.y)),${glslFloat(seed)},14.0);
+        float officeSection = ${PLATFORM37_OFFICES.slice(0,-1).map(([end], i) =>
+          `step(${end}.0+24.0*(fract(officePhase+${(i*.37).toFixed(2)})-0.5),officeAlong)`).join('+')};
         officeUv.x += ${PLATFORM37_OFFICE_STRIDE}.0 * officeSection;` : '';
   const screen = kind === 'timber' ? `
         float finGap = 1.0 - smoothstep( 0.09, 0.15, abs( fract( vMapUv.x * 10.0 + 0.5 ) - 0.5 ) );

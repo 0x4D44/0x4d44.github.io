@@ -119,7 +119,7 @@ test('upper curtain walls recover lit coverage on distinct whole-floor schedules
   assert.ok(mean(brightestFloorMeans) >= .85);
 });
 
-test('Balmoral stage has a lifted blue-violet cornice and stops above the corbel', () => {
+test('Balmoral stage has a warm lifted cornice and stops above the corbel', () => {
   const stone = shader(mesh(tower).material).fragmentShader;
   const paint = shader(mesh(structure).material).fragmentShader;
   const grade = block(stone,'balmoral-tower-wash') + block(stone,'balmoral-tower-grade')
@@ -149,12 +149,17 @@ test('Balmoral stage has a lifted blue-violet cornice and stops above the corbel
   glsl.run(block(paint,'balmoral-crown'),{vars});
   const crown = display(vars.totalEmissiveRadiance);
   const field = stageAt(47.7), course = stageAt(48.82), corbel = paintAt(40.99), paintCourse = paintAt(48.82);
-  console.log('Balmoral display RGB', {crown,field,course,corbel,paintCourse,lowerStage:stageAt(41.25)});
+  console.log('Balmoral display RGB', {crown,field,course,corbel,paintCourse,lowerStage:stageAt(41.75)});
   assert.ok(luma(course)-luma(field) >= 10);
-  assert.ok(Math.abs(hue(field)-hue(course)) <= 4 && Math.abs(hue(course)-hue(crown)) <= 8);
+  const stoneHue = ([r,g,b]: number[]) => {
+    assert.ok(r! > g! && g! > b!, 'the course is warm stone');
+    return 60*(g!-b!)/(r!-b!);
+  };
+  assert.ok(Math.abs(stoneHue(course)-38) <= 4 && Math.abs(hue(field)-hue(crown)) <= 8);
   assert.ok(corbel[0]! >= corbel[2]!+35, 'corbel top remains warm');
-  assert.ok(Math.abs(hue(paintCourse)-hue(crown)) <= 8);
-  assert.ok(hue(stageAt(41.25)) >= 260 && hue(stageAt(41.25)) <= 277);
+  assert.ok(Math.abs(stoneHue(paintCourse)-38) <= 8);
+  assert.ok(hue(stageAt(41.75)) >= 260 && hue(stageAt(41.75)) <= 277);
+  assert.ok(stageAt(41.25)[0]! > stageAt(41.25)[2]!+35, 'warm stone continues above the corbel');
   const dial = shader(mesh('waverley-balmoral-clock-dials').material).fragmentShader;
   assert.ok(!dial.includes('towerVioletWash'));
 

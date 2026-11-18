@@ -117,14 +117,18 @@ test('Balmoral crown and stage share a blue-violet hue through the lower-right c
   const vars = {vStationLampWorld:[58.55,base+50.53,-133.86],uStationLampLevel:1,totalEmissiveRadiance:[.025,.020,.016]};
   glsl.run(block(paint,'balmoral-crown'),{vars});
   const crown = display(vars.totalEmissiveRadiance);
-  const stages = [41.16,41.53,43.27,45,48.8].map(stageAt);
+  // Sample the violet right above the warm return and beneath the cornice.
+  const stages = [41.75,42.06,43.27,45,48.20].map(stageAt);
   console.log('Balmoral display RGB', {crown, stages, shaft:stageAt(36)});
   assert.ok(crown[2]! >= 217 && crown[2]! <= 245);
   for (const colour of stages) {
     assert.ok(colour[2]! >= 210 && colour[2]! <= 245);
     assert.ok(hue(colour) >= 260 && hue(colour) <= 277 && Math.abs(hue(colour)-hue(crown)) <= 8);
   }
-  assert.ok(stageAt(36)[0]! > stageAt(36)[2]!+35);
+  for (const height of [36,41.16,48.8]) {
+    const stone = stageAt(height);
+    assert.ok(stone[0]! > stone[2]!+35);
+  }
 });
 
 test('five North Bridge panes gain distinct warm cores and retain bars, snow and fog masking', () => {

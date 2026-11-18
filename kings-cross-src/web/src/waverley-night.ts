@@ -335,25 +335,25 @@ ${quoin}
 float towerBeam = (0.80*towerShaft*(1.0+0.37*towerQuoin) + 0.34*towerStage)*(1.0-smoothstep(48.8,51.0,towerHeight));
 totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*(towerFacing*towerBeam);
 // balmoral-tower-wash-end`;
-    // Keep the string courses and the underside of the corbel table warm.
-    // The stage and its projecting stonework take the same violet as the crown.
-    const towerGrade = (h: string, zone = '1.0', paintedTrim = false) => `
+    // The corbel table reaches 41 m and the cornice spans 48.75–49.25 m.
+    // Carry warm stone past the corbel's top and onto the turret returns.
+    const towerGrade = (h: string, zone = '1.0') => `
 float towerCourse = max(1.0-smoothstep(0.23,1.05,abs(${h}-26.25)),
   smoothstep(32.04,32.19,${h})*(1.0-smoothstep(32.58,32.74,${h})));
-float corbelLight = smoothstep(39.94,40.11,${h})*(1.0-smoothstep(41.03,41.23,${h}));
-float stageCornice = 1.0-smoothstep(0.25,0.95,abs(${h}-48.98));
-float towerBand = max(max(towerCourse,corbelLight),stageCornice);
-float towerVioletWash = ${paintedTrim ? `smoothstep(${BALMORAL_LEVELS.tower.corbel.toFixed(1)},41.20,${h})` : `smoothstep(40.95,41.15,${h})`};
+float corbelLight = smoothstep(39.94,40.11,${h})*(1.0-smoothstep(41.42,41.68,${h}));
+float stageStoneCourse = smoothstep(48.42,48.74,${h})*(1.0-smoothstep(49.25,49.43,${h}));
+float towerBand = max(max(towerCourse,corbelLight),stageStoneCourse);
+float towerVioletWash = smoothstep(41.34,41.68,${h})*(1.0-stageStoneCourse);
 vec3 towerStoneGrade = mix(vec3(1.0),vec3(0.31,0.22,0.21),(1.0-towerBand)*(${zone})*uStationLampLevel);
 towerStoneGrade = mix(towerStoneGrade,vec3(0.075),towerVioletWash*(${zone})*uStationLampLevel);`;
     const violet = 'vec3(0.082,0.018,0.455)';
     const stageViolet = (h: string, zone = '1.0') => `
 float towerVioletFacing = 0.88+0.12*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.55,0.25,-0.8))));
 float towerVioletStone = clamp(2.65*dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722)),0.45,1.23);
-// A shallow grazing wash picks out the cornice in the same violet light.
-float towerVioletCourse = smoothstep(48.35,48.65,${h})*(1.0-smoothstep(49.30,49.57,${h}));
-totalEmissiveRadiance += uStationLampLevel*(${zone})*towerVioletWash*towerVioletFacing*towerVioletStone
-  *(1.0-smoothstep(50.45,51.25,${h}))*(1.0+0.32*towerVioletCourse)*${violet};`;
+float towerWashLevel = uStationLampLevel*(${zone})*towerVioletFacing;
+totalEmissiveRadiance += towerWashLevel*towerVioletWash*towerVioletStone
+  *(1.0-smoothstep(50.45,51.25,${h}))*${violet};
+totalEmissiveRadiance += towerWashLevel*stageStoneCourse*vec3(0.68,0.46,0.26)*diffuseColor.rgb;`;
     const towerDiffuse = `
 // balmoral-tower-diffuse-begin
 reflectedLight.directDiffuse *= towerStoneGrade;
@@ -477,7 +477,7 @@ ${towerBox.isEmpty() ? '' : `
 if ((${bounds(towerBox,2)}) > 0.0 && trimHeight >= 39.4) {
 ${towerWash('float towerQuoin = 0.0;')}
 }`}${lit && towerPaint ? `
-${towerGrade('trimHeight',towerPaint,true)}
+${towerGrade('trimHeight',towerPaint)}
 totalEmissiveRadiance = mix(towerPaintStart,totalEmissiveRadiance,towerStoneGrade);
 ${stageViolet('trimHeight',bounds(towerBox,2))}` : ''}
 // balmoral-crown-begin
