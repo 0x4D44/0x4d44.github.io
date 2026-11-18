@@ -274,7 +274,7 @@ class Sim {
         if (riders.filter((q) => q.parent === r.p.parent && !q.leaving).length <= 1) continue;   // (the last rider of a car stays aboard: a car is never left empty at a stop)
         if (sc.mixLeaves(r.p)) continue;
         { const dp = this._carToCrowd(tv.cars[r.ci], 0, r.dz); if (this.crowd && this.crowd.mixNear && this.crowd.mixNear(r.p.char, dp.x, dp.z)) continue; }   // (nor one who would make one garment over half of the platform where they get off)   // (nor does a rider whose going would leave one garment over half of the car)
-        let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; }
+        let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; if (sc.people.some((o) => o !== r.p && o.parent === r.p.parent && o.state !== 'sit' && Math.hypot(o.x - spot.x, o.z - spot.z) < 0.45)) continue; }   /* (nor rise into someone standing there: review 31, pelvises 0.09 m apart) */
         perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
       }
     }
@@ -328,7 +328,7 @@ class Sim {
     const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
     // and not a seat whose floor (where the bag will stand, in front of the toes) has someone standing on it already, or on their way to it (review 14: a standing rider's foot in a boarder's tote for 16 s)
     const footOn = (s) => { const bx = Math.sign(s.x) * 0.24; return sc.people.some((o) => o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - bx, o.z - s.z) < 0.6) || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - bx, o.z - s.z) < 0.6); };
-    let seat = null; if (!(q.bag && /^(trolley|holdall|case)$/.test(q.bag.kind))) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !(q.bag && footOn(s))).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    let seat = null; if (!(q.bag && /^(trolley|holdall|case)$/.test(q.bag.kind))) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !footOn(s))   /* (everyone, bag or none: review 31 saw a boarder sit down in front of a stander already holding the pole) */.sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
     // a boarder who stands keeps off the floor in front of a seat another boarder with a bag is walking to (their bag is not on the floor yet, so _bagNear cannot see it)
     const bagComing = (x, z) => tv.seatMap.some((s) => s.ci === ci && s.p && s.p !== q && s.p.bag && !(s.p.parent === car && s.p.state === 'sit') && Math.hypot(Math.sign(s.x) * 0.24 - x, s.z - z) < 0.55);
     let spot = null;
