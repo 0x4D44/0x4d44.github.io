@@ -440,31 +440,40 @@ gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0
   const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length||optics.waverleyStreetFog)?clearHaloMaterial.clone():null;
   if(fogHaloMaterial){
     const original=clearHaloMaterial.onBeforeCompile;
-    const roofLampNear = optics.boundedFog==='wv'
-      ? '(1.0-smoothstep(18.0,46.0,vLampFogDistance))*(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight))'
-      : '(1.0-smoothstep(25.0,52.0,vLampFogDistance))*(1.0-smoothstep(-2.5,-0.9,vLampFogViewHeight))';
+    const waverleyRoof = optics.boundedFog==='wv';
+    const roofLampHeight = waverleyRoof
+      ? '(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight))'
+      : '(1.0-smoothstep(-2.5,-0.9,vLampFogViewHeight))';
+    const roofLampFar = waverleyRoof ? '46.0' : '52.0';
+    const roofLampNear = `(1.0-smoothstep(${waverleyRoof?'18.0':'25.0'},${roofLampFar},vLampFogDistance))*${roofLampHeight}`;
     fogHaloMaterial.onBeforeCompile=(shader,renderer)=>{
       original.call(clearHaloMaterial,shader,renderer);
       if(optics.boundedFog){
         shader.uniforms.uPlatformLampNight=headlampNight;
+        const gl = renderer?.getContext();
+        shader.uniforms.uRoofFogPointLimit = { value: gl?.getParameter(gl.ALIASED_POINT_SIZE_RANGE)?.[1] ?? 511 };
         shader.vertexShader=shader.vertexShader
           .replace('#include <common>',`#include <common>
 attribute float lampFogWeight;
 uniform float uPlatformLampNight;
+uniform float uRoofFogPointLimit;
 varying float vLampFogWeight;
-varying float vLampFogViewHeight;`)
+varying float vLampFogViewHeight;
+varying float vRoofFogPointSize;`)
           .replace('#include <fog_vertex>','#include <fog_vertex>\nvLampFogWeight = lampFogWeight;')
           .replace('#include <logdepthbuf_vertex>',`// lamp-roof-spread-begin
 // Runs after the shared screen sizing above, before the depth include.
 vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;
 float roofLampSpread = ${roofLampNear}*smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight;
-gl_PointSize *= 1.0+${optics.boundedFog==='wv'?'0.24':'0.32'}*roofLampSpread*(1.0-lampFogHalo);
+gl_PointSize *= 1.0+${waverleyRoof?'0.24':'0.32'}*roofLampSpread*(1.0-lampFogHalo);
+vRoofFogPointSize = min(gl_PointSize,uRoofFogPointLimit);
 // lamp-roof-spread-end
 #include <logdepthbuf_vertex>`);
         shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
 uniform float uPlatformLampNight;
 varying float vLampFogWeight;
-varying float vLampFogViewHeight;`);
+varying float vLampFogViewHeight;
+varying float vRoofFogPointSize;`);
       }
       if(optics.waverleyStreetFog){
         shader.vertexShader=shader.vertexShader
@@ -485,18 +494,35 @@ vLampFrontageFog = smoothstep(72.0,83.0,frontageLamp.x)*(1.0-smoothstep(124.0,15
 // Screen blending adds the scattered light into the remaining display
 // headroom. Overlapping samples compose to 1-exp(-sum(optical depth)).
 // The tighter head aureole stays distinct from the wide fog scatter.
-float roofGain = ${optics.boundedFog==='wv'?'mix(0.85,1.90,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
+float roofGain = ${waverleyRoof?'mix(0.85,1.90,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
 float roofLampNear = ${roofLampNear};
-float headGain = 0.58;${optics.boundedFog==='wv'?`
+float headGain = 0.58;${waverleyRoof?`
 // Resolve the close downlight under a pendant without increasing the broad
 // roof scatter or the distant pendant cluster at the end of the platform.
 vec2 pendantOffset = 2.0*(gl_PointCoord-vec2(0.5));
 headGain += 2.85*roofLampNear*exp(-9.0*dot(pendantOffset,pendantOffset));`:''}
 // A wider aureole uses less optical depth at its centre, leaving headroom
 // for the physical emitter and the screen-blended shoulders of its neighbours.
-float peakLoss = ${optics.boundedFog==='wv'?'0.025+0.045*smoothstep(12.0,18.0,vLampFogDistance)':'0.07'};
+float peakLoss = ${waverleyRoof?'0.025+0.045*smoothstep(12.0,18.0,vLampFogDistance)':'0.07'};
 headGain *= 1.0-peakLoss*roofLampNear*smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight;
 float roofScatter = vLampFogWeight * gl_FragColor.a * mix(headGain,roofGain,vLampFogHalo);
+// Add optical depth to the wide point in raster pixels. Reserve the centre
+// for the steep head profile and let the shoulder fade inside the point.
+float roofShoulder = smoothstep(0.65,0.89,uLampFog)*uPlatformLampNight*vLampFogHalo
+  *(1.0-smoothstep(33.0,${roofLampFar},vLampFogDistance))*${roofLampHeight};
+if (roofShoulder > 0.0) {
+  float roofRadius = length(gl_PointCoord-vec2(0.5));
+  float shoulderPx = roofRadius*vRoofFogPointSize;
+  float shoulderSq = shoulderPx*shoulderPx;
+  ${waverleyRoof?`// The nearest pendant has less display headroom and a steeper shoulder.
+  float closePendant = 1.0-smoothstep(9.0,18.0,vLampFogDistance);`:''}
+  float shoulderGain = ${waverleyRoof
+    ? 'mix(0.112,0.163,closePendant)+0.56*closePendant*exp(-0.0017*shoulderSq)'
+    : '0.145'};
+  float shoulderProfile = (1.0-exp(-0.014*shoulderSq))*exp(-0.000105*shoulderSq)
+    *(1.0-smoothstep(42.0,70.0,shoulderPx))*(1.0-smoothstep(0.40,0.5,roofRadius));
+  roofScatter += vLampFogWeight*lampAirAlpha*roofShoulder*shoulderGain*shoulderProfile;
+}
 gl_FragColor.rgb = vec3(1.0)-exp(-roofScatter*gl_FragColor.rgb);
 // lamp-roof-scatter-end`:''}${optics.waverleyStreetFog?`
 // lamp-edinburgh-frontage-fog-begin
