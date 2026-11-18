@@ -56,7 +56,7 @@ function facadeProbe(mesh: THREE.Mesh, {
     .replace(/\bFLOOD\b/g, String(night.defines!.FLOOD));
   const vars = {
     vMidlandNight: [1, rake], vMidlandHeight: height, vMidlandBrickBody: body, vMidlandStoneBody: body,
-    vMidlandTowerTrim: trim, vMidlandClockStage: stage, vMidlandPinnacle: box,
+    vMidlandTowerTrim: trim, vMidlandClockStage: stage, vMidlandGableField: 0, vMidlandPinnacle: box,
     uMidlandNight: 1, uMidlandLandmarkNight: 1,
     cameraPosition: [-90, height, 100], vViewPosition: [0, 0, 0], viewMatrix: identity,
     diffuseColor: [...albedo, 1], direct: albedo.map(c => c * .07), indirect: albedo.map(c => c * .07),

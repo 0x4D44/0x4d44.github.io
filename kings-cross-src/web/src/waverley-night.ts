@@ -75,7 +75,55 @@ function roofLightMap(heads: readonly number[]) {
   return { map, rect: new THREE.Vector4(x0,z0,1/width,1/depth) };
 }
 
-export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose():void} {
+// The east and west shed footprints were measured on the cassette geometry.
+// Integrate a softly bounded density lobe above each roof, stopping at the
+// receiving fragment. Sky and distant masonry see the same volume, while
+// occluding buildings and the glazing close to the camera keep their contrast.
+const ROOF_AIR_FUNCTIONS = /* glsl */`
+// waverley-roof-air-functions-begin
+float waverleyRoofAir( vec3 ray, float depth, vec3 centre, vec3 radii ) {
+  vec3 offset = (cameraPosition-centre)/radii;
+  vec3 scaledRay = ray/radii;
+  float speed = length(scaledRay);
+  vec3 axis = scaledRay/speed;
+  float middle = -dot(offset,axis);
+  vec3 closest = offset+middle*axis;
+  float density = 1.0-dot(closest,closest);
+  if (density <= 0.0) return 0.0;
+  float radius = sqrt(density);
+  float start = max(-radius,-middle);
+  float end = min(radius,depth*speed-middle);
+  if (end <= start) return 0.0;
+  // Integral of density - s*s over the segment inside the lobe.
+  return (end-start)*(density-(start*start+start*end+end*end)/3.0)/speed;
+}
+// waverley-roof-air-functions-end`;
+
+const ROOF_AIR_COLOUR = /* glsl */`
+// waverley-roof-air-begin
+if (cameraPosition.y > 11.0) {
+  vec3 roofAirRay = vWaverleyRoofAirWorld-cameraPosition;
+  float roofAirDepth = length(roofAirRay);
+  if (roofAirDepth > 34.0) {
+    vec3 roofAirDir = roofAirRay/roofAirDepth;
+    float westAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(-4.0,15.0,-5.0),vec3(108.0,9.5,78.0));
+    float eastAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(205.0,16.0,-40.0),vec3(112.0,15.0,70.0));
+    float scatter = (1.0-exp(-(westAir+eastAir)/47.0))*smoothstep(34.0,95.0,roofAirDepth)
+      *smoothstep(11.0,15.0,cameraPosition.y)*uWaverleyRoofAir;
+    gl_FragColor.rgb += vec3(0.066,0.084,0.104)*scatter;
+  }
+}
+// waverley-roof-air-end`;
+
+const ROOF_AIR_RECEIVERS = [
+  'waverley-building-walls', 'waverley-building-ashlar', 'waverley-building-tops',
+  'waverley-city-monuments', 'waverley-scott-monument', 'waverley-tree-crowns',
+  'waverley-ground', 'waverley-ground-cover', 'waverley-frontage-structure',
+  'waverley-balmoral-facade', 'waverley-bridge-decks', 'waverley-mapped-roofs',
+  'waverley-roof-strips', 'waverley-central-block', 'waverley-central-block-top',
+] as const;
+
+export function createWaverleyGlow(scene: THREE.Object3D, sky?: THREE.Mesh): NightLayer & {dispose():void} {
   const level = {value:0}, undo: (()=>void)[] = [];
   const nightPrograms: THREE.Material[] = [];
   const hasNight = () => level.value > .003;
@@ -88,7 +136,7 @@ export function createWaverleyGlow(scene: THREE.Object3D): NightLayer & {dispose
   if(tower)box.union(towerBox.setFromObject(tower));
   const patch = (name:string, colour: readonly number[], select = '1.0', snow = false, extra: string | ((night: boolean) => string) = '', ambient=false,
     vertexInput?: { declaration: string; varying: string; assignment: string },
-    night?: { code?: string; declarations?: string; uniforms?: Record<string, THREE.IUniform>; afterEmission?: string; fog?: string }):void => {
+    night?: { code?: string; declarations?: string; uniforms?: Record<string, THREE.IUniform>; afterEmission?: string; diffuse?: string; fog?: string }):void => {
     const mesh = scene.getObjectByName(name) as THREE.Mesh | undefined;
     const m = mesh?.material as THREE.MeshLambertMaterial | undefined;
     if (!m?.isMeshLambertMaterial) return;
@@ -114,6 +162,8 @@ ${typeof extra === 'function' ? extra(lit) : extra}${effect?.code ? '\n'+effect.
       // The previous hook inserts the window light after emissivemap_fragment.
       if (effect?.afterEmission) shader.fragmentShader = shader.fragmentShader
         .replace('#include <lights_lambert_fragment>', `${effect.afterEmission}\n#include <lights_lambert_fragment>`);
+      if (effect?.diffuse) shader.fragmentShader = shader.fragmentShader
+        .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>\n${effect.diffuse}`);
       // The skyline hook may have expanded fog_fragment. This next chunk is
       // still present and the colour it receives has already passed through fog.
       if (effect?.fog) shader.fragmentShader = shader.fragmentShader
@@ -136,7 +186,8 @@ reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
     m.needsUpdate=true;
     undo.push(()=>{m.onBeforeCompile=before;m.customProgramCacheKey=key;m.needsUpdate=true;});
   };
-  const heads = scene.getObjectByName('waverley-roof')?.userData.platformLampHeads as number[] | undefined;
+  const roof = scene.getObjectByName('waverley-roof');
+  const heads = roof?.userData.platformLampHeads as number[] | undefined;
   const roofLight = heads?.length ? roofLightMap(heads) : undefined;
   if (roofLight) undo.push(() => roofLight.map.dispose());
   // The top cassettes use the same geometry and map in both programs. Only
@@ -188,7 +239,7 @@ totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*
   // The mapped Castle walls span x -756..-524 and z 274..444 m. Light the
   // summit from the north-east with a softer fill on returns.
   for (const name of ['waverley-city-monuments', 'waverley-building-walls', 'waverley-building-ashlar', 'waverley-building-tops']) {
-    patch(name,[0,0,0],'1.0',false,`
+    patch(name,[0,0,0],'1.0',false,lit=>`
 // castle-wash-begin
 float castleX = smoothstep(-760.0,-752.0,vStationLampWorld.x)*(1.0-smoothstep(-532.0,-520.0,vStationLampWorld.x));
 float castleZ = smoothstep(270.0,278.0,vStationLampWorld.z)*(1.0-smoothstep(440.0,448.0,vStationLampWorld.z));
@@ -204,7 +255,7 @@ if (castleZone > 0.0 && uStationLampLevel > 0.0) {
   float castleFog = smoothstep(fogNear,fogFar,vFogDepth);
   castleAir -= smoothstep(0.60,0.85,uStationLampFog)*castleFog;
 #endif
-  totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.37)*diffuseColor.rgb*(0.98*castleZone*castleFace*castleAir);
+  totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(1.0,0.96,0.98)' : 'vec3(1.0,0.68,0.37)'}*diffuseColor.rgb*(${lit ? '2.25' : '0.98'}*castleZone*castleFace*castleAir);
 }
 // castle-wash-end`,false,undefined,{fog:`
 // castle-fog-colour-begin
@@ -287,7 +338,26 @@ vec3 roomEmission = totalEmissiveRadiance-balmoralStoneEmission;
 float brightestRoomChannel = max(roomEmission.r,max(roomEmission.g,roomEmission.b));
 float roomHeadroom = 1.0-smoothstep(0.37,0.70,brightestRoomChannel);
 totalEmissiveRadiance += roomEmission*vec3(0.26,0.21,0.13)*roomHeadroom;
-// balmoral-room-contrast-end`,
+// balmoral-room-contrast-end
+vec3 balmoralBuiltFlood = vec3(0.0);
+#ifdef FLOOD
+balmoralBuiltFlood = diffuseColor.rgb*vec3(1.0,0.82,0.5)*uWinNight
+  *FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vStationLampWorld.y-FLOOD.w,0.0)/FLOOD.y));
+#endif
+// balmoral-stone-grade-begin
+float firstFloorBand = smoothstep(7.2,8.3,hotelHeight)*(1.0-smoothstep(9.2,10.7,hotelHeight));
+float topStoreyBand = smoothstep(22.1,23.9,hotelHeight);
+float bandFill = max(firstFloorBand,topStoreyBand);
+vec3 balmoralStoneGrade = mix(vec3(1.0),mix(vec3(0.36,0.27,0.26),vec3(1.0),bandFill),uStationLampLevel);
+// Grade the stone washes and the fill, leaving room emission and late lamp
+// contributions intact. The full albedo range remains in the dark masonry.
+totalEmissiveRadiance -= (balmoralStoneEmission+balmoralBuiltFlood)*(1.0-balmoralStoneGrade);
+// balmoral-stone-grade-end`,
+      diffuse: `
+// balmoral-stone-diffuse-begin
+reflectedLight.directDiffuse *= balmoralStoneGrade;
+reflectedLight.indirectDiffuse *= balmoralStoneGrade;
+// balmoral-stone-diffuse-end`,
       fog:`
 // balmoral-facade-fog-begin
 float facadeFog = smoothstep(0.65,0.90,uStationLampFog)*smoothstep(15.0,110.0,vFogDepth);
@@ -336,7 +406,7 @@ ${towerWash('float towerQuoin = 0.0;')}
 }`}
 // balmoral-crown-begin
 float crown = (${within})*smoothstep(${(base+49.2).toFixed(3)},${(base+51.0).toFixed(3)},vStationLampWorld.y);
-totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.54,0.018,0.63)' : 'vec3(0.62,0.07,0.38)'}*crown;
+totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.43,0.018,0.80)' : 'vec3(0.62,0.07,0.38)'}*crown;
 // balmoral-crown-end
 // north-bridge-wash-begin
 if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
@@ -353,6 +423,38 @@ if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
       declaration:'attribute float northBridgeDeck;',varying:'varying float vNorthBridgeDeck;',assignment:'vNorthBridgeDeck = northBridgeDeck;',
     },{fog:towerBox.isEmpty() ? undefined : towerFog(`(${bounds(towerBox,2)})*smoothstep(39.4,41.0,trimHeight)`)});
   }
+  const roofAir = { value: 0 };
+  const airPrograms = new Set<THREE.Material>();
+  if (roofLight && sky) {
+    const receivers = [sky, ...ROOF_AIR_RECEIVERS.map(name => scene.getObjectByName(name))];
+    for (const receiver of receivers) {
+      if (!(receiver instanceof THREE.Mesh) || Array.isArray(receiver.material)) continue;
+      const material = receiver.material as THREE.Material;
+      if (airPrograms.has(material)) continue;
+      airPrograms.add(material);
+      const prior = material.onBeforeCompile, key = material.customProgramCacheKey;
+      const defaultKey = key === THREE.Material.prototype.customProgramCacheKey ? key.call(material) : undefined;
+      material.onBeforeCompile = (shader, renderer) => {
+        prior.call(material, shader, renderer);
+        if (roofAir.value <= .003) return;
+        shader.uniforms.uWaverleyRoofAir = roofAir;
+        const varying = 'varying vec3 vWaverleyRoofAirWorld;';
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', `#include <common>\n${varying}`)
+          .replace('#include <project_vertex>', `#include <project_vertex>
+vec4 roofAirPosition = vec4(transformed,1.0);
+#ifdef USE_INSTANCING
+roofAirPosition = instanceMatrix*roofAirPosition;
+#endif
+vWaverleyRoofAirWorld = (modelMatrix*roofAirPosition).xyz;`);
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', `#include <common>\n${varying}\nuniform float uWaverleyRoofAir;\n${ROOF_AIR_FUNCTIONS}`)
+          .replace('#include <premultiplied_alpha_fragment>', `${ROOF_AIR_COLOUR}\n#include <premultiplied_alpha_fragment>`);
+      };
+      material.customProgramCacheKey = () => (defaultKey ?? key.call(material)) + (roofAir.value > .003 ? '+waverley-roof-air' : '');
+      undo.push(() => { material.onBeforeCompile = prior; material.customProgramCacheKey = key; material.needsUpdate = true; });
+    }
+  }
   return {
     setLevel(next) {
       const wasNight = hasNight();
@@ -360,6 +462,10 @@ if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
       // These Waverley-owned materials keep their day programs and sort IDs.
       // Select the alternate program only when this layer is lit.
       if (hasNight() !== wasNight) for (const material of nightPrograms) material.needsUpdate = true;
+      const hadRoofAir = roofAir.value > .003;
+      roofAir.value = roof?.visible ? level.value * (1-surfaceUniforms.snowCover.value)
+        * THREE.MathUtils.smoothstep(surfaceUniforms.fog.value,.65,.90) : 0;
+      if ((roofAir.value > .003) !== hadRoofAir) for (const material of airPrograms) material.needsUpdate = true;
     },
     dispose(){undo.reverse().forEach(fn=>fn());},
   };

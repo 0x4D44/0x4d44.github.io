@@ -45,7 +45,7 @@ function facadeSample(material: THREE.Material, height: number, scope = 1, body 
   const vars = {
     vMidlandNight: [scope, rake], vMidlandHeight: height,
     vMidlandBrickBody: body, vMidlandStoneBody: body, vMidlandTowerTrim: towerTrim,
-    vMidlandClockStage: 0, vMidlandPinnacle: [0, 0, 0, 0],
+    vMidlandClockStage: 0, vMidlandGableField: 0, vMidlandPinnacle: [0, 0, 0, 0],
     uMidlandNight: night, uMidlandLandmarkNight: night,
     cameraPosition: [-90, height, 100], vViewPosition: [0, 0, 0], viewMatrix: identity,
     diffuseColor: [.35, .12, .06, 1], direct: [.025, .011, .006], indirect: [.025, .011, .006],

@@ -739,6 +739,7 @@ const NIGHT_MODE = {
 const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled' | 'kx-crick'): string => {
   const wholeFloors = kind === 'kx-city' || kind === 'kx-crick';
   const hash = wholeFloors ? 'officeHash' : 'winHash';
+  const eastOfficeSeed = (id: number) => `dot(vec3(${facadeTint(id).join(', ')}), vec3(37.1, 91.7, 53.3))`;
   return /* glsl */`
 uniform float uOfficeFog;
 ${wholeFloors ? `
@@ -760,7 +761,15 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float phase = floor( 5.0 * officeHash( vec2( 0.0, group ), seed, 2.0 ) );
   float floorSlot = cell.y + phase;
   float darkSlots = 2.0${kind === 'kx-city' ? ' + step( officeHash( vec2( 0.0, group ), seed, 9.0 ), 0.22 )' : ''};
-  float occupied = step( darkSlots, floorSlot - 5.0 * floor( floorSlot / 5.0 ) ) * smoothstep( start, start + 0.24, night );
+  float scheduled = step( darkSlots, floorSlot - 5.0 * floor( floorSlot / 5.0 ) );
+  ${kind === 'kx-city' ? `// Two east-side curtain walls have long, occupied office floors.
+  // Identify the buildings by the baked tint already used to seed this batch.
+  float eastOfficeFloor = 0.0;
+  if (abs(seed - ${eastOfficeSeed(375735261)}) < 0.01 && cell.y >= 4.0 && cell.y <= 5.0) eastOfficeFloor = 1.0;
+  if (abs(seed - ${eastOfficeSeed(260722156)}) < 0.01 && cell.y == 4.0) eastOfficeFloor = 1.0;
+  scheduled = max(scheduled,eastOfficeFloor);` : `// Break up the contiguous bank of lit floors at the Crick's base.
+  if (cell.y >= 0.0 && cell.y < 5.0) scheduled = 1.0 - (cell.y - 2.0*floor(cell.y/2.0));`}
+  float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
   `}vec3 white = ${kind === 'ordinary' ? 'vec3( 1.0, 0.86, 0.71 )' : wholeFloors ? 'vec3( 0.92, 0.97, 1.0 )' : 'vec3( 0.79, 0.92, 1.0 )'};
@@ -779,8 +788,8 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   ${kind === 'kx-city' ? `float pitch = 16.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
   float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
-  float suite = step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit );
-  float floorLight = mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) );
+  float suite = max(eastOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
+  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, eastOfficeFloor );
   float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
     * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
   float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
