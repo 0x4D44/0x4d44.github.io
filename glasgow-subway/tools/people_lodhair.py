@@ -51,9 +51,13 @@ RECIPE_HAIR = ('girl', 'girl_school_kilt', 'teen_girl', 'woman_puffer',   # the 
                # the bob and loose styles whose decimated hair is a few big wedges with bare scalp between them, or over the face
                'ya_tube_heels', 'ya_smile_halter', 'adult_suit_bun', 'woman_midi', 'woman_bob', 'woman_dress', 'girl_small', 'ya_ginger_long', 'adult_heel_boots', 'woman_scarf', 'teen_hippy')   # (review 18: elvs_island_princess_hair decimated to a skull cap and splinters) people added later with the same trouble (ponytail, braid): the scalp measure in research/people-hair.md
 # part name -> (material name prefix, who: a tuple of person ids or None for everybody who has the part, default lift in metres)
+HATTED = ('adult_camo_cap', 'adult_cap_shorts', 'elder_man_cap', 'adult_tophat')   # review 24: their decimated hair came through their decimated hats on the far model
 PARTS = {
-    'hair': ('alpha_hair', RECIPE_HAIR, 0.006),
+    'hair': ('alpha_hair', RECIPE_HAIR + HATTED, 0.006),
     'brows': ('alpha_brows', None, 0.001),
+    # the full-detail hat over the full-detail hair, as on the near model (a little lift: the far head is a little proud of the full one, as for the hair)
+    'cap': ('cloth_cap', HATTED, 0.008),
+    'tophat': ('cloth_tophat_felt', HATTED, 0.008),
 }
 MARK = 'lodparts'
 ATTRS = ('POSITION', 'NORMAL', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0')
@@ -150,7 +154,7 @@ def main():
     ap.add_argument('--force', action='store_true', help='repair people already marked as repaired (the part is copied afresh)')
     ap.add_argument('--out', default='', help='with --write: write there instead of in place')
     a = ap.parse_args()
-    lifts = {'hair': a.hair_lift, 'brows': a.brow_lift}
+    lifts = {k: v[2] for k, v in PARTS.items()}; lifts.update({'hair': a.hair_lift, 'brows': a.brow_lift})
     src, dst = Glb(a.main), Glb(a.lod)
     only = [s for s in a.only.split(',') if s]
     missing = 0
