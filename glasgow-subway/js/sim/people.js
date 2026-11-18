@@ -160,7 +160,7 @@ export function pickChar(chars, pool, filter, rng, local, global = IN_USE) {
 }
 // id -> [[material name, r, g, b multiplier (linear: 0.15 shows as ~0.42)], ...]. Review 8: the two long-coat women wore one pale striped coat that read as a bathrobe (now
 // camel and dark navy); adult_casual2 and ya_ginger_lad one sweatshirt; teen_skirt and woman_mini one top (woman_mini's goes blue; her tartan was turned green at build)
-const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.15, 0.22, 0.15], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
+const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0.22, 0.3, 0.55]], elder_woman_coat: [[/^cloth_coat\./i, 0.33, 0.2, 0.09, 'flat']],
   ya_winter: [[/^cloth_coat\./i, 0.035, 0.045, 0.09, 'flat']], teen_tube: [[/skirt/i, 0.07, 0.12, 0.3, 'flat']], ya_ginger_lad: [[/casualsuit/i, 0.32, 0.32, 0.32]],
   man_kilt_casual: [[/sweater/i, 0.3, 0.26, 0.3]], teen_skater: [[/tennisshoes/i, 0.06, 0.06, 0.07]],
   adult_lusekofta: [[/winterboots/i, 0.12, 0.06, 0.025, 'flat']], adult_beret: [[/riding_boots/i, 0.05, 0.05, 0.05]] };   // (review 13: the one maze-striped coat on two women - now a plain camel coat and a plain navy one; the tartan mini on two girls - teen_tube's now plain blue)   // (review 13: the boots' white texture parts stretched into white wedges at the boot tops - now the boot's own colour throughout)   // (review 11: man_beard's red jumper on man_kilt_casual too - now a dark burgundy; teen_skater's white trainers on sum_loose_shorts_w's template - now black)
@@ -374,15 +374,18 @@ export class AnimCrowd {
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
     const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
     const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    // where each hand closes (the crook of the curled middle finger, as for a bag handle): a rider holding a pole is placed so that this point is on the pole (review 14)
+    const bone = (n) => sk[0].skeleton.bones.find((b) => b.name === n), G = { l: [bone('middle_01_l') || bone('hand_l'), bone('middle_02_l')], r: [bone('middle_01_r') || bone('hand_r'), bone('middle_02_r')] }, grip = { l: [0, 0, 0], r: [0, 0, 0] };
     for (let k = 0; k < N; k++) {
       mixer.setTime((k / N) * clip.duration); obj.updateMatrixWorld(true); hipsB.getWorldPosition(h);
+      for (const sd of ['l', 'r']) { const [b0, b1] = G[sd]; if (!b0) continue; b0.getWorldPosition(v); if (b1) { const v1 = b1.getWorldPosition(new THREE.Vector3()); v.lerp(v1, 0.5); } grip[sd][0] += v.x / N; grip[sd][1] += v.y / N; grip[sd][2] += v.z / N; }
       let sMin = 1e9; const cv = [];
       for (const m of sk) { m.skeleton.update(); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 2) { m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld); sMin = Math.min(sMin, v.y); maxY = Math.max(maxY, v.y); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); cv.push(v.y, v.z); if (k === 0 || k === 2) keep.push(v.x, v.y, v.z); } }
       minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z;
       // pelvis contact: lowest vertex y near the hips' z (excluding the feet region) = where a seat surface touches
       let c = 1e9; for (let i = 0; i < cv.length; i += 2) if (Math.abs(cv[i + 1] - h.z) < 0.22 && cv[i] > sMin + 0.25 && cv[i] < c) c = cv[i]; contact += c === 1e9 ? h.y - 0.1 : c;
     }
-    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
+    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), grip, w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
     this.meas.set(key, r); return r;
   }
   _clip(ch, cat, rng) { const a = ch.pools[cat]; return a && a.length ? a[Math.floor((rng || this.rng)() * a.length)] : null; }
@@ -402,6 +405,21 @@ export class AnimCrowd {
     const cats = state === 'pole' ? ['pole'] : ['idle', 'phone', 'talk', 'fidget']; let h = 0;
     for (const c of cats) for (const clip of ch.pools[c] || []) h = Math.max(h, this.measure(ch, clip).height);
     return (ch[key] = h || ch.metaH || 1.7);
+  }
+  /** a standing rider holding a pole: where to stand, which way to face and in which clip, so that the gripping hand (the higher one) closes on the upright pole at
+   *  pole {x, z} (the parent's frame). s = {y, ceilAt}; ok(x, z, yaw) vetoes places (the aisle, the doorways, other riders, bags). null if this character cannot.
+   *  (review 14: riders were put anywhere, facing anyway, and every hand in a pole or rail clip held air 0.26-1.08 m from the nearest pole) */
+  poleSpot(ch, pole, s, ok, rng = this.rng) {
+    const out = [];
+    for (const clip of ch.pools.pole || []) {
+      const m = this.measure(ch, clip), g = m.grip; if (!g) continue; const h = g.l[1] > g.r[1] ? g.l : g.r, hy = h[1] - m.minY; if (hy < 0.75 || hy > 1.85) continue;   // (the pole runs from the floor to 1.95 m)
+      for (let k = 0; k < 24; k++) {
+        const yaw = k * Math.PI / 12, c = Math.cos(yaw), sn = Math.sin(yaw), x = pole.x - (c * h[0] + sn * h[2]), z = pole.z - (-sn * h[0] + c * h[2]);
+        if (ok(x, z, yaw)) out.push({ x, z, yaw, clip, pole });
+      }
+    }
+    while (out.length) { const f = out.splice(Math.floor(rng() * out.length), 1)[0]; if (this._fitsStandAt(ch, { x: f.x, y: s.y, z: f.z, yaw: f.yaw, mode: 'pole', ceilAt: s.ceilAt })) return f; }   // (the ceiling test is the slow one: only on the place drawn)
+    return null;
   }
   // ------------------------------------------------------------------ people
   clear() { if (this.people.length) this._recent = new Set(this.people.filter((p) => p.char).map((p) => p.char.id)); for (const p of this.people) this._drop(p); this.people.length = 0; }
@@ -425,9 +443,9 @@ export class AnimCrowd {
     // review 10: re-rolling the category still left one garment over half the people near the player in every run (it gave up after four rolls, and counted children
     // apart). Now a group already worn by 45 % of the people within 15 m is left out of the draw while anyone else fits; children count by what they wear.
     const grp = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
-    const at = this._pickAt, near = (q) => !at || at.x == null || Math.hypot(q.x - at.x, q.z - at.z) < 15;
+    const at = this._pickAt, par = this._pickPar, near = (q) => !at || at.x == null || ((!par || q.parent === par) && Math.hypot(q.x - at.x, q.z - at.z) < 15);   // (in a train: the same car - its riders' x, z are in the car's own frame, and every car's are near (0, 0) - review 14 still counted 55-57 % in one garment in a car)
     const tally = new Map(); let nOwn = 0; for (const q of this.people) if (q.char && q.obj && near(q)) { nOwn++; const g = grp(q.char); tally.set(g, (tally.get(g) || 0) + 1); }
-    const full = new Set(); if (nOwn >= 5) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
+    const full = new Set(); if (nOwn >= 4) for (const [g, n] of tally) if (n + 1 > 0.45 * (nOwn + 1)) full.add(g);
     const okMix = (c) => !full.has(grp(c)), and = (f) => (f ? (c) => okMix(c) && f(c) : okMix);
     let pool = this._rollPool(); for (let k = 0; k < 6 && pool.length && pool.every((c) => full.has(grp(c))); k++) pool = this._rollPool();
     const free = (x) => (x && !(this.unique && IN_USE.get(x.id)) ? x : null), tryF = (f) => free(pickChar(this.chars, pool, f, this.rng, own));   // (an in-use pick is no pick in a unique crowd: try the next)
@@ -441,7 +459,7 @@ export class AnimCrowd {
     // a person handed over with their look (getting off a train on to this platform, getting on) who is already here in this crowd comes as somebody else: review 6 saw
     // the same people twice on one platform and in one car. Their bag and print go with the look, so they are dropped too.
     if (p.char && this.people.some((q) => q.char === p.char && q.obj)) { p.char = null; p.bag = undefined; p.print = null; p.teeColour = undefined; }
-    this._pickAt = p; const ch = p.char || this._pick(filter); this._pickAt = null; if (!ch) return p; p.char = ch; p.counted = true; useChar(ch.id, 1);
+    this._pickAt = p; this._pickPar = parent || null; const ch = p.char || this._pick(filter); this._pickAt = this._pickPar = null; if (!ch) return p; p.char = ch; if (p.onPick) { p.onPick(p, ch); p.onPick = null; } p.counted = true; useChar(ch.id, 1);
     p.lod = !!ch.lodNode; const obj = this._clone(ch, p.lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });   // (only the LOD file loaded yet: everybody is drawn from it)
     this._dressTee(p, obj); this._lids(p, obj);
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.sp = p.sp || 0; p.yw = 0;
@@ -572,6 +590,7 @@ export class AnimCrowd {
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
+    if (state === 'pole' && p.poleClip && (ch.pools.pole || []).includes(p.poleClip)) clip = p.poleClip;   // (the clip the rider was placed for: the other one puts the other hand up, in the air)
     if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && p.bag.kind))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
     // Standing: the quiet stance is the rule. The other idle clip is a gesture of the whole right arm (the forearm swings through 109 degrees); looped for a whole bout, on a
     // platform of people, it read as arms waving about. It is now an occasional single gesture: one pass of the clip, then back to the quiet stance.
@@ -780,7 +799,7 @@ export class AnimCrowd {
     const made = [];
     for (const s of slots) {
       if (this.people.length >= this.max) break;
-      const filter = s.mode !== 'sit' && s.ceilAt ? (c) => this._fitsStandAt(c, s) : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
+      const filter = s.fit ? s.fit : s.mode !== 'sit' && s.ceilAt ? (c) => this._fitsStandAt(c, s) : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
       const p = this.add({ ...s, static: true }, parent, filter); if (p.obj) made.push(p);
     }
     return made;

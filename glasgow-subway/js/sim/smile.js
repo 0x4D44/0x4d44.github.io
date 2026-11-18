@@ -3,7 +3,7 @@
 // a little, and the middle of the lips stays nearly where it was.  The shape is plain maths in units of the distance between the eyes (smileDelta), fitted to
 // each face from where its eyes are; three.js blends it in on the GPU, on top of the skinning.  The far (LOD) model has no smile.
 //
-// What it is not: there are no teeth to show, the eyes do not narrow, and the shading does not change (no morphed normals).  It is a closed-mouth smile.
+// What it is not: there are no teeth to show. It is a closed-mouth smile. (The lids narrow with it - people.js - and the normals are morphed with it, so the shading follows.)
 
 export const SMILE = {
   mouthY: 1.17,    // the line of the mouth, below the line of the eyes, in eye-to-eye distances (used when the mouth cannot be found in the mesh)
@@ -76,8 +76,21 @@ export function buildSmile(THREE, rest) {
   }
   if (!moved) return null;
   const a = new T.Float32BufferAttribute(D, 3); a.name = 'smile'; geo.morphAttributes.position = [a]; geo.morphTargetsRelative = true;
+  // and the shading moves with it: the normals of the smiling face, less those of the face at rest, as a second morph (review 14: with the shading of the face at rest the
+  // smile showed only on the side the light caught - a crease at one corner - and read as a one-sided smirk)
+  const nd = smileNormals(T, geo, D); if (nd) { const an = new T.Float32BufferAttribute(nd, 3); an.name = 'smile'; geo.morphAttributes.normal = [an]; }
   geo.userData.smile = { geo, moved, mouthY, half, found: !!found, d };
   return geo.userData.smile;
+}
+
+/** the change in the vertex normals a move D (per vertex, in the geometry's own space) makes, both sets worked out the same way (from the faces), so that the seams cancel */
+export function smileNormals(T, geo, D) {
+  const pos = geo.attributes.position; if (!geo.index || !geo.attributes.normal) return null;
+  const n = pos.count, P0 = new Float32Array(n * 3); for (let i = 0; i < n; i++) { P0[i * 3] = pos.getX(i); P0[i * 3 + 1] = pos.getY(i); P0[i * 3 + 2] = pos.getZ(i); }
+  const norm = (P) => { const g = new T.BufferGeometry(); g.setIndex(geo.index); g.setAttribute('position', new T.BufferAttribute(P, 3)); g.computeVertexNormals(); return g.attributes.normal.array; };
+  const N0 = norm(P0), N1 = norm(P0.map((x, j) => x + D[j])), out = new Float32Array(n * 3); let any = false;
+  for (let j = 0; j < n * 3; j++) { const d = N1[j] - N0[j]; if (Math.abs(d) > 1e-4) { out[j] = d; any = true; } }
+  return any ? out : null;
 }
 
 const PIX = new WeakMap();

@@ -183,18 +183,50 @@ class Sim {
       let got = sc.seat(car, seated); for (const q of got) if (q.seatRef) q.seatRef.p = q;
       // two bags at the feet of next-door seats stood inside each other (review 12): of two neighbours on one side, the second comes with no bag
       for (const q of got) if (q.bag && got.some((o) => o !== q && o.bag && o.bagRig && Math.abs(o.z - q.z) < (Math.sign(o.x) === Math.sign(q.x) ? 0.7 : 0.6) && got.indexOf(o) < got.indexOf(q))) sc._bagSet(q, null);   // (or straight across the aisle: a wheeled case at the knees reaches the middle of the car)
-      for (let k = 0; k < nStand * 8 && standing.length < nStand; k++) {
+      const nPole = low ? 0 : Math.round(nStand * (0.35 + rng() * 0.4));   // (the rest stand without holding on)
+      for (let k = 0; k < nStand * 8 && standing.length < nStand - nPole; k++) {
         const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.04 + rng() * 0.1 : 0.14 + rng() * 0.16);
         if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < gapS) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) || sc._bagNear(car, x, z)) continue;
-        standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.55 ? 'pole' : 'stand', ceilAt });
+        standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: 'stand', ceilAt });
       }
       got = got.concat(sc.seat(car, standing));
+      // the others hold a pole: at a real pole, facing so that the hand closes on it (review 14: they held air anywhere in the car)
+      const poles = this._carPoles(ci, info), okP = this._standOk(sc, car, ci, info, poles);
+      for (let i = poles.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)), t = poles[i]; poles[i] = poles[j]; poles[j] = t; }
+      for (let k = 0, n = 0; k < poles.length && n < nPole; k++) { const g = sc.seat(car, [this._poleSlot(sc, poles[k], PYf, ceilAt, okP, rng)]); if (g.length) { n++; got = got.concat(g); } }
       // a car left empty (nobody fitted the seat or spot drawn for it: the ceiling and walls rule some people out of some seats) tries its other seats in turn
       // (and a car reached once the crowd is at its cap - the head cars took boarders - still gets that one rider)
       if (!got.length) { const m0 = sc.max; sc.max = Math.max(sc.max, sc.people.length + 1); for (let k = 0; !got.length && k < slots.length; k++) { got = sc.seat(car, [slots[k]]); for (const q of got) if (q.seatRef) q.seatRef.p = q; } sc.max = m0; }
     }
     this._saloonObs(tv);
     if (job.car >= tv.cars.length) { tv.saloonDone = true; tv.saloonJob = null; }
+  }
+  /** the upright orange poles of car ci, in its frame (tools/assets_train.py): either side of each doorway (x = +-0.58, 0.75 m from the door's middle) and either side
+   *  of each gangway (x = +-0.70, 0.12 m in from the car's end; a cab end has none) */
+  _carPoles(ci, info) {
+    const wc = this.walkable && this.walkable.cars && this.walkable.cars[ci]; if (!wc) return [];
+    const P = [], dz = wc.centreZ - info.zc, half = wc.length / 2;
+    for (const d of wc.doorZ) for (const e of [-1, 1]) for (const sx of [-1, 1]) P.push({ x: sx * 0.58, z: d - info.zc + e * ((wc.doorWidth || 1.3) / 2 + 0.1) });
+    for (const e of [-1, 1]) { if (wc.hasCab && Math.sign(wc.centreZ) === e) continue; for (const sx of [-1, 1]) P.push({ x: sx * 0.70, z: dz + e * (half - 0.12) }); }
+    return P;
+  }
+  /** may a rider stand at (x, z) in this car (its frame)? Not in a doorway's walking lane, not over the bench fronts outside the door bays, not in a gangway, not on a pole,
+   *  clear of the other standing riders, of seated riders' knees and of their floor bags. (also: any extra (x, z) test) */
+  _standOk(sc, car, ci, info, poles, extra) {
+    const doors = this.trainView.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1), wc = this.walkable && this.walkable.cars && this.walkable.cars[ci], end = wc ? wc.length / 2 : info.len / 2, mid = wc ? wc.centreZ - info.zc : 0;
+    return (x, z) => {
+      if (Math.abs(z - mid) > end - 0.5 || doors.some((d) => Math.abs(z - d) < 0.4)) return false;
+      if (Math.abs(x) > (doors.some((d) => Math.abs(z - d) < 0.65) ? 0.55 : 0.3)) return false;
+      if (poles.some((q) => Math.hypot(q.x - x, q.z - z) < 0.22)) return false;
+      for (const o of sc.people) { if (o.parent !== car || !o.obj) continue; if (o.state === 'sit') { if (Math.abs(o.z - z) < 0.55 && x * Math.sign(o.x) > 0.12) return false; } else if (Math.hypot(o.x - x, o.z - z) < 0.55) return false; }
+      return !sc._bagNear(car, x, z) && (!extra || extra(x, z));
+    };
+  }
+  /** a standing slot at a pole (for AnimCrowd.seat): the character drawn is the one who can hold it, and is put where their hand closes on it */
+  _poleSlot(sc, pole, y, ceilAt, ok, rng) {
+    const fits = new Map(), spot = (c) => { if (!fits.has(c.id)) fits.set(c.id, sc.poleSpot(c, pole, { y, ceilAt }, ok, rng)); return fits.get(c.id); };
+    return { x: Math.sign(pole.x) * 0.15, y, z: pole.z, yaw: 0, mode: 'pole', ceilAt, fit: (c) => !!spot(c),
+      onPick: (p, c) => { const f = spot(c); if (f) { p.x = f.x; p.z = f.z; p.yaw = p.yawT = f.yaw; p.poleClip = f.clip; p.poleAt = pole; } else p.mode = p.state = 'stand'; } };
   }
   /** the standing riders of a train are things the walker goes round (soft: it slides round a rider rather than sticking); rebuilt whenever someone gets up, sits down, gets on or off */
   _saloonObs(tv) {
@@ -276,11 +308,20 @@ class Sim {
     if (sc.people.some((r) => r.char === q.char)) return;   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
     const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
     const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
-    let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    // and not a seat whose floor (where the bag will stand, in front of the toes) has someone standing on it already, or on their way to it (review 14: a standing rider's foot in a boarder's tote for 16 s)
+    const footOn = (s) => { const bx = Math.sign(s.x) * 0.24; return sc.people.some((o) => o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - bx, o.z - s.z) < 0.6) || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - bx, o.z - s.z) < 0.6); };
+    let seat = null; for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !(q.bag && footOn(s))).sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    // a boarder who stands keeps off the floor in front of a seat another boarder with a bag is walking to (their bag is not on the floor yet, so _bagNear cannot see it)
+    const bagComing = (x, z) => tv.seatMap.some((s) => s.ci === ci && s.p && s.p !== q && s.p.bag && !(s.p.parent === car && s.p.state === 'sit') && Math.hypot(Math.sign(s.x) * 0.24 - x, s.z - z) < 0.55);
     let spot = null;
     if (seat) { seat.p = q; spot = { x: Math.sign(seat.x) * 0.2, z: seat.z }; }
-    else for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
-      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc._bagNear(car, c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
+    else if (q.char.pools.pole && sc.rng() < 0.6) {   // most hold on: a free pole near their door (review 14: a standing boarder put a hand up to a pole that was not there)
+      const poles = this._carPoles(ci, info), took = (pl) => sc.people.some((o) => o.parent === car && o.poleAt && Math.hypot(o.poleAt.x - pl.x, o.poleAt.z - pl.z) < 0.05) || X.stands.some((o) => o.ci === ci && o.pole && Math.hypot(o.pole.x - pl.x, o.pole.z - pl.z) < 0.05);
+      const ok = this._standOk(sc, car, ci, info, poles, (x, z) => !X.stands.some((o) => o.ci === ci && Math.hypot(o.x - x, o.z - z) < 0.55) && !bagComing(x, z));
+      for (const pl of poles.filter((pl) => !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
+    }
+    if (!seat && !spot) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
+      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
     const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }
     q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
     const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;
@@ -291,7 +332,7 @@ class Sim {
       const at = reached && !seat && spot.yaw != null, here = { x: at ? spot.x : Math.max(-0.25, Math.min(0.25, c.x)), y: PY, z: at ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, force: true };
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
-      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: np.char.pools.pole ? 'pole' : 'stand' }, 0.6); }
+      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; } sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, 0.6); }   // (a pole only where there is one under the hand)
       this._saloonObs(tv);
     };
   }
