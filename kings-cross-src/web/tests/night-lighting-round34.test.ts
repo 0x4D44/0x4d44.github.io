@@ -57,25 +57,80 @@ function nightRooms() {
 
 const display = (rgb: readonly number[]) => toSrgb(acesFilmic(rgb as V3, NIGHT_EXPOSURE)).map(c => c*255);
 
-test('Balmoral room cores read yellow-gold with room variation and headroom', () => {
+test('Balmoral room cores mix cream, tungsten and cool white with room variation and headroom', () => {
   const sample = nightRooms();
-  const lit = levels.flatMap(height => patchBays.map(bay => sample(bay, height)))
-    .filter(rgb => luma(rgb) > .08).map(display);
-  const mean = [0,1,2].map(i => lit.reduce((sum, rgb) => sum+rgb[i]!, 0)/lit.length);
-  const spreads = [0,1,2].map(i => Math.max(...lit.map(rgb => rgb[i]!))-Math.min(...lit.map(rgb => rgb[i]!)));
-  console.log('room-core display RGB', { mean, spreads });
-  assert.ok(mean[0]! >= 228 && mean[0]! <= 247);
-  assert.ok(mean[1]! >= 172 && mean[1]! <= 204);
-  assert.ok(mean[2]! >= 82 && mean[2]! <= 120);
-  assert.ok(spreads.every(spread => spread >= 8));
+  const bays = Array.from({ length: 56 }, (_, bay) => bay);
+  const classify = (rgb: number[]) => Math.max(...rgb)-Math.min(...rgb) < 16 ? 'cool'
+    : rgb[1]!-rgb[2]! > 55 ? 'tungsten' : 'cream';
+  const floors = [2.4, ...levels].map(height => bays.map((bay) => ({ bay, rgb: sample(bay, height) }))
+    .filter(({rgb}) => luma(rgb) > .08).map(({bay,rgb}) => ({ bay, rgb: display(rgb) })));
+  const lit = floors.flat();
+  const patch = floors.slice(1).flat().filter(({bay}) => patchBays.includes(bay));
+  const patchSpreads = [0,1,2].map(i => {
+    const channels = patch.map(({rgb}) => rgb[i]!);
+    return Math.max(...channels)-Math.min(...channels);
+  });
+  const palette = [
+    { name: 'cream', share: .65, target: [225,205,165] },
+    { name: 'tungsten', share: .25, target: [240,190,110] },
+    { name: 'cool', share: .10, target: [205,205,200] },
+  ];
+  const colours = palette.map(({name, share, target}) => {
+    const rooms = lit.filter(({rgb}) => classify(rgb) === name);
+    const mean = target.map((_, i) => rooms.reduce((sum, {rgb}) => sum+rgb[i]!, 0)/rooms.length);
+    const lumas = rooms.map(({rgb}) => luma(rgb));
+    return { name, share, target, count: rooms.length, mean, spread: Math.max(...lumas)-Math.min(...lumas),
+      bays: new Set(rooms.map(room => room.bay)).size };
+  });
+  console.log('room-core display palette', colours);
+  for (const {name, share, target, count, mean, spread, bays} of colours) {
+    assert.ok(Math.abs(count/lit.length - share) <= .035, `${name}: ${count}/${lit.length}`);
+    assert.ok(mean.every((channel,i) => Math.abs(channel-target[i]!) <= 8), `${name}: ${mean}`);
+    assert.ok(spread >= 8 && spread < 35 && bays >= 8, `${name}: luma range ${spread}, ${bays} bays`);
+    assert.ok(floors.filter(row => row.some(({rgb}) => classify(rgb) === name)).length >= 4);
+  }
+  assert.ok(patchSpreads.every(spread => spread >= 8));
   // Upper aperture cores carry the strongest room contribution. Allow
   // additional linear fill beyond the window emission in the headroom check.
-  const peaks = Array.from({ length: 56 }, (_, bay) =>
+  const peaks = bays.map(bay =>
     [4.1, 7.05, 11.6, 15.2, 18.65, 22.1].map(height =>
       luma(display(sample(bay, height).map((channel, i) => channel + [.045,.040,.030][i]!)))));
   const peak = Math.max(...peaks.flat());
   console.log('peak room luma with fill', peak);
   assert.ok(peak <= 245, `peak room luma ${peak.toFixed(1)}`);
+});
+
+test('Balmoral stone is dark between one warm storey band and the cornice', () => {
+  glow.setLevel(1);
+  const source = facadeShader().fragmentShader;
+  const base = scene.group.getObjectByName('waverley-frontage')!.userData.frontage.P as number;
+  const washes = ['balmoral-facade-wash', 'balmoral-bands', 'balmoral-body-uplight']
+    .map(label => block(source, label)).join('\n');
+  const grade = block(source, 'balmoral-stone-grade') + block(source, 'balmoral-stone-diffuse')
+    .replaceAll('reflectedLight.directDiffuse', 'direct').replaceAll('reflectedLight.indirectDiffuse', 'indirect');
+  const glsl = new Glsl('');
+  const wash = glsl.snippet(washes);
+  const shade = glsl.snippet(grade);
+  function stone(height: number) {
+    const albedo = [.41,.30,.21];
+    const vars = {
+      vStationLampWorld: [58,base+height,-132], diffuseColor: [...albedo,1], uStationLampLevel: 1, hotelHeight: height,
+      totalEmissiveRadiance: [0,0,0], balmoralStoneEmission: [0,0,0],
+      balmoralBuiltFlood: albedo.map((c,i) => c*[1,.82,.5][i]!*.08*(.5+.5*Math.exp(-(height+18)/30))),
+      direct: albedo.map(c => c*.10), indirect: albedo.map(c => c*.12),
+    };
+    wash({vars});
+    vars.balmoralStoneEmission = [...vars.totalEmissiveRadiance];
+    shade({vars});
+    return display(vars.totalEmissiveRadiance.map((c,i) => c+vars.balmoralBuiltFlood[i]!+vars.direct[i]!+vars.indirect[i]!));
+  }
+  const heights = [3.4,6.25,8.7,10.5,14.2,17.8,21.3,24.3];
+  const paints = heights.map(stone);
+  const brightness = paints.map(luma);
+  console.log('Balmoral stone display luma by height', brightness);
+  assert.ok([0,1,4,5,6].every(i => brightness[i]! < 36));
+  assert.ok(brightness[2]! > 145 && brightness[3]! > 92 && brightness[7]! > 150);
+  assert.ok([2,3,7].every(i => paints[i]![0]!-paints[i]![1]! > 18));
 });
 
 test('Balmoral moves one lit room into the top storey of the 20-pane patch', () => {
@@ -93,7 +148,7 @@ test('Princes Street breaks the four-storey stack while retaining the occupied-r
   assert.deepEqual(patterns, [[1,0,1,1], [1,0,1,0]]);
 });
 
-test('the changed night program reaches only glazing and restores exact day and Perth receipts', () => {
+test('the changed night program reaches only Balmoral glazing and facade stone and restores day and Perth receipts', () => {
   const fingerprint = () => {
     const { vertexShader, fragmentShader } = facadeShader();
     return sha(vertexShader + fragmentShader + JSON.stringify(material.defines ?? {}));
@@ -105,7 +160,8 @@ test('the changed night program reaches only glazing and restores exact day and 
   glow.setLevel(1);
   const source = facadeShader().fragmentShader;
   const roomCode = block(source, 'balmoral-amber-rooms');
-  assert.equal(sha(source.replace(roomCode, '')), '9cde959c65453bbee8b150d80e74fcde09c0c9a99bb891a0123605db7c9c3260');
+  const stoneCode = block(source, 'balmoral-stone-grade');
+  assert.equal(sha(source.replace(roomCode, '').replace(stoneCode, '')), 'aa553a124a3a0013fbf94f278c5bbd8e0f08a026e70887cad7f74986b2324ffc');
   const sample = rooms(source);
   assert.deepEqual(sample(54, 21.3, .78), [0,0,0]);
   assert.deepEqual(sample(54, 23.0), [0,0,0]);
