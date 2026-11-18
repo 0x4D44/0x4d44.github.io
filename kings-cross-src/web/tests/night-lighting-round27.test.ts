@@ -176,9 +176,9 @@ function officeShader(material: THREE.Material) {
   return new Glsl(source.slice(from, tile > 0 ? Math.min(tile,end) : end).replace(/^\s*#.*$/gm, ''));
 }
 
-function bays(code: Glsl, floor: number, width: number, seed: number, rect: readonly number[]) {
+function bays(code: Glsl, floor: number, width: number, seed: number, rect: readonly number[], firstBay = 0) {
   return Array.from({length:width}, (_, bay) => {
-    const rgb = code.call('winOffice', [[bay+.5, floor+.55], [.30,.13], seed, 1, [...rect], .44, .9, 420],
+    const rgb = code.call('winOffice', [[firstBay+bay+.5, floor+.55], [.30,.13], seed, 1, [...rect], .44, .9, 420],
       { vars: { uOfficeFog: 0 } });
     return luma(rgb as number[]) > .30;
   });
@@ -192,12 +192,12 @@ test('the Crick breaks each visible occupied floor into lit and dark suites', ()
     const code = officeShader(central.officesAtNight.get('curtain')!);
     const rows = [1,2,3,4,5,6,7].map(floor => row(bays(code, floor, 80, 2.98, [.03125,.96875,.2375,.975])));
     console.log('Crick bay masks on floors 1–7', rows);
-    for (const index of [0,1,3]) {
+    for (const index of [0,1,3,5]) {
       assert.ok(longestDark(rows[index]!) >= 14 && longestDark(rows[index]!) <= 19);
       assert.ok(rows[index]!.replaceAll('.', '').length >= 64);
     }
     assert.notEqual(rows[0], rows[1]);
-    for (const index of [2,5,6]) assert.equal(rows[index], '.'.repeat(80));
+    for (const index of [2,6]) assert.equal(rows[index], '.'.repeat(80));
   } finally { central.owned.forEach(m => m.dispose()); }
 });
 
@@ -205,13 +205,15 @@ test('Platform 37 timber offices have adjacent occupied floors and a 50–60% oc
   const central = createMaterials();
   try {
     const code = officeShader(central.officesAtNight.get('timber')!);
-    const rows = Array.from({length:10}, (_, floor) => row(bays(code, floor, 18, 6.99, [.14,.86,1/4.2,.98])));
+    const glass = [.14,.86,1/4.2,.98];
+    const rows = Array.from({length:11}, (_, floor) => row(bays(code, floor, 18, 6.99, glass, 6*128)));
     const occupied = rows.map(pattern => pattern.replaceAll('.', '').length >= 14);
     console.log('Platform 37 bay masks', rows);
     assert.equal(occupied.filter(Boolean).length, 6);
     assert.ok(occupied.some((lit, index) => lit && occupied[index+1] && !occupied[index+2]));
-    assert.equal(rows.filter(pattern => pattern === '.'.repeat(18)).length, 3);
-    assert.ok(rows[7]!.replaceAll('.', '').length > 0 && rows[7]!.replaceAll('.', '').length < 14);
+    assert.equal(rows.filter(pattern => pattern === '.'.repeat(18)).length, 5);
+    const acrossSectionBoundary = [5,6].flatMap(section => bays(code, 7, 9, 6.99, glass, section*128));
+    assert.ok(acrossSectionBoundary.filter(Boolean).length > 0 && acrossSectionBoundary.filter(Boolean).length < 14);
   } finally { central.owned.forEach(m => m.dispose()); }
 });
 

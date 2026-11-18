@@ -47,7 +47,7 @@ function shaderPart(material: THREE.Material, begin: string, defs: Record<string
 function windows(material: THREE.Material, useColor: boolean) {
   const run = shaderPart(material, '#include <map_fragment>', useColor ? {USE_COLOR:''} : {});
   return (u: number, v: number, level = 1, seed = .72, span = [.02,.02], fog = 0, depth = 100, tint = [seed,.75,.8]): number[] => {
-    const vars: Record<string, Value> = {uWinNight:level, uOfficeFog:fog, vViewPosition:[0,0,depth], vMapUv:[u,v], vColor:tint,
+    const vars: Record<string, Value> = {uWinNight:level, uOfficeFog:fog, vViewPosition:[0,0,depth], vMapUv:[u,v], vColor:tint, vPlatform37Position:[-45.7+u*.223,-163.3-u*1.483],
       diffuseColor:[.3,.42,.6,1], totalEmissiveRadiance:[...zero]};
     run({vars, fns:{fwidth: () => span}});
     return vars.totalEmissiveRadiance as number[];

@@ -144,16 +144,17 @@ test('the Crick has joined runs of occupied floors, partial suites and a double 
   const central = createMaterials();
   try {
     const code = officeShader(central.officesAtNight.get('curtain')!);
-    const rows = Array.from({length: 10}, (_, floor) => Array.from({length: 80}, (_, bay) => {
+    const rows = Array.from({length: 11}, (_, floor) => Array.from({length: 80}, (_, bay) => {
       const rgb = code.call('winOffice', [[bay+.5, floor+.55], [.30,.13], 2.98, 1, [.03125,.96875,.2375,.975], .44, .9, 420], { vars: { uOfficeFog: 0 } });
       return luma(rgb as number[]) > .30;
     }));
     const counts = rows.map(row => row.filter(Boolean).length);
     console.log('Crick lit bays by floor out of 80', counts);
     assert.ok(counts[1]! >= 64 && counts[2]! >= 64 && counts[3] === 0 && counts[4]! >= 64);
-    assert.ok(counts[5]! > 20 && counts[5]! < 60 && counts[6] === 0 && counts[7] === 0);
+    assert.ok(counts[5]! > 20 && counts[5]! < 60 && counts[6]! >= 64 && counts[7] === 0);
     const suite = rows[5]!;
     assert.ok(suite.slice(0,-5).some((_, i) => suite.slice(i,i+6).every(v => !v)));
+    assert.ok(counts[9] === 0 && counts[10] === 0);
   } finally { central.owned.forEach(m => m.dispose()); }
 });
 

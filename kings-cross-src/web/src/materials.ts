@@ -733,6 +733,22 @@ const NIGHT_MODE = {
   londonFrontage: [0.23, 0.10, 0.08, 0.08],
 } as const;
 
+// Evening tenancy along Platform 37, measured from the south end of the
+// stepped envelope. Each section has a different run of vacant storeys.
+const PLATFORM37_OFFICES = [
+  [36, [0, 1, 5, 6]],
+  [72, [0, 1, 2, 6]],
+  [108, [0, 3, 4, 5]],
+  [147, [2, 3, 4, 7, 8]],
+  [186, [0, 3, 4, 5, 8]],
+  [225, [0, 1, 4, 5, 7, 9]],
+  [258, [1, 2, 5, 6, 9, 10]],
+  [Infinity, [0, 1, 4, 5, 6, 10]],
+] as const;
+// Carry the section in the room index without changing its fractional UV.
+// The local wall strips are all under 128 three-metre rooms long.
+const PLATFORM37_OFFICE_STRIDE = 128;
+
 /** A storey shares an evening schedule, with a few unoccupied bays and
  * shadows behind its mullions. Fade unresolved glazing rather than filling
  * in the gaps or lighting dark storeys with an average. */
@@ -752,7 +768,9 @@ float officeHash( vec2 cell, float seed, float salt ) {
 }
 ` : ''}
 vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare, float depth ) {
-  vec2 cell = floor( v );
+  vec2 cell = floor( v );${kind === 'kx-modelled' ? `
+  float section = floor( cell.x / ${PLATFORM37_OFFICE_STRIDE}.0 );
+  cell.x -= section * ${PLATFORM37_OFFICE_STRIDE}.0;` : ''}
   vec2 row = vec2( 0.0, cell.y );
   float start = 0.08 + 0.53 * ${hash}( row, seed, 3.0 );
   ${wholeFloors ? `// Schedule neighbouring storeys together, with a different phase
@@ -766,7 +784,7 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   // corner. Match the baked tint within the merged curtain-wall batch.
   float wholeOfficeFloor = 0.0;
   if (abs(seed - ${officeBuildingSeed(265720685)}) < 0.01 && cell.y >= 5.0 && cell.y <= 10.0) {
-    wholeOfficeFloor = (cell.y == 6.0 || cell.y == 8.0 || cell.y == 9.0) ? 1.0 : 0.0;
+    wholeOfficeFloor = (cell.y == 6.0 || cell.y >= 8.0) ? 1.0 : 0.0;
     scheduled = wholeOfficeFloor;
   }
   if (abs(seed - ${officeBuildingSeed(375735261)}) < 0.01 && cell.y >= 2.0 && cell.y <= 7.0) {
@@ -780,15 +798,16 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   if (abs(seed - ${officeBuildingSeed(137827419)}) < 0.01 && cell.y >= 1.0 && cell.y <= 5.0) {
     wholeOfficeFloor = (cell.y == 1.0 || cell.y == 2.0 || cell.y == 5.0) ? 1.0 : 0.0;
     scheduled = wholeOfficeFloor;
-  }` : kind === 'kx-crick' ? `// The Crick's lower offices form two runs, followed by two
-  // closed floors and occupied suites under the barrel vaults.
+  }` : kind === 'kx-crick' ? `// Two occupied runs on the main envelope and a
+  // separate floor under the barrel vaults.
   if (cell.y >= 0.0 && cell.y <= 10.0) {
     scheduled = ((cell.y >= 1.0 && cell.y <= 2.0)
-      || (cell.y >= 4.0 && cell.y <= 5.0) || cell.y == 8.0 || cell.y == 10.0) ? 1.0 : 0.0;
+      || (cell.y >= 4.0 && cell.y <= 6.0) || cell.y == 8.0) ? 1.0 : 0.0;
   }` : `// Platform 37's tiered envelope uses absolute storey UVs, including
-  // its setbacks. Distribute closed floors across the three terraces.
+  // the setbacks. The tenancy groups carry through corners and roof steps.
   if (cell.y >= 0.0 && cell.y <= 10.0) {
-    scheduled = (cell.y == 1.0 || cell.y == 3.0 || cell.y == 6.0) ? 0.0 : 1.0;
+${PLATFORM37_OFFICES.map(([, floors], section) =>
+    `    ${section ? 'else ' : ''}if (section == ${section}.0) scheduled = (${floors.map(y => `cell.y == ${y}.0`).join(' || ')}) ? 1.0 : 0.0;`).join('\n')}
   }`}
   float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
@@ -810,23 +829,20 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
   float suite = max(wholeOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
-  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, wholeOfficeFloor );
+  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.22, wholeOfficeFloor );
+  float blindShare = mix(0.055,0.032,wholeOfficeFloor);
   float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : kind === 'kx-crick' ? `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
+    * mix( 0.035, 1.0, step( blindShare, blinds ) ) * suite;` : kind === 'kx-crick' ? `float floorLight = mix( 0.88, 1.06, officeHash( row, seed, 13.0 ) );
   // At overview scale each bay spans roughly two pixels. Give vacant
   // suites 15 to 16 consecutive bays and stagger them around both vaults.
-  float suiteLength = cell.y <= 2.0 ? 57.0 : cell.y == 5.0 ? 37.0 : cell.y == 10.0 ? 30.0 : 56.0;
-  float suiteOffset = cell.y == 1.0 ? 38.0 : cell.y == 2.0 ? 29.0 : cell.y == 4.0 ? 23.0 : 17.0+9.0*cell.y;
+  float suiteLength = cell.y <= 2.0 ? 57.0 : 56.0;
+  float suiteOffset = cell.y == 1.0 ? 38.0 : cell.y == 2.0 ? 29.0 : cell.y == 4.0 ? 23.0 : cell.y == 5.0 ? 56.0 : cell.y == 6.0 ? 22.0 : 17.0+9.0*cell.y;
   float suiteBay = 72.0*fract((cell.x + suiteOffset)/72.0);
   float suite = mix(0.035,1.0,step(suiteBay+0.5,suiteLength));
   float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
     * mix( 0.035, 1.0, step( 0.012, blinds ) ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
   float bay = mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) )
-    * mix( 0.035, 1.0, step( 0.10, blinds ) );
-  if (cell.y == 7.0 || cell.y == 10.0) {
-    float room = 44.0*fract((cell.x+(cell.y == 7.0 ? 9.0 : 30.0))/44.0);
-    bay *= step(room+0.5,16.0);
-  }`}`
+    * mix( 0.035, 1.0, step( 0.075, blinds ) );`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
@@ -972,19 +988,30 @@ export function officeFacade(
   // The ten timber fins per tile are too fine to stand in for separate
   // rooms. Use 3 m bays behind them and resolve the fins when close.
   const uv = kind === 'timber' ? 'vMapUv * vec2( 0.5, 1.0 )' : 'vMapUv';
+  const section = kind === 'timber' ? `
+        // Project along the envelope: the local UV restarts at corners
+        // and setbacks. The axis and south end follow landscraperPlan.
+        float officeAlong = dot(vPlatform37Position,vec2(0.148665,-0.988888))-154.69;
+        float officeSection = ${PLATFORM37_OFFICES.slice(0,-1).map(([end]) => `step(${end}.0,officeAlong)`).join('+')};
+        officeUv.x += ${PLATFORM37_OFFICE_STRIDE}.0 * officeSection;` : '';
   const screen = kind === 'timber' ? `
         float finGap = 1.0 - smoothstep( 0.09, 0.15, abs( fract( vMapUv.x * 10.0 + 0.5 ) - 0.5 ) );
         officeLight *= mix( 1.0, 0.12 + 0.88 * finGap, 1.0 - smoothstep( 0.003, 0.015, officeSpan.x ) );` : '';
   m.onBeforeCompile = (shader, renderer) => {
     shader.uniforms.uWinNight = windowNight;
     shader.uniforms.uOfficeFog = officeNightFog;
+    if (kind === 'timber') {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vPlatform37Position;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvPlatform37Position = ( modelMatrix * vec4( transformed, 1.0 ) ).xz;');
+    }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${kind === 'curtain' ? KX_CRICK_OFFICE_WINDOWS_GLSL : KX_MODELLED_OFFICE_WINDOWS_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${kind === 'timber' ? '\nvarying vec2 vPlatform37Position;' : ''}${WIN_NIGHT_GLSL}${kind === 'curtain' ? KX_CRICK_OFFICE_WINDOWS_GLSL : KX_MODELLED_OFFICE_WINDOWS_GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
 #ifdef USE_MAP
       if ( uWinNight > 0.003 ) {${kind === 'curtain' ? KX_OFFICE_NIGHT_GLASS : ''}
         vec2 officeUv = ${uv};
-        vec2 officeSpan = fwidth( officeUv );
+        vec2 officeSpan = fwidth( officeUv );${section}
         vec3 officeLight = winOffice( officeUv, officeSpan, ${glslFloat(seed)}, uWinNight, ${glslVec4(glass)},
           ${glslFloat(NIGHT_MODE.curtain[2])}, ${glslFloat(NIGHT_MODE.curtain[3])}, vViewPosition.z );${screen}
         totalEmissiveRadiance += ${glslFloat(gain)} * officeLight;
