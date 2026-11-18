@@ -11,6 +11,7 @@ import { acesFilmic, toSrgb, type V3 } from './aces.ts';
 import { Glsl, type Value } from './glsl.ts';
 import receipts from './fixtures/remote-weather-322a72a3.json' with { type: 'json' };
 import { remoteWeatherSnapshot } from './weather-isolation-snapshot.ts';
+import cameras from '../../tools/tests/frozen-waverley-cameras.json' with { type: 'json' };
 
 const city = buildWaverleyScene({ lighting: false });
 const undo = lightWaverleyNight(city.group, .60);
@@ -82,6 +83,7 @@ test('Balmoral east-end patch has about half amber panes across five storeys and
   assert.deepEqual(pane(52,8.5), [0,0,0]);
   assert.deepEqual(pane(53,17.8,0), [0,0,0]);
   assert.deepEqual(pane(53,17.8,1,.78), [0,0,0]);
+  assert.ok(patch[4]!.filter(rgb => luma(rgb) > .08).length >= 2, 'top floor has an occupied bay away from the corner');
 });
 
 test('the existing Calton landmark batches pick out gold masonry with shaded returns and sparse spill', () => {
@@ -93,6 +95,7 @@ test('the existing Calton landmark batches pick out gold masonry with shaded ret
     assert.ok(tag.array.some(value => value > 0), name);
     const v = {
       vWaverleyLandmarkWash: 1, vStationLampWorld: [-155,48,172],
+      vWaverleyLandmarkProfile: [0,0],
       vStationLampNormal: [.52,0,-.85], diffuseColor: [.23,.23,.20,1],
       uStationLampFog: 0, vFogDepth: 710, fogNear: 100, fogFar: 2200,
     };
@@ -105,6 +108,82 @@ test('the existing Calton landmark batches pick out gold masonry with shaded ret
     const alreadyLit = [.43,.37,.26];
     assert.deepEqual(evaluate(name, 'calton-landmark-wash', { ...v, totalEmissiveRadiance: alreadyLit }), alreadyLit);
   }
+});
+
+const balmoralGold = [182,129,71];
+const caltonAir = { uStationLampFog: 0, fogNear: 100, fogFar: 2200 };
+const caltonHotels = [
+  { name: 'Carlton', gain: 205/255, x: 197, z: 107, normal: [.985,0,-.173], depth: 381 },
+  { name: 'Scotsman', gain: 195/255, x: 114, z: 85, normal: [.964,0,-.267], depth: 440 },
+];
+function caltonColour(vars: Record<string, Value>, depth: number) {
+  const emission = evaluate(walls, 'calton-landmark-wash', { ...caltonAir, ...vars, vFogDepth: depth,
+    diffuseColor: [.23,.23,.20,1],
+  });
+  const haze = THREE.MathUtils.smoothstep(depth, 100, 2200);
+  return display(emission.map((c,i) => c+[.004,.006,.009][i]!)).map((c,i) => THREE.MathUtils.lerp(c,[14,22,38][i]!,haze));
+}
+function hotelRows(hotel: typeof caltonHotels[number]) {
+  return [.87,.67,.47,.27].map(height => caltonColour({
+    vWaverleyLandmarkWash: hotel.gain, vWaverleyLandmarkProfile: [1,height],
+    vStationLampWorld: [hotel.x,12+height*38,hotel.z], vStationLampNormal: hotel.normal,
+  },hotel.depth));
+}
+
+for (const hotel of caltonHotels) {
+  test(`${hotel.name} uplight falls away by storey`, () => {
+    glow.setLevel(1);
+    const rows = hotelRows(hotel).map(luma);
+    assert.ok(rows.every((value,i) => i === 0 || value >= rows[i-1]!+8), rows.join(', '));
+  });
+  test(`${hotel.name} gold stays below the Balmoral's brightness`, () => {
+    glow.setLevel(1);
+    const brightest = hotelRows(hotel).at(-1)!;
+    const [r,g,b] = brightest as [number,number,number];
+    assert.ok(luma(brightest) < luma(balmoralGold)-6 && r > g+24 && g > b+24, brightest.join(', '));
+  });
+}
+
+for (const [name,x,y] of [['Carlton',65,676],['Scotsman',270,640],['Scotsman corner',253,609]] as const) {
+  test(`${name} wall seen from the Balmoral keeps the main night material response`, () => {
+    glow.setLevel(1);
+    const spec = cameras['wv-balmoral-east-end'];
+    const camera = new THREE.PerspectiveCamera(spec.fov, 1.6, .1, 20000);
+    camera.position.fromArray(spec.pos);
+    camera.lookAt(new THREE.Vector3().fromArray(spec.target));
+    camera.updateMatrixWorld();
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2((x+.5)/640-1,1-(y+.5)/400),camera);
+    const hit = ray.intersectObject(mesh(walls),false)[0]!;
+    const geometry = mesh(walls).geometry;
+    const tag = geometry.getAttribute('waverleyLandmarkWash');
+    const i = hit.face!.a;
+    const win = geometry.getAttribute('wallWindowData');
+    const vars = {
+      ...caltonAir, vFogDepth: -hit.point.clone().applyMatrix4(camera.matrixWorldInverse).z,
+      vWaverleyLandmarkWash: tag.getX(i),
+      vWaverleyLandmarkProfile: [tag.getY(i),.5],
+      vStationLampWorld: hit.point.toArray(), vStationLampNormal: hit.normal!.toArray(),
+      diffuseColor: [.23,.23,.20,1], uWinNight: 1, WALL_TILE: [1,1],
+      vWallWindowData: [win.getX(i),win.getY(i)], vMapUv: [hit.uv!.x/3,hit.uv!.y/3.6],
+    };
+    // The generic occupied panes already present on main are the starting emission.
+    const mainsGrid = new Glsl(WIN_NIGHT_GLSL+WAVERLEY_WALL_WINDOWS.profile.fragment);
+    const original = mainsGrid.call('waverleyWindowLight', [vars.vMapUv,[.13,.07],vars.vWallWindowData,vars.vFogDepth,1], { vars: {} }) as number[];
+    const ridge = evaluate(walls, 'calton-ridge-windows', { ...vars,totalEmissiveRadiance: original }, [.13,.07]);
+    const wash = evaluate(walls, 'calton-landmark-wash', { ...vars,totalEmissiveRadiance: ridge }, [.13,.07]);
+    assert.deepEqual(wash, original);
+  });
+}
+
+test('the Bank on the Mound is the brightest white-gold landmark in Calton', () => {
+  glow.setLevel(1);
+  const bank = caltonColour({
+    vWaverleyLandmarkWash: 1, vWaverleyLandmarkProfile: [.5,0],
+    vStationLampWorld: [-148,41.5,159], vStationLampNormal: [-.308,0,-.951],
+  },689);
+  const [r,g,b] = bank as [number,number,number];
+  assert.ok(luma(bank) > 180 && r < 242 && r > g && g > b+8 && g < b+26, bank.join(', '));
 });
 
 test('distant Castle stone lifts toward pale grey and still dissolves in dense fog', () => {
@@ -139,6 +218,7 @@ test('ridge windows form warm clusters in previously dark bays with dark gaps an
   const v = {
     WALL_TILE: [1,1], WIN_GAIN: 1, vWallWindowData: [.53,0], uWinNight: 1,
     vStationLampWorld: [-84,45,210], vStationLampNormal: [.52,0,-.85],
+    vWaverleyLandmarkProfile: [0,0],
     uStationLampFog: 0, vFogDepth: 660, fogNear: 100, fogFar: 2200,
   };
   const grid = new Glsl(WIN_NIGHT_GLSL + WAVERLEY_WALL_WINDOWS.profile.fragment);

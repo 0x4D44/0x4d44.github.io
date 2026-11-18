@@ -70,7 +70,7 @@ if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
   float sill = 9.22+3.70*roomRow;
   float head = sill+2.56-0.20*roomRow;
   float halfWidth = 0.174-0.006*roomRow;
-  float share = 0.49;
+  float share = roomRow >= 3.0 ? 0.61 : 0.49;
   float bayOffset = abs(fract(vMapUv.x)-0.5);
   if (hotelHeight < 8.65) {
     roomRow = -1.0;
@@ -115,12 +115,32 @@ if (vWaverleyLandmarkWash > 0.0) {
   float beam = 0.73+0.27*smoothstep(-0.8,0.9,sin(0.107*along)+0.42*cos(0.063*along+0.23*vStationLampWorld.y));
   float peak = max(totalEmissiveRadiance.r,max(totalEmissiveRadiance.g,totalEmissiveRadiance.b));
   float headroom = 1.0-smoothstep(0.12,0.41,peak);
-  totalEmissiveRadiance += uStationLampLevel*caltonAir*vWaverleyLandmarkWash
-    *faceWash*beam*headroom*1.65*vec3(1.0,0.71,0.33)*diffuseColor.rgb;
+  float profile = vWaverleyLandmarkProfile.x;
+  vec3 wash = faceWash*beam*1.65*vec3(1.0,0.71,0.33)*diffuseColor.rgb;
+  if (profile > 0.75) {
+    // The lit east elevations face Calton. The north returns and the
+    // Scotsman's far corner stay dark toward the Balmoral.
+    float eastFace = smoothstep(0.70,0.94,faceNormal.x);
+    float endShadow = profile < 0.90 ? 1.0-smoothstep(126.0,132.0,vStationLampWorld.x) : 1.0;
+    float height = clamp(vWaverleyLandmarkProfile.y,0.0,1.0);
+    float uplight = 0.055+0.945*pow(1.0-height,1.45);
+    float cornice = (height-0.945)/0.023;
+    float run = vStationLampWorld.z+0.24*vStationLampWorld.x;
+    float pools = mix(0.23,1.0,smoothstep(-0.52,0.72,cos((run-118.0)*0.135)+0.52*cos((run-61.0)*0.071)));
+    vec3 hotelStone = 3.1*vec3(1.0,0.51,0.17)*diffuseColor.rgb;
+    hotelStone *= min(1.0,0.22/max(0.01,hotelStone.r));
+    wash = eastFace*endShadow*pools*(uplight+0.105*exp(-cornice*cornice))*hotelStone;
+  } else if (profile > 0.25) {
+    // White-gold stone and dome, with headroom for its occupied rooms.
+    float bankFace = (0.64+0.36*towardLight)*(1.0-0.52*abs(faceNormal.y));
+    wash = bankFace*3.85*vec3(1.0,0.85,0.53)*diffuseColor.rgb;
+    wash *= min(1.0,0.72/max(0.01,max(wash.r,max(wash.g,wash.b))));
+  }
+  totalEmissiveRadiance += uStationLampLevel*caltonAir*vWaverleyLandmarkWash*headroom*wash;
 }
 // calton-landmark-wash-end`;
 
-const CALTON_RIDGE_WINDOWS = /* glsl */`
+const caltonRidgeWindows = (hasLandmarkWash: boolean) => /* glsl */`
 #if defined( WALL_WIN ) && defined( USE_MAP )
 // calton-ridge-windows-begin
 vec2 ridgeUv = vMapUv*WALL_TILE;
@@ -130,7 +150,7 @@ vec3 ridgePoint = vStationLampWorld;
 // Castlehill. The existing office profiles and the New Town stay as built.
 float ridgeZ = 190.0-0.29*ridgePoint.x;
 float ridge = smoothstep(-430.0,-395.0,ridgePoint.x)*(1.0-smoothstep(105.0,145.0,ridgePoint.x))
-  *(1.0-smoothstep(45.0,75.0,abs(ridgePoint.z-ridgeZ)))*smoothstep(22.0,37.0,ridgePoint.y);
+  *(1.0-smoothstep(45.0,75.0,abs(ridgePoint.z-ridgeZ)))*smoothstep(22.0,37.0,ridgePoint.y)${hasLandmarkWash ? '*(1.0-step(0.75,vWaverleyLandmarkProfile.x))' : ''};
 if (ridge > 0.0 && vWallWindowData.y < 0.5 && uWinNight > 0.003) {
   ${CALTON_LIGHT_THROUGH_FOG}
   vec2 cell = floor(ridgeUv);
@@ -405,11 +425,11 @@ if (castleZone > 0.0 && uStationLampLevel > 0.0) {
     : 'totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.37)*diffuseColor.rgb*(0.98*castleZone*castleFace*castleAir);'}
 }
 // castle-wash-end`,false,undefined,{
-      afterEmission:(name === 'waverley-building-walls' ? CALTON_RIDGE_WINDOWS : '')+(wash ? CALTON_LANDMARK_WASH : ''),
+      afterEmission:(name === 'waverley-building-walls' ? caltonRidgeWindows(wash) : '')+(wash ? CALTON_LANDMARK_WASH : ''),
       vertexInput:wash ? {
-        declaration:'attribute float waverleyLandmarkWash;',
-        varying:'varying float vWaverleyLandmarkWash;',
-        assignment:'vWaverleyLandmarkWash = waverleyLandmarkWash;',
+        declaration:'attribute vec3 waverleyLandmarkWash;',
+        varying:'varying float vWaverleyLandmarkWash;\nvarying vec2 vWaverleyLandmarkProfile;',
+        assignment:'vWaverleyLandmarkWash = waverleyLandmarkWash.x;\nvWaverleyLandmarkProfile = waverleyLandmarkWash.yz;',
       } : undefined,
       fog:`
 // castle-clear-contrast-begin
