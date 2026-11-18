@@ -87,12 +87,18 @@ if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
   }
   vec2 room = vec2(floor(vMapUv.x),roomRow);
   float roomOn = step(balmoralRoomHash(room,13.0),share);
+  // Princes Street bay IDs follow the facade UV around the building.
+  // Move one room up to the top storey and one across to break a lit stack.
+  if (room.x == 54.0 && room.y == 0.0) roomOn = 0.0;
+  if (room.x == 54.0 && room.y == 3.0) roomOn = 1.0;
+  if (room.x == 48.0 && room.y == 1.0) roomOn = 0.0;
+  if (room.x == 49.0 && room.y == 2.0) roomOn = 1.0;
   float turnOn = 0.15+0.52*balmoralRoomHash(room,7.0);
   float gain = (0.19+0.17*balmoralRoomHash(room,4.0))*smoothstep(turnOn,turnOn+0.18,uWinNight);
   vec4 aperture = vec4(0.5-halfWidth,0.5+halfWidth,sill,head);
   float paneMask = winPane(vec2(fract(vMapUv.x),hotelHeight),aperture,hotelCellSpan*0.5);
   float mullion = 1.0-0.54*smoothstep(0.06,0.24,dot(sampledDiffuseColor.rgb,vec3(0.2126,0.7152,0.0722)));
-  vec3 amber = mix(vec3(1.0,0.63,0.25),vec3(1.0,0.76,0.34),balmoralRoomHash(room,3.0));
+  vec3 amber = mix(vec3(1.88,0.60,0.11),vec3(1.88,0.73,0.17),balmoralRoomHash(room,3.0));
   totalEmissiveRadiance += roomOn*gain*paneMask*mullion*winRoom(hotelHeight,aperture)*amber;
 }
 // balmoral-amber-rooms-end
