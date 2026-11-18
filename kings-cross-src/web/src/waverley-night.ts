@@ -6,6 +6,7 @@ import type { WallGrid } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { BALMORAL_LEVELS } from './waverley-frontage-balmoral.ts';
 import { NORTH_BRIDGE } from './waverley-frontage-bridges.ts';
+import { WAVERLEY_STATION_TEXTURES } from './waverley-station-textures.ts';
 
 /** The wall UV is in metres and the stone facade map repeats every 3 by 3.6 m. */
 export const WAVERLEY_WALL_TILE = [3, 3.6] as const;
@@ -49,14 +50,13 @@ vec3 waverleyWindowLight( vec2 uv, vec2 span, vec2 building, float distanceM, fl
   },
 } as const satisfies WallGrid;
 
-// Five transmitting panes on the shed slopes visible from North Bridge.
-// Local centres in metres, measured on the mapped cassettes.
-const NORTH_BRIDGE_PANE_CENTRES = [
-  [79.91, 11.31], [79.99, 9.31], [91.16, 6.84], [94.54, 6.84], [92.07, 3.85],
+// Cassette tile indices on the shed slopes seen from North Bridge. The
+// roof mesh maps its world x/z in metres directly to these glazing bars.
+const NORTH_BRIDGE_PANES = [
+  [37, 7], [37, 11], [38, 11], [38, 7], [39, 14],
 ] as const;
-const NORTH_BRIDGE_PANE_DISTANCE = NORTH_BRIDGE_PANE_CENTRES.reduce(
-  (nearest, [x, z]) => `min(${nearest},length((vStationLampWorld.xz-vec2(${x},${z}))*vec2(1.0,1.20)))`, '1.0',
-);
+const northBridgePaneMatch = NORTH_BRIDGE_PANES.map(([u,v]) =>
+  `(roofPaneCell.x == ${u}.0 && roofPaneCell.y == ${v}.0)`).join(' || ');
 
 /** Diffuse transmission seen from above the existing enclosed pendant rows. */
 function roofLightMap(heads: readonly number[]) {
@@ -236,12 +236,19 @@ if (abs(vStationLampNormal.x) > 0.10 && uStationLampSnow < 1.0) {
   float glintHeadroom = 1.0-0.67*smoothstep(0.58,0.96,interiorLight);
   float coolCut = mix(0.08,0.23,smoothstep(0.67,0.94,interiorLight));
   paneLight += clearGlint*vec3(0.62*glintHeadroom,0.55*glintHeadroom,-coolCut);
-  if (clearWeather > 0.0 && vStationLampWorld.x > 79.0 && vStationLampWorld.x < 95.5
-      && vStationLampWorld.z > 3.1 && vStationLampWorld.z < 12.1) {
-    float paneSpot = 1.0-smoothstep(0.25,0.76,${NORTH_BRIDGE_PANE_DISTANCE});
-    float spotView = smoothstep(0.035,0.095,roofSight)*(1.0-smoothstep(60.0,125.0,length(roofEye)));
-    float spotGain = mix(1.0,0.38,smoothstep(0.40,0.85,interiorLight));
-    paneLight += clearWeather*paneSpot*spotView*spotGain*vec3(0.50,0.36,0.045);
+  if (clearWeather > 0.0 && vStationLampWorld.x > 88.8 && vStationLampWorld.x < 96.0
+      && vStationLampWorld.z > 4.2 && vStationLampWorld.z < 14.4) {
+    vec2 roofPane = vStationLampWorld.xz/vec2(${WAVERLEY_STATION_TEXTURES.cassettes.tile.join(',')});
+    vec2 roofPaneCell = floor(roofPane);
+    if (${northBridgePaneMatch}) {
+      vec2 paneUv = fract(roofPane);
+      // Leave the painted strips at the cassette edges visible. The narrow
+      // feather covers partial pixels but leaves a flat, rectangular core.
+      float paneSpot = smoothstep(0.025,0.075,paneUv.x)*(1.0-smoothstep(0.91,0.99,paneUv.x))
+        *smoothstep(0.05,0.18,paneUv.y)*(1.0-smoothstep(0.79,0.92,paneUv.y));
+      float spotView = smoothstep(0.035,0.095,roofSight)*(1.0-smoothstep(60.0,125.0,length(roofEye)));
+      paneLight = mix(paneLight,vec3(0.53,0.43,0.135),clearWeather*paneSpot*spotView);
+    }
   }
   totalEmissiveRadiance += uStationLampLevel*paneLight*cassetteTransmission*(1.0-uStationLampSnow);
 }
@@ -330,21 +337,23 @@ totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*
 // balmoral-tower-wash-end`;
     // Keep the string courses and the underside of the corbel table warm.
     // The stage and its projecting stonework take the same violet as the crown.
-    const towerGrade = (h: string, zone = '1.0') => `
+    const towerGrade = (h: string, zone = '1.0', paintedTrim = false) => `
 float towerCourse = max(1.0-smoothstep(0.23,1.05,abs(${h}-26.25)),
   smoothstep(32.04,32.19,${h})*(1.0-smoothstep(32.58,32.74,${h})));
 float corbelLight = smoothstep(39.94,40.11,${h})*(1.0-smoothstep(41.03,41.23,${h}));
 float stageCornice = 1.0-smoothstep(0.25,0.95,abs(${h}-48.98));
 float towerBand = max(max(towerCourse,corbelLight),stageCornice);
-float towerVioletWash = smoothstep(40.95,41.15,${h});
+float towerVioletWash = ${paintedTrim ? `smoothstep(${BALMORAL_LEVELS.tower.corbel.toFixed(1)},41.20,${h})` : `smoothstep(40.95,41.15,${h})`};
 vec3 towerStoneGrade = mix(vec3(1.0),vec3(0.31,0.22,0.21),(1.0-towerBand)*(${zone})*uStationLampLevel);
 towerStoneGrade = mix(towerStoneGrade,vec3(0.075),towerVioletWash*(${zone})*uStationLampLevel);`;
     const violet = 'vec3(0.082,0.018,0.455)';
     const stageViolet = (h: string, zone = '1.0') => `
 float towerVioletFacing = 0.88+0.12*abs(dot(normalize(vStationLampNormal),normalize(vec3(0.55,0.25,-0.8))));
 float towerVioletStone = clamp(2.65*dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722)),0.45,1.23);
+// A shallow grazing wash picks out the cornice in the same violet light.
+float towerVioletCourse = smoothstep(48.35,48.65,${h})*(1.0-smoothstep(49.30,49.57,${h}));
 totalEmissiveRadiance += uStationLampLevel*(${zone})*towerVioletWash*towerVioletFacing*towerVioletStone
-  *(1.0-smoothstep(50.45,51.25,${h}))*${violet};`;
+  *(1.0-smoothstep(50.45,51.25,${h}))*(1.0+0.32*towerVioletCourse)*${violet};`;
     const towerDiffuse = `
 // balmoral-tower-diffuse-begin
 reflectedLight.directDiffuse *= towerStoneGrade;
@@ -468,7 +477,7 @@ ${towerBox.isEmpty() ? '' : `
 if ((${bounds(towerBox,2)}) > 0.0 && trimHeight >= 39.4) {
 ${towerWash('float towerQuoin = 0.0;')}
 }`}${lit && towerPaint ? `
-${towerGrade('trimHeight',towerPaint)}
+${towerGrade('trimHeight',towerPaint,true)}
 totalEmissiveRadiance = mix(towerPaintStart,totalEmissiveRadiance,towerStoneGrade);
 ${stageViolet('trimHeight',bounds(towerBox,2))}` : ''}
 // balmoral-crown-begin

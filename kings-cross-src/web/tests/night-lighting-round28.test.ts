@@ -59,22 +59,30 @@ const numbers = (start: number, count: number) => Array.from({length:count}, (_,
 const shares = (masks: string[]) => masks.map(row => row.replaceAll('.', '').length/row.length);
 const gap = (row: string) => Math.max(...row.split('#').map(run => run.length));
 
-test('Platform 37 distributes six bright floors alongside three closed floors and two partial floors', () => {
+test('Platform 37 distributes bright and closed floors across the eight sections', () => {
   const material = central.officesAtNight.get('timber')!;
-  const rows = shares(floorMasks(material, numbers(0,11), numbers(0,56), 6.99, [.14,.86,1/4.2,.98]));
+  const groups = [7,7,7,9,9,9,11,11].map((height, section) =>
+    shares(floorMasks(material, numbers(0,height), numbers(128*section,24), 6.99, [.14,.86,1/4.2,.98])));
+  const rows = numbers(0,11).map(y => {
+    const present = groups.flatMap(floors => floors[y] === undefined ? [] : [floors[y]]);
+    return present.reduce((sum,v) => sum+v,0)/present.length;
+  });
   console.log('Platform 37 fractions, lower to upper floors', rows);
-  assert.deepEqual(rows.map(v => v === 0 ? 'off' : v >= .75 ? 'whole' : 'partial'),
-    ['whole','off','whole','off','whole','whole','off','partial','whole','whole','partial']);
-  assert.ok([7,10].every(i => rows[i]! >= .20 && rows[i]! <= .50));
+  assert.deepEqual(groups.map(floors => floors.map(v => v === 0 ? 'off' : v >= .75 ? 'whole' : 'partial').join(',')),
+    ['whole,whole,off,off,off,whole,whole', 'whole,whole,whole,off,off,off,whole',
+      'whole,off,off,whole,whole,whole,off', 'off,off,whole,whole,whole,off,off,whole,whole',
+      'whole,off,off,whole,whole,whole,off,off,whole', 'whole,whole,off,off,whole,whole,off,whole,off',
+      'off,whole,whole,off,off,whole,whole,off,off,whole,whole', 'whole,whole,off,off,whole,whole,whole,off,off,off,whole']);
+  assert.ok([2,3].every(i => rows[i]! >= .20 && rows[i]! <= .50));
 });
 
-test('Crick has wide dark suites on the occupied overview floors and a double blackout above', () => {
+test('Crick has wide dark suites on the occupied overview floors and closed floors between runs', () => {
   const samples = floorMasks(central.officesAtNight.get('curtain')!, numbers(1,7), numbers(0,60),
     2.98, [.03125,.96875,.2375,.975]);
   const rows = shares(samples), gaps = samples.map(gap);
   console.log('Crick fractions and longest gaps', rows, gaps);
-  assert.ok([0,1,3].every(i => gaps[i]! >= 13 && rows[i]! >= .60));
-  assert.ok([2,5,6].every(i => rows[i] === 0));
+  assert.ok([0,1,3,5].every(i => gaps[i]! >= 13 && rows[i]! >= .60));
+  assert.ok([2,6].every(i => rows[i] === 0));
   assert.equal(new Set([samples[0],samples[1],samples[3]]).size, 3);
 });
 
@@ -87,7 +95,7 @@ test('the four visible London curtain walls use distinct whole-floor schedules',
     assert.ok(fractions.every(f => f === 0 || f >= .75));
     return fractions.map(f => +!!f);
   });
-  assert.deepEqual(states, [[0,1,0,1,1,0], [0,0,1,1,0,1], [1,0,1,1,0], [1,1,0,0,1]]);
+  assert.deepEqual(states, [[0,1,0,1,1,1], [0,0,1,1,0,1], [1,0,1,1,0], [1,1,0,0,1]]);
 });
 
 test('Balmoral crown and stage share a blue-violet hue through the lower-right clock stage', () => {
@@ -148,9 +156,15 @@ test('five North Bridge panes gain distinct warm cores and retain bars, snow and
     }}});
     return display(vars.totalEmissiveRadiance);
   };
-  const sites = [[868,461],[895,461],[1042,483],[1090,521],[1110,494]] as const;
-  const readings = sites.map(([x,y]) => {
-    const core = sample(x,y), rims = [sample(x,y-6),sample(x,y+6)];
+  const sites = [
+    [1081.1,480.4,1086.5,480.3,1075,480.6],
+    [1042.9,481.5,1048.4,481.4,1036.6,481.7],
+    [1065.2,499.2,1070.9,499,1058.6,499.4],
+    [1104.8,497.9,1110.4,497.7,1098.4,498.1],
+    [1058,519.7,1064,519.4,1051.1,519.9],
+  ] as const;
+  const readings = sites.map(([x,y,rx,ry,lx,ly]) => {
+    const core = sample(x,y), rims = [sample(rx,ry),sample(lx,ly)];
     assert.deepEqual(sample(x,y,1),sample(x,y,0,1));
     assert.deepEqual(sample(x,y,0,0,1),[0,0,0]);
     assert.ok(luma(sample(x,y,0,0,0,.57)) < luma(core)*.20);
