@@ -612,6 +612,8 @@ export class AnimCrowd {
     else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
+    // (the looking-about and crossed-leg sits hold a hand out wide: with someone in the next seat it rested on their knee - review 28, in 2 of 3 rides)
+    if (state === 'sit' && cat === 'sitalt' && this.people.some((o) => o !== p && o.parent === p.parent && o.state === 'sit' && Math.sign(o.x) === Math.sign(p.x) && Math.abs(o.z - p.z) < 0.75)) cat = 'sit';
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     if (state === 'pole' && p.poleClip && (ch.pools.pole || []).includes(p.poleClip)) clip = p.poleClip;   // (the clip the rider was placed for: the other one puts the other hand up, in the air)
     if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && p.bag.kind))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
