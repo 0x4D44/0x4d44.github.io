@@ -41,7 +41,7 @@ import type { CoalDropsPlan, CrickPlan, Edge, Facet, Gasholder, GasholderPlan, G
 import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { addBand, addFramedWindow, addSash, liftParts, partMarks, segmentsOutside } from './landmarks.ts';
-import { Batch, material, mergeParts, part, rng } from './materials.ts';
+import { Batch, material, mergeParts, officeFacade, part, rng } from './materials.ts';
 import type { PartMap, TextureSpec, V2, V3 } from './materials.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -264,9 +264,13 @@ export function createMaterials(): MaterialSet {
       iron: own(new THREE.MeshLambertMaterial({ color: 0x737b82 })),
       drum: own(new THREE.MeshLambertMaterial(mapped('drum'))),
       // glass and louvres catch the sun: a Phong sheen on top of the drawn pattern
-      curtain: own(new THREE.MeshPhongMaterial({ ...mapped('curtain'), specular: 0x6f8190, shininess: 45 })),
+      curtain: own(officeFacade(new THREE.MeshPhongMaterial({ ...mapped('curtain'), specular: 0x6f8190, shininess: 45 }),
+        'curtain', [3/96, 93/96, 0.95/4, 0.975], 2.82, 0.27)),
       alu: own(new THREE.MeshPhongMaterial({ ...mapped('alu'), specular: 0x4a525a, shininess: 18, side: THREE.DoubleSide })),
-      timber: own(new THREE.MeshLambertMaterial(mapped('timber'))),
+      // Each fin covers 12–88% of its 0.15 m pitch. Shift the glazing
+      // cycle half a pitch in the shader so its rectangle spans the gap.
+      timber: own(officeFacade(new THREE.MeshLambertMaterial(mapped('timber')),
+        'timber', [0.38, 0.62, 1/4.2, 0.98], 6.25, 0.58)),
       green: own(new THREE.MeshLambertMaterial(mapped('green'))),
     },
     owned,

@@ -712,9 +712,35 @@ vec3 winPaneLit( vec2 v, vec2 w, float night, float share ) {
  */
 const NIGHT_MODE = {
   house: [0.14, 0.5, 0.12, 0.18],
-  curtain: [0.4, 0.4, 0.4, 0.5],
+  curtain: [1, 0, 0.44, 0.9],
   shop: [0.3, 0.35, 0, 0.15],
+  londonFrontage: [0.23, 0.10, 0.08, 0.08],
 } as const;
+
+/** Floor occupancy and colour are shared across the building. Near the
+ * camera the mullions and spandrels break the lit band into panes. At a
+ * grazing angle only the horizontal coverage is averaged, so dark floors
+ * survive until the vertical pixel footprint starts to span storeys. */
+const OFFICE_WINDOWS_GLSL = /* glsl */`
+vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare ) {
+  vec2 row = vec2( 0.0, floor( v.y ) );
+  float start = 0.08 + 0.53 * winHash( row, seed, 3.0 );
+  float occupied = step( off, winHash( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
+  vec3 cool = vec3( 0.78, 0.90, 1.0 );
+  vec3 warm = vec3( 1.0, 0.86, 0.68 );
+  vec3 colour = mix( warm, cool, step( 1.0-coolShare, winHash( row, seed, 4.0 ) ) );
+  vec2 f = fract( v );
+  float across = smoothstep( 0.20, 0.63, w.x );
+  vec2 edge = max( w, vec2( 0.002 ) );
+  float paneX = smoothstep( rect.x-edge.x, rect.x+edge.x, f.x ) * smoothstep( -rect.y-edge.x, -rect.y+edge.x, -f.x );
+  float paneY = smoothstep( rect.z-edge.y, rect.z+edge.y, f.y ) * smoothstep( -rect.w-edge.y, -rect.w+edge.y, -f.y );
+  float width = rect.y - rect.x;
+  float bay = 0.82 + 0.18 * winHash( floor( v ), seed, 5.0 );
+  vec3 local = colour * occupied * mix( paneX * bay, width * 0.91, across ) * paneY * winRoom( f.y, rect );
+  vec3 distant = mix( warm, cool, coolShare ) * (1.0-off) * clamp( (night-0.15)/0.60, 0.0, 1.0 );
+  return mix( local, distant * ( width * (rect.w-rect.z) * 0.78 ), smoothstep( 0.25, 0.60, w.y ) );
+}
+`;
 
 /** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
 const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
@@ -744,7 +770,9 @@ float gk = fract( sin( dot( floor( vMapUv ), vec2( 12.9898, 78.233 ) ) + gSeed )
 ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.23 ) ) + 3.1 * gSeed + 1.7 * sin( dot( floor( vMapUv ), vec2( 0.17, 0.31 ) ) ) ), 0.75 );\ngk = clamp( gk + 0.07 + 0.6 * fract( gSeed ) - exp( -0.2 * vMapUv.y ), 0.0, 1.0 );' : ''}
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
-if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare );
+if ( uWinNight > 0.003 ) totalEmissiveRadiance += WIN_GAIN * ${curtain
+  ? 'winOffice( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE.z, WIN_MODE.w )'
+  : 'winTile( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE, gShare )'};
 `;
 
 /**
@@ -809,10 +837,33 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWinPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
     }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}`)
+      .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}${by === 'curtain' ? OFFICE_WINDOWS_GLSL : ''}`)
       .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
   };
   m.customProgramCacheKey = () => `glassVaries-${by}`;
+  return m;
+}
+
+/** The two modelled King's Cross Central envelopes use the same floor
+ * lighting as the city's offices. Their maps already encode storey height. */
+export function officeFacade<T extends THREE.MeshLambertMaterial | THREE.MeshPhongMaterial>(
+  m: T, kind: 'curtain' | 'timber', glass: readonly number[], seed: number, gain: number,
+): T {
+  const uv = kind === 'timber' ? 'vMapUv * vec2( 10.0, 1.0 ) + vec2( 0.5, 0.0 )' : 'vMapUv';
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uWinNight = windowNight;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${OFFICE_WINDOWS_GLSL}`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+#ifdef USE_MAP
+      if ( uWinNight > 0.003 ) {
+        vec2 officeUv = ${uv};
+        totalEmissiveRadiance += ${glslFloat(gain)} * winOffice( officeUv, fwidth( officeUv ), ${glslFloat(seed)}, uWinNight, ${glslVec4(glass)},
+          ${glslFloat(NIGHT_MODE.curtain[2])}, ${glslFloat(NIGHT_MODE.curtain[3])} );
+      }
+#endif`);
+  };
+  m.customProgramCacheKey = () => `kx-office-${kind}`;
   return m;
 }
 
@@ -841,18 +892,22 @@ vec3 midlandPaneLight( vec2 uv, vec2 span, float night ) {
 }
 `;
 
-/** The visible upper panes use a slightly smaller sample of occupied rooms
- * and a broader range of lamp warmth. The arcade uses its existing light. */
-const MIDLAND_VISIBLE_PANE_GLSL = `
+/** Three-colour lamps in the upper rooms. A pane is an isolated polygon:
+ * even at distance its neighbours cannot contribute to its light. */
+const MIDLAND_VISIBLE_PANE_GLSL = /* glsl */`
 vec3 midlandVisiblePaneLight( vec2 uv, vec2 span, float night ) {
   float id = floor(uv.x);
   if ( id >= ${glslFloat(PANE_UV.numbers)} ) return midlandPaneLight(uv,span,night);
-  float keepShare = 0.77;
-  float room = step(fract(id*0.618034+0.75),keepShare);
-  float far = smoothstep(0.25,0.6,max(span.x,span.y));
-  float warmth = mix(winHash(vec2(id,0.0),0.0,7.0),0.5,far);
-  vec3 tint = mix(vec3(0.43,0.27,0.095),vec3(0.74,0.59,0.29),warmth);
-  return tint * winPaneLit(uv,span,night,0.2) * mix(room,keepShare,far);
+  float occupied = step(fract(id*0.75487767+0.19),0.20);
+  float start = 0.07 + 0.56 * fract(id*0.618034+0.31);
+  float lamp = fract(id*0.56984029+0.27);
+  vec3 amber = vec3(0.34,0.14,0.043);
+  vec3 ivory = vec3(0.76,0.57,0.34);
+  vec3 cool = vec3(0.40,0.58,0.72);
+  vec3 tint = mix(mix(amber,ivory,smoothstep(0.19,1.0,lamp)),cool,1.0-step(0.19,lamp));
+  float brightness = 0.65 + 0.35 * fract(id*0.41421356+0.34);
+  float room = winRoom(-1.0-uv.y,vec4(0.0,1.0,0.0,1.0));
+  return tint * (occupied * smoothstep(start,start+0.24,night) * brightness * room);
 }
 `;
 
@@ -1825,7 +1880,8 @@ const cityMakers: Readonly<Record<CityMaterialName, () => THREE.Material>> = {
 function cityFacade(key: FacadeKey): THREE.Material {
   const t = cityTexture(key);
   // one window to a tile: each one mirrors the sky or shows its room (see glassVaries)
-  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile', FACADE_GLASS[key], key === 'shop' ? NIGHT_MODE.shop : NIGHT_MODE.house, key === 'shop' ? NIGHT_GAIN.shop : NIGHT_GAIN.house);
+  const mode = key === 'shop' ? NIGHT_MODE.shop : key === 'panel' ? NIGHT_MODE.house : NIGHT_MODE.londonFrontage;
+  return glassVaries(new THREE.MeshLambertMaterial({ map: t, color: t ? 0xffffff : CITY_TEXTURES[key].average, vertexColors: true }), 'tile', FACADE_GLASS[key], mode, key === 'shop' ? NIGHT_GAIN.shop : NIGHT_GAIN.house);
 }
 
 function cityFlat(from: 'asphalt' | 'concourseFloor', color: number): THREE.Material {
