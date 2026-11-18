@@ -766,9 +766,18 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   // Identify the buildings by the baked tint already used to seed this batch.
   float eastOfficeFloor = 0.0;
   if (abs(seed - ${eastOfficeSeed(375735261)}) < 0.01 && cell.y >= 4.0 && cell.y <= 5.0) eastOfficeFloor = 1.0;
-  if (abs(seed - ${eastOfficeSeed(260722156)}) < 0.01 && cell.y == 4.0) eastOfficeFloor = 1.0;
-  scheduled = max(scheduled,eastOfficeFloor);` : `// Break up the contiguous bank of lit floors at the Crick's base.
-  if (cell.y >= 0.0 && cell.y < 5.0) scheduled = 1.0 - (cell.y - 2.0*floor(cell.y/2.0));`}
+  // East of the tracks, group the lit floors into a bank with a dark
+  // floor below and above. This is the same building as the east return.
+  if (abs(seed - ${eastOfficeSeed(260722156)}) < 0.01 && cell.y >= 2.0 && cell.y <= 5.0) {
+    eastOfficeFloor = step(3.0,cell.y)*(1.0-step(5.0,cell.y));
+    scheduled = eastOfficeFloor;
+  }
+  scheduled = max(scheduled,eastOfficeFloor);` : `// The Crick's lower offices form two runs, followed by two
+  // closed floors and occupied suites under the barrel vaults.
+  if (cell.y >= 0.0 && cell.y <= 10.0) {
+    scheduled = ((cell.y >= 1.0 && cell.y <= 2.0)
+      || (cell.y >= 4.0 && cell.y <= 5.0) || cell.y == 8.0 || cell.y == 10.0) ? 1.0 : 0.0;
+  }`}
   float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
@@ -792,8 +801,15 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.0, eastOfficeFloor );
   float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
     * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
+  float suite = 1.0;
+  if (cell.y == 5.0 || cell.y == 10.0) {
+    // Only one side of each service corridor is occupied on these floors.
+    // Stagger the long runs between floors along the continuous facade UV.
+    float suiteBay = 32.0*fract((cell.x + 9.0*cell.y)/32.0);
+    suite = mix(0.035,1.0,step(suiteBay,cell.y == 5.0 ? 18.0 : 13.0));
+  }
   float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( 0.10, blinds ) );`}`
+    * mix( 0.035, 1.0, step( 0.10, blinds ) ) * suite;`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );

@@ -81,7 +81,7 @@ function roofLightMap(heads: readonly number[]) {
 // occluding buildings and the glazing close to the camera keep their contrast.
 const ROOF_AIR_FUNCTIONS = /* glsl */`
 // waverley-roof-air-functions-begin
-float waverleyRoofAir( vec3 ray, float depth, vec3 centre, vec3 radii ) {
+float waverleyRoofAir( vec3 ray, float depth, vec3 centre, vec3 radii, float taper ) {
   vec3 offset = (cameraPosition-centre)/radii;
   vec3 scaledRay = ray/radii;
   float speed = length(scaledRay);
@@ -95,7 +95,10 @@ float waverleyRoofAir( vec3 ray, float depth, vec3 centre, vec3 radii ) {
   float end = min(radius,depth*speed-middle);
   if (end <= start) return 0.0;
   // Integral of density - s*s over the segment inside the lobe.
-  return (end-start)*(density-(start*start+start*end+end*end)/3.0)/speed;
+  float column = (end-start)*(density-(start*start+start*end+end*end)/3.0)/speed;
+  // Long, glancing rays from the hill otherwise give almost the same
+  // saturated glow across the shed. Weight them toward the lobe's axis.
+  return column*mix(1.0,density,taper);
 }
 // waverley-roof-air-functions-end`;
 
@@ -106,11 +109,13 @@ if (cameraPosition.y > 11.0) {
   float roofAirDepth = length(roofAirRay);
   if (roofAirDepth > 34.0) {
     vec3 roofAirDir = roofAirRay/roofAirDepth;
-    float westAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(-4.0,15.0,-5.0),vec3(108.0,9.5,78.0));
-    float eastAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(205.0,16.0,-40.0),vec3(112.0,15.0,70.0));
-    float scatter = (1.0-exp(-(westAir+eastAir)/47.0))*smoothstep(34.0,95.0,roofAirDepth)
+    float hillView = smoothstep(24.0,38.0,cameraPosition.y);
+    vec3 footprint = mix(vec3(1.0),vec3(0.80,1.0,0.86),hillView);
+    float westAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(-4.0,15.0,-5.0),vec3(108.0,9.5,78.0)*footprint,hillView);
+    float eastAir = waverleyRoofAir(roofAirDir,roofAirDepth,vec3(205.0,16.0,-40.0),vec3(112.0,15.0,70.0)*footprint,hillView);
+    float scatter = (1.0-exp(-(westAir+eastAir)/mix(47.0,62.0,hillView)))*smoothstep(34.0,95.0,roofAirDepth)
       *smoothstep(11.0,15.0,cameraPosition.y)*uWaverleyRoofAir;
-    gl_FragColor.rgb += vec3(0.066,0.084,0.104)*scatter;
+    gl_FragColor.rgb += mix(vec3(0.066,0.084,0.104),vec3(0.124,0.090,0.059),hillView)*scatter;
   }
 }
 // waverley-roof-air-end`;
@@ -193,8 +198,8 @@ reflectedLight.directDiffuse *= mix(1.0,0.45,uStationLampLevel);
   // The top cassettes use the same geometry and map in both programs. Only
   // the glazed slopes above the interior acquire the transmitted light.
   patch('waverley-mapped-roofs',[.11,.17,.24],'1.0',true,'',false,undefined,roofLight && {
-    uniforms: {uWaverleyRoofLight:{value:roofLight.map}, uWaverleyRoofRect:{value:roofLight.rect}},
-    declarations: 'uniform sampler2D uWaverleyRoofLight;\nuniform vec4 uWaverleyRoofRect;',
+    uniforms: {uWaverleyRoofLight:{value:roofLight.map}, uWaverleyRoofRect:{value:roofLight.rect}, uWaverleyRoofWet:surfaceUniforms.wet},
+    declarations: 'uniform sampler2D uWaverleyRoofLight;\nuniform vec4 uWaverleyRoofRect;\nuniform float uWaverleyRoofWet;',
     code: `
 // waverley-roof-transmission-begin
 vec2 roofLightUv = (vStationLampWorld.xz-uWaverleyRoofRect.xy)*uWaverleyRoofRect.zw;
@@ -211,8 +216,15 @@ if (abs(vStationLampNormal.x) > 0.10 && uStationLampSnow < 1.0) {
 #endif
   float interiorLight = texture2D(uWaverleyRoofLight,roofLightUv).r;
   float pendantGlint = 0.20*smoothstep(0.57,0.92,interiorLight);
-  totalEmissiveRadiance += uStationLampLevel*vec3(0.93,0.99,1.0)
-    *(0.022+0.32*interiorLight+pendantGlint)*cassetteTransmission*(1.0-uStationLampSnow);
+  vec3 paneLight = vec3(0.93,0.99,1.0)*(0.022+0.32*interiorLight+pendantGlint);
+  // From above the nearby cassettes transmit more of the warm interior.
+  // Concentrate the bright glints over occupied platforms and preserve
+  // the cool glazing between them and on more glancing views.
+  float roofSight = normalize(cameraPosition-vStationLampWorld).y;
+  float clearGlint = smoothstep(0.45,0.94,interiorLight)*smoothstep(0.12,0.20,roofSight)
+    *(1.0-smoothstep(0.10,0.55,uStationLampFog))*(1.0-smoothstep(0.05,0.30,uWaverleyRoofWet));
+  paneLight = mix(paneLight,paneLight*vec3(1.43,1.16,0.94)+vec3(0.04,0.033,0.022),clearGlint);
+  totalEmissiveRadiance += uStationLampLevel*paneLight*cassetteTransmission*(1.0-uStationLampSnow);
 }
 // waverley-roof-transmission-end`,
     fog: `
@@ -297,12 +309,35 @@ ${quoin}
 float towerBeam = (0.80*towerShaft*(1.0+0.37*towerQuoin) + 0.34*towerStage)*(1.0-smoothstep(48.8,51.0,towerHeight));
 totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.68,0.34)*diffuseColor.rgb*(towerFacing*towerBeam);
 // balmoral-tower-wash-end`;
+    // Reserve full light for the string courses, corbel table and stage
+    // cornice. The dial faces have a separate material and wash.
+    const towerGrade = (h: string, zone = '1.0') => `
+float towerCourse = max(1.0-smoothstep(0.23,1.05,abs(${h}-26.25)),
+  1.0-smoothstep(0.23,0.85,abs(${h}-32.38)));
+float corbelLight = smoothstep(39.45,40.10,${h})*(1.0-smoothstep(41.05,42.4,${h}));
+float stageCornice = 1.0-smoothstep(0.25,0.95,abs(${h}-48.98));
+float towerBand = max(max(towerCourse,corbelLight),stageCornice);
+vec3 towerStoneGrade = mix(vec3(1.0),vec3(0.31,0.22,0.21),(1.0-towerBand)*(${zone})*uStationLampLevel);`;
+    const towerDiffuse = `
+// balmoral-tower-diffuse-begin
+reflectedLight.directDiffuse *= towerStoneGrade;
+reflectedLight.indirectDiffuse *= towerStoneGrade;
+// balmoral-tower-diffuse-end`;
     if (tower) patch(tower.name,[0,0,0],'1.0',false,towerWash(`
 // Match the alternating wide and narrow quoins in balmoralTowerTexture.
 float quoinWidth = mix(0.05,0.08,step(0.5,fract(towerHeight)));
 float towerQuoin = 1.0-smoothstep(quoinWidth-0.01,quoinWidth,min(vBalmoralTowerU,1.0-vBalmoralTowerU));
 `),false,{declaration:'',varying:'varying float vBalmoralTowerU;',assignment:'vBalmoralTowerU = uv.x;'},
-      {fog:towerFog('1.0')});
+      {afterEmission:`
+vec3 towerBuiltFlood = vec3(0.0);
+#ifdef FLOOD
+towerBuiltFlood = diffuseColor.rgb*vec3(1.0,0.82,0.5)*uWinNight
+  *FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vStationLampWorld.y-FLOOD.w,0.0)/FLOOD.y));
+#endif
+// balmoral-tower-grade-begin
+${towerGrade('towerHeight')}
+totalEmissiveRadiance -= (totalEmissiveRadiance+towerBuiltFlood)*(1.0-towerStoneGrade);
+// balmoral-tower-grade-end`, diffuse:towerDiffuse, fog:towerFog('1.0')});
     patch('waverley-balmoral-facade',[0,0,0],'1.0',false,`
 // balmoral-facade-wash-begin
 float facadeWashHeight = max(0.0,${height});
@@ -367,7 +402,8 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb,fogColor,0.186*facadeFog);
     // Cornices and lead domes share a material with bridge ribs and the hands.
     // Select by hotel bounds/height. The minimum lit response stops the dark
     // lead vertex tint becoming a smudge through the turret's floodlight.
-    patch('waverley-frontage-structure',[0,0,0],'1.0',false,lit=>`
+    const towerPaint = towerBox.isEmpty() ? '' : `(${bounds(towerBox,2)})*smoothstep(39.4,40.1,trimHeight)*(1.0-smoothstep(49.0,51.0,trimHeight))`;
+    patch('waverley-frontage-structure',[0,0,0],'1.0',false,lit=>`${lit && towerPaint ? '\nvec3 towerPaintStart = totalEmissiveRadiance;' : ''}
 // balmoral-trim-begin
 float trimHeight = ${height};
 float trimZone = (${within})*smoothstep(8.0,8.5,trimHeight)*(1.0-smoothstep(50.8,51.6,trimHeight));
@@ -403,10 +439,12 @@ trimRadiance *= mix(vec3(1.0),vec3(1.43,1.16,0.82),corniceFace);\n` : ''}totalEm
 ${towerBox.isEmpty() ? '' : `
 if ((${bounds(towerBox,2)}) > 0.0 && trimHeight >= 39.4) {
 ${towerWash('float towerQuoin = 0.0;')}
-}`}
+}`}${lit && towerPaint ? `
+${towerGrade('trimHeight',towerPaint)}
+totalEmissiveRadiance = mix(towerPaintStart,totalEmissiveRadiance,towerStoneGrade);` : ''}
 // balmoral-crown-begin
 float crown = (${within})*smoothstep(${(base+49.2).toFixed(3)},${(base+51.0).toFixed(3)},vStationLampWorld.y);
-totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.43,0.018,0.80)' : 'vec3(0.62,0.07,0.38)'}*crown;
+totalEmissiveRadiance += uStationLampLevel*${lit ? 'vec3(0.205,0.027,1.36)' : 'vec3(0.62,0.07,0.38)'}*crown;
 // balmoral-crown-end
 // north-bridge-wash-begin
 if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
@@ -421,7 +459,7 @@ if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
 }
 // north-bridge-wash-end`,false,{
       declaration:'attribute float northBridgeDeck;',varying:'varying float vNorthBridgeDeck;',assignment:'vNorthBridgeDeck = northBridgeDeck;',
-    },{fog:towerBox.isEmpty() ? undefined : towerFog(`(${bounds(towerBox,2)})*smoothstep(39.4,41.0,trimHeight)`)});
+    },{diffuse:towerPaint ? towerDiffuse : undefined, fog:towerBox.isEmpty() ? undefined : towerFog(`(${bounds(towerBox,2)})*smoothstep(39.4,41.0,trimHeight)`)});
   }
   const roofAir = { value: 0 };
   const airPrograms = new Set<THREE.Material>();

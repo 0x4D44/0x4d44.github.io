@@ -118,9 +118,9 @@ test('North Bridge glazing has dark cassette bars and distinct glints at the act
   const data = map.image.data as Uint8Array;
   function sample(x: number, z: number, albedo: number, snow = 0) {
     const vars = {
-      vStationLampWorld: [x, 9, z], vStationLampNormal: [.37, 1, 0],
+      vStationLampWorld: [x, 9, z], vStationLampNormal: [.37, 1, 0], cameraPosition: [x+34, 16.73, z],
       diffuseColor: [albedo*.30, albedo*.30, albedo*.30, 1],
-      uStationLampLevel: 1, uStationLampSnow: snow, sampledDiffuseColor: [albedo, albedo, albedo, 1],
+      uStationLampLevel: 1, uStationLampSnow: snow, uStationLampFog: 0, uWaverleyRoofWet: 0, sampledDiffuseColor: [albedo, albedo, albedo, 1],
       uWaverleyRoofRect: rect.toArray(), uWaverleyRoofLight: new Sampler(null), totalEmissiveRadiance: [0, 0, 0],
     };
     const env: Env = { vars, fns: { texture2D: (_sampler, uv) => {
