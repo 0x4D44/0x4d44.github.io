@@ -145,7 +145,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_female_short_jeans', 'punkduck_tennis_shoes'], hat=('cap', '#2e5e3a')),
     dict(id='adult_oxford_shirt', lod_cloth=900, kind='elder', outfit='trousers', H=1.74, gender=1, age=0.86, weight=0.55, muscle=0.45, race=(0.7, 0.3, 0.0), skin='onlytheghosts_old_eurasian_male', eye='brown', brows='eyebrow009', lashes='eyelashes02', hair='short01', hair_col='#9a9a9a', hair_lift=True, face=True,
          clothes=['elvs_male_shirt_untucked_bd1', 'toigo_wool_pants', 'mindfront_shoes_oxford_male']),
-    dict(id='adult_vneck', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.58, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow006', lashes='eyelashes03', hair='elvs_50s_updo', hair_col='#c9a25e', face=True,
+    dict(id='adult_vneck', kind='woman', outfit='trousers', H=1.68, gender=0, age=0.58, weight=0.5, muscle=0.4, race=(0.0, 1.0, 0.0), skin='middleage_caucasian_female', eye='lightblue', brows='eyebrow010', lashes='eyelashes03', hair='elvs_50s_updo', hair_col='#c9a25e', face=True,
          clothes=['punkduck_v_neck_top', 'punkduck_female_tight_jeans', 'mindfront_shoes_oxford_female']),
     dict(id='adult_camo_cap', kind='man', outfit='shorts', H=1.86, gender=1, age=0.50, weight=0.5, muscle=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow012', lashes=None, hair='short01', hair_col='#a87a43', face=True,
          clothes=['drednicolson_short-tail_camo_tee', 'culturalibre_sneakers'], shorts=('#c9b48a', 0.62, 0.014), hat=('cap', '#111111')),
@@ -243,7 +243,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_running_shoes_01'], shorts=('#8b7d5e', 0.82, 0.016)),
     dict(id='sum_shorts_asian_m', kind='man', outfit='shorts', H=1.72, gender=1, age=0.50, weight=0.45, muscle=0.5, race=(0.7, 0.3, 0.0), skin='middleage_asian_male', eye='brown', brows='eyebrow009', lashes='eyelashes02', hair='short01', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#2c3a2a', 0.74, 0.016)),
-    dict(id='elder_shorts', kind='elder', outfit='shorts', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short03', hair_col='#8a8a8a', hair_lift=True, face=True,
+    dict(id='elder_shorts', kind='elder', outfit='shorts', H=1.70, gender=1, age=0.86, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='grey', brows='eyebrow008', lashes=None, hair='short02', hair_col='#8a8a8a', hair_lift=True, face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'culturalibre_sneakers'], shorts=('#a89a78', 0.88, 0.016)),
     dict(id='boy_shorts', kind='boy', outfit='shorts', H=1.34, gender=1, age=0.13, weight=0.45, muscle=0.4, race=(0.9, 0.1, 0.0), skin='young_asian_male', eye='brown', brows='eyebrow001', lashes=None, hair='elvs_grump_hair', hair_col='#17120e', face=True,
          clothes=['toigo_basic_tucked_t-shirt', 'culturalibre_sneakers'], shorts=('#2a3f6a', 0.75, 0.012)),
@@ -563,7 +563,12 @@ def assign_materials(person, maxpx=1024):
         if role == 'eyes':
             o.data.materials.append(make_material('eye_' + spec['eye'], person['eye_crop'], None, rough=0.18, spec=0.5, maxpx=256))
         elif role in ('brows', 'lashes'):
-            o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=None))
+            # brows the colour of the hair, a shade darker, where the hair is light (ginger, fair, grey): the near-black texture gave every redhead heavy black
+            # brows (review 20). Lashes stay dark.
+            hc = hex_rgb(spec['hair_col']) if spec.get('hair_col') else None
+            light = role == 'brows' and hc is not None and (0.299 * hc[0] + 0.587 * hc[1] + 0.114 * hc[2]) > 0.3
+            bt = tuple(lin(c * 0.75) for c in hc) if light else None
+            o.data.materials.append(make_material('alpha_' + role + '_' + os.path.basename(tex) + (spec['hair_col'] if light else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.8, spec=0.0, maxpx=256, tint=bt, lift=light))
         elif role == 'hair':
             o.data.materials.append(make_material('alpha_hair_' + os.path.basename(tex) + spec['hair_col'] + ('_lift' if spec.get('hair_lift') else ''), os.path.join(mh['_dir'], tex), None, alpha=True, rough=0.55, spec=0.3, maxpx=512,
                                                   tint=tuple(lin(c) for c in hex_rgb(spec['hair_col'])), lift=bool(spec.get('hair_lift'))))
