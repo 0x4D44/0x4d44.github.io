@@ -1059,7 +1059,9 @@ export class AnimCrowd {
       // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk
       // with no speed, the stride froze half taken with the arms mid-swing for seconds at a time (review 19: 1.4 - 5.1 s, a bent-knee half stride in a crowd)
       if (p.v < 0.08) p.stillT = (p.stillT || 0) + dt; else if (p.v > 0.15) p.stillT = 0;
-      const still = p.stillT > 0.5 && !p.static;
+      p.pauseT = p.paused ? (p.pauseT || 0) + dt : 0;
+      // (in sooner, out only on a clear move after a moment: review 20 saw a crawling jam flick between the two up to 39 times a minute)
+      const still = !p.static && (p.paused ? !(p.v > 0.25 && p.pauseT > 0.8) : p.stillT > 0.3);
       if (still !== !!p.paused) { p.paused = still; const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
       if (!p.paused && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
     } else if (p.paused) p.paused = false;
