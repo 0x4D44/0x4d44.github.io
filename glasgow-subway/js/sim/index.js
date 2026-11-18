@@ -187,7 +187,7 @@ class Sim {
       const nPole = low ? 0 : Math.round(nStand * (0.35 + rng() * 0.4));   // (the rest stand without holding on)
       for (let k = 0; k < nStand * 8 && standing.length < nStand - nPole; k++) {
         const busy = load > 0.9, z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (busy ? 0.14 + rng() * 0.08 : 0.14 + rng() * 0.16);   // (never nearer the middle than 0.14 m: 0.04 left a walker no way past on either side - e2e)
-        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < (Math.sign(q.x) === sx ? gapS : 1.0)) || (!busy && seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) || sc._bagNear(car, x, z)) continue;
+        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < (Math.sign(q.x) === sx ? gapS : 1.0)) || seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < (busy ? 0.5 : 0.75))   /* (busy too: review 29 found standers between seated knees, a hand on a leg, for 85 s) */ || sc._bagNear(car, x, z)) continue;
         standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: 'stand', ceilAt });
       }
       got = got.concat(sc.seat(car, standing));
