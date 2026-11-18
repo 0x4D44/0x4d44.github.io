@@ -736,12 +736,12 @@ const NIGHT_MODE = {
 /** A storey shares an evening schedule, with a few unoccupied bays and
  * shadows behind its mullions. Fade unresolved glazing rather than filling
  * in the gaps or lighting dark storeys with an average. */
-const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled'): string => {
-  const suites = kind === 'kx-city';
-  const hash = suites ? 'officeHash' : 'winHash';
+const officeWindowsGlsl = (kind: 'ordinary' | 'kx-city' | 'kx-modelled' | 'kx-crick'): string => {
+  const wholeFloors = kind === 'kx-city' || kind === 'kx-crick';
+  const hash = wholeFloors ? 'officeHash' : 'winHash';
   return /* glsl */`
 uniform float uOfficeFog;
-${suites ? `
+${wholeFloors ? `
 // Quantise the building tint and avoid a transcendental hash. Small GPU
 // rounding differences in the seed should not switch the whole floor.
 float officeHash( vec2 cell, float seed, float salt ) {
@@ -754,11 +754,18 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   vec2 cell = floor( v );
   vec2 row = vec2( 0.0, cell.y );
   float start = 0.08 + 0.53 * ${hash}( row, seed, 3.0 );
-  float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 )${suites ? ' + 0.025' : ''};
+  ${wholeFloors ? `// Schedule neighbouring storeys together, with a different phase
+  // per building and group. Each schedule wraps around the envelope.
+  float group = floor( cell.y / 5.0 );
+  float phase = floor( 5.0 * officeHash( vec2( 0.0, group ), seed, 2.0 ) );
+  float floorSlot = cell.y + phase;
+  float darkSlots = 2.0${kind === 'kx-city' ? ' + step( officeHash( vec2( 0.0, group ), seed, 9.0 ), 0.22 )' : ''};
+  float occupied = step( darkSlots, floorSlot - 5.0 * floor( floorSlot / 5.0 ) ) * smoothstep( start, start + 0.24, night );
+  ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
-  vec3 white = ${kind === 'ordinary' ? 'vec3( 1.0, 0.86, 0.71 )' : 'vec3( 0.79, 0.92, 1.0 )'};
+  `}vec3 white = ${kind === 'ordinary' ? 'vec3( 1.0, 0.86, 0.71 )' : wholeFloors ? 'vec3( 0.92, 0.97, 1.0 )' : 'vec3( 0.79, 0.92, 1.0 )'};
   vec3 warm = vec3( 1.0, 0.72, 0.47 );
-  vec3 colour = mix( warm, white, step( 1.0-coolShare, ${hash}( ${suites ? 'cell' : 'row'}, seed, 4.0 ) ) );
+  vec3 colour = mix( warm, white, step( 1.0-coolShare, ${hash}( ${wholeFloors ? 'cell' : 'row'}, seed, 4.0 ) ) );
   vec2 f = fract( v );
   // Include the dark reveal around the existing mullion so it survives
   // the screen footprint of a 1.5 m bay. Never widen it into its neighbour.
@@ -767,14 +774,17 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   vec2 edge = clamp( w * 0.40, vec2( 0.003 ), vec2( 0.10 ) );
   float pane = winPane( f, aperture, edge );
   float blinds = ${hash}( cell, seed, 7.0 );
-  ${suites ? `// Offices occupy connected runs of bays separated by dark suites.
-  float pitch = 13.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
-  float lengthLit = floor( mix( 0.50, 0.93, officeHash( row, seed, 11.0 ) ) * pitch );
+  ${wholeFloors ? `// Most bays share the floor's brightness. A few closed blinds
+  // interrupt the run without turning the facade into scattered pinpoints.
+  ${kind === 'kx-city' ? `float pitch = 16.0 + floor( 8.0 * officeHash( row, seed, 10.0 ) );
+  float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
   float suite = step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit );
-  float floorLight = mix( 0.55, 1.0, officeHash( row, seed, 13.0 ) );
-  float bay = ( 0.26 + 0.76 * officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.15, 1.0, step( 0.09, blinds ) ) * suite;`
+  float floorLight = mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) );
+  float bay = mix( 0.66, 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
+    * mix( 0.035, 1.0, step( 0.055, blinds ) ) * suite;` : `float floorLight = mix( 0.76, 1.0, officeHash( row, seed, 13.0 ) );
+  float bay = mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) * floorLight
+    * mix( 0.035, 1.0, step( 0.10, blinds ) );`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
@@ -785,6 +795,14 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
 const OFFICE_WINDOWS_GLSL = officeWindowsGlsl('ordinary');
 const KX_OFFICE_WINDOWS_GLSL = officeWindowsGlsl('kx-city');
 const KX_MODELLED_OFFICE_WINDOWS_GLSL = officeWindowsGlsl('kx-modelled');
+const KX_CRICK_OFFICE_WINDOWS_GLSL = officeWindowsGlsl('kx-crick');
+
+// After dark the unoccupied glazing reflects a little sky. Suppress the
+// daytime blue so the bright interiors define the rows.
+const KX_OFFICE_NIGHT_GLASS = `
+float glassLuma = dot( diffuseColor.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+diffuseColor.rgb = mix( diffuseColor.rgb, vec3( glassLuma * 0.58 ), 0.76 * uWinNight );
+`;
 
 /** A GLSL float: always with a point (the tests' interpreter and a strict compiler both want `1.0`, not `1`). */
 const glslFloat = (n: number): string => (Number.isInteger(n) ? n.toFixed(1) : String(n));
@@ -805,7 +823,7 @@ const glslVec4 = (v: readonly number[]): string => `vec4( ${v.map(glslFloat).joi
  * "building bases ... meet the ground with no darkening": the line at the foot is 0.48 now, not 0.64, and a four-storey wall's mean light falls by half a per cent); v is
  * the height up the wall in storeys, and starts at zero at the foot of each part of a wall, so the storey above a shopfront has a shadow under its fascia too.
  */
-const glassByTileGlsl = (curtain: boolean): string => /* glsl */`
+const glassByTileGlsl = (curtain: boolean, officeSuites: boolean): string => /* glsl */`
 float gSeed = 0.0;
 #ifdef USE_COLOR
 gSeed = dot( vColor.rgb, vec3( 37.1, 91.7, 53.3 ) );
@@ -815,7 +833,7 @@ ${curtain ? 'gk = mix( gk, 0.5 + 0.5 * sin( dot( floor( vMapUv ), vec2( 0.41, 0.
 ${curtain ? glassVariesGlsl(0.8, 1.3) : GLASS_VARIES_GLSL}
 diffuseColor.rgb *= 1.0 - 0.22 * exp( -vMapUv.y ) - 0.30 * exp( -8.0 * vMapUv.y );
 if ( uWinNight > 0.003 ) {
-${curtain ? `  totalEmissiveRadiance += WIN_GAIN * winOffice( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE.z, WIN_MODE.w, vViewPosition.z );` : `  vec4 tileMode = WIN_MODE;
+${curtain ? `${officeSuites ? KX_OFFICE_NIGHT_GLASS : ''}  totalEmissiveRadiance += WIN_GAIN * winOffice( vMapUv, fwidth( vMapUv ), gSeed, uWinNight, WIN_RECT, WIN_MODE.z, WIN_MODE.w, vViewPosition.z );` : `  vec4 tileMode = WIN_MODE;
 #ifdef USE_COLOR
   // The round forecourt retail pavilion is occupied as in the original
   // schedule. Its baked building tint keeps this within the shared batch.
@@ -891,7 +909,7 @@ export function glassVaries<T extends THREE.MeshLambertMaterial | THREE.MeshPhon
     }
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${by === 'quad' ? 'varying vec3 vWinPos;\n' : ''}uniform float uWinNight;${WIN_NIGHT_GLSL}${by === 'curtain' ? (officeSuites ? KX_OFFICE_WINDOWS_GLSL : OFFICE_WINDOWS_GLSL) : ''}`)
-      .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain')}`);
+      .replace('#include <map_fragment>', `#include <map_fragment>\n${by === 'quad' ? GLASS_BY_QUAD_GLSL : glassByTileGlsl(by === 'curtain', officeSuites)}`);
   };
   m.customProgramCacheKey = () => `glassVaries-${by}${officeSuites ? '-suites' : ''}`;
   return m;
@@ -919,10 +937,10 @@ export function officeFacade(
     shader.uniforms.uWinNight = windowNight;
     shader.uniforms.uOfficeFog = officeNightFog;
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${KX_MODELLED_OFFICE_WINDOWS_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uWinNight;${WIN_NIGHT_GLSL}${kind === 'curtain' ? KX_CRICK_OFFICE_WINDOWS_GLSL : KX_MODELLED_OFFICE_WINDOWS_GLSL}`)
       .replace('#include <map_fragment>', `#include <map_fragment>
 #ifdef USE_MAP
-      if ( uWinNight > 0.003 ) {
+      if ( uWinNight > 0.003 ) {${kind === 'curtain' ? KX_OFFICE_NIGHT_GLASS : ''}
         vec2 officeUv = ${uv};
         vec2 officeSpan = fwidth( officeUv );
         vec3 officeLight = winOffice( officeUv, officeSpan, ${glslFloat(seed)}, uWinNight, ${glslVec4(glass)},
