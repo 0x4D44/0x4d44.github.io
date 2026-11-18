@@ -191,9 +191,9 @@ class Sim {
       }
       got = got.concat(sc.seat(car, standing));
       // the others hold a pole: at a real pole, facing so that the hand closes on it (review 14: they held air anywhere in the car)
-      const poles = this._carPoles(ci, info), okP = this._standOk(sc, car, ci, info, poles);
-      for (let i = poles.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)), t = poles[i]; poles[i] = poles[j]; poles[j] = t; }
-      for (let k = 0, n = 0; k < poles.length && n < nPole; k++) { const g = sc.seat(car, [this._poleSlot(sc, poles[k], PYf, ceilAt, okP, rng)]); if (g.length) { n++; got = got.concat(g); } }
+      const poles = this._carPoles(ci, info), okP = this._standOk(sc, car, ci, info, poles), held = poles.filter((pl) => !pl.gang);
+      for (let i = held.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)), t = held[i]; held[i] = held[j]; held[j] = t; }
+      for (let k = 0, n = 0; k < held.length && n < nPole; k++) { const g = sc.seat(car, [this._poleSlot(sc, held[k], PYf, ceilAt, okP, rng)]); if (g.length) { n++; got = got.concat(g); } }
       // a car left empty (nobody fitted the seat or spot drawn for it: the ceiling and walls rule some people out of some seats) tries its other seats in turn
       // (and a car reached once the crowd is at its cap - the head cars took boarders - still gets that one rider)
       if (!got.length) { const m0 = sc.max; sc.max = Math.max(sc.max, sc.people.length + 1); for (let k = 0; !got.length && k < slots.length; k++) { got = sc.seat(car, [slots[k]]); for (const q of got) if (q.seatRef) q.seatRef.p = q; } sc.max = m0; }
@@ -202,12 +202,14 @@ class Sim {
     if (job.car >= tv.cars.length) { tv.saloonDone = true; tv.saloonJob = null; }
   }
   /** the upright orange poles of car ci, in its frame (tools/assets_train.py): either side of each doorway (x = +-0.58, 0.75 m from the door's middle) and either side
-   *  of each gangway (x = +-0.70, 0.12 m in from the car's end; a cab end has none) */
+   *  of each gangway (x = +-0.70, 0.12 m in from the car's end; a cab end has none; marked gang: nobody holds those) */
   _carPoles(ci, info) {
     const wc = this.walkable && this.walkable.cars && this.walkable.cars[ci]; if (!wc) return [];
     const P = [], dz = wc.centreZ - info.zc, half = wc.length / 2;
     for (const d of wc.doorZ) for (const e of [-1, 1]) for (const sx of [-1, 1]) P.push({ x: sx * 0.58, z: d - info.zc + e * ((wc.doorWidth || 1.3) / 2 + 0.1) });
-    for (const e of [-1, 1]) { if (wc.hasCab && Math.sign(wc.centreZ) === e) continue; for (const sx of [-1, 1]) P.push({ x: sx * 0.70, z: dz + e * (half - 0.12) }); }
+    // (and either side of each gangway, x = +-0.70 - but a rider holding one stands in the gangway's mouth, where everyone walking through the train must pass: those are
+    // only obstacles here, so that nobody stands on them)
+    for (const e of [-1, 1]) { if (wc.hasCab && Math.sign(wc.centreZ) === e) continue; for (const sx of [-1, 1]) P.push({ x: sx * 0.70, z: dz + e * (half - 0.12), gang: true }); }
     return P;
   }
   /** may a rider stand at (x, z) in this car (its frame)? Not in a doorway's walking lane, not over the bench fronts outside the door bays, not in a gangway, not on a pole,
@@ -216,7 +218,7 @@ class Sim {
     const doors = this.trainView.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1), wc = this.walkable && this.walkable.cars && this.walkable.cars[ci], end = wc ? wc.length / 2 : info.len / 2, mid = wc ? wc.centreZ - info.zc : 0;
     return (x, z) => {
       if (Math.abs(z - mid) > end - 0.5 || doors.some((d) => Math.abs(z - d) < 0.4)) return false;
-      if (Math.abs(x) > (doors.some((d) => Math.abs(z - d) < 0.65) ? 0.55 : 0.3)) return false;
+      const bay = doors.some((d) => Math.abs(z - d) < 0.65); if (Math.abs(x) > (bay ? 0.55 : 0.3) || (!bay && Math.abs(x) < 0.12)) return false;   // (between the benches, off the middle line: someone walking through the car goes round, not into them)
       if (poles.some((q) => Math.hypot(q.x - x, q.z - z) < 0.22)) return false;
       for (const o of sc.people) { if (o.parent !== car || !o.obj) continue; if (o.state === 'sit') { if (Math.abs(o.z - z) < 0.55 && x * Math.sign(o.x) > 0.12) return false; } else if (Math.hypot(o.x - x, o.z - z) < 0.55) return false; }
       return !sc._bagNear(car, x, z) && (!extra || extra(x, z));
@@ -318,7 +320,7 @@ class Sim {
     else if (q.char.pools.pole && sc.rng() < 0.6) {   // most hold on: a free pole near their door (review 14: a standing boarder put a hand up to a pole that was not there)
       const poles = this._carPoles(ci, info), took = (pl) => sc.people.some((o) => o.parent === car && o.poleAt && Math.hypot(o.poleAt.x - pl.x, o.poleAt.z - pl.z) < 0.05) || X.stands.some((o) => o.ci === ci && o.pole && Math.hypot(o.pole.x - pl.x, o.pole.z - pl.z) < 0.05);
       const ok = this._standOk(sc, car, ci, info, poles, (x, z) => !X.stands.some((o) => o.ci === ci && Math.hypot(o.x - x, o.z - z) < 0.55) && !bagComing(x, z));
-      for (const pl of poles.filter((pl) => !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
+      for (const pl of poles.filter((pl) => !pl.gang && !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
     }
     if (!seat && !spot) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
       if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && Math.hypot(o.x - c.x, o.z - c.z) < 0.5) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
