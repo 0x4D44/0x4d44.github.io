@@ -336,13 +336,13 @@ class Sim {
     q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
     const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;
     q.onArrive = (p, reached) => {
-      const c = this._crowdToCar(car, p.x, p.z, p.yaw), free = (why) => { if (seat && seat.p === q) seat.p = null; T.lost++; if (T.why.length < 12) T.why.push(`${p.char.id} ${why} x=${c.x.toFixed(2)} z=${c.z.toFixed(2)} reached=${reached} legs=${p.path ? p.path.length : '-'} stuck=${(p.stuckT || 0).toFixed(1)}`); };
-      if (!p.rail) { if (seat && seat.p === q) seat.p = null; return 'keep'; }   // still on the platform: no way through, they stay there
+      const c = this._crowdToCar(car, p.x, p.z, p.yaw), unpend = () => { const i = pend.indexOf(q.char); if (i >= 0) pend.splice(i, 1); }, free = (why) => { unpend(); if (seat && seat.p === q) seat.p = null; T.lost++; if (T.why.length < 12) T.why.push(`${p.char.id} ${why} x=${c.x.toFixed(2)} z=${c.z.toFixed(2)} reached=${reached} legs=${p.path ? p.path.length : '-'} stuck=${(p.stuckT || 0).toFixed(1)}`); };
+      if (!p.rail) { unpend(); if (seat && seat.p === q) seat.p = null; return 'keep'; }   // (and no longer counts toward the car's mix: review 18 had five pass the check and two arrive)   // still on the platform: no way through, they stay there
       if (!spot) return free('no place');   // never got past the doorway (or there was nowhere for them): gone, as before
-      const at = reached && !seat && spot.yaw != null, here = { x: at ? spot.x : (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, force: true };
+      const at = reached && !seat && spot.yaw != null, here = { x: at ? spot.x : (c.x < 0 ? -1 : 1) * Math.max(0.14, Math.min(0.25, Math.abs(c.x))), y: PY, z: at ? spot.z : c.z, yaw: at ? spot.yaw : c.yaw, ceilAt, mode: 'stand' }, look = { char: p.char, print: p.print, teeColour: p.teeColour, bag: p.bag, force: true };   // (their own bag comes aboard with them: without it the car gave them a new one - review 18, 16 of 19 boarders changed bags at the door)
       if (!seat && !sc._fitsStandAt(p.char, here)) return free('too tall here');
       p.print = null; const np = sc.add({ ...look, ...here, yaw: c.yaw, static: true, state: 'stand' }, car); if (!np.obj) return free('not added');
-      seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; np.poleHand = spot.hand; } sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, 0.6); }   // (a pole only where there is one under the hand)
+      unpend(); seat ? T.sat++ : T.stood++; if (seat) { seat.p = np; np.seatRef = seat; sc.settle(np, seat, 1.0, () => this._saloonObs(tv)); } else { np.yawT = np.yaw; if (at && spot.clip) { np.poleClip = spot.clip; np.poleAt = spot.pole; np.poleHand = spot.hand; } sc.rise(np, { x: here.x, z: here.z, yaw: spot.yaw != null ? spot.yaw : here.yaw, mode: at && spot.clip ? 'pole' : 'stand' }, 0.6); }   // (a pole only where there is one under the hand)
       this._saloonObs(tv);
     };
   }
