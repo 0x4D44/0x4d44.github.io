@@ -15,7 +15,7 @@ import { surfaceUniforms } from './atmosphere.ts';
 import { COVER_GLSL, coverUniforms } from './cover.ts';
 import type { LampWetSurface } from './lamp-wet-surface.ts';
 import { LAMP_RECEIVER_GLSL } from './lamp-wet-surface.ts';
-import { createLampWeather, fadeLightInFog } from './streetlight-weather.ts';
+import { createLampWeather, fadeLightInFog, sharpenPlatformCoreInFog } from './streetlight-weather.ts';
 
 /** The tall post's height as built; an instance scales it to its own height (the arm and the head with it). */
 export const POST_HEIGHT = 8;
@@ -172,6 +172,10 @@ export interface StreetLightOptions {
   enhancedFog?: boolean;
   /** Scene-selected soft urban scattering; legacy/default/Perth stay exact. */
   softFog?: boolean;
+  /** Station-specific scattering and resolved lamp cores in dense fog. */
+  boundedFog?: 'kx' | 'wv';
+  /** Limit the overlapping street scatter around Princes Street in dense fog. */
+  waverleyStreetFog?: boolean;
   /** Wider scattering on Scottish city lights, independent of the clear head. */
   fogHaloSpread?: number;
   /** One low-opacity volume per LED strip, separate from its bright samples. */
@@ -278,6 +282,8 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
   group.add(halos);
 
   let cores: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> | undefined;
+  let clearCoreMaterial: THREE.PointsMaterial | undefined;
+  let fogCoreMaterial: THREE.PointsMaterial | undefined;
   if (options.coreSize && heads.length) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', haloGeometry.getAttribute('position'));
@@ -285,6 +291,13 @@ export function createStreetLights(spots: readonly LampSpot[], options: StreetLi
     const material = new THREE.PointsMaterial({ size: options.coreSize, sizeAttenuation: false, vertexColors: true,
       transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: options.fog ?? false, toneMapped: false });
     if (options.fog) fadeLightInFog(material,false,!!options.enhancedFog,!!(options.kxOptics || options.lightFog),!!options.softFog);
+    clearCoreMaterial=material;
+    if (options.boundedFog && options.fog && options.enhancedFog) {
+      fogCoreMaterial=material.clone();
+      fogCoreMaterial.onBeforeCompile=material.onBeforeCompile;
+      fogCoreMaterial.customProgramCacheKey=material.customProgramCacheKey;
+      sharpenPlatformCoreInFog(fogCoreMaterial);
+    }
     cores = new THREE.Points(geometry, material); cores.name = 'street-lamp-cores';
     cores.raycast = (): void => {};
     cores.frustumCulled = false; cores.renderOrder = 6; cores.visible = false;
@@ -440,7 +453,7 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.renderOrder = 4;
   group.add(pools);
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
-    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,softFog:options.softFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionRoadAt:options.reflectionRoad&&options.reflectionSurface?source=>{const e=poolEntries[source]!;return options.reflectionRoad!(e.spot,e.index)?[Math.sin(e.spot.yaw),Math.cos(e.spot.yaw)]:[0,0];}:undefined,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
+    poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,softFog:options.softFog,boundedFog:options.boundedFog,waverleyStreetFog:options.waverleyStreetFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionRoadAt:options.reflectionRoad&&options.reflectionSurface?source=>{const e=poolEntries[source]!;return options.reflectionRoad!(e.spot,e.index)?[Math.sin(e.spot.yaw),Math.cos(e.spot.yaw)]:[0,0];}:undefined,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
 
   return {
@@ -450,7 +463,11 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       haloMaterial.opacity = l * 0.9;
       poolMaterial.opacity = l;
       halos.visible = pools.visible = l > 0.01;
-      if (cores) { cores.material.opacity = l; cores.visible = l > 0.01; }
+      if (cores && clearCoreMaterial) {
+        cores.material = fogCoreMaterial && surfaceUniforms.fog.value > .65 ? fogCoreMaterial : clearCoreMaterial;
+        cores.material.opacity = l;
+        cores.visible = l > 0.01;
+      }
       weather?.setLevel(l);
     },
     counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + poolGeometry.index!.count / 3 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
@@ -462,7 +479,9 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       poolGeometry.dispose();
       material.dispose();
       haloMaterial.dispose();
-      cores?.geometry.dispose(); cores?.material.dispose();
+      cores?.geometry.dispose();
+      clearCoreMaterial?.dispose();
+      fogCoreMaterial?.dispose();
       poolMaterial.dispose();
       pools.dispose();
     },

@@ -33,6 +33,8 @@ gl_FragColor.rgb *= exp(-0.0055*max(0.0,vUrbanLampDistance-160.0)*sourceFog);
 export interface LampWeatherOptions {
   enhancedFog?: boolean;
   softFog?: boolean;
+  boundedFog?: 'kx' | 'wv';
+  waverleyStreetFog?: boolean;
   fogHaloSpread?: number;
   mastHaze?: boolean;
   kxOptics?: boolean;
@@ -45,6 +47,29 @@ export interface LampWeatherOptions {
   reflectionRoadAt?: (sourceIndex:number)=>readonly [number,number];
   /** A window is recessed inside the wall; its receiver is outside on paving. */
   receiverAnchor?: 'head' | 'base';
+}
+
+/** The existing platform core draw stays additive and resolves at pixel scale. */
+export function sharpenPlatformCoreInFog(material: THREE.PointsMaterial): void {
+  const before=material.onBeforeCompile, key=material.customProgramCacheKey;
+  material.onBeforeCompile=(shader,renderer)=>{
+    before.call(material,shader,renderer);
+    shader.vertexShader=shader.vertexShader
+      .replace('#include <common>','#include <common>\nuniform float uUrbanLampFog;')
+      .replace('gl_PointSize = size;',`gl_PointSize = size;
+// lamp-roof-core-size-begin
+gl_PointSize = mix(gl_PointSize,5.0,smoothstep(0.65,0.89,uUrbanLampFog));
+// lamp-roof-core-size-end`);
+    shader.fragmentShader=shader.fragmentShader
+      .replace('#include <premultiplied_alpha_fragment>',`// lamp-roof-core-begin
+float roofCoreFog = smoothstep(0.65,0.89,uUrbanLampFog);
+float roofCoreRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+gl_FragColor.a *= 1.0-roofCoreFog*smoothstep(0.56,1.0,roofCoreRadius);
+gl_FragColor.rgb *= 1.0+2.2*roofCoreFog*(1.0-smoothstep(125.0,210.0,vUrbanLampDistance));
+// lamp-roof-core-end
+#include <premultiplied_alpha_fragment>`);
+  };
+  material.customProgramCacheKey=()=>key.call(material)+'-platform-core';
 }
 
 /** One reflection per selected nearby source, laid onto its own ground plane. Its centre is
@@ -294,6 +319,17 @@ gl_FragColor.a *= 0.42+0.58*smoothstep(0.15,0.8,puddles);`}
   haze.forEach((s,i)=>{positions.set(s.point.toArray(),p.count*6+i*3);colors.set(s.colour.toArray(),p.count*6+i*3);});
   cores.forEach((s,i)=>{const offset=(p.count*2+haze.length+i)*3;positions.set(s.point.toArray(),offset);colors.set(s.colour.toArray(),offset);});
   hg.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));hg.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));hg.setAttribute('lampFogHalo',new THREE.Float32BufferAttribute(fogFlags,1));
+  if(optics.boundedFog){
+    // Coincident fittings occupy the same volume of air. Resolve that volume
+    // once in dense fog, retaining the original points in every other state.
+    const seen=new Set<string>(), weights=new Float32Array(sourceCount);
+    for(let i=0;i<p.count;i++){
+      const key=`${p.getX(i)},${p.getY(i)},${p.getZ(i)}`;
+      weights[i]=weights[i+p.count]=Number(!seen.has(key));
+      seen.add(key);
+    }
+    hg.setAttribute('lampFogWeight',new THREE.Float32BufferAttribute(weights,1));
+  }
   if(scale){const sizes=new Float32Array(sourceCount);sizes.set(scale.array);sizes.set(scale.array,scale.count);haze.forEach((s,i)=>{sizes[scale.count*2+i]=s.scale*(optics.kxOptics?1.65:1.15);});cores.forEach((s,i)=>{sizes[scale.count*2+haze.length+i]=s.scale*4.32;});hg.setAttribute('lampHaloScale',new THREE.Float32BufferAttribute(sizes,1));}
   if(haze.length){const flags=new Float32Array(sourceCount);flags.fill(1,p.count*2,p.count*2+haze.length);hg.setAttribute('lampFogHaze',new THREE.Float32BufferAttribute(flags,1));}
   if(cores.length){const flags=new Float32Array(sourceCount);flags.fill(1,p.count*2+haze.length);hg.setAttribute('lampFogCore',new THREE.Float32BufferAttribute(flags,1));}
@@ -308,7 +344,14 @@ gl_PointSize = size * mix( 1.0, ${enhancedFog?(optics.fogHaloSpread??9).toFixed(
 // lamp-fog-size-end`)
       .replace('#include <logdepthbuf_vertex>',`// lamp-fog-screen-begin
 ${enhancedFog?`vLampFogDistance = length(cameraPosition-(modelMatrix*vec4(position,1.0)).xyz);\nvLampFogMast = ${scale?'step(1.5,lampHaloScale)':'0.0'};`:''}
-gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );${softFog?'\ngl_PointSize *= 1.0+0.45*lampFogHalo*smoothstep(0.65,0.9,uLampFog)*(1.0-vLampFogMast);':''}
+gl_PointSize = max( gl_PointSize, 16.0 * lampFogHalo * uLampFog${enhancedFog?' * (1.0+1.25*uLampFog)':''} );${softFog?`
+gl_PointSize *= 1.0+0.45*lampFogHalo*smoothstep(0.65,0.9,uLampFog)*(1.0-vLampFogMast);
+// lamp-city-air-size-begin
+// A 52px sprite has no samples at 30px from its head. Give city mist a
+// resolved angular footprint; keep clear heads and the mast core unchanged.
+float cityAir = smoothstep(0.65,0.9,uLampFog)*lampFogHalo;
+gl_PointSize = mix(gl_PointSize,max(gl_PointSize,96.0),cityAir*(1.0-vLampFogMast));${haze.length?'\ngl_PointSize *= 1.0+0.12*cityAir*vLampFogHaze;':''}
+// lamp-city-air-size-end`:''}
 // lamp-fog-screen-end
 #include <logdepthbuf_vertex>`);
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\nvarying float vLampFogHalo;${enhancedFog?'\nvarying float vLampFogDistance;\nvarying float vLampFogMast;':''}`);
@@ -374,15 +417,105 @@ gl_FragColor.a = mix(gl_FragColor.a,0.16*mastScatterAlpha*coreFog*coreProfile,vL
       shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>',`// lamp-air-profile-begin
 float airRadius = 2.0*length(gl_PointCoord-vec2(0.5));
 float airFog = smoothstep(0.65,0.9,uLampFog)*vLampFogHalo*(1.0-vLampFogMast);
-float airProfile = 0.17*exp(-4.5*airRadius*airRadius)*(1.0-smoothstep(0.80,1.0,airRadius));
+float airProfile = 0.32*exp(-3.2*airRadius*airRadius)*(1.0-smoothstep(0.80,1.0,airRadius));
 float airDepth = exp(-0.0065*max(0.0,vLampFogDistance-50.0));
 gl_FragColor.a = mix(gl_FragColor.a,lampAirAlpha*airProfile*airDepth,airFog);
-// lamp-air-profile-end
+// lamp-air-profile-end${haze.length?`
+// lamp-city-mast-air-begin
+// One broad volume and one inner lobe per strip, not seven overlapping
+// strip samples. Add light to the accepted profiles, with no hollow centre.
+float cityMastRadius = 2.0*length(gl_PointCoord-vec2(0.5));
+float cityMastAir = (0.025*vLampFogHaze*exp(-3.0*cityMastRadius*cityMastRadius)${cores.length?'+0.065*vLampFogCore*exp(-6.0*cityMastRadius*cityMastRadius)':''})*(1.0-smoothstep(0.80,1.0,cityMastRadius));
+gl_FragColor.a += lampAirAlpha*cityMastAir*smoothstep(0.65,0.9,uLampFog)*exp(-0.007*max(0.0,vLampFogDistance-50.0));
+gl_FragColor.rgb *= 1.0+0.30*max(vLampFogHaze,${cores.length?'vLampFogCore':'0.0'})*smoothstep(0.65,0.9,uLampFog)*exp(-6.0*cityMastRadius*cityMastRadius);
+// lamp-city-mast-air-end`:''}
 #include <tonemapping_fragment>`);
     };
   }
-  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air':'');
+  halos.material.customProgramCacheKey=()=> (scale?'lamp-fog-scattering-strip':'lamp-fog-scattering')+(enhancedFog?`-wide-${optics.fogHaloSpread??9}`:'')+(haze.length?'-mast-haze':'')+(optics.kxOptics?'-kx':'')+(optics.lightFog?'-source':'')+(softFog?'-soft-air-2':'');
+  // The original material/program renders every other state byte-for-byte.
+  // Only dense fog selects the roof scatter or the LED strip's air capsule.
+  const clearHaloMaterial=halos.material;
+  const fogHaloMaterial=softFog&&(optics.boundedFog||cores.length||optics.waverleyStreetFog)?clearHaloMaterial.clone():null;
+  if(fogHaloMaterial){
+    const original=clearHaloMaterial.onBeforeCompile;
+    fogHaloMaterial.onBeforeCompile=(shader,renderer)=>{
+      original.call(clearHaloMaterial,shader,renderer);
+      if(optics.boundedFog){
+        shader.vertexShader=shader.vertexShader
+          .replace('#include <common>',`#include <common>
+attribute float lampFogWeight;
+varying float vLampFogWeight;
+varying float vLampFogViewHeight;`)
+          .replace('#include <fog_vertex>',`#include <fog_vertex>
+vLampFogWeight = lampFogWeight;
+vLampFogViewHeight = cameraPosition.y-(modelMatrix*vec4(position,1.0)).y;`);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
+varying float vLampFogWeight;
+varying float vLampFogViewHeight;`);
+      }
+      if(optics.waverleyStreetFog){
+        shader.vertexShader=shader.vertexShader
+          .replace('#include <common>','#include <common>\nvarying float vLampFrontageFog;')
+          .replace('#include <fog_vertex>',`#include <fog_vertex>
+// lamp-edinburgh-frontage-vertex-begin
+vec3 frontageLamp = (modelMatrix*vec4(position,1.0)).xyz;
+// Princes Street east end and the northern North Bridge approach overlap
+// in this view. The same fittings may contribute to both street batches.
+vLampFrontageFog = smoothstep(72.0,83.0,frontageLamp.x)*(1.0-smoothstep(124.0,150.0,frontageLamp.x))
+  * smoothstep(-175.0,-150.0,frontageLamp.z)*(1.0-smoothstep(-30.0,-14.0,frontageLamp.z))
+  * smoothstep(12.0,32.0,frontageLamp.z-cameraPosition.z);
+// lamp-edinburgh-frontage-vertex-end`);
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying float vLampFrontageFog;');
+      }
+      shader.fragmentShader=shader.fragmentShader.replace('#include <premultiplied_alpha_fragment>',`${optics.boundedFog?`
+// lamp-roof-scatter-begin
+// Screen blending adds the scattered light into the remaining display
+// headroom. Overlapping samples compose to 1-exp(-sum(optical depth)).
+// The tighter head aureole stays distinct from the wide fog scatter.
+float roofGain = ${optics.boundedFog==='wv'?'mix(0.85,1.90,smoothstep(3.0,10.0,vLampFogViewHeight))':'0.72'};
+float headGain = 0.58;${optics.boundedFog==='wv'?`
+// Resolve the close downlight under a pendant without increasing the broad
+// roof scatter or the distant pendant cluster at the end of the platform.
+vec2 pendantOffset = 2.0*(gl_PointCoord-vec2(0.5));
+float pendantNear = (1.0-smoothstep(18.0,46.0,vLampFogDistance))*(1.0-smoothstep(-0.8,0.0,vLampFogViewHeight));
+headGain += 2.85*pendantNear*exp(-9.0*dot(pendantOffset,pendantOffset));`:''}
+float roofScatter = vLampFogWeight * gl_FragColor.a * mix(headGain,roofGain,vLampFogHalo);
+gl_FragColor.rgb = vec3(1.0)-exp(-roofScatter*gl_FragColor.rgb);
+// lamp-roof-scatter-end`:''}${optics.waverleyStreetFog?`
+// lamp-edinburgh-frontage-fog-begin
+gl_FragColor.a *= 1.0-0.58*vLampFrontageFog*vLampFogHalo;
+// lamp-edinburgh-frontage-fog-end`:''}${cores.length?`
+// lamp-mast-capsule-begin
+// Scatter along the physical LED strip, including its upper end. The old
+// round core was centred halfway down it; gain there clipped rather than
+// lighting the head's 10–30px shoulders. Keep its existing central peak.
+vec2 capsulePoint = 2.0*(gl_PointCoord-vec2(0.5));
+float capsuleCentre = length(capsulePoint);
+capsulePoint.y = max(0.0,abs(capsulePoint.y)-0.48);
+float capsuleRadius = length(capsulePoint);
+// Keep the strip profile at the head. Add a compact lobe in its centre
+// and let both increments fall away before the surrounding veil.
+float capsuleProfile = 0.19*exp(-6.0*capsuleRadius*capsuleRadius)+0.32*exp(-10.5*capsuleCentre*capsuleCentre)
+  +0.18*exp(-42.0*capsuleCentre*capsuleCentre);
+float capsuleAir = capsuleProfile*lampAirAlpha*smoothstep(0.65,0.9,uLampFog)*(1.0-smoothstep(0.44,0.65,capsuleCentre));
+capsuleAir *= exp(-0.007*max(0.0,vLampFogDistance-50.0));
+gl_FragColor.a = mix(gl_FragColor.a,max(gl_FragColor.a,capsuleAir),vLampFogCore);
+gl_FragColor.a *= 1.0-0.42*vLampFogHaze*smoothstep(0.12,0.30,capsuleCentre);
+// lamp-mast-capsule-end`:''}
+#include <premultiplied_alpha_fragment>`);
+    };
+    if(optics.boundedFog){
+      fogHaloMaterial.blending=THREE.CustomBlending;
+      fogHaloMaterial.blendSrc=THREE.OneFactor;
+      fogHaloMaterial.blendDst=THREE.OneMinusSrcColorFactor;
+      fogHaloMaterial.blendSrcAlpha=THREE.ZeroFactor;
+      fogHaloMaterial.blendDstAlpha=THREE.OneFactor;
+    }
+    fogHaloMaterial.customProgramCacheKey=()=>clearHaloMaterial.customProgramCacheKey()+(optics.boundedFog?`-roof-scatter-${optics.boundedFog}`:'')+(optics.waverleyStreetFog?'-edinburgh-frontage-fog':'')+(cores.length?'-strip-capsule':'');
+  }
   return {group,triangles:indices.length*geometry.index!.count/3,draws:Number(indices.length>0),
-    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);},
-    dispose(){reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
+    setLevel(level:number){material.opacity=level;reflections.visible=level>.01&&surfaceUniforms.wet.value>.45&&(!optics.suppressSnow||surfaceUniforms.snowCover.value<.20);
+      if(fogHaloMaterial){fogHaloMaterial.opacity=clearHaloMaterial.opacity;halos.material=level>.01&&surfaceUniforms.fog.value>.65?fogHaloMaterial:clearHaloMaterial;}},
+    dispose(){halos.material=clearHaloMaterial;fogHaloMaterial?.dispose();reflections.dispose();geometry.dispose();material.dispose();group.removeFromParent();}};
 }
