@@ -466,7 +466,7 @@ function footOut(g, f, pfNow) {
 }
 const SW_MARK = 0.7;
 // steps per second of a healthy adult (0.92 m hip height) at speed ve (m/s): free walking, Grieve & Gear 1966; Bohannon 1997 (comfortable and fast speeds)
-const CAD = [[0.4, 62], [0.6, 77], [0.8, 90], [1.0, 101], [1.2, 110], [1.4, 118], [1.6, 126], [1.8, 134], [2.0, 143], [2.4, 160]];
+const CAD = [[0.4, 62], [0.6, 77], [0.8, 90], [1.0, 101], [1.2, 110], [1.4, 120], [1.6, 130], [1.8, 138], [2.0, 146], [2.4, 162]];
 function stepRate(ve) {
   let c;
   if (ve <= CAD[0][0]) c = Math.max(34, CAD[0][1] - (CAD[0][0] - ve) * 75);
