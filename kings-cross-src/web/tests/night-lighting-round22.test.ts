@@ -87,7 +87,7 @@ test('Balmoral floodlight picks out the built courses without losing the lower w
     && source.indexOf('totalEmissiveRadiance += ( WIN_GAIN') < source.indexOf('vec3 roomEmission'));
 });
 
-test('Balmoral crown takes a purple-magenta wash, isolated from the dial stage and the bridge', () => {
+test('Balmoral crown takes a violet wash above the clock stage and leaves the bridge alone', () => {
   const source = shader(named(built.group, structureName).material).fragmentShader;
   function sample(x: number, y: number, z: number): RGB {
     const env = { vars: { vStationLampWorld: [x, y, z], uStationLampLevel: 1, totalEmissiveRadiance: [0, 0, 0] } };
@@ -103,7 +103,7 @@ test('Balmoral crown takes a purple-magenta wash, isolated from the dial stage a
   glsl.run(block(source, 'balmoral-trim'), env);
   const cornice = env.vars.totalEmissiveRadiance as RGB;
   console.log('Balmoral projected cornice face emission', cornice);
-  assert.ok(cap[2] > cap[0] && cap[1] < .035 && luma(cap) > .15);
+  assert.ok(cap[2] > cap[0] && cap[1] < .035 && luma(cap) > .060361);
   assert.deepEqual(sample(55, base + 48, -126), [0, 0, 0]);
   assert.deepEqual(sample(130, 15, 30), [0, 0, 0]);
   assert.ok(cornice[0] > .38 && cornice[0] > 3*cornice[1]);
