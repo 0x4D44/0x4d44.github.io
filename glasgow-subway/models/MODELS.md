@@ -399,5 +399,11 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **Brows the colour the hair renders.** The spec's `hair_col` is a tint on the hair's own texture, so review 20's brows came out olive under auburn hair and blue-grey under grey. `hair_shows()` now takes the mean of the hair texture (or the lifted grey) times the tint; where PIL cannot read the texture, it falls back to the tint alone. Every person's brows take that colour a shade darker (0.75).
 - Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
 
+## Review 22 fixes
+
+- **Brows at the hair's own rendered colour.** The brows are thin strips in the shade of the brow ridge, so a shade darker read black (grey-haired men had slate brows).
+- `hair_shows` reads the hair PNGs with bad optional-chunk checksums the way `load_image` does. Before, `elvs_50s_updo` and `elvs_keylth_hair` fell back to the bare tint.
+- Both files were rebuilt and the post-build chain ran. The skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
