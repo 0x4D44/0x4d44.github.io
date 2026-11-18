@@ -768,6 +768,15 @@ float officeHash( vec2 cell, float seed, float salt ) {
   float h = fract( ( cell.x * 3.17 + cell.y * 0.87 + building * 1.27 + salt * 5.31 ) * 0.1031 );
   return fract( h * ( h + 33.33 ) * ( h + 11.73 ) );
 }
+
+// Pick one closed room in each group. Vary its position independently
+// so there is no repeating dark column and each row still reads as lit.
+float officeRoomOpen( vec2 cell, float seed, float rooms ) {
+  float group = floor( cell.x / rooms );
+  float room = cell.x - group * rooms;
+  float vacancy = floor( rooms * officeHash( vec2( group, cell.y ), seed, 17.0 ) );
+  return step( 0.5, abs( room - vacancy ) );
+}
 ` : ''}
 vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, float coolShare, float depth ) {
   vec2 cell = floor( v );${kind === 'kx-modelled' ? `
@@ -785,12 +794,15 @@ vec3 winOffice( vec2 v, vec2 w, float seed, float night, vec4 rect, float off, f
   ${kind === 'kx-city' ? `// The south-front offices share their schedule around each
   // corner. Match the baked tint within the merged curtain-wall batch.
   float wholeOfficeFloor = 0.0;
+  float eastOffice = step( abs(seed - ${officeBuildingSeed(375735261)}), 0.01 );
   if (abs(seed - ${officeBuildingSeed(265720685)}) < 0.01 && cell.y >= 5.0 && cell.y <= 10.0) {
     wholeOfficeFloor = (cell.y == 6.0 || cell.y >= 8.0) ? 1.0 : 0.0;
     scheduled = wholeOfficeFloor;
   }
-  if (abs(seed - ${officeBuildingSeed(375735261)}) < 0.01 && cell.y >= 2.0 && cell.y <= 7.0) {
-    wholeOfficeFloor = step( 4.0, cell.y );
+  if (eastOffice > 0.0 && cell.y >= 2.0 && cell.y <= 7.0) {
+    // Move the occupied sixth storey down to the third. The upper dark
+    // band stays legible from the shed and the block keeps four lit floors.
+    wholeOfficeFloor = (cell.y >= 3.0 && cell.y != 6.0) ? 1.0 : 0.0;
     scheduled = wholeOfficeFloor;
   }
   if (abs(seed - ${officeBuildingSeed(260722156)}) < 0.01 && cell.y >= 1.0 && cell.y <= 5.0) {
@@ -814,9 +826,24 @@ ${PLATFORM37_OFFICES.map(([, floors], section) =>
   float occupied = scheduled * smoothstep( start, start + 0.24, night );
   ` : `float cutoff = off + 0.46 * ( ${hash}( vec2( 0.0 ), seed, 9.0 ) - 0.5 );
   float occupied = step( cutoff, ${hash}( row, seed, 2.0 ) ) * smoothstep( start, start + 0.24, night );
-  `}vec3 white = ${kind === 'ordinary' ? 'vec3( 1.0, 0.86, 0.71 )' : wholeFloors ? 'vec3( 0.92, 0.97, 1.0 )' : 'vec3( 0.79, 0.92, 1.0 )'};
+  `}${wholeFloors ? `// Fittings serve a whole tenancy. Keep the room variation
+  // smaller than the warm-to-cool shift from one storey to the next.
+  float floorTone = officeHash( row, seed, 15.0 );
+  float roomTone = officeHash( cell, seed, 4.0 );
+  float warmth = smoothstep( 0.20, 0.68, floorTone ) * ${kind === 'kx-modelled' ? '0.92' : '0.74'} + 0.12 * roomTone;${kind === 'kx-city' ? '' : `
+  // Keep conventional cool fittings in circulation at the strip ends
+  // and on fallback storeys outside the surveyed envelope.
+  float surveyed = 1.0 - step( 11.0, cell.y );
+  float tenancy = smoothstep( 0.0, 3.0, cell.x ) * surveyed;
+  warmth *= mix( 0.07, 1.0, tenancy );`}
+  vec3 colour = mix( vec3( 0.92, 0.97, 1.0 ), vec3( 1.0, 0.83, 0.58 ), warmth );${kind === 'kx-city' ? `
+  // Outlying offices keep predominantly cool-white fittings. The
+  // surveyed whole floors carry the larger differences between tenants.
+  float neutralWarmth = mix( 0.12 * floorTone, 1.0, step( roomTone, 1.0 - coolShare ) );
+  vec3 neutral = mix( vec3( 0.92, 0.97, 1.0 ), vec3( 1.0, 0.83, 0.58 ), neutralWarmth );
+  colour = mix( neutral, colour, wholeOfficeFloor );` : ''}` : `vec3 white = vec3( 1.0, 0.86, 0.71 );
   vec3 warm = vec3( 1.0, 0.72, 0.47 );
-  vec3 colour = mix( warm, white, step( 1.0-coolShare, ${hash}( ${wholeFloors ? 'cell' : 'row'}, seed, 4.0 ) ) );
+  vec3 colour = mix( warm, white, step( 1.0-coolShare, winHash( row, seed, 4.0 ) ) );`}
   vec2 f = fract( v );
   // Include the dark reveal around the existing mullion so it survives
   // the screen footprint of a 1.5 m bay. Never widen it into its neighbour.
@@ -831,23 +858,37 @@ ${PLATFORM37_OFFICES.map(([, floors], section) =>
   float lengthLit = floor( mix( 0.58, 1.04, officeHash( row, seed, 11.0 ) ) * pitch );
   float offset = floor( pitch * officeHash( row, seed, 12.0 ) );
   float suite = max(wholeOfficeFloor,step( pitch * fract( ( cell.x + offset ) / pitch ) + 0.5, lengthLit ));
-  float floorLight = mix( mix( 0.69, 1.03, officeHash( row, seed, 13.0 ) ), 1.38, wholeOfficeFloor );
-  float blindShare = mix(0.055,0.022,wholeOfficeFloor);
-  float bay = mix( mix(0.66,0.78,wholeOfficeFloor), 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
-    * mix( 0.035, 1.0, step( blindShare, blinds ) ) * suite;` : kind === 'kx-crick' ? `// Lift the rooms when a pixel covers a material part of a pane.
+  float floorLight = mix( mix( 0.76, 1.05, officeHash( row, seed, 13.0 ) ),
+    mix( 1.20, 1.47, officeHash( row, seed, 16.0 ) ), wholeOfficeFloor );
+  // Broad street-facing offices keep occupied runs. Smaller rooms on
+  // the wings break them up. The east block fills its replacement floor.
+  float open = cell.x < 20.0 ? officeRoomOpen( cell, seed, 20.0 )
+    : officeRoomOpen( cell - vec2(20.0, 0.0), seed, 6.0 );
+  float bay = mix( mix(0.66,0.80,wholeOfficeFloor), 1.13, officeHash( cell, seed, 5.0 ) ) * floorLight
+    * mix( 0.035, 1.0, mix( step( 0.055, blinds ), max( eastOffice, open ), wholeOfficeFloor ) ) * suite;` : kind === 'kx-crick' ? `// Lift the rooms when a pixel covers a material part of a pane.
   float distantRoom = smoothstep( 0.08, 0.30, max( w.x, w.y ) );
-  float floorLight = mix( 0.88, 1.06, officeHash( row, seed, 13.0 ) ) + 0.13 * distantRoom;
+  float floorLight = mix( 0.86, 1.14, officeHash( row, seed, 16.0 ) ) + 0.13 * distantRoom;
   // At overview scale each bay spans roughly two pixels. Give vacant
   // suites 15 to 16 consecutive bays and stagger them around both vaults.
-  float suiteLength = cell.y <= 2.0 ? 57.0 : 56.0;
+  float suiteLength = cell.y == 5.0 ? 56.0 : 58.0;
   float suiteOffset = cell.y == 1.0 ? 38.0 : cell.y == 2.0 ? 29.0 : cell.y == 4.0 ? 23.0 : cell.y == 5.0 ? 56.0 : cell.y == 6.0 ? 22.0 : 17.0+9.0*cell.y;
   float suiteBay = 72.0*fract((cell.x + suiteOffset)/72.0);
   float suite = mix(0.035,1.0,step(suiteBay+0.5,suiteLength));
-  float bay = ( mix( 0.86, 1.06, officeHash( cell, seed, 5.0 ) ) + 0.04 * distantRoom ) * floorLight
-    * mix( 0.035, 1.0, step( 0.012, blinds ) ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
+  float open = step( 0.012, blinds );
+  if (cell.x >= 72.0 && suiteBay > 1.0 && suiteBay < suiteLength - 2.0) {
+    open = officeRoomOpen( cell, seed, 14.0 );
+  }
+  float bay = ( mix( 0.83, 1.10, officeHash( cell, seed, 5.0 ) ) + 0.04 * distantRoom ) * floorLight
+    * mix( 0.035, 1.0, open ) * suite;` : `// Timber fins mask the rooms separately in officeFacade.
   float distantRoom = smoothstep( 0.08, 0.30, max( w.x, w.y ) );
-  float bay = ( mix( 0.59, 0.93, officeHash( cell, seed, 5.0 ) ) + 0.13 * distantRoom )
-    * mix( 0.035, 1.0, step( mix( 0.075, 0.025, distantRoom ), blinds ) );`}`
+  float floorLight = mix( 1.0, mix( 0.90, 1.20, officeHash( row, seed, 16.0 ) ), surveyed );
+  // The south end is more continuously occupied. Keep corner panes
+  // lit where adjoining strips restart their bay UV.
+  float rooms = section == 0.0 ? 11.0 : section <= 2.0 ? 5.0 : 7.0;
+  float open = max( 1.0 - step( 1.0, cell.x ), officeRoomOpen( cell - vec2(1.0, 0.0), seed + section, rooms ) );
+  float roomLight = officeHash( cell, seed, 5.0 );
+  float bay = ( mix( mix( 0.59, 0.93, roomLight ), mix( 0.72, 1.05, roomLight ), surveyed ) + 0.13 * distantRoom ) * floorLight
+    * mix( 0.035, 1.0, open );`}`
     : 'float bay = ( 0.55 + 0.33 * winHash( cell, seed, 5.0 ) ) * mix( 0.035, 1.0, step( 0.17, blinds ) );'}
   float detail = 1.0 - smoothstep( 0.45, 1.08, max( w.x, w.y ) );
   float fog = 1.0 - smoothstep( 0.12, 0.82, uOfficeFog ) * smoothstep( 28.0, 300.0, depth );
