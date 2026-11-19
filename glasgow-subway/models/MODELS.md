@@ -411,5 +411,11 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **Flat-black brow textures.** eyebrow007 is flat black. The lift now turns it into an even light grey, so it takes the hair tint; before, it stayed black.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 33 fixes
+
+- **elder_shorts: new hair.** short02 ended in a jagged grey patch halfway down his forehead. He now has elvs_grump_hair, grey as before.
+- **teen_ginger: new hair.** short01 cut straight across a high forehead. He now has elvs_maxwell_hair, ginger as before.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
