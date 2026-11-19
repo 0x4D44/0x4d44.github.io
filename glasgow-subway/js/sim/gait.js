@@ -210,7 +210,8 @@ export function gaitParams(B, v, cad = 1) {
   const SL = v / fs;                                                  // step length
   const S = clamp(0.61 - 0.05 * (ve - 1.2), 0.59, 0.64);            // stance share of the stride
   const P = { v, ve, fs, SL, S, ff: 0.1, ho: Math.max(0.3, S - 0.25), thHS: clamp((8 + 10 * kv) * D2R, 8 * D2R, 24 * D2R), thTO: clamp((36 + 22 * kv) * D2R, 34 * D2R, 78 * D2R) };
-  P.bob = 0.036 * Math.pow(kv, 1.1) * (Lh / 0.92);                   // the bob the pelvis is asked for; the reach of the legs (lowerForReach) adds the rest, to about 0.035 m at 1.2 m/s
+  P.bob0 = 0.036 * Math.pow(kv, 1.1) * (Lh / 0.92);                  // the bob the pelvis is asked for, slid down under the legs' reach (trackReach)
+  P.bob = P.bob0 * (1 + 0.39 * smoother((kv - 1.0) / 0.3));           // ...and 39 % more at a brisk walk: the bob's low point is pinned at double support, so a bigger bob lifts mid-stance (review 32: knee 19 deg at mid-stance, a crouch; 8 people offline at 0.050 for all speeds: 21.1 -> 17.3 deg, pelvis jolts p99 8.7 -> 7.3 m/s^2, bob 34 -> 46 mm; at 0.8 and 1.2 m/s it cost woman_midi's knee, so up to 1.2 m/s the old bob stands)
   P.sway = 0.040 * Math.pow(1 / Math.max(kv, 0.5), 0.3) * (Lh / 0.92);
   P.yaw = (5 + 6 * Math.min(kv, 1.4)) * D2R;
   P.obl = (3.5 + 2.5 * Math.min(kv, 1.4)) * D2R;
@@ -344,7 +345,7 @@ const CAP_CS = new Float64Array(CAP_NB), CAP_SN = new Float64Array(CAP_NB);
 for (let b = 0; b < CAP_NB; b++) { CAP_CS[b] = Math.cos(4 * PI * (b + 0.5) / CAP_NB); CAP_SN[b] = Math.sin(4 * PI * (b + 0.5) / CAP_NB); }
 function trackReach(g, dt) {
   const P = g.P;
-  if (g.walkT < CAP_SETTLE) g.fitT = { hp: P.hPeak - CAP_PRIOR * P.bob * g.var.bob, bp: P.bobPh };   // (no log yet: what the bob has been found to need)
+  if (g.walkT < CAP_SETTLE) g.fitT = { hp: P.hPeak - CAP_PRIOR * P.bob0 * g.var.bob, bp: P.bobPh };   // (no log yet: what the bob has been found to need)
   else {
     const R = lowerForReach(g, gaitTargets(g), P, 10);
     if (!g.capG) { g.capG = new Float32Array(CAP_NB).fill(Infinity); g.capN = 0; }
