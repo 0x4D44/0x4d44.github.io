@@ -372,7 +372,7 @@ def macro_dict(spec):
     md['race'] = dict(asian=a, caucasian=c, african=f)
     return md
 
-FACE_REGIONS = dict(nose=0.5, mouth=0.45, chin=0.5, cheek=0.5, eyebrows=0.4, forehead=0.45, ears=0.5, eyes=0.35)   # region -> the largest weight used there
+FACE_REGIONS = dict(nose=0.5, mouth=0.3, chin=0.5, cheek=0.5, eyebrows=0.4, forehead=0.45, ears=0.5, eyes=0.35)   # region -> the largest weight used there   # (mouth 0.3, was 0.45: lopsided mouths and smirks at rest on ya_smile_polo, ya_tattoo_tank, teen_runner, woman_student, ya_ginger_braid ... - reviews 36 - 40)
 
 def face_targets(human, seed):
     """A face of its own: MakeHuman's face targets, a third of each region's paired controls pushed one way by up to the region's limit, seeded
@@ -403,7 +403,7 @@ def shape_targets(human, spec):
     """smile=: ARKit-style face units (MakeHuman faceunits01 pack, CC0) baked into the face - a closed-mouth smile with the cheeks lifted. belly=: MakeHuman's
     stomach target, for a paunch the macro weight alone does not give. Loaded before the rig and the assets, so eyes, brows and clothes fit the result."""
     _, TargetService = _services()
-    sm = spec.get('smile', 0)
+    sm = 0.6 * spec.get('smile', 0)   # (60 %: the face's own smile morph (js/sim/smile.js) adds the rest when they smile; baked in at full strength, the resting faces read as fixed grins and smirks - reviews 37 - 40)
     if sm:
         for name, w in (('mouthSmileLeft', sm), ('mouthSmileRight', sm), ('cheekSquintLeft', 0.5 * sm), ('cheekSquintRight', 0.5 * sm), ('mouthDimpleLeft', 0.25 * sm), ('mouthDimpleRight', 0.25 * sm)):
             TargetService.load_target(human, P('targets', 'faceunits', name + '.target'), weight=w)

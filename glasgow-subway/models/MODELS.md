@@ -442,5 +442,12 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **ya_ginger_long: her own face.** She now has a freckled ginger skin (toigo_light_skin_female_ginger), brown eyes and the wavy elvs_ashley_may_hair. She was the last pale, green-eyed face under woman_bob's red bob.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 40 fixes
+
+- **Gentler resting faces.** The baked smile (`smile=`) is now 60 % of its old strength; the runtime smile morph adds the rest when they smile.
+- **Narrower mouth range.** The seeded face targets' mouth range is 0.3 (was 0.45).
+- Both changes answer the fixed grins, smirks and lopsided mouths at rest that reviews 36 - 40 found.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

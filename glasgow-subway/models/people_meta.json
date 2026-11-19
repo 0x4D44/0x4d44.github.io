@@ -76,7 +76,7 @@
    "legLengthM": 0.941,
    "walkSpeedMps": 1.47,
    "walkFastSpeedMps": 2.36,
-   "tris": 7995,
+   "tris": 7994,
    "clips": [
     "idle_a",
     "idle_b",
@@ -396,7 +396,7 @@
    "legLengthM": 0.858,
    "walkSpeedMps": 1.34,
    "walkFastSpeedMps": 2.15,
-   "tris": 8000,
+   "tris": 7999,
    "clips": [
     "idle_a",
     "idle_b",
@@ -756,7 +756,7 @@
    "legLengthM": 0.704,
    "walkSpeedMps": 1.1,
    "walkFastSpeedMps": 1.77,
-   "tris": 7998,
+   "tris": 7997,
    "clips": [
     "idle_a",
     "idle_b",
@@ -1156,7 +1156,7 @@
    "legLengthM": 0.835,
    "walkSpeedMps": 1.3,
    "walkFastSpeedMps": 2.1,
-   "tris": 7998,
+   "tris": 7997,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3037,7 +3037,7 @@
    "legLengthM": 0.854,
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.14,
-   "tris": 7996,
+   "tris": 7995,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3077,7 +3077,7 @@
    "legLengthM": 0.825,
    "walkSpeedMps": 1.28,
    "walkFastSpeedMps": 2.07,
-   "tris": 7995,
+   "tris": 7996,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3157,7 +3157,7 @@
    "legLengthM": 0.877,
    "walkSpeedMps": 1.37,
    "walkFastSpeedMps": 2.2,
-   "tris": 7997,
+   "tris": 7998,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3197,7 +3197,7 @@
    "legLengthM": 0.634,
    "walkSpeedMps": 0.99,
    "walkFastSpeedMps": 1.59,
-   "tris": 7999,
+   "tris": 8000,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3317,7 +3317,7 @@
    "legLengthM": 0.837,
    "walkSpeedMps": 1.3,
    "walkFastSpeedMps": 2.1,
-   "tris": 7687,
+   "tris": 7688,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3637,7 +3637,7 @@
    "legLengthM": 0.86,
    "walkSpeedMps": 1.34,
    "walkFastSpeedMps": 2.16,
-   "tris": 7998,
+   "tris": 7999,
    "clips": [
     "idle_a",
     "idle_b",
