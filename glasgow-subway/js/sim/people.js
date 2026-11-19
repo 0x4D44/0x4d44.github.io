@@ -689,7 +689,8 @@ export class AnimCrowd {
     const pet = p.pet, o = p.obj, par = o.parent; if (!par) return;
     if (pet.root.parent !== par) { par.add(pet.root); par.add(pet.lead); pet.h.v = null; }
     const vis = o.visible && !p.hidden; pet.root.visible = pet.lead.visible = vis;
-    followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt); poseHaggis(pet, p.y);
+    const near = []; for (const q of this.people) if (q !== p && q.obj && q.obj.parent === par && Math.abs(q.obj.position.x - pet.h.x) < 1 && Math.abs(q.obj.position.z - pet.h.z) < 1) near.push({ x: q.obj.position.x, z: q.obj.position.z });
+    followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt, near); poseHaggis(pet, p.y);
     if (pet.hand === undefined || pet.handOf !== o) { pet.handOf = o; pet.hand = null; o.traverse((b) => { if (b.isBone && /hand_l$/.test(b.name) && !pet.hand) pet.hand = b; }); }
     const v = this._v;
     if (pet.hand) { o.updateWorldMatrix(true, false); pet.hand.updateWorldMatrix(true, false); par.updateWorldMatrix(true, false); pet.hand.getWorldPosition(v); par.worldToLocal(v); } else v.set(o.position.x, p.y + 0.8, o.position.z);

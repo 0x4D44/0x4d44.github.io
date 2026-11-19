@@ -1,6 +1,6 @@
 // A haggis on a lead, trotting behind the man in the string vest (people.js: PET_OWNER).  The wild haggis, as every visitor to Scotland is told, has the legs of
 // one side shorter than the other, for running round hillsides - so this one leans, and on the flat of a Subway platform it has to hurry.  Cosmetic only: it
-// collides with nothing and nobody steers round it.  The following is plain maths (followStep, unit-tested); the model and the lead are made here from
+// keeps out of other people's legs, but nobody steers round it.  The following is plain maths (followStep, unit-tested); the model and the lead are made here from
 // three.js primitives, in the frame of whatever group its owner stands in (a platform, a train's saloon).
 
 export const HAGGIS = {
@@ -10,6 +10,7 @@ export const HAGGIS = {
   vmax: 2.3, acc: 7,             // m/s, m/s^2: a hurried scuttle at the most
   snap: 4.5,                     // m: further from its owner than this (they boarded, the crowd was re-dealt) it is simply put in its place
   stride: 0.12,                  // m per leg cycle
+  clear: 0.36,                   // m: kept this far from the centre of anyone else (their feet and shins)
   lean: 0.16,                    // rad: the list its short side gives it
 };
 
@@ -22,13 +23,17 @@ export function petPlace(o) {
 
 /** one step of the following: h = { x, z, yaw, v, ph } is moved towards its place by its owner o = { x, z, yaw, sit }. yaw here is the haggis's own heading,
  *  atan2(dx, dz) of the way it goes (its nose is +z of the model). Returns h. */
-export function followStep(h, o, dt) {
+export function followStep(h, o, dt, avoid) {
   const t = petPlace(o); let dx = t.x - h.x, dz = t.z - h.z; const d = Math.hypot(dx, dz);
   if (!(d < HAGGIS.snap) || h.v == null) { h.x = t.x; h.z = t.z; h.v = 0; h.ph = h.ph || 0; h.yaw = Math.atan2(-Math.sin(o.yaw), -Math.cos(o.yaw)); return h; }
   const want = d > HAGGIS.slack ? Math.min(HAGGIS.vmax, d * 3.2) : 0, lim = HAGGIS.acc * dt;
   h.v += Math.max(-lim, Math.min(lim, want - h.v));
   const step = Math.min(d, h.v * dt);
   if (d > 1e-6 && step > 0) { h.x += dx / d * step; h.z += dz / d * step; h.ph = (h.ph + step / HAGGIS.stride) % 1; }
+  if (avoid) for (const a of avoid) {   // nobody's legs: pushed out round anyone else standing or walking near (review 31 saw it trot through them)
+    const ax = h.x - a.x, az = h.z - a.z, r = Math.hypot(ax, az);
+    if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k; }
+  }
   const face = h.v > 0.15 && d > 0.05 ? Math.atan2(dx, dz) : Math.atan2(o.x - h.x, o.z - h.z);   // going: where it goes; stopped: it looks up at its owner
   let e = face - h.yaw; while (e > Math.PI) e -= 2 * Math.PI; while (e < -Math.PI) e += 2 * Math.PI;
   h.yaw += e * Math.min(1, dt * 8);

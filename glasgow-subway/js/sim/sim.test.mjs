@@ -837,6 +837,18 @@ test('haggis: it follows its owner, keeps its place behind them and stops there'
   assert.ok(Math.hypot(h.x - t2.x, h.z - t2.z) < 1e-9, 'an owner who is suddenly elsewhere has it with them');
 });
 
+test('haggis: it keeps out of other people\'s legs, even with someone standing on its place', async () => {
+  const { followStep, petPlace, HAGGIS } = await import('./haggis.js');
+  const o = { x: 0, z: 0, yaw: 0, sit: false }, t = petPlace(o), h = { x: t.x, z: t.z, yaw: 0, v: null, ph: 0 };
+  followStep(h, o, 0);
+  const other = [{ x: t.x + 0.05, z: t.z }];   // a stander right on its place
+  let worst = 9;
+  for (let i = 0; i < 300; i++) { followStep(h, o, 1 / 60, other); worst = Math.min(worst, Math.hypot(h.x - other[0].x, h.z - other[0].z)); }
+  assert.ok(worst >= HAGGIS.clear - 1e-6, 'within ' + worst.toFixed(3) + ' m of a stander');
+  const free = Math.hypot(h.x - t.x, h.z - t.z);
+  assert.ok(free < 0.5, 'still near its place: ' + free.toFixed(2));
+});
+
 test('blinking: lids close and reopen within a quarter of a second, 8-25 blinks a minute, fewer at a phone, and only the seated doze', async () => {
   const { BLINK, lidAt, blinkStep } = await import('./blink.js');
   assert.equal(lidAt(0), 0); assert.equal(lidAt(BLINK.close + 0.01), 1); assert.equal(lidAt(BLINK.close + BLINK.shut + BLINK.open), 0);
