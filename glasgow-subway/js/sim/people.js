@@ -627,7 +627,7 @@ export class AnimCrowd {
     if (!clip) return; const n = this._action(p, clip), o = p.cur; if (o === n) { n.timeScale = speed; return; }
     n.timeScale = speed; n.enabled = true;
     if (o && fade > 0) { n.reset().setEffectiveWeight(1).play(); n.crossFadeFrom(o, fade, false); } else { if (o) o.setEffectiveWeight(0); n.setEffectiveWeight(1); }
-    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0;   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
+    p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0; p.fadeDur = fade; p.yFrom = p.yOff;   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
   }
   /** state -> clip choice (idle variants rotate, phone/talk/pole/fidget when the asset has them) */
   _enter(p, state, fade = this.crossfade) {
@@ -725,7 +725,12 @@ export class AnimCrowd {
     poseLead(pet, v.x, v.y, v.z);
   }
   _place(p, snap) {
-    const tgt = this._yOffset(p); p.yOff = snap || p.yOff == null ? tgt : p.yOff + (tgt - p.yOff) * 0.25;
+    const tgt = this._yOffset(p);
+    // into or out of a sit the body's height follows the pose's own blend: eased in a quarter of a second, the body sat down before the legs had bent (the feet 22 - 28 cm under
+    // the floor) and stood up before they had straightened (the feet 10 - 12 cm off it) - review 44
+    if (!snap && p.yFrom != null && p.fadeEnd && this._clock < p.fadeEnd && p.fadeDur > 0 && (p.state === 'sit' || p.wasSit)) { const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur)); p.yOff = p.yFrom + (tgt - p.yFrom) * w; }
+    else p.yOff = snap || p.yOff == null ? tgt : p.yOff + (tgt - p.yOff) * 0.25;
+    if (!(p.fadeEnd && this._clock < p.fadeEnd)) p.wasSit = p.state === 'sit';
     let x = p.x, z = p.z;
     if (p.state === 'sit' && p.m) { // hips over the seat position (not the root): root = seat - R(yaw) * hipsLocalXZ
       const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; x -= c * hx + s * hz; z -= -s * hx + c * hz;
@@ -992,7 +997,7 @@ export class AnimCrowd {
       this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 6.5)) && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 6.5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
+      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 6.5)) && !p.hidden && !(p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit))) {   /* (not in the middle of sitting down or getting up: the swap restarts the clip at full weight, and a near boarder sat on air before the seat - review 44) */ const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 6.5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
       if (upd && p.look) p.look.restore();
