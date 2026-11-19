@@ -1720,6 +1720,7 @@ class Sim {
           const rel = Math.atan2(-(w.x - q.x), -(w.z - q.z)) - q.yaw; out.near = { moved: Math.hypot(q.x - x0, q.z - z0), looked, maxHead, greeted, smiled, face: !!q.face, faceW, turned: Math.abs(Math.atan2(Math.sin(q.yaw - yaw0), Math.cos(q.yaw - yaw0))), off: Math.abs(Math.atan2(Math.sin(rel), Math.cos(rel))), state: q.state, rig: !!q.look }; }
         return out; },
       petAudit: () => { const c = this.crowd, ch = (c.chars || []).find((x) => x.id === 'adult_string_vest'); if (!ch) return null;
+        { const ex = c.people.find((x) => x.char === ch && x.obj); if (ex) { c._drop(ex); c.people.splice(c.people.indexOf(ex), 1); } }   // (he may be on the platform already: then add() would give somebody else, a person never being in a crowd twice)
         const q = c.people.find((x) => x.obj && !x.hidden) || { x: 0, z: 0, y: 0 }, p = c.add({ char: ch, x: q.x, z: q.z, y: q.y, yaw: 0, mode: 'stand', static: true, force: true }, c.group); if (!p.obj || !p.pet) return { made: false };
         for (let i = 0; i < 60; i++) c._petStep(p, 1 / 60);
         const r = p.pet.root, o = p.obj, out = { made: true, inScene: r.parent === o.parent && p.pet.lead.parent === o.parent, dist: Math.hypot(r.position.x - o.position.x, r.position.z - o.position.z), dy: r.position.y - p.y, lead: p.pet.lead.scale.y, v: p.pet.h.v };
