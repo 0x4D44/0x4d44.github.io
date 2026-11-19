@@ -78,10 +78,11 @@ export function makeHaggis(THREE) {
     tilt.add(hip); legs.push(hip);
   }
   tilt.rotation.z = HAGGIS.lean; tilt.position.y = 0.012;
-  const lead = new T.Mesh(G.lead, G.red); lead.name = 'haggis_lead'; lead.frustumCulled = false;
-  const lead2 = new T.Mesh(G.lead, G.red); lead2.name = 'haggis_lead2'; lead2.frustumCulled = false;
+  // the lead: short straight pieces along a hanging curve (two pieces made a sharp V - review 44); the group stays at the identity
+  const lead = new T.Group(); lead.name = 'haggis_lead';
+  for (let i = 0; i < LEAD_SEGS; i++) { const s = new T.Mesh(G.lead, G.red); s.frustumCulled = false; lead.add(s); }
   root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
-  return { root, tilt, legs, lead, lead2, h: { x: 0, z: 0, yaw: 0, v: null, ph: 0 }, _a: new T.Vector3(), _b: new T.Vector3(), _up: new T.Vector3(0, 1, 0) };
+  return { root, tilt, legs, lead, h: { x: 0, z: 0, yaw: 0, v: null, ph: 0 }, _a: new T.Vector3(), _b: new T.Vector3(), _up: new T.Vector3(0, 1, 0) };
 }
 
 /** pose the model from its state: place, heading, scuttling legs and a bob; y is the floor it stands on */
@@ -94,10 +95,13 @@ export function poseHaggis(pet, y) {
 
 /** the lead: from the collar to a point in the same group (the owner's hand) */
 export const LEAD_LEN = 1.25;   // m: the lead itself; the shorter the way from collar to hand, the more of it hangs
+const LEAD_SEGS = 10;
 export function poseLead(pet, hx, hy, hz) {
   const a = pet._a.set(0, 0.2, 0.1).applyEuler(pet.root.rotation).add(pet.root.position), b = pet._b.set(hx, hy, hz), L = a.distanceTo(b);
-  // it hangs in a curve between collar and hand, by as much as the slack allows (half a parabola each side: a straight rod read as a stick - review 43)
-  const sag = 0.5 * Math.sqrt(Math.max(0, LEAD_LEN * LEAD_LEN - L * L)) * 0.6, m = pet._m || (pet._m = a.clone()); m.copy(a).add(b).multiplyScalar(0.5); m.y -= sag;
+  // a parabola as long as the lead (arc ~ L + 8 s^2 / 3L), its slack let down to the floor and no further
+  const sag = L > 1e-3 ? Math.min(0.6, Math.sqrt(Math.max(0, 3 * L * (LEAD_LEN - L) / 8))) : 0, floor = pet.root.position.y + 0.008;
   pet.leadLen = L;
-  for (const [ld, p, q] of [[pet.lead, a, m], [pet.lead2, m, b]]) { if (!ld) continue; const d = pet._d || (pet._d = a.clone()); d.subVectors(q, p); const l = d.length(); ld.position.copy(p).add(q).multiplyScalar(0.5); ld.scale.set(1, Math.max(0.01, l), 1); ld.quaternion.setFromUnitVectors(pet._up, d.normalize()); }
+  const pts = pet._pts || (pet._pts = Array.from({ length: LEAD_SEGS + 1 }, () => a.clone())), d = pet._d || (pet._d = a.clone());
+  for (let i = 0; i <= LEAD_SEGS; i++) { const t = i / LEAD_SEGS; pts[i].lerpVectors(a, b, t); pts[i].y = Math.max(Math.min(floor, pts[i].y), pts[i].y - 4 * sag * t * (1 - t)); }
+  pet.lead.children.forEach((ld, i) => { const p = pts[i], q = pts[i + 1]; d.subVectors(q, p); const l = d.length(); ld.position.copy(p).add(q).multiplyScalar(0.5); ld.scale.set(1, Math.max(0.005, l * 1.04), 1); if (l > 1e-6) ld.quaternion.setFromUnitVectors(pet._up, d.normalize()); });
 }
