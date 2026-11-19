@@ -268,12 +268,13 @@ class Sim {
     if (X.state === 'idle' && svc.phase === 'run' && svc.distToStop < 30 && svc.distToStop > 0.5 && off < 32) {   // running in: who gets off here?
       X.state = 'rising'; X.t = 0; X.leavers = []; const rnd = sc.rng, riders = sc.people.filter((p) => p.obj && !p.tween && !p.leaving), perDoor = new Map();
       const want = Math.min(low ? 3 : 12, Math.round(riders.length * (0.15 + 0.25 * rnd())));
-      const rows = riders.map((p) => { const ci = tv.cars.indexOf(p.parent), ds = ci < 0 ? [] : doorsOf(ci); let dz = null, bd = 1e9; for (const d of ds) if (Math.abs(d - p.z) < bd) { bd = Math.abs(d - p.z); dz = d; } return { p, ci, dz, k: bd + rnd() * 2.5 - (p.state === 'sit' ? 0 : 1.5) }; }).filter((r) => r.dz != null).sort((a, b) => a.k - b.k);
+      const rows = riders.map((p) => { const ci = tv.cars.indexOf(p.parent), ds = ci < 0 ? [] : doorsOf(ci); let dz = null, bd = 1e9; for (const d of ds) if (Math.abs(d - p.z) < bd) { bd = Math.abs(d - p.z); dz = d; } return { p, ci, dz, k: bd + rnd() * 2.5 - (p.state === 'sit' ? 0 : 1.5) - (p.char && p.char.kid && p.state !== 'sit' ? 100 : 0) }; })   /* (a child standing gets off at the next stop: left aboard when the grown-up beside them got off, girl_small stood alone for 95 s - review 37) */.filter((r) => r.dz != null).sort((a, b) => a.k - b.k);
       for (const r of rows) {
-        if (X.leavers.length >= want) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
+        const kidUp = r.p.char && r.p.char.kid && r.p.state !== 'sit';   // (sorted first; not held back by the count, nor by the garment mix below)
+        if (X.leavers.length >= want && !kidUp) break; const key = r.ci + ':' + r.dz, n = perDoor.get(key) || 0; if (n >= 3) continue;
         if (riders.filter((q) => q.parent === r.p.parent && !q.leaving).length <= 1) continue;   // (the last rider of a car stays aboard: a car is never left empty at a stop)
-        if (sc.mixLeaves(r.p)) continue;
-        { const dp = this._carToCrowd(tv.cars[r.ci], 0, r.dz); if (this.crowd && this.crowd.mixNear && this.crowd.mixNear(r.p.char, dp.x, dp.z)) continue; }   // (nor one who would make one garment over half of the platform where they get off)   // (nor does a rider whose going would leave one garment over half of the car)
+        if (!kidUp && sc.mixLeaves(r.p)) continue;
+        { const dp = this._carToCrowd(tv.cars[r.ci], 0, r.dz); if (!kidUp && this.crowd && this.crowd.mixNear && this.crowd.mixNear(r.p.char, dp.x, dp.z)) continue; }   // (nor one who would make one garment over half of the platform where they get off)   // (nor does a rider whose going would leave one garment over half of the car)
         let spot = null; if (r.p.state === 'sit') { spot = { x: Math.sign(r.p.x) * 0.2, y: PY, z: r.p.z, yaw: r.dz > r.p.z ? Math.PI : 0, ceilAt: r.p.ceilAt, mode: 'stand' }; if (!sc._fitsStandAt(r.p.char, spot)) continue; if (sc.people.some((o) => o !== r.p && o.parent === r.p.parent && o.state !== 'sit' && Math.hypot(o.x - spot.x, o.z - spot.z) < 0.6) || X.leavers.some((L) => L.ci === r.ci && L.spot && Math.hypot(L.spot.x - spot.x, L.spot.z - spot.z) < 0.6)) continue; }   /* (nor two neighbours rising side by side: review 32 found risers waiting at a door 0.40 m apart, a hand on a thigh) */   /* (nor rise into someone standing there: review 31, pelvises 0.09 m apart) */
         perDoor.set(key, n + 1); r.p.leaving = true; X.leavers.push({ p: r.p, ci: r.ci, dz: r.dz, spot, riseT: rnd() * 2.2, t: 0.3 + n * 1.1 + rnd() * 0.5 });
       }
