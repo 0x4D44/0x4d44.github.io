@@ -260,7 +260,8 @@
    "description": "Write tests for self-modifying-code invalidation in a dynamic recompiler. Graded by mutant kill rate.",
    "tags": [
     "perf"
-   ]
+   ],
+   "note": "The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.1 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra; GPT-6 Astra xhigh and GPT-6.2 Sol ultra; GPT-5 high, Opus 4.5 high and o3 high."
   },
   {
    "id": "REV-01",
@@ -276,7 +277,8 @@
    "group": "REV",
    "title": "Review a recompiler change",
    "description": "Review a recompiler change that introduced memory corruption. Graded on known-defect recall and precision.",
-   "tags": []
+   "tags": [],
+   "note": "The four seats added on 19 Nov (GPT-6.2 Sol ultra, GPT-6.2 Astra xhigh, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 0.5 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Sol ultra and GPT-6.2 Astra xhigh; Opus 4.8 high, o3 high and Opus 4.5 high."
   },
   {
    "id": "FIX-01",
@@ -2538,6 +2540,90 @@
    "flags": []
   },
   {
+   "seat": "gpt-5-high",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 46.9,
+    "rubric": 47.5,
+    "score_claude": 47.0,
+    "score_gpt": 46.8,
+    "judge_sd": 0.4,
+    "bonus": 0.0,
+    "cost_usd": 1.052,
+    "wall_min": 7.8,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 77.1,
+    "rubric": 77.5,
+    "score_claude": 77.0,
+    "score_gpt": 77.2,
+    "judge_sd": 0.6,
+    "bonus": 0.7,
+    "cost_usd": 0.854,
+    "wall_min": 12.1,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 86.4,
+    "rubric": 86.2,
+    "score_claude": 86.0,
+    "score_gpt": 86.8,
+    "judge_sd": 0.7,
+    "bonus": 0.5,
+    "cost_usd": 4.132,
+    "wall_min": 15.6,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "TST-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 53.7,
+    "rubric": 55.0,
+    "score_claude": 53.3,
+    "score_gpt": 54.0,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "cost_usd": 7.513,
+    "wall_min": 18.2,
+    "gates_ok": true,
+    "builds": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
    "seat": "sol-6.1-ultra",
    "task": "REV-01",
    "run": 1,
@@ -3224,6 +3310,86 @@
     "gates_ok": true
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 6.5,
+    "rubric": 7.5,
+    "score_claude": 6.0,
+    "score_gpt": 7.0,
+    "judge_sd": 1.2,
+    "bonus": 0.0,
+    "cost_usd": 1.115,
+    "wall_min": 8.8,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 85.7,
+    "rubric": 85.5,
+    "score_claude": 85.7,
+    "score_gpt": 85.7,
+    "judge_sd": 0.7,
+    "bonus": 0.2,
+    "cost_usd": 2.015,
+    "wall_min": 10.4,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 84.5,
+    "rubric": 83.6,
+    "score_claude": 84.0,
+    "score_gpt": 85.1,
+    "judge_sd": 1.6,
+    "bonus": 0.3,
+    "cost_usd": 8.49,
+    "wall_min": 15.8,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "REV-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 19.7,
+    "rubric": 20.0,
+    "score_claude": 19.3,
+    "score_gpt": 20.0,
+    "judge_sd": 0.7,
+    "bonus": 0.0,
+    "cost_usd": 9.497,
+    "wall_min": 17.3,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
   },
   {
    "seat": "sol-6.1-ultra",
