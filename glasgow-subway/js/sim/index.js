@@ -314,21 +314,26 @@ class Sim {
     if (X.state === 'closed' && !atStop) X.state = 'idle';
   }
   /** send a boarding passenger (platform crowd) in through door k to a free seat they fit, or to a place to stand, and hand them to the train's crowd when they get there */
-  _routeBoarder(q, k, X) {
+  _routeBoarder(q, k, X, tried = 0) {
     const tv = this.trainView, sc = tv.saloon, inf = this.crowdFor.info, zD = this.doorZ[k]; let ci = tv.carInfo.findIndex((i) => Math.abs(zD - i.zc) < i.len / 2 + 0.2);
     // one who is not to board after all stays on the platform as one of the people waiting there: already walking for the door, left so, they reached the end
     // of that walk and were removed in front of everyone (review 21: 27 of 30 turned-away boarders vanished on the platform)
-    const away = () => { if (this.crowd.people.includes(q)) this.crowd.standBack(q); };
-    if (ci < 0 || !q.char) return away();
-    if (sc.people.some((r) => r.char === q.char)) return away();
+    const AW = this._xaway || (this._xaway = {}), away = (why = 'other') => { AW[why] = (AW[why] || 0) + 1; if (this.crowd.people.includes(q)) this.crowd.standBack(q); };   // (AW: why boarders were turned away, for the tests)
+    if (ci < 0 || !q.char) return away('no car');
+    if (sc.people.some((r) => r.char === q.char)) return away('twin aboard');
     const pend = (X.pend || (X.pend = {}))[ci] || (X.pend[ci] = []);   // (the others already walking to this car count too: several boarders checked at once each passed - review 17, 3 of 7 trousers became 5 of 9)
-    if (sc.mixOver(tv.cars[ci], q.char, pend)) return away();
+    if (sc.mixOver(tv.cars[ci], q.char, pend)) {   // (that car would be over half one garment: the next door along whose car would not, if there is one - review 34 counted 13 of 23 boarders turned away by this alone)
+      if (tried < 3) { const zq = q.z, zc0 = this._trainCentreZl(), order = this.doorZ.map((d, j) => j).filter((j) => j !== k).sort((a, b) => Math.abs(zc0 + this.doorZ[a] - zq) - Math.abs(zc0 + this.doorZ[b] - zq));
+        for (const j of order.slice(0, 3)) { const cj = tv.carInfo.findIndex((i) => Math.abs(this.doorZ[j] - i.zc) < i.len / 2 + 0.2); if (cj < 0 || cj === ci) continue; const pj = (X.pend || {})[cj] || [];
+          if (Math.abs(zc0 + this.doorZ[j] - zq) < 9 && !sc.mixOver(tv.cars[cj], q.char, pj)) return this._routeBoarder(q, j, X, tried + 1); } }
+      return away('garment mix');
+    }
     pend.push(q.char);   // (nor would they make one garment over half of that car: they wait for the next train - review 15)   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
     const car = tv.cars[ci], info = tv.carInfo[ci], dz = zD - info.zc, ceilAt = (tv.seatMap.find((s) => s.ci === ci) || {}).ceilAt;
     const bagBy = (s) => (q.bag ? tv.seatMap.some((o) => o !== s && o.ci === ci && o.p && o.p.bag && Math.abs(o.z - s.z) < (Math.sign(o.x) === Math.sign(s.x) ? 0.7 : 0.6)) : false);   // (a boarder with a bag takes a seat with no bag beside it, if there is one: review 12)
     // and not a seat whose floor (where the bag will stand, in front of the toes) has someone standing on it already, or on their way to it (review 14: a standing rider's foot in a boarder's tote for 16 s)
     const footOn = (s) => { const bx = Math.sign(s.x) * 0.24; return sc.people.some((o) => o.parent === car && o.obj && o.state !== 'sit' && Math.hypot(o.x - bx, o.z - s.z) < 0.6) || X.stands.some((o) => o.ci === ci && Math.hypot(o.x - bx, o.z - s.z) < 0.6); };
-    let seat = null; if (!(q.bag && /^(trolley|holdall|case)$/.test(q.bag.kind))) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !footOn(s))   /* (everyone, bag or none: review 31 saw a boarder sit down in front of a stander already holding the pole) */.sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 8)) if (sc._canSit(q.char, s)) { seat = s; break; }
+    let seat = null; if (!(q.bag && /^(trolley|holdall|case)$/.test(q.bag.kind))) for (const s of tv.seatMap.filter((s) => s.ci === ci && !s.p && !footOn(s))   /* (everyone, bag or none: review 31 saw a boarder sit down in front of a stander already holding the pole) */.sort((a, b) => (bagBy(a) - bagBy(b)) || (Math.abs(a.z - dz) - Math.abs(b.z - dz))).slice(0, 16)) if (sc._canSit(q.char, s)) { seat = s; break; }   /* (16, not 8: with the eight nearest the door taken, boarders were turned away from a car half empty - review 34) */
     // a boarder who stands keeps off the floor in front of a seat another boarder with a bag is walking to (their bag is not on the floor yet, so _bagNear cannot see it)
     const bagComing = (x, z) => tv.seatMap.some((s) => s.ci === ci && s.p && s.p !== q && s.p.bag && !(s.p.parent === car && s.p.state === 'sit') && Math.hypot(Math.sign(s.x) * 0.24 - x, s.z - z) < 0.55);
     let spot = null;
@@ -339,9 +344,10 @@ class Sim {
       const ok = this._standOk(sc, car, ci, info, poles, (x, z) => !X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - x, o.z - z) < 0.55 || (Math.abs(o.z - z) < 1.0 && Math.sign(o.x) !== Math.sign(x)))) && !bagComing(x, z));
       for (const pl of poles.filter((pl) => !pl.gang && !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
     }
-    if (!seat && !spot && !q.char.kid) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
-      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || tv.seatMap.some((st) => st.ci === ci && st.p && Math.abs(st.z - c.z) < 0.55 && c.x * Math.sign(st.x) > 0.12) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
-    if (!seat && !spot) { const i = pend.indexOf(q.char); if (i >= 0) pend.splice(i, 1); return away(); }   // (no seat and nowhere to stand: they wait for the next train, rather than walk in and vanish in the aisle - review 20, 10 of 115)
+    const withAdult = (c) => !q.char.kid || sc.people.some((o) => o.parent === car && o.obj && o.char && !o.char.kid && Math.hypot(o.x - c.x, o.z - c.z) < 1.2);   // (a child stands only beside a grown-up: never at a pole on their own - review 33 - but those who cannot sit, the kilted and girl_small, were otherwise never let aboard - review 34)
+    if (!seat && !spot) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
+      if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || tv.seatMap.some((st) => st.ci === ci && st.p && Math.abs(st.z - c.z) < 0.55 && c.x * Math.sign(st.x) > 0.12) || !sc._fitsStandAt(q.char, c) || !withAdult(c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
+    if (!seat && !spot) { const i = pend.indexOf(q.char); if (i >= 0) pend.splice(i, 1); return away(q.char.kid ? 'child, no seat' : 'no seat or spot'); }   // (no seat and nowhere to stand: they wait for the next train, rather than walk in and vanish in the aisle - review 20, 10 of 115)
     const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }
     q.tx = out.x; q.tz = out.z; q.rail = false; q.legR = 0.7; q.path = path; q.routed = true;   // (0.7: the people queuing at the door stand on the point itself)
     const T = this._xstat || (this._xstat = { routed: 0, sat: 0, stood: 0, lost: 0, why: [] }); T.routed++;
