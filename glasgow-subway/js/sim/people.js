@@ -690,7 +690,9 @@ export class AnimCrowd {
     if (pet.root.parent !== par) { par.add(pet.root); par.add(pet.lead); pet.h.v = null; }
     const vis = o.visible && !p.hidden; pet.root.visible = pet.lead.visible = vis;
     const near = []; for (const q of this.people) if (q !== p && q.obj && q.obj.parent === par && Math.abs(q.obj.position.x - pet.h.x) < 1 && Math.abs(q.obj.position.z - pet.h.z) < 1) { near.push({ x: q.obj.position.x, z: q.obj.position.z }); if (q.state === 'sit') near.push({ x: q.obj.position.x - Math.sin(q.yaw) * 0.45, z: q.obj.position.z - Math.cos(q.yaw) * 0.45 }); }   /* (and a seated rider's feet, half a metre in front: review 32 had it inside a foot for 68 s) */
-    followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt, near); poseHaggis(pet, p.y);
+    followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt, near);
+    if (!p.yAt && this.floor && !this._onFloor(pet.h.x, pet.h.z, 0.15)) { const f = this._toFloor(pet.h.x, pet.h.z, 0.15); pet.h.x = f.x; pet.h.z = f.z; }   // (on the platform, never in a wall: review 33 had it 60 s inside the wall behind its owner)
+    poseHaggis(pet, p.yAt ? p.yAt(pet.h.x, pet.h.z) : p.y);   // (on the stairs, on the tread under it, not at its owner's height: review 33 saw it 0.6 m under the steps)
     if (pet.hand === undefined || pet.handOf !== o) { pet.handOf = o; pet.hand = null; o.traverse((b) => { if (b.isBone && /hand_l$/.test(b.name) && !pet.hand) pet.hand = b; }); }
     const v = this._v;
     if (pet.hand) { o.updateWorldMatrix(true, false); pet.hand.updateWorldMatrix(true, false); par.updateWorldMatrix(true, false); pet.hand.getWorldPosition(v); par.worldToLocal(v); } else v.set(o.position.x, p.y + 0.8, o.position.z);
