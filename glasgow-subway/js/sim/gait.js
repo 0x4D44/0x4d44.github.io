@@ -416,7 +416,7 @@ function standStep(g, dt) {
   const err = [0, 1].map((s) => { const t = standTarget(g, s), f = F[s]; return Math.hypot(t.H[0] - f.H[0], t.H[1] - f.H[1]) + 0.25 * Math.abs(angDiff(t.psi, f.psi)); });
   for (let s = 0; s < 2; s++) { const f = F[s];
     if (f.mode === 'swing') { if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) land(g, f, null); } }
-    else if (!(closing && err[s] > 0.075 && f.th < 0)) f.th += (0 - f.th) * Math.min(1, dt * 9);        // the heel comes back down (unless this foot is about to take the closing step from its toes)
+    else if (!(closing && err[s] > 0.075 && f.th < 0 && err[s] >= err[1 - s])) f.th += (0 - f.th) * Math.min(1, dt * 9);        // the heel comes back down (unless this foot is about to take the closing step from its toes - only the one further out: with both waiting on their toes, neither could step, and a foot hung 3 - 4 cm up for 1.4 s, review 34)
   }
   // a foot that is too far from where the body stands steps back to it (one at a time), once the other carries the weight (flat, or on its heel)
   if (F[0].mode === 'stance' && F[1].mode === 'stance' && g.t - Math.max(F[0].landedAt, F[1].landedAt) > (closing ? 0.08 : 0.25)) {
