@@ -132,6 +132,7 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | hair/toigo_inverted_bob | MRT | CC0 |
 | hair/toigo_inverted_bob_with_bangs | MRT | CC0 |
 | skins/jartur69_middleage_slavic_male_with_genitals_and_beard | jartur69 | CC0 |
+| skins/jartur69_old_slavic_male_with_genitals_and_beard | jartur69 | CC0 |
 | skins/middleage_african_female | makehuman_system | CC0 |
 | skins/middleage_african_male | makehuman_system | CC0 |
 | skins/middleage_asian_female | makehuman_system | CC0 |
@@ -144,6 +145,8 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/old_caucasian_female | makehuman_system | CC0 |
 | skins/old_caucasian_male | makehuman_system | CC0 |
 | skins/onlytheghosts_old_eurasian_male | OnlyTheGhosts | CC0 |
+| skins/onlytheghosts_young_eurasian_female | OnlyTheGhosts | CC0 |
+| skins/toigo_light_skin_female_freckles | MargaretToigo | CC0 |
 | skins/young_african_female | makehuman_system | CC0 |
 | skins/young_african_male | makehuman_system | CC0 |
 | skins/young_asian_female | makehuman_system | CC0 |

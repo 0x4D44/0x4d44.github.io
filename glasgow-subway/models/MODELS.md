@@ -417,5 +417,15 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **teen_ginger: new hair.** short01 cut straight across a high forehead. He now has elvs_maxwell_hair, ginger as before.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 37 fixes
+
+- **Lookalikes made distinct.** Review 37 found four near-identical pale faces under the same red bob, and three old men sharing one face.
+  - woman_sash: freckled skin (toigo_light_skin_female_freckles), brown eyes, dark brown toigo_inverted_bob.
+  - ya_winter: onlytheghosts_young_eurasian_female skin, brown eyes, blonde elvs_hazel_hair.
+  - man_elder: the bearded old Slavic skin.
+  - adult_tophat: an older Black man (race 0.85 African, old_african_male skin, brown eyes).
+  - elvs_wavy_bob, bob01 and bob02 were tried on woman_sash. The first broke into shards; the other two hang over one eye.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
