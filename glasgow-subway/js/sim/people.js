@@ -677,7 +677,7 @@ export class AnimCrowd {
     let h = p.hold;
     if (!use) { if (h) { h.target = 0; h.next = null; } return; }
     if (!h) h = p.hold = { kind: use.kind, w: 0, target: 1, next: null, rig: null, variant: Math.floor(this.prng() * PHONE_VARIANTS), cap: false };
-    else if (h.kind === use.kind || h.w <= 0.02 || /^(text|sit)$/.test(h.kind) && /^(text|sit)$/.test(use.kind)) { h.kind = use.kind; h.target = 1; h.next = null; }   // (texting standing and seated hold the phone 2-3 cm apart: sitting down, the phone stays out - lowered and raised again, the stock sit_phone clip's empty hands showed between - review 45) else { h.next = use.kind; h.target = 0; return; }
+    else if (h.kind === use.kind || h.w <= 0.02 || /^(text|sit)$/.test(h.kind) && /^(text|sit)$/.test(use.kind)) { h.kind = use.kind; h.target = 1; h.next = null; } else { h.next = use.kind; h.target = 0; return; }   // (texting standing and seated hold the phone 2-3 cm apart: sitting down, the phone stays out - lowered and raised again, the stock sit_phone clip's empty hands showed between - review 45)
     // the phone is coming out: take the arms as they are NOW, before the animation starts blending in the stock phone clip, so that the first frame of that blend (which swings the hands a tenth
     // of the way to the face) is not shown either: the arms rise from this pose
     if (h.w <= 0.02 && !h.dead && p.obj) {
