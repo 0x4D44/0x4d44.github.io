@@ -139,11 +139,14 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/middleage_asian_male | makehuman_system | CC0 |
 | skins/middleage_caucasian_female | makehuman_system | CC0 |
 | skins/middleage_caucasian_male | makehuman_system | CC0 |
+| skins/mindfront_skin_male_african_middleage | Mindfront | CC0 |
 | skins/old_african_female | makehuman_system | CC0 |
 | skins/old_african_male | makehuman_system | CC0 |
 | skins/old_asian_female | makehuman_system | CC0 |
+| skins/old_asian_male | makehuman_system | CC0 |
 | skins/old_caucasian_female | makehuman_system | CC0 |
 | skins/old_caucasian_male | makehuman_system | CC0 |
+| skins/onlytheghosts_middle_aged_eurasian_female | OnlyTheGhosts | CC0 |
 | skins/onlytheghosts_old_eurasian_male | OnlyTheGhosts | CC0 |
 | skins/onlytheghosts_young_eurasian_female | OnlyTheGhosts | CC0 |
 | skins/toigo_light_skin_female_freckles | MargaretToigo | CC0 |

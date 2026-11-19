@@ -786,6 +786,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "skins/mindfront_skin_male_african_middleage",
+  "author": "Mindfront",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "skins/old_african_female",
   "author": "makehuman_system",
   "licence": "CC0",
@@ -804,6 +810,12 @@
   "url": "https://static.makehumancommunity.org/assets.html"
  },
  {
+  "name": "skins/old_asian_male",
+  "author": "makehuman_system",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
   "name": "skins/old_caucasian_female",
   "author": "makehuman_system",
   "licence": "CC0",
@@ -812,6 +824,12 @@
  {
   "name": "skins/old_caucasian_male",
   "author": "makehuman_system",
+  "licence": "CC0",
+  "url": "https://static.makehumancommunity.org/assets.html"
+ },
+ {
+  "name": "skins/onlytheghosts_middle_aged_eurasian_female",
+  "author": "OnlyTheGhosts",
   "licence": "CC0",
   "url": "https://static.makehumancommunity.org/assets.html"
  },

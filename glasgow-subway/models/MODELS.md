@@ -427,5 +427,14 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
   - elvs_wavy_bob, bob01 and bob02 were tried on woman_sash. The first broke into shards; the other two hang over one eye.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 38 fixes
+
+- **Lookalikes.**
+  - adult_beret: dark brown hair, brown eyes and onlytheghosts_middle_aged_eurasian_female skin. She was a third pale red bob.
+  - elder_man_suit: an older East Asian man.
+  - adult_tie_suit: a man of mixed African and European descent with dark grey hair. Before, these two shared man_longcoat's face.
+- **ya_winter's scalp.** Her elvs_hazel_hair showed scalp through the crown; she now has long01.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
