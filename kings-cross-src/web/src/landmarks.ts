@@ -81,7 +81,7 @@ function setNightDetail(mesh: THREE.Mesh, sets: PartMap<Key>[], key: Key, name: 
  * restart on dressings and cannot describe the arcade-to-upper-wall falloff.
  * Round eight dims both upper-brick terms: diffuse moon/sky fill, and the
  * separate FLOOD emission added earlier by lighting.ts. */
-function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: number, owned: MaterialSet['owned'], dials: ClockDial[]): void {
+function midlandNightFacade(group: THREE.Group, sets: PartMap<Key>[], base: number, eaves: number, owned: MaterialSet['owned'], dials: ClockDial[]): void {
   const [front, back, side] = dials;
   const vec = (values: readonly number[]) => values.map(n => n.toFixed(6)).join(', ');
   // The four dials share a height. The smaller of the two horizontal offsets
@@ -296,8 +296,22 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
 }
 // midland-lamp-wash-end`);
       if (landmarkGrade) {
-        shader.fragmentShader = shader.fragmentShader.replace('#include <common>',
-          `#include <common>\nuniform float uMidlandLandmarkNight;\nvarying vec3 vMidlandFacadeDetail;${towerGrade ? '\nvarying float vMidlandTowerTrim;\nvarying vec4 vMidlandPinnacle;' : '\nvarying float vMidlandClockStage;\nvarying float vMidlandGableField;'}`);
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>',
+            `#include <common>\nuniform float uMidlandLandmarkNight;\nvarying vec3 vMidlandFacadeDetail;${towerGrade ? '\nvarying float vMidlandTowerTrim;\nvarying vec4 vMidlandPinnacle;' : '\nvarying float vMidlandClockStage;\nvarying float vMidlandGableField;'}`)
+          .replace('#include <aomap_fragment>', `#include <aomap_fragment>
+// midland-gable-uplight-begin
+// Architectural uplight across the three pavilion faces and their tracery.
+// The copings keep the subdued finish established by the facade detail grade.
+float gableSurface = ${key === 'stone' ? 'vMidlandFacadeDetail.z * (1.0 - vMidlandNight.y)' : 'vMidlandGableField * vMidlandBrickBody'};
+float gableNight = uMidlandLandmarkNight * vMidlandNight.x;
+if (gableSurface > 0.0 && gableNight > 0.55) {
+  float aboveEaves = vMidlandHeight - ${eaves.toFixed(6)};
+  float gableBeam = mix(1.0, 0.12, smoothstep(0.1, 8.6, aboveEaves));
+  totalEmissiveRadiance += diffuseColor.rgb * ${key === 'stone' ? 'vec3(0.18, 0.135, 0.043)' : 'vec3(0.17, 0.29, 0.18)'}
+    * (gableBeam * gableSurface * smoothstep(0.55, 0.90, gableNight));
+}
+// midland-gable-uplight-end`);
       }
     };
     m.customProgramCacheKey = () => `${priorKey}|midland-night-v7-${key}-${base.toFixed(6)}`;
@@ -308,7 +322,7 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
       shader.uniforms.uMidlandLandmarkNight = windowNight;
       m.onBeforeCompile(shader, renderer);
     };
-    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade-r35`;
+    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade-r36-${eaves.toFixed(6)}`;
     owned.push(night);
     withBuildingNightMaterial(mesh, night);
   }
@@ -1535,11 +1549,11 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
       if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
       const hs = h * 0.58;
-      const dormerStart = stone.positions.length / 3;
+      // Dormer stone receives the ordinary roofline grade. The existing room
+      // lights account for the occasional warm pane on the otherwise dark roof.
       addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'stone');
       addFramedWindow(parts, { at: [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], dir: e.dir, normal: e.normal }, mid[1] + 0.2, ww * 0.95, hs * 0.8, 'pointed', 0.1);
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
-      if (lower) markNightDetail(stone, dormerStart, facadeDetail.gableStone, 0.45);
     }
   });
   // the stacks: each shaft rises out of the slope, its foot buried 0.3 m under the slate at its outer face (see stackClusters)
@@ -1843,7 +1857,7 @@ export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOpt
     withBuildingNightMaterial(panes, night);
   }
   const dials = midlandClockDials(plans.midland, seats?.midland.y ?? 0);
-  midlandNightFacade(group, parts, seats?.midland.y ?? 0, set.owned, dials);
+  midlandNightFacade(group, parts, seats?.midland.y ?? 0, plans.midland.eaves, set.owned, dials);
   group.userData.clockDials = dials; // clocks.ts
   scene.add(group);
   const geometries: THREE.BufferGeometry[] = [];
