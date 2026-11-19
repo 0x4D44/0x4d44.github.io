@@ -38,11 +38,13 @@ function block(source: string, tag: string) {
   return source.split(`// ${tag}-begin`)[1]!.split(`// ${tag}-end`)[0]!;
 }
 
+const trimColours = { ...BALMORAL_COLOURS, roofDeck: 0xffffff, chimneyPot: 0x8a6a52 };
+
 function trim(source: string) {
   const evaluate = glsl.snippet(block(source, 'balmoral-trim'));
-  return (x: number, z: number, height: number, colour: keyof typeof BALMORAL_COLOURS,
+  return (x: number, z: number, height: number, colour: keyof typeof trimColours,
     normal = [.96, 0, -.27], uv = [0, 0], level = 1) => {
-    const albedo = rgb(BALMORAL_COLOURS[colour]);
+    const albedo = rgb(trimColours[colour]);
     const vars = { vStationLampWorld: [x, base+height, z], vStationLampNormal: normal,
       diffuseColor: [...albedo, 1], vColor: [...albedo], vBalmoralTrimUv: uv,
       uStationLampLevel: level, totalEmissiveRadiance: [0, 0, 0] };
@@ -71,37 +73,64 @@ function stone(source: string) {
 
 const round = (rgb: number[]) => rgb.map(c => Math.round(c));
 
-test('Balmoral roofline is dark above the lit attic faces, with a lit dormer pane', () => {
+test('Balmoral roof mass, chimneys and corner turret lead caps keep the round 37 silhouette', () => {
   glow.setLevel(1);
   const sample = trim(shader(materials[1]!).fragmentShader);
-  const roof = sample(80, -120, 29.4, 'slate', [.75,.60,-.25]);
-  const stack = sample(84, -103, 36, 'stone', [.96,0,-.27], [.5,.5]);
-  const dormer = sample(81.5, -115, 27.4, 'stone', [.96,0,-.27], [.5,.5]);
-  const pediment = sample(77, -132, 32, 'stone');
-  const pane = sample(77, -132, 28.1, 'pane', [.96,0,-.27], [.5,.5]);
-  console.log('roofline RGB', [roof, stack, dormer, pediment, pane].map(round));
-  for (const surface of [roof, stack, dormer, pediment]) assert.ok(luma(surface) < 65);
-  assert.ok(luma(pane) > 115 && luma(pane) < 210);
+  const surfaces = {
+    mansard: sample(80,-120,29.4,'slate',[.89,.3773,-.25]),
+    roofDeck: sample(70,-110,31.5,'roofDeck',[0,1,0]),
+    stack: sample(84,-103,36,'stone',[.96,0,-.27],[.5,.5]),
+    chimneyCope: sample(84,-103,38.7,'cornice',[0,1,0],[.5,.5]),
+    chimneyPot: sample(84,-103,39,'chimneyPot'),
+    eastLead: sample(74,-136,28.5,'lead'),
+    westLead: sample(26,-120,31.7,'lead'),
+  };
+  console.log('roof silhouette RGB', Object.fromEntries(Object.entries(surfaces).map(([name,rgb]) => [name,round(rgb)])));
+  assert.ok(luma(surfaces.roofDeck) < 75); // this upward face has a white base and retains its sky fill
+  assert.ok([surfaces.mansard, surfaces.stack, surfaces.chimneyCope, surfaces.chimneyPot,
+    surfaces.eastLead, surfaces.westLead].every(surface => luma(surface) < 65));
 });
 
-test('Balmoral attic gable lights stop at one storey and give central bays paler cream', () => {
+function atticTrim(sample: ReturnType<typeof trim>) {
+  const pixel = (...args: Parameters<typeof sample>) => round(sample(...args));
+  return {
+    cornice: pixel(77.065,-132.142,25.5,'cornice',[.96,0,-.27],[.5,.5]),
+    pavilion: [25.9, 27.3, 28.28, 28.45, 32, 35.95].map(h => pixel(77.065,-132.142,h,'stone')),
+    centre: pixel(84.127,-106.712,27.3,'stone'),
+    centreEdge: pixel(87.127,-106.712,27.3,'stone'),
+    dormer: pixel(81.5,-115,27.4,'stone',[.96,0,-.27],[.5,.5]),
+    dormerPediment: pixel(81.5,-115,29.2,'roofDeck'),
+    dormerPitch: pixel(81.5,-115,29.2,'slate',[.59,.7875,-.20]),
+    pane: pixel(77,-132,28.1,'pane',[.96,0,-.27],[.5,.5]),
+    eastDrum: pixel(74,-136,27.45,'stone',[.96,0,-.27],[.5,.5]),
+    westDrum: pixel(26,-120,28.66,'stone'),
+  };
+}
+
+function atticWall(sample: ReturnType<typeof stone>) {
+  const heights = [22.2, 23.35, 23.75, 24.3, 25.4];
+  return [[77.065,-132.142], [84.127,-106.712], [87.127,-106.712]].map(([x,z]) =>
+    heights.map(height => sample(height, x, z)));
+}
+
+test('Balmoral cornice, gables up to the pediment tops, dormers and turret drums match main at night', () => {
   glow.setLevel(1);
-  const sample = trim(shader(materials[1]!).fragmentShader);
-  const pavilion = sample(77.065, -132.142, 27.3, 'stone');
-  const centre = sample(84.127, -106.712, 27.3, 'stone');
-  const above = sample(84.127, -106.712, 28.9, 'stone');
-  const features = frontage.userData.frontage.hotel.features as { kind: string; x: number; z: number }[];
-  assert.ok(features.some(({kind,x,z}) => kind === 'gable' && Math.hypot(x-84.127,z+106.712) < .002));
-  assert.ok(features.some(({kind,x,z}) => kind === 'gable' && Math.hypot(x-77.065,z+132.142) < .002));
-  console.log('attic RGB', [pavilion, centre, above].map(round));
-  const wall = stone(shader(materials[0]!).fragmentShader);
-  const topEdge = [23.35, 23.75].map(height => luma(wall(height)));
-  console.log('lower attic edge luma', topEdge.map(Math.round));
-  assert.ok(pavilion[0]! - pavilion[1]! > 50 && pavilion[1]! - pavilion[2]! > 48);
-  assert.ok(centre[1]! > pavilion[1]!+42 && centre[2]! > pavilion[2]!+88);
-  assert.ok(luma(centre) > 205 && luma(centre) < 235);
-  assert.ok(luma(centre) - luma(above) > 125);
-  assert.ok(topEdge[1]! - topEdge[0]! > 100);
+  const sample = atticTrim(trim(shader(materials[1]!).fragmentShader));
+  assert.deepEqual(sample, {
+    cornice: [244,194,113], pavilion: [[240,190,106],[221,171,95],[217,165,89],[216,164,88],[197,141,70],[173,116,55]],
+    centre: [221,171,95], centreEdge: [221,171,95], dormer: [221,171,95], dormerPediment: [238,204,145],
+    dormerPitch: [216,162,84], pane: [222,171,90], eastDrum: [222,173,97], westDrum: [202,147,74],
+  });
+});
+
+test('Balmoral top facade has main’s night gradient across the pavilion and central bay', () => {
+  glow.setLevel(1);
+  const sample = atticWall(stone(shader(materials[0]!).fragmentShader));
+  assert.deepEqual(sample.map(row => row.map(round)), [
+    [[33,27,23],[191,144,104],[228,187,138],[230,190,140],[212,173,128]],
+    [[33,27,23],[191,145,104],[228,187,138],[230,190,140],[212,173,128]],
+    [[33,27,23],[190,144,104],[228,187,138],[230,190,140],[212,173,128]],
+  ]);
 });
 
 test('Balmoral balcony lighting is sharp at both storey edges', () => {
@@ -128,10 +157,10 @@ test('Balmoral bands and glazing stay below luma 245 with bright stone and pane 
     roof(77,-132,28.1,'pane'), wall(24.3,84.127,-106.712,[.65,.57,.45]), wall(10.5,58,-132,[.65,.57,.45])];
   console.log('bright surfaces luma', samples.map(sample => Math.round(luma(sample))));
   assert.ok(samples.every(sample => luma(sample) <= 245));
-  assert.ok(samples[0]![2]! > 185 && samples[1]![2]! > 180, 'the cream band reaches both attic stone and cornice');
+  assert.ok(luma(samples[4]!) > 200, 'bright balcony stone keeps the stronger storey wash with headroom');
 });
 
-test('round 37 activates only for Balmoral night and restores the exact day and Perth receipts', () => {
+test('Balmoral changes activate only at night and restore the exact day and Perth receipts', () => {
   const fingerprint = (material: THREE.Material) => {
     const { vertexShader, fragmentShader } = shader(material);
     return sha(vertexShader + fragmentShader + JSON.stringify(material.defines ?? {}));

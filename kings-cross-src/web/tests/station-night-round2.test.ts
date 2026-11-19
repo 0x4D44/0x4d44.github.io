@@ -7,6 +7,8 @@ import {createStreetLights} from '../src/streetlights.ts';
 import {LAMP_KIND} from '../../core/streetlights.ts';
 import {buildWaverleyScene} from '../src/waverley-scene.ts';
 import {loadWaverleyLamps} from '../src/waverley-lamps.ts';
+import {rgb} from '../src/materials.ts';
+import {BALMORAL_COLOURS} from '../src/waverley-frontage-balmoral.ts';
 import {createWaverleyGlow} from '../src/waverley-night.ts';
 import {addCity} from '../src/city.ts';
 import {Glsl} from './glsl.ts';
@@ -92,7 +94,8 @@ test('Balmoral clock crown glows violet while the adjacent bridge remains unlit'
 
 test('Balmoral turret lead cap reads as a silhouette above the attic light',()=>{
  const r=glowing();try {const s=shader(named<THREE.Mesh>(r.built.group,'waverley-frontage-structure').material as THREE.Material,'lambert'),base=r.built.group.getObjectByName('waverley-frontage')!.userData.frontage.P;
-  const e={vars:{vStationLampWorld:[74,base+28.5,-136],vStationLampNormal:[0,1,0],diffuseColor:[.01,.02,.03,1],vColor:[.01,.02,.03],vBalmoralTrimUv:[0,0],uStationLampLevel:1,totalEmissiveRadiance:[0,0,0]}};
+  const lead=rgb(BALMORAL_COLOURS.lead);
+  const e={vars:{vStationLampWorld:[74,base+28.5,-136],vStationLampNormal:[0,1,0],diffuseColor:[...lead,1],vColor:[...lead],vBalmoralTrimUv:[0,0],uStationLampLevel:1,totalEmissiveRadiance:[0,0,0]}};
   new Glsl('').run(block(s.fragmentShader,'balmoral-trim'),e);assert.ok(Math.max(...e.vars.totalEmissiveRadiance)<.01);
  }finally{r.dispose();}
 });

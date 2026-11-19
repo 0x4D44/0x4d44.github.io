@@ -98,8 +98,7 @@ test('Balmoral crown takes a violet wash above the clock stage and leaves the br
   console.log('Balmoral cap emission', cap);
   const env = { vars: {
     vStationLampWorld: [74, base + 24.9, -136], vStationLampNormal: [1, 0, 0],
-    diffuseColor: [.5, .5, .5, 1], vColor: [.5,.5,.5], vBalmoralTrimUv: [.5,.5],
-    uStationLampLevel: 1, totalEmissiveRadiance: [0, 0, 0],
+    diffuseColor: [.5, .5, .5, 1], uStationLampLevel: 1, totalEmissiveRadiance: [0, 0, 0],
   }};
   glsl.run(block(source, 'balmoral-trim'), env);
   const cornice = env.vars.totalEmissiveRadiance as RGB;

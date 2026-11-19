@@ -4,31 +4,35 @@ import * as THREE from 'three';
 import {buildWaverleyScene} from '../src/waverley-scene.ts';
 import {createWaverleyGlow} from '../src/waverley-night.ts';
 import {Glsl} from './glsl.ts';
+import {rgb} from '../src/materials.ts';
+import {BALMORAL_COLOURS} from '../src/waverley-frontage-balmoral.ts';
 const scene=buildWaverleyScene({lighting:false}),glow=createWaverleyGlow(scene.group);
 after(()=>{glow.dispose();scene.dispose();});
 const mesh=scene.group.getObjectByName('waverley-frontage-structure') as THREE.Mesh;
 const s={uniforms:{},vertexShader:THREE.ShaderLib.lambert!.vertexShader,fragmentShader:THREE.ShaderLib.lambert!.fragmentShader};
-glow.setLevel(1);
 (mesh.material as THREE.Material).onBeforeCompile(s as never,undefined as never);
 const code=s.fragmentShader.split('// balmoral-trim-begin')[1]!.split('// balmoral-trim-end')[0]!;
 const base=scene.group.getObjectByName('waverley-frontage')!.userData.frontage.P;
-function emission(height:number,level=1,colour=[.1,.1,.1],normal=[0,1,0]){
- const e={vars:{vStationLampWorld:[74,base+height,-136],vStationLampNormal:normal,diffuseColor:[...colour,1],vColor:colour,
-  vBalmoralTrimUv:[.5,.5],uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]}};
- new Glsl('').run(code,e);return e.vars.totalEmissiveRadiance;
-}
+function emission(height:number,level=1){const e={vars:{vStationLampWorld:[74,base+height,-136],vStationLampNormal:[0,1,0],diffuseColor:[.1,.1,.1,1],uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]}};new Glsl('').run(code,e);return e.vars.totalEmissiveRadiance as number[];}
 test('Balmoral corner cap keeps its lower shoulder and upper bell in silhouette',()=>{
- const low=emission(27.8),high=emission(30.8);
+ glow.setLevel(1);
+ const {vertexShader,fragmentShader}=THREE.ShaderLib.lambert!;
+ const night={uniforms:{},vertexShader,fragmentShader};
+ (mesh.material as THREE.Material).onBeforeCompile(night as never,undefined as never);
+ glow.setLevel(0);
+ const trim=night.fragmentShader.split('// balmoral-trim-begin')[1]!.split('// balmoral-trim-end')[0]!;
+ const lead=rgb(BALMORAL_COLOURS.lead);
+ function cap(height:number,level=1){
+  const vars={vStationLampWorld:[74,base+height,-136],vStationLampNormal:[0,1,0],diffuseColor:[...lead,1],vColor:[...lead],
+   vBalmoralTrimUv:[0,0],uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]};
+  new Glsl('').run(trim,{vars});return vars.totalEmissiveRadiance;
+ }
+ const low=cap(27.8),high=cap(30.8);
  assert.ok(Math.max(...low,...high)<.01,'both parts of the lead cap stay dark');
  assert.ok(low[0]!/low[2]!<2 && high[0]!/high[2]!<2,'the remaining fill is subdued and neutral');
- assert.deepEqual(emission(27.8,0),[0,0,0]);
+ assert.deepEqual(cap(27.8,0),[0,0,0]);
 });
-test('Balmoral turret cornice stays gold with a sharp upper edge below the lead',()=>{
- const lamp=emission(24.8,1,[.5,.5,.5],[1,0,0]),above=emission(27.0,1,[.5,.5,.5],[1,0,0]);
- assert.ok(lamp[0]!>.2 && lamp[0]!>3*above[0]!,'the cornice retains a bright face below the dark turret');
- assert.ok(lamp[0]!/lamp[2]!>=2);
- assert.deepEqual(emission(24.8,0),[0,0,0]);
-});
+test('Balmoral turret flood fades above its cornice instead of carrying a flat minimum up the shaft',()=>{const lamp=emission(24.8),above=emission(27.0);assert.ok(lamp[0]!>3*above[0]!,'the turret reveals vertical lamp falloff');assert.ok(above[0]!/above[2]!>=2);assert.deepEqual(emission(24.8,0),[0,0,0]);});
 
 test('Princes Street lamp pools leave a dark gap across the frozen Balmoral road band',async()=>{
  const {loadWaverleyLamps}=await import('../src/waverley-lamps.ts'),{lampSurfaceAt}=await import('../src/lamp-wet-surface.ts');
