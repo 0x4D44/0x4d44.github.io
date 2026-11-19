@@ -13,7 +13,7 @@ import { buildingNightMaterialsOf } from '../src/materials.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
 import { addWorld } from '../src/world.ts';
 import { acesFilmic, toSrgb, type V3 } from './aces.ts';
-import { Glsl } from './glsl.ts';
+import { Glsl, Mat } from './glsl.ts';
 import receipts from './fixtures/remote-weather-322a72a3.json' with { type: 'json' };
 import { remoteWeatherSnapshot } from './weather-isolation-snapshot.ts';
 
@@ -30,6 +30,7 @@ const eaves = FIGURES.midland.eaves;
 const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 const display = (rgb: V3) => toSrgb(acesFilmic(rgb, NIGHT_EXPOSURE)).map(value => Math.round(255 * value));
 const luma = ([r, g, b]: number[]) => .2126 * r + .7152 * g + .0722 * b;
+const identity = new Mat(4, new THREE.Matrix4().toArray());
 
 function compile(material: THREE.Material) {
   const { vertexShader, fragmentShader } = THREE.ShaderLib.lambert;
@@ -46,18 +47,31 @@ function snippet(source: string, begin: string, end: string) {
   return source.slice(from + begin.length, to);
 }
 
-function gable(key: 'stone' | 'brickRed', height: number, level: number, { ornament = 0, field = 0, body = 1, rake = 0, scope = 1 } = {}) {
-  const source = compile(night(key)).fragmentShader;
-  const code = snippet(source, '// midland-gable-uplight-begin', '// midland-gable-uplight-end');
+function gableRgb(key: 'stone' | 'brickRed', height: number) {
+  const material = night(key);
+  const source = compile(material).fragmentShader;
+  // Include the whole landmark grade through the final light accumulation,
+  // including terms injected between the grade and outgoingLight.
+  const code = snippet(source, '// midland-night-begin', 'vec3 outgoingLight =')
+    .replace('#include <aomap_fragment>', '')
+    .replaceAll('reflectedLight.directDiffuse', 'direct')
+    .replaceAll('reflectedLight.indirectDiffuse', 'indirect')
+    .replace(/\bFLOOD\b/g, String(material.defines!.FLOOD));
+  const stone = key === 'stone';
+  const albedo: V3 = stone ? [.46, .39, .27] : [.35, .12, .06];
+  const flood = (stone ? .12 : .28) * (.04 + .96 * Math.exp(-height / 5));
   const vars = {
-    uMidlandLandmarkNight: level,
-    vMidlandNight: [scope, rake], vMidlandHeight: height, vMidlandBrickBody: body,
-    vMidlandGableField: field, vMidlandFacadeDetail: [0, 0, ornament],
-    diffuseColor: key === 'stone' ? [.46, .39, .27, 1] : [.35, .12, .06, 1],
-    totalEmissiveRadiance: [0, 0, 0],
+    uMidlandNight: 1, uMidlandLandmarkNight: 1,
+    vMidlandNight: [1, 0], vMidlandHeight: height, vMidlandBrickBody: 1, vMidlandStoneBody: 1,
+    vMidlandClockStage: 0, vMidlandGableField: 1, vMidlandTowerTrim: 0, vMidlandPinnacle: [0, 0, 0, 0],
+    vMidlandFacadeDetail: [0, 0, stone ? 1 : 0],
+    cameraPosition: [-90, height, 100], viewMatrix: identity, vViewPosition: [0, 0, 0],
+    diffuseColor: [...albedo, 1], direct: albedo.map(c => .07 * c), indirect: albedo.map(c => .07 * c),
+    totalEmissiveRadiance: albedo.map((c, i) => c * [1, .82, .50][i] * flood),
   };
   new Glsl('').run(code, { vars });
-  return vars.totalEmissiveRadiance as unknown as V3;
+  const outgoing = vars.totalEmissiveRadiance.map((c, i) => c + vars.direct[i] + vars.indirect[i]);
+  return display(outgoing as unknown as V3);
 }
 
 test('Midland dormer stone returns to the dark slate roof grade and the two warm panes keep their room light', () => {
@@ -98,9 +112,7 @@ test('Midland dormer stone returns to the dark slate roof grade and the two warm
   }
 });
 
-test('three main gables carry gold from base to apex on the field and ornament, with the coping and tower excluded', () => {
-  const base = [gable('brickRed', eaves + 1, 1, { field: 1 }), gable('stone', eaves + 1, 1, { ornament: 1 })];
-  const apex = [gable('brickRed', eaves + 8, 1, { field: 1 }), gable('stone', eaves + 8, 1, { ornament: 1 })];
+test('the three main gable faces and their ornament match 69c80505 night output', () => {
   const field = mesh('brickRed').geometry;
   const fields = field.index!;
   const mask = field.getAttribute('midlandGableField');
@@ -111,18 +123,17 @@ test('three main gables carry gold from base to apex on the field and ornament, 
     if (mask.getX(vertex) && body.getX(vertex)) mainGables++;
   }
   assert.equal(mainGables, 3);
-  for (const [i, glows] of base.entries()) {
-    const rgb = display(glows);
-    assert.ok(luma(rgb) > 48 && rgb[0] > rgb[1] && rgb[1] > rgb[2] + 20 && Math.max(...rgb) < 210, String(rgb));
-    assert.ok(luma(rgb) > luma(display(apex[i])) + 28);
-  }
-  const zero = [0, 0, 0];
-  assert.deepEqual(gable('stone', eaves + 1, 1, { rake: 1 }), zero);
-  assert.deepEqual(gable('brickRed', eaves + 1, 1, { field: 1, body: 0 }), zero);
-  assert.deepEqual(gable('brickRed', eaves + 1, 1), zero);
+  // CPU shader samples from 69c80505, measured from the eaves toward the apex.
+  assert.deepEqual({
+    brick: [1, 4, 8].map(y => gableRgb('brickRed', eaves + y)),
+    stone: [1.5, 3.5, 5].map(y => gableRgb('stone', eaves + y)),
+  }, {
+    brick: [[25, 7, 2], [19, 5, 1], [6, 1, 0]],
+    stone: [[83, 58, 33], [83, 58, 33], [83, 58, 33]],
+  });
 });
 
-test('round 36 runs only on Midland night materials in all four states and preserves day and remote CPU fingerprints', () => {
+test('the Midland runs the 69c80505 night programs in all four states and preserves day and remote CPU fingerprints', () => {
   const world = addWorld(scene, { grid: false });
   const sky = createAtmosphere({ scene, world, sites: null, kingsCrossNightFog: true });
   const camera = new THREE.PerspectiveCamera(50, 1.6, .5, 9000);
@@ -133,6 +144,10 @@ test('round 36 runs only on Midland night materials in all four states and prese
     '30cb039754b15671bf42901ea679fd6e67e3e159b09d388cc930440624b279b7',
     '3a3e9f7341bb0c076e6fe599967ce76e2f0ab3725c9a3bdfceb330f7481880cc',
     '80236ba1f06a0885834ac781cda3ddb7946e694f2943188a41a5cfba4e3b8721',
+  ];
+  const nightFingerprints = [
+    'dae12ff40321cc35256567bda19c7833767a96708af85b04d223925e51b96eeb',
+    '3f88888f1bdf8922ff6684488ba5d1d489ca6646ca1c539631cc9f5c4580e570',
   ];
   const fingerprint = (material: THREE.Material) => {
     const { vertexShader, fragmentShader } = compile(material);
@@ -149,10 +164,9 @@ test('round 36 runs only on Midland night materials in all four states and prese
     assert.deepEqual(built.stats, { meshes: 13, triangles: 67675, materials: 14 });
     for (const [i, state] of states.entries()) {
       update('22:30:00', 2000 * i + 1000, state);
-      for (const key of ['brickRed', 'stone'] as const) {
-        assert.equal(mesh(key).material, night(key));
-        assert.ok(compile(mesh(key).material).fragmentShader.includes('// midland-gable-uplight-begin'), state);
-      }
+      const masonry = ['brickRed', 'stone'] as const;
+      for (const key of masonry) assert.equal(mesh(key).material, night(key));
+      assert.deepEqual(masonry.map(key => fingerprint(mesh(key).material)), nightFingerprints, state);
       update('12:00:00', 2000 * i + 2000, 'clear');
       assert.ok(keys.every((key, k) => mesh(key).material === day[k]));
       assert.deepEqual(keys.map(key => fingerprint(mesh(key).material)), fingerprints);
@@ -160,11 +174,6 @@ test('round 36 runs only on Midland night materials in all four states and prese
         assert.equal(hash(JSON.stringify(remoteWeatherSnapshot(remote, state, true))), receipts[`${remote}/${state}`]);
       }
     }
-    for (const level of [0, .55]) {
-      assert.deepEqual(gable('stone', eaves + 1, level, { ornament: 1 }), [0, 0, 0]);
-      assert.deepEqual(gable('brickRed', eaves + 1, level, { field: 1 }), [0, 0, 0]);
-    }
-    assert.deepEqual(gable('stone', eaves + 1, 1, { ornament: 1, scope: 0 }), [0, 0, 0]);
   } finally {
     sky.dispose();
   }
