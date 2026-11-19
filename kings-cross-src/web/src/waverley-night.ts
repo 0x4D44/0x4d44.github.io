@@ -2,9 +2,9 @@
 // geometry and materials only.
 import * as THREE from 'three';
 import { surfaceUniforms } from './atmosphere.ts';
-import type { WallGrid } from './materials.ts';
+import { rgb, type WallGrid } from './materials.ts';
 import type { NightLayer } from './night.ts';
-import { BALMORAL_LEVELS } from './waverley-frontage-balmoral.ts';
+import { BALMORAL_COLOURS, BALMORAL_LEVELS } from './waverley-frontage-balmoral.ts';
 import { NORTH_BRIDGE } from './waverley-frontage-bridges.ts';
 import { WAVERLEY_STATION_TEXTURES } from './waverley-station-textures.ts';
 
@@ -109,6 +109,44 @@ if (hotelHeight > 0.0 && hotelHeight < 23.3 && uWinNight > 0.003) {
 }
 // balmoral-amber-rooms-end
 #endif`;
+
+// The lower faces of the existing Dutch gables supply the attic bays. Pick
+// the middle built gable on each elevation, in Princes Street, North Bridge,
+// station, and Waverley Steps order. The tower interrupts the Princes Street row.
+const BALMORAL_CENTRAL_GABLES = [[40.500,-127.800],[84.127,-106.712],[63.900,-76.600],[30.896,-92.054]] as const;
+const BALMORAL_LIT_ATTIC_PANES = [[77.065,-132.142],[81.773,-115.188],[39.254,-70.323],[59.792,-75.554],
+  [22.873,-120.377],[36.456,-126.600],[67.875,-136.175]] as const;
+
+function balmoralSiteDistance(sites: readonly (readonly [number, number])[]) {
+  return sites.map(([x,z]) => `length(vStationLampWorld.xz-vec2(${x.toFixed(3)},${z.toFixed(3)}))`)
+    .reduce((a,b) => `min(${a},${b})`);
+}
+
+const balmoralCreamBay = `1.0-smoothstep(2.6,3.4,${balmoralSiteDistance(BALMORAL_CENTRAL_GABLES)})`;
+const BALMORAL_ROOFLINE = /* glsl */`
+// balmoral-roofline-begin
+// The body chimney pots end at P+39.4. The first clock tower trim is at
+// P+39.55 and the other structures in the batch stay below the attic.
+if (trimZone > 0.0 && trimHeight >= 23.50 && trimHeight < 39.45) {
+  float upright = 1.0-smoothstep(0.04,0.30,abs(normalize(vStationLampNormal).y));
+  float frieze = smoothstep(23.50,23.66,trimHeight)*(1.0-smoothstep(26.05,26.16,trimHeight));
+  // The gable slabs use a flat stone vertex tint and no texture coordinates.
+  // The dormer cheeks are UV-mapped boxes and the mansard faces are slate.
+  float gableStone = 1.0-step(0.003,length(vColor.rgb-vec3(${rgb(BALMORAL_COLOURS.stone).join(',')})));
+  float gableFace = gableStone*(1.0-step(0.00001,length(vBalmoralTrimUv)));
+  float attic = gableFace*(1.0-smoothstep(28.28,28.45,trimHeight));
+  float atticBand = upright*max(frieze,attic);
+  float creamBay = ${balmoralCreamBay};
+  float stoneResponse = clamp(dot(vColor.rgb,vec3(0.2126,0.7152,0.0722))*2.5,0.58,1.07);
+  vec3 atticLight = mix(vec3(0.39,0.094,0.012),vec3(0.49,0.350,0.210),creamBay);
+  float pane = 1.0-step(0.002,length(vColor.rgb-vec3(${rgb(BALMORAL_COLOURS.pane).join(',')})));
+  float paneLit = 1.0-smoothstep(0.95,1.25,${balmoralSiteDistance(BALMORAL_LIT_ATTIC_PANES)});
+  paneLit *= upright*pane*smoothstep(26.55,26.72,trimHeight)*(1.0-smoothstep(28.92,29.08,trimHeight));
+  trimRadiance = vec3(0.008,0.007,0.009)*stoneResponse + atticBand*atticLight*stoneResponse
+    + paneLit*vec3(0.19,0.116,0.052);
+}
+// balmoral-roofline-end
+`;
 
 // Cassette tile indices on the shed slopes seen from North Bridge. The
 // roof mesh maps its world x/z in metres directly to these glazing bars.
@@ -477,18 +515,28 @@ balmoralBuiltFlood = diffuseColor.rgb*vec3(1.0,0.82,0.5)*uWinNight
   *FLOOD.x*mix(FLOOD.z,1.0,exp(-max(vStationLampWorld.y-FLOOD.w,0.0)/FLOOD.y));
 #endif
 // balmoral-stone-grade-begin
-float balconyRise = smoothstep(7.2,8.3,hotelHeight);
-float firstFloorBand = balconyRise*(1.0-smoothstep(9.2,10.7,hotelHeight));
-float topStoreyBand = smoothstep(22.1,23.9,hotelHeight);
+// The balcony slab is at 8.2 m, with the next window sills at 13.0 m.
+float firstFloorBand = smoothstep(8.22,8.38,hotelHeight)*(1.0-smoothstep(12.02,12.18,hotelHeight));
+// The wall meets the painted frieze at the top of the texture.
+float topStoreyBand = smoothstep(23.50,23.66,hotelHeight);
 float bandFill = max(firstFloorBand,topStoreyBand);
-// Keep the existing falloff on the balcony storey. Recede into shadow above it.
-float balconyStorey = balconyRise*(1.0-smoothstep(10.7,12.2,hotelHeight));
+// Keep the previous wash in the dark glass texels beneath the room lights.
+float masonry = smoothstep(0.055,0.14,dot(diffuseColor.rgb,vec3(0.2126,0.7152,0.0722)));
+float glassBalconyRise = smoothstep(7.2,8.3,hotelHeight);
+float glassBandFill = max(glassBalconyRise*(1.0-smoothstep(9.2,10.7,hotelHeight)),smoothstep(22.1,23.9,hotelHeight));
+float glassBalconyStorey = glassBalconyRise*(1.0-smoothstep(10.7,12.2,hotelHeight));
+float balconyStorey = mix(glassBalconyStorey,firstFloorBand,masonry);
 float stoneShadowMix = smoothstep(0.0,1.5,hotelHeight)*(1.0-balconyStorey);
 vec3 stoneShadow = mix(vec3(0.36,0.27,0.26),vec3(0.085,0.119,0.17),stoneShadowMix);
-vec3 balmoralStoneGrade = mix(vec3(1.0),mix(stoneShadow,vec3(1.0),bandFill),uStationLampLevel);
+vec3 balmoralStoneGrade = mix(vec3(1.0),mix(stoneShadow,vec3(1.0),mix(glassBandFill,bandFill,masonry)),uStationLampLevel);
 // Grade the stone washes and the fill, leaving room emission and late lamp
 // contributions intact. The full albedo range remains in the dark masonry.
-totalEmissiveRadiance -= (balmoralStoneEmission+balmoralBuiltFlood)*(1.0-balmoralStoneGrade);
+vec3 stoneWash = balmoralStoneEmission+balmoralBuiltFlood;
+totalEmissiveRadiance -= stoneWash*(1.0-balmoralStoneGrade);
+float creamBay = ${balmoralCreamBay};
+vec3 topWash = mix(vec3(0.70,0.19,0.012),vec3(0.95,0.89,0.91),creamBay);
+vec3 bandWash = diffuseColor.rgb*(vec3(0.64,0.23,0.028)*firstFloorBand+topWash*topStoreyBand);
+totalEmissiveRadiance += (bandWash-stoneWash*balmoralStoneGrade*bandFill)*uStationLampLevel*masonry;
 // balmoral-stone-grade-end`,
       diffuse: `
 // balmoral-stone-diffuse-begin
@@ -536,7 +584,8 @@ vec3 baseCapRadiance = vec3(0.95,0.39,0.085)*max(diffuseColor.rgb,vec3(0.5))*tri
 float capFaces = (1.0-smoothstep(0.65,0.95,normalize(vStationLampNormal).y))*smoothstep(19.0,20.0,trimHeight)*(1.0-smoothstep(39.5,40.0,trimHeight));
 trimRadiance = mix(trimRadiance,max(trimRadiance,max(baseCapRadiance,vec3(0.105,0.0431,0.0094)*trimZone)),capFaces);
 ${lit ? `float corniceFace = smoothstep(23.2,24.1,trimHeight)*(1.0-smoothstep(26.0,27.0,trimHeight));
-trimRadiance *= mix(vec3(1.0),vec3(1.43,1.16,0.82),corniceFace);\n` : ''}totalEmissiveRadiance += uStationLampLevel*trimRadiance;
+trimRadiance *= mix(vec3(1.0),vec3(1.43,1.16,0.82),corniceFace);
+${BALMORAL_ROOFLINE}` : ''}totalEmissiveRadiance += uStationLampLevel*trimRadiance;
 // balmoral-trim-end
 ${towerBox.isEmpty() ? '' : `
 if ((${bounds(towerBox,2)}) > 0.0 && trimHeight >= 39.4) {
@@ -562,7 +611,9 @@ if (vNorthBridgeDeck > 0.0 && uStationLampLevel > 0.0) {
   totalEmissiveRadiance += uStationLampLevel*vec3(1.0,0.69,0.38)*diffuseColor.rgb*(streetWash+archWash)*bridgeBay;
 }
 // north-bridge-wash-end`,false,{
-      declaration:'attribute float northBridgeDeck;',varying:'varying float vNorthBridgeDeck;',assignment:'vNorthBridgeDeck = northBridgeDeck;',
+      declaration:'attribute float northBridgeDeck;',
+      get varying() {return 'varying float vNorthBridgeDeck;'+(hasNight() ? '\nvarying vec2 vBalmoralTrimUv;' : '');},
+      get assignment() {return 'vNorthBridgeDeck = northBridgeDeck;'+(hasNight() ? '\nvBalmoralTrimUv = uv;' : '');},
     },{diffuse:towerPaint ? towerDiffuse : undefined, fog:towerBox.isEmpty() ? undefined : towerFog(`(${bounds(towerBox,2)})*smoothstep(39.4,41.0,trimHeight)`)});
   }
   const roofAir = { value: 0 };

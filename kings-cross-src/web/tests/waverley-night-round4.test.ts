@@ -8,12 +8,27 @@ const scene=buildWaverleyScene({lighting:false}),glow=createWaverleyGlow(scene.g
 after(()=>{glow.dispose();scene.dispose();});
 const mesh=scene.group.getObjectByName('waverley-frontage-structure') as THREE.Mesh;
 const s={uniforms:{},vertexShader:THREE.ShaderLib.lambert!.vertexShader,fragmentShader:THREE.ShaderLib.lambert!.fragmentShader};
+glow.setLevel(1);
 (mesh.material as THREE.Material).onBeforeCompile(s as never,undefined as never);
 const code=s.fragmentShader.split('// balmoral-trim-begin')[1]!.split('// balmoral-trim-end')[0]!;
 const base=scene.group.getObjectByName('waverley-frontage')!.userData.frontage.P;
-function emission(height:number,level=1){const e={vars:{vStationLampWorld:[74,base+height,-136],vStationLampNormal:[0,1,0],diffuseColor:[.1,.1,.1,1],uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]}};new Glsl('').run(code,e);return e.vars.totalEmissiveRadiance as number[];}
-test('Balmoral corner cap flood has a bright lower shoulder and falls off upward between bands',()=>{const low=emission(27.8),high=emission(30.8);assert.ok(low[0]!>3*high[0]!,'an upper cap must not read as the same orange paint as its lit shoulder');assert.ok(low[0]!>.2,'the full cap shoulder receives the flood');assert.ok(low[0]!/low[2]!>=2,'retain orange gold');assert.deepEqual(emission(27.8,0),[0,0,0]);});
-test('Balmoral turret flood fades above its cornice instead of carrying a flat minimum up the shaft',()=>{const lamp=emission(24.8),above=emission(27.0);assert.ok(lamp[0]!>3*above[0]!,'the turret reveals vertical lamp falloff');assert.ok(above[0]!/above[2]!>=2);assert.deepEqual(emission(24.8,0),[0,0,0]);});
+function emission(height:number,level=1,colour=[.1,.1,.1],normal=[0,1,0]){
+ const e={vars:{vStationLampWorld:[74,base+height,-136],vStationLampNormal:normal,diffuseColor:[...colour,1],vColor:colour,
+  vBalmoralTrimUv:[.5,.5],uStationLampLevel:level,totalEmissiveRadiance:[0,0,0]}};
+ new Glsl('').run(code,e);return e.vars.totalEmissiveRadiance;
+}
+test('Balmoral corner cap keeps its lower shoulder and upper bell in silhouette',()=>{
+ const low=emission(27.8),high=emission(30.8);
+ assert.ok(Math.max(...low,...high)<.01,'both parts of the lead cap stay dark');
+ assert.ok(low[0]!/low[2]!<2 && high[0]!/high[2]!<2,'the remaining fill is subdued and neutral');
+ assert.deepEqual(emission(27.8,0),[0,0,0]);
+});
+test('Balmoral turret cornice stays gold with a sharp upper edge below the lead',()=>{
+ const lamp=emission(24.8,1,[.5,.5,.5],[1,0,0]),above=emission(27.0,1,[.5,.5,.5],[1,0,0]);
+ assert.ok(lamp[0]!>.2 && lamp[0]!>3*above[0]!,'the cornice retains a bright face below the dark turret');
+ assert.ok(lamp[0]!/lamp[2]!>=2);
+ assert.deepEqual(emission(24.8,0),[0,0,0]);
+});
 
 test('Princes Street lamp pools leave a dark gap across the frozen Balmoral road band',async()=>{
  const {loadWaverleyLamps}=await import('../src/waverley-lamps.ts'),{lampSurfaceAt}=await import('../src/lamp-wet-surface.ts');
