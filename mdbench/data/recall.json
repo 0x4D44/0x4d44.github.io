@@ -9173,6 +9173,601 @@
    "flags": []
   },
   {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 91.96,
+    "accuracy": 0.9305,
+    "invention_rate": 0.0117,
+    "exact_run": 19,
+    "brier": 0.0304,
+    "ece": 0.0518,
+    "second_delta": 0.0,
+    "best_guess_score": 95.32,
+    "confident_wrong": 0.0312,
+    "cost_usd": 1.6287,
+    "wall_min": 9.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 15.86,
+    "accuracy": 0.2923,
+    "invention_rate": 0.4574,
+    "exact_run": 11,
+    "brier": 0.0182,
+    "ece": 0.0529,
+    "second_delta": -1.74,
+    "best_guess_score": 10.44,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.2759,
+    "wall_min": 7.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.27,
+    "accuracy": 0.0054,
+    "invention_rate": 0.5,
+    "exact_run": 0,
+    "brier": 0.0625,
+    "ece": 0.25,
+    "second_delta": -0.27,
+    "best_guess_score": 3.15,
+    "cost_usd": 0.8258,
+    "wall_min": 6.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 62.49,
+    "accuracy": 0.6489,
+    "invention_rate": 0.0369,
+    "exact_run": 16,
+    "brier": 0.0034,
+    "ece": 0.0366,
+    "second_delta": -1.72,
+    "best_guess_score": 50.66,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.654,
+    "wall_min": 16.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.16,
+    "accuracy": 0.0016,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "brier": 0.0068,
+    "ece": 0.0824,
+    "second_delta": -0.08,
+    "best_guess_score": 7.41,
+    "cost_usd": 1.2731,
+    "wall_min": 9.11
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 3.04,
+    "accuracy": 0.0304,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "brier": 0.0625,
+    "ece": 0.2,
+    "second_delta": 0.0,
+    "best_guess_score": 32.28,
+    "cost_usd": 1.0109,
+    "wall_min": 6.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.27,
+    "accuracy": 0.0027,
+    "invention_rate": 0.0,
+    "exact_run": 1,
+    "brier": 0.36,
+    "ece": 0.6,
+    "second_delta": -0.27,
+    "best_guess_score": 9.55,
+    "cost_usd": 0.4447,
+    "wall_min": 2.67
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 18.78,
+    "accuracy": 0.1945,
+    "invention_rate": 0.0345,
+    "exact_run": 2,
+    "brier": 0.0117,
+    "ece": 0.0643,
+    "second_delta": 0.68,
+    "best_guess_score": 10.42,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.8918,
+    "wall_min": 4.48
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 25.47,
+    "accuracy": 0.2547,
+    "invention_rate": 0.0,
+    "exact_run": 3,
+    "brier": 0.0126,
+    "ece": 0.1,
+    "second_delta": 0.0,
+    "best_guess_score": 16.9,
+    "confident_wrong": 0.0,
+    "cost_usd": 1.1658,
+    "wall_min": 8.06
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 31.09,
+    "accuracy": 0.324,
+    "invention_rate": 0.0405,
+    "exact_run": 0,
+    "brier": 0.0334,
+    "ece": 0.1329,
+    "second_delta": -10.15,
+    "best_guess_score": 15.97,
+    "cost_usd": 1.4724,
+    "wall_min": 10.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0001,
+    "ece": 0.0088,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.394,
+    "wall_min": 1.04
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0003,
+    "ece": 0.0122,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4685,
+    "wall_min": 1.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.01,
+    "ece": 0.0747,
+    "second_delta": 0.0,
+    "best_guess_score": 99.04,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.5195,
+    "wall_min": 1.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.22,
+    "accuracy": 0.9961,
+    "invention_rate": 0.0039,
+    "exact_run": 191,
+    "brier": 0.0019,
+    "ece": 0.0323,
+    "second_delta": 0.0,
+    "best_guess_score": 99.22,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6051,
+    "wall_min": 2.09
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0001,
+    "ece": 0.0081,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.5046,
+    "wall_min": 1.73
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0,
+    "ece": 0.0046,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3659,
+    "wall_min": 0.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0,
+    "ece": 0.004,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3275,
+    "wall_min": 0.76
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0002,
+    "ece": 0.0088,
+    "second_delta": 0.0,
+    "best_guess_score": 99.62,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4496,
+    "wall_min": 1.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0001,
+    "ece": 0.0089,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4496,
+    "wall_min": 1.15
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.6,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0016,
+    "exact_run": 47,
+    "brier": 0.0001,
+    "ece": 0.0075,
+    "second_delta": 0.0,
+    "best_guess_score": 99.6,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.7772,
+    "wall_min": 2.86
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0011,
+    "ece": 0.0037,
+    "second_delta": 0.0,
+    "best_guess_score": 98.29,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6033,
+    "wall_min": 2.27
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 697,
+    "brier": 0.0002,
+    "ece": 0.0115,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6044,
+    "wall_min": 2.12
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0003,
+    "ece": 0.0125,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2387,
+    "wall_min": 0.99
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.42,
+    "accuracy": 0.9975,
+    "invention_rate": 0.0033,
+    "exact_run": 141,
+    "brier": 0.0003,
+    "ece": 0.0091,
+    "second_delta": 0.33,
+    "best_guess_score": 99.75,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.8471,
+    "wall_min": 4.28
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0009,
+    "ece": 0.0152,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.6203,
+    "wall_min": 2.2
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4411,
+    "wall_min": 0.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0,
+    "ece": 0.0033,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4332,
+    "wall_min": 1.44
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-sonnet-18",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 114,
+    "brier": 0.0,
+    "ece": 0.0036,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3435,
+    "wall_min": 0.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-two-cities",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 119,
+    "brier": 0.0,
+    "ece": 0.0029,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2935,
+    "wall_min": 0.57
+   },
+   "flags": []
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "text-washington-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 377,
+    "brier": 0.0003,
+    "ece": 0.0167,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4374,
+    "wall_min": 1.28
+   },
+   "flags": []
+  },
+  {
    "seat": "gpt-5-high",
    "task": "music-bach-prelude-c-bwv846",
    "run": 1,
@@ -10337,6 +10932,598 @@
     "confident_wrong": 0.0,
     "cost_usd": 0.2643,
     "wall_min": 0.59
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 53.77,
+    "accuracy": 0.7146,
+    "invention_rate": 0.2476,
+    "exact_run": 0,
+    "brier": 0.0919,
+    "ece": 0.266,
+    "second_delta": 0.66,
+    "best_guess_score": 52.75,
+    "confident_wrong": 0.0625,
+    "cost_usd": 0.3995,
+    "wall_min": 8.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 15.86,
+    "accuracy": 0.2923,
+    "invention_rate": 0.4574,
+    "exact_run": 11,
+    "brier": 0.0208,
+    "ece": 0.0633,
+    "second_delta": 9.06,
+    "best_guess_score": 15.89,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3585,
+    "wall_min": 7.6
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.76,
+    "accuracy": 0.0152,
+    "invention_rate": 0.5,
+    "exact_run": 0,
+    "brier": 0.0005,
+    "ece": 0.0222,
+    "second_delta": -0.76,
+    "best_guess_score": 2.75,
+    "cost_usd": 0.2912,
+    "wall_min": 5.04
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 59.58,
+    "accuracy": 0.5958,
+    "invention_rate": 0.0,
+    "exact_run": 21,
+    "brier": 0.0184,
+    "ece": 0.0405,
+    "second_delta": 1.33,
+    "best_guess_score": 45.42,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.4869,
+    "wall_min": 9.26
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 4.09,
+    "cost_usd": 0.3523,
+    "wall_min": 6.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 2.24,
+    "accuracy": 0.0384,
+    "invention_rate": 0.4167,
+    "exact_run": 0,
+    "brier": 0.0573,
+    "ece": 0.1914,
+    "second_delta": 0.0,
+    "best_guess_score": 18.44,
+    "cost_usd": 0.2979,
+    "wall_min": 5.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 8.68,
+    "cost_usd": 0.1406,
+    "wall_min": 2.96
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 23.23,
+    "accuracy": 0.2387,
+    "invention_rate": 0.027,
+    "exact_run": 2,
+    "brier": 0.0205,
+    "ece": 0.0745,
+    "second_delta": 0.66,
+    "best_guess_score": 17.01,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2382,
+    "wall_min": 5.22
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.81,
+    "accuracy": 0.0318,
+    "invention_rate": 0.7447,
+    "exact_run": 0,
+    "brier": 0.5993,
+    "ece": 0.7623,
+    "second_delta": 2.66,
+    "best_guess_score": 4.8,
+    "confident_wrong": 0.3333,
+    "cost_usd": 0.1987,
+    "wall_min": 4.0
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 3.88,
+    "accuracy": 0.0919,
+    "invention_rate": 0.5778,
+    "exact_run": 0,
+    "brier": 0.483,
+    "ece": 0.6867,
+    "second_delta": -0.43,
+    "best_guess_score": 6.76,
+    "confident_wrong": 1.0,
+    "cost_usd": 0.3066,
+    "wall_min": 5.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0002,
+    "ece": 0.0125,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1095,
+    "wall_min": 1.04
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 311,
+    "brier": 0.0015,
+    "ece": 0.0211,
+    "second_delta": -0.96,
+    "best_guess_score": 99.04,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1353,
+    "wall_min": 1.66
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.04,
+    "accuracy": 0.9936,
+    "invention_rate": 0.0032,
+    "exact_run": 21,
+    "brier": 0.0154,
+    "ece": 0.1214,
+    "second_delta": 0.0,
+    "best_guess_score": 99.04,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1605,
+    "wall_min": 2.39
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 94.1,
+    "accuracy": 0.9959,
+    "invention_rate": 0.0551,
+    "exact_run": 4,
+    "brier": 0.0893,
+    "ece": 0.0833,
+    "second_delta": 0.0,
+    "best_guess_score": 94.1,
+    "confident_wrong": 0.0909,
+    "cost_usd": 0.1566,
+    "wall_min": 1.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 503,
+    "brier": 0.0002,
+    "ece": 0.0112,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1913,
+    "wall_min": 2.07
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0001,
+    "ece": 0.0085,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0959,
+    "wall_min": 0.69
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0001,
+    "ece": 0.01,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0558,
+    "wall_min": 0.86
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.62,
+    "accuracy": 0.9962,
+    "invention_rate": 0.0,
+    "exact_run": 169,
+    "brier": 0.0006,
+    "ece": 0.0203,
+    "second_delta": 0.0,
+    "best_guess_score": 99.62,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1489,
+    "wall_min": 1.82
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 202,
+    "brier": 0.0003,
+    "ece": 0.0167,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.139,
+    "wall_min": 1.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.6,
+    "accuracy": 0.9976,
+    "invention_rate": 0.0016,
+    "exact_run": 47,
+    "brier": 0.0009,
+    "ece": 0.0218,
+    "second_delta": 0.0,
+    "best_guess_score": 99.6,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2288,
+    "wall_min": 3.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 40,
+    "brier": 0.0013,
+    "ece": 0.0046,
+    "second_delta": 0.0,
+    "best_guess_score": 98.29,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1539,
+    "wall_min": 2.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.71,
+    "accuracy": 0.9986,
+    "invention_rate": 0.0014,
+    "exact_run": 569,
+    "brier": 0.0004,
+    "ece": 0.0162,
+    "second_delta": 0.0,
+    "best_guess_score": 99.71,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2067,
+    "wall_min": 2.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0003,
+    "ece": 0.0138,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1144,
+    "wall_min": 1.08
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.02,
+    "accuracy": 0.9967,
+    "invention_rate": 0.0066,
+    "exact_run": 141,
+    "brier": 0.0008,
+    "ece": 0.0154,
+    "second_delta": 0.49,
+    "best_guess_score": 99.51,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2553,
+    "wall_min": 4.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.48,
+    "accuracy": 0.9974,
+    "invention_rate": 0.0026,
+    "exact_run": 124,
+    "brier": 0.0004,
+    "ece": 0.0118,
+    "second_delta": 0.0,
+    "best_guess_score": 99.48,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0828,
+    "wall_min": 1.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0874,
+    "wall_min": 0.53
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 353,
+    "brier": 0.0002,
+    "ece": 0.0133,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1308,
+    "wall_min": 1.59
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-sonnet-18",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 114,
+    "brier": 0.0,
+    "ece": 0.0,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0939,
+    "wall_min": 0.65
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-two-cities",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 119,
+    "brier": 0.0001,
+    "ece": 0.0036,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.0414,
+    "wall_min": 0.54
+   },
+   "flags": []
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "text-washington-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 377,
+    "brier": 0.0011,
+    "ece": 0.0317,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.139,
+    "wall_min": 1.57
    },
    "flags": []
   }
