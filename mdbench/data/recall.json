@@ -9173,6 +9173,581 @@
    "flags": []
   },
   {
+   "seat": "gpt-5-high",
+   "task": "music-bach-prelude-c-bwv846",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.28,
+    "cost_usd": 0.2537,
+    "wall_min": 2.62
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-beethoven-9-ode-to-joy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 3.74,
+    "accuracy": 0.0854,
+    "invention_rate": 0.5625,
+    "exact_run": 0,
+    "brier": 0.0398,
+    "ece": 0.1896,
+    "second_delta": -3.74,
+    "best_guess_score": 8.15,
+    "cost_usd": 0.359,
+    "wall_min": 3.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-debussy-clair-de-lune",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 0.94,
+    "cost_usd": 0.1806,
+    "wall_min": 2.33
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-fur-elise",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.4,
+    "accuracy": 0.0129,
+    "invention_rate": 0.6875,
+    "exact_run": 0,
+    "brier": 0.2193,
+    "ece": 0.4605,
+    "second_delta": -0.2,
+    "best_guess_score": 0.69,
+    "confident_wrong": 1.0,
+    "cost_usd": 0.3132,
+    "wall_min": 3.47
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-holst-jupiter",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.24,
+    "best_guess_score": 5.34,
+    "cost_usd": 0.2961,
+    "wall_min": 11.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-joplin-entertainer",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 1.97,
+    "cost_usd": 0.2238,
+    "wall_min": 3.8
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-joplin-maple-leaf-rag",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 4.38,
+    "cost_usd": 0.2473,
+    "wall_min": 5.52
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-moonlight-sonata-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.04,
+    "cost_usd": 0.2219,
+    "wall_min": 4.42
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-mozart-k545-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.01,
+    "cost_usd": 0.2016,
+    "wall_min": 3.49
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "music-satie-gymnopedie-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 0.0,
+    "accuracy": 0.0,
+    "invention_rate": 0.0,
+    "exact_run": 0,
+    "second_delta": 0.0,
+    "best_guess_score": 2.22,
+    "cost_usd": 0.2051,
+    "wall_min": 3.41
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-declaration",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 340,
+    "brier": 0.0197,
+    "ece": 0.1313,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2868,
+    "wall_min": 2.38
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-eisenhower-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.07,
+    "accuracy": 0.9871,
+    "invention_rate": 0.0065,
+    "exact_run": 60,
+    "brier": 0.0051,
+    "ece": 0.0618,
+    "second_delta": 0.0,
+    "best_guess_score": 98.07,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2311,
+    "wall_min": 1.6
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-elizabeth-tilbury",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 92.78,
+    "accuracy": 0.9617,
+    "invention_rate": 0.0353,
+    "exact_run": 55,
+    "brier": 0.0848,
+    "ece": 0.2646,
+    "second_delta": 1.87,
+    "best_guess_score": 94.65,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2365,
+    "wall_min": 1.42
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-fdr-1st-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 90.29,
+    "accuracy": 0.9502,
+    "invention_rate": 0.0498,
+    "exact_run": 4,
+    "brier": 0.0927,
+    "ece": 0.0946,
+    "second_delta": 0.79,
+    "best_guess_score": 91.08,
+    "confident_wrong": 0.0833,
+    "cost_usd": 0.2785,
+    "wall_min": 2.68
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-fdr-infamy",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.81,
+    "accuracy": 0.994,
+    "invention_rate": 0.006,
+    "exact_run": 34,
+    "brier": 0.0335,
+    "ece": 0.1681,
+    "second_delta": -0.99,
+    "best_guess_score": 97.82,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2874,
+    "wall_min": 2.31
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-genesis-1",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 280,
+    "brier": 0.0014,
+    "ece": 0.0331,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1918,
+    "wall_min": 1.91
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-gettysburg",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 267,
+    "brier": 0.0147,
+    "ece": 0.11,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.176,
+    "wall_min": 2.43
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-hamlet-to-be",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.1,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0077,
+    "exact_run": 127,
+    "brier": 0.0069,
+    "ece": 0.0719,
+    "second_delta": 0.0,
+    "best_guess_score": 98.1,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2453,
+    "wall_min": 2.4
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-house-divided",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 201,
+    "brier": 0.0323,
+    "ece": 0.1578,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3033,
+    "wall_min": 2.13
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-jfk-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 85.63,
+    "accuracy": 0.8859,
+    "invention_rate": 0.0333,
+    "exact_run": 391,
+    "brier": 0.042,
+    "ece": 0.0972,
+    "second_delta": 3.38,
+    "best_guess_score": 89.01,
+    "confident_wrong": 0.0227,
+    "cost_usd": 0.5139,
+    "wall_min": 4.79
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-kubla-khan",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 97.72,
+    "accuracy": 0.9885,
+    "invention_rate": 0.0115,
+    "exact_run": 40,
+    "brier": 0.0043,
+    "ece": 0.0401,
+    "second_delta": 0.0,
+    "best_guess_score": 97.72,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2187,
+    "wall_min": 1.7
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-lincoln-2nd-inaugural",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.29,
+    "accuracy": 0.9914,
+    "invention_rate": 0.0086,
+    "exact_run": 440,
+    "brier": 0.0109,
+    "ece": 0.0832,
+    "second_delta": 0.28,
+    "best_guess_score": 98.57,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3098,
+    "wall_min": 3.1
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-moby-dick",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 314,
+    "brier": 0.0246,
+    "ece": 0.1269,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2669,
+    "wall_min": 3.63
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-patrick-henry",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.01,
+    "accuracy": 0.9926,
+    "invention_rate": 0.0025,
+    "exact_run": 52,
+    "brier": 0.0074,
+    "ece": 0.0631,
+    "second_delta": -0.08,
+    "best_guess_score": 98.93,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3978,
+    "wall_min": 3.75
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-pride-prejudice",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 387,
+    "brier": 0.0028,
+    "ece": 0.0469,
+    "second_delta": -0.52,
+    "best_guess_score": 99.48,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3821,
+    "wall_min": 2.99
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-psalm-23",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 118,
+    "brier": 0.0004,
+    "ece": 0.0183,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1063,
+    "wall_min": 0.95
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-raven",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 99.43,
+    "accuracy": 0.9972,
+    "invention_rate": 0.0028,
+    "exact_run": 72,
+    "brier": 0.0065,
+    "ece": 0.068,
+    "second_delta": 0.0,
+    "best_guess_score": 99.43,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.3791,
+    "wall_min": 3.94
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-sonnet-18",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 114,
+    "brier": 0.0021,
+    "ece": 0.0429,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1322,
+    "wall_min": 1.25
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-two-cities",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 100.0,
+    "accuracy": 1.0,
+    "invention_rate": 0.0,
+    "exact_run": 119,
+    "brier": 0.0003,
+    "ece": 0.015,
+    "second_delta": 0.0,
+    "best_guess_score": 100.0,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.1449,
+    "wall_min": 2.21
+   },
+   "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "text-washington-farewell",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "item_score": 98.15,
+    "accuracy": 0.9894,
+    "invention_rate": 0.008,
+    "exact_run": 108,
+    "brier": 0.0746,
+    "ece": 0.2656,
+    "second_delta": 0.79,
+    "best_guess_score": 98.94,
+    "confident_wrong": 0.0,
+    "cost_usd": 0.2622,
+    "wall_min": 2.07
+   },
+   "flags": []
+  },
+  {
    "seat": "opus-4.8-high",
    "task": "music-bach-prelude-c-bwv846",
    "run": 1,
