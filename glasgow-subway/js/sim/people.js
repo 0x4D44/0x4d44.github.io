@@ -634,7 +634,7 @@ export class AnimCrowd {
     const ch = p.char, r = this.rng; p.state = state;
     let cat = 'idle';
     if (state === 'walk' || state === 'go') cat = 'walk';
-    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit'); }   // (children and staff have no phone to hold, so they do not take the pose of holding one)
+    else if (state === 'sit') { const sp = ch.pools.sitphone && !(this.phones && (ch.kid || ch.staff)); cat = r() < 0.4 ? (sp ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');; if (sp && this.phones && p.hold && p.hold.target > 0 && /^(text|sit)$/.test(p.hold.kind)) cat = 'sitphone'; }   // (someone texting who sits down goes on texting: put away mid-sit, the phone clip's empty hands showed by the face - review 45)   // (children and staff have no phone to hold, so they do not take the pose of holding one)
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     // (the looking-about and crossed-leg sits hold a hand out wide: with someone in the next seat it rested on their knee - review 28, in 2 of 3 rides)
@@ -650,7 +650,7 @@ export class AnimCrowd {
     if (cat === 'fidget') once = true;
     const use = this.phones ? this._phoneUse(p, state, cat) : null;   // who is on a phone: it takes the body of the stock phone clip (head down, or to the ear) and the arms of hold_three.js
     if (use && use.clip) clip = use.clip;
-    if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
+    if (!use && p.hold && p.hold.w > 0 && fade > 0) fade = Math.max(fade, HOLD_OUT + 0.1);  if (!use && p.hold && fade > 0) p.hold.out = Math.max(HOLD_OUT, fade);   // ... nor may the hold let go faster than the clip's arms come down (a 1 s sit: they showed empty by the face for half a second - review 45)   // the phone goes away: the clip's own arms (up by the face, in the stock phone clips) must not drop faster than the hold lets go of them
     const was = p.cat, m0 = p.m;
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     // Walking off from a standing pose: remember the pose that was left. Until the gait has the legs, the height of the body is a blend of that pose's and the gait's (_yOffset); the
@@ -677,7 +677,7 @@ export class AnimCrowd {
     let h = p.hold;
     if (!use) { if (h) { h.target = 0; h.next = null; } return; }
     if (!h) h = p.hold = { kind: use.kind, w: 0, target: 1, next: null, rig: null, variant: Math.floor(this.prng() * PHONE_VARIANTS), cap: false };
-    else if (h.kind === use.kind || h.w <= 0.02) { h.kind = use.kind; h.target = 1; h.next = null; } else { h.next = use.kind; h.target = 0; return; }
+    else if (h.kind === use.kind || h.w <= 0.02 || /^(text|sit)$/.test(h.kind) && /^(text|sit)$/.test(use.kind)) { h.kind = use.kind; h.target = 1; h.next = null; }   // (texting standing and seated hold the phone 2-3 cm apart: sitting down, the phone stays out - lowered and raised again, the stock sit_phone clip's empty hands showed between - review 45) else { h.next = use.kind; h.target = 0; return; }
     // the phone is coming out: take the arms as they are NOW, before the animation starts blending in the stock phone clip, so that the first frame of that blend (which swings the hands a tenth
     // of the way to the face) is not shown either: the arms rise from this pose
     if (h.w <= 0.02 && !h.dead && p.obj) {
@@ -688,7 +688,7 @@ export class AnimCrowd {
   /** One frame of the hold, after the mixer and the gait: ramp its weight, and lay the arms over the pose. snap = the person is not being animated (far, or a one-off pose): no ramp, the weight is the target. */
   _holdStep(p, dt, snap) {
     const h = p.hold; if (!h || h.dead) return; const w0 = h.w;
-    h.w = snap ? h.target : h.target > h.w ? Math.min(h.target, h.w + dt / HOLD_IN) : Math.max(h.target, h.w - dt / HOLD_OUT);
+    h.w = snap ? h.target : h.target > h.w ? Math.min(h.target, h.w + dt / HOLD_IN) : Math.max(h.target, h.w - dt / (h.out || HOLD_OUT)); if (h.target > 0) h.out = null;
     if (h.w <= 0 && h.next) { h.kind = h.next; h.next = null; h.target = 1; if (snap) h.w = 1; }
     if (h.w <= 0) { if (h.rig) h.rig.hide(); return; }
     if (!h.rig || h.rig.obj !== p.obj) { h.rig = new HoldRig(this.THREE, p.obj, h.variant); if (!h.rig.ok) { h.dead = true; return; } }
@@ -1112,7 +1112,7 @@ export class AnimCrowd {
     if (p.paused && !p.static && p.intent < 0.5) { p.x = p.px; p.z = p.pz; }
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
     p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
-    if (p.v > 0.15 && p.hold && p.hold.target > 0) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away
+    if (p.v > 0.15 && p.hold && p.hold.target > 0 && p.state !== 'sit') this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away (not the slide back into a seat: that put the phone away for good and left the sit_phone clip cupping nothing - review 45)
     if ((p.state === 'walk' || p.state === 'go') && p.cur) {
       // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk
       // with no speed, the stride froze half taken with the arms mid-swing for seconds at a time (review 19: 1.4 - 5.1 s, a bent-knee half stride in a crowd)
