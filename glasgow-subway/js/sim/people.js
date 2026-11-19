@@ -220,6 +220,7 @@ export class AnimCrowd {
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gcount = {}; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5); this.bags = !NO_BAGS; this.brng = mulberry32(0xba95);   // phones have their own random stream: switching them off changes nothing else
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
+  _seatDraped(c) { if (c.seatDrape === undefined) { c.seatDrape = false; for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isMesh && m.geometry && m.geometry.attributes._seat) c.seatDrape = true; }); } return c.seatDrape; }
   _skirted(c) { return /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit); }
   /** the bodyfit.js fits of the full-detail model (people.glb) */
   _fitFull(c) {
@@ -509,6 +510,12 @@ export class AnimCrowd {
       if (!m.isSkinnedMesh || !m.material || !/^cloth_/i.test(m.material.name || '') || /shoe|boot|flats|sock|hose|camisole|top|blouse|shirt|sweater|jacket/i.test(m.material.name)) return;
       const g0 = m.userData.standGeo || m.geometry; m.userData.standGeo = g0;
       if (!on) { m.geometry = g0; return; }
+      const sa = g0.attributes._seat;
+      if (sa) {   // the garment as Blender's cloth simulation settled it on a seat (tools/assets_people_mpfb.py seat_drape): an offset in rest space, on the standing weights
+        let gd = g0.userData.seatGeo;
+        if (!gd) { gd = g0.userData.seatGeo = g0.clone(); const P = gd.attributes.position.clone(); for (let i = 0; i < P.count; i++) P.setXYZ(i, P.getX(i) + sa.getX(i), P.getY(i) + sa.getY(i), P.getZ(i) + sa.getZ(i)); gd.setAttribute('position', P); gd.computeVertexNormals(); gd.computeBoundingSphere(); }
+        m.geometry = gd; return;
+      }
       let gs = g0.userData.sitGeo;
       if (gs === undefined) { gs = g0.userData.sitGeo = this._sitWeights(m, g0) || null; }
       if (gs) m.geometry = gs;
@@ -618,6 +625,7 @@ export class AnimCrowd {
     else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.2 ? 'fidget' : 'idle'; }   // idle poses, or a phone (below): talk/wave/point read as flailing arms
     // (the looking-about and crossed-leg sits hold a hand out wide: with someone in the next seat it rested on their knee - review 28, in 2 of 3 rides)
     if (state === 'sit' && cat === 'sitalt' && this.people.some((o) => o !== p && o.parent === p.parent && o.state === 'sit' && Math.sign(o.x) === Math.sign(p.x) && Math.abs(o.z - p.z) < 0.75)) cat = 'sit';
+    if (state === 'sit' && cat === 'sitalt' && this._seatDraped(ch)) cat = 'sit';   // (a skirt draped on the seat was settled in the plain sit: crossed legs would go through it)
     let clip = (cat === 'walk' && this.gaitOn && this._plainWalk(ch)) || this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     if (state === 'pole' && p.poleClip && (ch.pools.pole || []).includes(p.poleClip)) clip = p.poleClip;   // (the clip the rider was placed for: the other one puts the other hand up, in the air)
     if (clip && /cross/.test(clip.name) && (/pencil|midi/.test(ch.outfit) || (p.bag && p.bag.kind))) clip = this._clip(ch, 'sit') || clip;   // (nor does anyone with a bag standing at their feet: the crossed leg went through it - review 8)   // (a pencil skirt does not cross its legs: it split into flaps - review 5)
@@ -849,11 +857,11 @@ export class AnimCrowd {
   _canSit(c, s) {   // every vertex of the seated body, in every sit clip, must stay under the ceiling profile and inside the side walls at this seat
     // a knee-length winter coat (punkduck_winter_coat, MakeHuman's rig) balloons into a crumpled shell over the thighs in every sit clip: its wearers stand (review 4)
     if (c.longCoat === undefined) { c.longCoat = false; const n = c.node || c.lodNode; if (n) n.traverse((o) => { if (o.isMesh && o.material && /^cloth_coat\./i.test(o.material.name || '')) c.longCoat = true; }); }
-    if (c.longCoat) return false;
+    if (c.longCoat && !this._seatDraped(c)) return false;
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 37: let sit again after stills in the viewer looked whole, in the game elder_woman_dress's skirt rode to the hip in stiff flaps and ya_smile_dress's hem hung as a half-disc below the seat - both stand again)   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
+    if (!this._seatDraped(c) && /^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 37: let sit again after stills in the viewer looked whole, in the game elder_woman_dress's skirt rode to the hip in stiff flaps and ya_smile_dress's hem hung as a half-disc below the seat - both stand again)   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
     if (s.seatY != null) for (const cat of ['sit', 'sitalt', 'sitphone']) for (const clip of c.pools[cat] || []) { const m = this.measure(c, clip); if (s.seatY - s.y - m.contact + m.minY < -SIT_FEET) return false; }

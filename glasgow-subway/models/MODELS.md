@@ -449,5 +449,16 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - Both changes answer the fixed grins, smirks and lopsided mouths at rest that reviews 36 - 40 found.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Seated skirts (after review 41)
+
+- **The seated drape.** For each of the 16 people in a skirt, dress or kilt, `seat_drape` in `assets_people_mpfb.py`:
+  - poses the sit clip (`sit_idle`);
+  - lets the cloth below the hips settle as cloth on the body and on a seat just under the thighs (Blender cloth simulation, 60 frames);
+  - stores where each vertex ended up as a rest-space offset, the `_SEAT` vertex attribute.
+- **In the game.** `people.js` adds `_SEAT` to the garment when the person sits, on the standing weights. Such people now sit (`_canSit`). They are kept to the plain and phone sits, because crossed legs would pass through the settled cloth.
+- **Why.** On the standing weights the cloth hung from the hips through and below the seat: a sheet between the knees and a half-disc of hem below the seat edge. Every skirt, dress and kilt had to stand, and the cars split by garment (reviews 11 - 41).
+- **Tools.** `people_lodhair.py` copies `_SEAT` with the hair parts it moves.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

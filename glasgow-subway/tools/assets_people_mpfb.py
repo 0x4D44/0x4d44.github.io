@@ -4,7 +4,7 @@ Highland garments, converts to a straight-arm rest pose, re-authors the shared a
 
 Run:  HOME=<scratch>/mpfb/home python tools/assets_people_mpfb.py [--lod] [--out DIR] [id ...]
 The MPFB extension + asset packs live OUTSIDE the repo (MPFB_DATA / HOME below).  This file contains only our own code."""
-import bpy, sys, os, math, json, random, zlib
+import re, bpy, sys, os, math, json, random, zlib
 import addon_utils
 from mathutils import Vector, Matrix, Quaternion
 sys.path.insert(0, os.path.dirname(__file__))
@@ -1682,12 +1682,84 @@ def rest_orientation_spread(rigs):
             if a > worst: worst, wb = a, b.name
     return worst, wb
 
+# ------------------------------------------------------------------ seated skirts: the cloth settled on a seat (Blender cloth simulation), kept as a rest-space offset
+SKIRT_FREE_SKIP = ('shoe', 'boot', 'flats', 'sock', 'hose', 'sneaker')
+def seat_drape(pr):
+    """For a person in a skirt, dress or kilt: pose the seated clip (sit_idle), let everything of cloth below the hips fall as cloth onto the body and onto a seat just under
+    the thighs (Blender's cloth simulation, 60 frames), and store where each such vertex ended up as an offset from its rest position in rest space - the mesh attribute
+    '_seat', exported (export_attributes) and added to the garment by people.js when the person sits. Skinned on the standing weights the cloth hung from the hips through and
+    below the seat, a sheet between the knees and a half-disc of hem below the seat's edge (reviews 11 - 41); every skirt and dress had to stand."""
+    import bmesh
+    spec = pr['spec']
+    if not re.search(r'kilt|skirt|highland|dress', spec.get('outfit', '')) or 'trews' in spec.get('outfit', ''): return 0
+    rig, me = pr['rig'], pr['mesh']; act = bpy.data.actions.get('sit_idle')
+    if not act: return 0
+    sc = bpy.context.scene; ad = rig.animation_data_create(); mutes = [(t, t.mute) for t in ad.nla_tracks]
+    for t, _ in mutes: t.mute = True
+    ad.action = act; sc.frame_set(40)
+    pbh = lambda n: rig.matrix_world @ rig.pose.bones[n].head
+    hip = (pbh('thigh_l') + pbh('thigh_r')) / 2; knee = (pbh('calf_l') + pbh('calf_r')) / 2
+    mw = me.matrix_world; mwi = mw.inverted()
+    free_mat = {i for i, m in enumerate(me.data.materials) if m and m.name.startswith('cloth_') and not any(k in m.name.lower() for k in SKIRT_FREE_SKIP)}
+    def posed_copy(name):
+        dg = bpy.context.evaluated_depsgraph_get(); m2 = bpy.data.meshes.new_from_object(me.evaluated_get(dg), depsgraph=dg)
+        o = bpy.data.objects.new(name, m2); sc.collection.objects.link(o); o.matrix_world = mw.copy(); return o
+    P0 = [v.co.copy() for v in posed_copy('_p0').data.vertices]
+    free = set()
+    for poly in me.data.polygons:
+        if poly.material_index in free_mat:
+            for vi in poly.vertices:
+                if (mw @ P0[vi]).z < hip.z - 0.02: free.add(vi)
+    tmp = [o for o in bpy.data.objects if o.name.startswith('_p0')]
+    if not free:
+        for o in tmp: bpy.data.objects.remove(o, do_unlink=True)
+        ad.action = None
+        for t, m_ in mutes: t.mute = m_
+        return 0
+    body = posed_copy('_body'); bm = bmesh.new(); bm.from_mesh(body.data)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index in free_mat and any(v.index in free for v in f.verts)], context='FACES'); bm.to_mesh(body.data); bm.free()
+    fwd = knee - hip; fwd.z = 0; fwd.normalize(); L = (knee - hip).dot(fwd) + 0.1
+    bpy.ops.mesh.primitive_cube_add(size=1); seat = bpy.context.active_object; seat.name = '_seat'
+    seat.scale = (0.9 if abs(fwd.x) < 0.5 else L + 0.3, L + 0.3 if abs(fwd.x) < 0.5 else 0.9, 0.4)
+    seat.location = hip + fwd * ((L + 0.3) / 2 - 0.35); seat.location.z = min(hip.z, knee.z) - 0.075 - 0.2
+    for o in (body, seat):
+        o.modifiers.new('col', 'COLLISION'); o.collision.thickness_outer = 0.006; o.collision.cloth_friction = 5
+    cl = posed_copy('_cloth'); vg = cl.vertex_groups.new(name='pin'); vg.add([i for i in range(len(cl.data.vertices)) if i not in free], 1.0, 'REPLACE')
+    mod = cl.modifiers.new('cloth', 'CLOTH'); st = mod.settings
+    st.quality = 10; st.mass = 0.15; st.tension_stiffness = 15; st.compression_stiffness = 15; st.bending_stiffness = 0.5; st.vertex_group_mass = 'pin'
+    mod.collision_settings.distance_min = 0.004; mod.collision_settings.use_self_collision = False; mod.point_cache.frame_start = 1; mod.point_cache.frame_end = 60
+    for fr in range(1, 61): sc.frame_set(fr)
+    dg = bpy.context.evaluated_depsgraph_get(); F = [v.co.copy() for v in cl.evaluated_get(dg).to_mesh().vertices]; cl.evaluated_get(dg).to_mesh_clear()
+    sc.frame_set(40)
+    # the skinning's own linear map at each vertex, in this pose: three rest-space nudges of 1 cm, read back through the armature
+    if me.data.shape_keys: raise RuntimeError('seat_drape: mesh already has shape keys')
+    me.shape_key_add(name='Basis'); J = []
+    for ax in range(3):
+        k = me.shape_key_add(name='d%d' % ax); 
+        for v in k.data: v.co[ax] += 0.01
+        k.value = 1.0
+        dg = bpy.context.evaluated_depsgraph_get(); ev = me.evaluated_get(dg).to_mesh(); J.append([(ev.vertices[i].co - P0[i]) / 0.01 for i in range(len(P0))]); me.evaluated_get(dg).to_mesh_clear(); k.value = 0.0
+    bpy.context.view_layer.objects.active = me; me.shape_key_clear()
+    attr = me.data.attributes.get('_seat') or me.data.attributes.new('_seat', 'FLOAT_VECTOR', 'POINT'); n_ = 0
+    for i in range(len(P0)):
+        d = Vector((0, 0, 0))
+        if i in free:
+            M = Matrix(((J[0][i].x, J[1][i].x, J[2][i].x), (J[0][i].y, J[1][i].y, J[2][i].y), (J[0][i].z, J[1][i].z, J[2][i].z)))
+            try: d = M.inverted() @ (mwi @ (cl.matrix_world @ F[i]) - P0[i]); n_ += 1
+            except ValueError: d = Vector((0, 0, 0))
+        attr.data[i].vector = (d.x, d.z, -d.y)   # glTF is y-up and the exporter does not turn custom attributes: done here
+    for o in [body, seat, cl] + tmp: bpy.data.objects.remove(o, do_unlink=True)
+    ad.action = None
+    for t, m_ in mutes: t.mute = m_
+    sc.frame_set(1)
+    return n_
+
 # ------------------------------------------------------------------ export + meta
 def export_all(path):
     bpy.ops.object.select_all(action='DESELECT')
     kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='AUTO', export_vertex_color='NONE',
               export_cameras=False, export_lights=False, export_skins=True, export_animations=True, export_animation_mode='NLA_TRACKS', export_frame_range=False,
-              export_optimize_animation_size=True, export_force_sampling=True)
+              export_optimize_animation_size=True, export_force_sampling=True, export_attributes=True)
     try: bpy.ops.export_scene.gltf(**kw)
     except TypeError as e:
         print('TypeError', e)
@@ -1732,6 +1804,9 @@ def main():
     names = list(clips.keys())
     unify_rest_orientation([p['rig'] for p in people])
     author_clips(people[0]['rig'], clips)
+    for p in people:
+        nd = seat_drape(p)
+        if nd: print('seat drape', p['spec']['id'], nd, 'vertices')
     worst, wb = rest_orientation_spread([p['rig'] for p in people])
     print('rest orientation spread (deg)', round(worst, 2), wb)
     path = os.path.join(OUTDIR, 'people_lod.glb' if LOD else 'people.glb')

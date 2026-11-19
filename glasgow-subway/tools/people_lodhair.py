@@ -67,6 +67,7 @@ PARTS = {
 }
 MARK = 'lodparts'
 ATTRS = ('POSITION', 'NORMAL', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0')
+OPT = ('_SEAT',)   # the seated-skirt offset (assets_people_mpfb.py seat_drape), on every primitive of a skirted person: copied as it is
 ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER = 34962, 34963
 
 
@@ -107,7 +108,7 @@ def check_compatible(src, dst, pid, sp, dp):
     sj = [src.j['nodes'][i]['name'] for i in src.j['skins'][src.node_of(pid)['skin']]['joints']]
     dj = [dst.j['nodes'][i]['name'] for i in dst.j['skins'][dst.node_of(pid)['skin']]['joints']]
     assert sj == dj, f'{pid}: the two files do not share a skeleton'
-    assert set(sp['attributes']) == set(dp['attributes']) == set(ATTRS), f"{pid}: vertex attributes differ: {sorted(sp['attributes'])} vs {sorted(dp['attributes'])}"
+    assert set(sp['attributes']) == set(dp['attributes']) and set(sp['attributes']) - set(OPT) == set(ATTRS), f"{pid}: vertex attributes differ: {sorted(sp['attributes'])} vs {sorted(dp['attributes'])}"
     sm, dm = src.j['materials'][sp['material']], dst.j['materials'][dp['material']]
     assert sm['name'] == dm['name'] and sm['pbrMetallicRoughness'].get('baseColorFactor') == dm['pbrMetallicRoughness'].get('baseColorFactor'), f'{pid}: the materials differ'
     for k in ATTRS:   # the copy takes new accessors in the source's own format (append_accessor), byte for byte
@@ -128,7 +129,7 @@ def transplant(src, dst, pid, part, lift):
     assert sp is not None and dp is not None, f'{pid}: no {part} primitive in both files'
     check_compatible(src, dst, pid, sp, dp)
     new = {}
-    for k in ATTRS:
+    for k in ATTRS + tuple(o for o in OPT if o in sp['attributes']):
         a, rows = raw_accessor(src, sp['attributes'][k])
         if k == 'POSITION':
             P = rows.view(np.float32).reshape(-1, 3).astype(np.float64)
