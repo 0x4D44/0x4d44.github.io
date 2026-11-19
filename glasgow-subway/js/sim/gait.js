@@ -388,9 +388,12 @@ function walkStep(g, dt, P) {
   if ((g.phase < 0.5 ? 0 : 1) !== half0) g.eT = VARY.rho * g.eT + Math.sqrt(1 - VARY.rho * VARY.rho) * VARY.T * g.var.vary * gauss(g.rng);   // a new step has begun: its own pace
   g.rate += (1 + g.eT - g.rate) * (1 - Math.exp(-dt / VARY.tau));
   for (let s = 0; s < 2; s++) {
-    const f = F[s], pf = wrap1(g.phase - (s ? 0.5 : 0));
+    const f = F[s]; let pf = wrap1(g.phase - (s ? 0.5 : 0));
     if (f.mode === 'stance') {
-      if (pf >= P.S && pf < 0.97) {                         // toe-off: swing begins from the pose the foot has now
+      if (pf >= P.S && pf < 0.97) {
+        // found late in its stance (a closing step that ran into the start of a walk landed by the clock, past this foot's toe-off): with the other foot on the floor, the
+        // stride's clock is set back so that this foot leaves now, at its own toe-off, and takes a whole swing - given only the rest of the stride, the step took 3 - 4 frames (review 36)
+        if (pf - P.S > 1.5 * dt * P.fs * 0.5 && F[1 - s].mode === 'stance') { g.phase = wrap1(g.phase - (pf - P.S)); pf = P.S; }                         // toe-off: swing begins from the pose the foot has now
         // (the roll of this frame first: f.th is still the one of the frame before, and the foot read through it at the instant of toe-off stood still for a frame - the ankle and the
         // roll of the shoe stalled at every toe-off, and the pelvis, held by that leg's reach, lurched with them: part of the 20 - 58 m/s^2 vertical stomp of the pelvis, see trackReach)
         const late = pf - P.S > 1.5 * dt * P.fs * 0.5;   // (a foot that landed by the clock - a closing step that ran into the start of a walk - and finds itself past its toe-off)
