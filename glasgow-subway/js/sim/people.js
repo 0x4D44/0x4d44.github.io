@@ -226,14 +226,15 @@ export class AnimCrowd {
   _seatMorph(p, dt) {
     const on = p.state === 'sit' && !p.tween ? 1 : 0;
     if (p.seatObj !== p.obj) { p.seatObj = p.obj; p.seatMeshes = []; if (p.obj) p.obj.traverse((m) => { if (!m.isSkinnedMesh) return; const g = m.userData.standGeo || m.geometry, sa = g.attributes._seat; if (!sa) return;
-      if (!g.morphAttributes.position) {
+      let mg = g.userData.morphGeo;   // (a geometry of its own, shared only by those who have morph influences: on the shared one, a clone without them broke the render - e2e)
+      if (!mg) { mg = g.userData.morphGeo = g.clone();
         const d = new this.THREE.Float32BufferAttribute(sa.count * 3, 3); for (let i = 0; i < sa.count; i++) d.setXYZ(i, sa.getX(i), sa.getY(i), sa.getZ(i));
         const tmp = new this.THREE.BufferGeometry(); const P = g.attributes.position.clone(); for (let i = 0; i < P.count; i++) P.setXYZ(i, P.getX(i) + d.getX(i), P.getY(i) + d.getY(i), P.getZ(i) + d.getZ(i)); tmp.setAttribute('position', P); if (g.index) tmp.setIndex(g.index); tmp.computeVertexNormals();
         const n0 = g.attributes.normal, nd = new this.THREE.Float32BufferAttribute(sa.count * 3, 3), nn = tmp.attributes.normal;
         for (let i = 0; i < sa.count; i++) nd.setXYZ(i, nn.getX(i) - (n0 ? n0.getX(i) : 0), nn.getY(i) - (n0 ? n0.getY(i) : 0), nn.getZ(i) - (n0 ? n0.getZ(i) : 0));
-        g.morphAttributes.position = [d]; g.morphAttributes.normal = [nd]; g.morphTargetsRelative = true;
+        mg.morphAttributes.position = [d]; mg.morphAttributes.normal = [nd]; mg.morphTargetsRelative = true;
       }
-      if (m.geometry !== g) m.geometry = g; m.updateMorphTargets(); if (m.material) m.material.needsUpdate = true; p.seatMeshes.push(m); }); p.seatW = on; }
+      m.userData.standGeo = g; m.geometry = mg; m.updateMorphTargets(); if (m.material) m.material.needsUpdate = true; p.seatMeshes.push(m); }); p.seatW = on; }
     if (!p.seatMeshes || !p.seatMeshes.length) return;
     p.seatW += Math.max(-dt / 0.5, Math.min(dt / 0.5, on - p.seatW));
     for (const m of p.seatMeshes) if (m.morphTargetInfluences) m.morphTargetInfluences[0] = p.seatW;
@@ -527,8 +528,8 @@ export class AnimCrowd {
     p.obj.traverse((m) => {
       if (!m.isSkinnedMesh || !m.material || !/^cloth_/i.test(m.material.name || '') || /shoe|boot|flats|sock|hose|camisole|top|blouse|shirt|sweater|jacket/i.test(m.material.name)) return;
       const g0 = m.userData.standGeo || m.geometry; m.userData.standGeo = g0;
-      if (!on) { m.geometry = g0; return; }
       if (g0.attributes._seat) return;   // (a garment draped on the seat follows its morph instead: _seatMorph)
+      if (!on) { m.geometry = g0; return; }
       let gs = g0.userData.sitGeo;
       if (gs === undefined) { gs = g0.userData.sitGeo = this._sitWeights(m, g0) || null; }
       if (gs) m.geometry = gs;
