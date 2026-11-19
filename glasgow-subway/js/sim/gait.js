@@ -284,7 +284,10 @@ const toLocal = (g, x, z) => { const dx = x - g.x, dz = z - g.z, c = Math.cos(g.
 function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th1, clear }
   const cur = f.cur;
   const vy = g.var.vary;
-  f.sw = { A0: cur.A.slice(), th0: cur.th, thb0: cur.thb, psi0: cur.psi, tgt: tgt, T: o.T || null, t: 0, s: 0, th1: o.th1, clear: o.clear, A1: null, m0: 0,
+  // a foot already in the air (a walk stopped mid-stride re-aims its swing at where it will stand) goes on from the height it is at: from the floor, its forward speed carried it
+  // 10 - 23 cm along the ground within 12 mm of it (review 33: 16 of 30 pauses slid over 10 cm)
+  const c0 = f.mode === 'swing' ? Math.max(0, cur.A[1] + lowestRel(g.body.leg[f.s], cur.th, cur.thb)) : 0;
+  f.sw = { A0: cur.A.slice(), th0: cur.th, thb0: cur.thb, psi0: cur.psi, tgt: tgt, T: o.T || null, t: 0, s: 0, th1: o.th1, clear: o.clear, A1: null, m0: 0, c0,
     kL: 1 + VARY.L * vy * gauss(g.rng), kW: 1 + VARY.W * vy * gauss(g.rng), dToe: VARY.toe * vy * gauss(g.rng) };   // this step's own length, width and foot angle (see VARY)
   f.mode = 'swing';
   // the foot leaves the floor already moving forward (it has been rolling over the toes): its path starts with that speed, not from rest
@@ -460,7 +463,7 @@ function footOut(g, f, pfNow) {
   // by 97 % of the swing and then lowers straight down, so nothing drags along the floor
   const e = swingE(s, sw.m0), th = sw.th0 * (1 - smoother(s / 0.45)) + sw.th1 * smoother((s - 0.65) / 0.35), thb = sw.thb0 + (th - sw.thb0) * smoother(s / 0.35);
   const x = sw.A0[0] + (A1[0] - sw.A0[0]) * e, z = sw.A0[2] + (A1[2] - sw.A0[2]) * e;
-  const c = swingLift(sw.clear, s);                                                       // the lowest point of the foot
+  const c = sw.c0 ? Math.max(swingLift(sw.clear, s), sw.c0 * (1 - smoother(s / 0.85))) : swingLift(sw.clear, s);   // the lowest point of the foot
   const y = c - lowestRel(o, th, thb);
   // continuity with the stance pose at both ends comes from the lowest point being on the floor there
   return { A: [x, y, z], psi: sw.psi0 + angDiff(tgt.psi, sw.psi0) * e, th, thb };

@@ -1073,9 +1073,11 @@ export class AnimCrowd {
       // with no speed, the stride froze half taken with the arms mid-swing for seconds at a time (review 19: 1.4 - 5.1 s, a bent-knee half stride in a crowd)
       if (p.v < 0.08) p.stillT = (p.stillT || 0) + dt; else if (p.v > 0.15) p.stillT = 0;
       p.pauseT = p.paused ? (p.pauseT || 0) + dt : 0;
+      p.goT = p.paused ? 0 : (p.goT == null ? 9 : p.goT + dt);   // (how long since they last walked on)
       // (in sooner, out only on a clear move after a moment: review 20 saw a crawling jam flick between the two up to 39 times a minute)
-      const still = !p.static && (p.paused ? !((p.intent > 0.25 && p.pauseT > 0.8) || p.intent > 0.5) : p.stillT > 0.3);   // (but moved along briskly, they walk at once: review 21 saw a pushed walker glide 0.42 m in the standing pose)
-      if (still !== !!p.paused) { p.paused = still; const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
+      const still = !p.static && (p.paused ? !((p.intent > 0.25 && p.pauseT > 0.8) || p.intent > 0.5) : p.stillT > 0.3 && p.goT > 1.0);   // (and once on the move, a moment before they stop again: review 33 counted 47 stops and starts a minute)   // (but moved along briskly, they walk at once: review 21 saw a pushed walker glide 0.42 m in the standing pose)
+      if (still !== !!p.paused) { p.paused = still; if (!still) p.stillT = 0;   /* (walking on, the stillness that stopped them is spent: left at 0.3 s or more it stopped them again the next frame, before the smoothed speed had reached 0.15) */
+         const ch = p.char, quiet = ch.pools.idle.find((c) => /idle_a$/.test(c.name)) || ch.pools.idle[0]; this._play(p, still ? quiet : (this.gaitOn && this._plainWalk(ch)) || this._clip(ch, 'walk') || quiet, 0.4); }
       if (!p.paused && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
     } else if (p.paused) p.paused = false;
   }
