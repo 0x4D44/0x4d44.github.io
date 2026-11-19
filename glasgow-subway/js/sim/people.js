@@ -504,7 +504,7 @@ export class AnimCrowd {
    *  teen_skirt). A seated wearer's garment meshes take a second set of skin weights, made once per character and model: below the hips each vertex is
    *  handed over to the thigh on its own side, from nothing at the hip to all of it at the knee, so the cloth lies along the thighs and falls from the knees. */
   _skirtSit(p, on) {
-    p.skirtSit = on; if (!p.obj) return;
+    p.skirtSit = on; p.skirtObj = p.obj; if (!p.obj) return;
     p.obj.traverse((m) => {
       if (!m.isSkinnedMesh || !m.material || !/^cloth_/i.test(m.material.name || '') || /shoe|boot|flats|sock|hose|camisole|top|blouse|shirt|sweater|jacket/i.test(m.material.name)) return;
       const g0 = m.userData.standGeo || m.geometry; m.userData.standGeo = g0;
@@ -907,7 +907,7 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
-      if ((p.state === 'sit') !== !!p.skirtSit && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');
+      if (((p.state === 'sit') !== !!p.skirtSit || (p.skirtSit && p.skirtObj !== p.obj)) && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');   // (and again on a new model: swapped between the near and far model, a seated skirt kept its standing weights - review 37's dresses)
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p));   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update)
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
