@@ -150,6 +150,7 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | skins/onlytheghosts_old_eurasian_male | OnlyTheGhosts | CC0 |
 | skins/onlytheghosts_young_eurasian_female | OnlyTheGhosts | CC0 |
 | skins/toigo_light_skin_female_freckles | MargaretToigo | CC0 |
+| skins/toigo_light_skin_female_ginger | MargaretToigo | CC0 |
 | skins/young_african_female | makehuman_system | CC0 |
 | skins/young_african_male | makehuman_system | CC0 |
 | skins/young_asian_female | makehuman_system | CC0 |

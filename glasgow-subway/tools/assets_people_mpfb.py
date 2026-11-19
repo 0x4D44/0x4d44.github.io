@@ -125,7 +125,7 @@ PEOPLE = [
          clothes=['toigo_basic_tucked_t-shirt', 'punkduck_tennis_shoes'], shorts=('#d9d2c0', 0.70, 0.012)),
     dict(id='ya_spiky', kind='man', outfit='shorts', H=1.83, gender=1, age=0.39, weight=0.35, muscle=0.4, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='bluegreen', brows='eyebrow009', lashes=None, hair='elvs_maxwell_hair', hair_col='#2a1d14', face=True,
          clothes=['elvs_crude_t-shirt_male', 'punkduck_tennis_shoes'], shorts=('#c9b48a', 0.62, 0.014)),
-    dict(id='ya_winter', lod_cloth=1000, lod_uv=True, kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='onlytheghosts_young_eurasian_female', eye='brown', brows='eyebrow009', lashes='eyelashes02', hair='long01', hair_col='#c8a066', face=True,
+    dict(id='ya_winter', lod_cloth=1000, lod_uv=True, kind='woman', outfit='trousers', H=1.63, gender=0, age=0.50, weight=0.45, muscle=0.35, race=(0.0, 1.0, 0.0), skin='onlytheghosts_young_eurasian_female', eye='brown', brows='eyebrow009', lashes='eyelashes02', hair='ponytail01', hair_col='#d8b86c', face=True,
          clothes=['punkduck_winter_coat', 'punkduck_female_tight_jeans', 'toigo_ballet_flats']),
     # --- batch 2 (2026-11-07): adults, and the garments made here (add_garments): lycra=(leggings|shorts, colour) paints the body's own skin;
     #     baggy=f widens the jeans' legs by f at the hem; tuck=(bottom, top) pulls the bottom's waistband in under the top; hat=(cap|tophat|beret, colour). rare=f: the crowd takes this person only f of the times they come up.
@@ -195,7 +195,7 @@ PEOPLE = [
          tattoos=[dict(bone='upperarm_r', kind='anchor', t0=0.25, t1=0.75, width=110), dict(bone='lowerarm_l', kind='mum', t0=0.2, t1=0.7, width=120)]),
     dict(id='adult_piper', kind='man', outfit='highland', H=1.78, gender=1, age=0.46, weight=0.55, muscle=0.55, smile=0.3, race=(0.0, 1.0, 0.0), skin='young_caucasian_male', eye='blue', brows='eyebrow009', lashes=None, hair='short01', hair_col='#b5521c', face=True,
          clothes=['toigo_male_suit_tie_and_jacket'], cut=('suit', 0.15), kilt=dict(kind='kilt', tart=1, sporran=True, belt=True, hose=('#ddd6bf', '#1d3a2a')), shoes='mindfront_shoes_oxford_male', hat=('beret', '#1a2a22', 'felt'), nolegs=True, pipes=True),
-    dict(id='ya_ginger_long', kind='woman', outfit='trousers', H=1.67, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow007', lashes='eyelashes02', hair='toigo_curled_under_bob', hair_col='#b8541e', face=True,
+    dict(id='ya_ginger_long', kind='woman', outfit='trousers', H=1.67, gender=0, age=0.36, weight=0.42, muscle=0.4, smile=0.7, race=(0.0, 1.0, 0.0), skin='toigo_light_skin_female_ginger', eye='brown', brows='eyebrow007', lashes='eyelashes02', hair='elvs_ashley_may_hair', hair_col='#b8541e', face=True,
          clothes=['punkduck_lace_up_blouse', 'punkduck_female_tight_jeans', 'toigo_ankle_boots_female', 'punkduck_handbag01']),
     dict(id='ya_ginger_braid', kind='woman', outfit='shorts', H=1.63, gender=0, age=0.33, weight=0.45, muscle=0.4, smile=0.55, race=(0.0, 1.0, 0.0), skin='young_caucasian_female2', eye='lightblue', brows='eyebrow009', lashes='eyelashes01', hair='elvs_keylth_hair', hair_col='#c0602a', hair_lift=True, face=True,
          clothes=['punkduck_retro_top', 'punkduck_comfortable_sneakers'], shorts=('#7a8fb0', 0.80, 0.012), tattoos=[dict(bone='upperarm_l', kind='thistle', t0=0.3, t1=0.8, width=110)]),

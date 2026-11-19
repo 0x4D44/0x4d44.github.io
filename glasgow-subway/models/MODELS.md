@@ -436,5 +436,11 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **ya_winter's scalp.** Her elvs_hazel_hair showed scalp through the crown; she now has long01.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 39 fixes
+
+- **ya_winter: blonde ponytail01.** Her long01 was a faceted slab fading from blonde to near-black at the ends, with a hole at the shoulder.
+- **ya_ginger_long: her own face.** She now has a freckled ginger skin (toigo_light_skin_female_ginger), brown eyes and the wavy elvs_ashley_may_hair. She was the last pale, green-eyed face under woman_bob's red bob.
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.

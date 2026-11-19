@@ -1013,8 +1013,8 @@ export class AnimCrowd {
     const rg = p.bagRig, gh = rg && p.obj.visible ? rg.gh : -1, held = p.hold && p.hold.w > 0;
     for (let s = 0; s < 2; s++) {
       if (held && !ph) continue;
-      // a phone is held with the fingers bent round its edges, not on a flat open hand (review 35/36): a call in the right hand, a text in both
-      const want = ph ? (ph.kind === 'call' ? (s === PHONE_SIDE ? 0.55 * ph.w : 0) : 0.3 * ph.w) : gh === s || (onPole && p.poleHand === s) ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
+      // a phone is held with the fingers bent round its edges, not on a flat open hand (review 35/36): a call in the right hand
+      const want = ph ? (ph.kind === 'call' ? (s === PHONE_SIDE ? 0.55 * ph.w : 0) : 0) :   /* (texting: the fingers stay flat on the phone's back - bent, they left it floating over them, review 39) */ gh === s || (onPole && p.poleHand === s) ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
       for (const b of f.side[s]) { const a = b.rel + (b.grip - b.rel) * c; b.bone.quaternion.copy(b.rest).multiply(q.setFromAxisAngle(X, a)); }
     }
   }
