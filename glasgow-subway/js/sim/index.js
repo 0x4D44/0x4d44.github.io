@@ -289,7 +289,7 @@ class Sim {
       const exits = this._exitPoints(v), door = this.doorZ.slice(), before = new Set(this.crowd.people), queued = this.crowd.people.filter((q) => q.mode === 'queue');
       const nearestDoor = (z) => { let bi = 0, bd = 1e9; door.forEach((dz, k) => { const d = Math.abs(zc + dz - z); if (d < bd) { bd = d; bi = k; } }); return bi; };
       const boarded = this.crowd.board((q) => ({ x: inf.xe + S * 0.7, z: zc + door[nearestDoor(q.z)] }));
-      for (const q of queued) this._routeBoarder(q, nearestDoor(q.z), X);
+      for (const q of queued.slice().sort((a, b) => (a.char && a.char.kid ? 1 : 0) - (b.char && b.char.kid ? 1 : 0))) this._routeBoarder(q, nearestDoor(q.z), X);   // (the grown-ups first: a child who cannot sit stands only beside one, and placed first found nobody yet - review 36, boy_kilt turned away five times)
       const nBo = Math.max(0, Math.min(low ? 3 : 7, Math.round(v.crowdN * 0.3)) - boarded);
       // (only from a stair foot near enough to make the doors before they shut: from further, review 19 counted 24 of 34 boarders left on the platform when the doors closed)
       const reach = (ex) => door.some((dz) => Math.hypot(ex.x - (inf.xe + S * 0.7), ex.z - (zc + dz)) < 12), near = exits.filter(reach);
