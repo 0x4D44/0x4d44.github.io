@@ -393,7 +393,8 @@ function walkStep(g, dt, P) {
       if (pf >= P.S && pf < 0.97) {                         // toe-off: swing begins from the pose the foot has now
         // (the roll of this frame first: f.th is still the one of the frame before, and the foot read through it at the instant of toe-off stood still for a frame - the ankle and the
         // roll of the shoe stalled at every toe-off, and the pelvis, held by that leg's reach, lurched with them: part of the 20 - 58 m/s^2 vertical stomp of the pelvis, see trackReach)
-        if (!f.fresh) f.th = stanceTh(P, pf);   // (the first step of a walk leaves from the foot as it stands, flat: set off at the phase of toe-off, the heel went from flat to 42 deg up in one frame and the ankle jumped 5 - 7 cm - review 34)
+        const late = pf - P.S > 1.5 * dt * P.fs * 0.5;   // (a foot that landed by the clock - a closing step that ran into the start of a walk - and finds itself past its toe-off)
+        if (!f.fresh && !late) f.th = stanceTh(P, pf);   // (the first step of a walk leaves from the foot as it stands, flat: set off at the phase of toe-off, the heel went from flat to 42 deg up in one frame and the ankle jumped 5 - 7 cm - review 34)
         f.fresh = false;
         f.cur = footOut(g, f, pf); startSwing(g, f, null, { T: null, th1: P.thHS, clear: P.clear });
         // The foot did not leave the floor at the start of this frame but somewhere in the step since the last one: (pf - S) of the stride ago. Draw it that far into its swing, not at
@@ -401,11 +402,12 @@ function walkStep(g, dt, P) {
         // first move - tens of degrees at the speed of the pelvis - lands on the NEXT frame: a one-frame pop at every toe-off (peak joint rate 776 -> 518 deg/s on the fixtures).
         // Only when the crossing really is within this frame (a foot found late in its stance after a restart starts its swing from the beginning).
         const eps = pf - P.S; if (eps <= 1.5 * dt * P.fs * 0.5) f.sw.s = clamp(eps / (1 - P.S), 0, 1);
+        else f.sw.pf0 = pf;   // ...swings from here: its progress is counted from the phase it left at, not from S - counted from S it started half its arc on, and the foot was drawn 50 - 70 cm on in one frame (review 35), its heel first flipped to the toe-off pitch
       } else { f.th = stanceTh(P, pf); f.fresh = false; }
     } else if (f.mode === 'swing') {
       if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) land(g, f, P); }
       else if (pf < P.S) { f.sw.s = 1; land(g, f, P); }                        // the phase has come round to heel strike
-      else f.sw.s = clamp((pf - P.S) / (1 - P.S), 0, 1);
+      else { const p0 = f.sw.pf0 != null && f.sw.pf0 < 0.999 ? f.sw.pf0 : P.S; f.sw.s = clamp((pf - p0) / (1 - p0), 0, 1); }
     }
   }
 }
