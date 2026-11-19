@@ -1535,11 +1535,11 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
       if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
       const hs = h * 0.58;
-      const dormerStart = stone.positions.length / 3;
+      // Dormer stone receives the ordinary roofline grade. The existing room
+      // lights account for the occasional warm pane on the otherwise dark roof.
       addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'stone');
       addFramedWindow(parts, { at: [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], dir: e.dir, normal: e.normal }, mid[1] + 0.2, ww * 0.95, hs * 0.8, 'pointed', 0.1);
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
-      if (lower) markNightDetail(stone, dormerStart, facadeDetail.gableStone, 0.45);
     }
   });
   // the stacks: each shaft rises out of the slope, its foot buried 0.3 m under the slate at its outer face (see stackClusters)
