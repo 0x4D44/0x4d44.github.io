@@ -55,6 +55,27 @@ function markNightRange(ranges: WeakMap<Batch, [number, number][]>, batch: Batch
 // Keep this boundary with the geometry, not a camera or world-height guess.
 const midlandBodyEnd = new WeakMap<Batch, number>();
 
+type NightDetailRange = [start: number, end: number, channel: number, weight: number];
+const midlandNightDetails = new WeakMap<Batch, NightDetailRange[]>();
+const facadeDetail = { shaft: 0, archHead: 1, gableStone: 2 } as const;
+const openingDetail = { arcade: 0, belfry: 1 } as const;
+
+function markNightDetail(batch: Batch, start: number, channel: number, weight = 1): void {
+  const marked = midlandNightDetails.get(batch) ?? [];
+  marked.push([start, batch.positions.length / 3, channel, weight]);
+  midlandNightDetails.set(batch, marked);
+}
+
+/** Match the vertex order of mergeParts, leaving the neighbouring buildings at zero. */
+function setNightDetail(mesh: THREE.Mesh, sets: PartMap<Key>[], key: Key, name: string, size: number): void {
+  const attribute = new Float32Array(mesh.geometry.getAttribute('position').count * size);
+  const offset = (sets[0]?.[key]?.positions.length ?? 0) / 3;
+  for (const [start, end, channel, weight] of midlandNightDetails.get(sets[1]![key]!) ?? []) {
+    for (let i = start; i < end; i++) attribute[(offset + i) * size + channel] = weight;
+  }
+  mesh.geometry.setAttribute(name, new THREE.BufferAttribute(attribute, size));
+}
+
 /** Night-only treatment on the existing merged meshes, with a zero mask on the
  * hotel and Barlow. World height is relative to the Midland's terrain seat; UVs
  * restart on dressings and cannot describe the arcade-to-upper-wall falloff.
@@ -105,6 +126,7 @@ float dialSpill = 1.0 - smoothstep(2.45, 4.45, dialRadius);` : 'float dialSpill 
     });
     mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(mask, 2));
     mesh.geometry.setAttribute(bodyAttribute,new THREE.BufferAttribute(bodyMask,1));
+    setNightDetail(mesh, sets, key, 'midlandFacadeDetail', 3);
     if (towerTrim) mesh.geometry.setAttribute('midlandTowerTrim', new THREE.BufferAttribute(towerTrim, 1));
     if (clockStage) mesh.geometry.setAttribute('midlandClockStage', new THREE.BufferAttribute(clockStage, 1));
     if (gableField) mesh.geometry.setAttribute('midlandGableField', new THREE.BufferAttribute(gableField, 1));
@@ -120,6 +142,11 @@ float dialSpill = 1.0 - smoothstep(2.45, 4.45, dialRadius);` : 'float dialSpill 
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>\nattribute vec2 midlandNight;\nvarying vec2 vMidlandNight;\nvarying float vMidlandHeight;\nattribute float ${bodyAttribute};\nvarying float ${bodyVarying};`)
         .replace('#include <project_vertex>', `#include <project_vertex>\nvMidlandNight = midlandNight;\nvMidlandHeight = ( modelMatrix * vec4( transformed, 1.0 ) ).y - ${base.toFixed(6)};\n${bodyVarying} = ${bodyAttribute};`);
+      if (landmarkGrade) {
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nattribute vec3 midlandFacadeDetail;\nvarying vec3 vMidlandFacadeDetail;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMidlandFacadeDetail = midlandFacadeDetail;');
+      }
       if (towerGrade) {
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', `#include <common>
@@ -236,7 +263,26 @@ totalEmissiveRadiance += stoneTone * landmarkNight * (
   vec3(0.16, 0.079, 0.021) * vMidlandNight.y +
   vec3(0.19, 0.092, 0.019) * towerGilt);
 `}
-// midland-landmark-grade-end` : ''}
+// midland-landmark-grade-end
+// midland-facade-detail-begin
+${key === 'brickRed' ? 'float shaftShade = 1.0;\n' : ''}if (landmarkNight > 0.55) {
+  // daylight.ts allows weather to take the daytime lamp level up to 0.55.
+  float facadeNight = smoothstep(0.55, 0.90, landmarkNight);
+  float shaft = vMidlandFacadeDetail.x * smoothstep(8.0, 19.0, vMidlandHeight);
+  ${key === 'brickRed' ? `float arcadePier = vMidlandBrickBody * smoothstep(0.4, 1.1, vMidlandHeight)
+    * (1.0 - smoothstep(4.9, 6.2, vMidlandHeight));
+  shaftShade = mix(1.0, 0.48, facadeNight * shaft);
+  float architecturalShade = shaftShade * mix(1.0, 0.56, facadeNight * arcadePier);` : `float architecturalShade = mix(1.0, 0.67, facadeNight * shaft)
+    * mix(1.0, 0.085, facadeNight * vMidlandNight.y);`}
+  // Direct light includes the shared train headlamps. Shade the fill and the landmark flood.
+  reflectedLight.indirectDiffuse *= architecturalShade;
+  totalEmissiveRadiance *= architecturalShade;
+  float archHead = vMidlandFacadeDetail.y * smoothstep(7.65, 9.4, vMidlandHeight)
+    * (1.0 - smoothstep(10.0, 10.95, vMidlandHeight));
+  totalEmissiveRadiance += diffuseColor.rgb * vec3(0.33, 0.178, 0.069) * (facadeNight * archHead);
+  ${key === 'stone' ? `totalEmissiveRadiance += diffuseColor.rgb * vec3(0.055, 0.027, 0.007) * (facadeNight * vMidlandFacadeDetail.z);` : ''}
+}
+// midland-facade-detail-end` : ''}
 // midland-lamp-wash-begin
 if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
   vec3 facadeWorld = cameraPosition - vViewPosition * mat3(viewMatrix);
@@ -246,12 +292,12 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
   ${key === 'brickRed' ? `float rangeFill = 1.0-smoothstep(22.0,33.0,vMidlandHeight);
   float towerFill = 0.60*(1.0-smoothstep(33.0,47.0,vMidlandHeight));
   float brickFill = smoothstep(7.0,14.0,vMidlandHeight)*mix(towerFill,rangeFill,vMidlandBrickBody);
-  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill${landmarkGrade ? '*midBrickShadow*gableMasonry' : ''} + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
+  totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*(vec3(0.050,0.046,0.026)*brickFill${landmarkGrade ? '*midBrickShadow*gableMasonry*shaftShade' : ''} + vec3(0.026,0.018,0.009)*lampWash);` : `totalEmissiveRadiance += midlandLevel*diffuseColor.rgb*vec3(0.023,0.016,0.008)*lampWash;`}
 }
 // midland-lamp-wash-end`);
       if (landmarkGrade) {
         shader.fragmentShader = shader.fragmentShader.replace('#include <common>',
-          `#include <common>\nuniform float uMidlandLandmarkNight;${towerGrade ? '\nvarying float vMidlandTowerTrim;\nvarying vec4 vMidlandPinnacle;' : '\nvarying float vMidlandClockStage;\nvarying float vMidlandGableField;'}`);
+          `#include <common>\nuniform float uMidlandLandmarkNight;\nvarying vec3 vMidlandFacadeDetail;${towerGrade ? '\nvarying float vMidlandTowerTrim;\nvarying vec4 vMidlandPinnacle;' : '\nvarying float vMidlandClockStage;\nvarying float vMidlandGableField;'}`);
       }
     };
     m.customProgramCacheKey = () => `${priorKey}|midland-night-v7-${key}-${base.toFixed(6)}`;
@@ -262,10 +308,42 @@ if (midlandLevel > 0.003 && vMidlandHeight > 4.0 && vMidlandNight.y < 0.5) {
       shader.uniforms.uMidlandLandmarkNight = windowNight;
       m.onBeforeCompile(shader, renderer);
     };
-    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade-r25`;
+    night.customProgramCacheKey = () => `${m.customProgramCacheKey()}+midland-landmark-grade-r35`;
     owned.push(night);
     withBuildingNightMaterial(mesh, night);
   }
+}
+
+function lightMidlandOpenings(material: THREE.MeshLambertMaterial): void {
+  const before = material.onBeforeCompile;
+  const key = material.customProgramCacheKey();
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 midlandOpening;\nvarying vec2 vMidlandOpening;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMidlandOpening = midlandOpening;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vMidlandOpening;')
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+// midland-opening-grade-begin
+if (uWinNight > 0.55 && vMidlandOpening.x + vMidlandOpening.y > 0.0) {
+  float openingHeight = -1.0 - vWinUv.y;
+  float openingNight = smoothstep(0.55, 0.90, uWinNight);
+  if (vMidlandOpening.x > 0.5) {
+    // The warm interior falls off towards the crown. Keep the existing room variation.
+    float arcadeGlow = 0.95 + 0.27 * smoothstep(0.08, 0.55, openingHeight)
+      - 0.64 * smoothstep(0.58, 1.0, openingHeight);
+    totalEmissiveRadiance *= mix(vec3(1.0), vec3(1.70, 1.12, 0.52) * arcadeGlow, openingNight);
+  } else {
+    float belfryGlow = (0.38 + 0.62 * smoothstep(0.0, 0.48, openingHeight))
+      * (1.0 - 0.60 * smoothstep(0.65, 1.0, openingHeight));
+    totalEmissiveRadiance = mix(totalEmissiveRadiance,
+      vec3(0.225, 0.100, 0.027) * (vMidlandOpening.y * belfryGlow), openingNight);
+  }
+}
+// midland-opening-grade-end`);
+  };
+  material.customProgramCacheKey = () => key + '+midland-openings-r35';
 }
 
 export function createMaterials(): MaterialSet {
@@ -1036,7 +1114,9 @@ function addPavilion(parts: PartMap<Key>, b: BayPosition, eaves: number, slope: 
   stone.box(q(0, (P + 0.3) / 2, eaves - 0.5), [2 * w + 0.6, 1, P + 0.3], { rotY, skip: ['+z', '-y'] });
   for (const y of [11.5, 17]) stone.box(q(0, (P + 0.28) / 2, y + 0.175), [2 * w + 0.56, 0.35, P + 0.28], { rotY, skip: ['+z'] });
   addGable(parts, q(0, P, eaves), b.dir, b.normal, slope, w, hp, 0, 'brickRed', P);
+  const gableStoneStart = stone.positions.length / 3;
   addTwin(parts, shift(b, 0, P), eaves + 0.8, 2.6, 4.2);
+  markNightDetail(stone, gableStoneStart, facadeDetail.gableStone);
   addSpike(stone, at(0, P), b.dir, b.normal, 0.15, eaves + hp, eaves + hp + 1.4);
   for (const s of [-1, 1]) addTurret(parts, at(s * w, P - 0.3), b.dir, b.normal, eaves + 0.9, 0.5, 3.5, 9); // hist-b: slender striped spirelets at the gable's feet break the skyline (ASSUMED sizes)
   return [[-w, -0.2], [w, -0.2], [w, 0.5], [-w, 0.5]].map(([u, d]) => at(u as number, d as number));
@@ -1235,6 +1315,8 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
   const facesAt = (half: number): Placed[] => towerFaces(t, half);
   const faces = facesAt(h);
 
+  const shaftBrickStart = brick.positions.length / 3;
+  const shaftStoneStart = stone.positions.length / 3;
   // the shaft and the belfry: brick, string courses at the facade's levels and then every 9 m
   addWalls(brick, sq(h), 0, bT);
   for (const y of [6.0, 11.5, 17.0, 28.0, 37.0, 46.0]) if (y < sT - 1.5) addBand(stone, ring(h), y, 0.4, 0.28); // (round 7: 0.28 m out like the facade's, from 0.2 m)
@@ -1248,16 +1330,26 @@ function addTower(parts: PartMap<Key>, t: TowerPlan, plan: MidlandPlan): void {
     for (const y of [22, 29.5]) if (y + 3.6 < sT - 1.5) addFramedWindow(parts, f, y, 1.3, 3.6, 'pointed', 0.22);
   }
   // the entrance: a pointed portal in the front face (the grand entrance is at the foot of the west tower [HE-STP]); its surround stops short of the ground, off the OSM outline
+  const pane = part(parts, 'pane');
+  const portalStart = pane.positions.length / 3;
   addFramedWindow(parts, faces[0] as Placed, 0.5, 3.8, 4.9, 'pointed', 0.3, true);
+  markNightDetail(pane, portalStart, openingDetail.arcade);
+  if (clockTower) {
+    markNightDetail(brick, shaftBrickStart, facadeDetail.shaft);
+    markNightDetail(stone, shaftStoneStart, facadeDetail.shaft);
+  }
   // the belfry: a pair of pointed arches, each over two lancets and a shaft, on each face (the west tower: three round ones); hist-c: two tall groups from the balcony to the corbels,
   // their lancets about 5 m, and stone shafts with capitals standing free of the wall in front of the lights, on the jambs and the middle, up to the springing of the arches; sizes ASSUMED
   // (round 7, the scorer: "belfry lights lack the tall detached shafts of R-c": round 6's 0.28 m shafts, 0.12 m out, were two pixels wide and one with the wall; now 0.5 m, with a 0.15 m gap behind)
   const gh = bT - sT - 2.6;
   const shafted = gh - 2.5 * Math.sin(Math.PI / 3) - 0.1;
-  for (const f of faces) {
+  for (const [face, f] of faces.entries()) {
     if (!clockTower) for (const dx of [-2.6, 0, 2.6]) addFramedWindow(parts, shift(f, dx, 0.05), sT + 1.0, 1.5, bT - sT - 3.0, 'round', 0.18);
     else for (const dx of [-1.8, 1.8]) {
+      const belfryStart = pane.positions.length / 3;
       addTwin(parts, shift(f, dx), sT + 0.9, 2.5, gh);
+      // The road-facing pair is the strongest in Bourez's clock view.
+      markNightDetail(pane, belfryStart, openingDetail.belfry, face === 0 ? 1 : 0.28);
       for (const x of [-0.775, 0.775]) stone.box(onWall(f, dx + x, sT + 0.9 + (gh - 0.9) / 2, 0.14), [0.95, 0.14, 0.12], { rotY: yaw(f.dir) }); // a transom across each lancet (hist-c: two lights stacked, the tracery between)
       for (const x of [-1.3, 0, 1.3]) {
         stone.box(onWall(f, dx + x, sT + 1.0 + shafted / 2, 0.4), [0.5, shafted, 0.5], { rotY: yaw(f.dir), skip: ['-y', '+y'] });
@@ -1379,9 +1471,22 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       rows.forEach((row, r) => {
         // round 5 (the scorer: pairs and triples under a containing arch, an arcade below): the first floor's group is three lights in a wide arch, the floors above pairs; the ground
         // storey an arcade of arches 0.6 of a bay wide (at most 3.2 m) all springing at 3.4 m (hist-b)
-        if (rich && row.head === 'pointed') addTwin(parts, up, row.y, Math.max(r > 1 ? 1.8 : 2.4, Math.min(r > 1 ? 2.9 : 3.7, bay.width * (r > 1 ? 0.56 : 0.7))), row.h, r > 1 ? 2 : 3);
-        else if (row.head === 'round') addArch(parts, up, out ? 0.5 : row.y, out ? 2.4 : rich ? Math.min(3.2, bay.width * 0.6) : w, out ? 4.2 : rich ? 2.4 + Math.min(3.2, bay.width * 0.6) / 2 : row.h);
-        else addFramedWindow(parts, up, row.y, w, row.h, row.head, 0.22);
+        if (rich && row.head === 'pointed') {
+          const brick = part(parts, 'brickRed');
+          const brickStart = brick.positions.length / 3;
+          const stoneStart = stone.positions.length / 3;
+          addTwin(parts, up, row.y, Math.max(r > 1 ? 1.8 : 2.4, Math.min(r > 1 ? 2.9 : 3.7, bay.width * (r > 1 ? 0.56 : 0.7))), row.h, r > 1 ? 2 : 3);
+          if (r === 1) {
+            const weight = 0.68 + 0.32 * (windowId(up, row.y) % 13) / 12;
+            markNightDetail(brick, brickStart, facadeDetail.archHead, weight);
+            markNightDetail(stone, stoneStart, facadeDetail.archHead, weight);
+          }
+        } else if (row.head === 'round') {
+          const pane = part(parts, 'pane');
+          const start = pane.positions.length / 3;
+          addArch(parts, up, out ? 0.5 : row.y, out ? 2.4 : rich ? Math.min(3.2, bay.width * 0.6) : w, out ? 4.2 : rich ? 2.4 + Math.min(3.2, bay.width * 0.6) / 2 : row.h);
+          markNightDetail(pane, start, openingDetail.arcade);
+        } else addFramedWindow(parts, up, row.y, w, row.h, row.head, 0.22);
       });
     }
   };
@@ -1430,9 +1535,11 @@ export function midlandGeometry(plan: MidlandPlan, pavilions: readonly number[] 
       // inflate by the full reach of the dormer, not just its centre: no edge can cross a tower
       if (plan.towers.some((t) => pointInQuad([mid[0], mid[2]], towerSquare(t, Math.hypot(ww, back) + 0.45)))) continue;
       const hs = h * 0.58;
+      const dormerStart = stone.positions.length / 3;
       addGable(parts, mid, e.dir, e.normal, slope, ww, h, hs, 'stone');
       addFramedWindow(parts, { at: [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], dir: e.dir, normal: e.normal }, mid[1] + 0.2, ww * 0.95, hs * 0.8, 'pointed', 0.1);
       addSpike(stone, [mid[0] + e.normal[0] * 0.05, mid[2] + e.normal[1] * 0.05], e.dir, e.normal, 0.14, mid[1] + h + 0.1, mid[1] + h + 0.8);
+      if (lower) markNightDetail(stone, dormerStart, facadeDetail.gableStone, 0.45);
     }
   });
   // the stacks: each shaft rises out of the slope, its foot buried 0.3 m under the slate at its outer face (see stackClusters)
@@ -1730,6 +1837,8 @@ export function addLandmarks(scene: THREE.Scene, data: KxData, opts: LandmarkOpt
     const day = panes.material;
     const night = litPane(day.clone(), 'amber');
     addRoofShade(night);
+    setNightDetail(panes, parts, 'pane', 'midlandOpening', 2);
+    lightMidlandOpenings(night);
     set.owned.push(night);
     withBuildingNightMaterial(panes, night);
   }
