@@ -1,6 +1,6 @@
 {
  "schema": "mdbench-site/1",
- "generated": "2026-11-19T04:44:40Z",
+ "generated": "2026-11-19T09:40:56Z",
  "families": [
   {
    "id": "claude",
@@ -160,6 +160,36 @@
    "baseline": false
   },
   {
+   "id": "astra-6.2-xhigh",
+   "name": "GPT-6.2 Astra",
+   "label": "GPT-6.2 Astra · xhigh",
+   "family": "gpt",
+   "vendor": "OpenAI",
+   "model": "gpt-6.2-astra",
+   "effort": "xhigh",
+   "harness": "Codex CLI",
+   "billing": "subscription",
+   "cost_basis": "estimate",
+   "cost_note": "estimated from token counts at list price",
+   "released": null,
+   "baseline": false
+  },
+  {
+   "id": "sol-6.2-ultra",
+   "name": "GPT-6.2 Sol",
+   "label": "GPT-6.2 Sol · ultra",
+   "family": "gpt",
+   "vendor": "OpenAI",
+   "model": "gpt-6.2-sol",
+   "effort": "ultra",
+   "harness": "Codex CLI",
+   "billing": "subscription",
+   "cost_basis": "estimate",
+   "cost_note": "estimated from token counts at list price",
+   "released": null,
+   "baseline": false
+  },
+  {
    "id": "luna-6-none",
    "name": "GPT-6 Luna",
    "label": "GPT-6 Luna · none",
@@ -295,6 +325,21 @@
    "baseline": true
   },
   {
+   "id": "gpt-5-high",
+   "name": "GPT-5",
+   "label": "GPT-5 · high",
+   "family": "gpt",
+   "vendor": "OpenAI",
+   "model": "gpt-5-2025-08-07",
+   "effort": "high",
+   "harness": "Codex CLI",
+   "billing": "api",
+   "cost_basis": "estimate",
+   "cost_note": "estimated from token counts at list price",
+   "released": "2025-08-07",
+   "baseline": true
+  },
+  {
    "id": "opus-4.5-high",
    "name": "Opus 4.5",
    "label": "Opus 4.5 · high",
@@ -307,6 +352,21 @@
    "cost_basis": "reported",
    "cost_note": "list price reported by Claude Code",
    "released": "2025-11-24",
+   "baseline": true
+  },
+  {
+   "id": "opus-4.8-high",
+   "name": "Opus 4.8",
+   "label": "Opus 4.8 · high",
+   "family": "claude",
+   "vendor": "Anthropic",
+   "model": "claude-opus-4-8",
+   "effort": "high",
+   "harness": "Claude Code",
+   "billing": "subscription",
+   "cost_basis": "reported",
+   "cost_note": "list price reported by Claude Code",
+   "released": null,
    "baseline": true
   },
   {
