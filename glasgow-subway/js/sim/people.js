@@ -438,7 +438,7 @@ export class AnimCrowd {
     const skirt = (c) => /skirt|dress|sash|highland_dress/.test(c.outfit), kilt = (c) => /kilt|highland/.test(c.outfit) && !skirt(c);
     if (r < 0.10) pool = this.chars.filter((c) => c.kid); else if (r < 0.13) pool = this.chars.filter((c) => c.staff);
     else if (r < 0.25) pool = this.chars.filter((c) => skirt(c) && !c.kid); else if (r < 0.29) pool = this.chars.filter((c) => kilt(c) && !c.kid);   // (people review 1: at 8% of the roll, with the pipers and the school kilts, tartan was a quarter of every platform)
-    else { const bare = (c) => /shorts|leggings/.test(c.outfit); pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c) && bare(c) === (r < 0.68)); }   // (review 2 counted 58-62% trousers on platforms: shorts and leggings now ~35%, trousers ~32%)
+    else { const bare = (c) => /shorts|leggings/.test(c.outfit); pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c) && bare(c) === (r < 0.72)); }   // (review 2 counted 58-62% trousers on platforms: shorts and leggings now ~43%, trousers ~28% of the draw - review 38 still found trousers over half a platform in 19 of 20 samples, the riders getting off, who sit, being trousers and shorts)
     return pool.length ? pool : this.chars;
   }
   _pick(filter) {   // never the same person twice in a crowd, nor (while the roster allows) twice on screen across crowds: see pickChar
