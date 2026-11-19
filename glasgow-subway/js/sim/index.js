@@ -1724,7 +1724,7 @@ class Sim {
         { const ex = c.people.find((x) => x.char === ch && x.obj); if (ex) { c._drop(ex); c.people.splice(c.people.indexOf(ex), 1); } }   // (he may be on the platform already: then add() would give somebody else, a person never being in a crowd twice)
         const q = c.people.find((x) => x.obj && !x.hidden) || { x: 0, z: 0, y: 0 }, p = c.add({ char: ch, x: q.x, z: q.z, y: q.y, yaw: 0, mode: 'stand', static: true, force: true }, c.group); if (!p.obj || !p.pet) return { made: false };
         for (let i = 0; i < 60; i++) c._petStep(p, 1 / 60);
-        const r = p.pet.root, o = p.obj, out = { made: true, inScene: r.parent === o.parent && p.pet.lead.parent === o.parent, dist: Math.hypot(r.position.x - o.position.x, r.position.z - o.position.z), dy: r.position.y - p.y, lead: p.pet.lead.scale.y, v: p.pet.h.v };
+        const r = p.pet.root, o = p.obj, out = { made: true, inScene: r.parent === o.parent && p.pet.lead.parent === o.parent, dist: Math.hypot(r.position.x - o.position.x, r.position.z - o.position.z), dy: r.position.y - p.y, lead: p.pet.leadLen, v: p.pet.h.v };
         c._drop(p); const i = c.people.indexOf(p); if (i >= 0) c.people.splice(i, 1); out.gone = !r.parent && !p.pet; return out; },
       peopleInfo: () => { const c = this.crowd; const w = this.walker; return { maxH: Math.max(...(c.chars || []).map((ch) => c.standHeight(ch, 'stand'))), chars: (c.chars || []).length, eye: w.eyeY() - w.y, sit: w.sit, x: w.x, clips: c.chars && c.chars[0] ? Object.keys(c.chars[0].pools) : [] }; },
       peopleFit: () => { const c = this.crowd; if (!c.chars || !c.fit) return null; const rows = []; let u = null;   // skirt-off-the-legs fit (bodyfit.js): stats per skirted character + the strength switch

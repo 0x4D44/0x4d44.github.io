@@ -450,7 +450,7 @@ export class AnimCrowd {
   }
   // ------------------------------------------------------------------ people
   clear() { if (this.people.length) this._recent = new Set(this.people.filter((p) => p.char).map((p) => p.char.id)); for (const p of this.people) this._drop(p); this.people.length = 0; }
-  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.pet) { for (const o of [p.pet.root, p.pet.lead]) if (o.parent) o.parent.remove(o); p.pet = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
+  _drop(p) { if (p.counted) { p.counted = false; useChar(p.char.id, -1); } if (p.print != null) { releasePrint(p.print); p.print = null; } if (p.pet) { for (const o of [p.pet.root, p.pet.lead, p.pet.lead2].filter(Boolean)) if (o.parent) o.parent.remove(o); p.pet = null; } if (p.obj) undressTee(p.obj); if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; p.gait = null; p.hold = null; }
   _rollPool() {
     // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, ~35% shorts and leggings (denim, Lycra, chino), the rest (~32%) trousers and jeans:
     // no garment is on more than half of a crowd (research/people-rubric.md, category 6), though 58 of the 99 people in the file wear trousers
@@ -713,8 +713,8 @@ export class AnimCrowd {
   /** the haggis of PET_OWNER: follows where its owner was drawn last frame, in the owner's own group; the lead runs to the owner's left hand */
   _petStep(p, dt) {
     const pet = p.pet, o = p.obj, par = o.parent; if (!par) return;
-    if (pet.root.parent !== par) { par.add(pet.root); par.add(pet.lead); pet.h.v = null; }
-    const vis = o.visible && !p.hidden; pet.root.visible = pet.lead.visible = vis;
+    if (pet.root.parent !== par) { par.add(pet.root); par.add(pet.lead); if (pet.lead2) par.add(pet.lead2); pet.h.v = null; }
+    const vis = o.visible && !p.hidden; pet.root.visible = pet.lead.visible = vis; if (pet.lead2) pet.lead2.visible = vis;
     const near = []; for (const q of this.people) if (q !== p && q.obj && q.obj.parent === par && Math.abs(q.obj.position.x - pet.h.x) < 1 && Math.abs(q.obj.position.z - pet.h.z) < 1) { near.push({ x: q.obj.position.x, z: q.obj.position.z }); if (q.state === 'sit') near.push({ x: q.obj.position.x - Math.sin(q.yaw) * 0.45, z: q.obj.position.z - Math.cos(q.yaw) * 0.45 }); }   /* (and a seated rider's feet, half a metre in front: review 32 had it inside a foot for 68 s) */
     followStep(pet.h, { x: o.position.x, z: o.position.z, yaw: p.yaw, sit: p.state === 'sit' }, dt, near);
     if (!p.yAt && this.floor && !this._onFloor(pet.h.x, pet.h.z, 0.15)) { const f = this._toFloor(pet.h.x, pet.h.z, 0.15); pet.h.x = f.x; pet.h.z = f.z; }   // (on the platform, never in a wall: review 33 had it 60 s inside the wall behind its owner)
