@@ -9184,6 +9184,7 @@
    "Seats run with the fleet's own agent configuration (instructions, skills and hooks), not a vanilla install of Claude Code or the Codex CLI.",
    "All runs used the fleet's subscription logins except the older API baselines (GPT-4o, o3), which ran pay-per-token on the OpenAI API with a per-run cost cap.",
    "Cost is a list-price figure, not what was paid. Claude Code reports its own list-price cost; the Codex CLI reports only tokens, so GPT costs are estimates from token counts at published list prices (standard tier; one price was taken from third-party trackers).",
+   "One capped Opus 4.5 run (FIX-01) reported no cost; its figure is estimated from transcript tokens at list price.",
    "Some speeches exist in several accepted versions; the seat is scored against the best-matching one.",
    "Memorisation is the point here, so contamination is not a flaw. One private item is scored but never published."
   ]

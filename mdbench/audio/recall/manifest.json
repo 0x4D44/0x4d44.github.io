@@ -28,6 +28,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "astra-6.2-medium": {
+    "mid": "music-bach-prelude-c-bwv846/astra-6.2-medium.mid",
+    "opus": "music-bach-prelude-c-bwv846/astra-6.2-medium.opus",
+    "secs": 116.7,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-bach-prelude-c-bwv846/fable-5.2-high.mid",
     "opus": "music-bach-prelude-c-bwv846/fable-5.2-high.opus",
@@ -103,6 +112,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-bach-prelude-c-bwv846/sol-6.2-xhigh.mid",
+    "opus": "music-bach-prelude-c-bwv846/sol-6.2-xhigh.opus",
+    "secs": 103.3,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -151,6 +169,15 @@
    "astra-6-xhigh": {
     "mid": "music-beethoven-9-ode-to-joy/astra-6-xhigh.mid",
     "opus": "music-beethoven-9-ode-to-joy/astra-6-xhigh.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-beethoven-9-ode-to-joy/astra-6.2-medium.mid",
+    "opus": "music-beethoven-9-ode-to-joy/astra-6.2-medium.opus",
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
@@ -232,6 +259,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-beethoven-9-ode-to-joy/sol-6.2-xhigh.mid",
+    "opus": "music-beethoven-9-ode-to-joy/sol-6.2-xhigh.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": "music-beethoven-9-ode-to-joy/sonnet-4.5.mid",
     "opus": "music-beethoven-9-ode-to-joy/sonnet-4.5.opus",
@@ -278,6 +314,13 @@
     "why": "no notes (every bar a rest)"
    },
    "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6.2-medium": {
     "mid": null,
     "opus": null,
     "secs": null,
@@ -353,6 +396,15 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-debussy-clair-de-lune/sol-6.2-xhigh.mid",
+    "opus": "music-debussy-clair-de-lune/sol-6.2-xhigh.opus",
+    "secs": 8.0,
+    "status": "ok",
+    "bpm": 67.5,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -401,6 +453,15 @@
    "astra-6-xhigh": {
     "mid": "music-fur-elise/astra-6-xhigh.mid",
     "opus": "music-fur-elise/astra-6-xhigh.opus",
+    "secs": 52.0,
+    "status": "ok",
+    "bpm": 75.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-fur-elise/astra-6.2-medium.mid",
+    "opus": "music-fur-elise/astra-6.2-medium.opus",
     "secs": 52.0,
     "status": "ok",
     "bpm": 75.0,
@@ -482,6 +543,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-fur-elise/sol-6.2-xhigh.mid",
+    "opus": "music-fur-elise/sol-6.2-xhigh.opus",
+    "secs": 54.6,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": "music-fur-elise/sonnet-4.5.mid",
     "opus": "music-fur-elise/sonnet-4.5.opus",
@@ -535,6 +605,15 @@
     "secs": null,
     "status": "empty",
     "why": "no notes (every bar a rest)"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-holst-jupiter/astra-6.2-medium.mid",
+    "opus": "music-holst-jupiter/astra-6.2-medium.opus",
+    "secs": 7.0,
+    "status": "ok",
+    "bpm": 60.0,
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-holst-jupiter/fable-5.2-high.mid",
@@ -605,6 +684,15 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-holst-jupiter/sol-6.2-xhigh.mid",
+    "opus": "music-holst-jupiter/sol-6.2-xhigh.opus",
+    "secs": 0.7,
+    "status": "ok",
+    "bpm": 84.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -649,6 +737,13 @@
     "why": "no notes (every bar a rest)"
    },
    "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6.2-medium": {
     "mid": null,
     "opus": null,
     "secs": null,
@@ -724,6 +819,13 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "sol-6.2-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -768,6 +870,13 @@
     "why": "no notes (every bar a rest)"
    },
    "astra-6-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
+   "astra-6.2-medium": {
     "mid": null,
     "opus": null,
     "secs": null,
@@ -843,6 +952,13 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "sol-6.2-xhigh": {
+    "mid": null,
+    "opus": null,
+    "secs": null,
+    "status": "empty",
+    "why": "no notes (every bar a rest)"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -890,6 +1006,15 @@
     "mid": "music-moonlight-sonata-1/astra-6-xhigh.mid",
     "opus": "music-moonlight-sonata-1/astra-6-xhigh.opus",
     "secs": 36.9,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-moonlight-sonata-1/astra-6.2-medium.mid",
+    "opus": "music-moonlight-sonata-1/astra-6.2-medium.opus",
+    "secs": 27.7,
     "status": "ok",
     "bpm": 52.0,
     "tempo": "answer",
@@ -968,6 +1093,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-moonlight-sonata-1/sol-6.2-xhigh.mid",
+    "opus": "music-moonlight-sonata-1/sol-6.2-xhigh.opus",
+    "secs": 24.2,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -1017,6 +1151,15 @@
     "mid": "music-mozart-k545-1/astra-6-xhigh.mid",
     "opus": "music-mozart-k545-1/astra-6-xhigh.opus",
     "secs": 56.4,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-mozart-k545-1/astra-6.2-medium.mid",
+    "opus": "music-mozart-k545-1/astra-6.2-medium.opus",
+    "secs": 58.2,
     "status": "ok",
     "bpm": 132.0,
     "tempo": "answer",
@@ -1095,6 +1238,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "sol-6.2-xhigh": {
+    "mid": "music-mozart-k545-1/sol-6.2-xhigh.mid",
+    "opus": "music-mozart-k545-1/sol-6.2-xhigh.opus",
+    "secs": 56.4,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "sonnet-4.5": {
     "mid": null,
     "opus": null,
@@ -1144,6 +1296,15 @@
     "mid": "music-satie-gymnopedie-1/astra-6-xhigh.mid",
     "opus": "music-satie-gymnopedie-1/astra-6-xhigh.opus",
     "secs": 43.6,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-medium": {
+    "mid": "music-satie-gymnopedie-1/astra-6.2-medium.mid",
+    "opus": "music-satie-gymnopedie-1/astra-6.2-medium.opus",
+    "secs": 40.9,
     "status": "ok",
     "bpm": 66.0,
     "tempo": "answer",
@@ -1217,6 +1378,15 @@
     "mid": "music-satie-gymnopedie-1/sol-6.1-xhigh.mid",
     "opus": "music-satie-gymnopedie-1/sol-6.1-xhigh.opus",
     "secs": 51.8,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "sol-6.2-xhigh": {
+    "mid": "music-satie-gymnopedie-1/sol-6.2-xhigh.mid",
+    "opus": "music-satie-gymnopedie-1/sol-6.2-xhigh.opus",
+    "secs": 43.6,
     "status": "ok",
     "bpm": 66.0,
     "tempo": "answer",
