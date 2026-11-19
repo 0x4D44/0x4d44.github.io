@@ -224,7 +224,7 @@ export class AnimCrowd {
    *  person into and out of the sit: switched at once while the body blended for half a second, the dress bulged like a bustle sitting down and stood as a tube over bent
    *  thighs getting up (review 42). The morph's normals are full floats: written into the model's Int8 normals they rounded to nothing and the seated skirt drew black. */
   _seatMorph(p, dt) {
-    const on = p.state === 'sit' && !p.tween ? 1 : 0;
+    const on = p.state === 'sit' ? 1 : 0;   // (from the moment they start to sit: held back until the settle had ended, the body wore the standing skirt on the seat for half a second - review 43)
     if (p.seatObj !== p.obj) { p.seatObj = p.obj; p.seatMeshes = []; if (p.obj) p.obj.traverse((m) => { if (!m.isSkinnedMesh) return; const g = m.userData.standGeo || m.geometry, sa = g.attributes._seat; if (!sa) return;
       let mg = g.userData.morphGeo;   // (a geometry of its own, shared only by those who have morph influences: on the shared one, a clone without them broke the render - e2e)
       if (!mg) { mg = g.userData.morphGeo = g.clone();
@@ -236,7 +236,7 @@ export class AnimCrowd {
       }
       m.userData.standGeo = g; m.geometry = mg; m.updateMorphTargets(); if (m.material) m.material.needsUpdate = true; p.seatMeshes.push(m); }); p.seatW = on; }
     if (!p.seatMeshes || !p.seatMeshes.length) return;
-    p.seatW += Math.max(-dt / 0.5, Math.min(dt / 0.5, on - p.seatW));
+    const T = on ? 1.0 : 0.5; p.seatW += Math.max(-dt / T, Math.min(dt / T, on - p.seatW));   // (in over the second the settle takes, out over the half second of the rise)
     for (const m of p.seatMeshes) if (m.morphTargetInfluences) m.morphTargetInfluences[0] = p.seatW;
   }
   _seatDraped(c) { if (c.seatDrape === undefined) { c.seatDrape = false; for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isMesh && m.geometry && m.geometry.attributes._seat) c.seatDrape = true; }); } return c.seatDrape; }
@@ -875,7 +875,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
-    if (/^(woman_mini|teen_skirt|teen_tube|elder_woman_dress|adult_beret)$/.test(c.id)) return false;   // (draped, still broken seated - review 42: the minis shred round the thighs, elder_woman_dress's dress rides to the crotch, adult_beret's skirt leaves bare thigh above the boots)
+    if (/^(woman_mini|teen_skirt|teen_tube|elder_woman_dress|adult_beret|woman_coat|man_kilt_casual|man_highland)$/.test(c.id)) return false;   // (review 43: woman_coat's skirt split at the crotch with a sheet below the seat, man_kilt_casual's thighs through gaps in the kilt, man_highland's kilt up to a band at the hips)   // (draped, still broken seated - review 42: the minis shred round the thighs, elder_woman_dress's dress rides to the crotch, adult_beret's skirt leaves bare thigh above the boots)
     if (!this._seatDraped(c) && /^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 37: let sit again after stills in the viewer looked whole, in the game elder_woman_dress's skirt rode to the hip in stiff flaps and ya_smile_dress's hem hung as a half-disc below the seat - both stand again)   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
@@ -911,7 +911,7 @@ export class AnimCrowd {
   }
   /** a standing rider sits down on `seat` {x,z,yaw,seatY} */
   settle(p, seat, dur = 1.0, then = null) {
-    p.mode = 'sit'; p.seatY = seat.seatY; this._enter(p, 'sit', 0.5);
+    p.mode = 'sit'; p.seatY = seat.seatY; this._enter(p, 'sit', Math.min(1.0, dur));   // (the sit blends in over the move itself: in 0.5 s of a 1 s settle the body squatted in the air ahead of the seat - review 43)
     if (p.m) { const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; p.x += c * hx + s * hz; p.z += -s * hx + c * hz; }   // x,z become the hips' again
     p.tween = { x0: p.x, z0: p.z, a0: p.yaw, x1: seat.x, z1: seat.z, a1: seat.yaw, t: 0, dur, then };
   }
