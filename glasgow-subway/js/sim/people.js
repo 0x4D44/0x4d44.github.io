@@ -220,6 +220,24 @@ export class AnimCrowd {
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null; this.gaitOn = !CLIP_WALK; this._gcount = {}; this.phones = !NO_PHONES; this.prng = mulberry32(0x70e5); this.bags = !NO_BAGS; this.brng = mulberry32(0xba95);   // phones have their own random stream: switching them off changes nothing else
     this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
+  /** the garment as Blender's cloth simulation settled it on a seat (tools/assets_people_mpfb.py seat_drape: the rest-space offset _seat), as a morph target that follows the
+   *  person into and out of the sit: switched at once while the body blended for half a second, the dress bulged like a bustle sitting down and stood as a tube over bent
+   *  thighs getting up (review 42). The morph's normals are full floats: written into the model's Int8 normals they rounded to nothing and the seated skirt drew black. */
+  _seatMorph(p, dt) {
+    const on = p.state === 'sit' && !p.tween ? 1 : 0;
+    if (p.seatObj !== p.obj) { p.seatObj = p.obj; p.seatMeshes = []; if (p.obj) p.obj.traverse((m) => { if (!m.isSkinnedMesh) return; const g = m.userData.standGeo || m.geometry, sa = g.attributes._seat; if (!sa) return;
+      if (!g.morphAttributes.position) {
+        const d = new this.THREE.Float32BufferAttribute(sa.count * 3, 3); for (let i = 0; i < sa.count; i++) d.setXYZ(i, sa.getX(i), sa.getY(i), sa.getZ(i));
+        const tmp = new this.THREE.BufferGeometry(); const P = g.attributes.position.clone(); for (let i = 0; i < P.count; i++) P.setXYZ(i, P.getX(i) + d.getX(i), P.getY(i) + d.getY(i), P.getZ(i) + d.getZ(i)); tmp.setAttribute('position', P); if (g.index) tmp.setIndex(g.index); tmp.computeVertexNormals();
+        const n0 = g.attributes.normal, nd = new this.THREE.Float32BufferAttribute(sa.count * 3, 3), nn = tmp.attributes.normal;
+        for (let i = 0; i < sa.count; i++) nd.setXYZ(i, nn.getX(i) - (n0 ? n0.getX(i) : 0), nn.getY(i) - (n0 ? n0.getY(i) : 0), nn.getZ(i) - (n0 ? n0.getZ(i) : 0));
+        g.morphAttributes.position = [d]; g.morphAttributes.normal = [nd]; g.morphTargetsRelative = true;
+      }
+      if (m.geometry !== g) m.geometry = g; m.updateMorphTargets(); if (m.material) m.material.needsUpdate = true; p.seatMeshes.push(m); }); p.seatW = on; }
+    if (!p.seatMeshes || !p.seatMeshes.length) return;
+    p.seatW += Math.max(-dt / 0.5, Math.min(dt / 0.5, on - p.seatW));
+    for (const m of p.seatMeshes) if (m.morphTargetInfluences) m.morphTargetInfluences[0] = p.seatW;
+  }
   _seatDraped(c) { if (c.seatDrape === undefined) { c.seatDrape = false; for (const r of [c.node, c.lodNode]) if (r) r.traverse((m) => { if (m.isMesh && m.geometry && m.geometry.attributes._seat) c.seatDrape = true; }); } return c.seatDrape; }
   _skirted(c) { return /kilt|skirt|highland|dress/.test(c.outfit) && !/trews/.test(c.outfit); }
   /** the bodyfit.js fits of the full-detail model (people.glb) */
@@ -510,12 +528,7 @@ export class AnimCrowd {
       if (!m.isSkinnedMesh || !m.material || !/^cloth_/i.test(m.material.name || '') || /shoe|boot|flats|sock|hose|camisole|top|blouse|shirt|sweater|jacket/i.test(m.material.name)) return;
       const g0 = m.userData.standGeo || m.geometry; m.userData.standGeo = g0;
       if (!on) { m.geometry = g0; return; }
-      const sa = g0.attributes._seat;
-      if (sa) {   // the garment as Blender's cloth simulation settled it on a seat (tools/assets_people_mpfb.py seat_drape): an offset in rest space, on the standing weights
-        let gd = g0.userData.seatGeo;
-        if (!gd) { gd = g0.userData.seatGeo = g0.clone(); const P = gd.attributes.position.clone(); for (let i = 0; i < P.count; i++) P.setXYZ(i, P.getX(i) + sa.getX(i), P.getY(i) + sa.getY(i), P.getZ(i) + sa.getZ(i)); gd.setAttribute('position', P); gd.computeVertexNormals(); gd.computeBoundingSphere(); }
-        m.geometry = gd; return;
-      }
+      if (g0.attributes._seat) return;   // (a garment draped on the seat follows its morph instead: _seatMorph)
       let gs = g0.userData.sitGeo;
       if (gs === undefined) { gs = g0.userData.sitGeo = this._sitWeights(m, g0) || null; }
       if (gs) m.geometry = gs;
@@ -861,6 +874,7 @@ export class AnimCrowd {
     // ... and the skirts and kilts that still break on a seat even with the seated skin weights (_skirtSit): teen_tube's mini balloons from the hips,
     // man_kilt_casual's knee comes through his kilt; the pipers' and boy_kilt's kilts are not yet seen seated. Their wearers stand (review 8 had stood every
     // kilt and five skirts; review 9 then found seated cars were all trousers and shorts)
+    if (/^(woman_mini|teen_skirt|teen_tube|elder_woman_dress|adult_beret)$/.test(c.id)) return false;   // (draped, still broken seated - review 42: the minis shred round the thighs, elder_woman_dress's dress rides to the crotch, adult_beret's skirt leaves bare thigh above the boots)
     if (!this._seatDraped(c) && /^(teen_tube|man_kilt_casual|man_highland|adult_piper|boy_kilt|woman_mini|teen_skirt|elder_woman_dress|woman_sash|woman_midi|adult_beret|woman_dress|woman_coat|ya_smile_dress|girl_small|girl_school_kilt)$/.test(c.id)) return false;   // (review 37: let sit again after stills in the viewer looked whole, in the game elder_woman_dress's skirt rode to the hip in stiff flaps and ya_smile_dress's hem hung as a half-disc below the seat - both stand again)   // (review 18: woman_dress torn at the knee, woman_coat showing the underside of her skirt) (review 16: woman_sash's dress a stiff tube with the knee through it, woman_midi's skirt holed at both knees, adult_beret's knees through her pencil skirt)   // (review 11: seated, the short pleated minis stood as a hoop round the hips with the crotch showing, at eye height in the car; review 12: elder_woman_dress's dress parted to the hip)
     // and the soles must reach the floor with the pelvis on the seat: _sitOff lifts a body whose feet would go through the floor, so legs (with heels) too long
     // for this seat would leave the person hovering above it (the audit allows 8 cm). Such a person stands instead.
@@ -915,7 +929,8 @@ export class AnimCrowd {
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
-      if (((p.state === 'sit') !== !!p.skirtSit || (p.skirtSit && p.skirtObj !== p.obj)) && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');   // (and again on a new model: swapped between the near and far model, a seated skirt kept its standing weights - review 37's dresses)
+      if (((p.state === 'sit') !== !!p.skirtSit || (p.skirtSit && p.skirtObj !== p.obj)) && this._skirted(p.char)) this._skirtSit(p, p.state === 'sit');
+      if (this._skirted(p.char) && this._seatDraped(p.char)) this._seatMorph(p, dt);   // (and again on a new model: swapped between the near and far model, a seated skirt kept its standing weights - review 37's dresses)
       if (p.bagRig && p.obj.visible && (p.bagRig.kind !== 'ruck' || p.state === 'sit' || p.bagRig.where !== 'back')) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', !!(p.lod && p.state === 'sit'), this._bagHow(p));   // (a far-model rider is not animated every frame: its bones' world matrices can still be the standing bind pose's, which put the lap bag at the chin - review 8. fresh = read them after an update)
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
