@@ -726,14 +726,16 @@ export class AnimCrowd {
   /** Doorways of a train standing with its doors open: strips of floor from the platform edge into the car, which only passengers on their way on or off (mode 'go') may use.
    *  Without them boarders stopped and vanished on the platform edge and alighters appeared there. When the doors close, anyone still in a doorway is aboard and is removed. */
   setBays(bays) {
-    const had = this.bays && this.bays.length; this.bays = bays || [];
-    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj || q.stair) continue; this._goNow = false; if (!this._onFloor(q.x, q.z, 0)) {
+    const had = this.bays && this.bays.length, old = this.bays; this.bays = bays || [];
+    if (this.bays.length) { this._exitBays = null; for (const q of this.people) q.bayOut = null; } else if (had) this._exitBays = old;   // (the doorways of a train that has shut its doors stay floor for anyone still in one, until they have walked off: see below)
+    if (had && !this.bays.length && this.floor && this.floor.length) for (let i = this.people.length - 1; i >= 0; i--) { const q = this.people[i]; if (q.static || !q.obj || q.stair) continue; this._goNow = false; this._exitNow = false; if (!this._onFloor(q.x, q.z, 0)) {
       // a boarder is aboard (their onArrive puts them in the car); anyone else - someone getting off - steps back on to the platform edge and goes on from there,
       // rather than vanish in the doorway as it shuts (review 22: 4 a run removed in view)
-      if (!q.onArrive && q.obj.visible && !q.hidden) { let bx = q.x, bz = q.z, bd = 1e9; for (const f of this.floor) { const x = Math.min(f.x1 - 0.3, Math.max(f.x0 + 0.3, q.x)), z = Math.min(f.z1 - 0.3, Math.max(f.z0 + 0.3, q.z)), d = (x - q.x) ** 2 + (z - q.z) ** 2; if (d < bd) { bd = d; bx = x; bz = z; } } q.x = bx; q.z = bz; continue; }
+      if (!q.onArrive && q.obj.visible && !q.hidden) { let bx = q.x, bz = q.z, bd = 1e9; for (const f of this.floor) { const x = Math.min(f.x1 - 0.3, Math.max(f.x0 + 0.3, q.x)), z = Math.min(f.z1 - 0.3, Math.max(f.z0 + 0.3, q.z)), d = (x - q.x) ** 2 + (z - q.z) ** 2; if (d < bd) { bd = d; bx = x; bz = z; } }
+        q.bayOut = true; if (q.tx == null || q.mode === 'stand') { q.mode = 'walk'; q.revert = 'stand'; q.tx = bx; q.tz = bz; q.stopHere = true; q.wait = 0; q.sp = 0; q.stuckT = 0; q.bestD = 1e9; this._enter(q, 'walk'); } continue; }   // (they walk off it: put there in one frame, review 34 saw a woman jump 0.82 m)
       if (q.onArrive) q.onArrive(q, false); this._drop(q); this.people.splice(i, 1); } }
   }
-  _floors() { return this._goNow && this.bays && this.bays.length ? this.floor.concat(this.bays) : this.floor; }
+  _floors() { return this._goNow && this.bays && this.bays.length ? this.floor.concat(this.bays) : this._exitNow && this._exitBays ? this.floor.concat(this._exitBays) : this.floor; }
   _onFloor(x, z, m = 0.22) {
     const F = this.floor && this._floors(); if (!F || !F.length) return true;
     let ok = false; for (const f of F) if (x >= f.x0 + m && x <= f.x1 - m && z >= f.z0 + m && z <= f.z1 - m) { ok = true; break; }
@@ -897,7 +899,7 @@ export class AnimCrowd {
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~8k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
     let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if ((hiSet.size >= this.maxHi && d > 6) || d > 11) break; hiSet.add(q); } }   // (everyone within 6 m is on the full model whatever the budget: review 4 still saw up to 10 far models within 6 m beside a train)
-    this._goNow = false; this._separate(dt);
+    this._goNow = false; this._exitNow = false; this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       if (p.pet) this._petStep(p, dt);
@@ -906,7 +908,7 @@ export class AnimCrowd {
       if (p.face) { let w = 0; if (cam && !p.hidden && p.att && p.att.sm > 0.004) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) w = p.att.sm; } if (Math.abs(w - p.face.morphTargetInfluences[0]) > 0.002 || (!w && p.face.morphTargetInfluences[0])) p.face.morphTargetInfluences[0] = w; }
       if (p.eyes && cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) { const a = p.att, g = gazeStep(p.gaze, dt, this.rng, { phone: !!p.hold, want: a && a.tgt && a.tgt !== 'about' ? (a.wy || 0) - (a.yaw || 0) : 0 }); if (Math.abs(g.y - p.eyes.y) + Math.abs(g.p - p.eyes.p) > 0.002) p.eyes.set(g.y, g.p); } }
       if (p.lids) { let c = 0; if (cam && !p.hidden) { p.obj.getWorldPosition(v); if (v.distanceTo(cam) < BLINK.range) c = blinkStep(p.blink, dt, this.rng, { sit: p.state === 'sit', phone: !!p.hold }); } if (p.face) c = Math.max(c, 0.2 * p.face.morphTargetInfluences[0]); if (c !== p.lids.c) p.lids.set(c); }   // a real smile narrows the eyes (the cheeks push the lower lids up): without it review 6 read the smiles as faint smirks
-      p.stateT += dt; this._goNow = p.mode === 'go';
+      p.stateT += dt; this._goNow = p.mode === 'go'; this._exitNow = false; if (p.bayOut && this._onFloor(p.x, p.z, 0)) p.bayOut = null; this._exitNow = !!p.bayOut;
       if (!p.static) {
         if (p.mode === 'walk') {
           if (p.wait > 0) { p.wait -= dt; p.sp = 0; if (p.wait <= 0) this._enter(p, 'walk'); }
@@ -1032,14 +1034,21 @@ export class AnimCrowd {
    *  Two layers, with their own weights (gait_three.js): the upper body (pelvis, trunk, head, arms; wU) is the gait's while the person walks and for GAIT_TAIL after the last step
    *  (the arms settle), then goes back to the clip; the legs (wL) are the gait's from the first step for good, solved against whatever pelvis the person has, so the feet that were
    *  planted stay planted whatever the idle clips do, and a person who turns on the spot re-plants them with steps. Hands stay with the clip. */
+  /** where the person's ankles are now, as drawn (the parent's frame, [x, z] each), for a gait to plant its feet on; null if the bones cannot be read */
+  _clipAnkles(p) {
+    const o = p.obj, par = o && o.parent; if (!par) return null;
+    o.updateMatrixWorld(true); const v = this._v, out = [];
+    for (const n of ['foot_l', 'foot_r']) { let b = null; o.traverse((x) => { if (!b && x.isBone && x.name.endsWith(n)) b = x; }); if (!b) return null; b.getWorldPosition(v); par.worldToLocal(v); out.push([v.x, v.z]); }
+    return out;
+  }
   _gaitStep(p, dt) {
     const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = p.state === 'stand' || !!p.paused; let gs = p.gait;
     if (!gs) {
       if (!walking && !(standing && p.yawT != null && Math.abs(angDiff(p.yaw, p.yawT)) > 0.35)) return;   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
-      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, opts), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
+      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._clipAnkles(p) }), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
     }
-    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, gs.opts); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
+    if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, { ...gs.opts, plantAt: this._clipAnkles(p) }); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
     if (walking) gs.hold = 0; else gs.hold += dt;
     gs.wU = walking || gs.hold < GAIT_TAIL ? Math.min(1, gs.wU + dt / GAIT_IN) : Math.max(0, gs.wU - dt / GAIT_OUT);
     gs.wL = walking || standing ? Math.min(1, gs.wL + dt / GAIT_IN) : Math.max(0, gs.wL - dt / GAIT_OUT); gs.t = this._clock;

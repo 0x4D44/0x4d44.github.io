@@ -265,6 +265,7 @@ const newFoot = (s) => ({ s, mode: 'stance', H: [0, 0], psi: 0, th: 0, sw: null,
 export function newGait(B, opts = {}) {
   const g = { body: B, phase: 0, walking: false, wk: 0, t: 0, feet: [newFoot(0), newFoot(1)], x: 0, z: 0, yaw: 0, v: 0, placed: false, P: null, armOut: opts.armOut || [8, 8], hold: opts.hold || [0, 0], trail: opts.trail || [0, 0],
     var: Object.assign({ arm: 1, bob: 1, sway: 1, yawBias: 0, cad: 1, vary: 1, wid: 1 }, opts.var || {}), pole: [0, 0], stopD: null, stoppedAt: -99,
+    plantAt: opts.plantAt || null,
     rng: rng32(opts.seed != null ? opts.seed : 0x2f6e), eT: 0, rate: 1,      // eT, rate: the step-to-step wander of the timing (see VARY)
     acc: 0, vPrev: null };                                                    // acc: how fast the body is speeding up (m/s^2, smoothed): the foot is put where the body will be
   return g;
@@ -277,7 +278,14 @@ function standTarget(g, s, adv = 0) {
   const l = rotY([sgn * sx, 0, az + B.heelBack], g.yaw);
   return { H: [g.x - Math.sin(g.yaw) * adv + l[0], g.z - Math.cos(g.yaw) * adv + l[2]], psi: g.yaw - sgn * 7 * D2R };
 }
-function plantBoth(g) { for (let s = 0; s < 2; s++) { const t = standTarget(g, s), f = g.feet[s]; f.mode = 'stance'; f.H = t.H; f.psi = t.psi; f.th = 0; f.sw = null; } }
+function plantBoth(g) {
+  for (let s = 0; s < 2; s++) { const t = standTarget(g, s), f = g.feet[s]; f.mode = 'stance'; f.H = t.H; f.psi = t.psi; f.th = 0; f.sw = null;
+    // where the person's feet already are (opts.plantAt: each ankle [x, z], from the clip they were standing in), if it is near: planted at the stance's own spot instead, the
+    // legs' blend from the clip to the gait slid the feet 10 - 15 cm along the floor in 0.2 s as a waiting person set off (review 34)
+    const a = g.plantAt && g.plantAt[s]; if (a && Math.hypot(a[0] - g.x, a[1] - g.z) < 0.5) { const a0 = stanceAnkle(g.body.leg[s], [0, 0], t.psi, 0); f.H = [a[0] - a0[0], a[1] - a0[2]]; }
+  }
+  g.plantAt = null;
+}
 
 const toLocal = (g, x, z) => { const dx = x - g.x, dz = z - g.z, c = Math.cos(g.yaw), s = Math.sin(g.yaw); return [dx * c - dz * s, dx * s + dz * c]; };   // world -> node frame (x, z)
 
@@ -319,7 +327,7 @@ export function gaitUpdate(g, dt, inp) {
     // doors starts in step; how that looks on the platform has not been watched. A `phase0` trait that looked as if it broke the lockstep used to be carried in var and was read by nothing;
     // it is gone rather than left to suggest otherwise.
     g.phase = wrap1(P.S + (first ? 0.5 : 0));
-    for (let s = 0; s < 2; s++) F[s].th = 0;
+    for (let s = 0; s < 2; s++) { F[s].th = 0; F[s].fresh = F[s].mode === 'stance'; }
   } else if (!want && g.walking) {                            // stop: a swinging foot lands where the body stands now, a planted one settles
     g.walking = false; g.stoppedAt = g.t;
     for (let s = 0; s < 2; s++) { const f = F[s]; if (f.mode === 'swing') { const t = standTarget(g, s); startSwing(g, f, { H: t.H, psi: t.psi }, { T: 0.3, th1: 0, clear: 0.05 * B.Lh }); } }
@@ -385,14 +393,15 @@ function walkStep(g, dt, P) {
       if (pf >= P.S && pf < 0.97) {                         // toe-off: swing begins from the pose the foot has now
         // (the roll of this frame first: f.th is still the one of the frame before, and the foot read through it at the instant of toe-off stood still for a frame - the ankle and the
         // roll of the shoe stalled at every toe-off, and the pelvis, held by that leg's reach, lurched with them: part of the 20 - 58 m/s^2 vertical stomp of the pelvis, see trackReach)
-        f.th = stanceTh(P, pf);
+        if (!f.fresh) f.th = stanceTh(P, pf);   // (the first step of a walk leaves from the foot as it stands, flat: set off at the phase of toe-off, the heel went from flat to 42 deg up in one frame and the ankle jumped 5 - 7 cm - review 34)
+        f.fresh = false;
         f.cur = footOut(g, f, pf); startSwing(g, f, null, { T: null, th1: P.thHS, clear: P.clear });
         // The foot did not leave the floor at the start of this frame but somewhere in the step since the last one: (pf - S) of the stride ago. Draw it that far into its swing, not at
         // the instant of toe-off. Left at s = 0 the foot stays on its toes for up to a whole frame too long (stance +1.6 % of the stride on average) and the whole of the knee's
         // first move - tens of degrees at the speed of the pelvis - lands on the NEXT frame: a one-frame pop at every toe-off (peak joint rate 776 -> 518 deg/s on the fixtures).
         // Only when the crossing really is within this frame (a foot found late in its stance after a restart starts its swing from the beginning).
         const eps = pf - P.S; if (eps <= 1.5 * dt * P.fs * 0.5) f.sw.s = clamp(eps / (1 - P.S), 0, 1);
-      } else f.th = stanceTh(P, pf);
+      } else { f.th = stanceTh(P, pf); f.fresh = false; }
     } else if (f.mode === 'swing') {
       if (f.sw.T) { f.sw.t += dt; f.sw.s = clamp(f.sw.t / f.sw.T, 0, 1); if (f.sw.s >= 1) land(g, f, P); }
       else if (pf < P.S) { f.sw.s = 1; land(g, f, P); }                        // the phase has come round to heel strike
