@@ -37,6 +37,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "astra-6.2-xhigh": {
+    "mid": "music-bach-prelude-c-bwv846/astra-6.2-xhigh.mid",
+    "opus": "music-bach-prelude-c-bwv846/astra-6.2-xhigh.opus",
+    "secs": 106.7,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-bach-prelude-c-bwv846/fable-5.2-high.mid",
     "opus": "music-bach-prelude-c-bwv846/fable-5.2-high.opus",
@@ -203,6 +212,15 @@
    "astra-6.2-medium": {
     "mid": "music-beethoven-9-ode-to-joy/astra-6.2-medium.mid",
     "opus": "music-beethoven-9-ode-to-joy/astra-6.2-medium.opus",
+    "secs": 108.0,
+    "status": "ok",
+    "bpm": 160.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-xhigh": {
+    "mid": "music-beethoven-9-ode-to-joy/astra-6.2-xhigh.mid",
+    "opus": "music-beethoven-9-ode-to-joy/astra-6.2-xhigh.opus",
     "secs": 108.0,
     "status": "ok",
     "bpm": 160.0,
@@ -379,6 +397,15 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "astra-6.2-xhigh": {
+    "mid": "music-debussy-clair-de-lune/astra-6.2-xhigh.mid",
+    "opus": "music-debussy-clair-de-lune/astra-6.2-xhigh.opus",
+    "secs": 3.6,
+    "status": "ok",
+    "bpm": 75.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-debussy-clair-de-lune/fable-5.2-high.mid",
     "opus": "music-debussy-clair-de-lune/fable-5.2-high.opus",
@@ -540,6 +567,15 @@
     "mid": "music-fur-elise/astra-6.2-medium.mid",
     "opus": "music-fur-elise/astra-6.2-medium.opus",
     "secs": 52.0,
+    "status": "ok",
+    "bpm": 75.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-xhigh": {
+    "mid": "music-fur-elise/astra-6.2-xhigh.mid",
+    "opus": "music-fur-elise/astra-6.2-xhigh.opus",
+    "secs": 55.6,
     "status": "ok",
     "bpm": 75.0,
     "tempo": "answer",
@@ -719,6 +755,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "astra-6.2-xhigh": {
+    "mid": "music-holst-jupiter/astra-6.2-xhigh.mid",
+    "opus": "music-holst-jupiter/astra-6.2-xhigh.opus",
+    "secs": 0.8,
+    "status": "ok",
+    "bpm": 72.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-holst-jupiter/fable-5.2-high.mid",
     "opus": "music-holst-jupiter/fable-5.2-high.opus",
@@ -876,6 +921,15 @@
     "secs": null,
     "status": "empty",
     "why": "no notes (every bar a rest)"
+   },
+   "astra-6.2-xhigh": {
+    "mid": "music-joplin-entertainer/astra-6.2-xhigh.mid",
+    "opus": "music-joplin-entertainer/astra-6.2-xhigh.opus",
+    "secs": 2.8,
+    "status": "ok",
+    "bpm": 76.0,
+    "tempo": "answer",
+    "voices": "samples"
    },
    "fable-5.2-high": {
     "mid": "music-joplin-entertainer/fable-5.2-high.mid",
@@ -1035,6 +1089,15 @@
     "status": "empty",
     "why": "no notes (every bar a rest)"
    },
+   "astra-6.2-xhigh": {
+    "mid": "music-joplin-maple-leaf-rag/astra-6.2-xhigh.mid",
+    "opus": "music-joplin-maple-leaf-rag/astra-6.2-xhigh.opus",
+    "secs": 0.4,
+    "status": "ok",
+    "bpm": 80.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-joplin-maple-leaf-rag/fable-5.2-high.mid",
     "opus": "music-joplin-maple-leaf-rag/fable-5.2-high.opus",
@@ -1190,6 +1253,15 @@
     "mid": "music-moonlight-sonata-1/astra-6.2-medium.mid",
     "opus": "music-moonlight-sonata-1/astra-6.2-medium.opus",
     "secs": 27.7,
+    "status": "ok",
+    "bpm": 52.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-xhigh": {
+    "mid": "music-moonlight-sonata-1/astra-6.2-xhigh.mid",
+    "opus": "music-moonlight-sonata-1/astra-6.2-xhigh.opus",
+    "secs": 18.5,
     "status": "ok",
     "bpm": 52.0,
     "tempo": "answer",
@@ -1365,6 +1437,15 @@
     "tempo": "answer",
     "voices": "samples"
    },
+   "astra-6.2-xhigh": {
+    "mid": "music-mozart-k545-1/astra-6.2-xhigh.mid",
+    "opus": "music-mozart-k545-1/astra-6.2-xhigh.opus",
+    "secs": 65.5,
+    "status": "ok",
+    "bpm": 132.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
    "fable-5.2-high": {
     "mid": "music-mozart-k545-1/fable-5.2-high.mid",
     "opus": "music-mozart-k545-1/fable-5.2-high.opus",
@@ -1530,6 +1611,15 @@
     "mid": "music-satie-gymnopedie-1/astra-6.2-medium.mid",
     "opus": "music-satie-gymnopedie-1/astra-6.2-medium.opus",
     "secs": 40.9,
+    "status": "ok",
+    "bpm": 66.0,
+    "tempo": "answer",
+    "voices": "samples"
+   },
+   "astra-6.2-xhigh": {
+    "mid": "music-satie-gymnopedie-1/astra-6.2-xhigh.mid",
+    "opus": "music-satie-gymnopedie-1/astra-6.2-xhigh.opus",
+    "secs": 46.4,
     "status": "ok",
     "bpm": 66.0,
     "tempo": "answer",
