@@ -299,7 +299,7 @@ class Sim {
     }
     if (X.state === 'open') {
       X.t += dt;
-      if (!svc.doorsOpen) { for (const q of this.crowd.people.slice()) if (q.routed && q.onArrive) q.rail ? this.crowd.finish(q) : (q.onArrive(q, false), this.crowd.release(q)); this.crowd.setBays([]); for (const L of X.leavers) L.p.leaving = false; X.leavers = []; X.state = 'closed'; this._saloonObs(tv); return; }   // (anyone still in a doorway is put aboard by their onArrive: see _routeBoarder)
+      if (!svc.doorsOpen) { for (const q of this.crowd.people.slice()) if (q.routed && q.onArrive) q.rail ? this.crowd.finish(q) : (q.onArrive(q, false), this.crowd.release(q), this.crowd.standBack(q));   /* (one still on the platform when the doors shut steps back from the edge to wait: review 33, 185 s at 0.54 m from it) */ this.crowd.setBays([]); for (const L of X.leavers) L.p.leaving = false; X.leavers = []; X.state = 'closed'; this._saloonObs(tv); return; }   // (anyone still in a doorway is put aboard by their onArrive: see _routeBoarder)
       const exits = this._exitPoints(v);
       for (let i = X.leavers.length - 1; i >= 0; i--) {
         const L = X.leavers[i], p = L.p; if (L.spot) { if (p.seatRef) { p.seatRef.p = null; p.seatRef = null; } sc.rise(p, L.spot, 0.9); L.spot = null; continue; }
@@ -333,12 +333,13 @@ class Sim {
     const bagComing = (x, z) => tv.seatMap.some((s) => s.ci === ci && s.p && s.p !== q && s.p.bag && !(s.p.parent === car && s.p.state === 'sit') && Math.hypot(Math.sign(s.x) * 0.24 - x, s.z - z) < 0.55);
     let spot = null;
     if (seat) { seat.p = q; spot = { x: Math.sign(seat.x) * 0.2, z: seat.z }; }
+    else if (q.char.kid) { /* a child with no seat waits for the next train rather than stand alone in the car (review 33) */ }
     else if (q.char.pools.pole && sc.rng() < 0.6) {   // most hold on: a free pole near their door (review 14: a standing boarder put a hand up to a pole that was not there)
       const poles = this._carPoles(ci, info), took = (pl) => sc.people.some((o) => o.parent === car && o.poleAt && Math.hypot(o.poleAt.x - pl.x, o.poleAt.z - pl.z) < 0.05) || X.stands.some((o) => o.ci === ci && o.pole && Math.hypot(o.pole.x - pl.x, o.pole.z - pl.z) < 0.05);
       const ok = this._standOk(sc, car, ci, info, poles, (x, z) => !X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - x, o.z - z) < 0.55 || (Math.abs(o.z - z) < 1.0 && Math.sign(o.x) !== Math.sign(x)))) && !bagComing(x, z));
       for (const pl of poles.filter((pl) => !pl.gang && !took(pl)).sort((a, b) => Math.abs(a.z - dz) - Math.abs(b.z - dz)).slice(0, 4)) { const f = sc.poleSpot(q.char, pl, { y: PY, ceilAt }, ok); if (f) { spot = f; X.stands.push({ ci, x: f.x, z: f.z, pole: pl }); break; } }
     }
-    if (!seat && !spot) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
+    if (!seat && !spot && !q.char.kid) for (let n = 0; n < 14 && !spot; n++) { const c = { x: (n % 2 ? -1 : 1) * 0.2, y: PY, z: dz + (n % 4 < 2 ? 1 : -1) * (1.0 + 0.45 * Math.floor(n / 4)), yaw: n % 2 ? -Math.PI / 2 : Math.PI / 2, ceilAt, mode: 'stand' };
       if (Math.abs(c.z) > info.len / 2 - 0.6 || X.stands.some((o) => o.ci === ci && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc.people.some((o) => o.parent === car && o.state !== 'sit' && (Math.hypot(o.x - c.x, o.z - c.z) < 0.6 || (Math.abs(o.z - c.z) < 1.0 && Math.sign(o.x) !== Math.sign(c.x)))) || sc._bagNear(car, c.x, c.z) || bagComing(c.x, c.z) || tv.seatMap.some((st) => st.ci === ci && st.p && Math.abs(st.z - c.z) < 0.55 && c.x * Math.sign(st.x) > 0.12) || !sc._fitsStandAt(q.char, c)) continue; spot = c; X.stands.push({ ci, x: c.x, z: c.z }); }
     if (!seat && !spot) { const i = pend.indexOf(q.char); if (i >= 0) pend.splice(i, 1); return away(); }   // (no seat and nowhere to stand: they wait for the next train, rather than walk in and vanish in the aisle - review 20, 10 of 115)
     const dIn = this._carToCrowd(car, 0, dz), out = { x: inf.xe + inf.S * 0.7, z: dIn.z }, path = [{ x: inf.xe - inf.S * 0.15, z: dIn.z, rail: true }, { x: X.cx, z: dIn.z, rail: true }]; if (spot) { const a = this._carToCrowd(car, spot.x, spot.z); path.push({ x: a.x, z: a.z, rail: true }); }

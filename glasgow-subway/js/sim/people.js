@@ -834,7 +834,8 @@ export class AnimCrowd {
     const made = [];
     for (const s of slots) {
       if (this.people.length >= this.max) break;
-      const filter = s.fit ? s.fit : s.mode !== 'sit' && s.ceilAt ? (c) => this._fitsStandAt(c, s) : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
+      const f0 = s.fit ? s.fit : s.mode !== 'sit' && s.ceilAt ? (c) => this._fitsStandAt(c, s) : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
+      const filter = s.mode === 'sit' ? f0 : (c) => !c.kid && (!f0 || f0(c));   // (a child does not stand alone in a car, at a pole or anywhere else: review 33 saw girl_school_kilt by herself at a pole)
       const p = this.add({ ...s, static: true }, parent, filter); if (p.obj) made.push(p);
     }
     return made;
@@ -917,7 +918,8 @@ export class AnimCrowd {
             if (p.mode === 'walk' && !(p.wait > 0)) {
               const moved = this._step(p, dt, p.speed * 0.85), dd = Math.hypot(p.tx - p.x, p.tz - p.z);
               this._progress(p, moved, dd, dt, 0.05);
-              if ((!moved && !p.standingBack) || p.stuckT > 1.6) { p.standingBack = false; p.tx = null;   /* (one walking back from the doors keeps trying for a moment: one blocked frame ended the walk at the edge - review 27, 8 of 37) */ p.stopHere = false; p.sp = 0; p.stuckT = 0; if (p.revert) this._settle(p); else { p.mode = 'stand'; p.yawT = this._faceTrack(); p.restT = 40 + this.rng() * 160; this._enter(p, 'stand'); } }   // boxed in / going nowhere: wait here instead, never shuffle on the spot
+              if ((!moved && !p.standingBack) || p.stuckT > 1.6) { const wasBack = p.standingBack; p.standingBack = false; p.tx = null;   /* (one walking back from the doors keeps trying for a moment: one blocked frame ended the walk at the edge - review 27, 8 of 37) */ p.stopHere = false; p.sp = 0; p.stuckT = 0; if (p.revert) this._settle(p); else { p.mode = 'stand'; p.yawT = this._faceTrack(); p.restT = 40 + this.rng() * 160; this._enter(p, 'stand'); }
+                if (wasBack && (p.backTries = (p.backTries || 0) + 1) < 4 && this.site && this.site.edgeX != null && Math.abs(p.x - this.site.edgeX) < 1.0) this.standBack(p); else if (!wasBack) p.backTries = 0; }   // boxed in / going nowhere: wait here instead, never shuffle on the spot (but one stuck on the way back from the edge tries another spot, three times: review 33)
             }
           }
         } else if (p.mode === 'stand') {
@@ -1203,8 +1205,9 @@ export class AnimCrowd {
     if (!this.people.includes(q)) return; this.release(q); if (!this.people.includes(q) || !q.rect) return;
     // (well back from the edge: review 26 still found 7 of 9 within a metre of it - the first spot drawn may be at the edge itself)
     const s = this.site, back = (c) => !s || s.edgeX == null || Math.abs(c.x - s.edgeX) > 1.5; let c = null;
-    for (let k = 0; k < 8 && !(c && back(c)); k++) c = this._waitSpot(q.rect, { self: q });
-    if (!c || !back(c) || Math.hypot(c.x - q.x, c.z - q.z) < 0.5) return;
+    { const score = (t) => (back(t) ? 0 : 100 - (s && s.edgeX != null ? Math.abs(t.x - s.edgeX) : 0)) + Math.hypot(t.x - q.x, t.z - q.z);   // well back first, then the nearest: a spot 16 m off took one along the edge and stuck him there (review 33)
+      for (let k = 0; k < 24; k++) { const t = this._waitSpot(q.rect, { self: q }); if (t && (!c || score(t) < score(c))) c = t; } }
+    if (!c || (!back(c) && s && s.edgeX != null && Math.abs(c.x - s.edgeX) <= Math.abs(q.x - s.edgeX) + 0.3) || Math.hypot(c.x - q.x, c.z - q.z) < 0.5) return;   // (a spot short of 1.5 m still does, if it is well back from where they are)
     q.standingBack = true; q.revert = 'stand'; q.mode = 'walk'; q.tx = c.x; q.tz = c.z; q.wait = 0; q.sp = 0; q.stopHere = true; q.bestD = 1e9; q.stuckT = 0; q.turnT = 0; this._enter(q, 'walk');
   }
   /** someone the user keeps pressing into: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
