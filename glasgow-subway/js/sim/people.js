@@ -167,6 +167,7 @@ const GARMENT_TINT = { woman_mini: [[/skirt/i, 0.09, 0.12, 0.1], [/camisole/i, 0
 /** the four garment groups the crowd keeps any one of under half of the people near by (_pick) */
 const garmentGroup = (c) => (/skirt|dress|sash/.test(c.outfit) ? 'skirt' : /kilt|highland/.test(c.outfit) && !/trews/.test(c.outfit) ? 'kilt' : /shorts|leggings/.test(c.outfit) ? 'bare' : 'trousers');
 const FINGER_SIGN = 1;   // a positive turn about a finger bone's own X closes it toward the palm
+const PHONE_SIDE = 1;    // the right hand (_fingerRig: side 0 is the left), which holds a phone to the ear (hold.js holdHands)
 export class AnimCrowd {
   /** gltf: people.glb (full detail), lodGltf: people_lod.glb. Either may be null; with only the LOD file everyone is drawn from it until attachFull(people.glb)
    *  (the game loads the small file first, so the station is drawn without waiting for the big one). */
@@ -1004,12 +1005,13 @@ export class AnimCrowd {
    *  rest hangs half closed, and a hand on a handle is closed round it. This goes on after the mixer (which writes the fingers afresh at every update): relaxed
    *  for both hands, a grip for the hand with a bag or a case handle in it. A hand on a phone, a pole or a rail, waving or pointing keeps the clip's own fingers. */
   _fingers(p, dt, snap) {
-    const clip = p.cur ? p.cur.getClip().name : '', onPole = p.poleAt && p.poleHand != null && /pole|rail/.test(clip); if (/phone|wave|point/.test(clip) || (/pole|rail/.test(clip) && !onPole)) return;   // (a hand on a pole is closed round it: review 15 saw an open claw)
+    const clip = p.cur ? p.cur.getClip().name : '', onPole = p.poleAt && p.poleHand != null && /pole|rail/.test(clip), ph = p.hold && p.hold.w > 0.02 ? p.hold : null; if ((/phone|wave|point/.test(clip) && !ph) || (/pole|rail/.test(clip) && !onPole)) return;   // (a hand on a pole is closed round it: review 15 saw an open claw)
     let f = p.fing; if (!f || f.obj !== p.obj) f = p.fing = this._fingerRig(p.obj, f); if (!f.ok) return;
     const rg = p.bagRig, gh = rg && p.obj.visible ? rg.gh : -1, held = p.hold && p.hold.w > 0;
     for (let s = 0; s < 2; s++) {
-      if (held) continue;
-      const want = gh === s || (onPole && p.poleHand === s) ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
+      if (held && !ph) continue;
+      // a phone is held with the fingers bent round its edges, not on a flat open hand (review 35/36): a call in the right hand, a text in both
+      const want = ph ? (ph.kind === 'call' ? (s === PHONE_SIDE ? 0.55 * ph.w : 0) : 0.3 * ph.w) : gh === s || (onPole && p.poleHand === s) ? 1 : 0; f.c[s] = snap || f.c[s] < 0 ? want : f.c[s] + (want - f.c[s]) * Math.min(1, dt * 7); const c = f.c[s], q = this._fq || (this._fq = new this.THREE.Quaternion()), X = this._fx || (this._fx = new this.THREE.Vector3(1, 0, 0));
       for (const b of f.side[s]) { const a = b.rel + (b.grip - b.rel) * c; b.bone.quaternion.copy(b.rest).multiply(q.setFromAxisAngle(X, a)); }
     }
   }
