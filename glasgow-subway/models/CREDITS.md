@@ -106,7 +106,6 @@ People in `people.glb` / `people_lod.glb` were generated with MPFB2 (MakeHuman P
 | eyes/materials/blue | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/bluegreen | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/brown | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
-| eyes/materials/grey | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | eyes/materials/lightblue | MakeHuman Community (Data Collection AB, J. Palmius, J. Hauquier) | CC0 |
 | hair/afro01 | makehuman_system | CC0 |
 | hair/culturalibre_hair_05 | culturalibre | CC0 |
