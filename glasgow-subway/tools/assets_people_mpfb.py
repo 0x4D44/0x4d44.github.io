@@ -372,6 +372,7 @@ def macro_dict(spec):
     md['race'] = dict(asian=a, caucasian=c, african=f)
     return md
 
+REST_MOUTH_UP = 0.3
 FACE_REGIONS = dict(nose=0.5, mouth=0.3, chin=0.5, cheek=0.5, eyebrows=0.4, forehead=0.45, ears=0.5, eyes=0.35)   # region -> the largest weight used there   # (mouth 0.3, was 0.45: lopsided mouths and smirks at rest on ya_smile_polo, ya_tattoo_tank, teen_runner, woman_student, ya_ginger_braid ... - reviews 36 - 40)
 
 def face_targets(human, seed):
@@ -400,6 +401,8 @@ def face_targets(human, seed):
             # to the nose - the pouts, scowls and smirks of review 46: adult_smile_blouse, woman_midi, ya_smile_halter. The draw is kept here too.)
             if key in ('mouth-angles', 'mouth-scale-depth', 'mouth-lowerlip-ext', 'mouth-upperlip-ext') or (key == 'mouth-trans' and way in ('forward', 'backward')) or (key == 'eyebrows-angle' and way == 'down'): continue
             for path in groups[key][way]: TargetService.load_target(human, path, weight=w); n += 1
+    # a resting mouth a little up at the corners: with the seeded corner targets gone, the base mesh's neutral mouth read as glum on nearly everyone (reviews 53 - 57)
+    TargetService.load_target(human, os.path.join(root, 'mouth', 'mouth-angles-up.target.gz'), weight=REST_MOUTH_UP); n += 1
     print('face: %s %d targets' % (seed, n))
 
 def shape_targets(human, spec):
