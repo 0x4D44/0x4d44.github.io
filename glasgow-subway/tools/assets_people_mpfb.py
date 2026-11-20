@@ -31,7 +31,7 @@ PEOPLE = [
          clothes=['elvs_male_shirt_tie_tucked1', 'elvs_male_trouser', 'mindfront_shoes_oxford_male']),
     dict(id='man_hoodie', kind='man', outfit='trousers', H=1.74, gender=1, age=0.40, weight=0.45, muscle=0.45, race=(0.1, 0.5, 0.4), skin='young_caucasian_male2', eye='brown', brows='eyebrow012', lashes=None, hair='culturalibre_hair_05', hair_col='#3a281c', face=True,
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_male_classic_jeans', 'culturalibre_sneakers']),
-    dict(id='man_longcoat', lod_cloth=1000, lod_uv=True, kind='elder', outfit='trousers', H=1.80, gender=1, age=0.88, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='bluegreen', brows='eyebrow009', lashes=None, hair='short01', hair_col='#8c8c8c', hair_lift=True, face=True,
+    dict(id='man_longcoat', lod_cloth=1000, lod_uv=True, kind='elder', outfit='trousers', H=1.80, gender=1, age=0.88, weight=0.5, muscle=0.5, race=(0.0, 1.0, 0.0), skin='old_caucasian_male', eye='brown', brows='eyebrow009', lashes=None, hair='short01', hair_col='#8c8c8c', hair_lift=True, face=True,
          clothes=['male_elegantsuit01', 'mindfront_shoes_monk_strap_male']),
     dict(id='man_elder', kind='elder', outfit='trousers', H=1.68, gender=1, age=0.88, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='jartur69_old_slavic_male_with_genitals_and_beard', eye='grey', brows='eyebrow008', lashes=None, hair='short01', hair_col='#d0d0d0', hair_lift=True, face=True,
          clothes=['mindfront_knitted_sweater_01', 'mindfront_male_trousers_1', 'mindfront_shoes_oxford_male']),
@@ -396,6 +396,9 @@ def face_targets(human, seed):
             # (mouth-trans-in/out and nose-trans-in/out have no l-/r- pair: they slide the whole mouth or nose sideways, off the middle of the face - review 15's lopsided
             # mouths and smirks. The draw is kept, so every other face is as it was.)
             if way in ('in', 'out') and key.endswith('-trans'): continue
+            # (nor the shapes that read as an expression held at rest: the corners of the mouth turned down or up, the whole mouth pushed out or in, and brows angled down
+            # to the nose - the pouts, scowls and smirks of review 46: adult_smile_blouse, woman_midi, ya_smile_halter. The draw is kept here too.)
+            if key in ('mouth-angles', 'mouth-scale-depth', 'mouth-lowerlip-ext', 'mouth-upperlip-ext') or (key == 'mouth-trans' and way in ('forward', 'backward')) or (key == 'eyebrows-angle' and way == 'down'): continue
             for path in groups[key][way]: TargetService.load_target(human, path, weight=w); n += 1
     print('face: %s %d targets' % (seed, n))
 
