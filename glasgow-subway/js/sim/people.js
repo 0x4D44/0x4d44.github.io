@@ -1145,7 +1145,7 @@ export class AnimCrowd {
     if (!gs) {
       if (!walking && !standing) return;   // (anyone standing has the gait on the legs: their feet stay planted while the clip sways the body)   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
-      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._clipAnkles(p) }), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
+      const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._clipAnkles(p) }), opts, gb, wU: 0, wL: 0, hold: walking ? 0 : GAIT_TAIL, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
     }
     if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, { ...gs.opts, plantAt: this._clipAnkles(p) }); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
     { const quiet = p.settleGait && p.state !== 'pole' ? (p.char.pools.idle || []).find((c) => /idle_a$/.test(c.name)) : standing && p.curClip && !/^walk/.test(p.curClip.name) ? p.curClip : null; gs.g.standAt = quiet ? this.measure(p.char, quiet).ankles2 : null; }   // (a stepped turn ends standing where the idle clip has its feet: the hand-back to the clip slid a foot 35 - 39 cm - review 47)
