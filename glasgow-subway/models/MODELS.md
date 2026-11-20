@@ -460,5 +460,12 @@ Armfit, legradii and the skin budgets re-derived from the rebuilt files.
 - **Tools.** `people_lodhair.py` copies `_SEAT` with the hair parts it moves.
 - Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
 
+## Review 46 fixes
+
+- **No held expressions at rest.** `face_targets` now skips the seeded face targets that read as an expression rather than a face: the corners of the mouth turned down or up (`mouth-angles`, `mouth-lowerlip-ext`, `mouth-upperlip-ext`), the whole mouth pushed forward or back (`mouth-trans` forward / backward, `mouth-scale-depth`), and brows angled down to the nose (`eyebrows-angle` down). The draws are still made, so every other feature of every face is unchanged.
+- This answers the scowl (`woman_midi`, `ya_smile_halter`) and the crooked pout (`adult_smile_blouse`) that review 46 found.
+- `man_longcoat`'s eyes are brown (the pale blue-green read as washed out at every distance).
+- Rebuilt both files. The post-build chain ran as usual and the skin budgets were re-derived.
+
 ## Known gaps / TODO
 Nose shape is faceted; no door hinge animations on saloon end doors; vertex AO not baked; station tile texture density 0.125 m; escalator/stairs simplified.
