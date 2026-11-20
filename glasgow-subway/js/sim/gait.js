@@ -275,6 +275,9 @@ export function newGait(B, opts = {}) {
 // (adv: where it is for a person who has gone on `adv` m further along their heading - the place a planned stop ends)
 function standTarget(g, s, adv = 0) {
   const B = g.body, o = B.leg[s], sgn = s ? 1 : -1, sx = B.hipHalf * 0.92, az = B.P0[B.ix['foot_' + o.sd]][2];
+  // g.standAt: where the clip the person goes back to has each ankle ([x, z] in the body's own frame) - stand there, and the clip's legs take over without moving the feet
+  if (g.standAt && g.standAt[s]) { const A = rotY([g.standAt[s][0], 0, g.standAt[s][1]], g.yaw), psi = g.yaw - sgn * 7 * D2R, a0 = stanceAnkle(o, [0, 0], psi, 0);
+    return { H: [g.x - Math.sin(g.yaw) * adv + A[0] - a0[0], g.z - Math.cos(g.yaw) * adv + A[2] - a0[2]], psi }; }
   const l = rotY([sgn * sx, 0, az + B.heelBack], g.yaw);
   return { H: [g.x - Math.sin(g.yaw) * adv + l[0], g.z - Math.cos(g.yaw) * adv + l[2]], psi: g.yaw - sgn * 7 * D2R };
 }
