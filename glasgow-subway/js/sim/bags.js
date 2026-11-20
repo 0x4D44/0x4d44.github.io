@@ -290,7 +290,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
   if (where === 'floor') {
     const yaw = fz > 0 ? 0 : Math.PI, sd0 = fit.side, walk = o && o.walk ? Math.min(1, o.walk) : 0, lift = !!(o && o.lift);
     rig.gh = sit ? -1 : 0;
-    if (fresh) rig.tow = sit || pole ? 0 : walk; else rig.tow += ((sit || pole ? 0 : walk) - rig.tow) * 0.14;
+    const tw = sit || (pole && !(o && o.turn)) ? 0 : walk; if (fresh) rig.tow = tw; else rig.tow += (tw - rig.tow) * (tw < rig.tow && o && o.settle ? 0.035 : 0.14);   // (set back upright slowly after a stepped turn - snapped back in 0.25 s, 36 cm at up to 7 m/s - review 53; and towed round by a pole holder too)
     if (sit) {   // on the floor in front of the knees, the pull handle stowed
       at(B.calf_l, v); at(B.calf_r, u); const kx = (v.x + u.x) / 2, kf = (v.z + u.z) / 2; at(B.foot_l, v); at(B.foot_r, u);
       const ff = fz * Math.max(fz * kf, fz * v.z + 0.17 * rig.s, fz * u.z + 0.17 * rig.s);   // clear of the knees and of the toes

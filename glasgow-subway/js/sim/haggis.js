@@ -29,11 +29,14 @@ export function followStep(h, o, dt, avoid) {
   const want = d > HAGGIS.slack ? Math.min(HAGGIS.vmax, d * 3.2) : 0, lim = HAGGIS.acc * dt;
   h.v += Math.max(-lim, Math.min(lim, want - h.v));
   const step = Math.min(d, h.v * dt);
-  if (d > 1e-6 && step > 0) { h.x += dx / d * step; h.z += dz / d * step; h.ph = (h.ph + step / HAGGIS.stride) % 1; }
+  const x0 = h.x, z0 = h.z;
+  if (d > 1e-6 && step > 0) { h.x += dx / d * step; h.z += dz / d * step; }
   if (avoid) for (const a of avoid) {   // nobody's legs: pushed out round anyone else standing or walking near (review 31 saw it trot through them)
     const ax = h.x - a.x, az = h.z - a.z, r = Math.hypot(ax, az);
     if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k; }
   }
+  // the legs go as far as it really went: pushed back by someone's legs, it trotted on the spot at full speed for seconds (review 53); blocked, it slows and stands
+  const moved = Math.hypot(h.x - x0, h.z - z0); h.ph = (h.ph + moved / HAGGIS.stride) % 1; if (step > 1e-4 && moved < 0.3 * step) h.v *= Math.max(0, 1 - dt * 6);
   const face = h.v > 0.15 && d > 0.05 ? Math.atan2(dx, dz) : Math.atan2(o.x - h.x, o.z - h.z);   // going: where it goes; stopped: it looks up at its owner
   let e = face - h.yaw; while (e > Math.PI) e -= 2 * Math.PI; while (e < -Math.PI) e += 2 * Math.PI;
   h.yaw += e * Math.min(1, dt * 8);
