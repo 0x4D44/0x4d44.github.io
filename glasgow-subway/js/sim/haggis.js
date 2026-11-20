@@ -23,7 +23,7 @@ export function petPlace(o) {
 
 /** one step of the following: h = { x, z, yaw, v, ph } is moved towards its place by its owner o = { x, z, yaw, sit }. yaw here is the haggis's own heading,
  *  atan2(dx, dz) of the way it goes (its nose is +z of the model). Returns h. */
-export function followStep(h, o, dt, avoid) {
+export function followStep(h, o, dt, avoid, clamp) {
   const t = petPlace(o); let dx = t.x - h.x, dz = t.z - h.z; const d = Math.hypot(dx, dz);
   if (!(d < HAGGIS.snap) || h.v == null) { h.x = t.x; h.z = t.z; h.v = 0; h.ph = h.ph || 0; h.yaw = Math.atan2(-Math.sin(o.yaw), -Math.cos(o.yaw)); return h; }
   const want = d > HAGGIS.slack ? Math.min(HAGGIS.vmax, d * 3.2) : 0, lim = HAGGIS.acc * dt;
@@ -36,7 +36,8 @@ export function followStep(h, o, dt, avoid) {
     if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k; }
   }
   // the legs go as far as it really went: pushed back by someone's legs, it trotted on the spot at full speed for seconds (review 53); blocked, it slows and stands
-  const moved = Math.hypot(h.x - x0, h.z - z0); h.ph = (h.ph + moved / HAGGIS.stride) % 1; if (step > 1e-4 && moved < 0.3 * step) h.v *= Math.max(0, 1 - dt * 6);
+  if (clamp) clamp(h);   // (the floor's edge too, before the legs are moved: held back by it after, it trotted on the spot - review 54)
+  const moved = Math.hypot(h.x - x0, h.z - z0); h.ph = (h.ph + moved / HAGGIS.stride) % 1; if (step > 1e-4 && moved < 0.3 * step) h.v = Math.max(0, h.v - 2 * HAGGIS.acc * dt);   // (blocked, it brakes to a stand: slowed by a factor it settled at 1 m/s, frozen mid-stride - review 54)
   const face = h.v > 0.15 && d > 0.05 ? Math.atan2(dx, dz) : Math.atan2(o.x - h.x, o.z - h.z);   // going: where it goes; stopped: it looks up at its owner
   let e = face - h.yaw; while (e > Math.PI) e -= 2 * Math.PI; while (e < -Math.PI) e += 2 * Math.PI;
   h.yaw += e * Math.min(1, dt * 8);
