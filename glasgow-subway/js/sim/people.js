@@ -594,7 +594,7 @@ export class AnimCrowd {
   /** test hook: give a person a bag by hand ({ kind, colour, hand } or null) */
   _bagSet(p, bag) { dropBag(p.bagRig); p.bag = bag; if (p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; } this._bagOn(p); return !!p.bagRig; }
   /** how a wheeled case is handled this frame: towed as far as the person is walking, carried on the stairs */
-  _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0); this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; return this._bh; }
+  _bagHow(p) { if (!p.bagRig || p.bagRig.kind !== 'trolley') return null; const w = p.settleTurn || p.settleGait ? 1 : p.gait ? p.gait.wU : (p.cur && /^walk/.test(p.cur.getClip().name) ? 1 : 0);   /* (stepping round or to a new spot, the case is taken by the handle: left standing, it swept round its owner on the floor untouched - review 52) */ this._bh = this._bh || {}; this._bh.walk = w; this._bh.lift = !!p.stair; return this._bh; }
   /** a case carried up or down the stairs is held up by a bent arm (people review 1: the big case stayed at foot level and ran through the steps) */
   _carryStep(p, dt) { const g = p.gait; if (!g || !p.bagRig || p.bagRig.kind !== 'trolley') return; const c = g.carry || (g.carry = [0, 0]), want = p.stair ? 0.5 : 0; c[0] += (want - c[0]) * (1 - Math.exp(-6 * dt)); if (c[0] < 0.002 && !want) c[0] = 0; }
   /** test hook: set a person's smile by hand (0..1) */
