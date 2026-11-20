@@ -23,7 +23,7 @@ const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(l
 // ?bags=0: nobody carries a bag (bags.js)
 const NO_BAGS = typeof location !== 'undefined' && /[?&]bags=0(&|$)/.test(location.search || '');
 const NO_PHONES = typeof location !== 'undefined' && /[?&]phones=0(&|$)/.test(location.search || '');
-const STEP_TURN = 1.0;   // rad/s: the turn on the spot of a rider stepping round (to sit, after standing up, at a new spot)
+const STEP_TURN = 1.6;   // rad/s: the turn on the spot of a rider stepping round (to sit, after standing up, at a new spot)
 const FLOOR_BONE = 0.025;   // m: the lowest a foot or ball-of-foot bone may be above the floor while sitting down or getting up (standing, they are at 2.5 - 4.5 cm)
 const HOLD_IN = 0.55, HOLD_OUT = 0.5;   // s: the arms come up to the phone over HOLD_IN, and go back down over HOLD_OUT
 const PHONE_USE = 0.25, PHONE_CALL = 0.28;   // the share of a standing grown-up's idle bouts spent on a phone, and of those the share that are a call (the rest are typing / reading)
@@ -977,8 +977,8 @@ export class AnimCrowd {
     const w = p.settleTurn; w.t += dt; const g = p.gait && p.gait.g, still = !g || (!g.walking && !g.feet.some((f) => f.mode === 'swing'));
     if (Math.abs(angDiff(p.yaw, w.yaw)) < 0.03) w.done += dt; else w.done = 0;
     const aligned = !g || g.feet.every((f) => Math.abs(angDiff(f.psi, w.yaw)) < 0.45);   // (both feet round too: released with one still 70 - 90 degrees off, the clip swept it 20 - 42 cm - review 48)
-    if (!w.rel && ((w.done > 0.3 && still && aligned) || w.done > 2 || w.t > 5)) { w.rel = true; p.gaitRelease = true; p.yawT = w.yaw; }   // faced round: the gait lets go of the legs, standing (GAIT_OUT)...
-    if (w.rel && (!p.gait || (p.gait.wL <= 0 && p.gait.wU <= 0) || w.t > 4)) { p.settleTurn = null; p.gaitRelease = false; p.settleGait = false; p.static = true; p.yawT = null; p.yaw = w.yaw; if (w.cb) w.cb(p); }   // ...then on (sitting down: with the gait still on the legs as the hips went back, the feet slid 13 - 22 cm)
+    if (!w.rel && ((w.done > 0.25 && still && aligned) || w.done > 2 || w.t > 7)) { w.rel = true; p.gaitRelease = true; p.yawT = w.yaw; }   // faced round: the gait lets go of the legs, standing (GAIT_OUT)...
+    if (w.rel && (!p.gait || (p.gait.wL <= 0 && p.gait.wU <= 0) || w.t > 9)) {   /* (the failsafe after the gait has had time to let go: at 4 s, a turn of 140 degrees or more snapped the legs back to the clip in one frame - review 49) */ p.settleTurn = null; p.gaitRelease = false; p.settleGait = false; p.static = true; p.yawT = null; p.yaw = w.yaw; if (w.cb) w.cb(p); }   // ...then on (sitting down: with the gait still on the legs as the hips went back, the feet slid 13 - 22 cm)
   }
   _tweenStep(p, dt) {
     const w = p.tween; w.t += dt; const u = Math.min(1, w.t / w.dur), k = w.lin ? u : u * u * (3 - 2 * u);
@@ -1067,7 +1067,7 @@ export class AnimCrowd {
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (p.manFade) this._manFade(p);
-      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait)) this._gaitStep(p, dt);   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
       if (upd && p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit)) this._floorFeet(p);
       if (hold && upd) this._holdStep(p, dt, !animate);
       if (upd) this._fingers(p, dt, !animate);
@@ -1143,12 +1143,12 @@ export class AnimCrowd {
   _gaitStep(p, dt) {
     const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = (p.state === 'stand' || !!p.paused || (p.settleGait && p.state !== 'sit')) && !p.gaitRelease; let gs = p.gait;   // (gaitRelease: turned to sit down, the legs go back to the clip before the sit starts)
     if (!gs) {
-      if (!walking && !(standing && p.yawT != null && Math.abs(angDiff(p.yaw, p.yawT)) > 0.35) && !(standing && p.settleGait)) return;   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
+      if (!walking && !standing) return;   // (anyone standing has the gait on the legs: their feet stay planted while the clip sways the body)   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
       const opts = this._gaitOpts(p); gs = p.gait = { g: G.newGait(gb.body, { ...opts, plantAt: this._clipAnkles(p) }), opts, gb, wU: 0, wL: 0, hold: 0, rig: null, phase: 0, t: this._clock, px: p.x, pz: p.z, py: p.yaw };
     }
     if (this._clock - gs.t > 0.3 || Math.hypot(p.x - gs.px, p.z - gs.pz) > 0.6) { gs.opts.seed = (gs.opts.seed + 0x9e3779b1) >>> 0; gs.g = G.newGait(gs.gb.body, { ...gs.opts, plantAt: this._clipAnkles(p) }); gs.px = p.x; gs.pz = p.z; gs.py = p.yaw; }   // not seen for a while / moved bodily (not walked): plant afresh
-    { const quiet = p.settleGait && (p.state === 'pole' && p.curClip ? p.curClip : (p.char.pools.idle || []).find((c) => /idle_a$/.test(c.name))); gs.g.standAt = quiet ? this.measure(p.char, quiet).ankles2 : null; }   // (a stepped turn ends standing where the idle clip has its feet: the hand-back to the clip slid a foot 35 - 39 cm - review 47)
+    { const quiet = p.settleGait && p.state !== 'pole' ? (p.char.pools.idle || []).find((c) => /idle_a$/.test(c.name)) : standing && p.curClip && !/^walk/.test(p.curClip.name) ? p.curClip : null; gs.g.standAt = quiet ? this.measure(p.char, quiet).ankles2 : null; }   // (a stepped turn ends standing where the idle clip has its feet: the hand-back to the clip slid a foot 35 - 39 cm - review 47)
     if (walking) gs.hold = 0; else gs.hold += dt;
     gs.wU = walking || gs.hold < GAIT_TAIL ? Math.min(1, gs.wU + dt / GAIT_IN) : Math.max(0, gs.wU - dt / GAIT_OUT);
     gs.wL = walking || standing ? Math.min(1, gs.wL + dt / GAIT_IN) : Math.max(0, gs.wL - dt / GAIT_OUT); gs.t = this._clock;
