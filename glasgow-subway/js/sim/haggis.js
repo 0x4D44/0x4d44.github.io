@@ -35,12 +35,13 @@ export function followStep(h, o, dt, avoid, clamp) {
     const ax = h.x - a.x, az = h.z - a.z, r = Math.hypot(ax, az);
     if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k;
       // and round them, the way that leads to its place: pushed straight back it stood behind someone's legs while its owner walked on, the lead stretched to 4.7 m (review 55)
-      if (r > 1e-4 && step > 0) { let tx = -az / r, tz = ax / r; if (tx * dx + tz * dz < 0) { tx = -tx; tz = -tz; } h.x += tx * step; h.z += tz * step; } }
+      if (r > 1e-4 && step > 0) { let tx = -az / r, tz = ax / r; if (tx * dx + tz * dz < 0) { tx = -tx; tz = -tz; } h.x += tx * step * 0.6; h.z += tz * step * 0.6; } }
   }
   // the legs go as far as it really went: pushed back by someone's legs, it trotted on the spot at full speed for seconds (review 53); blocked, it slows and stands
   if (clamp) clamp(h);   // (the floor's edge too, before the legs are moved: held back by it after, it trotted on the spot - review 54)
   const moved = Math.hypot(h.x - x0, h.z - z0); h.ph = (h.ph + moved / HAGGIS.stride) % 1; if (step > 1e-4 && moved < 0.3 * step) h.v = Math.max(0, h.v - 2 * HAGGIS.acc * dt);   // (blocked, it brakes to a stand: slowed by a factor it settled at 1 m/s, frozen mid-stride - review 54)
-  const face = h.v > 0.15 && d > 0.05 ? Math.atan2(dx, dz) : Math.atan2(o.x - h.x, o.z - h.z);   // going: where it goes; stopped: it looks up at its owner
+  { const m = Math.hypot(h.x - x0, h.z - z0), cap = HAGGIS.vmax * dt; if (m > cap) { h.x = x0 + (h.x - x0) * cap / m; h.z = z0 + (h.z - z0) * cap / m; if (avoid) for (const a of avoid) { const ax = h.x - a.x, az = h.z - a.z, r = Math.hypot(ax, az); if (r < HAGGIS.clear && r > 1e-4) { h.x = a.x + ax * HAGGIS.clear / r; h.z = a.z + az * HAGGIS.clear / r; } } } }   // (never faster than its scuttle: round legs it once went 3.6 m/s - review 56)
+  const mvx = h.x - x0, mvz = h.z - z0, face = h.v > 0.15 && Math.hypot(mvx, mvz) > 1e-4 ? Math.atan2(mvx, mvz) : h.v > 0.15 && d > 0.05 ? Math.atan2(dx, dz) : Math.atan2(o.x - h.x, o.z - h.z);   // (it faces the way it really goes: facing its place while slid round legs, it crabbed 60 degrees sideways - review 56)   // going: where it goes; stopped: it looks up at its owner
   let e = face - h.yaw; while (e > Math.PI) e -= 2 * Math.PI; while (e < -Math.PI) e += 2 * Math.PI;
   h.yaw += e * Math.min(1, dt * 8);
   return h;

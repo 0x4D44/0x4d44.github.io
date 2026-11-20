@@ -323,10 +323,11 @@ class Sim {
     if (ci < 0 || !q.char) return away('no car');
     if (sc.people.some((r) => r.char === q.char)) return away('twin aboard');
     const pend = (X.pend || (X.pend = {}))[ci] || (X.pend[ci] = []);   // (the others already walking to this car count too: several boarders checked at once each passed - review 17, 3 of 7 trousers became 5 of 9)
-    if (sc.mixOver(tv.cars[ci], q.char, pend)) {   // (that car would be over half one garment: the next door along whose car would not, if there is one - review 34 counted 13 of 23 boarders turned away by this alone)
+    const live = (L) => L.filter((c) => this.crowd.people.some((o) => o.char === c && o.routed));   // (only those still on their way count as coming: one sent to a car who never got on held its mix open - 6 of 11 in shorts or leggings for 72 s, review 56)
+    if (sc.mixOver(tv.cars[ci], q.char, live(pend))) {   // (that car would be over half one garment: the next door along whose car would not, if there is one - review 34 counted 13 of 23 boarders turned away by this alone)
       if (tried < 3) { const zq = q.z, zc0 = this._trainCentreZl(), order = this.doorZ.map((d, j) => j).filter((j) => j !== k).sort((a, b) => Math.abs(zc0 + this.doorZ[a] - zq) - Math.abs(zc0 + this.doorZ[b] - zq));
         for (const j of order.slice(0, 3)) { const cj = tv.carInfo.findIndex((i) => Math.abs(this.doorZ[j] - i.zc) < i.len / 2 + 0.2); if (cj < 0 || cj === ci) continue; const pj = (X.pend || {})[cj] || [];
-          if (Math.abs(zc0 + this.doorZ[j] - zq) < 9 && !sc.mixOver(tv.cars[cj], q.char, pj)) return this._routeBoarder(q, j, X, tried + 1); } }
+          if (Math.abs(zc0 + this.doorZ[j] - zq) < 9 && !sc.mixOver(tv.cars[cj], q.char, live(pj))) return this._routeBoarder(q, j, X, tried + 1); } }
       return away('garment mix');
     }
     pend.push(q.char);   // (nor would they make one garment over half of that car: they wait for the next train - review 15)   // (the same person is already aboard this train: they wait for the next one - review 5 saw woman_scarf twice in one train)
