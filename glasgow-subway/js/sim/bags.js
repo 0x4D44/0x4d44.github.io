@@ -302,7 +302,7 @@ export function stepBag(rig, sit, pole, fresh, o) {
     }
     if (rig.handle) rig.handle.position.y = 0;
     // standing: upright beside the leg and a little behind.  Towed: tipped on to the wheels under the handle, the grip in the hand, the case rolling behind and outside the heel
-    if (walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off: it goes back to its place beside the leg when next stood)
+    if (rig.tow > 0.99 && walk > 0.5 && !(o && o.settle)) rig.park = null;   // (walking off, once it is fully in tow - not drawn standing then - it goes back to its place beside the leg when next stood; cleared at once, the standing case jumped 0.13 - 0.35 m in a frame, review 58)
     // after a turn on the spot it stays where it was towed to, and is stood up there: moved back to its place beside the leg it slid 0.3 - 0.5 m with no hand on it (reviews 53 - 57)
     const sx = rig.park ? rig.park[0] : fit.midx + sd0 * (fit.hip + rig.w / 2 + 0.06), sz = rig.park ? rig.park[1] : -fz * 0.1, t = rig.tow;
     if (t < 0.01) { mesh.position.set(sx, 0, sz); mesh.rotation.set(0, yaw, 0); return; }
