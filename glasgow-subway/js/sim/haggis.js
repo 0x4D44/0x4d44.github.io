@@ -33,7 +33,9 @@ export function followStep(h, o, dt, avoid, clamp) {
   if (d > 1e-6 && step > 0) { h.x += dx / d * step; h.z += dz / d * step; }
   if (avoid) for (const a of avoid) {   // nobody's legs: pushed out round anyone else standing or walking near (review 31 saw it trot through them)
     const ax = h.x - a.x, az = h.z - a.z, r = Math.hypot(ax, az);
-    if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k; }
+    if (r < HAGGIS.clear) { const k = r > 1e-4 ? HAGGIS.clear / r : 0; h.x = a.x + (k ? ax * k : HAGGIS.clear); h.z = a.z + az * k;
+      // and round them, the way that leads to its place: pushed straight back it stood behind someone's legs while its owner walked on, the lead stretched to 4.7 m (review 55)
+      if (r > 1e-4 && step > 0) { let tx = -az / r, tz = ax / r; if (tx * dx + tz * dz < 0) { tx = -tx; tz = -tz; } h.x += tx * step; h.z += tz * step; } }
   }
   // the legs go as far as it really went: pushed back by someone's legs, it trotted on the spot at full speed for seconds (review 53); blocked, it slows and stands
   if (clamp) clamp(h);   // (the floor's edge too, before the legs are moved: held back by it after, it trotted on the spot - review 54)
