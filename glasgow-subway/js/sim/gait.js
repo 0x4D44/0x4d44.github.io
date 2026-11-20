@@ -305,7 +305,8 @@ function startSwing(g, f, tgt, o) {   // o = { T (s) | null for phase driven, th
 }
 
 // ------------------------------------------------------------------------------------------------------------------------ the update
-const V_ON = 0.16, V_OFF = 0.09, ACC_TAU = 0.1, ACC_MAX = 3;   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
+const V_ON = 0.16, V_OFF = 0.09, ACC_TAU = 0.1, ACC_MAX = 3;
+const STEP_CAP = 1.15;   // a landing is at most this many steps (of the speed being reached) on from the other foot   // (ACC_*: the smoothing (s) and the ceiling (m/s^2) of the acceleration the landings are placed for)
 /** Advance the gait by dt (<= 1/30 s). inp = { x, z, yaw (the person's world position and heading), v (ground speed), walking (the game wants a walk),
  *  stopD (optional: the metres the body still has to travel along its heading before it comes to rest, for a person who is walking to a place to STAND - the last steps then land where
  *  they will stand instead of a stride ahead of it) } */
@@ -446,6 +447,9 @@ function landTarget(g, s, P, rem) {
   const up = clamp(g.acc, 0, ACC_MAX), PL = up > 0 ? gaitParams(g.body, P.v + up * T, g.var.cad) : P, ahead = PL.aH * (sw ? sw.kL : 1) + P.v * T + 0.5 * up * T * T;
   const toe = (g.var.yawBias + (sgn > 0 ? -6.5 : 6.5)) * D2R + (sw ? sw.dToe : 0);
   const W = { H: [g.x + fwd[0] * ahead + rgt[0] * sgn * half, g.z + fwd[1] * ahead + rgt[1] * sgn * half], psi: g.yaw + toe };
+  // no longer a step than the speed being reached takes: early in a walk the swing is long (the cadence is still low) and the acceleration term put the foot 0.8 - 0.97 m on
+  // from the other, a fencer's lunge with the pelvis dropped 11 - 21 cm, where a steady stride is about 0.6 m (review 47)
+  { const o = g.feet[1 - s].H, lead = (W.H[0] - o[0]) * fwd[0] + (W.H[1] - o[1]) * fwd[1], cap = STEP_CAP * PL.SL; if (lead > cap) { W.H = [W.H[0] - fwd[0] * (lead - cap), W.H[1] - fwd[1] * (lead - cap)]; } }
   if (g.stopD != null) {   // on the way to a planned stop the last steps shorten: a foot lands no further on than where it will stand once the body has got there (a person does not
     // stop with a foot a stride ahead and then walk it back), blending into the walking placement while that is still well short of it
     const st = standTarget(g, s, g.stopD), al = (h) => (h[0] - g.x) * fwd[0] + (h[1] - g.z) * fwd[1], k = smoother((al(W.H) - al(st.H) + 0.08) / 0.1);

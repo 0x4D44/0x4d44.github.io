@@ -16,7 +16,7 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const angDiff = (a, b) => { let d = b - a; d -= PI2 * Math.round(d / PI2); return d; };
 
 export const STEER = {
-  A: 1.6,        // m/s2, speeding up from rest (about a step and a half to a comfortable walk)
+  A: 1.35,       // m/s2, speeding up from rest (about a step and a half to a comfortable walk)
   BR: 1.3,       // m/s2, the planned stop: from 1.2 m/s it takes 0.9 s and 0.55 m
   BMAX: 3.0,     // m/s2, the hardest a person brakes when they have to (something in the way, a sharp corner)
   PIVOT: 2.2,    // rad/s, the fastest turn on the spot (126 deg/s)
