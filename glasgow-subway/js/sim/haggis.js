@@ -5,7 +5,7 @@
 
 export const HAGGIS = {
   behind: 0.78, aside: 0.26,     // m: where it wants to be, behind its owner and a little to their left (the lead hand)
-  sitAhead: 0.42, sitAside: 0.34, // ...and when the owner sits: by their feet
+  sitAhead: 0.4, sitAside: 0.27,  // ...and when the owner sits: beside their own shins, inside the seat's width (0.34 aside put it, and the lead from the lap, through the next rider's knees - review 45)
   slack: 0.10,                   // m: closer to its place than this, it stands still
   vmax: 2.3, acc: 7,             // m/s, m/s^2: a hurried scuttle at the most
   snap: 4.5,                     // m: further from its owner than this (they boarded, the crowd was re-dealt) it is simply put in its place
