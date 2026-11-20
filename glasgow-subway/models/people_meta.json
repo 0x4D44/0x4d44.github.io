@@ -756,7 +756,7 @@
    "legLengthM": 0.704,
    "walkSpeedMps": 1.1,
    "walkFastSpeedMps": 1.77,
-   "tris": 7998,
+   "tris": 7997,
    "clips": [
     "idle_a",
     "idle_b",
@@ -1556,7 +1556,7 @@
    "legLengthM": 0.842,
    "walkSpeedMps": 1.31,
    "walkFastSpeedMps": 2.11,
-   "tris": 7995,
+   "tris": 7994,
    "clips": [
     "idle_a",
     "idle_b",
@@ -2037,7 +2037,7 @@
    "legLengthM": 0.839,
    "walkSpeedMps": 1.31,
    "walkFastSpeedMps": 2.11,
-   "tris": 8000,
+   "tris": 7999,
    "clips": [
     "idle_a",
     "idle_b",
@@ -3837,7 +3837,7 @@
    "legLengthM": 0.977,
    "walkSpeedMps": 1.52,
    "walkFastSpeedMps": 2.45,
-   "tris": 7997,
+   "tris": 7996,
    "clips": [
     "idle_a",
     "idle_b",
