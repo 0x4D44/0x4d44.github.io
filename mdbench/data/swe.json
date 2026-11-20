@@ -296,7 +296,7 @@
    "tags": [
     "perf"
    ],
-   "note": "Speed was timed on three different days on a shared machine. The four seats added on 18 Nov were timed on a near-idle box, the others under heavier load. The speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable. The top seven seats score within 3 points of each other; their order is within judge noise."
+   "note": "Speed was timed on four different days on a shared machine. The four seats added on 18 Nov were timed on a near-idle box, the others under heavier load. The speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable. The top seven seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 6.0 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6 Astra xhigh, GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra and GPT-6.1 Sol ultra."
   }
  ],
  "results": [
@@ -4182,6 +4182,102 @@
     "speed_of_ref": 0.345
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "FIX-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 21.4,
+    "rubric": 22.3,
+    "score_claude": 20.7,
+    "score_gpt": 22.1,
+    "judge_sd": 1.0,
+    "bonus": 0.0,
+    "cost_usd": 1.618,
+    "wall_min": 12.1,
+    "gates_ok": false,
+    "builds": true,
+    "parity_ok": true,
+    "speed_ok": false,
+    "speed_of_ref": -0.043
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "FIX-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 95.4,
+    "rubric": 95.6,
+    "score_claude": 95.0,
+    "score_gpt": 95.9,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 2.672,
+    "wall_min": 25.8,
+    "gates_ok": true,
+    "builds": true,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.293
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "FIX-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 96.5,
+    "rubric": 96.9,
+    "score_claude": 96.0,
+    "score_gpt": 97.0,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 11.427,
+    "wall_min": 27.2,
+    "gates_ok": true,
+    "builds": true,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.161
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "FIX-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 81.8,
+    "rubric": 86.9,
+    "score_claude": 86.7,
+    "score_gpt": 77.0,
+    "judge_sd": 4.9,
+    "bonus": 0.0,
+    "cost_usd": 18.578,
+    "wall_min": 49.2,
+    "gates_ok": true,
+    "builds": true,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.024
+   },
+   "flags": [
+    "separate_panel"
+   ]
   }
  ],
  "methodology": {
