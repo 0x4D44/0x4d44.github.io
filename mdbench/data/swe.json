@@ -235,7 +235,7 @@
    "tags": [
     "perf"
    ],
-   "note": "Speed was timed on four different days on a shared machine. The four seats added on 18 Nov were timed on a near-idle box, the others under heavier load. The speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable. The top eight seats score within 3 points of each other; their order is within judge noise."
+   "note": "Speed was timed on five different days on a shared machine. The four seats added on 18 Nov were timed on a near-idle box, the others under heavier load. GPT-5 high was not timed because it fails parity, so its speed scores 0 by rule. The speed gate (gain separated from noise) holds, but speed-of-reference fractions from different days are not strictly comparable. The top eight seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov (GPT-6.2 Sol ultra, GPT-6.2 Astra xhigh, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.1 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Sol ultra, GPT-6 Astra xhigh, GPT-6.2 Astra xhigh and GPT-6.1 Sol ultra."
   },
   {
    "id": "COD-02",
@@ -1433,6 +1433,104 @@
     "speed_of_ref": 0.79
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 26.5,
+    "rubric": 28.4,
+    "score_claude": 25.7,
+    "score_gpt": 27.3,
+    "judge_sd": 1.0,
+    "bonus": 0.0,
+    "cost_usd": 1.469,
+    "wall_min": 12.1,
+    "gates_ok": false,
+    "builds": true,
+    "hidden_pass": 0.2,
+    "parity_ok": false
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 96.3,
+    "rubric": 96.9,
+    "score_claude": 97.0,
+    "score_gpt": 95.7,
+    "judge_sd": 1.1,
+    "bonus": 0.0,
+    "cost_usd": 2.233,
+    "wall_min": 31.2,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.104
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 95.9,
+    "rubric": 96.9,
+    "score_claude": 96.0,
+    "score_gpt": 95.8,
+    "judge_sd": 0.8,
+    "bonus": 0.0,
+    "cost_usd": 9.513,
+    "wall_min": 29.9,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.112
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "COD-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 88.5,
+    "rubric": 89.4,
+    "score_claude": 88.7,
+    "score_gpt": 88.3,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 25.995,
+    "wall_min": 53.3,
+    "gates_ok": true,
+    "builds": true,
+    "hidden_pass": 1.0,
+    "parity_ok": true,
+    "speed_ok": true,
+    "speed_of_ref": 1.039
+   },
+   "flags": [
+    "separate_panel"
+   ]
   },
   {
    "seat": "sol-6.1-ultra",
@@ -4298,7 +4396,7 @@
    "Some Claude runs hit a usage limit and were resumed in the same session (flagged resumed); their cost is the session's total, including the context re-read on resume.",
    "A run that stopped early (no tool calls, or under two minutes) without hitting a cap was told to continue, up to three times (flagged nudged); its time and cost include every part.",
    "FIX-01: most seats fail the hidden display-register test (all six phase-1 seats did), so All gates shows fail for them; the judge score reflects how much of the fix each seat got right.",
-   "COD-01: the seats were timed in four groups (six, six, the two Sol medium/max seats, then the four seats added on 18 Nov, on a near-idle box) on different days on a shared machine; the speed gate holds for each, but speed-of-reference fractions across groups are not strictly comparable. Sol max was re-timed once because its first timing ran under about three times the load the others had; the first attempt is kept in its record.",
+   "COD-01: the seats were timed in five groups (six, six, the two Sol medium/max seats, the four seats added on 18 Nov, on a near-idle box, then three of the four seats added on 19 Nov; GPT-5 high was not timed because it fails parity, so its speed scores 0 by rule) on different days on a shared machine; the speed gate holds for each, but speed-of-reference fractions across groups are not strictly comparable. Sol max was re-timed once because its first timing ran under about three times the load the others had; the first attempt is kept in its record.",
    "FIX-02: Haiku's speed gain (1.15 of the reference) was timed under heavy machine load; every timing pair was faster, so its speed gate pass stands, but the size of the gain is uncertain.",
    "COD-02: one helper in the hidden tests failed to compile for seats that gave the volume type a cleanup (Drop) step, scoring them 0 for the test file rather than their code; the helper was fixed and all 14 seats were re-graded on the revised file.",
    "One run per seat per exercise so far; the design calls for three runs on design exercises, which will show as spread when they land."
