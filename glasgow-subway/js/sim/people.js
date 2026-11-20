@@ -399,7 +399,7 @@ export class AnimCrowd {
     const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
     const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
-    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; const feetB = ['foot_l', 'foot_r', 'ball_l', 'ball_r'].map((n) => sk[0].skeleton.bones.find((b) => b.name === n)).filter(Boolean), feet = [0, 0]; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     // where each hand closes (the crook of the curled middle finger, as for a bag handle): a rider holding a pole is placed so that this point is on the pole (review 14)
     const bone = (n) => sk[0].skeleton.bones.find((b) => b.name === n), G = { l: [bone('middle_01_l') || bone('hand_l'), bone('middle_02_l')], r: [bone('middle_01_r') || bone('hand_r'), bone('middle_02_r')] }, grip = { l: [0, 0, 0], r: [0, 0, 0] };
     for (let k = 0; k < N; k++) {
@@ -407,11 +407,11 @@ export class AnimCrowd {
       for (const sd of ['l', 'r']) { const [b0, b1] = G[sd]; if (!b0) continue; b0.getWorldPosition(v); if (b1) { const v1 = b1.getWorldPosition(new THREE.Vector3()); v.lerp(v1, 0.5); } grip[sd][0] += v.x / N; grip[sd][1] += v.y / N; grip[sd][2] += v.z / N; }
       let sMin = 1e9; const cv = [];
       for (const m of sk) { m.skeleton.update(); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 2) { m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld); sMin = Math.min(sMin, v.y); maxY = Math.max(maxY, v.y); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); cv.push(v.y, v.z); if (k === 0 || k === 2) keep.push(v.x, v.y, v.z); } }
-      minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z;
+      minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z; for (const fb of feetB) { fb.getWorldPosition(v); feet[0] += v.x / (N * feetB.length); feet[1] += v.z / (N * feetB.length); }
       // pelvis contact: lowest vertex y near the hips' z (excluding the feet region) = where a seat surface touches
       let c = 1e9; for (let i = 0; i < cv.length; i += 2) if (Math.abs(cv[i + 1] - h.z) < 0.22 && cv[i] > sMin + 0.25 && cv[i] < c) c = cv[i]; contact += c === 1e9 ? h.y - 0.1 : c;
     }
-    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), grip, w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
+    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), grip, feet, w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
     this.meas.set(key, r); return r;
   }
   _clip(ch, cat, rng) { const a = ch.pools[cat]; return a && a.length ? a[Math.floor((rng || this.rng)() * a.length)] : null; }
@@ -915,14 +915,33 @@ export class AnimCrowd {
     p.tween = { x0: p.x, z0: p.z, a0: p.yaw, x1: to.x, z1: to.z, a1: to.yaw, t: 0, dur, then };
   }
   /** a standing rider sits down on `seat` {x,z,yaw,seatY} */
+  /** where a seated person's feet will be (car frame): the seat (the hips) plus the plain sit clip's feet-from-hips, turned to the seat's facing. A boarder walks to here, turns
+   *  their back to the seat and sits down without moving their feet (walked to the aisle and slid back into the seat, the feet skated 15 - 50 cm - review 45) */
+  seatFeet(ch, seat) {
+    const clip = (ch.pools.sit || []).find((c) => /sit_idle/.test(c.name)) || (ch.pools.sit || [])[0]; if (!clip) return null;
+    const m = this.measure(ch, clip), dx = m.feet[0] - m.hips[0], dz = m.feet[1] - m.hips[2], c = Math.cos(seat.yaw), s = Math.sin(seat.yaw);
+    return { x: seat.x + c * dx + s * dz, z: seat.z - s * dx + c * dz };
+  }
+  /** where the feet are now (the mean of the foot and ball bones), in the person's own frame [x, z]: the clip's average is 2 - 5 cm off at any one moment of an idle */
+  _feetNow(p) {
+    if (!p.obj) return null; const bs = p._feetB && p._feetB.obj === p.obj ? p._feetB.b : (p._feetB = { obj: p.obj, b: [] }).b;
+    if (!bs.length) p.obj.traverse((o) => { if (o.isBone && /^(foot|ball)_[lr]$/.test(o.name) && !bs.some((x) => x.name === o.name)) bs.push(o); }); if (!bs.length) return null;
+    p.obj.updateMatrixWorld(true); const v = this._v, inv = this._inv || (this._inv = new this.THREE.Matrix4()); inv.copy(p.obj.matrixWorld).invert(); let x = 0, z = 0;
+    for (const o of bs) { o.getWorldPosition(v).applyMatrix4(inv); x += v.x / bs.length; z += v.z / bs.length; }
+    return [x, z];
+  }
   settle(p, seat, dur = 1.0, then = null) {
+    const turn = angDiff(p.yaw, seat.yaw);   // first a turn on the spot, back to the seat (turning while being lowered swung the feet round the hips)
+    if (Math.abs(turn) > 0.3 && p.state !== 'sit') { const f = this._feetNow(p) || (p.m && p.m.feet) || [0, 0], c0 = Math.cos(p.yaw), s0 = Math.sin(p.yaw); p.tween = { pivot: [p.x + c0 * f[0] + s0 * f[1], p.z - s0 * f[0] + c0 * f[1], f[0], f[1]], x0: p.x, z0: p.z, a0: p.yaw, x1: p.x, z1: p.z, a1: seat.yaw, t: 0, dur: 0.3 + 0.3 * Math.min(1, Math.abs(turn) / (Math.PI / 2)), then: (q) => this.settle(q, seat, dur, then) }; p.settling = seat; return; }
+    p.settling = null;
     p.mode = 'sit'; p.seatY = seat.seatY; this._enter(p, 'sit', Math.min(1.0, dur));   // (the sit blends in over the move itself: in 0.5 s of a 1 s settle the body squatted in the air ahead of the seat - review 43)
     if (p.m) { const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; p.x += c * hx + s * hz; p.z += -s * hx + c * hz; }   // x,z become the hips' again
-    p.tween = { x0: p.x, z0: p.z, a0: p.yaw, x1: seat.x, z1: seat.z, a1: seat.yaw, t: 0, dur, then };
+    p.tween = { lin: true, x0: p.x, z0: p.z, a0: p.yaw, x1: seat.x, z1: seat.z, a1: seat.yaw, t: 0, dur, then };   // (lin: the hips go back in step with the pose's blend, which is linear: eased, the feet ran 10 cm ahead and back mid-sit)
   }
   _tweenStep(p, dt) {
-    const w = p.tween; w.t += dt; const u = Math.min(1, w.t / w.dur), k = u * u * (3 - 2 * u);
+    const w = p.tween; w.t += dt; const u = Math.min(1, w.t / w.dur), k = w.lin ? u : u * u * (3 - 2 * u);
     p.x = w.x0 + (w.x1 - w.x0) * k; p.z = w.z0 + (w.z1 - w.z0) * k; p.yaw = w.a0 + angDiff(w.a0, w.a1) * k; p.dirty = true;
+    if (w.pivot) { const [X, Z, fx, fz] = w.pivot, c = Math.cos(p.yaw), sn = Math.sin(p.yaw); p.x = X - (c * fx + sn * fz); p.z = Z - (-sn * fx + c * fz); }   // (a turn on the spot turns about the feet, not the root)
     if (u >= 1) { p.tween = null; if (w.then) w.then(p); }
   }
   setEnabled(on) { if (this.enabled === on) return; this.enabled = on; if (!on) for (const p of this.people) if (p.obj) p.obj.visible = false; }
