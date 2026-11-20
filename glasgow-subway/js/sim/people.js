@@ -23,6 +23,7 @@ const CLIP_WALK = typeof location !== 'undefined' && /[?&]gait=clip(&|$)/.test(l
 // ?bags=0: nobody carries a bag (bags.js)
 const NO_BAGS = typeof location !== 'undefined' && /[?&]bags=0(&|$)/.test(location.search || '');
 const NO_PHONES = typeof location !== 'undefined' && /[?&]phones=0(&|$)/.test(location.search || '');
+const FLOOR_BONE = 0.025;   // m: the lowest a foot or ball-of-foot bone may be above the floor while sitting down or getting up (standing, they are at 2.5 - 4.5 cm)
 const HOLD_IN = 0.55, HOLD_OUT = 0.5;   // s: the arms come up to the phone over HOLD_IN, and go back down over HOLD_OUT
 const PHONE_USE = 0.25, PHONE_CALL = 0.28;   // the share of a standing grown-up's idle bouts spent on a phone, and of those the share that are a call (the rest are typing / reading)
 const GAIT_IN = 0.2, GAIT_OUT = 0.35, GAIT_TAIL = 0.6;   // s: the gait is blended in over GAIT_IN, its upper body held GAIT_TAIL after the person stops (the last foot lands, the arms settle), then blended out over GAIT_OUT; the legs stay on the gait for good (feet that stay where they were planted)
@@ -618,15 +619,23 @@ export class AnimCrowd {
   /** LOD0 (people.glb) near, LOD1 (people_lod.glb, same rig/clips) beyond ~12 m: rebuild the clone and resume the same clip at the same time */
   _swapLod(p, lod) {
     const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
+    const fe = p.fadeEnd, fd = p.fadeDur, yF = p.yFrom, pa = p.prevAct, mid = pa && fe && this._clock < fe && fd > 0, prev = mid ? pa.getClip() : null, pt = mid ? pa.time : 0;   // (in the middle of a blend - sitting down, getting up: it carries on across the swap, from where it was)
     par.remove(old); p.mixer.stopAllAction(); p.lod = lod; undressTee(old); const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; }); this._dressTee(p, obj); this._lids(p, obj);
     p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; if (p.gait) { p.gait.rig = null; const gb = this._gaitBody(p.char, lod); if (gb) { p.gait.gb = gb; p.gait.g.body = gb.body; } }   // the gait lives on, on the new skeleton
-    if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true); this._bagOn(p);
+    if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } }
+    if (clip && mid && p.cur) { const o = this._action(p, prev); o.enabled = true; o.play(); o.time = pt; p.fadeEnd = fe; p.fadeDur = fd; p.yFrom = yF; p.prevAct = o; p.manFade = { o, n: p.cur }; this._manFade(p); } p.mixer.update(0.0001); p.dirty = false; if (p.hold) { p.hold.rig = null; this._holdStep(p, 0, true); } this._place(p, true); this._bagOn(p); if (mid && p.manFade) this._floorFeet(p);
+  }
+  /** a blend carried across a model swap, weighted by hand to the end it would have had (three's own cross-fade cannot be resumed part-way) */
+  _manFade(p) {
+    const f = p.manFade; if (!f) return; const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur));
+    f.n.setEffectiveWeight(w); f.o.setEffectiveWeight(1 - w); if (w >= 1) { f.o.setEffectiveWeight(0); p.manFade = null; }
   }
   _action(p, clip) { let a = p.act.get(clip.name); if (!a) { a = p.mixer.clipAction(clip); a.setEffectiveWeight(0); a.play(); p.act.set(clip.name, a); } return a; }
   _play(p, clip, fade = this.crossfade, speed = 1) {
     if (!clip) return; const n = this._action(p, clip), o = p.cur; if (o === n) { n.timeScale = speed; return; }
     n.timeScale = speed; n.enabled = true;
     if (o && fade > 0) { n.reset().setEffectiveWeight(1).play(); n.crossFadeFrom(o, fade, false); } else { if (o) o.setEffectiveWeight(0); n.setEffectiveWeight(1); }
+    p.prevAct = o && fade > 0 ? o : null; p.manFade = null;
     p.cur = n; p.curClip = clip; p.m = this.measure(p.char, clip); p.dirty = true; p.fadeEnd = o && fade > 0 ? this._clock + fade : 0; p.fadeDur = fade; p.yFrom = p.yOff;   // (until fadeEnd the pose is a blend of two clips: audits leave it alone)
   }
   /** state -> clip choice (idle variants rotate, phone/talk/pole/fidget when the asset has them) */
@@ -728,7 +737,7 @@ export class AnimCrowd {
     const tgt = this._yOffset(p);
     // into or out of a sit the body's height follows the pose's own blend: eased in a quarter of a second, the body sat down before the legs had bent (the feet 22 - 28 cm under
     // the floor) and stood up before they had straightened (the feet 10 - 12 cm off it) - review 44
-    if (!snap && p.yFrom != null && p.fadeEnd && this._clock < p.fadeEnd && p.fadeDur > 0 && (p.state === 'sit' || p.wasSit)) { const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur)); p.yOff = p.yFrom + (tgt - p.yFrom) * w; }
+    if ((!snap || p.manFade) && p.yFrom != null && p.fadeEnd && this._clock < p.fadeEnd && p.fadeDur > 0 && (p.state === 'sit' || p.wasSit)) { const w = Math.min(1, Math.max(0, 1 - (p.fadeEnd - this._clock) / p.fadeDur)); p.yOff = p.yFrom + (tgt - p.yFrom) * w; }
     else p.yOff = snap || p.yOff == null ? tgt : p.yOff + (tgt - p.yOff) * 0.25;
     if (!(p.fadeEnd && this._clock < p.fadeEnd)) p.wasSit = p.state === 'sit';
     let x = p.x, z = p.z;
@@ -922,10 +931,20 @@ export class AnimCrowd {
     const m = this.measure(ch, clip), dx = m.feet[0] - m.hips[0], dz = m.feet[1] - m.hips[2], c = Math.cos(seat.yaw), s = Math.sin(seat.yaw);
     return { x: seat.x + c * dx + s * dz, z: seat.z - s * dx + c * dz };
   }
+  /** half sat (a blend of a standing and a sitting clip) the feet are not where either clip has them: the body's height is a blend too, and the balls of the feet went 4-6 cm
+   *  through the floor half way down. Lift the body until the lowest foot bone is FLOOR_BONE above the floor. */
+  _floorFeet(p) {
+    const bs = this._footBones(p); if (!bs) return; p.obj.updateMatrixWorld(true); const v = this._v; let lo = 1e9;
+    for (const o of bs) { o.getWorldPosition(v); p.obj.parent.worldToLocal(v); lo = Math.min(lo, v.y); }
+    const under = p.y + FLOOR_BONE - lo; if (under > 0) { p.yOff += under; p.obj.position.y += under; p.obj.updateMatrixWorld(true); }
+  }
+  _footBones(p) {
+    if (!p.obj) return null; const c = p._feetB && p._feetB.obj === p.obj ? p._feetB : (p._feetB = { obj: p.obj, b: [] });
+    if (!c.b.length) p.obj.traverse((o) => { if (o.isBone && /^(foot|ball)_[lr]$/.test(o.name) && !c.b.some((x) => x.name === o.name)) c.b.push(o); }); return c.b.length ? c.b : null;
+  }
   /** where the feet are now (the mean of the foot and ball bones), in the person's own frame [x, z]: the clip's average is 2 - 5 cm off at any one moment of an idle */
   _feetNow(p) {
-    if (!p.obj) return null; const bs = p._feetB && p._feetB.obj === p.obj ? p._feetB.b : (p._feetB = { obj: p.obj, b: [] }).b;
-    if (!bs.length) p.obj.traverse((o) => { if (o.isBone && /^(foot|ball)_[lr]$/.test(o.name) && !bs.some((x) => x.name === o.name)) bs.push(o); }); if (!bs.length) return null;
+    const bs = this._footBones(p); if (!bs) return null;
     p.obj.updateMatrixWorld(true); const v = this._v, inv = this._inv || (this._inv = new this.THREE.Matrix4()); inv.copy(p.obj.matrixWorld).invert(); let x = 0, z = 0;
     for (const o of bs) { o.getWorldPosition(v).applyMatrix4(inv); x += v.x / bs.length; z += v.z / bs.length; }
     return [x, z];
@@ -1016,13 +1035,15 @@ export class AnimCrowd {
       this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 6.5)) && !p.hidden && !(p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit))) {   /* (not in the middle of sitting down or getting up: the swap restarts the clip at full weight, and a near boarder sat on air before the seat - review 44) */ const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 6.5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
+      if (cam && hiSet && p.char.lodNode && p.char.node && (swaps < 4 || (p.lod && dist < 6.5)) && !p.hidden) {   /* (in the middle of sitting down or getting up too: the blend is carried across - review 44's boarder who sat on air was the clip restarted at full weight; held back to the end of the blend, the far model stayed in use at 6-7 m - review 45) */ const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }   // (anyone within 6.5 m on the far model swaps at once: review 3 saw everyone near on it for half a second after boarding)
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       const animate = (dist < this.rAnim || p.v > 0.2) && p.obj.visible, upd = animate || p.dirty, hold = p.hold;
       if (upd && p.look) p.look.restore();
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
+      if (p.manFade) this._manFade(p);
       if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (upd && p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit)) this._floorFeet(p);
       if (hold && upd) this._holdStep(p, dt, !animate);
       if (upd) this._fingers(p, dt, !animate);
       // the look goes on after the hold (put on first, it sent a texting arm to 97% of full stretch at a full turn of the head). Someone holding a phone turns head and neck only: the shoulders, and so the hands, stay put
