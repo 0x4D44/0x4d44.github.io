@@ -567,7 +567,7 @@ export class AnimCrowd {
   mixOver(parent, ch, extra = []) {
     let n = 0, same = 0; const g = garmentGroup(ch); for (const q of this.people) if (q.parent === parent && q.char && q.obj && !q.leaving) { n++; if (garmentGroup(q.char) === g) same++; }   // (one getting off here is not staying - review 18)
     for (const c of extra) { n++; if (garmentGroup(c) === g) same++; }
-    return n >= 4 && same + 1 > 0.5 * (n + 1);
+    return n + 1 >= 4 && same + 1 > 0.5 * (n + 1);   // (n + 1: the 3rd and 4th people into a car are checked too - 4 of 4 in trousers for 98 s, review 57)
   }
   /** would one more person in ch's garment group make it over half of the people of this crowd within r of (x, z)? (riders getting off on to a platform: review 16 counted
    *  a platform near the player over half one garment in 13 of 65 samples) */
