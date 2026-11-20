@@ -920,6 +920,7 @@ export class AnimCrowd {
   finish(q) { const i = this.people.indexOf(q); if (i < 0) return; if (q.onArrive && q.onArrive(q, false) === 'keep') return this.release(q); this._drop(q); this.people.splice(i, 1); }
   /** a seated rider gets up: into a standing pose while moving to `to` {x,z,yaw} (the aisle in front of the seat), then(p) */
   rise(p, to, dur = 0.9, then = null) {
+    if (p.state === 'sit' && p.gait) { if (p.gait.rig) p.gait.rig.restore(); p.gait = null; }   // (a gait left from before they sat would be blended in while the body is still carried out of the seat: both feet slid 21 cm sideways at 2.7 m/s - review 52)
     // standing up: straight up where the feet are, facing the way they sat, then a stepped turn to to.yaw (turned while rising - the whole body spun about 86 degrees in the
     // 0.75 s - each foot glided 30 - 52 cm across the floor - review 47). Where the ceiling will not have them standing there, or the gait cannot step them round, as before.
     if (p.state === 'sit' && !to.plain && (to.mode || 'stand') === 'stand' && this._canStepTurn(p)) {
