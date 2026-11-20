@@ -1067,7 +1067,7 @@ export class AnimCrowd {
       if (upd && hold && hold.rig) hold.rig.restore();   // the layers come off in the reverse order they went on: the hold's (arms, phone), then the gait's, leaving the mixer's own pose on the bones before it advances (see gait_three.js)
       if (upd && p.gait && p.gait.rig) p.gait.rig.restore();
       if (p.manFade) this._manFade(p);
-      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait)) this._gaitStep(p, dt);   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if (animate) { p.mixer.update(dt); p.dirty = false; if (this.gaitOn && !p.static) { this._carryStep(p, dt); this._gaitStep(p, dt); } else if (this.gaitOn && (p.state === 'stand' || p.state === 'pole' || p.gait) && !(p.tween && !p.settleGait && !p.gait)) this._gaitStep(p, dt);   /* (not while a rider is carried by a tween with no gait of their own - standing up out of a seat: made then, it skated a foot 24 - 39 cm as the body left the seat - review 50) */   /* (a standing rider too: the idle clips turn the pelvis but never move it, so the shoes slid 8 - 12 cm side to side together every few seconds - review 49; planted by the gait they stay, and step when the body has drifted off them) */ } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
       if (upd && p.fadeEnd && this._clock < p.fadeEnd && (p.state === 'sit' || p.wasSit)) this._floorFeet(p);
       if (hold && upd) this._holdStep(p, dt, !animate);
       if (upd) this._fingers(p, dt, !animate);
@@ -1141,7 +1141,7 @@ export class AnimCrowd {
     return out;
   }
   _gaitStep(p, dt) {
-    const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = (p.state === 'stand' || !!p.paused || (p.settleGait && p.state !== 'sit')) && !p.gaitRelease; let gs = p.gait;   // (gaitRelease: turned to sit down, the legs go back to the clip before the sit starts)
+    const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = (p.state === 'stand' || p.state === 'pole' || !!p.paused || (p.settleGait && p.state !== 'sit')) && !p.gaitRelease; let gs = p.gait;   // (gaitRelease: turned to sit down, the legs go back to the clip before the sit starts)
     if (!gs) {
       if (!walking && !standing) return;   // (anyone standing has the gait on the legs: their feet stay planted while the clip sways the body)   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
@@ -1289,7 +1289,7 @@ export class AnimCrowd {
     p.sp = 0;
     if (p.yawT == null || (!p.yw && Math.abs(angDiff(p.yaw, p.yawT)) < 1e-3)) return;
     let tgt = p.yawT; const g = p.settleTurn && p.gait && p.gait.g;
-    if (g) { const F = g.feet, m = F[0].psi + angDiff(F[0].psi, F[1].psi) / 2; tgt = m + Math.max(-0.8, Math.min(0.8, angDiff(m, p.yawT))); g.stoppedAt = g.t; }   // (stepped round: the body faces no more than 46 degrees past its feet and waits for them; the steps follow on as a walk's closing steps do, not an idle re-plant's)
+    if (g) { const F = g.feet, m = F[0].psi + angDiff(F[0].psi, F[1].psi) / 2; tgt = m + Math.max(-1.0, Math.min(1.0, angDiff(m, p.yawT))); g.stoppedAt = g.t; }   // (stepped round: the body faces no more than 46 degrees past its feet and waits for them; the steps follow on as a walk's closing steps do, not an idle re-plant's)
     turnToward(p, tgt, dt, p.settleTurn ? STEP_TURN : STEER.PIVOT);   // (a rider's stepped turn: at the platform's 126 deg/s the body led a planted foot by 90 - 140 degrees before it stepped - review 48)
   }
   /** What a person on the platform is looking at, and what they do about the player (waiting.js). Nobody walks off when the player comes close: they stay where they are,
