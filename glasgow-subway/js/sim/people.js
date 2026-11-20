@@ -516,11 +516,14 @@ export class AnimCrowd {
   /** what this person carries: decided once, and kept while they are on screen (through LOD swaps, and from the platform onto the train: see take) */
   _rollBag(ch) { const fit = this._bagFit(ch), bag = pickBag(this.brng, { kid: ch.kid, staff: ch.staff, kind: ch.kind, outfit: ch.outfit, id: ch.id, pet: ch.id === PET_OWNER, longHair: !fit || fit.longHair || !fit.ok }); return this.bags ? bag : null; }
   _bagOn(p) {
-    p.bagRig = null; if (!p.bag || !p.obj) return;
+    const old = p.bagRig; p.bagRig = null; if (!p.bag || !p.obj) return;
     // the bag was rolled when the person was first made, maybe on the simplified model, whose decimated hair can miss being long: a rucksack under long hair becomes a tote
     if (p.bag.kind === 'ruck' && !p.char.kid) { const f = this._bagFit(p.char); if (f && f.longHair) p.bag = { kind: 'tote', colour: '#d8cfb8', hand: true }; }
     try { p.bagRig = wearBag(this.THREE, p.obj, p.bag, this._bagFit(p.char), p.char.metaH || 1.75); } catch (e) { p.bagRig = null; }
     if (p.bagRig) stepBag(p.bagRig, p.state === 'sit', p.state === 'pole', true, this._bagHow(p));
+    // the same bag on the other model (a near/far swap): it carries on as it was - placed afresh from the new skeleton, which the gait has not posed yet this frame, a towed
+    // case flickered 0.2 - 0.5 m for a frame (review 58)
+    if (p.bagRig && old && old.kind === p.bagRig.kind && old.mesh && p.bagRig.mesh) { p.bagRig.tow = old.tow; p.bagRig.park = old.park; if (old.where === p.bagRig.where) { p.bagRig.mesh.position.copy(old.mesh.position); p.bagRig.mesh.rotation.copy(old.mesh.rotation); if (old.handle && p.bagRig.handle) p.bagRig.handle.position.copy(old.handle.position); } }
   }
   /** Seated, a skirt or dress hung straight down from the hips as a ring round the knees, the bare thighs inside it (review 9: ya_smile_dress, elder_woman_dress,
    *  teen_skirt). A seated wearer's garment meshes take a second set of skin weights, made once per character and model: below the hips each vertex is
