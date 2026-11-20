@@ -400,7 +400,7 @@ export class AnimCrowd {
     const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
     const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
-    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; const feetB = ['foot_l', 'foot_r', 'ball_l', 'ball_r'].map((n) => sk[0].skeleton.bones.find((b) => b.name === n)).filter(Boolean), feet = [0, 0]; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; const feetB = ['foot_l', 'foot_r', 'ball_l', 'ball_r'].map((n) => sk[0].skeleton.bones.find((b) => b.name === n)).filter(Boolean), feet = [0, 0], ankles = [0, 0]; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     // where each hand closes (the crook of the curled middle finger, as for a bag handle): a rider holding a pole is placed so that this point is on the pole (review 14)
     const bone = (n) => sk[0].skeleton.bones.find((b) => b.name === n), G = { l: [bone('middle_01_l') || bone('hand_l'), bone('middle_02_l')], r: [bone('middle_01_r') || bone('hand_r'), bone('middle_02_r')] }, grip = { l: [0, 0, 0], r: [0, 0, 0] };
     for (let k = 0; k < N; k++) {
@@ -408,11 +408,11 @@ export class AnimCrowd {
       for (const sd of ['l', 'r']) { const [b0, b1] = G[sd]; if (!b0) continue; b0.getWorldPosition(v); if (b1) { const v1 = b1.getWorldPosition(new THREE.Vector3()); v.lerp(v1, 0.5); } grip[sd][0] += v.x / N; grip[sd][1] += v.y / N; grip[sd][2] += v.z / N; }
       let sMin = 1e9; const cv = [];
       for (const m of sk) { m.skeleton.update(); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 2) { m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld); sMin = Math.min(sMin, v.y); maxY = Math.max(maxY, v.y); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); cv.push(v.y, v.z); if (k === 0 || k === 2) keep.push(v.x, v.y, v.z); } }
-      minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z; for (const fb of feetB) { fb.getWorldPosition(v); feet[0] += v.x / (N * feetB.length); feet[1] += v.z / (N * feetB.length); }
+      minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z; for (const fb of feetB) { fb.getWorldPosition(v); feet[0] += v.x / (N * feetB.length); feet[1] += v.z / (N * feetB.length); } for (const fb of feetB.filter((b) => /^foot_/.test(b.name))) { fb.getWorldPosition(v); ankles[0] += v.x / (N * 2); ankles[1] += v.z / (N * 2); }
       // pelvis contact: lowest vertex y near the hips' z (excluding the feet region) = where a seat surface touches
       let c = 1e9; for (let i = 0; i < cv.length; i += 2) if (Math.abs(cv[i + 1] - h.z) < 0.22 && cv[i] > sMin + 0.25 && cv[i] < c) c = cv[i]; contact += c === 1e9 ? h.y - 0.1 : c;
     }
-    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), grip, feet, w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
+    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), grip, feet, ankles, w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
     this.meas.set(key, r); return r;
   }
   _clip(ch, cat, rng) { const a = ch.pools[cat]; return a && a.length ? a[Math.floor((rng || this.rng)() * a.length)] : null; }
@@ -951,11 +951,21 @@ export class AnimCrowd {
   }
   settle(p, seat, dur = 1.0, then = null) {
     const turn = angDiff(p.yaw, seat.yaw);   // first a turn on the spot, back to the seat (turning while being lowered swung the feet round the hips)
+    // the turn is stepped by the gait, as on a platform (a rider is static - no gait - so for the turn and until the gait has let go of the legs, they are not): rotated as a
+    // whole about the feet, each foot slid 24 - 53 cm round an arc flat on the floor, a person on a turntable - review 46
+    if (Math.abs(turn) > 0.3 && p.state !== 'sit' && this.gaitOn && p.char[p.lod && p.char.lodNode ? 'gbLo' : 'gbHi'] !== null && !p.settleTurn) { p.static = false; p.settleGait = true; p.yawT = seat.yaw; p.tween = null; p.settleTurn = { seat, dur, then, t: 0, done: 0 }; p.settling = seat; return; }
     if (Math.abs(turn) > 0.3 && p.state !== 'sit') { const f = this._feetNow(p) || (p.m && p.m.feet) || [0, 0], c0 = Math.cos(p.yaw), s0 = Math.sin(p.yaw); p.tween = { pivot: [p.x + c0 * f[0] + s0 * f[1], p.z - s0 * f[0] + c0 * f[1], f[0], f[1]], x0: p.x, z0: p.z, a0: p.yaw, x1: p.x, z1: p.z, a1: seat.yaw, t: 0, dur: 0.3 + 0.3 * Math.min(1, Math.abs(turn) / (Math.PI / 2)), then: (q) => this.settle(q, seat, dur, then) }; p.settling = seat; return; }
     p.settling = null;
     p.mode = 'sit'; p.seatY = seat.seatY; this._enter(p, 'sit', Math.min(1.0, dur));   // (the sit blends in over the move itself: in 0.5 s of a 1 s settle the body squatted in the air ahead of the seat - review 43)
     if (p.m) { const c = Math.cos(p.yaw), s = Math.sin(p.yaw), hx = p.m.hips[0], hz = p.m.hips[2]; p.x += c * hx + s * hz; p.z += -s * hx + c * hz; }   // x,z become the hips' again
     p.tween = { lin: true, x0: p.x, z0: p.z, a0: p.yaw, x1: seat.x, z1: seat.z, a1: seat.yaw, t: 0, dur, then };   // (lin: the hips go back in step with the pose's blend, which is linear: eased, the feet ran 10 cm ahead and back mid-sit)
+  }
+  /** the stepped turn before sitting down: when they face the seat's way and the last step has landed, they sit (a few seconds at the most, whatever happens) */
+  _settleTurnStep(p, dt) {
+    const w = p.settleTurn; w.t += dt; const g = p.gait && p.gait.g, still = !g || (!g.walking && !g.feet.some((f) => f.mode === 'swing'));
+    if (Math.abs(angDiff(p.yaw, w.seat.yaw)) < 0.03) w.done += dt; else w.done = 0;
+    if (!w.rel && ((w.done > 0.3 && still) || w.done > 0.8 || w.t > 3)) { w.rel = true; p.gaitRelease = true; p.yawT = w.seat.yaw; }   // faced round: the gait lets go of the legs, standing (GAIT_OUT)...
+    if (w.rel && (!p.gait || (p.gait.wL <= 0 && p.gait.wU <= 0) || w.t > 4)) { p.settleTurn = null; p.gaitRelease = false; p.settleGait = false; p.static = true; p.yawT = null; p.yaw = w.seat.yaw; this.settle(p, w.seat, w.dur, w.then); }   // ...then they sit, a rider again (with the gait still on the legs as the hips went back, the feet slid 13 - 22 cm)
   }
   _tweenStep(p, dt) {
     const w = p.tween; w.t += dt; const u = Math.min(1, w.t / w.dur), k = w.lin ? u : u * u * (3 - 2 * u);
@@ -1029,7 +1039,9 @@ export class AnimCrowd {
       }
       if (p.madeWayT > 0) p.madeWayT -= dt;
       if (!p.hidden && p.obj.visible) this._attend(p, dt);   // (riders too, though they are static: review 3 counted no smile and no look round in 1512 rider samples)
-      if (!p.static) this._turn(p, dt); else if (p.tween) this._tweenStep(p, dt);
+      if (!p.static) this._turn(p, dt); if (p.tween && (p.static || p.settleGait)) this._tweenStep(p, dt);
+      if (p.settleTurn) this._settleTurnStep(p, dt);
+      if (p.settleGait && p.state === 'sit' && (!p.gait || (p.gait.wL <= 0 && p.gait.wU <= 0))) { p.settleGait = false; p.static = true; p.yawT = null; }   // (the gait has let go of the legs: a rider again)
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._pace(p, dt);
@@ -1116,7 +1128,7 @@ export class AnimCrowd {
     return out;
   }
   _gaitStep(p, dt) {
-    const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = p.state === 'stand' || !!p.paused; let gs = p.gait;
+    const walking = (p.state === 'walk' || p.state === 'go') && !p.paused, standing = (p.state === 'stand' || !!p.paused) && !p.gaitRelease; let gs = p.gait;   // (gaitRelease: turned to sit down, the legs go back to the clip before the sit starts)
     if (!gs) {
       if (!walking && !(standing && p.yawT != null && Math.abs(angDiff(p.yaw, p.yawT)) > 0.35)) return;   // nobody who has neither walked nor is about to pivot needs it; one who pivots on the spot does (the idle clip's feet turn with the body)
       const gb = this._gaitBody(p.char, p.lod); if (!gb) return;
@@ -1152,7 +1164,7 @@ export class AnimCrowd {
     if (p.paused && !p.static && p.intent < 0.5) { p.x = p.px; p.z = p.pz; }
     const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
     p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
-    if (p.v > 0.15 && p.hold && p.hold.target > 0 && p.state !== 'sit') this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away (not the slide back into a seat: that put the phone away for good and left the sit_phone clip cupping nothing - review 45)
+    if (p.v > 0.15 && p.hold && p.hold.target > 0 && p.state !== 'sit' && !p.settleTurn) this._holdTo(p, null);   // moving off (stepping aside for someone, shuffled along): the phone goes away (not the slide back into a seat: that put the phone away for good and left the sit_phone clip cupping nothing - review 45)
     if ((p.state === 'walk' || p.state === 'go') && p.cur) {
       // held up (a jam on the way to the doors): after half a second still, they stand - feet together, the quiet stance - and walk on when there is room. Left in the walk
       // with no speed, the stride froze half taken with the arms mid-swing for seconds at a time (review 19: 1.4 - 5.1 s, a bent-knee half stride in a crowd)
