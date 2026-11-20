@@ -225,7 +225,7 @@
    "title": "Kernel demand paging",
    "description": "Design paged and non-paged memory for a hobby operating-system kernel, starting from what the code can support today.",
    "tags": [],
-   "note": "The top four seats score within 3 points of each other; their order is within judge noise."
+   "note": "The top four seats score within 3 points of each other; their order is within judge noise. The four seats added on 19 Nov ran this exercise on the Windows host; every other seat, the anchors included, ran it on the Mac. The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, Opus 4.8 high and GPT-5 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 1.8 points) but they have no panel rank. In the separate panel, GPT-6.2 Astra xhigh and GPT-6.2 Sol ultra score within 3 points of each other; their order is within judge noise."
   },
   {
    "id": "COD-01",
@@ -270,7 +270,8 @@
    "description": "Review an interpreter speed-up that, it later turned out, broke a game. Graded on recall of the known defects.",
    "tags": [
     "perf"
-   ]
+   ],
+   "note": "The four seats added on 19 Nov (GPT-6.2 Astra xhigh, GPT-6.2 Sol ultra, GPT-5 high and Opus 4.8 high) were judged in a separate panel with four of the published seats as anchors; their scores sit on the same scale (anchors moved by at most 0.3 points) but they have no panel rank. In the separate panel these seats score within 3 points of the next, so their order is within judge noise: GPT-6.2 Astra xhigh, GPT-6.1 Sol ultra, GPT-6 Astra xhigh and GPT-6.2 Sol ultra; Opus 4.5 high and GPT-5 high."
   },
   {
    "id": "REV-02",
@@ -997,6 +998,86 @@
     "gates_ok": true
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 30.0,
+    "rubric": 32.0,
+    "score_claude": 29.3,
+    "score_gpt": 30.7,
+    "judge_sd": 1.0,
+    "bonus": 0.0,
+    "cost_usd": 1.056,
+    "wall_min": 8.5,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 68.0,
+    "rubric": 68.4,
+    "score_claude": 67.7,
+    "score_gpt": 68.3,
+    "judge_sd": 0.6,
+    "bonus": 0.0,
+    "cost_usd": 0.682,
+    "wall_min": 6.9,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 70.0,
+    "rubric": 66.4,
+    "score_claude": 68.0,
+    "score_gpt": 72.0,
+    "judge_sd": 2.2,
+    "bonus": 0.5,
+    "cost_usd": 5.691,
+    "wall_min": 19.4,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "DES-02",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 47.0,
+    "rubric": 49.5,
+    "score_claude": 48.3,
+    "score_gpt": 45.7,
+    "judge_sd": 1.4,
+    "bonus": 0.0,
+    "cost_usd": 3.769,
+    "wall_min": 11.7,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
   },
   {
    "seat": "sol-6.1-ultra",
@@ -3064,6 +3145,86 @@
     "gates_ok": true
    },
    "flags": []
+  },
+  {
+   "seat": "gpt-5-high",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 71.1,
+    "rubric": 71.7,
+    "score_claude": 70.3,
+    "score_gpt": 71.9,
+    "judge_sd": 0.9,
+    "bonus": 0.0,
+    "cost_usd": 0.65,
+    "wall_min": 7.6,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "sol-6.2-ultra",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 93.6,
+    "rubric": 93.8,
+    "score_claude": 93.3,
+    "score_gpt": 93.9,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 0.913,
+    "wall_min": 11.3,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "astra-6.2-xhigh",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 94.5,
+    "rubric": 93.8,
+    "score_claude": 94.3,
+    "score_gpt": 94.7,
+    "judge_sd": 0.5,
+    "bonus": 0.0,
+    "cost_usd": 2.743,
+    "wall_min": 7.6,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
+  },
+  {
+   "seat": "opus-4.8-high",
+   "task": "REV-01",
+   "run": 1,
+   "date": "2026-11-19",
+   "metrics": {
+    "score": 65.4,
+    "rubric": 66.4,
+    "score_claude": 64.7,
+    "score_gpt": 66.1,
+    "judge_sd": 0.8,
+    "bonus": 0.0,
+    "cost_usd": 4.775,
+    "wall_min": 12.2,
+    "gates_ok": true
+   },
+   "flags": [
+    "separate_panel"
+   ]
   },
   {
    "seat": "sol-6.1-ultra",
