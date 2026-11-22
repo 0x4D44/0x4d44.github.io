@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { lampLevelFor } from '../../core/daylight.ts';
 import type { MidlandPlan } from '../../core/landmarks.ts';
-import { buildLightField, EUSTON_FACADE_REACH, LIGHT_FIELD_DOWNLIGHT, LIGHT_FIELD_EUSTON, LIGHT_FIELD_FACADE_REACH,
+import { buildLightField, EUSTON_FACADE_REACH, EUSTON_ROAD_REACH, LIGHT_FIELD_DOWNLIGHT, LIGHT_FIELD_EUSTON, LIGHT_FIELD_FACADE_REACH,
   LIGHT_FIELD_STRIP, LIGHT_FIELD_TEXELS_PER_SOURCE } from '../../core/light-field.ts';
 import type { LightField, LightGridSpec } from '../../core/light-field.ts';
 import { lightSourcesFor } from '../../core/light-sources.ts';
@@ -13,6 +13,7 @@ export function nightLightGLSL(cap: number, frontPlanes = 0): string {
   const planes = Array.from({ length: frontPlanes }, (_, i) => `uNightLightFront${i}`);
   return `
 uniform vec2 uNightLightLevels;
+uniform vec2 uNightLightWeather;
 uniform vec4 uNightLightGridRect;
 uniform float uNightLightCellM;
 uniform float uNightLightDataWidth;
@@ -54,7 +55,8 @@ vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 fr
   vec4 params = nightLightTexel(uNightLightData, address + 2.0, uNightLightDataWidth);
   bool euston = kind == ${LIGHT_FIELD_EUSTON.toFixed(1)};
   float facadeReach = euston ? ${EUSTON_FACADE_REACH.toFixed(1)} : ${LIGHT_FIELD_FACADE_REACH.toFixed(1)};
-  float reach = facade && road ? facadeReach : params.y;
+  float groundReach = euston ? min(params.y, ${EUSTON_ROAD_REACH.toFixed(1)}) : params.y;
+  float reach = facade && road ? facadeReach : groundReach;
   // Road cutoffs use full distance as in P1. The strip and downlight radii
   // describe the horizontal footprint, so an elevated fixture still reaches the ground.
   float horizontal2 = dot(ray.xz, ray.xz);
@@ -88,6 +90,12 @@ ${EUSTON_FACADE_LOBE}
     float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) * params.w / ray.y;
 ${EUSTON_ROAD_LOBES}
     window = 1.0 - smoothstep(reach * (27.0 / 38.0), reach, d);
+    if (euston) {
+      // Parallel rows can feed the same fragments. Keep the cross-street
+      // skirt and let each pool taper sooner along the carriageway.
+      window *= 0.50 * (1.0 - smoothstep(0.45, 1.15, along));
+      spectrum = vec3(1.0, 0.48, 0.18);
+    }
   } else if (kind == ${LIGHT_FIELD_STRIP.toFixed(1)}) {
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float r = length(vec2(dot(ray.xz, aim) / params.z, dot(ray.xz, vec2(-aim.y, aim.x)) / params.w));
@@ -115,10 +123,16 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane) {
   }
   return light * uNightLightLevels.x;
 }
-float nightSnowReceipt(float snow, float facing) {
-  // Fade only the lamp addition at grazing incidence. Avoid reprojecting a
-  // snow mask or amplifying the road's narrow snow and paint bands.
-  return 1.0 - 0.90 * smoothstep(0.015, 0.18, snow) * (1.0 - smoothstep(0.025, 0.40, facing));
+vec3 nightGroundReceipt(vec3 albedo) {
+  // Ploughed tyre tracks and snow piled along kerbs still show in the base
+  // surface. The added lamplight uses subdued, broad snow scatter so it
+  // does not turn those narrow albedo changes into high-contrast stripes.
+  float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
+  vec3 ground = mix(albedo, vec3(0.065, 0.068, 0.075), snow);
+  // Camera fog is applied later. Dense local fog also veils the pool at
+  // short camera distances, and wet paving leaves more light to reflections.
+  float fog = smoothstep(0.40, 0.90, uNightLightWeather.y);
+  return ground * (1.0 - 0.77 * uNightLightWeather.x) * (1.0 - 0.68 * fog);
 }
 `;
 }
@@ -146,8 +160,10 @@ function fieldTextures(field: LightField) {
 
 export function createNightLightLayer(scene: THREE.Scene, spec: LightGridSpec) {
   const levels = new THREE.Vector2();
+  const weather = new THREE.Vector2();
   const uniforms = {
     uNightLightLevels: { value: levels },
+    uNightLightWeather: { value: weather },
     uNightLightGridRect: { value: new THREE.Vector4() },
     uNightLightCellM: { value: spec.cellM },
     uNightLightDataWidth: { value: 1 },
@@ -180,7 +196,7 @@ ${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
   vec3 nightP = cameraPosition - vViewPosition * mat3( viewMatrix );
   vec3 nightN = inverseTransformDirection( normal, viewMatrix );
   reflectedLight.directDiffuse += nightLightAt(nightP, nightN, ${receiver !== 'ground'}, ${planes ? 'nightLightFrontPlane(nightP.x)' : 'vec3(0.0)'})
-    * material.diffuseColor${receiver === 'ground' ? ' * nightSnowReceipt(uNightLightLevels.y, dot(normal, normalize(vViewPosition)))' : ''};
+    * ${receiver === 'ground' ? 'nightGroundReceipt(material.diffuseColor)' : 'material.diffuseColor'};
 }`);
       prior.call(source, shader, renderer);
       Object.assign(shader.uniforms, uniforms, receiver === 'midland' ? front : {});
@@ -203,6 +219,7 @@ ${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
   function deactivate(): void {
     restoreMaterials();
     levels.set(0, 0);
+    weather.set(0, 0);
     uniforms.uNightLightData.value = null;
     uniforms.uNightLightGrid.value = null;
     street?.setReceiverPools?.(false);
@@ -251,6 +268,7 @@ ${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
         return;
       }
       levels.set(level, state!.weather.snowCover);
+      weather.set(state!.weather.wet, state!.rig.fogAmount);
       uniforms.uNightLightData.value = textures.data;
       uniforms.uNightLightGrid.value = textures.grid;
       for (const [mesh, receiver] of receivers) {
