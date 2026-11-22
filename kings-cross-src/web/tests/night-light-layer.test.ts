@@ -243,6 +243,56 @@ test('a sodium pool keeps its amber where a forecourt mast overlaps it, and the 
   }
 });
 
+test('on lying snow a mast spill overlapping a sodium pool takes the pool’s hue entirely', t => {
+  const sources = kingsCrossLights();
+  const all = probe(buildLightField(sources, LIGHT_GRID_DESKTOP));
+  const lamps = probe(buildLightField(sources.filter(source => !source.tags.includes('mast')), LIGHT_GRID_DESKTOP));
+  const white = [.78, .80, .82];
+  const snow = weatherFrame('snow');
+  // The south-front sodium pool of P1 post 1043, running into mast 2's spill.
+  const readings = Array.from({ length: 9 }, (_, i) => [52.3 + .5 * i, -.2, 21.5 - .8 * i]).map(p => {
+    const total = all.ground(p, white, snow), pool = lamps.ground(p, white, snow);
+    return { p, total, pool, blue: total[2]! / total[0]!, poolBlue: pool[2]! / pool[0]! };
+  });
+  t.diagnostic(JSON.stringify(readings));
+  // Inside the pool, where the sodium light is at least five times the mast's,
+  // the mast still adds light but no blue beyond the pool's own.
+  const inside = readings.filter(r => r.total[0]! - r.pool[0]! <= .2 * r.pool[0]!);
+  assert.ok(inside.some(r => r.total[0]! > r.pool[0]! * 1.05), JSON.stringify(inside));
+  for (const r of inside) assert.ok(r.blue <= r.poolBlue * (1 + 1e-6), JSON.stringify(r));
+});
+
+test('clustered side-street lanterns on Pancras Road stay below the Euston Road pools', t => {
+  const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  // Posts 109, 110 and 983 stand within 8 m of one another about (-60, 0).
+  const pancras = Array.from({ length: 21 * 21 }, (_, i) => [-70 + (i % 21), -.25, -10 + Math.floor(i / 21)]);
+  // Euston Road: along lamp 1031's pool and across P1 post 1041's.
+  const euston = [...Array.from({ length: 31 }, (_, i) => [-67.2, 1.2, 128 + .3 * i]),
+    ...Array.from({ length: 31 }, (_, i) => [10 + i, -.2, 50])];
+  const peak = (points: number[][]) => Math.max(...points.map(p => luma(meter.at(p))));
+  const side = peak(pancras), main = peak(euston);
+  t.diagnostic(JSON.stringify({ side, main }));
+  assert.ok(main > .5 && side < .95 * main, JSON.stringify({ side, main }));
+  assert.ok(side > .3, String(side));
+});
+
+test('a Euston Road pool outside P1 ends across the far lanes and keeps its peak by the post in fog', t => {
+  const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
+  const slush = [.10, .11, .12];
+  // Street lamp 1031 (z 135.1) throws south across the road; the Midland camera looks along this line.
+  const line = Array.from({ length: 47 }, (_, i) => 127.9 + .2 * i);
+  const rows = ['clear', 'fog'].map(weather => {
+    const row = line.map(z => meter.ground([-67.2, 1.2, z], slush, weatherFrame(weather), .015, 'city-asphalt')[0]!);
+    const peak = Math.max(...row);
+    // z 129.4 is the far lanes (main's y640), 6 m in front of the post.
+    return { weather, peakZ: line[row.indexOf(peak)]!, peak, far: row[line.indexOf(129.5)]! / peak };
+  });
+  t.diagnostic(JSON.stringify(rows));
+  for (const r of rows) assert.ok(r.peakZ > 134.0 && r.peakZ < 136.0, JSON.stringify(r));
+  assert.ok(rows[0]!.far < .15 && rows[0]!.peak > .06, JSON.stringify(rows));
+});
+
 test('cleared snow on Euston Road keeps dark gaps between lamps and a tan pool beside the head', t => {
   const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
   const slush = [.10, .11, .12];
@@ -453,7 +503,9 @@ test('ground fog softens the pool shoulder and keeps its centre strength before 
   const fog = weatherFrame('fog');
   // Hold wetness constant to isolate the optical footprint from damp paving.
   fog.weather = { ...fog.weather, wet: 0 };
-  const points = [[4, 0, 0], [4, 0, 9.2], [4, 0, 18]];
+  // S2g moves the fog core from the lobe's peak 4 m out to the pool's peak
+  // beside the post (main's fog maximum), so the centre is probed 1 m out.
+  const points = [[1, 0, 0], [4, 0, 9.2], [4, 0, 18]];
   const dry = points.map(p => meter.ground(p, asphalt)[0]!);
   const misted = points.map(p => meter.ground(p, asphalt, fog)[0]!);
   t.diagnostic(JSON.stringify({ fogAmount: fog.rig.fogAmount, dry, misted }));
