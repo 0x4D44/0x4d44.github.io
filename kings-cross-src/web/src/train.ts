@@ -178,6 +178,16 @@ export const PANE_LIFT = { swoosh: 0.012, seal: 0.014, pane: 0.016, sky: 0.022 }
  * stands 2 mm over the highest of those, the window 12 mm over the rim, the array's disc 4 mm over the window and the lenses 4 mm over that (the headlamp 8 mm over the window).
  */
 export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;
+/**
+ * How the AT300 lamp housing meets the nose, metres. Those lifts are the housing's middle; at its edge it comes down to the nose (round B3: a fresh score saw the
+ * flat-standing plate, its edge 26 mm proud with daylight under it, forming the nose's outline side on in `cab-side-3m` and stepping over the red cheek in `rear-nose-34`;
+ * lner-800-108-offord-cluny-2023 and LUMO-04 show the lamp glazing flush with the curve). The lowest layer (the rim, or the window where there is no rim) falls from its
+ * lift to `foot`, just under the loft so no chord of its edge shows a sliver, over the last `bevel` inside its outline (about one row of its grid, so the fall is a gentle
+ * slope, 14 to 24 degrees, not a second step); a window over a rim falls to `overRim` over the rim's lift (2 mm, the gap the rim keeps over the colour mask's band) except
+ * along its top, where the rim is the outline. Along its top a falling layer reaches further up the shoulder by what it came down, but no more than `overStop` inboard of the
+ * flank's stop. The disc's and the headlamp's centres stand more than `bevel` inside the window, so they keep their lifts. ASSUMED: the bevel, by eye.
+ */
+export const CLUSTER_EDGE = { bevel: 0.06, foot: -0.001, overRim: 0.002, overStop: 0.015 } as const;
 /** The dark steel of the marker array's disc, a shade up from the window's black so the round reads in it (lner-801-214-2025: a grey honeycomb disc in the black housing). */
 export const CLUSTER_ARRAY = 0x3a3f47;
 /** The array's hexagons: the corner radius of each, as a fraction of the disc's radius (seven of them, a centre and six round it, with a thin gap, fit the disc). */
@@ -1955,9 +1965,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // The highest a layer of the cluster may stand at distance s from the tip: the cluster is on the flank, so it stops where the outline has turned over onto the nose's top
       // (its half-width under FLANK_FRACTION of the section's widest, above the window's foot). The window's top edge is a level line, and at the tip the nose itself is lower than
       // that line, so without the stop the window's top-front corner is laid across the roof's rounding and the colour mask's band, a ragged strip of shards in the face's corners.
-      const flankTop = (s: number): number => {
+      // (`inset`: the height where the half-width is that much under the stop's, a little further up the shoulder)
+      const flankTop = (s: number, inset = 0): number => {
         const h = glassHalf(Math.max(0, s));
-        const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0]));
+        const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0])) - inset;
         for (let k = 1; k < h.length; k++) {
           const a = h[k - 1] as [number, number];
           const b = h[k] as [number, number];
@@ -1967,11 +1978,34 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       };
       // (the rim is laid on the stop itself, the window a rim's width under it, so the pale edge runs along the window's top where the stop bites)
       const reserve = cluster.rim?.width ?? 0;
+      // The lift of a layer `grow` out from the window, at distance s and height y on the flank: `lift` inside, falling to `foot` over the last CLUSTER_EDGE.bevel before its outline
+      // (see CLUSTER_EDGE). The distance to the outline is taken in s to the front and back edges and in height to the foot and the top. Along the top the fall is to `topFoot`:
+      // a window over a rim keeps its lift there (the rim, a rim's width further up, is the housing's outline, and the headlamp's strip, near that edge, stays inside the window
+      // seen from the side); a rim, or a window with no rim, comes down to `foot` there too. Along its top the layer reaches as much further up as its edge came down (`topAt`),
+      // so its outline seen from the side stays put, but never more than CLUSTER_EDGE.overStop inboard of the stop: on the flat of the shoulder a few millimetres up is a long way in.
+      const topFoot = (grow: number, lift: number, foot: number): number => (grow === 0 && cluster.rim ? lift : foot);
+      const topReach = (grow: number, lift: number, foot: number): number => win.y1 + grow + lift - topFoot(grow, lift, foot);
+      const topAt = (s: number, grow: number, lift: number, foot: number): number => {
+        const reach = lift - topFoot(grow, lift, foot);
+        return Math.min(topReach(grow, lift, foot), flankTop(s) - reserve + grow + reach, reach > 0 ? flankTop(s, CLUSTER_EDGE.overStop) : Infinity);
+      };
+      const taperedLift = (s: number, y: number, grow: number, lift: number, foot: number): number => {
+        const f = (y - win.y0) / (win.y1 - win.y0);
+        const top = topAt(s, grow, lift, foot);
+        const side = Math.min(s - (lerp(win.sFront0, win.sFront1, f) - grow), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - grow));
+        return Math.min(lerp(foot, lift, clamp01(side / CLUSTER_EDGE.bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / CLUSTER_EDGE.bevel)));
+      };
+      const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
       const windowPatch = (side: number, lift: number, grow: number, colour: number): void => {
+        // (the lowest layer comes down to the loft at its edge; a window over a rim comes down onto the rim)
+        const foot = grow > 0 || !cluster.rim ? CLUSTER_EDGE.foot : windowFoot;
         const grid: { p: V3; n: V3 }[][] = [];
-        for (let q = 0; q <= rows; q++) {
+        // (a window reaching further up, CLUSTER_EDGE, takes a row more where it needs one to keep its rows 72 mm apart, as its eight are over its own height; the rim, under it,
+        // keeps eight)
+        const rowCount = grow > 0 ? rows : Math.max(rows, Math.ceil((topReach(grow, lift, foot) - win.y0) / 0.072));
+        for (let q = 0; q <= rowCount; q++) {
           // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side)
-          const y = lerp(win.y0 - grow, win.y1 + grow, q / rows);
+          const y = lerp(win.y0 - grow, topReach(grow, lift, foot), q / rowCount);
           const f = (y - win.y0) / (win.y1 - win.y0);
           const sF = lerp(win.sFront0, win.sFront1, f) - grow;
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
@@ -1979,11 +2013,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           grid.push(
             Array.from({ length: cols + 1 }, (_, p) => {
               const s = lerp(sF, sB, (p / cols) * (p / cols));
-              return lifted(side, s, Math.min(y, flankTop(s) - reserve + grow), lift);
+              const yy = Math.min(y, topAt(s, grow, lift, foot));
+              return lifted(side, s, yy, taperedLift(s, yy, grow, lift, foot));
             }),
           );
         }
-        for (let i = 0; i < rows; i++) {
+        for (let i = 0; i < rowCount; i++) {
           for (let j = 0; j < cols; j++) {
             const a = (grid[i] as { p: V3; n: V3 }[])[j] as { p: V3; n: V3 };
             const b = (grid[i] as { p: V3; n: V3 }[])[j + 1] as { p: V3; n: V3 };

@@ -1,6 +1,6 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-bogie-trace.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts, train-interior-layout.ts, train-interior-kit.ts) against
 web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
-web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts and web/tests/train-roof-ends.test.ts.
+web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts, web/tests/train-roof-ends.test.ts and web/tests/train-at300-shell.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ... | #a-b]
 `#a-b` runs the mutants at positions a up to (not including) b of the list below, counted from 0: the full run in slices, each through the machine's one-driver gate, with the
 never-red test names of every slice intersected afterwards (a slice cannot see what the others turned red).
@@ -25,7 +25,7 @@ FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
 ILAY = "web/src/train-interior-layout.ts"
 IKIT = "web/src/train-interior-kit.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts"]
 # the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
 GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
 MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
@@ -1454,10 +1454,13 @@ M = [
     ("cluster: no stop on the flank", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 0;"),
     ("cluster: the stop at the section's widest point", "export const FLANK_FRACTION = 0.8;", "export const FLANK_FRACTION = 1;"),
     ("cluster: the stop never bites", "return lerp(a[1], b[1], (a[0] - limit) / (a[0] - b[0]));", "return Infinity;"),
-    ("cluster: the stop takes the section's first point for the widest", "const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0]));", "const limit = FLANK_FRACTION * (h[0] as [number, number])[0];"),
+    ("cluster: the stop takes the section's first point for the widest", "const limit = FLANK_FRACTION * Math.max(...h.map((pt) => pt[0])) - inset;", "const limit = FLANK_FRACTION * (h[0] as [number, number])[0] - inset;"),
     ("cluster: the window not a rim's width under the stop", "const reserve = cluster.rim?.width ?? 0;", "const reserve = 0;"),
-    ("cluster: the rim not laid on the stop itself", "Math.min(y, flankTop(s) - reserve + grow)", "Math.min(y, flankTop(s) - reserve)"),
-    ("cluster: the window a rim's width over the stop", "Math.min(y, flankTop(s) - reserve + grow)", "Math.min(y, flankTop(s) + reserve + grow)"),
+    ("cluster: the rim not laid on the stop itself", "flankTop(s) - reserve + grow + reach,", "flankTop(s) - reserve + reach,"),
+    ("cluster: the window a rim's width over the stop", "flankTop(s) - reserve + grow + reach,", "flankTop(s) + reserve + grow + reach,"),
+    ("cluster: the housing's edge left standing its lift (round B3's proud plate)", "return Math.min(lerp(foot, lift, clamp01(side / CLUSTER_EDGE.bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / CLUSTER_EDGE.bevel)));", "return lift;"),
+    ("cluster: the housing's top edge left standing its lift", "const topFoot = (grow: number, lift: number, foot: number): number => (grow === 0 && cluster.rim ? lift : foot);", "const topFoot = (grow: number, lift: number, foot: number): number => lift;"),
+    ("cluster: the edge's foot a centimetre proud", "export const CLUSTER_EDGE = { bevel: 0.06, foot: -0.001,", "export const CLUSTER_EDGE = { bevel: 0.06, foot: 0.01,"),
     ("cluster: the rim at the swoosh's height", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;", "export const CLUSTER_LIFT = { rim: 0.012, window: 0.026, array: 0.03, lens: 0.034 } as const;"),
     ("cluster: the window 4 mm over the rim", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.018, array: 0.03, lens: 0.034 } as const;"),
     ("cluster: the array's disc at the window's height", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.026, lens: 0.034 } as const;"),

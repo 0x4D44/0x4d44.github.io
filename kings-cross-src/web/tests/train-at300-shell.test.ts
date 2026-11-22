@@ -4,11 +4,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
+import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { bodySpec, buildTrain, carSection } from '../src/train.ts';
+import { bodySpec, buildTrain, carSection, CLUSTER_EDGE, CLUSTER_LIFT, faceSetback, frontOf } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
-import { eggSection, halfAt, normalised, ringAt, xAtY } from '../src/train-nose.ts';
+import { eggSection, halfAt, normalised, ringAt, ringStations, xAtY } from '../src/train-nose.ts';
 
 const spec = bodySpec('at300');
 const sec = carSection(spec);
@@ -116,4 +117,108 @@ test('the LNER yellow is a trapezoid widening to the glass, about 1.8 m2 head on
   const lner = coloured('lner5', LNER_YELLOW);
   assert.ok(hull.area > lner.area + 0.1, `the Hull Trains beak (${hull.area.toFixed(2)} m2) is wider than the LNER's yellow (${lner.area.toFixed(2)} m2)`);
   assert.ok(2 * hull.box.max.x > 1.5 && 2 * hull.box.max.x < 1.7, `the Hull Trains beak is ${(2 * hull.box.max.x).toFixed(2)} m across at the glass`);
+});
+
+type P3 = [number, number, number];
+/** The distance from p to the triangle abc's nearest point, signed by the triangle's winding (outward on the loft's right half): Ericson's closest point on a triangle. */
+function signedToTriangle(p: P3, a: P3, b: P3, c: P3): { d: number; sign: number } {
+  const sub = (u: P3, v: P3): P3 => [u[0] - v[0], u[1] - v[1], u[2] - v[2]];
+  const dot = (u: P3, v: P3): number => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+  const at = (o: P3, u: P3, k: number, v: P3 = [0, 0, 0], m = 0): P3 => [o[0] + u[0] * k + v[0] * m, o[1] + u[1] * k + v[1] * m, o[2] + u[2] * k + v[2] * m];
+  const ab = sub(b, a);
+  const ac = sub(c, a);
+  const q = ((): P3 => {
+    const ap = sub(p, a);
+    const d1 = dot(ab, ap);
+    const d2 = dot(ac, ap);
+    if (d1 <= 0 && d2 <= 0) return a;
+    const bp = sub(p, b);
+    const d3 = dot(ab, bp);
+    const d4 = dot(ac, bp);
+    if (d3 >= 0 && d4 <= d3) return b;
+    const vc = d1 * d4 - d3 * d2;
+    if (vc <= 0 && d1 >= 0 && d3 <= 0) return at(a, ab, d1 / (d1 - d3));
+    const cp = sub(p, c);
+    const d5 = dot(ab, cp);
+    const d6 = dot(ac, cp);
+    if (d6 >= 0 && d5 <= d6) return c;
+    const vb = d5 * d2 - d1 * d6;
+    if (vb <= 0 && d2 >= 0 && d6 <= 0) return at(a, ac, d2 / (d2 - d6));
+    const va = d3 * d6 - d5 * d4;
+    if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) return at(b, sub(c, b), (d4 - d3) / (d4 - d3 + (d5 - d6)));
+    const den = 1 / (va + vb + vc);
+    return at(a, ab, vb * den, ac, vc * den);
+  })();
+  const n: P3 = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+  const off = sub(p, q);
+  return { d: Math.hypot(...off), sign: Math.sign(dot(off, n)) || 1 };
+}
+
+test('the AT300 lamp housing lies flush on the nose: its outline comes down onto the loft at both ends of all four kinds, its middle keeps its lift (round B3)', () => {
+  // The fresh score of round B3: the housing was a plate laid CLUSTER_LIFT off the loft with an open edge, 14 mm proud at the rim and 26 mm at a window without one, so side on
+  // (cab-side-3m) its top edge stood out of the nose's outline and 3/4 on (rear-nose-34) its foot showed a step with daylight under it; lner-800-108-offord-cluny-2023 and LUMO-04 show
+  // the glazing flush with the curve. The loft here is the nose's own: the rings at ringStations, quads between them, in the nose's frame (x across, y up, s back from the tip).
+  const tip = faceSetback('at300');
+  const stations = ringStations(spec.nose).filter((s) => s < 3);
+  const rings = stations.map(ringHalf);
+  const loft: P3[][] = [];
+  for (let i = 0; i + 1 < rings.length; i++) {
+    for (let j = 0; j + 1 < (rings[i] as [number, number][]).length; j++) {
+      const v = (a: number, b: number): P3 => [...((rings[a] as [number, number][])[b] as [number, number]), stations[a] as number];
+      loft.push([v(i, j), v(i, j + 1), v(i + 1, j + 1)], [v(i, j), v(i + 1, j + 1), v(i + 1, j)]);
+    }
+  }
+  const offLoft = (p: P3): number => {
+    let best = { d: Infinity, sign: 1 };
+    for (const [a, b, c] of loft) {
+      const r = signedToTriangle(p, a as P3, b as P3, c as P3);
+      if (r.d < best.d) best = r;
+    }
+    return best.d * best.sign;
+  };
+  for (const kind of ['lner5', 'lner9', 'hull5', 'lumo5'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    // the lowest layer, whose outline meets the nose: the rim where the kind has one, else the window
+    const lowest = cluster.rim?.colour ?? cluster.window.colour;
+    const g = buildTrain(kind);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const mesh = g.getObjectByName(`car-${car.index}`)!.getObjectByName('body-detail') as THREE.Mesh;
+      const p = mesh.geometry.getAttribute('position');
+      const c = mesh.geometry.getAttribute('color');
+      // nose frame: the right half, s back from the tip
+      const nose = (k: number): P3 => [Math.abs(p.getX(k)), p.getY(k), (car.cab === 'front' ? p.getZ(k) - face : face - p.getZ(k)) - tip];
+      const isColour = (k: number, hex: number): boolean => {
+        const rgb = col(hex);
+        return Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4;
+      };
+      for (const sign of [-1, 1]) {
+        const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
+        // the layer's triangles on this side, on the nose (the colours are the housing's own there), and the edges only one of them uses: the outline
+        const uses = new Map<string, { n: number; a: number; b: number }>();
+        const key = (k: number): string => `${p.getX(k)},${p.getY(k)},${p.getZ(k)}`;
+        let windowLift = -Infinity;
+        for (let t = 0; t < p.count; t += 3) {
+          if ([t, t + 1, t + 2].some((k) => p.getX(k) * sign <= 0 || (nose(k)[2] as number) > 3)) continue;
+          if (isColour(t, cluster.window.colour)) windowLift = Math.max(windowLift, offLoft(nose(t)));
+          if (!isColour(t, lowest)) continue;
+          for (const [a, b] of [[t, t + 1], [t + 1, t + 2], [t + 2, t]] as const) {
+            const e = [key(a), key(b)].sort().join('|');
+            const u = uses.get(e) ?? { n: 0, a, b };
+            u.n++;
+            uses.set(e, u);
+          }
+        }
+        const outline = [...uses.values()].filter((u) => u.n === 1).flatMap((u) => [u.a, u.b]);
+        assert.ok(outline.length >= 80, `${here}: only ${outline.length} outline points`);
+        // every point of the outline on the loft or just under it (CLUSTER_EDGE.foot), none standing out of it: the edge leaves no step and no gap
+        const offs = outline.map((k) => offLoft(nose(k)));
+        const worst = Math.max(...offs);
+        assert.ok(worst <= 0.002, `${here}: the housing's outline stands ${(worst * 1000).toFixed(1)} mm off the nose`);
+        assert.ok(Math.min(...offs) >= CLUSTER_EDGE.foot - 0.003, `${here}: the housing's outline sinks ${(-Math.min(...offs) * 1000).toFixed(1)} mm into the nose`);
+        // and the window's middle still stands its lift over the loft, over the rim and the colour mask's band
+        assert.ok(Math.abs(windowLift - CLUSTER_LIFT.window) <= 0.002, `${here}: the window's middle stands ${(windowLift * 1000).toFixed(1)} mm off the nose`);
+      }
+    }
+  }
 });
