@@ -34,7 +34,7 @@ import { atlasRect, BAND_Y, decalMaterial, TEX_SPAN, TEX_Y0, TEX_Y1, texU, textE
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor, sideColourAt } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
-import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, trainNight, unit } from './train-geom.ts';
+import { clamp01, clipConvex, col, glassMaterial, gridNormals, lerp, plain, roundedRect, Soup, sub, trainNight, unit } from './train-geom.ts';
 import type { V3 } from './train-geom.ts';
 import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
@@ -188,6 +188,14 @@ export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.03
  * flank's stop. The disc's and the headlamp's centres stand more than `bevel` inside the window, so they keep their lifts. ASSUMED: the bevel, by eye.
  */
 export const CLUSTER_EDGE = { bevel: 0.06, foot: -0.001, overRim: 0.002, overStop: 0.015 } as const;
+/**
+ * The most a row of an AT300 lamp housing's grid climbs, metres. Round B5: a fresh score saw the Hull Trains housing's grey rim with a jagged outline (a spike beside the white
+ * cluster, a notch at the lower corner, a sawtooth inner edge; LUMO's milder, the LNER's a pale tail under each lamp unit). The housing's points lie on the nose's own surface, but
+ * a chord between two of them lies under that convex surface, and the nose's skin there (the loft and its shell over the shoulder) is itself drawn in chords between the rings:
+ * at 72 mm rows the housing's chords across the shoulder's crease dipped up to 5 mm, as low as its bevel near the edge, so the skin showed through it in shards and the visible
+ * outline was wherever the two meshes crossed. At 15 mm a chord dips about a millimetre, under the steep edge's fall, so the outline drawn is the one seen.
+ */
+export const CLUSTER_ROW = 0.015;
 /** The dark steel of the marker array's disc, a shade up from the window's black so the round reads in it (lner-801-214-2025: a grey honeycomb disc in the black housing). */
 export const CLUSTER_ARRAY = 0x3a3f47;
 /** The array's hexagons: the corner radius of each, as a fraction of the disc's radius (seven of them, a centre and six round it, with a thin gap, fit the disc). */
@@ -662,6 +670,9 @@ export const AT300_CLUSTER: ClusterSpec = {
   head: { s: 0.925, y: 1.76, a: 0.16, b: 0.033, cells: 5 },
   array: { s: 0.6, y: 1.63, r: 0.075 },
   rim: { colour: 0xc7ccd3, width: 0.025 },
+  // CHANGED (round B5; was the LNER's alone, the others CLUSTER_EDGE's 6 cm fall): every kind's housing comes down over 2 cm, so its 25 mm rim stands clear of the skin but at the
+  // edge, and the outline drawn is the one seen (hull-802-doncaster-2024: an even grey bezel round a smooth teardrop). ASSUMED, by eye, as the LNER's.
+  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
 };
 
 /**
@@ -671,13 +682,12 @@ export const AT300_CLUSTER: ClusterSpec = {
  * its top, so the housing spans 0.45 to 1.4 m (round 7's BASE: 0.55 to 1.34 m); the back edge keeps the AT300's lean, so the headlamp's strip keeps its slant and stays under the
  * flank's stop, and the strip and the marker array stay inside the window. ASSUMED: those
  * figures, by eye off the two photographs, to about 0.1 m. The edge falls over 2 cm (8 mm in height under the top, where the shoulder lies
- * over) to 3 mm under the loft (`edge`; CLUSTER_EDGE's 6 cm drawn across one grid row lay within 2 mm of the paint under it, the ragged white fringe the same score saw on the pale
+ * over) to 3 mm under the loft (`edge`, every kind's since round B5: see AT300_CLUSTER; CLUSTER_EDGE's 6 cm drawn across one grid row lay within 2 mm of the paint under it, the ragged white fringe the same score saw on the pale
  * rim). ASSUMED: those figures, chosen so no more than 1% of the rim lies within 2 mm of the paint and near parallel to it (it was 15%).
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
   window: { ...AT300_CLUSTER.window, sBack0: 0.75, sBack1: 1.4 },
-  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
 };
 
 /**
@@ -1252,7 +1262,9 @@ const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> 
   hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
-  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },
+  // (with no rim its window is the layer that meets the nose, 26 mm up where a rim stands 14 mm: it comes down over 4.5 cm (2 cm in height under its top) to 1 mm under the loft, so the outline stays clean and the
+  // housing still reads 0.28 m across head on, not widened by a 26 mm wall at its outboard edge; LUMO-04 and LUMO-05: an almond flush with the body. ASSUMED, by eye.)
+  lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined, edge: { bevel: 0.045, top: 0.02, foot: -0.001 } } },
 };
 
 /**
@@ -2029,26 +2041,32 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
       const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
+      // grid lines with the edge's own added, any inner line within a millimetre of one of those moved a millimetre off it (two lines a hair apart drew slivers with no
+      // area; moved, not dropped, so every row keeps as many columns)
+      const withLines = (lines: number[], extra: number[]): number[] =>
+        [
+          ...lines.map((v, k) => (k === 0 || k === lines.length - 1 ? v : extra.reduce((w, x) => (Math.abs(w - x) < 0.001 ? x + (w >= x ? 0.001 : -0.001) : w), v))),
+          ...extra,
+        ].sort((a, b) => a - b);
       const windowPatch = (side: number, lift: number, grow: number, colour: number): void => {
         // (the lowest layer comes down to the loft at its edge; a window over a rim comes down onto the rim)
         const foot = grow > 0 || !cluster.rim ? (cluster.edge?.foot ?? CLUSTER_EDGE.foot) : windowFoot;
         const grid: { p: V3; n: V3 }[][] = [];
-        // (a window reaching further up, CLUSTER_EDGE, takes a row more where it needs one to keep its rows 72 mm apart, as its eight are over its own height; the rim, under it,
-        // keeps eight)
-        const rowCount = grow > 0 ? rows : Math.max(rows, Math.ceil((topReach(grow, lift, foot) - win.y0) / 0.072));
+        // (at least eight rows, and as many more as keep them CLUSTER_ROW apart, so no chord of the layer dips into the shoulder's curve)
+        const rowCount = Math.max(rows, Math.ceil((topReach(grow, lift, foot) - (win.y0 - grow)) / CLUSTER_ROW));
         // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side; a kind's own `edge` adds
         // a row a bevel inside the foot and the top, and a column a bevel inside the front and back edges)
         const yLo = win.y0 - grow;
         const yHi = topReach(grow, lift, foot);
         const ys = Array.from({ length: rowCount + 1 }, (_, q) => lerp(yLo, yHi, q / rowCount));
-        if (cluster.edge) ys.splice(0, ys.length, ...[...ys, yLo + bevel, yHi - topBevel].sort((a, b) => a - b));
+        if (cluster.edge) ys.splice(0, ys.length, ...withLines(ys, [yLo + bevel, yHi - topBevel]));
         for (const y of ys) {
           const f = (y - win.y0) / (win.y1 - win.y0);
           const sF = lerp(win.sFront0, win.sFront1, f) - grow;
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
           const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, (p / cols) * (p / cols)));
-          if (cluster.edge) ss.splice(0, ss.length, ...[...ss, sF + bevel, sB - bevel].sort((a, b) => a - b));
+          if (cluster.edge) ss.splice(0, ss.length, ...withLines(ss, [sF + bevel, sB - bevel]));
           grid.push(
             ss.map((s, j) => {
               // (with its own edge, every row but the top one stops a bevel under the top where the stop holds the top down, so the fall there is drawn too; not the front and
@@ -2066,8 +2084,13 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
             const b = (grid[i] as { p: V3; n: V3 }[])[j + 1] as { p: V3; n: V3 };
             const c = (grid[i + 1] as { p: V3; n: V3 }[])[j + 1] as { p: V3; n: V3 };
             const e = (grid[i + 1] as { p: V3; n: V3 }[])[j] as { p: V3; n: V3 };
-            const quad = [a, b, c, e];
-            detail.quad(quad.map((v) => world(v.p)) as [V3, V3, V3, V3], quad.map((v) => wn(v.n)) as [V3, V3, V3, V3], col(colour));
+            // (as a quad's two triangles, but leaving out one with two corners in one place: where the rows above the stop fold onto it, a quad's corners meet; its other two
+            // edges are then one edge twice, so the outline is as it was)
+            for (const t of [[a, b, c], [a, c, e]]) {
+              const p = t.map((v) => world(v.p)) as [V3, V3, V3];
+              if ([[0, 1], [1, 2], [2, 0]].some(([i, j]) => Math.hypot(...sub(p[i] as V3, p[j] as V3)) < 1e-7)) continue;
+              detail.tri(p, t.map((v) => wn(v.n)) as [V3, V3, V3], col(colour));
+            }
           }
         }
       };

@@ -1481,6 +1481,9 @@ test('fronts: the Azuma\'s front: a slanted lamp cluster on each cheek (a strip 
       head: { s: 0.925, y: 1.76, a: 0.16, b: 0.033, cells: 5 },
       array: { s: 0.6, y: 1.63, r: 0.075 },
       rim: { colour: 0xc7ccd3, width: 0.025 },
+      // CHANGED (round B5: absent, so CLUSTER_EDGE's 6 cm fall): every kind's housing comes down over 2 cm (the LNER's since round B4), so the skin no longer cuts its rim into a
+      // jagged outline (hull-802-doncaster-2024: an even bezel round a smooth teardrop)
+      edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
     },
     shellTop: 9,
     frame: 0.07,

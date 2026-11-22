@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
-import { bodySpec, buildTrain, carSection, CLUSTER_EDGE, CLUSTER_LIFT, faceSetback, frontOf } from '../src/train.ts';
+import { bodySpec, buildTrain, carSection, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf } from '../src/train.ts';
 import { col } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
 import { eggSection, halfAt, normalised, ringAt, ringStations, xAtY } from '../src/train-nose.ts';
@@ -221,4 +221,99 @@ test('the AT300 lamp housing lies flush on the nose: its outline comes down onto
       }
     }
   }
+});
+
+test('the AT300 lamp housing\'s outline is the one drawn: inside it the layer that meets the nose stands clear of the nose\'s skin, its chords short enough not to dip into it, at both ends of all four kinds (round B5)', () => {
+  // The fresh score of round B4 (hull5 T8 6.0 -> 5.5): the Hull Trains housing's grey rim had a jagged outline, a spike beside the white cluster, a notch at the lower corner and a
+  // sawtooth inner edge (front-3m, rear-3m, nose-34-left, rear-nose-34-right), LUMO's the same more mildly, the LNER's a pale tail under each lamp unit; hull-802-doncaster-2024, LUMO-04
+  // and LUMO-05 show a smooth outline flush with the body. The cause: the layer fell from its lift to the nose over 6 cm, so most of the 25 mm rim stood within 2 mm of the skin, and
+  // its rows were 72 mm apart, so its chords across the shoulder dipped millimetres under the surface: the skin cut through it wherever the two crossed. So, more than 8 mm inside the
+  // outline (the steep edge's fall), no point of the layer stands under 2 mm over the loft, and no edge of its grid that comes within 2 mm of the skin dips more than 1.5 mm under the line between its ends' heights.
+  const tip = faceSetback('at300');
+  const stations = ringStations(spec.nose).filter((s) => s < 3);
+  const rings = stations.map(ringHalf);
+  const loft: { t: THREE.Triangle; n: THREE.Vector3; box: THREE.Box3 }[] = [];
+  for (let i = 0; i + 1 < rings.length; i++) {
+    for (let j = 0; j + 1 < (rings[i] as [number, number][]).length; j++) {
+      const v = (a: number, b: number): THREE.Vector3 => new THREE.Vector3(...((rings[a] as [number, number][])[b] as [number, number]), stations[a] as number);
+      for (const [a, b, c] of [[v(i, j), v(i, j + 1), v(i + 1, j + 1)], [v(i, j), v(i + 1, j + 1), v(i + 1, j)]] as const) {
+        const t = new THREE.Triangle(a, b, c);
+        loft.push({ t, n: t.getNormal(new THREE.Vector3()), box: new THREE.Box3().setFromPoints([a, b, c]) });
+      }
+    }
+  }
+  const near = new THREE.Vector3();
+  // signed distance over the loft (outward on the right half, as the rings wind)
+  const offLoft = (q: THREE.Vector3): number => {
+    let best = Infinity;
+    let sign = 1;
+    for (const f of loft) {
+      if (f.box.distanceToPoint(q) > Math.min(best, 0.05)) continue;
+      f.t.closestPointToPoint(q, near);
+      const d = near.distanceTo(q);
+      if (d < best) {
+        best = d;
+        sign = Math.sign(q.clone().sub(near).dot(f.n)) || 1;
+      }
+    }
+    return best * sign;
+  };
+  for (const kind of ['lner5', 'lner9', 'hull5', 'lumo5'] as const) {
+    const cluster = frontOf(kind).cluster!;
+    const rgb = col(cluster.rim?.colour ?? cluster.window.colour);
+    const g = buildTrain(kind);
+    for (const car of trainLayout(kind).cars.filter((c) => c.cab)) {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const mesh = g.getObjectByName(`car-${car.index}`)!.getObjectByName('body-detail') as THREE.Mesh;
+      const p = mesh.geometry.getAttribute('position');
+      const c = mesh.geometry.getAttribute('color');
+      const nose = (k: number): THREE.Vector3 => new THREE.Vector3(Math.abs(p.getX(k)), p.getY(k), (car.cab === 'front' ? p.getZ(k) - face : face - p.getZ(k)) - tip);
+      for (const sign of [-1, 1]) {
+        const here = `${kind} car ${car.index} ${sign > 0 ? 'right' : 'left'}`;
+        const tris: THREE.Vector3[][] = [];
+        const uses = new Map<string, { n: number; a: THREE.Vector3; b: THREE.Vector3 }>();
+        for (let t = 0; t < p.count; t += 3) {
+          if ([t, t + 1, t + 2].some((k) => p.getX(k) * sign <= 0 || nose(k).z > 3)) continue;
+          if (!(Math.abs(c.getX(t) - rgb.r) < 1e-4 && Math.abs(c.getY(t) - rgb.g) < 1e-4 && Math.abs(c.getZ(t) - rgb.b) < 1e-4)) continue;
+          const v = [t, t + 1, t + 2].map(nose);
+          tris.push(v);
+          for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+            const ka = v[a]!.toArray().map((x) => x.toFixed(5)).join();
+            const kb = v[b]!.toArray().map((x) => x.toFixed(5)).join();
+            if (ka === kb) continue;
+            const e = [ka, kb].sort().join('|');
+            const u = uses.get(e) ?? { n: 0, a: v[a]!, b: v[b]! };
+            u.n++;
+            uses.set(e, u);
+          }
+        }
+        const outline = [...uses.values()].filter((u) => u.n === 1).map((u) => new THREE.Line3(u.a, u.b));
+        const onLine = new THREE.Vector3();
+        const toOutline = (q: THREE.Vector3): number => Math.min(...outline.map((l) => l.closestPointToPoint(q, true, onLine).distanceTo(q)));
+        let samples = 0;
+        let low = 0;
+        let dip = 0;
+        for (const v of tris) {
+          const off = v.map(offLoft);
+          for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+            if (v[a]!.distanceTo(v[b]!) < 1e-6) continue;
+            const mid = v[a]!.clone().add(v[b]!).multiplyScalar(0.5);
+            // (only where the chord comes within 2 mm of the skin: at the full lift a sag of a few millimetres shows nothing)
+            const m = offLoft(mid);
+            if (m < 0.002) dip = Math.max(dip, (off[a]! + off[b]!) / 2 - m);
+          }
+          for (const [u, w] of [[1 / 3, 1 / 3], [0.5, 0], [0, 0.5], [0.5, 0.5]] as const) {
+            const q = v[0]!.clone().multiplyScalar(1 - u - w).addScaledVector(v[1]!, u).addScaledVector(v[2]!, w);
+            if (toOutline(q) < 0.008) continue;
+            samples++;
+            if (offLoft(q) < 0.002) low++;
+          }
+        }
+        assert.ok(samples > 400, `${here}: only ${samples} points inside the outline`);
+        assert.ok(low / samples < 0.01, `${here}: ${low} of ${samples} points more than 8 mm inside the housing's outline stand under 2 mm over the nose`);
+        assert.ok(dip <= 0.0015, `${here}: an edge of the housing's grid dips ${(dip * 1000).toFixed(1)} mm into the nose's curve`);
+      }
+    }
+  }
+  assert.ok(CLUSTER_ROW <= 0.02, 'the housing\'s rows stay close enough for their chords to follow the shoulder');
 });
