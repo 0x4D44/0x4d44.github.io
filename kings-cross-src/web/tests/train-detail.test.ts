@@ -313,12 +313,13 @@ test('nose: the AT300\'s front is blunt and round: a face about 1.15 m across an
     boxiness: 3.0,
   });
   assert.deepEqual(spec.glass.screen && { s0: spec.glass.screen.s0, s1: spec.glass.screen.s1 }, { s0: 1.0, s1: 2.6 }, 'the glass runs from 1.0 m back to 2.6 m');
+  // CHANGED (round B6, 0.5 -> 0.68 at the foot, 0.52 -> 0.6 at the top): head on lner-800-113-newcastle-2025 shows the glass 0.58 of the body's width, the model's was 0.47 (train-at300-shell.test.ts, round B6)
   // and its width: 0.5 of the cab's half-width at the foot (0.7 before the AT300 round, on a narrower nose; 0.64 in round 4), widening to 0.52 of it at the top (the same as before: the ring is wider there), the corners rounded 0.12 m at the foot and 0.3 m at the top (the glass's width is
   // read off lner-800-113-newcastle-2025, head on: ASSUMED to a few centimetres, a photograph at about 75 px to the metre)
   assert.deepEqual(
     spec.glass.screen && { fraction: spec.glass.screen.fraction, fractionTop: spec.glass.screen.fractionTop, topRadius: spec.glass.screen.topRadius, bottomRadius: spec.glass.screen.bottomRadius, footSweep: spec.glass.screen.footSweep },
-    { fraction: 0.5, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
-    'the glass is 0.5 of the half-width wide at its foot, 0.52 at its top, the foot swept back 0.3 m at its corners',
+    { fraction: 0.68, fractionTop: 0.6, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    'the glass is 0.68 of the half-width wide at its foot, 0.6 at its top, the foot swept back 0.3 m at its corners',
   );
   // the nose never rises above the roof it runs into (the roof line must not go back: the test of every nose's profile reads it too)
   for (const k of spec.nose.knots) assert.ok(k.top <= spec.crown + 1e-9, `the knot at ${k.s} m is ${k.top} m up, over the roof edge at ${spec.crown} m`);
@@ -5397,16 +5398,19 @@ test('fronts: the Azuma\'s windscreen foot is a shallow smile and not an arch, t
         assert.ok(close.length > 0, `${kind} car ${car.index}: no glass within ${SPAN} m of x = ${x}`);
         return close.reduce((a, q) => (q.s < a.s ? q : a));
       };
+      // CHANGED (round B6, the corner read 0.55 -> 0.75 m out and the third 0.3 -> 0.4 m): the glass's foot is 0.77 m out at its corner, where it was 0.57 m (GlassSpec.screen, widened to
+      // lner-800-113-newcastle-2025's 0.58 of the body's width), and the sweep is the square of the fraction of the way out, so the two reads move out with the corner (by 1.35); the bands
+      // stay. Built: 0.075 m back 0.4 m out, 0.3 m back and 0.05 m up at 0.75 m (the photograph: the foot's middle about 0.05 m below its corners)
       const middle = foot(0);
-      const corner = foot(0.55);
+      const corner = foot(0.75);
       near(middle.s, (family.glass.screen as NonNullable<typeof family.glass.screen>).s0, 0.03, `${kind} car ${car.index}: the foot's middle stands off the spec's`);
       assert.ok(corner.s - middle.s > 0.15 && corner.s - middle.s < 0.4, `${kind} car ${car.index}: the foot's corner stands ${(corner.s - middle.s).toFixed(2)} m behind its middle, not the sweep's 0.15 to 0.4`);
       assert.ok(corner.y - middle.y > 0.03 && corner.y - middle.y < 0.15, `${kind} car ${car.index}: the foot's corner stands ${(corner.y - middle.y).toFixed(3)} m over its middle: a smile is 0.03 to 0.15 m, an arch is below 0`);
       // it curves, as the square of how far out: 0.3 m out it has swept back under 0.4 of what it has at 0.55 m (a straight sweep, a V, is about 0.55 of it), and 0.05 to 0.11 m (0.075 built:
       // the square of the distance; a cube is about 0.04, which leaves the middle of the foot a long flat and the corners a sudden hook)
-      const third = foot(0.3);
-      assert.ok(third.s - middle.s < 0.4 * (corner.s - middle.s), `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out and ${(corner.s - middle.s).toFixed(3)} m 0.55 m out: not a curve`);
-      assert.ok(third.s - middle.s > 0.05 && third.s - middle.s < 0.11, `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.3 m out, not 0.05 to 0.11`);
+      const third = foot(0.4);
+      assert.ok(third.s - middle.s < 0.4 * (corner.s - middle.s), `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.4 m out and ${(corner.s - middle.s).toFixed(3)} m 0.75 m out: not a curve`);
+      assert.ok(third.s - middle.s > 0.05 && third.s - middle.s < 0.11, `${kind} car ${car.index}: the foot has swept back ${(third.s - middle.s).toFixed(3)} m 0.4 m out, not 0.05 to 0.11`);
       // the frame (the livery's black round the glass) follows it: its own foot stands 7 cm nearer the tip than the glass's (3 to 14 cm, across the whole foot)
       const frame = trisOfColour(detailOf(g, car), liveryFor(kind).glass).flat().filter((v) => Math.abs(v.x) <= 0.55 && along(v) > 0.3 && along(v) < 1.5).map((v) => ({ x: Math.abs(v.x), s: along(v) }));
       for (const x of [0.3, 0.5]) {

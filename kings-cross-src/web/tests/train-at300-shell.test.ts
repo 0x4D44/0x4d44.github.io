@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { trainLayout } from '../../core/train.ts';
 import type { TrainKind } from '../../core/train.ts';
 import { bodySpec, buildTrain, carSection, CLUSTER_EDGE, CLUSTER_LIFT, CLUSTER_ROW, faceSetback, frontOf } from '../src/train.ts';
+import { LIVERIES } from '../src/livery.ts';
 import { col } from '../src/train-geom.ts';
 import { HULL_BEAK, LNER_YELLOW } from '../src/train-livery.ts';
 import { eggSection, halfAt, normalised, ringAt, ringStations, xAtY } from '../src/train-nose.ts';
@@ -316,4 +317,160 @@ test('the AT300 lamp housing\'s outline is the one drawn: inside it the layer th
     }
   }
   assert.ok(CLUSTER_ROW <= 0.02, 'the housing\'s rows stay close enough for their chords to follow the shoulder');
+});
+
+/** The four AT300 kinds' cab cars, each with its geometry in the nose's frame (x across, y up, s back from the tip): `at` maps a vertex of a mesh of that car to it. */
+function at300Cabs(): { here: string; kind: TrainKind; glass: THREE.Mesh; detail: THREE.Mesh; at: (p: THREE.BufferAttribute, k: number) => THREE.Vector3 }[] {
+  const tip = faceSetback('at300');
+  return (['lner5', 'lner9', 'hull5', 'lumo5'] as const).flatMap((kind) => {
+    const g = buildTrain(kind);
+    return trainLayout(kind).cars.filter((c) => c.cab).map((car) => {
+      const face = car.cab === 'front' ? car.start : car.end;
+      const group = g.getObjectByName(`car-${car.index}`)!;
+      return {
+        here: `${kind} car ${car.index}`,
+        kind,
+        glass: group.getObjectByName('cab-glass') as THREE.Mesh,
+        detail: group.getObjectByName('body-detail') as THREE.Mesh,
+        at: (p: THREE.BufferAttribute, k: number) => new THREE.Vector3(p.getX(k), p.getY(k), (car.cab === 'front' ? p.getZ(k) - face : face - p.getZ(k)) - tip),
+      };
+    });
+  });
+}
+
+/** The triangles of a mesh, in the nose's frame, that `keep` passes (it sees the three vertex indices). */
+function trianglesOf(mesh: THREE.Mesh, at: (p: THREE.BufferAttribute, k: number) => THREE.Vector3, keep: (ids: number[]) => boolean): THREE.Vector3[][] {
+  const p = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const index = mesh.geometry.index;
+  const n = index ? index.count : p.count;
+  const out: THREE.Vector3[][] = [];
+  for (let t = 0; t < n; t += 3) {
+    const ids = [0, 1, 2].map((k) => (index ? index.getX(t + k) : t + k));
+    if (keep(ids)) out.push(ids.map((k) => at(p, k)));
+  }
+  return out;
+}
+
+/** The windscreen's glass (the cab-glass mesh, less the side windows, which face sideways) and its black frame (the livery's glass colour in the detail mesh, on the nose's roof). */
+function screenParts(cab: ReturnType<typeof at300Cabs>[number]): { glass: THREE.Vector3[][]; frame: THREE.Vector3[][] } {
+  const gn = cab.glass.geometry.getAttribute('normal');
+  const glass = trianglesOf(cab.glass, cab.at, (ids) => ids.every((k) => Math.abs(gn.getX(k)) < 0.7 && (cab.glass.geometry.getAttribute('position') as THREE.BufferAttribute).getY(k) > 1.9));
+  const rgb = col(LIVERIES[trainLayout(cab.kind).spec.livery].glass);
+  const c = cab.detail.geometry.getAttribute('color');
+  const p = cab.detail.geometry.getAttribute('position') as THREE.BufferAttribute;
+  const frame = trianglesOf(cab.detail, cab.at, (ids) =>
+    ids.every((k) => Math.abs(c.getX(k) - rgb.r) < 1e-5 && Math.abs(c.getY(k) - rgb.g) < 1e-5 && Math.abs(c.getZ(k) - rgb.b) < 1e-5 && p.getY(k) > 1.9 && Math.abs(p.getX(k)) < 1.1 && cab.at(p, k).z < 3));
+  return { glass, frame };
+}
+
+/** How far across (2 |x|) the triangles reach where they cross the height y: the widest crossing of that level by a triangle's edge. */
+function acrossAt(tris: THREE.Vector3[][], y: number): number {
+  let m = 0;
+  for (const t of tris) {
+    for (const [a, b] of [[0, 1], [1, 2], [2, 0]] as const) {
+      const p = t[a]!;
+      const q = t[b]!;
+      if ((p.y - y) * (q.y - y) > 0 || p.y === q.y) continue;
+      m = Math.max(m, Math.abs(p.x + ((y - p.y) / (q.y - p.y)) * (q.x - p.x)));
+    }
+  }
+  return 2 * m;
+}
+
+test('head on, the AT300 windscreen spans most of the cab: the glass about 0.58 of the body\'s width from its foot to its top, in a black frame about 0.65, at both ends of all four kinds (round B6)', () => {
+  // The fresh score of round B5 (T2 held, all four kinds): head on (front-3m, rear-3m) the glass spanned about 55% of the face with its frame (0.47 of the body's width, the glass alone), where
+  // lner-800-113-newcastle-2025, hull-802-doncaster-2024 and LUMO-06-803005-FPK show it across most of the cab. Read off lner-800-113-newcastle-2025, head on (a 1.74x crop of the face,
+  // 2.7 m of body, its widest at the glass's middle height, about 520 px across): the glass 300 px across 0.15 m over its foot (0.58), 300 px at its middle (0.58), 290 px 0.15 m under its
+  // top (0.56), the black frame round it 340 px (0.65); the glass 200 px tall head on (1.04 m). LUMO-06-803005-FPK, a little off the axis, reads 0.6 to 0.7: the band allows for those readings' spread (about 20 px).
+  const body = 2 * spec.half;
+  for (const cab of at300Cabs()) {
+    const { glass, frame } = screenParts(cab);
+    assert.ok(glass.length > 500 && frame.length > 500, `${cab.here}: ${glass.length} glass and ${frame.length} frame triangles`);
+    const ys = glass.flat().map((v) => v.y);
+    const foot = Math.min(...ys);
+    const top = Math.max(...ys);
+    const mid = (foot + top) / 2;
+    const ratio = (tris: THREE.Vector3[][], y: number): number => acrossAt(tris, y) / body;
+    for (const [what, y, lo, hi] of [['0.15 m over its foot', foot + 0.15, 0.54, 0.62], ['at its middle', mid, 0.55, 0.62], ['0.15 m under its top', top - 0.15, 0.52, 0.6]] as const) {
+      const r = ratio(glass, y);
+      assert.ok(r >= lo && r <= hi, `${cab.here}: the glass ${what} spans ${r.toFixed(3)} of the body's width, the photograph ${lo} to ${hi}`);
+    }
+    const f = ratio(frame, mid);
+    assert.ok(f >= 0.6 && f <= 0.7, `${cab.here}: the frame spans ${f.toFixed(3)} of the body's width at the glass's middle`);
+    // c522cb3d's rake and set-back stay: the glass's height head on (the photograph's 1.04 m) and its foot's height (2.0 to 2.2 m, the nose test above)
+    assert.ok(top - foot >= 0.9 && top - foot <= 1.1, `${cab.here}: the glass stands ${(top - foot).toFixed(2)} m tall head on`);
+    assert.ok(foot >= 2.0 && foot <= 2.2, `${cab.here}: the glass's foot is ${foot.toFixed(2)} m up`);
+  }
+});
+
+test('the widened AT300 windscreen lies on the nose: its frame runs at least 3 cm past the glass all round, neither stands proud of the shell nor sinks into it, and the lamp housings stay clear of both (round B6)', () => {
+  // the nose's loft, as the housing tests above build it, for the signed distance of a point off the skin (outward on the right half; the left half is mirrored onto it)
+  const stations = ringStations(spec.nose).filter((s) => s < 3);
+  const rings = stations.map(ringHalf);
+  const loft: { t: THREE.Triangle; n: THREE.Vector3; box: THREE.Box3 }[] = [];
+  for (let i = 0; i + 1 < rings.length; i++) {
+    for (let j = 0; j + 1 < (rings[i] as [number, number][]).length; j++) {
+      const v = (a: number, b: number): THREE.Vector3 => new THREE.Vector3(...((rings[a] as [number, number][])[b] as [number, number]), stations[a] as number);
+      for (const [a, b, c] of [[v(i, j), v(i, j + 1), v(i + 1, j + 1)], [v(i, j), v(i + 1, j + 1), v(i + 1, j)]] as const) {
+        const t = new THREE.Triangle(a, b, c);
+        loft.push({ t, n: t.getNormal(new THREE.Vector3()), box: new THREE.Box3().setFromPoints([a, b, c]) });
+      }
+    }
+  }
+  const near = new THREE.Vector3();
+  const offLoft = (q0: THREE.Vector3): number => {
+    const q = new THREE.Vector3(Math.abs(q0.x), q0.y, q0.z);
+    let best = Infinity;
+    let sign = 1;
+    for (const f of loft) {
+      if (f.box.distanceToPoint(q) > Math.min(best, 0.05)) continue;
+      f.t.closestPointToPoint(q, near);
+      const d = near.distanceTo(q);
+      if (d < best) {
+        best = d;
+        sign = Math.sign(q.clone().sub(near).dot(f.n)) || 1;
+      }
+    }
+    return best * sign;
+  };
+  // (x, s) inside one of the triangles, projected on the nose's plan (x across, s back)
+  const inPlan = (tris: THREE.Vector3[][], x: number, s: number): boolean => tris.some(([a, b, c]) => {
+    const d = (p: THREE.Vector3, q: THREE.Vector3): number => (q.x - p.x) * (s - p.z) - (q.z - p.z) * (x - p.x);
+    const d1 = d(a!, b!);
+    const d2 = d(b!, c!);
+    const d3 = d(c!, a!);
+    return (d1 >= -1e-9 && d2 >= -1e-9 && d3 >= -1e-9) || (d1 <= 1e-9 && d2 <= 1e-9 && d3 <= 1e-9);
+  });
+  for (const cab of at300Cabs()) {
+    const { glass, frame } = screenParts(cab);
+    // no see-through edge: every point of the glass, moved 3 cm out, back or forward, still lies over the frame's black (the frame is 7 cm wider all round, FrontSpec.frame)
+    const gaps = glass.flat().filter((v) => !inPlan(frame, Math.sign(v.x) * (Math.abs(v.x) + 0.03), v.z) || !inPlan(frame, v.x, v.z - 0.03) || !inPlan(frame, v.x, v.z + 0.03));
+    assert.equal(gaps.length, 0, `${cab.here}: ${gaps.length} points of the glass's edge lie within 3 cm of the frame's, e.g. ${gaps[0]?.toArray().map((x) => x.toFixed(3))}`);
+    // nothing proud of the shell, nothing under it: the frame lies 14 mm off the nose and the glass 20 mm (their lifts), each to within the facets' sag (about 6 mm on the steep shoulder)
+    for (const [what, tris, lift] of [['frame', frame, 0.014], ['glass', glass, 0.02]] as const) {
+      const offs = tris.flat().filter((_, k) => k % 3 === 0).map(offLoft);
+      const lo = Math.min(...offs);
+      const hi = Math.max(...offs);
+      assert.ok(lo >= lift - 0.006, `${cab.here}: the ${what} sinks to ${(lo * 1000).toFixed(1)} mm off the nose (its lift ${lift * 1000} mm)`);
+      assert.ok(hi <= lift + 0.006, `${cab.here}: the ${what} stands ${(hi * 1000).toFixed(1)} mm off the nose (its lift ${lift * 1000} mm)`);
+    }
+    // the housings (their window and rim) do not reach onto the frame: no vertex of them lies over the frame's plan or within 2 cm of its edge there (built: 57 mm clear at the frame's
+    // lower outer corner; lner-800-113-newcastle-2025 shows each housing tucked under the screen's outer corner, its inboard edge in line with the glass's, its top at the frame's foot)
+    const cluster = frontOf(cab.kind).cluster!;
+    const colours = [cluster.window.colour, ...(cluster.rim ? [cluster.rim.colour] : [])].map(col);
+    const c = cab.detail.geometry.getAttribute('color');
+    const housing = trianglesOf(cab.detail, cab.at, (ids) => ids.every((k) => colours.some((rgb) => Math.abs(c.getX(k) - rgb.r) < 1e-4 && Math.abs(c.getY(k) - rgb.g) < 1e-4 && Math.abs(c.getZ(k) - rgb.b) < 1e-4)))
+      .filter((t) => t.every((v) => v.z < 3 && v.z > 0.2));
+    assert.ok(housing.length > 200, `${cab.here}: ${housing.length} housing triangles`);
+    const over = housing.flat().filter((v) => inPlan(frame, v.x, v.z));
+    assert.equal(over.length, 0, `${cab.here}: ${over.length} points of the lamp housings lie over the windscreen's frame, e.g. ${over[0]?.toArray().map((x) => x.toFixed(3))}`);
+    const toSegment = (x: number, s: number, p: THREE.Vector3, q: THREE.Vector3): number => {
+      const dx = q.x - p.x;
+      const ds = q.z - p.z;
+      const t = Math.max(0, Math.min(1, ((x - p.x) * dx + (s - p.z) * ds) / (dx * dx + ds * ds || 1)));
+      return Math.hypot(x - p.x - t * dx, s - p.z - t * ds);
+    };
+    const clear = Math.min(...housing.flat().map((v) => Math.min(...frame.map((t) => Math.min(toSegment(v.x, v.z, t[0]!, t[1]!), toSegment(v.x, v.z, t[1]!, t[2]!), toSegment(v.x, v.z, t[2]!, t[0]!))))));
+    assert.ok(clear >= 0.02, `${cab.here}: the lamp housings come within ${(clear * 1000).toFixed(0)} mm of the windscreen's frame, in plan`);
+  }
 });

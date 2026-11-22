@@ -142,8 +142,10 @@ const FRAME_REACH = 0.91;
  * yellow tab at each of those corners (0.5 m out either side of the middle), which a swept foot made longer. At 7 mm a thin spike of it was left in the preview; at 4 mm the frame covers it
  * (the rows' lift is along the nose's normal, the nose's own facets sag between rings by a few mm: the 3 mm floor of the band's test is under it). CHANGED (AT300 round: 4 mm): on the
  * blunt nose the last row's chord across the outline's corner 0.6 m out stood 2.96 mm over the loft at 4 mm, under that floor; 4.5 mm (ASSUMED still under the frame, 14 mm off) clears it.
+ * CHANGED (round B6, 4.5 mm): the wider glass (GlassSpec.screen) puts the swept foot further forward 0.6 m out (s 1.14 m, was the corner at 1.3 m), and the last row's chord there stood 2.8 mm
+ * over the loft at 4.5 mm; 5 mm (ASSUMED still under the frame, 14 mm off) clears it.
  */
-const BAND_END_LIFT = 0.0045;
+const BAND_END_LIFT = 0.005;
 /** How many steps the columns of a colour mask's band take over its half-turn of angle (see the band in buildCar). CHANGED (AT300 round: 18 before): the blunt nose turns over
  * sharply at the band's outer edge, where the chord across two columns of its last row stood 0.4 mm under the loft at 18 steps (see BAND_END_LIFT for the rest). */
 const BAND_SPREAD = 36;
@@ -763,7 +765,13 @@ const AT300: BodySpec = {
     // CHANGED (AT300 round, with the blunt nose: AT300_NOSE_KNOTS): the foot's middle is 1.0 m back, 2.08 m up (was 0.7 m back, 2.24 m up), between lner-800-108-offord-cluny-2023's
     // 2.03 m at 1.09 m and the head-on 2.2 m; the top 2.6 m back, 3.05 m up (side on 2.55 m back, 2.93 m up; head on 3.15 m), so the glass lies back about 31 degrees as that photograph
     // shows it; 0.5 of the ring's half-width at the foot and 0.52 at the top (was 0.7 and 0.52 of a narrower nose's), about 1.2 m across at the foot (head on: 1.2 m of glass in a black frame 1.35 m across) and 1.36 m at the top
-    screen: { s0: 1.0, s1: 2.6, fraction: 0.5, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    // CHANGED (round B6; was 0.5 and 0.52): the B5 score held T2 because head on (front-3m, rear-3m) the glass spanned 0.47 of the body's width, about 55% of the face with its frame, where
+    // lner-800-113-newcastle-2025, hull-802-doncaster-2024 and LUMO-06-803005-FPK show it across most of the cab. Read off lner-800-113-newcastle-2025 against the 2.7 m body (about 520 px
+    // across at the glass's middle height in a 1.74x crop of the face; the rails' scale above reads the body 2.3 m wide, so it is not used for widths): the glass 300 px across near its foot and at its
+    // middle (0.58 of the body), 290 px near its top (0.56), its black frame 340 px (0.65). So 0.68 of the ring's half-width at the foot and 0.6 at the top: built, 0.58, 0.59 and 0.56 of the body
+    // and the frame 0.65. The rake, the foot and top (s0, s1) and the corners are c522cb3d's; the glass's height head on (0.97 m) is near the photograph's 1.04 m, so it is not made taller.
+    // The housings stay 57 mm clear of the frame in plan, tucked under its outer corners as the photograph shows them (train-at300-shell.test.ts, round B6). ASSUMED: the readings, to about 20 px.
+    screen: { s0: 1.0, s1: 2.6, fraction: 0.68, fractionTop: 0.6, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
     // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
     // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
     // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
@@ -1812,8 +1820,10 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const patch = (margin: number, target: Soup, colour: THREE.Color | null, lift: number, post = 0): void => {
         // with a centre post the glass is two panes (each its own patch, 8 columns across), and the frame's black shows between them
         // (24 rows by 16 columns a patch, two patches: 768 triangles each; it was 30 by 20, which the Azuma's longer nose had no triangles left for)
+        // CHANGED (round B6): a screen with no centre post (the Azuma's) takes 22 columns, its glass and its frame 1056 triangles a patch: widened to 1.6 m (GlassSpec.screen), 16 columns
+        // stood 0.1 m apart, where they were 0.07 m. A screen with a post (the Class 180's) keeps 16 for its frame and 8 a pane.
         for (const pane of post > 0 ? [-1, 1] : [0]) {
-          nosePatch(24, post > 0 ? 8 : 16, (v, u) => {
+          nosePatch(24, post > 0 ? 8 : screen.pillar ? 16 : 22, (v, u) => {
             // (a swept foot: each column starts at its own foot, `footSweepAt` of how far out the column is, and runs on to the one top edge)
             const s = lerp(screen.s0 - margin + (pane === 0 ? footSweepAt(Math.abs(2 * u - 1)) : 0), screen.s1 + margin, glassRow(v));
             const hw = screenHalfWidth(s, margin);
