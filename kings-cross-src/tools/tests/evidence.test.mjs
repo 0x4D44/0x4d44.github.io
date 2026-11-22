@@ -712,7 +712,8 @@ test('every camera the six rubrics add exists, looks somewhere, and names the ph
   const cameras = stationCameras(trackData), added = Object.values(NEW_CAMERAS).flat();
   assert.equal(added.length, 21);
   assert.equal(new Set(added).size, 21, 'no view is added twice');
-  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length, 'nothing else was added');
+  assert.deepEqual(Object.keys(cameras).slice(-1), ['kx-euston-road-lamp'], 'the night rubric view is appended after the six rubric sets');
+  assert.equal(Object.keys(cameras).length, Object.keys(OLD_CAMERAS).length + added.length + EXTRA_CAMERAS.length + 1, 'only the night rubric view was appended');
   assert.deepEqual(EXTRA_CAMERAS.filter(name => added.includes(name)), [], 'an extra camera is not one a rubric names');
   for (const name of EXTRA_CAMERAS) { assert.ok(cameras[name], name); assert.match(cameras[name].source, /\([a-z0-9-]+\.jpg/, `${name} names its reference photograph`); assert.ok(Object.values(ELEMENT_VIEWS).some(names => names.includes(name)), `${name} is scored with an element`); }
   for (const [element, names] of Object.entries(NEW_CAMERAS)) for (const name of names) {

@@ -579,5 +579,20 @@
       -3
     ],
     "source": "R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King's Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road"
+  },
+  "kx-euston-road-lamp": {
+    "pos": [
+      -78,
+      2.765,
+      133.5
+    ],
+    "target": [
+      -88.75,
+      5.91,
+      133.06
+    ],
+    "fov": 59,
+    "near": 0.1,
+    "source": "R-nw-b (night-b-euston-road-sodium-2019-oatsy40.jpg): south pavement opposite the Midland Grand, eye 1.6 m, looking west at the lamp on OSM carriageway 746410869, with the road and pavement beneath it"
   }
 }

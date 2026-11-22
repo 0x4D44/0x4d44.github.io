@@ -622,6 +622,12 @@ const FROZEN_STATION_CAMERAS = {
     target: [133.5, 3.9374999990686774, -3],
     source: 'R-city-surroundings-a standpoint (city-a-aerial-skyline-2016.jpg): Euston Road outside the King\'s Cross forecourt (OSM way 367808662), eye 1.7 m, looking east along Pentonville Road',
   },
+  'kx-euston-road-lamp': {
+    pos: [-78, 2.765, 133.5],
+    target: [-88.75, 5.91, 133.06],
+    fov: 59, near: 0.1,
+    source: 'R-nw-b (night-b-euston-road-sodium-2019-oatsy40.jpg): south pavement opposite the Midland Grand, eye 1.6 m, looking west at the lamp on OSM carriageway 746410869, with the road and pavement beneath it',
+  },
 };
 
 /**
@@ -633,9 +639,9 @@ export function stationCameras(data) {
 }
 
 /**
- * The 12 frozen Edinburgh Waverley cameras (Waverley's own frame: x east, y up, z south, origin 55.9519018 N 3.1904199 W,
- * core/waverley-data.ts WAVERLEY_ORIGIN, rail datum y = 0), as gfx-rubrics/waverley/frozen-cameras.json holds them;
- * tools/tests/frozen-waverley-cameras.json is the copy tools/tests/frozen-waverley-cameras.test.mjs holds waverleyCameras to.
+ * The frozen Edinburgh Waverley cameras (Waverley's own frame: x east, y up, z south, origin 55.9519018 N 3.1904199 W,
+ * core/waverley-data.ts WAVERLEY_ORIGIN, rail datum y = 0). tools/tests/frozen-waverley-cameras.json
+ * holds the Waverley baseline views and the night rubric's signal view in capture order.
  * Like FROZEN_STATION_CAMERAS they are literals and read no model: change one only on purpose, here and in the test's copy together,
  * and re-freeze the Waverley baseline with it. A camera with no fov (wv-overview) is shot at the page's 50 degrees.
  */
@@ -716,6 +722,12 @@ const FROZEN_WAVERLEY_CAMERAS = {
     target: [32.93, 7.543, -68.61],
     fov: 60,
     source: 'Head landing of the Waverley Steps (OSM way/577519823; bridgeFrame of the outline at s 0.3 m from the Princes Street end, t 0.3, 1.3 m west of the centreline), eye 1.6 m above the head landing (15.943 m: W2 layTreads, highest DTM under the walking line + 0.02), looking south down the line to its Market Street end at t 0.3, pitched 10 degrees down: the standpoint of R-wv2-d / R-wv1-d2 (M J Richardson 2013, geotag 55.95291 N, 3.19017 W). Placed 2026-11-09 by a neutral agent from the photo, no render consulted',
+  },
+  'wv-platform-signal': {
+    pos: [119, 2.515, 5],
+    target: [141.29, 3.5, 4.47],
+    fov: 45, near: 0.1,
+    source: 'R-nw-i (John Lucas, Red signals at Edinburgh Waverley): west end of platform 6, eye 1.6 m above the deck, looking east at running signal E456 with the east roof pendants in view',
   },
 };
 

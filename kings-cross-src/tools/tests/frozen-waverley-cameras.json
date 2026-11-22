@@ -179,5 +179,20 @@
     ],
     "fov": 60,
     "source": "Head landing of the Waverley Steps (OSM way/577519823; bridgeFrame of the outline at s 0.3 m from the Princes Street end, t 0.3, 1.3 m west of the centreline), eye 1.6 m above the head landing (15.943 m: W2 layTreads, highest DTM under the walking line + 0.02), looking south down the line to its Market Street end at t 0.3, pitched 10 degrees down: the standpoint of R-wv2-d / R-wv1-d2 (M J Richardson 2013, geotag 55.95291 N, 3.19017 W). Placed 2026-11-09 by a neutral agent from the photo, no render consulted"
+  },
+  "wv-platform-signal": {
+    "pos": [
+      119,
+      2.515,
+      5
+    ],
+    "target": [
+      141.29,
+      3.5,
+      4.47
+    ],
+    "fov": 45,
+    "near": 0.1,
+    "source": "R-nw-i (John Lucas, Red signals at Edinburgh Waverley): west end of platform 6, eye 1.6 m above the deck, looking east at running signal E456 with the east roof pendants in view"
   }
 }

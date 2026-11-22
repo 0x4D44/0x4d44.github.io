@@ -1,6 +1,6 @@
 // The Edinburgh Waverley cameras are frozen like the London station cameras (frozen-cameras.test.mjs): each is a literal in
-// tools/evidence.mjs (FROZEN_WAVERLEY_CAMERAS) equal to gfx-rubrics/waverley/frozen-cameras.json, whose copy is
-// tools/tests/frozen-waverley-cameras.json (sha256 267c1238881f2a4fdb110d8d384e6061d5e17526f81daf6bb258a550f18059b7). The scorers'
+// tools/evidence.mjs (FROZEN_WAVERLEY_CAMERAS). tools/tests/frozen-waverley-cameras.json holds the 13 baseline
+// views from gfx-rubrics/waverley/frozen-cameras.json and the night rubric's signal view. The scorers'
 // camera check compares pos, target and fov with it and voids a view that moved. To change a camera on purpose, change both together
 // and re-freeze the Waverley baseline.
 import assert from 'node:assert/strict';
@@ -24,12 +24,11 @@ function differences(cameras, expected) {
   return found;
 }
 
-// 13 since 2026-11-09: wv-waverley-steps, left unplaced by the rubric until W2 built the steps, was placed from R-wv1-d2.
-test('every Waverley camera is its frozen value, field for field, in the frozen order, and there are 13', () => {
+test('every Waverley camera is its frozen value, field for field, in the frozen order, and there are 14', () => {
   const cameras = waverleyCameras();
   assert.deepEqual(differences(cameras, frozen), []);
   assert.deepEqual(Object.keys(cameras), Object.keys(frozen));
-  assert.equal(Object.keys(cameras).length, 13);
+  assert.equal(Object.keys(cameras).length, 14);
 });
 
 test('every call returns fresh cameras, so editing one call\'s result changes nothing for the next', () => {
