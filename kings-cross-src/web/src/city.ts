@@ -28,6 +28,7 @@ import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial, cityOfficeAtNight, withBuildingNightMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
 import { EUSTON_P1_ROW, isEustonPilotLamp } from './night-lighting-p1.ts';
+import type { NightLightLayer } from './night-light-layer.ts';
 import type { NightLightingPilot } from './night-lighting-p1.ts';
 import { forecourtMasts, LAMP_KIND } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
@@ -40,6 +41,7 @@ import { GROUND_Y } from './world.ts';
 
 export interface CityOptions {
   nightLightingPilot?: NightLightingPilot;
+  nightLightingLayer?: NightLightLayer;
   /** Bounded pools, mast optics and station-local weather effects. */
   nightEffects?: boolean;
   /** OSM building ids drawn some other way (the station, the landmarks, whatever is under the shed) */
@@ -222,7 +224,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     return edge > -3 && edge < 1 ? .88 + .28 * hash01(Math.round(spot.x),Math.round(spot.z)) : 0;
   };
   let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true,
-    receiverPoolAt: opts.nightLightingPilot ? isEustonPilotLamp : undefined,
+    receiverPoolAt: opts.nightLightingLayer ? () => true : opts.nightLightingPilot ? isEustonPilotLamp : undefined,
     localSodiumScaleAt } : {}) : null;
   let panelSources: readonly LightSource[] = [];
   if (lights && wetSurface && stationBuilding(data)) {
@@ -270,6 +272,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
       return { ...source, halfSpace };
     });
     unregisterLights = registerLights(scene, [...emitters, ...panelSources]);
+    if (opts.nightEffects) opts.nightLightingLayer?.register(lights, midland);
   }
   return {
     group,
@@ -278,6 +281,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     dispose() {
       unregisterLights?.();
       opts.nightLightingPilot?.dispose();
+      opts.nightLightingLayer?.dispose();
       wetSurface?.dispose();
       scene.remove(group);
       for (const g of geometries) g.dispose();

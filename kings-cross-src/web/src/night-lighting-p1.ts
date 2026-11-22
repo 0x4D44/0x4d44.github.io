@@ -8,6 +8,7 @@ import { LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import type { AtmosphereState } from './atmosphere.ts';
 import { coverUniforms } from './cover.ts';
+import { EUSTON_FACADE_LOBE, EUSTON_ROAD_LOBES, eustonFrontPlanes } from './euston-light-optic.ts';
 import { headOf } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 
@@ -53,18 +54,11 @@ vec3 eustonP1One(vec3 p, vec3 n, vec3 centre, vec2 aim, vec3 wall, bool facade) 
   if (facade) {
     // Walk the street-side face up to the wall plane. Recess backs and side
     // returns cannot see the fitting; the open arcade glazing is a separate mesh.
-    optic = 1.18 * smoothstep(0.0, 0.14, ray.y / d)
-      * (1.0 - smoothstep(0.25, 0.57, ray.y / d))
-      * smoothstep(0.1, 0.58, dot(n.xz, wall.xy));
+${EUSTON_FACADE_LOBE}
   } else {
     float angle = across / ray.y;
     float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) / ray.y;
-    float forward = smoothstep(-0.86, -0.30, angle) * (1.0 - smoothstep(0.65, 1.43, angle))
-      * (1.0 - smoothstep(0.90, 2.40, along)) / (1.0 + 1.5 * (angle - 0.38) * (angle - 0.38));
-    // A weaker lobe behind the head reaches the pavement and open square.
-    float back = 0.36 * smoothstep(-2.45, -1.50, angle) * (1.0 - smoothstep(-1.05, -0.28, angle))
-      * (1.0 - smoothstep(0.95, 2.30, along));
-    optic = max(forward, back);
+${EUSTON_ROAD_LOBES}
   }
   float distanceWindow = 1.0 - smoothstep(27.0, reach, d);
   vec3 spectrum = facade ? vec3(1.0, 0.43, 0.19) : vec3(1.0, 0.53, 0.06);
@@ -154,10 +148,9 @@ ${facade ? 'if ( vMidlandNight.x > 0.5 ) ' : ''}{
       const row = spots.filter(isEustonPilotLamp);
       // The Midland front runs east to west. Each face uses the wall plane at
       // its own chainage, so a neighbouring facet's tangent cannot clip it.
-      frontPlanes = (midland?.front.edges ?? []).toSorted((a, b) => Math.min(b.a[0], b.b[0]) - Math.min(a.a[0], a.b[0])).map((edge, i) => {
+      frontPlanes = eustonFrontPlanes(midland).map((plane, i) => {
         const name = `uEustonP1Front${i}`;
-        uniforms[name] = { value: new THREE.Vector4(Math.min(edge.a[0], edge.b[0]), ...edge.normal,
-          edge.normal[0] * edge.a[0] + edge.normal[1] * edge.a[1]) };
+        uniforms[name] = { value: new THREE.Vector4(...plane) };
         return name;
       });
       bounds.set(Infinity, Infinity, -Infinity, -Infinity);

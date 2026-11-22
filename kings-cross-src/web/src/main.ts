@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PLATFORM_HEIGHT, railSegments } from '../../core/scene.ts';
@@ -42,6 +43,8 @@ import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWea
 import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
 import { lightSourcesFor } from '../../core/light-sources.ts';
+import { LIGHT_GRID_DESKTOP, LIGHT_GRID_MOBILE } from '../../core/light-field.ts';
+import { createNightLightLayer } from './night-light-layer.ts';
 import { createNightLightingPilot } from './night-lighting-p1.ts';
 import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
@@ -140,7 +143,7 @@ function start(): void {
       // buildings, streets, paving, water and trees stand on the terrain as drawn; without one (?terrain=0, or it failed to load) on the flat plane
       const ground = terrain ? { terrain } : {};
       central.addKxCentral(scene, data, ground);
-      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden, ...ground, nightEffects: true, night: atmosphere?.nightLights, nightLightingPilot }).group; // the street lamps' glow follows the night lights (round 7)
+      parts.buildings = addCity(scene, data, m.default as unknown as CityData, { hidden, ...ground, nightEffects: true, night: atmosphere?.nightLights, nightLightingPilot, nightLightingLayer }).group; // the street lamps' glow follows the night lights (round 7)
     })).catch((err: unknown) => { console.error('city failed to load', err); });
   const shed = buildShed(layout);
   scene.add(shed);
@@ -215,12 +218,16 @@ function start(): void {
   const pinnedTimeMs = parseSceneTime(params.get('time'));
   const forcedWeather = params.get('weather');
   const fixedSky = (bare || params.get('sky') === 'ref') && pinnedTimeMs === null && forcedWeather === null;
-  const nightLightingPilot = !fixedSky && !bare && params.get('nightlighting-p1') !== '0' ? createNightLightingPilot(scene) : undefined;
+  // ?nightlayer=1 opts into the shared light field (S2); off by default in every build, so the capture rig can score the built page with it.
+  const nightLightingLayer = !fixedSky && !bare && params.get('nightlayer') === '1'
+    ? createNightLightLayer(scene, matchMedia('(pointer: coarse)').matches ? LIGHT_GRID_MOBILE : LIGHT_GRID_DESKTOP)
+    : undefined;
+  const nightLightingPilot = !nightLightingLayer && !fixedSky && !bare && params.get('nightlighting-p1') !== '0' ? createNightLightingPilot(scene) : undefined;
   const replayDay = `${settings.date.slice(0, 4)}-${settings.date.slice(4, 6)}-${settings.date.slice(6, 8)}`;
   const weatherOptions = sceneWeatherOptions(forcedWeather, settings.mode === 'replay' ? replayDay : null);
   const lampPlan = furniture.userData.plan as FurniturePlan;
   const londonClimate = fixedSky ? null : createSceneWeather({ scene, world,
-    sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), platformLampFloor: data.platforms.filter(p=>!p.tunnel).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.320,.266,.237], litFogCloud:true, nightLightingPilot, weather: weatherOptions });
+    sites: nightLightSites({ lamps: lampPlan.lamps, layout, canopy, footprint: station?.pts ?? [] }), platformLampFloor: data.platforms.filter(p=>!p.tunnel).map(p=>p.pts), lampLayerSunGate:[0,6], kingsCrossNightFog:true, cityFogTint:[.320,.266,.237], litFogCloud:true, nightLightingPilot, nightLightingLayer, weather: weatherOptions });
   const atmosphere = londonClimate?.atmosphere ?? null, weatherFeed = londonClimate?.feed ?? null;
   // The sun's shadow (lighting.ts) is London's; ?shadows=0 leaves it out. Every scene with a climate is drawn through the filmic grade (see the frame loop).
   const sunShadow = atmosphere && params.get('shadows') !== '0' ? createSunShadow(scene, world.lights.sun) : null;
@@ -363,6 +370,7 @@ function start(): void {
       if (shown === scene && sunShadow && toSun) { if (added) sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
     }
     nightLightingPilot?.setFrame(shown, sky); // inherit the shadow tags on the original materials
+    nightLightingLayer?.setFrame(shown, sky);
     // after the trains are posed, the camera has moved and the sky has set the night: the headlamps of the scene on show (none for a scene with no trains of its own)
     const selected = stations.state().selected;
     const remoteLamps = selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.()
@@ -470,6 +478,7 @@ function start(): void {
     stPancras.dispose();
     feed?.dispose(); timetable?.dispose(); liveTrains?.dispose(); signalLayer?.dispose(); stationBoard?.dispose(); tooltip?.dispose();
     nightLightingPilot?.dispose();
+    nightLightingLayer?.dispose();
     sunShadow?.dispose(); londonClimate?.dispose(); interiors?.dispose(); lampLights.dispose();
   }, { once: true });
 }
