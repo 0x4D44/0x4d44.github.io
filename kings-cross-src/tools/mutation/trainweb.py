@@ -1,6 +1,6 @@
 """Mutation check for the three.js trains (web/src/train.ts, train-parts.ts, train-bogie-trace.ts, train-nose.ts, train-face.ts, train-geom.ts, train-livery.ts, livery.ts, train-interior-layout.ts, train-interior-kit.ts) against
 web/tests/train.test.ts, web/tests/train-detail.test.ts, web/tests/train-livery.test.ts, web/tests/train-lamps.test.ts, web/tests/train-rake.test.ts,
-web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts, web/tests/train-roof-ends.test.ts and web/tests/train-at300-shell.test.ts.
+web/tests/train-azuma-front.test.ts, web/tests/train-bogie-view.test.ts, web/tests/train-bogie-trace.test.ts, web/tests/train-bogie-trace-electrostar.test.ts, web/tests/train-bogie-trace-siemens.test.ts, web/tests/train-azuma-plan.test.ts, web/tests/train-roof.test.ts, web/tests/train-roof-ends.test.ts, web/tests/train-at300-shell.test.ts and web/tests/train-lner.test.ts.
 usage: python3 -I -u tools/mutation/trainweb.py <kings-cross-src> <scratch dir> [mutation-name substring ... | #a-b]
 `#a-b` runs the mutants at positions a up to (not including) b of the list below, counted from 0: the full run in slices, each through the machine's one-driver gate, with the
 never-red test names of every slice intersected afterwards (a slice cannot see what the others turned red).
@@ -25,7 +25,7 @@ FACE = "web/src/train-face.ts"
 GEOM = "web/src/train-geom.ts"
 ILAY = "web/src/train-interior-layout.ts"
 IKIT = "web/src/train-interior-kit.ts"
-TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts"]
+TESTS = ["web/tests/train.test.ts", "web/tests/train-detail.test.ts", "web/tests/train-livery.test.ts", "web/tests/train-lamps.test.ts", "web/tests/train-rake.test.ts", "web/tests/train-azuma-front.test.ts", "web/tests/train-bogie-view.test.ts", "web/tests/train-bogie-trace.test.ts", "web/tests/train-bogie-trace-electrostar.test.ts", "web/tests/train-bogie-trace-siemens.test.ts", "web/tests/train-azuma-plan.test.ts", "web/tests/train-roof.test.ts", "web/tests/train-roof-ends.test.ts", "web/tests/train-at300-shell.test.ts", "web/tests/train-lner.test.ts"]
 # the lines of the bogie's drive and brake units in train-parts.ts that the round-5 mutants below search for, each mutant changing one detail of one of them
 GEAR_CASE = "D.box(x0, x1, y - MOTOR_RADIUS + 0.04, y + MOTOR_RADIUS, Math.min(az - 0.17, az + dz - 0.17), Math.max(az + 0.17, az + dz + 0.17), pal.gear);"
 MOTOR_RINGS = "[[-stand, 0, 8], [-stand, boss, 8], [0, boss, 8], [0, MOTOR_RADIUS], [L, MOTOR_RADIUS], [L, boss, 8], [L + stand, boss, 8], [L + stand, 0, 8]],"
@@ -1458,7 +1458,13 @@ M = [
     ("cluster: the window not a rim's width under the stop", "const reserve = cluster.rim?.width ?? 0;", "const reserve = 0;"),
     ("cluster: the rim not laid on the stop itself", "flankTop(s) - reserve + grow + reach,", "flankTop(s) - reserve + reach,"),
     ("cluster: the window a rim's width over the stop", "flankTop(s) - reserve + grow + reach,", "flankTop(s) + reserve + grow + reach,"),
-    ("cluster: the housing's edge left standing its lift (round B3's proud plate)", "return Math.min(lerp(foot, lift, clamp01(side / CLUSTER_EDGE.bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / CLUSTER_EDGE.bevel)));", "return lift;"),
+    ("cluster: the housing's edge left standing its lift (round B3's proud plate)", "return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));", "return lift;"),
+    ("cluster: the LNER's edge back to the shared 6 cm bevel (round B4's white fringe)", "  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },", ""),
+    ("cluster: the LNER's edge without its own rows and columns", "        if (cluster.edge) ys.splice(0, ys.length, ...[...ys, yLo + bevel, yHi - topBevel].sort((a, b) => a - b));", ""),
+    ("cluster: the LNER housing carried back to 2.05 m again", "  window: { ...AT300_CLUSTER.window, sBack0: 0.75, sBack1: 1.4 },", "  window: { ...AT300_CLUSTER.window, sBack0: 1.35, sBack1: 2.05 },"),
+    ("paint: the LNER band across every door again", "  // no `doorBand`: every passenger door is white", "  stripeY: LNER_BAND,\n  doorBand: () => true,\n  // no `doorBand`: every passenger door is white", LV),
+    ("lner: the amber line stops at the dome's front corner", "          ...stations.filter((x) => x > sCap + 1e-9 && x <= noseLen + 1e-9).map((x): [number, number] => [edgeX(x), x]),", ""),
+    ("lner: the amber line a row ahead of the dome's front edge", "          ...Array.from({ length: 9 }, (_, q): [number, number] => [lerp(0.235, edgeX(sCap), q / 8), sCap]),", "          ...Array.from({ length: 9 }, (_, q): [number, number] => [lerp(0.235, edgeX(sCap), q / 8), sCap - 0.1]),"),
     ("cluster: the housing's top edge left standing its lift", "const topFoot = (grow: number, lift: number, foot: number): number => (grow === 0 && cluster.rim ? lift : foot);", "const topFoot = (grow: number, lift: number, foot: number): number => lift;"),
     ("cluster: the edge's foot a centimetre proud", "export const CLUSTER_EDGE = { bevel: 0.06, foot: -0.001,", "export const CLUSTER_EDGE = { bevel: 0.06, foot: 0.01,"),
     ("cluster: the rim at the swoosh's height", "export const CLUSTER_LIFT = { rim: 0.014, window: 0.026, array: 0.03, lens: 0.034 } as const;", "export const CLUSTER_LIFT = { rim: 0.012, window: 0.026, array: 0.03, lens: 0.034 } as const;"),

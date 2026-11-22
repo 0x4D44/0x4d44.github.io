@@ -378,9 +378,8 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   noseTop: 0x1a1c21,
   // the glass's top edge (glass.screen.s1; CHANGED AT300 round with the blunt nose: was 2.5 m)
   noseTopFrom: 2.6,
-  // The waist vinyl crosses the closed passenger leaves in 800108 and 801214.
-  stripeY: LNER_BAND,
-  doorBand: () => true,
+  // no `doorBand`: every passenger door is white and breaks the red band (round B4; lner-801-214-2025, lner-800-doncaster-2026 and lner-800-113-newcastle-2025 show white leaves
+  // in grey frames at every door, the band stopping at each; e76b7348 had run it across every leaf)
   // small red lettering on the white lower body, between the doors (photographs show the Azuma name and the LNER mark small, at the car ends)
   decals: (c) => [{ text: 'LNER', colour: LNER_RED, rect: [bay(c) - 0.5 * 2.722 * 0.26, 1.12, 0, 1.38] }],
 });

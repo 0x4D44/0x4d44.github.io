@@ -447,6 +447,13 @@ export interface ClusterSpec {
   array: { s: number; y: number; r: number };
   /** The rim round the window, a pale edge to its dark glass: its colour (absent: none), and how far it stands out beyond the window all round, metres. */
   rim?: { colour: number; width: number };
+  /**
+   * A kind's own edge (absent: CLUSTER_EDGE's, its fall drawn by the grid's own rows and columns): the lowest layer falls to `foot` over `bevel` inside its front, back and foot
+   * edges and over `top` (in height) under its top, and the grid takes a row and a column there, so the fall is drawn as steep as it is. Round B4: on the LNER the 6 cm fall, drawn
+   * across one 7 cm row of the grid, lay 11 to 15 degrees off the nose and within 2 mm of the paint under it over most of the 25 mm pale rim, which z-fought into the ragged white
+   * fringe a fresh score saw along the housing's top and foot; `foot` 3 mm under the loft keeps the corners, where two falls meet, clear of the paint too.
+   */
+  edge?: { bevel: number; top: number; foot: number };
 }
 
 /**
@@ -658,13 +665,19 @@ export const AT300_CLUSTER: ClusterSpec = {
 };
 
 /**
- * The LNER's cluster: the AT300's, its housing carried further back up the flank so that it reads about 0.38 m across from straight ahead (round-6 score; lner-800-113-newcastle-2025, head on:
- * each housing about 0.38 m across against the 2.7 m face, scaled by eye, ASSUMED), where the AT300's reads 0.28 m. Its front edge is the AT300's (0.45 m behind the tip at its foot); its back
- * edge, 2.05 m behind the tip at the top (was 1.8 m on the old beak), is inside the 1.2 to 2.2 m that lner-800-108-offord-cluny-2023 shows side on.
+ * The LNER's cluster: the AT300's lamps in a shorter housing with a steep edge. CHANGED (round B4; was carried back to 1.35 m at its foot and 2.05 m at its top, to read 0.38 m across
+ * head on): a fresh score saw that housing as a black slab about 1.5 m long running back across the cheek nearly to the cab side window, where lner-801-214-2025 and
+ * lner-800-doncaster-2026 show a compact lamp recess tight against the yellow's upper corners at the screen's foot. Its back edge now stands 0.75 m behind the tip at its foot and 1.4 m at
+ * its top, so the housing spans 0.45 to 1.4 m (round 7's BASE: 0.55 to 1.34 m); the back edge keeps the AT300's lean, so the headlamp's strip keeps its slant and stays under the
+ * flank's stop, and the strip and the marker array stay inside the window. ASSUMED: those
+ * figures, by eye off the two photographs, to about 0.1 m. The edge falls over 2 cm (8 mm in height under the top, where the shoulder lies
+ * over) to 3 mm under the loft (`edge`; CLUSTER_EDGE's 6 cm drawn across one grid row lay within 2 mm of the paint under it, the ragged white fringe the same score saw on the pale
+ * rim). ASSUMED: those figures, chosen so no more than 1% of the rim lies within 2 mm of the paint and near parallel to it (it was 15%).
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, sBack0: 1.35, sBack1: 2.05 },
+  window: { ...AT300_CLUSTER.window, sBack0: 0.75, sBack1: 1.4 },
+  edge: { bevel: 0.02, top: 0.008, foot: -0.003 },
 };
 
 /**
@@ -1803,13 +1816,31 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       patch(0, glass, null, 0.02, screen.pillar ?? 0);
       if (isLner(ctx.kind)) {
         // 801214 and Newcastle 800113 show an amber line along the brow of the screen, on the black dome (the livery's noseTop), that climbs round the upper marker lamp
-        // in the middle. All spans are ASSUMED from those oblique photos, in the nose's projected x/s plane
-        const browAt = (x: number): number => screen.s1 + 0.03 - 0.17 * (x / 0.84) ** 2;
+        // in the middle. All spans are ASSUMED from those oblique photos, in the nose's projected x/s plane.
+        // CHANGED (round B4; it was a brow curving forward 0.17 m by 0.82 m out, which left the dome's edge and crossed the white over the cab side window in nose-34-left): the line
+        // follows the dome's edge, as lner-801-214-2025 shows it: across its front edge (the first ring at noseTopFrom) from 0.235 m out to the corner, then back along its side edge
+        // (the shell's column `shellTop`, where the roof's columns start) to the nose's end, centred on the edge. ASSUMED: that it runs to the nose's end.
         const pinstripe = colourOf(0xe9a031);
+        const k1 = front.shellTop ?? SHELL_K1;
+        const sCap = stations.find((x) => x >= def.noseTopFrom - 1e-9) ?? noseLen;
+        const edgeX = (sAt: number): number => (glassHalf(sAt)[k1] as [number, number])[0];
+        const capEdge: [number, number][] = [
+          ...Array.from({ length: 9 }, (_, q): [number, number] => [lerp(0.235, edgeX(sCap), q / 8), sCap]),
+          ...stations.filter((x) => x > sCap + 1e-9 && x <= noseLen + 1e-9).map((x): [number, number] => [edgeX(x), x]),
+        ];
+        // (the strip is 14 mm across the edge, either side of it in the nose's x/s plane)
+        const across = capEdge.map((_, q): [number, number] => {
+          const a = capEdge[Math.max(0, q - 1)] as [number, number];
+          const b = capEdge[Math.min(capEdge.length - 1, q + 1)] as [number, number];
+          const t = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          return [-(b[1] - a[1]) / t, (b[0] - a[0]) / t];
+        });
         for (const side of [-1, 1]) {
-          nosePatch(1, 12, (v, u) => {
-            const x = side * lerp(0.235, 0.82, u);
-            return [x, browAt(x) + v * 0.014];
+          nosePatch(1, capEdge.length - 1, (v, u) => {
+            const q = Math.round(u * (capEdge.length - 1));
+            const [x, sAt] = capEdge[q] as [number, number];
+            const [nx, ns] = across[q] as [number, number];
+            return [side * (x + (v - 0.5) * 0.014 * nx), sAt + (v - 0.5) * 0.014 * ns];
           }, detail, pinstripe, 0.014);
         }
         const markerOutline = (expand: number): ((v: number, u: number) => [number, number]) => (v, u) => {
@@ -1989,37 +2020,48 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const reach = lift - topFoot(grow, lift, foot);
         return Math.min(topReach(grow, lift, foot), flankTop(s) - reserve + grow + reach, reach > 0 ? flankTop(s, CLUSTER_EDGE.overStop) : Infinity);
       };
+      const bevel = cluster.edge?.bevel ?? CLUSTER_EDGE.bevel;
+      const topBevel = cluster.edge?.top ?? CLUSTER_EDGE.bevel;
       const taperedLift = (s: number, y: number, grow: number, lift: number, foot: number): number => {
         const f = (y - win.y0) / (win.y1 - win.y0);
         const top = topAt(s, grow, lift, foot);
         const side = Math.min(s - (lerp(win.sFront0, win.sFront1, f) - grow), lerp(win.sBack0, win.sBack1, f) + grow - s, y - (win.y0 - grow));
-        return Math.min(lerp(foot, lift, clamp01(side / CLUSTER_EDGE.bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / CLUSTER_EDGE.bevel)));
+        return Math.min(lerp(foot, lift, clamp01(side / bevel)), lerp(topFoot(grow, lift, foot), lift, clamp01((top - Math.min(y, top)) / topBevel)));
       };
       const windowFoot = cluster.rim ? CLUSTER_LIFT.rim + CLUSTER_EDGE.overRim : CLUSTER_EDGE.foot;
       const windowPatch = (side: number, lift: number, grow: number, colour: number): void => {
         // (the lowest layer comes down to the loft at its edge; a window over a rim comes down onto the rim)
-        const foot = grow > 0 || !cluster.rim ? CLUSTER_EDGE.foot : windowFoot;
+        const foot = grow > 0 || !cluster.rim ? (cluster.edge?.foot ?? CLUSTER_EDGE.foot) : windowFoot;
         const grid: { p: V3; n: V3 }[][] = [];
         // (a window reaching further up, CLUSTER_EDGE, takes a row more where it needs one to keep its rows 72 mm apart, as its eight are over its own height; the rim, under it,
         // keeps eight)
         const rowCount = grow > 0 ? rows : Math.max(rows, Math.ceil((topReach(grow, lift, foot) - win.y0) / 0.072));
-        for (let q = 0; q <= rowCount; q++) {
-          // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side)
-          const y = lerp(win.y0 - grow, topReach(grow, lift, foot), q / rowCount);
+        // (the rim is the window's own outline pushed out by `grow` all round: the rows reach `grow` past each end and the edges `grow` out to each side; a kind's own `edge` adds
+        // a row a bevel inside the foot and the top, and a column a bevel inside the front and back edges)
+        const yLo = win.y0 - grow;
+        const yHi = topReach(grow, lift, foot);
+        const ys = Array.from({ length: rowCount + 1 }, (_, q) => lerp(yLo, yHi, q / rowCount));
+        if (cluster.edge) ys.splice(0, ys.length, ...[...ys, yLo + bevel, yHi - topBevel].sort((a, b) => a - b));
+        for (const y of ys) {
           const f = (y - win.y0) / (win.y1 - win.y0);
           const sF = lerp(win.sFront0, win.sFront1, f) - grow;
           const sB = lerp(win.sBack0, win.sBack1, f) + grow;
           // (the columns crowd toward the front edge, where the face turns into the cheek over a few centimetres: a chord across that bend would dip under the loft)
+          const ss = Array.from({ length: cols + 1 }, (_, p) => lerp(sF, sB, (p / cols) * (p / cols)));
+          if (cluster.edge) ss.splice(0, ss.length, ...[...ss, sF + bevel, sB - bevel].sort((a, b) => a - b));
           grid.push(
-            Array.from({ length: cols + 1 }, (_, p) => {
-              const s = lerp(sF, sB, (p / cols) * (p / cols));
-              const yy = Math.min(y, topAt(s, grow, lift, foot));
+            ss.map((s, j) => {
+              // (with its own edge, every row but the top one stops a bevel under the top where the stop holds the top down, so the fall there is drawn too; not the front and
+              // back columns, which are the outline and must come down to the foot)
+              const cap = topAt(s, grow, lift, foot);
+              const inner = j > 0 && j < ss.length - 1;
+              const yy = Math.min(y, cluster.edge && y < yHi && inner ? cap - topBevel : cap);
               return lifted(side, s, yy, taperedLift(s, yy, grow, lift, foot));
             }),
           );
         }
-        for (let i = 0; i < rowCount; i++) {
-          for (let j = 0; j < cols; j++) {
+        for (let i = 0; i < grid.length - 1; i++) {
+          for (let j = 0; j < (grid[i] as unknown[]).length - 1; j++) {
             const a = (grid[i] as { p: V3; n: V3 }[])[j] as { p: V3; n: V3 };
             const b = (grid[i] as { p: V3; n: V3 }[])[j + 1] as { p: V3; n: V3 };
             const c = (grid[i + 1] as { p: V3; n: V3 }[])[j + 1] as { p: V3; n: V3 };
