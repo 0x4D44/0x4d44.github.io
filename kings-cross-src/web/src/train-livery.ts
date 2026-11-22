@@ -377,6 +377,9 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   foot: 0x2d3036,
   noseTop: 0x1a1c21,
   noseTopFrom: 2.5,
+  // The waist vinyl crosses the closed passenger leaves in 800108 and 801214.
+  stripeY: LNER_BAND,
+  doorBand: () => true,
   // small red lettering on the white lower body, between the doors (photographs show the Azuma name and the LNER mark small, at the car ends)
   decals: (c) => [{ text: 'LNER', colour: LNER_RED, rect: [bay(c) - 0.5 * 2.722 * 0.26, 1.12, 0, 1.38] }],
 });

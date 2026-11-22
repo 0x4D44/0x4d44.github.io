@@ -30,7 +30,7 @@ import { standingTrainPose } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { EMU_FIGURES, FIGURES, trainLayout } from '../../core/train.ts';
 import type { Car, EmuFamily, Family, TrainKind, TrainLayout } from '../../core/train.ts';
-import { atlasRect, BAND_Y, decalMaterial, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
+import { atlasRect, BAND_Y, decalMaterial, TEX_SPAN, TEX_Y0, TEX_Y1, texU, textEms, WINDOW_Y } from './livery.ts';
 import type { DecalItem } from './livery.ts';
 import { HULL_BEAK, liveryFor, LNER_YELLOW, shellMaterialFor, sideColourAt } from './train-livery.ts';
 import type { TrainLivery } from './train-livery.ts';
@@ -204,11 +204,12 @@ export const SERVICE_LAMPS: TrainLampState = { front: 'head', rear: 'tail' };
 /** The state of a train standing nose-in at a buffer stop (the page's four sample trains): red lamps at its outer end, and nothing at the end toward the stops, where white lamps would light only a wall. Casts no light pool. */
 export const BUFFER_LAMPS: TrainLampState = { front: 'off', rear: 'tail' };
 /** What a lens is for: a headlamp (white when its end leads), a tail lamp (red when its end trails), or a marker lamp (the AT300's honeycomb: white at the leading end and red at the trailing one). */
-export type LensRole = 'head' | 'tail' | 'marker';
+export type LensRole = 'head' | 'tail' | 'marker' | 'upperMarker';
 /** What a lens looks like in a cab end's mode: its colour, and its glow tag (2: it glows in its own colour after dark, 0: it does not, `Soup.emit`). */
 export function lensLook(role: LensRole, mode: TrainLampMode): { hex: number; glow: 0 | 2 } {
   // a marker lamp shows what its end shows, white or red, and is dark only when the end shows neither (an unlit one is the tail lens's dark red)
   if (role === 'marker') return mode === 'off' ? { hex: LENS.tailOff, glow: 0 } : { hex: mode === 'head' ? LENS.markerOn : LENS.tailOn, glow: 2 };
+  if (role === 'upperMarker') return mode === 'head' ? { hex: 0xf9ecce, glow: 2 } : { hex: 0x535356, glow: 0 };
   const lit = mode === role;
   return { hex: role === 'head' ? (lit ? LENS.headOn : LENS.headOff) : (lit ? LENS.tailOn : LENS.tailOff), glow: lit ? 2 : 0 };
 }
@@ -624,6 +625,16 @@ export const AT300_CLUSTER: ClusterSpec = {
   rim: { colour: 0xc7ccd3, width: 0.025 },
 };
 
+/**
+ * The LNER's cluster: the AT300's, its housing carried further back up the flank so that it reads about 0.38 m across from straight ahead (round-6 score; lner-800-113-newcastle-2025, head on:
+ * each housing about 0.38 m across against the 2.7 m face, scaled by eye, ASSUMED), where the AT300's reads 0.28 m. Its front edge stays 0.55 m behind the tip (the face's plane); its back
+ * edge, 1.8 m behind the tip at the top, is still inside the 1.2 to 2.2 m that lner-800-108-offord-cluny-2023 shows side on.
+ */
+export const LNER_CLUSTER: ClusterSpec = {
+  ...AT300_CLUSTER,
+  window: { ...AT300_CLUSTER.window, sBack0: 1.3, sBack1: 1.8 },
+};
+
 const AT300: BodySpec = {
   family: 'at300',
   half: BW / 2,
@@ -704,6 +715,8 @@ const AT300: BodySpec = {
   plan: (car, _interior, kind) => at300Plan(car, kind),
 };
 
+const isLner = (kind?: TrainKind): boolean => kind === 'lner5' || kind === 'lner9';
+
 /**
  * How many of the six bays of a first-class driving car's (DPTF's) saloon, counted from the passenger door beside the cab toward the car's inner end, have no window: plain body panel
  * in the livery's band where a window would stand (round 6, T3: "windowless bays"). Read off the photographs, which show the right side of a car at the head of its train:
@@ -725,15 +738,22 @@ export const FIRST_CLASS_BLANK_BAYS: Readonly<Partial<Record<TrainKind, number>>
 export function at300Plan(car: Car, kind?: TrainKind): CarPlan {
   const L = car.length;
   const nose = car.cab ? ASSUMED.noseLength : 0;
-  const doors = [car.cab ? nose + ASSUMED.doorFromNose : ASSUMED.doorFromEnd, L - ASSUMED.doorFromEnd];
+  const lner = isLner(kind);
+  // ASSUMED, from joint-to-door proportions in 801214 and 800108. The leading
+  // passenger door remains 8 m from the nose. Distinct WC/shop sides are unverified.
+  const endDoor = lner ? 1.65 : ASSUMED.doorFromEnd;
+  const doors = [car.cab ? nose + ASSUMED.doorFromNose : endDoor, L - endDoor];
   const from = (doors[0] as number) + ASSUMED.doorWidth / 2 + 0.5;
   const to = (doors[1] as number) - ASSUMED.doorWidth / 2 - 0.5;
-  const n = Math.max(1, Math.round((to - from) / 2.0));
+  const n = lner ? (car.cab ? 6 : 9) : Math.max(1, Math.round((to - from) / 2.0));
   const pitch = (to - from) / n;
+  // The panes occupy about three quarters of a bay in 800108; inferred from its
+  // unobstructed first-class windows, with the same 1.65/1.72 m widths assumed elsewhere.
+  const pier = lner ? (pitch - (car.cab ? 1.72 : 1.65)) / 2 : 0.2;
   const blankBays = car.cab !== null && car.type === 'DPTF' && kind !== undefined ? FIRST_CLASS_BLANK_BAYS[kind] ?? 0 : 0;
   const windows: [number, number][] = [];
   const blanks: [number, number][] = [];
-  for (let k = 0; k < n; k++) (k < blankBays ? blanks : windows).push([from + k * pitch + 0.2, from + (k + 1) * pitch - 0.2]);
+  for (let k = 0; k < n; k++) (k < blankBays ? blanks : windows).push([from + k * pitch + pier, from + (k + 1) * pitch - pier]);
   // a driving car has the narrow crew door just behind its nose, as well as its two passenger doors
   const crewDoors = car.cab ? [{ s: nose + ASSUMED.crewDoorFromNose, width: ASSUMED.crewDoorWidth }] : [];
   return { length: L, nose, doors, windows, blanks, crewDoors };
@@ -1149,8 +1169,8 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
   // LNER: the yellow mask runs down the whole face over the cover to the chin, between red cheeks, with the lamp cluster's dark window at each of its lower
   // corners (lner-800-113-newcastle-2025, lner-801-214-2025, lner-800-doncaster-2026)
-  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },
-  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 } },
+  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cluster: LNER_CLUSTER },
+  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cluster: LNER_CLUSTER },
   // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp clusters, the cheeks the body's
   // blue); the cluster's window is a slate panel, a shade off the beak's own
   hull5: { mask: { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
@@ -1715,6 +1735,33 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       // the frame and the glass stand clear of the loft by more than its facets sag between rings (a few mm, up to a centimetre on the steep shoulder), so neither shows through the other
       patch(front.frame, detail, colourOf(def.glass), 0.014);
       patch(0, glass, null, 0.02, screen.pillar ?? 0);
+      if (isLner(ctx.kind)) {
+        // 801214 and Newcastle 800113 show an amber line along the brow of the screen, on the black dome (the livery's noseTop), that climbs round the upper marker lamp
+        // in the middle. All spans are ASSUMED from those oblique photos, in the nose's projected x/s plane
+        const browAt = (x: number): number => 2.53 - 0.17 * (x / 0.84) ** 2;
+        const pinstripe = colourOf(0xe9a031);
+        for (const side of [-1, 1]) {
+          nosePatch(1, 12, (v, u) => {
+            const x = side * lerp(0.235, 0.82, u);
+            return [x, browAt(x) + v * 0.014];
+          }, detail, pinstripe, 0.014);
+        }
+        const markerOutline = (expand: number): ((v: number, u: number) => [number, number]) => (v, u) => {
+          const r = 0.042;
+          const inset = (d: number): number => r - Math.sqrt(Math.max(0, r * r - Math.max(0, r - d) ** 2));
+          const span = 0.32 + 2 * expand;
+          const x = (2 * u - 1) * (0.212 + expand - Math.max(inset(v * span), inset((1 - v) * span)));
+          return [x, 2.55 - expand + v * span];
+        };
+        nosePatch(8, 8, markerOutline(0.023), detail, pinstripe, 0.015);
+        nosePatch(8, 8, markerOutline(0.009), detail, colourOf(0x34363b), 0.017);
+        const look = lensLook('upperMarker', lampMode);
+        const v0 = detail.glow.length;
+        detail.emit = look.glow;
+        nosePatch(6, 8, markerOutline(-0.065), detail, colourOf(look.hex), 0.019);
+        detail.emit = 0;
+        lampLenses.push({ role: 'upperMarker', v0, v1: detail.glow.length });
+      }
       if (screen.pillar && screen.pillarColour !== undefined) {
         // the centre post: a pale metal strip, a hair proud of the frame's black between the two panes (GC180-05: a bright silver post about a hand wide)
         const half = screen.pillar / 2;
@@ -1844,7 +1891,11 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       };
       const win = cluster.window;
       const rows = 8;
-      const cols = 8;
+      // at least 8 columns, more on a wider window (the LNER's): the columns crowd toward the front edge (below), so the last one is the widest, (2 cols - 1) / cols^2 of the
+      // window's width; enough columns hold it to 12 cm, so its chord stays on the shoulder
+      const widest = Math.max(win.sBack0 - win.sFront0, win.sBack1 - win.sFront1) + 2 * (cluster.rim?.width ?? 0);
+      let cols = 8;
+      while ((widest * (2 * cols - 1)) / (cols * cols) > 0.12) cols++;
       // The highest a layer of the cluster may stand at distance s from the tip: the cluster is on the flank, so it stops where the outline has turned over onto the nose's top
       // (its half-width under FLANK_FRACTION of the section's widest, above the window's foot). The window's top edge is a level line, and at the tip the nose itself is lower than
       // that line, so without the stop the window's top-front corner is laid across the roof's rounding and the colour mask's band, a ragged strip of shards in the face's corners.
@@ -2132,6 +2183,15 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       const [lx0, lx1] = lo(W - 0.005, half - 0.004);
       const [px0, px1] = lo(W - 0.005, half);
       const leafC = leafOf(di, crew);
+      // a livery's waist band carried across a passenger leaf (Grand Central: the black cab-end door, round 9; the LNER: every passenger door), in the side's own colour there (a
+      // through car's is its texture's last column, as its side is painted), a hair proud of the leaf
+      const doorBand = (face: number): void => {
+        if (!def.doorBand?.(carInfo, di)) return;
+        const [by0, by1] = def.stripeY ?? BAND_Y;
+        const [bx0, bx1] = lo(W - 0.005, face + 0.001);
+        const paintS = Math.min(TEX_SPAN - 1e-6, car.cab ? s : TEX_SPAN);
+        detail.box(bx0, bx1, by0, by1, z - dw / 2, z + dw / 2, col(sideColourAt(def, spec.nose.length, paintS, (by0 + by1) / 2)));
+      };
       if (crew) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
         detail.box(px0, px1, dy1 - 0.85, dy1 - 0.25, z - 0.12, z + 0.12, paneC);
@@ -2140,16 +2200,12 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         const { half: gh, y: [gy0, gy1], radius, seal } = spec.doorGlass;
         const [ex0, ex1] = lo(W - 0.005, leafFace);
         detail.box(ex0, ex1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
-        // a livery's waist band carried across this leaf (Grand Central: the black cab-end door, round 9), in the side's own colour there, a hair proud of the leaf
-        if (def.doorBand?.(carInfo, di)) {
-          const [by0, by1] = def.stripeY ?? BAND_Y;
-          const [bx0, bx1] = lo(W - 0.005, leafFace + 0.001);
-          detail.box(bx0, bx1, by0, by1, z - dw / 2, z + dw / 2, col(sideColourAt(def, noseLen, s, (by0 + by1) / 2)));
-        }
+        doorBand(leafFace);
         detail.prismX(roundedRect(z - gh - DOOR_GLASS_SEAL, z + gh + DOOR_GLASS_SEAL, gy0 - DOOR_GLASS_SEAL, gy1 + DOOR_GLASS_SEAL, radius + DOOR_GLASS_SEAL, 3), sx * (W - 0.005), sx * (leafFace + 0.002), col(seal ?? 0x0d0e10));
         detail.prismX(roundedRect(z - gh, z + gh, gy0, gy1, radius, 3), sx * (W - 0.005), sx * (leafFace + 0.004), paneC, false);
       } else if (spec.doorLeaves === 1) {
         detail.box(lx0, lx1, dy0, dy1, z - dw / 2, z + dw / 2, leafC);
+        doorBand(half - 0.004);
         detail.box(px0, px1, dy1 - 0.91, dy1 - 0.21, z - 0.27, z + 0.27, paneC);
       } else {
         // two sliding leaves with a seam between them, each with its own window
@@ -2214,14 +2270,14 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
     const radius = fig ? fig.wheelDiameter.value / 2 : FIGURES.wheelDiameter.value / 2;
     const motor = (car.motor as readonly boolean[])[k] as boolean;
     const wheelbase = fig ? (motor ? fig.wheelbaseMotor.value : fig.wheelbaseTrailer.value) : FIGURES.bogieWheelbase.value;
-    const b = buildBogie({ radius, wheelbase, track: FIGURES.gauge.value, motor, diesel: spec.family === 'adelante', style: BOGIE_STYLE[spec.family] });
+    const b = buildBogie({ radius, wheelbase, track: FIGURES.gauge.value, motor, diesel: spec.family === 'adelante', style: BOGIE_STYLE[spec.family], leads: isLner(ctx.kind) });
     b.name = `bogie-${car.index}-${k}`;
     b.position.set(0, 0, z);
     group.add(b);
   });
   if (car.pantograph) {
     const len = fig?.pantographLength?.value ?? FIGURES.pantographLength.value;
-    const p = buildPantograph(len, spec.pantographTop);
+    const p = buildPantograph(len, spec.pantographTop, isLner(ctx.kind));
     p.position.set(0, spec.crown, (car.pantograph[0] + car.pantograph[1]) / 2);
     group.add(p);
   }

@@ -97,6 +97,8 @@ function specOf(kind: TrainKind, car: Car, k: number): BogieSpec {
     motor,
     diesel: family === 'adelante',
     style: BOGIE_STYLE[family],
+    // CHANGED: the LNER's AT300 bogies carry the photograph's axle-box cable leads (train-parts.ts AT300_LEADS); Hull Trains' and Lumo's do not
+    leads: kind === 'lner5' || kind === 'lner9',
   };
 }
 

@@ -5443,6 +5443,8 @@ test('bogies: each family runs on its maker\'s bogie (Hitachi AT300, the Electro
           track: FIGURES.gauge.value,
           motor,
           diesel: family === 'adelante',
+          // CHANGED: the LNER's AT300 bogies carry the axle-box cable leads (train-parts.ts AT300_LEADS), a geometry of their own
+          leads: kind === 'lner5' || kind === 'lner9',
         };
         // the build shares one geometry per spec and maker, so a bogie of the right maker is the very geometry built here with that maker's style
         const actual = nearOf(named(named(g, `car-${car.index}`), `bogie-${car.index}-${k}`));
