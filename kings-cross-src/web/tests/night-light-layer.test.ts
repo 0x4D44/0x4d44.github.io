@@ -209,12 +209,58 @@ test('cleared snow carriageways take asphalt light with a soft far-lane shoulder
   const pavement = meter.ground(foreground, [.65, .65, .65], snow, .015, 'city-pavement');
   const shoulder = meter.ground(mid, slush, snow, .015, 'city-asphalt');
   t.diagnostic(JSON.stringify({ asphalt, paint, pavement, shoulder }));
-  assert.ok(asphalt[0]! > .023 && asphalt[0]! < .049, String(asphalt));
+  // S2f lifts the pool under the head (main's kerb peak): band moved up by .005.
+  assert.ok(asphalt[0]! > .028 && asphalt[0]! < .055, String(asphalt));
   assert.deepEqual(paint, asphalt);
   assert.ok(pavement[0]! > .14);
-  assert.ok(shoulder[0]! > .005 && shoulder[0]! < .35 * asphalt[0]!, String(shoulder));
+  // S2f starts the shoulder beyond the beam's end to restore main's dark snow
+  // gaps between lamps (.005 -> .002); the far lane keeps a weak shoulder.
+  assert.ok(shoulder[0]! > .002 && shoulder[0]! < .35 * asphalt[0]!, String(shoulder));
   assert.deepEqual(meter.ground(foreground, slush, weatherFrame('clear'), .015, 'city-asphalt'),
     meter.ground(foreground, slush, weatherFrame('clear'), .015, 'city-pavement'));
+});
+
+test('a sodium pool keeps its amber where a forecourt mast overlaps it, and the mast adds to the P1 floor', t => {
+  const sources = kingsCrossLights();
+  const mast = sources.find(source => source.id === 'kx/mast/2')!;
+  const all = probe(buildLightField(sources, LIGHT_GRID_DESKTOP));
+  const lamps = probe(buildLightField(sources.filter(source => !source.tags.includes('mast')), LIGHT_GRID_DESKTOP));
+  const spill = probe(buildLightField([mast], LIGHT_GRID_DESKTOP));
+  const paving = [.40, .40, .40];
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  // The back lobe of P1 post 1043 beside and at the foot of mast 2 (south front).
+  const points = [[52.3, -.2, 21.5], [54.5, -.15, 18.3]];
+  const readings = ['clear', 'rain', 'fog', 'snow'].flatMap(weather => points.map(p => {
+    const state = weatherFrame(weather);
+    const total = all.ground(p, paving, state);
+    return { weather, p, total, amber: (total[0]! - total[2]!) / total[0]!,
+      lamps: lamps.ground(p, paving, state), mast: spill.ground(p, paving, state) };
+  }));
+  t.diagnostic(JSON.stringify(readings));
+  for (const r of readings) {
+    assert.ok(r.amber > .5, JSON.stringify(r));
+    if (r.weather === 'clear') assert.ok(luma(r.total) >= (luma(r.lamps) + luma(r.mast)) * (1 - 1e-6), JSON.stringify(r));
+  }
+});
+
+test('cleared snow on Euston Road keeps dark gaps between lamps and a tan pool beside the head', t => {
+  const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
+  const slush = [.10, .11, .12];
+  const at = (p: number[], weather: string) => meter.ground(p, slush, weatherFrame(weather), .015, 'city-asphalt');
+  // Street lamp 1031 stands at z 135.1; the Midland camera looks along this line.
+  const line = Array.from({ length: 34 }, (_, i) => 130.7 + .2 * i);
+  const peaks = ['clear', 'snow'].map(weather => {
+    const row = line.map(z => at([-67.2, 1.2, z], weather)[0]!);
+    return { weather, z: line[row.indexOf(Math.max(...row))]!, peak: Math.max(...row) };
+  });
+  const pool = at([-67.2, 1.2, 135.3], 'snow');
+  // Between 1031 and 1032 (x -82) on the same cleared lane.
+  const gap = Math.max(...[[-73, 1.3, 138], [-75, 1.3, 136.5], [-71.5, 1.3, 139.3]].map(p => at(p, 'snow')[0]!));
+  t.diagnostic(JSON.stringify({ peaks, pool, gap }));
+  for (const { z } of peaks) assert.ok(z > 134.3 && z < 136.0, JSON.stringify(peaks));
+  assert.ok(peaks[0]!.peak > .105, JSON.stringify(peaks));
+  assert.ok(pool[0]! > 4 * gap, JSON.stringify({ pool, gap }));
+  assert.ok(pool[2]! > .30 * pool[0]!, String(pool));
 });
 
 test('forecourt masts keep a bright core and leave a dark gap between adjacent columns', t => {

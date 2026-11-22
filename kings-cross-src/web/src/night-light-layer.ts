@@ -22,6 +22,8 @@ uniform sampler2D uNightLightData;
 uniform sampler2D uNightLightGrid;
 // The pilot's own light from P1's five posts, which the field never undercuts.
 vec3 nightLightFloor;
+// Forecourt mast spill on the ground, held apart from the street lamps (see nightMastBlend).
+vec3 nightLightMast;
 ${planes.map(name => `uniform vec4 ${name};`).join('\n')}
 ${planes.length ? `
 vec3 nightLightFrontPlane(float x) {
@@ -122,12 +124,16 @@ ${EUSTON_FACADE_LOBE}
     if (euston) {
       // Separate the pools along the carriageway. Fog broadens the optical
       // shoulder while preserving the pool's centre and the cross-street skirt.
-      window *= 0.50;
+      // A narrow lift under the head puts the pool's peak beside the post, as
+      // main's pools had it, without filling the gaps the halving opened.
+      window *= 0.50 + 0.12 * (1.0 - smoothstep(0.05, 0.45, abs(angle))) * (1.0 - smoothstep(0.2, 0.6, along));
       optic *= 1.0 - smoothstep(mix(0.32, 0.23, fog), mix(1.04, 1.27, fog), along);
       if (snowRoad > 0.0) {
         // A weak, wider shoulder bridges the ends of opposing beams on
         // cleared lanes, where slush scatters a little light into the gap.
-        float shoulder = (1.0 - smoothstep(1.1, 2.6, abs(angle)))
+        // It starts beyond the beam's own end, so it leaves the dark gaps
+        // between lamps along the lane alone (main's snow pools had them).
+        float shoulder = smoothstep(0.85, 1.2, abs(angle)) * (1.0 - smoothstep(1.1, 2.6, abs(angle)))
           * (1.0 - smoothstep(0.65, 1.65, along));
         optic = max(optic, 0.35 * snowRoad * shoulder);
       }
@@ -146,13 +152,30 @@ ${EUSTON_FACADE_LOBE}
     optic = smoothstep(params.z - 0.10 * fog, params.w, ray.y / d);
     window = 1.0 - smoothstep(0.75 * reach, reach, sqrt(horizontal2));
   }
-  return spectrum * (head.w * optic * window * receipt * facing / (d * max(d2, 1.0)));
+  vec3 lit = spectrum * (head.w * optic * window * receipt * facing / (d * max(d2, 1.0)));
+  if (!facade && kind == ${LIGHT_FIELD_DOWNLIGHT.toFixed(1)}) {
+    nightLightMast += lit;
+    return vec3(0.0);
+  }
+  return lit;
+}
+vec3 nightMastBlend(vec3 lamps, vec3 mast) {
+  // Where a sodium pool overlaps a mast's neutral spill, the sum washed the
+  // amber out (main's decals kept it). Shift up to 60% of the mast's light
+  // toward the sodium chroma at the mast's own luminance, so the pool keeps
+  // its hue and the mast its brightness; away from sodium the mast stays neutral.
+  float amber = max(lamps.r - lamps.b, 0.0);
+  float share = 0.6 * smoothstep(0.08, 0.45, amber / (amber + mast.g + 1e-6));
+  vec3 luma = vec3(0.2126, 0.7152, 0.0722);
+  vec3 tint = lamps * (dot(mast, luma) / max(dot(lamps, luma), 1e-6));
+  return mix(mast, tint, share);
 }
 vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway, float lowerBrick) {
   // City roofs are excluded by the receiver list. Mixed façade batches also
   // contain upward faces, such as parapet caps, that should receive no spill.
   // P1's façade lobe gives them nothing either.
   nightLightFloor = vec3(0.0);
+  nightLightMast = vec3(0.0);
   if (uNightLightLevels.x <= 0.0 || (facade && n.y > 0.5)) return vec3(0.0);
   vec2 cell = floor((p.xz - uNightLightGridRect.xy) / uNightLightCellM);
   if (cell.x < 0.0 || cell.y < 0.0 || cell.x >= uNightLightGridRect.z || cell.y >= uNightLightGridRect.w) return vec3(0.0);
@@ -169,9 +192,13 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway
     float id = nightLightSlot(offset + float(i) + 1.0);
     light += nightLightOne(p, n, covered, id, facade, frontPlane, fog, snowRoad, lowerBrick);
   }
-  light *= uNightLightLevels.x;
   nightLightFloor *= uNightLightLevels.x;
-  return facade ? max(light, nightLightFloor) : light;
+  light *= uNightLightLevels.x;
+  if (facade) return max(light, nightLightFloor);
+  // P1's floor raises the street-lamp light alone. Taking it against the sum
+  // let a mast's neutral spill replace the pilot's amber instead of adding to it.
+  vec3 lamps = max(light, nightLightFloor);
+  return lamps + nightMastBlend(lamps, nightLightMast * uNightLightLevels.x);
 }
 vec3 nightFieldDiffuse(vec3 light, vec3 albedo, bool carriageway) {
   // Wet paving darkens through the receiving albedo alone. A further field
@@ -181,7 +208,10 @@ vec3 nightFieldDiffuse(vec3 light, vec3 albedo, bool carriageway) {
   float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
   // Cleared lanes and their paint share a dark slush reflectance. The
   // narrow tyre and kerb masks still affect the base surface.
-  vec3 scatter = light * (carriageway ? vec3(0.049, 0.051, 0.055) : vec3(0.80));
+  // Grey slush under sodium reads tan rather than orange (McKay): it takes a
+  // share of the light's luminance as well as its hue.
+  vec3 slush = mix(light, vec3(dot(light, vec3(0.2126, 0.7152, 0.0722))), 0.25) * vec3(0.049, 0.051, 0.055);
+  vec3 scatter = carriageway ? slush : light * 0.80;
   float peak = max(max(scatter.r, scatter.g), scatter.b);
   if (carriageway) return mix(paving, scatter * (0.22 / max(0.22, peak)), snow);
   // Ploughed tyre tracks and snow piled along kerbs still show in the base
