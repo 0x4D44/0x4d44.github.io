@@ -26,9 +26,11 @@ export function isEustonPilotLamp(spot: LampSpot): boolean {
     && EUSTON_P1_ROW.some(({ x, z }) => Math.abs(spot.x - x) < 0.05 && Math.abs(spot.z - z) < 0.05);
 }
 
-const REACH = 38;
+const ROAD_REACH = 38;
+const FACADE_REACH = 44;
 const RECEIVERS = new Map([
   ['city-asphalt', false], ['city-pavement', false], ['city-paint', false],
+  ['city-plaza', false], ['terrain-ground', false],
   ['landmarks-brickRed', true], ['landmarks-stone', true],
 ]);
 
@@ -41,7 +43,8 @@ export const EUSTON_P1_OPTIC = `
 vec3 eustonP1One(vec3 p, vec3 n, vec3 centre, vec2 aim, vec3 wall, bool facade) {
   vec3 ray = centre - p;
   float d2 = dot(ray, ray);
-  if (d2 >= 1444.0 || ray.y <= 0.0 || dot(p.xz, wall.xy) < wall.z - 0.025) return vec3(0.0);
+  float reach = facade ? ${FACADE_REACH.toFixed(1)} : ${ROAD_REACH.toFixed(1)};
+  if (d2 >= reach * reach || ray.y <= 0.0 || dot(p.xz, wall.xy) < wall.z - 0.025) return vec3(0.0);
   float facing = dot(n, ray);
   if (facing <= 0.0) return vec3(0.0);
   float d = sqrt(d2);
@@ -56,11 +59,16 @@ vec3 eustonP1One(vec3 p, vec3 n, vec3 centre, vec2 aim, vec3 wall, bool facade) 
   } else {
     float angle = across / ray.y;
     float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) / ray.y;
-    optic = smoothstep(-0.86, -0.30, angle) * (1.0 - smoothstep(0.65, 1.43, angle))
-      * (1.0 - smoothstep(0.66, 2.28, along)) / (1.0 + 1.5 * (angle - 0.38) * (angle - 0.38));
+    float forward = smoothstep(-0.86, -0.30, angle) * (1.0 - smoothstep(0.65, 1.43, angle))
+      * (1.0 - smoothstep(0.90, 2.40, along)) / (1.0 + 1.5 * (angle - 0.38) * (angle - 0.38));
+    // A weaker lobe behind the head reaches the pavement and open square.
+    float back = 0.36 * smoothstep(-2.45, -1.50, angle) * (1.0 - smoothstep(-1.05, -0.28, angle))
+      * (1.0 - smoothstep(0.95, 2.30, along));
+    optic = max(forward, back);
   }
-  float distanceWindow = 1.0 - smoothstep(27.0, 38.0, d);
-  return vec3(1.0, 0.43, 0.19) * (205.0 * optic * distanceWindow * facing / (d * max(d2, 1.0)));
+  float distanceWindow = 1.0 - smoothstep(27.0, reach, d);
+  vec3 spectrum = facade ? vec3(1.0, 0.43, 0.19) : vec3(1.0, 0.53, 0.06);
+  return spectrum * (205.0 * optic * distanceWindow * facing / (d * max(d2, 1.0)));
 }
 `;
 
@@ -70,9 +78,10 @@ export function createNightLightingPilot(scene: THREE.Scene) {
   const bounds = new THREE.Vector4();
   uniforms.uEustonP1Bounds = { value: bounds };
   let sourceCount = 0;
+  let frontPlanes: string[] = [];
   let street: StreetLights | undefined;
   const receivers = new Map<THREE.Mesh, boolean>();
-  const swaps = new Map<THREE.Mesh, THREE.Material>();
+  const swaps = new Map<THREE.Mesh, { original: THREE.Material; pilot: THREE.Material }>();
   const variants = new Map<THREE.Material, THREE.MeshLambertMaterial>();
 
   function nightMaterial(source: THREE.MeshLambertMaterial, facade: boolean): THREE.MeshLambertMaterial {
@@ -85,14 +94,23 @@ export function createNightLightingPilot(scene: THREE.Scene) {
     const count = sourceCount;
     const slots = Array.from({ length: count }, (_, i) => `uEustonP1Source${i}`);
     const declarations = slots.map(s => `uniform vec3 ${s}Head; uniform vec2 ${s}Aim; uniform vec3 ${s}Wall;`).join('\n');
-    const samples = slots.map(s => `eustonP1One(p, n, ${s}Head, ${s}Aim, ${s}Wall, ${facade})`).join(' + ');
+    const front = facade ? frontPlanes : [];
+    const facadePlane = front.length ? `
+${front.map(p => `uniform vec4 ${p};`).join('\n')}
+vec3 eustonP1FrontPlane(float x) {
+${front.slice(0, -1).map(p => `  if (x >= ${p}.x) return ${p}.yzw;`).join('\n')}
+  return ${front.at(-1)}.yzw;
+}` : '';
+    const samples = slots.map(s => `eustonP1One(p, n, ${s}Head, ${s}Aim, ${front.length ? 'frontWall' : `${s}Wall`}, ${facade})`).join(' + ');
     const field = `
 uniform float uEustonP1Level;
 uniform vec4 uEustonP1Bounds;
 ${declarations}
 ${EUSTON_P1_OPTIC}
+${facadePlane}
 vec3 eustonP1At(vec3 p, vec3 n) {
   if (p.x < uEustonP1Bounds.x || p.z < uEustonP1Bounds.y || p.x > uEustonP1Bounds.z || p.z > uEustonP1Bounds.w) return vec3(0.0);
+  ${front.length ? 'vec3 frontWall = eustonP1FrontPlane(p.x);' : ''}
   vec3 light = ${samples};
   if (light.r <= 0.0) return light;
   return light * (1.0 - coverGroundAt(p)) * uEustonP1Level;
@@ -109,13 +127,16 @@ ${facade ? 'if ( vMidlandNight.x > 0.5 ) ' : ''}{
   if ( eustonP1.r > 0.0 ) reflectedLight.directDiffuse += eustonP1 * material.diffuseColor;
 }`);
     };
-    night.customProgramCacheKey = () => `${key}+euston-p1-${count}-${facade}`;
+    night.customProgramCacheKey = () => `${key}+euston-p1b-${count}-${facade}-${front.length}`;
     variants.set(source, night);
     return night;
   }
 
   function restoreMaterials(): void {
-    for (const [mesh, source] of swaps) mesh.material = source;
+    for (const [mesh, { original, pilot }] of swaps) {
+      // A clock jump can install the atmosphere's daytime material first.
+      if (mesh.material === pilot) mesh.material = original;
+    }
     swaps.clear();
   }
 
@@ -131,6 +152,14 @@ ${facade ? 'if ( vMidlandNight.x > 0.5 ) ' : ''}{
       clearVariants();
       street = lights;
       const row = spots.filter(isEustonPilotLamp);
+      // The Midland front runs east to west. Each face uses the wall plane at
+      // its own chainage, so a neighbouring facet's tangent cannot clip it.
+      frontPlanes = (midland?.front.edges ?? []).toSorted((a, b) => Math.min(b.a[0], b.b[0]) - Math.min(a.a[0], a.b[0])).map((edge, i) => {
+        const name = `uEustonP1Front${i}`;
+        uniforms[name] = { value: new THREE.Vector4(Math.min(edge.a[0], edge.b[0]), ...edge.normal,
+          edge.normal[0] * edge.a[0] + edge.normal[1] * edge.a[1]) };
+        return name;
+      });
       bounds.set(Infinity, Infinity, -Infinity, -Infinity);
       sourceCount = row.length;
       row.forEach((spot, i) => {
@@ -143,16 +172,16 @@ ${facade ? 'if ( vMidlandNight.x > 0.5 ) ' : ''}{
           const d = distanceToSegment(at, facet.a, facet.b);
           if (d < distance) { distance = d; edge = facet; }
         }
-        // The survey plane is at the exposed Midland wall. Where the row
-        // continues past the hotel, clip spill behind the back of the footway.
-        const wall = edge && distance < REACH
+        // Near the hotel the wall stops spill behind it. The open plaza at
+        // the east end of the row is governed by the optic and the roof map.
+        const wall = edge && distance < ROAD_REACH
           ? new THREE.Vector3(...edge.normal, edge.normal[0] * edge.a[0] + edge.normal[1] * edge.a[1])
-          : new THREE.Vector3(aim.x, aim.y, aim.dot(new THREE.Vector2(head[0], head[2])) - 9);
+          : midland ? new THREE.Vector3() : new THREE.Vector3(aim.x, aim.y, aim.dot(new THREE.Vector2(head[0], head[2])) - 9);
         uniforms[`uEustonP1Source${i}Head`] = { value: new THREE.Vector3(...head) };
         uniforms[`uEustonP1Source${i}Aim`] = { value: aim };
         uniforms[`uEustonP1Source${i}Wall`] = { value: wall };
-        bounds.set(Math.min(bounds.x, head[0] - REACH), Math.min(bounds.y, head[2] - REACH),
-          Math.max(bounds.z, head[0] + REACH), Math.max(bounds.w, head[2] + REACH));
+        bounds.set(Math.min(bounds.x, head[0] - FACADE_REACH), Math.min(bounds.y, head[2] - FACADE_REACH),
+          Math.max(bounds.z, head[0] + FACADE_REACH), Math.max(bounds.w, head[2] + FACADE_REACH));
       });
     },
     scan(): void {
@@ -175,8 +204,9 @@ ${facade ? 'if ( vMidlandNight.x > 0.5 ) ' : ''}{
       if (level.value > 0 && !swaps.size) {
         for (const [mesh, facade] of receivers) {
           const source = mesh.material as THREE.MeshLambertMaterial;
-          swaps.set(mesh, source);
-          mesh.material = nightMaterial(source, facade);
+          const pilot = nightMaterial(source, facade);
+          swaps.set(mesh, { original: source, pilot });
+          mesh.material = pilot;
         }
       }
       street?.setReceiverPools?.(level.value > 0);

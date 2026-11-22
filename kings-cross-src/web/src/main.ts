@@ -336,7 +336,6 @@ function start(): void {
     const shown = stations.activeScene();
     clocks.frame(shown, sceneClock()); // the station clocks show the scene's time (clocks.ts), as the sun and the board do
     const sky = climate?.atmosphere.state() ?? null;
-    nightLightingPilot?.setFrame(shown, sky);
     const lampLevel = sky?.rig.lampLevel ?? 0;
     if (shown === scene) signalLayer?.setNightLevel(lampLevel);
     else if (stations.state().selected === 'edinburgh-waverley') stations.edinburgh()?.live?.setSignalNightLevel?.(lampLevel);
@@ -346,6 +345,7 @@ function start(): void {
       const toSun = climate.atmosphere.keyDirection();
       if (shown === scene && sunShadow && toSun) { if (added) sunShadow.tag(); sunShadow.update(camera, controls.target, toSun); }
     }
+    nightLightingPilot?.setFrame(shown, sky); // inherit the shadow tags on the original materials
     // after the trains are posed, the camera has moved and the sky has set the night: the headlamps of the scene on show (none for a scene with no trains of its own)
     headlamps.update(shown === scene ? trains : stations.state().selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.() ?? [] : [], camera, dt);
     grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud); // (the concourse's fill is London's)

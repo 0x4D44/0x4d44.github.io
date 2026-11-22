@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import * as THREE from 'three';
 import { skyRig } from '../../core/daylight.ts';
 import { solarPosition } from '../../core/solar.ts';
 import { squeezeGlslText } from '../../vite.config.ts';
+import { midlandGrandPlan } from '../../core/landmarks.ts';
+import type { MidlandPlan } from '../../core/landmarks.ts';
 import { LAMP_KIND } from '../../core/streetlights.ts';
 import type { LampSpot } from '../../core/streetlights.ts';
 import { createAtmosphere, REFERENCE } from '../src/atmosphere.ts';
 import type { AtmosphereState } from '../src/atmosphere.ts';
 import { COVER_GLSL } from '../src/cover.ts';
+import { withBuildingNightMaterial } from '../src/materials.ts';
 import { createNightLightingPilot } from '../src/night-lighting-p1.ts';
 import { createStreetLights, headOf } from '../src/streetlights.ts';
 import { CLEAR_STATE, FORCED_NAMES, forcedObservation, weatherState } from '../src/weather.ts';
@@ -42,10 +46,10 @@ function frame(elevationDeg: number, weather = CLEAR_STATE): AtmosphereState {
   return { timeMs: 0, sun: { ...solarPosition(0), elevationDeg, azimuthDeg: 0 }, weather, rig };
 }
 
-function fixture(enabled = true) {
+function fixture(enabled = true, plan: MidlandPlan | null = null, lamps = [spot, other]) {
   const scene = new THREE.Scene();
   const pilot = enabled ? createNightLightingPilot(scene) : undefined;
-  const nightLayer = createStreetLights([spot, other], {
+  const nightLayer = createStreetLights(lamps, {
     poolSegments: 12, luminairePools: true, localSodiumScaleAt: () => 1,
     coreSize: 2, weatherEffects: true,
     receiverPoolAt: enabled ? s => s === spot : undefined,
@@ -62,7 +66,7 @@ function fixture(enabled = true) {
   masonry.material.customProgramCacheKey = () => 'masonry-fixture';
   scene.add(road, masonry);
   const weather = createAtmosphere({ scene, world: addWorld(scene, { grid: false }), sites: null, nightLightingPilot: pilot });
-  pilot?.register([spot, other], null, nightLayer);
+  pilot?.register(lamps, plan, nightLayer);
   weather.rescan();
   nightLayer.setLevel(1);
   const select = (displayed = scene, state = frame(-20)) => pilot?.setFrame(displayed, state);
@@ -181,4 +185,111 @@ test('daytime gloom and both remote scenes keep original material identities and
     assert.strictEqual(f.road.material, f.day);
     assert.deepEqual(signature(f.road.material), original);
   } finally { f.close(); }
+});
+
+const midland = midlandGrandPlan(JSON.parse(readFileSync(new URL('../src/data/kx-track.json', import.meta.url), 'utf8')));
+const west = { ...spot, x: -107.747, y: 1.583, z: 137.974, yaw: -1.00075 };
+const east = { ...spot, x: 48.363, y: -.344, z: 31.919, yaw: -1.00362 };
+
+test('the Midland pier is lit across the joint between its two modelled wall facets', () => {
+  const f = fixture(true, midland);
+  try {
+    f.select();
+    const light = opticalProbe(f.masonry.material);
+    // Rays to the same brick receiver either side of the trapezoid in the frozen Midland frame.
+    const left = light([-66.5049, 4.7722, 86.1767], [.4586, 0, .8886])[0]!;
+    const middle = light([-65.3978, 4.4390, 85.6053], [.4586, 0, .8886])[0]!;
+    const right = light([-64.2481, 2.7866, 85.1063], [.4209, 0, .9071])[0]!;
+    assert.ok(middle > .24 && Math.abs(left - middle) < .06 && Math.abs(right - middle) < .09,
+      `exterior brick falloff must be continuous across the facet joint: ${[left, middle, right]}`);
+    assert.deepEqual(light([-65.3978, 4.4390, 85.4553], [.4586, 0, .8886]), [0, 0, 0]);
+  } finally { f.close(); }
+});
+
+test('the central Midland bay has a weak overlap between the two lamps as their range tapers off', () => {
+  const f = fixture(true, midland, [spot, west]);
+  try {
+    f.select();
+    const light = opticalProbe(f.masonry.material);
+    const middle = light([-97.9252, 5.6938, 101.8715], [.4458, 0, .8951])[0]!;
+    assert.ok(middle > .01 && middle < .12, `central bay receives a faint tail: ${middle}`);
+  } finally { f.close(); }
+});
+
+test('the Midland station-side shoulder reaches paving and exposed terrain up to the hotel foot', () => {
+  const f = fixture(true, midland);
+  try {
+    const paving = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshLambertMaterial());
+    paving.name = 'city-pavement';
+    const terrain = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshLambertMaterial());
+    terrain.name = 'terrain-ground';
+    f.scene.add(paving, terrain);
+    f.weather.rescan();
+    f.select();
+    const pavingLight = opticalProbe(paving.material);
+    const terrainLight = opticalProbe(terrain.material);
+    assert.ok(pavingLight([-61.5368, .6307, 98.9655], up)[0]! > .08, 'lamp spill reaches the hotel sidewalk');
+    assert.ok(terrainLight([-66.2193, .4127, 94.7951], up)[0]! > .04, 'lamp spill crosses the mapped pavement gap');
+    assert.deepEqual(terrainLight([-65, .4, 83], up), [0, 0, 0], 'the ground behind the facade stays dark');
+  } finally { f.close(); }
+});
+
+test('the eastern lamp reaches the overview plaza and the south-front foreground with a weak open-side tail', () => {
+  const f = fixture(true, midland, [east]);
+  try {
+    const plazaDay = new THREE.MeshLambertMaterial();
+    const plaza = new THREE.Mesh(new THREE.PlaneGeometry(), plazaDay);
+    plaza.name = 'city-plaza';
+    f.scene.add(plaza);
+    f.weather.rescan();
+    assert.strictEqual(plaza.material, plazaDay);
+    f.select();
+    const light = opticalProbe(plaza.material);
+    const byKerb = light([41.7347, -.0538, 22.0426], up)[0]!;
+    const beyondCut = light([53.8959, -.1008, 13.3428], up)[0]!;
+    const foreground = light([41.6026, -.0351, 21.3939], up)[0]!;
+    assert.ok(byKerb > .04 && beyondCut > .015 && foreground > .04 && foreground < .30,
+      `the spill crosses to plaza paving and reads as a tail: ${[byKerb, beyondCut, foreground]}`);
+    assert.deepEqual(light([34, 0, 1], up), [0, 0, 0], 'no fill deep into the square');
+    f.select(f.scene, frame(15, weatherState(forcedObservation('rain'))));
+    assert.strictEqual(plaza.material, plazaDay);
+  } finally { f.close(); }
+});
+
+test('the weak asphalt shoulder carries amber instead of feeding the blue ambient', () => {
+  const f = fixture(true, midland);
+  try {
+    f.select();
+    const [red, green, blue] = opticalProbe(f.road.material)([-71.1415, .9644, 120.0548], up);
+    assert.ok(red! > .18 && green! >= .50 * red! && blue! <= .12 * red!,
+      `sodium shoulder has a stronger green and smaller blue share: ${[red, green, blue]}`);
+  } finally { f.close(); }
+});
+
+test('a direct KX night-to-day clock jump keeps the daylight masonry installed by the atmosphere', () => {
+  const f = fixture();
+  try {
+    const original = f.masonry.material;
+    const originalNight = original.clone();
+    originalNight.onBeforeCompile = original.onBeforeCompile;
+    withBuildingNightMaterial(f.masonry, originalNight);
+    f.weather.rescan();
+    const update = (utc: string, wallMs: number) => {
+      f.weather.update({ timeMs: Date.parse(utc), wallMs, weather: CLEAR_STATE, target: new THREE.Vector3(), camera: new THREE.PerspectiveCamera() });
+      f.select(f.scene, f.weather.state()!);
+    };
+    update('2026-11-20T22:30:00Z', 0);
+    assert.notStrictEqual(f.masonry.material, originalNight);
+    update('2026-11-20T12:00:00Z', 300);
+    assert.ok(f.masonry.material === original, 'the pilot must not restore the old night material over the daylight material');
+    assert.deepEqual(signature(f.masonry.material), signature(original));
+  } finally { f.close(); }
+});
+
+test('the page tags original casters before installing pilot variants that inherit their shadow side', () => {
+  const page = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  const tag = page.indexOf('sunShadow.tag()');
+  const pilot = page.indexOf('nightLightingPilot?.setFrame(shown, sky)');
+  assert.ok(tag >= 0 && tag < pilot && pilot < page.indexOf('renderer.render(shown, camera)'),
+    'shadow tags must be on the source materials before the pilot clones them');
 });
