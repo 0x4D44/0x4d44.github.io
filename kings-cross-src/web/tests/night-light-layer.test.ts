@@ -29,6 +29,7 @@ function probe(field: LightField, cap = field.spec.cap, roof = 0, level = 1) {
   const program = new Glsl('float coverGroundAt(vec3 p) { return ' + roof.toFixed(3) + '; }\n' + nightLightGLSL(cap));
   const vars: Record<string, Value> = {
     uNightLightLevels: [level, 0],
+    uNightLightWeather: [0, 0],
     uNightLightGridRect: [...field.origin, field.columns, field.rows],
     uNightLightCellM: field.spec.cellM,
     uNightLightData: new Sampler(field.data), uNightLightDataWidth: field.dataWidth,
@@ -111,7 +112,8 @@ test('facade spill stays close to each fitting and winter ground scatter is inde
   const winter = weatherFrame('snow');
   const snowGrazing = p.ground(road, ground, winter, .015)[0]!;
   const snowOblique = p.ground(road, ground, winter, .5)[0]!;
-  assert.ok(Math.abs(snowGrazing / lightAtRoad - .0474825) < 1e-10 && snowGrazing === snowOblique);
+  const snowLight = .80 * lightAtRoad;
+  assert.ok(Math.abs(snowGrazing - snowLight / (1 + snowLight / .22)) < 1e-10 && snowGrazing === snowOblique);
   t.diagnostic(JSON.stringify({ near, between, acrossRoadLit, acrossRoadDark, snowGrazing, snowOblique }));
 });
 
@@ -146,7 +148,7 @@ function groundReceipt(): string {
     layer.scan();
     layer.setFrame(scene, frame(-20));
     const shader = compile(mesh.material).fragmentShader;
-    const contribution = shader.match(/reflectedLight\.directDiffuse \+= (nightLightAt[^;]+);/);
+    const contribution = shader.match(/reflectedLight\.directDiffuse \+= (night(?:LightAt|GroundDiffuse)\([^;]+);/);
     assert.ok(contribution);
     receipt = contribution[1]!.replace('material.diffuseColor', 'diffuse');
     return receipt;
@@ -179,6 +181,34 @@ function kingsCrossLights() {
   return cityLights;
 }
 
+test('fresh snow lights up under a mast and a street lamp and rolls off at overlapping peaks', t => {
+  const sources = kingsCrossLights();
+  const mast = sources.find(source => source.tags.includes('mast'))!;
+  const post = EUSTON_P1_ROW[0];
+  const lamp = sources.find(source => source.id === post.id)!;
+  const snow = weatherFrame('snow');
+  const white = [.78, .80, .82];
+  const ground = [
+    { source: mast, point: [mast.pos[0], mast.footY, mast.pos[2]], clear: [.40, .40, .40], min: .085 },
+    { source: lamp, point: [post.x, lamp.footY, post.z], clear: [.078, .078, .078], min: .145 },
+  ];
+  const readings = ground.map(({ source, point, clear, min }) => {
+    const field = buildLightField([source], LIGHT_GRID_DESKTOP);
+    const meter = probe(field);
+    const weak = probe(field, field.spec.cap, 0, .04);
+    return { id: source.id, min, clear: meter.ground(point, clear), snow: meter.ground(point, white, snow),
+      weakReflectance: weak.ground(point, white, snow)[0]! / weak.at(point)[0]! };
+  });
+  const overlap = probe(buildLightField(Array.from({ length: 8 }, (_, i) => light(String(i))), LIGHT_GRID_DESKTOP))
+    .ground([4, 0, 0], white, snow);
+  t.diagnostic(JSON.stringify({ readings, overlap }));
+  for (const entry of readings) {
+    assert.ok(entry.snow[0]! > entry.min && entry.snow[0]! > entry.clear[0]!, JSON.stringify(entry));
+    assert.ok(entry.weakReflectance > .70 && entry.weakReflectance < .80, JSON.stringify(entry));
+  }
+  assert.ok(Math.max(...overlap) > .18 && Math.max(...overlap) < .22, String(overlap));
+});
+
 test('forecourt masts light the foot softly and equally in every horizontal direction', t => {
   const mast = kingsCrossLights().find(source => source.tags.includes('mast'))!;
   const meter = probe(buildLightField([mast], LIGHT_GRID_DESKTOP));
@@ -187,7 +217,10 @@ test('forecourt masts light the foot softly and equally in every horizontal dire
   const paving = [['clear', .40], ['rain', .27], ['fog', .36], ['snow', .66]] as const;
   const byWeather = Object.fromEntries(paving.map(([weather, albedo]) => [weather, samples.map(p =>
     meter.ground(p, [albedo, albedo, albedo], weatherFrame(weather))[0]!)]));
-  t.diagnostic(JSON.stringify({ mast: mast.pos, byWeather }));
+  const clearPeak = meter.ground(samples[0]!, [.40, .40, .40]);
+  t.diagnostic(JSON.stringify({ mast: mast.pos, clearPeak, byWeather }));
+  assert.ok(clearPeak[0]! > .075 && clearPeak[0]! < .095, String(clearPeak));
+  assert.ok(Math.max(...clearPeak) - Math.min(...clearPeak) < 1e-7, String(clearPeak));
   for (const readings of Object.values(byWeather)) {
     const [foot, ...around] = readings;
     assert.ok(foot! > .001 && foot! < .11, String(readings));
@@ -214,10 +247,13 @@ test('Euston Road has bounded warm pools and a dark gap on the actual lamp row',
   const contributions = surrounding.map(source => ({ id: source.id, pos: source.pos, yaw: source.yaw, optic: source.optic, gap:
     probe(buildLightField([source], LIGHT_GRID_DESKTOP)).ground([(ax! + bx!) / 2, (a.footY + b.footY) / 2, (az! + bz!) / 2], [.078, .078, .078])[0] }));
   const grids = [desktop, mobile].map(f => ({ width: f.gridWidth, height: f.gridHeight, peak: f.maxCandidates, overflow: f.overflowingCells }));
-  t.diagnostic(JSON.stringify({ foot, underHead, pool, gap, contributions, grids }));
+  const gapRatio = gap[0]! / pool[0]!;
+  const greenRatio = pool[1]! / pool[0]!;
+  t.diagnostic(JSON.stringify({ foot, underHead, pool, gap, gapRatio, greenRatio, contributions, grids }));
   assert.ok(pool[0]! > .04 && pool[0]! < .12 && foot[0]! < .12);
-  assert.ok(gap[0]! < .35 * pool[0]!);
+  assert.ok(gapRatio < .10, String(gapRatio));
   assert.ok(pool[0]! > pool[1]! && pool[1]! > pool[2]! && pool[2]! > .14 * pool[0]!);
+  assert.ok(greenRatio > .53 && greenRatio < .58, String(greenRatio));
 });
 
 test('wet weather reduces the ground field beyond the usual albedo darkening', t => {
@@ -227,19 +263,22 @@ test('wet weather reduces the ground field beyond the usual albedo darkening', t
   const wet = weatherFrame('rain');
   const wetScale = meter.ground(p, asphalt, wet)[0]! / dry;
   t.diagnostic(JSON.stringify({ wetness: wet.weather.wet, wetScale }));
-  assert.ok(wetScale > .12 && wetScale < .4, String(wetScale));
+  assert.ok(wetScale > .50 && wetScale < .70, String(wetScale));
 });
 
-test('the scene fog amount veils the local ground pools before camera fog is applied', t => {
+test('ground fog softens the pool shoulder and keeps its centre strength before camera fog', t => {
   const meter = probe(buildLightField([light()], LIGHT_GRID_DESKTOP));
-  const p = [4, 0, 0], asphalt = [.078, .078, .078];
-  const dry = meter.ground(p, asphalt)[0]!;
+  const asphalt = [.078, .078, .078];
   const fog = weatherFrame('fog');
-  // Hold the wetness constant to isolate the in-scattered fog from damp paving.
+  // Hold wetness constant to isolate the optical footprint from damp paving.
   fog.weather = { ...fog.weather, wet: 0 };
-  const fogScale = meter.ground(p, asphalt, fog)[0]! / dry;
-  t.diagnostic(JSON.stringify({ fogAmount: fog.rig.fogAmount, fogScale }));
-  assert.ok(fogScale > .25 && fogScale < .45, String(fogScale));
+  const points = [[4, 0, 0], [4, 0, 9.2], [4, 0, 18]];
+  const dry = points.map(p => meter.ground(p, asphalt)[0]!);
+  const misted = points.map(p => meter.ground(p, asphalt, fog)[0]!);
+  t.diagnostic(JSON.stringify({ fogAmount: fog.rig.fogAmount, dry, misted }));
+  assert.ok(Math.abs(misted[0]! / dry[0]! - 1) < .02, JSON.stringify({ dry, misted }));
+  assert.ok(misted[1]! > dry[1]! * 1.10 && misted[1]! < .5 * misted[0]!);
+  assert.equal(misted[2], 0);
 });
 
 test('winter field light crosses the tyre, kerb and pavement without copying their hard albedo bands', t => {
@@ -253,7 +292,7 @@ test('winter field light crosses the tyre, kerb and pavement without copying the
   const overview = bands.map(a => meter.ground(p, [a, a, a], snow, .5)[0]!);
   t.diagnostic(JSON.stringify({ cover: snow.weather.snowCover, grazing, overview }));
   assert.ok(Math.max(...grazing, ...overview) / Math.min(...grazing, ...overview) < 1.10);
-  assert.ok(grazing[0]! > .025 && overview[3]! < .11);
+  assert.ok(grazing[0]! > .145 && overview[3]! < .18);
 });
 
 test('night receivers preserve prior hooks and the squeezed anchors, hide all decals and restore original programs in daylight and Perth', () => {
@@ -289,9 +328,9 @@ test('night receivers preserve prior hooks and the squeezed anchors, hide all de
     const raw = compile(night), squeezed = compile(night, true);
     for (const shader of [raw, squeezed]) {
       assert.ok(shader.fragmentShader.indexOf('float coverGroundAt') < shader.fragmentShader.indexOf('vec3 nightLightAt'));
-      assert.match(shader.fragmentShader, /reflectedLight.directDiffuse \+= nightLightAt/);
+      assert.match(shader.fragmentShader, /reflectedLight\.directDiffuse \+= nightGroundDiffuse\(nightLightAt\(nightP, nightN, false, vec3\(0\.0\)\), material\.diffuseColor\);/);
       assert.ok(shader.fragmentShader.indexOf('reflectedLight.directDiffuse *= roofK.a') <
-        shader.fragmentShader.indexOf('reflectedLight.directDiffuse += nightLightAt'));
+        shader.fragmentShader.indexOf('reflectedLight.directDiffuse += nightGroundDiffuse'));
       assert.doesNotMatch(shader.fragmentShader, /uEustonP1/);
       assert.ok(shader.uniforms.uNightLightGrid && shader.uniforms.uNightLightData);
       assert.deepEqual([...shader.fragmentShader.matchAll(/uniform sampler2D (u\w+);/g)].map(m => m[1]),

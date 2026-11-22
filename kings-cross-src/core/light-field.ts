@@ -57,10 +57,11 @@ function packLight(source: DirectLight, data: Float32Array, index: number): { ra
   } else if (optic.kind === 'strip' && source.tags.includes('mast')) {
     // The vertical LED strip describes the visible fitting. Its small
     // downward spill is a broad, soft pool centred on the column. The
-    // spill share puts 0.40-albedo paving near 0.05 linear red at the foot.
+    // spill share puts 0.40-albedo paving near 0.09 linear RGB at the foot.
     kind = LIGHT_FIELD_DOWNLIGHT;
     range = 16;
-    strength *= .047;
+    strength *= .086;
+    spectrum = [1, 1, 1];
     opticParams = [0, range, Math.cos(62 * radians), Math.cos(32 * radians)];
   } else if (optic.kind === 'strip') {
     kind = LIGHT_FIELD_STRIP;

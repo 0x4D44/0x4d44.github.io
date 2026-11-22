@@ -39,7 +39,7 @@ float nightLightSlot(float slot) {
   vec4 bytes = nightLightGridBytes(address);
   return slot == address * 2.0 ? dot(bytes.rg, vec2(1.0, 256.0)) : dot(bytes.ba, vec2(1.0, 256.0));
 }
-vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 frontPlane) {
+vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 frontPlane, float fog) {
   float address = id * ${LIGHT_FIELD_TEXELS_PER_SOURCE.toFixed(1)};
   vec4 head = nightLightTexel(uNightLightData, address, uNightLightDataWidth);
   vec3 ray = head.xyz - p;
@@ -89,19 +89,24 @@ ${EUSTON_FACADE_LOBE}
     float angle = -dot(ray.xz, aim) * params.z / ray.y;
     float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) * params.w / ray.y;
 ${EUSTON_ROAD_LOBES}
-    window = 1.0 - smoothstep(reach * (27.0 / 38.0), reach, d);
+    window = 1.0 - smoothstep(reach * mix(27.0 / 38.0, 0.56, fog), reach, d);
     if (euston) {
-      // Parallel rows can feed the same fragments. Keep the cross-street
-      // skirt and let each pool taper sooner along the carriageway.
-      window *= 0.50 * (1.0 - smoothstep(0.45, 1.15, along));
-      spectrum = vec3(1.0, 0.48, 0.18);
+      // Separate the pools along the carriageway. Fog broadens the optical
+      // shoulder while preserving the pool's centre and the cross-street skirt.
+      window *= 0.50 * (1.0 - smoothstep(mix(0.32, 0.23, fog), mix(1.04, 1.27, fog), along));
+      if (fog > 0.0) {
+        // Feather the light from the beam core into the wider fog shoulder.
+        vec2 fromCore = vec2(angle - 0.38, 0.65 * along);
+        window *= mix(1.0, 0.46 + 0.54 / (1.0 + 70.0 * dot(fromCore, fromCore)), fog);
+      }
+      spectrum = vec3(1.0, 0.55, 0.18);
     }
   } else if (kind == ${LIGHT_FIELD_STRIP.toFixed(1)}) {
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float r = length(vec2(dot(ray.xz, aim) / params.z, dot(ray.xz, vec2(-aim.y, aim.x)) / params.w));
     optic = 1.0 - smoothstep(0.52, 1.0, r);
   } else if (kind == ${LIGHT_FIELD_DOWNLIGHT.toFixed(1)}) {
-    optic = smoothstep(params.z, params.w, ray.y / d);
+    optic = smoothstep(params.z - 0.10 * fog, params.w, ray.y / d);
     window = 1.0 - smoothstep(0.75 * reach, reach, sqrt(horizontal2));
   }
   return spectrum * (head.w * optic * window * receipt * facing / (d * max(d2, 1.0)));
@@ -115,24 +120,25 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane) {
   float count = nightLightSlot(offset);
   if (count <= 0.0) return vec3(0.0);
   float covered = coverGroundAt(p);
+  float fog = facade ? 0.0 : smoothstep(0.40, 0.90, uNightLightWeather.y);
   vec3 light = vec3(0.0);
   for (int i = 0; i < ${cap}; i += 1) {
     if (float(i) >= count) break;
     float id = nightLightSlot(offset + float(i) + 1.0);
-    light += nightLightOne(p, n, covered, id, facade, frontPlane);
+    light += nightLightOne(p, n, covered, id, facade, frontPlane, fog);
   }
   return light * uNightLightLevels.x;
 }
-vec3 nightGroundReceipt(vec3 albedo) {
+vec3 nightGroundDiffuse(vec3 light, vec3 albedo) {
+  vec3 paving = light * albedo * (1.0 - 0.40 * uNightLightWeather.x);
+  if (uNightLightLevels.y <= 0.02) return paving;
   // Ploughed tyre tracks and snow piled along kerbs still show in the base
-  // surface. The added lamplight uses subdued, broad snow scatter so it
-  // does not turn those narrow albedo changes into high-contrast stripes.
+  // surface. Broad snow scatter across the join avoids lighting those narrow
+  // masks as stripes. Roll off the sum so overlapping lights cannot clip it.
   float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
-  vec3 ground = mix(albedo, vec3(0.065, 0.068, 0.075), snow);
-  // Camera fog is applied later. Dense local fog also veils the pool at
-  // short camera distances, and wet paving leaves more light to reflections.
-  float fog = smoothstep(0.40, 0.90, uNightLightWeather.y);
-  return ground * (1.0 - 0.77 * uNightLightWeather.x) * (1.0 - 0.68 * fog);
+  vec3 scatter = 0.80 * light;
+  float peak = max(max(scatter.r, scatter.g), scatter.b);
+  return mix(paving, scatter / (1.0 + peak / 0.22), snow);
 }
 `;
 }
@@ -188,6 +194,8 @@ export function createNightLightLayer(scene: THREE.Scene, spec: LightGridSpec) {
     const key = source.customProgramCacheKey();
     const planes = receiver === 'midland' ? Object.keys(front).length : 0;
     const field = nightLightGLSL(spec.cap, planes);
+    const sample = `nightLightAt(nightP, nightN, ${receiver !== 'ground'}, ${planes ? 'nightLightFrontPlane(nightP.x)' : 'vec3(0.0)'})`;
+    const diffuse = receiver === 'ground' ? `nightGroundDiffuse(${sample}, material.diffuseColor)` : `${sample} * material.diffuseColor`;
     night.onBeforeCompile = (shader, renderer) => {
       // Leave the include in place so addRoofShade inserts its shade and
       // headlamps before this contribution. The original hook still owns them.
@@ -195,8 +203,7 @@ export function createNightLightLayer(scene: THREE.Scene, spec: LightGridSpec) {
 ${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
   vec3 nightP = cameraPosition - vViewPosition * mat3( viewMatrix );
   vec3 nightN = inverseTransformDirection( normal, viewMatrix );
-  reflectedLight.directDiffuse += nightLightAt(nightP, nightN, ${receiver !== 'ground'}, ${planes ? 'nightLightFrontPlane(nightP.x)' : 'vec3(0.0)'})
-    * ${receiver === 'ground' ? 'nightGroundReceipt(material.diffuseColor)' : 'material.diffuseColor'};
+  reflectedLight.directDiffuse += ${diffuse};
 }`);
       prior.call(source, shader, renderer);
       Object.assign(shader.uniforms, uniforms, receiver === 'midland' ? front : {});
