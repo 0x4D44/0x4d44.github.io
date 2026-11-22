@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { lampLevelFor } from '../../core/daylight.ts';
 import type { MidlandPlan } from '../../core/landmarks.ts';
-import { buildLightField, EUSTON_FACADE_REACH, EUSTON_ROAD_REACH, LIGHT_FIELD_DOWNLIGHT, LIGHT_FIELD_EUSTON, LIGHT_FIELD_FACADE_REACH,
+import { buildLightField, EUSTON_FACADE_REACH, EUSTON_ROAD_REACH, EUSTON_ROAD_SPECTRUM, LIGHT_FIELD_DOWNLIGHT, LIGHT_FIELD_EUSTON, LIGHT_FIELD_FACADE_REACH,
   LIGHT_FIELD_STRIP, LIGHT_FIELD_TEXELS_PER_SOURCE } from '../../core/light-field.ts';
 import type { LightField, LightGridSpec } from '../../core/light-field.ts';
 import { lightSourcesFor } from '../../core/light-sources.ts';
@@ -20,6 +20,8 @@ uniform float uNightLightDataWidth;
 uniform float uNightLightGridWidth;
 uniform sampler2D uNightLightData;
 uniform sampler2D uNightLightGrid;
+// The pilot's own light from P1's five posts, which the field never undercuts.
+vec3 nightLightFloor;
 ${planes.map(name => `uniform vec4 ${name};`).join('\n')}
 ${planes.length ? `
 vec3 nightLightFrontPlane(float x) {
@@ -33,6 +35,11 @@ vec4 nightLightTexel(sampler2D tex, float address, float width) {
 }
 vec4 nightLightGridBytes(float address) {
   return floor(nightLightTexel(uNightLightGrid, address, uNightLightGridWidth) * 255.0 + 0.5);
+}
+float nightLightRoadLobe(float angle, float along) {
+  float optic = 0.0;
+${EUSTON_ROAD_LOBES}
+  return optic;
 }
 float nightLightSlot(float slot) {
   float address = floor(slot * 0.5);
@@ -75,6 +82,8 @@ vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 fr
   float optic = 0.0;
   float window = 1.0;
   vec3 spectrum = colour.rgb;
+  // Euston records carry P1's strength in place of a spectrum (see packLight).
+  float pilot = euston ? colour.r * receipt * facing / (d * max(d2, 1.0)) : 0.0;
   if (road && facade) {
     // With no recorded plane, the fragment's local normal supplies N.L.
     vec3 wall = dot(plane.xz, plane.xz) > 0.0 ? plane.xzw : vec3(n.xz, 0.0);
@@ -85,6 +94,10 @@ ${EUSTON_FACADE_LOBE}
     window = (1.0 - smoothstep(euston ? 27.0 : 10.0, reach, d))
       * (1.0 - smoothstep(3.0, 12.0, alongWall));
     if (euston) spectrum = vec3(1.0, 0.43, 0.19);
+    // P1 lit the Midland front without the along-wall taper.
+    if (pilot > 0.0 && dot(frontPlane.xy, frontPlane.xy) > 0.0) {
+      nightLightFloor += spectrum * (pilot * optic * (1.0 - smoothstep(27.0, reach, d)));
+    }
     if (euston && lowerBrick > 0.0) {
       // The narrow upper-wall lobe misses lower bays between the fittings.
       // Broaden their side-on spill within the same front plane and reach.
@@ -99,7 +112,12 @@ ${EUSTON_FACADE_LOBE}
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float angle = -dot(ray.xz, aim) * params.z / ray.y;
     float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) * params.w / ray.y;
-${EUSTON_ROAD_LOBES}
+    optic = nightLightRoadLobe(angle, along);
+    if (pilot > 0.0) {
+      // P1's lobes take unscaled angles and its own distance window.
+      nightLightFloor += vec3(${EUSTON_ROAD_SPECTRUM.map(v => v.toFixed(2)).join(', ')}) * (pilot * (1.0 - smoothstep(27.0, reach, d))
+        * nightLightRoadLobe(angle / params.z, along / params.w));
+    }
     window = 1.0 - smoothstep(reach * mix(27.0 / 38.0, 0.56, fog), reach, d);
     if (euston) {
       // Separate the pools along the carriageway. Fog broadens the optical
@@ -133,6 +151,8 @@ ${EUSTON_ROAD_LOBES}
 vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway, float lowerBrick) {
   // City roofs are excluded by the receiver list. Mixed façade batches also
   // contain upward faces, such as parapet caps, that should receive no spill.
+  // P1's façade lobe gives them nothing either.
+  nightLightFloor = vec3(0.0);
   if (uNightLightLevels.x <= 0.0 || (facade && n.y > 0.5)) return vec3(0.0);
   vec2 cell = floor((p.xz - uNightLightGridRect.xy) / uNightLightCellM);
   if (cell.x < 0.0 || cell.y < 0.0 || cell.x >= uNightLightGridRect.z || cell.y >= uNightLightGridRect.w) return vec3(0.0);
@@ -149,10 +169,14 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway
     float id = nightLightSlot(offset + float(i) + 1.0);
     light += nightLightOne(p, n, covered, id, facade, frontPlane, fog, snowRoad, lowerBrick);
   }
-  return light * uNightLightLevels.x;
+  light *= uNightLightLevels.x;
+  nightLightFloor *= uNightLightLevels.x;
+  return facade ? max(light, nightLightFloor) : light;
 }
-vec3 nightGroundDiffuse(vec3 light, vec3 albedo, bool carriageway) {
-  vec3 paving = light * albedo * (1.0 - 0.40 * uNightLightWeather.x);
+vec3 nightFieldDiffuse(vec3 light, vec3 albedo, bool carriageway) {
+  // Wet paving darkens through the receiving albedo alone. A further field
+  // factor left lamp-lit wet roads and mast pools below main's decals.
+  vec3 paving = light * albedo;
   if (uNightLightLevels.y <= 0.02) return paving;
   float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
   // Cleared lanes and their paint share a dark slush reflectance. The
@@ -164,6 +188,10 @@ vec3 nightGroundDiffuse(vec3 light, vec3 albedo, bool carriageway) {
   // surface. Broad snow scatter across the join avoids lighting those narrow
   // masks as stripes. Roll off the sum so overlapping lights cannot clip it.
   return mix(paving, scatter / (1.0 + peak / 0.22), snow);
+}
+vec3 nightGroundDiffuse(vec3 light, vec3 albedo, bool carriageway) {
+  // P1 lit the receiving albedo in every weather; nightLightAt has just set the floor.
+  return max(nightFieldDiffuse(light, albedo, carriageway), nightLightFloor * albedo);
 }
 `;
 }

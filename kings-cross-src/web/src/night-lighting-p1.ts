@@ -2,6 +2,7 @@
 // the luminous heads and all reflection/fog data.
 import * as THREE from 'three';
 import { distanceToSegment } from '../../core/ole.ts';
+import { EUSTON_P1_STRENGTH } from '../../core/light-field.ts';
 import { lampLevelFor } from '../../core/daylight.ts';
 import type { MidlandPlan } from '../../core/landmarks.ts';
 import { LAMP_KIND } from '../../core/streetlights.ts';
@@ -62,7 +63,7 @@ ${EUSTON_ROAD_LOBES}
   }
   float distanceWindow = 1.0 - smoothstep(27.0, reach, d);
   vec3 spectrum = facade ? vec3(1.0, 0.43, 0.19) : vec3(1.0, 0.53, 0.06);
-  return spectrum * (205.0 * optic * distanceWindow * facing / (d * max(d2, 1.0)));
+  return spectrum * (${EUSTON_P1_STRENGTH.toFixed(1)} * optic * distanceWindow * facing / (d * max(d2, 1.0)));
 }
 `;
 

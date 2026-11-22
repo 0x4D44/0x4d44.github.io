@@ -259,7 +259,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
       const lumens = spot.kind === LAMP_KIND.sodium ? 10000 + 1600 * (spot.height - 5)
         : (spot.kind === LAMP_KIND.warm ? 8000 : 6000) + 800 * (spot.height - 5);
       const source = roadLight('kx', pilot ? pilot.id : `kx/street/${i}`, spot, headOf(spot),
-        { lumens, throwM: 4 * spot.height * (localScale || 1), tags: euston ? ['road', 'euston-road'] : ['road'] });
+        { lumens, throwM: 4 * spot.height * (localScale || 1), tags: pilot ? ['road', 'euston-road', 'euston-p1'] : euston ? ['road', 'euston-road'] : ['road'] });
       if (!pilot) return source;
       let distance = 38, halfSpace: LightSource['halfSpace'];
       for (const facet of midland?.front.edges ?? []) {

@@ -17,7 +17,7 @@ import { REFERENCE } from '../src/atmosphere.ts';
 import { addCity } from '../src/city.ts';
 import { addRoofShade } from '../src/lighting.ts';
 import { createNightLightLayer, nightLightGLSL } from '../src/night-light-layer.ts';
-import { EUSTON_P1_ROW } from '../src/night-lighting-p1.ts';
+import { EUSTON_P1_OPTIC, EUSTON_P1_ROW } from '../src/night-lighting-p1.ts';
 import { createStreetLights } from '../src/streetlights.ts';
 import { CLEAR_STATE, forcedObservation, weatherState } from '../src/weather.ts';
 import { Glsl, Sampler } from './glsl.ts';
@@ -47,6 +47,8 @@ function probe(field: LightField, cap = field.spec.cap, roof = 0, level = 1) {
   return {
     at: (p: number[], n = up, facade = false) =>
       program.call('nightLightAt', [p, n, facade, [0, 0, 0], false, 0], { vars, fns }) as number[],
+    front: (p: number[], n: number[], plane: number[], lowerBrick = 0) =>
+      program.call('nightLightAt', [p, n, true, plane, false, lowerBrick], { vars, fns }) as number[],
     midland: (p: number[], n: number[], height: number) => program.evaluate(receiverContribution('landmarks-brickRed'), {
       vars: { ...vars, nightP: p, nightN: n, diffuse: [1, 1, 1], vMidlandHeight: height }, fns,
     }) as number[],
@@ -190,8 +192,13 @@ function kingsCrossLights() {
   return cityLights;
 }
 
+// The field's own terms, without the P1 floor that the pilot-floor tests cover.
+function withoutPilotFloor<T extends { tags: readonly string[] }>(sources: readonly T[]): T[] {
+  return sources.map(source => ({ ...source, tags: source.tags.filter(tag => tag !== 'euston-p1') }));
+}
+
 test('cleared snow carriageways take asphalt light with a soft far-lane shoulder', t => {
-  const field = buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP);
+  const field = buildLightField(withoutPilotFloor(kingsCrossLights()), LIGHT_GRID_DESKTOP);
   const meter = probe(field);
   const snow = weatherFrame('snow');
   const slush = [.10, .11, .12];
@@ -221,9 +228,9 @@ test('forecourt masts keep a bright core and leave a dark gap between adjacent c
   const at = (p: number[]) => meter.ground(p, [.4, .4, .4]);
   const centre = at(first), gap = at(midpoint);
   t.diagnostic(JSON.stringify({ first, second, centre, gap }));
-  assert.ok(centre[0]! > .075 && centre[0]! < .095);
+  assert.ok(centre[0]! > .085 && centre[0]! < .105);
   assert.ok(gap[0]! > .05 * centre[0]! && gap[0]! < .13 * centre[0]!, String(gap));
-  assert.ok(centre[0]! > centre[2]! && centre[0]! < 1.12 * centre[2]!);
+  assert.ok(centre[0]! > centre[2]! && centre[0]! < 1.20 * centre[2]!);
 });
 
 test('upward masonry caps in a mixed façade batch reject below-head light', t => {
@@ -251,11 +258,60 @@ test('the Midland’s lower brick picks up a local sodium shoulder above the arc
   assert.deepEqual(high, meter.at(upper, plate, true));
 });
 
+// Main's P1 pilot for one post, exactly as night-lighting-p1.ts evaluates it.
+const pilotProgram = new Glsl('float coverGroundAt(vec3 p) { return 0.0; }\n' + EUSTON_P1_OPTIC);
+function pilotAt(source: ReturnType<typeof light>, p: number[], n: number[], wall: number[], facade: boolean) {
+  return pilotProgram.call('eustonP1One', [p, n, [...source.pos], [Math.cos(source.yaw), -Math.sin(source.yaw)], wall, facade],
+    { vars: {} }) as number[];
+}
+// Float32 packing of the lamp record moves the field by a few parts in 1e8.
+const atLeast = (field: number[], pilot: number[]) => field.every((v, i) => v >= pilot[i]! * (1 - 1e-6) - 1e-12);
+
+test('P1 posts light the Midland front at least as the pilot did on main, between posts too', t => {
+  const post = { ...light(), tags: ['road', 'euston-road', 'euston-p1'] };
+  const meter = probe(buildLightField([post], LIGHT_GRID_DESKTOP));
+  // A front facing the post 8 m behind it: the register() uniform carries the
+  // facet offset less 0.025 m, P1 subtracts the same margin itself.
+  const plane = [1, 0, -8.025], wall = [1, 0, -8];
+  const rows = [0, 8, 16, 24].flatMap(z => [2, 5].map(y => {
+    const p = [-7.99, y, z], n = [1, 0, 0];
+    return { p, field: meter.front(p, n, plane), brick: meter.front(p, n, plane, 1), pilot: pilotAt(post, p, n, wall, true) };
+  }));
+  const cap = [-6, 4, 10];
+  const capField = meter.front(cap, up, plane), capPilot = pilotAt(post, cap, up, wall, true);
+  t.diagnostic(JSON.stringify({ rows, capField, capPilot }));
+  for (const { field, brick, pilot } of rows) assert.ok(atLeast(field, pilot) && atLeast(brick, pilot), JSON.stringify({ field, brick, pilot }));
+  // Between posts (16 m along the front) the old taper left nothing.
+  assert.ok(rows.filter(r => r.p[2] === 16).every(r => r.pilot[0]! > .01));
+  // Upward caps: P1's façade lobe needs a street-facing normal, so the gate undercuts nothing.
+  assert.deepEqual([capField, capPilot], [zero, zero]);
+  // Other posts keep the tapered field and no floor.
+  const plain = probe(buildLightField([light()], LIGHT_GRID_DESKTOP));
+  assert.deepEqual(plain.front([-7.99, 2, 16], [1, 0, 0], plane), zero);
+});
+
+test('P1 posts light the ground at least as the pilot did on main in every weather', t => {
+  const post = { ...light(), tags: ['road', 'euston-road', 'euston-p1'] };
+  const meter = probe(buildLightField([post], LIGHT_GRID_DESKTOP));
+  const albedo = [.078, .078, .078];
+  // Pool centre, the back lobe on the paving, the pool's flank and a gap along the road.
+  const points = [[4, 0, 0], [-6, 0, 0], [8, 0, 6], [4, 0, 14]];
+  const readings = ['clear', 'rain', 'fog', 'snow'].flatMap(weather => points.flatMap(p =>
+    ['city-asphalt', 'city-pavement'].map(surface => {
+      const pilot = pilotAt(post, p, up, [0, 0, 0], false).map((v, i) => v * albedo[i]!);
+      return { weather, p, surface, pilot, field: meter.ground(p, albedo, weatherFrame(weather), .5, surface) };
+    })));
+  t.diagnostic(JSON.stringify(readings));
+  for (const r of readings) assert.ok(atLeast(r.field, r.pilot), JSON.stringify(r));
+  // The halved field alone fell to about half of P1 in the pool's centre.
+  assert.ok(readings.filter(r => r.weather === 'clear' && r.p === points[0]).every(r => r.field[0]! >= r.pilot[0]! && r.pilot[0]! > .1));
+});
+
 test('fresh snow lights up under a mast and a street lamp and rolls off at overlapping peaks', t => {
   const sources = kingsCrossLights();
   const mast = sources.find(source => source.tags.includes('mast'))!;
   const post = EUSTON_P1_ROW[0];
-  const lamp = sources.find(source => source.id === post.id)!;
+  const lamp = withoutPilotFloor(sources).find(source => source.id === post.id)!;
   const snow = weatherFrame('snow');
   const white = [.78, .80, .82];
   const ground = [
@@ -289,9 +345,9 @@ test('forecourt masts light the foot softly and equally in every horizontal dire
     meter.ground(p, [albedo, albedo, albedo], weatherFrame(weather))[0]!)]));
   const clearPeak = meter.ground(samples[0]!, [.40, .40, .40]);
   t.diagnostic(JSON.stringify({ mast: mast.pos, clearPeak, byWeather }));
-  assert.ok(clearPeak[0]! > .075 && clearPeak[0]! < .095, String(clearPeak));
-  assert.ok(Math.abs(clearPeak[1]! / clearPeak[0]! - .98) < 1e-7 &&
-    Math.abs(clearPeak[2]! / clearPeak[0]! - .90) < 1e-7, String(clearPeak));
+  assert.ok(clearPeak[0]! > .085 && clearPeak[0]! < .105, String(clearPeak));
+  assert.ok(Math.abs(clearPeak[1]! / clearPeak[0]! - .96) < 1e-7 &&
+    Math.abs(clearPeak[2]! / clearPeak[0]! - .85) < 1e-7, String(clearPeak));
   for (const readings of Object.values(byWeather)) {
     const [foot, ...around] = readings;
     assert.ok(foot! > .001 && foot! < .11, String(readings));
@@ -300,7 +356,7 @@ test('forecourt masts light the foot softly and equally in every horizontal dire
 });
 
 test('Euston Road has bounded warm pools and a dark gap on the actual lamp row', t => {
-  const sources = kingsCrossLights();
+  const sources = withoutPilotFloor(kingsCrossLights());
   const desktop = buildLightField(sources, LIGHT_GRID_DESKTOP);
   const mobile = buildLightField(sources, LIGHT_GRID_MOBILE);
   const meter = probe(desktop);
@@ -327,14 +383,22 @@ test('Euston Road has bounded warm pools and a dark gap on the actual lamp row',
   assert.ok(greenRatio > .53 && greenRatio < .58, String(greenRatio));
 });
 
-test('wet weather reduces the ground field beyond the usual albedo darkening', t => {
-  const meter = probe(buildLightField([light()], LIGHT_GRID_DESKTOP));
-  const p = [4, 0, 0], asphalt = [.078, .078, .078];
-  const dry = meter.ground(p, asphalt)[0]!;
+test('wet weather darkens the ground field only through the receiving albedo, for street lamps and masts', t => {
+  const mast = kingsCrossLights().find(source => source.tags.includes('mast'))!;
   const wet = weatherFrame('rain');
-  const wetScale = meter.ground(p, asphalt, wet)[0]! / dry;
-  t.diagnostic(JSON.stringify({ wetness: wet.weather.wet, wetScale }));
-  assert.ok(wetScale > .50 && wetScale < .70, String(wetScale));
+  const cases = [
+    { meter: probe(buildLightField([light()], LIGHT_GRID_DESKTOP)), p: [4, 0, 0], surface: 'city-asphalt', albedo: [.078, .078, .078] },
+    { meter: probe(buildLightField([light()], LIGHT_GRID_DESKTOP)), p: [4, 0, 0], surface: 'city-plaza', albedo: [.078, .078, .078] },
+    { meter: probe(buildLightField([mast], LIGHT_GRID_DESKTOP)), p: [mast.pos[0] + 2, mast.footY, mast.pos[2]], surface: 'city-plaza', albedo: [.27, .27, .27] },
+  ];
+  const readings = cases.map(({ meter, p, surface, albedo }) => ({ surface,
+    dry: meter.ground(p, albedo, weatherFrame('clear'), .5, surface), wet: meter.ground(p, albedo, wet, .5, surface) }));
+  t.diagnostic(JSON.stringify({ wetness: wet.weather.wet, readings }));
+  assert.ok(wet.weather.wet > .5);
+  for (const { dry, wet: rain } of readings) {
+    assert.ok(dry[0]! > .005, String(dry));
+    assert.deepEqual(rain, dry);
+  }
 });
 
 test('ground fog softens the pool shoulder and keeps its centre strength before camera fog', t => {

@@ -28,6 +28,8 @@ export const LIGHT_FIELD_FACADE_REACH = 20;
 export const EUSTON_FACADE_REACH = 44;
 export const EUSTON_ROAD_REACH = 38;
 export const EUSTON_ROAD_SPECTRUM = [1, .53, .06] as const;
+/** The P1 pilot's effective intensity for each of its five posts (night-lighting-p1.ts). */
+export const EUSTON_P1_STRENGTH = 205;
 
 const TEXTURE_EDGE = 2048; // WebGL2 minimum.
 const ROW_TEXELS = 1024;
@@ -46,10 +48,13 @@ function packLight(source: DirectLight, data: Float32Array, index: number): { ra
     const euston = source.tags.includes('euston-road') && source.spectrum === 'hps';
     kind = euston ? LIGHT_FIELD_EUSTON : LIGHT_FIELD_ROAD;
     if (euston) {
-      spectrum = EUSTON_ROAD_SPECTRUM;
       // S1 matched the pilot on linear luma. Recover the red-channel scale
       // for the pilot's calibrated receiver spectrum.
-      strength /= .2126 * spectrum[0] + .7152 * spectrum[1] + .0722 * spectrum[2];
+      strength /= .2126 * EUSTON_ROAD_SPECTRUM[0] + .7152 * EUSTON_ROAD_SPECTRUM[1] + .0722 * EUSTON_ROAD_SPECTRUM[2];
+      // The shader applies the pilot's own spectra to Euston fittings, so the
+      // spectrum slot carries the pilot's floor strength instead: P1's five
+      // posts never light less than the pilot did on main, others carry none.
+      spectrum = [source.tags.includes('euston-p1') ? EUSTON_P1_STRENGTH : 0, 0, 0];
     }
     range = EUSTON_ROAD_REACH * Math.max(optic.throwM / EUSTON_REFERENCE.optic.throwM, optic.spreadM / EUSTON_REFERENCE.optic.spreadM);
     opticParams = [yaw, range, height / 10.15 * EUSTON_REFERENCE.optic.spreadM / optic.spreadM,
@@ -57,12 +62,12 @@ function packLight(source: DirectLight, data: Float32Array, index: number): { ra
   } else if (optic.kind === 'strip' && source.tags.includes('mast')) {
     // The vertical LED strip describes the visible fitting. Its small
     // downward spill is a broad, soft pool centred on the column. The
-    // spill share puts 0.40-albedo paving near 0.09 linear RGB at the foot.
+    // spill share puts 0.40-albedo paving near 0.10 linear red at the foot.
     kind = LIGHT_FIELD_DOWNLIGHT;
     range = 12;
-    strength *= .086;
+    strength *= .096;
     // Balance the cool night fill on the paving with a slightly warm source.
-    spectrum = [1, .98, .90];
+    spectrum = [1, .96, .85];
     opticParams = [0, range, Math.cos(54 * radians), Math.cos(12 * radians)];
   } else if (optic.kind === 'strip') {
     kind = LIGHT_FIELD_STRIP;
