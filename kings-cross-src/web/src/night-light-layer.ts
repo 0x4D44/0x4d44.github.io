@@ -12,12 +12,25 @@ import type { StreetLights } from './streetlights.ts';
 // Side-street lanterns on the ground: the share of each weaker overlapping pool
 // that adds to the strongest, and the light (linear luma) that the summed pool's
 // centre rolls off by half at.
-const SIDE_OVERLAP = 0.5;
+const SIDE_OVERLAP = 0.8;
 const SIDE_KNEE = 1.2;
+// Their gain on the carriageway and on other paving, in clear air and rain
+// (fog and lying snow already fill the street), the carriageway's own knee,
+// and the scale on the along-street distance that stretches each pool down
+// its street.
+const SIDE_ROAD_GAIN = 3.6;
+const SIDE_ROAD_KNEE = 1.0;
+const SIDE_PAVING_GAIN = 0.8;
+const SIDE_ALONG = 0.5;
+// The light (linear luma) that a lantern's spill on a wall beside it levels off at.
+const SIDE_WALL_KNEE = 0.6;
 // The most of a mast's ground spill that takes a sodium pool's hue, on clear
 // ground and on lying snow.
 const MAST_SHARE = 0.6;
 const MAST_SNOW_SHARE = 1.0;
+// The same on wet ground and in ground fog, where the wet sheen and the haze
+// otherwise thin the pool's amber (main's decals kept it).
+const MAST_WET_SHARE = 1.0;
 
 export function nightLightGLSL(cap: number, frontPlanes = 0): string {
   const planes = Array.from({ length: frontPlanes }, (_, i) => `uNightLightFront${i}`);
@@ -34,7 +47,7 @@ uniform sampler2D uNightLightGrid;
 vec3 nightLightFloor;
 // Forecourt mast spill on the ground, held apart from the street lamps (see nightMastBlend).
 vec3 nightLightMast;
-// Ground light from the side-street lanterns: their sum and per-channel peak (see nightLightAt).
+// Light from the side-street lanterns, on the ground or a wall: their sum and per-channel peak (see nightLightAt).
 vec3 nightLightSide;
 vec3 nightLightSideTop;
 ${planes.map(name => `uniform vec4 ${name};`).join('\n')}
@@ -126,7 +139,7 @@ ${EUSTON_FACADE_LOBE}
   } else if (road) {
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float angle = -dot(ray.xz, aim) * params.z / ray.y;
-    float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) * params.w / ray.y;
+    float along = abs(dot(ray.xz, vec2(-aim.y, aim.x))) * params.w / ray.y * (euston ? 1.0 : ${SIDE_ALONG.toFixed(2)});
     optic = nightLightRoadLobe(angle, along);
     if (pilot > 0.0) {
       // P1's lobes take unscaled angles and its own distance window.
@@ -180,7 +193,7 @@ ${EUSTON_FACADE_LOBE}
     nightLightMast += lit;
     return vec3(0.0);
   }
-  if (!facade && kind == ${LIGHT_FIELD_ROAD.toFixed(1)}) {
+  if (kind == ${LIGHT_FIELD_ROAD.toFixed(1)}) {
     nightLightSide += lit;
     nightLightSideTop = max(nightLightSideTop, lit);
     return vec3(0.0);
@@ -195,7 +208,8 @@ vec3 nightMastBlend(vec3 lamps, vec3 mast, float snow) {
   // Lying snow under the pool is otherwise blue with moonlight, which main's
   // decals covered, so there all of the overlapping spill takes the hue.
   float amber = max(lamps.r - lamps.b, 0.0);
-  float share = mix(${MAST_SHARE.toFixed(2)}, ${MAST_SNOW_SHARE.toFixed(2)}, snow)
+  float wet = max(uNightLightWeather.x, smoothstep(0.40, 0.90, uNightLightWeather.y));
+  float share = mix(mix(${MAST_SHARE.toFixed(2)}, ${MAST_WET_SHARE.toFixed(2)}, wet), ${MAST_SNOW_SHARE.toFixed(2)}, snow)
     * smoothstep(0.08, 0.45, amber / (amber + mast.g + 1e-6));
   vec3 luma = vec3(0.2126, 0.7152, 0.0722);
   vec3 tint = lamps * (dot(mast, luma) / max(dot(lamps, luma), 1e-6));
@@ -227,10 +241,25 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway
   }
   // Side-street lanterns stand in clusters (Pancras Road has a 5 m and a 9 m
   // post 4 m apart, and a third 7 m on), and their summed pools out-shone
-  // Euston Road. Overlaps add half of the weaker pools to the strongest, and
+  // Euston Road. Overlaps add most of the weaker pools to the strongest, and
   // the low posts' hot centres roll off.
-  vec3 side = nightLightSideTop + ${SIDE_OVERLAP.toFixed(2)} * (nightLightSide - nightLightSideTop);
-  light += side / (1.0 + dot(side, vec3(0.2126, 0.7152, 0.0722)) / ${SIDE_KNEE.toFixed(2)});
+  vec3 luma = vec3(0.2126, 0.7152, 0.0722);
+  if (facade) {
+    // A lantern a few metres from a wall clipped it to white. Level the
+    // spill off softly; the dimmer glow along the terrace keeps its strength.
+    float wall = dot(nightLightSide, luma) / ${SIDE_WALL_KNEE.toFixed(2)};
+    light += nightLightSide / sqrt(sqrt(1.0 + wall * wall * wall * wall));
+  } else {
+    // Main's decals filled each side street evenly along the carriageway.
+    // Lift the dark asphalt more than the paving beside it, where the back
+    // lobe already reached, and give the pools Euston Road's sodium hue at
+    // their own luminance: the narrow-band orange read as a saturated spot.
+    vec3 side = (nightLightSideTop + ${SIDE_OVERLAP.toFixed(2)} * (nightLightSide - nightLightSideTop))
+      * mix(carriageway ? ${SIDE_ROAD_GAIN.toFixed(2)} : ${SIDE_PAVING_GAIN.toFixed(2)}, 1.0, max(fog, smoothstep(0.02, 0.75, uNightLightLevels.y)));
+    vec3 sodium = vec3(1.0, 0.55, 0.18);
+    side = sodium * (dot(side, luma) / dot(sodium, luma));
+    light += side / (1.0 + dot(side, luma) / (carriageway ? ${SIDE_ROAD_KNEE.toFixed(2)} : ${SIDE_KNEE.toFixed(2)}));
+  }
   nightLightFloor *= uNightLightLevels.x;
   light *= uNightLightLevels.x;
   if (facade) return max(light, nightLightFloor);

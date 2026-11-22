@@ -262,6 +262,27 @@ test('on lying snow a mast spill overlapping a sodium pool takes the pool’s hu
   for (const r of inside) assert.ok(r.blue <= r.poolBlue * (1 + 1e-6), JSON.stringify(r));
 });
 
+test('in rain and ground fog a mast spill overlapping a sodium pool keeps the pool’s amber', t => {
+  const sources = kingsCrossLights();
+  const all = probe(buildLightField(sources, LIGHT_GRID_DESKTOP));
+  const lamps = probe(buildLightField(sources.filter(source => !source.tags.includes('mast')), LIGHT_GRID_DESKTOP));
+  const paving = [.40, .40, .40];
+  const amber = (c: number[]) => (c[0]! - c[2]!) / c[0]!;
+  // The back lobe of P1 post 1043 beside and at the foot of mast 2 (south front).
+  const readings = ['rain', 'fog'].flatMap(weather => [[52.3, -.2, 21.5], [54.5, -.15, 18.3]].map(p => {
+    const state = weatherFrame(weather);
+    const total = all.ground(p, paving, state), pool = lamps.ground(p, paving, state);
+    return { weather, p, total, pool, amber: amber(total), poolAmber: amber(pool) };
+  }));
+  t.diagnostic(JSON.stringify(readings));
+  // Inside the pool the overlap keeps the pool's own amber; at the mast's
+  // foot, where the mast's spill outweighs the pool, most of it (S2g: .82, .65).
+  for (const r of readings) {
+    assert.ok(r.total[0]! > r.pool[0]! * 1.05, JSON.stringify(r));
+    assert.ok(r.amber >= r.poolAmber * (r.p[0] === 52.3 ? .99 : .75), JSON.stringify(r));
+  }
+});
+
 test('clustered side-street lanterns on Pancras Road stay below the Euston Road pools', t => {
   const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
   const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
@@ -275,6 +296,56 @@ test('clustered side-street lanterns on Pancras Road stay below the Euston Road 
   t.diagnostic(JSON.stringify({ side, main }));
   assert.ok(main > .5 && side < .95 * main, JSON.stringify({ side, main }));
   assert.ok(side > .3, String(side));
+});
+
+test('Pancras Road carriageway fills evenly in sodium amber, below Euston Road, in clear air and rain', t => {
+  const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const asphalt = [.18, .18, .17];
+  // Posts 109, 110 and 983 stand within 8 m of one another about (-60, 0).
+  const pancras = Array.from({ length: 21 * 21 }, (_, i) => [-70 + (i % 21), -.25, -10 + Math.floor(i / 21)]);
+  // Euston Road: along lamp 1031's pool and across P1 post 1041's.
+  const euston = [...Array.from({ length: 31 }, (_, i) => [-67.2, 1.2, 128 + .3 * i]),
+    ...Array.from({ length: 31 }, (_, i) => [10 + i, -.2, 50])];
+  const rows = ['clear', 'rain'].map(weather => {
+    const state = weatherFrame(weather);
+    const road = pancras.map(p => meter.ground(p, asphalt, state, .015, 'city-asphalt'));
+    const lit = road.filter(c => luma(c) > 1e-4);
+    return { weather, mean: road.reduce((a, c) => a + luma(c), 0) / road.length,
+      peak: Math.max(...road.map(luma)), minGreen: Math.min(...lit.map(c => c[1]! / c[0]!)),
+      euston: Math.max(...euston.map(p => luma(meter.ground(p, asphalt, state, .015, 'city-asphalt')))) };
+  });
+  t.diagnostic(JSON.stringify(rows));
+  // S2g lit this grid at a mean of .057 with a minimum green/red of .26.
+  for (const r of rows) {
+    assert.ok(r.mean > .085, JSON.stringify(r));
+    assert.ok(r.minGreen > .5, JSON.stringify(r));
+    assert.ok(r.peak < r.euston, JSON.stringify(r));
+  }
+});
+
+test('a side-street lantern stretches its pool down its street', t => {
+  const lantern = { ...light('side', [0, 6, 0]), tags: ['road'] };
+  const meter = probe(buildLightField([lantern], LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  // The head aims along +x across its street; the street runs along z.
+  // Distant streets read as lines of light, not separate pools: 20 m down the
+  // street keeps a few percent of the pool's centre (S2g: 1%).
+  const row = Array.from({ length: 13 }, (_, i) => luma(meter.at([2, 0, 2 * i])));
+  t.diagnostic(JSON.stringify(row));
+  assert.ok(row[0]! > .3, String(row));
+  assert.ok(row[10]! > .025 * row[0]!, String(row));
+});
+
+test('a lantern a few metres from a wall levels off below white there', t => {
+  const meter = probe(buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  // Overview pixels that clipped to white in snow and rain (city-stone, city-panel).
+  const walls = [[[141.66, 9.06, -323.57], [1, 0, .007]], [[164.8, 6.89, -240.44], [-.039, 0, .999]]];
+  const readings = walls.map(([p, n]) => luma(meter.at(p!, n!, true)));
+  t.diagnostic(JSON.stringify(readings));
+  // S2g lit them at 3.9 and 2.3.
+  for (const l of readings) assert.ok(l > .3 && l < .6, String(readings));
 });
 
 test('a Euston Road pool outside P1 ends across the far lanes and keeps its peak by the post in fog', t => {
