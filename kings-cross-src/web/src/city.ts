@@ -15,6 +15,11 @@
 import * as THREE from 'three';
 import { buildCity, CITY_KEYS, hash01, PAGE_DRAPE, roadWidth, SegmentGrid } from '../../core/city.ts';
 import { OSM_IDS, midlandGrandPlan } from '../../core/landmarks.ts';
+import { distanceToSegment } from '../../core/ole.ts';
+import { registerLights } from '../../core/light-sources.ts';
+import type { LightSource } from '../../core/light-sources.ts';
+import type { LampSpot } from '../../core/streetlights.ts';
+import { roadLight } from './light-source-adapters.ts';
 import { railShapes } from '../../core/curves.ts';
 import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
@@ -22,14 +27,14 @@ import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial, cityOfficeAtNight, withBuildingNightMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
-import { isEustonPilotLamp } from './night-lighting-p1.ts';
+import { EUSTON_P1_ROW, isEustonPilotLamp } from './night-lighting-p1.ts';
 import type { NightLightingPilot } from './night-lighting-p1.ts';
 import { forecourtMasts, LAMP_KIND } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
 import { createKxFrontReflections, createKxFacadeReflections, createKxWindowReflections } from './kx-front-reflections.ts';
 import { shedLayout, stationBuilding } from '../../core/station.ts';
 import { urbanLampOptions } from './station-lamps.ts';
-import { createStreetLights } from './streetlights.ts';
+import { createStreetLights, headOf, MAST_STRIP, stripPoints } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 import { GROUND_Y } from './world.ts';
 
@@ -209,18 +214,21 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     const reach = roadWidth(road).width / 2;
     for (let i = 1; i < road.pts.length; i++) euston.add({ a: road.pts[i-1]!, b: road.pts[i]!, reach });
   }
+  const localSodiumScaleAt = (spot: LampSpot): number => {
+    if (spot.mast || spot.kind !== LAMP_KIND.sodium) return 0;
+    const edge = euston.nearest([spot.x,spot.z],16);
+    // The inferred fixtures stand 0.6 m outside their carriageway. A
+    // parallel carriageway can be closer, so also admit the shared median.
+    return edge > -3 && edge < 1 ? .88 + .28 * hash01(Math.round(spot.x),Math.round(spot.z)) : 0;
+  };
   let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true,
     receiverPoolAt: opts.nightLightingPilot ? isEustonPilotLamp : undefined,
-    localSodiumScaleAt: spot => {
-      if (spot.mast || spot.kind !== LAMP_KIND.sodium) return 0;
-      const edge = euston.nearest([spot.x,spot.z],16);
-      // The inferred fixtures stand 0.6 m outside their carriageway. A
-      // parallel carriageway can be closer, so also admit the shared median.
-      return edge > -3 && edge < 1 ? .88 + .28 * hash01(Math.round(spot.x),Math.round(spot.z)) : 0;
-    }} : {}) : null;
+    localSodiumScaleAt } : {}) : null;
+  let panelSources: readonly LightSource[] = [];
   if (lights && wetSurface && stationBuilding(data)) {
     const lampsLayer = lights, layout=shedLayout(data), front = createKxFrontReflections(layout,wetSurface), amber=createKxFacadeReflections(layout,wetSurface), windows=createKxWindowReflections(scene,wetSurface);
     lampsLayer.group.add(front.group,amber.group,windows.group);
+    panelSources = [...front.lightSources, ...amber.lightSources, ...windows.lightSources];
     lights = {...lampsLayer,
       setLevel(level) { lampsLayer.setLevel(level); front.setLevel(level); amber.setLevel(level); windows.setLevel(level); },
       counts() { const c=lampsLayer.counts(); return {...c,triangles:c.triangles+front.triangles+amber.triangles+windows.triangles,draws:c.draws+front.draws+amber.draws+windows.draws}; },
@@ -229,16 +237,46 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   }
   stats.lamps = lamps.length;
   let detach: (() => void) | undefined;
+  let unregisterLights: (() => void) | undefined;
   if (lights) {
     scene.add(lights.group);
     detach = opts.night?.attach(lights);
-    if (opts.nightEffects) opts.nightLightingPilot?.register(lamps, data.buildings.some(b => b.id === OSM_IDS.midlandGrandHotel) ? midlandGrandPlan(data) : null, lights);
+    const midland = opts.nightEffects && data.buildings.some(b => b.id === OSM_IDS.midlandGrandHotel) ? midlandGrandPlan(data) : null;
+    if (opts.nightEffects) opts.nightLightingPilot?.register(lamps, midland, lights);
+    let mastIndex = 0;
+    const emitters = lamps.map((spot, i): LightSource => {
+      if (spot.mast) {
+        return { id: `kx/mast/${mastIndex++}`, station: 'kx', pos: [spot.x, spot.y + (MAST_STRIP[0] + MAST_STRIP[1]) / 2, spot.z],
+          footY: spot.y, yaw: spot.yaw, spectrum: 'led-5000', lumens: 30000, cover: 'open', tags: ['mast'],
+          drawnHeads: stripPoints(spot),
+          optic: { kind: 'strip', lengthM: MAST_STRIP[1] - MAST_STRIP[0], widthM: .2, cutoffDeg: 70, throwM: 6, spreadM: 1.4 } };
+      }
+      const pilot = spot.kind === LAMP_KIND.sodium && EUSTON_P1_ROW.find(({ x, z }) => Math.abs(spot.x - x) < .05 && Math.abs(spot.z - z) < .05);
+      const localScale = opts.nightEffects ? localSodiumScaleAt(spot) : 0;
+      const euston = !!pilot || localScale > 0;
+      const lumens = spot.kind === LAMP_KIND.sodium ? 10000 + 1600 * (spot.height - 5)
+        : (spot.kind === LAMP_KIND.warm ? 8000 : 6000) + 800 * (spot.height - 5);
+      const source = roadLight('kx', pilot ? pilot.id : `kx/street/${i}`, spot, headOf(spot),
+        { lumens, throwM: 4 * spot.height * (localScale || 1), tags: euston ? ['road', 'euston-road'] : ['road'] });
+      if (!pilot) return source;
+      let distance = 38, halfSpace: LightSource['halfSpace'];
+      for (const facet of midland?.front.edges ?? []) {
+        const d = distanceToSegment([spot.x, spot.z], facet.a, facet.b);
+        if (d >= distance) continue;
+        const [x, z] = facet.normal;
+        halfSpace = { normal: [x, 0, z], offset: x * facet.a[0] + z * facet.a[1] - .025 };
+        distance = d;
+      }
+      return { ...source, halfSpace };
+    });
+    unregisterLights = registerLights(scene, [...emitters, ...panelSources]);
   }
   return {
     group,
     lights,
     stats,
     dispose() {
+      unregisterLights?.();
       opts.nightLightingPilot?.dispose();
       wetSurface?.dispose();
       scene.remove(group);

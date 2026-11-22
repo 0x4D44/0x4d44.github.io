@@ -2,6 +2,7 @@
 // This adds no luminaires or diffuse pools. Sample points lie on the built
 // glazing (shed.ts, FRONT_THICK / 2 + 0.1), transformed by the shed frame.
 import * as THREE from 'three';
+import type { LightSource } from '../../core/light-sources.ts';
 import { shedToWorld, SHED_SPAN_WIDTH } from '../../core/station.ts';
 import type { ShedLayout } from '../../core/station.ts';
 import { lampSurfaceAt } from './lamp-wet-surface.ts';
@@ -173,5 +174,15 @@ function reflectedSources(sources:KxFrontSource[],surface:LampWetSurface,name:st
   }
   weather.group.name='kx-front-reflections';
   pools.dispose();geometry.dispose();material.dispose();haloGeometry.dispose();haloMaterial.dispose();
-  return {...weather,sources};
+  const lightSources: LightSource[] = sources.map((s, i) => {
+    const dx = s.base[0] - s.head[0], dz = s.base[2] - s.head[2];
+    const length = Math.hypot(dx, dz) || 1;
+    // The legacy quads use a width scale, with no surveyed panel height.
+    return { id: `kx/${name}/${i}`, station: 'kx', pos: s.head, footY: s.base[1] - .012,
+      yaw: Math.atan2(-dz, dx), spectrum: name === 'kx-front-amber-reflections' ? 'hps' : 'led-3000',
+      lumens: 0, optic: { kind: 'panel', normal: [dx / length, 0, dz / length],
+        w: 1.5 * s.widthScale, h: 1, linearRgb: tint, paneId: s.paneId },
+      cover: 'open', tags: ['reflections-only', name] };
+  });
+  return {...weather,sources,lightSources};
 }

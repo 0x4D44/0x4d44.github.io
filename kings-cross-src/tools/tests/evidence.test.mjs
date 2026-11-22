@@ -779,6 +779,22 @@ test('the probe runs inside the page: it needs nothing from this module', () => 
   const kx = lightingKx({ atmosphere: { state: () => ({ sun: { elevationDeg: 12.5 } }) }, fog: { colour: '99aabb', near: 10, far: 900 } });
   const inPage = JSON.parse(JSON.stringify(runInNewContext(`(${lightingProbe.toString()})(kx)`, { kx })));
   assert.deepEqual(inPage, JSON.parse(JSON.stringify(lightingProbe(kx))));
+  const camera = new THREE.PerspectiveCamera(50, 1, .1, 100);
+  camera.updateMatrixWorld();
+  const withRegistry = { ...kx, camera, lightSourcesFor(scene) {
+    assert.strictEqual(scene, kx.scene);
+    return [
+      { id: 'kx/street/0', pos: [0, 0, -5], optic: { kind: 'road' } },
+      { id: 'kx/panel/0', pos: [1, 0, -5], optic: { kind: 'panel' } },
+      { id: 'kx/street/1', pos: [0, 0, 5], optic: { kind: 'road' } },
+    ];
+  } };
+  const census = runInNewContext(`(${lightingProbe.toString()})(kx)`, { kx: withRegistry });
+  assert.deepEqual(JSON.parse(JSON.stringify(census.lampRegistry)), {
+    total: 3, direct: 2, bySet: { street: 2, panel: 1 }, inFrustum: 2, directInFrustum: 1,
+    poolInstances: 0, poolTriangles: 0, poolDraws: 0,
+  });
+  assert.equal(lightingFingerprint(census), lightingFingerprint(inPage), 'the count is outside the rig fingerprint');
 });
 
 test('equal lighting fingerprints mean equal lighting, whatever the order of the lights or the keys', () => {

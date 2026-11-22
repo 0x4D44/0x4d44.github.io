@@ -26,7 +26,7 @@ import {kingsPlaceCut} from './perth-frontage-bridge.ts';
 import {addPerthCity, addPerthGround, addPerthMappedRoofs} from './perth-city.ts';
 import {PERTH_LANDUSE} from './perth-city-features.ts';
 import {createPerthLights, perthForecourtLampSpots, perthLampGround, perthTownLampSpots} from './perth-lamps.ts';
-import type {StreetLights} from './streetlights.ts';
+
 import {perthStationPlan} from './perth-station-structure.ts';
 import {FRONTAGE_WINDOW, ROAD_WIDTHS} from './perth-frontage-street.ts';
 import frontageFile from './data/perth-frontage.json' with {type: 'json'};
@@ -99,7 +99,7 @@ export interface PerthScene {
   buildingIds: string[];
   /** How many drawn blocks stand at an OSM, a LiDAR (perth-city-heights.ts) or an ASSUMED height. */
   heightBasis: {OSM: number; LiDAR: number; ASSUMED: number};
-  night: StreetLights;
+  night: ReturnType<typeof createPerthLights>;
   dispose(): void;
 }
 

@@ -9,6 +9,8 @@ import { pointInPolygon } from '../../core/station.ts';
 import { LAMP_KIND, lampSpots } from '../../core/streetlights.ts';
 import type { LampRun, LampSpot } from '../../core/streetlights.ts';
 import { Batch } from './materials.ts';
+import type { LightSource } from '../../core/light-sources.ts';
+import { downlight, lampSpectrum, roadLight } from './light-source-adapters.ts';
 import { createStreetLights, headOf } from './streetlights.ts';
 import type { StreetLights } from './streetlights.ts';
 import { Footprints } from './waverley-city-ground.ts';
@@ -158,7 +160,7 @@ export function perthForecourtLampSpots(file: FrontageFile, ground: Ground, foot
 }
 
 /** Instanced heads/pools and one extra Points draw for distant town cores. */
-export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpot[], forecourt: readonly LampSpot[]): StreetLights {
+export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpot[], forecourt: readonly LampSpot[]): StreetLights & { sources: readonly LightSource[] } {
   const group = new THREE.Group(); group.name = 'perth-night-lamps';
   // A single LED pool peaks at L*48. Keep the falloff: tightly limited reach
   // avoids round 2's many overlapping layers converging to a grey plateau.
@@ -189,7 +191,19 @@ export function createPerthLights(plan: PerthStationPlan, town: readonly LampSpo
   const geometry = fittings.build(), material = new THREE.MeshLambertMaterial({ color: 0xe8e5da });
   const mesh = new THREE.Mesh(geometry,material); mesh.name = 'perth-canopy-light-fittings';
   if (plan.canopyColumns.length) group.add(mesh);
-  return { group,
+  const sheltered = plan.structure.lamps.length + plan.canopyColumns.length;
+  const sources = [
+    ...town.map((s, i) => {
+      const radius = Math.min(inForecourt([s.x,s.z]) ? 5.5 : 8, townRadii[i]!);
+      const lumens = 6000 + 1000 * Math.min(4, Math.max(0, s.height - 4));
+      return roadLight('pt', `pt/town/${i}`, s, headOf(s),
+        { lumens, throwM: radius, spreadM: radius, tags: ['road', 'town'] });
+    }),
+    ...station.map((s, i) => downlight('pt', 'station', i, fixtureHead(s), s.y, lampSpectrum[s.kind], 6000, 60, s.radius!,
+      i < sheltered ? 'under-roof' : 'open')),
+    ...forecourt.map((s, i) => downlight('pt', 'forecourt', i, fixtureHead(s), s.y, lampSpectrum[s.kind], 6000, 60, yardRadii[i]!, 'open')),
+  ];
+  return { group, sources,
     setLevel(level) { street.setLevel(level); existing.setLevel(level); },
     counts() {
       const a = street.counts(), b = existing.counts();

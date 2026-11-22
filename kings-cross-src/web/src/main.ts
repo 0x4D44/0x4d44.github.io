@@ -41,6 +41,7 @@ import type { GroundAt } from './camera-ground.ts';
 import { createPerthWeather, createSceneWeather, createWaverleyWeather, sceneWeatherOptions } from './station-weather.ts';
 import { createAdditionsWatch, createSunShadow, createUngradedScan, grade } from './lighting.ts';
 import { nightLightSites } from './night.ts';
+import { lightSourcesFor } from '../../core/light-sources.ts';
 import { createNightLightingPilot } from './night-lighting-p1.ts';
 import { parseSceneTime } from './weather.ts';
 import trackData from './data/kx-track.json';
@@ -250,7 +251,7 @@ function start(): void {
     boardRows: null as BoardRows | null,
     feed: { mode, connection, timeMs: 0, speed: settings.speed, date: settings.date } };
   // tools/evidence.mjs builds a Great Northern 387 for its close-up shot through this hook.
-  Object.assign(kx, { evidenceBuildTrain: buildTrain, setTrainLampState, atmosphere, weatherFeed });
+  Object.assign(kx, { evidenceBuildTrain: buildTrain, setTrainLampState, atmosphere, weatherFeed, lightSourcesFor });
   // tools/train-capture.mjs builds the Waverley kinds (web/src/edinburgh-fleet.ts rows) through this hook.
   Object.assign(kx, { evidenceBuildEdinburgh });
   const stPancras = createStPancrasLive({ scene, camera, parent: document.body, data,

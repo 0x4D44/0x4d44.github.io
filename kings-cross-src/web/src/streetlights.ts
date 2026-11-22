@@ -5,6 +5,7 @@
 // white-hot head in an orange halo and the orange pool on the road, night-b-euston-road-2025-brown.jpg for the warm-white LED, night-a-kx-square-2015-skinner.jpg for the forecourt's masts
 // (a steel column with a strip of white LEDs near its top: (246, 247, 250) in the photograph) and their cool white.
 import * as THREE from 'three';
+import { legacyLampLight } from '../../core/light-photometry.ts';
 import { LAMP_KIND, MAST_HEIGHT, POOL_REACH, poolRadius } from '../../core/streetlights.ts';
 import type { LampKind, LampSpot } from '../../core/streetlights.ts';
 import { Batch, rgb } from './materials.ts';
@@ -28,13 +29,14 @@ export const POST_HEIGHT = 8;
  * over the night's own light, so the white LEDs' pools are weak. The strengths are fitted to those.
  */
 export const LAMP_LIGHT: Readonly<Record<LampKind, { halo: number; pool: number; strength: number }>> = {
-  [LAMP_KIND.sodium]: { halo: 0xffa84a, pool: 0xffbc74, strength: 0.13 },
-  [LAMP_KIND.warm]: { halo: 0xffd8a0, pool: 0xffd9a8, strength: 0.11 },
-  [LAMP_KIND.cool]: { halo: 0xcfe4ff, pool: 0xe6ecf5, strength: 0.05 },
+  [LAMP_KIND.sodium]: legacyLampLight('hps'),
+  [LAMP_KIND.warm]: legacyLampLight('led-3000'),
+  [LAMP_KIND.cool]: legacyLampLight('led-4000'),
 };
 
 /** How far out the lamp's arm reaches, metres at `POST_HEIGHT` (the head hangs at its end). */
 const ARM = 1.72;
+const LOW_PRESSURE_LAMP_LIGHT = legacyLampLight('lps');
 
 /** A six-sided column from its foot at the origin, `r0` across at the bottom and `r1` at `height`, flat vertex colour. */
 function column(batch: Batch, r0: number, r1: number, height: number, color: Rgb): void {
@@ -233,7 +235,7 @@ float lampCoreProfile( vec2 uv, vec2 shape ) {
 export function createStreetLights(spots: readonly LampSpot[], options: StreetLightOptions = {}): StreetLights {
   const n = spots.length;
   const lightOf = (spot:LampSpot) => spot.kind===LAMP_KIND.sodium && (typeof options.lowPressureSodium==='function'?options.lowPressureSodium(spot):options.lowPressureSodium)
-    ? {halo:0xff993c,pool:0xff9136,strength:.13} : LAMP_LIGHT[spot.kind];
+    ? LOW_PRESSURE_LAMP_LIGHT : LAMP_LIGHT[spot.kind];
   const headAt = options.headAt ?? headOf;
   const group = new THREE.Group();
   group.name = 'street-lamps';

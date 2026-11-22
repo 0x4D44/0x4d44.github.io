@@ -984,7 +984,7 @@ async function waverleyMain(options, site = REMOTE_CAPTURE_SITES.waverley) {
           url:location.href,camera:{pos:k.camera.position.toArray(),target:k.controls.target.toArray(),fov:k.camera.fov,near:k.camera.near},
           renderer:d?g.getParameter(d.UNMASKED_RENDERER_WEBGL):'unknown',drawCalls:k.renderer.info.render.calls,triangles:k.renderer.info.render.triangles,
           viewport:{width:innerWidth,height:innerHeight},sun}; })()`);
-        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=${site.view};return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,atmosphere:e.climate?.atmosphere??null});})()`);
+        const lightingState = await evaluate(`(()=>{const k=window.__kx,e=${site.view};return (${lightingProbe.toString()})({scene:e.scene,renderer:k.renderer,camera:k.camera,lightSourcesFor:k.lightSourcesFor,atmosphere:e.climate?.atmosphere??null});})()`);
         report.renderer ??= metadata.renderer;
         if (options.gpu && !realMetal(metadata.renderer)) throw new Error(`real Metal required, observed renderer: ${metadata.renderer}`);
         const departure = cameraDeparture(camera, metadata.camera);
@@ -1047,8 +1047,19 @@ export const LIGHTING_NOTE = 'Captures pin the scene with ?time=<instant>&weathe
 
 /** Serialized into the page: the lighting state of the scene, rounded so equal rigs read equal. */
 export function lightingProbe(kx) {
+  const sources = kx.lightSourcesFor?.(kx.scene);
+  let poolInstances = 0, poolTriangles = 0, poolDraws = 0;
   const round = n => Math.round(n * 1e4) / 1e4, hex = c => c?.getHexString?.() ?? null, lights = [];
   kx.scene.traverse(o => {
+    if (sources && o.isInstancedMesh && (o.name === 'street-lamp-pools' || o.name === 'street-lamp-pools-euston-p1')) {
+      let visible = true;
+      for (let ancestor = o; ancestor; ancestor = ancestor.parent) visible &&= ancestor.visible;
+      if (visible && o.count > 0) {
+        poolInstances += o.count;
+        poolTriangles += o.count * (o.geometry.index?.count ?? o.geometry.getAttribute('position').count) / 3;
+        poolDraws++;
+      }
+    }
     if (o.isLight) lights.push({ type: o.type, name: o.name || null, colour: hex(o.color), groundColour: hex(o.groundColor), intensity: round(o.intensity), position: o.position.toArray().map(round), visible: o.visible });
   });
   // The sky dome is a vertex-coloured sphere: its lowest and highest vertex colours are the horizon and the zenith.
@@ -1067,16 +1078,39 @@ export function lightingProbe(kx) {
     atmosphere = 'fixed';
     if (kx.atmosphere) { let sun = null; try { sun = kx.atmosphere.state?.().sun?.elevationDeg; } catch { /* the hook exists; its sun is unknown */ } atmosphere = { sunElevationDeg: Number.isFinite(sun) ? round(sun) : null }; }
   }
-  return { lights, background: hex(kx.scene.background), horizon, zenith, fog: fog ? { colour: hex(fog.color), near: fog.near ?? null, far: fog.far ?? null, density: fog.density ?? null } : null,
+  let lampRegistry;
+  if (sources) {
+    const bySet = {};
+    let direct = 0, inFrustum = 0, directInFrustum = 0;
+    const camera = kx.camera, p = camera?.position.clone();
+    for (const source of sources) {
+      const set = source.id.split('/')[1];
+      bySet[set] = (bySet[set] ?? 0) + 1;
+      const emits = source.optic.kind !== 'panel';
+      if (emits) direct++;
+      if (p) {
+        p.fromArray(source.pos).project(camera);
+        if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && Math.abs(p.z) <= 1) {
+          inFrustum++;
+          if (emits) directInFrustum++;
+        }
+      }
+    }
+    lampRegistry = { total: sources.length, direct, bySet, inFrustum: p ? inFrustum : null,
+      directInFrustum: p ? directInFrustum : null, poolInstances, poolTriangles, poolDraws };
+  }
+  return { ...(lampRegistry ? { lampRegistry } : {}), lights, background: hex(kx.scene.background), horizon, zenith, fog: fog ? { colour: hex(fog.color), near: fog.near ?? null, far: fog.far ?? null, density: fog.density ?? null } : null,
     toneMapping: kx.renderer.toneMapping, exposure: round(kx.renderer.toneMappingExposure), outputColorSpace: kx.renderer.outputColorSpace, atmosphere };
 }
 
 /** A short stable id for a lighting state: independent of the order of lights and of object key order. */
 export function lightingFingerprint(state) {
+  // The registry and camera counts are evidence metadata, outside the rig fingerprint.
+  const { lampRegistry: _lampRegistry, ...rig } = state;
   const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object'
     ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
-  const lights = state.lights.map(canonical).map(light => JSON.stringify(light)).sort();
-  return createHash('sha256').update(JSON.stringify({ ...canonical(state), lights })).digest('hex').slice(0, 16);
+  const lights = rig.lights.map(canonical).map(light => JSON.stringify(light)).sort();
+  return createHash('sha256').update(JSON.stringify({ ...canonical(rig), lights })).digest('hex').slice(0, 16);
 }
 
 /** Serialized into the page so a deferred city cannot arrive after a cutaway was hidden. */
@@ -1369,7 +1403,8 @@ The page draws its own overlays (station switcher, status and attribution panels
         city:{loaded:!!k.parts?.buildings,bare:new URLSearchParams(location.search).has('bare'),visible:k.parts?.buildings?.visible??false},
         motion:k.motionState?.map(t=>({id:t.id,state:t.state,speed:t.speed,point:t.leading.point})),signals:k.signals?.signals().map(r=>({id:r.signal.id,berth:r.group.userData.berth??r.signal.berth,state:r.state,inferred:r.inferredPosition,starter:!!r.group.userData.platformStarter,label:r.label}))}; })()`);
       const lightingState = await evaluate(`(${lightingProbe.toString()})(window.__kx)`), lighting = lightingFingerprint(lightingState);
-      (report.lighting.fingerprints[lighting] ??= { state: lightingState, shots: 0 }).shots++;
+      const { lampRegistry, ...rigState } = lightingState;
+      (report.lighting.fingerprints[lighting] ??= { state: rigState, shots: 0 }).shots++;
       if (pinnedLoad) report.lighting.pinHonoured = (report.lighting.pinHonoured ?? true) && pinHonoured(options.pin, lightingState.atmosphere);
       const collisions = cameraBuildingCollisions({ [name]: metadata.camera }, buildings);
       report.cameraClearance.captures.push({ name, collisions });
@@ -1428,7 +1463,7 @@ The page draws its own overlays (station switcher, status and attribution panels
       if (extra.signalId !== undefined && !await evaluate(`window.__kx.signals.signals().find(r=>r.signal.id===${extra.signalId})?.state===${JSON.stringify(extra.observedState)}`)) throw new Error('signal changed during capture; shot was not accepted');
       await writePrivateFile(path.join(options.out, file), Buffer.from(png.data, 'base64'));
       const flicker = secondPng ? compareFrames(Buffer.from(png.data, 'base64'), Buffer.from(secondPng.data, 'base64')) : null;
-      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(flicker ? { flicker } : {}), ...(hud ? { hud } : {}), ...extra };
+      const record = { file, axis: id, scenario: currentScenario, ...metadata, ...(captureRender ?? {}), source: c?.source ?? 'current page camera', lighting, ...(lampRegistry ? { lampRegistry } : {}), ...(flicker ? { flicker } : {}), ...(hud ? { hud } : {}), ...extra };
       report.screenshots.push(record); axis(id).screenshots.push(file); return record;
     };
     const attempt = async (id, name, work) => { try { await work(); } catch (e) { gap(id, `${name}: ${e.message}`); } };
