@@ -38,7 +38,7 @@ function dateAt(ms) {
   catch { return null; }
 }
 
-function headcodeFrom(trainId) {
+export function headcodeFrom(trainId) {
   return /^[A-Z0-9]{6,32}$/.test(trainId) && /^[0-9][A-Z][0-9]{2}$/.test(trainId.slice(2, 6)) ? trainId.slice(2, 6) : '';
 }
 

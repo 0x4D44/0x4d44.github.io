@@ -8,6 +8,7 @@
 //   GET /fleet?area=EB    fleet evidence {booked, ptac}: <area data dir>/fleet.json (booked diagrams) and
 //                         ptac.json (PTAC allocations), each null when absent; 404 when both are
 //   GET /schedule?date=YYYY-MM-DD   cached KNGX calls + TRUST actuals (today by default)
+//   GET /perth?date=YYYY-MM-DD      opt-in Perth timetable + recent TRUST movements
 //   GET /static/smart?td=Y9         SMART rows for a TD area
 //   GET /static/corpus?stanox=54311 CORPUS rows for a STANOX
 //   GET /census           opt-in (census: true / KX_TD_CENSUS=1) all-area TD tally, see census.mjs;
@@ -31,6 +32,7 @@ import { configuredAreas, requestArea, areaDataDir } from './areas.mjs';
 import { STATIONS } from '../core/station-config.ts';
 import { createCensus } from './census.mjs';
 import { createTrustProbe } from './trust-probe.mjs';
+import { perthCall, perthReport } from './perth.mjs';
 
 const RECENT_MAX = 2000;
 const MAX_LOCAL_JSON = 16 * 1024 * 1024;
@@ -182,13 +184,16 @@ export async function startRelay({
   ptac = null, // runPtac() handle; /health reports its counts
   census: censusOption = false, // true or a createCensus limits object: enable GET /census
   trustProbe: trustProbeStanox = null, // array of STANOX: enable the TRUST probe, GET /trust-probe
+  perth = null, // {stanox, tiploc?}: use the existing TRUST subscription and CIF download
 }) {
   const allowedAreas = configuredAreas(areas, area);
   const defaultArea = allowedAreas.includes(area) ? area : allowedAreas[0];
   const contexts = new Map();
   const census = censusOption ? createCensus({ ...(typeof censusOption === 'object' ? censusOption : {}), configured: allowedAreas, now }) : null;
-  const trustProbe = Array.isArray(trustProbeStanox) && trustProbeStanox.length
-    ? createTrustProbe({ stanox: trustProbeStanox, now, file: path.join(dataDir, 'trust-probe.json') }) : null;
+  const probeStanox = new Set(Array.isArray(trustProbeStanox) ? trustProbeStanox : []);
+  if (perth) probeStanox.add(perth.stanox);
+  const trustProbe = probeStanox.size ? createTrustProbe({ stanox: [...probeStanox], now, file: path.join(dataDir, 'trust-probe.json') }) : null;
+  let perthSchedules, perthFeed = feedEnabled ? 'connecting' : 'disabled';
   const heartbeats = new Set();
   let closing;
   const store = createStaticStore({ dataDir, readCredentials, fetchImpl, now });
@@ -211,7 +216,7 @@ export async function startRelay({
         for (const send of listeners) send(row);
       }
     };
-    const schedules = station?.schedule === 'available' ? createScheduleStore({ dataDir, readCredentials, fetchImpl, now,
+    const schedules = station?.schedule === 'available' ? createScheduleStore({ dataDir, readCredentials, fetchImpl, now, perth,
       enabled: scheduleEnabled, corpus: () => store.get('corpus'), log,
       onReady: (doc) => {
         services = doc.calls;
@@ -225,8 +230,12 @@ export async function startRelay({
       anchorsFile: area === 'Y9' ? anchorsFile : path.join(cacheDir, 'anchors.json'),
       sclassFile: area === 'Y9' ? sclassFile : path.join(cacheDir, 'sclass.json'),
     });
+    if (perth && station?.schedule === 'available') perthSchedules = schedules;
     schedules.start();
   }
+  const perthOnly = perth && !perthSchedules ? createScheduleStore({ dataDir, readCredentials, fetchImpl, now, perth,
+    london: false, enabled: scheduleEnabled, corpus: () => store.get('corpus'), log }) : null;
+  if (perthOnly) { perthSchedules = perthOnly; perthOnly.start(); }
 
   const feed = feedEnabled
     ? runFeed({
@@ -246,6 +255,7 @@ export async function startRelay({
           for (const { trust, publishTrust } of contexts.values()) publishTrust(trust.apply(body));
         },
         onStatus: (s) => {
+          if (!s.badMessage) perthFeed = s.state;
           for (const { status, recorder } of contexts.values()) {
             if (s.badMessage) status.badMessages += 1;
             else status.state = s.state;
@@ -277,6 +287,21 @@ export async function startRelay({
       const url = new URL(req.url, `http://127.0.0.1:${boundPort}`);
       if (url.pathname === '/trust-probe') return trustProbe ? json(res, 200, trustProbe.snapshot()) : json(res, 404, { error: 'not found' });
       if (url.pathname === '/census') return census ? json(res, 200, census.snapshot()) : json(res, 404, { error: 'not found' });
+      if (url.pathname === '/perth') {
+        if (!perthSchedules || !perth) return json(res, 404, { error: 'not found' });
+        const dates = url.searchParams.getAll('date');
+        const date = dates[0] ?? scheduleDate(now());
+        if (dates.length > 1 || !validDate(date) || [...url.searchParams.keys()].some(key => key !== 'date')) {
+          return json(res, 400, { error: 'date must be YYYY-MM-DD' });
+        }
+        const doc = await perthSchedules.getPerth(date);
+        const calls = (doc?.calls ?? []).map(perthCall).filter(Boolean);
+        const booked = new Set(calls.flatMap(c => [c.arrivalMs, c.departureMs, c.passMs].filter(t => t !== null).map(t => `${c.headcode}/${t}`)));
+        const reports = trustProbe.recent(perth.stanox).map(perthReport).filter(report => report &&
+          (scheduleDate(report.plannedMs ?? report.actualMs) === date || booked.has(`${report.headcode}/${report.plannedMs}`)));
+        return json(res, 200, { date, feed: perthFeed, scheduleAvailable: doc !== null,
+          calls, reports });
+      }
 
       let area;
       try {
@@ -371,7 +396,7 @@ export async function startRelay({
     });
   } catch (error) {
     feed?.stop();
-    await Promise.all([...contexts.values()].flatMap(({ schedules, recorder }) => [schedules.close(), recorder.close()]));
+    await Promise.all([perthOnly?.close(), ...[...contexts.values()].flatMap(({ schedules, recorder }) => [schedules.close(), recorder.close()])]);
     throw error;
   }
 
@@ -390,7 +415,7 @@ export async function startRelay({
         // Stop periodic writes before waiting for sockets. A server-close error must
         // still finish the recording, and callers may share the same close promise.
         const recorded = Promise.all([...contexts.values()].map(({ recorder }) => recorder.close()));
-        const scheduled = Promise.all([...contexts.values()].map(({ schedules }) => schedules.close()));
+        const scheduled = Promise.all([perthOnly?.close(), ...[...contexts.values()].map(({ schedules }) => schedules.close())]);
         const probed = trustProbe?.close();
         try {
           await new Promise((resolve, reject) => {

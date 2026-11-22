@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 // The Perth station view: the lazy Perth model and its geometry, loaded as Waverley's are (waverley.ts), into the same view shape the
-// station switcher hops to. No live trains yet: the Perth train-describer area is not in the relay (see station-config.ts).
+// station switcher hops to. The page attaches the TRUST and timetable layer in live preview modes.
 import * as THREE from 'three';
 import type { NightLayer } from './night.ts';
 import { registerLights } from '../../core/light-sources.ts';

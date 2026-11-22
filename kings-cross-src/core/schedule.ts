@@ -20,6 +20,11 @@ export interface ScheduleCall {
   arrivalMs: number | null; departureMs: number | null;
   publicArrivalMs: number | null; publicDepartureMs: number | null;
 }
+export interface PerthScheduleCall extends ScheduleCall {
+  passMs: number | null;
+  previous: string[];
+  next: string[];
+}
 const DAY = 86_400_000;
 const rank: Record<Stp, number> = { P: 1, N: 2, O: 3, C: 4 };
 const text = (v: unknown): string => typeof v === 'string' ? v.trim() : '';
@@ -67,11 +72,12 @@ function epoch(date: string, t: string | null, after = -Infinity): number | null
   const nominal = Date.parse(`${wall}Z`);
   return [nominal - 3_600_000, nominal].find(ms => ms >= after && localParts(ms) === wall) ?? null;
 }
-function recordCalls(r: ScheduleRecord, serviceDate: string, date: string): ScheduleCall[] {
-  if (r.stp === 'C' || r.deleted || !r.locations.some(l => l.tiploc === 'KNGX')) return [];
+function recordCalls(r: ScheduleRecord, serviceDate: string, date: string, perth?: ReadonlySet<string>): ScheduleCall[] {
+  const matches = (l: ScheduleLocation) => perth ? perth.has(l.tiploc) : l.tiploc === 'KNGX';
+  if (r.stp === 'C' || r.deleted || !r.locations.some(matches)) return [];
   const out: ScheduleCall[] = [];
   let day = 0, previousClock = -1, previousEpoch = -Infinity;
-  for (const l of r.locations) {
+  for (const [index, l] of r.locations.entries()) {
     const epochs: (number | null)[] = [], dates: string[] = [];
     for (const t of [l.arrival, l.departure, l.pass]) {
       if (t !== null) {
@@ -84,32 +90,41 @@ function recordCalls(r: ScheduleRecord, serviceDate: string, date: string): Sche
       if (ms !== null) previousEpoch = ms;
       epochs.push(ms); dates.push(callDate);
     }
-    const callDate = l.arrival ? dates[0]! : dates[1]!;
-    if (l.tiploc !== 'KNGX' || callDate !== date || (!l.arrival && !l.departure)) continue;
-    // King's Cross has platforms 0-10. Blank/unknown platform remains unknown.
-    const platform = l.platform && /^(?:[0-9]|10)$/.test(l.platform) ? l.platform : null;
+    const callDate = dates[l.arrival ? 0 : l.departure || !perth ? 1 : 2]!;
+    if (!matches(l) || (callDate !== date && !(perth && l.departure && dates[1] === date)) ||
+        (!l.arrival && !l.departure && !(perth && l.pass))) continue;
+    const platform = perth ? l.platform : l.platform && /^(?:[0-9]|10)$/.test(l.platform) ? l.platform : null;
     const publicEpoch = (t: string | null, working: string | null, workingDate: string): number | null => {
       let publicDate = workingDate;
       if (t && working && seconds(t) - seconds(working) > 12 * 3600) publicDate = shift(workingDate, -1);
       if (t && working && seconds(working) - seconds(t) > 12 * 3600) publicDate = shift(workingDate, 1);
       return epoch(publicDate, t);
     };
-    out.push({ uid: r.uid, headcode: r.headcode, operator: r.operator, category: r.category,
+    const call: ScheduleCall = { uid: r.uid, headcode: r.headcode, operator: r.operator, category: r.category,
       date: callDate, serviceDate, stp: r.stp, startDate: r.startDate, endDate: r.endDate,
       platform, origin: r.locations[0]?.tiploc ?? '', destination: r.locations.at(-1)?.tiploc ?? '',
       arrival: l.arrival, departure: l.departure, publicArrival: l.publicArrival, publicDeparture: l.publicDeparture,
       arrivalMs: epochs[0]!, departureMs: epochs[1]!,
       publicArrivalMs: publicEpoch(l.publicArrival, l.arrival, dates[0]!),
-      publicDepartureMs: publicEpoch(l.publicDeparture, l.departure, dates[1]!) });
+      publicDepartureMs: publicEpoch(l.publicDeparture, l.departure, dates[1]!) };
+    if (perth) {
+      const projected: PerthScheduleCall = { ...call, passMs: epochs[2]!,
+        previous: r.locations.slice(Math.max(0, index - 12), index).reverse().map(l => l.tiploc),
+        next: r.locations.slice(index + 1, index + 13).map(l => l.tiploc) };
+      out.push(projected);
+    } else out.push(call);
   }
   return out;
 }
 /** Retain only winning compact markers/calls, never the full input extract/locations.
  * Apply every schedule, including cancellations and overlays which bypass King's Cross. */
-export function createScheduleSelector(date: string) {
+export function createScheduleSelector(date: string, perthTiplocs?: readonly string[], london = true) {
   if (!validDate(date)) throw new Error('invalid schedule date');
   const dates = [shift(date, -1), date];
-  const winners = new Map<string, { rank: number; start: string; calls: ScheduleCall[] }>();
+  const perth = perthTiplocs?.length ? new Set(perthTiplocs) : undefined;
+  const winners = new Map<string, { rank: number; start: string; calls: ScheduleCall[]; perthCalls?: ScheduleCall[] }>();
+  const timeOf = (c: ScheduleCall) => c.arrivalMs ?? c.departureMs ?? (c as Partial<PerthScheduleCall>).passMs ?? 0;
+  const sorted = (calls: ScheduleCall[]) => calls.sort((a, b) => timeOf(a) - timeOf(b) || a.uid.localeCompare(b.uid) || a.serviceDate.localeCompare(b.serviceDate));
   return {
     apply(r: ScheduleRecord): void {
       for (const serviceDate of dates) {
@@ -117,12 +132,12 @@ export function createScheduleSelector(date: string) {
         if (serviceDate < r.startDate || serviceDate > r.endDate || r.days[weekday] !== '1') continue;
         const key = `${r.uid}/${serviceDate}`, old = winners.get(key), priority = rank[r.stp];
         if (old && (old.rank > priority || (old.rank === priority && old.start > r.startDate))) continue;
-        winners.set(key, { rank: priority, start: r.startDate, calls: recordCalls(r, serviceDate, date) });
+        winners.set(key, { rank: priority, start: r.startDate, calls: london ? recordCalls(r, serviceDate, date) : [],
+          ...(perth ? { perthCalls: recordCalls(r, serviceDate, date, perth) } : {}) });
       }
     },
-    calls(): ScheduleCall[] {
-      return [...winners.values()].flatMap(w => w.calls).sort((a, b) => (a.arrivalMs ?? a.departureMs ?? 0) - (b.arrivalMs ?? b.departureMs ?? 0) || a.uid.localeCompare(b.uid) || a.serviceDate.localeCompare(b.serviceDate));
-    },
+    calls: (): ScheduleCall[] => sorted([...winners.values()].flatMap(w => w.calls)),
+    perthCalls: (): ScheduleCall[] => sorted([...winners.values()].flatMap(w => w.perthCalls ?? [])),
   };
 }
 export function callsForDate(records: Iterable<ScheduleRecord>, date: string): ScheduleCall[] {

@@ -29,8 +29,7 @@ export const STATIONS: Readonly<Record<StationId, StationConfig>> = {
     schedule: 'unavailable', legacyLnerFallback: false,
   },
   perth: {
-    // TODO: the train-describer area that covers Perth is not yet identified from the feed, and the relay does not record one, so no
-    // TD area is configured and no live trains are drawn. The lead adds the area once it is confirmed.
+    // Perth station is outside the open TD feed. The Perth preview uses its separate TRUST and timetable route.
     id: 'perth', name: 'Perth', tdAreas: [],
     // TODO: verify schedule location identifiers before enabling this station's schedule.
     tiplocs: [], stanox: [], platformRefs: Array.from({ length: 7 }, (_, n) => String(n + 1)),

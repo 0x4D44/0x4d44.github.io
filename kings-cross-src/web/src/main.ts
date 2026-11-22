@@ -51,6 +51,7 @@ import { kingsCrossLandingView } from './station-framing.ts';
 import { resizeViewport } from './viewport.ts';
 import { createStPancrasLive } from './stpancras-live.ts';
 import { createEdinburghLive } from './edinburgh-live.ts';
+import { createPerthLive } from './perth-live.ts';
 import { evidenceBuildEdinburgh } from './edinburgh-fleet.ts';
 
 const data = trackData as unknown as KxData;
@@ -260,7 +261,14 @@ function start(): void {
     attachEdinburgh: view => { view.live = createEdinburghLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
       mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname, signals: params.get('signals') === '0' ? null : view.signals });
       if (!fixedSky) view.climate = createWaverleyWeather(view, weatherOptions); },
-    attachPerth: view => { if (!fixedSky) view.climate = createPerthWeather(view, weatherOptions); },
+    attachPerth: view => {
+      view.live = createPerthLive({ geometry: view.geometry, scene: view.scene, camera, parent: document.body,
+        mode: settings.mode, date: settings.date, speed: settings.speed, hostname: location.hostname });
+      if (!view.live && settings.mode !== 'none' && settings.mode !== 'demo') {
+        view.message = 'Perth: OSM model · live trains unavailable without the local relay';
+      }
+      if (!fixedSky) view.climate = createPerthWeather(view, weatherOptions);
+    },
     stationSuffix: id => (id === 'edinburgh-waverley' || id === 'perth' ? stations.remote()?.climate : londonClimate)?.status(sceneClock(), timeNote) ?? '',
     stationStatus: id => id === 'st-pancras' && settings.mode !== 'demo' && settings.mode !== 'none' ? stPancras.status() : undefined,
     kxObjects: () => [...trains.map(t => t.group), ...(signalLayer?.signals().map(s => s.group) ?? [])] });
@@ -284,10 +292,17 @@ function start(): void {
   };
   let sampleTimeMs = 0, lastBoardFrame = -Infinity;
   const simNow = (): number => mode === 'demo' ? sampleTimeMs : mode === 'live' ? Date.now()
-    : feed?.timeMs() ?? (stPancras.timeMs() || stations.edinburgh()?.live?.timeMs() || 0);
+    : feed?.timeMs() ?? (stPancras.timeMs() || stations.edinburgh()?.live?.timeMs() || stations.perth()?.live?.timeMs() || 0);
   Object.defineProperty(kx, 'simulationTimeMs', { get: simNow });
   // The scene clock the sun and the weather follow: now, or the recording's time in a replay (noon of its day until the feed has one), or ?time=.
-  const sceneClock = (): number => pinnedTimeMs ?? (settings.mode === 'replay' ? ((stations.state().selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.timeMs() : feed?.timeMs()) || replayNoonMs) : Date.now());
+  const sceneClock = (): number => {
+    if (pinnedTimeMs !== null) return pinnedTimeMs;
+    if (settings.mode !== 'replay') return Date.now();
+    const selected = stations.state().selected;
+    const time = selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.timeMs()
+      : selected === 'perth' ? stations.perth()?.live?.timeMs() : feed?.timeMs();
+    return time || replayNoonMs;
+  };
   const timeNote = pinnedTimeMs !== null ? ' (time set by the page address)' : params.has('time') ? ' (time= ignored: not an ISO instant with a zone, or 13-digit epoch milliseconds)' : '';
   // Hover or tap a train for everything the page knows of it (tooltip.ts). ?tooltip=0 leaves it out.
   const tooltip = params.get('tooltip') === '0' ? null : createTrainTooltip({ parent: document.body, canvas: renderer.domElement, camera,
@@ -324,6 +339,7 @@ function start(): void {
     if (time - lastBoardFrame >= 250) { paintBoard(); lastBoardFrame = time; }
     stations.frame(time);
     stations.edinburgh()?.live?.frame(dt, stations.state().selected === 'edinburgh-waverley', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
+    stations.perth()?.live?.frame(dt, stations.state().selected === 'perth', feed?.timeMs() ?? (stPancras.timeMs() || undefined));
     controls.update();
     interiors?.frame(stations.activeScene() === scene); // after the trains are posed and the camera has moved, before the render
     const climate = stations.activeScene() === scene ? londonClimate : stations.remote()?.climate;
@@ -348,7 +364,10 @@ function start(): void {
     }
     nightLightingPilot?.setFrame(shown, sky); // inherit the shadow tags on the original materials
     // after the trains are posed, the camera has moved and the sky has set the night: the headlamps of the scene on show (none for a scene with no trains of its own)
-    headlamps.update(shown === scene ? trains : stations.state().selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.() ?? [] : [], camera, dt);
+    const selected = stations.state().selected;
+    const remoteLamps = selected === 'edinburgh-waverley' ? stations.edinburgh()?.live?.lampTrains?.()
+      : selected === 'perth' ? stations.perth()?.live?.lampTrains?.() : undefined;
+    headlamps.update(shown === scene ? trains : remoteLamps ?? [], camera, dt);
     grade(renderer, sky !== null, sky?.rig.exposure ?? 1, shown === scene ? sky?.rig.hemisphere.intensity : 0, sky?.weather.cloud); // (the concourse's fill is London's)
     renderer.render(shown, camera);
     tooltip?.frame(); // after the render, so every matrix is this frame's

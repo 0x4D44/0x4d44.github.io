@@ -2,15 +2,29 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSclassJob } from './sclass-job.mjs';
 import { areaDataDir } from './areas.mjs';
+import { STATIONS } from '../core/station-config.ts';
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /**
  * The committed public render assets of each area beyond Y9 (Y9's are the relearn CLI's defaults): its OSM signal overlay and
  * its track. The relearn writes the area's private table under <dataDir>/areas/<area>/, never beside these.
  */
-export const DEFAULT_AREA_ASSETS = Object.freeze({
-  EB: Object.freeze({ overlayPath: path.join(packageRoot, 'web/src/data/waverley-signals.json'), trackPath: path.join(packageRoot, 'web/src/data/waverley-scene.json') }),
-});
+export function areaAssetsFor(perthAreas = STATIONS.perth.tdAreas) {
+  // Retained for offline TD experiments on the approaches. The Perth station page uses TRUST and CIF.
+  const assets = {
+    EB: Object.freeze({ overlayPath: path.join(packageRoot, 'web/src/data/waverley-signals.json'), trackPath: path.join(packageRoot, 'web/src/data/waverley-scene.json') }),
+  };
+  const perth = Object.freeze({ overlayPath: path.join(packageRoot, 'web/src/data/perth-signals.json'), trackPath: path.join(packageRoot, 'web/src/data/perth-scene.json') });
+  const otherAreas = new Set(Object.values(STATIONS).filter(station => station.id !== 'perth').flatMap(station => station.tdAreas));
+  for (const area of perthAreas) {
+    if (typeof area !== 'string' || !/^[A-Z0-9]{2}$/.test(area)) throw new Error('Invalid Perth area');
+    if (otherAreas.has(area) || Object.hasOwn(assets, area)) throw new Error(`Area ${area} already belongs to a station or is repeated`);
+    assets[area] = perth;
+  }
+  return Object.freeze(assets);
+}
+
+export const DEFAULT_AREA_ASSETS = areaAssetsFor();
 
 /** Build daily private relearn jobs with one state directory per area. */
 export function createAreaSclassJobs({ dataDir, areas, anchorsPath, tablePath, areaAssets = DEFAULT_AREA_ASSETS, createJob = createSclassJob,

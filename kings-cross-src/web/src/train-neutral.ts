@@ -5,8 +5,10 @@ import { NEUTRAL_ASSUMED, neutralTrainLayout } from '../../core/train-neutral.ts
 import type { NeutralLayout } from '../../core/train-neutral.ts';
 import { Soup, col, plain, roundedRect } from './train-geom.ts';
 import { buildBogie } from './train-parts.ts';
+import { lensLook, SERVICE_LAMPS } from './train.ts';
+import type { LampLens, LampRecord } from './train.ts';
 
-export function buildNeutralTrain(layout: NeutralLayout = neutralTrainLayout()): THREE.Group {
+export function buildNeutralTrain(layout: NeutralLayout = neutralTrainLayout(), lamps = false): THREE.Group {
   const root = new THREE.Group(); root.name = 'train-neutral';
   root.userData = { kind: 'neutral', family: 'neutral', allocation: 'assumed fleet', label: layout.spec.label, length: layout.length, cars: layout.cars.length, source: layout.spec.source, assumptions: 'ASSUMED car count, length, dimensions, glazing, equipment and bogies; no actual fleet identified' };
   const half = NEUTRAL_ASSUMED.width.value / 2;
@@ -32,6 +34,21 @@ export function buildNeutralTrain(layout: NeutralLayout = neutralTrainLayout()):
       soup.box(-0.87, 0.87, 2.15, 3.12, z - 0.012, z + 0.012, col(0x30434d));
     }
     const body = new THREE.Mesh(soup.build(), plain()); body.name = 'body-shell'; group.add(body);
+    if (lamps && car.cab) {
+      const lenses: LampLens[] = [], detail = new Soup();
+      const z = car.cab === 'front' ? start - .02 : end + .02;
+      // Assumed marker positions on the generic end, with the shared live lamp colours and glow tags.
+      const look = lensLook('marker', SERVICE_LAMPS[car.cab]);
+      detail.emit = look.glow;
+      for (const x of [-.95, .95]) {
+        const v0 = detail.glow.length;
+        detail.box(x - .09, x + .09, 1.25, 1.43, z - .005, z + .005, col(look.hex));
+        lenses.push({ role: 'marker', v0, v1: detail.glow.length });
+      }
+      const mesh = new THREE.Mesh(detail.build(), plain()); mesh.name = 'body-detail';
+      mesh.userData.lamps = { end: car.cab, interior: false, lenses } satisfies LampRecord;
+      group.add(mesh);
+    }
     for (const [index, z] of car.bogies.entries()) {
       const bogie = buildBogie({ radius: NEUTRAL_ASSUMED.wheelDiameter.value / 2, wheelbase: NEUTRAL_ASSUMED.wheelbase.value, track: 1.435, motor: false });
       bogie.name = `bogie-${car.index}-${index}`; bogie.position.z = z; group.add(bogie);
