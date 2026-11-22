@@ -45,13 +45,17 @@ function probe(field: LightField, cap = field.spec.cap, roof = 0, level = 1) {
     return [...data.subarray(offset, offset + 4)].map(v => data instanceof Uint8Array ? v / 255 : v);
   } };
   return {
-    at: (p: number[], n = up, facade = false) => program.call('nightLightAt', [p, n, facade, [0, 0, 0]], { vars, fns }) as number[],
-    ground: (p: number[], albedo: number[], state = weatherFrame('clear'), facing = .5) => {
+    at: (p: number[], n = up, facade = false) =>
+      program.call('nightLightAt', [p, n, facade, [0, 0, 0], false, 0], { vars, fns }) as number[],
+    midland: (p: number[], n: number[], height: number) => program.evaluate(receiverContribution('landmarks-brickRed'), {
+      vars: { ...vars, nightP: p, nightN: n, diffuse: [1, 1, 1], vMidlandHeight: height }, fns,
+    }) as number[],
+    ground: (p: number[], albedo: number[], state = weatherFrame('clear'), facing = .5, surface = 'city-plaza') => {
       const env = { vars: { ...vars, nightP: p, nightN: up, diffuse: albedo, normal: up,
         vViewPosition: [0, facing, Math.sqrt(1 - facing ** 2)],
         uNightLightLevels: [level, state.weather.snowCover],
         uNightLightWeather: [state.weather.wet, state.rig.fogAmount] }, fns };
-      return program.evaluate(groundReceipt(), env) as number[];
+      return program.evaluate(receiverContribution(surface), env) as number[];
     },
   };
 }
@@ -131,14 +135,18 @@ function compile(material: THREE.Material, squeezed = false) {
 
 // Evaluate the expression installed on the actual ground receiver, supplying
 // the linear albedo that the preceding texture and weather stages produce.
-let receipt: string | undefined;
-function groundReceipt(): string {
-  if (receipt) return receipt;
+const receipts = new Map<string, string>();
+function receiverContribution(surface: string): string {
+  const cached = receipts.get(surface);
+  if (cached) return cached;
   const scene = new THREE.Scene();
   const material = new THREE.MeshLambertMaterial();
   addRoofShade(material);
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), material);
-  mesh.name = 'city-asphalt';
+  mesh.name = surface;
+  if (surface === 'landmarks-brickRed') {
+    mesh.geometry.setAttribute('midlandNight', new THREE.BufferAttribute(new Float32Array(8), 2));
+  }
   scene.add(mesh);
   const street = createStreetLights([]);
   const unregister = registerLights(scene, [light()]);
@@ -148,9 +156,10 @@ function groundReceipt(): string {
     layer.scan();
     layer.setFrame(scene, frame(-20));
     const shader = compile(mesh.material).fragmentShader;
-    const contribution = shader.match(/reflectedLight\.directDiffuse \+= (night(?:LightAt|GroundDiffuse)\([^;]+);/);
+    const contribution = shader.match(/reflectedLight\.directDiffuse \+= (night\w+\([^;]+);/);
     assert.ok(contribution);
-    receipt = contribution[1]!.replace('material.diffuseColor', 'diffuse');
+    const receipt = contribution[1]!.replace('material.diffuseColor', 'diffuse');
+    receipts.set(surface, receipt);
     return receipt;
   } finally {
     layer.dispose();
@@ -180,6 +189,67 @@ function kingsCrossLights() {
   city.dispose();
   return cityLights;
 }
+
+test('cleared snow carriageways take asphalt light with a soft far-lane shoulder', t => {
+  const field = buildLightField(kingsCrossLights(), LIGHT_GRID_DESKTOP);
+  const meter = probe(field);
+  const snow = weatherFrame('snow');
+  const slush = [.10, .11, .12];
+  const foreground = [-67.16, 1.19, 135.33];
+  const mid = [-65.86, 1.02, 119.89];
+  const asphalt = meter.ground(foreground, slush, snow, .015, 'city-asphalt');
+  const paint = meter.ground(foreground, [.8, .8, .8], snow, .015, 'city-paint');
+  const pavement = meter.ground(foreground, [.65, .65, .65], snow, .015, 'city-pavement');
+  const shoulder = meter.ground(mid, slush, snow, .015, 'city-asphalt');
+  t.diagnostic(JSON.stringify({ asphalt, paint, pavement, shoulder }));
+  assert.ok(asphalt[0]! > .023 && asphalt[0]! < .049, String(asphalt));
+  assert.deepEqual(paint, asphalt);
+  assert.ok(pavement[0]! > .14);
+  assert.ok(shoulder[0]! > .005 && shoulder[0]! < .35 * asphalt[0]!, String(shoulder));
+  assert.deepEqual(meter.ground(foreground, slush, weatherFrame('clear'), .015, 'city-asphalt'),
+    meter.ground(foreground, slush, weatherFrame('clear'), .015, 'city-pavement'));
+});
+
+test('forecourt masts keep a bright core and leave a dark gap between adjacent columns', t => {
+  const masts = kingsCrossLights().filter(source => source.tags.includes('mast'));
+  const [a, b] = masts.slice(1);
+  assert.ok(a && b);
+  const meter = probe(buildLightField(masts, LIGHT_GRID_DESKTOP));
+  const foot = (source: typeof a) => [source.pos[0], source.footY, source.pos[2]];
+  const first = foot(a), second = foot(b);
+  const midpoint = first.map((v,i) => (v + second[i]!) * .5);
+  const at = (p: number[]) => meter.ground(p, [.4, .4, .4]);
+  const centre = at(first), gap = at(midpoint);
+  t.diagnostic(JSON.stringify({ first, second, centre, gap }));
+  assert.ok(centre[0]! > .075 && centre[0]! < .095);
+  assert.ok(gap[0]! > .05 * centre[0]! && gap[0]! < .13 * centre[0]!, String(gap));
+  assert.ok(centre[0]! > centre[2]! && centre[0]! < 1.12 * centre[2]!);
+});
+
+test('upward masonry caps in a mixed façade batch reject below-head light', t => {
+  const source = kingsCrossLights().find(s => s.tags.includes('mast'))!;
+  const meter = probe(buildLightField([source], LIGHT_GRID_DESKTOP));
+  const [x, , z] = source.pos;
+  const point = [x + 1, source.footY + 2, z];
+  const cap = meter.at(point, up, true);
+  const wall = meter.at(point, [-1, 0, 0], true);
+  t.diagnostic(JSON.stringify({ cap, wall }));
+  assert.deepEqual(cap, zero);
+  assert.ok(wall[0]! > .01);
+});
+
+test('the Midland’s lower brick picks up a local sodium shoulder above the arcade only', t => {
+  const source = light();
+  const meter = probe(buildLightField([source], LIGHT_GRID_DESKTOP));
+  const plate = [1, 0, 0], local = [-28, 3, 15], distant = [-28, 3, 29], upper = [-28, 7, 0];
+  const sample = (p: number[]) => meter.midland(p, plate, p[1]!);
+  const lower = sample(local), gap = sample(distant), high = meter.midland(upper, plate, 12);
+  t.diagnostic(JSON.stringify({ lower, gap, high }));
+  assert.ok(lower[0]! > .09 && lower[0]! < .24 && lower[1]! > .045);
+  assert.deepEqual(gap, zero);
+  assert.ok(high[0]! > .2);
+  assert.deepEqual(high, meter.at(upper, plate, true));
+});
 
 test('fresh snow lights up under a mast and a street lamp and rolls off at overlapping peaks', t => {
   const sources = kingsCrossLights();
@@ -220,7 +290,8 @@ test('forecourt masts light the foot softly and equally in every horizontal dire
   const clearPeak = meter.ground(samples[0]!, [.40, .40, .40]);
   t.diagnostic(JSON.stringify({ mast: mast.pos, clearPeak, byWeather }));
   assert.ok(clearPeak[0]! > .075 && clearPeak[0]! < .095, String(clearPeak));
-  assert.ok(Math.max(...clearPeak) - Math.min(...clearPeak) < 1e-7, String(clearPeak));
+  assert.ok(Math.abs(clearPeak[1]! / clearPeak[0]! - .98) < 1e-7 &&
+    Math.abs(clearPeak[2]! / clearPeak[0]! - .90) < 1e-7, String(clearPeak));
   for (const readings of Object.values(byWeather)) {
     const [foot, ...around] = readings;
     assert.ok(foot! > .001 && foot! < .11, String(readings));
@@ -308,6 +379,9 @@ test('night receivers preserve prior hooks and the squeezed anchors, hide all de
   });
   const sharedInPerth = new THREE.Mesh(ground[0]!.geometry, original);
   perth.add(sharedInPerth);
+  const cityRoof = new THREE.Mesh(ground[0]!.geometry, original);
+  cityRoof.name = 'city-roof';
+  scene.add(cityRoof);
   const street = createStreetLights([{ x: 0, y: 0, z: 0, height: 10, yaw: 0, kind: 0, slope: [0, 0] },
     { x: 10, y: 0, z: 0, height: 10, yaw: 0, kind: 0, slope: [0, 0] }], { poolSegments: 12, receiverPoolAt: () => true });
   const pools = street.group.getObjectByName('street-lamp-pools') as THREE.InstancedMesh;
@@ -324,11 +398,12 @@ test('night receivers preserve prior hooks and the squeezed anchors, hide all de
     layer.setFrame(scene, frame(-20, 1));
     assert.ok(ground.every(m => m.material !== original));
     assert.equal(sharedInPerth.material, original);
+    assert.equal(cityRoof.material, original);
     const night = ground[0]!.material;
     const raw = compile(night), squeezed = compile(night, true);
     for (const shader of [raw, squeezed]) {
       assert.ok(shader.fragmentShader.indexOf('float coverGroundAt') < shader.fragmentShader.indexOf('vec3 nightLightAt'));
-      assert.match(shader.fragmentShader, /reflectedLight\.directDiffuse \+= nightGroundDiffuse\(nightLightAt\(nightP, nightN, false, vec3\(0\.0\)\), material\.diffuseColor\);/);
+      assert.match(shader.fragmentShader, /reflectedLight\.directDiffuse \+= nightGroundDiffuse\(nightLightAt\(nightP, nightN, false, vec3\(0\.0\), true, 0\.0\), material\.diffuseColor, true\);/);
       assert.ok(shader.fragmentShader.indexOf('reflectedLight.directDiffuse *= roofK.a') <
         shader.fragmentShader.indexOf('reflectedLight.directDiffuse += nightGroundDiffuse'));
       assert.doesNotMatch(shader.fragmentShader, /uEustonP1/);

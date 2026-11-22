@@ -59,10 +59,11 @@ function packLight(source: DirectLight, data: Float32Array, index: number): { ra
     // downward spill is a broad, soft pool centred on the column. The
     // spill share puts 0.40-albedo paving near 0.09 linear RGB at the foot.
     kind = LIGHT_FIELD_DOWNLIGHT;
-    range = 16;
+    range = 12;
     strength *= .086;
-    spectrum = [1, 1, 1];
-    opticParams = [0, range, Math.cos(62 * radians), Math.cos(32 * radians)];
+    // Balance the cool night fill on the paving with a slightly warm source.
+    spectrum = [1, .98, .90];
+    opticParams = [0, range, Math.cos(54 * radians), Math.cos(12 * radians)];
   } else if (optic.kind === 'strip') {
     kind = LIGHT_FIELD_STRIP;
     range = Math.max(optic.throwM, optic.spreadM);

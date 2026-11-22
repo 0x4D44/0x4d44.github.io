@@ -39,7 +39,8 @@ float nightLightSlot(float slot) {
   vec4 bytes = nightLightGridBytes(address);
   return slot == address * 2.0 ? dot(bytes.rg, vec2(1.0, 256.0)) : dot(bytes.ba, vec2(1.0, 256.0));
 }
-vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 frontPlane, float fog) {
+vec3 nightLightOne(vec3 p, vec3 n, float covered, float id, bool facade, vec3 frontPlane,
+  float fog, float snowRoad, float lowerBrick) {
   float address = id * ${LIGHT_FIELD_TEXELS_PER_SOURCE.toFixed(1)};
   vec4 head = nightLightTexel(uNightLightData, address, uNightLightDataWidth);
   vec3 ray = head.xyz - p;
@@ -84,6 +85,16 @@ ${EUSTON_FACADE_LOBE}
     window = (1.0 - smoothstep(euston ? 27.0 : 10.0, reach, d))
       * (1.0 - smoothstep(3.0, 12.0, alongWall));
     if (euston) spectrum = vec3(1.0, 0.43, 0.19);
+    if (euston && lowerBrick > 0.0) {
+      // The narrow upper-wall lobe misses lower bays between the fittings.
+      // Broaden their side-on spill within the same front plane and reach.
+      float shoulder = 0.86 * (1.0 - smoothstep(35.0, reach, d))
+        * (1.0 - smoothstep(8.0, 27.0, alongWall))
+        * smoothstep(0.1, 0.58, dot(n.xz, wall.xy));
+      float extra = max(0.0, shoulder - optic * window) * lowerBrick;
+      return (spectrum * (optic * window) + vec3(1.0, 0.68, 0.23) * extra)
+        * (head.w * receipt * facing / (d * max(d2, 1.0)));
+    }
   } else if (road) {
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float angle = -dot(ray.xz, aim) * params.z / ray.y;
@@ -93,7 +104,15 @@ ${EUSTON_ROAD_LOBES}
     if (euston) {
       // Separate the pools along the carriageway. Fog broadens the optical
       // shoulder while preserving the pool's centre and the cross-street skirt.
-      window *= 0.50 * (1.0 - smoothstep(mix(0.32, 0.23, fog), mix(1.04, 1.27, fog), along));
+      window *= 0.50;
+      optic *= 1.0 - smoothstep(mix(0.32, 0.23, fog), mix(1.04, 1.27, fog), along);
+      if (snowRoad > 0.0) {
+        // A weak, wider shoulder bridges the ends of opposing beams on
+        // cleared lanes, where slush scatters a little light into the gap.
+        float shoulder = (1.0 - smoothstep(1.1, 2.6, abs(angle)))
+          * (1.0 - smoothstep(0.65, 1.65, along));
+        optic = max(optic, 0.35 * snowRoad * shoulder);
+      }
       if (fog > 0.0) {
         // Feather the light from the beam core into the wider fog shoulder.
         vec2 fromCore = vec2(angle - 0.38, 0.65 * along);
@@ -111,8 +130,10 @@ ${EUSTON_ROAD_LOBES}
   }
   return spectrum * (head.w * optic * window * receipt * facing / (d * max(d2, 1.0)));
 }
-vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane) {
-  if (uNightLightLevels.x <= 0.0) return vec3(0.0);
+vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway, float lowerBrick) {
+  // City roofs are excluded by the receiver list. Mixed façade batches also
+  // contain upward faces, such as parapet caps, that should receive no spill.
+  if (uNightLightLevels.x <= 0.0 || (facade && n.y > 0.5)) return vec3(0.0);
   vec2 cell = floor((p.xz - uNightLightGridRect.xy) / uNightLightCellM);
   if (cell.x < 0.0 || cell.y < 0.0 || cell.x >= uNightLightGridRect.z || cell.y >= uNightLightGridRect.w) return vec3(0.0);
   vec4 header = nightLightGridBytes(cell.y * uNightLightGridRect.z + cell.x);
@@ -121,33 +142,38 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane) {
   if (count <= 0.0) return vec3(0.0);
   float covered = coverGroundAt(p);
   float fog = facade ? 0.0 : smoothstep(0.40, 0.90, uNightLightWeather.y);
+  float snowRoad = carriageway ? smoothstep(0.02, 0.75, uNightLightLevels.y) : 0.0;
   vec3 light = vec3(0.0);
   for (int i = 0; i < ${cap}; i += 1) {
     if (float(i) >= count) break;
     float id = nightLightSlot(offset + float(i) + 1.0);
-    light += nightLightOne(p, n, covered, id, facade, frontPlane, fog);
+    light += nightLightOne(p, n, covered, id, facade, frontPlane, fog, snowRoad, lowerBrick);
   }
   return light * uNightLightLevels.x;
 }
-vec3 nightGroundDiffuse(vec3 light, vec3 albedo) {
+vec3 nightGroundDiffuse(vec3 light, vec3 albedo, bool carriageway) {
   vec3 paving = light * albedo * (1.0 - 0.40 * uNightLightWeather.x);
   if (uNightLightLevels.y <= 0.02) return paving;
+  float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
+  // Cleared lanes and their paint share a dark slush reflectance. The
+  // narrow tyre and kerb masks still affect the base surface.
+  vec3 scatter = light * (carriageway ? vec3(0.049, 0.051, 0.055) : vec3(0.80));
+  float peak = max(max(scatter.r, scatter.g), scatter.b);
+  if (carriageway) return mix(paving, scatter * (0.22 / max(0.22, peak)), snow);
   // Ploughed tyre tracks and snow piled along kerbs still show in the base
   // surface. Broad snow scatter across the join avoids lighting those narrow
   // masks as stripes. Roll off the sum so overlapping lights cannot clip it.
-  float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
-  vec3 scatter = 0.80 * light;
-  float peak = max(max(scatter.r, scatter.g), scatter.b);
   return mix(paving, scatter / (1.0 + peak / 0.22), snow);
 }
 `;
 }
 
-const groundReceivers = new Set(['city-asphalt', 'city-pavement', 'city-paint', 'city-plaza', 'city-grass',
+const carriagewayReceivers = new Set(['city-asphalt', 'city-paint']);
+const groundReceivers = new Set(['city-pavement', 'city-plaza', 'city-grass',
   'terrain-ground', 'terrain-bank']);
 const facadeReceivers = new Set(['city-stock', 'city-red', 'city-stone', 'city-panel', 'city-shop']);
 const midlandReceivers = new Set(['landmarks-brickRed', 'landmarks-stone']);
-type Receiver = 'ground' | 'facade' | 'midland';
+type Receiver = 'ground' | 'carriageway' | 'facade' | 'midland' | 'midland-brick';
 
 function dataTexture(data: Float32Array<ArrayBuffer> | Uint8Array<ArrayBuffer>, width: number, height: number) {
   const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat,
@@ -192,21 +218,26 @@ export function createNightLightLayer(scene: THREE.Scene, spec: LightGridSpec) {
     if (source.defines) night.defines = { ...source.defines };
     const prior = source.onBeforeCompile;
     const key = source.customProgramCacheKey();
-    const planes = receiver === 'midland' ? Object.keys(front).length : 0;
+    const isMidland = receiver === 'midland' || receiver === 'midland-brick';
+    const carriageway = receiver === 'carriageway';
+    const ground = receiver === 'ground' || carriageway;
+    const planes = isMidland ? Object.keys(front).length : 0;
     const field = nightLightGLSL(spec.cap, planes);
-    const sample = `nightLightAt(nightP, nightN, ${receiver !== 'ground'}, ${planes ? 'nightLightFrontPlane(nightP.x)' : 'vec3(0.0)'})`;
-    const diffuse = receiver === 'ground' ? `nightGroundDiffuse(${sample}, material.diffuseColor)` : `${sample} * material.diffuseColor`;
+    const plane = planes ? 'nightLightFrontPlane(nightP.x)' : 'vec3(0.0)';
+    const lowerBrick = receiver === 'midland-brick' ? '1.0 - smoothstep(6.0, 11.0, vMidlandHeight)' : '0.0';
+    const sample = `nightLightAt(nightP, nightN, ${!ground}, ${plane}, ${carriageway}, ${lowerBrick})`;
+    const diffuse = ground ? `nightGroundDiffuse(${sample}, material.diffuseColor, ${carriageway})` : `${sample} * material.diffuseColor`;
     night.onBeforeCompile = (shader, renderer) => {
       // Leave the include in place so addRoofShade inserts its shade and
       // headlamps before this contribution. The original hook still owns them.
       shader.fragmentShader = shader.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
-${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
+${isMidland ? 'if (vMidlandNight.x > 0.5) ' : ''}{
   vec3 nightP = cameraPosition - vViewPosition * mat3( viewMatrix );
   vec3 nightN = inverseTransformDirection( normal, viewMatrix );
   reflectedLight.directDiffuse += ${diffuse};
 }`);
       prior.call(source, shader, renderer);
-      Object.assign(shader.uniforms, uniforms, receiver === 'midland' ? front : {});
+      Object.assign(shader.uniforms, uniforms, isMidland ? front : {});
       // The prior Lambert hook has already declared coverGroundAt in <common>.
       shader.fragmentShader = shader.fragmentShader.replace('#include <lights_lambert_pars_fragment>', `#include <lights_lambert_pars_fragment>\n${field}`);
     };
@@ -262,9 +293,12 @@ ${receiver === 'midland' ? 'if (vMidlandNight.x > 0.5) ' : ''}{
       receivers.clear();
       scene.traverse(mesh => {
         if (!(mesh instanceof THREE.Mesh) || !(mesh.material instanceof THREE.MeshLambertMaterial)) return;
-        if (groundReceivers.has(mesh.name) || mesh.material.name === 'ground-flat') receivers.set(mesh, 'ground');
+        if (carriagewayReceivers.has(mesh.name)) receivers.set(mesh, 'carriageway');
+        else if (groundReceivers.has(mesh.name) || mesh.material.name === 'ground-flat') receivers.set(mesh, 'ground');
         else if (facadeReceivers.has(mesh.name)) receivers.set(mesh, 'facade');
-        else if (midlandReceivers.has(mesh.name) && mesh.geometry.hasAttribute('midlandNight')) receivers.set(mesh, 'midland');
+        else if (midlandReceivers.has(mesh.name) && mesh.geometry.hasAttribute('midlandNight')) {
+          receivers.set(mesh, mesh.name === 'landmarks-brickRed' ? 'midland-brick' : 'midland');
+        }
       });
     },
     setFrame(displayed: THREE.Scene, state: AtmosphereState | null): void {
