@@ -435,7 +435,8 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
     // cap over the windscreen on the 803, from the glass's top edge back; every other part of the row is still livery.ts's
     assert.equal(l.noseTop, 0x2a2d33);
     // CHANGED round 5 (2.0 -> 2.5): the windscreen is taller now (its top edge is 2.5 m from the tip, glass.screen.s1 in train.ts), and the cap starts at the glass's top edge
-    assert.equal(l.noseTopFrom, 2.5);
+    // CHANGED AT300 round (2.5 -> 2.6): the blunt nose's glass tops out 2.6 m from the tip
+    assert.equal(l.noseTopFrom, 2.6);
     for (const key of Object.keys(row) as (keyof typeof row)[]) assert.equal(l[key], row[key], `${kind}.${key}`);
   }
   // CHANGED (the LNER dome began 3.2 m back, on a 5.4 m nose): the nose is 3.9 m long now and the black cap starts at the windscreen's top edge, 2.0 m from the tip
@@ -443,7 +444,8 @@ test('liveryFor: each kind wears its scheme, and kinds without one of their own 
   // CHANGED round 5 (2.0 -> 2.5): the glass's top edge moved back to 2.5 m (the screen is taller, clear above the beak), and the cap follows it
   // the LNER nose is a black dome over the glass; the 717's the whole nose; the others have no special top
   assert.equal(liveryFor('lner5').noseTop, 0x1a1c21);
-  assert.equal(liveryFor('lner5').noseTopFrom, 2.5);
+  // CHANGED AT300 round (2.5 -> 2.6): the blunt nose's glass tops out 2.6 m from the tip
+  assert.equal(liveryFor('lner5').noseTopFrom, 2.6);
   // CHANGED (the 717's dome was written out here, and the 700 had none): both Desiro Citys' domes are the black of their flat faces' masks, from the tip (train-face.ts), the 700's a blue-black
   assert.equal(liveryFor('gn717x6').noseTop, 0x1a1c21);
   assert.equal(liveryFor('gn717x6').noseTop, MASK_717);
@@ -569,9 +571,10 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
   const mask = frontOf('hull5').mask;
   assert.ok(mask, 'the Hull Trains front has a colour mask');
   assert.equal(mask.colour, HULL_BEAK);
-  // the lines' numbers, written out (the checks below read them from the spec): 0.4 m out at the face's foot, 0.46 at its top, 0.72 at the windscreen's foot. The face is 0.94 m across at its
+  // the lines' numbers, written out (the checks below read them from the spec): 0.5 m out at the face's foot, 0.62 at its top, 0.8 at the windscreen's foot. The face is 1.23 m across at its
   // widest, so the lines cross its outline (the mask needs that: where they never do, the band over the nose's top has no width to start from)
-  assert.deepEqual(mask, { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 });
+  // CHANGED (AT300 round: 0.4, 0.46 and 0.72, the LNER's own, on the old beak's 0.94 m face): hull-802-doncaster-2024 shows the grey wider than the LNER's yellow, filling the face between the lamp housings
+  assert.deepEqual(mask, { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 });
   const r0 = ringAt(bodySpec('at300').nose, 0);
   // CHANGED (the beak was cut along the loft's own columns, an upright strip: the cheeks' inner edge one x at every height): the mask is two straight lines from the face's foot
   // (`hwFoot` either side of the middle) to its top (`hwTop`), as hull-802-doncaster-2024 shows a bullet of grey widening up the face; the beak stays inside them at every
@@ -601,7 +604,7 @@ test('the Hull Trains front: a grey beak between two blue cheeks on the face, it
   for (const car of layout.cars) assert.ok(trisOfColour(detailOf(g, car.index), HULL_DOOR).length >= 8, `car ${car.index}: red door leaves`);
 });
 
-test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over the glass from its top edge (2.5 m back), the 717 a dark nose roof from the tip, every other kind none', () => {
+test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over the glass from its top edge (2.6 m back), the 717 a dark nose roof from the tip, every other kind none', () => {
   const dark = 0x1a1c21;
   const lumoDome = 0x2a2d33;
   const cars = (kind: TrainKind): number[] => trainLayout(kind).cars.filter((c) => c.cab).map((c) => c.index);
@@ -611,14 +614,15 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
   // CHANGED round 5: the glass's top edge is 2.5 m back now (glass.screen.s1), so the cap starts there: the first ring at or behind 2.5 m is 2.515 m back. The nose's textured
   // columns run up to column 9 (`front.shellTop`, the AT300 front's own, so the livery's cheek and white reach over the shoulder and no vertex-coloured roof wedge shows low down on
   // the flank), so the dome's lowest edge is column 9 of the section at that ring, 3.07 m up, not column 7
+  // CHANGED (AT300 round, the blunt nose: AT300_NOSE_KNOTS): the glass's top edge is 2.6 m back (glass.screen.s1), the first ring at or behind it 2.658 m back, the dome's lowest edge 2.99 m up there (the bounds, 3.0 to 3.15 m, move down with it: 2.92 to 3.07 m)
   const at300 = bodySpec('at300');
   const sec300 = carSection(at300);
   const norm300 = normalised(sec300);
   const topColumn = at300.front.shellTop ?? 7;
   assert.equal(topColumn, 9, 'the AT300 nose\'s textured columns run to column 9');
-  const domeRing = ringStations(at300.nose).find((s) => s >= 2.5 - 1e-9) as number;
+  const domeRing = ringStations(at300.nose).find((s) => s >= 2.6 - 1e-9) as number;
   const domeFloor = (halfAt(sec300, norm300, eggSection(norm300, at300.nose.widest, at300.nose.boxiness), ringAt(at300.nose, domeRing))[topColumn] as [number, number])[1];
-  assert.ok(domeRing >= 2.5 - 1e-9 && domeRing < 2.6 && domeFloor > 3.0 && domeFloor < 3.15, `the dome's first ring is ${domeRing} m back, its lowest edge ${domeFloor} m up`);
+  assert.ok(domeRing >= 2.6 - 1e-9 && domeRing < 2.7 && domeFloor > 2.92 && domeFloor < 3.07, `the dome's first ring is ${domeRing} m back, its lowest edge ${domeFloor} m up`);
   for (const [kind, colour] of [['lner5', dark], ['lner9', dark], ['lumo5', lumoDome]] as [TrainKind, number][]) {
     const g = buildTrain(kind);
     g.updateMatrixWorld(true);
@@ -626,10 +630,10 @@ test('the nose\'s top: the LNER has a black dome and Lumo a dark grey one over t
       const car = trainLayout(kind).cars[index] as { cab: 'front' | 'rear'; start: number; end: number };
       const tris = trisOfColour(detailOf(g, index), colour);
       assert.ok(tris.length > 20, `${kind} car ${index}: the dome (${tris.length} triangles)`);
-      // all of it is more than 2.5 m from the nose's tip (the livery's `noseTopFrom`, CHANGED round 5 from 2.0 m), measured along the car, and on the roof
+      // all of it is more than 2.6 m from the nose's tip (the livery's `noseTopFrom`, CHANGED round 5 from 2.0 m, and in the AT300 round from 2.5 m), measured along the car, and on the roof
       const tip = car.cab === 'front' ? car.start : car.end;
       for (const t of tris) for (const v of t) {
-        assert.ok(Math.abs(v.z - tip) >= 2.5 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
+        assert.ok(Math.abs(v.z - tip) >= 2.6 - 0.05, `${kind} car ${index}: dark roof only ${Math.abs(v.z - tip).toFixed(2)} m from the tip`);
         // (CHANGED from 2.5 m: the cap runs a little way down the sides of the glass, about a third of the way down its side edge, 2.6 m: lner-801-214-2025's close crop of the cab)
         assert.ok(v.y >= domeFloor - 1e-4, `${kind} car ${index}: dark triangle at y = ${v.y.toFixed(3)}, under the shell's top edge (${domeFloor.toFixed(3)}): not on the roof or the glass's upper shoulder`);
       }

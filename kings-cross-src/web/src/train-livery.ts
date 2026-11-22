@@ -376,7 +376,8 @@ const LNER: TrainLivery = asTrainLivery(LIVERIES.lner, {
   surround: null,
   foot: 0x2d3036,
   noseTop: 0x1a1c21,
-  noseTopFrom: 2.5,
+  // the glass's top edge (glass.screen.s1; CHANGED AT300 round with the blunt nose: was 2.5 m)
+  noseTopFrom: 2.6,
   // The waist vinyl crosses the closed passenger leaves in 800108 and 801214.
   stripeY: LNER_BAND,
   doorBand: () => true,
@@ -483,7 +484,7 @@ const GC: TrainLivery = asTrainLivery(LIVERIES.grandcentral, {
 
 // Lumo: livery.ts's row unchanged, and over the windscreen a dark grey dome (LUMO-03-Lumo-803004-passes-York-301023, LUMO-05-Lumo-803005-at-King-s-Cross-Platform-10:
 // the cab's top is a smooth dark cap from the glass's upper edge back, the shoulders beside the glass the body's blue; the shade approximate).
-const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.5 });
+const LUMO: TrainLivery = asTrainLivery(LIVERIES.lumo, { scheme: 'base', noseTop: 0x2a2d33, noseTopFrom: 2.6 });
 
 const BY_KIND: Partial<Record<TrainKind, TrainLivery>> = {
   lner5: LNER,

@@ -39,7 +39,7 @@ import type { V3 } from './train-geom.ts';
 import { ADELANTE_FACE, AMBER, boxOutline, DESIRO_700_FACE, DESIRO_717_FACE, ELECTROSTAR_FACE, PANE_SEAL, PANE_SKY_HI, PANE_SKY_MID, RECESS, RECESS_LIFT, WIPER, YELLOW } from './train-face.ts';
 import type { FaceShape, FaceSpec } from './train-face.ts';
 import { eggSection, halfAt, loopFromHalf, normalised, rakeLean, rakeLeanSlope, rakeSet, ringAt, ringStations, xAtY, yAtX } from './train-nose.ts';
-import type { NoseSpec, Section } from './train-nose.ts';
+import type { NoseKnot, NoseSpec, Section } from './train-nose.ts';
 import { bellowsRings, buildBogie, buildPantograph, couplerHalf, pantographDeck, podHanger, roofEnd, roofHatch, roofKit, roofKitSpan, roofPlan, skirtPanel, skirtSplit, underfloorPod, WHEEL_WIDTH } from './train-parts.ts';
 import type { BogieStyle, CouplerStyle, PodForm, RoofEndStyle, RoofHatchStyle, RoofKitStyle, SkirtBoxes } from './train-parts.ts';
 
@@ -140,9 +140,13 @@ const FRAME_REACH = 0.91;
  * How far off the nose the last row of a mask's band stands (the row that runs on under the windscreen's frame; the rows before it stand 12 mm off). The frame stands 14 mm off but its
  * quads cut across the corners of the section's outline, a few millimetres under it, and the band's last row ends in the frame's strip: at 12 mm it showed through the frame as a
  * yellow tab at each of those corners (0.5 m out either side of the middle), which a swept foot made longer. At 7 mm a thin spike of it was left in the preview; at 4 mm the frame covers it
- * (the rows' lift is along the nose's normal, the nose's own facets sag between rings by a few mm: the 3 mm floor of the band's test is under it).
+ * (the rows' lift is along the nose's normal, the nose's own facets sag between rings by a few mm: the 3 mm floor of the band's test is under it). CHANGED (AT300 round: 4 mm): on the
+ * blunt nose the last row's chord across the outline's corner 0.6 m out stood 2.96 mm over the loft at 4 mm, under that floor; 4.5 mm (ASSUMED still under the frame, 14 mm off) clears it.
  */
-const BAND_END_LIFT = 0.004;
+const BAND_END_LIFT = 0.0045;
+/** How many steps the columns of a colour mask's band take over its half-turn of angle (see the band in buildCar). CHANGED (AT300 round: 18 before): the blunt nose turns over
+ * sharply at the band's outer edge, where the chord across two columns of its last row stood 0.4 mm under the loft at 18 steps (see BAND_END_LIFT for the rest). */
+const BAND_SPREAD = 36;
 /** The smoked glass of an AT300 lamp cluster's window, on the nose's cheek: near black, a shade off the bezel's so the two read apart (Lumo, LNER). */
 export const POD = 0x181a1e;
 /** The same window on a Hull Trains cab, a dark slate a shade off the grey beak's own so the two still read apart (hull-802-doncaster-2024: slate window, lighter rim). */
@@ -508,6 +512,8 @@ interface BodySpec {
   wallTop: number;
   /** the roof's centre line */
   crown: number;
+  /** how far across the roof's shoulder (the cant rail's quarter-ellipse, from the wall's top to the crown) runs, metres (absent: CANT_RADIUS) */
+  cantRadius?: number;
   /** the roof fairings stand this far above the crown (0: none) */
   coverHeight: number;
   coverBw: number;
@@ -581,6 +587,16 @@ const FLOOR = ASSUMED.floorHeight;
  * (FIGURES.roofEdgeHeight), so the shape holds while the height follows the figure.
  */
 const DRAWN_ROOF_EDGE = 3.725;
+/** The roof's shoulder, metres across: every family but the AT300 (see AT300_CANT_RADIUS), and every section built outside this file (the 385's, the EMR units', the DMUs'). */
+const CANT_RADIUS = 0.55;
+/**
+ * The AT300's shoulder: wider than the commuter units' (CHANGED, AT300 round: was CANT_RADIUS, 0.55 m). lner-800-113-newcastle-2025, head on (about 128 px to the metre at the train):
+ * the outline turns from the side to the roof over about 0.8 m across and 0.75 m down at the nose's dome, a broad round shoulder, not the tight corner over a flat top the 0.55 m drew.
+ * Only the width can follow: the wall stands upright to WALL_TOP (2.9 m) for the doors' heads (2.86 m) and the crown is the roof edge (3.35 m), so the shoulder stays 0.44 m tall.
+ * And only part of the way: the gangway's bellows opening (ASSUMED.gangwayWidth 2.3 m, its top 3.15 m up) must stay 5 cm under the roof at its top corners, which a shoulder wider than
+ * 0.6 m would cut. 0.6 m leaves the flat of the roof (0.71 m either side of the middle) under the roof covers (0.425 m) and the roof kit (0.52 m out). ASSUMED (no drawn section was found).
+ */
+const AT300_CANT_RADIUS = 0.6;
 /** Top of the vertical side wall: the doors, windows and livery bands all sit below it and are not scaled. */
 const WALL_TOP = 2.9;
 /** A height above the floor, scaled with the roof edge (the nose rings). */
@@ -616,24 +632,55 @@ function windowsIn(from: number, to: number, pitch: number, pier: number, atLeas
  * proportions). CHANGED (round 5): the housing is slimmer (0.3 m across, 0.42 to 0.55 m before), and the headlamp a row of small lenses up the slant where it was one round eye
  * 0.28 m by 0.15 m (the round-4 score: "in the photos the clusters are slim, slanted multi-lens strips; the model reads as an eye"; lner-801-214-2025 and LUMO-04-Lumo-803003 show the
  * headlamp as a bright cluster of small LED lenses, not one lens).
- * The window starts 0.55 m behind the tip, so nothing of it, lifted off the cheek where the face leans forward, can stand ahead of the face's plane (the test holds it to that).
+ * CHANGED (AT300 round, with the blunt nose, AT300_NOSE_KNOTS): head on (lner-800-113-newcastle-2025) the housings stand 0.67 to 1.02 m out and 1.6 to 2.13 m up, beside the yellow's
+ * upper corners, just under the glass's foot. On the blunt nose that is 0.45 to 1.6 m back: the window's foot runs 0.45 to 0.95 m back at 1.53 m up and its top 0.85 to 1.6 m back at
+ * 2.1 m (it was 0.55 to 0.84 m and 1.02 to 1.34 m, from 1.5 to 2.1 m up, on the old beak); the headlamp (0.32 m long, each lens 0.054 m by 0.066 m: shorter than the beak's 0.36 m, so that its upper end stays inside the window under the stop) at (0.925 m back, 1.76 m up), the marker array at (0.6, 1.63). Those two are
+ * placed where the nose's surface still faces forward (its normal 0.36 to 0.39 of the way toward straight ahead, so the lenses and their night halos read head on) and not yet over
+ * onto its top (the lens, lifted off the surface, stays within 2 cm of its height). The flank's stop (FLANK_FRACTION) holds the housing's inboard edge 0.85 to 0.89 m out, 0.2 m outboard
+ * of the photograph's; side on it reaches 1.6 m back (the LNER's 2.05 m) where lner-800-108-offord-cluny-2023 shows about 2.0 m. ASSUMED: every figure, to about 0.1 m.
+ * The window starts 0.45 m behind the tip, so nothing of it, lifted off the cheek where the face leans forward, can stand ahead of the face's plane (the test holds it to that).
  */
 export const AT300_CLUSTER: ClusterSpec = {
-  window: { y0: 1.5, y1: 2.1, sFront0: 0.55, sBack0: 0.84, sFront1: 1.02, sBack1: 1.34, colour: POD },
-  head: { s: 1.02, y: 1.9, a: 0.18, b: 0.033, cells: 5 },
-  array: { s: 0.8, y: 1.63, r: 0.075 },
+  window: { y0: 1.53, y1: 2.1, sFront0: 0.45, sBack0: 0.95, sFront1: 0.85, sBack1: 1.6, colour: POD },
+  head: { s: 0.925, y: 1.76, a: 0.16, b: 0.033, cells: 5 },
+  array: { s: 0.6, y: 1.63, r: 0.075 },
   rim: { colour: 0xc7ccd3, width: 0.025 },
 };
 
 /**
  * The LNER's cluster: the AT300's, its housing carried further back up the flank so that it reads about 0.38 m across from straight ahead (round-6 score; lner-800-113-newcastle-2025, head on:
- * each housing about 0.38 m across against the 2.7 m face, scaled by eye, ASSUMED), where the AT300's reads 0.28 m. Its front edge stays 0.55 m behind the tip (the face's plane); its back
- * edge, 1.8 m behind the tip at the top, is still inside the 1.2 to 2.2 m that lner-800-108-offord-cluny-2023 shows side on.
+ * each housing about 0.38 m across against the 2.7 m face, scaled by eye, ASSUMED), where the AT300's reads 0.28 m. Its front edge is the AT300's (0.45 m behind the tip at its foot); its back
+ * edge, 2.05 m behind the tip at the top (was 1.8 m on the old beak), is inside the 1.2 to 2.2 m that lner-800-108-offord-cluny-2023 shows side on.
  */
 export const LNER_CLUSTER: ClusterSpec = {
   ...AT300_CLUSTER,
-  window: { ...AT300_CLUSTER.window, sBack0: 1.3, sBack1: 1.8 },
+  window: { ...AT300_CLUSTER.window, sBack0: 1.35, sBack1: 2.05 },
 };
+
+/**
+ * The AT300's nose profile, shared by every operator (LNER 800/801, Hull Trains 802, Lumo 803: one bodyshell). CHANGED (AT300 round): a blunt, round-fronted bullet where it was a
+ * small face 0.7 m tall at the end of a 45-degree ramp. The round-6 score held T2 at 6.0 because "the yellow still fills about three quarters of the face": head on, the old nose's
+ * lower section closed in to a narrow egg, so the mask had almost nothing round it. The photographs show a tall round front, its coupler cover a disc about 1.6 m across and 1.15 m
+ * tall whose seam crosses both the yellow and the red cheeks, the cheeks filling out to nearly the full width low down (lner-800-113-newcastle-2025, head on, scaled by the 1.5 m
+ * between the rails, about 128 px to the metre; lner-801-214-2025, front three-quarter), and a top line that rises steeply off the front and then lies back at about 30 degrees to the
+ * roof (lner-800-108-offord-cluny-2023, nearly side on, scaled by the crew door's 1.15 to 2.86 m: the front's most forward point about 0.95 m up, the centre line 1.35 m up 0.06 m
+ * back, 1.62 m at 0.24 m, 1.78 m at 0.48 m, 1.92 m at 0.79 m, 2.03 m at 1.09 m where the screen's foot meets it, and the glass's top edge about 31 degrees off level).
+ * The knots below are those readings before the fillet rounds the front (`fillet`, `filletLoss`); the screen's foot is put at 2.1 m, between the side-on reading (2.0 m) and the
+ * head-on one (2.2 m: see the glass). ASSUMED: every figure, to about 0.1 m (no drawing of the nose was found; the photographs are not calibrated).
+ * Width (`ws`): the head-on photograph puts the nose's lower half at about 1.6 m across 0.3 m back (built: 1.87 m at 1.15 m up) and over 2 m by 1 m back (2.1 m), while at the
+ * lamps' height the surface still faces well forward (the housings and their lenses read head on); the section is widest at half its
+ * height (it was 0.55: lower cuts the section's foot flat, a corner at the chin) and boxier (3.0, was 2.6), so the cheeks stay full down to the skirt line rather than closing in under the lamps.
+ */
+const AT300_NOSE_KNOTS: readonly NoseKnot[] = [
+  { s: 0, top: 1.6, ws: 0.62, bottom: 0.5 },
+  { s: 0.24, top: 1.7, ws: 0.7, bottom: 0.48 },
+  { s: 0.5, top: 1.82, ws: 0.76, bottom: 0.47 },
+  { s: 1.0, top: 2.08, ws: 0.84, bottom: 0.46 },
+  { s: 1.6, top: 2.44, ws: 0.91, bottom: 0.5 },
+  { s: 2.6, top: 3.05, ws: 0.97, bottom: 0.7 },
+  { s: 3.3, top: 3.3, ws: 0.995, bottom: 0.86 },
+  { s: ASSUMED.noseLength, top: ROOF_EDGE, ws: 1, bottom: FLOOR },
+];
 
 const AT300: BodySpec = {
   family: 'at300',
@@ -641,6 +688,7 @@ const AT300: BodySpec = {
   floor: FLOOR,
   wallTop: WALL_TOP,
   crown: ROOF_EDGE,
+  cantRadius: AT300_CANT_RADIUS,
   coverHeight: FIGURES.roofCoverHeight.value,
   coverBw: 0.85,
   coverTw: 0.62,
@@ -660,23 +708,15 @@ const AT300: BodySpec = {
   // (it was 1.3 m back at 2.4 m up and 3.0 m back at 3.2 m up), and the glass is 0.7 of the cab's half-width at its foot (0.64 before), so it stands clear above the beak in the 3 m front
   // view (the round-4 score: "the beak hides almost all of the windscreen"); the livery's dome starts later (LNER and Lumo `noseTopFrom`) so the glass has the front of the nose to itself.
   // (Before round 4 it was a blunter nose, the glass's foot 0.7 m back and its top 2.0 m back, which the round-3 score called short and bulbous.)
+  // CHANGED (AT300 round): blunt and round-fronted again, but tall and full at the front where round 3's was short: see AT300_NOSE_KNOTS for the readings.
   nose: {
     length: ASSUMED.noseLength,
-    knots: [
-      { s: 0, top: 1.3, ws: 0.44, bottom: 0.6 },
-      { s: 0.4, top: 1.78, ws: 0.56, bottom: 0.5 },
-      { s: 0.8, top: 2.16, ws: 0.67, bottom: 0.46 },
-      { s: 1.3, top: 2.6, ws: 0.82, bottom: 0.48 },
-      { s: 2.0, top: 2.98, ws: 0.9, bottom: 0.58 },
-      { s: 2.7, top: 3.22, ws: 0.95, bottom: 0.72 },
-      { s: 3.3, top: 3.32, ws: 0.98, bottom: 0.86 },
-      { s: ASSUMED.noseLength, top: ROOF_EDGE, ws: 1, bottom: FLOOR },
-    ],
-    fillet: 0.3,
-    filletLoss: 0.2,
+    knots: AT300_NOSE_KNOTS,
+    fillet: 0.45,
+    filletLoss: 0.3,
     roundLen: 3.6,
-    widest: 0.55,
-    boxiness: 2.6,
+    widest: 0.5,
+    boxiness: 3.0,
   },
   glass: {
     // the glass is about half the cab's width and nearly as wide at its top as at its foot (lner-800-113-newcastle-2025: 1.2 m wide, 1.2 m high on the slope).
@@ -687,7 +727,10 @@ const AT300: BodySpec = {
     // where this model's was an arch 0.2 m high (a foot at one distance from the tip, over a nose that falls away to each side), the yellow's peak reaching up into the glass.
     // lner-800-108-offord-cluny-2023, side on, reads lower (the foot 2.0 m up, the top 2.85 m) and puts the foot's corner about 1.3 m back, but its scale is the door beside it at this model's own
     // 1.15 to 2.86 m, and a real door a tenth taller would put those 0.2 m higher: the head-on photograph, scaled by the rails, is the one followed. ASSUMED: the sizes, to about 0.1 m (neither is calibrated)
-    screen: { s0: 0.7, s1: 2.5, fraction: 0.7, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
+    // CHANGED (AT300 round, with the blunt nose: AT300_NOSE_KNOTS): the foot's middle is 1.0 m back, 2.08 m up (was 0.7 m back, 2.24 m up), between lner-800-108-offord-cluny-2023's
+    // 2.03 m at 1.09 m and the head-on 2.2 m; the top 2.6 m back, 3.05 m up (side on 2.55 m back, 2.93 m up; head on 3.15 m), so the glass lies back about 31 degrees as that photograph
+    // shows it; 0.5 of the ring's half-width at the foot and 0.52 at the top (was 0.7 and 0.52 of a narrower nose's), about 1.2 m across at the foot (head on: 1.2 m of glass in a black frame 1.35 m across) and 1.36 m at the top
+    screen: { s0: 1.0, s1: 2.6, fraction: 0.5, fractionTop: 0.52, topRadius: 0.3, bottomRadius: 0.12, footSweep: 0.3 },
     // A wedge, low at the front and tall at the back, against the nose's end: a short dark window whose raked top edge climbs from a point low on the
     // cheek to the cab door's side (photographs lner-800-doncaster-2026, hull-802-paragon-2025, hull-802-doncaster-2024, LUMO-04-Lumo-803003-at-Edinburgh-Waverley:
     // a teardrop pane behind the windscreen's pillar, its rear edge upright beside the crew door). Hull Trains and Lumo have a dark swoosh round it
@@ -1166,14 +1209,24 @@ const BODIES: Readonly<Record<Family, BodySpec>> = { at300: AT300, electrostar: 
  * has the yellow mask under the windscreen, with the red cheeks either side of it (photographs lner-801-214-2025,
  * lner-800-113-newcastle-2025: the mask is about four fifths of the face's width and runs back to the windscreen's lower edge).
  */
+/**
+ * LNER: the yellow mask runs down the whole face over the cover to the chin, between red cheeks, with the lamp cluster's dark window beside each of its upper corners. A trapezoid
+ * that widens upward: lner-800-113-newcastle-2025, head on (about 128 px to the metre): about 0.96 m across at the chin (0.6 m up) and 1.35 m under the glass (2.15 m up), its sides
+ * nearly straight; lner-801-214-2025 the same. CHANGED (AT300 round, with the blunter nose; was 0.4, 0.46 and 0.72): the edge is 0.44 m out at the face's foot (0.67 m up), 0.56 m
+ * at its top (1.44 m up: on the photograph's straight edge, 0.54 to 0.57 m there) and 0.7 m at the glass. ASSUMED, to about 0.05 m.
+ */
+export const LNER_MASK = { colour: LNER_YELLOW, hwFoot: 0.44, hwTop: 0.56, hwSill: 0.7 } as const;
+/**
+ * Hull Trains: the grey beak, over blue cheeks (hull-802-doncaster-2024: a grey bullet that fills the face between the two lamp clusters under the glass and closes to the cover's
+ * foot; the cheeks are the body's blue): wider than the LNER's yellow, reaching the clusters' inner edges at the glass. CHANGED (AT300 round; was 0.4, 0.46 and 0.72, the LNER's):
+ * 0.5 m out at the face's foot, 0.62 m at its top and 0.8 m at the glass. ASSUMED, read by eye off that three-quarter view.
+ */
+export const HULL_MASK = { colour: HULL_BEAK, hwFoot: 0.5, hwTop: 0.62, hwSill: 0.8 } as const;
+
 const FRONT_OVERRIDES: Readonly<Partial<Record<TrainKind, Partial<FrontSpec>>>> = {
-  // LNER: the yellow mask runs down the whole face over the cover to the chin, between red cheeks, with the lamp cluster's dark window at each of its lower
-  // corners (lner-800-113-newcastle-2025, lner-801-214-2025, lner-800-doncaster-2026)
-  lner5: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cluster: LNER_CLUSTER },
-  lner9: { mask: { colour: LNER_YELLOW, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cluster: LNER_CLUSTER },
-  // Hull Trains: the grey beak is the same shape of panel, over blue cheeks (hull-802-doncaster-2024: a grey bullet between the lamp clusters, the cheeks the body's
-  // blue); the cluster's window is a slate panel, a shade off the beak's own
-  hull5: { mask: { colour: HULL_BEAK, hwFoot: 0.4, hwTop: 0.46, hwSill: 0.72 }, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
+  lner5: { mask: LNER_MASK, cluster: LNER_CLUSTER },
+  lner9: { mask: LNER_MASK, cluster: LNER_CLUSTER },
+  hull5: { mask: HULL_MASK, cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, window: { ...AT300_CLUSTER.window, colour: HULL_POD }, rim: { colour: 0x4a5160, width: 0.025 } } },
   // Lumo: the same dark swoosh round the cab side window (LUMO-04-Lumo-803003-at-Edinburgh-Waverley, LUMO-02-803-001-Lumo-Trains-at-Offord-Cluny), and a
   // black window in the cluster (LUMO-04: smoked glass in a body-coloured rim)
   lumo5: { cabSideSurround: CAB_SWOOSH, cluster: { ...AT300_CLUSTER, rim: undefined } },
@@ -1237,13 +1290,16 @@ export function carPlan(car: Car, family: Family = 'at300', kind?: TrainKind): C
 
 // --- the car section -----------------------------------------------------------------------------
 
-/** Right half of the section, from the bottom corner up to the roof centre: slight corners, a vertical wall, a quarter-ellipse shoulder, a nearly flat crown. */
-export function carSection(b: Pick<BodySpec, 'floor' | 'wallTop' | 'crown'> & { half: number }): Section {
+/**
+ * Right half of the section, from the bottom corner up to the roof centre: slight corners, a vertical wall, a quarter-ellipse shoulder `cantRadius` across (default
+ * CANT_RADIUS), a nearly flat crown.
+ */
+export function carSection(b: Pick<BodySpec, 'floor' | 'wallTop' | 'crown'> & { half: number; cantRadius?: number }): Section {
   const W = b.half - DOOR_RELIEF;
   const half: [number, number][] = [[W - 0.15, b.floor], [W - 0.03, b.floor + 0.07]];
   const w0 = b.floor + 0.25;
   for (let i = 0; i < 4; i++) half.push([W, lerp(w0, b.wallTop, i / 3)]);
-  const rx = 0.55;
+  const rx = b.cantRadius ?? CANT_RADIUS;
   const ry = b.crown - b.wallTop - 0.012;
   const n = 5;
   for (let j = 1; j <= n; j++) {
@@ -1738,7 +1794,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
       if (isLner(ctx.kind)) {
         // 801214 and Newcastle 800113 show an amber line along the brow of the screen, on the black dome (the livery's noseTop), that climbs round the upper marker lamp
         // in the middle. All spans are ASSUMED from those oblique photos, in the nose's projected x/s plane
-        const browAt = (x: number): number => 2.53 - 0.17 * (x / 0.84) ** 2;
+        const browAt = (x: number): number => screen.s1 + 0.03 - 0.17 * (x / 0.84) ** 2;
         const pinstripe = colourOf(0xe9a031);
         for (const side of [-1, 1]) {
           nosePatch(1, 12, (v, u) => {
@@ -1751,7 +1807,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
           const inset = (d: number): number => r - Math.sqrt(Math.max(0, r * r - Math.max(0, r - d) ** 2));
           const span = 0.32 + 2 * expand;
           const x = (2 * u - 1) * (0.212 + expand - Math.max(inset(v * span), inset((1 - v) * span)));
-          return [x, 2.55 - expand + v * span];
+          return [x, screen.s1 + 0.05 - expand + v * span];
         };
         nosePatch(8, 8, markerOutline(0.023), detail, pinstripe, 0.015);
         nosePatch(8, 8, markerOutline(0.009), detail, colourOf(0x34363b), 0.017);
@@ -1778,7 +1834,7 @@ function buildCar(car: Car, ctx: CarContext): THREE.Group {
         // stood 8 mm under it, and the strip dipped under the loft there, a red shard at each of the two vertices.
         const sEnd = screen.s0 - front.frame + 0.06;
         const pins = bandVertices.flatMap((x) => (x > 1e-6 ? [x / bandStart, -x / bandStart] : [0]));
-        const spread = Array.from({ length: 19 }, (_, q) => Math.sin(Math.PI * (q / 18 - 0.5)));
+        const spread = Array.from({ length: BAND_SPREAD + 1 }, (_, q) => Math.sin(Math.PI * (q / BAND_SPREAD - 0.5)));
         const columns = [...pins, ...spread.filter((f) => pins.every((p) => Math.abs(p - f) > 0.02))].sort((a, b) => a - b);
         // The rows stand at the loft's own rings (and one last at the glass's frame): the band lies on the surface it is laid on, and no chord of it cuts across a ring. The fillet round
         // the face is six rings in 0.3 m, 1 to 7 cm apart, and a chord across two of them stands under that convex surface (6 mm, where the band's rows stood 2 cm apart
