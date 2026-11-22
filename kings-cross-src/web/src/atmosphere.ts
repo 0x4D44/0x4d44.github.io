@@ -24,6 +24,7 @@ import { addRoofShade } from './lighting.ts';
 import { buildingNightMaterialsOf, officeNightFog, windowNight } from './materials.ts';
 import { createDialLights, createNightLights } from './night.ts';
 import type { NightLights, NightLightSites } from './night.ts';
+import type { NightLightingPilot } from './night-lighting-p1.ts';
 import { createPrecip } from './precip.ts';
 import type { Precip } from './precip.ts';
 import { snowSurface } from './snow.ts';
@@ -297,6 +298,7 @@ function starPoints(): THREE.Points {
 }
 
 export interface AtmosphereOptions {
+  nightLightingPilot?: NightLightingPilot;
   /** Geographic location only; omitted preserves the original London sun and lighting rig. */
   location?: LatLon;
   /** Optional solar gate for artificial light: fade weather's daytime boost
@@ -410,7 +412,7 @@ export const RAIL_NIGHT = 0.3;
 const WAVERLEY_SKYLINE_MESHES = new Set(['waverley-building-walls', 'waverley-building-ashlar',
   'waverley-building-tops', 'waverley-city-monuments', 'waverley-ground', 'waverley-ground-cover']);
 
-export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud }: AtmosphereOptions): Atmosphere {
+export function createAtmosphere({ scene, world, sites, location, haze, lampSunGate, lampLayerSunGate, platformLampFloor, kingsCrossNightFog, cityFogTint, litFogCloud, nightLightingPilot }: AtmosphereOptions): Atmosphere {
   const { hemisphere, sun, fills } = world.lights;
   const kxFogMaterials = kingsCrossNightFog ? createKxFogMaterials() : null;
   const precip = createPrecip();
@@ -454,6 +456,7 @@ export function createAtmosphere({ scene, world, sites, location, haze, lampSunG
   let roofKey: string | null = null;
   let coverMap: CoverMap | null = null;
   const rescan = (): void => {
+    nightLightingPilot?.restoreMaterials();
     const roofs = findRoofs(scene);
     const key = roofs.map((m) => m.uuid).join(',');
     if (key !== roofKey) {
@@ -540,6 +543,7 @@ if (uWaverleySkylineFog > 0.0 && vFogDepth > 550.0) {
     }
     dialLights?.scan(scene);
     kxFogMaterials?.scan(scene);
+    nightLightingPilot?.scan();
   };
   rescan();
 

@@ -14,6 +14,7 @@
 // With a `terrain` (core/terrain.ts) the city stands on that ground; without one it stands on the flat plane at GROUND_Y.
 import * as THREE from 'three';
 import { buildCity, CITY_KEYS, hash01, PAGE_DRAPE, roadWidth, SegmentGrid } from '../../core/city.ts';
+import { OSM_IDS, midlandGrandPlan } from '../../core/landmarks.ts';
 import { railShapes } from '../../core/curves.ts';
 import { railSegments } from '../../core/scene.ts';
 import type { CityBuildOptions, CityData, CityKey, CityMeshes, MeshAcc, TreeSpot } from '../../core/city.ts';
@@ -21,6 +22,8 @@ import type { KxData } from '../../core/osm.ts';
 import type { Terrain } from '../../core/terrain.ts';
 import { cityMaterial, cityOfficeAtNight, withBuildingNightMaterial } from './materials.ts';
 import type { NightLayer } from './night.ts';
+import { isEustonPilotLamp } from './night-lighting-p1.ts';
+import type { NightLightingPilot } from './night-lighting-p1.ts';
 import { forecourtMasts, LAMP_KIND } from '../../core/streetlights.ts';
 import { createLampWetSurface } from './lamp-wet-surface.ts';
 import { createKxFrontReflections, createKxFacadeReflections, createKxWindowReflections } from './kx-front-reflections.ts';
@@ -31,6 +34,7 @@ import type { StreetLights } from './streetlights.ts';
 import { GROUND_Y } from './world.ts';
 
 export interface CityOptions {
+  nightLightingPilot?: NightLightingPilot;
   /** Bounded pools, mast optics and station-local weather effects. */
   nightEffects?: boolean;
   /** OSM building ids drawn some other way (the station, the landmarks, whatever is under the shed) */
@@ -206,6 +210,7 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
     for (let i = 1; i < road.pts.length; i++) euston.add({ a: road.pts[i-1]!, b: road.pts[i]!, reach });
   }
   let lights: StreetLights | null = lamps.length > 0 ? createStreetLights(lamps, opts.nightEffects ? {...urbanLampOptions(wetSurface),poolSegments:12,poolFocus:.8,kxOptics:true,softFog:true,poolRoadShape:false,luminairePools:true,roadPoolBalance:true,roughReflections:true,
+    receiverPoolAt: opts.nightLightingPilot ? isEustonPilotLamp : undefined,
     localSodiumScaleAt: spot => {
       if (spot.mast || spot.kind !== LAMP_KIND.sodium) return 0;
       const edge = euston.nearest([spot.x,spot.z],16);
@@ -227,12 +232,14 @@ export function addCity(scene: THREE.Scene, data: KxData, city: CityData, opts: 
   if (lights) {
     scene.add(lights.group);
     detach = opts.night?.attach(lights);
+    if (opts.nightEffects) opts.nightLightingPilot?.register(lamps, data.buildings.some(b => b.id === OSM_IDS.midlandGrandHotel) ? midlandGrandPlan(data) : null, lights);
   }
   return {
     group,
     lights,
     stats,
     dispose() {
+      opts.nightLightingPilot?.dispose();
       wetSurface?.dispose();
       scene.remove(group);
       for (const g of geometries) g.dispose();

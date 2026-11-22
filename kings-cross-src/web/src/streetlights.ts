@@ -115,6 +115,7 @@ export function poolTexture(): THREE.Texture | null {
 
 export interface StreetLights extends NightLayer {
   group: THREE.Group;
+  setReceiverPools?(active: boolean): void;
   counts(): { lamps: number; triangles: number; draws: number };
   dispose(): void;
 }
@@ -146,6 +147,8 @@ export interface StreetLightOptions {
   poolFocus?: number;
   /** Keep distant head cores without allocating unseen pools on distant roads. */
   poolAt?: (spot:LampSpot,index:number)=>boolean;
+  /** Pools drawn by the receiving shader when that night variant is active. */
+  receiverPoolAt?: (spot: LampSpot) => boolean;
   /** Drape urban pools onto the same physical paving as their reflections. */
   poolSurface?: LampWetSurface;
   /** Receiver samples across a pool on tightly folded urban terrain. */
@@ -536,17 +539,55 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
   pools.frustumCulled = false;
   pools.renderOrder = 4;
   group.add(pools);
+  const legacyIndices = options.receiverPoolAt
+    ? poolEntries.flatMap(({spot}, i) => options.receiverPoolAt!(spot) ? [] : [i]) : undefined;
+  let receiverPools: typeof pools | undefined;
+  if (legacyIndices && legacyIndices.length < poolEntries.length) {
+    const geometry = poolGeometry.clone();
+    // Preserve the original instance order and every retained decal attribute.
+    for (const [name, attr] of Object.entries(poolGeometry.attributes)) {
+      if (!(attr instanceof THREE.InstancedBufferAttribute)) continue;
+      const values = new Float32Array(legacyIndices.length * attr.itemSize);
+      legacyIndices.forEach((index, i) => values.set(attr.array.subarray(index * attr.itemSize, (index + 1) * attr.itemSize), i * attr.itemSize));
+      geometry.setAttribute(name, new THREE.InstancedBufferAttribute(values, attr.itemSize, attr.normalized));
+    }
+    receiverPools = new THREE.InstancedMesh(geometry, poolMaterial, legacyIndices.length);
+    const compact = receiverPools;
+    const instanceColour = new THREE.Color();
+    legacyIndices.forEach((index, i) => {
+      pools.getMatrixAt(index, matrix);
+      compact.setMatrixAt(i, matrix);
+      if (pools.instanceColor) {
+        pools.getColorAt(index, instanceColour);
+        compact.setColorAt(i, instanceColour);
+      }
+    });
+    compact.name = 'street-lamp-pools-euston-p1';
+    compact.raycast = pools.raycast;
+    compact.visible = false;
+    compact.frustumCulled = false;
+    compact.renderOrder = pools.renderOrder;
+    group.add(compact);
+  }
+  // Reflections, halos and fog still read the full original pool data.
   const weather = options.weatherEffects && poolEntries.length ? createLampWeather(pools, poolEntries.flatMap(({spot})=>headAt(spot)), halos, options.poolFloor,
     poolEntries.flatMap(({spot,index},i)=>options.reflectionAt?.(spot,index) === false ? [] : [i]), options.reflectionReach, options.reflectionSurface, options.reflectionBroken, {enhancedFog:options.enhancedFog,softFog:options.softFog,boundedFog:options.boundedFog,waverleyStreetFog:options.waverleyStreetFog,fogHaloSpread:options.fogHaloSpread,mastHaze:options.mastHaze,kxOptics:options.kxOptics,roughReflections:options.roughReflections,reflectionRoadAt:options.reflectionRoad&&options.reflectionSurface?source=>{const e=poolEntries[source]!;return options.reflectionRoad!(e.spot,e.index)?[Math.sin(e.spot.yaw),Math.cos(e.spot.yaw)]:[0,0];}:undefined,reflectionTailAt:options.reflectionTail?source=>options.reflectionTail!(poolEntries[source]!.spot,poolEntries[source]!.index):undefined,lightFog:options.lightFog,suppressSnow:options.suppressSnow}) : undefined;
   if (weather) group.add(weather.group);
+  let receiverActive = false;
+  const drawPools = () => {
+    pools.visible = halos.visible && !receiverActive;
+    if (receiverPools) receiverPools.visible = halos.visible && receiverActive && receiverPools.count > 0;
+  };
 
   return {
     group,
+    setReceiverPools(active) { receiverActive = !!receiverPools && active; drawPools(); },
     setLevel(level) {
       const l = Math.min(1, Math.max(0, level));
       haloMaterial.opacity = l * 0.9;
       poolMaterial.opacity = l;
-      halos.visible = pools.visible = l > 0.01;
+      halos.visible = l > 0.01;
+      drawPools();
       if (cores && clearCoreMaterial) {
         const denseFog = surfaceUniforms.fog.value > .65;
         const lens = l > .01 && !denseFog ? sourceCore : undefined;
@@ -557,13 +598,18 @@ gl_FragColor.a *= ( 1.0 - 0.38 * uPoolWet * poolOpen ) * ( 1.0 - 0.55 * uPoolFog
       }
       weather?.setLevel(l);
     },
-    counts: () => ({ lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + poolGeometry.index!.count / 3 * poolEntries.length + (weather?.triangles ?? 0), draws: meshes.length + 2 + Number(!!cores) + (weather?.draws ?? 0) }),
+    counts: () => {
+      const poolCount = receiverActive ? receiverPools!.count : poolEntries.length;
+      return { lamps: n, triangles: meshes.reduce((sum, m) => sum + (m.geometry.index as THREE.BufferAttribute).count / 3 * m.count, 0) + poolGeometry.index!.count / 3 * poolCount + (weather?.triangles ?? 0), draws: meshes.length + 1 + Number(!receiverActive || poolCount > 0) + Number(!!cores) + (weather?.draws ?? 0) };
+    },
     dispose() {
       weather?.dispose();
       for (const g of geometries) g.dispose();
       for (const m of meshes) m.dispose();
       haloGeometry.dispose();
       poolGeometry.dispose();
+      receiverPools?.geometry.dispose();
+      receiverPools?.dispose();
       material.dispose();
       haloMaterial.dispose();
       legacyCoreGeometry?.dispose();
