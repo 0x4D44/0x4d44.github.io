@@ -250,7 +250,8 @@ test('on lying snow a mast spill overlapping a sodium pool takes the pool’s hu
   const white = [.78, .80, .82];
   const snow = weatherFrame('snow');
   // The south-front sodium pool of P1 post 1043, running into mast 2's spill.
-  const readings = Array.from({ length: 9 }, (_, i) => [52.3 + .5 * i, -.2, 21.5 - .8 * i]).map(p => {
+  // S2i narrows the dry mast pool, so the overlap is walked at quarter steps.
+  const readings = Array.from({ length: 33 }, (_, i) => [52.3 + .125 * i, -.2, 21.5 - .2 * i]).map(p => {
     const total = all.ground(p, white, snow), pool = lamps.ground(p, white, snow);
     return { p, total, pool, blue: total[2]! / total[0]!, poolBlue: pool[2]! / pool[0]! };
   });
@@ -392,11 +393,15 @@ test('forecourt masts keep a bright core and leave a dark gap between adjacent c
   const foot = (source: typeof a) => [source.pos[0], source.footY, source.pos[2]];
   const first = foot(a), second = foot(b);
   const midpoint = first.map((v,i) => (v + second[i]!) * .5);
-  const at = (p: number[]) => meter.ground(p, [.4, .4, .4]);
+  const at = (p: number[], weather = 'clear') => meter.ground(p, [.4, .4, .4], weatherFrame(weather));
   const centre = at(first), gap = at(midpoint);
-  t.diagnostic(JSON.stringify({ first, second, centre, gap }));
+  const wetCentre = at(first, 'rain'), wetGap = at(midpoint, 'rain');
+  t.diagnostic(JSON.stringify({ first, second, centre, gap, wetCentre, wetGap }));
   assert.ok(centre[0]! > .085 && centre[0]! < .105);
-  assert.ok(gap[0]! > .05 * centre[0]! && gap[0]! < .13 * centre[0]!, String(gap));
+  // S2i: dry paving now leaves the gap dark (Skinner); rain keeps the soft
+  // pool, so the S2h bounds (.05-.13 of the centre) still hold there.
+  assert.ok(gap[0]! < .02 * centre[0]!, String(gap));
+  assert.ok(wetGap[0]! > .05 * wetCentre[0]! && wetGap[0]! < .13 * wetCentre[0]!, String(wetGap));
   assert.ok(centre[0]! > centre[2]! && centre[0]! < 1.20 * centre[2]!);
 });
 
@@ -667,5 +672,65 @@ test('night receivers preserve prior hooks and the squeezed anchors, hide all de
     layer.dispose();
     unregister();
     street.dispose();
+  }
+});
+
+test('in lying snow a side-street lantern lights its cleared street more than the snow beside it', t => {
+  const lantern = { ...light('side', [0, 6, 0]), tags: ['road'] };
+  const meter = probe(buildLightField([lantern], LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const snow = weatherFrame('snow');
+  // The head aims along +x across its street; the street runs along z. The
+  // carriageway lies ahead of the post, the kerb pavement under it and the
+  // open ground and blocks behind that.
+  const road = [[2, 0, 0], [4, 0, 0], [2, 0, 6], [4, 0, 10]].map(p => luma(meter.ground(p, [.10, .11, .12], snow, .5, 'city-asphalt')));
+  const beside = [[-4, 0, 0], [-8, 0, 0], [-4, 0, 6], [-6, 0, 10]].map(p => luma(meter.ground(p, [.78, .80, .82], snow, .5, 'terrain-ground')));
+  t.diagnostic(JSON.stringify({ road, beside }));
+  // S2h: the snow beside the road reached .085 while the street peaked at .026.
+  assert.ok(Math.max(...beside) < .75 * Math.max(...road), JSON.stringify({ road, beside }));
+  assert.ok(road[0]! > .012, String(road));
+});
+
+test('a mast’s pool keeps a firm edge on dry paving and lying snow, and its soft shoulder in rain', t => {
+  const mast = kingsCrossLights().find(source => source.tags.includes('mast'))!;
+  const meter = probe(buildLightField([mast], LIGHT_GRID_DESKTOP));
+  const [x, , z] = mast.pos, y = mast.footY;
+  const ratio = (weather: string, albedo: number) => {
+    const at = (r: number) => meter.ground([x + r, y, z], [albedo, albedo, albedo], weatherFrame(weather))[0]!;
+    return at(7) / at(0);
+  };
+  const rows = { clear: ratio('clear', .40), snow: ratio('snow', .66), rain: ratio('rain', .27) };
+  t.diagnostic(JSON.stringify(rows));
+  // S2h kept 35% of the centre 7 m out on dry paving and 51% on snow (screen
+  // gaps 63-73 against centres 119-126; Skinner's gaps sit near 40-50).
+  assert.ok(rows.clear < .20 && rows.snow < .25, JSON.stringify(rows));
+  assert.ok(rows.rain > .30, JSON.stringify(rows));
+});
+
+test('a side-street lantern lights a wall in the street’s sodium hue, not salmon', t => {
+  const lantern = { ...light('side', [0, 6, 0]), tags: ['road'] };
+  const meter = probe(buildLightField([lantern], LIGHT_GRID_DESKTOP));
+  const wall = meter.at([8, 3, 0], [-1, 0, 0], true);
+  t.diagnostic(JSON.stringify(wall));
+  // S2h passed the lantern's own spectrum through: green/red .26 read salmon on brick.
+  assert.ok(wall[0]! > .05 && Math.abs(wall[1]! / wall[0]! - .55) < .01 && Math.abs(wall[2]! / wall[0]! - .18) < .01, String(wall));
+});
+
+test('P1’s amber floor keeps its hue under the field and still takes a share of it', t => {
+  const post = { ...light(), tags: ['road', 'euston-road', 'euston-p1'] };
+  const meter = probe(buildLightField([post], LIGHT_GRID_DESKTOP));
+  const field = probe(buildLightField([light()], LIGHT_GRID_DESKTOP));
+  const luma = (c: number[]) => .2126 * c[0]! + .7152 * c[1]! + .0722 * c[2]!;
+  const albedo = [.078, .078, .078];
+  const rows = [[4, 0, 0], [1, 0, 0], [-6, 0, 0]].map(p => {
+    const pilot = pilotAt(post, p, up, [0, 0, 0], false).map((v, i) => v * albedo[i]!);
+    return { p, pilot, alone: field.ground(p, albedo), total: meter.ground(p, albedo) };
+  });
+  t.diagnostic(JSON.stringify(rows));
+  for (const { pilot, alone, total } of rows) {
+    // S2h took a per-channel maximum: the field's blue greyed the pilot's amber
+    // and nothing of the field added where the pilot was brighter.
+    assert.ok(total[2]! / total[0]! < pilot[2]! / pilot[0]! + .5 * (alone[2]! / alone[0]! - pilot[2]! / pilot[0]!), JSON.stringify({ pilot, alone, total }));
+    assert.ok(luma(total) >= Math.max(luma(pilot), luma(alone)) + .2 * Math.min(luma(pilot), luma(alone)), JSON.stringify({ pilot, alone, total }));
   }
 });

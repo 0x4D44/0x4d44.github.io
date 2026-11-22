@@ -15,15 +15,26 @@ import type { StreetLights } from './streetlights.ts';
 const SIDE_OVERLAP = 0.8;
 const SIDE_KNEE = 1.2;
 // Their gain on the carriageway and on other paving, in clear air and rain
-// (fog and lying snow already fill the street), the carriageway's own knee,
-// and the scale on the along-street distance that stretches each pool down
-// its street.
+// (fog already fills the street), the carriageway's own knee, and the scale on
+// the along-street distance that stretches each pool down its street. Lying
+// snow beside the road reflects four times what asphalt does, so there the
+// paving gain falls to SIDE_SNOW_PAVING_GAIN and the cleared carriageway keeps
+// its own: the light follows the street instead of pooling on the snow.
 const SIDE_ROAD_GAIN = 3.6;
 const SIDE_ROAD_KNEE = 1.0;
 const SIDE_PAVING_GAIN = 0.8;
+const SIDE_SNOW_PAVING_GAIN = 0.1;
 const SIDE_ALONG = 0.5;
 // The light (linear luma) that a lantern's spill on a wall beside it levels off at.
 const SIDE_WALL_KNEE = 0.6;
+// The sodium hue that side-street light takes on the ground and on walls. The
+// lanterns' own narrow-band spectrum read as salmon on brick.
+const SIDE_SODIUM = [1.0, 0.55, 0.18] as const;
+// In dry air a forecourt mast's ground spill narrows: its cone's soft edge
+// moves this share of the way toward the core, and its window closes between
+// these shares of the reach. Rain and fog keep the wide soft pool.
+const MAST_DRY_CONE = 0.45;
+const MAST_DRY_WINDOW = [0.5, 0.75] as const;
 // The most of a mast's ground spill that takes a sodium pool's hue, on clear
 // ground and on lying snow.
 const MAST_SHARE = 0.6;
@@ -31,6 +42,13 @@ const MAST_SNOW_SHARE = 1.0;
 // The same on wet ground and in ground fog, where the wet sheen and the haze
 // otherwise thin the pool's amber (main's decals kept it).
 const MAST_WET_SHARE = 1.0;
+// The share of the field that always adds on top of P1's floor, as main's
+// decals added to the pilot's pools.
+const FLOOR_FIELD_SHARE = 0.25;
+// The share of the light's luminance that grey slush takes (McKay's tan pool),
+// and the blue in the Euston Road sodium pools on the ground.
+const SLUSH_GREY = 0.22;
+const EUSTON_GROUND_BLUE = 0.15;
 
 export function nightLightGLSL(cap: number, frontPlanes = 0): string {
   const planes = Array.from({ length: frontPlanes }, (_, i) => `uNightLightFront${i}`);
@@ -178,15 +196,19 @@ ${EUSTON_FACADE_LOBE}
         vec2 fromCore = vec2(angle - 0.10, 0.65 * along);
         window *= mix(1.0, 0.46 + 0.54 / (1.0 + 70.0 * dot(fromCore, fromCore)), fog);
       }
-      spectrum = vec3(1.0, 0.55, 0.18);
+      spectrum = vec3(1.0, 0.55, ${EUSTON_GROUND_BLUE.toFixed(2)});
     }
   } else if (kind == ${LIGHT_FIELD_STRIP.toFixed(1)}) {
     vec2 aim = vec2(cos(params.x), -sin(params.x));
     float r = length(vec2(dot(ray.xz, aim) / params.z, dot(ray.xz, vec2(-aim.y, aim.x)) / params.w));
     optic = 1.0 - smoothstep(0.52, 1.0, r);
   } else if (kind == ${LIGHT_FIELD_DOWNLIGHT.toFixed(1)}) {
-    optic = smoothstep(params.z - 0.10 * fog, params.w, ray.y / d);
-    window = 1.0 - smoothstep(0.75 * reach, reach, sqrt(horizontal2));
+    // Dry paving shows a mast's pool with a firm edge and dark gaps between
+    // columns (Skinner); wet sheen and haze spread it (Daniel, Lamb).
+    float dry = facade ? 0.0 : 1.0 - max(smoothstep(0.40, 0.90, uNightLightWeather.x), fog);
+    float edge = mix(params.z, mix(params.z, params.w, ${MAST_DRY_CONE.toFixed(2)}), dry);
+    optic = smoothstep(edge - 0.10 * fog, params.w, ray.y / d);
+    window = 1.0 - smoothstep(mix(0.75, ${MAST_DRY_WINDOW[0].toFixed(2)}, dry) * reach, mix(1.0, ${MAST_DRY_WINDOW[1].toFixed(2)}, dry) * reach, sqrt(horizontal2));
   }
   vec3 lit = spectrum * (head.w * optic * window * receipt * facing / (d * max(d2, 1.0)));
   if (!facade && kind == ${LIGHT_FIELD_DOWNLIGHT.toFixed(1)}) {
@@ -214,6 +236,14 @@ vec3 nightMastBlend(vec3 lamps, vec3 mast, float snow) {
   vec3 luma = vec3(0.2126, 0.7152, 0.0722);
   vec3 tint = lamps * (dot(mast, luma) / max(dot(lamps, luma), 1e-6));
   return mix(mast, tint, share);
+}
+vec3 nightLightOver(vec3 floorLight, vec3 light) {
+  // The floor plus the field above it by luminance, so never below the floor
+  // in any channel. A per-channel maximum took the field's blue under P1's
+  // deep amber floor and greyed the pilot's pools; main kept their hue and
+  // added its decals on top, which a share of the field stands in for.
+  vec3 luma = vec3(0.2126, 0.7152, 0.0722);
+  return floorLight + light * max(${FLOOR_FIELD_SHARE.toFixed(2)}, 1.0 - dot(floorLight, luma) / max(dot(light, luma), 1e-9));
 }
 vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway, float lowerBrick) {
   // City roofs are excluded by the receiver list. Mixed façade batches also
@@ -244,19 +274,21 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway
   // Euston Road. Overlaps add most of the weaker pools to the strongest, and
   // the low posts' hot centres roll off.
   vec3 luma = vec3(0.2126, 0.7152, 0.0722);
+  float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
+  vec3 sodium = vec3(${SIDE_SODIUM.map(v => v.toFixed(2)).join(', ')});
   if (facade) {
     // A lantern a few metres from a wall clipped it to white. Level the
     // spill off softly; the dimmer glow along the terrace keeps its strength.
+    // The wall takes the street's sodium hue at the spill's own luminance.
     float wall = dot(nightLightSide, luma) / ${SIDE_WALL_KNEE.toFixed(2)};
-    light += nightLightSide / sqrt(sqrt(1.0 + wall * wall * wall * wall));
+    light += sodium * (dot(nightLightSide, luma) / dot(sodium, luma)) / sqrt(sqrt(1.0 + wall * wall * wall * wall));
   } else {
     // Main's decals filled each side street evenly along the carriageway.
     // Lift the dark asphalt more than the paving beside it, where the back
     // lobe already reached, and give the pools Euston Road's sodium hue at
     // their own luminance: the narrow-band orange read as a saturated spot.
     vec3 side = (nightLightSideTop + ${SIDE_OVERLAP.toFixed(2)} * (nightLightSide - nightLightSideTop))
-      * mix(carriageway ? ${SIDE_ROAD_GAIN.toFixed(2)} : ${SIDE_PAVING_GAIN.toFixed(2)}, 1.0, max(fog, smoothstep(0.02, 0.75, uNightLightLevels.y)));
-    vec3 sodium = vec3(1.0, 0.55, 0.18);
+      * mix(carriageway ? ${SIDE_ROAD_GAIN.toFixed(2)} : mix(${SIDE_PAVING_GAIN.toFixed(2)}, ${SIDE_SNOW_PAVING_GAIN.toFixed(2)}, snow), 1.0, fog);
     side = sodium * (dot(side, luma) / dot(sodium, luma));
     light += side / (1.0 + dot(side, luma) / (carriageway ? ${SIDE_ROAD_KNEE.toFixed(2)} : ${SIDE_KNEE.toFixed(2)}));
   }
@@ -265,8 +297,7 @@ vec3 nightLightAt(vec3 p, vec3 n, bool facade, vec3 frontPlane, bool carriageway
   if (facade) return max(light, nightLightFloor);
   // P1's floor raises the street-lamp light alone. Taking it against the sum
   // let a mast's neutral spill replace the pilot's amber instead of adding to it.
-  vec3 lamps = max(light, nightLightFloor);
-  float snow = smoothstep(0.02, 0.75, uNightLightLevels.y);
+  vec3 lamps = nightLightOver(nightLightFloor, light);
   return lamps + nightMastBlend(lamps, nightLightMast * uNightLightLevels.x, snow);
 }
 vec3 nightFieldDiffuse(vec3 light, vec3 albedo, bool carriageway) {
@@ -279,7 +310,7 @@ vec3 nightFieldDiffuse(vec3 light, vec3 albedo, bool carriageway) {
   // narrow tyre and kerb masks still affect the base surface.
   // Grey slush under sodium reads tan rather than orange (McKay): it takes a
   // share of the light's luminance as well as its hue.
-  vec3 slush = mix(light, vec3(dot(light, vec3(0.2126, 0.7152, 0.0722))), 0.25) * vec3(0.049, 0.051, 0.055);
+  vec3 slush = mix(light, vec3(dot(light, vec3(0.2126, 0.7152, 0.0722))), ${SLUSH_GREY.toFixed(2)}) * vec3(0.049, 0.051, 0.055);
   vec3 scatter = carriageway ? slush : light * 0.80;
   float peak = max(max(scatter.r, scatter.g), scatter.b);
   if (carriageway) return mix(paving, scatter * (0.22 / max(0.22, peak)), snow);
